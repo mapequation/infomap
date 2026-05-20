@@ -6,6 +6,23 @@ import subprocess
 from pathlib import Path
 
 
+PUBLIC_PARAMETER_KEYS = {
+    "long",
+    "short",
+    "description",
+    "group",
+    "required",
+    "advanced",
+    "incremental",
+    "longType",
+    "shortType",
+    "default",
+    "choices",
+    "min",
+    "max",
+}
+
+
 def load_parameters(infomap_bin):
     infomap_bin = infomap_bin.resolve()
     completed = subprocess.run(
@@ -16,6 +33,13 @@ def load_parameters(infomap_bin):
     )
     payload = json.loads(completed.stdout)
     return payload["parameters"]
+
+
+def public_parameter_metadata(parameters):
+    return [
+        {key: value for key, value in parameter.items() if key in PUBLIC_PARAMETER_KEYS}
+        for parameter in parameters
+    ]
 
 
 def write_json(path, payload):
@@ -32,7 +56,7 @@ def main():
     output_dir = Path(args.output_dir)
     parameters = load_parameters(Path(args.infomap_bin))
 
-    write_json(output_dir / "parameters.json", parameters)
+    write_json(output_dir / "parameters.json", public_parameter_metadata(parameters))
 
 
 if __name__ == "__main__":

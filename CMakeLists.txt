@@ -162,6 +162,15 @@ if(BUILD_TESTING)
     set_tests_properties(shell_completion PROPERTIES LABELS "fast;core;parser;cli")
 
     add_test(
+        NAME help_contract
+        COMMAND
+            "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/test/scripts/check_help_contract.py"
+            "$<TARGET_FILE:infomap_cli>"
+    )
+    set_tests_properties(help_contract PROPERTIES LABELS "fast;core;parser;cli")
+
+    add_test(
         NAME pretty_output
         COMMAND
             "${Python3_EXECUTABLE}"

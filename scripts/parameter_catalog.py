@@ -7,52 +7,6 @@ from typing import Any
 
 GROUPS = ("Input", "Output", "Algorithm", "Accuracy")
 
-PY_DEFAULTS = {
-    "--meta-data-rate": "1.0",
-    "--teleportation-probability": "0.15",
-    "--regularization-strength": "1.0",
-    "--entropy-correction-strength": "1.0",
-    "--markov-time": "1.0",
-    "--variable-markov-damping": "1.0",
-    "--variable-markov-min-scale": "1.0",
-    "--multilayer-relax-rate": "0.15",
-    "--multilayer-relax-limit": "-1",
-    "--multilayer-relax-limit-up": "-1",
-    "--multilayer-relax-limit-down": "-1",
-    "--seed": "123",
-    "--num-trials": "1",
-    "--core-loop-limit": "10",
-    "--core-loop-codelength-threshold": "1e-10",
-    "--tune-iteration-relative-threshold": "1e-5",
-}
-
-R_DEFAULTS = {
-    "--meta-data-rate": "DEFAULT_META_DATA_RATE",
-    "--teleportation-probability": "DEFAULT_TELEPORTATION_PROB",
-    "--regularization-strength": "1.0",
-    "--entropy-correction-strength": "1.0",
-    "--markov-time": "1.0",
-    "--variable-markov-damping": "1.0",
-    "--variable-markov-min-scale": "1.0",
-    "--multilayer-relax-rate": "DEFAULT_MULTILAYER_RELAX_RATE",
-    "--seed": "DEFAULT_SEED",
-    "--num-trials": "1L",
-    "--core-loop-limit": "10L",
-    "--core-loop-codelength-threshold": "DEFAULT_CORE_LOOP_CODELENGTH_THRESHOLD",
-    "--tune-iteration-relative-threshold": "DEFAULT_TUNE_ITER_RELATIVE_THRESHOLD",
-}
-
-PY_DEFAULT_CONSTANTS = {
-    "--verbose": "_DEFAULT_VERBOSITY_LEVEL",
-    "--meta-data-rate": "_DEFAULT_META_DATA_RATE",
-    "--teleportation-probability": "_DEFAULT_TELEPORTATION_PROB",
-    "--multilayer-relax-rate": "_DEFAULT_MULTILAYER_RELAX_RATE",
-    "--seed": "_DEFAULT_SEED",
-    "--core-loop-codelength-threshold": "_DEFAULT_CORE_LOOP_CODELENGTH_THRESHOLD",
-    "--tune-iteration-relative-threshold": "_DEFAULT_TUNE_ITER_RELATIVE_THRESHOLD",
-}
-
-
 def snake_name(flag: str) -> str:
     return flag.removeprefix("--").replace("-", "_")
 
@@ -63,15 +17,8 @@ def camel_name(flag: str) -> str:
 
 
 def _render_policy(raw: dict[str, Any]) -> str:
-    flag = raw["long"]
-    if flag in {"--verbose", "--fast-hierarchical-solution"}:
-        return "repeated_short"
-    if flag == "--output":
-        return "comma_list"
-    if flag == "--directed":
-        return "directed_alias"
-    if flag == "--no-self-links":
-        return "deprecated_alias_target"
+    if raw.get("renderPolicy"):
+        return raw["renderPolicy"]
     if raw["required"]:
         return "value"
     return "flag"
@@ -150,9 +97,12 @@ class Parameter:
 
     @property
     def choices(self) -> list[str] | None:
-        return self.overrides.get("choices", {}).get(self.flag)
+        return self.raw.get("choices") or self.overrides.get("choices", {}).get(self.flag)
 
     def name(self, language: str) -> str:
+        binding_names = self.raw.get("bindingNames", {})
+        if language in binding_names:
+            return binding_names[language]
         names = self.overrides.get("names", {}).get(self.flag, {})
         if language in names:
             return names[language]
@@ -163,17 +113,18 @@ class Parameter:
     def uses_generic_spec(self) -> bool:
         return self.render_policy in {"flag", "value"}
 
+    def binding_default(self, language: str) -> dict[str, str]:
+        return self.raw.get("bindingDefaults", {}).get(language, {})
+
     def python_default_value(self) -> str:
-        if self.flag == "--verbose":
-            return "1"
-        if self.flag in {"--directed", "--fast-hierarchical-solution"}:
-            return "None"
+        if value := self.binding_default("python").get("value"):
+            return value
         if not self.required:
             return "False"
-        return PY_DEFAULTS.get(self.flag, "None")
+        return "None"
 
     def python_default_expr(self) -> str:
-        return PY_DEFAULT_CONSTANTS.get(self.flag, self.python_default_value())
+        return self.python_default_value()
 
     def python_include_expr(self) -> str:
         default = self.python_default_value()
@@ -183,9 +134,7 @@ class Parameter:
 
     def python_type(self) -> str:
         if self.render_policy == "repeated_short":
-            return (
-                "int | None" if self.flag == "--fast-hierarchical-solution" else "int"
-            )
+            return "int | None" if self.python_default_value() == "None" else "int"
         if self.render_policy == "directed_alias":
             return "bool | None"
         if self.choices:
@@ -218,20 +167,17 @@ class Parameter:
         return "str, optional"
 
     def python_doc_description(self) -> str:
-        if self.name("python") == "verbosity_level":
-            return "Verbosity level on the console. 1 keeps the default output level, 2 renders -vv and so on."
-        if self.flag == "--fast-hierarchical-solution":
-            return "Find top modules fast. Use 2 to keep all fast levels and 3 to skip the recursive part."
+        python_docs = self.raw.get("bindingDocs", {}).get("python", {})
+        if description := python_docs.get("description"):
+            return description
         return self.description
 
     def r_default(self) -> str:
-        if self.flag == "--verbose":
-            return "DEFAULT_VERBOSITY_LEVEL"
-        if self.flag in {"--directed", "--fast-hierarchical-solution"}:
-            return "NULL"
+        if value := self.binding_default("r").get("value"):
+            return value
         if not self.required:
             return "FALSE"
-        return R_DEFAULTS.get(self.flag, "NULL")
+        return "NULL"
 
     def r_include_expr(self) -> str:
         default = self.r_default()

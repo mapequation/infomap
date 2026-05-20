@@ -20,22 +20,6 @@
     "default": false
   },
   {
-    "long": "--completion",
-    "short": "",
-    "description": "Print shell completion script for bash or zsh.",
-    "group": "About",
-    "required": true,
-    "advanced": false,
-    "incremental": false,
-    "longType": "option",
-    "shortType": "o",
-    "default": "",
-    "choices": [
-      "bash",
-      "zsh"
-    ]
-  },
-  {
     "long": "--skip-adjust-bipartite-flow",
     "short": "",
     "description": "Keep flow on bipartite nodes instead of distributing it to primary nodes.",
@@ -65,7 +49,8 @@
     "incremental": false,
     "longType": "number",
     "shortType": "f",
-    "default": "0"
+    "default": "0",
+    "min": "0"
   },
   {
     "long": "--no-self-links",
@@ -87,7 +72,8 @@
     "incremental": false,
     "longType": "integer",
     "shortType": "n",
-    "default": "0"
+    "default": "0",
+    "min": "1"
   },
   {
     "long": "--matchable-multilayer-ids",
@@ -99,7 +85,8 @@
     "incremental": false,
     "longType": "integer",
     "shortType": "n",
-    "default": "0"
+    "default": "0",
+    "min": "1"
   },
   {
     "long": "--cluster-data",
@@ -145,7 +132,8 @@
     "incremental": false,
     "longType": "number",
     "shortType": "f",
-    "default": "1"
+    "default": "1",
+    "min": "0"
   },
   {
     "long": "--meta-data-unweighted",
@@ -229,7 +217,8 @@
     "incremental": false,
     "longType": "integer",
     "shortType": "n",
-    "default": "1"
+    "default": "1",
+    "min": "-1"
   },
   {
     "long": "--output",
@@ -354,7 +343,9 @@
     "incremental": false,
     "longType": "probability",
     "shortType": "P",
-    "default": "0.15"
+    "default": "0.15",
+    "min": "0",
+    "max": "1"
   },
   {
     "long": "--regularized",
@@ -376,7 +367,8 @@
     "incremental": false,
     "longType": "number",
     "shortType": "f",
-    "default": "1"
+    "default": "1",
+    "min": "0"
   },
   {
     "long": "--entropy-corrected",
@@ -410,7 +402,8 @@
     "incremental": false,
     "longType": "number",
     "shortType": "f",
-    "default": "1"
+    "default": "1",
+    "min": "0"
   },
   {
     "long": "--variable-markov-time",
@@ -456,7 +449,8 @@
     "incremental": false,
     "longType": "integer",
     "shortType": "n",
-    "default": "0"
+    "default": "0",
+    "min": "1"
   },
   {
     "long": "--multilayer-relax-rate",
@@ -468,7 +462,9 @@
     "incremental": false,
     "longType": "probability",
     "shortType": "P",
-    "default": "0.15"
+    "default": "0.15",
+    "min": "0",
+    "max": "1"
   },
   {
     "long": "--multilayer-relax-limit",
@@ -526,7 +522,8 @@
     "incremental": false,
     "longType": "integer",
     "shortType": "n",
-    "default": "123"
+    "default": "123",
+    "min": "1"
   },
   {
     "long": "--num-trials",
@@ -538,7 +535,8 @@
     "incremental": false,
     "longType": "integer",
     "shortType": "n",
-    "default": "1"
+    "default": "1",
+    "min": "1"
   },
   {
     "long": "--core-loop-limit",
@@ -550,19 +548,21 @@
     "incremental": false,
     "longType": "integer",
     "shortType": "n",
-    "default": "10"
+    "default": "10",
+    "min": "1"
   },
   {
     "long": "--core-level-limit",
     "short": "-L",
-    "description": "Limit how many times core loops are reapplied to the aggregated modular network to find larger structures.",
+    "description": "Limit how many times core loops are reapplied to the aggregated modular network to find larger structures. 0 means no limit.",
     "group": "Accuracy",
     "required": true,
     "advanced": true,
     "incremental": false,
     "longType": "integer",
     "shortType": "n",
-    "default": "0"
+    "default": "0",
+    "min": "0"
   },
   {
     "long": "--tune-iteration-limit",
@@ -574,7 +574,8 @@
     "incremental": false,
     "longType": "integer",
     "shortType": "n",
-    "default": "0"
+    "default": "0",
+    "min": "0"
   },
   {
     "long": "--core-loop-codelength-threshold",
@@ -586,7 +587,8 @@
     "incremental": false,
     "longType": "number",
     "shortType": "f",
-    "default": "1e-10"
+    "default": "1e-10",
+    "min": "0"
   },
   {
     "long": "--tune-iteration-relative-threshold",
@@ -598,7 +600,8 @@
     "incremental": false,
     "longType": "number",
     "shortType": "f",
-    "default": "1e-05"
+    "default": "1e-05",
+    "min": "0"
   },
   {
     "long": "--fast-hierarchical-solution",
@@ -640,7 +643,8 @@
     "incremental": false,
     "longType": "integer",
     "shortType": "n",
-    "default": "5"
+    "default": "5",
+    "min": "0"
   },
   {
     "long": "--max-degree-for-random-moves",
@@ -652,7 +656,8 @@
     "incremental": false,
     "longType": "integer",
     "shortType": "n",
-    "default": "2"
+    "default": "2",
+    "min": "0"
   },
   {
     "long": "--verbose",

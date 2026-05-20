@@ -66,6 +66,8 @@ inline const char* flowModelToString(const FlowModel& flowModel)
   }
 }
 
+// Mutable runtime state after parameter parsing and default adaptation. Add or
+// change parameter metadata in ParameterCatalog, not by editing this struct alone.
 struct Config {
   // Input
   bool isCLI = false;
