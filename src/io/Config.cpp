@@ -11,8 +11,10 @@
 #include "ConfigBuilder.h"
 #include "OutputFormats.h"
 #include "../utils/Log.h"
+#include "../utils/convert.h"
 #include <vector>
 #include <stdexcept>
+#include <utility>
 
 namespace infomap {
 
@@ -24,6 +26,19 @@ constexpr int FlowModel::rawdir;
 constexpr int FlowModel::precomputed;
 
 namespace {
+
+  const std::vector<std::pair<std::string, FlowModel>>& flowModelMappings()
+  {
+    static const std::vector<std::pair<std::string, FlowModel>> mappings = {
+      { "undirected", FlowModel::undirected },
+      { "directed", FlowModel::directed },
+      { "undirdir", FlowModel::undirdir },
+      { "outdirdir", FlowModel::outdirdir },
+      { "rawdir", FlowModel::rawdir },
+      { "precomputed", FlowModel::precomputed },
+    };
+    return mappings;
+  }
 
   void enableOutputFormat(Config& config, const OutputFormat& format)
   {
@@ -59,6 +74,39 @@ namespace {
   }
 
 } // namespace
+
+const std::vector<std::string>& flowModelNames()
+{
+  static const std::vector<std::string> names = [] {
+    std::vector<std::string> values;
+    for (const auto& mapping : flowModelMappings()) {
+      values.push_back(mapping.first);
+    }
+    return values;
+  }();
+  return names;
+}
+
+bool parseFlowModel(const std::string& name, FlowModel& flowModel)
+{
+  for (const auto& mapping : flowModelMappings()) {
+    if (mapping.first == name) {
+      flowModel = mapping.second;
+      return true;
+    }
+  }
+  return false;
+}
+
+const char* flowModelToString(const FlowModel& flowModel)
+{
+  for (const auto& mapping : flowModelMappings()) {
+    if (mapping.second == flowModel) {
+      return mapping.first.c_str();
+    }
+  }
+  return "undirected";
+}
 
 Config::Config(const std::string& flags, bool isCLI) : isCLI(isCLI)
 {

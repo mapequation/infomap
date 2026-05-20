@@ -10,7 +10,7 @@
 #ifndef CONFIG_BUILDER_H_
 #define CONFIG_BUILDER_H_
 
-#include "ProgramInterface.h"
+#include "ParsedOption.h"
 
 #include <string>
 #include <vector>

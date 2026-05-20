@@ -182,7 +182,7 @@ namespace {
     }
 
     template <typename T>
-    SpecBuilder& configTarget(T Config::*member)
+    SpecBuilder& configTarget(T Config::* member)
     {
       parameter_.registrar = [member](ProgramInterface& api, ConfigParameterTargets& targets, const ParameterSpec& parameter) {
         registerOptionForTarget(api, targets.config.*member, parameter);
@@ -190,7 +190,7 @@ namespace {
       return *this;
     }
 
-    SpecBuilder& incrementalTarget(unsigned int Config::*member)
+    SpecBuilder& incrementalTarget(unsigned int Config::* member)
     {
       parameter_.registrar = [member](ProgramInterface& api, ConfigParameterTargets& targets, const ParameterSpec& parameter) {
         registerIncrementalOptionForTarget(api, targets.config.*member, parameter);
@@ -269,23 +269,21 @@ namespace {
     return option;
   }
 
-  void registerBoolOption(ProgramInterface& api, bool& target, const ParameterSpec& parameter)
+  Option& addFlagOption(ProgramInterface& api, bool& target, const ParameterSpec& parameter)
   {
     if (parameter.shortName == '\0') {
-      addConfiguredOption(api.addOptionArgument(target, parameter.longName, parameter.description, parameter.group, parameter.isAdvanced), parameter);
-    } else {
-      addConfiguredOption(api.addOptionArgument(target, parameter.shortName, parameter.longName, parameter.description, parameter.group, parameter.isAdvanced), parameter);
+      return api.addOptionArgument(target, parameter.longName, parameter.description, parameter.group, parameter.isAdvanced);
     }
+    return api.addOptionArgument(target, parameter.shortName, parameter.longName, parameter.description, parameter.group, parameter.isAdvanced);
   }
 
   template <typename T>
-  void registerValueOption(ProgramInterface& api, T& target, const ParameterSpec& parameter)
+  Option& addValueOption(ProgramInterface& api, T& target, const ParameterSpec& parameter)
   {
     if (parameter.shortName == '\0') {
-      addConfiguredOption(api.addOptionArgument(target, parameter.longName, parameter.description, parameter.argumentName, parameter.group, parameter.isAdvanced), parameter);
-    } else {
-      addConfiguredOption(api.addOptionArgument(target, parameter.shortName, parameter.longName, parameter.description, parameter.argumentName, parameter.group, parameter.isAdvanced), parameter);
+      return api.addOptionArgument(target, parameter.longName, parameter.description, parameter.argumentName, parameter.group, parameter.isAdvanced);
     }
+    return api.addOptionArgument(target, parameter.shortName, parameter.longName, parameter.description, parameter.argumentName, parameter.group, parameter.isAdvanced);
   }
 
   template <typename T>
@@ -299,43 +297,47 @@ namespace {
   }
 
   template <typename T>
-  void registerLowerBoundOption(ProgramInterface& api, T& target, const ParameterSpec& parameter)
+  Option& addLowerBoundOption(ProgramInterface& api, T& target, const ParameterSpec& parameter)
   {
     const auto minValue = numericConstraint<T>(parameter, parameter.minValue, "minValue");
     if (parameter.shortName == '\0') {
-      addConfiguredOption(api.addOptionArgument(target, parameter.longName, parameter.description, parameter.argumentName, parameter.group, minValue, parameter.isAdvanced), parameter);
-    } else {
-      addConfiguredOption(api.addOptionArgument(target, parameter.shortName, parameter.longName, parameter.description, parameter.argumentName, parameter.group, minValue, parameter.isAdvanced), parameter);
+      return api.addOptionArgument(target, parameter.longName, parameter.description, parameter.argumentName, parameter.group, minValue, parameter.isAdvanced);
     }
+    return api.addOptionArgument(target, parameter.shortName, parameter.longName, parameter.description, parameter.argumentName, parameter.group, minValue, parameter.isAdvanced);
   }
 
   template <typename T>
-  void registerRangeOption(ProgramInterface& api, T& target, const ParameterSpec& parameter)
+  Option& addRangeOption(ProgramInterface& api, T& target, const ParameterSpec& parameter)
   {
     const auto minValue = numericConstraint<T>(parameter, parameter.minValue, "minValue");
     const auto maxValue = numericConstraint<T>(parameter, parameter.maxValue, "maxValue");
     if (parameter.shortName == '\0') {
-      addConfiguredOption(api.addOptionArgument(target, parameter.longName, parameter.description, parameter.argumentName, parameter.group, minValue, maxValue, parameter.isAdvanced), parameter);
-    } else {
-      addConfiguredOption(api.addOptionArgument(target, parameter.shortName, parameter.longName, parameter.description, parameter.argumentName, parameter.group, minValue, maxValue, parameter.isAdvanced), parameter);
+      return api.addOptionArgument(target, parameter.longName, parameter.description, parameter.argumentName, parameter.group, minValue, maxValue, parameter.isAdvanced);
     }
+    return api.addOptionArgument(target, parameter.shortName, parameter.longName, parameter.description, parameter.argumentName, parameter.group, minValue, maxValue, parameter.isAdvanced);
+  }
+
+  template <typename T>
+  Option& addValueOptionForSpec(ProgramInterface& api, T& target, const ParameterSpec& parameter)
+  {
+    if (!parameter.minValue.empty() && !parameter.maxValue.empty()) {
+      return addRangeOption(api, target, parameter);
+    }
+    if (!parameter.minValue.empty()) {
+      return addLowerBoundOption(api, target, parameter);
+    }
+    return addValueOption(api, target, parameter);
   }
 
   void registerOptionForTarget(ProgramInterface& api, bool& target, const ParameterSpec& parameter)
   {
-    registerBoolOption(api, target, parameter);
+    addConfiguredOption(addFlagOption(api, target, parameter), parameter);
   }
 
   template <typename T>
   void registerOptionForTarget(ProgramInterface& api, T& target, const ParameterSpec& parameter)
   {
-    if (!parameter.minValue.empty() && !parameter.maxValue.empty()) {
-      registerRangeOption(api, target, parameter);
-    } else if (!parameter.minValue.empty()) {
-      registerLowerBoundOption(api, target, parameter);
-    } else {
-      registerValueOption(api, target, parameter);
-    }
+    addConfiguredOption(addValueOptionForSpec(api, target, parameter), parameter);
   }
 
   void registerIncrementalOptionForTarget(ProgramInterface& api, unsigned int& target, const ParameterSpec& parameter)
@@ -552,7 +554,7 @@ const std::vector<ParameterSpec>& parameterCatalog()
         .description("Choose how Infomap derives flow from the input links. Options: undirected, directed, undirdir, outdirdir, rawdir, precomputed.")
         .argument(ArgType::option)
         .group("Algorithm")
-        .choices({ "undirected", "directed", "undirdir", "outdirdir", "rawdir", "precomputed" })
+        .choices(flowModelNames())
         .flowModelTarget(),
     param()
         .shortName('d')

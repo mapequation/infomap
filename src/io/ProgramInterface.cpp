@@ -524,8 +524,20 @@ std::vector<ParsedOption> ProgramInterface::getUsedOptionArguments() const
   unsigned int numFlags = m_optionArguments.size();
   for (unsigned int i = 0; i < numFlags; ++i) {
     auto& opt = *m_optionArguments[i];
-    if (opt.used && opt.longName != "negate-next")
-      opts.emplace_back(opt);
+    if (opt.used && opt.longName != "negate-next") {
+      opts.push_back({
+          opt.shortName,
+          opt.longName,
+          opt.description,
+          opt.group,
+          opt.isAdvanced,
+          opt.requireArgument,
+          opt.incrementalArgument,
+          opt.argumentName,
+          opt.negated,
+          opt.printValue(),
+      });
+    }
   }
   return opts;
 }
