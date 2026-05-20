@@ -1,6 +1,7 @@
 #include "vendor/doctest.h"
 
 #include "Infomap.h"
+#include "io/OutputView.h"
 
 #include "TestUtils.h"
 
@@ -15,6 +16,7 @@ using infomap::InfomapWrapper;
 
 using InternalEdge = std::tuple<unsigned int, unsigned int, double, double>;
 using NodeIdentity = std::tuple<unsigned int, unsigned int, std::vector<int>>;
+using OutputRowIdentity = std::tuple<unsigned int, unsigned int, unsigned int>;
 
 std::multiset<InternalEdge> internalEdgesForModule(infomap::InfoNode& module)
 {
@@ -66,6 +68,17 @@ void removeFiles(const std::vector<std::string>& paths)
   for (const auto& path : paths) {
     std::remove(path.c_str());
   }
+}
+
+std::vector<OutputRowIdentity> outputViewIdentities(InfomapWrapper& im, bool states)
+{
+  infomap::OutputView view(im, im.network(), states);
+  std::vector<OutputRowIdentity> rows;
+  view.forEachLeaf(1, infomap::OutputLeafFilter::Regular, [&](const infomap::OutputLeafRow& row) {
+    rows.emplace_back(row.stateId, row.physicalId, row.layerId);
+  });
+  std::sort(rows.begin(), rows.end());
+  return rows;
 }
 
 TEST_CASE("Infomap partitions the unweighted two-triangle fixture into two modules [fast][core][lifecycle]")
@@ -495,6 +508,85 @@ TEST_CASE("writeTree and writeClu render higher-order state output [fast][core][
 
   std::remove(treePath.c_str());
   std::remove(cluPath.c_str());
+}
+
+TEST_CASE("OutputView projects first-order leaf rows [fast][core][output]")
+{
+  auto im = infomap::test::makeRunningInfomap(
+      [&](InfomapWrapper& infomap) { infomap::test::addEdgeFixtureLinks(infomap, "graphs/twotriangles_unweighted.edges"); });
+
+  infomap::OutputView view(*im, im->network(), false);
+  std::vector<unsigned int> physicalIds;
+  unsigned int nonEmptyPaths = 0;
+  view.forEachLeaf(1, infomap::OutputLeafFilter::Regular, [&](const infomap::OutputLeafRow& row) {
+    physicalIds.push_back(row.physicalId);
+    CHECK(row.stateId == row.physicalId);
+    CHECK(row.moduleId > 0);
+    if (!row.path.empty()) {
+      ++nonEmptyPaths;
+    }
+  });
+
+  std::sort(physicalIds.begin(), physicalIds.end());
+  CHECK(physicalIds == std::vector<unsigned int> { 1, 2, 3, 4, 5, 6 });
+  CHECK(nonEmptyPaths == physicalIds.size());
+}
+
+TEST_CASE("OutputView separates higher-order physical and state rows [fast][core][output]")
+{
+  auto im = infomap::test::makeRunningInfomap(
+      [&](InfomapWrapper& infomap) { infomap::test::readNetworkFixture(infomap, "states.net"); });
+
+  infomap::OutputView physicalView(*im, im->network(), false);
+  infomap::OutputView stateView(*im, im->network(), true);
+
+  CHECK(physicalView.isHigherOrderPhysicalLevel());
+  CHECK_FALSE(stateView.isHigherOrderPhysicalLevel());
+
+  const auto physicalRows = outputViewIdentities(*im, false);
+  const auto stateRows = outputViewIdentities(*im, true);
+  std::set<unsigned int> physicalIds;
+  for (const auto& row : stateRows) {
+    physicalIds.insert(std::get<1>(row));
+  }
+
+  CHECK(physicalRows.size() <= stateRows.size());
+  CHECK(physicalIds.size() == 5);
+  CHECK(stateRows.size() == 6);
+}
+
+TEST_CASE("OutputView exposes multilayer state layer ids [fast][core][output]")
+{
+  auto im = infomap::test::makeRunningInfomap(
+      [&](InfomapWrapper& infomap) { infomap::test::readNetworkFixture(infomap, "multilayer.net"); });
+
+  infomap::OutputView view(*im, im->network(), true);
+  bool foundLayer = false;
+  view.forEachLeaf(1, infomap::OutputLeafFilter::Regular, [&](const infomap::OutputLeafRow& row) {
+    CHECK(row.physicalId != 0);
+    if (row.layerId != 0) {
+      foundLayer = true;
+    }
+  });
+
+  CHECK(view.isMultilayer());
+  CHECK(foundLayer);
+}
+
+TEST_CASE("OutputView applies bipartite hide filter centrally [fast][core][output]")
+{
+  auto im = infomap::test::makeRunningInfomap(
+      [&](InfomapWrapper& infomap) { infomap.readInputData(infomap::test::repoPath("examples/networks/bipartite.net")); });
+  im->hideBipartiteNodes = true;
+
+  infomap::OutputView view(*im, im->network(), false);
+  std::vector<unsigned int> physicalIds;
+  view.forEachLeaf(1, infomap::OutputLeafFilter::Regular, [&](const infomap::OutputLeafRow& row) {
+    physicalIds.push_back(row.physicalId);
+  });
+
+  std::sort(physicalIds.begin(), physicalIds.end());
+  CHECK(physicalIds == std::vector<unsigned int> { 1, 2, 3 });
 }
 
 TEST_CASE("writeFlowTree is stable across repeated calls on the same instance [fast][core][output][regression]")
