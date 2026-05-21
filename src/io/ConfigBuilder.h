@@ -12,6 +12,8 @@
 
 #include "ParameterCatalog.h"
 
+#include <string>
+
 namespace infomap {
 
 struct Config;
@@ -20,6 +22,7 @@ using ParsedConfigParameters = ParsedParameterSet;
 
 class ConfigBuilder {
 public:
+  static void buildFromFlags(Config& config, const std::string& flags, bool isCLI);
   static ParsedConfigParameters parseRaw(Config& config, const std::string& flags, bool isCLI);
   static void applyParsed(Config& config, const ParsedConfigParameters& parsed, bool isCLI);
 };

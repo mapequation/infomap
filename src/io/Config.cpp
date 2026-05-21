@@ -10,7 +10,6 @@
 #include "Config.h"
 #include "ConfigBuilder.h"
 #include "OutputFormats.h"
-#include "../utils/Log.h"
 #include "../utils/convert.h"
 #include <vector>
 #include <stdexcept>
@@ -110,23 +109,7 @@ const char* flowModelToString(const FlowModel& flowModel)
 
 Config::Config(const std::string& flags, bool isCLI) : isCLI(isCLI)
 {
-  const auto parsed = ConfigBuilder::parseRaw(*this, flags, isCLI);
-  ConfigBuilder::applyParsed(*this, parsed, isCLI);
-
-  parsedString = flags;
-  parsedOptions = parsed.usedOptions;
-
-  if (verbosity > 0) {
-    prettyOutput = false;
-  }
-
-  if (printAllTrials && numTrials < 2) {
-    printAllTrials = false;
-  }
-
-  adaptDefaults();
-
-  Log::init(verbosity, silent, verboseNumberPrecision, prettyOutput);
+  ConfigBuilder::buildFromFlags(*this, flags, isCLI);
 }
 
 void Config::adaptDefaults()
