@@ -8,10 +8,10 @@
  ******************************************************************************/
 
 #include "Network.h"
-#include "NetworkInputParser.h"
-#include "../utils/FileURI.h"
+#include "NetworkBuilder.h"
 #include "../utils/Log.h"
 #include "../utils/PrettyOutput.h"
+#include "../utils/convert.h"
 
 #include <cmath>
 #include <algorithm>
@@ -21,106 +21,6 @@
 namespace infomap {
 
 using std::make_pair;
-
-namespace {
-
-  void addParsedVertex(Network& network, const input::ParsedVertex& vertex)
-  {
-    if (vertex.hasWeight) {
-      network.addPhysicalNode(vertex.id, vertex.weight, vertex.name);
-    } else {
-      network.addPhysicalNode(vertex.id, vertex.name);
-    }
-  }
-
-} // namespace
-
-class NetworkInputSinkAdapter {
-public:
-  explicit NetworkInputSinkAdapter(Network& network) : m_network(network) {}
-
-  bool isUndirectedFlow() const { return m_network.m_config.isUndirectedFlow(); }
-  unsigned int matchableMultilayerIds() const { return m_network.m_config.matchableMultilayerIds; }
-  unsigned int numPhysicalNodes() const { return m_network.numPhysicalNodes(); }
-  unsigned int numLinks() const { return m_network.numLinks(); }
-  unsigned int numIntraLayerLinks() const { return m_network.m_numIntraLayerLinks; }
-  unsigned int numInterLayerLinks() const { return m_network.m_numInterLayerLinks; }
-  unsigned int numLayerLinks() const { return m_network.m_numIntraLayerLinks + m_network.m_numInterLayerLinks; }
-  unsigned int numLayers() const { return m_network.m_layers.size(); }
-  unsigned int numMetaDataColumns() const { return m_network.m_numMetaDataColumns; }
-  unsigned int numMetaDataRows() const { return m_network.m_metaData.size(); }
-
-  void onFileInput() { m_network.m_haveFileInput = true; }
-
-  void onNetworkParsed()
-  {
-    m_network.postProcessInputData();
-  }
-
-  void onPhysicalNode(const input::ParsedVertex& vertex)
-  {
-    if (vertex.hasWeight) {
-      m_network.m_haveNodeWeights = true;
-    }
-    addParsedVertex(m_network, vertex);
-  }
-
-  void onStateNode(const input::ParsedStateNode& parsed)
-  {
-    const auto& stateNode = parsed.node;
-    m_network.m_higherOrderInputMethodCalled = true;
-    if (parsed.hasWeight) {
-      m_network.m_haveStateNodeWeights = true;
-    }
-    m_network.addStateNode(stateNode);
-    m_network.addPhysicalNode(stateNode.physicalId);
-    ++m_network.m_numStateNodesFound;
-  }
-
-  void onLink(const input::ParsedLink& link)
-  {
-    m_network.addLink(link.source, link.target, link.weight);
-  }
-
-  void onMultilayerLink(const input::ParsedMultilayerLink& link)
-  {
-    m_network.addMultilayerLink(link.sourceLayer, link.sourceNode, link.targetLayer, link.targetNode, link.weight);
-  }
-
-  void onMultilayerIntraLink(const input::ParsedMultilayerIntraLink& link)
-  {
-    m_network.addMultilayerIntraLink(link.layer, link.sourceNode, link.targetNode, link.weight);
-  }
-
-  void onMultilayerInterLink(const input::ParsedMultilayerInterLink& link)
-  {
-    m_network.addMultilayerInterLink(link.sourceLayer, link.node, link.targetLayer, link.weight);
-  }
-
-  void onBipartiteStart(unsigned int bipartiteStartId)
-  {
-    m_network.m_bipartiteStartId = bipartiteStartId;
-    m_network.m_config.bipartite = true;
-  }
-
-  void onBipartiteLink(const std::string& line, const input::ParsedLink& link)
-  {
-    bool sourceIsFeature = link.source >= m_network.m_bipartiteStartId;
-    bool targetIsFeature = link.target >= m_network.m_bipartiteStartId;
-    if (sourceIsFeature == targetIsFeature) {
-      throw std::runtime_error(io::Str() << "Bipartite link '" << line << "' must cross bipartite start id " << m_network.m_bipartiteStartId << ".");
-    }
-    m_network.addLink(link.source, link.target, link.weight);
-  }
-
-  void onMetaData(unsigned int nodeId, const std::vector<int>& metaData)
-  {
-    m_network.addMetaData(nodeId, metaData);
-  }
-
-private:
-  Network& m_network;
-};
 
 void Network::init()
 {
@@ -163,10 +63,7 @@ void Network::readInputData(std::string filename, bool accumulate)
   if (filename.empty()) {
     throw std::runtime_error("No input file to read network");
   }
-  FileURI networkFilename(filename, false);
-
-  NetworkInputSinkAdapter sink(*this);
-  input::parseNetworkInput(filename, sink);
+  buildNetworkFromInput(*this, filename);
   printSummary();
 }
 
@@ -186,8 +83,7 @@ void Network::postProcessInputData()
 
 void Network::readMetaData(const std::string& filename)
 {
-  NetworkInputSinkAdapter sink(*this);
-  input::parseMetaDataInput(filename, sink);
+  buildMetaDataFromInput(*this, filename);
 }
 
 void Network::printSummary()
