@@ -12,6 +12,7 @@
 #include "ProgramInterface.h"
 #include "SafeFile.h"
 #include "../utils/FileURI.h"
+#include "../utils/convert.h"
 
 #include <stdexcept>
 
