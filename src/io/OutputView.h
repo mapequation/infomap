@@ -15,6 +15,7 @@
 #include <functional>
 #include <map>
 #include <string>
+#include <utility>
 
 namespace infomap {
 
@@ -52,6 +53,11 @@ struct OutputStateNodeTarget {
   unsigned int childIndex = 0;
 };
 
+using OutputModulePath = std::string;
+using OutputModuleLink = std::pair<unsigned int, unsigned int>;
+using OutputModuleLinkMap = std::map<OutputModuleLink, double>;
+using OutputModuleLinks = std::map<OutputModulePath, OutputModuleLinkMap>;
+
 class OutputView {
 public:
   using LeafCallback = std::function<void(const OutputLeafRow&)>;
@@ -64,11 +70,15 @@ public:
   bool isHigherOrderPhysicalLevel() const;
   bool isMultilayer() const;
   bool hasMetaData() const;
+  const char* nodeIdHeaderName() const;
+  unsigned int leafId(const OutputLeafRow& row) const;
+  unsigned int leafId(const OutputTreeRow& row) const;
 
   void forEachLeaf(int moduleIndexLevel, OutputLeafPolicy filter, const LeafCallback& callback);
   void forEachTreeNode(const TreeCallback& callback);
 
   std::map<unsigned int, OutputStateNodeTarget> stateNodeTargets();
+  OutputModuleLinks moduleLinks();
 
 private:
   bool shouldIncludeLeaf(const InfoNode& node, OutputLeafPolicy filter) const;

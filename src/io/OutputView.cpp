@@ -10,6 +10,7 @@
 #include "OutputView.h"
 #include "../core/InfomapBase.h"
 #include "../core/InfoNode.h"
+#include "../core/iterators/InfomapIterator.h"
 #include "../core/StateNetwork.h"
 #include "../utils/convert.h"
 
@@ -31,6 +32,21 @@ bool OutputView::isMultilayer() const
 bool OutputView::hasMetaData() const
 {
   return m_infomap.haveMetaData();
+}
+
+const char* OutputView::nodeIdHeaderName() const
+{
+  return m_states ? "state_id" : "node_id";
+}
+
+unsigned int OutputView::leafId(const OutputLeafRow& row) const
+{
+  return m_states ? row.stateId : row.physicalId;
+}
+
+unsigned int OutputView::leafId(const OutputTreeRow& row) const
+{
+  return m_states ? row.stateId : row.physicalId;
 }
 
 void OutputView::forEachLeaf(int moduleIndexLevel, OutputLeafPolicy filter, const LeafCallback& callback)
@@ -89,6 +105,60 @@ std::map<unsigned int, OutputStateNodeTarget> OutputView::stateNodeTargets()
   }
 
   return targets;
+}
+
+OutputModuleLinks OutputView::moduleLinks()
+{
+  auto stateTargets = stateNodeTargets();
+  OutputModuleLinks moduleLinks;
+
+  for (auto& leaf : m_infomap.leafNodes()) {
+    for (auto& link : leaf->outEdges()) {
+      const double flow = link->data.flow;
+      auto& sourceTarget = stateTargets[link->source->stateId];
+      auto& targetTarget = stateTargets[link->target->stateId];
+      InfoNode* sourceParent = sourceTarget.parent;
+      InfoNode* targetParent = targetTarget.parent;
+
+      auto sourceDepth = sourceParent->calculatePath().size() + 1;
+      auto targetDepth = targetParent->calculatePath().size() + 1;
+
+      auto sourceChildIndex = sourceTarget.childIndex;
+      auto targetChildIndex = targetTarget.childIndex;
+
+      auto sourceParentIt = InfomapParentIterator(sourceParent);
+      auto targetParentIt = InfomapParentIterator(targetParent);
+
+      while (targetDepth > sourceDepth) {
+        ++targetParentIt;
+        --targetDepth;
+      }
+
+      while (sourceDepth > targetDepth) {
+        ++sourceParentIt;
+        --sourceDepth;
+      }
+
+      auto currentDepth = sourceDepth;
+      while (currentDepth > 0) {
+        if (sourceParentIt == targetParentIt && sourceChildIndex != targetChildIndex) {
+          const auto parentId = io::stringify(sourceParentIt->calculatePath(), ":");
+          auto& linkMap = moduleLinks[parentId];
+          linkMap[std::make_pair(sourceChildIndex + 1, targetChildIndex + 1)] += flow;
+        }
+
+        sourceChildIndex = sourceParentIt->childIndex();
+        targetChildIndex = targetParentIt->childIndex();
+
+        ++sourceParentIt;
+        ++targetParentIt;
+
+        --currentDepth;
+      }
+    }
+  }
+
+  return moduleLinks;
 }
 
 bool OutputView::shouldIncludeLeaf(const InfoNode& node, OutputLeafPolicy filter) const
