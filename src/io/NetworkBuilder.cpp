@@ -120,8 +120,7 @@ private:
 
 void buildNetworkFromInput(Network& network, const std::string& filename)
 {
-  const FileURI networkFilename(filename, false);
-  (void)networkFilename;
+  FileURI { filename, false };
 
   NetworkInputSinkAdapter sink(network);
   input::parseNetworkInput(filename, sink);
