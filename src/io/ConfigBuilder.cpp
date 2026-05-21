@@ -9,30 +9,15 @@
 
 #include "ConfigBuilder.h"
 #include "Config.h"
-#include "ParameterCatalog.h"
 #include "ProgramInterface.h"
 #include "SafeFile.h"
 #include "../utils/FileURI.h"
-#include "../utils/convert.h"
 
 #include <stdexcept>
 
 namespace infomap {
 
 namespace {
-
-  void rejectDeprecatedAliases(const ParsedConfigParameters& parsed)
-  {
-    if (parsed.deprecatedIncludeSelfLinks) {
-      throw std::runtime_error("The --include-self-links flag is deprecated; self-links are included by default. Use --no-self-links to exclude them.");
-    }
-  }
-
-  void applyOutputDirectory(Config& config, const ParsedConfigParameters& parsed)
-  {
-    if (!parsed.optionalOutputDir.empty())
-      config.outDirectory = parsed.optionalOutputDir[0];
-  }
 
   void applyLibraryOutputDefaults(Config& config, bool isCLI)
   {
@@ -45,24 +30,6 @@ namespace {
     if (!config.noFileOutput && config.outDirectory.empty() && isCLI) {
       throw std::runtime_error("Missing out_directory");
     }
-  }
-
-  void applyFlowModelSelection(Config& config, const ParsedConfigParameters& parsed)
-  {
-    if (config.directed) {
-      config.setFlowModel(FlowModel::directed);
-      return;
-    }
-
-    if (parsed.flowModelArg.empty()) {
-      return;
-    }
-
-    FlowModel flowModel = FlowModel::undirected;
-    if (!parseFlowModel(parsed.flowModelArg, flowModel)) {
-      throw std::runtime_error(io::Str() << "Unrecognized flow model: '" << parsed.flowModelArg << "'");
-    }
-    config.setFlowModel(flowModel);
   }
 
   void applyOptionInteractions(Config& config)
@@ -110,7 +77,7 @@ ParsedConfigParameters ConfigBuilder::parseRaw(Config& config, const std::string
   api.setJsonParametersProvider(parameterCatalogJson);
 
   ParsedConfigParameters parsed;
-  registerConfigParameters(api, { config, parsed.flowModelArg, parsed.deprecatedIncludeSelfLinks, parsed.optionalOutputDir }, isCLI);
+  registerConfigParameters(api, { config, parsed }, isCLI);
 
   api.parseArgs(flags);
   parsed.usedOptions = api.getUsedOptionArguments();
@@ -119,11 +86,9 @@ ParsedConfigParameters ConfigBuilder::parseRaw(Config& config, const std::string
 
 void ConfigBuilder::applyParsed(Config& config, const ParsedConfigParameters& parsed, bool isCLI)
 {
-  rejectDeprecatedAliases(parsed);
-  applyOutputDirectory(config, parsed);
+  applyParsedParameters(config, parsed);
   applyLibraryOutputDefaults(config, isCLI);
   validateRequiredCliOutput(config, isCLI);
-  applyFlowModelSelection(config, parsed);
   applyOptionInteractions(config);
   normalizeOutputDirectory(config);
   validateOutputDirectory(config);

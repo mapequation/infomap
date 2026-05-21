@@ -10,21 +10,13 @@
 #ifndef CONFIG_BUILDER_H_
 #define CONFIG_BUILDER_H_
 
-#include "ParsedOption.h"
-
-#include <string>
-#include <vector>
+#include "ParameterCatalog.h"
 
 namespace infomap {
 
 struct Config;
 
-struct ParsedConfigParameters {
-  std::string flowModelArg;
-  bool deprecatedIncludeSelfLinks = false;
-  std::vector<std::string> optionalOutputDir;
-  std::vector<ParsedOption> usedOptions;
-};
+using ParsedConfigParameters = ParsedParameterSet;
 
 class ConfigBuilder {
 public:

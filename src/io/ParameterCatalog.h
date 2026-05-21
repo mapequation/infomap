@@ -10,6 +10,8 @@
 #ifndef PARAMETER_CATALOG_H_
 #define PARAMETER_CATALOG_H_
 
+#include "ParsedOption.h"
+
 #include <functional>
 #include <string>
 #include <vector>
@@ -19,11 +21,16 @@ namespace infomap {
 struct Config;
 class ProgramInterface;
 
+struct ParsedParameterSet {
+  std::string flowModelArg;
+  bool deprecatedIncludeSelfLinks = false;
+  std::vector<std::string> optionalOutputDir;
+  std::vector<ParsedOption> usedOptions;
+};
+
 struct ConfigParameterTargets {
   Config& config;
-  std::string& flowModelArg;
-  bool& deprecatedIncludeSelfLinks;
-  std::vector<std::string>& optionalOutputDir;
+  ParsedParameterSet& parsed;
 };
 
 struct ParameterSpec {
@@ -57,6 +64,7 @@ struct ParameterSpec {
 // mutable runtime state that receives parsed values and applies adaptation rules.
 const std::vector<ParameterSpec>& parameterCatalog();
 void registerConfigParameters(ProgramInterface& api, ConfigParameterTargets targets, bool isCli);
+void applyParsedParameters(Config& config, const ParsedParameterSet& parsed);
 std::string parameterCatalogJson();
 
 } // namespace infomap
