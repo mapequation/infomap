@@ -304,7 +304,9 @@ void writeJsonTree(InfomapBase& im, const StateNetwork& network, std::ostream& o
   // Write modules
   // -------------
 
-  // Uses stateId to store depth on modules to optimize link aggregation
+  // Module links are pre-aggregated by OutputView::moduleLinks() using
+  // state-node target mapping and parent iteration, and are looked up here
+  // by each module's path/id while serializing the module list.
   auto moduleLinks = view.moduleLinks();
 
   first = true;
