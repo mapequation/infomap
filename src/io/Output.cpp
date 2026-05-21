@@ -58,12 +58,12 @@ std::string writeClu(InfomapBase& im, const StateNetwork& network, const std::st
   outFile << std::resetiosflags(std::ios::floatfield) << std::setprecision(6);
 
   if (states) {
-    outFile << "# state_id module flow node_id";
+    outFile << "# " << view.nodeIdHeaderName() << " module flow node_id";
     if (view.isMultilayer())
       outFile << " layer_id";
     outFile << '\n';
   } else {
-    outFile << "# node_id module flow\n";
+    outFile << "# " << view.nodeIdHeaderName() << " module flow\n";
   }
 
   view.forEachLeaf(moduleIndexLevel, OutputLeafPolicy::HideBipartite, [&](const OutputLeafRow& row) {
@@ -88,12 +88,12 @@ void writeTree(InfomapBase& im, const StateNetwork& network, std::ostream& outSt
   outStream << std::setprecision(6);
 
   if (states) {
-    outStream << "# path flow name state_id node_id";
+    outStream << "# path flow name " << view.nodeIdHeaderName() << " node_id";
     if (view.isMultilayer())
       outStream << " layer_id";
     outStream << '\n';
   } else {
-    outStream << "# path flow name node_id\n";
+    outStream << "# path flow name " << view.nodeIdHeaderName() << "\n";
   }
 
   view.forEachLeaf(1, OutputLeafPolicy::HideBipartiteUnlessFlowTree, [&](const OutputLeafRow& row) {
@@ -112,83 +112,13 @@ void writeTree(InfomapBase& im, const StateNetwork& network, std::ostream& outSt
   outStream << std::setprecision(oldPrecision);
 }
 
-using Link = std::pair<unsigned int, unsigned int>;
-using LinkMap = std::map<Link, double>;
-
-std::map<std::string, LinkMap> aggregateModuleLinks(InfomapBase& im, OutputView& view)
-{
-  // Aggregate links between each module. Rest is aggregated as exit flow
-
-  // Links on nodes within sub infomap instances doesn't have links outside the root
-  // so iterate over links on main instance and map to infomap tree iterator
-  auto stateTargets = view.stateNodeTargets();
-
-  std::map<std::string, LinkMap> moduleLinks;
-
-  for (auto& leaf : im.leafNodes()) {
-    for (auto& link : leaf->outEdges()) {
-      double flow = link->data.flow;
-      auto& sourceTarget = stateTargets[link->source->stateId];
-      auto& targetTarget = stateTargets[link->target->stateId];
-      InfoNode* sourceParent = sourceTarget.parent;
-      InfoNode* targetParent = targetTarget.parent;
-
-      auto sourceDepth = sourceParent->calculatePath().size() + 1;
-      auto targetDepth = targetParent->calculatePath().size() + 1;
-
-      auto sourceChildIndex = sourceTarget.childIndex;
-      auto targetChildIndex = targetTarget.childIndex;
-
-      auto sourceParentIt = InfomapParentIterator(sourceParent);
-      auto targetParentIt = InfomapParentIterator(targetParent);
-
-      // Iterate to same depth
-      // First raise target
-      while (targetDepth > sourceDepth) {
-        ++targetParentIt;
-        --targetDepth;
-      }
-
-      // Raise source to same depth
-      while (sourceDepth > targetDepth) {
-        ++sourceParentIt;
-        --sourceDepth;
-      }
-
-      auto currentDepth = sourceDepth;
-      // Add link if same parent
-
-      while (currentDepth > 0) {
-        if (sourceParentIt == targetParentIt) {
-          // Skip self-links
-          if (sourceChildIndex != targetChildIndex) {
-            auto parentId = io::stringify(sourceParentIt->calculatePath(), ":");
-            auto& linkMap = moduleLinks[parentId];
-            linkMap[std::make_pair(sourceChildIndex + 1, targetChildIndex + 1)] += flow;
-          }
-        }
-
-        sourceChildIndex = sourceParentIt->childIndex();
-        targetChildIndex = targetParentIt->childIndex();
-
-        ++sourceParentIt;
-        ++targetParentIt;
-
-        --currentDepth;
-      }
-    }
-  }
-
-  return moduleLinks;
-}
-
 void writeTreeLinks(InfomapBase& im, std::ostream& outStream, bool states)
 {
   auto oldPrecision = outStream.precision();
   outStream << std::setprecision(6);
 
   OutputView view(im, im.network(), states);
-  auto moduleLinks = aggregateModuleLinks(im, view);
+  auto moduleLinks = view.moduleLinks();
 
   outStream << "*Links " << (im.isUndirectedFlow() ? "undirected" : "directed") << "\n";
   outStream << "#*Links path enterFlow exitFlow numEdges numChildren\n";
@@ -228,12 +158,12 @@ void writeNewickTree(InfomapBase& im, std::ostream& outStream, bool states)
       outStream << "(";
       flowStack.push_back(row.flow);
       if (node.isLeaf())
-        outStream << (states ? row.stateId : row.physicalId) << ":" << row.flow;
+        outStream << view.leafId(row) << ":" << row.flow;
     } else if (depth == lastDepth) {
       outStream << ",";
       flowStack[flowStack.size() - 1] = row.flow;
       if (node.isLeaf()) {
-        outStream << (states ? row.stateId : row.physicalId) << ":" << row.flow;
+        outStream << view.leafId(row) << ":" << row.flow;
       }
     } else {
       // depth < lastDepth
@@ -344,7 +274,7 @@ void writeJsonTree(InfomapBase& im, const StateNetwork& network, std::ostream& o
       }
 
       const auto path = io::stringify(row.path, ", ");
-      const auto modules = im.haveModules() ? io::stringify(multilevelModules.at(states ? row.stateId : row.physicalId), ", ") : "1";
+      const auto modules = im.haveModules() ? io::stringify(multilevelModules.at(view.leafId(row)), ", ") : "1";
 
       outStream << "{"
                 << "\"path\":[" << path << "],"
@@ -375,7 +305,7 @@ void writeJsonTree(InfomapBase& im, const StateNetwork& network, std::ostream& o
   // -------------
 
   // Uses stateId to store depth on modules to optimize link aggregation
-  auto moduleLinks = aggregateModuleLinks(im, view);
+  auto moduleLinks = view.moduleLinks();
 
   first = true;
 
@@ -442,10 +372,10 @@ void writeCsvTree(InfomapBase& im, const StateNetwork& network, std::ostream& ou
   outStream << "path,flow,name,";
 
   if (view.isHigherOrderPhysicalLevel()) {
-    outStream << "node_id\n";
+    outStream << view.nodeIdHeaderName() << "\n";
   } else {
     if (states) {
-      outStream << "state_id,";
+      outStream << view.nodeIdHeaderName() << ",";
       if (view.isMultilayer())
         outStream << "layer_id,";
     }
