@@ -83,6 +83,27 @@ void OutputView::forEachTreeNode(const TreeCallback& callback)
   }
 }
 
+void OutputView::forEachModule(const ModuleCallback& callback)
+{
+  auto linksByModulePath = moduleLinks();
+  const OutputModuleLinkMap emptyLinks;
+  for (auto it(m_infomap.iterModules()); !it.isEnd(); ++it) {
+    const auto path = io::stringify(it.path(), ":");
+    const auto& module = *it;
+    const auto linksIt = linksByModulePath.find(path);
+    const auto& links = linksIt == linksByModulePath.end() ? emptyLinks : linksIt->second;
+    callback({
+        io::stringify(it.path(), ","),
+        path.empty() ? "root" : path,
+        module.data.enterFlow,
+        module.data.exitFlow,
+        module.infomapChildDegree(),
+        module.codelength,
+        links,
+    });
+  }
+}
+
 std::map<unsigned int, OutputStateNodeTarget> OutputView::stateNodeTargets()
 {
   std::map<unsigned int, OutputStateNodeTarget> targets;

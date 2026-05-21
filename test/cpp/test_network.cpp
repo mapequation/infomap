@@ -6,6 +6,8 @@
 
 #include "TestUtils.h"
 
+#include <cstdio>
+#include <fstream>
 #include <string>
 #include <vector>
 
@@ -13,6 +15,8 @@ namespace {
 
 using infomap::Config;
 using infomap::Network;
+
+const infomap::input::NetworkInputOptions defaultInputOptions {};
 
 struct FakeInputSink {
   bool undirectedFlow = true;
@@ -30,8 +34,6 @@ struct FakeInputSink {
   std::vector<infomap::input::ParsedLink> bipartiteLinks;
   std::vector<std::vector<int>> metaDataRows;
 
-  bool isUndirectedFlow() const { return undirectedFlow; }
-  unsigned int matchableMultilayerIds() const { return matchableIds; }
   unsigned int numPhysicalNodes() const { return vertices.size(); }
   unsigned int numLinks() const { return links.size(); }
   unsigned int numIntraLayerLinks() const { return intraLinks.size() + countExplicitIntraLinks(); }
@@ -127,25 +129,86 @@ TEST_CASE("Network rejects malformed multilayer fixture lines [fast][core][parse
       std::runtime_error);
 }
 
+TEST_CASE("NetworkBuilder validates bipartite intake while building Network state [fast][core][parser]")
+{
+  const std::string path = "invalid_bipartite_test.net";
+  {
+    std::ofstream out(path.c_str());
+    out << "*Bipartite 4\n";
+    out << "1 2 1\n";
+  }
+
+  Config config;
+  config.silent = true;
+  Network network(config);
+
+  CHECK_THROWS_WITH_AS(
+      network.readInputData(path),
+      "Bipartite link '1 2 1' must cross bipartite start id 4.",
+      std::runtime_error);
+
+  std::remove(path.c_str());
+}
+
+TEST_CASE("NetworkBuilder owns metadata and multilayer intake summaries [fast][core][parser]")
+{
+  Config config;
+  config.silent = true;
+  Network network(config);
+
+  network.readInputData(infomap::test::repoPath("test/fixtures/networks/intra_inter.net"));
+  CHECK(network.haveMemoryInput());
+  CHECK(network.isMultilayerNetwork());
+
+  network.readMetaData(infomap::test::repoPath("test/fixtures/meta/states.meta"));
+  CHECK(network.numMetaDataColumns() == 1);
+  CHECK(network.metaData().size() == 6);
+}
+
+TEST_CASE("NetworkBuilder accumulate=false replaces previous intake state [fast][core][parser]")
+{
+  Config config;
+  config.silent = true;
+  Network network(config);
+
+  network.readInputData(infomap::test::repoPath("test/fixtures/networks/accumulate_a.net"));
+  CHECK(network.nodes().count(1) == 1);
+  network.readInputData(infomap::test::repoPath("test/fixtures/networks/accumulate_b.net"), false);
+
+  CHECK(network.nodes().count(1) == 0);
+  CHECK(network.nodes().count(3) == 1);
+}
+
 TEST_CASE("NetworkInputParser emits events for link-list input [fast][core][parser]")
 {
   FakeInputSink sink;
 
-  infomap::input::parseNetworkInput(infomap::test::repoPath("test/fixtures/graphs/twotriangles_unweighted.edges"), sink);
+  infomap::input::parseNetworkInput(infomap::test::repoPath("test/fixtures/graphs/twotriangles_unweighted.edges"), sink, defaultInputOptions);
 
-  CHECK(sink.fileInput);
-  CHECK(sink.parsed);
+  CHECK_FALSE(sink.fileInput);
+  CHECK_FALSE(sink.parsed);
   CHECK(sink.links.size() == 7);
   CHECK(sink.links.front().source == 1);
   CHECK(sink.links.front().target == 2);
   CHECK(sink.links.front().weight == doctest::Approx(1.0));
 }
 
+TEST_CASE("NetworkInputParser accepts explicit parser options without querying sink state [fast][core][parser]")
+{
+  FakeInputSink sink;
+  const infomap::input::NetworkInputOptions options { false, 3 };
+
+  infomap::input::parseNetworkInput(infomap::test::repoPath("examples/networks/multilayer.net"), sink, options);
+
+  CHECK(sink.multilayerLinks.size() == 16);
+  CHECK(sink.matchableIds == 0);
+}
+
 TEST_CASE("NetworkInputParser emits vertex and bipartite events [fast][core][parser]")
 {
   FakeInputSink sink;
 
-  infomap::input::parseNetworkInput(infomap::test::repoPath("examples/networks/bipartite.net"), sink);
+  infomap::input::parseNetworkInput(infomap::test::repoPath("examples/networks/bipartite.net"), sink, defaultInputOptions);
 
   CHECK(sink.vertices.size() == 5);
   CHECK(sink.vertices.front().id == 1);
@@ -158,7 +221,7 @@ TEST_CASE("NetworkInputParser emits state-network events [fast][core][parser]")
 {
   FakeInputSink sink;
 
-  infomap::input::parseNetworkInput(infomap::test::repoPath("examples/networks/states.net"), sink);
+  infomap::input::parseNetworkInput(infomap::test::repoPath("examples/networks/states.net"), sink, defaultInputOptions);
 
   CHECK(sink.vertices.size() == 5);
   CHECK(sink.stateNodes.size() == 6);
@@ -171,7 +234,7 @@ TEST_CASE("NetworkInputParser emits explicit multilayer events [fast][core][pars
 {
   FakeInputSink sink;
 
-  infomap::input::parseNetworkInput(infomap::test::repoPath("examples/networks/multilayer.net"), sink);
+  infomap::input::parseNetworkInput(infomap::test::repoPath("examples/networks/multilayer.net"), sink, defaultInputOptions);
 
   CHECK(sink.vertices.size() == 5);
   CHECK(sink.multilayerLinks.size() == 16);
@@ -183,7 +246,7 @@ TEST_CASE("NetworkInputParser emits intra and inter events [fast][core][parser]"
 {
   FakeInputSink sink;
 
-  infomap::input::parseNetworkInput(infomap::test::repoPath("test/fixtures/networks/intra_inter.net"), sink);
+  infomap::input::parseNetworkInput(infomap::test::repoPath("test/fixtures/networks/intra_inter.net"), sink, defaultInputOptions);
 
   CHECK(sink.intraLinks.size() == 2);
   CHECK(sink.interLinks.size() == 2);
@@ -207,7 +270,7 @@ TEST_CASE("NetworkInputParser preserves malformed multilayer errors [fast][core]
   FakeInputSink sink;
 
   CHECK_THROWS_WITH_AS(
-      infomap::input::parseNetworkInput(infomap::test::repoPath("test/fixtures/networks/invalid_multilayer.net"), sink),
+      infomap::input::parseNetworkInput(infomap::test::repoPath("test/fixtures/networks/invalid_multilayer.net"), sink, defaultInputOptions),
       "Can't parse multilayer link data from line '1 1 broken'",
       std::runtime_error);
 }

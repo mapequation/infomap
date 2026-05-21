@@ -5,6 +5,7 @@
 #include "io/OutputFormats.h"
 #include "io/OutputPlan.h"
 #include "io/ParameterCatalog.h"
+#include "io/ProgramInterface.h"
 
 #include <map>
 #include <set>
@@ -323,6 +324,22 @@ TEST_CASE("Parameter catalog owns option choices and binding names [fast][core][
   REQUIRE(tuneIterationLimit != nullptr);
   CHECK(tuneIterationLimit->defaultValue == "0");
   CHECK(tuneIterationLimit->minValue == "0");
+}
+
+TEST_CASE("Parameter catalog registers with ProgramInterface through a named adapter [fast][core][config][cli]")
+{
+  Config config;
+  infomap::ParsedParameterSet parsed;
+  infomap::ProgramInterface api("Infomap", "Test parser", "1.0");
+
+  infomap::registerCatalogWithProgramInterface(api, { config, parsed }, true);
+  api.parseArgs("input.net --silent --no-file-output --flow-model directed");
+
+  CHECK(config.networkFile == "input.net");
+  CHECK(config.silent);
+  CHECK(config.noFileOutput);
+  CHECK(parsed.flowModelArg == "directed");
+  CHECK_FALSE(api.getUsedOptionArguments().empty());
 }
 
 } // namespace

@@ -118,25 +118,20 @@ void writeTreeLinks(InfomapBase& im, std::ostream& outStream, bool states)
   outStream << std::setprecision(6);
 
   OutputView view(im, im.network(), states);
-  auto moduleLinks = view.moduleLinks();
 
   outStream << "*Links " << (im.isUndirectedFlow() ? "undirected" : "directed") << "\n";
   outStream << "#*Links path enterFlow exitFlow numEdges numChildren\n";
 
-  for (auto it(im.iterModules()); !it.isEnd(); ++it) {
-    auto parentId = io::stringify(it.path(), ":");
-    auto& module = *it;
-    auto& links = moduleLinks[parentId];
+  view.forEachModule([&](const OutputModuleRow& module) {
+    outStream << "*Links " << module.linkPathLabel << " " << module.enterFlow << " " << module.exitFlow << " " << module.links.size() << " " << module.numChildren << "\n";
 
-    outStream << "*Links " << (parentId.empty() ? "root" : parentId) << " " << module.data.enterFlow << " " << module.data.exitFlow << " " << links.size() << " " << module.infomapChildDegree() << "\n";
-
-    for (auto itLink : links) {
+    for (auto itLink : module.links) {
       unsigned int sourceId = itLink.first.first;
       unsigned int targetId = itLink.first.second;
       double flow = itLink.second;
       outStream << sourceId << " " << targetId << " " << flow << "\n";
     }
-  }
+  });
 
   outStream << std::setprecision(oldPrecision);
 }
@@ -304,21 +299,11 @@ void writeJsonTree(InfomapBase& im, const StateNetwork& network, std::ostream& o
   // Write modules
   // -------------
 
-  // Module links are pre-aggregated by OutputView::moduleLinks() using
-  // state-node target mapping and parent iteration, and are looked up here
-  // by each module's path/id while serializing the module list.
-  auto moduleLinks = view.moduleLinks();
-
   first = true;
 
   outStream << "\"modules\":[";
 
-  for (auto it(im.iterModules()); !it.isEnd(); ++it) {
-    const auto parentId = io::stringify(it.path(), ":");
-    const auto& module = *it;
-    const auto& links = moduleLinks[parentId];
-    const auto path = io::stringify(it.path(), ",");
-
+  view.forEachModule([&](const OutputModuleRow& module) {
     if (first) {
       first = false;
     } else {
@@ -327,11 +312,11 @@ void writeJsonTree(InfomapBase& im, const StateNetwork& network, std::ostream& o
 
     outStream << "{";
 
-    outStream << "\"path\":[" << (parentId.empty() ? "0" : path) << "],"
-              << "\"enterFlow\":" << module.data.enterFlow << ','
-              << "\"exitFlow\":" << module.data.exitFlow << ','
-              << "\"numEdges\":" << links.size() << ','
-              << "\"numChildren\":" << module.infomapChildDegree() << ','
+    outStream << "\"path\":[" << (module.jsonPath.empty() ? "0" : module.jsonPath) << "],"
+              << "\"enterFlow\":" << module.enterFlow << ','
+              << "\"exitFlow\":" << module.exitFlow << ','
+              << "\"numEdges\":" << module.links.size() << ','
+              << "\"numChildren\":" << module.numChildren << ','
               << "\"codelength\":" << module.codelength;
 
     if (writeLinks) {
@@ -340,7 +325,7 @@ void writeJsonTree(InfomapBase& im, const StateNetwork& network, std::ostream& o
 
       auto firstLink = true;
 
-      for (auto itLink : links) {
+      for (auto itLink : module.links) {
         if (firstLink) {
           firstLink = false;
         } else {
@@ -356,7 +341,7 @@ void writeJsonTree(InfomapBase& im, const StateNetwork& network, std::ostream& o
     }
 
     outStream << "}";
-  }
+  });
 
   outStream << "]"; // modules
 

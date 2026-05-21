@@ -31,20 +31,14 @@ namespace {
 
 } // namespace
 
-class NetworkInputSinkAdapter {
+class NetworkIntakeAdapter {
 public:
-  explicit NetworkInputSinkAdapter(Network& network) : m_network(network) {}
+  explicit NetworkIntakeAdapter(Network& network) : m_network(network) {}
 
-  bool isUndirectedFlow() const { return m_network.m_config.isUndirectedFlow(); }
-  unsigned int matchableMultilayerIds() const { return m_network.m_config.matchableMultilayerIds; }
-  unsigned int numPhysicalNodes() const { return m_network.numPhysicalNodes(); }
-  unsigned int numLinks() const { return m_network.numLinks(); }
-  unsigned int numIntraLayerLinks() const { return m_network.m_numIntraLayerLinks; }
-  unsigned int numInterLayerLinks() const { return m_network.m_numInterLayerLinks; }
-  unsigned int numLayerLinks() const { return m_network.m_numIntraLayerLinks + m_network.m_numInterLayerLinks; }
-  unsigned int numLayers() const { return m_network.m_layers.size(); }
-  unsigned int numMetaDataColumns() const { return m_network.m_numMetaDataColumns; }
-  unsigned int numMetaDataRows() const { return m_network.m_metaData.size(); }
+  input::NetworkInputOptions inputOptions() const
+  {
+    return { m_network.m_config.isUndirectedFlow(), m_network.m_config.matchableMultilayerIds };
+  }
 
   void onFileInput() { m_network.m_haveFileInput = true; }
 
@@ -122,13 +116,15 @@ void buildNetworkFromInput(Network& network, const std::string& filename)
 {
   FileURI { filename, false };
 
-  NetworkInputSinkAdapter sink(network);
-  input::parseNetworkInput(filename, sink);
+  NetworkIntakeAdapter sink(network);
+  sink.onFileInput();
+  input::parseNetworkInput(filename, sink, sink.inputOptions());
+  sink.onNetworkParsed();
 }
 
 void buildMetaDataFromInput(Network& network, const std::string& filename)
 {
-  NetworkInputSinkAdapter sink(network);
+  NetworkIntakeAdapter sink(network);
   input::parseMetaDataInput(filename, sink);
 }
 

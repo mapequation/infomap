@@ -63,6 +63,7 @@ struct ParameterSpec {
 // Declarative source of truth for Infomap parameter metadata. Config remains the
 // mutable runtime state that receives parsed values and applies adaptation rules.
 const std::vector<ParameterSpec>& parameterCatalog();
+void registerCatalogWithProgramInterface(ProgramInterface& api, ConfigParameterTargets targets, bool isCli);
 void registerConfigParameters(ProgramInterface& api, ConfigParameterTargets targets, bool isCli);
 void applyParsedParameters(Config& config, const ParsedParameterSet& parsed);
 std::string parameterCatalogJson();
