@@ -105,9 +105,9 @@ TEST_CASE("Config adapts parsed runtime defaults after registration [fast][core]
 TEST_CASE("ConfigBuilder exposes raw parse state before runtime adaptation [fast][core][config][cli]")
 {
   Config raw;
-  raw.isCLI = true;
 
   const auto parsed = infomap::ConfigBuilder::parseRaw(raw, "input.net --silent --no-file-output --flow-model directed --regularized --num-trials 4", true);
+  CHECK_FALSE(raw.isCLI);
   CHECK(raw.networkFile == "input.net");
   CHECK(raw.noFileOutput);
   CHECK(raw.regularized);
@@ -117,8 +117,29 @@ TEST_CASE("ConfigBuilder exposes raw parse state before runtime adaptation [fast
   CHECK_FALSE(parsed.usedOptions.empty());
 
   infomap::ConfigBuilder::applyParsed(raw, parsed, true);
+  CHECK(raw.isCLI);
   CHECK(infomap::flowModelToString(raw.flowModel) == std::string("directed"));
   CHECK(raw.recordedTeleportation);
+}
+
+TEST_CASE("ConfigBuilder owns full flags-to-runtime config lifecycle [fast][core][config][cli]")
+{
+  Config config;
+  config.printTree = true;
+  config.outName = "stale";
+  config.parsedString = "stale flags";
+
+  infomap::ConfigBuilder::buildFromFlags(config, "input.net --silent --no-file-output --verbose --pretty --print-all-trials --num-trials 1 --output json", true);
+
+  CHECK(config.isCLI);
+  CHECK(config.parsedString == "input.net --silent --no-file-output --verbose --pretty --print-all-trials --num-trials 1 --output json");
+  CHECK_FALSE(config.parsedOptions.empty());
+  CHECK(config.verbosity == 1);
+  CHECK_FALSE(config.prettyOutput);
+  CHECK_FALSE(config.printAllTrials);
+  CHECK(config.printJson);
+  CHECK_FALSE(config.printTree);
+  CHECK(config.outName == "input");
 }
 
 TEST_CASE("Config parses pretty output flag [fast][core][config][cli]")

@@ -12,6 +12,7 @@
 #include "ProgramInterface.h"
 #include "SafeFile.h"
 #include "../utils/FileURI.h"
+#include "../utils/Log.h"
 #include "../utils/convert.h"
 
 #include <stdexcept>
@@ -44,6 +45,17 @@ namespace {
     }
   }
 
+  void applyRuntimeOutputInteractions(Config& config)
+  {
+    if (config.verbosity > 0) {
+      config.prettyOutput = false;
+    }
+
+    if (config.printAllTrials && config.numTrials < 2) {
+      config.printAllTrials = false;
+    }
+  }
+
   void normalizeOutputDirectory(Config& config)
   {
     if (!config.haveOutput() || config.outDirectory.empty())
@@ -66,7 +78,25 @@ namespace {
     }
   }
 
+  void initializeLogging(const Config& config)
+  {
+    Log::init(config.verbosity, config.silent, config.verboseNumberPrecision, config.prettyOutput);
+  }
+
 } // namespace
+
+void ConfigBuilder::buildFromFlags(Config& config, const std::string& flags, bool isCLI)
+{
+  config = Config {};
+  config.isCLI = isCLI;
+  config.parsedString = flags;
+
+  const auto parsed = parseRaw(config, flags, isCLI);
+  config.parsedOptions = parsed.usedOptions;
+  applyParsed(config, parsed, isCLI);
+
+  initializeLogging(config);
+}
 
 ParsedConfigParameters ConfigBuilder::parseRaw(Config& config, const std::string& flags, bool isCLI)
 {
@@ -87,6 +117,7 @@ ParsedConfigParameters ConfigBuilder::parseRaw(Config& config, const std::string
 
 void ConfigBuilder::applyParsed(Config& config, const ParsedConfigParameters& parsed, bool isCLI)
 {
+  config.isCLI = isCLI;
   applyParsedParameters(config, parsed);
   applyLibraryOutputDefaults(config, isCLI);
   validateRequiredCliOutput(config, isCLI);
@@ -94,6 +125,8 @@ void ConfigBuilder::applyParsed(Config& config, const ParsedConfigParameters& pa
   normalizeOutputDirectory(config);
   validateOutputDirectory(config);
   applyOutputNameDefault(config);
+  applyRuntimeOutputInteractions(config);
+  config.adaptDefaults();
 }
 
 } // namespace infomap
