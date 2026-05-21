@@ -24,10 +24,10 @@
 namespace infomap {
 
 struct LayerNode;
-class NetworkInputSinkAdapter;
+class NetworkIntakeAdapter;
 
 class Network : public StateNetwork {
-  friend class NetworkInputSinkAdapter;
+  friend class NetworkIntakeAdapter;
 
 private:
   // Multilayer

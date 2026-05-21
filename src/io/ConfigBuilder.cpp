@@ -78,7 +78,7 @@ ParsedConfigParameters ConfigBuilder::parseRaw(Config& config, const std::string
   api.setJsonParametersProvider(parameterCatalogJson);
 
   ParsedConfigParameters parsed;
-  registerConfigParameters(api, { config, parsed }, isCLI);
+  registerCatalogWithProgramInterface(api, { config, parsed }, isCLI);
 
   api.parseArgs(flags);
   parsed.usedOptions = api.getUsedOptionArguments();

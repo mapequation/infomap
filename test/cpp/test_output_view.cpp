@@ -142,6 +142,30 @@ TEST_CASE("OutputView owns module-link projection [fast][core][output]")
   CHECK(foundPositiveFlow);
 }
 
+TEST_CASE("OutputView exposes serializable module rows for output adapters [fast][core][output]")
+{
+  auto im = runTwoTriangles();
+  infomap::OutputView view(*im, im->network(), false);
+
+  unsigned int numModules = 0;
+  bool foundRoot = false;
+  bool foundLinks = false;
+  view.forEachModule([&](const infomap::OutputModuleRow& module) {
+    ++numModules;
+    if (module.linkPathLabel == "root") {
+      foundRoot = true;
+      CHECK(module.jsonPath.empty());
+      CHECK(module.numChildren > 0);
+      CHECK(module.codelength >= 0.0);
+    }
+    foundLinks = foundLinks || !module.links.empty();
+  });
+
+  CHECK(numModules > 0);
+  CHECK(foundRoot);
+  CHECK(foundLinks);
+}
+
 TEST_CASE("OutputView refactor preserves stable tree output fields [fast][core][output]")
 {
   auto im = runTwoTriangles();

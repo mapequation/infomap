@@ -15,6 +15,7 @@
 #include "../utils/Log.h"
 #include "../utils/convert.h"
 
+#include <algorithm>
 #include <cstdlib>
 #include <fstream>
 #include <limits>
@@ -27,6 +28,11 @@
 
 namespace infomap {
 namespace input {
+
+  struct NetworkInputOptions {
+    bool undirectedFlow = true;
+    unsigned int matchableMultilayerIds = 0;
+  };
 
   struct ParsedVertex {
     unsigned int id = 0;
@@ -71,6 +77,14 @@ namespace input {
   namespace detail {
 
     using InsensitiveStringSet = std::set<std::string, io::InsensitiveCompare>;
+
+    struct ParseProgress {
+      unsigned int numPhysicalNodes = 0;
+      unsigned int numLinks = 0;
+      unsigned int numIntraLayerLinks = 0;
+      unsigned int numInterLayerLinks = 0;
+      std::set<unsigned int> layers;
+    };
 
     inline bool isInputWhitespace(char c)
     {
@@ -213,7 +227,7 @@ namespace input {
     }
 
     template <typename Sink>
-    std::string parseVertices(std::ifstream& file, const std::string&, Sink& sink)
+    std::string parseVertices(std::ifstream& file, const std::string&, Sink& sink, ParseProgress& progress)
     {
       Log() << "  Parsing vertices...\n"
             << std::flush;
@@ -248,8 +262,9 @@ namespace input {
         }
 
         sink.onPhysicalNode(vertex);
+        ++progress.numPhysicalNodes;
       }
-      Log() << "  -> " << sink.numPhysicalNodes() << " physical nodes added\n";
+      Log() << "  -> " << progress.numPhysicalNodes << " physical nodes added\n";
       return line;
     }
 
@@ -276,7 +291,7 @@ namespace input {
     }
 
     template <typename Sink>
-    std::string parseLinks(std::ifstream& file, Sink& sink)
+    std::string parseLinks(std::ifstream& file, Sink& sink, ParseProgress& progress)
     {
       bool parsingLinks = false;
       std::string line;
@@ -294,20 +309,21 @@ namespace input {
         }
 
         sink.onLink(parseLink(line));
+        ++progress.numLinks;
       }
       if (parsingLinks)
-        Log() << "  -> " << sink.numLinks() << " links\n";
+        Log() << "  -> " << progress.numLinks << " links\n";
       return line;
     }
 
     template <typename Sink>
-    std::string parseMultilayerLinks(std::ifstream& file, Sink& sink)
+    std::string parseMultilayerLinks(std::ifstream& file, Sink& sink, const NetworkInputOptions& options, ParseProgress& progress)
     {
       Log() << "  Parsing multilayer links...\n"
             << std::flush;
 
-      if (sink.matchableMultilayerIds() > 0) {
-        Log() << "  Creating matchable state ids using: nodeId << (log2(" << sink.matchableMultilayerIds() << ") + 1) | layerId\n";
+      if (options.matchableMultilayerIds > 0) {
+        Log() << "  Creating matchable state ids using: nodeId << (log2(" << options.matchableMultilayerIds << ") + 1) | layerId\n";
       }
 
       std::string line;
@@ -318,22 +334,30 @@ namespace input {
         if (line[0] == '*')
           break;
 
-        sink.onMultilayerLink(parseMultilayerLink(line));
+        const auto link = parseMultilayerLink(line);
+        sink.onMultilayerLink(link);
+        progress.layers.insert(link.sourceLayer);
+        progress.layers.insert(link.targetLayer);
+        if (link.sourceLayer == link.targetLayer) {
+          ++progress.numIntraLayerLinks;
+        } else {
+          ++progress.numInterLayerLinks;
+        }
       }
-      Log() << "  -> " << sink.numLayerLinks() << " links in " << sink.numLayers() << " layers\n";
-      Log() << "    -> " << sink.numIntraLayerLinks() << " intra-layer links\n";
-      Log() << "    -> " << sink.numInterLayerLinks() << " inter-layer links\n";
+      Log() << "  -> " << (progress.numIntraLayerLinks + progress.numInterLayerLinks) << " links in " << progress.layers.size() << " layers\n";
+      Log() << "    -> " << progress.numIntraLayerLinks << " intra-layer links\n";
+      Log() << "    -> " << progress.numInterLayerLinks << " inter-layer links\n";
       return line;
     }
 
     template <typename Sink>
-    std::string parseMultilayerIntraLinks(std::ifstream& file, Sink& sink)
+    std::string parseMultilayerIntraLinks(std::ifstream& file, Sink& sink, const NetworkInputOptions& options, ParseProgress& progress)
     {
       Log() << "  Parsing intra-layer links...\n"
             << std::flush;
 
-      if (sink.matchableMultilayerIds() > 0) {
-        Log() << "  Creating matchable state ids using: nodeId << (log2(" << sink.matchableMultilayerIds() << ") + 1) | layerId\n";
+      if (options.matchableMultilayerIds > 0) {
+        Log() << "  Creating matchable state ids using: nodeId << (log2(" << options.matchableMultilayerIds << ") + 1) | layerId\n";
       }
 
       std::string line;
@@ -344,14 +368,17 @@ namespace input {
         if (line[0] == '*')
           break;
 
-        sink.onMultilayerIntraLink(parseMultilayerIntraLink(line));
+        const auto link = parseMultilayerIntraLink(line);
+        sink.onMultilayerIntraLink(link);
+        progress.layers.insert(link.layer);
+        ++progress.numIntraLayerLinks;
       }
-      Log() << "  -> " << sink.numIntraLayerLinks() << " intra-layer links\n";
+      Log() << "  -> " << progress.numIntraLayerLinks << " intra-layer links\n";
       return line;
     }
 
     template <typename Sink>
-    std::string parseMultilayerInterLinks(std::ifstream& file, Sink& sink)
+    std::string parseMultilayerInterLinks(std::ifstream& file, Sink& sink, ParseProgress& progress)
     {
       Log() << "  Parsing inter-layer links...\n"
             << std::flush;
@@ -363,9 +390,13 @@ namespace input {
         if (line[0] == '*')
           break;
 
-        sink.onMultilayerInterLink(parseMultilayerInterLink(line));
+        const auto link = parseMultilayerInterLink(line);
+        sink.onMultilayerInterLink(link);
+        progress.layers.insert(link.sourceLayer);
+        progress.layers.insert(link.targetLayer);
+        ++progress.numInterLayerLinks;
       }
-      Log() << "  -> " << sink.numInterLayerLinks() << " inter-layer links\n";
+      Log() << "  -> " << progress.numInterLayerLinks << " inter-layer links\n";
       return line;
     }
 
@@ -406,12 +437,17 @@ namespace input {
     }
 
     template <typename Sink>
-    void parseNetwork(const std::string& filename, const InsensitiveStringSet& validHeadings, const InsensitiveStringSet& ignoreHeadings, Sink& sink, const std::string& startHeading = "")
+    void parseNetwork(const std::string& filename,
+                      const InsensitiveStringSet& validHeadings,
+                      const InsensitiveStringSet& ignoreHeadings,
+                      Sink& sink,
+                      const NetworkInputOptions& options,
+                      const std::string& startHeading = "")
     {
-      sink.onFileInput();
       SafeInFile input(filename);
+      ParseProgress progress;
 
-      std::string heading = !startHeading.empty() ? startHeading : parseLinks(input, sink);
+      std::string heading = !startHeading.empty() ? startHeading : parseLinks(input, sink, progress);
 
       while (!heading.empty() && heading[0] == '*') {
         std::string headingLowerCase = io::tolower(io::firstWord(heading));
@@ -420,25 +456,25 @@ namespace input {
         }
         bool shouldIgnoreHeading = ignoreHeadings.count(headingLowerCase) > 0;
         if (!shouldIgnoreHeading && headingLowerCase == "*vertices") {
-          heading = parseVertices(input, heading, sink);
+          heading = parseVertices(input, heading, sink, progress);
         } else if (!shouldIgnoreHeading && headingLowerCase == "*states") {
           heading = parseStateNodes(input, heading, sink);
         } else if (!shouldIgnoreHeading && headingLowerCase == "*edges") {
-          if (!sink.isUndirectedFlow())
+          if (!options.undirectedFlow)
             Log() << "\n --> Notice: Links marked as undirected but parsed as directed.\n";
-          heading = parseLinks(input, sink);
+          heading = parseLinks(input, sink, progress);
         } else if (!shouldIgnoreHeading && headingLowerCase == "*arcs") {
-          if (sink.isUndirectedFlow())
+          if (options.undirectedFlow)
             Log() << "\n --> Notice: Links marked as directed but parsed as undirected.\n";
-          heading = parseLinks(input, sink);
+          heading = parseLinks(input, sink, progress);
         } else if (!shouldIgnoreHeading && headingLowerCase == "*links") {
-          heading = parseLinks(input, sink);
+          heading = parseLinks(input, sink, progress);
         } else if (!shouldIgnoreHeading && (headingLowerCase == "*multilayer" || headingLowerCase == "*multiplex")) {
-          heading = parseMultilayerLinks(input, sink);
+          heading = parseMultilayerLinks(input, sink, options, progress);
         } else if (!shouldIgnoreHeading && headingLowerCase == "*intra") {
-          heading = parseMultilayerIntraLinks(input, sink);
+          heading = parseMultilayerIntraLinks(input, sink, options, progress);
         } else if (!shouldIgnoreHeading && headingLowerCase == "*inter") {
-          heading = parseMultilayerInterLinks(input, sink);
+          heading = parseMultilayerInterLinks(input, sink, progress);
         } else if (!shouldIgnoreHeading && headingLowerCase == "*bipartite") {
           heading = parseBipartiteLinks(input, heading, sink);
         } else {
@@ -446,17 +482,16 @@ namespace input {
         }
       }
 
-      sink.onNetworkParsed();
       Log() << "Done!\n";
     }
 
   } // namespace detail
 
   template <typename Sink>
-  void parseNetworkInput(const std::string& filename, Sink& sink)
+  void parseNetworkInput(const std::string& filename, Sink& sink, const NetworkInputOptions& options)
   {
-    Log() << "Parsing " << (sink.isUndirectedFlow() ? "undirected" : "directed") << " network from file '" << filename << "'...\n";
-    detail::parseNetwork(filename, detail::generalValidHeadings(), detail::generalIgnoredHeadings(), sink);
+    Log() << "Parsing " << (options.undirectedFlow ? "undirected" : "directed") << " network from file '" << filename << "'...\n";
+    detail::parseNetwork(filename, detail::generalValidHeadings(), detail::generalIgnoredHeadings(), sink, options);
   }
 
   template <typename Sink>
@@ -465,6 +500,8 @@ namespace input {
     Log() << "Parsing meta data from '" << filename << "'...\n";
     SafeInFile input(filename);
     std::string line;
+    unsigned int numMetaDataColumns = 0;
+    unsigned int numMetaDataRows = 0;
     while (!std::getline(input, line).fail()) {
       if (line.empty() || line[0] == '#')
         continue;
@@ -486,8 +523,10 @@ namespace input {
         throw std::runtime_error(io::Str() << "Can't parse any meta data from line '" << line << "'");
 
       sink.onMetaData(nodeId, metaData);
+      numMetaDataColumns = std::max<unsigned int>(numMetaDataColumns, metaData.size());
+      ++numMetaDataRows;
     }
-    Log() << " -> Parsed " << sink.numMetaDataColumns() << " columns of meta data for " << sink.numMetaDataRows() << " nodes.\n";
+    Log() << " -> Parsed " << numMetaDataColumns << " columns of meta data for " << numMetaDataRows << " nodes.\n";
   }
 
 } // namespace input

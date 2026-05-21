@@ -58,10 +58,21 @@ using OutputModuleLink = std::pair<unsigned int, unsigned int>;
 using OutputModuleLinkMap = std::map<OutputModuleLink, double>;
 using OutputModuleLinks = std::map<OutputModulePath, OutputModuleLinkMap>;
 
+struct OutputModuleRow {
+  OutputModulePath jsonPath;
+  OutputModulePath linkPathLabel;
+  double enterFlow = 0.0;
+  double exitFlow = 0.0;
+  unsigned int numChildren = 0;
+  double codelength = 0.0;
+  const OutputModuleLinkMap& links;
+};
+
 class OutputView {
 public:
   using LeafCallback = std::function<void(const OutputLeafRow&)>;
   using TreeCallback = std::function<void(const OutputTreeRow&)>;
+  using ModuleCallback = std::function<void(const OutputModuleRow&)>;
 
   OutputView(InfomapBase& infomap, const StateNetwork& network, bool states);
 
@@ -76,6 +87,8 @@ public:
 
   void forEachLeaf(int moduleIndexLevel, OutputLeafPolicy filter, const LeafCallback& callback);
   void forEachTreeNode(const TreeCallback& callback);
+  // OutputModuleRow::links is valid only for the duration of the callback.
+  void forEachModule(const ModuleCallback& callback);
 
   std::map<unsigned int, OutputStateNodeTarget> stateNodeTargets();
   OutputModuleLinks moduleLinks();

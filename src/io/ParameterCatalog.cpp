@@ -888,7 +888,7 @@ const std::vector<ParameterSpec>& parameterCatalog()
   return parameters;
 }
 
-void registerConfigParameters(ProgramInterface& api, ConfigParameterTargets targets, bool isCli)
+void registerCatalogWithProgramInterface(ProgramInterface& api, ConfigParameterTargets targets, bool isCli)
 {
   for (const auto& parameter : parameterCatalog()) {
     if (!parameter.registrar) {
@@ -902,6 +902,11 @@ void registerConfigParameters(ProgramInterface& api, ConfigParameterTargets targ
     }
     parameter.registrar(api, targets, parameter);
   }
+}
+
+void registerConfigParameters(ProgramInterface& api, ConfigParameterTargets targets, bool isCli)
+{
+  registerCatalogWithProgramInterface(api, targets, isCli);
 }
 
 void applyParsedParameters(Config& config, const ParsedParameterSet& parsed)
