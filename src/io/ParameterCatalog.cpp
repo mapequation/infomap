@@ -201,7 +201,7 @@ namespace {
     SpecBuilder& flowModelTarget()
     {
       parameter_.registrar = [](ProgramInterface& api, ConfigParameterTargets& targets, const ParameterSpec& parameter) {
-        registerOptionForTarget(api, targets.flowModelArg, parameter);
+        registerOptionForTarget(api, targets.parsed.flowModelArg, parameter);
       };
       return *this;
     }
@@ -209,7 +209,7 @@ namespace {
     SpecBuilder& deprecatedIncludeSelfLinksTarget()
     {
       parameter_.registrar = [](ProgramInterface& api, ConfigParameterTargets& targets, const ParameterSpec& parameter) {
-        registerOptionForTarget(api, targets.deprecatedIncludeSelfLinks, parameter);
+        registerOptionForTarget(api, targets.parsed.deprecatedIncludeSelfLinks, parameter);
       };
       return *this;
     }
@@ -225,7 +225,7 @@ namespace {
     SpecBuilder& outputDirectoryArgument()
     {
       parameter_.registrar = [](ProgramInterface& api, ConfigParameterTargets& targets, const ParameterSpec& parameter) {
-        api.addOptionalNonOptionArguments(targets.optionalOutputDir, "out_directory", parameter.description, parameter.group);
+        api.addOptionalNonOptionArguments(targets.parsed.optionalOutputDir, "out_directory", parameter.description, parameter.group);
       };
       return *this;
     }
@@ -343,6 +343,37 @@ namespace {
   void registerIncrementalOptionForTarget(ProgramInterface& api, unsigned int& target, const ParameterSpec& parameter)
   {
     addConfiguredOption(api.addIncrementalOptionArgument(target, parameter.shortName, parameter.longName, parameter.description, parameter.group, parameter.isAdvanced), parameter);
+  }
+
+  void rejectDeprecatedAliases(const ParsedParameterSet& parsed)
+  {
+    if (parsed.deprecatedIncludeSelfLinks) {
+      throw std::runtime_error("The --include-self-links flag is deprecated; self-links are included by default. Use --no-self-links to exclude them.");
+    }
+  }
+
+  void applyOutputDirectory(Config& config, const ParsedParameterSet& parsed)
+  {
+    if (!parsed.optionalOutputDir.empty())
+      config.outDirectory = parsed.optionalOutputDir[0];
+  }
+
+  void applyFlowModelSelection(Config& config, const ParsedParameterSet& parsed)
+  {
+    if (config.directed) {
+      config.setFlowModel(FlowModel::directed);
+      return;
+    }
+
+    if (parsed.flowModelArg.empty()) {
+      return;
+    }
+
+    FlowModel flowModel = FlowModel::undirected;
+    if (!parseFlowModel(parsed.flowModelArg, flowModel)) {
+      throw std::runtime_error(io::Str() << "Unrecognized flow model: '" << parsed.flowModelArg << "'");
+    }
+    config.setFlowModel(flowModel);
   }
 
 } // namespace
@@ -871,6 +902,13 @@ void registerConfigParameters(ProgramInterface& api, ConfigParameterTargets targ
     }
     parameter.registrar(api, targets, parameter);
   }
+}
+
+void applyParsedParameters(Config& config, const ParsedParameterSet& parsed)
+{
+  rejectDeprecatedAliases(parsed);
+  applyOutputDirectory(config, parsed);
+  applyFlowModelSelection(config, parsed);
 }
 
 std::string parameterCatalogJson()
