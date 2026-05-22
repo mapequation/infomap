@@ -1,6 +1,5 @@
 #include "vendor/doctest.h"
 
-#include "io/ConfigBuilder.h"
 #include "io/Config.h"
 #include "io/OutputFormats.h"
 #include "io/OutputPlan.h"
@@ -102,44 +101,57 @@ TEST_CASE("Config adapts parsed runtime defaults after registration [fast][core]
   CHECK(libraryConfig.outDirectory.empty());
 }
 
-TEST_CASE("ConfigBuilder exposes raw parse state before runtime adaptation [fast][core][config][cli]")
+TEST_CASE("Config construction applies cross-field invariants from flags [fast][core][config][cli]")
 {
-  Config raw;
+  const Config config("input.net --silent --no-file-output --flow-model directed --regularized --num-trials 4", true);
 
-  const auto parsed = infomap::ConfigBuilder::parseRaw(raw, "input.net --silent --no-file-output --flow-model directed --regularized --num-trials 4", true);
-  CHECK_FALSE(raw.isCLI);
-  CHECK(raw.networkFile == "input.net");
-  CHECK(raw.noFileOutput);
-  CHECK(raw.regularized);
-  CHECK_FALSE(raw.recordedTeleportation);
-  CHECK(raw.numTrials == 4);
-  CHECK(parsed.flowModelArg == "directed");
-  CHECK_FALSE(parsed.usedOptions.empty());
-
-  infomap::ConfigBuilder::applyParsed(raw, parsed, true);
-  CHECK(raw.isCLI);
-  CHECK(infomap::flowModelToString(raw.flowModel) == std::string("directed"));
-  CHECK(raw.recordedTeleportation);
+  CHECK(config.isCLI);
+  CHECK(config.networkFile == "input.net");
+  CHECK(config.noFileOutput);
+  CHECK(config.regularized);
+  CHECK(config.numTrials == 4);
+  CHECK(infomap::flowModelToString(config.flowModel) == std::string("directed"));
+  // applyOptionInteractions: regularized implies recordedTeleportation
+  CHECK(config.recordedTeleportation);
+  CHECK_FALSE(config.parsedOptions.empty());
 }
 
-TEST_CASE("ConfigBuilder owns full flags-to-runtime config lifecycle [fast][core][config][cli]")
+TEST_CASE("Config construction applies runtime output interactions [fast][core][config][cli]")
 {
-  Config config;
-  config.printTree = true;
-  config.outName = "stale";
-  config.parsedString = "stale flags";
-
-  infomap::ConfigBuilder::buildFromFlags(config, "input.net --silent --no-file-output --verbose --pretty --print-all-trials --num-trials 1 --output json", true);
+  const Config config("input.net --silent --no-file-output --verbose --pretty --print-all-trials --num-trials 1 --output json", true);
 
   CHECK(config.isCLI);
   CHECK(config.parsedString == "input.net --silent --no-file-output --verbose --pretty --print-all-trials --num-trials 1 --output json");
   CHECK_FALSE(config.parsedOptions.empty());
   CHECK(config.verbosity == 1);
+  // applyRuntimeOutputInteractions: verbosity > 0 disables pretty output
   CHECK_FALSE(config.prettyOutput);
+  // applyRuntimeOutputInteractions: printAllTrials requires numTrials >= 2
   CHECK_FALSE(config.printAllTrials);
   CHECK(config.printJson);
   CHECK_FALSE(config.printTree);
+  // applyOutputNameDefault: outName derives from networkFile when not set
   CHECK(config.outName == "input");
+}
+
+TEST_CASE("adaptDefaults applies invariants when called on a library-mutated config [fast][core][config][library]")
+{
+  Config config;
+  config.outputFormats = "tree";
+  config.regularized = true;
+  config.noInfomap = true;
+  config.numTrials = 7;
+  config.networkFile = "graph.net";
+
+  config.adaptDefaults();
+
+  // applyLibraryOutputDefaults: non-CLI with empty outDirectory implies noFileOutput
+  CHECK(config.noFileOutput);
+  // applyOptionInteractions: regularized -> recordedTeleportation, noInfomap -> numTrials = 1
+  CHECK(config.recordedTeleportation);
+  CHECK(config.numTrials == 1);
+  // applyOutputNameDefault: outName derives from networkFile
+  CHECK(config.outName == "graph");
 }
 
 TEST_CASE("Config parses pretty output flag [fast][core][config][cli]")

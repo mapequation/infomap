@@ -8,8 +8,12 @@
  ******************************************************************************/
 
 #include "Config.h"
-#include "ConfigBuilder.h"
 #include "OutputFormats.h"
+#include "ParameterCatalog.h"
+#include "ProgramInterface.h"
+#include "SafeFile.h"
+#include "../utils/FileURI.h"
+#include "../utils/Log.h"
 #include "../utils/convert.h"
 #include <vector>
 #include <stdexcept>
@@ -72,6 +76,134 @@ namespace {
     }
   }
 
+  // Config invariants applied by adaptDefaults. These describe the coherent
+  // state of a Config after fields have been set, regardless of whether the
+  // fields were set by flag parsing or by direct mutation through bindings.
+
+  void applyLibraryOutputDefaults(Config& config)
+  {
+    if (!config.isCLI && config.outDirectory.empty())
+      config.noFileOutput = true;
+  }
+
+  void validateRequiredCliOutput(const Config& config)
+  {
+    if (!config.noFileOutput && config.outDirectory.empty() && config.isCLI) {
+      throw std::runtime_error("Missing out_directory");
+    }
+  }
+
+  void applyOptionInteractions(Config& config)
+  {
+    if (config.regularized) {
+      config.recordedTeleportation = true;
+    }
+
+    if (config.noInfomap) {
+      config.numTrials = 1;
+    }
+  }
+
+  void applyRuntimeOutputInteractions(Config& config)
+  {
+    if (config.verbosity > 0) {
+      config.prettyOutput = false;
+    }
+
+    if (config.printAllTrials && config.numTrials < 2) {
+      config.printAllTrials = false;
+    }
+  }
+
+  void normalizeOutputDirectory(Config& config)
+  {
+    if (!config.haveOutput() || config.outDirectory.empty())
+      return;
+
+    if (config.outDirectory.back() != '/')
+      config.outDirectory.push_back('/');
+  }
+
+  void applyOutputNameDefault(Config& config)
+  {
+    if (config.outName.empty()) {
+      config.outName = !config.networkFile.empty() ? FileURI(config.networkFile).getName() : "no-name";
+    }
+  }
+
+  // Lifecycle-only steps. These read staged parse state, touch the filesystem,
+  // or mutate global state — they are not Config invariants and must not fire
+  // when a library user calls adaptDefaults() on a mutated Config.
+
+  void rejectDeprecatedAliases(const ParsedParameterSet& parsed)
+  {
+    if (parsed.deprecatedIncludeSelfLinks) {
+      throw std::runtime_error("The --include-self-links flag is deprecated; self-links are included by default. Use --no-self-links to exclude them.");
+    }
+  }
+
+  void applyOutputDirectory(Config& config, const ParsedParameterSet& parsed)
+  {
+    if (!parsed.optionalOutputDir.empty())
+      config.outDirectory = parsed.optionalOutputDir[0];
+  }
+
+  void applyFlowModelSelection(Config& config, const ParsedParameterSet& parsed)
+  {
+    if (config.directed) {
+      config.setFlowModel(FlowModel::directed);
+      return;
+    }
+
+    if (parsed.flowModelArg.empty()) {
+      return;
+    }
+
+    FlowModel flowModel = FlowModel::undirected;
+    if (!parseFlowModel(parsed.flowModelArg, flowModel)) {
+      throw std::runtime_error(io::Str() << "Unrecognized flow model: '" << parsed.flowModelArg << "'");
+    }
+    config.setFlowModel(flowModel);
+  }
+
+  void validateOutputDirectory(const Config& config)
+  {
+    if (config.haveOutput() && !isDirectoryWritable(config.outDirectory))
+      throw std::runtime_error(io::Str() << "Can't write to directory '" << config.outDirectory << "'. Check that the directory exists and that you have write permissions.");
+  }
+
+  void initializeLogging(const Config& config)
+  {
+    Log::init(config.verbosity, config.silent, config.verboseNumberPrecision, config.prettyOutput);
+  }
+
+  void buildConfigFromFlags(Config& config, const std::string& flags, bool isCLI)
+  {
+    config.parsedString = flags;
+
+    ProgramInterface api("Infomap",
+                         "Implementation of the Infomap clustering algorithm based on the Map Equation (see www.mapequation.org)",
+                         INFOMAP_VERSION);
+
+    api.setGroups({ "Input", "Algorithm", "Accuracy", "Output" });
+    api.setJsonParametersProvider(parameterCatalogJson);
+
+    ParsedParameterSet staging;
+    registerCatalogWithProgramInterface(api, { config, staging }, isCLI);
+
+    api.parseArgs(flags);
+    config.parsedOptions = api.getUsedOptionArguments();
+
+    rejectDeprecatedAliases(staging);
+    applyOutputDirectory(config, staging);
+    applyFlowModelSelection(config, staging);
+
+    config.adaptDefaults();
+
+    validateOutputDirectory(config);
+    initializeLogging(config);
+  }
+
 } // namespace
 
 const std::vector<std::string>& flowModelNames()
@@ -109,7 +241,7 @@ const char* flowModelToString(const FlowModel& flowModel)
 
 Config::Config(const std::string& flags, bool isCLI) : isCLI(isCLI)
 {
-  ConfigBuilder::buildFromFlags(*this, flags, isCLI);
+  buildConfigFromFlags(*this, flags, isCLI);
 }
 
 void Config::adaptDefaults()
@@ -127,6 +259,15 @@ void Config::adaptDefaults()
   if (isCLI && !haveModularResultOutput()) {
     printTree = true;
   }
+
+  // Cross-field invariants. These run whether construction was via flag parsing
+  // or library mutation followed by adaptDefaults().
+  applyLibraryOutputDefaults(*this);
+  validateRequiredCliOutput(*this);
+  applyOptionInteractions(*this);
+  normalizeOutputDirectory(*this);
+  applyOutputNameDefault(*this);
+  applyRuntimeOutputInteractions(*this);
 }
 
 std::ostream& operator<<(std::ostream& out, FlowModel f)
