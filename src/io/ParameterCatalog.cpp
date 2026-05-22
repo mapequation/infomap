@@ -345,37 +345,6 @@ namespace {
     addConfiguredOption(api.addIncrementalOptionArgument(target, parameter.shortName, parameter.longName, parameter.description, parameter.group, parameter.isAdvanced), parameter);
   }
 
-  void rejectDeprecatedAliases(const ParsedParameterSet& parsed)
-  {
-    if (parsed.deprecatedIncludeSelfLinks) {
-      throw std::runtime_error("The --include-self-links flag is deprecated; self-links are included by default. Use --no-self-links to exclude them.");
-    }
-  }
-
-  void applyOutputDirectory(Config& config, const ParsedParameterSet& parsed)
-  {
-    if (!parsed.optionalOutputDir.empty())
-      config.outDirectory = parsed.optionalOutputDir[0];
-  }
-
-  void applyFlowModelSelection(Config& config, const ParsedParameterSet& parsed)
-  {
-    if (config.directed) {
-      config.setFlowModel(FlowModel::directed);
-      return;
-    }
-
-    if (parsed.flowModelArg.empty()) {
-      return;
-    }
-
-    FlowModel flowModel = FlowModel::undirected;
-    if (!parseFlowModel(parsed.flowModelArg, flowModel)) {
-      throw std::runtime_error(io::Str() << "Unrecognized flow model: '" << parsed.flowModelArg << "'");
-    }
-    config.setFlowModel(flowModel);
-  }
-
 } // namespace
 
 const std::vector<ParameterSpec>& parameterCatalog()
@@ -907,13 +876,6 @@ void registerCatalogWithProgramInterface(ProgramInterface& api, ConfigParameterT
 void registerConfigParameters(ProgramInterface& api, ConfigParameterTargets targets, bool isCli)
 {
   registerCatalogWithProgramInterface(api, targets, isCli);
-}
-
-void applyParsedParameters(Config& config, const ParsedParameterSet& parsed)
-{
-  rejectDeprecatedAliases(parsed);
-  applyOutputDirectory(config, parsed);
-  applyFlowModelSelection(config, parsed);
 }
 
 std::string parameterCatalogJson()

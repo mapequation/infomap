@@ -10,8 +10,6 @@
 #ifndef PARAMETER_CATALOG_H_
 #define PARAMETER_CATALOG_H_
 
-#include "ParsedOption.h"
-
 #include <functional>
 #include <string>
 #include <vector>
@@ -25,7 +23,6 @@ struct ParsedParameterSet {
   std::string flowModelArg;
   bool deprecatedIncludeSelfLinks = false;
   std::vector<std::string> optionalOutputDir;
-  std::vector<ParsedOption> usedOptions;
 };
 
 struct ConfigParameterTargets {
@@ -65,7 +62,6 @@ struct ParameterSpec {
 const std::vector<ParameterSpec>& parameterCatalog();
 void registerCatalogWithProgramInterface(ProgramInterface& api, ConfigParameterTargets targets, bool isCli);
 void registerConfigParameters(ProgramInterface& api, ConfigParameterTargets targets, bool isCli);
-void applyParsedParameters(Config& config, const ParsedParameterSet& parsed);
 std::string parameterCatalogJson();
 
 } // namespace infomap
