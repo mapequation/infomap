@@ -20,6 +20,7 @@
 #include <set>
 #include <utility>
 #include <algorithm>
+#include <vector>
 
 namespace infomap {
 
@@ -130,6 +131,15 @@ inline bool InfomapOptimizer<MetaMapEquation>::shouldUseInnerParallelization() c
 {
   // MetaMapEquation's delta evaluation mutates shared metadata state while
   // testing moves, so the lock-free inner parallel loop is not thread-safe.
+  return false;
+}
+
+template <>
+inline bool InfomapOptimizer<MemMapEquation>::shouldUseInnerParallelization() const
+{
+  // MemMapEquation keeps extra physical-node state that is updated together
+  // with accepted moves. Keep it on the stable serial path until that state can
+  // be batched with the module-flow updates.
   return false;
 }
 
@@ -501,184 +511,283 @@ INFOMAP_HOT unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestMod
   std::vector<unsigned int> nodeEnumeration(network.size());
   m_infomap->m_rand.getRandomizedIndexVector(nodeEnumeration);
 
-  auto numNodes = nodeEnumeration.size();
-  unsigned int numMoved = 0;
-  unsigned int numInvalidMoves = 0;
+  unsigned int numNodes = nodeEnumeration.size();
+  unsigned int numRandomMoves = std::min(m_infomap->numRandomMoves, numNodes);
 
-#pragma omp parallel for schedule(dynamic) // Use dynamic scheduling as some threads could end early
-  for (unsigned int i = 0; i < numNodes; ++i) {
-    // Pick nodes in random order
-    InfoNode& current = *network[nodeEnumeration[i]];
-
-    if (!current.dirty)
-      continue;
-
-    // If other nodes have moved here, don't move away on first loop
-    if (m_moduleMembers[current.index] > 1 && m_infomap->isFirstLoop() && m_infomap->tuneIterationLimit != 1)
-      continue;
-
-    // If no links connecting this node with other nodes, it won't move into others,
-    // and others won't move into this. TODO: Always best leave it alone?
-    // For memory networks, don't skip try move to same physical node!
-
-    // Create map with module links
-    VectorMap<DeltaFlowDataType> deltaFlow(numNodes);
-
-    // For all outlinks
-    for (auto& e : current.outEdges()) {
-      auto& edge = *e;
-      InfoNode* neighbour = edge.target;
-      deltaFlow.add(neighbour->index, DeltaFlowDataType(neighbour->index, edge.data.flow, 0.0));
-    }
-    // For all inlinks
-    for (auto& e : current.inEdges()) {
-      auto& edge = *e;
-      InfoNode* neighbour = edge.source;
-      deltaFlow.add(neighbour->index, DeltaFlowDataType(neighbour->index, 0.0, edge.data.flow));
-    }
-
-    // For not moving
-    deltaFlow.add(current.index, DeltaFlowDataType(current.index, 0.0, 0.0));
-    DeltaFlowDataType& oldModuleDelta = deltaFlow[current.index];
-    oldModuleDelta.module = current.index; // Make sure index is correct if created new
-
-    // Option to move to empty module (if node not already alone)
-    if (m_moduleMembers[current.index] > 1 && !m_emptyModules.empty()) {
-      // deltaFlow[m_emptyModules.back()] += DeltaFlowDataType(m_emptyModules.back(), 0.0, 0.0);
-      deltaFlow.add(m_emptyModules.back(), DeltaFlowDataType(m_emptyModules.back(), 0.0, 0.0));
-    }
-
-    // For memory networks
-    m_objective.addMemoryContributions(current, oldModuleDelta, deltaFlow);
-
-    auto& moduleDeltaEnterExit = deltaFlow.values();
-    unsigned int numModuleLinks = deltaFlow.size();
-
-    // Randomize link order for optimized search
-    if (numModuleLinks > 2) {
-      for (unsigned int j = 0; j < numModuleLinks - 2; ++j) {
-        unsigned int randPos = m_infomap->m_rand.randInt(j + 1, numModuleLinks - 1);
-        swap(moduleDeltaEnterExit[j], moduleDeltaEnterExit[randPos]);
-      }
-    }
-
-    DeltaFlowDataType bestDeltaModule(oldModuleDelta);
-    double bestDeltaCodelength = 0.0;
-    DeltaFlowDataType strongestConnectedModule(oldModuleDelta);
-    double deltaCodelengthOnStrongestConnectedModule = 0.0;
-
-    // Find the move that minimizes the description length
-    for (unsigned int j = 0; j < deltaFlow.size(); ++j) {
-      unsigned int otherModule = moduleDeltaEnterExit[j].module;
-      if (otherModule != current.index) {
-        double deltaCodelength = m_objective.getDeltaCodelengthOnMovingNode(current,
-                                                                            oldModuleDelta,
-                                                                            moduleDeltaEnterExit[j],
-                                                                            m_moduleFlowData,
-                                                                            m_moduleMembers);
-
-        if (deltaCodelength < bestDeltaCodelength - m_infomap->minimumSingleNodeCodelengthImprovement) {
-          bestDeltaModule = moduleDeltaEnterExit[j];
-          bestDeltaCodelength = deltaCodelength;
-        }
-
-        // Save strongest connected module to prefer if codelength improvement equal
-        if (moduleDeltaEnterExit[j].deltaExit > strongestConnectedModule.deltaExit) {
-          strongestConnectedModule = moduleDeltaEnterExit[j];
-          deltaCodelengthOnStrongestConnectedModule = deltaCodelength;
-        }
-      }
-    }
-
-    // Prefer strongest connected module if equal delta codelength
-    if (strongestConnectedModule.module != bestDeltaModule.module && deltaCodelengthOnStrongestConnectedModule <= bestDeltaCodelength + m_infomap->minimumSingleNodeCodelengthImprovement) {
-      bestDeltaModule = strongestConnectedModule;
-    }
-
-    // Make best possible move
-    if (bestDeltaModule.module == current.index) {
-      current.dirty = false;
-      continue;
-    } else {
-#pragma omp critical(moveUpdate)
-      {
-        unsigned int bestModuleIndex = bestDeltaModule.module;
-        unsigned int oldModuleIndex = current.index;
-
-        bool movingToEmptyModule = !m_emptyModules.empty() && bestModuleIndex == m_emptyModules.back();
-        bool validMove = movingToEmptyModule
-            // Check validity of move to empty target
-            ? m_moduleMembers[oldModuleIndex] > 1
-            // Not valid if the best module is empty now but not when decided
-            : m_moduleMembers[bestModuleIndex] > 0;
-
-        if (validMove) {
-          // Recalculate delta codelength for proposed move to see if still an improvement
-          oldModuleDelta = DeltaFlowDataType(oldModuleIndex, 0.0, 0.0);
-          DeltaFlowDataType newModuleDelta(bestModuleIndex, 0.0, 0.0);
-
-          // For all outlinks
-          for (auto& e : current.outEdges()) {
-            auto& edge = *e;
-            unsigned int otherModule = edge.target->index;
-            if (otherModule == oldModuleIndex)
-              oldModuleDelta.deltaExit += edge.data.flow;
-            else if (otherModule == bestModuleIndex)
-              newModuleDelta.deltaExit += edge.data.flow;
-          }
-          // For all inlinks
-          for (auto& e : current.inEdges()) {
-            auto& edge = *e;
-            unsigned int otherModule = edge.source->index;
-            if (otherModule == oldModuleIndex)
-              oldModuleDelta.deltaEnter += edge.data.flow;
-            else if (otherModule == bestModuleIndex)
-              newModuleDelta.deltaEnter += edge.data.flow;
-          }
-
-          // For memory networks
-          m_objective.addMemoryContributions(current, oldModuleDelta, deltaFlow);
-
-          double deltaCodelength = m_objective.getDeltaCodelengthOnMovingNode(current,
-                                                                              oldModuleDelta,
-                                                                              newModuleDelta,
-                                                                              m_moduleFlowData,
-                                                                              m_moduleMembers);
-
-          if (deltaCodelength < 0.0 - m_infomap->minimumSingleNodeCodelengthImprovement) {
-            // Update empty module vector
-            if (m_moduleMembers[bestModuleIndex] == 0) {
-              m_emptyModules.pop_back();
-            }
-            if (m_moduleMembers[oldModuleIndex] == 1) {
-              m_emptyModules.push_back(oldModuleIndex);
-            }
-
-            m_objective.updateCodelengthOnMovingNode(current, oldModuleDelta, bestDeltaModule, m_moduleFlowData, m_moduleMembers);
-
-            m_moduleMembers[oldModuleIndex] -= 1;
-            m_moduleMembers[bestModuleIndex] += 1;
-
-            current.index = bestModuleIndex;
-
-            ++numMoved;
-
-            // Mark neighbours as dirty
-            for (auto& e : current.outEdges())
-              e->target->dirty = true;
-            for (auto& e : current.inEdges())
-              e->source->dirty = true;
-          } else {
-            ++numInvalidMoves;
-          }
-        } else {
-          ++numInvalidMoves;
-        }
+  std::vector<std::vector<unsigned int>> randomMoveTargets(numNodes);
+  if (numRandomMoves > 0) {
+    for (unsigned int i = 0; i < numNodes; ++i) {
+      InfoNode& current = *network[nodeEnumeration[i]];
+      if (current.degree() > m_infomap->maxDegreeForRandomMoves)
+        continue;
+      auto& targets = randomMoveTargets[nodeEnumeration[i]];
+      targets.reserve(numRandomMoves);
+      for (unsigned int j = 0; j < numRandomMoves; ++j) {
+        unsigned int randIndex = m_infomap->m_rand.randInt(0, numNodes - 1);
+        targets.push_back(nodeEnumeration[randIndex]);
       }
     }
   }
 
-  return numMoved + numInvalidMoves;
+  struct MoveProposal {
+    bool valid = false;
+    bool clearDirty = false;
+    unsigned int nodeIndex = 0;
+    unsigned int oldModule = 0;
+    unsigned int newModule = 0;
+    bool targetWasEmpty = false;
+    double deltaCodelength = 0.0;
+    DeltaFlowDataType oldModuleDelta;
+    DeltaFlowDataType newModuleDelta;
+  };
+
+  std::vector<MoveProposal> proposals(numNodes);
+
+#pragma omp parallel
+  {
+    VectorMap<DeltaFlowDataType> deltaFlow(numNodes);
+
+#pragma omp for schedule(dynamic) // Use dynamic scheduling as some threads could end early
+    for (unsigned int i = 0; i < numNodes; ++i) {
+      deltaFlow.startRound();
+
+      // Pick nodes in random order
+      unsigned int nodeIndex = nodeEnumeration[i];
+      InfoNode& current = *network[nodeIndex];
+
+      if (!current.dirty)
+        continue;
+
+      // If other nodes have moved here, don't move away on first loop
+      if (m_moduleMembers[current.index] > 1 && m_infomap->isFirstLoop() && m_infomap->tuneIterationLimit != 1)
+        continue;
+
+      // If no links connecting this node with other nodes, it won't move into others,
+      // and others won't move into this. TODO: Always best leave it alone?
+      // For memory networks, don't skip try move to same physical node!
+
+      // For all outlinks
+      for (auto& e : current.outEdges()) {
+        auto& edge = *e;
+        InfoNode* neighbour = edge.target;
+        deltaFlow.add(neighbour->index, DeltaFlowDataType(neighbour->index, edge.data.flow, 0.0));
+      }
+      // For all inlinks
+      for (auto& e : current.inEdges()) {
+        auto& edge = *e;
+        InfoNode* neighbour = edge.source;
+        deltaFlow.add(neighbour->index, DeltaFlowDataType(neighbour->index, 0.0, edge.data.flow));
+      }
+
+      // For random moves
+      for (unsigned int randNodeIndex : randomMoveTargets[nodeIndex]) {
+        InfoNode& neighbour = *network[randNodeIndex];
+        deltaFlow.add(neighbour.index, DeltaFlowDataType(neighbour.index, 0.0, 0.0));
+      }
+
+      // For not moving
+      deltaFlow.add(current.index, DeltaFlowDataType(current.index, 0.0, 0.0));
+      DeltaFlowDataType& oldModuleDelta = deltaFlow[current.index];
+      oldModuleDelta.module = current.index; // Make sure index is correct if created new
+
+      // Option to move to empty module (if node not already alone)
+      if (m_moduleMembers[current.index] > 1 && !m_emptyModules.empty()) {
+        deltaFlow.add(m_emptyModules.back(), DeltaFlowDataType(m_emptyModules.back(), 0.0, 0.0));
+      }
+
+      // For memory networks
+      m_objective.addMemoryContributions(current, oldModuleDelta, deltaFlow);
+
+      auto& moduleDeltaEnterExit = deltaFlow.values();
+      unsigned int numModuleLinks = deltaFlow.size();
+
+      if (m_infomap->recordedTeleportation) {
+        for (unsigned int j = 0; j < numModuleLinks; ++j) {
+          auto& deltaEnterExit = moduleDeltaEnterExit[j];
+          auto moduleIndex = deltaEnterExit.module;
+          if (moduleIndex == current.index) {
+            auto& oldModuleFlowData = m_moduleFlowData[moduleIndex];
+            double deltaEnterOld = (oldModuleFlowData.teleportFlow - current.data.teleportFlow) * current.data.teleportWeight;
+            double deltaExitOld = current.data.teleportFlow * (oldModuleFlowData.teleportWeight - current.data.teleportWeight);
+            deltaFlow.add(moduleIndex, DeltaFlowDataType(moduleIndex, deltaExitOld, deltaEnterOld));
+          } else {
+            auto& newModuleFlowData = m_moduleFlowData[moduleIndex];
+            double deltaEnterNew = newModuleFlowData.teleportFlow * current.data.teleportWeight;
+            double deltaExitNew = current.data.teleportFlow * newModuleFlowData.teleportWeight;
+            deltaFlow.add(moduleIndex, DeltaFlowDataType(moduleIndex, deltaExitNew, deltaEnterNew));
+          }
+        }
+      }
+
+      DeltaFlowDataType bestDeltaModule(oldModuleDelta);
+      double bestDeltaCodelength = 0.0;
+      DeltaFlowDataType strongestConnectedModule(oldModuleDelta);
+      double deltaCodelengthOnStrongestConnectedModule = 0.0;
+
+      // Find the move that minimizes the description length
+      for (unsigned int j = 0; j < deltaFlow.size(); ++j) {
+        unsigned int otherModule = moduleDeltaEnterExit[j].module;
+        if (otherModule != current.index) {
+          double deltaCodelength = m_objective.getDeltaCodelengthOnMovingNode(current,
+                                                                              oldModuleDelta,
+                                                                              moduleDeltaEnterExit[j],
+                                                                              m_moduleFlowData,
+                                                                              m_moduleMembers);
+
+          if (deltaCodelength < bestDeltaCodelength - m_infomap->minimumSingleNodeCodelengthImprovement) {
+            bestDeltaModule = moduleDeltaEnterExit[j];
+            bestDeltaCodelength = deltaCodelength;
+          }
+
+          // Save strongest connected module to prefer if codelength improvement equal
+          if (moduleDeltaEnterExit[j].deltaExit > strongestConnectedModule.deltaExit) {
+            strongestConnectedModule = moduleDeltaEnterExit[j];
+            deltaCodelengthOnStrongestConnectedModule = deltaCodelength;
+          }
+        }
+      }
+
+      // Prefer strongest connected module if equal delta codelength
+      if (strongestConnectedModule.module != bestDeltaModule.module && deltaCodelengthOnStrongestConnectedModule <= bestDeltaCodelength + m_infomap->minimumSingleNodeCodelengthImprovement) {
+        bestDeltaModule = strongestConnectedModule;
+      }
+
+      // Make best possible move
+      if (bestDeltaModule.module == current.index) {
+        proposals[nodeIndex].clearDirty = true;
+        continue;
+      }
+
+      auto& proposal = proposals[nodeIndex];
+      proposal.valid = true;
+      proposal.nodeIndex = nodeIndex;
+      proposal.oldModule = current.index;
+      proposal.newModule = bestDeltaModule.module;
+      proposal.targetWasEmpty = m_moduleMembers[bestDeltaModule.module] == 0;
+      proposal.deltaCodelength = bestDeltaCodelength;
+      proposal.oldModuleDelta = oldModuleDelta;
+      proposal.newModuleDelta = bestDeltaModule;
+    }
+  }
+
+  std::vector<unsigned int> selectedProposalIndices;
+  selectedProposalIndices.reserve(numNodes);
+  std::vector<char> reservedEmptyModules(numNodes, false);
+  unsigned int numProposals = 0;
+  unsigned int numSkippedChangedModule = 0;
+  unsigned int numSkippedInvalidTarget = 0;
+  unsigned int numSkippedReservedEmpty = 0;
+  unsigned int numSkippedRejectedRecheck = 0;
+
+  for (unsigned int nodeIndex : nodeEnumeration) {
+    auto& proposal = proposals[nodeIndex];
+    if (!proposal.valid)
+      continue;
+    ++numProposals;
+    InfoNode& current = *network[proposal.nodeIndex];
+    if (current.index != proposal.oldModule) {
+      ++numSkippedChangedModule;
+      continue;
+    }
+
+    bool validMove = proposal.targetWasEmpty
+        ? m_moduleMembers[proposal.oldModule] > 1 && m_moduleMembers[proposal.newModule] == 0
+        : m_moduleMembers[proposal.newModule] > 0;
+    if (!validMove) {
+      ++numSkippedInvalidTarget;
+      continue;
+    }
+    if (proposal.targetWasEmpty && reservedEmptyModules[proposal.newModule]) {
+      ++numSkippedReservedEmpty;
+      continue;
+    }
+
+    unsigned int oldModule = proposal.oldModule;
+    unsigned int newModule = proposal.newModule;
+    DeltaFlowDataType oldModuleDelta(oldModule, 0.0, 0.0);
+    DeltaFlowDataType newModuleDelta(newModule, 0.0, 0.0);
+
+    for (auto& e : current.outEdges()) {
+      auto& edge = *e;
+      unsigned int otherModule = edge.target->index;
+      if (otherModule == oldModule) {
+        oldModuleDelta.deltaExit += edge.data.flow;
+      } else if (otherModule == newModule) {
+        newModuleDelta.deltaExit += edge.data.flow;
+      }
+    }
+    for (auto& e : current.inEdges()) {
+      auto& edge = *e;
+      unsigned int otherModule = edge.source->index;
+      if (otherModule == oldModule) {
+        oldModuleDelta.deltaEnter += edge.data.flow;
+      } else if (otherModule == newModule) {
+        newModuleDelta.deltaEnter += edge.data.flow;
+      }
+    }
+
+    if (m_infomap->recordedTeleportation) {
+      auto& oldModuleFlowData = m_moduleFlowData[oldModule];
+      oldModuleDelta.deltaEnter += (oldModuleFlowData.teleportFlow - current.data.teleportFlow) * current.data.teleportWeight;
+      oldModuleDelta.deltaExit += current.data.teleportFlow * (oldModuleFlowData.teleportWeight - current.data.teleportWeight);
+
+      auto& newModuleFlowData = m_moduleFlowData[newModule];
+      newModuleDelta.deltaEnter += newModuleFlowData.teleportFlow * current.data.teleportWeight;
+      newModuleDelta.deltaExit += current.data.teleportFlow * newModuleFlowData.teleportWeight;
+    }
+
+    double deltaCodelength = m_objective.getDeltaCodelengthOnMovingNode(current,
+                                                                        oldModuleDelta,
+                                                                        newModuleDelta,
+                                                                        m_moduleFlowData,
+                                                                        m_moduleMembers);
+    if (deltaCodelength >= -m_infomap->minimumSingleNodeCodelengthImprovement) {
+      ++numSkippedRejectedRecheck;
+      continue;
+    }
+
+    m_objective.updateCodelengthOnMovingNode(current, oldModuleDelta, newModuleDelta, m_moduleFlowData, m_moduleMembers);
+
+    m_moduleMembers[oldModule] -= 1;
+    m_moduleMembers[newModule] += 1;
+    current.index = newModule;
+
+    selectedProposalIndices.push_back(nodeIndex);
+
+    // Keep empty-module moves unique within this sweep. Later proposals that
+    // targeted the same empty module were evaluated against an empty target.
+    if (proposal.targetWasEmpty)
+      reservedEmptyModules[newModule] = true;
+  }
+
+  unsigned int numMoved = selectedProposalIndices.size();
+  Log(3) << "Inner-parallelization proposals: " << numProposals
+         << ", accepted: " << numMoved
+         << ", skipped after changed module: " << numSkippedChangedModule
+         << ", invalid target: " << numSkippedInvalidTarget
+         << ", reserved empty target: " << numSkippedReservedEmpty
+         << ", rejected by recheck: " << numSkippedRejectedRecheck << "\n";
+
+  for (auto& proposal : proposals) {
+    if (proposal.clearDirty)
+      network[proposal.nodeIndex]->dirty = false;
+  }
+
+  for (unsigned int nodeIndex : selectedProposalIndices) {
+    InfoNode& current = *network[nodeIndex];
+    for (auto& e : current.outEdges())
+      e->target->dirty = true;
+    for (auto& e : current.inEdges())
+      e->source->dirty = true;
+  }
+
+  m_emptyModules.clear();
+  for (unsigned int moduleIndex = 0; moduleIndex < m_moduleMembers.size(); ++moduleIndex) {
+    if (m_moduleMembers[moduleIndex] == 0)
+      m_emptyModules.push_back(moduleIndex);
+  }
+
+  return numMoved;
 }
 
 template <typename Objective>

@@ -245,7 +245,9 @@ class InfomapOptions:
         Find top modules fast. Use 2 to keep all fast levels and 3 to skip the recursive
         part.
     inner_parallelization : bool, optional
-        Parallelize the innermost loop for speed, with a possible accuracy tradeoff.
+        Use batched parallel node moves for coarse optimization; usually beneficial only
+        with a relaxed core-loop-codelength-threshold and low tune-iteration-limit, and
+        may produce a different partition than serial optimization.
     prefer_modular_solution : bool, optional
         Prefer a modular solution even when one module gives a lower codelength.
     num_random_moves : int, optional

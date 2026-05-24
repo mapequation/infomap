@@ -616,7 +616,7 @@
   {
     "long": "--inner-parallelization",
     "short": "",
-    "description": "Parallelize the innermost loop for speed, with a possible accuracy tradeoff.",
+    "description": "Use batched parallel node moves for coarse optimization; usually beneficial only with a relaxed core-loop-codelength-threshold and low tune-iteration-limit, and may produce a different partition than serial optimization.",
     "group": "Accuracy",
     "required": false,
     "advanced": true,

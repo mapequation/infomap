@@ -4,6 +4,9 @@
 
 #include "TestUtils.h"
 
+#include <cstdio>
+#include <fstream>
+#include <map>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -17,6 +20,7 @@ namespace {
 using infomap::InfomapWrapper;
 
 struct FlowRunResult {
+  std::map<unsigned int, unsigned int> modules;
   std::vector<std::vector<unsigned int>> partition;
   double codelength = 0.0;
   double indexCodelength = 0.0;
@@ -30,13 +34,35 @@ FlowRunResult runDirectedFixture(const std::string& extraFlags)
 
   im.run();
 
+  auto modules = im.getModules();
   infomap::test::checkRunSanity(im);
   return {
-      infomap::test::canonicalPartition(im.getModules()),
+      modules,
+      infomap::test::canonicalPartition(modules),
       im.codelength(),
       im.getIndexCodelength(),
       im.numTopModules(),
   };
+}
+
+void checkInnerParallelPartitionCodelength(const std::string& extraFlags, const std::string& clusterPath)
+{
+  const auto result = runDirectedFixture("--inner-parallelization " + extraFlags);
+  {
+    std::ofstream out(clusterPath.c_str());
+    out << "# node_id module\n";
+    for (const auto& module : result.modules) {
+      out << module.first << " " << module.second << "\n";
+    }
+  }
+
+  InfomapWrapper check(infomap::test::defaultFlags("--directed --no-infomap --cluster-data " + clusterPath + " " + extraFlags));
+  infomap::test::readNetworkFixture(check, "teleport_directed.net");
+  check.run();
+  std::remove(clusterPath.c_str());
+
+  CHECK(check.codelength() == doctest::Approx(result.codelength));
+  CHECK(check.getIndexCodelength() == doctest::Approx(result.indexCodelength));
 }
 
 TEST_CASE("Recorded teleportation stays stable across trial counts for the directed fixture [fast][core][flow]")
@@ -96,6 +122,41 @@ TEST_CASE("Inner parallelization remains runnable and numerically sane on the di
   CHECK(result.codelength >= result.indexCodelength);
 }
 
+TEST_CASE("Inner parallelization codelength matches its emitted partition [fast][core][flow][openmp]")
+{
+#ifdef _OPENMP
+  omp_set_num_threads(8);
+  CHECK(omp_get_max_threads() > 1);
+#endif
+
+  checkInnerParallelPartitionCodelength("", "inner_parallel_partition_check.clu");
+}
+
+TEST_CASE("Inner parallelization codelength matches recorded-teleportation partition [fast][core][flow][openmp]")
+{
+#ifdef _OPENMP
+  omp_set_num_threads(8);
+  CHECK(omp_get_max_threads() > 1);
+#endif
+
+  checkInnerParallelPartitionCodelength("--recorded-teleportation", "inner_parallel_recorded_partition_check.clu");
+}
+
+TEST_CASE("Inner parallelization is deterministic for a fixed seed and thread count [fast][core][flow][openmp]")
+{
+#ifdef _OPENMP
+  omp_set_num_threads(8);
+  CHECK(omp_get_max_threads() > 1);
+#endif
+
+  const auto first = runDirectedFixture("--inner-parallelization");
+  const auto second = runDirectedFixture("--inner-parallelization");
+
+  CHECK(first.partition == second.partition);
+  CHECK(first.codelength == doctest::Approx(second.codelength));
+  CHECK(first.indexCodelength == doctest::Approx(second.indexCodelength));
+}
+
 TEST_CASE("Inner parallelization with meta data falls back to stable serial optimization [fast][core][flow][openmp]")
 {
 #ifdef _OPENMP
@@ -117,6 +178,23 @@ TEST_CASE("Inner parallelization with meta data falls back to stable serial opti
     CHECK_FALSE(leaf->metaData.empty());
     CHECK(leaf->metaData[0] != -1);
   }
+}
+
+TEST_CASE("Inner parallelization with memory input falls back to stable serial optimization [fast][core][flow][openmp]")
+{
+#ifdef _OPENMP
+  omp_set_num_threads(8);
+  CHECK(omp_get_max_threads() > 1);
+#endif
+
+  InfomapWrapper im(infomap::test::defaultFlags("--inner-parallelization"));
+  infomap::test::readNetworkFixture(im, "states.net");
+
+  im.run();
+
+  infomap::test::checkRunSanity(im);
+  CHECK(im.codelength() > 0.0);
+  CHECK(im.codelength() >= im.getIndexCodelength());
 }
 
 TEST_CASE("Precomputed flow rejects first-order input without vertex flows [fast][core][flow][parser]")

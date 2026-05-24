@@ -230,7 +230,7 @@ OPTION_DEFAULTS <- list(
 #'   \item{`core_loop_codelength_threshold`}{Require at least this codelength improvement to accept a new solution in a core loop.}
 #'   \item{`tune_iteration_relative_threshold`}{Require each tune iteration to improve codelength by this fraction of the initial two-level codelength.}
 #'   \item{`fast_hierarchical_solution`}{Find top modules quickly. Use -FF to keep all fast levels. Use -FFF to skip recursive refinement.}
-#'   \item{`inner_parallelization`}{Parallelize the innermost loop for speed, with a possible accuracy tradeoff.}
+#'   \item{`inner_parallelization`}{Use batched parallel node moves for coarse optimization; usually beneficial only with a relaxed core-loop-codelength-threshold and low tune-iteration-limit, and may produce a different partition than serial optimization.}
 #'   \item{`prefer_modular_solution`}{Prefer a modular solution even when one module gives a lower codelength.}
 #'   \item{`num_random_moves`}{Try this many random moves in each core loop to merge weakly connected nodes.}
 #'   \item{`max_degree_for_random_moves`}{Try random moves only for nodes with degree at most this value.}
