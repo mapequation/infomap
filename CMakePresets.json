@@ -39,6 +39,15 @@
         "INFOMAP_USE_OPENMP": "ON",
         "INFOMAP_NATIVE_ARCH": "ON"
       }
+    },
+    {
+      "name": "release-simd",
+      "displayName": "C++ release with inlined SIMD log2 polynomial",
+      "inherits": "release-native",
+      "binaryDir": "${sourceDir}/build/cmake-release-simd",
+      "cacheVariables": {
+        "INFOMAP_SIMD_LOG": "ON"
+      }
     }
   ],
   "buildPresets": [
@@ -63,6 +72,14 @@
         "infomap_cli",
         "infomap_native_benchmark"
       ]
+    },
+    {
+      "name": "release-simd",
+      "configurePreset": "release-simd",
+      "targets": [
+        "infomap_cli",
+        "infomap_native_benchmark"
+      ]
     }
   ],
   "testPresets": [
@@ -83,6 +100,13 @@
     {
       "name": "release-native",
       "configurePreset": "release-native",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "release-simd",
+      "configurePreset": "release-simd",
       "output": {
         "outputOnFailure": true
       }
