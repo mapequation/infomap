@@ -128,6 +128,8 @@ inline double InfomapOptimizer<Objective>::getMetaCodelength(bool /*unweighted*/
 template <>
 inline bool InfomapOptimizer<MetaMapEquation>::shouldUseInnerParallelization() const
 {
+  // MetaMapEquation's delta evaluation mutates shared metadata state while
+  // testing moves, so the lock-free inner parallel loop is not thread-safe.
   return false;
 }
 

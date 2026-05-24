@@ -8,6 +8,10 @@
 #include <string>
 #include <vector>
 
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
 namespace {
 
 using infomap::InfomapWrapper;
@@ -94,6 +98,11 @@ TEST_CASE("Inner parallelization remains runnable and numerically sane on the di
 
 TEST_CASE("Inner parallelization with meta data falls back to stable serial optimization [fast][core][flow][openmp]")
 {
+#ifdef _OPENMP
+  omp_set_num_threads(8);
+  CHECK(omp_get_max_threads() > 1);
+#endif
+
   InfomapWrapper im(infomap::test::defaultFlags(
       "--inner-parallelization --meta-data " + infomap::test::fixturePath("meta/states.meta") + " --meta-data-rate 2"));
   infomap::test::readNetworkFixture(im, "states.net");
@@ -106,6 +115,7 @@ TEST_CASE("Inner parallelization with meta data falls back to stable serial opti
   CHECK(im.getMetaCodelength() >= 0.0);
   for (auto* leaf : im.leafNodes()) {
     CHECK_FALSE(leaf->metaData.empty());
+    CHECK(leaf->metaData[0] != -1);
   }
 }
 
