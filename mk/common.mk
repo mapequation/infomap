@@ -87,10 +87,13 @@ CXX_COMPILE := $(if $(and $(filter 1,$(USE_CCACHE)),$(CCACHE_BIN)),$(CCACHE_BIN)
 # LTO + GCC: plain `ar` strips the LTO bitcode from .o files, leaving an empty
 # static archive. Prefer gcc-ar (which loads the LTO plugin) when both are in
 # play. clang's ar handles LTO bitcode natively, so no override is needed there.
-# A user-set AR (env or command line) is respected.
+# A user-set AR (env, command line, or `override` directive) is respected;
+# Make's built-in default (origin == "default") is overridden.
 ifeq ($(NATIVE_ARCH),1)
 ifeq ($(BUILD_CONFIG_COMPILER_FAMILY),gnu)
-ifeq ($(origin AR),file)
+# $(origin AR) can be a two-word string ("command line", "environment override").
+# Take the first word so the filter catches both single- and two-word origins.
+ifeq ($(filter command environment override,$(firstword $(origin AR))),)
 GCC_AR_BIN := $(shell command -v gcc-ar 2>/dev/null)
 ifneq ($(GCC_AR_BIN),)
 AR := $(GCC_AR_BIN)
