@@ -214,7 +214,8 @@ INFOMAP_HOT double MapEquation<FlowDataType, DeltaFlowDataType>::getDeltaCodelen
   double curExit = current.data.exitFlow;
   double curFlow = current.data.flow;
 
-  double args[13] = {
+  constexpr int kPlogpBatchN = 13;
+  double args[kPlogpBatchN] = {
     enterFlow + deltaEnterExitOldModule - deltaEnterExitNewModule,
     oldEnter,
     newEnter,
@@ -229,8 +230,8 @@ INFOMAP_HOT double MapEquation<FlowDataType, DeltaFlowDataType>::getDeltaCodelen
     oldExitPlusFlow - curExit - curFlow + deltaEnterExitOldModule,
     newExitPlusFlow + curExit + curFlow - deltaEnterExitNewModule,
   };
-  double pl[13];
-  plogp_batch(args, pl, 13);
+  double pl[kPlogpBatchN];
+  plogp_batch(args, pl, kPlogpBatchN);
 
   double delta_enter = pl[0] - enterFlow_log_enterFlow;
   double delta_enter_log_enter = -pl[1] - pl[2] + pl[3] + pl[4];

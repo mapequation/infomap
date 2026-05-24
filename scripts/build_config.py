@@ -144,8 +144,15 @@ def _native_arch_link_flags(compiler_family):
     return []
 
 
-def _simd_log_compile_flags():
-    return ["-DINFOMAP_USE_SIMD_LOG=1"]
+def _simd_log_compile_flags(compiler_family):
+    # The SIMD log paths key off __ARM_NEON or __AVX2__/__FMA__ macros that are
+    # only set by clang/gnu (typically via -march=native). MSVC builds wouldn't
+    # activate the SIMD code even if the define were present, and MSVC uses /D
+    # instead of -D for preprocessor flags. Skip the define entirely on other
+    # toolchains to avoid passing an invalid flag.
+    if compiler_family in {"clang", "gnu"}:
+        return ["-DINFOMAP_USE_SIMD_LOG=1"]
+    return []
 
 
 def resolve_build_config(
@@ -176,7 +183,7 @@ def resolve_build_config(
     native_link_flags = (
         _native_arch_link_flags(compiler_family) if native_arch and mode == "release" else []
     )
-    simd_log_compile_flags = _simd_log_compile_flags() if simd_log else []
+    simd_log_compile_flags = _simd_log_compile_flags(compiler_family) if simd_log else []
 
     platform_compile_flags = []
     platform_link_flags = []
@@ -227,7 +234,9 @@ def resolve_build_config(
         # (clang/gnu). For MSVC or unknown toolchains the request is silently
         # ignored, and the reported field stays false to match reality.
         "native_arch": bool(native_compile_flags),
-        "simd_log": bool(simd_log),
+        # Same logic as native_arch: only report effective when flags were
+        # actually emitted (clang/gnu).
+        "simd_log": bool(simd_log_compile_flags),
         "platform": platform_name,
         "compiler": compiler,
         "compiler_family": compiler_family,
