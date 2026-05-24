@@ -92,6 +92,23 @@ TEST_CASE("Inner parallelization remains runnable and numerically sane on the di
   CHECK(result.codelength >= result.indexCodelength);
 }
 
+TEST_CASE("Inner parallelization with meta data falls back to stable serial optimization [fast][core][flow][openmp]")
+{
+  InfomapWrapper im(infomap::test::defaultFlags(
+      "--inner-parallelization --meta-data " + infomap::test::fixturePath("meta/states.meta") + " --meta-data-rate 2"));
+  infomap::test::readNetworkFixture(im, "states.net");
+
+  im.run();
+
+  infomap::test::checkRunSanity(im);
+  CHECK(im.codelength() > 0.0);
+  CHECK(im.codelength() >= im.getIndexCodelength());
+  CHECK(im.getMetaCodelength() >= 0.0);
+  for (auto* leaf : im.leafNodes()) {
+    CHECK_FALSE(leaf->metaData.empty());
+  }
+}
+
 TEST_CASE("Precomputed flow rejects first-order input without vertex flows [fast][core][flow][parser]")
 {
   InfomapWrapper im(infomap::test::defaultFlags("--flow-model precomputed"));

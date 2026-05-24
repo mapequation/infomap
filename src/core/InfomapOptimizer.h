@@ -81,6 +81,8 @@ protected:
 
   unsigned int optimizeActiveNetwork() override;
 
+  bool shouldUseInnerParallelization() const;
+
   unsigned int tryMoveEachNodeIntoBestModule() override;
 
   unsigned int tryMoveEachNodeIntoBestModuleInParallel() override;
@@ -121,6 +123,18 @@ template <typename Objective>
 inline double InfomapOptimizer<Objective>::getMetaCodelength(bool /*unweighted*/) const
 {
   return 0.0;
+}
+
+template <>
+inline bool InfomapOptimizer<MetaMapEquation>::shouldUseInnerParallelization() const
+{
+  return false;
+}
+
+template <typename Objective>
+inline bool InfomapOptimizer<Objective>::shouldUseInnerParallelization() const
+{
+  return m_infomap->innerParallelization;
 }
 
 // ===================================================
@@ -274,7 +288,7 @@ INFOMAP_HOT inline unsigned int InfomapOptimizer<Objective>::optimizeActiveNetwo
 
   do {
     ++coreLoopCount;
-    unsigned int numNodesMoved = m_infomap->innerParallelization
+    unsigned int numNodesMoved = shouldUseInnerParallelization()
         ? tryMoveEachNodeIntoBestModuleInParallel()
         : tryMoveEachNodeIntoBestModule();
     // Break if not enough improvement
