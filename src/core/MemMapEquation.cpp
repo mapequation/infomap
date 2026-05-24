@@ -317,11 +317,11 @@ void MemMapEquation::addMemoryContributions(InfoNode& current,
   m_memoryContributionsAdded = true;
 }
 
-double MemMapEquation::getDeltaCodelengthOnMovingNode(InfoNode& current,
-                                                      MemDeltaFlow& oldModuleDelta,
-                                                      MemDeltaFlow& newModuleDelta,
-                                                      std::vector<FlowData>& moduleFlowData,
-                                                      std::vector<unsigned int>& moduleMembers)
+INFOMAP_HOT double MemMapEquation::getDeltaCodelengthOnMovingNode(InfoNode& current,
+                                                                  MemDeltaFlow& oldModuleDelta,
+                                                                  MemDeltaFlow& newModuleDelta,
+                                                                  std::vector<FlowData>& moduleFlowData,
+                                                                  std::vector<unsigned int>& moduleMembers)
 {
   double deltaL = Base::getDeltaCodelengthOnMovingNode(current, oldModuleDelta, newModuleDelta, moduleFlowData, moduleMembers);
 

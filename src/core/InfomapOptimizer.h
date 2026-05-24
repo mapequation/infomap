@@ -259,7 +259,7 @@ bool InfomapOptimizer<Objective>::moveNodeToPredefinedModule(InfoNode& current, 
 }
 
 template <typename Objective>
-inline unsigned int InfomapOptimizer<Objective>::optimizeActiveNetwork()
+INFOMAP_HOT inline unsigned int InfomapOptimizer<Objective>::optimizeActiveNetwork()
 {
   unsigned int coreLoopCount = 0;
   unsigned int numEffectiveLoops = 0;
@@ -288,7 +288,7 @@ inline unsigned int InfomapOptimizer<Objective>::optimizeActiveNetwork()
 }
 
 template <typename Objective>
-unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
+INFOMAP_HOT unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
 {
   // Get random enumeration of nodes
   auto& network = m_infomap->activeNetwork();
@@ -478,7 +478,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
  * @return The number of nodes moved.
  */
 template <typename Objective>
-unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParallel()
+INFOMAP_HOT unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParallel()
 {
   // Get random enumeration of nodes
   auto& network = m_infomap->activeNetwork();
