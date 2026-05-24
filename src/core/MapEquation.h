@@ -196,30 +196,46 @@ protected:
 template <typename FlowDataType, typename DeltaFlowDataType>
 INFOMAP_HOT double MapEquation<FlowDataType, DeltaFlowDataType>::getDeltaCodelengthOnMovingNode(InfoNode& current, DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta, std::vector<FlowDataType>& moduleFlowData, std::vector<unsigned int>&)
 {
-  using infomath::plogp;
+  using infomath::plogp_batch;
   unsigned int oldModule = oldModuleDelta.module;
   unsigned int newModule = newModuleDelta.module;
   double deltaEnterExitOldModule = oldModuleDelta.deltaEnter + oldModuleDelta.deltaExit;
   double deltaEnterExitNewModule = newModuleDelta.deltaEnter + newModuleDelta.deltaExit;
 
-  double delta_enter = plogp(enterFlow + deltaEnterExitOldModule - deltaEnterExitNewModule) - enterFlow_log_enterFlow;
+  FlowDataType& oldMfd = moduleFlowData[oldModule];
+  FlowDataType& newMfd = moduleFlowData[newModule];
+  double oldEnter = oldMfd.enterFlow;
+  double newEnter = newMfd.enterFlow;
+  double oldExit = oldMfd.exitFlow;
+  double newExit = newMfd.exitFlow;
+  double oldExitPlusFlow = oldMfd.exitFlow + oldMfd.flow;
+  double newExitPlusFlow = newMfd.exitFlow + newMfd.flow;
+  double curEnter = current.data.enterFlow;
+  double curExit = current.data.exitFlow;
+  double curFlow = current.data.flow;
 
-  double delta_enter_log_enter = -plogp(moduleFlowData[oldModule].enterFlow)
-      - plogp(moduleFlowData[newModule].enterFlow)
-      + plogp(moduleFlowData[oldModule].enterFlow - current.data.enterFlow + deltaEnterExitOldModule)
-      + plogp(moduleFlowData[newModule].enterFlow + current.data.enterFlow - deltaEnterExitNewModule);
+  double args[13] = {
+    enterFlow + deltaEnterExitOldModule - deltaEnterExitNewModule,
+    oldEnter,
+    newEnter,
+    oldEnter - curEnter + deltaEnterExitOldModule,
+    newEnter + curEnter - deltaEnterExitNewModule,
+    oldExit,
+    newExit,
+    oldExit - curExit + deltaEnterExitOldModule,
+    newExit + curExit - deltaEnterExitNewModule,
+    oldExitPlusFlow,
+    newExitPlusFlow,
+    oldExitPlusFlow - curExit - curFlow + deltaEnterExitOldModule,
+    newExitPlusFlow + curExit + curFlow - deltaEnterExitNewModule,
+  };
+  double pl[13];
+  plogp_batch(args, pl, 13);
 
-  double delta_exit_log_exit = -plogp(moduleFlowData[oldModule].exitFlow)
-      - plogp(moduleFlowData[newModule].exitFlow)
-      + plogp(moduleFlowData[oldModule].exitFlow - current.data.exitFlow + deltaEnterExitOldModule)
-      + plogp(moduleFlowData[newModule].exitFlow + current.data.exitFlow - deltaEnterExitNewModule);
-
-  double delta_flow_log_flow = -plogp(moduleFlowData[oldModule].exitFlow + moduleFlowData[oldModule].flow)
-      - plogp(moduleFlowData[newModule].exitFlow + moduleFlowData[newModule].flow)
-      + plogp(moduleFlowData[oldModule].exitFlow + moduleFlowData[oldModule].flow
-              - current.data.exitFlow - current.data.flow + deltaEnterExitOldModule)
-      + plogp(moduleFlowData[newModule].exitFlow + moduleFlowData[newModule].flow
-              + current.data.exitFlow + current.data.flow - deltaEnterExitNewModule);
+  double delta_enter = pl[0] - enterFlow_log_enterFlow;
+  double delta_enter_log_enter = -pl[1] - pl[2] + pl[3] + pl[4];
+  double delta_exit_log_exit = -pl[5] - pl[6] + pl[7] + pl[8];
+  double delta_flow_log_flow = -pl[9] - pl[10] + pl[11] + pl[12];
 
   double deltaL = delta_enter - delta_enter_log_enter - delta_exit_log_exit + delta_flow_log_flow;
   return deltaL;

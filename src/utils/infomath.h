@@ -35,6 +35,16 @@ namespace infomath {
     return INFOMAP_LIKELY(p > 0.0) ? p * log2(p) : 0.0;
   }
 
+  // Batched p * log2(p) for n independent inputs. Bit-exact with calling plogp()
+  // in a loop. Inputs and outputs must not alias. The signature exists so that
+  // accelerated backends (vector log2) can plug in via the same call site.
+  INFOMAP_HOT inline void plogp_batch(const double* in, double* out, int n)
+  {
+    for (int i = 0; i < n; ++i) {
+      out[i] = INFOMAP_LIKELY(in[i] > 0.0) ? in[i] * log2(in[i]) : 0.0;
+    }
+  }
+
   inline double isEqual(double a, double b, double tol = 1e-8)
   {
     return std::abs(a - b) <= tol;
