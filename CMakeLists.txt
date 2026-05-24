@@ -3,6 +3,7 @@ project(infomap LANGUAGES CXX)
 
 option(INFOMAP_USE_OPENMP "Enable OpenMP support when available." ON)
 option(INFOMAP_ENABLE_SANITIZERS "Enable address and undefined behavior sanitizers." OFF)
+option(INFOMAP_NATIVE_ARCH "Enable -march=native, LTO, and loop unrolling for the host CPU. Produces non-portable binaries; opt-in for local builds only." OFF)
 set(INFOMAP_MODE "release" CACHE STRING "Build mode shared with the Make-based native build policy.")
 set_property(CACHE INFOMAP_MODE PROPERTY STRINGS release debug)
 set(INFOMAP_EXTRA_CPPFLAGS "" CACHE STRING "Extra preprocessor/compiler flags appended to the shared build policy.")
@@ -25,6 +26,12 @@ else()
     set(INFOMAP_OPENMP_ARG 0)
 endif()
 
+if(INFOMAP_NATIVE_ARCH)
+    set(INFOMAP_NATIVE_ARCH_ARG 1)
+else()
+    set(INFOMAP_NATIVE_ARCH_ARG 0)
+endif()
+
 execute_process(
     COMMAND
         "${CMAKE_COMMAND}" -E env
@@ -35,6 +42,7 @@ execute_process(
         "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/scripts/build_config.py" json
         --mode "${INFOMAP_MODE}"
         --openmp "${INFOMAP_OPENMP_ARG}"
+        --native-arch "${INFOMAP_NATIVE_ARCH_ARG}"
         --compiler "${CMAKE_CXX_COMPILER}"
         --platform "${CMAKE_SYSTEM_NAME}"
     OUTPUT_VARIABLE INFOMAP_BUILD_CONFIG_JSON

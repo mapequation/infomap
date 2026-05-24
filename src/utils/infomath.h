@@ -13,14 +13,26 @@
 #include <cmath>
 #include <cstdlib>
 
+#if defined(__GNUC__) || defined(__clang__)
+  #define INFOMAP_HOT __attribute__((hot))
+  #define INFOMAP_ALWAYS_INLINE __attribute__((always_inline))
+  #define INFOMAP_LIKELY(x) __builtin_expect(!!(x), 1)
+  #define INFOMAP_UNLIKELY(x) __builtin_expect(!!(x), 0)
+#else
+  #define INFOMAP_HOT
+  #define INFOMAP_ALWAYS_INLINE
+  #define INFOMAP_LIKELY(x) (x)
+  #define INFOMAP_UNLIKELY(x) (x)
+#endif
+
 namespace infomap {
 namespace infomath {
 
   using std::log2;
 
-  inline double plogp(double p)
+  INFOMAP_HOT INFOMAP_ALWAYS_INLINE inline double plogp(double p)
   {
-    return p > 0.0 ? p * log2(p) : 0.0;
+    return INFOMAP_LIKELY(p > 0.0) ? p * log2(p) : 0.0;
   }
 
   inline double isEqual(double a, double b, double tol = 1e-8)

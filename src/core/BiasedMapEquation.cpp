@@ -172,11 +172,11 @@ int BiasedMapEquation::getDeltaNumModulesIfMoving(unsigned int oldModule,
   return deltaNumModules;
 }
 
-double BiasedMapEquation::getDeltaCodelengthOnMovingNode(InfoNode& current,
-                                                         DeltaFlow& oldModuleDelta,
-                                                         DeltaFlow& newModuleDelta,
-                                                         std::vector<FlowData>& moduleFlowData,
-                                                         std::vector<unsigned int>& moduleMembers)
+INFOMAP_HOT double BiasedMapEquation::getDeltaCodelengthOnMovingNode(InfoNode& current,
+                                                                     DeltaFlow& oldModuleDelta,
+                                                                     DeltaFlow& newModuleDelta,
+                                                                     std::vector<FlowData>& moduleFlowData,
+                                                                     std::vector<unsigned int>& moduleMembers)
 {
   double deltaL = Base::getDeltaCodelengthOnMovingNode(current, oldModuleDelta, newModuleDelta, moduleFlowData, moduleMembers);
 

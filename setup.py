@@ -76,6 +76,7 @@ shared_build = resolve_build_config(
     ldflags=os.environ.get("LDFLAGS", ""),
     deployment_target=os.environ.get("MACOSX_DEPLOYMENT_TARGET", ""),
     platform_name=sys.platform,
+    native_arch=norm_openmp(os.environ.get("NATIVE_ARCH", "0")),
 )
 
 compiler_args = list(shared_build["compile_flags"])

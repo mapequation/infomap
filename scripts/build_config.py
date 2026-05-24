@@ -132,6 +132,18 @@ def _mode_compile_flags(mode, compiler_family):
     return ["-O3"]
 
 
+def _native_arch_compile_flags(compiler_family):
+    if compiler_family in {"clang", "gnu"}:
+        return ["-march=native", "-flto", "-funroll-loops"]
+    return []
+
+
+def _native_arch_link_flags(compiler_family):
+    if compiler_family in {"clang", "gnu"}:
+        return ["-flto"]
+    return []
+
+
 def resolve_build_config(
     *,
     mode="release",
@@ -142,6 +154,7 @@ def resolve_build_config(
     ldflags="",
     deployment_target="",
     platform_name=None,
+    native_arch=False,
 ):
     platform_name = platform_name or sys.platform
     compiler_family = _compiler_family_for_platform(compiler, platform_name)
@@ -152,6 +165,12 @@ def resolve_build_config(
 
     base_compile_flags = _base_compile_flags(compiler_family)
     mode_compile_flags = _mode_compile_flags(mode, compiler_family)
+    native_compile_flags = (
+        _native_arch_compile_flags(compiler_family) if native_arch and mode == "release" else []
+    )
+    native_link_flags = (
+        _native_arch_link_flags(compiler_family) if native_arch and mode == "release" else []
+    )
 
     platform_compile_flags = []
     platform_link_flags = []
@@ -180,16 +199,23 @@ def resolve_build_config(
     compile_flags = _dedupe(
         base_compile_flags
         + mode_compile_flags
+        + native_compile_flags
         + openmp_compile_flags
         + platform_compile_flags
         + _split_flags(cppflags)
         + _split_flags(cxxflags)
     )
-    link_flags = _dedupe(platform_link_flags + openmp_link_flags + _split_flags(ldflags))
+    link_flags = _dedupe(
+        platform_link_flags
+        + native_link_flags
+        + openmp_link_flags
+        + _split_flags(ldflags)
+    )
 
     return {
         "mode": mode,
         "openmp": bool(openmp),
+        "native_arch": bool(native_arch and mode == "release"),
         "platform": platform_name,
         "compiler": compiler,
         "compiler_family": compiler_family,
@@ -216,6 +242,7 @@ def main():
     parser.add_argument("--field", choices=[
         "mode",
         "openmp",
+        "native_arch",
         "platform",
         "compiler",
         "compiler_family",
@@ -227,6 +254,7 @@ def main():
     ])
     parser.add_argument("--mode", default="release", choices=["release", "debug"])
     parser.add_argument("--openmp", default="1")
+    parser.add_argument("--native-arch", default="0")
     parser.add_argument("--compiler", default="c++")
     parser.add_argument("--cppflags", default=os.environ.get("CPPFLAGS", ""))
     parser.add_argument("--cxxflags", default=os.environ.get("CXXFLAGS", ""))
@@ -244,6 +272,7 @@ def main():
         ldflags=args.ldflags,
         deployment_target=args.deployment_target,
         platform_name=args.platform,
+        native_arch=_norm_openmp(args.native_arch),
     )
 
     if args.format == "json":
