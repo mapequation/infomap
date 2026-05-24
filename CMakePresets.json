@@ -26,6 +26,28 @@
       "cacheVariables": {
         "INFOMAP_USE_OPENMP": "ON"
       }
+    },
+    {
+      "name": "release-native",
+      "displayName": "C++ release tuned for host CPU",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/cmake-release-native",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "INFOMAP_MODE": "release",
+        "INFOMAP_USE_OPENMP": "ON",
+        "INFOMAP_NATIVE_ARCH": "ON"
+      }
+    },
+    {
+      "name": "release-simd",
+      "displayName": "C++ release with inlined SIMD log2 polynomial",
+      "inherits": "release-native",
+      "binaryDir": "${sourceDir}/build/cmake-release-simd",
+      "cacheVariables": {
+        "INFOMAP_SIMD_LOG": "ON"
+      }
     }
   ],
   "buildPresets": [
@@ -42,6 +64,22 @@
       "targets": [
         "infomap_cpp_tests"
       ]
+    },
+    {
+      "name": "release-native",
+      "configurePreset": "release-native",
+      "targets": [
+        "infomap_cli",
+        "infomap_native_benchmark"
+      ]
+    },
+    {
+      "name": "release-simd",
+      "configurePreset": "release-simd",
+      "targets": [
+        "infomap_cli",
+        "infomap_native_benchmark"
+      ]
     }
   ],
   "testPresets": [
@@ -55,6 +93,20 @@
     {
       "name": "dev-openmp",
       "configurePreset": "dev-openmp",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "release-native",
+      "configurePreset": "release-native",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "release-simd",
+      "configurePreset": "release-simd",
       "output": {
         "outputOnFailure": true
       }

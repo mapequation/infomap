@@ -10,12 +10,14 @@
 #ifndef PROGRAM_INTERFACE_H_
 #define PROGRAM_INTERFACE_H_
 
+#include "ParsedOption.h"
 #include "../utils/convert.h"
 
 #include <stdexcept>
 #include <utility>
 #include <vector>
 #include <deque>
+#include <functional>
 #include <memory>
 #include <string>
 #include <sstream>
@@ -213,41 +215,6 @@ struct ArgumentOption<bool> : Option {
   bool& target;
 };
 
-struct ParsedOption {
-  explicit ParsedOption(const Option& opt)
-      : shortName(opt.shortName),
-        longName(opt.longName),
-        description(opt.description),
-        group(opt.group),
-        isAdvanced(opt.isAdvanced),
-        requireArgument(opt.requireArgument),
-        incrementalArgument(opt.incrementalArgument),
-        argumentName(opt.argumentName),
-        negated(opt.negated),
-        value(opt.printValue()) {}
-
-  friend std::ostream& operator<<(std::ostream& out, const ParsedOption& option)
-  {
-    if (option.negated)
-      out << "no ";
-    out << option.longName;
-    if (option.requireArgument)
-      out << " = " << option.value;
-    return out;
-  }
-
-  char shortName;
-  std::string longName;
-  std::string description;
-  std::string group;
-  bool isAdvanced;
-  bool requireArgument;
-  bool incrementalArgument;
-  std::string argumentName;
-  bool negated;
-  std::string value;
-};
-
 struct TargetBase {
   TargetBase(std::string variableName_, std::string desc, std::string group_, bool isAdvanced_)
       : variableName(std::move(variableName_)), description(std::move(desc)), group(std::move(group_)), isOptionalVector(false), isAdvanced(isAdvanced_) {}
@@ -394,6 +361,9 @@ public:
 
   void parseArgs(const std::string& args);
 
+  void setJsonParameters(std::string jsonParameters) { m_jsonParameters = std::move(jsonParameters); }
+  void setJsonParametersProvider(std::function<std::string()> jsonParametersProvider) { m_jsonParametersProvider = std::move(jsonParametersProvider); }
+
   std::vector<ParsedOption> getUsedOptionArguments() const;
 
   unsigned int numRequiredArguments() const { return m_nonOptionArguments.size() - m_numOptionalNonOptionArguments; }
@@ -419,6 +389,8 @@ private:
   bool m_displayVersion = false;
   bool m_printJsonParameters = false;
   std::string m_completionShell;
+  std::string m_jsonParameters;
+  std::function<std::string()> m_jsonParametersProvider;
 
   unsigned int m_numOptionalNonOptionArguments = 0;
 };

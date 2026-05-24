@@ -10,9 +10,9 @@
 #ifndef CONFIG_H_
 #define CONFIG_H_
 
+#include "ParsedOption.h"
 #include "../utils/Date.h"
 #include "../version.h"
-#include "ProgramInterface.h"
 
 #include <stdexcept>
 #include <iomanip>
@@ -46,26 +46,12 @@ struct FlowModel {
 };
 
 std::ostream& operator<<(std::ostream& out, FlowModel f);
+const std::vector<std::string>& flowModelNames();
+bool parseFlowModel(const std::string& name, FlowModel& flowModel);
+const char* flowModelToString(const FlowModel& flowModel);
 
-inline const char* flowModelToString(const FlowModel& flowModel)
-{
-  switch (flowModel) {
-  case FlowModel::directed:
-    return "directed";
-  case FlowModel::undirdir:
-    return "undirdir";
-  case FlowModel::outdirdir:
-    return "outdirdir";
-  case FlowModel::rawdir:
-    return "rawdir";
-  case FlowModel::precomputed:
-    return "precomputed";
-  case FlowModel::undirected:
-  default:
-    return "undirected";
-  }
-}
-
+// Mutable runtime state after parameter parsing and default adaptation. Add or
+// change parameter metadata in ParameterCatalog, not by editing this struct alone.
 struct Config {
   // Input
   bool isCLI = false;

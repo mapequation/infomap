@@ -11,6 +11,7 @@
 #include "../utils/FlowCalculator.h"
 #include "../utils/Log.h"
 #include "../io/SafeFile.h"
+#include <deque>
 #include <stdexcept>
 #include <utility>
 

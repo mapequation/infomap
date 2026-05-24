@@ -1,0 +1,9 @@
+# A multilayer network using separate intra/inter sections
+*Intra
+# layer node node weight
+1 1 2 3
+2 1 2 4
+*Inter
+# layer node layer weight
+1 1 2 0.5
+2 2 1 0.6

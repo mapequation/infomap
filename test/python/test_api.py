@@ -96,7 +96,9 @@ def test_add_networkx_graph_supports_numpy_integer_ids(make_infomap):
     assert mapping == {1: numpy.int64(1), 2: numpy.int64(2)}
 
 
-def test_get_dataframe_supports_states_and_depth_level(make_infomap, example_network_path):
+def test_get_dataframe_supports_states_and_depth_level(
+    make_infomap, example_network_path
+):
     pytest.importorskip("pandas")
 
     states_im = make_infomap(num_trials=10)
@@ -160,7 +162,9 @@ def test_to_dataframe_uses_pandas_friendly_defaults(make_infomap, example_networ
     assert set(dataframe["module_id"]) == {1, 2}
 
 
-def test_to_dataframe_supports_index_sort_and_community_alias(make_infomap, example_network_path):
+def test_to_dataframe_supports_index_sort_and_community_alias(
+    make_infomap, example_network_path
+):
     pytest.importorskip("pandas")
 
     im = make_infomap(num_trials=10)
@@ -178,7 +182,9 @@ def test_to_dataframe_supports_index_sort_and_community_alias(make_infomap, exam
     assert list(dataframe["community"]) == sorted(dataframe["community"])
 
 
-def test_to_dataframe_caches_names_for_name_column(monkeypatch, make_infomap, example_network_path):
+def test_to_dataframe_caches_names_for_name_column(
+    monkeypatch, make_infomap, example_network_path
+):
     pytest.importorskip("pandas")
 
     im = make_infomap(num_trials=10)
@@ -200,7 +206,9 @@ def test_to_dataframe_caches_names_for_name_column(monkeypatch, make_infomap, ex
     assert set(dataframe["name"]) == {"A", "B", "C", "D", "E", "F"}
 
 
-def test_to_dataframe_supports_true_sort_and_depth_level_alias(make_infomap, example_network_path):
+def test_to_dataframe_supports_true_sort_and_depth_level_alias(
+    make_infomap, example_network_path
+):
     pytest.importorskip("pandas")
 
     im = make_infomap(num_trials=10)
@@ -244,7 +252,7 @@ def test_get_dataframe_missing_pandas_message(monkeypatch, make_infomap):
 
     with (
         pytest.deprecated_call(match="get_dataframe.*to_dataframe"),
-        pytest.raises(ImportError, match=r'infomap\[pandas\]'),
+        pytest.raises(ImportError, match=r"infomap\[pandas\]"),
     ):
         im.get_dataframe()
 

@@ -78,8 +78,7 @@ public:
                           const std::vector<unsigned int>& targetNodeIds,
                           const std::vector<double>& weights)
   {
-    m_network.addMultilayerLinks(sourceLayerIds, sourceNodeIds, targetLayerIds, targetNodeIds,
-                                 weights);
+    m_network.addMultilayerLinks(sourceLayerIds, sourceNodeIds, targetLayerIds, targetNodeIds, weights);
   }
   void addMultilayerIntraLink(unsigned int layer, unsigned int n1, unsigned int n2, double weight) { m_network.addMultilayerIntraLink(layer, n1, n2, weight); }
   void addMultilayerIntraLinks(const std::vector<unsigned int>& layerIds,

@@ -1,32 +1,4 @@
 {
-  "choices": {
-    "--flow-model": [
-      "undirected",
-      "directed",
-      "undirdir",
-      "outdirdir",
-      "rawdir",
-      "precomputed"
-    ],
-    "--output": [
-      "clu",
-      "tree",
-      "ftree",
-      "newick",
-      "json",
-      "csv",
-      "network",
-      "states",
-      "flow"
-    ]
-  },
-  "names": {
-    "--verbose": {
-      "python": "verbosity_level",
-      "r": "verbosity_level",
-      "ts": "verbose"
-    }
-  },
   "bindingOnly": {
     "python": [
       {

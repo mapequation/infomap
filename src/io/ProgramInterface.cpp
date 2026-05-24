@@ -459,68 +459,18 @@ void ProgramInterface::exitWithCompletion() const
   throw CleanExit {};
 }
 
-std::string toJson(const std::string& key, const std::string& value)
-{
-  return io::Str() << '"' << key << "\": \"" << value << '"';
-}
-
-std::string toJson(const std::string& key, bool value)
-{
-  return io::Str() << '"' << key << "\": " << (value ? "true" : "false");
-}
-
-template <typename Value>
-std::string toJson(const std::string& key, Value value)
-{
-  return io::Str() << '"' << key << "\": " << value;
-}
-
-std::string toJson(const Option& opt)
-{
-  std::ostringstream json;
-  json << "{ "
-       << toJson("long", std::string(io::Str() << "--" << opt.longName)) << ", "
-       << toJson("short", opt.shortName != '\0' ? std::string(io::Str() << "-" << opt.shortName) : "") << ", "
-       << toJson("description", opt.description) << ", "
-       << toJson("group", opt.group) << ", "
-       << toJson("required", opt.requireArgument) << ", "
-       << toJson("advanced", opt.isAdvanced) << ", "
-       << toJson("incremental", opt.incrementalArgument) << ", "
-       << (opt.requireArgument
-               ? (io::Str() << toJson("longType", opt.argumentName) << ", "
-                            << toJson("shortType", std::string(1, ArgType::toShort.at(opt.argumentName))) << ", "
-                            << toJson("default", opt.printValue()))
-               : toJson("default", false));
-  if (!opt.choices.empty()) {
-    json << ", \"choices\": [";
-    for (unsigned int i = 0; i < opt.choices.size(); ++i) {
-      if (i > 0)
-        json << ", ";
-      json << '"' << opt.choices[i] << '"';
-    }
-    json << "]";
-  }
-  json << " }";
-  return json.str();
-}
-
 void ProgramInterface::exitWithJsonParameters() const
 {
-  Log() << "{\n  \"parameters\": [\n";
-
-  for (unsigned int i = 0; i < m_optionArguments.size(); ++i) {
-    auto& opt = *m_optionArguments[i];
-    if (opt.hidden)
-      continue;
-    Log() << "    " << toJson(opt);
-    if (i < m_optionArguments.size() - 1) {
-      Log() << ",\n";
-    } else {
-      Log() << "\n";
-    }
+  auto jsonParameters = m_jsonParameters;
+  if (jsonParameters.empty() && m_jsonParametersProvider) {
+    jsonParameters = m_jsonParametersProvider();
   }
-  Log() << "  ]\n}";
 
+  if (jsonParameters.empty()) {
+    throw std::runtime_error("JSON parameter metadata is not configured for this ProgramInterface.");
+  }
+
+  Log() << jsonParameters;
   throw CleanExit {};
 }
 
@@ -574,8 +524,20 @@ std::vector<ParsedOption> ProgramInterface::getUsedOptionArguments() const
   unsigned int numFlags = m_optionArguments.size();
   for (unsigned int i = 0; i < numFlags; ++i) {
     auto& opt = *m_optionArguments[i];
-    if (opt.used && opt.longName != "negate-next")
-      opts.emplace_back(opt);
+    if (opt.used && opt.longName != "negate-next") {
+      opts.push_back({
+          opt.shortName,
+          opt.longName,
+          opt.description,
+          opt.group,
+          opt.isAdvanced,
+          opt.requireArgument,
+          opt.incrementalArgument,
+          opt.argumentName,
+          opt.negated,
+          opt.printValue(),
+      });
+    }
   }
   return opts;
 }

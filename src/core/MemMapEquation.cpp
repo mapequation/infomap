@@ -15,8 +15,10 @@
 #include <vector>
 #include <set>
 #include <map>
+#include <limits>
 #include <utility>
 #include <algorithm>
+#include <unordered_map>
 
 namespace infomap {
 
@@ -315,11 +317,11 @@ void MemMapEquation::addMemoryContributions(InfoNode& current,
   m_memoryContributionsAdded = true;
 }
 
-double MemMapEquation::getDeltaCodelengthOnMovingNode(InfoNode& current,
-                                                      DeltaFlowDataType& oldModuleDelta,
-                                                      DeltaFlowDataType& newModuleDelta,
-                                                      std::vector<FlowDataType>& moduleFlowData,
-                                                      std::vector<unsigned int>& moduleMembers)
+INFOMAP_HOT double MemMapEquation::getDeltaCodelengthOnMovingNode(InfoNode& current,
+                                                                  DeltaFlowDataType& oldModuleDelta,
+                                                                  DeltaFlowDataType& newModuleDelta,
+                                                                  std::vector<FlowDataType>& moduleFlowData,
+                                                                  std::vector<unsigned int>& moduleMembers)
 {
   double deltaL = Base::getDeltaCodelengthOnMovingNode(current, oldModuleDelta, newModuleDelta, moduleFlowData, moduleMembers);
 

@@ -54,6 +54,7 @@ Output
 \item{\code{print_all_trials}}{Write each trial to separate output files. Has effect only when --num-trials is greater than 1.}
 \item{\code{verbosity_level}}{Increase console verbosity. Add more v flags to increase verbosity up to -vvv.}
 \item{\code{silent}}{Suppress console output.}
+\item{\code{pretty}}{Use modernized console output with color and Unicode on interactive terminals.}
 }
 
 Algorithm
@@ -86,7 +87,7 @@ Accuracy
 \item{\code{seed}}{Set the random number generator seed for reproducible results.}
 \item{\code{num_trials}}{Run this many independent trials and keep the best solution.}
 \item{\code{core_loop_limit}}{Limit how many core loops try to move each node to the best module.}
-\item{\code{core_level_limit}}{Limit how many times core loops are reapplied to the aggregated modular network to find larger structures.}
+\item{\code{core_level_limit}}{Limit how many times core loops are reapplied to the aggregated modular network to find larger structures. 0 means no limit.}
 \item{\code{tune_iteration_limit}}{Limit the main iterations in the two-level partition algorithm. 0 means no limit.}
 \item{\code{core_loop_codelength_threshold}}{Require at least this codelength improvement to accept a new solution in a core loop.}
 \item{\code{tune_iteration_relative_threshold}}{Require each tune iteration to improve codelength by this fraction of the initial two-level codelength.}

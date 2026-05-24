@@ -1,6 +1,7 @@
 #include "vendor/doctest.h"
 
 #include "Infomap.h"
+#include "io/OutputView.h"
 
 #include "TestUtils.h"
 
@@ -15,6 +16,7 @@ using infomap::InfomapWrapper;
 
 using InternalEdge = std::tuple<unsigned int, unsigned int, double, double>;
 using NodeIdentity = std::tuple<unsigned int, unsigned int, std::vector<int>>;
+using OutputRowIdentity = std::tuple<unsigned int, unsigned int, unsigned int>;
 
 std::multiset<InternalEdge> internalEdgesForModule(infomap::InfoNode& module)
 {
@@ -59,6 +61,24 @@ std::vector<std::vector<unsigned int>> canonicalSubInfomapPartition(infomap::Inf
 std::string temporaryOutputPath(const std::string& prefix, const std::string& suffix)
 {
   return prefix + suffix;
+}
+
+void removeFiles(const std::vector<std::string>& paths)
+{
+  for (const auto& path : paths) {
+    std::remove(path.c_str());
+  }
+}
+
+std::vector<OutputRowIdentity> outputViewIdentities(InfomapWrapper& im, bool states)
+{
+  infomap::OutputView view(im, im.network(), states);
+  std::vector<OutputRowIdentity> rows;
+  view.forEachLeaf(1, infomap::OutputLeafPolicy::HideBipartite, [&](const infomap::OutputLeafRow& row) {
+    rows.emplace_back(row.stateId, row.physicalId, row.layerId);
+  });
+  std::sort(rows.begin(), rows.end());
+  return rows;
 }
 
 TEST_CASE("Infomap partitions the unweighted two-triangle fixture into two modules [fast][core][lifecycle]")
@@ -490,6 +510,85 @@ TEST_CASE("writeTree and writeClu render higher-order state output [fast][core][
   std::remove(cluPath.c_str());
 }
 
+TEST_CASE("OutputView projects first-order leaf rows [fast][core][output]")
+{
+  auto im = infomap::test::makeRunningInfomap(
+      [&](InfomapWrapper& infomap) { infomap::test::addEdgeFixtureLinks(infomap, "graphs/twotriangles_unweighted.edges"); });
+
+  infomap::OutputView view(*im, im->network(), false);
+  std::vector<unsigned int> physicalIds;
+  unsigned int nonEmptyPaths = 0;
+  view.forEachLeaf(1, infomap::OutputLeafPolicy::HideBipartite, [&](const infomap::OutputLeafRow& row) {
+    physicalIds.push_back(row.physicalId);
+    CHECK(row.stateId == row.physicalId);
+    CHECK(row.moduleId > 0);
+    if (!row.path.empty()) {
+      ++nonEmptyPaths;
+    }
+  });
+
+  std::sort(physicalIds.begin(), physicalIds.end());
+  CHECK(physicalIds == std::vector<unsigned int> { 1, 2, 3, 4, 5, 6 });
+  CHECK(nonEmptyPaths == physicalIds.size());
+}
+
+TEST_CASE("OutputView separates higher-order physical and state rows [fast][core][output]")
+{
+  auto im = infomap::test::makeRunningInfomap(
+      [&](InfomapWrapper& infomap) { infomap::test::readNetworkFixture(infomap, "states.net"); });
+
+  infomap::OutputView physicalView(*im, im->network(), false);
+  infomap::OutputView stateView(*im, im->network(), true);
+
+  CHECK(physicalView.isHigherOrderPhysicalLevel());
+  CHECK_FALSE(stateView.isHigherOrderPhysicalLevel());
+
+  const auto physicalRows = outputViewIdentities(*im, false);
+  const auto stateRows = outputViewIdentities(*im, true);
+  std::set<unsigned int> physicalIds;
+  for (const auto& row : stateRows) {
+    physicalIds.insert(std::get<1>(row));
+  }
+
+  CHECK(physicalRows.size() <= stateRows.size());
+  CHECK(physicalIds.size() == 5);
+  CHECK(stateRows.size() == 6);
+}
+
+TEST_CASE("OutputView exposes multilayer state layer ids [fast][core][output]")
+{
+  auto im = infomap::test::makeRunningInfomap(
+      [&](InfomapWrapper& infomap) { infomap::test::readNetworkFixture(infomap, "multilayer.net"); });
+
+  infomap::OutputView view(*im, im->network(), true);
+  bool foundLayer = false;
+  view.forEachLeaf(1, infomap::OutputLeafPolicy::HideBipartite, [&](const infomap::OutputLeafRow& row) {
+    CHECK(row.physicalId != 0);
+    if (row.layerId != 0) {
+      foundLayer = true;
+    }
+  });
+
+  CHECK(view.isMultilayer());
+  CHECK(foundLayer);
+}
+
+TEST_CASE("OutputView applies bipartite hide filter centrally [fast][core][output]")
+{
+  auto im = infomap::test::makeRunningInfomap(
+      [&](InfomapWrapper& infomap) { infomap.readInputData(infomap::test::repoPath("examples/networks/bipartite.net")); });
+  im->hideBipartiteNodes = true;
+
+  infomap::OutputView view(*im, im->network(), false);
+  std::vector<unsigned int> physicalIds;
+  view.forEachLeaf(1, infomap::OutputLeafPolicy::HideBipartite, [&](const infomap::OutputLeafRow& row) {
+    physicalIds.push_back(row.physicalId);
+  });
+
+  std::sort(physicalIds.begin(), physicalIds.end());
+  CHECK(physicalIds == std::vector<unsigned int> { 1, 2, 3 });
+}
+
 TEST_CASE("writeFlowTree is stable across repeated calls on the same instance [fast][core][output][regression]")
 {
   auto im = infomap::test::makeRunningInfomap(
@@ -508,6 +607,90 @@ TEST_CASE("writeFlowTree is stable across repeated calls on the same instance [f
 
   std::remove(firstPath.c_str());
   std::remove(secondPath.c_str());
+}
+
+TEST_CASE("writeResult renders selected first-order output artifacts [fast][core][output]")
+{
+  auto im = infomap::test::makeRunningInfomap(
+      [&](InfomapWrapper& infomap) { infomap::test::addEdgeFixtureLinks(infomap, "graphs/twotriangles_unweighted.edges"); });
+
+  im->noFileOutput = false;
+  im->outDirectory = "";
+  im->outName = "output_result_first_order";
+  im->printTree = true;
+  im->printClu = true;
+  im->printJson = true;
+  im->printCsv = true;
+
+  const std::vector<std::string> paths = {
+    "output_result_first_order.tree",
+    "output_result_first_order.clu",
+    "output_result_first_order.json",
+    "output_result_first_order.csv",
+  };
+  removeFiles(paths);
+
+  im->writeResult();
+
+  const auto treeText = infomap::test::readTextFile(paths[0]);
+  const auto cluText = infomap::test::readTextFile(paths[1]);
+  const auto jsonText = infomap::test::readTextFile(paths[2]);
+  const auto csvText = infomap::test::readTextFile(paths[3]);
+
+  CHECK(treeText.find("# path flow name node_id") != std::string::npos);
+  CHECK(cluText.find("# node_id module flow") != std::string::npos);
+  CHECK(jsonText.find("\"nodes\":[") != std::string::npos);
+  CHECK(csvText.find("path,flow,name,node_id") != std::string::npos);
+
+  removeFiles(paths);
+}
+
+TEST_CASE("writeResult renders selected physical and state output artifacts [fast][core][output]")
+{
+  auto im = infomap::test::makeRunningInfomap(
+      [&](InfomapWrapper& infomap) { infomap::test::readNetworkFixture(infomap, "states.net"); });
+
+  im->noFileOutput = false;
+  im->outDirectory = "";
+  im->outName = "output_result_states";
+  im->printTree = true;
+  im->printClu = true;
+  im->printJson = true;
+  im->printCsv = true;
+
+  const std::vector<std::string> paths = {
+    "output_result_states.tree",
+    "output_result_states_states.tree",
+    "output_result_states.clu",
+    "output_result_states_states.clu",
+    "output_result_states.json",
+    "output_result_states_states.json",
+    "output_result_states.csv",
+    "output_result_states_states.csv",
+  };
+  removeFiles(paths);
+
+  im->writeResult();
+
+  const auto physicalTreeText = infomap::test::readTextFile(paths[0]);
+  const auto stateTreeText = infomap::test::readTextFile(paths[1]);
+  const auto physicalCluText = infomap::test::readTextFile(paths[2]);
+  const auto stateCluText = infomap::test::readTextFile(paths[3]);
+  const auto physicalJsonText = infomap::test::readTextFile(paths[4]);
+  const auto stateJsonText = infomap::test::readTextFile(paths[5]);
+  const auto physicalCsvText = infomap::test::readTextFile(paths[6]);
+  const auto stateCsvText = infomap::test::readTextFile(paths[7]);
+
+  CHECK(physicalTreeText.find("# path flow name node_id") != std::string::npos);
+  CHECK(stateTreeText.find("# path flow name state_id node_id") != std::string::npos);
+  CHECK(physicalCluText.find("# node_id module flow") != std::string::npos);
+  CHECK(stateCluText.find("# state_id module flow node_id") != std::string::npos);
+  CHECK(physicalJsonText.find("\"stateLevel\":false") != std::string::npos);
+  CHECK(stateJsonText.find("\"stateLevel\":true") != std::string::npos);
+  CHECK(physicalCsvText.find("path,flow,name,node_id") != std::string::npos);
+  CHECK(stateCsvText.find("path,flow,name,state_id,node_id") != std::string::npos);
+
+  removeFiles(paths);
 }
 
 } // namespace

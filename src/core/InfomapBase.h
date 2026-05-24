@@ -26,6 +26,7 @@
 #include <deque>
 #include <map>
 #include <limits>
+#include <memory>
 #include <string>
 #include <ostream>
 #include <sstream>

@@ -2,10 +2,9 @@ WORKER_FILENAME := infomap.worker.js
 JS_WORKER_TARGET := build/js/$(WORKER_FILENAME)
 PRE_WORKER_MODULE := interfaces/js/pre-worker-module.js
 JS_METADATA_DIR := interfaces/js/generated
-JS_CHANGELOG_JSON := $(JS_METADATA_DIR)/changelog.json
 JS_PARAMETERS_JSON := $(JS_METADATA_DIR)/parameters.json
 JS_OUTPUT_FORMATS_JSON := $(JS_METADATA_DIR)/output-formats.json
-JS_METADATA_FILES := $(JS_CHANGELOG_JSON) $(JS_PARAMETERS_JSON)
+JS_METADATA_FILES := $(JS_PARAMETERS_JSON)
 JS_WORKER_OUTPUT_FORMATS := build/js/output-formats-worker.js
 PRE_WORKER_MODULES := $(JS_WORKER_OUTPUT_FORMATS) $(PRE_WORKER_MODULE)
 NPM_STAGE_DIR := dist/npm/package
@@ -22,13 +21,12 @@ build-js: $(JS_WORKER_TARGET) $(JS_METADATA_FILES)
 	@echo "Built $^ into $(NPM_STAGE_DIR)"
 
 build-js-metadata: build-native
-	@$(PYTHON_FOR_BUILD_CONFIG) scripts/generate_js_metadata.py --infomap-bin ./Infomap --changelog CHANGELOG.md --output-dir $(JS_METADATA_DIR)
+	@$(PYTHON_FOR_BUILD_CONFIG) scripts/generate_js_metadata.py --infomap-bin ./Infomap --output-dir $(JS_METADATA_DIR)
 	@printf "Wrote JS metadata to %s\n" "$(JS_METADATA_DIR)"
 
 test-js-metadata: build-native
 	@tmpdir="$$(mktemp -d)"; \
-	$(PYTHON_FOR_BUILD_CONFIG) scripts/generate_js_metadata.py --infomap-bin ./Infomap --changelog CHANGELOG.md --output-dir "$$tmpdir"; \
-	diff -u "$(JS_CHANGELOG_JSON)" "$$tmpdir/changelog.json"; \
+	$(PYTHON_FOR_BUILD_CONFIG) scripts/generate_js_metadata.py --infomap-bin ./Infomap --output-dir "$$tmpdir"; \
 	diff -u "$(JS_PARAMETERS_JSON)" "$$tmpdir/parameters.json"; \
 	rm -rf "$$tmpdir"
 
@@ -38,7 +36,7 @@ $(JS_WORKER_OUTPUT_FORMATS): $(JS_OUTPUT_FORMATS_JSON) interfaces/js/scripts/wri
 $(JS_WORKER_TARGET): $(SOURCES) $(HEADERS) $(PRE_WORKER_MODULES) $(MK_FILES) Makefile
 	@echo "Compiling Infomap to run in a worker in the browser..."
 	@mkdir -p $(dir $@)
-	$(EMXX) -std=c++14 -O3 -s WASM=0 -s ALLOW_MEMORY_GROWTH=1 -s DISABLE_EXCEPTION_CATCHING=0 -s ENVIRONMENT=worker $(foreach file,$(PRE_WORKER_MODULES),--pre-js $(file)) -o $@ $(SOURCES)
+	$(EMXX) -std=c++14 -O3 -s SINGLE_FILE=1 -s ALLOW_MEMORY_GROWTH=1 -s DISABLE_EXCEPTION_CATCHING=0 -s ENVIRONMENT=worker $(foreach file,$(PRE_WORKER_MODULES),--pre-js $(file)) -o $@ $(SOURCES)
 
 test-js: build-js
 	$(RM) -r $(NPM_UNPACK_DIR) $(NPM_STAGE_DIR)/*.tgz $(NPM_PACK_JSON)

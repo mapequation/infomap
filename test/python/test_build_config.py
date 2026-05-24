@@ -62,7 +62,14 @@ def test_clang_debug_and_release_share_warning_policy():
         openmp=False,
     )
 
-    for flag in ["-Wall", "-Wextra", "-Wshadow", "-pedantic", "-Wnon-virtual-dtor", "-std=c++14"]:
+    for flag in [
+        "-Wall",
+        "-Wextra",
+        "-Wshadow",
+        "-pedantic",
+        "-Wnon-virtual-dtor",
+        "-std=c++14",
+    ]:
         assert flag in debug_config["compile_flags"]
         assert flag in release_config["compile_flags"]
 

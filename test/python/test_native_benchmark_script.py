@@ -15,7 +15,9 @@ def _find_repo_root(start: Path) -> Path:
     for candidate in (start, *start.parents):
         if (candidate / target).exists():
             return candidate
-    raise FileNotFoundError(f"Could not locate repository root containing {target!s} from {start!s}")
+    raise FileNotFoundError(
+        f"Could not locate repository root containing {target!s} from {start!s}"
+    )
 
 
 def _load_benchmark_module():
@@ -61,7 +63,9 @@ def test_benchmark_case_tolerates_missing_rebuild_metrics(monkeypatch, tmp_path:
     }
 
     def fake_run(*args, **kwargs):
-        return benchmark_module.subprocess.CompletedProcess(args[0], 0, stdout=json.dumps(payload), stderr="")
+        return benchmark_module.subprocess.CompletedProcess(
+            args[0], 0, stdout=json.dumps(payload), stderr=""
+        )
 
     monkeypatch.setattr(benchmark_module.subprocess, "run", fake_run)
 
@@ -80,7 +84,9 @@ def test_benchmark_case_tolerates_missing_rebuild_metrics(monkeypatch, tmp_path:
     assert result["rebuild"]["module_size_buckets"] == {}
 
 
-def test_benchmark_case_collects_dynamic_rebuild_bucket_labels(monkeypatch, tmp_path: Path):
+def test_benchmark_case_collects_dynamic_rebuild_bucket_labels(
+    monkeypatch, tmp_path: Path
+):
     benchmark_module = _load_benchmark_module()
     payload = {
         "flags": "--silent --no-file-output --num-trials 1 --seed 123",
@@ -131,7 +137,9 @@ def test_benchmark_case_collects_dynamic_rebuild_bucket_labels(monkeypatch, tmp_
     }
 
     def fake_run(*args, **kwargs):
-        return benchmark_module.subprocess.CompletedProcess(args[0], 0, stdout=json.dumps(payload), stderr="")
+        return benchmark_module.subprocess.CompletedProcess(
+            args[0], 0, stdout=json.dumps(payload), stderr=""
+        )
 
     monkeypatch.setattr(benchmark_module.subprocess, "run", fake_run)
 
@@ -146,7 +154,9 @@ def test_benchmark_case_collects_dynamic_rebuild_bucket_labels(monkeypatch, tmp_
     )
 
     assert result["rebuild"]["mean_total_sec"] == pytest.approx(0.05)
-    assert result["rebuild"]["module_size_buckets"]["33-64"]["mean_sec"] == pytest.approx(0.03)
+    assert result["rebuild"]["module_size_buckets"]["33-64"][
+        "mean_sec"
+    ] == pytest.approx(0.03)
 
 
 def test_benchmark_case_discards_warmup_samples(monkeypatch, tmp_path: Path):
@@ -185,7 +195,9 @@ def test_benchmark_case_discards_warmup_samples(monkeypatch, tmp_path: Path):
     payloads = [payload(99.0), payload(1.0), payload(3.0)]
 
     def fake_run(*args, **kwargs):
-        return benchmark_module.subprocess.CompletedProcess(args[0], 0, stdout=json.dumps(payloads.pop(0)), stderr="")
+        return benchmark_module.subprocess.CompletedProcess(
+            args[0], 0, stdout=json.dumps(payloads.pop(0)), stderr=""
+        )
 
     monkeypatch.setattr(benchmark_module.subprocess, "run", fake_run)
 
@@ -207,7 +219,9 @@ def test_benchmark_case_discards_warmup_samples(monkeypatch, tmp_path: Path):
     assert [sample["repeat"] for sample in result["run_samples"]] == [1, 2]
 
 
-def test_build_benchmark_cases_pr_profile_focuses_on_stable_cases(monkeypatch, tmp_path: Path):
+def test_build_benchmark_cases_pr_profile_focuses_on_stable_cases(
+    monkeypatch, tmp_path: Path
+):
     benchmark_module = _load_benchmark_module()
     repo_root = Path(__file__).resolve().parents[2]
     generated_paths: list[Path] = []
@@ -215,24 +229,43 @@ def test_build_benchmark_cases_pr_profile_focuses_on_stable_cases(monkeypatch, t
     def stub_generate_state_ring(path: Path, physical_nodes: int) -> None:
         generated_paths.append(path)
 
-    def stub_generate_sparse_graph(path: Path, num_nodes: int, avg_degree: int, seed: int) -> None:
+    def stub_generate_sparse_graph(
+        path: Path, num_nodes: int, avg_degree: int, seed: int
+    ) -> None:
         generated_paths.append(path)
 
-    def stub_generate_ring_of_cliques(path: Path, clique_count: int, clique_size: int) -> None:
+    def stub_generate_ring_of_cliques(
+        path: Path, clique_count: int, clique_size: int
+    ) -> None:
         generated_paths.append(path)
 
-    monkeypatch.setattr(benchmark_module, "generate_state_ring", stub_generate_state_ring)
-    monkeypatch.setattr(benchmark_module, "generate_sparse_graph", stub_generate_sparse_graph)
-    monkeypatch.setattr(benchmark_module, "generate_ring_of_cliques", stub_generate_ring_of_cliques)
+    monkeypatch.setattr(
+        benchmark_module, "generate_state_ring", stub_generate_state_ring
+    )
+    monkeypatch.setattr(
+        benchmark_module, "generate_sparse_graph", stub_generate_sparse_graph
+    )
+    monkeypatch.setattr(
+        benchmark_module, "generate_ring_of_cliques", stub_generate_ring_of_cliques
+    )
 
     cases = benchmark_module.build_benchmark_cases("pr", repo_root, tmp_path)
     names = [case["name"] for case in cases]
     paths = [Path(case["path"]) for case in cases]
 
-    assert names == ["states_meta", "state_ring_5k", "sparse_100k", "ring_of_cliques_100k"]
+    assert names == [
+        "states_meta",
+        "state_ring_5k",
+        "sparse_100k",
+        "ring_of_cliques_100k",
+    ]
     assert paths[0] == repo_root / "examples" / "networks" / "states.net"
     assert paths[1:] == generated_paths
-    assert [path.name for path in generated_paths] == ["state_ring_5k.net", "sparse_100k.net", "ring_of_cliques_100k.net"]
+    assert [path.name for path in generated_paths] == [
+        "state_ring_5k.net",
+        "sparse_100k.net",
+        "ring_of_cliques_100k.net",
+    ]
 
 
 def test_build_benchmark_cases_smoke_skips_100k_generation(monkeypatch, tmp_path: Path):
@@ -242,18 +275,24 @@ def test_build_benchmark_cases_smoke_skips_100k_generation(monkeypatch, tmp_path
 
     original_generate_sparse_graph = benchmark_module.generate_sparse_graph
 
-    def recording_generate_sparse_graph(path: Path, num_nodes: int, avg_degree: int, seed: int) -> None:
+    def recording_generate_sparse_graph(
+        path: Path, num_nodes: int, avg_degree: int, seed: int
+    ) -> None:
         calls.append(num_nodes)
         original_generate_sparse_graph(path, num_nodes, avg_degree, seed)
 
-    monkeypatch.setattr(benchmark_module, "generate_sparse_graph", recording_generate_sparse_graph)
+    monkeypatch.setattr(
+        benchmark_module, "generate_sparse_graph", recording_generate_sparse_graph
+    )
 
     benchmark_module.build_benchmark_cases("smoke", repo_root, tmp_path)
 
     assert calls == [10_000]
 
 
-def test_build_benchmark_cases_large_profile_uses_only_large_generated_cases(monkeypatch, tmp_path: Path):
+def test_build_benchmark_cases_large_profile_uses_only_large_generated_cases(
+    monkeypatch, tmp_path: Path
+):
     benchmark_module = _load_benchmark_module()
     repo_root = _find_repo_root(Path(__file__).resolve())
     calls: list[tuple[str, Path, tuple[object, ...]]] = []
@@ -261,7 +300,9 @@ def test_build_benchmark_cases_large_profile_uses_only_large_generated_cases(mon
     def stub_generate_if_missing(path: Path, generator, *args: object) -> None:
         calls.append((generator.__name__, path, args))
 
-    monkeypatch.setattr(benchmark_module, "generate_if_missing", stub_generate_if_missing)
+    monkeypatch.setattr(
+        benchmark_module, "generate_if_missing", stub_generate_if_missing
+    )
 
     cases = benchmark_module.build_benchmark_cases("large", repo_root, tmp_path)
 
@@ -281,8 +322,16 @@ def test_build_benchmark_cases_large_profile_uses_only_large_generated_cases(mon
         ("generate_block_sparse_graph", "block_sparse_1m.net", (1_000_000, 100, 8, 2)),
         ("generate_state_ring", "state_ring_500k.net", (500_000,)),
         ("generate_state_block_network", "state_block_1m_states.net", (250_000, 4, 50)),
-        ("generate_multilayer_block_network", "multilayer_100k_x10.net", (100_000, 10, 50)),
-        ("generate_multilayer_block_network", "multilayer_250k_x8.net", (250_000, 8, 50)),
+        (
+            "generate_multilayer_block_network",
+            "multilayer_100k_x10.net",
+            (100_000, 10, 50),
+        ),
+        (
+            "generate_multilayer_block_network",
+            "multilayer_250k_x8.net",
+            (250_000, 8, 50),
+        ),
     ]
 
 

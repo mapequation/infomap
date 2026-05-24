@@ -37,9 +37,13 @@ NINJA ?= $(shell command -v ninja 2>/dev/null || command -v /opt/homebrew/bin/ni
 
 MODE ?= release
 OPENMP ?= 1
+NATIVE_ARCH ?= 0
+SIMD_LOG ?= 0
 
 VALID_MODES := release debug
 VALID_OPENMP := 0 1
+VALID_NATIVE_ARCH := 0 1
+VALID_SIMD_LOG := 0 1
 
 ifeq ($(filter $(MODE),$(VALID_MODES)),)
 $(error MODE must be one of: $(VALID_MODES))
@@ -47,6 +51,14 @@ endif
 
 ifeq ($(filter $(OPENMP),$(VALID_OPENMP)),)
 $(error OPENMP must be one of: $(VALID_OPENMP))
+endif
+
+ifeq ($(filter $(NATIVE_ARCH),$(VALID_NATIVE_ARCH)),)
+$(error NATIVE_ARCH must be one of: $(VALID_NATIVE_ARCH))
+endif
+
+ifeq ($(filter $(SIMD_LOG),$(VALID_SIMD_LOG)),)
+$(error SIMD_LOG must be one of: $(VALID_SIMD_LOG))
 endif
 
 HEADERS := $(shell find src -name "*.h")
@@ -57,7 +69,7 @@ BINDING_OPTIONS_SCRIPT := scripts/generate_binding_options.py
 BUILD_CONFIG_SCRIPT := scripts/build_config.py
 
 define build_config_field
-$(strip $(shell CPPFLAGS='$(CPPFLAGS)' CXXFLAGS='$(CXXFLAGS)' LDFLAGS='$(LDFLAGS)' MACOSX_DEPLOYMENT_TARGET='$(MACOSX_DEPLOYMENT_TARGET)' $(PYTHON_FOR_BUILD_CONFIG) $(BUILD_CONFIG_SCRIPT) field --field "$(1)" --mode "$(MODE)" --openmp "$(OPENMP)" --compiler "$(CXX)" --platform "$(UNAME_S)"))
+$(strip $(shell CPPFLAGS='$(CPPFLAGS)' CXXFLAGS='$(CXXFLAGS)' LDFLAGS='$(LDFLAGS)' MACOSX_DEPLOYMENT_TARGET='$(MACOSX_DEPLOYMENT_TARGET)' $(PYTHON_FOR_BUILD_CONFIG) $(BUILD_CONFIG_SCRIPT) field --field "$(1)" --mode "$(MODE)" --openmp "$(OPENMP)" --native-arch "$(NATIVE_ARCH)" --simd-log "$(SIMD_LOG)" --compiler "$(CXX)" --platform "$(UNAME_S)"))
 endef
 
 BUILD_CONFIG_MODE := $(call build_config_field,mode)
@@ -71,6 +83,24 @@ BUILD_CONFIG_DEPLOYMENT_TARGET := $(call build_config_field,deployment_target)
 NATIVE_CXXFLAGS := $(call build_config_field,compile_flags)
 NATIVE_LDFLAGS := $(call build_config_field,link_flags)
 CXX_COMPILE := $(if $(and $(filter 1,$(USE_CCACHE)),$(CCACHE_BIN)),$(CCACHE_BIN) ,)$(CXX)
+
+# LTO + GCC: plain `ar` strips the LTO bitcode from .o files, leaving an empty
+# static archive. Prefer gcc-ar (which loads the LTO plugin) when both are in
+# play. clang's ar handles LTO bitcode natively, so no override is needed there.
+# A user-set AR (env, command line, or `override` directive) is respected;
+# Make's built-in default (origin == "default") is overridden.
+ifeq ($(NATIVE_ARCH),1)
+ifeq ($(BUILD_CONFIG_COMPILER_FAMILY),gnu)
+# $(origin AR) can be a two-word string ("command line", "environment override").
+# Take the first word so the filter catches both single- and two-word origins.
+ifeq ($(filter command environment override,$(firstword $(origin AR))),)
+GCC_AR_BIN := $(shell command -v gcc-ar 2>/dev/null)
+ifneq ($(GCC_AR_BIN),)
+AR := $(GCC_AR_BIN)
+endif
+endif
+endif
+endif
 
 .PHONY: help doctor dev-bootstrap clean build-binding-options
 
@@ -88,7 +118,7 @@ help:
 		"  build-r-binary-from-tarball Build a platform-native R binary from dist/R/." \
 		"  build-r-swig          Regenerate the tracked SWIG wrapper outputs for R maintainers." \
 		"  build-binding-options Regenerate Python, R, and TypeScript option APIs from C++ metadata." \
-		"  build-js-metadata     Refresh the tracked JS parameters/changelog metadata." \
+		"  build-js-metadata     Refresh the tracked JS parameter metadata." \
 		"  build-js              Build the JS worker bundle and npm package assets from tracked metadata." \
 		"  build-docs            Build the Python docs site into docs/ (untracked output)." \
 		"" \
@@ -144,6 +174,8 @@ help:
 		"  make build-native" \
 		"  make build-native JOBS=1" \
 		"  make build-native MODE=debug OPENMP=0" \
+		"  make build-native NATIVE_ARCH=1                 # -march=native + LTO + unroll (non-portable)" \
+		"  make build-native NATIVE_ARCH=1 SIMD_LOG=1      # plus inlined SIMD log2 (arm64 Neon / x86_64 AVX2+FMA)" \
 		"  make build-python dev-python-install test-python-unit" \
 		"  make build-binding-options test-binding-options-freshness" \
 		"  make build-js-metadata test-js-metadata" \
@@ -156,8 +188,9 @@ build-binding-options: build-native
 doctor:
 	@printf "%s\n" "Infomap doctor" ""
 	@printf "Platform: %s\n" "$(UNAME_S)"
-	@printf "Mode: MODE=%s OPENMP=%s\n" "$(MODE)" "$(OPENMP)"
+	@printf "Mode: MODE=%s OPENMP=%s NATIVE_ARCH=%s SIMD_LOG=%s\n" "$(MODE)" "$(OPENMP)" "$(NATIVE_ARCH)" "$(SIMD_LOG)"
 	@printf "Policy: MODE drives Infomap optimization/debug flags for native, Python, and CMake targets.\n"
+	@printf "Opt-ins: NATIVE_ARCH=1 enables -march=native+LTO+unroll; SIMD_LOG=1 enables inlined SIMD log2 (arm64 Neon or x86_64 AVX2+FMA). Both produce non-portable binaries.\n"
 	@printf "Mode detail: %s\n" "$(if $(filter debug,$(MODE)),$(if $(filter msvc,$(BUILD_CONFIG_COMPILER_FAMILY)),debug => /Od /Zi,debug => -O0 -g),$(if $(filter msvc,$(BUILD_CONFIG_COMPILER_FAMILY)),release => /O2,release => -O3))"
 	@printf "CMake detail: CMAKE_BUILD_TYPE=%s is kept for generator/output behavior; MODE still owns Infomap compile flags.\n" "$(CMAKE_BUILD_TYPE)"
 	@printf "Parallel jobs: %s\n" "$(JOBS)"

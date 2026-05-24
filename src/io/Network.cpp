@@ -8,14 +8,13 @@
  ******************************************************************************/
 
 #include "Network.h"
-#include "../io/SafeFile.h"
-#include "../utils/FileURI.h"
+#include "NetworkBuilder.h"
 #include "../utils/Log.h"
 #include "../utils/PrettyOutput.h"
+#include "../utils/convert.h"
 
 #include <cmath>
 #include <algorithm>
-#include <cstdlib>
 #include <limits>
 #include <stdexcept>
 
@@ -23,72 +22,8 @@ namespace infomap {
 
 using std::make_pair;
 
-namespace {
-
-inline bool isInputWhitespace(char c)
-{
-  return c == ' ' || c == '\t' || c == '\r' || c == '\n' || c == '\f' || c == '\v';
-}
-
-inline bool isDigit(char c)
-{
-  return c >= '0' && c <= '9';
-}
-
-void skipWhitespace(const char*& p)
-{
-  while (isInputWhitespace(*p)) {
-    ++p;
-  }
-}
-
-bool parseUnsigned(const char*& p, unsigned int& value)
-{
-  skipWhitespace(p);
-  if (*p == '+') {
-    ++p;
-  }
-  if (!isDigit(*p)) {
-    return false;
-  }
-
-  unsigned long long result = 0;
-  const unsigned long long maxValue = std::numeric_limits<unsigned int>::max();
-  do {
-    result = result * 10 + static_cast<unsigned long long>(*p - '0');
-    if (result > maxValue) {
-      return false;
-    }
-    ++p;
-  } while (isDigit(*p));
-
-  value = static_cast<unsigned int>(result);
-  return true;
-}
-
-bool parseOptionalDouble(const char*& p, double& value)
-{
-  skipWhitespace(p);
-  if (*p == '\0' || *p == '#') {
-    return false;
-  }
-
-  char* end = nullptr;
-  const double parsed = std::strtod(p, &end);
-  if (end == p) {
-    return false;
-  }
-
-  value = parsed;
-  p = end;
-  return true;
-}
-
-} // namespace
-
 void Network::init()
 {
-  initValidHeadings();
   updateDerivedConfig();
 }
 
@@ -97,56 +32,6 @@ void Network::updateDerivedConfig()
   m_multilayerStateIdBitShift = m_config.matchableMultilayerIds == 0
       ? 0
       : static_cast<unsigned int>(std::ceil(std::log2(m_config.matchableMultilayerIds)));
-}
-
-void Network::initValidHeadings()
-{
-  auto& headingsPajek = m_validHeadings["pajek"];
-  headingsPajek.insert("*vertices");
-  headingsPajek.insert("*edges");
-  headingsPajek.insert("*arcs");
-
-  auto& headingsLinklist = m_validHeadings["link-list"];
-  headingsLinklist.insert("*links");
-  headingsLinklist.insert("*edges");
-  headingsLinklist.insert("*arcs");
-
-  auto& headingsBipartite = m_validHeadings["bipartite"];
-  headingsBipartite.insert("*vertices");
-  headingsBipartite.insert("*bipartite");
-
-  auto& headingsStates = m_validHeadings["states"];
-  headingsStates.insert("*vertices");
-  headingsStates.insert("*states");
-  headingsStates.insert("*edges");
-  headingsStates.insert("*arcs");
-  headingsStates.insert("*links");
-  headingsStates.insert("*contexts");
-  auto& ignoreHeadingsStates = m_ignoreHeadings["states"];
-  ignoreHeadingsStates.insert("*edges");
-  ignoreHeadingsStates.insert("*contexts");
-
-  auto& headingsMultilayer = m_validHeadings["multilayer"];
-  headingsMultilayer.insert("*vertices");
-  headingsMultilayer.insert("*multiplex");
-  headingsMultilayer.insert("*multilayer");
-  headingsMultilayer.insert("*intra");
-  headingsMultilayer.insert("*inter");
-
-  auto& headingsGeneral = m_validHeadings["general"];
-  headingsGeneral.insert("*vertices");
-  headingsGeneral.insert("*states");
-  headingsGeneral.insert("*multilayer");
-  headingsGeneral.insert("*intra");
-  headingsGeneral.insert("*inter");
-  headingsGeneral.insert("*paths");
-  headingsGeneral.insert("*edges");
-  headingsGeneral.insert("*arcs");
-  headingsGeneral.insert("*links");
-  headingsGeneral.insert("*contexts");
-  headingsGeneral.insert("*bipartite");
-  auto& ignoreHeadingsGeneral = m_ignoreHeadings["general"];
-  ignoreHeadingsGeneral.insert("*contexts");
 }
 
 void Network::clear()
@@ -178,62 +63,8 @@ void Network::readInputData(std::string filename, bool accumulate)
   if (filename.empty()) {
     throw std::runtime_error("No input file to read network");
   }
-  FileURI networkFilename(filename, false);
-
-  parseNetwork(filename);
+  buildNetworkFromInput(*this, filename);
   printSummary();
-}
-
-void Network::parseNetwork(const std::string& filename)
-{
-  Log() << "Parsing " << (m_config.isUndirectedFlow() ? "undirected" : "directed") << " network from file '" << filename << "'...\n";
-
-  parseNetwork(filename, m_validHeadings["general"], m_ignoreHeadings["general"]);
-}
-
-void Network::parseNetwork(const std::string& filename, const InsensitiveStringSet& validHeadings, const InsensitiveStringSet& ignoreHeadings, const std::string& startHeading)
-{
-  m_haveFileInput = true;
-  SafeInFile input(filename);
-
-  // Parse standard links by default until possible heading is reached
-  std::string heading = !startHeading.empty() ? startHeading : parseLinks(input);
-
-  while (!heading.empty() && heading[0] == '*') {
-    std::string headingLowerCase = io::tolower(io::firstWord(heading));
-    if (validHeadings.count(headingLowerCase) == 0) {
-      throw std::runtime_error(io::Str() << "Unrecognized heading in network file: '" << headingLowerCase << "'.");
-    }
-    bool shouldIgnoreHeading = ignoreHeadings.count(headingLowerCase) > 0;
-    if (!shouldIgnoreHeading && headingLowerCase == "*vertices") {
-      heading = parseVertices(input, heading);
-    } else if (!shouldIgnoreHeading && headingLowerCase == "*states") {
-      heading = parseStateNodes(input, heading);
-    } else if (!shouldIgnoreHeading && headingLowerCase == "*edges") {
-      if (!m_config.isUndirectedFlow())
-        Log() << "\n --> Notice: Links marked as undirected but parsed as directed.\n";
-      heading = parseLinks(input);
-    } else if (!shouldIgnoreHeading && headingLowerCase == "*arcs") {
-      if (m_config.isUndirectedFlow())
-        Log() << "\n --> Notice: Links marked as directed but parsed as undirected.\n";
-      heading = parseLinks(input);
-    } else if (!shouldIgnoreHeading && headingLowerCase == "*links") {
-      heading = parseLinks(input);
-    } else if (!shouldIgnoreHeading && (headingLowerCase == "*multilayer" || headingLowerCase == "*multiplex")) {
-      heading = parseMultilayerLinks(input);
-    } else if (!shouldIgnoreHeading && headingLowerCase == "*intra") {
-      heading = parseMultilayerIntraLinks(input);
-    } else if (!shouldIgnoreHeading && headingLowerCase == "*inter") {
-      heading = parseMultilayerInterLinks(input);
-    } else if (!shouldIgnoreHeading && headingLowerCase == "*bipartite") {
-      heading = parseBipartiteLinks(input, heading);
-    } else {
-      heading = ignoreSection(input, headingLowerCase);
-    }
-  }
-
-  postProcessInputData();
-  Log() << "Done!\n";
 }
 
 void Network::postProcessInputData()
@@ -252,345 +83,7 @@ void Network::postProcessInputData()
 
 void Network::readMetaData(const std::string& filename)
 {
-  Log() << "Parsing meta data from '" << filename << "'...\n";
-  SafeInFile input(filename);
-  std::string line;
-  while (!std::getline(input, line).fail()) {
-    if (line.empty() || line[0] == '#')
-      continue;
-
-    if (line[0] == '*')
-      break;
-
-    m_extractor.clear();
-    m_extractor.str(line);
-
-    unsigned int nodeId;
-    if (!(m_extractor >> nodeId))
-      throw std::runtime_error(io::Str() << "Can't parse node id from line '" << line << "'");
-
-    std::vector<int> metaData;
-    unsigned int metaId;
-    while (m_extractor >> metaId) {
-      metaData.push_back(metaId);
-    }
-    if (metaData.empty())
-      throw std::runtime_error(io::Str() << "Can't parse any meta data from line '" << line << "'");
-
-    addMetaData(nodeId, metaData);
-  }
-  Log() << " -> Parsed " << m_numMetaDataColumns << " columns of meta data for " << m_metaData.size() << " nodes.\n";
-}
-//////////////////////////////////////////////////////////////////////////////////////////
-//
-//  HELPER METHODS
-//
-//////////////////////////////////////////////////////////////////////////////////////////
-
-std::string Network::parseVertices(std::ifstream& file, const std::string& /*heading*/)
-{
-  Log() << "  Parsing vertices...\n"
-        << std::flush;
-  std::string line;
-  while (!std::getline(file, line).fail()) {
-    if (line.empty() || line[0] == '#')
-      continue;
-
-    if (line[0] == '*')
-      break;
-
-    m_extractor.clear();
-    m_extractor.str(line);
-
-    unsigned int id = 0;
-    if (!(m_extractor >> id))
-      throw std::runtime_error(io::Str() << "Can't parse node id from line '" << line << "'");
-
-    auto nameStart = line.find_first_of('\"');
-    auto nameEnd = line.find_last_of('\"');
-    std::string name;
-    if (nameStart < nameEnd) {
-      name = std::string(line.begin() + nameStart + 1, line.begin() + nameEnd);
-      line = line.substr(nameEnd + 1);
-      m_extractor.clear();
-      m_extractor.str(line);
-    } else {
-      if (!(m_extractor >> name))
-        throw std::runtime_error(io::Str() << "Can't parse node name from line '" << line << "'");
-    }
-    double weight = 1.0;
-    if ((m_extractor >> weight)) {
-      m_haveNodeWeights = true;
-      if (weight < 0)
-        throw std::runtime_error(io::Str() << "Negative node weight (" << weight << ") from line '" << line << "'");
-    }
-
-    addPhysicalNode(id, weight, name);
-  }
-  Log() << "  -> " << m_physNodes.size() << " physical nodes added\n";
-  return line;
-}
-
-std::string Network::parseStateNodes(std::ifstream& file, const std::string& /*heading*/)
-{
-  m_higherOrderInputMethodCalled = true;
-  Log() << "  Parsing state nodes...\n"
-        << std::flush;
-  std::string line;
-  while (!std::getline(file, line).fail()) {
-    if (line.empty() || line[0] == '#')
-      continue;
-
-    if (line[0] == '*')
-      break;
-
-    StateNode stateNode;
-    parseStateNode(line, stateNode);
-
-    addStateNode(stateNode);
-    addPhysicalNode(stateNode.physicalId);
-
-    ++m_numStateNodesFound;
-  }
-  Log() << "  -> " << m_numStateNodesFound << " state nodes added\n";
-  return line;
-}
-
-std::string Network::parseLinks(std::ifstream& file)
-{
-  // This is the default action, so check for links before printing
-  bool parsingLinks = false;
-  std::string line;
-  while (!std::getline(file, line).fail()) {
-    if (line.empty() || line[0] == '#')
-      continue;
-
-    if (line[0] == '*')
-      break;
-
-    if (!parsingLinks) {
-      parsingLinks = true;
-      Log() << "  Parsing links...\n"
-            << std::flush;
-    }
-
-    unsigned int n1, n2;
-    double weight;
-    parseLink(line, n1, n2, weight);
-
-    addLink(n1, n2, weight);
-  }
-  if (parsingLinks)
-    Log() << "  -> " << m_numLinks << " links\n";
-  return line;
-}
-
-std::string Network::parseMultilayerLinks(std::ifstream& file)
-{
-  Log() << "  Parsing multilayer links...\n"
-        << std::flush;
-
-  if (m_config.regularized) {
-    throw std::runtime_error("Regularized multilayer flow requires *Intra/*Inter input; explicit *Multilayer input is not supported with --regularized.");
-  }
-
-  if (m_config.matchableMultilayerIds > 0) {
-    Log() << "  Creating matchable state ids using: nodeId << (log2(" << m_config.matchableMultilayerIds << ") + 1) | layerId\n";
-  }
-
-  std::string line;
-  while (!std::getline(file, line).fail()) {
-    if (line.empty() || line[0] == '#')
-      continue;
-
-    if (line[0] == '*')
-      break;
-
-    unsigned int layer1, n1, layer2, n2;
-    double weight;
-    parseMultilayerLink(line, layer1, n1, layer2, n2, weight);
-
-    // TODO: This explicit multilayer format can allow undirected but not the inter/intra format, clear?
-    addMultilayerLink(layer1, n1, layer2, n2, weight);
-  }
-  Log() << "  -> " << (m_numIntraLayerLinks + m_numInterLayerLinks) << " links in " << m_layers.size() << " layers\n";
-  Log() << "    -> " << m_numIntraLayerLinks << " intra-layer links\n";
-  Log() << "    -> " << m_numInterLayerLinks << " inter-layer links\n";
-  return line;
-}
-
-std::string Network::parseMultilayerIntraLinks(std::ifstream& file)
-{
-  Log() << "  Parsing intra-layer links...\n"
-        << std::flush;
-
-  if (m_config.matchableMultilayerIds > 0) {
-    Log() << "  Creating matchable state ids using: nodeId << (log2(" << m_config.matchableMultilayerIds << ") + 1) | layerId\n";
-  }
-  // if (m_config.regularized && m_config.multilayerTest > 0) {
-  // Log() << "  Using regularized multilayer flow...\n";
-  if (m_config.multilayerAggregation) {
-    Log() << "  Using aggregated multilayer flow...\n";
-    m_aggregatedNetwork = std::make_unique<Network>();
-    // if (m_config.isUndirectedFlow()) {
-    //   m_haveDirectedInput = true;
-    //   Log() << "  -> Expanding undirected links to directed...\n";
-    // }
-  }
-
-  std::string line;
-  while (!std::getline(file, line).fail()) {
-    if (line.empty() || line[0] == '#')
-      continue;
-
-    if (line[0] == '*')
-      break;
-
-    unsigned int layer, n1, n2;
-    double weight;
-    parseMultilayerIntraLink(line, layer, n1, n2, weight);
-
-    if (m_config.multilayerAggregation) {
-      addMultilayerLink(layer, n1, layer, n2, weight);
-      // if (m_config.isUndirectedFlow())
-      //   addMultilayerLink(layer, n2, layer, n1, weight);
-      m_aggregatedNetwork->addLink(n1, n2, weight);
-    } else {
-      addMultilayerIntraLink(layer, n1, n2, weight);
-    }
-  }
-  Log() << "  -> " << m_numIntraLayerLinks << " intra-layer links\n";
-  return line;
-}
-
-std::string Network::parseMultilayerInterLinks(std::ifstream& file)
-{
-  Log() << "  Parsing inter-layer links...\n"
-        << std::flush;
-  std::string line;
-  while (!std::getline(file, line).fail()) {
-    if (line.empty() || line[0] == '#')
-      continue;
-
-    if (line[0] == '*')
-      break;
-
-    unsigned int layer1, n, layer2;
-    double weight;
-    parseMultilayerInterLink(line, layer1, n, layer2, weight);
-
-    addMultilayerInterLink(layer1, n, layer2, weight);
-  }
-  Log() << "  -> " << m_numInterLayerLinks << " inter-layer links\n";
-  return line;
-}
-
-std::string Network::parseBipartiteLinks(std::ifstream& file, const std::string& heading)
-{
-  Log() << "  Parsing bipartite links...\n";
-  // Extract break point for bipartite links
-  m_extractor.clear();
-  m_extractor.str(heading);
-  std::string tmp;
-  if (!(m_extractor >> tmp >> m_bipartiteStartId))
-    throw std::runtime_error(io::Str() << "Can't parse bipartite start id from line '" << heading << "'");
-
-  Log() << "  -> Using bipartite start id " << m_bipartiteStartId << "\n";
-  m_config.bipartite = true;
-  std::string line;
-  while (!std::getline(file, line).fail()) {
-    if (line.empty() || line[0] == '#')
-      continue;
-
-    if (line[0] == '*')
-      break;
-
-    unsigned int n1, n2;
-    double weight;
-    parseLink(line, n1, n2, weight);
-    bool sourceIsFeature = n1 >= m_bipartiteStartId;
-    bool targetIsFeature = n2 >= m_bipartiteStartId;
-    if (sourceIsFeature == targetIsFeature) {
-      throw std::runtime_error(io::Str() << "Bipartite link '" << line << "' must cross bipartite start id " << m_bipartiteStartId << ".");
-    }
-    addLink(n1, n2, weight);
-  }
-  return line;
-}
-
-std::string Network::ignoreSection(std::ifstream& file, const std::string& heading)
-{
-  Log() << "(Ignoring section " << heading << ") ";
-  std::string line;
-  while (!std::getline(file, line).fail()) {
-    if (line[0] == '*')
-      break;
-  }
-  return line;
-}
-
-void Network::parseStateNode(const std::string& line, StateNetwork::StateNode& stateNode)
-{
-  const char* p = line.c_str();
-  if (!parseUnsigned(p, stateNode.id) || !parseUnsigned(p, stateNode.physicalId))
-    throw std::runtime_error(io::Str() << "Can't parse any state node from line '" << line << "'");
-
-  // Optional name enclosed in double quotes
-  auto nameStart = line.find_first_of('\"', static_cast<std::size_t>(p - line.c_str()));
-  auto nameEnd = line.find_last_of('\"');
-  if (nameStart < nameEnd) {
-    stateNode.name = std::string(line.begin() + nameStart + 1, line.begin() + nameEnd);
-    p = line.c_str() + nameEnd + 1;
-  }
-  // Optional weight, default to 1.0
-  if (parseOptionalDouble(p, stateNode.weight)) {
-    m_haveStateNodeWeights = true;
-    if (stateNode.weight < 0)
-      throw std::runtime_error(io::Str() << "Negative state node weight (" << stateNode.weight << ") from line '" << line << "'");
-  }
-}
-
-void Network::parseLink(const std::string& line, unsigned int& n1, unsigned int& n2, double& weight)
-{
-  const char* p = line.c_str();
-  if (!parseUnsigned(p, n1) || !parseUnsigned(p, n2))
-    throw std::runtime_error(io::Str() << "Can't parse link data from line '" << line << "'");
-  if (!parseOptionalDouble(p, weight)) {
-    weight = 1.0;
-  }
-}
-
-void Network::parseMultilayerLink(const std::string& line, unsigned int& layer1, unsigned int& n1, unsigned int& layer2, unsigned int& n2, double& weight)
-{
-  const char* p = line.c_str();
-  if (!parseUnsigned(p, layer1) || !parseUnsigned(p, n1) || !parseUnsigned(p, layer2) || !parseUnsigned(p, n2))
-    throw std::runtime_error(io::Str() << "Can't parse multilayer link data from line '" << line << "'");
-  if (!parseOptionalDouble(p, weight)) {
-    weight = 1.0;
-  }
-}
-
-void Network::parseMultilayerIntraLink(const std::string& line, unsigned int& layer, unsigned int& n1, unsigned int& n2, double& weight)
-{
-  const char* p = line.c_str();
-  if (!parseUnsigned(p, layer) || !parseUnsigned(p, n1) || !parseUnsigned(p, n2))
-    throw std::runtime_error(io::Str() << "Can't parse intra-multilayer link data from line '" << line << "'");
-  if (!parseOptionalDouble(p, weight)) {
-    weight = 1.0;
-  }
-}
-
-void Network::parseMultilayerInterLink(const std::string& line, unsigned int& layer1, unsigned int& n, unsigned int& layer2, double& weight)
-{
-  const char* p = line.c_str();
-  if (!parseUnsigned(p, layer1) || !parseUnsigned(p, n) || !parseUnsigned(p, layer2))
-    throw std::runtime_error(io::Str() << "Can't parse inter-multilayer link data from line '" << line << "'");
-  if (!parseOptionalDouble(p, weight)) {
-    weight = 1.0;
-  }
-  if (layer1 == layer2)
-    throw std::runtime_error(io::Str() << "Inter-layer link from line '" << line << "' doesn't go between different layers.");
-  // TODO: Same as intra-layer self-link?
+  buildMetaDataFromInput(*this, filename);
 }
 
 void Network::printSummary()
@@ -675,10 +168,7 @@ void Network::addMultilayerLinks(const std::vector<unsigned int>& sourceLayerIds
                                  const std::vector<unsigned int>& targetNodeIds,
                                  const std::vector<double>& weights)
 {
-  if (sourceLayerIds.size() != sourceNodeIds.size() ||
-      sourceLayerIds.size() != targetLayerIds.size() ||
-      sourceLayerIds.size() != targetNodeIds.size() ||
-      sourceLayerIds.size() != weights.size()) {
+  if (sourceLayerIds.size() != sourceNodeIds.size() || sourceLayerIds.size() != targetLayerIds.size() || sourceLayerIds.size() != targetNodeIds.size() || sourceLayerIds.size() != weights.size()) {
     throw std::invalid_argument("sourceLayerIds, sourceNodeIds, targetLayerIds, targetNodeIds, and weights must have the same length");
   }
 
@@ -1354,9 +844,7 @@ void Network::addMultilayerIntraLinks(const std::vector<unsigned int>& layerIds,
                                       const std::vector<unsigned int>& targetNodeIds,
                                       const std::vector<double>& weights)
 {
-  if (layerIds.size() != sourceNodeIds.size() ||
-      layerIds.size() != targetNodeIds.size() ||
-      layerIds.size() != weights.size()) {
+  if (layerIds.size() != sourceNodeIds.size() || layerIds.size() != targetNodeIds.size() || layerIds.size() != weights.size()) {
     throw std::invalid_argument("layerIds, sourceNodeIds, targetNodeIds, and weights must have the same length");
   }
 
@@ -1386,9 +874,7 @@ void Network::addMultilayerInterLinks(const std::vector<unsigned int>& sourceLay
                                       const std::vector<unsigned int>& targetLayerIds,
                                       const std::vector<double>& weights)
 {
-  if (sourceLayerIds.size() != nodeIds.size() ||
-      sourceLayerIds.size() != targetLayerIds.size() ||
-      sourceLayerIds.size() != weights.size()) {
+  if (sourceLayerIds.size() != nodeIds.size() || sourceLayerIds.size() != targetLayerIds.size() || sourceLayerIds.size() != weights.size()) {
     throw std::invalid_argument("sourceLayerIds, nodeIds, targetLayerIds, and weights must have the same length");
   }
 
