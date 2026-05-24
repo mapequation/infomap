@@ -90,6 +90,23 @@ else()
     message("-- Found Ccache: FALSE")
 endif()
 
+# GCC + LTO: plain `ar`/`ranlib` strip the LTO bitcode from object files,
+# leaving an empty/broken static archive. Prefer the LTO-aware wrappers
+# (gcc-ar/gcc-ranlib) when both are in play. clang's archiver handles LTO
+# bitcode natively, so no override is needed there. Mirror of the mk/common.mk
+# detection so the CMake build path is consistent with the Makefile build path.
+if(INFOMAP_NATIVE_ARCH AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    find_program(INFOMAP_GCC_AR gcc-ar)
+    find_program(INFOMAP_GCC_RANLIB gcc-ranlib)
+    if(INFOMAP_GCC_AR AND INFOMAP_GCC_RANLIB)
+        set(CMAKE_AR "${INFOMAP_GCC_AR}")
+        set(CMAKE_RANLIB "${INFOMAP_GCC_RANLIB}")
+        message(STATUS "INFOMAP_NATIVE_ARCH: using ${INFOMAP_GCC_AR} / ${INFOMAP_GCC_RANLIB} for LTO-safe static archives")
+    else()
+        message(WARNING "INFOMAP_NATIVE_ARCH=ON with GCC but gcc-ar / gcc-ranlib not found in PATH. The static infomap_core archive may end up empty under -flto.")
+    endif()
+endif()
+
 file(GLOB_RECURSE infomap_headers CONFIGURE_DEPENDS "src/*.h")
 file(GLOB_RECURSE infomap_sources CONFIGURE_DEPENDS "src/*.cpp")
 set(infomap_main_source "${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp")
