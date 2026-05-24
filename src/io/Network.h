@@ -13,12 +13,12 @@
 #include "Config.h"
 #include "../core/StateNetwork.h"
 
-#include <string>
+#include <limits>
 #include <map>
+#include <memory>
+#include <string>
 #include <utility>
 #include <vector>
-#include <utility>
-#include <limits>
 
 namespace infomap {
 
