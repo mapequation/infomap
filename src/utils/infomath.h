@@ -140,7 +140,11 @@ namespace infomath {
 
   // Batched p * log2(p) for n independent inputs. The scalar path is bit-exact with
   // calling plogp() in a loop; SIMD paths use an inlined polynomial for log2 (~1 ulp
-  // deviation from std::log2). Inputs and outputs must not alias.
+  // deviation from std::log2 on finite positive inputs). Inputs and outputs must
+  // not alias. Non-positive inputs are masked to a zero output. Non-finite positive
+  // inputs (+Inf, NaN) produce undefined results on the SIMD paths — Infomap flow
+  // values are always finite, so this isn't a runtime concern, but callers passing
+  // synthetic data should pre-validate.
   INFOMAP_HOT inline void plogp_batch(const double* in, double* out, int n)
   {
 #if defined(INFOMAP_AVX2_LOG)

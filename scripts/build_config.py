@@ -222,7 +222,11 @@ def resolve_build_config(
     return {
         "mode": mode,
         "openmp": bool(openmp),
-        "native_arch": bool(native_arch and mode == "release"),
+        # Report native_arch as effective only when flags were actually emitted —
+        # i.e. release mode AND a compiler family that we know how to tune
+        # (clang/gnu). For MSVC or unknown toolchains the request is silently
+        # ignored, and the reported field stays false to match reality.
+        "native_arch": bool(native_compile_flags),
         "simd_log": bool(simd_log),
         "platform": platform_name,
         "compiler": compiler,

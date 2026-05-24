@@ -84,6 +84,21 @@ NATIVE_CXXFLAGS := $(call build_config_field,compile_flags)
 NATIVE_LDFLAGS := $(call build_config_field,link_flags)
 CXX_COMPILE := $(if $(and $(filter 1,$(USE_CCACHE)),$(CCACHE_BIN)),$(CCACHE_BIN) ,)$(CXX)
 
+# LTO + GCC: plain `ar` strips the LTO bitcode from .o files, leaving an empty
+# static archive. Prefer gcc-ar (which loads the LTO plugin) when both are in
+# play. clang's ar handles LTO bitcode natively, so no override is needed there.
+# A user-set AR (env or command line) is respected.
+ifeq ($(NATIVE_ARCH),1)
+ifeq ($(BUILD_CONFIG_COMPILER_FAMILY),gnu)
+ifeq ($(origin AR),file)
+GCC_AR_BIN := $(shell command -v gcc-ar 2>/dev/null)
+ifneq ($(GCC_AR_BIN),)
+AR := $(GCC_AR_BIN)
+endif
+endif
+endif
+endif
+
 .PHONY: help doctor dev-bootstrap clean build-binding-options
 
 help:
