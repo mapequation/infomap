@@ -625,7 +625,7 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnNo
 
   // double interLinkStrength = std::log(L);
   // double interLinkWeight = std::log(L) / L;
-  double interLinkWeight = std::log(L) / (m_config.noSelfLinks ? L - 1 : L);
+  double interLinkWeight = m_config.regularizationStrength * std::log(L) / (m_config.noSelfLinks ? L - 1 : L);
   // double intraLinkStrength = std::log(N) / L;
   // double totalInterWeightIfNoLimit = interLinkWeight * L;
   if (haveUpOrDownLimit) {
