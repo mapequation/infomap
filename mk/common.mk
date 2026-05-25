@@ -26,6 +26,7 @@ SWIG ?= swig
 EMXX ?= em++
 R ?= R
 RSCRIPT ?= Rscript
+AIR ?= $(shell command -v air 2>/dev/null || command -v /opt/homebrew/bin/air 2>/dev/null || echo air)
 SPHINX_BUILD_BIN := $(shell command -v sphinx-build 2>/dev/null || true)
 SPHINX_BUILD ?= $(if $(SPHINX_BUILD_BIN),$(SPHINX_BUILD_BIN),$(PYTHON) -m sphinx)
 CMAKE ?= $(shell command -v cmake 2>/dev/null || command -v /opt/homebrew/bin/cmake 2>/dev/null || echo cmake)
@@ -149,6 +150,8 @@ help:
 		"  configure-cpp-dev     Configure a clangd-friendly CMake dev build." \
 		"  format-native         Rewrite C++ sources with clang-format." \
 		"  format-native-check   Verify C++ sources are clang-format clean." \
+		"  format-r              Rewrite R sources with Air." \
+		"  format-r-check        Verify R sources are Air-format clean." \
 		"  tidy-native           Run clang-tidy over C++ source files." \
 		"  dev-cpp-check         Run the fast C++ developer feedback suite." \
 		"  dev-bootstrap         Install Python dev dependencies and run npm ci." \
@@ -204,6 +207,8 @@ doctor:
 	@printf "R (%s): %s\n" "$(R)" "$$(command -v $(R) 2>/dev/null || echo missing)"
 	@printf "R version: %s\n" "$$($(R) --version 2>/dev/null | sed -nE 's/^R version ([0-9.]+).*/\1/p' | head -1 || echo missing)"
 	@printf "Rscript (%s): %s\n" "$(RSCRIPT)" "$$(command -v $(RSCRIPT) 2>/dev/null || echo missing)"
+	@printf "air (%s): %s\n" "$(AIR)" "$$(command -v $(AIR) 2>/dev/null || echo missing)"
+	@printf "air version: %s\n" "$$($(AIR) --version 2>/dev/null || echo missing)"
 	@printf "R packages:\n"
 	@if command -v $(RSCRIPT) >/dev/null 2>&1; then \
 		for pkg in R6 methods roxygen2 rcmdcheck testthat igraph tibble; do \

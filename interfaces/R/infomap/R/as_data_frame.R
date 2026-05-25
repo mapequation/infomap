@@ -26,28 +26,37 @@
 #' im$run()
 #' as.data.frame(im)
 #' @export
-as.data.frame.Infomap <- function(x,
-                                  row.names = NULL,
-                                  optional = FALSE,
-                                  states = TRUE,
-                                  depth_level = 1L,
-                                  tibble = FALSE,
-                                  ...) {
-  raw <- x$get_nodes(depth_level = as.integer(depth_level), states = isTRUE(states))
+as.data.frame.Infomap <- function(
+  x,
+  row.names = NULL,
+  optional = FALSE,
+  states = TRUE,
+  depth_level = 1L,
+  tibble = FALSE,
+  ...
+) {
+  raw <- x$get_nodes(
+    depth_level = as.integer(depth_level),
+    states = isTRUE(states)
+  )
   df <- data.frame(
-    state_id  = raw$state_id,
-    node_id   = raw$node_id,
+    state_id = raw$state_id,
+    node_id = raw$node_id,
     module_id = raw$module_id,
-    flow      = raw$flow,
+    flow = raw$flow,
     stringsAsFactors = FALSE
   )
   if (!is.null(raw$layer_id)) {
     df$layer_id <- raw$layer_id
   }
-  df$name <- vapply(raw$node_id, function(id) {
-    nm <- x$get_name(id, default = NA_character_)
-    if (is.null(nm) || is.na(nm)) NA_character_ else as.character(nm)
-  }, character(1L))
+  df$name <- vapply(
+    raw$node_id,
+    function(id) {
+      nm <- x$get_name(id, default = NA_character_)
+      if (is.null(nm) || is.na(nm)) NA_character_ else as.character(nm)
+    },
+    character(1L)
+  )
 
   if (isTRUE(tibble)) {
     if (!requireNamespace("tibble", quietly = TRUE)) {
