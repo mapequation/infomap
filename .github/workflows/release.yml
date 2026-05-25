@@ -38,7 +38,6 @@ jobs:
           fi
 
   native:
-    if: ${{ github.event_name == 'workflow_dispatch' || !contains(github.ref_name, '-') }}
     needs: [validate-stable-tag]
     uses: ./.github/workflows/_native-build.yml
     with:
@@ -46,7 +45,6 @@ jobs:
       upload-artifacts: true
 
   python:
-    if: ${{ github.event_name == 'workflow_dispatch' || !contains(github.ref_name, '-') }}
     needs: [validate-stable-tag]
     uses: ./.github/workflows/_python-package.yml
     with:
@@ -55,7 +53,6 @@ jobs:
       build-release-artifacts: true
 
   javascript:
-    if: ${{ github.event_name == 'workflow_dispatch' || !contains(github.ref_name, '-') }}
     needs: [validate-stable-tag]
     uses: ./.github/workflows/_js-package.yml
     with:
@@ -64,7 +61,6 @@ jobs:
       pack-artifact: true
 
   r:
-    if: ${{ github.event_name == 'workflow_dispatch' || !contains(github.ref_name, '-') }}
     needs: [validate-stable-tag]
     uses: ./.github/workflows/_r-package.yml
     with:
