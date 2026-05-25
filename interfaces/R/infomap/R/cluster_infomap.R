@@ -50,15 +50,17 @@
 #' result$modules
 #' as.data.frame(result)
 #' @export
-cluster_infomap <- function(edges,
-                            weight = NULL,
-                            e.weights = NULL,
-                            v.weights = NULL,
-                            nb.trials = NULL,
-                            args = NULL,
-                            opts = NULL,
-                            tibble = FALSE,
-                            ...) {
+cluster_infomap <- function(
+  edges,
+  weight = NULL,
+  e.weights = NULL,
+  v.weights = NULL,
+  nb.trials = NULL,
+  args = NULL,
+  opts = NULL,
+  tibble = FALSE,
+  ...
+) {
   call_options <- list(...)
   if (!is.null(e.weights)) {
     if (!is.null(weight)) {
@@ -141,10 +143,12 @@ summary.infomap_result <- function(object, ...) {
 #' @rdname cluster_infomap
 #' @method as.data.frame infomap_result
 #' @export
-as.data.frame.infomap_result <- function(x,
-                                         row.names = NULL,
-                                         optional = FALSE,
-                                         ...) {
+as.data.frame.infomap_result <- function(
+  x,
+  row.names = NULL,
+  optional = FALSE,
+  ...
+) {
   x$nodes
 }
 
@@ -218,12 +222,14 @@ as.data.frame.infomap_result <- function(x,
 #' result <- cluster_infomap_multilayer(edges, silent = TRUE, num_trials = 3)
 #' result$num_top_modules
 #' @export
-cluster_infomap_multilayer <- function(multilayer_edges,
-                                       weight = NULL,
-                                       args = NULL,
-                                       opts = NULL,
-                                       tibble = FALSE,
-                                       ...) {
+cluster_infomap_multilayer <- function(
+  multilayer_edges,
+  weight = NULL,
+  args = NULL,
+  opts = NULL,
+  tibble = FALSE,
+  ...
+) {
   call_options <- list(...)
   im <- do.call(Infomap, c(list(args = args, opts = opts), call_options))
   .add_multilayer_input(im, multilayer_edges, weight)
@@ -309,7 +315,11 @@ as_communities.infomap_result <- function(x, graph, ...) {
     while (edge_weight_attr %in% igraph::edge_attr_names(graph)) {
       edge_weight_attr <- paste0(".", edge_weight_attr)
     }
-    graph <- igraph::set_edge_attr(graph, edge_weight_attr, value = igraph_weight)
+    graph <- igraph::set_edge_attr(
+      graph,
+      edge_weight_attr,
+      value = igraph_weight
+    )
     igraph_weight <- edge_weight_attr
   }
   im$add_igraph(graph, weight = igraph_weight)
@@ -317,19 +327,31 @@ as_communities.infomap_result <- function(x, graph, ...) {
 
 .normalize_edge_list <- function(edges, weight) {
   if (!is.data.frame(edges) && !is.matrix(edges)) {
-    stop("`edges` must be a data.frame, matrix, or igraph graph.", call. = FALSE)
+    stop(
+      "`edges` must be a data.frame, matrix, or igraph graph.",
+      call. = FALSE
+    )
   }
   if (ncol(edges) < 2L) {
-    stop("`edges` must have at least two columns (source, target).", call. = FALSE)
+    stop(
+      "`edges` must have at least two columns (source, target).",
+      call. = FALSE
+    )
   }
 
   source <- if (is.matrix(edges)) edges[, 1L] else edges[[1L]]
   target <- if (is.matrix(edges)) edges[, 2L] else edges[[2L]]
   if (!is.numeric(source) || !is.numeric(target)) {
-    stop("`edges` source/target columns must be numeric/integer.", call. = FALSE)
+    stop(
+      "`edges` source/target columns must be numeric/integer.",
+      call. = FALSE
+    )
   }
   if (anyNA(source) || anyNA(target)) {
-    stop("`edges` source/target columns cannot contain missing values.", call. = FALSE)
+    stop(
+      "`edges` source/target columns cannot contain missing values.",
+      call. = FALSE
+    )
   }
 
   weight_values <- .edge_weights(edges, weight)
@@ -374,16 +396,21 @@ as_communities.infomap_result <- function(x, graph, ...) {
     return(if (is.matrix(edges)) edges[, index] else edges[[index]])
   }
 
-  stop("`weight` must be NULL, FALSE, a column name, or a column index.", call. = FALSE)
+  stop(
+    "`weight` must be NULL, FALSE, a column name, or a column index.",
+    call. = FALSE
+  )
 }
 
-.MULTILAYER_FULL_COLS  <- c("layer_from", "node_from", "layer_to", "node_to")
+.MULTILAYER_FULL_COLS <- c("layer_from", "node_from", "layer_to", "node_to")
 .MULTILAYER_INTRA_COLS <- c("layer", "node_from", "node_to")
 
 .add_multilayer_input <- function(im, edges, weight) {
   if (!is.data.frame(edges) && !is.matrix(edges)) {
-    stop("`multilayer_edges` must be a data.frame, tibble, or matrix.",
-         call. = FALSE)
+    stop(
+      "`multilayer_edges` must be a data.frame, tibble, or matrix.",
+      call. = FALSE
+    )
   }
   if (nrow(edges) == 0L) {
     stop("`multilayer_edges` must have at least one row.", call. = FALSE)
@@ -403,8 +430,12 @@ as_communities.infomap_result <- function(x, graph, ...) {
 .detect_multilayer_format <- function(edges) {
   if (is.matrix(edges)) {
     nc <- ncol(edges)
-    if (nc == 3L) return("intra")
-    if (nc %in% c(4L, 5L)) return("full")
+    if (nc == 3L) {
+      return("intra")
+    }
+    if (nc %in% c(4L, 5L)) {
+      return("full")
+    }
     stop(
       "Multilayer matrix input must have 3 columns ",
       "(layer, node_from, node_to) for unweighted intra-layer links or ",
@@ -416,12 +447,16 @@ as_communities.infomap_result <- function(x, graph, ...) {
   }
 
   cols <- names(edges)
-  has_full  <- all(.MULTILAYER_FULL_COLS  %in% cols)
+  has_full <- all(.MULTILAYER_FULL_COLS %in% cols)
   has_intra <- all(.MULTILAYER_INTRA_COLS %in% cols) &&
     !any(c("layer_from", "layer_to") %in% cols)
 
-  if (has_full)  return("full")
-  if (has_intra) return("intra")
+  if (has_full) {
+    return("full")
+  }
+  if (has_intra) {
+    return("intra")
+  }
 
   stop(
     "`multilayer_edges` must have either columns ",
@@ -435,50 +470,54 @@ as_communities.infomap_result <- function(x, graph, ...) {
 .normalize_multilayer_full <- function(edges, weight) {
   if (is.matrix(edges)) {
     layer_from <- edges[, 1L]
-    node_from  <- edges[, 2L]
-    layer_to   <- edges[, 3L]
-    node_to    <- edges[, 4L]
+    node_from <- edges[, 2L]
+    layer_to <- edges[, 3L]
+    node_to <- edges[, 4L]
     weights <- .multilayer_weights(edges, weight, default_index = 5L)
   } else {
     layer_from <- edges[["layer_from"]]
-    node_from  <- edges[["node_from"]]
-    layer_to   <- edges[["layer_to"]]
-    node_to    <- edges[["node_to"]]
+    node_from <- edges[["node_from"]]
+    layer_to <- edges[["layer_to"]]
+    node_to <- edges[["node_to"]]
     weights <- .multilayer_weights(
-      edges, weight,
+      edges,
+      weight,
       reserved = .MULTILAYER_FULL_COLS
     )
   }
 
   .check_multilayer_ids(
     list(
-      layer_from = layer_from, node_from = node_from,
-      layer_to = layer_to, node_to = node_to
+      layer_from = layer_from,
+      node_from = node_from,
+      layer_to = layer_to,
+      node_to = node_to
     )
   )
 
   data.frame(
     layer_from = layer_from,
-    node_from  = node_from,
-    layer_to   = layer_to,
-    node_to    = node_to,
-    weight     = as.numeric(weights),
+    node_from = node_from,
+    layer_to = layer_to,
+    node_to = node_to,
+    weight = as.numeric(weights),
     stringsAsFactors = FALSE
   )
 }
 
 .normalize_multilayer_intra <- function(edges, weight) {
   if (is.matrix(edges)) {
-    layer     <- edges[, 1L]
+    layer <- edges[, 1L]
     node_from <- edges[, 2L]
-    node_to   <- edges[, 3L]
+    node_to <- edges[, 3L]
     weights <- .multilayer_weights(edges, weight)
   } else {
-    layer     <- edges[["layer"]]
+    layer <- edges[["layer"]]
     node_from <- edges[["node_from"]]
-    node_to   <- edges[["node_to"]]
+    node_to <- edges[["node_to"]]
     weights <- .multilayer_weights(
-      edges, weight,
+      edges,
+      weight,
       reserved = .MULTILAYER_INTRA_COLS
     )
   }
@@ -488,10 +527,10 @@ as_communities.infomap_result <- function(x, graph, ...) {
   )
 
   data.frame(
-    layer     = layer,
+    layer = layer,
     node_from = node_from,
-    node_to   = node_to,
-    weight    = as.numeric(weights),
+    node_to = node_to,
+    weight = as.numeric(weights),
     stringsAsFactors = FALSE
   )
 }
@@ -508,9 +547,12 @@ as_communities.infomap_result <- function(x, graph, ...) {
   }
 }
 
-.multilayer_weights <- function(edges, weight,
-                                reserved = NULL,
-                                default_index = NULL) {
+.multilayer_weights <- function(
+  edges,
+  weight,
+  reserved = NULL,
+  default_index = NULL
+) {
   n <- nrow(edges)
 
   if (identical(weight, FALSE)) {
@@ -522,8 +564,11 @@ as_communities.infomap_result <- function(x, graph, ...) {
     # else fall back to a trailing positional column on matrices.
     if (is.data.frame(edges) && "weight" %in% names(edges)) {
       w <- edges[["weight"]]
-    } else if (is.matrix(edges) && !is.null(default_index) &&
-               ncol(edges) >= default_index) {
+    } else if (
+      is.matrix(edges) &&
+        !is.null(default_index) &&
+        ncol(edges) >= default_index
+    ) {
       w <- edges[, default_index]
     } else if (is.data.frame(edges) && !is.null(reserved)) {
       extras <- setdiff(names(edges), reserved)
@@ -535,8 +580,9 @@ as_communities.infomap_result <- function(x, graph, ...) {
     } else {
       return(rep(1.0, n))
     }
-  } else if (is.character(weight) && length(weight) == 1L &&
-             is.data.frame(edges)) {
+  } else if (
+    is.character(weight) && length(weight) == 1L && is.data.frame(edges)
+  ) {
     if (!weight %in% names(edges)) {
       stop("`weight` column not found in `multilayer_edges`.", call. = FALSE)
     }
