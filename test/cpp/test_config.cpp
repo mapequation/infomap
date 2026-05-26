@@ -180,16 +180,16 @@ TEST_CASE("Config rejects unknown flow models and output formats [fast][core][co
   CHECK_THROWS_AS(Config("input.net --silent --no-file-output --output tree,unknown", true), std::runtime_error);
 }
 
-TEST_CASE("Native feature-gated option follows compile-time flag [fast][core][config][cli]")
+TEST_CASE("Feature-gated option follows compile-time flag [fast][core][config][cli]")
 {
-#if INFOMAP_FEATURE_TEST_NATIVE_FEATURE
-  CHECK(findParameter("test-native-feature") != nullptr);
+#if INFOMAP_FEATURE_TEST_FEATURE
+  CHECK(findParameter("test-feature") != nullptr);
 
-  const Config config("input.net --silent --no-file-output --test-native-feature", true);
-  CHECK(config.testNativeFeature);
+  const Config config("input.net --silent --no-file-output --test-feature", true);
+  CHECK(config.testFeature);
 #else
-  CHECK(findParameter("test-native-feature") == nullptr);
-  CHECK_THROWS_AS(Config("input.net --silent --no-file-output --test-native-feature", true), std::runtime_error);
+  CHECK(findParameter("test-feature") == nullptr);
+  CHECK_THROWS_AS(Config("input.net --silent --no-file-output --test-feature", true), std::runtime_error);
 #endif
 }
 

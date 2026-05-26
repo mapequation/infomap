@@ -120,8 +120,8 @@ struct Config {
   unsigned int fastHierarchicalSolution = 0;
   bool preferModularSolution = false;
   bool innerParallelization = false;
-#if INFOMAP_FEATURE_TEST_NATIVE_FEATURE
-  bool testNativeFeature = false;
+#if INFOMAP_FEATURE_TEST_FEATURE
+  bool testFeature = false;
 #endif
   unsigned int numRandomMoves = 5; // Amount of random moves to try in core loop, used if regularized/recorded teleportation.
   unsigned int maxDegreeForRandomMoves = 2; // Only try random moves for nodes with degree less than or equal to this value.
@@ -209,8 +209,8 @@ struct Config {
     minimumRelativeTuneIterationImprovement = other.minimumRelativeTuneIterationImprovement;
     preferModularSolution = other.preferModularSolution;
     innerParallelization = other.innerParallelization;
-#if INFOMAP_FEATURE_TEST_NATIVE_FEATURE
-    testNativeFeature = other.testNativeFeature;
+#if INFOMAP_FEATURE_TEST_FEATURE
+    testFeature = other.testFeature;
 #endif
     numRandomMoves = other.numRandomMoves;
     maxDegreeForRandomMoves = other.maxDegreeForRandomMoves;

@@ -801,13 +801,13 @@ const std::vector<ParameterSpec>& parameterCatalog()
         .group("Accuracy")
         .advanced()
         .configTarget(&Config::innerParallelization),
-#if INFOMAP_FEATURE_TEST_NATIVE_FEATURE
+#if INFOMAP_FEATURE_TEST_FEATURE
     param()
-        .longName("test-native-feature")
-        .description("Enable the internal native feature flag canary.")
+        .longName("test-feature")
+        .description("Enable the internal feature flag canary.")
         .group("Accuracy")
         .advanced()
-        .configTarget(&Config::testNativeFeature),
+        .configTarget(&Config::testFeature),
 #endif
     param()
         .longName("prefer-modular-solution")

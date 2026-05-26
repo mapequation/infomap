@@ -61,7 +61,7 @@ endif
 
 ifneq ($(FEATURES),)
 ifeq ($(PYTHON_FOR_BUILD_CONFIG),)
-$(error FEATURES requires python3 so scripts/build_config.py can validate native feature names)
+$(error FEATURES requires python3 so scripts/build_config.py can validate feature names)
 endif
 endif
 
@@ -87,7 +87,7 @@ BUILD_CONFIG_LIBOMP_PREFIX := $(call build_config_field,libomp_prefix)
 BUILD_CONFIG_DEPLOYMENT_TARGET := $(call build_config_field,deployment_target)
 NATIVE_CXXFLAGS := $(call build_config_field,compile_flags)
 NATIVE_LDFLAGS := $(call build_config_field,link_flags)
-NATIVE_FEATURE_CACHE_KEY := $(if $(BUILD_CONFIG_ENABLED_FEATURES),$(subst $(space),_,$(BUILD_CONFIG_ENABLED_FEATURES)),none)
+FEATURE_CACHE_KEY := $(if $(BUILD_CONFIG_ENABLED_FEATURES),$(subst $(space),_,$(BUILD_CONFIG_ENABLED_FEATURES)),none)
 CXX_COMPILE := $(if $(and $(filter 1,$(USE_CCACHE)),$(CCACHE_BIN)),$(CCACHE_BIN) ,)$(CXX)
 
 # LTO + GCC: plain `ar` strips the LTO bitcode from .o files, leaving an empty

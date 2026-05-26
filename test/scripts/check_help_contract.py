@@ -23,7 +23,7 @@ def assert_ordered(output: str, needles: list[str]) -> None:
 
 def version_features(output: str) -> set[str]:
     for line in output.splitlines():
-        prefix = "Native features: "
+        prefix = "Features: "
         if line.startswith(prefix):
             return set(line[len(prefix) :].replace(",", " ").split())
     return set()
@@ -43,7 +43,7 @@ def main() -> int:
     assert "--skip-adjust-bipartite-flow" not in standard
     assert "--teleportation-probability" not in standard
     assert "--output <list>" not in standard
-    assert "--test-native-feature" not in standard
+    assert "--test-feature" not in standard
     assert_ordered(
         standard,
         [
@@ -56,16 +56,16 @@ def main() -> int:
     )
 
     advanced = run(cli, "-hh")
-    has_test_native_feature = "--test-native-feature" in advanced
+    has_test_feature = "--test-feature" in advanced
     assert "--skip-adjust-bipartite-flow" in advanced
     assert "--teleportation-probability <probability>" in advanced
     assert "--output <list>" in advanced
     assert "--include-self-links" in advanced
     assert "--print-json-parameters" in advanced
-    if has_test_native_feature:
-        assert "test-native-feature" in version_features(version)
+    if has_test_feature:
+        assert "test-feature" in version_features(version)
     else:
-        assert "test-native-feature" not in version_features(version)
+        assert "test-feature" not in version_features(version)
     assert_ordered(
         advanced,
         [

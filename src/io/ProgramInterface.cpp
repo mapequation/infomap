@@ -8,7 +8,7 @@
  ******************************************************************************/
 
 #include "ProgramInterface.h"
-#include "NativeFeatures.h"
+#include "Features.h"
 #include "../utils/Log.h"
 
 #include <map>
@@ -329,11 +329,14 @@ void ProgramInterface::exitWithVersionInformation() const
   Log() << " compiled with OpenMP";
 #endif
   Log() << '\n';
-  const auto features = enabledNativeFeatures();
+  const auto features = enabledFeatures();
   if (!features.empty()) {
-    Log() << "Native features:";
-    for (const auto& feature : features)
-      Log() << " " << feature;
+    Log() << "Features:";
+    const char* separator = " ";
+    for (const auto& feature : features) {
+      Log() << separator << feature;
+      separator = ", ";
+    }
     Log() << '\n';
   }
   Log() << "See www.mapequation.org for terms of use.\n";

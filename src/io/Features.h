@@ -1,16 +1,16 @@
-#ifndef INFOMAP_NATIVE_FEATURES_H
-#define INFOMAP_NATIVE_FEATURES_H
+#ifndef INFOMAP_FEATURES_H
+#define INFOMAP_FEATURES_H
 
 #include <string>
 #include <vector>
 
 namespace infomap {
 
-inline std::vector<std::string> enabledNativeFeatures()
+inline std::vector<std::string> enabledFeatures()
 {
   std::vector<std::string> features;
-#ifdef INFOMAP_ENABLED_NATIVE_FEATURES
-  const std::string encodedFeatures { INFOMAP_ENABLED_NATIVE_FEATURES };
+#ifdef INFOMAP_ENABLED_FEATURES
+  const std::string encodedFeatures { INFOMAP_ENABLED_FEATURES };
   std::string::size_type begin = 0;
   while (begin <= encodedFeatures.size()) {
     const auto end = encodedFeatures.find(',', begin);
@@ -27,4 +27,4 @@ inline std::vector<std::string> enabledNativeFeatures()
 
 } // namespace infomap
 
-#endif // INFOMAP_NATIVE_FEATURES_H
+#endif // INFOMAP_FEATURES_H

@@ -16,9 +16,9 @@ FEATURE_REGISTRY = {
         "requires": [],
         "conflicts": [],
     },
-    "test-native-feature": {
-        "define": "INFOMAP_FEATURE_TEST_NATIVE_FEATURE",
-        "description": "Internal canary used to verify native-only compile-time feature gates.",
+    "test-feature": {
+        "define": "INFOMAP_FEATURE_TEST_FEATURE",
+        "description": "Internal canary used to verify compile-time feature gates.",
         "requires": [],
         "conflicts": [],
     },
@@ -176,7 +176,7 @@ def _normalize_features(features):
         if feature not in FEATURE_REGISTRY:
             known = ", ".join(sorted(FEATURE_REGISTRY))
             raise ValueError(
-                f"Unknown native feature '{feature}'. Known native features: {known}."
+                f"Unknown feature '{feature}'. Known features: {known}."
             )
         requested.add(feature)
     return [feature for feature in FEATURE_REGISTRY if feature in requested]
@@ -191,12 +191,12 @@ def _validate_features(features):
         ]
         if missing:
             raise ValueError(
-                f"Native feature '{feature}' requires: {', '.join(missing)}."
+                f"Feature '{feature}' requires: {', '.join(missing)}."
             )
         conflicts = [conflict for conflict in spec["conflicts"] if conflict in enabled]
         if conflicts:
             raise ValueError(
-                f"Native feature '{feature}' conflicts with: {', '.join(conflicts)}."
+                f"Feature '{feature}' conflicts with: {', '.join(conflicts)}."
             )
 
 
@@ -221,7 +221,7 @@ def _feature_compile_flags(compiler_family, features):
         flags.append(
             _define_string_flag(
                 compiler_family,
-                "INFOMAP_ENABLED_NATIVE_FEATURES",
+                "INFOMAP_ENABLED_FEATURES",
                 ",".join(features),
             )
         )
@@ -231,7 +231,7 @@ def _feature_compile_flags(compiler_family, features):
 def _feature_definitions(features):
     definitions = [f"{FEATURE_REGISTRY[feature]['define']}=1" for feature in features]
     if features:
-        definitions.append(f'INFOMAP_ENABLED_NATIVE_FEATURES="{",".join(features)}"')
+        definitions.append(f'INFOMAP_ENABLED_FEATURES="{",".join(features)}"')
     return definitions
 
 
