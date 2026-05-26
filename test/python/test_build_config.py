@@ -101,6 +101,7 @@ def test_native_features_are_disabled_by_default():
 
     assert config["enabled_features"] == []
     assert config["enabled_feature_defines"] == []
+    assert "-DINFOMAP_USE_SIMD_LOG=1" not in config["compile_flags"]
     assert "-DINFOMAP_FEATURE_TEST_NATIVE_FEATURE=1" not in config["compile_flags"]
 
 
@@ -118,6 +119,20 @@ def test_explicit_native_feature_emits_compile_define():
         "INFOMAP_FEATURE_TEST_NATIVE_FEATURE=1"
     ]
     assert "-DINFOMAP_FEATURE_TEST_NATIVE_FEATURE=1" in config["compile_flags"]
+
+
+def test_simd_log_is_native_feature():
+    config = resolve_build_config(
+        platform_name="linux",
+        compiler="clang++",
+        mode="release",
+        openmp=False,
+        features=["simd-log"],
+    )
+
+    assert config["enabled_features"] == ["simd-log"]
+    assert config["enabled_feature_defines"] == ["INFOMAP_USE_SIMD_LOG=1"]
+    assert "-DINFOMAP_USE_SIMD_LOG=1" in config["compile_flags"]
 
 
 def test_explicit_native_feature_uses_msvc_define_syntax():

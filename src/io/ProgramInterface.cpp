@@ -244,6 +244,9 @@ namespace {
 #if INFOMAP_FEATURE_TEST_NATIVE_FEATURE
     features.emplace_back("test-native-feature");
 #endif
+#if defined(INFOMAP_USE_SIMD_LOG)
+    features.emplace_back("simd-log");
+#endif
     return features;
   }
 

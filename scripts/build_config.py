@@ -10,6 +10,12 @@ from pathlib import Path
 
 
 FEATURE_REGISTRY = {
+    "simd-log": {
+        "define": "INFOMAP_USE_SIMD_LOG",
+        "description": "Batch plogp's log2 calls through an inlined SIMD polynomial.",
+        "requires": [],
+        "conflicts": [],
+    },
     "test-native-feature": {
         "define": "INFOMAP_FEATURE_TEST_NATIVE_FEATURE",
         "description": "Internal canary used to verify native-only compile-time feature gates.",
@@ -154,17 +160,6 @@ def _native_arch_link_flags(compiler_family):
     return []
 
 
-def _simd_log_compile_flags(compiler_family):
-    # The SIMD log paths key off __ARM_NEON or __AVX2__/__FMA__ macros that are
-    # only set by clang/gnu (typically via -march=native). MSVC builds wouldn't
-    # activate the SIMD code even if the define were present, and MSVC uses /D
-    # instead of -D for preprocessor flags. Skip the define entirely on other
-    # toolchains to avoid passing an invalid flag.
-    if compiler_family in {"clang", "gnu"}:
-        return ["-DINFOMAP_USE_SIMD_LOG=1"]
-    return []
-
-
 def _normalize_features(features):
     if not features:
         return []
@@ -234,7 +229,6 @@ def resolve_build_config(
     deployment_target="",
     platform_name=None,
     native_arch=False,
-    simd_log=False,
     features=None,
 ):
     platform_name = platform_name or sys.platform
@@ -257,9 +251,6 @@ def resolve_build_config(
         _native_arch_link_flags(compiler_family)
         if native_arch and mode == "release"
         else []
-    )
-    simd_log_compile_flags = (
-        _simd_log_compile_flags(compiler_family) if simd_log else []
     )
     feature_compile_flags = _feature_compile_flags(compiler_family, enabled_features)
 
@@ -291,7 +282,6 @@ def resolve_build_config(
         base_compile_flags
         + mode_compile_flags
         + native_compile_flags
-        + simd_log_compile_flags
         + feature_compile_flags
         + openmp_compile_flags
         + platform_compile_flags
@@ -313,9 +303,6 @@ def resolve_build_config(
         # (clang/gnu). For MSVC or unknown toolchains the request is silently
         # ignored, and the reported field stays false to match reality.
         "native_arch": bool(native_compile_flags),
-        # Same logic as native_arch: only report effective when flags were
-        # actually emitted (clang/gnu).
-        "simd_log": bool(simd_log_compile_flags),
         "enabled_features": enabled_features,
         "enabled_feature_defines": _feature_definitions(enabled_features),
         "platform": platform_name,
@@ -347,7 +334,6 @@ def main():
             "mode",
             "openmp",
             "native_arch",
-            "simd_log",
             "enabled_features",
             "enabled_feature_defines",
             "platform",
@@ -363,7 +349,6 @@ def main():
     parser.add_argument("--mode", default="release", choices=["release", "debug"])
     parser.add_argument("--openmp", default="1")
     parser.add_argument("--native-arch", default="0")
-    parser.add_argument("--simd-log", default="0")
     parser.add_argument("--features", default="")
     parser.add_argument("--compiler", default="c++")
     parser.add_argument("--cppflags", default=os.environ.get("CPPFLAGS", ""))
@@ -386,7 +371,6 @@ def main():
             deployment_target=args.deployment_target,
             platform_name=args.platform,
             native_arch=_norm_openmp(args.native_arch),
-            simd_log=_norm_openmp(args.simd_log),
             features=args.features,
         )
     except ValueError as error:

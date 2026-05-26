@@ -44,7 +44,9 @@ class BuildExt(build_ext):
         quiet_swig_flags = swig_warning_suppression(shared_build["compiler_family"])
         swig_source = str(SWIG_CPP_SOURCE)
 
-        def compile_with_source_overrides(obj, src, ext, cc_args, extra_postargs, pp_opts):
+        def compile_with_source_overrides(
+            obj, src, ext, cc_args, extra_postargs, pp_opts
+        ):
             source = os.path.abspath(src)
             compile_args = list(extra_postargs or [])
             if source == swig_source and quiet_swig_flags:
@@ -77,7 +79,6 @@ shared_build = resolve_build_config(
     deployment_target=os.environ.get("MACOSX_DEPLOYMENT_TARGET", ""),
     platform_name=sys.platform,
     native_arch=norm_openmp(os.environ.get("NATIVE_ARCH", "0")),
-    simd_log=norm_openmp(os.environ.get("SIMD_LOG", "0")),
 )
 
 compiler_args = list(shared_build["compile_flags"])
@@ -111,5 +112,5 @@ setup(
             extra_compile_args=compiler_args,
             extra_link_args=link_args,
         )
-    ]
+    ],
 )

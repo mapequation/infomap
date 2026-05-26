@@ -120,6 +120,14 @@ Configure a feature-enabled Make native build by passing feature names through
 make build-native FEATURES=feature-x
 ```
 
+Feature names are defined in `scripts/build_config.py`. The existing SIMD log
+optimization is enabled as the native feature `simd-log`:
+
+```bash
+make build-native NATIVE_ARCH=1 FEATURES=simd-log
+cmake -S . -B build/cmake-simd -DINFOMAP_NATIVE_ARCH=ON -DINFOMAP_FEATURES=simd-log
+```
+
 For the maintained CMake-based native test target, pass feature names through
 `TEST_CMAKE_ARGS`:
 

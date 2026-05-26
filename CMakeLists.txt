@@ -4,7 +4,6 @@ project(infomap LANGUAGES CXX)
 option(INFOMAP_USE_OPENMP "Enable OpenMP support when available." ON)
 option(INFOMAP_ENABLE_SANITIZERS "Enable address and undefined behavior sanitizers." OFF)
 option(INFOMAP_NATIVE_ARCH "Enable -march=native, LTO, and loop unrolling for the host CPU. Produces non-portable binaries; opt-in for local builds only." OFF)
-option(INFOMAP_SIMD_LOG "Batch plogp's log2 calls through an inlined SIMD polynomial (arm64 Neon or x86_64 AVX2+FMA). Produces small ulp deviation from scalar std::log2. Opt-in." OFF)
 set(INFOMAP_MODE "release" CACHE STRING "Build mode shared with the Make-based native build policy.")
 set_property(CACHE INFOMAP_MODE PROPERTY STRINGS release debug)
 set(INFOMAP_EXTRA_CPPFLAGS "" CACHE STRING "Extra preprocessor/compiler flags appended to the shared build policy.")
@@ -34,12 +33,6 @@ else()
     set(INFOMAP_NATIVE_ARCH_ARG 0)
 endif()
 
-if(INFOMAP_SIMD_LOG)
-    set(INFOMAP_SIMD_LOG_ARG 1)
-else()
-    set(INFOMAP_SIMD_LOG_ARG 0)
-endif()
-
 execute_process(
     COMMAND
         "${CMAKE_COMMAND}" -E env
@@ -51,7 +44,6 @@ execute_process(
         --mode "${INFOMAP_MODE}"
         --openmp "${INFOMAP_OPENMP_ARG}"
         --native-arch "${INFOMAP_NATIVE_ARCH_ARG}"
-        --simd-log "${INFOMAP_SIMD_LOG_ARG}"
         --features "${INFOMAP_FEATURES}"
         --compiler "${CMAKE_CXX_COMPILER}"
         --platform "${CMAKE_SYSTEM_NAME}"
