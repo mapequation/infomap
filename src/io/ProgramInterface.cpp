@@ -8,10 +8,12 @@
  ******************************************************************************/
 
 #include "ProgramInterface.h"
+#include "Features.h"
 #include "../utils/Log.h"
 
 #include <map>
 #include <utility>
+#include <vector>
 
 namespace infomap {
 
@@ -327,6 +329,16 @@ void ProgramInterface::exitWithVersionInformation() const
   Log() << " compiled with OpenMP";
 #endif
   Log() << '\n';
+  const auto features = enabledFeatures();
+  if (!features.empty()) {
+    Log() << "Features:";
+    const char* separator = " ";
+    for (const auto& feature : features) {
+      Log() << separator << feature;
+      separator = ", ";
+    }
+    Log() << '\n';
+  }
   Log() << "See www.mapequation.org for terms of use.\n";
   throw CleanExit {};
 }

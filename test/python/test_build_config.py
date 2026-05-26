@@ -89,3 +89,112 @@ def test_clang_without_openmp_drops_openmp_flags():
     assert "-Xpreprocessor" not in config["compile_flags"]
     assert "-fopenmp" not in config["compile_flags"]
     assert "-lomp" not in config["link_flags"]
+
+
+def test_features_are_disabled_by_default():
+    config = resolve_build_config(
+        platform_name="linux",
+        compiler="clang++",
+        mode="release",
+        openmp=False,
+    )
+
+    assert config["enabled_features"] == []
+    assert config["enabled_feature_defines"] == []
+    assert "-DINFOMAP_USE_SIMD_LOG=1" not in config["compile_flags"]
+    assert "-DINFOMAP_FEATURE_TEST_FEATURE=1" not in config["compile_flags"]
+    assert "INFOMAP_ENABLED_FEATURES" not in " ".join(config["compile_flags"])
+
+
+def test_explicit_feature_emits_compile_define():
+    config = resolve_build_config(
+        platform_name="linux",
+        compiler="clang++",
+        mode="release",
+        openmp=False,
+        features=["test-feature"],
+    )
+
+    assert config["enabled_features"] == ["test-feature"]
+    assert config["enabled_feature_defines"] == [
+        "INFOMAP_FEATURE_TEST_FEATURE=1",
+        'INFOMAP_ENABLED_FEATURES="test-feature"',
+    ]
+    assert "-DINFOMAP_FEATURE_TEST_FEATURE=1" in config["compile_flags"]
+    assert (
+        '-DINFOMAP_ENABLED_FEATURES=\\"test-feature\\"'
+        in config["compile_flags"]
+    )
+    assert (
+        "-DINFOMAP_FEATURE_TEST_FEATURE=1" not in config["cmake_compile_flags"]
+    )
+    assert "INFOMAP_ENABLED_FEATURES" not in " ".join(
+        config["cmake_compile_flags"]
+    )
+
+
+def test_simd_log_is_feature():
+    config = resolve_build_config(
+        platform_name="linux",
+        compiler="clang++",
+        mode="release",
+        openmp=False,
+        features=["simd-log"],
+    )
+
+    assert config["enabled_features"] == ["simd-log"]
+    assert config["enabled_feature_defines"] == [
+        "INFOMAP_USE_SIMD_LOG=1",
+        'INFOMAP_ENABLED_FEATURES="simd-log"',
+    ]
+    assert "-DINFOMAP_USE_SIMD_LOG=1" in config["compile_flags"]
+    assert '-DINFOMAP_ENABLED_FEATURES=\\"simd-log\\"' in config["compile_flags"]
+
+
+def test_features_use_registry_order():
+    config = resolve_build_config(
+        platform_name="linux",
+        compiler="clang++",
+        mode="release",
+        openmp=False,
+        features="test-feature,simd-log",
+    )
+
+    assert config["enabled_features"] == ["simd-log", "test-feature"]
+    assert config["enabled_feature_defines"][-1] == (
+        'INFOMAP_ENABLED_FEATURES="simd-log,test-feature"'
+    )
+
+
+def test_explicit_feature_uses_msvc_define_syntax():
+    config = resolve_build_config(
+        platform_name="win32",
+        compiler="cl.exe",
+        openmp=False,
+        features="test-feature",
+    )
+
+    assert config["enabled_features"] == ["test-feature"]
+    assert config["enabled_feature_defines"] == [
+        "INFOMAP_FEATURE_TEST_FEATURE=1",
+        'INFOMAP_ENABLED_FEATURES="test-feature"',
+    ]
+    assert "/DINFOMAP_FEATURE_TEST_FEATURE=1" in config["compile_flags"]
+    assert (
+        '/DINFOMAP_ENABLED_FEATURES=\\"test-feature\\"'
+        in config["compile_flags"]
+    )
+
+
+def test_unknown_feature_fails_early():
+    try:
+        resolve_build_config(
+            platform_name="linux",
+            compiler="clang++",
+            openmp=False,
+            features=["unknown-feature"],
+        )
+    except ValueError as error:
+        assert "Unknown feature 'unknown-feature'" in str(error)
+    else:
+        raise AssertionError("unknown feature did not fail")
