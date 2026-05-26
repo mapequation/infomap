@@ -16,7 +16,7 @@ endif
 CXX ?= c++
 AR ?= ar
 PYTHON ?= $(shell command -v python 2>/dev/null || command -v python3 2>/dev/null || echo python3)
-PYTHON_FOR_BUILD_CONFIG ?= $(shell command -v $(PYTHON) 2>/dev/null || command -v python3 2>/dev/null || echo python3)
+PYTHON_FOR_BUILD_CONFIG ?= $(shell command -v $(PYTHON) 2>/dev/null || command -v python3 2>/dev/null || true)
 PIP ?= $(PYTHON) -m pip
 PYTEST ?= $(PYTHON) -m pytest
 RUFF ?= $(PYTHON) -m ruff
@@ -59,6 +59,12 @@ ifeq ($(filter $(NATIVE_ARCH),$(VALID_NATIVE_ARCH)),)
 $(error NATIVE_ARCH must be one of: $(VALID_NATIVE_ARCH))
 endif
 
+ifneq ($(FEATURES),)
+ifeq ($(PYTHON_FOR_BUILD_CONFIG),)
+$(error FEATURES requires python3 so scripts/build_config.py can validate native feature names)
+endif
+endif
+
 HEADERS := $(shell find src -name "*.h")
 SOURCES := $(shell find src -name "*.cpp")
 SWIG_FILES := $(shell find interfaces/swig -name "*.i")
@@ -67,7 +73,7 @@ BINDING_OPTIONS_SCRIPT := scripts/generate_binding_options.py
 BUILD_CONFIG_SCRIPT := scripts/build_config.py
 
 define build_config_field
-$(strip $(eval BUILD_CONFIG_FIELD_VALUE := $(shell CPPFLAGS='$(CPPFLAGS)' CXXFLAGS='$(CXXFLAGS)' LDFLAGS='$(LDFLAGS)' MACOSX_DEPLOYMENT_TARGET='$(MACOSX_DEPLOYMENT_TARGET)' $(PYTHON_FOR_BUILD_CONFIG) $(BUILD_CONFIG_SCRIPT) field --field "$(1)" --mode "$(MODE)" --openmp "$(OPENMP)" --native-arch "$(NATIVE_ARCH)" --features "$(FEATURES)" --compiler "$(CXX)" --platform "$(UNAME_S)" || printf "__INFOMAP_BUILD_CONFIG_FAILED__"))$(if $(findstring __INFOMAP_BUILD_CONFIG_FAILED__,$(BUILD_CONFIG_FIELD_VALUE)),$(error Failed to resolve build config field '$(1)'),$(BUILD_CONFIG_FIELD_VALUE)))
+$(if $(PYTHON_FOR_BUILD_CONFIG),$(strip $(eval BUILD_CONFIG_FIELD_VALUE := $(shell CPPFLAGS='$(CPPFLAGS)' CXXFLAGS='$(CXXFLAGS)' LDFLAGS='$(LDFLAGS)' MACOSX_DEPLOYMENT_TARGET='$(MACOSX_DEPLOYMENT_TARGET)' $(PYTHON_FOR_BUILD_CONFIG) $(BUILD_CONFIG_SCRIPT) field --field "$(1)" --mode "$(MODE)" --openmp "$(OPENMP)" --native-arch "$(NATIVE_ARCH)" --features "$(FEATURES)" --compiler "$(CXX)" --platform "$(UNAME_S)" || printf "__INFOMAP_BUILD_CONFIG_FAILED__"))$(if $(findstring __INFOMAP_BUILD_CONFIG_FAILED__,$(BUILD_CONFIG_FIELD_VALUE)),$(error Failed to resolve build config field '$(1)'),$(BUILD_CONFIG_FIELD_VALUE))),)
 endef
 
 BUILD_CONFIG_MODE := $(call build_config_field,mode)
