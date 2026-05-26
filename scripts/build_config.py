@@ -168,7 +168,7 @@ def _normalize_features(features):
     else:
         candidates = list(features)
 
-    normalized = []
+    requested = set()
     for feature in candidates:
         feature = str(feature).strip()
         if not feature:
@@ -178,9 +178,8 @@ def _normalize_features(features):
             raise ValueError(
                 f"Unknown native feature '{feature}'. Known native features: {known}."
             )
-        if feature not in normalized:
-            normalized.append(feature)
-    return normalized
+        requested.add(feature)
+    return [feature for feature in FEATURE_REGISTRY if feature in requested]
 
 
 def _validate_features(features):

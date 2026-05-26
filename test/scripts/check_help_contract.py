@@ -21,6 +21,14 @@ def assert_ordered(output: str, needles: list[str]) -> None:
         position = next_position
 
 
+def version_features(output: str) -> set[str]:
+    for line in output.splitlines():
+        prefix = "Native features: "
+        if line.startswith(prefix):
+            return set(line[len(prefix) :].replace(",", " ").split())
+    return set()
+
+
 def main() -> int:
     cli = sys.argv[1]
 
@@ -55,9 +63,9 @@ def main() -> int:
     assert "--include-self-links" in advanced
     assert "--print-json-parameters" in advanced
     if has_test_native_feature:
-        assert "Native features: test-native-feature" in version
+        assert "test-native-feature" in version_features(version)
     else:
-        assert "test-native-feature" not in version
+        assert "test-native-feature" not in version_features(version)
     assert_ordered(
         advanced,
         [

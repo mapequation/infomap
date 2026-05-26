@@ -1,7 +1,7 @@
 NATIVE_BINARY := Infomap
-NATIVE_OBJECT_DIR := build/native/$(MODE)-omp$(OPENMP)-features-$(NATIVE_FEATURE_CACHE_KEY)
+NATIVE_OBJECT_DIR := build/native/$(MODE)-omp$(OPENMP)-native$(NATIVE_ARCH)-features-$(NATIVE_FEATURE_CACHE_KEY)
 LIB_OUTPUT := lib/libInfomap.a
-LIB_OBJECT_DIR := build/lib/$(MODE)-omp$(OPENMP)-features-$(NATIVE_FEATURE_CACHE_KEY)
+LIB_OBJECT_DIR := build/lib/$(MODE)-omp$(OPENMP)-native$(NATIVE_ARCH)-features-$(NATIVE_FEATURE_CACHE_KEY)
 PUBLIC_INCLUDE_DIR := include
 
 NATIVE_OBJECTS := $(SOURCES:src/%.cpp=$(NATIVE_OBJECT_DIR)/%.o)

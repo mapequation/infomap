@@ -151,6 +151,21 @@ def test_simd_log_is_native_feature():
     assert '-DINFOMAP_ENABLED_NATIVE_FEATURES=\\"simd-log\\"' in config["compile_flags"]
 
 
+def test_native_features_use_registry_order():
+    config = resolve_build_config(
+        platform_name="linux",
+        compiler="clang++",
+        mode="release",
+        openmp=False,
+        features="test-native-feature,simd-log",
+    )
+
+    assert config["enabled_features"] == ["simd-log", "test-native-feature"]
+    assert config["enabled_feature_defines"][-1] == (
+        'INFOMAP_ENABLED_NATIVE_FEATURES="simd-log,test-native-feature"'
+    )
+
+
 def test_explicit_native_feature_uses_msvc_define_syntax():
     config = resolve_build_config(
         platform_name="win32",
