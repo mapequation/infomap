@@ -64,6 +64,49 @@ std::map<EdgeKey, double> aggregatedModuleFlow(InfoNode& root, bool undirected)
   return flows;
 }
 
+struct ConsolidatedSnapshot {
+  std::map<EdgeKey, double> moduleFlows;
+  unsigned int numTopModules = 0;
+  unsigned int rootChildDegree = 0;
+  double codelength = 0.0;
+  double indexCodelength = 0.0;
+};
+
+void addConsolidationTestLinks(InfomapWrapper& im)
+{
+  im.addLink(1, 2);
+  im.addLink(2, 1);
+  im.addLink(3, 4);
+  im.addLink(4, 3);
+  im.addLink(1, 3);
+  im.addLink(2, 3);
+  im.addLink(2, 4);
+  im.addLink(3, 1);
+  im.addLink(4, 2);
+}
+
+ConsolidatedSnapshot consolidateFourNodeFixture(const std::string& extraFlags)
+{
+  InfomapWrapper im(infomap::test::defaultFlags(extraFlags));
+  addConsolidationTestLinks(im);
+  im.initNetwork(im.network());
+  im.setActiveNetworkFromLeafs();
+  im.initPartition();
+
+  std::vector<unsigned int> modules { 0, 0, 1, 1 };
+  im.moveActiveNodesToPredefinedModules(modules);
+
+  im.consolidateModules(false);
+
+  return {
+    aggregatedModuleFlow(im.root(), im.isUndirectedClustering()),
+    im.numTopModules(),
+    im.root().childDegree(),
+    im.codelength(),
+    im.getIndexCodelength(),
+  };
+}
+
 TEST_CASE("Cluster-data clu fixture initializes a two-level partition [fast][core][partition]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());
@@ -545,6 +588,60 @@ TEST_CASE("Consolidate modules preserves aggregated inter-module flow [fast][cor
   CHECK(im.numTopModules() == 2);
   CHECK(im.root().childDegree() == 2);
   CHECK(aggregatedModuleFlow(im.root(), im.isUndirectedClustering()) == expectedFlows);
+}
+
+TEST_CASE("Consolidate modules keeps directed opposite module links separate [fast][core][partition][tree]")
+{
+  InfomapWrapper im(infomap::test::defaultFlags("--directed"));
+  addConsolidationTestLinks(im);
+  im.initNetwork(im.network());
+  im.setActiveNetworkFromLeafs();
+  im.initPartition();
+
+  std::vector<unsigned int> modules { 0, 0, 1, 1 };
+  im.moveActiveNodesToPredefinedModules(modules);
+
+  const auto expectedFlows = aggregatedInterModuleFlow(im.activeNetwork(), im.isUndirectedClustering());
+  REQUIRE(expectedFlows.size() == 2);
+
+  im.consolidateModules(false);
+
+  CHECK(im.numTopModules() == 2);
+  CHECK(im.root().childDegree() == 2);
+  CHECK(aggregatedModuleFlow(im.root(), im.isUndirectedClustering()) == expectedFlows);
+}
+
+TEST_CASE("Consolidate modules folds undirected opposite module links together [fast][core][partition][tree]")
+{
+  InfomapWrapper im(infomap::test::defaultFlags());
+  addConsolidationTestLinks(im);
+  im.initNetwork(im.network());
+  im.setActiveNetworkFromLeafs();
+  im.initPartition();
+
+  std::vector<unsigned int> modules { 0, 0, 1, 1 };
+  im.moveActiveNodesToPredefinedModules(modules);
+
+  const auto expectedFlows = aggregatedInterModuleFlow(im.activeNetwork(), im.isUndirectedClustering());
+  REQUIRE(expectedFlows.size() == 1);
+
+  im.consolidateModules(false);
+
+  CHECK(im.numTopModules() == 2);
+  CHECK(im.root().childDegree() == 2);
+  CHECK(aggregatedModuleFlow(im.root(), im.isUndirectedClustering()) == expectedFlows);
+}
+
+TEST_CASE("Consolidate modules remains deterministic on repeated setup [fast][core][partition][tree]")
+{
+  const auto first = consolidateFourNodeFixture("--directed");
+  const auto second = consolidateFourNodeFixture("--directed");
+
+  CHECK(second.moduleFlows == first.moduleFlows);
+  CHECK(second.numTopModules == first.numTopModules);
+  CHECK(second.rootChildDegree == first.rootChildDegree);
+  CHECK(second.codelength == doctest::Approx(first.codelength));
+  CHECK(second.indexCodelength == doctest::Approx(first.indexCodelength));
 }
 
 TEST_CASE("Invalid cluster-data fixtures fail deterministically [fast][core][partition][parser]")

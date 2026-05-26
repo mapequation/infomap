@@ -20,6 +20,8 @@
 #include <set>
 #include <utility>
 #include <algorithm>
+#include <cstddef>
+#include <vector>
 
 namespace infomap {
 
@@ -712,9 +714,23 @@ inline void InfomapOptimizer<Objective>::consolidateModules(bool replaceExisting
     modules[moduleIndex]->addChild(node);
   }
 
-  using NodePair = std::pair<unsigned int, unsigned int>;
-  using EdgeMap = std::map<NodePair, double>;
-  EdgeMap moduleLinks;
+  struct ModuleLink {
+    unsigned int source;
+    unsigned int target;
+    double flow;
+  };
+
+  std::size_t numInterModuleLinks = 0;
+  for (auto& node : network) {
+    const unsigned int module1 = node->index;
+    for (auto& e : node->outEdges()) {
+      if (module1 != e->target->index)
+        ++numInterModuleLinks;
+    }
+  }
+
+  std::vector<ModuleLink> moduleLinks;
+  moduleLinks.reserve(numInterModuleLinks);
 
   for (auto& node : network) {
     unsigned int module1 = node->index;
@@ -727,18 +743,26 @@ inline void InfomapOptimizer<Objective>::consolidateModules(bool replaceExisting
         // If undirected, the order may be swapped to aggregate the edge on an opposite one
         if (m_infomap->isUndirectedClustering() && m1 > m2)
           std::swap(m1, m2);
-        auto ret = moduleLinks.insert(std::make_pair(NodePair(m1, m2), edge.data.flow));
-        if (!ret.second) {
-          ret.first->second += edge.data.flow;
-        }
+        moduleLinks.push_back({ m1, m2, edge.data.flow });
       }
     }
   }
 
+  std::stable_sort(moduleLinks.begin(), moduleLinks.end(), [](const ModuleLink& a, const ModuleLink& b) {
+    return a.source < b.source || (a.source == b.source && a.target < b.target);
+  });
+
   // Add the aggregated edge flow structure to the new modules
-  for (auto& e : moduleLinks) {
-    const auto& nodePair = e.first;
-    modules[nodePair.first]->addOutEdge(*modules[nodePair.second], 0.0, e.second);
+  for (std::size_t i = 0; i < moduleLinks.size();) {
+    const auto source = moduleLinks[i].source;
+    const auto target = moduleLinks[i].target;
+    double flow = 0.0;
+    do {
+      flow += moduleLinks[i].flow;
+      ++i;
+    } while (i < moduleLinks.size() && moduleLinks[i].source == source && moduleLinks[i].target == target);
+
+    modules[source]->addOutEdge(*modules[target], 0.0, flow);
   }
 
   if (replaceExistingModules) {
