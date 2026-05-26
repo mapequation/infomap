@@ -207,15 +207,33 @@ def _define_flag(compiler_family, define):
     return f"-D{define}=1"
 
 
+def _define_string_flag(compiler_family, define, value):
+    if compiler_family == "msvc":
+        return f'/D{define}=\\"{value}\\"'
+    return f'-D{define}=\\"{value}\\"'
+
+
 def _feature_compile_flags(compiler_family, features):
-    return [
+    flags = [
         _define_flag(compiler_family, FEATURE_REGISTRY[feature]["define"])
         for feature in features
     ]
+    if features:
+        flags.append(
+            _define_string_flag(
+                compiler_family,
+                "INFOMAP_ENABLED_NATIVE_FEATURES",
+                ",".join(features),
+            )
+        )
+    return flags
 
 
 def _feature_definitions(features):
-    return [f"{FEATURE_REGISTRY[feature]['define']}=1" for feature in features]
+    definitions = [f"{FEATURE_REGISTRY[feature]['define']}=1" for feature in features]
+    if features:
+        definitions.append(f'INFOMAP_ENABLED_NATIVE_FEATURES="{",".join(features)}"')
+    return definitions
 
 
 def resolve_build_config(
@@ -278,16 +296,16 @@ def resolve_build_config(
             openmp_compile_flags.append("-fopenmp")
             openmp_link_flags.append("-fopenmp")
 
-    compile_flags = _dedupe(
+    cmake_compile_flags = _dedupe(
         base_compile_flags
         + mode_compile_flags
         + native_compile_flags
-        + feature_compile_flags
         + openmp_compile_flags
         + platform_compile_flags
         + _split_flags(cppflags)
         + _split_flags(cxxflags)
     )
+    compile_flags = _dedupe(cmake_compile_flags + feature_compile_flags)
     link_flags = _dedupe(
         platform_link_flags
         + native_link_flags
@@ -311,6 +329,7 @@ def resolve_build_config(
         "brew_prefix": brew_prefix,
         "libomp_prefix": libomp_prefix,
         "deployment_target": deployment_target,
+        "cmake_compile_flags": cmake_compile_flags,
         "compile_flags": compile_flags,
         "link_flags": link_flags,
     }
@@ -342,6 +361,7 @@ def main():
             "brew_prefix",
             "libomp_prefix",
             "deployment_target",
+            "cmake_compile_flags",
             "compile_flags",
             "link_flags",
         ],

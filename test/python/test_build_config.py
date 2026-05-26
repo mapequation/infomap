@@ -103,6 +103,7 @@ def test_native_features_are_disabled_by_default():
     assert config["enabled_feature_defines"] == []
     assert "-DINFOMAP_USE_SIMD_LOG=1" not in config["compile_flags"]
     assert "-DINFOMAP_FEATURE_TEST_NATIVE_FEATURE=1" not in config["compile_flags"]
+    assert "INFOMAP_ENABLED_NATIVE_FEATURES" not in " ".join(config["compile_flags"])
 
 
 def test_explicit_native_feature_emits_compile_define():
@@ -116,9 +117,20 @@ def test_explicit_native_feature_emits_compile_define():
 
     assert config["enabled_features"] == ["test-native-feature"]
     assert config["enabled_feature_defines"] == [
-        "INFOMAP_FEATURE_TEST_NATIVE_FEATURE=1"
+        "INFOMAP_FEATURE_TEST_NATIVE_FEATURE=1",
+        'INFOMAP_ENABLED_NATIVE_FEATURES="test-native-feature"',
     ]
     assert "-DINFOMAP_FEATURE_TEST_NATIVE_FEATURE=1" in config["compile_flags"]
+    assert (
+        '-DINFOMAP_ENABLED_NATIVE_FEATURES=\\"test-native-feature\\"'
+        in config["compile_flags"]
+    )
+    assert (
+        "-DINFOMAP_FEATURE_TEST_NATIVE_FEATURE=1" not in config["cmake_compile_flags"]
+    )
+    assert "INFOMAP_ENABLED_NATIVE_FEATURES" not in " ".join(
+        config["cmake_compile_flags"]
+    )
 
 
 def test_simd_log_is_native_feature():
@@ -131,8 +143,12 @@ def test_simd_log_is_native_feature():
     )
 
     assert config["enabled_features"] == ["simd-log"]
-    assert config["enabled_feature_defines"] == ["INFOMAP_USE_SIMD_LOG=1"]
+    assert config["enabled_feature_defines"] == [
+        "INFOMAP_USE_SIMD_LOG=1",
+        'INFOMAP_ENABLED_NATIVE_FEATURES="simd-log"',
+    ]
     assert "-DINFOMAP_USE_SIMD_LOG=1" in config["compile_flags"]
+    assert '-DINFOMAP_ENABLED_NATIVE_FEATURES=\\"simd-log\\"' in config["compile_flags"]
 
 
 def test_explicit_native_feature_uses_msvc_define_syntax():
@@ -145,9 +161,14 @@ def test_explicit_native_feature_uses_msvc_define_syntax():
 
     assert config["enabled_features"] == ["test-native-feature"]
     assert config["enabled_feature_defines"] == [
-        "INFOMAP_FEATURE_TEST_NATIVE_FEATURE=1"
+        "INFOMAP_FEATURE_TEST_NATIVE_FEATURE=1",
+        'INFOMAP_ENABLED_NATIVE_FEATURES="test-native-feature"',
     ]
     assert "/DINFOMAP_FEATURE_TEST_NATIVE_FEATURE=1" in config["compile_flags"]
+    assert (
+        '/DINFOMAP_ENABLED_NATIVE_FEATURES=\\"test-native-feature\\"'
+        in config["compile_flags"]
+    )
 
 
 def test_unknown_native_feature_fails_early():

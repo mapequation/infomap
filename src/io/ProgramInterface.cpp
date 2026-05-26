@@ -8,6 +8,7 @@
  ******************************************************************************/
 
 #include "ProgramInterface.h"
+#include "NativeFeatures.h"
 #include "../utils/Log.h"
 
 #include <map>
@@ -236,18 +237,6 @@ namespace {
       words.push_back(io::Str() << "--" << opt.longName);
     }
     return words;
-  }
-
-  std::vector<std::string> enabledNativeFeatures()
-  {
-    std::vector<std::string> features;
-#if INFOMAP_FEATURE_TEST_NATIVE_FEATURE
-    features.emplace_back("test-native-feature");
-#endif
-#if defined(INFOMAP_USE_SIMD_LOG)
-    features.emplace_back("simd-log");
-#endif
-    return features;
   }
 
 } // namespace

@@ -70,7 +70,7 @@ function(infomap_json_array output_name field_name)
     set(${output_name} "${ITEMS}" PARENT_SCOPE)
 endfunction()
 
-infomap_json_array(INFOMAP_COMPILE_FLAGS compile_flags)
+infomap_json_array(INFOMAP_COMPILE_FLAGS cmake_compile_flags)
 infomap_json_array(INFOMAP_LINK_FLAGS link_flags)
 infomap_json_array(INFOMAP_ENABLED_FEATURE_DEFINES enabled_feature_defines)
 

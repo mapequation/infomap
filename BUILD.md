@@ -138,10 +138,10 @@ make test-native TEST_CMAKE_ARGS='-DINFOMAP_FEATURES=feature-x'
 To add a new native feature flag, register it in `scripts/build_config.py`,
 gate the related `Config` fields, `parameterCatalog()` entries, and
 implementation with the macro named by the feature registry's `define` field,
-then add `--version` reporting in `src/io/ProgramInterface.cpp` and cover both
-the default-off and enabled builds in tests. `scripts/build_config.py` is the
-source of truth for feature names, compile definitions, dependencies, and
-conflicts.
+then cover both the default-off and enabled builds in tests. `--version`
+reports enabled native features from build-config metadata. `scripts/build_config.py`
+is the source of truth for feature names, compile definitions, dependencies,
+and conflicts.
 
 ## Python package
 
