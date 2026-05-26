@@ -26,6 +26,7 @@ def assert_completion(output):
 def main() -> int:
     cli = sys.argv[1]
     help_result = run(cli, "-hh")
+    assert help_result.returncode == 0, help_result.stderr
     expect_test_native_feature = "--test-native-feature" in help_result.stdout
 
     bash = run(cli, "--completion", "bash")
