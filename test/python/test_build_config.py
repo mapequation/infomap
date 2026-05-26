@@ -89,3 +89,61 @@ def test_clang_without_openmp_drops_openmp_flags():
     assert "-Xpreprocessor" not in config["compile_flags"]
     assert "-fopenmp" not in config["compile_flags"]
     assert "-lomp" not in config["link_flags"]
+
+
+def test_native_features_are_disabled_by_default():
+    config = resolve_build_config(
+        platform_name="linux",
+        compiler="clang++",
+        mode="release",
+        openmp=False,
+    )
+
+    assert config["enabled_features"] == []
+    assert config["enabled_feature_defines"] == []
+    assert "-DINFOMAP_FEATURE_TEST_NATIVE_FEATURE=1" not in config["compile_flags"]
+
+
+def test_explicit_native_feature_emits_compile_define():
+    config = resolve_build_config(
+        platform_name="linux",
+        compiler="clang++",
+        mode="release",
+        openmp=False,
+        features=["test-native-feature"],
+    )
+
+    assert config["enabled_features"] == ["test-native-feature"]
+    assert config["enabled_feature_defines"] == [
+        "INFOMAP_FEATURE_TEST_NATIVE_FEATURE=1"
+    ]
+    assert "-DINFOMAP_FEATURE_TEST_NATIVE_FEATURE=1" in config["compile_flags"]
+
+
+def test_explicit_native_feature_uses_msvc_define_syntax():
+    config = resolve_build_config(
+        platform_name="win32",
+        compiler="cl.exe",
+        openmp=False,
+        features="test-native-feature",
+    )
+
+    assert config["enabled_features"] == ["test-native-feature"]
+    assert config["enabled_feature_defines"] == [
+        "INFOMAP_FEATURE_TEST_NATIVE_FEATURE=1"
+    ]
+    assert "/DINFOMAP_FEATURE_TEST_NATIVE_FEATURE=1" in config["compile_flags"]
+
+
+def test_unknown_native_feature_fails_early():
+    try:
+        resolve_build_config(
+            platform_name="linux",
+            compiler="clang++",
+            openmp=False,
+            features=["unknown-feature"],
+        )
+    except ValueError as error:
+        assert "Unknown native feature 'unknown-feature'" in str(error)
+    else:
+        raise AssertionError("unknown native feature did not fail")

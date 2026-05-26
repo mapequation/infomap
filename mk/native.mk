@@ -1,7 +1,7 @@
 NATIVE_BINARY := Infomap
-NATIVE_OBJECT_DIR := build/native/$(MODE)-omp$(OPENMP)
+NATIVE_OBJECT_DIR := build/native/$(MODE)-omp$(OPENMP)-features-$(NATIVE_FEATURE_CACHE_KEY)
 LIB_OUTPUT := lib/libInfomap.a
-LIB_OBJECT_DIR := build/lib/$(MODE)-omp$(OPENMP)
+LIB_OBJECT_DIR := build/lib/$(MODE)-omp$(OPENMP)-features-$(NATIVE_FEATURE_CACHE_KEY)
 PUBLIC_INCLUDE_DIR := include
 
 NATIVE_OBJECTS := $(SOURCES:src/%.cpp=$(NATIVE_OBJECT_DIR)/%.o)
@@ -11,7 +11,7 @@ LIB_HEADERS := $(HEADERS:src/%.h=$(PUBLIC_INCLUDE_DIR)/%.h)
 .PHONY: build-native build-lib clean-native format-native format-native-check
 
 build-native: $(NATIVE_BINARY)
-	@printf "Built %s (MODE=%s OPENMP=%s)\n" "$(NATIVE_BINARY)" "$(MODE)" "$(OPENMP)"
+	@printf "Built %s (MODE=%s OPENMP=%s FEATURES=%s)\n" "$(NATIVE_BINARY)" "$(MODE)" "$(OPENMP)" "$(if $(BUILD_CONFIG_ENABLED_FEATURES),$(BUILD_CONFIG_ENABLED_FEATURES),none)"
 
 $(NATIVE_BINARY): $(NATIVE_OBJECTS)
 	@echo "Linking object files to target $@..."

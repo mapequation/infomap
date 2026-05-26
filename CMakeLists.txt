@@ -10,6 +10,7 @@ set_property(CACHE INFOMAP_MODE PROPERTY STRINGS release debug)
 set(INFOMAP_EXTRA_CPPFLAGS "" CACHE STRING "Extra preprocessor/compiler flags appended to the shared build policy.")
 set(INFOMAP_EXTRA_CXX_FLAGS "" CACHE STRING "Extra C++ compiler flags appended to the shared build policy.")
 set(INFOMAP_EXTRA_LINK_FLAGS "" CACHE STRING "Extra linker flags appended to the shared build policy.")
+set(INFOMAP_FEATURES "" CACHE STRING "Space- or comma-separated experimental feature names to compile in. Empty builds the default stable feature set.")
 
 # Keep CMake build types available for generators and output directories, but let the
 # shared build policy own optimization, debug, and OpenMP flags across all surfaces.
@@ -51,36 +52,35 @@ execute_process(
         --openmp "${INFOMAP_OPENMP_ARG}"
         --native-arch "${INFOMAP_NATIVE_ARCH_ARG}"
         --simd-log "${INFOMAP_SIMD_LOG_ARG}"
+        --features "${INFOMAP_FEATURES}"
         --compiler "${CMAKE_CXX_COMPILER}"
         --platform "${CMAKE_SYSTEM_NAME}"
     OUTPUT_VARIABLE INFOMAP_BUILD_CONFIG_JSON
+    ERROR_VARIABLE INFOMAP_BUILD_CONFIG_ERROR
     RESULT_VARIABLE INFOMAP_BUILD_CONFIG_RESULT
     OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 
 if(NOT INFOMAP_BUILD_CONFIG_RESULT EQUAL 0)
-    message(FATAL_ERROR "Failed to resolve Infomap build config.")
+    message(FATAL_ERROR "Failed to resolve Infomap build config: ${INFOMAP_BUILD_CONFIG_ERROR}")
 endif()
 
-string(JSON INFOMAP_COMPILE_FLAG_COUNT LENGTH "${INFOMAP_BUILD_CONFIG_JSON}" compile_flags)
-math(EXPR INFOMAP_COMPILE_FLAG_LAST "${INFOMAP_COMPILE_FLAG_COUNT} - 1")
-set(INFOMAP_COMPILE_FLAGS "")
-if(INFOMAP_COMPILE_FLAG_COUNT GREATER 0)
-    foreach(INDEX RANGE ${INFOMAP_COMPILE_FLAG_LAST})
-        string(JSON INFOMAP_COMPILE_FLAG GET "${INFOMAP_BUILD_CONFIG_JSON}" compile_flags ${INDEX})
-        list(APPEND INFOMAP_COMPILE_FLAGS "${INFOMAP_COMPILE_FLAG}")
-    endforeach()
-endif()
+function(infomap_json_array output_name field_name)
+    string(JSON ITEM_COUNT LENGTH "${INFOMAP_BUILD_CONFIG_JSON}" "${field_name}")
+    set(ITEMS "")
+    if(ITEM_COUNT GREATER 0)
+        math(EXPR ITEM_LAST "${ITEM_COUNT} - 1")
+        foreach(INDEX RANGE ${ITEM_LAST})
+            string(JSON ITEM GET "${INFOMAP_BUILD_CONFIG_JSON}" "${field_name}" ${INDEX})
+            list(APPEND ITEMS "${ITEM}")
+        endforeach()
+    endif()
+    set(${output_name} "${ITEMS}" PARENT_SCOPE)
+endfunction()
 
-string(JSON INFOMAP_LINK_FLAG_COUNT LENGTH "${INFOMAP_BUILD_CONFIG_JSON}" link_flags)
-math(EXPR INFOMAP_LINK_FLAG_LAST "${INFOMAP_LINK_FLAG_COUNT} - 1")
-set(INFOMAP_LINK_FLAGS "")
-if(INFOMAP_LINK_FLAG_COUNT GREATER 0)
-    foreach(INDEX RANGE ${INFOMAP_LINK_FLAG_LAST})
-        string(JSON INFOMAP_LINK_FLAG GET "${INFOMAP_BUILD_CONFIG_JSON}" link_flags ${INDEX})
-        list(APPEND INFOMAP_LINK_FLAGS "${INFOMAP_LINK_FLAG}")
-    endforeach()
-endif()
+infomap_json_array(INFOMAP_COMPILE_FLAGS compile_flags)
+infomap_json_array(INFOMAP_LINK_FLAGS link_flags)
+infomap_json_array(INFOMAP_ENABLED_FEATURE_DEFINES enabled_feature_defines)
 
 find_program(CCACHE ccache)
 if(CCACHE)
@@ -117,6 +117,7 @@ target_include_directories(infomap_core PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src"
 target_compile_features(infomap_core PUBLIC cxx_std_14)
 set_target_properties(infomap_core PROPERTIES CXX_EXTENSIONS OFF)
 target_compile_options(infomap_core PRIVATE ${INFOMAP_COMPILE_FLAGS})
+target_compile_definitions(infomap_core PUBLIC ${INFOMAP_ENABLED_FEATURE_DEFINES})
 target_link_options(infomap_core PUBLIC ${INFOMAP_LINK_FLAGS})
 
 if(INFOMAP_ENABLE_SANITIZERS)

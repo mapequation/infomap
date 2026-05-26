@@ -39,6 +39,10 @@ MODE ?= release
 OPENMP ?= 1
 NATIVE_ARCH ?= 0
 SIMD_LOG ?= 0
+FEATURES ?=
+
+empty :=
+space := $(empty) $(empty)
 
 VALID_MODES := release debug
 VALID_OPENMP := 0 1
@@ -69,11 +73,12 @@ BINDING_OPTIONS_SCRIPT := scripts/generate_binding_options.py
 BUILD_CONFIG_SCRIPT := scripts/build_config.py
 
 define build_config_field
-$(strip $(shell CPPFLAGS='$(CPPFLAGS)' CXXFLAGS='$(CXXFLAGS)' LDFLAGS='$(LDFLAGS)' MACOSX_DEPLOYMENT_TARGET='$(MACOSX_DEPLOYMENT_TARGET)' $(PYTHON_FOR_BUILD_CONFIG) $(BUILD_CONFIG_SCRIPT) field --field "$(1)" --mode "$(MODE)" --openmp "$(OPENMP)" --native-arch "$(NATIVE_ARCH)" --simd-log "$(SIMD_LOG)" --compiler "$(CXX)" --platform "$(UNAME_S)"))
+$(strip $(shell CPPFLAGS='$(CPPFLAGS)' CXXFLAGS='$(CXXFLAGS)' LDFLAGS='$(LDFLAGS)' MACOSX_DEPLOYMENT_TARGET='$(MACOSX_DEPLOYMENT_TARGET)' $(PYTHON_FOR_BUILD_CONFIG) $(BUILD_CONFIG_SCRIPT) field --field "$(1)" --mode "$(MODE)" --openmp "$(OPENMP)" --native-arch "$(NATIVE_ARCH)" --simd-log "$(SIMD_LOG)" --features "$(FEATURES)" --compiler "$(CXX)" --platform "$(UNAME_S)"))
 endef
 
 BUILD_CONFIG_MODE := $(call build_config_field,mode)
 BUILD_CONFIG_OPENMP := $(call build_config_field,openmp)
+BUILD_CONFIG_ENABLED_FEATURES := $(call build_config_field,enabled_features)
 BUILD_CONFIG_PLATFORM := $(call build_config_field,platform)
 BUILD_CONFIG_COMPILER := $(call build_config_field,compiler)
 BUILD_CONFIG_COMPILER_FAMILY := $(call build_config_field,compiler_family)
@@ -82,6 +87,7 @@ BUILD_CONFIG_LIBOMP_PREFIX := $(call build_config_field,libomp_prefix)
 BUILD_CONFIG_DEPLOYMENT_TARGET := $(call build_config_field,deployment_target)
 NATIVE_CXXFLAGS := $(call build_config_field,compile_flags)
 NATIVE_LDFLAGS := $(call build_config_field,link_flags)
+NATIVE_FEATURE_CACHE_KEY := $(if $(BUILD_CONFIG_ENABLED_FEATURES),$(subst $(space),_,$(BUILD_CONFIG_ENABLED_FEATURES)),none)
 CXX_COMPILE := $(if $(and $(filter 1,$(USE_CCACHE)),$(CCACHE_BIN)),$(CCACHE_BIN) ,)$(CXX)
 
 # LTO + GCC: plain `ar` strips the LTO bitcode from .o files, leaving an empty

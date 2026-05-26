@@ -12,6 +12,7 @@
 
 #include <map>
 #include <utility>
+#include <vector>
 
 namespace infomap {
 
@@ -237,6 +238,15 @@ namespace {
     return words;
   }
 
+  std::vector<std::string> enabledNativeFeatures()
+  {
+    std::vector<std::string> features;
+#if INFOMAP_FEATURE_TEST_NATIVE_FEATURE
+    features.emplace_back("test-native-feature");
+#endif
+    return features;
+  }
+
 } // namespace
 
 ProgramInterface::ProgramInterface(std::string name, std::string shortDescription, std::string version)
@@ -327,6 +337,13 @@ void ProgramInterface::exitWithVersionInformation() const
   Log() << " compiled with OpenMP";
 #endif
   Log() << '\n';
+  const auto features = enabledNativeFeatures();
+  if (!features.empty()) {
+    Log() << "Native features:";
+    for (const auto& feature : features)
+      Log() << " " << feature;
+    Log() << '\n';
+  }
   Log() << "See www.mapequation.org for terms of use.\n";
   throw CleanExit {};
 }

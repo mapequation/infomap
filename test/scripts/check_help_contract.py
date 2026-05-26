@@ -25,6 +25,7 @@ def main() -> int:
     cli = sys.argv[1]
 
     standard = run(cli, "--help")
+    version = run(cli, "--version")
     assert "Usage:\n        Infomap network_file out_directory [options]" in standard
     assert "[network_file]" in standard
     assert "[out_directory]" in standard
@@ -34,6 +35,7 @@ def main() -> int:
     assert "--skip-adjust-bipartite-flow" not in standard
     assert "--teleportation-probability" not in standard
     assert "--output <list>" not in standard
+    assert "--test-native-feature" not in standard
     assert_ordered(
         standard,
         [
@@ -46,11 +48,16 @@ def main() -> int:
     )
 
     advanced = run(cli, "-hh")
+    has_test_native_feature = "--test-native-feature" in advanced
     assert "--skip-adjust-bipartite-flow" in advanced
     assert "--teleportation-probability <probability>" in advanced
     assert "--output <list>" in advanced
     assert "--include-self-links" in advanced
     assert "--print-json-parameters" in advanced
+    if has_test_native_feature:
+        assert "Native features: test-native-feature" in version
+    else:
+        assert "test-native-feature" not in version
     assert_ordered(
         advanced,
         [
