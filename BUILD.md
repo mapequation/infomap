@@ -101,9 +101,9 @@ Use `dev-openmp` instead of `dev` for an OpenMP-enabled preset.
 
 ### Feature flags
 
-Experimental compile-time feature flags are only supported for native C++
-builds. They are off by default. Python, R, and JavaScript builds do not
-expose a feature-flag surface.
+Experimental compile-time feature flags are supported for native C++ builds
+and Python wheel builds. They are off by default. R and JavaScript builds do
+not expose a feature-flag surface.
 
 Configure a feature-enabled CMake build by passing feature names through
 `INFOMAP_FEATURES`:
@@ -118,6 +118,14 @@ Configure a feature-enabled Make native build by passing feature names through
 
 ```bash
 make build-native FEATURES=feature-x
+```
+
+Configure a feature-enabled Python wheel or editable local install through the
+same `FEATURES` variable:
+
+```bash
+FEATURES=regularized-multilayer make build-python
+FEATURES=regularized-multilayer make dev-python-install
 ```
 
 Feature names are defined in `scripts/build_config.py`. The existing SIMD log
@@ -138,10 +146,11 @@ make test-native TEST_CMAKE_ARGS='-DINFOMAP_FEATURES=feature-x'
 To add a new feature flag, register it in `scripts/build_config.py`,
 gate the related `Config` fields, `parameterCatalog()` entries, and
 implementation with the macro named by the feature registry's `define` field,
-then cover both the default-off and enabled builds in tests. `--version`
-reports enabled features from build-config metadata. `scripts/build_config.py`
-is the source of truth for feature names, compile definitions, dependencies,
-and conflicts.
+then cover both the default-off and enabled builds in tests. Feature flags are
+compile-time build inputs, not runtime API options. `--version` and Python
+`infomap.build_info()` report enabled features from build-config metadata.
+`scripts/build_config.py` is the source of truth for feature names, compile
+definitions, dependencies, and conflicts.
 
 ## Python package
 

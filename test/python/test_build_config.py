@@ -1,9 +1,12 @@
+import ast
 import importlib.util
 from pathlib import Path
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 BUILD_CONFIG_PATH = REPO_ROOT / "scripts" / "build_config.py"
+PYTHON_MK_PATH = REPO_ROOT / "mk" / "python.mk"
+SETUP_PY_PATH = REPO_ROOT / "setup.py"
 
 
 def load_build_config():
@@ -214,3 +217,45 @@ def test_unknown_feature_fails_early():
         assert "Unknown feature 'unknown-feature'" in str(error)
     else:
         raise AssertionError("unknown feature did not fail")
+
+
+def test_python_make_build_env_passes_features():
+    python_mk = PYTHON_MK_PATH.read_text(encoding="utf-8")
+
+    assert 'FEATURES="$(FEATURES)"' in python_mk
+
+
+def test_setup_py_passes_features_env_to_build_config():
+    setup_tree = ast.parse(SETUP_PY_PATH.read_text(encoding="utf-8"))
+
+    resolve_calls = [
+        node
+        for node in ast.walk(setup_tree)
+        if isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Name)
+        and node.func.id == "resolve_build_config"
+    ]
+
+    assert len(resolve_calls) == 1
+    feature_keywords = [
+        keyword for keyword in resolve_calls[0].keywords if keyword.arg == "features"
+    ]
+    assert len(feature_keywords) == 1
+    feature_value = feature_keywords[0].value
+    assert isinstance(feature_value, ast.Call)
+    assert isinstance(feature_value.func, ast.Attribute)
+    assert feature_value.func.attr == "get"
+    assert isinstance(feature_value.func.value, ast.Attribute)
+    assert feature_value.func.value.attr == "environ"
+    assert isinstance(feature_value.func.value.value, ast.Name)
+    assert feature_value.func.value.value.id == "os"
+    assert [arg.value for arg in feature_value.args] == ["FEATURES", ""]
+
+
+def test_setup_py_unescapes_string_defines_for_setuptools():
+    setup_py = SETUP_PY_PATH.read_text(encoding="utf-8")
+
+    assert (
+        "arg.replace('\\\\\"', '\"') for arg in shared_build[\"compile_flags\"]"
+        in setup_py
+    )

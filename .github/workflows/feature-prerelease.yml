@@ -1,0 +1,68 @@
+name: Feature Prerelease
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Branch, tag, or SHA to build.
+        required: false
+        type: string
+        default: ""
+      features:
+        description: Space- or comma-separated compile-time features.
+        required: false
+        type: string
+        default: regularized-multilayer
+      publish:
+        description: Publish wheel artifacts to PyPI.
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: feature-prerelease-${{ github.ref_name }}-${{ inputs.features }}
+  cancel-in-progress: false
+
+jobs:
+  python:
+    uses: ./.github/workflows/_python-package.yml
+    with:
+      ref: ${{ inputs.ref || github.sha }}
+      run-tests: true
+      build-release-artifacts: true
+      features: ${{ inputs.features }}
+
+  publish-pypi:
+    name: Publish feature prerelease wheels to PyPI
+    if: inputs.publish
+    needs: [python]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment:
+      name: pypi-prerelease
+      url: https://pypi.org/project/infomap/
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Download Python wheels
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: python-wheels-*
+          path: dist/python
+          merge-multiple: true
+
+      - name: Verify Python wheels
+        run: |
+          find dist/python -maxdepth 1 -name '*.whl' -print | sort
+          wheel_count="$(find dist/python -maxdepth 1 -name '*.whl' | wc -l | tr -d ' ')"
+          [ "$wheel_count" -gt 0 ]
+
+      - name: Publish feature prerelease wheels to PyPI
+        uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b # release/v1
+        with:
+          packages-dir: dist/python
