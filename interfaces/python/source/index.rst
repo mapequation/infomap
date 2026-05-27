@@ -27,6 +27,11 @@ Quick start
 Continue to :doc:`installation` for optional integrations and shell completion,
 or jump to :doc:`quickstart` for the first end-to-end example.
 
+For Jupyter, start with the flagship
+`quickstart notebook <https://github.com/mapequation/infomap/blob/master/examples/notebooks/quickstart.ipynb>`_.
+It shows the notebook-native Infomap result summary, dataframe inspection, and
+a copyable static network partition helper.
+
 Where to go next
 ----------------
 

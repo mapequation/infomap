@@ -109,6 +109,7 @@ release = [
 
 [project.scripts]
 infomap = "infomap:main"
+infomap-shell = "infomap.shell:main"
 
 [tool.setuptools]
 include-package-data = true
