@@ -129,6 +129,19 @@ TEST_CASE("Network rejects malformed multilayer fixture lines [fast][core][parse
       std::runtime_error);
 }
 
+TEST_CASE("Network rejects explicit multilayer input with regularized flow [fast][core][parser]")
+{
+  Config config;
+  config.silent = true;
+  config.regularized = true;
+  Network network(config);
+
+  CHECK_THROWS_WITH_AS(
+      network.readInputData(infomap::test::repoPath("test/fixtures/networks/multilayer.net")),
+      "Regularized multilayer flow requires *Intra/*Inter input; explicit *Multilayer input is not supported with --regularized.",
+      std::runtime_error);
+}
+
 TEST_CASE("NetworkBuilder validates bipartite intake while building Network state [fast][core][parser]")
 {
   const std::string path = "invalid_bipartite_test.net";

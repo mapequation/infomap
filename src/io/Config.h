@@ -194,6 +194,7 @@ struct Config {
     multilayerJSRelaxRate = other.multilayerJSRelaxRate;
     multilayerRelaxByJensenShannonDivergence = other.multilayerRelaxByJensenShannonDivergence;
     multilayerJSRelaxLimit = other.multilayerJSRelaxLimit;
+    maxFlowIterations = other.maxFlowIterations;
     twoLevel = other.twoLevel;
     noCoarseTune = other.noCoarseTune;
     recordedTeleportation = other.recordedTeleportation;
@@ -247,6 +248,9 @@ struct Config {
 
   bool isMultilayerNetwork() const { return multilayerInput || !additionalInput.empty(); }
   bool isBipartite() const { return bipartite; }
+#ifndef SWIG
+  bool isRegularizedMultilayerFlow() const { return isMultilayerNetwork() && regularized; }
+#endif
 
   bool haveMemory() const { return stateInput; }
   bool printStates() const { return stateOutput; }

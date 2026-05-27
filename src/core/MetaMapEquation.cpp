@@ -48,6 +48,7 @@ std::ostream& operator<<(std::ostream& out, const MetaMapEquation& mapEq)
 void MetaMapEquation::init(const Config& config)
 {
   Log(3) << "MetaMapEquation::init()...\n";
+  Base::init(config);
   numMetaDataDimensions = config.numMetaDataDimensions;
   metaDataRate = config.metaDataRate;
   weightByFlow = !config.unweightedMetaData;
