@@ -21,10 +21,19 @@ def assert_ordered(output: str, needles: list[str]) -> None:
         position = next_position
 
 
+def version_features(output: str) -> set[str]:
+    for line in output.splitlines():
+        prefix = "Features: "
+        if line.startswith(prefix):
+            return set(line[len(prefix) :].replace(",", " ").split())
+    return set()
+
+
 def main() -> int:
     cli = sys.argv[1]
 
     standard = run(cli, "--help")
+    version = run(cli, "--version")
     assert "Usage:\n        Infomap network_file out_directory [options]" in standard
     assert "[network_file]" in standard
     assert "[out_directory]" in standard
@@ -34,6 +43,7 @@ def main() -> int:
     assert "--skip-adjust-bipartite-flow" not in standard
     assert "--teleportation-probability" not in standard
     assert "--output <list>" not in standard
+    assert "--test-feature" not in standard
     assert_ordered(
         standard,
         [
@@ -46,11 +56,16 @@ def main() -> int:
     )
 
     advanced = run(cli, "-hh")
+    has_test_feature = "--test-feature" in advanced
     assert "--skip-adjust-bipartite-flow" in advanced
     assert "--teleportation-probability <probability>" in advanced
     assert "--output <list>" in advanced
     assert "--include-self-links" in advanced
     assert "--print-json-parameters" in advanced
+    if has_test_feature:
+        assert "test-feature" in version_features(version)
+    else:
+        assert "test-feature" not in version_features(version)
     assert_ordered(
         advanced,
         [

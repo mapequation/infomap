@@ -14,25 +14,25 @@
 #include <cstdlib>
 
 #if defined(__GNUC__) || defined(__clang__)
-  #define INFOMAP_HOT __attribute__((hot))
-  #define INFOMAP_ALWAYS_INLINE __attribute__((always_inline))
-  #define INFOMAP_LIKELY(x) __builtin_expect(!!(x), 1)
-  #define INFOMAP_UNLIKELY(x) __builtin_expect(!!(x), 0)
+#define INFOMAP_HOT __attribute__((hot))
+#define INFOMAP_ALWAYS_INLINE __attribute__((always_inline))
+#define INFOMAP_LIKELY(x) __builtin_expect(!!(x), 1)
+#define INFOMAP_UNLIKELY(x) __builtin_expect(!!(x), 0)
 #else
-  #define INFOMAP_HOT
-  #define INFOMAP_ALWAYS_INLINE
-  #define INFOMAP_LIKELY(x) (x)
-  #define INFOMAP_UNLIKELY(x) (x)
+#define INFOMAP_HOT
+#define INFOMAP_ALWAYS_INLINE
+#define INFOMAP_LIKELY(x) (x)
+#define INFOMAP_UNLIKELY(x) (x)
 #endif
 
 #if defined(INFOMAP_USE_SIMD_LOG) && defined(__ARM_NEON) && defined(__aarch64__)
-  #include <arm_neon.h>
-  #define INFOMAP_NEON_LOG 1
+#include <arm_neon.h>
+#define INFOMAP_NEON_LOG 1
 #endif
 
 #if defined(INFOMAP_USE_SIMD_LOG) && defined(__AVX2__) && defined(__FMA__)
-  #include <immintrin.h>
-  #define INFOMAP_AVX2_LOG 1
+#include <immintrin.h>
+#define INFOMAP_AVX2_LOG 1
 #endif
 
 namespace infomap {

@@ -14,7 +14,9 @@ im$run()
 
 cat(sprintf(
   "Partitioned %d-node network in %d modules with codelength %.4f bits.\n",
-  im$num_nodes, im$num_top_modules, im$codelength
+  im$num_nodes,
+  im$num_top_modules,
+  im$codelength
 ))
 
 comm <- im$as_communities(g)

@@ -133,7 +133,7 @@ clean-python:
 	@find build -maxdepth 1 -type d \( -name 'bdist.*' -o -name 'lib.*' -o -name 'temp.*' \) -exec rm -rf {} + 2>/dev/null || true
 
 format-python:
-	$(RUFF) format $(PYTHON_FORMAT_TARGETS) || true
+	$(RUFF) format $(PYTHON_FORMAT_TARGETS)
 
 release-python-dist:
 	@$(MAKE) --no-print-directory clean-python-build-cache

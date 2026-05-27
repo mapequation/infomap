@@ -13,14 +13,16 @@ library(infomap)
 # via `multilayer_relax_rate` (default 0.15).
 
 intra <- data.frame(
-  layer     = c(1, 1, 1, 2, 2, 2),
+  layer = c(1, 1, 1, 2, 2, 2),
   node_from = c(1, 2, 3, 1, 2, 3),
-  node_to   = c(2, 3, 1, 2, 3, 1)
+  node_to = c(2, 3, 1, 2, 3, 1)
 )
 
 result_intra <- cluster_infomap_multilayer(
   intra,
-  silent = TRUE, num_trials = 5, two_level = TRUE
+  silent = TRUE,
+  num_trials = 5,
+  two_level = TRUE
 )
 
 cat(sprintf(
@@ -37,20 +39,23 @@ print(result_intra$nodes)
 
 edges <- data.frame(
   layer_from = c(1, 1, 1, 2, 2, 2, 1, 1, 1),
-  node_from  = c(1, 2, 3, 1, 2, 3, 1, 2, 3),
-  layer_to   = c(1, 1, 1, 2, 2, 2, 2, 2, 2),
-  node_to    = c(2, 3, 1, 2, 3, 1, 1, 2, 3),
-  weight     = c(1, 1, 1, 1, 1, 1, 0.5, 0.5, 0.5)
+  node_from = c(1, 2, 3, 1, 2, 3, 1, 2, 3),
+  layer_to = c(1, 1, 1, 2, 2, 2, 2, 2, 2),
+  node_to = c(2, 3, 1, 2, 3, 1, 1, 2, 3),
+  weight = c(1, 1, 1, 1, 1, 1, 0.5, 0.5, 0.5)
 )
 
 result_full <- cluster_infomap_multilayer(
   edges,
-  silent = TRUE, num_trials = 5, two_level = TRUE
+  silent = TRUE,
+  num_trials = 5,
+  two_level = TRUE
 )
 
 cat(sprintf(
   "[full]   %d modules, codelength %.4f bits.\n",
-  result_full$num_top_modules, result_full$codelength
+  result_full$num_top_modules,
+  result_full$codelength
 ))
 print(result_full$nodes)
 
@@ -74,6 +79,7 @@ im$run()
 
 cat(sprintf(
   "[R6]     %d modules, codelength %.4f bits.\n",
-  im$num_top_modules, im$codelength
+  im$num_top_modules,
+  im$codelength
 ))
 print(as.data.frame(im))

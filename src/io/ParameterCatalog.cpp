@@ -838,6 +838,14 @@ const std::vector<ParameterSpec>& parameterCatalog()
         .group("Accuracy")
         .advanced()
         .configTarget(&Config::innerParallelization),
+#if INFOMAP_FEATURE_TEST_FEATURE
+    param()
+        .longName("test-feature")
+        .description("Enable the internal feature flag canary.")
+        .group("Accuracy")
+        .advanced()
+        .configTarget(&Config::testFeature),
+#endif
     param()
         .longName("prefer-modular-solution")
         .description("Prefer a modular solution even when one module gives a lower codelength.")
