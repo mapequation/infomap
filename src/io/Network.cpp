@@ -80,7 +80,7 @@ void Network::readInputData(std::string filename, bool accumulate)
 
 void Network::postProcessInputData()
 {
-  if (!m_networks.empty() || m_aggregatedNetwork) {
+  if (!m_networks.empty()) {
     generateStateNetworkFromMultilayer();
   }
 
@@ -211,14 +211,10 @@ void Network::generateStateNetworkFromMultilayer()
 
   if (!m_interLinks.empty()) {
     generateStateNetworkFromMultilayerWithInterLinks();
+  } else if (m_config.regularized) {
+    generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnNodeStrengthRegularized();
   } else {
-    if (m_config.multilayerAggregation) {
-      generateInterlayerLinksFromAggregatedMultilayer();
-    } else if (m_config.regularized) {
-      generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnNodeStrengthRegularized();
-    } else {
-      generateStateNetworkFromMultilayerWithSimulatedInterLinks();
-    }
+    generateStateNetworkFromMultilayerWithSimulatedInterLinks();
   }
 
   // Update physId and layerId on link map
@@ -231,7 +227,6 @@ void Network::generateStateNetworkFromMultilayer()
   //   }
   // }
 
-  m_aggregatedNetwork.reset();
   m_networks.clear();
   m_interLinks.clear();
 }
@@ -317,61 +312,6 @@ void Network::generateStateNetworkFromMultilayerWithInterLinks()
 
           addLink(stateId1, stateId2i, weight);
           ++m_numInterLayerLinks; // TODO: Count all as one?
-        }
-      }
-    }
-  }
-}
-
-void Network::generateInterlayerLinksFromAggregatedMultilayer()
-{
-  auto numLayers = m_layers.size();
-  auto N = m_aggregatedNetwork->numNodes();
-  auto E = m_aggregatedNetwork->numLinks();
-  double priorIntraOutWeight = std::log(N);
-
-  Log() << "  -> " << N << " nodes and " << E << " links in aggregated network...\n";
-  Log() << "  -> Generating inter-layer links in " << numLayers << " layers based on aggregated network...\n"
-        << std::flush;
-
-  double interLinkWeightNormalizationFactor = std::log(numLayers) / numLayers * m_config.regularizationStrength;
-  auto& targetLinks = m_aggregatedNetwork->nodeLinkMap();
-  for (auto& n1It : m_aggregatedNetwork->nodes()) {
-    auto& n1 = n1It.first;
-
-    for (auto& layer1 : m_layers) {
-      unsigned int stateId1i = addMultilayerNode(layer1, n1);
-
-      for (auto& layer2 : m_layers) {
-        auto& targetOutlinks = targetLinks[StateNode(n1)];
-        if (targetOutlinks.empty()) {
-          continue;
-        }
-        double intraOutWeight = m_aggregatedNetwork->outWeights()[n1];
-        if (m_config.multilayerSelfInterLinks) {
-          unsigned int stateId2i = addMultilayerNode(layer2, n1);
-
-          double weight = interLinkWeightNormalizationFactor * intraOutWeight / (priorIntraOutWeight + intraOutWeight);
-          if (weight < 1e-16) {
-            continue;
-          }
-          addLink(stateId1i, stateId2i, weight);
-          ++m_numInterLayerLinks;
-        } else {
-          for (auto& outLink : targetOutlinks) {
-            auto& n2 = outLink.first.physicalId;
-            auto& linkData = outLink.second;
-            double intraWeight = linkData.weight;
-
-            unsigned int stateId2i = addMultilayerNode(layer2, n2);
-
-            double weight = interLinkWeightNormalizationFactor * intraWeight / (priorIntraOutWeight + intraOutWeight);
-            if (weight < 1e-16) {
-              continue;
-            }
-            addLink(stateId1i, stateId2i, weight);
-            ++m_numInterLayerLinks;
-          }
         }
       }
     }
@@ -491,36 +431,23 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnLa
                 linkWeightNormalizationFactor = jsRelaxWeightsIt->second * relaxRate / (1.0 - relaxRate) * sumOutLinkWeightLayer1 / jsTotWeightIt->second;
               }
 
-              if (m_config.multilayerSelfInterLinks && !isIntra) {
-                double sumOutLinkWeightLayer2 = m_networks[layer2].outWeights()[nodeId];
-                if (sumOutLinkWeightLayer2 < 1e-16) {
-                  continue;
-                }
-                // TODO: How set node teleportation weights and link weight if self-inter-links?
-                unsigned int stateId1 = addMultilayerNode(layer1, nodeId);
-                unsigned int stateId2 = addMultilayerNode(layer2, nodeId);
-                double weight = linkWeightNormalizationFactor * sumOutLinkWeightLayer2;
-                addLink(stateId1, stateId2, weight);
-                ++m_numInterLayerLinks;
-              } else {
-                auto& targetLinks = m_networks[layer2].nodeLinkMap();
-                auto& targetOutlinks = targetLinks[StateNode(nodeId)];
-                if (targetOutlinks.empty()) {
-                  continue;
-                }
-                for (auto& outLink : targetOutlinks) {
-                  auto& n2 = outLink.first.physicalId;
-                  auto& linkData = outLink.second;
-                  double intraWeight = linkData.weight;
-                  // Add intra link weight as teleport weight to source node
-                  // TODO: Why, and only first intra link that sets the teleport weight?
-                  unsigned int stateId1 = addMultilayerNode(layer1, nodeId, intraWeight);
-                  unsigned int stateId2i = addMultilayerNode(layer2, n2, 0.0);
+              auto& targetLinks = m_networks[layer2].nodeLinkMap();
+              auto& targetOutlinks = targetLinks[StateNode(nodeId)];
+              if (targetOutlinks.empty()) {
+                continue;
+              }
+              for (auto& outLink : targetOutlinks) {
+                auto& n2 = outLink.first.physicalId;
+                auto& linkData = outLink.second;
+                double intraWeight = linkData.weight;
+                // Add intra link weight as teleport weight to source node
+                // TODO: Why, and only first intra link that sets the teleport weight?
+                unsigned int stateId1 = addMultilayerNode(layer1, nodeId, intraWeight);
+                unsigned int stateId2i = addMultilayerNode(layer2, n2, 0.0);
 
-                  double weight = intraWeight == 0.0 ? 0.0 : linkWeightNormalizationFactor * intraWeight;
-                  addLink(stateId1, stateId2i, weight);
-                  ++m_numInterLayerLinks;
-                }
+                double weight = intraWeight == 0.0 ? 0.0 : linkWeightNormalizationFactor * intraWeight;
+                addLink(stateId1, stateId2i, weight);
+                ++m_numInterLayerLinks;
               }
             }
           }
@@ -592,34 +519,23 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnNo
         if (isIntra) {
           linkWeightNormalizationFactor += (1.0 - relaxRate) / sumOutLinkWeightLayer1;
         }
-        if (m_config.multilayerSelfInterLinks && !isIntra) {
-          double sumOutLinkWeightLayer2 = network2.outWeights()[n1];
-          if (sumOutLinkWeightLayer2 < 1e-16) {
-            continue;
-          }
-          unsigned int stateId2 = addMultilayerNode(layer2, n1);
-          double weight = linkWeightNormalizationFactor * sumOutLinkWeightLayer2;
-          addLink(stateId1, stateId2, weight);
-          ++m_numInterLayerLinks;
-        } else {
-          auto& targetLinks = network2.nodeLinkMap();
-          auto& targetOutlinks = targetLinks[StateNode(n1)];
-          if (targetOutlinks.empty()) {
-            continue;
-          }
-          for (auto& outLink : targetOutlinks) {
-            auto& n2 = outLink.first.physicalId;
-            auto& linkData = outLink.second;
-            double intraWeight = linkData.weight;
-            unsigned int stateId2i = addMultilayerNode(layer2, n2);
+        auto& targetLinks = network2.nodeLinkMap();
+        auto& targetOutlinks = targetLinks[StateNode(n1)];
+        if (targetOutlinks.empty()) {
+          continue;
+        }
+        for (auto& outLink : targetOutlinks) {
+          auto& n2 = outLink.first.physicalId;
+          auto& linkData = outLink.second;
+          double intraWeight = linkData.weight;
+          unsigned int stateId2i = addMultilayerNode(layer2, n2);
 
-            double weight = linkWeightNormalizationFactor * intraWeight;
-            if (weight < 1e-16) {
-              continue;
-            }
-            addLink(stateId1, stateId2i, weight);
-            ++m_numInterLayerLinks; // TODO: Count all as one?
+          double weight = linkWeightNormalizationFactor * intraWeight;
+          if (weight < 1e-16) {
+            continue;
           }
+          addLink(stateId1, stateId2i, weight);
+          ++m_numInterLayerLinks; // TODO: Count all as one?
         }
       }
     }
@@ -698,71 +614,18 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnNo
         }
       }
 
-      // double sumOutLinkWeightLayer1 = network1.outWeights()[n1];
-      // double sumOutWeightAllLayers = 0.0;
-
-      // for (auto& it2 : m_networks) {
-      //   auto layer2 = it2.first;
-      //   if (!withinRelaxLimit(layer1, layer2)) {
-      //     continue;
-      //   }
-      //   auto& network2 = it2.second;
-      //   sumOutWeightAllLayers += network2.outWeights()[n1];
-      // }
-
-      // if (sumOutWeightAllLayers <= 0) {
-      //   continue;
-      // }
       for (auto& it2 : m_networks) {
         auto layer2 = it2.first;
         if (!withinRelaxLimit(layer1, layer2) || (m_config.noSelfLinks && layer1 == layer2)) {
           continue;
         }
-        // auto& network2 = it2.second;
-        // bool isIntra = layer2 == layer1;
 
         unsigned int stateId2 = addMultilayerNode(layer2, n1);
-        // Log() << "Add vertical link " << stateId1 << " -> " << stateId2 << " with weight: " << interLinkWeight << "\n";
         addLink(stateId1, stateId2, interLinkWeight);
         ++m_numInterLayerLinks;
-
-        // double linkWeightNormalizationFactor = relaxRate / sumOutWeightAllLayers;
-        // if (isIntra) {
-        //   linkWeightNormalizationFactor += (1.0 - relaxRate) / sumOutLinkWeightLayer1;
-        // }
-        // if (m_config.multilayerSelfInterLinks && !isIntra) {
-        //   double sumOutLinkWeightLayer2 = network2.outWeights()[n1];
-        //   if (sumOutLinkWeightLayer2 < 1e-16) {
-        //     continue;
-        //   }
-        //   unsigned int stateId2 = addMultilayerNode(layer2, n1);
-        //   double weight = linkWeightNormalizationFactor * sumOutLinkWeightLayer2;
-        //   addLink(stateId1, stateId2, weight);
-        //   ++m_numInterLayerLinks;
-        // } else {
-        //   auto& targetLinks = network2.nodeLinkMap();
-        //   auto& targetOutlinks = targetLinks[StateNode(n1)];
-        //   if (targetOutlinks.empty()) {
-        //     continue;
-        //   }
-        //   for (auto& outLink : targetOutlinks) {
-        //     auto& n2 = outLink.first.physicalId;
-        //     auto& linkData = outLink.second;
-        //     double intraWeight = linkData.weight;
-        //     unsigned int stateId2i = addMultilayerNode(layer2, n2);
-
-        //     double weight = linkWeightNormalizationFactor * intraWeight;
-        //     if (weight < 1e-16) {
-        //       continue;
-        //     }
-        //     addLink(stateId1, stateId2i, weight);
-        //     ++m_numInterLayerLinks; // TODO: Count all as one?
-        //   }
-        // }
       }
     }
   }
-  // Log() << "Created " << m_numInterLayerLinks << " inter-layer links!\n";
 }
 
 double Network::calculateJensenShannonDivergence(bool& intersect, const OutLinkMap& layer1OutLinks, double sumOutLinkWeightLayer1, const OutLinkMap& layer2OutLinks, double sumOutLinkWeightLayer2)

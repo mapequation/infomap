@@ -20,7 +20,6 @@ export type Arguments = Partial<{
   weightThreshold: number;
   noSelfLinks: boolean;
   nodeLimit: number;
-  multilayerSelfInterLinks: boolean;
   matchableMultilayerIds: number;
   clusterData: string;
   assignToNeighbouringModule: boolean;
@@ -28,7 +27,6 @@ export type Arguments = Partial<{
   metaDataRate: number;
   metaDataUnweighted: boolean;
   noInfomap: boolean;
-  hardPartition: boolean;
   // output
   outName: string;
   noFileOutput: boolean;
@@ -56,7 +54,6 @@ export type Arguments = Partial<{
   useNodeWeightsAsFlow: boolean;
   toNodes: boolean;
   teleportationProbability: number;
-  randomNodeCheckRate: number;
   regularized: boolean;
   regularizationStrength: number;
   entropyCorrected: boolean;
@@ -71,8 +68,6 @@ export type Arguments = Partial<{
   multilayerRelaxLimitUp: number;
   multilayerRelaxLimitDown: number;
   multilayerRelaxByJsd: boolean;
-  multilayerTest: number;
-  multilayerAggregation: boolean;
   // accuracy
   seed: number;
   numTrials: number;
@@ -105,8 +100,6 @@ export default function argumentsToString(args: Arguments) {
 
   if (args.nodeLimit != null) result += " --node-limit " + args.nodeLimit;
 
-  if (args.multilayerSelfInterLinks) result += " --multilayer-self-inter-links";
-
   if (args.matchableMultilayerIds != null)
     result += " --matchable-multilayer-ids " + args.matchableMultilayerIds;
 
@@ -123,8 +116,6 @@ export default function argumentsToString(args: Arguments) {
   if (args.metaDataUnweighted) result += " --meta-data-unweighted";
 
   if (args.noInfomap) result += " --no-infomap";
-
-  if (args.hardPartition) result += " --hard-partition";
 
   if (args.outName != null) result += " --out-name " + args.outName;
 
@@ -168,9 +159,6 @@ export default function argumentsToString(args: Arguments) {
   if (args.teleportationProbability != null)
     result += " --teleportation-probability " + args.teleportationProbability;
 
-  if (args.randomNodeCheckRate != null)
-    result += " --random-node-check-rate " + args.randomNodeCheckRate;
-
   if (args.regularized) result += " --regularized";
 
   if (args.regularizationStrength != null)
@@ -208,11 +196,6 @@ export default function argumentsToString(args: Arguments) {
     result += " --multilayer-relax-limit-down " + args.multilayerRelaxLimitDown;
 
   if (args.multilayerRelaxByJsd) result += " --multilayer-relax-by-jsd";
-
-  if (args.multilayerTest != null)
-    result += " --multilayer-test " + args.multilayerTest;
-
-  if (args.multilayerAggregation) result += " --multilayer-aggregation";
 
   if (args.seed != null) result += " --seed " + args.seed;
 

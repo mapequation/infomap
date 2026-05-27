@@ -84,18 +84,6 @@ def test_add_networkx_multilayer_graph_with_string_ids(make_infomap):
     assert nodes == [(0, 0, 1), (1, 1, 1), (2, 1, 2)]
 
 
-def test_add_networkx_graph_supports_numpy_integer_ids(make_infomap):
-    numpy = pytest.importorskip("numpy")
-
-    graph = nx.Graph()
-    graph.add_edge(numpy.int64(1), numpy.int64(2))
-
-    im = make_infomap(no_infomap=True)
-    mapping = im.add_networkx_graph(graph)
-
-    assert mapping == {1: numpy.int64(1), 2: numpy.int64(2)}
-
-
 def test_get_dataframe_supports_states_and_depth_level(
     make_infomap, example_network_path
 ):

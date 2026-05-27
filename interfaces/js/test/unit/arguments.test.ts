@@ -22,20 +22,6 @@ describe("argumentsToString", () => {
     ).toBe(" --variable-markov-min-scale 0.5");
   });
 
-  test("serializes regularized multilayer options", () => {
-    expect(
-      argumentsToString({
-        hardPartition: true,
-        multilayerSelfInterLinks: true,
-        randomNodeCheckRate: 0.25,
-        multilayerTest: 2,
-        multilayerAggregation: true,
-      }),
-    ).toBe(
-      " --multilayer-self-inter-links --hard-partition --random-node-check-rate 0.25 --multilayer-test 2 --multilayer-aggregation",
-    );
-  });
-
   test("serializes incremental and binding-only options", () => {
     expect(
       argumentsToString({

@@ -90,7 +90,9 @@ public:
   bool dirty = false;
 
   std::vector<PhysData> physicalNodes;
+#ifndef SWIG
   std::vector<LayerTeleFlowData> layerTeleFlowData; // For regularized multilayer flow
+#endif
   MetaCollection metaCollection; // For modules
   std::vector<unsigned int> stateNodes; // For physically aggregated nodes
 

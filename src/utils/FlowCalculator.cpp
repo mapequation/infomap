@@ -470,32 +470,6 @@ void FlowCalculator::calcDirectedFlow(const StateNetwork& network, const Config&
     beta = 1.0;
   }
 
-  if (config.multilayerSelfInterLinks) {
-    // Log() << "(adjusting flow for self-inter-links...) ";
-    // auto r = config.multilayerRelaxRate;
-    // for (unsigned int i = 0; i < numNodes; ++i) {
-    //   nodeFlow[i] *= (1 - r);
-    // }
-    // double sumFlow = 1 - r;
-
-    // // for (auto& nodeIt : network.m_nodes) {
-    // //   auto& node = nodeIt.second;
-    // //   const auto nodeIndex = nodeIndexMap[node.id];
-    // // }
-
-    // for (const auto& link : flowLinks) {
-    //   bool isIntra = true; //asdf
-    //   if (isIntra) {
-    //     double f = r * nodeFlowTmp[link.source] * link.flow;
-    //     sumFlow += f;
-    //     nodeFlow[link.target] += f;
-    //   }
-    // }
-    // for (unsigned int i = 0; i < numNodes; ++i) {
-    //   nodeFlow[i] /= sumFlow;
-    // }
-  }
-
   // Update the links with their global flow from the PageRank values.
   // Note: beta is set to 1 if unrecorded teleportation
   for (auto& link : flowLinks) {
@@ -915,62 +889,33 @@ void FlowCalculator::calcDirectedRegularizedMultilayerFlow(const StateNetwork& n
     Log() << "\n  -> PageRank calculation done in " << iterations << " iterations.\n";
   }
 
-  // Log() << std::setprecision(16);
-  // Log() << "Flow: ";
   for (unsigned int i = 0; i < layerTeleFlow.size(); ++i) {
     sumTeleFlow += layerTeleFlow[i];
   }
-  Log() << "Sum tele flow: " << sumTeleFlow << "\n";
 
-  // double sumNodeRank = 1.0;
-  // for (auto& link : flowLinks) {
-  //   double beta = 1 - alpha[link.source] * (config.noSelfLinks ? 1 - nodeTeleportWeights[link.source] : 1);
-  //   link.flow *= beta * nodeFlow[link.source] / sumNodeRank;
-  // }
   linkIndex = 0;
-  double sumLinkFlow = 0.0;
-  double sumInterLinkFlow = 0.0;
   enterFlow.assign(numNodes, 0.0);
   exitFlow.assign(numNodes, 0.0);
-  // unrecorded inter-layer flow, skip adding enter/exit to intermediate node for unrecorded flow?
   for (auto& link : flowLinks) {
     if (isInterLink[linkIndex++]) {
-      // Log() << " | Inter-link " << linkIndex << ": (" << layerIds[link.source] << "," << physicalIds[link.source] << ") -> (" << layerIds[link.target] << "," << physicalIds[link.target] << ") p_i_inter: " << alphaInter[link.source] << ", flow: " << nodeFlow[link.source] << ", p_ij_inter: " << link.flow << " -> flow " << alphaInter[link.source] * nodeFlow[link.source] * link.flow << "\n";
       link.flow = alphaInter[link.source] * nodeFlow[link.source] * link.flow;
-      sumInterLinkFlow += link.flow;
       // Need to add enter/exit flow to eventually collapse
       exitFlow[link.source] += link.flow;
       enterFlow[link.target] += link.flow;
-      // Remove unrecorded enter and exit flow on intermediate nodes removes collapse
-      // exitFlow[link.target] -= link.flow;
-      // enterFlow[link.target] -= link.flow;
-      // }
     } else {
       double beta = 1 - alpha[link.source];
       link.flow = beta * link.flow * ((1 - alphaInter[link.source]) * nodeFlow[link.source] + unrecordedInterFlow[link.source]);
-      // Log() << " - Intra-link " << linkIndex << ": (" << layerIds[link.source] << "," << physicalIds[link.source] << ") -> (" << layerIds[link.target] << "," << physicalIds[link.target] << "), flow: " << link.flow << "\n";
       exitFlow[link.source] += link.flow;
       enterFlow[link.target] += link.flow;
     }
-    sumLinkFlow += link.flow;
-    // Log() << linkIndex << ": (" << layerIds[link.source] << "," << physicalIds[link.source] << ") -> (" << layerIds[link.target] << "," << physicalIds[link.target] << ") is inter: " << isInterLink[linkIndex] << ", flow: " << link.flow << "\n";
   }
-  Log() << "=> Sum link flow: " << sumLinkFlow << ", sum inter link flow: " << sumInterLinkFlow << ", sum intra link flow: " << sumLinkFlow - sumInterLinkFlow << "\n";
-  Log() << "Sum intra link flow plus tele flow: " << sumTeleFlow + sumLinkFlow - sumInterLinkFlow << "\n";
 
   nodeTeleportFlow.assign(numNodes, 0.0);
   for (unsigned int i = 0; i < N; ++i) {
-    // nodeTeleportFlow[i] = nodeFlow[i] * alpha[i];
     nodeTeleportFlow[i] = alpha[i] * ((1 - alphaInter[i]) * nodeFlow[i] + unrecordedInterFlow[i]);
-    // Log() << i << ": " << nodeFlow[i] << ", tele-flow: " << nodeTeleportFlow[i] << "\n";
-    // Log() << i << " (" << layerIds[i] << "," << physicalIds[i] << "): " << nodeFlow[i] << ", tele-flow: " << nodeTeleportFlow[i] << ", alpha: " << alpha[i] << ", alphaInter: " << alphaInter[i] << ", unrecordedInter: " << unrecordedInterFlow[i] << ", tele-weight: " << nodeTeleportWeights[i] << "\n";
 
     exitFlow[i] += nodeTeleportFlow[i] * (1 - nodeTeleportWeights[i]); // + node.intraLayerTeleFlow * (1 - node.intraLayerTeleWeight);
     enterFlow[i] += (layerTeleFlow[layerIndices[i]] - nodeTeleportFlow[i]) * nodeTeleportWeights[i];
-    // double unrecordedTeleFlow = alpha[i] * (1 - alphaInter[i]) * nodeFlow[i];
-    // exitFlow[i] += unrecordedTeleFlow * (1 - nodeTeleportWeights[i]); // + node.intraLayerTeleFlow * (1 - node.intraLayerTeleWeight);
-    // enterFlow[i] += (layerTeleFlow[layerIndices[i]] - unrecordedTeleFlow) * nodeTeleportWeights[i];
-    // Log() << i << " (" << layerIds[i] << "," << physicalIds[i] << "): enter: " << enterFlow[i] << ", exit: " << exitFlow[i] << "\n";
   }
 }
 #endif // INFOMAP_FEATURE_REGULARIZED_MULTILAYER
@@ -1075,51 +1020,9 @@ void FlowCalculator::calcUndirectedRegularizedFlow(const StateNetwork& network, 
 #if INFOMAP_FEATURE_REGULARIZED_MULTILAYER
 void FlowCalculator::calcUndirectedRegularizedMultilayerFlow(const StateNetwork& network, const Config& config)
 {
-  if (config.multilayerTest == 0) {
-    calcUndirectedRegularizedFlow(network, config);
-    return;
-  }
-  Log() << "\n  -> Using undirected regularized multilayer flow. " << std::flush;
-  throw std::runtime_error("Undirected multilayer regularization not implemented");
-
-  // double lambda = config.regularizationStrength * std::log(N) / numNodesAsTeleportationTargets;
-
-  unsigned int N = network.numPhysicalNodes();
-  unsigned int N_states = network.numNodes();
-  // unsigned int L = network.numLayers();
-  // double n = N / L; // average number of nodes per layer
-
-  // Default tele degree is log(N_states)
-  // We want log(N), so adjust with regularization strength
-
-  // double defaultLambda = std::log(N_states) / N_states;
-
-  // double lambdaIntra = std::log(N) / (L * N);
-  // double lambdaInter = std::log(L) / (L * N);
-  // double lambda = lambdaIntra + lambdaInter;
-  // double fractionIntraFlow = std::log(N) / (std::log(N) + L * std::log(L));
-
-  // double newLambda = lambdaIntra + lambdaInter;
-
-  Config tmpConfig(config);
-  // tmpConfig.regularizationStrength *= newLambda / defaultLambda;
-  // Log() << "\n!! old lambda: " << defaultLambda << ", new lambda: " << newLambda << "\n";
-  double lambdaFactor = std::log(N) / std::log(N_states);
-  tmpConfig.regularizationStrength *= lambdaFactor;
-  Log() << "\n  -> Using regularized multilayer flow (lambda factor " << lambdaFactor << "). " << std::flush;
-  // Log() << "\n!! lambda factor: " << lambdaFactor << "\n";
-  // Log() << "Fraction intra flow: " << fractionIntraFlow << "\n";
-
-  // for (auto& link : flowLinks) {
-  //   k[link.source] += 1;
-  //   s[link.source] += link.flow;
-  //   if (link.source != link.target) {
-  //     k[link.target] += 1;
-  //     s[link.target] += link.flow;
-  //   }
-  // }
-
-  calcUndirectedRegularizedFlow(network, tmpConfig);
+  (void)network;
+  (void)config;
+  throw std::runtime_error("Undirected regularized multilayer flow is not implemented.");
 }
 #endif // INFOMAP_FEATURE_REGULARIZED_MULTILAYER
 
@@ -1327,17 +1230,9 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
     }
   }
 
-  // unsigned int N_phys = network.numPhysicalNodes();
-  // unsigned int L = network.numLayers();
-  // double fractionIntraFlow = std::log(N_phys) / (std::log(N_phys) + L * std::log(L));
-  // double fractionIntraFlow = 1 / L;
   double fractionIntraFlow = config.isMultilayerNetwork() && config.regularized ? 1 : 0;
-  // if (config.multilayerTest < 2) {
-  //   fractionIntraFlow = 0;
-  // }
 
   sumTeleFlow = 0.0;
-  // double sumIntraTeleFlow = 0.0;
 
   for (auto& nodeIt : network.m_nodes) {
     auto& node = nodeIt.second;

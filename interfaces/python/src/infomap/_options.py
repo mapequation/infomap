@@ -13,7 +13,6 @@ _INPUT_OPTION_SPECS = (
     ("flag", "bipartite_teleportation", "--bipartite-teleportation", None),
     ("value", "weight_threshold", "--weight-threshold", lambda value: value is not None),
     ("value", "node_limit", "--node-limit", lambda value: value is not None),
-    ("flag", "multilayer_self_inter_links", "--multilayer-self-inter-links", None),
     ("value", "matchable_multilayer_ids", "--matchable-multilayer-ids", lambda value: value is not None),
     ("value", "cluster_data", "--cluster-data", lambda value: value is not None),
     ("flag", "assign_to_neighbouring_module", "--assign-to-neighbouring-module", None),
@@ -21,7 +20,6 @@ _INPUT_OPTION_SPECS = (
     ("value", "meta_data_rate", "--meta-data-rate", lambda value: value != 1.0),
     ("flag", "meta_data_unweighted", "--meta-data-unweighted", None),
     ("flag", "no_infomap", "--no-infomap", None),
-    ("flag", "hard_partition", "--hard-partition", None),
 )
 
 _OUTPUT_OPTION_SPECS = (
@@ -44,7 +42,6 @@ _ALGORITHM_OPTION_SPECS = (
     ("flag", "use_node_weights_as_flow", "--use-node-weights-as-flow", None),
     ("flag", "to_nodes", "--to-nodes", None),
     ("value", "teleportation_probability", "--teleportation-probability", lambda value: value != 0.15),
-    ("value", "random_node_check_rate", "--random-node-check-rate", lambda value: value is not None),
     ("flag", "regularized", "--regularized", None),
     ("value", "regularization_strength", "--regularization-strength", lambda value: value != 1.0),
     ("flag", "entropy_corrected", "--entropy-corrected", None),
@@ -59,8 +56,6 @@ _ALGORITHM_OPTION_SPECS = (
     ("value", "multilayer_relax_limit_up", "--multilayer-relax-limit-up", lambda value: value != -1),
     ("value", "multilayer_relax_limit_down", "--multilayer-relax-limit-down", lambda value: value != -1),
     ("flag", "multilayer_relax_by_jsd", "--multilayer-relax-by-jsd", None),
-    ("value", "multilayer_test", "--multilayer-test", lambda value: value is not None),
-    ("flag", "multilayer_aggregation", "--multilayer-aggregation", None),
 )
 
 _ACCURACY_OPTION_SPECS = (
@@ -121,9 +116,6 @@ class InfomapOptions:
     node_limit : int, optional
         Read only nodes up to this node id and ignore links connected to higher node
         ids.
-    multilayer_self_inter_links : bool, optional
-        For inter/intra format, restrict inter-layer links within same physical node but
-        adjust flow to approximate physical steps
     matchable_multilayer_ids : int, optional
         Construct state ids from node ids and layer ids that stay comparable across
         networks. Set at least to the largest layer id among networks to match.
@@ -143,8 +135,6 @@ class InfomapOptions:
     no_infomap : bool, optional
         Skip optimization. Use this to calculate codelength for --cluster-data or to
         print non-modular statistics.
-    hard_partition : bool, optional
-        Do not split initial partition.
     out_name : str, optional
         Base name for output files, for example [out_directory]/[out-name].tree.
     no_file_output : bool, optional
@@ -194,8 +184,6 @@ class InfomapOptions:
     teleportation_probability : float, optional
         Set the probability of teleporting to a random node or link when calculating
         flow.
-    random_node_check_rate : float, optional
-        Check a selected proportion of nodes for moves if recorded teleportation
     regularized : bool, optional
         Add a fully connected Bayesian prior network to reduce overfitting to missing
         links. Activates --recorded-teleportation.
@@ -235,10 +223,6 @@ class InfomapOptions:
     multilayer_relax_by_jsd : bool, optional
         Weight multilayer relaxation by out-link similarity measured with Jensen-Shannon
         divergence.
-    multilayer_test : int, optional
-        Testing different multilayer implementations.
-    multilayer_aggregation : bool, optional
-        Experimental: Use aggregated multilayer network.
     seed : int, optional
         Set the random number generator seed for reproducible results.
     num_trials : int, optional
@@ -280,7 +264,6 @@ class InfomapOptions:
     weight_threshold: float | None = None
     no_self_links: bool = False
     node_limit: int | None = None
-    multilayer_self_inter_links: bool = False
     matchable_multilayer_ids: int | None = None
     cluster_data: str | None = None
     assign_to_neighbouring_module: bool = False
@@ -288,7 +271,6 @@ class InfomapOptions:
     meta_data_rate: float = 1.0
     meta_data_unweighted: bool = False
     no_infomap: bool = False
-    hard_partition: bool = False
     # output
     out_name: str | None = None
     no_file_output: bool = False
@@ -310,7 +292,6 @@ class InfomapOptions:
     use_node_weights_as_flow: bool = False
     to_nodes: bool = False
     teleportation_probability: float = 0.15
-    random_node_check_rate: float | None = None
     regularized: bool = False
     regularization_strength: float = 1.0
     entropy_corrected: bool = False
@@ -325,8 +306,6 @@ class InfomapOptions:
     multilayer_relax_limit_up: int = -1
     multilayer_relax_limit_down: int = -1
     multilayer_relax_by_jsd: bool = False
-    multilayer_test: int | None = None
-    multilayer_aggregation: bool = False
     # accuracy
     seed: int = 123
     num_trials: int = 1
@@ -397,7 +376,6 @@ def _construct_args(
     weight_threshold=None,
     no_self_links=False,
     node_limit=None,
-    multilayer_self_inter_links=False,
     matchable_multilayer_ids=None,
     cluster_data=None,
     assign_to_neighbouring_module=False,
@@ -405,7 +383,6 @@ def _construct_args(
     meta_data_rate=1.0,
     meta_data_unweighted=False,
     no_infomap=False,
-    hard_partition=False,
     # output
     out_name=None,
     no_file_output=False,
@@ -427,7 +404,6 @@ def _construct_args(
     use_node_weights_as_flow=False,
     to_nodes=False,
     teleportation_probability=0.15,
-    random_node_check_rate=None,
     regularized=False,
     regularization_strength=1.0,
     entropy_corrected=False,
@@ -442,8 +418,6 @@ def _construct_args(
     multilayer_relax_limit_up=-1,
     multilayer_relax_limit_down=-1,
     multilayer_relax_by_jsd=False,
-    multilayer_test=None,
-    multilayer_aggregation=False,
     # accuracy
     seed=123,
     num_trials=1,

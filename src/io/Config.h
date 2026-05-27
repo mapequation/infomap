@@ -81,7 +81,6 @@ struct Config {
   bool directed = false;
   bool useNodeWeightsAsFlow = false;
   bool teleportToNodes = false;
-  double randomNodeCheckRate = 0.0;
   double markovTime = 1.0;
   bool variableMarkovTime = false;
   double variableMarkovTimeDamping = 1.0; // 0 for linear scaling, 1 for log scaled.
@@ -94,9 +93,6 @@ struct Config {
   double multilayerJSRelaxRate = 0.15;
   bool multilayerRelaxByJensenShannonDivergence = false;
   int multilayerJSRelaxLimit = -1;
-  bool multilayerSelfInterLinks = false;
-  bool multilayerAggregation = false;
-  unsigned int multilayerTest = 0;
   unsigned int maxFlowIterations = 400;
 
   // Clustering
@@ -187,7 +183,6 @@ struct Config {
     directed = other.directed;
     useNodeWeightsAsFlow = other.useNodeWeightsAsFlow;
     teleportToNodes = other.teleportToNodes;
-    randomNodeCheckRate = other.randomNodeCheckRate;
     markovTime = other.markovTime;
     variableMarkovTime = other.variableMarkovTime;
     variableMarkovTimeDamping = other.variableMarkovTimeDamping;
@@ -199,9 +194,6 @@ struct Config {
     multilayerJSRelaxRate = other.multilayerJSRelaxRate;
     multilayerRelaxByJensenShannonDivergence = other.multilayerRelaxByJensenShannonDivergence;
     multilayerJSRelaxLimit = other.multilayerJSRelaxLimit;
-    multilayerSelfInterLinks = other.multilayerSelfInterLinks;
-    multilayerAggregation = other.multilayerAggregation;
-    multilayerTest = other.multilayerTest;
     maxFlowIterations = other.maxFlowIterations;
     twoLevel = other.twoLevel;
     noCoarseTune = other.noCoarseTune;
@@ -254,9 +246,11 @@ struct Config {
 
   bool printAsUndirected() const { return isUndirectedClustering(); }
 
-  bool isBipartite() const { return bipartite; }
   bool isMultilayerNetwork() const { return multilayerInput || !additionalInput.empty(); }
+  bool isBipartite() const { return bipartite; }
+#ifndef SWIG
   bool isRegularizedMultilayerFlow() const { return isMultilayerNetwork() && regularized; }
+#endif
 
   bool haveMemory() const { return stateInput; }
   bool printStates() const { return stateOutput; }

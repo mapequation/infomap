@@ -102,10 +102,7 @@ def test_features_are_disabled_by_default():
     assert config["enabled_features"] == []
     assert config["enabled_feature_defines"] == []
     assert "-DINFOMAP_USE_SIMD_LOG=1" not in config["compile_flags"]
-    assert (
-        "-DINFOMAP_FEATURE_REGULARIZED_MULTILAYER=1"
-        not in config["compile_flags"]
-    )
+    assert "-DINFOMAP_FEATURE_REGULARIZED_MULTILAYER=1" not in config["compile_flags"]
     assert "-DINFOMAP_FEATURE_TEST_FEATURE=1" not in config["compile_flags"]
     assert "INFOMAP_ENABLED_FEATURES" not in " ".join(config["compile_flags"])
 
@@ -125,16 +122,9 @@ def test_explicit_feature_emits_compile_define():
         'INFOMAP_ENABLED_FEATURES="test-feature"',
     ]
     assert "-DINFOMAP_FEATURE_TEST_FEATURE=1" in config["compile_flags"]
-    assert (
-        '-DINFOMAP_ENABLED_FEATURES=\\"test-feature\\"'
-        in config["compile_flags"]
-    )
-    assert (
-        "-DINFOMAP_FEATURE_TEST_FEATURE=1" not in config["cmake_compile_flags"]
-    )
-    assert "INFOMAP_ENABLED_FEATURES" not in " ".join(
-        config["cmake_compile_flags"]
-    )
+    assert '-DINFOMAP_ENABLED_FEATURES=\\"test-feature\\"' in config["compile_flags"]
+    assert "-DINFOMAP_FEATURE_TEST_FEATURE=1" not in config["cmake_compile_flags"]
+    assert "INFOMAP_ENABLED_FEATURES" not in " ".join(config["cmake_compile_flags"])
 
 
 def test_simd_log_is_feature():
@@ -169,10 +159,7 @@ def test_regularized_multilayer_is_feature():
         "INFOMAP_FEATURE_REGULARIZED_MULTILAYER=1",
         'INFOMAP_ENABLED_FEATURES="regularized-multilayer"',
     ]
-    assert (
-        "-DINFOMAP_FEATURE_REGULARIZED_MULTILAYER=1"
-        in config["compile_flags"]
-    )
+    assert "-DINFOMAP_FEATURE_REGULARIZED_MULTILAYER=1" in config["compile_flags"]
     assert (
         '-DINFOMAP_ENABLED_FEATURES=\\"regularized-multilayer\\"'
         in config["compile_flags"]
@@ -212,10 +199,7 @@ def test_explicit_feature_uses_msvc_define_syntax():
         'INFOMAP_ENABLED_FEATURES="test-feature"',
     ]
     assert "/DINFOMAP_FEATURE_TEST_FEATURE=1" in config["compile_flags"]
-    assert (
-        '/DINFOMAP_ENABLED_FEATURES=\\"test-feature\\"'
-        in config["compile_flags"]
-    )
+    assert '/DINFOMAP_ENABLED_FEATURES=\\"test-feature\\"' in config["compile_flags"]
 
 
 def test_unknown_feature_fails_early():

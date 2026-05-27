@@ -20,9 +20,9 @@ struct FlowData {
   double enterFlow = 0.0;
   double exitFlow = 0.0;
   double teleportFlow = 0.0;
+  double teleportSourceFlow = 0.0;
   double teleportWeight = 0.0;
-  double teleportSourceFlow = 0.0; // TODO: Skip?
-  double danglingFlow = 0.0; // TODO: Skip?
+  double danglingFlow = 0.0;
 
   FlowData() = default;
   FlowData(double flow) : flow(flow) {}
@@ -160,6 +160,7 @@ struct PhysData {
   }
 };
 
+#ifndef SWIG
 struct LayerTeleFlowData {
   unsigned int layerId = 0;
   unsigned int numNodes = 0;
@@ -186,14 +187,6 @@ struct LayerTeleFlowData {
     return *this;
   }
 
-  // LayerTeleFlowData& operator=(const LayerTeleFlowData& other)
-  // {
-  //   numNodes = other.numNodes;
-  //   teleportFlow = other.teleportFlow;
-  //   teleportWeight = other.teleportWeight;
-  //   return *this;
-  // }
-
   bool isEmpty() const
   {
     return numNodes == 0;
@@ -204,6 +197,7 @@ struct LayerTeleFlowData {
     return out << "{" << data.layerId << "|" << data.numNodes << "|" << data.teleportFlow << "|" << data.teleportWeight << "}";
   }
 };
+#endif
 
 } // namespace infomap
 

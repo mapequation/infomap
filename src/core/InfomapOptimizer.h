@@ -304,10 +304,6 @@ INFOMAP_HOT unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestMod
   unsigned int numMoved = 0;
   unsigned int numRandomMoves = std::min(m_infomap->numRandomMoves, numNodes);
 
-  unsigned int numRandTries = (unsigned int)std::round(numNodes * m_infomap->randomNodeCheckRate);
-  const bool checkRandomNodes = numRandTries > 0;
-  std::vector<bool> moduleTested(checkRandomNodes ? numNodes : 0);
-
   // Create map with module links
   VectorMap<DeltaFlowDataType> deltaFlow(numNodes);
 
@@ -322,36 +318,18 @@ INFOMAP_HOT unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestMod
       continue;
 
     deltaFlow.startRound();
-    if (checkRandomNodes)
-      std::fill(moduleTested.begin(), moduleTested.end(), false);
 
     // For all outlinks
     for (auto& e : current.outEdges()) {
       auto& edge = *e;
       InfoNode* neighbour = edge.target;
       deltaFlow.add(neighbour->index, DeltaFlowDataType(neighbour->index, edge.data.flow, 0.0));
-      if (checkRandomNodes)
-        moduleTested[neighbour->index] = true;
     }
     // For all inlinks
     for (auto& e : current.inEdges()) {
       auto& edge = *e;
       InfoNode* neighbour = edge.source;
       deltaFlow.add(neighbour->index, DeltaFlowDataType(neighbour->index, 0.0, edge.data.flow));
-      if (checkRandomNodes)
-        moduleTested[neighbour->index] = true;
-    }
-
-    // Check random nodes if recorded teleportation
-    if (checkRandomNodes) {
-      for (unsigned int j = 0; j < numRandTries; ++j) {
-        unsigned int randPos = m_infomap->m_rand.randInt(0, numNodes - 1);
-        InfoNode& neighbour = *network[nodeEnumeration[randPos]];
-        if (moduleTested[neighbour.index])
-          continue;
-        deltaFlow.add(neighbour.index, DeltaFlowDataType(neighbour.index, 0, 0));
-        moduleTested[neighbour.index] = true;
-      }
     }
 
     // For random moves
@@ -372,8 +350,6 @@ INFOMAP_HOT unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestMod
     if (m_moduleMembers[current.index] > 1 && !m_emptyModules.empty()) {
       deltaFlow.add(m_emptyModules.back(), DeltaFlowDataType(m_emptyModules.back(), 0.0, 0.0));
     }
-
-    // TODO: Optimize for singletons? If leaving a singleton, it's easy to calculate change in codelength in old module.
 
     // For memory networks
     m_objective.addMemoryContributions(current, oldModuleDelta, deltaFlow);
@@ -637,8 +613,6 @@ INFOMAP_HOT unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestMod
           }
 
           // For memory networks
-          // XXX: Don't use deltaFlow but create method for only old and new module!
-          // TODO: Expose first part of addMemoryContributionsAndUpdatePhysicalNodes
           m_objective.addMemoryContributions(current, oldModuleDelta, deltaFlow);
 
           // For recorded teleportation
