@@ -113,9 +113,15 @@ Feature prerelease wheels use the same `infomap` package name and Python
 prerelease versions. They are wheel-only artifacts because sdists are rebuilt
 by installers and cannot reliably preserve compile-time feature flags.
 
-Use `.github/workflows/feature-prerelease.yml` with `publish=false` first to
-build artifacts for inspection. When publishing, use a prerelease version that
-has not already been uploaded to PyPI:
+`.github/workflows/prerelease.yml` has two modes:
+
+- Tag pushes for `vX.Y.Z-rc.N` or `vX.Y.Z-beta.N` build the full Python and
+  JavaScript prerelease and publish to PyPI and npm.
+- Manual `workflow_dispatch` runs build feature-enabled Python wheels only.
+  Use `publish=false` first to build artifacts for inspection.
+
+When publishing feature wheels, use a prerelease version that has not already
+been uploaded to PyPI:
 
 ```bash
 python -m pip install --pre infomap
