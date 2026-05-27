@@ -16,6 +16,12 @@ FEATURE_REGISTRY = {
         "requires": [],
         "conflicts": [],
     },
+    "regularized-multilayer": {
+        "define": "INFOMAP_FEATURE_REGULARIZED_MULTILAYER",
+        "description": "Enable experimental regularized flow for multilayer networks.",
+        "requires": [],
+        "conflicts": [],
+    },
     "test-feature": {
         "define": "INFOMAP_FEATURE_TEST_FEATURE",
         "description": "Internal canary used to verify compile-time feature gates.",

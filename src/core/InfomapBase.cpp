@@ -14,7 +14,9 @@
 #include "BiasedMapEquation.h"
 #include "MemMapEquation.h"
 #include "MetaMapEquation.h"
+#if INFOMAP_FEATURE_REGULARIZED_MULTILAYER
 #include "RegularizedMultilayerMapEquation.h"
+#endif
 #include "InfomapOptimizer.h"
 #include "../io/SafeFile.h"
 #include "../io/OutputPlan.h"
@@ -2472,11 +2474,15 @@ void InfomapBase::initOptimizer(bool forceNoMemory)
   if (haveMetaData()) {
     m_optimizer = std::make_unique<InfomapOptimizer<MetaMapEquation>>();
   } else if (haveMemory() && !forceNoMemory) {
+#if INFOMAP_FEATURE_REGULARIZED_MULTILAYER
     if (isRegularizedMultilayerFlow() && multilayerTest > 1) {
       m_optimizer = std::make_unique<InfomapOptimizer<RegularizedMultilayerMapEquation>>();
     } else {
       m_optimizer = std::make_unique<InfomapOptimizer<MemMapEquation>>();
     }
+#else
+    m_optimizer = std::make_unique<InfomapOptimizer<MemMapEquation>>();
+#endif
   } else {
     m_optimizer = std::make_unique<InfomapOptimizer<BiasedMapEquation>>();
   }

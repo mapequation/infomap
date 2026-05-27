@@ -102,6 +102,10 @@ def test_features_are_disabled_by_default():
     assert config["enabled_features"] == []
     assert config["enabled_feature_defines"] == []
     assert "-DINFOMAP_USE_SIMD_LOG=1" not in config["compile_flags"]
+    assert (
+        "-DINFOMAP_FEATURE_REGULARIZED_MULTILAYER=1"
+        not in config["compile_flags"]
+    )
     assert "-DINFOMAP_FEATURE_TEST_FEATURE=1" not in config["compile_flags"]
     assert "INFOMAP_ENABLED_FEATURES" not in " ".join(config["compile_flags"])
 
@@ -151,18 +155,46 @@ def test_simd_log_is_feature():
     assert '-DINFOMAP_ENABLED_FEATURES=\\"simd-log\\"' in config["compile_flags"]
 
 
+def test_regularized_multilayer_is_feature():
+    config = resolve_build_config(
+        platform_name="linux",
+        compiler="clang++",
+        mode="release",
+        openmp=False,
+        features=["regularized-multilayer"],
+    )
+
+    assert config["enabled_features"] == ["regularized-multilayer"]
+    assert config["enabled_feature_defines"] == [
+        "INFOMAP_FEATURE_REGULARIZED_MULTILAYER=1",
+        'INFOMAP_ENABLED_FEATURES="regularized-multilayer"',
+    ]
+    assert (
+        "-DINFOMAP_FEATURE_REGULARIZED_MULTILAYER=1"
+        in config["compile_flags"]
+    )
+    assert (
+        '-DINFOMAP_ENABLED_FEATURES=\\"regularized-multilayer\\"'
+        in config["compile_flags"]
+    )
+
+
 def test_features_use_registry_order():
     config = resolve_build_config(
         platform_name="linux",
         compiler="clang++",
         mode="release",
         openmp=False,
-        features="test-feature,simd-log",
+        features="test-feature,regularized-multilayer,simd-log",
     )
 
-    assert config["enabled_features"] == ["simd-log", "test-feature"]
+    assert config["enabled_features"] == [
+        "simd-log",
+        "regularized-multilayer",
+        "test-feature",
+    ]
     assert config["enabled_feature_defines"][-1] == (
-        'INFOMAP_ENABLED_FEATURES="simd-log,test-feature"'
+        'INFOMAP_ENABLED_FEATURES="simd-log,regularized-multilayer,test-feature"'
     )
 
 

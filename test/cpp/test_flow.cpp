@@ -360,6 +360,7 @@ TEST_CASE("Directed regularized codelength matches analytic multi-level tree [fa
   infomap::test::checkApproxCodelength(im.codelength(), 4.051270346886);
 }
 
+#if INFOMAP_FEATURE_REGULARIZED_MULTILAYER
 TEST_CASE("Regularized multilayer flow supports non-dense matchable state ids [fast][core][flow]")
 {
   InfomapWrapper im(infomap::test::defaultFlags(
@@ -445,6 +446,19 @@ TEST_CASE("Regularized multilayer matchable state-id flow matches analytic prior
 
   checkRegularizedMultilayerFlow(im, analyticRegularizedMultilayerFlow(intraLinks));
 }
+#else
+TEST_CASE("Regularized multilayer flow requires compile-time feature [fast][core][flow]")
+{
+  InfomapWrapper im(infomap::test::defaultFlags("--directed --regularized --no-infomap --two-level"));
+  im.addMultilayerIntraLink(1, 1, 2, 1.0);
+  im.addMultilayerIntraLink(1, 2, 1, 1.0);
+
+  CHECK_THROWS_WITH_AS(
+      im.run(),
+      "Regularized multilayer flow requires building with FEATURES=regularized-multilayer.",
+      std::runtime_error);
+}
+#endif
 
 TEST_CASE("Directed regularized codelength matches analytic multi-level tree [fast][core][flow]")
 {

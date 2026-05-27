@@ -18,9 +18,21 @@
 #include <limits>
 #include <algorithm>
 #include <functional>
+#include <stdexcept>
 #include <unordered_map>
 
 namespace infomap {
+
+namespace {
+
+#if !INFOMAP_FEATURE_REGULARIZED_MULTILAYER
+  const char* regularizedMultilayerFeatureError()
+  {
+    return "Regularized multilayer flow requires building with FEATURES=regularized-multilayer.";
+  }
+#endif
+
+} // namespace
 
 template <typename T>
 inline void normalize(std::vector<T>& v, const T sum) noexcept
@@ -158,10 +170,15 @@ FlowCalculator::FlowCalculator(StateNetwork& network, const Config& config)
   switch (config.flowModel) {
   case FlowModel::undirected:
     if (config.regularized) {
-      if (config.isMultilayerNetwork())
+      if (config.isMultilayerNetwork()) {
+#if INFOMAP_FEATURE_REGULARIZED_MULTILAYER
         calcUndirectedRegularizedMultilayerFlow(network, config);
-      else
+#else
+        throw std::runtime_error(regularizedMultilayerFeatureError());
+#endif
+      } else {
         calcUndirectedRegularizedFlow(network, config);
+      }
     } else {
       calcUndirectedFlow();
     }
@@ -171,10 +188,15 @@ FlowCalculator::FlowCalculator(StateNetwork& network, const Config& config)
       calcDirectedBipartiteFlow(network, config);
     } else {
       if (config.regularized) {
-        if (config.isMultilayerNetwork())
+        if (config.isMultilayerNetwork()) {
+#if INFOMAP_FEATURE_REGULARIZED_MULTILAYER
           calcDirectedRegularizedMultilayerFlow(network, config);
-        else
+#else
+          throw std::runtime_error(regularizedMultilayerFeatureError());
+#endif
+        } else {
           calcDirectedRegularizedFlow(network, config);
+        }
       } else {
         calcDirectedFlow(network, config);
       }
@@ -637,6 +659,7 @@ void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, co
   }
 }
 
+#if INFOMAP_FEATURE_REGULARIZED_MULTILAYER
 void FlowCalculator::calcDirectedRegularizedMultilayerFlow(const StateNetwork& network, const Config& config) noexcept
 {
   Log() << "\n  -> Using regularized multilayer flow. " << std::flush;
@@ -950,6 +973,7 @@ void FlowCalculator::calcDirectedRegularizedMultilayerFlow(const StateNetwork& n
     // Log() << i << " (" << layerIds[i] << "," << physicalIds[i] << "): enter: " << enterFlow[i] << ", exit: " << exitFlow[i] << "\n";
   }
 }
+#endif // INFOMAP_FEATURE_REGULARIZED_MULTILAYER
 
 void FlowCalculator::calcUndirectedRegularizedFlow(const StateNetwork& network, const Config& config) noexcept
 {
@@ -1048,6 +1072,7 @@ void FlowCalculator::calcUndirectedRegularizedFlow(const StateNetwork& network, 
   }
 }
 
+#if INFOMAP_FEATURE_REGULARIZED_MULTILAYER
 void FlowCalculator::calcUndirectedRegularizedMultilayerFlow(const StateNetwork& network, const Config& config)
 {
   if (config.multilayerTest == 0) {
@@ -1096,6 +1121,7 @@ void FlowCalculator::calcUndirectedRegularizedMultilayerFlow(const StateNetwork&
 
   calcUndirectedRegularizedFlow(network, tmpConfig);
 }
+#endif // INFOMAP_FEATURE_REGULARIZED_MULTILAYER
 
 void FlowCalculator::calcDirectedBipartiteFlow(const StateNetwork& network, const Config& config) noexcept
 {

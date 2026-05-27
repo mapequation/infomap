@@ -22,6 +22,17 @@ namespace infomap {
 
 using std::make_pair;
 
+namespace {
+
+#if !INFOMAP_FEATURE_REGULARIZED_MULTILAYER
+  const char* regularizedMultilayerFeatureError()
+  {
+    return "Regularized multilayer flow requires building with FEATURES=regularized-multilayer.";
+  }
+#endif
+
+} // namespace
+
 void Network::init()
 {
   updateDerivedConfig();
@@ -179,6 +190,12 @@ void Network::addMultilayerLinks(const std::vector<unsigned int>& sourceLayerIds
 
 void Network::generateStateNetworkFromMultilayer()
 {
+#if !INFOMAP_FEATURE_REGULARIZED_MULTILAYER
+  if (m_config.regularized) {
+    throw std::runtime_error(regularizedMultilayerFeatureError());
+  }
+#endif
+
   // As inter-layer links is directed to neighbouring nodes in target layer,
   // the symmetry is broken so we need directed links for inter-layer flow
   if (!m_networks.empty() && m_config.isUndirectedFlow()) {
