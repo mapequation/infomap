@@ -4,7 +4,6 @@ from contextlib import contextmanager
 
 from ._bindings import *  # noqa: F401,F403
 from ._bindings import __all__ as _BINDINGS_ALL
-from ._bindings import build_info as build_info
 from ._edge_index import add_edge_index as _add_edge_index
 from ._igraph import add_igraph_graph as _add_igraph_graph
 from ._igraph import find_igraph_communities
@@ -41,7 +40,6 @@ __all__ = [
     "Infomap",
     "InfomapOptions",
     "MultilayerNode",
-    "build_info",
     "entropy",
     "find_communities",
     "find_igraph_communities",
