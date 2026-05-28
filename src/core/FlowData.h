@@ -160,6 +160,45 @@ struct PhysData {
   }
 };
 
+#ifndef SWIG
+struct LayerTeleFlowData {
+  unsigned int layerId = 0;
+  unsigned int numNodes = 0;
+  double teleportFlow = 0.0;
+  double teleportWeight = 0.0;
+
+  LayerTeleFlowData() = default;
+  LayerTeleFlowData(unsigned int layerId, double flow, double weight, unsigned int numNodes = 1)
+      : layerId(layerId), numNodes(numNodes), teleportFlow(flow), teleportWeight(weight) {}
+
+  LayerTeleFlowData& operator+=(const LayerTeleFlowData& other)
+  {
+    numNodes += other.numNodes;
+    teleportFlow += other.teleportFlow;
+    teleportWeight += other.teleportWeight;
+    return *this;
+  }
+
+  LayerTeleFlowData& operator-=(const LayerTeleFlowData& other)
+  {
+    numNodes -= other.numNodes;
+    teleportFlow -= other.teleportFlow;
+    teleportWeight -= other.teleportWeight;
+    return *this;
+  }
+
+  bool isEmpty() const
+  {
+    return numNodes == 0;
+  }
+
+  friend std::ostream& operator<<(std::ostream& out, const LayerTeleFlowData& data)
+  {
+    return out << "{" << data.layerId << "|" << data.numNodes << "|" << data.teleportFlow << "|" << data.teleportWeight << "}";
+  }
+};
+#endif
+
 } // namespace infomap
 
 #endif // FLOWDATA_H_

@@ -17,20 +17,41 @@ test_that("non-default values are rendered", {
 test_that("default values are skipped (not rendered)", {
   rendered <- construct_args(NULL, infomap_options(seed = 123L))
   expect_false(grepl("--seed", rendered))
-  rendered <- construct_args(NULL, infomap_options(teleportation_probability = 0.15))
+  rendered <- construct_args(
+    NULL,
+    infomap_options(teleportation_probability = 0.15)
+  )
   expect_false(grepl("--teleportation-probability", rendered))
 })
 
 test_that("directed flag renders correctly", {
-  expect_match(construct_args(NULL, infomap_options(directed = TRUE)), "--directed")
-  expect_match(construct_args(NULL, infomap_options(directed = FALSE)), "--flow-model undirected")
-  expect_false(grepl("--directed|--flow-model", construct_args(NULL, infomap_options(directed = NULL))))
+  expect_match(
+    construct_args(NULL, infomap_options(directed = TRUE)),
+    "--directed"
+  )
+  expect_match(
+    construct_args(NULL, infomap_options(directed = FALSE)),
+    "--flow-model undirected"
+  )
+  expect_false(grepl(
+    "--directed|--flow-model",
+    construct_args(NULL, infomap_options(directed = NULL))
+  ))
 })
 
 test_that("verbosity_level renders -vv style flag", {
-  expect_match(construct_args(NULL, infomap_options(verbosity_level = 2L)), "-vv")
-  expect_match(construct_args(NULL, infomap_options(verbosity_level = 3L)), "-vvv")
-  expect_false(grepl("-vv", construct_args(NULL, infomap_options(verbosity_level = 1L))))
+  expect_match(
+    construct_args(NULL, infomap_options(verbosity_level = 2L)),
+    "-vv"
+  )
+  expect_match(
+    construct_args(NULL, infomap_options(verbosity_level = 3L)),
+    "-vvv"
+  )
+  expect_false(grepl(
+    "-vv",
+    construct_args(NULL, infomap_options(verbosity_level = 1L))
+  ))
 })
 
 test_that("output sequence renders comma-separated", {
@@ -39,8 +60,14 @@ test_that("output sequence renders comma-separated", {
 })
 
 test_that("fast_hierarchical_solution renders -F repetition", {
-  expect_match(construct_args(NULL, infomap_options(fast_hierarchical_solution = 2L)), "-FF")
-  expect_match(construct_args(NULL, infomap_options(fast_hierarchical_solution = 3L)), "-FFF")
+  expect_match(
+    construct_args(NULL, infomap_options(fast_hierarchical_solution = 2L)),
+    "-FF"
+  )
+  expect_match(
+    construct_args(NULL, infomap_options(fast_hierarchical_solution = 3L)),
+    "-FFF"
+  )
 })
 
 test_that("multilayer_relax_limit defaults to NULL and is not rendered", {
@@ -49,12 +76,18 @@ test_that("multilayer_relax_limit defaults to NULL and is not rendered", {
 })
 
 test_that("explicit multilayer_relax_limit = -1L is rendered", {
-  rendered <- construct_args(NULL, infomap_options(multilayer_relax_limit = -1L))
+  rendered <- construct_args(
+    NULL,
+    infomap_options(multilayer_relax_limit = -1L)
+  )
   expect_match(rendered, "--multilayer-relax-limit -1")
 })
 
 test_that("variable_markov_min_scale renders when non-default", {
-  rendered <- construct_args(NULL, infomap_options(variable_markov_min_scale = 0.5))
+  rendered <- construct_args(
+    NULL,
+    infomap_options(variable_markov_min_scale = 0.5)
+  )
   expect_match(rendered, "--variable-markov-min-scale 0.5")
 })
 

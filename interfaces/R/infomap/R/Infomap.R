@@ -53,7 +53,11 @@ Infomap <- function(args = NULL, opts = NULL, ...) {
 
 .network_input_weights <- function(input, weight_index, count, message) {
   if (ncol(input) == weight_index) {
-    weights <- if (is.matrix(input)) input[, weight_index] else input[[weight_index]]
+    weights <- if (is.matrix(input)) {
+      input[, weight_index]
+    } else {
+      input[[weight_index]]
+    }
     if (!is.numeric(weights)) {
       stop(message, call. = FALSE)
     }
@@ -71,7 +75,12 @@ Infomap <- function(args = NULL, opts = NULL, ...) {
   lengths
 }
 
-.network_input_scalar_numeric <- function(entry, index, scalar_message, numeric_message) {
+.network_input_scalar_numeric <- function(
+  entry,
+  index,
+  scalar_message,
+  numeric_message
+) {
   value <- entry[[index]]
   if (length(value) != 1L) {
     stop(scalar_message, call. = FALSE)
@@ -82,9 +91,15 @@ Infomap <- function(args = NULL, opts = NULL, ...) {
   value
 }
 
-.network_input_table <- function(input, allowed_columns, shape_message,
-                                 id_columns, id_message,
-                                 weight_column, weight_message) {
+.network_input_table <- function(
+  input,
+  allowed_columns,
+  shape_message,
+  id_columns,
+  id_message,
+  weight_column,
+  weight_message
+) {
   ncol_input <- ncol(input)
   if (!ncol_input %in% allowed_columns) {
     stop(shape_message, call. = FALSE)
@@ -93,16 +108,29 @@ Infomap <- function(args = NULL, opts = NULL, ...) {
   values <- .network_input_columns(input, id_columns)
   .network_input_require_numeric(values, id_message)
   weights <- .network_input_weights(
-    input, weight_column, length(values[[1L]]), weight_message
+    input,
+    weight_column,
+    length(values[[1L]]),
+    weight_message
   )
   c(values, list(weights))
 }
 
-.network_input_flat_rows <- function(entries, allowed_lengths, length_message,
-                                     value_names, row_name,
-                                     id_message, weight_scalar_message,
-                                     weight_numeric_message) {
-  .network_input_validate_entry_lengths(entries, allowed_lengths, length_message)
+.network_input_flat_rows <- function(
+  entries,
+  allowed_lengths,
+  length_message,
+  value_names,
+  row_name,
+  id_message,
+  weight_scalar_message,
+  weight_numeric_message
+) {
+  .network_input_validate_entry_lengths(
+    entries,
+    allowed_lengths,
+    length_message
+  )
 
   values <- lapply(
     seq_along(value_names),
@@ -113,7 +141,13 @@ Infomap <- function(args = NULL, opts = NULL, ...) {
           .network_input_scalar_numeric(
             entry,
             index,
-            paste0("Each ", row_name, " ", value_names[[index]], " value must be scalar."),
+            paste0(
+              "Each ",
+              row_name,
+              " ",
+              value_names[[index]],
+              " value must be scalar."
+            ),
             id_message
           )
         },
@@ -124,9 +158,16 @@ Infomap <- function(args = NULL, opts = NULL, ...) {
   weights <- vapply(
     entries,
     function(entry) {
-      value <- if (length(entry) == length(value_names) + 1L) entry[[length(entry)]] else 1.0
+      value <- if (length(entry) == length(value_names) + 1L) {
+        entry[[length(entry)]]
+      } else {
+        1.0
+      }
       .network_input_scalar_numeric(
-        list(value), 1L, weight_scalar_message, weight_numeric_message
+        list(value),
+        1L,
+        weight_scalar_message,
+        weight_numeric_message
       )
     },
     numeric(1L)
@@ -136,8 +177,10 @@ Infomap <- function(args = NULL, opts = NULL, ...) {
 
 .network_input_multilayer_node_value <- function(node, name, index) {
   if (length(node) != 2L) {
-    stop("Each multilayer node must contain 2 values: layer id and node id.",
-         call. = FALSE)
+    stop(
+      "Each multilayer node must contain 2 values: layer id and node id.",
+      call. = FALSE
+    )
   }
   .network_input_scalar_numeric(
     node,
@@ -176,7 +219,9 @@ InfomapClass <- R6::R6Class(
       if (is.null(opts)) {
         opts <- do.call(infomap_options, overrides)
       } else if (length(overrides) > 0L) {
-        for (name in names(overrides)) opts[[name]] <- overrides[[name]]
+        for (name in names(overrides)) {
+          opts[[name]] <- overrides[[name]]
+        }
       }
       cli <- construct_args(args, opts)
       private$.swig <- InfomapWrapper(cli)
@@ -195,7 +240,10 @@ InfomapClass <- R6::R6Class(
     #' @param filename Path to a network file (`.net`, `.txt`, `.tree`, etc.).
     #' @param accumulate If `TRUE` (default), accumulate to existing nodes/links.
     read_file = function(filename, accumulate = TRUE) {
-      private$.swig$readInputData(as.character(filename), as.logical(accumulate))
+      private$.swig$readInputData(
+        as.character(filename),
+        as.logical(accumulate)
+      )
       invisible(self)
     },
 
@@ -206,7 +254,11 @@ InfomapClass <- R6::R6Class(
     add_node = function(node_id, name = NULL, teleportation_weight = NULL) {
       id <- as.integer(node_id)
       if (!is.null(name) && !is.null(teleportation_weight)) {
-        private$.swig$addNode(id, as.character(name), as.numeric(teleportation_weight))
+        private$.swig$addNode(
+          id,
+          as.character(name),
+          as.numeric(teleportation_weight)
+        )
       } else if (!is.null(name)) {
         private$.swig$addNode(id, as.character(name))
       } else if (!is.null(teleportation_weight)) {
@@ -239,8 +291,11 @@ InfomapClass <- R6::R6Class(
           if (is.character(attr) && length(attr) == 1L) {
             self$add_node(id, name = attr)
           } else if (is.list(attr) || length(attr) > 1L) {
-            self$add_node(id, name = as.character(attr[[1]]),
-                          teleportation_weight = as.numeric(attr[[2]]))
+            self$add_node(
+              id,
+              name = as.character(attr[[1]]),
+              teleportation_weight = as.numeric(attr[[2]])
+            )
           } else {
             self$add_node(id, name = as.character(attr))
           }
@@ -277,7 +332,9 @@ InfomapClass <- R6::R6Class(
     #' @param node_id Integer node id.
     #' @param name Node name (character). `NULL` clears the name.
     set_name = function(node_id, name) {
-      if (is.null(name)) name <- ""
+      if (is.null(name)) {
+        name <- ""
+      }
       private$.swig$addName(as.integer(node_id), as.character(name))
       invisible(self)
     },
@@ -287,7 +344,9 @@ InfomapClass <- R6::R6Class(
     #'   list/vector mapping `node_id` to `name`.
     set_names = function(mapping) {
       if (is.null(names(mapping))) {
-        for (entry in mapping) self$set_name(entry[[1L]], entry[[2L]])
+        for (entry in mapping) {
+          self$set_name(entry[[1L]], entry[[2L]])
+        }
       } else {
         for (id_str in names(mapping)) {
           self$set_name(as.integer(id_str), mapping[[id_str]])
@@ -301,7 +360,11 @@ InfomapClass <- R6::R6Class(
     #' @param target_id Target node id.
     #' @param weight Link weight.
     add_link = function(source_id, target_id, weight = 1.0) {
-      private$.swig$addLink(as.integer(source_id), as.integer(target_id), as.numeric(weight))
+      private$.swig$addLink(
+        as.integer(source_id),
+        as.integer(target_id),
+        as.numeric(weight)
+      )
       invisible(self)
     },
 
@@ -314,8 +377,11 @@ InfomapClass <- R6::R6Class(
       if (is.matrix(links) || is.data.frame(links)) {
         ncol_links <- ncol(links)
         if (!ncol_links %in% c(2L, 3L)) {
-          stop("`links` matrix/data.frame must have 2 or 3 columns ",
-               "(source, target, [weight]).", call. = FALSE)
+          stop(
+            "`links` matrix/data.frame must have 2 or 3 columns ",
+            "(source, target, [weight]).",
+            call. = FALSE
+          )
         }
         id_columns <- .network_input_columns(links, c(1L, 2L))
         .network_input_require_numeric(
@@ -325,7 +391,10 @@ InfomapClass <- R6::R6Class(
         sources <- id_columns[[1L]]
         targets <- id_columns[[2L]]
         weights <- .network_input_weights(
-          links, 3L, length(sources), "`links` weight column must be numeric."
+          links,
+          3L,
+          length(sources),
+          "`links` weight column must be numeric."
         )
       } else {
         link_lengths <- .network_input_validate_entry_lengths(
@@ -372,7 +441,11 @@ InfomapClass <- R6::R6Class(
         )
       }
 
-      private$.swig$addLinks(as.integer(sources), as.integer(targets), as.numeric(weights))
+      private$.swig$addLinks(
+        as.integer(sources),
+        as.integer(targets),
+        as.numeric(weights)
+      )
       invisible(self)
     },
 
@@ -380,14 +453,19 @@ InfomapClass <- R6::R6Class(
     #' @param source_id Source node id.
     #' @param target_id Target node id.
     remove_link = function(source_id, target_id) {
-      private$.swig$network()$removeLink(as.integer(source_id), as.integer(target_id))
+      private$.swig$network()$removeLink(
+        as.integer(source_id),
+        as.integer(target_id)
+      )
       invisible(self)
     },
 
     #' @description Remove many links at once.
     #' @param links A list of `c(source, target)` vectors.
     remove_links = function(links) {
-      for (entry in links) self$remove_link(entry[[1L]], entry[[2L]])
+      for (entry in links) {
+        self$remove_link(entry[[1L]], entry[[2L]])
+      }
       invisible(self)
     },
 
@@ -397,10 +475,20 @@ InfomapClass <- R6::R6Class(
     #' @param target_multilayer_node A `c(layer_id, node_id)` vector or
     #'   the result of [multilayer_node()].
     #' @param weight Link weight.
-    add_multilayer_link = function(source_multilayer_node, target_multilayer_node, weight = 1.0) {
+    add_multilayer_link = function(
+      source_multilayer_node,
+      target_multilayer_node,
+      weight = 1.0
+    ) {
       src <- as.integer(source_multilayer_node)
       tgt <- as.integer(target_multilayer_node)
-      private$.swig$addMultilayerLink(src[[1L]], src[[2L]], tgt[[1L]], tgt[[2L]], as.numeric(weight))
+      private$.swig$addMultilayerLink(
+        src[[1L]],
+        src[[2L]],
+        tgt[[1L]],
+        tgt[[2L]],
+        as.numeric(weight)
+      )
       invisible(self)
     },
 
@@ -409,10 +497,17 @@ InfomapClass <- R6::R6Class(
     #' @param source_node_id Source node id.
     #' @param target_node_id Target node id.
     #' @param weight Link weight.
-    add_multilayer_intra_link = function(layer_id, source_node_id, target_node_id, weight = 1.0) {
+    add_multilayer_intra_link = function(
+      layer_id,
+      source_node_id,
+      target_node_id,
+      weight = 1.0
+    ) {
       private$.swig$addMultilayerIntraLink(
-        as.integer(layer_id), as.integer(source_node_id),
-        as.integer(target_node_id), as.numeric(weight)
+        as.integer(layer_id),
+        as.integer(source_node_id),
+        as.integer(target_node_id),
+        as.numeric(weight)
       )
       invisible(self)
     },
@@ -454,7 +549,10 @@ InfomapClass <- R6::R6Class(
       }
 
       private$.swig$addMultilayerIntraLinks(
-        as.integer(layers), as.integer(sources), as.integer(targets), as.numeric(weights)
+        as.integer(layers),
+        as.integer(sources),
+        as.integer(targets),
+        as.numeric(weights)
       )
       invisible(self)
     },
@@ -464,10 +562,17 @@ InfomapClass <- R6::R6Class(
     #' @param node_id Physical node id (same in both layers).
     #' @param target_layer_id Target layer id.
     #' @param weight Link weight.
-    add_multilayer_inter_link = function(source_layer_id, node_id, target_layer_id, weight = 1.0) {
+    add_multilayer_inter_link = function(
+      source_layer_id,
+      node_id,
+      target_layer_id,
+      weight = 1.0
+    ) {
       private$.swig$addMultilayerInterLink(
-        as.integer(source_layer_id), as.integer(node_id),
-        as.integer(target_layer_id), as.numeric(weight)
+        as.integer(source_layer_id),
+        as.integer(node_id),
+        as.integer(target_layer_id),
+        as.numeric(weight)
       )
       invisible(self)
     },
@@ -509,8 +614,10 @@ InfomapClass <- R6::R6Class(
       }
 
       private$.swig$addMultilayerInterLinks(
-        as.integer(source_layers), as.integer(nodes),
-        as.integer(target_layers), as.numeric(weights)
+        as.integer(source_layers),
+        as.integer(nodes),
+        as.integer(target_layers),
+        as.numeric(weights)
       )
       invisible(self)
     },
@@ -546,22 +653,38 @@ InfomapClass <- R6::R6Class(
 
         source_layers <- vapply(
           links,
-          function(entry) .network_input_multilayer_node_value(entry[[1L]], "source layer", 1L),
+          function(entry) {
+            .network_input_multilayer_node_value(
+              entry[[1L]],
+              "source layer",
+              1L
+            )
+          },
           numeric(1L)
         )
         source_nodes <- vapply(
           links,
-          function(entry) .network_input_multilayer_node_value(entry[[1L]], "source node", 2L),
+          function(entry) {
+            .network_input_multilayer_node_value(entry[[1L]], "source node", 2L)
+          },
           numeric(1L)
         )
         target_layers <- vapply(
           links,
-          function(entry) .network_input_multilayer_node_value(entry[[2L]], "target layer", 1L),
+          function(entry) {
+            .network_input_multilayer_node_value(
+              entry[[2L]],
+              "target layer",
+              1L
+            )
+          },
           numeric(1L)
         )
         target_nodes <- vapply(
           links,
-          function(entry) .network_input_multilayer_node_value(entry[[2L]], "target node", 2L),
+          function(entry) {
+            .network_input_multilayer_node_value(entry[[2L]], "target node", 2L)
+          },
           numeric(1L)
         )
         weights <- vapply(
@@ -580,8 +703,11 @@ InfomapClass <- R6::R6Class(
       }
 
       private$.swig$addMultilayerLinks(
-        as.integer(source_layers), as.integer(source_nodes),
-        as.integer(target_layers), as.integer(target_nodes), as.numeric(weights)
+        as.integer(source_layers),
+        as.integer(source_nodes),
+        as.integer(target_layers),
+        as.integer(target_nodes),
+        as.numeric(weights)
       )
       invisible(self)
     },
@@ -590,7 +716,10 @@ InfomapClass <- R6::R6Class(
     #' @param node_id Integer node id.
     #' @param meta_category Integer meta category.
     set_meta_data = function(node_id, meta_category) {
-      private$.swig$network()$addMetaData(as.integer(node_id), as.integer(meta_category))
+      private$.swig$network()$addMetaData(
+        as.integer(node_id),
+        as.integer(meta_category)
+      )
       invisible(self)
     },
 
@@ -607,15 +736,20 @@ InfomapClass <- R6::R6Class(
       if (is.null(opts)) {
         opts <- do.call(infomap_options, overrides)
       } else if (length(overrides) > 0L) {
-        for (name in names(overrides)) opts[[name]] <- overrides[[name]]
+        for (name in names(overrides)) {
+          opts[[name]] <- overrides[[name]]
+        }
       }
       # Mirror Python: if add_igraph() saw a directed graph and the user
       # never set a flow model (at construction or here, in opts or args),
       # treat the network as directed.
-      if (isTRUE(private$.directed_from_igraph) &&
+      if (
+        isTRUE(private$.directed_from_igraph) &&
           !private$.flow_model_set &&
-          is.null(opts$flow_model) && is.null(opts$directed) &&
-          !.flow_model_in_args(args)) {
+          is.null(opts$flow_model) &&
+          is.null(opts$directed) &&
+          !.flow_model_in_args(args)
+      ) {
         opts$directed <- TRUE
       }
       cli <- construct_args(args, opts)
@@ -683,11 +817,13 @@ InfomapClass <- R6::R6Class(
     #'   networks with non-numeric `phys_id` labels, the returned vector has
     #'   a `"phys_id"` attribute mapping internal physical ids to original
     #'   labels. Useful for joining Infomap results back to the original graph.
-    add_igraph = function(g,
-                          weight = "weight",
-                          phys_id = "phys_id",
-                          layer_id = "layer_id",
-                          multilayer_inter_intra_format = TRUE) {
+    add_igraph = function(
+      g,
+      weight = "weight",
+      phys_id = "phys_id",
+      layer_id = "layer_id",
+      multilayer_inter_intra_format = TRUE
+    ) {
       if (!requireNamespace("igraph", quietly = TRUE)) {
         stop(
           "The 'igraph' package is required for add_igraph(). ",
@@ -700,8 +836,10 @@ InfomapClass <- R6::R6Class(
       }
 
       is_directed <- igraph::is_directed(g)
-      has_phys <- length(phys_id) == 1L && phys_id %in% igraph::vertex_attr_names(g)
-      has_layer <- length(layer_id) == 1L && layer_id %in% igraph::vertex_attr_names(g)
+      has_phys <- length(phys_id) == 1L &&
+        phys_id %in% igraph::vertex_attr_names(g)
+      has_layer <- length(layer_id) == 1L &&
+        layer_id %in% igraph::vertex_attr_names(g)
 
       vertex_names <- igraph::V(g)$name
       if (is.null(vertex_names)) {
@@ -758,7 +896,9 @@ InfomapClass <- R6::R6Class(
             intra_targets <- edge_targets[same_layer]
             self$add_multilayer_intra_links(
               cbind(
-                layers[intra_sources], phys[intra_sources], phys[intra_targets],
+                layers[intra_sources],
+                phys[intra_sources],
+                phys[intra_targets],
                 weights[same_layer]
               )
             )
@@ -768,7 +908,9 @@ InfomapClass <- R6::R6Class(
             inter_targets <- edge_targets[!same_layer]
             self$add_multilayer_inter_links(
               cbind(
-                layers[inter_sources], phys[inter_sources], layers[inter_targets],
+                layers[inter_sources],
+                phys[inter_sources],
+                layers[inter_targets],
                 weights[!same_layer]
               )
             )
@@ -777,7 +919,11 @@ InfomapClass <- R6::R6Class(
           for (e in seq_len(nrow(edges))) {
             s <- edges[e, 1L]
             t <- edges[e, 2L]
-            self$add_multilayer_link(c(layers[s], phys[s]), c(layers[t], phys[t]), weights[e])
+            self$add_multilayer_link(
+              c(layers[s], phys[s]),
+              c(layers[t], phys[t]),
+              weights[e]
+            )
           }
         }
       } else if (has_phys) {
@@ -818,8 +964,10 @@ InfomapClass <- R6::R6Class(
       if (!inherits(g, "igraph")) {
         stop("`g` must be an igraph graph.", call. = FALSE)
       }
-      if (!is.null(private$.igraph_vcount) &&
-          igraph::vcount(g) != private$.igraph_vcount) {
+      if (
+        !is.null(private$.igraph_vcount) &&
+          igraph::vcount(g) != private$.igraph_vcount
+      ) {
         stop(
           "`g` must be the same igraph graph passed to add_igraph().",
           call. = FALSE
@@ -847,7 +995,7 @@ InfomapClass <- R6::R6Class(
       igraph::make_clusters(
         g,
         membership = membership,
-        algorithm  = "Infomap",
+        algorithm = "Infomap",
         modularity = FALSE
       )
     },
@@ -880,7 +1028,9 @@ InfomapClass <- R6::R6Class(
       while (!it$isEnd()) {
         if (it$isLeaf()) {
           i <- i + 1L
-          ids[i] <- as.integer(if (isTRUE(states)) it$stateId else it$physicalId)
+          ids[i] <- as.integer(
+            if (isTRUE(states)) it$stateId else it$physicalId
+          )
           modules[i] <- as.integer(it$moduleId())
         }
         it$stepForward()
@@ -900,7 +1050,9 @@ InfomapClass <- R6::R6Class(
       if (depth < 1L) {
         return(structure(list(), names = character()))
       }
-      per_level <- lapply(seq_len(depth), function(d) self$get_modules(d, states))
+      per_level <- lapply(seq_len(depth), function(d) {
+        self$get_modules(d, states)
+      })
       ids <- names(per_level[[1L]])
       out <- lapply(ids, function(id) {
         vapply(per_level, function(m) m[[id]], integer(1L))
@@ -941,12 +1093,14 @@ InfomapClass <- R6::R6Class(
         it$stepForward()
       }
       out <- list(
-        state_id  = state_id[seq_len(i)],
-        node_id   = node_id[seq_len(i)],
+        state_id = state_id[seq_len(i)],
+        node_id = node_id[seq_len(i)],
         module_id = module_id[seq_len(i)],
-        flow      = flow[seq_len(i)]
+        flow = flow[seq_len(i)]
       )
-      if (has_layer) out$layer_id <- layer_id[seq_len(i)]
+      if (has_layer) {
+        out$layer_id <- layer_id[seq_len(i)]
+      }
       out
     },
 
@@ -990,7 +1144,9 @@ InfomapClass <- R6::R6Class(
     #' @return Character (or `default`).
     get_name = function(node_id, default = NULL) {
       name <- private$.swig$getName(as.integer(node_id))
-      if (identical(name, "")) return(default)
+      if (identical(name, "")) {
+        return(default)
+      }
       name
     },
 
@@ -1001,10 +1157,14 @@ InfomapClass <- R6::R6Class(
       # and ask for each name individually.
       ids <- self$get_nodes(depth_level = 1L, states = TRUE)$node_id
       ids <- unique(ids)
-      out <- vapply(ids, function(id) {
-        name <- private$.swig$getName(as.integer(id))
-        if (is.null(name)) "" else name
-      }, character(1L))
+      out <- vapply(
+        ids,
+        function(id) {
+          name <- private$.swig$getName(as.integer(id))
+          if (is.null(name)) "" else name
+        },
+        character(1L)
+      )
       names(out) <- as.character(ids)
       out[nzchar(out)]
     },
@@ -1018,7 +1178,11 @@ InfomapClass <- R6::R6Class(
     #' @param states Whether to write state ids (default `FALSE`).
     #' @param depth_level Tree depth used for the module id.
     write_clu = function(filename, states = FALSE, depth_level = 1L) {
-      private$.swig$writeClu(as.character(filename), as.logical(states), as.integer(depth_level))
+      private$.swig$writeClu(
+        as.character(filename),
+        as.logical(states),
+        as.integer(depth_level)
+      )
       invisible(filename)
     },
 
@@ -1066,7 +1230,10 @@ InfomapClass <- R6::R6Class(
     #' @param filename Output path.
     #' @param flow Whether to write computed flow values per link.
     write_pajek = function(filename, flow = FALSE) {
-      private$.swig$network()$writePajekNetwork(as.character(filename), as.logical(flow))
+      private$.swig$network()$writePajekNetwork(
+        as.character(filename),
+        as.logical(flow)
+      )
       invisible(filename)
     },
 
@@ -1084,10 +1251,11 @@ InfomapClass <- R6::R6Class(
     #' @param ... Forwarded to the chosen writer.
     write = function(filename, ...) {
       ext <- tolower(tools::file_ext(filename))
-      ext <- switch(ext,
+      ext <- switch(
+        ext,
         "ftree" = "flow_tree",
-        "nwk"   = "newick",
-        "net"   = "pajek",
+        "nwk" = "newick",
+        "net" = "pajek",
         ext
       )
       method_name <- paste0("write_", ext)
@@ -1108,15 +1276,21 @@ InfomapClass <- R6::R6Class(
     codelengths = function() {
       v <- private$.swig$codelengths()
       n <- v$size()
-      if (n == 0L) return(numeric(0L))
-      vapply(seq_len(n) - 1L,
-             function(i) v$"__getitem__"(as.integer(i)),
-             numeric(1L))
+      if (n == 0L) {
+        return(numeric(0L))
+      }
+      vapply(
+        seq_len(n) - 1L,
+        function(i) v$"__getitem__"(as.integer(i)),
+        numeric(1L)
+      )
     },
     #' @field num_top_modules Number of top modules in the tree.
     num_top_modules = function() private$.swig$numTopModules(),
     #' @field num_non_trivial_top_modules Number of non-trivial top modules.
-    num_non_trivial_top_modules = function() private$.swig$numNonTrivialTopModules(),
+    num_non_trivial_top_modules = function() {
+      private$.swig$numNonTrivialTopModules()
+    },
     #' @field num_levels Number of levels in the tree.
     num_levels = function() private$.swig$numLevels(),
     #' @field max_tree_depth Maximum depth of the tree.
@@ -1136,19 +1310,26 @@ InfomapClass <- R6::R6Class(
     #' @field module_codelength Module codelength (within-module part).
     module_codelength = function() private$.swig$getModuleCodelength(),
     #' @field hierarchical_codelength Hierarchical codelength.
-    hierarchical_codelength = function() private$.swig$getHierarchicalCodelength(),
+    hierarchical_codelength = function() {
+      private$.swig$getHierarchicalCodelength()
+    },
     #' @field one_level_codelength One-level codelength baseline.
     one_level_codelength = function() private$.swig$getOneLevelCodelength(),
     #' @field relative_codelength_savings Relative codelength savings.
-    relative_codelength_savings = function() private$.swig$getRelativeCodelengthSavings(),
+    relative_codelength_savings = function() {
+      private$.swig$getRelativeCodelengthSavings()
+    },
     #' @field entropy_rate Entropy rate of the network.
     entropy_rate = function() private$.swig$getEntropyRate(),
     #' @field max_entropy Maximum possible entropy.
     max_entropy = function() private$.swig$getMaxEntropy(),
     #' @field bipartite_start_id Get or set the bipartite start id.
     bipartite_start_id = function(value) {
-      if (missing(value)) self$get_bipartite_start_id()
-      else self$set_bipartite_start_id(value)
+      if (missing(value)) {
+        self$get_bipartite_start_id()
+      } else {
+        self$set_bipartite_start_id(value)
+      }
     },
     #' @field modules Top-level module assignment per node (named integer vector).
     modules = function() {
@@ -1199,7 +1380,9 @@ InfomapClass <- R6::R6Class(
 # greedily on -d), but covers the relevant flags. Used to avoid
 # overriding user-supplied flags when add_igraph() sees a directed graph.
 .flow_model_in_args <- function(args) {
-  if (is.null(args) || !nzchar(args)) return(FALSE)
+  if (is.null(args) || !nzchar(args)) {
+    return(FALSE)
+  }
   grepl("(^|\\s)(--directed|-d\\b|--flow-model|-f\\b)", args)
 }
 
@@ -1229,14 +1412,20 @@ InfomapClass <- R6::R6Class(
     stop("`weight` edge attribute must be numeric.", call. = FALSE)
   }
   if (anyNA(weights)) {
-    stop("`weight` edge attribute cannot contain missing values.", call. = FALSE)
+    stop(
+      "`weight` edge attribute cannot contain missing values.",
+      call. = FALSE
+    )
   }
   as.numeric(weights)
 }
 
 .map_igraph_phys_ids <- function(values) {
   if (anyNA(values)) {
-    stop("`phys_id` vertex attribute cannot contain missing values.", call. = FALSE)
+    stop(
+      "`phys_id` vertex attribute cannot contain missing values.",
+      call. = FALSE
+    )
   }
 
   if (is.numeric(values)) {
@@ -1252,11 +1441,17 @@ InfomapClass <- R6::R6Class(
 
   labels <- as.character(values)
   if (anyNA(labels)) {
-    stop("`phys_id` vertex attribute cannot contain missing values.", call. = FALSE)
+    stop(
+      "`phys_id` vertex attribute cannot contain missing values.",
+      call. = FALSE
+    )
   }
 
   unique_labels <- unique(labels)
   ids <- match(labels, unique_labels)
-  mapping <- stats::setNames(unique_labels, as.character(seq_along(unique_labels)))
+  mapping <- stats::setNames(
+    unique_labels,
+    as.character(seq_along(unique_labels))
+  )
   list(ids = as.integer(ids), mapping = mapping)
 }

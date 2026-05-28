@@ -29,7 +29,8 @@ im$run()
 
 cat(sprintf(
   "[R6]     %d modules, codelength %.4f bits.\n",
-  im$num_top_modules, im$codelength
+  im$num_top_modules,
+  im$codelength
 ))
 print(im$modules)
 
@@ -42,10 +43,16 @@ edges <- data.frame(
   target = c(1, 2, 3, 0, 2, 1, 0, 0, 4, 5, 3, 5, 4, 3)
 )
 
-result <- cluster_infomap(edges, silent = TRUE, two_level = TRUE, directed = TRUE)
+result <- cluster_infomap(
+  edges,
+  silent = TRUE,
+  two_level = TRUE,
+  directed = TRUE
+)
 
 cat(sprintf(
   "[helper] %d modules, codelength %.4f bits.\n",
-  result$num_top_modules, result$codelength
+  result$num_top_modules,
+  result$codelength
 ))
 print(result$modules)

@@ -6,6 +6,11 @@ guided, exploratory introduction to the map equation and Infomap workflows.
 The notebooks were created as companion material for the paper
 `Community Detection with the Map Equation and Infomap: Theory and Applications`_.
 
+Start with the flagship quickstart notebook:
+`quickstart.ipynb <https://github.com/mapequation/infomap/blob/master/examples/notebooks/quickstart.ipynb>`_.
+It shows the notebook-native Infomap result summary, a copyable static network
+partition helper, dataframe inspection, and export paths for further analysis.
+
 They are useful when you want to:
 
 - connect the mathematical ideas in the map equation to executable examples;
@@ -18,7 +23,13 @@ They are useful when you want to:
 What's included
 ---------------
 
-The notebooks cover:
+The notebooks include:
+
+- a flagship Python quickstart for Jupyter-native Infomap workflows;
+- comparison tutorials for NetworkX, igraph, and Scanpy-style workflows;
+- companion material for the survey article.
+
+The numbered survey notebooks cover:
 
 - the two-level map equation;
 - the two-level search phase and solution landscapes;

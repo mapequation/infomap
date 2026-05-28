@@ -1,6 +1,14 @@
 test_that("get_modules returns a named integer vector", {
   im <- Infomap(silent = TRUE, num_trials = 3)
-  im$add_links(list(c(1, 2), c(1, 3), c(2, 3), c(3, 4), c(4, 5), c(4, 6), c(5, 6)))
+  im$add_links(list(
+    c(1, 2),
+    c(1, 3),
+    c(2, 3),
+    c(3, 4),
+    c(4, 5),
+    c(4, 6),
+    c(5, 6)
+  ))
   im$run()
 
   m <- im$get_modules()
@@ -12,7 +20,15 @@ test_that("get_modules returns a named integer vector", {
 
 test_that("get_multilevel_modules returns a list of integer paths", {
   im <- Infomap(silent = TRUE, num_trials = 3)
-  im$add_links(list(c(1, 2), c(1, 3), c(2, 3), c(3, 4), c(4, 5), c(4, 6), c(5, 6)))
+  im$add_links(list(
+    c(1, 2),
+    c(1, 3),
+    c(2, 3),
+    c(3, 4),
+    c(4, 5),
+    c(4, 6),
+    c(5, 6)
+  ))
   im$run()
 
   ml <- im$get_multilevel_modules()

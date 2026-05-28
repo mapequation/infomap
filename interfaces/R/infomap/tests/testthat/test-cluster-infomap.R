@@ -4,7 +4,12 @@ test_that("cluster_infomap accepts data.frame edge lists", {
     target = c(2, 3, 3, 4, 5, 6, 6)
   )
 
-  result <- cluster_infomap(edges, silent = TRUE, num_trials = 5, two_level = TRUE)
+  result <- cluster_infomap(
+    edges,
+    silent = TRUE,
+    num_trials = 5,
+    two_level = TRUE
+  )
 
   expect_s3_class(result, "infomap_result")
   expect_s3_class(result$model, "Infomap")
@@ -19,17 +24,17 @@ test_that("cluster_infomap accepts data.frame edge lists", {
 
 test_that("cluster_infomap accepts matrix edge lists", {
   edges <- matrix(
-    c(1, 2,
-      1, 3,
-      2, 3,
-      4, 5,
-      4, 6,
-      5, 6),
+    c(1, 2, 1, 3, 2, 3, 4, 5, 4, 6, 5, 6),
     ncol = 2L,
     byrow = TRUE
   )
 
-  result <- cluster_infomap(edges, silent = TRUE, num_trials = 5, two_level = TRUE)
+  result <- cluster_infomap(
+    edges,
+    silent = TRUE,
+    num_trials = 5,
+    two_level = TRUE
+  )
 
   expect_s3_class(result, "infomap_result")
   expect_equal(result$num_nodes, 6L)
@@ -45,8 +50,18 @@ test_that("cluster_infomap accepts weighted edge lists", {
   )
 
   default_weight <- cluster_infomap(edges, silent = TRUE, two_level = TRUE)
-  named_weight <- cluster_infomap(edges, weight = "w", silent = TRUE, two_level = TRUE)
-  unweighted <- cluster_infomap(edges, weight = FALSE, silent = TRUE, two_level = TRUE)
+  named_weight <- cluster_infomap(
+    edges,
+    weight = "w",
+    silent = TRUE,
+    two_level = TRUE
+  )
+  unweighted <- cluster_infomap(
+    edges,
+    weight = FALSE,
+    silent = TRUE,
+    two_level = TRUE
+  )
 
   expect_equal(default_weight$num_links, 7L)
   expect_equal(named_weight$num_links, 7L)
@@ -69,11 +84,22 @@ test_that("infomap_result methods expose node table and summary", {
 test_that("cluster_infomap accepts igraph input", {
   skip_if_not_installed("igraph")
 
-  graph <- igraph::make_graph(c(1, 2, 1, 3, 2, 3, 4, 5, 4, 6, 5, 6), directed = FALSE)
-  result <- cluster_infomap(graph, silent = TRUE, nb.trials = 5, two_level = TRUE)
+  graph <- igraph::make_graph(
+    c(1, 2, 1, 3, 2, 3, 4, 5, 4, 6, 5, 6),
+    directed = FALSE
+  )
+  result <- cluster_infomap(
+    graph,
+    silent = TRUE,
+    nb.trials = 5,
+    two_level = TRUE
+  )
 
   expect_s3_class(result, "infomap_result")
-  expect_equal(names(result$mapping), as.character(seq_len(igraph::vcount(graph))))
+  expect_equal(
+    names(result$mapping),
+    as.character(seq_len(igraph::vcount(graph)))
+  )
   expect_setequal(result$nodes$node_id, seq_len(igraph::vcount(graph)))
 
   communities <- as_communities(result, graph)
@@ -120,17 +146,27 @@ test_that("cluster_infomap rejects conflicting or unsupported igraph-style alias
 })
 
 test_that("cluster_infomap rejects invalid edge-list inputs", {
-  expect_error(cluster_infomap(data.frame(source = 1), silent = TRUE), "at least two columns")
+  expect_error(
+    cluster_infomap(data.frame(source = 1), silent = TRUE),
+    "at least two columns"
+  )
   expect_error(
     cluster_infomap(data.frame(source = "a", target = "b"), silent = TRUE),
     "numeric/integer"
   )
   expect_error(
-    cluster_infomap(data.frame(source = 1, target = 2, w = "bad"), silent = TRUE),
+    cluster_infomap(
+      data.frame(source = 1, target = 2, w = "bad"),
+      silent = TRUE
+    ),
     "weight.*numeric"
   )
   expect_error(
-    cluster_infomap(data.frame(source = 1, target = 2), weight = "missing", silent = TRUE),
+    cluster_infomap(
+      data.frame(source = 1, target = 2),
+      weight = "missing",
+      silent = TRUE
+    ),
     "not found"
   )
 })

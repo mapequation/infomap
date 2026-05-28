@@ -19,13 +19,33 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  validate-stable-tag:
+    name: Validate stable release tag
+    if: ${{ github.event_name == 'workflow_dispatch' || !contains(github.ref_name, '-') }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+
+    steps:
+      - name: Validate tag format
+        env:
+          RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+        run: |
+          set -euo pipefail
+
+          if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Expected stable release tag vX.Y.Z, got: $RELEASE_TAG" >&2
+            exit 1
+          fi
+
   native:
+    needs: [validate-stable-tag]
     uses: ./.github/workflows/_native-build.yml
     with:
       ref: ${{ github.event_name == 'workflow_dispatch' && format('refs/tags/{0}', inputs.tag) || github.ref }}
       upload-artifacts: true
 
   python:
+    needs: [validate-stable-tag]
     uses: ./.github/workflows/_python-package.yml
     with:
       ref: ${{ github.event_name == 'workflow_dispatch' && format('refs/tags/{0}', inputs.tag) || github.ref }}
@@ -33,6 +53,7 @@ jobs:
       build-release-artifacts: true
 
   javascript:
+    needs: [validate-stable-tag]
     uses: ./.github/workflows/_js-package.yml
     with:
       ref: ${{ github.event_name == 'workflow_dispatch' && format('refs/tags/{0}', inputs.tag) || github.ref }}
@@ -40,6 +61,7 @@ jobs:
       pack-artifact: true
 
   r:
+    needs: [validate-stable-tag]
     uses: ./.github/workflows/_r-package.yml
     with:
       ref: ${{ github.event_name == 'workflow_dispatch' && format('refs/tags/{0}', inputs.tag) || github.ref }}
@@ -189,17 +211,17 @@ jobs:
           platforms: amd64,arm64
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
+        uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
 
       - name: Log in to GHCR
-        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and publish CLI image
-        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7.1.0
+        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
         with:
           context: .
           file: docker/infomap.Dockerfile
@@ -215,7 +237,7 @@ jobs:
             org.opencontainers.image.licenses=GPL-3.0-or-later
 
       - name: Build and publish notebook image
-        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7.1.0
+        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
         with:
           context: .
           file: docker/notebook.Dockerfile

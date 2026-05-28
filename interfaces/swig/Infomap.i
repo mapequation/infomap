@@ -6,6 +6,7 @@
 %{
 /* Includes the header in the wrapper code */
 #include "src/Infomap.h"
+#include "src/io/Features.h"
 #ifdef SWIGPYTHON
 namespace infomap {
 int run(const std::string& flags);
@@ -337,6 +338,32 @@ namespace std {
     %template(pair_uint_uint) std::pair<unsigned int, unsigned int>;
     %template(map_pair_uint_uint_double) std::map<std::pair<unsigned int, unsigned int>, double>;
 }
+
+#ifdef SWIGPYTHON
+%rename(_enabled_features_string) infomap::pythonEnabledFeaturesString;
+%inline %{
+namespace infomap {
+std::string pythonEnabledFeaturesString()
+{
+  const auto features = enabledFeatures();
+  std::string encoded;
+  for (const auto& feature : features) {
+    if (!encoded.empty())
+      encoded += ",";
+    encoded += feature;
+  }
+  return encoded;
+}
+}
+%}
+
+%insert("python") %{
+def build_info():
+    features = _infomap._enabled_features_string()
+    enabled_features = tuple(feature for feature in features.split(",") if feature)
+    return {"enabled_features": enabled_features}
+%}
+#endif
 
 namespace infomap {
 #ifdef SWIGPYTHON
