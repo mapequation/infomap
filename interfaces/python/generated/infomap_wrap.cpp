@@ -3715,6 +3715,7 @@ namespace swig {
 
 /* Includes the header in the wrapper code */
 #include "src/Infomap.h"
+#include "src/io/Features.h"
 #ifdef SWIGPYTHON
 namespace infomap {
 int run(const std::string& flags);
@@ -7070,6 +7071,21 @@ SWIGINTERN PyObject *std_map_Sl_std_pair_Sl_unsigned_SS_int_Sc_unsigned_SS_int_S
     }
 SWIGINTERN void std_map_Sl_std_pair_Sl_unsigned_SS_int_Sc_unsigned_SS_int_Sg__Sc_double_Sg__erase__SWIG_1(std::map< std::pair< unsigned int,unsigned int >,double > *self,std::map< std::pair< unsigned int,unsigned int >,double >::iterator position){ self->erase(position); }
 SWIGINTERN void std_map_Sl_std_pair_Sl_unsigned_SS_int_Sc_unsigned_SS_int_Sg__Sc_double_Sg__erase__SWIG_2(std::map< std::pair< unsigned int,unsigned int >,double > *self,std::map< std::pair< unsigned int,unsigned int >,double >::iterator first,std::map< std::pair< unsigned int,unsigned int >,double >::iterator last){ self->erase(first, last); }
+
+namespace infomap {
+std::string pythonEnabledFeaturesString()
+{
+  const auto features = enabledFeatures();
+  std::string encoded;
+  for (const auto& feature : features) {
+    if (!encoded.empty())
+      encoded += ",";
+    encoded += feature;
+  }
+  return encoded;
+}
+}
+
 SWIGINTERN void infomap_InfomapWrapper_addLinksFromNumpy2D(infomap::InfomapWrapper *self,PyObject *links,std::size_t numRows,unsigned int numColumns,std::string const &dtypeKind,unsigned int itemSize){
         infomap::addLinksFromNumpy2D(*self, links, numRows, numColumns, dtypeKind, itemSize);
     }
@@ -55553,13 +55569,33 @@ SWIGINTERN PyObject *map_pair_uint_uint_double_swiginit(PyObject *SWIGUNUSEDPARM
   return SWIG_Python_InitShadowInstance(args);
 }
 
+SWIGINTERN PyObject *_wrap__enabled_features_string(PyObject *self, PyObject *args) {
+  PyObject *resultobj = 0;
+  std::string result;
+
+  (void)self;
+  if (!SWIG_Python_UnpackTuple(args, "_enabled_features_string", 0, 0, 0)) SWIG_fail;
+  {
+    try {
+      result = infomap::pythonEnabledFeaturesString();
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_From_std_string(static_cast< std::string >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_run(PyObject *self, PyObject *args) {
   PyObject *resultobj = 0;
   std::string *arg1 = 0 ;
   int res1 = SWIG_OLDOBJ ;
   PyObject *swig_obj[1] ;
   int result;
-  
+
   (void)self;
   if (!args) SWIG_fail;
   swig_obj[0] = args;
@@ -55567,10 +55603,10 @@ SWIGINTERN PyObject *_wrap_run(PyObject *self, PyObject *args) {
     std::string *ptr = (std::string *)0;
     res1 = SWIG_AsPtr_std_string(swig_obj[0], &ptr);
     if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "run" "', argument " "1"" of type '" "std::string const &""'"); 
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "run" "', argument " "1"" of type '" "std::string const &""'");
     }
     if (!ptr) {
-      SWIG_exception_fail(SWIG_NullReferenceError, "invalid null reference " "in method '" "run" "', argument " "1"" of type '" "std::string const &""'"); 
+      SWIG_exception_fail(SWIG_NullReferenceError, "invalid null reference " "in method '" "run" "', argument " "1"" of type '" "std::string const &""'");
     }
     arg1 = ptr;
   }
@@ -55593,7 +55629,7 @@ fail:
 SWIGINTERN PyObject *_wrap_new_InfomapWrapper__SWIG_0(PyObject *self, Py_ssize_t nobjs, PyObject **SWIGUNUSEDPARM(swig_obj)) {
   PyObject *resultobj = 0;
   infomap::InfomapWrapper *result = 0 ;
-  
+
   (void)self;
   if ((nobjs < 0) || (nobjs > 0)) SWIG_fail;
   {
@@ -55615,17 +55651,17 @@ SWIGINTERN PyObject *_wrap_new_InfomapWrapper__SWIG_1(PyObject *self, Py_ssize_t
   std::string *arg1 = 0 ;
   int res1 = SWIG_OLDOBJ ;
   infomap::InfomapWrapper *result = 0 ;
-  
+
   (void)self;
   if ((nobjs < 1) || (nobjs > 1)) SWIG_fail;
   {
     std::string *ptr = (std::string *)0;
     res1 = SWIG_AsPtr_std_string(swig_obj[0], &ptr);
     if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_InfomapWrapper" "', argument " "1"" of type '" "std::string const &""'"); 
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_InfomapWrapper" "', argument " "1"" of type '" "std::string const &""'");
     }
     if (!ptr) {
-      SWIG_exception_fail(SWIG_NullReferenceError, "invalid null reference " "in method '" "new_InfomapWrapper" "', argument " "1"" of type '" "std::string const &""'"); 
+      SWIG_exception_fail(SWIG_NullReferenceError, "invalid null reference " "in method '" "new_InfomapWrapper" "', argument " "1"" of type '" "std::string const &""'");
     }
     arg1 = ptr;
   }
@@ -55651,15 +55687,15 @@ SWIGINTERN PyObject *_wrap_new_InfomapWrapper__SWIG_2(PyObject *self, Py_ssize_t
   void *argp1 = 0 ;
   int res1 = 0 ;
   infomap::InfomapWrapper *result = 0 ;
-  
+
   (void)self;
   if ((nobjs < 1) || (nobjs > 1)) SWIG_fail;
   res1 = SWIG_ConvertPtr(swig_obj[0], &argp1, SWIGTYPE_p_infomap__Config,  0  | 0);
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_InfomapWrapper" "', argument " "1"" of type '" "infomap::Config const &""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_InfomapWrapper" "', argument " "1"" of type '" "infomap::Config const &""'");
   }
   if (!argp1) {
-    SWIG_exception_fail(SWIG_NullReferenceError, "invalid null reference " "in method '" "new_InfomapWrapper" "', argument " "1"" of type '" "infomap::Config const &""'"); 
+    SWIG_exception_fail(SWIG_NullReferenceError, "invalid null reference " "in method '" "new_InfomapWrapper" "', argument " "1"" of type '" "infomap::Config const &""'");
   }
   arg1 = reinterpret_cast< infomap::Config * >(argp1);
   {
@@ -55681,7 +55717,7 @@ SWIGINTERN PyObject *_wrap_new_InfomapWrapper(PyObject *self, PyObject *args) {
   PyObject *argv[2] = {
     0
   };
-  
+
   if (!(argc = SWIG_Python_UnpackTuple(args, "new_InfomapWrapper", 0, 1, argv))) SWIG_fail;
   --argc;
   if (argc == 0) {
@@ -55703,7 +55739,7 @@ SWIGINTERN PyObject *_wrap_new_InfomapWrapper(PyObject *self, PyObject *args) {
       return _wrap_new_InfomapWrapper__SWIG_1(self, argc, argv);
     }
   }
-  
+
 fail:
   SWIG_Python_RaiseOrModifyTypeError("Wrong number or type of arguments for overloaded function 'new_InfomapWrapper'.\n"
     "  Possible C/C++ prototypes are:\n"
@@ -55720,13 +55756,13 @@ SWIGINTERN PyObject *_wrap_delete_InfomapWrapper(PyObject *self, PyObject *args)
   void *argp1 = 0 ;
   int res1 = 0 ;
   PyObject *swig_obj[1] ;
-  
+
   (void)self;
   if (!args) SWIG_fail;
   swig_obj[0] = args;
   res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__InfomapWrapper, SWIG_POINTER_DISOWN |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "delete_InfomapWrapper" "', argument " "1"" of type '" "infomap::InfomapWrapper *""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "delete_InfomapWrapper" "', argument " "1"" of type '" "infomap::InfomapWrapper *""'");
   }
   arg1 = reinterpret_cast< infomap::InfomapWrapper * >(argp1);
   {
@@ -59574,6 +59610,7 @@ static PyMethodDef SwigMethods[] = {
 	 { "delete_map_pair_uint_uint_double", _wrap_delete_map_pair_uint_uint_double, METH_O, NULL},
 	 { "map_pair_uint_uint_double_swigregister", map_pair_uint_uint_double_swigregister, METH_O, NULL},
 	 { "map_pair_uint_uint_double_swiginit", map_pair_uint_uint_double_swiginit, METH_VARARGS, NULL},
+	 { "_enabled_features_string", _wrap__enabled_features_string, METH_NOARGS, NULL},
 	 { "run", _wrap_run, METH_O, NULL},
 	 { "new_InfomapWrapper", _wrap_new_InfomapWrapper, METH_VARARGS, NULL},
 	 { "delete_InfomapWrapper", _wrap_delete_InfomapWrapper, METH_O, NULL},

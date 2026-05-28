@@ -3018,6 +3018,15 @@ class map_pair_uint_uint_double(object):
 # Register map_pair_uint_uint_double in _infomap:
 _infomap.map_pair_uint_uint_double_swigregister(map_pair_uint_uint_double)
 
+def _enabled_features_string():
+    return _infomap._enabled_features_string()
+
+def build_info():
+    features = _infomap._enabled_features_string()
+    enabled_features = tuple(feature for feature in features.split(",") if feature)
+    return {"enabled_features": enabled_features}
+
+
 def run(flags):
     return _infomap.run(flags)
 class InfomapWrapper(InfomapBase):

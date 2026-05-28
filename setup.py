@@ -79,9 +79,10 @@ shared_build = resolve_build_config(
     deployment_target=os.environ.get("MACOSX_DEPLOYMENT_TARGET", ""),
     platform_name=sys.platform,
     native_arch=norm_openmp(os.environ.get("NATIVE_ARCH", "0")),
+    features=os.environ.get("FEATURES", ""),
 )
 
-compiler_args = list(shared_build["compile_flags"])
+compiler_args = [arg.replace('\\"', '"') for arg in shared_build["compile_flags"]]
 link_args = list(shared_build["link_flags"])
 
 define_macros = [
