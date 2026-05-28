@@ -25,6 +25,12 @@ namespace infomap {
 
 class InfoNode;
 
+struct MemNodeSet {
+  MemNodeSet(unsigned int numMemNodes, double sumFlow) : numMemNodes(numMemNodes), sumFlow(sumFlow) {}
+  unsigned int numMemNodes; // use counter to check for zero to avoid round-off errors in sumFlow
+  double sumFlow;
+};
+
 template <typename FlowDataType = FlowData, typename DeltaFlowDataType = DeltaFlow>
 class MapEquation {
   using ME = MapEquation<FlowDataType, DeltaFlowDataType>;
@@ -65,9 +71,10 @@ public:
   // Init
   // ===================================================
 
-  virtual void init(const Config&)
+  virtual void init(const Config& config)
   {
     Log(3) << "MapEquation::init()...\n";
+    m_config = config;
   }
 
   virtual void initTree(InfoNode& /*root*/) = 0;
@@ -113,6 +120,10 @@ public:
   virtual void addMemoryContributions(InfoNode& /*current*/, DeltaFlowDataType& /*oldModuleDelta*/, DeltaFlowDataType& /*newModuleDelta*/) {}
 
   virtual void addMemoryContributions(InfoNode& /*current*/, DeltaFlowDataType& /*oldModuleDelta*/, VectorMap<DeltaFlowDataType>& /*moduleDeltaFlow*/) {}
+
+  virtual void addTeleportationFlow(InfoNode& current, const std::vector<FlowDataType>& moduleFlowData, DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta);
+
+  virtual void addTeleportationFlow(InfoNode& current, const std::vector<FlowDataType>& moduleFlowData, VectorMap<DeltaFlowDataType>& moduleDeltaFlow);
 
   virtual double getDeltaCodelengthOnMovingNode(InfoNode& current,
                                                 DeltaFlowDataType& oldModuleDelta,
@@ -181,6 +192,8 @@ protected:
   // Protected member variables
   // ===================================================
 
+  Config m_config;
+
   double nodeFlow_log_nodeFlow = 0.0; // constant while the leaf network is the same
   double flow_log_flow = 0.0; // node.(flow + exitFlow)
   double exit_log_exit = 0.0;
@@ -193,33 +206,98 @@ protected:
   double exitNetworkFlow_log_exitNetworkFlow = 0.0;
 };
 
+/**
+ * Add teleportation flow for predefined move
+ */
 template <typename FlowDataType, typename DeltaFlowDataType>
-double MapEquation<FlowDataType, DeltaFlowDataType>::getDeltaCodelengthOnMovingNode(InfoNode& current, DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta, std::vector<FlowDataType>& moduleFlowData, std::vector<unsigned int>&)
+void MapEquation<FlowDataType, DeltaFlowDataType>::addTeleportationFlow(InfoNode& current, const std::vector<FlowDataType>& moduleFlowData, DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta)
 {
-  using infomath::plogp;
+  if (!m_config.recordedTeleportation)
+    return;
+
+  auto& oldModuleFlowData = moduleFlowData[oldModuleDelta.module];
+  double deltaEnterOld = (oldModuleFlowData.teleportFlow - current.data.teleportFlow) * current.data.teleportWeight;
+  double deltaExitOld = current.data.teleportFlow * (oldModuleFlowData.teleportWeight - current.data.teleportWeight);
+  oldModuleDelta.deltaEnter += deltaEnterOld;
+  oldModuleDelta.deltaExit += deltaExitOld;
+
+  auto& newModuleFlowData = moduleFlowData[newModuleDelta.module];
+  double deltaEnterNew = current.data.teleportFlow * newModuleFlowData.teleportWeight;
+  double deltaExitNew = newModuleFlowData.teleportFlow * current.data.teleportWeight;
+  newModuleDelta.deltaEnter += deltaEnterNew;
+  newModuleDelta.deltaExit += deltaExitNew;
+}
+
+template <typename FlowDataType, typename DeltaFlowDataType>
+void MapEquation<FlowDataType, DeltaFlowDataType>::addTeleportationFlow(InfoNode& current, const std::vector<FlowDataType>& moduleFlowData, VectorMap<DeltaFlowDataType>& moduleDeltaFlow)
+{
+  if (!m_config.recordedTeleportation)
+    return;
+
+  auto& moduleDeltaEnterExit = moduleDeltaFlow.values();
+
+  for (unsigned int j = 0; j < moduleDeltaFlow.size(); ++j) {
+    auto& deltaEnterExit = moduleDeltaEnterExit[j];
+    auto moduleIndex = deltaEnterExit.module;
+
+    if (moduleIndex == current.index) {
+      auto& oldModuleFlowData = moduleFlowData[moduleIndex];
+      double deltaEnterOld = (oldModuleFlowData.teleportFlow - current.data.teleportFlow) * current.data.teleportWeight;
+      double deltaExitOld = current.data.teleportFlow * (oldModuleFlowData.teleportWeight - current.data.teleportWeight);
+      moduleDeltaFlow.add(moduleIndex, DeltaFlowDataType(moduleIndex, deltaExitOld, deltaEnterOld));
+    } else {
+      auto& newModuleFlowData = moduleFlowData[moduleIndex];
+      double deltaEnterNew = newModuleFlowData.teleportFlow * current.data.teleportWeight;
+      double deltaExitNew = current.data.teleportFlow * newModuleFlowData.teleportWeight;
+      moduleDeltaFlow.add(moduleIndex, DeltaFlowDataType(moduleIndex, deltaExitNew, deltaEnterNew));
+    }
+  }
+}
+
+template <typename FlowDataType, typename DeltaFlowDataType>
+INFOMAP_HOT double MapEquation<FlowDataType, DeltaFlowDataType>::getDeltaCodelengthOnMovingNode(InfoNode& current, DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta, std::vector<FlowDataType>& moduleFlowData, std::vector<unsigned int>&)
+{
+  using infomath::plogp_batch;
   unsigned int oldModule = oldModuleDelta.module;
   unsigned int newModule = newModuleDelta.module;
   double deltaEnterExitOldModule = oldModuleDelta.deltaEnter + oldModuleDelta.deltaExit;
   double deltaEnterExitNewModule = newModuleDelta.deltaEnter + newModuleDelta.deltaExit;
 
-  double delta_enter = plogp(enterFlow + deltaEnterExitOldModule - deltaEnterExitNewModule) - enterFlow_log_enterFlow;
+  FlowDataType& oldMfd = moduleFlowData[oldModule];
+  FlowDataType& newMfd = moduleFlowData[newModule];
+  double oldEnter = oldMfd.enterFlow;
+  double newEnter = newMfd.enterFlow;
+  double oldExit = oldMfd.exitFlow;
+  double newExit = newMfd.exitFlow;
+  double oldExitPlusFlow = oldMfd.exitFlow + oldMfd.flow;
+  double newExitPlusFlow = newMfd.exitFlow + newMfd.flow;
+  double curEnter = current.data.enterFlow;
+  double curExit = current.data.exitFlow;
+  double curFlow = current.data.flow;
 
-  double delta_enter_log_enter = -plogp(moduleFlowData[oldModule].enterFlow)
-      - plogp(moduleFlowData[newModule].enterFlow)
-      + plogp(moduleFlowData[oldModule].enterFlow - current.data.enterFlow + deltaEnterExitOldModule)
-      + plogp(moduleFlowData[newModule].enterFlow + current.data.enterFlow - deltaEnterExitNewModule);
+  constexpr int kPlogpBatchN = 13;
+  double args[kPlogpBatchN] = {
+    enterFlow + deltaEnterExitOldModule - deltaEnterExitNewModule,
+    oldEnter,
+    newEnter,
+    oldEnter - curEnter + deltaEnterExitOldModule,
+    newEnter + curEnter - deltaEnterExitNewModule,
+    oldExit,
+    newExit,
+    oldExit - curExit + deltaEnterExitOldModule,
+    newExit + curExit - deltaEnterExitNewModule,
+    oldExitPlusFlow,
+    newExitPlusFlow,
+    oldExitPlusFlow - curExit - curFlow + deltaEnterExitOldModule,
+    newExitPlusFlow + curExit + curFlow - deltaEnterExitNewModule,
+  };
+  double pl[kPlogpBatchN];
+  plogp_batch(args, pl, kPlogpBatchN);
 
-  double delta_exit_log_exit = -plogp(moduleFlowData[oldModule].exitFlow)
-      - plogp(moduleFlowData[newModule].exitFlow)
-      + plogp(moduleFlowData[oldModule].exitFlow - current.data.exitFlow + deltaEnterExitOldModule)
-      + plogp(moduleFlowData[newModule].exitFlow + current.data.exitFlow - deltaEnterExitNewModule);
-
-  double delta_flow_log_flow = -plogp(moduleFlowData[oldModule].exitFlow + moduleFlowData[oldModule].flow)
-      - plogp(moduleFlowData[newModule].exitFlow + moduleFlowData[newModule].flow)
-      + plogp(moduleFlowData[oldModule].exitFlow + moduleFlowData[oldModule].flow
-              - current.data.exitFlow - current.data.flow + deltaEnterExitOldModule)
-      + plogp(moduleFlowData[newModule].exitFlow + moduleFlowData[newModule].flow
-              + current.data.exitFlow + current.data.flow - deltaEnterExitNewModule);
+  double delta_enter = pl[0] - enterFlow_log_enterFlow;
+  double delta_enter_log_enter = -pl[1] - pl[2] + pl[3] + pl[4];
+  double delta_exit_log_exit = -pl[5] - pl[6] + pl[7] + pl[8];
+  double delta_flow_log_flow = -pl[9] - pl[10] + pl[11] + pl[12];
 
   double deltaL = delta_enter - delta_enter_log_enter - delta_exit_log_exit + delta_flow_log_flow;
   return deltaL;

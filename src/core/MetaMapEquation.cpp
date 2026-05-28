@@ -48,6 +48,7 @@ std::ostream& operator<<(std::ostream& out, const MetaMapEquation& mapEq)
 void MetaMapEquation::init(const Config& config)
 {
   Log(3) << "MetaMapEquation::init()...\n";
+  Base::init(config);
   numMetaDataDimensions = config.numMetaDataDimensions;
   metaDataRate = config.metaDataRate;
   weightByFlow = !config.unweightedMetaData;
@@ -159,11 +160,11 @@ double MetaMapEquation::calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent
   return indexLength + metaDataRate * _metaCodelength;
 }
 
-double MetaMapEquation::getDeltaCodelengthOnMovingNode(InfoNode& current,
-                                                       DeltaFlow& oldModuleDelta,
-                                                       DeltaFlow& newModuleDelta,
-                                                       std::vector<FlowData>& moduleFlowData,
-                                                       std::vector<unsigned int>& moduleMembers)
+INFOMAP_HOT double MetaMapEquation::getDeltaCodelengthOnMovingNode(InfoNode& current,
+                                                                   DeltaFlow& oldModuleDelta,
+                                                                   DeltaFlow& newModuleDelta,
+                                                                   std::vector<FlowData>& moduleFlowData,
+                                                                   std::vector<unsigned int>& moduleMembers)
 {
   double deltaL = Base::getDeltaCodelengthOnMovingNode(current, oldModuleDelta, newModuleDelta, moduleFlowData, moduleMembers);
 

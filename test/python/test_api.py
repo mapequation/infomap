@@ -6,6 +6,7 @@ import networkx as nx
 import pytest
 
 import infomap as infomap_module
+import infomap._facade as facade_module
 import infomap._results as results_module
 
 
@@ -344,3 +345,127 @@ def test_run_with_options_forwards_to_run(monkeypatch):
     assert captured["kwargs"]["initial_partition"] == {1: 1}
     assert captured["kwargs"]["variable_markov_time"] is True
     assert captured["kwargs"]["num_trials"] == 5
+
+
+def test_infomap_repr_shows_readable_state(make_infomap):
+    im = make_infomap()
+    im.add_link(1, 2)
+
+    assert (
+        repr(im)
+        == "Infomap(nodes=2, links=1, physical_nodes=2, state_nodes=0, status='not run')"
+    )
+    assert im.summary() == {
+        "nodes": 2,
+        "links": 1,
+        "physical_nodes": 2,
+        "state_nodes": 0,
+        "higher_order": False,
+        "status": "not run",
+    }
+
+    im.run()
+
+    representation = repr(im)
+
+    assert representation.startswith(
+        "Infomap(nodes=2, links=1, physical_nodes=2, state_nodes=0, status='run'"
+    )
+    assert "multilayer_network=False" in representation
+    assert "levels=2" in representation
+    assert "top_modules=1" in representation
+    assert "codelength=1.0" in representation
+
+    summary = im.summary()
+    assert summary["state_input"] is False
+    assert summary["multilayer_input"] is False
+    assert summary["multilayer_network"] is False
+    assert summary["levels"] == 2
+    assert summary["leaf_nodes"] == 2
+    assert summary["top_modules"] == 1
+    assert summary["non_trivial_top_modules"] == 0
+    assert summary["leaf_modules"] == 1
+    assert summary["index_codelength"] == 0.0
+    assert summary["module_codelength"] == 1.0
+    assert summary["one_level_codelength"] == 1.0
+    assert summary["relative_codelength_savings"] == 0.0
+    assert summary["entropy_rate"] == 0.0
+    assert summary["elapsed_time"] >= 0
+
+
+def test_infomap_html_repr_shows_not_run_state(make_infomap):
+    im = make_infomap()
+    im.add_link(1, 2)
+
+    html = im._repr_html_()
+
+    assert "Infomap" in html
+    assert "Status" in html
+    assert "Not run" in html
+    assert "Nodes" in html
+    assert "Links" in html
+    assert "Higher-order" in html
+    assert "Top-module flow" not in html
+
+
+def test_infomap_html_repr_shows_run_summary_and_flow(make_infomap):
+    im = make_infomap(num_trials=10)
+    im.add_links([(1, 2), (2, 3), (3, 1), (4, 5), (5, 6), (6, 4), (3, 4)])
+    im.run()
+
+    html = im._repr_html_()
+
+    assert "Codelength" in html
+    assert "Relative savings" in html
+    assert "Top modules" in html
+    assert "Effective modules" in html
+    assert "Top-module flow" in html
+    assert "Module 1" in html
+
+
+def test_infomap_html_repr_escapes_rendered_values(monkeypatch, make_infomap):
+    im = make_infomap()
+
+    def fake_summary():
+        return {
+            "nodes": "<script>",
+            "links": 0,
+            "physical_nodes": "<script>",
+            "higher_order": False,
+            "status": "not run",
+        }
+
+    monkeypatch.setattr(im, "summary", fake_summary)
+
+    html = im._repr_html_()
+
+    assert "&lt;script&gt;" in html
+    assert "<script>" not in html
+
+
+def test_top_module_flow_bars_caps_tail_as_other(monkeypatch):
+    class FakeModule:
+        def __init__(self, module_id, flow):
+            self.module_id = module_id
+            self.flow = flow
+            self.depth = 1
+
+    class FakeInfomap:
+        def get_tree(self, depth_level=1):
+            assert depth_level == 1
+            return [FakeModule(module_id, 1.0) for module_id in range(1, 21)]
+
+    monkeypatch.setattr(facade_module, "_REPR_MAX_FLOW_FRACTION", 0.5)
+    monkeypatch.setattr(facade_module, "_REPR_MAX_MODULES", 4)
+
+    bars = facade_module._top_module_flow_bars(FakeInfomap())
+
+    assert len(bars) == 5
+    assert [bar["label"] for bar in bars[:-1]] == [
+        "Module 1",
+        "Module 2",
+        "Module 3",
+        "Module 4",
+    ]
+    assert bars[-1]["label"] == "Other modules"
+    assert bars[-1]["fraction"] == pytest.approx(0.8)

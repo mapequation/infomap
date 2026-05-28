@@ -74,6 +74,12 @@ Quick start with Python:
 
     print(communities)
 
+For Jupyter, start with the flagship
+`quickstart notebook <https://github.com/mapequation/infomap/blob/master/examples/notebooks/quickstart.ipynb>`_.
+It shows the notebook-native Infomap result summary, dataframe inspection, a
+copyable static network partition helper, and export paths for further
+analysis.
+
 For direct control over Infomap-specific options and result access:
 
 .. code-block:: python

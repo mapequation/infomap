@@ -1,9 +1,13 @@
 test_that("Infomap clusters two triangles into two modules", {
   im <- Infomap(silent = TRUE, num_trials = 5, two_level = TRUE)
   im$add_links(list(
-    c(1, 2), c(1, 3), c(2, 3),
+    c(1, 2),
+    c(1, 3),
+    c(2, 3),
     c(3, 4),
-    c(4, 5), c(4, 6), c(5, 6)
+    c(4, 5),
+    c(4, 6),
+    c(5, 6)
   ))
   im$run()
 
@@ -22,9 +26,7 @@ test_that("Infomap clusters two triangles into two modules", {
 test_that("add_links accepts matrix input through bulk path", {
   im <- Infomap(silent = TRUE)
   links <- matrix(
-    c(1, 2, 2,
-      2, 3, 1,
-      3, 1, 1),
+    c(1, 2, 2, 2, 3, 1, 3, 1, 1),
     ncol = 3L,
     byrow = TRUE
   )
@@ -37,8 +39,15 @@ test_that("add_links accepts matrix input through bulk path", {
 })
 
 test_that("add_links list input matches repeated add_link", {
-  links <- list(c(1, 2, 2), c(1, 3, 2), c(2, 3, 2), c(3, 4, 1),
-                c(4, 5, 3), c(4, 6, 3), c(5, 6, 3))
+  links <- list(
+    c(1, 2, 2),
+    c(1, 3, 2),
+    c(2, 3, 2),
+    c(3, 4, 1),
+    c(4, 5, 3),
+    c(4, 6, 3),
+    c(5, 6, 3)
+  )
 
   baseline <- Infomap(silent = TRUE, num_trials = 3, two_level = TRUE)
   for (link in links) {
@@ -85,7 +94,15 @@ test_that("Infomap accepts named-argument keyword overrides", {
 
 test_that("as.data.frame returns one row per leaf node", {
   im <- Infomap(silent = TRUE)
-  im$add_links(list(c(1, 2), c(2, 3), c(3, 1), c(3, 4), c(4, 5), c(5, 6), c(6, 4)))
+  im$add_links(list(
+    c(1, 2),
+    c(2, 3),
+    c(3, 1),
+    c(3, 4),
+    c(4, 5),
+    c(5, 6),
+    c(6, 4)
+  ))
   im$run()
   df <- as.data.frame(im)
   expect_s3_class(df, "data.frame")
@@ -96,7 +113,10 @@ test_that("as.data.frame returns one row per leaf node", {
 })
 
 test_that("named arguments mirror Infomap CLI flags", {
-  args <- construct_args(NULL, infomap_options(silent = TRUE, two_level = TRUE, num_trials = 4L))
+  args <- construct_args(
+    NULL,
+    infomap_options(silent = TRUE, two_level = TRUE, num_trials = 4L)
+  )
   expect_match(args, "--silent")
   expect_match(args, "--two-level")
   expect_match(args, "--num-trials 4")

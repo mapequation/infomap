@@ -14,6 +14,9 @@
 #include "BiasedMapEquation.h"
 #include "MemMapEquation.h"
 #include "MetaMapEquation.h"
+#if INFOMAP_FEATURE_REGULARIZED_MULTILAYER
+#include "RegularizedMultilayerMapEquation.h"
+#endif
 #include "InfomapOptimizer.h"
 #include "../io/SafeFile.h"
 #include "../io/OutputPlan.h"
@@ -570,7 +573,7 @@ InfomapBase& InfomapBase::initNetwork(Network& network)
 {
   if (network.numNodes() == 0)
     throw std::domain_error("No nodes in network");
-  // A fresh network init invalidates any previous hard-partition restore buffer.
+  // A fresh network init invalidates any previous hard partition restore buffer.
   m_originalLeafNodes.clear();
   if (m_root.firstChild != nullptr || m_root.collapsedFirstChild != nullptr) {
     m_root.deleteChildren();
@@ -1005,11 +1008,11 @@ InfomapBase& InfomapBase::initPartition(std::vector<unsigned int>& modules, bool
       ++nodeIndex;
     }
 
-    Log(1) << "\n -> Hard-partitioned the network to " << numNodesInNewNetwork << " nodes and " << numLinksInNewNetwork << " links with codelength " << *this << '\n';
+    Log() << "\n -> Hard-partitioned the network to " << numNodesInNewNetwork << " nodes and " << numLinksInNewNetwork << " links with codelength " << *this << '\n';
   } else {
     if (prettyOutput)
       PrettyOutput(true).status("Initial", io::Str() << "codelength " << *this << ", " << numTopModules() << " top modules");
-    Log(1) << "\n -> Initiated to codelength " << *this << " in " << numTopModules() << " top modules.\n";
+    Log() << "\n -> Initiated to codelength " << *this << " in " << numTopModules() << " top modules.\n";
   }
   m_hierarchicalCodelength = getCodelength();
 
@@ -1039,6 +1042,8 @@ void InfomapBase::generateSubNetwork(Network& network)
     node->data.teleportFlow = networkNode.teleFlow;
     node->data.exitFlow = networkNode.exitFlow;
     node->data.enterFlow = networkNode.enterFlow;
+    node->layerTeleFlowData.emplace_back(networkNode.layerId, networkNode.intraLayerTeleFlow, networkNode.intraLayerTeleWeight);
+    // Log() << "Node " << node->stateId << " (" << node->layerId << "," << node->physicalId << ") data: " << node->data << ", tele-flow: " << networkNode.teleFlow << ", intra-tele: " << networkNode.intraLayerTeleFlow << "\n";
     if (haveMetaData()) {
       auto meta = metaData.find(networkNode.id);
       if (meta != metaData.end()) {
@@ -1456,7 +1461,7 @@ void InfomapBase::restoreHardPartition()
   // Swap back original leaf nodes
   m_originalLeafNodes.swap(m_leafNodes);
 
-  Log(1) << "Expanded " << numExpandedNodes << " hard modules to " << numExpandedChildren << " original nodes.\n";
+  Log() << "Expanded " << numExpandedNodes << " hard modules to " << numExpandedChildren << " original nodes.\n";
 }
 
 // ===================================================
@@ -2469,7 +2474,15 @@ void InfomapBase::initOptimizer(bool forceNoMemory)
   if (haveMetaData()) {
     m_optimizer = std::make_unique<InfomapOptimizer<MetaMapEquation>>();
   } else if (haveMemory() && !forceNoMemory) {
+#if INFOMAP_FEATURE_REGULARIZED_MULTILAYER
+    if (isRegularizedMultilayerFlow()) {
+      m_optimizer = std::make_unique<InfomapOptimizer<RegularizedMultilayerMapEquation>>();
+    } else {
+      m_optimizer = std::make_unique<InfomapOptimizer<MemMapEquation>>();
+    }
+#else
     m_optimizer = std::make_unique<InfomapOptimizer<MemMapEquation>>();
+#endif
   } else {
     m_optimizer = std::make_unique<InfomapOptimizer<BiasedMapEquation>>();
   }
