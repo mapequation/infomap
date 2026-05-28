@@ -59,6 +59,16 @@ For direct control over Infomap-specific options and result access:
         if node.is_leaf:
             print(node.node_id, node.module_id)
 
+For interactive exploration, start:
+
+.. code-block:: bash
+
+    infomap-shell
+
+This opens a Python shell with ``im = Infomap(pretty=True)`` ready to use.
+Run ``options()`` to inspect the generated ``InfomapOptions`` reference and
+``summary()`` to print the current network or result state.
+
 Recommended researcher workflow
 -------------------------------
 
