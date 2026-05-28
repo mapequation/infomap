@@ -1,5 +1,10 @@
 # Infomap tutorial notebooks
 
+Start with [`quickstart.ipynb`](quickstart.ipynb). It is the flagship Python
+notebook for running Infomap in Jupyter, inspecting the notebook-native result
+summary, drawing a small readable partition, and exporting results for further
+analysis.
+
 Most numbered notebooks accompany [Community Detection with the Map Equation
 and Infomap: Theory and Applications](https://doi.org/10.1145/3779648).
 Descriptive, unnumbered notebooks cover practical Python workflows that are

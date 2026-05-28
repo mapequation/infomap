@@ -23,8 +23,10 @@ test_that("directed and undirected runs produce different codelengths", {
 
 test_that("add_igraph propagates directed graphs to run() by default", {
   skip_if_not_installed("igraph")
-  g <- igraph::make_graph(c(1, 2, 2, 3, 3, 1, 3, 4, 4, 5, 5, 6, 6, 4),
-                          directed = TRUE)
+  g <- igraph::make_graph(
+    c(1, 2, 2, 3, 3, 1, 3, 4, 4, 5, 5, 6, 6, 4),
+    directed = TRUE
+  )
 
   im <- Infomap(silent = TRUE, num_trials = 3)
   im$add_igraph(g)

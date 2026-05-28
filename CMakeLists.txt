@@ -3,11 +3,13 @@ project(infomap LANGUAGES CXX)
 
 option(INFOMAP_USE_OPENMP "Enable OpenMP support when available." ON)
 option(INFOMAP_ENABLE_SANITIZERS "Enable address and undefined behavior sanitizers." OFF)
+option(INFOMAP_NATIVE_ARCH "Enable -march=native, LTO, and loop unrolling for the host CPU. Produces non-portable binaries; opt-in for local builds only." OFF)
 set(INFOMAP_MODE "release" CACHE STRING "Build mode shared with the Make-based native build policy.")
 set_property(CACHE INFOMAP_MODE PROPERTY STRINGS release debug)
 set(INFOMAP_EXTRA_CPPFLAGS "" CACHE STRING "Extra preprocessor/compiler flags appended to the shared build policy.")
 set(INFOMAP_EXTRA_CXX_FLAGS "" CACHE STRING "Extra C++ compiler flags appended to the shared build policy.")
 set(INFOMAP_EXTRA_LINK_FLAGS "" CACHE STRING "Extra linker flags appended to the shared build policy.")
+set(INFOMAP_FEATURES "" CACHE STRING "Space- or comma-separated experimental feature names to compile in. Empty builds the default stable feature set.")
 
 # Keep CMake build types available for generators and output directories, but let the
 # shared build policy own optimization, debug, and OpenMP flags across all surfaces.
@@ -25,6 +27,12 @@ else()
     set(INFOMAP_OPENMP_ARG 0)
 endif()
 
+if(INFOMAP_NATIVE_ARCH)
+    set(INFOMAP_NATIVE_ARCH_ARG 1)
+else()
+    set(INFOMAP_NATIVE_ARCH_ARG 0)
+endif()
+
 execute_process(
     COMMAND
         "${CMAKE_COMMAND}" -E env
@@ -35,36 +43,36 @@ execute_process(
         "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/scripts/build_config.py" json
         --mode "${INFOMAP_MODE}"
         --openmp "${INFOMAP_OPENMP_ARG}"
+        --native-arch "${INFOMAP_NATIVE_ARCH_ARG}"
+        --features "${INFOMAP_FEATURES}"
         --compiler "${CMAKE_CXX_COMPILER}"
         --platform "${CMAKE_SYSTEM_NAME}"
     OUTPUT_VARIABLE INFOMAP_BUILD_CONFIG_JSON
+    ERROR_VARIABLE INFOMAP_BUILD_CONFIG_ERROR
     RESULT_VARIABLE INFOMAP_BUILD_CONFIG_RESULT
     OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 
 if(NOT INFOMAP_BUILD_CONFIG_RESULT EQUAL 0)
-    message(FATAL_ERROR "Failed to resolve Infomap build config.")
+    message(FATAL_ERROR "Failed to resolve Infomap build config: ${INFOMAP_BUILD_CONFIG_ERROR}")
 endif()
 
-string(JSON INFOMAP_COMPILE_FLAG_COUNT LENGTH "${INFOMAP_BUILD_CONFIG_JSON}" compile_flags)
-math(EXPR INFOMAP_COMPILE_FLAG_LAST "${INFOMAP_COMPILE_FLAG_COUNT} - 1")
-set(INFOMAP_COMPILE_FLAGS "")
-if(INFOMAP_COMPILE_FLAG_COUNT GREATER 0)
-    foreach(INDEX RANGE ${INFOMAP_COMPILE_FLAG_LAST})
-        string(JSON INFOMAP_COMPILE_FLAG GET "${INFOMAP_BUILD_CONFIG_JSON}" compile_flags ${INDEX})
-        list(APPEND INFOMAP_COMPILE_FLAGS "${INFOMAP_COMPILE_FLAG}")
-    endforeach()
-endif()
+function(infomap_json_array output_name field_name)
+    string(JSON ITEM_COUNT LENGTH "${INFOMAP_BUILD_CONFIG_JSON}" "${field_name}")
+    set(ITEMS "")
+    if(ITEM_COUNT GREATER 0)
+        math(EXPR ITEM_LAST "${ITEM_COUNT} - 1")
+        foreach(INDEX RANGE ${ITEM_LAST})
+            string(JSON ITEM GET "${INFOMAP_BUILD_CONFIG_JSON}" "${field_name}" ${INDEX})
+            list(APPEND ITEMS "${ITEM}")
+        endforeach()
+    endif()
+    set(${output_name} "${ITEMS}" PARENT_SCOPE)
+endfunction()
 
-string(JSON INFOMAP_LINK_FLAG_COUNT LENGTH "${INFOMAP_BUILD_CONFIG_JSON}" link_flags)
-math(EXPR INFOMAP_LINK_FLAG_LAST "${INFOMAP_LINK_FLAG_COUNT} - 1")
-set(INFOMAP_LINK_FLAGS "")
-if(INFOMAP_LINK_FLAG_COUNT GREATER 0)
-    foreach(INDEX RANGE ${INFOMAP_LINK_FLAG_LAST})
-        string(JSON INFOMAP_LINK_FLAG GET "${INFOMAP_BUILD_CONFIG_JSON}" link_flags ${INDEX})
-        list(APPEND INFOMAP_LINK_FLAGS "${INFOMAP_LINK_FLAG}")
-    endforeach()
-endif()
+infomap_json_array(INFOMAP_COMPILE_FLAGS cmake_compile_flags)
+infomap_json_array(INFOMAP_LINK_FLAGS link_flags)
+infomap_json_array(INFOMAP_ENABLED_FEATURE_DEFINES enabled_feature_defines)
 
 find_program(CCACHE ccache)
 if(CCACHE)
@@ -72,6 +80,23 @@ if(CCACHE)
     set(CMAKE_CXX_COMPILER_LAUNCHER ccache)
 else()
     message("-- Found Ccache: FALSE")
+endif()
+
+# GCC + LTO: plain `ar`/`ranlib` strip the LTO bitcode from object files,
+# leaving an empty/broken static archive. Prefer the LTO-aware wrappers
+# (gcc-ar/gcc-ranlib) when both are in play. clang's archiver handles LTO
+# bitcode natively, so no override is needed there. Mirror of the mk/common.mk
+# detection so the CMake build path is consistent with the Makefile build path.
+if(INFOMAP_NATIVE_ARCH AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    find_program(INFOMAP_GCC_AR gcc-ar)
+    find_program(INFOMAP_GCC_RANLIB gcc-ranlib)
+    if(INFOMAP_GCC_AR AND INFOMAP_GCC_RANLIB)
+        set(CMAKE_AR "${INFOMAP_GCC_AR}")
+        set(CMAKE_RANLIB "${INFOMAP_GCC_RANLIB}")
+        message(STATUS "INFOMAP_NATIVE_ARCH: using ${INFOMAP_GCC_AR} / ${INFOMAP_GCC_RANLIB} for LTO-safe static archives")
+    else()
+        message(WARNING "INFOMAP_NATIVE_ARCH=ON with GCC but gcc-ar / gcc-ranlib not found in PATH. The static infomap_core archive may end up empty under -flto.")
+    endif()
 endif()
 
 file(GLOB_RECURSE infomap_headers CONFIGURE_DEPENDS "src/*.h")
@@ -84,6 +109,7 @@ target_include_directories(infomap_core PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src"
 target_compile_features(infomap_core PUBLIC cxx_std_14)
 set_target_properties(infomap_core PROPERTIES CXX_EXTENSIONS OFF)
 target_compile_options(infomap_core PRIVATE ${INFOMAP_COMPILE_FLAGS})
+target_compile_definitions(infomap_core PUBLIC ${INFOMAP_ENABLED_FEATURE_DEFINES})
 target_link_options(infomap_core PUBLIC ${INFOMAP_LINK_FLAGS})
 
 if(INFOMAP_ENABLE_SANITIZERS)

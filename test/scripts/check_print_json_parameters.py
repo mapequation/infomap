@@ -19,6 +19,9 @@ def main() -> int:
     assert parameters[1]["long"] == "--version"
     assert "--completion" not in {param["long"] for param in parameters}
     assert "--print-json-parameters" not in {param["long"] for param in parameters}
+    has_test_feature = "--test-feature" in {
+        param["long"] for param in parameters
+    }
 
     groups = [param["group"] for param in parameters]
     assert groups[:2] == ["About", "About"]
@@ -73,6 +76,9 @@ def main() -> int:
     assert by_long["--core-level-limit"]["description"].endswith("0 means no limit.")
     assert by_long["--tune-iteration-limit"]["default"] == "0"
     assert by_long["--tune-iteration-limit"]["min"] == "0"
+    if has_test_feature:
+        assert by_long["--test-feature"]["group"] == "Accuracy"
+        assert by_long["--test-feature"]["advanced"]
     return 0
 
 

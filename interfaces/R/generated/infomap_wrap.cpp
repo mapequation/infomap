@@ -1633,6 +1633,7 @@ template <typename T> T SwigValueInit() {
 
 /* Includes the header in the wrapper code */
 #include "src/Infomap.h"
+#include "src/io/Features.h"
 #ifdef SWIGPYTHON
 namespace infomap {
 int run(const std::string& flags);
