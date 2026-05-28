@@ -22,6 +22,17 @@ namespace infomap {
 
 using std::make_pair;
 
+namespace {
+
+#if !INFOMAP_FEATURE_REGULARIZED_MULTILAYER
+  const char* regularizedMultilayerFeatureError()
+  {
+    return "Regularized multilayer flow requires building with FEATURES=regularized-multilayer.";
+  }
+#endif
+
+} // namespace
+
 void Network::init()
 {
   updateDerivedConfig();
@@ -179,10 +190,16 @@ void Network::addMultilayerLinks(const std::vector<unsigned int>& sourceLayerIds
 
 void Network::generateStateNetworkFromMultilayer()
 {
+#if !INFOMAP_FEATURE_REGULARIZED_MULTILAYER
+  if (m_config.regularized) {
+    throw std::runtime_error(regularizedMultilayerFeatureError());
+  }
+#endif
+
   // As inter-layer links is directed to neighbouring nodes in target layer,
   // the symmetry is broken so we need directed links for inter-layer flow
-  m_haveDirectedInput = true;
-  if (m_config.isUndirectedFlow()) {
+  if (!m_networks.empty() && m_config.isUndirectedFlow()) {
+    m_haveDirectedInput = true;
     // TODO: Don't allow undirdir/outdirdir/rawdir?
     // Expand each undirected intra-layer link to two opposite directed links
     Log() << "  -> Expanding undirected links to directed...\n";
@@ -194,9 +211,22 @@ void Network::generateStateNetworkFromMultilayer()
 
   if (!m_interLinks.empty()) {
     generateStateNetworkFromMultilayerWithInterLinks();
+  } else if (m_config.regularized) {
+    generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnNodeStrengthRegularized();
   } else {
     generateStateNetworkFromMultilayerWithSimulatedInterLinks();
   }
+
+  // Update physId and layerId on link map
+  // TODO: Fix this here?
+  // for (const auto& node : m_nodeLinkMap) {
+  //   for (const auto& link : node.second) {
+  //     auto& s2 = m_nodes[link.first.id];
+  //     link.first.physicalId = s2.physicalId;
+  //     link.first.layerId = s2.layerId;
+  //   }
+  // }
+
   m_networks.clear();
   m_interLinks.clear();
 }
@@ -290,29 +320,38 @@ void Network::generateStateNetworkFromMultilayerWithInterLinks()
 
 void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinks()
 {
-  Log() << "Generating state network from multilayer networks with simulated inter-layer links...\n"
+  if (m_config.multilayerRelaxByJensenShannonDivergence) {
+    return generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnLayerSimilarity();
+  }
+  return generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnNodeStrength();
+}
+
+void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnLayerSimilarity()
+{
+  Log() << "Generating state network from multilayer networks with simulated inter-layer links based on layer similarity...\n"
         << std::flush;
   double relaxRate = m_config.multilayerRelaxRate;
 
-  int maxRelaxLimit = m_networks.size();
-  int relaxLimitSymmetric = m_config.multilayerRelaxLimit < 0 ? maxRelaxLimit : m_config.multilayerRelaxLimit;
-  int relaxLimitDown = m_config.multilayerRelaxLimitDown < 0 ? relaxLimitSymmetric : std::min(relaxLimitSymmetric, m_config.multilayerRelaxLimitDown);
-  int relaxLimitUp = m_config.multilayerRelaxLimitUp < 0 ? relaxLimitSymmetric : std::min(relaxLimitSymmetric, m_config.multilayerRelaxLimitUp);
-  auto haveUpOrDownLimit = m_config.multilayerRelaxLimitDown >= 0 || m_config.multilayerRelaxLimitUp >= 0;
+  // TODO: Add relax limits
+  // int maxRelaxLimit = m_networks.size();
+  // int relaxLimitSymmetric = m_config.multilayerRelaxLimit < 0 ? maxRelaxLimit : m_config.multilayerRelaxLimit;
+  // int relaxLimitDown = m_config.multilayerRelaxLimitDown < 0 ? relaxLimitSymmetric : std::min(relaxLimitSymmetric, m_config.multilayerRelaxLimitDown);
+  // int relaxLimitUp = m_config.multilayerRelaxLimitUp < 0 ? relaxLimitSymmetric : std::min(relaxLimitSymmetric, m_config.multilayerRelaxLimitUp);
+  // auto haveUpOrDownLimit = m_config.multilayerRelaxLimitDown >= 0 || m_config.multilayerRelaxLimitUp >= 0;
 
   Log() << "-> " << m_networks.size() << " networks\n";
   Log() << "-> Relax rate: " << relaxRate << "\n";
-  if (haveUpOrDownLimit) {
-    Log() << "-> Relax limit up: " << relaxLimitUp << (relaxLimitUp == maxRelaxLimit ? " (no limit)\n" : "\n");
-    Log() << "-> Relax limit down: " << relaxLimitDown << (relaxLimitDown == maxRelaxLimit ? " (no limit)\n" : "\n");
-  } else if (m_config.multilayerRelaxLimit >= 0) {
-    Log() << "-> Relax limit: " << m_config.multilayerRelaxLimit << "\n";
-  }
+  // if (haveUpOrDownLimit) {
+  //   Log() << "-> Relax limit up: " << relaxLimitUp << (relaxLimitUp == maxRelaxLimit ? " (no limit)\n" : "\n");
+  //   Log() << "-> Relax limit down: " << relaxLimitDown << (relaxLimitDown == maxRelaxLimit ? " (no limit)\n" : "\n");
+  // } else if (m_config.multilayerRelaxLimit >= 0) {
+  //   Log() << "-> Relax limit: " << m_config.multilayerRelaxLimit << "\n";
+  // }
 
-  auto withinRelaxLimit = [relaxLimitDown, relaxLimitUp](auto& layer1, auto& layer2) {
-    int diff = layer1 - layer2;
-    return layer1 >= layer2 ? diff <= relaxLimitDown : -diff <= relaxLimitUp;
-  };
+  // auto withinRelaxLimit = [relaxLimitDown, relaxLimitUp](auto& layer1, auto& layer2) {
+  //   int diff = layer1 - layer2;
+  //   return layer1 >= layer2 ? diff <= relaxLimitDown : -diff <= relaxLimitUp;
+  // };
 
   if (m_config.multilayerRelaxByJensenShannonDivergence) {
     Log() << "-> Using Jensen-Shannon Divergence\n";
@@ -402,6 +441,7 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinks()
                 auto& linkData = outLink.second;
                 double intraWeight = linkData.weight;
                 // Add intra link weight as teleport weight to source node
+                // TODO: Why, and only first intra link that sets the teleport weight?
                 unsigned int stateId1 = addMultilayerNode(layer1, nodeId, intraWeight);
                 unsigned int stateId2i = addMultilayerNode(layer2, n2, 0.0);
 
@@ -414,9 +454,35 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinks()
         }
       }
     }
-
-    return;
   }
+}
+
+void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnNodeStrength()
+{
+  Log() << "Generating state network from multilayer networks with simulated inter-layer links...\n"
+        << std::flush;
+  double relaxRate = m_config.multilayerRelaxRate;
+
+  unsigned int L = m_networks.size();
+  int maxRelaxLimit = L;
+  int relaxLimitSymmetric = m_config.multilayerRelaxLimit < 0 ? maxRelaxLimit : m_config.multilayerRelaxLimit;
+  int relaxLimitDown = m_config.multilayerRelaxLimitDown < 0 ? relaxLimitSymmetric : std::min(relaxLimitSymmetric, m_config.multilayerRelaxLimitDown);
+  int relaxLimitUp = m_config.multilayerRelaxLimitUp < 0 ? relaxLimitSymmetric : std::min(relaxLimitSymmetric, m_config.multilayerRelaxLimitUp);
+  auto haveUpOrDownLimit = m_config.multilayerRelaxLimitDown >= 0 || m_config.multilayerRelaxLimitUp >= 0;
+
+  Log() << "-> " << m_networks.size() << " networks\n";
+  Log() << "-> Relax rate: " << relaxRate << "\n";
+  if (haveUpOrDownLimit) {
+    Log() << "-> Relax limit up: " << relaxLimitUp << (relaxLimitUp == maxRelaxLimit ? " (no limit)\n" : "\n");
+    Log() << "-> Relax limit down: " << relaxLimitDown << (relaxLimitDown == maxRelaxLimit ? " (no limit)\n" : "\n");
+  } else if (m_config.multilayerRelaxLimit >= 0) {
+    Log() << "-> Relax limit: " << m_config.multilayerRelaxLimit << "\n";
+  }
+
+  auto withinRelaxLimit = [relaxLimitDown, relaxLimitUp](auto& layer1, auto& layer2) {
+    int diff = layer1 - layer2;
+    return layer1 >= layer2 ? diff <= relaxLimitDown : -diff <= relaxLimitUp;
+  };
 
   for (auto& it1 : m_networks) {
     auto layer1 = it1.first;
@@ -453,7 +519,6 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinks()
         if (isIntra) {
           linkWeightNormalizationFactor += (1.0 - relaxRate) / sumOutLinkWeightLayer1;
         }
-
         auto& targetLinks = network2.nodeLinkMap();
         auto& targetOutlinks = targetLinks[StateNode(n1)];
         if (targetOutlinks.empty()) {
@@ -465,10 +530,99 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinks()
           double intraWeight = linkData.weight;
           unsigned int stateId2i = addMultilayerNode(layer2, n2);
 
-          double weight = intraWeight == 0.0 ? 0.0 : linkWeightNormalizationFactor * intraWeight;
+          double weight = linkWeightNormalizationFactor * intraWeight;
+          if (weight < 1e-16) {
+            continue;
+          }
           addLink(stateId1, stateId2i, weight);
           ++m_numInterLayerLinks; // TODO: Count all as one?
         }
+      }
+    }
+  }
+}
+
+void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnNodeStrengthRegularized()
+{
+  Log() << "Generating regularized state network from multilayer networks with simulated inter-layer links...\n"
+        << std::flush;
+  // double relaxRate = m_config.multilayerRelaxRate;
+
+  unsigned int L = m_networks.size();
+  // unsigned int N = numPhysicalNodes();
+  int maxRelaxLimit = L;
+  int relaxLimitSymmetric = m_config.multilayerRelaxLimit < 0 ? maxRelaxLimit : m_config.multilayerRelaxLimit;
+  int relaxLimitDown = m_config.multilayerRelaxLimitDown < 0 ? relaxLimitSymmetric : std::min(relaxLimitSymmetric, m_config.multilayerRelaxLimitDown);
+  int relaxLimitUp = m_config.multilayerRelaxLimitUp < 0 ? relaxLimitSymmetric : std::min(relaxLimitSymmetric, m_config.multilayerRelaxLimitUp);
+  auto haveUpOrDownLimit = m_config.multilayerRelaxLimitDown >= 0 || m_config.multilayerRelaxLimitUp >= 0;
+
+  // double interLinkStrength = std::log(L);
+  // double interLinkWeight = std::log(L) / L;
+  double interLinkWeight = m_config.regularizationStrength * std::log(L) / (m_config.noSelfLinks ? L - 1 : L);
+  // double intraLinkStrength = std::log(N) / L;
+  // double totalInterWeightIfNoLimit = interLinkWeight * L;
+  if (haveUpOrDownLimit) {
+    // TODO: create a map with aggregated inter-flow for each layer with limits.
+  }
+
+  Log() << "-> " << m_networks.size() << " networks and " << m_physNodes.size() << " physical nodes\n";
+  // Log() << "-> Relax rate: " << relaxRate << "\n";
+  if (haveUpOrDownLimit) {
+    Log() << "-> Relax limit up: " << relaxLimitUp << (relaxLimitUp == maxRelaxLimit ? " (no limit)\n" : "\n");
+    Log() << "-> Relax limit down: " << relaxLimitDown << (relaxLimitDown == maxRelaxLimit ? " (no limit)\n" : "\n");
+    throw std::runtime_error("Relax limits not implemented for regularized flow");
+  } else if (m_config.multilayerRelaxLimit >= 0) {
+    Log() << "-> Relax limit: " << m_config.multilayerRelaxLimit << "\n";
+    throw std::runtime_error("Relax limits not implemented for regularized flow");
+  }
+
+  auto withinRelaxLimit = [relaxLimitDown, relaxLimitUp](auto& layer1, auto& layer2) {
+    int diff = layer1 - layer2;
+    return layer1 >= layer2 ? diff <= relaxLimitDown : -diff <= relaxLimitUp;
+  };
+
+  for (auto& it1 : m_networks) {
+    auto layer1 = it1.first;
+    auto& network1 = it1.second;
+
+    // Loop over all physical nodes, even if they lack intra links, to add inter links
+    for (auto& physNodeIt : m_physNodes) {
+      auto& n1 = physNodeIt.first;
+      unsigned int stateId1 = addMultilayerNode(layer1, n1);
+
+      // double sumOutLinkWeightLayer1 = network1.outWeights()[n1];
+      // Multiply observed link weight with this factor to account for the physical part of inter-link flow
+      // double gamma = 1 + interLinkStrength / (sumOutLinkWeightLayer1 + intraLinkStrength);
+      // Log() << "(" << layer1 << "," << n1 << "): gamma = 1 + " << interLinkStrength << " / (" << sumOutLinkWeightLayer1 << " + " << intraLinkStrength << ") = " << gamma << "\n";
+      // Need original weight to calculate correct inter-layer relax rate.
+
+      // Add intra links
+      auto targetOutLinksIt = network1.nodeLinkMap().find(StateNode(n1));
+      if (targetOutLinksIt != network1.nodeLinkMap().end()) {
+        for (auto& outLink : targetOutLinksIt->second) {
+          auto& n2 = outLink.first.physicalId;
+          auto& linkData = outLink.second;
+          // double weight = linkData.weight * gamma;
+          double weight = linkData.weight;
+          unsigned int stateId2i = addMultilayerNode(layer1, n2);
+
+          if (weight < 1e-16) {
+            continue;
+          }
+          addLink(stateId1, stateId2i, weight);
+          ++m_numIntraLayerLinks;
+        }
+      }
+
+      for (auto& it2 : m_networks) {
+        auto layer2 = it2.first;
+        if (!withinRelaxLimit(layer1, layer2) || (m_config.noSelfLinks && layer1 == layer2)) {
+          continue;
+        }
+
+        unsigned int stateId2 = addMultilayerNode(layer2, n1);
+        addLink(stateId1, stateId2, interLinkWeight);
+        ++m_numInterLayerLinks;
       }
     }
   }
@@ -561,6 +715,8 @@ void Network::addMultilayerIntraLink(unsigned int layer, unsigned int n1, unsign
     ++m_numIntraLayerLinks;
     m_maxNodeIdInIntraLayerNetworks = std::max(m_maxNodeIdInIntraLayerNetworks, std::max(n1, n2));
   }
+  addPhysicalNode(n1);
+  addPhysicalNode(n2);
 }
 
 void Network::addMultilayerIntraLinks(const std::vector<unsigned int>& layerIds,

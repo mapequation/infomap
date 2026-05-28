@@ -10,8 +10,12 @@ test_that("add_links rejects character columns in a data.frame", {
 
 test_that("add_links rejects a non-numeric weight column", {
   im <- Infomap(silent = TRUE)
-  bad <- data.frame(s = c(1, 2), t = c(2, 3), w = c("a", "b"),
-                    stringsAsFactors = FALSE)
+  bad <- data.frame(
+    s = c(1, 2),
+    t = c(2, 3),
+    w = c("a", "b"),
+    stringsAsFactors = FALSE
+  )
   expect_error(im$add_links(bad), "weight column must be numeric")
 })
 
@@ -26,10 +30,22 @@ test_that("add_links rejects malformed list entries", {
   expect_error(im$add_links(list(c(1))), "2 or 3 values")
   expect_error(im$add_links(list(c(1, 2, 3, 4))), "2 or 3 values")
   expect_error(im$add_links(list(c("a", "b"))), "numeric/integer")
-  expect_error(im$add_links(list(list(1, 2, "bad"))), "weight values must be numeric")
-  expect_error(im$add_links(list(list(c(1, 2), 3))), "source value must be scalar")
-  expect_error(im$add_links(list(list(1, c(2, 3)))), "target value must be scalar")
-  expect_error(im$add_links(list(list(1, 2, c(3, 4)))), "weight value must be scalar")
+  expect_error(
+    im$add_links(list(list(1, 2, "bad"))),
+    "weight values must be numeric"
+  )
+  expect_error(
+    im$add_links(list(list(c(1, 2), 3))),
+    "source value must be scalar"
+  )
+  expect_error(
+    im$add_links(list(list(1, c(2, 3)))),
+    "target value must be scalar"
+  )
+  expect_error(
+    im$add_links(list(list(1, 2, c(3, 4)))),
+    "weight value must be scalar"
+  )
 })
 
 test_that("add_multilayer_links rejects malformed matrix/data.frame input", {
@@ -91,11 +107,20 @@ test_that("add_multilayer_intra_links rejects malformed matrix/data.frame input"
     "3 or 4 columns"
   )
   expect_error(
-    im$add_multilayer_intra_links(data.frame(layer = "x", source = 1, target = 2)),
+    im$add_multilayer_intra_links(data.frame(
+      layer = "x",
+      source = 1,
+      target = 2
+    )),
     "numeric/integer"
   )
   expect_error(
-    im$add_multilayer_intra_links(data.frame(layer = 1, source = 1, target = 2, weight = "bad")),
+    im$add_multilayer_intra_links(data.frame(
+      layer = 1,
+      source = 1,
+      target = 2,
+      weight = "bad"
+    )),
     "weight column must be numeric"
   )
 })
@@ -104,12 +129,18 @@ test_that("add_multilayer_intra_links rejects malformed list entries", {
   im <- Infomap(silent = TRUE)
 
   expect_error(im$add_multilayer_intra_links(list(c(1, 2))), "3 or 4 values")
-  expect_error(im$add_multilayer_intra_links(list(c(1, 2, 3, 4, 5))), "3 or 4 values")
+  expect_error(
+    im$add_multilayer_intra_links(list(c(1, 2, 3, 4, 5))),
+    "3 or 4 values"
+  )
   expect_error(
     im$add_multilayer_intra_links(list(list(c(1, 2), 2, 3))),
     "layer value must be scalar"
   )
-  expect_error(im$add_multilayer_intra_links(list(c("a", 2, 3))), "numeric/integer")
+  expect_error(
+    im$add_multilayer_intra_links(list(c("a", 2, 3))),
+    "numeric/integer"
+  )
   expect_error(
     im$add_multilayer_intra_links(list(list(1, 2, 3, c(1, 2)))),
     "weight value must be scalar"
@@ -128,11 +159,20 @@ test_that("add_multilayer_inter_links rejects malformed matrix/data.frame input"
     "3 or 4 columns"
   )
   expect_error(
-    im$add_multilayer_inter_links(data.frame(source_layer = "x", node = 1, target_layer = 2)),
+    im$add_multilayer_inter_links(data.frame(
+      source_layer = "x",
+      node = 1,
+      target_layer = 2
+    )),
     "numeric/integer"
   )
   expect_error(
-    im$add_multilayer_inter_links(data.frame(source_layer = 1, node = 1, target_layer = 2, weight = "bad")),
+    im$add_multilayer_inter_links(data.frame(
+      source_layer = 1,
+      node = 1,
+      target_layer = 2,
+      weight = "bad"
+    )),
     "weight column must be numeric"
   )
 })
@@ -141,12 +181,18 @@ test_that("add_multilayer_inter_links rejects malformed list entries", {
   im <- Infomap(silent = TRUE)
 
   expect_error(im$add_multilayer_inter_links(list(c(1, 2))), "3 or 4 values")
-  expect_error(im$add_multilayer_inter_links(list(c(1, 2, 3, 4, 5))), "3 or 4 values")
+  expect_error(
+    im$add_multilayer_inter_links(list(c(1, 2, 3, 4, 5))),
+    "3 or 4 values"
+  )
   expect_error(
     im$add_multilayer_inter_links(list(list(c(1, 2), 2, 3))),
     "source layer value must be scalar"
   )
-  expect_error(im$add_multilayer_inter_links(list(c("a", 2, 3))), "numeric/integer")
+  expect_error(
+    im$add_multilayer_inter_links(list(c("a", 2, 3))),
+    "numeric/integer"
+  )
   expect_error(
     im$add_multilayer_inter_links(list(list(1, 2, 3, c(1, 2)))),
     "weight value must be scalar"

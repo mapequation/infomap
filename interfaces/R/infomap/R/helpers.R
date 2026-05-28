@@ -15,7 +15,7 @@ entropy <- function(p) {
 
 #' @noRd
 perplexity <- function(p) {
-  2 ^ entropy(p)
+  2^entropy(p)
 }
 
 # Top-level helpers exported alongside the Infomap class.
@@ -53,7 +53,9 @@ multilayer_node <- function(layer_id, node_id) {
 #' @return Invisibly returns the resulting `Infomap` instance.
 #' @export
 main <- function(args = NULL) {
-  if (is.null(args)) args <- commandArgs(trailingOnly = TRUE)
+  if (is.null(args)) {
+    args <- commandArgs(trailingOnly = TRUE)
+  }
   args <- as.character(args)
   cli <- paste(shQuote(args), collapse = " ")
   im <- Infomap(args = cli)

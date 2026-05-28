@@ -15,7 +15,12 @@ REQUIRED_SWIG_VERSION = "4.4.1"
 
 
 def github_actions_escape(value: str) -> str:
-    return value.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A").replace(":", "%3A")
+    return (
+        value.replace("%", "%25")
+        .replace("\r", "%0D")
+        .replace("\n", "%0A")
+        .replace(":", "%3A")
+    )
 
 
 def print_github_actions_error(message: str) -> None:
@@ -39,7 +44,9 @@ def get_swig_version(swig_command: str) -> str:
     )
     match = re.search(r"SWIG Version\s+(\S+)", result.stdout)
     if match is None:
-        raise RuntimeError(f"Could not parse SWIG version from output:\n{result.stdout}")
+        raise RuntimeError(
+            f"Could not parse SWIG version from output:\n{result.stdout}"
+        )
     return match.group(1)
 
 
@@ -79,7 +86,9 @@ def copy_file(src: Path, dest: Path) -> None:
     shutil.copyfile(src, dest)
 
 
-def strip_trailing_whitespace_in_block(path: Path, start_marker: str, end_marker: str) -> None:
+def strip_trailing_whitespace_in_block(
+    path: Path, start_marker: str, end_marker: str
+) -> None:
     lines = path.read_text(encoding="utf-8").splitlines(keepends=True)
     in_block = False
     updated_lines = []
@@ -96,7 +105,9 @@ def strip_trailing_whitespace_in_block(path: Path, start_marker: str, end_marker
 
 
 def files_match(expected: Path, actual: Path) -> bool:
-    return expected.exists() and expected.read_text(encoding="utf-8") == actual.read_text(encoding="utf-8")
+    return expected.exists() and expected.read_text(
+        encoding="utf-8"
+    ) == actual.read_text(encoding="utf-8")
 
 
 def main() -> int:
@@ -112,16 +123,50 @@ def main() -> int:
     with tempfile.TemporaryDirectory(prefix="infomap-swig-") as temp_dir_name:
         temp_dir = Path(temp_dir_name)
         generated_python, generated_cpp = generate(temp_dir)
-        for wrapper_name in (
-            "addLinksFromNumpy2D",
-            "addMultilayerLinksFromNumpy2D",
-            "addMultilayerIntraLinksFromNumpy2D",
-            "addMultilayerInterLinksFromNumpy2D",
+        for start_marker, end_marker in (
+            (
+                "SWIGINTERN PyObject *_wrap__enabled_features_string",
+                "return resultobj;",
+            ),
+            ("SWIGINTERN PyObject *_wrap_run", "return resultobj;"),
+            (
+                "SWIGINTERN PyObject *_wrap_new_InfomapWrapper__SWIG_0",
+                "return resultobj;",
+            ),
+            (
+                "SWIGINTERN PyObject *_wrap_new_InfomapWrapper__SWIG_1",
+                "return resultobj;",
+            ),
+            (
+                "SWIGINTERN PyObject *_wrap_new_InfomapWrapper__SWIG_2",
+                "return resultobj;",
+            ),
+            ("SWIGINTERN PyObject *_wrap_new_InfomapWrapper", "return 0;"),
+            (
+                "SWIGINTERN PyObject *_wrap_delete_InfomapWrapper",
+                "resultobj = SWIG_Py_Void();",
+            ),
+            (
+                "SWIGINTERN PyObject *_wrap_InfomapWrapper_addLinksFromNumpy2D",
+                "resultobj = SWIG_Py_Void();",
+            ),
+            (
+                "SWIGINTERN PyObject *_wrap_InfomapWrapper_addMultilayerLinksFromNumpy2D",
+                "resultobj = SWIG_Py_Void();",
+            ),
+            (
+                "SWIGINTERN PyObject *_wrap_InfomapWrapper_addMultilayerIntraLinksFromNumpy2D",
+                "resultobj = SWIG_Py_Void();",
+            ),
+            (
+                "SWIGINTERN PyObject *_wrap_InfomapWrapper_addMultilayerInterLinksFromNumpy2D",
+                "resultobj = SWIG_Py_Void();",
+            ),
         ):
             strip_trailing_whitespace_in_block(
                 generated_cpp,
-                f"SWIGINTERN PyObject *_wrap_InfomapWrapper_{wrapper_name}",
-                "resultobj = SWIG_Py_Void();",
+                start_marker,
+                end_marker,
             )
 
         if args.check:

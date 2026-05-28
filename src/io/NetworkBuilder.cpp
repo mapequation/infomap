@@ -74,6 +74,9 @@ public:
 
   void onMultilayerLink(const input::ParsedMultilayerLink& link)
   {
+    if (m_network.m_config.regularized) {
+      throw std::runtime_error("Regularized multilayer flow requires *Intra/*Inter input; explicit *Multilayer input is not supported with --regularized.");
+    }
     m_network.addMultilayerLink(link.sourceLayer, link.sourceNode, link.targetLayer, link.targetNode, link.weight);
   }
 

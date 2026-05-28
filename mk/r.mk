@@ -10,6 +10,13 @@ R_TARBALL := $(R_DIST_DIR)/infomap_$(R_VERSION).tar.gz
 
 R_STAGE_SCRIPT := scripts/stage_r_package.py
 R_SWIG_SCRIPT := scripts/generate_r_swig.py
+R_SOURCE_FILES := $(filter-out $(R_SKELETON_DIR)/R/options.R $(R_SKELETON_DIR)/R/swig_bindings.R,$(wildcard $(R_SKELETON_DIR)/R/*.R))
+R_TEST_FILES := $(wildcard $(R_SKELETON_DIR)/tests/*.R) $(wildcard $(R_SKELETON_DIR)/tests/testthat/*.R)
+R_EXAMPLE_FILES := $(wildcard examples/R/*.R)
+R_FORMAT_TARGETS := \
+	$(R_SOURCE_FILES) \
+	$(R_TEST_FILES) \
+	$(R_EXAMPLE_FILES)
 
 # On macOS, Homebrew LLVM clang++ may be first in PATH but Homebrew R uses
 # Apple's libc++ at runtime.  Compilation with LLVM clang++ produces a .so
@@ -41,6 +48,8 @@ endif
 	test-r \
 	test-r-examples \
 	dev-r-install \
+	format-r \
+	format-r-check \
 	clean-r \
 	release-r-dist
 
@@ -86,6 +95,12 @@ test-r-examples: dev-r-install
 		echo "Running $$f"; \
 		$(RSCRIPT) "$$f" > /dev/null || exit 1; \
 	done
+
+format-r:
+	$(AIR) format $(R_FORMAT_TARGETS)
+
+format-r-check:
+	$(AIR) format $(R_FORMAT_TARGETS) --check
 
 clean-r:
 	$(RM) -r $(R_BUILD_DIR) $(R_DIST_DIR)

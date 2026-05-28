@@ -81,6 +81,7 @@ std::ostream& operator<<(std::ostream& out, const BiasedMapEquation& mapEq)
 void BiasedMapEquation::init(const Config& config)
 {
   Log(3) << "BiasedMapEquation::init()...\n";
+  Base::init(config);
   preferredNumModules = config.preferredNumberOfModules;
   useEntropyBiasCorrection = config.entropyBiasCorrection;
   entropyBiasCorrectionMultiplier = config.entropyBiasCorrectionMultiplier;
@@ -172,11 +173,11 @@ int BiasedMapEquation::getDeltaNumModulesIfMoving(unsigned int oldModule,
   return deltaNumModules;
 }
 
-double BiasedMapEquation::getDeltaCodelengthOnMovingNode(InfoNode& current,
-                                                         DeltaFlow& oldModuleDelta,
-                                                         DeltaFlow& newModuleDelta,
-                                                         std::vector<FlowData>& moduleFlowData,
-                                                         std::vector<unsigned int>& moduleMembers)
+INFOMAP_HOT double BiasedMapEquation::getDeltaCodelengthOnMovingNode(InfoNode& current,
+                                                                     DeltaFlow& oldModuleDelta,
+                                                                     DeltaFlow& newModuleDelta,
+                                                                     std::vector<FlowData>& moduleFlowData,
+                                                                     std::vector<unsigned int>& moduleMembers)
 {
   double deltaL = Base::getDeltaCodelengthOnMovingNode(current, oldModuleDelta, newModuleDelta, moduleFlowData, moduleMembers);
 
