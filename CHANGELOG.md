@@ -2,6 +2,47 @@
 
 All notable changes to this project will be documented in this file. Releases are automated with [release-please](https://github.com/googleapis/release-please), using [Conventional Commits](https://www.conventionalcommits.org) to determine version bumps and changelog entries.
 
+## [2.11.0](https://github.com/mapequation/infomap/compare/v2.10.1...v2.11.0) (2026-05-28)
+
+
+### Features
+
+* add shell completion generation ([#529](https://github.com/mapequation/infomap/issues/529)) ([82de4e4](https://github.com/mapequation/infomap/commit/82de4e4e435be2dbcaba60c9acff7669f2226c6f))
+* pretty CLI output ([#568](https://github.com/mapequation/infomap/issues/568)) ([cb23d9f](https://github.com/mapequation/infomap/commit/cb23d9feee9a75816d58c9861fda36b02939a7b8))
+* **python:** add AnnData Scanpy integration ([#549](https://github.com/mapequation/infomap/issues/549)) ([cc0fae4](https://github.com/mapequation/infomap/commit/cc0fae43be51a595b9c11c2af225261d906d5b71))
+* **python:** add edge index input support ([#548](https://github.com/mapequation/infomap/issues/548)) ([0a5c74b](https://github.com/mapequation/infomap/commit/0a5c74b20073c4d6c73ca619f3c2d485d5748fbf))
+* **python:** add GraphML and GEXF export helpers ([#550](https://github.com/mapequation/infomap/issues/550)) ([11f9395](https://github.com/mapequation/infomap/commit/11f93959d3f83d44b8ce10cce872bf4f63987a30))
+* **python:** add igraph helpers ([#528](https://github.com/mapequation/infomap/issues/528)) ([efe1aa9](https://github.com/mapequation/infomap/commit/efe1aa99ea4dab33bfa027b43fb6dd4eb76c376c))
+* **python:** add integration extras and typed marker ([8657773](https://github.com/mapequation/infomap/commit/8657773d6300007e5324fa6e9f089e8ee67092c2))
+* **python:** add NetworkX-friendly find_communities() ([#525](https://github.com/mapequation/infomap/issues/525)) ([1b56af4](https://github.com/mapequation/infomap/commit/1b56af421374f8fdced22c32c1f2f5fd11dee547))
+* **python:** add Python quickstart notebook and infomap-shell ([#601](https://github.com/mapequation/infomap/issues/601)) ([a864231](https://github.com/mapequation/infomap/commit/a864231e4c854e7e88cfee52e6b606061fa13a2f))
+* **python:** add scipy sparse matrix support ([#547](https://github.com/mapequation/infomap/issues/547)) ([fbad0bb](https://github.com/mapequation/infomap/commit/fbad0bbff367bf6b63919e6dbb251333ca849278))
+* **python:** add tutorial notebooks ([#551](https://github.com/mapequation/infomap/issues/551)) ([5df5574](https://github.com/mapequation/infomap/commit/5df5574d8ac690db6aab79f2e123d7cfcd582f6b))
+* **python:** improve dataframe and dependency ergonomics ([6c659f4](https://github.com/mapequation/infomap/commit/6c659f40dbddcb426fdfbbc34f2595a05740791a))
+* **R:** add cluster_infomap_multilayer() helper ([#515](https://github.com/mapequation/infomap/issues/515)) ([c9c8f24](https://github.com/mapequation/infomap/commit/c9c8f2410fec27629dc3f0a6d69f90c50106eb78))
+* regularized multilayer ([#462](https://github.com/mapequation/infomap/issues/462)) ([130bce1](https://github.com/mapequation/infomap/commit/130bce1c1a775867c9033d1c2f7247507838bfb2))
+* **R:** expose R link results ([#567](https://github.com/mapequation/infomap/issues/567)) ([5e10f40](https://github.com/mapequation/infomap/commit/5e10f4075f13a7695784946d250220370b1d03fe))
+
+
+### Bug Fixes
+
+* **js:** improve js package ([#512](https://github.com/mapequation/infomap/issues/512)) ([010fb9b](https://github.com/mapequation/infomap/commit/010fb9b0d896317fc09193164c618de9ead37d49))
+* prevent metadata inner parallel crash ([#593](https://github.com/mapequation/infomap/issues/593)) ([38c3a03](https://github.com/mapequation/infomap/commit/38c3a03ad2bfb23a31d70d123a4df7dedeebdc23))
+* **python:** rename phys_id to node_id in graph adapter API ([#545](https://github.com/mapequation/infomap/issues/545)) ([22b901e](https://github.com/mapequation/infomap/commit/22b901e42545ef34661e493c500e97ec2f490242))
+* **python:** support PyTorch with macOS OpenMP wheels ([#592](https://github.com/mapequation/infomap/issues/592)) ([e7764b3](https://github.com/mapequation/infomap/commit/e7764b30c1093214754ebf2c1fb8ea4c1aaadb63))
+* redirect missing infomap pages ([#546](https://github.com/mapequation/infomap/issues/546)) ([f16d76b](https://github.com/mapequation/infomap/commit/f16d76bf76efe0eae7f427f48c1065eefcd72726))
+* Reset num non-trivial modules when reset to one module ([4b33082](https://github.com/mapequation/infomap/commit/4b33082307c9868402e866ef2b480289e26aacd3))
+* **R:** improve R igraph integration ([#526](https://github.com/mapequation/infomap/issues/526)) ([8b020ee](https://github.com/mapequation/infomap/commit/8b020ee442eb4aa73fc200115f1a68a8b3bf60d7))
+* warm-start .tree input on higher-order networks ([6ad980a](https://github.com/mapequation/infomap/commit/6ad980a06740bcbdfe037db453f7c5fd66045ac1))
+
+
+### Performance Improvements
+
+* **js:** build worker as single-file wasm ([#571](https://github.com/mapequation/infomap/issues/571)) ([89afaf4](https://github.com/mapequation/infomap/commit/89afaf4d877903f4aa57d3c8750f4d38067d1dc2))
+* opt-in -march=native + LTO + inlined SIMD log2 polynomial ([#591](https://github.com/mapequation/infomap/issues/591)) ([9a250b1](https://github.com/mapequation/infomap/commit/9a250b1395df55806a0f538371607ed99b22cd68))
+* speed up large network input parsing ([#522](https://github.com/mapequation/infomap/issues/522)) ([34ff6bc](https://github.com/mapequation/infomap/commit/34ff6bc614128d7b1ed0e7cb1eebc59c55f7e8d3))
+* speed up NumPy link ingestion ([#523](https://github.com/mapequation/infomap/issues/523)) ([6d4857e](https://github.com/mapequation/infomap/commit/6d4857e59780736140cc22cf4a3099f6ebbcf54d))
+
 ## [2.10.1](https://github.com/mapequation/infomap/compare/v2.10.0...v2.10.1) (2026-05-05)
 
 
