@@ -22,7 +22,9 @@ jobs:
     outputs:
       policy: ${{ steps.filter.outputs.policy }}
       native: ${{ steps.filter.outputs.native }}
-      python: ${{ steps.filter.outputs.python }}
+      python-core: ${{ steps.filter.outputs.python-core }}
+      python-packaging: ${{ steps.filter.outputs.python-packaging }}
+      python-swig: ${{ steps.filter.outputs.python-swig }}
       javascript: ${{ steps.filter.outputs.javascript }}
       r: ${{ steps.filter.outputs.r }}
       docs: ${{ steps.filter.outputs.docs }}
@@ -60,7 +62,7 @@ jobs:
               - "test/fixtures/**"
               - ".github/workflows/ci.yml"
               - ".github/workflows/_native-build.yml"
-            python:
+            python-core:
               - "CMakeLists.txt"
               - "Makefile"
               - "mk/**"
@@ -71,6 +73,7 @@ jobs:
               - ".github/workflows/_native-build.yml"
               - "pyproject.toml"
               - "setup.py"
+              - "interfaces/swig/**"
               - "interfaces/python/**"
               - "examples/python/**"
               - "examples/notebooks/**"
@@ -80,6 +83,20 @@ jobs:
               - "scripts/generate_python_swig.py"
               - "scripts/notebook_manifest.py"
               - ".github/actions/setup-python-build/action.yml"
+              - ".github/workflows/_python-package.yml"
+            python-packaging:
+              - "Makefile"
+              - "mk/**"
+              - "pyproject.toml"
+              - "setup.py"
+              - "scripts/build_config.py"
+              - ".github/actions/setup-python-build/action.yml"
+              - ".github/workflows/_python-package.yml"
+            python-swig:
+              - "interfaces/swig/**"
+              - "interfaces/python/generated/**"
+              - "interfaces/python/src/infomap/_swig.py"
+              - "scripts/generate_python_swig.py"
               - ".github/workflows/_python-package.yml"
             javascript:
               - "CMakeLists.txt"
@@ -135,10 +152,8 @@ jobs:
               - "scripts/build_config.py"
               - "README.rst"
             notebooks:
-              - "Makefile"
-              - "mk/**"
-              - "pyproject.toml"
-              - "setup.py"
+              - "interfaces/python/**"
+              - "test/python/**"
               - "examples/notebooks/**"
               - "scripts/notebook_manifest.py"
               - ".github/actions/setup-python-build/action.yml"
@@ -233,15 +248,18 @@ jobs:
 
   python:
     needs: changes
-    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.python == 'true'
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.python-core == 'true' || needs.changes.outputs.python-swig == 'true'
     uses: ./.github/workflows/_python-package.yml
     with:
       run-tests: true
+      mode: ${{ github.event_name == 'pull_request' && 'quick' || 'full' }}
+      run-swig-freshness: ${{ github.event_name == 'workflow_dispatch' || needs.changes.outputs.python-swig == 'true' }}
+      run-release-smoke: ${{ github.event_name == 'workflow_dispatch' || needs.changes.outputs.python-packaging == 'true' }}
       build-release-artifacts: false
 
   notebooks:
     needs: changes
-    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.python == 'true' || needs.changes.outputs.notebooks == 'true'
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.notebooks == 'true' || (github.event_name == 'push' && needs.changes.outputs.python-core == 'true')
     name: Tutorial notebook smoke tests
     runs-on: ubuntu-24.04
     timeout-minutes: 45

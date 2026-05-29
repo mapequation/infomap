@@ -85,7 +85,7 @@ Configure these integrations before the first release:
 5. Release Please creates the `vX.Y.Z` tag and the GitHub Release.
 6. `.github/workflows/release.yml` runs for that tag and:
    - builds the native release assets
-   - builds the Python sdist and wheels
+   - builds the Python sdist and wheels through the full Python workflow tier
    - builds the R source tarball once, then builds macOS and Windows R
      binaries from that exact tarball for both R `release` and `oldrel`
    - builds and verifies the npm package

@@ -56,6 +56,7 @@ jobs:
     with:
       ref: ${{ github.event_name == 'workflow_dispatch' && (inputs.ref || github.sha) || github.ref }}
       run-tests: true
+      mode: full
       build-release-artifacts: true
       features: ${{ github.event_name == 'workflow_dispatch' && inputs.features || '' }}
 
