@@ -62,6 +62,14 @@ Configure these integrations before the first release:
 
 ## Normal release flow
 
+> Pushing a `vX.Y.Z` tag triggers `release.yml`, which publishes immediately, so
+> there is no window to rehearse the new tag itself. To catch pipeline or
+> infrastructure regressions (runner image changes, dependency drift) before a
+> release cycle, run `.github/workflows/release-rehearsal.yml` (`workflow_dispatch`)
+> against the most recent existing tag first. It reproduces every release
+> artifact build and the version preflight without publishing. See
+> [CI.md](CI.md).
+
 1. Merge ordinary pull requests to `master` using Conventional Commit messages.
 2. Let `.github/workflows/release-please.yml` open or update the release PR.
 3. Review the release PR. Verify the main release version fields moved to the
