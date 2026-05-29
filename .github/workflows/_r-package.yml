@@ -11,6 +11,10 @@ on:
         required: false
         type: boolean
         default: true
+      mode:
+        required: false
+        type: string
+        default: full
       build-release-artifacts:
         required: false
         type: boolean
@@ -20,6 +24,24 @@ permissions:
   contents: read
 
 jobs:
+  matrix-setup:
+    if: inputs.run-tests
+    name: Resolve R test matrix
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      matrix: ${{ steps.set.outputs.matrix }}
+
+    steps:
+      - name: Select matrix for mode
+        id: set
+        run: |
+          if [ "${{ inputs.mode }}" = "quick" ]; then
+            echo 'matrix={"os":["ubuntu-24.04"],"r":["release"]}' >> "$GITHUB_OUTPUT"
+          else
+            echo 'matrix={"os":["ubuntu-24.04","macos-15","windows-2025-vs2026"],"r":["release","oldrel"]}' >> "$GITHUB_OUTPUT"
+          fi
+
   swig-freshness:
     name: R SWIG freshness
     runs-on: ubuntu-24.04
@@ -72,12 +94,10 @@ jobs:
     name: R ${{ matrix.r }} on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
-    needs: swig-freshness
+    needs: [swig-freshness, matrix-setup]
     strategy:
       fail-fast: false
-      matrix:
-        os: [ubuntu-24.04, macos-15, windows-2025-vs2026]
-        r: [release, oldrel]
+      matrix: ${{ fromJSON(needs.matrix-setup.outputs.matrix) }}
 
     defaults:
       run:
@@ -253,7 +273,7 @@ jobs:
           if-no-files-found: error
 
   r-universe-simulation:
-    if: inputs.run-tests
+    if: inputs.run-tests && inputs.mode == 'full'
     name: R r-universe simulation
     runs-on: ubuntu-24.04
     timeout-minutes: 60

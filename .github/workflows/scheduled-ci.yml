@@ -1,0 +1,133 @@
+name: Scheduled CI
+
+# Full-coverage CI that runs the heavier jobs kept out of the fast PR loop:
+# sanitizers, clang-tidy, the full R OS/version matrix, r-universe simulation,
+# and the full Python version matrix. Runs nightly on weekdays and can be
+# dispatched manually on any branch (e.g. before merging risky native changes).
+
+on:
+  schedule:
+    - cron: "17 3 * * 1-5"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: scheduled-ci-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  policy:
+    name: C++ stream policy
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Check runtime stream policy
+        run: make test-cpp-stream-policy PYTHON=python3
+
+  sanitizers:
+    name: Linux sanitizers
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install sanitizer toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang lld ninja-build
+        shell: bash
+
+      - name: Configure sanitizer build
+        run: make test-sanitizers CMAKE_GENERATOR=Ninja SANITIZER_CXX=clang++
+        shell: bash
+        env:
+          ASAN_OPTIONS: detect_leaks=1:strict_string_checks=1
+          UBSAN_OPTIONS: print_stacktrace=1
+
+  clang-tidy:
+    name: Linux clang-tidy
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install clang-tidy toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-tidy ninja-build
+        shell: bash
+
+      - name: Run clang-tidy
+        run: make tidy-native CMAKE_DEV_GENERATOR=Ninja CLANG_TIDY_WARNINGS_AS_ERRORS='readability-*,performance-*,modernize-use-override,bugprone-branch-clone'
+        shell: bash
+
+  native:
+    uses: ./.github/workflows/_native-build.yml
+
+  python:
+    uses: ./.github/workflows/_python-package.yml
+    with:
+      run-tests: true
+      mode: full
+      build-release-artifacts: false
+
+  notebooks:
+    name: Tutorial notebook smoke tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up Python
+        uses: ./.github/actions/setup-python-build
+        with:
+          python-version: "3.14"
+          install-build-tooling: "true"
+
+      - name: Install package and notebook dependencies
+        run: |
+          make build-python
+          make dev-python-install
+          make dev-python-notebooks-install
+
+      - name: Run notebook smoke tests
+        run: make test-python-notebooks-smoke
+
+  javascript:
+    uses: ./.github/workflows/_js-package.yml
+    with:
+      run-tests: true
+      pack-artifact: false
+
+  r:
+    uses: ./.github/workflows/_r-package.yml
+    with:
+      run-tests: true
+      mode: full
+      build-release-artifacts: false
+
+  scheduled-summary:
+    name: Scheduled CI Summary
+    needs: [policy, sanitizers, clang-tidy, native, python, notebooks, javascript, r]
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+
+    steps:
+      - name: Check scheduled CI results
+        run: |
+          results='${{ toJSON(needs) }}'
+          echo "$results"
+          echo "$results" | jq -e 'to_entries | all(.value.result == "success" or .value.result == "skipped")'
