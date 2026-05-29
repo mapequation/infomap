@@ -1,0 +1,136 @@
+name: Release Rehearsal
+
+# Dry run of the release build against an existing tag. Reproduces every
+# artifact-producing step of release.yml -- native packaging, Python sdist +
+# cibuildwheel, npm pack, R source + binaries, and the multi-arch Docker build
+# -- but publishes nothing. Use before tagging (or to debug a failed release)
+# to confirm the release will build without touching PyPI/npm/GHCR.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing tag to rehearse the release build for (vX.Y.Z)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-rehearsal-${{ inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  check-versions:
+    name: Verify package versions match the tag
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: refs/tags/${{ inputs.tag }}
+
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.14"
+
+      - name: Check version consistency
+        run: python3 scripts/check_release_versions.py --tag "${{ inputs.tag }}"
+
+  native:
+    needs: [check-versions]
+    uses: ./.github/workflows/_native-build.yml
+    with:
+      ref: refs/tags/${{ inputs.tag }}
+      upload-artifacts: true
+
+  python:
+    needs: [check-versions]
+    uses: ./.github/workflows/_python-package.yml
+    with:
+      ref: refs/tags/${{ inputs.tag }}
+      run-tests: true
+      mode: full
+      build-release-artifacts: true
+
+  javascript:
+    needs: [check-versions]
+    uses: ./.github/workflows/_js-package.yml
+    with:
+      ref: refs/tags/${{ inputs.tag }}
+      run-tests: true
+      pack-artifact: true
+
+  r:
+    needs: [check-versions]
+    uses: ./.github/workflows/_r-package.yml
+    with:
+      ref: refs/tags/${{ inputs.tag }}
+      run-tests: true
+      mode: full
+      build-release-artifacts: true
+
+  docker-dry-run:
+    name: Docker multi-arch build (no push)
+    needs: [check-versions]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: refs/tags/${{ inputs.tag }}
+
+      - name: Resolve version
+        id: release
+        run: echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+        env:
+          TAG: ${{ inputs.tag }}
+
+      - name: Build and smoke-test supported Docker images
+        run: make test-docker-supported
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # v4.0.0
+        with:
+          platforms: amd64,arm64
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
+
+      - name: Build CLI image (no push)
+        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
+        with:
+          context: .
+          file: docker/infomap.Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: false
+          tags: ghcr.io/mapequation/infomap:${{ steps.release.outputs.version }}
+
+      - name: Build notebook image (no push)
+        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
+        with:
+          context: .
+          file: docker/notebook.Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: false
+          tags: ghcr.io/mapequation/infomap:notebook-${{ steps.release.outputs.version }}
+
+  rehearsal-summary:
+    name: Release Rehearsal Summary
+    needs: [check-versions, native, python, javascript, r, docker-dry-run]
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+
+    steps:
+      - name: Check rehearsal results
+        run: |
+          results='${{ toJSON(needs) }}'
+          echo "$results"
+          echo "$results" | jq -e 'to_entries | all(.value.result == "success" or .value.result == "skipped")'
