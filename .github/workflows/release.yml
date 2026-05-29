@@ -37,15 +37,37 @@ jobs:
             exit 1
           fi
 
-  native:
+  check-versions:
+    name: Verify package versions match the tag
     needs: [validate-stable-tag]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && format('refs/tags/{0}', inputs.tag) || github.ref }}
+
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.14"
+
+      - name: Check version consistency
+        env:
+          RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+        run: python3 scripts/check_release_versions.py --tag "$RELEASE_TAG"
+
+  native:
+    needs: [validate-stable-tag, check-versions]
     uses: ./.github/workflows/_native-build.yml
     with:
       ref: ${{ github.event_name == 'workflow_dispatch' && format('refs/tags/{0}', inputs.tag) || github.ref }}
       upload-artifacts: true
 
   python:
-    needs: [validate-stable-tag]
+    needs: [validate-stable-tag, check-versions]
     uses: ./.github/workflows/_python-package.yml
     with:
       ref: ${{ github.event_name == 'workflow_dispatch' && format('refs/tags/{0}', inputs.tag) || github.ref }}
@@ -54,7 +76,7 @@ jobs:
       build-release-artifacts: true
 
   javascript:
-    needs: [validate-stable-tag]
+    needs: [validate-stable-tag, check-versions]
     uses: ./.github/workflows/_js-package.yml
     with:
       ref: ${{ github.event_name == 'workflow_dispatch' && format('refs/tags/{0}', inputs.tag) || github.ref }}
@@ -62,11 +84,12 @@ jobs:
       pack-artifact: true
 
   r:
-    needs: [validate-stable-tag]
+    needs: [validate-stable-tag, check-versions]
     uses: ./.github/workflows/_r-package.yml
     with:
       ref: ${{ github.event_name == 'workflow_dispatch' && format('refs/tags/{0}', inputs.tag) || github.ref }}
       run-tests: true
+      mode: full
       build-release-artifacts: true
 
   publish-github-release:
