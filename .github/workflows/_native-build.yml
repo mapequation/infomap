@@ -26,7 +26,7 @@ jobs:
         config:
           - {
               name: windows,
-              os: windows-2025,
+              os: windows-2025-vs2026,
               artifact: infomap-win,
               binary: Infomap.exe,
               cxxflags: -static,
