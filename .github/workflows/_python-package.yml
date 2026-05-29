@@ -84,7 +84,7 @@ jobs:
             python-version: "3.14"
             smoke-only: false
             run-full-suite: true
-          - os: windows-2025
+          - os: windows-2025-vs2026
             python-version: "3.14"
             smoke-only: true
             run-full-suite: false
@@ -231,7 +231,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, windows-2025, macos-15]
+        os: [ubuntu-24.04, windows-2025-vs2026, macos-15]
 
     steps:
       - name: Checkout repository
