@@ -197,6 +197,12 @@ More targeted checks are available when you only need one slice:
 - `make test-python-doctest`
 - `make test-python-examples`
 
+CI uses two Python coverage tiers. Pull requests run the quick tier: Python
+3.14 on Ubuntu with unit tests, plus a Windows smoke test. The full tier keeps
+the broader Python version matrix, doctests, examples, and release smoke checks
+for `master`, release, prerelease, and manual workflow runs. Release and
+prerelease workflows still build the Python sdist and platform wheels.
+
 To build the Python extension in debug mode, pass the same mode override:
 
 ```bash
