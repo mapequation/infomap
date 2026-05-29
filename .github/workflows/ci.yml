@@ -330,7 +330,7 @@ jobs:
 
   ci-summary:
     name: CI Summary
-    needs: [changes, policy, cxx-format, sanitizers, clang-tidy, native, python, notebooks, javascript, r]
+    needs: [changes, policy, cxx-format, sanitizers, clang-tidy, native, python, notebooks, javascript, r, docs, docker]
     if: always()
     runs-on: ubuntu-24.04
     timeout-minutes: 10
