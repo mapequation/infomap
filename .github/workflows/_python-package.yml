@@ -128,7 +128,9 @@ jobs:
           FEATURES: ${{ inputs.features }}
 
       - name: Install editable package
-        run: make dev-python-install
+        run: |
+          make dev-python-install
+          command -v ccache >/dev/null 2>&1 && ccache -s || true
         env:
           FEATURES: ${{ inputs.features }}
 
@@ -208,7 +210,9 @@ jobs:
           FEATURES: ${{ inputs.features }}
 
       - name: Install editable package
-        run: make dev-python-install
+        run: |
+          make dev-python-install
+          command -v ccache >/dev/null 2>&1 && ccache -s || true
         env:
           FEATURES: ${{ inputs.features }}
 
@@ -262,7 +266,9 @@ jobs:
           key-prefix: python-release-smoke-${{ runner.os }}
 
       - name: Build release distributions
-        run: make release-python-dist
+        run: |
+          make release-python-dist
+          command -v ccache >/dev/null 2>&1 && ccache -s || true
         env:
           FEATURES: ${{ inputs.features }}
 

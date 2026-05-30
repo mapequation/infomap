@@ -126,7 +126,9 @@ jobs:
           key-prefix: r-${{ matrix.os }}-${{ matrix.r }}
 
       - name: Stage and check the package
-        run: make test-r
+        run: |
+          make test-r
+          command -v ccache >/dev/null 2>&1 && ccache -s || true
 
   build-source:
     if: inputs.build-release-artifacts
