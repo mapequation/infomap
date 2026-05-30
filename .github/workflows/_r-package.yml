@@ -120,6 +120,11 @@ jobs:
             any::tibble
             any::rcmdcheck
 
+      - name: Set up ccache
+        uses: ./.github/actions/setup-ccache
+        with:
+          key-prefix: r-${{ matrix.os }}-${{ matrix.r }}
+
       - name: Stage and check the package
         run: make test-r
 

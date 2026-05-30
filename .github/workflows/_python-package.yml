@@ -117,6 +117,11 @@ jobs:
           python-version: ${{ matrix.python-version }}
           install-build-tooling: "true"
 
+      - name: Set up ccache
+        uses: ./.github/actions/setup-ccache
+        with:
+          key-prefix: python-${{ matrix.os }}-py${{ matrix.python-version }}
+
       - name: Build Python wheel from repo root
         run: make build-python
         env:
@@ -192,6 +197,11 @@ jobs:
           python-version: ${{ matrix.python-version }}
           install-build-tooling: "true"
 
+      - name: Set up ccache
+        uses: ./.github/actions/setup-ccache
+        with:
+          key-prefix: python-${{ matrix.os }}-py${{ matrix.python-version }}
+
       - name: Build Python wheel from repo root
         run: make build-python
         env:
@@ -245,6 +255,11 @@ jobs:
         with:
           python-version: "3.14"
           install-build-tooling: "true"
+
+      - name: Set up ccache
+        uses: ./.github/actions/setup-ccache
+        with:
+          key-prefix: python-release-smoke-${{ runner.os }}
 
       - name: Build release distributions
         run: make release-python-dist
