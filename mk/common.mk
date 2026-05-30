@@ -78,13 +78,22 @@ BUILD_CONFIG_SCRIPT := scripts/build_config.py
 # / NATIVE_LDFLAGS). build_config.py probes the compiler (`--version`) and shells
 # out to brew, so doing this once per `make` run instead of once per field cuts
 # the fixed cost paid by every build, including no-op incremental ones.
+#
+# Skip resolution when the only goals are clean targets: they don't need the
+# config, and generating it would recreate the build/ artifacts a clean is meant
+# to remove. (No explicit goal means the default target runs, which does need it.)
+BUILD_CONFIG_NEEDED := $(if $(MAKECMDGOALS),$(filter-out clean%,$(MAKECMDGOALS)),default)
 BUILD_CONFIG_MK := build/build_config.generated.mk
+ifneq ($(BUILD_CONFIG_NEEDED),)
 ifneq ($(PYTHON_FOR_BUILD_CONFIG),)
-BUILD_CONFIG_STATUS := $(shell mkdir -p $(dir $(BUILD_CONFIG_MK)) && CPPFLAGS='$(CPPFLAGS)' CXXFLAGS='$(CXXFLAGS)' LDFLAGS='$(LDFLAGS)' MACOSX_DEPLOYMENT_TARGET='$(MACOSX_DEPLOYMENT_TARGET)' $(PYTHON_FOR_BUILD_CONFIG) $(BUILD_CONFIG_SCRIPT) make-export --mode "$(MODE)" --openmp "$(OPENMP)" --native-arch "$(NATIVE_ARCH)" --features "$(FEATURES)" --compiler "$(CXX)" --platform "$(UNAME_S)" > $(BUILD_CONFIG_MK) 2>/dev/null && echo ok)
+# stderr is left attached so a failing resolution surfaces the real diagnostic
+# (Python traceback / argparse error) rather than only the generic $(error) below.
+BUILD_CONFIG_STATUS := $(shell mkdir -p $(dir $(BUILD_CONFIG_MK)) && CPPFLAGS='$(CPPFLAGS)' CXXFLAGS='$(CXXFLAGS)' LDFLAGS='$(LDFLAGS)' MACOSX_DEPLOYMENT_TARGET='$(MACOSX_DEPLOYMENT_TARGET)' $(PYTHON_FOR_BUILD_CONFIG) $(BUILD_CONFIG_SCRIPT) make-export --mode "$(MODE)" --openmp "$(OPENMP)" --native-arch "$(NATIVE_ARCH)" --features "$(FEATURES)" --compiler "$(CXX)" --platform "$(UNAME_S)" > $(BUILD_CONFIG_MK) && echo ok)
 ifneq ($(BUILD_CONFIG_STATUS),ok)
 $(error Failed to resolve build configuration via $(BUILD_CONFIG_SCRIPT))
 endif
 include $(BUILD_CONFIG_MK)
+endif
 endif
 FEATURE_CACHE_KEY := $(if $(BUILD_CONFIG_ENABLED_FEATURES),$(subst $(space),_,$(BUILD_CONFIG_ENABLED_FEATURES)),none)
 CXX_COMPILE := $(if $(and $(filter 1,$(USE_CCACHE)),$(CCACHE_BIN)),$(CCACHE_BIN) ,)$(CXX)
