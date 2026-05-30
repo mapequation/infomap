@@ -79,10 +79,12 @@ BUILD_CONFIG_SCRIPT := scripts/build_config.py
 # out to brew, so doing this once per `make` run instead of once per field cuts
 # the fixed cost paid by every build, including no-op incremental ones.
 #
-# Skip resolution when the only goals are clean targets: they don't need the
-# config, and generating it would recreate the build/ artifacts a clean is meant
-# to remove. (No explicit goal means the default target runs, which does need it.)
-BUILD_CONFIG_NEEDED := $(if $(MAKECMDGOALS),$(filter-out clean%,$(MAKECMDGOALS)),default)
+# Skip resolution when no requested goal consumes the build config — clean
+# targets (which would otherwise recreate the build/ artifacts a clean removes)
+# and `help`, the default goal. This keeps plain `make` / `make help` from
+# probing the compiler and brew, so they work even without a toolchain.
+BUILD_CONFIG_GOALS := $(if $(MAKECMDGOALS),$(MAKECMDGOALS),$(.DEFAULT_GOAL))
+BUILD_CONFIG_NEEDED := $(filter-out help clean%,$(BUILD_CONFIG_GOALS))
 BUILD_CONFIG_MK := build/build_config.generated.mk
 ifneq ($(BUILD_CONFIG_NEEDED),)
 ifneq ($(PYTHON_FOR_BUILD_CONFIG),)

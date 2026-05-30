@@ -370,9 +370,10 @@ MAKE_EXPORT_FIELDS = (
 def _make_export(config):
     lines = []
     for make_var, field in MAKE_EXPORT_FIELDS:
-        # Escape `$` so Make treats flag/path values literally on `include`,
-        # matching the old per-field `:=` capture which did not re-expand them.
-        value = _field_value(config, field).replace("$", "$$")
+        # Escape characters Make would otherwise interpret on `include`: `$`
+        # (variable expansion) and `#` (starts a comment, truncating the value).
+        # Flag/path values can contain either via user CPPFLAGS/CXXFLAGS/paths.
+        value = _field_value(config, field).replace("$", "$$").replace("#", "\\#")
         lines.append(f"{make_var} := {value}")
     return "\n".join(lines)
 

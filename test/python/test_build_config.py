@@ -271,6 +271,22 @@ def test_make_export_escapes_dollar_signs():
     assert "$$ORIGIN" in build_config._make_export(config)
 
 
+def test_make_export_escapes_hash():
+    config = resolve_build_config(
+        platform_name="linux",
+        compiler="clang++",
+        openmp=False,
+        cxxflags="-DTAG=a#b",
+    )
+
+    raw = build_config._field_value(config, "compile_flags")
+    assert "a#b" in raw
+
+    # An unescaped `#` would start a Make comment on `include`, truncating the
+    # value, so it is backslash-escaped.
+    assert "a\\#b" in build_config._make_export(config)
+
+
 def test_setup_py_passes_features_env_to_build_config():
     setup_tree = ast.parse(SETUP_PY_PATH.read_text(encoding="utf-8"))
 

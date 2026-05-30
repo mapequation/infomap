@@ -26,7 +26,7 @@ R_FORMAT_TARGETS := \
 #     as the native/Python builds. ccache execs the compiler unchanged for link
 #     steps, so it is safe as the CXX used to both compile and link the .so.
 CCACHE_LAUNCHER := $(if $(and $(filter 1,$(USE_CCACHE)),$(CCACHE_BIN)),$(CCACHE_BIN),)
-R_PARALLEL := MAKE="make -j$(JOBS)"
+R_PARALLEL := MAKE="$(MAKE) -j$(JOBS)"
 R_MAKEVARS_FILE := $(CURDIR)/$(R_BUILD_DIR)/.Makevars.infomap
 
 # On macOS, Homebrew LLVM clang++ may be first in PATH but Homebrew R uses
