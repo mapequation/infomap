@@ -12,6 +12,7 @@ runs:
   using: composite
   steps:
     - name: Configure CCACHE_DIR
+      if: runner.os != 'Windows'
       shell: bash
       run: echo "CCACHE_DIR=$GITHUB_WORKSPACE/.ccache" >> "$GITHUB_ENV"
 

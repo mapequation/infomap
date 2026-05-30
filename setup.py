@@ -71,10 +71,19 @@ class BuildExt(build_ext):
         # loop. Only the unix-style compiler drives compilation through the
         # _compile hook used above; MSVC has its own loop, so leave it serial.
         jobs = resolve_build_jobs()
-        parallelize = jobs > 1 and getattr(compiler, "compiler_type", None) in {
-            "unix",
-            "cygwin",
-        }
+        # Parallelizing a single extension's sources means reimplementing the
+        # compiler's compile loop with distutils internals (_setup_compile /
+        # _get_cc_args / _compile). Guard on their presence so a future setuptools
+        # that renames or drops them simply falls back to the correct serial
+        # build instead of erroring.
+        parallelize = (
+            jobs > 1
+            and getattr(compiler, "compiler_type", None) in {"unix", "cygwin"}
+            and all(
+                hasattr(compiler, attr)
+                for attr in ("_setup_compile", "_get_cc_args", "_compile")
+            )
+        )
         original_compile_method = compiler.compile
 
         def parallel_compile(
