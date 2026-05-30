@@ -25,8 +25,17 @@ R_FORMAT_TARGETS := \
 #   * ccache as a compiler launcher, so repeat builds hit the cache — same idea
 #     as the native/Python builds. ccache execs the compiler unchanged for link
 #     steps, so it is safe as the CXX used to both compile and link the .so.
+#   * CCACHE_NOHASHDIR=1 (when ccache is active): R CMD INSTALL --build, the
+#     r-universe build, and CI binary builds compile inside a fresh temp dir each
+#     run, so ccache's default directory hashing (on with -g) would miss every
+#     time. Dropping it lets tarball installs hit the cache too, and lets the
+#     stable staged-dir install (dev-r-install) share entries with them.
 CCACHE_LAUNCHER := $(if $(and $(filter 1,$(USE_CCACHE)),$(CCACHE_BIN)),$(CCACHE_BIN),)
 R_PARALLEL := MAKE="$(MAKE) -j$(JOBS)"
+# Only meaningful when ccache is active; empty otherwise so the no-ccache
+# environment is left byte-for-byte unchanged. Trailing space lets it abut the
+# next assignment cleanly.
+R_CCACHE_ENV := $(if $(CCACHE_LAUNCHER),CCACHE_NOHASHDIR=1 ,)
 R_MAKEVARS_FILE := $(CURDIR)/$(R_BUILD_DIR)/.Makevars.infomap
 
 # On macOS, Homebrew LLVM clang++ may be first in PATH but Homebrew R uses
@@ -43,14 +52,14 @@ R_MAKEVARS_FILE := $(CURDIR)/$(R_BUILD_DIR)/.Makevars.infomap
 ifeq ($(UNAME_S),Darwin)
 _R_CC  := $(if $(CCACHE_LAUNCHER),$(CCACHE_LAUNCHER) ,)/usr/bin/clang
 _R_CXX := $(if $(CCACHE_LAUNCHER),$(CCACHE_LAUNCHER) ,)/usr/bin/clang++
-R_CMD_ENV := R_MAKEVARS_USER=$(R_MAKEVARS_FILE) $(R_PARALLEL) INFOMAP_R_CXX_LAUNCHER=$(CCACHE_LAUNCHER)
+R_CMD_ENV := R_MAKEVARS_USER=$(R_MAKEVARS_FILE) $(R_PARALLEL) $(R_CCACHE_ENV)INFOMAP_R_CXX_LAUNCHER=$(CCACHE_LAUNCHER)
 _write_r_makevars = @mkdir -p $(R_BUILD_DIR) && \
 	printf 'CC = %s\nCXX = %s\nCXX17 = %s\n' '$(_R_CC)' '$(_R_CXX)' '$(_R_CXX)' \
 	> $(R_MAKEVARS_FILE)
 else ifneq ($(CCACHE_LAUNCHER),)
 # Other unix: no configure override, so route R's configured compiler through
 # ccache via a user Makevars.
-R_CMD_ENV := R_MAKEVARS_USER=$(R_MAKEVARS_FILE) $(R_PARALLEL)
+R_CMD_ENV := R_MAKEVARS_USER=$(R_MAKEVARS_FILE) $(R_PARALLEL) $(R_CCACHE_ENV)
 _write_r_makevars = @mkdir -p $(R_BUILD_DIR) && \
 	cc="$$($(R) CMD config CC)"; cxx="$$($(R) CMD config CXX)"; cxx17="$$($(R) CMD config CXX17)"; \
 	printf 'CC = %s %s\nCXX = %s %s\nCXX17 = %s %s\n' \
