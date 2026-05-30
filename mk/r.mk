@@ -18,24 +18,47 @@ R_FORMAT_TARGETS := \
 	$(R_TEST_FILES) \
 	$(R_EXAMPLE_FILES)
 
+# R compiles the package's ~25 translation units serially through the toolchain
+# from its Makeconf (no ccache). We speed both up:
+#   * MAKE="make -j$(JOBS)": R drives the SHLIB build via $(MAKE), so overriding
+#     it parallelizes the per-object compiles. (MAKEFLAGS=-j is NOT honored here.)
+#   * ccache as a compiler launcher, so repeat builds hit the cache — same idea
+#     as the native/Python builds. ccache execs the compiler unchanged for link
+#     steps, so it is safe as the CXX used to both compile and link the .so.
+CCACHE_LAUNCHER := $(if $(and $(filter 1,$(USE_CCACHE)),$(CCACHE_BIN)),$(CCACHE_BIN),)
+R_PARALLEL := MAKE="make -j$(JOBS)"
+R_MAKEVARS_FILE := $(CURDIR)/$(R_BUILD_DIR)/.Makevars.infomap
+
 # On macOS, Homebrew LLVM clang++ may be first in PATH but Homebrew R uses
 # Apple's libc++ at runtime.  Compilation with LLVM clang++ produces a .so
 # that references LLVM-only symbols (e.g. __ZNSt3__113__hash_memoryEPKvm)
-# that the Apple runtime cannot resolve.  Writing a temporary Makevars file
-# that pins CC/CXX to Apple's toolchain — and passing it via
-# R_MAKEVARS_USER — keeps the compiled .so ABI-compatible with R.
+# that the Apple runtime cannot resolve.  The package's configure script pins
+# CC/CXX to Apple's toolchain with GNU Make `override` (which beats both Makeconf
+# and a user Makevars), keeping the compiled .so ABI-compatible with R. We pass
+# the ccache launcher through INFOMAP_R_CXX_LAUNCHER so configure can prefix the
+# pinned compiler; we still write the user Makevars as a historical fallback.
 # REMOVE WHEN: Homebrew R links against the LLVM libc++ runtime, or the
 # CRAN macOS toolchain assumption changes such that LLVM-built .so files
 # load cleanly under R.
 ifeq ($(UNAME_S),Darwin)
-_R_APPLE_MV  := $(CURDIR)/$(R_BUILD_DIR)/.Makevars.apple
-R_CMD_ENV    := R_MAKEVARS_USER=$(_R_APPLE_MV)
-_write_apple_mv = @mkdir -p $(R_BUILD_DIR) && \
-	printf 'CC = /usr/bin/clang\nCXX = /usr/bin/clang++\nCXX17 = /usr/bin/clang++\n' \
-	> $(_R_APPLE_MV)
+_R_CC  := $(if $(CCACHE_LAUNCHER),$(CCACHE_LAUNCHER) ,)/usr/bin/clang
+_R_CXX := $(if $(CCACHE_LAUNCHER),$(CCACHE_LAUNCHER) ,)/usr/bin/clang++
+R_CMD_ENV := R_MAKEVARS_USER=$(R_MAKEVARS_FILE) $(R_PARALLEL) INFOMAP_R_CXX_LAUNCHER=$(CCACHE_LAUNCHER)
+_write_r_makevars = @mkdir -p $(R_BUILD_DIR) && \
+	printf 'CC = %s\nCXX = %s\nCXX17 = %s\n' '$(_R_CC)' '$(_R_CXX)' '$(_R_CXX)' \
+	> $(R_MAKEVARS_FILE)
+else ifneq ($(CCACHE_LAUNCHER),)
+# Other unix: no configure override, so route R's configured compiler through
+# ccache via a user Makevars.
+R_CMD_ENV := R_MAKEVARS_USER=$(R_MAKEVARS_FILE) $(R_PARALLEL)
+_write_r_makevars = @mkdir -p $(R_BUILD_DIR) && \
+	cc="$$($(R) CMD config CC)"; cxx="$$($(R) CMD config CXX)"; cxx17="$$($(R) CMD config CXX17)"; \
+	printf 'CC = %s %s\nCXX = %s %s\nCXX17 = %s %s\n' \
+	'$(CCACHE_LAUNCHER)' "$$cc" '$(CCACHE_LAUNCHER)' "$$cxx" '$(CCACHE_LAUNCHER)' "$$cxx17" \
+	> $(R_MAKEVARS_FILE)
 else
-R_CMD_ENV       :=
-_write_apple_mv := @true
+R_CMD_ENV := $(R_PARALLEL)
+_write_r_makevars := @true
 endif
 
 .PHONY: \
@@ -72,21 +95,21 @@ build-r-binary: build-r
 	$(MAKE) build-r-binary-from-tarball
 
 build-r-binary-from-tarball:
-	$(_write_apple_mv)
+	$(_write_r_makevars)
 	@mkdir -p $(R_DIST_DIR)
 	@test -f $(R_TARBALL)
 	cd $(R_DIST_DIR) && $(R_CMD_ENV) $(R) CMD INSTALL --build $(CURDIR)/$(R_TARBALL)
 	@echo "Built R binary in $(R_DIST_DIR)/"
 
 test-r: build-r-stage
-	$(_write_apple_mv)
+	$(_write_r_makevars)
 	@mkdir -p $(R_BUILD_DIR)/check
 	$(R_CMD_ENV) _R_CHECK_FORCE_SUGGESTS_=false \
 		$(RSCRIPT) scripts/r_check.R $(R_STAGED_DIR) $(R_BUILD_DIR)/check \
 		--no-manual --no-vignettes --as-cran
 
 dev-r-install: build-r-stage
-	$(_write_apple_mv)
+	$(_write_r_makevars)
 	$(R_CMD_ENV) $(R) CMD INSTALL $(R_STAGED_DIR)
 
 test-r-examples: dev-r-install
