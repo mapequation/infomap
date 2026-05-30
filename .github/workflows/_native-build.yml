@@ -20,6 +20,11 @@ jobs:
     name: ${{ matrix.config.os }}${{ matrix.target.name }}
     runs-on: ${{ matrix.config.os }}
     timeout-minutes: 30
+    env:
+      # Workspace-local, deterministic ccache location shared by the build and
+      # test steps and persisted across runs by the cache step below. The Make
+      # build auto-detects ccache on PATH and uses it as the compiler launcher.
+      CCACHE_DIR: ${{ github.workspace }}/.ccache
     strategy:
       fail-fast: false
       matrix:
@@ -70,8 +75,35 @@ jobs:
           brew install libomp
           make ci-export-github-env >> "$GITHUB_ENV"
 
+      # Windows native CI uses MinGW g++ without ccache; skip there.
+      - name: Set up ccache
+        if: matrix.config.name != 'windows'
+        run: |
+          if ! command -v ccache >/dev/null 2>&1; then
+            if [ "$RUNNER_OS" = "macOS" ]; then
+              brew install ccache
+            else
+              sudo apt-get update && sudo apt-get install -y ccache
+            fi
+          fi
+          ccache --version
+        shell: bash
+
+      - name: Cache ccache directory
+        if: matrix.config.name != 'windows'
+        uses: actions/cache@v5
+        with:
+          path: ${{ github.workspace }}/.ccache
+          key: ccache-native-${{ matrix.config.name }}-omp${{ matrix.target.openmp }}-${{ github.sha }}
+          restore-keys: |
+            ccache-native-${{ matrix.config.name }}-omp${{ matrix.target.openmp }}-
+            ccache-native-${{ matrix.config.name }}-
+
       - name: Build native binary
-        run: make -j build-native OPENMP=${{ matrix.target.openmp }}
+        run: |
+          command -v ccache >/dev/null 2>&1 && ccache -z || true
+          make -j build-native OPENMP=${{ matrix.target.openmp }}
+          command -v ccache >/dev/null 2>&1 && ccache -s || true
         shell: bash
         env:
           CXX: ${{ matrix.config.compiler }}

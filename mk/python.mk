@@ -37,11 +37,18 @@ PYTEST_ARGS ?=
 PYTHON_DIST_DIR := dist/python
 PYPI_DIR := $(PYTHON_DIST_DIR)
 PYPI_SDIST := $(shell find $(PYPI_DIR) -name "*.tar.gz" 2>/dev/null)
-PYTHON_BUILD_CXX ?= $(if $(filter Windows_NT,$(OS)),cl,$(CXX))
+# Route Python extension compiles through ccache too (the native build already
+# does via CXX_COMPILE). distutils shlex-splits CC/CXX, so a "ccache c++" launcher
+# prefix works. Skipped on Windows (MSVC `cl`), matching the native build.
+ifeq ($(filter Windows_NT,$(OS)),)
+PYTHON_BUILD_CXX ?= $(if $(and $(filter 1,$(USE_CCACHE)),$(CCACHE_BIN)),$(CCACHE_BIN) ,)$(CXX)
+else
+PYTHON_BUILD_CXX ?= cl
+endif
 PYTHON_BUILD_CC ?= $(PYTHON_BUILD_CXX)
 PYTHON_BUILD_ENV = \
 	CC="$(PYTHON_BUILD_CC)" CXX="$(PYTHON_BUILD_CXX)" MODE="$(MODE)" OPENMP="$(OPENMP)" \
-	FEATURES="$(FEATURES)" \
+	FEATURES="$(FEATURES)" INFOMAP_BUILD_JOBS="$(JOBS)" \
 	CPPFLAGS="$(CPPFLAGS)" CXXFLAGS="$(CXXFLAGS)" LDFLAGS="$(LDFLAGS)" \
 	$(if $(MACOSX_DEPLOYMENT_TARGET),MACOSX_DEPLOYMENT_TARGET="$(MACOSX_DEPLOYMENT_TARGET)")
 
