@@ -1,5 +1,6 @@
 import ast
 import importlib.util
+import re
 from pathlib import Path
 
 
@@ -223,6 +224,67 @@ def test_python_make_build_env_passes_features():
     python_mk = PYTHON_MK_PATH.read_text(encoding="utf-8")
 
     assert 'FEATURES="$(FEATURES)"' in python_mk
+
+
+def test_python_make_build_env_passes_build_jobs():
+    python_mk = PYTHON_MK_PATH.read_text(encoding="utf-8")
+
+    assert 'INFOMAP_BUILD_JOBS="$(JOBS)"' in python_mk
+
+
+def test_make_export_matches_per_field_values():
+    config = resolve_build_config(
+        platform_name="linux",
+        compiler="clang++",
+        openmp=True,
+    )
+
+    lines = build_config._make_export(config).splitlines()
+
+    # One assignment per mapped field, each a parseable Make assignment.
+    assert len(lines) == len(build_config.MAKE_EXPORT_FIELDS)
+    rendered = {}
+    for line in lines:
+        name, sep, value = line.partition(" := ")
+        assert sep, f"not a Make assignment: {line!r}"
+        assert re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", name), name
+        rendered[name] = value
+
+    # Values must equal the prior per-field rendering (with `$` escaped).
+    for make_var, field in build_config.MAKE_EXPORT_FIELDS:
+        expected = build_config._field_value(config, field).replace("$", "$$")
+        assert rendered[make_var] == expected
+
+
+def test_make_export_escapes_dollar_signs():
+    config = resolve_build_config(
+        platform_name="linux",
+        compiler="clang++",
+        openmp=False,
+        cxxflags="-DPATH=$ORIGIN",
+    )
+
+    raw = build_config._field_value(config, "compile_flags")
+    assert "$ORIGIN" in raw and "$$" not in raw
+
+    # On `include`, an unescaped `$` would be expanded by Make, so it is doubled.
+    assert "$$ORIGIN" in build_config._make_export(config)
+
+
+def test_make_export_escapes_hash():
+    config = resolve_build_config(
+        platform_name="linux",
+        compiler="clang++",
+        openmp=False,
+        cxxflags="-DTAG=a#b",
+    )
+
+    raw = build_config._field_value(config, "compile_flags")
+    assert "a#b" in raw
+
+    # An unescaped `#` would start a Make comment on `include`, truncating the
+    # value, so it is backslash-escaped.
+    assert "a\\#b" in build_config._make_export(config)
 
 
 def test_setup_py_passes_features_env_to_build_config():

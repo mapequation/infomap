@@ -73,21 +73,30 @@ MK_FILES := $(wildcard mk/*.mk)
 BINDING_OPTIONS_SCRIPT := scripts/generate_binding_options.py
 BUILD_CONFIG_SCRIPT := scripts/build_config.py
 
-define build_config_field
-$(if $(PYTHON_FOR_BUILD_CONFIG),$(strip $(eval BUILD_CONFIG_FIELD_VALUE := $(shell CPPFLAGS='$(CPPFLAGS)' CXXFLAGS='$(CXXFLAGS)' LDFLAGS='$(LDFLAGS)' MACOSX_DEPLOYMENT_TARGET='$(MACOSX_DEPLOYMENT_TARGET)' $(PYTHON_FOR_BUILD_CONFIG) $(BUILD_CONFIG_SCRIPT) field --field "$(1)" --mode "$(MODE)" --openmp "$(OPENMP)" --native-arch "$(NATIVE_ARCH)" --features "$(FEATURES)" --compiler "$(CXX)" --platform "$(UNAME_S)" || printf "__INFOMAP_BUILD_CONFIG_FAILED__"))$(if $(findstring __INFOMAP_BUILD_CONFIG_FAILED__,$(BUILD_CONFIG_FIELD_VALUE)),$(error Failed to resolve build config field '$(1)'),$(BUILD_CONFIG_FIELD_VALUE))),)
-endef
-
-BUILD_CONFIG_MODE := $(call build_config_field,mode)
-BUILD_CONFIG_OPENMP := $(call build_config_field,openmp)
-BUILD_CONFIG_ENABLED_FEATURES := $(call build_config_field,enabled_features)
-BUILD_CONFIG_PLATFORM := $(call build_config_field,platform)
-BUILD_CONFIG_COMPILER := $(call build_config_field,compiler)
-BUILD_CONFIG_COMPILER_FAMILY := $(call build_config_field,compiler_family)
-BUILD_CONFIG_BREW_PREFIX := $(call build_config_field,brew_prefix)
-BUILD_CONFIG_LIBOMP_PREFIX := $(call build_config_field,libomp_prefix)
-BUILD_CONFIG_DEPLOYMENT_TARGET := $(call build_config_field,deployment_target)
-NATIVE_CXXFLAGS := $(call build_config_field,compile_flags)
-NATIVE_LDFLAGS := $(call build_config_field,link_flags)
+# Resolve the whole build configuration in a single build_config.py invocation
+# and `include` the emitted Make assignments (BUILD_CONFIG_* plus NATIVE_CXXFLAGS
+# / NATIVE_LDFLAGS). build_config.py probes the compiler (`--version`) and shells
+# out to brew, so doing this once per `make` run instead of once per field cuts
+# the fixed cost paid by every build, including no-op incremental ones.
+#
+# Skip resolution when no requested goal consumes the build config — clean
+# targets (which would otherwise recreate the build/ artifacts a clean removes)
+# and `help`, the default goal. This keeps plain `make` / `make help` from
+# probing the compiler and brew, so they work even without a toolchain.
+BUILD_CONFIG_GOALS := $(if $(MAKECMDGOALS),$(MAKECMDGOALS),$(.DEFAULT_GOAL))
+BUILD_CONFIG_NEEDED := $(filter-out help clean%,$(BUILD_CONFIG_GOALS))
+BUILD_CONFIG_MK := build/build_config.generated.mk
+ifneq ($(BUILD_CONFIG_NEEDED),)
+ifneq ($(PYTHON_FOR_BUILD_CONFIG),)
+# stderr is left attached so a failing resolution surfaces the real diagnostic
+# (Python traceback / argparse error) rather than only the generic $(error) below.
+BUILD_CONFIG_STATUS := $(shell mkdir -p $(dir $(BUILD_CONFIG_MK)) && CPPFLAGS='$(CPPFLAGS)' CXXFLAGS='$(CXXFLAGS)' LDFLAGS='$(LDFLAGS)' MACOSX_DEPLOYMENT_TARGET='$(MACOSX_DEPLOYMENT_TARGET)' $(PYTHON_FOR_BUILD_CONFIG) $(BUILD_CONFIG_SCRIPT) make-export --mode "$(MODE)" --openmp "$(OPENMP)" --native-arch "$(NATIVE_ARCH)" --features "$(FEATURES)" --compiler "$(CXX)" --platform "$(UNAME_S)" > $(BUILD_CONFIG_MK) && echo ok)
+ifneq ($(BUILD_CONFIG_STATUS),ok)
+$(error Failed to resolve build configuration via $(BUILD_CONFIG_SCRIPT))
+endif
+include $(BUILD_CONFIG_MK)
+endif
+endif
 FEATURE_CACHE_KEY := $(if $(BUILD_CONFIG_ENABLED_FEATURES),$(subst $(space),_,$(BUILD_CONFIG_ENABLED_FEATURES)),none)
 CXX_COMPILE := $(if $(and $(filter 1,$(USE_CCACHE)),$(CCACHE_BIN)),$(CCACHE_BIN) ,)$(CXX)
 

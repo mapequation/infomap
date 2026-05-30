@@ -37,11 +37,18 @@ PYTEST_ARGS ?=
 PYTHON_DIST_DIR := dist/python
 PYPI_DIR := $(PYTHON_DIST_DIR)
 PYPI_SDIST := $(shell find $(PYPI_DIR) -name "*.tar.gz" 2>/dev/null)
-PYTHON_BUILD_CXX ?= $(if $(filter Windows_NT,$(OS)),cl,$(CXX))
+# Route Python extension compiles through ccache too (the native build already
+# does via CXX_COMPILE). distutils shlex-splits CC/CXX, so a "ccache c++" launcher
+# prefix works. Skipped on Windows (MSVC `cl`), matching the native build.
+ifeq ($(filter Windows_NT,$(OS)),)
+PYTHON_BUILD_CXX ?= $(if $(and $(filter 1,$(USE_CCACHE)),$(CCACHE_BIN)),$(CCACHE_BIN) ,)$(CXX)
+else
+PYTHON_BUILD_CXX ?= cl
+endif
 PYTHON_BUILD_CC ?= $(PYTHON_BUILD_CXX)
 PYTHON_BUILD_ENV = \
 	CC="$(PYTHON_BUILD_CC)" CXX="$(PYTHON_BUILD_CXX)" MODE="$(MODE)" OPENMP="$(OPENMP)" \
-	FEATURES="$(FEATURES)" \
+	FEATURES="$(FEATURES)" INFOMAP_BUILD_JOBS="$(JOBS)" \
 	CPPFLAGS="$(CPPFLAGS)" CXXFLAGS="$(CXXFLAGS)" LDFLAGS="$(LDFLAGS)" \
 	$(if $(MACOSX_DEPLOYMENT_TARGET),MACOSX_DEPLOYMENT_TARGET="$(MACOSX_DEPLOYMENT_TARGET)")
 
@@ -80,8 +87,12 @@ build-python-swig:
 test-python-swig-freshness:
 	@SWIG="$(SWIG)" $(PYTHON) scripts/generate_python_swig.py --check --python-out $(PYTHON_SWIG_PY) --cpp-out $(PYTHON_SWIG_CPP)
 
+# Extras installed by dev-python-install. Defaults to the full local dev set;
+# CI test jobs override it (e.g. PYTHON_DEV_EXTRAS=test,examples) to skip docs.
+PYTHON_DEV_EXTRAS ?= test,docs,examples
+
 dev-python-install:
-	$(PYTHON_BUILD_ENV) $(PIP) install -e .[test,docs,examples]
+	$(PYTHON_BUILD_ENV) $(PIP) install -e ".[$(PYTHON_DEV_EXTRAS)]"
 
 dev-python-notebooks-install:
 	$(PYTHON_BUILD_ENV) $(PIP) install -e .[notebooks]

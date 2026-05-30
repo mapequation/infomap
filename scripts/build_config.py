@@ -349,9 +349,38 @@ def _field_value(config, field):
     return str(value)
 
 
+# Maps each Make variable to the config field that supplies its value. Used by
+# the `make-export` format so the Makefile can resolve the whole build config in
+# a single invocation instead of one process per field.
+MAKE_EXPORT_FIELDS = (
+    ("BUILD_CONFIG_MODE", "mode"),
+    ("BUILD_CONFIG_OPENMP", "openmp"),
+    ("BUILD_CONFIG_ENABLED_FEATURES", "enabled_features"),
+    ("BUILD_CONFIG_PLATFORM", "platform"),
+    ("BUILD_CONFIG_COMPILER", "compiler"),
+    ("BUILD_CONFIG_COMPILER_FAMILY", "compiler_family"),
+    ("BUILD_CONFIG_BREW_PREFIX", "brew_prefix"),
+    ("BUILD_CONFIG_LIBOMP_PREFIX", "libomp_prefix"),
+    ("BUILD_CONFIG_DEPLOYMENT_TARGET", "deployment_target"),
+    ("NATIVE_CXXFLAGS", "compile_flags"),
+    ("NATIVE_LDFLAGS", "link_flags"),
+)
+
+
+def _make_export(config):
+    lines = []
+    for make_var, field in MAKE_EXPORT_FIELDS:
+        # Escape characters Make would otherwise interpret on `include`: `$`
+        # (variable expansion) and `#` (starts a comment, truncating the value).
+        # Flag/path values can contain either via user CPPFLAGS/CXXFLAGS/paths.
+        value = _field_value(config, field).replace("$", "$$").replace("#", "\\#")
+        lines.append(f"{make_var} := {value}")
+    return "\n".join(lines)
+
+
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("format", choices=["json", "field"])
+    parser.add_argument("format", choices=["json", "field", "make-export"])
     parser.add_argument(
         "--field",
         choices=[
@@ -403,6 +432,9 @@ def main():
 
     if args.format == "json":
         json.dump(config, sys.stdout)
+        sys.stdout.write("\n")
+    elif args.format == "make-export":
+        sys.stdout.write(_make_export(config))
         sys.stdout.write("\n")
     else:
         if not args.field:

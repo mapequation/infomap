@@ -1,0 +1,44 @@
+name: Set up ccache
+description: >-
+  Install ccache, point CCACHE_DIR at a workspace-local directory, and persist
+  it across runs with a rolling cache. No-op on Windows (the MSVC/MinGW builds
+  do not use ccache). The Make builds auto-detect ccache on PATH and use it as
+  the compiler launcher.
+inputs:
+  key-prefix:
+    description: Cache key namespace, e.g. "python-ubuntu-24.04-py3.14".
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Configure CCACHE_DIR
+      if: runner.os != 'Windows'
+      shell: bash
+      run: echo "CCACHE_DIR=$GITHUB_WORKSPACE/.ccache" >> "$GITHUB_ENV"
+
+    - name: Install ccache
+      if: runner.os != 'Windows'
+      shell: bash
+      run: |
+        if ! command -v ccache >/dev/null 2>&1; then
+          if [ "$RUNNER_OS" = "macOS" ]; then
+            brew install ccache
+          else
+            sudo apt-get update && sudo apt-get install -y ccache
+          fi
+        fi
+        ccache --version
+
+    - name: Cache ccache directory
+      if: runner.os != 'Windows'
+      uses: actions/cache@v5
+      with:
+        path: ${{ github.workspace }}/.ccache
+        key: ccache-${{ inputs.key-prefix }}-${{ github.sha }}
+        restore-keys: |
+          ccache-${{ inputs.key-prefix }}-
+
+    - name: Reset ccache stats
+      if: runner.os != 'Windows'
+      shell: bash
+      run: command -v ccache >/dev/null 2>&1 && ccache -z || true
