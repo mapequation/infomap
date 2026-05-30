@@ -87,8 +87,12 @@ build-python-swig:
 test-python-swig-freshness:
 	@SWIG="$(SWIG)" $(PYTHON) scripts/generate_python_swig.py --check --python-out $(PYTHON_SWIG_PY) --cpp-out $(PYTHON_SWIG_CPP)
 
+# Extras installed by dev-python-install. Defaults to the full local dev set;
+# CI test jobs override it (e.g. PYTHON_DEV_EXTRAS=test,examples) to skip docs.
+PYTHON_DEV_EXTRAS ?= test,docs,examples
+
 dev-python-install:
-	$(PYTHON_BUILD_ENV) $(PIP) install -e .[test,docs,examples]
+	$(PYTHON_BUILD_ENV) $(PIP) install -e ".[$(PYTHON_DEV_EXTRAS)]"
 
 dev-python-notebooks-install:
 	$(PYTHON_BUILD_ENV) $(PIP) install -e .[notebooks]

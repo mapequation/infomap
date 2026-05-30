@@ -117,22 +117,17 @@ jobs:
           python-version: ${{ matrix.python-version }}
           install-build-tooling: "true"
 
-      - name: Set up ccache
-        uses: ./.github/actions/setup-ccache
-        with:
-          key-prefix: python-${{ matrix.os }}-py${{ matrix.python-version }}
-
       - name: Build Python wheel from repo root
         run: make build-python
         env:
           FEATURES: ${{ inputs.features }}
 
       - name: Install editable package
-        run: |
-          make dev-python-install
-          command -v ccache >/dev/null 2>&1 && ccache -s || true
+        run: make dev-python-install
         env:
           FEATURES: ${{ inputs.features }}
+          # docs (sphinx/furo) is only needed by build-docs, not the test jobs.
+          PYTHON_DEV_EXTRAS: test,examples
 
       - name: Run Python smoke test
         if: matrix.smoke-only
@@ -199,22 +194,17 @@ jobs:
           python-version: ${{ matrix.python-version }}
           install-build-tooling: "true"
 
-      - name: Set up ccache
-        uses: ./.github/actions/setup-ccache
-        with:
-          key-prefix: python-${{ matrix.os }}-py${{ matrix.python-version }}
-
       - name: Build Python wheel from repo root
         run: make build-python
         env:
           FEATURES: ${{ inputs.features }}
 
       - name: Install editable package
-        run: |
-          make dev-python-install
-          command -v ccache >/dev/null 2>&1 && ccache -s || true
+        run: make dev-python-install
         env:
           FEATURES: ${{ inputs.features }}
+          # docs (sphinx/furo) is only needed by build-docs, not the test jobs.
+          PYTHON_DEV_EXTRAS: test,examples
 
       - name: Run Python smoke test
         if: matrix.smoke-only
@@ -260,15 +250,8 @@ jobs:
           python-version: "3.14"
           install-build-tooling: "true"
 
-      - name: Set up ccache
-        uses: ./.github/actions/setup-ccache
-        with:
-          key-prefix: python-release-smoke-${{ runner.os }}
-
       - name: Build release distributions
-        run: |
-          make release-python-dist
-          command -v ccache >/dev/null 2>&1 && ccache -s || true
+        run: make release-python-dist
         env:
           FEATURES: ${{ inputs.features }}
 
