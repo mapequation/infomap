@@ -1064,7 +1064,8 @@ void InfomapBase::generateSubNetwork(Network& network)
   if (!this->regularized) {
     m_calculateEnterExitFlow = true;
   }
-  BiasedMapEquation::setNetworkProperties(network);
+  if (entropyBiasCorrection)
+    BiasedMapEquation::setNetworkProperties(network);
 
   if (std::abs(sumNodeFlow - 1.0) > 1e-10)
     Log() << "Warning, total flow on nodes differs from 1.0 by " << sumNodeFlow - 1.0 << ".\n";

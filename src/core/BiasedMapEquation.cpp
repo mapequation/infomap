@@ -15,6 +15,7 @@
 #include <vector>
 #include <utility>
 #include <cstdlib>
+#include <mutex>
 #include "StateNetwork.h"
 
 namespace infomap {
@@ -24,12 +25,17 @@ unsigned int BiasedMapEquation::s_numNodes = 0;
 
 void BiasedMapEquation::setNetworkProperties(const StateNetwork& network)
 {
-  s_totalDegree = network.sumWeightedDegree();
+  auto totalDegree = network.sumWeightedDegree();
   // Negative entropy bias is based on discrete counts, if average weight is below 1, use unweighted total degree
-  if (s_totalDegree < network.sumDegree()) {
-    s_totalDegree = network.sumDegree();
+  if (totalDegree < network.sumDegree()) {
+    totalDegree = network.sumDegree();
   }
-  s_numNodes = network.numNodes();
+  const auto numNodes = network.numNodes();
+
+  static std::mutex networkPropertiesMutex;
+  std::lock_guard<std::mutex> lock(networkPropertiesMutex);
+  s_totalDegree = totalDegree;
+  s_numNodes = numNodes;
 }
 
 double BiasedMapEquation::getIndexCodelength() const
