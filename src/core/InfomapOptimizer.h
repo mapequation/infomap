@@ -107,6 +107,11 @@ protected:
   std::vector<FlowDataType> m_moduleFlowData;
   std::vector<unsigned int> m_moduleMembers;
   std::vector<unsigned int> m_emptyModules;
+
+  // Reused across sweeps to avoid O(N) (re)allocation per call (behavior-preserving).
+  VectorMap<DeltaFlowDataType> m_deltaFlow;
+  std::vector<unsigned int> m_nodeEnumeration;
+  std::vector<unsigned int> m_moduleEnumeration;
 };
 
 // ===================================================
@@ -295,17 +300,25 @@ INFOMAP_HOT inline unsigned int InfomapOptimizer<Objective>::optimizeActiveNetwo
 template <typename Objective>
 INFOMAP_HOT unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
 {
-  // Get random enumeration of nodes
+  // Get random enumeration of nodes. Reuse the buffer across sweeps; resize() keeps
+  // capacity, and getRandomizedIndexVector overwrites every entry, so the RNG draws
+  // and resulting order are identical to a freshly allocated vector.
   auto& network = m_infomap->activeNetwork();
-  std::vector<unsigned int> nodeEnumeration(network.size());
+  auto& nodeEnumeration = m_nodeEnumeration;
+  nodeEnumeration.resize(network.size());
   m_infomap->m_rand.getRandomizedIndexVector(nodeEnumeration);
 
   unsigned int numNodes = nodeEnumeration.size();
   unsigned int numMoved = 0;
   unsigned int numRandomMoves = std::min(m_infomap->numRandomMoves, numNodes);
 
-  // Create map with module links
-  VectorMap<DeltaFlowDataType> deltaFlow(numNodes);
+  // Map with module links, reused across sweeps. The per-node startRound() below
+  // resets it in O(1) via an offset bump, so a reused map is bit-identical to a
+  // freshly constructed one; only grow (reallocate) when the active network is
+  // larger than any seen so far.
+  if (m_deltaFlow.capacity() < numNodes)
+    m_deltaFlow = VectorMap<DeltaFlowDataType>(numNodes);
+  auto& deltaFlow = m_deltaFlow;
 
   for (unsigned int i = 0; i < numNodes; ++i) {
     InfoNode& current = *network[nodeEnumeration[i]];
@@ -360,8 +373,11 @@ INFOMAP_HOT unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestMod
     auto& moduleDeltaEnterExit = deltaFlow.values();
     unsigned int numModuleLinks = deltaFlow.size();
 
-    // Randomize link order for optimized search
-    std::vector<unsigned int> moduleEnumeration(numModuleLinks);
+    // Randomize link order for optimized search. Reused buffer (see node enumeration
+    // above): resize() keeps capacity and every entry is overwritten, so the order is
+    // identical to a fresh allocation.
+    auto& moduleEnumeration = m_moduleEnumeration;
+    moduleEnumeration.resize(numModuleLinks);
     m_infomap->m_rand.getRandomizedIndexVector(moduleEnumeration);
 
     DeltaFlowDataType bestDeltaModule(oldModuleDelta);

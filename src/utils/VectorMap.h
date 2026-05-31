@@ -68,6 +68,11 @@ public:
     return m_values;
   }
 
+  unsigned int capacity() const
+  {
+    return m_capacity;
+  }
+
 private:
   unsigned int m_capacity = 0;
   std::vector<T> m_values;
