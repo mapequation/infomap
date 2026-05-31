@@ -801,6 +801,12 @@ const std::vector<ParameterSpec>& parameterCatalog()
         .group("Accuracy")
         .advanced()
         .configTarget(&Config::innerParallelization),
+    param()
+        .longName("parallel-trials")
+        .description("Run independent trials in parallel with OpenMP. Has effect only when --num-trials is greater than 1.")
+        .group("Accuracy")
+        .advanced()
+        .configTarget(&Config::parallelTrials),
 #if INFOMAP_FEATURE_TEST_FEATURE
     param()
         .longName("test-feature")

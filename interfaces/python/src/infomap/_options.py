@@ -67,6 +67,7 @@ _ACCURACY_OPTION_SPECS = (
     ("value", "core_loop_codelength_threshold", "--core-loop-codelength-threshold", lambda value: value != 1e-10),
     ("value", "tune_iteration_relative_threshold", "--tune-iteration-relative-threshold", lambda value: value != 1e-05),
     ("flag", "inner_parallelization", "--inner-parallelization", None),
+    ("flag", "parallel_trials", "--parallel-trials", None),
     ("flag", "prefer_modular_solution", "--prefer-modular-solution", None),
     ("value", "num_random_moves", "--num-random-moves", lambda value: value is not None),
     ("value", "max_degree_for_random_moves", "--max-degree-for-random-moves", lambda value: value is not None),
@@ -246,6 +247,9 @@ class InfomapOptions:
         part.
     inner_parallelization : bool, optional
         Parallelize the innermost loop for speed, with a possible accuracy tradeoff.
+    parallel_trials : bool, optional
+        Run independent trials in parallel with OpenMP. Has effect only when
+        --num-trials is greater than 1.
     prefer_modular_solution : bool, optional
         Prefer a modular solution even when one module gives a lower codelength.
     num_random_moves : int, optional
@@ -316,6 +320,7 @@ class InfomapOptions:
     tune_iteration_relative_threshold: float = 1e-05
     fast_hierarchical_solution: int | None = None
     inner_parallelization: bool = False
+    parallel_trials: bool = False
     prefer_modular_solution: bool = False
     num_random_moves: int | None = None
     max_degree_for_random_moves: int | None = None
@@ -428,6 +433,7 @@ def _construct_args(
     tune_iteration_relative_threshold=1e-05,
     fast_hierarchical_solution=None,
     inner_parallelization=False,
+    parallel_trials=False,
     prefer_modular_solution=False,
     num_random_moves=None,
     max_degree_for_random_moves=None,

@@ -120,6 +120,7 @@ struct Config {
   unsigned int fastHierarchicalSolution = 0;
   bool preferModularSolution = false;
   bool innerParallelization = false;
+  bool parallelTrials = false;
 #if INFOMAP_FEATURE_TEST_FEATURE
   bool testFeature = false;
 #endif

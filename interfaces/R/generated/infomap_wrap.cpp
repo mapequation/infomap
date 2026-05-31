@@ -7812,6 +7812,67 @@ R_swig_Config_innerParallelization_get ( SEXP self, SEXP s_swig_copy)
 
 
 SWIGEXPORT SEXP
+R_swig_Config_parallelTrials_set ( SEXP self, SEXP s_parallelTrials)
+{
+  {
+    infomap::Config *arg1 = 0 ;
+    bool arg2 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_infomap__Config, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Config_parallelTrials_set" "', argument " "1"" of type '" "infomap::Config *""'"); 
+    }
+    arg1 = reinterpret_cast< infomap::Config * >(argp1);
+    arg2 = LOGICAL(s_parallelTrials)[0] ? true : false;
+    if (arg1) (arg1)->parallelTrials = arg2;
+    r_ans = R_NilValue;
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
+R_swig_Config_parallelTrials_get ( SEXP self, SEXP s_swig_copy)
+{
+  {
+    bool result;
+    infomap::Config *arg1 = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_infomap__Config, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Config_parallelTrials_get" "', argument " "1"" of type '" "infomap::Config *""'"); 
+    }
+    arg1 = reinterpret_cast< infomap::Config * >(argp1);
+    result = (bool) ((arg1)->parallelTrials);
+    r_ans = Rf_ScalarLogical(result);
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
 R_swig_Config_numRandomMoves_set ( SEXP self, SEXP s_numRandomMoves)
 {
   {
@@ -50151,6 +50212,7 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
    {"R_swig_InfoNode_deleteChildren", (DL_FUNC) &R_swig_InfoNode_deleteChildren, 1},
    {"R_swig_InfomapIterator_numLeafMembers", (DL_FUNC) &R_swig_InfomapIterator_numLeafMembers, 2},
    {"R_swig_new_map_pair_uint_uint_double__SWIG_0", (DL_FUNC) &R_swig_new_map_pair_uint_uint_double__SWIG_0, 1},
+   {"R_swig_Config_parallelTrials_get", (DL_FUNC) &R_swig_Config_parallelTrials_get, 2},
    {"R_swig_Config_regularizationStrength_get", (DL_FUNC) &R_swig_Config_regularizationStrength_get, 2},
    {"R_swig_map_uint_vector_uint_erase", (DL_FUNC) &R_swig_map_uint_vector_uint_erase, 3},
    {"R_swig_new_map_pair_uint_uint_double__SWIG_1", (DL_FUNC) &R_swig_new_map_pair_uint_uint_double__SWIG_1, 0},
@@ -50631,6 +50693,7 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
    {"R_swig_InfomapBase_getOneLevelCodelength", (DL_FUNC) &R_swig_InfomapBase_getOneLevelCodelength, 2},
    {"R_swig_InfomapIterator_end_child__SWIG_1", (DL_FUNC) &R_swig_InfomapIterator_end_child__SWIG_1, 2},
    {"R_swig_InfomapParentIterator_getMetaData__SWIG_0", (DL_FUNC) &R_swig_InfomapParentIterator_getMetaData__SWIG_0, 3},
+   {"R_swig_Config_parallelTrials_set", (DL_FUNC) &R_swig_Config_parallelTrials_set, 2},
    {"R_swig_Config_regularizationStrength_set", (DL_FUNC) &R_swig_Config_regularizationStrength_set, 2},
    {"R_swig_Config_multilayerRelaxByJensenShannonDivergence_get", (DL_FUNC) &R_swig_Config_multilayerRelaxByJensenShannonDivergence_get, 2},
    {"R_swig_Config_multilayerRelaxByJensenShannonDivergence_set", (DL_FUNC) &R_swig_Config_multilayerRelaxByJensenShannonDivergence_set, 2},

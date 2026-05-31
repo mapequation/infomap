@@ -40,6 +40,7 @@ def main() -> int:
     assert "--print-json-parameters" in standard
     assert "--flow-model <option>" in standard
     assert "--num-trials <integer>" in standard
+    assert "--parallel-trials" not in standard
     assert "--skip-adjust-bipartite-flow" not in standard
     assert "--teleportation-probability" not in standard
     assert "--output <list>" not in standard
@@ -62,6 +63,7 @@ def main() -> int:
     assert "--output <list>" in advanced
     assert "--include-self-links" in advanced
     assert "--print-json-parameters" in advanced
+    assert "--parallel-trials" in advanced
     if has_test_feature:
         assert "test-feature" in version_features(version)
     else:

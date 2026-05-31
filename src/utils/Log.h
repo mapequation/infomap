@@ -30,6 +30,27 @@ class Log {
   using ostreamFuncPtr = std::add_pointer_t<std::ostream&(std::ostream&)>;
 
 public:
+  class ScopedMute {
+  public:
+    explicit ScopedMute(bool enabled = true) : m_enabled(enabled)
+    {
+      if (m_enabled)
+        ++s_threadMuteDepth;
+    }
+
+    ~ScopedMute()
+    {
+      if (m_enabled)
+        --s_threadMuteDepth;
+    }
+
+    ScopedMute(const ScopedMute&) = delete;
+    ScopedMute& operator=(const ScopedMute&) = delete;
+
+  private:
+    bool m_enabled;
+  };
+
   /**
    * Log when level is below or equal Log::verboseLevel()
    * and maxLevel is above or equal Log::verboseLevel()
@@ -91,7 +112,7 @@ public:
 
   static bool isVisible(LogChannel channel, unsigned int level, unsigned int maxLevel)
   {
-    return !s_silent && !(channel == LogChannel::Legacy && s_legacyMuted) && s_verboseLevel >= level && s_verboseLevel <= maxLevel;
+    return s_threadMuteDepth == 0 && !s_silent && !(channel == LogChannel::Legacy && s_legacyMuted) && s_verboseLevel >= level && s_verboseLevel <= maxLevel;
   }
 
   static void setVerboseLevel(unsigned int level) { s_verboseLevel = level; }
@@ -101,6 +122,8 @@ public:
   static void setLegacyMuted(bool muted) { s_legacyMuted = muted; }
 
   static bool isSilent() { return s_silent; }
+
+  static bool isThreadMuted() { return s_threadMuteDepth > 0; }
 
   /// Set a custom output stream for all Log output.
   /// The caller must ensure @p os outlives all subsequent logging,
@@ -120,6 +143,8 @@ public:
 
   static std::streamsize precision(std::streamsize precision)
   {
+    if (s_threadMuteDepth > 0)
+      return precision;
     return ostream().precision(precision);
   }
 
@@ -145,6 +170,7 @@ private:
   static unsigned int s_verboseLevel;
   static bool s_silent;
   static bool s_legacyMuted;
+  static thread_local unsigned int s_threadMuteDepth;
 };
 
 struct hideIf {

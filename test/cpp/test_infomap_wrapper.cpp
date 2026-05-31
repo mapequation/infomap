@@ -2,11 +2,14 @@
 
 #include "Infomap.h"
 #include "io/OutputView.h"
+#include "utils/Log.h"
 
 #include "TestUtils.h"
 
 #include <cstdio>
+#include <iostream>
 #include <set>
+#include <sstream>
 #include <tuple>
 #include <vector>
 
@@ -17,6 +20,22 @@ using infomap::InfomapWrapper;
 using InternalEdge = std::tuple<unsigned int, unsigned int, double, double>;
 using NodeIdentity = std::tuple<unsigned int, unsigned int, std::vector<int>>;
 using OutputRowIdentity = std::tuple<unsigned int, unsigned int, unsigned int>;
+
+struct LogCapture {
+  std::ostringstream output;
+
+  LogCapture()
+  {
+    infomap::Log::setOutputStream(output);
+    infomap::Log::setSilent(false);
+  }
+
+  ~LogCapture()
+  {
+    infomap::Log::setOutputStream(std::cout);
+    infomap::Log::setSilent(false);
+  }
+};
 
 std::multiset<InternalEdge> internalEdgesForModule(infomap::InfoNode& module)
 {
@@ -81,6 +100,15 @@ std::vector<OutputRowIdentity> outputViewIdentities(InfomapWrapper& im, bool sta
   return rows;
 }
 
+std::vector<double> runParallelTrialsFixture(const std::string& extraFlags = "")
+{
+  InfomapWrapper im("--silent --seed 7 --num-trials 4 --parallel-trials --no-file-output " + extraFlags);
+  im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+  im.run();
+  infomap::test::checkRunSanity(im);
+  return im.codelengths();
+}
+
 TEST_CASE("Infomap partitions the unweighted two-triangle fixture into two modules [fast][core][lifecycle]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());
@@ -129,6 +157,87 @@ TEST_CASE("Multi-trial run reports the best trial codelength [fast][core][lifecy
   REQUIRE(bestIt != codelengths.end());
 
   CHECK(im.codelength() == doctest::Approx(*bestIt));
+}
+
+TEST_CASE("Parallel trials report the best trial codelength [fast][core][lifecycle][openmp]")
+{
+  InfomapWrapper im("--silent --seed 7 --num-trials 4 --parallel-trials --no-file-output");
+  im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+
+  im.run();
+
+  infomap::test::checkRunSanity(im);
+  const auto& codelengths = im.codelengths();
+  REQUIRE(codelengths.size() == 4);
+
+  auto bestIt = std::min_element(codelengths.begin(), codelengths.end());
+  REQUIRE(bestIt != codelengths.end());
+
+  CHECK(im.codelength() == doctest::Approx(*bestIt));
+}
+
+TEST_CASE("Parallel trials are deterministic for the same seed [fast][core][lifecycle][openmp]")
+{
+  const auto first = runParallelTrialsFixture();
+  const auto second = runParallelTrialsFixture();
+
+  REQUIRE(first.size() == 4);
+  REQUIRE(second.size() == 4);
+  CHECK(first == second);
+}
+
+TEST_CASE("Parallel trials with one trial warn and run serially [fast][core][lifecycle]")
+{
+  LogCapture capture;
+  InfomapWrapper im("--seed 7 --num-trials 1 --parallel-trials --no-file-output");
+  infomap::test::addEdgeFixtureLinks(im, "graphs/twotriangles_unweighted.edges");
+
+  im.run();
+
+  infomap::test::checkRunSanity(im);
+  CHECK(im.codelengths().size() == 1);
+  CHECK(capture.output.str().find("--parallel-trials requires --num-trials > 1") != std::string::npos);
+}
+
+TEST_CASE("Parallel trials with variable Markov time warn and run serially [fast][core][lifecycle]")
+{
+  LogCapture capture;
+  InfomapWrapper im("--seed 7 --num-trials 2 --parallel-trials --variable-markov-time --no-file-output");
+  infomap::test::addEdgeFixtureLinks(im, "graphs/twotriangles_unweighted.edges");
+
+  im.run();
+
+  infomap::test::checkRunSanity(im);
+  CHECK(im.codelengths().size() == 2);
+  CHECK(capture.output.str().find("--parallel-trials is not supported with --variable-markov-time") != std::string::npos);
+}
+
+TEST_CASE("Parallel trials with entropy correction warn and run serially [fast][core][lifecycle]")
+{
+  LogCapture capture;
+  InfomapWrapper im("--seed 7 --num-trials 2 --parallel-trials --entropy-corrected --no-file-output");
+  infomap::test::addEdgeFixtureLinks(im, "graphs/twotriangles_unweighted.edges");
+
+  im.run();
+
+  infomap::test::checkRunSanity(im);
+  CHECK(im.codelengths().size() == 2);
+  CHECK(capture.output.str().find("--parallel-trials is not supported with --entropy-corrected") != std::string::npos);
+}
+
+TEST_CASE("Parallel trials warn when inner parallelization is requested [fast][core][lifecycle][openmp]")
+{
+#ifdef _OPENMP
+  LogCapture capture;
+  InfomapWrapper im("--seed 7 --num-trials 2 --parallel-trials --inner-parallelization --no-file-output");
+  infomap::test::addEdgeFixtureLinks(im, "graphs/twotriangles_unweighted.edges");
+
+  im.run();
+
+  infomap::test::checkRunSanity(im);
+  CHECK(im.codelengths().size() == 2);
+  CHECK(capture.output.str().find("--parallel-trials ignores --inner-parallelization") != std::string::npos);
+#endif
 }
 
 TEST_CASE("Infomap reruns ninetriangles deterministically on the same instance [fast][core][lifecycle][crash]")

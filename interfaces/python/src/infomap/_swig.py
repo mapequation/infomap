@@ -142,6 +142,7 @@ class Config(object):
     fastHierarchicalSolution = property(_infomap.Config_fastHierarchicalSolution_get, _infomap.Config_fastHierarchicalSolution_set)
     preferModularSolution = property(_infomap.Config_preferModularSolution_get, _infomap.Config_preferModularSolution_set)
     innerParallelization = property(_infomap.Config_innerParallelization_get, _infomap.Config_innerParallelization_set)
+    parallelTrials = property(_infomap.Config_parallelTrials_get, _infomap.Config_parallelTrials_set)
     numRandomMoves = property(_infomap.Config_numRandomMoves_get, _infomap.Config_numRandomMoves_set)
     maxDegreeForRandomMoves = property(_infomap.Config_maxDegreeForRandomMoves_get, _infomap.Config_maxDegreeForRandomMoves_set)
     outDirectory = property(_infomap.Config_outDirectory_get, _infomap.Config_outDirectory_set)

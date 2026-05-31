@@ -36,6 +36,8 @@
 #include <cstdlib>
 #include <algorithm>
 #include <cmath>
+#include <exception>
+#include <mutex>
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -120,6 +122,7 @@ public:
     double bestHierarchicalCodelength = std::numeric_limits<double>::max();
     NodePaths bestTree;
     unsigned int bestTrialIndex = 0;
+    bool bestTreeNeedsRestore = false;
   };
 
   RunSession(InfomapBase& infomap, Network& network) : m_infomap(infomap), m_network(network) {}
@@ -131,6 +134,7 @@ public:
     configureNetworkMode();
     calculateFlowAndInitNetwork();
     writeOutputArtifacts(m_infomap, m_network, OutputPhase::AfterFlow);
+    m_runParallelTrials = selectParallelTrialMode();
     releaseInputLinksIfCli();
     logRunPartitionStart();
     return runTrials();
@@ -230,6 +234,10 @@ private:
     m_infomap.m_codelengths.clear();
     m_infomap.m_numTopModules.clear();
 
+    if (m_runParallelTrials) {
+      return runTrialsInParallel();
+    }
+
     for (unsigned int i = 0; i < m_numTrials; ++i) {
       runTrial(i, result);
     }
@@ -237,13 +245,139 @@ private:
     return result;
   }
 
+  Result runTrialsInParallel()
+  {
+    Result result;
+    result.bestTree = NodePaths(m_infomap.numLeafNodes());
+    result.bestTreeNeedsRestore = true;
+
+    std::vector<double> codelengths(m_numTrials, std::numeric_limits<double>::max());
+    std::vector<unsigned int> numTopModules(m_numTrials, 0);
+    bool hasError = false;
+    unsigned int firstErrorTrial = 0;
+    std::string firstError;
+    std::mutex bestResultMutex;
+    std::mutex errorMutex;
+    std::mutex outputMutex;
+
+#ifdef _OPENMP
+#pragma omp parallel for schedule(dynamic)
+#endif
+    for (int trial = 0; trial < static_cast<int>(m_numTrials); ++trial) {
+      const auto trialIndex = static_cast<unsigned int>(trial);
+      try {
+        Log::ScopedMute muteWorkerLogs;
+        auto workerConfig = m_infomap.getConfig();
+        workerConfig.numTrials = 1;
+        workerConfig.parallelTrials = false;
+        workerConfig.innerParallelization = false;
+        workerConfig.seedToRandomNumberGenerator = m_infomap.seedToRandomNumberGenerator + trialIndex;
+
+        InfomapBase worker(workerConfig);
+        worker.m_initialPartition = m_infomap.m_initialPartition;
+
+        NodePaths trialTree;
+        unsigned int trialNumLevels = 0;
+        std::ostringstream trialStatistics;
+        worker.initNetwork(m_network);
+        initTrialPartition(worker);
+        executeTrial(worker);
+        worker.root().sortChildrenOnFlow();
+
+        trialNumLevels = printPerLevelCodelength(worker.root(), trialStatistics, worker.prettyOutput);
+        trialTree.reserve(worker.numLeafNodes());
+        for (auto it(worker.iterLeafNodes()); !it.isEnd(); ++it) {
+          trialTree.emplace_back(it->stateId, it.path());
+        }
+
+        if (worker.printAllTrials && m_numTrials > 1) {
+          std::lock_guard<std::mutex> lock(outputMutex);
+          worker.writeResult(static_cast<int>(trialIndex + 1));
+        }
+
+        const auto trialCodelength = worker.m_hierarchicalCodelength;
+        const auto trialTopModules = worker.numTopModules();
+        codelengths[trialIndex] = trialCodelength;
+        numTopModules[trialIndex] = trialTopModules;
+
+        std::lock_guard<std::mutex> lock(bestResultMutex);
+        const auto bestIndexMissing = result.bestTrialIndex >= m_numTrials;
+        const auto isBetter = trialCodelength < result.bestHierarchicalCodelength - 1e-10;
+        const auto isEarlierTie = std::abs(trialCodelength - result.bestHierarchicalCodelength) < 1e-10 && trialIndex < result.bestTrialIndex;
+        if (bestIndexMissing || isBetter || isEarlierTie) {
+          result.bestSolutionStatistics.clear();
+          result.bestSolutionStatistics.str(trialStatistics.str());
+          result.bestNumLevels = trialNumLevels;
+          result.bestHierarchicalCodelength = trialCodelength;
+          result.bestTrialIndex = trialIndex;
+          result.bestTree = std::move(trialTree);
+        }
+      } catch (const std::exception& e) {
+        std::lock_guard<std::mutex> lock(errorMutex);
+        if (!hasError) {
+          hasError = true;
+          firstErrorTrial = trialIndex;
+          firstError = e.what();
+        }
+      } catch (...) {
+        std::lock_guard<std::mutex> lock(errorMutex);
+        if (!hasError) {
+          hasError = true;
+          firstErrorTrial = trialIndex;
+          firstError = "unknown error";
+        }
+      }
+    }
+
+    if (hasError) {
+      throw std::runtime_error(io::Str() << "Parallel trial " << (firstErrorTrial + 1) << "/" << m_numTrials << " failed: " << firstError);
+    }
+
+    m_infomap.m_codelengths = std::move(codelengths);
+    m_infomap.m_numTopModules = std::move(numTopModules);
+    return result;
+  }
+
   void restoreBestResult(const Result& result)
   {
-    if (m_numTrials > 1 && result.bestTrialIndex < m_numTrials - 1) {
+    if (m_numTrials > 1 && (result.bestTreeNeedsRestore || result.bestTrialIndex < m_numTrials - 1)) {
       // Restore Infomap tree to best solution.
       m_infomap.initTree(result.bestTree);
       m_infomap.writeResult(); // Overwrite result to get total elapsed time in output file header.
     }
+  }
+
+  bool selectParallelTrialMode()
+  {
+    if (!m_infomap.parallelTrials) {
+      return false;
+    }
+
+    if (m_numTrials < 2) {
+      Log::important() << "  -> Warning: --parallel-trials requires --num-trials > 1; running trials serially.\n";
+      return false;
+    }
+
+    if (m_infomap.variableMarkovTime) {
+      Log::important() << "  -> Warning: --parallel-trials is not supported with --variable-markov-time; running trials serially.\n";
+      return false;
+    }
+
+    if (m_infomap.entropyBiasCorrection) {
+      Log::important() << "  -> Warning: --parallel-trials is not supported with --entropy-corrected; running trials serially.\n";
+      return false;
+    }
+
+#ifndef _OPENMP
+    Log::important() << "  -> Warning: --parallel-trials requires an OpenMP build; running trials serially.\n";
+    return false;
+#else
+    if (m_infomap.innerParallelization) {
+      Log::important() << "  -> Warning: --parallel-trials ignores --inner-parallelization inside trial workers.\n";
+    }
+    Log() << "  -> Running " << m_numTrials << " trials in parallel with up to " << omp_get_max_threads() << " OpenMP threads.\n";
+    return true;
+#endif
   }
 
   void validateNetwork()
@@ -300,7 +434,7 @@ private:
   {
     // If used as a library, we may want to reuse the network instance, else clear to use less memory
     // TODO: May have to use some meta data for output?
-    if (m_infomap.isCLI) {
+    if (m_infomap.isCLI && !m_runParallelTrials) {
       m_network.clearLinks();
     }
   }
@@ -320,8 +454,8 @@ private:
     Stopwatch timer(true);
 
     logTrialStart(trialIndex, startDate);
-    initTrialPartition();
-    executeTrial();
+    initTrialPartition(m_infomap);
+    executeTrial(m_infomap);
     finishTrial(trialIndex, timer, result);
   }
 
@@ -345,27 +479,27 @@ private:
     Log() << "================================================\n";
   }
 
-  void initTrialPartition()
+  void initTrialPartition(InfomapBase& infomap)
   {
-    if (!m_infomap.isMainInfomap()) {
+    if (!infomap.isMainInfomap()) {
       return;
     }
 
-    if (!m_infomap.clusterDataFile.empty())
-      m_infomap.initPartition(m_infomap.clusterDataFile, m_infomap.clusterDataIsHard, &m_network);
-    else if (!m_infomap.m_initialPartition.empty())
-      m_infomap.initPartition(m_infomap.m_initialPartition, m_infomap.clusterDataIsHard);
+    if (!infomap.clusterDataFile.empty())
+      infomap.initPartition(infomap.clusterDataFile, infomap.clusterDataIsHard, &m_network);
+    else if (!infomap.m_initialPartition.empty())
+      infomap.initPartition(infomap.m_initialPartition, infomap.clusterDataIsHard);
   }
 
-  void executeTrial()
+  void executeTrial(InfomapBase& infomap)
   {
-    if (!m_infomap.noInfomap)
-      m_infomap.runPartition();
+    if (!infomap.noInfomap)
+      infomap.runPartition();
     else
-      m_infomap.m_hierarchicalCodelength = m_infomap.calcCodelengthOnTree(m_infomap.root(), true);
+      infomap.m_hierarchicalCodelength = infomap.calcCodelengthOnTree(infomap.root(), true);
 
-    if (m_infomap.haveHardPartition())
-      m_infomap.restoreHardPartition();
+    if (infomap.haveHardPartition())
+      infomap.restoreHardPartition();
   }
 
   void finishTrial(unsigned int trialIndex, Stopwatch& timer, Result& result)
@@ -416,6 +550,7 @@ private:
   InfomapBase& m_infomap;
   Network& m_network;
   const unsigned int m_numTrials = m_infomap.numTrials;
+  bool m_runParallelTrials = false;
 };
 
 std::map<unsigned int, std::vector<unsigned int>> InfomapBase::getMultilevelModules(bool states)
@@ -1064,7 +1199,8 @@ void InfomapBase::generateSubNetwork(Network& network)
   if (!this->regularized) {
     m_calculateEnterExitFlow = true;
   }
-  BiasedMapEquation::setNetworkProperties(network);
+  if (entropyBiasCorrection)
+    BiasedMapEquation::setNetworkProperties(network);
 
   if (std::abs(sumNodeFlow - 1.0) > 1e-10)
     Log() << "Warning, total flow on nodes differs from 1.0 by " << sumNodeFlow - 1.0 << ".\n";
@@ -1225,7 +1361,8 @@ void InfomapBase::hierarchicalPartition()
 
     else if (fastHierarchicalSolution == 1) {
       Log(1) << "Fine-tune bottom modules... ";
-      bool isSilent = isMainInfomap() && Log::isSilent();
+      const bool shouldRestoreSilent = isMainInfomap() && !Log::isThreadMuted();
+      bool isSilent = shouldRestoreSilent && Log::isSilent();
 
       double codelengthBefore = 0.0;
       double codelengthAfter = 0.0;
@@ -1286,7 +1423,7 @@ void InfomapBase::hierarchicalPartition()
         }
       }
 
-      if (isMainInfomap())
+      if (shouldRestoreSilent)
         Log::setSilent(isSilent);
 
       const double diffCodelength = codelengthBefore - codelengthAfter;
@@ -1744,11 +1881,7 @@ unsigned int InfomapBase::coarseTune()
 
   Log(4) << "Coarse-tune...\nPartition each module in sub-modules for coarse tune...\n";
 
-  bool isSilent = false;
-  if (isMainInfomap()) {
-    isSilent = Log::isSilent();
-    Log::setSilent(true);
-  }
+  Log::ScopedMute muteNestedMainRun(isMainInfomap());
 
   unsigned int moduleIndexOffset = 0;
   for (auto& node : m_root) {
@@ -1776,9 +1909,6 @@ unsigned int InfomapBase::coarseTune()
       node.disposeInfomap();
     }
   }
-
-  if (isMainInfomap())
-    Log::setSilent(isSilent);
 
   Log(4) << "Move leaf nodes to " << moduleIndexOffset << " sub-modules... \n";
   // Put leaf modules in the calculated sub-modules
@@ -1938,8 +2068,9 @@ unsigned int InfomapBase::findHierarchicalSuperModules(unsigned int superLevelLi
   // Add index codebooks as long as the code gets shorter
   do {
     Log(1) << "Iteration " << numLevelsCreated + 1 << ", finding super modules to " << numTopModules() << " modules... \n";
+    const bool shouldMuteNestedMainRun = isMainInfomap() && !Log::isThreadMuted();
     bool isSilent = false;
-    if (isMainInfomap()) {
+    if (shouldMuteNestedMainRun) {
       isSilent = Log::isSilent();
       Log::setSilent(true);
     }
@@ -1948,7 +2079,7 @@ unsigned int InfomapBase::findHierarchicalSuperModules(unsigned int superLevelLi
                              .setTwoLevel(true);
     superInfomap.initNetwork(m_root, true); //.initSuperNetwork();
     superInfomap.run();
-    if (isMainInfomap()) {
+    if (shouldMuteNestedMainRun) {
       Log::setSilent(isSilent);
     }
     double superCodelength = superInfomap.getCodelength();
@@ -2100,22 +2231,23 @@ unsigned int InfomapBase::recursivePartition()
 
   double sumConsolidatedCodelength = hierarchicalCodelength - partitionQueue.moduleCodelength;
 
+  const bool shouldMuteNestedMainRun = isMainInfomap() && !Log::isThreadMuted();
   bool isSilent = false;
-  if (isMainInfomap()) {
+  if (shouldMuteNestedMainRun) {
     isSilent = Log::isSilent();
   }
 
   while (partitionQueue.size() > 0) {
     Log(1) << "Level " << partitionQueue.level << ": " << (partitionQueue.flow * 100) << "% of the flow in " << partitionQueue.size() << " modules. Partitioning... " << std::setprecision(6) << std::flush;
 
-    if (isMainInfomap())
+    if (shouldMuteNestedMainRun)
       Log::setSilent(true);
 
     // Partition all modules in the queue and fill up the next level queue
     PartitionQueue nextLevelQueue;
     processPartitionQueue(partitionQueue, nextLevelQueue);
 
-    if (isMainInfomap())
+    if (shouldMuteNestedMainRun)
       Log::setSilent(isSilent);
 
     double leftToImprove = partitionQueue.moduleCodelength;
