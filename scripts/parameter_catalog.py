@@ -219,6 +219,10 @@ class ParameterCatalog:
             ]
             for language, entries in overrides.get("bindingOnly", {}).items()
         }
+        self.hidden_bindings = {
+            language: {entry["flag"] for entry in entries}
+            for language, entries in overrides.get("hiddenBindings", {}).items()
+        }
 
     def grouped(self) -> dict[str, list[Parameter]]:
         return {
@@ -234,3 +238,7 @@ class ParameterCatalog:
             if entry.name == name:
                 return entry
         raise RuntimeError(f"Missing bindingOnly override for {language}:{name}")
+
+    def visible_parameters(self, language: str) -> list[Parameter]:
+        hidden = self.hidden_bindings.get(language, set())
+        return [param for param in self.parameters if param.flag not in hidden]

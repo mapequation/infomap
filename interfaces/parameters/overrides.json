@@ -1,4 +1,12 @@
 {
+  "hiddenBindings": {
+    "ts": [
+      {
+        "flag": "--parallel-trials",
+        "reason": "The JavaScript package runs Infomap in a single-threaded worker, so exposing OpenMP trial scheduling would be misleading."
+      }
+    ]
+  },
   "bindingOnly": {
     "python": [
       {

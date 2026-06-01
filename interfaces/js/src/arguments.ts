@@ -78,7 +78,6 @@ export type Arguments = Partial<{
   tuneIterationRelativeThreshold: number;
   fastHierarchicalSolution: 1 | 2 | 3;
   innerParallelization: boolean;
-  parallelTrials: boolean;
   preferModularSolution: boolean;
   numRandomMoves: number;
   maxDegreeForRandomMoves: number;
@@ -224,8 +223,6 @@ export default function argumentsToString(args: Arguments) {
     result += " -" + "F".repeat(args.fastHierarchicalSolution);
 
   if (args.innerParallelization) result += " --inner-parallelization";
-
-  if (args.parallelTrials) result += " --parallel-trials";
 
   if (args.preferModularSolution) result += " --prefer-modular-solution";
 

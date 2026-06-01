@@ -112,6 +112,25 @@ namespace {
     }
   }
 
+#ifdef _OPENMP
+  class ScopedOpenMpMaxActiveLevels {
+  public:
+    explicit ScopedOpenMpMaxActiveLevels(int value)
+        : m_previous(omp_get_max_active_levels())
+    {
+      omp_set_max_active_levels(value);
+    }
+
+    ~ScopedOpenMpMaxActiveLevels()
+    {
+      omp_set_max_active_levels(m_previous);
+    }
+
+  private:
+    int m_previous;
+  };
+#endif
+
 } // namespace
 
 class InfomapBase::RunSession {
@@ -250,6 +269,7 @@ private:
     Result result;
     result.bestTree = NodePaths(m_infomap.numLeafNodes());
     result.bestTreeNeedsRestore = true;
+    const unsigned int numWorkers = parallelTrialWorkers();
 
     std::vector<double> codelengths(m_numTrials, std::numeric_limits<double>::max());
     std::vector<unsigned int> numTopModules(m_numTrials, 0);
@@ -261,70 +281,76 @@ private:
     std::mutex outputMutex;
 
 #ifdef _OPENMP
-#pragma omp parallel for schedule(dynamic)
+    ScopedOpenMpMaxActiveLevels scopedMaxActiveLevels(1);
+#pragma omp parallel for schedule(dynamic) num_threads(numWorkers)
 #endif
-    for (int trial = 0; trial < static_cast<int>(m_numTrials); ++trial) {
-      const auto trialIndex = static_cast<unsigned int>(trial);
-      try {
-        Log::ScopedMute muteWorkerLogs;
-        auto workerConfig = m_infomap.getConfig();
-        workerConfig.numTrials = 1;
-        workerConfig.parallelTrials = false;
-        workerConfig.innerParallelization = false;
-        workerConfig.seedToRandomNumberGenerator = m_infomap.seedToRandomNumberGenerator + trialIndex;
+    for (int workerIndex = 0; workerIndex < static_cast<int>(numWorkers); ++workerIndex) {
+      auto workerConfig = m_infomap.getConfig();
+      workerConfig.numTrials = 1;
+      workerConfig.parallelTrials = false;
+      workerConfig.innerParallelization = false;
+      workerConfig.seedToRandomNumberGenerator = m_infomap.seedToRandomNumberGenerator + static_cast<unsigned int>(workerIndex);
 
-        InfomapBase worker(workerConfig);
-        worker.m_initialPartition = m_infomap.m_initialPartition;
+      InfomapBase worker(workerConfig);
+      worker.m_initialPartition = m_infomap.m_initialPartition;
 
-        NodePaths trialTree;
-        unsigned int trialNumLevels = 0;
-        std::ostringstream trialStatistics;
-        worker.initNetwork(m_network);
-        initTrialPartition(worker);
-        executeTrial(worker);
-        worker.root().sortChildrenOnFlow();
+      for (unsigned int trialIndex = static_cast<unsigned int>(workerIndex); trialIndex < m_numTrials; trialIndex += numWorkers) {
+        try {
+          Log::ScopedMute muteWorkerLogs;
+          const auto trialSeed = m_infomap.seedToRandomNumberGenerator + trialIndex;
+          worker.seedToRandomNumberGenerator = trialSeed;
+          worker.reseed(trialSeed);
 
-        trialNumLevels = printPerLevelCodelength(worker.root(), trialStatistics, worker.prettyOutput);
-        trialTree.reserve(worker.numLeafNodes());
-        for (auto it(worker.iterLeafNodes()); !it.isEnd(); ++it) {
-          trialTree.emplace_back(it->stateId, it.path());
-        }
+          NodePaths trialTree;
+          unsigned int trialNumLevels = 0;
+          std::ostringstream trialStatistics;
+          worker.initNetwork(m_network);
+          initTrialPartition(worker);
+          executeTrial(worker);
+          worker.root().sortChildrenOnFlow();
 
-        if (worker.printAllTrials && m_numTrials > 1) {
-          std::lock_guard<std::mutex> lock(outputMutex);
-          worker.writeResult(static_cast<int>(trialIndex + 1));
-        }
+          trialNumLevels = printPerLevelCodelength(worker.root(), trialStatistics, worker.prettyOutput);
+          trialTree.reserve(worker.numLeafNodes());
+          for (auto it(worker.iterLeafNodes()); !it.isEnd(); ++it) {
+            trialTree.emplace_back(it->stateId, it.path());
+          }
 
-        const auto trialCodelength = worker.m_hierarchicalCodelength;
-        const auto trialTopModules = worker.numTopModules();
-        codelengths[trialIndex] = trialCodelength;
-        numTopModules[trialIndex] = trialTopModules;
+          if (worker.printAllTrials && m_numTrials > 1) {
+            std::lock_guard<std::mutex> lock(outputMutex);
+            worker.writeResult(static_cast<int>(trialIndex + 1));
+          }
 
-        std::lock_guard<std::mutex> lock(bestResultMutex);
-        const auto bestIndexMissing = result.bestTrialIndex >= m_numTrials;
-        const auto isBetter = trialCodelength < result.bestHierarchicalCodelength - 1e-10;
-        const auto isEarlierTie = std::abs(trialCodelength - result.bestHierarchicalCodelength) < 1e-10 && trialIndex < result.bestTrialIndex;
-        if (bestIndexMissing || isBetter || isEarlierTie) {
-          result.bestSolutionStatistics.clear();
-          result.bestSolutionStatistics.str(trialStatistics.str());
-          result.bestNumLevels = trialNumLevels;
-          result.bestHierarchicalCodelength = trialCodelength;
-          result.bestTrialIndex = trialIndex;
-          result.bestTree = std::move(trialTree);
-        }
-      } catch (const std::exception& e) {
-        std::lock_guard<std::mutex> lock(errorMutex);
-        if (!hasError) {
-          hasError = true;
-          firstErrorTrial = trialIndex;
-          firstError = e.what();
-        }
-      } catch (...) {
-        std::lock_guard<std::mutex> lock(errorMutex);
-        if (!hasError) {
-          hasError = true;
-          firstErrorTrial = trialIndex;
-          firstError = "unknown error";
+          const auto trialCodelength = worker.m_hierarchicalCodelength;
+          const auto trialTopModules = worker.numTopModules();
+          codelengths[trialIndex] = trialCodelength;
+          numTopModules[trialIndex] = trialTopModules;
+
+          std::lock_guard<std::mutex> lock(bestResultMutex);
+          const auto bestIndexMissing = result.bestTrialIndex >= m_numTrials;
+          const auto isBetter = trialCodelength < result.bestHierarchicalCodelength - 1e-10;
+          const auto isEarlierTie = std::abs(trialCodelength - result.bestHierarchicalCodelength) < 1e-10 && trialIndex < result.bestTrialIndex;
+          if (bestIndexMissing || isBetter || isEarlierTie) {
+            result.bestSolutionStatistics.clear();
+            result.bestSolutionStatistics.str(trialStatistics.str());
+            result.bestNumLevels = trialNumLevels;
+            result.bestHierarchicalCodelength = trialCodelength;
+            result.bestTrialIndex = trialIndex;
+            result.bestTree = std::move(trialTree);
+          }
+        } catch (const std::exception& e) {
+          std::lock_guard<std::mutex> lock(errorMutex);
+          if (!hasError) {
+            hasError = true;
+            firstErrorTrial = trialIndex;
+            firstError = e.what();
+          }
+        } catch (...) {
+          std::lock_guard<std::mutex> lock(errorMutex);
+          if (!hasError) {
+            hasError = true;
+            firstErrorTrial = trialIndex;
+            firstError = "unknown error";
+          }
         }
       }
     }
@@ -336,6 +362,16 @@ private:
     m_infomap.m_codelengths = std::move(codelengths);
     m_infomap.m_numTopModules = std::move(numTopModules);
     return result;
+  }
+
+  unsigned int parallelTrialWorkers() const
+  {
+#ifdef _OPENMP
+    const unsigned int maxOpenMpThreads = static_cast<unsigned int>(std::max(1, omp_get_max_threads()));
+    return std::max(1u, std::min(m_numTrials, std::max(1u, maxOpenMpThreads / 2)));
+#else
+    return 1;
+#endif
   }
 
   void restoreBestResult(const Result& result)
