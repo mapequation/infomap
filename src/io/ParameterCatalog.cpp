@@ -803,7 +803,7 @@ const std::vector<ParameterSpec>& parameterCatalog()
         .configTarget(&Config::innerParallelization),
     param()
         .longName("parallel-trials")
-        .description("Run independent trials in parallel with OpenMP. Has effect only when --num-trials is greater than 1.")
+        .description("Run independent trials in parallel with OpenMP. --num-trials remains the total number of trials; workers are chosen automatically from OpenMP threads. Nested OpenMP and --inner-parallelization are disabled inside workers.")
         .group("Accuracy")
         .advanced()
         .configTarget(&Config::parallelTrials),

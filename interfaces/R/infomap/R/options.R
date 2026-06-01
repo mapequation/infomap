@@ -233,7 +233,7 @@ OPTION_DEFAULTS <- list(
 #'   \item{`tune_iteration_relative_threshold`}{Require each tune iteration to improve codelength by this fraction of the initial two-level codelength.}
 #'   \item{`fast_hierarchical_solution`}{Find top modules quickly. Use -FF to keep all fast levels. Use -FFF to skip recursive refinement.}
 #'   \item{`inner_parallelization`}{Parallelize the innermost loop for speed, with a possible accuracy tradeoff.}
-#'   \item{`parallel_trials`}{Run independent trials in parallel with OpenMP. Has effect only when --num-trials is greater than 1.}
+#'   \item{`parallel_trials`}{Run independent trials in parallel with OpenMP. --num-trials remains the total number of trials; workers are chosen automatically from OpenMP threads. Nested OpenMP and --inner-parallelization are disabled inside workers.}
 #'   \item{`prefer_modular_solution`}{Prefer a modular solution even when one module gives a lower codelength.}
 #'   \item{`num_random_moves`}{Try this many random moves in each core loop to merge weakly connected nodes.}
 #'   \item{`max_degree_for_random_moves`}{Try random moves only for nodes with degree at most this value.}
