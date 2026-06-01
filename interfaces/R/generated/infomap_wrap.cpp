@@ -19969,7 +19969,7 @@ SWIGEXPORT SEXP
 R_swig_InfomapIterator_path ( SEXP self, SEXP s_swig_copy)
 {
   {
-    std::deque< unsigned int,std::allocator< unsigned int > > *result = 0 ;
+    std::vector< unsigned int,std::allocator< unsigned int > > *result = 0 ;
     infomap::InfomapIterator *arg1 = 0 ;
     void *argp1 = 0 ;
     int res1 = 0 ;
@@ -19984,12 +19984,12 @@ R_swig_InfomapIterator_path ( SEXP self, SEXP s_swig_copy)
     arg1 = reinterpret_cast< infomap::InfomapIterator * >(argp1);
     {
       try {
-        result = (std::deque< unsigned int,std::allocator< unsigned int > > *) &((infomap::InfomapIterator const *)arg1)->path();
+        result = (std::vector< unsigned int,std::allocator< unsigned int > > *) &((infomap::InfomapIterator const *)arg1)->path();
       } catch (const std::exception& e) {
         SWIG_exception(SWIG_RuntimeError, e.what());
       }
     }
-    r_ans = swig::from(static_cast< std::deque< unsigned int,std::allocator< unsigned int > > >(*result));
+    r_ans = swig::from(static_cast< std::vector< unsigned int,std::allocator< unsigned int > > >(*result));
     vmaxset(r_vmax);
     if(r_nprotect)  Rf_unprotect(r_nprotect);
     
@@ -24782,7 +24782,7 @@ SWIGEXPORT SEXP
 R_swig_InfomapModuleIterator_path ( SEXP self, SEXP s_swig_copy)
 {
   {
-    std::deque< unsigned int,std::allocator< unsigned int > > *result = 0 ;
+    std::vector< unsigned int,std::allocator< unsigned int > > *result = 0 ;
     infomap::InfomapModuleIterator *arg1 = 0 ;
     void *argp1 = 0 ;
     int res1 = 0 ;
@@ -24797,12 +24797,12 @@ R_swig_InfomapModuleIterator_path ( SEXP self, SEXP s_swig_copy)
     arg1 = reinterpret_cast< infomap::InfomapModuleIterator * >(argp1);
     {
       try {
-        result = (std::deque< unsigned int,std::allocator< unsigned int > > *) &((infomap::InfomapModuleIterator const *)arg1)->path();
+        result = (std::vector< unsigned int,std::allocator< unsigned int > > *) &((infomap::InfomapModuleIterator const *)arg1)->path();
       } catch (const std::exception& e) {
         SWIG_exception(SWIG_RuntimeError, e.what());
       }
     }
-    r_ans = swig::from(static_cast< std::deque< unsigned int,std::allocator< unsigned int > > >(*result));
+    r_ans = swig::from(static_cast< std::vector< unsigned int,std::allocator< unsigned int > > >(*result));
     vmaxset(r_vmax);
     if(r_nprotect)  Rf_unprotect(r_nprotect);
     
@@ -25465,7 +25465,7 @@ SWIGEXPORT SEXP
 R_swig_InfomapLeafModuleIterator_path ( SEXP self, SEXP s_swig_copy)
 {
   {
-    std::deque< unsigned int,std::allocator< unsigned int > > *result = 0 ;
+    std::vector< unsigned int,std::allocator< unsigned int > > *result = 0 ;
     infomap::InfomapLeafModuleIterator *arg1 = 0 ;
     void *argp1 = 0 ;
     int res1 = 0 ;
@@ -25480,12 +25480,12 @@ R_swig_InfomapLeafModuleIterator_path ( SEXP self, SEXP s_swig_copy)
     arg1 = reinterpret_cast< infomap::InfomapLeafModuleIterator * >(argp1);
     {
       try {
-        result = (std::deque< unsigned int,std::allocator< unsigned int > > *) &((infomap::InfomapLeafModuleIterator const *)arg1)->path();
+        result = (std::vector< unsigned int,std::allocator< unsigned int > > *) &((infomap::InfomapLeafModuleIterator const *)arg1)->path();
       } catch (const std::exception& e) {
         SWIG_exception(SWIG_RuntimeError, e.what());
       }
     }
-    r_ans = swig::from(static_cast< std::deque< unsigned int,std::allocator< unsigned int > > >(*result));
+    r_ans = swig::from(static_cast< std::vector< unsigned int,std::allocator< unsigned int > > >(*result));
     vmaxset(r_vmax);
     if(r_nprotect)  Rf_unprotect(r_nprotect);
     
@@ -26148,7 +26148,7 @@ SWIGEXPORT SEXP
 R_swig_InfomapLeafIterator_path ( SEXP self, SEXP s_swig_copy)
 {
   {
-    std::deque< unsigned int,std::allocator< unsigned int > > *result = 0 ;
+    std::vector< unsigned int,std::allocator< unsigned int > > *result = 0 ;
     infomap::InfomapLeafIterator *arg1 = 0 ;
     void *argp1 = 0 ;
     int res1 = 0 ;
@@ -26163,12 +26163,12 @@ R_swig_InfomapLeafIterator_path ( SEXP self, SEXP s_swig_copy)
     arg1 = reinterpret_cast< infomap::InfomapLeafIterator * >(argp1);
     {
       try {
-        result = (std::deque< unsigned int,std::allocator< unsigned int > > *) &((infomap::InfomapLeafIterator const *)arg1)->path();
+        result = (std::vector< unsigned int,std::allocator< unsigned int > > *) &((infomap::InfomapLeafIterator const *)arg1)->path();
       } catch (const std::exception& e) {
         SWIG_exception(SWIG_RuntimeError, e.what());
       }
     }
-    r_ans = swig::from(static_cast< std::deque< unsigned int,std::allocator< unsigned int > > >(*result));
+    r_ans = swig::from(static_cast< std::vector< unsigned int,std::allocator< unsigned int > > >(*result));
     vmaxset(r_vmax);
     if(r_nprotect)  Rf_unprotect(r_nprotect);
     
@@ -26829,7 +26829,7 @@ SWIGEXPORT SEXP
 R_swig_InfomapIteratorPhysical_path ( SEXP self, SEXP s_swig_copy)
 {
   {
-    std::deque< unsigned int,std::allocator< unsigned int > > *result = 0 ;
+    std::vector< unsigned int,std::allocator< unsigned int > > *result = 0 ;
     infomap::InfomapIteratorPhysical *arg1 = 0 ;
     void *argp1 = 0 ;
     int res1 = 0 ;
@@ -26844,12 +26844,12 @@ R_swig_InfomapIteratorPhysical_path ( SEXP self, SEXP s_swig_copy)
     arg1 = reinterpret_cast< infomap::InfomapIteratorPhysical * >(argp1);
     {
       try {
-        result = (std::deque< unsigned int,std::allocator< unsigned int > > *) &((infomap::InfomapIteratorPhysical const *)arg1)->path();
+        result = (std::vector< unsigned int,std::allocator< unsigned int > > *) &((infomap::InfomapIteratorPhysical const *)arg1)->path();
       } catch (const std::exception& e) {
         SWIG_exception(SWIG_RuntimeError, e.what());
       }
     }
-    r_ans = swig::from(static_cast< std::deque< unsigned int,std::allocator< unsigned int > > >(*result));
+    r_ans = swig::from(static_cast< std::vector< unsigned int,std::allocator< unsigned int > > >(*result));
     vmaxset(r_vmax);
     if(r_nprotect)  Rf_unprotect(r_nprotect);
     
@@ -27459,7 +27459,7 @@ SWIGEXPORT SEXP
 R_swig_InfomapLeafIteratorPhysical_path ( SEXP self, SEXP s_swig_copy)
 {
   {
-    std::deque< unsigned int,std::allocator< unsigned int > > *result = 0 ;
+    std::vector< unsigned int,std::allocator< unsigned int > > *result = 0 ;
     infomap::InfomapLeafIteratorPhysical *arg1 = 0 ;
     void *argp1 = 0 ;
     int res1 = 0 ;
@@ -27474,12 +27474,12 @@ R_swig_InfomapLeafIteratorPhysical_path ( SEXP self, SEXP s_swig_copy)
     arg1 = reinterpret_cast< infomap::InfomapLeafIteratorPhysical * >(argp1);
     {
       try {
-        result = (std::deque< unsigned int,std::allocator< unsigned int > > *) &((infomap::InfomapLeafIteratorPhysical const *)arg1)->path();
+        result = (std::vector< unsigned int,std::allocator< unsigned int > > *) &((infomap::InfomapLeafIteratorPhysical const *)arg1)->path();
       } catch (const std::exception& e) {
         SWIG_exception(SWIG_RuntimeError, e.what());
       }
     }
-    r_ans = swig::from(static_cast< std::deque< unsigned int,std::allocator< unsigned int > > >(*result));
+    r_ans = swig::from(static_cast< std::vector< unsigned int,std::allocator< unsigned int > > >(*result));
     vmaxset(r_vmax);
     if(r_nprotect)  Rf_unprotect(r_nprotect);
     

@@ -25806,7 +25806,7 @@ SWIGINTERN PyObject *_wrap_InfomapIterator_path(PyObject *self, PyObject *args) 
   void *argp1 = 0 ;
   int res1 = 0 ;
   PyObject *swig_obj[1] ;
-  std::deque< unsigned int,std::allocator< unsigned int > > *result = 0 ;
+  std::vector< unsigned int,std::allocator< unsigned int > > *result = 0 ;
   
   (void)self;
   if (!args) SWIG_fail;
@@ -25818,12 +25818,12 @@ SWIGINTERN PyObject *_wrap_InfomapIterator_path(PyObject *self, PyObject *args) 
   arg1 = reinterpret_cast< infomap::InfomapIterator * >(argp1);
   {
     try {
-      result = (std::deque< unsigned int,std::allocator< unsigned int > > *) &((infomap::InfomapIterator const *)arg1)->path();
+      result = (std::vector< unsigned int,std::allocator< unsigned int > > *) &((infomap::InfomapIterator const *)arg1)->path();
     } catch (const std::exception& e) {
       SWIG_exception(SWIG_RuntimeError, e.what());
     }
   }
-  resultobj = swig::from(static_cast< std::deque< unsigned int,std::allocator< unsigned int > > >(*result));
+  resultobj = swig::from(static_cast< std::vector< unsigned int,std::allocator< unsigned int > > >(*result));
   return resultobj;
 fail:
   return NULL;
@@ -30337,7 +30337,7 @@ SWIGINTERN PyObject *_wrap_InfomapModuleIterator_path(PyObject *self, PyObject *
   void *argp1 = 0 ;
   int res1 = 0 ;
   PyObject *swig_obj[1] ;
-  std::deque< unsigned int,std::allocator< unsigned int > > *result = 0 ;
+  std::vector< unsigned int,std::allocator< unsigned int > > *result = 0 ;
   
   (void)self;
   if (!args) SWIG_fail;
@@ -30349,12 +30349,12 @@ SWIGINTERN PyObject *_wrap_InfomapModuleIterator_path(PyObject *self, PyObject *
   arg1 = reinterpret_cast< infomap::InfomapModuleIterator * >(argp1);
   {
     try {
-      result = (std::deque< unsigned int,std::allocator< unsigned int > > *) &((infomap::InfomapModuleIterator const *)arg1)->path();
+      result = (std::vector< unsigned int,std::allocator< unsigned int > > *) &((infomap::InfomapModuleIterator const *)arg1)->path();
     } catch (const std::exception& e) {
       SWIG_exception(SWIG_RuntimeError, e.what());
     }
   }
-  resultobj = swig::from(static_cast< std::deque< unsigned int,std::allocator< unsigned int > > >(*result));
+  resultobj = swig::from(static_cast< std::vector< unsigned int,std::allocator< unsigned int > > >(*result));
   return resultobj;
 fail:
   return NULL;
@@ -30865,7 +30865,7 @@ SWIGINTERN PyObject *_wrap_InfomapLeafModuleIterator_path(PyObject *self, PyObje
   void *argp1 = 0 ;
   int res1 = 0 ;
   PyObject *swig_obj[1] ;
-  std::deque< unsigned int,std::allocator< unsigned int > > *result = 0 ;
+  std::vector< unsigned int,std::allocator< unsigned int > > *result = 0 ;
   
   (void)self;
   if (!args) SWIG_fail;
@@ -30877,12 +30877,12 @@ SWIGINTERN PyObject *_wrap_InfomapLeafModuleIterator_path(PyObject *self, PyObje
   arg1 = reinterpret_cast< infomap::InfomapLeafModuleIterator * >(argp1);
   {
     try {
-      result = (std::deque< unsigned int,std::allocator< unsigned int > > *) &((infomap::InfomapLeafModuleIterator const *)arg1)->path();
+      result = (std::vector< unsigned int,std::allocator< unsigned int > > *) &((infomap::InfomapLeafModuleIterator const *)arg1)->path();
     } catch (const std::exception& e) {
       SWIG_exception(SWIG_RuntimeError, e.what());
     }
   }
-  resultobj = swig::from(static_cast< std::deque< unsigned int,std::allocator< unsigned int > > >(*result));
+  resultobj = swig::from(static_cast< std::vector< unsigned int,std::allocator< unsigned int > > >(*result));
   return resultobj;
 fail:
   return NULL;
@@ -31393,7 +31393,7 @@ SWIGINTERN PyObject *_wrap_InfomapLeafIterator_path(PyObject *self, PyObject *ar
   void *argp1 = 0 ;
   int res1 = 0 ;
   PyObject *swig_obj[1] ;
-  std::deque< unsigned int,std::allocator< unsigned int > > *result = 0 ;
+  std::vector< unsigned int,std::allocator< unsigned int > > *result = 0 ;
   
   (void)self;
   if (!args) SWIG_fail;
@@ -31405,12 +31405,12 @@ SWIGINTERN PyObject *_wrap_InfomapLeafIterator_path(PyObject *self, PyObject *ar
   arg1 = reinterpret_cast< infomap::InfomapLeafIterator * >(argp1);
   {
     try {
-      result = (std::deque< unsigned int,std::allocator< unsigned int > > *) &((infomap::InfomapLeafIterator const *)arg1)->path();
+      result = (std::vector< unsigned int,std::allocator< unsigned int > > *) &((infomap::InfomapLeafIterator const *)arg1)->path();
     } catch (const std::exception& e) {
       SWIG_exception(SWIG_RuntimeError, e.what());
     }
   }
-  resultobj = swig::from(static_cast< std::deque< unsigned int,std::allocator< unsigned int > > >(*result));
+  resultobj = swig::from(static_cast< std::vector< unsigned int,std::allocator< unsigned int > > >(*result));
   return resultobj;
 fail:
   return NULL;
@@ -31932,7 +31932,7 @@ SWIGINTERN PyObject *_wrap_InfomapIteratorPhysical_path(PyObject *self, PyObject
   void *argp1 = 0 ;
   int res1 = 0 ;
   PyObject *swig_obj[1] ;
-  std::deque< unsigned int,std::allocator< unsigned int > > *result = 0 ;
+  std::vector< unsigned int,std::allocator< unsigned int > > *result = 0 ;
   
   (void)self;
   if (!args) SWIG_fail;
@@ -31944,12 +31944,12 @@ SWIGINTERN PyObject *_wrap_InfomapIteratorPhysical_path(PyObject *self, PyObject
   arg1 = reinterpret_cast< infomap::InfomapIteratorPhysical * >(argp1);
   {
     try {
-      result = (std::deque< unsigned int,std::allocator< unsigned int > > *) &((infomap::InfomapIteratorPhysical const *)arg1)->path();
+      result = (std::vector< unsigned int,std::allocator< unsigned int > > *) &((infomap::InfomapIteratorPhysical const *)arg1)->path();
     } catch (const std::exception& e) {
       SWIG_exception(SWIG_RuntimeError, e.what());
     }
   }
-  resultobj = swig::from(static_cast< std::deque< unsigned int,std::allocator< unsigned int > > >(*result));
+  resultobj = swig::from(static_cast< std::vector< unsigned int,std::allocator< unsigned int > > >(*result));
   return resultobj;
 fail:
   return NULL;
@@ -32460,7 +32460,7 @@ SWIGINTERN PyObject *_wrap_InfomapLeafIteratorPhysical_path(PyObject *self, PyOb
   void *argp1 = 0 ;
   int res1 = 0 ;
   PyObject *swig_obj[1] ;
-  std::deque< unsigned int,std::allocator< unsigned int > > *result = 0 ;
+  std::vector< unsigned int,std::allocator< unsigned int > > *result = 0 ;
   
   (void)self;
   if (!args) SWIG_fail;
@@ -32472,12 +32472,12 @@ SWIGINTERN PyObject *_wrap_InfomapLeafIteratorPhysical_path(PyObject *self, PyOb
   arg1 = reinterpret_cast< infomap::InfomapLeafIteratorPhysical * >(argp1);
   {
     try {
-      result = (std::deque< unsigned int,std::allocator< unsigned int > > *) &((infomap::InfomapLeafIteratorPhysical const *)arg1)->path();
+      result = (std::vector< unsigned int,std::allocator< unsigned int > > *) &((infomap::InfomapLeafIteratorPhysical const *)arg1)->path();
     } catch (const std::exception& e) {
       SWIG_exception(SWIG_RuntimeError, e.what());
     }
   }
-  resultobj = swig::from(static_cast< std::deque< unsigned int,std::allocator< unsigned int > > >(*result));
+  resultobj = swig::from(static_cast< std::vector< unsigned int,std::allocator< unsigned int > > >(*result));
   return resultobj;
 fail:
   return NULL;

@@ -332,6 +332,7 @@ setClass("infomap::InfomapIterator",
     representation(
         m_moduleIndexLevel = "integer",
         m_moduleIndex = "integer",
+        m_path = "integer",
         m_depth = "integer"),
         contains = "RSWIGStruct")
 
@@ -9079,15 +9080,11 @@ class(`InfomapIterator_stepForward`) = c("SWIGFunction", class('InfomapIterator_
 `InfomapIterator_path` = function(self, .copy = FALSE)
 {
   if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;ans = .Call('R_swig_InfomapIterator_path', self, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_std__dequeT_unsigned_int_t", ref=ans);
-  
-  ans
+  ;.Call('R_swig_InfomapIterator_path', self, as.logical(.copy), PACKAGE='infomap');
   
 }
 
-attr(`InfomapIterator_path`, 'returnType') = '_p_std__dequeT_unsigned_int_t'
+attr(`InfomapIterator_path`, 'returnType') = 'integer'
 attr(`InfomapIterator_path`, "inputTypes") = c('_p_infomap__InfomapIterator')
 class(`InfomapIterator_path`) = c("SWIGFunction", class('InfomapIterator_path'))
 
@@ -11246,6 +11243,7 @@ CopyToR_infomap__InfomapIterator = function(value, obj = new("infomap::InfomapIt
 {
   obj@m_moduleIndexLevel = value$m_moduleIndexLevel;
   obj@m_moduleIndex = value$m_moduleIndex;
+  obj@m_path = value$m_path;
   obj@m_depth = value$m_depth;
   obj;
 }
@@ -11256,6 +11254,7 @@ CopyToC_infomap__InfomapIterator = function(value, obj)
 {
   obj$m_moduleIndexLevel = value@m_moduleIndexLevel;
   obj$m_moduleIndex = value@m_moduleIndex;
+  obj$m_path = value@m_path;
   obj$m_depth = value@m_depth;
   obj
 }
@@ -11618,15 +11617,11 @@ class(`InfomapModuleIterator_modularCentrality`) = c("SWIGFunction", class('Info
 `InfomapModuleIterator_path` = function(self, .copy = FALSE)
 {
   if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;ans = .Call('R_swig_InfomapModuleIterator_path', self, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_std__dequeT_unsigned_int_t", ref=ans);
-  
-  ans
+  ;.Call('R_swig_InfomapModuleIterator_path', self, as.logical(.copy), PACKAGE='infomap');
   
 }
 
-attr(`InfomapModuleIterator_path`, 'returnType') = '_p_std__dequeT_unsigned_int_t'
+attr(`InfomapModuleIterator_path`, 'returnType') = 'integer'
 attr(`InfomapModuleIterator_path`, "inputTypes") = c('_p_infomap__InfomapModuleIterator')
 class(`InfomapModuleIterator_path`) = c("SWIGFunction", class('InfomapModuleIterator_path'))
 
@@ -12032,15 +12027,11 @@ class(`InfomapLeafModuleIterator_modularCentrality`) = c("SWIGFunction", class('
 `InfomapLeafModuleIterator_path` = function(self, .copy = FALSE)
 {
   if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;ans = .Call('R_swig_InfomapLeafModuleIterator_path', self, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_std__dequeT_unsigned_int_t", ref=ans);
-  
-  ans
+  ;.Call('R_swig_InfomapLeafModuleIterator_path', self, as.logical(.copy), PACKAGE='infomap');
   
 }
 
-attr(`InfomapLeafModuleIterator_path`, 'returnType') = '_p_std__dequeT_unsigned_int_t'
+attr(`InfomapLeafModuleIterator_path`, 'returnType') = 'integer'
 attr(`InfomapLeafModuleIterator_path`, "inputTypes") = c('_p_infomap__InfomapLeafModuleIterator')
 class(`InfomapLeafModuleIterator_path`) = c("SWIGFunction", class('InfomapLeafModuleIterator_path'))
 
@@ -12446,15 +12437,11 @@ class(`InfomapLeafIterator_modularCentrality`) = c("SWIGFunction", class('Infoma
 `InfomapLeafIterator_path` = function(self, .copy = FALSE)
 {
   if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;ans = .Call('R_swig_InfomapLeafIterator_path', self, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_std__dequeT_unsigned_int_t", ref=ans);
-  
-  ans
+  ;.Call('R_swig_InfomapLeafIterator_path', self, as.logical(.copy), PACKAGE='infomap');
   
 }
 
-attr(`InfomapLeafIterator_path`, 'returnType') = '_p_std__dequeT_unsigned_int_t'
+attr(`InfomapLeafIterator_path`, 'returnType') = 'integer'
 attr(`InfomapLeafIterator_path`, "inputTypes") = c('_p_infomap__InfomapLeafIterator')
 class(`InfomapLeafIterator_path`) = c("SWIGFunction", class('InfomapLeafIterator_path'))
 
@@ -12868,15 +12855,11 @@ class(`InfomapIteratorPhysical_modularCentrality`) = c("SWIGFunction", class('In
 `InfomapIteratorPhysical_path` = function(self, .copy = FALSE)
 {
   if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;ans = .Call('R_swig_InfomapIteratorPhysical_path', self, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_std__dequeT_unsigned_int_t", ref=ans);
-  
-  ans
+  ;.Call('R_swig_InfomapIteratorPhysical_path', self, as.logical(.copy), PACKAGE='infomap');
   
 }
 
-attr(`InfomapIteratorPhysical_path`, 'returnType') = '_p_std__dequeT_unsigned_int_t'
+attr(`InfomapIteratorPhysical_path`, 'returnType') = 'integer'
 attr(`InfomapIteratorPhysical_path`, "inputTypes") = c('_p_infomap__InfomapIteratorPhysical')
 class(`InfomapIteratorPhysical_path`) = c("SWIGFunction", class('InfomapIteratorPhysical_path'))
 
@@ -13243,15 +13226,11 @@ class(`InfomapLeafIteratorPhysical_modularCentrality`) = c("SWIGFunction", class
 `InfomapLeafIteratorPhysical_path` = function(self, .copy = FALSE)
 {
   if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;ans = .Call('R_swig_InfomapLeafIteratorPhysical_path', self, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_std__dequeT_unsigned_int_t", ref=ans);
-  
-  ans
+  ;.Call('R_swig_InfomapLeafIteratorPhysical_path', self, as.logical(.copy), PACKAGE='infomap');
   
 }
 
-attr(`InfomapLeafIteratorPhysical_path`, 'returnType') = '_p_std__dequeT_unsigned_int_t'
+attr(`InfomapLeafIteratorPhysical_path`, 'returnType') = 'integer'
 attr(`InfomapLeafIteratorPhysical_path`, "inputTypes") = c('_p_infomap__InfomapLeafIteratorPhysical')
 class(`InfomapLeafIteratorPhysical_path`) = c("SWIGFunction", class('InfomapLeafIteratorPhysical_path'))
 
