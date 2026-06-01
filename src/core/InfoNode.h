@@ -92,8 +92,8 @@ public:
   std::vector<PhysData> physicalNodes;
 #ifndef SWIG
   std::vector<LayerTeleFlowData> layerTeleFlowData; // For regularized multilayer flow
+  std::unique_ptr<MetaCollection> metaCollection; // For modules; lazily allocated, only set when meta data is used
 #endif
-  MetaCollection metaCollection; // For modules
   std::vector<unsigned int> stateNodes; // For physically aggregated nodes
 
 private:
@@ -140,7 +140,7 @@ public:
         dirty(other.dirty),
         physicalNodes(other.physicalNodes),
         layerTeleFlowData(other.layerTeleFlowData),
-        metaCollection(other.metaCollection),
+        metaCollection(other.metaCollection ? std::make_unique<MetaCollection>(*other.metaCollection) : nullptr),
         m_childDegree(other.m_childDegree),
         m_childrenChanged(other.m_childrenChanged),
         m_numLeafMembers(other.m_numLeafMembers) {}
@@ -149,6 +149,8 @@ public:
 
   InfoNode& operator=(const InfoNode& other)
   {
+    if (this == &other)
+      return *this;
     data = other.data;
     index = other.index;
     stateId = other.stateId;
@@ -164,7 +166,7 @@ public:
     collapsedLastChild = other.collapsedLastChild;
     codelength = other.codelength;
     dirty = other.dirty;
-    metaCollection = other.metaCollection;
+    metaCollection = other.metaCollection ? std::make_unique<MetaCollection>(*other.metaCollection) : nullptr;
     m_childDegree = other.m_childDegree;
     m_childrenChanged = other.m_childrenChanged;
     m_numLeafMembers = other.m_numLeafMembers;
@@ -181,6 +183,21 @@ public:
     auto meta = metaData[dimension];
     return meta < 0 ? 0 : static_cast<unsigned int>(meta);
   }
+
+#ifndef SWIG
+  // ---------------------------- Meta collection ----------------------------
+  // The collection is only allocated for nodes that carry meta data, so a node
+  // in a run without meta data costs just the null pointer. Kept out of the
+  // SWIG bindings since it is an internal aggregation structure.
+  bool hasMetaCollection() const noexcept { return metaCollection != nullptr; }
+
+  MetaCollection& ensureMetaCollection()
+  {
+    if (!metaCollection)
+      metaCollection = std::make_unique<MetaCollection>();
+    return *metaCollection;
+  }
+#endif
 
   // ---------------------------- Infomap ----------------------------
   InfomapBase& getInfomap();
