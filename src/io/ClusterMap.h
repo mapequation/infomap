@@ -14,11 +14,10 @@
 #include <string>
 #include <map>
 #include <vector>
-#include <deque>
 
 namespace infomap {
 
-using Path = std::deque<unsigned int>; // 1-based indexing
+using Path = std::vector<unsigned int>; // 1-based indexing
 
 using NodePath = std::pair<unsigned int, Path>;
 

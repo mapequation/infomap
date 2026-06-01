@@ -11,7 +11,7 @@
 #define OUTPUT_VIEW_H_
 
 #include <cstdint>
-#include <deque>
+#include <vector>
 #include <functional>
 #include <map>
 #include <string>
@@ -30,7 +30,7 @@ enum class OutputLeafPolicy : std::uint8_t {
 
 struct OutputLeafRow {
   const InfoNode& node;
-  std::deque<unsigned int> path;
+  std::vector<unsigned int> path;
   unsigned int moduleId = 0;
   double modularCentrality = 0.0;
   unsigned int stateId = 0;
@@ -96,7 +96,7 @@ public:
 private:
   bool shouldIncludeLeaf(const InfoNode& node, OutputLeafPolicy filter) const;
   OutputLeafRow leafRow(const InfoNode& node,
-                        const std::deque<unsigned int>& path,
+                        const std::vector<unsigned int>& path,
                         unsigned int moduleId,
                         double modularCentrality) const;
   OutputTreeRow treeRow(const InfoNode& node, unsigned int depth) const;

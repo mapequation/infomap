@@ -12,7 +12,7 @@
 
 #include <cstddef>
 #include <iterator>
-#include <deque>
+#include <vector>
 
 namespace infomap {
 
@@ -115,7 +115,7 @@ protected:
   NodePointerType m_current = nullptr;
   int m_moduleIndexLevel = -1;
   unsigned int m_moduleIndex = 0;
-  std::deque<unsigned int> m_path; // The child index path to current node
+  std::vector<unsigned int> m_path; // The child index path to current node
   unsigned int m_depth = 0;
 
 public:
@@ -157,7 +157,7 @@ public:
 
   bool operator!=(const TreeIterator& rhs) const { return !(m_current == rhs.m_current); }
 
-  const std::deque<unsigned int>& path() const { return m_path; }
+  const std::vector<unsigned int>& path() const { return m_path; }
 
   unsigned int moduleIndex() const { return m_moduleIndex; }
 
