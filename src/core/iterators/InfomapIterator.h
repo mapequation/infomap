@@ -10,7 +10,7 @@
 #ifndef INFOMAP_ITERATOR_H_
 #define INFOMAP_ITERATOR_H_
 
-#include <deque>
+#include <vector>
 #include <map>
 #include <cmath>
 
@@ -29,7 +29,7 @@ protected:
   InfoNode* m_current = nullptr;
   int m_moduleIndexLevel = -1; // TODO: Not used.
   unsigned int m_moduleIndex = 0;
-  std::deque<unsigned int> m_path; // The tree path to current node (indexing starting from one!)
+  std::vector<unsigned int> m_path; // The tree path to current node (indexing starting from one!)
   unsigned int m_depth = 0;
 
 public:
@@ -75,7 +75,7 @@ public:
     return *this;
   }
 
-  const std::deque<unsigned int>& path() const noexcept { return m_path; }
+  const std::vector<unsigned int>& path() const noexcept { return m_path; }
 
   unsigned int moduleIndex() const noexcept { return m_moduleIndex; }
 

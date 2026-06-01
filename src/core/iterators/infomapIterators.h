@@ -11,7 +11,7 @@
 #define INFOMAP_ITERATORS_H_
 
 #include "treeIterators.h"
-#include <deque>
+#include <vector>
 #include <limits>
 
 namespace infomap {
@@ -233,7 +233,7 @@ class InfomapDepthFirstIterator : public DepthFirstIteratorBase<NodePointerType>
 protected:
   using Base = DepthFirstIteratorBase<NodePointerType>;
 
-  std::deque<unsigned int> m_path; // The child index path to current node
+  std::vector<unsigned int> m_path; // The child index path to current node
   unsigned int m_moduleIndex = 0;
   int m_moduleIndexLevel = -1;
 
@@ -353,7 +353,7 @@ public:
     return *this;
   }
 
-  const std::deque<unsigned int>& path() const
+  const std::vector<unsigned int>& path() const
   {
     return m_path;
   }
