@@ -49,7 +49,7 @@ std::string getOutputFileHeader(const InfomapBase& im, const StateNetwork& netwo
 std::string writeClu(InfomapBase& im, const StateNetwork& network, const std::string& filename, bool states, int moduleIndexLevel)
 {
   auto outputFilename = getOutputFilename(im, filename, ".clu", states);
-  SafeOutFile outFile { outputFilename };
+  SafeOutFile outFile { outputFilename, std::ios_base::out, im.overwriteOutput() };
   OutputView view(im, network, states);
 
   outFile << std::setprecision(9);
@@ -76,6 +76,7 @@ std::string writeClu(InfomapBase& im, const StateNetwork& network, const std::st
       outFile << row.physicalId << " " << row.moduleId << " " << row.flow << "\n";
     }
   });
+  outFile.commit();
   return outputFilename;
 }
 
@@ -388,41 +389,46 @@ void writeCsvTree(InfomapBase& im, const StateNetwork& network, std::ostream& ou
 std::string writeTree(InfomapBase& im, const StateNetwork& network, const std::string& filename, bool states)
 {
   auto outputFilename = getOutputFilename(im, filename, ".tree", states);
-  SafeOutFile outFile { outputFilename };
+  SafeOutFile outFile { outputFilename, std::ios_base::out, im.overwriteOutput() };
   writeTree(im, network, outFile, states);
+  outFile.commit();
   return outputFilename;
 }
 
 std::string writeFlowTree(InfomapBase& im, const StateNetwork& network, const std::string& filename, bool states)
 {
   auto outputFilename = getOutputFilename(im, filename, ".ftree", states);
-  SafeOutFile outFile { outputFilename };
+  SafeOutFile outFile { outputFilename, std::ios_base::out, im.overwriteOutput() };
   writeTree(im, network, outFile, states);
   writeTreeLinks(im, outFile, states);
+  outFile.commit();
   return outputFilename;
 }
 
 std::string writeNewickTree(InfomapBase& im, const std::string& filename, bool states)
 {
   auto outputFilename = getOutputFilename(im, filename, ".nwk", states);
-  SafeOutFile outFile { outputFilename };
+  SafeOutFile outFile { outputFilename, std::ios_base::out, im.overwriteOutput() };
   writeNewickTree(im, outFile, states);
+  outFile.commit();
   return outputFilename;
 }
 
 std::string writeJsonTree(InfomapBase& im, const StateNetwork& network, const std::string& filename, bool states, bool writeLinks)
 {
   auto outputFilename = getOutputFilename(im, filename, ".json", states);
-  SafeOutFile outFile { outputFilename };
+  SafeOutFile outFile { outputFilename, std::ios_base::out, im.overwriteOutput() };
   writeJsonTree(im, network, outFile, states, writeLinks);
+  outFile.commit();
   return outputFilename;
 }
 
 std::string writeCsvTree(InfomapBase& im, const StateNetwork& network, const std::string& filename, bool states)
 {
   auto outputFilename = getOutputFilename(im, filename, ".csv", states);
-  SafeOutFile outFile { outputFilename };
+  SafeOutFile outFile { outputFilename, std::ios_base::out, im.overwriteOutput() };
   writeCsvTree(im, network, outFile, states);
+  outFile.commit();
   return outputFilename;
 }
 

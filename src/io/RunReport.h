@@ -50,7 +50,7 @@ struct RunTimingReport {
 
 std::string runSummaryReportJson(const RunSummaryReport& report);
 std::string runTimingReportJson(const RunTimingReport& report);
-void writeJsonReport(const std::string& path, const std::string& json);
+void writeJsonReport(const std::string& path, const std::string& json, bool overwrite = true);
 
 } // namespace infomap
 

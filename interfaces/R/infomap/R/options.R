@@ -29,8 +29,11 @@ OUTPUT_OPTIONS <- list(
   list(type = "value", name = "clu_level", flag = "--clu-level", default = NULL, include = .skip_when_null),
   list(type = "flag", name = "hide_bipartite_nodes", flag = "--hide-bipartite-nodes", default = FALSE),
   list(type = "flag", name = "print_all_trials", flag = "--print-all-trials", default = FALSE),
+  list(type = "flag", name = "no_overwrite", flag = "--no-overwrite", default = FALSE),
+  list(type = "flag", name = "print_config_fingerprint", flag = "--print-config-fingerprint", default = FALSE),
   list(type = "value", name = "timing_json", flag = "--timing-json", default = NULL, include = .skip_when_null),
   list(type = "value", name = "summary_json", flag = "--summary-json", default = NULL, include = .skip_when_null),
+  list(type = "value", name = "manifest_json", flag = "--manifest-json", default = NULL, include = .skip_when_null),
   list(type = "flag", name = "memory_report", flag = "--memory-report", default = FALSE),
   list(type = "flag", name = "silent", flag = "--silent", default = FALSE),
   list(type = "flag", name = "pretty", flag = "--pretty", default = FALSE)
@@ -80,17 +83,18 @@ OPTION_FIELD_NAMES <- c(
   "assign_to_neighbouring_module", "meta_data", "meta_data_rate", "meta_data_unweighted",
   "no_infomap", "out_name", "no_file_output", "tree",
   "ftree", "clu", "clu_level", "output",
-  "hide_bipartite_nodes", "print_all_trials", "timing_json", "summary_json",
-  "memory_report", "verbosity_level", "silent", "pretty",
-  "two_level", "flow_model", "directed", "recorded_teleportation",
-  "use_node_weights_as_flow", "to_nodes", "teleportation_probability", "regularized",
-  "regularization_strength", "entropy_corrected", "entropy_correction_strength", "markov_time",
-  "variable_markov_time", "variable_markov_damping", "variable_markov_min_scale", "preferred_number_of_modules",
-  "multilayer_relax_rate", "multilayer_relax_limit", "multilayer_relax_limit_up", "multilayer_relax_limit_down",
-  "multilayer_relax_by_jsd", "seed", "num_trials", "core_loop_limit",
-  "core_level_limit", "tune_iteration_limit", "core_loop_codelength_threshold", "tune_iteration_relative_threshold",
-  "fast_hierarchical_solution", "inner_parallelization", "parallel_trials", "prefer_modular_solution",
-  "num_random_moves", "max_degree_for_random_moves"
+  "hide_bipartite_nodes", "print_all_trials", "no_overwrite", "print_config_fingerprint",
+  "timing_json", "summary_json", "manifest_json", "memory_report",
+  "verbosity_level", "silent", "pretty", "two_level",
+  "flow_model", "directed", "recorded_teleportation", "use_node_weights_as_flow",
+  "to_nodes", "teleportation_probability", "regularized", "regularization_strength",
+  "entropy_corrected", "entropy_correction_strength", "markov_time", "variable_markov_time",
+  "variable_markov_damping", "variable_markov_min_scale", "preferred_number_of_modules", "multilayer_relax_rate",
+  "multilayer_relax_limit", "multilayer_relax_limit_up", "multilayer_relax_limit_down", "multilayer_relax_by_jsd",
+  "seed", "num_trials", "core_loop_limit", "core_level_limit",
+  "tune_iteration_limit", "core_loop_codelength_threshold", "tune_iteration_relative_threshold", "fast_hierarchical_solution",
+  "inner_parallelization", "parallel_trials", "prefer_modular_solution", "num_random_moves",
+  "max_degree_for_random_moves"
 )
 
 OPTION_DEFAULTS <- list(
@@ -116,8 +120,11 @@ OPTION_DEFAULTS <- list(
   output = NULL,
   hide_bipartite_nodes = FALSE,
   print_all_trials = FALSE,
+  no_overwrite = FALSE,
+  print_config_fingerprint = FALSE,
   timing_json = NULL,
   summary_json = NULL,
+  manifest_json = NULL,
   memory_report = FALSE,
   verbosity_level = 1L,
   silent = FALSE,
@@ -199,8 +206,11 @@ OPTION_DEFAULTS <- list(
 #'   \item{`output`}{Write selected output formats as a comma-separated list without spaces, e.g. -o clu,tree,ftree. Options: clu, tree, ftree, newick, json, csv, network, states, flow.}
 #'   \item{`hide_bipartite_nodes`}{Hide bipartite nodes in output by projecting the solution to primary nodes.}
 #'   \item{`print_all_trials`}{Write each trial to separate output files. Has effect only when --num-trials is greater than 1.}
+#'   \item{`no_overwrite`}{Fail with an output error if any target output file already exists. By default existing files are replaced.}
+#'   \item{`print_config_fingerprint`}{Print the canonical configuration fingerprint and exit.}
 #'   \item{`timing_json`}{Write machine-readable run timing JSON to this path. Use - for stdout.}
 #'   \item{`summary_json`}{Write machine-readable final run summary JSON to this path. Use - for stdout.}
+#'   \item{`manifest_json`}{Write a machine-readable run manifest JSON to this path. Use - for stdout.}
 #'   \item{`memory_report`}{Include peak RSS and best-effort bytes per node/link estimates in timing JSON. Requires --timing-json.}
 #'   \item{`verbosity_level`}{Increase console verbosity. Add more v flags to increase verbosity up to -vvv.}
 #'   \item{`silent`}{Suppress console output.}

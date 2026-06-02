@@ -260,4 +260,76 @@ TEST_CASE("SafeFile detects writable and missing directories [fast][core][utils]
   CHECK_FALSE(infomap::isDirectoryWritable(tempDir.path() + "/missing/"));
 }
 
+TEST_CASE("SafeOutFile commits atomically and overwrites by default [fast][core][utils][io]")
+{
+  const TempDir tempDir;
+  const auto path = joinPath(tempDir.path(), "result.txt");
+
+  {
+    infomap::SafeOutFile initial(path);
+    initial << "old\n";
+    initial.commit();
+  }
+
+  {
+    infomap::SafeOutFile replacement(path);
+    replacement << "new\n";
+    replacement.commit();
+  }
+
+  std::ifstream input(path.c_str());
+  std::ostringstream contents;
+  contents << input.rdbuf();
+  CHECK(contents.str() == "new\n");
+}
+
+TEST_CASE("SafeOutFile no-overwrite preserves existing targets [fast][core][utils][io]")
+{
+  const TempDir tempDir;
+  const auto path = joinPath(tempDir.path(), "result.txt");
+
+  {
+    infomap::SafeOutFile initial(path);
+    initial << "old\n";
+    initial.commit();
+  }
+
+  const auto expectedMessage = "Output file already exists: '" + path + "'";
+  CHECK_THROWS_WITH_AS(
+      infomap::SafeOutFile(path, std::ios_base::out, false),
+      expectedMessage.c_str(),
+      std::runtime_error);
+
+  std::ifstream input(path.c_str());
+  std::ostringstream contents;
+  contents << input.rdbuf();
+  CHECK(contents.str() == "old\n");
+}
+
+TEST_CASE("SafeOutFile removes uncommitted temp files [fast][core][utils][io]")
+{
+  const TempDir tempDir;
+  const auto path = joinPath(tempDir.path(), "result.txt");
+
+  {
+    infomap::SafeOutFile output(path);
+    output << "partial\n";
+  }
+
+  std::ifstream input(path.c_str());
+  CHECK_FALSE(input.good());
+}
+
+TEST_CASE("ensureDirectoryExists creates a deep directory chain [fast][core][utils][io]")
+{
+  const TempDir tempDir;
+  const auto leaf = joinPath(joinPath(joinPath(tempDir.path(), "a"), "b"), "c");
+
+  infomap::ensureDirectoryExists(leaf);
+
+  CHECK(infomap::isDirectory(leaf));
+  // Idempotent: a second call on an existing chain is a no-op, not an error.
+  CHECK_NOTHROW(infomap::ensureDirectoryExists(leaf));
+}
+
 } // namespace

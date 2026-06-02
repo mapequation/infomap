@@ -139,8 +139,11 @@ struct Config {
   bool printClu = false;
   bool printAllTrials = false;
 #ifndef SWIG
+  bool noOverwriteOutput = false;
+  bool printConfigFingerprint = false;
   std::string timingJsonPath;
   std::string summaryJsonPath;
+  std::string runManifestPath;
   bool memoryReport = false;
 #endif
   int cluLevel = 1; // Write modules at specified depth from root. 1, 2, ... or -1 for bottom level
@@ -225,8 +228,11 @@ struct Config {
     outName = other.outName;
     outputFormats = other.outputFormats;
 #ifndef SWIG
+    noOverwriteOutput = other.noOverwriteOutput;
+    printConfigFingerprint = other.printConfigFingerprint;
     timingJsonPath = other.timingJsonPath;
     summaryJsonPath = other.summaryJsonPath;
+    runManifestPath = other.runManifestPath;
     memoryReport = other.memoryReport;
 #endif
     verbosity = other.verbosity;
@@ -269,6 +275,10 @@ struct Config {
   bool haveMetaData() const { return !metaDataFile.empty() || numMetaDataDimensions != 0; }
 
   bool haveOutput() const { return !noFileOutput; }
+
+#ifndef SWIG
+  bool overwriteOutput() const { return !noOverwriteOutput; }
+#endif
 
   bool haveModularResultOutput() const
   {

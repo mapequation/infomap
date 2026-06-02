@@ -8,7 +8,9 @@
  ******************************************************************************/
 
 #include "Infomap.h"
+#include "io/InfomapError.h"
 #include "io/ProgramInterface.h"
+#include "io/RunMetadata.h"
 #include <iostream>
 #include <stdexcept>
 
@@ -21,16 +23,39 @@ namespace infomap {
 int run(const std::string& flags)
 {
   try {
-    InfomapWrapper(Config(flags, true)).run();
+    Config config;
+    try {
+      config = Config(flags, true);
+    } catch (const InfomapError&) {
+      // Preserve the typed exit code (e.g. output errors during validation).
+      throw;
+    } catch (const std::exception& e) {
+      // Argument parsing failures surface as std::runtime_error.
+      throw InfomapError(ExitCode::InvalidArguments, e.what());
+    }
+    // CleanExit (help/version/json-parameters) is not a std::exception, so it
+    // bypasses the remapping above and is handled by the outer catch.
+
+    if (config.printConfigFingerprint) {
+      std::cout << configFingerprint(config) << '\n';
+      return 0;
+    }
+    InfomapWrapper(config).run();
   } catch (const CleanExit&) {
     // Help / version / json-parameters CLI flags requested a clean exit.
     return 0;
+  } catch (const InfomapError& e) {
+    std::cerr << "Error: " << e.what() << '\n';
+    return exitCodeValue(e.code());
+  } catch (const std::logic_error& e) {
+    std::cerr << "Error: " << e.what() << '\n';
+    return exitCodeValue(ExitCode::InternalError);
   } catch (std::exception& e) {
     std::cerr << "Error: " << e.what() << '\n';
-    return 1;
+    return exitCodeValue(ExitCode::InternalError);
   } catch (char const* e) {
     std::cerr << "Str error: " << e << '\n';
-    return 1;
+    return exitCodeValue(ExitCode::InternalError);
   }
 
   return 0;

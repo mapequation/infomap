@@ -8,6 +8,7 @@
  ******************************************************************************/
 
 #include "Network.h"
+#include "InfomapError.h"
 #include "NetworkBuilder.h"
 #include "../utils/Log.h"
 #include "../utils/PrettyOutput.h"
@@ -74,7 +75,13 @@ void Network::readInputData(std::string filename, bool accumulate)
   if (filename.empty()) {
     throw std::runtime_error("No input file to read network");
   }
-  buildNetworkFromInput(*this, filename);
+  try {
+    buildNetworkFromInput(*this, filename);
+  } catch (const InfomapError&) {
+    throw;
+  } catch (const std::exception& e) {
+    throw InfomapError(ExitCode::InputError, e.what());
+  }
   printSummary();
 }
 
@@ -94,7 +101,13 @@ void Network::postProcessInputData()
 
 void Network::readMetaData(const std::string& filename)
 {
-  buildMetaDataFromInput(*this, filename);
+  try {
+    buildMetaDataFromInput(*this, filename);
+  } catch (const InfomapError&) {
+    throw;
+  } catch (const std::exception& e) {
+    throw InfomapError(ExitCode::InputError, e.what());
+  }
 }
 
 void Network::printSummary()

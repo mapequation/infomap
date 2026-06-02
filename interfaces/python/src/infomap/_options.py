@@ -31,8 +31,11 @@ _OUTPUT_OPTION_SPECS = (
     ("value", "clu_level", "--clu-level", lambda value: value is not None),
     ("flag", "hide_bipartite_nodes", "--hide-bipartite-nodes", None),
     ("flag", "print_all_trials", "--print-all-trials", None),
+    ("flag", "no_overwrite", "--no-overwrite", None),
+    ("flag", "print_config_fingerprint", "--print-config-fingerprint", None),
     ("value", "timing_json", "--timing-json", lambda value: value is not None),
     ("value", "summary_json", "--summary-json", lambda value: value is not None),
+    ("value", "manifest_json", "--manifest-json", lambda value: value is not None),
     ("flag", "memory_report", "--memory-report", None),
     ("flag", "silent", "--silent", None),
     ("flag", "pretty", "--pretty", None),
@@ -163,10 +166,17 @@ class InfomapOptions:
     print_all_trials : bool, optional
         Write each trial to separate output files. Has effect only when --num-trials is
         greater than 1.
+    no_overwrite : bool, optional
+        Fail with an output error if any target output file already exists. By default
+        existing files are replaced.
+    print_config_fingerprint : bool, optional
+        Print the canonical configuration fingerprint and exit.
     timing_json : str, optional
         Write machine-readable run timing JSON to this path. Use - for stdout.
     summary_json : str, optional
         Write machine-readable final run summary JSON to this path. Use - for stdout.
+    manifest_json : str, optional
+        Write a machine-readable run manifest JSON to this path. Use - for stdout.
     memory_report : bool, optional
         Include peak RSS and best-effort bytes per node/link estimates in timing JSON.
         Requires --timing-json.
@@ -301,8 +311,11 @@ class InfomapOptions:
     output: list[str] | tuple[str, ...] | None = None
     hide_bipartite_nodes: bool = False
     print_all_trials: bool = False
+    no_overwrite: bool = False
+    print_config_fingerprint: bool = False
     timing_json: str | None = None
     summary_json: str | None = None
+    manifest_json: str | None = None
     memory_report: bool = False
     verbosity_level: int = 1
     silent: bool = False
@@ -417,8 +430,11 @@ def _construct_args(
     output=None,
     hide_bipartite_nodes=False,
     print_all_trials=False,
+    no_overwrite=False,
+    print_config_fingerprint=False,
     timing_json=None,
     summary_json=None,
+    manifest_json=None,
     memory_report=False,
     verbosity_level=1,
     silent=False,

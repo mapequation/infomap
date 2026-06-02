@@ -8,8 +8,10 @@
  ******************************************************************************/
 
 #include "OutputPlan.h"
+#include "InfomapError.h"
 #include "Network.h"
 #include "OutputFormats.h"
+#include "SafeFile.h"
 #include "../core/InfomapBase.h"
 #include "../utils/Log.h"
 #include "../utils/PrettyOutput.h"
@@ -219,6 +221,57 @@ std::vector<OutputArtifact> planOutputArtifacts(const Config& config, const std:
 std::vector<OutputArtifact> planOutputArtifacts(const Config& config, OutputPhase phase, int trial)
 {
   return planOutputArtifacts(config, outputPlanBasename(config, trial), phase);
+}
+
+std::vector<std::pair<std::string, std::string>> planReportArtifacts(const Config& config)
+{
+  std::vector<std::pair<std::string, std::string>> reports;
+  const auto add = [&](const std::string& key, const std::string& path) {
+    if (!path.empty() && path != "-")
+      reports.emplace_back(key, path);
+  };
+  add("summary_json", config.summaryJsonPath);
+  add("timing_json", config.timingJsonPath);
+  add("run_manifest", config.runManifestPath);
+  return reports;
+}
+
+std::vector<std::string> planAllOutputPaths(const Config& config)
+{
+  std::vector<std::string> paths;
+
+  const auto collectPhase = [&](OutputPhase phase, int trial) {
+    for (const auto& artifact : planOutputArtifacts(config, phase, trial))
+      paths.push_back(artifact.filename);
+  };
+
+  // Network sidecars are written once, independent of trial.
+  collectPhase(OutputPhase::BeforeFlow, -1);
+  collectPhase(OutputPhase::AfterFlow, -1);
+
+  // The final modular result is written once with the canonical basename, and
+  // additionally per trial when --print-all-trials uses separate files.
+  collectPhase(OutputPhase::AfterPartition, -1);
+  if (config.printAllTrials && config.numTrials > 1) {
+    for (unsigned int trial = 1; trial <= config.numTrials; ++trial)
+      collectPhase(OutputPhase::AfterPartition, static_cast<int>(trial));
+  }
+
+  for (const auto& report : planReportArtifacts(config))
+    paths.push_back(report.second);
+
+  return paths;
+}
+
+void preflightOutputTargets(const Config& config)
+{
+  if (config.overwriteOutput())
+    return;
+
+  for (const auto& path : planAllOutputPaths(config)) {
+    if (pathExists(path))
+      throw InfomapError(ExitCode::OutputError, io::Str() << "Output file already exists: '" << path << "'");
+  }
 }
 
 void writeOutputArtifact(InfomapBase& infomap, Network& network, const OutputArtifact& output)

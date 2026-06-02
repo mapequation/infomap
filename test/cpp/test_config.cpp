@@ -5,6 +5,7 @@
 #include "io/OutputPlan.h"
 #include "io/ParameterCatalog.h"
 #include "io/ProgramInterface.h"
+#include "io/RunMetadata.h"
 
 #include <map>
 #include <set>
@@ -182,11 +183,12 @@ TEST_CASE("Config parses parallel trials flag [fast][core][config][cli]")
 
 TEST_CASE("Config parses run report flags [fast][core][config][cli]")
 {
-  const Config config("input.net --silent --no-file-output --timing-json timing.json --summary-json summary.json --memory-report", true);
+  const Config config("input.net --silent --no-file-output --timing-json timing.json --summary-json summary.json --memory-report --manifest-json manifest.json", true);
 
   CHECK(config.timingJsonPath == "timing.json");
   CHECK(config.summaryJsonPath == "summary.json");
   CHECK(config.memoryReport);
+  CHECK(config.runManifestPath == "manifest.json");
 
   const auto* timingJson = findParameter("timing-json");
   REQUIRE(timingJson != nullptr);
@@ -205,6 +207,84 @@ TEST_CASE("Config parses run report flags [fast][core][config][cli]")
   CHECK(memoryReport->group == "Output");
   CHECK(memoryReport->isAdvanced);
   CHECK_FALSE(memoryReport->requireArgument);
+
+  const auto* runManifest = findParameter("manifest-json");
+  REQUIRE(runManifest != nullptr);
+  CHECK(runManifest->group == "Output");
+  CHECK(runManifest->isAdvanced);
+  CHECK(runManifest->requireArgument);
+}
+
+TEST_CASE("Config parses batch output safety flags [fast][core][config][cli]")
+{
+  const Config defaultConfig("input.net --silent --no-file-output", true);
+  CHECK(defaultConfig.overwriteOutput());
+
+  const Config strictConfig("input.net --silent --no-file-output --no-overwrite", true);
+  CHECK_FALSE(strictConfig.overwriteOutput());
+
+  // --overwrite was removed; only --no-overwrite opts into strict mode.
+  CHECK_THROWS_AS(Config("input.net --silent --no-file-output --overwrite", true), std::runtime_error);
+
+  const auto* noOverwrite = findParameter("no-overwrite");
+  REQUIRE(noOverwrite != nullptr);
+  CHECK(noOverwrite->group == "Output");
+  CHECK(noOverwrite->isAdvanced);
+  CHECK_FALSE(noOverwrite->requireArgument);
+
+  CHECK(findParameter("overwrite") == nullptr);
+}
+
+TEST_CASE("Config fingerprint ignores presentation output options [fast][core][config][cli]")
+{
+  const Config base("input.net --silent --no-file-output --seed 7 --num-trials 2 --flow-model directed", true);
+  const Config cosmetic("input.net --pretty --verbose --no-file-output --seed 7 --num-trials 2 --flow-model directed --timing-json timing.json --summary-json summary.json", true);
+  const Config changed("input.net --silent --no-file-output --seed 8 --num-trials 2 --flow-model directed", true);
+
+  CHECK(infomap::configFingerprint(base) == infomap::configFingerprint(cosmetic));
+  CHECK(infomap::configFingerprint(base) != infomap::configFingerprint(changed));
+  CHECK(infomap::canonicalConfigJson(base).find("\"seed\":7") != std::string::npos);
+}
+
+TEST_CASE("Config fingerprint ignores the input path [fast][core][config][cli]")
+{
+  // Input identity is captured by the input fingerprint, not the config
+  // fingerprint, so the same algorithm config over a different path matches.
+  const Config a("a.net --silent --no-file-output --seed 7 --num-trials 2", true);
+  const Config b("sub/dir/b.net --silent --no-file-output --seed 7 --num-trials 2", true);
+
+  CHECK(infomap::configFingerprint(a) == infomap::configFingerprint(b));
+  CHECK(infomap::canonicalConfigJson(a).find(".net") == std::string::npos);
+}
+
+TEST_CASE("Config fingerprint round-trips double precision [fast][core][config][cli]")
+{
+  // Default stream precision (6) would collapse these to the same string.
+  const Config base("input.net --silent --no-file-output --markov-time 1.0", true);
+  const Config nudged("input.net --silent --no-file-output --markov-time 1.0000000001", true);
+
+  CHECK(infomap::configFingerprint(base) != infomap::configFingerprint(nudged));
+}
+
+TEST_CASE("Config fingerprint tracks multilayer relax settings [fast][core][config][cli]")
+{
+  const Config base("input.net --silent --no-file-output", true);
+  const Config relaxed("input.net --silent --no-file-output --multilayer-relax-rate 0.3", true);
+
+  CHECK(infomap::configFingerprint(base) != infomap::configFingerprint(relaxed));
+}
+
+TEST_CASE("Config parses fingerprint-only CLI flag [fast][core][config][cli]")
+{
+  const Config config("input.net --silent --no-file-output --print-config-fingerprint", true);
+
+  CHECK(config.printConfigFingerprint);
+
+  const auto* parameter = findParameter("print-config-fingerprint");
+  REQUIRE(parameter != nullptr);
+  CHECK(parameter->group == "Output");
+  CHECK(parameter->isAdvanced);
+  CHECK_FALSE(parameter->requireArgument);
 }
 
 TEST_CASE("Config rejects two stdout run report streams [fast][core][config][cli]")
@@ -212,6 +292,10 @@ TEST_CASE("Config rejects two stdout run report streams [fast][core][config][cli
   CHECK_THROWS_WITH_AS(
       Config("input.net --silent --no-file-output --timing-json - --summary-json -", true),
       "--timing-json - and --summary-json - cannot both write to stdout",
+      std::runtime_error);
+  CHECK_THROWS_WITH_AS(
+      Config("input.net --silent --no-file-output --summary-json - --manifest-json -", true),
+      "--summary-json - and --manifest-json - cannot both write to stdout",
       std::runtime_error);
 }
 
@@ -238,9 +322,14 @@ TEST_CASE("Config requires silent mode for stdout run reports [fast][core][confi
       Config("input.net --no-file-output --summary-json -", true),
       "--summary-json - requires --silent",
       std::runtime_error);
+  CHECK_THROWS_WITH_AS(
+      Config("input.net --no-file-output --manifest-json -", true),
+      "--manifest-json - requires --silent",
+      std::runtime_error);
 
   CHECK_NOTHROW(Config("input.net --silent --no-file-output --timing-json -", true));
   CHECK_NOTHROW(Config("input.net --silent --no-file-output --summary-json -", true));
+  CHECK_NOTHROW(Config("input.net --silent --no-file-output --manifest-json -", true));
 }
 
 TEST_CASE("Config accepts zero sentinel limits [fast][core][config][cli]")

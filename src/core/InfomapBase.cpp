@@ -19,6 +19,7 @@
 #endif
 #include "InfomapOptimizer.h"
 #include "../io/RunReport.h"
+#include "../io/RunMetadata.h"
 #include "../io/SafeFile.h"
 #include "../io/OutputPlan.h"
 #include "../utils/FileURI.h"
@@ -152,6 +153,7 @@ public:
 
   Result run()
   {
+    preflightOutputTargets(m_infomap);
     validateNetwork();
     {
       auto timer = m_timing.scope("pre_run_output_s");
@@ -648,7 +650,7 @@ public:
       report.bestTrial = result.bestTrialIndex + 1;
       report.trialCodelengths = m_infomap.m_codelengths;
       report.trialTopModules = m_infomap.m_numTopModules;
-      writeJsonReport(m_infomap.summaryJsonPath, runSummaryReportJson(report));
+      writeJsonReport(m_infomap.summaryJsonPath, runSummaryReportJson(report), m_infomap.overwriteOutput());
     }
 
     if (!m_infomap.timingJsonPath.empty()) {
@@ -669,7 +671,11 @@ public:
       if (report.includeMemory) {
         report.memory = currentMemoryReport(report.network.nodes, report.network.links);
       }
-      writeJsonReport(m_infomap.timingJsonPath, runTimingReportJson(report));
+      writeJsonReport(m_infomap.timingJsonPath, runTimingReportJson(report), m_infomap.overwriteOutput());
+    }
+
+    if (!m_infomap.runManifestPath.empty()) {
+      writeJsonReport(m_infomap.runManifestPath, runManifestJson(m_infomap), m_infomap.overwriteOutput());
     }
   }
 
