@@ -639,7 +639,9 @@ INFOMAP_HOT unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestMod
 
       // Make best possible move
       if (bestDeltaModule.module == current.index) {
-        proposals[nodeIndex].clearDirty = true;
+        auto& proposal = proposals[nodeIndex];
+        proposal.clearDirty = true;
+        proposal.nodeIndex = nodeIndex;
         continue;
       }
 
