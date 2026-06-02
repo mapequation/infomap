@@ -16,6 +16,7 @@
 #include "../utils/infomath.h"
 #include "InfoNode.h"
 #include "FlowData.h"
+#include "../utils/Random.h"
 
 #include <set>
 #include <utility>
@@ -34,6 +35,7 @@ public:
   {
     m_infomap = infomap;
     m_objective.init(infomap->getConfig());
+    m_innerParallelMoveSweep = 0;
   }
 
   // ===================================================
@@ -112,6 +114,7 @@ protected:
   std::vector<FlowDataType> m_moduleFlowData;
   std::vector<unsigned int> m_moduleMembers;
   std::vector<unsigned int> m_emptyModules;
+  unsigned int m_innerParallelMoveSweep = 0;
 };
 
 // ===================================================
@@ -528,6 +531,7 @@ INFOMAP_HOT unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestMod
 
   unsigned int numNodes = nodeEnumeration.size();
   unsigned int numRandomMoves = std::min(m_infomap->numRandomMoves, numNodes);
+  const unsigned int parallelMoveSweep = ++m_innerParallelMoveSweep;
 
   std::vector<std::vector<unsigned int>> randomMoveTargets(numNodes);
   if (numRandomMoves > 0) {
@@ -562,6 +566,7 @@ INFOMAP_HOT unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestMod
 #pragma omp parallel
   {
     VectorMap<DeltaFlowDataType> deltaFlow(numNodes);
+    std::vector<unsigned int> moduleEnumeration;
 
 #pragma omp for schedule(dynamic) // Use dynamic scheduling as some threads could end early
     for (unsigned int i = 0; i < numNodes; ++i) {
@@ -618,6 +623,14 @@ INFOMAP_HOT unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestMod
       m_objective.addTeleportationFlow(current, m_moduleFlowData, deltaFlow);
 
       auto& moduleDeltaEnterExit = deltaFlow.values();
+      unsigned int numModuleLinks = deltaFlow.size();
+
+      // Randomize link order for optimized search without sharing m_rand across threads.
+      moduleEnumeration.resize(numModuleLinks);
+      Random moduleRand(static_cast<unsigned int>(m_infomap->seedToRandomNumberGenerator)
+                        + 0x9e3779b9u * (nodeIndex + 1u)
+                        + 0x85ebca6bu * parallelMoveSweep);
+      moduleRand.getRandomizedIndexVector(moduleEnumeration);
 
       DeltaFlowDataType bestDeltaModule(oldModuleDelta);
       double bestDeltaCodelength = 0.0;
@@ -625,7 +638,8 @@ INFOMAP_HOT unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestMod
       double deltaCodelengthOnStrongestConnectedModule = 0.0;
 
       // Find the move that minimizes the description length
-      for (unsigned int j = 0; j < deltaFlow.size(); ++j) {
+      for (unsigned int k = 0; k < numModuleLinks; ++k) {
+        auto j = moduleEnumeration[k];
         unsigned int otherModule = moduleDeltaEnterExit[j].module;
         if (otherModule != current.index) {
           double deltaCodelength = m_objective.getDeltaCodelengthOnMovingNode(current,

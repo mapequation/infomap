@@ -21,6 +21,22 @@ namespace {
 
 using infomap::InfomapWrapper;
 
+#ifdef _OPENMP
+struct ScopedOmpThreadCount {
+  explicit ScopedOmpThreadCount(int numThreads) : previousThreads(omp_get_max_threads())
+  {
+    omp_set_num_threads(numThreads);
+  }
+
+  ~ScopedOmpThreadCount()
+  {
+    omp_set_num_threads(previousThreads);
+  }
+
+  int previousThreads = 0;
+};
+#endif
+
 struct FlowRunResult {
   std::map<unsigned int, unsigned int> modules;
   std::vector<std::vector<unsigned int>> partition;
@@ -475,7 +491,7 @@ TEST_CASE("Regularized multilayer matchable state-id flow matches analytic prior
 TEST_CASE("Inner parallelization with regularized multilayer input falls back to stable serial optimization [fast][core][flow][openmp]")
 {
 #ifdef _OPENMP
-  omp_set_num_threads(8);
+  ScopedOmpThreadCount ompThreads(8);
   CHECK(omp_get_max_threads() > 1);
 #endif
 
@@ -560,7 +576,7 @@ TEST_CASE("Inner parallelization remains runnable and numerically sane on the di
 TEST_CASE("Inner parallelization codelength matches its emitted partition [fast][core][flow][openmp]")
 {
 #ifdef _OPENMP
-  omp_set_num_threads(8);
+  ScopedOmpThreadCount ompThreads(8);
   CHECK(omp_get_max_threads() > 1);
 #endif
 
@@ -570,7 +586,7 @@ TEST_CASE("Inner parallelization codelength matches its emitted partition [fast]
 TEST_CASE("Inner parallelization codelength matches recorded-teleportation partition [fast][core][flow][openmp]")
 {
 #ifdef _OPENMP
-  omp_set_num_threads(8);
+  ScopedOmpThreadCount ompThreads(8);
   CHECK(omp_get_max_threads() > 1);
 #endif
 
@@ -580,7 +596,7 @@ TEST_CASE("Inner parallelization codelength matches recorded-teleportation parti
 TEST_CASE("Inner parallelization is deterministic for a fixed seed and thread count [fast][core][flow][openmp]")
 {
 #ifdef _OPENMP
-  omp_set_num_threads(8);
+  ScopedOmpThreadCount ompThreads(8);
   CHECK(omp_get_max_threads() > 1);
 #endif
 
@@ -595,7 +611,7 @@ TEST_CASE("Inner parallelization is deterministic for a fixed seed and thread co
 TEST_CASE("Inner parallelization with meta data falls back to stable serial optimization [fast][core][flow][openmp]")
 {
 #ifdef _OPENMP
-  omp_set_num_threads(8);
+  ScopedOmpThreadCount ompThreads(8);
   CHECK(omp_get_max_threads() > 1);
 #endif
 
@@ -618,7 +634,7 @@ TEST_CASE("Inner parallelization with meta data falls back to stable serial opti
 TEST_CASE("Inner parallelization with memory input falls back to stable serial optimization [fast][core][flow][openmp]")
 {
 #ifdef _OPENMP
-  omp_set_num_threads(8);
+  ScopedOmpThreadCount ompThreads(8);
   CHECK(omp_get_max_threads() > 1);
 #endif
 
