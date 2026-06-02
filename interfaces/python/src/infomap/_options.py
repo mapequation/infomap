@@ -246,7 +246,10 @@ class InfomapOptions:
         Find top modules fast. Use 2 to keep all fast levels and 3 to skip the recursive
         part.
     inner_parallelization : bool, optional
-        Parallelize the innermost loop for speed, with a possible accuracy tradeoff.
+        Experimental: use batched parallel node moves for coarse optimization.
+        Performance gains are workload-dependent, often require a relaxed
+        core-loop-codelength-threshold and low tune-iteration-limit, and may produce a
+        different partition than serial optimization.
     parallel_trials : bool, optional
         Run independent trials in parallel with OpenMP. --num-trials remains the total
         number of trials; the number of parallel workers follows the OpenMP thread count

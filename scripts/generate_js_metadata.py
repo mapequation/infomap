@@ -6,6 +6,9 @@ import subprocess
 from pathlib import Path
 
 
+REPO_ROOT = Path(__file__).resolve().parents[1]
+OVERRIDES = REPO_ROOT / "interfaces" / "parameters" / "overrides.json"
+
 PUBLIC_PARAMETER_KEYS = {
     "long",
     "short",
@@ -36,10 +39,20 @@ def load_parameters(infomap_bin):
 
 
 def public_parameter_metadata(parameters):
+    hidden = hidden_js_parameter_flags()
     return [
         {key: value for key, value in parameter.items() if key in PUBLIC_PARAMETER_KEYS}
         for parameter in parameters
+        if parameter["long"] not in hidden
     ]
+
+
+def hidden_js_parameter_flags():
+    overrides = json.loads(OVERRIDES.read_text(encoding="utf-8"))
+    return {
+        entry["flag"]
+        for entry in overrides.get("hiddenBindings", {}).get("ts", [])
+    }
 
 
 def write_json(path, payload):

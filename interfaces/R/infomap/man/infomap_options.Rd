@@ -92,7 +92,8 @@ Accuracy
 \item{\code{core_loop_codelength_threshold}}{Require at least this codelength improvement to accept a new solution in a core loop.}
 \item{\code{tune_iteration_relative_threshold}}{Require each tune iteration to improve codelength by this fraction of the initial two-level codelength.}
 \item{\code{fast_hierarchical_solution}}{Find top modules quickly. Use -FF to keep all fast levels. Use -FFF to skip recursive refinement.}
-\item{\code{inner_parallelization}}{Parallelize the innermost loop for speed, with a possible accuracy tradeoff.}
+\item{\code{inner_parallelization}}{Experimental: use batched parallel node moves for coarse optimization. Performance gains are workload-dependent, often require a relaxed core-loop-codelength-threshold and low tune-iteration-limit, and may produce a different partition than serial optimization.}
+\item{\code{parallel_trials}}{Run independent trials in parallel with OpenMP. --num-trials remains the total number of trials; the number of parallel workers follows the OpenMP thread count (e.g. OMP_NUM_THREADS), clamped to --num-trials. Peak memory scales with the worker count. Nested OpenMP and --inner-parallelization are disabled inside workers.}
 \item{\code{prefer_modular_solution}}{Prefer a modular solution even when one module gives a lower codelength.}
 \item{\code{num_random_moves}}{Try this many random moves in each core loop to merge weakly connected nodes.}
 \item{\code{max_degree_for_random_moves}}{Try random moves only for nodes with degree at most this value.}

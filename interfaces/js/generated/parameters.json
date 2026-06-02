@@ -614,16 +614,6 @@
     "default": false
   },
   {
-    "long": "--inner-parallelization",
-    "short": "",
-    "description": "Parallelize the innermost loop for speed, with a possible accuracy tradeoff.",
-    "group": "Accuracy",
-    "required": false,
-    "advanced": true,
-    "incremental": false,
-    "default": false
-  },
-  {
     "long": "--prefer-modular-solution",
     "short": "",
     "description": "Prefer a modular solution even when one module gives a lower codelength.",
