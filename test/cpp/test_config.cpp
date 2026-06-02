@@ -24,6 +24,16 @@ std::vector<std::string> resultKeysFor(const Config& config, infomap::OutputPhas
   return keys;
 }
 
+const infomap::ParameterSpec* findParameter(const std::string& longName)
+{
+  for (const auto& parameter : infomap::parameterCatalog()) {
+    if (parameter.longName == longName) {
+      return &parameter;
+    }
+  }
+  return nullptr;
+}
+
 TEST_CASE("Config accepts no-file-output without an output directory [fast][core][config][cli]")
 {
   CHECK_NOTHROW(Config("input.net --silent --no-file-output", true));
@@ -65,16 +75,10 @@ TEST_CASE("Flow model names map to runtime values [fast][core][config][cli]")
 TEST_CASE("Parameter catalog flow model choices match runtime flow model names [fast][core][config][cli]")
 {
   const auto& expected = infomap::flowModelNames();
-  bool foundFlowModel = false;
 
-  for (const auto& parameter : infomap::parameterCatalog()) {
-    if (parameter.longName == "flow-model") {
-      foundFlowModel = true;
-      CHECK(parameter.choices == expected);
-    }
-  }
-
-  CHECK(foundFlowModel);
+  const auto* flowModel = findParameter("flow-model");
+  REQUIRE(flowModel != nullptr);
+  CHECK(flowModel->choices == expected);
 }
 
 TEST_CASE("Config treats directed shorthand as directed flow model [fast][core][config][cli]")
@@ -163,6 +167,19 @@ TEST_CASE("Config parses pretty output flag [fast][core][config][cli]")
   CHECK_FALSE(negatedConfig.prettyOutput);
 }
 
+TEST_CASE("Config parses parallel trials flag [fast][core][config][cli]")
+{
+  const Config config("input.net --silent --no-file-output --num-trials 4 --parallel-trials", true);
+  CHECK(config.numTrials == 4);
+  CHECK(config.parallelTrials);
+
+  const auto* parameter = findParameter("parallel-trials");
+  REQUIRE(parameter != nullptr);
+  CHECK(parameter->group == "Accuracy");
+  CHECK(parameter->isAdvanced);
+  CHECK_FALSE(parameter->requireArgument);
+}
+
 TEST_CASE("Config accepts zero sentinel limits [fast][core][config][cli]")
 {
   const Config config("input.net --silent --no-file-output --core-level-limit 0 --tune-iteration-limit 0", true);
@@ -174,6 +191,19 @@ TEST_CASE("Config rejects unknown flow models and output formats [fast][core][co
 {
   CHECK_THROWS_WITH_AS(Config("input.net --silent --no-file-output --flow-model unknown", true), "Unrecognized flow model: 'unknown'", std::runtime_error);
   CHECK_THROWS_AS(Config("input.net --silent --no-file-output --output tree,unknown", true), std::runtime_error);
+}
+
+TEST_CASE("Feature-gated option follows compile-time flag [fast][core][config][cli]")
+{
+#if INFOMAP_FEATURE_TEST_FEATURE
+  CHECK(findParameter("test-feature") != nullptr);
+
+  const Config config("input.net --silent --no-file-output --test-feature", true);
+  CHECK(config.testFeature);
+#else
+  CHECK(findParameter("test-feature") == nullptr);
+  CHECK_THROWS_AS(Config("input.net --silent --no-file-output --test-feature", true), std::runtime_error);
+#endif
 }
 
 TEST_CASE("Output format manifest describes CLI formats and compatible filenames [fast][core][config][cli]")
@@ -338,15 +368,6 @@ TEST_CASE("Parameter catalog owns option choices and binding names [fast][core][
 
   REQUIRE(numTrials != nullptr);
   CHECK(numTrials->minValue == "1");
-
-  const auto findParameter = [](const std::string& longName) {
-    for (const auto& parameter : infomap::parameterCatalog()) {
-      if (parameter.longName == longName) {
-        return &parameter;
-      }
-    }
-    return static_cast<const infomap::ParameterSpec*>(nullptr);
-  };
 
   const auto* coreLevelLimit = findParameter("core-level-limit");
   REQUIRE(coreLevelLimit != nullptr);

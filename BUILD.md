@@ -99,6 +99,59 @@ ctest --preset dev
 
 Use `dev-openmp` instead of `dev` for an OpenMP-enabled preset.
 
+### Feature flags
+
+Experimental compile-time feature flags are supported for native C++ builds
+and Python wheel builds. They are off by default. R and JavaScript builds do
+not expose a feature-flag surface.
+
+Configure a feature-enabled CMake build by passing feature names through
+`INFOMAP_FEATURES`:
+
+```bash
+cmake -S . -B build/cmake-feature-x -DINFOMAP_FEATURES=feature-x
+cmake --build build/cmake-feature-x --target infomap_cli
+```
+
+Configure a feature-enabled Make native build by passing feature names through
+`FEATURES`:
+
+```bash
+make build-native FEATURES=feature-x
+```
+
+Configure a feature-enabled Python wheel or editable local install through the
+same `FEATURES` variable:
+
+```bash
+FEATURES=regularized-multilayer make build-python
+FEATURES=regularized-multilayer make dev-python-install
+```
+
+Feature names are defined in `scripts/build_config.py`. The existing SIMD log
+optimization is enabled as the feature `simd-log`:
+
+```bash
+make build-native NATIVE_ARCH=1 FEATURES=simd-log
+cmake -S . -B build/cmake-simd -DINFOMAP_NATIVE_ARCH=ON -DINFOMAP_FEATURES=simd-log
+```
+
+For the maintained CMake-based native test target, pass feature names through
+`TEST_CMAKE_ARGS`:
+
+```bash
+make test-native TEST_CMAKE_ARGS='-DINFOMAP_FEATURES=feature-x'
+```
+
+To add a new feature flag, register it in `scripts/build_config.py`,
+gate the related `Config` fields, `parameterCatalog()` entries, and
+implementation with the macro named by the feature registry's `define` field,
+then cover both the default-off and enabled builds in tests. Feature flags are
+compile-time build inputs, not runtime API options. `--version` and Python
+`infomap.build_info()` report enabled features from build-config metadata.
+`scripts/build_config.py` is the source of truth for feature names, compile
+definitions, dependencies, and conflicts.
+
 ## Python package
 
 `make build-python` uses the same shared `MODE`/`OPENMP` policy as
@@ -143,6 +196,12 @@ More targeted checks are available when you only need one slice:
 - `make test-python-unit`
 - `make test-python-doctest`
 - `make test-python-examples`
+
+CI uses two Python coverage tiers. Pull requests run the quick tier: Python
+3.14 on Ubuntu with unit tests, plus a Windows smoke test. The full tier keeps
+the broader Python version matrix, doctests, examples, and release smoke checks
+for `master`, release, prerelease, and manual workflow runs. Release and
+prerelease workflows still build the Python sdist and platform wheels.
 
 To build the Python extension in debug mode, pass the same mode override:
 

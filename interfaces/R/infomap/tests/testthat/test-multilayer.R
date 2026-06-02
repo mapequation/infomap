@@ -8,7 +8,9 @@ test_that("multilayer intra/inter format clusters across layers", {
       im$add_multilayer_intra_link(layer, e[1], e[2], 1.0)
     }
   }
-  for (n in 1:3) im$add_multilayer_inter_link(1, n, 2, 1.0)
+  for (n in 1:3) {
+    im$add_multilayer_inter_link(1, n, 2, 1.0)
+  }
 
   im$run()
   expect_true(im$have_memory)
@@ -26,12 +28,18 @@ expect_same_multilayer_links <- function(actual, expected) {
 }
 
 intra_links <- list(
-  c(1, 1, 2, 1.0), c(1, 2, 3, 1.0), c(1, 3, 1, 1.0),
-  c(2, 1, 2, 2.0), c(2, 2, 3, 2.0), c(2, 3, 1, 2.0)
+  c(1, 1, 2, 1.0),
+  c(1, 2, 3, 1.0),
+  c(1, 3, 1, 1.0),
+  c(2, 1, 2, 2.0),
+  c(2, 2, 3, 2.0),
+  c(2, 3, 1, 2.0)
 )
 
 inter_links <- list(
-  c(1, 1, 2, 0.5), c(1, 2, 2, 0.5), c(1, 3, 2, 0.5)
+  c(1, 1, 2, 0.5),
+  c(1, 2, 2, 0.5),
+  c(1, 3, 2, 0.5)
 )
 
 expect_same_multilayer_run <- function(actual, expected) {
@@ -44,7 +52,12 @@ expect_same_multilayer_run <- function(actual, expected) {
 test_that("add_multilayer_intra_links list input matches repeated add_multilayer_intra_link", {
   baseline <- Infomap(silent = TRUE, num_trials = 1L, two_level = TRUE)
   for (link in intra_links) {
-    baseline$add_multilayer_intra_link(link[[1L]], link[[2L]], link[[3L]], link[[4L]])
+    baseline$add_multilayer_intra_link(
+      link[[1L]],
+      link[[2L]],
+      link[[3L]],
+      link[[4L]]
+    )
   }
 
   im <- Infomap(silent = TRUE, num_trials = 1L, two_level = TRUE)
@@ -58,7 +71,12 @@ test_that("add_multilayer_intra_links accepts matrix input", {
 
   baseline <- Infomap(silent = TRUE, num_trials = 1L, two_level = TRUE)
   for (i in seq_len(nrow(links))) {
-    baseline$add_multilayer_intra_link(links[i, 1], links[i, 2], links[i, 3], links[i, 4])
+    baseline$add_multilayer_intra_link(
+      links[i, 1],
+      links[i, 2],
+      links[i, 3],
+      links[i, 4]
+    )
   }
 
   im <- Infomap(silent = TRUE, num_trials = 1L, two_level = TRUE)
@@ -85,11 +103,21 @@ test_that("add_multilayer_inter_links list input matches repeated add_multilayer
   baseline <- Infomap(silent = TRUE, num_trials = 1L, two_level = TRUE)
   im <- Infomap(silent = TRUE, num_trials = 1L, two_level = TRUE)
   for (link in intra_links) {
-    baseline$add_multilayer_intra_link(link[[1L]], link[[2L]], link[[3L]], link[[4L]])
+    baseline$add_multilayer_intra_link(
+      link[[1L]],
+      link[[2L]],
+      link[[3L]],
+      link[[4L]]
+    )
     im$add_multilayer_intra_link(link[[1L]], link[[2L]], link[[3L]], link[[4L]])
   }
   for (link in inter_links) {
-    baseline$add_multilayer_inter_link(link[[1L]], link[[2L]], link[[3L]], link[[4L]])
+    baseline$add_multilayer_inter_link(
+      link[[1L]],
+      link[[2L]],
+      link[[3L]],
+      link[[4L]]
+    )
   }
   im$add_multilayer_inter_links(inter_links)
 
@@ -104,7 +132,12 @@ test_that("add_multilayer_inter_links accepts matrix input", {
   baseline$add_multilayer_intra_links(intra_links)
   im$add_multilayer_intra_links(intra_links)
   for (i in seq_len(nrow(links))) {
-    baseline$add_multilayer_inter_link(links[i, 1], links[i, 2], links[i, 3], links[i, 4])
+    baseline$add_multilayer_inter_link(
+      links[i, 1],
+      links[i, 2],
+      links[i, 3],
+      links[i, 4]
+    )
   }
   im$add_multilayer_inter_links(links)
 
@@ -153,9 +186,7 @@ test_that("add_multilayer_links list input matches repeated add_multilayer_link"
 
 test_that("add_multilayer_links accepts matrix input through bulk path", {
   links <- matrix(
-    c(1, 1, 1, 2, 2,
-      1, 2, 2, 1, 1,
-      2, 1, 2, 2, 3),
+    c(1, 1, 1, 2, 2, 1, 2, 2, 1, 1, 2, 1, 2, 2, 3),
     ncol = 5L,
     byrow = TRUE
   )
@@ -173,9 +204,7 @@ test_that("add_multilayer_links accepts matrix input through bulk path", {
 
 test_that("add_multilayer_links accepts unweighted matrix input", {
   links <- matrix(
-    c(1, 1, 1, 2,
-      1, 2, 2, 1,
-      2, 1, 2, 2),
+    c(1, 1, 1, 2, 1, 2, 2, 1, 2, 1, 2, 2),
     ncol = 4L,
     byrow = TRUE
   )
@@ -197,7 +226,7 @@ test_that("add_igraph rejects diagonal multilayer links by default", {
   # Build an igraph with vertex attrs phys_id and layer_id, with a single
   # diagonal edge between (layer=1, phys=1) and (layer=2, phys=2).
   g <- igraph::make_empty_graph(4, directed = FALSE)
-  g <- igraph::set_vertex_attr(g, "phys_id",  value = c(1, 2, 1, 2))
+  g <- igraph::set_vertex_attr(g, "phys_id", value = c(1, 2, 1, 2))
   g <- igraph::set_vertex_attr(g, "layer_id", value = c(1, 1, 2, 2))
   # Edge between vertex 1 (layer=1, phys=1) and vertex 4 (layer=2, phys=2)
   g <- igraph::add_edges(g, c(1, 4))
@@ -214,13 +243,31 @@ test_that("add_igraph accepts intra/inter-compatible multilayer links", {
   skip_if_not_installed("igraph")
 
   g <- igraph::make_empty_graph(6, directed = TRUE)
-  g <- igraph::set_vertex_attr(g, "phys_id",  value = c(1, 2, 3, 1, 2, 3))
+  g <- igraph::set_vertex_attr(g, "phys_id", value = c(1, 2, 3, 1, 2, 3))
   g <- igraph::set_vertex_attr(g, "layer_id", value = c(1, 1, 1, 2, 2, 2))
-  g <- igraph::add_edges(g, c(
-    1, 2, 2, 3, 3, 1,
-    4, 5, 5, 6, 6, 4,
-    1, 4, 2, 5, 3, 6
-  ))
+  g <- igraph::add_edges(
+    g,
+    c(
+      1,
+      2,
+      2,
+      3,
+      3,
+      1,
+      4,
+      5,
+      5,
+      6,
+      6,
+      4,
+      1,
+      4,
+      2,
+      5,
+      3,
+      6
+    )
+  )
 
   im <- Infomap(silent = TRUE, num_trials = 1L, two_level = TRUE)
   expect_silent(im$add_igraph(g, multilayer_inter_intra_format = TRUE))
@@ -232,22 +279,26 @@ test_that("add_igraph accepts intra/inter-compatible multilayer links", {
 
 test_that("cluster_infomap_multilayer matches R6 path on intra-layer-only data.frame", {
   edges <- data.frame(
-    layer     = c(1, 1, 1, 2, 2, 2),
+    layer = c(1, 1, 1, 2, 2, 2),
     node_from = c(1, 2, 3, 1, 2, 3),
-    node_to   = c(2, 3, 1, 2, 3, 1)
+    node_to = c(2, 3, 1, 2, 3, 1)
   )
 
   baseline <- Infomap(silent = TRUE, num_trials = 1L, two_level = TRUE)
   for (i in seq_len(nrow(edges))) {
     baseline$add_multilayer_intra_link(
-      edges$layer[i], edges$node_from[i], edges$node_to[i]
+      edges$layer[i],
+      edges$node_from[i],
+      edges$node_to[i]
     )
   }
   baseline$run()
 
   result <- cluster_infomap_multilayer(
     edges,
-    silent = TRUE, num_trials = 1L, two_level = TRUE
+    silent = TRUE,
+    num_trials = 1L,
+    two_level = TRUE
   )
 
   expect_s3_class(result, "infomap_result")
@@ -260,17 +311,17 @@ test_that("cluster_infomap_multilayer matches R6 path on intra-layer-only data.f
 test_that("cluster_infomap_multilayer matches R6 path on full multilayer data.frame", {
   edges <- data.frame(
     layer_from = c(1, 1, 1, 2, 2, 2, 1, 1, 1),
-    node_from  = c(1, 2, 3, 1, 2, 3, 1, 2, 3),
-    layer_to   = c(1, 1, 1, 2, 2, 2, 2, 2, 2),
-    node_to    = c(2, 3, 1, 2, 3, 1, 1, 2, 3),
-    weight     = c(1, 1, 1, 1, 1, 1, 0.5, 0.5, 0.5)
+    node_from = c(1, 2, 3, 1, 2, 3, 1, 2, 3),
+    layer_to = c(1, 1, 1, 2, 2, 2, 2, 2, 2),
+    node_to = c(2, 3, 1, 2, 3, 1, 1, 2, 3),
+    weight = c(1, 1, 1, 1, 1, 1, 0.5, 0.5, 0.5)
   )
 
   baseline <- Infomap(silent = TRUE, num_trials = 1L, two_level = TRUE)
   for (i in seq_len(nrow(edges))) {
     baseline$add_multilayer_link(
       c(edges$layer_from[i], edges$node_from[i]),
-      c(edges$layer_to[i],   edges$node_to[i]),
+      c(edges$layer_to[i], edges$node_to[i]),
       edges$weight[i]
     )
   }
@@ -278,7 +329,9 @@ test_that("cluster_infomap_multilayer matches R6 path on full multilayer data.fr
 
   result <- cluster_infomap_multilayer(
     edges,
-    silent = TRUE, num_trials = 1L, two_level = TRUE
+    silent = TRUE,
+    num_trials = 1L,
+    two_level = TRUE
   )
 
   expect_equal(result$num_links, baseline$num_links)
@@ -289,14 +342,24 @@ test_that("cluster_infomap_multilayer matches R6 path on full multilayer data.fr
 test_that("cluster_infomap_multilayer is column-order independent", {
   ordered <- data.frame(
     layer_from = c(1, 1, 2, 2),
-    node_from  = c(1, 2, 1, 2),
-    layer_to   = c(1, 1, 2, 2),
-    node_to    = c(2, 3, 2, 3)
+    node_from = c(1, 2, 1, 2),
+    layer_to = c(1, 1, 2, 2),
+    node_to = c(2, 3, 2, 3)
   )
   shuffled <- ordered[, c("node_to", "layer_from", "node_from", "layer_to")]
 
-  a <- cluster_infomap_multilayer(ordered,  silent = TRUE, num_trials = 1L, two_level = TRUE)
-  b <- cluster_infomap_multilayer(shuffled, silent = TRUE, num_trials = 1L, two_level = TRUE)
+  a <- cluster_infomap_multilayer(
+    ordered,
+    silent = TRUE,
+    num_trials = 1L,
+    two_level = TRUE
+  )
+  b <- cluster_infomap_multilayer(
+    shuffled,
+    silent = TRUE,
+    num_trials = 1L,
+    two_level = TRUE
+  )
 
   expect_equal(a$codelength, b$codelength, tolerance = 1e-10)
   expect_equal(a$num_links, b$num_links)
@@ -304,23 +367,28 @@ test_that("cluster_infomap_multilayer is column-order independent", {
 
 test_that("cluster_infomap_multilayer reads weight column by name", {
   edges <- data.frame(
-    layer     = c(1, 1, 2, 2),
+    layer = c(1, 1, 2, 2),
     node_from = c(1, 2, 1, 2),
-    node_to   = c(2, 3, 2, 3),
-    weight    = c(2, 2, 3, 3)
+    node_to = c(2, 3, 2, 3),
+    weight = c(2, 2, 3, 3)
   )
 
   baseline <- Infomap(silent = TRUE, num_trials = 1L, two_level = TRUE)
   for (i in seq_len(nrow(edges))) {
     baseline$add_multilayer_intra_link(
-      edges$layer[i], edges$node_from[i], edges$node_to[i], edges$weight[i]
+      edges$layer[i],
+      edges$node_from[i],
+      edges$node_to[i],
+      edges$weight[i]
     )
   }
   baseline$run()
 
   result <- cluster_infomap_multilayer(
     edges,
-    silent = TRUE, num_trials = 1L, two_level = TRUE
+    silent = TRUE,
+    num_trials = 1L,
+    two_level = TRUE
   )
 
   expect_equal(result$codelength, baseline$codelength, tolerance = 1e-10)
@@ -328,16 +396,19 @@ test_that("cluster_infomap_multilayer reads weight column by name", {
 
 test_that("cluster_infomap_multilayer can ignore weight column explicitly", {
   edges <- data.frame(
-    layer     = c(1, 1, 2, 2),
+    layer = c(1, 1, 2, 2),
     node_from = c(1, 2, 1, 2),
-    node_to   = c(2, 3, 2, 3),
-    weight    = c(100, 100, 1, 1)
+    node_to = c(2, 3, 2, 3),
+    weight = c(100, 100, 1, 1)
   )
 
   baseline <- Infomap(silent = TRUE, num_trials = 1L, two_level = TRUE)
   for (i in seq_len(nrow(edges))) {
     baseline$add_multilayer_intra_link(
-      edges$layer[i], edges$node_from[i], edges$node_to[i], 1.0
+      edges$layer[i],
+      edges$node_from[i],
+      edges$node_to[i],
+      1.0
     )
   }
   baseline$run()
@@ -345,7 +416,9 @@ test_that("cluster_infomap_multilayer can ignore weight column explicitly", {
   result <- cluster_infomap_multilayer(
     edges,
     weight = FALSE,
-    silent = TRUE, num_trials = 1L, two_level = TRUE
+    silent = TRUE,
+    num_trials = 1L,
+    two_level = TRUE
   )
 
   expect_equal(result$num_links, baseline$num_links)
@@ -354,30 +427,33 @@ test_that("cluster_infomap_multilayer can ignore weight column explicitly", {
 
 test_that("cluster_infomap_multilayer accepts matrix input positionally", {
   m_full <- matrix(
-    c(1, 1, 1, 2,
-      1, 2, 2, 1,
-      2, 1, 2, 2),
-    ncol = 4L, byrow = TRUE
+    c(1, 1, 1, 2, 1, 2, 2, 1, 2, 1, 2, 2),
+    ncol = 4L,
+    byrow = TRUE
   )
 
   expect_silent(
     res <- cluster_infomap_multilayer(
-      m_full, silent = TRUE, num_trials = 1L, two_level = TRUE
+      m_full,
+      silent = TRUE,
+      num_trials = 1L,
+      two_level = TRUE
     )
   )
   expect_s3_class(res, "infomap_result")
 
   m_intra <- matrix(
-    c(1, 1, 2,
-      1, 2, 3,
-      2, 1, 2,
-      2, 2, 3),
-    ncol = 3L, byrow = TRUE
+    c(1, 1, 2, 1, 2, 3, 2, 1, 2, 2, 2, 3),
+    ncol = 3L,
+    byrow = TRUE
   )
 
   expect_silent(
     res2 <- cluster_infomap_multilayer(
-      m_intra, silent = TRUE, num_trials = 1L, two_level = TRUE
+      m_intra,
+      silent = TRUE,
+      num_trials = 1L,
+      two_level = TRUE
     )
   )
   expect_s3_class(res2, "infomap_result")
@@ -396,7 +472,8 @@ test_that("add_igraph supports non-numeric physical ids", {
 
   g <- igraph::make_empty_graph(4, directed = TRUE)
   g <- igraph::set_vertex_attr(
-    g, "phys_id",
+    g,
+    "phys_id",
     value = factor(c("alpha", "beta", "alpha", "beta"))
   )
   g <- igraph::set_vertex_attr(g, "layer_id", value = c(1, 1, 2, 2))
@@ -420,7 +497,7 @@ test_that("add_igraph supports non-numeric physical ids", {
 test_that("add_igraph accepts diagonal links with multilayer_inter_intra_format = FALSE", {
   skip_if_not_installed("igraph")
   g <- igraph::make_empty_graph(4, directed = FALSE)
-  g <- igraph::set_vertex_attr(g, "phys_id",  value = c(1, 2, 1, 2))
+  g <- igraph::set_vertex_attr(g, "phys_id", value = c(1, 2, 1, 2))
   g <- igraph::set_vertex_attr(g, "layer_id", value = c(1, 1, 2, 2))
   g <- igraph::add_edges(g, c(1, 4))
 

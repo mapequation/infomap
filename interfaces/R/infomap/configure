@@ -49,12 +49,19 @@ fi
 # `override` is required: R loads src/Makevars first, then Makeconf, then
 # passes CXX on the make command line. Without `override`, both later steps
 # clobber our setting.
-if [ "$(uname)" = "Darwin" ] && ! grep -q 'override CXX17 = /usr/bin/clang++ -std=gnu++17' "$PKG_DIR/src/Makevars" 2>/dev/null; then
+# Optional compiler launcher (e.g. ccache) prefixed to the pinned compiler.
+# Unset (the CRAN / r-universe default) leaves the pinned command unchanged.
+LAUNCHER=""
+if [ -n "${INFOMAP_R_CXX_LAUNCHER:-}" ]; then
+  LAUNCHER="${INFOMAP_R_CXX_LAUNCHER} "
+fi
+
+if [ "$(uname)" = "Darwin" ] && ! grep -q '# Pinned by configure' "$PKG_DIR/src/Makevars" 2>/dev/null; then
   {
     printf '\n'
     printf '# Pinned by configure: Apple clang avoids LLVM libc++ ABI mismatch.\n'
-    printf 'override CC  = /usr/bin/clang\n'
-    printf 'override CXX = /usr/bin/clang++ -std=gnu++17\n'
-    printf 'override CXX17 = /usr/bin/clang++ -std=gnu++17\n'
+    printf 'override CC  = %s/usr/bin/clang\n' "$LAUNCHER"
+    printf 'override CXX = %s/usr/bin/clang++ -std=gnu++17\n' "$LAUNCHER"
+    printf 'override CXX17 = %s/usr/bin/clang++ -std=gnu++17\n' "$LAUNCHER"
   } >> "$PKG_DIR/src/Makevars"
 fi

@@ -40,9 +40,10 @@ std::ostream& operator<<(std::ostream& out, const MemMapEquation& mapEq)
 // Init
 // ===================================================
 
-void MemMapEquation::init(const Config& /*config*/)
+void MemMapEquation::init(const Config& config)
 {
   Log(3) << "MemMapEquation::init()...\n";
+  Base::init(config);
 }
 
 void MemMapEquation::initNetwork(InfoNode& root)
@@ -57,7 +58,6 @@ void MemMapEquation::initSuperNetwork(InfoNode& /*root*/)
 
 void MemMapEquation::initSubNetwork(InfoNode& /*root*/)
 {
-  //	Base::initSubNetwork(root);
 }
 
 void MemMapEquation::initPartition(std::vector<InfoNode*>& nodes)
@@ -277,8 +277,8 @@ double MemMapEquation::calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent)
 }
 
 void MemMapEquation::addMemoryContributions(InfoNode& current,
-                                            MemDeltaFlow& oldModuleDelta,
-                                            VectorMap<MemDeltaFlow>& moduleDeltaFlow)
+                                            DeltaFlowDataType& oldModuleDelta,
+                                            VectorMap<DeltaFlowDataType>& moduleDeltaFlow)
 {
   // Overlapping modules
   /*
@@ -310,7 +310,7 @@ void MemMapEquation::addMemoryContributions(InfoNode& current,
 
         double sumDeltaPlogpPhysFlow = infomath::plogp(newPhysFlow) - infomath::plogp(oldPhysFlow);
         double sumPlogpPhysFlow = infomath::plogp(physData.sumFlowFromM2Node);
-        moduleDeltaFlow.add(moduleIndex, MemDeltaFlow(moduleIndex, 0.0, 0.0, sumDeltaPlogpPhysFlow, sumPlogpPhysFlow));
+        moduleDeltaFlow.add(moduleIndex, DeltaFlowDataType(moduleIndex, 0.0, 0.0, sumDeltaPlogpPhysFlow, sumPlogpPhysFlow));
       }
     }
   }
@@ -318,9 +318,9 @@ void MemMapEquation::addMemoryContributions(InfoNode& current,
 }
 
 INFOMAP_HOT double MemMapEquation::getDeltaCodelengthOnMovingNode(InfoNode& current,
-                                                                  MemDeltaFlow& oldModuleDelta,
-                                                                  MemDeltaFlow& newModuleDelta,
-                                                                  std::vector<FlowData>& moduleFlowData,
+                                                                  DeltaFlowDataType& oldModuleDelta,
+                                                                  DeltaFlowDataType& newModuleDelta,
+                                                                  std::vector<FlowDataType>& moduleFlowData,
                                                                   std::vector<unsigned int>& moduleMembers)
 {
   double deltaL = Base::getDeltaCodelengthOnMovingNode(current, oldModuleDelta, newModuleDelta, moduleFlowData, moduleMembers);
@@ -335,9 +335,9 @@ INFOMAP_HOT double MemMapEquation::getDeltaCodelengthOnMovingNode(InfoNode& curr
 // ===================================================
 
 void MemMapEquation::updateCodelengthOnMovingNode(InfoNode& current,
-                                                  MemDeltaFlow& oldModuleDelta,
-                                                  MemDeltaFlow& newModuleDelta,
-                                                  std::vector<FlowData>& moduleFlowData,
+                                                  DeltaFlowDataType& oldModuleDelta,
+                                                  DeltaFlowDataType& newModuleDelta,
+                                                  std::vector<FlowDataType>& moduleFlowData,
                                                   std::vector<unsigned int>& moduleMembers)
 {
   Base::updateCodelengthOnMovingNode(current, oldModuleDelta, newModuleDelta, moduleFlowData, moduleMembers);
@@ -381,7 +381,7 @@ void MemMapEquation::updatePhysicalNodes(InfoNode& current, unsigned int oldModu
   }
 }
 
-void MemMapEquation::addMemoryContributionsAndUpdatePhysicalNodes(InfoNode& current, MemDeltaFlow& oldModuleDelta, MemDeltaFlow& newModuleDelta)
+void MemMapEquation::addMemoryContributionsAndUpdatePhysicalNodes(InfoNode& current, DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta)
 {
   unsigned int oldModuleIndex = oldModuleDelta.module;
   unsigned int bestModuleIndex = newModuleDelta.module;

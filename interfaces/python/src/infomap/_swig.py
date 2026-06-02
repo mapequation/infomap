@@ -142,6 +142,7 @@ class Config(object):
     fastHierarchicalSolution = property(_infomap.Config_fastHierarchicalSolution_get, _infomap.Config_fastHierarchicalSolution_set)
     preferModularSolution = property(_infomap.Config_preferModularSolution_get, _infomap.Config_preferModularSolution_set)
     innerParallelization = property(_infomap.Config_innerParallelization_get, _infomap.Config_innerParallelization_set)
+    parallelTrials = property(_infomap.Config_parallelTrials_get, _infomap.Config_parallelTrials_set)
     numRandomMoves = property(_infomap.Config_numRandomMoves_get, _infomap.Config_numRandomMoves_set)
     maxDegreeForRandomMoves = property(_infomap.Config_maxDegreeForRandomMoves_get, _infomap.Config_maxDegreeForRandomMoves_set)
     outDirectory = property(_infomap.Config_outDirectory_get, _infomap.Config_outDirectory_set)
@@ -263,9 +264,9 @@ class DeltaFlow(object):
     thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc="The membership flag")
     __repr__ = _swig_repr
     module = property(_infomap.DeltaFlow_module_get, _infomap.DeltaFlow_module_set)
+    count = property(_infomap.DeltaFlow_count_get, _infomap.DeltaFlow_count_set)
     deltaExit = property(_infomap.DeltaFlow_deltaExit_get, _infomap.DeltaFlow_deltaExit_set)
     deltaEnter = property(_infomap.DeltaFlow_deltaEnter_get, _infomap.DeltaFlow_deltaEnter_set)
-    count = property(_infomap.DeltaFlow_count_get, _infomap.DeltaFlow_count_set)
 
     def __init__(self, *args):
         _infomap.DeltaFlow_swiginit(self, _infomap.new_DeltaFlow(*args))
@@ -526,7 +527,6 @@ class InfoNode(object):
     codelength = property(_infomap.InfoNode_codelength_get, _infomap.InfoNode_codelength_set)
     dirty = property(_infomap.InfoNode_dirty_get, _infomap.InfoNode_dirty_set)
     physicalNodes = property(_infomap.InfoNode_physicalNodes_get, _infomap.InfoNode_physicalNodes_set)
-    metaCollection = property(_infomap.InfoNode_metaCollection_get, _infomap.InfoNode_metaCollection_set)
     stateNodes = property(_infomap.InfoNode_stateNodes_get, _infomap.InfoNode_stateNodes_set)
 
     def __init__(self, *args):
@@ -1082,7 +1082,6 @@ class InfomapIterator(object):
     codelength = property(_infomap.InfomapIterator_codelength_get, _infomap.InfomapIterator_codelength_set)
     dirty = property(_infomap.InfomapIterator_dirty_get, _infomap.InfomapIterator_dirty_set)
     physicalNodes = property(_infomap.InfomapIterator_physicalNodes_get, _infomap.InfomapIterator_physicalNodes_set)
-    metaCollection = property(_infomap.InfomapIterator_metaCollection_get, _infomap.InfomapIterator_metaCollection_set)
     stateNodes = property(_infomap.InfomapIterator_stateNodes_get, _infomap.InfomapIterator_stateNodes_set)
 
     def getMetaData(self, dimension=0):
@@ -1761,7 +1760,6 @@ class InfomapParentIterator(object):
     codelength = property(_infomap.InfomapParentIterator_codelength_get, _infomap.InfomapParentIterator_codelength_set)
     dirty = property(_infomap.InfomapParentIterator_dirty_get, _infomap.InfomapParentIterator_dirty_set)
     physicalNodes = property(_infomap.InfomapParentIterator_physicalNodes_get, _infomap.InfomapParentIterator_physicalNodes_set)
-    metaCollection = property(_infomap.InfomapParentIterator_metaCollection_get, _infomap.InfomapParentIterator_metaCollection_set)
     stateNodes = property(_infomap.InfomapParentIterator_stateNodes_get, _infomap.InfomapParentIterator_stateNodes_set)
 
     def getMetaData(self, dimension=0):
@@ -3017,6 +3015,15 @@ class map_pair_uint_uint_double(object):
 
 # Register map_pair_uint_uint_double in _infomap:
 _infomap.map_pair_uint_uint_double_swigregister(map_pair_uint_uint_double)
+
+def _enabled_features_string():
+    return _infomap._enabled_features_string()
+
+def build_info():
+    features = _infomap._enabled_features_string()
+    enabled_features = tuple(feature for feature in features.split(",") if feature)
+    return {"enabled_features": enabled_features}
+
 
 def run(flags):
     return _infomap.run(flags)

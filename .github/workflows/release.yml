@@ -19,20 +19,42 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  validate-stable-tag:
+    name: Validate stable release tag
+    if: ${{ github.event_name == 'workflow_dispatch' || !contains(github.ref_name, '-') }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+
+    steps:
+      - name: Validate tag format
+        env:
+          RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+        run: |
+          set -euo pipefail
+
+          if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Expected stable release tag vX.Y.Z, got: $RELEASE_TAG" >&2
+            exit 1
+          fi
+
   native:
+    needs: [validate-stable-tag]
     uses: ./.github/workflows/_native-build.yml
     with:
       ref: ${{ github.event_name == 'workflow_dispatch' && format('refs/tags/{0}', inputs.tag) || github.ref }}
       upload-artifacts: true
 
   python:
+    needs: [validate-stable-tag]
     uses: ./.github/workflows/_python-package.yml
     with:
       ref: ${{ github.event_name == 'workflow_dispatch' && format('refs/tags/{0}', inputs.tag) || github.ref }}
       run-tests: true
+      mode: full
       build-release-artifacts: true
 
   javascript:
+    needs: [validate-stable-tag]
     uses: ./.github/workflows/_js-package.yml
     with:
       ref: ${{ github.event_name == 'workflow_dispatch' && format('refs/tags/{0}', inputs.tag) || github.ref }}
@@ -40,6 +62,7 @@ jobs:
       pack-artifact: true
 
   r:
+    needs: [validate-stable-tag]
     uses: ./.github/workflows/_r-package.yml
     with:
       ref: ${{ github.event_name == 'workflow_dispatch' && format('refs/tags/{0}', inputs.tag) || github.ref }}
@@ -184,7 +207,7 @@ jobs:
         run: make test-docker-supported
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # v4.0.0
+        uses: docker/setup-qemu-action@06116385d9baf250c9f4dcb4858b16962ea869c3 # v4.1.0
         with:
           platforms: amd64,arm64
 

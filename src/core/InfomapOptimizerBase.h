@@ -17,6 +17,8 @@
 
 namespace infomap {
 
+class StateNetwork;
+
 class InfomapOptimizerBase {
   friend class InfomapBase;
   using FlowDataType = FlowData;
@@ -45,6 +47,16 @@ public:
   virtual double getModuleCodelength() const = 0;
 
   virtual double getMetaCodelength(bool /*unweighted*/ = false) const { return 0.0; }
+
+  // Forward per-network properties (e.g. total degree, node count) to the objective.
+  // Only meaningful for objectives that use them (BiasedMapEquation); a no-op otherwise.
+  // Stored per-instance so parallel trial workers don't share mutable state.
+  virtual void setNetworkProperties(const StateNetwork& /*network*/) {}
+
+  // Propagate already-computed network properties from a parent optimizer to a sub/super
+  // Infomap instance (which has no full StateNetwork of its own). No-op unless the objective
+  // uses them (BiasedMapEquation).
+  virtual void inheritNetworkPropertiesFrom(const InfomapOptimizerBase& /*parent*/) {}
 
 protected:
   virtual unsigned int numActiveModules() const = 0;

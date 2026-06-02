@@ -85,7 +85,7 @@ Configure these integrations before the first release:
 5. Release Please creates the `vX.Y.Z` tag and the GitHub Release.
 6. `.github/workflows/release.yml` runs for that tag and:
    - builds the native release assets
-   - builds the Python sdist and wheels
+   - builds the Python sdist and wheels through the full Python workflow tier
    - builds the R source tarball once, then builds macOS and Windows R
      binaries from that exact tarball for both R `release` and `oldrel`
    - builds and verifies the npm package
@@ -106,6 +106,30 @@ Configure these integrations before the first release:
    `workflow_dispatch` for `.github/workflows/release.yml` rebuilds and
    republishes an existing tag. Use it only after confirming the target version
    has not already been published to a registry that rejects duplicate uploads.
+
+## Feature prerelease wheels
+
+Feature prerelease wheels use the same `infomap` package name and Python
+prerelease versions. They are wheel-only artifacts because sdists are rebuilt
+by installers and cannot reliably preserve compile-time feature flags.
+
+`.github/workflows/prerelease.yml` has two modes:
+
+- Tag pushes for `vX.Y.Z-rc.N` or `vX.Y.Z-beta.N` build the full Python and
+  JavaScript prerelease and publish to PyPI and npm.
+- Manual `workflow_dispatch` runs build feature-enabled Python wheels only.
+  Use `publish=false` first to build artifacts for inspection.
+
+When publishing feature wheels, use a prerelease version that has not already
+been uploaded to PyPI:
+
+```bash
+python -m pip install --pre infomap
+python -m pip install "infomap==X.Y.ZrcN"
+```
+
+Stable releases remain feature-free unless a feature graduates out of its
+compile-time gate.
 
 ## R Package Publishing
 

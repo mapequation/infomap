@@ -1,7 +1,10 @@
 test_that("add_igraph imports edges from an igraph graph", {
   skip_if_not_installed("igraph")
 
-  g <- igraph::make_graph(c(1, 2, 1, 3, 2, 3, 4, 5, 4, 6, 5, 6), directed = FALSE)
+  g <- igraph::make_graph(
+    c(1, 2, 1, 3, 2, 3, 4, 5, 4, 6, 5, 6),
+    directed = FALSE
+  )
 
   im <- Infomap(silent = TRUE, num_trials = 5)
   mapping <- im$add_igraph(g)
@@ -54,7 +57,10 @@ test_that("add_igraph rejects invalid igraph weights", {
 test_that("as_communities aligns membership with igraph vertex ids", {
   skip_if_not_installed("igraph")
 
-  g <- igraph::make_graph(c(1, 2, 1, 3, 2, 3, 4, 5, 4, 6, 5, 6), directed = FALSE)
+  g <- igraph::make_graph(
+    c(1, 2, 1, 3, 2, 3, 4, 5, 4, 6, 5, 6),
+    directed = FALSE
+  )
 
   im <- Infomap(silent = TRUE, num_trials = 5)
   im$add_igraph(g)

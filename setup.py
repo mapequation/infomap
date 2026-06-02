@@ -1,6 +1,7 @@
 import os
 import sys
 import importlib.util
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from setuptools import Extension, setup
@@ -38,24 +39,89 @@ def swig_warning_suppression(compiler_family):
     return []
 
 
+def resolve_build_jobs():
+    env_jobs = os.environ.get("INFOMAP_BUILD_JOBS", "").strip()
+    if env_jobs.isdigit() and int(env_jobs) > 0:
+        return int(env_jobs)
+    return os.cpu_count() or 1
+
+
 class BuildExt(build_ext):
     def build_extensions(self):
-        original_compile = self.compiler._compile
+        compiler = self.compiler
+        original_compile = compiler._compile
         quiet_swig_flags = swig_warning_suppression(shared_build["compiler_family"])
         swig_source = str(SWIG_CPP_SOURCE)
 
-        def compile_with_source_overrides(obj, src, ext, cc_args, extra_postargs, pp_opts):
+        def compile_with_source_overrides(
+            obj, src, ext, cc_args, extra_postargs, pp_opts
+        ):
             source = os.path.abspath(src)
             compile_args = list(extra_postargs or [])
             if source == swig_source and quiet_swig_flags:
                 compile_args.extend(quiet_swig_flags)
             return original_compile(obj, src, ext, cc_args, compile_args, pp_opts)
 
-        self.compiler._compile = compile_with_source_overrides
+        compiler._compile = compile_with_source_overrides
+
+        # Compile this extension's ~30 translation units concurrently.
+        # setuptools' build_ext.parallel only parallelizes *across extensions*,
+        # and the package ships a single extension, so we parallelize the
+        # per-object compiles ourselves by overriding the compiler's compile
+        # loop. Only the unix-style compiler drives compilation through the
+        # _compile hook used above; MSVC has its own loop, so leave it serial.
+        jobs = resolve_build_jobs()
+        # Parallelizing a single extension's sources means reimplementing the
+        # compiler's compile loop with distutils internals (_setup_compile /
+        # _get_cc_args / _compile). Guard on their presence so a future setuptools
+        # that renames or drops them simply falls back to the correct serial
+        # build instead of erroring.
+        parallelize = (
+            jobs > 1
+            and getattr(compiler, "compiler_type", None) in {"unix", "cygwin"}
+            and all(
+                hasattr(compiler, attr)
+                for attr in ("_setup_compile", "_get_cc_args", "_compile")
+            )
+        )
+        original_compile_method = compiler.compile
+
+        def parallel_compile(
+            sources,
+            output_dir=None,
+            macros=None,
+            include_dirs=None,
+            debug=0,
+            extra_preargs=None,
+            extra_postargs=None,
+            depends=None,
+        ):
+            macros, objects, extra_postargs, pp_opts, build = compiler._setup_compile(
+                output_dir, macros, include_dirs, sources, depends, extra_postargs
+            )
+            cc_args = compiler._get_cc_args(pp_opts, debug, extra_preargs)
+
+            def compile_one(obj):
+                try:
+                    src, ext = build[obj]
+                except KeyError:
+                    return
+                compiler._compile(obj, src, ext, cc_args, extra_postargs, pp_opts)
+
+            with ThreadPoolExecutor(max_workers=jobs) as executor:
+                # Iterate results so the first compile error propagates.
+                for _ in executor.map(compile_one, objects):
+                    pass
+            return objects
+
+        if parallelize:
+            compiler.compile = parallel_compile
         try:
             super().build_extensions()
         finally:
-            self.compiler._compile = original_compile
+            compiler._compile = original_compile
+            if parallelize:
+                compiler.compile = original_compile_method
 
 
 build_config = load_build_config()
@@ -77,10 +143,10 @@ shared_build = resolve_build_config(
     deployment_target=os.environ.get("MACOSX_DEPLOYMENT_TARGET", ""),
     platform_name=sys.platform,
     native_arch=norm_openmp(os.environ.get("NATIVE_ARCH", "0")),
-    simd_log=norm_openmp(os.environ.get("SIMD_LOG", "0")),
+    features=os.environ.get("FEATURES", ""),
 )
 
-compiler_args = list(shared_build["compile_flags"])
+compiler_args = [arg.replace('\\"', '"') for arg in shared_build["compile_flags"]]
 link_args = list(shared_build["link_flags"])
 
 define_macros = [
@@ -111,5 +177,5 @@ setup(
             extra_compile_args=compiler_args,
             extra_link_args=link_args,
         )
-    ]
+    ],
 )

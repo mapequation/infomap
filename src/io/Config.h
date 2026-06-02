@@ -120,6 +120,10 @@ struct Config {
   unsigned int fastHierarchicalSolution = 0;
   bool preferModularSolution = false;
   bool innerParallelization = false;
+  bool parallelTrials = false;
+#if INFOMAP_FEATURE_TEST_FEATURE
+  bool testFeature = false;
+#endif
   unsigned int numRandomMoves = 5; // Amount of random moves to try in core loop, used if regularized/recorded teleportation.
   unsigned int maxDegreeForRandomMoves = 2; // Only try random moves for nodes with degree less than or equal to this value.
 
@@ -191,6 +195,7 @@ struct Config {
     multilayerJSRelaxRate = other.multilayerJSRelaxRate;
     multilayerRelaxByJensenShannonDivergence = other.multilayerRelaxByJensenShannonDivergence;
     multilayerJSRelaxLimit = other.multilayerJSRelaxLimit;
+    maxFlowIterations = other.maxFlowIterations;
     twoLevel = other.twoLevel;
     noCoarseTune = other.noCoarseTune;
     recordedTeleportation = other.recordedTeleportation;
@@ -206,6 +211,9 @@ struct Config {
     minimumRelativeTuneIterationImprovement = other.minimumRelativeTuneIterationImprovement;
     preferModularSolution = other.preferModularSolution;
     innerParallelization = other.innerParallelization;
+#if INFOMAP_FEATURE_TEST_FEATURE
+    testFeature = other.testFeature;
+#endif
     numRandomMoves = other.numRandomMoves;
     maxDegreeForRandomMoves = other.maxDegreeForRandomMoves;
     outDirectory = other.outDirectory;
@@ -241,6 +249,9 @@ struct Config {
 
   bool isMultilayerNetwork() const { return multilayerInput || !additionalInput.empty(); }
   bool isBipartite() const { return bipartite; }
+#ifndef SWIG
+  bool isRegularizedMultilayerFlow() const { return isMultilayerNetwork() && regularized; }
+#endif
 
   bool haveMemory() const { return stateInput; }
   bool printStates() const { return stateOutput; }

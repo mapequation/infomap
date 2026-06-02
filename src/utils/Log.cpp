@@ -36,6 +36,7 @@ std::ostream* Log::s_ostream = nullptr;
 unsigned int Log::s_verboseLevel = 0;
 bool Log::s_silent = false;
 bool Log::s_legacyMuted = false;
+thread_local unsigned int Log::s_threadMuteDepth = 0;
 
 void Log::setNoOutput()
 {

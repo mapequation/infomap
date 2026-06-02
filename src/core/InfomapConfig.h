@@ -127,7 +127,11 @@ public:
   Infomap& setDirected(bool value)
   {
     directed = value;
-    flowModel = directed ? FlowModel::directed : FlowModel::undirected;
+    if (directed && isUndirectedFlow()) {
+      flowModel = FlowModel::directed;
+    } else if (!directed && !isUndirectedFlow()) {
+      flowModel = FlowModel::undirected;
+    }
     return get();
   }
 

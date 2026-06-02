@@ -74,6 +74,8 @@ public:
 
   using Base::addMemoryContributions;
 
+  using Base::addTeleportationFlow;
+
   double getDeltaCodelengthOnMovingNode(InfoNode& current,
                                         DeltaFlow& oldModuleDelta,
                                         DeltaFlow& newModuleDelta,
@@ -166,11 +168,20 @@ private:
   double entropyBiasCorrectionMultiplier = 1;
   double indexEntropyBiasCorrection = 0;
   double moduleEntropyBiasCorrection = 0;
-  static double s_totalDegree;
-  static unsigned int s_numNodes;
+  double m_totalDegree = 1;
+  unsigned int m_numNodes = 0;
 
 public:
-  static void setNetworkProperties(const StateNetwork& network);
+  void setNetworkProperties(const StateNetwork& network);
+
+  // Copy the whole-network properties from a parent objective. Sub/super Infomap instances
+  // partition InfoNodes and have no StateNetwork of their own, but the entropy bias correction
+  // must keep using the full network's total degree and node count (previously a shared static).
+  void setNetworkPropertiesFrom(const BiasedMapEquation& other)
+  {
+    m_totalDegree = other.m_totalDegree;
+    m_numNodes = other.m_numNodes;
+  }
 };
 
 } // namespace infomap

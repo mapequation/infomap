@@ -26,7 +26,7 @@ jobs:
         config:
           - {
               name: windows,
-              os: windows-2025,
+              os: windows-2025-vs2026,
               artifact: infomap-win,
               binary: Infomap.exe,
               cxxflags: -static,
@@ -70,8 +70,16 @@ jobs:
           brew install libomp
           make ci-export-github-env >> "$GITHUB_ENV"
 
+      # Windows native CI uses MinGW g++ without ccache; the action no-ops there.
+      - name: Set up ccache
+        uses: ./.github/actions/setup-ccache
+        with:
+          key-prefix: native-${{ matrix.config.name }}-omp${{ matrix.target.openmp }}
+
       - name: Build native binary
-        run: make -j build-native OPENMP=${{ matrix.target.openmp }}
+        run: |
+          make -j build-native OPENMP=${{ matrix.target.openmp }}
+          command -v ccache >/dev/null 2>&1 && ccache -s || true
         shell: bash
         env:
           CXX: ${{ matrix.config.compiler }}

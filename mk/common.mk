@@ -16,7 +16,7 @@ endif
 CXX ?= c++
 AR ?= ar
 PYTHON ?= $(shell command -v python 2>/dev/null || command -v python3 2>/dev/null || echo python3)
-PYTHON_FOR_BUILD_CONFIG ?= $(shell command -v $(PYTHON) 2>/dev/null || command -v python3 2>/dev/null || echo python3)
+PYTHON_FOR_BUILD_CONFIG ?= $(shell command -v $(PYTHON) 2>/dev/null || command -v python3 2>/dev/null || true)
 PIP ?= $(PYTHON) -m pip
 PYTEST ?= $(PYTHON) -m pytest
 RUFF ?= $(PYTHON) -m ruff
@@ -26,6 +26,7 @@ SWIG ?= swig
 EMXX ?= em++
 R ?= R
 RSCRIPT ?= Rscript
+AIR ?= $(shell command -v air 2>/dev/null || command -v /opt/homebrew/bin/air 2>/dev/null || echo air)
 SPHINX_BUILD_BIN := $(shell command -v sphinx-build 2>/dev/null || true)
 SPHINX_BUILD ?= $(if $(SPHINX_BUILD_BIN),$(SPHINX_BUILD_BIN),$(PYTHON) -m sphinx)
 CMAKE ?= $(shell command -v cmake 2>/dev/null || command -v /opt/homebrew/bin/cmake 2>/dev/null || echo cmake)
@@ -38,12 +39,14 @@ NINJA ?= $(shell command -v ninja 2>/dev/null || command -v /opt/homebrew/bin/ni
 MODE ?= release
 OPENMP ?= 1
 NATIVE_ARCH ?= 0
-SIMD_LOG ?= 0
+FEATURES ?=
+
+empty :=
+space := $(empty) $(empty)
 
 VALID_MODES := release debug
 VALID_OPENMP := 0 1
 VALID_NATIVE_ARCH := 0 1
-VALID_SIMD_LOG := 0 1
 
 ifeq ($(filter $(MODE),$(VALID_MODES)),)
 $(error MODE must be one of: $(VALID_MODES))
@@ -57,8 +60,10 @@ ifeq ($(filter $(NATIVE_ARCH),$(VALID_NATIVE_ARCH)),)
 $(error NATIVE_ARCH must be one of: $(VALID_NATIVE_ARCH))
 endif
 
-ifeq ($(filter $(SIMD_LOG),$(VALID_SIMD_LOG)),)
-$(error SIMD_LOG must be one of: $(VALID_SIMD_LOG))
+ifneq ($(FEATURES),)
+ifeq ($(PYTHON_FOR_BUILD_CONFIG),)
+$(error FEATURES requires python3 so scripts/build_config.py can validate feature names)
+endif
 endif
 
 HEADERS := $(shell find src -name "*.h")
@@ -68,20 +73,31 @@ MK_FILES := $(wildcard mk/*.mk)
 BINDING_OPTIONS_SCRIPT := scripts/generate_binding_options.py
 BUILD_CONFIG_SCRIPT := scripts/build_config.py
 
-define build_config_field
-$(strip $(shell CPPFLAGS='$(CPPFLAGS)' CXXFLAGS='$(CXXFLAGS)' LDFLAGS='$(LDFLAGS)' MACOSX_DEPLOYMENT_TARGET='$(MACOSX_DEPLOYMENT_TARGET)' $(PYTHON_FOR_BUILD_CONFIG) $(BUILD_CONFIG_SCRIPT) field --field "$(1)" --mode "$(MODE)" --openmp "$(OPENMP)" --native-arch "$(NATIVE_ARCH)" --simd-log "$(SIMD_LOG)" --compiler "$(CXX)" --platform "$(UNAME_S)"))
-endef
-
-BUILD_CONFIG_MODE := $(call build_config_field,mode)
-BUILD_CONFIG_OPENMP := $(call build_config_field,openmp)
-BUILD_CONFIG_PLATFORM := $(call build_config_field,platform)
-BUILD_CONFIG_COMPILER := $(call build_config_field,compiler)
-BUILD_CONFIG_COMPILER_FAMILY := $(call build_config_field,compiler_family)
-BUILD_CONFIG_BREW_PREFIX := $(call build_config_field,brew_prefix)
-BUILD_CONFIG_LIBOMP_PREFIX := $(call build_config_field,libomp_prefix)
-BUILD_CONFIG_DEPLOYMENT_TARGET := $(call build_config_field,deployment_target)
-NATIVE_CXXFLAGS := $(call build_config_field,compile_flags)
-NATIVE_LDFLAGS := $(call build_config_field,link_flags)
+# Resolve the whole build configuration in a single build_config.py invocation
+# and `include` the emitted Make assignments (BUILD_CONFIG_* plus NATIVE_CXXFLAGS
+# / NATIVE_LDFLAGS). build_config.py probes the compiler (`--version`) and shells
+# out to brew, so doing this once per `make` run instead of once per field cuts
+# the fixed cost paid by every build, including no-op incremental ones.
+#
+# Skip resolution when no requested goal consumes the build config — clean
+# targets (which would otherwise recreate the build/ artifacts a clean removes)
+# and `help`, the default goal. This keeps plain `make` / `make help` from
+# probing the compiler and brew, so they work even without a toolchain.
+BUILD_CONFIG_GOALS := $(if $(MAKECMDGOALS),$(MAKECMDGOALS),$(.DEFAULT_GOAL))
+BUILD_CONFIG_NEEDED := $(filter-out help clean%,$(BUILD_CONFIG_GOALS))
+BUILD_CONFIG_MK := build/build_config.generated.mk
+ifneq ($(BUILD_CONFIG_NEEDED),)
+ifneq ($(PYTHON_FOR_BUILD_CONFIG),)
+# stderr is left attached so a failing resolution surfaces the real diagnostic
+# (Python traceback / argparse error) rather than only the generic $(error) below.
+BUILD_CONFIG_STATUS := $(shell mkdir -p $(dir $(BUILD_CONFIG_MK)) && CPPFLAGS='$(CPPFLAGS)' CXXFLAGS='$(CXXFLAGS)' LDFLAGS='$(LDFLAGS)' MACOSX_DEPLOYMENT_TARGET='$(MACOSX_DEPLOYMENT_TARGET)' $(PYTHON_FOR_BUILD_CONFIG) $(BUILD_CONFIG_SCRIPT) make-export --mode "$(MODE)" --openmp "$(OPENMP)" --native-arch "$(NATIVE_ARCH)" --features "$(FEATURES)" --compiler "$(CXX)" --platform "$(UNAME_S)" > $(BUILD_CONFIG_MK) && echo ok)
+ifneq ($(BUILD_CONFIG_STATUS),ok)
+$(error Failed to resolve build configuration via $(BUILD_CONFIG_SCRIPT))
+endif
+include $(BUILD_CONFIG_MK)
+endif
+endif
+FEATURE_CACHE_KEY := $(if $(BUILD_CONFIG_ENABLED_FEATURES),$(subst $(space),_,$(BUILD_CONFIG_ENABLED_FEATURES)),none)
 CXX_COMPILE := $(if $(and $(filter 1,$(USE_CCACHE)),$(CCACHE_BIN)),$(CCACHE_BIN) ,)$(CXX)
 
 # LTO + GCC: plain `ar` strips the LTO bitcode from .o files, leaving an empty
@@ -149,6 +165,8 @@ help:
 		"  configure-cpp-dev     Configure a clangd-friendly CMake dev build." \
 		"  format-native         Rewrite C++ sources with clang-format." \
 		"  format-native-check   Verify C++ sources are clang-format clean." \
+		"  format-r              Rewrite R sources with Air." \
+		"  format-r-check        Verify R sources are Air-format clean." \
 		"  tidy-native           Run clang-tidy over C++ source files." \
 		"  dev-cpp-check         Run the fast C++ developer feedback suite." \
 		"  dev-bootstrap         Install Python dev dependencies and run npm ci." \
@@ -175,7 +193,7 @@ help:
 		"  make build-native JOBS=1" \
 		"  make build-native MODE=debug OPENMP=0" \
 		"  make build-native NATIVE_ARCH=1                 # -march=native + LTO + unroll (non-portable)" \
-		"  make build-native NATIVE_ARCH=1 SIMD_LOG=1      # plus inlined SIMD log2 (arm64 Neon / x86_64 AVX2+FMA)" \
+		"  make build-native NATIVE_ARCH=1 FEATURES=simd-log # plus inlined SIMD log2 (arm64 Neon / x86_64 AVX2+FMA)" \
 		"  make build-python dev-python-install test-python-unit" \
 		"  make build-binding-options test-binding-options-freshness" \
 		"  make build-js-metadata test-js-metadata" \
@@ -188,9 +206,9 @@ build-binding-options: build-native
 doctor:
 	@printf "%s\n" "Infomap doctor" ""
 	@printf "Platform: %s\n" "$(UNAME_S)"
-	@printf "Mode: MODE=%s OPENMP=%s NATIVE_ARCH=%s SIMD_LOG=%s\n" "$(MODE)" "$(OPENMP)" "$(NATIVE_ARCH)" "$(SIMD_LOG)"
+	@printf "Mode: MODE=%s OPENMP=%s NATIVE_ARCH=%s FEATURES=%s\n" "$(MODE)" "$(OPENMP)" "$(NATIVE_ARCH)" "$(if $(BUILD_CONFIG_ENABLED_FEATURES),$(BUILD_CONFIG_ENABLED_FEATURES),none)"
 	@printf "Policy: MODE drives Infomap optimization/debug flags for native, Python, and CMake targets.\n"
-	@printf "Opt-ins: NATIVE_ARCH=1 enables -march=native+LTO+unroll; SIMD_LOG=1 enables inlined SIMD log2 (arm64 Neon or x86_64 AVX2+FMA). Both produce non-portable binaries.\n"
+	@printf "Opt-ins: NATIVE_ARCH=1 enables -march=native+LTO+unroll; FEATURES=simd-log enables inlined SIMD log2 (arm64 Neon or x86_64 AVX2+FMA). Both produce non-portable binaries.\n"
 	@printf "Mode detail: %s\n" "$(if $(filter debug,$(MODE)),$(if $(filter msvc,$(BUILD_CONFIG_COMPILER_FAMILY)),debug => /Od /Zi,debug => -O0 -g),$(if $(filter msvc,$(BUILD_CONFIG_COMPILER_FAMILY)),release => /O2,release => -O3))"
 	@printf "CMake detail: CMAKE_BUILD_TYPE=%s is kept for generator/output behavior; MODE still owns Infomap compile flags.\n" "$(CMAKE_BUILD_TYPE)"
 	@printf "Parallel jobs: %s\n" "$(JOBS)"
@@ -204,6 +222,8 @@ doctor:
 	@printf "R (%s): %s\n" "$(R)" "$$(command -v $(R) 2>/dev/null || echo missing)"
 	@printf "R version: %s\n" "$$($(R) --version 2>/dev/null | sed -nE 's/^R version ([0-9.]+).*/\1/p' | head -1 || echo missing)"
 	@printf "Rscript (%s): %s\n" "$(RSCRIPT)" "$$(command -v $(RSCRIPT) 2>/dev/null || echo missing)"
+	@printf "air (%s): %s\n" "$(AIR)" "$$(command -v $(AIR) 2>/dev/null || echo missing)"
+	@printf "air version: %s\n" "$$($(AIR) --version 2>/dev/null || echo missing)"
 	@printf "R packages:\n"
 	@if command -v $(RSCRIPT) >/dev/null 2>&1; then \
 		for pkg in R6 methods roxygen2 rcmdcheck testthat igraph tibble; do \

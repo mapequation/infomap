@@ -97,6 +97,13 @@ def copy_skeleton(skeleton: Path, dest: Path) -> None:
     shutil.copytree(skeleton, dest)
 
 
+def normalize_configure_permissions(pkg_root: Path) -> None:
+    for name in ("configure", "configure.win"):
+        path = pkg_root / name
+        if path.exists():
+            path.chmod(0o755)
+
+
 def remove_compiled_artifacts(pkg_src: Path) -> None:
     for pattern in ("*.o", "*.so", "*.dll", "*.dylib"):
         for path in pkg_src.rglob(pattern):
@@ -120,6 +127,8 @@ def stage(
             raise RuntimeError("--in-place requires out_dir == skeleton")
     else:
         copy_skeleton(skeleton, out_dir)
+
+    normalize_configure_permissions(out_dir)
 
     generated_cpp = generated / "infomap_wrap.cpp"
     generated_r = generated / "infomap.R"

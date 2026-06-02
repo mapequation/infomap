@@ -192,7 +192,7 @@ bool OutputView::shouldIncludeLeaf(const InfoNode& node, OutputLeafPolicy filter
 }
 
 OutputLeafRow OutputView::leafRow(const InfoNode& node,
-                                  const std::deque<unsigned int>& path,
+                                  const std::vector<unsigned int>& path,
                                   unsigned int moduleId,
                                   double modularCentrality) const
 {

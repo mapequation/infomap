@@ -1,4 +1,9 @@
 [[notebooks]]
+path = "quickstart.ipynb"
+tier = "smoke"
+description = "Flagship Infomap Python quickstart with notebook-native summary and static network visualization."
+
+[[notebooks]]
 path = "3.1 The two-level map equation.ipynb"
 tier = "smoke"
 description = "Core two-level map equation example with local data only."

@@ -39,6 +39,40 @@ configuration across multiple runs:
     im2.add_link(2, 3)
     im2.run_with_options(options)
 
+Inspecting state
+----------------
+
+``repr(im)`` shows a compact snapshot that is useful in a Python shell,
+notebook, debugger, or failed test output:
+
+.. code-block:: python
+
+    from infomap import Infomap
+
+    im = Infomap(silent=True)
+    im.add_link(1, 2)
+    im
+    # Infomap(nodes=2, links=1, physical_nodes=2, state_nodes=0, status='not run')
+
+    im.run()
+    im
+    # Infomap(nodes=2, links=1, physical_nodes=2, state_nodes=0, status='run', multilayer_network=False, levels=2, top_modules=1, codelength=1.0)
+
+Use :meth:`infomap.Infomap.summary` when you want the full inspection data as a
+dictionary:
+
+.. code-block:: python
+
+    im.summary()
+    # {
+    #     "nodes": 2,
+    #     "links": 1,
+    #     "physical_nodes": 2,
+    #     "state_nodes": 0,
+    #     "status": "run",
+    #     ...
+    # }
+
 NetworkX graphs
 ---------------
 

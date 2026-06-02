@@ -46,7 +46,7 @@
       "inherits": "release-native",
       "binaryDir": "${sourceDir}/build/cmake-release-simd",
       "cacheVariables": {
-        "INFOMAP_SIMD_LOG": "ON"
+        "INFOMAP_FEATURES": "simd-log"
       }
     }
   ],

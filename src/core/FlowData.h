@@ -60,10 +60,11 @@ struct FlowData {
 };
 
 struct DeltaFlow {
+  // module and count grouped so the two 4-byte fields pack into one 8-byte slot
   unsigned int module = 0;
+  unsigned int count = 0;
   double deltaExit = 0.0;
   double deltaEnter = 0.0;
-  unsigned int count = 0;
 
   explicit DeltaFlow(unsigned int module, double deltaExit, double deltaEnter)
       : module(module),
@@ -75,7 +76,7 @@ struct DeltaFlow {
   DeltaFlow(DeltaFlow&&) = default;
   DeltaFlow& operator=(const DeltaFlow&) = default;
   DeltaFlow& operator=(DeltaFlow&&) = default;
-  virtual ~DeltaFlow() = default;
+  ~DeltaFlow() = default;
 
   DeltaFlow& operator+=(const DeltaFlow& other)
   {
@@ -86,7 +87,7 @@ struct DeltaFlow {
     return *this;
   }
 
-  virtual void reset()
+  void reset()
   {
     module = 0;
     deltaExit = 0.0;
@@ -127,7 +128,7 @@ struct MemDeltaFlow : DeltaFlow {
     return *this;
   }
 
-  void reset() override
+  void reset()
   {
     DeltaFlow::reset();
     sumDeltaPlogpPhysFlow = 0.0;
@@ -159,6 +160,45 @@ struct PhysData {
     return out << "physNodeIndex: " << data.physNodeIndex << ", sumFlowFromM2Node: " << data.sumFlowFromM2Node;
   }
 };
+
+#ifndef SWIG
+struct LayerTeleFlowData {
+  unsigned int layerId = 0;
+  unsigned int numNodes = 0;
+  double teleportFlow = 0.0;
+  double teleportWeight = 0.0;
+
+  LayerTeleFlowData() = default;
+  LayerTeleFlowData(unsigned int layerId, double flow, double weight, unsigned int numNodes = 1)
+      : layerId(layerId), numNodes(numNodes), teleportFlow(flow), teleportWeight(weight) {}
+
+  LayerTeleFlowData& operator+=(const LayerTeleFlowData& other)
+  {
+    numNodes += other.numNodes;
+    teleportFlow += other.teleportFlow;
+    teleportWeight += other.teleportWeight;
+    return *this;
+  }
+
+  LayerTeleFlowData& operator-=(const LayerTeleFlowData& other)
+  {
+    numNodes -= other.numNodes;
+    teleportFlow -= other.teleportFlow;
+    teleportWeight -= other.teleportWeight;
+    return *this;
+  }
+
+  bool isEmpty() const
+  {
+    return numNodes == 0;
+  }
+
+  friend std::ostream& operator<<(std::ostream& out, const LayerTeleFlowData& data)
+  {
+    return out << "{" << data.layerId << "|" << data.numNodes << "|" << data.teleportFlow << "|" << data.teleportWeight << "}";
+  }
+};
+#endif
 
 } // namespace infomap
 

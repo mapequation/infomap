@@ -2,13 +2,21 @@
 
 #include "Infomap.h"
 #include "io/OutputView.h"
+#include "utils/Log.h"
 
 #include "TestUtils.h"
 
 #include <cstdio>
+#include <iostream>
 #include <set>
+#include <sstream>
+#include <string>
 #include <tuple>
 #include <vector>
+
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
 namespace {
 
@@ -17,6 +25,28 @@ using infomap::InfomapWrapper;
 using InternalEdge = std::tuple<unsigned int, unsigned int, double, double>;
 using NodeIdentity = std::tuple<unsigned int, unsigned int, std::vector<int>>;
 using OutputRowIdentity = std::tuple<unsigned int, unsigned int, unsigned int>;
+
+struct LogCapture {
+  std::ostringstream output;
+  std::ostream& previousStream;
+  bool previousSilent;
+
+  // Capture the previous global log state and restore it in the destructor, so a capture
+  // never leaks the output stream / silent flag into subsequent test cases.
+  LogCapture()
+      : previousStream(infomap::Log::getOutputStream()),
+        previousSilent(infomap::Log::isSilent())
+  {
+    infomap::Log::setOutputStream(output);
+    infomap::Log::setSilent(false);
+  }
+
+  ~LogCapture()
+  {
+    infomap::Log::setOutputStream(previousStream);
+    infomap::Log::setSilent(previousSilent);
+  }
+};
 
 std::multiset<InternalEdge> internalEdgesForModule(infomap::InfoNode& module)
 {
@@ -81,6 +111,35 @@ std::vector<OutputRowIdentity> outputViewIdentities(InfomapWrapper& im, bool sta
   return rows;
 }
 
+std::vector<double> runParallelTrialsFixture(const std::string& extraFlags = "")
+{
+  InfomapWrapper im("--silent --seed 7 --num-trials 4 --parallel-trials --no-file-output " + extraFlags);
+  im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+  im.run();
+  infomap::test::checkRunSanity(im);
+  return im.codelengths();
+}
+
+double runSingleTrialFixture(unsigned int seed)
+{
+  InfomapWrapper im("--silent --seed " + std::to_string(seed) + " --num-trials 1 --two-level --no-file-output");
+  im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+  im.run();
+  infomap::test::checkRunSanity(im);
+  return im.codelength();
+}
+
+// Serial single-trial run whose flags (other than seed/num-trials) match runParallelTrialsFixture,
+// so parallel trial i must equal the serial run with seed 7+i element-wise for the same mode.
+double runSingleTrialFixtureWith(unsigned int seed, const std::string& extraFlags)
+{
+  InfomapWrapper im("--silent --seed " + std::to_string(seed) + " --num-trials 1 --no-file-output " + extraFlags);
+  im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+  im.run();
+  infomap::test::checkRunSanity(im);
+  return im.codelength();
+}
+
 TEST_CASE("Infomap partitions the unweighted two-triangle fixture into two modules [fast][core][lifecycle]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());
@@ -129,6 +188,206 @@ TEST_CASE("Multi-trial run reports the best trial codelength [fast][core][lifecy
   REQUIRE(bestIt != codelengths.end());
 
   CHECK(im.codelength() == doctest::Approx(*bestIt));
+}
+
+TEST_CASE("Parallel trials report the best trial codelength [fast][core][lifecycle][openmp]")
+{
+  InfomapWrapper im("--silent --seed 7 --num-trials 4 --parallel-trials --no-file-output");
+  im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+
+  im.run();
+
+  infomap::test::checkRunSanity(im);
+  const auto& codelengths = im.codelengths();
+  REQUIRE(codelengths.size() == 4);
+
+  auto bestIt = std::min_element(codelengths.begin(), codelengths.end());
+  REQUIRE(bestIt != codelengths.end());
+
+  CHECK(im.codelength() == doctest::Approx(*bestIt));
+}
+
+TEST_CASE("Parallel trials are deterministic for the same seed [fast][core][lifecycle][openmp]")
+{
+  const auto first = runParallelTrialsFixture();
+  const auto second = runParallelTrialsFixture();
+
+  REQUIRE(first.size() == 4);
+  REQUIRE(second.size() == 4);
+  CHECK(first == second);
+}
+
+TEST_CASE("Parallel trials are invariant to worker count [fast][core][lifecycle][openmp]")
+{
+#ifdef _OPENMP
+  // Worker count is driven by OMP_NUM_THREADS; the per-trial codelength vector must be
+  // identical regardless of how many workers run the trials (trial i always uses seed+i).
+  const int previousThreads = omp_get_max_threads();
+
+  omp_set_num_threads(1);
+  const auto oneWorker = runParallelTrialsFixture();
+
+  omp_set_num_threads(4);
+  const auto manyWorkers = runParallelTrialsFixture();
+
+  omp_set_num_threads(previousThreads);
+
+  REQUIRE(oneWorker.size() == 4);
+  REQUIRE(manyWorkers.size() == 4);
+  CHECK(oneWorker == manyWorkers);
+#endif
+}
+
+TEST_CASE("Parallel trial workers reset between strided trials [fast][core][lifecycle][openmp]")
+{
+#ifdef _OPENMP
+  InfomapWrapper im("--silent --seed 7 --num-trials 8 --parallel-trials --two-level --no-file-output");
+  im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+
+  im.run();
+
+  infomap::test::checkRunSanity(im);
+  const auto& codelengths = im.codelengths();
+  REQUIRE(codelengths.size() == 8);
+  for (unsigned int i = 0; i < codelengths.size(); ++i) {
+    CHECK(codelengths[i] == doctest::Approx(runSingleTrialFixture(7 + i)));
+  }
+#endif
+}
+
+TEST_CASE("Parallel trials with one trial warn and run serially [fast][core][lifecycle]")
+{
+  LogCapture capture;
+  InfomapWrapper im("--seed 7 --num-trials 1 --parallel-trials --no-file-output");
+  infomap::test::addEdgeFixtureLinks(im, "graphs/twotriangles_unweighted.edges");
+
+  im.run();
+
+  infomap::test::checkRunSanity(im);
+  CHECK(im.codelengths().size() == 1);
+  CHECK(capture.output.str().find("--parallel-trials requires --num-trials > 1") != std::string::npos);
+}
+
+TEST_CASE("Parallel trials run with variable Markov time without falling back [fast][core][lifecycle]")
+{
+  LogCapture capture;
+  InfomapWrapper im("--seed 7 --num-trials 2 --parallel-trials --variable-markov-time --no-file-output");
+  infomap::test::addEdgeFixtureLinks(im, "graphs/twotriangles_unweighted.edges");
+
+  im.run();
+
+  infomap::test::checkRunSanity(im);
+  CHECK(im.codelengths().size() == 2);
+  CHECK(capture.output.str().find("is not supported with --variable-markov-time") == std::string::npos);
+}
+
+TEST_CASE("Parallel trials run with entropy correction without falling back [fast][core][lifecycle]")
+{
+  LogCapture capture;
+  InfomapWrapper im("--seed 7 --num-trials 2 --parallel-trials --entropy-corrected --no-file-output");
+  infomap::test::addEdgeFixtureLinks(im, "graphs/twotriangles_unweighted.edges");
+
+  im.run();
+
+  infomap::test::checkRunSanity(im);
+  CHECK(im.codelengths().size() == 2);
+  CHECK(capture.output.str().find("is not supported with --entropy-corrected") == std::string::npos);
+}
+
+TEST_CASE("Serial entropy correction is deterministic across fresh instances [fast][core][lifecycle]")
+{
+  // Hierarchical search spawns sub-Infomap instances; entropy bias correction must keep using
+  // the full network's total degree / node count (formerly a shared static, now propagated to
+  // sub instances via inheritNetworkPropertiesFrom). We assert seed determinism rather than an
+  // absolute codelength: the exact value is a platform-dependent local optimum (greedy
+  // tie-breaking differs across libm/FP), so a golden number is not portable. Propagation
+  // correctness (serial results unchanged vs the pre-fix build) is verified out of band.
+  const auto run = [] {
+    InfomapWrapper im("--silent --seed 7 --num-trials 1 --entropy-corrected --no-file-output");
+    im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+    im.run();
+    infomap::test::checkRunSanity(im);
+    return im.codelength();
+  };
+
+  CHECK(run() == doctest::Approx(run()));
+}
+
+TEST_CASE("Parallel trials with variable Markov time match serial trials [fast][core][lifecycle][openmp]")
+{
+#ifdef _OPENMP
+  // Each parallel trial i must equal the serial single-trial run with seed 7+i for the same mode.
+  // This pins both correctness (parallel == serial) and that serial VMT results are unchanged.
+  const auto codelengths = runParallelTrialsFixture("--variable-markov-time");
+  REQUIRE(codelengths.size() == 4);
+  for (unsigned int i = 0; i < codelengths.size(); ++i) {
+    CHECK(codelengths[i] == doctest::Approx(runSingleTrialFixtureWith(7 + i, "--variable-markov-time")));
+  }
+#endif
+}
+
+TEST_CASE("Parallel trials with entropy correction match serial trials [fast][core][lifecycle][openmp]")
+{
+#ifdef _OPENMP
+  const auto codelengths = runParallelTrialsFixture("--entropy-corrected");
+  REQUIRE(codelengths.size() == 4);
+  for (unsigned int i = 0; i < codelengths.size(); ++i) {
+    CHECK(codelengths[i] == doctest::Approx(runSingleTrialFixtureWith(7 + i, "--entropy-corrected")));
+  }
+#endif
+}
+
+TEST_CASE("Parallel trials with variable Markov time are invariant to worker count [fast][core][lifecycle][openmp]")
+{
+#ifdef _OPENMP
+  const int previousThreads = omp_get_max_threads();
+
+  omp_set_num_threads(1);
+  const auto oneWorker = runParallelTrialsFixture("--variable-markov-time");
+
+  omp_set_num_threads(4);
+  const auto manyWorkers = runParallelTrialsFixture("--variable-markov-time");
+
+  omp_set_num_threads(previousThreads);
+
+  REQUIRE(oneWorker.size() == 4);
+  REQUIRE(manyWorkers.size() == 4);
+  CHECK(oneWorker == manyWorkers);
+#endif
+}
+
+TEST_CASE("Parallel trials with entropy correction are invariant to worker count [fast][core][lifecycle][openmp]")
+{
+#ifdef _OPENMP
+  const int previousThreads = omp_get_max_threads();
+
+  omp_set_num_threads(1);
+  const auto oneWorker = runParallelTrialsFixture("--entropy-corrected");
+
+  omp_set_num_threads(4);
+  const auto manyWorkers = runParallelTrialsFixture("--entropy-corrected");
+
+  omp_set_num_threads(previousThreads);
+
+  REQUIRE(oneWorker.size() == 4);
+  REQUIRE(manyWorkers.size() == 4);
+  CHECK(oneWorker == manyWorkers);
+#endif
+}
+
+TEST_CASE("Parallel trials warn when inner parallelization is requested [fast][core][lifecycle][openmp]")
+{
+#ifdef _OPENMP
+  LogCapture capture;
+  InfomapWrapper im("--seed 7 --num-trials 2 --parallel-trials --inner-parallelization --no-file-output");
+  infomap::test::addEdgeFixtureLinks(im, "graphs/twotriangles_unweighted.edges");
+
+  im.run();
+
+  infomap::test::checkRunSanity(im);
+  CHECK(im.codelengths().size() == 2);
+  CHECK(capture.output.str().find("--parallel-trials ignores --inner-parallelization") != std::string::npos);
+#endif
 }
 
 TEST_CASE("Infomap reruns ninetriangles deterministically on the same instance [fast][core][lifecycle][crash]")

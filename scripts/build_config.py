@@ -9,6 +9,28 @@ import sys
 from pathlib import Path
 
 
+FEATURE_REGISTRY = {
+    "simd-log": {
+        "define": "INFOMAP_USE_SIMD_LOG",
+        "description": "Batch plogp's log2 calls through an inlined SIMD polynomial.",
+        "requires": [],
+        "conflicts": [],
+    },
+    "regularized-multilayer": {
+        "define": "INFOMAP_FEATURE_REGULARIZED_MULTILAYER",
+        "description": "Enable experimental regularized flow for multilayer networks.",
+        "requires": [],
+        "conflicts": [],
+    },
+    "test-feature": {
+        "define": "INFOMAP_FEATURE_TEST_FEATURE",
+        "description": "Internal canary used to verify compile-time feature gates.",
+        "requires": [],
+        "conflicts": [],
+    },
+}
+
+
 def _split_flags(value):
     if not value:
         return []
@@ -144,15 +166,79 @@ def _native_arch_link_flags(compiler_family):
     return []
 
 
-def _simd_log_compile_flags(compiler_family):
-    # The SIMD log paths key off __ARM_NEON or __AVX2__/__FMA__ macros that are
-    # only set by clang/gnu (typically via -march=native). MSVC builds wouldn't
-    # activate the SIMD code even if the define were present, and MSVC uses /D
-    # instead of -D for preprocessor flags. Skip the define entirely on other
-    # toolchains to avoid passing an invalid flag.
-    if compiler_family in {"clang", "gnu"}:
-        return ["-DINFOMAP_USE_SIMD_LOG=1"]
-    return []
+def _normalize_features(features):
+    if not features:
+        return []
+    if isinstance(features, str):
+        candidates = features.replace(",", " ").split()
+    else:
+        candidates = list(features)
+
+    requested = set()
+    for feature in candidates:
+        feature = str(feature).strip()
+        if not feature:
+            continue
+        if feature not in FEATURE_REGISTRY:
+            known = ", ".join(sorted(FEATURE_REGISTRY))
+            raise ValueError(
+                f"Unknown feature '{feature}'. Known features: {known}."
+            )
+        requested.add(feature)
+    return [feature for feature in FEATURE_REGISTRY if feature in requested]
+
+
+def _validate_features(features):
+    enabled = set(features)
+    for feature in features:
+        spec = FEATURE_REGISTRY[feature]
+        missing = [
+            dependency for dependency in spec["requires"] if dependency not in enabled
+        ]
+        if missing:
+            raise ValueError(
+                f"Feature '{feature}' requires: {', '.join(missing)}."
+            )
+        conflicts = [conflict for conflict in spec["conflicts"] if conflict in enabled]
+        if conflicts:
+            raise ValueError(
+                f"Feature '{feature}' conflicts with: {', '.join(conflicts)}."
+            )
+
+
+def _define_flag(compiler_family, define):
+    if compiler_family == "msvc":
+        return f"/D{define}=1"
+    return f"-D{define}=1"
+
+
+def _define_string_flag(compiler_family, define, value):
+    if compiler_family == "msvc":
+        return f'/D{define}=\\"{value}\\"'
+    return f'-D{define}=\\"{value}\\"'
+
+
+def _feature_compile_flags(compiler_family, features):
+    flags = [
+        _define_flag(compiler_family, FEATURE_REGISTRY[feature]["define"])
+        for feature in features
+    ]
+    if features:
+        flags.append(
+            _define_string_flag(
+                compiler_family,
+                "INFOMAP_ENABLED_FEATURES",
+                ",".join(features),
+            )
+        )
+    return flags
+
+
+def _feature_definitions(features):
+    definitions = [f"{FEATURE_REGISTRY[feature]['define']}=1" for feature in features]
+    if features:
+        definitions.append(f'INFOMAP_ENABLED_FEATURES="{",".join(features)}"')
+    return definitions
 
 
 def resolve_build_config(
@@ -166,11 +252,13 @@ def resolve_build_config(
     deployment_target="",
     platform_name=None,
     native_arch=False,
-    simd_log=False,
+    features=None,
 ):
     platform_name = platform_name or sys.platform
     compiler_family = _compiler_family_for_platform(compiler, platform_name)
     is_darwin = platform_name in {"darwin", "Darwin"}
+    enabled_features = _normalize_features(features)
+    _validate_features(enabled_features)
 
     brew_prefix = _brew_prefix() if is_darwin else ""
     libomp_prefix = _brew_prefix("libomp") if is_darwin else ""
@@ -178,12 +266,16 @@ def resolve_build_config(
     base_compile_flags = _base_compile_flags(compiler_family)
     mode_compile_flags = _mode_compile_flags(mode, compiler_family)
     native_compile_flags = (
-        _native_arch_compile_flags(compiler_family) if native_arch and mode == "release" else []
+        _native_arch_compile_flags(compiler_family)
+        if native_arch and mode == "release"
+        else []
     )
     native_link_flags = (
-        _native_arch_link_flags(compiler_family) if native_arch and mode == "release" else []
+        _native_arch_link_flags(compiler_family)
+        if native_arch and mode == "release"
+        else []
     )
-    simd_log_compile_flags = _simd_log_compile_flags(compiler_family) if simd_log else []
+    feature_compile_flags = _feature_compile_flags(compiler_family, enabled_features)
 
     platform_compile_flags = []
     platform_link_flags = []
@@ -209,16 +301,16 @@ def resolve_build_config(
             openmp_compile_flags.append("-fopenmp")
             openmp_link_flags.append("-fopenmp")
 
-    compile_flags = _dedupe(
+    cmake_compile_flags = _dedupe(
         base_compile_flags
         + mode_compile_flags
         + native_compile_flags
-        + simd_log_compile_flags
         + openmp_compile_flags
         + platform_compile_flags
         + _split_flags(cppflags)
         + _split_flags(cxxflags)
     )
+    compile_flags = _dedupe(cmake_compile_flags + feature_compile_flags)
     link_flags = _dedupe(
         platform_link_flags
         + native_link_flags
@@ -234,15 +326,15 @@ def resolve_build_config(
         # (clang/gnu). For MSVC or unknown toolchains the request is silently
         # ignored, and the reported field stays false to match reality.
         "native_arch": bool(native_compile_flags),
-        # Same logic as native_arch: only report effective when flags were
-        # actually emitted (clang/gnu).
-        "simd_log": bool(simd_log_compile_flags),
+        "enabled_features": enabled_features,
+        "enabled_feature_defines": _feature_definitions(enabled_features),
         "platform": platform_name,
         "compiler": compiler,
         "compiler_family": compiler_family,
         "brew_prefix": brew_prefix,
         "libomp_prefix": libomp_prefix,
         "deployment_target": deployment_target,
+        "cmake_compile_flags": cmake_compile_flags,
         "compile_flags": compile_flags,
         "link_flags": link_flags,
     }
@@ -257,50 +349,92 @@ def _field_value(config, field):
     return str(value)
 
 
+# Maps each Make variable to the config field that supplies its value. Used by
+# the `make-export` format so the Makefile can resolve the whole build config in
+# a single invocation instead of one process per field.
+MAKE_EXPORT_FIELDS = (
+    ("BUILD_CONFIG_MODE", "mode"),
+    ("BUILD_CONFIG_OPENMP", "openmp"),
+    ("BUILD_CONFIG_ENABLED_FEATURES", "enabled_features"),
+    ("BUILD_CONFIG_PLATFORM", "platform"),
+    ("BUILD_CONFIG_COMPILER", "compiler"),
+    ("BUILD_CONFIG_COMPILER_FAMILY", "compiler_family"),
+    ("BUILD_CONFIG_BREW_PREFIX", "brew_prefix"),
+    ("BUILD_CONFIG_LIBOMP_PREFIX", "libomp_prefix"),
+    ("BUILD_CONFIG_DEPLOYMENT_TARGET", "deployment_target"),
+    ("NATIVE_CXXFLAGS", "compile_flags"),
+    ("NATIVE_LDFLAGS", "link_flags"),
+)
+
+
+def _make_export(config):
+    lines = []
+    for make_var, field in MAKE_EXPORT_FIELDS:
+        # Escape characters Make would otherwise interpret on `include`: `$`
+        # (variable expansion) and `#` (starts a comment, truncating the value).
+        # Flag/path values can contain either via user CPPFLAGS/CXXFLAGS/paths.
+        value = _field_value(config, field).replace("$", "$$").replace("#", "\\#")
+        lines.append(f"{make_var} := {value}")
+    return "\n".join(lines)
+
+
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("format", choices=["json", "field"])
-    parser.add_argument("--field", choices=[
-        "mode",
-        "openmp",
-        "native_arch",
-        "simd_log",
-        "platform",
-        "compiler",
-        "compiler_family",
-        "brew_prefix",
-        "libomp_prefix",
-        "deployment_target",
-        "compile_flags",
-        "link_flags",
-    ])
+    parser.add_argument("format", choices=["json", "field", "make-export"])
+    parser.add_argument(
+        "--field",
+        choices=[
+            "mode",
+            "openmp",
+            "native_arch",
+            "enabled_features",
+            "enabled_feature_defines",
+            "platform",
+            "compiler",
+            "compiler_family",
+            "brew_prefix",
+            "libomp_prefix",
+            "deployment_target",
+            "cmake_compile_flags",
+            "compile_flags",
+            "link_flags",
+        ],
+    )
     parser.add_argument("--mode", default="release", choices=["release", "debug"])
     parser.add_argument("--openmp", default="1")
     parser.add_argument("--native-arch", default="0")
-    parser.add_argument("--simd-log", default="0")
+    parser.add_argument("--features", default="")
     parser.add_argument("--compiler", default="c++")
     parser.add_argument("--cppflags", default=os.environ.get("CPPFLAGS", ""))
     parser.add_argument("--cxxflags", default=os.environ.get("CXXFLAGS", ""))
     parser.add_argument("--ldflags", default=os.environ.get("LDFLAGS", ""))
-    parser.add_argument("--deployment-target", default=os.environ.get("MACOSX_DEPLOYMENT_TARGET", ""))
+    parser.add_argument(
+        "--deployment-target", default=os.environ.get("MACOSX_DEPLOYMENT_TARGET", "")
+    )
     parser.add_argument("--platform", default=sys.platform)
     args = parser.parse_args()
 
-    config = resolve_build_config(
-        mode=args.mode,
-        openmp=_norm_openmp(args.openmp),
-        compiler=args.compiler,
-        cppflags=args.cppflags,
-        cxxflags=args.cxxflags,
-        ldflags=args.ldflags,
-        deployment_target=args.deployment_target,
-        platform_name=args.platform,
-        native_arch=_norm_openmp(args.native_arch),
-        simd_log=_norm_openmp(args.simd_log),
-    )
+    try:
+        config = resolve_build_config(
+            mode=args.mode,
+            openmp=_norm_openmp(args.openmp),
+            compiler=args.compiler,
+            cppflags=args.cppflags,
+            cxxflags=args.cxxflags,
+            ldflags=args.ldflags,
+            deployment_target=args.deployment_target,
+            platform_name=args.platform,
+            native_arch=_norm_openmp(args.native_arch),
+            features=args.features,
+        )
+    except ValueError as error:
+        parser.error(str(error))
 
     if args.format == "json":
         json.dump(config, sys.stdout)
+        sys.stdout.write("\n")
+    elif args.format == "make-export":
+        sys.stdout.write(_make_export(config))
         sys.stdout.write("\n")
     else:
         if not args.field:

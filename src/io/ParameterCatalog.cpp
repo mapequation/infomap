@@ -802,6 +802,20 @@ const std::vector<ParameterSpec>& parameterCatalog()
         .advanced()
         .configTarget(&Config::innerParallelization),
     param()
+        .longName("parallel-trials")
+        .description("Run independent trials in parallel with OpenMP. --num-trials remains the total number of trials; the number of parallel workers follows the OpenMP thread count (e.g. OMP_NUM_THREADS), clamped to --num-trials. Peak memory scales with the worker count. Nested OpenMP and --inner-parallelization are disabled inside workers.")
+        .group("Accuracy")
+        .advanced()
+        .configTarget(&Config::parallelTrials),
+#if INFOMAP_FEATURE_TEST_FEATURE
+    param()
+        .longName("test-feature")
+        .description("Enable the internal feature flag canary.")
+        .group("Accuracy")
+        .advanced()
+        .configTarget(&Config::testFeature),
+#endif
+    param()
         .longName("prefer-modular-solution")
         .description("Prefer a modular solution even when one module gives a lower codelength.")
         .group("Accuracy")

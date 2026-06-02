@@ -237,6 +237,7 @@ setClass("infomap::Config",
         fastHierarchicalSolution = "integer",
         preferModularSolution = "logical",
         innerParallelization = "logical",
+        parallelTrials = "logical",
         numRandomMoves = "integer",
         maxDegreeForRandomMoves = "integer",
         outDirectory = "character",
@@ -285,9 +286,9 @@ setClass('_p_infomap__DeltaFlow', contains = 'C++Reference')
 setClass("infomap::DeltaFlow",
     representation(
         module = "integer",
+        count = "integer",
         deltaExit = "numeric",
-        deltaEnter = "numeric",
-        count = "integer"),
+        deltaEnter = "numeric"),
         contains = "RSWIGStruct")
 
 
@@ -332,6 +333,7 @@ setClass("infomap::InfomapIterator",
     representation(
         m_moduleIndexLevel = "integer",
         m_moduleIndex = "integer",
+        m_path = "integer",
         m_depth = "integer"),
         contains = "RSWIGStruct")
 
@@ -2397,6 +2399,33 @@ attr(`Config_innerParallelization_get`, 'returnType') = 'logical'
 attr(`Config_innerParallelization_get`, "inputTypes") = c('_p_infomap__Config')
 class(`Config_innerParallelization_get`) = c("SWIGFunction", class('Config_innerParallelization_get'))
 
+# Start of Config_parallelTrials_set
+
+`Config_parallelTrials_set` = function(self, s_parallelTrials)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  s_parallelTrials = as.logical(s_parallelTrials);
+  ;.Call('R_swig_Config_parallelTrials_set', self, s_parallelTrials, PACKAGE='infomap');
+  
+}
+
+attr(`Config_parallelTrials_set`, 'returnType') = 'void'
+attr(`Config_parallelTrials_set`, "inputTypes") = c('_p_infomap__Config', 'logical')
+class(`Config_parallelTrials_set`) = c("SWIGFunction", class('Config_parallelTrials_set'))
+
+# Start of Config_parallelTrials_get
+
+`Config_parallelTrials_get` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;.Call('R_swig_Config_parallelTrials_get', self, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`Config_parallelTrials_get`, 'returnType') = 'logical'
+attr(`Config_parallelTrials_get`, "inputTypes") = c('_p_infomap__Config')
+class(`Config_parallelTrials_get`) = c("SWIGFunction", class('Config_parallelTrials_get'))
+
 # Start of Config_numRandomMoves_set
 
 `Config_numRandomMoves_set` = function(self, s_numRandomMoves)
@@ -3440,8 +3469,8 @@ class(`delete_Config`) = c("SWIGFunction", class('delete_Config'))
 setMethod('$', '_p_infomap__Config', function(x, name)
 
 {
-  accessorFuns = list('isCLI' = Config_isCLI_get, 'networkFile' = Config_networkFile_get, 'additionalInput' = Config_additionalInput_get, 'stateInput' = Config_stateInput_get, 'stateOutput' = Config_stateOutput_get, 'multilayerInput' = Config_multilayerInput_get, 'weightThreshold' = Config_weightThreshold_get, 'bipartite' = Config_bipartite_get, 'skipAdjustBipartiteFlow' = Config_skipAdjustBipartiteFlow_get, 'bipartiteTeleportation' = Config_bipartiteTeleportation_get, 'noSelfLinks' = Config_noSelfLinks_get, 'nodeLimit' = Config_nodeLimit_get, 'matchableMultilayerIds' = Config_matchableMultilayerIds_get, 'clusterDataFile' = Config_clusterDataFile_get, 'metaDataFile' = Config_metaDataFile_get, 'metaDataRate' = Config_metaDataRate_get, 'unweightedMetaData' = Config_unweightedMetaData_get, 'numMetaDataDimensions' = Config_numMetaDataDimensions_get, 'clusterDataIsHard' = Config_clusterDataIsHard_get, 'assignToNeighbouringModule' = Config_assignToNeighbouringModule_get, 'noInfomap' = Config_noInfomap_get, 'flowModel' = Config_flowModel_get, 'flowModelIsSet' = Config_flowModelIsSet_get, 'directed' = Config_directed_get, 'useNodeWeightsAsFlow' = Config_useNodeWeightsAsFlow_get, 'teleportToNodes' = Config_teleportToNodes_get, 'markovTime' = Config_markovTime_get, 'variableMarkovTime' = Config_variableMarkovTime_get, 'variableMarkovTimeDamping' = Config_variableMarkovTimeDamping_get, 'variableMarkovTimeMinLocalScale' = Config_variableMarkovTimeMinLocalScale_get, 'markovTimeNoSelfLinks' = Config_markovTimeNoSelfLinks_get, 'multilayerRelaxRate' = Config_multilayerRelaxRate_get, 'multilayerRelaxLimit' = Config_multilayerRelaxLimit_get, 'multilayerRelaxLimitUp' = Config_multilayerRelaxLimitUp_get, 'multilayerRelaxLimitDown' = Config_multilayerRelaxLimitDown_get, 'multilayerJSRelaxRate' = Config_multilayerJSRelaxRate_get, 'multilayerRelaxByJensenShannonDivergence' = Config_multilayerRelaxByJensenShannonDivergence_get, 'multilayerJSRelaxLimit' = Config_multilayerJSRelaxLimit_get, 'maxFlowIterations' = Config_maxFlowIterations_get, 'twoLevel' = Config_twoLevel_get, 'noCoarseTune' = Config_noCoarseTune_get, 'recordedTeleportation' = Config_recordedTeleportation_get, 'regularized' = Config_regularized_get, 'regularizationStrength' = Config_regularizationStrength_get, 'teleportationProbability' = Config_teleportationProbability_get, 'preferredNumberOfModules' = Config_preferredNumberOfModules_get, 'entropyBiasCorrection' = Config_entropyBiasCorrection_get, 'entropyBiasCorrectionMultiplier' = Config_entropyBiasCorrectionMultiplier_get, 'seedToRandomNumberGenerator' = Config_seedToRandomNumberGenerator_get, 'numTrials' = Config_numTrials_get, 'minimumCodelengthImprovement' = Config_minimumCodelengthImprovement_get, 'minimumSingleNodeCodelengthImprovement' = Config_minimumSingleNodeCodelengthImprovement_get, 'randomizeCoreLoopLimit' = Config_randomizeCoreLoopLimit_get, 'coreLoopLimit' = Config_coreLoopLimit_get, 'levelAggregationLimit' = Config_levelAggregationLimit_get, 'tuneIterationLimit' = Config_tuneIterationLimit_get, 'minimumRelativeTuneIterationImprovement' = Config_minimumRelativeTuneIterationImprovement_get, 'onlySuperModules' = Config_onlySuperModules_get, 'fastHierarchicalSolution' = Config_fastHierarchicalSolution_get, 'preferModularSolution' = Config_preferModularSolution_get, 'innerParallelization' = Config_innerParallelization_get, 'numRandomMoves' = Config_numRandomMoves_get, 'maxDegreeForRandomMoves' = Config_maxDegreeForRandomMoves_get, 'outDirectory' = Config_outDirectory_get, 'outName' = Config_outName_get, 'outputFormats' = Config_outputFormats_get, 'printTree' = Config_printTree_get, 'printFlowTree' = Config_printFlowTree_get, 'printNewick' = Config_printNewick_get, 'printJson' = Config_printJson_get, 'printCsv' = Config_printCsv_get, 'printClu' = Config_printClu_get, 'printAllTrials' = Config_printAllTrials_get, 'cluLevel' = Config_cluLevel_get, 'printFlowNetwork' = Config_printFlowNetwork_get, 'printPajekNetwork' = Config_printPajekNetwork_get, 'printStateNetwork' = Config_printStateNetwork_get, 'noFileOutput' = Config_noFileOutput_get, 'verbosity' = Config_verbosity_get, 'verboseNumberPrecision' = Config_verboseNumberPrecision_get, 'silent' = Config_silent_get, 'prettyOutput' = Config_prettyOutput_get, 'hideBipartiteNodes' = Config_hideBipartiteNodes_get, 'startDate' = Config_startDate_get, 'version' = Config_version_get, 'parsedString' = Config_parsedString_get, 'parsedOptions' = Config_parsedOptions_get, 'cloneAsNonMain' = Config_cloneAsNonMain, 'adaptDefaults' = Config_adaptDefaults, 'setStateInput' = Config_setStateInput, 'setStateOutput' = Config_setStateOutput, 'setMultilayerInput' = Config_setMultilayerInput, 'setFlowModel' = Config_setFlowModel, 'isUndirectedClustering' = Config_isUndirectedClustering, 'isUndirectedFlow' = Config_isUndirectedFlow, 'printAsUndirected' = Config_printAsUndirected, 'isMultilayerNetwork' = Config_isMultilayerNetwork, 'isBipartite' = Config_isBipartite, 'haveMemory' = Config_haveMemory, 'printStates' = Config_printStates, 'haveMetaData' = Config_haveMetaData, 'haveOutput' = Config_haveOutput, 'haveModularResultOutput' = Config_haveModularResultOutput);
-  vaccessors = c('isCLI', 'networkFile', 'additionalInput', 'stateInput', 'stateOutput', 'multilayerInput', 'weightThreshold', 'bipartite', 'skipAdjustBipartiteFlow', 'bipartiteTeleportation', 'noSelfLinks', 'nodeLimit', 'matchableMultilayerIds', 'clusterDataFile', 'metaDataFile', 'metaDataRate', 'unweightedMetaData', 'numMetaDataDimensions', 'clusterDataIsHard', 'assignToNeighbouringModule', 'noInfomap', 'flowModel', 'flowModelIsSet', 'directed', 'useNodeWeightsAsFlow', 'teleportToNodes', 'markovTime', 'variableMarkovTime', 'variableMarkovTimeDamping', 'variableMarkovTimeMinLocalScale', 'markovTimeNoSelfLinks', 'multilayerRelaxRate', 'multilayerRelaxLimit', 'multilayerRelaxLimitUp', 'multilayerRelaxLimitDown', 'multilayerJSRelaxRate', 'multilayerRelaxByJensenShannonDivergence', 'multilayerJSRelaxLimit', 'maxFlowIterations', 'twoLevel', 'noCoarseTune', 'recordedTeleportation', 'regularized', 'regularizationStrength', 'teleportationProbability', 'preferredNumberOfModules', 'entropyBiasCorrection', 'entropyBiasCorrectionMultiplier', 'seedToRandomNumberGenerator', 'numTrials', 'minimumCodelengthImprovement', 'minimumSingleNodeCodelengthImprovement', 'randomizeCoreLoopLimit', 'coreLoopLimit', 'levelAggregationLimit', 'tuneIterationLimit', 'minimumRelativeTuneIterationImprovement', 'onlySuperModules', 'fastHierarchicalSolution', 'preferModularSolution', 'innerParallelization', 'numRandomMoves', 'maxDegreeForRandomMoves', 'outDirectory', 'outName', 'outputFormats', 'printTree', 'printFlowTree', 'printNewick', 'printJson', 'printCsv', 'printClu', 'printAllTrials', 'cluLevel', 'printFlowNetwork', 'printPajekNetwork', 'printStateNetwork', 'noFileOutput', 'verbosity', 'verboseNumberPrecision', 'silent', 'prettyOutput', 'hideBipartiteNodes', 'startDate', 'version', 'parsedString', 'parsedOptions');
+  accessorFuns = list('isCLI' = Config_isCLI_get, 'networkFile' = Config_networkFile_get, 'additionalInput' = Config_additionalInput_get, 'stateInput' = Config_stateInput_get, 'stateOutput' = Config_stateOutput_get, 'multilayerInput' = Config_multilayerInput_get, 'weightThreshold' = Config_weightThreshold_get, 'bipartite' = Config_bipartite_get, 'skipAdjustBipartiteFlow' = Config_skipAdjustBipartiteFlow_get, 'bipartiteTeleportation' = Config_bipartiteTeleportation_get, 'noSelfLinks' = Config_noSelfLinks_get, 'nodeLimit' = Config_nodeLimit_get, 'matchableMultilayerIds' = Config_matchableMultilayerIds_get, 'clusterDataFile' = Config_clusterDataFile_get, 'metaDataFile' = Config_metaDataFile_get, 'metaDataRate' = Config_metaDataRate_get, 'unweightedMetaData' = Config_unweightedMetaData_get, 'numMetaDataDimensions' = Config_numMetaDataDimensions_get, 'clusterDataIsHard' = Config_clusterDataIsHard_get, 'assignToNeighbouringModule' = Config_assignToNeighbouringModule_get, 'noInfomap' = Config_noInfomap_get, 'flowModel' = Config_flowModel_get, 'flowModelIsSet' = Config_flowModelIsSet_get, 'directed' = Config_directed_get, 'useNodeWeightsAsFlow' = Config_useNodeWeightsAsFlow_get, 'teleportToNodes' = Config_teleportToNodes_get, 'markovTime' = Config_markovTime_get, 'variableMarkovTime' = Config_variableMarkovTime_get, 'variableMarkovTimeDamping' = Config_variableMarkovTimeDamping_get, 'variableMarkovTimeMinLocalScale' = Config_variableMarkovTimeMinLocalScale_get, 'markovTimeNoSelfLinks' = Config_markovTimeNoSelfLinks_get, 'multilayerRelaxRate' = Config_multilayerRelaxRate_get, 'multilayerRelaxLimit' = Config_multilayerRelaxLimit_get, 'multilayerRelaxLimitUp' = Config_multilayerRelaxLimitUp_get, 'multilayerRelaxLimitDown' = Config_multilayerRelaxLimitDown_get, 'multilayerJSRelaxRate' = Config_multilayerJSRelaxRate_get, 'multilayerRelaxByJensenShannonDivergence' = Config_multilayerRelaxByJensenShannonDivergence_get, 'multilayerJSRelaxLimit' = Config_multilayerJSRelaxLimit_get, 'maxFlowIterations' = Config_maxFlowIterations_get, 'twoLevel' = Config_twoLevel_get, 'noCoarseTune' = Config_noCoarseTune_get, 'recordedTeleportation' = Config_recordedTeleportation_get, 'regularized' = Config_regularized_get, 'regularizationStrength' = Config_regularizationStrength_get, 'teleportationProbability' = Config_teleportationProbability_get, 'preferredNumberOfModules' = Config_preferredNumberOfModules_get, 'entropyBiasCorrection' = Config_entropyBiasCorrection_get, 'entropyBiasCorrectionMultiplier' = Config_entropyBiasCorrectionMultiplier_get, 'seedToRandomNumberGenerator' = Config_seedToRandomNumberGenerator_get, 'numTrials' = Config_numTrials_get, 'minimumCodelengthImprovement' = Config_minimumCodelengthImprovement_get, 'minimumSingleNodeCodelengthImprovement' = Config_minimumSingleNodeCodelengthImprovement_get, 'randomizeCoreLoopLimit' = Config_randomizeCoreLoopLimit_get, 'coreLoopLimit' = Config_coreLoopLimit_get, 'levelAggregationLimit' = Config_levelAggregationLimit_get, 'tuneIterationLimit' = Config_tuneIterationLimit_get, 'minimumRelativeTuneIterationImprovement' = Config_minimumRelativeTuneIterationImprovement_get, 'onlySuperModules' = Config_onlySuperModules_get, 'fastHierarchicalSolution' = Config_fastHierarchicalSolution_get, 'preferModularSolution' = Config_preferModularSolution_get, 'innerParallelization' = Config_innerParallelization_get, 'parallelTrials' = Config_parallelTrials_get, 'numRandomMoves' = Config_numRandomMoves_get, 'maxDegreeForRandomMoves' = Config_maxDegreeForRandomMoves_get, 'outDirectory' = Config_outDirectory_get, 'outName' = Config_outName_get, 'outputFormats' = Config_outputFormats_get, 'printTree' = Config_printTree_get, 'printFlowTree' = Config_printFlowTree_get, 'printNewick' = Config_printNewick_get, 'printJson' = Config_printJson_get, 'printCsv' = Config_printCsv_get, 'printClu' = Config_printClu_get, 'printAllTrials' = Config_printAllTrials_get, 'cluLevel' = Config_cluLevel_get, 'printFlowNetwork' = Config_printFlowNetwork_get, 'printPajekNetwork' = Config_printPajekNetwork_get, 'printStateNetwork' = Config_printStateNetwork_get, 'noFileOutput' = Config_noFileOutput_get, 'verbosity' = Config_verbosity_get, 'verboseNumberPrecision' = Config_verboseNumberPrecision_get, 'silent' = Config_silent_get, 'prettyOutput' = Config_prettyOutput_get, 'hideBipartiteNodes' = Config_hideBipartiteNodes_get, 'startDate' = Config_startDate_get, 'version' = Config_version_get, 'parsedString' = Config_parsedString_get, 'parsedOptions' = Config_parsedOptions_get, 'cloneAsNonMain' = Config_cloneAsNonMain, 'adaptDefaults' = Config_adaptDefaults, 'setStateInput' = Config_setStateInput, 'setStateOutput' = Config_setStateOutput, 'setMultilayerInput' = Config_setMultilayerInput, 'setFlowModel' = Config_setFlowModel, 'isUndirectedClustering' = Config_isUndirectedClustering, 'isUndirectedFlow' = Config_isUndirectedFlow, 'printAsUndirected' = Config_printAsUndirected, 'isMultilayerNetwork' = Config_isMultilayerNetwork, 'isBipartite' = Config_isBipartite, 'haveMemory' = Config_haveMemory, 'printStates' = Config_printStates, 'haveMetaData' = Config_haveMetaData, 'haveOutput' = Config_haveOutput, 'haveModularResultOutput' = Config_haveModularResultOutput);
+  vaccessors = c('isCLI', 'networkFile', 'additionalInput', 'stateInput', 'stateOutput', 'multilayerInput', 'weightThreshold', 'bipartite', 'skipAdjustBipartiteFlow', 'bipartiteTeleportation', 'noSelfLinks', 'nodeLimit', 'matchableMultilayerIds', 'clusterDataFile', 'metaDataFile', 'metaDataRate', 'unweightedMetaData', 'numMetaDataDimensions', 'clusterDataIsHard', 'assignToNeighbouringModule', 'noInfomap', 'flowModel', 'flowModelIsSet', 'directed', 'useNodeWeightsAsFlow', 'teleportToNodes', 'markovTime', 'variableMarkovTime', 'variableMarkovTimeDamping', 'variableMarkovTimeMinLocalScale', 'markovTimeNoSelfLinks', 'multilayerRelaxRate', 'multilayerRelaxLimit', 'multilayerRelaxLimitUp', 'multilayerRelaxLimitDown', 'multilayerJSRelaxRate', 'multilayerRelaxByJensenShannonDivergence', 'multilayerJSRelaxLimit', 'maxFlowIterations', 'twoLevel', 'noCoarseTune', 'recordedTeleportation', 'regularized', 'regularizationStrength', 'teleportationProbability', 'preferredNumberOfModules', 'entropyBiasCorrection', 'entropyBiasCorrectionMultiplier', 'seedToRandomNumberGenerator', 'numTrials', 'minimumCodelengthImprovement', 'minimumSingleNodeCodelengthImprovement', 'randomizeCoreLoopLimit', 'coreLoopLimit', 'levelAggregationLimit', 'tuneIterationLimit', 'minimumRelativeTuneIterationImprovement', 'onlySuperModules', 'fastHierarchicalSolution', 'preferModularSolution', 'innerParallelization', 'parallelTrials', 'numRandomMoves', 'maxDegreeForRandomMoves', 'outDirectory', 'outName', 'outputFormats', 'printTree', 'printFlowTree', 'printNewick', 'printJson', 'printCsv', 'printClu', 'printAllTrials', 'cluLevel', 'printFlowNetwork', 'printPajekNetwork', 'printStateNetwork', 'noFileOutput', 'verbosity', 'verboseNumberPrecision', 'silent', 'prettyOutput', 'hideBipartiteNodes', 'startDate', 'version', 'parsedString', 'parsedOptions');
   ;        idx = pmatch(name, names(accessorFuns));
   if(is.na(idx)) 
   return(callNextMethod(x, name));
@@ -3458,7 +3487,7 @@ setMethod('$', '_p_infomap__Config', function(x, name)
 setMethod('$<-', '_p_infomap__Config', function(x, name, value)
 
 {
-  accessorFuns = list('isCLI' = Config_isCLI_set, 'networkFile' = Config_networkFile_set, 'additionalInput' = Config_additionalInput_set, 'stateInput' = Config_stateInput_set, 'stateOutput' = Config_stateOutput_set, 'multilayerInput' = Config_multilayerInput_set, 'weightThreshold' = Config_weightThreshold_set, 'bipartite' = Config_bipartite_set, 'skipAdjustBipartiteFlow' = Config_skipAdjustBipartiteFlow_set, 'bipartiteTeleportation' = Config_bipartiteTeleportation_set, 'noSelfLinks' = Config_noSelfLinks_set, 'nodeLimit' = Config_nodeLimit_set, 'matchableMultilayerIds' = Config_matchableMultilayerIds_set, 'clusterDataFile' = Config_clusterDataFile_set, 'metaDataFile' = Config_metaDataFile_set, 'metaDataRate' = Config_metaDataRate_set, 'unweightedMetaData' = Config_unweightedMetaData_set, 'numMetaDataDimensions' = Config_numMetaDataDimensions_set, 'clusterDataIsHard' = Config_clusterDataIsHard_set, 'assignToNeighbouringModule' = Config_assignToNeighbouringModule_set, 'noInfomap' = Config_noInfomap_set, 'flowModel' = Config_flowModel_set, 'flowModelIsSet' = Config_flowModelIsSet_set, 'directed' = Config_directed_set, 'useNodeWeightsAsFlow' = Config_useNodeWeightsAsFlow_set, 'teleportToNodes' = Config_teleportToNodes_set, 'markovTime' = Config_markovTime_set, 'variableMarkovTime' = Config_variableMarkovTime_set, 'variableMarkovTimeDamping' = Config_variableMarkovTimeDamping_set, 'variableMarkovTimeMinLocalScale' = Config_variableMarkovTimeMinLocalScale_set, 'markovTimeNoSelfLinks' = Config_markovTimeNoSelfLinks_set, 'multilayerRelaxRate' = Config_multilayerRelaxRate_set, 'multilayerRelaxLimit' = Config_multilayerRelaxLimit_set, 'multilayerRelaxLimitUp' = Config_multilayerRelaxLimitUp_set, 'multilayerRelaxLimitDown' = Config_multilayerRelaxLimitDown_set, 'multilayerJSRelaxRate' = Config_multilayerJSRelaxRate_set, 'multilayerRelaxByJensenShannonDivergence' = Config_multilayerRelaxByJensenShannonDivergence_set, 'multilayerJSRelaxLimit' = Config_multilayerJSRelaxLimit_set, 'maxFlowIterations' = Config_maxFlowIterations_set, 'twoLevel' = Config_twoLevel_set, 'noCoarseTune' = Config_noCoarseTune_set, 'recordedTeleportation' = Config_recordedTeleportation_set, 'regularized' = Config_regularized_set, 'regularizationStrength' = Config_regularizationStrength_set, 'teleportationProbability' = Config_teleportationProbability_set, 'preferredNumberOfModules' = Config_preferredNumberOfModules_set, 'entropyBiasCorrection' = Config_entropyBiasCorrection_set, 'entropyBiasCorrectionMultiplier' = Config_entropyBiasCorrectionMultiplier_set, 'seedToRandomNumberGenerator' = Config_seedToRandomNumberGenerator_set, 'numTrials' = Config_numTrials_set, 'minimumCodelengthImprovement' = Config_minimumCodelengthImprovement_set, 'minimumSingleNodeCodelengthImprovement' = Config_minimumSingleNodeCodelengthImprovement_set, 'randomizeCoreLoopLimit' = Config_randomizeCoreLoopLimit_set, 'coreLoopLimit' = Config_coreLoopLimit_set, 'levelAggregationLimit' = Config_levelAggregationLimit_set, 'tuneIterationLimit' = Config_tuneIterationLimit_set, 'minimumRelativeTuneIterationImprovement' = Config_minimumRelativeTuneIterationImprovement_set, 'onlySuperModules' = Config_onlySuperModules_set, 'fastHierarchicalSolution' = Config_fastHierarchicalSolution_set, 'preferModularSolution' = Config_preferModularSolution_set, 'innerParallelization' = Config_innerParallelization_set, 'numRandomMoves' = Config_numRandomMoves_set, 'maxDegreeForRandomMoves' = Config_maxDegreeForRandomMoves_set, 'outDirectory' = Config_outDirectory_set, 'outName' = Config_outName_set, 'outputFormats' = Config_outputFormats_set, 'printTree' = Config_printTree_set, 'printFlowTree' = Config_printFlowTree_set, 'printNewick' = Config_printNewick_set, 'printJson' = Config_printJson_set, 'printCsv' = Config_printCsv_set, 'printClu' = Config_printClu_set, 'printAllTrials' = Config_printAllTrials_set, 'cluLevel' = Config_cluLevel_set, 'printFlowNetwork' = Config_printFlowNetwork_set, 'printPajekNetwork' = Config_printPajekNetwork_set, 'printStateNetwork' = Config_printStateNetwork_set, 'noFileOutput' = Config_noFileOutput_set, 'verbosity' = Config_verbosity_set, 'verboseNumberPrecision' = Config_verboseNumberPrecision_set, 'silent' = Config_silent_set, 'prettyOutput' = Config_prettyOutput_set, 'hideBipartiteNodes' = Config_hideBipartiteNodes_set, 'startDate' = Config_startDate_set, 'version' = Config_version_set, 'parsedString' = Config_parsedString_set, 'parsedOptions' = Config_parsedOptions_set);
+  accessorFuns = list('isCLI' = Config_isCLI_set, 'networkFile' = Config_networkFile_set, 'additionalInput' = Config_additionalInput_set, 'stateInput' = Config_stateInput_set, 'stateOutput' = Config_stateOutput_set, 'multilayerInput' = Config_multilayerInput_set, 'weightThreshold' = Config_weightThreshold_set, 'bipartite' = Config_bipartite_set, 'skipAdjustBipartiteFlow' = Config_skipAdjustBipartiteFlow_set, 'bipartiteTeleportation' = Config_bipartiteTeleportation_set, 'noSelfLinks' = Config_noSelfLinks_set, 'nodeLimit' = Config_nodeLimit_set, 'matchableMultilayerIds' = Config_matchableMultilayerIds_set, 'clusterDataFile' = Config_clusterDataFile_set, 'metaDataFile' = Config_metaDataFile_set, 'metaDataRate' = Config_metaDataRate_set, 'unweightedMetaData' = Config_unweightedMetaData_set, 'numMetaDataDimensions' = Config_numMetaDataDimensions_set, 'clusterDataIsHard' = Config_clusterDataIsHard_set, 'assignToNeighbouringModule' = Config_assignToNeighbouringModule_set, 'noInfomap' = Config_noInfomap_set, 'flowModel' = Config_flowModel_set, 'flowModelIsSet' = Config_flowModelIsSet_set, 'directed' = Config_directed_set, 'useNodeWeightsAsFlow' = Config_useNodeWeightsAsFlow_set, 'teleportToNodes' = Config_teleportToNodes_set, 'markovTime' = Config_markovTime_set, 'variableMarkovTime' = Config_variableMarkovTime_set, 'variableMarkovTimeDamping' = Config_variableMarkovTimeDamping_set, 'variableMarkovTimeMinLocalScale' = Config_variableMarkovTimeMinLocalScale_set, 'markovTimeNoSelfLinks' = Config_markovTimeNoSelfLinks_set, 'multilayerRelaxRate' = Config_multilayerRelaxRate_set, 'multilayerRelaxLimit' = Config_multilayerRelaxLimit_set, 'multilayerRelaxLimitUp' = Config_multilayerRelaxLimitUp_set, 'multilayerRelaxLimitDown' = Config_multilayerRelaxLimitDown_set, 'multilayerJSRelaxRate' = Config_multilayerJSRelaxRate_set, 'multilayerRelaxByJensenShannonDivergence' = Config_multilayerRelaxByJensenShannonDivergence_set, 'multilayerJSRelaxLimit' = Config_multilayerJSRelaxLimit_set, 'maxFlowIterations' = Config_maxFlowIterations_set, 'twoLevel' = Config_twoLevel_set, 'noCoarseTune' = Config_noCoarseTune_set, 'recordedTeleportation' = Config_recordedTeleportation_set, 'regularized' = Config_regularized_set, 'regularizationStrength' = Config_regularizationStrength_set, 'teleportationProbability' = Config_teleportationProbability_set, 'preferredNumberOfModules' = Config_preferredNumberOfModules_set, 'entropyBiasCorrection' = Config_entropyBiasCorrection_set, 'entropyBiasCorrectionMultiplier' = Config_entropyBiasCorrectionMultiplier_set, 'seedToRandomNumberGenerator' = Config_seedToRandomNumberGenerator_set, 'numTrials' = Config_numTrials_set, 'minimumCodelengthImprovement' = Config_minimumCodelengthImprovement_set, 'minimumSingleNodeCodelengthImprovement' = Config_minimumSingleNodeCodelengthImprovement_set, 'randomizeCoreLoopLimit' = Config_randomizeCoreLoopLimit_set, 'coreLoopLimit' = Config_coreLoopLimit_set, 'levelAggregationLimit' = Config_levelAggregationLimit_set, 'tuneIterationLimit' = Config_tuneIterationLimit_set, 'minimumRelativeTuneIterationImprovement' = Config_minimumRelativeTuneIterationImprovement_set, 'onlySuperModules' = Config_onlySuperModules_set, 'fastHierarchicalSolution' = Config_fastHierarchicalSolution_set, 'preferModularSolution' = Config_preferModularSolution_set, 'innerParallelization' = Config_innerParallelization_set, 'parallelTrials' = Config_parallelTrials_set, 'numRandomMoves' = Config_numRandomMoves_set, 'maxDegreeForRandomMoves' = Config_maxDegreeForRandomMoves_set, 'outDirectory' = Config_outDirectory_set, 'outName' = Config_outName_set, 'outputFormats' = Config_outputFormats_set, 'printTree' = Config_printTree_set, 'printFlowTree' = Config_printFlowTree_set, 'printNewick' = Config_printNewick_set, 'printJson' = Config_printJson_set, 'printCsv' = Config_printCsv_set, 'printClu' = Config_printClu_set, 'printAllTrials' = Config_printAllTrials_set, 'cluLevel' = Config_cluLevel_set, 'printFlowNetwork' = Config_printFlowNetwork_set, 'printPajekNetwork' = Config_printPajekNetwork_set, 'printStateNetwork' = Config_printStateNetwork_set, 'noFileOutput' = Config_noFileOutput_set, 'verbosity' = Config_verbosity_set, 'verboseNumberPrecision' = Config_verboseNumberPrecision_set, 'silent' = Config_silent_set, 'prettyOutput' = Config_prettyOutput_set, 'hideBipartiteNodes' = Config_hideBipartiteNodes_set, 'startDate' = Config_startDate_set, 'version' = Config_version_set, 'parsedString' = Config_parsedString_set, 'parsedOptions' = Config_parsedOptions_set);
   ;        idx = pmatch(name, names(accessorFuns));
   if(is.na(idx)) 
   return(callNextMethod(x, name, value));
@@ -3473,7 +3502,7 @@ setMethod('[[<-', c('_p_infomap__Config', 'character'),function(x, i, j, ..., va
 
 {
   name = i;
-  accessorFuns = list('isCLI' = Config_isCLI_set, 'networkFile' = Config_networkFile_set, 'additionalInput' = Config_additionalInput_set, 'stateInput' = Config_stateInput_set, 'stateOutput' = Config_stateOutput_set, 'multilayerInput' = Config_multilayerInput_set, 'weightThreshold' = Config_weightThreshold_set, 'bipartite' = Config_bipartite_set, 'skipAdjustBipartiteFlow' = Config_skipAdjustBipartiteFlow_set, 'bipartiteTeleportation' = Config_bipartiteTeleportation_set, 'noSelfLinks' = Config_noSelfLinks_set, 'nodeLimit' = Config_nodeLimit_set, 'matchableMultilayerIds' = Config_matchableMultilayerIds_set, 'clusterDataFile' = Config_clusterDataFile_set, 'metaDataFile' = Config_metaDataFile_set, 'metaDataRate' = Config_metaDataRate_set, 'unweightedMetaData' = Config_unweightedMetaData_set, 'numMetaDataDimensions' = Config_numMetaDataDimensions_set, 'clusterDataIsHard' = Config_clusterDataIsHard_set, 'assignToNeighbouringModule' = Config_assignToNeighbouringModule_set, 'noInfomap' = Config_noInfomap_set, 'flowModel' = Config_flowModel_set, 'flowModelIsSet' = Config_flowModelIsSet_set, 'directed' = Config_directed_set, 'useNodeWeightsAsFlow' = Config_useNodeWeightsAsFlow_set, 'teleportToNodes' = Config_teleportToNodes_set, 'markovTime' = Config_markovTime_set, 'variableMarkovTime' = Config_variableMarkovTime_set, 'variableMarkovTimeDamping' = Config_variableMarkovTimeDamping_set, 'variableMarkovTimeMinLocalScale' = Config_variableMarkovTimeMinLocalScale_set, 'markovTimeNoSelfLinks' = Config_markovTimeNoSelfLinks_set, 'multilayerRelaxRate' = Config_multilayerRelaxRate_set, 'multilayerRelaxLimit' = Config_multilayerRelaxLimit_set, 'multilayerRelaxLimitUp' = Config_multilayerRelaxLimitUp_set, 'multilayerRelaxLimitDown' = Config_multilayerRelaxLimitDown_set, 'multilayerJSRelaxRate' = Config_multilayerJSRelaxRate_set, 'multilayerRelaxByJensenShannonDivergence' = Config_multilayerRelaxByJensenShannonDivergence_set, 'multilayerJSRelaxLimit' = Config_multilayerJSRelaxLimit_set, 'maxFlowIterations' = Config_maxFlowIterations_set, 'twoLevel' = Config_twoLevel_set, 'noCoarseTune' = Config_noCoarseTune_set, 'recordedTeleportation' = Config_recordedTeleportation_set, 'regularized' = Config_regularized_set, 'regularizationStrength' = Config_regularizationStrength_set, 'teleportationProbability' = Config_teleportationProbability_set, 'preferredNumberOfModules' = Config_preferredNumberOfModules_set, 'entropyBiasCorrection' = Config_entropyBiasCorrection_set, 'entropyBiasCorrectionMultiplier' = Config_entropyBiasCorrectionMultiplier_set, 'seedToRandomNumberGenerator' = Config_seedToRandomNumberGenerator_set, 'numTrials' = Config_numTrials_set, 'minimumCodelengthImprovement' = Config_minimumCodelengthImprovement_set, 'minimumSingleNodeCodelengthImprovement' = Config_minimumSingleNodeCodelengthImprovement_set, 'randomizeCoreLoopLimit' = Config_randomizeCoreLoopLimit_set, 'coreLoopLimit' = Config_coreLoopLimit_set, 'levelAggregationLimit' = Config_levelAggregationLimit_set, 'tuneIterationLimit' = Config_tuneIterationLimit_set, 'minimumRelativeTuneIterationImprovement' = Config_minimumRelativeTuneIterationImprovement_set, 'onlySuperModules' = Config_onlySuperModules_set, 'fastHierarchicalSolution' = Config_fastHierarchicalSolution_set, 'preferModularSolution' = Config_preferModularSolution_set, 'innerParallelization' = Config_innerParallelization_set, 'numRandomMoves' = Config_numRandomMoves_set, 'maxDegreeForRandomMoves' = Config_maxDegreeForRandomMoves_set, 'outDirectory' = Config_outDirectory_set, 'outName' = Config_outName_set, 'outputFormats' = Config_outputFormats_set, 'printTree' = Config_printTree_set, 'printFlowTree' = Config_printFlowTree_set, 'printNewick' = Config_printNewick_set, 'printJson' = Config_printJson_set, 'printCsv' = Config_printCsv_set, 'printClu' = Config_printClu_set, 'printAllTrials' = Config_printAllTrials_set, 'cluLevel' = Config_cluLevel_set, 'printFlowNetwork' = Config_printFlowNetwork_set, 'printPajekNetwork' = Config_printPajekNetwork_set, 'printStateNetwork' = Config_printStateNetwork_set, 'noFileOutput' = Config_noFileOutput_set, 'verbosity' = Config_verbosity_set, 'verboseNumberPrecision' = Config_verboseNumberPrecision_set, 'silent' = Config_silent_set, 'prettyOutput' = Config_prettyOutput_set, 'hideBipartiteNodes' = Config_hideBipartiteNodes_set, 'startDate' = Config_startDate_set, 'version' = Config_version_set, 'parsedString' = Config_parsedString_set, 'parsedOptions' = Config_parsedOptions_set);
+  accessorFuns = list('isCLI' = Config_isCLI_set, 'networkFile' = Config_networkFile_set, 'additionalInput' = Config_additionalInput_set, 'stateInput' = Config_stateInput_set, 'stateOutput' = Config_stateOutput_set, 'multilayerInput' = Config_multilayerInput_set, 'weightThreshold' = Config_weightThreshold_set, 'bipartite' = Config_bipartite_set, 'skipAdjustBipartiteFlow' = Config_skipAdjustBipartiteFlow_set, 'bipartiteTeleportation' = Config_bipartiteTeleportation_set, 'noSelfLinks' = Config_noSelfLinks_set, 'nodeLimit' = Config_nodeLimit_set, 'matchableMultilayerIds' = Config_matchableMultilayerIds_set, 'clusterDataFile' = Config_clusterDataFile_set, 'metaDataFile' = Config_metaDataFile_set, 'metaDataRate' = Config_metaDataRate_set, 'unweightedMetaData' = Config_unweightedMetaData_set, 'numMetaDataDimensions' = Config_numMetaDataDimensions_set, 'clusterDataIsHard' = Config_clusterDataIsHard_set, 'assignToNeighbouringModule' = Config_assignToNeighbouringModule_set, 'noInfomap' = Config_noInfomap_set, 'flowModel' = Config_flowModel_set, 'flowModelIsSet' = Config_flowModelIsSet_set, 'directed' = Config_directed_set, 'useNodeWeightsAsFlow' = Config_useNodeWeightsAsFlow_set, 'teleportToNodes' = Config_teleportToNodes_set, 'markovTime' = Config_markovTime_set, 'variableMarkovTime' = Config_variableMarkovTime_set, 'variableMarkovTimeDamping' = Config_variableMarkovTimeDamping_set, 'variableMarkovTimeMinLocalScale' = Config_variableMarkovTimeMinLocalScale_set, 'markovTimeNoSelfLinks' = Config_markovTimeNoSelfLinks_set, 'multilayerRelaxRate' = Config_multilayerRelaxRate_set, 'multilayerRelaxLimit' = Config_multilayerRelaxLimit_set, 'multilayerRelaxLimitUp' = Config_multilayerRelaxLimitUp_set, 'multilayerRelaxLimitDown' = Config_multilayerRelaxLimitDown_set, 'multilayerJSRelaxRate' = Config_multilayerJSRelaxRate_set, 'multilayerRelaxByJensenShannonDivergence' = Config_multilayerRelaxByJensenShannonDivergence_set, 'multilayerJSRelaxLimit' = Config_multilayerJSRelaxLimit_set, 'maxFlowIterations' = Config_maxFlowIterations_set, 'twoLevel' = Config_twoLevel_set, 'noCoarseTune' = Config_noCoarseTune_set, 'recordedTeleportation' = Config_recordedTeleportation_set, 'regularized' = Config_regularized_set, 'regularizationStrength' = Config_regularizationStrength_set, 'teleportationProbability' = Config_teleportationProbability_set, 'preferredNumberOfModules' = Config_preferredNumberOfModules_set, 'entropyBiasCorrection' = Config_entropyBiasCorrection_set, 'entropyBiasCorrectionMultiplier' = Config_entropyBiasCorrectionMultiplier_set, 'seedToRandomNumberGenerator' = Config_seedToRandomNumberGenerator_set, 'numTrials' = Config_numTrials_set, 'minimumCodelengthImprovement' = Config_minimumCodelengthImprovement_set, 'minimumSingleNodeCodelengthImprovement' = Config_minimumSingleNodeCodelengthImprovement_set, 'randomizeCoreLoopLimit' = Config_randomizeCoreLoopLimit_set, 'coreLoopLimit' = Config_coreLoopLimit_set, 'levelAggregationLimit' = Config_levelAggregationLimit_set, 'tuneIterationLimit' = Config_tuneIterationLimit_set, 'minimumRelativeTuneIterationImprovement' = Config_minimumRelativeTuneIterationImprovement_set, 'onlySuperModules' = Config_onlySuperModules_set, 'fastHierarchicalSolution' = Config_fastHierarchicalSolution_set, 'preferModularSolution' = Config_preferModularSolution_set, 'innerParallelization' = Config_innerParallelization_set, 'parallelTrials' = Config_parallelTrials_set, 'numRandomMoves' = Config_numRandomMoves_set, 'maxDegreeForRandomMoves' = Config_maxDegreeForRandomMoves_set, 'outDirectory' = Config_outDirectory_set, 'outName' = Config_outName_set, 'outputFormats' = Config_outputFormats_set, 'printTree' = Config_printTree_set, 'printFlowTree' = Config_printFlowTree_set, 'printNewick' = Config_printNewick_set, 'printJson' = Config_printJson_set, 'printCsv' = Config_printCsv_set, 'printClu' = Config_printClu_set, 'printAllTrials' = Config_printAllTrials_set, 'cluLevel' = Config_cluLevel_set, 'printFlowNetwork' = Config_printFlowNetwork_set, 'printPajekNetwork' = Config_printPajekNetwork_set, 'printStateNetwork' = Config_printStateNetwork_set, 'noFileOutput' = Config_noFileOutput_set, 'verbosity' = Config_verbosity_set, 'verboseNumberPrecision' = Config_verboseNumberPrecision_set, 'silent' = Config_silent_set, 'prettyOutput' = Config_prettyOutput_set, 'hideBipartiteNodes' = Config_hideBipartiteNodes_set, 'startDate' = Config_startDate_set, 'version' = Config_version_set, 'parsedString' = Config_parsedString_set, 'parsedOptions' = Config_parsedOptions_set);
   ;        idx = pmatch(name, names(accessorFuns));
   if(is.na(idx)) 
   return(callNextMethod(x, name, value));
@@ -3548,6 +3577,7 @@ CopyToR_infomap__Config = function(value, obj = new("infomap::Config"))
   obj@fastHierarchicalSolution = value$fastHierarchicalSolution;
   obj@preferModularSolution = value$preferModularSolution;
   obj@innerParallelization = value$innerParallelization;
+  obj@parallelTrials = value$parallelTrials;
   obj@numRandomMoves = value$numRandomMoves;
   obj@maxDegreeForRandomMoves = value$maxDegreeForRandomMoves;
   obj@outDirectory = value$outDirectory;
@@ -3638,6 +3668,7 @@ CopyToC_infomap__Config = function(value, obj)
   obj$fastHierarchicalSolution = value@fastHierarchicalSolution;
   obj$preferModularSolution = value@preferModularSolution;
   obj$innerParallelization = value@innerParallelization;
+  obj$parallelTrials = value@parallelTrials;
   obj$numRandomMoves = value@numRandomMoves;
   obj$maxDegreeForRandomMoves = value@maxDegreeForRandomMoves;
   obj$outDirectory = value@outDirectory;
@@ -4081,6 +4112,38 @@ attr(`DeltaFlow_module_get`, 'returnType') = 'integer'
 attr(`DeltaFlow_module_get`, "inputTypes") = c('_p_infomap__DeltaFlow')
 class(`DeltaFlow_module_get`) = c("SWIGFunction", class('DeltaFlow_module_get'))
 
+# Start of DeltaFlow_count_set
+
+`DeltaFlow_count_set` = function(self, s_count)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  s_count = as.integer(s_count);
+  
+  if(length(s_count) > 1) {
+    warning("using only the first element of s_count");
+  };
+  
+  ;.Call('R_swig_DeltaFlow_count_set', self, s_count, PACKAGE='infomap');
+  
+}
+
+attr(`DeltaFlow_count_set`, 'returnType') = 'void'
+attr(`DeltaFlow_count_set`, "inputTypes") = c('_p_infomap__DeltaFlow', 'integer')
+class(`DeltaFlow_count_set`) = c("SWIGFunction", class('DeltaFlow_count_set'))
+
+# Start of DeltaFlow_count_get
+
+`DeltaFlow_count_get` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;.Call('R_swig_DeltaFlow_count_get', self, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`DeltaFlow_count_get`, 'returnType') = 'integer'
+attr(`DeltaFlow_count_get`, "inputTypes") = c('_p_infomap__DeltaFlow')
+class(`DeltaFlow_count_get`) = c("SWIGFunction", class('DeltaFlow_count_get'))
+
 # Start of DeltaFlow_deltaExit_set
 
 `DeltaFlow_deltaExit_set` = function(self, s_deltaExit)
@@ -4134,38 +4197,6 @@ class(`DeltaFlow_deltaEnter_set`) = c("SWIGFunction", class('DeltaFlow_deltaEnte
 attr(`DeltaFlow_deltaEnter_get`, 'returnType') = 'numeric'
 attr(`DeltaFlow_deltaEnter_get`, "inputTypes") = c('_p_infomap__DeltaFlow')
 class(`DeltaFlow_deltaEnter_get`) = c("SWIGFunction", class('DeltaFlow_deltaEnter_get'))
-
-# Start of DeltaFlow_count_set
-
-`DeltaFlow_count_set` = function(self, s_count)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_count = as.integer(s_count);
-  
-  if(length(s_count) > 1) {
-    warning("using only the first element of s_count");
-  };
-  
-  ;.Call('R_swig_DeltaFlow_count_set', self, s_count, PACKAGE='infomap');
-  
-}
-
-attr(`DeltaFlow_count_set`, 'returnType') = 'void'
-attr(`DeltaFlow_count_set`, "inputTypes") = c('_p_infomap__DeltaFlow', 'integer')
-class(`DeltaFlow_count_set`) = c("SWIGFunction", class('DeltaFlow_count_set'))
-
-# Start of DeltaFlow_count_get
-
-`DeltaFlow_count_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_DeltaFlow_count_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`DeltaFlow_count_get`, 'returnType') = 'integer'
-attr(`DeltaFlow_count_get`, "inputTypes") = c('_p_infomap__DeltaFlow')
-class(`DeltaFlow_count_get`) = c("SWIGFunction", class('DeltaFlow_count_get'))
 
 # Start of new_DeltaFlow
 
@@ -4390,8 +4421,8 @@ class(`swap__SWIG_0`) = c("SWIGFunction", class('swap__SWIG_0'))
 setMethod('$', '_p_infomap__DeltaFlow', function(x, name)
 
 {
-  accessorFuns = list('module' = DeltaFlow_module_get, 'deltaExit' = DeltaFlow_deltaExit_get, 'deltaEnter' = DeltaFlow_deltaEnter_get, 'count' = DeltaFlow_count_get, 'Equal' = DeltaFlow_Equal, 'PlusEqual' = DeltaFlow_PlusEqual, 'reset' = DeltaFlow_reset);
-  vaccessors = c('module', 'deltaExit', 'deltaEnter', 'count');
+  accessorFuns = list('module' = DeltaFlow_module_get, 'count' = DeltaFlow_count_get, 'deltaExit' = DeltaFlow_deltaExit_get, 'deltaEnter' = DeltaFlow_deltaEnter_get, 'Equal' = DeltaFlow_Equal, 'PlusEqual' = DeltaFlow_PlusEqual, 'reset' = DeltaFlow_reset);
+  vaccessors = c('module', 'count', 'deltaExit', 'deltaEnter');
   ;        idx = pmatch(name, names(accessorFuns));
   if(is.na(idx)) 
   return(callNextMethod(x, name));
@@ -4408,7 +4439,7 @@ setMethod('$', '_p_infomap__DeltaFlow', function(x, name)
 setMethod('$<-', '_p_infomap__DeltaFlow', function(x, name, value)
 
 {
-  accessorFuns = list('module' = DeltaFlow_module_set, 'deltaExit' = DeltaFlow_deltaExit_set, 'deltaEnter' = DeltaFlow_deltaEnter_set, 'count' = DeltaFlow_count_set);
+  accessorFuns = list('module' = DeltaFlow_module_set, 'count' = DeltaFlow_count_set, 'deltaExit' = DeltaFlow_deltaExit_set, 'deltaEnter' = DeltaFlow_deltaEnter_set);
   ;        idx = pmatch(name, names(accessorFuns));
   if(is.na(idx)) 
   return(callNextMethod(x, name, value));
@@ -4423,7 +4454,7 @@ setMethod('[[<-', c('_p_infomap__DeltaFlow', 'character'),function(x, i, j, ...,
 
 {
   name = i;
-  accessorFuns = list('module' = DeltaFlow_module_set, 'deltaExit' = DeltaFlow_deltaExit_set, 'deltaEnter' = DeltaFlow_deltaEnter_set, 'count' = DeltaFlow_count_set);
+  accessorFuns = list('module' = DeltaFlow_module_set, 'count' = DeltaFlow_count_set, 'deltaExit' = DeltaFlow_deltaExit_set, 'deltaEnter' = DeltaFlow_deltaEnter_set);
   ;        idx = pmatch(name, names(accessorFuns));
   if(is.na(idx)) 
   return(callNextMethod(x, name, value));
@@ -4440,9 +4471,9 @@ setMethod('delete', '_p_infomap__DeltaFlow', function(obj) {delete_infomap__Delt
 CopyToR_infomap__DeltaFlow = function(value, obj = new("infomap::DeltaFlow"))
 {
   obj@module = value$module;
+  obj@count = value$count;
   obj@deltaExit = value$deltaExit;
   obj@deltaEnter = value$deltaEnter;
-  obj@count = value$count;
   obj;
 }
 
@@ -4451,9 +4482,9 @@ CopyToR_infomap__DeltaFlow = function(value, obj = new("infomap::DeltaFlow"))
 CopyToC_infomap__DeltaFlow = function(value, obj)
 {
   obj$module = value@module;
+  obj$count = value@count;
   obj$deltaExit = value@deltaExit;
   obj$deltaEnter = value@deltaEnter;
-  obj$count = value@count;
   obj
 }
 
@@ -6462,37 +6493,6 @@ attr(`InfoNode_physicalNodes_get`, 'returnType') = '_p_std__vectorT_infomap__Phy
 attr(`InfoNode_physicalNodes_get`, "inputTypes") = c('_p_infomap__InfoNode')
 class(`InfoNode_physicalNodes_get`) = c("SWIGFunction", class('InfoNode_physicalNodes_get'))
 
-# Start of InfoNode_metaCollection_set
-
-`InfoNode_metaCollection_set` = function(self, s_metaCollection)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  if (inherits(s_metaCollection, "ExternalReference")) s_metaCollection = slot(s_metaCollection,"ref"); 
-  ;.Call('R_swig_InfoNode_metaCollection_set', self, s_metaCollection, PACKAGE='infomap');
-  
-}
-
-attr(`InfoNode_metaCollection_set`, 'returnType') = 'void'
-attr(`InfoNode_metaCollection_set`, "inputTypes") = c('_p_infomap__InfoNode', '_p_MetaCollection')
-class(`InfoNode_metaCollection_set`) = c("SWIGFunction", class('InfoNode_metaCollection_set'))
-
-# Start of InfoNode_metaCollection_get
-
-`InfoNode_metaCollection_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;ans = .Call('R_swig_InfoNode_metaCollection_get', self, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_MetaCollection", ref=ans);
-  
-  ans
-  
-}
-
-attr(`InfoNode_metaCollection_get`, 'returnType') = '_p_MetaCollection'
-attr(`InfoNode_metaCollection_get`, "inputTypes") = c('_p_infomap__InfoNode')
-class(`InfoNode_metaCollection_get`) = c("SWIGFunction", class('InfoNode_metaCollection_get'))
-
 # Start of InfoNode_stateNodes_set
 
 `InfoNode_stateNodes_set` = function(self, s_stateNodes)
@@ -8245,8 +8245,8 @@ class(`InfoNode_addOutEdge__SWIG_1`) = c("SWIGFunction", class('InfoNode_addOutE
 setMethod('$', '_p_infomap__InfoNode', function(x, name)
 
 {
-  accessorFuns = list('data' = InfoNode_data_get, 'index' = InfoNode_index_get, 'stateId' = InfoNode_stateId_get, 'physicalId' = InfoNode_physicalId_get, 'layerId' = InfoNode_layerId_get, 'metaData' = InfoNode_metaData_get, 'owner' = InfoNode_owner_get, 'parent' = InfoNode_parent_get, 'previous' = InfoNode_previous_get, '_next' = InfoNode__next_get, 'firstChild' = InfoNode_firstChild_get, 'lastChild' = InfoNode_lastChild_get, 'collapsedFirstChild' = InfoNode_collapsedFirstChild_get, 'collapsedLastChild' = InfoNode_collapsedLastChild_get, 'codelength' = InfoNode_codelength_get, 'dirty' = InfoNode_dirty_get, 'physicalNodes' = InfoNode_physicalNodes_get, 'metaCollection' = InfoNode_metaCollection_get, 'stateNodes' = InfoNode_stateNodes_get, 'Equal' = InfoNode_Equal, 'getMetaData' = InfoNode_getMetaData, 'getInfomap' = InfoNode_getInfomap, 'setInfomap' = InfoNode_setInfomap, 'getInfomapRoot' = InfoNode_getInfomapRoot, 'disposeInfomap' = InfoNode_disposeInfomap, 'numPhysicalNodes' = InfoNode_numPhysicalNodes, 'begin' = InfoNode_begin, 'end' = InfoNode_end, 'begin_child' = InfoNode_begin_child, 'end_child' = InfoNode_end_child, 'children' = InfoNode_children, 'infomap_children' = InfoNode_infomap_children, 'begin_post_depth_first' = InfoNode_begin_post_depth_first, 'begin_leaf_nodes' = InfoNode_begin_leaf_nodes, 'begin_leaf_modules' = InfoNode_begin_leaf_modules, 'begin_tree' = InfoNode_begin_tree, 'end_tree' = InfoNode_end_tree, 'infomapTree' = InfoNode_infomapTree, 'begin_outEdge' = InfoNode_begin_outEdge, 'end_outEdge' = InfoNode_end_outEdge, 'begin_inEdge' = InfoNode_begin_inEdge, 'end_inEdge' = InfoNode_end_inEdge, 'outEdges' = InfoNode_outEdges, 'inEdges' = InfoNode_inEdges, 'childDegree' = InfoNode_childDegree, 'isLeaf' = InfoNode_isLeaf, 'isLeafModule' = InfoNode_isLeafModule, 'isRoot' = InfoNode_isRoot, 'depth' = InfoNode_depth, 'firstDepthBelow' = InfoNode_firstDepthBelow, 'numLeafMembers' = InfoNode_numLeafMembers, 'isDangling' = InfoNode_isDangling, 'outDegree' = InfoNode_outDegree, 'inDegree' = InfoNode_inDegree, 'degree' = InfoNode_degree, 'isFirst' = InfoNode_isFirst, 'isLast' = InfoNode_isLast, 'childIndex' = InfoNode_childIndex, 'calculatePath' = InfoNode_calculatePath, 'infomapChildDegree' = InfoNode_infomapChildDegree, 'id' = InfoNode_id, 'EqualEqual' = InfoNode_EqualEqual, 'NotEqual' = InfoNode_NotEqual, 'initClean' = InfoNode_initClean, 'sortChildrenOnFlow' = InfoNode_sortChildrenOnFlow, 'collapseChildren' = InfoNode_collapseChildren, 'expandChildren' = InfoNode_expandChildren, 'setChildDegree' = InfoNode_setChildDegree, 'setNumLeafNodes' = InfoNode_setNumLeafNodes, 'addChild' = InfoNode_addChild, 'releaseChildren' = InfoNode_releaseChildren, 'replaceChildrenWithOneNode' = InfoNode_replaceChildrenWithOneNode, 'replaceWithChildren' = InfoNode_replaceWithChildren, 'replaceWithChildrenDebug' = InfoNode_replaceWithChildrenDebug, 'replaceChildrenWithGrandChildren' = InfoNode_replaceChildrenWithGrandChildren, 'replaceChildrenWithGrandChildrenDebug' = InfoNode_replaceChildrenWithGrandChildrenDebug, 'remove' = InfoNode_remove, 'deleteChildren' = InfoNode_deleteChildren, 'addOutEdge' = InfoNode_addOutEdge);
-  vaccessors = c('data', 'index', 'stateId', 'physicalId', 'layerId', 'metaData', 'owner', 'parent', 'previous', '_next', 'firstChild', 'lastChild', 'collapsedFirstChild', 'collapsedLastChild', 'codelength', 'dirty', 'physicalNodes', 'metaCollection', 'stateNodes');
+  accessorFuns = list('data' = InfoNode_data_get, 'index' = InfoNode_index_get, 'stateId' = InfoNode_stateId_get, 'physicalId' = InfoNode_physicalId_get, 'layerId' = InfoNode_layerId_get, 'metaData' = InfoNode_metaData_get, 'owner' = InfoNode_owner_get, 'parent' = InfoNode_parent_get, 'previous' = InfoNode_previous_get, '_next' = InfoNode__next_get, 'firstChild' = InfoNode_firstChild_get, 'lastChild' = InfoNode_lastChild_get, 'collapsedFirstChild' = InfoNode_collapsedFirstChild_get, 'collapsedLastChild' = InfoNode_collapsedLastChild_get, 'codelength' = InfoNode_codelength_get, 'dirty' = InfoNode_dirty_get, 'physicalNodes' = InfoNode_physicalNodes_get, 'stateNodes' = InfoNode_stateNodes_get, 'Equal' = InfoNode_Equal, 'getMetaData' = InfoNode_getMetaData, 'getInfomap' = InfoNode_getInfomap, 'setInfomap' = InfoNode_setInfomap, 'getInfomapRoot' = InfoNode_getInfomapRoot, 'disposeInfomap' = InfoNode_disposeInfomap, 'numPhysicalNodes' = InfoNode_numPhysicalNodes, 'begin' = InfoNode_begin, 'end' = InfoNode_end, 'begin_child' = InfoNode_begin_child, 'end_child' = InfoNode_end_child, 'children' = InfoNode_children, 'infomap_children' = InfoNode_infomap_children, 'begin_post_depth_first' = InfoNode_begin_post_depth_first, 'begin_leaf_nodes' = InfoNode_begin_leaf_nodes, 'begin_leaf_modules' = InfoNode_begin_leaf_modules, 'begin_tree' = InfoNode_begin_tree, 'end_tree' = InfoNode_end_tree, 'infomapTree' = InfoNode_infomapTree, 'begin_outEdge' = InfoNode_begin_outEdge, 'end_outEdge' = InfoNode_end_outEdge, 'begin_inEdge' = InfoNode_begin_inEdge, 'end_inEdge' = InfoNode_end_inEdge, 'outEdges' = InfoNode_outEdges, 'inEdges' = InfoNode_inEdges, 'childDegree' = InfoNode_childDegree, 'isLeaf' = InfoNode_isLeaf, 'isLeafModule' = InfoNode_isLeafModule, 'isRoot' = InfoNode_isRoot, 'depth' = InfoNode_depth, 'firstDepthBelow' = InfoNode_firstDepthBelow, 'numLeafMembers' = InfoNode_numLeafMembers, 'isDangling' = InfoNode_isDangling, 'outDegree' = InfoNode_outDegree, 'inDegree' = InfoNode_inDegree, 'degree' = InfoNode_degree, 'isFirst' = InfoNode_isFirst, 'isLast' = InfoNode_isLast, 'childIndex' = InfoNode_childIndex, 'calculatePath' = InfoNode_calculatePath, 'infomapChildDegree' = InfoNode_infomapChildDegree, 'id' = InfoNode_id, 'EqualEqual' = InfoNode_EqualEqual, 'NotEqual' = InfoNode_NotEqual, 'initClean' = InfoNode_initClean, 'sortChildrenOnFlow' = InfoNode_sortChildrenOnFlow, 'collapseChildren' = InfoNode_collapseChildren, 'expandChildren' = InfoNode_expandChildren, 'setChildDegree' = InfoNode_setChildDegree, 'setNumLeafNodes' = InfoNode_setNumLeafNodes, 'addChild' = InfoNode_addChild, 'releaseChildren' = InfoNode_releaseChildren, 'replaceChildrenWithOneNode' = InfoNode_replaceChildrenWithOneNode, 'replaceWithChildren' = InfoNode_replaceWithChildren, 'replaceWithChildrenDebug' = InfoNode_replaceWithChildrenDebug, 'replaceChildrenWithGrandChildren' = InfoNode_replaceChildrenWithGrandChildren, 'replaceChildrenWithGrandChildrenDebug' = InfoNode_replaceChildrenWithGrandChildrenDebug, 'remove' = InfoNode_remove, 'deleteChildren' = InfoNode_deleteChildren, 'addOutEdge' = InfoNode_addOutEdge);
+  vaccessors = c('data', 'index', 'stateId', 'physicalId', 'layerId', 'metaData', 'owner', 'parent', 'previous', '_next', 'firstChild', 'lastChild', 'collapsedFirstChild', 'collapsedLastChild', 'codelength', 'dirty', 'physicalNodes', 'stateNodes');
   ;        idx = pmatch(name, names(accessorFuns));
   if(is.na(idx)) 
   return(callNextMethod(x, name));
@@ -8263,7 +8263,7 @@ setMethod('$', '_p_infomap__InfoNode', function(x, name)
 setMethod('$<-', '_p_infomap__InfoNode', function(x, name, value)
 
 {
-  accessorFuns = list('data' = InfoNode_data_set, 'index' = InfoNode_index_set, 'stateId' = InfoNode_stateId_set, 'physicalId' = InfoNode_physicalId_set, 'layerId' = InfoNode_layerId_set, 'metaData' = InfoNode_metaData_set, 'owner' = InfoNode_owner_set, 'parent' = InfoNode_parent_set, 'previous' = InfoNode_previous_set, '_next' = InfoNode__next_set, 'firstChild' = InfoNode_firstChild_set, 'lastChild' = InfoNode_lastChild_set, 'collapsedFirstChild' = InfoNode_collapsedFirstChild_set, 'collapsedLastChild' = InfoNode_collapsedLastChild_set, 'codelength' = InfoNode_codelength_set, 'dirty' = InfoNode_dirty_set, 'physicalNodes' = InfoNode_physicalNodes_set, 'metaCollection' = InfoNode_metaCollection_set, 'stateNodes' = InfoNode_stateNodes_set);
+  accessorFuns = list('data' = InfoNode_data_set, 'index' = InfoNode_index_set, 'stateId' = InfoNode_stateId_set, 'physicalId' = InfoNode_physicalId_set, 'layerId' = InfoNode_layerId_set, 'metaData' = InfoNode_metaData_set, 'owner' = InfoNode_owner_set, 'parent' = InfoNode_parent_set, 'previous' = InfoNode_previous_set, '_next' = InfoNode__next_set, 'firstChild' = InfoNode_firstChild_set, 'lastChild' = InfoNode_lastChild_set, 'collapsedFirstChild' = InfoNode_collapsedFirstChild_set, 'collapsedLastChild' = InfoNode_collapsedLastChild_set, 'codelength' = InfoNode_codelength_set, 'dirty' = InfoNode_dirty_set, 'physicalNodes' = InfoNode_physicalNodes_set, 'stateNodes' = InfoNode_stateNodes_set);
   ;        idx = pmatch(name, names(accessorFuns));
   if(is.na(idx)) 
   return(callNextMethod(x, name, value));
@@ -8278,7 +8278,7 @@ setMethod('[[<-', c('_p_infomap__InfoNode', 'character'),function(x, i, j, ..., 
 
 {
   name = i;
-  accessorFuns = list('data' = InfoNode_data_set, 'index' = InfoNode_index_set, 'stateId' = InfoNode_stateId_set, 'physicalId' = InfoNode_physicalId_set, 'layerId' = InfoNode_layerId_set, 'metaData' = InfoNode_metaData_set, 'owner' = InfoNode_owner_set, 'parent' = InfoNode_parent_set, 'previous' = InfoNode_previous_set, '_next' = InfoNode__next_set, 'firstChild' = InfoNode_firstChild_set, 'lastChild' = InfoNode_lastChild_set, 'collapsedFirstChild' = InfoNode_collapsedFirstChild_set, 'collapsedLastChild' = InfoNode_collapsedLastChild_set, 'codelength' = InfoNode_codelength_set, 'dirty' = InfoNode_dirty_set, 'physicalNodes' = InfoNode_physicalNodes_set, 'metaCollection' = InfoNode_metaCollection_set, 'stateNodes' = InfoNode_stateNodes_set);
+  accessorFuns = list('data' = InfoNode_data_set, 'index' = InfoNode_index_set, 'stateId' = InfoNode_stateId_set, 'physicalId' = InfoNode_physicalId_set, 'layerId' = InfoNode_layerId_set, 'metaData' = InfoNode_metaData_set, 'owner' = InfoNode_owner_set, 'parent' = InfoNode_parent_set, 'previous' = InfoNode_previous_set, '_next' = InfoNode__next_set, 'firstChild' = InfoNode_firstChild_set, 'lastChild' = InfoNode_lastChild_set, 'collapsedFirstChild' = InfoNode_collapsedFirstChild_set, 'collapsedLastChild' = InfoNode_collapsedLastChild_set, 'codelength' = InfoNode_codelength_set, 'dirty' = InfoNode_dirty_set, 'physicalNodes' = InfoNode_physicalNodes_set, 'stateNodes' = InfoNode_stateNodes_set);
   ;        idx = pmatch(name, names(accessorFuns));
   if(is.na(idx)) 
   return(callNextMethod(x, name, value));
@@ -9110,15 +9110,11 @@ class(`InfomapIterator_stepForward`) = c("SWIGFunction", class('InfomapIterator_
 `InfomapIterator_path` = function(self, .copy = FALSE)
 {
   if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;ans = .Call('R_swig_InfomapIterator_path', self, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_std__dequeT_unsigned_int_t", ref=ans);
-  
-  ans
+  ;.Call('R_swig_InfomapIterator_path', self, as.logical(.copy), PACKAGE='infomap');
   
 }
 
-attr(`InfomapIterator_path`, 'returnType') = '_p_std__dequeT_unsigned_int_t'
+attr(`InfomapIterator_path`, 'returnType') = 'integer'
 attr(`InfomapIterator_path`, "inputTypes") = c('_p_infomap__InfomapIterator')
 class(`InfomapIterator_path`) = c("SWIGFunction", class('InfomapIterator_path'))
 
@@ -9735,37 +9731,6 @@ class(`InfomapIterator_physicalNodes_set`) = c("SWIGFunction", class('InfomapIte
 attr(`InfomapIterator_physicalNodes_get`, 'returnType') = '_p_std__vectorT_infomap__PhysData_std__allocatorT_infomap__PhysData_t_t'
 attr(`InfomapIterator_physicalNodes_get`, "inputTypes") = c('_p_infomap__InfomapIterator')
 class(`InfomapIterator_physicalNodes_get`) = c("SWIGFunction", class('InfomapIterator_physicalNodes_get'))
-
-# Start of InfomapIterator_metaCollection_set
-
-`InfomapIterator_metaCollection_set` = function(self, s_metaCollection)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  if (inherits(s_metaCollection, "ExternalReference")) s_metaCollection = slot(s_metaCollection,"ref"); 
-  ;.Call('R_swig_InfomapIterator_metaCollection_set', self, s_metaCollection, PACKAGE='infomap');
-  
-}
-
-attr(`InfomapIterator_metaCollection_set`, 'returnType') = 'void'
-attr(`InfomapIterator_metaCollection_set`, "inputTypes") = c('_p_infomap__InfomapIterator', '_p_MetaCollection')
-class(`InfomapIterator_metaCollection_set`) = c("SWIGFunction", class('InfomapIterator_metaCollection_set'))
-
-# Start of InfomapIterator_metaCollection_get
-
-`InfomapIterator_metaCollection_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;ans = .Call('R_swig_InfomapIterator_metaCollection_get', self, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_MetaCollection", ref=ans);
-  
-  ans
-  
-}
-
-attr(`InfomapIterator_metaCollection_get`, 'returnType') = '_p_MetaCollection'
-attr(`InfomapIterator_metaCollection_get`, "inputTypes") = c('_p_infomap__InfomapIterator')
-class(`InfomapIterator_metaCollection_get`) = c("SWIGFunction", class('InfomapIterator_metaCollection_get'))
 
 # Start of InfomapIterator_stateNodes_set
 
@@ -11257,8 +11222,8 @@ class(`InfomapIterator_addOutEdge__SWIG_1`) = c("SWIGFunction", class('InfomapIt
 setMethod('$', '_p_infomap__InfomapIterator', function(x, name)
 
 {
-  accessorFuns = list('Equal' = InfomapIterator_Equal, 'current' = InfomapIterator_current, '__ref__' = InfomapIterator___ref__, '__deref__' = InfomapIterator___deref__, 'EqualEqual' = InfomapIterator_EqualEqual, 'NotEqual' = InfomapIterator_NotEqual, 'PlusPlusPrefix' = InfomapIterator_PlusPlusPrefix, 'PlusPlusPostfix' = InfomapIterator_PlusPlusPostfix, 'stepForward' = InfomapIterator_stepForward, 'path' = InfomapIterator_path, 'moduleIndex' = InfomapIterator_moduleIndex, 'moduleId' = InfomapIterator_moduleId, 'childIndex' = InfomapIterator_childIndex, 'depth' = InfomapIterator_depth, 'modularCentrality' = InfomapIterator_modularCentrality, 'isEnd' = InfomapIterator_isEnd, 'copy' = InfomapIterator_copy, 'data' = InfomapIterator_data_get, 'index' = InfomapIterator_index_get, 'stateId' = InfomapIterator_stateId_get, 'physicalId' = InfomapIterator_physicalId_get, 'layerId' = InfomapIterator_layerId_get, 'metaData' = InfomapIterator_metaData_get, 'owner' = InfomapIterator_owner_get, 'parent' = InfomapIterator_parent_get, 'previous' = InfomapIterator_previous_get, '_next' = InfomapIterator__next_get, 'firstChild' = InfomapIterator_firstChild_get, 'lastChild' = InfomapIterator_lastChild_get, 'collapsedFirstChild' = InfomapIterator_collapsedFirstChild_get, 'collapsedLastChild' = InfomapIterator_collapsedLastChild_get, 'codelength' = InfomapIterator_codelength_get, 'dirty' = InfomapIterator_dirty_get, 'physicalNodes' = InfomapIterator_physicalNodes_get, 'metaCollection' = InfomapIterator_metaCollection_get, 'stateNodes' = InfomapIterator_stateNodes_get, 'getMetaData' = InfomapIterator_getMetaData, 'getInfomap' = InfomapIterator_getInfomap, 'setInfomap' = InfomapIterator_setInfomap, 'getInfomapRoot' = InfomapIterator_getInfomapRoot, 'disposeInfomap' = InfomapIterator_disposeInfomap, 'numPhysicalNodes' = InfomapIterator_numPhysicalNodes, 'begin' = InfomapIterator_begin, 'end' = InfomapIterator_end, 'begin_child' = InfomapIterator_begin_child, 'end_child' = InfomapIterator_end_child, 'children' = InfomapIterator_children, 'infomap_children' = InfomapIterator_infomap_children, 'begin_post_depth_first' = InfomapIterator_begin_post_depth_first, 'begin_leaf_nodes' = InfomapIterator_begin_leaf_nodes, 'begin_leaf_modules' = InfomapIterator_begin_leaf_modules, 'begin_tree' = InfomapIterator_begin_tree, 'end_tree' = InfomapIterator_end_tree, 'infomapTree' = InfomapIterator_infomapTree, 'begin_outEdge' = InfomapIterator_begin_outEdge, 'end_outEdge' = InfomapIterator_end_outEdge, 'begin_inEdge' = InfomapIterator_begin_inEdge, 'end_inEdge' = InfomapIterator_end_inEdge, 'outEdges' = InfomapIterator_outEdges, 'inEdges' = InfomapIterator_inEdges, 'childDegree' = InfomapIterator_childDegree, 'isLeaf' = InfomapIterator_isLeaf, 'isLeafModule' = InfomapIterator_isLeafModule, 'isRoot' = InfomapIterator_isRoot, 'firstDepthBelow' = InfomapIterator_firstDepthBelow, 'numLeafMembers' = InfomapIterator_numLeafMembers, 'isDangling' = InfomapIterator_isDangling, 'outDegree' = InfomapIterator_outDegree, 'inDegree' = InfomapIterator_inDegree, 'degree' = InfomapIterator_degree, 'isFirst' = InfomapIterator_isFirst, 'isLast' = InfomapIterator_isLast, 'calculatePath' = InfomapIterator_calculatePath, 'infomapChildDegree' = InfomapIterator_infomapChildDegree, 'id' = InfomapIterator_id, 'initClean' = InfomapIterator_initClean, 'sortChildrenOnFlow' = InfomapIterator_sortChildrenOnFlow, 'collapseChildren' = InfomapIterator_collapseChildren, 'expandChildren' = InfomapIterator_expandChildren, 'setChildDegree' = InfomapIterator_setChildDegree, 'setNumLeafNodes' = InfomapIterator_setNumLeafNodes, 'addChild' = InfomapIterator_addChild, 'releaseChildren' = InfomapIterator_releaseChildren, 'replaceChildrenWithOneNode' = InfomapIterator_replaceChildrenWithOneNode, 'replaceWithChildren' = InfomapIterator_replaceWithChildren, 'replaceWithChildrenDebug' = InfomapIterator_replaceWithChildrenDebug, 'replaceChildrenWithGrandChildren' = InfomapIterator_replaceChildrenWithGrandChildren, 'replaceChildrenWithGrandChildrenDebug' = InfomapIterator_replaceChildrenWithGrandChildrenDebug, 'remove' = InfomapIterator_remove, 'deleteChildren' = InfomapIterator_deleteChildren, 'addOutEdge' = InfomapIterator_addOutEdge);
-  vaccessors = c('data', 'index', 'stateId', 'physicalId', 'layerId', 'metaData', 'owner', 'parent', 'previous', '_next', 'firstChild', 'lastChild', 'collapsedFirstChild', 'collapsedLastChild', 'codelength', 'dirty', 'physicalNodes', 'metaCollection', 'stateNodes');
+  accessorFuns = list('Equal' = InfomapIterator_Equal, 'current' = InfomapIterator_current, '__ref__' = InfomapIterator___ref__, '__deref__' = InfomapIterator___deref__, 'EqualEqual' = InfomapIterator_EqualEqual, 'NotEqual' = InfomapIterator_NotEqual, 'PlusPlusPrefix' = InfomapIterator_PlusPlusPrefix, 'PlusPlusPostfix' = InfomapIterator_PlusPlusPostfix, 'stepForward' = InfomapIterator_stepForward, 'path' = InfomapIterator_path, 'moduleIndex' = InfomapIterator_moduleIndex, 'moduleId' = InfomapIterator_moduleId, 'childIndex' = InfomapIterator_childIndex, 'depth' = InfomapIterator_depth, 'modularCentrality' = InfomapIterator_modularCentrality, 'isEnd' = InfomapIterator_isEnd, 'copy' = InfomapIterator_copy, 'data' = InfomapIterator_data_get, 'index' = InfomapIterator_index_get, 'stateId' = InfomapIterator_stateId_get, 'physicalId' = InfomapIterator_physicalId_get, 'layerId' = InfomapIterator_layerId_get, 'metaData' = InfomapIterator_metaData_get, 'owner' = InfomapIterator_owner_get, 'parent' = InfomapIterator_parent_get, 'previous' = InfomapIterator_previous_get, '_next' = InfomapIterator__next_get, 'firstChild' = InfomapIterator_firstChild_get, 'lastChild' = InfomapIterator_lastChild_get, 'collapsedFirstChild' = InfomapIterator_collapsedFirstChild_get, 'collapsedLastChild' = InfomapIterator_collapsedLastChild_get, 'codelength' = InfomapIterator_codelength_get, 'dirty' = InfomapIterator_dirty_get, 'physicalNodes' = InfomapIterator_physicalNodes_get, 'stateNodes' = InfomapIterator_stateNodes_get, 'getMetaData' = InfomapIterator_getMetaData, 'getInfomap' = InfomapIterator_getInfomap, 'setInfomap' = InfomapIterator_setInfomap, 'getInfomapRoot' = InfomapIterator_getInfomapRoot, 'disposeInfomap' = InfomapIterator_disposeInfomap, 'numPhysicalNodes' = InfomapIterator_numPhysicalNodes, 'begin' = InfomapIterator_begin, 'end' = InfomapIterator_end, 'begin_child' = InfomapIterator_begin_child, 'end_child' = InfomapIterator_end_child, 'children' = InfomapIterator_children, 'infomap_children' = InfomapIterator_infomap_children, 'begin_post_depth_first' = InfomapIterator_begin_post_depth_first, 'begin_leaf_nodes' = InfomapIterator_begin_leaf_nodes, 'begin_leaf_modules' = InfomapIterator_begin_leaf_modules, 'begin_tree' = InfomapIterator_begin_tree, 'end_tree' = InfomapIterator_end_tree, 'infomapTree' = InfomapIterator_infomapTree, 'begin_outEdge' = InfomapIterator_begin_outEdge, 'end_outEdge' = InfomapIterator_end_outEdge, 'begin_inEdge' = InfomapIterator_begin_inEdge, 'end_inEdge' = InfomapIterator_end_inEdge, 'outEdges' = InfomapIterator_outEdges, 'inEdges' = InfomapIterator_inEdges, 'childDegree' = InfomapIterator_childDegree, 'isLeaf' = InfomapIterator_isLeaf, 'isLeafModule' = InfomapIterator_isLeafModule, 'isRoot' = InfomapIterator_isRoot, 'firstDepthBelow' = InfomapIterator_firstDepthBelow, 'numLeafMembers' = InfomapIterator_numLeafMembers, 'isDangling' = InfomapIterator_isDangling, 'outDegree' = InfomapIterator_outDegree, 'inDegree' = InfomapIterator_inDegree, 'degree' = InfomapIterator_degree, 'isFirst' = InfomapIterator_isFirst, 'isLast' = InfomapIterator_isLast, 'calculatePath' = InfomapIterator_calculatePath, 'infomapChildDegree' = InfomapIterator_infomapChildDegree, 'id' = InfomapIterator_id, 'initClean' = InfomapIterator_initClean, 'sortChildrenOnFlow' = InfomapIterator_sortChildrenOnFlow, 'collapseChildren' = InfomapIterator_collapseChildren, 'expandChildren' = InfomapIterator_expandChildren, 'setChildDegree' = InfomapIterator_setChildDegree, 'setNumLeafNodes' = InfomapIterator_setNumLeafNodes, 'addChild' = InfomapIterator_addChild, 'releaseChildren' = InfomapIterator_releaseChildren, 'replaceChildrenWithOneNode' = InfomapIterator_replaceChildrenWithOneNode, 'replaceWithChildren' = InfomapIterator_replaceWithChildren, 'replaceWithChildrenDebug' = InfomapIterator_replaceWithChildrenDebug, 'replaceChildrenWithGrandChildren' = InfomapIterator_replaceChildrenWithGrandChildren, 'replaceChildrenWithGrandChildrenDebug' = InfomapIterator_replaceChildrenWithGrandChildrenDebug, 'remove' = InfomapIterator_remove, 'deleteChildren' = InfomapIterator_deleteChildren, 'addOutEdge' = InfomapIterator_addOutEdge);
+  vaccessors = c('data', 'index', 'stateId', 'physicalId', 'layerId', 'metaData', 'owner', 'parent', 'previous', '_next', 'firstChild', 'lastChild', 'collapsedFirstChild', 'collapsedLastChild', 'codelength', 'dirty', 'physicalNodes', 'stateNodes');
   ;        idx = pmatch(name, names(accessorFuns));
   if(is.na(idx)) 
   return(callNextMethod(x, name));
@@ -11275,7 +11240,7 @@ setMethod('$', '_p_infomap__InfomapIterator', function(x, name)
 setMethod('$<-', '_p_infomap__InfomapIterator', function(x, name, value)
 
 {
-  accessorFuns = list('data' = InfomapIterator_data_set, 'index' = InfomapIterator_index_set, 'stateId' = InfomapIterator_stateId_set, 'physicalId' = InfomapIterator_physicalId_set, 'layerId' = InfomapIterator_layerId_set, 'metaData' = InfomapIterator_metaData_set, 'owner' = InfomapIterator_owner_set, 'parent' = InfomapIterator_parent_set, 'previous' = InfomapIterator_previous_set, '_next' = InfomapIterator__next_set, 'firstChild' = InfomapIterator_firstChild_set, 'lastChild' = InfomapIterator_lastChild_set, 'collapsedFirstChild' = InfomapIterator_collapsedFirstChild_set, 'collapsedLastChild' = InfomapIterator_collapsedLastChild_set, 'codelength' = InfomapIterator_codelength_set, 'dirty' = InfomapIterator_dirty_set, 'physicalNodes' = InfomapIterator_physicalNodes_set, 'metaCollection' = InfomapIterator_metaCollection_set, 'stateNodes' = InfomapIterator_stateNodes_set);
+  accessorFuns = list('data' = InfomapIterator_data_set, 'index' = InfomapIterator_index_set, 'stateId' = InfomapIterator_stateId_set, 'physicalId' = InfomapIterator_physicalId_set, 'layerId' = InfomapIterator_layerId_set, 'metaData' = InfomapIterator_metaData_set, 'owner' = InfomapIterator_owner_set, 'parent' = InfomapIterator_parent_set, 'previous' = InfomapIterator_previous_set, '_next' = InfomapIterator__next_set, 'firstChild' = InfomapIterator_firstChild_set, 'lastChild' = InfomapIterator_lastChild_set, 'collapsedFirstChild' = InfomapIterator_collapsedFirstChild_set, 'collapsedLastChild' = InfomapIterator_collapsedLastChild_set, 'codelength' = InfomapIterator_codelength_set, 'dirty' = InfomapIterator_dirty_set, 'physicalNodes' = InfomapIterator_physicalNodes_set, 'stateNodes' = InfomapIterator_stateNodes_set);
   ;        idx = pmatch(name, names(accessorFuns));
   if(is.na(idx)) 
   return(callNextMethod(x, name, value));
@@ -11290,7 +11255,7 @@ setMethod('[[<-', c('_p_infomap__InfomapIterator', 'character'),function(x, i, j
 
 {
   name = i;
-  accessorFuns = list('data' = InfomapIterator_data_set, 'index' = InfomapIterator_index_set, 'stateId' = InfomapIterator_stateId_set, 'physicalId' = InfomapIterator_physicalId_set, 'layerId' = InfomapIterator_layerId_set, 'metaData' = InfomapIterator_metaData_set, 'owner' = InfomapIterator_owner_set, 'parent' = InfomapIterator_parent_set, 'previous' = InfomapIterator_previous_set, '_next' = InfomapIterator__next_set, 'firstChild' = InfomapIterator_firstChild_set, 'lastChild' = InfomapIterator_lastChild_set, 'collapsedFirstChild' = InfomapIterator_collapsedFirstChild_set, 'collapsedLastChild' = InfomapIterator_collapsedLastChild_set, 'codelength' = InfomapIterator_codelength_set, 'dirty' = InfomapIterator_dirty_set, 'physicalNodes' = InfomapIterator_physicalNodes_set, 'metaCollection' = InfomapIterator_metaCollection_set, 'stateNodes' = InfomapIterator_stateNodes_set);
+  accessorFuns = list('data' = InfomapIterator_data_set, 'index' = InfomapIterator_index_set, 'stateId' = InfomapIterator_stateId_set, 'physicalId' = InfomapIterator_physicalId_set, 'layerId' = InfomapIterator_layerId_set, 'metaData' = InfomapIterator_metaData_set, 'owner' = InfomapIterator_owner_set, 'parent' = InfomapIterator_parent_set, 'previous' = InfomapIterator_previous_set, '_next' = InfomapIterator__next_set, 'firstChild' = InfomapIterator_firstChild_set, 'lastChild' = InfomapIterator_lastChild_set, 'collapsedFirstChild' = InfomapIterator_collapsedFirstChild_set, 'collapsedLastChild' = InfomapIterator_collapsedLastChild_set, 'codelength' = InfomapIterator_codelength_set, 'dirty' = InfomapIterator_dirty_set, 'physicalNodes' = InfomapIterator_physicalNodes_set, 'stateNodes' = InfomapIterator_stateNodes_set);
   ;        idx = pmatch(name, names(accessorFuns));
   if(is.na(idx)) 
   return(callNextMethod(x, name, value));
@@ -11308,6 +11273,7 @@ CopyToR_infomap__InfomapIterator = function(value, obj = new("infomap::InfomapIt
 {
   obj@m_moduleIndexLevel = value$m_moduleIndexLevel;
   obj@m_moduleIndex = value$m_moduleIndex;
+  obj@m_path = value$m_path;
   obj@m_depth = value$m_depth;
   obj;
 }
@@ -11318,6 +11284,7 @@ CopyToC_infomap__InfomapIterator = function(value, obj)
 {
   obj$m_moduleIndexLevel = value@m_moduleIndexLevel;
   obj$m_moduleIndex = value@m_moduleIndex;
+  obj$m_path = value@m_path;
   obj$m_depth = value@m_depth;
   obj
 }
@@ -11680,15 +11647,11 @@ class(`InfomapModuleIterator_modularCentrality`) = c("SWIGFunction", class('Info
 `InfomapModuleIterator_path` = function(self, .copy = FALSE)
 {
   if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;ans = .Call('R_swig_InfomapModuleIterator_path', self, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_std__dequeT_unsigned_int_t", ref=ans);
-  
-  ans
+  ;.Call('R_swig_InfomapModuleIterator_path', self, as.logical(.copy), PACKAGE='infomap');
   
 }
 
-attr(`InfomapModuleIterator_path`, 'returnType') = '_p_std__dequeT_unsigned_int_t'
+attr(`InfomapModuleIterator_path`, 'returnType') = 'integer'
 attr(`InfomapModuleIterator_path`, "inputTypes") = c('_p_infomap__InfomapModuleIterator')
 class(`InfomapModuleIterator_path`) = c("SWIGFunction", class('InfomapModuleIterator_path'))
 
@@ -12094,15 +12057,11 @@ class(`InfomapLeafModuleIterator_modularCentrality`) = c("SWIGFunction", class('
 `InfomapLeafModuleIterator_path` = function(self, .copy = FALSE)
 {
   if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;ans = .Call('R_swig_InfomapLeafModuleIterator_path', self, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_std__dequeT_unsigned_int_t", ref=ans);
-  
-  ans
+  ;.Call('R_swig_InfomapLeafModuleIterator_path', self, as.logical(.copy), PACKAGE='infomap');
   
 }
 
-attr(`InfomapLeafModuleIterator_path`, 'returnType') = '_p_std__dequeT_unsigned_int_t'
+attr(`InfomapLeafModuleIterator_path`, 'returnType') = 'integer'
 attr(`InfomapLeafModuleIterator_path`, "inputTypes") = c('_p_infomap__InfomapLeafModuleIterator')
 class(`InfomapLeafModuleIterator_path`) = c("SWIGFunction", class('InfomapLeafModuleIterator_path'))
 
@@ -12508,15 +12467,11 @@ class(`InfomapLeafIterator_modularCentrality`) = c("SWIGFunction", class('Infoma
 `InfomapLeafIterator_path` = function(self, .copy = FALSE)
 {
   if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;ans = .Call('R_swig_InfomapLeafIterator_path', self, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_std__dequeT_unsigned_int_t", ref=ans);
-  
-  ans
+  ;.Call('R_swig_InfomapLeafIterator_path', self, as.logical(.copy), PACKAGE='infomap');
   
 }
 
-attr(`InfomapLeafIterator_path`, 'returnType') = '_p_std__dequeT_unsigned_int_t'
+attr(`InfomapLeafIterator_path`, 'returnType') = 'integer'
 attr(`InfomapLeafIterator_path`, "inputTypes") = c('_p_infomap__InfomapLeafIterator')
 class(`InfomapLeafIterator_path`) = c("SWIGFunction", class('InfomapLeafIterator_path'))
 
@@ -12930,15 +12885,11 @@ class(`InfomapIteratorPhysical_modularCentrality`) = c("SWIGFunction", class('In
 `InfomapIteratorPhysical_path` = function(self, .copy = FALSE)
 {
   if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;ans = .Call('R_swig_InfomapIteratorPhysical_path', self, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_std__dequeT_unsigned_int_t", ref=ans);
-  
-  ans
+  ;.Call('R_swig_InfomapIteratorPhysical_path', self, as.logical(.copy), PACKAGE='infomap');
   
 }
 
-attr(`InfomapIteratorPhysical_path`, 'returnType') = '_p_std__dequeT_unsigned_int_t'
+attr(`InfomapIteratorPhysical_path`, 'returnType') = 'integer'
 attr(`InfomapIteratorPhysical_path`, "inputTypes") = c('_p_infomap__InfomapIteratorPhysical')
 class(`InfomapIteratorPhysical_path`) = c("SWIGFunction", class('InfomapIteratorPhysical_path'))
 
@@ -13305,15 +13256,11 @@ class(`InfomapLeafIteratorPhysical_modularCentrality`) = c("SWIGFunction", class
 `InfomapLeafIteratorPhysical_path` = function(self, .copy = FALSE)
 {
   if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;ans = .Call('R_swig_InfomapLeafIteratorPhysical_path', self, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_std__dequeT_unsigned_int_t", ref=ans);
-  
-  ans
+  ;.Call('R_swig_InfomapLeafIteratorPhysical_path', self, as.logical(.copy), PACKAGE='infomap');
   
 }
 
-attr(`InfomapLeafIteratorPhysical_path`, 'returnType') = '_p_std__dequeT_unsigned_int_t'
+attr(`InfomapLeafIteratorPhysical_path`, 'returnType') = 'integer'
 attr(`InfomapLeafIteratorPhysical_path`, "inputTypes") = c('_p_infomap__InfomapLeafIteratorPhysical')
 class(`InfomapLeafIteratorPhysical_path`) = c("SWIGFunction", class('InfomapLeafIteratorPhysical_path'))
 
@@ -14303,37 +14250,6 @@ class(`InfomapParentIterator_physicalNodes_set`) = c("SWIGFunction", class('Info
 attr(`InfomapParentIterator_physicalNodes_get`, 'returnType') = '_p_std__vectorT_infomap__PhysData_std__allocatorT_infomap__PhysData_t_t'
 attr(`InfomapParentIterator_physicalNodes_get`, "inputTypes") = c('_p_infomap__InfomapParentIterator')
 class(`InfomapParentIterator_physicalNodes_get`) = c("SWIGFunction", class('InfomapParentIterator_physicalNodes_get'))
-
-# Start of InfomapParentIterator_metaCollection_set
-
-`InfomapParentIterator_metaCollection_set` = function(self, s_metaCollection)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  if (inherits(s_metaCollection, "ExternalReference")) s_metaCollection = slot(s_metaCollection,"ref"); 
-  ;.Call('R_swig_InfomapParentIterator_metaCollection_set', self, s_metaCollection, PACKAGE='infomap');
-  
-}
-
-attr(`InfomapParentIterator_metaCollection_set`, 'returnType') = 'void'
-attr(`InfomapParentIterator_metaCollection_set`, "inputTypes") = c('_p_infomap__InfomapParentIterator', '_p_MetaCollection')
-class(`InfomapParentIterator_metaCollection_set`) = c("SWIGFunction", class('InfomapParentIterator_metaCollection_set'))
-
-# Start of InfomapParentIterator_metaCollection_get
-
-`InfomapParentIterator_metaCollection_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;ans = .Call('R_swig_InfomapParentIterator_metaCollection_get', self, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_MetaCollection", ref=ans);
-  
-  ans
-  
-}
-
-attr(`InfomapParentIterator_metaCollection_get`, 'returnType') = '_p_MetaCollection'
-attr(`InfomapParentIterator_metaCollection_get`, "inputTypes") = c('_p_infomap__InfomapParentIterator')
-class(`InfomapParentIterator_metaCollection_get`) = c("SWIGFunction", class('InfomapParentIterator_metaCollection_get'))
 
 # Start of InfomapParentIterator_stateNodes_set
 
@@ -15851,8 +15767,8 @@ class(`InfomapParentIterator_addOutEdge__SWIG_1`) = c("SWIGFunction", class('Inf
 setMethod('$', '_p_infomap__InfomapParentIterator', function(x, name)
 
 {
-  accessorFuns = list('Equal' = InfomapParentIterator_Equal, 'current' = InfomapParentIterator_current, '__ref__' = InfomapParentIterator___ref__, '__deref__' = InfomapParentIterator___deref__, 'EqualEqual' = InfomapParentIterator_EqualEqual, 'NotEqual' = InfomapParentIterator_NotEqual, 'PlusPlusPrefix' = InfomapParentIterator_PlusPlusPrefix, 'PlusPlusPostfix' = InfomapParentIterator_PlusPlusPostfix, 'stepForward' = InfomapParentIterator_stepForward, 'isEnd' = InfomapParentIterator_isEnd, 'data' = InfomapParentIterator_data_get, 'index' = InfomapParentIterator_index_get, 'stateId' = InfomapParentIterator_stateId_get, 'physicalId' = InfomapParentIterator_physicalId_get, 'layerId' = InfomapParentIterator_layerId_get, 'metaData' = InfomapParentIterator_metaData_get, 'owner' = InfomapParentIterator_owner_get, 'parent' = InfomapParentIterator_parent_get, 'previous' = InfomapParentIterator_previous_get, '_next' = InfomapParentIterator__next_get, 'firstChild' = InfomapParentIterator_firstChild_get, 'lastChild' = InfomapParentIterator_lastChild_get, 'collapsedFirstChild' = InfomapParentIterator_collapsedFirstChild_get, 'collapsedLastChild' = InfomapParentIterator_collapsedLastChild_get, 'codelength' = InfomapParentIterator_codelength_get, 'dirty' = InfomapParentIterator_dirty_get, 'physicalNodes' = InfomapParentIterator_physicalNodes_get, 'metaCollection' = InfomapParentIterator_metaCollection_get, 'stateNodes' = InfomapParentIterator_stateNodes_get, 'getMetaData' = InfomapParentIterator_getMetaData, 'getInfomap' = InfomapParentIterator_getInfomap, 'setInfomap' = InfomapParentIterator_setInfomap, 'getInfomapRoot' = InfomapParentIterator_getInfomapRoot, 'disposeInfomap' = InfomapParentIterator_disposeInfomap, 'numPhysicalNodes' = InfomapParentIterator_numPhysicalNodes, 'begin' = InfomapParentIterator_begin, 'end' = InfomapParentIterator_end, 'begin_child' = InfomapParentIterator_begin_child, 'end_child' = InfomapParentIterator_end_child, 'children' = InfomapParentIterator_children, 'infomap_children' = InfomapParentIterator_infomap_children, 'begin_post_depth_first' = InfomapParentIterator_begin_post_depth_first, 'begin_leaf_nodes' = InfomapParentIterator_begin_leaf_nodes, 'begin_leaf_modules' = InfomapParentIterator_begin_leaf_modules, 'begin_tree' = InfomapParentIterator_begin_tree, 'end_tree' = InfomapParentIterator_end_tree, 'infomapTree' = InfomapParentIterator_infomapTree, 'begin_outEdge' = InfomapParentIterator_begin_outEdge, 'end_outEdge' = InfomapParentIterator_end_outEdge, 'begin_inEdge' = InfomapParentIterator_begin_inEdge, 'end_inEdge' = InfomapParentIterator_end_inEdge, 'outEdges' = InfomapParentIterator_outEdges, 'inEdges' = InfomapParentIterator_inEdges, 'childDegree' = InfomapParentIterator_childDegree, 'isLeaf' = InfomapParentIterator_isLeaf, 'isLeafModule' = InfomapParentIterator_isLeafModule, 'isRoot' = InfomapParentIterator_isRoot, 'depth' = InfomapParentIterator_depth, 'firstDepthBelow' = InfomapParentIterator_firstDepthBelow, 'numLeafMembers' = InfomapParentIterator_numLeafMembers, 'isDangling' = InfomapParentIterator_isDangling, 'outDegree' = InfomapParentIterator_outDegree, 'inDegree' = InfomapParentIterator_inDegree, 'degree' = InfomapParentIterator_degree, 'isFirst' = InfomapParentIterator_isFirst, 'isLast' = InfomapParentIterator_isLast, 'childIndex' = InfomapParentIterator_childIndex, 'calculatePath' = InfomapParentIterator_calculatePath, 'infomapChildDegree' = InfomapParentIterator_infomapChildDegree, 'id' = InfomapParentIterator_id, 'initClean' = InfomapParentIterator_initClean, 'sortChildrenOnFlow' = InfomapParentIterator_sortChildrenOnFlow, 'collapseChildren' = InfomapParentIterator_collapseChildren, 'expandChildren' = InfomapParentIterator_expandChildren, 'setChildDegree' = InfomapParentIterator_setChildDegree, 'setNumLeafNodes' = InfomapParentIterator_setNumLeafNodes, 'addChild' = InfomapParentIterator_addChild, 'releaseChildren' = InfomapParentIterator_releaseChildren, 'replaceChildrenWithOneNode' = InfomapParentIterator_replaceChildrenWithOneNode, 'replaceWithChildren' = InfomapParentIterator_replaceWithChildren, 'replaceWithChildrenDebug' = InfomapParentIterator_replaceWithChildrenDebug, 'replaceChildrenWithGrandChildren' = InfomapParentIterator_replaceChildrenWithGrandChildren, 'replaceChildrenWithGrandChildrenDebug' = InfomapParentIterator_replaceChildrenWithGrandChildrenDebug, 'remove' = InfomapParentIterator_remove, 'deleteChildren' = InfomapParentIterator_deleteChildren, 'addOutEdge' = InfomapParentIterator_addOutEdge);
-  vaccessors = c('data', 'index', 'stateId', 'physicalId', 'layerId', 'metaData', 'owner', 'parent', 'previous', '_next', 'firstChild', 'lastChild', 'collapsedFirstChild', 'collapsedLastChild', 'codelength', 'dirty', 'physicalNodes', 'metaCollection', 'stateNodes');
+  accessorFuns = list('Equal' = InfomapParentIterator_Equal, 'current' = InfomapParentIterator_current, '__ref__' = InfomapParentIterator___ref__, '__deref__' = InfomapParentIterator___deref__, 'EqualEqual' = InfomapParentIterator_EqualEqual, 'NotEqual' = InfomapParentIterator_NotEqual, 'PlusPlusPrefix' = InfomapParentIterator_PlusPlusPrefix, 'PlusPlusPostfix' = InfomapParentIterator_PlusPlusPostfix, 'stepForward' = InfomapParentIterator_stepForward, 'isEnd' = InfomapParentIterator_isEnd, 'data' = InfomapParentIterator_data_get, 'index' = InfomapParentIterator_index_get, 'stateId' = InfomapParentIterator_stateId_get, 'physicalId' = InfomapParentIterator_physicalId_get, 'layerId' = InfomapParentIterator_layerId_get, 'metaData' = InfomapParentIterator_metaData_get, 'owner' = InfomapParentIterator_owner_get, 'parent' = InfomapParentIterator_parent_get, 'previous' = InfomapParentIterator_previous_get, '_next' = InfomapParentIterator__next_get, 'firstChild' = InfomapParentIterator_firstChild_get, 'lastChild' = InfomapParentIterator_lastChild_get, 'collapsedFirstChild' = InfomapParentIterator_collapsedFirstChild_get, 'collapsedLastChild' = InfomapParentIterator_collapsedLastChild_get, 'codelength' = InfomapParentIterator_codelength_get, 'dirty' = InfomapParentIterator_dirty_get, 'physicalNodes' = InfomapParentIterator_physicalNodes_get, 'stateNodes' = InfomapParentIterator_stateNodes_get, 'getMetaData' = InfomapParentIterator_getMetaData, 'getInfomap' = InfomapParentIterator_getInfomap, 'setInfomap' = InfomapParentIterator_setInfomap, 'getInfomapRoot' = InfomapParentIterator_getInfomapRoot, 'disposeInfomap' = InfomapParentIterator_disposeInfomap, 'numPhysicalNodes' = InfomapParentIterator_numPhysicalNodes, 'begin' = InfomapParentIterator_begin, 'end' = InfomapParentIterator_end, 'begin_child' = InfomapParentIterator_begin_child, 'end_child' = InfomapParentIterator_end_child, 'children' = InfomapParentIterator_children, 'infomap_children' = InfomapParentIterator_infomap_children, 'begin_post_depth_first' = InfomapParentIterator_begin_post_depth_first, 'begin_leaf_nodes' = InfomapParentIterator_begin_leaf_nodes, 'begin_leaf_modules' = InfomapParentIterator_begin_leaf_modules, 'begin_tree' = InfomapParentIterator_begin_tree, 'end_tree' = InfomapParentIterator_end_tree, 'infomapTree' = InfomapParentIterator_infomapTree, 'begin_outEdge' = InfomapParentIterator_begin_outEdge, 'end_outEdge' = InfomapParentIterator_end_outEdge, 'begin_inEdge' = InfomapParentIterator_begin_inEdge, 'end_inEdge' = InfomapParentIterator_end_inEdge, 'outEdges' = InfomapParentIterator_outEdges, 'inEdges' = InfomapParentIterator_inEdges, 'childDegree' = InfomapParentIterator_childDegree, 'isLeaf' = InfomapParentIterator_isLeaf, 'isLeafModule' = InfomapParentIterator_isLeafModule, 'isRoot' = InfomapParentIterator_isRoot, 'depth' = InfomapParentIterator_depth, 'firstDepthBelow' = InfomapParentIterator_firstDepthBelow, 'numLeafMembers' = InfomapParentIterator_numLeafMembers, 'isDangling' = InfomapParentIterator_isDangling, 'outDegree' = InfomapParentIterator_outDegree, 'inDegree' = InfomapParentIterator_inDegree, 'degree' = InfomapParentIterator_degree, 'isFirst' = InfomapParentIterator_isFirst, 'isLast' = InfomapParentIterator_isLast, 'childIndex' = InfomapParentIterator_childIndex, 'calculatePath' = InfomapParentIterator_calculatePath, 'infomapChildDegree' = InfomapParentIterator_infomapChildDegree, 'id' = InfomapParentIterator_id, 'initClean' = InfomapParentIterator_initClean, 'sortChildrenOnFlow' = InfomapParentIterator_sortChildrenOnFlow, 'collapseChildren' = InfomapParentIterator_collapseChildren, 'expandChildren' = InfomapParentIterator_expandChildren, 'setChildDegree' = InfomapParentIterator_setChildDegree, 'setNumLeafNodes' = InfomapParentIterator_setNumLeafNodes, 'addChild' = InfomapParentIterator_addChild, 'releaseChildren' = InfomapParentIterator_releaseChildren, 'replaceChildrenWithOneNode' = InfomapParentIterator_replaceChildrenWithOneNode, 'replaceWithChildren' = InfomapParentIterator_replaceWithChildren, 'replaceWithChildrenDebug' = InfomapParentIterator_replaceWithChildrenDebug, 'replaceChildrenWithGrandChildren' = InfomapParentIterator_replaceChildrenWithGrandChildren, 'replaceChildrenWithGrandChildrenDebug' = InfomapParentIterator_replaceChildrenWithGrandChildrenDebug, 'remove' = InfomapParentIterator_remove, 'deleteChildren' = InfomapParentIterator_deleteChildren, 'addOutEdge' = InfomapParentIterator_addOutEdge);
+  vaccessors = c('data', 'index', 'stateId', 'physicalId', 'layerId', 'metaData', 'owner', 'parent', 'previous', '_next', 'firstChild', 'lastChild', 'collapsedFirstChild', 'collapsedLastChild', 'codelength', 'dirty', 'physicalNodes', 'stateNodes');
   ;        idx = pmatch(name, names(accessorFuns));
   if(is.na(idx)) 
   return(callNextMethod(x, name));
@@ -15869,7 +15785,7 @@ setMethod('$', '_p_infomap__InfomapParentIterator', function(x, name)
 setMethod('$<-', '_p_infomap__InfomapParentIterator', function(x, name, value)
 
 {
-  accessorFuns = list('data' = InfomapParentIterator_data_set, 'index' = InfomapParentIterator_index_set, 'stateId' = InfomapParentIterator_stateId_set, 'physicalId' = InfomapParentIterator_physicalId_set, 'layerId' = InfomapParentIterator_layerId_set, 'metaData' = InfomapParentIterator_metaData_set, 'owner' = InfomapParentIterator_owner_set, 'parent' = InfomapParentIterator_parent_set, 'previous' = InfomapParentIterator_previous_set, '_next' = InfomapParentIterator__next_set, 'firstChild' = InfomapParentIterator_firstChild_set, 'lastChild' = InfomapParentIterator_lastChild_set, 'collapsedFirstChild' = InfomapParentIterator_collapsedFirstChild_set, 'collapsedLastChild' = InfomapParentIterator_collapsedLastChild_set, 'codelength' = InfomapParentIterator_codelength_set, 'dirty' = InfomapParentIterator_dirty_set, 'physicalNodes' = InfomapParentIterator_physicalNodes_set, 'metaCollection' = InfomapParentIterator_metaCollection_set, 'stateNodes' = InfomapParentIterator_stateNodes_set);
+  accessorFuns = list('data' = InfomapParentIterator_data_set, 'index' = InfomapParentIterator_index_set, 'stateId' = InfomapParentIterator_stateId_set, 'physicalId' = InfomapParentIterator_physicalId_set, 'layerId' = InfomapParentIterator_layerId_set, 'metaData' = InfomapParentIterator_metaData_set, 'owner' = InfomapParentIterator_owner_set, 'parent' = InfomapParentIterator_parent_set, 'previous' = InfomapParentIterator_previous_set, '_next' = InfomapParentIterator__next_set, 'firstChild' = InfomapParentIterator_firstChild_set, 'lastChild' = InfomapParentIterator_lastChild_set, 'collapsedFirstChild' = InfomapParentIterator_collapsedFirstChild_set, 'collapsedLastChild' = InfomapParentIterator_collapsedLastChild_set, 'codelength' = InfomapParentIterator_codelength_set, 'dirty' = InfomapParentIterator_dirty_set, 'physicalNodes' = InfomapParentIterator_physicalNodes_set, 'stateNodes' = InfomapParentIterator_stateNodes_set);
   ;        idx = pmatch(name, names(accessorFuns));
   if(is.na(idx)) 
   return(callNextMethod(x, name, value));
@@ -15884,7 +15800,7 @@ setMethod('[[<-', c('_p_infomap__InfomapParentIterator', 'character'),function(x
 
 {
   name = i;
-  accessorFuns = list('data' = InfomapParentIterator_data_set, 'index' = InfomapParentIterator_index_set, 'stateId' = InfomapParentIterator_stateId_set, 'physicalId' = InfomapParentIterator_physicalId_set, 'layerId' = InfomapParentIterator_layerId_set, 'metaData' = InfomapParentIterator_metaData_set, 'owner' = InfomapParentIterator_owner_set, 'parent' = InfomapParentIterator_parent_set, 'previous' = InfomapParentIterator_previous_set, '_next' = InfomapParentIterator__next_set, 'firstChild' = InfomapParentIterator_firstChild_set, 'lastChild' = InfomapParentIterator_lastChild_set, 'collapsedFirstChild' = InfomapParentIterator_collapsedFirstChild_set, 'collapsedLastChild' = InfomapParentIterator_collapsedLastChild_set, 'codelength' = InfomapParentIterator_codelength_set, 'dirty' = InfomapParentIterator_dirty_set, 'physicalNodes' = InfomapParentIterator_physicalNodes_set, 'metaCollection' = InfomapParentIterator_metaCollection_set, 'stateNodes' = InfomapParentIterator_stateNodes_set);
+  accessorFuns = list('data' = InfomapParentIterator_data_set, 'index' = InfomapParentIterator_index_set, 'stateId' = InfomapParentIterator_stateId_set, 'physicalId' = InfomapParentIterator_physicalId_set, 'layerId' = InfomapParentIterator_layerId_set, 'metaData' = InfomapParentIterator_metaData_set, 'owner' = InfomapParentIterator_owner_set, 'parent' = InfomapParentIterator_parent_set, 'previous' = InfomapParentIterator_previous_set, '_next' = InfomapParentIterator__next_set, 'firstChild' = InfomapParentIterator_firstChild_set, 'lastChild' = InfomapParentIterator_lastChild_set, 'collapsedFirstChild' = InfomapParentIterator_collapsedFirstChild_set, 'collapsedLastChild' = InfomapParentIterator_collapsedLastChild_set, 'codelength' = InfomapParentIterator_codelength_set, 'dirty' = InfomapParentIterator_dirty_set, 'physicalNodes' = InfomapParentIterator_physicalNodes_set, 'stateNodes' = InfomapParentIterator_stateNodes_set);
   ;        idx = pmatch(name, names(accessorFuns));
   if(is.na(idx)) 
   return(callNextMethod(x, name, value));

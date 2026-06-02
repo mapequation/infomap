@@ -40,14 +40,13 @@ jobs:
         id: swig-cache
         uses: actions/cache@v5
         with:
-          path: |
-            /usr/local/bin/swig
-            /usr/local/share/swig
-          key: swig-4.4.1-${{ runner.os }}-${{ runner.arch }}-v1
+          path: ${{ runner.tool_cache }}/swig/4.4.1/${{ runner.arch }}
+          key: swig-4.4.1-${{ runner.os }}-${{ runner.arch }}-v2
 
       - name: Install SWIG 4.4.1
         if: steps.swig-cache.outputs.cache-hit != 'true'
         run: |
+          swig_prefix="$RUNNER_TOOL_CACHE/swig/4.4.1/$RUNNER_ARCH"
           sudo apt-get update
           sudo apt-get install -y ca-certificates curl build-essential libpcre2-dev
           curl -L --retry 3 --output /tmp/swig.tar.gz \
@@ -55,9 +54,12 @@ jobs:
           mkdir -p /tmp/swig-src
           tar -xzf /tmp/swig.tar.gz -C /tmp/swig-src --strip-components=1
           cd /tmp/swig-src
-          ./configure
+          ./configure --prefix="$swig_prefix"
           make -j"$(nproc)"
-          sudo make install
+          make install
+
+      - name: Add SWIG to PATH
+        run: echo "$RUNNER_TOOL_CACHE/swig/4.4.1/$RUNNER_ARCH/bin" >> "$GITHUB_PATH"
 
       - name: Verify SWIG version
         run: swig -version
@@ -74,7 +76,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, macos-15, windows-2025]
+        os: [ubuntu-24.04, macos-15, windows-2025-vs2026]
         r: [release, oldrel]
 
     defaults:
@@ -118,8 +120,15 @@ jobs:
             any::tibble
             any::rcmdcheck
 
+      - name: Set up ccache
+        uses: ./.github/actions/setup-ccache
+        with:
+          key-prefix: r-${{ matrix.os }}-${{ matrix.r }}
+
       - name: Stage and check the package
-        run: make test-r
+        run: |
+          make test-r
+          command -v ccache >/dev/null 2>&1 && ccache -s || true
 
   build-source:
     if: inputs.build-release-artifacts
@@ -165,7 +174,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-15, windows-2025]
+        os: [macos-15, windows-2025-vs2026]
         r: [release, oldrel]
 
     defaults:

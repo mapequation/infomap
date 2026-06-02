@@ -56,6 +56,23 @@ For a list of available options, run:
 
     infomap --help
 
+Interactive shell
+-----------------
+
+Start a Python shell with Infomap preloaded:
+
+.. code-block:: bash
+
+    infomap-shell
+
+The shell imports ``Infomap``, ``InfomapOptions``, and ``MultilayerNode``.
+It also creates ``im = Infomap(pretty=True)`` and provides ``summary()`` and
+``options()`` helpers. Pass one network file to preload it:
+
+.. code-block:: bash
+
+    infomap-shell examples/networks/twotriangles.net
+
 Shell completion
 ----------------
 
