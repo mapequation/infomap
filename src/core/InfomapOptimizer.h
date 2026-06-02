@@ -660,11 +660,9 @@ INFOMAP_HOT unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestMod
 
   std::vector<unsigned int> selectedProposalIndices;
   selectedProposalIndices.reserve(numNodes);
-  std::vector<char> reservedEmptyModules(numNodes, false);
   unsigned int numProposals = 0;
   unsigned int numSkippedChangedModule = 0;
   unsigned int numSkippedInvalidTarget = 0;
-  unsigned int numSkippedReservedEmpty = 0;
   unsigned int numSkippedRejectedRecheck = 0;
 
   for (unsigned int nodeIndex : nodeEnumeration) {
@@ -685,11 +683,6 @@ INFOMAP_HOT unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestMod
       ++numSkippedInvalidTarget;
       continue;
     }
-    if (proposal.targetWasEmpty && reservedEmptyModules[proposal.newModule]) {
-      ++numSkippedReservedEmpty;
-      continue;
-    }
-
     unsigned int oldModule = proposal.oldModule;
     unsigned int newModule = proposal.newModule;
     DeltaFlowDataType oldModuleDelta(oldModule, 0.0, 0.0);
@@ -734,11 +727,6 @@ INFOMAP_HOT unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestMod
     current.index = newModule;
 
     selectedProposalIndices.push_back(nodeIndex);
-
-    // Keep empty-module moves unique within this sweep. Later proposals that
-    // targeted the same empty module were evaluated against an empty target.
-    if (proposal.targetWasEmpty)
-      reservedEmptyModules[newModule] = true;
   }
 
   unsigned int numMoved = selectedProposalIndices.size();
@@ -746,7 +734,6 @@ INFOMAP_HOT unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestMod
          << ", accepted: " << numMoved
          << ", skipped after changed module: " << numSkippedChangedModule
          << ", invalid target: " << numSkippedInvalidTarget
-         << ", reserved empty target: " << numSkippedReservedEmpty
          << ", rejected by recheck: " << numSkippedRejectedRecheck << "\n";
 
   for (auto& proposal : proposals) {
