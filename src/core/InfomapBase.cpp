@@ -415,7 +415,16 @@ private:
     if (m_infomap.innerParallelization) {
       Log::important() << "  -> Warning: --parallel-trials ignores --inner-parallelization inside trial workers.\n";
     }
-    Log() << "  -> Running " << m_numTrials << " trials in parallel with " << parallelTrialWorkers() << " workers from " << omp_get_max_threads() << " OpenMP threads (peak memory scales with workers; inner parallelization off).\n";
+    const unsigned int workers = parallelTrialWorkers();
+    if (m_infomap.prettyOutput) {
+      PrettyOutput pretty(true);
+      Log::pretty() << "\n"
+                    << pretty.dim() << "  Parallel trials: " << workers << " workers from "
+                    << omp_get_max_threads() << " OpenMP threads (memory scales with workers; inner parallelization off)"
+                    << pretty.reset() << "\n";
+    } else {
+      Log() << "  -> Running " << m_numTrials << " trials in parallel with " << workers << " workers from " << omp_get_max_threads() << " OpenMP threads (peak memory scales with workers; inner parallelization off).\n";
+    }
     return true;
 #endif
   }
