@@ -797,7 +797,7 @@ const std::vector<ParameterSpec>& parameterCatalog()
         .incrementalTarget(&Config::fastHierarchicalSolution),
     param()
         .longName("inner-parallelization")
-        .description("Use batched parallel node moves for coarse optimization; usually beneficial only with a relaxed core-loop-codelength-threshold and low tune-iteration-limit, and may produce a different partition than serial optimization.")
+        .description("Experimental: use batched parallel node moves for coarse optimization. Performance gains are workload-dependent, often require a relaxed core-loop-codelength-threshold and low tune-iteration-limit, and may produce a different partition than serial optimization.")
         .group("Accuracy")
         .advanced()
         .configTarget(&Config::innerParallelization),
