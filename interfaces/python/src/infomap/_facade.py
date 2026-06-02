@@ -424,6 +424,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         fast_hierarchical_solution=None,
         prefer_modular_solution=False,
         inner_parallelization=False,
+        parallel_trials=False,
         num_random_moves=None,
         max_degree_for_random_moves=None,
     ):
@@ -1679,6 +1680,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         fast_hierarchical_solution=None,
         prefer_modular_solution=False,
         inner_parallelization=False,
+        parallel_trials=False,
         num_random_moves=None,
         max_degree_for_random_moves=None,
     ):

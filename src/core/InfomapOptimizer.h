@@ -53,6 +53,10 @@ public:
 
   double getMetaCodelength(bool unweighted = false) const override;
 
+  void setNetworkProperties(const StateNetwork& network) override;
+
+  void inheritNetworkPropertiesFrom(const InfomapOptimizerBase& parent) override;
+
 protected:
   unsigned int numActiveModules() const override { return m_infomap->activeNetwork().size() - m_emptyModules.size(); }
 
@@ -123,6 +127,33 @@ template <typename Objective>
 inline double InfomapOptimizer<Objective>::getMetaCodelength(bool /*unweighted*/) const
 {
   return 0.0;
+}
+
+// Only BiasedMapEquation uses per-network properties; every other objective keeps the no-op.
+template <typename Objective>
+inline void InfomapOptimizer<Objective>::setNetworkProperties(const StateNetwork& /*network*/)
+{
+}
+
+template <>
+inline void InfomapOptimizer<BiasedMapEquation>::setNetworkProperties(const StateNetwork& network)
+{
+  m_objective.setNetworkProperties(network);
+}
+
+template <typename Objective>
+inline void InfomapOptimizer<Objective>::inheritNetworkPropertiesFrom(const InfomapOptimizerBase& /*parent*/)
+{
+}
+
+template <>
+inline void InfomapOptimizer<BiasedMapEquation>::inheritNetworkPropertiesFrom(const InfomapOptimizerBase& parent)
+{
+  // The objective type is identical across a whole run, so the parent optimizer is also a
+  // BiasedMapEquation optimizer. Copy the full-network properties so sub/super instances keep
+  // the same entropy bias correction normalization the shared static used to provide.
+  if (const auto* p = dynamic_cast<const InfomapOptimizer<BiasedMapEquation>*>(&parent))
+    m_objective.setNetworkPropertiesFrom(p->m_objective);
 }
 
 template <>

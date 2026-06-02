@@ -65,6 +65,7 @@ ACCURACY_OPTIONS <- list(
   list(type = "value", name = "core_loop_codelength_threshold", flag = "--core-loop-codelength-threshold", default = 1e-10, include = .skip_when_not_equal(1e-10)),
   list(type = "value", name = "tune_iteration_relative_threshold", flag = "--tune-iteration-relative-threshold", default = 1e-05, include = .skip_when_not_equal(1e-05)),
   list(type = "flag", name = "inner_parallelization", flag = "--inner-parallelization", default = FALSE),
+  list(type = "flag", name = "parallel_trials", flag = "--parallel-trials", default = FALSE),
   list(type = "flag", name = "prefer_modular_solution", flag = "--prefer-modular-solution", default = FALSE),
   list(type = "value", name = "num_random_moves", flag = "--num-random-moves", default = NULL, include = .skip_when_null),
   list(type = "value", name = "max_degree_for_random_moves", flag = "--max-degree-for-random-moves", default = NULL, include = .skip_when_null)
@@ -84,8 +85,8 @@ OPTION_FIELD_NAMES <- c(
   "preferred_number_of_modules", "multilayer_relax_rate", "multilayer_relax_limit", "multilayer_relax_limit_up",
   "multilayer_relax_limit_down", "multilayer_relax_by_jsd", "seed", "num_trials",
   "core_loop_limit", "core_level_limit", "tune_iteration_limit", "core_loop_codelength_threshold",
-  "tune_iteration_relative_threshold", "fast_hierarchical_solution", "inner_parallelization", "prefer_modular_solution",
-  "num_random_moves", "max_degree_for_random_moves"
+  "tune_iteration_relative_threshold", "fast_hierarchical_solution", "inner_parallelization", "parallel_trials",
+  "prefer_modular_solution", "num_random_moves", "max_degree_for_random_moves"
 )
 
 OPTION_DEFAULTS <- list(
@@ -144,6 +145,7 @@ OPTION_DEFAULTS <- list(
   tune_iteration_relative_threshold = 1e-05,
   fast_hierarchical_solution = NULL,
   inner_parallelization = FALSE,
+  parallel_trials = FALSE,
   prefer_modular_solution = FALSE,
   num_random_moves = NULL,
   max_degree_for_random_moves = NULL
@@ -231,6 +233,7 @@ OPTION_DEFAULTS <- list(
 #'   \item{`tune_iteration_relative_threshold`}{Require each tune iteration to improve codelength by this fraction of the initial two-level codelength.}
 #'   \item{`fast_hierarchical_solution`}{Find top modules quickly. Use -FF to keep all fast levels. Use -FFF to skip recursive refinement.}
 #'   \item{`inner_parallelization`}{Parallelize the innermost loop for speed, with a possible accuracy tradeoff.}
+#'   \item{`parallel_trials`}{Run independent trials in parallel with OpenMP. --num-trials remains the total number of trials; the number of parallel workers follows the OpenMP thread count (e.g. OMP_NUM_THREADS), clamped to --num-trials. Peak memory scales with the worker count. Nested OpenMP and --inner-parallelization are disabled inside workers.}
 #'   \item{`prefer_modular_solution`}{Prefer a modular solution even when one module gives a lower codelength.}
 #'   \item{`num_random_moves`}{Try this many random moves in each core loop to merge weakly connected nodes.}
 #'   \item{`max_degree_for_random_moves`}{Try random moves only for nodes with degree at most this value.}

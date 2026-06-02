@@ -167,6 +167,19 @@ TEST_CASE("Config parses pretty output flag [fast][core][config][cli]")
   CHECK_FALSE(negatedConfig.prettyOutput);
 }
 
+TEST_CASE("Config parses parallel trials flag [fast][core][config][cli]")
+{
+  const Config config("input.net --silent --no-file-output --num-trials 4 --parallel-trials", true);
+  CHECK(config.numTrials == 4);
+  CHECK(config.parallelTrials);
+
+  const auto* parameter = findParameter("parallel-trials");
+  REQUIRE(parameter != nullptr);
+  CHECK(parameter->group == "Accuracy");
+  CHECK(parameter->isAdvanced);
+  CHECK_FALSE(parameter->requireArgument);
+}
+
 TEST_CASE("Config accepts zero sentinel limits [fast][core][config][cli]")
 {
   const Config config("input.net --silent --no-file-output --core-level-limit 0 --tune-iteration-limit 0", true);

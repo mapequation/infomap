@@ -71,6 +71,9 @@ def main() -> int:
     assert by_long["--directed"]["bindingDefaults"]["python"]["value"] == "None"
     assert by_long["--num-trials"]["min"] == "1"
     assert by_long["--num-trials"]["bindingDefaults"]["r"]["value"] == "1L"
+    assert by_long["--parallel-trials"]["group"] == "Accuracy"
+    assert by_long["--parallel-trials"]["advanced"]
+    assert not by_long["--parallel-trials"]["required"]
     assert by_long["--core-level-limit"]["default"] == "0"
     assert by_long["--core-level-limit"]["min"] == "0"
     assert by_long["--core-level-limit"]["description"].endswith("0 means no limit.")
