@@ -143,6 +143,11 @@ public:
 
   static std::streamsize precision(std::streamsize precision)
   {
+    // When muted (a worker thread under --parallel-trials), deliberately do NOT touch the
+    // shared global stream — concurrent precision() calls across workers would race on it.
+    // The returned value is therefore a no-op echo, not the stream's previous precision.
+    // This is safe because muted callers' save/restore pairs are balanced and never reach
+    // the stream; do not "fix" this by querying ostream() here (that reintroduces the race).
     if (s_threadMuteDepth > 0)
       return precision;
     return ostream().precision(precision);

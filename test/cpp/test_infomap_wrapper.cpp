@@ -28,8 +28,14 @@ using OutputRowIdentity = std::tuple<unsigned int, unsigned int, unsigned int>;
 
 struct LogCapture {
   std::ostringstream output;
+  std::ostream& previousStream;
+  bool previousSilent;
 
+  // Capture the previous global log state and restore it in the destructor, so a capture
+  // never leaks the output stream / silent flag into subsequent test cases.
   LogCapture()
+      : previousStream(infomap::Log::getOutputStream()),
+        previousSilent(infomap::Log::isSilent())
   {
     infomap::Log::setOutputStream(output);
     infomap::Log::setSilent(false);
@@ -37,8 +43,8 @@ struct LogCapture {
 
   ~LogCapture()
   {
-    infomap::Log::setOutputStream(std::cout);
-    infomap::Log::setSilent(false);
+    infomap::Log::setOutputStream(previousStream);
+    infomap::Log::setSilent(previousSilent);
   }
 };
 
