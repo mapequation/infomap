@@ -211,7 +211,7 @@ TEST_CASE("Run reports write machine-readable JSON with no-file-output [fast][co
   CHECK(summaryJson.find("\"codelength\":") != std::string::npos);
   CHECK(summaryJson.find("\"top_modules\":") != std::string::npos);
   CHECK(summaryJson.find("\"levels\":") != std::string::npos);
-  CHECK(summaryJson.find("\"trials\":2") != std::string::npos);
+  CHECK(summaryJson.find("\"trials\":2,") != std::string::npos);
   CHECK(summaryJson.find("\"best_trial\":") != std::string::npos);
   CHECK(summaryJson.find("\"trial_codelengths\":[") != std::string::npos);
   CHECK(summaryJson.find("\"trial_top_modules\":[") != std::string::npos);
@@ -219,7 +219,7 @@ TEST_CASE("Run reports write machine-readable JSON with no-file-output [fast][co
   CHECK(timingJson.find("\"version\":\"") != std::string::npos);
   CHECK(timingJson.find("\"openmp\":") != std::string::npos);
   CHECK(timingJson.find("\"threads_requested\":") != std::string::npos);
-  CHECK(timingJson.find("\"threads_used\":1") != std::string::npos);
+  CHECK(timingJson.find("\"threads_used\":1,") != std::string::npos);
   CHECK(timingJson.find("\"network\":{\"nodes\":") != std::string::npos);
   CHECK(timingJson.find("\"timing\":{") != std::string::npos);
   CHECK(timingJson.find("\"flow_calculation_s\":") != std::string::npos);
@@ -228,11 +228,11 @@ TEST_CASE("Run reports write machine-readable JSON with no-file-output [fast][co
   CHECK(timingJson.find("\"total_s\":") != std::string::npos);
   CHECK(timingJson.find("\"parse_input_s\"") == std::string::npos);
   CHECK(timingJson.find("\"trials\":[") != std::string::npos);
-  CHECK(timingJson.find("\"trial\":1") != std::string::npos);
-  CHECK(timingJson.find("\"trial\":2") != std::string::npos);
-  CHECK(timingJson.find("\"thread\":0") != std::string::npos);
-  CHECK(timingJson.find("\"seed\":7") != std::string::npos);
-  CHECK(timingJson.find("\"seed\":8") != std::string::npos);
+  CHECK(timingJson.find("\"trial\":1,") != std::string::npos);
+  CHECK(timingJson.find("\"trial\":2,") != std::string::npos);
+  CHECK(timingJson.find("\"thread\":0,") != std::string::npos);
+  CHECK(timingJson.find("\"seed\":7,") != std::string::npos);
+  CHECK(timingJson.find("\"seed\":8,") != std::string::npos);
   CHECK(timingJson.find("\"top_modules\":") != std::string::npos);
   CHECK(timingJson.find("\"memory\":{\"rss_peak_mb\":") != std::string::npos);
 
