@@ -656,6 +656,7 @@ TEST_CASE("Subnetwork reuse and dispose stay stable on the same parent module [f
     }
 
     std::vector<unsigned int> coveredIds;
+    coveredIds.reserve(modules.size());
     for (const auto& moduleEntry : modules) {
       coveredIds.push_back(moduleEntry.first);
     }
