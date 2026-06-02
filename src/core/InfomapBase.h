@@ -195,18 +195,24 @@ private:
 
   InfomapBase& getSubInfomap(InfoNode& node) const
   {
-    return node.setInfomap(getNewInfomapInstance())
-        .setIsMain(false)
-        .setSubLevel(m_subLevel + 1)
-        .setNonMainConfig(*this);
+    auto& subInfomap = node.setInfomap(getNewInfomapInstance())
+                           .setIsMain(false)
+                           .setSubLevel(m_subLevel + 1)
+                           .setNonMainConfig(*this);
+    // Carry the full-network properties down so entropy bias correction stays consistent
+    // across the hierarchy (this used to be a shared static).
+    subInfomap.m_optimizer->inheritNetworkPropertiesFrom(*m_optimizer);
+    return subInfomap;
   }
 
   InfomapBase& getSuperInfomap(InfoNode& node) const
   {
-    return node.setInfomap(getNewInfomapInstanceWithoutMemory())
-        .setIsMain(false)
-        .setSubLevel(m_subLevel + SUPER_LEVEL_ADDITION)
-        .setNonMainConfig(*this);
+    auto& superInfomap = node.setInfomap(getNewInfomapInstanceWithoutMemory())
+                             .setIsMain(false)
+                             .setSubLevel(m_subLevel + SUPER_LEVEL_ADDITION)
+                             .setNonMainConfig(*this);
+    superInfomap.m_optimizer->inheritNetworkPropertiesFrom(*m_optimizer);
+    return superInfomap;
   }
 
   /**

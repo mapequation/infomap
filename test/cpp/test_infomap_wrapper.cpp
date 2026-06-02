@@ -129,6 +129,17 @@ double runSingleTrialFixture(unsigned int seed)
   return im.codelength();
 }
 
+// Serial single-trial run whose flags (other than seed/num-trials) match runParallelTrialsFixture,
+// so parallel trial i must equal the serial run with seed 7+i element-wise for the same mode.
+double runSingleTrialFixtureWith(unsigned int seed, const std::string& extraFlags)
+{
+  InfomapWrapper im("--silent --seed " + std::to_string(seed) + " --num-trials 1 --no-file-output " + extraFlags);
+  im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+  im.run();
+  infomap::test::checkRunSanity(im);
+  return im.codelength();
+}
+
 TEST_CASE("Infomap partitions the unweighted two-triangle fixture into two modules [fast][core][lifecycle]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());
@@ -257,7 +268,7 @@ TEST_CASE("Parallel trials with one trial warn and run serially [fast][core][lif
   CHECK(capture.output.str().find("--parallel-trials requires --num-trials > 1") != std::string::npos);
 }
 
-TEST_CASE("Parallel trials with variable Markov time warn and run serially [fast][core][lifecycle]")
+TEST_CASE("Parallel trials run with variable Markov time without falling back [fast][core][lifecycle]")
 {
   LogCapture capture;
   InfomapWrapper im("--seed 7 --num-trials 2 --parallel-trials --variable-markov-time --no-file-output");
@@ -267,10 +278,10 @@ TEST_CASE("Parallel trials with variable Markov time warn and run serially [fast
 
   infomap::test::checkRunSanity(im);
   CHECK(im.codelengths().size() == 2);
-  CHECK(capture.output.str().find("--parallel-trials is not supported with --variable-markov-time") != std::string::npos);
+  CHECK(capture.output.str().find("is not supported with --variable-markov-time") == std::string::npos);
 }
 
-TEST_CASE("Parallel trials with entropy correction warn and run serially [fast][core][lifecycle]")
+TEST_CASE("Parallel trials run with entropy correction without falling back [fast][core][lifecycle]")
 {
   LogCapture capture;
   InfomapWrapper im("--seed 7 --num-trials 2 --parallel-trials --entropy-corrected --no-file-output");
@@ -280,7 +291,85 @@ TEST_CASE("Parallel trials with entropy correction warn and run serially [fast][
 
   infomap::test::checkRunSanity(im);
   CHECK(im.codelengths().size() == 2);
-  CHECK(capture.output.str().find("--parallel-trials is not supported with --entropy-corrected") != std::string::npos);
+  CHECK(capture.output.str().find("is not supported with --entropy-corrected") == std::string::npos);
+}
+
+TEST_CASE("Serial entropy correction keeps the whole-network normalization through recursion [fast][core][lifecycle]")
+{
+  // Hierarchical search spawns sub-Infomap instances; entropy bias correction must keep using
+  // the full network's total degree / node count (formerly a shared static, now propagated to
+  // sub instances). Pinning the absolute codelength guards against the per-instance default (1)
+  // leaking into sub-Infomaps, which the parallel-vs-serial equivalence checks cannot catch
+  // (both sides would regress together). A regression here yields ~3.8186 instead of ~3.7930.
+  InfomapWrapper im("--silent --seed 7 --num-trials 1 --entropy-corrected --no-file-output");
+  im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+
+  im.run();
+
+  infomap::test::checkRunSanity(im);
+  CHECK(im.codelength() == doctest::Approx(3.792986622));
+}
+
+TEST_CASE("Parallel trials with variable Markov time match serial trials [fast][core][lifecycle][openmp]")
+{
+#ifdef _OPENMP
+  // Each parallel trial i must equal the serial single-trial run with seed 7+i for the same mode.
+  // This pins both correctness (parallel == serial) and that serial VMT results are unchanged.
+  const auto codelengths = runParallelTrialsFixture("--variable-markov-time");
+  REQUIRE(codelengths.size() == 4);
+  for (unsigned int i = 0; i < codelengths.size(); ++i) {
+    CHECK(codelengths[i] == doctest::Approx(runSingleTrialFixtureWith(7 + i, "--variable-markov-time")));
+  }
+#endif
+}
+
+TEST_CASE("Parallel trials with entropy correction match serial trials [fast][core][lifecycle][openmp]")
+{
+#ifdef _OPENMP
+  const auto codelengths = runParallelTrialsFixture("--entropy-corrected");
+  REQUIRE(codelengths.size() == 4);
+  for (unsigned int i = 0; i < codelengths.size(); ++i) {
+    CHECK(codelengths[i] == doctest::Approx(runSingleTrialFixtureWith(7 + i, "--entropy-corrected")));
+  }
+#endif
+}
+
+TEST_CASE("Parallel trials with variable Markov time are invariant to worker count [fast][core][lifecycle][openmp]")
+{
+#ifdef _OPENMP
+  const int previousThreads = omp_get_max_threads();
+
+  omp_set_num_threads(1);
+  const auto oneWorker = runParallelTrialsFixture("--variable-markov-time");
+
+  omp_set_num_threads(4);
+  const auto manyWorkers = runParallelTrialsFixture("--variable-markov-time");
+
+  omp_set_num_threads(previousThreads);
+
+  REQUIRE(oneWorker.size() == 4);
+  REQUIRE(manyWorkers.size() == 4);
+  CHECK(oneWorker == manyWorkers);
+#endif
+}
+
+TEST_CASE("Parallel trials with entropy correction are invariant to worker count [fast][core][lifecycle][openmp]")
+{
+#ifdef _OPENMP
+  const int previousThreads = omp_get_max_threads();
+
+  omp_set_num_threads(1);
+  const auto oneWorker = runParallelTrialsFixture("--entropy-corrected");
+
+  omp_set_num_threads(4);
+  const auto manyWorkers = runParallelTrialsFixture("--entropy-corrected");
+
+  omp_set_num_threads(previousThreads);
+
+  REQUIRE(oneWorker.size() == 4);
+  REQUIRE(manyWorkers.size() == 4);
+  CHECK(oneWorker == manyWorkers);
+#endif
 }
 
 TEST_CASE("Parallel trials warn when inner parallelization is requested [fast][core][lifecycle][openmp]")

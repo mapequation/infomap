@@ -398,16 +398,6 @@ private:
       return false;
     }
 
-    if (m_infomap.variableMarkovTime) {
-      Log::important() << "  -> Warning: --parallel-trials is not supported with --variable-markov-time; running trials serially.\n";
-      return false;
-    }
-
-    if (m_infomap.entropyBiasCorrection) {
-      Log::important() << "  -> Warning: --parallel-trials is not supported with --entropy-corrected; running trials serially.\n";
-      return false;
-    }
-
 #ifndef _OPENMP
     Log::important() << "  -> Warning: --parallel-trials requires an OpenMP build; running trials serially.\n";
     return false;
@@ -766,6 +756,11 @@ InfomapBase& InfomapBase::initNetwork(Network& network)
   generateSubNetwork(network);
 
   initOptimizer();
+
+  // Per-instance network properties for entropy bias correction must be set after the
+  // optimizer/objective exists and before init() reads them via calcCodelength().
+  if (entropyBiasCorrection)
+    m_optimizer->setNetworkProperties(network);
 
   init();
   return *this;
@@ -1248,9 +1243,6 @@ void InfomapBase::generateSubNetwork(Network& network)
   if (!this->regularized) {
     m_calculateEnterExitFlow = true;
   }
-  if (entropyBiasCorrection)
-    BiasedMapEquation::setNetworkProperties(network);
-
   if (std::abs(sumNodeFlow - 1.0) > 1e-10)
     Log() << "Warning, total flow on nodes differs from 1.0 by " << sumNodeFlow - 1.0 << ".\n";
 
@@ -1337,7 +1329,11 @@ void InfomapBase::generateSubNetwork(Network& network)
         }
         double localMarkovTimeScale = maxScale / std::max(minLocalScale, localScale);
         e->data.flow *= localMarkovTimeScale;
-        network.nodeLinkMap()[e->source->stateId][e->target->stateId].flow = e->data.flow;
+        // Note: deliberately do NOT write the scaled flow back into the shared StateNetwork
+        // (network.nodeLinkMap()). The optimizer and output use only the per-instance InfoEdge
+        // flow (e->data.flow), so the write-back was a non-idempotent side effect that made
+        // --parallel-trials unsafe (workers share one Network). Library getLinks(flow=True) /
+        // getLinkResults() now return the input link flow rather than the VMT-scaled flow.
       }
     }
   }

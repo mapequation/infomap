@@ -15,13 +15,9 @@
 #include <vector>
 #include <utility>
 #include <cstdlib>
-#include <mutex>
 #include "StateNetwork.h"
 
 namespace infomap {
-
-double BiasedMapEquation::s_totalDegree = 1;
-unsigned int BiasedMapEquation::s_numNodes = 0;
 
 void BiasedMapEquation::setNetworkProperties(const StateNetwork& network)
 {
@@ -30,12 +26,8 @@ void BiasedMapEquation::setNetworkProperties(const StateNetwork& network)
   if (totalDegree < network.sumDegree()) {
     totalDegree = network.sumDegree();
   }
-  const auto numNodes = network.numNodes();
-
-  static std::mutex networkPropertiesMutex;
-  std::lock_guard<std::mutex> lock(networkPropertiesMutex);
-  s_totalDegree = totalDegree;
-  s_numNodes = numNodes;
+  m_totalDegree = totalDegree;
+  m_numNodes = network.numNodes();
 }
 
 double BiasedMapEquation::getIndexCodelength() const
@@ -117,17 +109,17 @@ double BiasedMapEquation::calcNumModuleCost(unsigned int numModules) const
 
 double BiasedMapEquation::calcIndexEntropyBiasCorrection(unsigned int numModules) const
 {
-  return useEntropyBiasCorrection ? entropyBiasCorrectionMultiplier * (numModules - 1) / (2 * s_totalDegree) : 0;
+  return useEntropyBiasCorrection ? entropyBiasCorrectionMultiplier * (numModules - 1) / (2 * m_totalDegree) : 0;
 }
 
 double BiasedMapEquation::calcModuleEntropyBiasCorrection() const
 {
-  return useEntropyBiasCorrection ? entropyBiasCorrectionMultiplier * s_numNodes / (2 * s_totalDegree) : 0;
+  return useEntropyBiasCorrection ? entropyBiasCorrectionMultiplier * m_numNodes / (2 * m_totalDegree) : 0;
 }
 
 double BiasedMapEquation::calcEntropyBiasCorrection(unsigned int numModules) const
 {
-  return useEntropyBiasCorrection ? entropyBiasCorrectionMultiplier * (numModules - 1 + s_numNodes) / (2 * s_totalDegree) : 0;
+  return useEntropyBiasCorrection ? entropyBiasCorrectionMultiplier * (numModules - 1 + m_numNodes) / (2 * m_totalDegree) : 0;
 }
 
 void BiasedMapEquation::calculateCodelength(std::vector<InfoNode*>& nodes)
@@ -157,7 +149,7 @@ double BiasedMapEquation::calcCodelengthOnModuleOfModules(const InfoNode& parent
   if (!useEntropyBiasCorrection)
     return L;
 
-  return L + entropyBiasCorrectionMultiplier * parent.childDegree() / (2 * s_totalDegree);
+  return L + entropyBiasCorrectionMultiplier * parent.childDegree() / (2 * m_totalDegree);
 }
 
 double BiasedMapEquation::calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) const
@@ -166,7 +158,7 @@ double BiasedMapEquation::calcCodelengthOnModuleOfLeafNodes(const InfoNode& pare
   if (!useEntropyBiasCorrection)
     return L;
 
-  return L + entropyBiasCorrectionMultiplier * parent.childDegree() / (2 * s_totalDegree);
+  return L + entropyBiasCorrectionMultiplier * parent.childDegree() / (2 * m_totalDegree);
 }
 
 int BiasedMapEquation::getDeltaNumModulesIfMoving(unsigned int oldModule,
