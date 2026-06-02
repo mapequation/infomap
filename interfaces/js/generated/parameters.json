@@ -614,16 +614,6 @@
     "default": false
   },
   {
-    "long": "--inner-parallelization",
-    "short": "",
-    "description": "Use batched parallel node moves for coarse optimization; usually beneficial only with a relaxed core-loop-codelength-threshold and low tune-iteration-limit, and may produce a different partition than serial optimization.",
-    "group": "Accuracy",
-    "required": false,
-    "advanced": true,
-    "incremental": false,
-    "default": false
-  },
-  {
     "long": "--prefer-modular-solution",
     "short": "",
     "description": "Prefer a modular solution even when one module gives a lower codelength.",
