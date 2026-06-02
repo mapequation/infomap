@@ -249,8 +249,10 @@ class InfomapOptions:
         Parallelize the innermost loop for speed, with a possible accuracy tradeoff.
     parallel_trials : bool, optional
         Run independent trials in parallel with OpenMP. --num-trials remains the total
-        number of trials; workers are chosen automatically from OpenMP threads. Nested
-        OpenMP and --inner-parallelization are disabled inside workers.
+        number of trials; the number of parallel workers follows the OpenMP thread count
+        (e.g. OMP_NUM_THREADS), clamped to --num-trials. Peak memory scales with the
+        worker count. Nested OpenMP and --inner-parallelization are disabled inside
+        workers.
     prefer_modular_solution : bool, optional
         Prefer a modular solution even when one module gives a lower codelength.
     num_random_moves : int, optional

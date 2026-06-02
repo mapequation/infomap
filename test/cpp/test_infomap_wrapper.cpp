@@ -10,8 +10,13 @@
 #include <iostream>
 #include <set>
 #include <sstream>
+#include <string>
 #include <tuple>
 #include <vector>
+
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
 namespace {
 
@@ -109,6 +114,15 @@ std::vector<double> runParallelTrialsFixture(const std::string& extraFlags = "")
   return im.codelengths();
 }
 
+double runSingleTrialFixture(unsigned int seed)
+{
+  InfomapWrapper im("--silent --seed " + std::to_string(seed) + " --num-trials 1 --two-level --no-file-output");
+  im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+  im.run();
+  infomap::test::checkRunSanity(im);
+  return im.codelength();
+}
+
 TEST_CASE("Infomap partitions the unweighted two-triangle fixture into two modules [fast][core][lifecycle]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());
@@ -184,6 +198,44 @@ TEST_CASE("Parallel trials are deterministic for the same seed [fast][core][life
   REQUIRE(first.size() == 4);
   REQUIRE(second.size() == 4);
   CHECK(first == second);
+}
+
+TEST_CASE("Parallel trials are invariant to worker count [fast][core][lifecycle][openmp]")
+{
+#ifdef _OPENMP
+  // Worker count is driven by OMP_NUM_THREADS; the per-trial codelength vector must be
+  // identical regardless of how many workers run the trials (trial i always uses seed+i).
+  const int previousThreads = omp_get_max_threads();
+
+  omp_set_num_threads(1);
+  const auto oneWorker = runParallelTrialsFixture();
+
+  omp_set_num_threads(4);
+  const auto manyWorkers = runParallelTrialsFixture();
+
+  omp_set_num_threads(previousThreads);
+
+  REQUIRE(oneWorker.size() == 4);
+  REQUIRE(manyWorkers.size() == 4);
+  CHECK(oneWorker == manyWorkers);
+#endif
+}
+
+TEST_CASE("Parallel trial workers reset between strided trials [fast][core][lifecycle][openmp]")
+{
+#ifdef _OPENMP
+  InfomapWrapper im("--silent --seed 7 --num-trials 8 --parallel-trials --two-level --no-file-output");
+  im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+
+  im.run();
+
+  infomap::test::checkRunSanity(im);
+  const auto& codelengths = im.codelengths();
+  REQUIRE(codelengths.size() == 8);
+  for (unsigned int i = 0; i < codelengths.size(); ++i) {
+    CHECK(codelengths[i] == doctest::Approx(runSingleTrialFixture(7 + i)));
+  }
+#endif
 }
 
 TEST_CASE("Parallel trials with one trial warn and run serially [fast][core][lifecycle]")

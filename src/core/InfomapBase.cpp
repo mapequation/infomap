@@ -339,14 +339,14 @@ private:
           }
         } catch (const std::exception& e) {
           std::lock_guard<std::mutex> lock(errorMutex);
-          if (!hasError) {
+          if (!hasError || trialIndex < firstErrorTrial) {
             hasError = true;
             firstErrorTrial = trialIndex;
             firstError = e.what();
           }
         } catch (...) {
           std::lock_guard<std::mutex> lock(errorMutex);
-          if (!hasError) {
+          if (!hasError || trialIndex < firstErrorTrial) {
             hasError = true;
             firstErrorTrial = trialIndex;
             firstError = "unknown error";
@@ -367,8 +367,12 @@ private:
   unsigned int parallelTrialWorkers() const
   {
 #ifdef _OPENMP
+    // Worker count is driven directly by the OpenMP thread count (OMP_NUM_THREADS),
+    // giving HPC users explicit control with no hidden heuristic. Clamp to numTrials
+    // so we never spawn idle workers. Peak memory scales with the worker count (each
+    // worker holds its own leaf network) — reduce OMP_NUM_THREADS if memory-constrained.
     const unsigned int maxOpenMpThreads = static_cast<unsigned int>(std::max(1, omp_get_max_threads()));
-    return std::max(1u, std::min(m_numTrials, std::max(1u, maxOpenMpThreads / 2)));
+    return std::max(1u, std::min(m_numTrials, maxOpenMpThreads));
 #else
     return 1;
 #endif
@@ -411,7 +415,7 @@ private:
     if (m_infomap.innerParallelization) {
       Log::important() << "  -> Warning: --parallel-trials ignores --inner-parallelization inside trial workers.\n";
     }
-    Log() << "  -> Running " << m_numTrials << " trials in parallel with up to " << omp_get_max_threads() << " OpenMP threads.\n";
+    Log() << "  -> Running " << m_numTrials << " trials in parallel with " << parallelTrialWorkers() << " workers from " << omp_get_max_threads() << " OpenMP threads (peak memory scales with workers; inner parallelization off).\n";
     return true;
 #endif
   }
