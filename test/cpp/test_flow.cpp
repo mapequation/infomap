@@ -320,8 +320,8 @@ void checkInnerParallelPartitionCodelength(const std::string& extraFlags, const 
   check.run();
   std::remove(clusterPath.c_str());
 
-  CHECK(check.codelength() == doctest::Approx(result.codelength));
-  CHECK(check.getIndexCodelength() == doctest::Approx(result.indexCodelength));
+  infomap::test::checkApproxCodelength(check.codelength(), result.codelength, 1e-9);
+  infomap::test::checkApproxCodelength(check.getIndexCodelength(), result.indexCodelength, 1e-9);
 }
 
 TEST_CASE("Recorded teleportation stays stable across trial counts for the directed fixture [fast][core][flow]")

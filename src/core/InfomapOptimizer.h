@@ -522,6 +522,10 @@ INFOMAP_HOT unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestMod
   if (numRandomMoves > 0) {
     for (unsigned int i = 0; i < numNodes; ++i) {
       InfoNode& current = *network[nodeEnumeration[i]];
+      if (!current.dirty)
+        continue;
+      if (m_moduleMembers[current.index] > 1 && m_infomap->isFirstLoop() && m_infomap->tuneIterationLimit != 1)
+        continue;
       if (current.degree() > m_infomap->maxDegreeForRandomMoves)
         continue;
       auto& targets = randomMoveTargets[nodeEnumeration[i]];
