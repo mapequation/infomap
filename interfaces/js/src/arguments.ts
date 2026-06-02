@@ -37,6 +37,9 @@ export type Arguments = Partial<{
   output: OutputFormats | OutputFormats[];
   hideBipartiteNodes: boolean;
   printAllTrials: boolean;
+  timingJson: string;
+  summaryJson: string;
+  memoryReport: boolean;
   verbose: 1 | 2 | 3;
   silent: boolean;
   pretty: boolean;
@@ -136,6 +139,12 @@ export default function argumentsToString(args: Arguments) {
   if (args.hideBipartiteNodes) result += " --hide-bipartite-nodes";
 
   if (args.printAllTrials) result += " --print-all-trials";
+
+  if (args.timingJson != null) result += " --timing-json " + args.timingJson;
+
+  if (args.summaryJson != null) result += " --summary-json " + args.summaryJson;
+
+  if (args.memoryReport) result += " --memory-report";
 
   if (args.verbose) result += " -" + "v".repeat(args.verbose);
 

@@ -180,6 +180,69 @@ TEST_CASE("Config parses parallel trials flag [fast][core][config][cli]")
   CHECK_FALSE(parameter->requireArgument);
 }
 
+TEST_CASE("Config parses run report flags [fast][core][config][cli]")
+{
+  const Config config("input.net --silent --no-file-output --timing-json timing.json --summary-json summary.json --memory-report", true);
+
+  CHECK(config.timingJsonPath == "timing.json");
+  CHECK(config.summaryJsonPath == "summary.json");
+  CHECK(config.memoryReport);
+
+  const auto* timingJson = findParameter("timing-json");
+  REQUIRE(timingJson != nullptr);
+  CHECK(timingJson->group == "Output");
+  CHECK(timingJson->isAdvanced);
+  CHECK(timingJson->requireArgument);
+
+  const auto* summaryJson = findParameter("summary-json");
+  REQUIRE(summaryJson != nullptr);
+  CHECK(summaryJson->group == "Output");
+  CHECK(summaryJson->isAdvanced);
+  CHECK(summaryJson->requireArgument);
+
+  const auto* memoryReport = findParameter("memory-report");
+  REQUIRE(memoryReport != nullptr);
+  CHECK(memoryReport->group == "Output");
+  CHECK(memoryReport->isAdvanced);
+  CHECK_FALSE(memoryReport->requireArgument);
+}
+
+TEST_CASE("Config rejects two stdout run report streams [fast][core][config][cli]")
+{
+  CHECK_THROWS_WITH_AS(
+      Config("input.net --silent --no-file-output --timing-json - --summary-json -", true),
+      "--timing-json - and --summary-json - cannot both write to stdout",
+      std::runtime_error);
+}
+
+TEST_CASE("Config rejects memory report without timing JSON [fast][core][config][cli]")
+{
+  CHECK_THROWS_WITH_AS(
+      Config("input.net --silent --no-file-output --memory-report", true),
+      "--memory-report requires --timing-json",
+      std::runtime_error);
+
+  CHECK_THROWS_WITH_AS(
+      Config("input.net --silent --no-file-output --summary-json summary.json --memory-report", true),
+      "--memory-report requires --timing-json",
+      std::runtime_error);
+}
+
+TEST_CASE("Config requires silent mode for stdout run reports [fast][core][config][cli]")
+{
+  CHECK_THROWS_WITH_AS(
+      Config("input.net --no-file-output --timing-json -", true),
+      "--timing-json - requires --silent",
+      std::runtime_error);
+  CHECK_THROWS_WITH_AS(
+      Config("input.net --no-file-output --summary-json -", true),
+      "--summary-json - requires --silent",
+      std::runtime_error);
+
+  CHECK_NOTHROW(Config("input.net --silent --no-file-output --timing-json -", true));
+  CHECK_NOTHROW(Config("input.net --silent --no-file-output --summary-json -", true));
+}
+
 TEST_CASE("Config accepts zero sentinel limits [fast][core][config][cli]")
 {
   const Config config("input.net --silent --no-file-output --core-level-limit 0 --tune-iteration-limit 0", true);

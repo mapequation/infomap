@@ -115,6 +115,22 @@ namespace {
     }
   }
 
+  void validateRunReportOutput(const Config& config)
+  {
+    if (config.memoryReport && config.timingJsonPath.empty()) {
+      throw std::runtime_error("--memory-report requires --timing-json");
+    }
+    if (config.timingJsonPath == "-" && config.summaryJsonPath == "-") {
+      throw std::runtime_error("--timing-json - and --summary-json - cannot both write to stdout");
+    }
+    if (config.timingJsonPath == "-" && !config.silent) {
+      throw std::runtime_error("--timing-json - requires --silent");
+    }
+    if (config.summaryJsonPath == "-" && !config.silent) {
+      throw std::runtime_error("--summary-json - requires --silent");
+    }
+  }
+
   void normalizeOutputDirectory(Config& config)
   {
     if (!config.haveOutput() || config.outDirectory.empty())
@@ -265,6 +281,7 @@ void Config::adaptDefaults()
   applyLibraryOutputDefaults(*this);
   validateRequiredCliOutput(*this);
   applyOptionInteractions(*this);
+  validateRunReportOutput(*this);
   normalizeOutputDirectory(*this);
   applyOutputNameDefault(*this);
   applyRuntimeOutputInteractions(*this);
