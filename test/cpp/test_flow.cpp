@@ -471,6 +471,49 @@ TEST_CASE("Regularized multilayer matchable state-id flow matches analytic prior
 
   checkRegularizedMultilayerFlow(im, analyticRegularizedMultilayerFlow(intraLinks));
 }
+
+TEST_CASE("Inner parallelization with regularized multilayer input falls back to stable serial optimization [fast][core][flow][openmp]")
+{
+#ifdef _OPENMP
+  omp_set_num_threads(8);
+  CHECK(omp_get_max_threads() > 1);
+#endif
+
+  const std::vector<MultilayerIntraLink> intraLinks = {
+      { 1, 1, 2, 2.0 },
+      { 1, 2, 1, 1.0 },
+      { 1, 1, 3, 1.0 },
+      { 1, 3, 1, 1.0 },
+      { 2, 1, 2, 1.0 },
+      { 2, 2, 3, 3.0 },
+      { 2, 3, 1, 1.0 },
+  };
+
+  auto runRegularizedMultilayer = [&intraLinks](const std::string& extraFlags) {
+    InfomapWrapper im(infomap::test::defaultFlags("--directed --regularized --two-level " + extraFlags));
+    addMultilayerIntraLinks(im, intraLinks);
+
+    im.run();
+
+    infomap::test::checkRunSanity(im);
+    FlowRunResult result;
+    result.modules = im.getModules(1, true);
+    result.partition = infomap::test::canonicalPartition(result.modules);
+    result.codelength = im.codelength();
+    result.indexCodelength = im.getIndexCodelength();
+    result.numTopModules = im.numTopModules();
+    return result;
+  };
+
+  const auto serial = runRegularizedMultilayer("");
+  const auto requestedInner = runRegularizedMultilayer("--inner-parallelization");
+
+  CHECK(requestedInner.modules == serial.modules);
+  CHECK(requestedInner.partition == serial.partition);
+  CHECK(requestedInner.numTopModules == serial.numTopModules);
+  infomap::test::checkApproxCodelength(requestedInner.codelength, serial.codelength, 1e-12);
+  infomap::test::checkApproxCodelength(requestedInner.indexCodelength, serial.indexCodelength, 1e-12);
+}
 #else
 TEST_CASE("Regularized multilayer flow requires compile-time feature [fast][core][flow]")
 {

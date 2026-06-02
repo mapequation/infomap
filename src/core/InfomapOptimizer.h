@@ -174,6 +174,17 @@ inline bool InfomapOptimizer<MemMapEquation>::shouldUseInnerParallelization() co
   return false;
 }
 
+#if INFOMAP_FEATURE_REGULARIZED_MULTILAYER
+template <>
+inline bool InfomapOptimizer<RegularizedMultilayerMapEquation>::shouldUseInnerParallelization() const
+{
+  // RegularizedMultilayerMapEquation extends the memory objective with layer
+  // teleportation state. Keep it on the stable serial path until those updates
+  // can be batched with module-flow and physical-node updates.
+  return false;
+}
+#endif
+
 template <typename Objective>
 inline bool InfomapOptimizer<Objective>::shouldUseInnerParallelization() const
 {
