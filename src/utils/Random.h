@@ -11,6 +11,7 @@
 #define RANDOM_H_
 
 #include <cstdint>
+#include <numeric>
 #include <random>
 #include <utility>
 #include <vector>
@@ -70,8 +71,7 @@ public:
   void getRandomizedIndexVector(std::vector<unsigned int>& randomOrder)
   {
     unsigned int size = randomOrder.size();
-    for (unsigned int i = 0; i < size; ++i)
-      randomOrder[i] = i;
+    std::iota(randomOrder.begin(), randomOrder.end(), 0u);
     for (unsigned int i = 0; i < size; ++i)
       std::swap(randomOrder[i], randomOrder[i + randInt(0, size - i - 1)]);
   }
