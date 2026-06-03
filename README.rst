@@ -20,8 +20,8 @@ For contributing, security reporting, and maintainer workflows, see
    :target: https://github.com/mapequation/infomap/actions/workflows/ci.yml
    :alt: CI
 
-.. _Map equation: https://www.mapequation.org/publications.html#Rosvall-Axelsson-Bergstrom-2009-Map-equation
-.. _`mapequation.org/infomap/`: https://www.mapequation.org/infomap/
+.. _Map equation: https://www.mapequation.org/publications.html#Rosvall-Axelsson-Bergstrom-2009-Map-equation?utm_source=infomap&utm_medium=readme&utm_campaign=infomap
+.. _`mapequation.org/infomap/`: https://www.mapequation.org/infomap/?utm_source=infomap&utm_medium=readme&utm_campaign=infomap
 .. _`CHANGELOG.md`: https://github.com/mapequation/infomap/blob/master/CHANGELOG.md
 .. _`CONTRIBUTING.md`: https://github.com/mapequation/infomap/blob/master/CONTRIBUTING.md
 .. _`SECURITY.md`: https://github.com/mapequation/infomap/blob/master/SECURITY.md
@@ -74,7 +74,7 @@ Quick start with Python:
 
     print(communities)
 
-For Jupyter, start with the flagship
+For Jupyter, start with the
 `quickstart notebook <https://github.com/mapequation/infomap/blob/master/examples/notebooks/quickstart.ipynb>`_.
 It shows the notebook-native Infomap result summary, dataframe inspection, a
 copyable static network partition helper, and export paths for further
