@@ -190,6 +190,55 @@ TEST_CASE("Multi-trial run reports the best trial codelength [fast][core][lifecy
   CHECK(im.codelength() == doctest::Approx(*bestIt));
 }
 
+TEST_CASE("Run reports write machine-readable JSON with no-file-output [fast][core][lifecycle][output]")
+{
+  const std::vector<std::string> paths = {
+    "run_report_timing.json",
+    "run_report_summary.json",
+  };
+  removeFiles(paths);
+
+  InfomapWrapper im("--silent --seed 7 --num-trials 2 --no-file-output --memory-report --timing-json " + paths[0] + " --summary-json " + paths[1]);
+  infomap::test::addEdgeFixtureLinks(im, "graphs/twotriangles_unweighted.edges");
+
+  im.run();
+
+  infomap::test::checkRunSanity(im);
+  const auto timingJson = infomap::test::readTextFile(paths[0]);
+  const auto summaryJson = infomap::test::readTextFile(paths[1]);
+
+  CHECK(summaryJson.find("\"version\":\"") != std::string::npos);
+  CHECK(summaryJson.find("\"codelength\":") != std::string::npos);
+  CHECK(summaryJson.find("\"top_modules\":") != std::string::npos);
+  CHECK(summaryJson.find("\"levels\":") != std::string::npos);
+  CHECK(summaryJson.find("\"trials\":2,") != std::string::npos);
+  CHECK(summaryJson.find("\"best_trial\":") != std::string::npos);
+  CHECK(summaryJson.find("\"trial_codelengths\":[") != std::string::npos);
+  CHECK(summaryJson.find("\"trial_top_modules\":[") != std::string::npos);
+
+  CHECK(timingJson.find("\"version\":\"") != std::string::npos);
+  CHECK(timingJson.find("\"openmp\":") != std::string::npos);
+  CHECK(timingJson.find("\"threads_requested\":") != std::string::npos);
+  CHECK(timingJson.find("\"threads_used\":1,") != std::string::npos);
+  CHECK(timingJson.find("\"network\":{\"nodes\":") != std::string::npos);
+  CHECK(timingJson.find("\"timing\":{") != std::string::npos);
+  CHECK(timingJson.find("\"flow_calculation_s\":") != std::string::npos);
+  CHECK(timingJson.find("\"init_network_s\":") != std::string::npos);
+  CHECK(timingJson.find("\"trial_optimize_s\":") != std::string::npos);
+  CHECK(timingJson.find("\"total_s\":") != std::string::npos);
+  CHECK(timingJson.find("\"parse_input_s\"") == std::string::npos);
+  CHECK(timingJson.find("\"trials\":[") != std::string::npos);
+  CHECK(timingJson.find("\"trial\":1,") != std::string::npos);
+  CHECK(timingJson.find("\"trial\":2,") != std::string::npos);
+  CHECK(timingJson.find("\"thread\":0,") != std::string::npos);
+  CHECK(timingJson.find("\"seed\":7,") != std::string::npos);
+  CHECK(timingJson.find("\"seed\":8,") != std::string::npos);
+  CHECK(timingJson.find("\"top_modules\":") != std::string::npos);
+  CHECK(timingJson.find("\"memory\":{\"rss_peak_mb\":") != std::string::npos);
+
+  removeFiles(paths);
+}
+
 TEST_CASE("Parallel trials report the best trial codelength [fast][core][lifecycle][openmp]")
 {
   InfomapWrapper im("--silent --seed 7 --num-trials 4 --parallel-trials --no-file-output");
@@ -607,6 +656,7 @@ TEST_CASE("Subnetwork reuse and dispose stay stable on the same parent module [f
     }
 
     std::vector<unsigned int> coveredIds;
+    coveredIds.reserve(modules.size());
     for (const auto& moduleEntry : modules) {
       coveredIds.push_back(moduleEntry.first);
     }

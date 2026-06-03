@@ -31,6 +31,9 @@ _OUTPUT_OPTION_SPECS = (
     ("value", "clu_level", "--clu-level", lambda value: value is not None),
     ("flag", "hide_bipartite_nodes", "--hide-bipartite-nodes", None),
     ("flag", "print_all_trials", "--print-all-trials", None),
+    ("value", "timing_json", "--timing-json", lambda value: value is not None),
+    ("value", "summary_json", "--summary-json", lambda value: value is not None),
+    ("flag", "memory_report", "--memory-report", None),
     ("flag", "silent", "--silent", None),
     ("flag", "pretty", "--pretty", None),
 )
@@ -160,6 +163,13 @@ class InfomapOptions:
     print_all_trials : bool, optional
         Write each trial to separate output files. Has effect only when --num-trials is
         greater than 1.
+    timing_json : str, optional
+        Write machine-readable run timing JSON to this path. Use - for stdout.
+    summary_json : str, optional
+        Write machine-readable final run summary JSON to this path. Use - for stdout.
+    memory_report : bool, optional
+        Include peak RSS and best-effort bytes per node/link estimates in timing JSON.
+        Requires --timing-json.
     verbosity_level : int, optional
         Verbosity level on the console. 1 keeps the default output level, 2 renders -vv
         and so on.
@@ -291,6 +301,9 @@ class InfomapOptions:
     output: list[str] | tuple[str, ...] | None = None
     hide_bipartite_nodes: bool = False
     print_all_trials: bool = False
+    timing_json: str | None = None
+    summary_json: str | None = None
+    memory_report: bool = False
     verbosity_level: int = 1
     silent: bool = False
     pretty: bool = False
@@ -404,6 +417,9 @@ def _construct_args(
     output=None,
     hide_bipartite_nodes=False,
     print_all_trials=False,
+    timing_json=None,
+    summary_json=None,
+    memory_report=False,
     verbosity_level=1,
     silent=False,
     pretty=False,

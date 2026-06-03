@@ -18,11 +18,14 @@
 #include "RegularizedMultilayerMapEquation.h"
 #endif
 #include "InfomapOptimizer.h"
+#include "../io/RunReport.h"
 #include "../io/SafeFile.h"
 #include "../io/OutputPlan.h"
 #include "../utils/FileURI.h"
 #include "../utils/FlowCalculator.h"
+#include "../utils/MemoryUsage.h"
 #include "../utils/PrettyOutput.h"
+#include "../utils/TimingRegistry.h"
 
 #include <stdexcept>
 #include <string>
@@ -141,22 +144,42 @@ public:
     double bestHierarchicalCodelength = std::numeric_limits<double>::max();
     NodePaths bestTree;
     unsigned int bestTrialIndex = 0;
+    unsigned int threadsUsed = 1;
     bool bestTreeNeedsRestore = false;
   };
 
-  RunSession(InfomapBase& infomap, Network& network) : m_infomap(infomap), m_network(network) {}
+  RunSession(InfomapBase& infomap, Network& network, TimingRegistry& timing) : m_infomap(infomap), m_network(network), m_timing(timing) {}
 
   Result run()
   {
     validateNetwork();
-    writeOutputArtifacts(m_infomap, m_network, OutputPhase::BeforeFlow);
-    configureNetworkMode();
+    {
+      auto timer = m_timing.scope("pre_run_output_s");
+      writeOutputArtifacts(m_infomap, m_network, OutputPhase::BeforeFlow);
+    }
+    {
+      auto timer = m_timing.scope("configure_network_s");
+      configureNetworkMode();
+    }
     calculateFlowAndInitNetwork();
-    writeOutputArtifacts(m_infomap, m_network, OutputPhase::AfterFlow);
+    {
+      auto timer = m_timing.scope("post_flow_output_s");
+      writeOutputArtifacts(m_infomap, m_network, OutputPhase::AfterFlow);
+    }
+    m_reportNetwork.nodes = m_network.numNodes();
+    m_reportNetwork.links = m_network.numLinks();
+    m_reportNetwork.directed = !m_infomap.isUndirectedFlow();
     m_runParallelTrials = selectParallelTrialMode();
+    m_threadsUsed = m_runParallelTrials ? parallelTrialWorkers() : 1;
     releaseInputLinksIfCli();
     logRunPartitionStart();
-    return runTrials();
+    Result result;
+    {
+      auto timer = m_timing.scope("trial_optimize_s");
+      result = runTrials();
+    }
+    result.threadsUsed = m_threadsUsed;
+    return result;
   }
 
   void printSummary(const Result& result)
@@ -164,6 +187,12 @@ public:
     if (!m_infomap.isMainInfomap()) {
       return;
     }
+
+    if (m_numTrials > 1) {
+      restoreBestResult(result);
+    }
+
+    auto summaryTimer = m_timing.scope("summary_s");
 
     if (m_infomap.prettyOutput)
       PrettyOutput(true).section(io::Str() << "Summary after " << m_numTrials << (m_numTrials > 1 ? " trials" : " trial"));
@@ -174,8 +203,6 @@ public:
     std::string codelengthRange;
     std::string topModulesRange;
     if (m_numTrials > 1) {
-      restoreBestResult(result);
-
       Log() << std::fixed << std::setprecision(9);
       if (m_infomap.prettyOutput)
         Log::pretty() << std::fixed << std::setprecision(9);
@@ -252,6 +279,7 @@ private:
     result.bestTree = NodePaths(m_infomap.numLeafNodes());
     m_infomap.m_codelengths.clear();
     m_infomap.m_numTopModules.clear();
+    m_timing.resetTrials(m_numTrials);
 
     if (m_runParallelTrials) {
       return runTrialsInParallel();
@@ -300,6 +328,11 @@ private:
           const auto trialSeed = m_infomap.seedToRandomNumberGenerator + trialIndex;
           worker.seedToRandomNumberGenerator = trialSeed;
           worker.reseed(trialSeed);
+          int threadNumber = 0;
+#ifdef _OPENMP
+          threadNumber = omp_get_thread_num();
+#endif
+          Stopwatch trialTimer(true);
 
           NodePaths trialTree;
           unsigned int trialNumLevels = 0;
@@ -315,15 +348,18 @@ private:
             trialTree.emplace_back(it->stateId, it.path());
           }
 
-          if (worker.printAllTrials && m_numTrials > 1) {
-            std::lock_guard<std::mutex> lock(outputMutex);
-            worker.writeResult(static_cast<int>(trialIndex + 1));
-          }
-
           const auto trialCodelength = worker.m_hierarchicalCodelength;
           const auto trialTopModules = worker.numTopModules();
+          const auto trialTime = trialTimer.getElapsedTimeInSec();
           codelengths[trialIndex] = trialCodelength;
           numTopModules[trialIndex] = trialTopModules;
+          m_timing.recordTrial(trialIndex, threadNumber, trialSeed, trialTime, trialCodelength, trialTopModules);
+
+          if (worker.printAllTrials && m_numTrials > 1) {
+            std::lock_guard<std::mutex> lock(outputMutex);
+            auto outputTimer = m_timing.scope("output_s");
+            worker.writeResult(static_cast<int>(trialIndex + 1));
+          }
 
           std::lock_guard<std::mutex> lock(bestResultMutex);
           const auto bestIndexMissing = result.bestTrialIndex >= m_numTrials;
@@ -382,7 +418,11 @@ private:
   {
     if (m_numTrials > 1 && (result.bestTreeNeedsRestore || result.bestTrialIndex < m_numTrials - 1)) {
       // Restore Infomap tree to best solution.
-      m_infomap.initTree(result.bestTree);
+      {
+        auto timer = m_timing.scope("best_restore_s");
+        m_infomap.initTree(result.bestTree);
+      }
+      auto outputTimer = m_timing.scope("output_s");
       m_infomap.writeResult(); // Overwrite result to get total elapsed time in output file header.
     }
   }
@@ -457,13 +497,19 @@ private:
 
   void calculateFlowAndInitNetwork()
   {
-    calculateFlow(m_network, m_infomap);
+    {
+      auto timer = m_timing.scope("flow_calculation_s");
+      calculateFlow(m_network, m_infomap);
+    }
 
     if (m_network.isBipartite()) {
       m_infomap.bipartite = true;
     }
 
-    m_infomap.initNetwork(m_network);
+    {
+      auto timer = m_timing.scope("init_network_s");
+      m_infomap.initNetwork(m_network);
+    }
 
     if (m_infomap.numLeafNodes() == 0)
       throw std::domain_error("No nodes to partition");
@@ -559,8 +605,10 @@ private:
     }
     m_infomap.m_codelengths.push_back(m_infomap.m_hierarchicalCodelength);
     m_infomap.m_numTopModules.push_back(m_infomap.numTopModules());
+    m_timing.recordTrial(trialIndex, 0, m_infomap.seedToRandomNumberGenerator + trialIndex, timer.getElapsedTimeInSec(), m_infomap.m_hierarchicalCodelength, m_infomap.numTopModules());
 
     if (m_infomap.printAllTrials && m_numTrials > 1) {
+      auto outputTimer = m_timing.scope("output_s");
       m_infomap.writeResult(static_cast<int>(trialIndex + 1));
     }
 
@@ -577,6 +625,7 @@ private:
     result.bestHierarchicalCodelength = m_infomap.m_hierarchicalCodelength;
     result.bestTrialIndex = trialIndex;
     m_infomap.root().sortChildrenOnFlow();
+    auto outputTimer = m_timing.scope("output_s");
     m_infomap.writeResult();
     if (m_numTrials > 1) {
       result.bestTree.clear();
@@ -586,10 +635,52 @@ private:
     }
   }
 
+public:
+  void writeRunReports(const Result& result)
+  {
+    if (!m_infomap.summaryJsonPath.empty()) {
+      RunSummaryReport report;
+      report.version = INFOMAP_VERSION;
+      report.codelength = result.bestHierarchicalCodelength;
+      report.topModules = m_infomap.numTopModules();
+      report.levels = result.bestNumLevels;
+      report.trials = m_numTrials;
+      report.bestTrial = result.bestTrialIndex + 1;
+      report.trialCodelengths = m_infomap.m_codelengths;
+      report.trialTopModules = m_infomap.m_numTopModules;
+      writeJsonReport(m_infomap.summaryJsonPath, runSummaryReportJson(report));
+    }
+
+    if (!m_infomap.timingJsonPath.empty()) {
+      RunTimingReport report;
+      report.version = INFOMAP_VERSION;
+#ifdef _OPENMP
+      report.openmp = true;
+      report.threadsRequested = static_cast<unsigned int>(std::max(1, omp_get_max_threads()));
+#else
+      report.openmp = false;
+      report.threadsRequested = 1;
+#endif
+      report.threadsUsed = result.threadsUsed;
+      report.network = m_reportNetwork;
+      report.timing = m_timing.phases();
+      report.trials = m_timing.trials();
+      report.includeMemory = m_infomap.memoryReport;
+      if (report.includeMemory) {
+        report.memory = currentMemoryReport(report.network.nodes, report.network.links);
+      }
+      writeJsonReport(m_infomap.timingJsonPath, runTimingReportJson(report));
+    }
+  }
+
+private:
   InfomapBase& m_infomap;
   Network& m_network;
+  TimingRegistry& m_timing;
+  RunReportNetwork m_reportNetwork;
   const unsigned int m_numTrials = m_infomap.numTrials;
   bool m_runParallelTrials = false;
+  unsigned int m_threadsUsed = 1;
 };
 
 std::map<unsigned int, std::vector<unsigned int>> InfomapBase::getMultilevelModules(bool states)
@@ -726,11 +817,16 @@ void InfomapBase::run(Network& network)
   if (!isMainInfomap())
     throw std::logic_error("Can't run a non-main Infomap with an input network");
 
-  RunSession runSession(*this, network);
+  TimingRegistry timing;
+  Stopwatch totalTimer(true);
+  RunSession runSession(*this, network, timing);
   auto runResult = runSession.run();
   m_elapsedTime.stop();
   m_endDate = Date();
   runSession.printSummary(runResult);
+  totalTimer.stop();
+  timing.setPhase("total_s", totalTimer.getElapsedTimeInSec());
+  runSession.writeRunReports(runResult);
 }
 
 // ===================================================

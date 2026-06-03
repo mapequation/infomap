@@ -391,6 +391,9 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         output=None,
         hide_bipartite_nodes=False,
         print_all_trials=False,
+        timing_json=None,
+        summary_json=None,
+        memory_report=False,
         # algorithm
         two_level=False,
         flow_model=None,
@@ -1647,6 +1650,9 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         output=None,
         hide_bipartite_nodes=False,
         print_all_trials=False,
+        timing_json=None,
+        summary_json=None,
+        memory_report=False,
         # algorithm
         two_level=False,
         flow_model=None,

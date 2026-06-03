@@ -138,6 +138,11 @@ struct Config {
   bool printCsv = false;
   bool printClu = false;
   bool printAllTrials = false;
+#ifndef SWIG
+  std::string timingJsonPath;
+  std::string summaryJsonPath;
+  bool memoryReport = false;
+#endif
   int cluLevel = 1; // Write modules at specified depth from root. 1, 2, ... or -1 for bottom level
   bool printFlowNetwork = false;
   bool printPajekNetwork = false;
@@ -219,6 +224,11 @@ struct Config {
     outDirectory = other.outDirectory;
     outName = other.outName;
     outputFormats = other.outputFormats;
+#ifndef SWIG
+    timingJsonPath = other.timingJsonPath;
+    summaryJsonPath = other.summaryJsonPath;
+    memoryReport = other.memoryReport;
+#endif
     verbosity = other.verbosity;
     verboseNumberPrecision = other.verboseNumberPrecision;
     prettyOutput = other.prettyOutput;
