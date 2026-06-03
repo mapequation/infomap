@@ -10,6 +10,7 @@
 #include "OutputFormats.h"
 
 #include <algorithm>
+#include <iterator>
 #include <stdexcept>
 #include <sstream>
 #include <utility>
@@ -105,10 +106,11 @@ const std::vector<OutputFormat>& outputFormats()
 
 std::vector<std::string> outputFormatNames()
 {
+  const auto& formats = outputFormats();
   std::vector<std::string> names;
-  for (const auto& format : outputFormats()) {
-    names.push_back(format.optionName);
-  }
+  names.reserve(formats.size());
+  std::transform(formats.begin(), formats.end(), std::back_inserter(names),
+      [](const auto& format) { return format.optionName; });
   return names;
 }
 

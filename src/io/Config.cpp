@@ -15,6 +15,8 @@
 #include "../utils/FileURI.h"
 #include "../utils/Log.h"
 #include "../utils/convert.h"
+#include <algorithm>
+#include <iterator>
 #include <vector>
 #include <stdexcept>
 #include <utility>
@@ -225,10 +227,11 @@ namespace {
 const std::vector<std::string>& flowModelNames()
 {
   static const std::vector<std::string> names = [] {
+    const auto& mappings = flowModelMappings();
     std::vector<std::string> values;
-    for (const auto& mapping : flowModelMappings()) {
-      values.push_back(mapping.first);
-    }
+    values.reserve(mappings.size());
+    std::transform(mappings.begin(), mappings.end(), std::back_inserter(values),
+        [](const auto& mapping) { return mapping.first; });
     return values;
   }();
   return names;

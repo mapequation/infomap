@@ -915,13 +915,8 @@ NodePaths InfomapBase::normalizeTreePaths(const TreePaths& tree, unsigned int& n
   normalized.reserve(tree.size());
 
   // Fast path: every row is a state-level leaf — pass through.
-  bool allState = true;
-  for (const auto& tp : tree) {
-    if (tp.idType != TreeLeafIdType::state) {
-      allState = false;
-      break;
-    }
-  }
+  bool allState = std::all_of(tree.begin(), tree.end(),
+      [](const auto& tp) { return tp.idType == TreeLeafIdType::state; });
   if (allState) {
     for (const auto& tp : tree)
       normalized.emplace_back(tp.nodeId, tp.path);
@@ -1164,12 +1159,8 @@ InfomapBase& InfomapBase::initPartition(const std::map<unsigned int, unsigned in
     ++moduleIndex;
   }
 
-  unsigned int numNodesWithoutClusterInfo = 0;
-  for (auto& count : selectedNodes) {
-    if (count == 0) {
-      ++numNodesWithoutClusterInfo;
-    }
-  }
+  unsigned int numNodesWithoutClusterInfo = static_cast<unsigned int>(
+      std::count_if(selectedNodes.begin(), selectedNodes.end(), [](unsigned int count) { return count == 0; }));
 
   if (numNodesWithoutClusterInfo == 0) {
     return initPartition(modules, hard);
