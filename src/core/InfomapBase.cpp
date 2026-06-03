@@ -26,6 +26,7 @@
 #include "../utils/MemoryUsage.h"
 #include "../utils/PrettyOutput.h"
 #include "../utils/TimingRegistry.h"
+#include "../utils/convert.h"
 
 #include <stdexcept>
 #include <string>
@@ -55,13 +56,7 @@ namespace {
     if (compression.empty())
       return "0%";
 
-    std::string summary;
-    for (unsigned int i = 0; i < compression.size(); ++i) {
-      if (i > 0)
-        summary += ", ";
-      summary += compression[i];
-    }
-    return summary;
+    return io::stringify(compression, ", ");
   }
 
   void printPrettyStart(const Config& config, const Date& startDate, unsigned int numInitialModuleIds)

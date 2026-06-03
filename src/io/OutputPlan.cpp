@@ -95,13 +95,7 @@ namespace {
         summaries.push_back(group.second.front().empty() ? group.first : io::Str() << group.first << "." << group.second.front());
         continue;
       }
-      io::Str suffixes;
-      for (unsigned int i = 0; i < group.second.size(); ++i) {
-        if (i > 0)
-          suffixes << ",";
-        suffixes << group.second[i];
-      }
-      summaries.push_back(io::Str() << group.first << ".{" << std::string(suffixes) << "}");
+      summaries.push_back(io::Str() << group.first << ".{" << io::stringify(group.second, ",") << "}");
     }
     return summaries;
   }

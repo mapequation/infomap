@@ -10,6 +10,7 @@
 #include "ProgramInterface.h"
 #include "Features.h"
 #include "../utils/Log.h"
+#include "../utils/convert.h"
 
 #include <map>
 #include <utility>
@@ -165,13 +166,7 @@ namespace {
 
   std::string join(const std::vector<std::string>& values, const std::string& separator)
   {
-    std::ostringstream out;
-    for (unsigned int i = 0; i < values.size(); ++i) {
-      if (i > 0)
-        out << separator;
-      out << values[i];
-    }
-    return out.str();
+    return io::stringify(values, separator);
   }
 
   std::string bashWords(const std::vector<std::string>& values)
