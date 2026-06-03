@@ -14,6 +14,7 @@
 #include "OutputFormats.h"
 
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace infomap {
@@ -44,6 +45,20 @@ std::string outputPlanBasename(const Config& config, int trial = -1);
 std::vector<OutputArtifact> planOutputArtifacts(const Config& config, const std::string& basename, OutputPhase phase);
 
 std::vector<OutputArtifact> planOutputArtifacts(const Config& config, OutputPhase phase, int trial = -1);
+
+// JSON report sidecars (summary, timing, run manifest) as {resultKey, path} pairs.
+// Stdout targets ("-") and unset paths are excluded. Shared by the run manifest
+// and the no-overwrite pre-flight so the two never drift apart.
+std::vector<std::pair<std::string, std::string>> planReportArtifacts(const Config& config);
+
+// Every file path a CLI run would write: modular artifacts across all phases
+// (expanded per trial when --print-all-trials writes separate files) plus the
+// report sidecars. Used by the no-overwrite pre-flight.
+std::vector<std::string> planAllOutputPaths(const Config& config);
+
+// Throws InfomapError(OutputError) before any work when --no-overwrite is set and
+// any planned output path already exists. No-op when overwriting is allowed.
+void preflightOutputTargets(const Config& config);
 
 void writeOutputArtifact(InfomapBase& infomap, Network& network, const OutputArtifact& artifact);
 

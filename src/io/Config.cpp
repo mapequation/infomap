@@ -8,6 +8,7 @@
  ******************************************************************************/
 
 #include "Config.h"
+#include "InfomapError.h"
 #include "OutputFormats.h"
 #include "ParameterCatalog.h"
 #include "ProgramInterface.h"
@@ -104,6 +105,13 @@ namespace {
     }
   }
 
+  void applyFingerprintOnlyOutputInteraction(Config& config)
+  {
+    if (config.printConfigFingerprint) {
+      config.noFileOutput = true;
+    }
+  }
+
   void applyRuntimeOutputInteractions(Config& config)
   {
     if (config.verbosity > 0) {
@@ -123,11 +131,20 @@ namespace {
     if (config.timingJsonPath == "-" && config.summaryJsonPath == "-") {
       throw std::runtime_error("--timing-json - and --summary-json - cannot both write to stdout");
     }
+    if (config.timingJsonPath == "-" && config.runManifestPath == "-") {
+      throw std::runtime_error("--timing-json - and --manifest-json - cannot both write to stdout");
+    }
+    if (config.summaryJsonPath == "-" && config.runManifestPath == "-") {
+      throw std::runtime_error("--summary-json - and --manifest-json - cannot both write to stdout");
+    }
     if (config.timingJsonPath == "-" && !config.silent) {
       throw std::runtime_error("--timing-json - requires --silent");
     }
     if (config.summaryJsonPath == "-" && !config.silent) {
       throw std::runtime_error("--summary-json - requires --silent");
+    }
+    if (config.runManifestPath == "-" && !config.silent) {
+      throw std::runtime_error("--manifest-json - requires --silent");
     }
   }
 
@@ -184,8 +201,11 @@ namespace {
 
   void validateOutputDirectory(const Config& config)
   {
+    if (config.haveOutput()) {
+      ensureDirectoryExists(config.outDirectory);
+    }
     if (config.haveOutput() && !isDirectoryWritable(config.outDirectory))
-      throw std::runtime_error(io::Str() << "Can't write to directory '" << config.outDirectory << "'. Check that the directory exists and that you have write permissions.");
+      throw InfomapError(ExitCode::OutputError, io::Str() << "Can't write to directory '" << config.outDirectory << "'. Check that the directory exists and that you have write permissions.");
   }
 
   void initializeLogging(const Config& config)
@@ -278,6 +298,7 @@ void Config::adaptDefaults()
 
   // Cross-field invariants. These run whether construction was via flag parsing
   // or library mutation followed by adaptDefaults().
+  applyFingerprintOnlyOutputInteraction(*this);
   applyLibraryOutputDefaults(*this);
   validateRequiredCliOutput(*this);
   applyOptionInteractions(*this);

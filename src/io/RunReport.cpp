@@ -157,15 +157,16 @@ std::string runTimingReportJson(const RunTimingReport& report)
   return out.str();
 }
 
-void writeJsonReport(const std::string& path, const std::string& json)
+void writeJsonReport(const std::string& path, const std::string& json, bool overwrite)
 {
   if (path == "-") {
     Log::getOutputStream() << json;
     return;
   }
 
-  SafeOutFile output(path);
+  SafeOutFile output(path, std::ios_base::out, overwrite);
   output << json;
+  output.commit();
 }
 
 } // namespace infomap

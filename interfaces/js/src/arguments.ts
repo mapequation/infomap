@@ -37,8 +37,11 @@ export type Arguments = Partial<{
   output: OutputFormats | OutputFormats[];
   hideBipartiteNodes: boolean;
   printAllTrials: boolean;
+  noOverwrite: boolean;
+  printConfigFingerprint: boolean;
   timingJson: string;
   summaryJson: string;
+  manifestJson: string;
   memoryReport: boolean;
   verbose: 1 | 2 | 3;
   silent: boolean;
@@ -140,9 +143,16 @@ export default function argumentsToString(args: Arguments) {
 
   if (args.printAllTrials) result += " --print-all-trials";
 
+  if (args.noOverwrite) result += " --no-overwrite";
+
+  if (args.printConfigFingerprint) result += " --print-config-fingerprint";
+
   if (args.timingJson != null) result += " --timing-json " + args.timingJson;
 
   if (args.summaryJson != null) result += " --summary-json " + args.summaryJson;
+
+  if (args.manifestJson != null)
+    result += " --manifest-json " + args.manifestJson;
 
   if (args.memoryReport) result += " --memory-report";
 
