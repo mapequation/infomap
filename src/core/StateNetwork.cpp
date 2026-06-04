@@ -228,12 +228,14 @@ bool StateNetwork::undirectedToDirected()
 void StateNetwork::clearLinks()
 {
   m_nodeLinkMap.clear();
+  clearEffectiveLinkMap();
 }
 
 void StateNetwork::clear()
 {
   m_nodes.clear();
   m_nodeLinkMap.clear();
+  clearEffectiveLinkMap();
   m_physNodes.clear();
   m_outWeights.clear();
   m_names.clear();

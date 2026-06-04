@@ -10,6 +10,8 @@
 #ifndef FLOW_CALCULATOR_H_
 #define FLOW_CALCULATOR_H_
 
+#include "FlowLink.h"
+
 #include <unordered_map>
 #include <string>
 #include <vector>
@@ -18,14 +20,6 @@ namespace infomap {
 
 struct Config;
 class StateNetwork;
-
-namespace detail {
-  struct FlowLink {
-    unsigned int source;
-    unsigned int target;
-    double flow;
-  };
-} // namespace detail
 
 /**
  * Calculate flow on network based on different flow models
@@ -39,6 +33,7 @@ private:
   void calcDirectedFlow(const StateNetwork&, const Config&) noexcept;
   void calcUndirectedRegularizedFlow(const StateNetwork&, const Config&) noexcept;
   void calcUndirectedRegularizedMultilayerFlow(const StateNetwork&, const Config&);
+  void calcDirectedRegularizedMemoryFlow(StateNetwork&, const Config&);
   void calcDirectedRegularizedFlow(const StateNetwork&, const Config&) noexcept;
   void calcDirectedRegularizedMultilayerFlow(const StateNetwork&, const Config&) noexcept;
   void calcDirectedBipartiteFlow(const StateNetwork&, const Config&) noexcept;

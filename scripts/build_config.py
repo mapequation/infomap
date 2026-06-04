@@ -16,9 +16,9 @@ FEATURE_REGISTRY = {
         "requires": [],
         "conflicts": [],
     },
-    "regularized-multilayer": {
-        "define": "INFOMAP_FEATURE_REGULARIZED_MULTILAYER",
-        "description": "Enable experimental regularized flow for multilayer networks.",
+    "regularized-higher-order": {
+        "define": "INFOMAP_FEATURE_REGULARIZED_HIGHER_ORDER",
+        "description": "Enable experimental regularized flow for higher-order memory and multilayer networks.",
         "requires": [],
         "conflicts": [],
     },
@@ -181,9 +181,7 @@ def _normalize_features(features):
             continue
         if feature not in FEATURE_REGISTRY:
             known = ", ".join(sorted(FEATURE_REGISTRY))
-            raise ValueError(
-                f"Unknown feature '{feature}'. Known features: {known}."
-            )
+            raise ValueError(f"Unknown feature '{feature}'. Known features: {known}.")
         requested.add(feature)
     return [feature for feature in FEATURE_REGISTRY if feature in requested]
 
@@ -196,9 +194,7 @@ def _validate_features(features):
             dependency for dependency in spec["requires"] if dependency not in enabled
         ]
         if missing:
-            raise ValueError(
-                f"Feature '{feature}' requires: {', '.join(missing)}."
-            )
+            raise ValueError(f"Feature '{feature}' requires: {', '.join(missing)}.")
         conflicts = [conflict for conflict in spec["conflicts"] if conflict in enabled]
         if conflicts:
             raise ValueError(

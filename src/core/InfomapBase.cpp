@@ -14,7 +14,7 @@
 #include "BiasedMapEquation.h"
 #include "MemMapEquation.h"
 #include "MetaMapEquation.h"
-#if INFOMAP_FEATURE_REGULARIZED_MULTILAYER
+#if INFOMAP_FEATURE_REGULARIZED_HIGHER_ORDER
 #include "RegularizedMultilayerMapEquation.h"
 #endif
 #include "InfomapOptimizer.h"
@@ -916,8 +916,7 @@ NodePaths InfomapBase::normalizeTreePaths(const TreePaths& tree, unsigned int& n
   normalized.reserve(tree.size());
 
   // Fast path: every row is a state-level leaf — pass through.
-  bool allState = std::all_of(tree.begin(), tree.end(),
-      [](const auto& tp) { return tp.idType == TreeLeafIdType::state; });
+  bool allState = std::all_of(tree.begin(), tree.end(), [](const auto& tp) { return tp.idType == TreeLeafIdType::state; });
   if (allState) {
     for (const auto& tp : tree)
       normalized.emplace_back(tp.nodeId, tp.path);
@@ -1339,7 +1338,7 @@ void InfomapBase::generateSubNetwork(Network& network)
     Log() << "  -> Rescale link flow with global Markov time " << markovTime << "\n";
   }
 
-  for (auto& linkIt : network.nodeLinkMap()) {
+  for (auto& linkIt : network.effectiveLinkMap()) {
     unsigned int linkSourceId = linkIt.first.id;
     unsigned int sourceIndex = nodeIndexMap[linkSourceId];
     const auto& subLinks = linkIt.second;
@@ -2739,7 +2738,7 @@ void InfomapBase::initOptimizer(bool forceNoMemory)
   if (haveMetaData()) {
     m_optimizer = std::make_unique<InfomapOptimizer<MetaMapEquation>>();
   } else if (haveMemory() && !forceNoMemory) {
-#if INFOMAP_FEATURE_REGULARIZED_MULTILAYER
+#if INFOMAP_FEATURE_REGULARIZED_HIGHER_ORDER
     if (isRegularizedMultilayerFlow()) {
       m_optimizer = std::make_unique<InfomapOptimizer<RegularizedMultilayerMapEquation>>();
     } else {

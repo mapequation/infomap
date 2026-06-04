@@ -177,7 +177,7 @@ inline bool InfomapOptimizer<MemMapEquation>::shouldUseInnerParallelization() co
   return false;
 }
 
-#if INFOMAP_FEATURE_REGULARIZED_MULTILAYER
+#if INFOMAP_FEATURE_REGULARIZED_HIGHER_ORDER
 template <>
 inline bool InfomapOptimizer<RegularizedMultilayerMapEquation>::shouldUseInnerParallelization() const
 {
