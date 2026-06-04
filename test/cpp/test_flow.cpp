@@ -358,9 +358,9 @@ MemoryBuilderInput makeMemoryBuilderInput(const infomap::Network& network)
     input.nodeIndexMap[node.second.id] = index++;
   }
   for (const auto& source : network.nodeLinkMap()) {
-    const auto sourceIndex = input.nodeIndexMap[source.first.id];
+    const auto sourceIndex = input.nodeIndexMap.at(source.first.id);
     for (const auto& target : source.second) {
-      input.observedLinks.push_back({ sourceIndex, input.nodeIndexMap[target.first.id], target.second.weight });
+      input.observedLinks.push_back({ sourceIndex, input.nodeIndexMap.at(target.first.id), target.second.weight });
     }
   }
   return input;

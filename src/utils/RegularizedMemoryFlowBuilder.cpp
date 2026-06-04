@@ -14,7 +14,6 @@
 
 #include <algorithm>
 #include <cmath>
-#include <limits>
 #include <map>
 #include <numeric>
 #include <set>
@@ -23,7 +22,6 @@
 namespace infomap {
 namespace {
 
-  using Transition = RegularizedMemoryFlowResult::Transition;
   using Key = std::pair<unsigned int, unsigned int>;
 
   constexpr double kConvergenceThreshold = 1.0e-15;
