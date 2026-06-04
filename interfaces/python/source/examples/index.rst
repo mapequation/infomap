@@ -1,0 +1,65 @@
+Notebook examples
+=================
+
+These examples are rendered from the Jupyter notebooks in
+``examples/notebooks``. They are published as regular documentation pages so
+they can be searched, linked, and read without opening Jupyter.
+
+Start here
+----------
+
+- :doc:`quickstart` — first end-to-end Infomap workflow in Python.
+- :doc:`compare-infomap-louvain-networkx` — compare Infomap and Louvain with
+  NetworkX.
+- :doc:`compare-infomap-louvain-leiden-igraph` — compare Infomap, Louvain, and
+  Leiden with python-igraph.
+- :doc:`compare-infomap-scanpy-workflow` — compare Infomap and Leiden in an
+  AnnData and Scanpy-style workflow.
+
+Additional tutorial notebooks
+-----------------------------
+
+The notebook source tree also includes companion material for
+`Community Detection with the Map Equation and Infomap: Theory and Applications`_:
+
+- the two-level map equation;
+- the two-level search phase and solution landscapes;
+- memory, multilayer, temporal, and multi-body network models;
+- networks with metadata, bipartite structure, and incomplete data;
+- map equation centrality, similarity, bioregions, and model selection with
+  correlational data.
+
+Those source notebooks are available in
+`examples/notebooks <https://github.com/mapequation/infomap/tree/master/examples/notebooks>`_.
+Some require external research code or additional data-processing packages and
+are not rendered in this first docs set.
+
+.. _`Community Detection with the Map Equation and Infomap: Theory and Applications`: https://doi.org/10.1145/3779648
+
+Run locally
+-----------
+
+From an Infomap source checkout:
+
+.. code-block:: bash
+
+    python -m pip install -e '.[notebooks]'
+    cd examples/notebooks
+    jupyter lab
+
+Source notebooks
+----------------
+
+- `quickstart.ipynb <https://github.com/mapequation/infomap/blob/master/examples/notebooks/quickstart.ipynb>`_
+- `compare-infomap-louvain-networkx.ipynb <https://github.com/mapequation/infomap/blob/master/examples/notebooks/compare-infomap-louvain-networkx.ipynb>`_
+- `compare-infomap-louvain-leiden-igraph.ipynb <https://github.com/mapequation/infomap/blob/master/examples/notebooks/compare-infomap-louvain-leiden-igraph.ipynb>`_
+- `compare-infomap-scanpy-workflow.ipynb <https://github.com/mapequation/infomap/blob/master/examples/notebooks/compare-infomap-scanpy-workflow.ipynb>`_
+
+.. toctree::
+   :hidden:
+   :maxdepth: 1
+
+   quickstart
+   compare-infomap-louvain-networkx
+   compare-infomap-louvain-leiden-igraph
+   compare-infomap-scanpy-workflow

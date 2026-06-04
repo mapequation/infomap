@@ -109,5 +109,5 @@ runs with the same graph, use the lower-level :class:`infomap.Infomap` API with
 :meth:`infomap.Infomap.add_scipy_sparse_matrix`. The AnnData helper keeps the
 default output compact for interactive single-cell analysis.
 
-For a worked comparison with Scanpy's Leiden workflow, see the unnumbered
-Scanpy comparison tutorial on the :doc:`notebooks` page.
+For a worked comparison with Scanpy's Leiden workflow, see the Scanpy
+comparison tutorial on the :doc:`examples/index` page.

@@ -115,5 +115,4 @@ many independent optimization trials are run before Infomap keeps the best
 solution. For reproducible reports, record the package version, graph input,
 edge weight field, ``seed``, ``num_trials``, and non-default Infomap options.
 
-For longer worked examples, see the :doc:`notebooks` that accompany the map
-equation and Infomap survey article.
+For longer worked examples, see :doc:`examples/index`.

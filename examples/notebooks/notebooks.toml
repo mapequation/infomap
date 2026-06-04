@@ -74,9 +74,9 @@ tier = "full"
 description = "Correlational-data model-selection example with local dependencies."
 
 [[notebooks]]
-path = "compare-infomap-louvain-leiden-networkx.ipynb"
+path = "compare-infomap-louvain-networkx.ipynb"
 tier = "smoke"
-description = "NetworkX comparison of Infomap, Louvain, and Leiden when available."
+description = "NetworkX comparison of Infomap and Louvain."
 
 [[notebooks]]
 path = "compare-infomap-louvain-leiden-igraph.ipynb"
@@ -85,5 +85,5 @@ description = "python-igraph comparison of Infomap, Louvain, and Leiden."
 
 [[notebooks]]
 path = "compare-infomap-scanpy-workflow.ipynb"
-tier = "manual"
-description = "Scanpy and AnnData comparison of Infomap and Leiden with optional Scanpy dependencies."
+tier = "smoke"
+description = "Scanpy and AnnData comparison of Infomap and Leiden."

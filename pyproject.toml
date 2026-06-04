@@ -74,6 +74,7 @@ test = [
 docs = [
   "sphinx",
   "furo",
+  "myst-nb",
   "sphinx-copybutton",
   "sphinxext-opengraph",
 ]
@@ -96,6 +97,7 @@ notebooks = [
   "numpy",
   "pandas",
   "scikit-learn",
+  "scanpy[leiden]",
   "scipy",
   "seaborn",
   "SPARQLWrapper",

@@ -1,16 +1,18 @@
 # Configuration file for the Sphinx documentation builder.
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
+import importlib.util
+from pathlib import Path
+
 # -- Project information -----------------------------------------------------
 
 project = "Infomap"
 copyright = "2020, Daniel Edler, Anton Holmgren, Martin Rosvall"
 author = "Daniel Edler, Anton Holmgren, Martin Rosvall"
 
-import importlib.util
-from pathlib import Path
-
-version_module_path = Path(__file__).resolve().parents[1] / "src" / "infomap" / "_version.py"
+version_module_path = (
+    Path(__file__).resolve().parents[1] / "src" / "infomap" / "_version.py"
+)
 spec = importlib.util.spec_from_file_location("infomap_version", version_module_path)
 module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(module)
@@ -26,6 +28,7 @@ extensions = [
     "sphinx.ext.githubpages",
     "sphinx_copybutton",
     "sphinxext.opengraph",
+    "myst_nb",
 ]
 
 templates_path = ["_templates"]
@@ -79,6 +82,9 @@ intersphinx_mapping = {
 
 copybutton_prompt_text = r">>> |\.\.\. |\$ "
 copybutton_prompt_is_regexp = True
+
+# Execute rendered notebook pages and cache outputs between documentation builds.
+nb_execution_mode = "cache"
 
 # -- Open Graph --------------------------------------------------------------
 

@@ -389,8 +389,8 @@ Use :meth:`infomap.Infomap.add_networkx_graph` or
 you need state networks, multilayer networks, explicit result iteration,
 dataframe export, or several runs with different Infomap options.
 
-For worked comparisons against Louvain and Leiden in NetworkX and igraph
-workflows, see the unnumbered comparison tutorials on the :doc:`notebooks`
-page.
+For worked comparisons against Louvain in NetworkX and against Louvain and
+Leiden in igraph workflows, see the comparison tutorials on the
+:doc:`examples/index` page.
 
 See the :doc:`api/index` reference for the full surface.
