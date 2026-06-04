@@ -34,7 +34,7 @@ classifiers = [
 
 [project.urls]
 Homepage = "https://www.mapequation.org/infomap"
-Documentation = "https://mapequation.github.io/infomap/"
+Documentation = "https://mapequation.org/infomap-python-docs/"
 Repository = "https://github.com/mapequation/infomap.git"
 Issues = "https://github.com/mapequation/infomap/issues"
 

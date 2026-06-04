@@ -96,7 +96,7 @@ For direct control over Infomap-specific options and result access:
     print(im.to_dataframe(columns=["node_id", "module_id", "flow"], index="node_id"))
 
 .. _PyPI: https://pypi.org/project/infomap/
-.. _`Infomap Python API`: https://mapequation.github.io/infomap-python-docs/
+.. _`Infomap Python API`: https://mapequation.org/infomap-python-docs/
 
 R package
 ^^^^^^^^^

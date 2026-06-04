@@ -26,7 +26,7 @@ hasattr(infomap, "InfomapOptions")
 hasattr(infomap, "tl") and hasattr(infomap.tl, "infomap")
 ```
 
-If inspection is run from an Infomap source checkout, verify `infomap.__file__` so Python has not imported repo-local sources by accident. If needed, run from another working directory or a clean environment. Use the published Python docs at `https://mapequation.github.io/infomap-python-docs/` when internet access is available.
+If inspection is run from an Infomap source checkout, verify `infomap.__file__` so Python has not imported repo-local sources by accident. If needed, run from another working directory or a clean environment. Use the published Python docs at `https://mapequation.org/infomap-python-docs/` when internet access is available.
 
 ## Choose the Python entry point
 

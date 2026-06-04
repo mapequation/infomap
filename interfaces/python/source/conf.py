@@ -37,6 +37,7 @@ html_theme = "furo"
 html_title = f"Infomap {release}"
 html_static_path = ["_static"]
 html_css_files = ["custom.css"]
+html_js_files = ["analytics.js"]
 html_logo = "https://mapequation.github.io/assets/img/twocolormapicon_whiteboarder.svg"
 # TODO: add a real favicon (.ico or .svg) and re-enable:
 # html_favicon = "_static/favicon.ico"
@@ -81,7 +82,7 @@ copybutton_prompt_is_regexp = True
 
 # -- Open Graph --------------------------------------------------------------
 
-ogp_site_url = "https://mapequation.github.io/infomap/"
+ogp_site_url = "https://mapequation.org/infomap-python-docs/"
 ogp_image = "https://mapequation.github.io/assets/img/twocolormapicon_whiteboarder.svg"
 ogp_site_name = "Infomap Python API"
 ogp_description_length = 200
