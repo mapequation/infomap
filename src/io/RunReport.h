@@ -41,6 +41,7 @@ struct RunTimingReport {
   bool openmp = false;
   unsigned int threadsRequested = 1;
   unsigned int threadsUsed = 1;
+  std::string threadSource = "serial";
   RunReportNetwork network;
   std::vector<std::pair<std::string, double>> timing;
   std::vector<TrialTimingRecord> trials;

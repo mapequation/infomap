@@ -106,6 +106,7 @@ std::string runTimingReportJson(const RunTimingReport& report)
       << "\"openmp\":" << (report.openmp ? "true" : "false") << ','
       << "\"threads_requested\":" << report.threadsRequested << ','
       << "\"threads_used\":" << report.threadsUsed << ','
+      << "\"thread_source\":" << jsonString(report.threadSource) << ','
       << "\"network\":{"
       << "\"nodes\":" << report.network.nodes << ','
       << "\"links\":" << report.network.links << ','

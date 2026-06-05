@@ -767,4 +767,28 @@ TEST_CASE("numNonTrivialTopModules is zero when all nodes are in one module [fas
   infomap::test::checkCanonicalPartition(im, { { 1, 2, 3, 4, 5 } });
 }
 
+TEST_CASE("--num-threads bounds parallel-trials workers without changing the result [fast][core][threads]")
+{
+  // Parallel trials reseed per trial (seed = base + trialIndex), so the result is
+  // invariant to the worker count. --num-threads only bounds how many workers run.
+  // Therefore a 1-thread budget and a 4-thread budget must produce the same best
+  // result, which confirms omp_set_num_threads(B) propagates into the worker pool
+  // without altering the per-trial RNG sequence.
+  const char* baseFlags = "--parallel-trials --num-trials 4 --seed 123 --no-file-output --silent";
+  InfomapWrapper oneThread(std::string("--num-threads 1 ") + baseFlags);
+  InfomapWrapper fourThreads(std::string("--num-threads 4 ") + baseFlags);
+  for (InfomapWrapper* im : { &oneThread, &fourThreads }) {
+    im->addLink(0, 1);
+    im->addLink(1, 2);
+    im->addLink(2, 0);
+    im->addLink(2, 3);
+    im->addLink(3, 4);
+    im->addLink(4, 5);
+    im->addLink(5, 3);
+    im->run();
+  }
+  CHECK(oneThread.codelength() == doctest::Approx(fourThreads.codelength()));
+  CHECK(oneThread.numTopModules() == fourThreads.numTopModules());
+}
+
 } // namespace

@@ -8,6 +8,14 @@
       {
         "flag": "--inner-parallelization",
         "reason": "The JavaScript package runs Infomap in a single-threaded worker, so exposing OpenMP node-move scheduling would be misleading."
+      },
+      {
+        "flag": "--num-threads",
+        "reason": "The JavaScript package runs Infomap in a single-threaded WASM worker, so an OpenMP thread budget is meaningless there."
+      },
+      {
+        "flag": "--threads",
+        "reason": "Alias of --num-threads; the single-threaded JavaScript worker has no OpenMP thread budget."
       }
     ]
   },

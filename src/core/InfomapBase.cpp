@@ -26,6 +26,7 @@
 #include "../utils/FlowCalculator.h"
 #include "../utils/MemoryUsage.h"
 #include "../utils/PrettyOutput.h"
+#include "../utils/ThreadConfig.h"
 #include "../utils/TimingRegistry.h"
 #include "../utils/convert.h"
 
@@ -148,6 +149,25 @@ public:
 
   Result run()
   {
+    {
+      // Resolve the thread budget once for the whole run. RunSession is only
+      // constructed for the main Infomap (run(Network&) requires isMainInfomap),
+      // so this fires exactly once, before any OpenMP region. Setting the
+      // process-global max thread count lets all parallel regions (recursive
+      // partition, parallel trials, inner parallelization) inherit the budget
+      // via their existing omp_get_max_threads() calls.
+      ThreadSources threadSources = readThreadSourcesFromEnv();
+      threadSources.explicitThreads = m_infomap.numThreads; // 0 = auto
+      m_threadBudget = resolveThreadBudget(threadSources);
+      m_cpusetCount = threadSources.cpusetCount;
+#ifdef _OPENMP
+      // Clamp to INT_MAX before the signed cast: the budget is unsigned, and a value
+      // above INT_MAX would make omp_set_num_threads see a negative thread count.
+      const unsigned int ompThreads = std::min(m_threadBudget.threads,
+          static_cast<unsigned int>(std::numeric_limits<int>::max()));
+      omp_set_num_threads(static_cast<int>(ompThreads));
+#endif
+    }
     preflightOutputTargets(m_infomap);
     validateNetwork();
     {
@@ -527,6 +547,43 @@ private:
       Log(2) << "Run Infomap with memory...\n";
     else
       Log(2) << "Run Infomap...\n";
+#ifdef _OPENMP
+    {
+      // Prefer the cpuset size (the actual allocation under Linux/SLURM) over
+      // omp_get_num_procs(), which ignores affinity; fall back when unknown.
+      const unsigned int cpus = m_cpusetCount > 0 ? m_cpusetCount : static_cast<unsigned int>(std::max(1, omp_get_num_procs()));
+      const char* source = threadSourceName(m_threadBudget.source);
+      const char* innerState = m_infomap.innerParallelization ? "enabled" : "disabled";
+      if (m_infomap.prettyOutput) {
+        PrettyOutput pretty(true);
+        Log::pretty() << pretty.dim() << "  Runtime: " << cpus << " CPUs available, thread budget "
+                      << m_threadBudget.threads << " (" << source << "), inner parallelization "
+                      << innerState << pretty.reset() << "\n";
+      } else {
+        Log() << "  -> Runtime: " << cpus << " CPUs available, thread budget "
+              << m_threadBudget.threads << " (" << source << "), inner parallelization "
+              << innerState << ".\n";
+      }
+
+      // Oversubscription warnings (only meaningful when cpuset is known, i.e. Linux).
+      // Warn whenever the *resolved* budget exceeds the cpuset, regardless of source
+      // (explicit --num-threads, INFOMAP_NUM_THREADS, SLURM_CPUS_PER_TASK, OMP_NUM_THREADS).
+      if (m_cpusetCount > 0 && m_threadBudget.threads > m_cpusetCount) {
+        Log::important() << "  -> Warning: thread budget " << m_threadBudget.threads
+                         << " (" << source << ") exceeds the available cpuset of " << m_cpusetCount
+                         << " CPUs; this may oversubscribe the node.\n";
+      }
+      if (m_cpusetCount > 0) {
+        const unsigned int innerThreads = (m_infomap.innerParallelization && !m_runParallelTrials) ? m_threadBudget.threads : 1;
+        const unsigned int demand = m_threadsUsed * innerThreads;
+        if (demand > m_cpusetCount) {
+          Log::important() << "  -> Warning: " << m_threadsUsed << " trial workers x " << innerThreads
+                           << " inner threads = " << demand << " exceeds the available cpuset of "
+                           << m_cpusetCount << " CPUs.\n";
+        }
+      }
+    }
+#endif
   }
 
   void runTrial(unsigned int trialIndex, Result& result)
@@ -653,10 +710,12 @@ public:
       report.version = INFOMAP_VERSION;
 #ifdef _OPENMP
       report.openmp = true;
-      report.threadsRequested = static_cast<unsigned int>(std::max(1, omp_get_max_threads()));
+      report.threadsRequested = m_threadBudget.threads;
+      report.threadSource = threadSourceName(m_threadBudget.source);
 #else
       report.openmp = false;
       report.threadsRequested = 1;
+      report.threadSource = "serial";
 #endif
       report.threadsUsed = result.threadsUsed;
       report.network = m_reportNetwork;
@@ -682,6 +741,8 @@ private:
   const unsigned int m_numTrials = m_infomap.numTrials;
   bool m_runParallelTrials = false;
   unsigned int m_threadsUsed = 1;
+  ThreadBudget m_threadBudget;
+  unsigned int m_cpusetCount = 0;
 };
 
 std::map<unsigned int, std::vector<unsigned int>> InfomapBase::getMultilevelModules(bool states)

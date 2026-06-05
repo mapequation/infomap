@@ -145,6 +145,8 @@ struct Config {
   std::string summaryJsonPath;
   std::string runManifestPath;
   bool memoryReport = false;
+  std::string numThreadsArg = "auto"; // raw --num-threads / --threads argument
+  unsigned int numThreads = 0;        // 0 = auto; positive = explicit request
 #endif
   int cluLevel = 1; // Write modules at specified depth from root. 1, 2, ... or -1 for bottom level
   bool printFlowNetwork = false;
@@ -234,6 +236,8 @@ struct Config {
     summaryJsonPath = other.summaryJsonPath;
     runManifestPath = other.runManifestPath;
     memoryReport = other.memoryReport;
+    numThreadsArg = other.numThreadsArg;
+    numThreads = other.numThreads;
 #endif
     verbosity = other.verbosity;
     verboseNumberPrecision = other.verboseNumberPrecision;
