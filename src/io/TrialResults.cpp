@@ -359,12 +359,10 @@ TrialResultsFile parseTrialResults(const std::string& json, const std::string& s
   };
 
   auto readUintField = [&](const std::string& key, unsigned int& field) {
-    unsigned long tmp = field;
     std::size_t search = 0;
     if (findKey(json, search, key)) {
-      tmp = parseUlong(json, search, sourcePath);
+      field = static_cast<unsigned int>(parseUlong(json, search, sourcePath));
     }
-    field = static_cast<unsigned int>(tmp);
   };
 
   readStringField("network_fingerprint", result.networkFingerprint);

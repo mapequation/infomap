@@ -37,11 +37,17 @@ TEST_CASE("TrialResults serialize/parse round-trips [fast][core][merge]")
 
   CHECK(back.networkFingerprint == "abc123");
   CHECK(back.configFingerprint == "def456");
+  CHECK(back.infomapVersion == "2.8.0");
   CHECK(back.baseSeed == 100);
   CHECK(back.trialOffset == 3);
   CHECK(back.numTrials == 2);
   CHECK(back.bestTreeFile == "out_trial_4.tree");
   REQUIRE(back.trials.size() == 2);
+  CHECK(back.trials[0].trial == 3);
+  CHECK(back.trials[0].seed == 103);
+  CHECK(back.trials[0].codelength == doctest::Approx(6.5));
+  CHECK(back.trials[0].numTopModules == 10);
+  CHECK(back.trials[0].numLevels == 3);
   CHECK(back.trials[1].trial == 4);
   CHECK(back.trials[1].seed == 104);
   CHECK(back.trials[1].codelength == doctest::Approx(6.1));
