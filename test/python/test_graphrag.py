@@ -179,6 +179,60 @@ def test_read_graphrag_rejects_duplicate_titles_for_title_endpoints(tmp_path):
         read_graphrag(entities_path, relationships_path)
 
 
+def test_read_graphrag_rejects_missing_entity_ids(tmp_path):
+    pd = _require_parquet_stack()
+
+    entities = pd.DataFrame(
+        {
+            "id": ["a", None],
+            "title": ["Alpha", "Beta"],
+        }
+    )
+    relationships = pd.DataFrame(
+        {
+            "source": ["Alpha"],
+            "target": ["Beta"],
+            "weight": [1.0],
+        }
+    )
+    entities_path = tmp_path / "entities.parquet"
+    relationships_path = tmp_path / "relationships.parquet"
+    entities.to_parquet(entities_path)
+    relationships.to_parquet(relationships_path)
+
+    from infomap.graphrag import read_graphrag
+
+    with pytest.raises(ValueError, match="entity id column .* cannot contain missing"):
+        read_graphrag(entities_path, relationships_path)
+
+
+def test_read_graphrag_rejects_duplicate_entity_ids(tmp_path):
+    pd = _require_parquet_stack()
+
+    entities = pd.DataFrame(
+        {
+            "id": ["a", "a"],
+            "title": ["Alpha", "Beta"],
+        }
+    )
+    relationships = pd.DataFrame(
+        {
+            "source": ["Alpha"],
+            "target": ["Beta"],
+            "weight": [1.0],
+        }
+    )
+    entities_path = tmp_path / "entities.parquet"
+    relationships_path = tmp_path / "relationships.parquet"
+    entities.to_parquet(entities_path)
+    relationships.to_parquet(relationships_path)
+
+    from infomap.graphrag import read_graphrag
+
+    with pytest.raises(ValueError, match="entity id column .* must be unique"):
+        read_graphrag(entities_path, relationships_path)
+
+
 def test_output_paths_treats_dotted_output_as_directory(tmp_path):
     from infomap.graphrag import _output_paths
 
@@ -289,8 +343,20 @@ def test_write_graphrag_communities_exports_hierarchy(tmp_path, example_network_
     output_dir = tmp_path / "infomap"
     write_graphrag_communities(im, graph=graph, output=output_dir)
     communities = pd.read_parquet(output_dir / "communities.parquet")
+    nodes = pd.read_parquet(output_dir / "infomap_nodes.parquet")
 
     assert communities["level"].max() > 1
+    expected_paths = {
+        node_id: [int(module_id) for module_id in module_path]
+        for node_id, module_path in im.get_multilevel_modules().items()
+    }
+    exported_paths = {
+        node_id: list(module_path)
+        for node_id, module_path in zip(
+            nodes["node_id"], nodes["module_path"], strict=True
+        )
+    }
+    assert exported_paths == expected_paths
 
     by_community = {int(row["community"]): row for _, row in communities.iterrows()}
     parent_ids = {int(parent) for parent in communities["parent"] if pd.notna(parent)}

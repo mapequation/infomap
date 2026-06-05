@@ -86,6 +86,17 @@ def _validate_unique_titles(entities_table, entity_title_col):
         )
 
 
+def _validate_unique_entity_ids(entities_table, entity_id_col):
+    entity_ids = entities_table[entity_id_col]
+    if bool(entity_ids.isna().any()):
+        raise ValueError(
+            f"GraphRAG entity id column {entity_id_col!r} cannot contain missing "
+            "values."
+        )
+    if bool(entity_ids.duplicated().any()):
+        raise ValueError(f"GraphRAG entity id column {entity_id_col!r} must be unique.")
+
+
 def _validate_relationship_endpoints(relationships_table, source_col, target_col):
     missing_columns = [
         column
@@ -144,6 +155,7 @@ def read_graphrag(
     node_id_to_entity_title = {}
     entity_title_to_node_id = {}
 
+    _validate_unique_entity_ids(entities_table, entity_id_col)
     if endpoint_col == "title":
         _validate_unique_titles(entities_table, entity_title_col)
 
@@ -289,33 +301,54 @@ def _entity_ids_by_prefix(nodes):
     return entity_ids_by_prefix
 
 
-def _relationship_ids_by_prefix(nodes, graph: GraphRAGGraph):
-    node_to_path = dict(
-        zip(
-            nodes["node_id"].map(int),
-            nodes["module_path"].map(tuple),
-            strict=True,
+def _node_prefixes_table(nodes):
+    pd = _import_parquet_stack()
+    rows = []
+    for row in nodes[["node_id", "module_path"]].itertuples(index=False):
+        module_path = tuple(row.module_path)
+        rows.extend(
+            {
+                "node_id": int(row.node_id),
+                "prefix": module_path[:level],
+                "level": level,
+            }
+            for level in range(1, len(module_path) + 1)
         )
+    return pd.DataFrame(rows, columns=["node_id", "prefix", "level"])
+
+
+def _relationship_ids_by_prefix(nodes, graph: GraphRAGGraph):
+    pd = _import_parquet_stack()
+    prefixes = _node_prefixes_table(nodes)
+    if prefixes.empty:
+        return {}
+
+    relationships = pd.DataFrame(
+        {
+            "relationship_index": range(len(graph.relationship_ids)),
+            "source": graph.sources.astype("int64", copy=False),
+            "target": graph.targets.astype("int64", copy=False),
+            "relationship_id": graph.relationship_ids,
+        }
     )
-    relationship_ids_by_prefix: dict[tuple[int, ...], list[Any]] = {}
-    for source, target, relationship_id in zip(
-        graph.sources,
-        graph.targets,
-        graph.relationship_ids,
-        strict=True,
-    ):
-        source_path = node_to_path.get(int(source), ())
-        target_path = node_to_path.get(int(target), ())
-        common_depth = 0
-        for source_module, target_module in zip(source_path, target_path, strict=False):
-            if source_module != target_module:
-                break
-            common_depth += 1
-        for level in range(1, common_depth + 1):
-            relationship_ids_by_prefix.setdefault(source_path[:level], []).append(
-                relationship_id
-            )
-    return relationship_ids_by_prefix
+
+    source_prefixes = relationships[
+        ["relationship_index", "source", "relationship_id"]
+    ].merge(prefixes, left_on="source", right_on="node_id", how="inner", sort=False)
+    target_prefixes = relationships[["relationship_index", "target"]].merge(
+        prefixes, left_on="target", right_on="node_id", how="inner", sort=False
+    )
+    common_prefixes = source_prefixes.merge(
+        target_prefixes[["relationship_index", "prefix", "level"]],
+        on=["relationship_index", "prefix", "level"],
+        how="inner",
+        sort=False,
+    ).sort_values("relationship_index", kind="stable")
+    return (
+        common_prefixes.groupby("prefix", sort=False)["relationship_id"]
+        .agg(list)
+        .to_dict()
+    )
 
 
 def _communities_table(nodes, graph: GraphRAGGraph):
