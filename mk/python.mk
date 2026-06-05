@@ -133,10 +133,10 @@ _build-docs-site:
 		fi
 	@rm -rf "$(SPHINX_TARGET_DIR)/.doctrees"
 
-build-docs: build-native dev-python-install
+build-docs: dev-python-install
 	@tmp_dir="$$(mktemp -d 2>/dev/null || mktemp -d -t infomap-docs)"; \
 	trap 'rm -rf "$$tmp_dir"' EXIT; \
-	MAKEFLAGS= $(MAKE) --no-print-directory SPHINX_TARGET_DIR="$$tmp_dir/docs" _build-docs-site; \
+	$(MAKE) -j1 --no-print-directory SPHINX_TARGET_DIR="$$tmp_dir/docs" _build-docs-site; \
 	mkdir -p docs; \
 	rsync $(DOCS_SYNC_ARGS) "$$tmp_dir/docs/" docs/
 
