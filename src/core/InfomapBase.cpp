@@ -161,7 +161,11 @@ public:
       m_threadBudget = resolveThreadBudget(threadSources);
       m_cpusetCount = threadSources.cpusetCount;
 #ifdef _OPENMP
-      omp_set_num_threads(static_cast<int>(m_threadBudget.threads));
+      // Clamp to INT_MAX before the signed cast: the budget is unsigned, and a value
+      // above INT_MAX would make omp_set_num_threads see a negative thread count.
+      const unsigned int ompThreads = std::min(m_threadBudget.threads,
+          static_cast<unsigned int>(std::numeric_limits<int>::max()));
+      omp_set_num_threads(static_cast<int>(ompThreads));
 #endif
     }
     preflightOutputTargets(m_infomap);

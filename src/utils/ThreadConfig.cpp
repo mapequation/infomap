@@ -10,6 +10,7 @@
 #include "ThreadConfig.h"
 
 #include <algorithm>
+#include <cerrno>
 #include <cstddef>
 #include <cstdlib>
 #include <limits>
@@ -84,10 +85,37 @@ namespace {
   unsigned int readCpusetCount()
   {
 #if defined(__linux__)
-    cpu_set_t set;
-    CPU_ZERO(&set);
-    if (sched_getaffinity(0, sizeof(set), &set) == 0) {
-      return static_cast<unsigned int>(CPU_COUNT(&set));
+    // Fast path: the fixed-size set covers machines up to CPU_SETSIZE (typically 1024) CPUs.
+    {
+      cpu_set_t set;
+      CPU_ZERO(&set);
+      if (sched_getaffinity(0, sizeof(set), &set) == 0) {
+        return static_cast<unsigned int>(CPU_COUNT(&set));
+      }
+      if (errno != EINVAL) {
+        return 0; // a non-size error won't be fixed by a larger mask
+      }
+    }
+    // Large machines (> CPU_SETSIZE CPUs) make the fixed-size call fail with EINVAL;
+    // grow a dynamically-allocated mask until sched_getaffinity succeeds.
+    for (unsigned int numCpus = CPU_SETSIZE * 2; numCpus <= CPU_SETSIZE * 1024u; numCpus *= 2) {
+      cpu_set_t* set = CPU_ALLOC(numCpus);
+      if (set == nullptr) {
+        break;
+      }
+      const std::size_t size = CPU_ALLOC_SIZE(numCpus);
+      CPU_ZERO_S(size, set);
+      const int rc = sched_getaffinity(0, size, set);
+      if (rc == 0) {
+        const unsigned int count = static_cast<unsigned int>(CPU_COUNT_S(size, set));
+        CPU_FREE(set);
+        return count;
+      }
+      const int err = errno;
+      CPU_FREE(set);
+      if (err != EINVAL) {
+        break;
+      }
     }
 #endif
     return 0;
