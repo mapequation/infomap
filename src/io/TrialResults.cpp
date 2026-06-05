@@ -234,6 +234,11 @@ namespace {
       expect(s, pos, '{', source);
 
       TrialResultEntry entry;
+      // Required keys must be present so a malformed/partially-written shard
+      // cannot win merge selection with default 0 values.
+      bool seenTrial = false;
+      bool seenSeed = false;
+      bool seenCodelength = false;
       // Parse all key/value pairs in this object without assuming order.
       bool first = true;
       while (true) {
@@ -256,10 +261,13 @@ namespace {
 
         if (key == "trial") {
           entry.trial = static_cast<unsigned int>(parseUlong(s, pos, source));
+          seenTrial = true;
         } else if (key == "seed") {
           entry.seed = parseUlong(s, pos, source);
+          seenSeed = true;
         } else if (key == "codelength") {
           entry.codelength = parseDouble(s, pos, source);
+          seenCodelength = true;
         } else if (key == "num_top_modules") {
           entry.numTopModules = static_cast<unsigned int>(parseUlong(s, pos, source));
         } else if (key == "num_levels") {
@@ -280,6 +288,10 @@ namespace {
             }
           }
         }
+      }
+      if (!seenTrial || !seenSeed || !seenCodelength) {
+        throw std::runtime_error("TrialResults parse error in '" + source
+                                 + "': trial object is missing a required field (trial, seed, codelength)");
       }
       trials.push_back(entry);
 

@@ -97,10 +97,10 @@ namespace {
   }
 
   // Copy a file verbatim, using atomic SafeOutFile + commit.
-  void copyFileAtomic(const std::string& srcPath, const std::string& dstPath)
+  void copyFileAtomic(const std::string& srcPath, const std::string& dstPath, bool overwrite)
   {
     SafeInFile src(srcPath);
-    SafeOutFile dst(dstPath, std::ios_base::out, true /* overwrite */);
+    SafeOutFile dst(dstPath, std::ios_base::out, overwrite);
     dst << src.rdbuf();
     dst.commit();
   }
@@ -115,9 +115,9 @@ namespace {
   // Module ids are derived from treePaths(): path[0] is the 1-based top-level
   // module id. Flow is taken from flowData() keyed by nodeId (defaults to 0.0
   // if absent).
-  void writeCluFromClusterMap(const std::string& cluPath, const ClusterMap& cm)
+  void writeCluFromClusterMap(const std::string& cluPath, const ClusterMap& cm, bool overwrite)
   {
-    SafeOutFile outFile(cluPath, std::ios_base::out, true /* overwrite */);
+    SafeOutFile outFile(cluPath, std::ios_base::out, overwrite);
     outFile << std::setprecision(9);
     outFile << "# produced by --merge-trial-results\n";
     outFile << "# module level 1\n";
@@ -313,6 +313,16 @@ ExitCode mergeTrialResults(const Config& config)
 
   // Resolve the winner's bestTreeFile relative to its shard JSON.
   const auto& winnerShard = shards[winner.shardIndex];
+
+  // A shard run without tree output records an empty best_tree_file; resolving it
+  // would yield the shard directory (which pathExists accepts), so reject it early
+  // with a clear message instead of failing later with a confusing I/O error.
+  if (winnerShard.results.bestTreeFile.empty()) {
+    Log::important() << "Error: winning shard '" << winnerShard.jsonPath
+                     << "' recorded no best tree file; re-run shards with tree output enabled.\n";
+    return ExitCode::InputError;
+  }
+
   winner.bestTreeFile = resolveBestTree(winnerShard.results.bestTreeFile, winnerShard.jsonPath);
 
   if (!pathExists(winner.bestTreeFile)) {
@@ -377,7 +387,7 @@ ExitCode mergeTrialResults(const Config& config)
   if (config.printTree) {
     const std::string treePath = outBase + ".tree";
     try {
-      copyFileAtomic(winner.bestTreeFile, treePath);
+      copyFileAtomic(winner.bestTreeFile, treePath, config.overwriteOutput());
     } catch (const std::exception& e) {
       Log::important() << "Error writing merged tree to '" << treePath << "': " << e.what() << "\n";
       return ExitCode::OutputError;
@@ -389,7 +399,7 @@ ExitCode mergeTrialResults(const Config& config)
     try {
       ClusterMap cm;
       cm.readClusterData(winner.bestTreeFile, true /* includeFlow */);
-      writeCluFromClusterMap(cluPath, cm);
+      writeCluFromClusterMap(cluPath, cm, config.overwriteOutput());
     } catch (const std::exception& e) {
       Log::important() << "Error writing merged clu to '" << cluPath << "': " << e.what() << "\n";
       return ExitCode::OutputError;

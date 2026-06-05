@@ -133,3 +133,21 @@ TEST_CASE("Shard run emits trial-results JSON and best-tree file; --no-final-out
   std::remove(trialTree6.c_str());
   std::remove(aggregatePath.c_str());
 }
+
+TEST_CASE("parseTrialResults rejects a trial object missing a required field [fast][core][merge]")
+{
+  // A partially-written shard must not parse to a default-0 entry (which could
+  // otherwise win merge selection with codelength 0.0).
+  const std::string missingCodelength =
+      "{\"network_fingerprint\":\"n\",\"config_fingerprint\":\"c\",\"infomap_version\":\"v\","
+      "\"base_seed\":1,\"trial_offset\":0,\"num_trials\":1,\"best_tree_file\":\"t.tree\","
+      "\"trials\":[{\"trial\":0,\"seed\":1,\"num_top_modules\":2,\"num_levels\":1,\"thread\":0,\"time_s\":0.1}]}";
+  CHECK_THROWS(parseTrialResults(missingCodelength, "shard.json"));
+
+  // A complete entry still parses.
+  const std::string complete =
+      "{\"network_fingerprint\":\"n\",\"config_fingerprint\":\"c\",\"infomap_version\":\"v\","
+      "\"base_seed\":1,\"trial_offset\":0,\"num_trials\":1,\"best_tree_file\":\"t.tree\","
+      "\"trials\":[{\"trial\":0,\"seed\":1,\"codelength\":6.1,\"num_top_modules\":2,\"num_levels\":1,\"thread\":0,\"time_s\":0.1}]}";
+  CHECK_NOTHROW(parseTrialResults(complete, "shard.json"));
+}

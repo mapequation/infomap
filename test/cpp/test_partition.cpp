@@ -816,9 +816,11 @@ TEST_CASE("--trial-offset produces a valid codelength [fast][core][partition][sh
 TEST_CASE("Sharding-mode serial reseed makes trial i reproducible by global index [fast][core][merge]")
 {
   auto runTrialAt = [](unsigned int offset) {
-    // sharding mode is active because --trial-results is set
+    // Sharding mode is active because --trial-offset > 0, which triggers the
+    // per-trial reseed (seed = base + global index). No files are written, so
+    // the test is portable and needs no cleanup.
     InfomapWrapper im("--silent --seed 99 --num-trials 1 --trial-offset " + std::to_string(offset)
-                      + " --trial-results /tmp/infomap_reseed_probe.json --no-final-output --no-file-output");
+                      + " --no-file-output");
     im.addLink(0, 1);
     im.addLink(1, 2);
     im.addLink(2, 0);
