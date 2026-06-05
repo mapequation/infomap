@@ -9,6 +9,8 @@ Start here
 ----------
 
 - :doc:`quickstart` — first end-to-end Infomap workflow in Python.
+- :doc:`run-infomap-on-hpc` — native CLI recipes for scheduler-aware HPC runs
+  and Python shard merging.
 - :doc:`compare-infomap-louvain-networkx` — compare Infomap and Louvain with
   NetworkX.
 - :doc:`compare-infomap-louvain-leiden-igraph` — compare Infomap, Louvain, and
@@ -51,6 +53,7 @@ Source notebooks
 ----------------
 
 - `quickstart.ipynb <https://github.com/mapequation/infomap/blob/master/examples/notebooks/quickstart.ipynb>`_
+- `run-infomap-on-hpc.ipynb <https://github.com/mapequation/infomap/blob/master/examples/notebooks/run-infomap-on-hpc.ipynb>`_
 - `compare-infomap-louvain-networkx.ipynb <https://github.com/mapequation/infomap/blob/master/examples/notebooks/compare-infomap-louvain-networkx.ipynb>`_
 - `compare-infomap-louvain-leiden-igraph.ipynb <https://github.com/mapequation/infomap/blob/master/examples/notebooks/compare-infomap-louvain-leiden-igraph.ipynb>`_
 - `compare-infomap-scanpy-workflow.ipynb <https://github.com/mapequation/infomap/blob/master/examples/notebooks/compare-infomap-scanpy-workflow.ipynb>`_
@@ -60,6 +63,7 @@ Source notebooks
    :maxdepth: 1
 
    quickstart
+   run-infomap-on-hpc
    compare-infomap-louvain-networkx
    compare-infomap-louvain-leiden-igraph
    compare-infomap-scanpy-workflow
