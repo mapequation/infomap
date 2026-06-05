@@ -582,4 +582,19 @@ TEST_CASE("Config rejects --num-threads 0 [fast][core][config][cli]")
   CHECK_THROWS(Config("input.net --silent --no-file-output --num-threads 0", true));
 }
 
+TEST_CASE("Config rejects an out-of-range --num-threads without crashing [fast][core][config][cli]")
+{
+  CHECK_THROWS(Config("input.net --silent --no-file-output --num-threads 999999999999999999999999", true));
+}
+
+TEST_CASE("Config rejects a negative --num-threads [fast][core][config][cli]")
+{
+  CHECK_THROWS(Config("input.net --silent --no-file-output --num-threads -1", true));
+}
+
+TEST_CASE("Config rejects --num-threads with trailing garbage [fast][core][config][cli]")
+{
+  CHECK_THROWS(Config("input.net --silent --no-file-output --num-threads 4x", true));
+}
+
 } // namespace

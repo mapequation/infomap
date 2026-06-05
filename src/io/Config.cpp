@@ -17,6 +17,7 @@
 #include "../utils/Log.h"
 #include "../utils/convert.h"
 #include <algorithm>
+#include <cstddef>
 #include <iterator>
 #include <limits>
 #include <vector>
@@ -173,15 +174,25 @@ namespace {
       config.numThreads = 0;
       return;
     }
-    try {
-      const long value = std::stol(config.numThreadsArg);
-      if (value < 1 || static_cast<unsigned long>(value) > std::numeric_limits<unsigned int>::max()) {
-        throw std::runtime_error("--num-threads must be 'auto' or a positive integer");
-      }
-      config.numThreads = static_cast<unsigned int>(value);
-    } catch (const std::invalid_argument&) {
+    const auto invalid = []() {
       throw std::runtime_error("--num-threads must be 'auto' or a positive integer");
+    };
+    long value = 0;
+    try {
+      std::size_t consumed = 0;
+      value = std::stol(config.numThreadsArg, &consumed);
+      if (consumed != config.numThreadsArg.size()) {
+        invalid(); // trailing garbage like "4x"
+      }
+    } catch (const std::invalid_argument&) {
+      invalid();
+    } catch (const std::out_of_range&) {
+      invalid();
     }
+    if (value < 1 || static_cast<unsigned long>(value) > std::numeric_limits<unsigned int>::max()) {
+      invalid();
+    }
+    config.numThreads = static_cast<unsigned int>(value);
   }
 
   // Lifecycle-only steps. These read staged parse state, touch the filesystem,
