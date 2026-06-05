@@ -548,4 +548,38 @@ TEST_CASE("Parameter catalog registers with ProgramInterface through a named ada
   CHECK_FALSE(api.getUsedOptionArguments().empty());
 }
 
+TEST_CASE("Config parses --num-threads as an explicit budget [fast][core][config][cli]")
+{
+  const Config config("input.net --silent --no-file-output --num-threads 4", true);
+  CHECK(config.numThreads == 4);
+}
+
+TEST_CASE("Config accepts --threads as an alias for --num-threads [fast][core][config][cli]")
+{
+  const Config config("input.net --silent --no-file-output --threads 6", true);
+  CHECK(config.numThreads == 6);
+}
+
+TEST_CASE("Config treats --num-threads auto as the zero sentinel [fast][core][config][cli]")
+{
+  const Config config("input.net --silent --no-file-output --num-threads auto", true);
+  CHECK(config.numThreads == 0);
+}
+
+TEST_CASE("Config defaults numThreads to auto when flag absent [fast][core][config][cli]")
+{
+  const Config config("input.net --silent --no-file-output", true);
+  CHECK(config.numThreads == 0);
+}
+
+TEST_CASE("Config rejects non-numeric, non-auto --num-threads [fast][core][config][cli]")
+{
+  CHECK_THROWS(Config("input.net --silent --no-file-output --num-threads banana", true));
+}
+
+TEST_CASE("Config rejects --num-threads 0 [fast][core][config][cli]")
+{
+  CHECK_THROWS(Config("input.net --silent --no-file-output --num-threads 0", true));
+}
+
 } // namespace

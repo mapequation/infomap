@@ -846,6 +846,22 @@ const std::vector<ParameterSpec>& parameterCatalog()
         .group("Accuracy")
         .advanced()
         .configTarget(&Config::parallelTrials),
+    param()
+        .longName("num-threads")
+        .description("Effective thread budget: 'auto' (resolve from --num-threads > INFOMAP_NUM_THREADS > SLURM_CPUS_PER_TASK > OMP_NUM_THREADS > cpuset > hardware), or a positive integer. 1 forces fully serial. Governs the recursive partition, parallel trials, and inner parallelization.")
+        .argument(ArgType::string)
+        .group("Accuracy")
+        .advanced()
+        .defaultValue("auto")
+        .configTarget(&Config::numThreadsArg),
+    param()
+        .longName("threads")
+        .description("Alias for --num-threads.")
+        .argument(ArgType::string)
+        .group("Accuracy")
+        .advanced()
+        .defaultValue("auto")
+        .configTarget(&Config::numThreadsArg),
 #if INFOMAP_FEATURE_TEST_FEATURE
     param()
         .longName("test-feature")

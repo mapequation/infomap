@@ -18,6 +18,7 @@
 #include "../utils/convert.h"
 #include <algorithm>
 #include <iterator>
+#include <limits>
 #include <vector>
 #include <stdexcept>
 #include <utility>
@@ -166,6 +167,23 @@ namespace {
     }
   }
 
+  void applyThreadBudgetInteraction(Config& config)
+  {
+    if (config.numThreadsArg.empty() || config.numThreadsArg == "auto") {
+      config.numThreads = 0;
+      return;
+    }
+    try {
+      const long value = std::stol(config.numThreadsArg);
+      if (value < 1 || static_cast<unsigned long>(value) > std::numeric_limits<unsigned int>::max()) {
+        throw std::runtime_error("--num-threads must be 'auto' or a positive integer");
+      }
+      config.numThreads = static_cast<unsigned int>(value);
+    } catch (const std::invalid_argument&) {
+      throw std::runtime_error("--num-threads must be 'auto' or a positive integer");
+    }
+  }
+
   // Lifecycle-only steps. These read staged parse state, touch the filesystem,
   // or mutate global state — they are not Config invariants and must not fire
   // when a library user calls adaptDefaults() on a mutated Config.
@@ -305,6 +323,7 @@ void Config::adaptDefaults()
   applyLibraryOutputDefaults(*this);
   validateRequiredCliOutput(*this);
   applyOptionInteractions(*this);
+  applyThreadBudgetInteraction(*this);
   validateRunReportOutput(*this);
   normalizeOutputDirectory(*this);
   applyOutputNameDefault(*this);
