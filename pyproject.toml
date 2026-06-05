@@ -48,6 +48,10 @@ igraph = [
 pandas = [
   "pandas",
 ]
+graphrag = [
+  "pandas",
+  "pyarrow",
+]
 scipy = [
   "scipy",
 ]
@@ -61,6 +65,7 @@ all = [
   "igraph",
   "networkx",
   "pandas",
+  "pyarrow",
   "scipy",
 ]
 test = [
@@ -68,6 +73,7 @@ test = [
   "igraph",
   "pytest",
   "networkx",
+  "pyarrow",
   "ruff",
   "scipy",
 ]
@@ -83,6 +89,7 @@ examples = [
   "networkx",
   "numpy",
   "pandas",
+  "pyarrow",
   "scikit-learn",
   "scipy",
 ]
@@ -96,6 +103,7 @@ notebooks = [
   "networkx",
   "numpy",
   "pandas",
+  "pyarrow",
   "scikit-learn",
   "scanpy[leiden]",
   "scipy",

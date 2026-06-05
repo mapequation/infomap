@@ -253,6 +253,7 @@ def test_python_package_extras_are_declared(test_paths):
     assert optional_dependencies["networkx"] == ["networkx"]
     assert optional_dependencies["igraph"] == ["igraph"]
     assert optional_dependencies["pandas"] == ["pandas"]
+    assert optional_dependencies["graphrag"] == ["pandas", "pyarrow"]
     assert optional_dependencies["scipy"] == ["scipy"]
     assert optional_dependencies["anndata"] == ["anndata", "pandas", "scipy"]
     assert set(optional_dependencies["all"]) == {
@@ -260,6 +261,7 @@ def test_python_package_extras_are_declared(test_paths):
         "igraph",
         "networkx",
         "pandas",
+        "pyarrow",
         "scipy",
     }
 

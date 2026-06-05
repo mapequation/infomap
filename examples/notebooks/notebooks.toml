@@ -9,6 +9,11 @@ tier = "smoke"
 description = "HPC recipe notebook for native trial sharding, scheduler-aware threads, and Python shard merging."
 
 [[notebooks]]
+path = "run-infomap-on-graphrag-tables.ipynb"
+tier = "smoke"
+description = "Experimental GraphRAG-style table workflow from Parquet input to Infomap community output."
+
+[[notebooks]]
 path = "3.1 The two-level map equation.ipynb"
 tier = "smoke"
 description = "Core two-level map equation example with local data only."

@@ -15,6 +15,8 @@ Choose a notebook
   Leiden when you want igraph-native clustering objects.
 - :doc:`compare-infomap-scanpy-workflow` — compare Infomap and Leiden in an
   AnnData and Scanpy-style workflow.
+- :doc:`run-infomap-on-graphrag-tables` — run Infomap on GraphRAG-style
+  entity and relationship tables.
 - :doc:`run-infomap-on-hpc` — native CLI recipes for scheduler-aware HPC runs
   and Python shard merging.
 
@@ -56,6 +58,7 @@ Source notebooks
 - `compare-infomap-louvain-networkx.ipynb <https://github.com/mapequation/infomap/blob/master/examples/notebooks/compare-infomap-louvain-networkx.ipynb>`_
 - `compare-infomap-louvain-leiden-igraph.ipynb <https://github.com/mapequation/infomap/blob/master/examples/notebooks/compare-infomap-louvain-leiden-igraph.ipynb>`_
 - `compare-infomap-scanpy-workflow.ipynb <https://github.com/mapequation/infomap/blob/master/examples/notebooks/compare-infomap-scanpy-workflow.ipynb>`_
+- `run-infomap-on-graphrag-tables.ipynb <https://github.com/mapequation/infomap/blob/master/examples/notebooks/run-infomap-on-graphrag-tables.ipynb>`_
 - `run-infomap-on-hpc.ipynb <https://github.com/mapequation/infomap/blob/master/examples/notebooks/run-infomap-on-hpc.ipynb>`_
 
 .. toctree::
@@ -66,4 +69,5 @@ Source notebooks
    compare-infomap-louvain-networkx
    compare-infomap-louvain-leiden-igraph
    compare-infomap-scanpy-workflow
+   run-infomap-on-graphrag-tables
    run-infomap-on-hpc
