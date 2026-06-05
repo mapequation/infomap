@@ -28,8 +28,11 @@ Imports:
     R6
 Suggests:
     igraph,
+    knitr,
+    rmarkdown,
     testthat (>= 3.0.0),
     tibble
+VignetteBuilder: knitr
 Config/testthat/edition: 3
 LazyData: false
 Roxygen: list(markdown = TRUE)

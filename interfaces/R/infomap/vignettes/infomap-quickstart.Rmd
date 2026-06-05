@@ -1,0 +1,117 @@
+---
+title: "Infomap quickstart"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Infomap quickstart}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7,
+  fig.height = 4.5
+)
+```
+
+This vignette shows a small Infomap workflow with an `igraph` graph.
+It runs Infomap, compares the partition with Louvain, and inspects the
+resulting node assignments.
+
+```{r packages}
+library(infomap)
+library(igraph)
+
+packageVersion("infomap")
+packageVersion("igraph")
+```
+
+## Load a graph
+
+Zachary's karate club graph is a small undirected social network.
+The known split is used below as a reference label for summary metrics.
+
+```{r graph}
+graph <- igraph::make_graph("Zachary")
+
+mr_hi <- c(1, 2, 3, 4, 8, 12, 13, 14, 18, 20, 22)
+truth <- ifelse(seq_len(igraph::vcount(graph)) %in% mr_hi, "Mr. Hi", "Officer")
+
+graph
+table(truth)
+```
+
+## Run Infomap and Louvain
+
+Use `infomap::cluster_infomap()` for a compact result object with node
+assignments and summary fields. The function name is qualified because
+`igraph` also exports a function named `cluster_infomap()`.
+
+```{r run}
+set.seed(123)
+
+infomap_result <- infomap::cluster_infomap(
+  graph,
+  silent = TRUE,
+  nb.trials = 20,
+  two_level = TRUE
+)
+
+louvain_result <- igraph::cluster_louvain(graph)
+
+summary(infomap_result)
+```
+
+## Compare assignments
+
+The numeric module ids are local labels. They identify groups within one
+partition and should not be interpreted as ordered values across methods.
+
+```{r assignments}
+assignments <- as.data.frame(infomap_result)
+assignments <- assignments[order(assignments$node_id), c("node_id", "module_id", "flow")]
+assignments$truth <- truth[assignments$node_id]
+assignments$louvain_module <- unname(igraph::membership(louvain_result))[assignments$node_id]
+
+head(assignments, 10)
+```
+
+Normalized mutual information (NMI) compares the detected assignments with
+the known karate-club split.
+
+```{r metrics}
+metrics <- data.frame(
+  method = c("infomap", "louvain"),
+  NMI_vs_truth = c(
+    igraph::compare(truth, assignments$module_id, method = "nmi"),
+    igraph::compare(truth, assignments$louvain_module, method = "nmi")
+  )
+)
+
+metrics
+```
+
+## Visualize the Infomap partition
+
+```{r plot}
+palette <- grDevices::hcl.colors(length(unique(assignments$module_id)), "Set 2")
+vertex_colors <- palette[assignments$module_id]
+
+plot(
+  graph,
+  layout = igraph::layout_with_fr(graph),
+  vertex.color = vertex_colors,
+  vertex.label = seq_len(igraph::vcount(graph)),
+  vertex.size = 18,
+  edge.color = "grey75",
+  main = "Infomap modules"
+)
+```
+
+## Next steps
+
+For larger workflows, use the returned `infomap_result` object to inspect
+`codelength`, `modules`, and the node table from `as.data.frame()`.
+For lower-level control, use `Infomap()` directly.
