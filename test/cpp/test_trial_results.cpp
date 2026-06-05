@@ -9,12 +9,15 @@
 
 #include "vendor/doctest.h"
 #include "io/TrialResults.h"
+#include "io/SafeFile.h"
+#include "Infomap.h"
 #include "TestUtils.h"
 
 #include <string>
 #include <cstdio>
 
 using namespace infomap;
+using infomap::test::readTextFile;
 
 TEST_CASE("TrialResults serialize/parse round-trips [fast][core][merge]")
 {
@@ -56,4 +59,71 @@ TEST_CASE("TrialResults parser tolerates whitespace and handles an empty trials 
   const TrialResultsFile back = parseTrialResults(json, "x.json");
   CHECK(back.trials.empty());
   CHECK(back.networkFingerprint == "h");
+}
+
+TEST_CASE("Shard run emits trial-results JSON and best-tree file; --no-final-output suppresses aggregate [fast][core][merge]")
+{
+  // Paths used by this test (in the CWD where the test binary runs).
+  const std::string resultsPath = "tr_shard_results.json";
+  const std::string outName = "tr_shard_out";
+  // Per-trial tree files (trial_offset=5, 2 trials → global indices 5 and 6).
+  const std::string trialTree5 = outName + "_trial_6.tree"; // global index 5, file uses 1-based (+1)
+  const std::string trialTree6 = outName + "_trial_7.tree"; // global index 6, file uses 1-based (+1)
+  const std::string aggregatePath = outName + ".tree";
+
+  // Clean up before.
+  std::remove(resultsPath.c_str());
+  std::remove(trialTree5.c_str());
+  std::remove(trialTree6.c_str());
+  std::remove(aggregatePath.c_str());
+
+  {
+    InfomapWrapper im("--silent --seed 7 --num-trials 2 --trial-offset 5"
+                      " --trial-results " + resultsPath
+                      + " --no-final-output"
+                      + " --tree --out-name " + outName);
+    // Set output directory explicitly so library mode writes tree files to CWD.
+    // Also reset noFileOutput: adaptDefaults sets it to true when outDirectory is
+    // empty in non-CLI mode, so we override it after construction.
+    im.outDirectory = "./";
+    im.noFileOutput = false;
+    // Two-triangle network: nodes 0-2 and 3-5.
+    im.addLink(0, 1);
+    im.addLink(1, 2);
+    im.addLink(2, 0);
+    im.addLink(3, 4);
+    im.addLink(4, 5);
+    im.addLink(5, 3);
+    im.run();
+  }
+
+  // The results file must exist and have content.
+  REQUIRE(infomap::pathExists(resultsPath));
+
+  const auto json = readTextFile(resultsPath);
+  const TrialResultsFile parsed = parseTrialResults(json, resultsPath);
+
+  CHECK(parsed.trialOffset == 5);
+  CHECK(parsed.numTrials == 2);
+  REQUIRE(parsed.trials.size() == 2);
+
+  // Global trial indices must be 5 and 6 (offset 5 + local slots 0 and 1).
+  CHECK(parsed.trials[0].trial == 5);
+  CHECK(parsed.trials[1].trial == 6);
+
+  // bestTreeFile must be non-empty.
+  CHECK(!parsed.bestTreeFile.empty());
+
+  // The referenced best tree file must exist on disk.
+  // bestTreeFile is relative to the results file directory (CWD here).
+  CHECK(infomap::pathExists(parsed.bestTreeFile));
+
+  // The aggregate final output must NOT have been written (--no-final-output).
+  CHECK(!infomap::pathExists(aggregatePath));
+
+  // Clean up.
+  std::remove(resultsPath.c_str());
+  std::remove(trialTree5.c_str());
+  std::remove(trialTree6.c_str());
+  std::remove(aggregatePath.c_str());
 }

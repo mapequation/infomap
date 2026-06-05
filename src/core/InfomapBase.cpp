@@ -22,6 +22,7 @@
 #include "../io/RunMetadata.h"
 #include "../io/SafeFile.h"
 #include "../io/OutputPlan.h"
+#include "../io/TrialResults.h"
 #include "../utils/FileURI.h"
 #include "../utils/FlowCalculator.h"
 #include "../utils/MemoryUsage.h"
@@ -440,8 +441,10 @@ private:
         auto timer = m_timing.scope("best_restore_s");
         m_infomap.initTree(result.bestTree);
       }
-      auto outputTimer = m_timing.scope("output_s");
-      m_infomap.writeResult(); // Overwrite result to get total elapsed time in output file header.
+      if (!m_infomap.noFinalOutput) {
+        auto outputTimer = m_timing.scope("output_s");
+        m_infomap.writeResult(); // Overwrite result to get total elapsed time in output file header.
+      }
     }
   }
 
@@ -587,10 +590,11 @@ private:
 #endif
   }
 
+  bool isShardingMode() const { return m_infomap.trialOffset > 0 || !m_infomap.trialResultsPath.empty(); }
+
   void runTrial(unsigned int trialIndex, Result& result)
   {
-    const bool shardingMode = m_infomap.trialOffset > 0 || !m_infomap.trialResultsPath.empty();
-    if (shardingMode) {
+    if (isShardingMode()) {
       const unsigned int globalSeed = static_cast<unsigned int>(m_infomap.seedToRandomNumberGenerator + (m_infomap.trialOffset + trialIndex));
       m_infomap.reseed(globalSeed);
     }
@@ -687,7 +691,9 @@ private:
     result.bestTrialIndex = trialIndex;
     m_infomap.root().sortChildrenOnFlow();
     auto outputTimer = m_timing.scope("output_s");
-    m_infomap.writeResult();
+    if (!m_infomap.noFinalOutput) {
+      m_infomap.writeResult();
+    }
     if (m_numTrials > 1) {
       result.bestTree.clear();
       for (auto it(m_infomap.iterLeafNodes()); !it.isEnd(); ++it) {
@@ -737,6 +743,71 @@ public:
 
     if (!m_infomap.runManifestPath.empty()) {
       writeJsonReport(m_infomap.runManifestPath, runManifestJson(m_infomap), m_infomap.overwriteOutput());
+    }
+
+    if (!m_infomap.trialResultsPath.empty()) {
+      TrialResultsFile trialResultsFile;
+      trialResultsFile.networkFingerprint = networkFingerprint(m_infomap.networkFile);
+      trialResultsFile.configFingerprint = configFingerprint(m_infomap.getConfig());
+      trialResultsFile.infomapVersion = INFOMAP_VERSION;
+      trialResultsFile.baseSeed = m_infomap.seedToRandomNumberGenerator;
+      trialResultsFile.trialOffset = m_infomap.trialOffset;
+      trialResultsFile.numTrials = m_numTrials;
+
+      // Build per-trial entries from timing records.
+      const auto timingTrials = m_timing.trials();
+      for (std::size_t s = 0; s < timingTrials.size(); ++s) {
+        const auto& rec = timingTrials[s];
+        if (!rec.valid) continue;
+        TrialResultEntry entry;
+        entry.trial = m_infomap.trialOffset + static_cast<unsigned int>(s);
+        entry.seed = rec.seed;
+        entry.codelength = rec.codelength;
+        entry.numTopModules = rec.topModules;
+        entry.numLevels = rec.numLevels;
+        entry.thread = rec.thread;
+        entry.timeSec = rec.timeSec;
+        trialResultsFile.trials.push_back(entry);
+      }
+
+      // Determine best tree file.
+      // After printSummary / restoreBestResult, m_infomap holds the best tree in memory.
+      // We write the best tree with an explicit per-trial-numbered filename (always, not
+      // conditional on printAllTrials) so the merge step has a stable reference.
+      // If printAllTrials already wrote it and --no-overwrite is set, skip the write to
+      // avoid a collision on the already-existing file.
+      const unsigned int globalBestIndex = m_infomap.trialOffset + result.bestTrialIndex;
+      if (m_infomap.printTree && !m_infomap.noFileOutput) {
+        // Always use the trial-numbered basename for the shard best tree, regardless of
+        // printAllTrials, so the merge step always finds a per-shard-named file.
+        const auto treeBasename = m_infomap.outDirectory + m_infomap.outName
+            + "_trial_" + std::to_string(globalBestIndex + 1);
+        const auto treeAbsPath = outputFilenameForResultKey(treeBasename, "tree");
+
+        const bool alreadyWritten = pathExists(treeAbsPath);
+        if (!alreadyWritten || m_infomap.overwriteOutput()) {
+          auto outputTimer = m_timing.scope("output_s");
+          m_infomap.writeTree(treeAbsPath, false);
+        }
+
+        // Store path relative to the results file directory.
+        std::string resultsDir;
+        const auto lastSlash = m_infomap.trialResultsPath.find_last_of("/\\");
+        if (lastSlash != std::string::npos) {
+          resultsDir = m_infomap.trialResultsPath.substr(0, lastSlash + 1);
+        }
+        if (!resultsDir.empty() && treeAbsPath.substr(0, resultsDir.size()) == resultsDir) {
+          trialResultsFile.bestTreeFile = treeAbsPath.substr(resultsDir.size());
+        } else {
+          // Different directories — store the filename component only.
+          const auto treeSlash = treeAbsPath.find_last_of("/\\");
+          trialResultsFile.bestTreeFile = (treeSlash != std::string::npos)
+              ? treeAbsPath.substr(treeSlash + 1)
+              : treeAbsPath;
+        }
+      }
+
+      writeJsonReport(m_infomap.trialResultsPath, serializeTrialResults(trialResultsFile), m_infomap.overwriteOutput());
     }
   }
 
