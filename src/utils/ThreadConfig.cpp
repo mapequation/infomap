@@ -10,6 +10,7 @@
 #include "ThreadConfig.h"
 
 #include <algorithm>
+#include <cstddef>
 #include <cstdlib>
 #include <limits>
 #include <string>
@@ -67,8 +68,11 @@ namespace {
       return 0;
     }
     try {
-      const long value = std::stol(std::string(raw));
-      if (value > 0 && value <= static_cast<long>(std::numeric_limits<unsigned int>::max())) {
+      const std::string text(raw);
+      std::size_t consumed = 0;
+      const long value = std::stol(text, &consumed);
+      // Reject trailing garbage (e.g. "4x") — treat a non-numeric env value as unset.
+      if (consumed == text.size() && value > 0 && value <= static_cast<long>(std::numeric_limits<unsigned int>::max())) {
         return static_cast<unsigned int>(value);
       }
       return 0;

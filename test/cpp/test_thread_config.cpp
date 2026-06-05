@@ -2,8 +2,10 @@
 
 #include "utils/ThreadConfig.h"
 
+#include <cstdlib>
 #include <string>
 
+using infomap::readThreadSourcesFromEnv;
 using infomap::resolveThreadBudget;
 using infomap::ThreadBudget;
 using infomap::ThreadSource;
@@ -95,3 +97,63 @@ TEST_CASE("threadSourceName returns documented labels [fast][core][threads]")
   CHECK(std::string(threadSourceName(ThreadSource::Cpuset)) == "cpuset");
   CHECK(std::string(threadSourceName(ThreadSource::Hardware)) == "hardware_concurrency");
 }
+
+#if defined(__unix__) || defined(__APPLE__)
+namespace {
+// RAII save/restore of an env var so the test never leaks state into other cases.
+struct ScopedEnv {
+  std::string name;
+  bool hadValue = false;
+  std::string previous;
+  explicit ScopedEnv(const char* envName) : name(envName)
+  {
+    if (const char* current = std::getenv(envName)) {
+      hadValue = true;
+      previous = current;
+    }
+  }
+  void set(const char* value) const { setenv(name.c_str(), value, 1); }
+  void clear() const { unsetenv(name.c_str()); }
+  ~ScopedEnv()
+  {
+    if (hadValue) {
+      setenv(name.c_str(), previous.c_str(), 1);
+    } else {
+      unsetenv(name.c_str());
+    }
+  }
+};
+} // namespace
+
+TEST_CASE("readThreadSourcesFromEnv reads env vars and rejects trailing garbage [fast][core][threads]")
+{
+  ScopedEnv infomapEnv("INFOMAP_NUM_THREADS");
+  ScopedEnv slurmEnv("SLURM_CPUS_PER_TASK");
+  ScopedEnv ompEnv("OMP_NUM_THREADS");
+
+  infomapEnv.set("7");
+  slurmEnv.set("8");
+  ompEnv.set("16");
+  {
+    const ThreadSources s = readThreadSourcesFromEnv();
+    CHECK(s.infomapEnv == 7);
+    CHECK(s.slurmCpusPerTask == 8);
+    CHECK(s.ompEnv == 16);
+    CHECK(s.hardwareConcurrency >= 1); // always present fallback
+    // The env values feed precedence resolution: INFOMAP_NUM_THREADS wins here.
+    CHECK(resolveThreadBudget(s).source == ThreadSource::InfomapEnv);
+    CHECK(resolveThreadBudget(s).threads == 7);
+  }
+
+  // Trailing garbage and non-numeric values are treated as unset (0), not parsed loosely.
+  infomapEnv.set("4x");
+  slurmEnv.clear();
+  ompEnv.clear();
+  {
+    const ThreadSources s = readThreadSourcesFromEnv();
+    CHECK(s.infomapEnv == 0);
+    CHECK(s.slurmCpusPerTask == 0);
+    CHECK(s.ompEnv == 0);
+  }
+}
+#endif

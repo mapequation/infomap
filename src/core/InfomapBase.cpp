@@ -545,7 +545,9 @@ private:
       Log(2) << "Run Infomap...\n";
 #ifdef _OPENMP
     {
-      const unsigned int cpus = static_cast<unsigned int>(std::max(1, omp_get_num_procs()));
+      // Prefer the cpuset size (the actual allocation under Linux/SLURM) over
+      // omp_get_num_procs(), which ignores affinity; fall back when unknown.
+      const unsigned int cpus = m_cpusetCount > 0 ? m_cpusetCount : static_cast<unsigned int>(std::max(1, omp_get_num_procs()));
       const char* source = threadSourceName(m_threadBudget.source);
       const char* innerState = m_infomap.innerParallelization ? "enabled" : "disabled";
       if (m_infomap.prettyOutput) {
@@ -560,9 +562,11 @@ private:
       }
 
       // Oversubscription warnings (only meaningful when cpuset is known, i.e. Linux).
-      if (m_cpusetCount > 0 && m_infomap.numThreads > m_cpusetCount) {
-        Log::important() << "  -> Warning: --num-threads " << m_infomap.numThreads
-                         << " exceeds the available cpuset of " << m_cpusetCount
+      // Warn whenever the *resolved* budget exceeds the cpuset, regardless of source
+      // (explicit --num-threads, INFOMAP_NUM_THREADS, SLURM_CPUS_PER_TASK, OMP_NUM_THREADS).
+      if (m_cpusetCount > 0 && m_threadBudget.threads > m_cpusetCount) {
+        Log::important() << "  -> Warning: thread budget " << m_threadBudget.threads
+                         << " (" << source << ") exceeds the available cpuset of " << m_cpusetCount
                          << " CPUs; this may oversubscribe the node.\n";
       }
       if (m_cpusetCount > 0) {
