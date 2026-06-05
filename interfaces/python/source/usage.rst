@@ -1,16 +1,32 @@
-Usage
-=====
+API usage patterns
+==================
 
-This page covers the most common usage patterns: reusable options, the
-NetworkX- and igraph-style entry points, state and multilayer networks, and a
-short migration guide for users coming from other community-detection
-packages.
+This page is a reference for Python API patterns: reusable options,
+NetworkX- and igraph-style entry points, sparse inputs, state and multilayer
+networks, and migration notes for users coming from other
+community-detection packages.
 
 For single-cell analysis workflows using AnnData or Scanpy, see
 :doc:`scanpy`.
 
 For GraphML and GEXF files with module assignments attached to nodes, see
 :doc:`export`.
+
+For end-to-end notebooks, see :doc:`examples/index`. The notebooks own the
+worked comparisons against Louvain and Leiden.
+
+Which API should I use?
+-----------------------
+
+- Use :func:`infomap.find_communities` when you have a NetworkX-style graph
+  and want a partition.
+- Use :class:`infomap.Infomap` when you need hierarchy, flows, detailed
+  options, output files, or repeated runs.
+- Use :func:`infomap.find_igraph_communities` when you want an
+  igraph-native ``VertexClustering``.
+- Use :func:`infomap.tl.infomap` when your graph is stored in AnnData.
+- Use the native ``infomap`` CLI for large file-based runs, batch jobs, and
+  HPC workflows.
 
 Reusable options
 ----------------
@@ -73,8 +89,8 @@ dictionary:
     #     ...
     # }
 
-NetworkX graphs
----------------
+NetworkX API semantics
+----------------------
 
 :func:`infomap.find_communities` provides a NetworkX-style entry point that
 returns communities as a ``list[set]`` partition using the original graph node
@@ -104,13 +120,8 @@ attribute name:
     infomap.find_communities(graph, module_attribute="community")
 
 This follows NetworkX community conventions where algorithms return partitions
-and node attributes are stored on the graph. See the NetworkX documentation
-for `community algorithms`_, `Louvain communities`_, and `setting node
-attributes`_.
-
-.. _community algorithms: https://networkx.org/documentation/stable/reference/algorithms/community.html
-.. _Louvain communities: https://networkx.org/documentation/stable/reference/algorithms/generated/networkx.algorithms.community.louvain.louvain_communities.html
-.. _setting node attributes: https://networkx.org/documentation/stable/reference/generated/networkx.classes.function.set_node_attributes.html
+and node attributes are stored on the graph. For a worked comparison with
+Louvain, see :doc:`examples/compare-infomap-louvain-networkx`.
 
 :meth:`infomap.Infomap.add_networkx_graph` remains available when you need
 direct control over the :class:`infomap.Infomap` instance. It accepts
@@ -298,8 +309,8 @@ For the NetworkX-style wrapper:
 
     communities = infomap.find_communities(graph)
 
-igraph graphs
--------------
+igraph API semantics
+--------------------
 
 :func:`infomap.find_igraph_communities` provides an igraph-native entry point
 without making igraph a required dependency. It imports igraph only when the
@@ -360,9 +371,9 @@ and multilayer graphs are mapped to stable internal physical ids:
 python-igraph also includes ``Graph.community_infomap()``. The ``infomap``
 package API is useful when you want the current Infomap package
 implementation, Infomap-specific options, or state/multilayer import, while
-still receiving an igraph-native ``VertexClustering`` result. See the
-python-igraph documentation for `Graph.community_infomap`_ and
-`VertexClustering`_.
+still receiving an igraph-native ``VertexClustering`` result. For a worked
+comparison with Louvain and Leiden, see
+:doc:`examples/compare-infomap-louvain-leiden-igraph`.
 
 .. _Graph.community_infomap: https://python.igraph.org/en/main/api/igraph.Graph.html
 .. _VertexClustering: https://python.igraph.org/en/main/api/igraph.VertexClustering.html
@@ -388,9 +399,5 @@ Use :meth:`infomap.Infomap.add_networkx_graph` or
 :meth:`infomap.Infomap.add_igraph_graph` instead of the one-shot helpers when
 you need state networks, multilayer networks, explicit result iteration,
 dataframe export, or several runs with different Infomap options.
-
-For worked comparisons against Louvain in NetworkX and against Louvain and
-Leiden in igraph workflows, see the comparison tutorials on the
-:doc:`examples/index` page.
 
 See the :doc:`api/index` reference for the full surface.

@@ -9,6 +9,10 @@ sparse graph from ``adata.obsp``, stores categorical cluster labels in
 Infomap does not import Scanpy. It only requires an AnnData-compatible object
 with ``obs``, ``obsp``, ``uns`` and ``obs_names``.
 
+This is the reference page for AnnData graph selection and result storage. For
+an end-to-end Scanpy-style comparison with Leiden and UMAP plots, see
+:doc:`examples/compare-infomap-scanpy-workflow`.
+
 Minimal AnnData example
 -----------------------
 
@@ -31,12 +35,12 @@ Minimal AnnData example
     adata.obs["infomap"]
     adata.uns["infomap"]
 
-Scanpy workflow
----------------
+Using Scanpy neighbor graphs
+----------------------------
 
 In Scanpy workflows, nearest-neighbor graphs are commonly created with
 ``sc.pp.neighbors``. By default, Infomap uses ``adata.obsp["connectivities"]``,
-which is the graph used by Scanpy clustering tools:
+which is the graph used by Scanpy clustering tools.
 
 .. code-block:: python
 
@@ -47,9 +51,6 @@ which is the graph used by Scanpy clustering tools:
     sc.pp.neighbors(adata)
 
     infomap.tl.infomap(adata, key_added="infomap")
-
-    sc.tl.leiden(adata, key_added="leiden")
-    sc.pl.umap(adata, color=["infomap", "leiden"])
 
 If the neighbor graph was stored under a custom key, pass ``neighbors_key`` and
 Infomap will resolve the graph through
@@ -109,5 +110,10 @@ runs with the same graph, use the lower-level :class:`infomap.Infomap` API with
 :meth:`infomap.Infomap.add_scipy_sparse_matrix`. The AnnData helper keeps the
 default output compact for interactive single-cell analysis.
 
-For a worked comparison with Scanpy's Leiden workflow, see the Scanpy
-comparison tutorial on the :doc:`examples/index` page.
+See also
+--------
+
+- :doc:`examples/compare-infomap-scanpy-workflow` for a worked comparison with
+  Leiden in a Scanpy-style workflow.
+- :doc:`usage` for sparse matrix and lower-level :class:`infomap.Infomap`
+  patterns.

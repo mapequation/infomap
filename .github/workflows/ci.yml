@@ -280,6 +280,9 @@ jobs:
           make dev-python-install
           make dev-python-notebooks-install
 
+      - name: Build native Infomap for HPC notebook
+        run: make build-native
+
       - name: Run notebook smoke tests
         run: make test-python-notebooks-smoke
 
@@ -312,6 +315,9 @@ jobs:
         uses: ./.github/actions/setup-python-build
         with:
           python-version: "3.14"
+
+      - name: Build native Infomap for HPC notebook
+        run: make build-native
 
       - name: Build docs
         run: make build-docs

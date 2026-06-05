@@ -25,30 +25,36 @@ Quick start
     print(communities)
 
 Continue to :doc:`installation` for optional integrations and shell completion,
-or jump to :doc:`quickstart` for the first end-to-end example.
+or jump to :doc:`quickstart` for the smallest Python API examples.
 
 For Jupyter, start with the flagship
 `quickstart notebook <https://github.com/mapequation/infomap/blob/master/examples/notebooks/quickstart.ipynb>`_.
 It shows the notebook-native Infomap result summary, dataframe inspection, and
 a copyable static network partition helper.
 
-Where to go next
-----------------
+Choose a path
+-------------
+
+- New to Infomap in Python? Start with :doc:`quickstart`.
+- Working in NetworkX, igraph, sparse matrices, or multilayer graphs? Use
+  :doc:`usage`.
+- Working with AnnData or Scanpy? Use :doc:`scanpy`.
+- Need GraphML or GEXF files? Use :doc:`export`.
+- Learning from executable workflows? Use :doc:`examples/index`.
+- Running many native trials on a cluster? Use
+  :doc:`examples/run-infomap-on-hpc`.
+- Need exact signatures and return types? Use :doc:`api/index`.
+
+Core pages
+----------
 
 - :doc:`installation` — install the package, optional integrations, and the
   ``infomap`` CLI entry point.
-- :doc:`quickstart` — the shortest path from ``pip install`` to a partition.
+- :doc:`quickstart` — small Python API examples for first runs and result
+  access.
+- :doc:`usage` — API patterns for common graph containers and result access.
 - :doc:`examples/index` — executed notebooks for practical Infomap workflows
   and survey companion material.
-- :doc:`usage` — NetworkX, igraph, state and multilayer networks, reusable
-  options, and a migration guide for users of other community-detection
-  packages.
-- :doc:`export` — write Infomap module assignments to GraphML and GEXF for
-  visualization tools.
-- :doc:`scanpy` — run Infomap on AnnData graphs in Scanpy-style single-cell
-  workflows.
-- :doc:`api/index` — full API reference, split into top-level functions, the
-  :class:`infomap.Infomap` class, options, and tree iterators.
 
 External resources
 ------------------

@@ -2,6 +2,7 @@ PYTHON_SWIG_PY := interfaces/python/src/infomap/_swig.py
 PYTHON_SWIG_CPP := interfaces/python/generated/infomap_wrap.cpp
 SPHINX_SOURCE_DIR := interfaces/python/source
 SPHINX_TARGET_DIR ?= docs
+DOCS_BUILD_DIR ?= build/docs-site
 DOCS_SYNC_ARGS := -a --delete
 PYTHON_TEST_DIR := test/python
 NOTEBOOK_DIR := examples/notebooks
@@ -124,21 +125,25 @@ test-python-notebooks-full:
 	@cd $(NOTEBOOK_DIR) && $(PYTHON) ../../scripts/notebook_manifest.py --manifest notebooks.toml --suite full --print0 | \
 		xargs -0 $(PYTEST) --nbmake --nbmake-timeout=$(NOTEBOOK_TIMEOUT)
 
+define BUILD_DOCS_SITE
+set -e; \
+mkdir -p "$(1)"; \
+$(SPHINX_BUILD) -b html "$(SPHINX_SOURCE_DIR)" "$(1)"; \
+searchindex="$(1)/searchindex.js"; \
+if [ -f "$$searchindex" ] && [ -n "$$(tail -c 1 "$$searchindex" 2>/dev/null)" ]; then \
+	printf '\n' >> "$$searchindex"; \
+fi; \
+rm -rf "$(1)/.doctrees"
+endef
+
 _build-docs-site:
-	@mkdir -p "$(SPHINX_TARGET_DIR)"
-	@$(SPHINX_BUILD) -b html "$(SPHINX_SOURCE_DIR)" "$(SPHINX_TARGET_DIR)"
-	@searchindex="$(SPHINX_TARGET_DIR)/searchindex.js"; \
-		if [ -f "$$searchindex" ] && [ -n "$$(tail -c 1 "$$searchindex" 2>/dev/null)" ]; then \
-			printf '\n' >> "$$searchindex"; \
-		fi
-	@rm -rf "$(SPHINX_TARGET_DIR)/.doctrees"
+	@$(call BUILD_DOCS_SITE,$(SPHINX_TARGET_DIR))
 
 build-docs: dev-python-install
-	@tmp_dir="$$(mktemp -d 2>/dev/null || mktemp -d -t infomap-docs)"; \
-	trap 'rm -rf "$$tmp_dir"' EXIT; \
-	$(MAKE) --no-print-directory SPHINX_TARGET_DIR="$$tmp_dir/docs" _build-docs-site; \
+	@rm -rf "$(DOCS_BUILD_DIR)"
+	@$(call BUILD_DOCS_SITE,$(DOCS_BUILD_DIR))
 	mkdir -p docs; \
-	rsync $(DOCS_SYNC_ARGS) "$$tmp_dir/docs/" docs/
+	rsync $(DOCS_SYNC_ARGS) "$(DOCS_BUILD_DIR)/" docs/
 
 clean-python:
 	$(RM) -r dist/python *.egg-info interfaces/python/src/infomap/_infomap*.so interfaces/python/src/infomap/*.pyd

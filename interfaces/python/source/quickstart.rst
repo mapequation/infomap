@@ -1,13 +1,15 @@
 Quick start
 ===========
 
-Import the package with:
+This page shows the smallest useful Python API calls. For a worked notebook
+with plotting, dataframe inspection, and export, see
+:doc:`examples/quickstart`.
 
-.. code-block:: python
+Run on a graph
+--------------
 
-    import infomap
-
-A simple example:
+Use :func:`infomap.find_communities` when you already have a NetworkX-style
+graph and only need top-level assignments:
 
 .. code-block:: python
 
@@ -23,96 +25,57 @@ A simple example:
 
     print(communities)
 
-For direct control over Infomap-specific options and result access:
+Pass ``weight=None`` for unweighted edges. Pass ``module_attribute`` when you
+want the assignments written back to graph nodes.
 
-.. code-block:: python
+Use the Infomap class
+---------------------
 
-    from infomap import Infomap
-
-    # Command line flags can be provided as a string
-    im = Infomap("--two-level --directed")
-
-    # Add weight as optional third argument
-    im.add_link(0, 1)
-    im.add_link(0, 2)
-    im.add_link(0, 3)
-    im.add_link(1, 0)
-    im.add_link(1, 2)
-    im.add_link(2, 1)
-    im.add_link(2, 0)
-    im.add_link(3, 0)
-    im.add_link(3, 4)
-    im.add_link(3, 5)
-    im.add_link(4, 3)
-    im.add_link(4, 5)
-    im.add_link(5, 4)
-    im.add_link(5, 3)
-
-    # Run the search
-    im.run()
-
-    print(f"Found {im.num_top_modules} modules with codelength: {im.codelength}")
-
-    print("Result")
-    print("\n#node module")
-    for node in im.tree:
-        if node.is_leaf:
-            print(node.node_id, node.module_id)
-
-For interactive exploration, start:
-
-.. code-block:: bash
-
-    infomap-shell
-
-This opens a Python shell with ``im = Infomap(pretty=True)`` ready to use.
-Run ``options()`` to inspect the generated ``InfomapOptions`` reference and
-``summary()`` to print the current network or result state.
-
-Recommended researcher workflow
--------------------------------
-
-For notebooks and scripts, start from the graph package you already use,
-choose a seed, run multiple trials, then store both the partition and the
-settings used to produce it:
-
-.. code-block:: python
-
-    import networkx as nx
-    import infomap
-
-    graph = nx.karate_club_graph()
-    communities = infomap.find_communities(
-        graph,
-        weight="weight",
-        seed=123,
-        num_trials=20,
-        module_attribute="module_id",
-        flow_attribute="flow",
-    )
-
-    print(f"{len(communities)} communities")
-    print("Report: Infomap, seed=123, num_trials=20, weight='weight'")
-
-When you need tabular results, use :meth:`infomap.Infomap.to_dataframe` after
-running an explicit :class:`infomap.Infomap` instance:
+Use :class:`infomap.Infomap` when you need Infomap-specific options, result
+inspection, hierarchy access, or repeated runs:
 
 .. code-block:: python
 
     from infomap import Infomap
 
     im = Infomap(silent=True, seed=123, num_trials=20)
-    im.add_networkx_graph(graph)
+    im.add_link(0, 1)
+    im.add_link(1, 2)
+    im.add_link(2, 0)
     im.run()
+
+    print(im.codelength)
+    print(im.get_modules())
+
+For tabular output:
+
+.. code-block:: python
+
     results = im.to_dataframe(
-        columns=["node_id", "community", "flow"],
+        columns=["node_id", "module_id", "flow"],
         index="node_id",
-        sort=["community", "flow"],
     )
 
-``seed`` initializes the random number generator. ``num_trials`` controls how
-many independent optimization trials are run before Infomap keeps the best
-solution. For reproducible reports, record the package version, graph input,
-edge weight field, ``seed``, ``num_trials``, and non-default Infomap options.
+Record ``seed``, ``num_trials``, input provenance, and non-default options for
+reproducible reports.
 
-For longer worked examples, see :doc:`examples/index`.
+Explore interactively
+---------------------
+
+Start a Python shell with Infomap preloaded:
+
+.. code-block:: bash
+
+    infomap-shell
+
+This opens a shell with ``im = Infomap(pretty=True)`` ready to use. Run
+``options()`` to inspect options and ``summary()`` to inspect the current
+network or result.
+
+Next steps
+----------
+
+- :doc:`usage` covers NetworkX, igraph, SciPy sparse matrices, edge-index,
+  state networks, and multilayer networks.
+- :doc:`examples/index` contains executed workflow notebooks.
+- :doc:`api/index` is the full API reference.

@@ -5,16 +5,18 @@ These examples are rendered from the Jupyter notebooks in
 ``examples/notebooks``. They are published as regular documentation pages so
 they can be searched, linked, and read without opening Jupyter.
 
-Start here
-----------
+Choose a notebook
+-----------------
 
 - :doc:`quickstart` — first end-to-end Infomap workflow in Python.
 - :doc:`compare-infomap-louvain-networkx` — compare Infomap and Louvain with
-  NetworkX.
+  NetworkX when your graph already lives in NetworkX.
 - :doc:`compare-infomap-louvain-leiden-igraph` — compare Infomap, Louvain, and
-  Leiden with python-igraph.
+  Leiden when you want igraph-native clustering objects.
 - :doc:`compare-infomap-scanpy-workflow` — compare Infomap and Leiden in an
   AnnData and Scanpy-style workflow.
+- :doc:`run-infomap-on-hpc` — native CLI recipes for scheduler-aware HPC runs
+  and Python shard merging.
 
 Additional tutorial notebooks
 -----------------------------
@@ -54,6 +56,7 @@ Source notebooks
 - `compare-infomap-louvain-networkx.ipynb <https://github.com/mapequation/infomap/blob/master/examples/notebooks/compare-infomap-louvain-networkx.ipynb>`_
 - `compare-infomap-louvain-leiden-igraph.ipynb <https://github.com/mapequation/infomap/blob/master/examples/notebooks/compare-infomap-louvain-leiden-igraph.ipynb>`_
 - `compare-infomap-scanpy-workflow.ipynb <https://github.com/mapequation/infomap/blob/master/examples/notebooks/compare-infomap-scanpy-workflow.ipynb>`_
+- `run-infomap-on-hpc.ipynb <https://github.com/mapequation/infomap/blob/master/examples/notebooks/run-infomap-on-hpc.ipynb>`_
 
 .. toctree::
    :hidden:
@@ -63,3 +66,4 @@ Source notebooks
    compare-infomap-louvain-networkx
    compare-infomap-louvain-leiden-igraph
    compare-infomap-scanpy-workflow
+   run-infomap-on-hpc
