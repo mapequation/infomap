@@ -192,7 +192,6 @@ std::string canonicalConfigJson(const Config& config)
   appendField(json, first, "flow_model", jsonString(flowModelToString(config.flowModel)));
   appendField(json, first, "directed", boolString(config.directed));
   appendNumericField(json, first, "seed", config.seedToRandomNumberGenerator);
-  appendNumericField(json, first, "num_trials", config.numTrials);
   appendField(json, first, "two_level", boolString(config.twoLevel));
   appendField(json, first, "no_infomap", boolString(config.noInfomap));
   appendField(json, first, "regularized", boolString(config.regularized));

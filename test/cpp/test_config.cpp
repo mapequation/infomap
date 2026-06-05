@@ -597,4 +597,12 @@ TEST_CASE("Config rejects --num-threads with trailing garbage [fast][core][confi
   CHECK_THROWS(Config("input.net --silent --no-file-output --num-threads 4x", true));
 }
 
+TEST_CASE("Config fingerprint is invariant to num_trials and trial offset [fast][core][config][cli]")
+{
+  const Config a("input.net --silent --no-file-output --num-trials 1", true);
+  const Config b("input.net --silent --no-file-output --num-trials 100", true);
+  CHECK(infomap::configFingerprint(a) == infomap::configFingerprint(b));
+  CHECK(infomap::canonicalConfigJson(a).find("num_trials") == std::string::npos);
+}
+
 } // namespace
