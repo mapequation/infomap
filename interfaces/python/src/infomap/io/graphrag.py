@@ -202,7 +202,7 @@ def _nodes_table(im, graph: GraphRAGGraph):
     nodes["node_id"] = nodes["node_id"].map(int)
     nodes["entity_id"] = nodes["node_id"].map(graph.node_id_to_entity_id)
     nodes["entity_title"] = nodes["node_id"].map(graph.node_id_to_entity_title)
-    nodes["module_path"] = nodes["path"].map(lambda path: list(path))
+    nodes["module_path"] = nodes["path"].map(list)
     nodes["level"] = nodes["module_path"].map(len)
     return nodes[
         [
