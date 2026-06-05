@@ -147,6 +147,11 @@ struct Config {
   bool memoryReport = false;
   std::string numThreadsArg = "auto"; // raw --num-threads / --threads argument
   unsigned int numThreads = 0;        // 0 = auto; positive = explicit request
+  unsigned int trialOffset = 0;       // global index of this shard's first trial
+  std::string trialResultsPath;       // --trial-results <file.json>
+  bool noFinalOutput = false;         // suppress aggregate final write (per-trial still written)
+  std::string mergeTrialResults;      // --merge-trial-results <glob,...> (comma-separated)
+  bool requireCompleteTrials = false; // error on missing trial indices at merge
 #endif
   int cluLevel = 1; // Write modules at specified depth from root. 1, 2, ... or -1 for bottom level
   bool printFlowNetwork = false;
@@ -238,6 +243,11 @@ struct Config {
     memoryReport = other.memoryReport;
     numThreadsArg = other.numThreadsArg;
     numThreads = other.numThreads;
+    trialOffset = other.trialOffset;
+    trialResultsPath = other.trialResultsPath;
+    noFinalOutput = other.noFinalOutput;
+    mergeTrialResults = other.mergeTrialResults;
+    requireCompleteTrials = other.requireCompleteTrials;
 #endif
     verbosity = other.verbosity;
     verboseNumberPrecision = other.verboseNumberPrecision;
