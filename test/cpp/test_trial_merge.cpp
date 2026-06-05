@@ -177,6 +177,89 @@ TEST_CASE("mergeTrialResults: two valid shards picks winner and writes outputs [
 }
 
 // ---------------------------------------------------------------------------
+// Test (a2): merged .clu content — correct row count and node→module mapping
+// ---------------------------------------------------------------------------
+TEST_CASE("mergeTrialResults: merged .clu has correct row count and node-to-module mapping [fast][core][merge]")
+{
+  // makeTinyTree(codelength, numNodes) places nodes 1..half in module 1 and
+  // nodes (half+1)..numNodes in module 2. With numNodes=4: module 1 = {1,2},
+  // module 2 = {3,4}. All flows = 1/numNodes = 0.25.
+
+  const std::string dir = std::string(INFOMAP_TEST_ROOT) + "/test/tmp/merge_clu_content";
+  infomap::ensureDirectoryExists(dir);
+
+  const std::string netFp = "nfp_clu_content";
+  const std::string cfgFp = "cfg_clu_content";
+
+  // Single shard, 4-node tree (2 modules of 2 nodes each).
+  auto pathA = writeShardFixture(dir, "shardA.json", "shardA_best.tree",
+      netFp, cfgFp, 0, 1,
+      { { 0, 100, 2.0, 2, 2, 0, 0.1 } });
+
+  const std::string outDir = dir + "/out";
+  infomap::ensureDirectoryExists(outDir);
+  std::remove((outDir + "/merged_content.tree").c_str());
+  std::remove((outDir + "/merged_content.clu").c_str());
+
+  // printTree=false, printClu=true — only generate the .clu
+  auto config = makeMergeConfig(pathA, outDir, "merged_content",
+      /*requireComplete=*/false,
+      /*printTree=*/false,
+      /*printClu=*/true);
+
+  const ExitCode code = mergeTrialResults(config);
+  REQUIRE(code == ExitCode::Success);
+
+  const std::string cluPath = outDir + "/merged_content.clu";
+  REQUIRE(infomap::pathExists(cluPath));
+
+  // Parse the .clu file.
+  const auto cluContent = readTextFile(cluPath);
+  REQUIRE_FALSE(cluContent.empty());
+
+  // Count data rows (lines that don't start with '#' and are non-empty).
+  int dataRows = 0;
+  unsigned int node1Module = 0;
+  unsigned int node3Module = 0;
+  {
+    std::istringstream ss(cluContent);
+    std::string line;
+    while (std::getline(ss, line)) {
+      if (line.empty() || line[0] == '#')
+        continue;
+      ++dataRows;
+      // Parse: node_id module flow
+      unsigned int nid = 0, mod = 0;
+      double flow = 0.0;
+      std::istringstream ls(line);
+      ls >> nid >> mod >> flow;
+      if (nid == 1)
+        node1Module = mod;
+      if (nid == 3)
+        node3Module = mod;
+    }
+  }
+
+  // 4 leaf nodes → 4 data rows.
+  CHECK(dataRows == 4);
+
+  // Nodes 1 and 2 are in module 1; nodes 3 and 4 are in module 2.
+  CHECK(node1Module == 1);
+  CHECK(node3Module == 2);
+
+  // The two modules must be distinct.
+  CHECK(node1Module != node3Module);
+
+  // Column header must be present.
+  CHECK(cluContent.find("# node_id module flow") != std::string::npos);
+  // Module-level line must be present.
+  CHECK(cluContent.find("# module level 1") != std::string::npos);
+
+  // Clean up.
+  std::remove((outDir + "/merged_content.clu").c_str());
+}
+
+// ---------------------------------------------------------------------------
 // Test (b): mismatched configFingerprint → InputError
 // ---------------------------------------------------------------------------
 TEST_CASE("mergeTrialResults: mismatched configFingerprint returns InputError [fast][core][merge]")

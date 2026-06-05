@@ -11,7 +11,6 @@
 #define TRIAL_MERGE_H_
 
 #include "InfomapError.h"
-#include <string>
 
 namespace infomap {
 

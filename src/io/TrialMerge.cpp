@@ -13,20 +13,13 @@
 #include "InfomapError.h"
 #include "SafeFile.h"
 #include "TrialResults.h"
-#include "../utils/FileURI.h"
 #include "../utils/Log.h"
-#include "../utils/convert.h"
 
-#include <algorithm>
-#include <cstdio>
-#include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <limits>
-#include <map>
 #include <set>
 #include <sstream>
-#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -115,20 +108,31 @@ namespace {
 
   // Write .clu from a parsed ClusterMap (physical level, non-multilayer,
   // non-state). Format matches writeClu() in Output.cpp:
+  //   # produced by --merge-trial-results
+  //   # module level 1
   //   # node_id module flow
   //   physicalId moduleId flow
+  //
+  // Module ids are derived from treePaths(): path[0] is the 1-based top-level
+  // module id. Flow is taken from flowData() keyed by nodeId (defaults to 0.0
+  // if absent).
   void writeCluFromClusterMap(const std::string& cluPath, const ClusterMap& cm)
   {
     SafeOutFile outFile(cluPath, std::ios_base::out, true /* overwrite */);
-    outFile << std::setprecision(6);
+    outFile << std::setprecision(9);
+    outFile << "# produced by --merge-trial-results\n";
+    outFile << "# module level 1\n";
+    outFile << std::resetiosflags(std::ios::floatfield) << std::setprecision(6);
     outFile << "# node_id module flow\n";
 
-    const auto& clusterIds = cm.clusterIds();
+    const auto& paths = cm.treePaths();
     const auto& flowData = cm.flowData();
 
-    for (const auto& kv : clusterIds) {
-      const unsigned int nodeId = kv.first;
-      const unsigned int moduleId = kv.second;
+    for (const auto& tp : paths) {
+      if (tp.path.empty())
+        continue; // defensive: skip malformed entries
+      const unsigned int nodeId = tp.nodeId;
+      const unsigned int moduleId = tp.path.front(); // top-level module (1-based)
       double flow = 0.0;
       auto it = flowData.find(nodeId);
       if (it != flowData.end())
@@ -348,13 +352,25 @@ ExitCode mergeTrialResults(const Config& config)
 
   const std::string outBase = config.outDirectory + config.outName;
 
-  // Ensure output directory exists.
-  if (!config.outDirectory.empty()) {
-    try {
-      ensureDirectoryExists(config.outDirectory);
-    } catch (const std::exception& e) {
-      std::cerr << "Error: " << e.what() << "\n";
-      return ExitCode::OutputError;
+  // Ensure output directory exists. When outDirectory is empty but outName
+  // contains a path separator, create the parent directory of outName so
+  // that callers can specify a full path via --out-name without a positional
+  // out_directory argument (useful in merge mode from the CLI).
+  {
+    std::string dirToCreate = config.outDirectory;
+    if (dirToCreate.empty()) {
+      const auto sep = outBase.find_last_of("/\\");
+      if (sep != std::string::npos) {
+        dirToCreate = outBase.substr(0, sep + 1);
+      }
+    }
+    if (!dirToCreate.empty()) {
+      try {
+        ensureDirectoryExists(dirToCreate);
+      } catch (const std::exception& e) {
+        std::cerr << "Error: " << e.what() << "\n";
+        return ExitCode::OutputError;
+      }
     }
   }
 
