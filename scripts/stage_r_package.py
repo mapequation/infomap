@@ -98,7 +98,7 @@ def copy_skeleton(skeleton: Path, dest: Path) -> None:
 
 
 def normalize_configure_permissions(pkg_root: Path) -> None:
-    for name in ("configure", "configure.win"):
+    for name in ("configure", "configure.win", "cleanup"):
         path = pkg_root / name
         if path.exists():
             path.chmod(0o755)

@@ -1,0 +1,16 @@
+#!/bin/sh
+# cleanup — run by R CMD build (and by R CMD INSTALL --clean) after vignette
+# rendering. R CMD build renders vignettes by temporarily installing the package
+# into the build copy, which compiles the C++ core and leaves host .o/.so files
+# in src/. Those stale objects would then be packed into the *source* tarball and
+# break r-universe / CRAN binary builds, which try to link host objects on a
+# foreign toolchain ("Relocations in generic ELF", "unknown file type", TLS link
+# errors). Strip them so the source tarball stays source-only; the binary build
+# recompiles from the .cpp sources in a fresh tree.
+set -e
+
+PKG_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+find "$PKG_DIR/src" \
+  \( -name '*.o' -o -name '*.so' -o -name '*.dll' -o -name '*.dylib' \) \
+  -delete 2>/dev/null || true

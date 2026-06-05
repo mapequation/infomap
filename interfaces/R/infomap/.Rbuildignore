@@ -11,3 +11,11 @@
 ^src/symbols\.rds$
 ^configure\.win$
 ^bootstrap\.R$
+# Compiled artifacts must never reach the source tarball. .Rbuildignore only
+# filters at the initial copy (catching a dirty in-place source tree); the
+# objects that the vignette install creates *during* the build are removed by
+# the cleanup script instead.
+\.o$
+\.so$
+\.dll$
+\.dylib$

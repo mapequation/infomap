@@ -313,5 +313,16 @@ jobs:
           mv interfaces/R/infomap/infomap_*.tar.gz build/R/r-universe-simulation/
           tarball="$(find build/R/r-universe-simulation -maxdepth 1 -name 'infomap_*.tar.gz' -print -quit)"
           test -n "$tarball"
+          # The source tarball must be source-only. R CMD build renders vignettes
+          # via a temporary install that compiles the C++ core in-tree; without
+          # the package's cleanup script those host .o/.so objects get packed and
+          # break r-universe/CRAN binary builds on foreign toolchains. Fail loud
+          # here rather than waiting for the downstream binary build to break.
+          if compiled="$(tar tzf "$tarball" | grep -E '\.(o|so|dll|dylib)$')"; then
+            echo "ERROR: source tarball contains compiled objects:" >&2
+            echo "$compiled" >&2
+            echo "The package cleanup script should have removed these." >&2
+            exit 1
+          fi
           R CMD INSTALL "$tarball"
           Rscript -e 'library(testthat); library(infomap); testthat::test_dir("interfaces/R/infomap/tests/testthat")'
