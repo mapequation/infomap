@@ -618,4 +618,27 @@ TEST_CASE("networkFingerprint depends only on content [fast][core][config]")
   CHECK(infomap::networkFingerprint(pathA) == infomap::networkFingerprint(pathA));
 }
 
+TEST_CASE("Config parses --trial-offset [fast][core][config][cli]")
+{
+  const Config c("input.net --silent --no-file-output --trial-offset 25", true);
+  CHECK(c.trialOffset == 25);
+}
+
+TEST_CASE("Config parses --trial-results and --no-final-output [fast][core][config][cli]")
+{
+  const Config c("input.net --silent --no-file-output --trial-results r.json --no-final-output", true);
+  CHECK(c.trialResultsPath == "r.json");
+  CHECK(c.noFinalOutput);
+}
+
+TEST_CASE("Config parses --merge-trial-results list and --require-complete-trials [fast][core][config][cli]")
+{
+  // ArgType::list binds to a std::string as comma-separated tokens.
+  // A network_file placeholder is required by the CLI positional parser even in merge mode
+  // (merge-mode enforcement is a later phase); phase C just wires the flags.
+  const Config c("input.net --silent --no-file-output --merge-trial-results a.json,b.json --require-complete-trials --output tree,clu", true);
+  CHECK(c.mergeTrialResults == "a.json,b.json");
+  CHECK(c.requireCompleteTrials);
+}
+
 } // namespace
