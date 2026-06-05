@@ -35,6 +35,11 @@ OUTPUT_OPTIONS <- list(
   list(type = "value", name = "summary_json", flag = "--summary-json", default = NULL, include = .skip_when_null),
   list(type = "value", name = "manifest_json", flag = "--manifest-json", default = NULL, include = .skip_when_null),
   list(type = "flag", name = "memory_report", flag = "--memory-report", default = FALSE),
+  list(type = "value", name = "trial_offset", flag = "--trial-offset", default = NULL, include = .skip_when_null),
+  list(type = "value", name = "trial_results", flag = "--trial-results", default = NULL, include = .skip_when_null),
+  list(type = "flag", name = "no_final_output", flag = "--no-final-output", default = FALSE),
+  list(type = "value", name = "merge_trial_results", flag = "--merge-trial-results", default = NULL, include = .skip_when_null),
+  list(type = "flag", name = "require_complete_trials", flag = "--require-complete-trials", default = FALSE),
   list(type = "flag", name = "silent", flag = "--silent", default = FALSE),
   list(type = "flag", name = "pretty", flag = "--pretty", default = FALSE)
 )
@@ -87,16 +92,17 @@ OPTION_FIELD_NAMES <- c(
   "ftree", "clu", "clu_level", "output",
   "hide_bipartite_nodes", "print_all_trials", "no_overwrite", "print_config_fingerprint",
   "timing_json", "summary_json", "manifest_json", "memory_report",
-  "verbosity_level", "silent", "pretty", "two_level",
-  "flow_model", "directed", "recorded_teleportation", "use_node_weights_as_flow",
-  "to_nodes", "teleportation_probability", "regularized", "regularization_strength",
-  "entropy_corrected", "entropy_correction_strength", "markov_time", "variable_markov_time",
-  "variable_markov_damping", "variable_markov_min_scale", "preferred_number_of_modules", "multilayer_relax_rate",
-  "multilayer_relax_limit", "multilayer_relax_limit_up", "multilayer_relax_limit_down", "multilayer_relax_by_jsd",
-  "seed", "num_trials", "core_loop_limit", "core_level_limit",
-  "tune_iteration_limit", "core_loop_codelength_threshold", "tune_iteration_relative_threshold", "fast_hierarchical_solution",
-  "inner_parallelization", "parallel_trials", "num_threads", "threads",
-  "prefer_modular_solution", "num_random_moves", "max_degree_for_random_moves"
+  "trial_offset", "trial_results", "no_final_output", "merge_trial_results",
+  "require_complete_trials", "verbosity_level", "silent", "pretty",
+  "two_level", "flow_model", "directed", "recorded_teleportation",
+  "use_node_weights_as_flow", "to_nodes", "teleportation_probability", "regularized",
+  "regularization_strength", "entropy_corrected", "entropy_correction_strength", "markov_time",
+  "variable_markov_time", "variable_markov_damping", "variable_markov_min_scale", "preferred_number_of_modules",
+  "multilayer_relax_rate", "multilayer_relax_limit", "multilayer_relax_limit_up", "multilayer_relax_limit_down",
+  "multilayer_relax_by_jsd", "seed", "num_trials", "core_loop_limit",
+  "core_level_limit", "tune_iteration_limit", "core_loop_codelength_threshold", "tune_iteration_relative_threshold",
+  "fast_hierarchical_solution", "inner_parallelization", "parallel_trials", "num_threads",
+  "threads", "prefer_modular_solution", "num_random_moves", "max_degree_for_random_moves"
 )
 
 OPTION_DEFAULTS <- list(
@@ -128,6 +134,11 @@ OPTION_DEFAULTS <- list(
   summary_json = NULL,
   manifest_json = NULL,
   memory_report = FALSE,
+  trial_offset = NULL,
+  trial_results = NULL,
+  no_final_output = FALSE,
+  merge_trial_results = NULL,
+  require_complete_trials = FALSE,
   verbosity_level = 1L,
   silent = FALSE,
   pretty = FALSE,
@@ -216,6 +227,11 @@ OPTION_DEFAULTS <- list(
 #'   \item{`summary_json`}{Write machine-readable final run summary JSON to this path. Use - for stdout.}
 #'   \item{`manifest_json`}{Write a machine-readable run manifest JSON to this path. Use - for stdout.}
 #'   \item{`memory_report`}{Include peak RSS and best-effort bytes per node/link estimates in timing JSON. Requires --timing-json.}
+#'   \item{`trial_offset`}{Global index of the first trial this process runs; trial i uses seed = base_seed + (trial_offset + i). Default 0 (single-process behavior).}
+#'   \item{`trial_results`}{Write this shard's per-trial results (codelengths, seeds, best-tree reference, fingerprints) as JSON to this path, for later --merge-trial-results.}
+#'   \item{`no_final_output`}{Skip writing this process's aggregate best result. Per-trial outputs and --trial-results are still written.}
+#'   \item{`merge_trial_results`}{Merge mode: read these shard result files (comma-separated globs), pick the global best trial, and write the final output. Takes no network input.}
+#'   \item{`require_complete_trials`}{With --merge-trial-results, fail (instead of warn) if any global trial index in \[0, max\] is missing across the shard files.}
 #'   \item{`verbosity_level`}{Increase console verbosity. Add more v flags to increase verbosity up to -vvv.}
 #'   \item{`silent`}{Suppress console output.}
 #'   \item{`pretty`}{Use modernized console output with color and Unicode on interactive terminals.}
