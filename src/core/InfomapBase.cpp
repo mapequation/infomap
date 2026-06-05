@@ -790,20 +790,21 @@ public:
           m_infomap.writeTree(treeAbsPath, false);
         }
 
-        // Store path relative to the results file directory.
+        // Store the tree path relative to the results file's directory, so the
+        // merge tool can resolve it from wherever the results file lives.
         std::string resultsDir;
         const auto lastSlash = m_infomap.trialResultsPath.find_last_of("/\\");
         if (lastSlash != std::string::npos) {
           resultsDir = m_infomap.trialResultsPath.substr(0, lastSlash + 1);
         }
         if (!resultsDir.empty() && treeAbsPath.substr(0, resultsDir.size()) == resultsDir) {
+          // Tree lives under the results directory — store the relative remainder.
           trialResultsFile.bestTreeFile = treeAbsPath.substr(resultsDir.size());
         } else {
-          // Different directories — store the filename component only.
-          const auto treeSlash = treeAbsPath.find_last_of("/\\");
-          trialResultsFile.bestTreeFile = (treeSlash != std::string::npos)
-              ? treeAbsPath.substr(treeSlash + 1)
-              : treeAbsPath;
+          // Results file is in the CWD (resultsDir empty) or an unrelated
+          // directory: the tree path as written (relative to the CWD) is correct.
+          // Stripping to a basename here would drop the output-directory prefix.
+          trialResultsFile.bestTreeFile = treeAbsPath;
         }
       }
 
