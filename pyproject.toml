@@ -49,6 +49,7 @@ pandas = [
   "pandas",
 ]
 graphrag = [
+  "numpy",
   "pandas",
   "pyarrow",
 ]
@@ -64,6 +65,7 @@ all = [
   "anndata",
   "igraph",
   "networkx",
+  "numpy",
   "pandas",
   "pyarrow",
   "scipy",

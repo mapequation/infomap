@@ -286,6 +286,15 @@ def _run_summary_metadata(im):
     }
 
 
+def _links_array(graph: GraphRAGGraph):
+    import numpy as np
+
+    columns = [graph.sources, graph.targets]
+    if graph.weights is not None:
+        columns.append(graph.weights)
+    return np.column_stack(columns)
+
+
 def write_graphrag_communities(im, *, graph: GraphRAGGraph, output):
     """Write experimental GraphRAG-compatible community tables."""
     _import_parquet_stack()
@@ -323,7 +332,7 @@ def run_graphrag_communities(
     paths["dir"].mkdir(parents=True, exist_ok=True)
 
     im = Infomap(options, summary_json=str(paths["run"]))
-    im.add_links(graph.sources, graph.targets, graph.weights)
+    im.add_links(_links_array(graph))
     im.run()
     write_graphrag_communities(im, graph=graph, output=output_dir)
     return GraphRAGRunResult(infomap=im, graph=graph, output_dir=Path(output_dir))

@@ -26,73 +26,6 @@ from ._scipy import add_scipy_sparse_matrix as _add_scipy_sparse_matrix
 from ._writers import _InfomapWritersMixin
 
 
-def _columnar_links_array(sources, targets, weights=None):
-    import numpy as np
-
-    sources_array = np.asarray(sources)
-    targets_array = np.asarray(targets)
-
-    if sources_array.ndim != 1 or targets_array.ndim != 1:
-        raise ValueError("Columnar link sources and targets must be 1-dimensional.")
-    if len(sources_array) != len(targets_array):
-        raise ValueError("Columnar link sources and targets must have the same length.")
-
-    columns = [sources_array, targets_array]
-    if weights is not None:
-        weights_array = np.asarray(weights)
-        if weights_array.ndim != 1:
-            raise ValueError("Columnar link weights must be 1-dimensional.")
-        if len(weights_array) != len(sources_array):
-            raise ValueError(
-                "Columnar link weights must have the same length as sources."
-            )
-        columns.append(weights_array)
-
-    return np.column_stack(columns)
-
-
-def _columnar_length(column):
-    try:
-        return len(column)
-    except TypeError as err:
-        raise ValueError(
-            "Columnar link inputs must be sized 1-dimensional values."
-        ) from err
-
-
-def _validate_columnar_links(sources, targets, weights=None):
-    if getattr(sources, "ndim", 1) != 1 or getattr(targets, "ndim", 1) != 1:
-        raise ValueError("Columnar link sources and targets must be 1-dimensional.")
-    if _columnar_length(sources) != _columnar_length(targets):
-        raise ValueError("Columnar link sources and targets must have the same length.")
-
-    if weights is not None:
-        if getattr(weights, "ndim", 1) != 1:
-            raise ValueError("Columnar link weights must be 1-dimensional.")
-        if _columnar_length(weights) != _columnar_length(sources):
-            raise ValueError(
-                "Columnar link weights must have the same length as sources."
-            )
-
-
-def _columnar_link_column(column):
-    return column.to_numpy() if hasattr(column, "to_numpy") else column
-
-
-def _use_numpy_columnar_links(*columns):
-    return any(
-        column is not None and (_is_numpy_input(column) or hasattr(column, "to_numpy"))
-        for column in columns
-    )
-
-
-def _link_table_column(table, column_name):
-    try:
-        return table[column_name]
-    except KeyError as err:
-        raise ValueError(f"Missing link table column {column_name!r}.") from err
-
-
 def _package_construct_args():
     package_module = sys.modules.get(__package__)
     if package_module is None:
@@ -877,7 +810,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         """
         return super().addLink(source_id, target_id, weight)
 
-    def add_links(self, links, targets=None, weights=None):
+    def add_links(self, links):
         """Add several links.
 
         Examples
@@ -901,34 +834,12 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
 
         Parameters
         ----------
-        links : iterable of tuples, numpy.ndarray, or array-like
+        links : iterable of tuples or numpy.ndarray
             Iterable of tuples of int of the form
             ``(source_id, target_id, [weight])``. NumPy arrays must be
             2-dimensional with 2 or 3 columns, where the first two columns are
             source and target ids and the optional third column is link weight.
-            When ``targets`` is given, this argument is interpreted as a
-            1-dimensional source-id column.
-        targets : array-like, optional
-            Target-id column for columnar input.
-        weights : array-like, optional
-            Link-weight column for columnar input. Requires ``targets``.
         """
-        if targets is not None:
-            links, targets, weights = (
-                _columnar_link_column(links),
-                _columnar_link_column(targets),
-                None if weights is None else _columnar_link_column(weights),
-            )
-            _validate_columnar_links(links, targets, weights)
-            if _use_numpy_columnar_links(links, targets, weights):
-                links = _columnar_links_array(links, targets, weights)
-            else:
-                if weights is None:
-                    weights = [1.0] * len(links)
-                return super().addLinks(links, targets, weights)
-        elif weights is not None:
-            raise ValueError("Columnar link weights require a targets column.")
-
         if _is_numpy_input(links):
             links_array = _normalize_numpy_links(
                 links,
@@ -954,32 +865,6 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         )
 
         return super().addLinks(source_ids, target_ids, weights)
-
-    def add_link_table(
-        self,
-        table,
-        source_col="source",
-        target_col="target",
-        weight_col="weight",
-    ):
-        """Add links from a table with source, target, and optional weight columns.
-
-        Parameters
-        ----------
-        table : object
-            Table-like object supporting ``table[column_name]`` access.
-        source_col : str, optional
-            Source-id column name. Default ``"source"``.
-        target_col : str, optional
-            Target-id column name. Default ``"target"``.
-        weight_col : str or None, optional
-            Weight column name. Set to ``None`` for unweighted links. If left
-            as the default ``"weight"``, the table must contain that column.
-        """
-        sources = _link_table_column(table, source_col)
-        targets = _link_table_column(table, target_col)
-        weights = None if weight_col is None else _link_table_column(table, weight_col)
-        return self.add_links(sources, targets, weights)
 
     def remove_link(self, source_id, target_id):
         """Remove a link.

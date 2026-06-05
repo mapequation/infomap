@@ -62,6 +62,13 @@ def test_add_links_rejects_invalid_link_lengths(make_infomap):
         im.add_links([(1, 2, 3, 4)])
 
 
+def test_add_links_keeps_single_argument_api(make_infomap):
+    im = make_infomap()
+
+    with pytest.raises(TypeError):
+        im.add_links([1], [2], [1.0])
+
+
 def test_add_links_accepts_weighted_numpy_array(make_infomap, canonical_modules):
     np = pytest.importorskip("numpy")
 
