@@ -17,6 +17,7 @@
 
 #include <cstdio>
 #include <fstream>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -296,4 +297,75 @@ TEST_CASE("mergeTrialResults: missing global trial index — warning by default,
     CHECK(code == ExitCode::InputError);
     CHECK_FALSE(infomap::pathExists(outDir + "/merged_gap_strict.tree"));
   }
+}
+
+// ---------------------------------------------------------------------------
+// Test (E3): end-to-end via Config parsed from flags (simulates CLI entry)
+// ---------------------------------------------------------------------------
+TEST_CASE("mergeTrialResults: end-to-end via CLI-style Config + mergeTrialResults [fast][core][merge][cli]")
+{
+  const std::string dir = std::string(INFOMAP_TEST_ROOT) + "/test/tmp/merge_e3";
+  infomap::ensureDirectoryExists(dir);
+
+  const std::string netFp = "nfp_e3";
+  const std::string cfgFp = "cfg_e3";
+
+  auto pathA = writeShardFixture(dir, "shardA.json", "shardA_best.tree",
+      netFp, cfgFp, 0, 2,
+      { { 0, 100, 5.0, 2, 2, 0, 0.1 }, { 1, 101, 3.5, 2, 2, 0, 0.1 } });
+  auto pathB = writeShardFixture(dir, "shardB.json", "shardB_best.tree",
+      netFp, cfgFp, 2, 2,
+      { { 2, 102, 4.0, 2, 2, 0, 0.1 }, { 3, 103, 2.7, 2, 2, 0, 0.1 } });
+
+  const std::string outBase = dir + "/cli_merged";
+  std::remove((outBase + ".tree").c_str());
+  std::remove((outBase + ".clu").c_str());
+
+  // Build the flags string as it would come from the CLI. --out-name uses a
+  // full path so outDirectory can remain empty.
+  std::ostringstream flags;
+  flags << "--merge-trial-results " << pathA << "," << pathB
+        << " --output tree,clu"
+        << " --out-name " << outBase
+        << " --silent";
+
+  // Parse as CLI config (isCLI=true) and call mergeTrialResults.
+  Config config;
+  REQUIRE_NOTHROW(config = Config(flags.str(), true));
+  CHECK(config.mergeTrialResults == pathA + "," + pathB);
+  CHECK(config.printTree);
+  CHECK(config.printClu);
+  CHECK(config.outName == outBase);
+
+  const ExitCode code = mergeTrialResults(config);
+  CHECK(code == ExitCode::Success);
+  CHECK(infomap::pathExists(outBase + ".tree"));
+  CHECK(infomap::pathExists(outBase + ".clu"));
+
+  // The winner (trial 3, codelength 2.7) must be reflected in the output.
+  const auto treeContent = readTextFile(outBase + ".tree");
+  CHECK(treeContent.find("2.7") != std::string::npos);
+
+  // Fingerprint mismatch via CLI-style Config.
+  {
+    auto pathC = writeShardFixture(dir, "shardC.json", "shardC_best.tree",
+        "DIFFERENT_NETFP", cfgFp, 4, 1,
+        { { 4, 104, 2.0, 2, 2, 0, 0.1 } });
+
+    std::ostringstream badFlags;
+    badFlags << "--merge-trial-results " << pathA << "," << pathC
+             << " --output tree,clu"
+             << " --out-name " << dir << "/should_not_exist"
+             << " --silent";
+
+    Config badConfig;
+    REQUIRE_NOTHROW(badConfig = Config(badFlags.str(), true));
+    const ExitCode badCode = mergeTrialResults(badConfig);
+    CHECK(badCode == ExitCode::InputError);
+    CHECK_FALSE(infomap::pathExists(dir + "/should_not_exist.tree"));
+  }
+
+  // Clean up.
+  std::remove((outBase + ".tree").c_str());
+  std::remove((outBase + ".clu").c_str());
 }

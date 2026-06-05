@@ -217,7 +217,11 @@ namespace {
     SpecBuilder& networkFileArgument()
     {
       parameter_.registrar = [](ProgramInterface& api, ConfigParameterTargets& targets, const ParameterSpec& parameter) {
-        api.addNonOptionArgument(targets.config.networkFile, "network_file", parameter.description, parameter.group);
+        // Register network_file as an optional single positional so that
+        // early-exit modes (--merge-trial-results, --print-config-fingerprint)
+        // can run without a network file.  Missing-network validation is
+        // deferred to Config::adaptDefaults().
+        api.addOptionalNonOptionArgument(targets.config.networkFile, "network_file", parameter.description, parameter.group);
       };
       return *this;
     }

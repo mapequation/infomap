@@ -217,7 +217,7 @@ struct ArgumentOption<bool> : Option {
 
 struct TargetBase {
   TargetBase(std::string variableName_, std::string desc, std::string group_, bool isAdvanced_)
-      : variableName(std::move(variableName_)), description(std::move(desc)), group(std::move(group_)), isOptionalVector(false), isAdvanced(isAdvanced_) {}
+      : variableName(std::move(variableName_)), description(std::move(desc)), group(std::move(group_)), isOptionalVector(false), isOptionalSingle(false), isAdvanced(isAdvanced_) {}
 
   virtual ~TargetBase() = default;
 
@@ -232,6 +232,7 @@ struct TargetBase {
   std::string description;
   std::string group;
   bool isOptionalVector = false;
+  bool isOptionalSingle = false; // single optional positional arg (0 or 1 occurrences)
   bool isAdvanced;
 };
 
@@ -280,11 +281,24 @@ public:
     m_nonOptionArguments.emplace_back(new Target<T>(target, std::move(variableName), std::move(desc), std::move(group), isAdvanced));
   }
 
+  // Add a single positional argument that may be omitted (0 or 1 occurrences).
+  // When omitted, the target keeps its default value.
+  // Optional singles must be registered before any optional vector argument.
+  template <typename T>
+  void addOptionalNonOptionArgument(T& target, std::string variableName, std::string desc, std::string group, bool isAdvanced = false)
+  {
+    ++m_numOptionalNonOptionArguments;
+    auto* t = new Target<T>(target, std::move(variableName), std::move(desc), std::move(group), isAdvanced);
+    t->isOptionalSingle = true;
+    m_nonOptionArguments.emplace_back(t);
+  }
+
   template <typename T>
   void addOptionalNonOptionArguments(std::vector<T>& target, std::string variableName, std::string desc, std::string group, bool isAdvanced = false)
   {
-    if (m_numOptionalNonOptionArguments != 0)
+    if (m_numOptionalNonOptionVectorArguments != 0)
       throw std::runtime_error("Can't have two non-option vector arguments");
+    ++m_numOptionalNonOptionVectorArguments;
     ++m_numOptionalNonOptionArguments;
     m_nonOptionArguments.emplace_back(new OptionalTargets<T>(target, std::move(variableName), std::move(desc), std::move(group), isAdvanced));
   }
@@ -393,6 +407,7 @@ private:
   std::function<std::string()> m_jsonParametersProvider;
 
   unsigned int m_numOptionalNonOptionArguments = 0;
+  unsigned int m_numOptionalNonOptionVectorArguments = 0;
 };
 
 } // namespace infomap

@@ -11,6 +11,7 @@
 #include "io/InfomapError.h"
 #include "io/ProgramInterface.h"
 #include "io/RunMetadata.h"
+#include "io/TrialMerge.h"
 #include <iostream>
 #include <stdexcept>
 
@@ -40,6 +41,11 @@ int run(const std::string& flags)
       std::cout << configFingerprint(config) << '\n';
       return 0;
     }
+
+    if (!config.mergeTrialResults.empty()) {
+      return exitCodeValue(mergeTrialResults(config));
+    }
+
     InfomapWrapper(config).run();
   } catch (const CleanExit&) {
     // Help / version / json-parameters CLI flags requested a clean exit.
