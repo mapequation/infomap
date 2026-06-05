@@ -16,7 +16,7 @@ Choose a notebook
 - :doc:`compare-infomap-scanpy-workflow` — compare Infomap and Leiden in an
   AnnData and Scanpy-style workflow.
 - :doc:`run-infomap-on-graphrag-tables` — run Infomap on GraphRAG-style
-  entity and relationship tables.
+  entity and relationship tables and compare with Leiden.
 - :doc:`run-infomap-on-hpc` — native CLI recipes for scheduler-aware HPC runs
   and Python shard merging.
 

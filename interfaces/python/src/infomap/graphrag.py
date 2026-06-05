@@ -5,6 +5,14 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+__all__ = [
+    "GraphRAGGraph",
+    "GraphRAGRunResult",
+    "read_graphrag",
+    "run_graphrag_communities",
+    "write_graphrag_communities",
+]
+
 
 @dataclass
 class GraphRAGGraph:
@@ -233,6 +241,7 @@ def _output_paths(output):
 
 
 def _nodes_table(im, graph: GraphRAGGraph):
+    multilevel_modules = im.get_multilevel_modules()
     nodes = im.to_dataframe(
         columns=["node_id", "module_id", "flow", "path", "name"],
         sort=True,
@@ -240,7 +249,9 @@ def _nodes_table(im, graph: GraphRAGGraph):
     nodes["node_id"] = nodes["node_id"].map(int)
     nodes["entity_id"] = nodes["node_id"].map(graph.node_id_to_entity_id)
     nodes["entity_title"] = nodes["node_id"].map(graph.node_id_to_entity_title)
-    nodes["module_path"] = nodes["path"].map(list)
+    nodes["module_path"] = nodes["node_id"].map(
+        lambda node_id: [int(module_id) for module_id in multilevel_modules[node_id]]
+    )
     nodes["level"] = nodes["module_path"].map(len)
     return nodes[
         [
@@ -255,44 +266,90 @@ def _nodes_table(im, graph: GraphRAGGraph):
     ]
 
 
-def _relationship_ids_by_module(nodes, graph: GraphRAGGraph):
-    node_to_module = dict(
-        zip(nodes["node_id"].map(int), nodes["module_id"].map(int), strict=True)
+def _community_prefixes(nodes):
+    prefixes = set()
+    for module_path in nodes["module_path"]:
+        module_path = tuple(module_path)
+        prefixes.update(module_path[:level] for level in range(1, len(module_path) + 1))
+    return sorted(prefixes)
+
+
+def _prefix_string(prefix):
+    return ".".join(str(module_id) for module_id in prefix)
+
+
+def _entity_ids_by_prefix(nodes):
+    entity_ids_by_prefix: dict[tuple[int, ...], list[Any]] = {}
+    for row in nodes[["entity_id", "module_path"]].itertuples(index=False):
+        module_path = tuple(row.module_path)
+        for level in range(1, len(module_path) + 1):
+            entity_ids_by_prefix.setdefault(module_path[:level], []).append(
+                row.entity_id
+            )
+    return entity_ids_by_prefix
+
+
+def _relationship_ids_by_prefix(nodes, graph: GraphRAGGraph):
+    node_to_path = dict(
+        zip(
+            nodes["node_id"].map(int),
+            nodes["module_path"].map(tuple),
+            strict=True,
+        )
     )
-    relationship_ids_by_module: dict[int, list[Any]] = {}
+    relationship_ids_by_prefix: dict[tuple[int, ...], list[Any]] = {}
     for source, target, relationship_id in zip(
         graph.sources,
         graph.targets,
         graph.relationship_ids,
         strict=True,
     ):
-        source_module = node_to_module.get(int(source))
-        target_module = node_to_module.get(int(target))
-        if source_module is not None and source_module == target_module:
-            relationship_ids_by_module.setdefault(source_module, []).append(
+        source_path = node_to_path.get(int(source), ())
+        target_path = node_to_path.get(int(target), ())
+        common_depth = 0
+        for source_module, target_module in zip(source_path, target_path, strict=False):
+            if source_module != target_module:
+                break
+            common_depth += 1
+        for level in range(1, common_depth + 1):
+            relationship_ids_by_prefix.setdefault(source_path[:level], []).append(
                 relationship_id
             )
-    return relationship_ids_by_module
+    return relationship_ids_by_prefix
 
 
 def _communities_table(nodes, graph: GraphRAGGraph):
     pd = _import_parquet_stack()
     rows = []
-    relationship_ids_by_module = _relationship_ids_by_module(nodes, graph)
-    for module_id, module_nodes in nodes.groupby("module_id", sort=True):
-        entity_ids = module_nodes["entity_id"].tolist()
-        module_id = int(module_id)
+    prefixes = _community_prefixes(nodes)
+    prefix_to_community = {
+        prefix: community_id for community_id, prefix in enumerate(prefixes, start=1)
+    }
+    children_by_prefix: dict[tuple[int, ...], list[int]] = {}
+    for prefix in prefixes:
+        if len(prefix) > 1:
+            children_by_prefix.setdefault(prefix[:-1], []).append(
+                prefix_to_community[prefix]
+            )
+    entity_ids_by_prefix = _entity_ids_by_prefix(nodes)
+    relationship_ids_by_prefix = _relationship_ids_by_prefix(nodes, graph)
+
+    for prefix in prefixes:
+        community_id = prefix_to_community[prefix]
+        prefix_label = _prefix_string(prefix)
+        parent = prefix_to_community.get(prefix[:-1]) if len(prefix) > 1 else None
+        entity_ids = entity_ids_by_prefix[prefix]
         rows.append(
             {
-                "id": f"infomap-{module_id}",
-                "human_readable_id": str(module_id),
-                "community": int(module_id),
-                "parent": None,
-                "children": [],
-                "level": 1,
-                "title": f"Infomap community {module_id}",
+                "id": f"infomap-{prefix_label}",
+                "human_readable_id": prefix_label,
+                "community": community_id,
+                "parent": parent,
+                "children": children_by_prefix.get(prefix, []),
+                "level": len(prefix),
+                "title": f"Infomap community {prefix_label}",
                 "entity_ids": entity_ids,
-                "relationship_ids": relationship_ids_by_module.get(module_id, []),
+                "relationship_ids": relationship_ids_by_prefix.get(prefix, []),
                 "text_unit_ids": [],
                 "period": None,
                 "size": len(entity_ids),

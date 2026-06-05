@@ -11,7 +11,7 @@ description = "HPC recipe notebook for native trial sharding, scheduler-aware th
 [[notebooks]]
 path = "run-infomap-on-graphrag-tables.ipynb"
 tier = "smoke"
-description = "Experimental GraphRAG-style table workflow from Parquet input to Infomap community output."
+description = "GraphRAG-style Parquet workflow with Infomap hierarchy output and a Leiden comparison."
 
 [[notebooks]]
 path = "3.1 The two-level map equation.ipynb"

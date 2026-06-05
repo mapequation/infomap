@@ -46,7 +46,7 @@ def _add_graphrag_links(im, graph):
 
 
 def test_read_graphrag_factorizes_titles_from_entities_first(tmp_path):
-    from infomap.io.graphrag import read_graphrag
+    from infomap.graphrag import read_graphrag
 
     entities_path, relationships_path = _write_graphrag_fixture(tmp_path)
 
@@ -88,7 +88,7 @@ def test_read_graphrag_resolves_title_id_collisions_by_endpoint_columns(tmp_path
     entities.to_parquet(entities_path)
     relationships.to_parquet(relationships_path)
 
-    from infomap.io.graphrag import read_graphrag
+    from infomap.graphrag import read_graphrag
 
     graph = read_graphrag(entities_path, relationships_path)
 
@@ -117,7 +117,7 @@ def test_read_graphrag_can_resolve_relationship_endpoints_by_entity_id(tmp_path)
     entities.to_parquet(entities_path)
     relationships.to_parquet(relationships_path)
 
-    from infomap.io.graphrag import read_graphrag
+    from infomap.graphrag import read_graphrag
 
     graph = read_graphrag(entities_path, relationships_path, endpoint_col="id")
 
@@ -146,7 +146,7 @@ def test_read_graphrag_rejects_missing_relationship_endpoints(tmp_path):
     entities.to_parquet(entities_path)
     relationships.to_parquet(relationships_path)
 
-    from infomap.io.graphrag import read_graphrag
+    from infomap.graphrag import read_graphrag
 
     with pytest.raises(ValueError, match="missing relationship endpoints"):
         read_graphrag(entities_path, relationships_path)
@@ -173,14 +173,14 @@ def test_read_graphrag_rejects_duplicate_titles_for_title_endpoints(tmp_path):
     entities.to_parquet(entities_path)
     relationships.to_parquet(relationships_path)
 
-    from infomap.io.graphrag import read_graphrag
+    from infomap.graphrag import read_graphrag
 
     with pytest.raises(ValueError, match="unique.*endpoint_col=.id."):
         read_graphrag(entities_path, relationships_path)
 
 
 def test_output_paths_treats_dotted_output_as_directory(tmp_path):
-    from infomap.io.graphrag import _output_paths
+    from infomap.graphrag import _output_paths
 
     output_dir = tmp_path / "output.v1"
     paths = _output_paths(output_dir)
@@ -199,7 +199,7 @@ def test_write_graphrag_communities_exports_mvp_tables(tmp_path):
     pd = _require_parquet_stack()
 
     from infomap import Infomap
-    from infomap.io.graphrag import read_graphrag, write_graphrag_communities
+    from infomap.graphrag import read_graphrag, write_graphrag_communities
 
     entities_path, relationships_path = _write_graphrag_fixture(tmp_path)
     graph = read_graphrag(entities_path, relationships_path)
@@ -254,9 +254,76 @@ def test_write_graphrag_communities_exports_mvp_tables(tmp_path):
     assert "seed" not in run
 
 
+def test_write_graphrag_communities_exports_hierarchy(tmp_path, example_network_path):
+    pd = _require_parquet_stack()
+
+    from infomap import Infomap
+    from infomap.graphrag import read_graphrag, write_graphrag_communities
+
+    edges = [
+        tuple(line.split())
+        for line in example_network_path("ninetriangles.net").read_text().splitlines()
+    ]
+    entities = pd.DataFrame(
+        {
+            "id": [str(node_id) for node_id in range(1, 28)],
+            "title": [str(node_id) for node_id in range(1, 28)],
+        }
+    )
+    relationships = pd.DataFrame(
+        {
+            "id": [f"r{i}" for i in range(len(edges))],
+            "source": [source for source, _target in edges],
+            "target": [target for _source, target in edges],
+            "weight": [1.0] * len(edges),
+        }
+    )
+    graph = read_graphrag(entities, relationships)
+
+    im = Infomap(silent=True, seed=123, num_trials=5)
+    _add_graphrag_links(im, graph)
+    im.run()
+
+    assert im.max_depth > 2
+
+    output_dir = tmp_path / "infomap"
+    write_graphrag_communities(im, graph=graph, output=output_dir)
+    communities = pd.read_parquet(output_dir / "communities.parquet")
+
+    assert communities["level"].max() > 1
+
+    by_community = {int(row["community"]): row for _, row in communities.iterrows()}
+    parent_ids = {int(parent) for parent in communities["parent"] if pd.notna(parent)}
+    assert parent_ids <= set(by_community)
+
+    top_level = communities[communities["level"] == 1]
+    assert top_level["parent"].isna().all()
+
+    for parent_id in parent_ids:
+        child_ids = set(by_community[parent_id]["children"])
+        actual_children = set(
+            communities.loc[communities["parent"] == parent_id, "community"]
+        )
+        assert child_ids == actual_children
+
+    leaf_paths = {tuple(path) for path in im.get_multilevel_modules().values()}
+    expected_prefix_count = len(
+        {path[:level] for path in leaf_paths for level in range(1, len(path) + 1)}
+    )
+    assert len(communities) == expected_prefix_count
+
+    deepest_relationships = {
+        tuple(sorted(row["entity_ids"])): sorted(row["relationship_ids"])
+        for _, row in communities[
+            communities["level"] == communities["level"].max()
+        ].iterrows()
+    }
+    assert deepest_relationships[("1", "2", "3")] == ["r0", "r1", "r3"]
+
+
 def test_write_graphrag_communities_does_not_depend_on_run_args_history(tmp_path):
     from infomap import Infomap
-    from infomap.io.graphrag import read_graphrag, write_graphrag_communities
+    from infomap.graphrag import read_graphrag, write_graphrag_communities
 
     entities_path, relationships_path = _write_graphrag_fixture(tmp_path)
     graph = read_graphrag(entities_path, relationships_path)
@@ -276,7 +343,7 @@ def test_write_graphrag_communities_does_not_depend_on_run_args_history(tmp_path
 
 
 def test_run_graphrag_communities_reads_runs_and_writes_outputs(tmp_path):
-    from infomap.io.graphrag import run_graphrag_communities
+    from infomap.graphrag import run_graphrag_communities
 
     entities_path, relationships_path = _write_graphrag_fixture(tmp_path)
     input_dir = entities_path.parent
