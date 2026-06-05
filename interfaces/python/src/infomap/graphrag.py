@@ -54,7 +54,7 @@ def _import_parquet_stack():
 
 def _read_table(table_or_path):
     pd = _import_parquet_stack()
-    if isinstance(table_or_path, str | Path):
+    if isinstance(table_or_path, (str, Path)):
         return pd.read_parquet(table_or_path)
     return table_or_path
 
