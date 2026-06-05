@@ -136,7 +136,13 @@ _build-docs-site:
 build-docs: dev-python-install
 	@tmp_dir="$$(mktemp -d 2>/dev/null || mktemp -d -t infomap-docs)"; \
 	trap 'rm -rf "$$tmp_dir"' EXIT; \
-	$(MAKE) -j1 --no-print-directory SPHINX_TARGET_DIR="$$tmp_dir/docs" _build-docs-site; \
+	mkdir -p "$$tmp_dir/docs"; \
+	$(SPHINX_BUILD) -b html "$(SPHINX_SOURCE_DIR)" "$$tmp_dir/docs"; \
+	searchindex="$$tmp_dir/docs/searchindex.js"; \
+	if [ -f "$$searchindex" ] && [ -n "$$(tail -c 1 "$$searchindex" 2>/dev/null)" ]; then \
+		printf '\n' >> "$$searchindex"; \
+	fi; \
+	rm -rf "$$tmp_dir/docs/.doctrees"; \
 	mkdir -p docs; \
 	rsync $(DOCS_SYNC_ARGS) "$$tmp_dir/docs/" docs/
 
