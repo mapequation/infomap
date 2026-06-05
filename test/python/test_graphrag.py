@@ -125,6 +125,76 @@ def test_read_graphrag_can_resolve_relationship_endpoints_by_entity_id(tmp_path)
     assert graph.targets.tolist() == [2]
 
 
+def test_read_graphrag_rejects_missing_relationship_endpoints(tmp_path):
+    pd = _require_parquet_stack()
+
+    entities = pd.DataFrame(
+        {
+            "id": ["a", "b"],
+            "title": ["Alpha", "Beta"],
+        }
+    )
+    relationships = pd.DataFrame(
+        {
+            "source": ["Alpha", None],
+            "target": ["Beta", "Alpha"],
+            "weight": [1.0, 1.0],
+        }
+    )
+    entities_path = tmp_path / "entities.parquet"
+    relationships_path = tmp_path / "relationships.parquet"
+    entities.to_parquet(entities_path)
+    relationships.to_parquet(relationships_path)
+
+    from infomap.io.graphrag import read_graphrag
+
+    with pytest.raises(ValueError, match="missing relationship endpoints"):
+        read_graphrag(entities_path, relationships_path)
+
+
+def test_read_graphrag_rejects_duplicate_titles_for_title_endpoints(tmp_path):
+    pd = _require_parquet_stack()
+
+    entities = pd.DataFrame(
+        {
+            "id": ["a", "b"],
+            "title": ["Alpha", "Alpha"],
+        }
+    )
+    relationships = pd.DataFrame(
+        {
+            "source": ["Alpha"],
+            "target": ["Alpha"],
+            "weight": [1.0],
+        }
+    )
+    entities_path = tmp_path / "entities.parquet"
+    relationships_path = tmp_path / "relationships.parquet"
+    entities.to_parquet(entities_path)
+    relationships.to_parquet(relationships_path)
+
+    from infomap.io.graphrag import read_graphrag
+
+    with pytest.raises(ValueError, match="unique.*endpoint_col=.id."):
+        read_graphrag(entities_path, relationships_path)
+
+
+def test_output_paths_treats_dotted_output_as_directory(tmp_path):
+    from infomap.io.graphrag import _output_paths
+
+    output_dir = tmp_path / "output.v1"
+    paths = _output_paths(output_dir)
+
+    assert paths["dir"] == output_dir
+    assert paths["communities"] == output_dir / "communities.parquet"
+
+    output_file = tmp_path / "communities.v1.parquet"
+    paths = _output_paths(output_file)
+
+    assert paths["dir"] == tmp_path
+    assert paths["communities"] == output_file
+
+
 def test_write_graphrag_communities_exports_mvp_tables(tmp_path):
     pd = _require_parquet_stack()
 
@@ -170,6 +240,12 @@ def test_write_graphrag_communities_exports_mvp_tables(tmp_path):
         "size",
     }
     assert communities["level"].tolist() == [1] * len(communities)
+    community_relationships = {
+        tuple(sorted(row["entity_ids"])): sorted(row["relationship_ids"])
+        for _, row in communities.iterrows()
+    }
+    assert community_relationships[("a", "b", "c")] == ["ab", "bc", "ca"]
+    assert community_relationships[("d", "e", "f")] == ["de", "ef", "fd"]
     assert run["codelength"] == pytest.approx(im.codelength)
     assert run["top_modules"] == im.num_top_modules
     assert run["levels"] == im.max_depth

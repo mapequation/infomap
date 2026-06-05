@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from itertools import chain
 from pathlib import Path
 from typing import Any
 
@@ -64,6 +63,34 @@ def _is_missing(value):
     return bool(pd.isna(value))
 
 
+def _validate_unique_titles(entities_table, entity_title_col):
+    titles = entities_table[entity_title_col]
+    if bool(titles.isna().any()):
+        raise ValueError(
+            f"GraphRAG entity title column {entity_title_col!r} cannot contain "
+            "missing values when endpoint_col='title'."
+        )
+    if bool(titles.duplicated().any()):
+        raise ValueError(
+            f"GraphRAG entity title column {entity_title_col!r} must be unique "
+            "when endpoint_col='title'. Use endpoint_col='id' for id-based "
+            "relationship endpoints."
+        )
+
+
+def _validate_relationship_endpoints(relationships_table, source_col, target_col):
+    missing_columns = [
+        column
+        for column in (source_col, target_col)
+        if bool(relationships_table[column].isna().any())
+    ]
+    if missing_columns:
+        raise ValueError(
+            "GraphRAG relationships contain missing relationship endpoints in "
+            f"columns: {', '.join(missing_columns)}."
+        )
+
+
 def _register_node(
     *,
     entity_id,
@@ -109,10 +136,17 @@ def read_graphrag(
     node_id_to_entity_title = {}
     entity_title_to_node_id = {}
 
-    for _, entity in entities_table.iterrows():
+    if endpoint_col == "title":
+        _validate_unique_titles(entities_table, entity_title_col)
+
+    for entity_id, entity_title in zip(
+        entities_table[entity_id_col],
+        entities_table[entity_title_col],
+        strict=True,
+    ):
         _register_node(
-            entity_id=entity[entity_id_col],
-            entity_title=entity[entity_title_col],
+            entity_id=entity_id,
+            entity_title=entity_title,
             entity_id_to_node_id=entity_id_to_node_id,
             node_id_to_entity_id=node_id_to_entity_id,
             node_id_to_entity_title=node_id_to_entity_title,
@@ -126,7 +160,11 @@ def read_graphrag(
     else:
         raise ValueError("GraphRAG endpoint_col must be 'id' or 'title'.")
 
-    endpoints = chain(relationships_table[source_col], relationships_table[target_col])
+    _validate_relationship_endpoints(relationships_table, source_col, target_col)
+    endpoints = pd.concat(
+        [relationships_table[source_col], relationships_table[target_col]],
+        ignore_index=True,
+    ).drop_duplicates()
     for endpoint in endpoints:
         if endpoint not in endpoint_to_node_id:
             _register_node(
@@ -179,7 +217,7 @@ def read_graphrag(
 
 def _output_paths(output):
     output_path = Path(output)
-    if output_path.suffix:
+    if output_path.suffix.lower() == ".parquet":
         output_dir = output_path.parent
         communities_path = output_path
     else:
@@ -217,25 +255,33 @@ def _nodes_table(im, graph: GraphRAGGraph):
     ]
 
 
-def _relationship_ids_for_nodes(graph: GraphRAGGraph, node_ids: set[int]):
-    relationship_ids = []
+def _relationship_ids_by_module(nodes, graph: GraphRAGGraph):
+    node_to_module = dict(
+        zip(nodes["node_id"].map(int), nodes["module_id"].map(int), strict=True)
+    )
+    relationship_ids_by_module: dict[int, list[Any]] = {}
     for source, target, relationship_id in zip(
         graph.sources,
         graph.targets,
         graph.relationship_ids,
         strict=True,
     ):
-        if int(source) in node_ids and int(target) in node_ids:
-            relationship_ids.append(relationship_id)
-    return relationship_ids
+        source_module = node_to_module.get(int(source))
+        target_module = node_to_module.get(int(target))
+        if source_module is not None and source_module == target_module:
+            relationship_ids_by_module.setdefault(source_module, []).append(
+                relationship_id
+            )
+    return relationship_ids_by_module
 
 
 def _communities_table(nodes, graph: GraphRAGGraph):
     pd = _import_parquet_stack()
     rows = []
+    relationship_ids_by_module = _relationship_ids_by_module(nodes, graph)
     for module_id, module_nodes in nodes.groupby("module_id", sort=True):
         entity_ids = module_nodes["entity_id"].tolist()
-        node_ids = set(module_nodes["node_id"].map(int))
+        module_id = int(module_id)
         rows.append(
             {
                 "id": f"infomap-{module_id}",
@@ -246,7 +292,7 @@ def _communities_table(nodes, graph: GraphRAGGraph):
                 "level": 1,
                 "title": f"Infomap community {module_id}",
                 "entity_ids": entity_ids,
-                "relationship_ids": _relationship_ids_for_nodes(graph, node_ids),
+                "relationship_ids": relationship_ids_by_module.get(module_id, []),
                 "text_unit_ids": [],
                 "period": None,
                 "size": len(entity_ids),
