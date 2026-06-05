@@ -38,9 +38,6 @@ struct TrialResultsFile {
 
 std::string serializeTrialResults(const TrialResultsFile& results);
 
-// sourcePath is the path of the JSON file being parsed (used only for error messages).
-TrialResultsFile parseTrialResults(const std::string& json, const std::string& sourcePath);
-
 } // namespace infomap
 
 #endif // TRIAL_RESULTS_H_

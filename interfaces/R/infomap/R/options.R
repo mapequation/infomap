@@ -224,7 +224,7 @@ OPTION_DEFAULTS <- list(
 #'   \item{`manifest_json`}{Write a machine-readable run manifest JSON to this path. Use - for stdout.}
 #'   \item{`memory_report`}{Include peak RSS and best-effort bytes per node/link estimates in timing JSON. Requires --timing-json.}
 #'   \item{`trial_offset`}{Global index of the first trial this process runs; trial i uses seed = base_seed + (trial_offset + i). Default 0 (single-process behavior).}
-#'   \item{`trial_results`}{Write this shard's per-trial results (codelengths, seeds, best-tree reference, fingerprints) as JSON to this path, for later --merge-trial-results.}
+#'   \item{`trial_results`}{Write this shard's per-trial results (codelengths, seeds, best-tree reference, fingerprints) as JSON to this path, for deterministic merging of distributed shard runs into a final solution.}
 #'   \item{`no_final_output`}{Skip writing this process's aggregate best result. Per-trial outputs and --trial-results are still written.}
 #'   \item{`verbosity_level`}{Increase console verbosity. Add more v flags to increase verbosity up to -vvv.}
 #'   \item{`silent`}{Suppress console output.}

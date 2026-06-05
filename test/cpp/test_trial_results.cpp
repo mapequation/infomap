@@ -19,7 +19,7 @@
 using namespace infomap;
 using infomap::test::readTextFile;
 
-TEST_CASE("TrialResults serialize/parse round-trips [fast][core][merge]")
+TEST_CASE("serializeTrialResults emits the documented JSON fields [fast][core][merge]")
 {
   TrialResultsFile r;
   r.networkFingerprint = "abc123";
@@ -33,38 +33,27 @@ TEST_CASE("TrialResults serialize/parse round-trips [fast][core][merge]")
   r.trials.push_back({ 4, 104, 6.1, 12, 4, 1, 1.3 });
 
   const std::string json = serializeTrialResults(r);
-  const TrialResultsFile back = parseTrialResults(json, "results.json");
 
-  CHECK(back.networkFingerprint == "abc123");
-  CHECK(back.configFingerprint == "def456");
-  CHECK(back.infomapVersion == "2.8.0");
-  CHECK(back.baseSeed == 100);
-  CHECK(back.trialOffset == 3);
-  CHECK(back.numTrials == 2);
-  CHECK(back.bestTreeFile == "out_trial_4.tree");
-  REQUIRE(back.trials.size() == 2);
-  CHECK(back.trials[0].trial == 3);
-  CHECK(back.trials[0].seed == 103);
-  CHECK(back.trials[0].codelength == doctest::Approx(6.5));
-  CHECK(back.trials[0].numTopModules == 10);
-  CHECK(back.trials[0].numLevels == 3);
-  CHECK(back.trials[1].trial == 4);
-  CHECK(back.trials[1].seed == 104);
-  CHECK(back.trials[1].codelength == doctest::Approx(6.1));
-  CHECK(back.trials[1].numTopModules == 12);
-  CHECK(back.trials[1].numLevels == 4);
-}
+  // Run-identity header.
+  CHECK(json.find("\"network_fingerprint\":\"abc123\"") != std::string::npos);
+  CHECK(json.find("\"config_fingerprint\":\"def456\"") != std::string::npos);
+  CHECK(json.find("\"infomap_version\":\"2.8.0\"") != std::string::npos);
+  CHECK(json.find("\"base_seed\":100") != std::string::npos);
+  CHECK(json.find("\"trial_offset\":3") != std::string::npos);
+  CHECK(json.find("\"num_trials\":2") != std::string::npos);
+  CHECK(json.find("\"best_tree_file\":\"out_trial_4.tree\"") != std::string::npos);
 
-TEST_CASE("TrialResults parser tolerates whitespace and handles an empty trials array [fast][core][merge]")
-{
-  TrialResultsFile r;
-  r.networkFingerprint = "h";
-  r.configFingerprint = "c";
-  r.infomapVersion = "v";
-  const std::string json = serializeTrialResults(r);
-  const TrialResultsFile back = parseTrialResults(json, "x.json");
-  CHECK(back.trials.empty());
-  CHECK(back.networkFingerprint == "h");
+  // Per-trial entries (global indices, codelength, levels).
+  CHECK(json.find("\"trial\":3") != std::string::npos);
+  CHECK(json.find("\"trial\":4") != std::string::npos);
+  CHECK(json.find("\"seed\":104") != std::string::npos);
+  CHECK(json.find("\"num_levels\":4") != std::string::npos);
+
+  // An empty trials array serializes to a valid (empty) array.
+  TrialResultsFile empty;
+  empty.networkFingerprint = "h";
+  const std::string emptyJson = serializeTrialResults(empty);
+  CHECK(emptyJson.find("\"trials\":[]") != std::string::npos);
 }
 
 TEST_CASE("Shard run emits trial-results JSON and best-tree file; --no-final-output suppresses aggregate [fast][core][merge]")
@@ -72,9 +61,10 @@ TEST_CASE("Shard run emits trial-results JSON and best-tree file; --no-final-out
   // Paths used by this test (in the CWD where the test binary runs).
   const std::string resultsPath = "tr_shard_results.json";
   const std::string outName = "tr_shard_out";
-  // Per-trial tree files (trial_offset=5, 2 trials → global indices 5 and 6).
-  const std::string trialTree5 = outName + "_trial_6.tree"; // global index 5, file uses 1-based (+1)
-  const std::string trialTree6 = outName + "_trial_7.tree"; // global index 6, file uses 1-based (+1)
+  // Per-trial tree files (trial_offset=5, 2 trials → global indices 5 and 6;
+  // file names use the 1-based trial number, i.e. global index + 1).
+  const std::string trialTree5 = outName + "_trial_6.tree"; // global index 5
+  const std::string trialTree6 = outName + "_trial_7.tree"; // global index 6
   const std::string aggregatePath = outName + ".tree";
 
   // Clean up before.
@@ -89,8 +79,8 @@ TEST_CASE("Shard run emits trial-results JSON and best-tree file; --no-final-out
                       + " --no-final-output"
                       + " --tree --out-name " + outName);
     // Set output directory explicitly so library mode writes tree files to CWD.
-    // Also reset noFileOutput: adaptDefaults sets it to true when outDirectory is
-    // empty in non-CLI mode, so we override it after construction.
+    // adaptDefaults sets noFileOutput=true when outDirectory is empty in non-CLI
+    // mode, so we override both after construction.
     im.outDirectory = "./";
     im.noFileOutput = false;
     // Two-triangle network: nodes 0-2 and 3-5.
@@ -103,27 +93,23 @@ TEST_CASE("Shard run emits trial-results JSON and best-tree file; --no-final-out
     im.run();
   }
 
-  // The results file must exist and have content.
+  // The results file must exist and have content. Verify via string checks on
+  // the emitted JSON (the JSON is read back by the separate Python merge tool,
+  // not by the C++ binary, so there is no C++ parser to rely on here).
   REQUIRE(infomap::pathExists(resultsPath));
-
   const auto json = readTextFile(resultsPath);
-  const TrialResultsFile parsed = parseTrialResults(json, resultsPath);
 
-  CHECK(parsed.trialOffset == 5);
-  CHECK(parsed.numTrials == 2);
-  REQUIRE(parsed.trials.size() == 2);
-
+  CHECK(json.find("\"trial_offset\":5") != std::string::npos);
+  CHECK(json.find("\"num_trials\":2") != std::string::npos);
   // Global trial indices must be 5 and 6 (offset 5 + local slots 0 and 1).
-  CHECK(parsed.trials[0].trial == 5);
-  CHECK(parsed.trials[1].trial == 6);
-
-  // bestTreeFile must be non-empty.
-  CHECK(!parsed.bestTreeFile.empty());
-
-  // The referenced best tree file must exist on disk.
-  // bestTreeFile is relative to the results file directory (CWD here).
-  CHECK(infomap::pathExists(parsed.bestTreeFile));
-
+  CHECK(json.find("\"trial\":5") != std::string::npos);
+  CHECK(json.find("\"trial\":6") != std::string::npos);
+  // best_tree_file must be recorded and non-empty.
+  CHECK(json.find("\"best_tree_file\":\"") != std::string::npos);
+  CHECK(json.find("\"best_tree_file\":\"\"") == std::string::npos);
+  // The winning trial's tree must exist on disk (only the best trial's tree is
+  // written without --print-all-trials, so exactly one of these is present).
+  CHECK((infomap::pathExists(trialTree5) || infomap::pathExists(trialTree6)));
   // The aggregate final output must NOT have been written (--no-final-output).
   CHECK(!infomap::pathExists(aggregatePath));
 
@@ -132,22 +118,4 @@ TEST_CASE("Shard run emits trial-results JSON and best-tree file; --no-final-out
   std::remove(trialTree5.c_str());
   std::remove(trialTree6.c_str());
   std::remove(aggregatePath.c_str());
-}
-
-TEST_CASE("parseTrialResults rejects a trial object missing a required field [fast][core][merge]")
-{
-  // A partially-written shard must not parse to a default-0 entry (which could
-  // otherwise win merge selection with codelength 0.0).
-  const std::string missingCodelength =
-      "{\"network_fingerprint\":\"n\",\"config_fingerprint\":\"c\",\"infomap_version\":\"v\","
-      "\"base_seed\":1,\"trial_offset\":0,\"num_trials\":1,\"best_tree_file\":\"t.tree\","
-      "\"trials\":[{\"trial\":0,\"seed\":1,\"num_top_modules\":2,\"num_levels\":1,\"thread\":0,\"time_s\":0.1}]}";
-  CHECK_THROWS(parseTrialResults(missingCodelength, "shard.json"));
-
-  // A complete entry still parses.
-  const std::string complete =
-      "{\"network_fingerprint\":\"n\",\"config_fingerprint\":\"c\",\"infomap_version\":\"v\","
-      "\"base_seed\":1,\"trial_offset\":0,\"num_trials\":1,\"best_tree_file\":\"t.tree\","
-      "\"trials\":[{\"trial\":0,\"seed\":1,\"codelength\":6.1,\"num_top_modules\":2,\"num_levels\":1,\"thread\":0,\"time_s\":0.1}]}";
-  CHECK_NOTHROW(parseTrialResults(complete, "shard.json"));
 }

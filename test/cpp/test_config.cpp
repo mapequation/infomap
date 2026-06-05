@@ -631,14 +631,5 @@ TEST_CASE("Config parses --trial-results and --no-final-output [fast][core][conf
   CHECK(c.noFinalOutput);
 }
 
-TEST_CASE("Config parses --merge-trial-results list and --require-complete-trials [fast][core][config][cli]")
-{
-  // ArgType::list binds to a std::string as comma-separated tokens.
-  // A network_file placeholder is required by the CLI positional parser even in merge mode
-  // (merge-mode enforcement is a later phase); phase C just wires the flags.
-  const Config c("input.net --silent --no-file-output --merge-trial-results a.json,b.json --require-complete-trials --output tree,clu", true);
-  CHECK(c.mergeTrialResults == "a.json,b.json");
-  CHECK(c.requireCompleteTrials);
-}
 
 } // namespace

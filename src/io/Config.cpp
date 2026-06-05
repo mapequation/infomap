@@ -91,29 +91,8 @@ namespace {
       config.noFileOutput = true;
   }
 
-  void validateNetworkFile(const Config& config)
-  {
-    // Only enforce network-file presence for CLI invocations. Library users
-    // supply the network via addLink() / readInputData(), not a file path.
-    if (!config.isCLI)
-      return;
-    // Require a network file for normal runs. Exempt early-exit modes that
-    // operate on already-computed results or emit no run output.
-    if (!config.networkFile.empty())
-      return;
-    if (!config.mergeTrialResults.empty())
-      return; // merge mode reads shard files, not a network
-    if (config.printConfigFingerprint)
-      return; // fingerprint-only mode does not need a real network
-    throw InfomapError(ExitCode::InvalidArguments, "Missing required arguments.");
-  }
-
   void validateRequiredCliOutput(const Config& config)
   {
-    // In merge mode the outDirectory comes from the merge configuration,
-    // not from the positional argument. Skip the ordinary requirement.
-    if (!config.mergeTrialResults.empty())
-      return;
     if (!config.noFileOutput && config.outDirectory.empty() && config.isCLI) {
       throw std::runtime_error("Missing out_directory");
     }
@@ -253,9 +232,6 @@ namespace {
 
   void validateOutputDirectory(const Config& config)
   {
-    // Merge mode manages its own output directory; skip the normal pre-run check.
-    if (!config.mergeTrialResults.empty())
-      return;
     if (config.haveOutput()) {
       ensureDirectoryExists(config.outDirectory);
     }
@@ -354,7 +330,6 @@ void Config::adaptDefaults()
 
   // Cross-field invariants. These run whether construction was via flag parsing
   // or library mutation followed by adaptDefaults().
-  validateNetworkFile(*this);
   applyFingerprintOnlyOutputInteraction(*this);
   applyLibraryOutputDefaults(*this);
   validateRequiredCliOutput(*this);

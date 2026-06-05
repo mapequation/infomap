@@ -217,11 +217,7 @@ namespace {
     SpecBuilder& networkFileArgument()
     {
       parameter_.registrar = [](ProgramInterface& api, ConfigParameterTargets& targets, const ParameterSpec& parameter) {
-        // Register network_file as an optional single positional so that
-        // early-exit modes (--merge-trial-results, --print-config-fingerprint)
-        // can run without a network file.  Missing-network validation is
-        // deferred to Config::adaptDefaults().
-        api.addOptionalNonOptionArgument(targets.config.networkFile, "network_file", parameter.description, parameter.group);
+        api.addNonOptionArgument(targets.config.networkFile, "network_file", parameter.description, parameter.group);
       };
       return *this;
     }
@@ -877,7 +873,7 @@ const std::vector<ParameterSpec>& parameterCatalog()
         .configTarget(&Config::trialOffset),
     param()
         .longName("trial-results")
-        .description("Write this shard's per-trial results (codelengths, seeds, best-tree reference, fingerprints) as JSON to this path, for later --merge-trial-results.")
+        .description("Write this shard's per-trial results (codelengths, seeds, best-tree reference, fingerprints) as JSON to this path, for deterministic merging of distributed shard runs into a final solution.")
         .argument(ArgType::path)
         .group("Output")
         .advanced()
@@ -888,23 +884,6 @@ const std::vector<ParameterSpec>& parameterCatalog()
         .group("Output")
         .advanced()
         .configTarget(&Config::noFinalOutput),
-    param()
-        .longName("merge-trial-results")
-        .description("Merge mode: read these shard result files (comma-separated globs), pick the global best trial, and write the final output. Takes no network input.")
-        .argument(ArgType::list)
-        .group("Output")
-        .advanced()
-        .cliOnly()
-        .hideFromJson()
-        .configTarget(&Config::mergeTrialResults),
-    param()
-        .longName("require-complete-trials")
-        .description("With --merge-trial-results, fail (instead of warn) if any global trial index in [0, max] is missing across the shard files.")
-        .group("Output")
-        .advanced()
-        .cliOnly()
-        .hideFromJson()
-        .configTarget(&Config::requireCompleteTrials),
 #if INFOMAP_FEATURE_TEST_FEATURE
     param()
         .longName("test-feature")

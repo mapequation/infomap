@@ -190,7 +190,8 @@ class InfomapOptions:
         + (trial_offset + i). Default 0 (single-process behavior).
     trial_results : str, optional
         Write this shard's per-trial results (codelengths, seeds, best-tree reference,
-        fingerprints) as JSON to this path, for later --merge-trial-results.
+        fingerprints) as JSON to this path, for deterministic merging of distributed
+        shard runs into a final solution.
     no_final_output : bool, optional
         Skip writing this process's aggregate best result. Per-trial outputs and
         --trial-results are still written.
