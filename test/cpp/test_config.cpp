@@ -1,5 +1,6 @@
 #include "vendor/doctest.h"
 
+#include "TestUtils.h"
 #include "io/Config.h"
 #include "io/OutputFormats.h"
 #include "io/OutputPlan.h"
@@ -603,6 +604,18 @@ TEST_CASE("Config fingerprint is invariant to num_trials and trial offset [fast]
   const Config b("input.net --silent --no-file-output --num-trials 100", true);
   CHECK(infomap::configFingerprint(a) == infomap::configFingerprint(b));
   CHECK(infomap::canonicalConfigJson(a).find("num_trials") == std::string::npos);
+}
+
+TEST_CASE("networkFingerprint depends only on content [fast][core][config]")
+{
+  // Two files with different content must hash differently.
+  const auto pathA = infomap::test::networkFixturePath("accumulate_a.net");
+  const auto pathB = infomap::test::networkFixturePath("accumulate_b.net");
+  CHECK_FALSE(infomap::networkFingerprint(pathA).empty());
+  CHECK(infomap::networkFingerprint(pathA) != infomap::networkFingerprint(pathB));
+
+  // The same file read twice must give the same hash (content-stable).
+  CHECK(infomap::networkFingerprint(pathA) == infomap::networkFingerprint(pathA));
 }
 
 } // namespace
