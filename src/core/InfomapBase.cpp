@@ -589,6 +589,11 @@ private:
 
   void runTrial(unsigned int trialIndex, Result& result)
   {
+    const bool shardingMode = m_infomap.trialOffset > 0 || !m_infomap.trialResultsPath.empty();
+    if (shardingMode) {
+      const unsigned int globalSeed = static_cast<unsigned int>(m_infomap.seedToRandomNumberGenerator + (m_infomap.trialOffset + trialIndex));
+      m_infomap.reseed(globalSeed);
+    }
     m_infomap.removeModules();
     auto startDate = Date();
     Stopwatch timer(true);

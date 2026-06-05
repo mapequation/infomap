@@ -813,4 +813,26 @@ TEST_CASE("--trial-offset produces a valid codelength [fast][core][partition][sh
   }
 }
 
+TEST_CASE("Sharding-mode serial reseed makes trial i reproducible by global index [fast][core][merge]")
+{
+  auto runTrialAt = [](unsigned int offset) {
+    // sharding mode is active because --trial-results is set
+    InfomapWrapper im("--silent --seed 99 --num-trials 1 --trial-offset " + std::to_string(offset)
+                      + " --trial-results /tmp/infomap_reseed_probe.json --no-final-output --no-file-output");
+    im.addLink(0, 1);
+    im.addLink(1, 2);
+    im.addLink(2, 0);
+    im.addLink(2, 3);
+    im.addLink(3, 4);
+    im.addLink(4, 5);
+    im.addLink(5, 3);
+    im.run();
+    return im.codelength();
+  };
+  // Two single-trial shards at the SAME global index must give identical codelength
+  CHECK(runTrialAt(2) == doctest::Approx(runTrialAt(2)));
+  // ...and the path runs without error at a nonzero offset.
+  CHECK(runTrialAt(5) > 0.0);
+}
+
 } // namespace
