@@ -137,7 +137,8 @@ std::string runTimingReportJson(const RunTimingReport& report)
         << "\"seed\":" << trial.seed << ','
         << "\"time_s\":" << trial.timeSec << ','
         << "\"codelength\":" << trial.codelength << ','
-        << "\"top_modules\":" << trial.topModules
+        << "\"top_modules\":" << trial.topModules << ','
+        << "\"num_levels\":" << trial.numLevels
         << '}';
   }
   out << ']';

@@ -236,6 +236,7 @@ TEST_CASE("Run reports write machine-readable JSON with no-file-output [fast][co
   CHECK(timingJson.find("\"seed\":7,") != std::string::npos);
   CHECK(timingJson.find("\"seed\":8,") != std::string::npos);
   CHECK(timingJson.find("\"top_modules\":") != std::string::npos);
+  CHECK(timingJson.find("\"num_levels\":") != std::string::npos);
   CHECK(timingJson.find("\"memory\":{\"rss_peak_mb\":") != std::string::npos);
 
   removeFiles(paths);

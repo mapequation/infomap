@@ -370,7 +370,7 @@ private:
           const auto trialTime = trialTimer.getElapsedTimeInSec();
           codelengths[trialIndex] = trialCodelength;
           numTopModules[trialIndex] = trialTopModules;
-          m_timing.recordTrial(trialIndex, threadNumber, trialSeed, trialTime, trialCodelength, trialTopModules);
+          m_timing.recordTrial(trialIndex, threadNumber, trialSeed, trialTime, trialCodelength, trialTopModules, trialNumLevels);
 
           if (worker.printAllTrials && m_numTrials > 1) {
             std::lock_guard<std::mutex> lock(outputMutex);
@@ -659,7 +659,7 @@ private:
     }
     m_infomap.m_codelengths.push_back(m_infomap.m_hierarchicalCodelength);
     m_infomap.m_numTopModules.push_back(m_infomap.numTopModules());
-    m_timing.recordTrial(trialIndex, 0, m_infomap.seedToRandomNumberGenerator + trialIndex, timer.getElapsedTimeInSec(), m_infomap.m_hierarchicalCodelength, m_infomap.numTopModules());
+    m_timing.recordTrial(trialIndex, 0, m_infomap.seedToRandomNumberGenerator + trialIndex, timer.getElapsedTimeInSec(), m_infomap.m_hierarchicalCodelength, m_infomap.numTopModules(), m_infomap.numLevels());
 
     if (m_infomap.printAllTrials && m_numTrials > 1) {
       auto outputTimer = m_timing.scope("output_s");
