@@ -519,7 +519,6 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         """
         options = InfomapOptions.from_mapping(locals())
         self._args = _package_construct_args()(args, **options.to_kwargs())
-        self._last_run_args = self._args
         super().__init__(self._args)
 
     def __repr__(self):
@@ -1843,7 +1842,6 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         """
         options = InfomapOptions.from_mapping(locals())
         args = _package_construct_args()(args, **options.to_kwargs())
-        self._last_run_args = f"{self._args} {args}".strip() if args else self._args
 
         if initial_partition is not None:
             with self._initial_partition(initial_partition):

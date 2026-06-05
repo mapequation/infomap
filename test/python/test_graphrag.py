@@ -162,14 +162,15 @@ def test_write_graphrag_communities_exports_mvp_tables(tmp_path):
         "size",
     }
     assert communities["level"].tolist() == [1] * len(communities)
-    assert run["num_nodes"] == 6
-    assert run["num_links"] == 7
     assert run["codelength"] == pytest.approx(im.codelength)
-    assert run["options"] == "--silent --num-trials 5"
-    assert run["seed"] is None
+    assert run["top_modules"] == im.num_top_modules
+    assert run["levels"] == im.max_depth
+    assert run["trials"] == 5
+    assert "options" not in run
+    assert "seed" not in run
 
 
-def test_write_graphrag_communities_combines_constructor_and_run_options(tmp_path):
+def test_write_graphrag_communities_does_not_depend_on_run_args_history(tmp_path):
     from infomap import Infomap
     from infomap.io.graphrag import read_graphrag, write_graphrag_communities
 
@@ -184,8 +185,10 @@ def test_write_graphrag_communities_combines_constructor_and_run_options(tmp_pat
     write_graphrag_communities(im, graph=graph, output=output_dir)
 
     run = json.loads((output_dir / "infomap_run.json").read_text())
-    assert run["options"] == "--silent --seed 7 --num-trials 3"
-    assert run["seed"] == 7
+    assert run["trials"] == 3
+    assert run["codelength"] == pytest.approx(im.codelength)
+    assert "options" not in run
+    assert "seed" not in run
 
 
 def test_run_graphrag_communities_reads_runs_and_writes_outputs(tmp_path):
@@ -208,5 +211,7 @@ def test_run_graphrag_communities_reads_runs_and_writes_outputs(tmp_path):
     assert (output_dir / "communities.parquet").is_file()
 
     run = json.loads((output_dir / "infomap_run.json").read_text())
-    assert run["options"] == "--silent --seed 123 --num-trials 1"
-    assert run["seed"] == 123
+    assert run["trials"] == 1
+    assert run["codelength"] == pytest.approx(result.infomap.codelength)
+    assert "options" not in run
+    assert "seed" not in run

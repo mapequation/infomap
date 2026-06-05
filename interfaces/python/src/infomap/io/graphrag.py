@@ -271,24 +271,18 @@ def _communities_table(nodes, graph: GraphRAGGraph):
     )
 
 
-def _option_value(options: str, flag: str):
-    parts = options.split()
-    try:
-        return int(parts[parts.index(flag) + 1])
-    except (ValueError, IndexError):
-        return None
-
-
-def _run_metadata(im):
-    options = " ".join(getattr(im, "_last_run_args", getattr(im, "_args", "")).split())
+def _run_summary_metadata(im):
+    codelengths = list(im.codelengths)
+    best_trial = codelengths.index(min(codelengths)) + 1 if codelengths else 0
     return {
-        "options": options,
-        "num_nodes": im.num_nodes,
-        "num_links": im.num_links,
+        "version": getattr(im, "version", ""),
         "codelength": im.codelength,
-        "num_top_modules": im.num_top_modules,
-        "max_depth": im.max_depth,
-        "seed": _option_value(options, "--seed"),
+        "top_modules": im.num_top_modules,
+        "levels": im.max_depth,
+        "trials": len(codelengths),
+        "best_trial": best_trial,
+        "trial_codelengths": codelengths,
+        "trial_top_modules": [],
     }
 
 
@@ -303,7 +297,8 @@ def write_graphrag_communities(im, *, graph: GraphRAGGraph, output):
 
     nodes.to_parquet(paths["nodes"], index=False)
     communities.to_parquet(paths["communities"], index=False)
-    paths["run"].write_text(json.dumps(_run_metadata(im), indent=2) + "\n")
+    if not paths["run"].exists():
+        paths["run"].write_text(json.dumps(_run_summary_metadata(im), indent=2) + "\n")
 
 
 def run_graphrag_communities(
@@ -324,7 +319,10 @@ def run_graphrag_communities(
         input_path / relationships_name,
         **read_options,
     )
-    im = Infomap(options)
+    paths = _output_paths(output_dir)
+    paths["dir"].mkdir(parents=True, exist_ok=True)
+
+    im = Infomap(options, summary_json=str(paths["run"]))
     im.add_links(graph.sources, graph.targets, graph.weights)
     im.run()
     write_graphrag_communities(im, graph=graph, output=output_dir)
