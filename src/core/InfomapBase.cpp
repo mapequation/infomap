@@ -26,6 +26,7 @@
 #include "../utils/FlowCalculator.h"
 #include "../utils/MemoryUsage.h"
 #include "../utils/PrettyOutput.h"
+#include "../utils/ThreadConfig.h"
 #include "../utils/TimingRegistry.h"
 #include "../utils/convert.h"
 
@@ -148,6 +149,14 @@ public:
 
   Result run()
   {
+    {
+      ThreadSources threadSources = readThreadSourcesFromEnv();
+      threadSources.explicitThreads = m_infomap.numThreads; // 0 = auto
+      m_threadBudget = resolveThreadBudget(threadSources);
+#ifdef _OPENMP
+      omp_set_num_threads(static_cast<int>(m_threadBudget.threads));
+#endif
+    }
     preflightOutputTargets(m_infomap);
     validateNetwork();
     {
@@ -682,6 +691,7 @@ private:
   const unsigned int m_numTrials = m_infomap.numTrials;
   bool m_runParallelTrials = false;
   unsigned int m_threadsUsed = 1;
+  ThreadBudget m_threadBudget;
 };
 
 std::map<unsigned int, std::vector<unsigned int>> InfomapBase::getMultilevelModules(bool states)

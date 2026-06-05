@@ -767,4 +767,22 @@ TEST_CASE("numNonTrivialTopModules is zero when all nodes are in one module [fas
   infomap::test::checkCanonicalPartition(im, { { 1, 2, 3, 4, 5 } });
 }
 
+TEST_CASE("--num-threads 1 matches default codelength on a small network [fast][core][threads]")
+{
+  const char* baseFlags = "--num-trials 3 --seed 123 --no-file-output --silent";
+  InfomapWrapper serial(std::string("--num-threads 1 ") + baseFlags);
+  InfomapWrapper parallelTrials(std::string("--num-threads 1 --parallel-trials ") + baseFlags);
+  for (InfomapWrapper* im : { &serial, &parallelTrials }) {
+    im->addLink(0, 1);
+    im->addLink(1, 2);
+    im->addLink(2, 0);
+    im->addLink(2, 3);
+    im->addLink(3, 4);
+    im->addLink(4, 5);
+    im->addLink(5, 3);
+    im->run();
+  }
+  CHECK(serial.codelength() == doctest::Approx(parallelTrials.codelength()));
+}
+
 } // namespace
