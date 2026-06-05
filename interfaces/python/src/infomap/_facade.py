@@ -451,8 +451,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
             Raw Infomap arguments to prepend before rendered keyword options.
         """
         options = InfomapOptions.from_mapping(locals())
-        self._args = _package_construct_args()(args, **options.to_kwargs())
-        super().__init__(self._args)
+        super().__init__(_package_construct_args()(args, **options.to_kwargs()))
 
     def __repr__(self):
         summary = _summary_data(self)
