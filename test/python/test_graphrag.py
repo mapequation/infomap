@@ -408,6 +408,20 @@ def test_write_graphrag_communities_does_not_depend_on_run_args_history(tmp_path
     assert "seed" not in run
 
 
+def test_write_graphrag_communities_requires_run_results(tmp_path):
+    from infomap import Infomap
+    from infomap.graphrag import read_graphrag, write_graphrag_communities
+
+    entities_path, relationships_path = _write_graphrag_fixture(tmp_path)
+    graph = read_graphrag(entities_path, relationships_path)
+
+    im = Infomap(silent=True)
+    _add_graphrag_links(im, graph)
+
+    with pytest.raises(ValueError, match="Run Infomap before exporting"):
+        write_graphrag_communities(im, graph=graph, output=tmp_path / "infomap")
+
+
 def test_run_graphrag_communities_reads_runs_and_writes_outputs(tmp_path):
     from infomap.graphrag import run_graphrag_communities
 
@@ -432,3 +446,21 @@ def test_run_graphrag_communities_reads_runs_and_writes_outputs(tmp_path):
     assert run["codelength"] == pytest.approx(result.infomap.codelength)
     assert "options" not in run
     assert "seed" not in run
+
+
+def test_run_graphrag_communities_returns_output_directory_for_file_output(tmp_path):
+    from infomap.graphrag import run_graphrag_communities
+
+    entities_path, _relationships_path = _write_graphrag_fixture(tmp_path)
+    output_file = tmp_path / "communities.v1.parquet"
+
+    result = run_graphrag_communities(
+        input_dir=entities_path.parent,
+        output_dir=output_file,
+        options="--silent --seed 123 --num-trials 1",
+    )
+
+    assert result.output_dir == tmp_path
+    assert output_file.is_file()
+    assert (tmp_path / "infomap_nodes.parquet").is_file()
+    assert (tmp_path / "infomap_run.json").is_file()

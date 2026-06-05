@@ -431,9 +431,17 @@ def _links_array(graph: GraphRAGGraph):
     return np.column_stack(columns)
 
 
+def _require_modules(im):
+    if not im.haveModules():
+        raise ValueError(
+            "Infomap results are not available. Run Infomap before exporting."
+        )
+
+
 def write_graphrag_communities(im, *, graph: GraphRAGGraph, output):
     """Write experimental GraphRAG-compatible community tables."""
     _import_parquet_stack()
+    _require_modules(im)
     paths = _output_paths(output)
     paths["dir"].mkdir(parents=True, exist_ok=True)
 
@@ -471,4 +479,4 @@ def run_graphrag_communities(
     im.add_links(_links_array(graph))
     im.run()
     write_graphrag_communities(im, graph=graph, output=output_dir)
-    return GraphRAGRunResult(infomap=im, graph=graph, output_dir=Path(output_dir))
+    return GraphRAGRunResult(infomap=im, graph=graph, output_dir=paths["dir"])
