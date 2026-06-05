@@ -702,10 +702,12 @@ public:
       report.version = INFOMAP_VERSION;
 #ifdef _OPENMP
       report.openmp = true;
-      report.threadsRequested = static_cast<unsigned int>(std::max(1, omp_get_max_threads()));
+      report.threadsRequested = m_threadBudget.threads;
+      report.threadSource = threadSourceName(m_threadBudget.source);
 #else
       report.openmp = false;
       report.threadsRequested = 1;
+      report.threadSource = "serial";
 #endif
       report.threadsUsed = result.threadsUsed;
       report.network = m_reportNetwork;
