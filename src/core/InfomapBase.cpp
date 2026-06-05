@@ -159,6 +159,7 @@ public:
       ThreadSources threadSources = readThreadSourcesFromEnv();
       threadSources.explicitThreads = m_infomap.numThreads; // 0 = auto
       m_threadBudget = resolveThreadBudget(threadSources);
+      m_cpusetCount = threadSources.cpusetCount;
 #ifdef _OPENMP
       omp_set_num_threads(static_cast<int>(m_threadBudget.threads));
 #endif
@@ -542,6 +543,39 @@ private:
       Log(2) << "Run Infomap with memory...\n";
     else
       Log(2) << "Run Infomap...\n";
+#ifdef _OPENMP
+    {
+      const unsigned int cpus = static_cast<unsigned int>(std::max(1, omp_get_num_procs()));
+      const char* source = threadSourceName(m_threadBudget.source);
+      const char* innerState = m_infomap.innerParallelization ? "enabled" : "disabled";
+      if (m_infomap.prettyOutput) {
+        PrettyOutput pretty(true);
+        Log::pretty() << pretty.dim() << "  Runtime: " << cpus << " CPUs available, thread budget "
+                      << m_threadBudget.threads << " (" << source << "), inner parallelization "
+                      << innerState << pretty.reset() << "\n";
+      } else {
+        Log() << "  -> Runtime: " << cpus << " CPUs available, thread budget "
+              << m_threadBudget.threads << " (" << source << "), inner parallelization "
+              << innerState << ".\n";
+      }
+
+      // Oversubscription warnings (only meaningful when cpuset is known, i.e. Linux).
+      if (m_cpusetCount > 0 && m_infomap.numThreads > m_cpusetCount) {
+        Log::important() << "  -> Warning: --num-threads " << m_infomap.numThreads
+                         << " exceeds the available cpuset of " << m_cpusetCount
+                         << " CPUs; this may oversubscribe the node.\n";
+      }
+      if (m_cpusetCount > 0) {
+        const unsigned int innerThreads = (m_infomap.innerParallelization && !m_runParallelTrials) ? m_threadBudget.threads : 1;
+        const unsigned int demand = m_threadsUsed * innerThreads;
+        if (demand > m_cpusetCount) {
+          Log::important() << "  -> Warning: " << m_threadsUsed << " trial workers x " << innerThreads
+                           << " inner threads = " << demand << " exceeds the available cpuset of "
+                           << m_cpusetCount << " CPUs.\n";
+        }
+      }
+    }
+#endif
   }
 
   void runTrial(unsigned int trialIndex, Result& result)
@@ -698,6 +732,7 @@ private:
   bool m_runParallelTrials = false;
   unsigned int m_threadsUsed = 1;
   ThreadBudget m_threadBudget;
+  unsigned int m_cpusetCount = 0;
 };
 
 std::map<unsigned int, std::vector<unsigned int>> InfomapBase::getMultilevelModules(bool states)
