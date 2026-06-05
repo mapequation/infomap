@@ -221,6 +221,7 @@ TEST_CASE("Run reports write machine-readable JSON with no-file-output [fast][co
   CHECK(timingJson.find("\"threads_requested\":") != std::string::npos);
   CHECK(timingJson.find("\"threads_used\":1,") != std::string::npos);
   CHECK(timingJson.find("\"thread_source\":\"") != std::string::npos);
+  CHECK(timingJson.find("\"thread_source\":\"\"") == std::string::npos); // value is non-empty
   CHECK(timingJson.find("\"network\":{\"nodes\":") != std::string::npos);
   CHECK(timingJson.find("\"timing\":{") != std::string::npos);
   CHECK(timingJson.find("\"flow_calculation_s\":") != std::string::npos);
