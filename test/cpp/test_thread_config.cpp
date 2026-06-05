@@ -73,8 +73,25 @@ TEST_CASE("Budget is clamped to at least 1 [fast][core][threads]")
   CHECK(b.threads == 1);
 }
 
+TEST_CASE("INFOMAP_NUM_THREADS wins when explicit is absent [fast][core][threads]")
+{
+  ThreadSources s;
+  s.infomapEnv = 7;
+  s.slurmCpusPerTask = 8;
+  s.ompEnv = 16;
+  s.cpusetCount = 32;
+  s.hardwareConcurrency = 64;
+  const ThreadBudget b = resolveThreadBudget(s);
+  CHECK(b.threads == 7);
+  CHECK(b.source == ThreadSource::InfomapEnv);
+}
+
 TEST_CASE("threadSourceName returns documented labels [fast][core][threads]")
 {
+  CHECK(std::string(threadSourceName(ThreadSource::Explicit)) == "--num-threads");
+  CHECK(std::string(threadSourceName(ThreadSource::InfomapEnv)) == "INFOMAP_NUM_THREADS");
   CHECK(std::string(threadSourceName(ThreadSource::Slurm)) == "SLURM_CPUS_PER_TASK");
+  CHECK(std::string(threadSourceName(ThreadSource::Omp)) == "OMP_NUM_THREADS");
   CHECK(std::string(threadSourceName(ThreadSource::Cpuset)) == "cpuset");
+  CHECK(std::string(threadSourceName(ThreadSource::Hardware)) == "hardware_concurrency");
 }

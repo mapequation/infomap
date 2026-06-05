@@ -1,7 +1,17 @@
+/*******************************************************************************
+ Infomap software package for multi-level network clustering
+ Copyright (c) 2013, 2014 Daniel Edler, Anton Holmgren, Martin Rosvall
+
+ This file is part of the Infomap software package.
+ See file LICENSE_GPLv3.txt for full license details.
+ For more information, see <http://www.mapequation.org>
+ ******************************************************************************/
+
 #include "ThreadConfig.h"
 
 #include <algorithm>
 #include <cstdlib>
+#include <limits>
 #include <string>
 #include <thread>
 
@@ -45,6 +55,7 @@ const char* threadSourceName(ThreadSource source)
     case ThreadSource::Cpuset: return "cpuset";
     case ThreadSource::Hardware: return "hardware_concurrency";
   }
+  // unreachable — all enumerators handled above
   return "unknown";
 }
 
@@ -57,7 +68,10 @@ namespace {
     }
     try {
       const long value = std::stol(std::string(raw));
-      return value > 0 ? static_cast<unsigned int>(value) : 0;
+      if (value > 0 && value <= static_cast<long>(std::numeric_limits<unsigned int>::max())) {
+        return static_cast<unsigned int>(value);
+      }
+      return 0;
     } catch (...) {
       return 0;
     }
