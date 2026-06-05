@@ -783,6 +783,7 @@ TEST_CASE("--num-threads 1 matches default codelength on a small network [fast][
     im->run();
   }
   CHECK(serial.codelength() == doctest::Approx(parallelTrials.codelength()));
+  CHECK(serial.numTopModules() == parallelTrials.numTopModules());
 }
 
 } // namespace

@@ -150,6 +150,12 @@ public:
   Result run()
   {
     {
+      // Resolve the thread budget once for the whole run. RunSession is only
+      // constructed for the main Infomap (run(Network&) requires isMainInfomap),
+      // so this fires exactly once, before any OpenMP region. Setting the
+      // process-global max thread count lets all parallel regions (recursive
+      // partition, parallel trials, inner parallelization) inherit the budget
+      // via their existing omp_get_max_threads() calls.
       ThreadSources threadSources = readThreadSourcesFromEnv();
       threadSources.explicitThreads = m_infomap.numThreads; // 0 = auto
       m_threadBudget = resolveThreadBudget(threadSources);
