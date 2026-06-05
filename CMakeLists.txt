@@ -171,6 +171,7 @@ if(BUILD_TESTING)
     add_infomap_cpp_test(infomap_cpp_no_output_tests test/cpp/test_no_output.cpp "fast;core;output;library")
     add_infomap_cpp_test(infomap_cpp_trial_results_tests test/cpp/test_trial_results.cpp "fast;core;merge")
     add_infomap_cpp_test(infomap_cpp_output_view_tests test/cpp/test_output_view.cpp "fast;core;output")
+    add_infomap_cpp_test(infomap_cpp_trial_merge_tests test/cpp/test_trial_merge.cpp "fast;core;merge")
 
     add_test(
         NAME print_json_parameters
@@ -248,6 +249,7 @@ if(BUILD_TESTING)
             infomap_cpp_no_output_tests
             infomap_cpp_output_view_tests
             infomap_cpp_trial_results_tests
+            infomap_cpp_trial_merge_tests
             infomap_cli
     )
 endif()
