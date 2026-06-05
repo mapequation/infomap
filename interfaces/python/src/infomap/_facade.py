@@ -433,6 +433,9 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         parallel_trials=False,
         num_threads=None,
         threads=None,
+        trial_offset=None,
+        trial_results=None,
+        no_final_output=False,
         num_random_moves=None,
         max_degree_for_random_moves=None,
     ):
@@ -1697,6 +1700,9 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         parallel_trials=False,
         num_threads=None,
         threads=None,
+        trial_offset=None,
+        trial_results=None,
+        no_final_output=False,
         num_random_moves=None,
         max_degree_for_random_moves=None,
     ):

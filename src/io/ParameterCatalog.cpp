@@ -894,12 +894,16 @@ const std::vector<ParameterSpec>& parameterCatalog()
         .argument(ArgType::list)
         .group("Output")
         .advanced()
+        .cliOnly()
+        .hideFromJson()
         .configTarget(&Config::mergeTrialResults),
     param()
         .longName("require-complete-trials")
         .description("With --merge-trial-results, fail (instead of warn) if any global trial index in [0, max] is missing across the shard files.")
         .group("Output")
         .advanced()
+        .cliOnly()
+        .hideFromJson()
         .configTarget(&Config::requireCompleteTrials),
 #if INFOMAP_FEATURE_TEST_FEATURE
     param()

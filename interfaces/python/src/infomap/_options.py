@@ -40,8 +40,6 @@ _OUTPUT_OPTION_SPECS = (
     ("value", "trial_offset", "--trial-offset", lambda value: value is not None),
     ("value", "trial_results", "--trial-results", lambda value: value is not None),
     ("flag", "no_final_output", "--no-final-output", None),
-    ("value", "merge_trial_results", "--merge-trial-results", lambda value: value is not None),
-    ("flag", "require_complete_trials", "--require-complete-trials", None),
     ("flag", "silent", "--silent", None),
     ("flag", "pretty", "--pretty", None),
 )
@@ -196,12 +194,6 @@ class InfomapOptions:
     no_final_output : bool, optional
         Skip writing this process's aggregate best result. Per-trial outputs and
         --trial-results are still written.
-    merge_trial_results : str, optional
-        Merge mode: read these shard result files (comma-separated globs), pick the
-        global best trial, and write the final output. Takes no network input.
-    require_complete_trials : bool, optional
-        With --merge-trial-results, fail (instead of warn) if any global trial index in
-        [0, max] is missing across the shard files.
     verbosity_level : int, optional
         Verbosity level on the console. 1 keeps the default output level, 2 renders -vv
         and so on.
@@ -349,8 +341,6 @@ class InfomapOptions:
     trial_offset: int | None = None
     trial_results: str | None = None
     no_final_output: bool = False
-    merge_trial_results: list[str] | tuple[str, ...] | None = None
-    require_complete_trials: bool = False
     verbosity_level: int = 1
     silent: bool = False
     pretty: bool = False
@@ -475,8 +465,6 @@ def _construct_args(
     trial_offset=None,
     trial_results=None,
     no_final_output=False,
-    merge_trial_results=None,
-    require_complete_trials=False,
     verbosity_level=1,
     silent=False,
     pretty=False,
