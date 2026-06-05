@@ -791,4 +791,26 @@ TEST_CASE("--num-threads bounds parallel-trials workers without changing the res
   CHECK(oneThread.numTopModules() == fourThreads.numTopModules());
 }
 
+// Light smoke test for the offset path: both offset-0 and offset-1 should
+// converge to a valid positive codelength on a small network.
+// Full split-then-merge determinism (sharded+merged == single run) is
+// verified in Phase F.
+TEST_CASE("--trial-offset produces a valid codelength [fast][core][partition][sharding]")
+{
+  const char* baseFlags = "--seed 123 --num-trials 1 --silent --no-file-output";
+  for (const char* flags : { baseFlags, "--seed 123 --num-trials 1 --silent --no-file-output --trial-offset 1" }) {
+    InfomapWrapper im(flags);
+    im.addLink(0, 1);
+    im.addLink(1, 2);
+    im.addLink(2, 0);
+    im.addLink(2, 3);
+    im.addLink(3, 4);
+    im.addLink(4, 5);
+    im.addLink(5, 3);
+    im.run();
+    CHECK(im.codelength() > 0.0);
+    infomap::test::checkRunSanity(im);
+  }
+}
+
 } // namespace

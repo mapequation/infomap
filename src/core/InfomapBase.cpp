@@ -342,7 +342,8 @@ private:
       for (unsigned int trialIndex = static_cast<unsigned int>(workerIndex); trialIndex < m_numTrials; trialIndex += numWorkers) {
         try {
           Log::ScopedMute muteWorkerLogs;
-          const auto trialSeed = m_infomap.seedToRandomNumberGenerator + trialIndex;
+          const auto globalIndex = m_infomap.trialOffset + trialIndex;
+          const auto trialSeed = m_infomap.seedToRandomNumberGenerator + globalIndex;
           worker.seedToRandomNumberGenerator = trialSeed;
           worker.reseed(trialSeed);
           int threadNumber = 0;
@@ -375,7 +376,7 @@ private:
           if (worker.printAllTrials && m_numTrials > 1) {
             std::lock_guard<std::mutex> lock(outputMutex);
             auto outputTimer = m_timing.scope("output_s");
-            worker.writeResult(static_cast<int>(trialIndex + 1));
+            worker.writeResult(static_cast<int>(globalIndex + 1));
           }
 
           std::lock_guard<std::mutex> lock(bestResultMutex);
@@ -659,11 +660,12 @@ private:
     }
     m_infomap.m_codelengths.push_back(m_infomap.m_hierarchicalCodelength);
     m_infomap.m_numTopModules.push_back(m_infomap.numTopModules());
-    m_timing.recordTrial(trialIndex, 0, m_infomap.seedToRandomNumberGenerator + trialIndex, timer.getElapsedTimeInSec(), m_infomap.m_hierarchicalCodelength, m_infomap.numTopModules(), m_infomap.numLevels());
+    const unsigned long globalSeed = m_infomap.seedToRandomNumberGenerator + (m_infomap.trialOffset + trialIndex);
+    m_timing.recordTrial(trialIndex, 0, globalSeed, timer.getElapsedTimeInSec(), m_infomap.m_hierarchicalCodelength, m_infomap.numTopModules(), m_infomap.numLevels());
 
     if (m_infomap.printAllTrials && m_numTrials > 1) {
       auto outputTimer = m_timing.scope("output_s");
-      m_infomap.writeResult(static_cast<int>(trialIndex + 1));
+      m_infomap.writeResult(static_cast<int>(m_infomap.trialOffset + trialIndex + 1));
     }
 
     if (m_infomap.m_hierarchicalCodelength < result.bestHierarchicalCodelength - 1e-10) {
