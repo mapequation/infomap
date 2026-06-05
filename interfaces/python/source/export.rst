@@ -6,6 +6,10 @@ them to common visualization formats. This keeps the graph topology and the
 Infomap result in one file, so tools such as Gephi and Cytoscape can color or
 filter nodes by community without a separate join step.
 
+This is the reference page for export semantics and written attributes. For a
+worked NetworkX workflow that runs Infomap, compares Louvain, and writes
+GraphML/GEXF files, see :doc:`examples/compare-infomap-louvain-networkx`.
+
 NetworkX GraphML and GEXF
 -------------------------
 
@@ -111,3 +115,10 @@ color one hierarchy level at a time.
 The native ``infomap`` CLI does not read or write GraphML/GEXF in this
 release. Use the Python workflow above when you need these interchange
 formats.
+
+See also
+--------
+
+- :doc:`examples/compare-infomap-louvain-networkx` for a worked NetworkX
+  export workflow.
+- :doc:`api/export` for exact helper signatures.

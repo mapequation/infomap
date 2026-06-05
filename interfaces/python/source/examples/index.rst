@@ -5,14 +5,14 @@ These examples are rendered from the Jupyter notebooks in
 ``examples/notebooks``. They are published as regular documentation pages so
 they can be searched, linked, and read without opening Jupyter.
 
-Start here
-----------
+Choose a notebook
+-----------------
 
 - :doc:`quickstart` — first end-to-end Infomap workflow in Python.
 - :doc:`compare-infomap-louvain-networkx` — compare Infomap and Louvain with
-  NetworkX.
+  NetworkX when your graph already lives in NetworkX.
 - :doc:`compare-infomap-louvain-leiden-igraph` — compare Infomap, Louvain, and
-  Leiden with python-igraph.
+  Leiden when you want igraph-native clustering objects.
 - :doc:`compare-infomap-scanpy-workflow` — compare Infomap and Leiden in an
   AnnData and Scanpy-style workflow.
 - :doc:`run-infomap-on-hpc` — native CLI recipes for scheduler-aware HPC runs
