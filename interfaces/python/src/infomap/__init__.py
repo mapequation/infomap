@@ -28,6 +28,12 @@ _VERSION_ALL = [
 
 __all__ = list(_VERSION_ALL)
 
+# The distributed-trial merge tool lives in the pure-Python ``infomap.merge``
+# module (use ``from infomap.merge import merge_trial_results`` or the CLI
+# ``python -m infomap.merge``). It is intentionally NOT imported here so the
+# ``python -m infomap.merge`` entry point runs without a re-import warning and
+# stays usable even before the compiled bindings are built.
+
 try:
     from ._facade import __all__ as _FACADE_ALL
     from ._facade import *  # noqa: F401,F403

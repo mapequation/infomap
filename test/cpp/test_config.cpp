@@ -1,5 +1,6 @@
 #include "vendor/doctest.h"
 
+#include "TestUtils.h"
 #include "io/Config.h"
 #include "io/OutputFormats.h"
 #include "io/OutputPlan.h"
@@ -596,5 +597,39 @@ TEST_CASE("Config rejects --num-threads with trailing garbage [fast][core][confi
 {
   CHECK_THROWS(Config("input.net --silent --no-file-output --num-threads 4x", true));
 }
+
+TEST_CASE("Config fingerprint is invariant to num_trials and trial offset [fast][core][config][cli]")
+{
+  const Config a("input.net --silent --no-file-output --num-trials 1", true);
+  const Config b("input.net --silent --no-file-output --num-trials 100", true);
+  CHECK(infomap::configFingerprint(a) == infomap::configFingerprint(b));
+  CHECK(infomap::canonicalConfigJson(a).find("num_trials") == std::string::npos);
+}
+
+TEST_CASE("networkFingerprint depends only on content [fast][core][config]")
+{
+  // Two files with different content must hash differently.
+  const auto pathA = infomap::test::networkFixturePath("accumulate_a.net");
+  const auto pathB = infomap::test::networkFixturePath("accumulate_b.net");
+  CHECK_FALSE(infomap::networkFingerprint(pathA).empty());
+  CHECK(infomap::networkFingerprint(pathA) != infomap::networkFingerprint(pathB));
+
+  // The same file read twice must give the same hash (content-stable).
+  CHECK(infomap::networkFingerprint(pathA) == infomap::networkFingerprint(pathA));
+}
+
+TEST_CASE("Config parses --trial-offset [fast][core][config][cli]")
+{
+  const Config c("input.net --silent --no-file-output --trial-offset 25", true);
+  CHECK(c.trialOffset == 25);
+}
+
+TEST_CASE("Config parses --trial-results and --no-final-output [fast][core][config][cli]")
+{
+  const Config c("input.net --silent --no-file-output --trial-results r.json --no-final-output", true);
+  CHECK(c.trialResultsPath == "r.json");
+  CHECK(c.noFinalOutput);
+}
+
 
 } // namespace

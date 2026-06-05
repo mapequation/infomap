@@ -37,6 +37,9 @@ _OUTPUT_OPTION_SPECS = (
     ("value", "summary_json", "--summary-json", lambda value: value is not None),
     ("value", "manifest_json", "--manifest-json", lambda value: value is not None),
     ("flag", "memory_report", "--memory-report", None),
+    ("value", "trial_offset", "--trial-offset", lambda value: value is not None),
+    ("value", "trial_results", "--trial-results", lambda value: value is not None),
+    ("flag", "no_final_output", "--no-final-output", None),
     ("flag", "silent", "--silent", None),
     ("flag", "pretty", "--pretty", None),
 )
@@ -182,6 +185,16 @@ class InfomapOptions:
     memory_report : bool, optional
         Include peak RSS and best-effort bytes per node/link estimates in timing JSON.
         Requires --timing-json.
+    trial_offset : int, optional
+        Global index of the first trial this process runs; trial i uses seed = base_seed
+        + (trial_offset + i). Default 0 (single-process behavior).
+    trial_results : str, optional
+        Write this shard's per-trial results (codelengths, seeds, best-tree reference,
+        fingerprints) as JSON to this path, for deterministic merging of distributed
+        shard runs into a final solution.
+    no_final_output : bool, optional
+        Skip writing this process's aggregate best result. Per-trial outputs and
+        --trial-results are still written.
     verbosity_level : int, optional
         Verbosity level on the console. 1 keeps the default output level, 2 renders -vv
         and so on.
@@ -326,6 +339,9 @@ class InfomapOptions:
     summary_json: str | None = None
     manifest_json: str | None = None
     memory_report: bool = False
+    trial_offset: int | None = None
+    trial_results: str | None = None
+    no_final_output: bool = False
     verbosity_level: int = 1
     silent: bool = False
     pretty: bool = False
@@ -447,6 +463,9 @@ def _construct_args(
     summary_json=None,
     manifest_json=None,
     memory_report=False,
+    trial_offset=None,
+    trial_results=None,
+    no_final_output=False,
     verbosity_level=1,
     silent=False,
     pretty=False,

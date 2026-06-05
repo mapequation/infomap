@@ -19,6 +19,9 @@ struct Config;
 std::string canonicalConfigJson(const Config& config);
 std::string configFingerprint(const Config& config);
 std::string inputFingerprintJson(const std::string& path);
+// Node-stable content hash of the input network (no size/mtime). Used by the
+// distributed-trial merge guard to confirm all shards ran on the same network.
+std::string networkFingerprint(const std::string& path);
 std::string runManifestJson(const Config& config);
 
 } // namespace infomap

@@ -169,6 +169,7 @@ if(BUILD_TESTING)
     add_infomap_cpp_test(infomap_cpp_config_tests test/cpp/test_config.cpp "fast;core;config;cli")
     add_infomap_cpp_test(infomap_cpp_thread_config_tests test/cpp/test_thread_config.cpp "fast;core;threads")
     add_infomap_cpp_test(infomap_cpp_no_output_tests test/cpp/test_no_output.cpp "fast;core;output;library")
+    add_infomap_cpp_test(infomap_cpp_trial_results_tests test/cpp/test_trial_results.cpp "fast;core;merge")
     add_infomap_cpp_test(infomap_cpp_output_view_tests test/cpp/test_output_view.cpp "fast;core;output")
 
     add_test(
@@ -246,6 +247,7 @@ if(BUILD_TESTING)
             infomap_cpp_thread_config_tests
             infomap_cpp_no_output_tests
             infomap_cpp_output_view_tests
+            infomap_cpp_trial_results_tests
             infomap_cli
     )
 endif()

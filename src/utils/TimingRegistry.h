@@ -26,6 +26,7 @@ struct TrialTimingRecord {
   double timeSec = 0.0;
   double codelength = 0.0;
   unsigned int topModules = 0;
+  unsigned int numLevels = 0;
   bool valid = false;
 };
 
@@ -102,7 +103,7 @@ public:
     m_trials.assign(numTrials, TrialTimingRecord());
   }
 
-  void recordTrial(unsigned int trialIndex, int thread, unsigned long seed, double timeSec, double codelength, unsigned int topModules)
+  void recordTrial(unsigned int trialIndex, int thread, unsigned long seed, double timeSec, double codelength, unsigned int topModules, unsigned int numLevels)
   {
     std::lock_guard<std::mutex> lock(m_mutex);
     if (trialIndex >= m_trials.size()) {
@@ -115,6 +116,7 @@ public:
     record.timeSec = timeSec;
     record.codelength = codelength;
     record.topModules = topModules;
+    record.numLevels = numLevels;
     record.valid = true;
     m_trials[trialIndex] = record;
   }

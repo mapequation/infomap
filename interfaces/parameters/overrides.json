@@ -16,6 +16,18 @@
       {
         "flag": "--threads",
         "reason": "Alias of --num-threads; the single-threaded JavaScript worker has no OpenMP thread budget."
+      },
+      {
+        "flag": "--trial-offset",
+        "reason": "Distributed trial sharding is for multi-process HPC runs; the single-threaded JavaScript WASM worker cannot shard."
+      },
+      {
+        "flag": "--trial-results",
+        "reason": "Per-shard result emission is for multi-process HPC merge workflows, not the JavaScript worker."
+      },
+      {
+        "flag": "--no-final-output",
+        "reason": "Only meaningful for shard runs feeding --merge-trial-results, which the JavaScript worker does not use."
       }
     ]
   },

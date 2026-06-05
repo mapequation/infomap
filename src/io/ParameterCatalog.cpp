@@ -862,6 +862,28 @@ const std::vector<ParameterSpec>& parameterCatalog()
         .advanced()
         .defaultValue("auto")
         .configTarget(&Config::numThreadsArg),
+    param()
+        .longName("trial-offset")
+        .description("Global index of the first trial this process runs; trial i uses seed = base_seed + (trial_offset + i). Default 0 (single-process behavior).")
+        .argument(ArgType::integer)
+        .group("Output")
+        .advanced()
+        .defaultValue("0")
+        .min("0")
+        .configTarget(&Config::trialOffset),
+    param()
+        .longName("trial-results")
+        .description("Write this shard's per-trial results (codelengths, seeds, best-tree reference, fingerprints) as JSON to this path, for deterministic merging of distributed shard runs into a final solution.")
+        .argument(ArgType::path)
+        .group("Output")
+        .advanced()
+        .configTarget(&Config::trialResultsPath),
+    param()
+        .longName("no-final-output")
+        .description("Skip writing this process's aggregate best result. Per-trial outputs and --trial-results are still written.")
+        .group("Output")
+        .advanced()
+        .configTarget(&Config::noFinalOutput),
 #if INFOMAP_FEATURE_TEST_FEATURE
     param()
         .longName("test-feature")

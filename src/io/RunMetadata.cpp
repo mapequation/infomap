@@ -192,7 +192,6 @@ std::string canonicalConfigJson(const Config& config)
   appendField(json, first, "flow_model", jsonString(flowModelToString(config.flowModel)));
   appendField(json, first, "directed", boolString(config.directed));
   appendNumericField(json, first, "seed", config.seedToRandomNumberGenerator);
-  appendNumericField(json, first, "num_trials", config.numTrials);
   appendField(json, first, "two_level", boolString(config.twoLevel));
   appendField(json, first, "no_infomap", boolString(config.noInfomap));
   appendField(json, first, "regularized", boolString(config.regularized));
@@ -273,6 +272,20 @@ std::string inputFingerprintJson(const std::string& path)
   return json.str();
 }
 
+std::string networkFingerprint(const std::string& path)
+{
+  if (path.empty())
+    return "";
+
+  struct stat info;
+  if (stat(path.c_str(), &info) != 0) {
+    throw std::runtime_error(io::Str() << "Error reading input file metadata for '" << path << "'.");
+  }
+
+  const auto size = static_cast<unsigned long long>(info.st_size);
+  return fileContentFingerprint(path, size);
+}
+
 std::string runManifestJson(const Config& config)
 {
   const auto canonicalConfig = canonicalConfigJson(config);
@@ -280,6 +293,7 @@ std::string runManifestJson(const Config& config)
   json << '{'
        << "\"version\":" << jsonString(INFOMAP_VERSION) << ','
        << "\"command\":" << jsonString(config.parsedString) << ','
+       << "\"num_trials\":" << config.numTrials << ','
        << "\"config\":" << canonicalConfig << ','
        << "\"config_fingerprint\":" << jsonString(fnvHex(canonicalConfig)) << ','
        << "\"input\":" << inputFingerprintJson(config.networkFile) << ','
