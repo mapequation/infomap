@@ -16,7 +16,6 @@
 #include "../utils/Log.h"
 
 #include <iomanip>
-#include <iostream>
 #include <limits>
 #include <set>
 #include <sstream>
@@ -154,7 +153,7 @@ ExitCode mergeTrialResults(const Config& config)
 
   const std::string& patterns = config.mergeTrialResults;
   if (patterns.empty()) {
-    std::cerr << "Error: --merge-trial-results requires at least one file pattern.\n";
+    Log::important() << "Error: --merge-trial-results requires at least one file pattern.\n";
     return ExitCode::InvalidArguments;
   }
 
@@ -181,9 +180,9 @@ ExitCode mergeTrialResults(const Config& config)
     auto expanded = expandGlob(pat);
     if (expanded.empty()) {
       if (hasWildcard) {
-        std::cerr << "Error: --merge-trial-results pattern '" << pat << "' matched no files.\n";
+        Log::important() << "Error: --merge-trial-results pattern '" << pat << "' matched no files.\n";
       } else {
-        std::cerr << "Error: --merge-trial-results file not found: '" << pat << "'.\n";
+        Log::important() << "Error: --merge-trial-results file not found: '" << pat << "'.\n";
       }
       return ExitCode::InputError;
     }
@@ -192,7 +191,7 @@ ExitCode mergeTrialResults(const Config& config)
   }
 
   if (shardPaths.empty()) {
-    std::cerr << "Error: --merge-trial-results: no shard files found.\n";
+    Log::important() << "Error: --merge-trial-results: no shard files found.\n";
     return ExitCode::InputError;
   }
 
@@ -211,7 +210,7 @@ ExitCode mergeTrialResults(const Config& config)
     try {
       json = readFileMerge(jsonPath);
     } catch (const std::exception& e) {
-      std::cerr << "Error reading shard file '" << jsonPath << "': " << e.what() << "\n";
+      Log::important() << "Error reading shard file '" << jsonPath << "': " << e.what() << "\n";
       return ExitCode::InputError;
     }
 
@@ -219,7 +218,7 @@ ExitCode mergeTrialResults(const Config& config)
     try {
       rf = parseTrialResults(json, jsonPath);
     } catch (const std::exception& e) {
-      std::cerr << "Error parsing shard file '" << jsonPath << "': " << e.what() << "\n";
+      Log::important() << "Error parsing shard file '" << jsonPath << "': " << e.what() << "\n";
       return ExitCode::InputError;
     }
 
@@ -233,12 +232,12 @@ ExitCode mergeTrialResults(const Config& config)
   const std::string& expectedCfgFp = shards[0].results.configFingerprint;
 
   if (expectedNetFp.empty()) {
-    std::cerr << "Error: shard file '" << shards[0].jsonPath
+    Log::important() << "Error: shard file '" << shards[0].jsonPath
                << "' has an empty network_fingerprint. Cannot validate run identity.\n";
     return ExitCode::InputError;
   }
   if (expectedCfgFp.empty()) {
-    std::cerr << "Error: shard file '" << shards[0].jsonPath
+    Log::important() << "Error: shard file '" << shards[0].jsonPath
                << "' has an empty config_fingerprint. Cannot validate run identity.\n";
     return ExitCode::InputError;
   }
@@ -246,23 +245,23 @@ ExitCode mergeTrialResults(const Config& config)
   for (size_t i = 1; i < shards.size(); ++i) {
     const auto& rf = shards[i].results;
     if (rf.networkFingerprint.empty()) {
-      std::cerr << "Error: shard file '" << shards[i].jsonPath
+      Log::important() << "Error: shard file '" << shards[i].jsonPath
                  << "' has an empty network_fingerprint.\n";
       return ExitCode::InputError;
     }
     if (rf.configFingerprint.empty()) {
-      std::cerr << "Error: shard file '" << shards[i].jsonPath
+      Log::important() << "Error: shard file '" << shards[i].jsonPath
                  << "' has an empty config_fingerprint.\n";
       return ExitCode::InputError;
     }
     if (rf.networkFingerprint != expectedNetFp) {
-      std::cerr << "Error: network_fingerprint mismatch between shards.\n"
+      Log::important() << "Error: network_fingerprint mismatch between shards.\n"
                  << "  Shard 0 (" << shards[0].jsonPath << "): " << expectedNetFp << "\n"
                  << "  Shard " << i << " (" << shards[i].jsonPath << "): " << rf.networkFingerprint << "\n";
       return ExitCode::InputError;
     }
     if (rf.configFingerprint != expectedCfgFp) {
-      std::cerr << "Error: config_fingerprint mismatch between shards.\n"
+      Log::important() << "Error: config_fingerprint mismatch between shards.\n"
                  << "  Shard 0 (" << shards[0].jsonPath << "): " << expectedCfgFp << "\n"
                  << "  Shard " << i << " (" << shards[i].jsonPath << "): " << rf.configFingerprint << "\n";
       return ExitCode::InputError;
@@ -273,7 +272,7 @@ ExitCode mergeTrialResults(const Config& config)
   // Merge supports only tree and clu. Reject any other format requested.
   if (config.printFlowTree || config.printNewick || config.printJson || config.printCsv
       || config.printPajekNetwork || config.printStateNetwork || config.printFlowNetwork) {
-    std::cerr << "Error: --merge-trial-results supports only 'tree' and 'clu' output formats. "
+    Log::important() << "Error: --merge-trial-results supports only 'tree' and 'clu' output formats. "
                << "Other formats require a live network and are not supported in merge mode.\n";
     return ExitCode::InvalidArguments;
   }
@@ -308,7 +307,7 @@ ExitCode mergeTrialResults(const Config& config)
   }
 
   if (coveredTrials.empty()) {
-    std::cerr << "Error: no trial results found across all shard files.\n";
+    Log::important() << "Error: no trial results found across all shard files.\n";
     return ExitCode::InputError;
   }
 
@@ -317,7 +316,7 @@ ExitCode mergeTrialResults(const Config& config)
   winner.bestTreeFile = resolveBestTree(winnerShard.results.bestTreeFile, winnerShard.jsonPath);
 
   if (!pathExists(winner.bestTreeFile)) {
-    std::cerr << "Error: winner's best tree file does not exist: '" << winner.bestTreeFile << "'.\n";
+    Log::important() << "Error: winner's best tree file does not exist: '" << winner.bestTreeFile << "'.\n";
     return ExitCode::InputError;
   }
 
@@ -332,12 +331,13 @@ ExitCode mergeTrialResults(const Config& config)
 
   if (!missingTrials.empty()) {
     if (config.requireCompleteTrials) {
-      std::cerr << "Error: --require-complete-trials: missing "
-                 << missingTrials.size() << " global trial index(es) in [0, "
-                 << maxTrial << "]. Missing:";
+      std::ostringstream missing;
+      missing << "Error: --require-complete-trials: missing "
+              << missingTrials.size() << " global trial index(es) in [0, "
+              << maxTrial << "]. Missing:";
       for (auto idx : missingTrials)
-        std::cerr << " " << idx;
-      std::cerr << "\n";
+        missing << " " << idx;
+      Log::important() << missing.str() << "\n";
       return ExitCode::InputError;
     } else {
       Log() << "Warning: missing " << missingTrials.size()
@@ -368,7 +368,7 @@ ExitCode mergeTrialResults(const Config& config)
       try {
         ensureDirectoryExists(dirToCreate);
       } catch (const std::exception& e) {
-        std::cerr << "Error: " << e.what() << "\n";
+        Log::important() << "Error: " << e.what() << "\n";
         return ExitCode::OutputError;
       }
     }
@@ -379,7 +379,7 @@ ExitCode mergeTrialResults(const Config& config)
     try {
       copyFileAtomic(winner.bestTreeFile, treePath);
     } catch (const std::exception& e) {
-      std::cerr << "Error writing merged tree to '" << treePath << "': " << e.what() << "\n";
+      Log::important() << "Error writing merged tree to '" << treePath << "': " << e.what() << "\n";
       return ExitCode::OutputError;
     }
   }
@@ -391,7 +391,7 @@ ExitCode mergeTrialResults(const Config& config)
       cm.readClusterData(winner.bestTreeFile, true /* includeFlow */);
       writeCluFromClusterMap(cluPath, cm);
     } catch (const std::exception& e) {
-      std::cerr << "Error writing merged clu to '" << cluPath << "': " << e.what() << "\n";
+      Log::important() << "Error writing merged clu to '" << cluPath << "': " << e.what() << "\n";
       return ExitCode::OutputError;
     }
   }
