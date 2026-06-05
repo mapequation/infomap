@@ -74,6 +74,8 @@ _ACCURACY_OPTION_SPECS = (
     ("value", "tune_iteration_relative_threshold", "--tune-iteration-relative-threshold", lambda value: value != 1e-05),
     ("flag", "inner_parallelization", "--inner-parallelization", None),
     ("flag", "parallel_trials", "--parallel-trials", None),
+    ("value", "num_threads", "--num-threads", lambda value: value is not None),
+    ("value", "threads", "--threads", lambda value: value is not None),
     ("flag", "prefer_modular_solution", "--prefer-modular-solution", None),
     ("value", "num_random_moves", "--num-random-moves", lambda value: value is not None),
     ("value", "max_degree_for_random_moves", "--max-degree-for-random-moves", lambda value: value is not None),
@@ -276,6 +278,13 @@ class InfomapOptions:
         (e.g. OMP_NUM_THREADS), clamped to --num-trials. Peak memory scales with the
         worker count. Nested OpenMP and --inner-parallelization are disabled inside
         workers.
+    num_threads : str, optional
+        Effective thread budget: 'auto' (resolve from --num-threads >
+        INFOMAP_NUM_THREADS > SLURM_CPUS_PER_TASK > OMP_NUM_THREADS > cpuset >
+        hardware), or a positive integer. 1 forces fully serial. Governs the recursive
+        partition, parallel trials, and inner parallelization.
+    threads : str, optional
+        Alias for --num-threads.
     prefer_modular_solution : bool, optional
         Prefer a modular solution even when one module gives a lower codelength.
     num_random_moves : int, optional
@@ -353,6 +362,8 @@ class InfomapOptions:
     fast_hierarchical_solution: int | None = None
     inner_parallelization: bool = False
     parallel_trials: bool = False
+    num_threads: str | None = None
+    threads: str | None = None
     prefer_modular_solution: bool = False
     num_random_moves: int | None = None
     max_degree_for_random_moves: int | None = None
@@ -472,6 +483,8 @@ def _construct_args(
     fast_hierarchical_solution=None,
     inner_parallelization=False,
     parallel_trials=False,
+    num_threads=None,
+    threads=None,
     prefer_modular_solution=False,
     num_random_moves=None,
     max_degree_for_random_moves=None,
