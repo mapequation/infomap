@@ -96,7 +96,7 @@ build-r-stage:
 
 build-r: build-r-stage
 	@mkdir -p $(R_DIST_DIR)
-	@$(R) CMD build --no-manual --no-build-vignettes $(R_STAGED_DIR)
+	@$(R) CMD build --no-manual $(R_STAGED_DIR)
 	@mv infomap_$(R_VERSION).tar.gz $(R_DIST_DIR)/
 	@echo "Built $(R_TARBALL)"
 

@@ -117,6 +117,8 @@ jobs:
           extra-packages: |
             any::testthat
             any::igraph
+            any::knitr
+            any::rmarkdown
             any::tibble
             any::rcmdcheck
 
@@ -294,6 +296,8 @@ jobs:
           extra-packages: |
             any::testthat
             any::igraph
+            any::knitr
+            any::rmarkdown
             any::tibble
 
       - name: Simulate r-universe package build
@@ -303,7 +307,7 @@ jobs:
           (
             cd interfaces/R/infomap
             Rscript bootstrap.R
-            R CMD build --no-manual --no-build-vignettes .
+            R CMD build --no-manual .
           )
           mkdir -p build/R/r-universe-simulation
           mv interfaces/R/infomap/infomap_*.tar.gz build/R/r-universe-simulation/

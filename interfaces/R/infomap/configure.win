@@ -3,23 +3,26 @@
 # typically available; if not, the user must install Python before
 # building from a git checkout.
 #
-# Source tarballs produced by `make build-r` are already staged and
-# do not ship this script.
+# Source tarballs produced by `make build-r` are already staged. During
+# vignette builds, R installs a temporary source copy, so only stage from
+# the full checkout when generated sources are missing.
 
 set -e
 
 PKG_DIR="$(cd "$(dirname "$0")" && pwd)"
-REPO_ROOT="$(cd "$PKG_DIR/../../.." && pwd)"
-SCRIPT="$REPO_ROOT/scripts/stage_r_package.py"
+if [ ! -f "$PKG_DIR/src/infomap_wrap.cpp" ]; then
+  REPO_ROOT="$(cd "$PKG_DIR/../../.." && pwd)"
+  SCRIPT="$REPO_ROOT/scripts/stage_r_package.py"
 
-if [ ! -f "$SCRIPT" ]; then
-  echo "ERROR: $SCRIPT not found." >&2
-  echo "This package must be installed from a checkout of the Infomap repository." >&2
-  exit 1
+  if [ ! -f "$SCRIPT" ]; then
+    echo "ERROR: $SCRIPT not found." >&2
+    echo "This package must be installed from a checkout of the Infomap repository." >&2
+    exit 1
+  fi
+
+  PYTHON="${PYTHON:-python}"
+  "$PYTHON" "$SCRIPT" --in-place \
+    --skeleton "$PKG_DIR" \
+    --generated "$REPO_ROOT/interfaces/R/generated" \
+    --src "$REPO_ROOT/src"
 fi
-
-PYTHON="${PYTHON:-python}"
-"$PYTHON" "$SCRIPT" --in-place \
-  --skeleton "$PKG_DIR" \
-  --generated "$REPO_ROOT/interfaces/R/generated" \
-  --src "$REPO_ROOT/src"
