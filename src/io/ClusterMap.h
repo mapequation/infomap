@@ -45,6 +45,11 @@ public:
     return m_clusterIds;
   }
 
+  const std::map<unsigned int, double>& flowData() const noexcept
+  {
+    return m_flowData;
+  }
+
   const TreePaths& treePaths() const noexcept { return m_treePaths; }
 
   const std::string& extension() const noexcept { return m_extension; }
