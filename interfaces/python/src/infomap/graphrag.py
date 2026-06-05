@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -16,7 +15,12 @@ __all__ = [
 
 @dataclass
 class GraphRAGGraph:
-    """GraphRAG-style tables converted to Infomap node ids."""
+    """GraphRAG-style tables converted to Infomap node ids.
+
+    The mapping fields are advanced plumbing for callers that need to join
+    Infomap node ids back to the original GraphRAG entity and relationship
+    tables.
+    """
 
     entities: Any
     relationships: Any
@@ -29,6 +33,7 @@ class GraphRAGGraph:
     endpoint_to_node_id: dict[Any, int]
     entity_title_to_node_id: dict[Any, int]
     relationship_ids: list[Any]
+    entity_id_col: str
 
 
 @dataclass
@@ -37,7 +42,9 @@ class GraphRAGRunResult:
 
     infomap: Any
     graph: GraphRAGGraph
-    output_dir: Path
+    output_dir: Path | None
+    nodes: Any
+    communities: Any
 
 
 def _import_parquet_stack():
@@ -232,10 +239,19 @@ def read_graphrag(
         endpoint_to_node_id=endpoint_to_node_id,
         entity_title_to_node_id=entity_title_to_node_id,
         relationship_ids=relationship_ids,
+        entity_id_col=entity_id_col,
     )
 
 
 def _output_paths(output):
+    if output is None:
+        return {
+            "dir": None,
+            "nodes": None,
+            "run": None,
+            "communities": None,
+        }
+
     output_path = Path(output)
     if output_path.suffix.lower() == ".parquet":
         output_dir = output_path.parent
@@ -301,6 +317,57 @@ def _entity_ids_by_prefix(nodes):
     return entity_ids_by_prefix
 
 
+def _text_unit_values(value):
+    pd = _import_parquet_stack()
+    if isinstance(value, str):
+        return [value]
+    if isinstance(value, (list, tuple)):
+        return list(value)
+    if hasattr(value, "tolist"):
+        return value.tolist()
+    if value is None:
+        return []
+    missing = pd.isna(value)
+    try:
+        if bool(missing):
+            return []
+    except ValueError:
+        pass
+    return [value]
+
+
+def _append_unique_text_units(target, values):
+    seen = set(target)
+    for value in values:
+        if value not in seen:
+            target.append(value)
+            seen.add(value)
+
+
+def _entity_text_unit_ids_by_prefix(nodes, graph: GraphRAGGraph):
+    if "text_unit_ids" not in graph.entities.columns:
+        return {}
+
+    entity_text_units = dict(
+        zip(
+            graph.entities[graph.entity_id_col],
+            graph.entities["text_unit_ids"],
+            strict=True,
+        )
+    )
+    text_unit_ids_by_prefix: dict[tuple[int, ...], list[Any]] = {}
+    for row in nodes[["entity_id", "module_path"]].itertuples(index=False):
+        text_unit_ids = _text_unit_values(entity_text_units.get(row.entity_id))
+        module_path = tuple(row.module_path)
+        for level in range(1, len(module_path) + 1):
+            prefix = module_path[:level]
+            _append_unique_text_units(
+                text_unit_ids_by_prefix.setdefault(prefix, []),
+                text_unit_ids,
+            )
+    return text_unit_ids_by_prefix
+
+
 def _node_prefixes_table(nodes):
     pd = _import_parquet_stack()
     rows = []
@@ -351,6 +418,46 @@ def _relationship_ids_by_prefix(nodes, graph: GraphRAGGraph):
     )
 
 
+def _relationship_text_unit_ids_by_prefix(nodes, graph: GraphRAGGraph):
+    if "text_unit_ids" not in graph.relationships.columns:
+        return {}
+
+    pd = _import_parquet_stack()
+    prefixes = _node_prefixes_table(nodes)
+    if prefixes.empty:
+        return {}
+
+    relationships = pd.DataFrame(
+        {
+            "relationship_index": range(len(graph.relationship_ids)),
+            "source": graph.sources.astype("int64", copy=False),
+            "target": graph.targets.astype("int64", copy=False),
+            "text_unit_ids": graph.relationships["text_unit_ids"],
+        }
+    )
+
+    source_prefixes = relationships[
+        ["relationship_index", "source", "text_unit_ids"]
+    ].merge(prefixes, left_on="source", right_on="node_id", how="inner", sort=False)
+    target_prefixes = relationships[["relationship_index", "target"]].merge(
+        prefixes, left_on="target", right_on="node_id", how="inner", sort=False
+    )
+    common_prefixes = source_prefixes.merge(
+        target_prefixes[["relationship_index", "prefix", "level"]],
+        on=["relationship_index", "prefix", "level"],
+        how="inner",
+        sort=False,
+    ).sort_values("relationship_index", kind="stable")
+
+    text_unit_ids_by_prefix: dict[tuple[int, ...], list[Any]] = {}
+    for row in common_prefixes[["prefix", "text_unit_ids"]].itertuples(index=False):
+        _append_unique_text_units(
+            text_unit_ids_by_prefix.setdefault(row.prefix, []),
+            _text_unit_values(row.text_unit_ids),
+        )
+    return text_unit_ids_by_prefix
+
+
 def _communities_table(nodes, graph: GraphRAGGraph):
     pd = _import_parquet_stack()
     rows = []
@@ -366,24 +473,37 @@ def _communities_table(nodes, graph: GraphRAGGraph):
             )
     entity_ids_by_prefix = _entity_ids_by_prefix(nodes)
     relationship_ids_by_prefix = _relationship_ids_by_prefix(nodes, graph)
+    entity_text_unit_ids_by_prefix = _entity_text_unit_ids_by_prefix(nodes, graph)
+    relationship_text_unit_ids_by_prefix = _relationship_text_unit_ids_by_prefix(
+        nodes, graph
+    )
 
     for prefix in prefixes:
         community_id = prefix_to_community[prefix]
         prefix_label = _prefix_string(prefix)
-        parent = prefix_to_community.get(prefix[:-1]) if len(prefix) > 1 else None
+        parent = prefix_to_community.get(prefix[:-1], -1) if len(prefix) > 1 else -1
         entity_ids = entity_ids_by_prefix[prefix]
+        text_unit_ids = []
+        _append_unique_text_units(
+            text_unit_ids,
+            entity_text_unit_ids_by_prefix.get(prefix, []),
+        )
+        _append_unique_text_units(
+            text_unit_ids,
+            relationship_text_unit_ids_by_prefix.get(prefix, []),
+        )
         rows.append(
             {
                 "id": f"infomap-{prefix_label}",
-                "human_readable_id": prefix_label,
+                "human_readable_id": community_id,
                 "community": community_id,
                 "parent": parent,
                 "children": children_by_prefix.get(prefix, []),
-                "level": len(prefix),
+                "level": len(prefix) - 1,
                 "title": f"Infomap community {prefix_label}",
                 "entity_ids": entity_ids,
                 "relationship_ids": relationship_ids_by_prefix.get(prefix, []),
-                "text_unit_ids": [],
+                "text_unit_ids": text_unit_ids,
                 "period": None,
                 "size": len(entity_ids),
             }
@@ -407,21 +527,6 @@ def _communities_table(nodes, graph: GraphRAGGraph):
     )
 
 
-def _run_summary_metadata(im):
-    codelengths = list(im.codelengths)
-    best_trial = codelengths.index(min(codelengths)) + 1 if codelengths else 0
-    return {
-        "version": getattr(im, "version", ""),
-        "codelength": im.codelength,
-        "top_modules": im.num_top_modules,
-        "levels": im.max_depth,
-        "trials": len(codelengths),
-        "best_trial": best_trial,
-        "trial_codelengths": codelengths,
-        "trial_top_modules": [],
-    }
-
-
 def _links_array(graph: GraphRAGGraph):
     import numpy as np
 
@@ -438,45 +543,93 @@ def _require_modules(im):
         )
 
 
+def _build_tables(im, graph: GraphRAGGraph):
+    _require_modules(im)
+    nodes = _nodes_table(im, graph)
+    communities = _communities_table(nodes, graph)
+    return nodes, communities
+
+
 def write_graphrag_communities(im, *, graph: GraphRAGGraph, output):
     """Write experimental GraphRAG-compatible community tables."""
     _import_parquet_stack()
-    _require_modules(im)
     paths = _output_paths(output)
+    if paths["dir"] is None:
+        raise ValueError("GraphRAG community output path cannot be None.")
     paths["dir"].mkdir(parents=True, exist_ok=True)
 
-    nodes = _nodes_table(im, graph)
-    communities = _communities_table(nodes, graph)
+    nodes, communities = _build_tables(im, graph)
 
     nodes.to_parquet(paths["nodes"], index=False)
     communities.to_parquet(paths["communities"], index=False)
-    if not paths["run"].exists():
-        paths["run"].write_text(json.dumps(_run_summary_metadata(im), indent=2) + "\n")
+    return nodes, communities
 
 
 def run_graphrag_communities(
     *,
     input_dir,
-    output_dir,
-    options="--silent",
+    output_dir=None,
+    args=None,
     entities_name="entities.parquet",
     relationships_name="relationships.parquet",
-    **read_options,
+    entity_id_col="id",
+    entity_title_col="title",
+    source_col="source",
+    target_col="target",
+    weight_col="weight",
+    relationship_id_col="id",
+    endpoint_col="title",
+    silent=True,
+    seed=123,
+    num_trials=5,
+    **infomap_options,
 ) -> GraphRAGRunResult:
     """Read GraphRAG tables, run Infomap, and write MVP community outputs."""
     from infomap import Infomap
+
+    if "options" in infomap_options:
+        raise TypeError(
+            "options= is not supported; use args=... for raw Infomap CLI arguments."
+        )
+    if "summary_json" in infomap_options:
+        raise ValueError(
+            "run_graphrag_communities manages summary_json through output_dir."
+        )
 
     input_path = Path(input_dir)
     graph = read_graphrag(
         input_path / entities_name,
         input_path / relationships_name,
-        **read_options,
+        entity_id_col=entity_id_col,
+        entity_title_col=entity_title_col,
+        source_col=source_col,
+        target_col=target_col,
+        weight_col=weight_col,
+        relationship_id_col=relationship_id_col,
+        endpoint_col=endpoint_col,
     )
     paths = _output_paths(output_dir)
-    paths["dir"].mkdir(parents=True, exist_ok=True)
+    if paths["dir"] is not None:
+        paths["dir"].mkdir(parents=True, exist_ok=True)
+        infomap_options["summary_json"] = str(paths["run"])
 
-    im = Infomap(options, summary_json=str(paths["run"]))
+    im = Infomap(
+        args=args,
+        silent=silent,
+        seed=seed,
+        num_trials=num_trials,
+        **infomap_options,
+    )
     im.add_links(_links_array(graph))
     im.run()
-    write_graphrag_communities(im, graph=graph, output=output_dir)
-    return GraphRAGRunResult(infomap=im, graph=graph, output_dir=paths["dir"])
+    nodes, communities = _build_tables(im, graph)
+    if paths["dir"] is not None:
+        nodes.to_parquet(paths["nodes"], index=False)
+        communities.to_parquet(paths["communities"], index=False)
+    return GraphRAGRunResult(
+        infomap=im,
+        graph=graph,
+        output_dir=paths["dir"],
+        nodes=nodes,
+        communities=communities,
+    )

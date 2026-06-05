@@ -37,6 +37,48 @@ def _write_graphrag_fixture(tmp_path):
     return entities_path, relationships_path
 
 
+def _write_graphrag_text_unit_fixture(tmp_path):
+    pd = _require_parquet_stack()
+
+    entities = pd.DataFrame(
+        {
+            "id": ["a", "b", "c", "d", "e", "f"],
+            "title": ["Alpha", "Beta", "Gamma", "Delta", "Epsilon", "Zeta"],
+            "text_unit_ids": [
+                ["tu-entity-a", "tu-shared"],
+                ["tu-entity-b"],
+                ["tu-entity-c"],
+                ["tu-entity-d"],
+                ["tu-entity-e"],
+                ["tu-entity-f"],
+            ],
+        }
+    )
+    relationships = pd.DataFrame(
+        {
+            "id": ["ab", "bc", "ca", "de", "ef", "fd", "cd"],
+            "source": ["Alpha", "Beta", "Gamma", "Delta", "Epsilon", "Zeta", "Gamma"],
+            "target": ["Beta", "Gamma", "Alpha", "Epsilon", "Zeta", "Delta", "Delta"],
+            "weight": [2.0, 2.0, 2.0, 3.0, 3.0, 3.0, 1.0],
+            "text_unit_ids": [
+                ["tu-rel-ab", "tu-shared"],
+                ["tu-rel-bc"],
+                ["tu-rel-ca"],
+                ["tu-rel-de"],
+                ["tu-rel-ef"],
+                ["tu-rel-fd"],
+                ["tu-rel-cd"],
+            ],
+        }
+    )
+
+    entities_path = tmp_path / "entities.parquet"
+    relationships_path = tmp_path / "relationships.parquet"
+    entities.to_parquet(entities_path)
+    relationships.to_parquet(relationships_path)
+    return entities_path, relationships_path
+
+
 def _add_graphrag_links(im, graph):
     np = pytest.importorskip("numpy")
     columns = [graph.sources, graph.targets]
@@ -267,7 +309,6 @@ def test_write_graphrag_communities_exports_mvp_tables(tmp_path):
 
     nodes = pd.read_parquet(output_dir / "infomap_nodes.parquet")
     communities = pd.read_parquet(output_dir / "communities.parquet")
-    run = json.loads((output_dir / "infomap_run.json").read_text())
 
     assert set(nodes.columns) == {
         "node_id",
@@ -293,19 +334,19 @@ def test_write_graphrag_communities_exports_mvp_tables(tmp_path):
         "period",
         "size",
     }
-    assert communities["level"].tolist() == [1] * len(communities)
+    assert communities["level"].tolist() == [0] * len(communities)
+    assert communities["parent"].tolist() == [-1] * len(communities)
+    assert communities["parent"].dtype.kind in {"i", "u"}
+    assert (
+        communities["human_readable_id"].tolist() == communities["community"].tolist()
+    )
     community_relationships = {
         tuple(sorted(row["entity_ids"])): sorted(row["relationship_ids"])
         for _, row in communities.iterrows()
     }
     assert community_relationships[("a", "b", "c")] == ["ab", "bc", "ca"]
     assert community_relationships[("d", "e", "f")] == ["de", "ef", "fd"]
-    assert run["codelength"] == pytest.approx(im.codelength)
-    assert run["top_modules"] == im.num_top_modules
-    assert run["levels"] == im.max_depth
-    assert run["trials"] == 5
-    assert "options" not in run
-    assert "seed" not in run
+    assert not (output_dir / "infomap_run.json").exists()
 
 
 def test_write_graphrag_communities_exports_hierarchy(tmp_path, example_network_path):
@@ -345,7 +386,7 @@ def test_write_graphrag_communities_exports_hierarchy(tmp_path, example_network_
     communities = pd.read_parquet(output_dir / "communities.parquet")
     nodes = pd.read_parquet(output_dir / "infomap_nodes.parquet")
 
-    assert communities["level"].max() > 1
+    assert communities["level"].max() > 0
     expected_paths = {
         node_id: [int(module_id) for module_id in module_path]
         for node_id, module_path in im.get_multilevel_modules().items()
@@ -360,12 +401,14 @@ def test_write_graphrag_communities_exports_hierarchy(tmp_path, example_network_
 
     by_community = {int(row["community"]): row for _, row in communities.iterrows()}
     parent_ids = {int(parent) for parent in communities["parent"] if pd.notna(parent)}
-    assert parent_ids <= set(by_community)
+    assert (parent_ids - {-1}) <= set(by_community)
 
-    top_level = communities[communities["level"] == 1]
-    assert top_level["parent"].isna().all()
+    top_level = communities[communities["level"] == 0]
+    assert top_level["parent"].eq(-1).all()
 
     for parent_id in parent_ids:
+        if parent_id == -1:
+            continue
         child_ids = set(by_community[parent_id]["children"])
         actual_children = set(
             communities.loc[communities["parent"] == parent_id, "community"]
@@ -387,25 +430,44 @@ def test_write_graphrag_communities_exports_hierarchy(tmp_path, example_network_
     assert deepest_relationships[("1", "2", "3")] == ["r0", "r1", "r3"]
 
 
-def test_write_graphrag_communities_does_not_depend_on_run_args_history(tmp_path):
+def test_write_graphrag_communities_exports_text_unit_ids(tmp_path):
+    pd = _require_parquet_stack()
+
     from infomap import Infomap
     from infomap.graphrag import read_graphrag, write_graphrag_communities
 
-    entities_path, relationships_path = _write_graphrag_fixture(tmp_path)
+    entities_path, relationships_path = _write_graphrag_text_unit_fixture(tmp_path)
     graph = read_graphrag(entities_path, relationships_path)
 
-    im = Infomap(silent=True, seed=7)
+    im = Infomap(silent=True, seed=123, num_trials=5)
     _add_graphrag_links(im, graph)
-    im.run(num_trials=3)
+    im.run()
 
     output_dir = tmp_path / "infomap"
     write_graphrag_communities(im, graph=graph, output=output_dir)
 
-    run = json.loads((output_dir / "infomap_run.json").read_text())
-    assert run["trials"] == 3
-    assert run["codelength"] == pytest.approx(im.codelength)
-    assert "options" not in run
-    assert "seed" not in run
+    communities = pd.read_parquet(output_dir / "communities.parquet")
+    community_text_units = {
+        tuple(sorted(row["entity_ids"])): list(row["text_unit_ids"])
+        for _, row in communities.iterrows()
+    }
+    assert community_text_units[("a", "b", "c")] == [
+        "tu-entity-a",
+        "tu-shared",
+        "tu-entity-b",
+        "tu-entity-c",
+        "tu-rel-ab",
+        "tu-rel-bc",
+        "tu-rel-ca",
+    ]
+    assert community_text_units[("d", "e", "f")] == [
+        "tu-entity-d",
+        "tu-entity-e",
+        "tu-entity-f",
+        "tu-rel-de",
+        "tu-rel-ef",
+        "tu-rel-fd",
+    ]
 
 
 def test_write_graphrag_communities_requires_run_results(tmp_path):
@@ -432,11 +494,16 @@ def test_run_graphrag_communities_reads_runs_and_writes_outputs(tmp_path):
     result = run_graphrag_communities(
         input_dir=input_dir,
         output_dir=output_dir,
-        options="--silent --seed 123 --num-trials 1",
+        silent=True,
+        seed=123,
+        num_trials=1,
     )
 
     assert result.infomap.num_nodes == 6
     assert result.graph.relationships.shape[0] == 7
+    assert result.output_dir == output_dir
+    assert result.nodes is not None
+    assert result.communities is not None
     assert (output_dir / "infomap_nodes.parquet").is_file()
     assert (output_dir / "infomap_run.json").is_file()
     assert (output_dir / "communities.parquet").is_file()
@@ -448,6 +515,75 @@ def test_run_graphrag_communities_reads_runs_and_writes_outputs(tmp_path):
     assert "seed" not in run
 
 
+def test_run_graphrag_communities_defaults_to_reproducible_trials(tmp_path):
+    from infomap.graphrag import run_graphrag_communities
+
+    entities_path, _relationships_path = _write_graphrag_fixture(tmp_path)
+
+    result = run_graphrag_communities(
+        input_dir=entities_path.parent,
+        output_dir=tmp_path / "result",
+    )
+
+    run = json.loads((tmp_path / "result" / "infomap_run.json").read_text())
+    assert run["trials"] == 5
+    assert result.infomap.codelength == pytest.approx(run["codelength"])
+
+
+def test_run_graphrag_communities_accepts_args_passthrough(tmp_path):
+    from infomap.graphrag import run_graphrag_communities
+
+    entities_path, _relationships_path = _write_graphrag_fixture(tmp_path)
+
+    result = run_graphrag_communities(
+        input_dir=entities_path.parent,
+        output_dir=None,
+        args="--two-level",
+        silent=True,
+        seed=123,
+        num_trials=1,
+    )
+
+    assert result.output_dir is None
+    assert result.infomap.max_depth == 2
+    assert result.nodes is not None
+    assert result.communities is not None
+
+
+def test_run_graphrag_communities_rejects_options_keyword(tmp_path):
+    from infomap.graphrag import run_graphrag_communities
+
+    entities_path, _relationships_path = _write_graphrag_fixture(tmp_path)
+
+    with pytest.raises(TypeError, match="options"):
+        run_graphrag_communities(
+            input_dir=entities_path.parent,
+            output_dir=None,
+            options="--silent",
+        )
+
+
+def test_run_graphrag_communities_can_skip_file_output(tmp_path):
+    from infomap.graphrag import run_graphrag_communities
+
+    entities_path, _relationships_path = _write_graphrag_fixture(tmp_path)
+
+    result = run_graphrag_communities(
+        input_dir=entities_path.parent,
+        output_dir=None,
+        silent=True,
+        seed=123,
+        num_trials=1,
+    )
+
+    assert result.output_dir is None
+    assert result.nodes.shape[0] == 6
+    assert set(result.communities["level"]) == {0}
+    assert not (tmp_path / "infomap_nodes.parquet").exists()
+    assert not (tmp_path / "communities.parquet").exists()
+    assert not (tmp_path / "infomap_run.json").exists()
+
+
 def test_run_graphrag_communities_returns_output_directory_for_file_output(tmp_path):
     from infomap.graphrag import run_graphrag_communities
 
@@ -457,7 +593,9 @@ def test_run_graphrag_communities_returns_output_directory_for_file_output(tmp_p
     result = run_graphrag_communities(
         input_dir=entities_path.parent,
         output_dir=output_file,
-        options="--silent --seed 123 --num-trials 1",
+        silent=True,
+        seed=123,
+        num_trials=1,
     )
 
     assert result.output_dir == tmp_path
