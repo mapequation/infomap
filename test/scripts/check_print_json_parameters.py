@@ -4,6 +4,8 @@ import json
 import subprocess
 import sys
 
+from schema_validation import validate_json_schema
+
 
 def main() -> int:
     cli = sys.argv[1]
@@ -14,14 +16,13 @@ def main() -> int:
         text=True,
     )
     payload = json.loads(result.stdout)
+    validate_json_schema(payload, "parameter-catalog.schema.json")
     parameters = payload["parameters"]
     assert parameters[0]["long"] == "--help"
     assert parameters[1]["long"] == "--version"
     assert "--completion" not in {param["long"] for param in parameters}
     assert "--print-json-parameters" not in {param["long"] for param in parameters}
-    has_test_feature = "--test-feature" in {
-        param["long"] for param in parameters
-    }
+    has_test_feature = "--test-feature" in {param["long"] for param in parameters}
 
     groups = [param["group"] for param in parameters]
     assert groups[:2] == ["About", "About"]

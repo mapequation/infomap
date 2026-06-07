@@ -221,6 +221,24 @@ if(BUILD_TESTING)
     set_tests_properties(run_metadata_cli PROPERTIES LABELS "fast;core;output;cli")
 
     add_test(
+        NAME run_reports_cli
+        COMMAND
+            "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/test/scripts/check_run_reports_cli.py"
+            "$<TARGET_FILE:infomap_cli>"
+    )
+    set_tests_properties(run_reports_cli PROPERTIES LABELS "fast;core;output;cli")
+
+    add_test(
+        NAME trial_results_cli
+        COMMAND
+            "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/test/scripts/check_trial_results_cli.py"
+            "$<TARGET_FILE:infomap_cli>"
+    )
+    set_tests_properties(trial_results_cli PROPERTIES LABELS "fast;core;merge;cli")
+
+    add_test(
         NAME js_output_format_manifest
         COMMAND
             "${CMAKE_COMMAND}" -E env "CXX=${CMAKE_CXX_COMPILER}"

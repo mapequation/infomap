@@ -1,0 +1,163 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mapequation.org/infomap/test-schemas/partition-output.schema.json",
+  "type": "object",
+  "required": [
+    "version",
+    "args",
+    "startedAt",
+    "completedIn",
+    "codelength",
+    "numLevels",
+    "numTopModules",
+    "numModules",
+    "relativeCodelengthSavings",
+    "directed",
+    "flowModel",
+    "higherOrder",
+    "nodes",
+    "modules"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "version": { "type": "string", "pattern": "^v" },
+    "args": { "type": "string" },
+    "startedAt": { "type": "string" },
+    "completedIn": { "type": "number" },
+    "codelength": { "type": "number" },
+    "numLevels": { "type": "integer", "minimum": 0 },
+    "numTopModules": { "type": "integer", "minimum": 0 },
+    "numModules": {
+      "type": "array",
+      "items": { "type": "integer", "minimum": 0 }
+    },
+    "relativeCodelengthSavings": { "type": "number" },
+    "directed": { "type": "boolean" },
+    "flowModel": { "type": "string" },
+    "higherOrder": { "type": "boolean" },
+    "stateLevel": { "type": "boolean" },
+    "bipartiteStartId": { "type": "integer", "minimum": 0 },
+    "nodes": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/node" }
+    },
+    "modules": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/module" }
+    }
+  },
+  "$defs": {
+    "uintArray": {
+      "type": "array",
+      "items": { "type": "integer", "minimum": 0 }
+    },
+    "metadata": {
+      "type": "object",
+      "propertyNames": { "pattern": "^[0-9]+$" },
+      "additionalProperties": { "type": "string" }
+    },
+    "baseNode": {
+      "type": "object",
+      "required": ["path", "name", "flow", "mec", "id"],
+      "properties": {
+        "path": { "$ref": "#/$defs/uintArray" },
+        "modules": { "$ref": "#/$defs/uintArray" },
+        "name": { "type": "string" },
+        "flow": { "type": "number" },
+        "mec": { "type": "number" },
+        "metadata": { "$ref": "#/$defs/metadata" },
+        "stateId": { "type": "integer", "minimum": 0 },
+        "layerId": { "type": "integer", "minimum": 0 },
+        "id": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "higherOrderPhysicalNode": {
+      "allOf": [
+        { "$ref": "#/$defs/baseNode" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "path": true,
+            "name": true,
+            "flow": true,
+            "mec": true,
+            "id": true
+          }
+        }
+      ]
+    },
+    "physicalNode": {
+      "allOf": [
+        { "$ref": "#/$defs/baseNode" },
+        {
+          "type": "object",
+          "required": ["modules"],
+          "additionalProperties": false,
+          "properties": {
+            "path": true,
+            "modules": true,
+            "name": true,
+            "flow": true,
+            "mec": true,
+            "metadata": true,
+            "id": true
+          }
+        }
+      ]
+    },
+    "stateNode": {
+      "allOf": [
+        { "$ref": "#/$defs/baseNode" },
+        {
+          "type": "object",
+          "required": ["modules", "stateId"],
+          "additionalProperties": false,
+          "properties": {
+            "path": true,
+            "modules": true,
+            "name": true,
+            "flow": true,
+            "mec": true,
+            "stateId": true,
+            "layerId": true,
+            "id": true
+          }
+        }
+      ]
+    },
+    "node": {
+      "oneOf": [
+        { "$ref": "#/$defs/higherOrderPhysicalNode" },
+        { "$ref": "#/$defs/physicalNode" },
+        { "$ref": "#/$defs/stateNode" }
+      ]
+    },
+    "module": {
+      "type": "object",
+      "required": ["path", "enterFlow", "exitFlow", "numEdges", "numChildren", "codelength"],
+      "additionalProperties": false,
+      "properties": {
+        "path": { "$ref": "#/$defs/uintArray" },
+        "enterFlow": { "type": "number" },
+        "exitFlow": { "type": "number" },
+        "numEdges": { "type": "integer", "minimum": 0 },
+        "numChildren": { "type": "integer", "minimum": 0 },
+        "codelength": { "type": "number" },
+        "links": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["source", "target", "flow"],
+            "additionalProperties": false,
+            "properties": {
+              "source": { "type": "integer", "minimum": 0 },
+              "target": { "type": "integer", "minimum": 0 },
+              "flow": { "type": "number" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

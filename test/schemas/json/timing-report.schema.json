@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mapequation.org/infomap/test-schemas/timing-report.schema.json",
+  "type": "object",
+  "required": [
+    "version",
+    "openmp",
+    "threads_requested",
+    "threads_used",
+    "thread_source",
+    "network",
+    "timing",
+    "trials"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "version": { "type": "string" },
+    "openmp": { "type": "boolean" },
+    "threads_requested": { "type": "integer", "minimum": 1 },
+    "threads_used": { "type": "integer", "minimum": 1 },
+    "thread_source": { "type": "string" },
+    "network": {
+      "type": "object",
+      "required": ["nodes", "links", "directed"],
+      "additionalProperties": false,
+      "properties": {
+        "nodes": { "type": "integer", "minimum": 0 },
+        "links": { "type": "integer", "minimum": 0 },
+        "directed": { "type": "boolean" }
+      }
+    },
+    "timing": {
+      "type": "object",
+      "propertyNames": { "pattern": "^[A-Za-z0-9_]+_s$" },
+      "additionalProperties": { "type": "number" }
+    },
+    "trials": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "trial",
+          "thread",
+          "seed",
+          "time_s",
+          "codelength",
+          "top_modules",
+          "num_levels"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "trial": { "type": "integer", "minimum": 1 },
+          "thread": { "type": "integer", "minimum": 0 },
+          "seed": { "type": "integer" },
+          "time_s": { "type": "number" },
+          "codelength": { "type": "number" },
+          "top_modules": { "type": "integer", "minimum": 0 },
+          "num_levels": { "type": "integer", "minimum": 0 }
+        }
+      }
+    },
+    "memory": {
+      "type": "object",
+      "required": ["rss_peak_mb"],
+      "additionalProperties": false,
+      "properties": {
+        "rss_peak_mb": { "type": "number" },
+        "bytes_per_node": { "type": "number" },
+        "bytes_per_link": { "type": "number" }
+      }
+    }
+  }
+}

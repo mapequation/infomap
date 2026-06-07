@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mapequation.org/infomap/test-schemas/run-manifest.schema.json",
+  "type": "object",
+  "required": ["version", "command", "num_trials", "config", "config_fingerprint", "input", "outputs"],
+  "additionalProperties": false,
+  "properties": {
+    "version": { "type": "string" },
+    "command": { "type": "string" },
+    "num_trials": { "type": "integer", "minimum": 0 },
+    "config": { "type": "object" },
+    "config_fingerprint": { "type": "string", "pattern": "^[0-9a-f]{16}$" },
+    "input": {
+      "oneOf": [
+        { "type": "null" },
+        { "$ref": "#/$defs/input" }
+      ]
+    },
+    "outputs": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/outputArtifact" }
+    }
+  },
+  "$defs": {
+    "input": {
+      "type": "object",
+      "required": ["path", "size", "mtime", "hash"],
+      "additionalProperties": false,
+      "properties": {
+        "path": { "type": "string" },
+        "size": { "type": "integer", "minimum": 0 },
+        "mtime": { "type": "integer" },
+        "hash": { "type": "string", "pattern": "^[0-9a-f]{16}$" }
+      }
+    },
+    "outputArtifact": {
+      "type": "object",
+      "required": ["key", "path"],
+      "additionalProperties": false,
+      "properties": {
+        "key": { "type": "string" },
+        "path": { "type": "string" }
+      }
+    }
+  }
+}

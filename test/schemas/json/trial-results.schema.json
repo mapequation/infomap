@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mapequation.org/infomap/test-schemas/trial-results.schema.json",
+  "type": "object",
+  "required": [
+    "network_fingerprint",
+    "config_fingerprint",
+    "infomap_version",
+    "base_seed",
+    "trial_offset",
+    "num_trials",
+    "best_tree_file",
+    "trials"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "network_fingerprint": { "type": "string" },
+    "config_fingerprint": { "type": "string" },
+    "infomap_version": { "type": "string" },
+    "base_seed": { "type": "integer" },
+    "trial_offset": { "type": "integer", "minimum": 0 },
+    "num_trials": { "type": "integer", "minimum": 0 },
+    "best_tree_file": { "type": "string" },
+    "trials": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["trial", "seed", "codelength", "num_top_modules", "num_levels", "thread", "time_s"],
+        "additionalProperties": false,
+        "properties": {
+          "trial": { "type": "integer", "minimum": 0 },
+          "seed": { "type": "integer" },
+          "codelength": { "type": "number" },
+          "num_top_modules": { "type": "integer", "minimum": 0 },
+          "num_levels": { "type": "integer", "minimum": 0 },
+          "thread": { "type": "integer", "minimum": 0 },
+          "time_s": { "type": "number" }
+        }
+      }
+    }
+  }
+}

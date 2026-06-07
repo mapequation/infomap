@@ -16,7 +16,7 @@ def _run_small_network(make_infomap, load_graph_fixture):
 
 
 def test_output_writers_are_stable_across_repeat_calls(
-    make_infomap, load_graph_fixture, output_dir
+    make_infomap, load_graph_fixture, output_dir, validate_json_schema
 ):
     im = _run_small_network(make_infomap, load_graph_fixture)
 
@@ -39,6 +39,7 @@ def test_output_writers_are_stable_across_repeat_calls(
     assert clu_a.read_text() == clu_b.read_text()
 
     parsed = json.loads(json_a.read_text())
+    validate_json_schema(parsed, "partition-output.schema.json")
     assert parsed["version"].startswith("v")
     assert "nodes" in parsed
     assert "modules" in parsed
@@ -47,7 +48,7 @@ def test_output_writers_are_stable_across_repeat_calls(
 
 
 def test_state_output_writers_include_state_columns(
-    make_infomap, network_fixture_path, output_dir
+    make_infomap, network_fixture_path, output_dir, validate_json_schema
 ):
     im = make_infomap()
     im.read_file(str(network_fixture_path("states.net")))
@@ -69,11 +70,14 @@ def test_state_output_writers_include_state_columns(
     assert "# state_id module flow node_id" in clu_text
 
     parsed = json.loads(json_text)
+    validate_json_schema(parsed, "partition-output.schema.json")
     assert parsed["stateLevel"] is True
     assert parsed["higherOrder"] is True
 
 
-def test_json_metadata_values_remain_strings(make_infomap, output_dir):
+def test_json_metadata_values_remain_strings(
+    make_infomap, output_dir, validate_json_schema
+):
     im = make_infomap()
     im.add_links(((1, 2), (1, 3), (2, 3), (3, 4), (4, 5), (4, 6), (5, 6)))
     for node_id, category in {
@@ -91,6 +95,7 @@ def test_json_metadata_values_remain_strings(make_infomap, output_dir):
     json_path = output_dir / "metadata.json"
     im.write_json(str(json_path))
     parsed = json.loads(json_path.read_text())
+    validate_json_schema(parsed, "partition-output.schema.json")
 
     metadata_nodes = [node for node in parsed["nodes"] if "metadata" in node]
     assert metadata_nodes

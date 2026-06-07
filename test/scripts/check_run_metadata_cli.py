@@ -4,6 +4,8 @@ import sys
 import traceback
 from pathlib import Path
 
+from schema_validation import validate_json_schema
+
 
 def run(infomap_bin, *args, cwd=None):
     return subprocess.run(
@@ -30,7 +32,9 @@ def make_workdir(path: Path) -> Path:
 def test_print_config_fingerprint_exits_without_output_directory(infomap_bin, work):
     make_workdir(work)
 
-    result = run(infomap_bin, "network.net", "--silent", "--print-config-fingerprint", cwd=work)
+    result = run(
+        infomap_bin, "network.net", "--silent", "--print-config-fingerprint", cwd=work
+    )
 
     assert result.returncode == 0
     assert len(result.stdout.strip()) == 16
@@ -52,14 +56,18 @@ def test_no_overwrite_returns_output_exit_code(infomap_bin, work):
     out_dir.mkdir()
     (out_dir / "network.tree").write_text("existing\n", encoding="utf-8")
 
-    result = run(infomap_bin, "network.net", "out", "--silent", "--no-overwrite", cwd=work)
+    result = run(
+        infomap_bin, "network.net", "out", "--silent", "--no-overwrite", cwd=work
+    )
 
     assert result.returncode == 3
     assert "Output file already exists" in result.stderr
     assert (out_dir / "network.tree").read_text(encoding="utf-8") == "existing\n"
 
 
-def test_no_overwrite_preflight_writes_no_files_when_one_target_exists(infomap_bin, work):
+def test_no_overwrite_preflight_writes_no_files_when_one_target_exists(
+    infomap_bin, work
+):
     make_workdir(work)
     out_dir = work / "out"
     out_dir.mkdir()
@@ -110,6 +118,7 @@ def test_run_manifest_contains_fingerprints_and_outputs(infomap_bin, work):
 
     assert result.returncode == 0, result.stderr
     data = json.loads((work / "manifest.json").read_text(encoding="utf-8"))
+    validate_json_schema(data, "run-manifest.schema.json")
     assert len(data["config_fingerprint"]) == 16
     assert data["input"]["path"] == "network.net"
     assert data["input"]["size"] == (work / "network.net").stat().st_size

@@ -8,6 +8,8 @@ import sys
 import tempfile
 from pathlib import Path
 
+from schema_validation import validate_json_schema
+
 
 def read_cpp_manifest(source: Path) -> dict[str, object]:
     repo_root = source.parents[2]
@@ -54,6 +56,8 @@ def main() -> int:
 
     cpp_manifest = read_cpp_manifest(Path(sys.argv[1]))
     js_manifest = json.loads(Path(sys.argv[2]).read_text())
+    validate_json_schema(cpp_manifest, "output-formats-manifest.schema.json")
+    validate_json_schema(js_manifest, "output-formats-manifest.schema.json")
 
     if js_manifest != cpp_manifest:
         print("JavaScript output format metadata differs from src/io/OutputFormats.cpp")

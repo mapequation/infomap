@@ -76,6 +76,10 @@ jobs:
         with:
           key-prefix: native-${{ matrix.config.name }}-omp${{ matrix.target.openmp }}
 
+      - name: Install Python test helpers
+        run: python -m pip install jsonschema
+        shell: bash
+
       - name: Build native binary
         run: |
           make -j build-native OPENMP=${{ matrix.target.openmp }}
