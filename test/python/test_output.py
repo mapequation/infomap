@@ -84,9 +84,6 @@ def test_json_metadata_values_remain_strings(
         1: 10,
         2: 10,
         3: 20,
-        4: 20,
-        5: 10,
-        6: 10,
     }.items():
         im.set_meta_data(node_id, category)
 
@@ -101,6 +98,8 @@ def test_json_metadata_values_remain_strings(
     assert metadata_nodes
     assert {node["metadata"]["0"] for node in metadata_nodes} == {"10", "20"}
     assert all(isinstance(node["metadata"]["0"], str) for node in metadata_nodes)
+    assert all(node["metadata"] for node in metadata_nodes)
+    assert any("metadata" not in node for node in parsed["nodes"])
 
 
 @pytest.mark.parametrize(

@@ -326,7 +326,10 @@ void writeJsonTree(InfomapBase& im, const StateNetwork& network, std::ostream& o
 
       // can't currently use both memory and meta map equation
       if (view.hasMetaData() && !states) {
-        node["metadata"] = metadataJson(row.physicalId);
+        auto metadata = metadataJson(row.physicalId);
+        if (!metadata.empty()) {
+          node["metadata"] = std::move(metadata);
+        }
       }
 
       if (states) {
