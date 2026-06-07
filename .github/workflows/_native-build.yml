@@ -77,7 +77,7 @@ jobs:
           key-prefix: native-${{ matrix.config.name }}-omp${{ matrix.target.openmp }}
 
       - name: Install Python test helpers
-        run: python -m pip install jsonschema
+        run: python -m pip install --upgrade "jsonschema>=4.18" referencing
         shell: bash
 
       - name: Build native binary
@@ -96,7 +96,7 @@ jobs:
 
       - name: Run C++ tests
         if: matrix.target.name == ''
-        run: make test-native CMAKE_CXX_COMPILER=${{ matrix.config.compiler }} ${{ matrix.config.test_extra_args }}
+        run: make test-native CMAKE_CXX_COMPILER=${{ matrix.config.compiler }} TEST_CMAKE_ARGS="-DPython3_EXECUTABLE=$(python -c 'import sys; print(sys.executable.replace("\\\\", "/"))')" ${{ matrix.config.test_extra_args }}
         shell: bash
         env:
           CXX: ${{ matrix.config.compiler }}

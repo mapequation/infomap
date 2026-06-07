@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from functools import cache
 from pathlib import Path
 from typing import Any
 
@@ -29,6 +30,7 @@ def load_schema(name: str) -> dict[str, Any]:
     return json.loads(_schema_path(name).read_text(encoding="utf-8"))
 
 
+@cache
 def _registry() -> Registry:
     resources = []
     for path in _schema_dir().glob("*.schema.json"):
