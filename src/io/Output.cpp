@@ -15,6 +15,7 @@
 #include "../core/StateNetwork.h"
 #include "../io/SafeFile.h"
 
+#include <stdexcept>
 #include <utility>
 
 namespace infomap {
@@ -25,7 +26,31 @@ namespace {
 
   Json modulePathJson(const std::string& path)
   {
-    return path.empty() ? Json::array({ 0 }) : Json::parse("[" + path + "]");
+    Json json = Json::array();
+    if (path.empty()) {
+      json.push_back(0);
+      return json;
+    }
+
+    unsigned int value = 0;
+    bool hasDigit = false;
+    for (const auto ch : path) {
+      if (ch >= '0' && ch <= '9') {
+        value = value * 10 + static_cast<unsigned int>(ch - '0');
+        hasDigit = true;
+      } else if (ch == ',' && hasDigit) {
+        json.push_back(value);
+        value = 0;
+        hasDigit = false;
+      } else {
+        throw std::logic_error("Invalid module path: " + path);
+      }
+    }
+    if (!hasDigit) {
+      throw std::logic_error("Invalid module path: " + path);
+    }
+    json.push_back(value);
+    return json;
   }
 
   void writeJsonObjectPrefix(std::ostream& outStream, const Json& json)
@@ -249,7 +274,7 @@ void writeJsonTree(InfomapBase& im, const StateNetwork& network, std::ostream& o
     }
     const auto& meta = metaIt->second;
     for (unsigned int i = 0; i < meta.size(); ++i) {
-      metadata[std::to_string(i)] = meta[i];
+      metadata[std::to_string(i)] = std::to_string(meta[i]);
     }
     return metadata;
   };
@@ -259,7 +284,7 @@ void writeJsonTree(InfomapBase& im, const StateNetwork& network, std::ostream& o
       outStream << ",";
     }
     firstNode = false;
-    outStream << node.dump();
+    outStream << node;
   };
 
   if (view.isHigherOrderPhysicalLevel()) {
@@ -329,11 +354,11 @@ void writeJsonTree(InfomapBase& im, const StateNetwork& network, std::ostream& o
         link["source"] = itLink.first.first;
         link["target"] = itLink.first.second;
         link["flow"] = itLink.second;
-        outStream << link.dump();
+        outStream << link;
       }
       outStream << "]}";
     } else {
-      outStream << item.dump();
+      outStream << item;
     }
   });
   outStream << "]}";

@@ -73,6 +73,31 @@ def test_state_output_writers_include_state_columns(
     assert parsed["higherOrder"] is True
 
 
+def test_json_metadata_values_remain_strings(make_infomap, output_dir):
+    im = make_infomap()
+    im.add_links(((1, 2), (1, 3), (2, 3), (3, 4), (4, 5), (4, 6), (5, 6)))
+    for node_id, category in {
+        1: 10,
+        2: 10,
+        3: 20,
+        4: 20,
+        5: 10,
+        6: 10,
+    }.items():
+        im.set_meta_data(node_id, category)
+
+    im.run(meta_data_rate=0)
+
+    json_path = output_dir / "metadata.json"
+    im.write_json(str(json_path))
+    parsed = json.loads(json_path.read_text())
+
+    metadata_nodes = [node for node in parsed["nodes"] if "metadata" in node]
+    assert metadata_nodes
+    assert {node["metadata"]["0"] for node in metadata_nodes} == {"10", "20"}
+    assert all(isinstance(node["metadata"]["0"], str) for node in metadata_nodes)
+
+
 @pytest.mark.parametrize(
     "network_name,states_output",
     [
