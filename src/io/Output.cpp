@@ -28,6 +28,12 @@ namespace {
     return path.empty() ? Json::array({ 0 }) : Json::parse("[" + path + "]");
   }
 
+  void writeJsonObjectPrefix(std::ostream& outStream, const Json& json)
+  {
+    const auto dumped = json.dump();
+    outStream << dumped.substr(0, dumped.size() - 1);
+  }
+
 } // namespace
 
 std::string getOutputFilename(const InfomapBase& im, const std::string& filename, const std::string& ext, bool states)
@@ -231,15 +237,29 @@ void writeJsonTree(InfomapBase& im, const StateNetwork& network, std::ostream& o
     json["bipartiteStartId"] = network.bipartiteStartId();
   }
 
-  Json nodes = Json::array();
-  auto metaData = network.metaData();
+  writeJsonObjectPrefix(outStream, json);
+  outStream << ",\"nodes\":[";
+
+  const auto& metaData = network.metaData();
   auto metadataJson = [&metaData](auto nodeId) {
     Json metadata;
-    auto meta = metaData[nodeId];
+    const auto metaIt = metaData.find(nodeId);
+    if (metaIt == metaData.end()) {
+      return metadata;
+    }
+    const auto& meta = metaIt->second;
     for (unsigned int i = 0; i < meta.size(); ++i) {
       metadata[std::to_string(i)] = meta[i];
     }
     return metadata;
+  };
+  auto firstNode = true;
+  auto writeNode = [&](const Json& node) {
+    if (!firstNode) {
+      outStream << ",";
+    }
+    firstNode = false;
+    outStream << node.dump();
   };
 
   if (view.isHigherOrderPhysicalLevel()) {
@@ -250,7 +270,7 @@ void writeJsonTree(InfomapBase& im, const StateNetwork& network, std::ostream& o
       node["flow"] = row.flow;
       node["mec"] = row.modularCentrality;
       node["id"] = row.physicalId;
-      nodes.push_back(std::move(node));
+      writeNode(node);
     });
   } else {
     const auto multilevelModules = im.getMultilevelModules(states);
@@ -276,12 +296,12 @@ void writeJsonTree(InfomapBase& im, const StateNetwork& network, std::ostream& o
       }
 
       node["id"] = row.physicalId;
-      nodes.push_back(std::move(node));
+      writeNode(node);
     });
   }
-  json["nodes"] = std::move(nodes);
+  outStream << "],\"modules\":[";
 
-  Json modules = Json::array();
+  auto firstModule = true;
   view.forEachModule([&](const OutputModuleRow& module) {
     Json item;
     item["path"] = modulePathJson(module.jsonPath);
@@ -291,23 +311,32 @@ void writeJsonTree(InfomapBase& im, const StateNetwork& network, std::ostream& o
     item["numChildren"] = module.numChildren;
     item["codelength"] = module.codelength;
 
+    if (!firstModule) {
+      outStream << ",";
+    }
+    firstModule = false;
+
     if (writeLinks) {
-      Json links = Json::array();
+      writeJsonObjectPrefix(outStream, item);
+      outStream << ",\"links\":[";
+      auto firstLink = true;
       for (auto itLink : module.links) {
+        if (!firstLink) {
+          outStream << ",";
+        }
+        firstLink = false;
         Json link;
         link["source"] = itLink.first.first;
         link["target"] = itLink.first.second;
         link["flow"] = itLink.second;
-        links.push_back(std::move(link));
+        outStream << link.dump();
       }
-      item["links"] = std::move(links);
+      outStream << "]}";
+    } else {
+      outStream << item.dump();
     }
-
-    modules.push_back(std::move(item));
   });
-  json["modules"] = std::move(modules);
-
-  outStream << json.dump();
+  outStream << "]}";
 }
 
 void writeCsvTree(InfomapBase& im, const StateNetwork& network, std::ostream& outStream, bool states)

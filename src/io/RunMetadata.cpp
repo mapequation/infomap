@@ -33,20 +33,10 @@ namespace {
   constexpr unsigned long long FNV_PRIME = 1099511628211ull;
   using Json = nlohmann::ordered_json;
 
-  // Render numbers with enough precision to round-trip an IEEE double, on a
-  // dedicated stream before handing them to nlohmann as raw JSON numbers.
-  template <typename T>
-  std::string numberToString(const T& value)
-  {
-    std::ostringstream out;
-    out << std::setprecision(std::numeric_limits<double>::max_digits10) << value;
-    return out.str();
-  }
-
   template <typename T>
   void addCanonicalNumber(Json& json, const std::string& key, const T& value)
   {
-    json[key] = Json::parse(numberToString(value));
+    json[key] = value;
   }
 
   void hashBytes(unsigned long long& hash, const char* data, std::streamsize size)

@@ -1,7 +1,7 @@
 # Generated from Makevars.in by scripts/stage_r_package.py.
 # Do not edit by hand.
 
-PKG_CPPFLAGS = -DAS_LIB -DINFOMAP_R -I. -Ivendor/nlohmann_json/include
+PKG_CPPFLAGS = -DAS_LIB -DINFOMAP_R -I. -I../inst/nlohmann_json/include
 PKG_CXXFLAGS = $(SHLIB_OPENMP_CXXFLAGS)
 PKG_LIBS = $(SHLIB_OPENMP_CXXFLAGS)
 CXX_STD = CXX17
