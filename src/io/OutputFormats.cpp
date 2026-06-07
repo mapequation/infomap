@@ -7,12 +7,13 @@
  For more information, see <http://www.mapequation.org>
  ******************************************************************************/
 
+#include <nlohmann/json.hpp>
+
 #include "OutputFormats.h"
 
 #include <algorithm>
 #include <iterator>
 #include <stdexcept>
-#include <sstream>
 #include <utility>
 
 namespace infomap {
@@ -21,6 +22,7 @@ namespace {
 
   const std::string textMimeType = "text/plain;charset=utf-8";
   const std::string jsonMimeType = "application/json;charset=utf-8";
+  using Json = nlohmann::ordered_json;
 
   OutputFileFormat file(const std::string& resultKey, const std::string& displayName, bool states, const std::string& suffix, const std::string& extension, const std::string& mimeType, unsigned int resultOrder)
   {
@@ -30,20 +32,6 @@ namespace {
   OutputFormat format(const std::string& optionName, OutputKind kind, std::vector<OutputFileFormat> files)
   {
     return { optionName, kind, std::move(files) };
-  }
-
-  std::string jsonString(const std::string& value)
-  {
-    std::ostringstream escaped;
-    escaped << '"';
-    for (auto c : value) {
-      if (c == '"' || c == '\\') {
-        escaped << '\\';
-      }
-      escaped << c;
-    }
-    escaped << '"';
-    return escaped.str();
   }
 
   std::vector<OutputFileFormat> orderedOutputFiles()
@@ -109,8 +97,7 @@ std::vector<std::string> outputFormatNames()
   const auto& formats = outputFormats();
   std::vector<std::string> names;
   names.reserve(formats.size());
-  std::transform(formats.begin(), formats.end(), std::back_inserter(names),
-      [](const auto& format) { return format.optionName; });
+  std::transform(formats.begin(), formats.end(), std::back_inserter(names), [](const auto& format) { return format.optionName; });
   return names;
 }
 
@@ -149,52 +136,33 @@ std::string outputFilenameForResultKey(const std::string& basename, const std::s
 
 std::string outputFormatsManifestJson()
 {
-  std::ostringstream json;
-  json << "{\n"
-       << "  \"resultOrder\": [\n";
-  bool firstResultKey = true;
+  Json json;
+  Json resultOrder = Json::array();
   for (const auto& file : orderedOutputFiles()) {
-    if (!firstResultKey) {
-      json << ",\n";
-    }
-    firstResultKey = false;
-    json << "    " << jsonString(file.resultKey);
+    resultOrder.push_back(file.resultKey);
   }
-  json << "\n"
-       << "  ],\n"
-       << "  \"formats\": [\n";
-  bool firstFormat = true;
+  json["resultOrder"] = std::move(resultOrder);
+
+  Json formats = Json::array();
   for (const auto& format : outputFormats()) {
-    if (!firstFormat) {
-      json << ",\n";
-    }
-    firstFormat = false;
-    json << "    {\n"
-         << "      \"optionName\": " << jsonString(format.optionName) << ",\n"
-         << "      \"files\": [\n";
-
-    bool firstFile = true;
+    Json formatJson;
+    formatJson["optionName"] = format.optionName;
+    Json files = Json::array();
     for (const auto& file : format.files) {
-      if (!firstFile) {
-        json << ",\n";
-      }
-      firstFile = false;
-      json << "        {"
-           << "\"key\": " << jsonString(file.resultKey) << ", "
-           << "\"name\": " << jsonString(file.displayName) << ", "
-           << "\"isStates\": " << (file.states ? "true" : "false") << ", "
-           << "\"suffix\": " << jsonString(file.suffix) << ", "
-           << "\"extension\": " << jsonString(file.extension) << ", "
-           << "\"mimeType\": " << jsonString(file.mimeType)
-           << "}";
+      Json fileJson;
+      fileJson["key"] = file.resultKey;
+      fileJson["name"] = file.displayName;
+      fileJson["isStates"] = file.states;
+      fileJson["suffix"] = file.suffix;
+      fileJson["extension"] = file.extension;
+      fileJson["mimeType"] = file.mimeType;
+      files.push_back(std::move(fileJson));
     }
-
-    json << "\n"
-         << "      ]\n"
-         << "    }";
+    formatJson["files"] = std::move(files);
+    formats.push_back(std::move(formatJson));
   }
-  json << "\n  ]\n}\n";
-  return json.str();
+  json["formats"] = std::move(formats);
+  return json.dump(2) + '\n';
 }
 
 } // namespace infomap

@@ -106,6 +106,7 @@ list(REMOVE_ITEM infomap_sources "${infomap_main_source}")
 
 add_library(infomap_core ${infomap_headers} ${infomap_sources})
 target_include_directories(infomap_core PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src")
+target_include_directories(infomap_core PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/vendor/nlohmann_json/include")
 target_compile_features(infomap_core PUBLIC cxx_std_14)
 set_target_properties(infomap_core PROPERTIES CXX_EXTENSIONS OFF)
 target_compile_options(infomap_core PRIVATE ${INFOMAP_COMPILE_FLAGS})
@@ -135,6 +136,7 @@ if(BUILD_TESTING)
         PRIVATE
             "${CMAKE_CURRENT_SOURCE_DIR}/src"
             "${CMAKE_CURRENT_SOURCE_DIR}/test"
+            "${CMAKE_CURRENT_SOURCE_DIR}/vendor/nlohmann_json/include"
     )
     target_link_libraries(infomap_native_benchmark PRIVATE infomap_core)
 

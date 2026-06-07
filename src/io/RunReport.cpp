@@ -7,156 +7,93 @@
  For more information, see <http://www.mapequation.org>
  ******************************************************************************/
 
+#include <nlohmann/json.hpp>
+
 #include "RunReport.h"
 #include "SafeFile.h"
 #include "../utils/Log.h"
 
-#include <iomanip>
-#include <sstream>
+#include <utility>
+
+namespace {
+
+using Json = nlohmann::ordered_json;
+
+} // namespace
 
 namespace infomap {
 
 namespace {
 
-  std::string jsonString(const std::string& value)
-  {
-    std::ostringstream escaped;
-    escaped << '"';
-    for (char c : value) {
-      switch (c) {
-      case '"':
-      case '\\':
-        escaped << '\\' << c;
-        break;
-      case '\b':
-        escaped << "\\b";
-        break;
-      case '\f':
-        escaped << "\\f";
-        break;
-      case '\n':
-        escaped << "\\n";
-        break;
-      case '\r':
-        escaped << "\\r";
-        break;
-      case '\t':
-        escaped << "\\t";
-        break;
-      default:
-        escaped << c;
-        break;
-      }
-    }
-    escaped << '"';
-    return escaped.str();
-  }
-
-  void writeDoubleArray(std::ostream& out, const std::vector<double>& values)
-  {
-    out << '[';
-    for (std::size_t i = 0; i < values.size(); ++i) {
-      if (i > 0) {
-        out << ',';
-      }
-      out << values[i];
-    }
-    out << ']';
-  }
-
-  void writeUnsignedArray(std::ostream& out, const std::vector<unsigned int>& values)
-  {
-    out << '[';
-    for (std::size_t i = 0; i < values.size(); ++i) {
-      if (i > 0) {
-        out << ',';
-      }
-      out << values[i];
-    }
-    out << ']';
-  }
+  std::string dumpJsonLine(const Json& json) { return json.dump() + '\n'; }
 
 } // namespace
 
 std::string runSummaryReportJson(const RunSummaryReport& report)
 {
-  std::ostringstream out;
-  out << std::setprecision(12);
-  out << '{'
-      << "\"version\":" << jsonString(report.version) << ','
-      << "\"codelength\":" << report.codelength << ','
-      << "\"top_modules\":" << report.topModules << ','
-      << "\"levels\":" << report.levels << ','
-      << "\"trials\":" << report.trials << ','
-      << "\"best_trial\":" << report.bestTrial << ','
-      << "\"trial_codelengths\":";
-  writeDoubleArray(out, report.trialCodelengths);
-  out << ",\"trial_top_modules\":";
-  writeUnsignedArray(out, report.trialTopModules);
-  out << "}\n";
-  return out.str();
+  Json json;
+  json["version"] = report.version;
+  json["codelength"] = report.codelength;
+  json["top_modules"] = report.topModules;
+  json["levels"] = report.levels;
+  json["trials"] = report.trials;
+  json["best_trial"] = report.bestTrial;
+  json["trial_codelengths"] = report.trialCodelengths;
+  json["trial_top_modules"] = report.trialTopModules;
+  return dumpJsonLine(json);
 }
 
 std::string runTimingReportJson(const RunTimingReport& report)
 {
-  std::ostringstream out;
-  out << std::setprecision(12);
-  out << '{'
-      << "\"version\":" << jsonString(report.version) << ','
-      << "\"openmp\":" << (report.openmp ? "true" : "false") << ','
-      << "\"threads_requested\":" << report.threadsRequested << ','
-      << "\"threads_used\":" << report.threadsUsed << ','
-      << "\"thread_source\":" << jsonString(report.threadSource) << ','
-      << "\"network\":{"
-      << "\"nodes\":" << report.network.nodes << ','
-      << "\"links\":" << report.network.links << ','
-      << "\"directed\":" << (report.network.directed ? "true" : "false")
-      << "},"
-      << "\"timing\":{";
+  Json json;
+  json["version"] = report.version;
+  json["openmp"] = report.openmp;
+  json["threads_requested"] = report.threadsRequested;
+  json["threads_used"] = report.threadsUsed;
+  json["thread_source"] = report.threadSource;
 
-  for (std::size_t i = 0; i < report.timing.size(); ++i) {
-    if (i > 0) {
-      out << ',';
-    }
-    out << jsonString(report.timing[i].first) << ':' << report.timing[i].second;
+  Json network;
+  network["nodes"] = report.network.nodes;
+  network["links"] = report.network.links;
+  network["directed"] = report.network.directed;
+  json["network"] = std::move(network);
+
+  Json timing;
+  for (const auto& item : report.timing) {
+    timing[item.first] = item.second;
   }
+  json["timing"] = std::move(timing);
 
-  out << "},\"trials\":[";
-  bool firstTrial = true;
+  Json trials = Json::array();
   for (const auto& trial : report.trials) {
     if (!trial.valid) {
       continue;
     }
-    if (!firstTrial) {
-      out << ',';
-    }
-    firstTrial = false;
-    out << '{'
-        << "\"trial\":" << trial.trial << ','
-        << "\"thread\":" << trial.thread << ','
-        << "\"seed\":" << trial.seed << ','
-        << "\"time_s\":" << trial.timeSec << ','
-        << "\"codelength\":" << trial.codelength << ','
-        << "\"top_modules\":" << trial.topModules << ','
-        << "\"num_levels\":" << trial.numLevels
-        << '}';
+    Json item;
+    item["trial"] = trial.trial;
+    item["thread"] = trial.thread;
+    item["seed"] = trial.seed;
+    item["time_s"] = trial.timeSec;
+    item["codelength"] = trial.codelength;
+    item["top_modules"] = trial.topModules;
+    item["num_levels"] = trial.numLevels;
+    trials.push_back(std::move(item));
   }
-  out << ']';
+  json["trials"] = std::move(trials);
 
   if (report.includeMemory) {
-    out << ",\"memory\":{"
-        << "\"rss_peak_mb\":" << report.memory.rssPeakMb;
+    Json memory;
+    memory["rss_peak_mb"] = report.memory.rssPeakMb;
     if (report.memory.haveBytesPerNode) {
-      out << ",\"bytes_per_node\":" << report.memory.bytesPerNode;
+      memory["bytes_per_node"] = report.memory.bytesPerNode;
     }
     if (report.memory.haveBytesPerLink) {
-      out << ",\"bytes_per_link\":" << report.memory.bytesPerLink;
+      memory["bytes_per_link"] = report.memory.bytesPerLink;
     }
-    out << '}';
+    json["memory"] = std::move(memory);
   }
 
-  out << "}\n";
-  return out.str();
+  return dumpJsonLine(json);
 }
 
 void writeJsonReport(const std::string& path, const std::string& json, bool overwrite)

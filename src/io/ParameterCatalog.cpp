@@ -7,13 +7,14 @@
  For more information, see <http://www.mapequation.org>
  ******************************************************************************/
 
+#include <nlohmann/json.hpp>
+
 #include "ParameterCatalog.h"
 #include "Config.h"
 #include "OutputFormats.h"
 #include "ProgramInterface.h"
 #include "../utils/convert.h"
 
-#include <sstream>
 #include <stdexcept>
 #include <utility>
 
@@ -241,19 +242,7 @@ namespace {
     return SpecBuilder();
   }
 
-  std::string jsonString(const std::string& value)
-  {
-    std::ostringstream escaped;
-    escaped << '"';
-    for (char c : value) {
-      if (c == '"' || c == '\\') {
-        escaped << '\\';
-      }
-      escaped << c;
-    }
-    escaped << '"';
-    return escaped.str();
-  }
+  using Json = nlohmann::ordered_json;
 
   std::string stringDefault(const ParameterSpec& parameter)
   {
@@ -971,89 +960,71 @@ void registerConfigParameters(ProgramInterface& api, ConfigParameterTargets targ
 
 std::string parameterCatalogJson()
 {
-  std::ostringstream json;
-  json << "{\n  \"parameters\": [\n";
-  bool firstParameter = true;
+  Json json;
+  Json parameters = Json::array();
   for (const auto& parameter : parameterCatalog()) {
     if (parameter.hidden || !parameter.includeInJson) {
       continue;
     }
-    if (!firstParameter) {
-      json << ",\n";
-    }
-    firstParameter = false;
-    json << "    { "
-         << "\"long\": " << jsonString("--" + parameter.longName) << ", "
-         << "\"short\": " << jsonString(parameter.shortName == '\0' ? "" : std::string("-") + parameter.shortName) << ", "
-         << "\"description\": " << jsonString(parameter.description) << ", "
-         << "\"group\": " << jsonString(parameter.group) << ", "
-         << "\"required\": " << (parameter.requireArgument ? "true" : "false") << ", "
-         << "\"advanced\": " << (parameter.isAdvanced ? "true" : "false") << ", "
-         << "\"incremental\": " << (parameter.incrementalArgument ? "true" : "false") << ", ";
+    Json item;
+    item["long"] = "--" + parameter.longName;
+    item["short"] = parameter.shortName == '\0' ? "" : std::string("-") + parameter.shortName;
+    item["description"] = parameter.description;
+    item["group"] = parameter.group;
+    item["required"] = parameter.requireArgument;
+    item["advanced"] = parameter.isAdvanced;
+    item["incremental"] = parameter.incrementalArgument;
     if (parameter.requireArgument) {
-      json << "\"longType\": " << jsonString(parameter.argumentName) << ", "
-           << "\"shortType\": " << jsonString(std::string(1, ArgType::toShort.at(parameter.argumentName))) << ", "
-           << "\"default\": " << jsonString(stringDefault(parameter));
+      item["longType"] = parameter.argumentName;
+      item["shortType"] = std::string(1, ArgType::toShort.at(parameter.argumentName));
+      item["default"] = stringDefault(parameter);
     } else {
-      json << "\"default\": false";
+      item["default"] = false;
     }
     if (!parameter.choices.empty()) {
-      json << ", \"choices\": [";
-      for (std::size_t i = 0; i < parameter.choices.size(); ++i) {
-        if (i > 0) {
-          json << ", ";
-        }
-        json << jsonString(parameter.choices[i]);
-      }
-      json << "]";
+      item["choices"] = parameter.choices;
     }
     if (!parameter.minValue.empty()) {
-      json << ", \"min\": " << jsonString(parameter.minValue);
+      item["min"] = parameter.minValue;
     }
     if (!parameter.maxValue.empty()) {
-      json << ", \"max\": " << jsonString(parameter.maxValue);
+      item["max"] = parameter.maxValue;
     }
     if (!parameter.pythonName.empty() || !parameter.rName.empty() || !parameter.tsName.empty()) {
-      json << ", \"bindingNames\": {";
-      bool firstName = true;
+      Json bindingNames;
       if (!parameter.pythonName.empty()) {
-        json << "\"python\": " << jsonString(parameter.pythonName);
-        firstName = false;
+        bindingNames["python"] = parameter.pythonName;
       }
       if (!parameter.rName.empty()) {
-        json << (firstName ? "" : ", ") << "\"r\": " << jsonString(parameter.rName);
-        firstName = false;
+        bindingNames["r"] = parameter.rName;
       }
       if (!parameter.tsName.empty()) {
-        json << (firstName ? "" : ", ") << "\"ts\": " << jsonString(parameter.tsName);
+        bindingNames["ts"] = parameter.tsName;
       }
-      json << "}";
+      item["bindingNames"] = std::move(bindingNames);
     }
     if (!parameter.renderPolicy.empty()) {
-      json << ", \"renderPolicy\": " << jsonString(parameter.renderPolicy);
+      item["renderPolicy"] = parameter.renderPolicy;
     }
     if (!parameter.pythonDocDescription.empty()) {
-      json << ", \"bindingDocs\": {\"python\": {\"description\": " << jsonString(parameter.pythonDocDescription) << "}}";
+      Json bindingDocs;
+      bindingDocs["python"]["description"] = parameter.pythonDocDescription;
+      item["bindingDocs"] = std::move(bindingDocs);
     }
     if (!parameter.pythonDefault.empty() || !parameter.rDefault.empty()) {
-      json << ", \"bindingDefaults\": {";
-      bool firstLanguage = true;
+      Json bindingDefaults;
       if (!parameter.pythonDefault.empty()) {
-        json << "\"python\": {\"value\": " << jsonString(parameter.pythonDefault);
-        json << "}";
-        firstLanguage = false;
+        bindingDefaults["python"]["value"] = parameter.pythonDefault;
       }
       if (!parameter.rDefault.empty()) {
-        json << (firstLanguage ? "" : ", ")
-             << "\"r\": {\"value\": " << jsonString(parameter.rDefault);
-        json << "}";
+        bindingDefaults["r"]["value"] = parameter.rDefault;
       }
-      json << "}";
+      item["bindingDefaults"] = std::move(bindingDefaults);
     }
-    json << " }";
+    parameters.push_back(std::move(item));
   }
-  json << "\n  ]\n}";
-  return json.str();
+  json["parameters"] = std::move(parameters);
+  return json.dump(2);
 }
 
 } // namespace infomap

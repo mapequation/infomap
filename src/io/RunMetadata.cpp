@@ -7,6 +7,8 @@
  For more information, see <http://www.mapequation.org>
  ******************************************************************************/
 
+#include <nlohmann/json.hpp>
+
 #include "RunMetadata.h"
 #include "Config.h"
 #include "OutputPlan.h"
@@ -19,6 +21,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <sys/stat.h>
+#include <utility>
 #include <vector>
 #include <algorithm>
 
@@ -28,70 +31,10 @@ namespace {
 
   constexpr unsigned long long FNV_OFFSET = 14695981039346656037ull;
   constexpr unsigned long long FNV_PRIME = 1099511628211ull;
-
-  std::string jsonString(const std::string& value)
-  {
-    std::ostringstream escaped;
-    escaped << '"';
-    for (char c : value) {
-      switch (c) {
-      case '"':
-      case '\\':
-        escaped << '\\' << c;
-        break;
-      case '\b':
-        escaped << "\\b";
-        break;
-      case '\f':
-        escaped << "\\f";
-        break;
-      case '\n':
-        escaped << "\\n";
-        break;
-      case '\r':
-        escaped << "\\r";
-        break;
-      case '\t':
-        escaped << "\\t";
-        break;
-      default:
-        if (static_cast<unsigned char>(c) < 0x20) {
-          // Remaining control characters must be \u-escaped to stay valid JSON.
-          escaped << "\\u" << std::hex << std::setw(4) << std::setfill('0')
-                  << static_cast<int>(static_cast<unsigned char>(c))
-                  << std::dec << std::setfill(' ');
-        } else {
-          escaped << c;
-        }
-        break;
-      }
-    }
-    escaped << '"';
-    return escaped.str();
-  }
-
-  std::string boolString(bool value)
-  {
-    return value ? "true" : "false";
-  }
-
-  void appendField(std::ostringstream& json, bool& first, const std::string& key, const std::string& value)
-  {
-    if (!first)
-      json << ',';
-    first = false;
-    json << jsonString(key) << ':' << value;
-  }
-
-  void appendStringField(std::ostringstream& json, bool& first, const std::string& key, const std::string& value)
-  {
-    appendField(json, first, key, jsonString(value));
-  }
+  using Json = nlohmann::ordered_json;
 
   // Render numbers with enough precision to round-trip an IEEE double, on a
-  // dedicated stream. io::Str() / the JSON stream use default precision (6),
-  // which would collapse distinct doubles to the same string and collide in
-  // the fingerprint. setprecision is ignored for integral types.
+  // dedicated stream before handing them to nlohmann as raw JSON numbers.
   template <typename T>
   std::string numberToString(const T& value)
   {
@@ -101,9 +44,9 @@ namespace {
   }
 
   template <typename T>
-  void appendNumericField(std::ostringstream& json, bool& first, const std::string& key, const T& value)
+  void addCanonicalNumber(Json& json, const std::string& key, const T& value)
   {
-    appendField(json, first, key, numberToString(value));
+    json[key] = Json::parse(numberToString(value));
   }
 
   void hashBytes(unsigned long long& hash, const char* data, std::streamsize size)
@@ -156,14 +99,12 @@ namespace {
 
   std::string outputArtifactsJson(const Config& config)
   {
-    std::ostringstream json;
-    json << '[';
-    bool first = true;
+    Json json = Json::array();
     const auto appendArtifact = [&](const std::string& key, const std::string& path) {
-      if (!first)
-        json << ',';
-      first = false;
-      json << "{\"key\":" << jsonString(key) << ",\"path\":" << jsonString(path) << '}';
+      Json artifact;
+      artifact["key"] = key;
+      artifact["path"] = path;
+      json.push_back(std::move(artifact));
     };
     for (auto phase : { OutputPhase::BeforeFlow, OutputPhase::AfterFlow, OutputPhase::AfterPartition }) {
       for (const auto& output : planOutputArtifacts(config, phase))
@@ -171,80 +112,76 @@ namespace {
     }
     for (const auto& report : planReportArtifacts(config))
       appendArtifact(report.first, report.second);
-    json << ']';
-    return json.str();
+    return json.dump();
   }
 
 } // namespace
 
 std::string canonicalConfigJson(const Config& config)
 {
-  std::ostringstream json;
-  json << '{';
-  bool first = true;
+  Json json;
 
   // Input identity (path, size, content) is captured separately by the input
   // fingerprint; the config fingerprint covers only algorithm-affecting
   // settings, so it stays stable when the same input is referenced via a
   // different path. The cluster/meta-data paths below have no separate content
   // fingerprint, so they remain the only available signal and are kept.
-  appendField(json, first, "additional_input_count", numberToString(config.additionalInput.size()));
-  appendField(json, first, "flow_model", jsonString(flowModelToString(config.flowModel)));
-  appendField(json, first, "directed", boolString(config.directed));
-  appendNumericField(json, first, "seed", config.seedToRandomNumberGenerator);
-  appendField(json, first, "two_level", boolString(config.twoLevel));
-  appendField(json, first, "no_infomap", boolString(config.noInfomap));
-  appendField(json, first, "regularized", boolString(config.regularized));
-  appendNumericField(json, first, "regularization_strength", config.regularizationStrength);
-  appendField(json, first, "recorded_teleportation", boolString(config.recordedTeleportation));
-  appendNumericField(json, first, "teleportation_probability", config.teleportationProbability);
-  appendNumericField(json, first, "markov_time", config.markovTime);
-  appendField(json, first, "variable_markov_time", boolString(config.variableMarkovTime));
-  appendNumericField(json, first, "variable_markov_damping", config.variableMarkovTimeDamping);
-  appendNumericField(json, first, "variable_markov_min_scale", config.variableMarkovTimeMinLocalScale);
-  appendField(json, first, "entropy_corrected", boolString(config.entropyBiasCorrection));
-  appendNumericField(json, first, "entropy_correction_strength", config.entropyBiasCorrectionMultiplier);
-  appendField(json, first, "use_node_weights_as_flow", boolString(config.useNodeWeightsAsFlow));
-  appendField(json, first, "teleport_to_nodes", boolString(config.teleportToNodes));
-  appendNumericField(json, first, "weight_threshold", config.weightThreshold);
-  appendField(json, first, "no_self_links", boolString(config.noSelfLinks));
-  appendNumericField(json, first, "node_limit", config.nodeLimit);
-  appendNumericField(json, first, "matchable_multilayer_ids", config.matchableMultilayerIds);
-  appendField(json, first, "bipartite", boolString(config.bipartite));
-  appendField(json, first, "bipartite_teleportation", boolString(config.bipartiteTeleportation));
-  appendStringField(json, first, "cluster_data", config.clusterDataFile);
-  appendStringField(json, first, "meta_data", config.metaDataFile);
-  appendNumericField(json, first, "meta_data_rate", config.metaDataRate);
-  appendField(json, first, "meta_data_unweighted", boolString(config.unweightedMetaData));
-  appendNumericField(json, first, "preferred_number_of_modules", config.preferredNumberOfModules);
-  appendField(json, first, "parallel_trials", boolString(config.parallelTrials));
-  appendField(json, first, "inner_parallelization", boolString(config.innerParallelization));
-  appendNumericField(json, first, "core_loop_limit", config.coreLoopLimit);
-  appendNumericField(json, first, "core_level_limit", config.levelAggregationLimit);
-  appendNumericField(json, first, "tune_iteration_limit", config.tuneIterationLimit);
-  appendNumericField(json, first, "core_loop_codelength_threshold", config.minimumCodelengthImprovement);
-  appendNumericField(json, first, "tune_iteration_relative_threshold", config.minimumRelativeTuneIterationImprovement);
-  appendNumericField(json, first, "max_flow_iterations", config.maxFlowIterations);
-  appendField(json, first, "prefer_modular_solution", boolString(config.preferModularSolution));
-  appendNumericField(json, first, "num_random_moves", config.numRandomMoves);
-  appendNumericField(json, first, "max_degree_for_random_moves", config.maxDegreeForRandomMoves);
-  appendField(json, first, "skip_adjust_bipartite_flow", boolString(config.skipAdjustBipartiteFlow));
-  appendField(json, first, "markov_time_no_self_links", boolString(config.markovTimeNoSelfLinks));
-  appendNumericField(json, first, "multilayer_relax_rate", config.multilayerRelaxRate);
-  appendNumericField(json, first, "multilayer_relax_limit", config.multilayerRelaxLimit);
-  appendNumericField(json, first, "multilayer_relax_limit_up", config.multilayerRelaxLimitUp);
-  appendNumericField(json, first, "multilayer_relax_limit_down", config.multilayerRelaxLimitDown);
-  appendNumericField(json, first, "multilayer_js_relax_rate", config.multilayerJSRelaxRate);
-  appendField(json, first, "multilayer_relax_by_jsd", boolString(config.multilayerRelaxByJensenShannonDivergence));
-  appendNumericField(json, first, "multilayer_js_relax_limit", config.multilayerJSRelaxLimit);
-  appendField(json, first, "no_coarse_tune", boolString(config.noCoarseTune));
-  appendField(json, first, "only_super_modules", boolString(config.onlySuperModules));
-  appendNumericField(json, first, "fast_hierarchical_solution", config.fastHierarchicalSolution);
-  appendField(json, first, "randomize_core_loop_limit", boolString(config.randomizeCoreLoopLimit));
-  appendNumericField(json, first, "minimum_single_node_codelength_improvement", config.minimumSingleNodeCodelengthImprovement);
+  addCanonicalNumber(json, "additional_input_count", config.additionalInput.size());
+  json["flow_model"] = flowModelToString(config.flowModel);
+  json["directed"] = config.directed;
+  addCanonicalNumber(json, "seed", config.seedToRandomNumberGenerator);
+  json["two_level"] = config.twoLevel;
+  json["no_infomap"] = config.noInfomap;
+  json["regularized"] = config.regularized;
+  addCanonicalNumber(json, "regularization_strength", config.regularizationStrength);
+  json["recorded_teleportation"] = config.recordedTeleportation;
+  addCanonicalNumber(json, "teleportation_probability", config.teleportationProbability);
+  addCanonicalNumber(json, "markov_time", config.markovTime);
+  json["variable_markov_time"] = config.variableMarkovTime;
+  addCanonicalNumber(json, "variable_markov_damping", config.variableMarkovTimeDamping);
+  addCanonicalNumber(json, "variable_markov_min_scale", config.variableMarkovTimeMinLocalScale);
+  json["entropy_corrected"] = config.entropyBiasCorrection;
+  addCanonicalNumber(json, "entropy_correction_strength", config.entropyBiasCorrectionMultiplier);
+  json["use_node_weights_as_flow"] = config.useNodeWeightsAsFlow;
+  json["teleport_to_nodes"] = config.teleportToNodes;
+  addCanonicalNumber(json, "weight_threshold", config.weightThreshold);
+  json["no_self_links"] = config.noSelfLinks;
+  addCanonicalNumber(json, "node_limit", config.nodeLimit);
+  addCanonicalNumber(json, "matchable_multilayer_ids", config.matchableMultilayerIds);
+  json["bipartite"] = config.bipartite;
+  json["bipartite_teleportation"] = config.bipartiteTeleportation;
+  json["cluster_data"] = config.clusterDataFile;
+  json["meta_data"] = config.metaDataFile;
+  addCanonicalNumber(json, "meta_data_rate", config.metaDataRate);
+  json["meta_data_unweighted"] = config.unweightedMetaData;
+  addCanonicalNumber(json, "preferred_number_of_modules", config.preferredNumberOfModules);
+  json["parallel_trials"] = config.parallelTrials;
+  json["inner_parallelization"] = config.innerParallelization;
+  addCanonicalNumber(json, "core_loop_limit", config.coreLoopLimit);
+  addCanonicalNumber(json, "core_level_limit", config.levelAggregationLimit);
+  addCanonicalNumber(json, "tune_iteration_limit", config.tuneIterationLimit);
+  addCanonicalNumber(json, "core_loop_codelength_threshold", config.minimumCodelengthImprovement);
+  addCanonicalNumber(json, "tune_iteration_relative_threshold", config.minimumRelativeTuneIterationImprovement);
+  addCanonicalNumber(json, "max_flow_iterations", config.maxFlowIterations);
+  json["prefer_modular_solution"] = config.preferModularSolution;
+  addCanonicalNumber(json, "num_random_moves", config.numRandomMoves);
+  addCanonicalNumber(json, "max_degree_for_random_moves", config.maxDegreeForRandomMoves);
+  json["skip_adjust_bipartite_flow"] = config.skipAdjustBipartiteFlow;
+  json["markov_time_no_self_links"] = config.markovTimeNoSelfLinks;
+  addCanonicalNumber(json, "multilayer_relax_rate", config.multilayerRelaxRate);
+  addCanonicalNumber(json, "multilayer_relax_limit", config.multilayerRelaxLimit);
+  addCanonicalNumber(json, "multilayer_relax_limit_up", config.multilayerRelaxLimitUp);
+  addCanonicalNumber(json, "multilayer_relax_limit_down", config.multilayerRelaxLimitDown);
+  addCanonicalNumber(json, "multilayer_js_relax_rate", config.multilayerJSRelaxRate);
+  json["multilayer_relax_by_jsd"] = config.multilayerRelaxByJensenShannonDivergence;
+  addCanonicalNumber(json, "multilayer_js_relax_limit", config.multilayerJSRelaxLimit);
+  json["no_coarse_tune"] = config.noCoarseTune;
+  json["only_super_modules"] = config.onlySuperModules;
+  addCanonicalNumber(json, "fast_hierarchical_solution", config.fastHierarchicalSolution);
+  json["randomize_core_loop_limit"] = config.randomizeCoreLoopLimit;
+  addCanonicalNumber(json, "minimum_single_node_codelength_improvement", config.minimumSingleNodeCodelengthImprovement);
 
-  json << '}';
-  return json.str();
+  return json.dump();
 }
 
 std::string configFingerprint(const Config& config)
@@ -263,13 +200,12 @@ std::string inputFingerprintJson(const std::string& path)
   }
 
   const auto size = static_cast<unsigned long long>(info.st_size);
-  std::ostringstream json;
-  json << "{\"path\":" << jsonString(path)
-       << ",\"size\":" << size
-       << ",\"mtime\":" << static_cast<long long>(info.st_mtime)
-       << ",\"hash\":" << jsonString(fileContentFingerprint(path, size))
-       << '}';
-  return json.str();
+  Json json;
+  json["path"] = path;
+  json["size"] = size;
+  json["mtime"] = static_cast<long long>(info.st_mtime);
+  json["hash"] = fileContentFingerprint(path, size);
+  return json.dump();
 }
 
 std::string networkFingerprint(const std::string& path)
@@ -289,17 +225,15 @@ std::string networkFingerprint(const std::string& path)
 std::string runManifestJson(const Config& config)
 {
   const auto canonicalConfig = canonicalConfigJson(config);
-  std::ostringstream json;
-  json << '{'
-       << "\"version\":" << jsonString(INFOMAP_VERSION) << ','
-       << "\"command\":" << jsonString(config.parsedString) << ','
-       << "\"num_trials\":" << config.numTrials << ','
-       << "\"config\":" << canonicalConfig << ','
-       << "\"config_fingerprint\":" << jsonString(fnvHex(canonicalConfig)) << ','
-       << "\"input\":" << inputFingerprintJson(config.networkFile) << ','
-       << "\"outputs\":" << outputArtifactsJson(config)
-       << "}\n";
-  return json.str();
+  Json json;
+  json["version"] = INFOMAP_VERSION;
+  json["command"] = config.parsedString;
+  json["num_trials"] = config.numTrials;
+  json["config"] = Json::parse(canonicalConfig);
+  json["config_fingerprint"] = fnvHex(canonicalConfig);
+  json["input"] = Json::parse(inputFingerprintJson(config.networkFile));
+  json["outputs"] = Json::parse(outputArtifactsJson(config));
+  return json.dump() + '\n';
 }
 
 } // namespace infomap

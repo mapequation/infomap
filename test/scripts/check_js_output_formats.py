@@ -33,6 +33,8 @@ def read_cpp_manifest(source: Path) -> dict[str, object]:
                 "-std=c++14",
                 "-I",
                 str(repo_root / "src"),
+                "-I",
+                str(repo_root / "vendor" / "nlohmann_json" / "include"),
                 str(helper),
                 str(source),
                 "-o",
@@ -45,7 +47,9 @@ def read_cpp_manifest(source: Path) -> dict[str, object]:
 
 def main() -> int:
     if len(sys.argv) != 3:
-        print("Usage: check_js_output_formats.py OUTPUT_FORMATS_CPP OUTPUT_FORMATS_JSON")
+        print(
+            "Usage: check_js_output_formats.py OUTPUT_FORMATS_CPP OUTPUT_FORMATS_JSON"
+        )
         return 2
 
     cpp_manifest = read_cpp_manifest(Path(sys.argv[1]))
