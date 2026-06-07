@@ -96,7 +96,7 @@ jobs:
 
       - name: Run C++ tests
         if: matrix.target.name == ''
-        run: make test-native CMAKE_CXX_COMPILER=${{ matrix.config.compiler }} TEST_CMAKE_ARGS="-DPython3_EXECUTABLE=$(python -c 'import sys; print(sys.executable.replace("\\\\", "/"))')" ${{ matrix.config.test_extra_args }}
+        run: make test-native CMAKE_CXX_COMPILER=${{ matrix.config.compiler }} TEST_CMAKE_ARGS="-DPython3_EXECUTABLE=$(python -c 'from pathlib import Path; import sys; print(Path(sys.executable).as_posix())')" ${{ matrix.config.test_extra_args }}
         shell: bash
         env:
           CXX: ${{ matrix.config.compiler }}

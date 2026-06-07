@@ -15,6 +15,7 @@
 #include "../core/StateNetwork.h"
 #include "../io/SafeFile.h"
 
+#include <cmath>
 #include <stdexcept>
 #include <utility>
 
@@ -23,6 +24,21 @@ namespace infomap {
 namespace {
 
   using Json = nlohmann::ordered_json;
+
+  double jsonOutputNumber(double value)
+  {
+    if (!std::isfinite(value) || value == 0.0) {
+      return value;
+    }
+
+    constexpr auto precision = 6;
+    const auto magnitude = std::floor(std::log10(std::fabs(value)));
+    const auto scale = std::pow(10.0, precision - 1 - magnitude);
+    if (!std::isfinite(scale) || scale == 0.0) {
+      return value;
+    }
+    return std::round(value * scale) / scale;
+  }
 
   Json modulePathJson(const std::string& path)
   {
@@ -292,8 +308,8 @@ void writeJsonTree(InfomapBase& im, const StateNetwork& network, std::ostream& o
       Json node;
       node["path"] = row.path;
       node["name"] = row.name;
-      node["flow"] = row.flow;
-      node["mec"] = row.modularCentrality;
+      node["flow"] = jsonOutputNumber(row.flow);
+      node["mec"] = jsonOutputNumber(row.modularCentrality);
       node["id"] = row.physicalId;
       writeNode(node);
     });
@@ -305,8 +321,8 @@ void writeJsonTree(InfomapBase& im, const StateNetwork& network, std::ostream& o
       node["path"] = row.path;
       node["modules"] = im.haveModules() ? Json(multilevelModules.at(view.leafId(row))) : Json::array({ 1 });
       node["name"] = row.name;
-      node["flow"] = row.flow;
-      node["mec"] = row.modularCentrality;
+      node["flow"] = jsonOutputNumber(row.flow);
+      node["mec"] = jsonOutputNumber(row.modularCentrality);
 
       // can't currently use both memory and meta map equation
       if (view.hasMetaData() && !states) {
@@ -330,11 +346,11 @@ void writeJsonTree(InfomapBase& im, const StateNetwork& network, std::ostream& o
   view.forEachModule([&](const OutputModuleRow& module) {
     Json item;
     item["path"] = modulePathJson(module.jsonPath);
-    item["enterFlow"] = module.enterFlow;
-    item["exitFlow"] = module.exitFlow;
+    item["enterFlow"] = jsonOutputNumber(module.enterFlow);
+    item["exitFlow"] = jsonOutputNumber(module.exitFlow);
     item["numEdges"] = module.links.size();
     item["numChildren"] = module.numChildren;
-    item["codelength"] = module.codelength;
+    item["codelength"] = jsonOutputNumber(module.codelength);
 
     if (!firstModule) {
       outStream << ",";
@@ -353,7 +369,7 @@ void writeJsonTree(InfomapBase& im, const StateNetwork& network, std::ostream& o
         Json link;
         link["source"] = itLink.first.first;
         link["target"] = itLink.first.second;
-        link["flow"] = itLink.second;
+        link["flow"] = jsonOutputNumber(itLink.second);
         outStream << link;
       }
       outStream << "]}";

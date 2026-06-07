@@ -195,6 +195,8 @@ TEST_CASE("OutputView refactor preserves stable JSON output fields [fast][core][
   CHECK(jsonText.find("\"modules\":[") != std::string::npos);
   CHECK(jsonText.find("\"directed\":false") != std::string::npos);
   CHECK(jsonText.find("\"flowModel\":\"undirected\"") != std::string::npos);
+  CHECK(jsonText.find("\"flow\":0.142857") != std::string::npos);
+  CHECK(jsonText.find("0.142857142857") == std::string::npos);
 
   removeOutput(jsonPath);
 }

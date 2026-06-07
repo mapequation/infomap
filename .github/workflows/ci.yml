@@ -222,7 +222,7 @@ jobs:
         shell: bash
 
       - name: Configure sanitizer build
-        run: make test-sanitizers CMAKE_GENERATOR=Ninja SANITIZER_CXX=clang++ SANITIZER_CMAKE_ARGS="-DPython3_EXECUTABLE=$(python -c 'import sys; print(sys.executable.replace("\\\\", "/"))')"
+        run: make test-sanitizers CMAKE_GENERATOR=Ninja SANITIZER_CXX=clang++ SANITIZER_CMAKE_ARGS="-DPython3_EXECUTABLE=$(python -c 'from pathlib import Path; import sys; print(Path(sys.executable).as_posix())')"
         shell: bash
         env:
           ASAN_OPTIONS: detect_leaks=1:strict_string_checks=1
