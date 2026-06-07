@@ -332,7 +332,8 @@ def _text_unit_values(value):
         if bool(missing):
             return []
     except ValueError:
-        pass
+        # Array-like missing checks are ambiguous; treat the value as concrete.
+        return [value]
     return [value]
 
 
