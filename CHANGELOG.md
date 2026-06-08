@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file. Releases are automated with [release-please](https://github.com/googleapis/release-please), using [Conventional Commits](https://www.conventionalcommits.org) to determine version bumps and changelog entries.
 
+## [2.12.0](https://github.com/mapequation/infomap/compare/v2.11.0...v2.12.0) (2026-06-08)
+
+
+### Features
+
+* --num-threads auto resolving cpuset / SLURM / OMP ([#634](https://github.com/mapequation/infomap/issues/634)) ([1f7718b](https://github.com/mapequation/infomap/commit/1f7718b8684bd59ed55b511b066dadbe3061c934))
+* add run JSON reports ([#629](https://github.com/mapequation/infomap/issues/629)) ([1eff104](https://github.com/mapequation/infomap/commit/1eff1048ea2ce591a5a3288d2582d1ae1909c249))
+* batch-safe output and reproducible run metadata ([#625](https://github.com/mapequation/infomap/issues/625)) ([#630](https://github.com/mapequation/infomap/issues/630)) ([013f17a](https://github.com/mapequation/infomap/commit/013f17a15ad9063f0bd088ea02b681ff29878059))
+* distributed trial sharding (--trial-offset / --trial-results) ([#635](https://github.com/mapequation/infomap/issues/635)) ([b432bb8](https://github.com/mapequation/infomap/commit/b432bb896e99569aa0559d249e00bb6811f44c4e))
+* **python:** add GraphRAG adapter ([#637](https://github.com/mapequation/infomap/issues/637)) ([898dbe3](https://github.com/mapequation/infomap/commit/898dbe360db7e70f20a7b973fd8876a5e19de83c))
+* run independent trials concurrently with --parallel-trials ([#628](https://github.com/mapequation/infomap/issues/628)) ([5df160e](https://github.com/mapequation/infomap/commit/5df160e4fbcc2551ec529625a165fde25e14c5b9))
+
+
+### Bug Fixes
+
+* stabilize inner parallelization ([#594](https://github.com/mapequation/infomap/issues/594)) ([0c927f9](https://github.com/mapequation/infomap/commit/0c927f9b52288a25cc0d30edc6ee9c92102f359a))
+
+
+### Performance Improvements
+
+* cut multi-trial peak memory ~40% and shrink hot-path value types ([#622](https://github.com/mapequation/infomap/issues/622)) ([48d2843](https://github.com/mapequation/infomap/commit/48d2843cfc9d76e1023b3037b1bcdd0c7a28d3c1))
+
 ## [2.11.0](https://github.com/mapequation/infomap/compare/v2.10.1...v2.11.0) (2026-05-28)
 
 
