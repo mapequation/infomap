@@ -5,4 +5,5 @@ Infomap class
 
 .. autoclass:: Infomap
    :members:
+   :inherited-members:
    :show-inheritance:
