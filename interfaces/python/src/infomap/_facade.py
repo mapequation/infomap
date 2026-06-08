@@ -552,15 +552,6 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, _InfomapWrapper):
     def _repr_html_(self):
         return _repr_html(self)
 
-    @property
-    def network(self):
-        """Compatibility proxy for selected former network methods."""
-        try:
-            return self._network_proxy
-        except AttributeError:
-            self._network_proxy = _NetworkProxy(self)
-            return self._network_proxy
-
     @classmethod
     def from_options(cls, options, args=None):
         """Create an :class:`Infomap` instance from :class:`InfomapOptions`."""
@@ -1819,6 +1810,15 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, _InfomapWrapper):
             initial_partition=initial_partition,
             **options.to_kwargs(),
         )
+
+    @property
+    def network(self):
+        """Compatibility proxy for selected former network methods."""
+        try:
+            return self._network_proxy
+        except AttributeError:
+            self._network_proxy = _NetworkProxy(self)
+            return self._network_proxy
 
     @property
     def codelength(self):
