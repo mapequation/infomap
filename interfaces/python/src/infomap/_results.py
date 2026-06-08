@@ -903,7 +903,7 @@ class _InfomapResultsMixin:
         int
             The number of nodes
         """
-        return self.network.numNodes()
+        return super().numNodes()
 
     @property
     def num_links(self):
@@ -914,7 +914,7 @@ class _InfomapResultsMixin:
         int
             The number of links
         """
-        return self.network.numLinks()
+        return super().numLinks()
 
     @property
     def num_physical_nodes(self):
@@ -929,7 +929,7 @@ class _InfomapResultsMixin:
         int
             The number of nodes
         """
-        return self.network.numPhysicalNodes()
+        return super().numPhysicalNodes()
 
     @property
     def num_top_modules(self):

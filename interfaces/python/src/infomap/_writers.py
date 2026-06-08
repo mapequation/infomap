@@ -143,7 +143,7 @@ class _InfomapWritersMixin:
         ----------
         filename : str
         """
-        return self.network.writeStateNetwork(filename)
+        return self.writeStateNetwork(filename)
 
     def write_pajek(self, filename, flow=False):
         """Write network to a Pajek file.
@@ -158,4 +158,4 @@ class _InfomapWritersMixin:
         flow : bool, optional
             If the flow should be included. Default ``False``.
         """
-        return self.network.writePajekNetwork(filename, flow)
+        return self.writePajekNetwork(filename, flow)

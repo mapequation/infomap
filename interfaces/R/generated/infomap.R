@@ -160,113 +160,6 @@ function(fun, userData = NULL)
 
 
 setClass('C++Reference', contains = 'ExternalReference')
-setClass('_p_infomap__FlowModel', contains = 'C++Reference')
-setClass("infomap::FlowModel",
-    representation(
-        undirected = "integer",
-        directed = "integer",
-        undirdir = "integer",
-        outdirdir = "integer",
-        rawdir = "integer",
-        precomputed = "integer",
-        value = "integer"),
-        contains = "RSWIGStruct")
-
-
-# End class infomap::FlowModel
-
-setClass('_p_infomap__Config', contains = 'C++Reference')
-setClass("infomap::Config",
-    representation(
-        isCLI = "logical",
-        networkFile = "character",
-        stateInput = "logical",
-        stateOutput = "logical",
-        multilayerInput = "logical",
-        weightThreshold = "numeric",
-        bipartite = "logical",
-        skipAdjustBipartiteFlow = "logical",
-        bipartiteTeleportation = "logical",
-        noSelfLinks = "logical",
-        nodeLimit = "integer",
-        matchableMultilayerIds = "integer",
-        clusterDataFile = "character",
-        metaDataFile = "character",
-        metaDataRate = "numeric",
-        unweightedMetaData = "logical",
-        numMetaDataDimensions = "integer",
-        clusterDataIsHard = "logical",
-        assignToNeighbouringModule = "logical",
-        noInfomap = "logical",
-        flowModelIsSet = "logical",
-        directed = "logical",
-        useNodeWeightsAsFlow = "logical",
-        teleportToNodes = "logical",
-        markovTime = "numeric",
-        variableMarkovTime = "logical",
-        variableMarkovTimeDamping = "numeric",
-        variableMarkovTimeMinLocalScale = "numeric",
-        markovTimeNoSelfLinks = "logical",
-        multilayerRelaxRate = "numeric",
-        multilayerRelaxLimit = "integer",
-        multilayerRelaxLimitUp = "integer",
-        multilayerRelaxLimitDown = "integer",
-        multilayerJSRelaxRate = "numeric",
-        multilayerRelaxByJensenShannonDivergence = "logical",
-        multilayerJSRelaxLimit = "integer",
-        maxFlowIterations = "integer",
-        twoLevel = "logical",
-        noCoarseTune = "logical",
-        recordedTeleportation = "logical",
-        regularized = "logical",
-        regularizationStrength = "numeric",
-        teleportationProbability = "numeric",
-        preferredNumberOfModules = "integer",
-        entropyBiasCorrection = "logical",
-        entropyBiasCorrectionMultiplier = "numeric",
-        seedToRandomNumberGenerator = "integer",
-        numTrials = "integer",
-        minimumCodelengthImprovement = "numeric",
-        minimumSingleNodeCodelengthImprovement = "numeric",
-        randomizeCoreLoopLimit = "logical",
-        coreLoopLimit = "integer",
-        levelAggregationLimit = "integer",
-        tuneIterationLimit = "integer",
-        minimumRelativeTuneIterationImprovement = "numeric",
-        onlySuperModules = "logical",
-        fastHierarchicalSolution = "integer",
-        preferModularSolution = "logical",
-        innerParallelization = "logical",
-        parallelTrials = "logical",
-        numRandomMoves = "integer",
-        maxDegreeForRandomMoves = "integer",
-        outDirectory = "character",
-        outName = "character",
-        outputFormats = "character",
-        printTree = "logical",
-        printFlowTree = "logical",
-        printNewick = "logical",
-        printJson = "logical",
-        printCsv = "logical",
-        printClu = "logical",
-        printAllTrials = "logical",
-        cluLevel = "integer",
-        printFlowNetwork = "logical",
-        printPajekNetwork = "logical",
-        printStateNetwork = "logical",
-        noFileOutput = "logical",
-        verbosity = "integer",
-        verboseNumberPrecision = "integer",
-        silent = "logical",
-        prettyOutput = "logical",
-        hideBipartiteNodes = "logical",
-        version = "character",
-        parsedString = "character"),
-        contains = "RSWIGStruct")
-
-
-# End class infomap::Config
-
 setClass('_p_infomap__FlowData', contains = 'C++Reference')
 setClass("infomap::FlowData",
     representation(
@@ -395,35 +288,8 @@ setClass("infomap::InfomapParentIterator",
 # End class infomap::InfomapParentIterator
 
 setClass('_p_std__vectorT_double_t', contains = 'C++Reference')
-setClass('_p_infomap__StateNetwork', contains = 'C++Reference')
-setClass('_p_infomap__Network', contains = c('_p_infomap__StateNetwork'))
-setClass('_p_infomap__LayerNode', contains = 'C++Reference')
-setClass("infomap::LayerNode",
-    representation(
-        layer = "integer",
-        node = "integer"),
-        contains = "RSWIGStruct")
-
-
-# End class infomap::LayerNode
-
-setClass('_p_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t', contains = 'C++Reference')
-setClass('_p_infomap__InfomapConfigT_infomap__InfomapBase_t', contains = c('_p_infomap__Config'))
-setClass('_p_infomap__InfomapBase', contains = c('_p_infomap__InfomapConfigT_infomap__InfomapBase_t'))
-setClass('_p_infomap__detail__PerLevelStat', contains = 'C++Reference')
-setClass("infomap::detail::PerLevelStat",
-    representation(
-        numModules = "integer",
-        numLeafNodes = "integer",
-        indexLength = "numeric",
-        leafLength = "numeric"),
-        contains = "RSWIGStruct")
-
-
-# End class infomap::detail::PerLevelStat
-
-setClass('_p_infomap__detail__PartitionQueue', contains = 'C++Reference')
 setClass('_p_std__vectorT_infomap__LinkResult_t', contains = 'C++Reference')
+setClass('_p_std__mapT_unsigned_int_unsigned_int_t', contains = 'C++Reference')
 setClass('_p_std__mapT_unsigned_int_std__vectorT_unsigned_int_t_t', contains = 'C++Reference')
 setClass('_p_std__mapT_unsigned_int_std__string_t', contains = 'C++Reference')
 setClass('_p_std__pairT_unsigned_int_unsigned_int_t', contains = 'C++Reference')
@@ -449,7 +315,7 @@ setClass("infomap::LinkResult",
 
 # End class infomap::LinkResult
 
-setClass('_p_infomap__InfomapWrapper', contains = c('_p_infomap__InfomapBase'))
+setClass('_p_infomap__InfomapWrapper', contains = 'C++Reference')
 setClass("infomap::InfomapWrapper",
     representation(
 ),
@@ -480,3230 +346,6 @@ function(from) {if (!is.null(from$"__str__")) from$"__str__"()})
 suppressMessages(suppressWarnings(setMethod('print', 'ExternalReference',
 function(x) {print(as(x, "character"))})))
 
-# Start of FlowModel_value_set
-
-`FlowModel_value_set` = function(self, s_value)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_value = as.integer(s_value);
-  
-  if(length(s_value) > 1) {
-    warning("using only the first element of s_value");
-  };
-  
-  ;.Call('R_swig_FlowModel_value_set', self, s_value, PACKAGE='infomap');
-  
-}
-
-attr(`FlowModel_value_set`, 'returnType') = 'void'
-attr(`FlowModel_value_set`, "inputTypes") = c('_p_infomap__FlowModel', 'integer')
-class(`FlowModel_value_set`) = c("SWIGFunction", class('FlowModel_value_set'))
-
-# Start of FlowModel_value_get
-
-`FlowModel_value_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_FlowModel_value_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`FlowModel_value_get`, 'returnType') = 'integer'
-attr(`FlowModel_value_get`, "inputTypes") = c('_p_infomap__FlowModel')
-class(`FlowModel_value_get`) = c("SWIGFunction", class('FlowModel_value_get'))
-
-# Start of new_FlowModel
-
-`FlowModel` = function(val)
-{
-  val = as.integer(val);
-  
-  if(length(val) > 1) {
-    warning("using only the first element of val");
-  };
-  
-  ;ans = .Call('R_swig_new_FlowModel', val, PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__FlowModel", ref=ans);
-  
-  reg.finalizer(ans@ref, delete_FlowModel);
-  ans
-  
-}
-
-attr(`FlowModel`, 'returnType') = '_p_infomap__FlowModel'
-attr(`FlowModel`, "inputTypes") = c('integer')
-class(`FlowModel`) = c("SWIGFunction", class('FlowModel'))
-
-# Start of FlowModel_Equal
-
-`FlowModel_Equal` = function(self, val, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  val = as.integer(val);
-  
-  if(length(val) > 1) {
-    warning("using only the first element of val");
-  };
-  
-  ;ans = .Call('R_swig_FlowModel_Equal', self, val, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__FlowModel", ref=ans);
-  
-  ans
-  
-}
-
-attr(`FlowModel_Equal`, 'returnType') = '_p_infomap__FlowModel'
-attr(`FlowModel_Equal`, "inputTypes") = c('_p_infomap__FlowModel', 'integer')
-class(`FlowModel_Equal`) = c("SWIGFunction", class('FlowModel_Equal'))
-
-# Start of delete_FlowModel
-
-`delete_FlowModel` = function(self)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_delete_FlowModel', self, PACKAGE='infomap');
-  
-}
-
-attr(`delete_FlowModel`, 'returnType') = 'void'
-attr(`delete_FlowModel`, "inputTypes") = c('_p_infomap__FlowModel')
-class(`delete_FlowModel`) = c("SWIGFunction", class('delete_FlowModel'))
-
-# Start of accessor method for infomap::FlowModel
-setMethod('$', '_p_infomap__FlowModel', function(x, name)
-
-{
-  accessorFuns = list('value' = FlowModel_value_get, 'Equal' = FlowModel_Equal);
-  vaccessors = c('value');
-  ;        idx = pmatch(name, names(accessorFuns));
-  if(is.na(idx)) 
-  return(callNextMethod(x, name));
-  f = accessorFuns[[idx]];
-  if (is.na(match(name, vaccessors))) function(...){
-    f(x, ...)
-  } else f(x);
-}
-
-
-);
-# end of accessor method for infomap::FlowModel
-# Start of accessor method for infomap::FlowModel
-setMethod('$<-', '_p_infomap__FlowModel', function(x, name, value)
-
-{
-  accessorFuns = list('value' = FlowModel_value_set);
-  ;        idx = pmatch(name, names(accessorFuns));
-  if(is.na(idx)) 
-  return(callNextMethod(x, name, value));
-  f = accessorFuns[[idx]];
-  f(x, value);
-  x;
-}
-
-
-);
-setMethod('[[<-', c('_p_infomap__FlowModel', 'character'),function(x, i, j, ..., value)
-
-{
-  name = i;
-  accessorFuns = list('value' = FlowModel_value_set);
-  ;        idx = pmatch(name, names(accessorFuns));
-  if(is.na(idx)) 
-  return(callNextMethod(x, name, value));
-  f = accessorFuns[[idx]];
-  f(x, value);
-  x;
-}
-
-
-);
-# end of accessor method for infomap::FlowModel
-setMethod('delete', '_p_infomap__FlowModel', function(obj) {delete_infomap__FlowModel(obj)})
-# Start definition of copy functions & methods for infomap::FlowModel
-CopyToR_infomap__FlowModel = function(value, obj = new("infomap::FlowModel"))
-{
-  obj@undirected = value$undirected;
-  obj@directed = value$directed;
-  obj@undirdir = value$undirdir;
-  obj@outdirdir = value$outdirdir;
-  obj@rawdir = value$rawdir;
-  obj@precomputed = value$precomputed;
-  obj@value = value$value;
-  obj;
-}
-
-
-
-CopyToC_infomap__FlowModel = function(value, obj)
-{
-  obj$undirected = value@undirected;
-  obj$directed = value@directed;
-  obj$undirdir = value@undirdir;
-  obj$outdirdir = value@outdirdir;
-  obj$rawdir = value@rawdir;
-  obj$precomputed = value@precomputed;
-  obj$value = value@value;
-  obj
-}
-
-
-
-# Start definition of copy methods for infomap::FlowModel
-setMethod('copyToR', '_p_infomap__FlowModel', CopyToR_infomap__FlowModel);
-setMethod('copyToC', 'infomap::FlowModel', CopyToC_infomap__FlowModel);
-
-# End definition of copy methods for infomap::FlowModel
-# End definition of copy functions & methods for infomap::FlowModel
-# Start of flowModelToString
-
-`flowModelToString` = function(flowModel)
-{
-  if (inherits(flowModel, "ExternalReference")) flowModel = slot(flowModel,"ref"); 
-  ;.Call('R_swig_flowModelToString', flowModel, PACKAGE='infomap');
-  
-}
-
-attr(`flowModelToString`, 'returnType') = 'character'
-attr(`flowModelToString`, "inputTypes") = c('_p_infomap__FlowModel')
-class(`flowModelToString`) = c("SWIGFunction", class('flowModelToString'))
-
-# Start of Config_isCLI_set
-
-`Config_isCLI_set` = function(self, s_isCLI)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_isCLI = as.logical(s_isCLI);
-  ;.Call('R_swig_Config_isCLI_set', self, s_isCLI, PACKAGE='infomap');
-  
-}
-
-attr(`Config_isCLI_set`, 'returnType') = 'void'
-attr(`Config_isCLI_set`, "inputTypes") = c('_p_infomap__Config', 'logical')
-class(`Config_isCLI_set`) = c("SWIGFunction", class('Config_isCLI_set'))
-
-# Start of Config_isCLI_get
-
-`Config_isCLI_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_isCLI_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_isCLI_get`, 'returnType') = 'logical'
-attr(`Config_isCLI_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_isCLI_get`) = c("SWIGFunction", class('Config_isCLI_get'))
-
-# Start of Config_networkFile_set
-
-`Config_networkFile_set` = function(self, s_networkFile)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_networkFile = as(s_networkFile, "character"); 
-  ;.Call('R_swig_Config_networkFile_set', self, s_networkFile, PACKAGE='infomap');
-  
-}
-
-attr(`Config_networkFile_set`, 'returnType') = 'void'
-attr(`Config_networkFile_set`, "inputTypes") = c('_p_infomap__Config', 'character')
-class(`Config_networkFile_set`) = c("SWIGFunction", class('Config_networkFile_set'))
-
-# Start of Config_networkFile_get
-
-`Config_networkFile_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_networkFile_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_networkFile_get`, 'returnType') = 'character'
-attr(`Config_networkFile_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_networkFile_get`) = c("SWIGFunction", class('Config_networkFile_get'))
-
-# Start of Config_additionalInput_set
-
-`Config_additionalInput_set` = function(self, s_additionalInput)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  if (inherits(s_additionalInput, "ExternalReference")) s_additionalInput = slot(s_additionalInput,"ref"); 
-  ;.Call('R_swig_Config_additionalInput_set', self, s_additionalInput, PACKAGE='infomap');
-  
-}
-
-attr(`Config_additionalInput_set`, 'returnType') = 'void'
-attr(`Config_additionalInput_set`, "inputTypes") = c('_p_infomap__Config', '_p_std__vectorT_std__string_std__allocatorT_std__string_t_t')
-class(`Config_additionalInput_set`) = c("SWIGFunction", class('Config_additionalInput_set'))
-
-# Start of Config_additionalInput_get
-
-`Config_additionalInput_get` = function(self)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;ans = .Call('R_swig_Config_additionalInput_get', self, PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_std__vectorT_std__string_std__allocatorT_std__string_t_t", ref=ans);
-  
-  ans
-  
-}
-
-attr(`Config_additionalInput_get`, 'returnType') = '_p_std__vectorT_std__string_std__allocatorT_std__string_t_t'
-attr(`Config_additionalInput_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_additionalInput_get`) = c("SWIGFunction", class('Config_additionalInput_get'))
-
-# Start of Config_stateInput_set
-
-`Config_stateInput_set` = function(self, s_stateInput)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_stateInput = as.logical(s_stateInput);
-  ;.Call('R_swig_Config_stateInput_set', self, s_stateInput, PACKAGE='infomap');
-  
-}
-
-attr(`Config_stateInput_set`, 'returnType') = 'void'
-attr(`Config_stateInput_set`, "inputTypes") = c('_p_infomap__Config', 'logical')
-class(`Config_stateInput_set`) = c("SWIGFunction", class('Config_stateInput_set'))
-
-# Start of Config_stateInput_get
-
-`Config_stateInput_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_stateInput_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_stateInput_get`, 'returnType') = 'logical'
-attr(`Config_stateInput_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_stateInput_get`) = c("SWIGFunction", class('Config_stateInput_get'))
-
-# Start of Config_stateOutput_set
-
-`Config_stateOutput_set` = function(self, s_stateOutput)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_stateOutput = as.logical(s_stateOutput);
-  ;.Call('R_swig_Config_stateOutput_set', self, s_stateOutput, PACKAGE='infomap');
-  
-}
-
-attr(`Config_stateOutput_set`, 'returnType') = 'void'
-attr(`Config_stateOutput_set`, "inputTypes") = c('_p_infomap__Config', 'logical')
-class(`Config_stateOutput_set`) = c("SWIGFunction", class('Config_stateOutput_set'))
-
-# Start of Config_stateOutput_get
-
-`Config_stateOutput_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_stateOutput_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_stateOutput_get`, 'returnType') = 'logical'
-attr(`Config_stateOutput_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_stateOutput_get`) = c("SWIGFunction", class('Config_stateOutput_get'))
-
-# Start of Config_multilayerInput_set
-
-`Config_multilayerInput_set` = function(self, s_multilayerInput)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_multilayerInput = as.logical(s_multilayerInput);
-  ;.Call('R_swig_Config_multilayerInput_set', self, s_multilayerInput, PACKAGE='infomap');
-  
-}
-
-attr(`Config_multilayerInput_set`, 'returnType') = 'void'
-attr(`Config_multilayerInput_set`, "inputTypes") = c('_p_infomap__Config', 'logical')
-class(`Config_multilayerInput_set`) = c("SWIGFunction", class('Config_multilayerInput_set'))
-
-# Start of Config_multilayerInput_get
-
-`Config_multilayerInput_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_multilayerInput_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_multilayerInput_get`, 'returnType') = 'logical'
-attr(`Config_multilayerInput_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_multilayerInput_get`) = c("SWIGFunction", class('Config_multilayerInput_get'))
-
-# Start of Config_weightThreshold_set
-
-`Config_weightThreshold_set` = function(self, s_weightThreshold)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  
-  ;.Call('R_swig_Config_weightThreshold_set', self, s_weightThreshold, PACKAGE='infomap');
-  
-}
-
-attr(`Config_weightThreshold_set`, 'returnType') = 'void'
-attr(`Config_weightThreshold_set`, "inputTypes") = c('_p_infomap__Config', 'numeric')
-class(`Config_weightThreshold_set`) = c("SWIGFunction", class('Config_weightThreshold_set'))
-
-# Start of Config_weightThreshold_get
-
-`Config_weightThreshold_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_weightThreshold_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_weightThreshold_get`, 'returnType') = 'numeric'
-attr(`Config_weightThreshold_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_weightThreshold_get`) = c("SWIGFunction", class('Config_weightThreshold_get'))
-
-# Start of Config_bipartite_set
-
-`Config_bipartite_set` = function(self, s_bipartite)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_bipartite = as.logical(s_bipartite);
-  ;.Call('R_swig_Config_bipartite_set', self, s_bipartite, PACKAGE='infomap');
-  
-}
-
-attr(`Config_bipartite_set`, 'returnType') = 'void'
-attr(`Config_bipartite_set`, "inputTypes") = c('_p_infomap__Config', 'logical')
-class(`Config_bipartite_set`) = c("SWIGFunction", class('Config_bipartite_set'))
-
-# Start of Config_bipartite_get
-
-`Config_bipartite_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_bipartite_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_bipartite_get`, 'returnType') = 'logical'
-attr(`Config_bipartite_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_bipartite_get`) = c("SWIGFunction", class('Config_bipartite_get'))
-
-# Start of Config_skipAdjustBipartiteFlow_set
-
-`Config_skipAdjustBipartiteFlow_set` = function(self, s_skipAdjustBipartiteFlow)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_skipAdjustBipartiteFlow = as.logical(s_skipAdjustBipartiteFlow);
-  ;.Call('R_swig_Config_skipAdjustBipartiteFlow_set', self, s_skipAdjustBipartiteFlow, PACKAGE='infomap');
-  
-}
-
-attr(`Config_skipAdjustBipartiteFlow_set`, 'returnType') = 'void'
-attr(`Config_skipAdjustBipartiteFlow_set`, "inputTypes") = c('_p_infomap__Config', 'logical')
-class(`Config_skipAdjustBipartiteFlow_set`) = c("SWIGFunction", class('Config_skipAdjustBipartiteFlow_set'))
-
-# Start of Config_skipAdjustBipartiteFlow_get
-
-`Config_skipAdjustBipartiteFlow_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_skipAdjustBipartiteFlow_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_skipAdjustBipartiteFlow_get`, 'returnType') = 'logical'
-attr(`Config_skipAdjustBipartiteFlow_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_skipAdjustBipartiteFlow_get`) = c("SWIGFunction", class('Config_skipAdjustBipartiteFlow_get'))
-
-# Start of Config_bipartiteTeleportation_set
-
-`Config_bipartiteTeleportation_set` = function(self, s_bipartiteTeleportation)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_bipartiteTeleportation = as.logical(s_bipartiteTeleportation);
-  ;.Call('R_swig_Config_bipartiteTeleportation_set', self, s_bipartiteTeleportation, PACKAGE='infomap');
-  
-}
-
-attr(`Config_bipartiteTeleportation_set`, 'returnType') = 'void'
-attr(`Config_bipartiteTeleportation_set`, "inputTypes") = c('_p_infomap__Config', 'logical')
-class(`Config_bipartiteTeleportation_set`) = c("SWIGFunction", class('Config_bipartiteTeleportation_set'))
-
-# Start of Config_bipartiteTeleportation_get
-
-`Config_bipartiteTeleportation_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_bipartiteTeleportation_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_bipartiteTeleportation_get`, 'returnType') = 'logical'
-attr(`Config_bipartiteTeleportation_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_bipartiteTeleportation_get`) = c("SWIGFunction", class('Config_bipartiteTeleportation_get'))
-
-# Start of Config_noSelfLinks_set
-
-`Config_noSelfLinks_set` = function(self, s_noSelfLinks)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_noSelfLinks = as.logical(s_noSelfLinks);
-  ;.Call('R_swig_Config_noSelfLinks_set', self, s_noSelfLinks, PACKAGE='infomap');
-  
-}
-
-attr(`Config_noSelfLinks_set`, 'returnType') = 'void'
-attr(`Config_noSelfLinks_set`, "inputTypes") = c('_p_infomap__Config', 'logical')
-class(`Config_noSelfLinks_set`) = c("SWIGFunction", class('Config_noSelfLinks_set'))
-
-# Start of Config_noSelfLinks_get
-
-`Config_noSelfLinks_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_noSelfLinks_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_noSelfLinks_get`, 'returnType') = 'logical'
-attr(`Config_noSelfLinks_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_noSelfLinks_get`) = c("SWIGFunction", class('Config_noSelfLinks_get'))
-
-# Start of Config_nodeLimit_set
-
-`Config_nodeLimit_set` = function(self, s_nodeLimit)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_nodeLimit = as.integer(s_nodeLimit);
-  
-  if(length(s_nodeLimit) > 1) {
-    warning("using only the first element of s_nodeLimit");
-  };
-  
-  ;.Call('R_swig_Config_nodeLimit_set', self, s_nodeLimit, PACKAGE='infomap');
-  
-}
-
-attr(`Config_nodeLimit_set`, 'returnType') = 'void'
-attr(`Config_nodeLimit_set`, "inputTypes") = c('_p_infomap__Config', 'integer')
-class(`Config_nodeLimit_set`) = c("SWIGFunction", class('Config_nodeLimit_set'))
-
-# Start of Config_nodeLimit_get
-
-`Config_nodeLimit_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_nodeLimit_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_nodeLimit_get`, 'returnType') = 'integer'
-attr(`Config_nodeLimit_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_nodeLimit_get`) = c("SWIGFunction", class('Config_nodeLimit_get'))
-
-# Start of Config_matchableMultilayerIds_set
-
-`Config_matchableMultilayerIds_set` = function(self, s_matchableMultilayerIds)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_matchableMultilayerIds = as.integer(s_matchableMultilayerIds);
-  
-  if(length(s_matchableMultilayerIds) > 1) {
-    warning("using only the first element of s_matchableMultilayerIds");
-  };
-  
-  ;.Call('R_swig_Config_matchableMultilayerIds_set', self, s_matchableMultilayerIds, PACKAGE='infomap');
-  
-}
-
-attr(`Config_matchableMultilayerIds_set`, 'returnType') = 'void'
-attr(`Config_matchableMultilayerIds_set`, "inputTypes") = c('_p_infomap__Config', 'integer')
-class(`Config_matchableMultilayerIds_set`) = c("SWIGFunction", class('Config_matchableMultilayerIds_set'))
-
-# Start of Config_matchableMultilayerIds_get
-
-`Config_matchableMultilayerIds_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_matchableMultilayerIds_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_matchableMultilayerIds_get`, 'returnType') = 'integer'
-attr(`Config_matchableMultilayerIds_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_matchableMultilayerIds_get`) = c("SWIGFunction", class('Config_matchableMultilayerIds_get'))
-
-# Start of Config_clusterDataFile_set
-
-`Config_clusterDataFile_set` = function(self, s_clusterDataFile)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_clusterDataFile = as(s_clusterDataFile, "character"); 
-  ;.Call('R_swig_Config_clusterDataFile_set', self, s_clusterDataFile, PACKAGE='infomap');
-  
-}
-
-attr(`Config_clusterDataFile_set`, 'returnType') = 'void'
-attr(`Config_clusterDataFile_set`, "inputTypes") = c('_p_infomap__Config', 'character')
-class(`Config_clusterDataFile_set`) = c("SWIGFunction", class('Config_clusterDataFile_set'))
-
-# Start of Config_clusterDataFile_get
-
-`Config_clusterDataFile_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_clusterDataFile_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_clusterDataFile_get`, 'returnType') = 'character'
-attr(`Config_clusterDataFile_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_clusterDataFile_get`) = c("SWIGFunction", class('Config_clusterDataFile_get'))
-
-# Start of Config_metaDataFile_set
-
-`Config_metaDataFile_set` = function(self, s_metaDataFile)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_metaDataFile = as(s_metaDataFile, "character"); 
-  ;.Call('R_swig_Config_metaDataFile_set', self, s_metaDataFile, PACKAGE='infomap');
-  
-}
-
-attr(`Config_metaDataFile_set`, 'returnType') = 'void'
-attr(`Config_metaDataFile_set`, "inputTypes") = c('_p_infomap__Config', 'character')
-class(`Config_metaDataFile_set`) = c("SWIGFunction", class('Config_metaDataFile_set'))
-
-# Start of Config_metaDataFile_get
-
-`Config_metaDataFile_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_metaDataFile_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_metaDataFile_get`, 'returnType') = 'character'
-attr(`Config_metaDataFile_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_metaDataFile_get`) = c("SWIGFunction", class('Config_metaDataFile_get'))
-
-# Start of Config_metaDataRate_set
-
-`Config_metaDataRate_set` = function(self, s_metaDataRate)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  
-  ;.Call('R_swig_Config_metaDataRate_set', self, s_metaDataRate, PACKAGE='infomap');
-  
-}
-
-attr(`Config_metaDataRate_set`, 'returnType') = 'void'
-attr(`Config_metaDataRate_set`, "inputTypes") = c('_p_infomap__Config', 'numeric')
-class(`Config_metaDataRate_set`) = c("SWIGFunction", class('Config_metaDataRate_set'))
-
-# Start of Config_metaDataRate_get
-
-`Config_metaDataRate_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_metaDataRate_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_metaDataRate_get`, 'returnType') = 'numeric'
-attr(`Config_metaDataRate_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_metaDataRate_get`) = c("SWIGFunction", class('Config_metaDataRate_get'))
-
-# Start of Config_unweightedMetaData_set
-
-`Config_unweightedMetaData_set` = function(self, s_unweightedMetaData)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_unweightedMetaData = as.logical(s_unweightedMetaData);
-  ;.Call('R_swig_Config_unweightedMetaData_set', self, s_unweightedMetaData, PACKAGE='infomap');
-  
-}
-
-attr(`Config_unweightedMetaData_set`, 'returnType') = 'void'
-attr(`Config_unweightedMetaData_set`, "inputTypes") = c('_p_infomap__Config', 'logical')
-class(`Config_unweightedMetaData_set`) = c("SWIGFunction", class('Config_unweightedMetaData_set'))
-
-# Start of Config_unweightedMetaData_get
-
-`Config_unweightedMetaData_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_unweightedMetaData_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_unweightedMetaData_get`, 'returnType') = 'logical'
-attr(`Config_unweightedMetaData_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_unweightedMetaData_get`) = c("SWIGFunction", class('Config_unweightedMetaData_get'))
-
-# Start of Config_numMetaDataDimensions_set
-
-`Config_numMetaDataDimensions_set` = function(self, s_numMetaDataDimensions)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_numMetaDataDimensions = as.integer(s_numMetaDataDimensions);
-  
-  if(length(s_numMetaDataDimensions) > 1) {
-    warning("using only the first element of s_numMetaDataDimensions");
-  };
-  
-  ;.Call('R_swig_Config_numMetaDataDimensions_set', self, s_numMetaDataDimensions, PACKAGE='infomap');
-  
-}
-
-attr(`Config_numMetaDataDimensions_set`, 'returnType') = 'void'
-attr(`Config_numMetaDataDimensions_set`, "inputTypes") = c('_p_infomap__Config', 'integer')
-class(`Config_numMetaDataDimensions_set`) = c("SWIGFunction", class('Config_numMetaDataDimensions_set'))
-
-# Start of Config_numMetaDataDimensions_get
-
-`Config_numMetaDataDimensions_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_numMetaDataDimensions_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_numMetaDataDimensions_get`, 'returnType') = 'integer'
-attr(`Config_numMetaDataDimensions_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_numMetaDataDimensions_get`) = c("SWIGFunction", class('Config_numMetaDataDimensions_get'))
-
-# Start of Config_clusterDataIsHard_set
-
-`Config_clusterDataIsHard_set` = function(self, s_clusterDataIsHard)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_clusterDataIsHard = as.logical(s_clusterDataIsHard);
-  ;.Call('R_swig_Config_clusterDataIsHard_set', self, s_clusterDataIsHard, PACKAGE='infomap');
-  
-}
-
-attr(`Config_clusterDataIsHard_set`, 'returnType') = 'void'
-attr(`Config_clusterDataIsHard_set`, "inputTypes") = c('_p_infomap__Config', 'logical')
-class(`Config_clusterDataIsHard_set`) = c("SWIGFunction", class('Config_clusterDataIsHard_set'))
-
-# Start of Config_clusterDataIsHard_get
-
-`Config_clusterDataIsHard_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_clusterDataIsHard_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_clusterDataIsHard_get`, 'returnType') = 'logical'
-attr(`Config_clusterDataIsHard_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_clusterDataIsHard_get`) = c("SWIGFunction", class('Config_clusterDataIsHard_get'))
-
-# Start of Config_assignToNeighbouringModule_set
-
-`Config_assignToNeighbouringModule_set` = function(self, s_assignToNeighbouringModule)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_assignToNeighbouringModule = as.logical(s_assignToNeighbouringModule);
-  ;.Call('R_swig_Config_assignToNeighbouringModule_set', self, s_assignToNeighbouringModule, PACKAGE='infomap');
-  
-}
-
-attr(`Config_assignToNeighbouringModule_set`, 'returnType') = 'void'
-attr(`Config_assignToNeighbouringModule_set`, "inputTypes") = c('_p_infomap__Config', 'logical')
-class(`Config_assignToNeighbouringModule_set`) = c("SWIGFunction", class('Config_assignToNeighbouringModule_set'))
-
-# Start of Config_assignToNeighbouringModule_get
-
-`Config_assignToNeighbouringModule_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_assignToNeighbouringModule_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_assignToNeighbouringModule_get`, 'returnType') = 'logical'
-attr(`Config_assignToNeighbouringModule_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_assignToNeighbouringModule_get`) = c("SWIGFunction", class('Config_assignToNeighbouringModule_get'))
-
-# Start of Config_noInfomap_set
-
-`Config_noInfomap_set` = function(self, s_noInfomap)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_noInfomap = as.logical(s_noInfomap);
-  ;.Call('R_swig_Config_noInfomap_set', self, s_noInfomap, PACKAGE='infomap');
-  
-}
-
-attr(`Config_noInfomap_set`, 'returnType') = 'void'
-attr(`Config_noInfomap_set`, "inputTypes") = c('_p_infomap__Config', 'logical')
-class(`Config_noInfomap_set`) = c("SWIGFunction", class('Config_noInfomap_set'))
-
-# Start of Config_noInfomap_get
-
-`Config_noInfomap_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_noInfomap_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_noInfomap_get`, 'returnType') = 'logical'
-attr(`Config_noInfomap_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_noInfomap_get`) = c("SWIGFunction", class('Config_noInfomap_get'))
-
-# Start of Config_flowModel_set
-
-`Config_flowModel_set` = function(self, s_flowModel)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  if (inherits(s_flowModel, "ExternalReference")) s_flowModel = slot(s_flowModel,"ref"); 
-  ;.Call('R_swig_Config_flowModel_set', self, s_flowModel, PACKAGE='infomap');
-  
-}
-
-attr(`Config_flowModel_set`, 'returnType') = 'void'
-attr(`Config_flowModel_set`, "inputTypes") = c('_p_infomap__Config', '_p_infomap__FlowModel')
-class(`Config_flowModel_set`) = c("SWIGFunction", class('Config_flowModel_set'))
-
-# Start of Config_flowModel_get
-
-`Config_flowModel_get` = function(self)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;ans = .Call('R_swig_Config_flowModel_get', self, PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__FlowModel", ref=ans);
-  
-  ans
-  
-}
-
-attr(`Config_flowModel_get`, 'returnType') = '_p_infomap__FlowModel'
-attr(`Config_flowModel_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_flowModel_get`) = c("SWIGFunction", class('Config_flowModel_get'))
-
-# Start of Config_flowModelIsSet_set
-
-`Config_flowModelIsSet_set` = function(self, s_flowModelIsSet)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_flowModelIsSet = as.logical(s_flowModelIsSet);
-  ;.Call('R_swig_Config_flowModelIsSet_set', self, s_flowModelIsSet, PACKAGE='infomap');
-  
-}
-
-attr(`Config_flowModelIsSet_set`, 'returnType') = 'void'
-attr(`Config_flowModelIsSet_set`, "inputTypes") = c('_p_infomap__Config', 'logical')
-class(`Config_flowModelIsSet_set`) = c("SWIGFunction", class('Config_flowModelIsSet_set'))
-
-# Start of Config_flowModelIsSet_get
-
-`Config_flowModelIsSet_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_flowModelIsSet_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_flowModelIsSet_get`, 'returnType') = 'logical'
-attr(`Config_flowModelIsSet_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_flowModelIsSet_get`) = c("SWIGFunction", class('Config_flowModelIsSet_get'))
-
-# Start of Config_directed_set
-
-`Config_directed_set` = function(self, s_directed)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_directed = as.logical(s_directed);
-  ;.Call('R_swig_Config_directed_set', self, s_directed, PACKAGE='infomap');
-  
-}
-
-attr(`Config_directed_set`, 'returnType') = 'void'
-attr(`Config_directed_set`, "inputTypes") = c('_p_infomap__Config', 'logical')
-class(`Config_directed_set`) = c("SWIGFunction", class('Config_directed_set'))
-
-# Start of Config_directed_get
-
-`Config_directed_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_directed_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_directed_get`, 'returnType') = 'logical'
-attr(`Config_directed_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_directed_get`) = c("SWIGFunction", class('Config_directed_get'))
-
-# Start of Config_useNodeWeightsAsFlow_set
-
-`Config_useNodeWeightsAsFlow_set` = function(self, s_useNodeWeightsAsFlow)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_useNodeWeightsAsFlow = as.logical(s_useNodeWeightsAsFlow);
-  ;.Call('R_swig_Config_useNodeWeightsAsFlow_set', self, s_useNodeWeightsAsFlow, PACKAGE='infomap');
-  
-}
-
-attr(`Config_useNodeWeightsAsFlow_set`, 'returnType') = 'void'
-attr(`Config_useNodeWeightsAsFlow_set`, "inputTypes") = c('_p_infomap__Config', 'logical')
-class(`Config_useNodeWeightsAsFlow_set`) = c("SWIGFunction", class('Config_useNodeWeightsAsFlow_set'))
-
-# Start of Config_useNodeWeightsAsFlow_get
-
-`Config_useNodeWeightsAsFlow_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_useNodeWeightsAsFlow_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_useNodeWeightsAsFlow_get`, 'returnType') = 'logical'
-attr(`Config_useNodeWeightsAsFlow_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_useNodeWeightsAsFlow_get`) = c("SWIGFunction", class('Config_useNodeWeightsAsFlow_get'))
-
-# Start of Config_teleportToNodes_set
-
-`Config_teleportToNodes_set` = function(self, s_teleportToNodes)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_teleportToNodes = as.logical(s_teleportToNodes);
-  ;.Call('R_swig_Config_teleportToNodes_set', self, s_teleportToNodes, PACKAGE='infomap');
-  
-}
-
-attr(`Config_teleportToNodes_set`, 'returnType') = 'void'
-attr(`Config_teleportToNodes_set`, "inputTypes") = c('_p_infomap__Config', 'logical')
-class(`Config_teleportToNodes_set`) = c("SWIGFunction", class('Config_teleportToNodes_set'))
-
-# Start of Config_teleportToNodes_get
-
-`Config_teleportToNodes_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_teleportToNodes_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_teleportToNodes_get`, 'returnType') = 'logical'
-attr(`Config_teleportToNodes_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_teleportToNodes_get`) = c("SWIGFunction", class('Config_teleportToNodes_get'))
-
-# Start of Config_markovTime_set
-
-`Config_markovTime_set` = function(self, s_markovTime)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  
-  ;.Call('R_swig_Config_markovTime_set', self, s_markovTime, PACKAGE='infomap');
-  
-}
-
-attr(`Config_markovTime_set`, 'returnType') = 'void'
-attr(`Config_markovTime_set`, "inputTypes") = c('_p_infomap__Config', 'numeric')
-class(`Config_markovTime_set`) = c("SWIGFunction", class('Config_markovTime_set'))
-
-# Start of Config_markovTime_get
-
-`Config_markovTime_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_markovTime_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_markovTime_get`, 'returnType') = 'numeric'
-attr(`Config_markovTime_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_markovTime_get`) = c("SWIGFunction", class('Config_markovTime_get'))
-
-# Start of Config_variableMarkovTime_set
-
-`Config_variableMarkovTime_set` = function(self, s_variableMarkovTime)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_variableMarkovTime = as.logical(s_variableMarkovTime);
-  ;.Call('R_swig_Config_variableMarkovTime_set', self, s_variableMarkovTime, PACKAGE='infomap');
-  
-}
-
-attr(`Config_variableMarkovTime_set`, 'returnType') = 'void'
-attr(`Config_variableMarkovTime_set`, "inputTypes") = c('_p_infomap__Config', 'logical')
-class(`Config_variableMarkovTime_set`) = c("SWIGFunction", class('Config_variableMarkovTime_set'))
-
-# Start of Config_variableMarkovTime_get
-
-`Config_variableMarkovTime_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_variableMarkovTime_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_variableMarkovTime_get`, 'returnType') = 'logical'
-attr(`Config_variableMarkovTime_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_variableMarkovTime_get`) = c("SWIGFunction", class('Config_variableMarkovTime_get'))
-
-# Start of Config_variableMarkovTimeDamping_set
-
-`Config_variableMarkovTimeDamping_set` = function(self, s_variableMarkovTimeDamping)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  
-  ;.Call('R_swig_Config_variableMarkovTimeDamping_set', self, s_variableMarkovTimeDamping, PACKAGE='infomap');
-  
-}
-
-attr(`Config_variableMarkovTimeDamping_set`, 'returnType') = 'void'
-attr(`Config_variableMarkovTimeDamping_set`, "inputTypes") = c('_p_infomap__Config', 'numeric')
-class(`Config_variableMarkovTimeDamping_set`) = c("SWIGFunction", class('Config_variableMarkovTimeDamping_set'))
-
-# Start of Config_variableMarkovTimeDamping_get
-
-`Config_variableMarkovTimeDamping_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_variableMarkovTimeDamping_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_variableMarkovTimeDamping_get`, 'returnType') = 'numeric'
-attr(`Config_variableMarkovTimeDamping_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_variableMarkovTimeDamping_get`) = c("SWIGFunction", class('Config_variableMarkovTimeDamping_get'))
-
-# Start of Config_variableMarkovTimeMinLocalScale_set
-
-`Config_variableMarkovTimeMinLocalScale_set` = function(self, s_variableMarkovTimeMinLocalScale)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  
-  ;.Call('R_swig_Config_variableMarkovTimeMinLocalScale_set', self, s_variableMarkovTimeMinLocalScale, PACKAGE='infomap');
-  
-}
-
-attr(`Config_variableMarkovTimeMinLocalScale_set`, 'returnType') = 'void'
-attr(`Config_variableMarkovTimeMinLocalScale_set`, "inputTypes") = c('_p_infomap__Config', 'numeric')
-class(`Config_variableMarkovTimeMinLocalScale_set`) = c("SWIGFunction", class('Config_variableMarkovTimeMinLocalScale_set'))
-
-# Start of Config_variableMarkovTimeMinLocalScale_get
-
-`Config_variableMarkovTimeMinLocalScale_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_variableMarkovTimeMinLocalScale_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_variableMarkovTimeMinLocalScale_get`, 'returnType') = 'numeric'
-attr(`Config_variableMarkovTimeMinLocalScale_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_variableMarkovTimeMinLocalScale_get`) = c("SWIGFunction", class('Config_variableMarkovTimeMinLocalScale_get'))
-
-# Start of Config_markovTimeNoSelfLinks_set
-
-`Config_markovTimeNoSelfLinks_set` = function(self, s_markovTimeNoSelfLinks)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_markovTimeNoSelfLinks = as.logical(s_markovTimeNoSelfLinks);
-  ;.Call('R_swig_Config_markovTimeNoSelfLinks_set', self, s_markovTimeNoSelfLinks, PACKAGE='infomap');
-  
-}
-
-attr(`Config_markovTimeNoSelfLinks_set`, 'returnType') = 'void'
-attr(`Config_markovTimeNoSelfLinks_set`, "inputTypes") = c('_p_infomap__Config', 'logical')
-class(`Config_markovTimeNoSelfLinks_set`) = c("SWIGFunction", class('Config_markovTimeNoSelfLinks_set'))
-
-# Start of Config_markovTimeNoSelfLinks_get
-
-`Config_markovTimeNoSelfLinks_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_markovTimeNoSelfLinks_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_markovTimeNoSelfLinks_get`, 'returnType') = 'logical'
-attr(`Config_markovTimeNoSelfLinks_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_markovTimeNoSelfLinks_get`) = c("SWIGFunction", class('Config_markovTimeNoSelfLinks_get'))
-
-# Start of Config_multilayerRelaxRate_set
-
-`Config_multilayerRelaxRate_set` = function(self, s_multilayerRelaxRate)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  
-  ;.Call('R_swig_Config_multilayerRelaxRate_set', self, s_multilayerRelaxRate, PACKAGE='infomap');
-  
-}
-
-attr(`Config_multilayerRelaxRate_set`, 'returnType') = 'void'
-attr(`Config_multilayerRelaxRate_set`, "inputTypes") = c('_p_infomap__Config', 'numeric')
-class(`Config_multilayerRelaxRate_set`) = c("SWIGFunction", class('Config_multilayerRelaxRate_set'))
-
-# Start of Config_multilayerRelaxRate_get
-
-`Config_multilayerRelaxRate_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_multilayerRelaxRate_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_multilayerRelaxRate_get`, 'returnType') = 'numeric'
-attr(`Config_multilayerRelaxRate_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_multilayerRelaxRate_get`) = c("SWIGFunction", class('Config_multilayerRelaxRate_get'))
-
-# Start of Config_multilayerRelaxLimit_set
-
-`Config_multilayerRelaxLimit_set` = function(self, s_multilayerRelaxLimit)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_multilayerRelaxLimit = as.integer(s_multilayerRelaxLimit);
-  
-  if(length(s_multilayerRelaxLimit) > 1) {
-    warning("using only the first element of s_multilayerRelaxLimit");
-  };
-  
-  ;.Call('R_swig_Config_multilayerRelaxLimit_set', self, s_multilayerRelaxLimit, PACKAGE='infomap');
-  
-}
-
-attr(`Config_multilayerRelaxLimit_set`, 'returnType') = 'void'
-attr(`Config_multilayerRelaxLimit_set`, "inputTypes") = c('_p_infomap__Config', 'integer')
-class(`Config_multilayerRelaxLimit_set`) = c("SWIGFunction", class('Config_multilayerRelaxLimit_set'))
-
-# Start of Config_multilayerRelaxLimit_get
-
-`Config_multilayerRelaxLimit_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_multilayerRelaxLimit_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_multilayerRelaxLimit_get`, 'returnType') = 'integer'
-attr(`Config_multilayerRelaxLimit_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_multilayerRelaxLimit_get`) = c("SWIGFunction", class('Config_multilayerRelaxLimit_get'))
-
-# Start of Config_multilayerRelaxLimitUp_set
-
-`Config_multilayerRelaxLimitUp_set` = function(self, s_multilayerRelaxLimitUp)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_multilayerRelaxLimitUp = as.integer(s_multilayerRelaxLimitUp);
-  
-  if(length(s_multilayerRelaxLimitUp) > 1) {
-    warning("using only the first element of s_multilayerRelaxLimitUp");
-  };
-  
-  ;.Call('R_swig_Config_multilayerRelaxLimitUp_set', self, s_multilayerRelaxLimitUp, PACKAGE='infomap');
-  
-}
-
-attr(`Config_multilayerRelaxLimitUp_set`, 'returnType') = 'void'
-attr(`Config_multilayerRelaxLimitUp_set`, "inputTypes") = c('_p_infomap__Config', 'integer')
-class(`Config_multilayerRelaxLimitUp_set`) = c("SWIGFunction", class('Config_multilayerRelaxLimitUp_set'))
-
-# Start of Config_multilayerRelaxLimitUp_get
-
-`Config_multilayerRelaxLimitUp_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_multilayerRelaxLimitUp_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_multilayerRelaxLimitUp_get`, 'returnType') = 'integer'
-attr(`Config_multilayerRelaxLimitUp_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_multilayerRelaxLimitUp_get`) = c("SWIGFunction", class('Config_multilayerRelaxLimitUp_get'))
-
-# Start of Config_multilayerRelaxLimitDown_set
-
-`Config_multilayerRelaxLimitDown_set` = function(self, s_multilayerRelaxLimitDown)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_multilayerRelaxLimitDown = as.integer(s_multilayerRelaxLimitDown);
-  
-  if(length(s_multilayerRelaxLimitDown) > 1) {
-    warning("using only the first element of s_multilayerRelaxLimitDown");
-  };
-  
-  ;.Call('R_swig_Config_multilayerRelaxLimitDown_set', self, s_multilayerRelaxLimitDown, PACKAGE='infomap');
-  
-}
-
-attr(`Config_multilayerRelaxLimitDown_set`, 'returnType') = 'void'
-attr(`Config_multilayerRelaxLimitDown_set`, "inputTypes") = c('_p_infomap__Config', 'integer')
-class(`Config_multilayerRelaxLimitDown_set`) = c("SWIGFunction", class('Config_multilayerRelaxLimitDown_set'))
-
-# Start of Config_multilayerRelaxLimitDown_get
-
-`Config_multilayerRelaxLimitDown_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_multilayerRelaxLimitDown_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_multilayerRelaxLimitDown_get`, 'returnType') = 'integer'
-attr(`Config_multilayerRelaxLimitDown_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_multilayerRelaxLimitDown_get`) = c("SWIGFunction", class('Config_multilayerRelaxLimitDown_get'))
-
-# Start of Config_multilayerJSRelaxRate_set
-
-`Config_multilayerJSRelaxRate_set` = function(self, s_multilayerJSRelaxRate)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  
-  ;.Call('R_swig_Config_multilayerJSRelaxRate_set', self, s_multilayerJSRelaxRate, PACKAGE='infomap');
-  
-}
-
-attr(`Config_multilayerJSRelaxRate_set`, 'returnType') = 'void'
-attr(`Config_multilayerJSRelaxRate_set`, "inputTypes") = c('_p_infomap__Config', 'numeric')
-class(`Config_multilayerJSRelaxRate_set`) = c("SWIGFunction", class('Config_multilayerJSRelaxRate_set'))
-
-# Start of Config_multilayerJSRelaxRate_get
-
-`Config_multilayerJSRelaxRate_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_multilayerJSRelaxRate_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_multilayerJSRelaxRate_get`, 'returnType') = 'numeric'
-attr(`Config_multilayerJSRelaxRate_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_multilayerJSRelaxRate_get`) = c("SWIGFunction", class('Config_multilayerJSRelaxRate_get'))
-
-# Start of Config_multilayerRelaxByJensenShannonDivergence_set
-
-`Config_multilayerRelaxByJensenShannonDivergence_set` = function(self, s_multilayerRelaxByJensenShannonDivergence)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_multilayerRelaxByJensenShannonDivergence = as.logical(s_multilayerRelaxByJensenShannonDivergence);
-  ;.Call('R_swig_Config_multilayerRelaxByJensenShannonDivergence_set', self, s_multilayerRelaxByJensenShannonDivergence, PACKAGE='infomap');
-  
-}
-
-attr(`Config_multilayerRelaxByJensenShannonDivergence_set`, 'returnType') = 'void'
-attr(`Config_multilayerRelaxByJensenShannonDivergence_set`, "inputTypes") = c('_p_infomap__Config', 'logical')
-class(`Config_multilayerRelaxByJensenShannonDivergence_set`) = c("SWIGFunction", class('Config_multilayerRelaxByJensenShannonDivergence_set'))
-
-# Start of Config_multilayerRelaxByJensenShannonDivergence_get
-
-`Config_multilayerRelaxByJensenShannonDivergence_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_multilayerRelaxByJensenShannonDivergence_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_multilayerRelaxByJensenShannonDivergence_get`, 'returnType') = 'logical'
-attr(`Config_multilayerRelaxByJensenShannonDivergence_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_multilayerRelaxByJensenShannonDivergence_get`) = c("SWIGFunction", class('Config_multilayerRelaxByJensenShannonDivergence_get'))
-
-# Start of Config_multilayerJSRelaxLimit_set
-
-`Config_multilayerJSRelaxLimit_set` = function(self, s_multilayerJSRelaxLimit)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_multilayerJSRelaxLimit = as.integer(s_multilayerJSRelaxLimit);
-  
-  if(length(s_multilayerJSRelaxLimit) > 1) {
-    warning("using only the first element of s_multilayerJSRelaxLimit");
-  };
-  
-  ;.Call('R_swig_Config_multilayerJSRelaxLimit_set', self, s_multilayerJSRelaxLimit, PACKAGE='infomap');
-  
-}
-
-attr(`Config_multilayerJSRelaxLimit_set`, 'returnType') = 'void'
-attr(`Config_multilayerJSRelaxLimit_set`, "inputTypes") = c('_p_infomap__Config', 'integer')
-class(`Config_multilayerJSRelaxLimit_set`) = c("SWIGFunction", class('Config_multilayerJSRelaxLimit_set'))
-
-# Start of Config_multilayerJSRelaxLimit_get
-
-`Config_multilayerJSRelaxLimit_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_multilayerJSRelaxLimit_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_multilayerJSRelaxLimit_get`, 'returnType') = 'integer'
-attr(`Config_multilayerJSRelaxLimit_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_multilayerJSRelaxLimit_get`) = c("SWIGFunction", class('Config_multilayerJSRelaxLimit_get'))
-
-# Start of Config_maxFlowIterations_set
-
-`Config_maxFlowIterations_set` = function(self, s_maxFlowIterations)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_maxFlowIterations = as.integer(s_maxFlowIterations);
-  
-  if(length(s_maxFlowIterations) > 1) {
-    warning("using only the first element of s_maxFlowIterations");
-  };
-  
-  ;.Call('R_swig_Config_maxFlowIterations_set', self, s_maxFlowIterations, PACKAGE='infomap');
-  
-}
-
-attr(`Config_maxFlowIterations_set`, 'returnType') = 'void'
-attr(`Config_maxFlowIterations_set`, "inputTypes") = c('_p_infomap__Config', 'integer')
-class(`Config_maxFlowIterations_set`) = c("SWIGFunction", class('Config_maxFlowIterations_set'))
-
-# Start of Config_maxFlowIterations_get
-
-`Config_maxFlowIterations_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_maxFlowIterations_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_maxFlowIterations_get`, 'returnType') = 'integer'
-attr(`Config_maxFlowIterations_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_maxFlowIterations_get`) = c("SWIGFunction", class('Config_maxFlowIterations_get'))
-
-# Start of Config_twoLevel_set
-
-`Config_twoLevel_set` = function(self, s_twoLevel)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_twoLevel = as.logical(s_twoLevel);
-  ;.Call('R_swig_Config_twoLevel_set', self, s_twoLevel, PACKAGE='infomap');
-  
-}
-
-attr(`Config_twoLevel_set`, 'returnType') = 'void'
-attr(`Config_twoLevel_set`, "inputTypes") = c('_p_infomap__Config', 'logical')
-class(`Config_twoLevel_set`) = c("SWIGFunction", class('Config_twoLevel_set'))
-
-# Start of Config_twoLevel_get
-
-`Config_twoLevel_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_twoLevel_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_twoLevel_get`, 'returnType') = 'logical'
-attr(`Config_twoLevel_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_twoLevel_get`) = c("SWIGFunction", class('Config_twoLevel_get'))
-
-# Start of Config_noCoarseTune_set
-
-`Config_noCoarseTune_set` = function(self, s_noCoarseTune)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_noCoarseTune = as.logical(s_noCoarseTune);
-  ;.Call('R_swig_Config_noCoarseTune_set', self, s_noCoarseTune, PACKAGE='infomap');
-  
-}
-
-attr(`Config_noCoarseTune_set`, 'returnType') = 'void'
-attr(`Config_noCoarseTune_set`, "inputTypes") = c('_p_infomap__Config', 'logical')
-class(`Config_noCoarseTune_set`) = c("SWIGFunction", class('Config_noCoarseTune_set'))
-
-# Start of Config_noCoarseTune_get
-
-`Config_noCoarseTune_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_noCoarseTune_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_noCoarseTune_get`, 'returnType') = 'logical'
-attr(`Config_noCoarseTune_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_noCoarseTune_get`) = c("SWIGFunction", class('Config_noCoarseTune_get'))
-
-# Start of Config_recordedTeleportation_set
-
-`Config_recordedTeleportation_set` = function(self, s_recordedTeleportation)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_recordedTeleportation = as.logical(s_recordedTeleportation);
-  ;.Call('R_swig_Config_recordedTeleportation_set', self, s_recordedTeleportation, PACKAGE='infomap');
-  
-}
-
-attr(`Config_recordedTeleportation_set`, 'returnType') = 'void'
-attr(`Config_recordedTeleportation_set`, "inputTypes") = c('_p_infomap__Config', 'logical')
-class(`Config_recordedTeleportation_set`) = c("SWIGFunction", class('Config_recordedTeleportation_set'))
-
-# Start of Config_recordedTeleportation_get
-
-`Config_recordedTeleportation_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_recordedTeleportation_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_recordedTeleportation_get`, 'returnType') = 'logical'
-attr(`Config_recordedTeleportation_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_recordedTeleportation_get`) = c("SWIGFunction", class('Config_recordedTeleportation_get'))
-
-# Start of Config_regularized_set
-
-`Config_regularized_set` = function(self, s_regularized)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_regularized = as.logical(s_regularized);
-  ;.Call('R_swig_Config_regularized_set', self, s_regularized, PACKAGE='infomap');
-  
-}
-
-attr(`Config_regularized_set`, 'returnType') = 'void'
-attr(`Config_regularized_set`, "inputTypes") = c('_p_infomap__Config', 'logical')
-class(`Config_regularized_set`) = c("SWIGFunction", class('Config_regularized_set'))
-
-# Start of Config_regularized_get
-
-`Config_regularized_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_regularized_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_regularized_get`, 'returnType') = 'logical'
-attr(`Config_regularized_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_regularized_get`) = c("SWIGFunction", class('Config_regularized_get'))
-
-# Start of Config_regularizationStrength_set
-
-`Config_regularizationStrength_set` = function(self, s_regularizationStrength)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  
-  ;.Call('R_swig_Config_regularizationStrength_set', self, s_regularizationStrength, PACKAGE='infomap');
-  
-}
-
-attr(`Config_regularizationStrength_set`, 'returnType') = 'void'
-attr(`Config_regularizationStrength_set`, "inputTypes") = c('_p_infomap__Config', 'numeric')
-class(`Config_regularizationStrength_set`) = c("SWIGFunction", class('Config_regularizationStrength_set'))
-
-# Start of Config_regularizationStrength_get
-
-`Config_regularizationStrength_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_regularizationStrength_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_regularizationStrength_get`, 'returnType') = 'numeric'
-attr(`Config_regularizationStrength_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_regularizationStrength_get`) = c("SWIGFunction", class('Config_regularizationStrength_get'))
-
-# Start of Config_teleportationProbability_set
-
-`Config_teleportationProbability_set` = function(self, s_teleportationProbability)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  
-  ;.Call('R_swig_Config_teleportationProbability_set', self, s_teleportationProbability, PACKAGE='infomap');
-  
-}
-
-attr(`Config_teleportationProbability_set`, 'returnType') = 'void'
-attr(`Config_teleportationProbability_set`, "inputTypes") = c('_p_infomap__Config', 'numeric')
-class(`Config_teleportationProbability_set`) = c("SWIGFunction", class('Config_teleportationProbability_set'))
-
-# Start of Config_teleportationProbability_get
-
-`Config_teleportationProbability_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_teleportationProbability_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_teleportationProbability_get`, 'returnType') = 'numeric'
-attr(`Config_teleportationProbability_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_teleportationProbability_get`) = c("SWIGFunction", class('Config_teleportationProbability_get'))
-
-# Start of Config_preferredNumberOfModules_set
-
-`Config_preferredNumberOfModules_set` = function(self, s_preferredNumberOfModules)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_preferredNumberOfModules = as.integer(s_preferredNumberOfModules);
-  
-  if(length(s_preferredNumberOfModules) > 1) {
-    warning("using only the first element of s_preferredNumberOfModules");
-  };
-  
-  ;.Call('R_swig_Config_preferredNumberOfModules_set', self, s_preferredNumberOfModules, PACKAGE='infomap');
-  
-}
-
-attr(`Config_preferredNumberOfModules_set`, 'returnType') = 'void'
-attr(`Config_preferredNumberOfModules_set`, "inputTypes") = c('_p_infomap__Config', 'integer')
-class(`Config_preferredNumberOfModules_set`) = c("SWIGFunction", class('Config_preferredNumberOfModules_set'))
-
-# Start of Config_preferredNumberOfModules_get
-
-`Config_preferredNumberOfModules_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_preferredNumberOfModules_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_preferredNumberOfModules_get`, 'returnType') = 'integer'
-attr(`Config_preferredNumberOfModules_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_preferredNumberOfModules_get`) = c("SWIGFunction", class('Config_preferredNumberOfModules_get'))
-
-# Start of Config_entropyBiasCorrection_set
-
-`Config_entropyBiasCorrection_set` = function(self, s_entropyBiasCorrection)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_entropyBiasCorrection = as.logical(s_entropyBiasCorrection);
-  ;.Call('R_swig_Config_entropyBiasCorrection_set', self, s_entropyBiasCorrection, PACKAGE='infomap');
-  
-}
-
-attr(`Config_entropyBiasCorrection_set`, 'returnType') = 'void'
-attr(`Config_entropyBiasCorrection_set`, "inputTypes") = c('_p_infomap__Config', 'logical')
-class(`Config_entropyBiasCorrection_set`) = c("SWIGFunction", class('Config_entropyBiasCorrection_set'))
-
-# Start of Config_entropyBiasCorrection_get
-
-`Config_entropyBiasCorrection_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_entropyBiasCorrection_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_entropyBiasCorrection_get`, 'returnType') = 'logical'
-attr(`Config_entropyBiasCorrection_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_entropyBiasCorrection_get`) = c("SWIGFunction", class('Config_entropyBiasCorrection_get'))
-
-# Start of Config_entropyBiasCorrectionMultiplier_set
-
-`Config_entropyBiasCorrectionMultiplier_set` = function(self, s_entropyBiasCorrectionMultiplier)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  
-  ;.Call('R_swig_Config_entropyBiasCorrectionMultiplier_set', self, s_entropyBiasCorrectionMultiplier, PACKAGE='infomap');
-  
-}
-
-attr(`Config_entropyBiasCorrectionMultiplier_set`, 'returnType') = 'void'
-attr(`Config_entropyBiasCorrectionMultiplier_set`, "inputTypes") = c('_p_infomap__Config', 'numeric')
-class(`Config_entropyBiasCorrectionMultiplier_set`) = c("SWIGFunction", class('Config_entropyBiasCorrectionMultiplier_set'))
-
-# Start of Config_entropyBiasCorrectionMultiplier_get
-
-`Config_entropyBiasCorrectionMultiplier_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_entropyBiasCorrectionMultiplier_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_entropyBiasCorrectionMultiplier_get`, 'returnType') = 'numeric'
-attr(`Config_entropyBiasCorrectionMultiplier_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_entropyBiasCorrectionMultiplier_get`) = c("SWIGFunction", class('Config_entropyBiasCorrectionMultiplier_get'))
-
-# Start of Config_seedToRandomNumberGenerator_set
-
-`Config_seedToRandomNumberGenerator_set` = function(self, s_seedToRandomNumberGenerator)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_seedToRandomNumberGenerator = as.integer(s_seedToRandomNumberGenerator);
-  
-  if(length(s_seedToRandomNumberGenerator) > 1) {
-    warning("using only the first element of s_seedToRandomNumberGenerator");
-  };
-  
-  ;.Call('R_swig_Config_seedToRandomNumberGenerator_set', self, s_seedToRandomNumberGenerator, PACKAGE='infomap');
-  
-}
-
-attr(`Config_seedToRandomNumberGenerator_set`, 'returnType') = 'void'
-attr(`Config_seedToRandomNumberGenerator_set`, "inputTypes") = c('_p_infomap__Config', 'integer')
-class(`Config_seedToRandomNumberGenerator_set`) = c("SWIGFunction", class('Config_seedToRandomNumberGenerator_set'))
-
-# Start of Config_seedToRandomNumberGenerator_get
-
-`Config_seedToRandomNumberGenerator_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_seedToRandomNumberGenerator_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_seedToRandomNumberGenerator_get`, 'returnType') = 'integer'
-attr(`Config_seedToRandomNumberGenerator_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_seedToRandomNumberGenerator_get`) = c("SWIGFunction", class('Config_seedToRandomNumberGenerator_get'))
-
-# Start of Config_numTrials_set
-
-`Config_numTrials_set` = function(self, s_numTrials)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_numTrials = as.integer(s_numTrials);
-  
-  if(length(s_numTrials) > 1) {
-    warning("using only the first element of s_numTrials");
-  };
-  
-  ;.Call('R_swig_Config_numTrials_set', self, s_numTrials, PACKAGE='infomap');
-  
-}
-
-attr(`Config_numTrials_set`, 'returnType') = 'void'
-attr(`Config_numTrials_set`, "inputTypes") = c('_p_infomap__Config', 'integer')
-class(`Config_numTrials_set`) = c("SWIGFunction", class('Config_numTrials_set'))
-
-# Start of Config_numTrials_get
-
-`Config_numTrials_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_numTrials_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_numTrials_get`, 'returnType') = 'integer'
-attr(`Config_numTrials_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_numTrials_get`) = c("SWIGFunction", class('Config_numTrials_get'))
-
-# Start of Config_minimumCodelengthImprovement_set
-
-`Config_minimumCodelengthImprovement_set` = function(self, s_minimumCodelengthImprovement)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  
-  ;.Call('R_swig_Config_minimumCodelengthImprovement_set', self, s_minimumCodelengthImprovement, PACKAGE='infomap');
-  
-}
-
-attr(`Config_minimumCodelengthImprovement_set`, 'returnType') = 'void'
-attr(`Config_minimumCodelengthImprovement_set`, "inputTypes") = c('_p_infomap__Config', 'numeric')
-class(`Config_minimumCodelengthImprovement_set`) = c("SWIGFunction", class('Config_minimumCodelengthImprovement_set'))
-
-# Start of Config_minimumCodelengthImprovement_get
-
-`Config_minimumCodelengthImprovement_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_minimumCodelengthImprovement_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_minimumCodelengthImprovement_get`, 'returnType') = 'numeric'
-attr(`Config_minimumCodelengthImprovement_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_minimumCodelengthImprovement_get`) = c("SWIGFunction", class('Config_minimumCodelengthImprovement_get'))
-
-# Start of Config_minimumSingleNodeCodelengthImprovement_set
-
-`Config_minimumSingleNodeCodelengthImprovement_set` = function(self, s_minimumSingleNodeCodelengthImprovement)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  
-  ;.Call('R_swig_Config_minimumSingleNodeCodelengthImprovement_set', self, s_minimumSingleNodeCodelengthImprovement, PACKAGE='infomap');
-  
-}
-
-attr(`Config_minimumSingleNodeCodelengthImprovement_set`, 'returnType') = 'void'
-attr(`Config_minimumSingleNodeCodelengthImprovement_set`, "inputTypes") = c('_p_infomap__Config', 'numeric')
-class(`Config_minimumSingleNodeCodelengthImprovement_set`) = c("SWIGFunction", class('Config_minimumSingleNodeCodelengthImprovement_set'))
-
-# Start of Config_minimumSingleNodeCodelengthImprovement_get
-
-`Config_minimumSingleNodeCodelengthImprovement_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_minimumSingleNodeCodelengthImprovement_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_minimumSingleNodeCodelengthImprovement_get`, 'returnType') = 'numeric'
-attr(`Config_minimumSingleNodeCodelengthImprovement_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_minimumSingleNodeCodelengthImprovement_get`) = c("SWIGFunction", class('Config_minimumSingleNodeCodelengthImprovement_get'))
-
-# Start of Config_randomizeCoreLoopLimit_set
-
-`Config_randomizeCoreLoopLimit_set` = function(self, s_randomizeCoreLoopLimit)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_randomizeCoreLoopLimit = as.logical(s_randomizeCoreLoopLimit);
-  ;.Call('R_swig_Config_randomizeCoreLoopLimit_set', self, s_randomizeCoreLoopLimit, PACKAGE='infomap');
-  
-}
-
-attr(`Config_randomizeCoreLoopLimit_set`, 'returnType') = 'void'
-attr(`Config_randomizeCoreLoopLimit_set`, "inputTypes") = c('_p_infomap__Config', 'logical')
-class(`Config_randomizeCoreLoopLimit_set`) = c("SWIGFunction", class('Config_randomizeCoreLoopLimit_set'))
-
-# Start of Config_randomizeCoreLoopLimit_get
-
-`Config_randomizeCoreLoopLimit_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_randomizeCoreLoopLimit_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_randomizeCoreLoopLimit_get`, 'returnType') = 'logical'
-attr(`Config_randomizeCoreLoopLimit_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_randomizeCoreLoopLimit_get`) = c("SWIGFunction", class('Config_randomizeCoreLoopLimit_get'))
-
-# Start of Config_coreLoopLimit_set
-
-`Config_coreLoopLimit_set` = function(self, s_coreLoopLimit)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_coreLoopLimit = as.integer(s_coreLoopLimit);
-  
-  if(length(s_coreLoopLimit) > 1) {
-    warning("using only the first element of s_coreLoopLimit");
-  };
-  
-  ;.Call('R_swig_Config_coreLoopLimit_set', self, s_coreLoopLimit, PACKAGE='infomap');
-  
-}
-
-attr(`Config_coreLoopLimit_set`, 'returnType') = 'void'
-attr(`Config_coreLoopLimit_set`, "inputTypes") = c('_p_infomap__Config', 'integer')
-class(`Config_coreLoopLimit_set`) = c("SWIGFunction", class('Config_coreLoopLimit_set'))
-
-# Start of Config_coreLoopLimit_get
-
-`Config_coreLoopLimit_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_coreLoopLimit_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_coreLoopLimit_get`, 'returnType') = 'integer'
-attr(`Config_coreLoopLimit_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_coreLoopLimit_get`) = c("SWIGFunction", class('Config_coreLoopLimit_get'))
-
-# Start of Config_levelAggregationLimit_set
-
-`Config_levelAggregationLimit_set` = function(self, s_levelAggregationLimit)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_levelAggregationLimit = as.integer(s_levelAggregationLimit);
-  
-  if(length(s_levelAggregationLimit) > 1) {
-    warning("using only the first element of s_levelAggregationLimit");
-  };
-  
-  ;.Call('R_swig_Config_levelAggregationLimit_set', self, s_levelAggregationLimit, PACKAGE='infomap');
-  
-}
-
-attr(`Config_levelAggregationLimit_set`, 'returnType') = 'void'
-attr(`Config_levelAggregationLimit_set`, "inputTypes") = c('_p_infomap__Config', 'integer')
-class(`Config_levelAggregationLimit_set`) = c("SWIGFunction", class('Config_levelAggregationLimit_set'))
-
-# Start of Config_levelAggregationLimit_get
-
-`Config_levelAggregationLimit_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_levelAggregationLimit_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_levelAggregationLimit_get`, 'returnType') = 'integer'
-attr(`Config_levelAggregationLimit_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_levelAggregationLimit_get`) = c("SWIGFunction", class('Config_levelAggregationLimit_get'))
-
-# Start of Config_tuneIterationLimit_set
-
-`Config_tuneIterationLimit_set` = function(self, s_tuneIterationLimit)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_tuneIterationLimit = as.integer(s_tuneIterationLimit);
-  
-  if(length(s_tuneIterationLimit) > 1) {
-    warning("using only the first element of s_tuneIterationLimit");
-  };
-  
-  ;.Call('R_swig_Config_tuneIterationLimit_set', self, s_tuneIterationLimit, PACKAGE='infomap');
-  
-}
-
-attr(`Config_tuneIterationLimit_set`, 'returnType') = 'void'
-attr(`Config_tuneIterationLimit_set`, "inputTypes") = c('_p_infomap__Config', 'integer')
-class(`Config_tuneIterationLimit_set`) = c("SWIGFunction", class('Config_tuneIterationLimit_set'))
-
-# Start of Config_tuneIterationLimit_get
-
-`Config_tuneIterationLimit_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_tuneIterationLimit_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_tuneIterationLimit_get`, 'returnType') = 'integer'
-attr(`Config_tuneIterationLimit_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_tuneIterationLimit_get`) = c("SWIGFunction", class('Config_tuneIterationLimit_get'))
-
-# Start of Config_minimumRelativeTuneIterationImprovement_set
-
-`Config_minimumRelativeTuneIterationImprovement_set` = function(self, s_minimumRelativeTuneIterationImprovement)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  
-  ;.Call('R_swig_Config_minimumRelativeTuneIterationImprovement_set', self, s_minimumRelativeTuneIterationImprovement, PACKAGE='infomap');
-  
-}
-
-attr(`Config_minimumRelativeTuneIterationImprovement_set`, 'returnType') = 'void'
-attr(`Config_minimumRelativeTuneIterationImprovement_set`, "inputTypes") = c('_p_infomap__Config', 'numeric')
-class(`Config_minimumRelativeTuneIterationImprovement_set`) = c("SWIGFunction", class('Config_minimumRelativeTuneIterationImprovement_set'))
-
-# Start of Config_minimumRelativeTuneIterationImprovement_get
-
-`Config_minimumRelativeTuneIterationImprovement_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_minimumRelativeTuneIterationImprovement_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_minimumRelativeTuneIterationImprovement_get`, 'returnType') = 'numeric'
-attr(`Config_minimumRelativeTuneIterationImprovement_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_minimumRelativeTuneIterationImprovement_get`) = c("SWIGFunction", class('Config_minimumRelativeTuneIterationImprovement_get'))
-
-# Start of Config_onlySuperModules_set
-
-`Config_onlySuperModules_set` = function(self, s_onlySuperModules)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_onlySuperModules = as.logical(s_onlySuperModules);
-  ;.Call('R_swig_Config_onlySuperModules_set', self, s_onlySuperModules, PACKAGE='infomap');
-  
-}
-
-attr(`Config_onlySuperModules_set`, 'returnType') = 'void'
-attr(`Config_onlySuperModules_set`, "inputTypes") = c('_p_infomap__Config', 'logical')
-class(`Config_onlySuperModules_set`) = c("SWIGFunction", class('Config_onlySuperModules_set'))
-
-# Start of Config_onlySuperModules_get
-
-`Config_onlySuperModules_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_onlySuperModules_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_onlySuperModules_get`, 'returnType') = 'logical'
-attr(`Config_onlySuperModules_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_onlySuperModules_get`) = c("SWIGFunction", class('Config_onlySuperModules_get'))
-
-# Start of Config_fastHierarchicalSolution_set
-
-`Config_fastHierarchicalSolution_set` = function(self, s_fastHierarchicalSolution)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_fastHierarchicalSolution = as.integer(s_fastHierarchicalSolution);
-  
-  if(length(s_fastHierarchicalSolution) > 1) {
-    warning("using only the first element of s_fastHierarchicalSolution");
-  };
-  
-  ;.Call('R_swig_Config_fastHierarchicalSolution_set', self, s_fastHierarchicalSolution, PACKAGE='infomap');
-  
-}
-
-attr(`Config_fastHierarchicalSolution_set`, 'returnType') = 'void'
-attr(`Config_fastHierarchicalSolution_set`, "inputTypes") = c('_p_infomap__Config', 'integer')
-class(`Config_fastHierarchicalSolution_set`) = c("SWIGFunction", class('Config_fastHierarchicalSolution_set'))
-
-# Start of Config_fastHierarchicalSolution_get
-
-`Config_fastHierarchicalSolution_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_fastHierarchicalSolution_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_fastHierarchicalSolution_get`, 'returnType') = 'integer'
-attr(`Config_fastHierarchicalSolution_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_fastHierarchicalSolution_get`) = c("SWIGFunction", class('Config_fastHierarchicalSolution_get'))
-
-# Start of Config_preferModularSolution_set
-
-`Config_preferModularSolution_set` = function(self, s_preferModularSolution)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_preferModularSolution = as.logical(s_preferModularSolution);
-  ;.Call('R_swig_Config_preferModularSolution_set', self, s_preferModularSolution, PACKAGE='infomap');
-  
-}
-
-attr(`Config_preferModularSolution_set`, 'returnType') = 'void'
-attr(`Config_preferModularSolution_set`, "inputTypes") = c('_p_infomap__Config', 'logical')
-class(`Config_preferModularSolution_set`) = c("SWIGFunction", class('Config_preferModularSolution_set'))
-
-# Start of Config_preferModularSolution_get
-
-`Config_preferModularSolution_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_preferModularSolution_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_preferModularSolution_get`, 'returnType') = 'logical'
-attr(`Config_preferModularSolution_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_preferModularSolution_get`) = c("SWIGFunction", class('Config_preferModularSolution_get'))
-
-# Start of Config_innerParallelization_set
-
-`Config_innerParallelization_set` = function(self, s_innerParallelization)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_innerParallelization = as.logical(s_innerParallelization);
-  ;.Call('R_swig_Config_innerParallelization_set', self, s_innerParallelization, PACKAGE='infomap');
-  
-}
-
-attr(`Config_innerParallelization_set`, 'returnType') = 'void'
-attr(`Config_innerParallelization_set`, "inputTypes") = c('_p_infomap__Config', 'logical')
-class(`Config_innerParallelization_set`) = c("SWIGFunction", class('Config_innerParallelization_set'))
-
-# Start of Config_innerParallelization_get
-
-`Config_innerParallelization_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_innerParallelization_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_innerParallelization_get`, 'returnType') = 'logical'
-attr(`Config_innerParallelization_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_innerParallelization_get`) = c("SWIGFunction", class('Config_innerParallelization_get'))
-
-# Start of Config_parallelTrials_set
-
-`Config_parallelTrials_set` = function(self, s_parallelTrials)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_parallelTrials = as.logical(s_parallelTrials);
-  ;.Call('R_swig_Config_parallelTrials_set', self, s_parallelTrials, PACKAGE='infomap');
-  
-}
-
-attr(`Config_parallelTrials_set`, 'returnType') = 'void'
-attr(`Config_parallelTrials_set`, "inputTypes") = c('_p_infomap__Config', 'logical')
-class(`Config_parallelTrials_set`) = c("SWIGFunction", class('Config_parallelTrials_set'))
-
-# Start of Config_parallelTrials_get
-
-`Config_parallelTrials_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_parallelTrials_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_parallelTrials_get`, 'returnType') = 'logical'
-attr(`Config_parallelTrials_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_parallelTrials_get`) = c("SWIGFunction", class('Config_parallelTrials_get'))
-
-# Start of Config_numRandomMoves_set
-
-`Config_numRandomMoves_set` = function(self, s_numRandomMoves)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_numRandomMoves = as.integer(s_numRandomMoves);
-  
-  if(length(s_numRandomMoves) > 1) {
-    warning("using only the first element of s_numRandomMoves");
-  };
-  
-  ;.Call('R_swig_Config_numRandomMoves_set', self, s_numRandomMoves, PACKAGE='infomap');
-  
-}
-
-attr(`Config_numRandomMoves_set`, 'returnType') = 'void'
-attr(`Config_numRandomMoves_set`, "inputTypes") = c('_p_infomap__Config', 'integer')
-class(`Config_numRandomMoves_set`) = c("SWIGFunction", class('Config_numRandomMoves_set'))
-
-# Start of Config_numRandomMoves_get
-
-`Config_numRandomMoves_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_numRandomMoves_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_numRandomMoves_get`, 'returnType') = 'integer'
-attr(`Config_numRandomMoves_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_numRandomMoves_get`) = c("SWIGFunction", class('Config_numRandomMoves_get'))
-
-# Start of Config_maxDegreeForRandomMoves_set
-
-`Config_maxDegreeForRandomMoves_set` = function(self, s_maxDegreeForRandomMoves)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_maxDegreeForRandomMoves = as.integer(s_maxDegreeForRandomMoves);
-  
-  if(length(s_maxDegreeForRandomMoves) > 1) {
-    warning("using only the first element of s_maxDegreeForRandomMoves");
-  };
-  
-  ;.Call('R_swig_Config_maxDegreeForRandomMoves_set', self, s_maxDegreeForRandomMoves, PACKAGE='infomap');
-  
-}
-
-attr(`Config_maxDegreeForRandomMoves_set`, 'returnType') = 'void'
-attr(`Config_maxDegreeForRandomMoves_set`, "inputTypes") = c('_p_infomap__Config', 'integer')
-class(`Config_maxDegreeForRandomMoves_set`) = c("SWIGFunction", class('Config_maxDegreeForRandomMoves_set'))
-
-# Start of Config_maxDegreeForRandomMoves_get
-
-`Config_maxDegreeForRandomMoves_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_maxDegreeForRandomMoves_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_maxDegreeForRandomMoves_get`, 'returnType') = 'integer'
-attr(`Config_maxDegreeForRandomMoves_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_maxDegreeForRandomMoves_get`) = c("SWIGFunction", class('Config_maxDegreeForRandomMoves_get'))
-
-# Start of Config_outDirectory_set
-
-`Config_outDirectory_set` = function(self, s_outDirectory)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_outDirectory = as(s_outDirectory, "character"); 
-  ;.Call('R_swig_Config_outDirectory_set', self, s_outDirectory, PACKAGE='infomap');
-  
-}
-
-attr(`Config_outDirectory_set`, 'returnType') = 'void'
-attr(`Config_outDirectory_set`, "inputTypes") = c('_p_infomap__Config', 'character')
-class(`Config_outDirectory_set`) = c("SWIGFunction", class('Config_outDirectory_set'))
-
-# Start of Config_outDirectory_get
-
-`Config_outDirectory_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_outDirectory_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_outDirectory_get`, 'returnType') = 'character'
-attr(`Config_outDirectory_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_outDirectory_get`) = c("SWIGFunction", class('Config_outDirectory_get'))
-
-# Start of Config_outName_set
-
-`Config_outName_set` = function(self, s_outName)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_outName = as(s_outName, "character"); 
-  ;.Call('R_swig_Config_outName_set', self, s_outName, PACKAGE='infomap');
-  
-}
-
-attr(`Config_outName_set`, 'returnType') = 'void'
-attr(`Config_outName_set`, "inputTypes") = c('_p_infomap__Config', 'character')
-class(`Config_outName_set`) = c("SWIGFunction", class('Config_outName_set'))
-
-# Start of Config_outName_get
-
-`Config_outName_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_outName_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_outName_get`, 'returnType') = 'character'
-attr(`Config_outName_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_outName_get`) = c("SWIGFunction", class('Config_outName_get'))
-
-# Start of Config_outputFormats_set
-
-`Config_outputFormats_set` = function(self, s_outputFormats)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_outputFormats = as(s_outputFormats, "character"); 
-  ;.Call('R_swig_Config_outputFormats_set', self, s_outputFormats, PACKAGE='infomap');
-  
-}
-
-attr(`Config_outputFormats_set`, 'returnType') = 'void'
-attr(`Config_outputFormats_set`, "inputTypes") = c('_p_infomap__Config', 'character')
-class(`Config_outputFormats_set`) = c("SWIGFunction", class('Config_outputFormats_set'))
-
-# Start of Config_outputFormats_get
-
-`Config_outputFormats_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_outputFormats_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_outputFormats_get`, 'returnType') = 'character'
-attr(`Config_outputFormats_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_outputFormats_get`) = c("SWIGFunction", class('Config_outputFormats_get'))
-
-# Start of Config_printTree_set
-
-`Config_printTree_set` = function(self, s_printTree)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_printTree = as.logical(s_printTree);
-  ;.Call('R_swig_Config_printTree_set', self, s_printTree, PACKAGE='infomap');
-  
-}
-
-attr(`Config_printTree_set`, 'returnType') = 'void'
-attr(`Config_printTree_set`, "inputTypes") = c('_p_infomap__Config', 'logical')
-class(`Config_printTree_set`) = c("SWIGFunction", class('Config_printTree_set'))
-
-# Start of Config_printTree_get
-
-`Config_printTree_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_printTree_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_printTree_get`, 'returnType') = 'logical'
-attr(`Config_printTree_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_printTree_get`) = c("SWIGFunction", class('Config_printTree_get'))
-
-# Start of Config_printFlowTree_set
-
-`Config_printFlowTree_set` = function(self, s_printFlowTree)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_printFlowTree = as.logical(s_printFlowTree);
-  ;.Call('R_swig_Config_printFlowTree_set', self, s_printFlowTree, PACKAGE='infomap');
-  
-}
-
-attr(`Config_printFlowTree_set`, 'returnType') = 'void'
-attr(`Config_printFlowTree_set`, "inputTypes") = c('_p_infomap__Config', 'logical')
-class(`Config_printFlowTree_set`) = c("SWIGFunction", class('Config_printFlowTree_set'))
-
-# Start of Config_printFlowTree_get
-
-`Config_printFlowTree_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_printFlowTree_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_printFlowTree_get`, 'returnType') = 'logical'
-attr(`Config_printFlowTree_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_printFlowTree_get`) = c("SWIGFunction", class('Config_printFlowTree_get'))
-
-# Start of Config_printNewick_set
-
-`Config_printNewick_set` = function(self, s_printNewick)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_printNewick = as.logical(s_printNewick);
-  ;.Call('R_swig_Config_printNewick_set', self, s_printNewick, PACKAGE='infomap');
-  
-}
-
-attr(`Config_printNewick_set`, 'returnType') = 'void'
-attr(`Config_printNewick_set`, "inputTypes") = c('_p_infomap__Config', 'logical')
-class(`Config_printNewick_set`) = c("SWIGFunction", class('Config_printNewick_set'))
-
-# Start of Config_printNewick_get
-
-`Config_printNewick_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_printNewick_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_printNewick_get`, 'returnType') = 'logical'
-attr(`Config_printNewick_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_printNewick_get`) = c("SWIGFunction", class('Config_printNewick_get'))
-
-# Start of Config_printJson_set
-
-`Config_printJson_set` = function(self, s_printJson)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_printJson = as.logical(s_printJson);
-  ;.Call('R_swig_Config_printJson_set', self, s_printJson, PACKAGE='infomap');
-  
-}
-
-attr(`Config_printJson_set`, 'returnType') = 'void'
-attr(`Config_printJson_set`, "inputTypes") = c('_p_infomap__Config', 'logical')
-class(`Config_printJson_set`) = c("SWIGFunction", class('Config_printJson_set'))
-
-# Start of Config_printJson_get
-
-`Config_printJson_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_printJson_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_printJson_get`, 'returnType') = 'logical'
-attr(`Config_printJson_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_printJson_get`) = c("SWIGFunction", class('Config_printJson_get'))
-
-# Start of Config_printCsv_set
-
-`Config_printCsv_set` = function(self, s_printCsv)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_printCsv = as.logical(s_printCsv);
-  ;.Call('R_swig_Config_printCsv_set', self, s_printCsv, PACKAGE='infomap');
-  
-}
-
-attr(`Config_printCsv_set`, 'returnType') = 'void'
-attr(`Config_printCsv_set`, "inputTypes") = c('_p_infomap__Config', 'logical')
-class(`Config_printCsv_set`) = c("SWIGFunction", class('Config_printCsv_set'))
-
-# Start of Config_printCsv_get
-
-`Config_printCsv_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_printCsv_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_printCsv_get`, 'returnType') = 'logical'
-attr(`Config_printCsv_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_printCsv_get`) = c("SWIGFunction", class('Config_printCsv_get'))
-
-# Start of Config_printClu_set
-
-`Config_printClu_set` = function(self, s_printClu)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_printClu = as.logical(s_printClu);
-  ;.Call('R_swig_Config_printClu_set', self, s_printClu, PACKAGE='infomap');
-  
-}
-
-attr(`Config_printClu_set`, 'returnType') = 'void'
-attr(`Config_printClu_set`, "inputTypes") = c('_p_infomap__Config', 'logical')
-class(`Config_printClu_set`) = c("SWIGFunction", class('Config_printClu_set'))
-
-# Start of Config_printClu_get
-
-`Config_printClu_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_printClu_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_printClu_get`, 'returnType') = 'logical'
-attr(`Config_printClu_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_printClu_get`) = c("SWIGFunction", class('Config_printClu_get'))
-
-# Start of Config_printAllTrials_set
-
-`Config_printAllTrials_set` = function(self, s_printAllTrials)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_printAllTrials = as.logical(s_printAllTrials);
-  ;.Call('R_swig_Config_printAllTrials_set', self, s_printAllTrials, PACKAGE='infomap');
-  
-}
-
-attr(`Config_printAllTrials_set`, 'returnType') = 'void'
-attr(`Config_printAllTrials_set`, "inputTypes") = c('_p_infomap__Config', 'logical')
-class(`Config_printAllTrials_set`) = c("SWIGFunction", class('Config_printAllTrials_set'))
-
-# Start of Config_printAllTrials_get
-
-`Config_printAllTrials_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_printAllTrials_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_printAllTrials_get`, 'returnType') = 'logical'
-attr(`Config_printAllTrials_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_printAllTrials_get`) = c("SWIGFunction", class('Config_printAllTrials_get'))
-
-# Start of Config_cluLevel_set
-
-`Config_cluLevel_set` = function(self, s_cluLevel)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_cluLevel = as.integer(s_cluLevel);
-  
-  if(length(s_cluLevel) > 1) {
-    warning("using only the first element of s_cluLevel");
-  };
-  
-  ;.Call('R_swig_Config_cluLevel_set', self, s_cluLevel, PACKAGE='infomap');
-  
-}
-
-attr(`Config_cluLevel_set`, 'returnType') = 'void'
-attr(`Config_cluLevel_set`, "inputTypes") = c('_p_infomap__Config', 'integer')
-class(`Config_cluLevel_set`) = c("SWIGFunction", class('Config_cluLevel_set'))
-
-# Start of Config_cluLevel_get
-
-`Config_cluLevel_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_cluLevel_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_cluLevel_get`, 'returnType') = 'integer'
-attr(`Config_cluLevel_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_cluLevel_get`) = c("SWIGFunction", class('Config_cluLevel_get'))
-
-# Start of Config_printFlowNetwork_set
-
-`Config_printFlowNetwork_set` = function(self, s_printFlowNetwork)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_printFlowNetwork = as.logical(s_printFlowNetwork);
-  ;.Call('R_swig_Config_printFlowNetwork_set', self, s_printFlowNetwork, PACKAGE='infomap');
-  
-}
-
-attr(`Config_printFlowNetwork_set`, 'returnType') = 'void'
-attr(`Config_printFlowNetwork_set`, "inputTypes") = c('_p_infomap__Config', 'logical')
-class(`Config_printFlowNetwork_set`) = c("SWIGFunction", class('Config_printFlowNetwork_set'))
-
-# Start of Config_printFlowNetwork_get
-
-`Config_printFlowNetwork_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_printFlowNetwork_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_printFlowNetwork_get`, 'returnType') = 'logical'
-attr(`Config_printFlowNetwork_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_printFlowNetwork_get`) = c("SWIGFunction", class('Config_printFlowNetwork_get'))
-
-# Start of Config_printPajekNetwork_set
-
-`Config_printPajekNetwork_set` = function(self, s_printPajekNetwork)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_printPajekNetwork = as.logical(s_printPajekNetwork);
-  ;.Call('R_swig_Config_printPajekNetwork_set', self, s_printPajekNetwork, PACKAGE='infomap');
-  
-}
-
-attr(`Config_printPajekNetwork_set`, 'returnType') = 'void'
-attr(`Config_printPajekNetwork_set`, "inputTypes") = c('_p_infomap__Config', 'logical')
-class(`Config_printPajekNetwork_set`) = c("SWIGFunction", class('Config_printPajekNetwork_set'))
-
-# Start of Config_printPajekNetwork_get
-
-`Config_printPajekNetwork_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_printPajekNetwork_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_printPajekNetwork_get`, 'returnType') = 'logical'
-attr(`Config_printPajekNetwork_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_printPajekNetwork_get`) = c("SWIGFunction", class('Config_printPajekNetwork_get'))
-
-# Start of Config_printStateNetwork_set
-
-`Config_printStateNetwork_set` = function(self, s_printStateNetwork)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_printStateNetwork = as.logical(s_printStateNetwork);
-  ;.Call('R_swig_Config_printStateNetwork_set', self, s_printStateNetwork, PACKAGE='infomap');
-  
-}
-
-attr(`Config_printStateNetwork_set`, 'returnType') = 'void'
-attr(`Config_printStateNetwork_set`, "inputTypes") = c('_p_infomap__Config', 'logical')
-class(`Config_printStateNetwork_set`) = c("SWIGFunction", class('Config_printStateNetwork_set'))
-
-# Start of Config_printStateNetwork_get
-
-`Config_printStateNetwork_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_printStateNetwork_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_printStateNetwork_get`, 'returnType') = 'logical'
-attr(`Config_printStateNetwork_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_printStateNetwork_get`) = c("SWIGFunction", class('Config_printStateNetwork_get'))
-
-# Start of Config_noFileOutput_set
-
-`Config_noFileOutput_set` = function(self, s_noFileOutput)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_noFileOutput = as.logical(s_noFileOutput);
-  ;.Call('R_swig_Config_noFileOutput_set', self, s_noFileOutput, PACKAGE='infomap');
-  
-}
-
-attr(`Config_noFileOutput_set`, 'returnType') = 'void'
-attr(`Config_noFileOutput_set`, "inputTypes") = c('_p_infomap__Config', 'logical')
-class(`Config_noFileOutput_set`) = c("SWIGFunction", class('Config_noFileOutput_set'))
-
-# Start of Config_noFileOutput_get
-
-`Config_noFileOutput_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_noFileOutput_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_noFileOutput_get`, 'returnType') = 'logical'
-attr(`Config_noFileOutput_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_noFileOutput_get`) = c("SWIGFunction", class('Config_noFileOutput_get'))
-
-# Start of Config_verbosity_set
-
-`Config_verbosity_set` = function(self, s_verbosity)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_verbosity = as.integer(s_verbosity);
-  
-  if(length(s_verbosity) > 1) {
-    warning("using only the first element of s_verbosity");
-  };
-  
-  ;.Call('R_swig_Config_verbosity_set', self, s_verbosity, PACKAGE='infomap');
-  
-}
-
-attr(`Config_verbosity_set`, 'returnType') = 'void'
-attr(`Config_verbosity_set`, "inputTypes") = c('_p_infomap__Config', 'integer')
-class(`Config_verbosity_set`) = c("SWIGFunction", class('Config_verbosity_set'))
-
-# Start of Config_verbosity_get
-
-`Config_verbosity_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_verbosity_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_verbosity_get`, 'returnType') = 'integer'
-attr(`Config_verbosity_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_verbosity_get`) = c("SWIGFunction", class('Config_verbosity_get'))
-
-# Start of Config_verboseNumberPrecision_set
-
-`Config_verboseNumberPrecision_set` = function(self, s_verboseNumberPrecision)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_verboseNumberPrecision = as.integer(s_verboseNumberPrecision);
-  
-  if(length(s_verboseNumberPrecision) > 1) {
-    warning("using only the first element of s_verboseNumberPrecision");
-  };
-  
-  ;.Call('R_swig_Config_verboseNumberPrecision_set', self, s_verboseNumberPrecision, PACKAGE='infomap');
-  
-}
-
-attr(`Config_verboseNumberPrecision_set`, 'returnType') = 'void'
-attr(`Config_verboseNumberPrecision_set`, "inputTypes") = c('_p_infomap__Config', 'integer')
-class(`Config_verboseNumberPrecision_set`) = c("SWIGFunction", class('Config_verboseNumberPrecision_set'))
-
-# Start of Config_verboseNumberPrecision_get
-
-`Config_verboseNumberPrecision_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_verboseNumberPrecision_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_verboseNumberPrecision_get`, 'returnType') = 'integer'
-attr(`Config_verboseNumberPrecision_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_verboseNumberPrecision_get`) = c("SWIGFunction", class('Config_verboseNumberPrecision_get'))
-
-# Start of Config_silent_set
-
-`Config_silent_set` = function(self, s_silent)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_silent = as.logical(s_silent);
-  ;.Call('R_swig_Config_silent_set', self, s_silent, PACKAGE='infomap');
-  
-}
-
-attr(`Config_silent_set`, 'returnType') = 'void'
-attr(`Config_silent_set`, "inputTypes") = c('_p_infomap__Config', 'logical')
-class(`Config_silent_set`) = c("SWIGFunction", class('Config_silent_set'))
-
-# Start of Config_silent_get
-
-`Config_silent_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_silent_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_silent_get`, 'returnType') = 'logical'
-attr(`Config_silent_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_silent_get`) = c("SWIGFunction", class('Config_silent_get'))
-
-# Start of Config_prettyOutput_set
-
-`Config_prettyOutput_set` = function(self, s_prettyOutput)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_prettyOutput = as.logical(s_prettyOutput);
-  ;.Call('R_swig_Config_prettyOutput_set', self, s_prettyOutput, PACKAGE='infomap');
-  
-}
-
-attr(`Config_prettyOutput_set`, 'returnType') = 'void'
-attr(`Config_prettyOutput_set`, "inputTypes") = c('_p_infomap__Config', 'logical')
-class(`Config_prettyOutput_set`) = c("SWIGFunction", class('Config_prettyOutput_set'))
-
-# Start of Config_prettyOutput_get
-
-`Config_prettyOutput_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_prettyOutput_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_prettyOutput_get`, 'returnType') = 'logical'
-attr(`Config_prettyOutput_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_prettyOutput_get`) = c("SWIGFunction", class('Config_prettyOutput_get'))
-
-# Start of Config_hideBipartiteNodes_set
-
-`Config_hideBipartiteNodes_set` = function(self, s_hideBipartiteNodes)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_hideBipartiteNodes = as.logical(s_hideBipartiteNodes);
-  ;.Call('R_swig_Config_hideBipartiteNodes_set', self, s_hideBipartiteNodes, PACKAGE='infomap');
-  
-}
-
-attr(`Config_hideBipartiteNodes_set`, 'returnType') = 'void'
-attr(`Config_hideBipartiteNodes_set`, "inputTypes") = c('_p_infomap__Config', 'logical')
-class(`Config_hideBipartiteNodes_set`) = c("SWIGFunction", class('Config_hideBipartiteNodes_set'))
-
-# Start of Config_hideBipartiteNodes_get
-
-`Config_hideBipartiteNodes_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_hideBipartiteNodes_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_hideBipartiteNodes_get`, 'returnType') = 'logical'
-attr(`Config_hideBipartiteNodes_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_hideBipartiteNodes_get`) = c("SWIGFunction", class('Config_hideBipartiteNodes_get'))
-
-# Start of Config_startDate_set
-
-`Config_startDate_set` = function(self, s_startDate)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  if (inherits(s_startDate, "ExternalReference")) s_startDate = slot(s_startDate,"ref"); 
-  ;.Call('R_swig_Config_startDate_set', self, s_startDate, PACKAGE='infomap');
-  
-}
-
-attr(`Config_startDate_set`, 'returnType') = 'void'
-attr(`Config_startDate_set`, "inputTypes") = c('_p_infomap__Config', '_p_Date')
-class(`Config_startDate_set`) = c("SWIGFunction", class('Config_startDate_set'))
-
-# Start of Config_startDate_get
-
-`Config_startDate_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;ans = .Call('R_swig_Config_startDate_get', self, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_Date", ref=ans);
-  
-  ans
-  
-}
-
-attr(`Config_startDate_get`, 'returnType') = '_p_Date'
-attr(`Config_startDate_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_startDate_get`) = c("SWIGFunction", class('Config_startDate_get'))
-
-# Start of Config_version_set
-
-`Config_version_set` = function(self, s_version)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_version = as(s_version, "character"); 
-  ;.Call('R_swig_Config_version_set', self, s_version, PACKAGE='infomap');
-  
-}
-
-attr(`Config_version_set`, 'returnType') = 'void'
-attr(`Config_version_set`, "inputTypes") = c('_p_infomap__Config', 'character')
-class(`Config_version_set`) = c("SWIGFunction", class('Config_version_set'))
-
-# Start of Config_version_get
-
-`Config_version_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_version_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_version_get`, 'returnType') = 'character'
-attr(`Config_version_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_version_get`) = c("SWIGFunction", class('Config_version_get'))
-
-# Start of Config_parsedString_set
-
-`Config_parsedString_set` = function(self, s_parsedString)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_parsedString = as(s_parsedString, "character"); 
-  ;.Call('R_swig_Config_parsedString_set', self, s_parsedString, PACKAGE='infomap');
-  
-}
-
-attr(`Config_parsedString_set`, 'returnType') = 'void'
-attr(`Config_parsedString_set`, "inputTypes") = c('_p_infomap__Config', 'character')
-class(`Config_parsedString_set`) = c("SWIGFunction", class('Config_parsedString_set'))
-
-# Start of Config_parsedString_get
-
-`Config_parsedString_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_parsedString_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_parsedString_get`, 'returnType') = 'character'
-attr(`Config_parsedString_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_parsedString_get`) = c("SWIGFunction", class('Config_parsedString_get'))
-
-# Start of Config_parsedOptions_set
-
-`Config_parsedOptions_set` = function(self, s_parsedOptions)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  if (inherits(s_parsedOptions, "ExternalReference")) s_parsedOptions = slot(s_parsedOptions,"ref"); 
-  ;.Call('R_swig_Config_parsedOptions_set', self, s_parsedOptions, PACKAGE='infomap');
-  
-}
-
-attr(`Config_parsedOptions_set`, 'returnType') = 'void'
-attr(`Config_parsedOptions_set`, "inputTypes") = c('_p_infomap__Config', '_p_std__vectorT_ParsedOption_std__allocatorT_ParsedOption_t_t')
-class(`Config_parsedOptions_set`) = c("SWIGFunction", class('Config_parsedOptions_set'))
-
-# Start of Config_parsedOptions_get
-
-`Config_parsedOptions_get` = function(self)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;ans = .Call('R_swig_Config_parsedOptions_get', self, PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_std__vectorT_ParsedOption_std__allocatorT_ParsedOption_t_t", ref=ans);
-  
-  ans
-  
-}
-
-attr(`Config_parsedOptions_get`, 'returnType') = '_p_std__vectorT_ParsedOption_std__allocatorT_ParsedOption_t_t'
-attr(`Config_parsedOptions_get`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_parsedOptions_get`) = c("SWIGFunction", class('Config_parsedOptions_get'))
-
-# Start of new_Config
-
-`Config__SWIG_0` = function()
-{
-  ;ans = .Call('R_swig_new_Config__SWIG_0', PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__Config", ref=ans);
-  
-  reg.finalizer(ans@ref, delete_Config);
-  ans
-  
-}
-
-attr(`Config__SWIG_0`, 'returnType') = '_p_infomap__Config'
-class(`Config__SWIG_0`) = c("SWIGFunction", class('Config__SWIG_0'))
-
-# Start of new_Config
-
-`Config__SWIG_1` = function(flags, isCLI)
-{
-  flags = as(flags, "character"); 
-  isCLI = as.logical(isCLI);
-  ;ans = .Call('R_swig_new_Config__SWIG_1', flags, isCLI, PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__Config", ref=ans);
-  
-  reg.finalizer(ans@ref, delete_Config);
-  ans
-  
-}
-
-attr(`Config__SWIG_1`, 'returnType') = '_p_infomap__Config'
-attr(`Config__SWIG_1`, "inputTypes") = c('character', 'logical')
-class(`Config__SWIG_1`) = c("SWIGFunction", class('Config__SWIG_1'))
-
-# Start of new_Config
-
-`Config__SWIG_2` = function(flags)
-{
-  flags = as(flags, "character"); 
-  ;ans = .Call('R_swig_new_Config__SWIG_2', flags, PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__Config", ref=ans);
-  
-  reg.finalizer(ans@ref, delete_Config);
-  ans
-  
-}
-
-attr(`Config__SWIG_2`, 'returnType') = '_p_infomap__Config'
-attr(`Config__SWIG_2`, "inputTypes") = c('character')
-class(`Config__SWIG_2`) = c("SWIGFunction", class('Config__SWIG_2'))
-
-`Config` <- function(...) {
-  argtypes <- mapply(class, list(...));
-  argv <- list(...);
-  argc <- length(argtypes);
-  f <- NULL;
-# dispatch functions 3
-  if (argc == 0) {
-    f <- Config__SWIG_0; 
-  } else if (argc == 1) {
-    if ( is.character(argv[[1]]) && length(argv[[1]]) == 1 ) {
-      f <- Config__SWIG_2; 
-    }
-  } else if (argc == 2) {
-    if (( is.character(argv[[1]]) && length(argv[[1]]) == 1 ) && ( is.logical(argv[[2]]) && length(argv[[2]]) == 1 )) {
-      f <- Config__SWIG_1; 
-    }
-  };
-  if (is.null(f)) {
-    stop("cannot find overloaded function for Config with argtypes (",toString(argtypes),")");
-  };
-  f(...);
-}
-
-# Dispatch function
-# Start of Config_cloneAsNonMain
-
-`Config_cloneAsNonMain` = function(self, other, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  if (inherits(other, "ExternalReference")) other = slot(other,"ref"); 
-  ;ans = .Call('R_swig_Config_cloneAsNonMain', self, other, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__Config", ref=ans);
-  
-  ans
-  
-}
-
-attr(`Config_cloneAsNonMain`, 'returnType') = '_p_infomap__Config'
-attr(`Config_cloneAsNonMain`, "inputTypes") = c('_p_infomap__Config', '_p_infomap__Config')
-class(`Config_cloneAsNonMain`) = c("SWIGFunction", class('Config_cloneAsNonMain'))
-
-# Start of Config_adaptDefaults
-
-`Config_adaptDefaults` = function(self)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_adaptDefaults', self, PACKAGE='infomap');
-  
-}
-
-attr(`Config_adaptDefaults`, 'returnType') = 'void'
-attr(`Config_adaptDefaults`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_adaptDefaults`) = c("SWIGFunction", class('Config_adaptDefaults'))
-
-# Start of Config_setStateInput
-
-`Config_setStateInput` = function(self)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_setStateInput', self, PACKAGE='infomap');
-  
-}
-
-attr(`Config_setStateInput`, 'returnType') = 'void'
-attr(`Config_setStateInput`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_setStateInput`) = c("SWIGFunction", class('Config_setStateInput'))
-
-# Start of Config_setStateOutput
-
-`Config_setStateOutput` = function(self)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_setStateOutput', self, PACKAGE='infomap');
-  
-}
-
-attr(`Config_setStateOutput`, 'returnType') = 'void'
-attr(`Config_setStateOutput`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_setStateOutput`) = c("SWIGFunction", class('Config_setStateOutput'))
-
-# Start of Config_setMultilayerInput
-
-`Config_setMultilayerInput` = function(self)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_setMultilayerInput', self, PACKAGE='infomap');
-  
-}
-
-attr(`Config_setMultilayerInput`, 'returnType') = 'void'
-attr(`Config_setMultilayerInput`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_setMultilayerInput`) = c("SWIGFunction", class('Config_setMultilayerInput'))
-
-# Start of Config_setFlowModel
-
-`Config_setFlowModel` = function(self, value)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  if (inherits(value, "ExternalReference")) value = slot(value,"ref"); 
-  ;.Call('R_swig_Config_setFlowModel', self, value, PACKAGE='infomap');
-  
-}
-
-attr(`Config_setFlowModel`, 'returnType') = 'void'
-attr(`Config_setFlowModel`, "inputTypes") = c('_p_infomap__Config', '_p_infomap__FlowModel')
-class(`Config_setFlowModel`) = c("SWIGFunction", class('Config_setFlowModel'))
-
-# Start of Config_isUndirectedClustering
-
-`Config_isUndirectedClustering` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_isUndirectedClustering', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_isUndirectedClustering`, 'returnType') = 'logical'
-attr(`Config_isUndirectedClustering`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_isUndirectedClustering`) = c("SWIGFunction", class('Config_isUndirectedClustering'))
-
-# Start of Config_isUndirectedFlow
-
-`Config_isUndirectedFlow` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_isUndirectedFlow', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_isUndirectedFlow`, 'returnType') = 'logical'
-attr(`Config_isUndirectedFlow`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_isUndirectedFlow`) = c("SWIGFunction", class('Config_isUndirectedFlow'))
-
-# Start of Config_printAsUndirected
-
-`Config_printAsUndirected` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_printAsUndirected', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_printAsUndirected`, 'returnType') = 'logical'
-attr(`Config_printAsUndirected`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_printAsUndirected`) = c("SWIGFunction", class('Config_printAsUndirected'))
-
-# Start of Config_isMultilayerNetwork
-
-`Config_isMultilayerNetwork` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_isMultilayerNetwork', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_isMultilayerNetwork`, 'returnType') = 'logical'
-attr(`Config_isMultilayerNetwork`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_isMultilayerNetwork`) = c("SWIGFunction", class('Config_isMultilayerNetwork'))
-
-# Start of Config_isBipartite
-
-`Config_isBipartite` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_isBipartite', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_isBipartite`, 'returnType') = 'logical'
-attr(`Config_isBipartite`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_isBipartite`) = c("SWIGFunction", class('Config_isBipartite'))
-
-# Start of Config_haveMemory
-
-`Config_haveMemory` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_haveMemory', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_haveMemory`, 'returnType') = 'logical'
-attr(`Config_haveMemory`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_haveMemory`) = c("SWIGFunction", class('Config_haveMemory'))
-
-# Start of Config_printStates
-
-`Config_printStates` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_printStates', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_printStates`, 'returnType') = 'logical'
-attr(`Config_printStates`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_printStates`) = c("SWIGFunction", class('Config_printStates'))
-
-# Start of Config_haveMetaData
-
-`Config_haveMetaData` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_haveMetaData', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_haveMetaData`, 'returnType') = 'logical'
-attr(`Config_haveMetaData`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_haveMetaData`) = c("SWIGFunction", class('Config_haveMetaData'))
-
-# Start of Config_haveOutput
-
-`Config_haveOutput` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_haveOutput', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_haveOutput`, 'returnType') = 'logical'
-attr(`Config_haveOutput`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_haveOutput`) = c("SWIGFunction", class('Config_haveOutput'))
-
-# Start of Config_haveModularResultOutput
-
-`Config_haveModularResultOutput` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Config_haveModularResultOutput', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Config_haveModularResultOutput`, 'returnType') = 'logical'
-attr(`Config_haveModularResultOutput`, "inputTypes") = c('_p_infomap__Config')
-class(`Config_haveModularResultOutput`) = c("SWIGFunction", class('Config_haveModularResultOutput'))
-
-# Start of delete_Config
-
-`delete_Config` = function(self)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_delete_Config', self, PACKAGE='infomap');
-  
-}
-
-attr(`delete_Config`, 'returnType') = 'void'
-attr(`delete_Config`, "inputTypes") = c('_p_infomap__Config')
-class(`delete_Config`) = c("SWIGFunction", class('delete_Config'))
-
-# Start of accessor method for infomap::Config
-setMethod('$', '_p_infomap__Config', function(x, name)
-
-{
-  accessorFuns = list('isCLI' = Config_isCLI_get, 'networkFile' = Config_networkFile_get, 'additionalInput' = Config_additionalInput_get, 'stateInput' = Config_stateInput_get, 'stateOutput' = Config_stateOutput_get, 'multilayerInput' = Config_multilayerInput_get, 'weightThreshold' = Config_weightThreshold_get, 'bipartite' = Config_bipartite_get, 'skipAdjustBipartiteFlow' = Config_skipAdjustBipartiteFlow_get, 'bipartiteTeleportation' = Config_bipartiteTeleportation_get, 'noSelfLinks' = Config_noSelfLinks_get, 'nodeLimit' = Config_nodeLimit_get, 'matchableMultilayerIds' = Config_matchableMultilayerIds_get, 'clusterDataFile' = Config_clusterDataFile_get, 'metaDataFile' = Config_metaDataFile_get, 'metaDataRate' = Config_metaDataRate_get, 'unweightedMetaData' = Config_unweightedMetaData_get, 'numMetaDataDimensions' = Config_numMetaDataDimensions_get, 'clusterDataIsHard' = Config_clusterDataIsHard_get, 'assignToNeighbouringModule' = Config_assignToNeighbouringModule_get, 'noInfomap' = Config_noInfomap_get, 'flowModel' = Config_flowModel_get, 'flowModelIsSet' = Config_flowModelIsSet_get, 'directed' = Config_directed_get, 'useNodeWeightsAsFlow' = Config_useNodeWeightsAsFlow_get, 'teleportToNodes' = Config_teleportToNodes_get, 'markovTime' = Config_markovTime_get, 'variableMarkovTime' = Config_variableMarkovTime_get, 'variableMarkovTimeDamping' = Config_variableMarkovTimeDamping_get, 'variableMarkovTimeMinLocalScale' = Config_variableMarkovTimeMinLocalScale_get, 'markovTimeNoSelfLinks' = Config_markovTimeNoSelfLinks_get, 'multilayerRelaxRate' = Config_multilayerRelaxRate_get, 'multilayerRelaxLimit' = Config_multilayerRelaxLimit_get, 'multilayerRelaxLimitUp' = Config_multilayerRelaxLimitUp_get, 'multilayerRelaxLimitDown' = Config_multilayerRelaxLimitDown_get, 'multilayerJSRelaxRate' = Config_multilayerJSRelaxRate_get, 'multilayerRelaxByJensenShannonDivergence' = Config_multilayerRelaxByJensenShannonDivergence_get, 'multilayerJSRelaxLimit' = Config_multilayerJSRelaxLimit_get, 'maxFlowIterations' = Config_maxFlowIterations_get, 'twoLevel' = Config_twoLevel_get, 'noCoarseTune' = Config_noCoarseTune_get, 'recordedTeleportation' = Config_recordedTeleportation_get, 'regularized' = Config_regularized_get, 'regularizationStrength' = Config_regularizationStrength_get, 'teleportationProbability' = Config_teleportationProbability_get, 'preferredNumberOfModules' = Config_preferredNumberOfModules_get, 'entropyBiasCorrection' = Config_entropyBiasCorrection_get, 'entropyBiasCorrectionMultiplier' = Config_entropyBiasCorrectionMultiplier_get, 'seedToRandomNumberGenerator' = Config_seedToRandomNumberGenerator_get, 'numTrials' = Config_numTrials_get, 'minimumCodelengthImprovement' = Config_minimumCodelengthImprovement_get, 'minimumSingleNodeCodelengthImprovement' = Config_minimumSingleNodeCodelengthImprovement_get, 'randomizeCoreLoopLimit' = Config_randomizeCoreLoopLimit_get, 'coreLoopLimit' = Config_coreLoopLimit_get, 'levelAggregationLimit' = Config_levelAggregationLimit_get, 'tuneIterationLimit' = Config_tuneIterationLimit_get, 'minimumRelativeTuneIterationImprovement' = Config_minimumRelativeTuneIterationImprovement_get, 'onlySuperModules' = Config_onlySuperModules_get, 'fastHierarchicalSolution' = Config_fastHierarchicalSolution_get, 'preferModularSolution' = Config_preferModularSolution_get, 'innerParallelization' = Config_innerParallelization_get, 'parallelTrials' = Config_parallelTrials_get, 'numRandomMoves' = Config_numRandomMoves_get, 'maxDegreeForRandomMoves' = Config_maxDegreeForRandomMoves_get, 'outDirectory' = Config_outDirectory_get, 'outName' = Config_outName_get, 'outputFormats' = Config_outputFormats_get, 'printTree' = Config_printTree_get, 'printFlowTree' = Config_printFlowTree_get, 'printNewick' = Config_printNewick_get, 'printJson' = Config_printJson_get, 'printCsv' = Config_printCsv_get, 'printClu' = Config_printClu_get, 'printAllTrials' = Config_printAllTrials_get, 'cluLevel' = Config_cluLevel_get, 'printFlowNetwork' = Config_printFlowNetwork_get, 'printPajekNetwork' = Config_printPajekNetwork_get, 'printStateNetwork' = Config_printStateNetwork_get, 'noFileOutput' = Config_noFileOutput_get, 'verbosity' = Config_verbosity_get, 'verboseNumberPrecision' = Config_verboseNumberPrecision_get, 'silent' = Config_silent_get, 'prettyOutput' = Config_prettyOutput_get, 'hideBipartiteNodes' = Config_hideBipartiteNodes_get, 'startDate' = Config_startDate_get, 'version' = Config_version_get, 'parsedString' = Config_parsedString_get, 'parsedOptions' = Config_parsedOptions_get, 'cloneAsNonMain' = Config_cloneAsNonMain, 'adaptDefaults' = Config_adaptDefaults, 'setStateInput' = Config_setStateInput, 'setStateOutput' = Config_setStateOutput, 'setMultilayerInput' = Config_setMultilayerInput, 'setFlowModel' = Config_setFlowModel, 'isUndirectedClustering' = Config_isUndirectedClustering, 'isUndirectedFlow' = Config_isUndirectedFlow, 'printAsUndirected' = Config_printAsUndirected, 'isMultilayerNetwork' = Config_isMultilayerNetwork, 'isBipartite' = Config_isBipartite, 'haveMemory' = Config_haveMemory, 'printStates' = Config_printStates, 'haveMetaData' = Config_haveMetaData, 'haveOutput' = Config_haveOutput, 'haveModularResultOutput' = Config_haveModularResultOutput);
-  vaccessors = c('isCLI', 'networkFile', 'additionalInput', 'stateInput', 'stateOutput', 'multilayerInput', 'weightThreshold', 'bipartite', 'skipAdjustBipartiteFlow', 'bipartiteTeleportation', 'noSelfLinks', 'nodeLimit', 'matchableMultilayerIds', 'clusterDataFile', 'metaDataFile', 'metaDataRate', 'unweightedMetaData', 'numMetaDataDimensions', 'clusterDataIsHard', 'assignToNeighbouringModule', 'noInfomap', 'flowModel', 'flowModelIsSet', 'directed', 'useNodeWeightsAsFlow', 'teleportToNodes', 'markovTime', 'variableMarkovTime', 'variableMarkovTimeDamping', 'variableMarkovTimeMinLocalScale', 'markovTimeNoSelfLinks', 'multilayerRelaxRate', 'multilayerRelaxLimit', 'multilayerRelaxLimitUp', 'multilayerRelaxLimitDown', 'multilayerJSRelaxRate', 'multilayerRelaxByJensenShannonDivergence', 'multilayerJSRelaxLimit', 'maxFlowIterations', 'twoLevel', 'noCoarseTune', 'recordedTeleportation', 'regularized', 'regularizationStrength', 'teleportationProbability', 'preferredNumberOfModules', 'entropyBiasCorrection', 'entropyBiasCorrectionMultiplier', 'seedToRandomNumberGenerator', 'numTrials', 'minimumCodelengthImprovement', 'minimumSingleNodeCodelengthImprovement', 'randomizeCoreLoopLimit', 'coreLoopLimit', 'levelAggregationLimit', 'tuneIterationLimit', 'minimumRelativeTuneIterationImprovement', 'onlySuperModules', 'fastHierarchicalSolution', 'preferModularSolution', 'innerParallelization', 'parallelTrials', 'numRandomMoves', 'maxDegreeForRandomMoves', 'outDirectory', 'outName', 'outputFormats', 'printTree', 'printFlowTree', 'printNewick', 'printJson', 'printCsv', 'printClu', 'printAllTrials', 'cluLevel', 'printFlowNetwork', 'printPajekNetwork', 'printStateNetwork', 'noFileOutput', 'verbosity', 'verboseNumberPrecision', 'silent', 'prettyOutput', 'hideBipartiteNodes', 'startDate', 'version', 'parsedString', 'parsedOptions');
-  ;        idx = pmatch(name, names(accessorFuns));
-  if(is.na(idx)) 
-  return(callNextMethod(x, name));
-  f = accessorFuns[[idx]];
-  if (is.na(match(name, vaccessors))) function(...){
-    f(x, ...)
-  } else f(x);
-}
-
-
-);
-# end of accessor method for infomap::Config
-# Start of accessor method for infomap::Config
-setMethod('$<-', '_p_infomap__Config', function(x, name, value)
-
-{
-  accessorFuns = list('isCLI' = Config_isCLI_set, 'networkFile' = Config_networkFile_set, 'additionalInput' = Config_additionalInput_set, 'stateInput' = Config_stateInput_set, 'stateOutput' = Config_stateOutput_set, 'multilayerInput' = Config_multilayerInput_set, 'weightThreshold' = Config_weightThreshold_set, 'bipartite' = Config_bipartite_set, 'skipAdjustBipartiteFlow' = Config_skipAdjustBipartiteFlow_set, 'bipartiteTeleportation' = Config_bipartiteTeleportation_set, 'noSelfLinks' = Config_noSelfLinks_set, 'nodeLimit' = Config_nodeLimit_set, 'matchableMultilayerIds' = Config_matchableMultilayerIds_set, 'clusterDataFile' = Config_clusterDataFile_set, 'metaDataFile' = Config_metaDataFile_set, 'metaDataRate' = Config_metaDataRate_set, 'unweightedMetaData' = Config_unweightedMetaData_set, 'numMetaDataDimensions' = Config_numMetaDataDimensions_set, 'clusterDataIsHard' = Config_clusterDataIsHard_set, 'assignToNeighbouringModule' = Config_assignToNeighbouringModule_set, 'noInfomap' = Config_noInfomap_set, 'flowModel' = Config_flowModel_set, 'flowModelIsSet' = Config_flowModelIsSet_set, 'directed' = Config_directed_set, 'useNodeWeightsAsFlow' = Config_useNodeWeightsAsFlow_set, 'teleportToNodes' = Config_teleportToNodes_set, 'markovTime' = Config_markovTime_set, 'variableMarkovTime' = Config_variableMarkovTime_set, 'variableMarkovTimeDamping' = Config_variableMarkovTimeDamping_set, 'variableMarkovTimeMinLocalScale' = Config_variableMarkovTimeMinLocalScale_set, 'markovTimeNoSelfLinks' = Config_markovTimeNoSelfLinks_set, 'multilayerRelaxRate' = Config_multilayerRelaxRate_set, 'multilayerRelaxLimit' = Config_multilayerRelaxLimit_set, 'multilayerRelaxLimitUp' = Config_multilayerRelaxLimitUp_set, 'multilayerRelaxLimitDown' = Config_multilayerRelaxLimitDown_set, 'multilayerJSRelaxRate' = Config_multilayerJSRelaxRate_set, 'multilayerRelaxByJensenShannonDivergence' = Config_multilayerRelaxByJensenShannonDivergence_set, 'multilayerJSRelaxLimit' = Config_multilayerJSRelaxLimit_set, 'maxFlowIterations' = Config_maxFlowIterations_set, 'twoLevel' = Config_twoLevel_set, 'noCoarseTune' = Config_noCoarseTune_set, 'recordedTeleportation' = Config_recordedTeleportation_set, 'regularized' = Config_regularized_set, 'regularizationStrength' = Config_regularizationStrength_set, 'teleportationProbability' = Config_teleportationProbability_set, 'preferredNumberOfModules' = Config_preferredNumberOfModules_set, 'entropyBiasCorrection' = Config_entropyBiasCorrection_set, 'entropyBiasCorrectionMultiplier' = Config_entropyBiasCorrectionMultiplier_set, 'seedToRandomNumberGenerator' = Config_seedToRandomNumberGenerator_set, 'numTrials' = Config_numTrials_set, 'minimumCodelengthImprovement' = Config_minimumCodelengthImprovement_set, 'minimumSingleNodeCodelengthImprovement' = Config_minimumSingleNodeCodelengthImprovement_set, 'randomizeCoreLoopLimit' = Config_randomizeCoreLoopLimit_set, 'coreLoopLimit' = Config_coreLoopLimit_set, 'levelAggregationLimit' = Config_levelAggregationLimit_set, 'tuneIterationLimit' = Config_tuneIterationLimit_set, 'minimumRelativeTuneIterationImprovement' = Config_minimumRelativeTuneIterationImprovement_set, 'onlySuperModules' = Config_onlySuperModules_set, 'fastHierarchicalSolution' = Config_fastHierarchicalSolution_set, 'preferModularSolution' = Config_preferModularSolution_set, 'innerParallelization' = Config_innerParallelization_set, 'parallelTrials' = Config_parallelTrials_set, 'numRandomMoves' = Config_numRandomMoves_set, 'maxDegreeForRandomMoves' = Config_maxDegreeForRandomMoves_set, 'outDirectory' = Config_outDirectory_set, 'outName' = Config_outName_set, 'outputFormats' = Config_outputFormats_set, 'printTree' = Config_printTree_set, 'printFlowTree' = Config_printFlowTree_set, 'printNewick' = Config_printNewick_set, 'printJson' = Config_printJson_set, 'printCsv' = Config_printCsv_set, 'printClu' = Config_printClu_set, 'printAllTrials' = Config_printAllTrials_set, 'cluLevel' = Config_cluLevel_set, 'printFlowNetwork' = Config_printFlowNetwork_set, 'printPajekNetwork' = Config_printPajekNetwork_set, 'printStateNetwork' = Config_printStateNetwork_set, 'noFileOutput' = Config_noFileOutput_set, 'verbosity' = Config_verbosity_set, 'verboseNumberPrecision' = Config_verboseNumberPrecision_set, 'silent' = Config_silent_set, 'prettyOutput' = Config_prettyOutput_set, 'hideBipartiteNodes' = Config_hideBipartiteNodes_set, 'startDate' = Config_startDate_set, 'version' = Config_version_set, 'parsedString' = Config_parsedString_set, 'parsedOptions' = Config_parsedOptions_set);
-  ;        idx = pmatch(name, names(accessorFuns));
-  if(is.na(idx)) 
-  return(callNextMethod(x, name, value));
-  f = accessorFuns[[idx]];
-  f(x, value);
-  x;
-}
-
-
-);
-setMethod('[[<-', c('_p_infomap__Config', 'character'),function(x, i, j, ..., value)
-
-{
-  name = i;
-  accessorFuns = list('isCLI' = Config_isCLI_set, 'networkFile' = Config_networkFile_set, 'additionalInput' = Config_additionalInput_set, 'stateInput' = Config_stateInput_set, 'stateOutput' = Config_stateOutput_set, 'multilayerInput' = Config_multilayerInput_set, 'weightThreshold' = Config_weightThreshold_set, 'bipartite' = Config_bipartite_set, 'skipAdjustBipartiteFlow' = Config_skipAdjustBipartiteFlow_set, 'bipartiteTeleportation' = Config_bipartiteTeleportation_set, 'noSelfLinks' = Config_noSelfLinks_set, 'nodeLimit' = Config_nodeLimit_set, 'matchableMultilayerIds' = Config_matchableMultilayerIds_set, 'clusterDataFile' = Config_clusterDataFile_set, 'metaDataFile' = Config_metaDataFile_set, 'metaDataRate' = Config_metaDataRate_set, 'unweightedMetaData' = Config_unweightedMetaData_set, 'numMetaDataDimensions' = Config_numMetaDataDimensions_set, 'clusterDataIsHard' = Config_clusterDataIsHard_set, 'assignToNeighbouringModule' = Config_assignToNeighbouringModule_set, 'noInfomap' = Config_noInfomap_set, 'flowModel' = Config_flowModel_set, 'flowModelIsSet' = Config_flowModelIsSet_set, 'directed' = Config_directed_set, 'useNodeWeightsAsFlow' = Config_useNodeWeightsAsFlow_set, 'teleportToNodes' = Config_teleportToNodes_set, 'markovTime' = Config_markovTime_set, 'variableMarkovTime' = Config_variableMarkovTime_set, 'variableMarkovTimeDamping' = Config_variableMarkovTimeDamping_set, 'variableMarkovTimeMinLocalScale' = Config_variableMarkovTimeMinLocalScale_set, 'markovTimeNoSelfLinks' = Config_markovTimeNoSelfLinks_set, 'multilayerRelaxRate' = Config_multilayerRelaxRate_set, 'multilayerRelaxLimit' = Config_multilayerRelaxLimit_set, 'multilayerRelaxLimitUp' = Config_multilayerRelaxLimitUp_set, 'multilayerRelaxLimitDown' = Config_multilayerRelaxLimitDown_set, 'multilayerJSRelaxRate' = Config_multilayerJSRelaxRate_set, 'multilayerRelaxByJensenShannonDivergence' = Config_multilayerRelaxByJensenShannonDivergence_set, 'multilayerJSRelaxLimit' = Config_multilayerJSRelaxLimit_set, 'maxFlowIterations' = Config_maxFlowIterations_set, 'twoLevel' = Config_twoLevel_set, 'noCoarseTune' = Config_noCoarseTune_set, 'recordedTeleportation' = Config_recordedTeleportation_set, 'regularized' = Config_regularized_set, 'regularizationStrength' = Config_regularizationStrength_set, 'teleportationProbability' = Config_teleportationProbability_set, 'preferredNumberOfModules' = Config_preferredNumberOfModules_set, 'entropyBiasCorrection' = Config_entropyBiasCorrection_set, 'entropyBiasCorrectionMultiplier' = Config_entropyBiasCorrectionMultiplier_set, 'seedToRandomNumberGenerator' = Config_seedToRandomNumberGenerator_set, 'numTrials' = Config_numTrials_set, 'minimumCodelengthImprovement' = Config_minimumCodelengthImprovement_set, 'minimumSingleNodeCodelengthImprovement' = Config_minimumSingleNodeCodelengthImprovement_set, 'randomizeCoreLoopLimit' = Config_randomizeCoreLoopLimit_set, 'coreLoopLimit' = Config_coreLoopLimit_set, 'levelAggregationLimit' = Config_levelAggregationLimit_set, 'tuneIterationLimit' = Config_tuneIterationLimit_set, 'minimumRelativeTuneIterationImprovement' = Config_minimumRelativeTuneIterationImprovement_set, 'onlySuperModules' = Config_onlySuperModules_set, 'fastHierarchicalSolution' = Config_fastHierarchicalSolution_set, 'preferModularSolution' = Config_preferModularSolution_set, 'innerParallelization' = Config_innerParallelization_set, 'parallelTrials' = Config_parallelTrials_set, 'numRandomMoves' = Config_numRandomMoves_set, 'maxDegreeForRandomMoves' = Config_maxDegreeForRandomMoves_set, 'outDirectory' = Config_outDirectory_set, 'outName' = Config_outName_set, 'outputFormats' = Config_outputFormats_set, 'printTree' = Config_printTree_set, 'printFlowTree' = Config_printFlowTree_set, 'printNewick' = Config_printNewick_set, 'printJson' = Config_printJson_set, 'printCsv' = Config_printCsv_set, 'printClu' = Config_printClu_set, 'printAllTrials' = Config_printAllTrials_set, 'cluLevel' = Config_cluLevel_set, 'printFlowNetwork' = Config_printFlowNetwork_set, 'printPajekNetwork' = Config_printPajekNetwork_set, 'printStateNetwork' = Config_printStateNetwork_set, 'noFileOutput' = Config_noFileOutput_set, 'verbosity' = Config_verbosity_set, 'verboseNumberPrecision' = Config_verboseNumberPrecision_set, 'silent' = Config_silent_set, 'prettyOutput' = Config_prettyOutput_set, 'hideBipartiteNodes' = Config_hideBipartiteNodes_set, 'startDate' = Config_startDate_set, 'version' = Config_version_set, 'parsedString' = Config_parsedString_set, 'parsedOptions' = Config_parsedOptions_set);
-  ;        idx = pmatch(name, names(accessorFuns));
-  if(is.na(idx)) 
-  return(callNextMethod(x, name, value));
-  f = accessorFuns[[idx]];
-  f(x, value);
-  x;
-}
-
-
-);
-# end of accessor method for infomap::Config
-setMethod('delete', '_p_infomap__Config', function(obj) {delete_infomap__Config(obj)})
-# Start definition of copy functions & methods for infomap::Config
-CopyToR_infomap__Config = function(value, obj = new("infomap::Config"))
-{
-  obj@isCLI = value$isCLI;
-  obj@networkFile = value$networkFile;
-  obj@stateInput = value$stateInput;
-  obj@stateOutput = value$stateOutput;
-  obj@multilayerInput = value$multilayerInput;
-  obj@weightThreshold = value$weightThreshold;
-  obj@bipartite = value$bipartite;
-  obj@skipAdjustBipartiteFlow = value$skipAdjustBipartiteFlow;
-  obj@bipartiteTeleportation = value$bipartiteTeleportation;
-  obj@noSelfLinks = value$noSelfLinks;
-  obj@nodeLimit = value$nodeLimit;
-  obj@matchableMultilayerIds = value$matchableMultilayerIds;
-  obj@clusterDataFile = value$clusterDataFile;
-  obj@metaDataFile = value$metaDataFile;
-  obj@metaDataRate = value$metaDataRate;
-  obj@unweightedMetaData = value$unweightedMetaData;
-  obj@numMetaDataDimensions = value$numMetaDataDimensions;
-  obj@clusterDataIsHard = value$clusterDataIsHard;
-  obj@assignToNeighbouringModule = value$assignToNeighbouringModule;
-  obj@noInfomap = value$noInfomap;
-  obj@flowModelIsSet = value$flowModelIsSet;
-  obj@directed = value$directed;
-  obj@useNodeWeightsAsFlow = value$useNodeWeightsAsFlow;
-  obj@teleportToNodes = value$teleportToNodes;
-  obj@markovTime = value$markovTime;
-  obj@variableMarkovTime = value$variableMarkovTime;
-  obj@variableMarkovTimeDamping = value$variableMarkovTimeDamping;
-  obj@variableMarkovTimeMinLocalScale = value$variableMarkovTimeMinLocalScale;
-  obj@markovTimeNoSelfLinks = value$markovTimeNoSelfLinks;
-  obj@multilayerRelaxRate = value$multilayerRelaxRate;
-  obj@multilayerRelaxLimit = value$multilayerRelaxLimit;
-  obj@multilayerRelaxLimitUp = value$multilayerRelaxLimitUp;
-  obj@multilayerRelaxLimitDown = value$multilayerRelaxLimitDown;
-  obj@multilayerJSRelaxRate = value$multilayerJSRelaxRate;
-  obj@multilayerRelaxByJensenShannonDivergence = value$multilayerRelaxByJensenShannonDivergence;
-  obj@multilayerJSRelaxLimit = value$multilayerJSRelaxLimit;
-  obj@maxFlowIterations = value$maxFlowIterations;
-  obj@twoLevel = value$twoLevel;
-  obj@noCoarseTune = value$noCoarseTune;
-  obj@recordedTeleportation = value$recordedTeleportation;
-  obj@regularized = value$regularized;
-  obj@regularizationStrength = value$regularizationStrength;
-  obj@teleportationProbability = value$teleportationProbability;
-  obj@preferredNumberOfModules = value$preferredNumberOfModules;
-  obj@entropyBiasCorrection = value$entropyBiasCorrection;
-  obj@entropyBiasCorrectionMultiplier = value$entropyBiasCorrectionMultiplier;
-  obj@seedToRandomNumberGenerator = value$seedToRandomNumberGenerator;
-  obj@numTrials = value$numTrials;
-  obj@minimumCodelengthImprovement = value$minimumCodelengthImprovement;
-  obj@minimumSingleNodeCodelengthImprovement = value$minimumSingleNodeCodelengthImprovement;
-  obj@randomizeCoreLoopLimit = value$randomizeCoreLoopLimit;
-  obj@coreLoopLimit = value$coreLoopLimit;
-  obj@levelAggregationLimit = value$levelAggregationLimit;
-  obj@tuneIterationLimit = value$tuneIterationLimit;
-  obj@minimumRelativeTuneIterationImprovement = value$minimumRelativeTuneIterationImprovement;
-  obj@onlySuperModules = value$onlySuperModules;
-  obj@fastHierarchicalSolution = value$fastHierarchicalSolution;
-  obj@preferModularSolution = value$preferModularSolution;
-  obj@innerParallelization = value$innerParallelization;
-  obj@parallelTrials = value$parallelTrials;
-  obj@numRandomMoves = value$numRandomMoves;
-  obj@maxDegreeForRandomMoves = value$maxDegreeForRandomMoves;
-  obj@outDirectory = value$outDirectory;
-  obj@outName = value$outName;
-  obj@outputFormats = value$outputFormats;
-  obj@printTree = value$printTree;
-  obj@printFlowTree = value$printFlowTree;
-  obj@printNewick = value$printNewick;
-  obj@printJson = value$printJson;
-  obj@printCsv = value$printCsv;
-  obj@printClu = value$printClu;
-  obj@printAllTrials = value$printAllTrials;
-  obj@cluLevel = value$cluLevel;
-  obj@printFlowNetwork = value$printFlowNetwork;
-  obj@printPajekNetwork = value$printPajekNetwork;
-  obj@printStateNetwork = value$printStateNetwork;
-  obj@noFileOutput = value$noFileOutput;
-  obj@verbosity = value$verbosity;
-  obj@verboseNumberPrecision = value$verboseNumberPrecision;
-  obj@silent = value$silent;
-  obj@prettyOutput = value$prettyOutput;
-  obj@hideBipartiteNodes = value$hideBipartiteNodes;
-  obj@version = value$version;
-  obj@parsedString = value$parsedString;
-  obj;
-}
-
-
-
-CopyToC_infomap__Config = function(value, obj)
-{
-  obj$isCLI = value@isCLI;
-  obj$networkFile = value@networkFile;
-  obj$stateInput = value@stateInput;
-  obj$stateOutput = value@stateOutput;
-  obj$multilayerInput = value@multilayerInput;
-  obj$weightThreshold = value@weightThreshold;
-  obj$bipartite = value@bipartite;
-  obj$skipAdjustBipartiteFlow = value@skipAdjustBipartiteFlow;
-  obj$bipartiteTeleportation = value@bipartiteTeleportation;
-  obj$noSelfLinks = value@noSelfLinks;
-  obj$nodeLimit = value@nodeLimit;
-  obj$matchableMultilayerIds = value@matchableMultilayerIds;
-  obj$clusterDataFile = value@clusterDataFile;
-  obj$metaDataFile = value@metaDataFile;
-  obj$metaDataRate = value@metaDataRate;
-  obj$unweightedMetaData = value@unweightedMetaData;
-  obj$numMetaDataDimensions = value@numMetaDataDimensions;
-  obj$clusterDataIsHard = value@clusterDataIsHard;
-  obj$assignToNeighbouringModule = value@assignToNeighbouringModule;
-  obj$noInfomap = value@noInfomap;
-  obj$flowModelIsSet = value@flowModelIsSet;
-  obj$directed = value@directed;
-  obj$useNodeWeightsAsFlow = value@useNodeWeightsAsFlow;
-  obj$teleportToNodes = value@teleportToNodes;
-  obj$markovTime = value@markovTime;
-  obj$variableMarkovTime = value@variableMarkovTime;
-  obj$variableMarkovTimeDamping = value@variableMarkovTimeDamping;
-  obj$variableMarkovTimeMinLocalScale = value@variableMarkovTimeMinLocalScale;
-  obj$markovTimeNoSelfLinks = value@markovTimeNoSelfLinks;
-  obj$multilayerRelaxRate = value@multilayerRelaxRate;
-  obj$multilayerRelaxLimit = value@multilayerRelaxLimit;
-  obj$multilayerRelaxLimitUp = value@multilayerRelaxLimitUp;
-  obj$multilayerRelaxLimitDown = value@multilayerRelaxLimitDown;
-  obj$multilayerJSRelaxRate = value@multilayerJSRelaxRate;
-  obj$multilayerRelaxByJensenShannonDivergence = value@multilayerRelaxByJensenShannonDivergence;
-  obj$multilayerJSRelaxLimit = value@multilayerJSRelaxLimit;
-  obj$maxFlowIterations = value@maxFlowIterations;
-  obj$twoLevel = value@twoLevel;
-  obj$noCoarseTune = value@noCoarseTune;
-  obj$recordedTeleportation = value@recordedTeleportation;
-  obj$regularized = value@regularized;
-  obj$regularizationStrength = value@regularizationStrength;
-  obj$teleportationProbability = value@teleportationProbability;
-  obj$preferredNumberOfModules = value@preferredNumberOfModules;
-  obj$entropyBiasCorrection = value@entropyBiasCorrection;
-  obj$entropyBiasCorrectionMultiplier = value@entropyBiasCorrectionMultiplier;
-  obj$seedToRandomNumberGenerator = value@seedToRandomNumberGenerator;
-  obj$numTrials = value@numTrials;
-  obj$minimumCodelengthImprovement = value@minimumCodelengthImprovement;
-  obj$minimumSingleNodeCodelengthImprovement = value@minimumSingleNodeCodelengthImprovement;
-  obj$randomizeCoreLoopLimit = value@randomizeCoreLoopLimit;
-  obj$coreLoopLimit = value@coreLoopLimit;
-  obj$levelAggregationLimit = value@levelAggregationLimit;
-  obj$tuneIterationLimit = value@tuneIterationLimit;
-  obj$minimumRelativeTuneIterationImprovement = value@minimumRelativeTuneIterationImprovement;
-  obj$onlySuperModules = value@onlySuperModules;
-  obj$fastHierarchicalSolution = value@fastHierarchicalSolution;
-  obj$preferModularSolution = value@preferModularSolution;
-  obj$innerParallelization = value@innerParallelization;
-  obj$parallelTrials = value@parallelTrials;
-  obj$numRandomMoves = value@numRandomMoves;
-  obj$maxDegreeForRandomMoves = value@maxDegreeForRandomMoves;
-  obj$outDirectory = value@outDirectory;
-  obj$outName = value@outName;
-  obj$outputFormats = value@outputFormats;
-  obj$printTree = value@printTree;
-  obj$printFlowTree = value@printFlowTree;
-  obj$printNewick = value@printNewick;
-  obj$printJson = value@printJson;
-  obj$printCsv = value@printCsv;
-  obj$printClu = value@printClu;
-  obj$printAllTrials = value@printAllTrials;
-  obj$cluLevel = value@cluLevel;
-  obj$printFlowNetwork = value@printFlowNetwork;
-  obj$printPajekNetwork = value@printPajekNetwork;
-  obj$printStateNetwork = value@printStateNetwork;
-  obj$noFileOutput = value@noFileOutput;
-  obj$verbosity = value@verbosity;
-  obj$verboseNumberPrecision = value@verboseNumberPrecision;
-  obj$silent = value@silent;
-  obj$prettyOutput = value@prettyOutput;
-  obj$hideBipartiteNodes = value@hideBipartiteNodes;
-  obj$version = value@version;
-  obj$parsedString = value@parsedString;
-  obj
-}
-
-
-
-# Start definition of copy methods for infomap::Config
-setMethod('copyToR', '_p_infomap__Config', CopyToR_infomap__Config);
-setMethod('copyToC', 'infomap::Config', CopyToC_infomap__Config);
-
-# End definition of copy methods for infomap::Config
-# End definition of copy functions & methods for infomap::Config
 # Start of FlowData_flow_set
 
 `FlowData_flow_set` = function(self, s_flow)
@@ -16376,5236 +13018,6 @@ setMethod('$', '_p_std__vectorT_double_t', function(x, name)
 );
 # end of accessor method for std::vector< double >
 setMethod('delete', '_p_std__vectorT_double_t', function(obj) {delete_std__vectorT_double_t(obj)})
-# Start of delete_StateNetwork
-
-`delete_StateNetwork` = function(self)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_delete_StateNetwork', self, PACKAGE='infomap');
-  
-}
-
-attr(`delete_StateNetwork`, 'returnType') = 'void'
-attr(`delete_StateNetwork`, "inputTypes") = c('_p_infomap__StateNetwork')
-class(`delete_StateNetwork`) = c("SWIGFunction", class('delete_StateNetwork'))
-
-# Start of StateNetwork_setConfig
-
-`StateNetwork_setConfig` = function(self, config)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  if (inherits(config, "ExternalReference")) config = slot(config,"ref"); 
-  ;.Call('R_swig_StateNetwork_setConfig', self, config, PACKAGE='infomap');
-  
-}
-
-attr(`StateNetwork_setConfig`, 'returnType') = 'void'
-attr(`StateNetwork_setConfig`, "inputTypes") = c('_p_infomap__StateNetwork', '_p_infomap__Config')
-class(`StateNetwork_setConfig`) = c("SWIGFunction", class('StateNetwork_setConfig'))
-
-# Start of StateNetwork_addStateNode
-
-`StateNetwork_addStateNode__SWIG_0` = function(self, node, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  if (inherits(node, "ExternalReference")) node = slot(node,"ref"); 
-  ;ans = .Call('R_swig_StateNetwork_addStateNode__SWIG_0', self, node, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_std__pairT_std__mapT_unsigned_int_infomap__StateNetwork__StateNode_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__StateNode_t_t_t__iterator_bool_t", ref=ans);
-  
-  ans
-  
-}
-
-attr(`StateNetwork_addStateNode__SWIG_0`, 'returnType') = '_p_std__pairT_std__mapT_unsigned_int_infomap__StateNetwork__StateNode_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__StateNode_t_t_t__iterator_bool_t'
-attr(`StateNetwork_addStateNode__SWIG_0`, "inputTypes") = c('_p_infomap__StateNetwork', '_p_infomap__StateNetwork__StateNode')
-class(`StateNetwork_addStateNode__SWIG_0`) = c("SWIGFunction", class('StateNetwork_addStateNode__SWIG_0'))
-
-# Start of StateNetwork_addStateNode
-
-`StateNetwork_addStateNode__SWIG_1` = function(self, id, physId, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  id = as.integer(id);
-  
-  if(length(id) > 1) {
-    warning("using only the first element of id");
-  };
-  
-  physId = as.integer(physId);
-  
-  if(length(physId) > 1) {
-    warning("using only the first element of physId");
-  };
-  
-  ;ans = .Call('R_swig_StateNetwork_addStateNode__SWIG_1', self, id, physId, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_std__pairT_std__mapT_unsigned_int_infomap__StateNetwork__StateNode_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__StateNode_t_t_t__iterator_bool_t", ref=ans);
-  
-  ans
-  
-}
-
-attr(`StateNetwork_addStateNode__SWIG_1`, 'returnType') = '_p_std__pairT_std__mapT_unsigned_int_infomap__StateNetwork__StateNode_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__StateNode_t_t_t__iterator_bool_t'
-attr(`StateNetwork_addStateNode__SWIG_1`, "inputTypes") = c('_p_infomap__StateNetwork', 'integer', 'integer')
-class(`StateNetwork_addStateNode__SWIG_1`) = c("SWIGFunction", class('StateNetwork_addStateNode__SWIG_1'))
-
-`StateNetwork_addStateNode` <- function(...) {
-  argtypes <- mapply(class, list(...));
-  argv <- list(...);
-  argc <- length(argtypes);
-  f <- NULL;
-# dispatch functions 2
-  if (argc == 2) {
-    if (( extends(argtypes[1], '_p_infomap__StateNetwork') || is.null(argv[[1]]) ) && ( extends(argtypes[2], '_p_infomap__StateNetwork__StateNode') && length(argv[[2]]) == 1 )) {
-      f <- StateNetwork_addStateNode__SWIG_0; 
-    }
-  } else if (argc == 3) {
-    if (( extends(argtypes[1], '_p_infomap__StateNetwork') || is.null(argv[[1]]) ) && ( (is.integer(argv[[2]]) || is.numeric(argv[[2]])) && length(argv[[2]]) == 1 ) && ( (is.integer(argv[[3]]) || is.numeric(argv[[3]])) && length(argv[[3]]) == 1 )) {
-      f <- StateNetwork_addStateNode__SWIG_1; 
-    }
-  };
-  if (is.null(f)) {
-    stop("cannot find overloaded function for StateNetwork_addStateNode with argtypes (",toString(argtypes),")");
-  };
-  f(...);
-}
-
-# Dispatch function
-# Start of StateNetwork_addNode
-
-`StateNetwork_addNode__SWIG_0` = function(self, id, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  id = as.integer(id);
-  
-  if(length(id) > 1) {
-    warning("using only the first element of id");
-  };
-  
-  ;ans = .Call('R_swig_StateNetwork_addNode__SWIG_0', self, id, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_std__pairT_std__mapT_unsigned_int_infomap__StateNetwork__StateNode_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__StateNode_t_t_t__iterator_bool_t", ref=ans);
-  
-  ans
-  
-}
-
-attr(`StateNetwork_addNode__SWIG_0`, 'returnType') = '_p_std__pairT_std__mapT_unsigned_int_infomap__StateNetwork__StateNode_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__StateNode_t_t_t__iterator_bool_t'
-attr(`StateNetwork_addNode__SWIG_0`, "inputTypes") = c('_p_infomap__StateNetwork', 'integer')
-class(`StateNetwork_addNode__SWIG_0`) = c("SWIGFunction", class('StateNetwork_addNode__SWIG_0'))
-
-# Start of StateNetwork_addNode
-
-`StateNetwork_addNode__SWIG_1` = function(self, id, name, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  id = as.integer(id);
-  
-  if(length(id) > 1) {
-    warning("using only the first element of id");
-  };
-  
-  name = as(name, "character"); 
-  ;ans = .Call('R_swig_StateNetwork_addNode__SWIG_1', self, id, name, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_std__pairT_std__mapT_unsigned_int_infomap__StateNetwork__StateNode_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__StateNode_t_t_t__iterator_bool_t", ref=ans);
-  
-  ans
-  
-}
-
-attr(`StateNetwork_addNode__SWIG_1`, 'returnType') = '_p_std__pairT_std__mapT_unsigned_int_infomap__StateNetwork__StateNode_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__StateNode_t_t_t__iterator_bool_t'
-attr(`StateNetwork_addNode__SWIG_1`, "inputTypes") = c('_p_infomap__StateNetwork', 'integer', 'character')
-class(`StateNetwork_addNode__SWIG_1`) = c("SWIGFunction", class('StateNetwork_addNode__SWIG_1'))
-
-# Start of StateNetwork_addNode
-
-`StateNetwork_addNode__SWIG_2` = function(self, id, weight, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  id = as.integer(id);
-  
-  if(length(id) > 1) {
-    warning("using only the first element of id");
-  };
-  
-  
-  ;ans = .Call('R_swig_StateNetwork_addNode__SWIG_2', self, id, weight, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_std__pairT_std__mapT_unsigned_int_infomap__StateNetwork__StateNode_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__StateNode_t_t_t__iterator_bool_t", ref=ans);
-  
-  ans
-  
-}
-
-attr(`StateNetwork_addNode__SWIG_2`, 'returnType') = '_p_std__pairT_std__mapT_unsigned_int_infomap__StateNetwork__StateNode_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__StateNode_t_t_t__iterator_bool_t'
-attr(`StateNetwork_addNode__SWIG_2`, "inputTypes") = c('_p_infomap__StateNetwork', 'integer', 'numeric')
-class(`StateNetwork_addNode__SWIG_2`) = c("SWIGFunction", class('StateNetwork_addNode__SWIG_2'))
-
-# Start of StateNetwork_addNode
-
-`StateNetwork_addNode__SWIG_3` = function(self, id, s_arg3, weight, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  id = as.integer(id);
-  
-  if(length(id) > 1) {
-    warning("using only the first element of id");
-  };
-  
-  s_arg3 = as(s_arg3, "character"); 
-  
-  ;ans = .Call('R_swig_StateNetwork_addNode__SWIG_3', self, id, s_arg3, weight, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_std__pairT_std__mapT_unsigned_int_infomap__StateNetwork__StateNode_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__StateNode_t_t_t__iterator_bool_t", ref=ans);
-  
-  ans
-  
-}
-
-attr(`StateNetwork_addNode__SWIG_3`, 'returnType') = '_p_std__pairT_std__mapT_unsigned_int_infomap__StateNetwork__StateNode_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__StateNode_t_t_t__iterator_bool_t'
-attr(`StateNetwork_addNode__SWIG_3`, "inputTypes") = c('_p_infomap__StateNetwork', 'integer', 'character', 'numeric')
-class(`StateNetwork_addNode__SWIG_3`) = c("SWIGFunction", class('StateNetwork_addNode__SWIG_3'))
-
-`StateNetwork_addNode` <- function(...) {
-  argtypes <- mapply(class, list(...));
-  argv <- list(...);
-  argc <- length(argtypes);
-  f <- NULL;
-# dispatch functions 4
-  if (argc == 2) {
-    if (( extends(argtypes[1], '_p_infomap__StateNetwork') || is.null(argv[[1]]) ) && ( (is.integer(argv[[2]]) || is.numeric(argv[[2]])) && length(argv[[2]]) == 1 )) {
-      f <- StateNetwork_addNode__SWIG_0; 
-    }
-  } else if (argc == 3) {
-    if (( extends(argtypes[1], '_p_infomap__StateNetwork') || is.null(argv[[1]]) ) && ( (is.integer(argv[[2]]) || is.numeric(argv[[2]])) && length(argv[[2]]) == 1 ) && ( is.numeric(argv[[3]]) && length(argv[[3]]) == 1 )) {
-      f <- StateNetwork_addNode__SWIG_2; 
-    }
-    else if (( extends(argtypes[1], '_p_infomap__StateNetwork') || is.null(argv[[1]]) ) && ( (is.integer(argv[[2]]) || is.numeric(argv[[2]])) && length(argv[[2]]) == 1 ) && ( is.character(argv[[3]]) && length(argv[[3]]) == 1 )) {
-      f <- StateNetwork_addNode__SWIG_1; 
-    }
-  } else if (argc == 4) {
-    if (( extends(argtypes[1], '_p_infomap__StateNetwork') || is.null(argv[[1]]) ) && ( (is.integer(argv[[2]]) || is.numeric(argv[[2]])) && length(argv[[2]]) == 1 ) && ( is.character(argv[[3]]) && length(argv[[3]]) == 1 ) && ( is.numeric(argv[[4]]) && length(argv[[4]]) == 1 )) {
-      f <- StateNetwork_addNode__SWIG_3; 
-    }
-  };
-  if (is.null(f)) {
-    stop("cannot find overloaded function for StateNetwork_addNode with argtypes (",toString(argtypes),")");
-  };
-  f(...);
-}
-
-# Dispatch function
-# Start of StateNetwork_addPhysicalNode
-
-`StateNetwork_addPhysicalNode__SWIG_0` = function(self, physId, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  physId = as.integer(physId);
-  
-  if(length(physId) > 1) {
-    warning("using only the first element of physId");
-  };
-  
-  ;ans = .Call('R_swig_StateNetwork_addPhysicalNode__SWIG_0', self, physId, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__StateNetwork__PhysNode", ref=ans);
-  
-  ans
-  
-}
-
-attr(`StateNetwork_addPhysicalNode__SWIG_0`, 'returnType') = '_p_infomap__StateNetwork__PhysNode'
-attr(`StateNetwork_addPhysicalNode__SWIG_0`, "inputTypes") = c('_p_infomap__StateNetwork', 'integer')
-class(`StateNetwork_addPhysicalNode__SWIG_0`) = c("SWIGFunction", class('StateNetwork_addPhysicalNode__SWIG_0'))
-
-# Start of StateNetwork_addPhysicalNode
-
-`StateNetwork_addPhysicalNode__SWIG_1` = function(self, physId, weight, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  physId = as.integer(physId);
-  
-  if(length(physId) > 1) {
-    warning("using only the first element of physId");
-  };
-  
-  
-  ;ans = .Call('R_swig_StateNetwork_addPhysicalNode__SWIG_1', self, physId, weight, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__StateNetwork__PhysNode", ref=ans);
-  
-  ans
-  
-}
-
-attr(`StateNetwork_addPhysicalNode__SWIG_1`, 'returnType') = '_p_infomap__StateNetwork__PhysNode'
-attr(`StateNetwork_addPhysicalNode__SWIG_1`, "inputTypes") = c('_p_infomap__StateNetwork', 'integer', 'numeric')
-class(`StateNetwork_addPhysicalNode__SWIG_1`) = c("SWIGFunction", class('StateNetwork_addPhysicalNode__SWIG_1'))
-
-# Start of StateNetwork_addPhysicalNode
-
-`StateNetwork_addPhysicalNode__SWIG_2` = function(self, physId, name, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  physId = as.integer(physId);
-  
-  if(length(physId) > 1) {
-    warning("using only the first element of physId");
-  };
-  
-  name = as(name, "character"); 
-  ;ans = .Call('R_swig_StateNetwork_addPhysicalNode__SWIG_2', self, physId, name, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__StateNetwork__PhysNode", ref=ans);
-  
-  ans
-  
-}
-
-attr(`StateNetwork_addPhysicalNode__SWIG_2`, 'returnType') = '_p_infomap__StateNetwork__PhysNode'
-attr(`StateNetwork_addPhysicalNode__SWIG_2`, "inputTypes") = c('_p_infomap__StateNetwork', 'integer', 'character')
-class(`StateNetwork_addPhysicalNode__SWIG_2`) = c("SWIGFunction", class('StateNetwork_addPhysicalNode__SWIG_2'))
-
-# Start of StateNetwork_addPhysicalNode
-
-`StateNetwork_addPhysicalNode__SWIG_3` = function(self, physId, weight, name, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  physId = as.integer(physId);
-  
-  if(length(physId) > 1) {
-    warning("using only the first element of physId");
-  };
-  
-  
-  name = as(name, "character"); 
-  ;ans = .Call('R_swig_StateNetwork_addPhysicalNode__SWIG_3', self, physId, weight, name, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__StateNetwork__PhysNode", ref=ans);
-  
-  ans
-  
-}
-
-attr(`StateNetwork_addPhysicalNode__SWIG_3`, 'returnType') = '_p_infomap__StateNetwork__PhysNode'
-attr(`StateNetwork_addPhysicalNode__SWIG_3`, "inputTypes") = c('_p_infomap__StateNetwork', 'integer', 'numeric', 'character')
-class(`StateNetwork_addPhysicalNode__SWIG_3`) = c("SWIGFunction", class('StateNetwork_addPhysicalNode__SWIG_3'))
-
-`StateNetwork_addPhysicalNode` <- function(...) {
-  argtypes <- mapply(class, list(...));
-  argv <- list(...);
-  argc <- length(argtypes);
-  f <- NULL;
-# dispatch functions 4
-  if (argc == 2) {
-    if (( extends(argtypes[1], '_p_infomap__StateNetwork') || is.null(argv[[1]]) ) && ( (is.integer(argv[[2]]) || is.numeric(argv[[2]])) && length(argv[[2]]) == 1 )) {
-      f <- StateNetwork_addPhysicalNode__SWIG_0; 
-    }
-  } else if (argc == 3) {
-    if (( extends(argtypes[1], '_p_infomap__StateNetwork') || is.null(argv[[1]]) ) && ( (is.integer(argv[[2]]) || is.numeric(argv[[2]])) && length(argv[[2]]) == 1 ) && ( is.numeric(argv[[3]]) && length(argv[[3]]) == 1 )) {
-      f <- StateNetwork_addPhysicalNode__SWIG_1; 
-    }
-    else if (( extends(argtypes[1], '_p_infomap__StateNetwork') || is.null(argv[[1]]) ) && ( (is.integer(argv[[2]]) || is.numeric(argv[[2]])) && length(argv[[2]]) == 1 ) && ( is.character(argv[[3]]) && length(argv[[3]]) == 1 )) {
-      f <- StateNetwork_addPhysicalNode__SWIG_2; 
-    }
-  } else if (argc == 4) {
-    if (( extends(argtypes[1], '_p_infomap__StateNetwork') || is.null(argv[[1]]) ) && ( (is.integer(argv[[2]]) || is.numeric(argv[[2]])) && length(argv[[2]]) == 1 ) && ( is.numeric(argv[[3]]) && length(argv[[3]]) == 1 ) && ( is.character(argv[[4]]) && length(argv[[4]]) == 1 )) {
-      f <- StateNetwork_addPhysicalNode__SWIG_3; 
-    }
-  };
-  if (is.null(f)) {
-    stop("cannot find overloaded function for StateNetwork_addPhysicalNode with argtypes (",toString(argtypes),")");
-  };
-  f(...);
-}
-
-# Dispatch function
-# Start of StateNetwork_addName
-
-`StateNetwork_addName` = function(self, id, s_arg3, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  id = as.integer(id);
-  
-  if(length(id) > 1) {
-    warning("using only the first element of id");
-  };
-  
-  s_arg3 = as(s_arg3, "character"); 
-  ;ans = .Call('R_swig_StateNetwork_addName', self, id, s_arg3, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_std__pairT_std__mapT_unsigned_int_std__string_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_std__string_t_t_t__iterator_bool_t", ref=ans);
-  
-  ans
-  
-}
-
-attr(`StateNetwork_addName`, 'returnType') = '_p_std__pairT_std__mapT_unsigned_int_std__string_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_std__string_t_t_t__iterator_bool_t'
-attr(`StateNetwork_addName`, "inputTypes") = c('_p_infomap__StateNetwork', 'integer', 'character')
-class(`StateNetwork_addName`) = c("SWIGFunction", class('StateNetwork_addName'))
-
-# Start of StateNetwork_addLink
-
-`StateNetwork_addLink__SWIG_0` = function(self, sourceId, targetId, weight, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  sourceId = as.integer(sourceId);
-  
-  if(length(sourceId) > 1) {
-    warning("using only the first element of sourceId");
-  };
-  
-  targetId = as.integer(targetId);
-  
-  if(length(targetId) > 1) {
-    warning("using only the first element of targetId");
-  };
-  
-  
-  ;.Call('R_swig_StateNetwork_addLink__SWIG_0', self, sourceId, targetId, weight, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`StateNetwork_addLink__SWIG_0`, 'returnType') = 'logical'
-attr(`StateNetwork_addLink__SWIG_0`, "inputTypes") = c('_p_infomap__StateNetwork', 'integer', 'integer', 'numeric')
-class(`StateNetwork_addLink__SWIG_0`) = c("SWIGFunction", class('StateNetwork_addLink__SWIG_0'))
-
-# Start of StateNetwork_addLink
-
-`StateNetwork_addLink__SWIG_1` = function(self, sourceId, targetId, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  sourceId = as.integer(sourceId);
-  
-  if(length(sourceId) > 1) {
-    warning("using only the first element of sourceId");
-  };
-  
-  targetId = as.integer(targetId);
-  
-  if(length(targetId) > 1) {
-    warning("using only the first element of targetId");
-  };
-  
-  ;.Call('R_swig_StateNetwork_addLink__SWIG_1', self, sourceId, targetId, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`StateNetwork_addLink__SWIG_1`, 'returnType') = 'logical'
-attr(`StateNetwork_addLink__SWIG_1`, "inputTypes") = c('_p_infomap__StateNetwork', 'integer', 'integer')
-class(`StateNetwork_addLink__SWIG_1`) = c("SWIGFunction", class('StateNetwork_addLink__SWIG_1'))
-
-# Start of StateNetwork_addLink
-
-`StateNetwork_addLink__SWIG_2` = function(self, sourceId, targetId, weight, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  sourceId = as.integer(sourceId);
-  
-  if(length(sourceId) > 1) {
-    warning("using only the first element of sourceId");
-  };
-  
-  targetId = as.integer(targetId);
-  
-  if(length(targetId) > 1) {
-    warning("using only the first element of targetId");
-  };
-  
-  weight = as.integer(weight);
-  
-  if(length(weight) > 1) {
-    warning("using only the first element of weight");
-  };
-  
-  ;.Call('R_swig_StateNetwork_addLink__SWIG_2', self, sourceId, targetId, weight, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`StateNetwork_addLink__SWIG_2`, 'returnType') = 'logical'
-attr(`StateNetwork_addLink__SWIG_2`, "inputTypes") = c('_p_infomap__StateNetwork', 'integer', 'integer', 'integer')
-class(`StateNetwork_addLink__SWIG_2`) = c("SWIGFunction", class('StateNetwork_addLink__SWIG_2'))
-
-`StateNetwork_addLink` <- function(...) {
-  argtypes <- mapply(class, list(...));
-  argv <- list(...);
-  argc <- length(argtypes);
-  f <- NULL;
-# dispatch functions 3
-  if (argc == 3) {
-    if (( extends(argtypes[1], '_p_infomap__StateNetwork') || is.null(argv[[1]]) ) && ( (is.integer(argv[[2]]) || is.numeric(argv[[2]])) && length(argv[[2]]) == 1 ) && ( (is.integer(argv[[3]]) || is.numeric(argv[[3]])) && length(argv[[3]]) == 1 )) {
-      f <- StateNetwork_addLink__SWIG_1; 
-    }
-  } else if (argc == 4) {
-    if (( extends(argtypes[1], '_p_infomap__StateNetwork') || is.null(argv[[1]]) ) && ( (is.integer(argv[[2]]) || is.numeric(argv[[2]])) && length(argv[[2]]) == 1 ) && ( (is.integer(argv[[3]]) || is.numeric(argv[[3]])) && length(argv[[3]]) == 1 ) && ( (is.integer(argv[[4]]) || is.numeric(argv[[4]])) && length(argv[[4]]) == 1 )) {
-      f <- StateNetwork_addLink__SWIG_2; 
-    }
-    else if (( extends(argtypes[1], '_p_infomap__StateNetwork') || is.null(argv[[1]]) ) && ( (is.integer(argv[[2]]) || is.numeric(argv[[2]])) && length(argv[[2]]) == 1 ) && ( (is.integer(argv[[3]]) || is.numeric(argv[[3]])) && length(argv[[3]]) == 1 ) && ( is.numeric(argv[[4]]) && length(argv[[4]]) == 1 )) {
-      f <- StateNetwork_addLink__SWIG_0; 
-    }
-  };
-  if (is.null(f)) {
-    stop("cannot find overloaded function for StateNetwork_addLink with argtypes (",toString(argtypes),")");
-  };
-  f(...);
-}
-
-# Dispatch function
-# Start of StateNetwork_addLinks
-
-`StateNetwork_addLinks` = function(self, sourceIds, targetIds, weights)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  sourceIds = as.integer(sourceIds);
-  targetIds = as.integer(targetIds);
-  weights = as.numeric(weights);
-  ;.Call('R_swig_StateNetwork_addLinks', self, sourceIds, targetIds, weights, PACKAGE='infomap');
-  
-}
-
-attr(`StateNetwork_addLinks`, 'returnType') = 'void'
-attr(`StateNetwork_addLinks`, "inputTypes") = c('_p_infomap__StateNetwork', 'integer', 'integer', '_p_std__vectorT_double_t')
-class(`StateNetwork_addLinks`) = c("SWIGFunction", class('StateNetwork_addLinks'))
-
-# Start of StateNetwork_removeLink
-
-`StateNetwork_removeLink` = function(self, sourceId, targetId, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  sourceId = as.integer(sourceId);
-  
-  if(length(sourceId) > 1) {
-    warning("using only the first element of sourceId");
-  };
-  
-  targetId = as.integer(targetId);
-  
-  if(length(targetId) > 1) {
-    warning("using only the first element of targetId");
-  };
-  
-  ;.Call('R_swig_StateNetwork_removeLink', self, sourceId, targetId, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`StateNetwork_removeLink`, 'returnType') = 'logical'
-attr(`StateNetwork_removeLink`, "inputTypes") = c('_p_infomap__StateNetwork', 'integer', 'integer')
-class(`StateNetwork_removeLink`) = c("SWIGFunction", class('StateNetwork_removeLink'))
-
-# Start of StateNetwork_undirectedToDirected
-
-`StateNetwork_undirectedToDirected` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_StateNetwork_undirectedToDirected', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`StateNetwork_undirectedToDirected`, 'returnType') = 'logical'
-attr(`StateNetwork_undirectedToDirected`, "inputTypes") = c('_p_infomap__StateNetwork')
-class(`StateNetwork_undirectedToDirected`) = c("SWIGFunction", class('StateNetwork_undirectedToDirected'))
-
-# Start of StateNetwork_clear
-
-`StateNetwork_clear` = function(self)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_StateNetwork_clear', self, PACKAGE='infomap');
-  
-}
-
-attr(`StateNetwork_clear`, 'returnType') = 'void'
-attr(`StateNetwork_clear`, "inputTypes") = c('_p_infomap__StateNetwork')
-class(`StateNetwork_clear`) = c("SWIGFunction", class('StateNetwork_clear'))
-
-# Start of StateNetwork_clearLinks
-
-`StateNetwork_clearLinks` = function(self)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_StateNetwork_clearLinks', self, PACKAGE='infomap');
-  
-}
-
-attr(`StateNetwork_clearLinks`, 'returnType') = 'void'
-attr(`StateNetwork_clearLinks`, "inputTypes") = c('_p_infomap__StateNetwork')
-class(`StateNetwork_clearLinks`) = c("SWIGFunction", class('StateNetwork_clearLinks'))
-
-# Start of StateNetwork_nodes
-
-`StateNetwork_nodes` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;ans = .Call('R_swig_StateNetwork_nodes', self, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_std__mapT_unsigned_int_infomap__StateNetwork__StateNode_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__StateNode_t_t_t", ref=ans);
-  
-  ans
-  
-}
-
-attr(`StateNetwork_nodes`, 'returnType') = '_p_std__mapT_unsigned_int_infomap__StateNetwork__StateNode_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__StateNode_t_t_t'
-attr(`StateNetwork_nodes`, "inputTypes") = c('_p_infomap__StateNetwork')
-class(`StateNetwork_nodes`) = c("SWIGFunction", class('StateNetwork_nodes'))
-
-# Start of StateNetwork_numNodes
-
-`StateNetwork_numNodes` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_StateNetwork_numNodes', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`StateNetwork_numNodes`, 'returnType') = 'integer'
-attr(`StateNetwork_numNodes`, "inputTypes") = c('_p_infomap__StateNetwork')
-class(`StateNetwork_numNodes`) = c("SWIGFunction", class('StateNetwork_numNodes'))
-
-# Start of StateNetwork_numPhysicalNodes
-
-`StateNetwork_numPhysicalNodes` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_StateNetwork_numPhysicalNodes', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`StateNetwork_numPhysicalNodes`, 'returnType') = 'integer'
-attr(`StateNetwork_numPhysicalNodes`, "inputTypes") = c('_p_infomap__StateNetwork')
-class(`StateNetwork_numPhysicalNodes`) = c("SWIGFunction", class('StateNetwork_numPhysicalNodes'))
-
-# Start of StateNetwork_sumNodeWeight
-
-`StateNetwork_sumNodeWeight` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_StateNetwork_sumNodeWeight', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`StateNetwork_sumNodeWeight`, 'returnType') = 'numeric'
-attr(`StateNetwork_sumNodeWeight`, "inputTypes") = c('_p_infomap__StateNetwork')
-class(`StateNetwork_sumNodeWeight`) = c("SWIGFunction", class('StateNetwork_sumNodeWeight'))
-
-# Start of StateNetwork_nodeLinkMap
-
-`StateNetwork_nodeLinkMap__SWIG_0` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;ans = .Call('R_swig_StateNetwork_nodeLinkMap__SWIG_0', self, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_std__mapT_infomap__StateNetwork__StateNode_std__mapT_infomap__StateNetwork__StateNode_infomap__StateNetwork__LinkData_std__lessT_infomap__StateNetwork__StateNode_t_std__allocatorT_std__pairT_infomap__StateNetwork__StateNode_const_infomap__StateNetwork__LinkData_t_t_t_std__lessT_infomap__StateNetwork__StateNode_t_std__allocatorT_std__pairT_infomap__StateNetwork__StateNode_const_std__mapT_infomap__StateNetwork__StateNode_infomap__StateNetwork__LinkData_std__lessT_infomap__StateNetwork__StateNode_t_std__allocatorT_std__pairT_infomap__StateNetwork__StateNode_const_infomap__StateNetwork__LinkData_t_t_t_t_t_t", ref=ans);
-  
-  ans
-  
-}
-
-attr(`StateNetwork_nodeLinkMap__SWIG_0`, 'returnType') = '_p_std__mapT_infomap__StateNetwork__StateNode_std__mapT_infomap__StateNetwork__StateNode_infomap__StateNetwork__LinkData_std__lessT_infomap__StateNetwork__StateNode_t_std__allocatorT_std__pairT_infomap__StateNetwork__StateNode_const_infomap__StateNetwork__LinkData_t_t_t_std__lessT_infomap__StateNetwork__StateNode_t_std__allocatorT_std__pairT_infomap__StateNetwork__StateNode_const_std__mapT_infomap__StateNetwork__StateNode_infomap__StateNetwork__LinkData_std__lessT_infomap__StateNetwork__StateNode_t_std__allocatorT_std__pairT_infomap__StateNetwork__StateNode_const_infomap__StateNetwork__LinkData_t_t_t_t_t_t'
-attr(`StateNetwork_nodeLinkMap__SWIG_0`, "inputTypes") = c('_p_infomap__StateNetwork')
-class(`StateNetwork_nodeLinkMap__SWIG_0`) = c("SWIGFunction", class('StateNetwork_nodeLinkMap__SWIG_0'))
-
-# Start of StateNetwork_nodeLinkMap
-
-`StateNetwork_nodeLinkMap__SWIG_1` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;ans = .Call('R_swig_StateNetwork_nodeLinkMap__SWIG_1', self, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_std__mapT_infomap__StateNetwork__StateNode_std__mapT_infomap__StateNetwork__StateNode_infomap__StateNetwork__LinkData_std__lessT_infomap__StateNetwork__StateNode_t_std__allocatorT_std__pairT_infomap__StateNetwork__StateNode_const_infomap__StateNetwork__LinkData_t_t_t_std__lessT_infomap__StateNetwork__StateNode_t_std__allocatorT_std__pairT_infomap__StateNetwork__StateNode_const_std__mapT_infomap__StateNetwork__StateNode_infomap__StateNetwork__LinkData_std__lessT_infomap__StateNetwork__StateNode_t_std__allocatorT_std__pairT_infomap__StateNetwork__StateNode_const_infomap__StateNetwork__LinkData_t_t_t_t_t_t", ref=ans);
-  
-  ans
-  
-}
-
-attr(`StateNetwork_nodeLinkMap__SWIG_1`, 'returnType') = '_p_std__mapT_infomap__StateNetwork__StateNode_std__mapT_infomap__StateNetwork__StateNode_infomap__StateNetwork__LinkData_std__lessT_infomap__StateNetwork__StateNode_t_std__allocatorT_std__pairT_infomap__StateNetwork__StateNode_const_infomap__StateNetwork__LinkData_t_t_t_std__lessT_infomap__StateNetwork__StateNode_t_std__allocatorT_std__pairT_infomap__StateNetwork__StateNode_const_std__mapT_infomap__StateNetwork__StateNode_infomap__StateNetwork__LinkData_std__lessT_infomap__StateNetwork__StateNode_t_std__allocatorT_std__pairT_infomap__StateNetwork__StateNode_const_infomap__StateNetwork__LinkData_t_t_t_t_t_t'
-attr(`StateNetwork_nodeLinkMap__SWIG_1`, "inputTypes") = c('_p_infomap__StateNetwork')
-class(`StateNetwork_nodeLinkMap__SWIG_1`) = c("SWIGFunction", class('StateNetwork_nodeLinkMap__SWIG_1'))
-
-`StateNetwork_nodeLinkMap` <- function(...) {
-  argtypes <- mapply(class, list(...));
-  argv <- list(...);
-  argc <- length(argtypes);
-  f <- NULL;
-# dispatch functions 2
-  if (argc == 1) {
-    if ( extends(argtypes[1], '_p_infomap__StateNetwork') || is.null(argv[[1]]) ) {
-      f <- StateNetwork_nodeLinkMap__SWIG_1; 
-    }
-    else if ( extends(argtypes[1], '_p_infomap__StateNetwork') || is.null(argv[[1]]) ) {
-      f <- StateNetwork_nodeLinkMap__SWIG_0; 
-    }
-  };
-  if (is.null(f)) {
-    stop("cannot find overloaded function for StateNetwork_nodeLinkMap with argtypes (",toString(argtypes),")");
-  };
-  f(...);
-}
-
-# Dispatch function
-# Start of StateNetwork_numLinks
-
-`StateNetwork_numLinks` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_StateNetwork_numLinks', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`StateNetwork_numLinks`, 'returnType') = 'integer'
-attr(`StateNetwork_numLinks`, "inputTypes") = c('_p_infomap__StateNetwork')
-class(`StateNetwork_numLinks`) = c("SWIGFunction", class('StateNetwork_numLinks'))
-
-# Start of StateNetwork_sumLinkWeight
-
-`StateNetwork_sumLinkWeight` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_StateNetwork_sumLinkWeight', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`StateNetwork_sumLinkWeight`, 'returnType') = 'numeric'
-attr(`StateNetwork_sumLinkWeight`, "inputTypes") = c('_p_infomap__StateNetwork')
-class(`StateNetwork_sumLinkWeight`) = c("SWIGFunction", class('StateNetwork_sumLinkWeight'))
-
-# Start of StateNetwork_numSelfLinks
-
-`StateNetwork_numSelfLinks` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_StateNetwork_numSelfLinks', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`StateNetwork_numSelfLinks`, 'returnType') = 'integer'
-attr(`StateNetwork_numSelfLinks`, "inputTypes") = c('_p_infomap__StateNetwork')
-class(`StateNetwork_numSelfLinks`) = c("SWIGFunction", class('StateNetwork_numSelfLinks'))
-
-# Start of StateNetwork_sumSelfLinkWeight
-
-`StateNetwork_sumSelfLinkWeight` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_StateNetwork_sumSelfLinkWeight', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`StateNetwork_sumSelfLinkWeight`, 'returnType') = 'numeric'
-attr(`StateNetwork_sumSelfLinkWeight`, "inputTypes") = c('_p_infomap__StateNetwork')
-class(`StateNetwork_sumSelfLinkWeight`) = c("SWIGFunction", class('StateNetwork_sumSelfLinkWeight'))
-
-# Start of StateNetwork_sumWeightedDegree
-
-`StateNetwork_sumWeightedDegree` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_StateNetwork_sumWeightedDegree', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`StateNetwork_sumWeightedDegree`, 'returnType') = 'numeric'
-attr(`StateNetwork_sumWeightedDegree`, "inputTypes") = c('_p_infomap__StateNetwork')
-class(`StateNetwork_sumWeightedDegree`) = c("SWIGFunction", class('StateNetwork_sumWeightedDegree'))
-
-# Start of StateNetwork_sumDegree
-
-`StateNetwork_sumDegree` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_StateNetwork_sumDegree', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`StateNetwork_sumDegree`, 'returnType') = 'integer'
-attr(`StateNetwork_sumDegree`, "inputTypes") = c('_p_infomap__StateNetwork')
-class(`StateNetwork_sumDegree`) = c("SWIGFunction", class('StateNetwork_sumDegree'))
-
-# Start of StateNetwork_outWeights
-
-`StateNetwork_outWeights` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;ans = .Call('R_swig_StateNetwork_outWeights', self, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_std__mapT_unsigned_int_double_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_double_t_t_t", ref=ans);
-  
-  ans
-  
-}
-
-attr(`StateNetwork_outWeights`, 'returnType') = '_p_std__mapT_unsigned_int_double_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_double_t_t_t'
-attr(`StateNetwork_outWeights`, "inputTypes") = c('_p_infomap__StateNetwork')
-class(`StateNetwork_outWeights`) = c("SWIGFunction", class('StateNetwork_outWeights'))
-
-# Start of StateNetwork_names
-
-`StateNetwork_names__SWIG_0` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;ans = .Call('R_swig_StateNetwork_names__SWIG_0', self, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_std__mapT_unsigned_int_std__string_t", ref=ans);
-  
-  ans
-  
-}
-
-attr(`StateNetwork_names__SWIG_0`, 'returnType') = '_p_std__mapT_unsigned_int_std__string_t'
-attr(`StateNetwork_names__SWIG_0`, "inputTypes") = c('_p_infomap__StateNetwork')
-class(`StateNetwork_names__SWIG_0`) = c("SWIGFunction", class('StateNetwork_names__SWIG_0'))
-
-# Start of StateNetwork_names
-
-`StateNetwork_names__SWIG_1` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;ans = .Call('R_swig_StateNetwork_names__SWIG_1', self, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_std__mapT_unsigned_int_std__string_t", ref=ans);
-  
-  ans
-  
-}
-
-attr(`StateNetwork_names__SWIG_1`, 'returnType') = '_p_std__mapT_unsigned_int_std__string_t'
-attr(`StateNetwork_names__SWIG_1`, "inputTypes") = c('_p_infomap__StateNetwork')
-class(`StateNetwork_names__SWIG_1`) = c("SWIGFunction", class('StateNetwork_names__SWIG_1'))
-
-`StateNetwork_names` <- function(...) {
-  argtypes <- mapply(class, list(...));
-  argv <- list(...);
-  argc <- length(argtypes);
-  f <- NULL;
-# dispatch functions 2
-  if (argc == 1) {
-    if ( extends(argtypes[1], '_p_infomap__StateNetwork') || is.null(argv[[1]]) ) {
-      f <- StateNetwork_names__SWIG_0; 
-    }
-    else if ( extends(argtypes[1], '_p_infomap__StateNetwork') || is.null(argv[[1]]) ) {
-      f <- StateNetwork_names__SWIG_1; 
-    }
-  };
-  if (is.null(f)) {
-    stop("cannot find overloaded function for StateNetwork_names with argtypes (",toString(argtypes),")");
-  };
-  f(...);
-}
-
-# Dispatch function
-# Start of StateNetwork_haveNodeWeights
-
-`StateNetwork_haveNodeWeights` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_StateNetwork_haveNodeWeights', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`StateNetwork_haveNodeWeights`, 'returnType') = 'logical'
-attr(`StateNetwork_haveNodeWeights`, "inputTypes") = c('_p_infomap__StateNetwork')
-class(`StateNetwork_haveNodeWeights`) = c("SWIGFunction", class('StateNetwork_haveNodeWeights'))
-
-# Start of StateNetwork_haveStateNodeWeights
-
-`StateNetwork_haveStateNodeWeights` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_StateNetwork_haveStateNodeWeights', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`StateNetwork_haveStateNodeWeights`, 'returnType') = 'logical'
-attr(`StateNetwork_haveStateNodeWeights`, "inputTypes") = c('_p_infomap__StateNetwork')
-class(`StateNetwork_haveStateNodeWeights`) = c("SWIGFunction", class('StateNetwork_haveStateNodeWeights'))
-
-# Start of StateNetwork_haveFileInput
-
-`StateNetwork_haveFileInput` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_StateNetwork_haveFileInput', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`StateNetwork_haveFileInput`, 'returnType') = 'logical'
-attr(`StateNetwork_haveFileInput`, "inputTypes") = c('_p_infomap__StateNetwork')
-class(`StateNetwork_haveFileInput`) = c("SWIGFunction", class('StateNetwork_haveFileInput'))
-
-# Start of StateNetwork_metaData
-
-`StateNetwork_metaData` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;ans = .Call('R_swig_StateNetwork_metaData', self, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_std__mapT_unsigned_int_std__vectorT_int_std__allocatorT_int_t_t_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_std__vectorT_int_std__allocatorT_int_t_t_t_t_t", ref=ans);
-  
-  ans
-  
-}
-
-attr(`StateNetwork_metaData`, 'returnType') = '_p_std__mapT_unsigned_int_std__vectorT_int_std__allocatorT_int_t_t_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_std__vectorT_int_std__allocatorT_int_t_t_t_t_t'
-attr(`StateNetwork_metaData`, "inputTypes") = c('_p_infomap__StateNetwork')
-class(`StateNetwork_metaData`) = c("SWIGFunction", class('StateNetwork_metaData'))
-
-# Start of StateNetwork_haveDirectedInput
-
-`StateNetwork_haveDirectedInput` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_StateNetwork_haveDirectedInput', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`StateNetwork_haveDirectedInput`, 'returnType') = 'logical'
-attr(`StateNetwork_haveDirectedInput`, "inputTypes") = c('_p_infomap__StateNetwork')
-class(`StateNetwork_haveDirectedInput`) = c("SWIGFunction", class('StateNetwork_haveDirectedInput'))
-
-# Start of StateNetwork_haveMemoryInput
-
-`StateNetwork_haveMemoryInput` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_StateNetwork_haveMemoryInput', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`StateNetwork_haveMemoryInput`, 'returnType') = 'logical'
-attr(`StateNetwork_haveMemoryInput`, "inputTypes") = c('_p_infomap__StateNetwork')
-class(`StateNetwork_haveMemoryInput`) = c("SWIGFunction", class('StateNetwork_haveMemoryInput'))
-
-# Start of StateNetwork_higherOrderInputMethodCalled
-
-`StateNetwork_higherOrderInputMethodCalled` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_StateNetwork_higherOrderInputMethodCalled', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`StateNetwork_higherOrderInputMethodCalled`, 'returnType') = 'logical'
-attr(`StateNetwork_higherOrderInputMethodCalled`, "inputTypes") = c('_p_infomap__StateNetwork')
-class(`StateNetwork_higherOrderInputMethodCalled`) = c("SWIGFunction", class('StateNetwork_higherOrderInputMethodCalled'))
-
-# Start of StateNetwork_isBipartite
-
-`StateNetwork_isBipartite` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_StateNetwork_isBipartite', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`StateNetwork_isBipartite`, 'returnType') = 'logical'
-attr(`StateNetwork_isBipartite`, "inputTypes") = c('_p_infomap__StateNetwork')
-class(`StateNetwork_isBipartite`) = c("SWIGFunction", class('StateNetwork_isBipartite'))
-
-# Start of StateNetwork_bipartiteStartId
-
-`StateNetwork_bipartiteStartId` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_StateNetwork_bipartiteStartId', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`StateNetwork_bipartiteStartId`, 'returnType') = 'integer'
-attr(`StateNetwork_bipartiteStartId`, "inputTypes") = c('_p_infomap__StateNetwork')
-class(`StateNetwork_bipartiteStartId`) = c("SWIGFunction", class('StateNetwork_bipartiteStartId'))
-
-# Start of StateNetwork_setBipartiteStartId
-
-`StateNetwork_setBipartiteStartId` = function(self, value)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  value = as.integer(value);
-  
-  if(length(value) > 1) {
-    warning("using only the first element of value");
-  };
-  
-  ;.Call('R_swig_StateNetwork_setBipartiteStartId', self, value, PACKAGE='infomap');
-  
-}
-
-attr(`StateNetwork_setBipartiteStartId`, 'returnType') = 'void'
-attr(`StateNetwork_setBipartiteStartId`, "inputTypes") = c('_p_infomap__StateNetwork', 'integer')
-class(`StateNetwork_setBipartiteStartId`) = c("SWIGFunction", class('StateNetwork_setBipartiteStartId'))
-
-# Start of StateNetwork_writeStateNetwork
-
-`StateNetwork_writeStateNetwork` = function(self, filename)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  filename = as(filename, "character"); 
-  ;.Call('R_swig_StateNetwork_writeStateNetwork', self, filename, PACKAGE='infomap');
-  
-}
-
-attr(`StateNetwork_writeStateNetwork`, 'returnType') = 'void'
-attr(`StateNetwork_writeStateNetwork`, "inputTypes") = c('_p_infomap__StateNetwork', 'character')
-class(`StateNetwork_writeStateNetwork`) = c("SWIGFunction", class('StateNetwork_writeStateNetwork'))
-
-# Start of StateNetwork_writePajekNetwork
-
-`StateNetwork_writePajekNetwork__SWIG_0` = function(self, filename, printFlow)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  filename = as(filename, "character"); 
-  printFlow = as.logical(printFlow);
-  ;.Call('R_swig_StateNetwork_writePajekNetwork__SWIG_0', self, filename, printFlow, PACKAGE='infomap');
-  
-}
-
-attr(`StateNetwork_writePajekNetwork__SWIG_0`, 'returnType') = 'void'
-attr(`StateNetwork_writePajekNetwork__SWIG_0`, "inputTypes") = c('_p_infomap__StateNetwork', 'character', 'logical')
-class(`StateNetwork_writePajekNetwork__SWIG_0`) = c("SWIGFunction", class('StateNetwork_writePajekNetwork__SWIG_0'))
-
-# Start of StateNetwork_writePajekNetwork
-
-`StateNetwork_writePajekNetwork__SWIG_1` = function(self, filename)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  filename = as(filename, "character"); 
-  ;.Call('R_swig_StateNetwork_writePajekNetwork__SWIG_1', self, filename, PACKAGE='infomap');
-  
-}
-
-attr(`StateNetwork_writePajekNetwork__SWIG_1`, 'returnType') = 'void'
-attr(`StateNetwork_writePajekNetwork__SWIG_1`, "inputTypes") = c('_p_infomap__StateNetwork', 'character')
-class(`StateNetwork_writePajekNetwork__SWIG_1`) = c("SWIGFunction", class('StateNetwork_writePajekNetwork__SWIG_1'))
-
-`StateNetwork_writePajekNetwork` <- function(...) {
-  argtypes <- mapply(class, list(...));
-  argv <- list(...);
-  argc <- length(argtypes);
-  f <- NULL;
-# dispatch functions 2
-  if (argc == 2) {
-    if (( extends(argtypes[1], '_p_infomap__StateNetwork') || is.null(argv[[1]]) ) && ( is.character(argv[[2]]) && length(argv[[2]]) == 1 )) {
-      f <- StateNetwork_writePajekNetwork__SWIG_1; 
-    }
-  } else if (argc == 3) {
-    if (( extends(argtypes[1], '_p_infomap__StateNetwork') || is.null(argv[[1]]) ) && ( is.character(argv[[2]]) && length(argv[[2]]) == 1 ) && ( is.logical(argv[[3]]) && length(argv[[3]]) == 1 )) {
-      f <- StateNetwork_writePajekNetwork__SWIG_0; 
-    }
-  };
-  if (is.null(f)) {
-    stop("cannot find overloaded function for StateNetwork_writePajekNetwork with argtypes (",toString(argtypes),")");
-  };
-  f(...);
-}
-
-# Dispatch function
-# Start of accessor method for infomap::StateNetwork
-setMethod('$', '_p_infomap__StateNetwork', function(x, name)
-
-{
-  accessorFuns = list('setConfig' = StateNetwork_setConfig, 'addStateNode' = StateNetwork_addStateNode, 'addNode' = StateNetwork_addNode, 'addPhysicalNode' = StateNetwork_addPhysicalNode, 'addName' = StateNetwork_addName, 'addLink' = StateNetwork_addLink, 'addLinks' = StateNetwork_addLinks, 'removeLink' = StateNetwork_removeLink, 'undirectedToDirected' = StateNetwork_undirectedToDirected, 'clear' = StateNetwork_clear, 'clearLinks' = StateNetwork_clearLinks, 'nodes' = StateNetwork_nodes, 'numNodes' = StateNetwork_numNodes, 'numPhysicalNodes' = StateNetwork_numPhysicalNodes, 'sumNodeWeight' = StateNetwork_sumNodeWeight, 'nodeLinkMap' = StateNetwork_nodeLinkMap, 'numLinks' = StateNetwork_numLinks, 'sumLinkWeight' = StateNetwork_sumLinkWeight, 'numSelfLinks' = StateNetwork_numSelfLinks, 'sumSelfLinkWeight' = StateNetwork_sumSelfLinkWeight, 'sumWeightedDegree' = StateNetwork_sumWeightedDegree, 'sumDegree' = StateNetwork_sumDegree, 'outWeights' = StateNetwork_outWeights, 'names' = StateNetwork_names, 'haveNodeWeights' = StateNetwork_haveNodeWeights, 'haveStateNodeWeights' = StateNetwork_haveStateNodeWeights, 'haveFileInput' = StateNetwork_haveFileInput, 'metaData' = StateNetwork_metaData, 'haveDirectedInput' = StateNetwork_haveDirectedInput, 'haveMemoryInput' = StateNetwork_haveMemoryInput, 'higherOrderInputMethodCalled' = StateNetwork_higherOrderInputMethodCalled, 'isBipartite' = StateNetwork_isBipartite, 'bipartiteStartId' = StateNetwork_bipartiteStartId, 'setBipartiteStartId' = StateNetwork_setBipartiteStartId, 'writeStateNetwork' = StateNetwork_writeStateNetwork, 'writePajekNetwork' = StateNetwork_writePajekNetwork);
-  ;        idx = pmatch(name, names(accessorFuns));
-  if(is.na(idx)) 
-  return(callNextMethod(x, name));
-  f = accessorFuns[[idx]];
-  function(...){
-    f(x, ...)
-  };
-}
-
-
-);
-# end of accessor method for infomap::StateNetwork
-setMethod('delete', '_p_infomap__StateNetwork', function(obj) {delete_infomap__StateNetwork(obj)})
-# Start of new_Network
-
-`Network__SWIG_0` = function()
-{
-  ;ans = .Call('R_swig_new_Network__SWIG_0', PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__Network", ref=ans);
-  
-  reg.finalizer(ans@ref, delete_Network);
-  ans
-  
-}
-
-attr(`Network__SWIG_0`, 'returnType') = '_p_infomap__Network'
-class(`Network__SWIG_0`) = c("SWIGFunction", class('Network__SWIG_0'))
-
-# Start of new_Network
-
-`Network__SWIG_1` = function(config)
-{
-  if (inherits(config, "ExternalReference")) config = slot(config,"ref"); 
-  ;ans = .Call('R_swig_new_Network__SWIG_1', config, PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__Network", ref=ans);
-  
-  reg.finalizer(ans@ref, delete_Network);
-  ans
-  
-}
-
-attr(`Network__SWIG_1`, 'returnType') = '_p_infomap__Network'
-attr(`Network__SWIG_1`, "inputTypes") = c('_p_infomap__Config')
-class(`Network__SWIG_1`) = c("SWIGFunction", class('Network__SWIG_1'))
-
-# Start of new_Network
-
-`Network__SWIG_2` = function(flags)
-{
-  flags = as(flags, "character"); 
-  ;ans = .Call('R_swig_new_Network__SWIG_2', flags, PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__Network", ref=ans);
-  
-  reg.finalizer(ans@ref, delete_Network);
-  ans
-  
-}
-
-attr(`Network__SWIG_2`, 'returnType') = '_p_infomap__Network'
-attr(`Network__SWIG_2`, "inputTypes") = c('character')
-class(`Network__SWIG_2`) = c("SWIGFunction", class('Network__SWIG_2'))
-
-`Network` <- function(...) {
-  argtypes <- mapply(class, list(...));
-  argv <- list(...);
-  argc <- length(argtypes);
-  f <- NULL;
-# dispatch functions 3
-  if (argc == 0) {
-    f <- Network__SWIG_0; 
-  } else if (argc == 1) {
-    if ( extends(argtypes[1], '_p_infomap__Config') && length(argv[[1]]) == 1 ) {
-      f <- Network__SWIG_1; 
-    }
-    else if ( is.character(argv[[1]]) && length(argv[[1]]) == 1 ) {
-      f <- Network__SWIG_2; 
-    }
-  };
-  if (is.null(f)) {
-    stop("cannot find overloaded function for Network with argtypes (",toString(argtypes),")");
-  };
-  f(...);
-}
-
-# Dispatch function
-# Start of delete_Network
-
-`delete_Network` = function(self)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_delete_Network', self, PACKAGE='infomap');
-  
-}
-
-attr(`delete_Network`, 'returnType') = 'void'
-attr(`delete_Network`, "inputTypes") = c('_p_infomap__Network')
-class(`delete_Network`) = c("SWIGFunction", class('delete_Network'))
-
-# Start of Network_setConfig
-
-`Network_setConfig` = function(self, config)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  if (inherits(config, "ExternalReference")) config = slot(config,"ref"); 
-  ;.Call('R_swig_Network_setConfig', self, config, PACKAGE='infomap');
-  
-}
-
-attr(`Network_setConfig`, 'returnType') = 'void'
-attr(`Network_setConfig`, "inputTypes") = c('_p_infomap__Network', '_p_infomap__Config')
-class(`Network_setConfig`) = c("SWIGFunction", class('Network_setConfig'))
-
-# Start of Network_clear
-
-`Network_clear` = function(self)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Network_clear', self, PACKAGE='infomap');
-  
-}
-
-attr(`Network_clear`, 'returnType') = 'void'
-attr(`Network_clear`, "inputTypes") = c('_p_infomap__Network')
-class(`Network_clear`) = c("SWIGFunction", class('Network_clear'))
-
-# Start of Network_readInputData
-
-`Network_readInputData__SWIG_0` = function(self, filename, accumulate)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  filename = as(filename, "character"); 
-  accumulate = as.logical(accumulate);
-  ;.Call('R_swig_Network_readInputData__SWIG_0', self, filename, accumulate, PACKAGE='infomap');
-  
-}
-
-attr(`Network_readInputData__SWIG_0`, 'returnType') = 'void'
-attr(`Network_readInputData__SWIG_0`, "inputTypes") = c('_p_infomap__Network', 'character', 'logical')
-class(`Network_readInputData__SWIG_0`) = c("SWIGFunction", class('Network_readInputData__SWIG_0'))
-
-# Start of Network_readInputData
-
-`Network_readInputData__SWIG_1` = function(self, filename)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  filename = as(filename, "character"); 
-  ;.Call('R_swig_Network_readInputData__SWIG_1', self, filename, PACKAGE='infomap');
-  
-}
-
-attr(`Network_readInputData__SWIG_1`, 'returnType') = 'void'
-attr(`Network_readInputData__SWIG_1`, "inputTypes") = c('_p_infomap__Network', 'character')
-class(`Network_readInputData__SWIG_1`) = c("SWIGFunction", class('Network_readInputData__SWIG_1'))
-
-# Start of Network_readInputData
-
-`Network_readInputData__SWIG_2` = function(self)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Network_readInputData__SWIG_2', self, PACKAGE='infomap');
-  
-}
-
-attr(`Network_readInputData__SWIG_2`, 'returnType') = 'void'
-attr(`Network_readInputData__SWIG_2`, "inputTypes") = c('_p_infomap__Network')
-class(`Network_readInputData__SWIG_2`) = c("SWIGFunction", class('Network_readInputData__SWIG_2'))
-
-`Network_readInputData` <- function(...) {
-  argtypes <- mapply(class, list(...));
-  argv <- list(...);
-  argc <- length(argtypes);
-  f <- NULL;
-# dispatch functions 3
-  if (argc == 1) {
-    if ( extends(argtypes[1], '_p_infomap__Network') || is.null(argv[[1]]) ) {
-      f <- Network_readInputData__SWIG_2; 
-    }
-  } else if (argc == 2) {
-    if (( extends(argtypes[1], '_p_infomap__Network') || is.null(argv[[1]]) ) && ( is.character(argv[[2]]) && length(argv[[2]]) == 1 )) {
-      f <- Network_readInputData__SWIG_1; 
-    }
-  } else if (argc == 3) {
-    if (( extends(argtypes[1], '_p_infomap__Network') || is.null(argv[[1]]) ) && ( is.character(argv[[2]]) && length(argv[[2]]) == 1 ) && ( is.logical(argv[[3]]) && length(argv[[3]]) == 1 )) {
-      f <- Network_readInputData__SWIG_0; 
-    }
-  };
-  if (is.null(f)) {
-    stop("cannot find overloaded function for Network_readInputData with argtypes (",toString(argtypes),")");
-  };
-  f(...);
-}
-
-# Dispatch function
-# Start of Network_readMetaData
-
-`Network_readMetaData` = function(self, filename)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  filename = as(filename, "character"); 
-  ;.Call('R_swig_Network_readMetaData', self, filename, PACKAGE='infomap');
-  
-}
-
-attr(`Network_readMetaData`, 'returnType') = 'void'
-attr(`Network_readMetaData`, "inputTypes") = c('_p_infomap__Network', 'character')
-class(`Network_readMetaData`) = c("SWIGFunction", class('Network_readMetaData'))
-
-# Start of Network_numMetaDataColumns
-
-`Network_numMetaDataColumns` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Network_numMetaDataColumns', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Network_numMetaDataColumns`, 'returnType') = 'integer'
-attr(`Network_numMetaDataColumns`, "inputTypes") = c('_p_infomap__Network')
-class(`Network_numMetaDataColumns`) = c("SWIGFunction", class('Network_numMetaDataColumns'))
-
-# Start of Network_metaData
-
-`Network_metaData` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;ans = .Call('R_swig_Network_metaData', self, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_std__mapT_unsigned_int_std__vectorT_int_std__allocatorT_int_t_t_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_std__vectorT_int_std__allocatorT_int_t_t_t_t_t", ref=ans);
-  
-  ans
-  
-}
-
-attr(`Network_metaData`, 'returnType') = '_p_std__mapT_unsigned_int_std__vectorT_int_std__allocatorT_int_t_t_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_std__vectorT_int_std__allocatorT_int_t_t_t_t_t'
-attr(`Network_metaData`, "inputTypes") = c('_p_infomap__Network')
-class(`Network_metaData`) = c("SWIGFunction", class('Network_metaData'))
-
-# Start of Network_isMultilayerNetwork
-
-`Network_isMultilayerNetwork` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Network_isMultilayerNetwork', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Network_isMultilayerNetwork`, 'returnType') = 'logical'
-attr(`Network_isMultilayerNetwork`, "inputTypes") = c('_p_infomap__Network')
-class(`Network_isMultilayerNetwork`) = c("SWIGFunction", class('Network_isMultilayerNetwork'))
-
-# Start of Network_layerNodeToStateId
-
-`Network_layerNodeToStateId` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;ans = .Call('R_swig_Network_layerNodeToStateId', self, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_std__mapT_unsigned_int_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t_t_t_t", ref=ans);
-  
-  ans
-  
-}
-
-attr(`Network_layerNodeToStateId`, 'returnType') = '_p_std__mapT_unsigned_int_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t_t_t_t'
-attr(`Network_layerNodeToStateId`, "inputTypes") = c('_p_infomap__Network')
-class(`Network_layerNodeToStateId`) = c("SWIGFunction", class('Network_layerNodeToStateId'))
-
-# Start of Network_postProcessInputData
-
-`Network_postProcessInputData` = function(self)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Network_postProcessInputData', self, PACKAGE='infomap');
-  
-}
-
-attr(`Network_postProcessInputData`, 'returnType') = 'void'
-attr(`Network_postProcessInputData`, "inputTypes") = c('_p_infomap__Network')
-class(`Network_postProcessInputData`) = c("SWIGFunction", class('Network_postProcessInputData'))
-
-# Start of Network_generateStateNetworkFromMultilayer
-
-`Network_generateStateNetworkFromMultilayer` = function(self)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Network_generateStateNetworkFromMultilayer', self, PACKAGE='infomap');
-  
-}
-
-attr(`Network_generateStateNetworkFromMultilayer`, 'returnType') = 'void'
-attr(`Network_generateStateNetworkFromMultilayer`, "inputTypes") = c('_p_infomap__Network')
-class(`Network_generateStateNetworkFromMultilayer`) = c("SWIGFunction", class('Network_generateStateNetworkFromMultilayer'))
-
-# Start of Network_generateStateNetworkFromMultilayerWithInterLinks
-
-`Network_generateStateNetworkFromMultilayerWithInterLinks` = function(self)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Network_generateStateNetworkFromMultilayerWithInterLinks', self, PACKAGE='infomap');
-  
-}
-
-attr(`Network_generateStateNetworkFromMultilayerWithInterLinks`, 'returnType') = 'void'
-attr(`Network_generateStateNetworkFromMultilayerWithInterLinks`, "inputTypes") = c('_p_infomap__Network')
-class(`Network_generateStateNetworkFromMultilayerWithInterLinks`) = c("SWIGFunction", class('Network_generateStateNetworkFromMultilayerWithInterLinks'))
-
-# Start of Network_generateStateNetworkFromMultilayerWithSimulatedInterLinks
-
-`Network_generateStateNetworkFromMultilayerWithSimulatedInterLinks` = function(self)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Network_generateStateNetworkFromMultilayerWithSimulatedInterLinks', self, PACKAGE='infomap');
-  
-}
-
-attr(`Network_generateStateNetworkFromMultilayerWithSimulatedInterLinks`, 'returnType') = 'void'
-attr(`Network_generateStateNetworkFromMultilayerWithSimulatedInterLinks`, "inputTypes") = c('_p_infomap__Network')
-class(`Network_generateStateNetworkFromMultilayerWithSimulatedInterLinks`) = c("SWIGFunction", class('Network_generateStateNetworkFromMultilayerWithSimulatedInterLinks'))
-
-# Start of Network_simulateInterLayerLinks
-
-`Network_simulateInterLayerLinks` = function(self)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_Network_simulateInterLayerLinks', self, PACKAGE='infomap');
-  
-}
-
-attr(`Network_simulateInterLayerLinks`, 'returnType') = 'void'
-attr(`Network_simulateInterLayerLinks`, "inputTypes") = c('_p_infomap__Network')
-class(`Network_simulateInterLayerLinks`) = c("SWIGFunction", class('Network_simulateInterLayerLinks'))
-
-# Start of Network_addMultilayerNode
-
-`Network_addMultilayerNode__SWIG_0` = function(self, layerId, physicalId, weight, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  layerId = as.integer(layerId);
-  
-  if(length(layerId) > 1) {
-    warning("using only the first element of layerId");
-  };
-  
-  physicalId = as.integer(physicalId);
-  
-  if(length(physicalId) > 1) {
-    warning("using only the first element of physicalId");
-  };
-  
-  
-  ;.Call('R_swig_Network_addMultilayerNode__SWIG_0', self, layerId, physicalId, weight, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Network_addMultilayerNode__SWIG_0`, 'returnType') = 'integer'
-attr(`Network_addMultilayerNode__SWIG_0`, "inputTypes") = c('_p_infomap__Network', 'integer', 'integer', 'numeric')
-class(`Network_addMultilayerNode__SWIG_0`) = c("SWIGFunction", class('Network_addMultilayerNode__SWIG_0'))
-
-# Start of Network_addMultilayerNode
-
-`Network_addMultilayerNode__SWIG_1` = function(self, layerId, physicalId, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  layerId = as.integer(layerId);
-  
-  if(length(layerId) > 1) {
-    warning("using only the first element of layerId");
-  };
-  
-  physicalId = as.integer(physicalId);
-  
-  if(length(physicalId) > 1) {
-    warning("using only the first element of physicalId");
-  };
-  
-  ;.Call('R_swig_Network_addMultilayerNode__SWIG_1', self, layerId, physicalId, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Network_addMultilayerNode__SWIG_1`, 'returnType') = 'integer'
-attr(`Network_addMultilayerNode__SWIG_1`, "inputTypes") = c('_p_infomap__Network', 'integer', 'integer')
-class(`Network_addMultilayerNode__SWIG_1`) = c("SWIGFunction", class('Network_addMultilayerNode__SWIG_1'))
-
-# Start of Network_addMultilayerNode
-
-`Network_addMultilayerNode__SWIG_2` = function(self, stateId, layerId, physicalId, weight, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  stateId = as.integer(stateId);
-  
-  if(length(stateId) > 1) {
-    warning("using only the first element of stateId");
-  };
-  
-  layerId = as.integer(layerId);
-  
-  if(length(layerId) > 1) {
-    warning("using only the first element of layerId");
-  };
-  
-  physicalId = as.integer(physicalId);
-  
-  if(length(physicalId) > 1) {
-    warning("using only the first element of physicalId");
-  };
-  
-  
-  ;.Call('R_swig_Network_addMultilayerNode__SWIG_2', self, stateId, layerId, physicalId, weight, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`Network_addMultilayerNode__SWIG_2`, 'returnType') = 'integer'
-attr(`Network_addMultilayerNode__SWIG_2`, "inputTypes") = c('_p_infomap__Network', 'integer', 'integer', 'integer', 'numeric')
-class(`Network_addMultilayerNode__SWIG_2`) = c("SWIGFunction", class('Network_addMultilayerNode__SWIG_2'))
-
-`Network_addMultilayerNode` <- function(...) {
-  argtypes <- mapply(class, list(...));
-  argv <- list(...);
-  argc <- length(argtypes);
-  f <- NULL;
-# dispatch functions 3
-  if (argc == 3) {
-    if (( extends(argtypes[1], '_p_infomap__Network') || is.null(argv[[1]]) ) && ( (is.integer(argv[[2]]) || is.numeric(argv[[2]])) && length(argv[[2]]) == 1 ) && ( (is.integer(argv[[3]]) || is.numeric(argv[[3]])) && length(argv[[3]]) == 1 )) {
-      f <- Network_addMultilayerNode__SWIG_1; 
-    }
-  } else if (argc == 4) {
-    if (( extends(argtypes[1], '_p_infomap__Network') || is.null(argv[[1]]) ) && ( (is.integer(argv[[2]]) || is.numeric(argv[[2]])) && length(argv[[2]]) == 1 ) && ( (is.integer(argv[[3]]) || is.numeric(argv[[3]])) && length(argv[[3]]) == 1 ) && ( is.numeric(argv[[4]]) && length(argv[[4]]) == 1 )) {
-      f <- Network_addMultilayerNode__SWIG_0; 
-    }
-  } else if (argc == 5) {
-    if (( extends(argtypes[1], '_p_infomap__Network') || is.null(argv[[1]]) ) && ( (is.integer(argv[[2]]) || is.numeric(argv[[2]])) && length(argv[[2]]) == 1 ) && ( (is.integer(argv[[3]]) || is.numeric(argv[[3]])) && length(argv[[3]]) == 1 ) && ( (is.integer(argv[[4]]) || is.numeric(argv[[4]])) && length(argv[[4]]) == 1 ) && ( is.numeric(argv[[5]]) && length(argv[[5]]) == 1 )) {
-      f <- Network_addMultilayerNode__SWIG_2; 
-    }
-  };
-  if (is.null(f)) {
-    stop("cannot find overloaded function for Network_addMultilayerNode with argtypes (",toString(argtypes),")");
-  };
-  f(...);
-}
-
-# Dispatch function
-# Start of Network_addMultilayerLink
-
-`Network_addMultilayerLink__SWIG_0` = function(self, layer1, n1, layer2, n2, weight)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  layer1 = as.integer(layer1);
-  
-  if(length(layer1) > 1) {
-    warning("using only the first element of layer1");
-  };
-  
-  n1 = as.integer(n1);
-  
-  if(length(n1) > 1) {
-    warning("using only the first element of n1");
-  };
-  
-  layer2 = as.integer(layer2);
-  
-  if(length(layer2) > 1) {
-    warning("using only the first element of layer2");
-  };
-  
-  n2 = as.integer(n2);
-  
-  if(length(n2) > 1) {
-    warning("using only the first element of n2");
-  };
-  
-  
-  ;.Call('R_swig_Network_addMultilayerLink__SWIG_0', self, layer1, n1, layer2, n2, weight, PACKAGE='infomap');
-  
-}
-
-attr(`Network_addMultilayerLink__SWIG_0`, 'returnType') = 'void'
-attr(`Network_addMultilayerLink__SWIG_0`, "inputTypes") = c('_p_infomap__Network', 'integer', 'integer', 'integer', 'integer', 'numeric')
-class(`Network_addMultilayerLink__SWIG_0`) = c("SWIGFunction", class('Network_addMultilayerLink__SWIG_0'))
-
-# Start of Network_addMultilayerLink
-
-`Network_addMultilayerLink__SWIG_1` = function(self, stateId1, layer1, n1, stateId2, layer2, n2, weight)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  stateId1 = as.integer(stateId1);
-  
-  if(length(stateId1) > 1) {
-    warning("using only the first element of stateId1");
-  };
-  
-  layer1 = as.integer(layer1);
-  
-  if(length(layer1) > 1) {
-    warning("using only the first element of layer1");
-  };
-  
-  n1 = as.integer(n1);
-  
-  if(length(n1) > 1) {
-    warning("using only the first element of n1");
-  };
-  
-  stateId2 = as.integer(stateId2);
-  
-  if(length(stateId2) > 1) {
-    warning("using only the first element of stateId2");
-  };
-  
-  layer2 = as.integer(layer2);
-  
-  if(length(layer2) > 1) {
-    warning("using only the first element of layer2");
-  };
-  
-  n2 = as.integer(n2);
-  
-  if(length(n2) > 1) {
-    warning("using only the first element of n2");
-  };
-  
-  
-  ;.Call('R_swig_Network_addMultilayerLink__SWIG_1', self, stateId1, layer1, n1, stateId2, layer2, n2, weight, PACKAGE='infomap');
-  
-}
-
-attr(`Network_addMultilayerLink__SWIG_1`, 'returnType') = 'void'
-attr(`Network_addMultilayerLink__SWIG_1`, "inputTypes") = c('_p_infomap__Network', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'numeric')
-class(`Network_addMultilayerLink__SWIG_1`) = c("SWIGFunction", class('Network_addMultilayerLink__SWIG_1'))
-
-`Network_addMultilayerLink` <- function(...) {
-  argtypes <- mapply(class, list(...));
-  argv <- list(...);
-  argc <- length(argtypes);
-  f <- NULL;
-# dispatch functions 2
-  if (argc == 6) {
-    if (( extends(argtypes[1], '_p_infomap__Network') || is.null(argv[[1]]) ) && ( (is.integer(argv[[2]]) || is.numeric(argv[[2]])) && length(argv[[2]]) == 1 ) && ( (is.integer(argv[[3]]) || is.numeric(argv[[3]])) && length(argv[[3]]) == 1 ) && ( (is.integer(argv[[4]]) || is.numeric(argv[[4]])) && length(argv[[4]]) == 1 ) && ( (is.integer(argv[[5]]) || is.numeric(argv[[5]])) && length(argv[[5]]) == 1 ) && ( is.numeric(argv[[6]]) && length(argv[[6]]) == 1 )) {
-      f <- Network_addMultilayerLink__SWIG_0; 
-    }
-  } else if (argc == 8) {
-    if (( extends(argtypes[1], '_p_infomap__Network') || is.null(argv[[1]]) ) && ( (is.integer(argv[[2]]) || is.numeric(argv[[2]])) && length(argv[[2]]) == 1 ) && ( (is.integer(argv[[3]]) || is.numeric(argv[[3]])) && length(argv[[3]]) == 1 ) && ( (is.integer(argv[[4]]) || is.numeric(argv[[4]])) && length(argv[[4]]) == 1 ) && ( (is.integer(argv[[5]]) || is.numeric(argv[[5]])) && length(argv[[5]]) == 1 ) && ( (is.integer(argv[[6]]) || is.numeric(argv[[6]])) && length(argv[[6]]) == 1 ) && ( (is.integer(argv[[7]]) || is.numeric(argv[[7]])) && length(argv[[7]]) == 1 ) && ( is.numeric(argv[[8]]) && length(argv[[8]]) == 1 )) {
-      f <- Network_addMultilayerLink__SWIG_1; 
-    }
-  };
-  if (is.null(f)) {
-    stop("cannot find overloaded function for Network_addMultilayerLink with argtypes (",toString(argtypes),")");
-  };
-  f(...);
-}
-
-# Dispatch function
-# Start of Network_addMultilayerLinks
-
-`Network_addMultilayerLinks` = function(self, sourceLayerIds, sourceNodeIds, targetLayerIds, targetNodeIds, weights)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  sourceLayerIds = as.integer(sourceLayerIds);
-  sourceNodeIds = as.integer(sourceNodeIds);
-  targetLayerIds = as.integer(targetLayerIds);
-  targetNodeIds = as.integer(targetNodeIds);
-  weights = as.numeric(weights);
-  ;.Call('R_swig_Network_addMultilayerLinks', self, sourceLayerIds, sourceNodeIds, targetLayerIds, targetNodeIds, weights, PACKAGE='infomap');
-  
-}
-
-attr(`Network_addMultilayerLinks`, 'returnType') = 'void'
-attr(`Network_addMultilayerLinks`, "inputTypes") = c('_p_infomap__Network', 'integer', 'integer', 'integer', 'integer', '_p_std__vectorT_double_t')
-class(`Network_addMultilayerLinks`) = c("SWIGFunction", class('Network_addMultilayerLinks'))
-
-# Start of Network_addMultilayerIntraLink
-
-`Network_addMultilayerIntraLink` = function(self, layer, n1, n2, weight)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  layer = as.integer(layer);
-  
-  if(length(layer) > 1) {
-    warning("using only the first element of layer");
-  };
-  
-  n1 = as.integer(n1);
-  
-  if(length(n1) > 1) {
-    warning("using only the first element of n1");
-  };
-  
-  n2 = as.integer(n2);
-  
-  if(length(n2) > 1) {
-    warning("using only the first element of n2");
-  };
-  
-  
-  ;.Call('R_swig_Network_addMultilayerIntraLink', self, layer, n1, n2, weight, PACKAGE='infomap');
-  
-}
-
-attr(`Network_addMultilayerIntraLink`, 'returnType') = 'void'
-attr(`Network_addMultilayerIntraLink`, "inputTypes") = c('_p_infomap__Network', 'integer', 'integer', 'integer', 'numeric')
-class(`Network_addMultilayerIntraLink`) = c("SWIGFunction", class('Network_addMultilayerIntraLink'))
-
-# Start of Network_addMultilayerIntraLinks
-
-`Network_addMultilayerIntraLinks` = function(self, layerIds, sourceNodeIds, targetNodeIds, weights)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  layerIds = as.integer(layerIds);
-  sourceNodeIds = as.integer(sourceNodeIds);
-  targetNodeIds = as.integer(targetNodeIds);
-  weights = as.numeric(weights);
-  ;.Call('R_swig_Network_addMultilayerIntraLinks', self, layerIds, sourceNodeIds, targetNodeIds, weights, PACKAGE='infomap');
-  
-}
-
-attr(`Network_addMultilayerIntraLinks`, 'returnType') = 'void'
-attr(`Network_addMultilayerIntraLinks`, "inputTypes") = c('_p_infomap__Network', 'integer', 'integer', 'integer', '_p_std__vectorT_double_t')
-class(`Network_addMultilayerIntraLinks`) = c("SWIGFunction", class('Network_addMultilayerIntraLinks'))
-
-# Start of Network_addMultilayerInterLink
-
-`Network_addMultilayerInterLink` = function(self, layer1, n, layer2, interWeight)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  layer1 = as.integer(layer1);
-  
-  if(length(layer1) > 1) {
-    warning("using only the first element of layer1");
-  };
-  
-  n = as.integer(n);
-  
-  if(length(n) > 1) {
-    warning("using only the first element of n");
-  };
-  
-  layer2 = as.integer(layer2);
-  
-  if(length(layer2) > 1) {
-    warning("using only the first element of layer2");
-  };
-  
-  
-  ;.Call('R_swig_Network_addMultilayerInterLink', self, layer1, n, layer2, interWeight, PACKAGE='infomap');
-  
-}
-
-attr(`Network_addMultilayerInterLink`, 'returnType') = 'void'
-attr(`Network_addMultilayerInterLink`, "inputTypes") = c('_p_infomap__Network', 'integer', 'integer', 'integer', 'numeric')
-class(`Network_addMultilayerInterLink`) = c("SWIGFunction", class('Network_addMultilayerInterLink'))
-
-# Start of Network_addMultilayerInterLinks
-
-`Network_addMultilayerInterLinks` = function(self, sourceLayerIds, nodeIds, targetLayerIds, weights)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  sourceLayerIds = as.integer(sourceLayerIds);
-  nodeIds = as.integer(nodeIds);
-  targetLayerIds = as.integer(targetLayerIds);
-  weights = as.numeric(weights);
-  ;.Call('R_swig_Network_addMultilayerInterLinks', self, sourceLayerIds, nodeIds, targetLayerIds, weights, PACKAGE='infomap');
-  
-}
-
-attr(`Network_addMultilayerInterLinks`, 'returnType') = 'void'
-attr(`Network_addMultilayerInterLinks`, "inputTypes") = c('_p_infomap__Network', 'integer', 'integer', 'integer', '_p_std__vectorT_double_t')
-class(`Network_addMultilayerInterLinks`) = c("SWIGFunction", class('Network_addMultilayerInterLinks'))
-
-# Start of Network_addMetaData
-
-`Network_addMetaData__SWIG_0` = function(self, nodeId, meta)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  nodeId = as.integer(nodeId);
-  
-  if(length(nodeId) > 1) {
-    warning("using only the first element of nodeId");
-  };
-  
-  meta = as.integer(meta);
-  
-  if(length(meta) > 1) {
-    warning("using only the first element of meta");
-  };
-  
-  ;.Call('R_swig_Network_addMetaData__SWIG_0', self, nodeId, meta, PACKAGE='infomap');
-  
-}
-
-attr(`Network_addMetaData__SWIG_0`, 'returnType') = 'void'
-attr(`Network_addMetaData__SWIG_0`, "inputTypes") = c('_p_infomap__Network', 'integer', 'integer')
-class(`Network_addMetaData__SWIG_0`) = c("SWIGFunction", class('Network_addMetaData__SWIG_0'))
-
-# Start of Network_addMetaData
-
-`Network_addMetaData__SWIG_1` = function(self, nodeId, metaData)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  nodeId = as.integer(nodeId);
-  
-  if(length(nodeId) > 1) {
-    warning("using only the first element of nodeId");
-  };
-  
-  metaData = as.integer(metaData);
-  ;.Call('R_swig_Network_addMetaData__SWIG_1', self, nodeId, metaData, PACKAGE='infomap');
-  
-}
-
-attr(`Network_addMetaData__SWIG_1`, 'returnType') = 'void'
-attr(`Network_addMetaData__SWIG_1`, "inputTypes") = c('_p_infomap__Network', 'integer', '_p_std__vectorT_int_std__allocatorT_int_t_t')
-class(`Network_addMetaData__SWIG_1`) = c("SWIGFunction", class('Network_addMetaData__SWIG_1'))
-
-`Network_addMetaData` <- function(...) {
-  argtypes <- mapply(class, list(...));
-  argv <- list(...);
-  argc <- length(argtypes);
-  f <- NULL;
-# dispatch functions 2
-  if (argc == 3) {
-    if (( extends(argtypes[1], '_p_infomap__Network') || is.null(argv[[1]]) ) && ( (is.integer(argv[[2]]) || is.numeric(argv[[2]])) && length(argv[[2]]) == 1 ) && ( (is.integer(argv[[3]]) || is.numeric(argv[[3]])) && length(argv[[3]]) == 1 )) {
-      f <- Network_addMetaData__SWIG_0; 
-    }
-    else if (( extends(argtypes[1], '_p_infomap__Network') || is.null(argv[[1]]) ) && ( (is.integer(argv[[2]]) || is.numeric(argv[[2]])) && length(argv[[2]]) == 1 ) && ( is.integer(argv[[3]]) || is.numeric(argv[[3]]) )) {
-      f <- Network_addMetaData__SWIG_1; 
-    }
-  };
-  if (is.null(f)) {
-    stop("cannot find overloaded function for Network_addMetaData with argtypes (",toString(argtypes),")");
-  };
-  f(...);
-}
-
-# Dispatch function
-# Start of accessor method for infomap::Network
-setMethod('$', '_p_infomap__Network', function(x, name)
-
-{
-  accessorFuns = list('setConfig' = Network_setConfig, 'clear' = Network_clear, 'readInputData' = Network_readInputData, 'readMetaData' = Network_readMetaData, 'numMetaDataColumns' = Network_numMetaDataColumns, 'metaData' = Network_metaData, 'isMultilayerNetwork' = Network_isMultilayerNetwork, 'layerNodeToStateId' = Network_layerNodeToStateId, 'postProcessInputData' = Network_postProcessInputData, 'generateStateNetworkFromMultilayer' = Network_generateStateNetworkFromMultilayer, 'generateStateNetworkFromMultilayerWithInterLinks' = Network_generateStateNetworkFromMultilayerWithInterLinks, 'generateStateNetworkFromMultilayerWithSimulatedInterLinks' = Network_generateStateNetworkFromMultilayerWithSimulatedInterLinks, 'simulateInterLayerLinks' = Network_simulateInterLayerLinks, 'addMultilayerNode' = Network_addMultilayerNode, 'addMultilayerLink' = Network_addMultilayerLink, 'addMultilayerLinks' = Network_addMultilayerLinks, 'addMultilayerIntraLink' = Network_addMultilayerIntraLink, 'addMultilayerIntraLinks' = Network_addMultilayerIntraLinks, 'addMultilayerInterLink' = Network_addMultilayerInterLink, 'addMultilayerInterLinks' = Network_addMultilayerInterLinks, 'addMetaData' = Network_addMetaData);
-  ;        idx = pmatch(name, names(accessorFuns));
-  if(is.na(idx)) 
-  return(callNextMethod(x, name));
-  f = accessorFuns[[idx]];
-  function(...){
-    f(x, ...)
-  };
-}
-
-
-);
-# end of accessor method for infomap::Network
-setMethod('delete', '_p_infomap__Network', function(obj) {delete_infomap__Network(obj)})
-# Start of LayerNode_layer_set
-
-`LayerNode_layer_set` = function(self, s_layer)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_layer = as.integer(s_layer);
-  
-  if(length(s_layer) > 1) {
-    warning("using only the first element of s_layer");
-  };
-  
-  ;.Call('R_swig_LayerNode_layer_set', self, s_layer, PACKAGE='infomap');
-  
-}
-
-attr(`LayerNode_layer_set`, 'returnType') = 'void'
-attr(`LayerNode_layer_set`, "inputTypes") = c('_p_infomap__LayerNode', 'integer')
-class(`LayerNode_layer_set`) = c("SWIGFunction", class('LayerNode_layer_set'))
-
-# Start of LayerNode_layer_get
-
-`LayerNode_layer_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_LayerNode_layer_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`LayerNode_layer_get`, 'returnType') = 'integer'
-attr(`LayerNode_layer_get`, "inputTypes") = c('_p_infomap__LayerNode')
-class(`LayerNode_layer_get`) = c("SWIGFunction", class('LayerNode_layer_get'))
-
-# Start of LayerNode_node_set
-
-`LayerNode_node_set` = function(self, s_node)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_node = as.integer(s_node);
-  
-  if(length(s_node) > 1) {
-    warning("using only the first element of s_node");
-  };
-  
-  ;.Call('R_swig_LayerNode_node_set', self, s_node, PACKAGE='infomap');
-  
-}
-
-attr(`LayerNode_node_set`, 'returnType') = 'void'
-attr(`LayerNode_node_set`, "inputTypes") = c('_p_infomap__LayerNode', 'integer')
-class(`LayerNode_node_set`) = c("SWIGFunction", class('LayerNode_node_set'))
-
-# Start of LayerNode_node_get
-
-`LayerNode_node_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_LayerNode_node_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`LayerNode_node_get`, 'returnType') = 'integer'
-attr(`LayerNode_node_get`, "inputTypes") = c('_p_infomap__LayerNode')
-class(`LayerNode_node_get`) = c("SWIGFunction", class('LayerNode_node_get'))
-
-# Start of new_LayerNode
-
-`LayerNode__SWIG_0` = function(layer, node)
-{
-  layer = as.integer(layer);
-  
-  if(length(layer) > 1) {
-    warning("using only the first element of layer");
-  };
-  
-  node = as.integer(node);
-  
-  if(length(node) > 1) {
-    warning("using only the first element of node");
-  };
-  
-  ;ans = .Call('R_swig_new_LayerNode__SWIG_0', layer, node, PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__LayerNode", ref=ans);
-  
-  reg.finalizer(ans@ref, delete_LayerNode);
-  ans
-  
-}
-
-attr(`LayerNode__SWIG_0`, 'returnType') = '_p_infomap__LayerNode'
-attr(`LayerNode__SWIG_0`, "inputTypes") = c('integer', 'integer')
-class(`LayerNode__SWIG_0`) = c("SWIGFunction", class('LayerNode__SWIG_0'))
-
-# Start of new_LayerNode
-
-`LayerNode__SWIG_1` = function(layer)
-{
-  layer = as.integer(layer);
-  
-  if(length(layer) > 1) {
-    warning("using only the first element of layer");
-  };
-  
-  ;ans = .Call('R_swig_new_LayerNode__SWIG_1', layer, PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__LayerNode", ref=ans);
-  
-  reg.finalizer(ans@ref, delete_LayerNode);
-  ans
-  
-}
-
-attr(`LayerNode__SWIG_1`, 'returnType') = '_p_infomap__LayerNode'
-attr(`LayerNode__SWIG_1`, "inputTypes") = c('integer')
-class(`LayerNode__SWIG_1`) = c("SWIGFunction", class('LayerNode__SWIG_1'))
-
-# Start of new_LayerNode
-
-`LayerNode__SWIG_2` = function()
-{
-  ;ans = .Call('R_swig_new_LayerNode__SWIG_2', PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__LayerNode", ref=ans);
-  
-  reg.finalizer(ans@ref, delete_LayerNode);
-  ans
-  
-}
-
-attr(`LayerNode__SWIG_2`, 'returnType') = '_p_infomap__LayerNode'
-class(`LayerNode__SWIG_2`) = c("SWIGFunction", class('LayerNode__SWIG_2'))
-
-`LayerNode` <- function(...) {
-  argtypes <- mapply(class, list(...));
-  argv <- list(...);
-  argc <- length(argtypes);
-  f <- NULL;
-# dispatch functions 3
-  if (argc == 0) {
-    f <- LayerNode__SWIG_2; 
-  } else if (argc == 1) {
-    if ( (is.integer(argv[[1]]) || is.numeric(argv[[1]])) && length(argv[[1]]) == 1 ) {
-      f <- LayerNode__SWIG_1; 
-    }
-  } else if (argc == 2) {
-    if (( (is.integer(argv[[1]]) || is.numeric(argv[[1]])) && length(argv[[1]]) == 1 ) && ( (is.integer(argv[[2]]) || is.numeric(argv[[2]])) && length(argv[[2]]) == 1 )) {
-      f <- LayerNode__SWIG_0; 
-    }
-  };
-  if (is.null(f)) {
-    stop("cannot find overloaded function for LayerNode with argtypes (",toString(argtypes),")");
-  };
-  f(...);
-}
-
-# Dispatch function
-# Start of LayerNode_LessThan
-
-`LayerNode_LessThan` = function(self, other, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  if (inherits(other, "ExternalReference")) other = slot(other,"ref"); 
-  ;.Call('R_swig_LayerNode_LessThan', self, other, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`LayerNode_LessThan`, 'returnType') = 'logical'
-attr(`LayerNode_LessThan`, "inputTypes") = c('_p_infomap__LayerNode', '_p_infomap__LayerNode')
-class(`LayerNode_LessThan`) = c("SWIGFunction", class('LayerNode_LessThan'))
-
-# Start of delete_LayerNode
-
-`delete_LayerNode` = function(self)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_delete_LayerNode', self, PACKAGE='infomap');
-  
-}
-
-attr(`delete_LayerNode`, 'returnType') = 'void'
-attr(`delete_LayerNode`, "inputTypes") = c('_p_infomap__LayerNode')
-class(`delete_LayerNode`) = c("SWIGFunction", class('delete_LayerNode'))
-
-# Start of accessor method for infomap::LayerNode
-setMethod('$', '_p_infomap__LayerNode', function(x, name)
-
-{
-  accessorFuns = list('layer' = LayerNode_layer_get, 'node' = LayerNode_node_get, 'LessThan' = LayerNode_LessThan);
-  vaccessors = c('layer', 'node');
-  ;        idx = pmatch(name, names(accessorFuns));
-  if(is.na(idx)) 
-  return(callNextMethod(x, name));
-  f = accessorFuns[[idx]];
-  if (is.na(match(name, vaccessors))) function(...){
-    f(x, ...)
-  } else f(x);
-}
-
-
-);
-# end of accessor method for infomap::LayerNode
-# Start of accessor method for infomap::LayerNode
-setMethod('$<-', '_p_infomap__LayerNode', function(x, name, value)
-
-{
-  accessorFuns = list('layer' = LayerNode_layer_set, 'node' = LayerNode_node_set);
-  ;        idx = pmatch(name, names(accessorFuns));
-  if(is.na(idx)) 
-  return(callNextMethod(x, name, value));
-  f = accessorFuns[[idx]];
-  f(x, value);
-  x;
-}
-
-
-);
-setMethod('[[<-', c('_p_infomap__LayerNode', 'character'),function(x, i, j, ..., value)
-
-{
-  name = i;
-  accessorFuns = list('layer' = LayerNode_layer_set, 'node' = LayerNode_node_set);
-  ;        idx = pmatch(name, names(accessorFuns));
-  if(is.na(idx)) 
-  return(callNextMethod(x, name, value));
-  f = accessorFuns[[idx]];
-  f(x, value);
-  x;
-}
-
-
-);
-# end of accessor method for infomap::LayerNode
-setMethod('delete', '_p_infomap__LayerNode', function(obj) {delete_infomap__LayerNode(obj)})
-# Start definition of copy functions & methods for infomap::LayerNode
-CopyToR_infomap__LayerNode = function(value, obj = new("infomap::LayerNode"))
-{
-  obj@layer = value$layer;
-  obj@node = value$node;
-  obj;
-}
-
-
-
-CopyToC_infomap__LayerNode = function(value, obj)
-{
-  obj$layer = value@layer;
-  obj$node = value@node;
-  obj
-}
-
-
-
-# Start definition of copy methods for infomap::LayerNode
-setMethod('copyToR', '_p_infomap__LayerNode', CopyToR_infomap__LayerNode);
-setMethod('copyToC', 'infomap::LayerNode', CopyToC_infomap__LayerNode);
-
-# End definition of copy methods for infomap::LayerNode
-# End definition of copy functions & methods for infomap::LayerNode
-# Start of new_map_uint_uint
-
-`map_uint_uint__SWIG_0` = function(other)
-{
-  if (inherits(other, "ExternalReference")) other = slot(other,"ref"); 
-  ;ans = .Call('R_swig_new_map_uint_uint__SWIG_0', other, PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t", ref=ans);
-  
-  reg.finalizer(ans@ref, delete_map_uint_uint);
-  ans
-  
-}
-
-attr(`map_uint_uint__SWIG_0`, 'returnType') = '_p_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t'
-attr(`map_uint_uint__SWIG_0`, "inputTypes") = c('_p_std__lessT_unsigned_int_t')
-class(`map_uint_uint__SWIG_0`) = c("SWIGFunction", class('map_uint_uint__SWIG_0'))
-
-# Start of new_map_uint_uint
-
-`map_uint_uint__SWIG_1` = function()
-{
-  ;ans = .Call('R_swig_new_map_uint_uint__SWIG_1', PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t", ref=ans);
-  
-  reg.finalizer(ans@ref, delete_map_uint_uint);
-  ans
-  
-}
-
-attr(`map_uint_uint__SWIG_1`, 'returnType') = '_p_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t'
-class(`map_uint_uint__SWIG_1`) = c("SWIGFunction", class('map_uint_uint__SWIG_1'))
-
-# Start of new_map_uint_uint
-
-`map_uint_uint__SWIG_2` = function(other)
-{
-  if (inherits(other, "ExternalReference")) other = slot(other,"ref"); 
-  ;ans = .Call('R_swig_new_map_uint_uint__SWIG_2', other, PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t", ref=ans);
-  
-  reg.finalizer(ans@ref, delete_map_uint_uint);
-  ans
-  
-}
-
-attr(`map_uint_uint__SWIG_2`, 'returnType') = '_p_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t'
-attr(`map_uint_uint__SWIG_2`, "inputTypes") = c('_p_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t')
-class(`map_uint_uint__SWIG_2`) = c("SWIGFunction", class('map_uint_uint__SWIG_2'))
-
-`map_uint_uint` <- function(...) {
-  argtypes <- mapply(class, list(...));
-  argv <- list(...);
-  argc <- length(argtypes);
-  f <- NULL;
-# dispatch functions 3
-  if (argc == 0) {
-    f <- map_uint_uint__SWIG_1; 
-  } else if (argc == 1) {
-    if ( extends(argtypes[1], '_p_std__lessT_unsigned_int_t') && length(argv[[1]]) == 1 ) {
-      f <- map_uint_uint__SWIG_0; 
-    }
-    else if ( extends(argtypes[1], '_p_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t') && length(argv[[1]]) == 1 ) {
-      f <- map_uint_uint__SWIG_2; 
-    }
-  };
-  if (is.null(f)) {
-    stop("cannot find overloaded function for map_uint_uint with argtypes (",toString(argtypes),")");
-  };
-  f(...);
-}
-
-# Dispatch function
-# Start of map_uint_uint_empty
-
-`map_uint_uint_empty` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_map_uint_uint_empty', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`map_uint_uint_empty`, 'returnType') = 'logical'
-attr(`map_uint_uint_empty`, "inputTypes") = c('_p_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t')
-class(`map_uint_uint_empty`) = c("SWIGFunction", class('map_uint_uint_empty'))
-
-# Start of map_uint_uint_size
-
-`map_uint_uint_size` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_map_uint_uint_size', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`map_uint_uint_size`, 'returnType') = 'integer'
-attr(`map_uint_uint_size`, "inputTypes") = c('_p_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t')
-class(`map_uint_uint_size`) = c("SWIGFunction", class('map_uint_uint_size'))
-
-# Start of map_uint_uint_swap
-
-`map_uint_uint_swap` = function(self, v)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  if (inherits(v, "ExternalReference")) v = slot(v,"ref"); 
-  ;.Call('R_swig_map_uint_uint_swap', self, v, PACKAGE='infomap');
-  
-}
-
-attr(`map_uint_uint_swap`, 'returnType') = 'void'
-attr(`map_uint_uint_swap`, "inputTypes") = c('_p_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t', '_p_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t')
-class(`map_uint_uint_swap`) = c("SWIGFunction", class('map_uint_uint_swap'))
-
-# Start of map_uint_uint_clear
-
-`map_uint_uint_clear` = function(self)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_map_uint_uint_clear', self, PACKAGE='infomap');
-  
-}
-
-attr(`map_uint_uint_clear`, 'returnType') = 'void'
-attr(`map_uint_uint_clear`, "inputTypes") = c('_p_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t')
-class(`map_uint_uint_clear`) = c("SWIGFunction", class('map_uint_uint_clear'))
-
-# Start of map_uint_uint_get_allocator
-
-`map_uint_uint_get_allocator` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;ans = .Call('R_swig_map_uint_uint_get_allocator', self, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t", ref=ans);
-  
-  ans
-  
-}
-
-attr(`map_uint_uint_get_allocator`, 'returnType') = '_p_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t'
-attr(`map_uint_uint_get_allocator`, "inputTypes") = c('_p_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t')
-class(`map_uint_uint_get_allocator`) = c("SWIGFunction", class('map_uint_uint_get_allocator'))
-
-# Start of map_uint_uint_erase
-
-`map_uint_uint_erase` = function(self, x, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  if (inherits(x, "ExternalReference")) x = slot(x,"ref"); 
-  ;.Call('R_swig_map_uint_uint_erase', self, x, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`map_uint_uint_erase`, 'returnType') = 'integer'
-attr(`map_uint_uint_erase`, "inputTypes") = c('_p_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t', '_p_unsigned_int')
-class(`map_uint_uint_erase`) = c("SWIGFunction", class('map_uint_uint_erase'))
-
-# Start of map_uint_uint_count
-
-`map_uint_uint_count` = function(self, x, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  if (inherits(x, "ExternalReference")) x = slot(x,"ref"); 
-  ;.Call('R_swig_map_uint_uint_count', self, x, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`map_uint_uint_count`, 'returnType') = 'integer'
-attr(`map_uint_uint_count`, "inputTypes") = c('_p_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t', '_p_unsigned_int')
-class(`map_uint_uint_count`) = c("SWIGFunction", class('map_uint_uint_count'))
-
-# Start of delete_map_uint_uint
-
-`delete_map_uint_uint` = function(self)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_delete_map_uint_uint', self, PACKAGE='infomap');
-  
-}
-
-attr(`delete_map_uint_uint`, 'returnType') = 'void'
-attr(`delete_map_uint_uint`, "inputTypes") = c('_p_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t')
-class(`delete_map_uint_uint`) = c("SWIGFunction", class('delete_map_uint_uint'))
-
-# Start of accessor method for std::map< unsigned int,unsigned int >
-setMethod('$', '_p_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t', function(x, name)
-
-{
-  accessorFuns = list('empty' = map_uint_uint_empty, 'size' = map_uint_uint_size, 'swap' = map_uint_uint_swap, 'clear' = map_uint_uint_clear, 'get_allocator' = map_uint_uint_get_allocator, 'erase' = map_uint_uint_erase, 'count' = map_uint_uint_count);
-  ;        idx = pmatch(name, names(accessorFuns));
-  if(is.na(idx)) 
-  return(callNextMethod(x, name));
-  f = accessorFuns[[idx]];
-  function(...){
-    f(x, ...)
-  };
-}
-
-
-);
-# end of accessor method for std::map< unsigned int,unsigned int >
-setMethod('delete', '_p_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t', function(obj) {delete_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t(obj)})
-# Start of new_InfomapConfigInfomapBase
-
-`InfomapConfigInfomapBase__SWIG_0` = function()
-{
-  ;ans = .Call('R_swig_new_InfomapConfigInfomapBase__SWIG_0', PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__InfomapConfigT_infomap__InfomapBase_t", ref=ans);
-  
-  reg.finalizer(ans@ref, delete_InfomapConfigInfomapBase);
-  ans
-  
-}
-
-attr(`InfomapConfigInfomapBase__SWIG_0`, 'returnType') = '_p_infomap__InfomapConfigT_infomap__InfomapBase_t'
-class(`InfomapConfigInfomapBase__SWIG_0`) = c("SWIGFunction", class('InfomapConfigInfomapBase__SWIG_0'))
-
-# Start of new_InfomapConfigInfomapBase
-
-`InfomapConfigInfomapBase__SWIG_1` = function(flags, isCli)
-{
-  flags = as(flags, "character"); 
-  isCli = as.logical(isCli);
-  ;ans = .Call('R_swig_new_InfomapConfigInfomapBase__SWIG_1', flags, isCli, PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__InfomapConfigT_infomap__InfomapBase_t", ref=ans);
-  
-  reg.finalizer(ans@ref, delete_InfomapConfigInfomapBase);
-  ans
-  
-}
-
-attr(`InfomapConfigInfomapBase__SWIG_1`, 'returnType') = '_p_infomap__InfomapConfigT_infomap__InfomapBase_t'
-attr(`InfomapConfigInfomapBase__SWIG_1`, "inputTypes") = c('character', 'logical')
-class(`InfomapConfigInfomapBase__SWIG_1`) = c("SWIGFunction", class('InfomapConfigInfomapBase__SWIG_1'))
-
-# Start of new_InfomapConfigInfomapBase
-
-`InfomapConfigInfomapBase__SWIG_2` = function(flags)
-{
-  flags = as(flags, "character"); 
-  ;ans = .Call('R_swig_new_InfomapConfigInfomapBase__SWIG_2', flags, PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__InfomapConfigT_infomap__InfomapBase_t", ref=ans);
-  
-  reg.finalizer(ans@ref, delete_InfomapConfigInfomapBase);
-  ans
-  
-}
-
-attr(`InfomapConfigInfomapBase__SWIG_2`, 'returnType') = '_p_infomap__InfomapConfigT_infomap__InfomapBase_t'
-attr(`InfomapConfigInfomapBase__SWIG_2`, "inputTypes") = c('character')
-class(`InfomapConfigInfomapBase__SWIG_2`) = c("SWIGFunction", class('InfomapConfigInfomapBase__SWIG_2'))
-
-# Start of new_InfomapConfigInfomapBase
-
-`InfomapConfigInfomapBase__SWIG_3` = function(conf)
-{
-  if (inherits(conf, "ExternalReference")) conf = slot(conf,"ref"); 
-  ;ans = .Call('R_swig_new_InfomapConfigInfomapBase__SWIG_3', conf, PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__InfomapConfigT_infomap__InfomapBase_t", ref=ans);
-  
-  reg.finalizer(ans@ref, delete_InfomapConfigInfomapBase);
-  ans
-  
-}
-
-attr(`InfomapConfigInfomapBase__SWIG_3`, 'returnType') = '_p_infomap__InfomapConfigT_infomap__InfomapBase_t'
-attr(`InfomapConfigInfomapBase__SWIG_3`, "inputTypes") = c('_p_infomap__Config')
-class(`InfomapConfigInfomapBase__SWIG_3`) = c("SWIGFunction", class('InfomapConfigInfomapBase__SWIG_3'))
-
-# Start of delete_InfomapConfigInfomapBase
-
-`delete_InfomapConfigInfomapBase` = function(self)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_delete_InfomapConfigInfomapBase', self, PACKAGE='infomap');
-  
-}
-
-attr(`delete_InfomapConfigInfomapBase`, 'returnType') = 'void'
-attr(`delete_InfomapConfigInfomapBase`, "inputTypes") = c('_p_infomap__InfomapConfigT_infomap__InfomapBase_t')
-class(`delete_InfomapConfigInfomapBase`) = c("SWIGFunction", class('delete_InfomapConfigInfomapBase'))
-
-# Start of new_InfomapConfigInfomapBase
-
-`InfomapConfigInfomapBase__SWIG_4` = function(s_arg1)
-{
-  if (inherits(s_arg1, "ExternalReference")) s_arg1 = slot(s_arg1,"ref"); 
-  ;ans = .Call('R_swig_new_InfomapConfigInfomapBase__SWIG_4', s_arg1, PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__InfomapConfigT_infomap__InfomapBase_t", ref=ans);
-  
-  reg.finalizer(ans@ref, delete_InfomapConfigInfomapBase);
-  ans
-  
-}
-
-attr(`InfomapConfigInfomapBase__SWIG_4`, 'returnType') = '_p_infomap__InfomapConfigT_infomap__InfomapBase_t'
-attr(`InfomapConfigInfomapBase__SWIG_4`, "inputTypes") = c('_p_infomap__InfomapConfigT_infomap__InfomapBase_t')
-class(`InfomapConfigInfomapBase__SWIG_4`) = c("SWIGFunction", class('InfomapConfigInfomapBase__SWIG_4'))
-
-# Start of InfomapConfigInfomapBase_Equal
-
-`InfomapConfigInfomapBase_Equal__SWIG_0` = function(self, s_arg2, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  if (inherits(s_arg2, "ExternalReference")) s_arg2 = slot(s_arg2,"ref"); 
-  ;ans = .Call('R_swig_InfomapConfigInfomapBase_Equal__SWIG_0', self, s_arg2, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__InfomapConfigT_infomap__InfomapBase_t", ref=ans);
-  
-  ans
-  
-}
-
-attr(`InfomapConfigInfomapBase_Equal__SWIG_0`, 'returnType') = '_p_infomap__InfomapConfigT_infomap__InfomapBase_t'
-attr(`InfomapConfigInfomapBase_Equal__SWIG_0`, "inputTypes") = c('_p_infomap__InfomapConfigT_infomap__InfomapBase_t', '_p_infomap__InfomapConfigT_infomap__InfomapBase_t')
-class(`InfomapConfigInfomapBase_Equal__SWIG_0`) = c("SWIGFunction", class('InfomapConfigInfomapBase_Equal__SWIG_0'))
-
-# Start of new_InfomapConfigInfomapBase
-
-`InfomapConfigInfomapBase__SWIG_5` = function(s_arg1)
-{
-  if (inherits(s_arg1, "ExternalReference")) s_arg1 = slot(s_arg1,"ref"); 
-  ;ans = .Call('R_swig_new_InfomapConfigInfomapBase__SWIG_5', s_arg1, PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__InfomapConfigT_infomap__InfomapBase_t", ref=ans);
-  
-  reg.finalizer(ans@ref, delete_InfomapConfigInfomapBase);
-  ans
-  
-}
-
-attr(`InfomapConfigInfomapBase__SWIG_5`, 'returnType') = '_p_infomap__InfomapConfigT_infomap__InfomapBase_t'
-attr(`InfomapConfigInfomapBase__SWIG_5`, "inputTypes") = c('_p_infomap__InfomapConfigT_infomap__InfomapBase_t')
-class(`InfomapConfigInfomapBase__SWIG_5`) = c("SWIGFunction", class('InfomapConfigInfomapBase__SWIG_5'))
-
-`InfomapConfigInfomapBase` <- function(...) {
-  argtypes <- mapply(class, list(...));
-  argv <- list(...);
-  argc <- length(argtypes);
-  f <- NULL;
-# dispatch functions 6
-  if (argc == 0) {
-    f <- InfomapConfigInfomapBase__SWIG_0; 
-  } else if (argc == 1) {
-    if ( extends(argtypes[1], '_p_infomap__InfomapConfigT_infomap__InfomapBase_t') && length(argv[[1]]) == 1 ) {
-      f <- InfomapConfigInfomapBase__SWIG_4; 
-    }
-    else if ( extends(argtypes[1], '_p_infomap__InfomapConfigT_infomap__InfomapBase_t') && length(argv[[1]]) == 1 ) {
-      f <- InfomapConfigInfomapBase__SWIG_5; 
-    }
-    else if ( extends(argtypes[1], '_p_infomap__Config') && length(argv[[1]]) == 1 ) {
-      f <- InfomapConfigInfomapBase__SWIG_3; 
-    }
-    else if ( is.character(argv[[1]]) && length(argv[[1]]) == 1 ) {
-      f <- InfomapConfigInfomapBase__SWIG_2; 
-    }
-  } else if (argc == 2) {
-    if (( is.character(argv[[1]]) && length(argv[[1]]) == 1 ) && ( is.logical(argv[[2]]) && length(argv[[2]]) == 1 )) {
-      f <- InfomapConfigInfomapBase__SWIG_1; 
-    }
-  };
-  if (is.null(f)) {
-    stop("cannot find overloaded function for InfomapConfigInfomapBase with argtypes (",toString(argtypes),")");
-  };
-  f(...);
-}
-
-# Dispatch function
-# Start of InfomapConfigInfomapBase_Equal
-
-`InfomapConfigInfomapBase_Equal__SWIG_1` = function(self, s_arg2, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  if (inherits(s_arg2, "ExternalReference")) s_arg2 = slot(s_arg2,"ref"); 
-  ;ans = .Call('R_swig_InfomapConfigInfomapBase_Equal__SWIG_1', self, s_arg2, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__InfomapConfigT_infomap__InfomapBase_t", ref=ans);
-  
-  ans
-  
-}
-
-attr(`InfomapConfigInfomapBase_Equal__SWIG_1`, 'returnType') = '_p_infomap__InfomapConfigT_infomap__InfomapBase_t'
-attr(`InfomapConfigInfomapBase_Equal__SWIG_1`, "inputTypes") = c('_p_infomap__InfomapConfigT_infomap__InfomapBase_t', '_p_infomap__InfomapConfigT_infomap__InfomapBase_t')
-class(`InfomapConfigInfomapBase_Equal__SWIG_1`) = c("SWIGFunction", class('InfomapConfigInfomapBase_Equal__SWIG_1'))
-
-`InfomapConfigInfomapBase_Equal` <- function(...) {
-  argtypes <- mapply(class, list(...));
-  argv <- list(...);
-  argc <- length(argtypes);
-  f <- NULL;
-# dispatch functions 2
-  if (argc == 2) {
-    if (( extends(argtypes[1], '_p_infomap__InfomapConfigT_infomap__InfomapBase_t') || is.null(argv[[1]]) ) && ( extends(argtypes[2], '_p_infomap__InfomapConfigT_infomap__InfomapBase_t') && length(argv[[2]]) == 1 )) {
-      f <- InfomapConfigInfomapBase_Equal__SWIG_0; 
-    }
-    else if (( extends(argtypes[1], '_p_infomap__InfomapConfigT_infomap__InfomapBase_t') || is.null(argv[[1]]) ) && ( extends(argtypes[2], '_p_infomap__InfomapConfigT_infomap__InfomapBase_t') && length(argv[[2]]) == 1 )) {
-      f <- InfomapConfigInfomapBase_Equal__SWIG_1; 
-    }
-  };
-  if (is.null(f)) {
-    stop("cannot find overloaded function for InfomapConfigInfomapBase_Equal with argtypes (",toString(argtypes),")");
-  };
-  f(...);
-}
-
-# Dispatch function
-# Start of InfomapConfigInfomapBase_getConfig
-
-`InfomapConfigInfomapBase_getConfig__SWIG_0` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;ans = .Call('R_swig_InfomapConfigInfomapBase_getConfig__SWIG_0', self, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__Config", ref=ans);
-  
-  ans
-  
-}
-
-attr(`InfomapConfigInfomapBase_getConfig__SWIG_0`, 'returnType') = '_p_infomap__Config'
-attr(`InfomapConfigInfomapBase_getConfig__SWIG_0`, "inputTypes") = c('_p_infomap__InfomapConfigT_infomap__InfomapBase_t')
-class(`InfomapConfigInfomapBase_getConfig__SWIG_0`) = c("SWIGFunction", class('InfomapConfigInfomapBase_getConfig__SWIG_0'))
-
-# Start of InfomapConfigInfomapBase_getConfig
-
-`InfomapConfigInfomapBase_getConfig__SWIG_1` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;ans = .Call('R_swig_InfomapConfigInfomapBase_getConfig__SWIG_1', self, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__Config", ref=ans);
-  
-  ans
-  
-}
-
-attr(`InfomapConfigInfomapBase_getConfig__SWIG_1`, 'returnType') = '_p_infomap__Config'
-attr(`InfomapConfigInfomapBase_getConfig__SWIG_1`, "inputTypes") = c('_p_infomap__InfomapConfigT_infomap__InfomapBase_t')
-class(`InfomapConfigInfomapBase_getConfig__SWIG_1`) = c("SWIGFunction", class('InfomapConfigInfomapBase_getConfig__SWIG_1'))
-
-`InfomapConfigInfomapBase_getConfig` <- function(...) {
-  argtypes <- mapply(class, list(...));
-  argv <- list(...);
-  argc <- length(argtypes);
-  f <- NULL;
-# dispatch functions 2
-  if (argc == 1) {
-    if ( extends(argtypes[1], '_p_infomap__InfomapConfigT_infomap__InfomapBase_t') || is.null(argv[[1]]) ) {
-      f <- InfomapConfigInfomapBase_getConfig__SWIG_0; 
-    }
-    else if ( extends(argtypes[1], '_p_infomap__InfomapConfigT_infomap__InfomapBase_t') || is.null(argv[[1]]) ) {
-      f <- InfomapConfigInfomapBase_getConfig__SWIG_1; 
-    }
-  };
-  if (is.null(f)) {
-    stop("cannot find overloaded function for InfomapConfigInfomapBase_getConfig with argtypes (",toString(argtypes),")");
-  };
-  f(...);
-}
-
-# Dispatch function
-# Start of InfomapConfigInfomapBase_setConfig
-
-`InfomapConfigInfomapBase_setConfig` = function(self, conf, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  if (inherits(conf, "ExternalReference")) conf = slot(conf,"ref"); 
-  ;ans = .Call('R_swig_InfomapConfigInfomapBase_setConfig', self, conf, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__InfomapBase", ref=ans);
-  
-  ans
-  
-}
-
-attr(`InfomapConfigInfomapBase_setConfig`, 'returnType') = '_p_infomap__InfomapBase'
-attr(`InfomapConfigInfomapBase_setConfig`, "inputTypes") = c('_p_infomap__InfomapConfigT_infomap__InfomapBase_t', '_p_infomap__Config')
-class(`InfomapConfigInfomapBase_setConfig`) = c("SWIGFunction", class('InfomapConfigInfomapBase_setConfig'))
-
-# Start of InfomapConfigInfomapBase_setNonMainConfig
-
-`InfomapConfigInfomapBase_setNonMainConfig` = function(self, conf, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  if (inherits(conf, "ExternalReference")) conf = slot(conf,"ref"); 
-  ;ans = .Call('R_swig_InfomapConfigInfomapBase_setNonMainConfig', self, conf, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__InfomapBase", ref=ans);
-  
-  ans
-  
-}
-
-attr(`InfomapConfigInfomapBase_setNonMainConfig`, 'returnType') = '_p_infomap__InfomapBase'
-attr(`InfomapConfigInfomapBase_setNonMainConfig`, "inputTypes") = c('_p_infomap__InfomapConfigT_infomap__InfomapBase_t', '_p_infomap__Config')
-class(`InfomapConfigInfomapBase_setNonMainConfig`) = c("SWIGFunction", class('InfomapConfigInfomapBase_setNonMainConfig'))
-
-# Start of InfomapConfigInfomapBase_setNumTrials
-
-`InfomapConfigInfomapBase_setNumTrials` = function(self, N, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  N = as.integer(N);
-  
-  if(length(N) > 1) {
-    warning("using only the first element of N");
-  };
-  
-  ;ans = .Call('R_swig_InfomapConfigInfomapBase_setNumTrials', self, N, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__InfomapBase", ref=ans);
-  
-  ans
-  
-}
-
-attr(`InfomapConfigInfomapBase_setNumTrials`, 'returnType') = '_p_infomap__InfomapBase'
-attr(`InfomapConfigInfomapBase_setNumTrials`, "inputTypes") = c('_p_infomap__InfomapConfigT_infomap__InfomapBase_t', 'integer')
-class(`InfomapConfigInfomapBase_setNumTrials`) = c("SWIGFunction", class('InfomapConfigInfomapBase_setNumTrials'))
-
-# Start of InfomapConfigInfomapBase_setVerbosity
-
-`InfomapConfigInfomapBase_setVerbosity` = function(self, level, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  level = as.integer(level);
-  
-  if(length(level) > 1) {
-    warning("using only the first element of level");
-  };
-  
-  ;ans = .Call('R_swig_InfomapConfigInfomapBase_setVerbosity', self, level, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__InfomapBase", ref=ans);
-  
-  ans
-  
-}
-
-attr(`InfomapConfigInfomapBase_setVerbosity`, 'returnType') = '_p_infomap__InfomapBase'
-attr(`InfomapConfigInfomapBase_setVerbosity`, "inputTypes") = c('_p_infomap__InfomapConfigT_infomap__InfomapBase_t', 'integer')
-class(`InfomapConfigInfomapBase_setVerbosity`) = c("SWIGFunction", class('InfomapConfigInfomapBase_setVerbosity'))
-
-# Start of InfomapConfigInfomapBase_setTwoLevel
-
-`InfomapConfigInfomapBase_setTwoLevel` = function(self, value, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  value = as.logical(value);
-  ;ans = .Call('R_swig_InfomapConfigInfomapBase_setTwoLevel', self, value, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__InfomapBase", ref=ans);
-  
-  ans
-  
-}
-
-attr(`InfomapConfigInfomapBase_setTwoLevel`, 'returnType') = '_p_infomap__InfomapBase'
-attr(`InfomapConfigInfomapBase_setTwoLevel`, "inputTypes") = c('_p_infomap__InfomapConfigT_infomap__InfomapBase_t', 'logical')
-class(`InfomapConfigInfomapBase_setTwoLevel`) = c("SWIGFunction", class('InfomapConfigInfomapBase_setTwoLevel'))
-
-# Start of InfomapConfigInfomapBase_setTuneIterationLimit
-
-`InfomapConfigInfomapBase_setTuneIterationLimit` = function(self, value, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  value = as.integer(value);
-  
-  if(length(value) > 1) {
-    warning("using only the first element of value");
-  };
-  
-  ;ans = .Call('R_swig_InfomapConfigInfomapBase_setTuneIterationLimit', self, value, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__InfomapBase", ref=ans);
-  
-  ans
-  
-}
-
-attr(`InfomapConfigInfomapBase_setTuneIterationLimit`, 'returnType') = '_p_infomap__InfomapBase'
-attr(`InfomapConfigInfomapBase_setTuneIterationLimit`, "inputTypes") = c('_p_infomap__InfomapConfigT_infomap__InfomapBase_t', 'integer')
-class(`InfomapConfigInfomapBase_setTuneIterationLimit`) = c("SWIGFunction", class('InfomapConfigInfomapBase_setTuneIterationLimit'))
-
-# Start of InfomapConfigInfomapBase_setFastHierarchicalSolution
-
-`InfomapConfigInfomapBase_setFastHierarchicalSolution` = function(self, level, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  level = as.integer(level);
-  
-  if(length(level) > 1) {
-    warning("using only the first element of level");
-  };
-  
-  ;ans = .Call('R_swig_InfomapConfigInfomapBase_setFastHierarchicalSolution', self, level, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__InfomapBase", ref=ans);
-  
-  ans
-  
-}
-
-attr(`InfomapConfigInfomapBase_setFastHierarchicalSolution`, 'returnType') = '_p_infomap__InfomapBase'
-attr(`InfomapConfigInfomapBase_setFastHierarchicalSolution`, "inputTypes") = c('_p_infomap__InfomapConfigT_infomap__InfomapBase_t', 'integer')
-class(`InfomapConfigInfomapBase_setFastHierarchicalSolution`) = c("SWIGFunction", class('InfomapConfigInfomapBase_setFastHierarchicalSolution'))
-
-# Start of InfomapConfigInfomapBase_setOnlySuperModules
-
-`InfomapConfigInfomapBase_setOnlySuperModules` = function(self, value, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  value = as.logical(value);
-  ;ans = .Call('R_swig_InfomapConfigInfomapBase_setOnlySuperModules', self, value, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__InfomapBase", ref=ans);
-  
-  ans
-  
-}
-
-attr(`InfomapConfigInfomapBase_setOnlySuperModules`, 'returnType') = '_p_infomap__InfomapBase'
-attr(`InfomapConfigInfomapBase_setOnlySuperModules`, "inputTypes") = c('_p_infomap__InfomapConfigT_infomap__InfomapBase_t', 'logical')
-class(`InfomapConfigInfomapBase_setOnlySuperModules`) = c("SWIGFunction", class('InfomapConfigInfomapBase_setOnlySuperModules'))
-
-# Start of InfomapConfigInfomapBase_setNoCoarseTune
-
-`InfomapConfigInfomapBase_setNoCoarseTune` = function(self, value, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  value = as.logical(value);
-  ;ans = .Call('R_swig_InfomapConfigInfomapBase_setNoCoarseTune', self, value, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__InfomapBase", ref=ans);
-  
-  ans
-  
-}
-
-attr(`InfomapConfigInfomapBase_setNoCoarseTune`, 'returnType') = '_p_infomap__InfomapBase'
-attr(`InfomapConfigInfomapBase_setNoCoarseTune`, "inputTypes") = c('_p_infomap__InfomapConfigT_infomap__InfomapBase_t', 'logical')
-class(`InfomapConfigInfomapBase_setNoCoarseTune`) = c("SWIGFunction", class('InfomapConfigInfomapBase_setNoCoarseTune'))
-
-# Start of InfomapConfigInfomapBase_setNoInfomap
-
-`InfomapConfigInfomapBase_setNoInfomap__SWIG_0` = function(self, value, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  value = as.logical(value);
-  ;ans = .Call('R_swig_InfomapConfigInfomapBase_setNoInfomap__SWIG_0', self, value, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__InfomapBase", ref=ans);
-  
-  ans
-  
-}
-
-attr(`InfomapConfigInfomapBase_setNoInfomap__SWIG_0`, 'returnType') = '_p_infomap__InfomapBase'
-attr(`InfomapConfigInfomapBase_setNoInfomap__SWIG_0`, "inputTypes") = c('_p_infomap__InfomapConfigT_infomap__InfomapBase_t', 'logical')
-class(`InfomapConfigInfomapBase_setNoInfomap__SWIG_0`) = c("SWIGFunction", class('InfomapConfigInfomapBase_setNoInfomap__SWIG_0'))
-
-# Start of InfomapConfigInfomapBase_setNoInfomap
-
-`InfomapConfigInfomapBase_setNoInfomap__SWIG_1` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;ans = .Call('R_swig_InfomapConfigInfomapBase_setNoInfomap__SWIG_1', self, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__InfomapBase", ref=ans);
-  
-  ans
-  
-}
-
-attr(`InfomapConfigInfomapBase_setNoInfomap__SWIG_1`, 'returnType') = '_p_infomap__InfomapBase'
-attr(`InfomapConfigInfomapBase_setNoInfomap__SWIG_1`, "inputTypes") = c('_p_infomap__InfomapConfigT_infomap__InfomapBase_t')
-class(`InfomapConfigInfomapBase_setNoInfomap__SWIG_1`) = c("SWIGFunction", class('InfomapConfigInfomapBase_setNoInfomap__SWIG_1'))
-
-`InfomapConfigInfomapBase_setNoInfomap` <- function(...) {
-  argtypes <- mapply(class, list(...));
-  argv <- list(...);
-  argc <- length(argtypes);
-  f <- NULL;
-# dispatch functions 2
-  if (argc == 1) {
-    if ( extends(argtypes[1], '_p_infomap__InfomapConfigT_infomap__InfomapBase_t') || is.null(argv[[1]]) ) {
-      f <- InfomapConfigInfomapBase_setNoInfomap__SWIG_1; 
-    }
-  } else if (argc == 2) {
-    if (( extends(argtypes[1], '_p_infomap__InfomapConfigT_infomap__InfomapBase_t') || is.null(argv[[1]]) ) && ( is.logical(argv[[2]]) && length(argv[[2]]) == 1 )) {
-      f <- InfomapConfigInfomapBase_setNoInfomap__SWIG_0; 
-    }
-  };
-  if (is.null(f)) {
-    stop("cannot find overloaded function for InfomapConfigInfomapBase_setNoInfomap with argtypes (",toString(argtypes),")");
-  };
-  f(...);
-}
-
-# Dispatch function
-# Start of InfomapConfigInfomapBase_setMarkovTime
-
-`InfomapConfigInfomapBase_setMarkovTime` = function(self, codeRate, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  
-  ;ans = .Call('R_swig_InfomapConfigInfomapBase_setMarkovTime', self, codeRate, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__InfomapBase", ref=ans);
-  
-  ans
-  
-}
-
-attr(`InfomapConfigInfomapBase_setMarkovTime`, 'returnType') = '_p_infomap__InfomapBase'
-attr(`InfomapConfigInfomapBase_setMarkovTime`, "inputTypes") = c('_p_infomap__InfomapConfigT_infomap__InfomapBase_t', 'numeric')
-class(`InfomapConfigInfomapBase_setMarkovTime`) = c("SWIGFunction", class('InfomapConfigInfomapBase_setMarkovTime'))
-
-# Start of InfomapConfigInfomapBase_setDirected
-
-`InfomapConfigInfomapBase_setDirected` = function(self, value, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  value = as.logical(value);
-  ;ans = .Call('R_swig_InfomapConfigInfomapBase_setDirected', self, value, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__InfomapBase", ref=ans);
-  
-  ans
-  
-}
-
-attr(`InfomapConfigInfomapBase_setDirected`, 'returnType') = '_p_infomap__InfomapBase'
-attr(`InfomapConfigInfomapBase_setDirected`, "inputTypes") = c('_p_infomap__InfomapConfigT_infomap__InfomapBase_t', 'logical')
-class(`InfomapConfigInfomapBase_setDirected`) = c("SWIGFunction", class('InfomapConfigInfomapBase_setDirected'))
-
-# Start of InfomapConfigInfomapBase_reseed
-
-`InfomapConfigInfomapBase_reseed` = function(self, seed, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  seed = as.integer(seed);
-  
-  if(length(seed) > 1) {
-    warning("using only the first element of seed");
-  };
-  
-  ;ans = .Call('R_swig_InfomapConfigInfomapBase_reseed', self, seed, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__InfomapBase", ref=ans);
-  
-  ans
-  
-}
-
-attr(`InfomapConfigInfomapBase_reseed`, 'returnType') = '_p_infomap__InfomapBase'
-attr(`InfomapConfigInfomapBase_reseed`, "inputTypes") = c('_p_infomap__InfomapConfigT_infomap__InfomapBase_t', 'integer')
-class(`InfomapConfigInfomapBase_reseed`) = c("SWIGFunction", class('InfomapConfigInfomapBase_reseed'))
-
-# Start of accessor method for infomap::InfomapConfig< infomap::InfomapBase >
-setMethod('$', '_p_infomap__InfomapConfigT_infomap__InfomapBase_t', function(x, name)
-
-{
-  accessorFuns = list('Equal' = InfomapConfigInfomapBase_Equal, 'getConfig' = InfomapConfigInfomapBase_getConfig, 'setConfig' = InfomapConfigInfomapBase_setConfig, 'setNonMainConfig' = InfomapConfigInfomapBase_setNonMainConfig, 'setNumTrials' = InfomapConfigInfomapBase_setNumTrials, 'setVerbosity' = InfomapConfigInfomapBase_setVerbosity, 'setTwoLevel' = InfomapConfigInfomapBase_setTwoLevel, 'setTuneIterationLimit' = InfomapConfigInfomapBase_setTuneIterationLimit, 'setFastHierarchicalSolution' = InfomapConfigInfomapBase_setFastHierarchicalSolution, 'setOnlySuperModules' = InfomapConfigInfomapBase_setOnlySuperModules, 'setNoCoarseTune' = InfomapConfigInfomapBase_setNoCoarseTune, 'setNoInfomap' = InfomapConfigInfomapBase_setNoInfomap, 'setMarkovTime' = InfomapConfigInfomapBase_setMarkovTime, 'setDirected' = InfomapConfigInfomapBase_setDirected, 'reseed' = InfomapConfigInfomapBase_reseed);
-  ;        idx = pmatch(name, names(accessorFuns));
-  if(is.na(idx)) 
-  return(callNextMethod(x, name));
-  f = accessorFuns[[idx]];
-  function(...){
-    f(x, ...)
-  };
-}
-
-
-);
-# end of accessor method for infomap::InfomapConfig< infomap::InfomapBase >
-setMethod('delete', '_p_infomap__InfomapConfigT_infomap__InfomapBase_t', function(obj) {delete_infomap__InfomapConfigT_infomap__InfomapBase_t(obj)})
-# Start of new_InfomapBase
-
-`InfomapBase__SWIG_0` = function()
-{
-  ;ans = .Call('R_swig_new_InfomapBase__SWIG_0', PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__InfomapBase", ref=ans);
-  
-  reg.finalizer(ans@ref, delete_InfomapBase);
-  ans
-  
-}
-
-attr(`InfomapBase__SWIG_0`, 'returnType') = '_p_infomap__InfomapBase'
-class(`InfomapBase__SWIG_0`) = c("SWIGFunction", class('InfomapBase__SWIG_0'))
-
-# Start of new_InfomapBase
-
-`InfomapBase__SWIG_1` = function(conf)
-{
-  if (inherits(conf, "ExternalReference")) conf = slot(conf,"ref"); 
-  ;ans = .Call('R_swig_new_InfomapBase__SWIG_1', conf, PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__InfomapBase", ref=ans);
-  
-  reg.finalizer(ans@ref, delete_InfomapBase);
-  ans
-  
-}
-
-attr(`InfomapBase__SWIG_1`, 'returnType') = '_p_infomap__InfomapBase'
-attr(`InfomapBase__SWIG_1`, "inputTypes") = c('_p_infomap__Config')
-class(`InfomapBase__SWIG_1`) = c("SWIGFunction", class('InfomapBase__SWIG_1'))
-
-# Start of new_InfomapBase
-
-`InfomapBase__SWIG_2` = function(flags, isCli)
-{
-  flags = as(flags, "character"); 
-  isCli = as.logical(isCli);
-  ;ans = .Call('R_swig_new_InfomapBase__SWIG_2', flags, isCli, PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__InfomapBase", ref=ans);
-  
-  reg.finalizer(ans@ref, delete_InfomapBase);
-  ans
-  
-}
-
-attr(`InfomapBase__SWIG_2`, 'returnType') = '_p_infomap__InfomapBase'
-attr(`InfomapBase__SWIG_2`, "inputTypes") = c('character', 'logical')
-class(`InfomapBase__SWIG_2`) = c("SWIGFunction", class('InfomapBase__SWIG_2'))
-
-# Start of new_InfomapBase
-
-`InfomapBase__SWIG_3` = function(flags)
-{
-  flags = as(flags, "character"); 
-  ;ans = .Call('R_swig_new_InfomapBase__SWIG_3', flags, PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__InfomapBase", ref=ans);
-  
-  reg.finalizer(ans@ref, delete_InfomapBase);
-  ans
-  
-}
-
-attr(`InfomapBase__SWIG_3`, 'returnType') = '_p_infomap__InfomapBase'
-attr(`InfomapBase__SWIG_3`, "inputTypes") = c('character')
-class(`InfomapBase__SWIG_3`) = c("SWIGFunction", class('InfomapBase__SWIG_3'))
-
-`InfomapBase` <- function(...) {
-  argtypes <- mapply(class, list(...));
-  argv <- list(...);
-  argc <- length(argtypes);
-  f <- NULL;
-# dispatch functions 4
-  if (argc == 0) {
-    f <- InfomapBase__SWIG_0; 
-  } else if (argc == 1) {
-    if ( extends(argtypes[1], '_p_infomap__Config') && length(argv[[1]]) == 1 ) {
-      f <- InfomapBase__SWIG_1; 
-    }
-    else if ( is.character(argv[[1]]) && length(argv[[1]]) == 1 ) {
-      f <- InfomapBase__SWIG_3; 
-    }
-  } else if (argc == 2) {
-    if (( is.character(argv[[1]]) && length(argv[[1]]) == 1 ) && ( is.logical(argv[[2]]) && length(argv[[2]]) == 1 )) {
-      f <- InfomapBase__SWIG_2; 
-    }
-  };
-  if (is.null(f)) {
-    stop("cannot find overloaded function for InfomapBase with argtypes (",toString(argtypes),")");
-  };
-  f(...);
-}
-
-# Dispatch function
-# Start of delete_InfomapBase
-
-`delete_InfomapBase` = function(self)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_delete_InfomapBase', self, PACKAGE='infomap');
-  
-}
-
-attr(`delete_InfomapBase`, 'returnType') = 'void'
-attr(`delete_InfomapBase`, "inputTypes") = c('_p_infomap__InfomapBase')
-class(`delete_InfomapBase`) = c("SWIGFunction", class('delete_InfomapBase'))
-
-# Start of InfomapBase_iterTree
-
-`InfomapBase_iterTree__SWIG_0` = function(self, maxClusterLevel, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  maxClusterLevel = as.integer(maxClusterLevel);
-  
-  if(length(maxClusterLevel) > 1) {
-    warning("using only the first element of maxClusterLevel");
-  };
-  
-  ;ans = .Call('R_swig_InfomapBase_iterTree__SWIG_0', self, maxClusterLevel, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__InfomapIterator", ref=ans);
-  
-  ans
-  
-}
-
-attr(`InfomapBase_iterTree__SWIG_0`, 'returnType') = '_p_infomap__InfomapIterator'
-attr(`InfomapBase_iterTree__SWIG_0`, "inputTypes") = c('_p_infomap__InfomapBase', 'integer')
-class(`InfomapBase_iterTree__SWIG_0`) = c("SWIGFunction", class('InfomapBase_iterTree__SWIG_0'))
-
-# Start of InfomapBase_iterTree
-
-`InfomapBase_iterTree__SWIG_1` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;ans = .Call('R_swig_InfomapBase_iterTree__SWIG_1', self, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__InfomapIterator", ref=ans);
-  
-  ans
-  
-}
-
-attr(`InfomapBase_iterTree__SWIG_1`, 'returnType') = '_p_infomap__InfomapIterator'
-attr(`InfomapBase_iterTree__SWIG_1`, "inputTypes") = c('_p_infomap__InfomapBase')
-class(`InfomapBase_iterTree__SWIG_1`) = c("SWIGFunction", class('InfomapBase_iterTree__SWIG_1'))
-
-`InfomapBase_iterTree` <- function(...) {
-  argtypes <- mapply(class, list(...));
-  argv <- list(...);
-  argc <- length(argtypes);
-  f <- NULL;
-# dispatch functions 2
-  if (argc == 1) {
-    if ( extends(argtypes[1], '_p_infomap__InfomapBase') || is.null(argv[[1]]) ) {
-      f <- InfomapBase_iterTree__SWIG_1; 
-    }
-  } else if (argc == 2) {
-    if (( extends(argtypes[1], '_p_infomap__InfomapBase') || is.null(argv[[1]]) ) && ( (is.integer(argv[[2]]) || is.numeric(argv[[2]])) && length(argv[[2]]) == 1 )) {
-      f <- InfomapBase_iterTree__SWIG_0; 
-    }
-  };
-  if (is.null(f)) {
-    stop("cannot find overloaded function for InfomapBase_iterTree with argtypes (",toString(argtypes),")");
-  };
-  f(...);
-}
-
-# Dispatch function
-# Start of InfomapBase_iterTreePhysical
-
-`InfomapBase_iterTreePhysical__SWIG_0` = function(self, maxClusterLevel, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  maxClusterLevel = as.integer(maxClusterLevel);
-  
-  if(length(maxClusterLevel) > 1) {
-    warning("using only the first element of maxClusterLevel");
-  };
-  
-  ;ans = .Call('R_swig_InfomapBase_iterTreePhysical__SWIG_0', self, maxClusterLevel, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__InfomapIteratorPhysical", ref=ans);
-  
-  ans
-  
-}
-
-attr(`InfomapBase_iterTreePhysical__SWIG_0`, 'returnType') = '_p_infomap__InfomapIteratorPhysical'
-attr(`InfomapBase_iterTreePhysical__SWIG_0`, "inputTypes") = c('_p_infomap__InfomapBase', 'integer')
-class(`InfomapBase_iterTreePhysical__SWIG_0`) = c("SWIGFunction", class('InfomapBase_iterTreePhysical__SWIG_0'))
-
-# Start of InfomapBase_iterTreePhysical
-
-`InfomapBase_iterTreePhysical__SWIG_1` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;ans = .Call('R_swig_InfomapBase_iterTreePhysical__SWIG_1', self, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__InfomapIteratorPhysical", ref=ans);
-  
-  ans
-  
-}
-
-attr(`InfomapBase_iterTreePhysical__SWIG_1`, 'returnType') = '_p_infomap__InfomapIteratorPhysical'
-attr(`InfomapBase_iterTreePhysical__SWIG_1`, "inputTypes") = c('_p_infomap__InfomapBase')
-class(`InfomapBase_iterTreePhysical__SWIG_1`) = c("SWIGFunction", class('InfomapBase_iterTreePhysical__SWIG_1'))
-
-`InfomapBase_iterTreePhysical` <- function(...) {
-  argtypes <- mapply(class, list(...));
-  argv <- list(...);
-  argc <- length(argtypes);
-  f <- NULL;
-# dispatch functions 2
-  if (argc == 1) {
-    if ( extends(argtypes[1], '_p_infomap__InfomapBase') || is.null(argv[[1]]) ) {
-      f <- InfomapBase_iterTreePhysical__SWIG_1; 
-    }
-  } else if (argc == 2) {
-    if (( extends(argtypes[1], '_p_infomap__InfomapBase') || is.null(argv[[1]]) ) && ( (is.integer(argv[[2]]) || is.numeric(argv[[2]])) && length(argv[[2]]) == 1 )) {
-      f <- InfomapBase_iterTreePhysical__SWIG_0; 
-    }
-  };
-  if (is.null(f)) {
-    stop("cannot find overloaded function for InfomapBase_iterTreePhysical with argtypes (",toString(argtypes),")");
-  };
-  f(...);
-}
-
-# Dispatch function
-# Start of InfomapBase_iterModules
-
-`InfomapBase_iterModules__SWIG_0` = function(self, maxClusterLevel, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  maxClusterLevel = as.integer(maxClusterLevel);
-  
-  if(length(maxClusterLevel) > 1) {
-    warning("using only the first element of maxClusterLevel");
-  };
-  
-  ;ans = .Call('R_swig_InfomapBase_iterModules__SWIG_0', self, maxClusterLevel, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__InfomapModuleIterator", ref=ans);
-  
-  ans
-  
-}
-
-attr(`InfomapBase_iterModules__SWIG_0`, 'returnType') = '_p_infomap__InfomapModuleIterator'
-attr(`InfomapBase_iterModules__SWIG_0`, "inputTypes") = c('_p_infomap__InfomapBase', 'integer')
-class(`InfomapBase_iterModules__SWIG_0`) = c("SWIGFunction", class('InfomapBase_iterModules__SWIG_0'))
-
-# Start of InfomapBase_iterModules
-
-`InfomapBase_iterModules__SWIG_1` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;ans = .Call('R_swig_InfomapBase_iterModules__SWIG_1', self, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__InfomapModuleIterator", ref=ans);
-  
-  ans
-  
-}
-
-attr(`InfomapBase_iterModules__SWIG_1`, 'returnType') = '_p_infomap__InfomapModuleIterator'
-attr(`InfomapBase_iterModules__SWIG_1`, "inputTypes") = c('_p_infomap__InfomapBase')
-class(`InfomapBase_iterModules__SWIG_1`) = c("SWIGFunction", class('InfomapBase_iterModules__SWIG_1'))
-
-`InfomapBase_iterModules` <- function(...) {
-  argtypes <- mapply(class, list(...));
-  argv <- list(...);
-  argc <- length(argtypes);
-  f <- NULL;
-# dispatch functions 2
-  if (argc == 1) {
-    if ( extends(argtypes[1], '_p_infomap__InfomapBase') || is.null(argv[[1]]) ) {
-      f <- InfomapBase_iterModules__SWIG_1; 
-    }
-  } else if (argc == 2) {
-    if (( extends(argtypes[1], '_p_infomap__InfomapBase') || is.null(argv[[1]]) ) && ( (is.integer(argv[[2]]) || is.numeric(argv[[2]])) && length(argv[[2]]) == 1 )) {
-      f <- InfomapBase_iterModules__SWIG_0; 
-    }
-  };
-  if (is.null(f)) {
-    stop("cannot find overloaded function for InfomapBase_iterModules with argtypes (",toString(argtypes),")");
-  };
-  f(...);
-}
-
-# Dispatch function
-# Start of InfomapBase_iterLeafModules
-
-`InfomapBase_iterLeafModules__SWIG_0` = function(self, maxClusterLevel, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  maxClusterLevel = as.integer(maxClusterLevel);
-  
-  if(length(maxClusterLevel) > 1) {
-    warning("using only the first element of maxClusterLevel");
-  };
-  
-  ;ans = .Call('R_swig_InfomapBase_iterLeafModules__SWIG_0', self, maxClusterLevel, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__InfomapLeafModuleIterator", ref=ans);
-  
-  ans
-  
-}
-
-attr(`InfomapBase_iterLeafModules__SWIG_0`, 'returnType') = '_p_infomap__InfomapLeafModuleIterator'
-attr(`InfomapBase_iterLeafModules__SWIG_0`, "inputTypes") = c('_p_infomap__InfomapBase', 'integer')
-class(`InfomapBase_iterLeafModules__SWIG_0`) = c("SWIGFunction", class('InfomapBase_iterLeafModules__SWIG_0'))
-
-# Start of InfomapBase_iterLeafModules
-
-`InfomapBase_iterLeafModules__SWIG_1` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;ans = .Call('R_swig_InfomapBase_iterLeafModules__SWIG_1', self, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__InfomapLeafModuleIterator", ref=ans);
-  
-  ans
-  
-}
-
-attr(`InfomapBase_iterLeafModules__SWIG_1`, 'returnType') = '_p_infomap__InfomapLeafModuleIterator'
-attr(`InfomapBase_iterLeafModules__SWIG_1`, "inputTypes") = c('_p_infomap__InfomapBase')
-class(`InfomapBase_iterLeafModules__SWIG_1`) = c("SWIGFunction", class('InfomapBase_iterLeafModules__SWIG_1'))
-
-`InfomapBase_iterLeafModules` <- function(...) {
-  argtypes <- mapply(class, list(...));
-  argv <- list(...);
-  argc <- length(argtypes);
-  f <- NULL;
-# dispatch functions 2
-  if (argc == 1) {
-    if ( extends(argtypes[1], '_p_infomap__InfomapBase') || is.null(argv[[1]]) ) {
-      f <- InfomapBase_iterLeafModules__SWIG_1; 
-    }
-  } else if (argc == 2) {
-    if (( extends(argtypes[1], '_p_infomap__InfomapBase') || is.null(argv[[1]]) ) && ( (is.integer(argv[[2]]) || is.numeric(argv[[2]])) && length(argv[[2]]) == 1 )) {
-      f <- InfomapBase_iterLeafModules__SWIG_0; 
-    }
-  };
-  if (is.null(f)) {
-    stop("cannot find overloaded function for InfomapBase_iterLeafModules with argtypes (",toString(argtypes),")");
-  };
-  f(...);
-}
-
-# Dispatch function
-# Start of InfomapBase_iterLeafNodes
-
-`InfomapBase_iterLeafNodes__SWIG_0` = function(self, maxClusterLevel, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  maxClusterLevel = as.integer(maxClusterLevel);
-  
-  if(length(maxClusterLevel) > 1) {
-    warning("using only the first element of maxClusterLevel");
-  };
-  
-  ;ans = .Call('R_swig_InfomapBase_iterLeafNodes__SWIG_0', self, maxClusterLevel, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__InfomapLeafIterator", ref=ans);
-  
-  ans
-  
-}
-
-attr(`InfomapBase_iterLeafNodes__SWIG_0`, 'returnType') = '_p_infomap__InfomapLeafIterator'
-attr(`InfomapBase_iterLeafNodes__SWIG_0`, "inputTypes") = c('_p_infomap__InfomapBase', 'integer')
-class(`InfomapBase_iterLeafNodes__SWIG_0`) = c("SWIGFunction", class('InfomapBase_iterLeafNodes__SWIG_0'))
-
-# Start of InfomapBase_iterLeafNodes
-
-`InfomapBase_iterLeafNodes__SWIG_1` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;ans = .Call('R_swig_InfomapBase_iterLeafNodes__SWIG_1', self, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__InfomapLeafIterator", ref=ans);
-  
-  ans
-  
-}
-
-attr(`InfomapBase_iterLeafNodes__SWIG_1`, 'returnType') = '_p_infomap__InfomapLeafIterator'
-attr(`InfomapBase_iterLeafNodes__SWIG_1`, "inputTypes") = c('_p_infomap__InfomapBase')
-class(`InfomapBase_iterLeafNodes__SWIG_1`) = c("SWIGFunction", class('InfomapBase_iterLeafNodes__SWIG_1'))
-
-`InfomapBase_iterLeafNodes` <- function(...) {
-  argtypes <- mapply(class, list(...));
-  argv <- list(...);
-  argc <- length(argtypes);
-  f <- NULL;
-# dispatch functions 2
-  if (argc == 1) {
-    if ( extends(argtypes[1], '_p_infomap__InfomapBase') || is.null(argv[[1]]) ) {
-      f <- InfomapBase_iterLeafNodes__SWIG_1; 
-    }
-  } else if (argc == 2) {
-    if (( extends(argtypes[1], '_p_infomap__InfomapBase') || is.null(argv[[1]]) ) && ( (is.integer(argv[[2]]) || is.numeric(argv[[2]])) && length(argv[[2]]) == 1 )) {
-      f <- InfomapBase_iterLeafNodes__SWIG_0; 
-    }
-  };
-  if (is.null(f)) {
-    stop("cannot find overloaded function for InfomapBase_iterLeafNodes with argtypes (",toString(argtypes),")");
-  };
-  f(...);
-}
-
-# Dispatch function
-# Start of InfomapBase_iterLeafNodesPhysical
-
-`InfomapBase_iterLeafNodesPhysical__SWIG_0` = function(self, maxClusterLevel, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  maxClusterLevel = as.integer(maxClusterLevel);
-  
-  if(length(maxClusterLevel) > 1) {
-    warning("using only the first element of maxClusterLevel");
-  };
-  
-  ;ans = .Call('R_swig_InfomapBase_iterLeafNodesPhysical__SWIG_0', self, maxClusterLevel, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__InfomapLeafIteratorPhysical", ref=ans);
-  
-  ans
-  
-}
-
-attr(`InfomapBase_iterLeafNodesPhysical__SWIG_0`, 'returnType') = '_p_infomap__InfomapLeafIteratorPhysical'
-attr(`InfomapBase_iterLeafNodesPhysical__SWIG_0`, "inputTypes") = c('_p_infomap__InfomapBase', 'integer')
-class(`InfomapBase_iterLeafNodesPhysical__SWIG_0`) = c("SWIGFunction", class('InfomapBase_iterLeafNodesPhysical__SWIG_0'))
-
-# Start of InfomapBase_iterLeafNodesPhysical
-
-`InfomapBase_iterLeafNodesPhysical__SWIG_1` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;ans = .Call('R_swig_InfomapBase_iterLeafNodesPhysical__SWIG_1', self, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__InfomapLeafIteratorPhysical", ref=ans);
-  
-  ans
-  
-}
-
-attr(`InfomapBase_iterLeafNodesPhysical__SWIG_1`, 'returnType') = '_p_infomap__InfomapLeafIteratorPhysical'
-attr(`InfomapBase_iterLeafNodesPhysical__SWIG_1`, "inputTypes") = c('_p_infomap__InfomapBase')
-class(`InfomapBase_iterLeafNodesPhysical__SWIG_1`) = c("SWIGFunction", class('InfomapBase_iterLeafNodesPhysical__SWIG_1'))
-
-`InfomapBase_iterLeafNodesPhysical` <- function(...) {
-  argtypes <- mapply(class, list(...));
-  argv <- list(...);
-  argc <- length(argtypes);
-  f <- NULL;
-# dispatch functions 2
-  if (argc == 1) {
-    if ( extends(argtypes[1], '_p_infomap__InfomapBase') || is.null(argv[[1]]) ) {
-      f <- InfomapBase_iterLeafNodesPhysical__SWIG_1; 
-    }
-  } else if (argc == 2) {
-    if (( extends(argtypes[1], '_p_infomap__InfomapBase') || is.null(argv[[1]]) ) && ( (is.integer(argv[[2]]) || is.numeric(argv[[2]])) && length(argv[[2]]) == 1 )) {
-      f <- InfomapBase_iterLeafNodesPhysical__SWIG_0; 
-    }
-  };
-  if (is.null(f)) {
-    stop("cannot find overloaded function for InfomapBase_iterLeafNodesPhysical with argtypes (",toString(argtypes),")");
-  };
-  f(...);
-}
-
-# Dispatch function
-# Start of InfomapBase_begin
-
-`InfomapBase_begin__SWIG_0` = function(self, maxClusterLevel, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  maxClusterLevel = as.integer(maxClusterLevel);
-  
-  if(length(maxClusterLevel) > 1) {
-    warning("using only the first element of maxClusterLevel");
-  };
-  
-  ;ans = .Call('R_swig_InfomapBase_begin__SWIG_0', self, maxClusterLevel, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__InfomapIterator", ref=ans);
-  
-  ans
-  
-}
-
-attr(`InfomapBase_begin__SWIG_0`, 'returnType') = '_p_infomap__InfomapIterator'
-attr(`InfomapBase_begin__SWIG_0`, "inputTypes") = c('_p_infomap__InfomapBase', 'integer')
-class(`InfomapBase_begin__SWIG_0`) = c("SWIGFunction", class('InfomapBase_begin__SWIG_0'))
-
-# Start of InfomapBase_begin
-
-`InfomapBase_begin__SWIG_1` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;ans = .Call('R_swig_InfomapBase_begin__SWIG_1', self, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__InfomapIterator", ref=ans);
-  
-  ans
-  
-}
-
-attr(`InfomapBase_begin__SWIG_1`, 'returnType') = '_p_infomap__InfomapIterator'
-attr(`InfomapBase_begin__SWIG_1`, "inputTypes") = c('_p_infomap__InfomapBase')
-class(`InfomapBase_begin__SWIG_1`) = c("SWIGFunction", class('InfomapBase_begin__SWIG_1'))
-
-`InfomapBase_begin` <- function(...) {
-  argtypes <- mapply(class, list(...));
-  argv <- list(...);
-  argc <- length(argtypes);
-  f <- NULL;
-# dispatch functions 2
-  if (argc == 1) {
-    if ( extends(argtypes[1], '_p_infomap__InfomapBase') || is.null(argv[[1]]) ) {
-      f <- InfomapBase_begin__SWIG_1; 
-    }
-  } else if (argc == 2) {
-    if (( extends(argtypes[1], '_p_infomap__InfomapBase') || is.null(argv[[1]]) ) && ( (is.integer(argv[[2]]) || is.numeric(argv[[2]])) && length(argv[[2]]) == 1 )) {
-      f <- InfomapBase_begin__SWIG_0; 
-    }
-  };
-  if (is.null(f)) {
-    stop("cannot find overloaded function for InfomapBase_begin with argtypes (",toString(argtypes),")");
-  };
-  f(...);
-}
-
-# Dispatch function
-# Start of InfomapBase_end
-
-`InfomapBase_end` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;ans = .Call('R_swig_InfomapBase_end', self, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__InfomapIterator", ref=ans);
-  
-  ans
-  
-}
-
-attr(`InfomapBase_end`, 'returnType') = '_p_infomap__InfomapIterator'
-attr(`InfomapBase_end`, "inputTypes") = c('_p_infomap__InfomapBase')
-class(`InfomapBase_end`) = c("SWIGFunction", class('InfomapBase_end'))
-
-# Start of InfomapBase_network
-
-`InfomapBase_network__SWIG_0` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;ans = .Call('R_swig_InfomapBase_network__SWIG_0', self, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__Network", ref=ans);
-  
-  ans
-  
-}
-
-attr(`InfomapBase_network__SWIG_0`, 'returnType') = '_p_infomap__Network'
-attr(`InfomapBase_network__SWIG_0`, "inputTypes") = c('_p_infomap__InfomapBase')
-class(`InfomapBase_network__SWIG_0`) = c("SWIGFunction", class('InfomapBase_network__SWIG_0'))
-
-# Start of InfomapBase_network
-
-`InfomapBase_network__SWIG_1` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;ans = .Call('R_swig_InfomapBase_network__SWIG_1', self, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__Network", ref=ans);
-  
-  ans
-  
-}
-
-attr(`InfomapBase_network__SWIG_1`, 'returnType') = '_p_infomap__Network'
-attr(`InfomapBase_network__SWIG_1`, "inputTypes") = c('_p_infomap__InfomapBase')
-class(`InfomapBase_network__SWIG_1`) = c("SWIGFunction", class('InfomapBase_network__SWIG_1'))
-
-`InfomapBase_network` <- function(...) {
-  argtypes <- mapply(class, list(...));
-  argv <- list(...);
-  argc <- length(argtypes);
-  f <- NULL;
-# dispatch functions 2
-  if (argc == 1) {
-    if ( extends(argtypes[1], '_p_infomap__InfomapBase') || is.null(argv[[1]]) ) {
-      f <- InfomapBase_network__SWIG_0; 
-    }
-    else if ( extends(argtypes[1], '_p_infomap__InfomapBase') || is.null(argv[[1]]) ) {
-      f <- InfomapBase_network__SWIG_1; 
-    }
-  };
-  if (is.null(f)) {
-    stop("cannot find overloaded function for InfomapBase_network with argtypes (",toString(argtypes),")");
-  };
-  f(...);
-}
-
-# Dispatch function
-# Start of InfomapBase_root
-
-`InfomapBase_root__SWIG_0` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;ans = .Call('R_swig_InfomapBase_root__SWIG_0', self, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__InfoNode", ref=ans);
-  
-  ans
-  
-}
-
-attr(`InfomapBase_root__SWIG_0`, 'returnType') = '_p_infomap__InfoNode'
-attr(`InfomapBase_root__SWIG_0`, "inputTypes") = c('_p_infomap__InfomapBase')
-class(`InfomapBase_root__SWIG_0`) = c("SWIGFunction", class('InfomapBase_root__SWIG_0'))
-
-# Start of InfomapBase_root
-
-`InfomapBase_root__SWIG_1` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;ans = .Call('R_swig_InfomapBase_root__SWIG_1', self, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__InfoNode", ref=ans);
-  
-  ans
-  
-}
-
-attr(`InfomapBase_root__SWIG_1`, 'returnType') = '_p_infomap__InfoNode'
-attr(`InfomapBase_root__SWIG_1`, "inputTypes") = c('_p_infomap__InfomapBase')
-class(`InfomapBase_root__SWIG_1`) = c("SWIGFunction", class('InfomapBase_root__SWIG_1'))
-
-`InfomapBase_root` <- function(...) {
-  argtypes <- mapply(class, list(...));
-  argv <- list(...);
-  argc <- length(argtypes);
-  f <- NULL;
-# dispatch functions 2
-  if (argc == 1) {
-    if ( extends(argtypes[1], '_p_infomap__InfomapBase') || is.null(argv[[1]]) ) {
-      f <- InfomapBase_root__SWIG_0; 
-    }
-    else if ( extends(argtypes[1], '_p_infomap__InfomapBase') || is.null(argv[[1]]) ) {
-      f <- InfomapBase_root__SWIG_1; 
-    }
-  };
-  if (is.null(f)) {
-    stop("cannot find overloaded function for InfomapBase_root with argtypes (",toString(argtypes),")");
-  };
-  f(...);
-}
-
-# Dispatch function
-# Start of InfomapBase_numLeafNodes
-
-`InfomapBase_numLeafNodes` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_InfomapBase_numLeafNodes', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`InfomapBase_numLeafNodes`, 'returnType') = 'integer'
-attr(`InfomapBase_numLeafNodes`, "inputTypes") = c('_p_infomap__InfomapBase')
-class(`InfomapBase_numLeafNodes`) = c("SWIGFunction", class('InfomapBase_numLeafNodes'))
-
-# Start of InfomapBase_leafNodes
-
-`InfomapBase_leafNodes` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;ans = .Call('R_swig_InfomapBase_leafNodes', self, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_std__vectorT_infomap__InfoNode_p_std__allocatorT_infomap__InfoNode_p_t_t", ref=ans);
-  
-  ans
-  
-}
-
-attr(`InfomapBase_leafNodes`, 'returnType') = '_p_std__vectorT_infomap__InfoNode_p_std__allocatorT_infomap__InfoNode_p_t_t'
-attr(`InfomapBase_leafNodes`, "inputTypes") = c('_p_infomap__InfomapBase')
-class(`InfomapBase_leafNodes`) = c("SWIGFunction", class('InfomapBase_leafNodes'))
-
-# Start of InfomapBase_numTopModules
-
-`InfomapBase_numTopModules` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_InfomapBase_numTopModules', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`InfomapBase_numTopModules`, 'returnType') = 'integer'
-attr(`InfomapBase_numTopModules`, "inputTypes") = c('_p_infomap__InfomapBase')
-class(`InfomapBase_numTopModules`) = c("SWIGFunction", class('InfomapBase_numTopModules'))
-
-# Start of InfomapBase_numActiveModules
-
-`InfomapBase_numActiveModules` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_InfomapBase_numActiveModules', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`InfomapBase_numActiveModules`, 'returnType') = 'integer'
-attr(`InfomapBase_numActiveModules`, "inputTypes") = c('_p_infomap__InfomapBase')
-class(`InfomapBase_numActiveModules`) = c("SWIGFunction", class('InfomapBase_numActiveModules'))
-
-# Start of InfomapBase_numNonTrivialTopModules
-
-`InfomapBase_numNonTrivialTopModules` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_InfomapBase_numNonTrivialTopModules', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`InfomapBase_numNonTrivialTopModules`, 'returnType') = 'integer'
-attr(`InfomapBase_numNonTrivialTopModules`, "inputTypes") = c('_p_infomap__InfomapBase')
-class(`InfomapBase_numNonTrivialTopModules`) = c("SWIGFunction", class('InfomapBase_numNonTrivialTopModules'))
-
-# Start of InfomapBase_haveModules
-
-`InfomapBase_haveModules` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_InfomapBase_haveModules', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`InfomapBase_haveModules`, 'returnType') = 'logical'
-attr(`InfomapBase_haveModules`, "inputTypes") = c('_p_infomap__InfomapBase')
-class(`InfomapBase_haveModules`) = c("SWIGFunction", class('InfomapBase_haveModules'))
-
-# Start of InfomapBase_haveNonTrivialModules
-
-`InfomapBase_haveNonTrivialModules` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_InfomapBase_haveNonTrivialModules', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`InfomapBase_haveNonTrivialModules`, 'returnType') = 'logical'
-attr(`InfomapBase_haveNonTrivialModules`, "inputTypes") = c('_p_infomap__InfomapBase')
-class(`InfomapBase_haveNonTrivialModules`) = c("SWIGFunction", class('InfomapBase_haveNonTrivialModules'))
-
-# Start of InfomapBase_numLevels
-
-`InfomapBase_numLevels` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_InfomapBase_numLevels', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`InfomapBase_numLevels`, 'returnType') = 'integer'
-attr(`InfomapBase_numLevels`, "inputTypes") = c('_p_infomap__InfomapBase')
-class(`InfomapBase_numLevels`) = c("SWIGFunction", class('InfomapBase_numLevels'))
-
-# Start of InfomapBase_maxTreeDepth
-
-`InfomapBase_maxTreeDepth` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_InfomapBase_maxTreeDepth', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`InfomapBase_maxTreeDepth`, 'returnType') = 'integer'
-attr(`InfomapBase_maxTreeDepth`, "inputTypes") = c('_p_infomap__InfomapBase')
-class(`InfomapBase_maxTreeDepth`) = c("SWIGFunction", class('InfomapBase_maxTreeDepth'))
-
-# Start of InfomapBase_getCodelength
-
-`InfomapBase_getCodelength` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_InfomapBase_getCodelength', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`InfomapBase_getCodelength`, 'returnType') = 'numeric'
-attr(`InfomapBase_getCodelength`, "inputTypes") = c('_p_infomap__InfomapBase')
-class(`InfomapBase_getCodelength`) = c("SWIGFunction", class('InfomapBase_getCodelength'))
-
-# Start of InfomapBase_getMetaCodelength
-
-`InfomapBase_getMetaCodelength__SWIG_0` = function(self, unweighted, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  unweighted = as.logical(unweighted);
-  ;.Call('R_swig_InfomapBase_getMetaCodelength__SWIG_0', self, unweighted, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`InfomapBase_getMetaCodelength__SWIG_0`, 'returnType') = 'numeric'
-attr(`InfomapBase_getMetaCodelength__SWIG_0`, "inputTypes") = c('_p_infomap__InfomapBase', 'logical')
-class(`InfomapBase_getMetaCodelength__SWIG_0`) = c("SWIGFunction", class('InfomapBase_getMetaCodelength__SWIG_0'))
-
-# Start of InfomapBase_getMetaCodelength
-
-`InfomapBase_getMetaCodelength__SWIG_1` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_InfomapBase_getMetaCodelength__SWIG_1', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`InfomapBase_getMetaCodelength__SWIG_1`, 'returnType') = 'numeric'
-attr(`InfomapBase_getMetaCodelength__SWIG_1`, "inputTypes") = c('_p_infomap__InfomapBase')
-class(`InfomapBase_getMetaCodelength__SWIG_1`) = c("SWIGFunction", class('InfomapBase_getMetaCodelength__SWIG_1'))
-
-`InfomapBase_getMetaCodelength` <- function(...) {
-  argtypes <- mapply(class, list(...));
-  argv <- list(...);
-  argc <- length(argtypes);
-  f <- NULL;
-# dispatch functions 2
-  if (argc == 1) {
-    if ( extends(argtypes[1], '_p_infomap__InfomapBase') || is.null(argv[[1]]) ) {
-      f <- InfomapBase_getMetaCodelength__SWIG_1; 
-    }
-  } else if (argc == 2) {
-    if (( extends(argtypes[1], '_p_infomap__InfomapBase') || is.null(argv[[1]]) ) && ( is.logical(argv[[2]]) && length(argv[[2]]) == 1 )) {
-      f <- InfomapBase_getMetaCodelength__SWIG_0; 
-    }
-  };
-  if (is.null(f)) {
-    stop("cannot find overloaded function for InfomapBase_getMetaCodelength with argtypes (",toString(argtypes),")");
-  };
-  f(...);
-}
-
-# Dispatch function
-# Start of InfomapBase_codelength
-
-`InfomapBase_codelength` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_InfomapBase_codelength', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`InfomapBase_codelength`, 'returnType') = 'numeric'
-attr(`InfomapBase_codelength`, "inputTypes") = c('_p_infomap__InfomapBase')
-class(`InfomapBase_codelength`) = c("SWIGFunction", class('InfomapBase_codelength'))
-
-# Start of InfomapBase_codelengths
-
-`InfomapBase_codelengths` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_InfomapBase_codelengths', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`InfomapBase_codelengths`, 'returnType') = '_p_std__vectorT_double_t'
-attr(`InfomapBase_codelengths`, "inputTypes") = c('_p_infomap__InfomapBase')
-class(`InfomapBase_codelengths`) = c("SWIGFunction", class('InfomapBase_codelengths'))
-
-# Start of InfomapBase_getIndexCodelength
-
-`InfomapBase_getIndexCodelength` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_InfomapBase_getIndexCodelength', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`InfomapBase_getIndexCodelength`, 'returnType') = 'numeric'
-attr(`InfomapBase_getIndexCodelength`, "inputTypes") = c('_p_infomap__InfomapBase')
-class(`InfomapBase_getIndexCodelength`) = c("SWIGFunction", class('InfomapBase_getIndexCodelength'))
-
-# Start of InfomapBase_getModuleCodelength
-
-`InfomapBase_getModuleCodelength` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_InfomapBase_getModuleCodelength', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`InfomapBase_getModuleCodelength`, 'returnType') = 'numeric'
-attr(`InfomapBase_getModuleCodelength`, "inputTypes") = c('_p_infomap__InfomapBase')
-class(`InfomapBase_getModuleCodelength`) = c("SWIGFunction", class('InfomapBase_getModuleCodelength'))
-
-# Start of InfomapBase_getHierarchicalCodelength
-
-`InfomapBase_getHierarchicalCodelength` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_InfomapBase_getHierarchicalCodelength', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`InfomapBase_getHierarchicalCodelength`, 'returnType') = 'numeric'
-attr(`InfomapBase_getHierarchicalCodelength`, "inputTypes") = c('_p_infomap__InfomapBase')
-class(`InfomapBase_getHierarchicalCodelength`) = c("SWIGFunction", class('InfomapBase_getHierarchicalCodelength'))
-
-# Start of InfomapBase_getOneLevelCodelength
-
-`InfomapBase_getOneLevelCodelength` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_InfomapBase_getOneLevelCodelength', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`InfomapBase_getOneLevelCodelength`, 'returnType') = 'numeric'
-attr(`InfomapBase_getOneLevelCodelength`, "inputTypes") = c('_p_infomap__InfomapBase')
-class(`InfomapBase_getOneLevelCodelength`) = c("SWIGFunction", class('InfomapBase_getOneLevelCodelength'))
-
-# Start of InfomapBase_getRelativeCodelengthSavings
-
-`InfomapBase_getRelativeCodelengthSavings` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_InfomapBase_getRelativeCodelengthSavings', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`InfomapBase_getRelativeCodelengthSavings`, 'returnType') = 'numeric'
-attr(`InfomapBase_getRelativeCodelengthSavings`, "inputTypes") = c('_p_infomap__InfomapBase')
-class(`InfomapBase_getRelativeCodelengthSavings`) = c("SWIGFunction", class('InfomapBase_getRelativeCodelengthSavings'))
-
-# Start of InfomapBase_getEntropyRate
-
-`InfomapBase_getEntropyRate` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_InfomapBase_getEntropyRate', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`InfomapBase_getEntropyRate`, 'returnType') = 'numeric'
-attr(`InfomapBase_getEntropyRate`, "inputTypes") = c('_p_infomap__InfomapBase')
-class(`InfomapBase_getEntropyRate`) = c("SWIGFunction", class('InfomapBase_getEntropyRate'))
-
-# Start of InfomapBase_getMaxEntropy
-
-`InfomapBase_getMaxEntropy` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_InfomapBase_getMaxEntropy', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`InfomapBase_getMaxEntropy`, 'returnType') = 'numeric'
-attr(`InfomapBase_getMaxEntropy`, "inputTypes") = c('_p_infomap__InfomapBase')
-class(`InfomapBase_getMaxEntropy`) = c("SWIGFunction", class('InfomapBase_getMaxEntropy'))
-
-# Start of InfomapBase_getMaxFlow
-
-`InfomapBase_getMaxFlow` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_InfomapBase_getMaxFlow', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`InfomapBase_getMaxFlow`, 'returnType') = 'numeric'
-attr(`InfomapBase_getMaxFlow`, "inputTypes") = c('_p_infomap__InfomapBase')
-class(`InfomapBase_getMaxFlow`) = c("SWIGFunction", class('InfomapBase_getMaxFlow'))
-
-# Start of InfomapBase_getStartDate
-
-`InfomapBase_getStartDate` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;ans = .Call('R_swig_InfomapBase_getStartDate', self, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_Date", ref=ans);
-  
-  ans
-  
-}
-
-attr(`InfomapBase_getStartDate`, 'returnType') = '_p_Date'
-attr(`InfomapBase_getStartDate`, "inputTypes") = c('_p_infomap__InfomapBase')
-class(`InfomapBase_getStartDate`) = c("SWIGFunction", class('InfomapBase_getStartDate'))
-
-# Start of InfomapBase_getElapsedTime
-
-`InfomapBase_getElapsedTime` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;ans = .Call('R_swig_InfomapBase_getElapsedTime', self, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_Stopwatch", ref=ans);
-  
-  ans
-  
-}
-
-attr(`InfomapBase_getElapsedTime`, 'returnType') = '_p_Stopwatch'
-attr(`InfomapBase_getElapsedTime`, "inputTypes") = c('_p_infomap__InfomapBase')
-class(`InfomapBase_getElapsedTime`) = c("SWIGFunction", class('InfomapBase_getElapsedTime'))
-
-# Start of InfomapBase_activeNetwork
-
-`InfomapBase_activeNetwork` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;ans = .Call('R_swig_InfomapBase_activeNetwork', self, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_std__vectorT_infomap__InfoNode_p_std__allocatorT_infomap__InfoNode_p_t_t", ref=ans);
-  
-  ans
-  
-}
-
-attr(`InfomapBase_activeNetwork`, 'returnType') = '_p_std__vectorT_infomap__InfoNode_p_std__allocatorT_infomap__InfoNode_p_t_t'
-attr(`InfomapBase_activeNetwork`, "inputTypes") = c('_p_infomap__InfomapBase')
-class(`InfomapBase_activeNetwork`) = c("SWIGFunction", class('InfomapBase_activeNetwork'))
-
-# Start of InfomapBase_getMultilevelModules
-
-`InfomapBase_getMultilevelModules__SWIG_0` = function(self, states, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  states = as.logical(states);
-  ;ans = .Call('R_swig_InfomapBase_getMultilevelModules__SWIG_0', self, states, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_std__mapT_unsigned_int_std__vectorT_unsigned_int_t_t", ref=ans);
-  
-  ans
-  
-}
-
-attr(`InfomapBase_getMultilevelModules__SWIG_0`, 'returnType') = '_p_std__mapT_unsigned_int_std__vectorT_unsigned_int_t_t'
-attr(`InfomapBase_getMultilevelModules__SWIG_0`, "inputTypes") = c('_p_infomap__InfomapBase', 'logical')
-class(`InfomapBase_getMultilevelModules__SWIG_0`) = c("SWIGFunction", class('InfomapBase_getMultilevelModules__SWIG_0'))
-
-# Start of InfomapBase_getMultilevelModules
-
-`InfomapBase_getMultilevelModules__SWIG_1` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;ans = .Call('R_swig_InfomapBase_getMultilevelModules__SWIG_1', self, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_std__mapT_unsigned_int_std__vectorT_unsigned_int_t_t", ref=ans);
-  
-  ans
-  
-}
-
-attr(`InfomapBase_getMultilevelModules__SWIG_1`, 'returnType') = '_p_std__mapT_unsigned_int_std__vectorT_unsigned_int_t_t'
-attr(`InfomapBase_getMultilevelModules__SWIG_1`, "inputTypes") = c('_p_infomap__InfomapBase')
-class(`InfomapBase_getMultilevelModules__SWIG_1`) = c("SWIGFunction", class('InfomapBase_getMultilevelModules__SWIG_1'))
-
-`InfomapBase_getMultilevelModules` <- function(...) {
-  argtypes <- mapply(class, list(...));
-  argv <- list(...);
-  argc <- length(argtypes);
-  f <- NULL;
-# dispatch functions 2
-  if (argc == 1) {
-    if ( extends(argtypes[1], '_p_infomap__InfomapBase') || is.null(argv[[1]]) ) {
-      f <- InfomapBase_getMultilevelModules__SWIG_1; 
-    }
-  } else if (argc == 2) {
-    if (( extends(argtypes[1], '_p_infomap__InfomapBase') || is.null(argv[[1]]) ) && ( is.logical(argv[[2]]) && length(argv[[2]]) == 1 )) {
-      f <- InfomapBase_getMultilevelModules__SWIG_0; 
-    }
-  };
-  if (is.null(f)) {
-    stop("cannot find overloaded function for InfomapBase_getMultilevelModules with argtypes (",toString(argtypes),")");
-  };
-  f(...);
-}
-
-# Dispatch function
-# Start of InfomapBase_toString
-
-`InfomapBase_toString` = function(self, out, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  if (inherits(out, "ExternalReference")) out = slot(out,"ref"); 
-  ;ans = .Call('R_swig_InfomapBase_toString', self, out, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_std__ostream", ref=ans);
-  
-  ans
-  
-}
-
-attr(`InfomapBase_toString`, 'returnType') = '_p_std__ostream'
-attr(`InfomapBase_toString`, "inputTypes") = c('_p_infomap__InfomapBase', '_p_std__ostream')
-class(`InfomapBase_toString`) = c("SWIGFunction", class('InfomapBase_toString'))
-
-# Start of InfomapBase_getInitialPartition
-
-`InfomapBase_getInitialPartition` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;ans = .Call('R_swig_InfomapBase_getInitialPartition', self, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t", ref=ans);
-  
-  ans
-  
-}
-
-attr(`InfomapBase_getInitialPartition`, 'returnType') = '_p_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t'
-attr(`InfomapBase_getInitialPartition`, "inputTypes") = c('_p_infomap__InfomapBase')
-class(`InfomapBase_getInitialPartition`) = c("SWIGFunction", class('InfomapBase_getInitialPartition'))
-
-# Start of InfomapBase_setInitialPartition
-
-`InfomapBase_setInitialPartition` = function(self, moduleIds, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  if (inherits(moduleIds, "ExternalReference")) moduleIds = slot(moduleIds,"ref"); 
-  ;ans = .Call('R_swig_InfomapBase_setInitialPartition', self, moduleIds, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__InfomapBase", ref=ans);
-  
-  ans
-  
-}
-
-attr(`InfomapBase_setInitialPartition`, 'returnType') = '_p_infomap__InfomapBase'
-attr(`InfomapBase_setInitialPartition`, "inputTypes") = c('_p_infomap__InfomapBase', '_p_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t')
-class(`InfomapBase_setInitialPartition`) = c("SWIGFunction", class('InfomapBase_setInitialPartition'))
-
-# Start of InfomapBase_run
-
-`InfomapBase_run__SWIG_0` = function(self, parameters)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  parameters = as(parameters, "character"); 
-  ;.Call('R_swig_InfomapBase_run__SWIG_0', self, parameters, PACKAGE='infomap');
-  
-}
-
-attr(`InfomapBase_run__SWIG_0`, 'returnType') = 'void'
-attr(`InfomapBase_run__SWIG_0`, "inputTypes") = c('_p_infomap__InfomapBase', 'character')
-class(`InfomapBase_run__SWIG_0`) = c("SWIGFunction", class('InfomapBase_run__SWIG_0'))
-
-# Start of InfomapBase_run
-
-`InfomapBase_run__SWIG_1` = function(self)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_InfomapBase_run__SWIG_1', self, PACKAGE='infomap');
-  
-}
-
-attr(`InfomapBase_run__SWIG_1`, 'returnType') = 'void'
-attr(`InfomapBase_run__SWIG_1`, "inputTypes") = c('_p_infomap__InfomapBase')
-class(`InfomapBase_run__SWIG_1`) = c("SWIGFunction", class('InfomapBase_run__SWIG_1'))
-
-# Start of InfomapBase_run
-
-`InfomapBase_run__SWIG_2` = function(self, network)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  if (inherits(network, "ExternalReference")) network = slot(network,"ref"); 
-  ;.Call('R_swig_InfomapBase_run__SWIG_2', self, network, PACKAGE='infomap');
-  
-}
-
-attr(`InfomapBase_run__SWIG_2`, 'returnType') = 'void'
-attr(`InfomapBase_run__SWIG_2`, "inputTypes") = c('_p_infomap__InfomapBase', '_p_infomap__Network')
-class(`InfomapBase_run__SWIG_2`) = c("SWIGFunction", class('InfomapBase_run__SWIG_2'))
-
-`InfomapBase_run` <- function(...) {
-  argtypes <- mapply(class, list(...));
-  argv <- list(...);
-  argc <- length(argtypes);
-  f <- NULL;
-# dispatch functions 3
-  if (argc == 1) {
-    if ( extends(argtypes[1], '_p_infomap__InfomapBase') || is.null(argv[[1]]) ) {
-      f <- InfomapBase_run__SWIG_1; 
-    }
-  } else if (argc == 2) {
-    if (( extends(argtypes[1], '_p_infomap__InfomapBase') || is.null(argv[[1]]) ) && ( extends(argtypes[2], '_p_infomap__Network') && length(argv[[2]]) == 1 )) {
-      f <- InfomapBase_run__SWIG_2; 
-    }
-    else if (( extends(argtypes[1], '_p_infomap__InfomapBase') || is.null(argv[[1]]) ) && ( is.character(argv[[2]]) && length(argv[[2]]) == 1 )) {
-      f <- InfomapBase_run__SWIG_0; 
-    }
-  };
-  if (is.null(f)) {
-    stop("cannot find overloaded function for InfomapBase_run with argtypes (",toString(argtypes),")");
-  };
-  f(...);
-}
-
-# Dispatch function
-# Start of InfomapBase_writeTree
-
-`InfomapBase_writeTree__SWIG_0` = function(self, filename, states, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  filename = as(filename, "character"); 
-  states = as.logical(states);
-  ;.Call('R_swig_InfomapBase_writeTree__SWIG_0', self, filename, states, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`InfomapBase_writeTree__SWIG_0`, 'returnType') = 'character'
-attr(`InfomapBase_writeTree__SWIG_0`, "inputTypes") = c('_p_infomap__InfomapBase', 'character', 'logical')
-class(`InfomapBase_writeTree__SWIG_0`) = c("SWIGFunction", class('InfomapBase_writeTree__SWIG_0'))
-
-# Start of InfomapBase_writeTree
-
-`InfomapBase_writeTree__SWIG_1` = function(self, filename, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  filename = as(filename, "character"); 
-  ;.Call('R_swig_InfomapBase_writeTree__SWIG_1', self, filename, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`InfomapBase_writeTree__SWIG_1`, 'returnType') = 'character'
-attr(`InfomapBase_writeTree__SWIG_1`, "inputTypes") = c('_p_infomap__InfomapBase', 'character')
-class(`InfomapBase_writeTree__SWIG_1`) = c("SWIGFunction", class('InfomapBase_writeTree__SWIG_1'))
-
-# Start of InfomapBase_writeTree
-
-`InfomapBase_writeTree__SWIG_2` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_InfomapBase_writeTree__SWIG_2', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`InfomapBase_writeTree__SWIG_2`, 'returnType') = 'character'
-attr(`InfomapBase_writeTree__SWIG_2`, "inputTypes") = c('_p_infomap__InfomapBase')
-class(`InfomapBase_writeTree__SWIG_2`) = c("SWIGFunction", class('InfomapBase_writeTree__SWIG_2'))
-
-`InfomapBase_writeTree` <- function(...) {
-  argtypes <- mapply(class, list(...));
-  argv <- list(...);
-  argc <- length(argtypes);
-  f <- NULL;
-# dispatch functions 3
-  if (argc == 1) {
-    if ( extends(argtypes[1], '_p_infomap__InfomapBase') || is.null(argv[[1]]) ) {
-      f <- InfomapBase_writeTree__SWIG_2; 
-    }
-  } else if (argc == 2) {
-    if (( extends(argtypes[1], '_p_infomap__InfomapBase') || is.null(argv[[1]]) ) && ( is.character(argv[[2]]) && length(argv[[2]]) == 1 )) {
-      f <- InfomapBase_writeTree__SWIG_1; 
-    }
-  } else if (argc == 3) {
-    if (( extends(argtypes[1], '_p_infomap__InfomapBase') || is.null(argv[[1]]) ) && ( is.character(argv[[2]]) && length(argv[[2]]) == 1 ) && ( is.logical(argv[[3]]) && length(argv[[3]]) == 1 )) {
-      f <- InfomapBase_writeTree__SWIG_0; 
-    }
-  };
-  if (is.null(f)) {
-    stop("cannot find overloaded function for InfomapBase_writeTree with argtypes (",toString(argtypes),")");
-  };
-  f(...);
-}
-
-# Dispatch function
-# Start of InfomapBase_writeFlowTree
-
-`InfomapBase_writeFlowTree__SWIG_0` = function(self, filename, states, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  filename = as(filename, "character"); 
-  states = as.logical(states);
-  ;.Call('R_swig_InfomapBase_writeFlowTree__SWIG_0', self, filename, states, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`InfomapBase_writeFlowTree__SWIG_0`, 'returnType') = 'character'
-attr(`InfomapBase_writeFlowTree__SWIG_0`, "inputTypes") = c('_p_infomap__InfomapBase', 'character', 'logical')
-class(`InfomapBase_writeFlowTree__SWIG_0`) = c("SWIGFunction", class('InfomapBase_writeFlowTree__SWIG_0'))
-
-# Start of InfomapBase_writeFlowTree
-
-`InfomapBase_writeFlowTree__SWIG_1` = function(self, filename, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  filename = as(filename, "character"); 
-  ;.Call('R_swig_InfomapBase_writeFlowTree__SWIG_1', self, filename, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`InfomapBase_writeFlowTree__SWIG_1`, 'returnType') = 'character'
-attr(`InfomapBase_writeFlowTree__SWIG_1`, "inputTypes") = c('_p_infomap__InfomapBase', 'character')
-class(`InfomapBase_writeFlowTree__SWIG_1`) = c("SWIGFunction", class('InfomapBase_writeFlowTree__SWIG_1'))
-
-# Start of InfomapBase_writeFlowTree
-
-`InfomapBase_writeFlowTree__SWIG_2` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_InfomapBase_writeFlowTree__SWIG_2', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`InfomapBase_writeFlowTree__SWIG_2`, 'returnType') = 'character'
-attr(`InfomapBase_writeFlowTree__SWIG_2`, "inputTypes") = c('_p_infomap__InfomapBase')
-class(`InfomapBase_writeFlowTree__SWIG_2`) = c("SWIGFunction", class('InfomapBase_writeFlowTree__SWIG_2'))
-
-`InfomapBase_writeFlowTree` <- function(...) {
-  argtypes <- mapply(class, list(...));
-  argv <- list(...);
-  argc <- length(argtypes);
-  f <- NULL;
-# dispatch functions 3
-  if (argc == 1) {
-    if ( extends(argtypes[1], '_p_infomap__InfomapBase') || is.null(argv[[1]]) ) {
-      f <- InfomapBase_writeFlowTree__SWIG_2; 
-    }
-  } else if (argc == 2) {
-    if (( extends(argtypes[1], '_p_infomap__InfomapBase') || is.null(argv[[1]]) ) && ( is.character(argv[[2]]) && length(argv[[2]]) == 1 )) {
-      f <- InfomapBase_writeFlowTree__SWIG_1; 
-    }
-  } else if (argc == 3) {
-    if (( extends(argtypes[1], '_p_infomap__InfomapBase') || is.null(argv[[1]]) ) && ( is.character(argv[[2]]) && length(argv[[2]]) == 1 ) && ( is.logical(argv[[3]]) && length(argv[[3]]) == 1 )) {
-      f <- InfomapBase_writeFlowTree__SWIG_0; 
-    }
-  };
-  if (is.null(f)) {
-    stop("cannot find overloaded function for InfomapBase_writeFlowTree with argtypes (",toString(argtypes),")");
-  };
-  f(...);
-}
-
-# Dispatch function
-# Start of InfomapBase_writeNewickTree
-
-`InfomapBase_writeNewickTree__SWIG_0` = function(self, filename, states, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  filename = as(filename, "character"); 
-  states = as.logical(states);
-  ;.Call('R_swig_InfomapBase_writeNewickTree__SWIG_0', self, filename, states, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`InfomapBase_writeNewickTree__SWIG_0`, 'returnType') = 'character'
-attr(`InfomapBase_writeNewickTree__SWIG_0`, "inputTypes") = c('_p_infomap__InfomapBase', 'character', 'logical')
-class(`InfomapBase_writeNewickTree__SWIG_0`) = c("SWIGFunction", class('InfomapBase_writeNewickTree__SWIG_0'))
-
-# Start of InfomapBase_writeNewickTree
-
-`InfomapBase_writeNewickTree__SWIG_1` = function(self, filename, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  filename = as(filename, "character"); 
-  ;.Call('R_swig_InfomapBase_writeNewickTree__SWIG_1', self, filename, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`InfomapBase_writeNewickTree__SWIG_1`, 'returnType') = 'character'
-attr(`InfomapBase_writeNewickTree__SWIG_1`, "inputTypes") = c('_p_infomap__InfomapBase', 'character')
-class(`InfomapBase_writeNewickTree__SWIG_1`) = c("SWIGFunction", class('InfomapBase_writeNewickTree__SWIG_1'))
-
-# Start of InfomapBase_writeNewickTree
-
-`InfomapBase_writeNewickTree__SWIG_2` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_InfomapBase_writeNewickTree__SWIG_2', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`InfomapBase_writeNewickTree__SWIG_2`, 'returnType') = 'character'
-attr(`InfomapBase_writeNewickTree__SWIG_2`, "inputTypes") = c('_p_infomap__InfomapBase')
-class(`InfomapBase_writeNewickTree__SWIG_2`) = c("SWIGFunction", class('InfomapBase_writeNewickTree__SWIG_2'))
-
-`InfomapBase_writeNewickTree` <- function(...) {
-  argtypes <- mapply(class, list(...));
-  argv <- list(...);
-  argc <- length(argtypes);
-  f <- NULL;
-# dispatch functions 3
-  if (argc == 1) {
-    if ( extends(argtypes[1], '_p_infomap__InfomapBase') || is.null(argv[[1]]) ) {
-      f <- InfomapBase_writeNewickTree__SWIG_2; 
-    }
-  } else if (argc == 2) {
-    if (( extends(argtypes[1], '_p_infomap__InfomapBase') || is.null(argv[[1]]) ) && ( is.character(argv[[2]]) && length(argv[[2]]) == 1 )) {
-      f <- InfomapBase_writeNewickTree__SWIG_1; 
-    }
-  } else if (argc == 3) {
-    if (( extends(argtypes[1], '_p_infomap__InfomapBase') || is.null(argv[[1]]) ) && ( is.character(argv[[2]]) && length(argv[[2]]) == 1 ) && ( is.logical(argv[[3]]) && length(argv[[3]]) == 1 )) {
-      f <- InfomapBase_writeNewickTree__SWIG_0; 
-    }
-  };
-  if (is.null(f)) {
-    stop("cannot find overloaded function for InfomapBase_writeNewickTree with argtypes (",toString(argtypes),")");
-  };
-  f(...);
-}
-
-# Dispatch function
-# Start of InfomapBase_writeJsonTree
-
-`InfomapBase_writeJsonTree__SWIG_0` = function(self, filename, states, writeLinks, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  filename = as(filename, "character"); 
-  states = as.logical(states);
-  writeLinks = as.logical(writeLinks);
-  ;.Call('R_swig_InfomapBase_writeJsonTree__SWIG_0', self, filename, states, writeLinks, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`InfomapBase_writeJsonTree__SWIG_0`, 'returnType') = 'character'
-attr(`InfomapBase_writeJsonTree__SWIG_0`, "inputTypes") = c('_p_infomap__InfomapBase', 'character', 'logical', 'logical')
-class(`InfomapBase_writeJsonTree__SWIG_0`) = c("SWIGFunction", class('InfomapBase_writeJsonTree__SWIG_0'))
-
-# Start of InfomapBase_writeJsonTree
-
-`InfomapBase_writeJsonTree__SWIG_1` = function(self, filename, states, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  filename = as(filename, "character"); 
-  states = as.logical(states);
-  ;.Call('R_swig_InfomapBase_writeJsonTree__SWIG_1', self, filename, states, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`InfomapBase_writeJsonTree__SWIG_1`, 'returnType') = 'character'
-attr(`InfomapBase_writeJsonTree__SWIG_1`, "inputTypes") = c('_p_infomap__InfomapBase', 'character', 'logical')
-class(`InfomapBase_writeJsonTree__SWIG_1`) = c("SWIGFunction", class('InfomapBase_writeJsonTree__SWIG_1'))
-
-# Start of InfomapBase_writeJsonTree
-
-`InfomapBase_writeJsonTree__SWIG_2` = function(self, filename, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  filename = as(filename, "character"); 
-  ;.Call('R_swig_InfomapBase_writeJsonTree__SWIG_2', self, filename, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`InfomapBase_writeJsonTree__SWIG_2`, 'returnType') = 'character'
-attr(`InfomapBase_writeJsonTree__SWIG_2`, "inputTypes") = c('_p_infomap__InfomapBase', 'character')
-class(`InfomapBase_writeJsonTree__SWIG_2`) = c("SWIGFunction", class('InfomapBase_writeJsonTree__SWIG_2'))
-
-# Start of InfomapBase_writeJsonTree
-
-`InfomapBase_writeJsonTree__SWIG_3` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_InfomapBase_writeJsonTree__SWIG_3', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`InfomapBase_writeJsonTree__SWIG_3`, 'returnType') = 'character'
-attr(`InfomapBase_writeJsonTree__SWIG_3`, "inputTypes") = c('_p_infomap__InfomapBase')
-class(`InfomapBase_writeJsonTree__SWIG_3`) = c("SWIGFunction", class('InfomapBase_writeJsonTree__SWIG_3'))
-
-`InfomapBase_writeJsonTree` <- function(...) {
-  argtypes <- mapply(class, list(...));
-  argv <- list(...);
-  argc <- length(argtypes);
-  f <- NULL;
-# dispatch functions 4
-  if (argc == 1) {
-    if ( extends(argtypes[1], '_p_infomap__InfomapBase') || is.null(argv[[1]]) ) {
-      f <- InfomapBase_writeJsonTree__SWIG_3; 
-    }
-  } else if (argc == 2) {
-    if (( extends(argtypes[1], '_p_infomap__InfomapBase') || is.null(argv[[1]]) ) && ( is.character(argv[[2]]) && length(argv[[2]]) == 1 )) {
-      f <- InfomapBase_writeJsonTree__SWIG_2; 
-    }
-  } else if (argc == 3) {
-    if (( extends(argtypes[1], '_p_infomap__InfomapBase') || is.null(argv[[1]]) ) && ( is.character(argv[[2]]) && length(argv[[2]]) == 1 ) && ( is.logical(argv[[3]]) && length(argv[[3]]) == 1 )) {
-      f <- InfomapBase_writeJsonTree__SWIG_1; 
-    }
-  } else if (argc == 4) {
-    if (( extends(argtypes[1], '_p_infomap__InfomapBase') || is.null(argv[[1]]) ) && ( is.character(argv[[2]]) && length(argv[[2]]) == 1 ) && ( is.logical(argv[[3]]) && length(argv[[3]]) == 1 ) && ( is.logical(argv[[4]]) && length(argv[[4]]) == 1 )) {
-      f <- InfomapBase_writeJsonTree__SWIG_0; 
-    }
-  };
-  if (is.null(f)) {
-    stop("cannot find overloaded function for InfomapBase_writeJsonTree with argtypes (",toString(argtypes),")");
-  };
-  f(...);
-}
-
-# Dispatch function
-# Start of InfomapBase_writeCsvTree
-
-`InfomapBase_writeCsvTree__SWIG_0` = function(self, filename, states, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  filename = as(filename, "character"); 
-  states = as.logical(states);
-  ;.Call('R_swig_InfomapBase_writeCsvTree__SWIG_0', self, filename, states, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`InfomapBase_writeCsvTree__SWIG_0`, 'returnType') = 'character'
-attr(`InfomapBase_writeCsvTree__SWIG_0`, "inputTypes") = c('_p_infomap__InfomapBase', 'character', 'logical')
-class(`InfomapBase_writeCsvTree__SWIG_0`) = c("SWIGFunction", class('InfomapBase_writeCsvTree__SWIG_0'))
-
-# Start of InfomapBase_writeCsvTree
-
-`InfomapBase_writeCsvTree__SWIG_1` = function(self, filename, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  filename = as(filename, "character"); 
-  ;.Call('R_swig_InfomapBase_writeCsvTree__SWIG_1', self, filename, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`InfomapBase_writeCsvTree__SWIG_1`, 'returnType') = 'character'
-attr(`InfomapBase_writeCsvTree__SWIG_1`, "inputTypes") = c('_p_infomap__InfomapBase', 'character')
-class(`InfomapBase_writeCsvTree__SWIG_1`) = c("SWIGFunction", class('InfomapBase_writeCsvTree__SWIG_1'))
-
-# Start of InfomapBase_writeCsvTree
-
-`InfomapBase_writeCsvTree__SWIG_2` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_InfomapBase_writeCsvTree__SWIG_2', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`InfomapBase_writeCsvTree__SWIG_2`, 'returnType') = 'character'
-attr(`InfomapBase_writeCsvTree__SWIG_2`, "inputTypes") = c('_p_infomap__InfomapBase')
-class(`InfomapBase_writeCsvTree__SWIG_2`) = c("SWIGFunction", class('InfomapBase_writeCsvTree__SWIG_2'))
-
-`InfomapBase_writeCsvTree` <- function(...) {
-  argtypes <- mapply(class, list(...));
-  argv <- list(...);
-  argc <- length(argtypes);
-  f <- NULL;
-# dispatch functions 3
-  if (argc == 1) {
-    if ( extends(argtypes[1], '_p_infomap__InfomapBase') || is.null(argv[[1]]) ) {
-      f <- InfomapBase_writeCsvTree__SWIG_2; 
-    }
-  } else if (argc == 2) {
-    if (( extends(argtypes[1], '_p_infomap__InfomapBase') || is.null(argv[[1]]) ) && ( is.character(argv[[2]]) && length(argv[[2]]) == 1 )) {
-      f <- InfomapBase_writeCsvTree__SWIG_1; 
-    }
-  } else if (argc == 3) {
-    if (( extends(argtypes[1], '_p_infomap__InfomapBase') || is.null(argv[[1]]) ) && ( is.character(argv[[2]]) && length(argv[[2]]) == 1 ) && ( is.logical(argv[[3]]) && length(argv[[3]]) == 1 )) {
-      f <- InfomapBase_writeCsvTree__SWIG_0; 
-    }
-  };
-  if (is.null(f)) {
-    stop("cannot find overloaded function for InfomapBase_writeCsvTree with argtypes (",toString(argtypes),")");
-  };
-  f(...);
-}
-
-# Dispatch function
-# Start of InfomapBase_writeClu
-
-`InfomapBase_writeClu__SWIG_0` = function(self, filename, states, moduleIndexLevel, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  filename = as(filename, "character"); 
-  states = as.logical(states);
-  moduleIndexLevel = as.integer(moduleIndexLevel);
-  
-  if(length(moduleIndexLevel) > 1) {
-    warning("using only the first element of moduleIndexLevel");
-  };
-  
-  ;.Call('R_swig_InfomapBase_writeClu__SWIG_0', self, filename, states, moduleIndexLevel, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`InfomapBase_writeClu__SWIG_0`, 'returnType') = 'character'
-attr(`InfomapBase_writeClu__SWIG_0`, "inputTypes") = c('_p_infomap__InfomapBase', 'character', 'logical', 'integer')
-class(`InfomapBase_writeClu__SWIG_0`) = c("SWIGFunction", class('InfomapBase_writeClu__SWIG_0'))
-
-# Start of InfomapBase_writeClu
-
-`InfomapBase_writeClu__SWIG_1` = function(self, filename, states, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  filename = as(filename, "character"); 
-  states = as.logical(states);
-  ;.Call('R_swig_InfomapBase_writeClu__SWIG_1', self, filename, states, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`InfomapBase_writeClu__SWIG_1`, 'returnType') = 'character'
-attr(`InfomapBase_writeClu__SWIG_1`, "inputTypes") = c('_p_infomap__InfomapBase', 'character', 'logical')
-class(`InfomapBase_writeClu__SWIG_1`) = c("SWIGFunction", class('InfomapBase_writeClu__SWIG_1'))
-
-# Start of InfomapBase_writeClu
-
-`InfomapBase_writeClu__SWIG_2` = function(self, filename, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  filename = as(filename, "character"); 
-  ;.Call('R_swig_InfomapBase_writeClu__SWIG_2', self, filename, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`InfomapBase_writeClu__SWIG_2`, 'returnType') = 'character'
-attr(`InfomapBase_writeClu__SWIG_2`, "inputTypes") = c('_p_infomap__InfomapBase', 'character')
-class(`InfomapBase_writeClu__SWIG_2`) = c("SWIGFunction", class('InfomapBase_writeClu__SWIG_2'))
-
-# Start of InfomapBase_writeClu
-
-`InfomapBase_writeClu__SWIG_3` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_InfomapBase_writeClu__SWIG_3', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`InfomapBase_writeClu__SWIG_3`, 'returnType') = 'character'
-attr(`InfomapBase_writeClu__SWIG_3`, "inputTypes") = c('_p_infomap__InfomapBase')
-class(`InfomapBase_writeClu__SWIG_3`) = c("SWIGFunction", class('InfomapBase_writeClu__SWIG_3'))
-
-`InfomapBase_writeClu` <- function(...) {
-  argtypes <- mapply(class, list(...));
-  argv <- list(...);
-  argc <- length(argtypes);
-  f <- NULL;
-# dispatch functions 4
-  if (argc == 1) {
-    if ( extends(argtypes[1], '_p_infomap__InfomapBase') || is.null(argv[[1]]) ) {
-      f <- InfomapBase_writeClu__SWIG_3; 
-    }
-  } else if (argc == 2) {
-    if (( extends(argtypes[1], '_p_infomap__InfomapBase') || is.null(argv[[1]]) ) && ( is.character(argv[[2]]) && length(argv[[2]]) == 1 )) {
-      f <- InfomapBase_writeClu__SWIG_2; 
-    }
-  } else if (argc == 3) {
-    if (( extends(argtypes[1], '_p_infomap__InfomapBase') || is.null(argv[[1]]) ) && ( is.character(argv[[2]]) && length(argv[[2]]) == 1 ) && ( is.logical(argv[[3]]) && length(argv[[3]]) == 1 )) {
-      f <- InfomapBase_writeClu__SWIG_1; 
-    }
-  } else if (argc == 4) {
-    if (( extends(argtypes[1], '_p_infomap__InfomapBase') || is.null(argv[[1]]) ) && ( is.character(argv[[2]]) && length(argv[[2]]) == 1 ) && ( is.logical(argv[[3]]) && length(argv[[3]]) == 1 ) && ( (is.integer(argv[[4]]) || is.numeric(argv[[4]])) && length(argv[[4]]) == 1 )) {
-      f <- InfomapBase_writeClu__SWIG_0; 
-    }
-  };
-  if (is.null(f)) {
-    stop("cannot find overloaded function for InfomapBase_writeClu with argtypes (",toString(argtypes),")");
-  };
-  f(...);
-}
-
-# Dispatch function
-# Start of InfomapBase_elapsedTime
-
-`InfomapBase_elapsedTime` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_InfomapBase_elapsedTime', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`InfomapBase_elapsedTime`, 'returnType') = 'numeric'
-attr(`InfomapBase_elapsedTime`, "inputTypes") = c('_p_infomap__InfomapBase')
-class(`InfomapBase_elapsedTime`) = c("SWIGFunction", class('InfomapBase_elapsedTime'))
-
-# Start of accessor method for infomap::InfomapBase
-setMethod('$', '_p_infomap__InfomapBase', function(x, name)
-
-{
-  accessorFuns = list('iterTree' = InfomapBase_iterTree, 'iterTreePhysical' = InfomapBase_iterTreePhysical, 'iterModules' = InfomapBase_iterModules, 'iterLeafModules' = InfomapBase_iterLeafModules, 'iterLeafNodes' = InfomapBase_iterLeafNodes, 'iterLeafNodesPhysical' = InfomapBase_iterLeafNodesPhysical, 'begin' = InfomapBase_begin, 'end' = InfomapBase_end, 'network' = InfomapBase_network, 'root' = InfomapBase_root, 'numLeafNodes' = InfomapBase_numLeafNodes, 'leafNodes' = InfomapBase_leafNodes, 'numTopModules' = InfomapBase_numTopModules, 'numActiveModules' = InfomapBase_numActiveModules, 'numNonTrivialTopModules' = InfomapBase_numNonTrivialTopModules, 'haveModules' = InfomapBase_haveModules, 'haveNonTrivialModules' = InfomapBase_haveNonTrivialModules, 'numLevels' = InfomapBase_numLevels, 'maxTreeDepth' = InfomapBase_maxTreeDepth, 'getCodelength' = InfomapBase_getCodelength, 'getMetaCodelength' = InfomapBase_getMetaCodelength, 'codelength' = InfomapBase_codelength, 'codelengths' = InfomapBase_codelengths, 'getIndexCodelength' = InfomapBase_getIndexCodelength, 'getModuleCodelength' = InfomapBase_getModuleCodelength, 'getHierarchicalCodelength' = InfomapBase_getHierarchicalCodelength, 'getOneLevelCodelength' = InfomapBase_getOneLevelCodelength, 'getRelativeCodelengthSavings' = InfomapBase_getRelativeCodelengthSavings, 'getEntropyRate' = InfomapBase_getEntropyRate, 'getMaxEntropy' = InfomapBase_getMaxEntropy, 'getMaxFlow' = InfomapBase_getMaxFlow, 'getStartDate' = InfomapBase_getStartDate, 'getElapsedTime' = InfomapBase_getElapsedTime, 'activeNetwork' = InfomapBase_activeNetwork, 'getMultilevelModules' = InfomapBase_getMultilevelModules, 'toString' = InfomapBase_toString, 'getInitialPartition' = InfomapBase_getInitialPartition, 'setInitialPartition' = InfomapBase_setInitialPartition, 'run' = InfomapBase_run, 'writeTree' = InfomapBase_writeTree, 'writeFlowTree' = InfomapBase_writeFlowTree, 'writeNewickTree' = InfomapBase_writeNewickTree, 'writeJsonTree' = InfomapBase_writeJsonTree, 'writeCsvTree' = InfomapBase_writeCsvTree, 'writeClu' = InfomapBase_writeClu, 'elapsedTime' = InfomapBase_elapsedTime);
-  ;        idx = pmatch(name, names(accessorFuns));
-  if(is.na(idx)) 
-  return(callNextMethod(x, name));
-  f = accessorFuns[[idx]];
-  function(...){
-    f(x, ...)
-  };
-}
-
-
-);
-# end of accessor method for infomap::InfomapBase
-setMethod('delete', '_p_infomap__InfomapBase', function(obj) {delete_infomap__InfomapBase(obj)})
-# Start of printPerLevelCodelength
-
-`printPerLevelCodelength__SWIG_0` = function(parent, out, prettyOutput, .copy = FALSE)
-{
-  if (inherits(parent, "ExternalReference")) parent = slot(parent,"ref"); 
-  if (inherits(out, "ExternalReference")) out = slot(out,"ref"); 
-  prettyOutput = as.logical(prettyOutput);
-  ;.Call('R_swig_printPerLevelCodelength__SWIG_0', parent, out, prettyOutput, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`printPerLevelCodelength__SWIG_0`, 'returnType') = 'integer'
-attr(`printPerLevelCodelength__SWIG_0`, "inputTypes") = c('_p_infomap__InfoNode', '_p_std__ostream', 'logical')
-class(`printPerLevelCodelength__SWIG_0`) = c("SWIGFunction", class('printPerLevelCodelength__SWIG_0'))
-
-# Start of printPerLevelCodelength
-
-`printPerLevelCodelength__SWIG_1` = function(parent, out, .copy = FALSE)
-{
-  if (inherits(parent, "ExternalReference")) parent = slot(parent,"ref"); 
-  if (inherits(out, "ExternalReference")) out = slot(out,"ref"); 
-  ;.Call('R_swig_printPerLevelCodelength__SWIG_1', parent, out, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`printPerLevelCodelength__SWIG_1`, 'returnType') = 'integer'
-attr(`printPerLevelCodelength__SWIG_1`, "inputTypes") = c('_p_infomap__InfoNode', '_p_std__ostream')
-class(`printPerLevelCodelength__SWIG_1`) = c("SWIGFunction", class('printPerLevelCodelength__SWIG_1'))
-
-`printPerLevelCodelength` <- function(...) {
-  argtypes <- mapply(class, list(...));
-  argv <- list(...);
-  argc <- length(argtypes);
-  f <- NULL;
-# dispatch functions 2
-  if (argc == 2) {
-    if (( extends(argtypes[1], '_p_infomap__InfoNode') && length(argv[[1]]) == 1 ) && ( extends(argtypes[2], '_p_std__ostream') && length(argv[[2]]) == 1 )) {
-      f <- printPerLevelCodelength__SWIG_1; 
-    }
-  } else if (argc == 3) {
-    if (( extends(argtypes[1], '_p_infomap__InfoNode') && length(argv[[1]]) == 1 ) && ( extends(argtypes[2], '_p_std__ostream') && length(argv[[2]]) == 1 ) && ( is.logical(argv[[3]]) && length(argv[[3]]) == 1 )) {
-      f <- printPerLevelCodelength__SWIG_0; 
-    }
-  };
-  if (is.null(f)) {
-    stop("cannot find overloaded function for printPerLevelCodelength with argtypes (",toString(argtypes),")");
-  };
-  f(...);
-}
-
-# Dispatch function
-# Start of aggregatePerLevelCodelength
-
-`aggregatePerLevelCodelength__SWIG_0` = function(parent, perLevelStat, level)
-{
-  if (inherits(parent, "ExternalReference")) parent = slot(parent,"ref"); 
-  if (inherits(perLevelStat, "ExternalReference")) perLevelStat = slot(perLevelStat,"ref"); 
-  level = as.integer(level);
-  
-  if(length(level) > 1) {
-    warning("using only the first element of level");
-  };
-  
-  ;.Call('R_swig_aggregatePerLevelCodelength__SWIG_0', parent, perLevelStat, level, PACKAGE='infomap');
-  
-}
-
-attr(`aggregatePerLevelCodelength__SWIG_0`, 'returnType') = 'void'
-attr(`aggregatePerLevelCodelength__SWIG_0`, "inputTypes") = c('_p_infomap__InfoNode', '_p_std__vectorT_infomap__detail__PerLevelStat_std__allocatorT_infomap__detail__PerLevelStat_t_t', 'integer')
-class(`aggregatePerLevelCodelength__SWIG_0`) = c("SWIGFunction", class('aggregatePerLevelCodelength__SWIG_0'))
-
-# Start of aggregatePerLevelCodelength
-
-`aggregatePerLevelCodelength__SWIG_1` = function(parent, perLevelStat)
-{
-  if (inherits(parent, "ExternalReference")) parent = slot(parent,"ref"); 
-  if (inherits(perLevelStat, "ExternalReference")) perLevelStat = slot(perLevelStat,"ref"); 
-  ;.Call('R_swig_aggregatePerLevelCodelength__SWIG_1', parent, perLevelStat, PACKAGE='infomap');
-  
-}
-
-attr(`aggregatePerLevelCodelength__SWIG_1`, 'returnType') = 'void'
-attr(`aggregatePerLevelCodelength__SWIG_1`, "inputTypes") = c('_p_infomap__InfoNode', '_p_std__vectorT_infomap__detail__PerLevelStat_std__allocatorT_infomap__detail__PerLevelStat_t_t')
-class(`aggregatePerLevelCodelength__SWIG_1`) = c("SWIGFunction", class('aggregatePerLevelCodelength__SWIG_1'))
-
-`aggregatePerLevelCodelength` <- function(...) {
-  argtypes <- mapply(class, list(...));
-  argv <- list(...);
-  argc <- length(argtypes);
-  f <- NULL;
-# dispatch functions 2
-  if (argc == 2) {
-    if (( extends(argtypes[1], '_p_infomap__InfoNode') && length(argv[[1]]) == 1 ) && ( extends(argtypes[2], '_p_std__vectorT_infomap__detail__PerLevelStat_std__allocatorT_infomap__detail__PerLevelStat_t_t') && length(argv[[2]]) == 1 )) {
-      f <- aggregatePerLevelCodelength__SWIG_1; 
-    }
-  } else if (argc == 3) {
-    if (( extends(argtypes[1], '_p_infomap__InfoNode') && length(argv[[1]]) == 1 ) && ( extends(argtypes[2], '_p_std__vectorT_infomap__detail__PerLevelStat_std__allocatorT_infomap__detail__PerLevelStat_t_t') && length(argv[[2]]) == 1 ) && ( (is.integer(argv[[3]]) || is.numeric(argv[[3]])) && length(argv[[3]]) == 1 )) {
-      f <- aggregatePerLevelCodelength__SWIG_0; 
-    }
-  };
-  if (is.null(f)) {
-    stop("cannot find overloaded function for aggregatePerLevelCodelength with argtypes (",toString(argtypes),")");
-  };
-  f(...);
-}
-
-# Dispatch function
-# Start of PerLevelStat_codelength
-
-`PerLevelStat_codelength` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_PerLevelStat_codelength', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`PerLevelStat_codelength`, 'returnType') = 'numeric'
-attr(`PerLevelStat_codelength`, "inputTypes") = c('_p_infomap__detail__PerLevelStat')
-class(`PerLevelStat_codelength`) = c("SWIGFunction", class('PerLevelStat_codelength'))
-
-# Start of PerLevelStat_numNodes
-
-`PerLevelStat_numNodes` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_PerLevelStat_numNodes', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`PerLevelStat_numNodes`, 'returnType') = 'integer'
-attr(`PerLevelStat_numNodes`, "inputTypes") = c('_p_infomap__detail__PerLevelStat')
-class(`PerLevelStat_numNodes`) = c("SWIGFunction", class('PerLevelStat_numNodes'))
-
-# Start of PerLevelStat_numModules_set
-
-`PerLevelStat_numModules_set` = function(self, s_numModules)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_numModules = as.integer(s_numModules);
-  
-  if(length(s_numModules) > 1) {
-    warning("using only the first element of s_numModules");
-  };
-  
-  ;.Call('R_swig_PerLevelStat_numModules_set', self, s_numModules, PACKAGE='infomap');
-  
-}
-
-attr(`PerLevelStat_numModules_set`, 'returnType') = 'void'
-attr(`PerLevelStat_numModules_set`, "inputTypes") = c('_p_infomap__detail__PerLevelStat', 'integer')
-class(`PerLevelStat_numModules_set`) = c("SWIGFunction", class('PerLevelStat_numModules_set'))
-
-# Start of PerLevelStat_numModules_get
-
-`PerLevelStat_numModules_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_PerLevelStat_numModules_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`PerLevelStat_numModules_get`, 'returnType') = 'integer'
-attr(`PerLevelStat_numModules_get`, "inputTypes") = c('_p_infomap__detail__PerLevelStat')
-class(`PerLevelStat_numModules_get`) = c("SWIGFunction", class('PerLevelStat_numModules_get'))
-
-# Start of PerLevelStat_numLeafNodes_set
-
-`PerLevelStat_numLeafNodes_set` = function(self, s_numLeafNodes)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_numLeafNodes = as.integer(s_numLeafNodes);
-  
-  if(length(s_numLeafNodes) > 1) {
-    warning("using only the first element of s_numLeafNodes");
-  };
-  
-  ;.Call('R_swig_PerLevelStat_numLeafNodes_set', self, s_numLeafNodes, PACKAGE='infomap');
-  
-}
-
-attr(`PerLevelStat_numLeafNodes_set`, 'returnType') = 'void'
-attr(`PerLevelStat_numLeafNodes_set`, "inputTypes") = c('_p_infomap__detail__PerLevelStat', 'integer')
-class(`PerLevelStat_numLeafNodes_set`) = c("SWIGFunction", class('PerLevelStat_numLeafNodes_set'))
-
-# Start of PerLevelStat_numLeafNodes_get
-
-`PerLevelStat_numLeafNodes_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_PerLevelStat_numLeafNodes_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`PerLevelStat_numLeafNodes_get`, 'returnType') = 'integer'
-attr(`PerLevelStat_numLeafNodes_get`, "inputTypes") = c('_p_infomap__detail__PerLevelStat')
-class(`PerLevelStat_numLeafNodes_get`) = c("SWIGFunction", class('PerLevelStat_numLeafNodes_get'))
-
-# Start of PerLevelStat_indexLength_set
-
-`PerLevelStat_indexLength_set` = function(self, s_indexLength)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  
-  ;.Call('R_swig_PerLevelStat_indexLength_set', self, s_indexLength, PACKAGE='infomap');
-  
-}
-
-attr(`PerLevelStat_indexLength_set`, 'returnType') = 'void'
-attr(`PerLevelStat_indexLength_set`, "inputTypes") = c('_p_infomap__detail__PerLevelStat', 'numeric')
-class(`PerLevelStat_indexLength_set`) = c("SWIGFunction", class('PerLevelStat_indexLength_set'))
-
-# Start of PerLevelStat_indexLength_get
-
-`PerLevelStat_indexLength_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_PerLevelStat_indexLength_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`PerLevelStat_indexLength_get`, 'returnType') = 'numeric'
-attr(`PerLevelStat_indexLength_get`, "inputTypes") = c('_p_infomap__detail__PerLevelStat')
-class(`PerLevelStat_indexLength_get`) = c("SWIGFunction", class('PerLevelStat_indexLength_get'))
-
-# Start of PerLevelStat_leafLength_set
-
-`PerLevelStat_leafLength_set` = function(self, s_leafLength)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  
-  ;.Call('R_swig_PerLevelStat_leafLength_set', self, s_leafLength, PACKAGE='infomap');
-  
-}
-
-attr(`PerLevelStat_leafLength_set`, 'returnType') = 'void'
-attr(`PerLevelStat_leafLength_set`, "inputTypes") = c('_p_infomap__detail__PerLevelStat', 'numeric')
-class(`PerLevelStat_leafLength_set`) = c("SWIGFunction", class('PerLevelStat_leafLength_set'))
-
-# Start of PerLevelStat_leafLength_get
-
-`PerLevelStat_leafLength_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_PerLevelStat_leafLength_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`PerLevelStat_leafLength_get`, 'returnType') = 'numeric'
-attr(`PerLevelStat_leafLength_get`, "inputTypes") = c('_p_infomap__detail__PerLevelStat')
-class(`PerLevelStat_leafLength_get`) = c("SWIGFunction", class('PerLevelStat_leafLength_get'))
-
-# Start of new_PerLevelStat
-
-`PerLevelStat` = function()
-{
-  ;ans = .Call('R_swig_new_PerLevelStat', PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__detail__PerLevelStat", ref=ans);
-  
-  reg.finalizer(ans@ref, delete_PerLevelStat);
-  ans
-  
-}
-
-attr(`PerLevelStat`, 'returnType') = '_p_infomap__detail__PerLevelStat'
-class(`PerLevelStat`) = c("SWIGFunction", class('PerLevelStat'))
-
-# Start of delete_PerLevelStat
-
-`delete_PerLevelStat` = function(self)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_delete_PerLevelStat', self, PACKAGE='infomap');
-  
-}
-
-attr(`delete_PerLevelStat`, 'returnType') = 'void'
-attr(`delete_PerLevelStat`, "inputTypes") = c('_p_infomap__detail__PerLevelStat')
-class(`delete_PerLevelStat`) = c("SWIGFunction", class('delete_PerLevelStat'))
-
-# Start of accessor method for infomap::detail::PerLevelStat
-setMethod('$', '_p_infomap__detail__PerLevelStat', function(x, name)
-
-{
-  accessorFuns = list('codelength' = PerLevelStat_codelength, 'numNodes' = PerLevelStat_numNodes, 'numModules' = PerLevelStat_numModules_get, 'numLeafNodes' = PerLevelStat_numLeafNodes_get, 'indexLength' = PerLevelStat_indexLength_get, 'leafLength' = PerLevelStat_leafLength_get);
-  vaccessors = c('numModules', 'numLeafNodes', 'indexLength', 'leafLength');
-  ;        idx = pmatch(name, names(accessorFuns));
-  if(is.na(idx)) 
-  return(callNextMethod(x, name));
-  f = accessorFuns[[idx]];
-  if (is.na(match(name, vaccessors))) function(...){
-    f(x, ...)
-  } else f(x);
-}
-
-
-);
-# end of accessor method for infomap::detail::PerLevelStat
-# Start of accessor method for infomap::detail::PerLevelStat
-setMethod('$<-', '_p_infomap__detail__PerLevelStat', function(x, name, value)
-
-{
-  accessorFuns = list('numModules' = PerLevelStat_numModules_set, 'numLeafNodes' = PerLevelStat_numLeafNodes_set, 'indexLength' = PerLevelStat_indexLength_set, 'leafLength' = PerLevelStat_leafLength_set);
-  ;        idx = pmatch(name, names(accessorFuns));
-  if(is.na(idx)) 
-  return(callNextMethod(x, name, value));
-  f = accessorFuns[[idx]];
-  f(x, value);
-  x;
-}
-
-
-);
-setMethod('[[<-', c('_p_infomap__detail__PerLevelStat', 'character'),function(x, i, j, ..., value)
-
-{
-  name = i;
-  accessorFuns = list('numModules' = PerLevelStat_numModules_set, 'numLeafNodes' = PerLevelStat_numLeafNodes_set, 'indexLength' = PerLevelStat_indexLength_set, 'leafLength' = PerLevelStat_leafLength_set);
-  ;        idx = pmatch(name, names(accessorFuns));
-  if(is.na(idx)) 
-  return(callNextMethod(x, name, value));
-  f = accessorFuns[[idx]];
-  f(x, value);
-  x;
-}
-
-
-);
-# end of accessor method for infomap::detail::PerLevelStat
-setMethod('delete', '_p_infomap__detail__PerLevelStat', function(obj) {delete_infomap__detail__PerLevelStat(obj)})
-# Start definition of copy functions & methods for infomap::detail::PerLevelStat
-CopyToR_infomap__detail__PerLevelStat = function(value, obj = new("infomap::detail::PerLevelStat"))
-{
-  obj@numModules = value$numModules;
-  obj@numLeafNodes = value$numLeafNodes;
-  obj@indexLength = value$indexLength;
-  obj@leafLength = value$leafLength;
-  obj;
-}
-
-
-
-CopyToC_infomap__detail__PerLevelStat = function(value, obj)
-{
-  obj$numModules = value@numModules;
-  obj$numLeafNodes = value@numLeafNodes;
-  obj$indexLength = value@indexLength;
-  obj$leafLength = value@leafLength;
-  obj
-}
-
-
-
-# Start definition of copy methods for infomap::detail::PerLevelStat
-setMethod('copyToR', '_p_infomap__detail__PerLevelStat', CopyToR_infomap__detail__PerLevelStat);
-setMethod('copyToC', 'infomap::detail::PerLevelStat', CopyToC_infomap__detail__PerLevelStat);
-
-# End definition of copy methods for infomap::detail::PerLevelStat
-# End definition of copy functions & methods for infomap::detail::PerLevelStat
-# Start of PartitionQueue_level_set
-
-`PartitionQueue_level_set` = function(self, s_level)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_level = as.integer(s_level);
-  
-  if(length(s_level) > 1) {
-    warning("using only the first element of s_level");
-  };
-  
-  ;.Call('R_swig_PartitionQueue_level_set', self, s_level, PACKAGE='infomap');
-  
-}
-
-attr(`PartitionQueue_level_set`, 'returnType') = 'void'
-attr(`PartitionQueue_level_set`, "inputTypes") = c('_p_infomap__detail__PartitionQueue', 'integer')
-class(`PartitionQueue_level_set`) = c("SWIGFunction", class('PartitionQueue_level_set'))
-
-# Start of PartitionQueue_level_get
-
-`PartitionQueue_level_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_PartitionQueue_level_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`PartitionQueue_level_get`, 'returnType') = 'integer'
-attr(`PartitionQueue_level_get`, "inputTypes") = c('_p_infomap__detail__PartitionQueue')
-class(`PartitionQueue_level_get`) = c("SWIGFunction", class('PartitionQueue_level_get'))
-
-# Start of PartitionQueue_numNonTrivialModules_set
-
-`PartitionQueue_numNonTrivialModules_set` = function(self, s_numNonTrivialModules)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_numNonTrivialModules = as.integer(s_numNonTrivialModules);
-  
-  if(length(s_numNonTrivialModules) > 1) {
-    warning("using only the first element of s_numNonTrivialModules");
-  };
-  
-  ;.Call('R_swig_PartitionQueue_numNonTrivialModules_set', self, s_numNonTrivialModules, PACKAGE='infomap');
-  
-}
-
-attr(`PartitionQueue_numNonTrivialModules_set`, 'returnType') = 'void'
-attr(`PartitionQueue_numNonTrivialModules_set`, "inputTypes") = c('_p_infomap__detail__PartitionQueue', 'integer')
-class(`PartitionQueue_numNonTrivialModules_set`) = c("SWIGFunction", class('PartitionQueue_numNonTrivialModules_set'))
-
-# Start of PartitionQueue_numNonTrivialModules_get
-
-`PartitionQueue_numNonTrivialModules_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_PartitionQueue_numNonTrivialModules_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`PartitionQueue_numNonTrivialModules_get`, 'returnType') = 'integer'
-attr(`PartitionQueue_numNonTrivialModules_get`, "inputTypes") = c('_p_infomap__detail__PartitionQueue')
-class(`PartitionQueue_numNonTrivialModules_get`) = c("SWIGFunction", class('PartitionQueue_numNonTrivialModules_get'))
-
-# Start of PartitionQueue_flow_set
-
-`PartitionQueue_flow_set` = function(self, s_flow)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  
-  ;.Call('R_swig_PartitionQueue_flow_set', self, s_flow, PACKAGE='infomap');
-  
-}
-
-attr(`PartitionQueue_flow_set`, 'returnType') = 'void'
-attr(`PartitionQueue_flow_set`, "inputTypes") = c('_p_infomap__detail__PartitionQueue', 'numeric')
-class(`PartitionQueue_flow_set`) = c("SWIGFunction", class('PartitionQueue_flow_set'))
-
-# Start of PartitionQueue_flow_get
-
-`PartitionQueue_flow_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_PartitionQueue_flow_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`PartitionQueue_flow_get`, 'returnType') = 'numeric'
-attr(`PartitionQueue_flow_get`, "inputTypes") = c('_p_infomap__detail__PartitionQueue')
-class(`PartitionQueue_flow_get`) = c("SWIGFunction", class('PartitionQueue_flow_get'))
-
-# Start of PartitionQueue_nonTrivialFlow_set
-
-`PartitionQueue_nonTrivialFlow_set` = function(self, s_nonTrivialFlow)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  
-  ;.Call('R_swig_PartitionQueue_nonTrivialFlow_set', self, s_nonTrivialFlow, PACKAGE='infomap');
-  
-}
-
-attr(`PartitionQueue_nonTrivialFlow_set`, 'returnType') = 'void'
-attr(`PartitionQueue_nonTrivialFlow_set`, "inputTypes") = c('_p_infomap__detail__PartitionQueue', 'numeric')
-class(`PartitionQueue_nonTrivialFlow_set`) = c("SWIGFunction", class('PartitionQueue_nonTrivialFlow_set'))
-
-# Start of PartitionQueue_nonTrivialFlow_get
-
-`PartitionQueue_nonTrivialFlow_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_PartitionQueue_nonTrivialFlow_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`PartitionQueue_nonTrivialFlow_get`, 'returnType') = 'numeric'
-attr(`PartitionQueue_nonTrivialFlow_get`, "inputTypes") = c('_p_infomap__detail__PartitionQueue')
-class(`PartitionQueue_nonTrivialFlow_get`) = c("SWIGFunction", class('PartitionQueue_nonTrivialFlow_get'))
-
-# Start of PartitionQueue_skip_set
-
-`PartitionQueue_skip_set` = function(self, s_skip)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  s_skip = as.logical(s_skip);
-  ;.Call('R_swig_PartitionQueue_skip_set', self, s_skip, PACKAGE='infomap');
-  
-}
-
-attr(`PartitionQueue_skip_set`, 'returnType') = 'void'
-attr(`PartitionQueue_skip_set`, "inputTypes") = c('_p_infomap__detail__PartitionQueue', 'logical')
-class(`PartitionQueue_skip_set`) = c("SWIGFunction", class('PartitionQueue_skip_set'))
-
-# Start of PartitionQueue_skip_get
-
-`PartitionQueue_skip_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_PartitionQueue_skip_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`PartitionQueue_skip_get`, 'returnType') = 'logical'
-attr(`PartitionQueue_skip_get`, "inputTypes") = c('_p_infomap__detail__PartitionQueue')
-class(`PartitionQueue_skip_get`) = c("SWIGFunction", class('PartitionQueue_skip_get'))
-
-# Start of PartitionQueue_indexCodelength_set
-
-`PartitionQueue_indexCodelength_set` = function(self, s_indexCodelength)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  
-  ;.Call('R_swig_PartitionQueue_indexCodelength_set', self, s_indexCodelength, PACKAGE='infomap');
-  
-}
-
-attr(`PartitionQueue_indexCodelength_set`, 'returnType') = 'void'
-attr(`PartitionQueue_indexCodelength_set`, "inputTypes") = c('_p_infomap__detail__PartitionQueue', 'numeric')
-class(`PartitionQueue_indexCodelength_set`) = c("SWIGFunction", class('PartitionQueue_indexCodelength_set'))
-
-# Start of PartitionQueue_indexCodelength_get
-
-`PartitionQueue_indexCodelength_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_PartitionQueue_indexCodelength_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`PartitionQueue_indexCodelength_get`, 'returnType') = 'numeric'
-attr(`PartitionQueue_indexCodelength_get`, "inputTypes") = c('_p_infomap__detail__PartitionQueue')
-class(`PartitionQueue_indexCodelength_get`) = c("SWIGFunction", class('PartitionQueue_indexCodelength_get'))
-
-# Start of PartitionQueue_leafCodelength_set
-
-`PartitionQueue_leafCodelength_set` = function(self, s_leafCodelength)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  
-  ;.Call('R_swig_PartitionQueue_leafCodelength_set', self, s_leafCodelength, PACKAGE='infomap');
-  
-}
-
-attr(`PartitionQueue_leafCodelength_set`, 'returnType') = 'void'
-attr(`PartitionQueue_leafCodelength_set`, "inputTypes") = c('_p_infomap__detail__PartitionQueue', 'numeric')
-class(`PartitionQueue_leafCodelength_set`) = c("SWIGFunction", class('PartitionQueue_leafCodelength_set'))
-
-# Start of PartitionQueue_leafCodelength_get
-
-`PartitionQueue_leafCodelength_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_PartitionQueue_leafCodelength_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`PartitionQueue_leafCodelength_get`, 'returnType') = 'numeric'
-attr(`PartitionQueue_leafCodelength_get`, "inputTypes") = c('_p_infomap__detail__PartitionQueue')
-class(`PartitionQueue_leafCodelength_get`) = c("SWIGFunction", class('PartitionQueue_leafCodelength_get'))
-
-# Start of PartitionQueue_moduleCodelength_set
-
-`PartitionQueue_moduleCodelength_set` = function(self, s_moduleCodelength)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  
-  ;.Call('R_swig_PartitionQueue_moduleCodelength_set', self, s_moduleCodelength, PACKAGE='infomap');
-  
-}
-
-attr(`PartitionQueue_moduleCodelength_set`, 'returnType') = 'void'
-attr(`PartitionQueue_moduleCodelength_set`, "inputTypes") = c('_p_infomap__detail__PartitionQueue', 'numeric')
-class(`PartitionQueue_moduleCodelength_set`) = c("SWIGFunction", class('PartitionQueue_moduleCodelength_set'))
-
-# Start of PartitionQueue_moduleCodelength_get
-
-`PartitionQueue_moduleCodelength_get` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_PartitionQueue_moduleCodelength_get', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`PartitionQueue_moduleCodelength_get`, 'returnType') = 'numeric'
-attr(`PartitionQueue_moduleCodelength_get`, "inputTypes") = c('_p_infomap__detail__PartitionQueue')
-class(`PartitionQueue_moduleCodelength_get`) = c("SWIGFunction", class('PartitionQueue_moduleCodelength_get'))
-
-# Start of PartitionQueue_swap
-
-`PartitionQueue_swap` = function(self, other)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  if (inherits(other, "ExternalReference")) other = slot(other,"ref"); 
-  ;.Call('R_swig_PartitionQueue_swap', self, other, PACKAGE='infomap');
-  
-}
-
-attr(`PartitionQueue_swap`, 'returnType') = 'void'
-attr(`PartitionQueue_swap`, "inputTypes") = c('_p_infomap__detail__PartitionQueue', '_p_infomap__detail__PartitionQueue')
-class(`PartitionQueue_swap`) = c("SWIGFunction", class('PartitionQueue_swap'))
-
-# Start of PartitionQueue_size
-
-`PartitionQueue_size` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;ans = .Call('R_swig_PartitionQueue_size', self, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_std__dequeT_infomap__InfoNode_p_std__allocatorT_infomap__InfoNode_p_t_t__size_type", ref=ans);
-  
-  ans
-  
-}
-
-attr(`PartitionQueue_size`, 'returnType') = '_p_std__dequeT_infomap__InfoNode_p_std__allocatorT_infomap__InfoNode_p_t_t__size_type'
-attr(`PartitionQueue_size`, "inputTypes") = c('_p_infomap__detail__PartitionQueue')
-class(`PartitionQueue_size`) = c("SWIGFunction", class('PartitionQueue_size'))
-
-# Start of PartitionQueue_resize
-
-`PartitionQueue_resize` = function(self, size)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  if (inherits(size, "ExternalReference")) size = slot(size,"ref"); 
-  ;.Call('R_swig_PartitionQueue_resize', self, size, PACKAGE='infomap');
-  
-}
-
-attr(`PartitionQueue_resize`, 'returnType') = 'void'
-attr(`PartitionQueue_resize`, "inputTypes") = c('_p_infomap__detail__PartitionQueue', '_p_std__dequeT_infomap__InfoNode_p_std__allocatorT_infomap__InfoNode_p_t_t__size_type')
-class(`PartitionQueue_resize`) = c("SWIGFunction", class('PartitionQueue_resize'))
-
-# Start of new_PartitionQueue
-
-`PartitionQueue` = function()
-{
-  ;ans = .Call('R_swig_new_PartitionQueue', PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__detail__PartitionQueue", ref=ans);
-  
-  reg.finalizer(ans@ref, delete_PartitionQueue);
-  ans
-  
-}
-
-attr(`PartitionQueue`, 'returnType') = '_p_infomap__detail__PartitionQueue'
-class(`PartitionQueue`) = c("SWIGFunction", class('PartitionQueue'))
-
-# Start of delete_PartitionQueue
-
-`delete_PartitionQueue` = function(self)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_delete_PartitionQueue', self, PACKAGE='infomap');
-  
-}
-
-attr(`delete_PartitionQueue`, 'returnType') = 'void'
-attr(`delete_PartitionQueue`, "inputTypes") = c('_p_infomap__detail__PartitionQueue')
-class(`delete_PartitionQueue`) = c("SWIGFunction", class('delete_PartitionQueue'))
-
-# Start of accessor method for infomap::detail::PartitionQueue
-setMethod('$', '_p_infomap__detail__PartitionQueue', function(x, name)
-
-{
-  accessorFuns = list('level' = PartitionQueue_level_get, 'numNonTrivialModules' = PartitionQueue_numNonTrivialModules_get, 'flow' = PartitionQueue_flow_get, 'nonTrivialFlow' = PartitionQueue_nonTrivialFlow_get, 'skip' = PartitionQueue_skip_get, 'indexCodelength' = PartitionQueue_indexCodelength_get, 'leafCodelength' = PartitionQueue_leafCodelength_get, 'moduleCodelength' = PartitionQueue_moduleCodelength_get, 'swap' = PartitionQueue_swap, 'size' = PartitionQueue_size, 'resize' = PartitionQueue_resize);
-  vaccessors = c('level', 'numNonTrivialModules', 'flow', 'nonTrivialFlow', 'skip', 'indexCodelength', 'leafCodelength', 'moduleCodelength');
-  ;        idx = pmatch(name, names(accessorFuns));
-  if(is.na(idx)) 
-  return(callNextMethod(x, name));
-  f = accessorFuns[[idx]];
-  if (is.na(match(name, vaccessors))) function(...){
-    f(x, ...)
-  } else f(x);
-}
-
-
-);
-# end of accessor method for infomap::detail::PartitionQueue
-# Start of accessor method for infomap::detail::PartitionQueue
-setMethod('$<-', '_p_infomap__detail__PartitionQueue', function(x, name, value)
-
-{
-  accessorFuns = list('level' = PartitionQueue_level_set, 'numNonTrivialModules' = PartitionQueue_numNonTrivialModules_set, 'flow' = PartitionQueue_flow_set, 'nonTrivialFlow' = PartitionQueue_nonTrivialFlow_set, 'skip' = PartitionQueue_skip_set, 'indexCodelength' = PartitionQueue_indexCodelength_set, 'leafCodelength' = PartitionQueue_leafCodelength_set, 'moduleCodelength' = PartitionQueue_moduleCodelength_set);
-  ;        idx = pmatch(name, names(accessorFuns));
-  if(is.na(idx)) 
-  return(callNextMethod(x, name, value));
-  f = accessorFuns[[idx]];
-  f(x, value);
-  x;
-}
-
-
-);
-setMethod('[[<-', c('_p_infomap__detail__PartitionQueue', 'character'),function(x, i, j, ..., value)
-
-{
-  name = i;
-  accessorFuns = list('level' = PartitionQueue_level_set, 'numNonTrivialModules' = PartitionQueue_numNonTrivialModules_set, 'flow' = PartitionQueue_flow_set, 'nonTrivialFlow' = PartitionQueue_nonTrivialFlow_set, 'skip' = PartitionQueue_skip_set, 'indexCodelength' = PartitionQueue_indexCodelength_set, 'leafCodelength' = PartitionQueue_leafCodelength_set, 'moduleCodelength' = PartitionQueue_moduleCodelength_set);
-  ;        idx = pmatch(name, names(accessorFuns));
-  if(is.na(idx)) 
-  return(callNextMethod(x, name, value));
-  f = accessorFuns[[idx]];
-  f(x, value);
-  x;
-}
-
-
-);
-# end of accessor method for infomap::detail::PartitionQueue
-setMethod('delete', '_p_infomap__detail__PartitionQueue', function(obj) {delete_infomap__detail__PartitionQueue(obj)})
 # Start of vector_link_result___nonzero__
 
 `vector_link_result___nonzero__` = function(self, .copy = FALSE)
@@ -22188,6 +13600,210 @@ setMethod('$', '_p_std__vectorT_infomap__LinkResult_t', function(x, name)
 );
 # end of accessor method for std::vector< infomap::LinkResult >
 setMethod('delete', '_p_std__vectorT_infomap__LinkResult_t', function(obj) {delete_std__vectorT_infomap__LinkResult_t(obj)})
+# Start of new_map_uint_uint
+
+`map_uint_uint__SWIG_0` = function(other)
+{
+  if (inherits(other, "ExternalReference")) other = slot(other,"ref"); 
+  ;ans = .Call('R_swig_new_map_uint_uint__SWIG_0', other, PACKAGE='infomap');
+  ans <- if (is.null(ans)) ans
+  else new("_p_std__mapT_unsigned_int_unsigned_int_t", ref=ans);
+  
+  reg.finalizer(ans@ref, delete_map_uint_uint);
+  ans
+  
+}
+
+attr(`map_uint_uint__SWIG_0`, 'returnType') = '_p_std__mapT_unsigned_int_unsigned_int_t'
+attr(`map_uint_uint__SWIG_0`, "inputTypes") = c('_p_std__lessT_unsigned_int_t')
+class(`map_uint_uint__SWIG_0`) = c("SWIGFunction", class('map_uint_uint__SWIG_0'))
+
+# Start of new_map_uint_uint
+
+`map_uint_uint__SWIG_1` = function()
+{
+  ;ans = .Call('R_swig_new_map_uint_uint__SWIG_1', PACKAGE='infomap');
+  ans <- if (is.null(ans)) ans
+  else new("_p_std__mapT_unsigned_int_unsigned_int_t", ref=ans);
+  
+  reg.finalizer(ans@ref, delete_map_uint_uint);
+  ans
+  
+}
+
+attr(`map_uint_uint__SWIG_1`, 'returnType') = '_p_std__mapT_unsigned_int_unsigned_int_t'
+class(`map_uint_uint__SWIG_1`) = c("SWIGFunction", class('map_uint_uint__SWIG_1'))
+
+# Start of new_map_uint_uint
+
+`map_uint_uint__SWIG_2` = function(other)
+{
+  if (inherits(other, "ExternalReference")) other = slot(other,"ref"); 
+  ;ans = .Call('R_swig_new_map_uint_uint__SWIG_2', other, PACKAGE='infomap');
+  ans <- if (is.null(ans)) ans
+  else new("_p_std__mapT_unsigned_int_unsigned_int_t", ref=ans);
+  
+  reg.finalizer(ans@ref, delete_map_uint_uint);
+  ans
+  
+}
+
+attr(`map_uint_uint__SWIG_2`, 'returnType') = '_p_std__mapT_unsigned_int_unsigned_int_t'
+attr(`map_uint_uint__SWIG_2`, "inputTypes") = c('_p_std__mapT_unsigned_int_unsigned_int_t')
+class(`map_uint_uint__SWIG_2`) = c("SWIGFunction", class('map_uint_uint__SWIG_2'))
+
+`map_uint_uint` <- function(...) {
+  argtypes <- mapply(class, list(...));
+  argv <- list(...);
+  argc <- length(argtypes);
+  f <- NULL;
+# dispatch functions 3
+  if (argc == 0) {
+    f <- map_uint_uint__SWIG_1; 
+  } else if (argc == 1) {
+    if ( extends(argtypes[1], '_p_std__lessT_unsigned_int_t') && length(argv[[1]]) == 1 ) {
+      f <- map_uint_uint__SWIG_0; 
+    }
+    else if ( extends(argtypes[1], '_p_std__mapT_unsigned_int_unsigned_int_t') && length(argv[[1]]) == 1 ) {
+      f <- map_uint_uint__SWIG_2; 
+    }
+  };
+  if (is.null(f)) {
+    stop("cannot find overloaded function for map_uint_uint with argtypes (",toString(argtypes),")");
+  };
+  f(...);
+}
+
+# Dispatch function
+# Start of map_uint_uint_empty
+
+`map_uint_uint_empty` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;.Call('R_swig_map_uint_uint_empty', self, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`map_uint_uint_empty`, 'returnType') = 'logical'
+attr(`map_uint_uint_empty`, "inputTypes") = c('_p_std__mapT_unsigned_int_unsigned_int_t')
+class(`map_uint_uint_empty`) = c("SWIGFunction", class('map_uint_uint_empty'))
+
+# Start of map_uint_uint_size
+
+`map_uint_uint_size` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;.Call('R_swig_map_uint_uint_size', self, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`map_uint_uint_size`, 'returnType') = 'integer'
+attr(`map_uint_uint_size`, "inputTypes") = c('_p_std__mapT_unsigned_int_unsigned_int_t')
+class(`map_uint_uint_size`) = c("SWIGFunction", class('map_uint_uint_size'))
+
+# Start of map_uint_uint_swap
+
+`map_uint_uint_swap` = function(self, v)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  if (inherits(v, "ExternalReference")) v = slot(v,"ref"); 
+  ;.Call('R_swig_map_uint_uint_swap', self, v, PACKAGE='infomap');
+  
+}
+
+attr(`map_uint_uint_swap`, 'returnType') = 'void'
+attr(`map_uint_uint_swap`, "inputTypes") = c('_p_std__mapT_unsigned_int_unsigned_int_t', '_p_std__mapT_unsigned_int_unsigned_int_t')
+class(`map_uint_uint_swap`) = c("SWIGFunction", class('map_uint_uint_swap'))
+
+# Start of map_uint_uint_clear
+
+`map_uint_uint_clear` = function(self)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;.Call('R_swig_map_uint_uint_clear', self, PACKAGE='infomap');
+  
+}
+
+attr(`map_uint_uint_clear`, 'returnType') = 'void'
+attr(`map_uint_uint_clear`, "inputTypes") = c('_p_std__mapT_unsigned_int_unsigned_int_t')
+class(`map_uint_uint_clear`) = c("SWIGFunction", class('map_uint_uint_clear'))
+
+# Start of map_uint_uint_get_allocator
+
+`map_uint_uint_get_allocator` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;ans = .Call('R_swig_map_uint_uint_get_allocator', self, as.logical(.copy), PACKAGE='infomap');
+  ans <- if (is.null(ans)) ans
+  else new("_p_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t", ref=ans);
+  
+  ans
+  
+}
+
+attr(`map_uint_uint_get_allocator`, 'returnType') = '_p_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t'
+attr(`map_uint_uint_get_allocator`, "inputTypes") = c('_p_std__mapT_unsigned_int_unsigned_int_t')
+class(`map_uint_uint_get_allocator`) = c("SWIGFunction", class('map_uint_uint_get_allocator'))
+
+# Start of map_uint_uint_erase
+
+`map_uint_uint_erase` = function(self, x, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  if (inherits(x, "ExternalReference")) x = slot(x,"ref"); 
+  ;.Call('R_swig_map_uint_uint_erase', self, x, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`map_uint_uint_erase`, 'returnType') = 'integer'
+attr(`map_uint_uint_erase`, "inputTypes") = c('_p_std__mapT_unsigned_int_unsigned_int_t', '_p_unsigned_int')
+class(`map_uint_uint_erase`) = c("SWIGFunction", class('map_uint_uint_erase'))
+
+# Start of map_uint_uint_count
+
+`map_uint_uint_count` = function(self, x, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  if (inherits(x, "ExternalReference")) x = slot(x,"ref"); 
+  ;.Call('R_swig_map_uint_uint_count', self, x, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`map_uint_uint_count`, 'returnType') = 'integer'
+attr(`map_uint_uint_count`, "inputTypes") = c('_p_std__mapT_unsigned_int_unsigned_int_t', '_p_unsigned_int')
+class(`map_uint_uint_count`) = c("SWIGFunction", class('map_uint_uint_count'))
+
+# Start of delete_map_uint_uint
+
+`delete_map_uint_uint` = function(self)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;.Call('R_swig_delete_map_uint_uint', self, PACKAGE='infomap');
+  
+}
+
+attr(`delete_map_uint_uint`, 'returnType') = 'void'
+attr(`delete_map_uint_uint`, "inputTypes") = c('_p_std__mapT_unsigned_int_unsigned_int_t')
+class(`delete_map_uint_uint`) = c("SWIGFunction", class('delete_map_uint_uint'))
+
+# Start of accessor method for std::map< unsigned int,unsigned int >
+setMethod('$', '_p_std__mapT_unsigned_int_unsigned_int_t', function(x, name)
+
+{
+  accessorFuns = list('empty' = map_uint_uint_empty, 'size' = map_uint_uint_size, 'swap' = map_uint_uint_swap, 'clear' = map_uint_uint_clear, 'get_allocator' = map_uint_uint_get_allocator, 'erase' = map_uint_uint_erase, 'count' = map_uint_uint_count);
+  ;        idx = pmatch(name, names(accessorFuns));
+  if(is.na(idx)) 
+  return(callNextMethod(x, name));
+  f = accessorFuns[[idx]];
+  function(...){
+    f(x, ...)
+  };
+}
+
+
+);
+# end of accessor method for std::map< unsigned int,unsigned int >
+setMethod('delete', '_p_std__mapT_unsigned_int_unsigned_int_t', function(obj) {delete_std__mapT_unsigned_int_unsigned_int_t(obj)})
 # Start of new_map_uint_vector_uint
 
 `map_uint_vector_uint__SWIG_0` = function(other)
@@ -23361,37 +14977,16 @@ attr(`InfomapWrapper__SWIG_1`, 'returnType') = '_p_infomap__InfomapWrapper'
 attr(`InfomapWrapper__SWIG_1`, "inputTypes") = c('character')
 class(`InfomapWrapper__SWIG_1`) = c("SWIGFunction", class('InfomapWrapper__SWIG_1'))
 
-# Start of new_InfomapWrapper
-
-`InfomapWrapper__SWIG_2` = function(conf)
-{
-  if (inherits(conf, "ExternalReference")) conf = slot(conf,"ref"); 
-  ;ans = .Call('R_swig_new_InfomapWrapper__SWIG_2', conf, PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__InfomapWrapper", ref=ans);
-  
-  reg.finalizer(ans@ref, delete_InfomapWrapper);
-  ans
-  
-}
-
-attr(`InfomapWrapper__SWIG_2`, 'returnType') = '_p_infomap__InfomapWrapper'
-attr(`InfomapWrapper__SWIG_2`, "inputTypes") = c('_p_infomap__Config')
-class(`InfomapWrapper__SWIG_2`) = c("SWIGFunction", class('InfomapWrapper__SWIG_2'))
-
 `InfomapWrapper` <- function(...) {
   argtypes <- mapply(class, list(...));
   argv <- list(...);
   argc <- length(argtypes);
   f <- NULL;
-# dispatch functions 3
+# dispatch functions 2
   if (argc == 0) {
     f <- InfomapWrapper__SWIG_0; 
   } else if (argc == 1) {
-    if ( extends(argtypes[1], '_p_infomap__Config') && length(argv[[1]]) == 1 ) {
-      f <- InfomapWrapper__SWIG_2; 
-    }
-    else if ( is.character(argv[[1]]) && length(argv[[1]]) == 1 ) {
+    if ( is.character(argv[[1]]) && length(argv[[1]]) == 1 ) {
       f <- InfomapWrapper__SWIG_1; 
     }
   };
@@ -23734,6 +15329,91 @@ attr(`InfomapWrapper_addStateNode`, 'returnType') = 'void'
 attr(`InfomapWrapper_addStateNode`, "inputTypes") = c('_p_infomap__InfomapWrapper', 'integer', 'integer')
 class(`InfomapWrapper_addStateNode`) = c("SWIGFunction", class('InfomapWrapper_addStateNode'))
 
+# Start of InfomapWrapper_addMultilayerNode
+
+`InfomapWrapper_addMultilayerNode__SWIG_0` = function(self, stateId, layerId, physicalId, weight, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  stateId = as.integer(stateId);
+  
+  if(length(stateId) > 1) {
+    warning("using only the first element of stateId");
+  };
+  
+  layerId = as.integer(layerId);
+  
+  if(length(layerId) > 1) {
+    warning("using only the first element of layerId");
+  };
+  
+  physicalId = as.integer(physicalId);
+  
+  if(length(physicalId) > 1) {
+    warning("using only the first element of physicalId");
+  };
+  
+  
+  ;.Call('R_swig_InfomapWrapper_addMultilayerNode__SWIG_0', self, stateId, layerId, physicalId, weight, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`InfomapWrapper_addMultilayerNode__SWIG_0`, 'returnType') = 'integer'
+attr(`InfomapWrapper_addMultilayerNode__SWIG_0`, "inputTypes") = c('_p_infomap__InfomapWrapper', 'integer', 'integer', 'integer', 'numeric')
+class(`InfomapWrapper_addMultilayerNode__SWIG_0`) = c("SWIGFunction", class('InfomapWrapper_addMultilayerNode__SWIG_0'))
+
+# Start of InfomapWrapper_addMultilayerNode
+
+`InfomapWrapper_addMultilayerNode__SWIG_1` = function(self, stateId, layerId, physicalId, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  stateId = as.integer(stateId);
+  
+  if(length(stateId) > 1) {
+    warning("using only the first element of stateId");
+  };
+  
+  layerId = as.integer(layerId);
+  
+  if(length(layerId) > 1) {
+    warning("using only the first element of layerId");
+  };
+  
+  physicalId = as.integer(physicalId);
+  
+  if(length(physicalId) > 1) {
+    warning("using only the first element of physicalId");
+  };
+  
+  ;.Call('R_swig_InfomapWrapper_addMultilayerNode__SWIG_1', self, stateId, layerId, physicalId, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`InfomapWrapper_addMultilayerNode__SWIG_1`, 'returnType') = 'integer'
+attr(`InfomapWrapper_addMultilayerNode__SWIG_1`, "inputTypes") = c('_p_infomap__InfomapWrapper', 'integer', 'integer', 'integer')
+class(`InfomapWrapper_addMultilayerNode__SWIG_1`) = c("SWIGFunction", class('InfomapWrapper_addMultilayerNode__SWIG_1'))
+
+`InfomapWrapper_addMultilayerNode` <- function(...) {
+  argtypes <- mapply(class, list(...));
+  argv <- list(...);
+  argc <- length(argtypes);
+  f <- NULL;
+# dispatch functions 2
+  if (argc == 4) {
+    if (( extends(argtypes[1], '_p_infomap__InfomapWrapper') || is.null(argv[[1]]) ) && ( (is.integer(argv[[2]]) || is.numeric(argv[[2]])) && length(argv[[2]]) == 1 ) && ( (is.integer(argv[[3]]) || is.numeric(argv[[3]])) && length(argv[[3]]) == 1 ) && ( (is.integer(argv[[4]]) || is.numeric(argv[[4]])) && length(argv[[4]]) == 1 )) {
+      f <- InfomapWrapper_addMultilayerNode__SWIG_1; 
+    }
+  } else if (argc == 5) {
+    if (( extends(argtypes[1], '_p_infomap__InfomapWrapper') || is.null(argv[[1]]) ) && ( (is.integer(argv[[2]]) || is.numeric(argv[[2]])) && length(argv[[2]]) == 1 ) && ( (is.integer(argv[[3]]) || is.numeric(argv[[3]])) && length(argv[[3]]) == 1 ) && ( (is.integer(argv[[4]]) || is.numeric(argv[[4]])) && length(argv[[4]]) == 1 ) && ( is.numeric(argv[[5]]) && length(argv[[5]]) == 1 )) {
+      f <- InfomapWrapper_addMultilayerNode__SWIG_0; 
+    }
+  };
+  if (is.null(f)) {
+    stop("cannot find overloaded function for InfomapWrapper_addMultilayerNode with argtypes (",toString(argtypes),")");
+  };
+  f(...);
+}
+
+# Dispatch function
 # Start of InfomapWrapper_addLink
 
 `InfomapWrapper_addLink__SWIG_0` = function(self, sourceId, targetId, weight)
@@ -23857,6 +15537,31 @@ attr(`InfomapWrapper_addLinks`, 'returnType') = 'void'
 attr(`InfomapWrapper_addLinks`, "inputTypes") = c('_p_infomap__InfomapWrapper', 'integer', 'integer', '_p_std__vectorT_double_t')
 class(`InfomapWrapper_addLinks`) = c("SWIGFunction", class('InfomapWrapper_addLinks'))
 
+# Start of InfomapWrapper_removeLink
+
+`InfomapWrapper_removeLink` = function(self, sourceId, targetId, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  sourceId = as.integer(sourceId);
+  
+  if(length(sourceId) > 1) {
+    warning("using only the first element of sourceId");
+  };
+  
+  targetId = as.integer(targetId);
+  
+  if(length(targetId) > 1) {
+    warning("using only the first element of targetId");
+  };
+  
+  ;.Call('R_swig_InfomapWrapper_removeLink', self, sourceId, targetId, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`InfomapWrapper_removeLink`, 'returnType') = 'logical'
+attr(`InfomapWrapper_removeLink`, "inputTypes") = c('_p_infomap__InfomapWrapper', 'integer', 'integer')
+class(`InfomapWrapper_removeLink`) = c("SWIGFunction", class('InfomapWrapper_removeLink'))
+
 # Start of InfomapWrapper_addMultilayerLink
 
 `InfomapWrapper_addMultilayerLink__SWIG_0` = function(self, layer1, n1, layer2, n2, weight)
@@ -23932,12 +15637,62 @@ attr(`InfomapWrapper_addMultilayerLink__SWIG_1`, 'returnType') = 'void'
 attr(`InfomapWrapper_addMultilayerLink__SWIG_1`, "inputTypes") = c('_p_infomap__InfomapWrapper', 'integer', 'integer', 'integer', 'integer')
 class(`InfomapWrapper_addMultilayerLink__SWIG_1`) = c("SWIGFunction", class('InfomapWrapper_addMultilayerLink__SWIG_1'))
 
+# Start of InfomapWrapper_addMultilayerLink
+
+`InfomapWrapper_addMultilayerLink__SWIG_2` = function(self, stateId1, layer1, n1, stateId2, layer2, n2, weight)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  stateId1 = as.integer(stateId1);
+  
+  if(length(stateId1) > 1) {
+    warning("using only the first element of stateId1");
+  };
+  
+  layer1 = as.integer(layer1);
+  
+  if(length(layer1) > 1) {
+    warning("using only the first element of layer1");
+  };
+  
+  n1 = as.integer(n1);
+  
+  if(length(n1) > 1) {
+    warning("using only the first element of n1");
+  };
+  
+  stateId2 = as.integer(stateId2);
+  
+  if(length(stateId2) > 1) {
+    warning("using only the first element of stateId2");
+  };
+  
+  layer2 = as.integer(layer2);
+  
+  if(length(layer2) > 1) {
+    warning("using only the first element of layer2");
+  };
+  
+  n2 = as.integer(n2);
+  
+  if(length(n2) > 1) {
+    warning("using only the first element of n2");
+  };
+  
+  
+  ;.Call('R_swig_InfomapWrapper_addMultilayerLink__SWIG_2', self, stateId1, layer1, n1, stateId2, layer2, n2, weight, PACKAGE='infomap');
+  
+}
+
+attr(`InfomapWrapper_addMultilayerLink__SWIG_2`, 'returnType') = 'void'
+attr(`InfomapWrapper_addMultilayerLink__SWIG_2`, "inputTypes") = c('_p_infomap__InfomapWrapper', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'numeric')
+class(`InfomapWrapper_addMultilayerLink__SWIG_2`) = c("SWIGFunction", class('InfomapWrapper_addMultilayerLink__SWIG_2'))
+
 `InfomapWrapper_addMultilayerLink` <- function(...) {
   argtypes <- mapply(class, list(...));
   argv <- list(...);
   argc <- length(argtypes);
   f <- NULL;
-# dispatch functions 2
+# dispatch functions 3
   if (argc == 5) {
     if (( extends(argtypes[1], '_p_infomap__InfomapWrapper') || is.null(argv[[1]]) ) && ( (is.integer(argv[[2]]) || is.numeric(argv[[2]])) && length(argv[[2]]) == 1 ) && ( (is.integer(argv[[3]]) || is.numeric(argv[[3]])) && length(argv[[3]]) == 1 ) && ( (is.integer(argv[[4]]) || is.numeric(argv[[4]])) && length(argv[[4]]) == 1 ) && ( (is.integer(argv[[5]]) || is.numeric(argv[[5]])) && length(argv[[5]]) == 1 )) {
       f <- InfomapWrapper_addMultilayerLink__SWIG_1; 
@@ -23945,6 +15700,10 @@ class(`InfomapWrapper_addMultilayerLink__SWIG_1`) = c("SWIGFunction", class('Inf
   } else if (argc == 6) {
     if (( extends(argtypes[1], '_p_infomap__InfomapWrapper') || is.null(argv[[1]]) ) && ( (is.integer(argv[[2]]) || is.numeric(argv[[2]])) && length(argv[[2]]) == 1 ) && ( (is.integer(argv[[3]]) || is.numeric(argv[[3]])) && length(argv[[3]]) == 1 ) && ( (is.integer(argv[[4]]) || is.numeric(argv[[4]])) && length(argv[[4]]) == 1 ) && ( (is.integer(argv[[5]]) || is.numeric(argv[[5]])) && length(argv[[5]]) == 1 ) && ( is.numeric(argv[[6]]) && length(argv[[6]]) == 1 )) {
       f <- InfomapWrapper_addMultilayerLink__SWIG_0; 
+    }
+  } else if (argc == 8) {
+    if (( extends(argtypes[1], '_p_infomap__InfomapWrapper') || is.null(argv[[1]]) ) && ( (is.integer(argv[[2]]) || is.numeric(argv[[2]])) && length(argv[[2]]) == 1 ) && ( (is.integer(argv[[3]]) || is.numeric(argv[[3]])) && length(argv[[3]]) == 1 ) && ( (is.integer(argv[[4]]) || is.numeric(argv[[4]])) && length(argv[[4]]) == 1 ) && ( (is.integer(argv[[5]]) || is.numeric(argv[[5]])) && length(argv[[5]]) == 1 ) && ( (is.integer(argv[[6]]) || is.numeric(argv[[6]])) && length(argv[[6]]) == 1 ) && ( (is.integer(argv[[7]]) || is.numeric(argv[[7]])) && length(argv[[7]]) == 1 ) && ( is.numeric(argv[[8]]) && length(argv[[8]]) == 1 )) {
+      f <- InfomapWrapper_addMultilayerLink__SWIG_2; 
     }
   };
   if (is.null(f)) {
@@ -24070,6 +15829,31 @@ attr(`InfomapWrapper_addMultilayerInterLinks`, 'returnType') = 'void'
 attr(`InfomapWrapper_addMultilayerInterLinks`, "inputTypes") = c('_p_infomap__InfomapWrapper', 'integer', 'integer', 'integer', '_p_std__vectorT_double_t')
 class(`InfomapWrapper_addMultilayerInterLinks`) = c("SWIGFunction", class('InfomapWrapper_addMultilayerInterLinks'))
 
+# Start of InfomapWrapper_addMetaData
+
+`InfomapWrapper_addMetaData` = function(self, nodeId, meta)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  nodeId = as.integer(nodeId);
+  
+  if(length(nodeId) > 1) {
+    warning("using only the first element of nodeId");
+  };
+  
+  meta = as.integer(meta);
+  
+  if(length(meta) > 1) {
+    warning("using only the first element of meta");
+  };
+  
+  ;.Call('R_swig_InfomapWrapper_addMetaData', self, nodeId, meta, PACKAGE='infomap');
+  
+}
+
+attr(`InfomapWrapper_addMetaData`, 'returnType') = 'void'
+attr(`InfomapWrapper_addMetaData`, "inputTypes") = c('_p_infomap__InfomapWrapper', 'integer', 'integer')
+class(`InfomapWrapper_addMetaData`) = c("SWIGFunction", class('InfomapWrapper_addMetaData'))
+
 # Start of InfomapWrapper_setBipartiteStartId
 
 `InfomapWrapper_setBipartiteStartId` = function(self, startId)
@@ -24088,6 +15872,84 @@ class(`InfomapWrapper_addMultilayerInterLinks`) = c("SWIGFunction", class('Infom
 attr(`InfomapWrapper_setBipartiteStartId`, 'returnType') = 'void'
 attr(`InfomapWrapper_setBipartiteStartId`, "inputTypes") = c('_p_infomap__InfomapWrapper', 'integer')
 class(`InfomapWrapper_setBipartiteStartId`) = c("SWIGFunction", class('InfomapWrapper_setBipartiteStartId'))
+
+# Start of InfomapWrapper_bipartiteStartId
+
+`InfomapWrapper_bipartiteStartId` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;.Call('R_swig_InfomapWrapper_bipartiteStartId', self, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`InfomapWrapper_bipartiteStartId`, 'returnType') = 'integer'
+attr(`InfomapWrapper_bipartiteStartId`, "inputTypes") = c('_p_infomap__InfomapWrapper')
+class(`InfomapWrapper_bipartiteStartId`) = c("SWIGFunction", class('InfomapWrapper_bipartiteStartId'))
+
+# Start of InfomapWrapper_isMultilayerNetwork
+
+`InfomapWrapper_isMultilayerNetwork` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;.Call('R_swig_InfomapWrapper_isMultilayerNetwork', self, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`InfomapWrapper_isMultilayerNetwork`, 'returnType') = 'logical'
+attr(`InfomapWrapper_isMultilayerNetwork`, "inputTypes") = c('_p_infomap__InfomapWrapper')
+class(`InfomapWrapper_isMultilayerNetwork`) = c("SWIGFunction", class('InfomapWrapper_isMultilayerNetwork'))
+
+# Start of InfomapWrapper_haveMemoryInput
+
+`InfomapWrapper_haveMemoryInput` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;.Call('R_swig_InfomapWrapper_haveMemoryInput', self, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`InfomapWrapper_haveMemoryInput`, 'returnType') = 'logical'
+attr(`InfomapWrapper_haveMemoryInput`, "inputTypes") = c('_p_infomap__InfomapWrapper')
+class(`InfomapWrapper_haveMemoryInput`) = c("SWIGFunction", class('InfomapWrapper_haveMemoryInput'))
+
+# Start of InfomapWrapper_numNodes
+
+`InfomapWrapper_numNodes` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;.Call('R_swig_InfomapWrapper_numNodes', self, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`InfomapWrapper_numNodes`, 'returnType') = 'integer'
+attr(`InfomapWrapper_numNodes`, "inputTypes") = c('_p_infomap__InfomapWrapper')
+class(`InfomapWrapper_numNodes`) = c("SWIGFunction", class('InfomapWrapper_numNodes'))
+
+# Start of InfomapWrapper_numPhysicalNodes
+
+`InfomapWrapper_numPhysicalNodes` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;.Call('R_swig_InfomapWrapper_numPhysicalNodes', self, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`InfomapWrapper_numPhysicalNodes`, 'returnType') = 'integer'
+attr(`InfomapWrapper_numPhysicalNodes`, "inputTypes") = c('_p_infomap__InfomapWrapper')
+class(`InfomapWrapper_numPhysicalNodes`) = c("SWIGFunction", class('InfomapWrapper_numPhysicalNodes'))
+
+# Start of InfomapWrapper_numLinks
+
+`InfomapWrapper_numLinks` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;.Call('R_swig_InfomapWrapper_numLinks', self, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`InfomapWrapper_numLinks`, 'returnType') = 'integer'
+attr(`InfomapWrapper_numLinks`, "inputTypes") = c('_p_infomap__InfomapWrapper')
+class(`InfomapWrapper_numLinks`) = c("SWIGFunction", class('InfomapWrapper_numLinks'))
 
 # Start of InfomapWrapper_getLinks
 
@@ -24138,13 +16000,13 @@ class(`InfomapWrapper_getLinkResults`) = c("SWIGFunction", class('InfomapWrapper
   states = as.logical(states);
   ;ans = .Call('R_swig_InfomapWrapper_getModules__SWIG_0', self, level, states, as.logical(.copy), PACKAGE='infomap');
   ans <- if (is.null(ans)) ans
-  else new("_p_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t", ref=ans);
+  else new("_p_std__mapT_unsigned_int_unsigned_int_t", ref=ans);
   
   ans
   
 }
 
-attr(`InfomapWrapper_getModules__SWIG_0`, 'returnType') = '_p_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t'
+attr(`InfomapWrapper_getModules__SWIG_0`, 'returnType') = '_p_std__mapT_unsigned_int_unsigned_int_t'
 attr(`InfomapWrapper_getModules__SWIG_0`, "inputTypes") = c('_p_infomap__InfomapWrapper', 'integer', 'logical')
 class(`InfomapWrapper_getModules__SWIG_0`) = c("SWIGFunction", class('InfomapWrapper_getModules__SWIG_0'))
 
@@ -24161,13 +16023,13 @@ class(`InfomapWrapper_getModules__SWIG_0`) = c("SWIGFunction", class('InfomapWra
   
   ;ans = .Call('R_swig_InfomapWrapper_getModules__SWIG_1', self, level, as.logical(.copy), PACKAGE='infomap');
   ans <- if (is.null(ans)) ans
-  else new("_p_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t", ref=ans);
+  else new("_p_std__mapT_unsigned_int_unsigned_int_t", ref=ans);
   
   ans
   
 }
 
-attr(`InfomapWrapper_getModules__SWIG_1`, 'returnType') = '_p_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t'
+attr(`InfomapWrapper_getModules__SWIG_1`, 'returnType') = '_p_std__mapT_unsigned_int_unsigned_int_t'
 attr(`InfomapWrapper_getModules__SWIG_1`, "inputTypes") = c('_p_infomap__InfomapWrapper', 'integer')
 class(`InfomapWrapper_getModules__SWIG_1`) = c("SWIGFunction", class('InfomapWrapper_getModules__SWIG_1'))
 
@@ -24178,13 +16040,13 @@ class(`InfomapWrapper_getModules__SWIG_1`) = c("SWIGFunction", class('InfomapWra
   if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
   ;ans = .Call('R_swig_InfomapWrapper_getModules__SWIG_2', self, as.logical(.copy), PACKAGE='infomap');
   ans <- if (is.null(ans)) ans
-  else new("_p_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t", ref=ans);
+  else new("_p_std__mapT_unsigned_int_unsigned_int_t", ref=ans);
   
   ans
   
 }
 
-attr(`InfomapWrapper_getModules__SWIG_2`, 'returnType') = '_p_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t'
+attr(`InfomapWrapper_getModules__SWIG_2`, 'returnType') = '_p_std__mapT_unsigned_int_unsigned_int_t'
 attr(`InfomapWrapper_getModules__SWIG_2`, "inputTypes") = c('_p_infomap__InfomapWrapper')
 class(`InfomapWrapper_getModules__SWIG_2`) = c("SWIGFunction", class('InfomapWrapper_getModules__SWIG_2'))
 
@@ -24209,151 +16071,6 @@ class(`InfomapWrapper_getModules__SWIG_2`) = c("SWIGFunction", class('InfomapWra
   };
   if (is.null(f)) {
     stop("cannot find overloaded function for InfomapWrapper_getModules with argtypes (",toString(argtypes),")");
-  };
-  f(...);
-}
-
-# Dispatch function
-# Start of InfomapWrapper_codelength
-
-`InfomapWrapper_codelength` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_InfomapWrapper_codelength', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`InfomapWrapper_codelength`, 'returnType') = 'numeric'
-attr(`InfomapWrapper_codelength`, "inputTypes") = c('_p_infomap__InfomapWrapper')
-class(`InfomapWrapper_codelength`) = c("SWIGFunction", class('InfomapWrapper_codelength'))
-
-# Start of InfomapWrapper_getEntropyRate
-
-`InfomapWrapper_getEntropyRate` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_InfomapWrapper_getEntropyRate', self, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`InfomapWrapper_getEntropyRate`, 'returnType') = 'numeric'
-attr(`InfomapWrapper_getEntropyRate`, "inputTypes") = c('_p_infomap__InfomapWrapper')
-class(`InfomapWrapper_getEntropyRate`) = c("SWIGFunction", class('InfomapWrapper_getEntropyRate'))
-
-# Start of InfomapWrapper_getMultilevelModules
-
-`InfomapWrapper_getMultilevelModules__SWIG_0` = function(self, states, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  states = as.logical(states);
-  ;ans = .Call('R_swig_InfomapWrapper_getMultilevelModules__SWIG_0', self, states, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_std__mapT_unsigned_int_std__vectorT_unsigned_int_t_t", ref=ans);
-  
-  ans
-  
-}
-
-attr(`InfomapWrapper_getMultilevelModules__SWIG_0`, 'returnType') = '_p_std__mapT_unsigned_int_std__vectorT_unsigned_int_t_t'
-attr(`InfomapWrapper_getMultilevelModules__SWIG_0`, "inputTypes") = c('_p_infomap__InfomapWrapper', 'logical')
-class(`InfomapWrapper_getMultilevelModules__SWIG_0`) = c("SWIGFunction", class('InfomapWrapper_getMultilevelModules__SWIG_0'))
-
-# Start of InfomapWrapper_getMultilevelModules
-
-`InfomapWrapper_getMultilevelModules__SWIG_1` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;ans = .Call('R_swig_InfomapWrapper_getMultilevelModules__SWIG_1', self, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_std__mapT_unsigned_int_std__vectorT_unsigned_int_t_t", ref=ans);
-  
-  ans
-  
-}
-
-attr(`InfomapWrapper_getMultilevelModules__SWIG_1`, 'returnType') = '_p_std__mapT_unsigned_int_std__vectorT_unsigned_int_t_t'
-attr(`InfomapWrapper_getMultilevelModules__SWIG_1`, "inputTypes") = c('_p_infomap__InfomapWrapper')
-class(`InfomapWrapper_getMultilevelModules__SWIG_1`) = c("SWIGFunction", class('InfomapWrapper_getMultilevelModules__SWIG_1'))
-
-`InfomapWrapper_getMultilevelModules` <- function(...) {
-  argtypes <- mapply(class, list(...));
-  argv <- list(...);
-  argc <- length(argtypes);
-  f <- NULL;
-# dispatch functions 2
-  if (argc == 1) {
-    if ( extends(argtypes[1], '_p_infomap__InfomapWrapper') || is.null(argv[[1]]) ) {
-      f <- InfomapWrapper_getMultilevelModules__SWIG_1; 
-    }
-  } else if (argc == 2) {
-    if (( extends(argtypes[1], '_p_infomap__InfomapWrapper') || is.null(argv[[1]]) ) && ( is.logical(argv[[2]]) && length(argv[[2]]) == 1 )) {
-      f <- InfomapWrapper_getMultilevelModules__SWIG_0; 
-    }
-  };
-  if (is.null(f)) {
-    stop("cannot find overloaded function for InfomapWrapper_getMultilevelModules with argtypes (",toString(argtypes),")");
-  };
-  f(...);
-}
-
-# Dispatch function
-# Start of InfomapWrapper_iterLeafNodes
-
-`InfomapWrapper_iterLeafNodes__SWIG_0` = function(self, maxClusterLevel, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  maxClusterLevel = as.integer(maxClusterLevel);
-  
-  if(length(maxClusterLevel) > 1) {
-    warning("using only the first element of maxClusterLevel");
-  };
-  
-  ;ans = .Call('R_swig_InfomapWrapper_iterLeafNodes__SWIG_0', self, maxClusterLevel, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__InfomapLeafIterator", ref=ans);
-  
-  ans
-  
-}
-
-attr(`InfomapWrapper_iterLeafNodes__SWIG_0`, 'returnType') = '_p_infomap__InfomapLeafIterator'
-attr(`InfomapWrapper_iterLeafNodes__SWIG_0`, "inputTypes") = c('_p_infomap__InfomapWrapper', 'integer')
-class(`InfomapWrapper_iterLeafNodes__SWIG_0`) = c("SWIGFunction", class('InfomapWrapper_iterLeafNodes__SWIG_0'))
-
-# Start of InfomapWrapper_iterLeafNodes
-
-`InfomapWrapper_iterLeafNodes__SWIG_1` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;ans = .Call('R_swig_InfomapWrapper_iterLeafNodes__SWIG_1', self, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_infomap__InfomapLeafIterator", ref=ans);
-  
-  ans
-  
-}
-
-attr(`InfomapWrapper_iterLeafNodes__SWIG_1`, 'returnType') = '_p_infomap__InfomapLeafIterator'
-attr(`InfomapWrapper_iterLeafNodes__SWIG_1`, "inputTypes") = c('_p_infomap__InfomapWrapper')
-class(`InfomapWrapper_iterLeafNodes__SWIG_1`) = c("SWIGFunction", class('InfomapWrapper_iterLeafNodes__SWIG_1'))
-
-`InfomapWrapper_iterLeafNodes` <- function(...) {
-  argtypes <- mapply(class, list(...));
-  argv <- list(...);
-  argc <- length(argtypes);
-  f <- NULL;
-# dispatch functions 2
-  if (argc == 1) {
-    if ( extends(argtypes[1], '_p_infomap__InfomapWrapper') || is.null(argv[[1]]) ) {
-      f <- InfomapWrapper_iterLeafNodes__SWIG_1; 
-    }
-  } else if (argc == 2) {
-    if (( extends(argtypes[1], '_p_infomap__InfomapWrapper') || is.null(argv[[1]]) ) && ( (is.integer(argv[[2]]) || is.numeric(argv[[2]])) && length(argv[[2]]) == 1 )) {
-      f <- InfomapWrapper_iterLeafNodes__SWIG_0; 
-    }
-  };
-  if (is.null(f)) {
-    stop("cannot find overloaded function for InfomapWrapper_iterLeafNodes with argtypes (",toString(argtypes),")");
   };
   f(...);
 }
@@ -24421,6 +16138,1171 @@ class(`InfomapWrapper_iterTree__SWIG_1`) = c("SWIGFunction", class('InfomapWrapp
 }
 
 # Dispatch function
+# Start of InfomapWrapper_iterTreePhysical
+
+`InfomapWrapper_iterTreePhysical__SWIG_0` = function(self, maxClusterLevel, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  maxClusterLevel = as.integer(maxClusterLevel);
+  
+  if(length(maxClusterLevel) > 1) {
+    warning("using only the first element of maxClusterLevel");
+  };
+  
+  ;ans = .Call('R_swig_InfomapWrapper_iterTreePhysical__SWIG_0', self, maxClusterLevel, as.logical(.copy), PACKAGE='infomap');
+  ans <- if (is.null(ans)) ans
+  else new("_p_infomap__InfomapIteratorPhysical", ref=ans);
+  
+  ans
+  
+}
+
+attr(`InfomapWrapper_iterTreePhysical__SWIG_0`, 'returnType') = '_p_infomap__InfomapIteratorPhysical'
+attr(`InfomapWrapper_iterTreePhysical__SWIG_0`, "inputTypes") = c('_p_infomap__InfomapWrapper', 'integer')
+class(`InfomapWrapper_iterTreePhysical__SWIG_0`) = c("SWIGFunction", class('InfomapWrapper_iterTreePhysical__SWIG_0'))
+
+# Start of InfomapWrapper_iterTreePhysical
+
+`InfomapWrapper_iterTreePhysical__SWIG_1` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;ans = .Call('R_swig_InfomapWrapper_iterTreePhysical__SWIG_1', self, as.logical(.copy), PACKAGE='infomap');
+  ans <- if (is.null(ans)) ans
+  else new("_p_infomap__InfomapIteratorPhysical", ref=ans);
+  
+  ans
+  
+}
+
+attr(`InfomapWrapper_iterTreePhysical__SWIG_1`, 'returnType') = '_p_infomap__InfomapIteratorPhysical'
+attr(`InfomapWrapper_iterTreePhysical__SWIG_1`, "inputTypes") = c('_p_infomap__InfomapWrapper')
+class(`InfomapWrapper_iterTreePhysical__SWIG_1`) = c("SWIGFunction", class('InfomapWrapper_iterTreePhysical__SWIG_1'))
+
+`InfomapWrapper_iterTreePhysical` <- function(...) {
+  argtypes <- mapply(class, list(...));
+  argv <- list(...);
+  argc <- length(argtypes);
+  f <- NULL;
+# dispatch functions 2
+  if (argc == 1) {
+    if ( extends(argtypes[1], '_p_infomap__InfomapWrapper') || is.null(argv[[1]]) ) {
+      f <- InfomapWrapper_iterTreePhysical__SWIG_1; 
+    }
+  } else if (argc == 2) {
+    if (( extends(argtypes[1], '_p_infomap__InfomapWrapper') || is.null(argv[[1]]) ) && ( (is.integer(argv[[2]]) || is.numeric(argv[[2]])) && length(argv[[2]]) == 1 )) {
+      f <- InfomapWrapper_iterTreePhysical__SWIG_0; 
+    }
+  };
+  if (is.null(f)) {
+    stop("cannot find overloaded function for InfomapWrapper_iterTreePhysical with argtypes (",toString(argtypes),")");
+  };
+  f(...);
+}
+
+# Dispatch function
+# Start of InfomapWrapper_iterLeafModules
+
+`InfomapWrapper_iterLeafModules__SWIG_0` = function(self, maxClusterLevel, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  maxClusterLevel = as.integer(maxClusterLevel);
+  
+  if(length(maxClusterLevel) > 1) {
+    warning("using only the first element of maxClusterLevel");
+  };
+  
+  ;ans = .Call('R_swig_InfomapWrapper_iterLeafModules__SWIG_0', self, maxClusterLevel, as.logical(.copy), PACKAGE='infomap');
+  ans <- if (is.null(ans)) ans
+  else new("_p_infomap__InfomapLeafModuleIterator", ref=ans);
+  
+  ans
+  
+}
+
+attr(`InfomapWrapper_iterLeafModules__SWIG_0`, 'returnType') = '_p_infomap__InfomapLeafModuleIterator'
+attr(`InfomapWrapper_iterLeafModules__SWIG_0`, "inputTypes") = c('_p_infomap__InfomapWrapper', 'integer')
+class(`InfomapWrapper_iterLeafModules__SWIG_0`) = c("SWIGFunction", class('InfomapWrapper_iterLeafModules__SWIG_0'))
+
+# Start of InfomapWrapper_iterLeafModules
+
+`InfomapWrapper_iterLeafModules__SWIG_1` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;ans = .Call('R_swig_InfomapWrapper_iterLeafModules__SWIG_1', self, as.logical(.copy), PACKAGE='infomap');
+  ans <- if (is.null(ans)) ans
+  else new("_p_infomap__InfomapLeafModuleIterator", ref=ans);
+  
+  ans
+  
+}
+
+attr(`InfomapWrapper_iterLeafModules__SWIG_1`, 'returnType') = '_p_infomap__InfomapLeafModuleIterator'
+attr(`InfomapWrapper_iterLeafModules__SWIG_1`, "inputTypes") = c('_p_infomap__InfomapWrapper')
+class(`InfomapWrapper_iterLeafModules__SWIG_1`) = c("SWIGFunction", class('InfomapWrapper_iterLeafModules__SWIG_1'))
+
+`InfomapWrapper_iterLeafModules` <- function(...) {
+  argtypes <- mapply(class, list(...));
+  argv <- list(...);
+  argc <- length(argtypes);
+  f <- NULL;
+# dispatch functions 2
+  if (argc == 1) {
+    if ( extends(argtypes[1], '_p_infomap__InfomapWrapper') || is.null(argv[[1]]) ) {
+      f <- InfomapWrapper_iterLeafModules__SWIG_1; 
+    }
+  } else if (argc == 2) {
+    if (( extends(argtypes[1], '_p_infomap__InfomapWrapper') || is.null(argv[[1]]) ) && ( (is.integer(argv[[2]]) || is.numeric(argv[[2]])) && length(argv[[2]]) == 1 )) {
+      f <- InfomapWrapper_iterLeafModules__SWIG_0; 
+    }
+  };
+  if (is.null(f)) {
+    stop("cannot find overloaded function for InfomapWrapper_iterLeafModules with argtypes (",toString(argtypes),")");
+  };
+  f(...);
+}
+
+# Dispatch function
+# Start of InfomapWrapper_iterLeafNodes
+
+`InfomapWrapper_iterLeafNodes__SWIG_0` = function(self, maxClusterLevel, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  maxClusterLevel = as.integer(maxClusterLevel);
+  
+  if(length(maxClusterLevel) > 1) {
+    warning("using only the first element of maxClusterLevel");
+  };
+  
+  ;ans = .Call('R_swig_InfomapWrapper_iterLeafNodes__SWIG_0', self, maxClusterLevel, as.logical(.copy), PACKAGE='infomap');
+  ans <- if (is.null(ans)) ans
+  else new("_p_infomap__InfomapLeafIterator", ref=ans);
+  
+  ans
+  
+}
+
+attr(`InfomapWrapper_iterLeafNodes__SWIG_0`, 'returnType') = '_p_infomap__InfomapLeafIterator'
+attr(`InfomapWrapper_iterLeafNodes__SWIG_0`, "inputTypes") = c('_p_infomap__InfomapWrapper', 'integer')
+class(`InfomapWrapper_iterLeafNodes__SWIG_0`) = c("SWIGFunction", class('InfomapWrapper_iterLeafNodes__SWIG_0'))
+
+# Start of InfomapWrapper_iterLeafNodes
+
+`InfomapWrapper_iterLeafNodes__SWIG_1` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;ans = .Call('R_swig_InfomapWrapper_iterLeafNodes__SWIG_1', self, as.logical(.copy), PACKAGE='infomap');
+  ans <- if (is.null(ans)) ans
+  else new("_p_infomap__InfomapLeafIterator", ref=ans);
+  
+  ans
+  
+}
+
+attr(`InfomapWrapper_iterLeafNodes__SWIG_1`, 'returnType') = '_p_infomap__InfomapLeafIterator'
+attr(`InfomapWrapper_iterLeafNodes__SWIG_1`, "inputTypes") = c('_p_infomap__InfomapWrapper')
+class(`InfomapWrapper_iterLeafNodes__SWIG_1`) = c("SWIGFunction", class('InfomapWrapper_iterLeafNodes__SWIG_1'))
+
+`InfomapWrapper_iterLeafNodes` <- function(...) {
+  argtypes <- mapply(class, list(...));
+  argv <- list(...);
+  argc <- length(argtypes);
+  f <- NULL;
+# dispatch functions 2
+  if (argc == 1) {
+    if ( extends(argtypes[1], '_p_infomap__InfomapWrapper') || is.null(argv[[1]]) ) {
+      f <- InfomapWrapper_iterLeafNodes__SWIG_1; 
+    }
+  } else if (argc == 2) {
+    if (( extends(argtypes[1], '_p_infomap__InfomapWrapper') || is.null(argv[[1]]) ) && ( (is.integer(argv[[2]]) || is.numeric(argv[[2]])) && length(argv[[2]]) == 1 )) {
+      f <- InfomapWrapper_iterLeafNodes__SWIG_0; 
+    }
+  };
+  if (is.null(f)) {
+    stop("cannot find overloaded function for InfomapWrapper_iterLeafNodes with argtypes (",toString(argtypes),")");
+  };
+  f(...);
+}
+
+# Dispatch function
+# Start of InfomapWrapper_iterLeafNodesPhysical
+
+`InfomapWrapper_iterLeafNodesPhysical__SWIG_0` = function(self, maxClusterLevel, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  maxClusterLevel = as.integer(maxClusterLevel);
+  
+  if(length(maxClusterLevel) > 1) {
+    warning("using only the first element of maxClusterLevel");
+  };
+  
+  ;ans = .Call('R_swig_InfomapWrapper_iterLeafNodesPhysical__SWIG_0', self, maxClusterLevel, as.logical(.copy), PACKAGE='infomap');
+  ans <- if (is.null(ans)) ans
+  else new("_p_infomap__InfomapLeafIteratorPhysical", ref=ans);
+  
+  ans
+  
+}
+
+attr(`InfomapWrapper_iterLeafNodesPhysical__SWIG_0`, 'returnType') = '_p_infomap__InfomapLeafIteratorPhysical'
+attr(`InfomapWrapper_iterLeafNodesPhysical__SWIG_0`, "inputTypes") = c('_p_infomap__InfomapWrapper', 'integer')
+class(`InfomapWrapper_iterLeafNodesPhysical__SWIG_0`) = c("SWIGFunction", class('InfomapWrapper_iterLeafNodesPhysical__SWIG_0'))
+
+# Start of InfomapWrapper_iterLeafNodesPhysical
+
+`InfomapWrapper_iterLeafNodesPhysical__SWIG_1` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;ans = .Call('R_swig_InfomapWrapper_iterLeafNodesPhysical__SWIG_1', self, as.logical(.copy), PACKAGE='infomap');
+  ans <- if (is.null(ans)) ans
+  else new("_p_infomap__InfomapLeafIteratorPhysical", ref=ans);
+  
+  ans
+  
+}
+
+attr(`InfomapWrapper_iterLeafNodesPhysical__SWIG_1`, 'returnType') = '_p_infomap__InfomapLeafIteratorPhysical'
+attr(`InfomapWrapper_iterLeafNodesPhysical__SWIG_1`, "inputTypes") = c('_p_infomap__InfomapWrapper')
+class(`InfomapWrapper_iterLeafNodesPhysical__SWIG_1`) = c("SWIGFunction", class('InfomapWrapper_iterLeafNodesPhysical__SWIG_1'))
+
+`InfomapWrapper_iterLeafNodesPhysical` <- function(...) {
+  argtypes <- mapply(class, list(...));
+  argv <- list(...);
+  argc <- length(argtypes);
+  f <- NULL;
+# dispatch functions 2
+  if (argc == 1) {
+    if ( extends(argtypes[1], '_p_infomap__InfomapWrapper') || is.null(argv[[1]]) ) {
+      f <- InfomapWrapper_iterLeafNodesPhysical__SWIG_1; 
+    }
+  } else if (argc == 2) {
+    if (( extends(argtypes[1], '_p_infomap__InfomapWrapper') || is.null(argv[[1]]) ) && ( (is.integer(argv[[2]]) || is.numeric(argv[[2]])) && length(argv[[2]]) == 1 )) {
+      f <- InfomapWrapper_iterLeafNodesPhysical__SWIG_0; 
+    }
+  };
+  if (is.null(f)) {
+    stop("cannot find overloaded function for InfomapWrapper_iterLeafNodesPhysical with argtypes (",toString(argtypes),")");
+  };
+  f(...);
+}
+
+# Dispatch function
+# Start of InfomapWrapper_numLeafNodes
+
+`InfomapWrapper_numLeafNodes` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;.Call('R_swig_InfomapWrapper_numLeafNodes', self, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`InfomapWrapper_numLeafNodes`, 'returnType') = 'integer'
+attr(`InfomapWrapper_numLeafNodes`, "inputTypes") = c('_p_infomap__InfomapWrapper')
+class(`InfomapWrapper_numLeafNodes`) = c("SWIGFunction", class('InfomapWrapper_numLeafNodes'))
+
+# Start of InfomapWrapper_numTopModules
+
+`InfomapWrapper_numTopModules` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;.Call('R_swig_InfomapWrapper_numTopModules', self, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`InfomapWrapper_numTopModules`, 'returnType') = 'integer'
+attr(`InfomapWrapper_numTopModules`, "inputTypes") = c('_p_infomap__InfomapWrapper')
+class(`InfomapWrapper_numTopModules`) = c("SWIGFunction", class('InfomapWrapper_numTopModules'))
+
+# Start of InfomapWrapper_numNonTrivialTopModules
+
+`InfomapWrapper_numNonTrivialTopModules` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;.Call('R_swig_InfomapWrapper_numNonTrivialTopModules', self, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`InfomapWrapper_numNonTrivialTopModules`, 'returnType') = 'integer'
+attr(`InfomapWrapper_numNonTrivialTopModules`, "inputTypes") = c('_p_infomap__InfomapWrapper')
+class(`InfomapWrapper_numNonTrivialTopModules`) = c("SWIGFunction", class('InfomapWrapper_numNonTrivialTopModules'))
+
+# Start of InfomapWrapper_numLevels
+
+`InfomapWrapper_numLevels` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;.Call('R_swig_InfomapWrapper_numLevels', self, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`InfomapWrapper_numLevels`, 'returnType') = 'integer'
+attr(`InfomapWrapper_numLevels`, "inputTypes") = c('_p_infomap__InfomapWrapper')
+class(`InfomapWrapper_numLevels`) = c("SWIGFunction", class('InfomapWrapper_numLevels'))
+
+# Start of InfomapWrapper_maxTreeDepth
+
+`InfomapWrapper_maxTreeDepth` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;.Call('R_swig_InfomapWrapper_maxTreeDepth', self, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`InfomapWrapper_maxTreeDepth`, 'returnType') = 'integer'
+attr(`InfomapWrapper_maxTreeDepth`, "inputTypes") = c('_p_infomap__InfomapWrapper')
+class(`InfomapWrapper_maxTreeDepth`) = c("SWIGFunction", class('InfomapWrapper_maxTreeDepth'))
+
+# Start of InfomapWrapper_haveModules
+
+`InfomapWrapper_haveModules` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;.Call('R_swig_InfomapWrapper_haveModules', self, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`InfomapWrapper_haveModules`, 'returnType') = 'logical'
+attr(`InfomapWrapper_haveModules`, "inputTypes") = c('_p_infomap__InfomapWrapper')
+class(`InfomapWrapper_haveModules`) = c("SWIGFunction", class('InfomapWrapper_haveModules'))
+
+# Start of InfomapWrapper_codelength
+
+`InfomapWrapper_codelength` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;.Call('R_swig_InfomapWrapper_codelength', self, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`InfomapWrapper_codelength`, 'returnType') = 'numeric'
+attr(`InfomapWrapper_codelength`, "inputTypes") = c('_p_infomap__InfomapWrapper')
+class(`InfomapWrapper_codelength`) = c("SWIGFunction", class('InfomapWrapper_codelength'))
+
+# Start of InfomapWrapper_codelengths
+
+`InfomapWrapper_codelengths` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;.Call('R_swig_InfomapWrapper_codelengths', self, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`InfomapWrapper_codelengths`, 'returnType') = '_p_std__vectorT_double_t'
+attr(`InfomapWrapper_codelengths`, "inputTypes") = c('_p_infomap__InfomapWrapper')
+class(`InfomapWrapper_codelengths`) = c("SWIGFunction", class('InfomapWrapper_codelengths'))
+
+# Start of InfomapWrapper_getIndexCodelength
+
+`InfomapWrapper_getIndexCodelength` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;.Call('R_swig_InfomapWrapper_getIndexCodelength', self, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`InfomapWrapper_getIndexCodelength`, 'returnType') = 'numeric'
+attr(`InfomapWrapper_getIndexCodelength`, "inputTypes") = c('_p_infomap__InfomapWrapper')
+class(`InfomapWrapper_getIndexCodelength`) = c("SWIGFunction", class('InfomapWrapper_getIndexCodelength'))
+
+# Start of InfomapWrapper_getModuleCodelength
+
+`InfomapWrapper_getModuleCodelength` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;.Call('R_swig_InfomapWrapper_getModuleCodelength', self, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`InfomapWrapper_getModuleCodelength`, 'returnType') = 'numeric'
+attr(`InfomapWrapper_getModuleCodelength`, "inputTypes") = c('_p_infomap__InfomapWrapper')
+class(`InfomapWrapper_getModuleCodelength`) = c("SWIGFunction", class('InfomapWrapper_getModuleCodelength'))
+
+# Start of InfomapWrapper_getHierarchicalCodelength
+
+`InfomapWrapper_getHierarchicalCodelength` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;.Call('R_swig_InfomapWrapper_getHierarchicalCodelength', self, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`InfomapWrapper_getHierarchicalCodelength`, 'returnType') = 'numeric'
+attr(`InfomapWrapper_getHierarchicalCodelength`, "inputTypes") = c('_p_infomap__InfomapWrapper')
+class(`InfomapWrapper_getHierarchicalCodelength`) = c("SWIGFunction", class('InfomapWrapper_getHierarchicalCodelength'))
+
+# Start of InfomapWrapper_getOneLevelCodelength
+
+`InfomapWrapper_getOneLevelCodelength` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;.Call('R_swig_InfomapWrapper_getOneLevelCodelength', self, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`InfomapWrapper_getOneLevelCodelength`, 'returnType') = 'numeric'
+attr(`InfomapWrapper_getOneLevelCodelength`, "inputTypes") = c('_p_infomap__InfomapWrapper')
+class(`InfomapWrapper_getOneLevelCodelength`) = c("SWIGFunction", class('InfomapWrapper_getOneLevelCodelength'))
+
+# Start of InfomapWrapper_getRelativeCodelengthSavings
+
+`InfomapWrapper_getRelativeCodelengthSavings` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;.Call('R_swig_InfomapWrapper_getRelativeCodelengthSavings', self, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`InfomapWrapper_getRelativeCodelengthSavings`, 'returnType') = 'numeric'
+attr(`InfomapWrapper_getRelativeCodelengthSavings`, "inputTypes") = c('_p_infomap__InfomapWrapper')
+class(`InfomapWrapper_getRelativeCodelengthSavings`) = c("SWIGFunction", class('InfomapWrapper_getRelativeCodelengthSavings'))
+
+# Start of InfomapWrapper_getEntropyRate
+
+`InfomapWrapper_getEntropyRate` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;.Call('R_swig_InfomapWrapper_getEntropyRate', self, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`InfomapWrapper_getEntropyRate`, 'returnType') = 'numeric'
+attr(`InfomapWrapper_getEntropyRate`, "inputTypes") = c('_p_infomap__InfomapWrapper')
+class(`InfomapWrapper_getEntropyRate`) = c("SWIGFunction", class('InfomapWrapper_getEntropyRate'))
+
+# Start of InfomapWrapper_getMaxEntropy
+
+`InfomapWrapper_getMaxEntropy` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;.Call('R_swig_InfomapWrapper_getMaxEntropy', self, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`InfomapWrapper_getMaxEntropy`, 'returnType') = 'numeric'
+attr(`InfomapWrapper_getMaxEntropy`, "inputTypes") = c('_p_infomap__InfomapWrapper')
+class(`InfomapWrapper_getMaxEntropy`) = c("SWIGFunction", class('InfomapWrapper_getMaxEntropy'))
+
+# Start of InfomapWrapper_getMetaCodelength
+
+`InfomapWrapper_getMetaCodelength__SWIG_0` = function(self, unweighted, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  unweighted = as.logical(unweighted);
+  ;.Call('R_swig_InfomapWrapper_getMetaCodelength__SWIG_0', self, unweighted, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`InfomapWrapper_getMetaCodelength__SWIG_0`, 'returnType') = 'numeric'
+attr(`InfomapWrapper_getMetaCodelength__SWIG_0`, "inputTypes") = c('_p_infomap__InfomapWrapper', 'logical')
+class(`InfomapWrapper_getMetaCodelength__SWIG_0`) = c("SWIGFunction", class('InfomapWrapper_getMetaCodelength__SWIG_0'))
+
+# Start of InfomapWrapper_getMetaCodelength
+
+`InfomapWrapper_getMetaCodelength__SWIG_1` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;.Call('R_swig_InfomapWrapper_getMetaCodelength__SWIG_1', self, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`InfomapWrapper_getMetaCodelength__SWIG_1`, 'returnType') = 'numeric'
+attr(`InfomapWrapper_getMetaCodelength__SWIG_1`, "inputTypes") = c('_p_infomap__InfomapWrapper')
+class(`InfomapWrapper_getMetaCodelength__SWIG_1`) = c("SWIGFunction", class('InfomapWrapper_getMetaCodelength__SWIG_1'))
+
+`InfomapWrapper_getMetaCodelength` <- function(...) {
+  argtypes <- mapply(class, list(...));
+  argv <- list(...);
+  argc <- length(argtypes);
+  f <- NULL;
+# dispatch functions 2
+  if (argc == 1) {
+    if ( extends(argtypes[1], '_p_infomap__InfomapWrapper') || is.null(argv[[1]]) ) {
+      f <- InfomapWrapper_getMetaCodelength__SWIG_1; 
+    }
+  } else if (argc == 2) {
+    if (( extends(argtypes[1], '_p_infomap__InfomapWrapper') || is.null(argv[[1]]) ) && ( is.logical(argv[[2]]) && length(argv[[2]]) == 1 )) {
+      f <- InfomapWrapper_getMetaCodelength__SWIG_0; 
+    }
+  };
+  if (is.null(f)) {
+    stop("cannot find overloaded function for InfomapWrapper_getMetaCodelength with argtypes (",toString(argtypes),")");
+  };
+  f(...);
+}
+
+# Dispatch function
+# Start of InfomapWrapper_haveMemory
+
+`InfomapWrapper_haveMemory` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;.Call('R_swig_InfomapWrapper_haveMemory', self, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`InfomapWrapper_haveMemory`, 'returnType') = 'logical'
+attr(`InfomapWrapper_haveMemory`, "inputTypes") = c('_p_infomap__InfomapWrapper')
+class(`InfomapWrapper_haveMemory`) = c("SWIGFunction", class('InfomapWrapper_haveMemory'))
+
+# Start of InfomapWrapper_elapsedTime
+
+`InfomapWrapper_elapsedTime` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;.Call('R_swig_InfomapWrapper_elapsedTime', self, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`InfomapWrapper_elapsedTime`, 'returnType') = 'numeric'
+attr(`InfomapWrapper_elapsedTime`, "inputTypes") = c('_p_infomap__InfomapWrapper')
+class(`InfomapWrapper_elapsedTime`) = c("SWIGFunction", class('InfomapWrapper_elapsedTime'))
+
+# Start of InfomapWrapper_getInitialPartition
+
+`InfomapWrapper_getInitialPartition` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;ans = .Call('R_swig_InfomapWrapper_getInitialPartition', self, as.logical(.copy), PACKAGE='infomap');
+  ans <- if (is.null(ans)) ans
+  else new("_p_std__mapT_unsigned_int_unsigned_int_t", ref=ans);
+  
+  ans
+  
+}
+
+attr(`InfomapWrapper_getInitialPartition`, 'returnType') = '_p_std__mapT_unsigned_int_unsigned_int_t'
+attr(`InfomapWrapper_getInitialPartition`, "inputTypes") = c('_p_infomap__InfomapWrapper')
+class(`InfomapWrapper_getInitialPartition`) = c("SWIGFunction", class('InfomapWrapper_getInitialPartition'))
+
+# Start of InfomapWrapper_setInitialPartition
+
+`InfomapWrapper_setInitialPartition` = function(self, moduleIds, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  if (inherits(moduleIds, "ExternalReference")) moduleIds = slot(moduleIds,"ref"); 
+  ;ans = .Call('R_swig_InfomapWrapper_setInitialPartition', self, moduleIds, as.logical(.copy), PACKAGE='infomap');
+  ans <- if (is.null(ans)) ans
+  else new("_p_infomap__InfomapWrapper", ref=ans);
+  
+  ans
+  
+}
+
+attr(`InfomapWrapper_setInitialPartition`, 'returnType') = '_p_infomap__InfomapWrapper'
+attr(`InfomapWrapper_setInitialPartition`, "inputTypes") = c('_p_infomap__InfomapWrapper', '_p_std__mapT_unsigned_int_unsigned_int_t')
+class(`InfomapWrapper_setInitialPartition`) = c("SWIGFunction", class('InfomapWrapper_setInitialPartition'))
+
+# Start of InfomapWrapper_getMultilevelModules
+
+`InfomapWrapper_getMultilevelModules__SWIG_0` = function(self, states, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  states = as.logical(states);
+  ;ans = .Call('R_swig_InfomapWrapper_getMultilevelModules__SWIG_0', self, states, as.logical(.copy), PACKAGE='infomap');
+  ans <- if (is.null(ans)) ans
+  else new("_p_std__mapT_unsigned_int_std__vectorT_unsigned_int_t_t", ref=ans);
+  
+  ans
+  
+}
+
+attr(`InfomapWrapper_getMultilevelModules__SWIG_0`, 'returnType') = '_p_std__mapT_unsigned_int_std__vectorT_unsigned_int_t_t'
+attr(`InfomapWrapper_getMultilevelModules__SWIG_0`, "inputTypes") = c('_p_infomap__InfomapWrapper', 'logical')
+class(`InfomapWrapper_getMultilevelModules__SWIG_0`) = c("SWIGFunction", class('InfomapWrapper_getMultilevelModules__SWIG_0'))
+
+# Start of InfomapWrapper_getMultilevelModules
+
+`InfomapWrapper_getMultilevelModules__SWIG_1` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;ans = .Call('R_swig_InfomapWrapper_getMultilevelModules__SWIG_1', self, as.logical(.copy), PACKAGE='infomap');
+  ans <- if (is.null(ans)) ans
+  else new("_p_std__mapT_unsigned_int_std__vectorT_unsigned_int_t_t", ref=ans);
+  
+  ans
+  
+}
+
+attr(`InfomapWrapper_getMultilevelModules__SWIG_1`, 'returnType') = '_p_std__mapT_unsigned_int_std__vectorT_unsigned_int_t_t'
+attr(`InfomapWrapper_getMultilevelModules__SWIG_1`, "inputTypes") = c('_p_infomap__InfomapWrapper')
+class(`InfomapWrapper_getMultilevelModules__SWIG_1`) = c("SWIGFunction", class('InfomapWrapper_getMultilevelModules__SWIG_1'))
+
+`InfomapWrapper_getMultilevelModules` <- function(...) {
+  argtypes <- mapply(class, list(...));
+  argv <- list(...);
+  argc <- length(argtypes);
+  f <- NULL;
+# dispatch functions 2
+  if (argc == 1) {
+    if ( extends(argtypes[1], '_p_infomap__InfomapWrapper') || is.null(argv[[1]]) ) {
+      f <- InfomapWrapper_getMultilevelModules__SWIG_1; 
+    }
+  } else if (argc == 2) {
+    if (( extends(argtypes[1], '_p_infomap__InfomapWrapper') || is.null(argv[[1]]) ) && ( is.logical(argv[[2]]) && length(argv[[2]]) == 1 )) {
+      f <- InfomapWrapper_getMultilevelModules__SWIG_0; 
+    }
+  };
+  if (is.null(f)) {
+    stop("cannot find overloaded function for InfomapWrapper_getMultilevelModules with argtypes (",toString(argtypes),")");
+  };
+  f(...);
+}
+
+# Dispatch function
+# Start of InfomapWrapper_writeTree
+
+`InfomapWrapper_writeTree__SWIG_0` = function(self, filename, states, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  filename = as(filename, "character"); 
+  states = as.logical(states);
+  ;.Call('R_swig_InfomapWrapper_writeTree__SWIG_0', self, filename, states, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`InfomapWrapper_writeTree__SWIG_0`, 'returnType') = 'character'
+attr(`InfomapWrapper_writeTree__SWIG_0`, "inputTypes") = c('_p_infomap__InfomapWrapper', 'character', 'logical')
+class(`InfomapWrapper_writeTree__SWIG_0`) = c("SWIGFunction", class('InfomapWrapper_writeTree__SWIG_0'))
+
+# Start of InfomapWrapper_writeTree
+
+`InfomapWrapper_writeTree__SWIG_1` = function(self, filename, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  filename = as(filename, "character"); 
+  ;.Call('R_swig_InfomapWrapper_writeTree__SWIG_1', self, filename, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`InfomapWrapper_writeTree__SWIG_1`, 'returnType') = 'character'
+attr(`InfomapWrapper_writeTree__SWIG_1`, "inputTypes") = c('_p_infomap__InfomapWrapper', 'character')
+class(`InfomapWrapper_writeTree__SWIG_1`) = c("SWIGFunction", class('InfomapWrapper_writeTree__SWIG_1'))
+
+# Start of InfomapWrapper_writeTree
+
+`InfomapWrapper_writeTree__SWIG_2` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;.Call('R_swig_InfomapWrapper_writeTree__SWIG_2', self, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`InfomapWrapper_writeTree__SWIG_2`, 'returnType') = 'character'
+attr(`InfomapWrapper_writeTree__SWIG_2`, "inputTypes") = c('_p_infomap__InfomapWrapper')
+class(`InfomapWrapper_writeTree__SWIG_2`) = c("SWIGFunction", class('InfomapWrapper_writeTree__SWIG_2'))
+
+`InfomapWrapper_writeTree` <- function(...) {
+  argtypes <- mapply(class, list(...));
+  argv <- list(...);
+  argc <- length(argtypes);
+  f <- NULL;
+# dispatch functions 3
+  if (argc == 1) {
+    if ( extends(argtypes[1], '_p_infomap__InfomapWrapper') || is.null(argv[[1]]) ) {
+      f <- InfomapWrapper_writeTree__SWIG_2; 
+    }
+  } else if (argc == 2) {
+    if (( extends(argtypes[1], '_p_infomap__InfomapWrapper') || is.null(argv[[1]]) ) && ( is.character(argv[[2]]) && length(argv[[2]]) == 1 )) {
+      f <- InfomapWrapper_writeTree__SWIG_1; 
+    }
+  } else if (argc == 3) {
+    if (( extends(argtypes[1], '_p_infomap__InfomapWrapper') || is.null(argv[[1]]) ) && ( is.character(argv[[2]]) && length(argv[[2]]) == 1 ) && ( is.logical(argv[[3]]) && length(argv[[3]]) == 1 )) {
+      f <- InfomapWrapper_writeTree__SWIG_0; 
+    }
+  };
+  if (is.null(f)) {
+    stop("cannot find overloaded function for InfomapWrapper_writeTree with argtypes (",toString(argtypes),")");
+  };
+  f(...);
+}
+
+# Dispatch function
+# Start of InfomapWrapper_writeFlowTree
+
+`InfomapWrapper_writeFlowTree__SWIG_0` = function(self, filename, states, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  filename = as(filename, "character"); 
+  states = as.logical(states);
+  ;.Call('R_swig_InfomapWrapper_writeFlowTree__SWIG_0', self, filename, states, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`InfomapWrapper_writeFlowTree__SWIG_0`, 'returnType') = 'character'
+attr(`InfomapWrapper_writeFlowTree__SWIG_0`, "inputTypes") = c('_p_infomap__InfomapWrapper', 'character', 'logical')
+class(`InfomapWrapper_writeFlowTree__SWIG_0`) = c("SWIGFunction", class('InfomapWrapper_writeFlowTree__SWIG_0'))
+
+# Start of InfomapWrapper_writeFlowTree
+
+`InfomapWrapper_writeFlowTree__SWIG_1` = function(self, filename, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  filename = as(filename, "character"); 
+  ;.Call('R_swig_InfomapWrapper_writeFlowTree__SWIG_1', self, filename, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`InfomapWrapper_writeFlowTree__SWIG_1`, 'returnType') = 'character'
+attr(`InfomapWrapper_writeFlowTree__SWIG_1`, "inputTypes") = c('_p_infomap__InfomapWrapper', 'character')
+class(`InfomapWrapper_writeFlowTree__SWIG_1`) = c("SWIGFunction", class('InfomapWrapper_writeFlowTree__SWIG_1'))
+
+# Start of InfomapWrapper_writeFlowTree
+
+`InfomapWrapper_writeFlowTree__SWIG_2` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;.Call('R_swig_InfomapWrapper_writeFlowTree__SWIG_2', self, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`InfomapWrapper_writeFlowTree__SWIG_2`, 'returnType') = 'character'
+attr(`InfomapWrapper_writeFlowTree__SWIG_2`, "inputTypes") = c('_p_infomap__InfomapWrapper')
+class(`InfomapWrapper_writeFlowTree__SWIG_2`) = c("SWIGFunction", class('InfomapWrapper_writeFlowTree__SWIG_2'))
+
+`InfomapWrapper_writeFlowTree` <- function(...) {
+  argtypes <- mapply(class, list(...));
+  argv <- list(...);
+  argc <- length(argtypes);
+  f <- NULL;
+# dispatch functions 3
+  if (argc == 1) {
+    if ( extends(argtypes[1], '_p_infomap__InfomapWrapper') || is.null(argv[[1]]) ) {
+      f <- InfomapWrapper_writeFlowTree__SWIG_2; 
+    }
+  } else if (argc == 2) {
+    if (( extends(argtypes[1], '_p_infomap__InfomapWrapper') || is.null(argv[[1]]) ) && ( is.character(argv[[2]]) && length(argv[[2]]) == 1 )) {
+      f <- InfomapWrapper_writeFlowTree__SWIG_1; 
+    }
+  } else if (argc == 3) {
+    if (( extends(argtypes[1], '_p_infomap__InfomapWrapper') || is.null(argv[[1]]) ) && ( is.character(argv[[2]]) && length(argv[[2]]) == 1 ) && ( is.logical(argv[[3]]) && length(argv[[3]]) == 1 )) {
+      f <- InfomapWrapper_writeFlowTree__SWIG_0; 
+    }
+  };
+  if (is.null(f)) {
+    stop("cannot find overloaded function for InfomapWrapper_writeFlowTree with argtypes (",toString(argtypes),")");
+  };
+  f(...);
+}
+
+# Dispatch function
+# Start of InfomapWrapper_writeNewickTree
+
+`InfomapWrapper_writeNewickTree__SWIG_0` = function(self, filename, states, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  filename = as(filename, "character"); 
+  states = as.logical(states);
+  ;.Call('R_swig_InfomapWrapper_writeNewickTree__SWIG_0', self, filename, states, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`InfomapWrapper_writeNewickTree__SWIG_0`, 'returnType') = 'character'
+attr(`InfomapWrapper_writeNewickTree__SWIG_0`, "inputTypes") = c('_p_infomap__InfomapWrapper', 'character', 'logical')
+class(`InfomapWrapper_writeNewickTree__SWIG_0`) = c("SWIGFunction", class('InfomapWrapper_writeNewickTree__SWIG_0'))
+
+# Start of InfomapWrapper_writeNewickTree
+
+`InfomapWrapper_writeNewickTree__SWIG_1` = function(self, filename, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  filename = as(filename, "character"); 
+  ;.Call('R_swig_InfomapWrapper_writeNewickTree__SWIG_1', self, filename, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`InfomapWrapper_writeNewickTree__SWIG_1`, 'returnType') = 'character'
+attr(`InfomapWrapper_writeNewickTree__SWIG_1`, "inputTypes") = c('_p_infomap__InfomapWrapper', 'character')
+class(`InfomapWrapper_writeNewickTree__SWIG_1`) = c("SWIGFunction", class('InfomapWrapper_writeNewickTree__SWIG_1'))
+
+# Start of InfomapWrapper_writeNewickTree
+
+`InfomapWrapper_writeNewickTree__SWIG_2` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;.Call('R_swig_InfomapWrapper_writeNewickTree__SWIG_2', self, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`InfomapWrapper_writeNewickTree__SWIG_2`, 'returnType') = 'character'
+attr(`InfomapWrapper_writeNewickTree__SWIG_2`, "inputTypes") = c('_p_infomap__InfomapWrapper')
+class(`InfomapWrapper_writeNewickTree__SWIG_2`) = c("SWIGFunction", class('InfomapWrapper_writeNewickTree__SWIG_2'))
+
+`InfomapWrapper_writeNewickTree` <- function(...) {
+  argtypes <- mapply(class, list(...));
+  argv <- list(...);
+  argc <- length(argtypes);
+  f <- NULL;
+# dispatch functions 3
+  if (argc == 1) {
+    if ( extends(argtypes[1], '_p_infomap__InfomapWrapper') || is.null(argv[[1]]) ) {
+      f <- InfomapWrapper_writeNewickTree__SWIG_2; 
+    }
+  } else if (argc == 2) {
+    if (( extends(argtypes[1], '_p_infomap__InfomapWrapper') || is.null(argv[[1]]) ) && ( is.character(argv[[2]]) && length(argv[[2]]) == 1 )) {
+      f <- InfomapWrapper_writeNewickTree__SWIG_1; 
+    }
+  } else if (argc == 3) {
+    if (( extends(argtypes[1], '_p_infomap__InfomapWrapper') || is.null(argv[[1]]) ) && ( is.character(argv[[2]]) && length(argv[[2]]) == 1 ) && ( is.logical(argv[[3]]) && length(argv[[3]]) == 1 )) {
+      f <- InfomapWrapper_writeNewickTree__SWIG_0; 
+    }
+  };
+  if (is.null(f)) {
+    stop("cannot find overloaded function for InfomapWrapper_writeNewickTree with argtypes (",toString(argtypes),")");
+  };
+  f(...);
+}
+
+# Dispatch function
+# Start of InfomapWrapper_writeJsonTree
+
+`InfomapWrapper_writeJsonTree__SWIG_0` = function(self, filename, states, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  filename = as(filename, "character"); 
+  states = as.logical(states);
+  ;.Call('R_swig_InfomapWrapper_writeJsonTree__SWIG_0', self, filename, states, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`InfomapWrapper_writeJsonTree__SWIG_0`, 'returnType') = 'character'
+attr(`InfomapWrapper_writeJsonTree__SWIG_0`, "inputTypes") = c('_p_infomap__InfomapWrapper', 'character', 'logical')
+class(`InfomapWrapper_writeJsonTree__SWIG_0`) = c("SWIGFunction", class('InfomapWrapper_writeJsonTree__SWIG_0'))
+
+# Start of InfomapWrapper_writeJsonTree
+
+`InfomapWrapper_writeJsonTree__SWIG_1` = function(self, filename, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  filename = as(filename, "character"); 
+  ;.Call('R_swig_InfomapWrapper_writeJsonTree__SWIG_1', self, filename, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`InfomapWrapper_writeJsonTree__SWIG_1`, 'returnType') = 'character'
+attr(`InfomapWrapper_writeJsonTree__SWIG_1`, "inputTypes") = c('_p_infomap__InfomapWrapper', 'character')
+class(`InfomapWrapper_writeJsonTree__SWIG_1`) = c("SWIGFunction", class('InfomapWrapper_writeJsonTree__SWIG_1'))
+
+# Start of InfomapWrapper_writeJsonTree
+
+`InfomapWrapper_writeJsonTree__SWIG_2` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;.Call('R_swig_InfomapWrapper_writeJsonTree__SWIG_2', self, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`InfomapWrapper_writeJsonTree__SWIG_2`, 'returnType') = 'character'
+attr(`InfomapWrapper_writeJsonTree__SWIG_2`, "inputTypes") = c('_p_infomap__InfomapWrapper')
+class(`InfomapWrapper_writeJsonTree__SWIG_2`) = c("SWIGFunction", class('InfomapWrapper_writeJsonTree__SWIG_2'))
+
+`InfomapWrapper_writeJsonTree` <- function(...) {
+  argtypes <- mapply(class, list(...));
+  argv <- list(...);
+  argc <- length(argtypes);
+  f <- NULL;
+# dispatch functions 3
+  if (argc == 1) {
+    if ( extends(argtypes[1], '_p_infomap__InfomapWrapper') || is.null(argv[[1]]) ) {
+      f <- InfomapWrapper_writeJsonTree__SWIG_2; 
+    }
+  } else if (argc == 2) {
+    if (( extends(argtypes[1], '_p_infomap__InfomapWrapper') || is.null(argv[[1]]) ) && ( is.character(argv[[2]]) && length(argv[[2]]) == 1 )) {
+      f <- InfomapWrapper_writeJsonTree__SWIG_1; 
+    }
+  } else if (argc == 3) {
+    if (( extends(argtypes[1], '_p_infomap__InfomapWrapper') || is.null(argv[[1]]) ) && ( is.character(argv[[2]]) && length(argv[[2]]) == 1 ) && ( is.logical(argv[[3]]) && length(argv[[3]]) == 1 )) {
+      f <- InfomapWrapper_writeJsonTree__SWIG_0; 
+    }
+  };
+  if (is.null(f)) {
+    stop("cannot find overloaded function for InfomapWrapper_writeJsonTree with argtypes (",toString(argtypes),")");
+  };
+  f(...);
+}
+
+# Dispatch function
+# Start of InfomapWrapper_writeCsvTree
+
+`InfomapWrapper_writeCsvTree__SWIG_0` = function(self, filename, states, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  filename = as(filename, "character"); 
+  states = as.logical(states);
+  ;.Call('R_swig_InfomapWrapper_writeCsvTree__SWIG_0', self, filename, states, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`InfomapWrapper_writeCsvTree__SWIG_0`, 'returnType') = 'character'
+attr(`InfomapWrapper_writeCsvTree__SWIG_0`, "inputTypes") = c('_p_infomap__InfomapWrapper', 'character', 'logical')
+class(`InfomapWrapper_writeCsvTree__SWIG_0`) = c("SWIGFunction", class('InfomapWrapper_writeCsvTree__SWIG_0'))
+
+# Start of InfomapWrapper_writeCsvTree
+
+`InfomapWrapper_writeCsvTree__SWIG_1` = function(self, filename, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  filename = as(filename, "character"); 
+  ;.Call('R_swig_InfomapWrapper_writeCsvTree__SWIG_1', self, filename, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`InfomapWrapper_writeCsvTree__SWIG_1`, 'returnType') = 'character'
+attr(`InfomapWrapper_writeCsvTree__SWIG_1`, "inputTypes") = c('_p_infomap__InfomapWrapper', 'character')
+class(`InfomapWrapper_writeCsvTree__SWIG_1`) = c("SWIGFunction", class('InfomapWrapper_writeCsvTree__SWIG_1'))
+
+# Start of InfomapWrapper_writeCsvTree
+
+`InfomapWrapper_writeCsvTree__SWIG_2` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;.Call('R_swig_InfomapWrapper_writeCsvTree__SWIG_2', self, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`InfomapWrapper_writeCsvTree__SWIG_2`, 'returnType') = 'character'
+attr(`InfomapWrapper_writeCsvTree__SWIG_2`, "inputTypes") = c('_p_infomap__InfomapWrapper')
+class(`InfomapWrapper_writeCsvTree__SWIG_2`) = c("SWIGFunction", class('InfomapWrapper_writeCsvTree__SWIG_2'))
+
+`InfomapWrapper_writeCsvTree` <- function(...) {
+  argtypes <- mapply(class, list(...));
+  argv <- list(...);
+  argc <- length(argtypes);
+  f <- NULL;
+# dispatch functions 3
+  if (argc == 1) {
+    if ( extends(argtypes[1], '_p_infomap__InfomapWrapper') || is.null(argv[[1]]) ) {
+      f <- InfomapWrapper_writeCsvTree__SWIG_2; 
+    }
+  } else if (argc == 2) {
+    if (( extends(argtypes[1], '_p_infomap__InfomapWrapper') || is.null(argv[[1]]) ) && ( is.character(argv[[2]]) && length(argv[[2]]) == 1 )) {
+      f <- InfomapWrapper_writeCsvTree__SWIG_1; 
+    }
+  } else if (argc == 3) {
+    if (( extends(argtypes[1], '_p_infomap__InfomapWrapper') || is.null(argv[[1]]) ) && ( is.character(argv[[2]]) && length(argv[[2]]) == 1 ) && ( is.logical(argv[[3]]) && length(argv[[3]]) == 1 )) {
+      f <- InfomapWrapper_writeCsvTree__SWIG_0; 
+    }
+  };
+  if (is.null(f)) {
+    stop("cannot find overloaded function for InfomapWrapper_writeCsvTree with argtypes (",toString(argtypes),")");
+  };
+  f(...);
+}
+
+# Dispatch function
+# Start of InfomapWrapper_writeClu
+
+`InfomapWrapper_writeClu__SWIG_0` = function(self, filename, states, moduleIndexLevel, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  filename = as(filename, "character"); 
+  states = as.logical(states);
+  moduleIndexLevel = as.integer(moduleIndexLevel);
+  
+  if(length(moduleIndexLevel) > 1) {
+    warning("using only the first element of moduleIndexLevel");
+  };
+  
+  ;.Call('R_swig_InfomapWrapper_writeClu__SWIG_0', self, filename, states, moduleIndexLevel, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`InfomapWrapper_writeClu__SWIG_0`, 'returnType') = 'character'
+attr(`InfomapWrapper_writeClu__SWIG_0`, "inputTypes") = c('_p_infomap__InfomapWrapper', 'character', 'logical', 'integer')
+class(`InfomapWrapper_writeClu__SWIG_0`) = c("SWIGFunction", class('InfomapWrapper_writeClu__SWIG_0'))
+
+# Start of InfomapWrapper_writeClu
+
+`InfomapWrapper_writeClu__SWIG_1` = function(self, filename, states, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  filename = as(filename, "character"); 
+  states = as.logical(states);
+  ;.Call('R_swig_InfomapWrapper_writeClu__SWIG_1', self, filename, states, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`InfomapWrapper_writeClu__SWIG_1`, 'returnType') = 'character'
+attr(`InfomapWrapper_writeClu__SWIG_1`, "inputTypes") = c('_p_infomap__InfomapWrapper', 'character', 'logical')
+class(`InfomapWrapper_writeClu__SWIG_1`) = c("SWIGFunction", class('InfomapWrapper_writeClu__SWIG_1'))
+
+# Start of InfomapWrapper_writeClu
+
+`InfomapWrapper_writeClu__SWIG_2` = function(self, filename, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  filename = as(filename, "character"); 
+  ;.Call('R_swig_InfomapWrapper_writeClu__SWIG_2', self, filename, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`InfomapWrapper_writeClu__SWIG_2`, 'returnType') = 'character'
+attr(`InfomapWrapper_writeClu__SWIG_2`, "inputTypes") = c('_p_infomap__InfomapWrapper', 'character')
+class(`InfomapWrapper_writeClu__SWIG_2`) = c("SWIGFunction", class('InfomapWrapper_writeClu__SWIG_2'))
+
+# Start of InfomapWrapper_writeClu
+
+`InfomapWrapper_writeClu__SWIG_3` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;.Call('R_swig_InfomapWrapper_writeClu__SWIG_3', self, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`InfomapWrapper_writeClu__SWIG_3`, 'returnType') = 'character'
+attr(`InfomapWrapper_writeClu__SWIG_3`, "inputTypes") = c('_p_infomap__InfomapWrapper')
+class(`InfomapWrapper_writeClu__SWIG_3`) = c("SWIGFunction", class('InfomapWrapper_writeClu__SWIG_3'))
+
+`InfomapWrapper_writeClu` <- function(...) {
+  argtypes <- mapply(class, list(...));
+  argv <- list(...);
+  argc <- length(argtypes);
+  f <- NULL;
+# dispatch functions 4
+  if (argc == 1) {
+    if ( extends(argtypes[1], '_p_infomap__InfomapWrapper') || is.null(argv[[1]]) ) {
+      f <- InfomapWrapper_writeClu__SWIG_3; 
+    }
+  } else if (argc == 2) {
+    if (( extends(argtypes[1], '_p_infomap__InfomapWrapper') || is.null(argv[[1]]) ) && ( is.character(argv[[2]]) && length(argv[[2]]) == 1 )) {
+      f <- InfomapWrapper_writeClu__SWIG_2; 
+    }
+  } else if (argc == 3) {
+    if (( extends(argtypes[1], '_p_infomap__InfomapWrapper') || is.null(argv[[1]]) ) && ( is.character(argv[[2]]) && length(argv[[2]]) == 1 ) && ( is.logical(argv[[3]]) && length(argv[[3]]) == 1 )) {
+      f <- InfomapWrapper_writeClu__SWIG_1; 
+    }
+  } else if (argc == 4) {
+    if (( extends(argtypes[1], '_p_infomap__InfomapWrapper') || is.null(argv[[1]]) ) && ( is.character(argv[[2]]) && length(argv[[2]]) == 1 ) && ( is.logical(argv[[3]]) && length(argv[[3]]) == 1 ) && ( (is.integer(argv[[4]]) || is.numeric(argv[[4]])) && length(argv[[4]]) == 1 )) {
+      f <- InfomapWrapper_writeClu__SWIG_0; 
+    }
+  };
+  if (is.null(f)) {
+    stop("cannot find overloaded function for InfomapWrapper_writeClu with argtypes (",toString(argtypes),")");
+  };
+  f(...);
+}
+
+# Dispatch function
+# Start of InfomapWrapper_writePajekNetwork
+
+`InfomapWrapper_writePajekNetwork__SWIG_0` = function(self, filename, printFlow)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  filename = as(filename, "character"); 
+  printFlow = as.logical(printFlow);
+  ;.Call('R_swig_InfomapWrapper_writePajekNetwork__SWIG_0', self, filename, printFlow, PACKAGE='infomap');
+  
+}
+
+attr(`InfomapWrapper_writePajekNetwork__SWIG_0`, 'returnType') = 'void'
+attr(`InfomapWrapper_writePajekNetwork__SWIG_0`, "inputTypes") = c('_p_infomap__InfomapWrapper', 'character', 'logical')
+class(`InfomapWrapper_writePajekNetwork__SWIG_0`) = c("SWIGFunction", class('InfomapWrapper_writePajekNetwork__SWIG_0'))
+
+# Start of InfomapWrapper_writePajekNetwork
+
+`InfomapWrapper_writePajekNetwork__SWIG_1` = function(self, filename)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  filename = as(filename, "character"); 
+  ;.Call('R_swig_InfomapWrapper_writePajekNetwork__SWIG_1', self, filename, PACKAGE='infomap');
+  
+}
+
+attr(`InfomapWrapper_writePajekNetwork__SWIG_1`, 'returnType') = 'void'
+attr(`InfomapWrapper_writePajekNetwork__SWIG_1`, "inputTypes") = c('_p_infomap__InfomapWrapper', 'character')
+class(`InfomapWrapper_writePajekNetwork__SWIG_1`) = c("SWIGFunction", class('InfomapWrapper_writePajekNetwork__SWIG_1'))
+
+`InfomapWrapper_writePajekNetwork` <- function(...) {
+  argtypes <- mapply(class, list(...));
+  argv <- list(...);
+  argc <- length(argtypes);
+  f <- NULL;
+# dispatch functions 2
+  if (argc == 2) {
+    if (( extends(argtypes[1], '_p_infomap__InfomapWrapper') || is.null(argv[[1]]) ) && ( is.character(argv[[2]]) && length(argv[[2]]) == 1 )) {
+      f <- InfomapWrapper_writePajekNetwork__SWIG_1; 
+    }
+  } else if (argc == 3) {
+    if (( extends(argtypes[1], '_p_infomap__InfomapWrapper') || is.null(argv[[1]]) ) && ( is.character(argv[[2]]) && length(argv[[2]]) == 1 ) && ( is.logical(argv[[3]]) && length(argv[[3]]) == 1 )) {
+      f <- InfomapWrapper_writePajekNetwork__SWIG_0; 
+    }
+  };
+  if (is.null(f)) {
+    stop("cannot find overloaded function for InfomapWrapper_writePajekNetwork with argtypes (",toString(argtypes),")");
+  };
+  f(...);
+}
+
+# Dispatch function
+# Start of InfomapWrapper_writeStateNetwork
+
+`InfomapWrapper_writeStateNetwork` = function(self, filename)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  filename = as(filename, "character"); 
+  ;.Call('R_swig_InfomapWrapper_writeStateNetwork', self, filename, PACKAGE='infomap');
+  
+}
+
+attr(`InfomapWrapper_writeStateNetwork`, 'returnType') = 'void'
+attr(`InfomapWrapper_writeStateNetwork`, "inputTypes") = c('_p_infomap__InfomapWrapper', 'character')
+class(`InfomapWrapper_writeStateNetwork`) = c("SWIGFunction", class('InfomapWrapper_writeStateNetwork'))
+
+# Start of InfomapWrapper_setDirected
+
+`InfomapWrapper_setDirected` = function(self, value, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  value = as.logical(value);
+  ;ans = .Call('R_swig_InfomapWrapper_setDirected', self, value, as.logical(.copy), PACKAGE='infomap');
+  ans <- if (is.null(ans)) ans
+  else new("_p_infomap__InfomapWrapper", ref=ans);
+  
+  ans
+  
+}
+
+attr(`InfomapWrapper_setDirected`, 'returnType') = '_p_infomap__InfomapWrapper'
+attr(`InfomapWrapper_setDirected`, "inputTypes") = c('_p_infomap__InfomapWrapper', 'logical')
+class(`InfomapWrapper_setDirected`) = c("SWIGFunction", class('InfomapWrapper_setDirected'))
+
+# Start of InfomapWrapper_getFlowModelIsSet
+
+`InfomapWrapper_getFlowModelIsSet` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;.Call('R_swig_InfomapWrapper_getFlowModelIsSet', self, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`InfomapWrapper_getFlowModelIsSet`, 'returnType') = 'logical'
+attr(`InfomapWrapper_getFlowModelIsSet`, "inputTypes") = c('_p_infomap__InfomapWrapper')
+class(`InfomapWrapper_getFlowModelIsSet`) = c("SWIGFunction", class('InfomapWrapper_getFlowModelIsSet'))
+
+# Start of InfomapWrapper_getStateInput
+
+`InfomapWrapper_getStateInput` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;.Call('R_swig_InfomapWrapper_getStateInput', self, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`InfomapWrapper_getStateInput`, 'returnType') = 'logical'
+attr(`InfomapWrapper_getStateInput`, "inputTypes") = c('_p_infomap__InfomapWrapper')
+class(`InfomapWrapper_getStateInput`) = c("SWIGFunction", class('InfomapWrapper_getStateInput'))
+
+# Start of InfomapWrapper_getMultilayerInput
+
+`InfomapWrapper_getMultilayerInput` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;.Call('R_swig_InfomapWrapper_getMultilayerInput', self, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`InfomapWrapper_getMultilayerInput`, 'returnType') = 'logical'
+attr(`InfomapWrapper_getMultilayerInput`, "inputTypes") = c('_p_infomap__InfomapWrapper')
+class(`InfomapWrapper_getMultilayerInput`) = c("SWIGFunction", class('InfomapWrapper_getMultilayerInput'))
+
 # Start of InfomapWrapper_run
 
 `InfomapWrapper_run__SWIG_0` = function(self, parameters)
@@ -24448,35 +17330,18 @@ attr(`InfomapWrapper_run__SWIG_1`, 'returnType') = 'void'
 attr(`InfomapWrapper_run__SWIG_1`, "inputTypes") = c('_p_infomap__InfomapWrapper')
 class(`InfomapWrapper_run__SWIG_1`) = c("SWIGFunction", class('InfomapWrapper_run__SWIG_1'))
 
-# Start of InfomapWrapper_run
-
-`InfomapWrapper_run__SWIG_2` = function(self, network)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  if (inherits(network, "ExternalReference")) network = slot(network,"ref"); 
-  ;.Call('R_swig_InfomapWrapper_run__SWIG_2', self, network, PACKAGE='infomap');
-  
-}
-
-attr(`InfomapWrapper_run__SWIG_2`, 'returnType') = 'void'
-attr(`InfomapWrapper_run__SWIG_2`, "inputTypes") = c('_p_infomap__InfomapWrapper', '_p_infomap__Network')
-class(`InfomapWrapper_run__SWIG_2`) = c("SWIGFunction", class('InfomapWrapper_run__SWIG_2'))
-
 `InfomapWrapper_run` <- function(...) {
   argtypes <- mapply(class, list(...));
   argv <- list(...);
   argc <- length(argtypes);
   f <- NULL;
-# dispatch functions 3
+# dispatch functions 2
   if (argc == 1) {
     if ( extends(argtypes[1], '_p_infomap__InfomapWrapper') || is.null(argv[[1]]) ) {
       f <- InfomapWrapper_run__SWIG_1; 
     }
   } else if (argc == 2) {
-    if (( extends(argtypes[1], '_p_infomap__InfomapWrapper') || is.null(argv[[1]]) ) && ( extends(argtypes[2], '_p_infomap__Network') && length(argv[[2]]) == 1 )) {
-      f <- InfomapWrapper_run__SWIG_2; 
-    }
-    else if (( extends(argtypes[1], '_p_infomap__InfomapWrapper') || is.null(argv[[1]]) ) && ( is.character(argv[[2]]) && length(argv[[2]]) == 1 )) {
+    if (( extends(argtypes[1], '_p_infomap__InfomapWrapper') || is.null(argv[[1]]) ) && ( is.character(argv[[2]]) && length(argv[[2]]) == 1 )) {
       f <- InfomapWrapper_run__SWIG_0; 
     }
   };
@@ -24491,7 +17356,7 @@ class(`InfomapWrapper_run__SWIG_2`) = c("SWIGFunction", class('InfomapWrapper_ru
 setMethod('$', '_p_infomap__InfomapWrapper', function(x, name)
 
 {
-  accessorFuns = list('readInputData' = InfomapWrapper_readInputData, 'addNode' = InfomapWrapper_addNode, 'addName' = InfomapWrapper_addName, 'getName' = InfomapWrapper_getName, 'getNames' = InfomapWrapper_getNames, 'addPhysicalNode' = InfomapWrapper_addPhysicalNode, 'addStateNode' = InfomapWrapper_addStateNode, 'addLink' = InfomapWrapper_addLink, 'addLinks' = InfomapWrapper_addLinks, 'addMultilayerLink' = InfomapWrapper_addMultilayerLink, 'addMultilayerLinks' = InfomapWrapper_addMultilayerLinks, 'addMultilayerIntraLink' = InfomapWrapper_addMultilayerIntraLink, 'addMultilayerIntraLinks' = InfomapWrapper_addMultilayerIntraLinks, 'addMultilayerInterLink' = InfomapWrapper_addMultilayerInterLink, 'addMultilayerInterLinks' = InfomapWrapper_addMultilayerInterLinks, 'setBipartiteStartId' = InfomapWrapper_setBipartiteStartId, 'getLinks' = InfomapWrapper_getLinks, 'getLinkResults' = InfomapWrapper_getLinkResults, 'getModules' = InfomapWrapper_getModules, 'codelength' = InfomapWrapper_codelength, 'getEntropyRate' = InfomapWrapper_getEntropyRate, 'getMultilevelModules' = InfomapWrapper_getMultilevelModules, 'iterLeafNodes' = InfomapWrapper_iterLeafNodes, 'iterTree' = InfomapWrapper_iterTree, 'run' = InfomapWrapper_run);
+  accessorFuns = list('readInputData' = InfomapWrapper_readInputData, 'addNode' = InfomapWrapper_addNode, 'addName' = InfomapWrapper_addName, 'getName' = InfomapWrapper_getName, 'getNames' = InfomapWrapper_getNames, 'addPhysicalNode' = InfomapWrapper_addPhysicalNode, 'addStateNode' = InfomapWrapper_addStateNode, 'addMultilayerNode' = InfomapWrapper_addMultilayerNode, 'addLink' = InfomapWrapper_addLink, 'addLinks' = InfomapWrapper_addLinks, 'removeLink' = InfomapWrapper_removeLink, 'addMultilayerLink' = InfomapWrapper_addMultilayerLink, 'addMultilayerLinks' = InfomapWrapper_addMultilayerLinks, 'addMultilayerIntraLink' = InfomapWrapper_addMultilayerIntraLink, 'addMultilayerIntraLinks' = InfomapWrapper_addMultilayerIntraLinks, 'addMultilayerInterLink' = InfomapWrapper_addMultilayerInterLink, 'addMultilayerInterLinks' = InfomapWrapper_addMultilayerInterLinks, 'addMetaData' = InfomapWrapper_addMetaData, 'setBipartiteStartId' = InfomapWrapper_setBipartiteStartId, 'bipartiteStartId' = InfomapWrapper_bipartiteStartId, 'isMultilayerNetwork' = InfomapWrapper_isMultilayerNetwork, 'haveMemoryInput' = InfomapWrapper_haveMemoryInput, 'numNodes' = InfomapWrapper_numNodes, 'numPhysicalNodes' = InfomapWrapper_numPhysicalNodes, 'numLinks' = InfomapWrapper_numLinks, 'getLinks' = InfomapWrapper_getLinks, 'getLinkResults' = InfomapWrapper_getLinkResults, 'getModules' = InfomapWrapper_getModules, 'iterTree' = InfomapWrapper_iterTree, 'iterTreePhysical' = InfomapWrapper_iterTreePhysical, 'iterLeafModules' = InfomapWrapper_iterLeafModules, 'iterLeafNodes' = InfomapWrapper_iterLeafNodes, 'iterLeafNodesPhysical' = InfomapWrapper_iterLeafNodesPhysical, 'numLeafNodes' = InfomapWrapper_numLeafNodes, 'numTopModules' = InfomapWrapper_numTopModules, 'numNonTrivialTopModules' = InfomapWrapper_numNonTrivialTopModules, 'numLevels' = InfomapWrapper_numLevels, 'maxTreeDepth' = InfomapWrapper_maxTreeDepth, 'haveModules' = InfomapWrapper_haveModules, 'codelength' = InfomapWrapper_codelength, 'codelengths' = InfomapWrapper_codelengths, 'getIndexCodelength' = InfomapWrapper_getIndexCodelength, 'getModuleCodelength' = InfomapWrapper_getModuleCodelength, 'getHierarchicalCodelength' = InfomapWrapper_getHierarchicalCodelength, 'getOneLevelCodelength' = InfomapWrapper_getOneLevelCodelength, 'getRelativeCodelengthSavings' = InfomapWrapper_getRelativeCodelengthSavings, 'getEntropyRate' = InfomapWrapper_getEntropyRate, 'getMaxEntropy' = InfomapWrapper_getMaxEntropy, 'getMetaCodelength' = InfomapWrapper_getMetaCodelength, 'haveMemory' = InfomapWrapper_haveMemory, 'elapsedTime' = InfomapWrapper_elapsedTime, 'getInitialPartition' = InfomapWrapper_getInitialPartition, 'setInitialPartition' = InfomapWrapper_setInitialPartition, 'getMultilevelModules' = InfomapWrapper_getMultilevelModules, 'writeTree' = InfomapWrapper_writeTree, 'writeFlowTree' = InfomapWrapper_writeFlowTree, 'writeNewickTree' = InfomapWrapper_writeNewickTree, 'writeJsonTree' = InfomapWrapper_writeJsonTree, 'writeCsvTree' = InfomapWrapper_writeCsvTree, 'writeClu' = InfomapWrapper_writeClu, 'writePajekNetwork' = InfomapWrapper_writePajekNetwork, 'writeStateNetwork' = InfomapWrapper_writeStateNetwork, 'setDirected' = InfomapWrapper_setDirected, 'getFlowModelIsSet' = InfomapWrapper_getFlowModelIsSet, 'getStateInput' = InfomapWrapper_getStateInput, 'getMultilayerInput' = InfomapWrapper_getMultilayerInput, 'run' = InfomapWrapper_run);
   ;        idx = pmatch(name, names(accessorFuns));
   if(is.na(idx)) 
   return(callNextMethod(x, name));

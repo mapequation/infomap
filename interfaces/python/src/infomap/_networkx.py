@@ -200,7 +200,7 @@ def add_networkx_graph(
 
         if is_multilayer_network:
             for state_label, data in g.nodes.data():
-                infomap.network.add_multilayer_node(
+                infomap.addMultilayerNode(
                     node_map[state_label],
                     data[layer_id],
                     phys_map[data[node_id]],
@@ -247,7 +247,7 @@ def add_networkx_graph(
                         edge_weight,
                     )
             else:
-                infomap.network.add_multilayer_state_link(
+                infomap.addMultilayerLink(
                     source_state_id,
                     source_layer_id,
                     source_node_id,

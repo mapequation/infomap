@@ -14,6 +14,11 @@ namespace std {
     %template(vector_uint) std::vector<unsigned int>;
 }
 
+%warnfilter(402) infomap::InfomapBase;
+#ifdef SWIGR
+%warnfilter(314) infomap::InfoNode::next;
+#endif
+
 /* Parse the header file to generate wrappers */
 %include "src/core/InfoNode.h"
 

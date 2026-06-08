@@ -350,6 +350,60 @@ def test_run_with_options_forwards_to_run(monkeypatch):
     assert captured["kwargs"]["num_trials"] == 5
 
 
+def test_network_property_returns_compatibility_proxy(make_infomap):
+    im = make_infomap()
+
+    assert im.network is im.network
+    assert isinstance(im.network, facade_module._NetworkProxy)
+
+
+def test_network_proxy_forwards_basic_network_methods(make_infomap, tmp_path):
+    im = make_infomap(no_infomap=True)
+    im.add_links([(1, 2), (2, 3)])
+    im.bipartite_start_id = 3
+
+    assert im.network.numNodes() == 3
+    assert im.network.numLinks() == 2
+    assert im.network.numPhysicalNodes() == 3
+    assert im.network.haveMemoryInput() is False
+    assert im.network.isMultilayerNetwork() is False
+    assert im.network.bipartiteStartId() == 3
+
+    im.network.addMetaData(1, 7)
+    assert im.network.removeLink(2, 3) is True
+    assert im.network.numLinks() == 1
+
+    pajek_path = tmp_path / "network.net"
+    im.network.writePajekNetwork(str(pajek_path))
+    assert pajek_path.exists()
+    assert "*Vertices" in pajek_path.read_text()
+
+
+def test_network_proxy_forwards_state_network_writers(make_infomap, tmp_path):
+    im = make_infomap(no_infomap=True)
+    im.add_state_node(10, 1)
+    im.add_state_node(11, 2)
+    im.add_link(10, 11)
+
+    state_path = tmp_path / "states.net"
+    im.network.writeStateNetwork(str(state_path))
+
+    assert state_path.exists()
+    assert "*States" in state_path.read_text()
+
+
+def test_network_proxy_forwards_multilayer_state_helpers(make_infomap):
+    im = make_infomap(no_infomap=True)
+    im.network.add_multilayer_node(0, 1, 10)
+    im.network.add_multilayer_node(1, 2, 10)
+    im.network.add_multilayer_state_link(0, 1, 10, 1, 2, 10, 2.0)
+
+    assert im.network.numNodes() == 2
+    assert im.network.numLinks() == 1
+    assert im.network.haveMemoryInput() is True
+    assert im.network.isMultilayerNetwork() is True
+
+
 def test_infomap_repr_shows_readable_state(make_infomap):
     im = make_infomap()
     im.add_link(1, 2)

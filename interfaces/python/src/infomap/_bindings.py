@@ -1,4 +1,6 @@
-from ._swig import *  # noqa: F401,F403
+from ._swig import InfomapWrapper as InfomapWrapper
+from ._swig import build_info as build_info
+from ._swig import run as run
 
 
-__all__ = [name for name in globals() if not name.startswith("_")]
+__all__ = ["InfomapWrapper", "build_info", "run"]

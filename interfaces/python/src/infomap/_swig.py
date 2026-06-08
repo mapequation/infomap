@@ -58,172 +58,6 @@ class _SwigNonDynamicMeta(type):
     __setattr__ = _swig_setattr_nondynamic_class_variable(type.__setattr__)
 
 
-class FlowModel(object):
-    thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc="The membership flag")
-    __repr__ = _swig_repr
-    undirected = _infomap.FlowModel_undirected
-    directed = _infomap.FlowModel_directed
-    undirdir = _infomap.FlowModel_undirdir
-    outdirdir = _infomap.FlowModel_outdirdir
-    rawdir = _infomap.FlowModel_rawdir
-    precomputed = _infomap.FlowModel_precomputed
-    value = property(_infomap.FlowModel_value_get, _infomap.FlowModel_value_set)
-
-    def __init__(self, val):
-        _infomap.FlowModel_swiginit(self, _infomap.new_FlowModel(val))
-    __swig_destroy__ = _infomap.delete_FlowModel
-
-# Register FlowModel in _infomap:
-_infomap.FlowModel_swigregister(FlowModel)
-
-def flowModelToString(flowModel):
-    return _infomap.flowModelToString(flowModel)
-class Config(object):
-    thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc="The membership flag")
-    __repr__ = _swig_repr
-    isCLI = property(_infomap.Config_isCLI_get, _infomap.Config_isCLI_set)
-    networkFile = property(_infomap.Config_networkFile_get, _infomap.Config_networkFile_set)
-    additionalInput = property(_infomap.Config_additionalInput_get, _infomap.Config_additionalInput_set)
-    stateInput = property(_infomap.Config_stateInput_get, _infomap.Config_stateInput_set)
-    stateOutput = property(_infomap.Config_stateOutput_get, _infomap.Config_stateOutput_set)
-    multilayerInput = property(_infomap.Config_multilayerInput_get, _infomap.Config_multilayerInput_set)
-    weightThreshold = property(_infomap.Config_weightThreshold_get, _infomap.Config_weightThreshold_set)
-    bipartite = property(_infomap.Config_bipartite_get, _infomap.Config_bipartite_set)
-    skipAdjustBipartiteFlow = property(_infomap.Config_skipAdjustBipartiteFlow_get, _infomap.Config_skipAdjustBipartiteFlow_set)
-    bipartiteTeleportation = property(_infomap.Config_bipartiteTeleportation_get, _infomap.Config_bipartiteTeleportation_set)
-    noSelfLinks = property(_infomap.Config_noSelfLinks_get, _infomap.Config_noSelfLinks_set)
-    nodeLimit = property(_infomap.Config_nodeLimit_get, _infomap.Config_nodeLimit_set)
-    matchableMultilayerIds = property(_infomap.Config_matchableMultilayerIds_get, _infomap.Config_matchableMultilayerIds_set)
-    clusterDataFile = property(_infomap.Config_clusterDataFile_get, _infomap.Config_clusterDataFile_set)
-    metaDataFile = property(_infomap.Config_metaDataFile_get, _infomap.Config_metaDataFile_set)
-    metaDataRate = property(_infomap.Config_metaDataRate_get, _infomap.Config_metaDataRate_set)
-    unweightedMetaData = property(_infomap.Config_unweightedMetaData_get, _infomap.Config_unweightedMetaData_set)
-    numMetaDataDimensions = property(_infomap.Config_numMetaDataDimensions_get, _infomap.Config_numMetaDataDimensions_set)
-    clusterDataIsHard = property(_infomap.Config_clusterDataIsHard_get, _infomap.Config_clusterDataIsHard_set)
-    assignToNeighbouringModule = property(_infomap.Config_assignToNeighbouringModule_get, _infomap.Config_assignToNeighbouringModule_set)
-    noInfomap = property(_infomap.Config_noInfomap_get, _infomap.Config_noInfomap_set)
-    flowModel = property(_infomap.Config_flowModel_get, _infomap.Config_flowModel_set)
-    flowModelIsSet = property(_infomap.Config_flowModelIsSet_get, _infomap.Config_flowModelIsSet_set)
-    directed = property(_infomap.Config_directed_get, _infomap.Config_directed_set)
-    useNodeWeightsAsFlow = property(_infomap.Config_useNodeWeightsAsFlow_get, _infomap.Config_useNodeWeightsAsFlow_set)
-    teleportToNodes = property(_infomap.Config_teleportToNodes_get, _infomap.Config_teleportToNodes_set)
-    markovTime = property(_infomap.Config_markovTime_get, _infomap.Config_markovTime_set)
-    variableMarkovTime = property(_infomap.Config_variableMarkovTime_get, _infomap.Config_variableMarkovTime_set)
-    variableMarkovTimeDamping = property(_infomap.Config_variableMarkovTimeDamping_get, _infomap.Config_variableMarkovTimeDamping_set)
-    variableMarkovTimeMinLocalScale = property(_infomap.Config_variableMarkovTimeMinLocalScale_get, _infomap.Config_variableMarkovTimeMinLocalScale_set)
-    markovTimeNoSelfLinks = property(_infomap.Config_markovTimeNoSelfLinks_get, _infomap.Config_markovTimeNoSelfLinks_set)
-    multilayerRelaxRate = property(_infomap.Config_multilayerRelaxRate_get, _infomap.Config_multilayerRelaxRate_set)
-    multilayerRelaxLimit = property(_infomap.Config_multilayerRelaxLimit_get, _infomap.Config_multilayerRelaxLimit_set)
-    multilayerRelaxLimitUp = property(_infomap.Config_multilayerRelaxLimitUp_get, _infomap.Config_multilayerRelaxLimitUp_set)
-    multilayerRelaxLimitDown = property(_infomap.Config_multilayerRelaxLimitDown_get, _infomap.Config_multilayerRelaxLimitDown_set)
-    multilayerJSRelaxRate = property(_infomap.Config_multilayerJSRelaxRate_get, _infomap.Config_multilayerJSRelaxRate_set)
-    multilayerRelaxByJensenShannonDivergence = property(_infomap.Config_multilayerRelaxByJensenShannonDivergence_get, _infomap.Config_multilayerRelaxByJensenShannonDivergence_set)
-    multilayerJSRelaxLimit = property(_infomap.Config_multilayerJSRelaxLimit_get, _infomap.Config_multilayerJSRelaxLimit_set)
-    maxFlowIterations = property(_infomap.Config_maxFlowIterations_get, _infomap.Config_maxFlowIterations_set)
-    twoLevel = property(_infomap.Config_twoLevel_get, _infomap.Config_twoLevel_set)
-    noCoarseTune = property(_infomap.Config_noCoarseTune_get, _infomap.Config_noCoarseTune_set)
-    recordedTeleportation = property(_infomap.Config_recordedTeleportation_get, _infomap.Config_recordedTeleportation_set)
-    regularized = property(_infomap.Config_regularized_get, _infomap.Config_regularized_set)
-    regularizationStrength = property(_infomap.Config_regularizationStrength_get, _infomap.Config_regularizationStrength_set)
-    teleportationProbability = property(_infomap.Config_teleportationProbability_get, _infomap.Config_teleportationProbability_set)
-    preferredNumberOfModules = property(_infomap.Config_preferredNumberOfModules_get, _infomap.Config_preferredNumberOfModules_set)
-    entropyBiasCorrection = property(_infomap.Config_entropyBiasCorrection_get, _infomap.Config_entropyBiasCorrection_set)
-    entropyBiasCorrectionMultiplier = property(_infomap.Config_entropyBiasCorrectionMultiplier_get, _infomap.Config_entropyBiasCorrectionMultiplier_set)
-    seedToRandomNumberGenerator = property(_infomap.Config_seedToRandomNumberGenerator_get, _infomap.Config_seedToRandomNumberGenerator_set)
-    numTrials = property(_infomap.Config_numTrials_get, _infomap.Config_numTrials_set)
-    minimumCodelengthImprovement = property(_infomap.Config_minimumCodelengthImprovement_get, _infomap.Config_minimumCodelengthImprovement_set)
-    minimumSingleNodeCodelengthImprovement = property(_infomap.Config_minimumSingleNodeCodelengthImprovement_get, _infomap.Config_minimumSingleNodeCodelengthImprovement_set)
-    randomizeCoreLoopLimit = property(_infomap.Config_randomizeCoreLoopLimit_get, _infomap.Config_randomizeCoreLoopLimit_set)
-    coreLoopLimit = property(_infomap.Config_coreLoopLimit_get, _infomap.Config_coreLoopLimit_set)
-    levelAggregationLimit = property(_infomap.Config_levelAggregationLimit_get, _infomap.Config_levelAggregationLimit_set)
-    tuneIterationLimit = property(_infomap.Config_tuneIterationLimit_get, _infomap.Config_tuneIterationLimit_set)
-    minimumRelativeTuneIterationImprovement = property(_infomap.Config_minimumRelativeTuneIterationImprovement_get, _infomap.Config_minimumRelativeTuneIterationImprovement_set)
-    onlySuperModules = property(_infomap.Config_onlySuperModules_get, _infomap.Config_onlySuperModules_set)
-    fastHierarchicalSolution = property(_infomap.Config_fastHierarchicalSolution_get, _infomap.Config_fastHierarchicalSolution_set)
-    preferModularSolution = property(_infomap.Config_preferModularSolution_get, _infomap.Config_preferModularSolution_set)
-    innerParallelization = property(_infomap.Config_innerParallelization_get, _infomap.Config_innerParallelization_set)
-    parallelTrials = property(_infomap.Config_parallelTrials_get, _infomap.Config_parallelTrials_set)
-    numRandomMoves = property(_infomap.Config_numRandomMoves_get, _infomap.Config_numRandomMoves_set)
-    maxDegreeForRandomMoves = property(_infomap.Config_maxDegreeForRandomMoves_get, _infomap.Config_maxDegreeForRandomMoves_set)
-    outDirectory = property(_infomap.Config_outDirectory_get, _infomap.Config_outDirectory_set)
-    outName = property(_infomap.Config_outName_get, _infomap.Config_outName_set)
-    outputFormats = property(_infomap.Config_outputFormats_get, _infomap.Config_outputFormats_set)
-    printTree = property(_infomap.Config_printTree_get, _infomap.Config_printTree_set)
-    printFlowTree = property(_infomap.Config_printFlowTree_get, _infomap.Config_printFlowTree_set)
-    printNewick = property(_infomap.Config_printNewick_get, _infomap.Config_printNewick_set)
-    printJson = property(_infomap.Config_printJson_get, _infomap.Config_printJson_set)
-    printCsv = property(_infomap.Config_printCsv_get, _infomap.Config_printCsv_set)
-    printClu = property(_infomap.Config_printClu_get, _infomap.Config_printClu_set)
-    printAllTrials = property(_infomap.Config_printAllTrials_get, _infomap.Config_printAllTrials_set)
-    cluLevel = property(_infomap.Config_cluLevel_get, _infomap.Config_cluLevel_set)
-    printFlowNetwork = property(_infomap.Config_printFlowNetwork_get, _infomap.Config_printFlowNetwork_set)
-    printPajekNetwork = property(_infomap.Config_printPajekNetwork_get, _infomap.Config_printPajekNetwork_set)
-    printStateNetwork = property(_infomap.Config_printStateNetwork_get, _infomap.Config_printStateNetwork_set)
-    noFileOutput = property(_infomap.Config_noFileOutput_get, _infomap.Config_noFileOutput_set)
-    verbosity = property(_infomap.Config_verbosity_get, _infomap.Config_verbosity_set)
-    verboseNumberPrecision = property(_infomap.Config_verboseNumberPrecision_get, _infomap.Config_verboseNumberPrecision_set)
-    silent = property(_infomap.Config_silent_get, _infomap.Config_silent_set)
-    prettyOutput = property(_infomap.Config_prettyOutput_get, _infomap.Config_prettyOutput_set)
-    hideBipartiteNodes = property(_infomap.Config_hideBipartiteNodes_get, _infomap.Config_hideBipartiteNodes_set)
-    startDate = property(_infomap.Config_startDate_get, _infomap.Config_startDate_set)
-    version = property(_infomap.Config_version_get, _infomap.Config_version_set)
-    parsedString = property(_infomap.Config_parsedString_get, _infomap.Config_parsedString_set)
-    parsedOptions = property(_infomap.Config_parsedOptions_get, _infomap.Config_parsedOptions_set)
-
-    def __init__(self, *args):
-        _infomap.Config_swiginit(self, _infomap.new_Config(*args))
-
-    def cloneAsNonMain(self, other):
-        return _infomap.Config_cloneAsNonMain(self, other)
-
-    def adaptDefaults(self):
-        return _infomap.Config_adaptDefaults(self)
-
-    def setStateInput(self):
-        return _infomap.Config_setStateInput(self)
-
-    def setStateOutput(self):
-        return _infomap.Config_setStateOutput(self)
-
-    def setMultilayerInput(self):
-        return _infomap.Config_setMultilayerInput(self)
-
-    def setFlowModel(self, value):
-        return _infomap.Config_setFlowModel(self, value)
-
-    def isUndirectedClustering(self):
-        return _infomap.Config_isUndirectedClustering(self)
-
-    def isUndirectedFlow(self):
-        return _infomap.Config_isUndirectedFlow(self)
-
-    def printAsUndirected(self):
-        return _infomap.Config_printAsUndirected(self)
-
-    def isMultilayerNetwork(self):
-        return _infomap.Config_isMultilayerNetwork(self)
-
-    def isBipartite(self):
-        return _infomap.Config_isBipartite(self)
-
-    def haveMemory(self):
-        return _infomap.Config_haveMemory(self)
-
-    def printStates(self):
-        return _infomap.Config_printStates(self)
-
-    def haveMetaData(self):
-        return _infomap.Config_haveMetaData(self)
-
-    def haveOutput(self):
-        return _infomap.Config_haveOutput(self)
-
-    def haveModularResultOutput(self):
-        return _infomap.Config_haveModularResultOutput(self)
-    __swig_destroy__ = _infomap.delete_Config
-
-# Register Config in _infomap:
-_infomap.Config_swigregister(Config)
 class FlowData(object):
     thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc="The membership flag")
     __repr__ = _swig_repr
@@ -2040,274 +1874,6 @@ class vector_double(object):
 
 # Register vector_double in _infomap:
 _infomap.vector_double_swigregister(vector_double)
-class StateNetwork(object):
-    thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc="The membership flag")
-
-    def __init__(self, *args, **kwargs):
-        raise AttributeError("No constructor defined - class is abstract")
-    __repr__ = _swig_repr
-    __swig_destroy__ = _infomap.delete_StateNetwork
-
-    def setConfig(self, config):
-        return _infomap.StateNetwork_setConfig(self, config)
-
-    def addStateNode(self, *args):
-        return _infomap.StateNetwork_addStateNode(self, *args)
-
-    def addNode(self, *args):
-        return _infomap.StateNetwork_addNode(self, *args)
-
-    def addPhysicalNode(self, *args):
-        return _infomap.StateNetwork_addPhysicalNode(self, *args)
-
-    def addName(self, id, arg3):
-        return _infomap.StateNetwork_addName(self, id, arg3)
-
-    def addLink(self, *args):
-        return _infomap.StateNetwork_addLink(self, *args)
-
-    def addLinks(self, sourceIds, targetIds, weights):
-        return _infomap.StateNetwork_addLinks(self, sourceIds, targetIds, weights)
-
-    def removeLink(self, sourceId, targetId):
-        return _infomap.StateNetwork_removeLink(self, sourceId, targetId)
-
-    def undirectedToDirected(self):
-        return _infomap.StateNetwork_undirectedToDirected(self)
-
-    def clear(self):
-        return _infomap.StateNetwork_clear(self)
-
-    def clearLinks(self):
-        return _infomap.StateNetwork_clearLinks(self)
-
-    def nodes(self):
-        return _infomap.StateNetwork_nodes(self)
-
-    def numNodes(self):
-        return _infomap.StateNetwork_numNodes(self)
-
-    def numPhysicalNodes(self):
-        return _infomap.StateNetwork_numPhysicalNodes(self)
-
-    def sumNodeWeight(self):
-        return _infomap.StateNetwork_sumNodeWeight(self)
-
-    def nodeLinkMap(self, *args):
-        return _infomap.StateNetwork_nodeLinkMap(self, *args)
-
-    def numLinks(self):
-        return _infomap.StateNetwork_numLinks(self)
-
-    def sumLinkWeight(self):
-        return _infomap.StateNetwork_sumLinkWeight(self)
-
-    def numSelfLinks(self):
-        return _infomap.StateNetwork_numSelfLinks(self)
-
-    def sumSelfLinkWeight(self):
-        return _infomap.StateNetwork_sumSelfLinkWeight(self)
-
-    def sumWeightedDegree(self):
-        return _infomap.StateNetwork_sumWeightedDegree(self)
-
-    def sumDegree(self):
-        return _infomap.StateNetwork_sumDegree(self)
-
-    def outWeights(self):
-        return _infomap.StateNetwork_outWeights(self)
-
-    def names(self, *args):
-        return _infomap.StateNetwork_names(self, *args)
-
-    def haveNodeWeights(self):
-        return _infomap.StateNetwork_haveNodeWeights(self)
-
-    def haveStateNodeWeights(self):
-        return _infomap.StateNetwork_haveStateNodeWeights(self)
-
-    def haveFileInput(self):
-        return _infomap.StateNetwork_haveFileInput(self)
-
-    def metaData(self):
-        return _infomap.StateNetwork_metaData(self)
-
-    def haveDirectedInput(self):
-        return _infomap.StateNetwork_haveDirectedInput(self)
-
-    def haveMemoryInput(self):
-        return _infomap.StateNetwork_haveMemoryInput(self)
-
-    def higherOrderInputMethodCalled(self):
-        return _infomap.StateNetwork_higherOrderInputMethodCalled(self)
-
-    def isBipartite(self):
-        return _infomap.StateNetwork_isBipartite(self)
-
-    def bipartiteStartId(self):
-        return _infomap.StateNetwork_bipartiteStartId(self)
-
-    def setBipartiteStartId(self, value):
-        return _infomap.StateNetwork_setBipartiteStartId(self, value)
-
-    def writeStateNetwork(self, filename):
-        return _infomap.StateNetwork_writeStateNetwork(self, filename)
-
-    def writePajekNetwork(self, filename, printFlow=False):
-        return _infomap.StateNetwork_writePajekNetwork(self, filename, printFlow)
-
-# Register StateNetwork in _infomap:
-_infomap.StateNetwork_swigregister(StateNetwork)
-class Network(StateNetwork):
-    thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc="The membership flag")
-    __repr__ = _swig_repr
-
-    def __init__(self, *args):
-        _infomap.Network_swiginit(self, _infomap.new_Network(*args))
-    __swig_destroy__ = _infomap.delete_Network
-
-    def setConfig(self, config):
-        return _infomap.Network_setConfig(self, config)
-
-    def clear(self):
-        return _infomap.Network_clear(self)
-
-    def readInputData(self, *args):
-        return _infomap.Network_readInputData(self, *args)
-
-    def readMetaData(self, filename):
-        return _infomap.Network_readMetaData(self, filename)
-
-    def numMetaDataColumns(self):
-        return _infomap.Network_numMetaDataColumns(self)
-
-    def metaData(self):
-        return _infomap.Network_metaData(self)
-
-    def isMultilayerNetwork(self):
-        return _infomap.Network_isMultilayerNetwork(self)
-
-    def layerNodeToStateId(self):
-        return _infomap.Network_layerNodeToStateId(self)
-
-    def postProcessInputData(self):
-        return _infomap.Network_postProcessInputData(self)
-
-    def generateStateNetworkFromMultilayer(self):
-        return _infomap.Network_generateStateNetworkFromMultilayer(self)
-
-    def generateStateNetworkFromMultilayerWithInterLinks(self):
-        return _infomap.Network_generateStateNetworkFromMultilayerWithInterLinks(self)
-
-    def generateStateNetworkFromMultilayerWithSimulatedInterLinks(self):
-        return _infomap.Network_generateStateNetworkFromMultilayerWithSimulatedInterLinks(self)
-
-    def simulateInterLayerLinks(self):
-        return _infomap.Network_simulateInterLayerLinks(self)
-
-    def addMultilayerNode(self, *args):
-        return _infomap.Network_addMultilayerNode(self, *args)
-
-    def addMultilayerLink(self, *args):
-        return _infomap.Network_addMultilayerLink(self, *args)
-
-    def addMultilayerLinks(self, sourceLayerIds, sourceNodeIds, targetLayerIds, targetNodeIds, weights):
-        return _infomap.Network_addMultilayerLinks(self, sourceLayerIds, sourceNodeIds, targetLayerIds, targetNodeIds, weights)
-
-    def addMultilayerIntraLink(self, layer, n1, n2, weight):
-        return _infomap.Network_addMultilayerIntraLink(self, layer, n1, n2, weight)
-
-    def addMultilayerIntraLinks(self, layerIds, sourceNodeIds, targetNodeIds, weights):
-        return _infomap.Network_addMultilayerIntraLinks(self, layerIds, sourceNodeIds, targetNodeIds, weights)
-
-    def addMultilayerInterLink(self, layer1, n, layer2, interWeight):
-        return _infomap.Network_addMultilayerInterLink(self, layer1, n, layer2, interWeight)
-
-    def addMultilayerInterLinks(self, sourceLayerIds, nodeIds, targetLayerIds, weights):
-        return _infomap.Network_addMultilayerInterLinks(self, sourceLayerIds, nodeIds, targetLayerIds, weights)
-
-    def addMetaData(self, *args):
-        return _infomap.Network_addMetaData(self, *args)
-
-
-    @property
-    def is_multilayer_network(self):
-    	"""True if the network have multiple layers.
-
-    	Returns
-    	-------
-    	bool
-    		Is multilayer network
-    	"""
-    	return self.isMultilayerNetwork()
-
-    def add_multilayer_node(self, state_id, layer_id, node_id, weight=1.0):
-    	"""Add a multilayer node with predefined state id.
-
-    	Parameters
-    	----------
-    	state_id : int
-    		The unique id for the state node
-    	layer_id : int
-    		The layer of the state node
-    	node_id : int
-    		The physical node id of the state node
-    	weight : float
-    		The optional weight of the state node, default 1.0
-
-    	Returns
-    	-------
-    	int
-    		The state id
-    	"""
-    	return self.addMultilayerNode(state_id, layer_id, node_id, weight)
-
-    def add_multilayer_state_link(self, source_state_id, source_layer_id, source_node_id, target_state_id, target_layer_id, target_node_id, weight=1.0):
-    	"""Add a multilayer link with predefined state ids.
-
-    	Parameters
-    	----------
-    	source_state_id : int
-    		The unique id for the source state node
-    	source_layer_id : int
-    		The layer of the source state node
-    	source_node_id : int
-    		The physical node id of the source state node
-    	target_state_id : int
-    		The unique id for the target state node
-    	target_layer_id : int
-    		The layer of the target state node
-    	target_node_id : int
-    		The physical node id of the target state node
-    	weight : float
-    		The optional weight of the link, default 1.0
-
-    	Returns
-    	-------
-    	int
-    		The state id
-    	"""
-    	return self.addMultilayerLink(source_state_id, source_layer_id, source_node_id, target_state_id, target_layer_id, target_node_id, weight)
-
-
-
-# Register Network in _infomap:
-_infomap.Network_swigregister(Network)
-class LayerNode(object):
-    thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc="The membership flag")
-    __repr__ = _swig_repr
-    layer = property(_infomap.LayerNode_layer_get, _infomap.LayerNode_layer_set)
-    node = property(_infomap.LayerNode_node_get, _infomap.LayerNode_node_set)
-
-    def __init__(self, layer=0, node=0):
-        _infomap.LayerNode_swiginit(self, _infomap.new_LayerNode(layer, node))
-
-    def __lt__(self, other):
-        return _infomap.LayerNode___lt__(self, other)
-    __swig_destroy__ = _infomap.delete_LayerNode
-
-# Register LayerNode in _infomap:
-_infomap.LayerNode_swigregister(LayerNode)
 class map_uint_uint(object):
     thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc="The membership flag")
     __repr__ = _swig_repr
@@ -2415,259 +1981,6 @@ class map_uint_uint(object):
 
 # Register map_uint_uint in _infomap:
 _infomap.map_uint_uint_swigregister(map_uint_uint)
-class InfomapConfigInfomapBase(Config):
-    thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc="The membership flag")
-    __repr__ = _swig_repr
-    __swig_destroy__ = _infomap.delete_InfomapConfigInfomapBase
-
-    def __init__(self, *args):
-        _infomap.InfomapConfigInfomapBase_swiginit(self, _infomap.new_InfomapConfigInfomapBase(*args))
-
-    def getConfig(self, *args):
-        return _infomap.InfomapConfigInfomapBase_getConfig(self, *args)
-
-    def setConfig(self, conf):
-        return _infomap.InfomapConfigInfomapBase_setConfig(self, conf)
-
-    def setNonMainConfig(self, conf):
-        return _infomap.InfomapConfigInfomapBase_setNonMainConfig(self, conf)
-
-    def setNumTrials(self, N):
-        return _infomap.InfomapConfigInfomapBase_setNumTrials(self, N)
-
-    def setVerbosity(self, level):
-        return _infomap.InfomapConfigInfomapBase_setVerbosity(self, level)
-
-    def setTwoLevel(self, value):
-        return _infomap.InfomapConfigInfomapBase_setTwoLevel(self, value)
-
-    def setTuneIterationLimit(self, value):
-        return _infomap.InfomapConfigInfomapBase_setTuneIterationLimit(self, value)
-
-    def setFastHierarchicalSolution(self, level):
-        return _infomap.InfomapConfigInfomapBase_setFastHierarchicalSolution(self, level)
-
-    def setOnlySuperModules(self, value):
-        return _infomap.InfomapConfigInfomapBase_setOnlySuperModules(self, value)
-
-    def setNoCoarseTune(self, value):
-        return _infomap.InfomapConfigInfomapBase_setNoCoarseTune(self, value)
-
-    def setNoInfomap(self, value=True):
-        return _infomap.InfomapConfigInfomapBase_setNoInfomap(self, value)
-
-    def setMarkovTime(self, codeRate):
-        return _infomap.InfomapConfigInfomapBase_setMarkovTime(self, codeRate)
-
-    def setDirected(self, value):
-        return _infomap.InfomapConfigInfomapBase_setDirected(self, value)
-
-    def reseed(self, seed):
-        return _infomap.InfomapConfigInfomapBase_reseed(self, seed)
-
-# Register InfomapConfigInfomapBase in _infomap:
-_infomap.InfomapConfigInfomapBase_swigregister(InfomapConfigInfomapBase)
-class InfomapBase(InfomapConfigInfomapBase):
-    thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc="The membership flag")
-    __repr__ = _swig_repr
-
-    def __init__(self, *args):
-        _infomap.InfomapBase_swiginit(self, _infomap.new_InfomapBase(*args))
-    __swig_destroy__ = _infomap.delete_InfomapBase
-
-    def iterTree(self, maxClusterLevel=1):
-        return _infomap.InfomapBase_iterTree(self, maxClusterLevel)
-
-    def iterTreePhysical(self, maxClusterLevel=1):
-        return _infomap.InfomapBase_iterTreePhysical(self, maxClusterLevel)
-
-    def iterModules(self, maxClusterLevel=1):
-        return _infomap.InfomapBase_iterModules(self, maxClusterLevel)
-
-    def iterLeafModules(self, maxClusterLevel=1):
-        return _infomap.InfomapBase_iterLeafModules(self, maxClusterLevel)
-
-    def iterLeafNodes(self, maxClusterLevel=1):
-        return _infomap.InfomapBase_iterLeafNodes(self, maxClusterLevel)
-
-    def iterLeafNodesPhysical(self, maxClusterLevel=1):
-        return _infomap.InfomapBase_iterLeafNodesPhysical(self, maxClusterLevel)
-
-    def begin(self, maxClusterLevel=1):
-        return _infomap.InfomapBase_begin(self, maxClusterLevel)
-
-    def end(self):
-        return _infomap.InfomapBase_end(self)
-
-    def network(self, *args):
-        return _infomap.InfomapBase_network(self, *args)
-
-    def root(self, *args):
-        return _infomap.InfomapBase_root(self, *args)
-
-    def numLeafNodes(self):
-        return _infomap.InfomapBase_numLeafNodes(self)
-
-    def leafNodes(self):
-        return _infomap.InfomapBase_leafNodes(self)
-
-    def numTopModules(self):
-        return _infomap.InfomapBase_numTopModules(self)
-
-    def numActiveModules(self):
-        return _infomap.InfomapBase_numActiveModules(self)
-
-    def numNonTrivialTopModules(self):
-        return _infomap.InfomapBase_numNonTrivialTopModules(self)
-
-    def haveModules(self):
-        return _infomap.InfomapBase_haveModules(self)
-
-    def haveNonTrivialModules(self):
-        return _infomap.InfomapBase_haveNonTrivialModules(self)
-
-    def numLevels(self):
-        return _infomap.InfomapBase_numLevels(self)
-
-    def maxTreeDepth(self):
-        return _infomap.InfomapBase_maxTreeDepth(self)
-
-    def getCodelength(self):
-        return _infomap.InfomapBase_getCodelength(self)
-
-    def getMetaCodelength(self, unweighted=False):
-        return _infomap.InfomapBase_getMetaCodelength(self, unweighted)
-
-    def codelength(self):
-        return _infomap.InfomapBase_codelength(self)
-
-    def codelengths(self):
-        return _infomap.InfomapBase_codelengths(self)
-
-    def getIndexCodelength(self):
-        return _infomap.InfomapBase_getIndexCodelength(self)
-
-    def getModuleCodelength(self):
-        return _infomap.InfomapBase_getModuleCodelength(self)
-
-    def getHierarchicalCodelength(self):
-        return _infomap.InfomapBase_getHierarchicalCodelength(self)
-
-    def getOneLevelCodelength(self):
-        return _infomap.InfomapBase_getOneLevelCodelength(self)
-
-    def getRelativeCodelengthSavings(self):
-        return _infomap.InfomapBase_getRelativeCodelengthSavings(self)
-
-    def getEntropyRate(self):
-        return _infomap.InfomapBase_getEntropyRate(self)
-
-    def getMaxEntropy(self):
-        return _infomap.InfomapBase_getMaxEntropy(self)
-
-    def getMaxFlow(self):
-        return _infomap.InfomapBase_getMaxFlow(self)
-
-    def getStartDate(self):
-        return _infomap.InfomapBase_getStartDate(self)
-
-    def getElapsedTime(self):
-        return _infomap.InfomapBase_getElapsedTime(self)
-
-    def activeNetwork(self):
-        return _infomap.InfomapBase_activeNetwork(self)
-
-    def getMultilevelModules(self, states=False):
-        return _infomap.InfomapBase_getMultilevelModules(self, states)
-
-    def toString(self, out):
-        return _infomap.InfomapBase_toString(self, out)
-
-    def getInitialPartition(self):
-        return _infomap.InfomapBase_getInitialPartition(self)
-
-    def setInitialPartition(self, moduleIds):
-        return _infomap.InfomapBase_setInitialPartition(self, moduleIds)
-
-    def run(self, *args):
-        return _infomap.InfomapBase_run(self, *args)
-
-    def writeTree(self, *args):
-        return _infomap.InfomapBase_writeTree(self, *args)
-
-    def writeFlowTree(self, *args):
-        return _infomap.InfomapBase_writeFlowTree(self, *args)
-
-    def writeNewickTree(self, *args):
-        return _infomap.InfomapBase_writeNewickTree(self, *args)
-
-    def writeJsonTree(self, *args):
-        return _infomap.InfomapBase_writeJsonTree(self, *args)
-
-    def writeCsvTree(self, *args):
-        return _infomap.InfomapBase_writeCsvTree(self, *args)
-
-    def writeClu(self, *args):
-        return _infomap.InfomapBase_writeClu(self, *args)
-
-    def elapsedTime(self):
-        return _infomap.InfomapBase_elapsedTime(self)
-
-# Register InfomapBase in _infomap:
-_infomap.InfomapBase_swigregister(InfomapBase)
-
-def printPerLevelCodelength(parent, out, prettyOutput=False):
-    return _infomap.printPerLevelCodelength(parent, out, prettyOutput)
-
-def aggregatePerLevelCodelength(parent, perLevelStat, level=0):
-    return _infomap.aggregatePerLevelCodelength(parent, perLevelStat, level)
-class PerLevelStat(object):
-    thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc="The membership flag")
-    __repr__ = _swig_repr
-
-    def codelength(self):
-        return _infomap.PerLevelStat_codelength(self)
-
-    def numNodes(self):
-        return _infomap.PerLevelStat_numNodes(self)
-    numModules = property(_infomap.PerLevelStat_numModules_get, _infomap.PerLevelStat_numModules_set)
-    numLeafNodes = property(_infomap.PerLevelStat_numLeafNodes_get, _infomap.PerLevelStat_numLeafNodes_set)
-    indexLength = property(_infomap.PerLevelStat_indexLength_get, _infomap.PerLevelStat_indexLength_set)
-    leafLength = property(_infomap.PerLevelStat_leafLength_get, _infomap.PerLevelStat_leafLength_set)
-
-    def __init__(self):
-        _infomap.PerLevelStat_swiginit(self, _infomap.new_PerLevelStat())
-    __swig_destroy__ = _infomap.delete_PerLevelStat
-
-# Register PerLevelStat in _infomap:
-_infomap.PerLevelStat_swigregister(PerLevelStat)
-class PartitionQueue(object):
-    thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc="The membership flag")
-    __repr__ = _swig_repr
-    level = property(_infomap.PartitionQueue_level_get, _infomap.PartitionQueue_level_set)
-    numNonTrivialModules = property(_infomap.PartitionQueue_numNonTrivialModules_get, _infomap.PartitionQueue_numNonTrivialModules_set)
-    flow = property(_infomap.PartitionQueue_flow_get, _infomap.PartitionQueue_flow_set)
-    nonTrivialFlow = property(_infomap.PartitionQueue_nonTrivialFlow_get, _infomap.PartitionQueue_nonTrivialFlow_set)
-    skip = property(_infomap.PartitionQueue_skip_get, _infomap.PartitionQueue_skip_set)
-    indexCodelength = property(_infomap.PartitionQueue_indexCodelength_get, _infomap.PartitionQueue_indexCodelength_set)
-    leafCodelength = property(_infomap.PartitionQueue_leafCodelength_get, _infomap.PartitionQueue_leafCodelength_set)
-    moduleCodelength = property(_infomap.PartitionQueue_moduleCodelength_get, _infomap.PartitionQueue_moduleCodelength_set)
-
-    def swap(self, other):
-        return _infomap.PartitionQueue_swap(self, other)
-
-    def size(self):
-        return _infomap.PartitionQueue_size(self)
-
-    def resize(self, size):
-        return _infomap.PartitionQueue_resize(self, size)
-
-    def __init__(self):
-        _infomap.PartitionQueue_swiginit(self, _infomap.new_PartitionQueue())
-    __swig_destroy__ = _infomap.delete_PartitionQueue
-
-# Register PartitionQueue in _infomap:
-_infomap.PartitionQueue_swigregister(PartitionQueue)
 class map_uint_vector_uint(object):
     thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc="The membership flag")
     __repr__ = _swig_repr
@@ -3027,7 +2340,7 @@ def build_info():
 
 def run(flags):
     return _infomap.run(flags)
-class InfomapWrapper(InfomapBase):
+class InfomapWrapper(object):
     thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc="The membership flag")
     __repr__ = _swig_repr
 
@@ -3056,14 +2369,20 @@ class InfomapWrapper(InfomapBase):
     def addStateNode(self, id, physId):
         return _infomap.InfomapWrapper_addStateNode(self, id, physId)
 
+    def addMultilayerNode(self, stateId, layerId, physicalId, weight=1.0):
+        return _infomap.InfomapWrapper_addMultilayerNode(self, stateId, layerId, physicalId, weight)
+
     def addLink(self, *args):
         return _infomap.InfomapWrapper_addLink(self, *args)
 
     def addLinks(self, sourceIds, targetIds, weights):
         return _infomap.InfomapWrapper_addLinks(self, sourceIds, targetIds, weights)
 
-    def addMultilayerLink(self, layer1, n1, layer2, n2, weight=1.0):
-        return _infomap.InfomapWrapper_addMultilayerLink(self, layer1, n1, layer2, n2, weight)
+    def removeLink(self, sourceId, targetId):
+        return _infomap.InfomapWrapper_removeLink(self, sourceId, targetId)
+
+    def addMultilayerLink(self, *args):
+        return _infomap.InfomapWrapper_addMultilayerLink(self, *args)
 
     def addMultilayerLinks(self, sourceLayerIds, sourceNodeIds, targetLayerIds, targetNodeIds, weights):
         return _infomap.InfomapWrapper_addMultilayerLinks(self, sourceLayerIds, sourceNodeIds, targetLayerIds, targetNodeIds, weights)
@@ -3080,8 +2399,29 @@ class InfomapWrapper(InfomapBase):
     def addMultilayerInterLinks(self, sourceLayerIds, nodeIds, targetLayerIds, weights):
         return _infomap.InfomapWrapper_addMultilayerInterLinks(self, sourceLayerIds, nodeIds, targetLayerIds, weights)
 
+    def addMetaData(self, nodeId, meta):
+        return _infomap.InfomapWrapper_addMetaData(self, nodeId, meta)
+
     def setBipartiteStartId(self, startId):
         return _infomap.InfomapWrapper_setBipartiteStartId(self, startId)
+
+    def bipartiteStartId(self):
+        return _infomap.InfomapWrapper_bipartiteStartId(self)
+
+    def isMultilayerNetwork(self):
+        return _infomap.InfomapWrapper_isMultilayerNetwork(self)
+
+    def haveMemoryInput(self):
+        return _infomap.InfomapWrapper_haveMemoryInput(self)
+
+    def numNodes(self):
+        return _infomap.InfomapWrapper_numNodes(self)
+
+    def numPhysicalNodes(self):
+        return _infomap.InfomapWrapper_numPhysicalNodes(self)
+
+    def numLinks(self):
+        return _infomap.InfomapWrapper_numLinks(self)
 
     def getLinks(self, flow):
         return _infomap.InfomapWrapper_getLinks(self, flow)
@@ -3089,20 +2429,119 @@ class InfomapWrapper(InfomapBase):
     def getModules(self, level=1, states=False):
         return _infomap.InfomapWrapper_getModules(self, level, states)
 
+    def iterTree(self, maxClusterLevel=1):
+        return _infomap.InfomapWrapper_iterTree(self, maxClusterLevel)
+
+    def iterTreePhysical(self, maxClusterLevel=1):
+        return _infomap.InfomapWrapper_iterTreePhysical(self, maxClusterLevel)
+
+    def iterLeafModules(self, maxClusterLevel=1):
+        return _infomap.InfomapWrapper_iterLeafModules(self, maxClusterLevel)
+
+    def iterLeafNodes(self, maxClusterLevel=1):
+        return _infomap.InfomapWrapper_iterLeafNodes(self, maxClusterLevel)
+
+    def iterLeafNodesPhysical(self, maxClusterLevel=1):
+        return _infomap.InfomapWrapper_iterLeafNodesPhysical(self, maxClusterLevel)
+
+    def numLeafNodes(self):
+        return _infomap.InfomapWrapper_numLeafNodes(self)
+
+    def numTopModules(self):
+        return _infomap.InfomapWrapper_numTopModules(self)
+
+    def numNonTrivialTopModules(self):
+        return _infomap.InfomapWrapper_numNonTrivialTopModules(self)
+
+    def numLevels(self):
+        return _infomap.InfomapWrapper_numLevels(self)
+
+    def maxTreeDepth(self):
+        return _infomap.InfomapWrapper_maxTreeDepth(self)
+
+    def haveModules(self):
+        return _infomap.InfomapWrapper_haveModules(self)
+
     def codelength(self):
         return _infomap.InfomapWrapper_codelength(self)
+
+    def codelengths(self):
+        return _infomap.InfomapWrapper_codelengths(self)
+
+    def getIndexCodelength(self):
+        return _infomap.InfomapWrapper_getIndexCodelength(self)
+
+    def getModuleCodelength(self):
+        return _infomap.InfomapWrapper_getModuleCodelength(self)
+
+    def getHierarchicalCodelength(self):
+        return _infomap.InfomapWrapper_getHierarchicalCodelength(self)
+
+    def getOneLevelCodelength(self):
+        return _infomap.InfomapWrapper_getOneLevelCodelength(self)
+
+    def getRelativeCodelengthSavings(self):
+        return _infomap.InfomapWrapper_getRelativeCodelengthSavings(self)
 
     def getEntropyRate(self):
         return _infomap.InfomapWrapper_getEntropyRate(self)
 
-    def getMultilevelModules(self, *args):
-        return _infomap.InfomapWrapper_getMultilevelModules(self, *args)
+    def getMaxEntropy(self):
+        return _infomap.InfomapWrapper_getMaxEntropy(self)
 
-    def iterLeafNodes(self, *args):
-        return _infomap.InfomapWrapper_iterLeafNodes(self, *args)
+    def getMetaCodelength(self, unweighted=False):
+        return _infomap.InfomapWrapper_getMetaCodelength(self, unweighted)
 
-    def iterTree(self, *args):
-        return _infomap.InfomapWrapper_iterTree(self, *args)
+    def haveMemory(self):
+        return _infomap.InfomapWrapper_haveMemory(self)
+
+    def elapsedTime(self):
+        return _infomap.InfomapWrapper_elapsedTime(self)
+
+    def getInitialPartition(self):
+        return _infomap.InfomapWrapper_getInitialPartition(self)
+
+    def setInitialPartition(self, moduleIds):
+        return _infomap.InfomapWrapper_setInitialPartition(self, moduleIds)
+
+    def getMultilevelModules(self, states=False):
+        return _infomap.InfomapWrapper_getMultilevelModules(self, states)
+
+    def writeTree(self, *args):
+        return _infomap.InfomapWrapper_writeTree(self, *args)
+
+    def writeFlowTree(self, *args):
+        return _infomap.InfomapWrapper_writeFlowTree(self, *args)
+
+    def writeNewickTree(self, *args):
+        return _infomap.InfomapWrapper_writeNewickTree(self, *args)
+
+    def writeJsonTree(self, *args):
+        return _infomap.InfomapWrapper_writeJsonTree(self, *args)
+
+    def writeCsvTree(self, *args):
+        return _infomap.InfomapWrapper_writeCsvTree(self, *args)
+
+    def writeClu(self, *args):
+        return _infomap.InfomapWrapper_writeClu(self, *args)
+
+    def writePajekNetwork(self, filename, printFlow=False):
+        return _infomap.InfomapWrapper_writePajekNetwork(self, filename, printFlow)
+
+    def writeStateNetwork(self, filename):
+        return _infomap.InfomapWrapper_writeStateNetwork(self, filename)
+
+    def setDirected(self, value):
+        return _infomap.InfomapWrapper_setDirected(self, value)
+
+    def getFlowModelIsSet(self):
+        return _infomap.InfomapWrapper_getFlowModelIsSet(self)
+
+    def getStateInput(self):
+        return _infomap.InfomapWrapper_getStateInput(self)
+
+    def getMultilayerInput(self):
+        return _infomap.InfomapWrapper_getMultilayerInput(self)
 
     def run(self, *args):
         return _infomap.InfomapWrapper_run(self, *args)
@@ -3130,6 +2569,10 @@ class InfomapWrapper(InfomapBase):
 
     def getLinks(self, flow=False):
         return dict(_infomap.InfomapWrapper_getLinks(self, flow))
+
+    flowModelIsSet = property(lambda self: self.getFlowModelIsSet())
+    stateInput = property(lambda self: self.getStateInput())
+    multilayerInput = property(lambda self: self.getMultilayerInput())
 
 
 # Register InfomapWrapper in _infomap:

@@ -5,6 +5,7 @@ from html import escape
 
 from ._bindings import *  # noqa: F401,F403
 from ._bindings import __all__ as _BINDINGS_ALL
+from ._bindings import InfomapWrapper as _InfomapWrapper
 from ._edge_index import add_edge_index as _add_edge_index
 from ._igraph import add_igraph_graph as _add_igraph_graph
 from ._igraph import find_igraph_communities
@@ -328,7 +329,74 @@ __all__ = [
 ]
 
 
-class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # noqa: F405
+class _NetworkProxy:
+    """Compatibility proxy for the former SWIG Network object."""
+
+    def __init__(self, infomap):
+        self._infomap = infomap
+
+    def removeLink(self, source_id, target_id):
+        return _InfomapWrapper.removeLink(self._infomap, source_id, target_id)
+
+    def addMetaData(self, node_id, meta_category):
+        return _InfomapWrapper.addMetaData(self._infomap, node_id, meta_category)
+
+    def bipartiteStartId(self):
+        return _InfomapWrapper.bipartiteStartId(self._infomap)
+
+    def numNodes(self):
+        return _InfomapWrapper.numNodes(self._infomap)
+
+    def numLinks(self):
+        return _InfomapWrapper.numLinks(self._infomap)
+
+    def numPhysicalNodes(self):
+        return _InfomapWrapper.numPhysicalNodes(self._infomap)
+
+    def haveMemoryInput(self):
+        return _InfomapWrapper.haveMemoryInput(self._infomap)
+
+    def writePajekNetwork(self, filename, printFlow=False):
+        return _InfomapWrapper.writePajekNetwork(self._infomap, filename, printFlow)
+
+    def writeStateNetwork(self, filename):
+        return _InfomapWrapper.writeStateNetwork(self._infomap, filename)
+
+    def isMultilayerNetwork(self):
+        return _InfomapWrapper.isMultilayerNetwork(self._infomap)
+
+    def add_multilayer_node(self, state_id, layer_id, node_id, weight=1.0):
+        return _InfomapWrapper.addMultilayerNode(
+            self._infomap,
+            state_id,
+            layer_id,
+            node_id,
+            weight,
+        )
+
+    def add_multilayer_state_link(
+        self,
+        source_state_id,
+        source_layer_id,
+        source_node_id,
+        target_state_id,
+        target_layer_id,
+        target_node_id,
+        weight=1.0,
+    ):
+        return _InfomapWrapper.addMultilayerLink(
+            self._infomap,
+            source_state_id,
+            source_layer_id,
+            source_node_id,
+            target_state_id,
+            target_layer_id,
+            target_node_id,
+            weight,
+        )
+
+
+class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, _InfomapWrapper):
     """Infomap
 
     This class is a thin wrapper around Infomap C++ compiled with SWIG.
@@ -483,6 +551,15 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
 
     def _repr_html_(self):
         return _repr_html(self)
+
+    @property
+    def network(self):
+        """Compatibility proxy for selected former network methods."""
+        try:
+            return self._network_proxy
+        except AttributeError:
+            self._network_proxy = _NetworkProxy(self)
+            return self._network_proxy
 
     @classmethod
     def from_options(cls, options, args=None):
@@ -881,7 +958,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         source_id : int
         target_id : int
         """
-        return self.network.removeLink(source_id, target_id)
+        return super().removeLink(source_id, target_id)
 
     def remove_links(self, links):
         """Remove several links.
@@ -1266,7 +1343,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         node_id : int
         meta_category : int
         """
-        return self.network.addMetaData(node_id, meta_category)
+        return super().addMetaData(node_id, meta_category)
 
     def add_networkx_graph(
         self,
@@ -1553,7 +1630,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         int
             The node id where the second node type starts.
         """
-        return self.network.bipartiteStartId()
+        return super().bipartiteStartId()
 
     @bipartite_start_id.setter
     def bipartite_start_id(self, start_id):
@@ -1742,11 +1819,6 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
             initial_partition=initial_partition,
             **options.to_kwargs(),
         )
-
-    @property
-    def network(self):
-        """Get the internal network."""
-        return super().network()
 
     @property
     def codelength(self):

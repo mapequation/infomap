@@ -44,7 +44,9 @@ def _edge_weights(g: Any, edge_weights: str | Iterable[Any] | None) -> list[floa
 
     if isinstance(edge_weights, str):
         if edge_weights not in g.es.attributes():
-            raise ValueError(f"`edge_weights` edge attribute {edge_weights!r} does not exist.")
+            raise ValueError(
+                f"`edge_weights` edge attribute {edge_weights!r} does not exist."
+            )
         return _validate_weight_values(g.es[edge_weights], name="edge_weights")
 
     try:
@@ -65,7 +67,9 @@ def _vertex_attribute(g, attribute):
         return None
     values = list(g.vs[attribute])
     if any(_is_missing(value) for value in values):
-        raise ValueError(f"`{attribute}` vertex attribute cannot contain missing or NaN values.")
+        raise ValueError(
+            f"`{attribute}` vertex attribute cannot contain missing or NaN values."
+        )
     return values
 
 
@@ -117,7 +121,9 @@ def add_igraph_graph(
     """Add a python-igraph graph to an Infomap instance."""
     _validate_igraph_graph(g)
     if vertex_weights is not None:
-        raise ValueError("`vertex_weights` is not supported by infomap's igraph adapter yet.")
+        raise ValueError(
+            "`vertex_weights` is not supported by infomap's igraph adapter yet."
+        )
 
     if not infomap.flowModelIsSet and g.is_directed():
         infomap.setDirected(True)
@@ -142,7 +148,7 @@ def add_igraph_graph(
 
     if is_multilayer_network:
         for vertex_id in vertices:
-            infomap.network.add_multilayer_node(
+            infomap.addMultilayerNode(
                 vertex_id,
                 layers[vertex_id],
                 phys[vertex_id],
@@ -186,7 +192,7 @@ def add_igraph_graph(
                         weight,
                     )
             else:
-                infomap.network.add_multilayer_state_link(
+                infomap.addMultilayerLink(
                     source,
                     source_layer_id,
                     source_node_id,

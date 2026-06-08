@@ -453,7 +453,7 @@ InfomapClass <- R6::R6Class(
     #' @param source_id Source node id.
     #' @param target_id Target node id.
     remove_link = function(source_id, target_id) {
-      private$.swig$network()$removeLink(
+      private$.swig$removeLink(
         as.integer(source_id),
         as.integer(target_id)
       )
@@ -716,7 +716,7 @@ InfomapClass <- R6::R6Class(
     #' @param node_id Integer node id.
     #' @param meta_category Integer meta category.
     set_meta_data = function(node_id, meta_category) {
-      private$.swig$network()$addMetaData(
+      private$.swig$addMetaData(
         as.integer(node_id),
         as.integer(meta_category)
       )
@@ -759,7 +759,7 @@ InfomapClass <- R6::R6Class(
 
     #' @description Get the bipartite start id (the node id where the second node type starts).
     get_bipartite_start_id = function() {
-      private$.swig$network()$bipartiteStartId()
+      private$.swig$bipartiteStartId()
     },
 
     #' @description Set the bipartite start id.
@@ -1230,7 +1230,7 @@ InfomapClass <- R6::R6Class(
     #' @param filename Output path.
     #' @param flow Whether to write computed flow values per link.
     write_pajek = function(filename, flow = FALSE) {
-      private$.swig$network()$writePajekNetwork(
+      private$.swig$writePajekNetwork(
         as.character(filename),
         as.logical(flow)
       )
@@ -1240,7 +1240,7 @@ InfomapClass <- R6::R6Class(
     #' @description Write the state network.
     #' @param filename Output path.
     write_state_network = function(filename) {
-      private$.swig$network()$writeStateNetwork(as.character(filename))
+      private$.swig$writeStateNetwork(as.character(filename))
       invisible(filename)
     },
 
@@ -1268,8 +1268,6 @@ InfomapClass <- R6::R6Class(
   active = list(
     #' @field swig The underlying SWIG-generated InfomapWrapper handle.
     swig = function() private$.swig,
-    #' @field network The underlying Network reference.
-    network = function() private$.swig$network(),
     #' @field codelength Total (hierarchical) codelength.
     codelength = function() private$.swig$codelength(),
     #' @field codelengths Codelength of each trial.
@@ -1298,13 +1296,13 @@ InfomapClass <- R6::R6Class(
     #' @field num_leaf_nodes Number of leaf nodes in the tree.
     num_leaf_nodes = function() private$.swig$numLeafNodes(),
     #' @field num_nodes Number of nodes (state nodes for higher-order networks).
-    num_nodes = function() private$.swig$network()$numNodes(),
+    num_nodes = function() private$.swig$numNodes(),
     #' @field num_physical_nodes Number of physical nodes.
-    num_physical_nodes = function() private$.swig$network()$numPhysicalNodes(),
+    num_physical_nodes = function() private$.swig$numPhysicalNodes(),
     #' @field num_links Number of links.
-    num_links = function() private$.swig$network()$numLinks(),
+    num_links = function() private$.swig$numLinks(),
     #' @field have_memory `TRUE` if this is a state/multilayer network.
-    have_memory = function() private$.swig$network()$haveMemoryInput(),
+    have_memory = function() private$.swig$haveMemoryInput(),
     #' @field index_codelength Index codelength (top-level part of the codelength).
     index_codelength = function() private$.swig$getIndexCodelength(),
     #' @field module_codelength Module codelength (within-module part).

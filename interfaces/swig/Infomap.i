@@ -320,15 +320,15 @@ void addMultilayerInterLinksFromNumpy2D(InfomapWrapper& infomap, PyObject* links
 %}
 
 %include "std_string.i"
-%include "Config.i"
-%include "InfomapBase.i"
+%include "InfoNode.i"
+%include "InfomapIterator.i"
 
 %include "std_map.i"
 %include "std_vector.i"
 %include "std_pair.i"
 
 namespace std {
-    %template(vector_uint) std::vector<unsigned int>;
+    %template(vector_double) std::vector<double>;
 #ifndef SWIGPYTHON
     %template(vector_link_result) std::vector<infomap::LinkResult>;
 #endif
@@ -371,13 +371,7 @@ int run(const std::string& flags);
 #endif
 }
 
-%extend infomap::InfomapBase
-{
-    double elapsedTime()
-    {
-        return $self->getElapsedTime().getElapsedTimeInSec();
-    }
-}
+%warnfilter(402) infomap::InfomapWrapper;
 
 #ifdef SWIGPYTHON
 %extend infomap::InfomapWrapper
@@ -415,6 +409,10 @@ int run(const std::string& flags);
 
         def getLinks(self, flow=False):
             return dict(_infomap.InfomapWrapper_getLinks(self, flow))
+
+        flowModelIsSet = property(lambda self: self.getFlowModelIsSet())
+        stateInput = property(lambda self: self.getStateInput())
+        multilayerInput = property(lambda self: self.getMultilayerInput())
     %}
 }
 #endif

@@ -41,7 +41,9 @@ struct InfomapWrapper : public InfomapBase {
 public:
   InfomapWrapper() {}
   InfomapWrapper(const std::string& flags) : InfomapBase(flags) {}
+#ifndef SWIG
   InfomapWrapper(const Config& conf) : InfomapBase(conf) {}
+#endif
   ~InfomapWrapper() override = default;
 
   // ===================================================
@@ -67,11 +69,17 @@ public:
 
   void addPhysicalNode(unsigned int id, const std::string& name = "") { m_network.addPhysicalNode(id, name); }
   void addStateNode(unsigned int id, unsigned int physId) { m_network.addStateNode(id, physId); }
+  unsigned int addMultilayerNode(unsigned int stateId, unsigned int layerId, unsigned int physicalId, double weight = 1.0) { return m_network.addMultilayerNode(stateId, layerId, physicalId, weight); }
 
   void addLink(unsigned int sourceId, unsigned int targetId, double weight = 1.0) { m_network.addLink(sourceId, targetId, weight); }
   void addLink(unsigned int sourceId, unsigned int targetId, unsigned long weight) { m_network.addLink(sourceId, targetId, weight); }
   void addLinks(const std::vector<unsigned int>& sourceIds, const std::vector<unsigned int>& targetIds, const std::vector<double>& weights) { m_network.addLinks(sourceIds, targetIds, weights); }
+  bool removeLink(unsigned int sourceId, unsigned int targetId) { return m_network.removeLink(sourceId, targetId); }
   void addMultilayerLink(unsigned int layer1, unsigned int n1, unsigned int layer2, unsigned int n2, double weight = 1.0) { m_network.addMultilayerLink(layer1, n1, layer2, n2, weight); }
+  void addMultilayerLink(unsigned int stateId1, unsigned int layer1, unsigned int n1, unsigned int stateId2, unsigned int layer2, unsigned int n2, double weight)
+  {
+    m_network.addMultilayerLink(stateId1, layer1, n1, stateId2, layer2, n2, weight);
+  }
   void addMultilayerLinks(const std::vector<unsigned int>& sourceLayerIds,
                           const std::vector<unsigned int>& sourceNodeIds,
                           const std::vector<unsigned int>& targetLayerIds,
@@ -97,7 +105,15 @@ public:
     m_network.addMultilayerInterLinks(sourceLayerIds, nodeIds, targetLayerIds, weights);
   }
 
+  void addMetaData(unsigned int nodeId, int meta) { m_network.addMetaData(nodeId, meta); }
+
   void setBipartiteStartId(unsigned int startId) { m_network.setBipartiteStartId(startId); }
+  unsigned int bipartiteStartId() const { return m_network.bipartiteStartId(); }
+  bool isMultilayerNetwork() const { return m_network.isMultilayerNetwork(); }
+  bool haveMemoryInput() const { return m_network.haveMemoryInput(); }
+  unsigned int numNodes() const { return m_network.numNodes(); }
+  unsigned int numPhysicalNodes() const { return m_network.numPhysicalNodes(); }
+  unsigned int numLinks() const { return m_network.numLinks(); }
 
   std::map<std::pair<unsigned int, unsigned int>, double> getLinks(bool flow) const
   {
@@ -149,12 +165,59 @@ public:
     return modules;
   }
 
-  using InfomapBase::codelength;
-  using InfomapBase::getEntropyRate;
-  using InfomapBase::getMultilevelModules;
-  using InfomapBase::iterLeafNodes;
-  using InfomapBase::iterTree;
-  using InfomapBase::run;
+  InfomapIterator iterTree(int maxClusterLevel = 1) { return InfomapBase::iterTree(maxClusterLevel); }
+  InfomapIteratorPhysical iterTreePhysical(int maxClusterLevel = 1) { return InfomapBase::iterTreePhysical(maxClusterLevel); }
+  InfomapLeafModuleIterator iterLeafModules(int maxClusterLevel = 1) { return InfomapBase::iterLeafModules(maxClusterLevel); }
+  InfomapLeafIterator iterLeafNodes(int maxClusterLevel = 1) { return InfomapBase::iterLeafNodes(maxClusterLevel); }
+  InfomapLeafIteratorPhysical iterLeafNodesPhysical(int maxClusterLevel = 1) { return InfomapBase::iterLeafNodesPhysical(maxClusterLevel); }
+
+  unsigned int numLeafNodes() const { return InfomapBase::numLeafNodes(); }
+  unsigned int numTopModules() const { return InfomapBase::numTopModules(); }
+  unsigned int numNonTrivialTopModules() const { return InfomapBase::numNonTrivialTopModules(); }
+  unsigned int numLevels() const { return InfomapBase::numLevels(); }
+  unsigned int maxTreeDepth() const { return InfomapBase::maxTreeDepth(); }
+  bool haveModules() const { return InfomapBase::haveModules(); }
+
+  double codelength() const { return InfomapBase::codelength(); }
+  const std::vector<double>& codelengths() const { return InfomapBase::codelengths(); }
+  double getIndexCodelength() const { return InfomapBase::getIndexCodelength(); }
+  double getModuleCodelength() const { return InfomapBase::getModuleCodelength(); }
+  double getHierarchicalCodelength() const { return InfomapBase::getHierarchicalCodelength(); }
+  double getOneLevelCodelength() const { return InfomapBase::getOneLevelCodelength(); }
+  double getRelativeCodelengthSavings() const { return InfomapBase::getRelativeCodelengthSavings(); }
+  double getEntropyRate() { return InfomapBase::getEntropyRate(); }
+  double getMaxEntropy() { return InfomapBase::getMaxEntropy(); }
+  double getMetaCodelength(bool unweighted = false) const { return InfomapBase::getMetaCodelength(unweighted); }
+  bool haveMemory() const { return InfomapBase::haveMemory(); }
+  double elapsedTime() const { return InfomapBase::getElapsedTime().getElapsedTimeInSec(); }
+
+  const std::map<unsigned int, unsigned int>& getInitialPartition() const { return InfomapBase::getInitialPartition(); }
+  InfomapWrapper& setInitialPartition(const std::map<unsigned int, unsigned int>& moduleIds)
+  {
+    InfomapBase::setInitialPartition(moduleIds);
+    return *this;
+  }
+  std::map<unsigned int, std::vector<unsigned int>> getMultilevelModules(bool states = false) { return InfomapBase::getMultilevelModules(states); }
+
+  std::string writeTree(const std::string& filename = "", bool states = false) { return InfomapBase::writeTree(filename, states); }
+  std::string writeFlowTree(const std::string& filename = "", bool states = false) { return InfomapBase::writeFlowTree(filename, states); }
+  std::string writeNewickTree(const std::string& filename = "", bool states = false) { return InfomapBase::writeNewickTree(filename, states); }
+  std::string writeJsonTree(const std::string& filename = "", bool states = false) { return InfomapBase::writeJsonTree(filename, states); }
+  std::string writeCsvTree(const std::string& filename = "", bool states = false) { return InfomapBase::writeCsvTree(filename, states); }
+  std::string writeClu(const std::string& filename = "", bool states = false, int moduleIndexLevel = 1) { return InfomapBase::writeClu(filename, states, moduleIndexLevel); }
+  void writePajekNetwork(const std::string& filename, bool printFlow = false) const { m_network.writePajekNetwork(filename, printFlow); }
+  void writeStateNetwork(const std::string& filename) const { m_network.writeStateNetwork(filename); }
+
+  InfomapWrapper& setDirected(bool value)
+  {
+    InfomapBase::setDirected(value);
+    return *this;
+  }
+  bool getFlowModelIsSet() const { return flowModelIsSet; }
+  bool getStateInput() const { return stateInput; }
+  bool getMultilayerInput() const { return multilayerInput; }
+
+  void run(const std::string& parameters = "") { InfomapBase::run(parameters); }
 };
 
 } // namespace infomap
