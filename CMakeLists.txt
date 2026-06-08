@@ -106,6 +106,7 @@ list(REMOVE_ITEM infomap_sources "${infomap_main_source}")
 
 add_library(infomap_core ${infomap_headers} ${infomap_sources})
 target_include_directories(infomap_core PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src")
+target_include_directories(infomap_core PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/vendor/nlohmann_json/include")
 target_compile_features(infomap_core PUBLIC cxx_std_14)
 set_target_properties(infomap_core PROPERTIES CXX_EXTENSIONS OFF)
 target_compile_options(infomap_core PRIVATE ${INFOMAP_COMPILE_FLAGS})
@@ -135,6 +136,7 @@ if(BUILD_TESTING)
         PRIVATE
             "${CMAKE_CURRENT_SOURCE_DIR}/src"
             "${CMAKE_CURRENT_SOURCE_DIR}/test"
+            "${CMAKE_CURRENT_SOURCE_DIR}/vendor/nlohmann_json/include"
     )
     target_link_libraries(infomap_native_benchmark PRIVATE infomap_core)
 
@@ -217,6 +219,24 @@ if(BUILD_TESTING)
             "$<TARGET_FILE:infomap_cli>"
     )
     set_tests_properties(run_metadata_cli PROPERTIES LABELS "fast;core;output;cli")
+
+    add_test(
+        NAME run_reports_cli
+        COMMAND
+            "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/test/scripts/check_run_reports_cli.py"
+            "$<TARGET_FILE:infomap_cli>"
+    )
+    set_tests_properties(run_reports_cli PROPERTIES LABELS "fast;core;output;cli")
+
+    add_test(
+        NAME trial_results_cli
+        COMMAND
+            "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/test/scripts/check_trial_results_cli.py"
+            "$<TARGET_FILE:infomap_cli>"
+    )
+    set_tests_properties(trial_results_cli PROPERTIES LABELS "fast;core;merge;cli")
 
     add_test(
         NAME js_output_format_manifest

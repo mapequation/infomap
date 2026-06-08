@@ -73,9 +73,11 @@ all = [
 test = [
   "anndata",
   "igraph",
+  "jsonschema>=4.18",
   "pytest",
   "networkx",
   "pyarrow",
+  "referencing",
   "ruff",
   "scipy",
 ]

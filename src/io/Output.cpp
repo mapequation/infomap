@@ -7,13 +7,75 @@
  For more information, see <http://www.mapequation.org>
  ******************************************************************************/
 
+#include <nlohmann/json.hpp>
+
 #include "Output.h"
 #include "OutputView.h"
 #include "../core/InfomapBase.h"
 #include "../core/StateNetwork.h"
 #include "../io/SafeFile.h"
 
+#include <cmath>
+#include <stdexcept>
+#include <utility>
+
 namespace infomap {
+
+namespace {
+
+  using Json = nlohmann::ordered_json;
+
+  double jsonOutputNumber(double value)
+  {
+    if (!std::isfinite(value) || value == 0.0) {
+      return value;
+    }
+
+    constexpr auto precision = 6;
+    const auto magnitude = std::floor(std::log10(std::fabs(value)));
+    const auto scale = std::pow(10.0, precision - 1 - magnitude);
+    if (!std::isfinite(scale) || scale == 0.0) {
+      return value;
+    }
+    return std::round(value * scale) / scale;
+  }
+
+  Json modulePathJson(const std::string& path)
+  {
+    Json json = Json::array();
+    if (path.empty()) {
+      json.push_back(0);
+      return json;
+    }
+
+    unsigned int value = 0;
+    bool hasDigit = false;
+    for (const auto ch : path) {
+      if (ch >= '0' && ch <= '9') {
+        value = value * 10 + static_cast<unsigned int>(ch - '0');
+        hasDigit = true;
+      } else if (ch == ',' && hasDigit) {
+        json.push_back(value);
+        value = 0;
+        hasDigit = false;
+      } else {
+        throw std::logic_error("Invalid module path: " + path);
+      }
+    }
+    if (!hasDigit) {
+      throw std::logic_error("Invalid module path: " + path);
+    }
+    json.push_back(value);
+    return json;
+  }
+
+  void writeJsonObjectPrefix(std::ostream& outStream, const Json& json)
+  {
+    const auto dumped = json.dump();
+    outStream << dumped.substr(0, dumped.size() - 1);
+  }
+
+} // namespace
 
 std::string getOutputFilename(const InfomapBase& im, const std::string& filename, const std::string& ext, bool states)
 {
@@ -185,170 +247,140 @@ void writeNewickTree(InfomapBase& im, std::ostream& outStream, bool states)
 
 void writeJsonTree(InfomapBase& im, const StateNetwork& network, std::ostream& outStream, bool states, bool writeLinks)
 {
-  auto oldPrecision = outStream.precision();
   OutputView view(im, network, states);
   std::vector<detail::PerLevelStat> perLevelStats;
   aggregatePerLevelCodelength(im.root(), perLevelStats);
 
-  outStream << "{";
+  Json json;
+  json["version"] = std::string("v") + INFOMAP_VERSION;
+  json["args"] = im.parsedString;
+  json["startedAt"] = io::Str() << im.getStartDate();
+  json["completedIn"] = im.getElapsedTime().getElapsedTimeInSec();
+  json["codelength"] = im.codelength();
+  json["numLevels"] = im.maxTreeDepth();
+  json["numTopModules"] = im.numTopModules();
 
-  outStream << "\"version\":\"v" << INFOMAP_VERSION << "\","
-            << "\"args\":\"" << im.parsedString << "\","
-            << "\"startedAt\":\"" << im.getStartDate() << "\","
-            << "\"completedIn\":" << im.getElapsedTime().getElapsedTimeInSec() << ","
-            << "\"codelength\":" << im.codelength() << ","
-            << "\"numLevels\":" << im.maxTreeDepth() << ","
-            << "\"numTopModules\":" << im.numTopModules() << ","
-            << "\"numModules\":[";
-
-  for (size_t i = 0; i < perLevelStats.size(); ++i) {
-    if (i > 0) {
-      outStream << ",";
-    }
-    outStream << perLevelStats[i].numModules;
+  Json numModules = Json::array();
+  for (const auto& perLevelStat : perLevelStats) {
+    numModules.push_back(perLevelStat.numModules);
   }
-
-  outStream << "],"
-            << "\"relativeCodelengthSavings\":" << im.getRelativeCodelengthSavings() << ","
-            << "\"directed\":" << (im.isUndirectedFlow() ? "false" : "true") << ","
-            << "\"flowModel\": \"" << flowModelToString(im.flowModel) << "\","
-            << "\"higherOrder\":" << (im.haveMemory() ? "true" : "false") << ",";
+  json["numModules"] = std::move(numModules);
+  json["relativeCodelengthSavings"] = im.getRelativeCodelengthSavings();
+  json["directed"] = !im.isUndirectedFlow();
+  json["flowModel"] = flowModelToString(im.flowModel);
+  json["higherOrder"] = im.haveMemory();
 
   if (im.haveMemory()) {
-    outStream << "\"stateLevel\":" << (states ? "true" : "false") << ",";
+    json["stateLevel"] = states;
   }
 
   if (im.isBipartite()) {
-    outStream << "\"bipartiteStartId\":" << network.bipartiteStartId() << ",";
+    json["bipartiteStartId"] = network.bipartiteStartId();
   }
 
-  outStream << std::setprecision(6);
+  writeJsonObjectPrefix(outStream, json);
+  outStream << ",\"nodes\":[";
 
-  outStream << "\"nodes\":[";
-
-  auto metaData = network.metaData();
-  auto writeMeta = [&metaData](auto& outStream, auto nodeId) {
-    outStream << "\"metadata\":{";
-    auto meta = metaData[nodeId];
-    for (unsigned int i = 0; i < meta.size(); ++i) {
-      outStream << '"' << i << "\":"
-                << '"' << meta[i] << '"'; // metadata class as string to highlight that this is a categorical variable
-      if (i < meta.size() - 1)
-        outStream << ',';
+  const auto& metaData = network.metaData();
+  auto metadataJson = [&metaData](auto nodeId) {
+    Json metadata;
+    const auto metaIt = metaData.find(nodeId);
+    if (metaIt == metaData.end()) {
+      return metadata;
     }
-    outStream << "},";
+    const auto& meta = metaIt->second;
+    for (unsigned int i = 0; i < meta.size(); ++i) {
+      metadata[std::to_string(i)] = std::to_string(meta[i]);
+    }
+    return metadata;
   };
-
-  // don't append a comma after the last entry
-  auto first = true;
+  auto firstNode = true;
+  auto writeNode = [&](const Json& node) {
+    if (!firstNode) {
+      outStream << ",";
+    }
+    firstNode = false;
+    outStream << node;
+  };
 
   if (view.isHigherOrderPhysicalLevel()) {
     view.forEachLeaf(1, OutputLeafPolicy::HideBipartite, [&](const OutputLeafRow& row) {
-      const auto path = io::stringify(row.path, ",");
-
-      if (first) {
-        first = false;
-      } else {
-        outStream << ",";
-      }
-
-      outStream << "{"
-                << "\"path\":[" << path << "],"
-                << "\"name\":\"" << row.name << "\","
-                << "\"flow\":" << row.flow << ","
-                << "\"mec\":" << row.modularCentrality << ","
-                << "\"id\":" << row.physicalId << "}";
+      Json node;
+      node["path"] = row.path;
+      node["name"] = row.name;
+      node["flow"] = jsonOutputNumber(row.flow);
+      node["mec"] = jsonOutputNumber(row.modularCentrality);
+      node["id"] = row.physicalId;
+      writeNode(node);
     });
   } else {
     const auto multilevelModules = im.getMultilevelModules(states);
 
     view.forEachLeaf(1, OutputLeafPolicy::HideBipartite, [&](const OutputLeafRow& row) {
-      if (first) {
-        first = false;
-      } else {
-        outStream << ",";
-      }
-
-      const auto path = io::stringify(row.path, ", ");
-      const auto modules = im.haveModules() ? io::stringify(multilevelModules.at(view.leafId(row)), ", ") : "1";
-
-      outStream << "{"
-                << "\"path\":[" << path << "],"
-                << "\"modules\":[" << modules << "],"
-                << "\"name\":\"" << row.name << "\","
-                << "\"flow\":" << row.flow << ","
-                << "\"mec\":" << row.modularCentrality << ",";
+      Json node;
+      node["path"] = row.path;
+      node["modules"] = im.haveModules() ? Json(multilevelModules.at(view.leafId(row))) : Json::array({ 1 });
+      node["name"] = row.name;
+      node["flow"] = jsonOutputNumber(row.flow);
+      node["mec"] = jsonOutputNumber(row.modularCentrality);
 
       // can't currently use both memory and meta map equation
       if (view.hasMetaData() && !states) {
-        writeMeta(outStream, row.physicalId);
+        auto metadata = metadataJson(row.physicalId);
+        if (!metadata.empty()) {
+          node["metadata"] = std::move(metadata);
+        }
       }
 
       if (states) {
-        outStream << "\"stateId\":" << row.stateId << ",";
-        if (view.isMultilayer())
-          outStream << "\"layerId\":" << row.layerId << ",";
+        node["stateId"] = row.stateId;
+        if (view.isMultilayer()) {
+          node["layerId"] = row.layerId;
+        }
       }
 
-      outStream << "\"id\":" << row.physicalId << "}";
+      node["id"] = row.physicalId;
+      writeNode(node);
     });
   }
+  outStream << "],\"modules\":[";
 
-  outStream << "],"; // tree
-
-  // -------------
-  // Write modules
-  // -------------
-
-  first = true;
-
-  outStream << "\"modules\":[";
-
+  auto firstModule = true;
   view.forEachModule([&](const OutputModuleRow& module) {
-    if (first) {
-      first = false;
-    } else {
+    Json item;
+    item["path"] = modulePathJson(module.jsonPath);
+    item["enterFlow"] = jsonOutputNumber(module.enterFlow);
+    item["exitFlow"] = jsonOutputNumber(module.exitFlow);
+    item["numEdges"] = module.links.size();
+    item["numChildren"] = module.numChildren;
+    item["codelength"] = jsonOutputNumber(module.codelength);
+
+    if (!firstModule) {
       outStream << ",";
     }
-
-    outStream << "{";
-
-    outStream << "\"path\":[" << (module.jsonPath.empty() ? "0" : module.jsonPath) << "],"
-              << "\"enterFlow\":" << module.enterFlow << ','
-              << "\"exitFlow\":" << module.exitFlow << ','
-              << "\"numEdges\":" << module.links.size() << ','
-              << "\"numChildren\":" << module.numChildren << ','
-              << "\"codelength\":" << module.codelength;
+    firstModule = false;
 
     if (writeLinks) {
-      outStream << ","
-                << "\"links\":[";
-
+      writeJsonObjectPrefix(outStream, item);
+      outStream << ",\"links\":[";
       auto firstLink = true;
-
       for (auto itLink : module.links) {
-        if (firstLink) {
-          firstLink = false;
-        } else {
+        if (!firstLink) {
           outStream << ",";
         }
-
-        unsigned int sourceId = itLink.first.first;
-        unsigned int targetId = itLink.first.second;
-        double flow = itLink.second;
-        outStream << "{\"source\":" << sourceId << ",\"target\":" << targetId << ",\"flow\":" << flow << "}";
+        firstLink = false;
+        Json link;
+        link["source"] = itLink.first.first;
+        link["target"] = itLink.first.second;
+        link["flow"] = jsonOutputNumber(itLink.second);
+        outStream << link;
       }
-      outStream << "]"; // links
+      outStream << "]}";
+    } else {
+      outStream << item;
     }
-
-    outStream << "}";
   });
-
-  outStream << "]"; // modules
-
-  outStream << "}";
-
-  outStream << std::setprecision(oldPrecision);
+  outStream << "]}";
 }
 
 void writeCsvTree(InfomapBase& im, const StateNetwork& network, std::ostream& outStream, bool states)

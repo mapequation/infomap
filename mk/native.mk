@@ -32,7 +32,7 @@ $(NATIVE_BINARY): $(NATIVE_OBJECTS)
 
 $(NATIVE_OBJECT_DIR)/%.o: src/%.cpp $(NATIVE_HEADER_DEP) $(MK_FILES) Makefile
 	@mkdir -p $(dir $@)
-	$(CXX_COMPILE) $(NATIVE_CXXFLAGS) $(DEP_FLAGS) -c $< -o $@
+	$(CXX_COMPILE) $(NATIVE_CXXFLAGS) $(INFOMAP_VENDOR_CPPFLAGS) $(DEP_FLAGS) -c $< -o $@
 
 build-lib: $(LIB_OUTPUT) $(LIB_HEADERS)
 	@echo "Wrote static library to lib/ and headers to include/"
@@ -48,7 +48,7 @@ $(PUBLIC_INCLUDE_DIR)/%.h: src/%.h
 
 $(LIB_OBJECT_DIR)/%.o: src/%.cpp $(NATIVE_HEADER_DEP) $(MK_FILES) Makefile
 	@mkdir -p $(dir $@)
-	$(CXX_COMPILE) $(NATIVE_CXXFLAGS) $(DEP_FLAGS) -DNS_INFOMAP -DAS_LIB -c $< -o $@
+	$(CXX_COMPILE) $(NATIVE_CXXFLAGS) $(INFOMAP_VENDOR_CPPFLAGS) $(DEP_FLAGS) -DNS_INFOMAP -DAS_LIB -c $< -o $@
 
 format-native:
 	$(CLANG_FORMAT) -i $(HEADERS) $(SOURCES)

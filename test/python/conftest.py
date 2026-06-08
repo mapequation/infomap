@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib.util
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, Union
@@ -25,6 +26,16 @@ def _normalized_pajek_lines(path: Path) -> list[str]:
     return lines
 
 
+def _load_schema_validation():
+    helper = Path(__file__).resolve().parents[1] / "scripts" / "schema_validation.py"
+    spec = importlib.util.spec_from_file_location("schema_validation", helper)
+    assert spec is not None
+    assert spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 @pytest.fixture(scope="session")
 def test_paths() -> TestPaths:
     repo_root = Path(__file__).resolve().parents[2]
@@ -37,6 +48,11 @@ def test_paths() -> TestPaths:
         expected_fixtures=fixtures_root / "expected",
         example_networks=repo_root / "examples" / "networks",
     )
+
+
+@pytest.fixture(scope="session")
+def validate_json_schema():
+    return _load_schema_validation().validate_json_schema
 
 
 @pytest.fixture

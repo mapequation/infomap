@@ -8,6 +8,8 @@ import sys
 import tempfile
 from pathlib import Path
 
+from schema_validation import validate_json_schema
+
 
 def read_cpp_manifest(source: Path) -> dict[str, object]:
     repo_root = source.parents[2]
@@ -33,6 +35,8 @@ def read_cpp_manifest(source: Path) -> dict[str, object]:
                 "-std=c++14",
                 "-I",
                 str(repo_root / "src"),
+                "-I",
+                str(repo_root / "vendor" / "nlohmann_json" / "include"),
                 str(helper),
                 str(source),
                 "-o",
@@ -45,11 +49,15 @@ def read_cpp_manifest(source: Path) -> dict[str, object]:
 
 def main() -> int:
     if len(sys.argv) != 3:
-        print("Usage: check_js_output_formats.py OUTPUT_FORMATS_CPP OUTPUT_FORMATS_JSON")
+        print(
+            "Usage: check_js_output_formats.py OUTPUT_FORMATS_CPP OUTPUT_FORMATS_JSON"
+        )
         return 2
 
     cpp_manifest = read_cpp_manifest(Path(sys.argv[1]))
     js_manifest = json.loads(Path(sys.argv[2]).read_text())
+    validate_json_schema(cpp_manifest, "output-formats-manifest.schema.json")
+    validate_json_schema(js_manifest, "output-formats-manifest.schema.json")
 
     if js_manifest != cpp_manifest:
         print("JavaScript output format metadata differs from src/io/OutputFormats.cpp")

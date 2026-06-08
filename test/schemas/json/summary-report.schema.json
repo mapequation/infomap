@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mapequation.org/infomap/test-schemas/summary-report.schema.json",
+  "type": "object",
+  "required": [
+    "version",
+    "codelength",
+    "top_modules",
+    "levels",
+    "trials",
+    "best_trial",
+    "trial_codelengths",
+    "trial_top_modules"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "version": { "type": "string" },
+    "codelength": { "type": "number" },
+    "top_modules": { "type": "integer", "minimum": 0 },
+    "levels": { "type": "integer", "minimum": 0 },
+    "trials": { "type": "integer", "minimum": 0 },
+    "best_trial": { "type": "integer", "minimum": 0 },
+    "trial_codelengths": {
+      "type": "array",
+      "items": { "type": "number" }
+    },
+    "trial_top_modules": {
+      "type": "array",
+      "items": { "type": "integer", "minimum": 0 }
+    }
+  }
+}

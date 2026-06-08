@@ -32,6 +32,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_SKELETON = REPO_ROOT / "interfaces" / "R" / "infomap"
 DEFAULT_GENERATED = REPO_ROOT / "interfaces" / "R" / "generated"
 DEFAULT_SRC = REPO_ROOT / "src"
+DEFAULT_VENDOR = REPO_ROOT / "vendor"
 DEFAULT_OUT_DIR = REPO_ROOT / "build" / "R" / "infomap"
 PYTHON_VERSION_FILE = (
     REPO_ROOT / "interfaces" / "python" / "src" / "infomap" / "_version.py"
@@ -120,6 +121,7 @@ def stage(
     skeleton: Path,
     generated: Path,
     src: Path,
+    vendor: Path,
     in_place: bool,
 ) -> None:
     if in_place:
@@ -160,6 +162,7 @@ def stage(
     # to resolve when -I. is on the include path.
     nested_src = pkg_src / "src"
     copy_tree(src, nested_src)
+    copy_tree(vendor / "nlohmann_json", out_dir / "inst" / "nlohmann_json")
 
     cpp_sources = ["infomap_wrap.cpp"] + [
         f"src/{p.relative_to(src).as_posix()}" for p in find_cpp_sources(src)
@@ -210,6 +213,12 @@ def main() -> int:
         help="Path to the C++ core sources (default: src).",
     )
     parser.add_argument(
+        "--vendor",
+        type=Path,
+        default=DEFAULT_VENDOR,
+        help="Path to vendored C++ dependencies (default: vendor).",
+    )
+    parser.add_argument(
         "--in-place",
         action="store_true",
         help="Stage into the skeleton itself; skip skeleton copy and keep configure scripts.",
@@ -220,11 +229,12 @@ def main() -> int:
     skeleton = args.skeleton.resolve()
     generated = args.generated.resolve()
     src = args.src.resolve()
+    vendor = args.vendor.resolve()
 
     if args.in_place:
         out_dir = skeleton
 
-    stage(out_dir, skeleton, generated, src, args.in_place)
+    stage(out_dir, skeleton, generated, src, vendor, args.in_place)
 
     where = "in place" if args.in_place else f"into {out_dir}"
     print(f"Staged infomap R package {where}.", file=sys.stderr)

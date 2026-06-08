@@ -7,50 +7,17 @@
  For more information, see <http://www.mapequation.org>
  ******************************************************************************/
 
+#include <nlohmann/json.hpp>
+
 #include "TrialResults.h"
 
-#include <iomanip>
-#include <sstream>
+#include <utility>
 
 namespace infomap {
 
 namespace {
 
-  // Local JSON string escaper — identical pattern to RunReport.cpp / ParameterCatalog.cpp.
-  std::string jsonString(const std::string& value)
-  {
-    std::ostringstream escaped;
-    escaped << '"';
-    for (char c : value) {
-      switch (c) {
-      case '"':
-      case '\\':
-        escaped << '\\' << c;
-        break;
-      case '\b':
-        escaped << "\\b";
-        break;
-      case '\f':
-        escaped << "\\f";
-        break;
-      case '\n':
-        escaped << "\\n";
-        break;
-      case '\r':
-        escaped << "\\r";
-        break;
-      case '\t':
-        escaped << "\\t";
-        break;
-      default:
-        escaped << c;
-        break;
-      }
-    }
-    escaped << '"';
-    return escaped.str();
-  }
-
+  using Json = nlohmann::ordered_json;
 
 } // namespace
 
@@ -60,35 +27,30 @@ namespace {
 
 std::string serializeTrialResults(const TrialResultsFile& r)
 {
-  std::ostringstream out;
-  out << std::setprecision(12);
-  out << '{'
-      << "\"network_fingerprint\":" << jsonString(r.networkFingerprint) << ','
-      << "\"config_fingerprint\":" << jsonString(r.configFingerprint) << ','
-      << "\"infomap_version\":" << jsonString(r.infomapVersion) << ','
-      << "\"base_seed\":" << r.baseSeed << ','
-      << "\"trial_offset\":" << r.trialOffset << ','
-      << "\"num_trials\":" << r.numTrials << ','
-      << "\"best_tree_file\":" << jsonString(r.bestTreeFile) << ','
-      << "\"trials\":[";
+  Json json;
+  json["network_fingerprint"] = r.networkFingerprint;
+  json["config_fingerprint"] = r.configFingerprint;
+  json["infomap_version"] = r.infomapVersion;
+  json["base_seed"] = r.baseSeed;
+  json["trial_offset"] = r.trialOffset;
+  json["num_trials"] = r.numTrials;
+  json["best_tree_file"] = r.bestTreeFile;
 
-  bool first = true;
+  Json trials = Json::array();
   for (const auto& t : r.trials) {
-    if (!first) out << ',';
-    first = false;
-    out << '{'
-        << "\"trial\":" << t.trial << ','
-        << "\"seed\":" << t.seed << ','
-        << "\"codelength\":" << t.codelength << ','
-        << "\"num_top_modules\":" << t.numTopModules << ','
-        << "\"num_levels\":" << t.numLevels << ','
-        << "\"thread\":" << t.thread << ','
-        << "\"time_s\":" << t.timeSec
-        << '}';
+    Json trial;
+    trial["trial"] = t.trial;
+    trial["seed"] = t.seed;
+    trial["codelength"] = t.codelength;
+    trial["num_top_modules"] = t.numTopModules;
+    trial["num_levels"] = t.numLevels;
+    trial["thread"] = t.thread;
+    trial["time_s"] = t.timeSec;
+    trials.push_back(std::move(trial));
   }
+  json["trials"] = std::move(trials);
 
-  out << "]}\n";
-  return out.str();
+  return json.dump() + '\n';
 }
 
 } // namespace infomap

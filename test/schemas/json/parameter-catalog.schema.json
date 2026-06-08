@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mapequation.org/infomap/test-schemas/parameter-catalog.schema.json",
+  "type": "object",
+  "required": ["parameters"],
+  "additionalProperties": false,
+  "properties": {
+    "parameters": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/parameter" }
+    }
+  },
+  "$defs": {
+    "bindingDefault": {
+      "type": "object",
+      "required": ["value"],
+      "additionalProperties": false,
+      "properties": {
+        "value": { "type": "string" }
+      }
+    },
+    "bindingDoc": {
+      "type": "object",
+      "required": ["description"],
+      "additionalProperties": false,
+      "properties": {
+        "description": { "type": "string" }
+      }
+    },
+    "parameter": {
+      "type": "object",
+      "required": [
+        "long",
+        "short",
+        "description",
+        "group",
+        "required",
+        "advanced",
+        "incremental",
+        "default"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "long": { "type": "string", "pattern": "^--[A-Za-z0-9][A-Za-z0-9-]*$" },
+        "short": { "type": "string", "pattern": "^(|-[A-Za-z0-9?])$" },
+        "description": { "type": "string" },
+        "group": { "type": "string" },
+        "required": { "type": "boolean" },
+        "advanced": { "type": "boolean" },
+        "incremental": { "type": "boolean" },
+        "longType": { "type": "string" },
+        "shortType": { "type": "string", "minLength": 1, "maxLength": 1 },
+        "default": {
+          "oneOf": [
+            { "type": "boolean" },
+            { "type": "string" }
+          ]
+        },
+        "choices": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1
+        },
+        "min": { "type": "string" },
+        "max": { "type": "string" },
+        "bindingNames": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": false,
+          "properties": {
+            "python": { "type": "string" },
+            "r": { "type": "string" },
+            "ts": { "type": "string" }
+          }
+        },
+        "renderPolicy": { "type": "string" },
+        "bindingDocs": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": false,
+          "properties": {
+            "python": { "$ref": "#/$defs/bindingDoc" },
+            "r": { "$ref": "#/$defs/bindingDoc" },
+            "ts": { "$ref": "#/$defs/bindingDoc" }
+          }
+        },
+        "bindingDefaults": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": false,
+          "properties": {
+            "python": { "$ref": "#/$defs/bindingDefault" },
+            "r": { "$ref": "#/$defs/bindingDefault" },
+            "ts": { "$ref": "#/$defs/bindingDefault" }
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "required": { "const": true } },
+            "required": ["required"]
+          },
+          "then": { "required": ["longType", "shortType"] }
+        }
+      ]
+    }
+  }
+}

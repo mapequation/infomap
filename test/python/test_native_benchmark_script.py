@@ -34,7 +34,10 @@ def _load_benchmark_module():
 def test_benchmark_case_tolerates_missing_rebuild_metrics(monkeypatch, tmp_path: Path):
     benchmark_module = _load_benchmark_module()
     payload = {
+        "name": "toy",
+        "path": str(tmp_path / "toy.net"),
         "flags": "--silent --no-file-output --num-trials 1 --seed 123",
+        "iterations": 1,
         "total_sec": 0.3,
         "read_input_sec": 0.1,
         "run_sec": 0.2,
@@ -89,7 +92,10 @@ def test_benchmark_case_collects_dynamic_rebuild_bucket_labels(
 ):
     benchmark_module = _load_benchmark_module()
     payload = {
+        "name": "toy",
+        "path": str(tmp_path / "toy.net"),
         "flags": "--silent --no-file-output --num-trials 1 --seed 123",
+        "iterations": 1,
         "total_sec": 0.5,
         "read_input_sec": 0.1,
         "run_sec": 0.4,
@@ -164,7 +170,10 @@ def test_benchmark_case_discards_warmup_samples(monkeypatch, tmp_path: Path):
 
     def payload(run_sec: float) -> dict[str, object]:
         return {
+            "name": "toy",
+            "path": str(tmp_path / "toy.net"),
             "flags": "--silent --no-file-output --num-trials 1 --seed 123",
+            "iterations": 1,
             "total_sec": run_sec + 0.1,
             "read_input_sec": 0.1,
             "run_sec": run_sec,

@@ -1,3 +1,5 @@
+#include <nlohmann/json.hpp>
+
 #include "Infomap.h"
 #include "core/InfoEdge.h"
 #include "core/InfoNode.h"
@@ -6,9 +8,9 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
-#include <sstream>
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 
 #if defined(__unix__) || defined(__APPLE__)
@@ -17,33 +19,7 @@
 
 namespace {
 
-std::string jsonEscape(const std::string& value)
-{
-  std::ostringstream escaped;
-  for (char c : value) {
-    switch (c) {
-    case '\\':
-      escaped << "\\\\";
-      break;
-    case '"':
-      escaped << "\\\"";
-      break;
-    case '\n':
-      escaped << "\\n";
-      break;
-    case '\r':
-      escaped << "\\r";
-      break;
-    case '\t':
-      escaped << "\\t";
-      break;
-    default:
-      escaped << c;
-      break;
-    }
-  }
-  return escaped.str();
-}
+using Json = nlohmann::ordered_json;
 
 unsigned long long peakRssBytes()
 {
@@ -78,18 +54,18 @@ struct RunSample {
   double codelength = 0.0;
 };
 
-void printRunSample(const RunSample& sample)
+Json runSampleJson(const RunSample& sample)
 {
-  std::cout << "{";
-  std::cout << "\"iteration\":" << sample.iteration << ",";
-  std::cout << "\"read_input_sec\":" << sample.readInputSec << ",";
-  std::cout << "\"run_sec\":" << sample.runSec << ",";
-  std::cout << "\"total_sec\":" << sample.totalSec << ",";
-  std::cout << "\"peak_rss_bytes\":" << sample.peakRssBytes << ",";
-  std::cout << "\"num_top_modules\":" << sample.numTopModules << ",";
-  std::cout << "\"num_levels\":" << sample.numLevels << ",";
-  std::cout << "\"codelength\":" << sample.codelength;
-  std::cout << "}";
+  Json json;
+  json["iteration"] = sample.iteration;
+  json["read_input_sec"] = sample.readInputSec;
+  json["run_sec"] = sample.runSec;
+  json["total_sec"] = sample.totalSec;
+  json["peak_rss_bytes"] = sample.peakRssBytes;
+  json["num_top_modules"] = sample.numTopModules;
+  json["num_levels"] = sample.numLevels;
+  json["codelength"] = sample.codelength;
+  return json;
 }
 
 } // namespace
@@ -176,33 +152,31 @@ int main(int argc, char* argv[])
       });
     }
 
-    std::cout << "{";
-    std::cout << "\"name\":\"" << jsonEscape(caseName) << "\",";
-    std::cout << "\"path\":\"" << jsonEscape(inputPath) << "\",";
-    std::cout << "\"flags\":\"" << jsonEscape(flags) << "\",";
-    std::cout << "\"iterations\":" << iterations << ",";
-    std::cout << "\"read_input_sec\":" << readInputSec << ",";
-    std::cout << "\"run_sec\":" << totalRunSec << ",";
-    std::cout << "\"total_sec\":" << (readInputSec + totalRunSec) << ",";
-    std::cout << "\"peak_rss_bytes\":" << peakRss << ",";
-    std::cout << "\"node_size_bytes\":" << sizeof(infomap::InfoNode) << ",";
-    std::cout << "\"edge_size_bytes\":" << sizeof(infomap::InfoEdge) << ",";
-    std::cout << "\"num_nodes\":" << inputNodeCount << ",";
-    std::cout << "\"num_links\":" << inputLinkCount << ",";
-    std::cout << "\"num_top_modules\":" << im.numTopModules() << ",";
-    std::cout << "\"num_levels\":" << im.numLevels() << ",";
-    std::cout << "\"codelength\":" << im.codelength() << ",";
-    std::cout << "\"higher_order_input\":" << (higherOrderInput ? "true" : "false") << ",";
-    std::cout << "\"directed_input\":" << (directedInput ? "true" : "false") << ",";
-    std::cout << "\"runs\":[";
-    for (std::size_t i = 0; i < runs.size(); ++i) {
-      if (i > 0) {
-        std::cout << ",";
-      }
-      printRunSample(runs[i]);
+    Json result;
+    result["name"] = caseName;
+    result["path"] = inputPath;
+    result["flags"] = flags;
+    result["iterations"] = iterations;
+    result["read_input_sec"] = readInputSec;
+    result["run_sec"] = totalRunSec;
+    result["total_sec"] = readInputSec + totalRunSec;
+    result["peak_rss_bytes"] = peakRss;
+    result["node_size_bytes"] = sizeof(infomap::InfoNode);
+    result["edge_size_bytes"] = sizeof(infomap::InfoEdge);
+    result["num_nodes"] = inputNodeCount;
+    result["num_links"] = inputLinkCount;
+    result["num_top_modules"] = im.numTopModules();
+    result["num_levels"] = im.numLevels();
+    result["codelength"] = im.codelength();
+    result["higher_order_input"] = higherOrderInput;
+    result["directed_input"] = directedInput;
+
+    Json runItems = Json::array();
+    for (const auto& run : runs) {
+      runItems.push_back(runSampleJson(run));
     }
-    std::cout << "]";
-    std::cout << "}\n";
+    result["runs"] = std::move(runItems);
+    std::cout << result.dump() << '\n';
   } catch (const std::exception& error) {
     std::cerr << "Error: " << error.what() << "\n";
     return 1;
