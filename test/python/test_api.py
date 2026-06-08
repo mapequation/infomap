@@ -367,9 +367,10 @@ def test_run_with_options_forwards_to_run(monkeypatch):
 
 def test_network_property_returns_compatibility_proxy(make_infomap):
     im = make_infomap()
+    network = im.network
 
-    assert im.network is im.network
-    assert isinstance(im.network, facade_module._NetworkProxy)
+    assert im.network is network
+    assert isinstance(network, facade_module._NetworkProxy)
 
 
 def test_network_proxy_forwards_basic_network_methods(make_infomap, tmp_path):
