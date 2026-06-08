@@ -217,6 +217,9 @@ public:
   bool getStateInput() const { return stateInput; }
   bool getMultilayerInput() const { return multilayerInput; }
 
+#ifndef SWIG
+  using InfomapBase::run;
+#endif
   void run(const std::string& parameters = "") { InfomapBase::run(parameters); }
 };
 

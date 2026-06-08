@@ -271,6 +271,21 @@ def test_py_typed_marker_is_packaged():
     assert importlib.resources.files("infomap").joinpath("py.typed").is_file()
 
 
+def test_result_iterator_types_are_top_level_exports():
+    exported_names = {
+        "InfoNode",
+        "InfomapIterator",
+        "InfomapLeafModuleIterator",
+        "InfomapLeafIterator",
+        "InfomapIteratorPhysical",
+        "InfomapLeafIteratorPhysical",
+    }
+
+    for name in exported_names:
+        assert getattr(infomap_module, name) is getattr(infomap_module._swig, name)
+        assert name in infomap_module.__all__
+
+
 def test_infomap_options_to_args_matches_construct_args():
     options = infomap_module.InfomapOptions(
         no_infomap=True,

@@ -199,10 +199,8 @@ public:
   unsigned int bipartiteStartId() const { return m_bipartiteStartId; }
   void setBipartiteStartId(unsigned int value) { m_bipartiteStartId = value; }
   // Multilayer
-#ifndef SWIG
   unsigned int numLayers() const { return m_layers.size(); }
   const std::set<unsigned int>& layers() const { return m_layers; }
-#endif
 
   /**
    * Write state network to file.

@@ -138,7 +138,6 @@ struct Config {
   bool printCsv = false;
   bool printClu = false;
   bool printAllTrials = false;
-#ifndef SWIG
   bool noOverwriteOutput = false;
   bool printConfigFingerprint = false;
   std::string timingJsonPath;
@@ -146,11 +145,10 @@ struct Config {
   std::string runManifestPath;
   bool memoryReport = false;
   std::string numThreadsArg = "auto"; // raw --num-threads / --threads argument
-  unsigned int numThreads = 0;        // 0 = auto; positive = explicit request
-  unsigned int trialOffset = 0;       // global index of this shard's first trial
-  std::string trialResultsPath;       // --trial-results <file.json>
-  bool noFinalOutput = false;         // suppress aggregate final write (per-trial still written)
-#endif
+  unsigned int numThreads = 0; // 0 = auto; positive = explicit request
+  unsigned int trialOffset = 0; // global index of this shard's first trial
+  std::string trialResultsPath; // --trial-results <file.json>
+  bool noFinalOutput = false; // suppress aggregate final write (per-trial still written)
   int cluLevel = 1; // Write modules at specified depth from root. 1, 2, ... or -1 for bottom level
   bool printFlowNetwork = false;
   bool printPajekNetwork = false;
@@ -232,7 +230,6 @@ struct Config {
     outDirectory = other.outDirectory;
     outName = other.outName;
     outputFormats = other.outputFormats;
-#ifndef SWIG
     noOverwriteOutput = other.noOverwriteOutput;
     printConfigFingerprint = other.printConfigFingerprint;
     timingJsonPath = other.timingJsonPath;
@@ -244,7 +241,6 @@ struct Config {
     trialOffset = other.trialOffset;
     trialResultsPath = other.trialResultsPath;
     noFinalOutput = other.noFinalOutput;
-#endif
     verbosity = other.verbosity;
     verboseNumberPrecision = other.verboseNumberPrecision;
     prettyOutput = other.prettyOutput;
@@ -275,9 +271,7 @@ struct Config {
 
   bool isMultilayerNetwork() const { return multilayerInput || !additionalInput.empty(); }
   bool isBipartite() const { return bipartite; }
-#ifndef SWIG
   bool isRegularizedMultilayerFlow() const { return isMultilayerNetwork() && regularized; }
-#endif
 
   bool haveMemory() const { return stateInput; }
   bool printStates() const { return stateOutput; }
@@ -286,9 +280,7 @@ struct Config {
 
   bool haveOutput() const { return !noFileOutput; }
 
-#ifndef SWIG
   bool overwriteOutput() const { return !noOverwriteOutput; }
-#endif
 
   bool haveModularResultOutput() const
   {

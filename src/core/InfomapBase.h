@@ -136,13 +136,11 @@ public:
     return oneLevelCodelength < 1e-16 ? 0 : 1.0 - codelength() / oneLevelCodelength;
   }
 
-#ifndef SWIG
   double getRelativeCodelengthSavings(double codelength) const
   {
     auto oneLevelCodelength = getOneLevelCodelength();
     return oneLevelCodelength < 1e-16 ? 0 : 1.0 - codelength / oneLevelCodelength;
   }
-#endif
 
   double getEntropyRate() { return m_entropyRate; }
   double getMaxEntropy() { return m_maxEntropy; }
