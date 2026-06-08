@@ -156,6 +156,15 @@ jobs:
         with:
           python-version: "3.14"
 
+      - name: Install R package dependencies
+        uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          working-directory: interfaces/R/infomap
+          extra-packages: |
+            any::knitr
+            any::rmarkdown
+            any::igraph
+
       - name: Build source tarball
         run: make build-r
 
