@@ -76,7 +76,7 @@ public:
 
   /// fmt-native logging: Log(level).print("{} of {}", a, b).
   /// The format string is checked at compile time under C++20 (consteval);
-  /// on C++14 it is validated at runtime. Rendering (the heavy fmt/format.h)
+  /// pre-C++20 it is validated at runtime. Rendering (the heavy fmt/format.h)
   /// lives in vprint() in Log.cpp so this header only needs fmt/core.h.
   template <typename... Args>
   Log& print(fmt::format_string<Args...> format, Args&&... args)
