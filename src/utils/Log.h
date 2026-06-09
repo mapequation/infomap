@@ -14,17 +14,10 @@
 #include <limits>
 #include <iomanip>
 #include <type_traits>
-#include <cstdint>
 
 namespace infomap {
 
 struct hideIf;
-
-enum class LogChannel : std::uint8_t {
-  Legacy,
-  Pretty,
-  Important,
-};
 
 class Log {
   using ostreamFuncPtr = std::add_pointer_t<std::ostream&(std::ostream&)>;
@@ -56,12 +49,9 @@ public:
    * and maxLevel is above or equal Log::verboseLevel()
    */
   explicit Log(unsigned int level = 0, unsigned int maxLevel = std::numeric_limits<int>::max())
-      : Log(LogChannel::Legacy, level, maxLevel) {}
+      : m_level(level), m_maxLevel(maxLevel), m_visible(isVisible(m_level, m_maxLevel)) {}
 
-  explicit Log(LogChannel channel, unsigned int level = 0, unsigned int maxLevel = std::numeric_limits<int>::max())
-      : m_channel(channel), m_level(level), m_maxLevel(maxLevel), m_visible(isVisible(m_channel, m_level, m_maxLevel)) {}
-
-  bool isVisible() const { return isVisible(m_channel, m_level, m_maxLevel); }
+  bool isVisible() const { return isVisible(m_level, m_maxLevel); }
 
   void hide(bool value) { m_visible = !value && isVisible(); }
 
@@ -82,44 +72,21 @@ public:
     return *this;
   }
 
-  static Log pretty(unsigned int level = 0, unsigned int maxLevel = std::numeric_limits<int>::max())
-  {
-    return Log(LogChannel::Pretty, level, maxLevel);
-  }
-
-  static Log important(unsigned int level = 0, unsigned int maxLevel = std::numeric_limits<int>::max())
-  {
-    return Log(LogChannel::Important, level, maxLevel);
-  }
-
   static void init(unsigned int verboseLevel, bool silent, unsigned int numberPrecision)
-  {
-    init(verboseLevel, silent, numberPrecision, false);
-  }
-
-  static void init(unsigned int verboseLevel, bool silent, unsigned int numberPrecision, bool prettyOutput)
   {
     setVerboseLevel(verboseLevel);
     setSilent(silent);
-    setLegacyMuted(prettyOutput && verboseLevel == 0);
-    Log() << std::setprecision(static_cast<int>(numberPrecision));
+    precision(static_cast<std::streamsize>(numberPrecision));
   }
 
   static bool isVisible(unsigned int level, unsigned int maxLevel)
   {
-    return isVisible(LogChannel::Legacy, level, maxLevel);
-  }
-
-  static bool isVisible(LogChannel channel, unsigned int level, unsigned int maxLevel)
-  {
-    return s_threadMuteDepth == 0 && !s_silent && !(channel == LogChannel::Legacy && s_legacyMuted) && s_verboseLevel >= level && s_verboseLevel <= maxLevel;
+    return s_threadMuteDepth == 0 && !s_silent && s_verboseLevel >= level && s_verboseLevel <= maxLevel;
   }
 
   static void setVerboseLevel(unsigned int level) { s_verboseLevel = level; }
 
   static void setSilent(bool silent) { s_silent = silent; }
-
-  static void setLegacyMuted(bool muted) { s_legacyMuted = muted; }
 
   static bool isSilent() { return s_silent; }
 
@@ -154,7 +121,6 @@ public:
   }
 
 private:
-  LogChannel m_channel;
   unsigned int m_level;
   unsigned int m_maxLevel;
   bool m_visible;
@@ -174,7 +140,6 @@ private:
   static std::ostream* s_ostream;
   static unsigned int s_verboseLevel;
   static bool s_silent;
-  static bool s_legacyMuted;
   static thread_local unsigned int s_threadMuteDepth;
 };
 

@@ -14,6 +14,7 @@
 #include "OutputFormats.h"
 #include "ProgramInterface.h"
 #include "../utils/convert.h"
+#include "../utils/format.h"
 
 #include <stdexcept>
 #include <utility>
@@ -280,7 +281,7 @@ namespace {
   {
     T constraint;
     if (value.empty() || !io::stringToValue(value, constraint)) {
-      throw std::runtime_error(io::Str() << "Invalid " << name << " for parameter --" << parameter.longName << ".");
+      throw std::runtime_error(fmt::format("Invalid {} for parameter --{}.", name, parameter.longName));
     }
     return constraint;
   }
@@ -930,8 +931,9 @@ const std::vector<ParameterSpec>& parameterCatalog()
         .configTarget(&Config::silent),
     param()
         .longName("pretty")
-        .description("Use modernized console output with color and Unicode on interactive terminals.")
+        .description("Deprecated no-op: pretty console output is always on. Kept for backward compatibility.")
         .group("Output")
+        .hidden()
         .configTarget(&Config::prettyOutput),
   };
   return parameters;

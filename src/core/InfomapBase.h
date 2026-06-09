@@ -29,7 +29,6 @@
 #include <memory>
 #include <string>
 #include <ostream>
-#include <sstream>
 
 namespace infomap {
 
@@ -551,7 +550,7 @@ protected:
 /**
  * Print per level statistics
  */
-unsigned int printPerLevelCodelength(const InfoNode& parent, std::ostream& out, bool prettyOutput = false);
+unsigned int printPerLevelCodelength(const InfoNode& parent, std::ostream& out);
 
 void aggregatePerLevelCodelength(const InfoNode& parent, std::vector<detail::PerLevelStat>& perLevelStat, unsigned int level = 0);
 

@@ -13,9 +13,9 @@
 #include "OutputFormats.h"
 #include "SafeFile.h"
 #include "../core/InfomapBase.h"
-#include "../utils/Log.h"
 #include "../utils/PrettyOutput.h"
 #include "../utils/convert.h"
+#include "../utils/format.h"
 
 #include <algorithm>
 #include <stdexcept>
@@ -94,10 +94,10 @@ namespace {
     summaries.reserve(groups.size());
     for (const auto& group : groups) {
       if (group.second.size() == 1) {
-        summaries.push_back(group.second.front().empty() ? group.first : io::Str() << group.first << "." << group.second.front());
+        summaries.push_back(group.second.front().empty() ? group.first : fmt::format("{}.{}", group.first, group.second.front()));
         continue;
       }
-      summaries.push_back(io::Str() << group.first << ".{" << io::stringify(group.second, ",") << "}");
+      summaries.push_back(fmt::format("{}.{{{}}}", group.first, io::stringify(group.second, ",")));
     }
     return summaries;
   }
@@ -147,11 +147,10 @@ namespace {
 
 std::string outputPlanBasename(const Config& config, int trial)
 {
-  io::Str basename;
-  basename << config.outDirectory + config.outName;
+  std::string basename = config.outDirectory + config.outName;
 
   if (config.printAllTrials && trial != -1 && config.numTrials > 1) {
-    basename << "_trial_" << trial;
+    basename += fmt::format("_trial_{}", trial);
   }
 
   return basename;
@@ -264,28 +263,18 @@ void preflightOutputTargets(const Config& config)
 
   for (const auto& path : planAllOutputPaths(config)) {
     if (pathExists(path))
-      throw InfomapError(ExitCode::OutputError, io::Str() << "Output file already exists: '" << path << "'");
+      throw InfomapError(ExitCode::OutputError, fmt::format("Output file already exists: '{}'", path));
   }
 }
 
 void writeOutputArtifact(InfomapBase& infomap, Network& network, const OutputArtifact& output)
 {
   if (output.phase == OutputPhase::AfterPartition) {
-    const auto write = [&]() { writeModularOutput(infomap, output); };
-    if (infomap.prettyOutput) {
-      write();
-      return;
-    }
-
-    Log() << "Write " << output.label << " to " << output.filename << "... ";
-    write();
-    Log() << "done!\n";
+    writeModularOutput(infomap, output);
     return;
   }
 
-  Log() << "Writing " << output.label << " to '" << output.filename << "'... ";
   writeNetworkOutput(network, output);
-  Log() << "done!\n";
 }
 
 void writeOutputArtifacts(InfomapBase& infomap, Network& network, OutputPhase phase, int trial)
@@ -295,28 +284,26 @@ void writeOutputArtifacts(InfomapBase& infomap, Network& network, OutputPhase ph
 
   for (const auto& output : artifacts) {
     writeOutputArtifact(infomap, network, output);
-    if (infomap.prettyOutput) {
-      if (phase != OutputPhase::AfterPartition) {
-        PrettyOutput(true).status("Output", io::Str() << output.label << " -> " << output.filename);
-        continue;
-      }
-      prettyOutputFiles.emplace_back(output.label, output.filename);
+    if (phase != OutputPhase::AfterPartition) {
+      PrettyOutput().status("Output", fmt::format("{} -> {}", output.label, output.filename));
+      continue;
     }
+    prettyOutputFiles.emplace_back(output.label, output.filename);
   }
 
-  if (!infomap.prettyOutput || prettyOutputFiles.empty()) {
+  if (prettyOutputFiles.empty()) {
     return;
   }
 
   if (prettyOutputFiles.size() == 1) {
-    PrettyOutput(true).status("Output", io::Str() << prettyOutputFiles.front().first << " -> " << prettyOutputFiles.front().second);
+    PrettyOutput().status("Output", fmt::format("{} -> {}", prettyOutputFiles.front().first, prettyOutputFiles.front().second));
     return;
   }
 
   const auto summaries = summarizeOutputFiles(prettyOutputFiles);
   for (unsigned int i = 0; i < summaries.size(); ++i) {
-    const std::string prefix = i == 0 ? std::string(io::Str() << prettyOutputFiles.size() << " files -> ") : "         ";
-    PrettyOutput(true).status("Output", io::Str() << prefix << summaries[i]);
+    const std::string prefix = i == 0 ? fmt::format("{} files -> ", prettyOutputFiles.size()) : "         ";
+    PrettyOutput().status("Output", fmt::format("{}{}", prefix, summaries[i]));
   }
 }
 

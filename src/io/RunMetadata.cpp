@@ -12,7 +12,7 @@
 #include "RunMetadata.h"
 #include "Config.h"
 #include "OutputPlan.h"
-#include "../utils/convert.h"
+#include "../utils/format.h"
 #include "../version.h"
 
 #include <fstream>
@@ -60,11 +60,11 @@ namespace {
   {
     std::ifstream input(path.c_str(), std::ios_base::binary);
     if (!input) {
-      throw std::runtime_error(io::Str() << "Error opening input file '" << path << "'. Check that the path points to a file and that you have read permissions.");
+      throw std::runtime_error(fmt::format("Error opening input file '{}'. Check that the path points to a file and that you have read permissions.", path));
     }
 
     auto hash = FNV_OFFSET;
-    const std::string sizeText = io::Str() << size;
+    const std::string sizeText = fmt::to_string(size);
     hashBytes(hash, sizeText.data(), static_cast<std::streamsize>(sizeText.size()));
 
     constexpr std::streamoff CHUNK_SIZE = 65536;
@@ -186,7 +186,7 @@ std::string inputFingerprintJson(const std::string& path)
 
   struct stat info;
   if (stat(path.c_str(), &info) != 0) {
-    throw std::runtime_error(io::Str() << "Error reading input file metadata for '" << path << "'.");
+    throw std::runtime_error(fmt::format("Error reading input file metadata for '{}'.", path));
   }
 
   const auto size = static_cast<unsigned long long>(info.st_size);
@@ -205,7 +205,7 @@ std::string networkFingerprint(const std::string& path)
 
   struct stat info;
   if (stat(path.c_str(), &info) != 0) {
-    throw std::runtime_error(io::Str() << "Error reading input file metadata for '" << path << "'.");
+    throw std::runtime_error(fmt::format("Error reading input file metadata for '{}'.", path));
   }
 
   const auto size = static_cast<unsigned long long>(info.st_size);

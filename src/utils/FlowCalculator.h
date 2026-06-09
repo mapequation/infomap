@@ -71,7 +71,6 @@ private:
   using FlowLink = detail::FlowLink;
   std::vector<FlowLink> flowLinks;
 
-  bool m_prettyOutput = false;
   std::string m_flowMethod;
   std::string m_teleportation;
   std::vector<std::string> m_flowNotes;

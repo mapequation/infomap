@@ -40,6 +40,10 @@ def main():
     verbose_pretty = run(
         cli, str(network), "-0", "--directed", "--seed", "1", "--pretty", "-vv"
     )
+    # Additive model: the pretty base renders at every verbosity, with legacy
+    # diagnostics layered on top (rather than replacing pretty as before).
+    for expected in ("Network", "Flow", "Optimization", "Levels"):
+        assert expected in verbose_pretty
     assert "Run Infomap..." in verbose_pretty
 
     silent_pretty = run(
@@ -176,10 +180,14 @@ def main():
         assert "test.{tree,ftree,nwk,json,csv,clu,states" not in output_pretty
         assert "Writing " not in output_pretty
 
-    plain = run(cli, str(network), "-0", "--directed", "--seed", "1")
-    assert "Parsing vertices..." in plain
-    assert "-------------------------------------" in plain
-    assert "Per level number of modules" in plain
+    # Pretty is the default (and only) console rendering. The legacy stream is
+    # being dismantled (Fas 5); --no-pretty is a transitional no-op slated for
+    # removal, so it is no longer asserted here.
+    default_out = run(cli, str(network), "-0", "--directed", "--seed", "1")
+    for expected in ("Network", "Flow", "Optimization", "Levels"):
+        assert expected in default_out
+    for legacy in ("Parsing vertices...", "Per level number of modules"):
+        assert legacy not in default_out
 
 
 if __name__ == "__main__":

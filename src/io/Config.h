@@ -146,10 +146,10 @@ struct Config {
   std::string runManifestPath;
   bool memoryReport = false;
   std::string numThreadsArg = "auto"; // raw --num-threads / --threads argument
-  unsigned int numThreads = 0;        // 0 = auto; positive = explicit request
-  unsigned int trialOffset = 0;       // global index of this shard's first trial
-  std::string trialResultsPath;       // --trial-results <file.json>
-  bool noFinalOutput = false;         // suppress aggregate final write (per-trial still written)
+  unsigned int numThreads = 0; // 0 = auto; positive = explicit request
+  unsigned int trialOffset = 0; // global index of this shard's first trial
+  std::string trialResultsPath; // --trial-results <file.json>
+  bool noFinalOutput = false; // suppress aggregate final write (per-trial still written)
 #endif
   int cluLevel = 1; // Write modules at specified depth from root. 1, 2, ... or -1 for bottom level
   bool printFlowNetwork = false;
@@ -159,7 +159,10 @@ struct Config {
   unsigned int verbosity = 0;
   unsigned int verboseNumberPrecision = 9;
   bool silent = false;
-  bool prettyOutput = false;
+  // Pretty (structured) console output is the only console rendering and is
+  // always on; -v/-vv add diagnostics on top. --pretty/--no-pretty are
+  // deprecated no-ops kept for backward compatibility (see ParameterCatalog).
+  bool prettyOutput = true;
   bool hideBipartiteNodes = false;
 
   // Other

@@ -164,7 +164,7 @@ TEST_CASE("Pretty per-level codelength renders a structured levels table [fast][
   im.run();
 
   std::ostringstream output;
-  const auto numLevels = infomap::printPerLevelCodelength(im.root(), output, true);
+  const auto numLevels = infomap::printPerLevelCodelength(im.root(), output);
   const auto text = output.str();
 
   CHECK(numLevels >= 2);

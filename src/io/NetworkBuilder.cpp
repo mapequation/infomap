@@ -11,7 +11,7 @@
 #include "Network.h"
 #include "NetworkInputParser.h"
 #include "../utils/FileURI.h"
-#include "../utils/convert.h"
+#include "../utils/format.h"
 
 #include <stdexcept>
 #include <vector>
@@ -101,7 +101,7 @@ public:
     bool sourceIsFeature = link.source >= m_network.m_bipartiteStartId;
     bool targetIsFeature = link.target >= m_network.m_bipartiteStartId;
     if (sourceIsFeature == targetIsFeature) {
-      throw std::runtime_error(io::Str() << "Bipartite link '" << line << "' must cross bipartite start id " << m_network.m_bipartiteStartId << ".");
+      throw std::runtime_error(fmt::format("Bipartite link '{}' must cross bipartite start id {}.", line, m_network.m_bipartiteStartId));
     }
     m_network.addLink(link.source, link.target, link.weight);
   }

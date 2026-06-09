@@ -14,8 +14,11 @@
 #include "../core/InfomapBase.h"
 #include "../core/StateNetwork.h"
 #include "../io/SafeFile.h"
+#include "../utils/convert.h"
+#include "../utils/format.h"
 
 #include <cmath>
+#include <iomanip>
 #include <stdexcept>
 #include <utility>
 
@@ -94,18 +97,27 @@ std::string getOutputFilename(const InfomapBase& im, const std::string& filename
 
 std::string getOutputFileHeader(const InfomapBase& im, const StateNetwork& network, bool states)
 {
-  std::string bipartiteInfo = io::Str() << "\n# bipartite start id " << network.bipartiteStartId();
-  return io::Str() << "# v" << INFOMAP_VERSION << "\n"
-                   << "# ./Infomap " << im.parsedString << "\n"
-                   << "# started at " << im.getStartDate() << "\n"
-                   << "# completed in " << im.getElapsedTime().getElapsedTimeInSec() << " s\n"
-                   << "# partitioned into " << im.maxTreeDepth() << " levels with " << im.numTopModules() << " top modules\n"
-                   << "# codelength " << im.codelength() << " bits\n"
-                   << "# relative codelength savings " << im.getRelativeCodelengthSavings() * 100 << "%\n"
-                   << "# flow model " << flowModelToString(im.flowModel)
-                   << (im.haveMemory() ? "\n# higher order" : "")
-                   << (im.haveMemory() ? states ? "\n# state level" : "\n# physical level" : "")
-                   << (network.isBipartite() ? bipartiteInfo : "");
+  std::string bipartiteInfo = fmt::format("\n# bipartite start id {}", network.bipartiteStartId());
+  return fmt::format("# v{}\n"
+                     "# ./Infomap {}\n"
+                     "# started at {}\n"
+                     "# completed in {:g} s\n"
+                     "# partitioned into {} levels with {} top modules\n"
+                     "# codelength {:g} bits\n"
+                     "# relative codelength savings {:g}%\n"
+                     "# flow model {}",
+                     INFOMAP_VERSION,
+                     im.parsedString,
+                     io::stringify(im.getStartDate()),
+                     im.getElapsedTime().getElapsedTimeInSec(),
+                     im.maxTreeDepth(),
+                     im.numTopModules(),
+                     im.codelength(),
+                     im.getRelativeCodelengthSavings() * 100,
+                     flowModelToString(im.flowModel))
+      + (im.haveMemory() ? "\n# higher order" : "")
+      + (im.haveMemory() ? states ? "\n# state level" : "\n# physical level" : "")
+      + (network.isBipartite() ? bipartiteInfo : "");
 }
 
 std::string writeClu(InfomapBase& im, const StateNetwork& network, const std::string& filename, bool states, int moduleIndexLevel)
@@ -254,7 +266,7 @@ void writeJsonTree(InfomapBase& im, const StateNetwork& network, std::ostream& o
   Json json;
   json["version"] = std::string("v") + INFOMAP_VERSION;
   json["args"] = im.parsedString;
-  json["startedAt"] = io::Str() << im.getStartDate();
+  json["startedAt"] = io::stringify(im.getStartDate());
   json["completedIn"] = im.getElapsedTime().getElapsedTimeInSec();
   json["codelength"] = im.codelength();
   json["numLevels"] = im.maxTreeDepth();

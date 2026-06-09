@@ -11,6 +11,7 @@
 #include "FlowData.h"
 #include "InfoNode.h"
 #include "../utils/Log.h"
+#include "../utils/format.h"
 
 #include <vector>
 #include <set>
@@ -362,7 +363,7 @@ void MemMapEquation::updatePhysicalNodes(InfoNode& current, unsigned int oldModu
     // Remove contribution to old module
     auto overlapIt = moduleToMemNodes.find(oldModuleIndex);
     if (overlapIt == moduleToMemNodes.end())
-      throw std::length_error(io::Str() << "Couldn't find old module " << oldModuleIndex << " in physical node " << physData.physNodeIndex);
+      throw std::length_error(fmt::format("Couldn't find old module {} in physical node {}", oldModuleIndex, physData.physNodeIndex));
 
     MemNodeSet& oldMemNodeSet = overlapIt->second;
     oldMemNodeSet.sumFlow -= physData.sumFlowFromM2Node;

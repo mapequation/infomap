@@ -120,29 +120,6 @@ namespace io {
     return items;
   }
 
-  class Str {
-  public:
-    Str() = default;
-    template <class T>
-    Str& operator<<(const T& t)
-    {
-      m_oss << stringify(t);
-      return *this;
-    }
-    Str& operator<<(std::ostream& (*f)(std::ostream&))
-    {
-      m_oss << f;
-      return *this;
-    }
-    operator std::string() const
-    {
-      return m_oss.str();
-    }
-
-  private:
-    std::ostringstream m_oss;
-  };
-
   template <typename T>
   inline bool stringToValue(std::string const& str, T& value)
   {

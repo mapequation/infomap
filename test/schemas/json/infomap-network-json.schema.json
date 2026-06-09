@@ -1,0 +1,283 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mapequation.org/infomap/test-schemas/infomap-network-json.schema.json",
+  "title": "Infomap Network JSON",
+  "description": "Proof-of-concept schema for infomap-network-json v1.0.",
+  "type": "object",
+  "required": ["format", "version", "edges"],
+  "properties": {
+    "format": { "const": "infomap-network-json" },
+    "version": { "const": "1.0" },
+    "type": {
+      "enum": ["standard", "bipartite", "multilayer", "state"],
+      "default": "standard"
+    },
+    "directed": { "type": "boolean", "default": false },
+    "nodes": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/node" }
+    },
+    "states": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/state" }
+    },
+    "edges": {
+      "type": "array"
+    },
+    "bipartiteStartId": { "$ref": "#/$defs/id" },
+    "multilayer": {
+      "enum": ["full", "intra", "intra-inter"],
+      "default": "full"
+    },
+    "layers": false
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "type": { "const": "bipartite" }
+        },
+        "required": ["type"]
+      },
+      "then": {
+        "required": ["bipartiteStartId"],
+        "properties": {
+          "edges": {
+            "type": "array",
+            "items": { "$ref": "#/$defs/standardEdge" }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": { "const": "multilayer" }
+        },
+        "required": ["type"]
+      },
+      "then": {
+        "not": {
+          "required": ["nodes"],
+          "properties": {
+            "nodes": {
+              "type": "array",
+              "contains": { "required": ["path"] }
+            }
+          }
+        },
+        "properties": {
+          "edges": {
+            "type": "array",
+            "items": { "$ref": "#/$defs/multilayerEdge" }
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "multilayer": { "const": "intra" }
+              },
+              "required": ["multilayer"]
+            },
+            "then": {
+              "properties": {
+                "edges": {
+                  "type": "array",
+                  "items": { "$ref": "#/$defs/multilayerIntraEdge" }
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "multilayer": { "const": "intra-inter" }
+              },
+              "required": ["multilayer"]
+            },
+            "then": {
+              "properties": {
+                "edges": {
+                  "type": "array",
+                  "items": { "$ref": "#/$defs/multilayerIntraInterEdge" }
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "not": {
+                "properties": {
+                  "multilayer": {
+                    "enum": ["intra", "intra-inter"]
+                  }
+                },
+                "required": ["multilayer"]
+              }
+            },
+            "then": {
+              "properties": {
+                "edges": {
+                  "type": "array",
+                  "items": { "$ref": "#/$defs/multilayerFullEdge" }
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": { "const": "state" }
+        },
+        "required": ["type"]
+      },
+      "then": {
+        "properties": {
+          "edges": {
+            "type": "array",
+            "items": { "$ref": "#/$defs/standardEdge" }
+          },
+          "states": {
+            "type": "array",
+            "items": { "$ref": "#/$defs/state" }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "not": {
+          "properties": {
+            "type": {
+              "enum": ["bipartite", "multilayer", "state"]
+            }
+          },
+          "required": ["type"]
+        }
+      },
+      "then": {
+        "properties": {
+          "edges": {
+            "type": "array",
+            "items": { "$ref": "#/$defs/standardEdge" }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "id": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "positiveId": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "weight": {
+      "type": "number",
+      "minimum": 0
+    },
+    "path": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/positiveId" }
+    },
+    "node": {
+      "type": "object",
+      "required": ["id"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "name": { "type": "string" },
+        "weight": { "$ref": "#/$defs/weight" },
+        "meta": { "$ref": "#/$defs/id" },
+        "path": { "$ref": "#/$defs/path" },
+        "label": false
+      }
+    },
+    "state": {
+      "type": "object",
+      "required": ["id", "node"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "node": { "$ref": "#/$defs/id" },
+        "name": { "type": "string" },
+        "weight": { "$ref": "#/$defs/weight" },
+        "path": { "$ref": "#/$defs/path" },
+        "meta": false
+      }
+    },
+    "standardEdge": {
+      "type": "object",
+      "required": ["source", "target"],
+      "properties": {
+        "source": { "$ref": "#/$defs/id" },
+        "target": { "$ref": "#/$defs/id" },
+        "weight": { "$ref": "#/$defs/weight" },
+        "layers": false,
+        "layer": false
+      }
+    },
+    "multilayerEdge": {
+      "type": "object",
+      "required": ["layers", "source", "target"],
+      "properties": {
+        "layers": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 2,
+          "items": { "$ref": "#/$defs/id" }
+        },
+        "source": { "$ref": "#/$defs/id" },
+        "target": { "$ref": "#/$defs/id" },
+        "weight": { "$ref": "#/$defs/weight" }
+      }
+    },
+    "multilayerFullEdge": {
+      "allOf": [
+        { "$ref": "#/$defs/multilayerEdge" },
+        {
+          "properties": {
+            "layers": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "items": { "$ref": "#/$defs/id" }
+            }
+          }
+        }
+      ]
+    },
+    "multilayerIntraEdge": {
+      "allOf": [
+        { "$ref": "#/$defs/multilayerEdge" },
+        {
+          "properties": {
+            "layers": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 1,
+              "items": { "$ref": "#/$defs/id" }
+            }
+          }
+        }
+      ]
+    },
+    "multilayerIntraInterEdge": {
+      "description": "For two-layer intra-inter edges, source == target is required by the RFC but cannot be expressed in standard JSON Schema 2020-12 without non-standard data references.",
+      "allOf": [
+        { "$ref": "#/$defs/multilayerEdge" },
+        {
+          "anyOf": [
+            { "$ref": "#/$defs/multilayerIntraEdge" },
+            { "$ref": "#/$defs/multilayerFullEdge" }
+          ]
+        }
+      ]
+    }
+  }
+}

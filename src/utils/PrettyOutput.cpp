@@ -10,12 +10,10 @@
 #include "PrettyOutput.h"
 #include "Log.h"
 #include "convert.h"
+#include "format.h"
 
-#include <algorithm>
 #include <cmath>
 #include <cstdlib>
-#include <iomanip>
-#include <sstream>
 
 #ifndef _WIN32
 #include <unistd.h>
@@ -40,75 +38,38 @@ namespace {
 
 } // namespace
 
-PrettyOutput::PrettyOutput(bool enabled) : m_enabled(enabled), m_ansi(enabled && stdoutSupportsAnsi()) {}
+PrettyOutput::PrettyOutput() : m_ansi(stdoutSupportsAnsi()) {}
 
 void PrettyOutput::section(const std::string& title) const
 {
-  if (!m_enabled)
-    return;
-  Log::pretty() << "\n"
-                << cyan() << bold() << title << reset() << "\n";
+  Log() << fmt::format("\n{}{}{}{}\n", cyan(), bold(), title, reset());
 }
 
 void PrettyOutput::metric(const std::string& label, const std::string& value) const
 {
-  if (!m_enabled)
-    return;
-  Log::pretty() << "  " << dim() << std::left << std::setw(30) << label << reset() << value << std::right << "\n";
+  // {:<30} == std::left << std::setw(30) (min width, left-justified, space fill).
+  // The label (and its padding) is dimmed; reset() lands before the value.
+  Log() << fmt::format("  {}{:<30}{}{}\n", dim(), label, reset(), value);
 }
 
 void PrettyOutput::status(const std::string& label, const std::string& value) const
 {
-  if (!m_enabled)
-    return;
-  Log::pretty() << "  " << bullet() << " " << std::left << std::setw(14) << label << std::right << value << "\n";
-}
-
-void PrettyOutput::table(const std::vector<std::string>& headers, const std::vector<std::vector<std::string>>& rows) const
-{
-  if (!m_enabled || headers.empty())
-    return;
-
-  std::vector<std::size_t> widths(headers.size(), 0);
-  for (std::size_t i = 0; i < headers.size(); ++i)
-    widths[i] = headers[i].size();
-  for (const auto& row : rows) {
-    for (std::size_t i = 0; i < std::min(row.size(), headers.size()); ++i)
-      widths[i] = std::max(widths[i], row[i].size());
-  }
-
-  Log::pretty() << "  " << dim();
-  for (std::size_t i = 0; i < headers.size(); ++i) {
-    if (i > 0)
-      Log::pretty() << "  ";
-    Log::pretty() << std::left << std::setw(static_cast<int>(widths[i])) << headers[i];
-  }
-  Log::pretty() << reset() << std::right << "\n";
-
-  for (const auto& row : rows) {
-    Log::pretty() << "  ";
-    for (std::size_t i = 0; i < headers.size(); ++i) {
-      if (i > 0)
-        Log::pretty() << "  ";
-      const std::string value = i < row.size() ? row[i] : "";
-      Log::pretty() << std::left << std::setw(static_cast<int>(widths[i])) << value;
-    }
-    Log::pretty() << std::right << "\n";
-  }
+  Log() << fmt::format("  {} {:<14}{}\n", bullet(), label, value);
 }
 
 std::string PrettyOutput::percent(double value)
 {
   if (std::abs(value) < 1e-9)
     return "0%";
-  return io::Str() << io::toPrecision(value, 2, true) << "%";
+  return fmt::format("{}%", io::toPrecision(value, 2, true));
 }
 
 std::string PrettyOutput::fixed(double value, unsigned int precision)
 {
-  std::ostringstream out;
-  out << std::fixed << std::setprecision(static_cast<int>(precision)) << value;
-  return out.str();
+  // {:.{}f} reproduces std::fixed << std::setprecision(precision) byte-for-byte
+  // (verified across edge cases); see scripts/check_cpp_stream_policy.py for why
+  // formatting goes through fmt rather than iostreams.
+  return fmt::format("{:.{}f}", value, precision);
 }
 
 } // namespace infomap

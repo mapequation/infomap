@@ -149,13 +149,13 @@ TEST_CASE("PrettyOutput formats plain output without ANSI and clamps tiny percen
 {
   std::ostringstream output;
   infomap::Log::setOutputStream(output);
-  infomap::Log::init(0, false, 9, true);
+  infomap::Log::init(0, false, 9);
 
 #ifndef _WIN32
   setenv("NO_COLOR", "1", 1);
 #endif
 
-  infomap::PrettyOutput pretty(true);
+  infomap::PrettyOutput pretty;
   pretty.section("Flow");
   pretty.metric("Model", "directed");
   pretty.status("Recursive", infomap::PrettyOutput::percent(-1.0e-12));
@@ -172,32 +172,33 @@ TEST_CASE("PrettyOutput formats plain output without ANSI and clamps tiny percen
   infomap::Log::init(0, false, 9);
 }
 
-TEST_CASE("Log channels mute legacy output in default pretty mode [fast][core][utils][io]")
+TEST_CASE("Log output is level-gated and respects verbosity and silent [fast][core][utils][io]")
 {
   std::ostringstream output;
   infomap::Log::setOutputStream(output);
 
-  infomap::Log::init(0, false, 9, true);
-  infomap::Log() << "legacy";
-  infomap::Log::pretty() << "pretty";
-  infomap::Log::important() << "important";
-
-  CHECK(output.str().find("legacy") == std::string::npos);
-  CHECK(output.str().find("pretty") != std::string::npos);
+  // Verbosity 0: level-0 lines show, level>=1 (verbose) lines are hidden.
+  infomap::Log::init(0, false, 9);
+  infomap::Log() << "base";
+  infomap::Log(1) << "verbose";
+  infomap::Log() << "important";
+  CHECK(output.str().find("base") != std::string::npos);
+  CHECK(output.str().find("verbose") == std::string::npos);
   CHECK(output.str().find("important") != std::string::npos);
 
+  // Verbosity 1: level-1 diagnostics now layer on top additively.
   output.str("");
   output.clear();
-  infomap::Log::init(1, false, 9, true);
-  infomap::Log() << "legacy";
-  CHECK(output.str().find("legacy") != std::string::npos);
+  infomap::Log::init(1, false, 9);
+  infomap::Log(1) << "verbose";
+  CHECK(output.str().find("verbose") != std::string::npos);
 
+  // Silent: nothing is emitted on any channel.
   output.str("");
   output.clear();
-  infomap::Log::init(0, true, 9, true);
-  infomap::Log() << "legacy";
-  infomap::Log::pretty() << "pretty";
-  infomap::Log::important() << "important";
+  infomap::Log::init(0, true, 9);
+  infomap::Log() << "base";
+  infomap::Log() << "important";
   CHECK(output.str().empty());
 
   infomap::Log::setOutputStream(std::cout);

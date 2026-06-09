@@ -8,7 +8,7 @@
  ******************************************************************************/
 
 #include "FileURI.h"
-#include "convert.h"
+#include "format.h"
 #include <stdexcept>
 #include <utility>
 
@@ -20,7 +20,7 @@ FileURI::FileURI(string filename, bool requireExtension)
     : m_filename(std::move(filename)), m_requireExtension(requireExtension)
 {
   auto getErrorMessage = [](const auto& name, auto requireExt) {
-    string s = io::Str() << "Filename '" << name << "' must match the pattern \"[dir/]name" << (requireExt ? ".extension\"" : "[.extension]\"");
+    string s = fmt::format("Filename '{}' must match the pattern \"[dir/]name{}", name, requireExt ? ".extension\"" : "[.extension]\"");
     return s;
   };
 

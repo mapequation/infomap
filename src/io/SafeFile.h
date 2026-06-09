@@ -11,7 +11,7 @@
 #define SAFEFILE_H_
 
 #include "InfomapError.h"
-#include "../utils/convert.h"
+#include "../utils/format.h"
 #include <atomic>
 #include <ctime>
 #include <fstream>
@@ -53,7 +53,7 @@ public:
       : ifstream(filename, mode)
   {
     if (fail())
-      throw std::runtime_error(io::Str() << "Error opening file '" << filename << "'. Check that the path points to a file and that you have read permissions.");
+      throw std::runtime_error(fmt::format("Error opening file '{}'. Check that the path points to a file and that you have read permissions.", filename));
   }
 
   ~SafeInFile() override
@@ -128,7 +128,7 @@ inline void ensureDirectoryExists(const std::string& directory)
   const auto created = mkdir(normalized.c_str(), 0777);
 #endif
   if (created != 0 && !isDirectory(normalized)) {
-    throw InfomapError(ExitCode::OutputError, io::Str() << "Can't create output directory '" << directory << "'.");
+    throw InfomapError(ExitCode::OutputError, fmt::format("Can't create output directory '{}'.", directory));
   }
 }
 
@@ -140,7 +140,7 @@ inline std::string makeTemporaryOutputFilename(const std::string& filename)
 #else
   const auto processId = static_cast<unsigned int>(getpid());
 #endif
-  return io::Str() << filename << ".tmp." << processId << "." << static_cast<unsigned long long>(std::time(nullptr)) << "." << counter.fetch_add(1);
+  return fmt::format("{}.tmp.{}.{}.{}", filename, processId, static_cast<unsigned long long>(std::time(nullptr)), counter.fetch_add(1));
 }
 
 class SafeOutFile : public ofstream {
@@ -151,12 +151,12 @@ public:
         m_overwrite(overwrite)
   {
     if (!m_overwrite && pathExists(m_filename)) {
-      throw InfomapError(ExitCode::OutputError, io::Str() << "Output file already exists: '" << m_filename << "'");
+      throw InfomapError(ExitCode::OutputError, fmt::format("Output file already exists: '{}'", m_filename));
     }
 
     open(m_temporaryFilename, mode);
     if (fail())
-      throw InfomapError(ExitCode::OutputError, io::Str() << "Error opening file '" << filename << "'. Check that the directory you are writing to exists and that you have write permissions.");
+      throw InfomapError(ExitCode::OutputError, fmt::format("Error opening file '{}'. Check that the directory you are writing to exists and that you have write permissions.", filename));
   }
 
   ~SafeOutFile() override
@@ -176,18 +176,18 @@ public:
     if (fail()) {
       close();
       std::remove(m_temporaryFilename.c_str());
-      throw InfomapError(ExitCode::OutputError, io::Str() << "Error writing file '" << m_filename << "'.");
+      throw InfomapError(ExitCode::OutputError, fmt::format("Error writing file '{}'.", m_filename));
     }
 
     close();
     if (fail()) {
       std::remove(m_temporaryFilename.c_str());
-      throw InfomapError(ExitCode::OutputError, io::Str() << "Error closing file '" << m_filename << "'.");
+      throw InfomapError(ExitCode::OutputError, fmt::format("Error closing file '{}'.", m_filename));
     }
 
     if (!m_overwrite && pathExists(m_filename)) {
       std::remove(m_temporaryFilename.c_str());
-      throw InfomapError(ExitCode::OutputError, io::Str() << "Output file already exists: '" << m_filename << "'");
+      throw InfomapError(ExitCode::OutputError, fmt::format("Output file already exists: '{}'", m_filename));
     }
 
 #ifdef _WIN32
@@ -198,7 +198,7 @@ public:
 
     if (std::rename(m_temporaryFilename.c_str(), m_filename.c_str()) != 0) {
       std::remove(m_temporaryFilename.c_str());
-      throw InfomapError(ExitCode::OutputError, io::Str() << "Error replacing file '" << m_filename << "'.");
+      throw InfomapError(ExitCode::OutputError, fmt::format("Error replacing file '{}'.", m_filename));
     }
 
     m_committed = true;
@@ -213,7 +213,7 @@ private:
 
 inline bool isDirectoryWritable(const std::string& dir)
 {
-  std::string path = io::Str() << dir << "_1nf0m4p_.tmp";
+  std::string path = fmt::format("{}_1nf0m4p_.tmp", dir);
   bool ok = true;
   try {
     SafeOutFile out(path);
