@@ -335,8 +335,8 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnLa
   // int relaxLimitUp = m_config.multilayerRelaxLimitUp < 0 ? relaxLimitSymmetric : std::min(relaxLimitSymmetric, m_config.multilayerRelaxLimitUp);
   // auto haveUpOrDownLimit = m_config.multilayerRelaxLimitDown >= 0 || m_config.multilayerRelaxLimitUp >= 0;
 
-  Log(1) << "-> " << m_networks.size() << " networks\n";
-  Log(1) << "-> Relax rate: " << relaxRate << "\n";
+  Log(1).print("-> {} networks\n", m_networks.size());
+  Log(1).print("-> Relax rate: {:g}\n", relaxRate);
   // if (haveUpOrDownLimit) {
   //   Log(1) << "-> Relax limit up: " << relaxLimitUp << (relaxLimitUp == maxRelaxLimit ? " (no limit)\n" : "\n");
   //   Log(1) << "-> Relax limit down: " << relaxLimitDown << (relaxLimitDown == maxRelaxLimit ? " (no limit)\n" : "\n");
@@ -466,13 +466,13 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnNo
   int relaxLimitUp = m_config.multilayerRelaxLimitUp < 0 ? relaxLimitSymmetric : std::min(relaxLimitSymmetric, m_config.multilayerRelaxLimitUp);
   auto haveUpOrDownLimit = m_config.multilayerRelaxLimitDown >= 0 || m_config.multilayerRelaxLimitUp >= 0;
 
-  Log(1) << "-> " << m_networks.size() << " networks\n";
-  Log(1) << "-> Relax rate: " << relaxRate << "\n";
+  Log(1).print("-> {} networks\n", m_networks.size());
+  Log(1).print("-> Relax rate: {:g}\n", relaxRate);
   if (haveUpOrDownLimit) {
-    Log(1) << "-> Relax limit up: " << relaxLimitUp << (relaxLimitUp == maxRelaxLimit ? " (no limit)\n" : "\n");
-    Log(1) << "-> Relax limit down: " << relaxLimitDown << (relaxLimitDown == maxRelaxLimit ? " (no limit)\n" : "\n");
+    Log(1).print("-> Relax limit up: {}{}", relaxLimitUp, relaxLimitUp == maxRelaxLimit ? " (no limit)\n" : "\n");
+    Log(1).print("-> Relax limit down: {}{}", relaxLimitDown, relaxLimitDown == maxRelaxLimit ? " (no limit)\n" : "\n");
   } else if (m_config.multilayerRelaxLimit >= 0) {
-    Log(1) << "-> Relax limit: " << m_config.multilayerRelaxLimit << "\n";
+    Log(1).print("-> Relax limit: {}\n", m_config.multilayerRelaxLimit);
   }
 
   auto withinRelaxLimit = [relaxLimitDown, relaxLimitUp](auto& layer1, auto& layer2) {
@@ -561,14 +561,14 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnNo
     // TODO: create a map with aggregated inter-flow for each layer with limits.
   }
 
-  Log(1) << "-> " << m_networks.size() << " networks and " << m_physNodes.size() << " physical nodes\n";
+  Log(1).print("-> {} networks and {} physical nodes\n", m_networks.size(), m_physNodes.size());
   // Log(1) << "-> Relax rate: " << relaxRate << "\n";
   if (haveUpOrDownLimit) {
-    Log(1) << "-> Relax limit up: " << relaxLimitUp << (relaxLimitUp == maxRelaxLimit ? " (no limit)\n" : "\n");
-    Log(1) << "-> Relax limit down: " << relaxLimitDown << (relaxLimitDown == maxRelaxLimit ? " (no limit)\n" : "\n");
+    Log(1).print("-> Relax limit up: {}{}", relaxLimitUp, relaxLimitUp == maxRelaxLimit ? " (no limit)\n" : "\n");
+    Log(1).print("-> Relax limit down: {}{}", relaxLimitDown, relaxLimitDown == maxRelaxLimit ? " (no limit)\n" : "\n");
     throw std::runtime_error("Relax limits not implemented for regularized flow");
   } else if (m_config.multilayerRelaxLimit >= 0) {
-    Log(1) << "-> Relax limit: " << m_config.multilayerRelaxLimit << "\n";
+    Log(1).print("-> Relax limit: {}\n", m_config.multilayerRelaxLimit);
     throw std::runtime_error("Relax limits not implemented for regularized flow");
   }
 

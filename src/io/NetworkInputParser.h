@@ -265,7 +265,7 @@ namespace input {
         sink.onPhysicalNode(vertex);
         ++progress.numPhysicalNodes;
       }
-      Log(1) << "  -> " << progress.numPhysicalNodes << " physical nodes added\n";
+      Log(1).print("  -> {} physical nodes added\n", progress.numPhysicalNodes);
       return line;
     }
 
@@ -287,7 +287,7 @@ namespace input {
         sink.onStateNode(stateNode);
         ++numStateNodesFound;
       }
-      Log(1) << "  -> " << numStateNodesFound << " state nodes added\n";
+      Log(1).print("  -> {} state nodes added\n", numStateNodesFound);
       return line;
     }
 
@@ -313,7 +313,7 @@ namespace input {
         ++progress.numLinks;
       }
       if (parsingLinks)
-        Log(1) << "  -> " << progress.numLinks << " links\n";
+        Log(1).print("  -> {} links\n", progress.numLinks);
       return line;
     }
 
@@ -324,7 +324,7 @@ namespace input {
              << std::flush;
 
       if (options.matchableMultilayerIds > 0) {
-        Log(1) << "  Creating matchable state ids using: nodeId << (log2(" << options.matchableMultilayerIds << ") + 1) | layerId\n";
+        Log(1).print("  Creating matchable state ids using: nodeId << (log2({}) + 1) | layerId\n", options.matchableMultilayerIds);
       }
 
       std::string line;
@@ -345,9 +345,9 @@ namespace input {
           ++progress.numInterLayerLinks;
         }
       }
-      Log(1) << "  -> " << (progress.numIntraLayerLinks + progress.numInterLayerLinks) << " links in " << progress.layers.size() << " layers\n";
-      Log(1) << "    -> " << progress.numIntraLayerLinks << " intra-layer links\n";
-      Log(1) << "    -> " << progress.numInterLayerLinks << " inter-layer links\n";
+      Log(1).print("  -> {} links in {} layers\n", progress.numIntraLayerLinks + progress.numInterLayerLinks, progress.layers.size());
+      Log(1).print("    -> {} intra-layer links\n", progress.numIntraLayerLinks);
+      Log(1).print("    -> {} inter-layer links\n", progress.numInterLayerLinks);
       return line;
     }
 
@@ -358,7 +358,7 @@ namespace input {
              << std::flush;
 
       if (options.matchableMultilayerIds > 0) {
-        Log(1) << "  Creating matchable state ids using: nodeId << (log2(" << options.matchableMultilayerIds << ") + 1) | layerId\n";
+        Log(1).print("  Creating matchable state ids using: nodeId << (log2({}) + 1) | layerId\n", options.matchableMultilayerIds);
       }
 
       std::string line;
@@ -374,7 +374,7 @@ namespace input {
         progress.layers.insert(link.layer);
         ++progress.numIntraLayerLinks;
       }
-      Log(1) << "  -> " << progress.numIntraLayerLinks << " intra-layer links\n";
+      Log(1).print("  -> {} intra-layer links\n", progress.numIntraLayerLinks);
       return line;
     }
 
@@ -397,7 +397,7 @@ namespace input {
         progress.layers.insert(link.targetLayer);
         ++progress.numInterLayerLinks;
       }
-      Log(1) << "  -> " << progress.numInterLayerLinks << " inter-layer links\n";
+      Log(1).print("  -> {} inter-layer links\n", progress.numInterLayerLinks);
       return line;
     }
 
@@ -411,7 +411,7 @@ namespace input {
       if (!(extractor >> tmp >> bipartiteStartId))
         throw std::runtime_error(fmt::format(FMT_STRING("Can't parse bipartite start id from line '{}'"), heading));
 
-      Log(1) << "  -> Using bipartite start id " << bipartiteStartId << "\n";
+      Log(1).print("  -> Using bipartite start id {}\n", bipartiteStartId);
       sink.onBipartiteStart(bipartiteStartId);
       std::string line;
       while (!std::getline(file, line).fail()) {
@@ -428,7 +428,7 @@ namespace input {
 
     inline std::string ignoreSection(std::ifstream& file, const std::string& heading)
     {
-      Log() << "(Ignoring section " << heading << ") ";
+      Log().print("(Ignoring section {}) ", heading);
       std::string line;
       while (!std::getline(file, line).fail()) {
         if (line[0] == '*')
@@ -491,14 +491,14 @@ namespace input {
   template <typename Sink>
   void parseNetworkInput(const std::string& filename, Sink& sink, const NetworkInputOptions& options)
   {
-    Log(1) << "Parsing " << (options.undirectedFlow ? "undirected" : "directed") << " network from file '" << filename << "'...\n";
+    Log(1).print("Parsing {} network from file '{}'...\n", options.undirectedFlow ? "undirected" : "directed", filename);
     detail::parseNetwork(filename, detail::generalValidHeadings(), detail::generalIgnoredHeadings(), sink, options);
   }
 
   template <typename Sink>
   void parseMetaDataInput(const std::string& filename, Sink& sink)
   {
-    Log(1) << "Parsing meta data from '" << filename << "'...\n";
+    Log(1).print("Parsing meta data from '{}'...\n", filename);
     SafeInFile input(filename);
     std::string line;
     unsigned int numMetaDataColumns = 0;
@@ -527,7 +527,7 @@ namespace input {
       numMetaDataColumns = std::max<unsigned int>(numMetaDataColumns, metaData.size());
       ++numMetaDataRows;
     }
-    Log(1) << " -> Parsed " << numMetaDataColumns << " columns of meta data for " << numMetaDataRows << " nodes.\n";
+    Log(1).print(" -> Parsed {} columns of meta data for {} nodes.\n", numMetaDataColumns, numMetaDataRows);
   }
 
 } // namespace input
