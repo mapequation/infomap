@@ -34,7 +34,7 @@ void ClusterMap::readClusterData(const std::string& filename, bool includeFlow, 
   if (m_extension == "clu") {
     return readClu(filename, includeFlow, layerNodeToStateId);
   }
-  throw std::runtime_error(fmt::format("Input cluster data from file '{}' is of unknown extension '{}'. Must be 'clu', 'tree' or 'ftree'.", filename, m_extension));
+  throw std::runtime_error(fmt::format(FMT_STRING("Input cluster data from file '{}' is of unknown extension '{}'. Must be 'clu', 'tree' or 'ftree'."), filename, m_extension));
 }
 
 /**
@@ -83,15 +83,15 @@ void ClusterMap::readTree(const std::string& filename, bool includeFlow, const s
     unsigned int nodeId = 0;
     unsigned int layerId = 0;
     if (!(lineStream >> pathString))
-      throw std::runtime_error(fmt::format("Couldn't parse tree path from line '{}'", line));
+      throw std::runtime_error(fmt::format(FMT_STRING("Couldn't parse tree path from line '{}'"), line));
     if (!(lineStream >> flow))
-      throw std::runtime_error(fmt::format("Couldn't parse node flow from line '{}'", line));
+      throw std::runtime_error(fmt::format(FMT_STRING("Couldn't parse node flow from line '{}'"), line));
     if (!getline(lineStream, name, '"'))
-      throw std::runtime_error(fmt::format("Can't parse node name from line {} ('{}').", lineNr, line));
+      throw std::runtime_error(fmt::format(FMT_STRING("Can't parse node name from line {} ('{}')."), lineNr, line));
     if (!getline(lineStream, name, '"'))
-      throw std::runtime_error(fmt::format("Can't parse node name from line {} ('{}').", lineNr, line));
+      throw std::runtime_error(fmt::format(FMT_STRING("Can't parse node name from line {} ('{}')."), lineNr, line));
     if (!(lineStream >> parsedId))
-      throw std::runtime_error(fmt::format("Couldn't parse node id from line '{}'", line));
+      throw std::runtime_error(fmt::format(FMT_STRING("Couldn't parse node id from line '{}'"), line));
 
     const auto hasExplicitNodeId = static_cast<bool>(lineStream >> nodeId);
     const auto inferredLeafIdType = hasExplicitNodeId ? TreeLeafIdType::state : TreeLeafIdType::physical;
@@ -103,20 +103,20 @@ void ClusterMap::readTree(const std::string& filename, bool includeFlow, const s
       // Earlier rows had a different column count. A file that mixes
       // physical-id (4 columns) and state-id (5+ columns) rows cannot be
       // parsed safely.
-      throw std::runtime_error(fmt::format("Mixed state and physical tree ids are not supported in line '{}'.", line));
+      throw std::runtime_error(fmt::format(FMT_STRING("Mixed state and physical tree ids are not supported in line '{}'."), line));
     }
 
     if (m_treeLeafIdType == TreeLeafIdType::state) {
       if (hasExplicitNodeId) {
         m_isHigherOrder = true;
       } else if (m_isHigherOrder) {
-        throw std::runtime_error(fmt::format("Missing node id from line '{}'.", line));
+        throw std::runtime_error(fmt::format(FMT_STRING("Missing node id from line '{}'."), line));
       }
       if (isMultilayer) {
         if (!hasExplicitNodeId)
-          throw std::runtime_error(fmt::format("Couldn't parse node key from line '{}'", line));
+          throw std::runtime_error(fmt::format(FMT_STRING("Couldn't parse node key from line '{}'"), line));
         if (!(lineStream >> layerId))
-          throw std::runtime_error(fmt::format("Couldn't parse layer id from line '{}'", line));
+          throw std::runtime_error(fmt::format(FMT_STRING("Couldn't parse layer id from line '{}'"), line));
       }
     }
 
@@ -182,7 +182,7 @@ void ClusterMap::readClu(const std::string& filename, bool includeFlow, const st
     unsigned int layerId;
 
     if (!(lineStream >> stateId >> moduleId))
-      throw std::runtime_error(fmt::format("Couldn't parse node key and cluster id from line '{}'", line));
+      throw std::runtime_error(fmt::format(FMT_STRING("Couldn't parse node key and cluster id from line '{}'"), line));
 
     auto flow = 0.0;
     if (lineStream >> flow) {
@@ -193,10 +193,10 @@ void ClusterMap::readClu(const std::string& filename, bool includeFlow, const st
     auto multilayerNodeFound = false;
     if (isMultilayer) {
       if (!(lineStream >> nodeId))
-        throw std::runtime_error(fmt::format("Couldn't parse node key from line '{}'", line));
+        throw std::runtime_error(fmt::format(FMT_STRING("Couldn't parse node key from line '{}'"), line));
 
       if (!(lineStream >> layerId))
-        throw std::runtime_error(fmt::format("Couldn't parse layer id from line '{}'", line));
+        throw std::runtime_error(fmt::format(FMT_STRING("Couldn't parse layer id from line '{}'"), line));
 
       // get new state id from map
       auto it = layerNodeToStateId->find(layerId);

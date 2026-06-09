@@ -131,12 +131,12 @@ void Network::printSummary()
   }
   if (isMultilayerNetwork()) {
     pretty.metric("Layers", fmt::to_string(m_layers.size()));
-    pretty.metric("Layer links", fmt::format("{} ({} intra, {} inter)", m_numIntraLayerLinks + m_numInterLayerLinks, m_numIntraLayerLinks, m_numInterLayerLinks));
+    pretty.metric("Layer links", fmt::format(FMT_STRING("{} ({} intra, {} inter)"), m_numIntraLayerLinks + m_numInterLayerLinks, m_numIntraLayerLinks, m_numInterLayerLinks));
   }
   pretty.metric("Links", fmt::to_string(numLinks()));
-  pretty.metric("Total weight", fmt::format("{:g}", m_totalLinkWeightAdded));
+  pretty.metric("Total weight", fmt::format(FMT_STRING("{:g}"), m_totalLinkWeightAdded));
   if (m_numLinksIgnoredByWeightThreshold > 0) {
-    pretty.metric("Ignored by threshold", fmt::format("{} links, weight {:g} ({})", m_numLinksIgnoredByWeightThreshold, m_totalLinkWeightIgnored, PrettyOutput::percent(m_totalLinkWeightIgnored / (m_totalLinkWeightIgnored + m_totalLinkWeightAdded) * 100)));
+    pretty.metric("Ignored by threshold", fmt::format(FMT_STRING("{} links, weight {:g} ({})"), m_numLinksIgnoredByWeightThreshold, m_totalLinkWeightIgnored, PrettyOutput::percent(m_totalLinkWeightIgnored / (m_totalLinkWeightIgnored + m_totalLinkWeightAdded) * 100)));
   }
 }
 
@@ -732,7 +732,7 @@ void Network::addMultilayerIntraLinks(const std::vector<unsigned int>& layerIds,
 void Network::addMultilayerInterLink(unsigned int layer1, unsigned int n, unsigned int layer2, double interWeight)
 {
   if (layer1 == layer2) {
-    throw std::runtime_error(fmt::format("Inter-layer link (layer1, node, layer2): {}, {}, {} must have layer1 != layer2", layer1, n, layer2));
+    throw std::runtime_error(fmt::format(FMT_STRING("Inter-layer link (layer1, node, layer2): {}, {}, {} must have layer1 != layer2"), layer1, n, layer2));
   }
   m_higherOrderInputMethodCalled = true;
 
@@ -774,7 +774,7 @@ unsigned int Network::addMultilayerNode(unsigned int layerId, unsigned int physi
   bool matchableMultilayerIds = m_config.matchableMultilayerIds != 0;
 
   if (matchableMultilayerIds && layerId > m_config.matchableMultilayerIds) {
-    throw std::runtime_error(fmt::format("Cannot add node with layer {} to network with matchable multilayer ids using largest layer id {}", layerId, m_config.matchableMultilayerIds));
+    throw std::runtime_error(fmt::format(FMT_STRING("Cannot add node with layer {} to network with matchable multilayer ids using largest layer id {}"), layerId, m_config.matchableMultilayerIds));
   }
 
   auto ret = matchableMultilayerIds
@@ -821,7 +821,7 @@ void Network::addMetaData(unsigned int nodeId, const std::vector<int>& metaData)
   if (m_numMetaDataColumns == 0) {
     m_numMetaDataColumns = metaData.size();
   } else if (metaData.size() != m_numMetaDataColumns) {
-    throw std::runtime_error(fmt::format("Must have same number of dimensions in meta data, error trying to add meta data '{}' on node {}.", io::stringify(metaData, ","), nodeId));
+    throw std::runtime_error(fmt::format(FMT_STRING("Must have same number of dimensions in meta data, error trying to add meta data '{}' on node {}."), io::stringify(metaData, ","), nodeId));
   }
 }
 

@@ -101,7 +101,7 @@ public:
     bool sourceIsFeature = link.source >= m_network.m_bipartiteStartId;
     bool targetIsFeature = link.target >= m_network.m_bipartiteStartId;
     if (sourceIsFeature == targetIsFeature) {
-      throw std::runtime_error(fmt::format("Bipartite link '{}' must cross bipartite start id {}.", line, m_network.m_bipartiteStartId));
+      throw std::runtime_error(fmt::format(FMT_STRING("Bipartite link '{}' must cross bipartite start id {}."), line, m_network.m_bipartiteStartId));
     }
     m_network.addLink(link.source, link.target, link.weight);
   }

@@ -281,7 +281,7 @@ namespace {
   {
     T constraint;
     if (value.empty() || !io::stringToValue(value, constraint)) {
-      throw std::runtime_error(fmt::format("Invalid {} for parameter --{}.", name, parameter.longName));
+      throw std::runtime_error(fmt::format(FMT_STRING("Invalid {} for parameter --{}."), name, parameter.longName));
     }
     return constraint;
   }

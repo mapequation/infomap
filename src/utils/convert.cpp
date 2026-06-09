@@ -20,8 +20,8 @@ namespace io {
     // byte-for-byte (including rounding and subnormal edge cases) against the
     // previous std::ostringstream implementation. Kept in a .cpp so the fmt
     // header stays out of the widely-included convert.h.
-    return fixed ? fmt::format("{:.{}f}", value, precision)
-                 : fmt::format("{:.{}g}", value, precision);
+    return fixed ? fmt::format(FMT_STRING("{:.{}f}"), value, precision)
+                 : fmt::format(FMT_STRING("{:.{}g}"), value, precision);
   }
 
 } // namespace io

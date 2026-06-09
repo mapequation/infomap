@@ -226,7 +226,7 @@ namespace {
 
     FlowModel flowModel = FlowModel::undirected;
     if (!parseFlowModel(parsed.flowModelArg, flowModel)) {
-      throw std::runtime_error(fmt::format("Unrecognized flow model: '{}'", parsed.flowModelArg));
+      throw std::runtime_error(fmt::format(FMT_STRING("Unrecognized flow model: '{}'"), parsed.flowModelArg));
     }
     config.setFlowModel(flowModel);
   }
@@ -237,7 +237,7 @@ namespace {
       ensureDirectoryExists(config.outDirectory);
     }
     if (config.haveOutput() && !isDirectoryWritable(config.outDirectory))
-      throw InfomapError(ExitCode::OutputError, fmt::format("Can't write to directory '{}'. Check that the directory exists and that you have write permissions.", config.outDirectory));
+      throw InfomapError(ExitCode::OutputError, fmt::format(FMT_STRING("Can't write to directory '{}'. Check that the directory exists and that you have write permissions."), config.outDirectory));
   }
 
   void initializeLogging(const Config& config)
@@ -318,7 +318,7 @@ void Config::adaptDefaults()
   for (std::string& o : outputs) {
     const auto* format = findOutputFormat(o);
     if (format == nullptr) {
-      throw std::runtime_error(fmt::format("Unrecognized output format: '{}'.", o));
+      throw std::runtime_error(fmt::format(FMT_STRING("Unrecognized output format: '{}'."), o));
     }
     enableOutputFormat(*this, *format);
   }

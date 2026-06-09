@@ -151,7 +151,7 @@ namespace input {
       const char* p = line.c_str();
       ParsedLink link;
       if (!parseUnsigned(p, link.source) || !parseUnsigned(p, link.target))
-        throw std::runtime_error(fmt::format("Can't parse link data from line '{}'", line));
+        throw std::runtime_error(fmt::format(FMT_STRING("Can't parse link data from line '{}'"), line));
       if (!parseOptionalDouble(p, link.weight)) {
         link.weight = 1.0;
       }
@@ -163,7 +163,7 @@ namespace input {
       const char* p = line.c_str();
       ParsedStateNode parsed;
       if (!parseUnsigned(p, parsed.node.id) || !parseUnsigned(p, parsed.node.physicalId))
-        throw std::runtime_error(fmt::format("Can't parse any state node from line '{}'", line));
+        throw std::runtime_error(fmt::format(FMT_STRING("Can't parse any state node from line '{}'"), line));
 
       auto nameStart = line.find_first_of('\"', static_cast<std::size_t>(p - line.c_str()));
       auto nameEnd = line.find_last_of('\"');
@@ -174,7 +174,7 @@ namespace input {
       if (parseOptionalDouble(p, parsed.node.weight)) {
         parsed.hasWeight = true;
         if (parsed.node.weight < 0)
-          throw std::runtime_error(fmt::format("Negative state node weight ({}) from line '{}'", parsed.node.weight, line));
+          throw std::runtime_error(fmt::format(FMT_STRING("Negative state node weight ({}) from line '{}'"), parsed.node.weight, line));
       }
       return parsed;
     }
@@ -184,7 +184,7 @@ namespace input {
       const char* p = line.c_str();
       ParsedMultilayerLink link;
       if (!parseUnsigned(p, link.sourceLayer) || !parseUnsigned(p, link.sourceNode) || !parseUnsigned(p, link.targetLayer) || !parseUnsigned(p, link.targetNode))
-        throw std::runtime_error(fmt::format("Can't parse multilayer link data from line '{}'", line));
+        throw std::runtime_error(fmt::format(FMT_STRING("Can't parse multilayer link data from line '{}'"), line));
       if (!parseOptionalDouble(p, link.weight)) {
         link.weight = 1.0;
       }
@@ -196,7 +196,7 @@ namespace input {
       const char* p = line.c_str();
       ParsedMultilayerIntraLink link;
       if (!parseUnsigned(p, link.layer) || !parseUnsigned(p, link.sourceNode) || !parseUnsigned(p, link.targetNode))
-        throw std::runtime_error(fmt::format("Can't parse intra-multilayer link data from line '{}'", line));
+        throw std::runtime_error(fmt::format(FMT_STRING("Can't parse intra-multilayer link data from line '{}'"), line));
       if (!parseOptionalDouble(p, link.weight)) {
         link.weight = 1.0;
       }
@@ -208,12 +208,12 @@ namespace input {
       const char* p = line.c_str();
       ParsedMultilayerInterLink link;
       if (!parseUnsigned(p, link.sourceLayer) || !parseUnsigned(p, link.node) || !parseUnsigned(p, link.targetLayer))
-        throw std::runtime_error(fmt::format("Can't parse inter-multilayer link data from line '{}'", line));
+        throw std::runtime_error(fmt::format(FMT_STRING("Can't parse inter-multilayer link data from line '{}'"), line));
       if (!parseOptionalDouble(p, link.weight)) {
         link.weight = 1.0;
       }
       if (link.sourceLayer == link.targetLayer)
-        throw std::runtime_error(fmt::format("Inter-layer link from line '{}' doesn't go between different layers.", line));
+        throw std::runtime_error(fmt::format(FMT_STRING("Inter-layer link from line '{}' doesn't go between different layers."), line));
       return link;
     }
 
@@ -243,7 +243,7 @@ namespace input {
         std::istringstream extractor(line);
         ParsedVertex vertex;
         if (!(extractor >> vertex.id))
-          throw std::runtime_error(fmt::format("Can't parse node id from line '{}'", line));
+          throw std::runtime_error(fmt::format(FMT_STRING("Can't parse node id from line '{}'"), line));
 
         auto nameStart = line.find_first_of('\"');
         auto nameEnd = line.find_last_of('\"');
@@ -254,12 +254,12 @@ namespace input {
           extractor.str(line);
         } else {
           if (!(extractor >> vertex.name))
-            throw std::runtime_error(fmt::format("Can't parse node name from line '{}'", line));
+            throw std::runtime_error(fmt::format(FMT_STRING("Can't parse node name from line '{}'"), line));
         }
         if ((extractor >> vertex.weight)) {
           vertex.hasWeight = true;
           if (vertex.weight < 0)
-            throw std::runtime_error(fmt::format("Negative node weight ({}) from line '{}'", vertex.weight, line));
+            throw std::runtime_error(fmt::format(FMT_STRING("Negative node weight ({}) from line '{}'"), vertex.weight, line));
         }
 
         sink.onPhysicalNode(vertex);
@@ -409,7 +409,7 @@ namespace input {
       std::string tmp;
       unsigned int bipartiteStartId = 0;
       if (!(extractor >> tmp >> bipartiteStartId))
-        throw std::runtime_error(fmt::format("Can't parse bipartite start id from line '{}'", heading));
+        throw std::runtime_error(fmt::format(FMT_STRING("Can't parse bipartite start id from line '{}'"), heading));
 
       Log(1) << "  -> Using bipartite start id " << bipartiteStartId << "\n";
       sink.onBipartiteStart(bipartiteStartId);
@@ -453,7 +453,7 @@ namespace input {
       while (!heading.empty() && heading[0] == '*') {
         std::string headingLowerCase = io::tolower(io::firstWord(heading));
         if (validHeadings.count(headingLowerCase) == 0) {
-          throw std::runtime_error(fmt::format("Unrecognized heading in network file: '{}'.", headingLowerCase));
+          throw std::runtime_error(fmt::format(FMT_STRING("Unrecognized heading in network file: '{}'."), headingLowerCase));
         }
         bool shouldIgnoreHeading = ignoreHeadings.count(headingLowerCase) > 0;
         if (!shouldIgnoreHeading && headingLowerCase == "*vertices") {
@@ -513,7 +513,7 @@ namespace input {
       std::istringstream extractor(line);
       unsigned int nodeId = 0;
       if (!(extractor >> nodeId))
-        throw std::runtime_error(fmt::format("Can't parse node id from line '{}'", line));
+        throw std::runtime_error(fmt::format(FMT_STRING("Can't parse node id from line '{}'"), line));
 
       std::vector<int> metaData;
       unsigned int metaId = 0;
@@ -521,7 +521,7 @@ namespace input {
         metaData.push_back(metaId);
       }
       if (metaData.empty())
-        throw std::runtime_error(fmt::format("Can't parse any meta data from line '{}'", line));
+        throw std::runtime_error(fmt::format(FMT_STRING("Can't parse any meta data from line '{}'"), line));
 
       sink.onMetaData(nodeId, metaData);
       numMetaDataColumns = std::max<unsigned int>(numMetaDataColumns, metaData.size());

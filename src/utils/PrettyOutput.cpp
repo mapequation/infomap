@@ -42,26 +42,26 @@ PrettyOutput::PrettyOutput() : m_ansi(stdoutSupportsAnsi()) {}
 
 void PrettyOutput::section(const std::string& title) const
 {
-  Log() << fmt::format("\n{}{}{}{}\n", cyan(), bold(), title, reset());
+  Log() << fmt::format(FMT_STRING("\n{}{}{}{}\n"), cyan(), bold(), title, reset());
 }
 
 void PrettyOutput::metric(const std::string& label, const std::string& value) const
 {
   // {:<30} == std::left << std::setw(30) (min width, left-justified, space fill).
   // The label (and its padding) is dimmed; reset() lands before the value.
-  Log() << fmt::format("  {}{:<30}{}{}\n", dim(), label, reset(), value);
+  Log() << fmt::format(FMT_STRING("  {}{:<30}{}{}\n"), dim(), label, reset(), value);
 }
 
 void PrettyOutput::status(const std::string& label, const std::string& value) const
 {
-  Log() << fmt::format("  {} {:<14}{}\n", bullet(), label, value);
+  Log() << fmt::format(FMT_STRING("  {} {:<14}{}\n"), bullet(), label, value);
 }
 
 std::string PrettyOutput::percent(double value)
 {
   if (std::abs(value) < 1e-9)
     return "0%";
-  return fmt::format("{}%", io::toPrecision(value, 2, true));
+  return fmt::format(FMT_STRING("{}%"), io::toPrecision(value, 2, true));
 }
 
 std::string PrettyOutput::fixed(double value, unsigned int precision)
@@ -69,7 +69,7 @@ std::string PrettyOutput::fixed(double value, unsigned int precision)
   // {:.{}f} reproduces std::fixed << std::setprecision(precision) byte-for-byte
   // (verified across edge cases); see scripts/check_cpp_stream_policy.py for why
   // formatting goes through fmt rather than iostreams.
-  return fmt::format("{:.{}f}", value, precision);
+  return fmt::format(FMT_STRING("{:.{}f}"), value, precision);
 }
 
 } // namespace infomap

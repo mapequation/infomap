@@ -11,6 +11,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
+#include <iomanip>
 #include <iostream>
 #include <limits>
 #include <sstream>
@@ -331,6 +332,65 @@ TEST_CASE("ensureDirectoryExists creates a deep directory chain [fast][core][uti
   CHECK(infomap::isDirectory(leaf));
   // Idempotent: a second call on an existing chain is a no-op, not an error.
   CHECK_NOTHROW(infomap::ensureDirectoryExists(leaf));
+}
+
+// Characterization test locking the byte-for-byte equivalence claim in
+// convert.cpp: io::toPrecision now formats with {fmt} ({:.{}g} / {:.{}f})
+// instead of std::ostringstream. This reference reproduces the *previous*
+// iostream implementation verbatim; the matrix below asserts fmt reproduces it
+// exactly so a future fmt bump or refactor can't silently shift Infomap's
+// numeric output. (Both run under the default "C" locale here, matching the
+// CLI, so locale divergence is out of scope.)
+std::string toPrecisionLegacy(double value, unsigned int precision, bool fixed)
+{
+  std::ostringstream o;
+  if (fixed)
+    o << std::fixed << std::setprecision(static_cast<int>(precision));
+  else
+    o << std::setprecision(static_cast<int>(precision));
+  o << value;
+  return o.str();
+}
+
+TEST_CASE("toPrecision reproduces the legacy iostream output byte-for-byte [fast][core][utils][io]")
+{
+  const std::vector<double> values = {
+    0.0,
+    -0.0,
+    1.0,
+    -1.0,
+    0.5,
+    1.0 / 3.0,
+    2.0 / 3.0,
+    3.14159265358979,
+    0.1,
+    0.125,
+    0.15, // classic banker's-rounding edge
+    2.675, // classic float-representation rounding edge
+    9.9999999999,
+    1234.5678,
+    123456789.123456789,
+    -42.0,
+    1e-9,
+    1e9,
+    1e-300,
+    1e300,
+    std::numeric_limits<double>::min(), // smallest normal
+    std::numeric_limits<double>::denorm_min(), // subnormal
+    std::numeric_limits<double>::max(),
+  };
+  const std::vector<unsigned int> precisions = { 0, 1, 2, 3, 6, 9, 10, 15, 17 };
+
+  for (const double value : values) {
+    for (const unsigned int precision : precisions) {
+      for (const bool fixed : { false, true }) {
+        const std::string expected = toPrecisionLegacy(value, precision, fixed);
+        const std::string actual = infomap::io::toPrecision(value, precision, fixed);
+        INFO("value=" << value << " precision=" << precision << " fixed=" << fixed);
+        CHECK(actual == expected);
+      }
+    }
+  }
 }
 
 } // namespace

@@ -56,12 +56,12 @@ namespace {
       if (opt.shortName != '\0') {
         auto inserted = lookup.shortOptions.insert(std::make_pair(opt.shortName, &opt));
         if (!inserted.second)
-          throw std::runtime_error(fmt::format("Duplication of option '{}'", opt.shortName));
+          throw std::runtime_error(fmt::format(FMT_STRING("Duplication of option '{}'"), opt.shortName));
       }
 
       auto inserted = lookup.longOptions.insert(std::make_pair(opt.longName, &opt));
       if (!inserted.second)
-        throw std::runtime_error(fmt::format("Duplication of option \"{}\"", opt.longName));
+        throw std::runtime_error(fmt::format(FMT_STRING("Duplication of option \"{}\""), opt.longName));
     }
     return lookup;
   }
@@ -79,7 +79,7 @@ namespace {
   void parseOptionValue(Option& opt, const std::string& value)
   {
     if (!opt.parse(value))
-      throw std::runtime_error(fmt::format("Cannot parse '{}' as argument to option '{}'. ", value, opt.longName));
+      throw std::runtime_error(fmt::format(FMT_STRING("Cannot parse '{}' as argument to option '{}'. "), value, opt.longName));
   }
 
   void parseLongOption(const std::string& arg, const LongOptionMap& longOptions, const std::vector<std::string>& flags, unsigned int& i)
@@ -97,7 +97,7 @@ namespace {
         it = longOptions.find(longOpt);
         flagValue = false;
       } else {
-        throw std::runtime_error(fmt::format("Unrecognized option: '--{}'", longOpt));
+        throw std::runtime_error(fmt::format(FMT_STRING("Unrecognized option: '--{}'"), longOpt));
       }
     }
 
@@ -109,7 +109,7 @@ namespace {
 
     const auto numArgsLeft = flags.size() - i - 1;
     if (numArgsLeft == 0)
-      throw std::runtime_error(fmt::format("Option '{}' requires argument", opt.longName));
+      throw std::runtime_error(fmt::format(FMT_STRING("Option '{}' requires argument"), opt.longName));
 
     ++i;
     parseOptionValue(opt, flags[i]);
@@ -122,7 +122,7 @@ namespace {
       const auto numCharsLeft = arg.length() - j - 1;
       auto it = shortOptions.find(optionName);
       if (it == shortOptions.end())
-        throw std::runtime_error(fmt::format("Unrecognized option: '-{}'", optionName));
+        throw std::runtime_error(fmt::format(FMT_STRING("Unrecognized option: '-{}'"), optionName));
 
       auto& opt = *it->second;
       if (!opt.requireArgument || opt.incrementalArgument) {
@@ -139,7 +139,7 @@ namespace {
         ++i;
         optArg = flags[i];
       } else {
-        throw std::runtime_error(fmt::format("Option '{}' requires argument", opt.longName));
+        throw std::runtime_error(fmt::format(FMT_STRING("Option '{}' requires argument"), opt.longName));
       }
 
       parseOptionValue(opt, optArg);
@@ -187,7 +187,7 @@ namespace {
   std::string zshAction(const Option& opt)
   {
     if (!opt.choices.empty())
-      return fmt::format("({})", join(opt.choices, " "));
+      return fmt::format(FMT_STRING("({})"), join(opt.choices, " "));
     if (opt.argumentName == ArgType::path)
       return "_files";
     return "";
@@ -201,8 +201,8 @@ namespace {
       if (opt.hidden)
         continue;
       if (opt.shortName != '\0')
-        words.push_back(fmt::format("-{}", opt.shortName));
-      words.push_back(fmt::format("--{}", opt.longName));
+        words.push_back(fmt::format(FMT_STRING("-{}"), opt.shortName));
+      words.push_back(fmt::format(FMT_STRING("--{}"), opt.longName));
     }
     return words;
   }
@@ -215,8 +215,8 @@ namespace {
       if (opt.hidden || !opt.requireArgument)
         continue;
       if (opt.shortName != '\0')
-        words.push_back(fmt::format("-{}", opt.shortName));
-      words.push_back(fmt::format("--{}", opt.longName));
+        words.push_back(fmt::format(FMT_STRING("-{}"), opt.shortName));
+      words.push_back(fmt::format(FMT_STRING("--{}"), opt.longName));
     }
     return words;
   }
@@ -229,8 +229,8 @@ namespace {
       if (opt.hidden || opt.argumentName != ArgType::path)
         continue;
       if (opt.shortName != '\0')
-        words.push_back(fmt::format("-{}", opt.shortName));
-      words.push_back(fmt::format("--{}", opt.longName));
+        words.push_back(fmt::format(FMT_STRING("-{}"), opt.shortName));
+      words.push_back(fmt::format(FMT_STRING("--{}"), opt.longName));
     }
     return words;
   }
@@ -277,12 +277,12 @@ void ProgramInterface::exitWithUsage(bool showAdvanced) const
   for (unsigned int i = 0; i < m_optionArguments.size(); ++i) {
     auto& opt = *m_optionArguments[i];
     bool haveShort = opt.shortName != '\0';
-    std::string optArgShort = opt.requireArgument ? fmt::format("<{}>", ArgType::toShort.at(opt.argumentName)) : opt.incrementalArgument ? "[+]"
+    std::string optArgShort = opt.requireArgument ? fmt::format(FMT_STRING("<{}>"), ArgType::toShort.at(opt.argumentName)) : opt.incrementalArgument ? "[+]"
                                                                                                                                          : std::string(3, ' ');
-    std::string optArgLong = opt.requireArgument ? fmt::format("<{}>", opt.argumentName) : opt.incrementalArgument ? "[+]"
+    std::string optArgLong = opt.requireArgument ? fmt::format(FMT_STRING("<{}>"), opt.argumentName) : opt.incrementalArgument ? "[+]"
                                                                                                                    : std::string(3, ' ');
-    std::string shortOption = haveShort ? fmt::format("  -{}{}", opt.shortName, optArgShort) : std::string(7, ' ');
-    optionStrings[i] = fmt::format("{} --{} {}", shortOption, opt.longName, optArgLong);
+    std::string shortOption = haveShort ? fmt::format(FMT_STRING("  -{}{}"), opt.shortName, optArgShort) : std::string(7, ' ');
+    optionStrings[i] = fmt::format(FMT_STRING("{} --{} {}"), shortOption, opt.longName, optArgLong);
     if (optionStrings[i].length() > maxLength)
       maxLength = optionStrings[i].length();
   }
@@ -398,8 +398,8 @@ void ProgramInterface::printBashCompletion() const
       continue;
     std::vector<std::string> words;
     if (opt.shortName != '\0')
-      words.push_back(fmt::format("-{}", opt.shortName));
-    words.push_back(fmt::format("--{}", opt.longName));
+      words.push_back(fmt::format(FMT_STRING("-{}"), opt.shortName));
+    words.push_back(fmt::format(FMT_STRING("--{}"), opt.longName));
     Log() << "    " << join(words, "|") << ") __infomap_words \"" << bashWords(opt.choices) << "\"; return ;;\n";
   }
   if (!pathOptions.empty())
@@ -461,7 +461,7 @@ void ProgramInterface::exitWithCompletion() const
   } else if (m_completionShell == "zsh") {
     printZshCompletion();
   } else {
-    throw std::runtime_error(fmt::format("Unsupported completion shell '{}'. Supported shells: bash, zsh.", m_completionShell));
+    throw std::runtime_error(fmt::format(FMT_STRING("Unsupported completion shell '{}'. Supported shells: bash, zsh."), m_completionShell));
   }
 
   throw CleanExit {};

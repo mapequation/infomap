@@ -94,10 +94,10 @@ namespace {
     summaries.reserve(groups.size());
     for (const auto& group : groups) {
       if (group.second.size() == 1) {
-        summaries.push_back(group.second.front().empty() ? group.first : fmt::format("{}.{}", group.first, group.second.front()));
+        summaries.push_back(group.second.front().empty() ? group.first : fmt::format(FMT_STRING("{}.{}"), group.first, group.second.front()));
         continue;
       }
-      summaries.push_back(fmt::format("{}.{{{}}}", group.first, io::stringify(group.second, ",")));
+      summaries.push_back(fmt::format(FMT_STRING("{}.{{{}}}"), group.first, io::stringify(group.second, ",")));
     }
     return summaries;
   }
@@ -150,7 +150,7 @@ std::string outputPlanBasename(const Config& config, int trial)
   std::string basename = config.outDirectory + config.outName;
 
   if (config.printAllTrials && trial != -1 && config.numTrials > 1) {
-    basename += fmt::format("_trial_{}", trial);
+    basename += fmt::format(FMT_STRING("_trial_{}"), trial);
   }
 
   return basename;
@@ -263,7 +263,7 @@ void preflightOutputTargets(const Config& config)
 
   for (const auto& path : planAllOutputPaths(config)) {
     if (pathExists(path))
-      throw InfomapError(ExitCode::OutputError, fmt::format("Output file already exists: '{}'", path));
+      throw InfomapError(ExitCode::OutputError, fmt::format(FMT_STRING("Output file already exists: '{}'"), path));
   }
 }
 
@@ -285,7 +285,7 @@ void writeOutputArtifacts(InfomapBase& infomap, Network& network, OutputPhase ph
   for (const auto& output : artifacts) {
     writeOutputArtifact(infomap, network, output);
     if (phase != OutputPhase::AfterPartition) {
-      PrettyOutput().status("Output", fmt::format("{} -> {}", output.label, output.filename));
+      PrettyOutput().status("Output", fmt::format(FMT_STRING("{} -> {}"), output.label, output.filename));
       continue;
     }
     prettyOutputFiles.emplace_back(output.label, output.filename);
@@ -296,14 +296,14 @@ void writeOutputArtifacts(InfomapBase& infomap, Network& network, OutputPhase ph
   }
 
   if (prettyOutputFiles.size() == 1) {
-    PrettyOutput().status("Output", fmt::format("{} -> {}", prettyOutputFiles.front().first, prettyOutputFiles.front().second));
+    PrettyOutput().status("Output", fmt::format(FMT_STRING("{} -> {}"), prettyOutputFiles.front().first, prettyOutputFiles.front().second));
     return;
   }
 
   const auto summaries = summarizeOutputFiles(prettyOutputFiles);
   for (unsigned int i = 0; i < summaries.size(); ++i) {
-    const std::string prefix = i == 0 ? fmt::format("{} files -> ", prettyOutputFiles.size()) : "         ";
-    PrettyOutput().status("Output", fmt::format("{}{}", prefix, summaries[i]));
+    const std::string prefix = i == 0 ? fmt::format(FMT_STRING("{} files -> "), prettyOutputFiles.size()) : "         ";
+    PrettyOutput().status("Output", fmt::format(FMT_STRING("{}{}"), prefix, summaries[i]));
   }
 }
 

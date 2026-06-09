@@ -214,7 +214,7 @@ public:
     auto summaryTimer = m_timing.scope("summary_s");
 
     PrettyOutput pretty;
-    pretty.section(fmt::format("Summary after {}{}", m_numTrials, m_numTrials > 1 ? " trials" : " trial"));
+    pretty.section(fmt::format(FMT_STRING("Summary after {}{}"), m_numTrials, m_numTrials > 1 ? " trials" : " trial"));
     std::string codelengthRange;
     std::string topModulesRange;
     if (m_numTrials > 1) {
@@ -235,8 +235,8 @@ public:
       }
       averageCodelength /= m_numTrials;
       averageNumTopModules /= m_numTrials;
-      codelengthRange = fmt::format("{:g} / {:g} / {:g}", minCodelength, averageCodelength, maxCodelength);
-      topModulesRange = fmt::format("{} / {} / {}", minNumTopModules, io::toPrecision(averageNumTopModules, 1, true), maxNumTopModules);
+      codelengthRange = fmt::format(FMT_STRING("{:g} / {:g} / {:g}"), minCodelength, averageCodelength, maxCodelength);
+      topModulesRange = fmt::format(FMT_STRING("{} / {} / {}"), minNumTopModules, io::toPrecision(averageNumTopModules, 1, true), maxNumTopModules);
       pretty.metric("Codelength min/avg/max", codelengthRange);
       pretty.metric("Top modules min/avg/max", topModulesRange);
       Log() << "\n";
@@ -244,11 +244,11 @@ public:
     pretty.metric("Nodes", fmt::to_string(m_infomap.numLeafNodes()));
     pretty.metric("Links", fmt::to_string(m_network.numLinks()));
     pretty.metric("Average degree", io::toPrecision(m_network.numLinks() * 2.0 / m_infomap.numLeafNodes(), 1, true));
-    pretty.metric("Top modules", fmt::format("{} ({} non-trivial)", m_infomap.numTopModules(), m_infomap.numNonTrivialTopModules()));
+    pretty.metric("Top modules", fmt::format(FMT_STRING("{} ({} non-trivial)"), m_infomap.numTopModules(), m_infomap.numNonTrivialTopModules()));
     pretty.metric("Levels", fmt::to_string(result.bestNumLevels));
     pretty.metric("One-level codelength", io::toPrecision(m_infomap.getOneLevelCodelength()));
     pretty.metric("Best codelength", io::toPrecision(result.bestHierarchicalCodelength));
-    pretty.metric("Relative savings", fmt::format("{}%", io::toPrecision(m_infomap.getRelativeCodelengthSavings() * 100, 2, true)));
+    pretty.metric("Relative savings", fmt::format(FMT_STRING("{}%"), io::toPrecision(m_infomap.getRelativeCodelengthSavings() * 100, 2, true)));
     Log() << "\n";
     Log() << result.bestSolutionStatistics.str() << '\n';
   }
@@ -374,7 +374,7 @@ private:
     }
 
     if (hasError) {
-      throw std::runtime_error(fmt::format("Parallel trial {}/{} failed: {}", firstErrorTrial + 1, m_numTrials, firstError));
+      throw std::runtime_error(fmt::format(FMT_STRING("Parallel trial {}/{} failed: {}"), firstErrorTrial + 1, m_numTrials, firstError));
     }
 
     m_infomap.m_codelengths = std::move(codelengths);
@@ -837,7 +837,7 @@ void InfomapBase::run(const std::string& parameters)
   m_elapsedTime = Stopwatch(true);
   m_startDate = Date();
 
-  std::string currentParameters = fmt::format("{}{}{}", m_initialParameters, parameters.empty() ? "" : " ", parameters);
+  std::string currentParameters = fmt::format(FMT_STRING("{}{}{}"), m_initialParameters, parameters.empty() ? "" : " ", parameters);
   if (currentParameters != m_currentParameters) {
     m_currentParameters = currentParameters;
     setConfig(Config(m_currentParameters, isCLI));
@@ -946,7 +946,7 @@ InfomapBase& InfomapBase::initPartition(const std::string& clusterDataFile, bool
     clusterMap.readClusterData(clusterDataFile);
   }
 
-  PrettyOutput().status("Initial", fmt::format("reading {}", clusterDataFile));
+  PrettyOutput().status("Initial", fmt::format(FMT_STRING("reading {}"), clusterDataFile));
   Log(1) << "Init partition from file '" << clusterDataFile << "'... ";
 
   const auto& ext = clusterMap.extension();
@@ -962,7 +962,7 @@ InfomapBase& InfomapBase::initPartition(const std::string& clusterDataFile, bool
     initPartition(clusterMap.clusterIds(), hard);
   }
 
-  PrettyOutput().status("Initial", fmt::format("generated {} levels, codelength {}", numLevels(), io::toPrecision(m_hierarchicalCodelength)));
+  PrettyOutput().status("Initial", fmt::format(FMT_STRING("generated {} levels, codelength {}"), numLevels(), io::toPrecision(m_hierarchicalCodelength)));
   Log(1) << "done! Generated " << numLevels() << " levels with codelength " << getIndexCodelength() << " + " << (m_hierarchicalCodelength - getIndexCodelength()) << " = " << io::toPrecision(m_hierarchicalCodelength) << '\n';
 
   return *this;
@@ -1178,7 +1178,7 @@ InfomapBase& InfomapBase::initTree(const NodePaths& tree)
   initPartition();
 
   m_hierarchicalCodelength = calcCodelengthOnTree(root(), true);
-  PrettyOutput().status("Initial", fmt::format("codelength {:g}, {} levels, {} top modules", m_hierarchicalCodelength, maxDepth, numTopModules()));
+  PrettyOutput().status("Initial", fmt::format(FMT_STRING("codelength {:g}, {} levels, {} top modules"), m_hierarchicalCodelength, maxDepth, numTopModules()));
   Log(1) << "\n -> Initiated to codelength " << m_hierarchicalCodelength << " in " << maxDepth << " levels with " << numTopModules() << " top modules.\n";
   Log(1) << std::setprecision(6);
   return *this;
@@ -1334,7 +1334,7 @@ InfomapBase& InfomapBase::initPartition(std::vector<unsigned int>& modules, bool
 
     Log(1) << "\n -> Hard-partitioned the network to " << numNodesInNewNetwork << " nodes and " << numLinksInNewNetwork << " links with codelength " << *this << '\n';
   } else {
-    PrettyOutput().status("Initial", fmt::format("codelength {}, {} top modules", io::stringify(*this), numTopModules()));
+    PrettyOutput().status("Initial", fmt::format(FMT_STRING("codelength {}, {} top modules"), io::stringify(*this), numTopModules()));
     Log(1) << "\n -> Initiated to codelength " << *this << " in " << numTopModules() << " top modules.\n";
   }
   m_hierarchicalCodelength = getCodelength();
@@ -1715,8 +1715,8 @@ void InfomapBase::partition()
 
   std::string nonTrivialSummary;
   if (m_numNonTrivialTopModules != numTopModules())
-    nonTrivialSummary = fmt::format(" ({} non-trivial)", m_numNonTrivialTopModules);
-  PrettyOutput().status("Two-level", fmt::format("{} -> codelength {}, {} modules{}", compressionSummary(prettyCompression), io::toPrecision(getCodelength()), numTopModules(), nonTrivialSummary));
+    nonTrivialSummary = fmt::format(FMT_STRING(" ({} non-trivial)"), m_numNonTrivialTopModules);
+  PrettyOutput().status("Two-level", fmt::format(FMT_STRING("{} -> codelength {}, {} modules{}"), compressionSummary(prettyCompression), io::toPrecision(getCodelength()), numTopModules(), nonTrivialSummary));
   const bool regularizedPriorOnly = regularized && network().numLinks() == 0;
   if (!preferModularSolution && preferredNumberOfModules == 0 && (haveNonTrivialModules() || regularizedPriorOnly) && getCodelength() > getOneLevelCodelength()) {
     Log(1) << "Worse codelength than one-level codelength, putting all nodes in one module... ";
@@ -2312,7 +2312,7 @@ unsigned int InfomapBase::findHierarchicalSuperModules(unsigned int superLevelLi
   // Restore the temporary transformation of flow to enter flow on super modules
   resetFlowOnModules();
 
-  PrettyOutput().status("Super-level", fmt::format("{} -> codelength {}, {} top modules", compressionSummary(prettyCompression), io::toPrecision(hierarchicalCodelength), numTopModules()));
+  PrettyOutput().status("Super-level", fmt::format(FMT_STRING("{} -> codelength {}, {} top modules"), compressionSummary(prettyCompression), io::toPrecision(hierarchicalCodelength), numTopModules()));
   Log(1) << "to codelength " << io::toPrecision(hierarchicalCodelength) << " in " << numTopModules() << " top modules.\n";
   Log(1) << "Finding super modules done! Added " << numLevelsCreated << " levels with hierarchical codelength " << io::toPrecision(hierarchicalCodelength) << " in " << numTopModules() << " top modules.\n";
 
@@ -2440,7 +2440,7 @@ unsigned int InfomapBase::recursivePartition()
   // Store resulting hierarchical codelength
   m_hierarchicalCodelength = hierarchicalCodelength;
 
-  PrettyOutput().status("Recursive", fmt::format("{} -> {} levels, codelength {}", compressionSummary(prettyCompression), partitionQueue.level, io::toPrecision(hierarchicalCodelength)));
+  PrettyOutput().status("Recursive", fmt::format(FMT_STRING("{} -> {} levels, codelength {}"), compressionSummary(prettyCompression), partitionQueue.level, io::toPrecision(hierarchicalCodelength)));
   Log(1) << ". Found " << partitionQueue.level << " levels with codelength " << io::toPrecision(hierarchicalCodelength) << "\n";
   Log(1) << "  -> Found " << partitionQueue.level << " levels with codelength " << io::toPrecision(hierarchicalCodelength) << "\n";
 

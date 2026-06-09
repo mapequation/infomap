@@ -363,7 +363,7 @@ void MemMapEquation::updatePhysicalNodes(InfoNode& current, unsigned int oldModu
     // Remove contribution to old module
     auto overlapIt = moduleToMemNodes.find(oldModuleIndex);
     if (overlapIt == moduleToMemNodes.end())
-      throw std::length_error(fmt::format("Couldn't find old module {} in physical node {}", oldModuleIndex, physData.physNodeIndex));
+      throw std::length_error(fmt::format(FMT_STRING("Couldn't find old module {} in physical node {}"), oldModuleIndex, physData.physNodeIndex));
 
     MemNodeSet& oldMemNodeSet = overlapIt->second;
     oldMemNodeSet.sumFlow -= physData.sumFlowFromM2Node;

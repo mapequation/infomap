@@ -271,7 +271,7 @@ void FlowCalculator::calcDirdirFlow(const Config& config) noexcept
 void FlowCalculator::calcRawdirFlow() noexcept
 {
   m_flowMethod = "directed links with raw flow";
-  addFlowNote(fmt::format("Total link weight {:g}", sumLinkWeight));
+  addFlowNote(fmt::format(FMT_STRING("Total link weight {:g}"), sumLinkWeight));
 
   // Treat the link weights as flow (after global normalization) and
   // do one power iteration to set the node flow
@@ -286,7 +286,7 @@ void FlowCalculator::calcRawdirFlow() noexcept
 void FlowCalculator::usePrecomputedFlow(const StateNetwork& network, const Config&)
 {
   m_flowMethod = "precomputed directed flow";
-  addFlowNote(fmt::format("Total link flow {:g}", sumLinkWeight));
+  addFlowNote(fmt::format(FMT_STRING("Total link flow {:g}"), sumLinkWeight));
 
   if (network.haveFileInput()) {
     if (network.haveMemoryInput() && !network.haveStateNodeWeights()) {
@@ -306,7 +306,7 @@ void FlowCalculator::usePrecomputedFlow(const StateNetwork& network, const Confi
     nodeFlow[nodeIndexMap[node.id]] = node.weight;
     sumFlow += node.weight;
   }
-  addFlowNote(fmt::format("Total node flow {:g}", sumFlow));
+  addFlowNote(fmt::format(FMT_STRING("Total node flow {:g}"), sumFlow));
 
   if (infomath::isEqual(sumFlow, 0)) {
     throw std::runtime_error("Missing node flow. Set it on the node weight property.");
@@ -363,7 +363,7 @@ IterationResult powerIterate(double alpha, unsigned int maxIterations, Iteration
 void FlowCalculator::calcDirectedFlow(const StateNetwork& network, const Config& config) noexcept
 {
   m_flowMethod = "directed links";
-  m_teleportation = fmt::format("{}, to {}", config.recordedTeleportation ? "recorded" : "unrecorded", config.teleportToNodes ? "nodes" : "links");
+  m_teleportation = fmt::format(FMT_STRING("{}, to {}"), config.recordedTeleportation ? "recorded" : "unrecorded", config.teleportToNodes ? "nodes" : "links");
 
   // Calculate the teleport rate distribution
   if (config.teleportToNodes) {
@@ -835,7 +835,7 @@ void FlowCalculator::calcDirectedRegularizedMultilayerFlow(const StateNetwork& n
     if (std::abs(nodeFlowDiff) > 1.0e-10) {
       Log(1) << "(Normalizing ranks after " << iter << " power iterations with error " << nodeFlowDiff << ") ";
       if (std::abs(nodeFlowDiff) > 1.0e-4) {
-        throw std::runtime_error(fmt::format("Total flow differs from 1 by {} after {} iterations. Please report the issue.\n", nodeFlowDiff, iter));
+        throw std::runtime_error(fmt::format(FMT_STRING("Total flow differs from 1 by {} after {} iterations. Please report the issue.\n"), nodeFlowDiff, iter));
       }
       normalize(nodeFlow, nodeFlowDiff + 1.0);
     }
@@ -1002,7 +1002,7 @@ void FlowCalculator::calcUndirectedRegularizedMultilayerFlow(const StateNetwork&
 void FlowCalculator::calcDirectedBipartiteFlow(const StateNetwork& network, const Config& config) noexcept
 {
   m_flowMethod = "directed bipartite links";
-  m_teleportation = fmt::format("{}, to {}", config.recordedTeleportation ? "recorded" : "unrecorded", config.teleportToNodes ? "nodes" : "links");
+  m_teleportation = fmt::format(FMT_STRING("{}, to {}"), config.recordedTeleportation ? "recorded" : "unrecorded", config.teleportToNodes ? "nodes" : "links");
 
   const auto bipartiteStartId = network.bipartiteStartId();
 
@@ -1286,7 +1286,7 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
     pretty.metric("Teleportation", m_teleportation);
   if (m_havePageRank) {
     pretty.metric(m_pageRankConverged ? "PageRank" : "PageRank warning",
-                  fmt::format("{} iterations, error {}", m_pageRankIterations, io::toPrecision(m_pageRankError)));
+                  fmt::format(FMT_STRING("{} iterations, error {}"), m_pageRankIterations, io::toPrecision(m_pageRankError)));
   }
   for (const auto& note : m_flowNotes)
     pretty.status("Note", note);
