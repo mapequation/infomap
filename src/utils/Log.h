@@ -10,6 +10,8 @@
 #ifndef LOG_H_
 #define LOG_H_
 
+#include "format_core.h"
+
 #include <ostream>
 #include <limits>
 #include <iomanip>
@@ -72,6 +74,18 @@ public:
     return *this;
   }
 
+  /// fmt-native logging: Log(level).print("{} of {}", a, b).
+  /// The format string is checked at compile time under C++20 (consteval);
+  /// on C++14 it is validated at runtime. Rendering (the heavy fmt/format.h)
+  /// lives in vprint() in Log.cpp so this header only needs fmt/core.h.
+  template <typename... Args>
+  Log& print(fmt::format_string<Args...> format, Args&&... args)
+  {
+    if (m_visible)
+      vprint(format, fmt::make_format_args(args...));
+    return *this;
+  }
+
   static void init(unsigned int verboseLevel, bool silent, unsigned int numberPrecision)
   {
     setVerboseLevel(verboseLevel);
@@ -121,6 +135,10 @@ public:
   }
 
 private:
+  // Type-erased renderer for print(); defined in Log.cpp so the heavy
+  // fmt/format.h (vformat) stays out of this widely-included header.
+  void vprint(fmt::string_view format, fmt::format_args args);
+
   unsigned int m_level;
   unsigned int m_maxLevel;
   bool m_visible;

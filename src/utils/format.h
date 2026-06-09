@@ -10,9 +10,11 @@
 #ifndef INFOMAP_FORMAT_H_
 #define INFOMAP_FORMAT_H_
 
-// Single entry point for {fmt}. Always include this wrapper instead of
-// <fmt/format.h> directly, so FMT_HEADER_ONLY is defined identically on every
-// build surface (CLI, Python, R, JS) and we never get an ODR mismatch.
+// Single entry point for the full {fmt} API (fmt::format and friends). Always
+// include this wrapper instead of <fmt/format.h> directly, so FMT_HEADER_ONLY is
+// defined identically on every build surface (CLI, Python, R, JS) and we never
+// get an ODR mismatch. Headers that only need fmt's typed-argument machinery
+// (not the renderer) should include the lighter utils/format_core.h instead.
 //
 // Only the iostream-free formatting core is vendored (vendor/fmt). Use
 // fmt::format to build strings, then route them through infomap::Log. Never use
@@ -20,9 +22,7 @@
 // breaking the R/Rprintf redirect) and never include fmt/ostream.h. This is
 // enforced by scripts/check_cpp_stream_policy.py.
 
-#ifndef FMT_HEADER_ONLY
-#define FMT_HEADER_ONLY 1
-#endif
+#include "format_core.h" // FMT_HEADER_ONLY + <fmt/core.h>
 
 // fmt 10.2.1 instantiates std::char_traits<fmt::detail::char8_type>, which newer
 // libc++ marks deprecated. The warning is in fmt's own headers, not our usage,
