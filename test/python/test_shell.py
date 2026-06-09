@@ -48,7 +48,6 @@ def test_create_namespace_preloads_default_infomap(monkeypatch, tmp_path):
 
     namespace = shell.create_namespace(network_file)
 
-    assert namespace["im"].pretty is True
     assert namespace["im"].loaded == [str(network_file)]
     assert namespace["InfomapOptions"] is shell.InfomapOptions
 

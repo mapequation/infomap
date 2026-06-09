@@ -25,7 +25,7 @@ def _make_banner(network_file=None):
     lines = [
         "Infomap shell",
         "Imported: infomap, Infomap, InfomapOptions, MultilayerNode",
-        "Created: im = Infomap(pretty=True)",
+        "Created: im = Infomap()",
         "Helpers: summary(), options()",
     ]
     if network_file is not None:
@@ -34,7 +34,7 @@ def _make_banner(network_file=None):
 
 
 def create_namespace(network_file=None):
-    im = Infomap(pretty=True)
+    im = Infomap()
     if network_file is not None:
         im.read_file(str(network_file))
 

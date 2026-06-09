@@ -8,10 +8,9 @@ describe("argumentsToString", () => {
         twoLevel: true,
         numTrials: 5,
         output: ["tree", "clu"],
-        pretty: true,
         help: "advanced",
       }),
-    ).toBe(" --output tree,clu --pretty --two-level --num-trials 5 -hh");
+    ).toBe(" --output tree,clu --two-level --num-trials 5 -hh");
   });
 
   test("serializes variable Markov minimum scale", () => {

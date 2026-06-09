@@ -54,7 +54,7 @@ describe("Infomap", () => {
     const infomap = new Infomap().on("progress", progress);
     const id = infomap.run({
       network: "#source target\n1 2\n",
-      args: { pretty: true },
+      args: {},
     });
     const worker = getWorker(infomap, id);
 

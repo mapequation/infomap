@@ -264,6 +264,72 @@
     "default": false
   },
   {
+    "long": "--no-overwrite",
+    "short": "",
+    "description": "Fail with an output error if any target output file already exists. By default existing files are replaced.",
+    "group": "Output",
+    "required": false,
+    "advanced": true,
+    "incremental": false,
+    "default": false
+  },
+  {
+    "long": "--print-config-fingerprint",
+    "short": "",
+    "description": "Print the canonical configuration fingerprint and exit.",
+    "group": "Output",
+    "required": false,
+    "advanced": true,
+    "incremental": false,
+    "default": false
+  },
+  {
+    "long": "--timing-json",
+    "short": "",
+    "description": "Write machine-readable run timing JSON to this path. Use - for stdout.",
+    "group": "Output",
+    "required": true,
+    "advanced": true,
+    "incremental": false,
+    "longType": "path",
+    "shortType": "p",
+    "default": ""
+  },
+  {
+    "long": "--summary-json",
+    "short": "",
+    "description": "Write machine-readable final run summary JSON to this path. Use - for stdout.",
+    "group": "Output",
+    "required": true,
+    "advanced": true,
+    "incremental": false,
+    "longType": "path",
+    "shortType": "p",
+    "default": ""
+  },
+  {
+    "long": "--manifest-json",
+    "short": "",
+    "description": "Write a machine-readable run manifest JSON to this path. Use - for stdout.",
+    "group": "Output",
+    "required": true,
+    "advanced": true,
+    "incremental": false,
+    "longType": "path",
+    "shortType": "p",
+    "default": ""
+  },
+  {
+    "long": "--memory-report",
+    "short": "",
+    "description": "Include peak RSS and best-effort bytes per node/link estimates in timing JSON. Requires --timing-json.",
+    "group": "Output",
+    "required": false,
+    "advanced": true,
+    "incremental": false,
+    "default": false
+  },
+  {
     "long": "--two-level",
     "short": "-2",
     "description": "Optimize a two-level partition instead of the default multi-level hierarchy.",
@@ -663,16 +729,6 @@
     "long": "--silent",
     "short": "",
     "description": "Suppress console output.",
-    "group": "Output",
-    "required": false,
-    "advanced": false,
-    "incremental": false,
-    "default": false
-  },
-  {
-    "long": "--pretty",
-    "short": "",
-    "description": "Use modernized console output with color and Unicode on interactive terminals.",
     "group": "Output",
     "required": false,
     "advanced": false,

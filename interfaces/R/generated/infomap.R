@@ -20899,55 +20899,18 @@ setMethod('$', '_p_infomap__InfomapBase', function(x, name)
 setMethod('delete', '_p_infomap__InfomapBase', function(obj) {delete_infomap__InfomapBase(obj)})
 # Start of printPerLevelCodelength
 
-`printPerLevelCodelength__SWIG_0` = function(parent, out, prettyOutput, .copy = FALSE)
+`printPerLevelCodelength` = function(parent, out, .copy = FALSE)
 {
   if (inherits(parent, "ExternalReference")) parent = slot(parent,"ref"); 
   if (inherits(out, "ExternalReference")) out = slot(out,"ref"); 
-  prettyOutput = as.logical(prettyOutput);
-  ;.Call('R_swig_printPerLevelCodelength__SWIG_0', parent, out, prettyOutput, as.logical(.copy), PACKAGE='infomap');
+  ;.Call('R_swig_printPerLevelCodelength', parent, out, as.logical(.copy), PACKAGE='infomap');
   
 }
 
-attr(`printPerLevelCodelength__SWIG_0`, 'returnType') = 'integer'
-attr(`printPerLevelCodelength__SWIG_0`, "inputTypes") = c('_p_infomap__InfoNode', '_p_std__ostream', 'logical')
-class(`printPerLevelCodelength__SWIG_0`) = c("SWIGFunction", class('printPerLevelCodelength__SWIG_0'))
+attr(`printPerLevelCodelength`, 'returnType') = 'integer'
+attr(`printPerLevelCodelength`, "inputTypes") = c('_p_infomap__InfoNode', '_p_std__ostream')
+class(`printPerLevelCodelength`) = c("SWIGFunction", class('printPerLevelCodelength'))
 
-# Start of printPerLevelCodelength
-
-`printPerLevelCodelength__SWIG_1` = function(parent, out, .copy = FALSE)
-{
-  if (inherits(parent, "ExternalReference")) parent = slot(parent,"ref"); 
-  if (inherits(out, "ExternalReference")) out = slot(out,"ref"); 
-  ;.Call('R_swig_printPerLevelCodelength__SWIG_1', parent, out, as.logical(.copy), PACKAGE='infomap');
-  
-}
-
-attr(`printPerLevelCodelength__SWIG_1`, 'returnType') = 'integer'
-attr(`printPerLevelCodelength__SWIG_1`, "inputTypes") = c('_p_infomap__InfoNode', '_p_std__ostream')
-class(`printPerLevelCodelength__SWIG_1`) = c("SWIGFunction", class('printPerLevelCodelength__SWIG_1'))
-
-`printPerLevelCodelength` <- function(...) {
-  argtypes <- mapply(class, list(...));
-  argv <- list(...);
-  argc <- length(argtypes);
-  f <- NULL;
-# dispatch functions 2
-  if (argc == 2) {
-    if (( extends(argtypes[1], '_p_infomap__InfoNode') && length(argv[[1]]) == 1 ) && ( extends(argtypes[2], '_p_std__ostream') && length(argv[[2]]) == 1 )) {
-      f <- printPerLevelCodelength__SWIG_1; 
-    }
-  } else if (argc == 3) {
-    if (( extends(argtypes[1], '_p_infomap__InfoNode') && length(argv[[1]]) == 1 ) && ( extends(argtypes[2], '_p_std__ostream') && length(argv[[2]]) == 1 ) && ( is.logical(argv[[3]]) && length(argv[[3]]) == 1 )) {
-      f <- printPerLevelCodelength__SWIG_0; 
-    }
-  };
-  if (is.null(f)) {
-    stop("cannot find overloaded function for printPerLevelCodelength with argtypes (",toString(argtypes),")");
-  };
-  f(...);
-}
-
-# Dispatch function
 # Start of aggregatePerLevelCodelength
 
 `aggregatePerLevelCodelength__SWIG_0` = function(parent, perLevelStat, level)

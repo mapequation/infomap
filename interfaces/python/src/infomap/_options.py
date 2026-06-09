@@ -41,7 +41,6 @@ _OUTPUT_OPTION_SPECS = (
     ("value", "trial_results", "--trial-results", lambda value: value is not None),
     ("flag", "no_final_output", "--no-final-output", None),
     ("flag", "silent", "--silent", None),
-    ("flag", "pretty", "--pretty", None),
 )
 
 _ALGORITHM_OPTION_SPECS = (
@@ -200,8 +199,6 @@ class InfomapOptions:
         and so on.
     silent : bool, optional
         Suppress console output.
-    pretty : bool, optional
-        Use modernized console output with color and Unicode on interactive terminals.
     two_level : bool, optional
         Optimize a two-level partition instead of the default multi-level hierarchy.
     flow_model : str, optional
@@ -344,7 +341,6 @@ class InfomapOptions:
     no_final_output: bool = False
     verbosity_level: int = 1
     silent: bool = False
-    pretty: bool = False
     # algorithm
     two_level: bool = False
     flow_model: str | None = None
@@ -468,7 +464,6 @@ def _construct_args(
     no_final_output=False,
     verbosity_level=1,
     silent=False,
-    pretty=False,
     # algorithm
     two_level=False,
     flow_model=None,
