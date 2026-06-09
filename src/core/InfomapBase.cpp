@@ -876,10 +876,6 @@ void InfomapBase::run(const std::string& parameters)
   run(m_network);
 
   printPrettyEnd(m_endDate, m_elapsedTime);
-  Log(1) << "===================================================\n";
-  Log(1).print("  Infomap ends at {}\n", m_endDate);
-  Log(1).print("  (Elapsed time: {})\n", m_elapsedTime);
-  Log(1) << "===================================================\n";
 }
 
 void InfomapBase::run(Network& network)
