@@ -149,9 +149,8 @@ public:
 
   virtual void printDebug() const
   {
-    Log() << "(enterFlow_log_enterFlow: " << enterFlow_log_enterFlow << ", "
-          << "enter_log_enter: " << enter_log_enter << ", "
-          << "exitNetworkFlow_log_exitNetworkFlow: " << exitNetworkFlow_log_exitNetworkFlow << ") ";
+    Log().print("(enterFlow_log_enterFlow: {:g}, enter_log_enter: {:g}, exitNetworkFlow_log_exitNetworkFlow: {:g}) ",
+                enterFlow_log_enterFlow, enter_log_enter, exitNetworkFlow_log_exitNetworkFlow);
   }
 
 protected:

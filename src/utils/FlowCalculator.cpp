@@ -315,7 +315,7 @@ void FlowCalculator::usePrecomputedFlow(const StateNetwork& network, const Confi
     if (infomath::isEqual(sumFlow, numNodes) && infomath::isEqual(nodeFlow[0], 1)) {
       Log() << "\n  Warning: Node flow sums to the number of nodes, is node flow provided or is default node weights used? Normalizing.";
     } else {
-      Log() << "\n  Warning: Node flow sums to " << sumFlow << ", normalizing.";
+      Log().print("\n  Warning: Node flow sums to {:g}, normalizing.", sumFlow);
     }
     for (unsigned int i = 0; i < numNodes; ++i) {
       nodeFlow[i] /= sumFlow;
@@ -353,7 +353,7 @@ IterationResult powerIterate(double alpha, unsigned int maxIterations, Iteration
 
   const bool converged = iterations < maxIterations;
   if (!converged) {
-    Log() << "\n  Warning: PageRank calculation did not converge after " << iterations << " iterations with error " << err << ".\n";
+    Log().print("\n  Warning: PageRank calculation did not converge after {} iterations with error {:g}.\n", iterations, err);
   } else {
   }
 
@@ -423,7 +423,7 @@ void FlowCalculator::calcDirectedFlow(const StateNetwork& network, const Config&
 
     // Normalize if needed
     if (std::abs(nodeFlowDiff) > 1.0e-10) {
-      Log(1) << "(Normalizing flow after " << iter << " power iterations with error " << nodeFlowDiff << ") ";
+      Log(1).print("(Normalizing flow after {} power iterations with error {:g}) ", iter, nodeFlowDiff);
       normalize(nodeFlow, nodeFlowDiff + 1.0);
     }
 
@@ -571,7 +571,7 @@ void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, co
 
     // Normalize if needed
     if (std::abs(nodeFlowDiff) > 1.0e-10) {
-      Log(1) << "(Normalizing ranks after " << iter << " power iterations with error " << nodeFlowDiff << ") ";
+      Log(1).print("(Normalizing ranks after {} power iterations with error {:g}) ", iter, nodeFlowDiff);
       normalize(nodeFlow, nodeFlowDiff + 1.0);
     }
 
@@ -594,7 +594,7 @@ void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, co
 
   recordPageRank(iterations, err, iterations < config.maxFlowIterations);
   if (iterations >= config.maxFlowIterations) {
-    Log() << "\n  Warning: PageRank calculation did not converge after " << iterations << " iterations with error " << err << ".\n";
+    Log().print("\n  Warning: PageRank calculation did not converge after {} iterations with error {:g}.\n", iterations, err);
   } else {
   }
 
@@ -833,7 +833,7 @@ void FlowCalculator::calcDirectedRegularizedMultilayerFlow(const StateNetwork& n
 
     // Normalize if needed
     if (std::abs(nodeFlowDiff) > 1.0e-10) {
-      Log(1) << "(Normalizing ranks after " << iter << " power iterations with error " << nodeFlowDiff << ") ";
+      Log(1).print("(Normalizing ranks after {} power iterations with error {:g}) ", iter, nodeFlowDiff);
       if (std::abs(nodeFlowDiff) > 1.0e-4) {
         throw std::runtime_error(fmt::format(FMT_STRING("Total flow differs from 1 by {} after {} iterations. Please report the issue.\n"), nodeFlowDiff, iter));
       }
@@ -859,7 +859,7 @@ void FlowCalculator::calcDirectedRegularizedMultilayerFlow(const StateNetwork& n
   } while (iterations < maxIterations && (err > 1.0e-15 || iterations < 50));
 
   if (iterations == maxIterations && err > 1e-14) {
-    Log() << "  -> Warning: PageRank calculation stopped after maximum " << iterations << " with diff " << err << ".\n";
+    Log().print("  -> Warning: PageRank calculation stopped after maximum {} with diff {:g}.\n", iterations, err);
   } else {
   }
 
@@ -1093,7 +1093,7 @@ void FlowCalculator::calcDirectedBipartiteFlow(const StateNetwork& network, cons
 
     // Normalize if needed
     if (std::abs(nodeFlowDiff) > 1.0e-10) {
-      Log(1) << "(Normalizing ranks after " << iter << " power iterations with error " << nodeFlowDiff << ") ";
+      Log(1).print("(Normalizing ranks after {} power iterations with error {:g}) ", iter, nodeFlowDiff);
       normalize(nodeFlow, nodeFlowDiff + 1.0);
     }
 

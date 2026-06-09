@@ -446,7 +446,7 @@ void MemMapEquation::consolidateModules(std::vector<InfoNode*>& modules)
 
 void MemMapEquation::printDebug() const
 {
-  Log() << "MemMapEquation::m_numPhysicalNodes: " << m_numPhysicalNodes << "\n";
+  Log().print("MemMapEquation::m_numPhysicalNodes: {}\n", m_numPhysicalNodes);
   Base::printDebug();
 }
 

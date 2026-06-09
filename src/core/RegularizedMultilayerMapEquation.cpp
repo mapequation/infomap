@@ -563,7 +563,7 @@ void RegularizedMultilayerMapEquation::consolidateModules(std::vector<InfoNode*>
 
 void RegularizedMultilayerMapEquation::printDebug() const
 {
-  Log() << "RegularizedMultilayerMapEquation::m_numPhysicalNodes: " << m_numPhysicalNodes << "\n";
+  Log().print("RegularizedMultilayerMapEquation::m_numPhysicalNodes: {}\n", m_numPhysicalNodes);
   Base::printDebug();
 }
 
