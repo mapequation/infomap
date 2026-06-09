@@ -172,6 +172,7 @@ setup(
                 repo_rel(REPO_ROOT / "src" / "io"),
                 repo_rel(REPO_ROOT / "src" / "utils"),
                 repo_rel(REPO_ROOT / "vendor" / "nlohmann_json" / "include"),
+                repo_rel(REPO_ROOT / "vendor" / "fmt" / "include"),
             ],
             define_macros=define_macros,
             language="c++",

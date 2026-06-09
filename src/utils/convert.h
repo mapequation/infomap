@@ -11,7 +11,6 @@
 #define CONVERT_H_
 
 #include <stdexcept>
-#include <iomanip>
 #include <sstream>
 #include <string>
 #include <locale> // std::locale, std::tolower
@@ -207,17 +206,11 @@ namespace io {
     return std::string(size - valStr.size(), paddingChar).append(valStr);
   }
 
-  inline std::string toPrecision(double value, unsigned int precision = 10, bool fixed = false)
-  {
-    std::ostringstream o;
-    if (fixed)
-      o << std::fixed << std::setprecision(static_cast<int>(precision));
-    else
-      o << std::setprecision(static_cast<int>(precision));
-    if (!(o << value))
-      throw std::runtime_error((o << "stringify(" << value << ")", o.str()));
-    return o.str();
-  }
+  // Defined in convert.cpp with fmt, to keep the heavy fmt header out of this
+  // widely-included file. {:.{}g} reproduces std::setprecision(precision) with
+  // the default floatfield, {:.{}f} reproduces std::fixed << setprecision(...);
+  // both verified byte-for-byte against the previous iostream implementation.
+  std::string toPrecision(double value, unsigned int precision = 10, bool fixed = false);
 
 } // namespace io
 
