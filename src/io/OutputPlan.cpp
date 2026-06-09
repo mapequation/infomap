@@ -13,7 +13,7 @@
 #include "OutputFormats.h"
 #include "SafeFile.h"
 #include "../core/InfomapBase.h"
-#include "../utils/PrettyOutput.h"
+#include "../utils/Console.h"
 #include "../utils/convert.h"
 #include "../utils/format.h"
 
@@ -285,7 +285,7 @@ void writeOutputArtifacts(InfomapBase& infomap, Network& network, OutputPhase ph
   for (const auto& output : artifacts) {
     writeOutputArtifact(infomap, network, output);
     if (phase != OutputPhase::AfterPartition) {
-      PrettyOutput().status("Output", fmt::format(FMT_STRING("{} -> {}"), output.label, output.filename));
+      Console().status("Output", fmt::format(FMT_STRING("{} -> {}"), output.label, output.filename));
       continue;
     }
     prettyOutputFiles.emplace_back(output.label, output.filename);
@@ -296,14 +296,14 @@ void writeOutputArtifacts(InfomapBase& infomap, Network& network, OutputPhase ph
   }
 
   if (prettyOutputFiles.size() == 1) {
-    PrettyOutput().status("Output", fmt::format(FMT_STRING("{} -> {}"), prettyOutputFiles.front().first, prettyOutputFiles.front().second));
+    Console().status("Output", fmt::format(FMT_STRING("{} -> {}"), prettyOutputFiles.front().first, prettyOutputFiles.front().second));
     return;
   }
 
   const auto summaries = summarizeOutputFiles(prettyOutputFiles);
   for (unsigned int i = 0; i < summaries.size(); ++i) {
     const std::string prefix = i == 0 ? fmt::format(FMT_STRING("{} files -> "), prettyOutputFiles.size()) : "         ";
-    PrettyOutput().status("Output", fmt::format(FMT_STRING("{}{}"), prefix, summaries[i]));
+    Console().status("Output", fmt::format(FMT_STRING("{}{}"), prefix, summaries[i]));
   }
 }
 

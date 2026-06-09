@@ -756,7 +756,11 @@ INFOMAP_HOT unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestMod
 
   unsigned int numMoved = selectedProposalIndices.size();
   Log(3).print("Inner-parallelization proposals: {}, accepted: {}, skipped after changed module: {}, invalid target: {}, rejected by recheck: {}\n",
-               numProposals, numMoved, numSkippedChangedModule, numSkippedInvalidTarget, numSkippedRejectedRecheck);
+               numProposals,
+               numMoved,
+               numSkippedChangedModule,
+               numSkippedInvalidTarget,
+               numSkippedRejectedRecheck);
 
   for (auto& proposal : proposals) {
     if (proposal.clearDirty)

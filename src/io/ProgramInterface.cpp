@@ -278,9 +278,9 @@ void ProgramInterface::exitWithUsage(bool showAdvanced) const
     auto& opt = *m_optionArguments[i];
     bool haveShort = opt.shortName != '\0';
     std::string optArgShort = opt.requireArgument ? fmt::format(FMT_STRING("<{}>"), ArgType::toShort.at(opt.argumentName)) : opt.incrementalArgument ? "[+]"
-                                                                                                                                         : std::string(3, ' ');
+                                                                                                                                                     : std::string(3, ' ');
     std::string optArgLong = opt.requireArgument ? fmt::format(FMT_STRING("<{}>"), opt.argumentName) : opt.incrementalArgument ? "[+]"
-                                                                                                                   : std::string(3, ' ');
+                                                                                                                               : std::string(3, ' ');
     std::string shortOption = haveShort ? fmt::format(FMT_STRING("  -{}{}"), opt.shortName, optArgShort) : std::string(7, ' ');
     optionStrings[i] = fmt::format(FMT_STRING("{} --{} {}"), shortOption, opt.longName, optArgLong);
     if (optionStrings[i].length() > maxLength)

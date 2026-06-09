@@ -11,7 +11,7 @@
 #include "InfomapError.h"
 #include "NetworkBuilder.h"
 #include "../utils/Log.h"
-#include "../utils/PrettyOutput.h"
+#include "../utils/Console.h"
 #include "../utils/convert.h"
 #include "../utils/format.h"
 
@@ -113,30 +113,30 @@ void Network::readMetaData(const std::string& filename)
 
 void Network::printSummary()
 {
-  PrettyOutput pretty;
-  pretty.section("Network");
-  pretty.metric("Input", m_config.networkFile);
-  pretty.metric("Direction", m_config.isUndirectedFlow() ? "undirected" : "directed");
+  Console console;
+  console.section("Network");
+  console.metric("Input", m_config.networkFile);
+  console.metric("Direction", m_config.isUndirectedFlow() ? "undirected" : "directed");
   if (haveMemoryInput()) {
-    pretty.metric("Type", isMultilayerNetwork() ? "higher-order multilayer" : "higher-order state");
-    pretty.metric("State nodes", fmt::to_string(numNodes()));
-    pretty.metric("Physical nodes", fmt::to_string(numPhysicalNodes()));
+    console.metric("Type", isMultilayerNetwork() ? "higher-order multilayer" : "higher-order state");
+    console.metric("State nodes", fmt::to_string(numNodes()));
+    console.metric("Physical nodes", fmt::to_string(numPhysicalNodes()));
   } else if (m_bipartiteStartId > 0) {
-    pretty.metric("Type", "bipartite first-order");
-    pretty.metric("Bipartite start id", fmt::to_string(m_bipartiteStartId));
-    pretty.metric("Nodes", fmt::to_string(numNodes()));
+    console.metric("Type", "bipartite first-order");
+    console.metric("Bipartite start id", fmt::to_string(m_bipartiteStartId));
+    console.metric("Nodes", fmt::to_string(numNodes()));
   } else {
-    pretty.metric("Type", "first-order");
-    pretty.metric("Nodes", fmt::to_string(numNodes()));
+    console.metric("Type", "first-order");
+    console.metric("Nodes", fmt::to_string(numNodes()));
   }
   if (isMultilayerNetwork()) {
-    pretty.metric("Layers", fmt::to_string(m_layers.size()));
-    pretty.metric("Layer links", fmt::format(FMT_STRING("{} ({} intra, {} inter)"), m_numIntraLayerLinks + m_numInterLayerLinks, m_numIntraLayerLinks, m_numInterLayerLinks));
+    console.metric("Layers", fmt::to_string(m_layers.size()));
+    console.metric("Layer links", fmt::format(FMT_STRING("{} ({} intra, {} inter)"), m_numIntraLayerLinks + m_numInterLayerLinks, m_numIntraLayerLinks, m_numInterLayerLinks));
   }
-  pretty.metric("Links", fmt::to_string(numLinks()));
-  pretty.metric("Total weight", fmt::format(FMT_STRING("{:g}"), m_totalLinkWeightAdded));
+  console.metric("Links", fmt::to_string(numLinks()));
+  console.metric("Total weight", fmt::format(FMT_STRING("{:g}"), m_totalLinkWeightAdded));
   if (m_numLinksIgnoredByWeightThreshold > 0) {
-    pretty.metric("Ignored by threshold", fmt::format(FMT_STRING("{} links, weight {:g} ({})"), m_numLinksIgnoredByWeightThreshold, m_totalLinkWeightIgnored, PrettyOutput::percent(m_totalLinkWeightIgnored / (m_totalLinkWeightIgnored + m_totalLinkWeightAdded) * 100)));
+    console.metric("Ignored by threshold", fmt::format(FMT_STRING("{} links, weight {:g} ({})"), m_numLinksIgnoredByWeightThreshold, m_totalLinkWeightIgnored, Console::percent(m_totalLinkWeightIgnored / (m_totalLinkWeightIgnored + m_totalLinkWeightAdded) * 100)));
   }
 }
 
@@ -198,7 +198,7 @@ void Network::generateStateNetworkFromMultilayer()
     m_haveDirectedInput = true;
     // TODO: Don't allow undirdir/outdirdir/rawdir?
     // Expand each undirected intra-layer link to two opposite directed links
-    Log(1) << "  -> Expanding undirected links to directed...\n";
+    Log(1) << Console::note("Expanding undirected links to directed...");
     for (auto& layerIt : m_networks) {
       auto& network = layerIt.second;
       network.undirectedToDirected();

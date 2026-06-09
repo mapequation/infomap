@@ -99,13 +99,13 @@ std::string getOutputFileHeader(const InfomapBase& im, const StateNetwork& netwo
 {
   std::string bipartiteInfo = fmt::format(FMT_STRING("\n# bipartite start id {}"), network.bipartiteStartId());
   return fmt::format(FMT_STRING("# v{}\n"
-                     "# ./Infomap {}\n"
-                     "# started at {}\n"
-                     "# completed in {:g} s\n"
-                     "# partitioned into {} levels with {} top modules\n"
-                     "# codelength {:g} bits\n"
-                     "# relative codelength savings {:g}%\n"
-                     "# flow model {}"),
+                                "# ./Infomap {}\n"
+                                "# started at {}\n"
+                                "# completed in {:g} s\n"
+                                "# partitioned into {} levels with {} top modules\n"
+                                "# codelength {:g} bits\n"
+                                "# relative codelength savings {:g}%\n"
+                                "# flow model {}"),
                      INFOMAP_VERSION,
                      im.parsedString,
                      io::stringify(im.getStartDate()),

@@ -3,7 +3,7 @@
 #include "io/SafeFile.h"
 #include "utils/FileURI.h"
 #include "utils/Log.h"
-#include "utils/PrettyOutput.h"
+#include "utils/Console.h"
 #include "utils/Random.h"
 #include "utils/convert.h"
 
@@ -146,7 +146,7 @@ TEST_CASE("convert helpers preserve current tokenization behavior [fast][core][u
   CHECK(infomap::io::InsensitiveCompare {}("abc", "ABD"));
 }
 
-TEST_CASE("PrettyOutput formats plain output without ANSI and clamps tiny percentages [fast][core][utils][io]")
+TEST_CASE("Console formats plain output without ANSI and clamps tiny percentages [fast][core][utils][io]")
 {
   std::ostringstream output;
   infomap::Log::setOutputStream(output);
@@ -156,15 +156,15 @@ TEST_CASE("PrettyOutput formats plain output without ANSI and clamps tiny percen
   setenv("NO_COLOR", "1", 1);
 #endif
 
-  infomap::PrettyOutput pretty;
-  pretty.section("Flow");
-  pretty.metric("Model", "directed");
-  pretty.status("Recursive", infomap::PrettyOutput::percent(-1.0e-12));
+  infomap::Console console;
+  console.section("Flow");
+  console.metric("Model", "directed");
+  console.status("Recursive", infomap::Console::percent(-1.0e-12));
 
   CHECK(output.str().find("\033[") == std::string::npos);
   CHECK(output.str().find("Flow") != std::string::npos);
   CHECK(output.str().find("0%") != std::string::npos);
-  CHECK(infomap::PrettyOutput::percent(-1.55696863e-14) == "0%");
+  CHECK(infomap::Console::percent(-1.55696863e-14) == "0%");
 
 #ifndef _WIN32
   unsetenv("NO_COLOR");

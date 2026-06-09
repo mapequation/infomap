@@ -13,6 +13,7 @@
 #include "SafeFile.h"
 #include "../core/StateNetwork.h"
 #include "../utils/Log.h"
+#include "../utils/Console.h"
 #include "../utils/convert.h"
 #include "../utils/format.h"
 
@@ -265,7 +266,7 @@ namespace input {
         sink.onPhysicalNode(vertex);
         ++progress.numPhysicalNodes;
       }
-      Log(1).print("  -> {} physical nodes added\n", progress.numPhysicalNodes);
+      Log(1) << Console::note(fmt::format(FMT_STRING("{} physical nodes added"), progress.numPhysicalNodes));
       return line;
     }
 
@@ -287,7 +288,7 @@ namespace input {
         sink.onStateNode(stateNode);
         ++numStateNodesFound;
       }
-      Log(1).print("  -> {} state nodes added\n", numStateNodesFound);
+      Log(1) << Console::note(fmt::format(FMT_STRING("{} state nodes added"), numStateNodesFound));
       return line;
     }
 
@@ -313,7 +314,7 @@ namespace input {
         ++progress.numLinks;
       }
       if (parsingLinks)
-        Log(1).print("  -> {} links\n", progress.numLinks);
+        Log(1) << Console::note(fmt::format(FMT_STRING("{} links"), progress.numLinks));
       return line;
     }
 
@@ -345,7 +346,7 @@ namespace input {
           ++progress.numInterLayerLinks;
         }
       }
-      Log(1).print("  -> {} links in {} layers\n", progress.numIntraLayerLinks + progress.numInterLayerLinks, progress.layers.size());
+      Log(1) << Console::note(fmt::format(FMT_STRING("{} links in {} layers"), progress.numIntraLayerLinks + progress.numInterLayerLinks, progress.layers.size()));
       Log(1).print("    -> {} intra-layer links\n", progress.numIntraLayerLinks);
       Log(1).print("    -> {} inter-layer links\n", progress.numInterLayerLinks);
       return line;
@@ -374,7 +375,7 @@ namespace input {
         progress.layers.insert(link.layer);
         ++progress.numIntraLayerLinks;
       }
-      Log(1).print("  -> {} intra-layer links\n", progress.numIntraLayerLinks);
+      Log(1) << Console::note(fmt::format(FMT_STRING("{} intra-layer links"), progress.numIntraLayerLinks));
       return line;
     }
 
@@ -397,7 +398,7 @@ namespace input {
         progress.layers.insert(link.targetLayer);
         ++progress.numInterLayerLinks;
       }
-      Log(1).print("  -> {} inter-layer links\n", progress.numInterLayerLinks);
+      Log(1) << Console::note(fmt::format(FMT_STRING("{} inter-layer links"), progress.numInterLayerLinks));
       return line;
     }
 
@@ -411,7 +412,7 @@ namespace input {
       if (!(extractor >> tmp >> bipartiteStartId))
         throw std::runtime_error(fmt::format(FMT_STRING("Can't parse bipartite start id from line '{}'"), heading));
 
-      Log(1).print("  -> Using bipartite start id {}\n", bipartiteStartId);
+      Log(1) << Console::note(fmt::format(FMT_STRING("Using bipartite start id {}"), bipartiteStartId));
       sink.onBipartiteStart(bipartiteStartId);
       std::string line;
       while (!std::getline(file, line).fail()) {
@@ -462,11 +463,13 @@ namespace input {
           heading = parseStateNodes(input, heading, sink);
         } else if (!shouldIgnoreHeading && headingLowerCase == "*edges") {
           if (!options.undirectedFlow)
-            Log() << "\n --> Notice: Links marked as undirected but parsed as directed.\n";
+            Log() << "\n"
+                  << Console::note("Links marked as undirected but parsed as directed.");
           heading = parseLinks(input, sink, progress);
         } else if (!shouldIgnoreHeading && headingLowerCase == "*arcs") {
           if (options.undirectedFlow)
-            Log() << "\n --> Notice: Links marked as directed but parsed as undirected.\n";
+            Log() << "\n"
+                  << Console::note("Links marked as directed but parsed as undirected.");
           heading = parseLinks(input, sink, progress);
         } else if (!shouldIgnoreHeading && headingLowerCase == "*links") {
           heading = parseLinks(input, sink, progress);

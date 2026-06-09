@@ -9,7 +9,7 @@
 
 #include "FlowCalculator.h"
 #include "../utils/Log.h"
-#include "../utils/PrettyOutput.h"
+#include "../utils/Console.h"
 #include "../utils/convert.h"
 #include "../utils/format.h"
 #include "../utils/infomath.h"
@@ -313,9 +313,11 @@ void FlowCalculator::usePrecomputedFlow(const StateNetwork& network, const Confi
   }
   if (!infomath::isEqual(sumFlow, 1)) {
     if (infomath::isEqual(sumFlow, numNodes) && infomath::isEqual(nodeFlow[0], 1)) {
-      Log() << "\n  Warning: Node flow sums to the number of nodes, is node flow provided or is default node weights used? Normalizing.";
+      Log() << "\n"
+            << Console::warn("Node flow sums to the number of nodes, is node flow provided or is default node weights used? Normalizing.");
     } else {
-      Log().print("\n  Warning: Node flow sums to {:g}, normalizing.", sumFlow);
+      Log() << "\n"
+            << Console::warn(fmt::format(FMT_STRING("Node flow sums to {:g}, normalizing."), sumFlow));
     }
     for (unsigned int i = 0; i < numNodes; ++i) {
       nodeFlow[i] /= sumFlow;
@@ -353,8 +355,8 @@ IterationResult powerIterate(double alpha, unsigned int maxIterations, Iteration
 
   const bool converged = iterations < maxIterations;
   if (!converged) {
-    Log().print("\n  Warning: PageRank calculation did not converge after {} iterations with error {:g}.\n", iterations, err);
-  } else {
+    Log() << "\n"
+          << Console::warn(fmt::format(FMT_STRING("PageRank calculation did not converge after {} iterations with error {:g}."), iterations, err));
   }
 
   return { alpha, beta, iterations, err, converged };
@@ -594,8 +596,8 @@ void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, co
 
   recordPageRank(iterations, err, iterations < config.maxFlowIterations);
   if (iterations >= config.maxFlowIterations) {
-    Log().print("\n  Warning: PageRank calculation did not converge after {} iterations with error {:g}.\n", iterations, err);
-  } else {
+    Log() << "\n"
+          << Console::warn(fmt::format(FMT_STRING("PageRank calculation did not converge after {} iterations with error {:g}."), iterations, err));
   }
 
   double sumNodeRank = 1.0;
@@ -859,7 +861,7 @@ void FlowCalculator::calcDirectedRegularizedMultilayerFlow(const StateNetwork& n
   } while (iterations < maxIterations && (err > 1.0e-15 || iterations < 50));
 
   if (iterations == maxIterations && err > 1e-14) {
-    Log().print("  -> Warning: PageRank calculation stopped after maximum {} with diff {:g}.\n", iterations, err);
+    Log() << Console::warn(fmt::format(FMT_STRING("PageRank calculation stopped after maximum {} with diff {:g}."), iterations, err));
   } else {
   }
 
@@ -1278,20 +1280,20 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
     }
   }
 
-  PrettyOutput pretty;
-  pretty.section("Flow");
-  pretty.metric("Model", io::stringify(config.flowModel));
-  pretty.metric("Method", m_flowMethod.empty() ? "standard" : m_flowMethod);
+  Console console;
+  console.section("Flow");
+  console.metric("Model", io::stringify(config.flowModel));
+  console.metric("Method", m_flowMethod.empty() ? "standard" : m_flowMethod);
   if (!m_teleportation.empty())
-    pretty.metric("Teleportation", m_teleportation);
+    console.metric("Teleportation", m_teleportation);
   if (m_havePageRank) {
-    pretty.metric(m_pageRankConverged ? "PageRank" : "PageRank warning",
-                  fmt::format(FMT_STRING("{} iterations, error {}"), m_pageRankIterations, io::toPrecision(m_pageRankError)));
+    console.metric(m_pageRankConverged ? "PageRank" : "PageRank warning",
+                   fmt::format(FMT_STRING("{} iterations, error {}"), m_pageRankIterations, io::toPrecision(m_pageRankError)));
   }
   for (const auto& note : m_flowNotes)
-    pretty.status("Note", note);
-  pretty.metric("Node flow sum", io::toPrecision(sumNodeFlow));
-  pretty.metric("Link flow sum", io::toPrecision(sumLinkFlow));
+    console.status("Note", note);
+  console.metric("Node flow sum", io::toPrecision(sumNodeFlow));
+  console.metric("Link flow sum", io::toPrecision(sumLinkFlow));
 }
 
 } // namespace infomap
