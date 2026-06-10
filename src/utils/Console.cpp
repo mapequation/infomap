@@ -137,6 +137,13 @@ std::string Console::detail(const std::string& message)
   return fmt::format(FMT_STRING("    {}{}{}\n"), c.dim(), message, c.reset());
 }
 
+std::string Console::arrow()
+{
+  // Same TTY/ANSI gate as bullet()/branch() (probed once, cached), so the
+  // optimization status lines degrade to "->" when piped or on a dumb terminal.
+  return stdoutSupportsAnsi() ? "→" : "->";
+}
+
 std::string Console::percent(double value)
 {
   if (std::abs(value) < 1e-9)

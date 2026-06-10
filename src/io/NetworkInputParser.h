@@ -406,7 +406,7 @@ namespace input {
       if (!(extractor >> tmp >> bipartiteStartId))
         throw std::runtime_error(fmt::format(FMT_STRING("Can't parse bipartite start id from line '{}'"), heading));
 
-      Log(1) << Console::detail(fmt::format(FMT_STRING("Using bipartite start id {}"), bipartiteStartId));
+      Log(1) << Console::detail(fmt::format(FMT_STRING("using bipartite start id {}"), bipartiteStartId));
       sink.onBipartiteStart(bipartiteStartId);
       std::string line;
       while (!std::getline(file, line).fail()) {
@@ -423,7 +423,7 @@ namespace input {
 
     inline std::string ignoreSection(std::ifstream& file, const std::string& heading)
     {
-      Log().print("(Ignoring section {}) ", heading);
+      Log() << Console::note(fmt::format(FMT_STRING("Ignoring unrecognized section '{}'."), heading));
       std::string line;
       while (!std::getline(file, line).fail()) {
         if (line[0] == '*')

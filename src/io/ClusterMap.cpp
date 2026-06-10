@@ -10,6 +10,7 @@
 #include "ClusterMap.h"
 #include "SafeFile.h"
 #include "../utils/Log.h"
+#include "../utils/Console.h"
 #include "../utils/FileURI.h"
 #include "../utils/format.h"
 #include <sstream>
@@ -162,7 +163,7 @@ void ClusterMap::readClu(const std::string& filename, bool includeFlow, const st
 {
   auto isMultilayer = layerNodeToStateId != nullptr;
 
-  Log(1).print("Read initial partition from '{}'... ", filename) << std::flush;
+  Log(1) << Console::detail(fmt::format(FMT_STRING("reading initial partition from '{}'"), filename));
   SafeInFile input(filename);
   std::string line;
   std::istringstream lineStream;

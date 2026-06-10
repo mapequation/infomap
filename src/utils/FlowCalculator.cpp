@@ -314,7 +314,7 @@ void FlowCalculator::usePrecomputedFlow(const StateNetwork& network, const Confi
   if (!infomath::isEqual(sumFlow, 1)) {
     if (infomath::isEqual(sumFlow, numNodes) && infomath::isEqual(nodeFlow[0], 1)) {
       Log() << "\n"
-            << Console::warn("Node flow sums to the number of nodes, is node flow provided or is default node weights used? Normalizing.");
+            << Console::warn("Node flow sums to the number of nodes; was node flow provided, or are default node weights being used? Normalizing.");
     } else {
       Log() << "\n"
             << Console::warn(fmt::format(FMT_STRING("Node flow sums to {:g}, normalizing."), sumFlow));
@@ -425,7 +425,7 @@ void FlowCalculator::calcDirectedFlow(const StateNetwork& network, const Config&
 
     // Normalize if needed
     if (std::abs(nodeFlowDiff) > 1.0e-10) {
-      Log(1).print("(Normalizing flow after {} power iterations with error {:g}) ", iter, nodeFlowDiff);
+      Log(1) << Console::detail(fmt::format(FMT_STRING("normalizing flow after {} power iterations with error {:g}"), iter, nodeFlowDiff));
       normalize(nodeFlow, nodeFlowDiff + 1.0);
     }
 
@@ -573,7 +573,7 @@ void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, co
 
     // Normalize if needed
     if (std::abs(nodeFlowDiff) > 1.0e-10) {
-      Log(1).print("(Normalizing ranks after {} power iterations with error {:g}) ", iter, nodeFlowDiff);
+      Log(1) << Console::detail(fmt::format(FMT_STRING("normalizing ranks after {} power iterations with error {:g}"), iter, nodeFlowDiff));
       normalize(nodeFlow, nodeFlowDiff + 1.0);
     }
 
@@ -835,7 +835,7 @@ void FlowCalculator::calcDirectedRegularizedMultilayerFlow(const StateNetwork& n
 
     // Normalize if needed
     if (std::abs(nodeFlowDiff) > 1.0e-10) {
-      Log(1).print("(Normalizing ranks after {} power iterations with error {:g}) ", iter, nodeFlowDiff);
+      Log(1) << Console::detail(fmt::format(FMT_STRING("normalizing ranks after {} power iterations with error {:g}"), iter, nodeFlowDiff));
       if (std::abs(nodeFlowDiff) > 1.0e-4) {
         throw std::runtime_error(fmt::format(FMT_STRING("Total flow differs from 1 by {} after {} iterations. Please report the issue.\n"), nodeFlowDiff, iter));
       }
@@ -861,7 +861,7 @@ void FlowCalculator::calcDirectedRegularizedMultilayerFlow(const StateNetwork& n
   } while (iterations < maxIterations && (err > 1.0e-15 || iterations < 50));
 
   if (iterations == maxIterations && err > 1e-14) {
-    Log() << Console::warn(fmt::format(FMT_STRING("PageRank calculation stopped after maximum {} with diff {:g}."), iterations, err));
+    Log() << Console::warn(fmt::format(FMT_STRING("PageRank calculation stopped after the maximum of {} iterations with diff {:g}."), iterations, err));
   } else {
   }
 
@@ -1095,7 +1095,7 @@ void FlowCalculator::calcDirectedBipartiteFlow(const StateNetwork& network, cons
 
     // Normalize if needed
     if (std::abs(nodeFlowDiff) > 1.0e-10) {
-      Log(1).print("(Normalizing ranks after {} power iterations with error {:g}) ", iter, nodeFlowDiff);
+      Log(1) << Console::detail(fmt::format(FMT_STRING("normalizing ranks after {} power iterations with error {:g}"), iter, nodeFlowDiff));
       normalize(nodeFlow, nodeFlowDiff + 1.0);
     }
 

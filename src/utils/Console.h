@@ -63,6 +63,12 @@ public:
   // "" leaving just the indent. Use as Log(1) << Console::detail(...).
   static std::string detail(const std::string& message);
 
+  // The "→" status connector, gated like bullet()/branch(): a real arrow on a
+  // color-capable TTY, plain "->" otherwise so piped/dumb-terminal output stays
+  // ASCII. Static (no per-call-site object) and used inside the format strings of
+  // the optimization status/detail lines.
+  static std::string arrow();
+
   static std::string percent(double value);
   static std::string fixed(double value, unsigned int precision = 6);
 

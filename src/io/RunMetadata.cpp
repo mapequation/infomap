@@ -60,7 +60,7 @@ namespace {
   {
     std::ifstream input(path.c_str(), std::ios_base::binary);
     if (!input) {
-      throw std::runtime_error(fmt::format(FMT_STRING("Error opening input file '{}'. Check that the path points to a file and that you have read permissions."), path));
+      throw std::runtime_error(fmt::format(FMT_STRING("Cannot open input file '{}'. Check that the path points to a file and that you have read permissions."), path));
     }
 
     auto hash = FNV_OFFSET;
@@ -186,7 +186,7 @@ std::string inputFingerprintJson(const std::string& path)
 
   struct stat info;
   if (stat(path.c_str(), &info) != 0) {
-    throw std::runtime_error(fmt::format(FMT_STRING("Error reading input file metadata for '{}'."), path));
+    throw std::runtime_error(fmt::format(FMT_STRING("Cannot read input file metadata for '{}'."), path));
   }
 
   const auto size = static_cast<unsigned long long>(info.st_size);
@@ -205,7 +205,7 @@ std::string networkFingerprint(const std::string& path)
 
   struct stat info;
   if (stat(path.c_str(), &info) != 0) {
-    throw std::runtime_error(fmt::format(FMT_STRING("Error reading input file metadata for '{}'."), path));
+    throw std::runtime_error(fmt::format(FMT_STRING("Cannot read input file metadata for '{}'."), path));
   }
 
   const auto size = static_cast<unsigned long long>(info.st_size);

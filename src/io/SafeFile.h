@@ -53,7 +53,7 @@ public:
       : ifstream(filename, mode)
   {
     if (fail())
-      throw std::runtime_error(fmt::format(FMT_STRING("Error opening file '{}'. Check that the path points to a file and that you have read permissions."), filename));
+      throw std::runtime_error(fmt::format(FMT_STRING("Cannot open file '{}'. Check that the path points to a file and that you have read permissions."), filename));
   }
 
   ~SafeInFile() override
@@ -156,7 +156,7 @@ public:
 
     open(m_temporaryFilename, mode);
     if (fail())
-      throw InfomapError(ExitCode::OutputError, fmt::format(FMT_STRING("Error opening file '{}'. Check that the directory you are writing to exists and that you have write permissions."), filename));
+      throw InfomapError(ExitCode::OutputError, fmt::format(FMT_STRING("Cannot open file '{}'. Check that the directory you are writing to exists and that you have write permissions."), filename));
   }
 
   ~SafeOutFile() override
@@ -176,13 +176,13 @@ public:
     if (fail()) {
       close();
       std::remove(m_temporaryFilename.c_str());
-      throw InfomapError(ExitCode::OutputError, fmt::format(FMT_STRING("Error writing file '{}'."), m_filename));
+      throw InfomapError(ExitCode::OutputError, fmt::format(FMT_STRING("Cannot write file '{}'."), m_filename));
     }
 
     close();
     if (fail()) {
       std::remove(m_temporaryFilename.c_str());
-      throw InfomapError(ExitCode::OutputError, fmt::format(FMT_STRING("Error closing file '{}'."), m_filename));
+      throw InfomapError(ExitCode::OutputError, fmt::format(FMT_STRING("Cannot close file '{}'."), m_filename));
     }
 
     if (!m_overwrite && pathExists(m_filename)) {
@@ -198,7 +198,7 @@ public:
 
     if (std::rename(m_temporaryFilename.c_str(), m_filename.c_str()) != 0) {
       std::remove(m_temporaryFilename.c_str());
-      throw InfomapError(ExitCode::OutputError, fmt::format(FMT_STRING("Error replacing file '{}'."), m_filename));
+      throw InfomapError(ExitCode::OutputError, fmt::format(FMT_STRING("Cannot replace file '{}'."), m_filename));
     }
 
     m_committed = true;

@@ -422,13 +422,6 @@ private:
    */
   unsigned int findHierarchicalSuperModules(unsigned int superLevelLimit = std::numeric_limits<unsigned int>::max());
 
-  /**
-   * Find super modules fast by merge and consolidate top modules iteratively
-   * @param levelLimit The maximum number of super module levels allowed
-   * @return number of levels created
-   */
-  unsigned int findHierarchicalSuperModulesFast(unsigned int superLevelLimit = std::numeric_limits<unsigned int>::max());
-
   void transformNodeFlowToEnterFlow(InfoNode& parent);
 
   void resetFlowOnModules();
