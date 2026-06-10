@@ -14,7 +14,6 @@
 
 #include <cmath>
 #include <cstdlib>
-#include <iostream>
 
 #ifndef _WIN32
 #include <unistd.h>
@@ -48,8 +47,9 @@ namespace {
     // away from stdout (Log::setOutputStream — R's Rprintf bridge, the binding
     // streams, test capture buffers). Only emit ANSI when Log actually writes to
     // the process stdout; otherwise escapes would leak into the redirected sink
-    // even though STDOUT itself is a tty.
-    return &Log::getOutputStream() == &std::cout;
+    // even though STDOUT itself is a tty. The stdout-identity comparison lives in
+    // Log.cpp so this file stays free of direct std-stream usage (stream policy).
+    return Log::isWritingToStdout();
   }
 
 } // namespace

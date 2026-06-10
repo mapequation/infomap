@@ -46,6 +46,17 @@ void Log::setNoOutput()
   s_silent = true;
 }
 
+bool Log::isWritingToStdout()
+{
+#ifdef INFOMAP_R
+  // The R build always routes Log through the Rprintf bridge (s_ostream), never
+  // the process stdout, and does not even include <iostream>.
+  return false;
+#else
+  return &ostream() == &std::cout;
+#endif
+}
+
 void Log::vprint(fmt::string_view format, fmt::format_args args)
 {
   // Called only from print() under m_visible; render here so fmt/format.h stays

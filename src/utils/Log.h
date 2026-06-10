@@ -122,6 +122,12 @@ public:
 
   static std::ostream& getOutputStream() { return ostream(); }
 
+  /// Whether the active Log sink is the process stdout, i.e. not redirected via
+  /// setOutputStream. Defined in Log.cpp so the stdout-identity comparison stays
+  /// out of shared headers (C++ stream policy). Used by the console layer to
+  /// avoid emitting ANSI into a redirected sink.
+  static bool isWritingToStdout();
+
   static std::streamsize precision() { return ostream().precision(); }
 
   static std::streamsize precision(std::streamsize precision)
