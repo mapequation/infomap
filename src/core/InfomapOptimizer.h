@@ -910,7 +910,7 @@ inline void InfomapOptimizer<Objective>::consolidateModules(bool replaceExisting
     InfoNode* node = network[i];
     unsigned int moduleIndex = node->index;
     if (modules[moduleIndex] == nullptr) {
-      modules[moduleIndex] = new InfoNode(m_moduleFlowData[moduleIndex]);
+      modules[moduleIndex] = &m_infomap->allocNode(m_moduleFlowData[moduleIndex]);
       modules[moduleIndex]->index = moduleIndex;
       node->parent->addChild(modules[moduleIndex]);
     }

@@ -25,6 +25,11 @@
 namespace infomap {
 
 class InfomapBase;
+class InfoNode;
+
+template <typename T>
+class ObjectPool;
+using NodePool = ObjectPool<InfoNode>;
 
 /**
  * Tree node with raw-pointer ownership.
@@ -105,6 +110,11 @@ private:
   std::vector<InfoEdge*> m_inEdges;
 
   InfomapBase* m_infomap = nullptr;
+
+  // Owning pool. Set by InfomapBase::allocNode for every pool-allocated node;
+  // stays nullptr only for the value-member root, which is never pool-freed.
+  NodePool* m_pool = nullptr;
+  friend class InfomapBase;
 
 public:
   InfoNode(const FlowData& flowData)
@@ -421,6 +431,11 @@ public:
 
 private:
   void calcChildDegree() noexcept;
+
+  // Destroy a node through its owning pool, or via plain delete if it was not
+  // pool-allocated (e.g. a standalone node built in a test). Lets InfoNode stay
+  // usable without an InfomapBase pool while still recycling pooled nodes.
+  static void destroyNode(InfoNode* node) noexcept;
 };
 
 } // namespace infomap

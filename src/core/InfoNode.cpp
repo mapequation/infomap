@@ -9,9 +9,18 @@
 
 #include "InfoNode.h"
 #include "InfomapBase.h"
+#include "ObjectPool.h"
 #include <algorithm>
 
 namespace infomap {
+
+void InfoNode::destroyNode(InfoNode* node) noexcept
+{
+  if (node->m_pool != nullptr)
+    node->m_pool->free(node);
+  else
+    delete node;
+}
 
 InfoNode::~InfoNode() noexcept
 {
@@ -167,7 +176,8 @@ InfoNode& InfoNode::replaceChildrenWithOneNode()
     throw std::logic_error("replaceChildrenWithOneNode called on a node without any children.");
   if (firstChild->firstChild == nullptr)
     throw std::logic_error("replaceChildrenWithOneNode called on a node without any grandchildren.");
-  auto* middleNode = new InfoNode();
+  auto* middleNode = m_pool != nullptr ? m_pool->alloc() : new InfoNode();
+  middleNode->m_pool = m_pool;
   InfoNode::child_iterator nodeIt = begin_child();
   unsigned int numOriginalChildrenLeft = m_childDegree;
   auto d0 = m_childDegree;
@@ -236,7 +246,7 @@ unsigned int InfoNode::replaceWithChildren() noexcept
   next = nullptr;
   previous = nullptr;
   parent = nullptr;
-  delete this;
+  destroyNode(this);
   return 1;
 }
 
@@ -289,13 +299,13 @@ void InfoNode::replaceWithChildrenDebug() noexcept
   previous = nullptr;
   parent = nullptr;
 
-  delete this;
+  destroyNode(this);
 }
 
 void InfoNode::remove(bool removeChildren) noexcept
 {
   firstChild = removeChildren ? nullptr : firstChild;
-  delete this;
+  destroyNode(this);
 }
 
 void InfoNode::deleteChildren() noexcept
@@ -307,7 +317,7 @@ void InfoNode::deleteChildren() noexcept
     InfoNode* node = first;
     while (node != nullptr) {
       InfoNode* next_node = node->next;
-      delete node;
+      destroyNode(node);
       node = next_node;
     }
 

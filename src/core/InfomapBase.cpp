@@ -1105,7 +1105,7 @@ InfomapBase& InfomapBase::initTree(const NodePaths& tree)
       prefix.push_back(path[i]);
       auto inserted = moduleByPathPrefix.emplace(prefix, nullptr);
       if (inserted.second) {
-        auto* module = new InfoNode();
+        auto* module = &allocNode();
         parent->addChild(module);
         inserted.first->second = module;
       }
@@ -1152,13 +1152,13 @@ InfomapBase& InfomapBase::initTree(const NodePaths& tree)
       }
       // Set to own module if no neighbour module available
       if (leafNode->parent == nullptr) {
-        auto module = new InfoNode();
+        auto* module = &allocNode();
         root().addChild(module);
         module->addChild(leafNode);
       }
     } else {
       // Set to own module if no neighbour module available
-      auto module = new InfoNode();
+      auto* module = &allocNode();
       root().addChild(module);
       module->addChild(leafNode);
     }
@@ -1363,7 +1363,7 @@ void InfomapBase::generateSubNetwork(Network& network)
   nodeIndexMap.reserve(numNodes);
   for (auto& nodeIt : network.nodes()) {
     auto& networkNode = nodeIt.second;
-    auto* node = new InfoNode(networkNode.flow, networkNode.id, networkNode.physicalId, networkNode.layerId);
+    auto* node = &allocNode(networkNode.flow, networkNode.id, networkNode.physicalId, networkNode.layerId);
     node->data.teleportWeight = networkNode.weight;
     node->data.teleportFlow = networkNode.teleFlow;
     node->data.exitFlow = networkNode.exitFlow;
@@ -1499,7 +1499,7 @@ void InfomapBase::generateSubNetwork(InfoNode& parent)
 
   unsigned int childIndex = 0;
   for (InfoNode& node : parent) {
-    auto* clonedNode = new InfoNode(node);
+    auto* clonedNode = &allocNode(node);
     clonedNode->initClean();
     m_root.addChild(clonedNode);
     node.index = childIndex; // Set index to its place in this subnetwork to be able to find edge target below
@@ -1602,7 +1602,7 @@ void InfomapBase::hierarchicalPartition()
             InfoNode* leaf = leafs[j];
             unsigned int moduleIndex = modules[j];
             if (subModules[moduleIndex] == nullptr) {
-              subModules[moduleIndex] = new InfoNode(subInfomap.leafNodes()[j]->parent->data);
+              subModules[moduleIndex] = &allocNode(subInfomap.leafNodes()[j]->parent->data);
               subModules[moduleIndex]->index = moduleIndex;
               module.addChild(subModules[moduleIndex]);
             }
@@ -2766,6 +2766,11 @@ void aggregatePerLevelCodelength(const InfoNode& parent, std::vector<detail::Per
 
 void InfomapBase::initOptimizer(bool forceNoMemory)
 {
+  // The value-member root is never pool-freed (isRoot() guards every free path),
+  // but it can allocate (e.g. the middle node in replaceChildrenWithOneNode), so
+  // it needs this instance's pool. Idempotent: initOptimizer may run twice.
+  m_root.m_pool = &m_nodePool;
+
   if (haveMetaData()) {
     m_optimizer = std::make_unique<InfomapOptimizer<MetaMapEquation>>();
   } else if (haveMemory() && !forceNoMemory) {
