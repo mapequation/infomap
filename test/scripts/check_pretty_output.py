@@ -184,7 +184,7 @@ def main():
         assert "Writing " not in output_pretty
 
     # Pretty is the default (and only) console rendering. The legacy stream is
-    # being dismantled (Fas 5); --no-pretty is a transitional no-op slated for
+    # being dismantled (Phase 5); --no-pretty is a transitional no-op slated for
     # removal, so it is no longer asserted here.
     default_out = run(cli, str(network), "-0", "--directed", "--seed", "1")
     for expected in ("Network", "Flow", "Optimization", "Levels"):

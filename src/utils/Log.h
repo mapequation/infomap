@@ -57,7 +57,9 @@ public:
 
   void hide(bool value) { m_visible = !value && isVisible(); }
 
-  Log& operator<<(const hideIf&) { return *this; }
+  // Defined out-of-line below, once hideIf is complete; a single non-ref-qualified
+  // member covers both `log << hideIf(c)` and `Log() << hideIf(c)` (temporaries).
+  Log& operator<<(const hideIf& manip);
 
   template <typename T>
   Log& operator<<(const T& data)
@@ -164,14 +166,14 @@ private:
 struct hideIf {
   explicit hideIf(bool value) : hide(value) {}
 
-  friend Log& operator<<(Log& out, const hideIf& manip)
-  {
-    out.hide(manip.hide);
-    return out;
-  }
-
   bool hide;
 };
+
+inline Log& Log::operator<<(const hideIf& manip)
+{
+  hide(manip.hide);
+  return *this;
+}
 
 } // namespace infomap
 

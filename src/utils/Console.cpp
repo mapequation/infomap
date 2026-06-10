@@ -94,6 +94,12 @@ void Console::Progress::update(const std::string& value)
   // mode keeps its detailed per-step lines instead of a clobbered live line.
   if (!m_console.m_ansi)
     return;
+  // Only claim the on-screen line if this verbosity actually draws it. Log(0, 0)
+  // is muted in verbose / silent / parallel-trial modes, where no live line ever
+  // appears — setting m_live there would lie about screen state and make finish()
+  // emit a stray carriage-return/clear over output it never wrote.
+  if (!Log(0, 0).isVisible())
+    return;
   Log(0, 0) << "\r" << m_console.statusLine(m_label, value) << "\033[K" << std::flush;
   m_live = true;
 }
@@ -101,10 +107,11 @@ void Console::Progress::update(const std::string& value)
 void Console::Progress::finish(const std::string& value)
 {
   // Freeze into the permanent status line, visible at verbosity 0 and above.
-  // On a TTY, overwrite the live line in place (\r ... \033[K) before
-  // committing the newline; otherwise emit the plain line, identical to
-  // status().
-  if (m_console.m_ansi)
+  // Overwrite the live line in place (\r ... \033[K) only if update() actually
+  // drew one (m_live); otherwise — verbose mode, or finish() called without a
+  // prior update() — emit the plain line, identical to status(), with no stray
+  // carriage-return / clear sequence.
+  if (m_console.m_ansi && m_live)
     Log() << "\r" << m_console.statusLine(m_label, value) << "\033[K\n";
   else
     Log() << m_console.statusLine(m_label, value) << "\n";
