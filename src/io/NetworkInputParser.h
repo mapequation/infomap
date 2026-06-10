@@ -231,8 +231,7 @@ namespace input {
     template <typename Sink>
     std::string parseVertices(std::ifstream& file, const std::string&, Sink& sink, ParseProgress& progress)
     {
-      Log(1) << "  Parsing vertices...\n"
-             << std::flush;
+      Log(1) << Console::detail("parsing vertices");
       std::string line;
       while (!std::getline(file, line).fail()) {
         if (line.empty() || line[0] == '#')
@@ -266,15 +265,14 @@ namespace input {
         sink.onPhysicalNode(vertex);
         ++progress.numPhysicalNodes;
       }
-      Log(1) << Console::note(fmt::format(FMT_STRING("{} physical nodes added"), progress.numPhysicalNodes));
+      Log(1) << Console::detail(fmt::format(FMT_STRING("{} physical nodes added"), progress.numPhysicalNodes));
       return line;
     }
 
     template <typename Sink>
     std::string parseStateNodes(std::ifstream& file, const std::string&, Sink& sink)
     {
-      Log(1) << "  Parsing state nodes...\n"
-             << std::flush;
+      Log(1) << Console::detail("parsing state nodes");
       unsigned int numStateNodesFound = 0;
       std::string line;
       while (!std::getline(file, line).fail()) {
@@ -288,7 +286,7 @@ namespace input {
         sink.onStateNode(stateNode);
         ++numStateNodesFound;
       }
-      Log(1) << Console::note(fmt::format(FMT_STRING("{} state nodes added"), numStateNodesFound));
+      Log(1) << Console::detail(fmt::format(FMT_STRING("{} state nodes added"), numStateNodesFound));
       return line;
     }
 
@@ -306,26 +304,24 @@ namespace input {
 
         if (!parsingLinks) {
           parsingLinks = true;
-          Log(1) << "  Parsing links...\n"
-                 << std::flush;
+          Log(1) << Console::detail("parsing links");
         }
 
         sink.onLink(parseLink(line));
         ++progress.numLinks;
       }
       if (parsingLinks)
-        Log(1) << Console::note(fmt::format(FMT_STRING("{} links"), progress.numLinks));
+        Log(1) << Console::detail(fmt::format(FMT_STRING("{} links"), progress.numLinks));
       return line;
     }
 
     template <typename Sink>
     std::string parseMultilayerLinks(std::ifstream& file, Sink& sink, const NetworkInputOptions& options, ParseProgress& progress)
     {
-      Log(1) << "  Parsing multilayer links...\n"
-             << std::flush;
+      Log(1) << Console::detail("parsing multilayer links");
 
       if (options.matchableMultilayerIds > 0) {
-        Log(1).print("  Creating matchable state ids using: nodeId << (log2({}) + 1) | layerId\n", options.matchableMultilayerIds);
+        Log(1) << Console::detail(fmt::format(FMT_STRING("creating matchable state ids: nodeId << (log2({}) + 1) | layerId"), options.matchableMultilayerIds));
       }
 
       std::string line;
@@ -346,20 +342,19 @@ namespace input {
           ++progress.numInterLayerLinks;
         }
       }
-      Log(1) << Console::note(fmt::format(FMT_STRING("{} links in {} layers"), progress.numIntraLayerLinks + progress.numInterLayerLinks, progress.layers.size()));
-      Log(1).print("    -> {} intra-layer links\n", progress.numIntraLayerLinks);
-      Log(1).print("    -> {} inter-layer links\n", progress.numInterLayerLinks);
+      Log(1) << Console::detail(fmt::format(FMT_STRING("{} links in {} layers"), progress.numIntraLayerLinks + progress.numInterLayerLinks, progress.layers.size()));
+      Log(1) << Console::detail(fmt::format(FMT_STRING("{} intra-layer links"), progress.numIntraLayerLinks));
+      Log(1) << Console::detail(fmt::format(FMT_STRING("{} inter-layer links"), progress.numInterLayerLinks));
       return line;
     }
 
     template <typename Sink>
     std::string parseMultilayerIntraLinks(std::ifstream& file, Sink& sink, const NetworkInputOptions& options, ParseProgress& progress)
     {
-      Log(1) << "  Parsing intra-layer links...\n"
-             << std::flush;
+      Log(1) << Console::detail("parsing intra-layer links");
 
       if (options.matchableMultilayerIds > 0) {
-        Log(1).print("  Creating matchable state ids using: nodeId << (log2({}) + 1) | layerId\n", options.matchableMultilayerIds);
+        Log(1) << Console::detail(fmt::format(FMT_STRING("creating matchable state ids: nodeId << (log2({}) + 1) | layerId"), options.matchableMultilayerIds));
       }
 
       std::string line;
@@ -375,15 +370,14 @@ namespace input {
         progress.layers.insert(link.layer);
         ++progress.numIntraLayerLinks;
       }
-      Log(1) << Console::note(fmt::format(FMT_STRING("{} intra-layer links"), progress.numIntraLayerLinks));
+      Log(1) << Console::detail(fmt::format(FMT_STRING("{} intra-layer links"), progress.numIntraLayerLinks));
       return line;
     }
 
     template <typename Sink>
     std::string parseMultilayerInterLinks(std::ifstream& file, Sink& sink, ParseProgress& progress)
     {
-      Log(1) << "  Parsing inter-layer links...\n"
-             << std::flush;
+      Log(1) << Console::detail("parsing inter-layer links");
       std::string line;
       while (!std::getline(file, line).fail()) {
         if (line.empty() || line[0] == '#')
@@ -398,21 +392,21 @@ namespace input {
         progress.layers.insert(link.targetLayer);
         ++progress.numInterLayerLinks;
       }
-      Log(1) << Console::note(fmt::format(FMT_STRING("{} inter-layer links"), progress.numInterLayerLinks));
+      Log(1) << Console::detail(fmt::format(FMT_STRING("{} inter-layer links"), progress.numInterLayerLinks));
       return line;
     }
 
     template <typename Sink>
     std::string parseBipartiteLinks(std::ifstream& file, const std::string& heading, Sink& sink)
     {
-      Log(1) << "  Parsing bipartite links...\n";
+      Log(1) << Console::detail("parsing bipartite links");
       std::istringstream extractor(heading);
       std::string tmp;
       unsigned int bipartiteStartId = 0;
       if (!(extractor >> tmp >> bipartiteStartId))
         throw std::runtime_error(fmt::format(FMT_STRING("Can't parse bipartite start id from line '{}'"), heading));
 
-      Log(1) << Console::note(fmt::format(FMT_STRING("Using bipartite start id {}"), bipartiteStartId));
+      Log(1) << Console::detail(fmt::format(FMT_STRING("Using bipartite start id {}"), bipartiteStartId));
       sink.onBipartiteStart(bipartiteStartId);
       std::string line;
       while (!std::getline(file, line).fail()) {
@@ -486,7 +480,7 @@ namespace input {
         }
       }
 
-      Log(1) << "Done!\n";
+      Log(1) << Console::detail("done");
     }
 
   } // namespace detail
@@ -494,14 +488,14 @@ namespace input {
   template <typename Sink>
   void parseNetworkInput(const std::string& filename, Sink& sink, const NetworkInputOptions& options)
   {
-    Log(1).print("Parsing {} network from file '{}'...\n", options.undirectedFlow ? "undirected" : "directed", filename);
+    Log(1) << Console::detail(fmt::format(FMT_STRING("parsing {} network from {}"), options.undirectedFlow ? "undirected" : "directed", filename));
     detail::parseNetwork(filename, detail::generalValidHeadings(), detail::generalIgnoredHeadings(), sink, options);
   }
 
   template <typename Sink>
   void parseMetaDataInput(const std::string& filename, Sink& sink)
   {
-    Log(1).print("Parsing meta data from '{}'...\n", filename);
+    Log(1) << Console::detail(fmt::format(FMT_STRING("parsing meta data from {}"), filename));
     SafeInFile input(filename);
     std::string line;
     unsigned int numMetaDataColumns = 0;
@@ -530,7 +524,7 @@ namespace input {
       numMetaDataColumns = std::max<unsigned int>(numMetaDataColumns, metaData.size());
       ++numMetaDataRows;
     }
-    Log(1).print(" -> Parsed {} columns of meta data for {} nodes.\n", numMetaDataColumns, numMetaDataRows);
+    Log(1) << Console::detail(fmt::format(FMT_STRING("parsed {} columns of meta data for {} nodes"), numMetaDataColumns, numMetaDataRows));
   }
 
 } // namespace input

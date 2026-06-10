@@ -56,6 +56,13 @@ public:
   static std::string note(const std::string& message);
   static std::string warn(const std::string& message);
 
+  // Tier-3 verbose trace: an indented, dimmed line subordinate to the section
+  // and status lines above it, so verbose output reads as a bright skimmable
+  // spine (sections + • bullets) with quiet detail nested beneath. Returns a
+  // complete line (trailing newline); in plain mode the dim escapes collapse to
+  // "" leaving just the indent. Use as Log(1) << Console::detail(...).
+  static std::string detail(const std::string& message);
+
   static std::string percent(double value);
   static std::string fixed(double value, unsigned int precision = 6);
 

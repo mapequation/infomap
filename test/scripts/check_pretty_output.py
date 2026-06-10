@@ -40,11 +40,14 @@ def main():
     verbose_pretty = run(
         cli, str(network), "-0", "--directed", "--seed", "1", "--pretty", "-vv"
     )
-    # Additive model: the pretty base renders at every verbosity, with legacy
-    # diagnostics layered on top (rather than replacing pretty as before).
+    # Additive model: the pretty base (sections + • status bullets) renders at
+    # every verbosity, with the dim, indented detail tier layered beneath each
+    # phase. Detail lines are indent-4; the trace verbs are lower-case.
     for expected in ("Network", "Flow", "Optimization", "Levels"):
         assert expected in verbose_pretty
-    assert "Run Infomap..." in verbose_pretty
+    assert "run Infomap" in verbose_pretty
+    # Detail tier: optimization trace nests under the Optimization section.
+    assert re.search(r"\n {4}iter 1:", verbose_pretty)
 
     silent_pretty = run(
         cli, str(network), "-0", "--directed", "--seed", "1", "--pretty", "--silent"

@@ -128,6 +128,15 @@ std::string Console::warn(const std::string& message)
   return fmt::format(FMT_STRING("  {}Warning:{} {}\n"), c.yellow(), c.reset(), message);
 }
 
+std::string Console::detail(const std::string& message)
+{
+  // Indent 4 (one step below the indent-2 status/metric tier) and dim, so the
+  // bright section headers and • bullets stay the visual spine and trace reads
+  // as subordinate. Plain mode keeps the indent, drops the dim.
+  Console c;
+  return fmt::format(FMT_STRING("    {}{}{}\n"), c.dim(), message, c.reset());
+}
+
 std::string Console::percent(double value)
 {
   if (std::abs(value) < 1e-9)

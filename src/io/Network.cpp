@@ -198,7 +198,7 @@ void Network::generateStateNetworkFromMultilayer()
     m_haveDirectedInput = true;
     // TODO: Don't allow undirdir/outdirdir/rawdir?
     // Expand each undirected intra-layer link to two opposite directed links
-    Log(1) << Console::note("Expanding undirected links to directed...");
+    Log(1) << Console::detail("expanding undirected links to directed");
     for (auto& layerIt : m_networks) {
       auto& network = layerIt.second;
       network.undirectedToDirected();
