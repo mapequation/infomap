@@ -18,6 +18,15 @@
 // format.h to avoid ODR mismatches. Never include <fmt/...> directly elsewhere;
 // see utils/format.h.
 
+// Header-only is mandatory: Infomap vendors only fmt's headers (vendor/fmt) and
+// compiles no fmt source files, so a build surface that forces FMT_HEADER_ONLY
+// off (or to some other value) would link-fail with undefined fmt symbols.
+// Surface that as a clear compile error here rather than a cryptic link error,
+// so every build surface (CLI, Python, R, JS) stays consistent by construction.
+#if defined(FMT_HEADER_ONLY) && (FMT_HEADER_ONLY != 1)
+#error "Infomap requires header-only {fmt}: FMT_HEADER_ONLY must be 1 (no fmt sources are compiled)."
+#endif
+
 #ifndef FMT_HEADER_ONLY
 #define FMT_HEADER_ONLY 1
 #endif
