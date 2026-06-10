@@ -14,6 +14,7 @@
 
 #include <cmath>
 #include <cstdlib>
+#include <iostream>
 
 #ifndef _WIN32
 #include <unistd.h>
@@ -23,22 +24,37 @@ namespace infomap {
 
 namespace {
 
-  bool stdoutSupportsAnsi()
+  bool consoleSupportsAnsi()
   {
-    static const bool supportsAnsi = []() {
+    // isatty(STDOUT) and TERM are fixed for the process lifetime — probe once.
+    static const bool terminalIsAnsiCapable = []() {
 #if defined(_WIN32) || defined(__EMSCRIPTEN__)
       return false;
 #else
       const char* term = std::getenv("TERM");
-      return ::isatty(STDOUT_FILENO) && std::getenv("NO_COLOR") == nullptr && term != nullptr && std::string(term) != "dumb";
+      return ::isatty(STDOUT_FILENO) && term != nullptr && std::string(term) != "dumb";
 #endif
     }();
-    return supportsAnsi;
+
+    if (!terminalIsAnsiCapable)
+      return false;
+
+    // NO_COLOR can be set/unset after the first probe (tests, embedders), so honor
+    // it per call — a cheap getenv, and it keeps behavior order-independent.
+    if (std::getenv("NO_COLOR") != nullptr)
+      return false;
+
+    // Console text is routed through infomap::Log, whose sink can be redirected
+    // away from stdout (Log::setOutputStream — R's Rprintf bridge, the binding
+    // streams, test capture buffers). Only emit ANSI when Log actually writes to
+    // the process stdout; otherwise escapes would leak into the redirected sink
+    // even though STDOUT itself is a tty.
+    return &Log::getOutputStream() == &std::cout;
   }
 
 } // namespace
 
-Console::Console() : m_ansi(stdoutSupportsAnsi()) {}
+Console::Console() : m_ansi(consoleSupportsAnsi()) {}
 
 void Console::section(const std::string& title) const
 {
@@ -148,7 +164,7 @@ std::string Console::arrow()
 {
   // Same TTY/ANSI gate as bullet()/branch() (probed once, cached), so the
   // optimization status lines degrade to "->" when piped or on a dumb terminal.
-  return stdoutSupportsAnsi() ? "→" : "->";
+  return consoleSupportsAnsi() ? "→" : "->";
 }
 
 std::string Console::percent(double value)

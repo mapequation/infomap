@@ -79,7 +79,7 @@ namespace {
   void parseOptionValue(Option& opt, const std::string& value)
   {
     if (!opt.parse(value))
-      throw std::runtime_error(fmt::format(FMT_STRING("Cannot parse '{}' as argument to option '{}'. "), value, opt.longName));
+      throw std::runtime_error(fmt::format(FMT_STRING("Cannot parse '{}' as argument to option '{}'."), value, opt.longName));
   }
 
   void parseLongOption(const std::string& arg, const LongOptionMap& longOptions, const std::vector<std::string>& flags, unsigned int& i)
