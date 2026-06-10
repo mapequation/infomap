@@ -46,7 +46,11 @@ InfoNode::~InfoNode() noexcept
   for (edge_iterator outEdgeIt(begin_outEdge());
        outEdgeIt != end_outEdge();
        ++outEdgeIt) {
-    delete *outEdgeIt;
+    InfoEdge* edge = *outEdgeIt;
+    if (edge->m_pool != nullptr)
+      edge->m_pool->free(edge);
+    else
+      delete edge;
   }
 }
 

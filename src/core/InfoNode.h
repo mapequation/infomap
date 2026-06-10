@@ -12,6 +12,7 @@
 
 #include "FlowData.h"
 #include "InfoEdge.h"
+#include "ObjectPool.h"
 #include "iterators/infomapIterators.h"
 #include "iterators/IterWrapper.h"
 #include "../utils/MetaCollection.h"
@@ -114,6 +115,9 @@ private:
   // Owning pool. Set by InfomapBase::allocNode for every pool-allocated node;
   // stays nullptr only for the value-member root, which is never pool-freed.
   NodePool* m_pool = nullptr;
+  // Pool that out-edges of this node are allocated from (same instance's edge
+  // pool). nullptr for standalone nodes, whose edges fall back to new/delete.
+  EdgePool* m_edgePool = nullptr;
   friend class InfomapBase;
 
 public:
@@ -424,7 +428,10 @@ public:
 
   void addOutEdge(InfoNode& target, double weight, double flow = 0.0) noexcept
   {
-    auto* edge = new InfoEdge(*this, target, weight, flow);
+    auto* edge = m_edgePool != nullptr
+        ? m_edgePool->alloc(*this, target, weight, flow)
+        : new InfoEdge(*this, target, weight, flow);
+    edge->m_pool = m_edgePool;
     m_outEdges.push_back(edge);
     target.m_inEdges.push_back(edge);
   }

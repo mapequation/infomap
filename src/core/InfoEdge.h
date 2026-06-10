@@ -25,6 +25,11 @@ public:
 };
 
 class InfoNode;
+class InfoEdge;
+
+template <typename T>
+class ObjectPool;
+using EdgePool = ObjectPool<InfoEdge>;
 
 class InfoEdge {
 public:
@@ -40,6 +45,10 @@ public:
   EdgeData data;
   InfoNode* source;
   InfoNode* target;
+
+  // Owning pool. Set by InfoNode::addOutEdge for pool-allocated edges; nullptr
+  // for edges created standalone (e.g. in a test), which delete normally.
+  EdgePool* m_pool = nullptr;
 };
 
 } // namespace infomap

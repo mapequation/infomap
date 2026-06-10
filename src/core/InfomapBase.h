@@ -191,6 +191,7 @@ private:
   {
     InfoNode& node = *m_nodePool.alloc(std::forward<Args>(args)...);
     node.m_pool = &m_nodePool;
+    node.m_edgePool = &m_edgePool;
     return node;
   }
 
@@ -524,6 +525,7 @@ protected:
   // reclaimed by ~m_root before the pool storage is dropped. Destruction runs
   // in reverse declaration order.
   NodePool m_nodePool;
+  EdgePool m_edgePool;
   InfoNode m_root;
   std::vector<InfoNode*> m_leafNodes;
   std::vector<InfoNode*> m_moduleNodes;

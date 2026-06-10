@@ -2770,6 +2770,7 @@ void InfomapBase::initOptimizer(bool forceNoMemory)
   // but it can allocate (e.g. the middle node in replaceChildrenWithOneNode), so
   // it needs this instance's pool. Idempotent: initOptimizer may run twice.
   m_root.m_pool = &m_nodePool;
+  m_root.m_edgePool = &m_edgePool;
 
   if (haveMetaData()) {
     m_optimizer = std::make_unique<InfomapOptimizer<MetaMapEquation>>();
