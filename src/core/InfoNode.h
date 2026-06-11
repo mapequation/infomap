@@ -12,7 +12,9 @@
 
 #include "FlowData.h"
 #include "InfoEdge.h"
+#ifndef SWIG
 #include "ObjectPool.h"
+#endif
 #include "iterators/infomapIterators.h"
 #include "iterators/IterWrapper.h"
 #include "../utils/MetaCollection.h"
@@ -26,11 +28,16 @@
 namespace infomap {
 
 class InfomapBase;
+
+#ifndef SWIG
+// Internal allocation plumbing; kept out of the SWIG bindings so the pool type
+// does not leak into the generated wrappers.
 class InfoNode;
 
 template <typename T>
 class ObjectPool;
 using NodePool = ObjectPool<InfoNode>;
+#endif
 
 /**
  * Tree node with raw-pointer ownership.
@@ -112,6 +119,7 @@ private:
 
   InfomapBase* m_infomap = nullptr;
 
+#ifndef SWIG
   // Owning pool. Set by InfomapBase::allocNode for every pool-allocated node;
   // stays nullptr only for the value-member root, which is never pool-freed.
   NodePool* m_pool = nullptr;
@@ -119,6 +127,7 @@ private:
   // pool). nullptr for standalone nodes, whose edges fall back to new/delete.
   EdgePool* m_edgePool = nullptr;
   friend class InfomapBase;
+#endif
 
 public:
   InfoNode(const FlowData& flowData)
