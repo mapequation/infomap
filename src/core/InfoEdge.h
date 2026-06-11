@@ -45,10 +45,6 @@ public:
   EdgeData data;
   InfoNode* source;
   InfoNode* target;
-
-  // Owning pool. Set by InfoNode::addOutEdge for pool-allocated edges; nullptr
-  // for edges created standalone (e.g. in a test), which delete normally.
-  EdgePool* m_pool = nullptr;
 };
 
 } // namespace infomap

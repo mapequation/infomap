@@ -41,14 +41,16 @@ InfoNode::~InfoNode() noexcept
       parent->lastChild = previous;
   }
 
-  // Delete outgoing edges.
+  // Delete outgoing edges. Every out-edge of this node was allocated from this
+  // node's m_edgePool (or with new, when m_edgePool is null for standalone
+  // nodes), so it is freed back through the same path.
   // TODO: Renders ingoing edges invalid. Assume or assert that all nodes on the same level are deleted?
   for (edge_iterator outEdgeIt(begin_outEdge());
        outEdgeIt != end_outEdge();
        ++outEdgeIt) {
     InfoEdge* edge = *outEdgeIt;
-    if (edge->m_pool != nullptr)
-      edge->m_pool->free(edge);
+    if (m_edgePool != nullptr)
+      m_edgePool->free(edge);
     else
       delete edge;
   }

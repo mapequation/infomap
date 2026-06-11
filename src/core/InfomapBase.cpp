@@ -1357,6 +1357,8 @@ void InfomapBase::generateSubNetwork(Network& network)
   }
 
   m_leafNodes.reserve(numNodes);
+  m_nodePool.reserve(numNodes);
+  m_edgePool.reserve(network.numLinks());
   double sumNodeFlow = 0.0;
   double sumTeleFlow = 0.0;
   std::unordered_map<unsigned int, unsigned int> nodeIndexMap;
@@ -1494,6 +1496,11 @@ void InfomapBase::generateSubNetwork(InfoNode& parent)
 
   unsigned int numNodes = parent.childDegree();
   m_leafNodes.resize(numNodes);
+  // Note: deliberately NOT reserving the node pool here. Sub-networks are often
+  // tiny (one per refined module); reserving the leaf count and then growing
+  // geometrically from that base overshoots for their module nodes, inflating
+  // peak RSS on graphs with many small modules. The kInitialChunk ramp is
+  // tighter for these. Reserve is applied only to the main network.
 
   Console::detail(1, "generate sub network with {} nodes", numNodes);
 

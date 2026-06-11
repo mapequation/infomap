@@ -431,7 +431,6 @@ public:
     auto* edge = m_edgePool != nullptr
         ? m_edgePool->alloc(*this, target, weight, flow)
         : new InfoEdge(*this, target, weight, flow);
-    edge->m_pool = m_edgePool;
     m_outEdges.push_back(edge);
     target.m_inEdges.push_back(edge);
   }

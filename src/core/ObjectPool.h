@@ -112,6 +112,21 @@ public:
     --m_liveCount;
   }
 
+  // Ensure room for n more objects without geometric ramp-up, for call sites
+  // that know the bulk count up front (leaf nodes = network size, sub-network
+  // clones = parent child-degree). One exactly-sized chunk replaces the
+  // 4,8,16,... ramp + tail slack, which is the bulk of pool over-reservation —
+  // most impactful for the swarm of small sub-Infomap pools.
+  void reserve(std::size_t n)
+  {
+    std::size_t available = m_free.size();
+    if (!m_chunks.empty())
+      available += m_chunks.back().capacity - m_chunks.back().used;
+    if (available >= n)
+      return;
+    m_chunks.emplace_back(n - available);
+  }
+
   std::size_t liveCount() const noexcept { return m_liveCount; }
   std::size_t chunkCount() const noexcept { return m_chunks.size(); }
 };
