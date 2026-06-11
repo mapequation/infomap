@@ -42,6 +42,7 @@
 #include <unordered_map>
 #include <cstdlib>
 #include <algorithm>
+#include <numeric>
 #include <cmath>
 #include <exception>
 #include <mutex>
@@ -165,7 +166,7 @@ public:
       // Clamp to INT_MAX before the signed cast: the budget is unsigned, and a value
       // above INT_MAX would make omp_set_num_threads see a negative thread count.
       const unsigned int ompThreads = std::min(m_threadBudget.threads,
-          static_cast<unsigned int>(std::numeric_limits<int>::max()));
+                                               static_cast<unsigned int>(std::numeric_limits<int>::max()));
       omp_set_num_threads(static_cast<int>(ompThreads));
 #endif
     }
@@ -1056,8 +1057,7 @@ NodePaths InfomapBase::normalizeTreePaths(const TreePaths& tree, unsigned int& n
   normalized.reserve(tree.size());
 
   // Fast path: every row is a state-level leaf — pass through.
-  bool allState = std::all_of(tree.begin(), tree.end(),
-      [](const auto& tp) { return tp.idType == TreeLeafIdType::state; });
+  bool allState = std::all_of(tree.begin(), tree.end(), [](const auto& tp) { return tp.idType == TreeLeafIdType::state; });
   if (allState) {
     for (const auto& tp : tree)
       normalized.emplace_back(tp.nodeId, tp.path);
@@ -2480,6 +2480,24 @@ unsigned int InfomapBase::removeSubModules(bool recalculateCodelengthOnTree)
   return numLevelsDeleted;
 }
 
+// Sub-modules with fewer children than this are partitioned inline by the
+// task that found them instead of as their own task, keeping the task count
+// proportional to the work that can actually run in parallel.
+constexpr unsigned int minChildDegreeForPartitionTask = 16;
+
+namespace detail {
+  // Per-module result of the recursive partitioning task graph. Children are
+  // sized once before their tasks are spawned, so each task writes only its
+  // own record through a stable address.
+  struct PartitionTaskRecord {
+    double indexCodelength = 0.0;
+    double moduleCodelength = 0.0;
+    double leafCodelength = 0.0;
+    double queueFlow = 0.0; // flow of the sub-queue spawned from this module
+    std::vector<PartitionTaskRecord> children;
+  };
+} // namespace detail
+
 unsigned int InfomapBase::recursivePartition()
 {
   double indexCodelength = getIndexCodelength();
@@ -2510,44 +2528,105 @@ unsigned int InfomapBase::recursivePartition()
     isSilent = Log::isSilent();
   }
 
-  while (partitionQueue.size() > 0) {
-    Log(1) << "Level " << partitionQueue.level << ": " << (partitionQueue.flow * 100) << "% of the flow in " << partitionQueue.size() << " modules. Partitioning... " << std::setprecision(6) << std::flush;
+  // Run the whole recursion as a task graph: every module is one task that
+  // spawns tasks for its accepted sub-modules, so threads flow from finished
+  // branches into deeper levels instead of waiting at per-level barriers.
+  // Each sub-Infomap re-seeds from the config seed, so per-module results are
+  // independent of execution order. Per-module statistics are recorded and
+  // aggregated afterwards in the same order as the former level-synchronous
+  // queue, reproducing its codelengths and log output exactly.
+  const unsigned int startLevel = partitionQueue.level;
+  std::vector<detail::PartitionTaskRecord> rootRecords(partitionQueue.size());
 
-    if (shouldMuteNestedMainRun)
-      Log::setSilent(true);
+  if (shouldMuteNestedMainRun)
+    Log::setSilent(true);
 
-    // Partition all modules in the queue and fill up the next level queue
-    PartitionQueue nextLevelQueue;
-    processPartitionQueue(partitionQueue, nextLevelQueue);
+  {
+    // Spawn the largest modules first so the dominant subtrees start immediately
+    std::vector<PartitionQueue::size_t> spawnOrder(partitionQueue.size());
+    std::iota(spawnOrder.begin(), spawnOrder.end(), PartitionQueue::size_t { 0 });
+    std::sort(spawnOrder.begin(), spawnOrder.end(), [&partitionQueue](PartitionQueue::size_t a, PartitionQueue::size_t b) {
+      return partitionQueue[a]->data.flow > partitionQueue[b]->data.flow;
+    });
 
-    if (shouldMuteNestedMainRun)
-      Log::setSilent(isSilent);
+#ifdef _OPENMP
+#pragma omp parallel
+#pragma omp single
+#endif
+    {
+      for (auto moduleIndex : spawnOrder) {
+        InfoNode* module = partitionQueue[moduleIndex];
+        detail::PartitionTaskRecord* record = &rootRecords[moduleIndex];
+#ifdef _OPENMP
+#pragma omp task firstprivate(module, record)
+#endif
+        partitionModuleRecursively(*module, startLevel, *record);
+      }
+#ifdef _OPENMP
+#pragma omp taskwait
+#endif
+    }
+  }
 
-    double leftToImprove = partitionQueue.moduleCodelength;
-    sumConsolidatedCodelength += partitionQueue.indexCodelength + partitionQueue.leafCodelength;
+  if (shouldMuteNestedMainRun)
+    Log::setSilent(isSilent);
+
+  // Aggregate the recorded statistics level by level, visiting the records in
+  // the same order as the former level-synchronous queue concatenated them, so
+  // all floating-point sums and printed values match it exactly.
+  std::vector<const detail::PartitionTaskRecord*> levelRecords;
+  levelRecords.reserve(rootRecords.size());
+  for (auto& record : rootRecords)
+    levelRecords.push_back(&record);
+
+  unsigned int level = startLevel;
+  double queueFlow = partitionQueue.flow;
+  while (!levelRecords.empty()) {
+    Log(1) << "Level " << level << ": " << (queueFlow * 100) << "% of the flow in " << levelRecords.size() << " modules. Partitioning... " << std::setprecision(6) << std::flush;
+
+    double sumIndexCodelength = 0.0;
+    double sumModuleCodelengths = 0.0;
+    double sumLeafCodelength = 0.0;
+    std::vector<const detail::PartitionTaskRecord*> nextLevelRecords;
+    double nextQueueFlow = 0.0;
+    for (const auto* record : levelRecords) {
+      sumIndexCodelength += record->indexCodelength;
+      sumModuleCodelengths += record->moduleCodelength;
+      sumLeafCodelength += record->leafCodelength;
+      if (!record->children.empty()) {
+        nextQueueFlow += record->queueFlow;
+        for (const auto& child : record->children)
+          nextLevelRecords.push_back(&child);
+      }
+    }
+
+    double leftToImprove = sumModuleCodelengths;
+    sumConsolidatedCodelength += sumIndexCodelength + sumLeafCodelength;
     double limitCodelength = sumConsolidatedCodelength + leftToImprove;
 
     const double recursiveCompression = ((hierarchicalCodelength - limitCodelength) / hierarchicalCodelength) * 100;
     if (prettyOutput)
       prettyCompression.push_back(PrettyOutput::percent(recursiveCompression));
     Log(0, 0) << ((hierarchicalCodelength - limitCodelength) / hierarchicalCodelength) * 100 << "% " << std::flush;
-    Log(1) << "done! Codelength: " << partitionQueue.indexCodelength << " + " << partitionQueue.leafCodelength << " (+ " << leftToImprove << " left to improve)"
+    Log(1) << "done! Codelength: " << sumIndexCodelength << " + " << sumLeafCodelength << " (+ " << leftToImprove << " left to improve)"
            << " -> limit: " << io::toPrecision(limitCodelength) << " bits.\n";
 
     hierarchicalCodelength = limitCodelength;
 
-    partitionQueue.swap(nextLevelQueue);
+    levelRecords = std::move(nextLevelRecords);
+    queueFlow = nextQueueFlow;
+    ++level;
   }
 
   // Store resulting hierarchical codelength
   m_hierarchicalCodelength = hierarchicalCodelength;
 
   if (prettyOutput)
-    PrettyOutput(true).status("Recursive", io::Str() << compressionSummary(prettyCompression) << " -> " << partitionQueue.level << " levels, codelength " << io::toPrecision(hierarchicalCodelength));
-  Log(0, 0) << ". Found " << partitionQueue.level << " levels with codelength " << io::toPrecision(hierarchicalCodelength) << "\n";
-  Log(1) << "  -> Found " << partitionQueue.level << " levels with codelength " << io::toPrecision(hierarchicalCodelength) << "\n";
+    PrettyOutput(true).status("Recursive", io::Str() << compressionSummary(prettyCompression) << " -> " << level << " levels, codelength " << io::toPrecision(hierarchicalCodelength));
+  Log(0, 0) << ". Found " << level << " levels with codelength " << io::toPrecision(hierarchicalCodelength) << "\n";
+  Log(1) << "  -> Found " << level << " levels with codelength " << io::toPrecision(hierarchicalCodelength) << "\n";
 
-  return partitionQueue.level;
+  return level;
 }
 
 void InfomapBase::queueTopModules(PartitionQueue& partitionQueue)
@@ -2615,93 +2694,79 @@ void InfomapBase::queueLeafModules(PartitionQueue& partitionQueue)
   partitionQueue.level = maxDepth;
 }
 
-bool InfomapBase::processPartitionQueue(PartitionQueue& queue, PartitionQueue& nextLevelQueue) const
+void InfomapBase::partitionModuleRecursively(InfoNode& module, unsigned int level, detail::PartitionTaskRecord& record) const
 {
-  PartitionQueue::size_t numModules = queue.size();
-  std::vector<double> indexCodelengths(numModules, 0.0);
-  std::vector<double> moduleCodelengths(numModules, 0.0);
-  std::vector<double> leafCodelengths(numModules, 0.0);
-  std::vector<PartitionQueue> subQueues(numModules);
-
-#pragma omp parallel for schedule(dynamic)
-  for (PartitionQueue::size_t moduleIndex = 0; moduleIndex < numModules; ++moduleIndex) {
-    InfoNode& module = *queue[moduleIndex];
-
+  module.codelength = calcCodelength(module);
+  // Delete former sub-structure if exists
+  if (module.disposeInfomap())
     module.codelength = calcCodelength(module);
-    // Delete former sub-structure if exists
-    if (module.disposeInfomap())
-      module.codelength = calcCodelength(module);
 
-    // If only trivial substructure is to be found, no need to create infomap instance to find sub-module structures.
-    if (module.childDegree() <= 2) {
-      module.codelength = calcCodelength(module);
-      leafCodelengths[moduleIndex] = module.codelength;
-      continue;
-    }
+  // If only trivial substructure is to be found, no need to create infomap instance to find sub-module structures.
+  if (module.childDegree() <= 2) {
+    module.codelength = calcCodelength(module);
+    record.leafCodelength = module.codelength;
+    return;
+  }
 
-    double oldModuleCodelength = module.codelength;
-    PartitionQueue& subQueue = subQueues[moduleIndex];
-    subQueue.level = queue.level + 1;
+  double oldModuleCodelength = module.codelength;
 
-    auto& subInfomap = getSubInfomap(module)
-                           .initNetwork(module);
-    // Run two-level partition + find hierarchically super modules (skip recursion)
-    subInfomap.setOnlySuperModules(true).run();
+  auto& subInfomap = getSubInfomap(module)
+                         .initNetwork(module);
+  // Run two-level partition + find hierarchically super modules (skip recursion)
+  subInfomap.setOnlySuperModules(true).run();
 
-    double subCodelength = subInfomap.getHierarchicalCodelength();
-    double subIndexCodelength = subInfomap.root().codelength;
-    double subModuleCodelength = subCodelength - subIndexCodelength;
-    InfoNode& subRoot = *module.getInfomapRoot();
-    unsigned int numSubModules = subRoot.childDegree();
-    bool trivialSubPartition = numSubModules == 1 || numSubModules == module.childDegree();
-    bool improvedCodelength = subCodelength < oldModuleCodelength - minimumCodelengthImprovement;
+  double subCodelength = subInfomap.getHierarchicalCodelength();
+  double subIndexCodelength = subInfomap.root().codelength;
+  double subModuleCodelength = subCodelength - subIndexCodelength;
+  InfoNode& subRoot = *module.getInfomapRoot();
+  unsigned int numSubModules = subRoot.childDegree();
+  bool trivialSubPartition = numSubModules == 1 || numSubModules == module.childDegree();
+  bool improvedCodelength = subCodelength < oldModuleCodelength - minimumCodelengthImprovement;
 
-    if (trivialSubPartition || !improvedCodelength) {
-      Log(1) << "Disposing unaccepted sub Infomap instance.\n";
-      module.disposeInfomap();
-      module.codelength = oldModuleCodelength;
-      subQueue.skip = true;
-      leafCodelengths[moduleIndex] = module.codelength;
+  if (trivialSubPartition || !improvedCodelength) {
+    Log(1) << "Disposing unaccepted sub Infomap instance.\n";
+    module.disposeInfomap();
+    module.codelength = oldModuleCodelength;
+    record.leafCodelength = module.codelength;
+    return;
+  }
+
+  // Improvement
+  PartitionQueue subQueue;
+  subQueue.level = level + 1;
+  subInfomap.queueTopModules(subQueue);
+  record.indexCodelength = subIndexCodelength;
+  record.moduleCodelength = subModuleCodelength;
+  record.queueFlow = subQueue.flow;
+
+  const auto numSubModulesQueued = subQueue.size();
+  // Sized once before spawning so child records have stable addresses
+  record.children.resize(numSubModulesQueued);
+
+  // Spawn the largest sub-modules first so the dominant subtrees start immediately
+  std::vector<PartitionQueue::size_t> spawnOrder(numSubModulesQueued);
+  std::iota(spawnOrder.begin(), spawnOrder.end(), PartitionQueue::size_t { 0 });
+  std::sort(spawnOrder.begin(), spawnOrder.end(), [&subQueue](PartitionQueue::size_t a, PartitionQueue::size_t b) {
+    return subQueue[a]->data.flow > subQueue[b]->data.flow;
+  });
+
+  for (auto subModuleIndex : spawnOrder) {
+    InfoNode* subModule = subQueue[subModuleIndex];
+    detail::PartitionTaskRecord* childRecord = &record.children[subModuleIndex];
+    // Small subtrees run inline: spawning them as tasks costs more in task
+    // scheduling and idle-thread stealing than their work is worth.
+    // NOLINTNEXTLINE(bugprone-branch-clone) -- the branches differ by the task pragma
+    if (subModule->childDegree() < minChildDegreeForPartitionTask) {
+      partitionModuleRecursively(*subModule, level + 1, *childRecord);
     } else {
-      // Improvement
-      subInfomap.queueTopModules(subQueue);
-      indexCodelengths[moduleIndex] = subIndexCodelength;
-      moduleCodelengths[moduleIndex] = subModuleCodelength;
+#ifdef _OPENMP
+#pragma omp task firstprivate(subModule, childRecord)
+#endif
+      partitionModuleRecursively(*subModule, level + 1, *childRecord);
     }
   }
-
-  double sumLeafCodelength = 0.0;
-  double sumIndexCodelength = 0.0;
-  double sumModuleCodelengths = 0.0;
-  PartitionQueue::size_t nextLevelSize = 0;
-  for (PartitionQueue::size_t moduleIndex = 0; moduleIndex < numModules; ++moduleIndex) {
-    nextLevelSize += subQueues[moduleIndex].skip ? 0 : subQueues[moduleIndex].size();
-    sumLeafCodelength += leafCodelengths[moduleIndex];
-    sumIndexCodelength += indexCodelengths[moduleIndex];
-    sumModuleCodelengths += moduleCodelengths[moduleIndex];
-  }
-
-  queue.indexCodelength = sumIndexCodelength;
-  queue.leafCodelength = sumLeafCodelength;
-  queue.moduleCodelength = sumModuleCodelengths;
-
-  // Collect the sub-queues and build the next-level queue
-  nextLevelQueue.level = queue.level + 1;
-  nextLevelQueue.resize(nextLevelSize);
-  PartitionQueue::size_t nextLevelIndex = 0;
-  for (PartitionQueue::size_t moduleIndex = 0; moduleIndex < numModules; ++moduleIndex) {
-    PartitionQueue& subQueue = subQueues[moduleIndex];
-    if (!subQueue.skip) {
-      for (PartitionQueue::size_t subIndex = 0; subIndex < subQueue.size(); ++subIndex) {
-        nextLevelQueue[nextLevelIndex++] = subQueue[subIndex];
-      }
-      nextLevelQueue.flow += subQueue.flow;
-      nextLevelQueue.nonTrivialFlow += subQueue.nonTrivialFlow;
-      nextLevelQueue.numNonTrivialModules += subQueue.numNonTrivialModules;
-    }
-  }
-
-  return nextLevelSize > 0;
+  // No taskwait needed: child tasks only write their own records, which outlive
+  // them, and all tasks complete before the spawning parallel region ends.
 }
 
 // ===================================================
