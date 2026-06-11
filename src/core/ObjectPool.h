@@ -33,6 +33,14 @@ namespace infomap {
  * destructor therefore only releases raw memory and asserts the pool is empty;
  * it does NOT run object destructors. A non-empty pool at teardown is a leak
  * (caught by the assert in debug and by LeakSanitizer otherwise).
+ *
+ * Thread safety: NOT thread-safe. Infomap relies on this: each InfomapBase owns
+ * its own pools, which gives every parallel partition/trial worker a private,
+ * lock-free allocator. Do NOT share one pool across instances that may run
+ * concurrently (e.g. parallel sub-Infomap recursion) — concurrent alloc/free
+ * races on m_chunks/m_free and corrupts the heap. Making it shareable would
+ * require locking every alloc/free, serializing the hot path and negating the
+ * point of the per-instance design.
  */
 template <typename T>
 class ObjectPool {
