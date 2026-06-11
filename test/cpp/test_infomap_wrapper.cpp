@@ -1005,4 +1005,22 @@ TEST_CASE("writeResult renders selected physical and state output artifacts [fas
   removeFiles(paths);
 }
 
+// Repeated runs on the same instance free and re-allocate the whole node/edge
+// tree from the per-instance ObjectPools. This exercises pool-slot reuse and
+// must produce value-stable results; teardown then validates the empty-pool
+// invariant (and, under sanitizers, no use-after-free across the reuse).
+TEST_CASE("InfomapWrapper reuses pooled nodes across repeated runs without leaking [fast][core][lifecycle][memory]")
+{
+  InfomapWrapper im("--two-level --silent --seed 7 --num-trials 1 --no-file-output");
+  im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+
+  im.run();
+  const double first = im.codelength();
+
+  im.run(); // second run reclaims and reuses freed pool slots
+  const double second = im.codelength();
+
+  CHECK(first == doctest::Approx(second));
+}
+
 } // namespace
