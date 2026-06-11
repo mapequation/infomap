@@ -23,7 +23,15 @@
 #include <algorithm>
 #include <vector>
 
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
 namespace infomap {
+
+// Below this active network size the fixed costs of a parallel move sweep
+// (team fork/join, proposal buffers, serial commit pass) outweigh the work.
+constexpr unsigned int minNetworkSizeForInnerParallelization = 10000;
 
 template <typename Objective>
 class InfomapOptimizer : public InfomapOptimizerBase {
@@ -115,6 +123,35 @@ protected:
   std::vector<unsigned int> m_moduleMembers;
   std::vector<unsigned int> m_emptyModules;
   unsigned int m_innerParallelMoveSweep = 0;
+
+  struct ParallelMoveProposal {
+    bool valid = false;
+    bool clearDirty = false;
+    unsigned int nodeIndex = 0;
+    unsigned int oldModule = 0;
+    unsigned int newModule = 0;
+    bool targetWasEmpty = false;
+    // Deltas against the sweep-start snapshot, applicable directly at commit
+    // time as long as neither module has been touched earlier in the commit.
+    DeltaFlowDataType oldDelta;
+    DeltaFlowDataType newDelta;
+  };
+
+  // Scratch buffers reused across move sweeps, to avoid re-allocating them
+  // per sweep (serial path) or per thread per sweep (parallel path).
+  std::vector<unsigned int> m_nodeEnumeration;
+  std::vector<unsigned int> m_moduleEnumeration;
+  VectorMap<DeltaFlowDataType> m_deltaFlow;
+  std::vector<VectorMap<DeltaFlowDataType>> m_threadDeltaFlow;
+  std::vector<std::vector<unsigned int>> m_threadModuleEnumeration;
+  std::vector<ParallelMoveProposal> m_moveProposals;
+  std::vector<unsigned int> m_randomMoveTargets;
+  std::vector<unsigned int> m_randomMoveTargetOffsets;
+  std::vector<unsigned int> m_acceptedProposalIndices;
+  // Per-module stamp of the last sweep whose commit phase changed the module,
+  // letting later proposals in the same commit skip the recheck when both of
+  // their modules are unchanged since the sweep-start snapshot.
+  std::vector<unsigned int> m_moduleTouchedSweep;
 };
 
 // ===================================================
@@ -191,7 +228,18 @@ inline bool InfomapOptimizer<RegularizedMultilayerMapEquation>::shouldUseInnerPa
 template <typename Objective>
 inline bool InfomapOptimizer<Objective>::shouldUseInnerParallelization() const
 {
-  return m_infomap->innerParallelization;
+  if (!m_infomap->innerParallelization)
+    return false;
+#ifdef _OPENMP
+  // Inside parallel trials or the recursive-partition tasks, a nested team
+  // would run with one thread but still pay the region and buffer setup,
+  // so keep nested instances on the serial path.
+  if (omp_in_parallel())
+    return false;
+  return m_infomap->activeNetwork().size() >= minNetworkSizeForInnerParallelization;
+#else
+  return false;
+#endif
 }
 
 // ===================================================
@@ -352,15 +400,18 @@ INFOMAP_HOT unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestMod
 {
   // Get random enumeration of nodes
   auto& network = m_infomap->activeNetwork();
-  std::vector<unsigned int> nodeEnumeration(network.size());
+  auto& nodeEnumeration = m_nodeEnumeration;
+  nodeEnumeration.resize(network.size());
   m_infomap->m_rand.getRandomizedIndexVector(nodeEnumeration);
 
   unsigned int numNodes = nodeEnumeration.size();
   unsigned int numMoved = 0;
   unsigned int numRandomMoves = std::min(m_infomap->numRandomMoves, numNodes);
 
-  // Create map with module links
-  VectorMap<DeltaFlowDataType> deltaFlow(numNodes);
+  // Map with module links, persistent across sweeps
+  if (m_deltaFlow.capacity() < numNodes)
+    m_deltaFlow = VectorMap<DeltaFlowDataType>(numNodes);
+  auto& deltaFlow = m_deltaFlow;
 
   for (unsigned int i = 0; i < numNodes; ++i) {
     InfoNode& current = *network[nodeEnumeration[i]];
@@ -416,7 +467,8 @@ INFOMAP_HOT unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestMod
     unsigned int numModuleLinks = deltaFlow.size();
 
     // Randomize link order for optimized search
-    std::vector<unsigned int> moduleEnumeration(numModuleLinks);
+    auto& moduleEnumeration = m_moduleEnumeration;
+    moduleEnumeration.resize(numModuleLinks);
     m_infomap->m_rand.getRandomizedIndexVector(moduleEnumeration);
 
     DeltaFlowDataType bestDeltaModule(oldModuleDelta);
@@ -526,49 +578,65 @@ INFOMAP_HOT unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestMod
 {
   // Get random enumeration of nodes
   auto& network = m_infomap->activeNetwork();
-  std::vector<unsigned int> nodeEnumeration(network.size());
+  auto& nodeEnumeration = m_nodeEnumeration;
+  nodeEnumeration.resize(network.size());
   m_infomap->m_rand.getRandomizedIndexVector(nodeEnumeration);
 
   unsigned int numNodes = nodeEnumeration.size();
   unsigned int numRandomMoves = std::min(m_infomap->numRandomMoves, numNodes);
   const unsigned int parallelMoveSweep = ++m_innerParallelMoveSweep;
 
-  std::vector<std::vector<unsigned int>> randomMoveTargets(numNodes);
-  if (numRandomMoves > 0) {
+  // Random-move targets in a flat array indexed by enumeration position, drawn
+  // serially up front so the parallel sweep never touches the shared RNG.
+  const bool useRandomMoves = numRandomMoves > 0;
+  if (useRandomMoves) {
+    m_randomMoveTargets.clear();
+    m_randomMoveTargetOffsets.resize(numNodes + 1);
+    m_randomMoveTargetOffsets[0] = 0;
     for (unsigned int i = 0; i < numNodes; ++i) {
       InfoNode& current = *network[nodeEnumeration[i]];
-      if (!current.dirty)
-        continue;
-      if (m_moduleMembers[current.index] > 1 && m_infomap->isFirstLoop() && m_infomap->tuneIterationLimit != 1)
-        continue;
-      if (current.degree() > m_infomap->maxDegreeForRandomMoves)
-        continue;
-      auto& targets = randomMoveTargets[nodeEnumeration[i]];
-      targets.reserve(numRandomMoves);
-      for (unsigned int j = 0; j < numRandomMoves; ++j) {
-        unsigned int randIndex = m_infomap->m_rand.randInt(0, numNodes - 1);
-        targets.push_back(nodeEnumeration[randIndex]);
+      bool wantRandomMoves = current.dirty
+          && !(m_moduleMembers[current.index] > 1 && m_infomap->isFirstLoop() && m_infomap->tuneIterationLimit != 1)
+          && current.degree() <= m_infomap->maxDegreeForRandomMoves;
+      if (wantRandomMoves) {
+        for (unsigned int j = 0; j < numRandomMoves; ++j) {
+          unsigned int randIndex = m_infomap->m_rand.randInt(0, numNodes - 1);
+          m_randomMoveTargets.push_back(nodeEnumeration[randIndex]);
+        }
       }
+      m_randomMoveTargetOffsets[i + 1] = static_cast<unsigned int>(m_randomMoveTargets.size());
     }
   }
 
-  struct MoveProposal {
-    bool valid = false;
-    bool clearDirty = false;
-    unsigned int nodeIndex = 0;
-    unsigned int oldModule = 0;
-    unsigned int newModule = 0;
-    bool targetWasEmpty = false;
-  };
+  auto& proposals = m_moveProposals;
+  proposals.assign(numNodes, ParallelMoveProposal());
 
-  std::vector<MoveProposal> proposals(numNodes);
+#ifdef _OPENMP
+  const auto numThreads = static_cast<unsigned int>(std::max(1, omp_get_max_threads()));
+#else
+  const unsigned int numThreads = 1;
+#endif
+  if (m_threadDeltaFlow.size() < numThreads || m_threadDeltaFlow.front().capacity() < numNodes) {
+    const unsigned int capacity = m_threadDeltaFlow.empty()
+        ? numNodes
+        : std::max(numNodes, m_threadDeltaFlow.front().capacity());
+    m_threadDeltaFlow.assign(numThreads, VectorMap<DeltaFlowDataType>(capacity));
+    m_threadModuleEnumeration.resize(numThreads);
+  }
 
 #pragma omp parallel
   {
-    VectorMap<DeltaFlowDataType> deltaFlow(numNodes);
-    std::vector<unsigned int> moduleEnumeration;
+#ifdef _OPENMP
+    const auto threadNum = static_cast<unsigned int>(omp_get_thread_num());
+#else
+    const unsigned int threadNum = 0;
+#endif
+    auto& deltaFlow = m_threadDeltaFlow[threadNum];
+    auto& moduleEnumeration = m_threadModuleEnumeration[threadNum];
 
-#pragma omp for schedule(dynamic) // Use dynamic scheduling as some threads could end early
+    // Chunked dynamic scheduling: load varies per node (dirty nodes cluster),
+    // but chunk size 1 costs one scheduler round-trip per iteration.
+#pragma omp for schedule(dynamic, 512)
     for (unsigned int i = 0; i < numNodes; ++i) {
       deltaFlow.startRound();
 
@@ -601,9 +669,11 @@ INFOMAP_HOT unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestMod
       }
 
       // For random moves
-      for (unsigned int randNodeIndex : randomMoveTargets[nodeIndex]) {
-        InfoNode& neighbour = *network[randNodeIndex];
-        deltaFlow.add(neighbour.index, DeltaFlowDataType(neighbour.index, 0.0, 0.0));
+      if (useRandomMoves) {
+        for (unsigned int t = m_randomMoveTargetOffsets[i]; t < m_randomMoveTargetOffsets[i + 1]; ++t) {
+          InfoNode& neighbour = *network[m_randomMoveTargets[t]];
+          deltaFlow.add(neighbour.index, DeltaFlowDataType(neighbour.index, 0.0, 0.0));
+        }
       }
 
       // For not moving
@@ -680,15 +750,22 @@ INFOMAP_HOT unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestMod
       proposal.oldModule = current.index;
       proposal.newModule = bestDeltaModule.module;
       proposal.targetWasEmpty = m_moduleMembers[bestDeltaModule.module] == 0;
+      proposal.oldDelta = oldModuleDelta;
+      proposal.newDelta = bestDeltaModule;
     }
   }
 
-  std::vector<unsigned int> selectedProposalIndices;
+  auto& selectedProposalIndices = m_acceptedProposalIndices;
+  selectedProposalIndices.clear();
   selectedProposalIndices.reserve(numNodes);
   unsigned int numProposals = 0;
+  unsigned int numFastAccepts = 0;
   unsigned int numSkippedChangedModule = 0;
   unsigned int numSkippedInvalidTarget = 0;
   unsigned int numSkippedRejectedRecheck = 0;
+
+  if (m_moduleTouchedSweep.size() < numNodes)
+    m_moduleTouchedSweep.resize(numNodes, 0);
 
   for (unsigned int nodeIndex : nodeEnumeration) {
     auto& proposal = proposals[nodeIndex];
@@ -696,6 +773,24 @@ INFOMAP_HOT unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestMod
       continue;
     ++numProposals;
     InfoNode& current = *network[proposal.nodeIndex];
+
+    // The propose phase is read-only, so every proposal is evaluated against
+    // the sweep-start snapshot. If the commit phase has not yet changed either
+    // module, the proposal's deltas are still exact and the recheck (with its
+    // edge iteration and delta re-evaluation) can be skipped.
+    if (m_moduleTouchedSweep[proposal.oldModule] != parallelMoveSweep
+        && m_moduleTouchedSweep[proposal.newModule] != parallelMoveSweep) {
+      m_objective.updateCodelengthOnMovingNode(current, proposal.oldDelta, proposal.newDelta, m_moduleFlowData, m_moduleMembers);
+      m_moduleMembers[proposal.oldModule] -= 1;
+      m_moduleMembers[proposal.newModule] += 1;
+      current.index = proposal.newModule;
+      m_moduleTouchedSweep[proposal.oldModule] = parallelMoveSweep;
+      m_moduleTouchedSweep[proposal.newModule] = parallelMoveSweep;
+      ++numFastAccepts;
+      selectedProposalIndices.push_back(nodeIndex);
+      continue;
+    }
+
     if (current.index != proposal.oldModule) {
       ++numSkippedChangedModule;
       continue;
@@ -750,6 +845,8 @@ INFOMAP_HOT unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestMod
     m_moduleMembers[oldModule] -= 1;
     m_moduleMembers[newModule] += 1;
     current.index = newModule;
+    m_moduleTouchedSweep[oldModule] = parallelMoveSweep;
+    m_moduleTouchedSweep[newModule] = parallelMoveSweep;
 
     selectedProposalIndices.push_back(nodeIndex);
   }
@@ -757,6 +854,7 @@ INFOMAP_HOT unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestMod
   unsigned int numMoved = selectedProposalIndices.size();
   Log(3) << "Inner-parallelization proposals: " << numProposals
          << ", accepted: " << numMoved
+         << " (fast: " << numFastAccepts << ")"
          << ", skipped after changed module: " << numSkippedChangedModule
          << ", invalid target: " << numSkippedInvalidTarget
          << ", rejected by recheck: " << numSkippedRejectedRecheck << "\n";
