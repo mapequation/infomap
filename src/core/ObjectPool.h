@@ -36,8 +36,14 @@ namespace infomap {
  */
 template <typename T>
 class ObjectPool {
-  static constexpr std::size_t kInitialChunk = 32;
-  static constexpr std::size_t kMaxChunk = 4096;
+  // A small initial chunk keeps the many tiny per-module sub-Infomap instances
+  // (each with its own node and edge pool) close to their real footprint —
+  // recursive partitioning spawns one pool pair per refined module, most of
+  // them only a handful of nodes. A larger cap keeps the big main-instance pool
+  // fast by amortizing chunk allocation. Tuned against test/bench/native_benchmark:
+  // matches or beats pre-pool peak RSS while improving large-graph runtime.
+  static constexpr std::size_t kInitialChunk = 4;
+  static constexpr std::size_t kMaxChunk = 1024;
 
   struct Chunk {
     std::unique_ptr<unsigned char[]> storage;
