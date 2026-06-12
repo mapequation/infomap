@@ -856,7 +856,9 @@ TEST_CASE("Hierarchical partition is invariant to the OpenMP thread count [fast]
     im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
     im.run();
     infomap::test::checkRunSanity(im);
-    CHECK(im.maxTreeDepth() > 2); // Multi-level, so the recursive phase actually ran
+    // Precondition: multi-level, so the recursive phase actually ran and the
+    // invariance comparison below is meaningful.
+    REQUIRE(im.maxTreeDepth() > 2);
     return std::make_tuple(im.getMultilevelModules(false), im.codelength(), im.getIndexCodelength());
   };
 
@@ -867,7 +869,7 @@ TEST_CASE("Hierarchical partition is invariant to the OpenMP thread count [fast]
   const auto serialResult = runHierarchical();
 
 #ifdef _OPENMP
-  omp_set_num_threads(std::max(previousMaxThreads, 4));
+  omp_set_num_threads(4); // Any count >= 2 exercises the task-graph scheduling
 #endif
   const auto parallelResult = runHierarchical();
 
