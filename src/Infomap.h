@@ -104,10 +104,10 @@ public:
     std::map<std::pair<unsigned int, unsigned int>, double> links;
 
     for (const auto& node : m_network.nodeLinkMap()) {
-      const auto sourceId = node.first.id;
+      const auto sourceId = node.first;
 
       for (const auto& link : node.second) {
-        const auto targetId = link.first.id;
+        const auto targetId = link.first;
         links[{ sourceId, targetId }] = flow ? link.second.flow : link.second.weight;
       }
     }
@@ -122,10 +122,10 @@ public:
     links.reserve(m_network.numLinks());
 
     for (const auto& node : m_network.nodeLinkMap()) {
-      const auto sourceId = node.first.id;
+      const auto sourceId = node.first;
 
       for (const auto& link : node.second) {
-        const auto targetId = link.first.id;
+        const auto targetId = link.first;
         links.emplace_back(sourceId, targetId, link.second.weight, link.second.flow);
       }
     }

@@ -82,8 +82,11 @@ public:
 
   // Unique state id to state node
   using NodeMap = std::map<unsigned int, StateNode>;
-  using OutLinkMap = std::map<StateNode, LinkData>;
-  using NodeLinkMap = std::map<StateNode, OutLinkMap>;
+  // Links keyed by state id. StateNode keys were only ever compared by id
+  // (and never updated past construction), so plain ids give the same
+  // iteration order at a fraction of the per-link footprint.
+  using OutLinkMap = std::map<unsigned int, LinkData>;
+  using NodeLinkMap = std::map<unsigned int, OutLinkMap>;
 
 protected:
   friend class FlowCalculator;

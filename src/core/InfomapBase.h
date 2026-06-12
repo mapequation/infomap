@@ -34,6 +34,7 @@ namespace infomap {
 
 namespace detail {
   class PartitionQueue;
+  struct PartitionTaskRecord;
   struct PerLevelStat;
 } // namespace detail
 
@@ -436,7 +437,7 @@ private:
 
   void queueLeafModules(PartitionQueue& partitionQueue);
 
-  bool processPartitionQueue(PartitionQueue& queue, PartitionQueue& nextLevel) const;
+  void partitionModuleRecursively(InfoNode& module, unsigned int level, detail::PartitionTaskRecord& record) const;
 
 public:
   // ===================================================

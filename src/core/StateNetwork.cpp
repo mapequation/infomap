@@ -131,7 +131,7 @@ bool StateNetwork::addLink(unsigned int sourceId, unsigned int targetId, double 
   if (outLinks.empty()) {
     outLinks[targetId] = weight;
   } else {
-    auto ret = outLinks.insert(std::make_pair(StateNode(targetId), LinkData(weight)));
+    auto ret = outLinks.insert(std::make_pair(targetId, LinkData(weight)));
     auto& linkData = ret.first->second;
     if (!ret.second) {
       linkData.weight += weight;
@@ -208,10 +208,10 @@ bool StateNetwork::undirectedToDirected()
   }
   std::deque<StateLink> oppositeLinks;
   for (auto& linkIt : m_nodeLinkMap) {
-    unsigned int sourceId = linkIt.first.id;
+    unsigned int sourceId = linkIt.first;
     const auto& subLinks = linkIt.second;
     for (auto& subIt : subLinks) {
-      unsigned int targetId = subIt.first.id;
+      unsigned int targetId = subIt.first;
       if (targetId == sourceId) {
         continue; // Self-links are treated as directed on undirected networks
       }
@@ -285,7 +285,7 @@ void StateNetwork::writeStateNetwork(const std::string& filename) const
   outFile << "*Links\n";
   for (auto& linkIt : m_nodeLinkMap) {
     for (auto& subIt : linkIt.second) {
-      outFile << linkIt.first.id << " " << subIt.first.id << " " << subIt.second.weight << "\n";
+      outFile << linkIt.first << " " << subIt.first << " " << subIt.second.weight << "\n";
     }
   }
   outFile.commit();
@@ -322,7 +322,7 @@ void StateNetwork::writePajekNetwork(const std::string& filename, bool printFlow
   for (auto& linkIt : m_nodeLinkMap) {
     for (auto& subIt : linkIt.second) {
       auto& linkData = subIt.second;
-      outFile << linkIt.first.id << " " << subIt.first.id << " " << (printFlow ? linkData.flow : linkData.weight) << "\n";
+      outFile << linkIt.first << " " << subIt.first << " " << (printFlow ? linkData.flow : linkData.weight) << "\n";
     }
   }
   outFile.commit();
