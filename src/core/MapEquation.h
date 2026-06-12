@@ -148,20 +148,20 @@ public:
   void addTeleportationFlow(InfoNode& current, const std::vector<FlowDataType>& moduleFlowData, VectorMap<DeltaFlowDataType>& moduleDeltaFlow);
 
   double getDeltaCodelengthOnMovingNode(InfoNode& current,
-                                                DeltaFlowDataType& oldModuleDelta,
-                                                DeltaFlowDataType& newModuleDelta,
-                                                std::vector<FlowDataType>& moduleFlowData,
-                                                std::vector<unsigned int>& /*moduleMembers*/);
+                                        DeltaFlowDataType& oldModuleDelta,
+                                        DeltaFlowDataType& newModuleDelta,
+                                        std::vector<FlowDataType>& moduleFlowData,
+                                        std::vector<unsigned int>& /*moduleMembers*/);
 
   // ===================================================
   // Consolidation
   // ===================================================
 
   void updateCodelengthOnMovingNode(InfoNode& current,
-                                            DeltaFlowDataType& oldModuleDelta,
-                                            DeltaFlowDataType& newModuleDelta,
-                                            std::vector<FlowDataType>& moduleFlowData,
-                                            std::vector<unsigned int>& /*moduleMembers*/);
+                                    DeltaFlowDataType& oldModuleDelta,
+                                    DeltaFlowDataType& newModuleDelta,
+                                    std::vector<FlowDataType>& moduleFlowData,
+                                    std::vector<unsigned int>& /*moduleMembers*/);
 
   // ===================================================
   // Debug
