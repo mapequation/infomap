@@ -17,6 +17,9 @@
 #if INFOMAP_FEATURE_REGULARIZED_MULTILAYER
 #include "RegularizedMultilayerMapEquation.h"
 #endif
+#if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
+#include "LossyMapEquation.h"
+#endif
 #include "InfomapOptimizer.h"
 #include "../io/RunReport.h"
 #include "../io/RunMetadata.h"
@@ -2779,7 +2782,15 @@ void InfomapBase::initOptimizer(bool forceNoMemory)
     m_optimizer = std::make_unique<InfomapOptimizer<MemMapEquation>>();
 #endif
   } else {
+#if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
+    if (lossy) {
+      m_optimizer = std::make_unique<InfomapOptimizer<LossyMapEquation>>();
+    } else {
+      m_optimizer = std::make_unique<InfomapOptimizer<BiasedMapEquation>>();
+    }
+#else
     m_optimizer = std::make_unique<InfomapOptimizer<BiasedMapEquation>>();
+#endif
   }
   m_optimizer->init(this);
 }

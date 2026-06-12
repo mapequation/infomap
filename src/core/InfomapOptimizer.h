@@ -225,6 +225,16 @@ inline bool InfomapOptimizer<RegularizedMultilayerMapEquation>::shouldUseInnerPa
 }
 #endif
 
+#if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
+template <>
+inline bool InfomapOptimizer<LossyMapEquation>::shouldUseInnerParallelization() const
+{
+  // LossyMapEquation keeps per-module loss/entropy aggregates that are updated
+  // together with accepted moves; keep it on the serial path for now.
+  return false;
+}
+#endif
+
 template <typename Objective>
 inline bool InfomapOptimizer<Objective>::shouldUseInnerParallelization() const
 {

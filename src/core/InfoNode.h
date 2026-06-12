@@ -96,6 +96,13 @@ public:
 #endif
   std::vector<unsigned int> stateNodes; // For physically aggregated nodes
 
+#if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
+  // Lossy map equation leaf aggregates, additive over contained leaf nodes:
+  // sum of p_alpha * h_alpha (share of the Markov entropy rate) and sum of plogp(p_alpha).
+  double lossyEntropy = 0.0;
+  double lossyFlowLogFlow = 0.0;
+#endif
+
 private:
   unsigned int m_childDegree = 0;
   bool m_childrenChanged = false;

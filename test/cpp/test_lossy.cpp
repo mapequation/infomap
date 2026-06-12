@@ -43,6 +43,20 @@ TEST_CASE("Lossy: rejects unsupported configurations [fast][core][lossy]")
   throws("--lossy --markov-time 2");
 }
 
+TEST_CASE("Lossy: lambda -> infinity reproduces the standard two-level map equation [fast][core][lossy]")
+{
+  InfomapWrapper plain(defaultFlags("--two-level"));
+  plain.readInputData(networkFixturePath("lossy_benchmark.net"));
+  plain.run();
+
+  InfomapWrapper lossy(defaultFlags("--lossy --lambda 1000000"));
+  lossy.readInputData(networkFixturePath("lossy_benchmark.net"));
+  lossy.run();
+
+  CHECK(lossy.codelength() == doctest::Approx(plain.codelength()).epsilon(1e-9));
+  CHECK(canonicalPartition(lossy.getModules(1, false)) == canonicalPartition(plain.getModules(1, false)));
+}
+
 } // namespace test
 } // namespace infomap
 

@@ -1,0 +1,27 @@
+# two 5-cliques joined by a bridge, with a 5-node chain hanging off one clique
+1 2
+1 3
+1 4
+1 5
+2 3
+2 4
+2 5
+3 4
+3 5
+4 5
+6 7
+6 8
+6 9
+6 10
+7 8
+7 9
+7 10
+8 9
+8 10
+9 10
+5 6
+10 11
+11 12
+12 13
+13 14
+14 15
