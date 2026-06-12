@@ -25,10 +25,10 @@ using std::make_pair;
 
 namespace {
 
-#if !INFOMAP_FEATURE_REGULARIZED_MULTILAYER
-  const char* regularizedMultilayerFeatureError()
+#if !INFOMAP_FEATURE_REGULARIZED_HIGHER_ORDER
+  const char* regularizedHigherOrderFeatureError()
   {
-    return "Regularized multilayer flow requires building with FEATURES=regularized-multilayer.";
+    return "Regularized higher-order flow requires building with FEATURES=regularized-higher-order.";
   }
 #endif
 
@@ -203,9 +203,9 @@ void Network::addMultilayerLinks(const std::vector<unsigned int>& sourceLayerIds
 
 void Network::generateStateNetworkFromMultilayer()
 {
-#if !INFOMAP_FEATURE_REGULARIZED_MULTILAYER
+#if !INFOMAP_FEATURE_REGULARIZED_HIGHER_ORDER
   if (m_config.regularized) {
-    throw std::runtime_error(regularizedMultilayerFeatureError());
+    throw std::runtime_error(regularizedHigherOrderFeatureError());
   }
 #endif
 

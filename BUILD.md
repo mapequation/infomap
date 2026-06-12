@@ -124,8 +124,8 @@ Configure a feature-enabled Python wheel or editable local install through the
 same `FEATURES` variable:
 
 ```bash
-FEATURES=regularized-multilayer make build-python
-FEATURES=regularized-multilayer make dev-python-install
+FEATURES=regularized-higher-order make build-python
+FEATURES=regularized-higher-order make dev-python-install
 ```
 
 Feature names are defined in `scripts/build_config.py`. The existing SIMD log

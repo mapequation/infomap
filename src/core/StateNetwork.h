@@ -16,7 +16,6 @@
 #include <utility>
 #include <vector>
 #include <set>
-#include <utility>
 
 namespace infomap {
 
@@ -95,6 +94,8 @@ protected:
   bool m_higherOrderInputMethodCalled = false;
   NodeMap m_nodes; // Nodes indexed by state id (equal physical id for first-order networks)
   NodeLinkMap m_nodeLinkMap;
+  NodeLinkMap m_effectiveLinkMap;
+  bool m_haveEffectiveLinkMap = false;
   unsigned int m_numStateNodesFound = 0;
   double m_sumNodeWeight = 0.0;
   unsigned int m_numLinks = 0;
@@ -175,6 +176,20 @@ public:
   double sumNodeWeight() const { return m_sumNodeWeight; }
   const NodeLinkMap& nodeLinkMap() const { return m_nodeLinkMap; }
   NodeLinkMap& nodeLinkMap() { return m_nodeLinkMap; }
+#ifndef SWIG
+  const NodeLinkMap& effectiveLinkMap() const { return m_haveEffectiveLinkMap ? m_effectiveLinkMap : m_nodeLinkMap; }
+  void setEffectiveLinkMap(NodeLinkMap effectiveLinkMap)
+  {
+    m_effectiveLinkMap = std::move(effectiveLinkMap);
+    m_haveEffectiveLinkMap = true;
+  }
+  void clearEffectiveLinkMap()
+  {
+    m_effectiveLinkMap.clear();
+    m_haveEffectiveLinkMap = false;
+  }
+  bool haveEffectiveLinkMap() const { return m_haveEffectiveLinkMap; }
+#endif
   unsigned int numLinks() const { return m_numLinks; }
   double sumLinkWeight() const { return m_sumLinkWeight; }
   unsigned int numSelfLinks() const { return m_numSelfLinks; }

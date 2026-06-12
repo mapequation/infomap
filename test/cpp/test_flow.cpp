@@ -3,14 +3,19 @@
 #include "Infomap.h"
 
 #include "TestUtils.h"
+#include "io/Network.h"
+#include "utils/FlowCalculator.h"
+#include "utils/RegularizedMemoryFlowBuilder.h"
 
 #include <array>
 #include <cmath>
 #include <cstdio>
 #include <fstream>
 #include <map>
+#include <numeric>
 #include <stdexcept>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #ifdef _OPENMP
@@ -274,26 +279,26 @@ RegularizedMultilayerEgoFlow analyticRegularizedMultilayerEgoFlow()
   const double absentBaseFromZ = 1.0 - alphaInterAbsent / 2.0;
 
   const std::array<double, 3> layerTeleportFlowCoefficients = {
-      alpha,
-      2.0 * alpha * presentBaseFromY + 2.0 * absentBaseFromY,
-      2.0 * alpha * presentBaseFromZ + 2.0 * absentBaseFromZ,
+    alpha,
+    2.0 * alpha * presentBaseFromY + 2.0 * absentBaseFromY,
+    2.0 * alpha * presentBaseFromZ + 2.0 * absentBaseFromZ,
   };
   const std::array<double, 3> presentBaseCoefficients = { 0.0, presentBaseFromY, presentBaseFromZ };
 
-  std::array<std::array<double, 3>, 3> coefficients = {{
-      {{
+  std::array<std::array<double, 3>, 3> coefficients = { {
+      { {
           1.0 - layerTeleportFlowCoefficients[0] / numPhysicalNodes - beta * presentBaseCoefficients[0],
           -layerTeleportFlowCoefficients[1] / numPhysicalNodes - beta * presentBaseCoefficients[1],
           -layerTeleportFlowCoefficients[2] / numPhysicalNodes - beta * presentBaseCoefficients[2],
-      }},
-      {{
+      } },
+      { {
           -layerTeleportFlowCoefficients[0] / numPhysicalNodes - beta / 2.0,
           1.0 - layerTeleportFlowCoefficients[1] / numPhysicalNodes - beta * presentBaseCoefficients[1] / 2.0,
           -layerTeleportFlowCoefficients[2] / numPhysicalNodes - beta * presentBaseCoefficients[2] / 2.0,
-      }},
-      {{ 2.0, 4.0, 4.0 }},
-  }};
-  const auto solution = solve3x3(coefficients, {{ 0.0, 0.0, 1.0 }});
+      } },
+      { { 2.0, 4.0, 4.0 } },
+  } };
+  const auto solution = solve3x3(coefficients, { { 0.0, 0.0, 1.0 } });
 
   const double egoPhysicalFlow = 2.0 * solution[0];
   const double peripheralPhysicalFlow = solution[1] + solution[2];
@@ -312,11 +317,11 @@ FlowRunResult runDirectedFixture(const std::string& extraFlags)
   auto modules = im.getModules();
   infomap::test::checkRunSanity(im);
   return {
-      modules,
-      infomap::test::canonicalPartition(modules),
-      im.codelength(),
-      im.getIndexCodelength(),
-      im.numTopModules(),
+    modules,
+    infomap::test::canonicalPartition(modules),
+    im.codelength(),
+    im.getIndexCodelength(),
+    im.numTopModules(),
   };
 }
 
@@ -340,12 +345,379 @@ void checkInnerParallelPartitionCodelength(const std::string& extraFlags, const 
   infomap::test::checkApproxCodelength(check.getIndexCodelength(), result.indexCodelength, 1e-9);
 }
 
+struct MemoryBuilderInput {
+  std::unordered_map<unsigned int, unsigned int> nodeIndexMap;
+  std::vector<infomap::detail::FlowLink> observedLinks;
+};
+
+MemoryBuilderInput makeMemoryBuilderInput(const infomap::Network& network)
+{
+  MemoryBuilderInput input;
+  unsigned int index = 0;
+  for (const auto& node : network.nodes()) {
+    input.nodeIndexMap[node.second.id] = index++;
+  }
+  for (const auto& source : network.nodeLinkMap()) {
+    const auto sourceIndex = input.nodeIndexMap.at(source.first.id);
+    for (const auto& target : source.second) {
+      input.observedLinks.push_back({ sourceIndex, input.nodeIndexMap.at(target.first.id), target.second.weight });
+    }
+  }
+  return input;
+}
+
+infomap::RegularizedMemoryFlowResult buildRegularizedMemoryFlow(infomap::Network& network, const std::string& extraFlags = "")
+{
+  infomap::Config config(infomap::test::defaultFlags("--directed --regularized --no-infomap " + extraFlags));
+  network.setConfig(config);
+  auto input = makeMemoryBuilderInput(network);
+  return infomap::RegularizedMemoryFlowBuilder(network, config, input.nodeIndexMap, input.observedLinks).build();
+}
+
+double transitionProbability(const infomap::RegularizedMemoryFlowResult& result, unsigned int source, unsigned int target)
+{
+  for (const auto& transition : result.posterior.at(source)) {
+    if (transition.first == target) {
+      return transition.second;
+    }
+  }
+  return 0.0;
+}
+
+unsigned int stateIndex(const infomap::Network& network, unsigned int stateId)
+{
+  return makeMemoryBuilderInput(network).nodeIndexMap.at(stateId);
+}
+
+std::unordered_map<unsigned int, unsigned int> stateIndexById(const infomap::Network& network)
+{
+  return makeMemoryBuilderInput(network).nodeIndexMap;
+}
+
+template <typename NetworkLike>
+void addRegularizedMemoryPosteriorFixture(NetworkLike& network)
+{
+  network.addStateNode(12, 1); // s_1^2
+  network.addStateNode(21, 2); // s_2^1
+  network.addStateNode(31, 3); // s_3^1
+  network.addStateNode(13, 1); // s_1^3
+  network.addLink(12, 21, 2.0);
+  network.addLink(12, 31, 1.0);
+  network.addLink(21, 12, 3.0);
+  network.addLink(31, 13, 4.0);
+  network.addLink(13, 21, 1.0);
+}
+
+void checkSameRegularizedMemoryFlow(const infomap::RegularizedMemoryFlowResult& lhs, const infomap::RegularizedMemoryFlowResult& rhs)
+{
+  REQUIRE(lhs.posterior.size() == rhs.posterior.size());
+  REQUIRE(lhs.nodeFlow.size() == rhs.nodeFlow.size());
+  for (unsigned int i = 0; i < lhs.posterior.size(); ++i) {
+    REQUIRE(lhs.posterior[i].size() == rhs.posterior[i].size());
+    for (unsigned int j = 0; j < lhs.posterior[i].size(); ++j) {
+      CHECK(lhs.posterior[i][j].first == rhs.posterior[i][j].first);
+      CHECK(lhs.posterior[i][j].second == doctest::Approx(rhs.posterior[i][j].second).epsilon(1e-12));
+    }
+    CHECK(lhs.nodeFlow[i] == doctest::Approx(rhs.nodeFlow[i]).epsilon(1e-12));
+  }
+}
+
+#if INFOMAP_FEATURE_REGULARIZED_HIGHER_ORDER
+TEST_CASE("Regularized memory prior gamma matches two-node oracle [fast][core][flow]")
+{
+  infomap::Config config(infomap::test::defaultFlags("--directed --regularized --no-infomap"));
+  infomap::Network network(config);
+  network.addStateNode(12, 1);
+  network.addStateNode(21, 2);
+  network.addLink(12, 21, 2.0);
+  network.addLink(21, 12, 2.0);
+
+  const auto result = buildRegularizedMemoryFlow(network);
+
+  const double gamma = std::log(2.0) / 2.0;
+  const double expectedObservedFlow = 0.5 * 2.0 / (2.0 + gamma);
+  CHECK(result.observedLinkFlow[0] == doctest::Approx(expectedObservedFlow).epsilon(1e-12));
+  CHECK(result.observedLinkFlow[1] == doctest::Approx(expectedObservedFlow).epsilon(1e-12));
+}
+
+TEST_CASE("Regularized memory posterior normalizes observed and prior support [fast][core][flow]")
+{
+  infomap::Config config(infomap::test::defaultFlags("--directed --regularized --no-infomap"));
+  infomap::Network network(config);
+  addRegularizedMemoryPosteriorFixture(network);
+
+  const auto result = buildRegularizedMemoryFlow(network);
+
+  const double lambda = std::log(3.0) / 9.0;
+  const double scale = 4.0 / 11.0;
+  const double gammaTo2 = lambda * scale * 4.0 * 3.0 / 2.0;
+  const double gammaTo3 = lambda * scale * 4.0 * 1.0 / 2.0;
+  const double denominator = 3.0 + gammaTo2 + gammaTo3;
+
+  CHECK(transitionProbability(result, stateIndex(network, 12), stateIndex(network, 21)) == doctest::Approx((2.0 + gammaTo2) / denominator).epsilon(1e-12));
+  CHECK(transitionProbability(result, stateIndex(network, 12), stateIndex(network, 31)) == doctest::Approx((1.0 + gammaTo3) / denominator).epsilon(1e-12));
+}
+
+TEST_CASE("Regularized memory no-self-links controls physical self priors [fast][core][flow]")
+{
+  infomap::Config withSelf(infomap::test::defaultFlags("--directed --regularized --no-infomap"));
+  infomap::Network withSelfNetwork(withSelf);
+  withSelfNetwork.addStateNode(12, 1);
+  withSelfNetwork.addStateNode(11, 1);
+  withSelfNetwork.addStateNode(21, 2);
+  withSelfNetwork.addLink(12, 11, 1.0);
+  withSelfNetwork.addLink(12, 21, 1.0);
+  withSelfNetwork.addLink(11, 21, 1.0);
+  withSelfNetwork.addLink(21, 12, 1.0);
+  auto withSelfResult = buildRegularizedMemoryFlow(withSelfNetwork);
+
+  infomap::Config withoutSelf(infomap::test::defaultFlags("--directed --regularized --no-infomap --no-self-links"));
+  infomap::Network withoutSelfNetwork(withoutSelf);
+  withoutSelfNetwork.addStateNode(12, 1);
+  withoutSelfNetwork.addStateNode(11, 1);
+  withoutSelfNetwork.addStateNode(21, 2);
+  withoutSelfNetwork.addLink(12, 11, 1.0);
+  withoutSelfNetwork.addLink(12, 21, 1.0);
+  withoutSelfNetwork.addLink(11, 21, 1.0);
+  withoutSelfNetwork.addLink(21, 12, 1.0);
+  auto withoutSelfResult = buildRegularizedMemoryFlow(withoutSelfNetwork, "--no-self-links");
+
+  CHECK(transitionProbability(withSelfResult, stateIndex(withSelfNetwork, 12), stateIndex(withSelfNetwork, 11))
+        > transitionProbability(withoutSelfResult, stateIndex(withoutSelfNetwork, 12), stateIndex(withoutSelfNetwork, 11)));
+}
+
+TEST_CASE("Regularized memory rejects dangling rows without valid second-order support [fast][core][flow]")
+{
+  infomap::Config config(infomap::test::defaultFlags("--directed --regularized --no-infomap"));
+  infomap::Network network(config);
+  network.addStateNode(12, 1);
+  network.addStateNode(21, 2);
+  network.addStateNode(31, 3);
+  network.addLink(12, 21, 1.0);
+  network.addLink(21, 12, 1.0);
+
+  CHECK_THROWS_WITH_AS(
+      buildRegularizedMemoryFlow(network),
+      "Regularized memory source state 31 at physical node 3 has no observed outgoing support and no valid second-order prior targets. Remove the sink state or run without --regularized.",
+      std::runtime_error);
+}
+
+TEST_CASE("Regularized memory rejects conflicting inferred contexts [fast][core][flow]")
+{
+  infomap::Config config(infomap::test::defaultFlags("--directed --regularized --no-infomap"));
+  infomap::Network network(config);
+  network.addStateNode(12, 1);
+  network.addStateNode(21, 2);
+  network.addStateNode(31, 3);
+  network.addLink(12, 31, 1.0);
+  network.addLink(21, 31, 1.0);
+
+  CHECK_THROWS_WITH_AS(
+      buildRegularizedMemoryFlow(network),
+      "Regularized memory networks require valid single-step second-order state structure: state node 31 receives contexts 1 and 2.",
+      std::runtime_error);
+}
+
+TEST_CASE("Regularized memory rejects duplicate physical-context targets [fast][core][flow]")
+{
+  infomap::Config config(infomap::test::defaultFlags("--directed --regularized --no-infomap"));
+  infomap::Network network(config);
+  network.addStateNode(12, 1);
+  network.addStateNode(13, 1);
+  network.addStateNode(21, 2);
+  network.addStateNode(201, 2);
+  network.addLink(12, 21, 1.0);
+  network.addLink(13, 201, 1.0);
+
+  CHECK_THROWS_WITH_AS(
+      buildRegularizedMemoryFlow(network),
+      "Regularized memory networks require valid single-step second-order state structure: multiple state nodes map to physical/context pair (2, 1).",
+      std::runtime_error);
+}
+
+TEST_CASE("Regularized memory accepts source states without inferred context [fast][core][flow]")
+{
+  infomap::Config config(infomap::test::defaultFlags("--directed --regularized --no-infomap"));
+  infomap::Network network(config);
+  network.addStateNode(41, 4);
+  network.addStateNode(14, 1);
+  network.addStateNode(21, 2);
+  network.addStateNode(32, 3);
+  network.addStateNode(13, 1);
+  network.addLink(41, 14, 1.0);
+  network.addLink(14, 21, 1.0);
+  network.addLink(21, 32, 1.0);
+  network.addLink(32, 13, 1.0);
+  network.addLink(13, 21, 1.0);
+
+  CHECK_NOTHROW(buildRegularizedMemoryFlow(network));
+}
+
+TEST_CASE("Regularized memory ignores directed teleportation options [fast][core][flow]")
+{
+  infomap::Config baseConfig(infomap::test::defaultFlags("--directed --regularized --no-infomap"));
+  infomap::Network baseNetwork(baseConfig);
+  addRegularizedMemoryPosteriorFixture(baseNetwork);
+  const auto baseResult = buildRegularizedMemoryFlow(baseNetwork);
+
+  infomap::Config teleportConfig(infomap::test::defaultFlags("--directed --regularized --no-infomap --recorded-teleportation --to-nodes"));
+  infomap::Network teleportNetwork(teleportConfig);
+  addRegularizedMemoryPosteriorFixture(teleportNetwork);
+  const auto teleportResult = buildRegularizedMemoryFlow(teleportNetwork, "--recorded-teleportation --to-nodes");
+
+  checkSameRegularizedMemoryFlow(baseResult, teleportResult);
+}
+
+TEST_CASE("Regularized memory strength zero uses observed MLE on connected support [fast][core][flow]")
+{
+  infomap::Config config(infomap::test::defaultFlags("--directed --regularized --no-infomap --regularization-strength 0"));
+  infomap::Network network(config);
+  addRegularizedMemoryPosteriorFixture(network);
+
+  const auto result = buildRegularizedMemoryFlow(network, "--regularization-strength 0");
+
+  CHECK(transitionProbability(result, stateIndex(network, 12), stateIndex(network, 21)) == doctest::Approx(2.0 / 3.0).epsilon(1e-12));
+  CHECK(transitionProbability(result, stateIndex(network, 12), stateIndex(network, 31)) == doctest::Approx(1.0 / 3.0).epsilon(1e-12));
+}
+
+TEST_CASE("Regularized memory supports non-contiguous physical ids [fast][core][flow]")
+{
+  infomap::Config config(infomap::test::defaultFlags("--directed --regularized --no-infomap"));
+  infomap::Network network(config);
+  network.addStateNode(1020, 10);
+  network.addStateNode(2010, 20);
+  network.addStateNode(3010, 30);
+  network.addStateNode(1030, 10);
+  network.addLink(1020, 2010, 2.0);
+  network.addLink(1020, 3010, 1.0);
+  network.addLink(2010, 1020, 3.0);
+  network.addLink(3010, 1030, 4.0);
+  network.addLink(1030, 2010, 1.0);
+
+  const auto result = buildRegularizedMemoryFlow(network);
+
+  CHECK(transitionProbability(result, stateIndex(network, 1020), stateIndex(network, 2010)) > 0.0);
+  CHECK(transitionProbability(result, stateIndex(network, 1020), stateIndex(network, 3010)) > 0.0);
+}
+
+TEST_CASE("Regularized memory tiny prior strength approaches observed MLE [fast][core][flow]")
+{
+  infomap::Config config(infomap::test::defaultFlags("--directed --regularized --no-infomap --regularization-strength 1e-12"));
+  infomap::Network network(config);
+  addRegularizedMemoryPosteriorFixture(network);
+
+  const auto result = buildRegularizedMemoryFlow(network, "--regularization-strength 1e-12");
+
+  CHECK(transitionProbability(result, stateIndex(network, 12), stateIndex(network, 21)) == doctest::Approx(2.0 / 3.0).epsilon(1e-10));
+  CHECK(transitionProbability(result, stateIndex(network, 12), stateIndex(network, 31)) == doctest::Approx(1.0 / 3.0).epsilon(1e-10));
+}
+
+TEST_CASE("Regularized memory handles zero-degree physical nodes without NaN [fast][core][flow]")
+{
+  infomap::Config config(infomap::test::defaultFlags("--directed --regularized --no-infomap"));
+  infomap::Network network(config);
+  addRegularizedMemoryPosteriorFixture(network);
+  network.addPhysicalNode(99);
+
+  const auto result = buildRegularizedMemoryFlow(network);
+
+  for (const auto flow : result.nodeFlow) {
+    CHECK(std::isfinite(flow));
+  }
+  for (const auto& transitions : result.posterior) {
+    for (const auto& transition : transitions) {
+      CHECK(std::isfinite(transition.second));
+    }
+  }
+}
+
+TEST_CASE("Regularized memory physical flow is the sum of state flows [fast][core][flow]")
+{
+  infomap::Config config(infomap::test::defaultFlags("--directed --regularized --no-infomap"));
+  infomap::Network network(config);
+  addRegularizedMemoryPosteriorFixture(network);
+
+  const auto result = buildRegularizedMemoryFlow(network);
+  const auto indices = stateIndexById(network);
+
+  std::map<unsigned int, double> physicalFlow;
+  for (const auto& node : network.nodes()) {
+    physicalFlow[node.second.physicalId] += result.nodeFlow[indices.at(node.second.id)];
+  }
+
+  const double totalPhysicalFlow = std::accumulate(
+      physicalFlow.begin(),
+      physicalFlow.end(),
+      0.0,
+      [](double sum, const auto& flow) { return sum + flow.second; });
+
+  CHECK(totalPhysicalFlow == doctest::Approx(1.0).epsilon(1e-12));
+  for (const auto& flow : physicalFlow) {
+    CHECK(flow.second > 0.0);
+  }
+}
+
+TEST_CASE("Regularized memory dispatch rejects unsupported memory variants [fast][core][flow]")
+{
+  InfomapWrapper undirected(infomap::test::defaultFlags("--flow-model undirected --regularized --no-infomap"));
+  undirected.addStateNode(12, 1);
+  undirected.addStateNode(21, 2);
+  undirected.addLink(12, 21, 1.0);
+  undirected.addLink(21, 12, 1.0);
+  CHECK_THROWS_WITH_AS(
+      undirected.run(),
+      "Regularized undirected memory networks are not supported yet; use directed flow or run without --regularized.",
+      std::runtime_error);
+
+  InfomapWrapper bipartite(infomap::test::defaultFlags("--directed --regularized --no-infomap"));
+  bipartite.addStateNode(12, 1);
+  bipartite.addStateNode(21, 2);
+  bipartite.addLink(12, 21, 1.0);
+  bipartite.addLink(21, 12, 1.0);
+  bipartite.setBipartiteStartId(21);
+  CHECK_THROWS_WITH_AS(
+      bipartite.run(),
+      "Regularized bipartite memory networks are not supported.",
+      std::runtime_error);
+}
+
+TEST_CASE("Regularized memory keeps prior links hidden from output links [fast][core][flow]")
+{
+  InfomapWrapper im(infomap::test::defaultFlags("--directed --regularized --no-infomap --two-level"));
+  addRegularizedMemoryPosteriorFixture(im);
+
+  im.run();
+
+  CHECK(im.network().haveEffectiveLinkMap());
+  CHECK(im.getLinks(false).count({ 13, 31 }) == 0);
+
+  const auto sourceIt = im.network().effectiveLinkMap().find(infomap::StateNetwork::StateNode(13));
+  REQUIRE(sourceIt != im.network().effectiveLinkMap().end());
+
+  const auto targetIt = sourceIt->second.find(infomap::StateNetwork::StateNode(31));
+  REQUIRE(targetIt != sourceIt->second.end());
+  CHECK(targetIt->second.weight > 0.0);
+  CHECK(targetIt->second.flow > 0.0);
+}
+#else
+TEST_CASE("Regularized memory flow requires compile-time feature [fast][core][flow]")
+{
+  InfomapWrapper im(infomap::test::defaultFlags("--directed --regularized --no-infomap --two-level"));
+  addRegularizedMemoryPosteriorFixture(im);
+
+  CHECK_THROWS_WITH_AS(
+      im.run(),
+      "Regularized higher-order flow requires building with FEATURES=regularized-higher-order.",
+      std::runtime_error);
+}
+#endif
+
 TEST_CASE("Recorded teleportation stays stable across trial counts for the directed fixture [fast][core][flow]")
 {
   const auto oneTrial = runDirectedFixture("--recorded-teleportation --num-trials 1");
   const auto twoTrials = runDirectedFixture("--recorded-teleportation --num-trials 2");
 
-  CHECK(oneTrial.partition == std::vector<std::vector<unsigned int>>{{1, 2, 3}, {4, 5, 6}});
+  CHECK(oneTrial.partition == std::vector<std::vector<unsigned int>> { { 1, 2, 3 }, { 4, 5, 6 } });
   CHECK(oneTrial.partition == twoTrials.partition);
   CHECK(oneTrial.codelength == doctest::Approx(twoTrials.codelength));
   CHECK(oneTrial.indexCodelength == doctest::Approx(twoTrials.indexCodelength));
@@ -356,7 +728,7 @@ TEST_CASE("Directed to-nodes teleportation keeps the expected coarse partition [
   const auto result = runDirectedFixture("--to-nodes");
 
   CHECK(result.numTopModules == 2);
-  CHECK(result.partition == std::vector<std::vector<unsigned int>>{{1, 2, 3}, {4, 5, 6}});
+  CHECK(result.partition == std::vector<std::vector<unsigned int>> { { 1, 2, 3 }, { 4, 5, 6 } });
 }
 
 TEST_CASE("Directed regularization remains numerically sane on the teleportation fixture [fast][core][flow]")
@@ -364,7 +736,7 @@ TEST_CASE("Directed regularization remains numerically sane on the teleportation
   const auto result = runDirectedFixture("--regularized");
 
   CHECK(result.numTopModules == 1);
-  CHECK(result.partition == std::vector<std::vector<unsigned int>>{{1, 2, 3, 4, 5, 6}});
+  CHECK(result.partition == std::vector<std::vector<unsigned int>> { { 1, 2, 3, 4, 5, 6 } });
   CHECK(result.codelength > result.indexCodelength);
   infomap::test::checkApproxCodelength(result.codelength, 2.575842872);
 }
@@ -378,7 +750,7 @@ TEST_CASE("Undirected regularization remains stable on the two-triangles fixture
 
   infomap::test::checkRunSanity(im);
   CHECK(im.numTopModules() == 1);
-  infomap::test::checkCanonicalPartition(im, {{1, 2, 3, 4, 5, 6}});
+  infomap::test::checkCanonicalPartition(im, { { 1, 2, 3, 4, 5, 6 } });
   infomap::test::checkApproxCodelength(im.codelength(), 2.575767408, 1e-9);
 }
 
@@ -401,7 +773,7 @@ TEST_CASE("Directed regularized codelength matches analytic multi-level tree [fa
   infomap::test::checkApproxCodelength(im.codelength(), 4.051270346886);
 }
 
-#if INFOMAP_FEATURE_REGULARIZED_MULTILAYER
+#if INFOMAP_FEATURE_REGULARIZED_HIGHER_ORDER
 TEST_CASE("Regularized multilayer flow supports non-dense matchable state ids [fast][core][flow]")
 {
   InfomapWrapper im(infomap::test::defaultFlags(
@@ -453,13 +825,13 @@ TEST_CASE("Regularized multilayer ego flow matches analytic prior-strength sampl
 TEST_CASE("Regularized multilayer asymmetric flow matches analytic prior-strength sample [fast][core][flow]")
 {
   const std::vector<MultilayerIntraLink> intraLinks = {
-      { 1, 1, 2, 2.0 },
-      { 1, 2, 1, 1.0 },
-      { 1, 1, 3, 1.0 },
-      { 1, 3, 1, 1.0 },
-      { 2, 1, 2, 1.0 },
-      { 2, 2, 3, 3.0 },
-      { 2, 3, 1, 1.0 },
+    { 1, 1, 2, 2.0 },
+    { 1, 2, 1, 1.0 },
+    { 1, 1, 3, 1.0 },
+    { 1, 3, 1, 1.0 },
+    { 2, 1, 2, 1.0 },
+    { 2, 2, 3, 3.0 },
+    { 2, 3, 1, 1.0 },
   };
 
   InfomapWrapper im(infomap::test::defaultFlags("--directed --regularized --no-infomap --two-level"));
@@ -473,10 +845,10 @@ TEST_CASE("Regularized multilayer asymmetric flow matches analytic prior-strengt
 TEST_CASE("Regularized multilayer matchable state-id flow matches analytic prior-strength sample [fast][core][flow]")
 {
   const std::vector<MultilayerIntraLink> intraLinks = {
-      { 1, 10, 20, 1.0 },
-      { 1, 20, 10, 2.0 },
-      { 2, 10, 30, 3.0 },
-      { 2, 30, 10, 1.0 },
+    { 1, 10, 20, 1.0 },
+    { 1, 20, 10, 2.0 },
+    { 2, 10, 30, 3.0 },
+    { 2, 30, 10, 1.0 },
   };
 
   InfomapWrapper im(infomap::test::defaultFlags(
@@ -496,13 +868,13 @@ TEST_CASE("Inner parallelization with regularized multilayer input falls back to
 #endif
 
   const std::vector<MultilayerIntraLink> intraLinks = {
-      { 1, 1, 2, 2.0 },
-      { 1, 2, 1, 1.0 },
-      { 1, 1, 3, 1.0 },
-      { 1, 3, 1, 1.0 },
-      { 2, 1, 2, 1.0 },
-      { 2, 2, 3, 3.0 },
-      { 2, 3, 1, 1.0 },
+    { 1, 1, 2, 2.0 },
+    { 1, 2, 1, 1.0 },
+    { 1, 1, 3, 1.0 },
+    { 1, 3, 1, 1.0 },
+    { 2, 1, 2, 1.0 },
+    { 2, 2, 3, 3.0 },
+    { 2, 3, 1, 1.0 },
   };
 
   auto runRegularizedMultilayer = [&intraLinks](const std::string& extraFlags) {
@@ -531,7 +903,7 @@ TEST_CASE("Inner parallelization with regularized multilayer input falls back to
   infomap::test::checkApproxCodelength(requestedInner.indexCodelength, serial.indexCodelength, 1e-12);
 }
 #else
-TEST_CASE("Regularized multilayer flow requires compile-time feature [fast][core][flow]")
+TEST_CASE("Regularized higher-order multilayer flow requires compile-time feature [fast][core][flow]")
 {
   InfomapWrapper im(infomap::test::defaultFlags("--directed --regularized --no-infomap --two-level"));
   im.addMultilayerIntraLink(1, 1, 2, 1.0);
@@ -539,7 +911,7 @@ TEST_CASE("Regularized multilayer flow requires compile-time feature [fast][core
 
   CHECK_THROWS_WITH_AS(
       im.run(),
-      "Regularized multilayer flow requires building with FEATURES=regularized-multilayer.",
+      "Regularized higher-order flow requires building with FEATURES=regularized-higher-order.",
       std::runtime_error);
 }
 #endif
@@ -681,7 +1053,7 @@ TEST_CASE("Precomputed flow fixture remains runnable in C++ tests [fast][core][f
   CHECK(im.numTopModules() == 2);
   CHECK(im.numLevels() == 2);
   infomap::test::checkApproxCodelength(im.codelength(), 1.889659695224);
-  infomap::test::checkCanonicalPartition(im, {{1, 2, 3}, {4, 5, 6}});
+  infomap::test::checkCanonicalPartition(im, { { 1, 2, 3 }, { 4, 5, 6 } });
 }
 
 } // namespace

@@ -8,6 +8,7 @@
  ******************************************************************************/
 
 #include "FlowCalculator.h"
+#include "RegularizedMemoryFlowBuilder.h"
 #include "../utils/Log.h"
 #include "../utils/PrettyOutput.h"
 #include "../utils/convert.h"
@@ -20,15 +21,16 @@
 #include <functional>
 #include <stdexcept>
 #include <unordered_map>
+#include <utility>
 
 namespace infomap {
 
 namespace {
 
-#if !INFOMAP_FEATURE_REGULARIZED_MULTILAYER
-  const char* regularizedMultilayerFeatureError()
+#if !INFOMAP_FEATURE_REGULARIZED_HIGHER_ORDER
+  const char* regularizedHigherOrderFeatureError()
   {
-    return "Regularized multilayer flow requires building with FEATURES=regularized-multilayer.";
+    return "Regularized higher-order flow requires building with FEATURES=regularized-higher-order.";
   }
 #endif
 
@@ -52,6 +54,7 @@ inline void normalize(std::vector<T>& v) noexcept
 FlowCalculator::FlowCalculator(StateNetwork& network, const Config& config)
     : numNodes(network.numNodes())
 {
+  network.clearEffectiveLinkMap();
   m_prettyOutput = config.prettyOutput;
   Log() << "Calculating global network flow using flow model '" << config.flowModel << "'... " << std::flush;
 
@@ -171,12 +174,19 @@ FlowCalculator::FlowCalculator(StateNetwork& network, const Config& config)
   case FlowModel::undirected:
     if (config.regularized) {
       if (config.isMultilayerNetwork()) {
-#if INFOMAP_FEATURE_REGULARIZED_MULTILAYER
+#if INFOMAP_FEATURE_REGULARIZED_HIGHER_ORDER
         calcUndirectedRegularizedMultilayerFlow(network, config);
 #else
-        throw std::runtime_error(regularizedMultilayerFeatureError());
+        throw std::runtime_error(regularizedHigherOrderFeatureError());
 #endif
       } else {
+        if (network.haveMemoryInput()) {
+#if !INFOMAP_FEATURE_REGULARIZED_HIGHER_ORDER
+          throw std::runtime_error(regularizedHigherOrderFeatureError());
+#else
+          throw std::runtime_error("Regularized undirected memory networks are not supported yet; use directed flow or run without --regularized.");
+#endif
+        }
         calcUndirectedRegularizedFlow(network, config);
       }
     } else {
@@ -184,15 +194,27 @@ FlowCalculator::FlowCalculator(StateNetwork& network, const Config& config)
     }
     break;
   case FlowModel::directed:
+    if (config.regularized && network.haveMemoryInput()) {
+#if !INFOMAP_FEATURE_REGULARIZED_HIGHER_ORDER
+      throw std::runtime_error(regularizedHigherOrderFeatureError());
+#endif
+      if (network.isBipartite()) {
+        throw std::runtime_error("Regularized bipartite memory networks are not supported.");
+      }
+    }
     if (network.isBipartite() && config.bipartiteTeleportation) {
       calcDirectedBipartiteFlow(network, config);
     } else {
       if (config.regularized) {
         if (config.isMultilayerNetwork()) {
-#if INFOMAP_FEATURE_REGULARIZED_MULTILAYER
+#if INFOMAP_FEATURE_REGULARIZED_HIGHER_ORDER
           calcDirectedRegularizedMultilayerFlow(network, config);
 #else
-          throw std::runtime_error(regularizedMultilayerFeatureError());
+          throw std::runtime_error(regularizedHigherOrderFeatureError());
+#endif
+        } else if (network.haveMemoryInput()) {
+#if INFOMAP_FEATURE_REGULARIZED_HIGHER_ORDER
+          calcDirectedRegularizedMemoryFlow(network, config);
 #endif
         } else {
           calcDirectedRegularizedFlow(network, config);
@@ -477,6 +499,40 @@ void FlowCalculator::calcDirectedFlow(const StateNetwork& network, const Config&
   }
 }
 
+void FlowCalculator::calcDirectedRegularizedMemoryFlow(StateNetwork& network, const Config& config)
+{
+  m_flowMethod = "directed regularized memory flow";
+  m_teleportation = "none, Eq. 18/24 memory prior on observed state support";
+  Log() << "\n  -> Using regularized memory flow with Eq. 18/24 priors on observed state support. " << std::flush;
+  if (config.regularizationStrength == 0.0) {
+    Log::important() << "\n  Warning: Regularized memory with zero prior strength has no global teleportation; "
+                     << "stationary flow can depend on initialization if the posterior chain is reducible or periodic.\n";
+  }
+
+  RegularizedMemoryFlowBuilder builder(network, config, nodeIndexMap, flowLinks);
+  auto result = builder.build();
+
+  nodeFlow = std::move(result.nodeFlow);
+  nodeTeleportWeights = std::move(result.nodeTeleportWeights);
+  nodeTeleportFlow = std::move(result.nodeTeleportFlow);
+  enterFlow = std::move(result.enterFlow);
+  exitFlow = std::move(result.exitFlow);
+
+  for (unsigned int i = 0; i < flowLinks.size(); ++i) {
+    flowLinks[i].flow = result.observedLinkFlow[i];
+  }
+  network.setEffectiveLinkMap(std::move(result.effectiveLinkMap));
+
+  recordPageRank(result.iterations, result.error, result.converged);
+  if (!result.converged) {
+    Log::important() << "\n  Warning: Regularized memory stationary flow did not converge after "
+                     << result.iterations << " iterations with error " << result.error << ".\n";
+  } else {
+    Log() << "\n  -> Regularized memory stationary flow done in " << result.iterations
+          << " iterations with error " << result.error << ".\n";
+  }
+}
+
 void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, const Config& config) noexcept
 {
   m_flowMethod = "directed regularized flow";
@@ -633,7 +689,7 @@ void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, co
   }
 }
 
-#if INFOMAP_FEATURE_REGULARIZED_MULTILAYER
+#if INFOMAP_FEATURE_REGULARIZED_HIGHER_ORDER
 void FlowCalculator::calcDirectedRegularizedMultilayerFlow(const StateNetwork& network, const Config& config) noexcept
 {
   Log() << "\n  -> Using regularized multilayer flow. " << std::flush;
@@ -918,7 +974,7 @@ void FlowCalculator::calcDirectedRegularizedMultilayerFlow(const StateNetwork& n
     enterFlow[i] += (layerTeleFlow[layerIndices[i]] - nodeTeleportFlow[i]) * nodeTeleportWeights[i];
   }
 }
-#endif // INFOMAP_FEATURE_REGULARIZED_MULTILAYER
+#endif // INFOMAP_FEATURE_REGULARIZED_HIGHER_ORDER
 
 void FlowCalculator::calcUndirectedRegularizedFlow(const StateNetwork& network, const Config& config) noexcept
 {
@@ -1017,14 +1073,14 @@ void FlowCalculator::calcUndirectedRegularizedFlow(const StateNetwork& network, 
   }
 }
 
-#if INFOMAP_FEATURE_REGULARIZED_MULTILAYER
+#if INFOMAP_FEATURE_REGULARIZED_HIGHER_ORDER
 void FlowCalculator::calcUndirectedRegularizedMultilayerFlow(const StateNetwork& network, const Config& config)
 {
   (void)network;
   (void)config;
   throw std::runtime_error("Undirected regularized multilayer flow is not implemented.");
 }
-#endif // INFOMAP_FEATURE_REGULARIZED_MULTILAYER
+#endif // INFOMAP_FEATURE_REGULARIZED_HIGHER_ORDER
 
 void FlowCalculator::calcDirectedBipartiteFlow(const StateNetwork& network, const Config& config) noexcept
 {
