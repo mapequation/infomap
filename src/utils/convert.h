@@ -11,7 +11,6 @@
 #define CONVERT_H_
 
 #include <stdexcept>
-#include <iomanip>
 #include <sstream>
 #include <string>
 #include <locale> // std::locale, std::tolower
@@ -121,29 +120,6 @@ namespace io {
     return items;
   }
 
-  class Str {
-  public:
-    Str() = default;
-    template <class T>
-    Str& operator<<(const T& t)
-    {
-      m_oss << stringify(t);
-      return *this;
-    }
-    Str& operator<<(std::ostream& (*f)(std::ostream&))
-    {
-      m_oss << f;
-      return *this;
-    }
-    operator std::string() const
-    {
-      return m_oss.str();
-    }
-
-  private:
-    std::ostringstream m_oss;
-  };
-
   template <typename T>
   inline bool stringToValue(std::string const& str, T& value)
   {
@@ -207,17 +183,11 @@ namespace io {
     return std::string(size - valStr.size(), paddingChar).append(valStr);
   }
 
-  inline std::string toPrecision(double value, unsigned int precision = 10, bool fixed = false)
-  {
-    std::ostringstream o;
-    if (fixed)
-      o << std::fixed << std::setprecision(static_cast<int>(precision));
-    else
-      o << std::setprecision(static_cast<int>(precision));
-    if (!(o << value))
-      throw std::runtime_error((o << "stringify(" << value << ")", o.str()));
-    return o.str();
-  }
+  // Defined in convert.cpp with fmt, to keep the heavy fmt header out of this
+  // widely-included file. {:.{}g} reproduces std::setprecision(precision) with
+  // the default floatfield, {:.{}f} reproduces std::fixed << setprecision(...);
+  // both verified byte-for-byte against the previous iostream implementation.
+  std::string toPrecision(double value, unsigned int precision = 10, bool fixed = false);
 
 } // namespace io
 

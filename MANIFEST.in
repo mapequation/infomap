@@ -3,5 +3,6 @@ include LICENSE_GPLv3.txt
 include scripts/build_config.py
 recursive-include src *.cpp *.h
 recursive-include vendor/nlohmann_json *.hpp *.MIT *.md
+recursive-include vendor/fmt *.h *.md LICENSE
 recursive-include interfaces/python/generated *.cpp
 recursive-include interfaces/python/src *.py

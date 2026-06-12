@@ -11,6 +11,7 @@
 #include "FlowData.h"
 #include "InfoNode.h"
 #include "../utils/Log.h"
+#include "../utils/format.h"
 
 #include <vector>
 #include <set>
@@ -366,7 +367,7 @@ void MemMapEquation::updatePhysicalNodes(InfoNode& current, unsigned int oldModu
     // Remove contribution to old module
     auto overlapIt = findModuleMemNodes(moduleToMemNodes, oldModuleIndex);
     if (overlapIt == moduleToMemNodes.end() || overlapIt->module != oldModuleIndex)
-      throw std::length_error(io::Str() << "Couldn't find old module " << oldModuleIndex << " in physical node " << physData.physNodeIndex);
+      throw std::length_error(fmt::format(FMT_STRING("Couldn't find old module {} in physical node {}"), oldModuleIndex, physData.physNodeIndex));
 
     overlapIt->sumFlow -= physData.sumFlowFromM2Node;
     if (--overlapIt->numMemNodes == 0)
@@ -444,7 +445,7 @@ void MemMapEquation::consolidateModules(std::vector<InfoNode*>& modules)
 
 void MemMapEquation::printDebug() const
 {
-  Log() << "MemMapEquation::m_numPhysicalNodes: " << m_numPhysicalNodes << "\n";
+  Log().print("MemMapEquation::m_numPhysicalNodes: {}\n", m_numPhysicalNodes);
   Base::printDebug();
 }
 

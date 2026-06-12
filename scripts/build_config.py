@@ -135,7 +135,12 @@ def shutil_which(name):
 
 def _base_compile_flags(compiler_family):
     if compiler_family == "msvc":
-        return ["/std:c++14"]
+        # /utf-8 sets the source AND execution charset to UTF-8. Required by
+        # vendored {fmt} >= 11 (a static_assert in fmt/base.h fails on MSVC
+        # otherwise), and it makes the Unicode pretty-output literals (•, →, ╰─)
+        # encode correctly. mingw-gcc (R/Windows) and clang/Emscripten (JS)
+        # already use a UTF-8 source charset, so this is MSVC-only.
+        return ["/std:c++14", "/utf-8"]
 
     flags = ["-Wall", "-Wextra", "-pedantic", "-Wnon-virtual-dtor", "-std=c++14"]
     if compiler_family in {"clang", "gnu"}:

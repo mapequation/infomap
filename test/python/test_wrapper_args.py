@@ -80,12 +80,6 @@ def test_construct_args_renders_variable_markov_min_scale():
     assert shlex.split(args) == ["--variable-markov-min-scale", "0.5"]
 
 
-def test_construct_args_renders_pretty_output():
-    args = infomap_module._construct_args(pretty=True)
-
-    assert shlex.split(args) == ["--pretty"]
-
-
 def test_infomap_facade_signatures_match_options():
     option_fields = set(infomap_module.InfomapOptions.__dataclass_fields__)
     init_params = set(inspect.signature(infomap_module.Infomap.__init__).parameters)
@@ -151,7 +145,6 @@ def test_cli_completion_exits_without_traceback(shell, expected):
     assert expected in result.stdout
     assert "--completion" in result.stdout
     assert "--flow-model" in result.stdout
-    assert "--pretty" in result.stdout
     assert "--print-json-parameters" not in result.stdout
     assert "Traceback" not in result.stderr
 

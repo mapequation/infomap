@@ -54,7 +54,7 @@ int run(const std::string& flags)
     std::cerr << "Error: " << e.what() << '\n';
     return exitCodeValue(ExitCode::InternalError);
   } catch (char const* e) {
-    std::cerr << "Str error: " << e << '\n';
+    std::cerr << "Error: " << e << '\n';
     return exitCodeValue(ExitCode::InternalError);
   }
 

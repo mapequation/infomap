@@ -130,8 +130,9 @@ TEST_CASE("Config construction applies runtime output interactions [fast][core][
   CHECK(config.parsedString == "input.net --silent --no-file-output --verbose --pretty --print-all-trials --num-trials 1 --output json");
   CHECK_FALSE(config.parsedOptions.empty());
   CHECK(config.verbosity == 1);
-  // applyRuntimeOutputInteractions: verbosity > 0 disables pretty output
-  CHECK_FALSE(config.prettyOutput);
+  // Pretty is the base layer at every verbosity; -v adds diagnostics on top
+  // rather than disabling pretty.
+  CHECK(config.prettyOutput);
   // applyRuntimeOutputInteractions: printAllTrials requires numTrials >= 2
   CHECK_FALSE(config.printAllTrials);
   CHECK(config.printJson);
@@ -160,13 +161,18 @@ TEST_CASE("adaptDefaults applies invariants when called on a library-mutated con
   CHECK(config.outName == "graph");
 }
 
-TEST_CASE("Config parses pretty output flag [fast][core][config][cli]")
+TEST_CASE("Pretty output is always on; --pretty/--no-pretty are deprecated no-ops [fast][core][config][cli]")
 {
   const Config config("input.net --silent --no-file-output --pretty", true);
   CHECK(config.prettyOutput);
 
-  const Config negatedConfig("input.net --silent --no-file-output --pretty --no-pretty", true);
-  CHECK_FALSE(negatedConfig.prettyOutput);
+  // --no-pretty is a deprecated no-op: pretty output stays enabled.
+  const Config negatedConfig("input.net --silent --no-file-output --no-pretty", true);
+  CHECK(negatedConfig.prettyOutput);
+
+  // The default (no flag at all) is pretty as well.
+  const Config defaultConfig("input.net --silent --no-file-output", true);
+  CHECK(defaultConfig.prettyOutput);
 }
 
 TEST_CASE("Config parses parallel trials flag [fast][core][config][cli]")

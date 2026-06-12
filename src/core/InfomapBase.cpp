@@ -26,10 +26,12 @@
 #include "../utils/FileURI.h"
 #include "../utils/FlowCalculator.h"
 #include "../utils/MemoryUsage.h"
-#include "../utils/PrettyOutput.h"
+#include "../utils/Console.h"
 #include "../utils/ThreadConfig.h"
 #include "../utils/TimingRegistry.h"
 #include "../utils/convert.h"
+#include "../utils/format.h"
+#include "../utils/formatters.h"
 
 #include <stdexcept>
 #include <string>
@@ -65,52 +67,57 @@ namespace {
 
   void printPrettyStart(const Config& config, const Date& startDate, unsigned int numInitialModuleIds)
   {
-    PrettyOutput pretty(config.prettyOutput);
-    Log::pretty() << pretty.bold() << "Infomap v" << INFOMAP_VERSION << pretty.reset() << "\n";
-    Log::pretty() << pretty.dim() << pretty.branch() << " started " << startDate << pretty.reset() << "\n";
-    Log::pretty() << pretty.bullet() << " Input      " << config.networkFile << "\n";
-    Log::pretty() << pretty.bullet() << " Output     " << (config.noFileOutput ? "disabled" : config.outDirectory) << "\n";
+    Console console;
+    Log().print("{}Infomap v{}{}\n", console.bold(), INFOMAP_VERSION, console.reset());
+    Log().print("{}{} started {}{}\n", console.dim(), console.branch(), startDate, console.reset());
+    Log().print("{} Input      {}\n", console.bullet(), config.networkFile);
+    Log().print("{} Output     {}\n", console.bullet(), config.noFileOutput ? "disabled" : config.outDirectory);
     if (!config.parsedOptions.empty()) {
-      Log::pretty() << pretty.bullet() << " Options    ";
+      Log().print("{} Options    ", console.bullet());
       for (unsigned int i = 0; i < config.parsedOptions.size(); ++i) {
         if (i > 0)
-          Log::pretty() << ", ";
-        Log::pretty() << config.parsedOptions[i];
+          Log() << ", ";
+        Log() << config.parsedOptions[i];
       }
-      Log::pretty() << "\n";
+      Log() << "\n";
     }
     if (numInitialModuleIds > 0) {
-      Log::pretty() << pretty.bullet() << " Initial    " << numInitialModuleIds << " module ids\n";
+      Log().print("{} Initial    {} module ids\n", console.bullet(), numInitialModuleIds);
     }
-    Log::pretty() << "\n";
+    Log() << "\n";
   }
 
   void printPrettyEnd(const Date& endDate, const Stopwatch& elapsedTime)
   {
-    PrettyOutput pretty(true);
-    Log::pretty() << "\n"
-                  << pretty.dim() << "Finished " << endDate << " in " << elapsedTime << pretty.reset() << "\n";
+    Console console;
+    Log().print("\n{}Finished {} in {}{}\n", console.dim(), endDate, elapsedTime, console.reset());
   }
 
   void printPrettyTrialTable(const std::vector<double>& codelengths, const std::vector<unsigned int>& numTopModules)
   {
-    PrettyOutput pretty(true);
-    double bestCodelengthSoFar = std::numeric_limits<double>::max();
-    Log::pretty() << "  " << pretty.dim() << "Trial  Codelength     Top modules  Best" << pretty.reset() << "\n";
+    Console console;
+    // Mark the single global best (the first trial reaching the minimum
+    // codelength); other trials sharing that minimum are "tie". The previous
+    // running comparison flagged every new minimum — including trial 1 — as
+    // "best".
+    const double bestCodelength = codelengths.empty() ? 0.0 : *std::min_element(codelengths.begin(), codelengths.end());
+    bool markedBest = false;
+    Log().print("  {}Trial  Codelength     Top modules  Best{}\n", console.dim(), console.reset());
     for (unsigned int i = 0; i < codelengths.size(); ++i) {
-      bool isBest = codelengths[i] < bestCodelengthSoFar;
-      if (isBest) {
-        bestCodelengthSoFar = codelengths[i];
-      }
-      bool isEqual = std::abs(codelengths[i] - bestCodelengthSoFar) < 1e-10;
-      Log::pretty() << "  " << std::setw(5) << (i + 1)
-                    << "  " << std::setw(12) << io::toPrecision(codelengths[i])
-                    << "  " << std::setw(11) << numTopModules[i]
-                    << "  " << (isBest ? pretty.green() : isEqual ? pretty.yellow()
-                                                                  : "")
-                    << (isBest ? "best" : isEqual ? "tie"
-                                                  : "")
-                    << pretty.reset() << "\n";
+      const bool isMin = std::abs(codelengths[i] - bestCodelength) < 1e-10;
+      const bool isBest = isMin && !markedBest;
+      const bool isTie = isMin && markedBest;
+      if (isBest)
+        markedBest = true;
+      Log().print("  {:>5}  {:>12}  {:>11}  {}{}{}\n",
+                  i + 1,
+                  io::toPrecision(codelengths[i]),
+                  numTopModules[i],
+                  isBest ? console.green() : isTie ? console.yellow()
+                                                   : "",
+                  isBest ? "best" : isTie ? "tie"
+                                          : "",
+                  console.reset());
     }
   }
 
@@ -213,37 +220,19 @@ public:
 
     auto summaryTimer = m_timing.scope("summary_s");
 
-    if (m_infomap.prettyOutput)
-      PrettyOutput(true).section(io::Str() << "Summary after " << m_numTrials << (m_numTrials > 1 ? " trials" : " trial"));
-    Log() << "\n\n";
-    Log() << "================================================\n";
-    Log() << "Summary after " << m_numTrials << (m_numTrials > 1 ? " trials\n" : " trial\n");
-    Log() << "================================================\n";
+    Console console;
+    console.section(fmt::format(FMT_STRING("Summary after {}{}"), m_numTrials, m_numTrials > 1 ? " trials" : " trial"));
     std::string codelengthRange;
     std::string topModulesRange;
     if (m_numTrials > 1) {
-      Log() << std::fixed << std::setprecision(9);
-      if (m_infomap.prettyOutput)
-        Log::pretty() << std::fixed << std::setprecision(9);
       double averageCodelength = 0.0;
       double minCodelength = m_infomap.m_codelengths[0];
       double maxCodelength = m_infomap.m_codelengths[0];
       double averageNumTopModules = 0.0;
       auto minNumTopModules = m_infomap.m_numTopModules[0];
       auto maxNumTopModules = m_infomap.m_numTopModules[0];
-      double bestCodelengthSoFar = std::numeric_limits<double>::max();
-      if (m_infomap.prettyOutput)
-        printPrettyTrialTable(m_infomap.m_codelengths, m_infomap.m_numTopModules);
-      Log() << "Trial    Codelength    NumTopModules    Best\n";
+      printPrettyTrialTable(m_infomap.m_codelengths, m_infomap.m_numTopModules);
       for (unsigned int i = 0; i < m_numTrials; ++i) {
-        bool isBest = m_infomap.m_codelengths[i] < bestCodelengthSoFar;
-        if (isBest) {
-          bestCodelengthSoFar = m_infomap.m_codelengths[i];
-        }
-        bool isEqual = std::abs(m_infomap.m_codelengths[i] - bestCodelengthSoFar) < 1e-10;
-        Log() << std::setw(5) << (i + 1) << std::setw(14) << io::toPrecision(m_infomap.m_codelengths[i]) << std::setw(17) << m_infomap.m_numTopModules[i] << std::setw(8) << (isBest ? '*' : isEqual ? '='
-                                                                                                                                                                                                     : ' ')
-              << "\n";
         averageCodelength += m_infomap.m_codelengths[i];
         minCodelength = std::min(minCodelength, m_infomap.m_codelengths[i]);
         maxCodelength = std::max(maxCodelength, m_infomap.m_codelengths[i]);
@@ -253,42 +242,21 @@ public:
       }
       averageCodelength /= m_numTrials;
       averageNumTopModules /= m_numTrials;
-      Log() << "\n";
-      Log() << "[min, average, max] codelength:      [" << minCodelength << ", " << averageCodelength << ", " << maxCodelength << "]\n";
-      Log() << "[min, average, max] num top modules: [" << minNumTopModules << ", " << io::toPrecision(averageNumTopModules, 1, true) << ", " << maxNumTopModules << "]\n\n";
-      codelengthRange = io::Str() << minCodelength << " / " << averageCodelength << " / " << maxCodelength;
-      topModulesRange = io::Str() << minNumTopModules << " / " << io::toPrecision(averageNumTopModules, 1, true) << " / " << maxNumTopModules;
+      codelengthRange = fmt::format(FMT_STRING("{} / {} / {}"), io::toPrecision(minCodelength), io::toPrecision(averageCodelength), io::toPrecision(maxCodelength));
+      topModulesRange = fmt::format(FMT_STRING("{} / {} / {}"), minNumTopModules, io::toPrecision(averageNumTopModules, 1, true), maxNumTopModules);
+      console.metric("Codelength min/avg/max", codelengthRange);
+      console.metric("Top modules min/avg/max", topModulesRange);
     }
-    if (m_infomap.prettyOutput) {
-      PrettyOutput pretty(true);
-      if (m_numTrials > 1) {
-        pretty.metric("Codelength min/avg/max", codelengthRange);
-        pretty.metric("Top modules min/avg/max", topModulesRange);
-        Log::pretty() << "\n";
-      }
-      pretty.metric("Nodes", io::Str() << m_infomap.numLeafNodes());
-      pretty.metric("Links", io::Str() << m_network.numLinks());
-      pretty.metric("Average degree", io::toPrecision(m_network.numLinks() * 2.0 / m_infomap.numLeafNodes(), 1, true));
-      pretty.metric("Top modules", io::Str() << m_infomap.numTopModules() << " (" << m_infomap.numNonTrivialTopModules() << " non-trivial)");
-      pretty.metric("Levels", io::Str() << result.bestNumLevels);
-      pretty.metric("One-level codelength", io::toPrecision(m_infomap.getOneLevelCodelength()));
-      pretty.metric("Best codelength", io::toPrecision(result.bestHierarchicalCodelength));
-      pretty.metric("Relative savings", io::Str() << io::toPrecision(m_infomap.getRelativeCodelengthSavings() * 100, 2, true) << "%");
-      Log::pretty() << "\n";
-    }
-    Log() << "Number nodes:                      " << m_infomap.numLeafNodes() << "\n";
-    Log() << "Number links:                      " << m_network.numLinks() << "\n";
-    Log() << "Average degree:                    " << io::toPrecision(m_network.numLinks() * 2.0 / m_infomap.numLeafNodes(), 1, true) << "\n";
-    Log() << "Number of top modules:             " << m_infomap.numTopModules() << "\n";
-    Log() << "Number of non-trivial top modules: " << m_infomap.numNonTrivialTopModules() << "\n";
-    Log() << "Number of levels:                  " << result.bestNumLevels << "\n";
-    Log() << "One-level codelength:              " << io::toPrecision(m_infomap.getOneLevelCodelength()) << "\n";
-    Log() << "Codelength:                        " << io::toPrecision(result.bestHierarchicalCodelength) << "\n";
-    Log() << "Relative codelength savings:       " << io::toPrecision(m_infomap.getRelativeCodelengthSavings() * 100, 2, true) << "%\n";
+    console.metric("Nodes", fmt::to_string(m_infomap.numLeafNodes()));
+    console.metric("Links", fmt::to_string(m_network.numLinks()));
+    console.metric("Average degree", io::toPrecision(m_network.numLinks() * 2.0 / m_infomap.numLeafNodes(), 1, true));
+    console.metric("Top modules", fmt::format(FMT_STRING("{} ({} non-trivial)"), m_infomap.numTopModules(), m_infomap.numNonTrivialTopModules()));
+    console.metric("Levels", fmt::to_string(result.bestNumLevels));
+    console.metric("One-level codelength", io::toPrecision(m_infomap.getOneLevelCodelength()));
+    console.metric("Best codelength", io::toPrecision(result.bestHierarchicalCodelength));
+    console.metric("Relative savings", fmt::format(FMT_STRING("{}%"), io::toPrecision(m_infomap.getRelativeCodelengthSavings() * 100, 2, true)));
     Log() << "\n";
-    Log() << result.bestSolutionStatistics.str() << '\n';
-    if (m_infomap.prettyOutput)
-      Log::pretty() << result.bestSolutionStatistics.str() << '\n';
+    Log().print("{}\n", result.bestSolutionStatistics.str());
   }
 
 private:
@@ -362,7 +330,7 @@ private:
           executeTrial(worker);
           worker.root().sortChildrenOnFlow();
 
-          trialNumLevels = printPerLevelCodelength(worker.root(), trialStatistics, worker.prettyOutput);
+          trialNumLevels = printPerLevelCodelength(worker.root(), trialStatistics);
           trialTree.reserve(worker.numLeafNodes());
           for (auto it(worker.iterLeafNodes()); !it.isEnd(); ++it) {
             trialTree.emplace_back(it->stateId, it.path());
@@ -412,7 +380,7 @@ private:
     }
 
     if (hasError) {
-      throw std::runtime_error(io::Str() << "Parallel trial " << (firstErrorTrial + 1) << "/" << m_numTrials << " failed: " << firstError);
+      throw std::runtime_error(fmt::format(FMT_STRING("Parallel trial {}/{} failed: {}"), firstErrorTrial + 1, m_numTrials, firstError));
     }
 
     m_infomap.m_codelengths = std::move(codelengths);
@@ -437,6 +405,12 @@ private:
   void restoreBestResult(const Result& result)
   {
     if (m_numTrials > 1 && (result.bestTreeNeedsRestore || result.bestTrialIndex < m_numTrials - 1)) {
+      // This restore + rewrite only refreshes the output file's elapsed-time
+      // header; the user already saw the "Output" line when the best trial ran.
+      // Mute it so the redundant "Initial …" (from initTree) and second "Output"
+      // line don't leak into the console. The file still writes (via SafeFile,
+      // not Log).
+      Log::ScopedMute mute;
       // Restore Infomap tree to best solution.
       {
         auto timer = m_timing.scope("best_restore_s");
@@ -456,27 +430,23 @@ private:
     }
 
     if (m_numTrials < 2) {
-      Log::important() << "  -> Warning: --parallel-trials requires --num-trials > 1; running trials serially.\n";
+      Console::warn(0, "--parallel-trials requires --num-trials > 1; running trials serially.");
       return false;
     }
 
 #ifndef _OPENMP
-    Log::important() << "  -> Warning: --parallel-trials requires an OpenMP build; running trials serially.\n";
+    Console::warn(0, "--parallel-trials requires an OpenMP build; running trials serially.");
     return false;
 #else
     if (m_infomap.innerParallelization) {
-      Log::important() << "  -> Warning: --parallel-trials ignores --inner-parallelization inside trial workers.\n";
+      Console::warn(0, "--parallel-trials ignores --inner-parallelization inside trial workers.");
     }
     const unsigned int workers = parallelTrialWorkers();
-    if (m_infomap.prettyOutput) {
-      PrettyOutput pretty(true);
-      Log::pretty() << "\n"
-                    << pretty.dim() << "  Parallel trials: " << workers << " workers from "
-                    << omp_get_max_threads() << " OpenMP threads (memory scales with workers; inner parallelization off)"
-                    << pretty.reset() << "\n";
-    } else {
-      Log() << "  -> Running " << m_numTrials << " trials in parallel with " << workers << " workers from " << omp_get_max_threads() << " OpenMP threads (peak memory scales with workers; inner parallelization off).\n";
-    }
+    Console console;
+    Log() << "\n"
+          << console.dim() << "  Parallel trials: " << workers << " workers from "
+          << omp_get_max_threads() << " OpenMP threads (memory scales with workers; inner parallelization off)"
+          << console.reset() << "\n";
     return true;
 #endif
   }
@@ -494,7 +464,7 @@ private:
   void configureNetworkMode()
   {
     if (m_network.haveMemoryInput()) {
-      Log() << "  -> Found higher order network input, using the Map Equation for higher order network flows\n";
+      Console::detail(1, "found higher-order network input, using the Map Equation for higher-order flows");
       m_infomap.setStateInput();
       m_infomap.setStateOutput();
 
@@ -503,15 +473,15 @@ private:
       }
     } else {
       if (m_infomap.haveMemory() || m_network.higherOrderInputMethodCalled()) {
-        Log::important() << "  -> Warning: Higher order network specified but no higher order input found.\n";
+        Console::warn(0, "Higher-order network specified but no higher-order input found.");
         // Use state output anyway for consistency even in the special case when input is first order
         m_infomap.setStateOutput();
       }
-      Log() << "  -> Ordinary network input, using the Map Equation for first order network flows\n";
+      Console::detail(1, "ordinary network input, using the Map Equation for first-order flows");
     }
 
     if (m_network.haveDirectedInput() && m_infomap.isUndirectedFlow()) {
-      Log() << "  -> Notice: Directed input found, changing flow model from '" << m_infomap.flowModel << "' to '" << FlowModel(FlowModel::directed) << "'\n";
+      Console::note(1, "Directed input found, changing flow model from '{}' to '{}'.", m_infomap.flowModel, FlowModel(FlowModel::directed));
       m_infomap.flowModel = FlowModel::directed;
     }
     m_network.setConfig(m_infomap);
@@ -549,9 +519,9 @@ private:
   void logRunPartitionStart()
   {
     if (m_infomap.haveMemory())
-      Log(2) << "Run Infomap with memory...\n";
+      Console::detail(2, "run Infomap with memory");
     else
-      Log(2) << "Run Infomap...\n";
+      Console::detail(2, "run Infomap");
 #ifdef _OPENMP
     {
       // Prefer the cpuset size (the actual allocation under Linux/SLURM) over
@@ -559,32 +529,23 @@ private:
       const unsigned int cpus = m_cpusetCount > 0 ? m_cpusetCount : static_cast<unsigned int>(std::max(1, omp_get_num_procs()));
       const char* source = threadSourceName(m_threadBudget.source);
       const char* innerState = m_infomap.innerParallelization ? "enabled" : "disabled";
-      if (m_infomap.prettyOutput) {
-        PrettyOutput pretty(true);
-        Log::pretty() << pretty.dim() << "  Runtime: " << cpus << " CPUs available, thread budget "
-                      << m_threadBudget.threads << " (" << source << "), inner parallelization "
-                      << innerState << pretty.reset() << "\n";
-      } else {
-        Log() << "  -> Runtime: " << cpus << " CPUs available, thread budget "
-              << m_threadBudget.threads << " (" << source << "), inner parallelization "
-              << innerState << ".\n";
-      }
+      Console console;
+      console.section("Threads");
+      console.metric("CPUs available", fmt::to_string(cpus));
+      console.metric("Thread budget", fmt::format(FMT_STRING("{} ({})"), m_threadBudget.threads, source));
+      console.metric("Inner parallelization", innerState);
 
       // Oversubscription warnings (only meaningful when cpuset is known, i.e. Linux).
       // Warn whenever the *resolved* budget exceeds the cpuset, regardless of source
       // (explicit --num-threads, INFOMAP_NUM_THREADS, SLURM_CPUS_PER_TASK, OMP_NUM_THREADS).
       if (m_cpusetCount > 0 && m_threadBudget.threads > m_cpusetCount) {
-        Log::important() << "  -> Warning: thread budget " << m_threadBudget.threads
-                         << " (" << source << ") exceeds the available cpuset of " << m_cpusetCount
-                         << " CPUs; this may oversubscribe the node.\n";
+        Console::warn(0, "Thread budget {} ({}) exceeds the available cpuset of {} CPUs; this may oversubscribe the node.", m_threadBudget.threads, source, m_cpusetCount);
       }
       if (m_cpusetCount > 0) {
         const unsigned int innerThreads = (m_infomap.innerParallelization && !m_runParallelTrials) ? m_threadBudget.threads : 1;
         const unsigned int demand = m_threadsUsed * innerThreads;
         if (demand > m_cpusetCount) {
-          Log::important() << "  -> Warning: " << m_threadsUsed << " trial workers x " << innerThreads
-                           << " inner threads = " << demand << " exceeds the available cpuset of "
-                           << m_cpusetCount << " CPUs.\n";
+          Console::warn(0, "{} trial workers × {} inner threads = {} exceeds the available cpuset of {} CPUs.", m_threadsUsed, innerThreads, demand, m_cpusetCount);
         }
       }
     }
@@ -615,18 +576,10 @@ private:
       return;
     }
 
-    if (m_infomap.prettyOutput) {
-      PrettyOutput pretty(true);
-      Log::pretty() << "\n"
-                    << pretty.cyan() << "Trial " << (trialIndex + 1) << "/" << m_numTrials << pretty.reset()
-                    << pretty.dim() << " started " << startDate << pretty.reset() << "\n";
-      return;
-    }
-
-    Log() << "\n";
-    Log() << "================================================\n";
-    Log() << "Trial " << (trialIndex + 1) << "/" << m_numTrials << " starting at " << startDate << "\n";
-    Log() << "================================================\n";
+    Console console;
+    Log() << "\n"
+          << console.cyan() << "Trial " << (trialIndex + 1) << "/" << m_numTrials << console.reset()
+          << console.dim() << " started " << startDate << console.reset() << "\n";
   }
 
   void initTrialPartition(InfomapBase& infomap)
@@ -658,16 +611,12 @@ private:
       return;
     }
 
-    if (m_infomap.prettyOutput) {
-      PrettyOutput pretty(true);
-      Log::pretty() << "\n"
-                    << pretty.green() << "Done" << pretty.reset()
-                    << " trial " << (trialIndex + 1) << "/" << m_numTrials
-                    << " in " << timer.getElapsedTimeInSec() << "s"
-                    << " | codelength " << m_infomap.m_hierarchicalCodelength << "\n";
-    } else {
-      Log() << "\n=> Trial " << (trialIndex + 1) << "/" << m_numTrials << " finished in " << timer.getElapsedTimeInSec() << "s with codelength " << m_infomap.m_hierarchicalCodelength << "\n";
-    }
+    Console console;
+    Log() << "\n"
+          << console.green() << "Done" << console.reset()
+          << " trial " << (trialIndex + 1) << "/" << m_numTrials
+          << " in " << timer.getElapsedTimeInSec() << "s"
+          << " | codelength " << io::toPrecision(m_infomap.m_hierarchicalCodelength) << "\n";
     m_infomap.m_codelengths.push_back(m_infomap.m_hierarchicalCodelength);
     m_infomap.m_numTopModules.push_back(m_infomap.numTopModules());
     const unsigned long globalSeed = m_infomap.seedToRandomNumberGenerator + (m_infomap.trialOffset + trialIndex);
@@ -687,7 +636,7 @@ private:
   {
     result.bestSolutionStatistics.clear();
     result.bestSolutionStatistics.str("");
-    result.bestNumLevels = printPerLevelCodelength(m_infomap.root(), result.bestSolutionStatistics, m_infomap.prettyOutput);
+    result.bestNumLevels = printPerLevelCodelength(m_infomap.root(), result.bestSolutionStatistics);
     result.bestHierarchicalCodelength = m_infomap.m_hierarchicalCodelength;
     result.bestTrialIndex = trialIndex;
     m_infomap.root().sortChildrenOnFlow();
@@ -897,41 +846,22 @@ void InfomapBase::run(const std::string& parameters)
   m_elapsedTime = Stopwatch(true);
   m_startDate = Date();
 
-  std::string currentParameters = io::Str() << m_initialParameters << (parameters.empty() ? "" : " ") << parameters;
+  std::string currentParameters = fmt::format(FMT_STRING("{}{}{}"), m_initialParameters, parameters.empty() ? "" : " ", parameters);
   if (currentParameters != m_currentParameters) {
     m_currentParameters = currentParameters;
     setConfig(Config(m_currentParameters, isCLI));
     m_network.setConfig(*this);
   }
 
-  Log::init(verbosity, silent, verboseNumberPrecision, prettyOutput);
+  Log::init(verbosity, silent, verboseNumberPrecision);
 
-  if (prettyOutput)
-    printPrettyStart(*this, m_startDate, m_initialPartition.size());
-  Log() << "=======================================================\n";
-  Log() << "  Infomap v" << INFOMAP_VERSION << " starts at " << m_startDate << "\n";
-  Log() << "  -> Input network: " << networkFile << "\n";
-  if (noFileOutput)
-    Log() << "  -> No file output!\n";
-  else
-    Log() << "  -> Output path:   " << outDirectory << "\n";
-  if (!parsedOptions.empty()) {
-    for (unsigned int i = 0; i < parsedOptions.size(); ++i)
-      Log() << (i == 0 ? "  -> Configuration: " : "                    ") << parsedOptions[i] << "\n";
-  }
-  if (!m_initialPartition.empty()) {
-    Log() << "  -> " << m_initialPartition.size() << " initial module ids provided\n";
-  }
-  Log() << "=======================================================\n";
+  printPrettyStart(*this, m_startDate, m_initialPartition.size());
 #ifdef _OPENMP
 #pragma omp parallel
 #pragma omp master
   {
-    if (prettyOutput) {
-      PrettyOutput pretty(true);
-      Log::pretty() << pretty.bullet() << " Runtime    OpenMP " << _OPENMP << " with " << omp_get_num_threads() << " threads\n\n";
-    }
-    Log() << "  OpenMP " << _OPENMP << " detected with " << omp_get_num_threads() << " threads...\n";
+    Console console;
+    Log().print("{} Runtime    OpenMP {} with {} threads\n", console.bullet(), _OPENMP, omp_get_num_threads());
   }
 #endif
 
@@ -946,12 +876,7 @@ void InfomapBase::run(const std::string& parameters)
 
   run(m_network);
 
-  if (prettyOutput)
-    printPrettyEnd(m_endDate, m_elapsedTime);
-  Log() << "===================================================\n";
-  Log() << "  Infomap ends at " << m_endDate << "\n";
-  Log() << "  (Elapsed time: " << m_elapsedTime << ")\n";
-  Log() << "===================================================\n";
+  printPrettyEnd(m_endDate, m_elapsedTime);
 }
 
 void InfomapBase::run(Network& network)
@@ -1026,9 +951,8 @@ InfomapBase& InfomapBase::initPartition(const std::string& clusterDataFile, bool
     clusterMap.readClusterData(clusterDataFile);
   }
 
-  if (prettyOutput)
-    PrettyOutput(true).status("Initial", io::Str() << "reading " << clusterDataFile);
-  Log() << "Init partition from file '" << clusterDataFile << "'... ";
+  Console().status("Initial", fmt::format(FMT_STRING("reading {}"), clusterDataFile));
+  Console::detail(1, "init partition from file '{}'", clusterDataFile);
 
   const auto& ext = clusterMap.extension();
 
@@ -1036,16 +960,15 @@ InfomapBase& InfomapBase::initPartition(const std::string& clusterDataFile, bool
     unsigned int numTreeNodesNotInNetwork = 0;
     const auto normalizedTree = normalizeTreePaths(clusterMap.treePaths(), numTreeNodesNotInNetwork);
     if (numTreeNodesNotInNetwork > 0) {
-      Log(1) << "\n -> " << numTreeNodesNotInNetwork << " physical nodes in tree not found in network.";
+      Console::note(1, "{} physical nodes in tree not found in network.", numTreeNodesNotInNetwork);
     }
     initTree(normalizedTree);
   } else if (ext == "clu") {
     initPartition(clusterMap.clusterIds(), hard);
   }
 
-  if (prettyOutput)
-    PrettyOutput(true).status("Initial", io::Str() << "generated " << numLevels() << " levels, codelength " << io::toPrecision(m_hierarchicalCodelength));
-  Log() << "done! Generated " << numLevels() << " levels with codelength " << getIndexCodelength() << " + " << (m_hierarchicalCodelength - getIndexCodelength()) << " = " << io::toPrecision(m_hierarchicalCodelength) << '\n';
+  Console().status("Initial", fmt::format(FMT_STRING("generated {} levels, codelength {}"), numLevels(), io::toPrecision(m_hierarchicalCodelength)));
+  Console::detail(1, "generated {} levels, codelength {:g} + {:g} = {}", numLevels(), getIndexCodelength(), m_hierarchicalCodelength - getIndexCodelength(), io::toPrecision(m_hierarchicalCodelength));
 
   return *this;
 }
@@ -1121,7 +1044,7 @@ NodePaths InfomapBase::normalizeTreePaths(const TreePaths& tree, unsigned int& n
 
 InfomapBase& InfomapBase::initTree(const NodePaths& tree)
 {
-  Log(4) << "Init tree... " << std::setprecision(9);
+  Log(4) << "Init tree... ";
   int maxDepth = 2;
   // If only two-level partition, we can directly use initPartition
   for (const auto& nodePath : tree) {
@@ -1195,7 +1118,7 @@ InfomapBase& InfomapBase::initTree(const NodePaths& tree)
   }
 
   if (numNodesNotInNetwork > 0) {
-    Log(1) << "\n -> " << numNodesNotInNetwork << "/" << numNodesFound << " nodes in tree not found in network.";
+    Console::note(1, "{}/{} nodes in tree not found in network.", numNodesNotInNetwork, numNodesFound);
   }
 
   auto numNodesAddedToNeighbouringModules = 0;
@@ -1242,9 +1165,9 @@ InfomapBase& InfomapBase::initTree(const NodePaths& tree)
   }
   if (numNodesWithoutClusterInfo > 0) {
     if (assignToNeighbouringModule) {
-      Log() << "\n -> " << numNodesWithoutClusterInfo << " nodes not found in tree, " << numNodesAddedToNeighbouringModules << " are put into neighbouring modules and " << (numNodesWithoutClusterInfo - numNodesAddedToNeighbouringModules) << " in separate.";
+      Console::note(1, "{} nodes not found in tree, {} are put into neighbouring modules and {} into separate modules.", numNodesWithoutClusterInfo, numNodesAddedToNeighbouringModules, numNodesWithoutClusterInfo - numNodesAddedToNeighbouringModules);
     } else {
-      Log() << "\n -> " << numNodesWithoutClusterInfo << " nodes not found in tree are put into separate modules.";
+      Console::note(1, "{} nodes not found in tree are put into separate modules.", numNodesWithoutClusterInfo);
     }
   }
 
@@ -1260,10 +1183,8 @@ InfomapBase& InfomapBase::initTree(const NodePaths& tree)
   initPartition();
 
   m_hierarchicalCodelength = calcCodelengthOnTree(root(), true);
-  if (prettyOutput)
-    PrettyOutput(true).status("Initial", io::Str() << "codelength " << m_hierarchicalCodelength << ", " << maxDepth << " levels, " << numTopModules() << " top modules");
-  Log() << "\n -> Initiated to codelength " << m_hierarchicalCodelength << " in " << maxDepth << " levels with " << numTopModules() << " top modules.\n";
-  Log() << std::setprecision(6);
+  Console().status("Initial", fmt::format(FMT_STRING("codelength {:g}, {} levels, {} top modules"), m_hierarchicalCodelength, maxDepth, numTopModules()));
+  Log(1) << std::setprecision(6);
   return *this;
 }
 
@@ -1308,7 +1229,7 @@ InfomapBase& InfomapBase::initPartition(const std::map<unsigned int, unsigned in
   }
 
   if (assignToNeighbouringModule) {
-    Log() << "\n -> " << numNodesWithoutClusterInfo << " nodes not found in cluster file are put into neighbouring modules if possible. ";
+    Console::note(1, "{} nodes not found in cluster file are put into neighbouring modules if possible.", numNodesWithoutClusterInfo);
     for (unsigned int i = 0; i < numNodes; ++i) {
       if (selectedNodes[i] == 0) {
         // Check out edges greedily for connected modules
@@ -1343,7 +1264,7 @@ InfomapBase& InfomapBase::initPartition(const std::map<unsigned int, unsigned in
       }
     }
   } else {
-    Log() << "\n -> " << numNodesWithoutClusterInfo << " nodes not found in cluster file are put into separate modules. ";
+    Console::note(1, "{} nodes not found in cluster file are put into separate modules.", numNodesWithoutClusterInfo);
     // Put non-selected nodes in its own module
     for (unsigned int i = 0; i < numNodes; ++i) {
       if (selectedNodes[i] == 0) {
@@ -1358,7 +1279,7 @@ InfomapBase& InfomapBase::initPartition(const std::map<unsigned int, unsigned in
 
 InfomapBase& InfomapBase::initPartition(std::vector<std::vector<unsigned int>>& clusters, bool hard)
 {
-  Log(3) << "\n -> Init " << (hard ? "hard" : "soft") << " partition... " << std::flush;
+  Log(3).print("\n -> Init {} partition... ", hard ? "hard" : "soft") << std::flush;
   unsigned int numNodes = numLeafNodes();
   // Get module indices from the merge structure
   std::vector<unsigned int> modules(numNodes);
@@ -1385,7 +1306,7 @@ InfomapBase& InfomapBase::initPartition(std::vector<std::vector<unsigned int>>& 
     }
   }
   if (numNodesWithoutClusterInfo > 0)
-    Log() << "\n -> " << numNodesWithoutClusterInfo << " nodes not found in cluster file are put into separate modules. ";
+    Console::note(1, "{} nodes not found in cluster file are put into separate modules.", numNodesWithoutClusterInfo);
 
   return initPartition(modules, hard);
 }
@@ -1415,11 +1336,9 @@ InfomapBase& InfomapBase::initPartition(std::vector<unsigned int>& modules, bool
       ++nodeIndex;
     }
 
-    Log() << "\n -> Hard-partitioned the network to " << numNodesInNewNetwork << " nodes and " << numLinksInNewNetwork << " links with codelength " << *this << '\n';
+    Console::detail(1, "hard-partitioned the network to {} nodes and {} links with codelength {}", numNodesInNewNetwork, numLinksInNewNetwork, io::stringify(*this));
   } else {
-    if (prettyOutput)
-      PrettyOutput(true).status("Initial", io::Str() << "codelength " << *this << ", " << numTopModules() << " top modules");
-    Log() << "\n -> Initiated to codelength " << *this << " in " << numTopModules() << " top modules.\n";
+    Console().status("Initial", fmt::format(FMT_STRING("codelength {}, {} top modules"), io::stringify(*this), numTopModules()));
   }
   m_hierarchicalCodelength = getCodelength();
 
@@ -1432,9 +1351,9 @@ void InfomapBase::generateSubNetwork(Network& network)
   auto& metaData = network.metaData();
   numMetaDataDimensions = network.numMetaDataColumns();
 
-  Log() << "Build internal network with " << numNodes << " nodes and " << network.numLinks() << " links...\n";
+  Console::detail(1, "build internal network with {} nodes and {} links", numNodes, network.numLinks());
   if (!metaData.empty()) {
-    Log() << "and " << metaData.size() << " meta-data records in " << numMetaDataDimensions << " dimensions\n";
+    Console::detail(1, "with {} meta-data records in {} dimensions", metaData.size(), numMetaDataDimensions);
   }
 
   m_leafNodes.reserve(numNodes);
@@ -1450,7 +1369,7 @@ void InfomapBase::generateSubNetwork(Network& network)
     node->data.exitFlow = networkNode.exitFlow;
     node->data.enterFlow = networkNode.enterFlow;
     node->layerTeleFlowData.emplace_back(networkNode.layerId, networkNode.intraLayerTeleFlow, networkNode.intraLayerTeleWeight);
-    // Log() << "Node " << node->stateId << " (" << node->layerId << "," << node->physicalId << ") data: " << node->data << ", tele-flow: " << networkNode.teleFlow << ", intra-tele: " << networkNode.intraLayerTeleFlow << "\n";
+    // Log(1) << "Node " << node->stateId << " (" << node->layerId << "," << node->physicalId << ") data: " << node->data << ", tele-flow: " << networkNode.teleFlow << ", intra-tele: " << networkNode.intraLayerTeleFlow << "\n";
     if (haveMetaData()) {
       auto meta = metaData.find(networkNode.id);
       if (meta != metaData.end()) {
@@ -1472,11 +1391,11 @@ void InfomapBase::generateSubNetwork(Network& network)
     m_calculateEnterExitFlow = true;
   }
   if (std::abs(sumNodeFlow - 1.0) > 1e-10)
-    Log() << "Warning, total flow on nodes differs from 1.0 by " << sumNodeFlow - 1.0 << ".\n";
+    Console::warn(1, "Total flow on nodes differs from 1.0 by {:g}.", sumNodeFlow - 1.0);
 
   bool changeMarkovTime = std::abs(markovTime - 1) > 1e-3;
   if (changeMarkovTime) {
-    Log() << "  -> Rescale link flow with global Markov time " << markovTime << "\n";
+    Console::detail(1, "rescale link flow with global Markov time {:g}", markovTime);
   }
 
   for (auto& linkIt : network.nodeLinkMap()) {
@@ -1495,9 +1414,9 @@ void InfomapBase::generateSubNetwork(Network& network)
   }
 
   if (variableMarkovTime) {
-    Log() << "  -> Rescale link flow with variable Markov time\n";
+    Console::detail(1, "rescale link flow with variable Markov time");
     if (std::abs(variableMarkovTimeDamping - 1) > 1e-9) {
-      Log() << "  -> Use variable Markov time strength " << variableMarkovTimeDamping << "\n";
+      Console::detail(1, "use variable Markov time strength {:g}", variableMarkovTimeDamping);
     }
   }
 
@@ -1576,7 +1495,7 @@ void InfomapBase::generateSubNetwork(InfoNode& parent)
   unsigned int numNodes = parent.childDegree();
   m_leafNodes.resize(numNodes);
 
-  Log(1) << "Generate sub network with " << numNodes << " nodes...\n";
+  Console::detail(1, "generate sub network with {} nodes", numNodes);
 
   unsigned int childIndex = 0;
   for (InfoNode& node : parent) {
@@ -1611,7 +1530,7 @@ void InfomapBase::init()
   initNetwork();
 
   m_oneLevelCodelength = calcCodelength(m_root);
-  Log() << "  -> One-level codelength: " << m_oneLevelCodelength << '\n';
+  Console::detail(1, "one-level codelength: {}", io::toPrecision(m_oneLevelCodelength));
 }
 
 // ===================================================
@@ -1620,20 +1539,19 @@ void InfomapBase::init()
 
 void InfomapBase::hierarchicalPartition()
 {
-  Log(1) << "Hierarchical partition...\n";
+  Console::detail(1, "hierarchical partition");
 
   const auto depth = maxTreeDepth();
   if (depth > 2) {
-    Log(1) << "Continuing from a tree with " << depth << " levels...\n";
+    Console::detail(1, "continuing from a tree with {} levels", depth);
 
     if (fastHierarchicalSolution == 0) {
-      Log(1) << "Removing sub modules...\n";
+      Console::detail(1, "removing sub modules");
       removeSubModules(true);
       m_hierarchicalCodelength = calcCodelengthOnTree(root(), true);
     }
 
     else if (fastHierarchicalSolution == 1) {
-      Log(1) << "Fine-tune bottom modules... ";
       const bool shouldRestoreSilent = isMainInfomap() && !Log::isThreadMuted();
       bool isSilent = shouldRestoreSilent && Log::isSilent();
 
@@ -1700,7 +1618,7 @@ void InfomapBase::hierarchicalPartition()
         Log::setSilent(isSilent);
 
       const double diffCodelength = codelengthBefore - codelengthAfter;
-      Log() << "done! Codelength improvement " << (diffCodelength / codelengthBefore) * 100 << "% to codelength " << codelengthAfter << "\n";
+      Console::detail(1, "fine-tune bottom modules: improvement {:g}% {} codelength {}", (diffCodelength / codelengthBefore) * 100, Console::arrow(), io::toPrecision(codelengthAfter));
     }
 
     recursivePartition();
@@ -1710,7 +1628,7 @@ void InfomapBase::hierarchicalPartition()
   partition();
 
   if (numTopModules() == 1 || numTopModules() == numLeafNodes()) {
-    Log(1) << "Trivial partition, skip search for hierarchical solution.\n";
+    Console::detail(1, "trivial partition, skipping hierarchical search");
     return;
   }
 
@@ -1739,12 +1657,10 @@ void InfomapBase::hierarchicalPartition()
 
 void InfomapBase::partition()
 {
-  auto oldPrecision = Log::precision();
   std::vector<std::string> prettyCompression;
-  if (prettyOutput)
-    PrettyOutput(true).section("Optimization");
-  Log(0, 0) << "Two-level compression: " << std::setprecision(2) << std::flush;
-  Log(1) << "Trying to find modular structure... \n";
+  Console().section("Optimization");
+  auto progress = Console().progress("Two-level");
+  progress.update("working…");
   double initialCodelength = m_oneLevelCodelength;
   double oldCodelength = initialCodelength;
 
@@ -1753,10 +1669,9 @@ void InfomapBase::partition()
 
   double newCodelength = getCodelength();
   double compression = oldCodelength < 1e-16 ? 0.0 : (oldCodelength - newCodelength) / oldCodelength;
-  if (prettyOutput)
-    prettyCompression.push_back(PrettyOutput::percent(compression * 100));
-  Log(0, 0) << (compression * 100) << "% " << std::flush;
+  prettyCompression.push_back(Console::percent(compression * 100));
   oldCodelength = newCodelength;
+  progress.update(fmt::format(FMT_STRING("working… codelength {} · {} modules"), io::toPrecision(getCodelength()), numTopModules()));
 
   bool doFineTune = true;
   bool coarseTuned = false;
@@ -1764,27 +1679,25 @@ void InfomapBase::partition()
     ++m_tuneIterationIndex;
     if (doFineTune) {
       Log(3) << "\n";
-      Log(1, 3) << "Fine tune... " << std::flush;
       unsigned int numEffectiveLoops = fineTune();
       if (numEffectiveLoops > 0) {
-        Log(1, 3) << " -> done in " << numEffectiveLoops << " effective loops to codelength " << *this << " in " << numTopModules() << " modules.\n";
+        Console::detail(1, 3, "fine-tune: done in {} effective loops {} codelength {}, {} modules", numEffectiveLoops, Console::arrow(), io::stringify(*this), numTopModules());
         // Continue to merge fine-tuned modules
         findTopModulesRepeatedly(levelAggregationLimit);
       } else {
-        Log(1, 3) << "no improvement.\n";
+        Console::detail(1, 3, "fine-tune: no improvement");
       }
     } else {
       coarseTuned = true;
       if (!noCoarseTune) {
         Log(3) << "\n";
-        Log(1, 3) << "Coarse tune... " << std::flush;
         unsigned int numEffectiveLoops = coarseTune();
         if (numEffectiveLoops > 0) {
-          Log(1, 3) << "done in " << numEffectiveLoops << " effective loops to codelength " << *this << " in " << numTopModules() << " modules.\n";
+          Console::detail(1, 3, "coarse-tune: done in {} effective loops {} codelength {}, {} modules", numEffectiveLoops, Console::arrow(), io::stringify(*this), numTopModules());
           // Continue to merge fine-tuned modules
           findTopModulesRepeatedly(levelAggregationLimit);
         } else {
-          Log(1, 3) << "no improvement.\n";
+          Console::detail(1, 3, "coarse-tune: no improvement");
         }
       }
     }
@@ -1798,27 +1711,18 @@ void InfomapBase::partition()
     } else {
       oldCodelength = newCodelength;
     }
-    if (prettyOutput)
-      prettyCompression.push_back(PrettyOutput::percent(compression * 100));
-    Log(0, 0) << (compression * 100) << "% " << std::flush;
+    prettyCompression.push_back(Console::percent(compression * 100));
+    progress.update(fmt::format(FMT_STRING("working… codelength {} · {} modules"), io::toPrecision(getCodelength()), numTopModules()));
     doFineTune = !doFineTune;
   }
 
-  if (prettyOutput) {
-    std::string nonTrivialSummary;
-    if (m_numNonTrivialTopModules != numTopModules())
-      nonTrivialSummary = io::Str() << " (" << m_numNonTrivialTopModules << " non-trivial)";
-    PrettyOutput(true).status("Two-level", io::Str() << compressionSummary(prettyCompression) << " -> codelength " << io::toPrecision(getCodelength()) << ", " << numTopModules() << " modules" << nonTrivialSummary);
-  }
-  Log(0, 0) << std::setprecision(oldPrecision) << '\n';
-  Log() << "Partitioned to codelength " << *this << " in " << numTopModules();
+  std::string nonTrivialSummary;
   if (m_numNonTrivialTopModules != numTopModules())
-    Log() << " (" << m_numNonTrivialTopModules << " non-trivial)";
-  Log() << " modules.\n";
-
+    nonTrivialSummary = fmt::format(FMT_STRING(" ({} non-trivial)"), m_numNonTrivialTopModules);
+  progress.finish(fmt::format(FMT_STRING("{} {} codelength {}, {} modules{}"), compressionSummary(prettyCompression), Console::arrow(), io::toPrecision(getCodelength()), numTopModules(), nonTrivialSummary));
   const bool regularizedPriorOnly = regularized && network().numLinks() == 0;
   if (!preferModularSolution && preferredNumberOfModules == 0 && (haveNonTrivialModules() || regularizedPriorOnly) && getCodelength() > getOneLevelCodelength()) {
-    Log() << "Worse codelength than one-level codelength, putting all nodes in one module... ";
+    Console::detail(1, "worse codelength than one-level, putting all nodes in one module");
 
     // Create new single module between modules and root
     auto& module = root().replaceChildrenWithOneNode();
@@ -1871,7 +1775,7 @@ void InfomapBase::restoreHardPartition()
   // Swap back original leaf nodes
   m_originalLeafNodes.swap(m_leafNodes);
 
-  Log() << "Expanded " << numExpandedNodes << " hard modules to " << numExpandedChildren << " original nodes.\n";
+  Console::detail(1, "expanded {} hard modules to {} original nodes", numExpandedNodes, numExpandedChildren);
 }
 
 // ===================================================
@@ -1966,7 +1870,7 @@ void InfomapBase::aggregateFlowValuesFromLeafToRoot()
   }
 
   if (std::abs(root().data.flow - 1.0) > 1e-10) {
-    Log() << "Warning, aggregated flow is not exactly 1.0, but " << std::setprecision(10) << root().data.flow << std::setprecision(9) << ".\n";
+    Console::warn(1, "Aggregated flow is not exactly 1.0, but {:.10g}.", root().data.flow);
   }
 
   // Aggregate enter and exit flow between modules
@@ -2021,7 +1925,7 @@ void InfomapBase::aggregateFlowValuesFromLeafToRoot()
     }
   }
   if (recordedTeleportation) {
-    Log() << "\n\nAggregating enter/exit flow for recorded teleportation, sum teleFlow: " << m_root.data.teleportFlow << "\n";
+    Console::detail(1, "aggregating enter/exit flow for recorded teleportation, sum teleFlow {:g}", m_root.data.teleportFlow);
 
     for (auto& node : m_root.infomapTree()) {
       if (!node.isLeaf()) {
@@ -2062,8 +1966,8 @@ void InfomapBase::setActiveNetworkFromChildrenOfRoot()
 
 void InfomapBase::findTopModulesRepeatedly(unsigned int maxLevels)
 {
-  Log(1, 2) << "Iteration " << (m_tuneIterationIndex + 1) << ", moving ";
-  Log(3) << "\nIteration " << (m_tuneIterationIndex + 1) << ":\n";
+  std::vector<std::string> passList; // "<nodes>*<loops>" per aggregation pass, for the -v trace
+  Log(3).print("\nIteration {}:\n", m_tuneIterationIndex + 1);
   m_aggregationLevel = 0;
   unsigned int numLevelsConsolidated = numLevels() - 1;
   if (maxLevels == 0)
@@ -2079,20 +1983,20 @@ void InfomapBase::findTopModulesRepeatedly(unsigned int maxLevels)
       setActiveNetworkFromLeafs();
     initPartition();
     if (m_aggregationLevel == 0) {
-      initialCodelength = io::Str() << "" << *this;
+      initialCodelength = io::stringify(*this);
     }
 
-    Log(1, 2) << activeNetwork().size() << "*" << std::flush;
-    Log(3) << "Level " << (numLevelsConsolidated + 1) << " (codelength: " << *this << "): Moving " << activeNetwork().size() << " nodes... " << std::flush;
+    const auto numActiveBeforeMove = activeNetwork().size();
+    Log(3).print("Level {} (codelength: {}): Moving {} nodes... ", numLevelsConsolidated + 1, io::stringify(*this), activeNetwork().size()) << std::flush;
     // Core loop, merging modules
     unsigned int numOptimizationLoops = optimizeActiveNetwork();
 
-    Log(1, 2) << numOptimizationLoops << ", " << std::flush;
-    Log(3) << "done! -> codelength " << *this << " in " << numActiveModules() << " modules.\n";
+    passList.push_back(fmt::format(FMT_STRING("{}*{}"), numActiveBeforeMove, numOptimizationLoops));
+    Log(3).print("done! -> codelength {} in {} modules.\n", io::stringify(*this), numActiveModules());
 
     // If no improvement, revert codelength terms to the last consolidated state
     if (haveModules() && restoreConsolidatedOptimizationPointIfNoImprovement()) {
-      Log(3) << "-> Restored to codelength " << *this << " in " << numTopModules() << " modules.\n";
+      Log(3).print("-> Restored to codelength {} in {} modules.\n", io::stringify(*this), numTopModules());
       break;
     }
 
@@ -2106,7 +2010,7 @@ void InfomapBase::findTopModulesRepeatedly(unsigned int maxLevels)
 
   m_numNonTrivialTopModules = calculateNumNonTrivialTopModules();
 
-  Log(1, 2) << (m_isCoarseTune ? "modules" : "nodes") << "*loops from codelength " << initialCodelength << " to codelength " << *this << " in " << numTopModules() << " modules. (" << m_numNonTrivialTopModules << " non-trivial modules)\n";
+  Console::detail(1, 2, "iter {}: codelength {} {} {}, {} modules ({} non-trivial); passes ({}*loops): {}", m_tuneIterationIndex + 1, initialCodelength, Console::arrow(), io::stringify(*this), numTopModules(), m_numNonTrivialTopModules, m_isCoarseTune ? "modules" : "nodes", io::stringify(passList, ", "));
 }
 
 unsigned int InfomapBase::fineTune()
@@ -2130,7 +2034,7 @@ unsigned int InfomapBase::fineTune()
   }
   moveActiveNodesToPredefinedModules(modules);
 
-  Log(3) << " -> moved to codelength " << *this << " in " << numActiveModules() << " existing modules. Try tuning...\n";
+  Log(3).print(" -> moved to codelength {} in {} existing modules. Try tuning...\n", io::stringify(*this), numActiveModules());
 
   // Continue to optimize from there to tune leaf nodes
   unsigned int numEffectiveLoops = optimizeActiveNetwork();
@@ -2141,7 +2045,7 @@ unsigned int InfomapBase::fineTune()
     // Delete existing modules and consolidate fine-tuned modules
     root().replaceChildrenWithGrandChildren();
     consolidateModules(false);
-    Log(4) << "Fine-tune done in " << numEffectiveLoops << " effective loops to codelength " << *this << " in " << numTopModules() << " modules.\n";
+    Log(4).print("Fine-tune done in {} effective loops to codelength {} in {} modules.\n", numEffectiveLoops, io::stringify(*this), numTopModules());
   }
 
   return numEffectiveLoops;
@@ -2183,7 +2087,7 @@ unsigned int InfomapBase::coarseTune()
     }
   }
 
-  Log(4) << "Move leaf nodes to " << moduleIndexOffset << " sub-modules... \n";
+  Log(4).print("Move leaf nodes to {} sub-modules... \n", moduleIndexOffset);
   // Put leaf modules in the calculated sub-modules
   std::vector<unsigned int> subModules(numLeafNodes());
   for (unsigned int i = 0; i < numLeafNodes(); ++i) {
@@ -2194,12 +2098,12 @@ unsigned int InfomapBase::coarseTune()
   initPartition();
   moveActiveNodesToPredefinedModules(subModules);
 
-  Log(4) << "Moved to " << numActiveModules() << " modules...\n";
+  Log(4).print("Moved to {} modules...\n", numActiveModules());
 
   // Replace existing modules but store that structure on the sub-modules
   consolidateModules(true);
 
-  Log(4) << "Consolidated " << numTopModules() << " sub-modules to codelength " << *this << '\n';
+  Log(4).print("Consolidated {} sub-modules to codelength {}\n", numTopModules(), io::stringify(*this));
 
   Log(4) << "Move sub-modules to former modular structure... \n";
   // Put sub-modules in the former modular structure
@@ -2214,12 +2118,12 @@ unsigned int InfomapBase::coarseTune()
   // Move sub-modules to former modular structure
   moveActiveNodesToPredefinedModules(modules);
 
-  Log(4) << "Tune sub-modules from codelength " << *this << " in " << numActiveModules() << " modules... \n";
+  Log(4).print("Tune sub-modules from codelength {} in {} modules... \n", io::stringify(*this), numActiveModules());
   // Continue to optimize from there to tune sub-modules
   unsigned int numEffectiveLoops = optimizeActiveNetwork();
-  Log(4) << "Tuned sub-modules in " << numEffectiveLoops << " effective loops to codelength " << *this << " in " << numActiveModules() << " modules.\n";
+  Log(4).print("Tuned sub-modules in {} effective loops to codelength {} in {} modules.\n", numEffectiveLoops, io::stringify(*this), numActiveModules());
   consolidateModules(true);
-  Log(4) << "Consolidated tuned sub-modules to codelength " << *this << " in " << numTopModules() << " modules.\n";
+  Log(4).print("Consolidated tuned sub-modules to codelength {} in {} modules.\n", io::stringify(*this), numTopModules());
   return numEffectiveLoops;
 }
 
@@ -2246,6 +2150,103 @@ unsigned int InfomapBase::calculateMaxDepth() const
   return maxDepth;
 }
 
+unsigned int InfomapBase::findHierarchicalSuperModules(unsigned int superLevelLimit)
+{
+  if (superLevelLimit == 0)
+    return 0;
+
+  unsigned int numLevelsCreated = 0;
+  double oldIndexLength = getIndexCodelength();
+  double hierarchicalCodelength = getCodelength();
+  double workingHierarchicalCodelength = hierarchicalCodelength;
+
+  if (!haveModules())
+    throw std::logic_error("Trying to find hierarchical super modules without any modules");
+
+  std::vector<std::string> prettyCompression;
+  auto progress = Console().progress("Super-level");
+  progress.update("working…");
+
+  // Add index codebooks as long as the code gets shorter
+  do {
+    Console::detail(1, "super iter {}: searching {} modules", numLevelsCreated + 1, numTopModules());
+    const bool shouldMuteNestedMainRun = isMainInfomap() && !Log::isThreadMuted();
+    bool isSilent = false;
+    if (shouldMuteNestedMainRun) {
+      isSilent = Log::isSilent();
+      Log::setSilent(true);
+    }
+    InfoNode tmp(m_root.data); // Temporary owner for the super Infomap instance
+    auto& superInfomap = getSuperInfomap(tmp)
+                             .setTwoLevel(true);
+    superInfomap.initNetwork(m_root, true); //.initSuperNetwork();
+    superInfomap.run();
+    if (shouldMuteNestedMainRun) {
+      Log::setSilent(isSilent);
+    }
+    double superCodelength = superInfomap.getCodelength();
+    double superIndexCodelength = superInfomap.getIndexCodelength();
+
+    unsigned int numSuperModules = superInfomap.numTopModules();
+    bool trivialSolution = numSuperModules == 1 || numSuperModules == numTopModules();
+
+    if (trivialSolution) {
+      Console::detail(1, "super: no non-trivial super modules found");
+      break;
+    }
+
+    bool improvedCodelength = superCodelength < oldIndexLength - minimumCodelengthImprovement;
+    if (!improvedCodelength) {
+      Console::detail(1, "super: index codebook not improved over one-level");
+      break;
+    }
+
+    workingHierarchicalCodelength += superCodelength - oldIndexLength;
+
+    const double superCompression = ((hierarchicalCodelength - workingHierarchicalCodelength)
+                                     / hierarchicalCodelength * 100);
+    prettyCompression.push_back(Console::percent(superCompression));
+    progress.update(fmt::format(FMT_STRING("working… codelength {} · {} top modules"), io::toPrecision(workingHierarchicalCodelength), numSuperModules));
+    Console::detail(1, "super iter {}: found {} super modules, codelength {:g} + {:g} + {:g} = {:g}", numLevelsCreated + 1, numSuperModules, superIndexCodelength, superCodelength - superIndexCodelength, workingHierarchicalCodelength - superCodelength, workingHierarchicalCodelength);
+
+    // Merge current top modules to two-level solution found in the super Infomap instance.
+    std::vector<unsigned int> modules(numTopModules());
+    unsigned int iModule = 0;
+    for (InfoNode* n : superInfomap.leafNodes()) {
+      modules[iModule++] = n->index;
+    }
+
+    setActiveNetworkFromChildrenOfRoot();
+    initPartition();
+    // Move top modules to super modules
+    moveActiveNodesToPredefinedModules(modules);
+
+    // Consolidate the dynamic modules without replacing any existing ones.
+    consolidateModules(false);
+
+    Console::detail(1, "super: consolidated {} modules, index codelength {:g} {} {}", numTopModules(), oldIndexLength, Console::arrow(), io::stringify(*this));
+
+    hierarchicalCodelength = workingHierarchicalCodelength;
+    oldIndexLength = superIndexCodelength;
+
+    ++numLevelsCreated;
+
+    m_numNonTrivialTopModules = calculateNumNonTrivialTopModules();
+
+  } while (m_numNonTrivialTopModules > 1 && numLevelsCreated != superLevelLimit);
+
+  // Restore the temporary transformation of flow to enter flow on super modules
+  resetFlowOnModules();
+
+  progress.finish(fmt::format(FMT_STRING("{} {} codelength {}, {} top modules"), compressionSummary(prettyCompression), Console::arrow(), io::toPrecision(hierarchicalCodelength), numTopModules()));
+  Console::detail(1, "super-level: added {} levels, codelength {}", numLevelsCreated, io::toPrecision(hierarchicalCodelength));
+
+  // Calculate and store hierarchical codelengths
+  m_hierarchicalCodelength = calcCodelengthOnTree(root(), true);
+
+  return numLevelsCreated;
+}
+
 unsigned int InfomapBase::findHierarchicalSuperModulesFast(unsigned int superLevelLimit)
 {
   if (superLevelLimit == 0)
@@ -2257,11 +2258,11 @@ unsigned int InfomapBase::findHierarchicalSuperModulesFast(unsigned int superLev
   double workingHierarchicalCodelength = hierarchicalCodelength;
 
   Log(1) << "\nFind hierarchical super modules iteratively...\n";
-  Log(0, 0) << "Fast super-level compression: " << std::setprecision(2) << std::flush;
+  Log(1) << "Fast super-level compression: " << std::setprecision(2) << std::flush;
 
   // Add index codebooks as long as the code gets shorter
   do {
-    Log(1) << "Iteration " << numLevelsCreated + 1 << ", finding super modules fast to " << numTopModules() << (haveModules() ? " modules" : " nodes") << "... \n";
+    Log(1).print("Iteration {}, finding super modules fast to {}{}... \n", numLevelsCreated + 1, numTopModules(), haveModules() ? " modules" : " nodes");
 
     if (haveModules()) {
       setActiveNetworkFromChildrenOfRoot();
@@ -2288,9 +2289,16 @@ unsigned int InfomapBase::findHierarchicalSuperModulesFast(unsigned int superLev
 
     workingHierarchicalCodelength += codelength - oldIndexLength;
 
-    Log(0, 0) << hideIf(!acceptSolution) << ((hierarchicalCodelength - workingHierarchicalCodelength) / hierarchicalCodelength * 100) << "% " << std::flush;
-    Log(1) << "  -> Found " << numActiveModules() << " super modules in " << numEffectiveLoops << " effective loops with hierarchical codelength " << indexCodelength << " + " << (workingHierarchicalCodelength - indexCodelength) << " = " << workingHierarchicalCodelength << (acceptSolution ? "\n" : ", discarding the solution.\n") << std::flush;
-    Log(1) << oldIndexLength << " -> " << *this << "\n";
+    Log(1) << hideIf(!acceptSolution) << ((hierarchicalCodelength - workingHierarchicalCodelength) / hierarchicalCodelength * 100) << "% " << std::flush;
+    Console::note(1, "Found {} super modules in {} effective loops with hierarchical codelength {:g} + {:g} = {:g}{}",
+                  numActiveModules(),
+                  numEffectiveLoops,
+                  indexCodelength,
+                  workingHierarchicalCodelength - indexCodelength,
+                  workingHierarchicalCodelength,
+                  acceptSolution ? "" : ", discarding the solution.");
+    Log(1) << std::flush;
+    Log(1).print("{:g} -> {}\n", oldIndexLength, io::stringify(*this));
 
     if (!acceptSolution) {
       restoreConsolidatedOptimizationPointIfNoImprovement(true);
@@ -2312,110 +2320,8 @@ unsigned int InfomapBase::findHierarchicalSuperModulesFast(unsigned int superLev
   // Restore the temporary transformation of flow to enter flow on super modules
   resetFlowOnModules();
 
-  Log(0, 0) << "to codelength " << io::toPrecision(hierarchicalCodelength) << " in " << numTopModules() << " top modules.\n";
-  Log(1) << "Finding super modules done! Added " << numLevelsCreated << " levels with hierarchical codelength " << io::toPrecision(hierarchicalCodelength) << " in " << numTopModules() << " top modules.\n";
-
-  // Calculate and store hierarchical codelengths
-  m_hierarchicalCodelength = calcCodelengthOnTree(root(), true);
-
-  return numLevelsCreated;
-}
-
-unsigned int InfomapBase::findHierarchicalSuperModules(unsigned int superLevelLimit)
-{
-  if (superLevelLimit == 0)
-    return 0;
-
-  unsigned int numLevelsCreated = 0;
-  double oldIndexLength = getIndexCodelength();
-  double hierarchicalCodelength = getCodelength();
-  double workingHierarchicalCodelength = hierarchicalCodelength;
-
-  if (!haveModules())
-    throw std::logic_error("Trying to find hierarchical super modules without any modules");
-
-  Log(1) << "\nFind hierarchical super modules iteratively...\n";
-  std::vector<std::string> prettyCompression;
-  Log(0, 0) << "Super-level compression: " << std::setprecision(2) << std::flush;
-
-  // Add index codebooks as long as the code gets shorter
-  do {
-    Log(1) << "Iteration " << numLevelsCreated + 1 << ", finding super modules to " << numTopModules() << " modules... \n";
-    const bool shouldMuteNestedMainRun = isMainInfomap() && !Log::isThreadMuted();
-    bool isSilent = false;
-    if (shouldMuteNestedMainRun) {
-      isSilent = Log::isSilent();
-      Log::setSilent(true);
-    }
-    InfoNode tmp(m_root.data); // Temporary owner for the super Infomap instance
-    auto& superInfomap = getSuperInfomap(tmp)
-                             .setTwoLevel(true);
-    superInfomap.initNetwork(m_root, true); //.initSuperNetwork();
-    superInfomap.run();
-    if (shouldMuteNestedMainRun) {
-      Log::setSilent(isSilent);
-    }
-    double superCodelength = superInfomap.getCodelength();
-    double superIndexCodelength = superInfomap.getIndexCodelength();
-
-    unsigned int numSuperModules = superInfomap.numTopModules();
-    bool trivialSolution = numSuperModules == 1 || numSuperModules == numTopModules();
-
-    if (trivialSolution) {
-      Log(1) << "failed to find non-trivial super modules.\n";
-      break;
-    }
-
-    bool improvedCodelength = superCodelength < oldIndexLength - minimumCodelengthImprovement;
-    if (!improvedCodelength) {
-      Log(1) << "two-level index codebook not improved over one-level.\n";
-      break;
-    }
-
-    workingHierarchicalCodelength += superCodelength - oldIndexLength;
-
-    const double superCompression = ((hierarchicalCodelength - workingHierarchicalCodelength)
-                                     / hierarchicalCodelength * 100);
-    if (prettyOutput)
-      prettyCompression.push_back(PrettyOutput::percent(superCompression));
-    Log(0, 0) << ((hierarchicalCodelength - workingHierarchicalCodelength)
-                  / hierarchicalCodelength * 100)
-              << "% " << std::flush;
-    Log(1) << "  -> Found " << numSuperModules << " super modules in with hierarchical codelength " << superIndexCodelength << " + " << (superCodelength - superIndexCodelength) << " + " << (workingHierarchicalCodelength - superCodelength) << " = " << workingHierarchicalCodelength << '\n';
-
-    // Merge current top modules to two-level solution found in the super Infomap instance.
-    std::vector<unsigned int> modules(numTopModules());
-    unsigned int iModule = 0;
-    for (InfoNode* n : superInfomap.leafNodes()) {
-      modules[iModule++] = n->index;
-    }
-
-    setActiveNetworkFromChildrenOfRoot();
-    initPartition();
-    // Move top modules to super modules
-    moveActiveNodesToPredefinedModules(modules);
-
-    // Consolidate the dynamic modules without replacing any existing ones.
-    consolidateModules(false);
-
-    Log(1) << "Consolidated " << numTopModules() << " super modules. Index codelength: " << oldIndexLength << " -> " << *this << "\n";
-
-    hierarchicalCodelength = workingHierarchicalCodelength;
-    oldIndexLength = superIndexCodelength;
-
-    ++numLevelsCreated;
-
-    m_numNonTrivialTopModules = calculateNumNonTrivialTopModules();
-
-  } while (m_numNonTrivialTopModules > 1 && numLevelsCreated != superLevelLimit);
-
-  // Restore the temporary transformation of flow to enter flow on super modules
-  resetFlowOnModules();
-
-  if (prettyOutput)
-    PrettyOutput(true).status("Super-level", io::Str() << compressionSummary(prettyCompression) << " -> codelength " << io::toPrecision(hierarchicalCodelength) << ", " << numTopModules() << " top modules");
-  Log(0, 0) << "to codelength " << io::toPrecision(hierarchicalCodelength) << " in " << numTopModules() << " top modules.\n";
-  Log(1) << "Finding super modules done! Added " << numLevelsCreated << " levels with hierarchical codelength " << io::toPrecision(hierarchicalCodelength) << " in " << numTopModules() << " top modules.\n";
+  Log(1).print("to codelength {} in {} top modules.\n", io::toPrecision(hierarchicalCodelength), numTopModules());
+  Log(1).print("Finding super modules done! Added {} levels with hierarchical codelength {} in {} top modules.\n", numLevelsCreated, io::toPrecision(hierarchicalCodelength), numTopModules());
 
   // Calculate and store hierarchical codelengths
   m_hierarchicalCodelength = calcCodelengthOnTree(root(), true);
@@ -2459,7 +2365,7 @@ unsigned int InfomapBase::removeModules()
     ++numLevelsDeleted;
   }
   if (numLevelsDeleted > 0) {
-    Log(2) << "Removed " << numLevelsDeleted << " levels of modules.\n";
+    Console::detail(2, "removed {} levels of modules", numLevelsDeleted);
   }
   return numLevelsDeleted;
 }
@@ -2473,7 +2379,7 @@ unsigned int InfomapBase::removeSubModules(bool recalculateCodelengthOnTree)
     ++numLevelsDeleted;
   }
   if (numLevelsDeleted > 0) {
-    Log(2) << "Removed " << numLevelsDeleted << " levels of sub-modules.\n";
+    Console::detail(2, "removed {} levels of sub-modules", numLevelsDeleted);
     if (recalculateCodelengthOnTree)
       calcCodelengthOnTree(root(), false);
   }
@@ -2504,21 +2410,23 @@ unsigned int InfomapBase::recursivePartition()
   double hierarchicalCodelength = m_hierarchicalCodelength;
 
   std::vector<std::string> prettyCompression;
-  Log(0, 0) << "\nRecursive sub-structure compression: " << std::flush;
+  auto progress = Console().progress("Recursive");
+  progress.update("working…");
 
   PartitionQueue partitionQueue;
+  std::string queueSource;
   if (fastHierarchicalSolution > 0) {
     queueLeafModules(partitionQueue);
-    Log(1) << "\nFind sub modules recursively from " << partitionQueue.size() << " sub modules on level " << numLevels() - 2;
+    queueSource = fmt::format(FMT_STRING("{} sub modules on level {}"), partitionQueue.size(), numLevels() - 2);
   } else {
     queueTopModules(partitionQueue);
-    Log(1) << "\nFind sub modules recursively from " << partitionQueue.size() << " top modules";
+    queueSource = fmt::format(FMT_STRING("{} top modules"), partitionQueue.size());
     double moduleCodelength = 0.0;
     for (auto& module : m_root)
       moduleCodelength += module.codelength;
     hierarchicalCodelength = indexCodelength + moduleCodelength;
   }
-  Log(1) << " with codelength: " << indexCodelength << " + " << (hierarchicalCodelength - indexCodelength) << " = " << io::toPrecision(hierarchicalCodelength) << '\n';
+  Console::detail(1, "recursive: from {}, codelength {:g} + {:g} = {}", queueSource, indexCodelength, hierarchicalCodelength - indexCodelength, io::toPrecision(hierarchicalCodelength));
 
   double sumConsolidatedCodelength = hierarchicalCodelength - partitionQueue.moduleCodelength;
 
@@ -2582,7 +2490,9 @@ unsigned int InfomapBase::recursivePartition()
   unsigned int level = startLevel;
   double queueFlow = partitionQueue.flow;
   while (!levelRecords.empty()) {
-    Log(1) << "Level " << level << ": " << (queueFlow * 100) << "% of the flow in " << levelRecords.size() << " modules. Partitioning... " << std::setprecision(6) << std::flush;
+    const auto levelNum = level;
+    const auto levelFlowPct = queueFlow * 100;
+    const auto levelModules = levelRecords.size();
 
     double sumIndexCodelength = 0.0;
     double sumModuleCodelengths = 0.0;
@@ -2605,11 +2515,9 @@ unsigned int InfomapBase::recursivePartition()
     double limitCodelength = sumConsolidatedCodelength + leftToImprove;
 
     const double recursiveCompression = ((hierarchicalCodelength - limitCodelength) / hierarchicalCodelength) * 100;
-    if (prettyOutput)
-      prettyCompression.push_back(PrettyOutput::percent(recursiveCompression));
-    Log(0, 0) << ((hierarchicalCodelength - limitCodelength) / hierarchicalCodelength) * 100 << "% " << std::flush;
-    Log(1) << "done! Codelength: " << sumIndexCodelength << " + " << sumLeafCodelength << " (+ " << leftToImprove << " left to improve)"
-           << " -> limit: " << io::toPrecision(limitCodelength) << " bits.\n";
+    prettyCompression.push_back(Console::percent(recursiveCompression));
+    progress.update(fmt::format(FMT_STRING("working… {} levels · codelength {}"), levelNum, io::toPrecision(limitCodelength)));
+    Console::detail(1, "level {}: {} modules ({:g}% flow) {} codelength {:.6g} + {:.6g} (+{:.6g} to improve) = {} bits", levelNum, levelModules, levelFlowPct, Console::arrow(), sumIndexCodelength, sumLeafCodelength, leftToImprove, io::toPrecision(limitCodelength));
 
     hierarchicalCodelength = limitCodelength;
 
@@ -2621,10 +2529,7 @@ unsigned int InfomapBase::recursivePartition()
   // Store resulting hierarchical codelength
   m_hierarchicalCodelength = hierarchicalCodelength;
 
-  if (prettyOutput)
-    PrettyOutput(true).status("Recursive", io::Str() << compressionSummary(prettyCompression) << " -> " << level << " levels, codelength " << io::toPrecision(hierarchicalCodelength));
-  Log(0, 0) << ". Found " << level << " levels with codelength " << io::toPrecision(hierarchicalCodelength) << "\n";
-  Log(1) << "  -> Found " << level << " levels with codelength " << io::toPrecision(hierarchicalCodelength) << "\n";
+  progress.finish(fmt::format(FMT_STRING("{} {} {} levels, codelength {}"), compressionSummary(prettyCompression), Console::arrow(), level, io::toPrecision(hierarchicalCodelength)));
 
   return level;
 }
@@ -2724,7 +2629,7 @@ void InfomapBase::partitionModuleRecursively(InfoNode& module, unsigned int leve
   bool improvedCodelength = subCodelength < oldModuleCodelength - minimumCodelengthImprovement;
 
   if (trivialSubPartition || !improvedCodelength) {
-    Log(1) << "Disposing unaccepted sub Infomap instance.\n";
+    Console::detail(1, "disposing unaccepted sub Infomap instance");
     module.disposeInfomap();
     module.codelength = oldModuleCodelength;
     record.leafCodelength = module.codelength;
@@ -2777,142 +2682,63 @@ void InfomapBase::writeResult(int trial)
   writeOutputArtifacts(*this, m_network, OutputPhase::AfterPartition, trial);
 }
 
-unsigned int printPerLevelCodelength(const InfoNode& parent, std::ostream& out, bool prettyOutput)
+unsigned int printPerLevelCodelength(const InfoNode& parent, std::ostream& out)
 {
   std::vector<detail::PerLevelStat> perLevelStats;
   aggregatePerLevelCodelength(parent, perLevelStats);
 
   unsigned int numLevels = perLevelStats.size();
 
-  if (prettyOutput) {
-    std::vector<std::vector<std::string>> rows;
-    rows.reserve(numLevels + 1);
-    unsigned int sumNumModules = 0;
-    unsigned int sumNumLeafNodes = 0;
-    double sumAverageChildDegree = 0.0;
-    double sumIndexLengths = 0.0;
-    double sumLeafLengths = 0.0;
-    double sumCodelengths = 0.0;
-    for (unsigned int i = 0; i < numLevels; ++i) {
-      double averageChildDegree = perLevelStats[i].numNodes();
-      if (i > 0 && perLevelStats[i - 1].numModules > 0) {
-        averageChildDegree = perLevelStats[i].numNodes() * 1.0 / perLevelStats[i - 1].numModules;
-      }
-      sumNumModules += perLevelStats[i].numModules;
-      sumNumLeafNodes += perLevelStats[i].numLeafNodes;
-      sumAverageChildDegree += averageChildDegree * perLevelStats[i].numNodes();
-      sumIndexLengths += perLevelStats[i].indexLength;
-      sumLeafLengths += perLevelStats[i].leafLength;
-      sumCodelengths += perLevelStats[i].codelength();
-      rows.push_back({
-          io::Str() << (i + 1),
-          io::Str() << perLevelStats[i].numModules,
-          io::Str() << perLevelStats[i].numLeafNodes,
-          io::toPrecision(averageChildDegree, 2, true),
-          PrettyOutput::fixed(perLevelStats[i].indexLength),
-          PrettyOutput::fixed(perLevelStats[i].leafLength),
-          PrettyOutput::fixed(perLevelStats[i].codelength()),
-      });
-    }
-    const unsigned int sumNumNodes = sumNumModules + sumNumLeafNodes;
-    rows.push_back({
-        "Total",
-        io::Str() << sumNumModules,
-        io::Str() << sumNumLeafNodes,
-        sumNumNodes > 0 ? io::toPrecision(sumAverageChildDegree / sumNumNodes, 2, true) : "0",
-        PrettyOutput::fixed(sumIndexLengths),
-        PrettyOutput::fixed(sumLeafLengths),
-        PrettyOutput::fixed(sumCodelengths),
-    });
-    out << "\nLevels\n";
-    out << "  Level  Modules  Leaves  Avg degree  Module bits  Leaf bits  Total bits\n";
-    for (const auto& row : rows) {
-      out << "  " << std::setw(5) << row[0]
-          << "  " << std::setw(7) << row[1]
-          << "  " << std::setw(6) << row[2]
-          << "  " << std::setw(10) << row[3]
-          << "  " << std::setw(11) << row[4]
-          << "  " << std::setw(9) << row[5]
-          << "  " << std::setw(10) << row[6] << "\n";
-    }
-    return numLevels;
-  }
-
-  out << "Per level number of modules:         [";
-  for (unsigned int i = 0; i < numLevels - 1; ++i) {
-    out << io::padValue(perLevelStats[i].numModules, 11) << ", ";
-  }
-  out << io::padValue(perLevelStats[numLevels - 1].numModules, 11) << "]";
+  std::vector<std::vector<std::string>> rows;
+  rows.reserve(numLevels + 1);
   unsigned int sumNumModules = 0;
-  for (unsigned int i = 0; i < numLevels; ++i)
-    sumNumModules += perLevelStats[i].numModules;
-  out << " (sum: " << sumNumModules << ")\n";
-
-  out << "Per level number of leaf nodes:      [";
-  for (unsigned int i = 0; i < numLevels - 1; ++i) {
-    out << io::padValue(perLevelStats[i].numLeafNodes, 11) << ", ";
-  }
-  out << io::padValue(perLevelStats[numLevels - 1].numLeafNodes, 11) << "]";
   unsigned int sumNumLeafNodes = 0;
-  for (unsigned int i = 0; i < numLevels; ++i)
-    sumNumLeafNodes += perLevelStats[i].numLeafNodes;
-  out << " (sum: " << sumNumLeafNodes << ")\n";
-
-  out << "Per level average child degree:      [";
-  double childDegree = perLevelStats[0].numNodes();
-  double sumAverageChildDegree = childDegree * childDegree;
-  if (numLevels > 1) {
-    out << io::padValue(perLevelStats[0].numModules, 11) << ", ";
-  }
-  for (unsigned int i = 1; i < numLevels - 1; ++i) {
-    childDegree = perLevelStats[i].numNodes() * 1.0 / perLevelStats[i - 1].numModules;
-    sumAverageChildDegree += childDegree * perLevelStats[i].numNodes();
-    out << io::padValue(childDegree, 11) << ", ";
-  }
-  if (numLevels > 1) {
-    childDegree = perLevelStats[numLevels - 1].numNodes() * 1.0 / perLevelStats[numLevels - 2].numModules;
-    sumAverageChildDegree += childDegree * perLevelStats[numLevels - 1].numNodes();
-  }
-  out << io::padValue(childDegree, 11) << "]";
-  out << " (average: " << sumAverageChildDegree / (sumNumModules + sumNumLeafNodes) << ")\n";
-
-  std::ios::fmtflags oldFlags = out.flags();
-  std::streamsize oldPrecision = out.precision();
-  out << std::fixed << std::setprecision(9);
-  out << "Per level codelength for modules:    [";
-  for (unsigned int i = 0; i < numLevels - 1; ++i) {
-    out << perLevelStats[i].indexLength << ", ";
-  }
-  out << perLevelStats[numLevels - 1].indexLength << "]";
+  double sumAverageChildDegree = 0.0;
   double sumIndexLengths = 0.0;
-  for (unsigned int i = 0; i < numLevels; ++i)
-    sumIndexLengths += perLevelStats[i].indexLength;
-  out << " (sum: " << sumIndexLengths << ")\n";
-
-  out << "Per level codelength for leaf nodes: [";
-  for (unsigned int i = 0; i < numLevels - 1; ++i) {
-    out << perLevelStats[i].leafLength << ", ";
-  }
-  out << perLevelStats[numLevels - 1].leafLength << "]";
-
   double sumLeafLengths = 0.0;
-  for (unsigned int i = 0; i < numLevels; ++i)
-    sumLeafLengths += perLevelStats[i].leafLength;
-  out << " (sum: " << sumLeafLengths << ")\n";
-
-  out << "Per level codelength total:          [";
-  for (unsigned int i = 0; i < numLevels - 1; ++i) {
-    out << perLevelStats[i].codelength() << ", ";
-  }
-  out << perLevelStats[numLevels - 1].codelength() << "]";
-
   double sumCodelengths = 0.0;
-  for (unsigned int i = 0; i < numLevels; ++i)
+  for (unsigned int i = 0; i < numLevels; ++i) {
+    double averageChildDegree = perLevelStats[i].numNodes();
+    if (i > 0 && perLevelStats[i - 1].numModules > 0) {
+      averageChildDegree = perLevelStats[i].numNodes() * 1.0 / perLevelStats[i - 1].numModules;
+    }
+    sumNumModules += perLevelStats[i].numModules;
+    sumNumLeafNodes += perLevelStats[i].numLeafNodes;
+    sumAverageChildDegree += averageChildDegree * perLevelStats[i].numNodes();
+    sumIndexLengths += perLevelStats[i].indexLength;
+    sumLeafLengths += perLevelStats[i].leafLength;
     sumCodelengths += perLevelStats[i].codelength();
-  out << " (sum: " << sumCodelengths << ")\n";
-  out.flags(oldFlags);
-  out << std::setprecision(oldPrecision);
-
+    rows.push_back({
+        fmt::to_string(i + 1),
+        fmt::to_string(perLevelStats[i].numModules),
+        fmt::to_string(perLevelStats[i].numLeafNodes),
+        io::toPrecision(averageChildDegree, 2, true),
+        Console::fixed(perLevelStats[i].indexLength),
+        Console::fixed(perLevelStats[i].leafLength),
+        Console::fixed(perLevelStats[i].codelength()),
+    });
+  }
+  const unsigned int sumNumNodes = sumNumModules + sumNumLeafNodes;
+  rows.push_back({
+      "Total",
+      fmt::to_string(sumNumModules),
+      fmt::to_string(sumNumLeafNodes),
+      sumNumNodes > 0 ? io::toPrecision(sumAverageChildDegree / sumNumNodes, 2, true) : "0",
+      Console::fixed(sumIndexLengths),
+      Console::fixed(sumLeafLengths),
+      Console::fixed(sumCodelengths),
+  });
+  out << "\nLevels\n";
+  out << "  Level  Modules  Leaves  Avg children  Module bits  Leaf bits  Total bits\n";
+  for (const auto& row : rows) {
+    out << "  " << std::setw(5) << row[0]
+        << "  " << std::setw(7) << row[1]
+        << "  " << std::setw(6) << row[2]
+        << "  " << std::setw(12) << row[3]
+        << "  " << std::setw(11) << row[4]
+        << "  " << std::setw(9) << row[5]
+        << "  " << std::setw(10) << row[6] << "\n";
+  }
   return numLevels;
 }
 

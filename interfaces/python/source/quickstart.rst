@@ -68,7 +68,7 @@ Start a Python shell with Infomap preloaded:
 
     infomap-shell
 
-This opens a shell with ``im = Infomap(pretty=True)`` ready to use. Run
+This opens a shell with ``im = Infomap()`` ready to use. Run
 ``options()`` to inspect options and ``summary()`` to inspect the current
 network or result.
 

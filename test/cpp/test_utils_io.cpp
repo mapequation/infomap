@@ -3,7 +3,7 @@
 #include "io/SafeFile.h"
 #include "utils/FileURI.h"
 #include "utils/Log.h"
-#include "utils/PrettyOutput.h"
+#include "utils/Console.h"
 #include "utils/Random.h"
 #include "utils/convert.h"
 
@@ -11,6 +11,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
+#include <iomanip>
 #include <iostream>
 #include <limits>
 #include <sstream>
@@ -145,25 +146,25 @@ TEST_CASE("convert helpers preserve current tokenization behavior [fast][core][u
   CHECK(infomap::io::InsensitiveCompare {}("abc", "ABD"));
 }
 
-TEST_CASE("PrettyOutput formats plain output without ANSI and clamps tiny percentages [fast][core][utils][io]")
+TEST_CASE("Console formats plain output without ANSI and clamps tiny percentages [fast][core][utils][io]")
 {
   std::ostringstream output;
   infomap::Log::setOutputStream(output);
-  infomap::Log::init(0, false, 9, true);
+  infomap::Log::init(0, false, 9);
 
 #ifndef _WIN32
   setenv("NO_COLOR", "1", 1);
 #endif
 
-  infomap::PrettyOutput pretty(true);
-  pretty.section("Flow");
-  pretty.metric("Model", "directed");
-  pretty.status("Recursive", infomap::PrettyOutput::percent(-1.0e-12));
+  infomap::Console console;
+  console.section("Flow");
+  console.metric("Model", "directed");
+  console.status("Recursive", infomap::Console::percent(-1.0e-12));
 
   CHECK(output.str().find("\033[") == std::string::npos);
   CHECK(output.str().find("Flow") != std::string::npos);
   CHECK(output.str().find("0%") != std::string::npos);
-  CHECK(infomap::PrettyOutput::percent(-1.55696863e-14) == "0%");
+  CHECK(infomap::Console::percent(-1.55696863e-14) == "0%");
 
 #ifndef _WIN32
   unsetenv("NO_COLOR");
@@ -172,32 +173,33 @@ TEST_CASE("PrettyOutput formats plain output without ANSI and clamps tiny percen
   infomap::Log::init(0, false, 9);
 }
 
-TEST_CASE("Log channels mute legacy output in default pretty mode [fast][core][utils][io]")
+TEST_CASE("Log output is level-gated and respects verbosity and silent [fast][core][utils][io]")
 {
   std::ostringstream output;
   infomap::Log::setOutputStream(output);
 
-  infomap::Log::init(0, false, 9, true);
-  infomap::Log() << "legacy";
-  infomap::Log::pretty() << "pretty";
-  infomap::Log::important() << "important";
-
-  CHECK(output.str().find("legacy") == std::string::npos);
-  CHECK(output.str().find("pretty") != std::string::npos);
+  // Verbosity 0: level-0 lines show, level>=1 (verbose) lines are hidden.
+  infomap::Log::init(0, false, 9);
+  infomap::Log() << "base";
+  infomap::Log(1) << "verbose";
+  infomap::Log() << "important";
+  CHECK(output.str().find("base") != std::string::npos);
+  CHECK(output.str().find("verbose") == std::string::npos);
   CHECK(output.str().find("important") != std::string::npos);
 
+  // Verbosity 1: level-1 diagnostics now layer on top additively.
   output.str("");
   output.clear();
-  infomap::Log::init(1, false, 9, true);
-  infomap::Log() << "legacy";
-  CHECK(output.str().find("legacy") != std::string::npos);
+  infomap::Log::init(1, false, 9);
+  infomap::Log(1) << "verbose";
+  CHECK(output.str().find("verbose") != std::string::npos);
 
+  // Silent: nothing is emitted on any channel.
   output.str("");
   output.clear();
-  infomap::Log::init(0, true, 9, true);
-  infomap::Log() << "legacy";
-  infomap::Log::pretty() << "pretty";
-  infomap::Log::important() << "important";
+  infomap::Log::init(0, true, 9);
+  infomap::Log() << "base";
+  infomap::Log() << "important";
   CHECK(output.str().empty());
 
   infomap::Log::setOutputStream(std::cout);
@@ -330,6 +332,65 @@ TEST_CASE("ensureDirectoryExists creates a deep directory chain [fast][core][uti
   CHECK(infomap::isDirectory(leaf));
   // Idempotent: a second call on an existing chain is a no-op, not an error.
   CHECK_NOTHROW(infomap::ensureDirectoryExists(leaf));
+}
+
+// Characterization test locking the byte-for-byte equivalence claim in
+// convert.cpp: io::toPrecision now formats with {fmt} ({:.{}g} / {:.{}f})
+// instead of std::ostringstream. This reference reproduces the *previous*
+// iostream implementation verbatim; the matrix below asserts fmt reproduces it
+// exactly so a future fmt bump or refactor can't silently shift Infomap's
+// numeric output. (Both run under the default "C" locale here, matching the
+// CLI, so locale divergence is out of scope.)
+std::string toPrecisionLegacy(double value, unsigned int precision, bool fixed)
+{
+  std::ostringstream o;
+  if (fixed)
+    o << std::fixed << std::setprecision(static_cast<int>(precision));
+  else
+    o << std::setprecision(static_cast<int>(precision));
+  o << value;
+  return o.str();
+}
+
+TEST_CASE("toPrecision reproduces the legacy iostream output byte-for-byte [fast][core][utils][io]")
+{
+  const std::vector<double> values = {
+    0.0,
+    -0.0,
+    1.0,
+    -1.0,
+    0.5,
+    1.0 / 3.0,
+    2.0 / 3.0,
+    3.14159265358979,
+    0.1,
+    0.125,
+    0.15, // classic banker's-rounding edge
+    2.675, // classic float-representation rounding edge
+    9.9999999999,
+    1234.5678,
+    123456789.123456789,
+    -42.0,
+    1e-9,
+    1e9,
+    1e-300,
+    1e300,
+    std::numeric_limits<double>::min(), // smallest normal
+    std::numeric_limits<double>::denorm_min(), // subnormal
+    std::numeric_limits<double>::max(),
+  };
+  const std::vector<unsigned int> precisions = { 0, 1, 2, 3, 6, 9, 10, 15, 17 };
+
+  for (const double value : values) {
+    for (const unsigned int precision : precisions) {
+      for (const bool fixed : { false, true }) {
+        const std::string expected = toPrecisionLegacy(value, precision, fixed);
+        const std::string actual = infomap::io::toPrecision(value, precision, fixed);
+        INFO("value=" << value << " precision=" << precision << " fixed=" << fixed);
+        CHECK(actual == expected);
+      }
+    }
+  }
 }
 
 } // namespace

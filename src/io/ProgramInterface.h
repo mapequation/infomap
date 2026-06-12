@@ -20,7 +20,6 @@
 #include <functional>
 #include <memory>
 #include <string>
-#include <sstream>
 #include <ostream>
 #include <unordered_map>
 
@@ -138,7 +137,7 @@ struct IncrementalOption : Option {
   }
 
   std::ostream& printValue(std::ostream& out) const override { return out << target; }
-  std::string printValue() const override { return io::Str() << target; }
+  std::string printValue() const override { return io::stringify(target); }
 
   unsigned int& target;
 };
@@ -154,7 +153,7 @@ struct ArgumentOption : Option {
     return io::stringToValue(value, target);
   }
 
-  std::string printValue() const override { return io::Str() << target; }
+  std::string printValue() const override { return io::stringify(target); }
   std::ostream& printValue(std::ostream& out) const override { return out << target; }
   std::string printNumericValue() const override { return TypeInfo<T>::isNumeric() ? printValue() : ""; }
 
@@ -209,7 +208,7 @@ struct ArgumentOption<bool> : Option {
   }
 
   std::ostream& printValue(std::ostream& out) const override { return out << target; }
-  std::string printValue() const override { return io::Str() << target; }
+  std::string printValue() const override { return io::stringify(target); }
   std::string printNumericValue() const override { return ""; }
 
   bool& target;

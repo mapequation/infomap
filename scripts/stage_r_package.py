@@ -163,6 +163,7 @@ def stage(
     nested_src = pkg_src / "src"
     copy_tree(src, nested_src)
     copy_tree(vendor / "nlohmann_json", out_dir / "inst" / "nlohmann_json")
+    copy_tree(vendor / "fmt", out_dir / "inst" / "fmt")
 
     cpp_sources = ["infomap_wrap.cpp"] + [
         f"src/{p.relative_to(src).as_posix()}" for p in find_cpp_sources(src)

@@ -54,7 +54,6 @@ Output
 \item{\code{print_all_trials}}{Write each trial to separate output files. Has effect only when --num-trials is greater than 1.}
 \item{\code{verbosity_level}}{Increase console verbosity. Add more v flags to increase verbosity up to -vvv.}
 \item{\code{silent}}{Suppress console output.}
-\item{\code{pretty}}{Use modernized console output with color and Unicode on interactive terminals.}
 }
 
 Algorithm

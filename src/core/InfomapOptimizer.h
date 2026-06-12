@@ -282,7 +282,7 @@ template <typename Objective>
 void InfomapOptimizer<Objective>::initPartition()
 {
   auto& network = m_infomap->activeNetwork();
-  Log(4) << "InfomapOptimizer::initPartition() with " << network.size() << " nodes...\n";
+  Log(4).print("InfomapOptimizer::initPartition() with {} nodes...\n", network.size());
 
   // Init one module for each node
   auto numNodes = network.size();
@@ -856,12 +856,13 @@ INFOMAP_HOT unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestMod
   }
 
   unsigned int numMoved = selectedProposalIndices.size();
-  Log(3) << "Inner-parallelization proposals: " << numProposals
-         << ", accepted: " << numMoved
-         << " (fast: " << numFastAccepts << ")"
-         << ", skipped after changed module: " << numSkippedChangedModule
-         << ", invalid target: " << numSkippedInvalidTarget
-         << ", rejected by recheck: " << numSkippedRejectedRecheck << "\n";
+  Log(3).print("Inner-parallelization proposals: {}, accepted: {} (fast: {}), skipped after changed module: {}, invalid target: {}, rejected by recheck: {}\n",
+               numProposals,
+               numMoved,
+               numFastAccepts,
+               numSkippedChangedModule,
+               numSkippedInvalidTarget,
+               numSkippedRejectedRecheck);
 
   for (auto& proposal : proposals) {
     if (proposal.clearDirty)

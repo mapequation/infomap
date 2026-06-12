@@ -16,6 +16,7 @@
 #include "../utils/FileURI.h"
 #include "../utils/Log.h"
 #include "../utils/convert.h"
+#include "../utils/format.h"
 #include <algorithm>
 #include <cstddef>
 #include <iterator>
@@ -118,9 +119,9 @@ namespace {
 
   void applyRuntimeOutputInteractions(Config& config)
   {
-    if (config.verbosity > 0) {
-      config.prettyOutput = false;
-    }
+    // Pretty is the only console rendering and is always on. --pretty/--no-pretty
+    // are deprecated no-ops kept for backward compatibility; neutralize them here.
+    config.prettyOutput = true;
 
     if (config.printAllTrials && config.numTrials < 2) {
       config.printAllTrials = false;
@@ -225,7 +226,7 @@ namespace {
 
     FlowModel flowModel = FlowModel::undirected;
     if (!parseFlowModel(parsed.flowModelArg, flowModel)) {
-      throw std::runtime_error(io::Str() << "Unrecognized flow model: '" << parsed.flowModelArg << "'");
+      throw std::runtime_error(fmt::format(FMT_STRING("Unrecognized flow model: '{}'"), parsed.flowModelArg));
     }
     config.setFlowModel(flowModel);
   }
@@ -236,12 +237,12 @@ namespace {
       ensureDirectoryExists(config.outDirectory);
     }
     if (config.haveOutput() && !isDirectoryWritable(config.outDirectory))
-      throw InfomapError(ExitCode::OutputError, io::Str() << "Can't write to directory '" << config.outDirectory << "'. Check that the directory exists and that you have write permissions.");
+      throw InfomapError(ExitCode::OutputError, fmt::format(FMT_STRING("Can't write to directory '{}'. Check that the directory exists and that you have write permissions."), config.outDirectory));
   }
 
   void initializeLogging(const Config& config)
   {
-    Log::init(config.verbosity, config.silent, config.verboseNumberPrecision, config.prettyOutput);
+    Log::init(config.verbosity, config.silent, config.verboseNumberPrecision);
   }
 
   void buildConfigFromFlags(Config& config, const std::string& flags, bool isCLI)
@@ -279,8 +280,7 @@ const std::vector<std::string>& flowModelNames()
     const auto& mappings = flowModelMappings();
     std::vector<std::string> values;
     values.reserve(mappings.size());
-    std::transform(mappings.begin(), mappings.end(), std::back_inserter(values),
-        [](const auto& mapping) { return mapping.first; });
+    std::transform(mappings.begin(), mappings.end(), std::back_inserter(values), [](const auto& mapping) { return mapping.first; });
     return values;
   }();
   return names;
@@ -318,7 +318,7 @@ void Config::adaptDefaults()
   for (std::string& o : outputs) {
     const auto* format = findOutputFormat(o);
     if (format == nullptr) {
-      throw std::runtime_error(io::Str() << "Unrecognized output format: '" << o << "'.");
+      throw std::runtime_error(fmt::format(FMT_STRING("Unrecognized output format: '{}'."), o));
     }
     enableOutputFormat(*this, *format);
   }

@@ -72,7 +72,7 @@ SWIG_FILES := $(shell find interfaces/swig -name "*.i")
 MK_FILES := $(wildcard mk/*.mk)
 BINDING_OPTIONS_SCRIPT := scripts/generate_binding_options.py
 BUILD_CONFIG_SCRIPT := scripts/build_config.py
-INFOMAP_VENDOR_CPPFLAGS := -Ivendor/nlohmann_json/include
+INFOMAP_VENDOR_CPPFLAGS := -Ivendor/nlohmann_json/include -Ivendor/fmt/include
 
 # Resolve the whole build configuration in a single build_config.py invocation
 # and `include` the emitted Make assignments (BUILD_CONFIG_* plus NATIVE_CXXFLAGS

@@ -50,12 +50,18 @@ ThreadBudget resolveThreadBudget(const ThreadSources& s)
 const char* threadSourceName(ThreadSource source)
 {
   switch (source) {
-    case ThreadSource::Explicit: return "--num-threads";
-    case ThreadSource::InfomapEnv: return "INFOMAP_NUM_THREADS";
-    case ThreadSource::Slurm: return "SLURM_CPUS_PER_TASK";
-    case ThreadSource::Omp: return "OMP_NUM_THREADS";
-    case ThreadSource::Cpuset: return "cpuset";
-    case ThreadSource::Hardware: return "hardware_concurrency";
+  case ThreadSource::Explicit:
+    return "--num-threads";
+  case ThreadSource::InfomapEnv:
+    return "INFOMAP_NUM_THREADS";
+  case ThreadSource::Slurm:
+    return "SLURM_CPUS_PER_TASK";
+  case ThreadSource::Omp:
+    return "OMP_NUM_THREADS";
+  case ThreadSource::Cpuset:
+    return "cpuset";
+  case ThreadSource::Hardware:
+    return "hardware_concurrency";
   }
   // unreachable — all enumerators handled above
   return "unknown";

@@ -11,8 +11,9 @@
 #include "InfomapError.h"
 #include "NetworkBuilder.h"
 #include "../utils/Log.h"
-#include "../utils/PrettyOutput.h"
+#include "../utils/Console.h"
 #include "../utils/convert.h"
+#include "../utils/format.h"
 
 #include <cmath>
 #include <algorithm>
@@ -112,48 +113,30 @@ void Network::readMetaData(const std::string& filename)
 
 void Network::printSummary()
 {
-  if (m_config.prettyOutput) {
-    PrettyOutput pretty(true);
-    pretty.section("Network");
-    pretty.metric("Input", m_config.networkFile);
-    pretty.metric("Direction", m_config.isUndirectedFlow() ? "undirected" : "directed");
-    if (haveMemoryInput()) {
-      pretty.metric("Type", isMultilayerNetwork() ? "higher-order multilayer" : "higher-order state");
-      pretty.metric("State nodes", io::Str() << numNodes());
-      pretty.metric("Physical nodes", io::Str() << numPhysicalNodes());
-    } else if (m_bipartiteStartId > 0) {
-      pretty.metric("Type", "bipartite first-order");
-      pretty.metric("Bipartite start id", io::Str() << m_bipartiteStartId);
-      pretty.metric("Nodes", io::Str() << numNodes());
-    } else {
-      pretty.metric("Type", "first-order");
-      pretty.metric("Nodes", io::Str() << numNodes());
-    }
-    if (isMultilayerNetwork()) {
-      pretty.metric("Layers", io::Str() << m_layers.size());
-      pretty.metric("Layer links", io::Str() << (m_numIntraLayerLinks + m_numInterLayerLinks) << " (" << m_numIntraLayerLinks << " intra, " << m_numInterLayerLinks << " inter)");
-    }
-    pretty.metric("Links", io::Str() << numLinks());
-    pretty.metric("Total weight", io::Str() << m_totalLinkWeightAdded);
-    if (m_numLinksIgnoredByWeightThreshold > 0) {
-      pretty.metric("Ignored by threshold", io::Str() << m_numLinksIgnoredByWeightThreshold << " links, weight " << m_totalLinkWeightIgnored << " (" << PrettyOutput::percent(m_totalLinkWeightIgnored / (m_totalLinkWeightIgnored + m_totalLinkWeightAdded) * 100) << ")");
-    }
-    return;
-  }
-
-  Log() << "-------------------------------------\n";
+  Console console;
+  console.section("Network");
+  console.metric("Input", m_config.networkFile);
+  console.metric("Direction", m_config.isUndirectedFlow() ? "undirected" : "directed");
   if (haveMemoryInput()) {
-    Log() << "  -> " << numNodes() << " state nodes\n";
-    Log() << "  -> " << numPhysicalNodes() << " physical nodes\n";
+    console.metric("Type", isMultilayerNetwork() ? "higher-order multilayer" : "higher-order state");
+    console.metric("State nodes", fmt::to_string(numNodes()));
+    console.metric("Physical nodes", fmt::to_string(numPhysicalNodes()));
+  } else if (m_bipartiteStartId > 0) {
+    console.metric("Type", "bipartite first-order");
+    console.metric("Bipartite start id", fmt::to_string(m_bipartiteStartId));
+    console.metric("Nodes", fmt::to_string(numNodes()));
   } else {
-    if (m_bipartiteStartId > 0)
-      Log() << "  -> " << numNodes() << " bipartite nodes\n";
-    else
-      Log() << "  -> " << numNodes() << " nodes\n";
+    console.metric("Type", "first-order");
+    console.metric("Nodes", fmt::to_string(numNodes()));
   }
-  Log() << "  -> " << numLinks() << " links with total weight " << m_totalLinkWeightAdded << "\n";
+  if (isMultilayerNetwork()) {
+    console.metric("Layers", fmt::to_string(m_layers.size()));
+    console.metric("Layer links", fmt::format(FMT_STRING("{} ({} intra, {} inter)"), m_numIntraLayerLinks + m_numInterLayerLinks, m_numIntraLayerLinks, m_numInterLayerLinks));
+  }
+  console.metric("Links", fmt::to_string(numLinks()));
+  console.metric("Total weight", fmt::format(FMT_STRING("{:g}"), m_totalLinkWeightAdded));
   if (m_numLinksIgnoredByWeightThreshold > 0) {
-    Log() << "  -> " << m_numLinksIgnoredByWeightThreshold << " links ignored by weight threshold with total weight " << m_totalLinkWeightIgnored << " (" << io::toPrecision(m_totalLinkWeightIgnored / (m_totalLinkWeightIgnored + m_totalLinkWeightAdded) * 100, 1, true) << "%)\n";
+    console.metric("Ignored by threshold", fmt::format(FMT_STRING("{} links, weight {:g} ({})"), m_numLinksIgnoredByWeightThreshold, m_totalLinkWeightIgnored, Console::percent(m_totalLinkWeightIgnored / (m_totalLinkWeightIgnored + m_totalLinkWeightAdded) * 100)));
   }
 }
 
@@ -215,7 +198,7 @@ void Network::generateStateNetworkFromMultilayer()
     m_haveDirectedInput = true;
     // TODO: Don't allow undirdir/outdirdir/rawdir?
     // Expand each undirected intra-layer link to two opposite directed links
-    Log() << "  -> Expanding undirected links to directed...\n";
+    Console::detail(1, "expanding undirected links to directed");
     for (auto& layerIt : m_networks) {
       auto& network = layerIt.second;
       network.undirectedToDirected();
@@ -246,8 +229,8 @@ void Network::generateStateNetworkFromMultilayer()
 
 void Network::generateStateNetworkFromMultilayerWithInterLinks()
 {
-  Log() << "Generating state network from multilayer networks with inter-layer links...\n"
-        << std::flush;
+  Console::detail(1, "generating state network from multilayer networks with inter-layer links");
+  Log(1) << std::flush;
   // First add intra-layer links
   for (auto& layerIt : m_networks) {
     unsigned int layer1 = layerIt.first;
@@ -264,7 +247,7 @@ void Network::generateStateNetworkFromMultilayerWithInterLinks()
     }
   }
 
-  Log() << "Connecting layers...\n";
+  Console::detail(1, "connecting layers");
   // Connect layers with inter-layer links spread out in target layer
   for (auto& it : m_interLinks) {
     auto& layerNode = it.first;
@@ -342,8 +325,8 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinks()
 
 void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnLayerSimilarity()
 {
-  Log() << "Generating state network from multilayer networks with simulated inter-layer links based on layer similarity...\n"
-        << std::flush;
+  Console::detail(1, "generating state network from multilayer networks with simulated inter-layer links based on layer similarity");
+  Log(1) << std::flush;
   double relaxRate = m_config.multilayerRelaxRate;
 
   // TODO: Add relax limits
@@ -353,13 +336,13 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnLa
   // int relaxLimitUp = m_config.multilayerRelaxLimitUp < 0 ? relaxLimitSymmetric : std::min(relaxLimitSymmetric, m_config.multilayerRelaxLimitUp);
   // auto haveUpOrDownLimit = m_config.multilayerRelaxLimitDown >= 0 || m_config.multilayerRelaxLimitUp >= 0;
 
-  Log() << "-> " << m_networks.size() << " networks\n";
-  Log() << "-> Relax rate: " << relaxRate << "\n";
+  Console::detail(1, "{} networks", m_networks.size());
+  Console::detail(1, "relax rate: {:g}", relaxRate);
   // if (haveUpOrDownLimit) {
-  //   Log() << "-> Relax limit up: " << relaxLimitUp << (relaxLimitUp == maxRelaxLimit ? " (no limit)\n" : "\n");
-  //   Log() << "-> Relax limit down: " << relaxLimitDown << (relaxLimitDown == maxRelaxLimit ? " (no limit)\n" : "\n");
+  //   Log(1) << "-> Relax limit up: " << relaxLimitUp << (relaxLimitUp == maxRelaxLimit ? " (no limit)\n" : "\n");
+  //   Log(1) << "-> Relax limit down: " << relaxLimitDown << (relaxLimitDown == maxRelaxLimit ? " (no limit)\n" : "\n");
   // } else if (m_config.multilayerRelaxLimit >= 0) {
-  //   Log() << "-> Relax limit: " << m_config.multilayerRelaxLimit << "\n";
+  //   Log(1) << "-> Relax limit: " << m_config.multilayerRelaxLimit << "\n";
   // }
 
   // auto withinRelaxLimit = [relaxLimitDown, relaxLimitUp](auto& layer1, auto& layer2) {
@@ -368,7 +351,7 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnLa
   // };
 
   if (m_config.multilayerRelaxByJensenShannonDivergence) {
-    Log() << "-> Using Jensen-Shannon Divergence\n";
+    Console::detail(1, "using Jensen-Shannon divergence");
 
     for (unsigned int nodeId = 0; nodeId <= m_maxNodeIdInIntraLayerNetworks; ++nodeId) {
       unsigned int layer2from = 0;
@@ -473,8 +456,8 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnLa
 
 void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnNodeStrength()
 {
-  Log() << "Generating state network from multilayer networks with simulated inter-layer links...\n"
-        << std::flush;
+  Console::detail(1, "generating state network from multilayer networks with simulated inter-layer links");
+  Log(1) << std::flush;
   double relaxRate = m_config.multilayerRelaxRate;
 
   unsigned int L = m_networks.size();
@@ -484,13 +467,13 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnNo
   int relaxLimitUp = m_config.multilayerRelaxLimitUp < 0 ? relaxLimitSymmetric : std::min(relaxLimitSymmetric, m_config.multilayerRelaxLimitUp);
   auto haveUpOrDownLimit = m_config.multilayerRelaxLimitDown >= 0 || m_config.multilayerRelaxLimitUp >= 0;
 
-  Log() << "-> " << m_networks.size() << " networks\n";
-  Log() << "-> Relax rate: " << relaxRate << "\n";
+  Console::detail(1, "{} networks", m_networks.size());
+  Console::detail(1, "relax rate: {:g}", relaxRate);
   if (haveUpOrDownLimit) {
-    Log() << "-> Relax limit up: " << relaxLimitUp << (relaxLimitUp == maxRelaxLimit ? " (no limit)\n" : "\n");
-    Log() << "-> Relax limit down: " << relaxLimitDown << (relaxLimitDown == maxRelaxLimit ? " (no limit)\n" : "\n");
+    Console::detail(1, "relax limit up: {}{}", relaxLimitUp, relaxLimitUp == maxRelaxLimit ? " (no limit)" : "");
+    Console::detail(1, "relax limit down: {}{}", relaxLimitDown, relaxLimitDown == maxRelaxLimit ? " (no limit)" : "");
   } else if (m_config.multilayerRelaxLimit >= 0) {
-    Log() << "-> Relax limit: " << m_config.multilayerRelaxLimit << "\n";
+    Console::detail(1, "relax limit: {}", m_config.multilayerRelaxLimit);
   }
 
   auto withinRelaxLimit = [relaxLimitDown, relaxLimitUp](auto& layer1, auto& layer2) {
@@ -558,8 +541,8 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnNo
 
 void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnNodeStrengthRegularized()
 {
-  Log() << "Generating regularized state network from multilayer networks with simulated inter-layer links...\n"
-        << std::flush;
+  Console::detail(1, "generating regularized state network from multilayer networks with simulated inter-layer links");
+  Log(1) << std::flush;
   // double relaxRate = m_config.multilayerRelaxRate;
 
   unsigned int L = m_networks.size();
@@ -579,14 +562,14 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnNo
     // TODO: create a map with aggregated inter-flow for each layer with limits.
   }
 
-  Log() << "-> " << m_networks.size() << " networks and " << m_physNodes.size() << " physical nodes\n";
-  // Log() << "-> Relax rate: " << relaxRate << "\n";
+  Console::detail(1, "{} networks and {} physical nodes", m_networks.size(), m_physNodes.size());
+  // Log(1) << "-> Relax rate: " << relaxRate << "\n";
   if (haveUpOrDownLimit) {
-    Log() << "-> Relax limit up: " << relaxLimitUp << (relaxLimitUp == maxRelaxLimit ? " (no limit)\n" : "\n");
-    Log() << "-> Relax limit down: " << relaxLimitDown << (relaxLimitDown == maxRelaxLimit ? " (no limit)\n" : "\n");
+    Console::detail(1, "relax limit up: {}{}", relaxLimitUp, relaxLimitUp == maxRelaxLimit ? " (no limit)" : "");
+    Console::detail(1, "relax limit down: {}{}", relaxLimitDown, relaxLimitDown == maxRelaxLimit ? " (no limit)" : "");
     throw std::runtime_error("Relax limits not implemented for regularized flow");
   } else if (m_config.multilayerRelaxLimit >= 0) {
-    Log() << "-> Relax limit: " << m_config.multilayerRelaxLimit << "\n";
+    Console::detail(1, "relax limit: {}", m_config.multilayerRelaxLimit);
     throw std::runtime_error("Relax limits not implemented for regularized flow");
   }
 
@@ -607,7 +590,7 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnNo
       // double sumOutLinkWeightLayer1 = network1.outWeights()[n1];
       // Multiply observed link weight with this factor to account for the physical part of inter-link flow
       // double gamma = 1 + interLinkStrength / (sumOutLinkWeightLayer1 + intraLinkStrength);
-      // Log() << "(" << layer1 << "," << n1 << "): gamma = 1 + " << interLinkStrength << " / (" << sumOutLinkWeightLayer1 << " + " << intraLinkStrength << ") = " << gamma << "\n";
+      // Log(1) << "(" << layer1 << "," << n1 << "): gamma = 1 + " << interLinkStrength << " / (" << sumOutLinkWeightLayer1 << " + " << intraLinkStrength << ") = " << gamma << "\n";
       // Need original weight to calculate correct inter-layer relax rate.
 
       // Add intra links
@@ -749,7 +732,7 @@ void Network::addMultilayerIntraLinks(const std::vector<unsigned int>& layerIds,
 void Network::addMultilayerInterLink(unsigned int layer1, unsigned int n, unsigned int layer2, double interWeight)
 {
   if (layer1 == layer2) {
-    throw std::runtime_error(io::Str() << "Inter-layer link (layer1, node, layer2): " << layer1 << ", " << n << ", " << layer2 << " must have layer1 != layer2");
+    throw std::runtime_error(fmt::format(FMT_STRING("Inter-layer link (layer1, node, layer2): {}, {}, {} must have layer1 != layer2"), layer1, n, layer2));
   }
   m_higherOrderInputMethodCalled = true;
 
@@ -791,7 +774,7 @@ unsigned int Network::addMultilayerNode(unsigned int layerId, unsigned int physi
   bool matchableMultilayerIds = m_config.matchableMultilayerIds != 0;
 
   if (matchableMultilayerIds && layerId > m_config.matchableMultilayerIds) {
-    throw std::runtime_error(io::Str() << "Cannot add node with layer " << layerId << " to network with matchable multilayer ids using largest layer id " << m_config.matchableMultilayerIds);
+    throw std::runtime_error(fmt::format(FMT_STRING("Cannot add node with layer {} to network with matchable multilayer ids using largest layer id {}"), layerId, m_config.matchableMultilayerIds));
   }
 
   auto ret = matchableMultilayerIds
@@ -838,7 +821,7 @@ void Network::addMetaData(unsigned int nodeId, const std::vector<int>& metaData)
   if (m_numMetaDataColumns == 0) {
     m_numMetaDataColumns = metaData.size();
   } else if (metaData.size() != m_numMetaDataColumns) {
-    throw std::runtime_error(io::Str() << "Must have same number of dimensions in meta data, error trying to add meta data '" << io::stringify(metaData, ",") << "' on node " << nodeId << ".");
+    throw std::runtime_error(fmt::format(FMT_STRING("Must have same number of dimensions in meta data, error trying to add meta data '{}' on node {}."), io::stringify(metaData, ","), nodeId));
   }
 }
 

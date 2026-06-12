@@ -26,6 +26,8 @@ def test_windows_cl_exe_uses_msvc_flags():
 
     assert config["compiler_family"] == "msvc"
     assert "/std:c++14" in config["compile_flags"]
+    # Required by vendored {fmt} >= 11 (static_assert in fmt/base.h on MSVC).
+    assert "/utf-8" in config["compile_flags"]
     assert "-Wextra" not in config["compile_flags"]
     assert "-fopenmp" not in config["compile_flags"]
 

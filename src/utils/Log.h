@@ -10,21 +10,16 @@
 #ifndef LOG_H_
 #define LOG_H_
 
+#include "format_core.h"
+
 #include <ostream>
 #include <limits>
 #include <iomanip>
 #include <type_traits>
-#include <cstdint>
 
 namespace infomap {
 
 struct hideIf;
-
-enum class LogChannel : std::uint8_t {
-  Legacy,
-  Pretty,
-  Important,
-};
 
 class Log {
   using ostreamFuncPtr = std::add_pointer_t<std::ostream&(std::ostream&)>;
@@ -56,16 +51,15 @@ public:
    * and maxLevel is above or equal Log::verboseLevel()
    */
   explicit Log(unsigned int level = 0, unsigned int maxLevel = std::numeric_limits<int>::max())
-      : Log(LogChannel::Legacy, level, maxLevel) {}
+      : m_level(level), m_maxLevel(maxLevel), m_visible(isVisible(m_level, m_maxLevel)) {}
 
-  explicit Log(LogChannel channel, unsigned int level = 0, unsigned int maxLevel = std::numeric_limits<int>::max())
-      : m_channel(channel), m_level(level), m_maxLevel(maxLevel), m_visible(isVisible(m_channel, m_level, m_maxLevel)) {}
-
-  bool isVisible() const { return isVisible(m_channel, m_level, m_maxLevel); }
+  bool isVisible() const { return isVisible(m_level, m_maxLevel); }
 
   void hide(bool value) { m_visible = !value && isVisible(); }
 
-  Log& operator<<(const hideIf&) { return *this; }
+  // Defined out-of-line below, once hideIf is complete; a single non-ref-qualified
+  // member covers both `log << hideIf(c)` and `Log() << hideIf(c)` (temporaries).
+  Log& operator<<(const hideIf& manip);
 
   template <typename T>
   Log& operator<<(const T& data)
@@ -82,44 +76,34 @@ public:
     return *this;
   }
 
-  static Log pretty(unsigned int level = 0, unsigned int maxLevel = std::numeric_limits<int>::max())
+  /// fmt-native logging: Log(level).print("{} of {}", a, b).
+  /// The format string is checked at compile time under C++20 (consteval);
+  /// pre-C++20 it is validated at runtime. Rendering (the heavy fmt/format.h)
+  /// lives in vprint() in Log.cpp so this header only needs fmt's core API
+  /// (fmt/base.h, via utils/format_core.h).
+  template <typename... Args>
+  Log& print(fmt::format_string<Args...> format, Args&&... args)
   {
-    return Log(LogChannel::Pretty, level, maxLevel);
-  }
-
-  static Log important(unsigned int level = 0, unsigned int maxLevel = std::numeric_limits<int>::max())
-  {
-    return Log(LogChannel::Important, level, maxLevel);
+    if (m_visible)
+      vprint(format, fmt::make_format_args(args...));
+    return *this;
   }
 
   static void init(unsigned int verboseLevel, bool silent, unsigned int numberPrecision)
   {
-    init(verboseLevel, silent, numberPrecision, false);
-  }
-
-  static void init(unsigned int verboseLevel, bool silent, unsigned int numberPrecision, bool prettyOutput)
-  {
     setVerboseLevel(verboseLevel);
     setSilent(silent);
-    setLegacyMuted(prettyOutput && verboseLevel == 0);
-    Log() << std::setprecision(static_cast<int>(numberPrecision));
+    precision(static_cast<std::streamsize>(numberPrecision));
   }
 
   static bool isVisible(unsigned int level, unsigned int maxLevel)
   {
-    return isVisible(LogChannel::Legacy, level, maxLevel);
-  }
-
-  static bool isVisible(LogChannel channel, unsigned int level, unsigned int maxLevel)
-  {
-    return s_threadMuteDepth == 0 && !s_silent && !(channel == LogChannel::Legacy && s_legacyMuted) && s_verboseLevel >= level && s_verboseLevel <= maxLevel;
+    return s_threadMuteDepth == 0 && !s_silent && s_verboseLevel >= level && s_verboseLevel <= maxLevel;
   }
 
   static void setVerboseLevel(unsigned int level) { s_verboseLevel = level; }
 
   static void setSilent(bool silent) { s_silent = silent; }
-
-  static void setLegacyMuted(bool muted) { s_legacyMuted = muted; }
 
   static bool isSilent() { return s_silent; }
 
@@ -139,6 +123,12 @@ public:
 
   static std::ostream& getOutputStream() { return ostream(); }
 
+  /// Whether the active Log sink is the process stdout, i.e. not redirected via
+  /// setOutputStream. Defined in Log.cpp so the stdout-identity comparison stays
+  /// out of shared headers (C++ stream policy). Used by the console layer to
+  /// avoid emitting ANSI into a redirected sink.
+  static bool isWritingToStdout();
+
   static std::streamsize precision() { return ostream().precision(); }
 
   static std::streamsize precision(std::streamsize precision)
@@ -154,7 +144,10 @@ public:
   }
 
 private:
-  LogChannel m_channel;
+  // Type-erased renderer for print(); defined in Log.cpp so the heavy
+  // fmt/format.h (vformat) stays out of this widely-included header.
+  void vprint(fmt::string_view format, fmt::format_args args);
+
   unsigned int m_level;
   unsigned int m_maxLevel;
   bool m_visible;
@@ -174,21 +167,20 @@ private:
   static std::ostream* s_ostream;
   static unsigned int s_verboseLevel;
   static bool s_silent;
-  static bool s_legacyMuted;
   static thread_local unsigned int s_threadMuteDepth;
 };
 
 struct hideIf {
   explicit hideIf(bool value) : hide(value) {}
 
-  friend Log& operator<<(Log& out, const hideIf& manip)
-  {
-    out.hide(manip.hide);
-    return out;
-  }
-
   bool hide;
 };
+
+inline Log& Log::operator<<(const hideIf& manip)
+{
+  hide(manip.hide);
+  return *this;
+}
 
 } // namespace infomap
 

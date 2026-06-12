@@ -27,8 +27,10 @@ build-js-metadata: build-native
 test-js-metadata: build-native
 	@tmpdir="$$(mktemp -d)"; \
 	$(PYTHON_FOR_BUILD_CONFIG) scripts/generate_js_metadata.py --infomap-bin ./Infomap --output-dir "$$tmpdir"; \
-	diff -u "$(JS_PARAMETERS_JSON)" "$$tmpdir/parameters.json"; \
-	rm -rf "$$tmpdir"
+	status=0; \
+	diff -u "$(JS_PARAMETERS_JSON)" "$$tmpdir/parameters.json" || status=$$?; \
+	rm -rf "$$tmpdir"; \
+	exit $$status
 
 $(JS_WORKER_OUTPUT_FORMATS): $(JS_OUTPUT_FORMATS_JSON) interfaces/js/scripts/write-worker-output-formats.mjs
 	$(NPM) run build:worker-output-formats -- $@

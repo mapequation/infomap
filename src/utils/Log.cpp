@@ -8,6 +8,7 @@
  ******************************************************************************/
 
 #include "Log.h"
+#include "format.h"
 #ifndef INFOMAP_R
 #include <iostream>
 #endif
@@ -35,7 +36,6 @@ std::ostream& Log::defaultStream()
 std::ostream* Log::s_ostream = nullptr;
 unsigned int Log::s_verboseLevel = 0;
 bool Log::s_silent = false;
-bool Log::s_legacyMuted = false;
 thread_local unsigned int Log::s_threadMuteDepth = 0;
 
 void Log::setNoOutput()
@@ -44,7 +44,25 @@ void Log::setNoOutput()
   static std::ostream nullStream(&nullBuf);
   s_ostream = &nullStream;
   s_silent = true;
-  s_legacyMuted = true;
+}
+
+bool Log::isWritingToStdout()
+{
+#ifdef INFOMAP_R
+  // The R build always routes Log through the Rprintf bridge (s_ostream), never
+  // the process stdout, and does not even include <iostream>.
+  return false;
+#else
+  return &ostream() == &std::cout;
+#endif
+}
+
+void Log::vprint(fmt::string_view format, fmt::format_args args)
+{
+  // Called only from print() under m_visible; render here so fmt/format.h stays
+  // out of Log.h. Routes through the same m_ostream sink as operator<<, so the
+  // R/Python redirect and verbosity/silent gating all still apply.
+  m_ostream << fmt::vformat(format, args);
 }
 
 } // namespace infomap

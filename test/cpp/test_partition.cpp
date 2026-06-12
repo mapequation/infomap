@@ -169,12 +169,12 @@ TEST_CASE("Pretty per-level codelength renders a structured levels table [fast][
   im.run();
 
   std::ostringstream output;
-  const auto numLevels = infomap::printPerLevelCodelength(im.root(), output, true);
+  const auto numLevels = infomap::printPerLevelCodelength(im.root(), output);
   const auto text = output.str();
 
   CHECK(numLevels >= 2);
   CHECK(text.find("Levels") != std::string::npos);
-  CHECK(text.find("Level  Modules  Leaves  Avg degree  Module bits  Leaf bits  Total bits") != std::string::npos);
+  CHECK(text.find("Level  Modules  Leaves  Avg children  Module bits  Leaf bits  Total bits") != std::string::npos);
   CHECK(text.find("Total") != std::string::npos);
   CHECK(text.find("Per level number of modules") == std::string::npos);
   CHECK(text.find("2.700302") != std::string::npos);

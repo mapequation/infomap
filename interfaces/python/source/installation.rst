@@ -66,7 +66,7 @@ Start a Python shell with Infomap preloaded:
     infomap-shell
 
 The shell imports ``Infomap``, ``InfomapOptions``, and ``MultilayerNode``.
-It also creates ``im = Infomap(pretty=True)`` and provides ``summary()`` and
+It also creates ``im = Infomap()`` and provides ``summary()`` and
 ``options()`` helpers. Pass one network file to preload it:
 
 .. code-block:: bash

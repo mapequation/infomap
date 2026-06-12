@@ -2616,8 +2616,8 @@ class InfomapBase(InfomapConfigInfomapBase):
 # Register InfomapBase in _infomap:
 _infomap.InfomapBase_swigregister(InfomapBase)
 
-def printPerLevelCodelength(parent, out, prettyOutput=False):
-    return _infomap.printPerLevelCodelength(parent, out, prettyOutput)
+def printPerLevelCodelength(parent, out):
+    return _infomap.printPerLevelCodelength(parent, out)
 
 def aggregatePerLevelCodelength(parent, perLevelStat, level=0):
     return _infomap.aggregatePerLevelCodelength(parent, perLevelStat, level)

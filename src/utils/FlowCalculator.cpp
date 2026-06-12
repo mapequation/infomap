@@ -9,8 +9,9 @@
 
 #include "FlowCalculator.h"
 #include "../utils/Log.h"
-#include "../utils/PrettyOutput.h"
+#include "../utils/Console.h"
 #include "../utils/convert.h"
+#include "../utils/format.h"
 #include "../utils/infomath.h"
 #include "../core/StateNetwork.h"
 #include <cmath>
@@ -52,9 +53,6 @@ inline void normalize(std::vector<T>& v) noexcept
 FlowCalculator::FlowCalculator(StateNetwork& network, const Config& config)
     : numNodes(network.numNodes())
 {
-  m_prettyOutput = config.prettyOutput;
-  Log() << "Calculating global network flow using flow model '" << config.flowModel << "'... " << std::flush;
-
   // Prepare data in sequence containers for fast access of individual elements
   // Map to zero-based dense indexing
   nodeIndexMap.reserve(numNodes);
@@ -222,25 +220,20 @@ FlowCalculator::FlowCalculator(StateNetwork& network, const Config& config)
 
 void FlowCalculator::addFlowNote(const std::string& note)
 {
-  if (m_prettyOutput)
-    m_flowNotes.push_back(note);
+  m_flowNotes.push_back(note);
 }
 
 void FlowCalculator::recordPageRank(unsigned int iterations, double error, bool converged) noexcept
 {
-  if (m_prettyOutput) {
-    m_havePageRank = true;
-    m_pageRankIterations = iterations;
-    m_pageRankError = error;
-    m_pageRankConverged = converged;
-  }
+  m_havePageRank = true;
+  m_pageRankIterations = iterations;
+  m_pageRankError = error;
+  m_pageRankConverged = converged;
 }
 
 void FlowCalculator::calcUndirectedFlow() noexcept
 {
-  if (m_prettyOutput)
-    m_flowMethod = "undirected links";
-  Log() << "\n  -> Using undirected links.";
+  m_flowMethod = "undirected links";
 
   // Flow is outgoing transition probability times source node flow
   // = w_ij / s_ij * s_ij / sum(s_ij) = w_ij / sum(s_ij)
@@ -258,10 +251,6 @@ void FlowCalculator::calcUndirectedFlow() noexcept
 void FlowCalculator::calcDirdirFlow(const Config& config) noexcept
 {
   m_flowMethod = config.flowModel == FlowModel::outdirdir ? "ingoing links only" : "undirected links, directed steady state";
-  if (config.flowModel == FlowModel::outdirdir)
-    Log() << "\n  -> Counting only ingoing links.";
-  else
-    Log() << "\n  -> Using undirected links, switching to directed after steady state.";
 
   // Take one last power iteration
   const std::vector<double> nodeFlowSteadyState(nodeFlow);
@@ -282,9 +271,7 @@ void FlowCalculator::calcDirdirFlow(const Config& config) noexcept
 void FlowCalculator::calcRawdirFlow() noexcept
 {
   m_flowMethod = "directed links with raw flow";
-  addFlowNote(io::Str() << "Total link weight " << sumLinkWeight);
-  Log() << "\n  -> Using directed links with raw flow.";
-  Log() << "\n  -> Total link weight: " << sumLinkWeight << ".";
+  addFlowNote(fmt::format(FMT_STRING("Total link weight {:g}"), sumLinkWeight));
 
   // Treat the link weights as flow (after global normalization) and
   // do one power iteration to set the node flow
@@ -299,17 +286,13 @@ void FlowCalculator::calcRawdirFlow() noexcept
 void FlowCalculator::usePrecomputedFlow(const StateNetwork& network, const Config&)
 {
   m_flowMethod = "precomputed directed flow";
-  addFlowNote(io::Str() << "Total link flow " << sumLinkWeight);
-  Log() << "\n  -> Using directed links with precomputed flow from input data.";
-  Log() << "\n  -> Total link flow: " << sumLinkWeight << ".";
+  addFlowNote(fmt::format(FMT_STRING("Total link flow {:g}"), sumLinkWeight));
 
   if (network.haveFileInput()) {
     if (network.haveMemoryInput() && !network.haveStateNodeWeights()) {
-      Log() << '\n';
       throw std::runtime_error("Missing node flow in input data. Should be passed as a third field under a *States section.");
     }
     if (!network.haveMemoryInput() && !network.haveNodeWeights()) {
-      Log() << '\n';
       throw std::runtime_error("Missing node flow in input data. Should be passed as a third field under a *Vertices section.");
     }
   }
@@ -323,18 +306,18 @@ void FlowCalculator::usePrecomputedFlow(const StateNetwork& network, const Confi
     nodeFlow[nodeIndexMap[node.id]] = node.weight;
     sumFlow += node.weight;
   }
-  if (m_prettyOutput)
-    addFlowNote(io::Str() << "Total node flow " << sumFlow);
-  Log() << "\n  -> Total node flow: " << sumFlow << ".";
+  addFlowNote(fmt::format(FMT_STRING("Total node flow {:g}"), sumFlow));
 
   if (infomath::isEqual(sumFlow, 0)) {
     throw std::runtime_error("Missing node flow. Set it on the node weight property.");
   }
   if (!infomath::isEqual(sumFlow, 1)) {
     if (infomath::isEqual(sumFlow, numNodes) && infomath::isEqual(nodeFlow[0], 1)) {
-      Log::important() << "\n  Warning: Node flow sums to the number of nodes, is node flow provided or is default node weights used? Normalizing.";
+      Log() << "\n";
+      Console::warn(0, "Node flow sums to the number of nodes; was node flow provided, or are default node weights being used? Normalizing.");
     } else {
-      Log::important() << "\n  Warning: Node flow sums to " << sumFlow << ", normalizing.";
+      Log() << "\n";
+      Console::warn(0, "Node flow sums to {:g}, normalizing.", sumFlow);
     }
     for (unsigned int i = 0; i < numNodes; ++i) {
       nodeFlow[i] /= sumFlow;
@@ -372,9 +355,8 @@ IterationResult powerIterate(double alpha, unsigned int maxIterations, Iteration
 
   const bool converged = iterations < maxIterations;
   if (!converged) {
-    Log::important() << "\n  Warning: PageRank calculation did not converge after " << iterations << " iterations with error " << err << ".\n";
-  } else {
-    Log() << "\n  -> PageRank calculation done in " << iterations << " iterations with error " << err << ".\n";
+    Log() << "\n";
+    Console::warn(0, "PageRank calculation did not converge after {} iterations with error {:g}.", iterations, err);
   }
 
   return { alpha, beta, iterations, err, converged };
@@ -383,8 +365,7 @@ IterationResult powerIterate(double alpha, unsigned int maxIterations, Iteration
 void FlowCalculator::calcDirectedFlow(const StateNetwork& network, const Config& config) noexcept
 {
   m_flowMethod = "directed links";
-  m_teleportation = io::Str() << (config.recordedTeleportation ? "recorded" : "unrecorded") << ", to " << (config.teleportToNodes ? "nodes" : "links");
-  Log() << "\n  -> Using " << (config.recordedTeleportation ? "recorded" : "unrecorded") << " teleportation to " << (config.teleportToNodes ? "nodes" : "links") << ". " << std::flush;
+  m_teleportation = fmt::format(FMT_STRING("{}, to {}"), config.recordedTeleportation ? "recorded" : "unrecorded", config.teleportToNodes ? "nodes" : "links");
 
   // Calculate the teleport rate distribution
   if (config.teleportToNodes) {
@@ -444,7 +425,7 @@ void FlowCalculator::calcDirectedFlow(const StateNetwork& network, const Config&
 
     // Normalize if needed
     if (std::abs(nodeFlowDiff) > 1.0e-10) {
-      Log() << "(Normalizing flow after " << iter << " power iterations with error " << nodeFlowDiff << ") ";
+      Console::detail(1, "normalizing flow after {} power iterations with error {:g}", iter, nodeFlowDiff);
       normalize(nodeFlow, nodeFlowDiff + 1.0);
     }
 
@@ -481,7 +462,6 @@ void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, co
 {
   m_flowMethod = "directed regularized flow";
   m_teleportation = "recorded, Bayesian prior to nodes";
-  Log() << "\n  -> Using recorded teleportation to nodes according to a fully connected Bayesian prior. " << std::flush;
 
   // Calculate node weights w_i = s_i/k_i, where s_i is the node strength (weighted degree) and k_i the (unweighted) degree
   unsigned int N = network.numNodes();
@@ -593,7 +573,7 @@ void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, co
 
     // Normalize if needed
     if (std::abs(nodeFlowDiff) > 1.0e-10) {
-      Log() << "(Normalizing ranks after " << iter << " power iterations with error " << nodeFlowDiff << ") ";
+      Console::detail(1, "normalizing ranks after {} power iterations with error {:g}", iter, nodeFlowDiff);
       normalize(nodeFlow, nodeFlowDiff + 1.0);
     }
 
@@ -616,9 +596,8 @@ void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, co
 
   recordPageRank(iterations, err, iterations < config.maxFlowIterations);
   if (iterations >= config.maxFlowIterations) {
-    Log::important() << "\n  Warning: PageRank calculation did not converge after " << iterations << " iterations with error " << err << ".\n";
-  } else {
-    Log() << "\n  -> PageRank calculation done in " << iterations << " iterations with error " << err << ".\n";
+    Log() << "\n";
+    Console::warn(0, "PageRank calculation did not converge after {} iterations with error {:g}.", iterations, err);
   }
 
   double sumNodeRank = 1.0;
@@ -636,8 +615,6 @@ void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, co
 #if INFOMAP_FEATURE_REGULARIZED_MULTILAYER
 void FlowCalculator::calcDirectedRegularizedMultilayerFlow(const StateNetwork& network, const Config& config) noexcept
 {
-  Log() << "\n  -> Using regularized multilayer flow. " << std::flush;
-
   // Calculate node weights w_i = s_i/k_i, where s_i is the node strength (weighted degree) and k_i the (unweighted) degree
   unsigned int N = network.numNodes();
   unsigned int N_phys = network.numPhysicalNodes();
@@ -647,9 +624,9 @@ void FlowCalculator::calcDirectedRegularizedMultilayerFlow(const StateNetwork& n
   double intraOutWeight = config.regularizationStrength * std::log(N_phys) / L;
   // double interOutWeight = config.regularizationStrength * std::log(L);
 
-  // Log() << "\n N: " << N_phys << ", N_states: " << N << ", L: " << L << "\n";
-  // Log() << "ln(N)/(NL): " << std::log(N_phys) / (N_phys * L) << "\n";
-  // Log() << "ln(N)/(L): " << std::log(N_phys) / (L) << "\n";
+  // Log(1) << "\n N: " << N_phys << ", N_states: " << N << ", L: " << L << "\n";
+  // Log(1) << "ln(N)/(NL): " << std::log(N_phys) / (N_phys * L) << "\n";
+  // Log(1) << "ln(N)/(L): " << std::log(N_phys) / (L) << "\n";
 
   std::vector<unsigned int> layerIds(N, 0);
   std::vector<unsigned int> physicalIds(N, 0);
@@ -658,9 +635,9 @@ void FlowCalculator::calcDirectedRegularizedMultilayerFlow(const StateNetwork& n
   unsigned int layerIndex = 0;
   for (unsigned int layerId : network.layers()) {
     layerIdToIndex[layerId] = layerIndex++;
-    // Log() << "Layer " << layerId << " -> index " << layerIdToIndex[layerId] << "\n";
+    // Log(1) << "Layer " << layerId << " -> index " << layerIdToIndex[layerId] << "\n";
   }
-  // Log() << "\n -> " << layerIdToIndex.size() << " layers...\n";
+  // Log(1) << "\n -> " << layerIdToIndex.size() << " layers...\n";
 
   std::vector<bool> isInterLink(flowLinks.size(), false);
   std::vector<unsigned int> layerIndices(N);
@@ -674,16 +651,16 @@ void FlowCalculator::calcDirectedRegularizedMultilayerFlow(const StateNetwork& n
     // if (layerIdToIndex.count(node.second.layerId) == 0) {
     //   layerIdToIndex[node.second.layerId] = layerIndex++;
     // }
-    // Log() << "Node (physId: " << node.second.physicalId << ", layerId: " << node.second.layerId << ") -> index: " << nodeIndexMap[node.second.id] << "\n";
+    // Log(1) << "Node (physId: " << node.second.physicalId << ", layerId: " << node.second.layerId << ") -> index: " << nodeIndexMap[node.second.id] << "\n";
   }
 
   unsigned int linkIndex = 0;
 
-  // Log() << "\nLinks:\n";
+  // Log(1) << "\nLinks:\n";
 
   for (const auto& link : flowLinks) {
     isInterLink[linkIndex] = physicalIds[link.source] == physicalIds[link.target];
-    // Log() << linkIndex << ": (" << layerIds[link.source] << "," << physicalIds[link.source] << ") -> (" << layerIds[link.target] << "," << physicalIds[link.target] << ") is inter: " << isInterLink[linkIndex] << "\n";
+    // Log(1) << linkIndex << ": (" << layerIds[link.source] << "," << physicalIds[link.source] << ") -> (" << layerIds[link.target] << "," << physicalIds[link.target] << ") is inter: " << isInterLink[linkIndex] << "\n";
     ++linkIndex;
   }
 
@@ -706,7 +683,7 @@ void FlowCalculator::calcDirectedRegularizedMultilayerFlow(const StateNetwork& n
       k_in[link.target] += 1;
       s_in[link.target] += link.flow;
       // if (link.source == 0) {
-      //   Log() << link.source << " -> " << link.target << " => k_out[0] -> " << k_out[link.source] << "\n";
+      //   Log(1) << link.source << " -> " << link.target << " => k_out[0] -> " << k_out[link.source] << "\n";
       // }
     }
   }
@@ -736,13 +713,13 @@ void FlowCalculator::calcDirectedRegularizedMultilayerFlow(const StateNetwork& n
   //   sum_u_in += u_in(i);
   // }
 
-  // Log() << "\nNodes:\n";
+  // Log(1) << "\nNodes:\n";
   for (unsigned int i = 0; i < N; ++i) {
     // nodeTeleportWeights[i] = u_in(i) / sum_u_in;
     // nodeTeleportWeights[i] = 1 / N;
     nodeTeleportWeights[i] = 1.0 / N_phys;
     // nodeTeleportWeights[i] = 1.0 / (config.noSelfLinks ? N_phys - 1 : N_phys);
-    // Log() << i << ") k_out: " << k_out[i] << ", s_out: " << s_out[i] << ", inter_out: " << inter_out[i] << "\n";
+    // Log(1) << i << ") k_out: " << k_out[i] << ", s_out: " << s_out[i] << ", inter_out: " << inter_out[i] << "\n";
   }
 
   // std::function<double(unsigned int)> t_out_withoutSelfLinks = [lambda, u_t, u_out, u_in, sum_u_in](unsigned int i) { return lambda / u_t * u_out(i) * (sum_u_in - u_in(i)); };
@@ -753,7 +730,7 @@ void FlowCalculator::calcDirectedRegularizedMultilayerFlow(const StateNetwork& n
 
   std::vector<double> alpha(N, 0);
   std::vector<double> alphaInter(N, 0);
-  // Log() << "\nTele probabilities:\n";
+  // Log(1) << "\nTele probabilities:\n";
   for (unsigned int i = 0; i < N; ++i) {
     // auto t_i = t_out(i);
     alpha[i] = intraLayerTeleRate(i); // = 1 for dangling nodes
@@ -764,11 +741,11 @@ void FlowCalculator::calcDirectedRegularizedMultilayerFlow(const StateNetwork& n
       alpha[i] /= 1 - nodeTeleportWeights[i];
       // alphaInter[i] /= 1 - nodeTeleportWeights[i];
     }
-    // Log() << i << ": intra: " << alpha[i] << ", inter: " << alphaInter[i] << "\n";
-    // Log() << i << ": intra: " << alpha[i] << ", inter: " << alphaInter[i] << " (inter_out: " << inter_out[i] << ", s_out: " << s_out[i] << ", intra_prior_out: " << intraOutWeight << ")\n";
+    // Log(1) << i << ": intra: " << alpha[i] << ", inter: " << alphaInter[i] << "\n";
+    // Log(1) << i << ": intra: " << alpha[i] << ", inter: " << alphaInter[i] << " (inter_out: " << inter_out[i] << ", s_out: " << s_out[i] << ", intra_prior_out: " << intraOutWeight << ")\n";
   }
 
-  // Log() << "\nLink probabilities:\n";
+  // Log(1) << "\nLink probabilities:\n";
   // Normalize link weights to probabilities, separate for intra and inter links
   linkIndex = 0;
   for (auto& link : flowLinks) {
@@ -782,7 +759,7 @@ void FlowCalculator::calcDirectedRegularizedMultilayerFlow(const StateNetwork& n
         link.flow /= s_out[link.source];
       }
     }
-    // Log() << link.source << " -> " << link.target << ": " << link.flow << "\n";
+    // Log(1) << link.source << " -> " << link.target << ": " << link.flow << "\n";
   }
 
   std::vector<double> unrecordedInterFlow(N, 0);
@@ -795,7 +772,7 @@ void FlowCalculator::calcDirectedRegularizedMultilayerFlow(const StateNetwork& n
 
   // Calculate two-step PageRank:
   const auto iteration = [&](const auto iter) {
-    // Log() << "\nIter " << iter << ":\n";
+    // Log(1) << "\nIter " << iter << ":\n";
 
     // 1. Unrecorded inter-layer step: push fraction of flow on inter-layer links to temporary location
     linkIndex = 0;
@@ -806,7 +783,7 @@ void FlowCalculator::calcDirectedRegularizedMultilayerFlow(const StateNetwork& n
       }
       unrecordedInterFlow[link.target] += alphaInter[link.source] * nodeFlow[link.source] * link.flow;
       // unrecordedInterFlow[link.target] += alphaInter[link.source] * nodeFlow[link.source] * link.flow * (config.noSelfLinks ? 1 - nodeTeleportWeights[link.source] : 1);
-      // Log() << "  " << link.source << " -> " << link.target << ": unrecorded[" << link.target << "] += " << nodeFlow[link.source] << " * " << alphaInter[link.source] << " * " << link.flow << "\n";
+      // Log(1) << "  " << link.source << " -> " << link.target << ": unrecorded[" << link.target << "] += " << nodeFlow[link.source] << " * " << alphaInter[link.source] << " * " << link.flow << "\n";
     }
 
     // double sumFlow = 0.0;
@@ -815,24 +792,24 @@ void FlowCalculator::calcDirectedRegularizedMultilayerFlow(const StateNetwork& n
     //   sumFlow += nodeFlow[i];
     //   sumUnrecordedFlow += unrecordedInterFlow[i];
     // }
-    // Log() << "  Sum flow: " << sumFlow << "\n";
-    // Log() << "  Sum unrecorded flow: " << sumUnrecordedFlow << "\n";
+    // Log(1) << "  Sum flow: " << sumFlow << "\n";
+    // Log(1) << "  Sum unrecorded flow: " << sumUnrecordedFlow << "\n";
 
     // 2. Recorded intra-layer step: push rest of flow plus temporarily stored flow to intra-layer with intra-layer teleportation
     layerTeleFlow.assign(L, 0.0);
     for (unsigned int i = 0; i < N; ++i) {
       layerTeleFlow[layerIndices[i]] += alpha[i] * ((1 - alphaInter[i]) * nodeFlow[i] + unrecordedInterFlow[i]);
-      // Log() << "Node " << i << " in layer " << layerIndices[i] << ": alpha: " << alpha[i] << ", non-inter flow: " << (1 - alphaInter[i]) * nodeFlow[i] << ", unrecorded flow: " << unrecordedInterFlow[i] << ", += " << alpha[i] * ((1 - alphaInter[i]) * nodeFlow[i] + unrecordedInterFlow[i]) << " -> " << layerTeleFlow[layerIndices[i]] << "\n";
+      // Log(1) << "Node " << i << " in layer " << layerIndices[i] << ": alpha: " << alpha[i] << ", non-inter flow: " << (1 - alphaInter[i]) * nodeFlow[i] << ", unrecorded flow: " << unrecordedInterFlow[i] << ", += " << alpha[i] * ((1 - alphaInter[i]) * nodeFlow[i] + unrecordedInterFlow[i]) << " -> " << layerTeleFlow[layerIndices[i]] << "\n";
     }
 
     // for (unsigned int i = 0; i < layerTeleFlow.size(); ++i) {
-    //   Log() << "Layer " << i << " tele flow: " << layerTeleFlow[i] << "\n";
+    //   Log(1) << "Layer " << i << " tele flow: " << layerTeleFlow[i] << "\n";
     // }
 
     for (unsigned int i = 0; i < N; ++i) {
       nodeFlowTmp[i] = nodeTeleportWeights[i] * (layerTeleFlow[layerIndices[i]] - (config.noSelfLinks ? (alpha[i] * nodeFlow[i]) : 0));
       // nodeFlowTmp[i] = nodeTeleportWeights[i] * layerTeleFlow[layerIndices[i]];
-      // Log() << i << ": tele flow: " << nodeFlowTmp[i] << "\n";
+      // Log(1) << i << ": tele flow: " << nodeFlowTmp[i] << "\n";
     }
 
     // Flow from links
@@ -858,9 +835,9 @@ void FlowCalculator::calcDirectedRegularizedMultilayerFlow(const StateNetwork& n
 
     // Normalize if needed
     if (std::abs(nodeFlowDiff) > 1.0e-10) {
-      Log() << "(Normalizing ranks after " << iter << " power iterations with error " << nodeFlowDiff << ") ";
+      Console::detail(1, "normalizing ranks after {} power iterations with error {:g}", iter, nodeFlowDiff);
       if (std::abs(nodeFlowDiff) > 1.0e-4) {
-        throw std::runtime_error(io::Str() << "Total flow differs from 1 by " << nodeFlowDiff << " after " << iter << " iterations. Please report the issue.\n");
+        throw std::runtime_error(fmt::format(FMT_STRING("Total flow differs from 1 by {} after {} iterations. Please report the issue.\n"), nodeFlowDiff, iter));
       }
       normalize(nodeFlow, nodeFlowDiff + 1.0);
     }
@@ -884,9 +861,8 @@ void FlowCalculator::calcDirectedRegularizedMultilayerFlow(const StateNetwork& n
   } while (iterations < maxIterations && (err > 1.0e-15 || iterations < 50));
 
   if (iterations == maxIterations && err > 1e-14) {
-    Log() << "  -> Warning: PageRank calculation stopped after maximum " << iterations << " with diff " << err << ".\n";
+    Console::warn(0, "PageRank calculation stopped after the maximum of {} iterations with diff {:g}.", iterations, err);
   } else {
-    Log() << "\n  -> PageRank calculation done in " << iterations << " iterations.\n";
   }
 
   for (unsigned int i = 0; i < layerTeleFlow.size(); ++i) {
@@ -924,7 +900,6 @@ void FlowCalculator::calcUndirectedRegularizedFlow(const StateNetwork& network, 
 {
   m_flowMethod = "undirected regularized flow";
   m_teleportation = "recorded, Bayesian prior to nodes";
-  Log() << "\n  -> Using recorded teleportation to nodes according to a fully connected Bayesian prior. " << std::flush;
 
   // Calculate node weights w_i = s_i/k_i, where s_i is the node strength (weighted degree) and k_i the (unweighted) degree
   unsigned int N = network.numNodes();
@@ -1029,8 +1004,7 @@ void FlowCalculator::calcUndirectedRegularizedMultilayerFlow(const StateNetwork&
 void FlowCalculator::calcDirectedBipartiteFlow(const StateNetwork& network, const Config& config) noexcept
 {
   m_flowMethod = "directed bipartite links";
-  m_teleportation = io::Str() << (config.recordedTeleportation ? "recorded" : "unrecorded") << ", to " << (config.teleportToNodes ? "nodes" : "links");
-  Log() << "\n  -> Using bipartite " << (config.recordedTeleportation ? "recorded" : "unrecorded") << " teleportation to " << (config.teleportToNodes ? "nodes" : "links") << ". " << std::flush;
+  m_teleportation = fmt::format(FMT_STRING("{}, to {}"), config.recordedTeleportation ? "recorded" : "unrecorded", config.teleportToNodes ? "nodes" : "links");
 
   const auto bipartiteStartId = network.bipartiteStartId();
 
@@ -1121,7 +1095,7 @@ void FlowCalculator::calcDirectedBipartiteFlow(const StateNetwork& network, cons
 
     // Normalize if needed
     if (std::abs(nodeFlowDiff) > 1.0e-10) {
-      Log() << "(Normalizing ranks after " << iter << " power iterations with error " << nodeFlowDiff << ") ";
+      Console::detail(1, "normalizing ranks after {} power iterations with error {:g}", iter, nodeFlowDiff);
       normalize(nodeFlow, nodeFlowDiff + 1.0);
     }
 
@@ -1161,9 +1135,7 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
 {
   // TODO: Skip bipartite flow adjustment for directed / rawdir / .. ?
   if (network.isBipartite()) {
-    if (m_prettyOutput)
-      addFlowNote("Using bipartite links");
-    Log() << "\n  -> Using bipartite links.";
+    addFlowNote("Using bipartite links");
 
     if (!config.skipAdjustBipartiteFlow && !config.bipartiteTeleportation) {
       // Only links between ordinary nodes and feature nodes in bipartite network
@@ -1196,9 +1168,7 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
   }
 
   if (config.useNodeWeightsAsFlow) {
-    if (m_prettyOutput)
-      addFlowNote("Using node weights as flow");
-    Log() << "\n  -> Using node weights as flow.";
+    addFlowNote("Using node weights as flow");
 
     for (auto& nodeIt : network.nodes()) {
       auto& node = nodeIt.second;
@@ -1310,24 +1280,20 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
     }
   }
 
-  if (m_prettyOutput) {
-    PrettyOutput pretty(true);
-    pretty.section("Flow");
-    pretty.metric("Model", io::Str() << config.flowModel);
-    pretty.metric("Method", m_flowMethod.empty() ? "standard" : m_flowMethod);
-    if (!m_teleportation.empty())
-      pretty.metric("Teleportation", m_teleportation);
-    if (m_havePageRank) {
-      pretty.metric(m_pageRankConverged ? "PageRank" : "PageRank warning",
-                    io::Str() << m_pageRankIterations << " iterations, error " << io::toPrecision(m_pageRankError));
-    }
-    for (const auto& note : m_flowNotes)
-      pretty.status("Note", note);
-    pretty.metric("Node flow sum", io::toPrecision(sumNodeFlow));
-    pretty.metric("Link flow sum", io::toPrecision(sumLinkFlow));
-    return;
+  Console console;
+  console.section("Flow");
+  console.metric("Model", io::stringify(config.flowModel));
+  console.metric("Method", m_flowMethod.empty() ? "standard" : m_flowMethod);
+  if (!m_teleportation.empty())
+    console.metric("Teleportation", m_teleportation);
+  if (m_havePageRank) {
+    console.metric(m_pageRankConverged ? "PageRank" : "PageRank warning",
+                   fmt::format(FMT_STRING("{} iterations, error {}"), m_pageRankIterations, io::toPrecision(m_pageRankError)));
   }
-  Log() << "\n  => Sum node flow: " << sumNodeFlow << ", sum link flow: " << sumLinkFlow << "\n";
+  for (const auto& note : m_flowNotes)
+    console.status("Note", note);
+  console.metric("Node flow sum", io::toPrecision(sumNodeFlow));
+  console.metric("Link flow sum", io::toPrecision(sumLinkFlow));
 }
 
 } // namespace infomap

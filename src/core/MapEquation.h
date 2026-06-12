@@ -148,20 +148,20 @@ public:
   void addTeleportationFlow(InfoNode& current, const std::vector<FlowDataType>& moduleFlowData, VectorMap<DeltaFlowDataType>& moduleDeltaFlow);
 
   double getDeltaCodelengthOnMovingNode(InfoNode& current,
-                                                DeltaFlowDataType& oldModuleDelta,
-                                                DeltaFlowDataType& newModuleDelta,
-                                                std::vector<FlowDataType>& moduleFlowData,
-                                                std::vector<unsigned int>& /*moduleMembers*/);
+                                        DeltaFlowDataType& oldModuleDelta,
+                                        DeltaFlowDataType& newModuleDelta,
+                                        std::vector<FlowDataType>& moduleFlowData,
+                                        std::vector<unsigned int>& /*moduleMembers*/);
 
   // ===================================================
   // Consolidation
   // ===================================================
 
   void updateCodelengthOnMovingNode(InfoNode& current,
-                                            DeltaFlowDataType& oldModuleDelta,
-                                            DeltaFlowDataType& newModuleDelta,
-                                            std::vector<FlowDataType>& moduleFlowData,
-                                            std::vector<unsigned int>& /*moduleMembers*/);
+                                    DeltaFlowDataType& oldModuleDelta,
+                                    DeltaFlowDataType& newModuleDelta,
+                                    std::vector<FlowDataType>& moduleFlowData,
+                                    std::vector<unsigned int>& /*moduleMembers*/);
 
   // ===================================================
   // Debug
@@ -169,9 +169,10 @@ public:
 
   void printDebug() const
   {
-    Log() << "(enterFlow_log_enterFlow: " << enterFlow_log_enterFlow << ", "
-          << "enter_log_enter: " << enter_log_enter << ", "
-          << "exitNetworkFlow_log_exitNetworkFlow: " << exitNetworkFlow_log_exitNetworkFlow << ") ";
+    Log().print("(enterFlow_log_enterFlow: {:g}, enter_log_enter: {:g}, exitNetworkFlow_log_exitNetworkFlow: {:g}) ",
+                enterFlow_log_enterFlow,
+                enter_log_enter,
+                exitNetworkFlow_log_exitNetworkFlow);
   }
 
 protected:

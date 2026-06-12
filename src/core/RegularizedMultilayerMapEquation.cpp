@@ -10,6 +10,7 @@
 #include "RegularizedMultilayerMapEquation.h"
 #include "FlowData.h"
 #include "InfoNode.h"
+#include "../utils/format.h"
 
 #include <algorithm>
 #include <limits>
@@ -474,7 +475,7 @@ void RegularizedMultilayerMapEquation::updatePhysicalNodes(InfoNode& current, un
     // Remove contribution to old module
     auto overlapIt = findModuleMemNodes(moduleToMemNodes, oldModuleIndex);
     if (overlapIt == moduleToMemNodes.end() || overlapIt->module != oldModuleIndex)
-      throw std::length_error(io::Str() << "Couldn't find old module " << oldModuleIndex << " in physical node " << physData.physNodeIndex);
+      throw std::length_error(fmt::format(FMT_STRING("Couldn't find old module {} in physical node {}"), oldModuleIndex, physData.physNodeIndex));
 
     overlapIt->sumFlow -= physData.sumFlowFromM2Node;
     if (--overlapIt->numMemNodes == 0)
@@ -561,7 +562,7 @@ void RegularizedMultilayerMapEquation::consolidateModules(std::vector<InfoNode*>
 
 void RegularizedMultilayerMapEquation::printDebug() const
 {
-  Log() << "RegularizedMultilayerMapEquation::m_numPhysicalNodes: " << m_numPhysicalNodes << "\n";
+  Log().print("RegularizedMultilayerMapEquation::m_numPhysicalNodes: {}\n", m_numPhysicalNodes);
   Base::printDebug();
 }
 
