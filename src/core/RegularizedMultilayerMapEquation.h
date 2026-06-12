@@ -160,10 +160,10 @@ private:
   using Base::exitNetworkFlow;
   using Base::exitNetworkFlow_log_exitNetworkFlow;
 
-  using ModuleToMemNodes = std::map<unsigned int, MemNodeSet>;
+  using ModuleToMemNodes = std::vector<ModuleMemNodes>; // sorted by module id
   using LayerTeleFlowMap = std::map<unsigned int, LayerTeleFlowData>;
 
-  std::vector<ModuleToMemNodes> m_physToModuleToMemNodes; // vector[physicalNodeID] map<moduleID, {#memNodes, sumFlow}>
+  std::vector<ModuleToMemNodes> m_physToModuleToMemNodes; // vector[physicalNodeID] sorted vector of {moduleID, #memNodes, sumFlow}
   std::vector<LayerTeleFlowMap> m_moduleLayerTeleFlowData; // vector[moduleID] map<layerID, layer teleport flow>
   unsigned int m_numPhysicalNodes = 0;
   bool m_memoryContributionsAdded = false;

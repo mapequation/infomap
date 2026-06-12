@@ -20,13 +20,19 @@
 #include <vector>
 #include <map>
 #include <ostream>
+#include <algorithm>
 
 namespace infomap {
 
 class InfoNode;
 
-struct MemNodeSet {
-  MemNodeSet(unsigned int numMemNodes, double sumFlow) : numMemNodes(numMemNodes), sumFlow(sumFlow) {}
+// One module entry of a physical node's flat module map, kept sorted by
+// module id. The sort order is load-bearing: iteration order determines
+// floating-point summation order in the codelength terms.
+struct ModuleMemNodes {
+  ModuleMemNodes(unsigned int module, unsigned int numMemNodes, double sumFlow)
+      : module(module), numMemNodes(numMemNodes), sumFlow(sumFlow) {}
+  unsigned int module;
   unsigned int numMemNodes; // use counter to check for zero to avoid round-off errors in sumFlow
   double sumFlow;
 };
@@ -43,6 +49,12 @@ struct MemNodeSet {
  * base version). Internal cross-calls are qualified with `ME::` so they always
  * bind to this base implementation regardless of the most-derived type.
  */
+
+inline std::vector<ModuleMemNodes>::iterator findModuleMemNodes(std::vector<ModuleMemNodes>& moduleToMemNodes, unsigned int module)
+{
+  return std::lower_bound(moduleToMemNodes.begin(), moduleToMemNodes.end(), module, [](const ModuleMemNodes& memNodes, unsigned int target) { return memNodes.module < target; });
+}
+
 template <typename FlowDataType = FlowData, typename DeltaFlowDataType = DeltaFlow>
 class MapEquation {
   using ME = MapEquation<FlowDataType, DeltaFlowDataType>;
