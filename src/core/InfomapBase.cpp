@@ -1494,6 +1494,10 @@ void InfomapBase::generateSubNetwork(InfoNode& parent)
   // Store parent module
   m_root.owner = &parent;
   m_root.data = parent.data;
+#if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
+  m_root.lossyEntropy = parent.lossyEntropy;
+  m_root.lossyFlowLogFlow = parent.lossyFlowLogFlow;
+#endif
 
   unsigned int numNodes = parent.childDegree();
   m_leafNodes.resize(numNodes);
@@ -1732,6 +1736,10 @@ void InfomapBase::partition()
     // TODO: Extract copying from root and resetting index to a method, also copy metadata?
     module.data = m_root.data;
     module.physicalNodes = m_root.physicalNodes;
+#if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
+    module.lossyEntropy = m_root.lossyEntropy;
+    module.lossyFlowLogFlow = m_root.lossyFlowLogFlow;
+#endif
     module.index = 0;
     for (auto& node : module) {
       node.index = 0;

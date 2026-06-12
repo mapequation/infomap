@@ -49,6 +49,12 @@ void LossyMapEquation::initNetwork(InfoNode& root)
 {
   Base::initNetwork(root);
 
+  // Sub-Infomap networks are cloned from one module of the full network and lack the
+  // links leaving the module, so recomputing h_alpha there would understate the
+  // distortion; the cloned nodes already carry the full-network values.
+  if (root.owner != nullptr)
+    return;
+
   // Compute each leaf node's share of the Markov entropy rate, p_alpha * h_alpha,
   // and its plogp(p_alpha), from edge weights. Undirected leaf networks store each
   // link once, so include both out- and in-edges (same pattern as the entropy rate
@@ -124,6 +130,12 @@ void LossyMapEquation::calculateCodelength(std::vector<InfoNode*>& nodes)
 double LossyMapEquation::calcCodelength(const InfoNode& parent) const
 {
   double L = Base::calcCodelength(parent);
+
+  // Corrections apply to modules that own a visit codebook, i.e. leaf modules in
+  // the two-level partition. The root (and any module of modules) is an index
+  // codebook and must not be treated as an anonymizable module.
+  if (!parent.isLeafModule())
+    return L;
 
   // Subtract this module's correction, computed from leaf sums carried by the children.
   double flowLogFlow = 0.0;

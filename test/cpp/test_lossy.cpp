@@ -101,6 +101,35 @@ TEST_CASE("Lossy: lambda -> 0 lumps everything into one noise module [fast][core
   CHECK(im.getLossyDistortion() == doctest::Approx(1.9005561812175085).epsilon(1e-9));
 }
 
+TEST_CASE("Lossy: reported codelength equals rate plus lambda times distortion [fast][core][lossy]")
+{
+  // Regression guard: the tree codelength is summed per module via calcCodelength,
+  // which must not subtract a correction for the root index level. On this network
+  // that root term is nonzero at lambda 1.5 (it cancels by coincidence at lambda 2).
+  for (const auto* lambdaFlag : { "--lossy --lambda 1.5", "--lossy --lambda 2" }) {
+    InfomapWrapper im(defaultFlags(lambdaFlag));
+    im.readInputData(networkFixturePath("lossy_benchmark.net"));
+    im.run();
+    const double lambda = im.lossyLambda;
+    CHECK(im.codelength() == doctest::Approx(im.getLossyRate() + lambda * im.getLossyDistortion()).epsilon(1e-9));
+  }
+}
+
+TEST_CASE("Lossy: rerun on the same instance preserves partition and codelength [fast][core][lossy][lifecycle]")
+{
+  InfomapWrapper im(defaultFlags("--lossy --lambda 2"));
+  im.readInputData(networkFixturePath("lossy_benchmark.net"));
+  im.run();
+  const auto firstCodelength = im.codelength();
+  const auto firstRate = im.getLossyRate();
+  const auto firstPartition = canonicalPartition(im.getModules(1, false));
+
+  im.run();
+  CHECK(im.codelength() == doctest::Approx(firstCodelength).epsilon(1e-9));
+  CHECK(im.getLossyRate() == doctest::Approx(firstRate).epsilon(1e-9));
+  CHECK(canonicalPartition(im.getModules(1, false)) == firstPartition);
+}
+
 } // namespace test
 } // namespace infomap
 

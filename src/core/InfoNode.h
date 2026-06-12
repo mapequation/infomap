@@ -148,6 +148,10 @@ public:
         physicalNodes(other.physicalNodes),
         layerTeleFlowData(other.layerTeleFlowData),
         metaCollection(other.metaCollection ? std::make_unique<MetaCollection>(*other.metaCollection) : nullptr),
+#if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
+        lossyEntropy(other.lossyEntropy),
+        lossyFlowLogFlow(other.lossyFlowLogFlow),
+#endif
         m_childDegree(other.m_childDegree),
         m_childrenChanged(other.m_childrenChanged),
         m_numLeafMembers(other.m_numLeafMembers) {}
@@ -174,6 +178,10 @@ public:
     codelength = other.codelength;
     dirty = other.dirty;
     metaCollection = other.metaCollection ? std::make_unique<MetaCollection>(*other.metaCollection) : nullptr;
+#if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
+    lossyEntropy = other.lossyEntropy;
+    lossyFlowLogFlow = other.lossyFlowLogFlow;
+#endif
     m_childDegree = other.m_childDegree;
     m_childrenChanged = other.m_childrenChanged;
     m_numLeafMembers = other.m_numLeafMembers;
