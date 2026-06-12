@@ -272,6 +272,7 @@ if(BUILD_TESTING)
             infomap_cpp_no_output_tests
             infomap_cpp_output_view_tests
             infomap_cpp_trial_results_tests
+            infomap_cpp_lossy_tests
             infomap_cli
     )
 endif()
