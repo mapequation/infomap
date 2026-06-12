@@ -78,6 +78,29 @@ TEST_CASE("Lossy: paper benchmark partition gives the published code lengths at 
   CHECK(plain.codelength() - im.getLossyRate() == doctest::Approx(0.3947947117880925).epsilon(1e-9));
 }
 
+TEST_CASE("Lossy: direct optimization at lambda 2 finds cliques standard and chain as one noise module [fast][core][lossy]")
+{
+  InfomapWrapper im(defaultFlags("--lossy --lambda 2"));
+  im.readInputData(networkFixturePath("lossy_benchmark.net"));
+  im.run();
+
+  checkCanonicalPartition(im, { { 1, 2, 3, 4, 5 }, { 6, 7, 8, 9, 10 }, { 11, 12, 13, 14, 15 } });
+  CHECK(im.codelength() == doctest::Approx(2.730915964229051).epsilon(1e-9));
+  CHECK(im.getLossyRate() == doctest::Approx(2.4232236565367433).epsilon(1e-9));
+  CHECK(im.getLossyDistortion() == doctest::Approx(0.15384615384615385).epsilon(1e-9));
+}
+
+TEST_CASE("Lossy: lambda -> 0 lumps everything into one noise module [fast][core][lossy]")
+{
+  InfomapWrapper im(defaultFlags("--lossy --lambda 0.001"));
+  im.readInputData(networkFixturePath("lossy_benchmark.net"));
+  im.run();
+
+  CHECK(im.numTopModules() == 1);
+  CHECK(im.getLossyRate() == doctest::Approx(0.0).epsilon(1e-9));
+  CHECK(im.getLossyDistortion() == doctest::Approx(1.9005561812175085).epsilon(1e-9));
+}
+
 } // namespace test
 } // namespace infomap
 

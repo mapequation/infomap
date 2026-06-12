@@ -135,13 +135,30 @@ double LossyMapEquation::calcCodelength(const InfoNode& parent) const
   return L - calcCorrection(parent.data.flow, flowLogFlow, entropy);
 }
 
-double LossyMapEquation::getDeltaCodelengthOnMovingNode(InfoNode& current,
-                                                        DeltaFlow& oldModuleDelta,
-                                                        DeltaFlow& newModuleDelta,
-                                                        std::vector<FlowData>& moduleFlowData,
-                                                        std::vector<unsigned int>& moduleMembers)
+INFOMAP_HOT double LossyMapEquation::getDeltaCodelengthOnMovingNode(InfoNode& current,
+                                                                    DeltaFlow& oldModuleDelta,
+                                                                    DeltaFlow& newModuleDelta,
+                                                                    std::vector<FlowData>& moduleFlowData,
+                                                                    std::vector<unsigned int>& moduleMembers)
 {
-  return Base::getDeltaCodelengthOnMovingNode(current, oldModuleDelta, newModuleDelta, moduleFlowData, moduleMembers);
+  double deltaL = Base::getDeltaCodelengthOnMovingNode(current, oldModuleDelta, newModuleDelta, moduleFlowData, moduleMembers);
+
+  unsigned int oldM = oldModuleDelta.module;
+  unsigned int newM = newModuleDelta.module;
+  if (oldM == newM)
+    return deltaL;
+
+  double curFlow = current.data.flow;
+  double curFlf = current.lossyFlowLogFlow;
+  double curEnt = current.lossyEntropy;
+
+  double corrBefore = calcCorrection(moduleFlowData[oldM].flow, m_moduleFlowLogFlow[oldM], m_moduleEntropy[oldM])
+      + calcCorrection(moduleFlowData[newM].flow, m_moduleFlowLogFlow[newM], m_moduleEntropy[newM]);
+  double corrAfter = calcCorrection(moduleFlowData[oldM].flow - curFlow, m_moduleFlowLogFlow[oldM] - curFlf, m_moduleEntropy[oldM] - curEnt)
+      + calcCorrection(moduleFlowData[newM].flow + curFlow, m_moduleFlowLogFlow[newM] + curFlf, m_moduleEntropy[newM] + curEnt);
+
+  // J = L_full - sum of corrections, so a correction increase lowers the objective.
+  return deltaL - (corrAfter - corrBefore);
 }
 
 // ===================================================
