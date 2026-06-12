@@ -44,6 +44,11 @@ namespace infomap {
  */
 template <typename T>
 class ObjectPool {
+  // Chunk storage comes from operator new[], which only guarantees alignment
+  // for ordinary types. The slot arithmetic below relies on that guarantee.
+  static_assert(alignof(T) <= alignof(std::max_align_t),
+                "ObjectPool does not support over-aligned types");
+
   // A small initial chunk keeps the many tiny per-module sub-Infomap instances
   // (each with its own node and edge pool) close to their real footprint —
   // recursive partitioning spawns one pool pair per refined module, most of
@@ -106,15 +111,16 @@ public:
     } else {
       slot = nextRawSlot();
     }
-    ::new (static_cast<void*>(slot)) T(std::forward<Args>(args)...);
+    T* obj = ::new (static_cast<void*>(slot)) T(std::forward<Args>(args)...);
     ++m_liveCount;
-    return slot;
+    return obj;
   }
 
   void free(T* obj) noexcept
   {
     if (obj == nullptr)
       return;
+    assert(m_liveCount > 0 && "ObjectPool::free without a matching alloc (double free?)");
     obj->~T();
     m_free.push_back(obj);
     --m_liveCount;
@@ -132,7 +138,10 @@ public:
       available += m_chunks.back().capacity - m_chunks.back().used;
     if (available >= n)
       return;
-    m_chunks.emplace_back(n - available);
+    // Appending a chunk strands the current back chunk's unused tail
+    // (allocations only come from the back chunk), so size the new chunk
+    // against the free list alone to actually guarantee room for n.
+    m_chunks.emplace_back(n - m_free.size());
   }
 
   std::size_t liveCount() const noexcept { return m_liveCount; }

@@ -184,6 +184,7 @@ InfoNode& InfoNode::replaceChildrenWithOneNode()
     throw std::logic_error("replaceChildrenWithOneNode called on a node without any grandchildren.");
   auto* middleNode = m_pool != nullptr ? m_pool->alloc() : new InfoNode();
   middleNode->m_pool = m_pool;
+  middleNode->m_edgePool = m_edgePool;
   InfoNode::child_iterator nodeIt = begin_child();
   unsigned int numOriginalChildrenLeft = m_childDegree;
   auto d0 = m_childDegree;
