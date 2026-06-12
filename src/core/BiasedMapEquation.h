@@ -23,7 +23,7 @@ namespace infomap {
 class InfoNode;
 class StateNetwork;
 
-class BiasedMapEquation : private MapEquation<> {
+class BiasedMapEquation final : private MapEquation<> {
   using Base = MapEquation<>;
 
 public:
@@ -34,11 +34,11 @@ public:
   // Getters
   // ===================================================
 
-  double getIndexCodelength() const override;
+  double getIndexCodelength() const;
 
-  double getModuleCodelength() const override;
+  double getModuleCodelength() const;
 
-  double getCodelength() const override;
+  double getCodelength() const;
 
   double getEntropyBiasCorrection() const;
 
@@ -46,7 +46,7 @@ public:
   // IO
   // ===================================================
 
-  std::ostream& print(std::ostream& out) const override;
+  std::ostream& print(std::ostream& out) const;
 
   friend std::ostream& operator<<(std::ostream&, const BiasedMapEquation&);
 
@@ -54,23 +54,23 @@ public:
   // Init
   // ===================================================
 
-  void init(const Config& config) override;
+  void init(const Config& config);
 
-  void initTree(InfoNode& /*root*/) override {}
+  void initTree(InfoNode& /*root*/) {}
 
-  void initNetwork(InfoNode& root) override;
+  void initNetwork(InfoNode& root);
 
   using Base::initSuperNetwork;
 
   using Base::initSubNetwork;
 
-  void initPartition(std::vector<InfoNode*>& nodes) override;
+  void initPartition(std::vector<InfoNode*>& nodes);
 
   // ===================================================
   // Codelength
   // ===================================================
 
-  double calcCodelength(const InfoNode& parent) const override;
+  double calcCodelength(const InfoNode& parent) const;
 
   using Base::addMemoryContributions;
 
@@ -80,7 +80,7 @@ public:
                                         DeltaFlow& oldModuleDelta,
                                         DeltaFlow& newModuleDelta,
                                         std::vector<FlowData>& moduleFlowData,
-                                        std::vector<unsigned int>& moduleMembers) override;
+                                        std::vector<unsigned int>& moduleMembers);
 
   // ===================================================
   // Consolidation
@@ -90,22 +90,22 @@ public:
                                     DeltaFlow& oldModuleDelta,
                                     DeltaFlow& newModuleDelta,
                                     std::vector<FlowData>& moduleFlowData,
-                                    std::vector<unsigned int>& moduleMembers) override;
+                                    std::vector<unsigned int>& moduleMembers);
 
-  void consolidateModules(std::vector<InfoNode*>& modules) override;
+  void consolidateModules(std::vector<InfoNode*>& modules);
 
   // ===================================================
   // Debug
   // ===================================================
 
-  void printDebug() const override;
+  void printDebug() const;
 
 private:
   // ===================================================
   // Private member functions
   // ===================================================
-  double calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) const override;
-  double calcCodelengthOnModuleOfModules(const InfoNode& parent) const override;
+  double calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) const;
+  double calcCodelengthOnModuleOfModules(const InfoNode& parent) const;
 
   static int getDeltaNumModulesIfMoving(unsigned int oldModule, unsigned int newModule, std::vector<unsigned int>& moduleMembers);
 
@@ -117,7 +117,7 @@ private:
   // Codelength
   // ===================================================
 
-  void calculateCodelength(std::vector<InfoNode*>& nodes) override;
+  void calculateCodelength(std::vector<InfoNode*>& nodes);
 
   using Base::calculateCodelengthTerms;
 

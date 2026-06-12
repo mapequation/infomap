@@ -37,6 +37,19 @@ struct ModuleMemNodes {
   double sumFlow;
 };
 
+/**
+ * Base implementation of the map equation, shared by the concrete objectives
+ * (BiasedMapEquation, MemMapEquation, MetaMapEquation, RegularizedMultilayerMapEquation).
+ *
+ * Dispatch is static, not dynamic: each objective is used as the concrete
+ * `Objective` type parameter of InfomapOptimizer<Objective> and stored by value,
+ * so no call here goes through a base pointer/reference. Subclasses inherit
+ * privately and re-expose or redefine members by name; the methods below are
+ * therefore deliberately non-virtual (a redefinition in a subclass hides the
+ * base version). Internal cross-calls are qualified with `ME::` so they always
+ * bind to this base implementation regardless of the most-derived type.
+ */
+
 inline std::vector<ModuleMemNodes>::iterator findModuleMemNodes(std::vector<ModuleMemNodes>& moduleToMemNodes, unsigned int module)
 {
   return std::lower_bound(moduleToMemNodes.begin(), moduleToMemNodes.end(), module, [](const ModuleMemNodes& memNodes, unsigned int target) { return memNodes.module < target; });
@@ -57,23 +70,23 @@ public:
 
   MapEquation& operator=(MapEquation&& other) noexcept = default;
 
-  virtual ~MapEquation() = default;
+  ~MapEquation() = default;
 
   // ===================================================
   // Getters
   // ===================================================
 
-  virtual double getIndexCodelength() const { return indexCodelength; }
+  double getIndexCodelength() const { return indexCodelength; }
 
-  virtual double getModuleCodelength() const { return moduleCodelength; }
+  double getModuleCodelength() const { return moduleCodelength; }
 
-  virtual double getCodelength() const { return codelength; }
+  double getCodelength() const { return codelength; }
 
   // ===================================================
   // IO
   // ===================================================
 
-  virtual std::ostream& print(std::ostream& out) const
+  std::ostream& print(std::ostream& out) const
   {
     return out << indexCodelength << " + " << moduleCodelength << " = " << io::toPrecision(codelength);
   }
@@ -82,15 +95,13 @@ public:
   // Init
   // ===================================================
 
-  virtual void init(const Config& config)
+  void init(const Config& config)
   {
     Log(3) << "MapEquation::init()...\n";
     m_config = config;
   }
 
-  virtual void initTree(InfoNode& /*root*/) = 0;
-
-  virtual void initNetwork(InfoNode& root)
+  void initNetwork(InfoNode& root)
   {
     Log(3) << "MapEquation::initNetwork()...\n";
 
@@ -101,7 +112,7 @@ public:
     ME::initSubNetwork(root);
   }
 
-  virtual void initSuperNetwork(InfoNode& root)
+  void initSuperNetwork(InfoNode& root)
   {
     Log(3) << "MapEquation::initSuperNetwork()...\n";
 
@@ -111,32 +122,32 @@ public:
     }
   }
 
-  virtual void initSubNetwork(InfoNode& root)
+  void initSubNetwork(InfoNode& root)
   {
     exitNetworkFlow = root.data.exitFlow;
     exitNetworkFlow_log_exitNetworkFlow = infomath::plogp(exitNetworkFlow);
   }
 
-  virtual void initPartition(std::vector<InfoNode*>& nodes) { ME::calculateCodelength(nodes); }
+  void initPartition(std::vector<InfoNode*>& nodes) { ME::calculateCodelength(nodes); }
 
   // ===================================================
   // Codelength
   // ===================================================
 
-  virtual double calcCodelength(const InfoNode& parent) const
+  double calcCodelength(const InfoNode& parent) const
   {
     return parent.isLeafModule() ? ME::calcCodelengthOnModuleOfLeafNodes(parent) : ME::calcCodelengthOnModuleOfModules(parent);
   }
 
-  virtual void addMemoryContributions(InfoNode& /*current*/, DeltaFlowDataType& /*oldModuleDelta*/, DeltaFlowDataType& /*newModuleDelta*/) {}
+  void addMemoryContributions(InfoNode& /*current*/, DeltaFlowDataType& /*oldModuleDelta*/, DeltaFlowDataType& /*newModuleDelta*/) {}
 
-  virtual void addMemoryContributions(InfoNode& /*current*/, DeltaFlowDataType& /*oldModuleDelta*/, VectorMap<DeltaFlowDataType>& /*moduleDeltaFlow*/) {}
+  void addMemoryContributions(InfoNode& /*current*/, DeltaFlowDataType& /*oldModuleDelta*/, VectorMap<DeltaFlowDataType>& /*moduleDeltaFlow*/) {}
 
-  virtual void addTeleportationFlow(InfoNode& current, const std::vector<FlowDataType>& moduleFlowData, DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta);
+  void addTeleportationFlow(InfoNode& current, const std::vector<FlowDataType>& moduleFlowData, DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta);
 
-  virtual void addTeleportationFlow(InfoNode& current, const std::vector<FlowDataType>& moduleFlowData, VectorMap<DeltaFlowDataType>& moduleDeltaFlow);
+  void addTeleportationFlow(InfoNode& current, const std::vector<FlowDataType>& moduleFlowData, VectorMap<DeltaFlowDataType>& moduleDeltaFlow);
 
-  virtual double getDeltaCodelengthOnMovingNode(InfoNode& current,
+  double getDeltaCodelengthOnMovingNode(InfoNode& current,
                                                 DeltaFlowDataType& oldModuleDelta,
                                                 DeltaFlowDataType& newModuleDelta,
                                                 std::vector<FlowDataType>& moduleFlowData,
@@ -146,19 +157,17 @@ public:
   // Consolidation
   // ===================================================
 
-  virtual void updateCodelengthOnMovingNode(InfoNode& current,
+  void updateCodelengthOnMovingNode(InfoNode& current,
                                             DeltaFlowDataType& oldModuleDelta,
                                             DeltaFlowDataType& newModuleDelta,
                                             std::vector<FlowDataType>& moduleFlowData,
                                             std::vector<unsigned int>& /*moduleMembers*/);
 
-  virtual void consolidateModules(std::vector<InfoNode*>& /*modules*/) = 0;
-
   // ===================================================
   // Debug
   // ===================================================
 
-  virtual void printDebug() const
+  void printDebug() const
   {
     Log() << "(enterFlow_log_enterFlow: " << enterFlow_log_enterFlow << ", "
           << "enter_log_enter: " << enter_log_enter << ", "
@@ -170,19 +179,19 @@ protected:
   // Protected member functions
   // ===================================================
 
-  virtual double calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) const;
+  double calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) const;
 
-  virtual double calcCodelengthOnModuleOfModules(const InfoNode& parent) const;
+  double calcCodelengthOnModuleOfModules(const InfoNode& parent) const;
 
-  virtual void calculateCodelength(std::vector<InfoNode*>& nodes)
+  void calculateCodelength(std::vector<InfoNode*>& nodes)
   {
     ME::calculateCodelengthTerms(nodes);
     ME::calculateCodelengthFromCodelengthTerms();
   }
 
-  virtual void calculateCodelengthTerms(std::vector<InfoNode*>& nodes);
+  void calculateCodelengthTerms(std::vector<InfoNode*>& nodes);
 
-  virtual void calculateCodelengthFromCodelengthTerms()
+  void calculateCodelengthFromCodelengthTerms()
   {
     indexCodelength = enterFlow_log_enterFlow - enter_log_enter - exitNetworkFlow_log_exitNetworkFlow;
     moduleCodelength = -exit_log_exit + flow_log_flow - nodeFlow_log_nodeFlow;
