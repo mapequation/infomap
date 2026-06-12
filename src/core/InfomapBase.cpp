@@ -1480,11 +1480,11 @@ void InfomapBase::generateSubNetwork(Network& network)
   }
 
   for (auto& linkIt : network.nodeLinkMap()) {
-    unsigned int linkSourceId = linkIt.first.id;
+    unsigned int linkSourceId = linkIt.first;
     unsigned int sourceIndex = nodeIndexMap[linkSourceId];
     const auto& subLinks = linkIt.second;
     for (auto& subIt : subLinks) {
-      unsigned int linkTargetId = subIt.first.id;
+      unsigned int linkTargetId = subIt.first;
       unsigned int targetIndex = nodeIndexMap[linkTargetId];
       // Ignore self-links in optimization as it doesn't change enter/exit flow on modular level
       if (sourceIndex != targetIndex) {

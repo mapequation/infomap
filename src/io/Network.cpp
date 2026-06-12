@@ -253,12 +253,13 @@ void Network::generateStateNetworkFromMultilayerWithInterLinks()
     unsigned int layer1 = layerIt.first;
     auto& network = layerIt.second;
     for (auto& linkIt : network.nodeLinkMap()) {
+      // Per-layer networks key links by physical node id
       auto& source = linkIt.first;
       const auto& subLinks = linkIt.second;
       for (auto& subIt : subLinks) {
         auto& target = subIt.first;
         double linkWeight = subIt.second.weight;
-        addMultilayerLink(layer1, source.physicalId, layer1, target.physicalId, linkWeight);
+        addMultilayerLink(layer1, source, layer1, target, linkWeight);
       }
     }
   }
@@ -275,8 +276,8 @@ void Network::generateStateNetworkFromMultilayerWithInterLinks()
       double interWeight = it2.second;
       auto& targetNetwork = m_networks[layer2];
 
-      std::map<StateNode, std::map<StateNode, LinkData>>& targetLinks = targetNetwork.nodeLinkMap();
-      auto& outlinks = targetLinks[StateNode(physId)];
+      auto& targetLinks = targetNetwork.nodeLinkMap();
+      auto& outlinks = targetLinks[physId];
       if (outlinks.empty()) {
         continue;
       }
@@ -284,7 +285,7 @@ void Network::generateStateNetworkFromMultilayerWithInterLinks()
       double sumIntraOutWeightTargetLayer = targetOutWeights[physId];
 
       for (auto& outLink : outlinks) {
-        auto& targetPhysId = outLink.first.physicalId;
+        auto& targetPhysId = outLink.first;
         auto& linkData = outLink.second;
         double intraWeight = linkData.weight;
         unsigned int stateId2i = addMultilayerNode(layer2, targetPhysId);
@@ -303,8 +304,8 @@ void Network::generateStateNetworkFromMultilayerWithInterLinks()
       unsigned int layer2 = layerNode.layer;
       unsigned int physId = layerNode.node;
       auto& targetNetwork = m_networks[layer2];
-      std::map<StateNode, std::map<StateNode, LinkData>>& targetLinks = targetNetwork.nodeLinkMap();
-      auto& outlinks = targetLinks[StateNode(physId)];
+      auto& targetLinks = targetNetwork.nodeLinkMap();
+      auto& outlinks = targetLinks[physId];
       if (outlinks.empty()) {
         continue;
       }
@@ -316,7 +317,7 @@ void Network::generateStateNetworkFromMultilayerWithInterLinks()
         unsigned int stateId1 = addMultilayerNode(layer1, physId);
 
         for (auto& outLink : outlinks) {
-          auto& targetPhysId = outLink.first.physicalId;
+          auto& targetPhysId = outLink.first;
           auto& linkData = outLink.second;
           double intraWeight = linkData.weight;
           unsigned int stateId2i = addMultilayerNode(layer2, targetPhysId);
@@ -385,7 +386,7 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnLa
         }
 
         auto& layer1LinkMap = m_networks[layer1].nodeLinkMap();
-        auto& layer1OutLinks = layer1LinkMap[StateNode(nodeId)];
+        auto& layer1OutLinks = layer1LinkMap[nodeId];
         // Skip dangling nodes, because they have no information to calculate similarity
         if (layer1OutLinks.empty())
           continue;
@@ -394,7 +395,7 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnLa
 
         for (unsigned int layer2 = layer2from; layer2 < layer2to; ++layer2) {
           auto& layer2LinkMap = m_networks[layer2].nodeLinkMap();
-          auto& layer2OutLinks = layer2LinkMap[StateNode(nodeId)];
+          auto& layer2OutLinks = layer2LinkMap[nodeId];
           if (layer2OutLinks.empty())
             continue;
 
@@ -445,12 +446,12 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnLa
               }
 
               auto& targetLinks = m_networks[layer2].nodeLinkMap();
-              auto& targetOutlinks = targetLinks[StateNode(nodeId)];
+              auto& targetOutlinks = targetLinks[nodeId];
               if (targetOutlinks.empty()) {
                 continue;
               }
               for (auto& outLink : targetOutlinks) {
-                auto& n2 = outLink.first.physicalId;
+                auto& n2 = outLink.first;
                 auto& linkData = outLink.second;
                 double intraWeight = linkData.weight;
                 // Add intra link weight as teleport weight to source node
@@ -533,12 +534,12 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnNo
           linkWeightNormalizationFactor += (1.0 - relaxRate) / sumOutLinkWeightLayer1;
         }
         auto& targetLinks = network2.nodeLinkMap();
-        auto& targetOutlinks = targetLinks[StateNode(n1)];
+        auto& targetOutlinks = targetLinks[n1];
         if (targetOutlinks.empty()) {
           continue;
         }
         for (auto& outLink : targetOutlinks) {
-          auto& n2 = outLink.first.physicalId;
+          auto& n2 = outLink.first;
           auto& linkData = outLink.second;
           double intraWeight = linkData.weight;
           unsigned int stateId2i = addMultilayerNode(layer2, n2);
@@ -610,10 +611,10 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnNo
       // Need original weight to calculate correct inter-layer relax rate.
 
       // Add intra links
-      auto targetOutLinksIt = network1.nodeLinkMap().find(StateNode(n1));
+      auto targetOutLinksIt = network1.nodeLinkMap().find(n1);
       if (targetOutLinksIt != network1.nodeLinkMap().end()) {
         for (auto& outLink : targetOutLinksIt->second) {
-          auto& n2 = outLink.first.physicalId;
+          auto& n2 = outLink.first;
           auto& linkData = outLink.second;
           // double weight = linkData.weight * gamma;
           double weight = linkData.weight;
@@ -659,15 +660,14 @@ double Network::calculateJensenShannonDivergence(bool& intersect, const OutLinkM
   auto layer1OutLinkItEnd = layer1OutLinks.end();
   auto layer2OutLinkItEnd = layer2OutLinks.end();
   while (layer1OutLinkIt != layer1OutLinkItEnd && layer2OutLinkIt != layer2OutLinkItEnd) {
-    int diff = layer1OutLinkIt->first.id - layer2OutLinkIt->first.id;
-    if (diff < 0) {
+    if (layer1OutLinkIt->first < layer2OutLinkIt->first) {
       // If the first state node has a link that the second has not
       double p1 = layer1OutLinkIt->second.weight / ow1;
       h1 -= p1 * log2(p1);
       double p12 = pi1 * layer1OutLinkIt->second.weight / ow1;
       h12 -= p12 * log2(p12);
       layer1OutLinkIt++;
-    } else if (diff > 0) {
+    } else if (layer2OutLinkIt->first < layer1OutLinkIt->first) {
       // If the second state node has a link that the second has not
       double p2 = layer2OutLinkIt->second.weight / ow2;
       h2 -= p2 * log2(p2);

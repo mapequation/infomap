@@ -89,7 +89,7 @@ FlowCalculator::FlowCalculator(StateNetwork& network, const Config& config)
       // with dangling nodes first to optimize calculation of dangling rank
 
       for (const auto& node : network.nodes()) {
-        const auto isDangling = nodeLinkMap.find(node.second) == nodeLinkMap.end();
+        const auto isDangling = nodeLinkMap.find(node.second.id) == nodeLinkMap.end();
         if (!isDangling) continue;
 
         const auto& nodeId = node.second.id;
@@ -99,7 +99,7 @@ FlowCalculator::FlowCalculator(StateNetwork& network, const Config& config)
       nonDanglingStartIndex = nodeIndex;
 
       for (const auto& node : network.nodes()) {
-        const auto isDangling = nodeLinkMap.find(node.second) == nodeLinkMap.end();
+        const auto isDangling = nodeLinkMap.find(node.second.id) == nodeLinkMap.end();
         if (isDangling) continue;
 
         const auto& nodeId = node.second.id;
@@ -116,7 +116,7 @@ FlowCalculator::FlowCalculator(StateNetwork& network, const Config& config)
     const auto bipartiteStartId = network.bipartiteStartId();
 
     for (const auto& node : nodeLinkMap) {
-      const auto sourceIsFeature = node.first.id >= bipartiteStartId;
+      const auto sourceIsFeature = node.first >= bipartiteStartId;
       if (sourceIsFeature) continue;
       bipartiteLinkStartIndex += node.second.size();
     }
@@ -127,11 +127,11 @@ FlowCalculator::FlowCalculator(StateNetwork& network, const Config& config)
   double undirectedLinkNormalization = 2 * sumLinkWeight - network.sumSelfLinkWeight();
 
   for (const auto& node : nodeLinkMap) {
-    const auto sourceId = node.first.id;
+    const auto sourceId = node.first;
     const auto sourceIndex = nodeIndexMap[sourceId];
 
     for (const auto& link : node.second) {
-      const auto targetId = link.first.id;
+      const auto targetId = link.first;
       const auto targetIndex = nodeIndexMap[targetId];
       const auto linkWeight = link.second.weight;
 
@@ -1221,7 +1221,7 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
   for (auto& node : network.m_nodeLinkMap) {
     for (auto& link : node.second) {
       auto& linkData = link.second;
-      if (network.isBipartite() && node.first.id >= network.bipartiteStartId()) {
+      if (network.isBipartite() && node.first >= network.bipartiteStartId()) {
         linkData.flow = flowLinks[featureLinkIndex++].flow;
       } else {
         linkData.flow = flowLinks[linkIndex++].flow;
@@ -1256,7 +1256,7 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
       auto& outLinks = network.m_nodeLinkMap[node.id];
       for (auto& link : outLinks) {
         auto& linkData = link.second;
-        if (node.id == link.first.id) {
+        if (node.id == link.first) {
           node.enterFlow -= linkData.flow / norm;
           node.exitFlow -= linkData.flow / norm;
           break;
@@ -1292,7 +1292,7 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
         }
         for (auto& link : outLinks) {
           auto& linkData = link.second;
-          const auto targetIndex = nodeIndexMap[link.first.id];
+          const auto targetIndex = nodeIndexMap[link.first];
           exitFlow[sourceIndex] += linkData.flow;
           enterFlow[targetIndex] += linkData.flow;
         }
