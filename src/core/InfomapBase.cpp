@@ -430,16 +430,16 @@ private:
     }
 
     if (m_numTrials < 2) {
-      Log() << Console::warn("--parallel-trials requires --num-trials > 1; running trials serially.");
+      Console::warn(0, "--parallel-trials requires --num-trials > 1; running trials serially.");
       return false;
     }
 
 #ifndef _OPENMP
-    Log() << Console::warn("--parallel-trials requires an OpenMP build; running trials serially.");
+    Console::warn(0, "--parallel-trials requires an OpenMP build; running trials serially.");
     return false;
 #else
     if (m_infomap.innerParallelization) {
-      Log() << Console::warn("--parallel-trials ignores --inner-parallelization inside trial workers.");
+      Console::warn(0, "--parallel-trials ignores --inner-parallelization inside trial workers.");
     }
     const unsigned int workers = parallelTrialWorkers();
     Console console;
@@ -464,7 +464,7 @@ private:
   void configureNetworkMode()
   {
     if (m_network.haveMemoryInput()) {
-      Log(1) << Console::detail("found higher-order network input, using the Map Equation for higher-order flows");
+      Console::detail(1, "found higher-order network input, using the Map Equation for higher-order flows");
       m_infomap.setStateInput();
       m_infomap.setStateOutput();
 
@@ -473,15 +473,15 @@ private:
       }
     } else {
       if (m_infomap.haveMemory() || m_network.higherOrderInputMethodCalled()) {
-        Log() << Console::warn("Higher-order network specified but no higher-order input found.");
+        Console::warn(0, "Higher-order network specified but no higher-order input found.");
         // Use state output anyway for consistency even in the special case when input is first order
         m_infomap.setStateOutput();
       }
-      Log(1) << Console::detail("ordinary network input, using the Map Equation for first-order flows");
+      Console::detail(1, "ordinary network input, using the Map Equation for first-order flows");
     }
 
     if (m_network.haveDirectedInput() && m_infomap.isUndirectedFlow()) {
-      Log(1) << Console::note(fmt::format(FMT_STRING("Directed input found, changing flow model from '{}' to '{}'."), m_infomap.flowModel, FlowModel(FlowModel::directed)));
+      Console::note(1, "Directed input found, changing flow model from '{}' to '{}'.", m_infomap.flowModel, FlowModel(FlowModel::directed));
       m_infomap.flowModel = FlowModel::directed;
     }
     m_network.setConfig(m_infomap);
@@ -519,9 +519,9 @@ private:
   void logRunPartitionStart()
   {
     if (m_infomap.haveMemory())
-      Log(2) << Console::detail("run Infomap with memory");
+      Console::detail(2, "run Infomap with memory");
     else
-      Log(2) << Console::detail("run Infomap");
+      Console::detail(2, "run Infomap");
 #ifdef _OPENMP
     {
       // Prefer the cpuset size (the actual allocation under Linux/SLURM) over
@@ -539,20 +539,13 @@ private:
       // Warn whenever the *resolved* budget exceeds the cpuset, regardless of source
       // (explicit --num-threads, INFOMAP_NUM_THREADS, SLURM_CPUS_PER_TASK, OMP_NUM_THREADS).
       if (m_cpusetCount > 0 && m_threadBudget.threads > m_cpusetCount) {
-        Log() << Console::warn(fmt::format(FMT_STRING("Thread budget {} ({}) exceeds the available cpuset of {} CPUs; this may oversubscribe the node."),
-                                           m_threadBudget.threads,
-                                           source,
-                                           m_cpusetCount));
+        Console::warn(0, "Thread budget {} ({}) exceeds the available cpuset of {} CPUs; this may oversubscribe the node.", m_threadBudget.threads, source, m_cpusetCount);
       }
       if (m_cpusetCount > 0) {
         const unsigned int innerThreads = (m_infomap.innerParallelization && !m_runParallelTrials) ? m_threadBudget.threads : 1;
         const unsigned int demand = m_threadsUsed * innerThreads;
         if (demand > m_cpusetCount) {
-          Log() << Console::warn(fmt::format(FMT_STRING("{} trial workers × {} inner threads = {} exceeds the available cpuset of {} CPUs."),
-                                             m_threadsUsed,
-                                             innerThreads,
-                                             demand,
-                                             m_cpusetCount));
+          Console::warn(0, "{} trial workers × {} inner threads = {} exceeds the available cpuset of {} CPUs.", m_threadsUsed, innerThreads, demand, m_cpusetCount);
         }
       }
     }
@@ -959,7 +952,7 @@ InfomapBase& InfomapBase::initPartition(const std::string& clusterDataFile, bool
   }
 
   Console().status("Initial", fmt::format(FMT_STRING("reading {}"), clusterDataFile));
-  Log(1) << Console::detail(fmt::format(FMT_STRING("init partition from file '{}'"), clusterDataFile));
+  Console::detail(1, "init partition from file '{}'", clusterDataFile);
 
   const auto& ext = clusterMap.extension();
 
@@ -967,7 +960,7 @@ InfomapBase& InfomapBase::initPartition(const std::string& clusterDataFile, bool
     unsigned int numTreeNodesNotInNetwork = 0;
     const auto normalizedTree = normalizeTreePaths(clusterMap.treePaths(), numTreeNodesNotInNetwork);
     if (numTreeNodesNotInNetwork > 0) {
-      Log(1) << Console::note(fmt::format(FMT_STRING("{} physical nodes in tree not found in network."), numTreeNodesNotInNetwork));
+      Console::note(1, "{} physical nodes in tree not found in network.", numTreeNodesNotInNetwork);
     }
     initTree(normalizedTree);
   } else if (ext == "clu") {
@@ -975,7 +968,7 @@ InfomapBase& InfomapBase::initPartition(const std::string& clusterDataFile, bool
   }
 
   Console().status("Initial", fmt::format(FMT_STRING("generated {} levels, codelength {}"), numLevels(), io::toPrecision(m_hierarchicalCodelength)));
-  Log(1) << Console::detail(fmt::format(FMT_STRING("generated {} levels, codelength {:g} + {:g} = {}"), numLevels(), getIndexCodelength(), m_hierarchicalCodelength - getIndexCodelength(), io::toPrecision(m_hierarchicalCodelength)));
+  Console::detail(1, "generated {} levels, codelength {:g} + {:g} = {}", numLevels(), getIndexCodelength(), m_hierarchicalCodelength - getIndexCodelength(), io::toPrecision(m_hierarchicalCodelength));
 
   return *this;
 }
@@ -1125,7 +1118,7 @@ InfomapBase& InfomapBase::initTree(const NodePaths& tree)
   }
 
   if (numNodesNotInNetwork > 0) {
-    Log(1) << Console::note(fmt::format(FMT_STRING("{}/{} nodes in tree not found in network."), numNodesNotInNetwork, numNodesFound));
+    Console::note(1, "{}/{} nodes in tree not found in network.", numNodesNotInNetwork, numNodesFound);
   }
 
   auto numNodesAddedToNeighbouringModules = 0;
@@ -1172,9 +1165,9 @@ InfomapBase& InfomapBase::initTree(const NodePaths& tree)
   }
   if (numNodesWithoutClusterInfo > 0) {
     if (assignToNeighbouringModule) {
-      Log(1) << Console::note(fmt::format(FMT_STRING("{} nodes not found in tree, {} are put into neighbouring modules and {} into separate modules."), numNodesWithoutClusterInfo, numNodesAddedToNeighbouringModules, numNodesWithoutClusterInfo - numNodesAddedToNeighbouringModules));
+      Console::note(1, "{} nodes not found in tree, {} are put into neighbouring modules and {} into separate modules.", numNodesWithoutClusterInfo, numNodesAddedToNeighbouringModules, numNodesWithoutClusterInfo - numNodesAddedToNeighbouringModules);
     } else {
-      Log(1) << Console::note(fmt::format(FMT_STRING("{} nodes not found in tree are put into separate modules."), numNodesWithoutClusterInfo));
+      Console::note(1, "{} nodes not found in tree are put into separate modules.", numNodesWithoutClusterInfo);
     }
   }
 
@@ -1236,7 +1229,7 @@ InfomapBase& InfomapBase::initPartition(const std::map<unsigned int, unsigned in
   }
 
   if (assignToNeighbouringModule) {
-    Log(1) << Console::note(fmt::format(FMT_STRING("{} nodes not found in cluster file are put into neighbouring modules if possible."), numNodesWithoutClusterInfo));
+    Console::note(1, "{} nodes not found in cluster file are put into neighbouring modules if possible.", numNodesWithoutClusterInfo);
     for (unsigned int i = 0; i < numNodes; ++i) {
       if (selectedNodes[i] == 0) {
         // Check out edges greedily for connected modules
@@ -1271,7 +1264,7 @@ InfomapBase& InfomapBase::initPartition(const std::map<unsigned int, unsigned in
       }
     }
   } else {
-    Log(1) << Console::note(fmt::format(FMT_STRING("{} nodes not found in cluster file are put into separate modules."), numNodesWithoutClusterInfo));
+    Console::note(1, "{} nodes not found in cluster file are put into separate modules.", numNodesWithoutClusterInfo);
     // Put non-selected nodes in its own module
     for (unsigned int i = 0; i < numNodes; ++i) {
       if (selectedNodes[i] == 0) {
@@ -1313,7 +1306,7 @@ InfomapBase& InfomapBase::initPartition(std::vector<std::vector<unsigned int>>& 
     }
   }
   if (numNodesWithoutClusterInfo > 0)
-    Log(1) << Console::note(fmt::format(FMT_STRING("{} nodes not found in cluster file are put into separate modules."), numNodesWithoutClusterInfo));
+    Console::note(1, "{} nodes not found in cluster file are put into separate modules.", numNodesWithoutClusterInfo);
 
   return initPartition(modules, hard);
 }
@@ -1343,7 +1336,7 @@ InfomapBase& InfomapBase::initPartition(std::vector<unsigned int>& modules, bool
       ++nodeIndex;
     }
 
-    Log(1) << Console::detail(fmt::format(FMT_STRING("hard-partitioned the network to {} nodes and {} links with codelength {}"), numNodesInNewNetwork, numLinksInNewNetwork, io::stringify(*this)));
+    Console::detail(1, "hard-partitioned the network to {} nodes and {} links with codelength {}", numNodesInNewNetwork, numLinksInNewNetwork, io::stringify(*this));
   } else {
     Console().status("Initial", fmt::format(FMT_STRING("codelength {}, {} top modules"), io::stringify(*this), numTopModules()));
   }
@@ -1358,9 +1351,9 @@ void InfomapBase::generateSubNetwork(Network& network)
   auto& metaData = network.metaData();
   numMetaDataDimensions = network.numMetaDataColumns();
 
-  Log(1) << Console::detail(fmt::format(FMT_STRING("build internal network with {} nodes and {} links"), numNodes, network.numLinks()));
+  Console::detail(1, "build internal network with {} nodes and {} links", numNodes, network.numLinks());
   if (!metaData.empty()) {
-    Log(1) << Console::detail(fmt::format(FMT_STRING("with {} meta-data records in {} dimensions"), metaData.size(), numMetaDataDimensions));
+    Console::detail(1, "with {} meta-data records in {} dimensions", metaData.size(), numMetaDataDimensions);
   }
 
   m_leafNodes.reserve(numNodes);
@@ -1398,11 +1391,11 @@ void InfomapBase::generateSubNetwork(Network& network)
     m_calculateEnterExitFlow = true;
   }
   if (std::abs(sumNodeFlow - 1.0) > 1e-10)
-    Log(1) << Console::warn(fmt::format(FMT_STRING("Total flow on nodes differs from 1.0 by {:g}."), sumNodeFlow - 1.0));
+    Console::warn(1, "Total flow on nodes differs from 1.0 by {:g}.", sumNodeFlow - 1.0);
 
   bool changeMarkovTime = std::abs(markovTime - 1) > 1e-3;
   if (changeMarkovTime) {
-    Log(1) << Console::detail(fmt::format(FMT_STRING("rescale link flow with global Markov time {:g}"), markovTime));
+    Console::detail(1, "rescale link flow with global Markov time {:g}", markovTime);
   }
 
   for (auto& linkIt : network.nodeLinkMap()) {
@@ -1421,9 +1414,9 @@ void InfomapBase::generateSubNetwork(Network& network)
   }
 
   if (variableMarkovTime) {
-    Log(1) << Console::detail("rescale link flow with variable Markov time");
+    Console::detail(1, "rescale link flow with variable Markov time");
     if (std::abs(variableMarkovTimeDamping - 1) > 1e-9) {
-      Log(1) << Console::detail(fmt::format(FMT_STRING("use variable Markov time strength {:g}"), variableMarkovTimeDamping));
+      Console::detail(1, "use variable Markov time strength {:g}", variableMarkovTimeDamping);
     }
   }
 
@@ -1502,7 +1495,7 @@ void InfomapBase::generateSubNetwork(InfoNode& parent)
   unsigned int numNodes = parent.childDegree();
   m_leafNodes.resize(numNodes);
 
-  Log(1) << Console::detail(fmt::format(FMT_STRING("generate sub network with {} nodes"), numNodes));
+  Console::detail(1, "generate sub network with {} nodes", numNodes);
 
   unsigned int childIndex = 0;
   for (InfoNode& node : parent) {
@@ -1537,7 +1530,7 @@ void InfomapBase::init()
   initNetwork();
 
   m_oneLevelCodelength = calcCodelength(m_root);
-  Log(1) << Console::detail(fmt::format(FMT_STRING("one-level codelength: {}"), io::toPrecision(m_oneLevelCodelength)));
+  Console::detail(1, "one-level codelength: {}", io::toPrecision(m_oneLevelCodelength));
 }
 
 // ===================================================
@@ -1546,14 +1539,14 @@ void InfomapBase::init()
 
 void InfomapBase::hierarchicalPartition()
 {
-  Log(1) << Console::detail("hierarchical partition");
+  Console::detail(1, "hierarchical partition");
 
   const auto depth = maxTreeDepth();
   if (depth > 2) {
-    Log(1) << Console::detail(fmt::format(FMT_STRING("continuing from a tree with {} levels"), depth));
+    Console::detail(1, "continuing from a tree with {} levels", depth);
 
     if (fastHierarchicalSolution == 0) {
-      Log(1) << Console::detail("removing sub modules");
+      Console::detail(1, "removing sub modules");
       removeSubModules(true);
       m_hierarchicalCodelength = calcCodelengthOnTree(root(), true);
     }
@@ -1625,7 +1618,7 @@ void InfomapBase::hierarchicalPartition()
         Log::setSilent(isSilent);
 
       const double diffCodelength = codelengthBefore - codelengthAfter;
-      Log(1) << Console::detail(fmt::format(FMT_STRING("fine-tune bottom modules: improvement {:g}% {} codelength {}"), (diffCodelength / codelengthBefore) * 100, Console::arrow(), io::toPrecision(codelengthAfter)));
+      Console::detail(1, "fine-tune bottom modules: improvement {:g}% {} codelength {}", (diffCodelength / codelengthBefore) * 100, Console::arrow(), io::toPrecision(codelengthAfter));
     }
 
     recursivePartition();
@@ -1635,7 +1628,7 @@ void InfomapBase::hierarchicalPartition()
   partition();
 
   if (numTopModules() == 1 || numTopModules() == numLeafNodes()) {
-    Log(1) << Console::detail("trivial partition, skipping hierarchical search");
+    Console::detail(1, "trivial partition, skipping hierarchical search");
     return;
   }
 
@@ -1688,11 +1681,11 @@ void InfomapBase::partition()
       Log(3) << "\n";
       unsigned int numEffectiveLoops = fineTune();
       if (numEffectiveLoops > 0) {
-        Log(1, 3) << Console::detail(fmt::format(FMT_STRING("fine-tune: done in {} effective loops {} codelength {}, {} modules"), numEffectiveLoops, Console::arrow(), io::stringify(*this), numTopModules()));
+        Console::detail(1, 3, "fine-tune: done in {} effective loops {} codelength {}, {} modules", numEffectiveLoops, Console::arrow(), io::stringify(*this), numTopModules());
         // Continue to merge fine-tuned modules
         findTopModulesRepeatedly(levelAggregationLimit);
       } else {
-        Log(1, 3) << Console::detail("fine-tune: no improvement");
+        Console::detail(1, 3, "fine-tune: no improvement");
       }
     } else {
       coarseTuned = true;
@@ -1700,11 +1693,11 @@ void InfomapBase::partition()
         Log(3) << "\n";
         unsigned int numEffectiveLoops = coarseTune();
         if (numEffectiveLoops > 0) {
-          Log(1, 3) << Console::detail(fmt::format(FMT_STRING("coarse-tune: done in {} effective loops {} codelength {}, {} modules"), numEffectiveLoops, Console::arrow(), io::stringify(*this), numTopModules()));
+          Console::detail(1, 3, "coarse-tune: done in {} effective loops {} codelength {}, {} modules", numEffectiveLoops, Console::arrow(), io::stringify(*this), numTopModules());
           // Continue to merge fine-tuned modules
           findTopModulesRepeatedly(levelAggregationLimit);
         } else {
-          Log(1, 3) << Console::detail("coarse-tune: no improvement");
+          Console::detail(1, 3, "coarse-tune: no improvement");
         }
       }
     }
@@ -1729,7 +1722,7 @@ void InfomapBase::partition()
   progress.finish(fmt::format(FMT_STRING("{} {} codelength {}, {} modules{}"), compressionSummary(prettyCompression), Console::arrow(), io::toPrecision(getCodelength()), numTopModules(), nonTrivialSummary));
   const bool regularizedPriorOnly = regularized && network().numLinks() == 0;
   if (!preferModularSolution && preferredNumberOfModules == 0 && (haveNonTrivialModules() || regularizedPriorOnly) && getCodelength() > getOneLevelCodelength()) {
-    Log(1) << Console::detail("worse codelength than one-level, putting all nodes in one module");
+    Console::detail(1, "worse codelength than one-level, putting all nodes in one module");
 
     // Create new single module between modules and root
     auto& module = root().replaceChildrenWithOneNode();
@@ -1782,7 +1775,7 @@ void InfomapBase::restoreHardPartition()
   // Swap back original leaf nodes
   m_originalLeafNodes.swap(m_leafNodes);
 
-  Log(1) << Console::detail(fmt::format(FMT_STRING("expanded {} hard modules to {} original nodes"), numExpandedNodes, numExpandedChildren));
+  Console::detail(1, "expanded {} hard modules to {} original nodes", numExpandedNodes, numExpandedChildren);
 }
 
 // ===================================================
@@ -1877,7 +1870,7 @@ void InfomapBase::aggregateFlowValuesFromLeafToRoot()
   }
 
   if (std::abs(root().data.flow - 1.0) > 1e-10) {
-    Log(1) << Console::warn(fmt::format(FMT_STRING("Aggregated flow is not exactly 1.0, but {:.10g}."), root().data.flow));
+    Console::warn(1, "Aggregated flow is not exactly 1.0, but {:.10g}.", root().data.flow);
   }
 
   // Aggregate enter and exit flow between modules
@@ -1932,7 +1925,7 @@ void InfomapBase::aggregateFlowValuesFromLeafToRoot()
     }
   }
   if (recordedTeleportation) {
-    Log(1) << Console::detail(fmt::format(FMT_STRING("aggregating enter/exit flow for recorded teleportation, sum teleFlow {:g}"), m_root.data.teleportFlow));
+    Console::detail(1, "aggregating enter/exit flow for recorded teleportation, sum teleFlow {:g}", m_root.data.teleportFlow);
 
     for (auto& node : m_root.infomapTree()) {
       if (!node.isLeaf()) {
@@ -2017,15 +2010,7 @@ void InfomapBase::findTopModulesRepeatedly(unsigned int maxLevels)
 
   m_numNonTrivialTopModules = calculateNumNonTrivialTopModules();
 
-  Log(1, 2) << Console::detail(fmt::format(FMT_STRING("iter {}: codelength {} {} {}, {} modules ({} non-trivial); passes ({}*loops): {}"),
-                                           m_tuneIterationIndex + 1,
-                                           initialCodelength,
-                                           Console::arrow(),
-                                           io::stringify(*this),
-                                           numTopModules(),
-                                           m_numNonTrivialTopModules,
-                                           m_isCoarseTune ? "modules" : "nodes",
-                                           io::stringify(passList, ", ")));
+  Console::detail(1, 2, "iter {}: codelength {} {} {}, {} modules ({} non-trivial); passes ({}*loops): {}", m_tuneIterationIndex + 1, initialCodelength, Console::arrow(), io::stringify(*this), numTopModules(), m_numNonTrivialTopModules, m_isCoarseTune ? "modules" : "nodes", io::stringify(passList, ", "));
 }
 
 unsigned int InfomapBase::fineTune()
@@ -2184,7 +2169,7 @@ unsigned int InfomapBase::findHierarchicalSuperModules(unsigned int superLevelLi
 
   // Add index codebooks as long as the code gets shorter
   do {
-    Log(1) << Console::detail(fmt::format(FMT_STRING("super iter {}: searching {} modules"), numLevelsCreated + 1, numTopModules()));
+    Console::detail(1, "super iter {}: searching {} modules", numLevelsCreated + 1, numTopModules());
     const bool shouldMuteNestedMainRun = isMainInfomap() && !Log::isThreadMuted();
     bool isSilent = false;
     if (shouldMuteNestedMainRun) {
@@ -2206,13 +2191,13 @@ unsigned int InfomapBase::findHierarchicalSuperModules(unsigned int superLevelLi
     bool trivialSolution = numSuperModules == 1 || numSuperModules == numTopModules();
 
     if (trivialSolution) {
-      Log(1) << Console::detail("super: no non-trivial super modules found");
+      Console::detail(1, "super: no non-trivial super modules found");
       break;
     }
 
     bool improvedCodelength = superCodelength < oldIndexLength - minimumCodelengthImprovement;
     if (!improvedCodelength) {
-      Log(1) << Console::detail("super: index codebook not improved over one-level");
+      Console::detail(1, "super: index codebook not improved over one-level");
       break;
     }
 
@@ -2222,13 +2207,7 @@ unsigned int InfomapBase::findHierarchicalSuperModules(unsigned int superLevelLi
                                      / hierarchicalCodelength * 100);
     prettyCompression.push_back(Console::percent(superCompression));
     progress.update(fmt::format(FMT_STRING("working… codelength {} · {} top modules"), io::toPrecision(workingHierarchicalCodelength), numSuperModules));
-    Log(1) << Console::detail(fmt::format(FMT_STRING("super iter {}: found {} super modules, codelength {:g} + {:g} + {:g} = {:g}"),
-                                          numLevelsCreated + 1,
-                                          numSuperModules,
-                                          superIndexCodelength,
-                                          superCodelength - superIndexCodelength,
-                                          workingHierarchicalCodelength - superCodelength,
-                                          workingHierarchicalCodelength));
+    Console::detail(1, "super iter {}: found {} super modules, codelength {:g} + {:g} + {:g} = {:g}", numLevelsCreated + 1, numSuperModules, superIndexCodelength, superCodelength - superIndexCodelength, workingHierarchicalCodelength - superCodelength, workingHierarchicalCodelength);
 
     // Merge current top modules to two-level solution found in the super Infomap instance.
     std::vector<unsigned int> modules(numTopModules());
@@ -2245,7 +2224,7 @@ unsigned int InfomapBase::findHierarchicalSuperModules(unsigned int superLevelLi
     // Consolidate the dynamic modules without replacing any existing ones.
     consolidateModules(false);
 
-    Log(1) << Console::detail(fmt::format(FMT_STRING("super: consolidated {} modules, index codelength {:g} {} {}"), numTopModules(), oldIndexLength, Console::arrow(), io::stringify(*this)));
+    Console::detail(1, "super: consolidated {} modules, index codelength {:g} {} {}", numTopModules(), oldIndexLength, Console::arrow(), io::stringify(*this));
 
     hierarchicalCodelength = workingHierarchicalCodelength;
     oldIndexLength = superIndexCodelength;
@@ -2260,7 +2239,7 @@ unsigned int InfomapBase::findHierarchicalSuperModules(unsigned int superLevelLi
   resetFlowOnModules();
 
   progress.finish(fmt::format(FMT_STRING("{} {} codelength {}, {} top modules"), compressionSummary(prettyCompression), Console::arrow(), io::toPrecision(hierarchicalCodelength), numTopModules()));
-  Log(1) << Console::detail(fmt::format(FMT_STRING("super-level: added {} levels, codelength {}"), numLevelsCreated, io::toPrecision(hierarchicalCodelength)));
+  Console::detail(1, "super-level: added {} levels, codelength {}", numLevelsCreated, io::toPrecision(hierarchicalCodelength));
 
   // Calculate and store hierarchical codelengths
   m_hierarchicalCodelength = calcCodelengthOnTree(root(), true);
@@ -2304,7 +2283,7 @@ unsigned int InfomapBase::removeModules()
     ++numLevelsDeleted;
   }
   if (numLevelsDeleted > 0) {
-    Log(2) << Console::detail(fmt::format(FMT_STRING("removed {} levels of modules"), numLevelsDeleted));
+    Console::detail(2, "removed {} levels of modules", numLevelsDeleted);
   }
   return numLevelsDeleted;
 }
@@ -2318,7 +2297,7 @@ unsigned int InfomapBase::removeSubModules(bool recalculateCodelengthOnTree)
     ++numLevelsDeleted;
   }
   if (numLevelsDeleted > 0) {
-    Log(2) << Console::detail(fmt::format(FMT_STRING("removed {} levels of sub-modules"), numLevelsDeleted));
+    Console::detail(2, "removed {} levels of sub-modules", numLevelsDeleted);
     if (recalculateCodelengthOnTree)
       calcCodelengthOnTree(root(), false);
   }
@@ -2365,7 +2344,7 @@ unsigned int InfomapBase::recursivePartition()
       moduleCodelength += module.codelength;
     hierarchicalCodelength = indexCodelength + moduleCodelength;
   }
-  Log(1) << Console::detail(fmt::format(FMT_STRING("recursive: from {}, codelength {:g} + {:g} = {}"), queueSource, indexCodelength, hierarchicalCodelength - indexCodelength, io::toPrecision(hierarchicalCodelength)));
+  Console::detail(1, "recursive: from {}, codelength {:g} + {:g} = {}", queueSource, indexCodelength, hierarchicalCodelength - indexCodelength, io::toPrecision(hierarchicalCodelength));
 
   double sumConsolidatedCodelength = hierarchicalCodelength - partitionQueue.moduleCodelength;
 
@@ -2456,15 +2435,7 @@ unsigned int InfomapBase::recursivePartition()
     const double recursiveCompression = ((hierarchicalCodelength - limitCodelength) / hierarchicalCodelength) * 100;
     prettyCompression.push_back(Console::percent(recursiveCompression));
     progress.update(fmt::format(FMT_STRING("working… {} levels · codelength {}"), levelNum, io::toPrecision(limitCodelength)));
-    Log(1) << Console::detail(fmt::format(FMT_STRING("level {}: {} modules ({:g}% flow) {} codelength {:.6g} + {:.6g} (+{:.6g} to improve) = {} bits"),
-                                          levelNum,
-                                          levelModules,
-                                          levelFlowPct,
-                                          Console::arrow(),
-                                          sumIndexCodelength,
-                                          sumLeafCodelength,
-                                          leftToImprove,
-                                          io::toPrecision(limitCodelength)));
+    Console::detail(1, "level {}: {} modules ({:g}% flow) {} codelength {:.6g} + {:.6g} (+{:.6g} to improve) = {} bits", levelNum, levelModules, levelFlowPct, Console::arrow(), sumIndexCodelength, sumLeafCodelength, leftToImprove, io::toPrecision(limitCodelength));
 
     hierarchicalCodelength = limitCodelength;
 
@@ -2576,7 +2547,7 @@ void InfomapBase::partitionModuleRecursively(InfoNode& module, unsigned int leve
   bool improvedCodelength = subCodelength < oldModuleCodelength - minimumCodelengthImprovement;
 
   if (trivialSubPartition || !improvedCodelength) {
-    Log(1) << Console::detail("disposing unaccepted sub Infomap instance");
+    Console::detail(1, "disposing unaccepted sub Infomap instance");
     module.disposeInfomap();
     module.codelength = oldModuleCodelength;
     record.leafCodelength = module.codelength;

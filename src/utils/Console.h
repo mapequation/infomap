@@ -10,6 +10,9 @@
 #ifndef INFOMAP_CONSOLE_H_
 #define INFOMAP_CONSOLE_H_
 
+#include "Log.h" // verbosity gating + the Log sink; also pulls in fmt's core API
+
+#include <limits>
 #include <string>
 
 namespace infomap {
@@ -47,21 +50,53 @@ public:
   // Console::Progress). The label is conventionally the one passed to finish().
   Progress progress(const std::string& label) const;
 
-  // Verbose (-v/-vv) diagnostic lines, in the same visual grammar as the
-  // level-0 output. These only format a styled string (with trailing newline);
-  // the caller owns the verbosity level, e.g. Log(1) << Console::note(...).
-  // Static like percent()/fixed(): no per-call-site object needed, and ANSI
-  // capability is probed once (cached). In plain mode (NO_COLOR / non-tty) the
-  // escapes collapse to "" so the output stays greppable.
-  static std::string note(const std::string& message);
-  static std::string warn(const std::string& message);
+  // Verbose (-v/-vv) diagnostic emitters. Each gates on Log visibility for the
+  // given level BEFORE formatting, so an invisible verbose line (the common case
+  // at verbosity 0) costs nothing — no fmt::format, no allocation. Format string
+  // is checked at compile time (fmt::format_string), mirroring Log::print; the
+  // actual rendering lives in the v* helpers in Console.cpp so this header needs
+  // only fmt's core API, not the full renderer.
+  //
+  //   Console::detail(1, "generate sub network with {} nodes", numNodes);
+  //
+  // Styling matches the former string-returning helpers exactly (see styleNote
+  // /styleWarn/styleDetail). In plain mode (NO_COLOR / non-tty) the escapes
+  // collapse to "" so the output stays greppable.
+
+  // Notes: greppable "  -> " marker, dimmed arrow on a terminal.
+  template <typename... Args>
+  static void note(unsigned int level, fmt::format_string<Args...> format, Args&&... args)
+  {
+    if (Log::isVisible(level, std::numeric_limits<int>::max()))
+      vNote(level, format, fmt::make_format_args(args...));
+  }
+
+  // Warnings: yellow "Warning:" marker, set apart from informational notes.
+  template <typename... Args>
+  static void warn(unsigned int level, fmt::format_string<Args...> format, Args&&... args)
+  {
+    if (Log::isVisible(level, std::numeric_limits<int>::max()))
+      vWarn(level, format, fmt::make_format_args(args...));
+  }
 
   // Tier-3 verbose trace: an indented, dimmed line subordinate to the section
   // and status lines above it, so verbose output reads as a bright skimmable
-  // spine (sections + • bullets) with quiet detail nested beneath. Returns a
-  // complete line (trailing newline); in plain mode the dim escapes collapse to
-  // "" leaving just the indent. Use as Log(1) << Console::detail(...).
-  static std::string detail(const std::string& message);
+  // spine (sections + • bullets) with quiet detail nested beneath.
+  template <typename... Args>
+  static void detail(unsigned int level, fmt::format_string<Args...> format, Args&&... args)
+  {
+    if (Log::isVisible(level, std::numeric_limits<int>::max()))
+      vDetail(level, format, fmt::make_format_args(args...));
+  }
+
+  // detail with an explicit upper verbosity bound (e.g. Log(1, 3)): visible only
+  // when level <= verbosity <= maxLevel.
+  template <typename... Args>
+  static void detail(unsigned int level, unsigned int maxLevel, fmt::format_string<Args...> format, Args&&... args)
+  {
+    if (Log::isVisible(level, maxLevel))
+      vDetail(level, format, fmt::make_format_args(args...));
+  }
 
   // The "→" status connector, gated like bullet()/branch(): a real arrow on a
   // color-capable TTY, plain "->" otherwise so piped/dumb-terminal output stays
@@ -76,6 +111,21 @@ private:
   // Renders the "  • Label  value" body shared by status() and Progress
   // (no leading carriage return, no trailing newline).
   std::string statusLine(const std::string& label, const std::string& value) const;
+
+  // Styling primitives for the verbose emitters: take an already-rendered
+  // message and return the complete styled line (trailing newline). Plain mode
+  // collapses the escapes to "". Internal — call note()/warn()/detail() instead.
+  static std::string styleNote(const std::string& message);
+  static std::string styleWarn(const std::string& message);
+  static std::string styleDetail(const std::string& message);
+
+  // Type-erased renderers behind note()/warn()/detail(): vformat the args, apply
+  // the matching style, and emit at the given level. Defined in Console.cpp so
+  // the heavy fmt renderer (vformat) stays out of this header — only reached
+  // after the public templates have confirmed the line is visible.
+  static void vNote(unsigned int level, fmt::string_view format, fmt::format_args args);
+  static void vWarn(unsigned int level, fmt::string_view format, fmt::format_args args);
+  static void vDetail(unsigned int level, fmt::string_view format, fmt::format_args args);
 
   bool m_ansi;
 

@@ -134,7 +134,7 @@ void Console::Progress::finish(const std::string& value)
   m_live = false;
 }
 
-std::string Console::note(const std::string& message)
+std::string Console::styleNote(const std::string& message)
 {
   // Keeps the recognizable "  -> " marker (greppable; byte-identical to the
   // previous verbose notes in plain mode) but dims the arrow in a terminal so
@@ -143,7 +143,7 @@ std::string Console::note(const std::string& message)
   return fmt::format(FMT_STRING("  {}->{} {}\n"), c.dim(), c.reset(), message);
 }
 
-std::string Console::warn(const std::string& message)
+std::string Console::styleWarn(const std::string& message)
 {
   // Warnings get their own marker (yellow "Warning:") instead of the note
   // arrow, so they stand apart from informational notes.
@@ -151,13 +151,28 @@ std::string Console::warn(const std::string& message)
   return fmt::format(FMT_STRING("  {}Warning:{} {}\n"), c.yellow(), c.reset(), message);
 }
 
-std::string Console::detail(const std::string& message)
+std::string Console::styleDetail(const std::string& message)
 {
   // Indent 4 (one step below the indent-2 status/metric tier) and dim, so the
   // bright section headers and • bullets stay the visual spine and trace reads
   // as subordinate. Plain mode keeps the indent, drops the dim.
   Console c;
   return fmt::format(FMT_STRING("    {}{}{}\n"), c.dim(), message, c.reset());
+}
+
+void Console::vNote(unsigned int level, fmt::string_view format, fmt::format_args args)
+{
+  Log(level) << styleNote(fmt::vformat(format, args));
+}
+
+void Console::vWarn(unsigned int level, fmt::string_view format, fmt::format_args args)
+{
+  Log(level) << styleWarn(fmt::vformat(format, args));
+}
+
+void Console::vDetail(unsigned int level, fmt::string_view format, fmt::format_args args)
+{
+  Log(level) << styleDetail(fmt::vformat(format, args));
 }
 
 std::string Console::arrow()
