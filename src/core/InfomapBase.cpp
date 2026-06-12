@@ -1496,11 +1496,20 @@ void InfomapBase::generateSubNetwork(InfoNode& parent)
 
   unsigned int numNodes = parent.childDegree();
   m_leafNodes.resize(numNodes);
-  // Note: deliberately NOT reserving the node pool here. Sub-networks are often
-  // tiny (one per refined module); reserving the leaf count and then growing
-  // geometrically from that base overshoots for their module nodes, inflating
-  // peak RSS on graphs with many small modules. The kInitialChunk ramp is
-  // tighter for these. Reserve is applied only to the main network.
+  // Reserve both pools to the exact clone counts. The per-pool ramp slack is
+  // small, but the recursive phase keeps many sub-Infomaps alive at once and
+  // the summed slack dominates the pool RSS overhead on higher-order networks;
+  // exact first chunks remove it. Module nodes allocated later still ramp from
+  // kInitialChunk, which stays tight for the tiny refined modules.
+  m_nodePool.reserve(numNodes);
+  unsigned int numInternalEdges = 0;
+  for (InfoNode& node : parent) {
+    for (InfoEdge* e : node.outEdges()) {
+      if (e->target->parent == &parent)
+        ++numInternalEdges;
+    }
+  }
+  m_edgePool.reserve(numInternalEdges);
 
   Console::detail(1, "generate sub network with {} nodes", numNodes);
 
