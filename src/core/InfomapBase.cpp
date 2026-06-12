@@ -2247,6 +2247,88 @@ unsigned int InfomapBase::findHierarchicalSuperModules(unsigned int superLevelLi
   return numLevelsCreated;
 }
 
+unsigned int InfomapBase::findHierarchicalSuperModulesFast(unsigned int superLevelLimit)
+{
+  if (superLevelLimit == 0)
+    return 0;
+
+  unsigned int numLevelsCreated = 0;
+  double oldIndexLength = getIndexCodelength();
+  double hierarchicalCodelength = getCodelength();
+  double workingHierarchicalCodelength = hierarchicalCodelength;
+
+  Log(1) << "\nFind hierarchical super modules iteratively...\n";
+  Log(1) << "Fast super-level compression: " << std::setprecision(2) << std::flush;
+
+  // Add index codebooks as long as the code gets shorter
+  do {
+    Log(1).print("Iteration {}, finding super modules fast to {}{}... \n", numLevelsCreated + 1, numTopModules(), haveModules() ? " modules" : " nodes");
+
+    if (haveModules()) {
+      setActiveNetworkFromChildrenOfRoot();
+      transformNodeFlowToEnterFlow(m_root);
+      initSuperNetwork();
+    } else {
+      setActiveNetworkFromLeafs();
+    }
+
+    initPartition();
+
+    unsigned int numEffectiveLoops = optimizeActiveNetwork();
+
+    double codelength = getCodelength();
+    double indexCodelength = getIndexCodelength();
+    unsigned int numSuperModules = numActiveModules();
+    bool trivialSolution = numSuperModules == 1 || numSuperModules == activeNetwork().size();
+
+    bool acceptSolution = !trivialSolution && codelength < oldIndexLength - minimumCodelengthImprovement;
+    // Force at least one modular level!
+    bool acceptByForce = !acceptSolution && !haveModules();
+    if (acceptByForce)
+      acceptSolution = true;
+
+    workingHierarchicalCodelength += codelength - oldIndexLength;
+
+    Log(1) << hideIf(!acceptSolution) << ((hierarchicalCodelength - workingHierarchicalCodelength) / hierarchicalCodelength * 100) << "% " << std::flush;
+    Console::note(1, "Found {} super modules in {} effective loops with hierarchical codelength {:g} + {:g} = {:g}{}",
+                  numActiveModules(),
+                  numEffectiveLoops,
+                  indexCodelength,
+                  workingHierarchicalCodelength - indexCodelength,
+                  workingHierarchicalCodelength,
+                  acceptSolution ? "" : ", discarding the solution.");
+    Log(1) << std::flush;
+    Log(1).print("{:g} -> {}\n", oldIndexLength, io::stringify(*this));
+
+    if (!acceptSolution) {
+      restoreConsolidatedOptimizationPointIfNoImprovement(true);
+      break;
+    }
+
+    // Consolidate the dynamic modules without replacing any existing ones.
+    consolidateModules(false);
+
+    hierarchicalCodelength = workingHierarchicalCodelength;
+    oldIndexLength = indexCodelength;
+
+    ++numLevelsCreated;
+
+    m_numNonTrivialTopModules = calculateNumNonTrivialTopModules();
+
+  } while (m_numNonTrivialTopModules > 1 && numLevelsCreated != superLevelLimit);
+
+  // Restore the temporary transformation of flow to enter flow on super modules
+  resetFlowOnModules();
+
+  Log(1).print("to codelength {} in {} top modules.\n", io::toPrecision(hierarchicalCodelength), numTopModules());
+  Log(1).print("Finding super modules done! Added {} levels with hierarchical codelength {} in {} top modules.\n", numLevelsCreated, io::toPrecision(hierarchicalCodelength), numTopModules());
+
+  // Calculate and store hierarchical codelengths
+  m_hierarchicalCodelength = calcCodelengthOnTree(root(), true);
+
+  return numLevelsCreated;
+}
+
 void InfomapBase::transformNodeFlowToEnterFlow(InfoNode& parent)
 {
   double sumFlow = 0.0;
