@@ -660,15 +660,14 @@ double Network::calculateJensenShannonDivergence(bool& intersect, const OutLinkM
   auto layer1OutLinkItEnd = layer1OutLinks.end();
   auto layer2OutLinkItEnd = layer2OutLinks.end();
   while (layer1OutLinkIt != layer1OutLinkItEnd && layer2OutLinkIt != layer2OutLinkItEnd) {
-    int diff = layer1OutLinkIt->first - layer2OutLinkIt->first;
-    if (diff < 0) {
+    if (layer1OutLinkIt->first < layer2OutLinkIt->first) {
       // If the first state node has a link that the second has not
       double p1 = layer1OutLinkIt->second.weight / ow1;
       h1 -= p1 * log2(p1);
       double p12 = pi1 * layer1OutLinkIt->second.weight / ow1;
       h12 -= p12 * log2(p12);
       layer1OutLinkIt++;
-    } else if (diff > 0) {
+    } else if (layer2OutLinkIt->first < layer1OutLinkIt->first) {
       // If the second state node has a link that the second has not
       double p2 = layer2OutLinkIt->second.weight / ow2;
       h2 -= p2 * log2(p2);
