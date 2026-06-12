@@ -874,6 +874,24 @@ const std::vector<ParameterSpec>& parameterCatalog()
         .group("Output")
         .advanced()
         .configTarget(&Config::noFinalOutput),
+#if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
+    param()
+        .longName("lossy")
+        .description("Use the lossy map equation: modules whose naming overhead exceeds lambda times their entropy rate become noise modules with one shared visit codeword. Implies --two-level. Requires undirected flow.")
+        .group("Algorithm")
+        .advanced()
+        .configTarget(&Config::lossy),
+    param()
+        .longName("lambda")
+        .description("With --lossy, the distortion price: one bit of forgone dynamics costs lambda transmitted bits. Low values lump more structure into noise modules; high values approach the standard map equation.")
+        .argument(ArgType::number)
+        .group("Algorithm")
+        .advanced()
+        .defaultValue("1")
+        .min("0")
+        .bindingDefaults()
+        .configTarget(&Config::lossyLambda),
+#endif
 #if INFOMAP_FEATURE_TEST_FEATURE
     param()
         .longName("test-feature")

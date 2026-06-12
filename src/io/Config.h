@@ -106,6 +106,10 @@ struct Config {
   bool entropyBiasCorrection = false;
   double entropyBiasCorrectionMultiplier = 1;
   unsigned long seedToRandomNumberGenerator = 123;
+#if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
+  bool lossy = false; // Lossy map equation: noise modules share one visit codeword
+  double lossyLambda = 1.0; // Price of one bit of forgone dynamics, in transmitted bits
+#endif
 
   // Performance and accuracy
   unsigned int numTrials = 1;
@@ -229,6 +233,10 @@ struct Config {
     innerParallelization = other.innerParallelization;
 #if INFOMAP_FEATURE_TEST_FEATURE
     testFeature = other.testFeature;
+#endif
+#if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
+    lossy = other.lossy;
+    lossyLambda = other.lossyLambda;
 #endif
     numRandomMoves = other.numRandomMoves;
     maxDegreeForRandomMoves = other.maxDegreeForRandomMoves;
