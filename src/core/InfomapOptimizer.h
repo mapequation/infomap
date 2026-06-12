@@ -64,6 +64,11 @@ public:
 
   double getMetaCodelength(bool unweighted = false) const override;
 
+#if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
+  double getLossyRate() const override;
+  double getLossyDistortion() const override;
+#endif
+
   void setNetworkProperties(const StateNetwork& network) override;
 
   void inheritNetworkPropertiesFrom(const InfomapOptimizerBase& parent) override;
@@ -169,6 +174,32 @@ inline double InfomapOptimizer<Objective>::getMetaCodelength(bool /*unweighted*/
 {
   return 0.0;
 }
+
+#if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
+template <>
+inline double InfomapOptimizer<LossyMapEquation>::getLossyRate() const
+{
+  return m_objective.getLossyRate();
+}
+
+template <>
+inline double InfomapOptimizer<LossyMapEquation>::getLossyDistortion() const
+{
+  return m_objective.getLossyDistortion();
+}
+
+template <typename Objective>
+inline double InfomapOptimizer<Objective>::getLossyRate() const
+{
+  return 0.0;
+}
+
+template <typename Objective>
+inline double InfomapOptimizer<Objective>::getLossyDistortion() const
+{
+  return 0.0;
+}
+#endif
 
 // Only BiasedMapEquation uses per-network properties; every other objective keeps the no-op.
 template <typename Objective>

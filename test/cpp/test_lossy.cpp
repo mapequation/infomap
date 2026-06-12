@@ -57,6 +57,27 @@ TEST_CASE("Lossy: lambda -> infinity reproduces the standard two-level map equat
   CHECK(canonicalPartition(lossy.getModules(1, false)) == canonicalPartition(plain.getModules(1, false)));
 }
 
+TEST_CASE("Lossy: paper benchmark partition gives the published code lengths at lambda 2 [fast][core][lossy]")
+{
+  InfomapWrapper im(defaultFlags("--lossy --lambda 2 --no-infomap --cluster-data " + clusterFixturePath("lossy_benchmark.clu")));
+  im.readInputData(networkFixturePath("lossy_benchmark.net"));
+  im.run();
+
+  // J = L_lossy + lambda * D
+  CHECK(im.codelength() == doctest::Approx(2.730915964229051).epsilon(1e-9));
+  CHECK(im.getLossyRate() == doctest::Approx(2.4232236565367433).epsilon(1e-9));
+  CHECK(im.getLossyDistortion() == doctest::Approx(0.15384615384615385).epsilon(1e-9));
+  // Markov entropy rate floor
+  CHECK(im.getEntropyRate() == doctest::Approx(1.9005561812175085).epsilon(1e-9));
+
+  // Identity: L_lossy = L_full - sum of noise losses (only the chain is noise)
+  InfomapWrapper plain(defaultFlags("--two-level --no-infomap --cluster-data " + clusterFixturePath("lossy_benchmark.clu")));
+  plain.readInputData(networkFixturePath("lossy_benchmark.net"));
+  plain.run();
+  CHECK(plain.codelength() == doctest::Approx(2.818018368324836).epsilon(1e-9));
+  CHECK(plain.codelength() - im.getLossyRate() == doctest::Approx(0.3947947117880925).epsilon(1e-9));
+}
+
 } // namespace test
 } // namespace infomap
 

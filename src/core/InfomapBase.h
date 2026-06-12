@@ -145,6 +145,10 @@ public:
 #endif
 
   double getEntropyRate() { return m_entropyRate; }
+#if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
+  double getLossyRate() const { return m_optimizer->getLossyRate(); }
+  double getLossyDistortion() const { return m_optimizer->getLossyDistortion(); }
+#endif
   double getMaxEntropy() { return m_maxEntropy; }
   double getMaxFlow() { return m_maxFlow; }
 
