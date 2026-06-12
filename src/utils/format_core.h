@@ -17,6 +17,10 @@
 // in the .cpp that actually renders. FMT_HEADER_ONLY is pinned identically to
 // format.h to avoid ODR mismatches. Never include <fmt/...> directly elsewhere;
 // see utils/format.h.
+//
+// The lightweight core is <fmt/base.h>. As of {fmt} 11 the old <fmt/core.h> is a
+// compatibility shim that pulls in the full <fmt/format.h>, so including it here
+// would defeat the purpose; include <fmt/base.h> directly.
 
 // Header-only is mandatory: Infomap vendors only fmt's headers (vendor/fmt) and
 // compiles no fmt source files, so a build surface that forces FMT_HEADER_ONLY
@@ -31,15 +35,6 @@
 #define FMT_HEADER_ONLY 1
 #endif
 
-#if defined(__clang__)
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-#endif
-
-#include <fmt/core.h> // IWYU pragma: export
-
-#if defined(__clang__)
-#pragma clang diagnostic pop
-#endif
+#include <fmt/base.h> // IWYU pragma: export
 
 #endif // INFOMAP_FORMAT_CORE_H_

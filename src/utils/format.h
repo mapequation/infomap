@@ -22,20 +22,8 @@
 // breaking the R/Rprintf redirect) and never include fmt/ostream.h. This is
 // enforced by scripts/check_cpp_stream_policy.py.
 
-#include "format_core.h" // FMT_HEADER_ONLY + <fmt/core.h>
-
-// fmt 10.2.1 instantiates std::char_traits<fmt::detail::char8_type>, which newer
-// libc++ marks deprecated. The warning is in fmt's own headers, not our usage,
-// and the build is not -Werror; silence it locally so consumers stay clean.
-#if defined(__clang__)
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-#endif
+#include "format_core.h" // FMT_HEADER_ONLY + <fmt/base.h>
 
 #include <fmt/format.h> // IWYU pragma: export
-
-#if defined(__clang__)
-#pragma clang diagnostic pop
-#endif
 
 #endif // INFOMAP_FORMAT_H_
