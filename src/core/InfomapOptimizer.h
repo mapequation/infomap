@@ -236,6 +236,10 @@ inline bool InfomapOptimizer<Objective>::shouldUseInnerParallelization() const
   // so keep nested instances on the serial path.
   if (omp_in_parallel())
     return false;
+  // With a single OpenMP thread the parallel sweep has the same fixed costs
+  // (proposal buffers, separate commit pass) and no parallelism to pay for them.
+  if (omp_get_max_threads() < 2)
+    return false;
   return m_infomap->activeNetwork().size() >= minNetworkSizeForInnerParallelization;
 #else
   return false;
