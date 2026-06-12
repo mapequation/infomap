@@ -24,11 +24,13 @@
 
 #include "format_core.h" // FMT_HEADER_ONLY + <fmt/base.h>
 
-// {fmt} 11's detail::allocator in fmt/format.h calls unqualified malloc/free
-// without including <cstdlib> itself, relying on transitive declarations. That
-// holds for libstdc++ but not for Emscripten's stricter libc++ ("use of
-// undeclared identifier 'malloc'"), so include it explicitly before fmt.
-#include <cstdlib>
+// {fmt} 11's detail::allocator in fmt/format.h calls *unqualified* malloc/free
+// without including a header for them, relying on transitive declarations. That
+// holds for libstdc++ but not for Emscripten's libc++ ("use of undeclared
+// identifier 'malloc'"). <cstdlib> is not enough: it only guarantees the names
+// in std::, not the global namespace fmt's unqualified calls need. <stdlib.h>
+// declares ::malloc/::free in the global namespace, so include it before fmt.
+#include <stdlib.h> // NOLINT(modernize-deprecated-headers) -- need global ::malloc
 
 #include <fmt/format.h> // IWYU pragma: export
 
