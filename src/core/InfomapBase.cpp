@@ -2733,7 +2733,6 @@ void InfomapBase::partitionModuleRecursively(InfoNode& module, unsigned int leve
 
   // Improvement
   PartitionQueue subQueue;
-  subQueue.level = level + 1;
   subInfomap.queueTopModules(subQueue);
   record.indexCodelength = subIndexCodelength;
   record.moduleCodelength = subModuleCodelength;

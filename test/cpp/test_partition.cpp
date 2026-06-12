@@ -4,11 +4,16 @@
 
 #include "TestUtils.h"
 
+#include <algorithm>
 #include <map>
 #include <set>
 #include <sstream>
 #include <tuple>
 #include <vector>
+
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
 namespace {
 
@@ -835,6 +840,46 @@ TEST_CASE("Sharding-mode serial reseed makes trial i reproducible by global inde
   CHECK(runTrialAt(2) == doctest::Approx(runTrialAt(2)));
   // ...and the path runs without error at a nonzero offset.
   CHECK(runTrialAt(5) > 0.0);
+}
+
+TEST_CASE("Hierarchical partition is invariant to the OpenMP thread count [fast][core][partition][threads]")
+{
+  // The recursive partition runs sub-modules as parallel tasks. Results must
+  // not depend on task scheduling: sub-Infomaps re-seed from the config seed,
+  // so every module's partition is execution-order independent, and per-module
+  // statistics are aggregated in a fixed order. Lock that guarantee in by
+  // comparing a multi-level run at 1 thread against one at several threads.
+  auto runHierarchical = [&]() {
+    // Seed 1 yields a three-level solution on ninetriangles (the default
+    // test seed 123 happens to stop at two levels, leaving nothing to check).
+    InfomapWrapper im("--seed 1 --num-trials 1 --silent");
+    im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+    im.run();
+    infomap::test::checkRunSanity(im);
+    CHECK(im.maxTreeDepth() > 2); // Multi-level, so the recursive phase actually ran
+    return std::make_tuple(im.getMultilevelModules(false), im.codelength(), im.getIndexCodelength());
+  };
+
+#ifdef _OPENMP
+  const int previousMaxThreads = omp_get_max_threads();
+  omp_set_num_threads(1);
+#endif
+  const auto serialResult = runHierarchical();
+
+#ifdef _OPENMP
+  omp_set_num_threads(std::max(previousMaxThreads, 4));
+#endif
+  const auto parallelResult = runHierarchical();
+
+#ifdef _OPENMP
+  omp_set_num_threads(previousMaxThreads);
+#endif
+
+  CHECK(std::get<0>(parallelResult) == std::get<0>(serialResult));
+  // Exact equality on purpose: the task graph preserves floating-point
+  // aggregation order, so the codelengths must match bitwise.
+  CHECK(std::get<1>(parallelResult) == std::get<1>(serialResult));
+  CHECK(std::get<2>(parallelResult) == std::get<2>(serialResult));
 }
 
 } // namespace
