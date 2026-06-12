@@ -35,7 +35,7 @@ FORBIDDEN_PATTERNS = (
         "using global std stream",
         re.compile(r"\busing\s+std\s*::\s*(?:" + "|".join(STREAM_NAMES) + r")\b"),
     ),
-    # fmt is vendored iostream-free (fmt/core.h, format.h, format-inl.h only).
+    # fmt is vendored iostream-free (fmt/base.h, format.h, format-inl.h only).
     # These fmt headers reintroduce <iostream>/<ostream>/FILE* and must not leak
     # into shared runtime code; include "utils/format.h" (which pulls only the
     # safe subset) instead.
