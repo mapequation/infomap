@@ -24,6 +24,12 @@
 
 #include "format_core.h" // FMT_HEADER_ONLY + <fmt/base.h>
 
+// {fmt} 11's detail::allocator in fmt/format.h calls unqualified malloc/free
+// without including <cstdlib> itself, relying on transitive declarations. That
+// holds for libstdc++ but not for Emscripten's stricter libc++ ("use of
+// undeclared identifier 'malloc'"), so include it explicitly before fmt.
+#include <cstdlib>
+
 #include <fmt/format.h> // IWYU pragma: export
 
 #endif // INFOMAP_FORMAT_H_
