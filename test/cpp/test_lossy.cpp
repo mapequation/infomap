@@ -43,6 +43,15 @@ TEST_CASE("Lossy: rejects unsupported configurations [fast][core][lossy]")
   throws("--lossy --markov-time 2");
 }
 
+TEST_CASE("Lossy: rejects unsupported input detected after parsing [fast][core][lossy]")
+{
+  // Config validation runs before the input file is parsed; state input flips
+  // haveMemory() afterwards, so the optimizer dispatch must re-validate.
+  InfomapWrapper im(defaultFlags("--lossy"));
+  im.readInputData(networkFixturePath("states.net"));
+  CHECK_THROWS_AS(im.run(), std::runtime_error);
+}
+
 TEST_CASE("Lossy: lambda -> infinity reproduces the standard two-level map equation [fast][core][lossy]")
 {
   InfomapWrapper plain(defaultFlags("--two-level"));

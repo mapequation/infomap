@@ -2784,6 +2784,18 @@ void aggregatePerLevelCodelength(const InfoNode& parent, std::vector<detail::Per
 
 void InfomapBase::initOptimizer(bool forceNoMemory)
 {
+#if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
+  // Config::adaptDefaults validates --lossy against the parsed flags, but input
+  // parsing can flip state/multilayer input and auto-switch the flow model to
+  // directed afterwards. Re-validate here so lossy never silently falls through
+  // to another objective.
+  if (lossy) {
+    if (haveMetaData() || haveMemory() || isMultilayerNetwork())
+      throw std::runtime_error("--lossy does not support memory, multilayer or meta-data input");
+    if (!isUndirectedFlow())
+      throw std::runtime_error("--lossy requires undirected flow");
+  }
+#endif
   if (haveMetaData()) {
     m_optimizer = std::make_unique<InfomapOptimizer<MetaMapEquation>>();
   } else if (haveMemory() && !forceNoMemory) {

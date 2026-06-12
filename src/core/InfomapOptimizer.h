@@ -17,6 +17,9 @@
 #include "InfoNode.h"
 #include "FlowData.h"
 #include "../utils/Random.h"
+#if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
+#include "LossyMapEquation.h"
+#endif
 
 #include <set>
 #include <utility>
