@@ -257,6 +257,13 @@ public:
     console.metric("Levels", fmt::to_string(result.bestNumLevels));
     console.metric("One-level codelength", io::toPrecision(m_infomap.getOneLevelCodelength()));
     console.metric("Best codelength", io::toPrecision(result.bestHierarchicalCodelength));
+#if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
+    if (m_infomap.lossy) {
+      console.metric("Lossy rate", io::toPrecision(m_infomap.getLossyRate()));
+      console.metric("Lossy distortion", io::toPrecision(m_infomap.getLossyDistortion()));
+      console.metric("Lambda", io::toPrecision(m_infomap.lossyLambda));
+    }
+#endif
     console.metric("Relative savings", fmt::format(FMT_STRING("{}%"), io::toPrecision(m_infomap.getRelativeCodelengthSavings() * 100, 2, true)));
     Log() << "\n";
     Log().print("{}\n", result.bestSolutionStatistics.str());

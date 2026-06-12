@@ -130,6 +130,23 @@ TEST_CASE("Lossy: rerun on the same instance preserves partition and codelength 
   CHECK(canonicalPartition(im.getModules(1, false)) == firstPartition);
 }
 
+TEST_CASE("Lossy: tree output header reports lambda, rate and distortion [fast][core][lossy][output]")
+{
+  InfomapWrapper im(defaultFlags("--lossy --lambda 2"));
+  im.readInputData(networkFixturePath("lossy_benchmark.net"));
+  im.run();
+
+  const std::string treePath = "/tmp/infomap_lossy_header_test.tree";
+  std::remove(treePath.c_str());
+  im.writeTree(treePath);
+  const auto content = readTextFile(treePath);
+
+  CHECK(content.find("# lossy lambda 2") != std::string::npos);
+  CHECK(content.find("rate 2.42322") != std::string::npos);
+  CHECK(content.find("distortion 0.153846") != std::string::npos);
+  std::remove(treePath.c_str());
+}
+
 } // namespace test
 } // namespace infomap
 

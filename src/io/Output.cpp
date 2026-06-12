@@ -98,6 +98,13 @@ std::string getOutputFilename(const InfomapBase& im, const std::string& filename
 std::string getOutputFileHeader(const InfomapBase& im, const StateNetwork& network, bool states)
 {
   std::string bipartiteInfo = fmt::format(FMT_STRING("\n# bipartite start id {}"), network.bipartiteStartId());
+#if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
+  std::string lossyInfo = im.lossy
+      ? fmt::format(FMT_STRING("\n# lossy lambda {:g} rate {:g} distortion {:g}"), im.lossyLambda, im.getLossyRate(), im.getLossyDistortion())
+      : "";
+#else
+  std::string lossyInfo;
+#endif
   return fmt::format(FMT_STRING("# v{}\n"
                                 "# ./Infomap {}\n"
                                 "# started at {}\n"
@@ -117,7 +124,8 @@ std::string getOutputFileHeader(const InfomapBase& im, const StateNetwork& netwo
                      flowModelToString(im.flowModel))
       + (im.haveMemory() ? "\n# higher order" : "")
       + (im.haveMemory() ? states ? "\n# state level" : "\n# physical level" : "")
-      + (network.isBipartite() ? bipartiteInfo : "");
+      + (network.isBipartite() ? bipartiteInfo : "")
+      + lossyInfo;
 }
 
 std::string writeClu(InfomapBase& im, const StateNetwork& network, const std::string& filename, bool states, int moduleIndexLevel)
