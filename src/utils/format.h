@@ -22,15 +22,7 @@
 // breaking the R/Rprintf redirect) and never include fmt/ostream.h. This is
 // enforced by scripts/check_cpp_stream_policy.py.
 
-#include "format_core.h" // FMT_HEADER_ONLY + <fmt/base.h>
-
-// {fmt} 11's detail::allocator in fmt/format.h calls *unqualified* malloc/free
-// without including a header for them, relying on transitive declarations. That
-// holds for libstdc++ but not for Emscripten's libc++ ("use of undeclared
-// identifier 'malloc'"). <cstdlib> is not enough: it only guarantees the names
-// in std::, not the global namespace fmt's unqualified calls need. <stdlib.h>
-// declares ::malloc/::free in the global namespace, so include it before fmt.
-#include <stdlib.h> // NOLINT(modernize-deprecated-headers) -- need global ::malloc
+#include "format_core.h" // FMT_HEADER_ONLY + <stdlib.h> (global ::malloc) + <fmt/base.h>
 
 #include <fmt/format.h> // IWYU pragma: export
 

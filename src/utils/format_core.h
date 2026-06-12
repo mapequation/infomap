@@ -35,6 +35,15 @@
 #define FMT_HEADER_ONLY 1
 #endif
 
+// Under FMT_HEADER_ONLY, <fmt/base.h> pulls in the full <fmt/format.h> at its
+// end, whose detail::allocator calls *unqualified* malloc/free without including
+// a header for them. That resolves on libstdc++ via transitive declarations but
+// not on Emscripten's libc++ ("use of undeclared identifier 'malloc'"). Declare
+// the global ::malloc/::free here, before fmt is pulled in, so every fmt-using
+// TU is covered (this is the single header both format.h and Log.h include
+// first). <cstdlib> is insufficient: it only guarantees the names in std::.
+#include <stdlib.h> // NOLINT(modernize-deprecated-headers) -- need global ::malloc
+
 #include <fmt/base.h> // IWYU pragma: export
 
 #endif // INFOMAP_FORMAT_CORE_H_
