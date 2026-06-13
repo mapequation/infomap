@@ -2742,11 +2742,17 @@ void InfomapBase::partitionModuleRecursively(InfoNode& module, unsigned int leve
 
     module.releaseChildren();
 
-    auto cloneLeafIt = subInfomap.leafNodes().begin();
-    for (InfoNode* originalLeaf : originalLeaves) {
-      const InfoNode* cloneSubModule = (*cloneLeafIt)->parent;
-      cloneToMaterialized.at(cloneSubModule)->addChild(originalLeaf);
-      ++cloneLeafIt;
+    // The sub-Infomap clones `module`'s leaves 1:1 in the same order, so clone
+    // leaf i corresponds to original leaf i. Assert that invariant explicitly:
+    // an indexed loop with a size check fails fast with a clear error if future
+    // subnetwork-generation changes ever break it, instead of walking the clone
+    // iterator past end() (UB / SIGSEGV).
+    const auto& cloneLeaves = subInfomap.leafNodes();
+    if (cloneLeaves.size() != originalLeaves.size())
+      throw std::logic_error("InfomapBase::partitionModuleRecursively(): sub-Infomap leaf count does not match the module's original leaves");
+    for (std::size_t i = 0; i < originalLeaves.size(); ++i) {
+      const InfoNode* cloneSubModule = cloneLeaves[i]->parent;
+      cloneToMaterialized.at(cloneSubModule)->addChild(originalLeaves[i]);
     }
 
     for (InfoNode* newSubModule : materializedSubModules)
