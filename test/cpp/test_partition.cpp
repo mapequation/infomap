@@ -516,7 +516,7 @@ TEST_CASE("Hard cluster-data rerun preserves leaf metadata on the same instance 
     infomap::test::checkRunSanity(im);
     CHECK(im.numLeafNodes() == 6);
     for (auto* leaf : im.leafNodes()) {
-      CHECK_FALSE(leaf->metaData.empty());
+      CHECK_FALSE(leaf->metaData().empty());
     }
   };
 

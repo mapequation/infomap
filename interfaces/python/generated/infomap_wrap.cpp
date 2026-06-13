@@ -18846,60 +18846,6 @@ fail:
 }
 
 
-SWIGINTERN PyObject *_wrap_InfoNode_metaData_set(PyObject *self, PyObject *args) {
-  PyObject *resultobj = 0;
-  infomap::InfoNode *arg1 = 0 ;
-  std::vector< int,std::allocator< int > > *arg2 = 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  void *argp2 = 0 ;
-  int res2 = 0 ;
-  PyObject *swig_obj[2] ;
-  
-  (void)self;
-  if (!SWIG_Python_UnpackTuple(args, "InfoNode_metaData_set", 2, 2, swig_obj)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__InfoNode, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "InfoNode_metaData_set" "', argument " "1"" of type '" "infomap::InfoNode *""'"); 
-  }
-  arg1 = reinterpret_cast< infomap::InfoNode * >(argp1);
-  res2 = SWIG_ConvertPtr(swig_obj[1], &argp2,SWIGTYPE_p_std__vectorT_int_std__allocatorT_int_t_t, 0 |  0 );
-  if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "InfoNode_metaData_set" "', argument " "2"" of type '" "std::vector< int,std::allocator< int > > *""'"); 
-  }
-  arg2 = reinterpret_cast< std::vector< int,std::allocator< int > > * >(argp2);
-  if (arg1) (arg1)->metaData = *arg2;
-  resultobj = SWIG_Py_Void();
-  return resultobj;
-fail:
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_InfoNode_metaData_get(PyObject *self, PyObject *args) {
-  PyObject *resultobj = 0;
-  infomap::InfoNode *arg1 = 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  PyObject *swig_obj[1] ;
-  std::vector< int,std::allocator< int > > *result = 0 ;
-  
-  (void)self;
-  if (!args) SWIG_fail;
-  swig_obj[0] = args;
-  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__InfoNode, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "InfoNode_metaData_get" "', argument " "1"" of type '" "infomap::InfoNode *""'"); 
-  }
-  arg1 = reinterpret_cast< infomap::InfoNode * >(argp1);
-  result = (std::vector< int,std::allocator< int > > *)& ((arg1)->metaData);
-  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_std__vectorT_int_std__allocatorT_int_t_t, 0 |  0 );
-  return resultobj;
-fail:
-  return NULL;
-}
-
-
 SWIGINTERN PyObject *_wrap_InfoNode_owner_set(PyObject *self, PyObject *args) {
   PyObject *resultobj = 0;
   infomap::InfoNode *arg1 = 0 ;
@@ -26364,60 +26310,6 @@ fail:
 }
 
 
-SWIGINTERN PyObject *_wrap_InfomapIterator_metaData_set(PyObject *self, PyObject *args) {
-  PyObject *resultobj = 0;
-  infomap::InfomapIterator *arg1 = 0 ;
-  std::vector< int,std::allocator< int > > *arg2 = 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  void *argp2 = 0 ;
-  int res2 = 0 ;
-  PyObject *swig_obj[2] ;
-  
-  (void)self;
-  if (!SWIG_Python_UnpackTuple(args, "InfomapIterator_metaData_set", 2, 2, swig_obj)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__InfomapIterator, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "InfomapIterator_metaData_set" "', argument " "1"" of type '" "infomap::InfomapIterator *""'"); 
-  }
-  arg1 = reinterpret_cast< infomap::InfomapIterator * >(argp1);
-  res2 = SWIG_ConvertPtr(swig_obj[1], &argp2,SWIGTYPE_p_std__vectorT_int_std__allocatorT_int_t_t, 0 |  0 );
-  if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "InfomapIterator_metaData_set" "', argument " "2"" of type '" "std::vector< int,std::allocator< int > > *""'"); 
-  }
-  arg2 = reinterpret_cast< std::vector< int,std::allocator< int > > * >(argp2);
-  if (arg1) (*arg1)->metaData = *arg2;
-  resultobj = SWIG_Py_Void();
-  return resultobj;
-fail:
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_InfomapIterator_metaData_get(PyObject *self, PyObject *args) {
-  PyObject *resultobj = 0;
-  infomap::InfomapIterator *arg1 = 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  PyObject *swig_obj[1] ;
-  std::vector< int,std::allocator< int > > *result = 0 ;
-  
-  (void)self;
-  if (!args) SWIG_fail;
-  swig_obj[0] = args;
-  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__InfomapIterator, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "InfomapIterator_metaData_get" "', argument " "1"" of type '" "infomap::InfomapIterator *""'"); 
-  }
-  arg1 = reinterpret_cast< infomap::InfomapIterator * >(argp1);
-  result = (std::vector< int,std::allocator< int > > *)& ((*(infomap::InfomapIterator const *)arg1)->metaData);
-  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_std__vectorT_int_std__allocatorT_int_t_t, 0 |  0 );
-  return resultobj;
-fail:
-  return NULL;
-}
-
-
 SWIGINTERN PyObject *_wrap_InfomapIterator_owner_set(PyObject *self, PyObject *args) {
   PyObject *resultobj = 0;
   infomap::InfomapIterator *arg1 = 0 ;
@@ -33440,60 +33332,6 @@ SWIGINTERN PyObject *_wrap_InfomapParentIterator_layerId_get(PyObject *self, PyO
   arg1 = reinterpret_cast< infomap::InfomapParentIterator * >(argp1);
   result = (unsigned int) ((*(infomap::InfomapParentIterator const *)arg1)->layerId);
   resultobj = SWIG_From_unsigned_SS_int(static_cast< unsigned int >(result));
-  return resultobj;
-fail:
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_InfomapParentIterator_metaData_set(PyObject *self, PyObject *args) {
-  PyObject *resultobj = 0;
-  infomap::InfomapParentIterator *arg1 = 0 ;
-  std::vector< int,std::allocator< int > > *arg2 = 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  void *argp2 = 0 ;
-  int res2 = 0 ;
-  PyObject *swig_obj[2] ;
-  
-  (void)self;
-  if (!SWIG_Python_UnpackTuple(args, "InfomapParentIterator_metaData_set", 2, 2, swig_obj)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__InfomapParentIterator, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "InfomapParentIterator_metaData_set" "', argument " "1"" of type '" "infomap::InfomapParentIterator *""'"); 
-  }
-  arg1 = reinterpret_cast< infomap::InfomapParentIterator * >(argp1);
-  res2 = SWIG_ConvertPtr(swig_obj[1], &argp2,SWIGTYPE_p_std__vectorT_int_std__allocatorT_int_t_t, 0 |  0 );
-  if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "InfomapParentIterator_metaData_set" "', argument " "2"" of type '" "std::vector< int,std::allocator< int > > *""'"); 
-  }
-  arg2 = reinterpret_cast< std::vector< int,std::allocator< int > > * >(argp2);
-  if (arg1) (*arg1)->metaData = *arg2;
-  resultobj = SWIG_Py_Void();
-  return resultobj;
-fail:
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_InfomapParentIterator_metaData_get(PyObject *self, PyObject *args) {
-  PyObject *resultobj = 0;
-  infomap::InfomapParentIterator *arg1 = 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  PyObject *swig_obj[1] ;
-  std::vector< int,std::allocator< int > > *result = 0 ;
-  
-  (void)self;
-  if (!args) SWIG_fail;
-  swig_obj[0] = args;
-  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__InfomapParentIterator, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "InfomapParentIterator_metaData_get" "', argument " "1"" of type '" "infomap::InfomapParentIterator *""'"); 
-  }
-  arg1 = reinterpret_cast< infomap::InfomapParentIterator * >(argp1);
-  result = (std::vector< int,std::allocator< int > > *)& ((*(infomap::InfomapParentIterator const *)arg1)->metaData);
-  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_std__vectorT_int_std__allocatorT_int_t_t, 0 |  0 );
   return resultobj;
 fail:
   return NULL;
@@ -58629,8 +58467,6 @@ static PyMethodDef SwigMethods[] = {
 	 { "InfoNode_physicalId_get", _wrap_InfoNode_physicalId_get, METH_O, NULL},
 	 { "InfoNode_layerId_set", _wrap_InfoNode_layerId_set, METH_VARARGS, NULL},
 	 { "InfoNode_layerId_get", _wrap_InfoNode_layerId_get, METH_O, NULL},
-	 { "InfoNode_metaData_set", _wrap_InfoNode_metaData_set, METH_VARARGS, NULL},
-	 { "InfoNode_metaData_get", _wrap_InfoNode_metaData_get, METH_O, NULL},
 	 { "InfoNode_owner_set", _wrap_InfoNode_owner_set, METH_VARARGS, NULL},
 	 { "InfoNode_owner_get", _wrap_InfoNode_owner_get, METH_O, NULL},
 	 { "InfoNode_parent_set", _wrap_InfoNode_parent_set, METH_VARARGS, NULL},
@@ -58780,8 +58616,6 @@ static PyMethodDef SwigMethods[] = {
 	 { "InfomapIterator_physicalId_get", _wrap_InfomapIterator_physicalId_get, METH_O, NULL},
 	 { "InfomapIterator_layerId_set", _wrap_InfomapIterator_layerId_set, METH_VARARGS, NULL},
 	 { "InfomapIterator_layerId_get", _wrap_InfomapIterator_layerId_get, METH_O, NULL},
-	 { "InfomapIterator_metaData_set", _wrap_InfomapIterator_metaData_set, METH_VARARGS, NULL},
-	 { "InfomapIterator_metaData_get", _wrap_InfomapIterator_metaData_get, METH_O, NULL},
 	 { "InfomapIterator_owner_set", _wrap_InfomapIterator_owner_set, METH_VARARGS, NULL},
 	 { "InfomapIterator_owner_get", _wrap_InfomapIterator_owner_get, METH_O, NULL},
 	 { "InfomapIterator_parent_set", _wrap_InfomapIterator_parent_set, METH_VARARGS, NULL},
@@ -58935,8 +58769,6 @@ static PyMethodDef SwigMethods[] = {
 	 { "InfomapParentIterator_physicalId_get", _wrap_InfomapParentIterator_physicalId_get, METH_O, NULL},
 	 { "InfomapParentIterator_layerId_set", _wrap_InfomapParentIterator_layerId_set, METH_VARARGS, NULL},
 	 { "InfomapParentIterator_layerId_get", _wrap_InfomapParentIterator_layerId_get, METH_O, NULL},
-	 { "InfomapParentIterator_metaData_set", _wrap_InfomapParentIterator_metaData_set, METH_VARARGS, NULL},
-	 { "InfomapParentIterator_metaData_get", _wrap_InfomapParentIterator_metaData_get, METH_O, NULL},
 	 { "InfomapParentIterator_owner_set", _wrap_InfomapParentIterator_owner_set, METH_VARARGS, NULL},
 	 { "InfomapParentIterator_owner_get", _wrap_InfomapParentIterator_owner_get, METH_O, NULL},
 	 { "InfomapParentIterator_parent_set", _wrap_InfomapParentIterator_parent_set, METH_VARARGS, NULL},
