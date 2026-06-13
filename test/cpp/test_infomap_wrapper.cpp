@@ -65,7 +65,7 @@ std::vector<NodeIdentity> nodeIdentitiesForModule(infomap::InfoNode& module)
 {
   std::vector<NodeIdentity> identities;
   for (auto& node : module) {
-    identities.emplace_back(node.stateId, node.physicalId, node.metaData);
+    identities.emplace_back(node.stateId, node.physicalId, node.metaData());
   }
   std::sort(identities.begin(), identities.end());
   return identities;

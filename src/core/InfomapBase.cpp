@@ -1380,14 +1380,14 @@ void InfomapBase::generateSubNetwork(Network& network)
     node->data.teleportFlow = networkNode.teleFlow;
     node->data.exitFlow = networkNode.exitFlow;
     node->data.enterFlow = networkNode.enterFlow;
-    node->layerTeleFlowData.emplace_back(networkNode.layerId, networkNode.intraLayerTeleFlow, networkNode.intraLayerTeleWeight);
+    node->ensureExtras().layerTeleFlowData.emplace_back(networkNode.layerId, networkNode.intraLayerTeleFlow, networkNode.intraLayerTeleWeight);
     // Log(1) << "Node " << node->stateId << " (" << node->layerId << "," << node->physicalId << ") data: " << node->data << ", tele-flow: " << networkNode.teleFlow << ", intra-tele: " << networkNode.intraLayerTeleFlow << "\n";
     if (haveMetaData()) {
       auto meta = metaData.find(networkNode.id);
       if (meta != metaData.end()) {
-        node->metaData = meta->second;
+        node->ensureExtras().metaData = meta->second;
       } else {
-        node->metaData = std::vector<int>(numMetaDataDimensions, -1);
+        node->ensureExtras().metaData = std::vector<int>(numMetaDataDimensions, -1);
       }
     }
     sumNodeFlow += networkNode.flow;

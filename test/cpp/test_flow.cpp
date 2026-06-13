@@ -626,8 +626,8 @@ TEST_CASE("Inner parallelization with meta data falls back to stable serial opti
   CHECK(im.codelength() >= im.getIndexCodelength());
   CHECK(im.getMetaCodelength() >= 0.0);
   for (auto* leaf : im.leafNodes()) {
-    CHECK_FALSE(leaf->metaData.empty());
-    CHECK(leaf->metaData[0] != -1);
+    CHECK_FALSE(leaf->metaData().empty());
+    CHECK(leaf->metaData()[0] != -1);
   }
 }
 

@@ -14,6 +14,15 @@
 
 namespace infomap {
 
+unsigned int InfoNode::getMetaData(unsigned int dimension) noexcept
+{
+  const auto& md = metaData();
+  if (dimension >= md.size())
+    return 0;
+  auto meta = md[dimension];
+  return meta < 0 ? 0 : static_cast<unsigned int>(meta);
+}
+
 void InfoNode::destroyNode(InfoNode* node) noexcept
 {
   if (node->m_pool != nullptr)
