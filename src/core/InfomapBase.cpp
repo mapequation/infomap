@@ -2727,9 +2727,13 @@ void InfomapBase::partitionModuleRecursively(InfoNode& module, unsigned int leve
       newSubModule->physicalNodes = cloneSubModule->physicalNodes;
       newSubModule->stateNodes = cloneSubModule->stateNodes;
 #ifndef SWIG
-      newSubModule->layerTeleFlowData = cloneSubModule->layerTeleFlowData;
+      // #659 moved these feature-only fields out-of-line into InfoNodeExtras;
+      // route the materialize-copy through the extras API and only allocate
+      // extras when the clone actually carries them (preserve the shrink).
+      if (!cloneSubModule->layerTeleFlowData().empty())
+        newSubModule->ensureExtras().layerTeleFlowData = cloneSubModule->layerTeleFlowData();
       if (cloneSubModule->hasMetaCollection())
-        newSubModule->ensureMetaCollection() = *cloneSubModule->metaCollection;
+        newSubModule->ensureMetaCollection() = cloneSubModule->metaCollection();
 #endif
 #if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
       newSubModule->lossyEntropy = cloneSubModule->lossyEntropy;
