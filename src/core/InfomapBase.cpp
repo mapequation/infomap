@@ -2698,8 +2698,12 @@ void InfomapBase::partitionModuleRecursively(InfoNode& module, unsigned int leve
   // the sub-Infomap so its working set (cloned active network + pools + maps) is
   // freed immediately instead of being held live until the whole recursion ends.
   // Top-down: `module`'s children are original main-tree leaves, so the new
-  // sub-module nodes reparent originals (never clones-of-clones) and output stays
-  // byte-identical. New module nodes use raw `new` (NOT the instance pool): the
+  // sub-module nodes reparent originals (never clones-of-clones). NOTE: this does
+  // NOT guarantee byte-identical output — recursing on original leaves sees a
+  // different edge order than the lazy clone path, so the order-sensitive greedy
+  // optimizer can settle on a different (quality-equivalent) optimum on deep
+  // networks; output is byte-identical only where recursion stays shallow.
+  // New module nodes use raw `new` (NOT the instance pool): the
   // task graph runs this function concurrently and ObjectPool is per-instance,
   // not thread-safe; malloc is. They are few, and InfoNode teardown deletes
   // non-pool nodes via `delete`.
