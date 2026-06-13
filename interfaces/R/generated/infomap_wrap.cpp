@@ -15526,53 +15526,6 @@ R_swig_delete_InfoNode ( SEXP self)
 
 
 SWIGEXPORT SEXP
-R_swig_InfoNode_Equal ( SEXP self, SEXP other, SEXP s_swig_copy)
-{
-  {
-    infomap::InfoNode *result = 0 ;
-    infomap::InfoNode *arg1 = 0 ;
-    infomap::InfoNode *arg2 = 0 ;
-    void *argp1 = 0 ;
-    int res1 = 0 ;
-    void *argp2 = 0 ;
-    int res2 = 0 ;
-    unsigned int r_nprotect = 0;
-    SEXP r_ans = R_NilValue ;
-    VMAXTYPE r_vmax = vmaxget() ;
-    
-    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_infomap__InfoNode, 0 |  0 );
-    if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "InfoNode_Equal" "', argument " "1"" of type '" "infomap::InfoNode *""'"); 
-    }
-    arg1 = reinterpret_cast< infomap::InfoNode * >(argp1);
-    res2 = SWIG_R_ConvertPtr(other, &argp2, SWIGTYPE_p_infomap__InfoNode,  0 );
-    if (!SWIG_IsOK(res2)) {
-      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "InfoNode_Equal" "', argument " "2"" of type '" "infomap::InfoNode const &""'"); 
-    }
-    if (!argp2) {
-      SWIG_exception_fail(SWIG_NullReferenceError, "invalid null reference " "in method '" "InfoNode_Equal" "', argument " "2"" of type '" "infomap::InfoNode const &""'"); 
-    }
-    arg2 = reinterpret_cast< infomap::InfoNode * >(argp2);
-    {
-      try {
-        result = (infomap::InfoNode *) &(arg1)->operator =((infomap::InfoNode const &)*arg2);
-      } catch (const std::exception& e) {
-        SWIG_exception(SWIG_RuntimeError, e.what());
-      }
-    }
-    r_ans = SWIG_R_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_infomap__InfoNode, 0 |  0 );
-    vmaxset(r_vmax);
-    if(r_nprotect)  Rf_unprotect(r_nprotect);
-    
-    return r_ans;
-    fail: SWIGUNUSED;
-  }
-  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
-  return R_NilValue;
-}
-
-
-SWIGEXPORT SEXP
 R_swig_InfoNode_getMetaData__SWIG_0 ( SEXP self, SEXP dimension, SEXP s_swig_copy)
 {
   {
@@ -49986,9 +49939,9 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
    {"R_swig_InfomapBase_iterLeafNodesPhysical__SWIG_1", (DL_FUNC) &R_swig_InfomapBase_iterLeafNodesPhysical__SWIG_1, 2},
    {"R_swig_map_pair_uint_uint_double_clear", (DL_FUNC) &R_swig_map_pair_uint_uint_double_clear, 1},
    {"R_swig_Config_additionalInput_get", (DL_FUNC) &R_swig_Config_additionalInput_get, 1},
+   {"R_swig_InfomapLeafIteratorPhysical_path", (DL_FUNC) &R_swig_InfomapLeafIteratorPhysical_path, 2},
    {"R_swig_EdgeData_flow_set", (DL_FUNC) &R_swig_EdgeData_flow_set, 2},
    {"R_swig_delete_EdgeData", (DL_FUNC) &R_swig_delete_EdgeData, 1},
-   {"R_swig_InfomapLeafIteratorPhysical_path", (DL_FUNC) &R_swig_InfomapLeafIteratorPhysical_path, 2},
    {"R_swig_InfomapLeafIteratorPhysical_Equal", (DL_FUNC) &R_swig_InfomapLeafIteratorPhysical_Equal, 3},
    {"R_swig_DeltaFlow_reset", (DL_FUNC) &R_swig_DeltaFlow_reset, 1},
    {"R_swig_PerLevelStat_numModules_set", (DL_FUNC) &R_swig_PerLevelStat_numModules_set, 2},
@@ -50284,7 +50237,6 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
    {"R_swig_Config_teleportationProbability_set", (DL_FUNC) &R_swig_Config_teleportationProbability_set, 2},
    {"R_swig_InfomapIterator_firstChild_set", (DL_FUNC) &R_swig_InfomapIterator_firstChild_set, 2},
    {"R_swig_InfomapIterator_stateNodes_set", (DL_FUNC) &R_swig_InfomapIterator_stateNodes_set, 2},
-   {"R_swig_InfoNode_Equal", (DL_FUNC) &R_swig_InfoNode_Equal, 3},
    {"R_swig_InfomapIteratorPhysical_Equal__SWIG_0", (DL_FUNC) &R_swig_InfomapIteratorPhysical_Equal__SWIG_0, 3},
    {"R_swig_InfomapIterator_Equal__SWIG_0", (DL_FUNC) &R_swig_InfomapIterator_Equal__SWIG_0, 3},
    {"R_swig_FlowData_PlusEqual", (DL_FUNC) &R_swig_FlowData_PlusEqual, 3},
