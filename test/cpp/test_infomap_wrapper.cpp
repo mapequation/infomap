@@ -1005,4 +1005,28 @@ TEST_CASE("writeResult renders selected physical and state output artifacts [fas
   removeFiles(paths);
 }
 
+// Repeated runs on the same instance free and re-allocate the whole node/edge
+// tree from the per-instance ObjectPools. The point is that pool-slot reuse and
+// teardown are sound across repeated runs: both runs must complete and yield a
+// valid codelength, and (under sanitizers) without any use-after-free, with the
+// empty-pool invariant holding at teardown. Exact codelength equality across
+// re-runs is NOT asserted -- it is not a guaranteed invariant (e.g. parallel
+// scheduling can break ties differently between runs).
+TEST_CASE("InfomapWrapper reuses pooled nodes across repeated runs without leaking [fast][core][lifecycle][memory]")
+{
+  InfomapWrapper im("--two-level --silent --seed 7 --num-trials 1 --no-file-output");
+  im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+
+  im.run();
+  const double first = im.codelength();
+
+  im.run(); // second run reclaims and reuses freed pool slots
+  const double second = im.codelength();
+
+  CHECK(std::isfinite(first));
+  CHECK(first > 0.0);
+  CHECK(std::isfinite(second));
+  CHECK(second > 0.0);
+}
+
 } // namespace

@@ -26,6 +26,16 @@ public:
 
 class InfoNode;
 
+#ifndef SWIG
+// Internal allocation plumbing; kept out of the SWIG bindings so the pool type
+// does not leak into the generated wrappers.
+class InfoEdge;
+
+template <typename T>
+class ObjectPool;
+using EdgePool = ObjectPool<InfoEdge>;
+#endif
+
 class InfoEdge {
 public:
   InfoEdge(InfoNode& source, InfoNode& target, double weight, double flow)

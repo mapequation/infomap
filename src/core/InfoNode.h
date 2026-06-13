@@ -12,6 +12,9 @@
 
 #include "FlowData.h"
 #include "InfoEdge.h"
+#ifndef SWIG
+#include "ObjectPool.h"
+#endif
 #include "iterators/infomapIterators.h"
 #include "iterators/IterWrapper.h"
 #include "../utils/MetaCollection.h"
@@ -25,6 +28,16 @@
 namespace infomap {
 
 class InfomapBase;
+
+#ifndef SWIG
+// Internal allocation plumbing; kept out of the SWIG bindings so the pool type
+// does not leak into the generated wrappers.
+class InfoNode;
+
+template <typename T>
+class ObjectPool;
+using NodePool = ObjectPool<InfoNode>;
+#endif
 
 /**
  * Tree node with raw-pointer ownership.
@@ -112,6 +125,16 @@ private:
   std::vector<InfoEdge*> m_inEdges;
 
   InfomapBase* m_infomap = nullptr;
+
+#ifndef SWIG
+  // Owning pool. Set by InfomapBase::allocNode for every pool-allocated node;
+  // stays nullptr only for the value-member root, which is never pool-freed.
+  NodePool* m_pool = nullptr;
+  // Pool that out-edges of this node are allocated from (same instance's edge
+  // pool). nullptr for standalone nodes, whose edges fall back to new/delete.
+  EdgePool* m_edgePool = nullptr;
+  friend class InfomapBase;
+#endif
 
 public:
   InfoNode(const FlowData& flowData)
@@ -429,13 +452,20 @@ public:
 
   void addOutEdge(InfoNode& target, double weight, double flow = 0.0) noexcept
   {
-    auto* edge = new InfoEdge(*this, target, weight, flow);
+    auto* edge = m_edgePool != nullptr
+        ? m_edgePool->alloc(*this, target, weight, flow)
+        : new InfoEdge(*this, target, weight, flow);
     m_outEdges.push_back(edge);
     target.m_inEdges.push_back(edge);
   }
 
 private:
   void calcChildDegree() noexcept;
+
+  // Destroy a node through its owning pool, or via plain delete if it was not
+  // pool-allocated (e.g. a standalone node built in a test). Lets InfoNode stay
+  // usable without an InfomapBase pool while still recycling pooled nodes.
+  static void destroyNode(InfoNode* node) noexcept;
 };
 
 } // namespace infomap

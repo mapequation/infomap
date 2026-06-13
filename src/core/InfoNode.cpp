@@ -9,9 +9,18 @@
 
 #include "InfoNode.h"
 #include "InfomapBase.h"
+#include "ObjectPool.h"
 #include <algorithm>
 
 namespace infomap {
+
+void InfoNode::destroyNode(InfoNode* node) noexcept
+{
+  if (node->m_pool != nullptr)
+    node->m_pool->free(node);
+  else
+    delete node;
+}
 
 InfoNode::~InfoNode() noexcept
 {
@@ -32,12 +41,18 @@ InfoNode::~InfoNode() noexcept
       parent->lastChild = previous;
   }
 
-  // Delete outgoing edges.
+  // Delete outgoing edges. Every out-edge of this node was allocated from this
+  // node's m_edgePool (or with new, when m_edgePool is null for standalone
+  // nodes), so it is freed back through the same path.
   // TODO: Renders ingoing edges invalid. Assume or assert that all nodes on the same level are deleted?
   for (edge_iterator outEdgeIt(begin_outEdge());
        outEdgeIt != end_outEdge();
        ++outEdgeIt) {
-    delete *outEdgeIt;
+    InfoEdge* edge = *outEdgeIt;
+    if (m_edgePool != nullptr)
+      m_edgePool->free(edge);
+    else
+      delete edge;
   }
 }
 
@@ -167,7 +182,9 @@ InfoNode& InfoNode::replaceChildrenWithOneNode()
     throw std::logic_error("replaceChildrenWithOneNode called on a node without any children.");
   if (firstChild->firstChild == nullptr)
     throw std::logic_error("replaceChildrenWithOneNode called on a node without any grandchildren.");
-  auto* middleNode = new InfoNode();
+  auto* middleNode = m_pool != nullptr ? m_pool->alloc() : new InfoNode();
+  middleNode->m_pool = m_pool;
+  middleNode->m_edgePool = m_edgePool;
   InfoNode::child_iterator nodeIt = begin_child();
   unsigned int numOriginalChildrenLeft = m_childDegree;
   auto d0 = m_childDegree;
@@ -236,7 +253,7 @@ unsigned int InfoNode::replaceWithChildren() noexcept
   next = nullptr;
   previous = nullptr;
   parent = nullptr;
-  delete this;
+  destroyNode(this);
   return 1;
 }
 
@@ -289,13 +306,13 @@ void InfoNode::replaceWithChildrenDebug() noexcept
   previous = nullptr;
   parent = nullptr;
 
-  delete this;
+  destroyNode(this);
 }
 
 void InfoNode::remove(bool removeChildren) noexcept
 {
   firstChild = removeChildren ? nullptr : firstChild;
-  delete this;
+  destroyNode(this);
 }
 
 void InfoNode::deleteChildren() noexcept
@@ -307,7 +324,7 @@ void InfoNode::deleteChildren() noexcept
     InfoNode* node = first;
     while (node != nullptr) {
       InfoNode* next_node = node->next;
-      delete node;
+      destroyNode(node);
       node = next_node;
     }
 

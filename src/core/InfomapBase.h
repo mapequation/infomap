@@ -13,6 +13,7 @@
 #include "InfomapConfig.h"
 #include "InfoEdge.h"
 #include "InfoNode.h"
+#include "ObjectPool.h"
 #include "InfomapOptimizerBase.h"
 #include "iterators/InfomapIterator.h"
 #include "../io/ClusterMap.h"
@@ -185,6 +186,18 @@ public:
 
 private:
   class RunSession;
+
+  // Allocate a tree node from this instance's pool and stamp its owning pool
+  // back-pointer so node-local teardown (deleteChildren / remove /
+  // replaceWithChildren) can reclaim it without an InfomapBase handle.
+  template <typename... Args>
+  InfoNode& allocNode(Args&&... args)
+  {
+    InfoNode& node = *m_nodePool.alloc(std::forward<Args>(args)...);
+    node.m_pool = &m_nodePool;
+    node.m_edgePool = &m_edgePool;
+    return node;
+  }
 
   bool isFullNetwork() const { return m_isMain && m_aggregationLevel == 0; }
   bool isFirstLoop() const { return m_tuneIterationIndex == 0 && isFullNetwork(); }
@@ -512,6 +525,11 @@ private:
   // ===================================================
 
 protected:
+  // Declared before m_root so the tree (whose nodes live in m_nodePool) is
+  // reclaimed by ~m_root before the pool storage is dropped. Destruction runs
+  // in reverse declaration order.
+  NodePool m_nodePool;
+  EdgePool m_edgePool;
   InfoNode m_root;
   std::vector<InfoNode*> m_leafNodes;
   std::vector<InfoNode*> m_moduleNodes;
