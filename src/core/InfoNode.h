@@ -192,34 +192,13 @@ public:
 
   ~InfoNode() noexcept;
 
-  InfoNode& operator=(const InfoNode& other)
-  {
-    if (this == &other)
-      return *this;
-    data = other.data;
-    index = other.index;
-    stateId = other.stateId;
-    physicalId = other.physicalId;
-    layerId = other.layerId;
-    parent = other.parent;
-    previous = other.previous;
-    next = other.next;
-    firstChild = other.firstChild;
-    lastChild = other.lastChild;
-    collapsedFirstChild = other.collapsedFirstChild;
-    collapsedLastChild = other.collapsedLastChild;
-    codelength = other.codelength;
-    dirty = other.dirty;
-    m_extras = other.m_extras ? std::make_unique<InfoNodeExtras>(*other.m_extras) : nullptr;
-#if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
-    lossyEntropy = other.lossyEntropy;
-    lossyFlowLogFlow = other.lossyFlowLogFlow;
-#endif
-    m_childDegree = other.m_childDegree;
-    m_childrenChanged = other.m_childrenChanged;
-    m_numLeafMembers = other.m_numLeafMembers;
-    return *this;
-  }
+  // Copy-assignment is unsupported and unused: nodes are cloned via the copy
+  // constructor (e.g. InfomapIterator physical aggregation) and otherwise
+  // referenced by pointer. A hand-maintained operator= had silently diverged
+  // from the constructor (it copied neither physicalNodes nor stateNodes),
+  // so delete it rather than keep two copy paths in sync. Any future use is a
+  // compile error, surfacing the need for a correct implementation.
+  InfoNode& operator=(const InfoNode& other) = delete;
 
   // ---------------------------- Getters ----------------------------
 
