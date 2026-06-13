@@ -486,10 +486,20 @@ private:
 // layout/alignment differences across platforms (Windows/macOS CI) don't trip
 // the guard, while still catching a regression back toward the un-shrunk sizes
 // (328 default / 344 lossy).
+//
+// Skip the guard under debug-STL configs (_GLIBCXX_DEBUG, libc++ debug,
+// MSVC _ITERATOR_DEBUG_LEVEL>0): those inflate std::vector/iterator layout, so
+// InfoNode legitimately exceeds these release-layout bounds without any real
+// regression. The guard's job is to catch re-bloat in normal builds, not to
+// constrain debug-iterator layouts.
+#if !defined(_GLIBCXX_DEBUG) && !defined(_GLIBCXX_DEBUG_PEDANTIC)            \
+    && !defined(_LIBCPP_DEBUG) && !(defined(_LIBCPP_DEBUG_LEVEL) && _LIBCPP_DEBUG_LEVEL > 0) \
+    && !(defined(_ITERATOR_DEBUG_LEVEL) && _ITERATOR_DEBUG_LEVEL > 0)
 #if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
 static_assert(sizeof(InfoNode) <= 320, "InfoNode grew beyond the shrink target (lossy build)");
 #else
 static_assert(sizeof(InfoNode) <= 304, "InfoNode grew beyond the shrink target");
+#endif
 #endif
 
 } // namespace infomap
