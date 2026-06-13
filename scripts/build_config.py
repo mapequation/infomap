@@ -22,6 +22,12 @@ FEATURE_REGISTRY = {
         "requires": [],
         "conflicts": [],
     },
+    "lossy-map-equation": {
+        "define": "INFOMAP_FEATURE_LOSSY_MAP_EQUATION",
+        "description": "Enable the experimental lossy map equation (noise modules, rate-distortion objective).",
+        "requires": [],
+        "conflicts": [],
+    },
     "test-feature": {
         "define": "INFOMAP_FEATURE_TEST_FEATURE",
         "description": "Internal canary used to verify compile-time feature gates.",

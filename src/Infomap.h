@@ -151,6 +151,10 @@ public:
 
   using InfomapBase::codelength;
   using InfomapBase::getEntropyRate;
+#if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
+  using InfomapBase::getLossyRate;
+  using InfomapBase::getLossyDistortion;
+#endif
   using InfomapBase::getMultilevelModules;
   using InfomapBase::iterLeafNodes;
   using InfomapBase::iterTree;

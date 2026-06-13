@@ -96,6 +96,13 @@ public:
 #endif
   std::vector<unsigned int> stateNodes; // For physically aggregated nodes
 
+#if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
+  // Lossy map equation leaf aggregates, additive over contained leaf nodes:
+  // sum of p_alpha * h_alpha (share of the Markov entropy rate) and sum of plogp(p_alpha).
+  double lossyEntropy = 0.0;
+  double lossyFlowLogFlow = 0.0;
+#endif
+
 private:
   unsigned int m_childDegree = 0;
   bool m_childrenChanged = false;
@@ -141,6 +148,10 @@ public:
         physicalNodes(other.physicalNodes),
         layerTeleFlowData(other.layerTeleFlowData),
         metaCollection(other.metaCollection ? std::make_unique<MetaCollection>(*other.metaCollection) : nullptr),
+#if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
+        lossyEntropy(other.lossyEntropy),
+        lossyFlowLogFlow(other.lossyFlowLogFlow),
+#endif
         m_childDegree(other.m_childDegree),
         m_childrenChanged(other.m_childrenChanged),
         m_numLeafMembers(other.m_numLeafMembers) {}
@@ -167,6 +178,10 @@ public:
     codelength = other.codelength;
     dirty = other.dirty;
     metaCollection = other.metaCollection ? std::make_unique<MetaCollection>(*other.metaCollection) : nullptr;
+#if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
+    lossyEntropy = other.lossyEntropy;
+    lossyFlowLogFlow = other.lossyFlowLogFlow;
+#endif
     m_childDegree = other.m_childDegree;
     m_childrenChanged = other.m_childrenChanged;
     m_numLeafMembers = other.m_numLeafMembers;

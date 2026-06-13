@@ -17,6 +17,9 @@
 #include "InfoNode.h"
 #include "FlowData.h"
 #include "../utils/Random.h"
+#if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
+#include "LossyMapEquation.h"
+#endif
 
 #include <set>
 #include <utility>
@@ -63,6 +66,11 @@ public:
   double getModuleCodelength() const override { return m_objective.getModuleCodelength(); }
 
   double getMetaCodelength(bool unweighted = false) const override;
+
+#if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
+  double getLossyRate() const override;
+  double getLossyDistortion() const override;
+#endif
 
   void setNetworkProperties(const StateNetwork& network) override;
 
@@ -170,6 +178,32 @@ inline double InfomapOptimizer<Objective>::getMetaCodelength(bool /*unweighted*/
   return 0.0;
 }
 
+#if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
+template <>
+inline double InfomapOptimizer<LossyMapEquation>::getLossyRate() const
+{
+  return m_objective.getLossyRate();
+}
+
+template <>
+inline double InfomapOptimizer<LossyMapEquation>::getLossyDistortion() const
+{
+  return m_objective.getLossyDistortion();
+}
+
+template <typename Objective>
+inline double InfomapOptimizer<Objective>::getLossyRate() const
+{
+  return 0.0;
+}
+
+template <typename Objective>
+inline double InfomapOptimizer<Objective>::getLossyDistortion() const
+{
+  return 0.0;
+}
+#endif
+
 // Only BiasedMapEquation uses per-network properties; every other objective keeps the no-op.
 template <typename Objective>
 inline void InfomapOptimizer<Objective>::setNetworkProperties(const StateNetwork& /*network*/)
@@ -221,6 +255,16 @@ inline bool InfomapOptimizer<RegularizedMultilayerMapEquation>::shouldUseInnerPa
   // RegularizedMultilayerMapEquation extends the memory objective with layer
   // teleportation state. Keep it on the stable serial path until those updates
   // can be batched with module-flow and physical-node updates.
+  return false;
+}
+#endif
+
+#if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
+template <>
+inline bool InfomapOptimizer<LossyMapEquation>::shouldUseInnerParallelization() const
+{
+  // LossyMapEquation keeps per-module loss/entropy aggregates that are updated
+  // together with accepted moves; keep it on the serial path for now.
   return false;
 }
 #endif

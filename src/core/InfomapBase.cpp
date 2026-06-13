@@ -17,6 +17,9 @@
 #if INFOMAP_FEATURE_REGULARIZED_MULTILAYER
 #include "RegularizedMultilayerMapEquation.h"
 #endif
+#if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
+#include "LossyMapEquation.h"
+#endif
 #include "InfomapOptimizer.h"
 #include "../io/RunReport.h"
 #include "../io/RunMetadata.h"
@@ -254,6 +257,13 @@ public:
     console.metric("Levels", fmt::to_string(result.bestNumLevels));
     console.metric("One-level codelength", io::toPrecision(m_infomap.getOneLevelCodelength()));
     console.metric("Best codelength", io::toPrecision(result.bestHierarchicalCodelength));
+#if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
+    if (m_infomap.lossy) {
+      console.metric("Lossy rate", io::toPrecision(m_infomap.getLossyRate()));
+      console.metric("Lossy distortion", io::toPrecision(m_infomap.getLossyDistortion()));
+      console.metric("Lambda", io::toPrecision(m_infomap.lossyLambda));
+    }
+#endif
     console.metric("Relative savings", fmt::format(FMT_STRING("{}%"), io::toPrecision(m_infomap.getRelativeCodelengthSavings() * 100, 2, true)));
     Log() << "\n";
     Log().print("{}\n", result.bestSolutionStatistics.str());
@@ -1491,6 +1501,10 @@ void InfomapBase::generateSubNetwork(InfoNode& parent)
   // Store parent module
   m_root.owner = &parent;
   m_root.data = parent.data;
+#if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
+  m_root.lossyEntropy = parent.lossyEntropy;
+  m_root.lossyFlowLogFlow = parent.lossyFlowLogFlow;
+#endif
 
   unsigned int numNodes = parent.childDegree();
   m_leafNodes.resize(numNodes);
@@ -1729,6 +1743,10 @@ void InfomapBase::partition()
     // TODO: Extract copying from root and resetting index to a method, also copy metadata?
     module.data = m_root.data;
     module.physicalNodes = m_root.physicalNodes;
+#if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
+    module.lossyEntropy = m_root.lossyEntropy;
+    module.lossyFlowLogFlow = m_root.lossyFlowLogFlow;
+#endif
     module.index = 0;
     for (auto& node : module) {
       node.index = 0;
@@ -2766,6 +2784,18 @@ void aggregatePerLevelCodelength(const InfoNode& parent, std::vector<detail::Per
 
 void InfomapBase::initOptimizer(bool forceNoMemory)
 {
+#if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
+  // Config::adaptDefaults validates --lossy against the parsed flags, but input
+  // parsing can flip state/multilayer input and auto-switch the flow model to
+  // directed afterwards. Re-validate here so lossy never silently falls through
+  // to another objective.
+  if (lossy) {
+    if (haveMetaData() || haveMemory() || isMultilayerNetwork())
+      throw std::runtime_error("--lossy does not support memory, multilayer or meta-data input");
+    if (!isUndirectedFlow())
+      throw std::runtime_error("--lossy requires undirected flow");
+  }
+#endif
   if (haveMetaData()) {
     m_optimizer = std::make_unique<InfomapOptimizer<MetaMapEquation>>();
   } else if (haveMemory() && !forceNoMemory) {
@@ -2779,7 +2809,15 @@ void InfomapBase::initOptimizer(bool forceNoMemory)
     m_optimizer = std::make_unique<InfomapOptimizer<MemMapEquation>>();
 #endif
   } else {
+#if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
+    if (lossy) {
+      m_optimizer = std::make_unique<InfomapOptimizer<LossyMapEquation>>();
+    } else {
+      m_optimizer = std::make_unique<InfomapOptimizer<BiasedMapEquation>>();
+    }
+#else
     m_optimizer = std::make_unique<InfomapOptimizer<BiasedMapEquation>>();
+#endif
   }
   m_optimizer->init(this);
 }

@@ -103,6 +103,15 @@ jobs:
           CXXFLAGS: ${{ matrix.config.cxxflags }} ${{ env.CPPFLAGS }}
           LDFLAGS: ${{ matrix.config.ldflags }} ${{ env.LDFLAGS }}
 
+      - name: Run C++ tests with experimental features
+        if: matrix.target.name == '' && matrix.config.name == 'ubuntu'
+        run: make test-native FEATURES="lossy-map-equation regularized-multilayer" CMAKE_TEST_BUILD_DIR=build/cmake-features CMAKE_CXX_COMPILER=${{ matrix.config.compiler }} TEST_CMAKE_ARGS="-DPython3_EXECUTABLE=$(python -c 'from pathlib import Path; import sys; print(Path(sys.executable).as_posix())')" ${{ matrix.config.test_extra_args }}
+        shell: bash
+        env:
+          CXX: ${{ matrix.config.compiler }}
+          CXXFLAGS: ${{ matrix.config.cxxflags }} ${{ env.CPPFLAGS }}
+          LDFLAGS: ${{ matrix.config.ldflags }} ${{ env.LDFLAGS }}
+
       - name: Package binary
         if: inputs.upload-artifacts
         run: 7z a ${{ matrix.config.artifact }}${{ matrix.target.name }}.zip ${{ matrix.config.binary }}

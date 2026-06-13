@@ -48,6 +48,12 @@ public:
 
   virtual double getMetaCodelength(bool /*unweighted*/ = false) const { return 0.0; }
 
+#if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
+  // Lossy map equation metrics; zero for every other objective.
+  virtual double getLossyRate() const { return 0.0; } // L_lossy (bits/step)
+  virtual double getLossyDistortion() const { return 0.0; } // D = sum over noise modules of H_i
+#endif
+
   // Forward per-network properties (e.g. total degree, node count) to the objective.
   // Only meaningful for objectives that use them (BiasedMapEquation); a no-op otherwise.
   // Stored per-instance so parallel trial workers don't share mutable state.
