@@ -2705,11 +2705,28 @@ void InfomapBase::partitionModuleRecursively(InfoNode& module, unsigned int leve
   // non-pool nodes via `delete`.
   std::vector<InfoNode*> materializedSubModules(numSubModulesQueued, nullptr);
   {
-    std::map<const InfoNode*, InfoNode*> cloneToMaterialized;
+    std::unordered_map<const InfoNode*, InfoNode*> cloneToMaterialized;
+    cloneToMaterialized.reserve(numSubModulesQueued);
     for (unsigned int k = 0; k < numSubModulesQueued; ++k) {
       const InfoNode* cloneSubModule = subQueue[k];
       auto* newSubModule = new InfoNode(cloneSubModule->data);
       newSubModule->codelength = cloneSubModule->codelength;
+      // Copy the objective-specific module aggregates the lazy sub-Infomap module
+      // node carried, so the materialized node is equivalent: calcCodelength and
+      // the deeper recursion read these on module nodes (e.g. MemMapEquation reads
+      // parent.physicalNodes). Without them, feature/higher-order builds compute
+      // wrong codelengths.
+      newSubModule->physicalNodes = cloneSubModule->physicalNodes;
+      newSubModule->stateNodes = cloneSubModule->stateNodes;
+#ifndef SWIG
+      newSubModule->layerTeleFlowData = cloneSubModule->layerTeleFlowData;
+      if (cloneSubModule->hasMetaCollection())
+        newSubModule->ensureMetaCollection() = *cloneSubModule->metaCollection;
+#endif
+#if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
+      newSubModule->lossyEntropy = cloneSubModule->lossyEntropy;
+      newSubModule->lossyFlowLogFlow = cloneSubModule->lossyFlowLogFlow;
+#endif
       cloneToMaterialized[cloneSubModule] = newSubModule;
       materializedSubModules[k] = newSubModule;
     }
