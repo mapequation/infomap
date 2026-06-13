@@ -256,7 +256,7 @@ public:
   bool hasMetaCollection() const noexcept { return m_extras && m_extras->metaCollection != nullptr; }
   MetaCollection& metaCollection() noexcept { return *m_extras->metaCollection; } // precondition: hasMetaCollection()
   const MetaCollection& metaCollection() const noexcept { return *m_extras->metaCollection; }
-  MetaCollection* metaCollectionPtr() const noexcept { return m_extras ? m_extras->metaCollection.get() : nullptr; }
+  const MetaCollection* metaCollectionPtr() const noexcept { return m_extras ? m_extras->metaCollection.get() : nullptr; }
 
   MetaCollection& ensureMetaCollection()
   {
@@ -501,12 +501,16 @@ private:
 // Guards the InfoNode shrink (feature-only fields moved out-of-line into
 // InfoNodeExtras). The common case (ordinary + higher-order) pays only the
 // extras pointer. The lossy feature adds two doubles inline.
-// Achieved: 328 -> 296 B in the default build (the three feature-only fields'
-// 56 nominal bytes net ~32 after alignment). The lossy feature adds two doubles.
+// Achieved on this toolchain: 328 -> 296 B in the default build (the three
+// feature-only fields' 56 nominal bytes net ~32 after alignment); the lossy
+// feature adds two doubles (~312 B). The bounds carry a small margin so struct
+// layout/alignment differences across platforms (Windows/macOS CI) don't trip
+// the guard, while still catching a regression back toward the un-shrunk sizes
+// (328 default / 344 lossy).
 #if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
-static_assert(sizeof(InfoNode) <= 312, "InfoNode grew beyond the shrink target (lossy build)");
+static_assert(sizeof(InfoNode) <= 320, "InfoNode grew beyond the shrink target (lossy build)");
 #else
-static_assert(sizeof(InfoNode) <= 296, "InfoNode grew beyond the shrink target");
+static_assert(sizeof(InfoNode) <= 304, "InfoNode grew beyond the shrink target");
 #endif
 
 } // namespace infomap
