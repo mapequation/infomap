@@ -2397,8 +2397,21 @@ void InfomapBase::resetFlowOnModules()
 
 unsigned int InfomapBase::removeModules()
 {
+  // Flatten until every child of root is a leaf. numLevels() only follows the
+  // firstChild chain (it assumes a uniform-depth tree, see its TODO), so it
+  // under-counts a ragged multilevel tree and would stop early, leaving deeper
+  // module subtrees behind. Loop on "any non-leaf child" instead so ragged trees
+  // (e.g. from materialize-and-free) flatten completely. For the uniform trees
+  // produced elsewhere this does the same number of passes as before.
+  auto rootHasModuleChild = [this]() {
+    for (auto& child : m_root)
+      if (!child.isLeaf())
+        return true;
+    return false;
+  };
+
   unsigned int numLevelsDeleted = 0;
-  while (numLevels() > 1) {
+  while (rootHasModuleChild()) {
     m_root.replaceChildrenWithGrandChildren();
     ++numLevelsDeleted;
   }
@@ -2685,15 +2698,87 @@ void InfomapBase::partitionModuleRecursively(InfoNode& module, unsigned int leve
   // Sized once before spawning so child records have stable addresses
   record.children.resize(numSubModulesQueued);
 
-  // Spawn the largest sub-modules first so the dominant subtrees start immediately
+  // Materialize this sub-partition into real children of `module`, then dispose
+  // the sub-Infomap so its working set (cloned active network + pools + maps) is
+  // freed immediately instead of being held live until the whole recursion ends.
+  // Top-down: `module`'s children are original main-tree leaves, so the new
+  // sub-module nodes reparent originals (never clones-of-clones). NOTE: this does
+  // NOT guarantee byte-identical output — recursing on original leaves sees a
+  // different edge order than the lazy clone path, so the order-sensitive greedy
+  // optimizer can settle on a different (quality-equivalent) optimum on deep
+  // networks; output is byte-identical only where recursion stays shallow.
+  // New module nodes use raw `new` (NOT the instance pool): the
+  // task graph runs this function concurrently and ObjectPool is per-instance,
+  // not thread-safe; malloc is. They are few, and InfoNode teardown deletes
+  // non-pool nodes via `delete`.
+  std::vector<InfoNode*> materializedSubModules(numSubModulesQueued, nullptr);
+  {
+    std::unordered_map<const InfoNode*, InfoNode*> cloneToMaterialized;
+    cloneToMaterialized.reserve(numSubModulesQueued);
+    for (unsigned int k = 0; k < numSubModulesQueued; ++k) {
+      const InfoNode* cloneSubModule = subQueue[k];
+      auto* newSubModule = new InfoNode(cloneSubModule->data);
+      newSubModule->codelength = cloneSubModule->codelength;
+      // Copy the objective-specific module aggregates the lazy sub-Infomap module
+      // node carried, so the materialized node is equivalent: calcCodelength and
+      // the deeper recursion read these on module nodes (e.g. MemMapEquation reads
+      // parent.physicalNodes). Without them, feature/higher-order builds compute
+      // wrong codelengths.
+      newSubModule->physicalNodes = cloneSubModule->physicalNodes;
+      newSubModule->stateNodes = cloneSubModule->stateNodes;
+#ifndef SWIG
+      newSubModule->layerTeleFlowData = cloneSubModule->layerTeleFlowData;
+      if (cloneSubModule->hasMetaCollection())
+        newSubModule->ensureMetaCollection() = *cloneSubModule->metaCollection;
+#endif
+#if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
+      newSubModule->lossyEntropy = cloneSubModule->lossyEntropy;
+      newSubModule->lossyFlowLogFlow = cloneSubModule->lossyFlowLogFlow;
+#endif
+      cloneToMaterialized[cloneSubModule] = newSubModule;
+      materializedSubModules[k] = newSubModule;
+    }
+
+    std::vector<InfoNode*> originalLeaves;
+    originalLeaves.reserve(module.childDegree());
+    for (auto& child : module)
+      originalLeaves.push_back(&child);
+
+    module.releaseChildren();
+
+    // The sub-Infomap clones `module`'s leaves 1:1 in the same order, so clone
+    // leaf i corresponds to original leaf i. Assert that invariant explicitly:
+    // an indexed loop with a size check fails fast with a clear error if future
+    // subnetwork-generation changes ever break it, instead of walking the clone
+    // iterator past end() (UB / SIGSEGV).
+    const auto& cloneLeaves = subInfomap.leafNodes();
+    if (cloneLeaves.size() != originalLeaves.size())
+      throw std::logic_error("InfomapBase::partitionModuleRecursively(): sub-Infomap leaf count does not match the module's original leaves");
+    for (std::size_t i = 0; i < originalLeaves.size(); ++i) {
+      const InfoNode* cloneSubModule = cloneLeaves[i]->parent;
+      cloneToMaterialized.at(cloneSubModule)->addChild(originalLeaves[i]);
+    }
+
+    for (InfoNode* newSubModule : materializedSubModules)
+      module.addChild(newSubModule);
+
+    // module now plays the role the sub-Infomap root did under getInfomapRoot():
+    // its index codelength is the sub-partition's index codelength.
+    module.codelength = subInfomap.root().codelength;
+    module.disposeInfomap();
+  }
+
+  // Spawn the largest sub-modules first so the dominant subtrees start immediately.
+  // Children recurse into the materialized real nodes (disjoint subtrees, no shared
+  // sub-Infomap), so the task graph is unchanged and no taskwait is needed.
   std::vector<PartitionQueue::size_t> spawnOrder(numSubModulesQueued);
   std::iota(spawnOrder.begin(), spawnOrder.end(), PartitionQueue::size_t { 0 });
-  std::sort(spawnOrder.begin(), spawnOrder.end(), [&subQueue](PartitionQueue::size_t a, PartitionQueue::size_t b) {
-    return subQueue[a]->data.flow > subQueue[b]->data.flow;
+  std::sort(spawnOrder.begin(), spawnOrder.end(), [&materializedSubModules](PartitionQueue::size_t a, PartitionQueue::size_t b) {
+    return materializedSubModules[a]->data.flow > materializedSubModules[b]->data.flow;
   });
 
   for (auto subModuleIndex : spawnOrder) {
-    InfoNode* subModule = subQueue[subModuleIndex];
+    InfoNode* subModule = materializedSubModules[subModuleIndex];
     detail::PartitionTaskRecord* childRecord = &record.children[subModuleIndex];
     // Small subtrees run inline: spawning them as tasks costs more in task
     // scheduling and idle-thread stealing than their work is worth.
