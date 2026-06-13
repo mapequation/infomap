@@ -110,6 +110,27 @@ namespace {
     }
   }
 
+#if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
+  void applyAndValidateLossyInteraction(Config& config)
+  {
+    if (!config.lossy)
+      return;
+
+    if (config.directed || (config.flowModelIsSet && config.flowModel != FlowModel::undirected))
+      throw std::runtime_error("--lossy requires undirected flow");
+    if (config.stateInput || config.multilayerInput || !config.additionalInput.empty())
+      throw std::runtime_error("--lossy does not support memory or multilayer networks");
+    if (config.haveMetaData())
+      throw std::runtime_error("--lossy does not support meta data");
+    if (config.recordedTeleportation || config.regularized)
+      throw std::runtime_error("--lossy does not support recorded teleportation or regularization");
+    if (config.variableMarkovTime || config.markovTime != 1.0)
+      throw std::runtime_error("--lossy does not support Markov time scaling");
+
+    config.twoLevel = true;
+  }
+#endif
+
   void applyFingerprintOnlyOutputInteraction(Config& config)
   {
     if (config.printConfigFingerprint) {
@@ -334,6 +355,9 @@ void Config::adaptDefaults()
   applyLibraryOutputDefaults(*this);
   validateRequiredCliOutput(*this);
   applyOptionInteractions(*this);
+#if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
+  applyAndValidateLossyInteraction(*this);
+#endif
   applyThreadBudgetInteraction(*this);
   validateRunReportOutput(*this);
   normalizeOutputDirectory(*this);
