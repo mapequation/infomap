@@ -24,7 +24,7 @@ SWIG-generated bindings.
 \seealso{
 Useful links:
 \itemize{
-  \item \url{https://www.mapequation.org/infomap/}
+  \item \url{https://mapequation.org/infomap/}
   \item \url{https://mapequation.r-universe.dev/infomap}
   \item Report bugs at \url{https://github.com/mapequation/infomap/issues}
 }

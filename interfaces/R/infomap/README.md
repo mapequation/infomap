@@ -1,6 +1,6 @@
 # infomap
 
-R bindings for the [Infomap](https://www.mapequation.org/infomap/) network
+R bindings for the [Infomap](https://mapequation.org/infomap/) network
 clustering algorithm. Infomap decomposes a network into modules by
 optimally compressing a description of information flows on the network
 using the Map Equation.

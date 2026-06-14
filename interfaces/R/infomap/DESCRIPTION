@@ -18,7 +18,7 @@ Description: R bindings for the Infomap network clustering algorithm. Infomap
     R helpers for inspecting the modular hierarchy, exporting to data
     frames, and integrating with the 'igraph' package.
 License: GPL-3
-URL: https://www.mapequation.org/infomap/, https://mapequation.r-universe.dev/infomap
+URL: https://mapequation.org/infomap/, https://mapequation.r-universe.dev/infomap
 BugReports: https://github.com/mapequation/infomap/issues
 Encoding: UTF-8
 SystemRequirements: C++17
