@@ -63,6 +63,41 @@ def test_seed_is_reproducible():
     assert _normalized(a) == _normalized(b)
 
 
+def test_weight_none_treats_edges_as_unweighted():
+    G = nx.karate_club_graph()
+    nx.set_edge_attributes(
+        G, {edge: i * i for i, edge in enumerate(G.edges)}, name="weight"
+    )
+    partition = nx.community.infomap_communities(
+        G, backend="infomap", weight=None, seed=42
+    )
+    assert nx.community.is_partition(G, partition)
+
+
+def test_seed_and_num_trials_forwarded_to_infomap(monkeypatch):
+    import infomap._nx_backend as backend
+
+    captured: dict = {}
+
+    def fake_find_communities(G, **kwargs):
+        captured.update(kwargs)
+        return [set(G.nodes())]
+
+    monkeypatch.setattr(backend, "find_communities", fake_find_communities)
+
+    G = nx.karate_club_graph()
+    backend.BackendInterface.infomap_communities(G, seed=99, num_trials=5)
+
+    assert captured["seed"] == 99
+    assert captured["num_trials"] == 5
+
+
+def test_multigraph_is_rejected():
+    G = nx.MultiGraph([(0, 1), (0, 1), (1, 2)])
+    with pytest.raises(nx.NetworkXNotImplemented):
+        nx.community.infomap_communities(G, backend="infomap")
+
+
 def test_isolated_node_is_retained():
     G = nx.karate_club_graph()  # integer-labeled nodes 0..33
     G.add_node(34)  # isolated, same label type
