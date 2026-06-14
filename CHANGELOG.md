@@ -2,6 +2,32 @@
 
 All notable changes to this project will be documented in this file. Releases are automated with [release-please](https://github.com/googleapis/release-please), using [Conventional Commits](https://www.conventionalcommits.org) to determine version bumps and changelog entries.
 
+## [2.13.0](https://github.com/mapequation/infomap/compare/v2.12.0...v2.13.0) (2026-06-14)
+
+
+### Features
+
+* lossy map equation with noise modules (feature-flagged) ([#656](https://github.com/mapequation/infomap/issues/656)) ([ab1301f](https://github.com/mapequation/infomap/commit/ab1301f99df5c32f0203c8edc78745463cfd329c))
+* multilayer cluster-data in the Python/R API ([#661](https://github.com/mapequation/infomap/issues/661)) ([39478a4](https://github.com/mapequation/infomap/commit/39478a467b3ebd8c9f89231a5611dcc93e5e2dde))
+* stop trials on a codelength plateau with --converge ([#666](https://github.com/mapequation/infomap/issues/666)) ([474c6ca](https://github.com/mapequation/infomap/commit/474c6caf7c18f42e495ee65e45bd4f3efd468cf2))
+* use pretty console output and migrate to fmt ([#648](https://github.com/mapequation/infomap/issues/648)) ([6179e00](https://github.com/mapequation/infomap/commit/6179e00a5a20dc1063312da713e2653e80538d4d))
+
+
+### Bug Fixes
+
+* repair InfoNode API mismatch in materialize-and-free ([4d57aff](https://github.com/mapequation/infomap/commit/4d57aff0797e85e14ce343563acf097c7aca23ca))
+
+
+### Performance Improvements
+
+* arena-pool allocation for InfoNode/InfoEdge in InfomapBase ([#650](https://github.com/mapequation/infomap/issues/650)) ([f5f93ea](https://github.com/mapequation/infomap/commit/f5f93eaf7ecf445e44ff34fe4337e26bdcdf526e))
+* flatten the physical-node module maps to sorted vectors ([#653](https://github.com/mapequation/infomap/issues/653)) ([a6cdb66](https://github.com/mapequation/infomap/commit/a6cdb66c82cfa62528b191937d07597d98bc55ed))
+* key the parse link maps by state id instead of StateNode ([#654](https://github.com/mapequation/infomap/issues/654)) ([05cadfc](https://github.com/mapequation/infomap/commit/05cadfcd4b4596c71cf6b53c856f8ecb29096c3b))
+* materialize-and-free sub-Infomap working sets ([#660](https://github.com/mapequation/infomap/issues/660)) ([c82cb51](https://github.com/mapequation/infomap/commit/c82cb51a46dab0c4092e6cebf1c087cf2dc048a5))
+* move InfoNode feature-only fields out-of-line ([#659](https://github.com/mapequation/infomap/issues/659)) ([b25099f](https://github.com/mapequation/infomap/commit/b25099f73715c08fbfe06d5b0238d1dbb7f95f27))
+* replace level-synchronous recursion with a task graph ([#651](https://github.com/mapequation/infomap/issues/651)) ([fc5156d](https://github.com/mapequation/infomap/commit/fc5156d24f46b8f11ba48208bac5fc939e54ed10))
+* reuse move-sweep buffers and rebuild the inner-parallel commit ([#652](https://github.com/mapequation/infomap/issues/652)) ([ab3c2db](https://github.com/mapequation/infomap/commit/ab3c2db2abbbe308968ae18b4811a6ee39903384))
+
 ## [2.12.0](https://github.com/mapequation/infomap/compare/v2.11.0...v2.12.0) (2026-06-08)
 
 
