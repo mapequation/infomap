@@ -1629,14 +1629,13 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
     def initial_partition(self, module_ids):
         if module_ids is None:
             module_ids = {}
-        keys = list(module_ids.keys())
-        if keys and any(isinstance(key, tuple) for key in keys):
-            if not all(isinstance(key, tuple) for key in keys):
+        if module_ids and any(isinstance(key, tuple) for key in module_ids):
+            if not all(isinstance(key, tuple) for key in module_ids):
                 raise ValueError(
                     "initial_partition keys must be either all integers "
                     "(node/state ids) or all (layer_id, node_id) tuples, not mixed"
                 )
-            if not all(len(key) == 2 for key in keys):
+            if not all(len(key) == 2 for key in module_ids):
                 raise ValueError(
                     "multilayer initial_partition keys must be (layer_id, node_id) "
                     "2-tuples (or MultilayerNode)"

@@ -15,7 +15,6 @@
 #include "../utils/format.h"
 #include <sstream>
 #include <vector>
-#include <algorithm>
 
 namespace infomap {
 
@@ -29,12 +28,15 @@ ColumnSchema ClusterMap::parseHeaderSchema(const std::string& headerLine)
       continue; // skip a standalone comment marker
     tokens.push_back(tok);
   }
+  // Match the exact declared schema (the new physical forms are an explicit
+  // opt-in, so a permissive "contains" match could misclassify other headers).
   // .clu physical multilayer: `# node_id layer_id module`
-  if (tokens.size() == 3 && tokens[0] == "node_id" && tokens[1] == "layer_id" && tokens[2] == "module")
+  static const std::vector<std::string> physicalCluHeader = { "node_id", "layer_id", "module" };
+  if (tokens == physicalCluHeader)
     return ColumnSchema::multilayerPhysicalClu;
-  // .tree physical multilayer: `# path flow name node_id layer_id` (no state_id)
-  auto has = [&tokens](const char* s) { return std::find(tokens.begin(), tokens.end(), s) != tokens.end(); };
-  if (has("path") && has("node_id") && has("layer_id") && !has("state_id"))
+  // .tree physical multilayer: `# path flow name node_id layer_id`
+  static const std::vector<std::string> physicalTreeHeader = { "path", "flow", "name", "node_id", "layer_id" };
+  if (tokens == physicalTreeHeader)
     return ColumnSchema::multilayerPhysicalTree;
   return ColumnSchema::legacy;
 }
