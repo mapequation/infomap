@@ -204,7 +204,9 @@ TEST_CASE("Config uses a default cap for converge without explicit num-trials [f
 {
   const Config config("input.net --silent --no-file-output --converge", true);
   CHECK(config.convergeTrials);
-  CHECK(config.numTrials == Config::convergeDefaultMaxTrials);
+  // Local copy avoids odr-use of the constexpr member (C++14: no out-of-line def).
+  const unsigned int defaultCap = Config::convergeDefaultMaxTrials;
+  CHECK(config.numTrials == defaultCap);
 }
 
 TEST_CASE("Config rejects converge combined with parallel trials [fast][core][config][cli]")

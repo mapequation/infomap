@@ -131,6 +131,7 @@ class Config(object):
     entropyBiasCorrectionMultiplier = property(_infomap.Config_entropyBiasCorrectionMultiplier_get, _infomap.Config_entropyBiasCorrectionMultiplier_set)
     seedToRandomNumberGenerator = property(_infomap.Config_seedToRandomNumberGenerator_get, _infomap.Config_seedToRandomNumberGenerator_set)
     numTrials = property(_infomap.Config_numTrials_get, _infomap.Config_numTrials_set)
+    convergeTrials = property(_infomap.Config_convergeTrials_get, _infomap.Config_convergeTrials_set)
     minimumCodelengthImprovement = property(_infomap.Config_minimumCodelengthImprovement_get, _infomap.Config_minimumCodelengthImprovement_set)
     minimumSingleNodeCodelengthImprovement = property(_infomap.Config_minimumSingleNodeCodelengthImprovement_get, _infomap.Config_minimumSingleNodeCodelengthImprovement_set)
     randomizeCoreLoopLimit = property(_infomap.Config_randomizeCoreLoopLimit_get, _infomap.Config_randomizeCoreLoopLimit_set)

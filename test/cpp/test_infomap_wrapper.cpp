@@ -201,7 +201,9 @@ TEST_CASE("Converge stops trials on a codelength plateau within the cap [fast][c
   infomap::test::checkRunSanity(im);
   const auto& codelengths = im.codelengths();
   // Ran at least the floor, never exceeded the cap, and the best is reported.
-  CHECK(codelengths.size() >= infomap::Config::convergeMinTrials);
+  // Local copy avoids odr-use of the constexpr member (C++14: no out-of-line def).
+  const unsigned int minTrials = infomap::Config::convergeMinTrials;
+  CHECK(codelengths.size() >= minTrials);
   CHECK(codelengths.size() <= cap);
 
   auto bestIt = std::min_element(codelengths.begin(), codelengths.end());

@@ -122,10 +122,14 @@ struct Config {
   // bounds are flat rather than size-adaptive; tolerance was insensitive across
   // 1e-8..1e-4.
   bool convergeTrials = false;
+#ifndef SWIG
+  // Internal calibration constants — hidden from the SWIG-wrapped binding API
+  // (they are not user-tunable; --converge is the only knob).
   static constexpr double convergeTolerance = 1e-6; // relative best-codelength improvement that counts
   static constexpr unsigned int convergePatience = 5; // consecutive non-improving trials before stopping
   static constexpr unsigned int convergeMinTrials = 5; // floor before the plateau rule can fire
   static constexpr unsigned int convergeDefaultMaxTrials = 50; // cap used when --converge is set without an explicit -N (~3.5x headroom over worst observed)
+#endif
   double minimumCodelengthImprovement = 1e-10;
   double minimumSingleNodeCodelengthImprovement = 1e-16;
   bool randomizeCoreLoopLimit = false;

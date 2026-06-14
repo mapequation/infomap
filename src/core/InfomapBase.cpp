@@ -447,7 +447,10 @@ private:
 
   void restoreBestResult(const Result& result)
   {
-    if (m_numTrials > 1 && (result.bestTreeNeedsRestore || result.bestTrialIndex < m_numTrials - 1)) {
+    // Compare against the actual executed trial count (m_trialsRun), not the cap
+    // (m_numTrials), so --converge does not force a redundant restore + rewrite
+    // when the best trial was the last one executed.
+    if (m_trialsRun > 1 && (result.bestTreeNeedsRestore || result.bestTrialIndex < m_trialsRun - 1)) {
       // This restore + rewrite only refreshes the output file's elapsed-time
       // header; the user already saw the "Output" line when the best trial ran.
       // Mute it so the redundant "Initial …" (from initTree) and second "Output"

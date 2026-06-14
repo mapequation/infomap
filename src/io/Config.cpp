@@ -27,13 +27,6 @@
 
 namespace infomap {
 
-// Out-of-line definitions for odr-use under C++14 (e.g. when passed by reference
-// to test assertion macros or formatters).
-constexpr double Config::convergeTolerance;
-constexpr unsigned int Config::convergePatience;
-constexpr unsigned int Config::convergeMinTrials;
-constexpr unsigned int Config::convergeDefaultMaxTrials;
-
 constexpr int FlowModel::undirected;
 constexpr int FlowModel::directed;
 constexpr int FlowModel::undirdir;
@@ -116,9 +109,10 @@ namespace {
       config.numTrials = 1;
     }
 
-    // --converge reinterprets numTrials as a cap. With no explicit -N (still at
-    // the default 1), a single-trial cap is meaningless, so use the default cap.
-    if (config.convergeTrials && config.numTrials <= 1 && !config.noInfomap) {
+    // --converge reinterprets numTrials as a cap. numTrials has min=1, so a value
+    // of 1 is the unspecified/default sentinel; treat it as "no explicit -N" and
+    // use the default cap (a single-trial cap would make --converge a no-op).
+    if (config.convergeTrials && config.numTrials == 1 && !config.noInfomap) {
       config.numTrials = Config::convergeDefaultMaxTrials;
     }
   }
