@@ -196,7 +196,7 @@ OPTION_DEFAULTS <- list(
 #'   \item{`no_self_links`}{Exclude self-links from the input network.}
 #'   \item{`node_limit`}{Read only nodes up to this node id and ignore links connected to higher node ids.}
 #'   \item{`matchable_multilayer_ids`}{Construct state ids from node ids and layer ids that stay comparable across networks. Set at least to the largest layer id among networks to match.}
-#'   \item{`cluster_data`}{Read an initial partition from a clu file or a hierarchy from a tree/ftree file. Tree input may use physical or state nodes for higher-order networks.}
+#'   \item{`cluster_data`}{Read an initial partition from a clu file or a hierarchy from a tree/ftree file. Tree input may use physical or state nodes for higher-order networks. For multilayer networks, a '# node_id layer_id module' clu header (or a '# path flow name node_id layer_id' tree header) keys the partition by physical identity, resolved to state ids internally.}
 #'   \item{`assign_to_neighbouring_module`}{With --cluster-data, assign nodes missing module ids to a neighboring node's module when possible.}
 #'   \item{`meta_data`}{Read metadata to encode from a clu-format file.}
 #'   \item{`meta_data_rate`}{With --meta-data, set the metadata encoding rate. The default encodes metadata at each step.}
