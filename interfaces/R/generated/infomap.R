@@ -20266,6 +20266,26 @@ attr(`InfomapBase_setInitialPartition`, 'returnType') = '_p_infomap__InfomapBase
 attr(`InfomapBase_setInitialPartition`, "inputTypes") = c('_p_infomap__InfomapBase', '_p_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t')
 class(`InfomapBase_setInitialPartition`) = c("SWIGFunction", class('InfomapBase_setInitialPartition'))
 
+# Start of InfomapBase_setMultilayerInitialPartition
+
+`InfomapBase_setMultilayerInitialPartition` = function(self, layerIds, nodeIds, moduleIds, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  layerIds = as.integer(layerIds);
+  nodeIds = as.integer(nodeIds);
+  moduleIds = as.integer(moduleIds);
+  ;ans = .Call('R_swig_InfomapBase_setMultilayerInitialPartition', self, layerIds, nodeIds, moduleIds, as.logical(.copy), PACKAGE='infomap');
+  ans <- if (is.null(ans)) ans
+  else new("_p_infomap__InfomapBase", ref=ans);
+  
+  ans
+  
+}
+
+attr(`InfomapBase_setMultilayerInitialPartition`, 'returnType') = '_p_infomap__InfomapBase'
+attr(`InfomapBase_setMultilayerInitialPartition`, "inputTypes") = c('_p_infomap__InfomapBase', 'integer', 'integer', 'integer')
+class(`InfomapBase_setMultilayerInitialPartition`) = c("SWIGFunction", class('InfomapBase_setMultilayerInitialPartition'))
+
 # Start of InfomapBase_run
 
 `InfomapBase_run__SWIG_0` = function(self, parameters)
@@ -20802,7 +20822,7 @@ class(`InfomapBase_elapsedTime`) = c("SWIGFunction", class('InfomapBase_elapsedT
 setMethod('$', '_p_infomap__InfomapBase', function(x, name)
 
 {
-  accessorFuns = list('iterTree' = InfomapBase_iterTree, 'iterTreePhysical' = InfomapBase_iterTreePhysical, 'iterModules' = InfomapBase_iterModules, 'iterLeafModules' = InfomapBase_iterLeafModules, 'iterLeafNodes' = InfomapBase_iterLeafNodes, 'iterLeafNodesPhysical' = InfomapBase_iterLeafNodesPhysical, 'begin' = InfomapBase_begin, 'end' = InfomapBase_end, 'network' = InfomapBase_network, 'root' = InfomapBase_root, 'numLeafNodes' = InfomapBase_numLeafNodes, 'leafNodes' = InfomapBase_leafNodes, 'numTopModules' = InfomapBase_numTopModules, 'numActiveModules' = InfomapBase_numActiveModules, 'numNonTrivialTopModules' = InfomapBase_numNonTrivialTopModules, 'haveModules' = InfomapBase_haveModules, 'haveNonTrivialModules' = InfomapBase_haveNonTrivialModules, 'numLevels' = InfomapBase_numLevels, 'maxTreeDepth' = InfomapBase_maxTreeDepth, 'getCodelength' = InfomapBase_getCodelength, 'getMetaCodelength' = InfomapBase_getMetaCodelength, 'codelength' = InfomapBase_codelength, 'codelengths' = InfomapBase_codelengths, 'getIndexCodelength' = InfomapBase_getIndexCodelength, 'getModuleCodelength' = InfomapBase_getModuleCodelength, 'getHierarchicalCodelength' = InfomapBase_getHierarchicalCodelength, 'getOneLevelCodelength' = InfomapBase_getOneLevelCodelength, 'getRelativeCodelengthSavings' = InfomapBase_getRelativeCodelengthSavings, 'getEntropyRate' = InfomapBase_getEntropyRate, 'getMaxEntropy' = InfomapBase_getMaxEntropy, 'getMaxFlow' = InfomapBase_getMaxFlow, 'getStartDate' = InfomapBase_getStartDate, 'getElapsedTime' = InfomapBase_getElapsedTime, 'activeNetwork' = InfomapBase_activeNetwork, 'getMultilevelModules' = InfomapBase_getMultilevelModules, 'toString' = InfomapBase_toString, 'getInitialPartition' = InfomapBase_getInitialPartition, 'setInitialPartition' = InfomapBase_setInitialPartition, 'run' = InfomapBase_run, 'writeTree' = InfomapBase_writeTree, 'writeFlowTree' = InfomapBase_writeFlowTree, 'writeNewickTree' = InfomapBase_writeNewickTree, 'writeJsonTree' = InfomapBase_writeJsonTree, 'writeCsvTree' = InfomapBase_writeCsvTree, 'writeClu' = InfomapBase_writeClu, 'elapsedTime' = InfomapBase_elapsedTime);
+  accessorFuns = list('iterTree' = InfomapBase_iterTree, 'iterTreePhysical' = InfomapBase_iterTreePhysical, 'iterModules' = InfomapBase_iterModules, 'iterLeafModules' = InfomapBase_iterLeafModules, 'iterLeafNodes' = InfomapBase_iterLeafNodes, 'iterLeafNodesPhysical' = InfomapBase_iterLeafNodesPhysical, 'begin' = InfomapBase_begin, 'end' = InfomapBase_end, 'network' = InfomapBase_network, 'root' = InfomapBase_root, 'numLeafNodes' = InfomapBase_numLeafNodes, 'leafNodes' = InfomapBase_leafNodes, 'numTopModules' = InfomapBase_numTopModules, 'numActiveModules' = InfomapBase_numActiveModules, 'numNonTrivialTopModules' = InfomapBase_numNonTrivialTopModules, 'haveModules' = InfomapBase_haveModules, 'haveNonTrivialModules' = InfomapBase_haveNonTrivialModules, 'numLevels' = InfomapBase_numLevels, 'maxTreeDepth' = InfomapBase_maxTreeDepth, 'getCodelength' = InfomapBase_getCodelength, 'getMetaCodelength' = InfomapBase_getMetaCodelength, 'codelength' = InfomapBase_codelength, 'codelengths' = InfomapBase_codelengths, 'getIndexCodelength' = InfomapBase_getIndexCodelength, 'getModuleCodelength' = InfomapBase_getModuleCodelength, 'getHierarchicalCodelength' = InfomapBase_getHierarchicalCodelength, 'getOneLevelCodelength' = InfomapBase_getOneLevelCodelength, 'getRelativeCodelengthSavings' = InfomapBase_getRelativeCodelengthSavings, 'getEntropyRate' = InfomapBase_getEntropyRate, 'getMaxEntropy' = InfomapBase_getMaxEntropy, 'getMaxFlow' = InfomapBase_getMaxFlow, 'getStartDate' = InfomapBase_getStartDate, 'getElapsedTime' = InfomapBase_getElapsedTime, 'activeNetwork' = InfomapBase_activeNetwork, 'getMultilevelModules' = InfomapBase_getMultilevelModules, 'toString' = InfomapBase_toString, 'getInitialPartition' = InfomapBase_getInitialPartition, 'setInitialPartition' = InfomapBase_setInitialPartition, 'setMultilayerInitialPartition' = InfomapBase_setMultilayerInitialPartition, 'run' = InfomapBase_run, 'writeTree' = InfomapBase_writeTree, 'writeFlowTree' = InfomapBase_writeFlowTree, 'writeNewickTree' = InfomapBase_writeNewickTree, 'writeJsonTree' = InfomapBase_writeJsonTree, 'writeCsvTree' = InfomapBase_writeCsvTree, 'writeClu' = InfomapBase_writeClu, 'elapsedTime' = InfomapBase_elapsedTime);
   ;        idx = pmatch(name, names(accessorFuns));
   if(is.na(idx)) 
   return(callNextMethod(x, name));

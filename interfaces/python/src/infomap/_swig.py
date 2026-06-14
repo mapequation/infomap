@@ -2586,6 +2586,9 @@ class InfomapBase(InfomapConfigInfomapBase):
     def setInitialPartition(self, moduleIds):
         return _infomap.InfomapBase_setInitialPartition(self, moduleIds)
 
+    def setMultilayerInitialPartition(self, layerIds, nodeIds, moduleIds):
+        return _infomap.InfomapBase_setMultilayerInitialPartition(self, layerIds, nodeIds, moduleIds)
+
     def run(self, *args):
         return _infomap.InfomapBase_run(self, *args)
 
