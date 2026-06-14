@@ -17,6 +17,7 @@
 #include <utility>
 #include <map>
 #include <vector>
+#include <stdexcept>
 
 namespace infomap {
 
@@ -95,6 +96,21 @@ public:
                                const std::vector<double>& weights)
   {
     m_network.addMultilayerInterLinks(sourceLayerIds, nodeIds, targetLayerIds, weights);
+  }
+
+  // Resolve a physical (node_id, layer_id) to the internally generated state id.
+  // The network must be built first (state nodes are created on the fly).
+  // Throws std::out_of_range if the combination is not present (issue #616).
+  unsigned int getMultilayerStateId(unsigned int nodeId, unsigned int layerId) const
+  {
+    const auto& map = m_network.layerNodeToStateId();
+    auto layerIt = map.find(layerId);
+    if (layerIt != map.end()) {
+      auto nodeIt = layerIt->second.find(nodeId);
+      if (nodeIt != layerIt->second.end())
+        return nodeIt->second;
+    }
+    throw std::out_of_range("No state id for (node " + std::to_string(nodeId) + ", layer " + std::to_string(layerId) + "); build the multilayer network before requesting it");
   }
 
   void setBipartiteStartId(unsigned int startId) { m_network.setBipartiteStartId(startId); }

@@ -23952,6 +23952,31 @@ attr(`InfomapWrapper_addMultilayerInterLinks`, 'returnType') = 'void'
 attr(`InfomapWrapper_addMultilayerInterLinks`, "inputTypes") = c('_p_infomap__InfomapWrapper', 'integer', 'integer', 'integer', '_p_std__vectorT_double_t')
 class(`InfomapWrapper_addMultilayerInterLinks`) = c("SWIGFunction", class('InfomapWrapper_addMultilayerInterLinks'))
 
+# Start of InfomapWrapper_getMultilayerStateId
+
+`InfomapWrapper_getMultilayerStateId` = function(self, nodeId, layerId, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  nodeId = as.integer(nodeId);
+  
+  if(length(nodeId) > 1) {
+    warning("using only the first element of nodeId");
+  };
+  
+  layerId = as.integer(layerId);
+  
+  if(length(layerId) > 1) {
+    warning("using only the first element of layerId");
+  };
+  
+  ;.Call('R_swig_InfomapWrapper_getMultilayerStateId', self, nodeId, layerId, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`InfomapWrapper_getMultilayerStateId`, 'returnType') = 'integer'
+attr(`InfomapWrapper_getMultilayerStateId`, "inputTypes") = c('_p_infomap__InfomapWrapper', 'integer', 'integer')
+class(`InfomapWrapper_getMultilayerStateId`) = c("SWIGFunction", class('InfomapWrapper_getMultilayerStateId'))
+
 # Start of InfomapWrapper_setBipartiteStartId
 
 `InfomapWrapper_setBipartiteStartId` = function(self, startId)
@@ -24373,7 +24398,7 @@ class(`InfomapWrapper_run__SWIG_2`) = c("SWIGFunction", class('InfomapWrapper_ru
 setMethod('$', '_p_infomap__InfomapWrapper', function(x, name)
 
 {
-  accessorFuns = list('readInputData' = InfomapWrapper_readInputData, 'addNode' = InfomapWrapper_addNode, 'addName' = InfomapWrapper_addName, 'getName' = InfomapWrapper_getName, 'getNames' = InfomapWrapper_getNames, 'addPhysicalNode' = InfomapWrapper_addPhysicalNode, 'addStateNode' = InfomapWrapper_addStateNode, 'addLink' = InfomapWrapper_addLink, 'addLinks' = InfomapWrapper_addLinks, 'addMultilayerLink' = InfomapWrapper_addMultilayerLink, 'addMultilayerLinks' = InfomapWrapper_addMultilayerLinks, 'addMultilayerIntraLink' = InfomapWrapper_addMultilayerIntraLink, 'addMultilayerIntraLinks' = InfomapWrapper_addMultilayerIntraLinks, 'addMultilayerInterLink' = InfomapWrapper_addMultilayerInterLink, 'addMultilayerInterLinks' = InfomapWrapper_addMultilayerInterLinks, 'setBipartiteStartId' = InfomapWrapper_setBipartiteStartId, 'getLinks' = InfomapWrapper_getLinks, 'getLinkResults' = InfomapWrapper_getLinkResults, 'getModules' = InfomapWrapper_getModules, 'codelength' = InfomapWrapper_codelength, 'getEntropyRate' = InfomapWrapper_getEntropyRate, 'getMultilevelModules' = InfomapWrapper_getMultilevelModules, 'iterLeafNodes' = InfomapWrapper_iterLeafNodes, 'iterTree' = InfomapWrapper_iterTree, 'run' = InfomapWrapper_run);
+  accessorFuns = list('readInputData' = InfomapWrapper_readInputData, 'addNode' = InfomapWrapper_addNode, 'addName' = InfomapWrapper_addName, 'getName' = InfomapWrapper_getName, 'getNames' = InfomapWrapper_getNames, 'addPhysicalNode' = InfomapWrapper_addPhysicalNode, 'addStateNode' = InfomapWrapper_addStateNode, 'addLink' = InfomapWrapper_addLink, 'addLinks' = InfomapWrapper_addLinks, 'addMultilayerLink' = InfomapWrapper_addMultilayerLink, 'addMultilayerLinks' = InfomapWrapper_addMultilayerLinks, 'addMultilayerIntraLink' = InfomapWrapper_addMultilayerIntraLink, 'addMultilayerIntraLinks' = InfomapWrapper_addMultilayerIntraLinks, 'addMultilayerInterLink' = InfomapWrapper_addMultilayerInterLink, 'addMultilayerInterLinks' = InfomapWrapper_addMultilayerInterLinks, 'getMultilayerStateId' = InfomapWrapper_getMultilayerStateId, 'setBipartiteStartId' = InfomapWrapper_setBipartiteStartId, 'getLinks' = InfomapWrapper_getLinks, 'getLinkResults' = InfomapWrapper_getLinkResults, 'getModules' = InfomapWrapper_getModules, 'codelength' = InfomapWrapper_codelength, 'getEntropyRate' = InfomapWrapper_getEntropyRate, 'getMultilevelModules' = InfomapWrapper_getMultilevelModules, 'iterLeafNodes' = InfomapWrapper_iterLeafNodes, 'iterTree' = InfomapWrapper_iterTree, 'run' = InfomapWrapper_run);
   ;        idx = pmatch(name, names(accessorFuns));
   if(is.na(idx)) 
   return(callNextMethod(x, name));

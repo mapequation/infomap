@@ -47935,6 +47935,58 @@ R_swig_InfomapWrapper_addMultilayerInterLinks ( SEXP self, SEXP sourceLayerIds, 
 
 
 SWIGEXPORT SEXP
+R_swig_InfomapWrapper_getMultilayerStateId ( SEXP self, SEXP nodeId, SEXP layerId, SEXP s_swig_copy)
+{
+  {
+    unsigned int result;
+    infomap::InfomapWrapper *arg1 = 0 ;
+    unsigned int arg2 ;
+    unsigned int arg3 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int val2 ;
+    int ecode2 = 0 ;
+    int val3 ;
+    int ecode3 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_infomap__InfomapWrapper, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "InfomapWrapper_getMultilayerStateId" "', argument " "1"" of type '" "infomap::InfomapWrapper const *""'"); 
+    }
+    arg1 = reinterpret_cast< infomap::InfomapWrapper * >(argp1);
+    ecode2 = SWIG_AsVal_int(nodeId, &val2);
+    if (!SWIG_IsOK(ecode2)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "InfomapWrapper_getMultilayerStateId" "', argument " "2"" of type '" "unsigned int""'");
+    } 
+    arg2 = static_cast< unsigned int >(val2);
+    ecode3 = SWIG_AsVal_int(layerId, &val3);
+    if (!SWIG_IsOK(ecode3)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "InfomapWrapper_getMultilayerStateId" "', argument " "3"" of type '" "unsigned int""'");
+    } 
+    arg3 = static_cast< unsigned int >(val3);
+    {
+      try {
+        result = (unsigned int)((infomap::InfomapWrapper const *)arg1)->getMultilayerStateId(arg2,arg3);
+      } catch (const std::exception& e) {
+        SWIG_exception(SWIG_RuntimeError, e.what());
+      }
+    }
+    r_ans = SWIG_From_int(static_cast< int >(result));
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
 R_swig_InfomapWrapper_setBipartiteStartId ( SEXP self, SEXP startId)
 {
   {
@@ -50249,6 +50301,7 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
    {"R_swig_InfomapIterator_begin_outEdge", (DL_FUNC) &R_swig_InfomapIterator_begin_outEdge, 2},
    {"R_swig_InfomapParentIterator_infomap_children__SWIG_0", (DL_FUNC) &R_swig_InfomapParentIterator_infomap_children__SWIG_0, 2},
    {"R_swig_InfomapParentIterator_infomap_children__SWIG_1", (DL_FUNC) &R_swig_InfomapParentIterator_infomap_children__SWIG_1, 2},
+   {"R_swig_InfomapWrapper_getMultilayerStateId", (DL_FUNC) &R_swig_InfomapWrapper_getMultilayerStateId, 4},
    {"R_swig_Config_skipAdjustBipartiteFlow_set", (DL_FUNC) &R_swig_Config_skipAdjustBipartiteFlow_set, 2},
    {"R_swig_InfomapBase_haveModules", (DL_FUNC) &R_swig_InfomapBase_haveModules, 2},
    {"R_swig_FlowModel_Equal", (DL_FUNC) &R_swig_FlowModel_Equal, 3},
