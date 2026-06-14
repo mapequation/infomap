@@ -82,6 +82,7 @@ export type Arguments = Partial<{
   coreLoopCodelengthThreshold: number;
   tuneIterationRelativeThreshold: number;
   fastHierarchicalSolution: 1 | 2 | 3;
+  converge: boolean;
   preferModularSolution: boolean;
   numRandomMoves: number;
   maxDegreeForRandomMoves: number;
@@ -236,6 +237,8 @@ export default function argumentsToString(args: Arguments) {
 
   if (args.fastHierarchicalSolution)
     result += " -" + "F".repeat(args.fastHierarchicalSolution);
+
+  if (args.converge) result += " --converge";
 
   if (args.preferModularSolution) result += " --prefer-modular-solution";
 

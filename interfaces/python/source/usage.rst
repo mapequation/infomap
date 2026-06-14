@@ -55,6 +55,30 @@ configuration across multiple runs:
     im2.add_link(2, 3)
     im2.run_with_options(options)
 
+Choosing the number of trials
+-----------------------------
+
+Each trial is an independent optimization from a different random seed, and
+Infomap keeps the best (lowest-codelength) partition. More trials means a
+better chance of finding the global optimum, at a linear cost in runtime. The
+default is a single trial (``num_trials=1``), which is fast but rarely the best
+solution.
+
+Instead of guessing a large fixed ``num_trials`` "to be safe", set
+``converge=True`` to treat ``num_trials`` as a *cap* and stop early once the
+best codelength has plateaued (no meaningful improvement over several
+consecutive trials):
+
+.. code-block:: python
+
+    im = Infomap(silent=True, converge=True, num_trials=50)
+
+This is serial and cannot be combined with parallel trials or distributed
+sharding. It targets a good-enough best partition, not a characterization of
+the solution landscape — if you need to study degeneracy or near-optimal
+diversity, use a large fixed ``num_trials`` or the dedicated `solution-landscape
+<https://github.com/mapequation/solution-landscape>`_ tooling instead.
+
 Inspecting state
 ----------------
 

@@ -38,6 +38,7 @@ std::string runSummaryReportJson(const RunSummaryReport& report)
   json["levels"] = report.levels;
   json["trials"] = report.trials;
   json["best_trial"] = report.bestTrial;
+  json["auto_stopped"] = report.autoStopped;
   json["trial_codelengths"] = report.trialCodelengths;
   json["trial_top_modules"] = report.trialTopModules;
   return dumpJsonLine(json);

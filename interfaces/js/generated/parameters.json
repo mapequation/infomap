@@ -680,6 +680,16 @@
     "default": false
   },
   {
+    "long": "--converge",
+    "short": "",
+    "description": "Treat the trial count as a cap and stop early once the best codelength has plateaued (no meaningful improvement over several consecutive trials). Runs trials serially; cannot be combined with parallel trials or distributed sharding. With no explicit trial count, a default cap is used.",
+    "group": "Accuracy",
+    "required": false,
+    "advanced": false,
+    "incremental": false,
+    "default": false
+  },
+  {
     "long": "--prefer-modular-solution",
     "short": "",
     "description": "Prefer a modular solution even when one module gives a lower codelength.",

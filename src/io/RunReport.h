@@ -32,6 +32,7 @@ struct RunSummaryReport {
   unsigned int levels = 0;
   unsigned int trials = 0;
   unsigned int bestTrial = 0;
+  bool autoStopped = false; // --converge: trials stopped early on a codelength plateau
   std::vector<double> trialCodelengths;
   std::vector<unsigned int> trialTopModules;
 };

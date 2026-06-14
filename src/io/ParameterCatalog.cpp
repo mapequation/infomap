@@ -837,6 +837,11 @@ const std::vector<ParameterSpec>& parameterCatalog()
         .advanced()
         .configTarget(&Config::parallelTrials),
     param()
+        .longName("converge")
+        .description("Treat the trial count as a cap and stop early once the best codelength has plateaued (no meaningful improvement over several consecutive trials). Runs trials serially; cannot be combined with parallel trials or distributed sharding. With no explicit trial count, a default cap is used.")
+        .group("Accuracy")
+        .configTarget(&Config::convergeTrials),
+    param()
         .longName("num-threads")
         .description("Effective thread budget: 'auto' (resolve from --num-threads > INFOMAP_NUM_THREADS > SLURM_CPUS_PER_TASK > OMP_NUM_THREADS > cpuset > hardware), or a positive integer. 1 forces fully serial. Governs the recursive partition, parallel trials, and inner parallelization.")
         .argument(ArgType::string)
