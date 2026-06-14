@@ -88,6 +88,40 @@ TEST_CASE("Cluster-data clu fixture initializes a two-level partition [fast][cor
   infomap::test::checkCanonicalPartition(im, { { 1, 2, 3 }, { 4, 5, 6 } });
 }
 
+TEST_CASE("Physical (node_id, layer_id) multilayer clu matches the state-keyed equivalent [fast][core][partition][multilayer][parser]")
+{
+  auto partitionFrom = [](const char* fixture) {
+    InfomapWrapper im(infomap::test::defaultFlags());
+    im.readInputData(infomap::test::networkFixturePath("multilayer.net"));
+    im.initNetwork(im.network());
+    im.initPartition(infomap::test::clusterFixturePath(fixture), false, &im.network());
+    return im.getModules(1, true); // state_id -> module
+  };
+
+  const auto legacy = partitionFrom("multilayer_states.clu");
+  const auto physical = partitionFrom("multilayer_physical.clu");
+
+  CHECK(legacy.size() == 6);
+  CHECK(physical == legacy);
+}
+
+TEST_CASE("Physical (node_id, layer_id) multilayer tree matches the state-keyed equivalent [fast][core][partition][multilayer][parser]")
+{
+  auto partitionFrom = [](const char* fixture) {
+    InfomapWrapper im(infomap::test::defaultFlags());
+    im.readInputData(infomap::test::networkFixturePath("multilayer.net"));
+    im.initNetwork(im.network());
+    im.initPartition(infomap::test::clusterFixturePath(fixture), false, &im.network());
+    return im.getModules(1, true); // state_id -> module
+  };
+
+  const auto legacy = partitionFrom("multilayer_states.tree");
+  const auto physical = partitionFrom("multilayer_physical.tree");
+
+  CHECK(legacy.size() == 6);
+  CHECK(physical == legacy);
+}
+
 TEST_CASE("Tree cluster-data fixture initializes a multi-level tree [fast][core][partition]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());
