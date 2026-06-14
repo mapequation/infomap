@@ -24,8 +24,16 @@ Two informational items may also appear and are expected:
 
 ## Test environments
 
-- local: macOS, R 4.6.0
-- (fill in win-builder / R-hub / GitHub Actions results before submitting)
+`R CMD check --as-cran` (via rcmdcheck) is run on GitHub Actions across a
+six-way matrix:
+
+- ubuntu-24.04, R release and R oldrel
+- macos-15, R release and R oldrel
+- windows-2025 (VS 2026), R release and R oldrel
+
+Also checked locally on macOS, R 4.6.0: 0 errors, 0 warnings, and the single
+expected "New submission" NOTE. The GitHub Actions matrix is the authoritative
+multi-platform result; confirm it is green before submitting.
 
 ## Reverse dependencies
 
