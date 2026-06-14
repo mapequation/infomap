@@ -1597,23 +1597,59 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         If you want to use an initial partition for one run only,
         use ``run(initial_partition=partition)``.
 
+        For a multilayer network you can key the partition by physical identity
+        instead of state ids, using ``(layer_id, node_id)`` tuples (or
+        :class:`MultilayerNode`) as keys. The resolution to internally generated
+        state ids is deferred until the network is built when you call
+        :meth:`run`.
+
+        >>> from infomap import Infomap, MultilayerNode
+        >>> im = Infomap(silent=True)
+        >>> im.add_multilayer_intra_link(1, 1, 2)
+        >>> im.add_multilayer_intra_link(2, 1, 3)
+        >>> im.initial_partition = {(1, 1): 0, MultilayerNode(2, 1): 1}
+
         Parameters
         ----------
-        module_ids : dict of int, or None
-            Dict with node ids as keys and module ids as values.
+        module_ids : dict, or None
+            Either ``{node_or_state_id: module_id}`` (integers) or, for a
+            multilayer network, ``{(layer_id, node_id): module_id}``.
 
         Returns
         -------
-        dict of int
-            Dict with node ids as keys and module ids as values.
+        dict
+            The initial partition as last set.
         """
+        physical = getattr(self, "_physical_initial_partition", None)
+        if physical is not None:
+            return physical
         return super().getInitialPartition()
 
     @initial_partition.setter
     def initial_partition(self, module_ids):
         if module_ids is None:
             module_ids = {}
-        super().setInitialPartition(module_ids)
+        if module_ids and any(isinstance(key, tuple) for key in module_ids):
+            if not all(isinstance(key, tuple) for key in module_ids):
+                raise ValueError(
+                    "initial_partition keys must be either all integers "
+                    "(node/state ids) or all (layer_id, node_id) tuples, not mixed"
+                )
+            if not all(len(key) == 2 for key in module_ids):
+                raise ValueError(
+                    "multilayer initial_partition keys must be (layer_id, node_id) "
+                    "2-tuples (or MultilayerNode)"
+                )
+            layer_ids, node_ids, modules = [], [], []
+            for (layer_id, node_id), module in module_ids.items():
+                layer_ids.append(int(layer_id))
+                node_ids.append(int(node_id))
+                modules.append(int(module))
+            super().setMultilayerInitialPartition(layer_ids, node_ids, modules)
+            self._physical_initial_partition = dict(module_ids)
+        else:
+            super().setInitialPartition(module_ids)
+            self._physical_initial_partition = None
 
     @contextmanager
     def _initial_partition(self, partition):

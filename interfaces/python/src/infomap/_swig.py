@@ -2586,6 +2586,9 @@ class InfomapBase(InfomapConfigInfomapBase):
     def setInitialPartition(self, moduleIds):
         return _infomap.InfomapBase_setInitialPartition(self, moduleIds)
 
+    def setMultilayerInitialPartition(self, layerIds, nodeIds, moduleIds):
+        return _infomap.InfomapBase_setMultilayerInitialPartition(self, layerIds, nodeIds, moduleIds)
+
     def run(self, *args):
         return _infomap.InfomapBase_run(self, *args)
 
@@ -3076,6 +3079,9 @@ class InfomapWrapper(InfomapBase):
 
     def addMultilayerInterLinks(self, sourceLayerIds, nodeIds, targetLayerIds, weights):
         return _infomap.InfomapWrapper_addMultilayerInterLinks(self, sourceLayerIds, nodeIds, targetLayerIds, weights)
+
+    def getMultilayerStateId(self, layerId, nodeId):
+        return _infomap.InfomapWrapper_getMultilayerStateId(self, layerId, nodeId)
 
     def setBipartiteStartId(self, startId):
         return _infomap.InfomapWrapper_setBipartiteStartId(self, startId)

@@ -47989,6 +47989,80 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_InfomapBase_setMultilayerInitialPartition(PyObject *self, PyObject *args) {
+  PyObject *resultobj = 0;
+  infomap::InfomapBase *arg1 = 0 ;
+  std::vector< unsigned int,std::allocator< unsigned int > > *arg2 = 0 ;
+  std::vector< unsigned int,std::allocator< unsigned int > > *arg3 = 0 ;
+  std::vector< unsigned int,std::allocator< unsigned int > > *arg4 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  int res2 = SWIG_OLDOBJ ;
+  int res3 = SWIG_OLDOBJ ;
+  int res4 = SWIG_OLDOBJ ;
+  PyObject *swig_obj[4] ;
+  infomap::InfomapBase *result = 0 ;
+  
+  (void)self;
+  if (!SWIG_Python_UnpackTuple(args, "InfomapBase_setMultilayerInitialPartition", 4, 4, swig_obj)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__InfomapBase, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "InfomapBase_setMultilayerInitialPartition" "', argument " "1"" of type '" "infomap::InfomapBase *""'"); 
+  }
+  arg1 = reinterpret_cast< infomap::InfomapBase * >(argp1);
+  {
+    std::vector< unsigned int,std::allocator< unsigned int > > *ptr = (std::vector< unsigned int,std::allocator< unsigned int > > *)0;
+    res2 = swig::asptr(swig_obj[1], &ptr);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "InfomapBase_setMultilayerInitialPartition" "', argument " "2"" of type '" "std::vector< unsigned int,std::allocator< unsigned int > > const &""'"); 
+    }
+    if (!ptr) {
+      SWIG_exception_fail(SWIG_NullReferenceError, "invalid null reference " "in method '" "InfomapBase_setMultilayerInitialPartition" "', argument " "2"" of type '" "std::vector< unsigned int,std::allocator< unsigned int > > const &""'"); 
+    }
+    arg2 = ptr;
+  }
+  {
+    std::vector< unsigned int,std::allocator< unsigned int > > *ptr = (std::vector< unsigned int,std::allocator< unsigned int > > *)0;
+    res3 = swig::asptr(swig_obj[2], &ptr);
+    if (!SWIG_IsOK(res3)) {
+      SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "InfomapBase_setMultilayerInitialPartition" "', argument " "3"" of type '" "std::vector< unsigned int,std::allocator< unsigned int > > const &""'"); 
+    }
+    if (!ptr) {
+      SWIG_exception_fail(SWIG_NullReferenceError, "invalid null reference " "in method '" "InfomapBase_setMultilayerInitialPartition" "', argument " "3"" of type '" "std::vector< unsigned int,std::allocator< unsigned int > > const &""'"); 
+    }
+    arg3 = ptr;
+  }
+  {
+    std::vector< unsigned int,std::allocator< unsigned int > > *ptr = (std::vector< unsigned int,std::allocator< unsigned int > > *)0;
+    res4 = swig::asptr(swig_obj[3], &ptr);
+    if (!SWIG_IsOK(res4)) {
+      SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "InfomapBase_setMultilayerInitialPartition" "', argument " "4"" of type '" "std::vector< unsigned int,std::allocator< unsigned int > > const &""'"); 
+    }
+    if (!ptr) {
+      SWIG_exception_fail(SWIG_NullReferenceError, "invalid null reference " "in method '" "InfomapBase_setMultilayerInitialPartition" "', argument " "4"" of type '" "std::vector< unsigned int,std::allocator< unsigned int > > const &""'"); 
+    }
+    arg4 = ptr;
+  }
+  {
+    try {
+      result = (infomap::InfomapBase *) &(arg1)->setMultilayerInitialPartition((std::vector< unsigned int,std::allocator< unsigned int > > const &)*arg2,(std::vector< unsigned int,std::allocator< unsigned int > > const &)*arg3,(std::vector< unsigned int,std::allocator< unsigned int > > const &)*arg4);
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_infomap__InfomapBase, 0 |  0 );
+  if (SWIG_IsNewObj(res2)) delete arg2;
+  if (SWIG_IsNewObj(res3)) delete arg3;
+  if (SWIG_IsNewObj(res4)) delete arg4;
+  return resultobj;
+fail:
+  if (SWIG_IsNewObj(res2)) delete arg2;
+  if (SWIG_IsNewObj(res3)) delete arg3;
+  if (SWIG_IsNewObj(res4)) delete arg4;
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_InfomapBase_run__SWIG_0(PyObject *self, Py_ssize_t nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
   infomap::InfomapBase *arg1 = 0 ;
@@ -57056,6 +57130,51 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_InfomapWrapper_getMultilayerStateId(PyObject *self, PyObject *args) {
+  PyObject *resultobj = 0;
+  infomap::InfomapWrapper *arg1 = 0 ;
+  unsigned int arg2 ;
+  unsigned int arg3 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  unsigned int val2 ;
+  int ecode2 = 0 ;
+  unsigned int val3 ;
+  int ecode3 = 0 ;
+  PyObject *swig_obj[3] ;
+  unsigned int result;
+  
+  (void)self;
+  if (!SWIG_Python_UnpackTuple(args, "InfomapWrapper_getMultilayerStateId", 3, 3, swig_obj)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__InfomapWrapper, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "InfomapWrapper_getMultilayerStateId" "', argument " "1"" of type '" "infomap::InfomapWrapper const *""'"); 
+  }
+  arg1 = reinterpret_cast< infomap::InfomapWrapper * >(argp1);
+  ecode2 = SWIG_AsVal_unsigned_SS_int(swig_obj[1], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "InfomapWrapper_getMultilayerStateId" "', argument " "2"" of type '" "unsigned int""'");
+  } 
+  arg2 = static_cast< unsigned int >(val2);
+  ecode3 = SWIG_AsVal_unsigned_SS_int(swig_obj[2], &val3);
+  if (!SWIG_IsOK(ecode3)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "InfomapWrapper_getMultilayerStateId" "', argument " "3"" of type '" "unsigned int""'");
+  } 
+  arg3 = static_cast< unsigned int >(val3);
+  {
+    try {
+      result = (unsigned int)((infomap::InfomapWrapper const *)arg1)->getMultilayerStateId(arg2,arg3);
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_From_unsigned_SS_int(static_cast< unsigned int >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_InfomapWrapper_setBipartiteStartId(PyObject *self, PyObject *args) {
   PyObject *resultobj = 0;
   infomap::InfomapWrapper *arg1 = 0 ;
@@ -59050,6 +59169,7 @@ static PyMethodDef SwigMethods[] = {
 	 { "InfomapBase_toString", _wrap_InfomapBase_toString, METH_VARARGS, NULL},
 	 { "InfomapBase_getInitialPartition", _wrap_InfomapBase_getInitialPartition, METH_O, NULL},
 	 { "InfomapBase_setInitialPartition", _wrap_InfomapBase_setInitialPartition, METH_VARARGS, NULL},
+	 { "InfomapBase_setMultilayerInitialPartition", _wrap_InfomapBase_setMultilayerInitialPartition, METH_VARARGS, NULL},
 	 { "InfomapBase_run", _wrap_InfomapBase_run, METH_VARARGS, NULL},
 	 { "InfomapBase_writeTree", _wrap_InfomapBase_writeTree, METH_VARARGS, NULL},
 	 { "InfomapBase_writeFlowTree", _wrap_InfomapBase_writeFlowTree, METH_VARARGS, NULL},
@@ -59225,6 +59345,7 @@ static PyMethodDef SwigMethods[] = {
 	 { "InfomapWrapper_addMultilayerIntraLinks", _wrap_InfomapWrapper_addMultilayerIntraLinks, METH_VARARGS, NULL},
 	 { "InfomapWrapper_addMultilayerInterLink", _wrap_InfomapWrapper_addMultilayerInterLink, METH_VARARGS, NULL},
 	 { "InfomapWrapper_addMultilayerInterLinks", _wrap_InfomapWrapper_addMultilayerInterLinks, METH_VARARGS, NULL},
+	 { "InfomapWrapper_getMultilayerStateId", _wrap_InfomapWrapper_getMultilayerStateId, METH_VARARGS, NULL},
 	 { "InfomapWrapper_setBipartiteStartId", _wrap_InfomapWrapper_setBipartiteStartId, METH_VARARGS, NULL},
 	 { "InfomapWrapper_getLinks", _wrap_InfomapWrapper_getLinks, METH_VARARGS, NULL},
 	 { "InfomapWrapper_getModules", _wrap_InfomapWrapper_getModules, METH_VARARGS, NULL},

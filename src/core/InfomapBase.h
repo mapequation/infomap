@@ -26,6 +26,8 @@
 #include <vector>
 #include <deque>
 #include <map>
+#include <array>
+#include <stdexcept>
 #include <limits>
 #include <memory>
 #include <string>
@@ -177,6 +179,24 @@ public:
   InfomapBase& setInitialPartition(const InitialPartition& moduleIds)
   {
     m_initialPartition = moduleIds;
+    m_multilayerInitialPartition.clear();
+    return *this;
+  }
+
+  // Initial partition for a multilayer network keyed by physical identity, given
+  // as parallel (layer_id, node_id, module_id) arrays. Resolution to state ids
+  // is deferred until the network is built (the state ids don't exist before
+  // then); see initTrialPartition. (issue #616)
+  InfomapBase& setMultilayerInitialPartition(const std::vector<unsigned int>& layerIds,
+                                             const std::vector<unsigned int>& nodeIds,
+                                             const std::vector<unsigned int>& moduleIds)
+  {
+    if (layerIds.size() != nodeIds.size() || layerIds.size() != moduleIds.size())
+      throw std::invalid_argument("setMultilayerInitialPartition: layer/node/module arrays must have equal length");
+    m_multilayerInitialPartition.assign(layerIds.size(), {});
+    for (std::size_t i = 0; i < layerIds.size(); ++i)
+      m_multilayerInitialPartition[i] = { layerIds[i], nodeIds[i], moduleIds[i] };
+    m_initialPartition.clear();
     return *this;
   }
 
@@ -539,6 +559,9 @@ protected:
 
   Network m_network;
   InitialPartition m_initialPartition; // nodeId -> moduleId
+  // Pending physical multilayer partition: {layer_id, node_id, module_id} rows,
+  // resolved to state ids in initTrialPartition once the network is built.
+  std::vector<std::array<unsigned int, 3>> m_multilayerInitialPartition;
 
   const unsigned int SUPER_LEVEL_ADDITION = 1 << 20;
   bool m_isMain = true;

@@ -40788,6 +40788,87 @@ R_swig_InfomapBase_setInitialPartition ( SEXP self, SEXP moduleIds, SEXP s_swig_
 
 
 SWIGEXPORT SEXP
+R_swig_InfomapBase_setMultilayerInitialPartition ( SEXP self, SEXP layerIds, SEXP nodeIds, SEXP moduleIds, SEXP s_swig_copy)
+{
+  {
+    infomap::InfomapBase *result = 0 ;
+    infomap::InfomapBase *arg1 = 0 ;
+    std::vector< unsigned int,std::allocator< unsigned int > > *arg2 = 0 ;
+    std::vector< unsigned int,std::allocator< unsigned int > > *arg3 = 0 ;
+    std::vector< unsigned int,std::allocator< unsigned int > > *arg4 = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int res2 = SWIG_OLDOBJ ;
+    int res3 = SWIG_OLDOBJ ;
+    int res4 = SWIG_OLDOBJ ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_infomap__InfomapBase, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "InfomapBase_setMultilayerInitialPartition" "', argument " "1"" of type '" "infomap::InfomapBase *""'"); 
+    }
+    arg1 = reinterpret_cast< infomap::InfomapBase * >(argp1);
+    {
+      std::vector< unsigned int,std::allocator< unsigned int > > *ptr = (std::vector< unsigned int,std::allocator< unsigned int > > *)0;
+      res2 = swig::asptr(layerIds, &ptr);
+      if (!SWIG_IsOK(res2)) {
+        SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "InfomapBase_setMultilayerInitialPartition" "', argument " "2"" of type '" "std::vector< unsigned int,std::allocator< unsigned int > > const &""'"); 
+      }
+      if (!ptr) {
+        SWIG_exception_fail(SWIG_NullReferenceError, "invalid null reference " "in method '" "InfomapBase_setMultilayerInitialPartition" "', argument " "2"" of type '" "std::vector< unsigned int,std::allocator< unsigned int > > const &""'"); 
+      }
+      arg2 = ptr;
+    }
+    {
+      std::vector< unsigned int,std::allocator< unsigned int > > *ptr = (std::vector< unsigned int,std::allocator< unsigned int > > *)0;
+      res3 = swig::asptr(nodeIds, &ptr);
+      if (!SWIG_IsOK(res3)) {
+        SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "InfomapBase_setMultilayerInitialPartition" "', argument " "3"" of type '" "std::vector< unsigned int,std::allocator< unsigned int > > const &""'"); 
+      }
+      if (!ptr) {
+        SWIG_exception_fail(SWIG_NullReferenceError, "invalid null reference " "in method '" "InfomapBase_setMultilayerInitialPartition" "', argument " "3"" of type '" "std::vector< unsigned int,std::allocator< unsigned int > > const &""'"); 
+      }
+      arg3 = ptr;
+    }
+    {
+      std::vector< unsigned int,std::allocator< unsigned int > > *ptr = (std::vector< unsigned int,std::allocator< unsigned int > > *)0;
+      res4 = swig::asptr(moduleIds, &ptr);
+      if (!SWIG_IsOK(res4)) {
+        SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "InfomapBase_setMultilayerInitialPartition" "', argument " "4"" of type '" "std::vector< unsigned int,std::allocator< unsigned int > > const &""'"); 
+      }
+      if (!ptr) {
+        SWIG_exception_fail(SWIG_NullReferenceError, "invalid null reference " "in method '" "InfomapBase_setMultilayerInitialPartition" "', argument " "4"" of type '" "std::vector< unsigned int,std::allocator< unsigned int > > const &""'"); 
+      }
+      arg4 = ptr;
+    }
+    {
+      try {
+        result = (infomap::InfomapBase *) &(arg1)->setMultilayerInitialPartition((std::vector< unsigned int,std::allocator< unsigned int > > const &)*arg2,(std::vector< unsigned int,std::allocator< unsigned int > > const &)*arg3,(std::vector< unsigned int,std::allocator< unsigned int > > const &)*arg4);
+      } catch (const std::exception& e) {
+        SWIG_exception(SWIG_RuntimeError, e.what());
+      }
+    }
+    r_ans = SWIG_R_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_infomap__InfomapBase, 0 |  0 );
+    if (SWIG_IsNewObj(res2)) delete arg2;
+    if (SWIG_IsNewObj(res3)) delete arg3;
+    if (SWIG_IsNewObj(res4)) delete arg4;
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+    if (SWIG_IsNewObj(res2)) delete arg2;
+    if (SWIG_IsNewObj(res3)) delete arg3;
+    if (SWIG_IsNewObj(res4)) delete arg4;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
 R_swig_InfomapBase_run__SWIG_0 ( SEXP self, SEXP parameters)
 {
   {
@@ -47935,6 +48016,58 @@ R_swig_InfomapWrapper_addMultilayerInterLinks ( SEXP self, SEXP sourceLayerIds, 
 
 
 SWIGEXPORT SEXP
+R_swig_InfomapWrapper_getMultilayerStateId ( SEXP self, SEXP layerId, SEXP nodeId, SEXP s_swig_copy)
+{
+  {
+    unsigned int result;
+    infomap::InfomapWrapper *arg1 = 0 ;
+    unsigned int arg2 ;
+    unsigned int arg3 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int val2 ;
+    int ecode2 = 0 ;
+    int val3 ;
+    int ecode3 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_infomap__InfomapWrapper, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "InfomapWrapper_getMultilayerStateId" "', argument " "1"" of type '" "infomap::InfomapWrapper const *""'"); 
+    }
+    arg1 = reinterpret_cast< infomap::InfomapWrapper * >(argp1);
+    ecode2 = SWIG_AsVal_int(layerId, &val2);
+    if (!SWIG_IsOK(ecode2)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "InfomapWrapper_getMultilayerStateId" "', argument " "2"" of type '" "unsigned int""'");
+    } 
+    arg2 = static_cast< unsigned int >(val2);
+    ecode3 = SWIG_AsVal_int(nodeId, &val3);
+    if (!SWIG_IsOK(ecode3)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "InfomapWrapper_getMultilayerStateId" "', argument " "3"" of type '" "unsigned int""'");
+    } 
+    arg3 = static_cast< unsigned int >(val3);
+    {
+      try {
+        result = (unsigned int)((infomap::InfomapWrapper const *)arg1)->getMultilayerStateId(arg2,arg3);
+      } catch (const std::exception& e) {
+        SWIG_exception(SWIG_RuntimeError, e.what());
+      }
+    }
+    r_ans = SWIG_From_int(static_cast< int >(result));
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
 R_swig_InfomapWrapper_setBipartiteStartId ( SEXP self, SEXP startId)
 {
   {
@@ -50249,6 +50382,7 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
    {"R_swig_InfomapIterator_begin_outEdge", (DL_FUNC) &R_swig_InfomapIterator_begin_outEdge, 2},
    {"R_swig_InfomapParentIterator_infomap_children__SWIG_0", (DL_FUNC) &R_swig_InfomapParentIterator_infomap_children__SWIG_0, 2},
    {"R_swig_InfomapParentIterator_infomap_children__SWIG_1", (DL_FUNC) &R_swig_InfomapParentIterator_infomap_children__SWIG_1, 2},
+   {"R_swig_InfomapWrapper_getMultilayerStateId", (DL_FUNC) &R_swig_InfomapWrapper_getMultilayerStateId, 4},
    {"R_swig_Config_skipAdjustBipartiteFlow_set", (DL_FUNC) &R_swig_Config_skipAdjustBipartiteFlow_set, 2},
    {"R_swig_InfomapBase_haveModules", (DL_FUNC) &R_swig_InfomapBase_haveModules, 2},
    {"R_swig_FlowModel_Equal", (DL_FUNC) &R_swig_FlowModel_Equal, 3},
@@ -50660,6 +50794,7 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
    {"R_swig_Config_haveMemory", (DL_FUNC) &R_swig_Config_haveMemory, 2},
    {"R_swig_InfomapWrapper_addMultilayerLink__SWIG_1", (DL_FUNC) &R_swig_InfomapWrapper_addMultilayerLink__SWIG_1, 5},
    {"R_swig_Config_preferModularSolution_get", (DL_FUNC) &R_swig_Config_preferModularSolution_get, 2},
+   {"R_swig_InfomapBase_setMultilayerInitialPartition", (DL_FUNC) &R_swig_InfomapBase_setMultilayerInitialPartition, 5},
    {"R_swig_Config_verbosity_set", (DL_FUNC) &R_swig_Config_verbosity_set, 2},
    {"R_swig_InfomapIterator_collapsedLastChild_set", (DL_FUNC) &R_swig_InfomapIterator_collapsedLastChild_set, 2},
    {"R_swig_EdgeData_flow_get", (DL_FUNC) &R_swig_EdgeData_flow_get, 2},

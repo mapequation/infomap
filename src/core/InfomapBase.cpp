@@ -600,7 +600,25 @@ private:
 
     if (!infomap.clusterDataFile.empty())
       infomap.initPartition(infomap.clusterDataFile, infomap.clusterDataIsHard, &m_network);
-    else if (!infomap.m_initialPartition.empty())
+    else if (!infomap.m_multilayerInitialPartition.empty()) {
+      // Resolve the physical (layer_id, node_id) keys to the generated state
+      // ids now that the network is built, then init as a normal partition.
+      const auto& layerNodeToStateId = m_network.layerNodeToStateId();
+      InfomapBase::InitialPartition statePartition;
+      for (const auto& row : infomap.m_multilayerInitialPartition) {
+        const auto layerId = row[0];
+        const auto nodeId = row[1];
+        const auto moduleId = row[2];
+        auto layerIt = layerNodeToStateId.find(layerId);
+        if (layerIt == layerNodeToStateId.end())
+          throw std::out_of_range("Initial partition references a multilayer node not in the network: (layer " + std::to_string(layerId) + ", node " + std::to_string(nodeId) + ")");
+        auto nodeIt = layerIt->second.find(nodeId);
+        if (nodeIt == layerIt->second.end())
+          throw std::out_of_range("Initial partition references a multilayer node not in the network: (layer " + std::to_string(layerId) + ", node " + std::to_string(nodeId) + ")");
+        statePartition[nodeIt->second] = moduleId;
+      }
+      infomap.initPartition(statePartition, infomap.clusterDataIsHard);
+    } else if (!infomap.m_initialPartition.empty())
       infomap.initPartition(infomap.m_initialPartition, infomap.clusterDataIsHard);
   }
 
