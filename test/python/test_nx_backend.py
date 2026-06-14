@@ -11,6 +11,8 @@ if not hasattr(nx.community, "infomap_communities"):
         "networkx does not provide infomap_communities", allow_module_level=True
     )
 
+pytestmark = pytest.mark.fast
+
 
 def _normalized(partition):
     return sorted(map(sorted, partition))
