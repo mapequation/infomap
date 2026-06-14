@@ -125,6 +125,12 @@ release = [
 infomap = "infomap:main"
 infomap-shell = "infomap.shell:main"
 
+[project.entry-points."networkx.backends"]
+infomap = "infomap._nx_backend:BackendInterface"
+
+[project.entry-points."networkx.backend_info"]
+infomap = "infomap._nx_backend:get_info"
+
 [tool.setuptools]
 include-package-data = true
 
