@@ -309,6 +309,29 @@ For the NetworkX-style wrapper:
 
     communities = infomap.find_communities(graph)
 
+Multilayer initial partitions
+-----------------------------
+
+For a multilayer network you can supply a pre-clustering keyed by physical
+identity, using ``(layer_id, node_id)`` tuples (or
+:class:`infomap.MultilayerNode`) instead of the internally generated state ids:
+
+.. code-block:: python
+
+    from infomap import Infomap, MultilayerNode
+
+    im = Infomap(silent=True)
+    im.add_multilayer_intra_link(1, 1, 2)
+    im.add_multilayer_intra_link(2, 1, 3)
+    im.initial_partition = {(1, 1): 0, MultilayerNode(2, 1): 1}
+    im.run()
+
+The keys are resolved to state ids when the network is built. On the command
+line the equivalent ``--cluster-data`` file is a ``.clu`` with a
+``# node_id layer_id module`` header (or a ``.tree`` with a
+``# path flow name node_id layer_id`` header); without such a header the file is
+read as before (state ids).
+
 igraph API semantics
 --------------------
 

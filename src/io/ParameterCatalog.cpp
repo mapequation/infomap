@@ -434,7 +434,7 @@ const std::vector<ParameterSpec>& parameterCatalog()
     param()
         .shortName('c')
         .longName("cluster-data")
-        .description("Read an initial partition from a clu file or a hierarchy from a tree/ftree file. Tree input may use physical or state nodes for higher-order networks.")
+        .description("Read an initial partition from a clu file or a hierarchy from a tree/ftree file. Tree input may use physical or state nodes for higher-order networks. For multilayer networks, a '# node_id layer_id module' clu header (or a '# path flow name node_id layer_id' tree header) keys the partition by physical identity, resolved to state ids internally.")
         .argument(ArgType::path)
         .group("Input")
         .configTarget(&Config::clusterDataFile),
