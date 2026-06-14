@@ -3080,8 +3080,8 @@ class InfomapWrapper(InfomapBase):
     def addMultilayerInterLinks(self, sourceLayerIds, nodeIds, targetLayerIds, weights):
         return _infomap.InfomapWrapper_addMultilayerInterLinks(self, sourceLayerIds, nodeIds, targetLayerIds, weights)
 
-    def getMultilayerStateId(self, nodeId, layerId):
-        return _infomap.InfomapWrapper_getMultilayerStateId(self, nodeId, layerId)
+    def getMultilayerStateId(self, layerId, nodeId):
+        return _infomap.InfomapWrapper_getMultilayerStateId(self, layerId, nodeId)
 
     def setBipartiteStartId(self, startId):
         return _infomap.InfomapWrapper_setBipartiteStartId(self, startId)

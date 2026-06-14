@@ -48016,7 +48016,7 @@ R_swig_InfomapWrapper_addMultilayerInterLinks ( SEXP self, SEXP sourceLayerIds, 
 
 
 SWIGEXPORT SEXP
-R_swig_InfomapWrapper_getMultilayerStateId ( SEXP self, SEXP nodeId, SEXP layerId, SEXP s_swig_copy)
+R_swig_InfomapWrapper_getMultilayerStateId ( SEXP self, SEXP layerId, SEXP nodeId, SEXP s_swig_copy)
 {
   {
     unsigned int result;
@@ -48038,12 +48038,12 @@ R_swig_InfomapWrapper_getMultilayerStateId ( SEXP self, SEXP nodeId, SEXP layerI
       SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "InfomapWrapper_getMultilayerStateId" "', argument " "1"" of type '" "infomap::InfomapWrapper const *""'"); 
     }
     arg1 = reinterpret_cast< infomap::InfomapWrapper * >(argp1);
-    ecode2 = SWIG_AsVal_int(nodeId, &val2);
+    ecode2 = SWIG_AsVal_int(layerId, &val2);
     if (!SWIG_IsOK(ecode2)) {
       SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "InfomapWrapper_getMultilayerStateId" "', argument " "2"" of type '" "unsigned int""'");
     } 
     arg2 = static_cast< unsigned int >(val2);
-    ecode3 = SWIG_AsVal_int(layerId, &val3);
+    ecode3 = SWIG_AsVal_int(nodeId, &val3);
     if (!SWIG_IsOK(ecode3)) {
       SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "InfomapWrapper_getMultilayerStateId" "', argument " "3"" of type '" "unsigned int""'");
     } 

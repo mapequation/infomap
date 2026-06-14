@@ -23974,22 +23974,22 @@ class(`InfomapWrapper_addMultilayerInterLinks`) = c("SWIGFunction", class('Infom
 
 # Start of InfomapWrapper_getMultilayerStateId
 
-`InfomapWrapper_getMultilayerStateId` = function(self, nodeId, layerId, .copy = FALSE)
+`InfomapWrapper_getMultilayerStateId` = function(self, layerId, nodeId, .copy = FALSE)
 {
   if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  nodeId = as.integer(nodeId);
-  
-  if(length(nodeId) > 1) {
-    warning("using only the first element of nodeId");
-  };
-  
   layerId = as.integer(layerId);
   
   if(length(layerId) > 1) {
     warning("using only the first element of layerId");
   };
   
-  ;.Call('R_swig_InfomapWrapper_getMultilayerStateId', self, nodeId, layerId, as.logical(.copy), PACKAGE='infomap');
+  nodeId = as.integer(nodeId);
+  
+  if(length(nodeId) > 1) {
+    warning("using only the first element of nodeId");
+  };
+  
+  ;.Call('R_swig_InfomapWrapper_getMultilayerStateId', self, layerId, nodeId, as.logical(.copy), PACKAGE='infomap');
   
 }
 

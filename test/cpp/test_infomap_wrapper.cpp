@@ -573,7 +573,7 @@ TEST_CASE("File-backed multilayer input clusters as a higher-order network [fast
   CHECK(im.getModules(1, true).size() == im.numLeafNodes());
 }
 
-TEST_CASE("getMultilayerStateId resolves physical (node, layer) to the generated state id [fast][core][multilayer][parser]")
+TEST_CASE("getMultilayerStateId resolves physical (layer, node) to the generated state id [fast][core][multilayer][parser]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());
   infomap::test::readNetworkFixture(im, "multilayer.net");
@@ -582,7 +582,7 @@ TEST_CASE("getMultilayerStateId resolves physical (node, layer) to the generated
   REQUIRE(!map.empty());
   for (const auto& [layerId, nodes] : map) {
     for (const auto& [nodeId, stateId] : nodes) {
-      CHECK(im.getMultilayerStateId(nodeId, layerId) == stateId);
+      CHECK(im.getMultilayerStateId(layerId, nodeId) == stateId);
     }
   }
 
