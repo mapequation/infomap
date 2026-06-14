@@ -132,10 +132,7 @@ class InfomapOptions:
         networks. Set at least to the largest layer id among networks to match.
     cluster_data : str, optional
         Read an initial partition from a clu file or a hierarchy from a tree/ftree file.
-        Tree input may use physical or state nodes for higher-order networks. For
-        multilayer networks, a '# node_id layer_id module' clu header (or a '# path flow
-        name node_id layer_id' tree header) keys the partition by physical identity,
-        resolved to state ids internally.
+        Tree input may use physical or state nodes for higher-order networks.
     assign_to_neighbouring_module : bool, optional
         With --cluster-data, assign nodes missing module ids to a neighboring node's
         module when possible.

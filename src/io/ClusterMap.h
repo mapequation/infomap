@@ -28,16 +28,6 @@ enum class TreeLeafIdType : std::uint8_t {
   state,
 };
 
-// Cluster-data column layout, selected by a recognized `#` header line.
-// `legacy` keeps the historical column-count / state-first behavior; the
-// multilayer-physical schemas are opt-in via their declared header so existing
-// files are unaffected (issue #616).
-enum class ColumnSchema : std::uint8_t {
-  legacy,
-  multilayerPhysicalClu, // # node_id layer_id module
-  multilayerPhysicalTree, // # path flow name node_id layer_id
-};
-
 struct TreePath {
   unsigned int nodeId = 0; // Either a physical id or a state id, see idType
   Path path;
@@ -65,14 +55,10 @@ private:
   void readTree(const std::string& filename, bool includeFlow, const std::map<unsigned int, std::map<unsigned int, unsigned int>>* layerNodeToStateId = nullptr);
   void readClu(const std::string& filename, bool includeFlow, const std::map<unsigned int, std::map<unsigned int, unsigned int>>* layerNodeToStateId = nullptr);
 
-  // Classify a `#` header line into a recognized column schema (legacy if none).
-  static ColumnSchema parseHeaderSchema(const std::string& headerLine);
-
   std::map<unsigned int, unsigned int> m_clusterIds;
   std::map<unsigned int, double> m_flowData;
   TreePaths m_treePaths;
   std::string m_extension;
-  ColumnSchema m_schema = ColumnSchema::legacy;
   bool m_isHigherOrder = false;
   bool m_hasTreeLeafIdType = false;
   TreeLeafIdType m_treeLeafIdType = TreeLeafIdType::physical;

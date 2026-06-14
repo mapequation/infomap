@@ -326,11 +326,9 @@ identity, using ``(layer_id, node_id)`` tuples (or
     im.initial_partition = {(1, 1): 0, MultilayerNode(2, 1): 1}
     im.run()
 
-The keys are resolved to state ids when the network is built. On the command
-line the equivalent ``--cluster-data`` file is a ``.clu`` with a
-``# node_id layer_id module`` header (or a ``.tree`` with a
-``# path flow name node_id layer_id`` header); without such a header the file is
-read as before (state ids).
+The keys are resolved to the generated state ids once the network is built, so
+you never need to know the state ids. (File-based ``--cluster-data`` still uses
+state ids; physical ``(layer_id, node_id)`` keys are an in-memory API feature.)
 
 igraph API semantics
 --------------------

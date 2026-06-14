@@ -14,32 +14,8 @@
 #include "../utils/FileURI.h"
 #include "../utils/format.h"
 #include <sstream>
-#include <vector>
 
 namespace infomap {
-
-ColumnSchema ClusterMap::parseHeaderSchema(const std::string& headerLine)
-{
-  std::istringstream hs(headerLine);
-  std::string tok;
-  std::vector<std::string> tokens;
-  while (hs >> tok) {
-    if (tok == "#")
-      continue; // skip a standalone comment marker
-    tokens.push_back(tok);
-  }
-  // Match the exact declared schema (the new physical forms are an explicit
-  // opt-in, so a permissive "contains" match could misclassify other headers).
-  // .clu physical multilayer: `# node_id layer_id module`
-  static const std::vector<std::string> physicalCluHeader = { "node_id", "layer_id", "module" };
-  if (tokens == physicalCluHeader)
-    return ColumnSchema::multilayerPhysicalClu;
-  // .tree physical multilayer: `# path flow name node_id layer_id`
-  static const std::vector<std::string> physicalTreeHeader = { "path", "flow", "name", "node_id", "layer_id" };
-  if (tokens == physicalTreeHeader)
-    return ColumnSchema::multilayerPhysicalTree;
-  return ColumnSchema::legacy;
-}
 
 void ClusterMap::readClusterData(const std::string& filename, bool includeFlow, const std::map<unsigned int, std::map<unsigned int, unsigned int>>* layerNodeToStateId)
 {
@@ -47,7 +23,6 @@ void ClusterMap::readClusterData(const std::string& filename, bool includeFlow, 
   m_flowData.clear();
   m_treePaths.clear();
   m_extension.clear();
-  m_schema = ColumnSchema::legacy;
   m_isHigherOrder = false;
   m_hasTreeLeafIdType = false;
   m_treeLeafIdType = TreeLeafIdType::physical;
@@ -91,12 +66,8 @@ void ClusterMap::readTree(const std::string& filename, bool includeFlow, const s
     if (line.empty())
       continue;
     if (line[0] == '#') {
-      // A recognized column header opts into the physical-multilayer schema;
-      // otherwise the header is decoration and the row column count is
-      // authoritative (legacy behavior unchanged).
-      auto schema = parseHeaderSchema(line);
-      if (schema != ColumnSchema::legacy)
-        m_schema = schema;
+      // Header lines like `# path flow name node_id [...]` are just
+      // human-readable decoration — the row column count is authoritative.
       continue;
     }
     if (line[0] == '*') {
@@ -123,74 +94,49 @@ void ClusterMap::readTree(const std::string& filename, bool includeFlow, const s
     if (!(lineStream >> parsedId))
       throw std::runtime_error(fmt::format(FMT_STRING("Couldn't parse node id from line '{}'"), line));
 
+    const auto hasExplicitNodeId = static_cast<bool>(lineStream >> nodeId);
+    const auto inferredLeafIdType = hasExplicitNodeId ? TreeLeafIdType::state : TreeLeafIdType::physical;
+
+    if (!m_hasTreeLeafIdType) {
+      m_treeLeafIdType = inferredLeafIdType;
+      m_hasTreeLeafIdType = true;
+    } else if (inferredLeafIdType != m_treeLeafIdType) {
+      // Earlier rows had a different column count. A file that mixes
+      // physical-id (4 columns) and state-id (5+ columns) rows cannot be
+      // parsed safely.
+      throw std::runtime_error(fmt::format(FMT_STRING("Mixed state and physical tree ids are not supported in line '{}'."), line));
+    }
+
+    if (m_treeLeafIdType == TreeLeafIdType::state) {
+      if (hasExplicitNodeId) {
+        m_isHigherOrder = true;
+      } else if (m_isHigherOrder) {
+        throw std::runtime_error(fmt::format(FMT_STRING("Missing node id from line '{}'."), line));
+      }
+      if (isMultilayer) {
+        if (!hasExplicitNodeId)
+          throw std::runtime_error(fmt::format(FMT_STRING("Couldn't parse node key from line '{}'"), line));
+        if (!(lineStream >> layerId))
+          throw std::runtime_error(fmt::format(FMT_STRING("Couldn't parse layer id from line '{}'"), line));
+      }
+    }
+
+    bool multilayerNodeFound = false;
     unsigned int stateId = parsedId;
 
-    if (m_schema == ColumnSchema::multilayerPhysicalTree) {
-      // `# path flow name node_id layer_id`: parsedId was actually the node id;
-      // resolve (node, layer) -> state id. Header-selected, so it cannot be
-      // confused with the equally-wide state-higher-order form.
-      if (!isMultilayer)
-        throw std::runtime_error("Physical multilayer cluster-data (node_id layer_id) requires a multilayer network.");
-      nodeId = parsedId;
-      if (!(lineStream >> layerId))
-        throw std::runtime_error(fmt::format(FMT_STRING("Couldn't parse layer id from line '{}'"), line));
-      if (!m_hasTreeLeafIdType) {
-        m_treeLeafIdType = TreeLeafIdType::state;
-        m_hasTreeLeafIdType = true;
-      } else if (m_treeLeafIdType != TreeLeafIdType::state) {
-        throw std::runtime_error(fmt::format(FMT_STRING("Mixed state and physical tree ids are not supported in line '{}'."), line));
-      }
-      m_isHigherOrder = true;
+    if (isMultilayer && m_treeLeafIdType == TreeLeafIdType::state) {
+      // Re-map state id from layer/node ids in case the multilayer state ids differ
       auto it = layerNodeToStateId->find(layerId);
-      if (it == layerNodeToStateId->end())
-        continue;
-      auto nodeIdToStateId = it->second.find(nodeId);
-      if (nodeIdToStateId == it->second.end())
-        continue;
-      stateId = nodeIdToStateId->second;
-    } else {
-      const auto hasExplicitNodeId = static_cast<bool>(lineStream >> nodeId);
-      const auto inferredLeafIdType = hasExplicitNodeId ? TreeLeafIdType::state : TreeLeafIdType::physical;
-
-      if (!m_hasTreeLeafIdType) {
-        m_treeLeafIdType = inferredLeafIdType;
-        m_hasTreeLeafIdType = true;
-      } else if (inferredLeafIdType != m_treeLeafIdType) {
-        // Earlier rows had a different column count. A file that mixes
-        // physical-id (4 columns) and state-id (5+ columns) rows cannot be
-        // parsed safely.
-        throw std::runtime_error(fmt::format(FMT_STRING("Mixed state and physical tree ids are not supported in line '{}'."), line));
-      }
-
-      if (m_treeLeafIdType == TreeLeafIdType::state) {
-        if (hasExplicitNodeId) {
-          m_isHigherOrder = true;
-        } else if (m_isHigherOrder) {
-          throw std::runtime_error(fmt::format(FMT_STRING("Missing node id from line '{}'."), line));
-        }
-        if (isMultilayer) {
-          if (!hasExplicitNodeId)
-            throw std::runtime_error(fmt::format(FMT_STRING("Couldn't parse node key from line '{}'"), line));
-          if (!(lineStream >> layerId))
-            throw std::runtime_error(fmt::format(FMT_STRING("Couldn't parse layer id from line '{}'"), line));
+      if (it != layerNodeToStateId->end()) {
+        auto nodeIdToStateId = it->second.find(nodeId);
+        if (nodeIdToStateId != it->second.end()) {
+          stateId = nodeIdToStateId->second;
+          multilayerNodeFound = true;
         }
       }
-
-      if (isMultilayer && m_treeLeafIdType == TreeLeafIdType::state) {
-        // Re-map state id from layer/node ids in case the multilayer state ids differ
-        bool multilayerNodeFound = false;
-        auto it = layerNodeToStateId->find(layerId);
-        if (it != layerNodeToStateId->end()) {
-          auto nodeIdToStateId = it->second.find(nodeId);
-          if (nodeIdToStateId != it->second.end()) {
-            stateId = nodeIdToStateId->second;
-            multilayerNodeFound = true;
-          }
-        }
-        if (!multilayerNodeFound) {
-          // Skip rows whose layer/node combination is not present in the network
-          continue;
-        }
+      if (!multilayerNodeFound) {
+        // Skip rows whose layer/node combination is not present in the network
+        continue;
       }
     }
 
@@ -224,42 +170,18 @@ void ClusterMap::readClu(const std::string& filename, bool includeFlow, const st
   std::map<unsigned int, unsigned int> clusterData;
 
   while (!std::getline(input, line).fail()) {
-    if (line.empty() || line[0] == '*')
+    if (line.empty() || line[0] == '#' || line[0] == '*')
       continue;
-    if (line[0] == '#') {
-      // A recognized column header selects the schema; legacy comment lines
-      // (version, command, "# state_id module ...") leave it unchanged.
-      auto schema = parseHeaderSchema(line);
-      if (schema != ColumnSchema::legacy)
-        m_schema = schema;
-      continue;
-    }
 
     lineStream.clear();
     lineStream.str(line);
+    // # state_id module flow node_id layer_id
 
     unsigned int stateId;
     unsigned int nodeId;
     unsigned int moduleId;
     unsigned int layerId;
 
-    // Physical multilayer form (# node_id layer_id module): resolve to state id.
-    if (m_schema == ColumnSchema::multilayerPhysicalClu) {
-      if (!isMultilayer)
-        throw std::runtime_error("Physical multilayer cluster-data (node_id layer_id module) requires a multilayer network.");
-      if (!(lineStream >> nodeId >> layerId >> moduleId))
-        throw std::runtime_error(fmt::format(FMT_STRING("Couldn't parse 'node_id layer_id module' from line '{}'"), line));
-      auto it = layerNodeToStateId->find(layerId);
-      if (it == layerNodeToStateId->end())
-        continue;
-      auto nodeIdToStateId = it->second.find(nodeId);
-      if (nodeIdToStateId == it->second.end())
-        continue;
-      m_clusterIds[nodeIdToStateId->second] = moduleId;
-      continue;
-    }
-
-    // # state_id module flow node_id layer_id
     if (!(lineStream >> stateId >> moduleId))
       throw std::runtime_error(fmt::format(FMT_STRING("Couldn't parse node key and cluster id from line '{}'"), line));
 
