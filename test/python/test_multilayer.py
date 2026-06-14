@@ -78,3 +78,9 @@ def test_initial_partition_physical_unknown_key_raises(make_infomap):
     im.initial_partition = {(9, 9): 0}
     with pytest.raises((ValueError, RuntimeError)):
         im.run(no_infomap=True)
+
+
+def test_initial_partition_physical_bad_tuple_shape_raises(make_infomap):
+    im = _build_multilayer(make_infomap)
+    with pytest.raises(ValueError):
+        im.initial_partition = {(1, 1, 1): 0}

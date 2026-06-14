@@ -1636,6 +1636,11 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
                     "initial_partition keys must be either all integers "
                     "(node/state ids) or all (layer_id, node_id) tuples, not mixed"
                 )
+            if not all(len(key) == 2 for key in keys):
+                raise ValueError(
+                    "multilayer initial_partition keys must be (layer_id, node_id) "
+                    "2-tuples (or MultilayerNode)"
+                )
             layer_ids, node_ids, modules = [], [], []
             for (layer_id, node_id), module in module_ids.items():
                 layer_ids.append(int(layer_id))
