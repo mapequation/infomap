@@ -9,6 +9,7 @@
     "levels",
     "trials",
     "best_trial",
+    "auto_stopped",
     "trial_codelengths",
     "trial_top_modules"
   ],
@@ -20,6 +21,7 @@
     "levels": { "type": "integer", "minimum": 0 },
     "trials": { "type": "integer", "minimum": 0 },
     "best_trial": { "type": "integer", "minimum": 0 },
+    "auto_stopped": { "type": "boolean" },
     "trial_codelengths": {
       "type": "array",
       "items": { "type": "number" }

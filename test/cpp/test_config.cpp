@@ -188,6 +188,38 @@ TEST_CASE("Config parses parallel trials flag [fast][core][config][cli]")
   CHECK_FALSE(parameter->requireArgument);
 }
 
+TEST_CASE("Config parses converge flag and treats num-trials as a cap [fast][core][config][cli]")
+{
+  const Config config("input.net --silent --no-file-output --num-trials 30 --converge", true);
+  CHECK(config.convergeTrials);
+  CHECK(config.numTrials == 30); // explicit -N stays the cap
+
+  const auto* parameter = findParameter("converge");
+  REQUIRE(parameter != nullptr);
+  CHECK(parameter->group == "Accuracy");
+  CHECK_FALSE(parameter->requireArgument);
+}
+
+TEST_CASE("Config uses a default cap for converge without explicit num-trials [fast][core][config][cli]")
+{
+  const Config config("input.net --silent --no-file-output --converge", true);
+  CHECK(config.convergeTrials);
+  // Local copy avoids odr-use of the constexpr member (C++14: no out-of-line def).
+  const unsigned int defaultCap = Config::convergeDefaultMaxTrials;
+  CHECK(config.numTrials == defaultCap);
+}
+
+TEST_CASE("Config rejects converge combined with parallel trials [fast][core][config][cli]")
+{
+  CHECK_THROWS_AS(Config("input.net --silent --no-file-output --converge --parallel-trials --num-trials 10", true), std::runtime_error);
+}
+
+TEST_CASE("Config rejects converge combined with distributed sharding [fast][core][config][cli]")
+{
+  CHECK_THROWS_AS(Config("input.net --silent --no-file-output --converge --trial-offset 5", true), std::runtime_error);
+  CHECK_THROWS_AS(Config("input.net --silent --no-file-output --converge --trial-results shard.json", true), std::runtime_error);
+}
+
 TEST_CASE("Config parses run report flags [fast][core][config][cli]")
 {
   const Config config("input.net --silent --no-file-output --timing-json timing.json --summary-json summary.json --memory-report --manifest-json manifest.json", true);

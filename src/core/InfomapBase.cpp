@@ -217,17 +217,21 @@ public:
       return;
     }
 
-    if (m_numTrials > 1) {
+    if (m_trialsRun > 1) {
       restoreBestResult(result);
     }
 
     auto summaryTimer = m_timing.scope("summary_s");
 
     Console console;
-    console.section(fmt::format(FMT_STRING("Summary after {}{}"), m_numTrials, m_numTrials > 1 ? " trials" : " trial"));
+    console.section(fmt::format(FMT_STRING("Summary after {}{}"), m_trialsRun, m_trialsRun > 1 ? " trials" : " trial"));
+    if (m_autoStopped) {
+      const unsigned int patience = Config::convergePatience;
+      Console::detail(0, "auto: stopped after {} trials (no improvement in last {})", m_trialsRun, patience);
+    }
     std::string codelengthRange;
     std::string topModulesRange;
-    if (m_numTrials > 1) {
+    if (m_trialsRun > 1) {
       double averageCodelength = 0.0;
       double minCodelength = m_infomap.m_codelengths[0];
       double maxCodelength = m_infomap.m_codelengths[0];
@@ -235,7 +239,7 @@ public:
       auto minNumTopModules = m_infomap.m_numTopModules[0];
       auto maxNumTopModules = m_infomap.m_numTopModules[0];
       printPrettyTrialTable(m_infomap.m_codelengths, m_infomap.m_numTopModules);
-      for (unsigned int i = 0; i < m_numTrials; ++i) {
+      for (unsigned int i = 0; i < m_trialsRun; ++i) {
         averageCodelength += m_infomap.m_codelengths[i];
         minCodelength = std::min(minCodelength, m_infomap.m_codelengths[i]);
         maxCodelength = std::max(maxCodelength, m_infomap.m_codelengths[i]);
@@ -243,8 +247,8 @@ public:
         minNumTopModules = std::min(minNumTopModules, m_infomap.m_numTopModules[i]);
         maxNumTopModules = std::max(maxNumTopModules, m_infomap.m_numTopModules[i]);
       }
-      averageCodelength /= m_numTrials;
-      averageNumTopModules /= m_numTrials;
+      averageCodelength /= m_trialsRun;
+      averageNumTopModules /= m_trialsRun;
       codelengthRange = fmt::format(FMT_STRING("{} / {} / {}"), io::toPrecision(minCodelength), io::toPrecision(averageCodelength), io::toPrecision(maxCodelength));
       topModulesRange = fmt::format(FMT_STRING("{} / {} / {}"), minNumTopModules, io::toPrecision(averageNumTopModules, 1, true), maxNumTopModules);
       console.metric("Codelength min/avg/max", codelengthRange);
@@ -282,11 +286,40 @@ private:
       return runTrialsInParallel();
     }
 
-    for (unsigned int i = 0; i < m_numTrials; ++i) {
-      runTrial(i, result);
+    if (m_convergeTrials) {
+      runTrialsUntilConverged(result);
+    } else {
+      for (unsigned int i = 0; i < m_numTrials; ++i) {
+        runTrial(i, result);
+      }
     }
 
     return result;
+  }
+
+  // --converge: m_numTrials is a cap. Run trials sequentially and stop once the
+  // best codelength has plateaued — no improvement beyond a relative tolerance
+  // for `convergePatience` consecutive trials, after a `convergeMinTrials` floor.
+  // The decision depends only on the deterministic per-trial codelengths, so the
+  // trial count and result are reproducible for a given input + seed.
+  void runTrialsUntilConverged(Result& result)
+  {
+    unsigned int trialsSinceImprovement = 0;
+    unsigned int i = 0;
+    for (; i < m_numTrials; ++i) {
+      const double bestBefore = result.bestHierarchicalCodelength;
+      runTrial(i, result);
+
+      const bool improved = result.bestHierarchicalCodelength < bestBefore * (1.0 - Config::convergeTolerance);
+      trialsSinceImprovement = improved ? 0 : trialsSinceImprovement + 1;
+
+      if (i + 1 >= Config::convergeMinTrials && trialsSinceImprovement >= Config::convergePatience) {
+        m_autoStopped = true;
+        ++i;
+        break;
+      }
+    }
+    m_trialsRun = i;
   }
 
   Result runTrialsInParallel()
@@ -414,7 +447,10 @@ private:
 
   void restoreBestResult(const Result& result)
   {
-    if (m_numTrials > 1 && (result.bestTreeNeedsRestore || result.bestTrialIndex < m_numTrials - 1)) {
+    // Compare against the actual executed trial count (m_trialsRun), not the cap
+    // (m_numTrials), so --converge does not force a redundant restore + rewrite
+    // when the best trial was the last one executed.
+    if (m_trialsRun > 1 && (result.bestTreeNeedsRestore || result.bestTrialIndex < m_trialsRun - 1)) {
       // This restore + rewrite only refreshes the output file's elapsed-time
       // header; the user already saw the "Output" line when the best trial ran.
       // Mute it so the redundant "Initial …" (from initTree) and second "Output"
@@ -689,8 +725,9 @@ public:
       report.codelength = result.bestHierarchicalCodelength;
       report.topModules = m_infomap.numTopModules();
       report.levels = result.bestNumLevels;
-      report.trials = m_numTrials;
+      report.trials = m_trialsRun;
       report.bestTrial = result.bestTrialIndex + 1;
+      report.autoStopped = m_autoStopped;
       report.trialCodelengths = m_infomap.m_codelengths;
       report.trialTopModules = m_infomap.m_numTopModules;
       writeJsonReport(m_infomap.summaryJsonPath, runSummaryReportJson(report), m_infomap.overwriteOutput());
@@ -796,6 +833,9 @@ private:
   TimingRegistry& m_timing;
   RunReportNetwork m_reportNetwork;
   const unsigned int m_numTrials = m_infomap.numTrials;
+  const bool m_convergeTrials = m_infomap.convergeTrials;
+  unsigned int m_trialsRun = m_infomap.numTrials; // actual count; equals m_numTrials unless --converge stops early
+  bool m_autoStopped = false;
   bool m_runParallelTrials = false;
   unsigned int m_threadsUsed = 1;
   ThreadBudget m_threadBudget;

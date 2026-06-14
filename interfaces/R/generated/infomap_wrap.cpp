@@ -7116,6 +7116,67 @@ R_swig_Config_numTrials_get ( SEXP self, SEXP s_swig_copy)
 
 
 SWIGEXPORT SEXP
+R_swig_Config_convergeTrials_set ( SEXP self, SEXP s_convergeTrials)
+{
+  {
+    infomap::Config *arg1 = 0 ;
+    bool arg2 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_infomap__Config, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Config_convergeTrials_set" "', argument " "1"" of type '" "infomap::Config *""'"); 
+    }
+    arg1 = reinterpret_cast< infomap::Config * >(argp1);
+    arg2 = LOGICAL(s_convergeTrials)[0] ? true : false;
+    if (arg1) (arg1)->convergeTrials = arg2;
+    r_ans = R_NilValue;
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
+R_swig_Config_convergeTrials_get ( SEXP self, SEXP s_swig_copy)
+{
+  {
+    bool result;
+    infomap::Config *arg1 = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_infomap__Config, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Config_convergeTrials_get" "', argument " "1"" of type '" "infomap::Config *""'"); 
+    }
+    arg1 = reinterpret_cast< infomap::Config * >(argp1);
+    result = (bool) ((arg1)->convergeTrials);
+    r_ans = Rf_ScalarLogical(result);
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
 R_swig_Config_minimumCodelengthImprovement_set ( SEXP self, SEXP s_minimumCodelengthImprovement)
 {
   {
@@ -50334,6 +50395,7 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
    {"R_swig_InfomapIterator___ref____SWIG_1", (DL_FUNC) &R_swig_InfomapIterator___ref____SWIG_1, 2},
    {"R_swig_PartitionQueue_moduleCodelength_set", (DL_FUNC) &R_swig_PartitionQueue_moduleCodelength_set, 2},
    {"R_swig_Config_haveModularResultOutput", (DL_FUNC) &R_swig_Config_haveModularResultOutput, 2},
+   {"R_swig_Config_convergeTrials_get", (DL_FUNC) &R_swig_Config_convergeTrials_get, 2},
    {"R_swig_InfoNode_setInfomap", (DL_FUNC) &R_swig_InfoNode_setInfomap, 3},
    {"R_swig_LinkResult_source_set", (DL_FUNC) &R_swig_LinkResult_source_set, 2},
    {"R_swig_delete_pair_uint_uint", (DL_FUNC) &R_swig_delete_pair_uint_uint, 1},
@@ -50828,6 +50890,7 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
    {"R_swig_InfomapParentIterator_begin_tree__SWIG_3", (DL_FUNC) &R_swig_InfomapParentIterator_begin_tree__SWIG_3, 2},
    {"R_swig_Config_assignToNeighbouringModule_get", (DL_FUNC) &R_swig_Config_assignToNeighbouringModule_get, 2},
    {"R_swig_new_InfomapLeafIteratorPhysical__SWIG_4", (DL_FUNC) &R_swig_new_InfomapLeafIteratorPhysical__SWIG_4, 1},
+   {"R_swig_Config_convergeTrials_set", (DL_FUNC) &R_swig_Config_convergeTrials_set, 2},
    {"R_swig_InfomapLeafModuleIterator_current__SWIG_0", (DL_FUNC) &R_swig_InfomapLeafModuleIterator_current__SWIG_0, 1},
    {"R_swig_InfomapBase_getRelativeCodelengthSavings", (DL_FUNC) &R_swig_InfomapBase_getRelativeCodelengthSavings, 2},
    {"R_swig_InfomapLeafModuleIterator_current__SWIG_1", (DL_FUNC) &R_swig_InfomapLeafModuleIterator_current__SWIG_1, 1},

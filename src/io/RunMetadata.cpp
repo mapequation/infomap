@@ -146,6 +146,7 @@ std::string canonicalConfigJson(const Config& config)
   json["meta_data_unweighted"] = config.unweightedMetaData;
   addCanonicalNumber(json, "preferred_number_of_modules", config.preferredNumberOfModules);
   json["parallel_trials"] = config.parallelTrials;
+  json["converge_trials"] = config.convergeTrials;
   json["inner_parallelization"] = config.innerParallelization;
   addCanonicalNumber(json, "core_loop_limit", config.coreLoopLimit);
   addCanonicalNumber(json, "core_level_limit", config.levelAggregationLimit);

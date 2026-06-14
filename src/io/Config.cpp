@@ -108,6 +108,26 @@ namespace {
     if (config.noInfomap) {
       config.numTrials = 1;
     }
+
+    // --converge reinterprets numTrials as a cap. numTrials has min=1, so a value
+    // of 1 is the unspecified/default sentinel; treat it as "no explicit -N" and
+    // use the default cap (a single-trial cap would make --converge a no-op).
+    if (config.convergeTrials && config.numTrials == 1 && !config.noInfomap) {
+      config.numTrials = Config::convergeDefaultMaxTrials;
+    }
+  }
+
+  void validateConvergeTrials(const Config& config)
+  {
+    if (!config.convergeTrials) {
+      return;
+    }
+    if (config.parallelTrials) {
+      throw std::runtime_error("--converge cannot be combined with --parallel-trials (auto-convergence needs each trial's result before deciding to continue)");
+    }
+    if (config.trialOffset > 0 || !config.trialResultsPath.empty()) {
+      throw std::runtime_error("--converge cannot be combined with distributed sharding (--trial-offset / --trial-results); independent shards cannot coordinate a stop");
+    }
   }
 
 #if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
@@ -355,6 +375,7 @@ void Config::adaptDefaults()
   applyLibraryOutputDefaults(*this);
   validateRequiredCliOutput(*this);
   applyOptionInteractions(*this);
+  validateConvergeTrials(*this);
 #if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
   applyAndValidateLossyInteraction(*this);
 #endif

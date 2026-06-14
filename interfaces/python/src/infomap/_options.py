@@ -76,6 +76,7 @@ _ACCURACY_OPTION_SPECS = (
     ("value", "tune_iteration_relative_threshold", "--tune-iteration-relative-threshold", lambda value: value != 1e-05),
     ("flag", "inner_parallelization", "--inner-parallelization", None),
     ("flag", "parallel_trials", "--parallel-trials", None),
+    ("flag", "converge", "--converge", None),
     ("value", "num_threads", "--num-threads", lambda value: value is not None),
     ("value", "threads", "--threads", lambda value: value is not None),
     ("flag", "prefer_modular_solution", "--prefer-modular-solution", None),
@@ -288,6 +289,11 @@ class InfomapOptions:
         (e.g. OMP_NUM_THREADS), clamped to --num-trials. Peak memory scales with the
         worker count. Nested OpenMP and --inner-parallelization are disabled inside
         workers.
+    converge : bool, optional
+        Treat the trial count as a cap and stop early once the best codelength has
+        plateaued (no meaningful improvement over several consecutive trials). Runs
+        trials serially; cannot be combined with parallel trials or distributed
+        sharding. With no explicit trial count, a default cap is used.
     num_threads : str, optional
         Effective thread budget: 'auto' (resolve from --num-threads >
         INFOMAP_NUM_THREADS > SLURM_CPUS_PER_TASK > OMP_NUM_THREADS > cpuset >
@@ -374,6 +380,7 @@ class InfomapOptions:
     fast_hierarchical_solution: int | None = None
     inner_parallelization: bool = False
     parallel_trials: bool = False
+    converge: bool = False
     num_threads: str | None = None
     threads: str | None = None
     prefer_modular_solution: bool = False
@@ -497,6 +504,7 @@ def _construct_args(
     fast_hierarchical_solution=None,
     inner_parallelization=False,
     parallel_trials=False,
+    converge=False,
     num_threads=None,
     threads=None,
     prefer_modular_solution=False,

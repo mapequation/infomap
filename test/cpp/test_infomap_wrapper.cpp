@@ -190,6 +190,42 @@ TEST_CASE("Multi-trial run reports the best trial codelength [fast][core][lifecy
   CHECK(im.codelength() == doctest::Approx(*bestIt));
 }
 
+TEST_CASE("Converge stops trials on a codelength plateau within the cap [fast][core][lifecycle]")
+{
+  const unsigned int cap = 30;
+  InfomapWrapper im("--silent --seed 1 --converge --num-trials " + std::to_string(cap));
+  im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+
+  im.run();
+
+  infomap::test::checkRunSanity(im);
+  const auto& codelengths = im.codelengths();
+  // Ran at least the floor, never exceeded the cap, and the best is reported.
+  // Local copy avoids odr-use of the constexpr member (C++14: no out-of-line def).
+  const unsigned int minTrials = infomap::Config::convergeMinTrials;
+  CHECK(codelengths.size() >= minTrials);
+  CHECK(codelengths.size() <= cap);
+
+  auto bestIt = std::min_element(codelengths.begin(), codelengths.end());
+  REQUIRE(bestIt != codelengths.end());
+  CHECK(im.codelength() == doctest::Approx(*bestIt));
+}
+
+TEST_CASE("Converge is deterministic for a given input and seed [fast][core][lifecycle]")
+{
+  auto runOnce = [] {
+    InfomapWrapper im("--silent --seed 1 --converge --num-trials 30");
+    im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+    im.run();
+    return std::make_pair(im.codelengths().size(), im.codelength());
+  };
+
+  const auto first = runOnce();
+  const auto second = runOnce();
+  CHECK(first.first == second.first); // same trial count
+  CHECK(first.second == doctest::Approx(second.second)); // same best codelength
+}
+
 TEST_CASE("Run reports write machine-readable JSON with no-file-output [fast][core][lifecycle][output]")
 {
   const std::vector<std::string> paths = {

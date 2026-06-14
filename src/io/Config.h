@@ -113,6 +113,23 @@ struct Config {
 
   // Performance and accuracy
   unsigned int numTrials = 1;
+  // --converge: run up to numTrials trials but stop once the best codelength
+  // has plateaued. The stop parameters below are calibration constants, not
+  // user-facing flags (see issue #664). Calibrated on an LFR suite spanning
+  // n=300..3000 and mixing mu=0.1..0.7: these values keep worst-case codelength
+  // regret vs a fixed N=200 run under ~0.05% while running a median of ~6 trials
+  // (<=14 worst case). Trials-to-plateau did not grow with network size, so the
+  // bounds are flat rather than size-adaptive; tolerance was insensitive across
+  // 1e-8..1e-4.
+  bool convergeTrials = false;
+#ifndef SWIG
+  // Internal calibration constants — hidden from the SWIG-wrapped binding API
+  // (they are not user-tunable; --converge is the only knob).
+  static constexpr double convergeTolerance = 1e-6; // relative best-codelength improvement that counts
+  static constexpr unsigned int convergePatience = 5; // consecutive non-improving trials before stopping
+  static constexpr unsigned int convergeMinTrials = 5; // floor before the plateau rule can fire
+  static constexpr unsigned int convergeDefaultMaxTrials = 50; // cap used when --converge is set without an explicit -N (~3.5x headroom over worst observed)
+#endif
   double minimumCodelengthImprovement = 1e-10;
   double minimumSingleNodeCodelengthImprovement = 1e-16;
   bool randomizeCoreLoopLimit = false;
