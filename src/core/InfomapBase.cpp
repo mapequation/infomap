@@ -634,6 +634,9 @@ private:
       return;
     }
 
+    if (!infomap.clusterDataFile.empty() && !m_network.initialPartitionPaths().empty())
+      Console::note(0, "--cluster-data overrides embedded JSON initial-partition paths.");
+
     if (!infomap.clusterDataFile.empty())
       infomap.initPartition(infomap.clusterDataFile, infomap.clusterDataIsHard, &m_network);
     else if (!infomap.m_multilayerInitialPartition.empty()) {
@@ -656,6 +659,14 @@ private:
       infomap.initPartition(statePartition, infomap.clusterDataIsHard);
     } else if (!infomap.m_initialPartition.empty())
       infomap.initPartition(infomap.m_initialPartition, infomap.clusterDataIsHard);
+    else if (!m_network.initialPartitionPaths().empty()) {
+      // Embedded JSON nodes[].path / states[].path, reusing the .tree channel.
+      unsigned int numNodesNotInNetwork = 0;
+      const auto normalizedTree = infomap.normalizeTreePaths(m_network.initialPartitionPaths(), numNodesNotInNetwork);
+      if (numNodesNotInNetwork > 0)
+        Console::note(1, "{} nodes in embedded initial-partition paths not found in network.", numNodesNotInNetwork);
+      infomap.initTree(normalizedTree);
+    }
   }
 
   void executeTrial(InfomapBase& infomap)

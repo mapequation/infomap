@@ -57,6 +57,55 @@ export type NetworkTypes =
   | MultilayerNetwork
   | MultilayerIntraInterNetwork;
 
+// --- infomap-network-json v1.0 authoring types (RFC #645) -------------------
+// Construct one of these and pass `network: JSON.stringify(net)` to run().
+// Infomap detects the format by content. These mirror
+// test/schemas/json/infomap-network-json.schema.json.
+
+export type InfomapNetworkJsonType =
+  | "standard"
+  | "bipartite"
+  | "multilayer"
+  | "state";
+
+export interface InfomapNetworkJsonNode {
+  id: number;
+  name?: string;
+  weight?: number;
+  /** One-dimensional integer metadata (enables meta coding, like --meta-data). */
+  meta?: number;
+  /** Initial-partition path: [module] (≡ .clu) or [..] (≡ .tree). */
+  path?: number[];
+}
+
+export interface InfomapNetworkJsonState {
+  id: number;
+  node: number;
+  name?: string;
+  weight?: number;
+  path?: number[];
+}
+
+export interface InfomapNetworkJsonEdge {
+  source: number;
+  target: number;
+  weight?: number;
+  /** Multilayer only: one layer id (intra) or two (full / inter). */
+  layers?: number[];
+}
+
+export interface InfomapNetworkJson {
+  format: "infomap-network-json";
+  version: "1.0";
+  type?: InfomapNetworkJsonType;
+  directed?: boolean;
+  multilayer?: "full" | "intra" | "intra-inter";
+  bipartiteStartId?: number;
+  nodes?: InfomapNetworkJsonNode[];
+  states?: InfomapNetworkJsonState[];
+  edges: InfomapNetworkJsonEdge[];
+}
+
 const isBipartite = (network: NetworkTypes): network is BipartiteNetwork => {
   const net = network as BipartiteNetwork;
   return "bipartiteStartId" in net && !("states" in net);
@@ -91,6 +140,13 @@ const isMultilayerIntraInter = (
   return "intra" in net;
 };
 
+/**
+ * Convert a legacy network object to Pajek text.
+ *
+ * @deprecated Prefer the `infomap-network-json` format: build an
+ * {@link InfomapNetworkJson} and pass `network: JSON.stringify(net)` to run().
+ * The format is detected by content. This object-to-Pajek path will be removed.
+ */
 export default function stringifyNetwork(network: NetworkTypes) {
   if (isMultilayerIntraInter(network)) {
     return multilayerIntraInterToString(network);

@@ -1,0 +1,6 @@
+{
+  "format": "infomap-network-json",
+  "version": "1.0",
+  "type": "hypergraph",
+  "edges": [{ "source": 1, "target": 2 }]
+}

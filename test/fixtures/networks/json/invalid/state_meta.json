@@ -1,0 +1,7 @@
+{
+  "format": "infomap-network-json",
+  "version": "1.0",
+  "type": "state",
+  "states": [{ "id": 1, "node": 1, "meta": 10 }],
+  "edges": [{ "source": 1, "target": 2 }]
+}

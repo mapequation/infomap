@@ -64,6 +64,9 @@ void Network::clear()
   // Meta data
   m_metaData.clear();
   m_numMetaDataColumns = 0;
+
+  // Embedded initial partition
+  m_initialPartitionPaths.clear();
 }
 
 void Network::readInputData(std::string filename, bool accumulate)
@@ -102,6 +105,9 @@ void Network::postProcessInputData()
 
 void Network::readMetaData(const std::string& filename)
 {
+  if (!m_metaData.empty()) {
+    Console::note(0, "External meta-data '{}' overrides {} meta-data entries already on the network (e.g. embedded JSON 'meta').", filename, m_metaData.size());
+  }
   try {
     buildMetaDataFromInput(*this, filename);
   } catch (const InfomapError&) {
@@ -807,6 +813,11 @@ unsigned int Network::addMultilayerNode(unsigned int stateId, unsigned int layer
   m_layerNodeToStateId[layerId][physicalId] = stateNode.id;
   m_layers.insert(layerId);
   return stateNode.id;
+}
+
+void Network::addInitialPartitionPath(unsigned int nodeId, const Path& path, TreeLeafIdType idType)
+{
+  m_initialPartitionPaths.push_back(TreePath { nodeId, path, idType });
 }
 
 void Network::addMetaData(unsigned int nodeId, int meta)
