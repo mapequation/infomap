@@ -478,7 +478,13 @@ namespace input {
       bool key(std::string& val)
       {
         currentKey = val;
-        if (inElement()) {
+        if (objectDepth == 1 && arrayDepth == 0) {
+          const bool knownRoot = val == "format" || val == "version" || val == "type"
+              || val == "directed" || val == "multilayer" || val == "bipartiteStartId"
+              || val == "nodes" || val == "states" || val == "edges";
+          if (!knownRoot)
+            warnUnknown("(root)", val);
+        } else if (inElement()) {
           if (section == Section::Nodes && !(val == "id" || val == "name" || val == "weight" || val == "meta" || val == "path"))
             warnUnknown("node", val);
           else if (section == Section::States && !(val == "id" || val == "node" || val == "name" || val == "weight" || val == "path"))

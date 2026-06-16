@@ -693,6 +693,7 @@ TEST_CASE("JSON parser tolerates unknown fields [fast][core][parser][json]")
   {
     std::ofstream out(path.c_str());
     out << R"({"format":"infomap-network-json","version":"1.0",)"
+        << R"("description":"a comment","customRootAttr":42,)"
         << R"("edges":[{"source":1,"target":2,"wieght":5.0}]})";
   }
 
