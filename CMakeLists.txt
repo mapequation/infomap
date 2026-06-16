@@ -154,6 +154,7 @@ if(BUILD_TESTING)
             PRIVATE
                 "${CMAKE_CURRENT_SOURCE_DIR}/src"
                 "${CMAKE_CURRENT_SOURCE_DIR}/test/cpp"
+                "${CMAKE_CURRENT_SOURCE_DIR}/vendor/nlohmann_json/include"
         )
         target_compile_definitions(
             ${target_name}

@@ -11,6 +11,9 @@
 #define NETWORK_H_
 
 #include "Config.h"
+#ifndef SWIG
+#include "ClusterMap.h"
+#endif
 #include "../core/StateNetwork.h"
 
 #include <limits>
@@ -44,6 +47,13 @@ private:
   // Meta data
   std::map<unsigned int, std::vector<int>> m_metaData;
   unsigned int m_numMetaDataColumns = 0;
+
+#ifndef SWIG
+  // Embedded initial partition paths (from JSON nodes[].path / states[].path).
+  // Hierarchical, reusing the same TreePaths model as a .tree cluster file.
+  // Internal plumbing (JSON parser -> initTrialPartition); not a binding API.
+  TreePaths m_initialPartitionPaths;
+#endif
 
 public:
   Network() { init(); }
@@ -85,6 +95,11 @@ public:
 
   [[nodiscard]] unsigned int numMetaDataColumns() const { return m_numMetaDataColumns; }
   [[nodiscard]] const std::map<unsigned int, std::vector<int>>& metaData() const override { return m_metaData; }
+
+#ifndef SWIG
+  void addInitialPartitionPath(unsigned int nodeId, const Path& path, TreeLeafIdType idType);
+  [[nodiscard]] const TreePaths& initialPartitionPaths() const { return m_initialPartitionPaths; }
+#endif
 
   [[nodiscard]] bool isMultilayerNetwork() const { return !m_layerNodeToStateId.empty(); }
   [[nodiscard]] const std::map<unsigned int, std::map<unsigned int, unsigned int>>& layerNodeToStateId() const { return m_layerNodeToStateId; }

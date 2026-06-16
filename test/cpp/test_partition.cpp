@@ -465,6 +465,20 @@ TEST_CASE("Hard cluster-data preserves the imposed coarse partition [fast][core]
   infomap::test::checkCanonicalPartition(im, { { 1, 2, 3 }, { 4, 5, 6 } });
 }
 
+TEST_CASE("Embedded JSON path seeds the initial partition [fast][core][partition][json]")
+{
+  // The embedded nodes[].path assigns three modules {1,2}, {3,4}, {5,6}.
+  // With --no-infomap the result is exactly that imposed initial partition,
+  // proving the embedded path fed initPartition during the trial.
+  InfomapWrapper im(infomap::test::defaultFlags("--no-infomap"));
+  im.readInputData(infomap::test::repoPath("test/fixtures/networks/json/twotriangles_paths.json"));
+
+  im.run();
+
+  CHECK(im.numTopModules() == 3);
+  infomap::test::checkCanonicalPartition(im, { { 1, 2 }, { 3, 4 }, { 5, 6 } });
+}
+
 TEST_CASE("Hard cluster-data reinit and rerun stay stable on the same instance [fast][core][partition][lifecycle]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());

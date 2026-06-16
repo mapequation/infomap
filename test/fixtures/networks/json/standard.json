@@ -1,0 +1,12 @@
+{
+  "format": "infomap-network-json",
+  "version": "1.0",
+  "directed": false,
+  "nodes": [
+    { "id": 1, "name": "Species A", "weight": 2.0, "meta": 10, "path": [1] },
+    { "id": 2, "name": "Species B", "meta": 20, "path": [1, 2] }
+  ],
+  "edges": [
+    { "source": 1, "target": 2, "weight": 1.0 }
+  ]
+}

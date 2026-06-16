@@ -275,6 +275,75 @@ mapequation.org documents every section a `.net` file can carry, including
 format also ships pre-loaded in {mod}`infomap.datasets`
 (`infomap.datasets.two_triangles()` returns this very network, ready to run).
 
+## JSON network input
+
+Infomap also reads the `infomap-network-json` v1.0 format, a small JSON input
+format that is convenient to produce from Python, notebooks, and web tools. The
+format is detected by content, so a `.json` file is handed to
+{func}`infomap.run` (or {meth}`~infomap.Network.from_file`) like any other
+network file. A minimal document needs only `format`, `version`, and `edges`:
+
+```json
+{
+  "format": "infomap-network-json",
+  "version": "1.0",
+  "edges": [{ "source": 1, "target": 2, "weight": 1.0 }]
+}
+```
+
+The same two-triangles network runs straight from a JSON file:
+
+```{code-cell} python
+import json
+import tempfile
+from pathlib import Path
+
+import infomap
+
+network = {
+    "format": "infomap-network-json",
+    "version": "1.0",
+    "edges": [
+        {"source": 1, "target": 2},
+        {"source": 1, "target": 3},
+        {"source": 2, "target": 3},
+        {"source": 3, "target": 4},
+        {"source": 4, "target": 5},
+        {"source": 4, "target": 6},
+        {"source": 5, "target": 6},
+    ],
+}
+path = Path(tempfile.mkdtemp()) / "twotriangles.json"
+path.write_text(json.dumps(network))
+
+result = infomap.run(str(path), two_level=True, seed=123, num_trials=5, silent=True)
+print(f"json route: {result.num_top_modules} modules, {result.codelength:.4f} bits/step")
+```
+
+`type` defaults to `standard`; the other values are `bipartite` (requires
+`bipartiteStartId`), `multilayer` (with `multilayer` set to `full`, `intra`, or
+`intra-inter` and `layers` on each edge), and `state` (edges are state ids, with
+an optional `states` array). Parsing is order- and emitter-independent, so key
+order (for example alphabetically sorted output) does not matter.
+
+Two optional conveniences replace separate input files:
+
+- `nodes[].meta` embeds one-dimensional integer metadata. Its presence enables
+  metadata coding exactly like `--meta-data` or
+  {meth}`~infomap.Infomap.set_meta_data` (it is not a passive annotation). An
+  external `--meta-data` file still composes with a JSON network and overrides
+  the embedded values, with a warning.
+- `nodes[].path` (and `states[].path` for state networks) embeds an initial
+  partition: `[3]` is equivalent to a `.clu` module and `[1, 2]` to a `.tree`
+  path. `--cluster-data` overrides it, with a warning.
+
+All ids are non-negative integers; integral-valued doubles such as `10.0` are
+accepted but `1.5` is rejected. Edge weights are passed to the same core network
+builder as the text formats, so weights `<= 0` are ignored (not an error); node
+and state weights must be non-negative. The JSON Schema in
+`test/schemas/json/infomap-network-json.schema.json` is the normative
+specification of what the parser accepts.
+
 ## Building incrementally with Network
 
 When you assemble a network programmatically, read a custom file format, or wire

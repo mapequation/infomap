@@ -1,0 +1,9 @@
+{
+  "format": "infomap-network-json",
+  "version": "1.0",
+  "type": "multilayer",
+  "multilayer": "full",
+  "edges": [
+    { "layers": [1, 2], "source": 1, "target": 2, "weight": 1.0 }
+  ]
+}

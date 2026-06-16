@@ -1,0 +1,10 @@
+{
+  "format": "infomap-network-json",
+  "version": "1.0",
+  "type": "multilayer",
+  "multilayer": "intra-inter",
+  "edges": [
+    { "layers": [1], "source": 1, "target": 2, "weight": 1.0 },
+    { "layers": [1, 2], "source": 1, "target": 1, "weight": 0.2 }
+  ]
+}
