@@ -57,10 +57,10 @@ export type NetworkTypes =
   | MultilayerNetwork
   | MultilayerIntraInterNetwork;
 
-// --- infomap-network-json v1.0 authoring types (RFC #645) -------------------
+// --- infomap-network v1.0 authoring types (RFC #645) -------------------
 // Construct one of these and pass `network: JSON.stringify(net)` to run().
 // Infomap detects the format by content. These mirror
-// test/schemas/json/infomap-network-json.schema.json.
+// test/schemas/json/infomap-network.schema.json.
 
 export type InfomapNetworkJsonType =
   | "standard"
@@ -95,7 +95,7 @@ export interface InfomapNetworkJsonEdge {
 }
 
 export interface InfomapNetworkJson {
-  format: "infomap-network-json";
+  format: "infomap-network";
   version: "1.0";
   type?: InfomapNetworkJsonType;
   directed?: boolean;
@@ -143,7 +143,7 @@ const isMultilayerIntraInter = (
 /**
  * Convert a legacy network object to Pajek text.
  *
- * @deprecated Prefer the `infomap-network-json` format: build an
+ * @deprecated Prefer the `infomap-network` format: build an
  * {@link InfomapNetworkJson} and pass `network: JSON.stringify(net)` to run().
  * The format is detected by content. This object-to-Pajek path will be removed.
  */

@@ -10,7 +10,7 @@
 #ifndef JSON_NETWORK_INPUT_PARSER_H_
 #define JSON_NETWORK_INPUT_PARSER_H_
 
-// JSON network input parser for the infomap-network-json v1.0 format (RFC #645).
+// JSON network input parser for the infomap-network v1.0 format (RFC #645).
 //
 // Parsing is order- and emitter-independent via two SAX passes (no DOM):
 //   pass 1 captures the root scalar discriminators (format/version/type/...),
@@ -539,15 +539,15 @@ namespace input {
 
     inline void validateHeader(const JsonHeader& header, const NetworkInputOptions& options)
     {
-      if (header.format != "infomap-network-json")
-        throw std::runtime_error(fmt::format(FMT_STRING("Not an infomap-network-json document (format = '{}')"), header.format));
+      if (header.format != "infomap-network")
+        throw std::runtime_error(fmt::format(FMT_STRING("Not an infomap-network document (format = '{}')"), header.format));
       if (header.version != "1.0")
-        throw std::runtime_error(fmt::format(FMT_STRING("Unsupported infomap-network-json version '{}' (this build supports 1.0)"), header.version));
+        throw std::runtime_error(fmt::format(FMT_STRING("Unsupported infomap-network version '{}' (this build supports 1.0)"), header.version));
 
       const bool validType = header.type == "standard" || header.type == "bipartite"
           || header.type == "multilayer" || header.type == "state";
       if (!validType)
-        throw std::runtime_error(fmt::format(FMT_STRING("Unknown infomap-network-json type '{}'"), header.type));
+        throw std::runtime_error(fmt::format(FMT_STRING("Unknown infomap-network type '{}'"), header.type));
 
       // 'directed' is advisory (like *Edges/*Arcs in the text format): the run
       // flag governs the flow model. Multilayer flow handles direction itself.
@@ -561,7 +561,7 @@ namespace input {
       }
 
       if (header.type == "bipartite" && !header.hasBipartiteStartId)
-        throw std::runtime_error("infomap-network-json type 'bipartite' requires a numeric 'bipartiteStartId'");
+        throw std::runtime_error("infomap-network type 'bipartite' requires a numeric 'bipartiteStartId'");
 
       if (header.type == "multilayer") {
         const bool validMode = header.multilayer == "full" || header.multilayer == "intra" || header.multilayer == "intra-inter";
@@ -572,7 +572,7 @@ namespace input {
 
   } // namespace json_detail
 
-  // Detect infomap-network-json by content: first non-whitespace byte is '{'.
+  // Detect infomap-network by content: first non-whitespace byte is '{'.
   inline bool looksLikeJsonNetwork(const std::string& filename)
   {
     std::ifstream file(filename);
@@ -591,7 +591,7 @@ namespace input {
   void parseJsonNetworkInput(const std::string& filename, Sink& sink, const NetworkInputOptions& options)
   {
     using namespace json_detail;
-    Console::detail(1, "parsing infomap-network-json from {}", filename);
+    Console::detail(1, "parsing infomap-network from {}", filename);
 
     JsonHeader header;
     {
@@ -603,7 +603,7 @@ namespace input {
     }
 
     validateHeader(header, options);
-    Console::detail(1, "infomap-network-json type '{}'", header.type);
+    Console::detail(1, "infomap-network type '{}'", header.type);
 
     // The bipartite boundary is a discriminator known from the header pass, so
     // emit it before any links regardless of nodes/edges key order.

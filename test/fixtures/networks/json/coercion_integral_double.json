@@ -1,5 +1,5 @@
 {
-  "format": "infomap-network-json",
+  "format": "infomap-network",
   "version": "1.0",
   "nodes": [
     { "id": 10.0, "meta": 20.0, "path": [1.0] }

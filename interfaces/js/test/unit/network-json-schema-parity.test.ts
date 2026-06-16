@@ -3,7 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, test } from "vitest";
 
-// Drift guard for the hand-written infomap-network-json authoring types.
+// Drift guard for the hand-written infomap-network authoring types.
 // The TS types in src/network.ts are maintained by hand (the schema's if/then
 // discrimination doesn't survive automatic codegen as a clean union). This test
 // fails if the schema gains or drops a property the types don't mirror.
@@ -13,7 +13,7 @@ const repoRoot = path.resolve(here, "../../../..");
 
 const schema = JSON.parse(
   readFileSync(
-    path.join(repoRoot, "test/schemas/json/infomap-network-json.schema.json"),
+    path.join(repoRoot, "test/schemas/json/infomap-network.schema.json"),
     "utf8",
   ),
 );
@@ -44,7 +44,7 @@ function schemaKeys(properties: Record<string, unknown>): string[] {
     .sort();
 }
 
-describe("infomap-network-json authoring types stay in sync with the schema", () => {
+describe("infomap-network authoring types stay in sync with the schema", () => {
   test("root object", () => {
     expect(interfaceKeys("InfomapNetworkJson")).toEqual(
       schemaKeys(schema.properties),

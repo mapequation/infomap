@@ -1,12 +1,12 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://mapequation.org/infomap/test-schemas/infomap-network-json.schema.json",
+  "$id": "https://mapequation.org/infomap/test-schemas/infomap-network.schema.json",
   "title": "Infomap Network JSON",
-  "description": "Normative schema for the infomap-network-json v1.0 input format (RFC #645). The SAX parser's accept/reject set must match this schema.",
+  "description": "Normative schema for the infomap-network v1.0 input format (RFC #645). The SAX parser's accept/reject set must match this schema.",
   "type": "object",
   "required": ["format", "version", "edges"],
   "properties": {
-    "format": { "const": "infomap-network-json" },
+    "format": { "const": "infomap-network" },
     "version": { "const": "1.0" },
     "type": {
       "enum": ["standard", "bipartite", "multilayer", "state"],

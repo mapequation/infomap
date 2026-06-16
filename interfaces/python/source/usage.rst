@@ -336,7 +336,7 @@ For the NetworkX-style wrapper:
 JSON network input
 ------------------
 
-Infomap reads the ``infomap-network-json`` v1.0 format, a small JSON input
+Infomap reads the ``infomap-network`` v1.0 format, a small JSON input
 format that is convenient to produce from Python, notebooks, and web tools.
 The format is detected by content, so a ``.json`` file is passed to
 :meth:`~infomap.Infomap.read_file` like any other network:
@@ -354,7 +354,7 @@ A minimal document needs only ``format``, ``version``, and ``edges``:
 .. code-block:: json
 
     {
-      "format": "infomap-network-json",
+      "format": "infomap-network",
       "version": "1.0",
       "edges": [{ "source": 1, "target": 2, "weight": 1.0 }]
     }
@@ -381,7 +381,7 @@ All ids are non-negative integers; integral-valued doubles such as ``10.0``
 are accepted but ``1.5`` is rejected. Edge weights are passed to the same core
 network builder as the text formats, so weights ``<= 0`` are ignored (not an
 error); node and state weights must be non-negative. The JSON Schema in
-``test/schemas/json/infomap-network-json.schema.json`` is the normative
+``test/schemas/json/infomap-network.schema.json`` is the normative
 specification of what the parser accepts.
 
 igraph API semantics
