@@ -1,4 +1,4 @@
-"""Schema parity tests for the infomap-network-json v1.0 input format (RFC #645).
+"""Schema parity tests for the infomap-network v1.0 input format (RFC #645).
 
 These validate the JSON Schema's accept/reject set. The SAX parser implemented
 in later phases must match this set; the same fixtures are reused as parser
@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-SCHEMA_NAME = "infomap-network-json.schema.json"
+SCHEMA_NAME = "infomap-network.schema.json"
 
 _FIXTURE_DIR = Path(__file__).resolve().parents[1] / "fixtures" / "networks" / "json"
 _VALID = sorted(_FIXTURE_DIR.glob("*.json"))
@@ -41,7 +41,7 @@ def test_invalid_fixtures_rejected_by_schema(path: Path, validate_json_schema) -
 
 def test_integral_doubles_accepted_non_integral_rejected(validate_json_schema) -> None:
     """Integer coercion: 10.0 is a valid id, 1.5 is not (RFC integer coercion)."""
-    base = {"format": "infomap-network-json", "version": "1.0"}
+    base = {"format": "infomap-network", "version": "1.0"}
 
     validate_json_schema(
         {**base, "edges": [{"source": 10.0, "target": 11}]}, SCHEMA_NAME
@@ -56,7 +56,7 @@ def test_negative_edge_weight_is_valid_but_negative_node_weight_is_not(
     validate_json_schema,
 ) -> None:
     """Edge weights <= 0 are ignored by the core (not errors); node weights must be >= 0."""
-    base = {"format": "infomap-network-json", "version": "1.0"}
+    base = {"format": "infomap-network", "version": "1.0"}
 
     validate_json_schema(
         {**base, "edges": [{"source": 1, "target": 2, "weight": -1.0}]}, SCHEMA_NAME

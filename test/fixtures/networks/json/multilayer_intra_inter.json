@@ -1,5 +1,5 @@
 {
-  "format": "infomap-network-json",
+  "format": "infomap-network",
   "version": "1.0",
   "type": "multilayer",
   "multilayer": "intra-inter",

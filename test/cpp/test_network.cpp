@@ -692,7 +692,7 @@ TEST_CASE("JSON parser tolerates unknown fields [fast][core][parser][json]")
   const std::string path = "json_unknown_field_test.json";
   {
     std::ofstream out(path.c_str());
-    out << R"({"format":"infomap-network-json","version":"1.0",)"
+    out << R"({"format":"infomap-network","version":"1.0",)"
         << R"("description":"a comment","customRootAttr":42,)"
         << R"("edges":[{"source":1,"target":2,"wieght":5.0}]})";
   }
@@ -749,7 +749,7 @@ TEST_CASE("JSON parser infers identity states when states[] omitted [fast][core]
   const std::string path = "json_state_inferred_test.json";
   {
     std::ofstream out(path.c_str());
-    out << R"({"format":"infomap-network-json","version":"1.0","type":"state",)"
+    out << R"({"format":"infomap-network","version":"1.0","type":"state",)"
         << R"("edges":[{"source":1,"target":2},{"source":2,"target":3}]})";
   }
 
@@ -816,7 +816,7 @@ TEST_CASE("JSON parser rejects intra-inter inter-layer edge with source != targe
   const std::string path = "json_intra_inter_bad_test.json";
   {
     std::ofstream out(path.c_str());
-    out << R"({"format":"infomap-network-json","version":"1.0","type":"multilayer","multilayer":"intra-inter",)"
+    out << R"({"format":"infomap-network","version":"1.0","type":"multilayer","multilayer":"intra-inter",)"
         << R"("edges":[{"layers":[1,2],"source":1,"target":2}]})";
   }
 
@@ -834,7 +834,7 @@ TEST_CASE("Network builds a higher-order state network from JSON [fast][core][pa
   const std::string path = "json_state_higher_order_test.json";
   {
     std::ofstream out(path.c_str());
-    out << R"({"format":"infomap-network-json","version":"1.0","type":"state",)"
+    out << R"({"format":"infomap-network","version":"1.0","type":"state",)"
         << R"("states":[{"id":1,"node":1},{"id":2,"node":1},{"id":3,"node":2}],)"
         << R"("edges":[{"source":1,"target":3},{"source":2,"target":3}]})";
   }
