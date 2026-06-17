@@ -99,9 +99,23 @@ std::string getOutputFileHeader(const InfomapBase& im, const StateNetwork& netwo
 {
   std::string bipartiteInfo = fmt::format(FMT_STRING("\n# bipartite start id {}"), network.bipartiteStartId());
 #if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
-  std::string lossyInfo = im.lossy
-      ? fmt::format(FMT_STRING("\n# lossy lambda {:g} rate {:g} distortion {:g}"), im.lossyLambda, im.getLossyRate(), im.getLossyDistortion())
-      : "";
+  std::string lossyInfo;
+  if (im.lossy) {
+    const auto noise = im.noiseTopModules();
+    std::string noiseStr;
+    for (std::size_t i = 0; i < noise.size(); ++i)
+      noiseStr += (i ? " " : "") + std::to_string(noise[i]);
+    lossyInfo = fmt::format(FMT_STRING("\n# lossy lambda {:g} J {:g} rate {:g} distortion {:g} one-level lossless {:g}"
+                                       "\n# noise modules {} of {}: {}"),
+                            im.lossyLambda,
+                            im.codelength(),
+                            im.getLossyRate(),
+                            im.getLossyDistortion(),
+                            im.getLossyOneLevelLossless(),
+                            noise.size(),
+                            im.numTopModules(),
+                            noiseStr.empty() ? "(none)" : noiseStr);
+  }
 #else
   std::string lossyInfo;
 #endif

@@ -133,16 +133,31 @@ public:
 
   double getOneLevelCodelength() const { return m_oneLevelCodelength; }
 
+#ifndef SWIG
+  // One-level reference reported to the user. In lossy mode this is the lossless
+  // L_1 = H(p_alpha) (a lambda-independent upper bound), not the lambda-dependent
+  // corrected one-module objective that m_oneLevelCodelength holds for the optimizer.
+  // Guarded from SWIG so it is not exposed as a new binding; callers below use it.
+  double getReferenceOneLevelCodelength() const
+  {
+#if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
+    if (lossy)
+      return m_optimizer->getLossyOneLevelLossless();
+#endif
+    return m_oneLevelCodelength;
+  }
+#endif
+
   double getRelativeCodelengthSavings() const
   {
-    auto oneLevelCodelength = getOneLevelCodelength();
+    auto oneLevelCodelength = getReferenceOneLevelCodelength();
     return oneLevelCodelength < 1e-16 ? 0 : 1.0 - codelength() / oneLevelCodelength;
   }
 
 #ifndef SWIG
   double getRelativeCodelengthSavings(double codelength) const
   {
-    auto oneLevelCodelength = getOneLevelCodelength();
+    auto oneLevelCodelength = getReferenceOneLevelCodelength();
     return oneLevelCodelength < 1e-16 ? 0 : 1.0 - codelength / oneLevelCodelength;
   }
 #endif
@@ -151,6 +166,9 @@ public:
 #if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
   double getLossyRate() const { return m_optimizer->getLossyRate(); }
   double getLossyDistortion() const { return m_optimizer->getLossyDistortion(); }
+  double getLossyOneLevelLossless() const { return m_optimizer->getLossyOneLevelLossless(); }
+  // 1-based indices of the top modules that are noise modules (l_i > lambda * H_i).
+  std::vector<unsigned int> noiseTopModules() const;
 #endif
   double getMaxEntropy() { return m_maxEntropy; }
   double getMaxFlow() { return m_maxFlow; }
