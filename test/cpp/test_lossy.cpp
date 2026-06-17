@@ -131,11 +131,15 @@ TEST_CASE("Lossy: rerun on the same instance preserves partition and codelength 
   im.run();
   const auto firstCodelength = im.codelength();
   const auto firstRate = im.getLossyRate();
+  const auto firstOneLevel = im.getReferenceOneLevelCodelength();
   const auto firstPartition = canonicalPartition(im.getModules(1, false));
 
   im.run();
   CHECK(im.codelength() == doctest::Approx(firstCodelength).epsilon(1e-9));
   CHECK(im.getLossyRate() == doctest::Approx(firstRate).epsilon(1e-9));
+  // L_1 must stay the lossless one-level reference across reruns, not drift to a
+  // partition-dependent value if calcCodelength is called again on the root.
+  CHECK(im.getReferenceOneLevelCodelength() == doctest::Approx(firstOneLevel).epsilon(1e-9));
   CHECK(canonicalPartition(im.getModules(1, false)) == firstPartition);
 }
 

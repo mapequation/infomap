@@ -141,8 +141,11 @@ double LossyMapEquation::calcCodelength(const InfoNode& parent) const
   // map-equation code length L_1 = H(p_alpha): a fixed, lambda-independent upper
   // reference. Capture it before any noise correction so reporting and relative
   // savings use L_1 rather than the lambda-dependent corrected one-module objective
-  // (which still drives the optimizer via m_oneLevelCodelength).
-  if (parent.isRoot())
+  // (which still drives the optimizer via m_oneLevelCodelength). Only the root whose
+  // children are the leaf nodes equals L_1; once the root is a module-of-modules,
+  // Base::calcCodelength(root) is an index codebook, so guard on isLeafModule() to
+  // avoid overwriting L_1 with a partition-dependent value.
+  if (parent.isRoot() && parent.isLeafModule())
     m_oneLevelLossless = L;
 
   // Corrections apply to modules that own a visit codebook, i.e. leaf modules in
