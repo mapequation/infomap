@@ -70,6 +70,7 @@ public:
 #if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
   double getLossyRate() const override;
   double getLossyDistortion() const override;
+  double getLossyOneLevelLossless() const override;
 #endif
 
   void setNetworkProperties(const StateNetwork& network) override;
@@ -199,6 +200,18 @@ inline double InfomapOptimizer<Objective>::getLossyRate() const
 
 template <typename Objective>
 inline double InfomapOptimizer<Objective>::getLossyDistortion() const
+{
+  return 0.0;
+}
+
+template <>
+inline double InfomapOptimizer<LossyMapEquation>::getLossyOneLevelLossless() const
+{
+  return m_objective.getOneLevelLossless();
+}
+
+template <typename Objective>
+inline double InfomapOptimizer<Objective>::getLossyOneLevelLossless() const
 {
   return 0.0;
 }

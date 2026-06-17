@@ -52,6 +52,7 @@ public:
   // Lossy map equation metrics; zero for every other objective.
   virtual double getLossyRate() const { return 0.0; } // L_lossy (bits/step)
   virtual double getLossyDistortion() const { return 0.0; } // D = sum over noise modules of H_i
+  virtual double getLossyOneLevelLossless() const { return 0.0; } // L_1 = H(p_alpha), lambda-independent
 #endif
 
   // Forward per-network properties (e.g. total degree, node count) to the objective.

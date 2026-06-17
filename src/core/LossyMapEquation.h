@@ -48,6 +48,10 @@ public:
 
   double getLossyDistortion() const { return m_sumNoiseEntropy; } // D
 
+  // L_1 = H(p_alpha): the lossless one-level reference, captured in calcCodelength
+  // of the root. Independent of lambda; used for reporting and relative savings.
+  double getOneLevelLossless() const { return m_oneLevelLossless; }
+
   // ===================================================
   // IO
   // ===================================================
@@ -153,6 +157,7 @@ private:
   double m_sumCorrection = 0.0; // sum_i c_i  (J = codelength - m_sumCorrection)
   double m_sumNoiseLoss = 0.0; // sum over noise modules of l_i
   double m_sumNoiseEntropy = 0.0; // sum over noise modules of H_i
+  mutable double m_oneLevelLossless = 0.0; // L_1 = H(p_alpha), set when scoring the root
 };
 
 } // namespace infomap
