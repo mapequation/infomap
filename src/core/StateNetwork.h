@@ -88,6 +88,13 @@ public:
   using OutLinkMap = std::map<unsigned int, LinkData>;
   using NodeLinkMap = std::map<unsigned int, OutLinkMap>;
 
+  // Flat build buffer for first-order (mode A) link intake.
+  struct LinkTriple {
+    unsigned int source;
+    unsigned int target;
+    double weight;
+  };
+
 protected:
   friend class FlowCalculator;
   // Config
@@ -97,7 +104,18 @@ protected:
   bool m_haveMemoryInput = false;
   bool m_higherOrderInputMethodCalled = false;
   NodeMap m_nodes; // Nodes indexed by state id (equal physical id for first-order networks)
-  NodeLinkMap m_nodeLinkMap;
+  // --- Link build representations (one active per instance) ---
+  NodeLinkMap m_nodeLinkMap;                   // mode B (multilayer) build rep
+  mutable std::vector<LinkTriple> m_linkBuffer; // mode A (first-order) build rep
+  bool m_useMapBuild = false;                  // true => mode B
+  mutable bool m_linksFinalized = false;
+  mutable unsigned int m_rawLinkCount = 0;     // pre-aggregation occurrences (mode A)
+  // --- Consumed CSR representation (valid after finalizeLinks) ---
+  mutable std::vector<unsigned int> m_nodeIds;     // sorted unique ids; index->id
+  mutable std::vector<unsigned int> m_linkOffsets; // size numNodes+1
+  mutable std::vector<unsigned int> m_linkTargets; // dense target indices
+  mutable std::vector<double> m_linkWeights;
+  mutable std::vector<double> m_linkFlows;
   unsigned int m_numStateNodesFound = 0;
   double m_sumNodeWeight = 0.0;
   unsigned int m_numLinks = 0;
@@ -116,6 +134,10 @@ protected:
   // Attributes
   std::map<unsigned int, std::string> m_names;
   std::map<unsigned int, PhysNode> m_physNodes;
+  // Unique physical-id count, tracked independently of m_physNodes so the map
+  // can be released once redundant (postProcessInputData, first-order input)
+  // while numPhysicalNodes() stays correct.
+  unsigned int m_numPhysicalNodesFound = 0;
 
   // Bipartite
   unsigned int m_bipartiteStartId = 0;
@@ -174,18 +196,74 @@ public:
   // Getters
   const NodeMap& nodes() const { return m_nodes; }
   unsigned int numNodes() const { return m_nodes.size(); }
-  unsigned int numPhysicalNodes() const { return m_physNodes.size(); }
+  unsigned int numPhysicalNodes() const { return m_numPhysicalNodesFound; }
   double sumNodeWeight() const { return m_sumNodeWeight; }
+#ifndef SWIG
+  // Mode B (multilayer) build representation, consumed only by the multilayer
+  // expansion in Network. Hidden from the bindings: external callers read links
+  // through getLinks()/getLinkResults(), which now serve the consumed CSR store.
   const NodeLinkMap& nodeLinkMap() const { return m_nodeLinkMap; }
   NodeLinkMap& nodeLinkMap() { return m_nodeLinkMap; }
-  unsigned int numLinks() const { return m_numLinks; }
+#endif
+
+#ifndef SWIG
+  // --- CSR link storage access (internal; valid after finalize). Hidden from the
+  // bindings: these expose CSR index mechanics, so external callers read links
+  // through getLinks()/getLinkResults(), which serve the consumed CSR store. ---
+  void finalizeLinks();
+  void ensureFinalized() const
+  {
+    if (!m_linksFinalized) const_cast<StateNetwork*>(this)->finalizeLinks();
+  }
+  unsigned int nodeId(unsigned int index) const { return m_nodeIds[index]; }
+  unsigned int indexOfId(unsigned int id) const;
+  unsigned int outDegree(unsigned int index) const { return m_linkOffsets[index + 1] - m_linkOffsets[index]; }
+  bool isDangling(unsigned int index) const { return outDegree(index) == 0; }
+  // fn(srcIndex, targetIndex, weight, double& flow) in (src,tgt) order. flow is
+  // writable (CSR arrays are mutable) so FlowCalculator can write flow back.
+  template <typename Fn>
+  void forEachLink(Fn&& fn) const
+  {
+    ensureFinalized();
+    for (unsigned int s = 0; s < m_nodeIds.size(); ++s)
+      for (unsigned int e = m_linkOffsets[s]; e < m_linkOffsets[s + 1]; ++e)
+        fn(s, m_linkTargets[e], m_linkWeights[e], m_linkFlows[e]);
+  }
+#endif
+
+  // Mode A (first-order) defers dedup to finalizeLinks(), so these counts are
+  // only valid afterwards -- ensure it. Mode B (multilayer) keeps them eager and
+  // must NOT finalize here: printSummary() reads numLinks() before the multilayer
+  // expansion populates the network. The ensureFinalized() call is guarded so
+  // SWIG never parses a reference to the hidden method (the compiled library the
+  // wrapper calls still lazy-finalizes).
+  unsigned int numAggregatedLinks() const
+  {
+#ifndef SWIG
+    if (!m_useMapBuild) ensureFinalized();
+#endif
+    return m_numAggregatedLinks;
+  }
+  unsigned int numLinks() const
+  {
+#ifndef SWIG
+    if (!m_useMapBuild) ensureFinalized();
+#endif
+    return m_numLinks;
+  }
   double sumLinkWeight() const { return m_sumLinkWeight; }
   unsigned int numSelfLinks() const { return m_numSelfLinks; }
   double sumSelfLinkWeight() const { return m_sumSelfLinkWeight; }
   // Use convention of counting self-links only once, treating them as directed
   double sumWeightedDegree() const { return 2 * sumLinkWeight() - sumSelfLinkWeight(); }
   unsigned int sumDegree() const { return 2 * numLinks() - numSelfLinks(); }
-  std::map<unsigned int, double>& outWeights() { return m_outWeights; }
+  std::map<unsigned int, double>& outWeights()
+  {
+#ifndef SWIG
+    deriveOutWeightsIfNeeded(); // mode A derives it lazily; mode B keeps it eager
+#endif
+    return m_outWeights;
+  }
   std::map<unsigned int, std::string>& names() { return m_names; }
   const std::map<unsigned int, std::string>& names() const { return m_names; }
   bool haveNodeWeights() const { return m_haveNodeWeights; }
@@ -224,6 +302,21 @@ protected:
   std::pair<NodeMap::iterator, bool> addStateNodeWithAutogeneratedId(unsigned int physId);
 
   std::pair<NodeMap::iterator, bool> addStateNodeWithDeterministicId(unsigned int physId, unsigned int layerId, unsigned int numLayersLog2);
+
+  // Build the consumed CSR arrays. Mode B (multilayer): from the already-sorted,
+  // already-aggregated m_nodeLinkMap. Mode A (first-order): from m_linkBuffer.
+  void buildCsrFromMap();
+  void buildCsrFromBuffer();
+  // Mode B eager aggregation into the nested map (the pre-CSR build path).
+  bool addLinkToMap(unsigned int sourceId, unsigned int targetId, double weight);
+  // Materialize the nested map from CSR so map-based mutation APIs work on a
+  // mode-A network (no-op in map-build mode).
+  void ensureMapBuild();
+  // Lazily fill m_outWeights from CSR for mode-A networks when outWeights() is read.
+  void deriveOutWeightsIfNeeded();
+  // Move CSR rows back into the flat buffer so a finalized network can keep
+  // building (mode A accumulate / addLink-after-run).
+  void definalize();
 };
 
 } // namespace infomap

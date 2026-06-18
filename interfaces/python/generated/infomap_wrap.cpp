@@ -3535,30 +3535,29 @@ SWIG_Python_NonDynamicSetAttr(PyObject *obj, PyObject *name, PyObject *value) {
 #define SWIGTYPE_p_std__mapT_std__pairT_unsigned_int_unsigned_int_t_double_t swig_types[89]
 #define SWIGTYPE_p_std__mapT_unsigned_int_double_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_double_t_t_t swig_types[90]
 #define SWIGTYPE_p_std__mapT_unsigned_int_infomap__StateNetwork__StateNode_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__StateNode_t_t_t swig_types[91]
-#define SWIGTYPE_p_std__mapT_unsigned_int_std__mapT_unsigned_int_infomap__StateNetwork__LinkData_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__LinkData_t_t_t_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_std__mapT_unsigned_int_infomap__StateNetwork__LinkData_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__LinkData_t_t_t_t_t_t swig_types[92]
-#define SWIGTYPE_p_std__mapT_unsigned_int_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t_t_t_t swig_types[93]
-#define SWIGTYPE_p_std__mapT_unsigned_int_std__string_t swig_types[94]
-#define SWIGTYPE_p_std__mapT_unsigned_int_std__vectorT_int_std__allocatorT_int_t_t_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_std__vectorT_int_std__allocatorT_int_t_t_t_t_t swig_types[95]
-#define SWIGTYPE_p_std__mapT_unsigned_int_std__vectorT_unsigned_int_t_t swig_types[96]
-#define SWIGTYPE_p_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t swig_types[97]
-#define SWIGTYPE_p_std__ostream swig_types[98]
-#define SWIGTYPE_p_std__pairT_std__mapT_unsigned_int_infomap__StateNetwork__StateNode_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__StateNode_t_t_t__iterator_bool_t swig_types[99]
-#define SWIGTYPE_p_std__pairT_std__mapT_unsigned_int_std__string_t__iterator_bool_t swig_types[100]
-#define SWIGTYPE_p_std__pairT_unsigned_int_unsigned_int_t swig_types[101]
-#define SWIGTYPE_p_std__vectorT_ParsedOption_std__allocatorT_ParsedOption_t_t swig_types[102]
-#define SWIGTYPE_p_std__vectorT_double_t swig_types[103]
-#define SWIGTYPE_p_std__vectorT_infomap__InfoEdge_p_std__allocatorT_infomap__InfoEdge_p_t_t__iterator swig_types[104]
-#define SWIGTYPE_p_std__vectorT_infomap__InfoNode_p_std__allocatorT_infomap__InfoNode_p_t_t swig_types[105]
-#define SWIGTYPE_p_std__vectorT_infomap__PhysData_std__allocatorT_infomap__PhysData_t_t swig_types[106]
-#define SWIGTYPE_p_std__vectorT_infomap__detail__PerLevelStat_std__allocatorT_infomap__detail__PerLevelStat_t_t swig_types[107]
-#define SWIGTYPE_p_std__vectorT_int_std__allocatorT_int_t_t swig_types[108]
-#define SWIGTYPE_p_std__vectorT_std__string_std__allocatorT_std__string_t_t swig_types[109]
-#define SWIGTYPE_p_std__vectorT_unsigned_int_t swig_types[110]
-#define SWIGTYPE_p_swig__SwigPyIterator swig_types[111]
-#define SWIGTYPE_p_tree_iterator swig_types[112]
-#define SWIGTYPE_p_value_type swig_types[113]
-static swig_type_info *swig_types[115];
-static swig_module_info swig_module = {swig_types, 114, 0, 0, 0, 0};
+#define SWIGTYPE_p_std__mapT_unsigned_int_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t_t_t_t swig_types[92]
+#define SWIGTYPE_p_std__mapT_unsigned_int_std__string_t swig_types[93]
+#define SWIGTYPE_p_std__mapT_unsigned_int_std__vectorT_int_std__allocatorT_int_t_t_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_std__vectorT_int_std__allocatorT_int_t_t_t_t_t swig_types[94]
+#define SWIGTYPE_p_std__mapT_unsigned_int_std__vectorT_unsigned_int_t_t swig_types[95]
+#define SWIGTYPE_p_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t swig_types[96]
+#define SWIGTYPE_p_std__ostream swig_types[97]
+#define SWIGTYPE_p_std__pairT_std__mapT_unsigned_int_infomap__StateNetwork__StateNode_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__StateNode_t_t_t__iterator_bool_t swig_types[98]
+#define SWIGTYPE_p_std__pairT_std__mapT_unsigned_int_std__string_t__iterator_bool_t swig_types[99]
+#define SWIGTYPE_p_std__pairT_unsigned_int_unsigned_int_t swig_types[100]
+#define SWIGTYPE_p_std__vectorT_ParsedOption_std__allocatorT_ParsedOption_t_t swig_types[101]
+#define SWIGTYPE_p_std__vectorT_double_t swig_types[102]
+#define SWIGTYPE_p_std__vectorT_infomap__InfoEdge_p_std__allocatorT_infomap__InfoEdge_p_t_t__iterator swig_types[103]
+#define SWIGTYPE_p_std__vectorT_infomap__InfoNode_p_std__allocatorT_infomap__InfoNode_p_t_t swig_types[104]
+#define SWIGTYPE_p_std__vectorT_infomap__PhysData_std__allocatorT_infomap__PhysData_t_t swig_types[105]
+#define SWIGTYPE_p_std__vectorT_infomap__detail__PerLevelStat_std__allocatorT_infomap__detail__PerLevelStat_t_t swig_types[106]
+#define SWIGTYPE_p_std__vectorT_int_std__allocatorT_int_t_t swig_types[107]
+#define SWIGTYPE_p_std__vectorT_std__string_std__allocatorT_std__string_t_t swig_types[108]
+#define SWIGTYPE_p_std__vectorT_unsigned_int_t swig_types[109]
+#define SWIGTYPE_p_swig__SwigPyIterator swig_types[110]
+#define SWIGTYPE_p_tree_iterator swig_types[111]
+#define SWIGTYPE_p_value_type swig_types[112]
+static swig_type_info *swig_types[114];
+static swig_module_info swig_module = {swig_types, 113, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
 #define SWIG_MangledTypeQuery(name) SWIG_MangledTypeQueryModule(&swig_module, &swig_module, name)
 
@@ -40493,95 +40492,33 @@ fail:
 }
 
 
-SWIGINTERN PyObject *_wrap_StateNetwork_nodeLinkMap__SWIG_0(PyObject *self, Py_ssize_t nobjs, PyObject **swig_obj) {
+SWIGINTERN PyObject *_wrap_StateNetwork_numAggregatedLinks(PyObject *self, PyObject *args) {
   PyObject *resultobj = 0;
   infomap::StateNetwork *arg1 = 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
-  infomap::StateNetwork::NodeLinkMap *result = 0 ;
+  PyObject *swig_obj[1] ;
+  unsigned int result;
   
   (void)self;
-  if ((nobjs < 1) || (nobjs > 1)) SWIG_fail;
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
   res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__StateNetwork, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "StateNetwork_nodeLinkMap" "', argument " "1"" of type '" "infomap::StateNetwork const *""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "StateNetwork_numAggregatedLinks" "', argument " "1"" of type '" "infomap::StateNetwork const *""'"); 
   }
   arg1 = reinterpret_cast< infomap::StateNetwork * >(argp1);
   {
     try {
-      result = (infomap::StateNetwork::NodeLinkMap *) &((infomap::StateNetwork const *)arg1)->nodeLinkMap();
+      result = (unsigned int)((infomap::StateNetwork const *)arg1)->numAggregatedLinks();
     } catch (const std::exception& e) {
       SWIG_exception(SWIG_RuntimeError, e.what());
     }
   }
-  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_std__mapT_unsigned_int_std__mapT_unsigned_int_infomap__StateNetwork__LinkData_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__LinkData_t_t_t_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_std__mapT_unsigned_int_infomap__StateNetwork__LinkData_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__LinkData_t_t_t_t_t_t, 0 |  0 );
+  resultobj = SWIG_From_unsigned_SS_int(static_cast< unsigned int >(result));
   return resultobj;
 fail:
   return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_StateNetwork_nodeLinkMap__SWIG_1(PyObject *self, Py_ssize_t nobjs, PyObject **swig_obj) {
-  PyObject *resultobj = 0;
-  infomap::StateNetwork *arg1 = 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  infomap::StateNetwork::NodeLinkMap *result = 0 ;
-  
-  (void)self;
-  if ((nobjs < 1) || (nobjs > 1)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__StateNetwork, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "StateNetwork_nodeLinkMap" "', argument " "1"" of type '" "infomap::StateNetwork *""'"); 
-  }
-  arg1 = reinterpret_cast< infomap::StateNetwork * >(argp1);
-  {
-    try {
-      result = (infomap::StateNetwork::NodeLinkMap *) &(arg1)->nodeLinkMap();
-    } catch (const std::exception& e) {
-      SWIG_exception(SWIG_RuntimeError, e.what());
-    }
-  }
-  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_std__mapT_unsigned_int_std__mapT_unsigned_int_infomap__StateNetwork__LinkData_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__LinkData_t_t_t_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_std__mapT_unsigned_int_infomap__StateNetwork__LinkData_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__LinkData_t_t_t_t_t_t, 0 |  0 );
-  return resultobj;
-fail:
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_StateNetwork_nodeLinkMap(PyObject *self, PyObject *args) {
-  Py_ssize_t argc;
-  PyObject *argv[2] = {
-    0
-  };
-  
-  if (!(argc = SWIG_Python_UnpackTuple(args, "StateNetwork_nodeLinkMap", 0, 1, argv))) SWIG_fail;
-  --argc;
-  if (argc == 1) {
-    int _v = 0;
-    void *vptr = 0;
-    int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_infomap__StateNetwork, 0);
-    _v = SWIG_CheckState(res);
-    if (_v) {
-      return _wrap_StateNetwork_nodeLinkMap__SWIG_1(self, argc, argv);
-    }
-  }
-  if (argc == 1) {
-    int _v = 0;
-    void *vptr = 0;
-    int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_infomap__StateNetwork, 0);
-    _v = SWIG_CheckState(res);
-    if (_v) {
-      return _wrap_StateNetwork_nodeLinkMap__SWIG_0(self, argc, argv);
-    }
-  }
-  
-fail:
-  SWIG_Python_RaiseOrModifyTypeError("Wrong number or type of arguments for overloaded function 'StateNetwork_nodeLinkMap'.\n"
-    "  Possible C/C++ prototypes are:\n"
-    "    infomap::StateNetwork::nodeLinkMap() const\n"
-    "    infomap::StateNetwork::nodeLinkMap()\n");
-  return 0;
 }
 
 
@@ -59078,7 +59015,7 @@ static PyMethodDef SwigMethods[] = {
 	 { "StateNetwork_numNodes", _wrap_StateNetwork_numNodes, METH_O, NULL},
 	 { "StateNetwork_numPhysicalNodes", _wrap_StateNetwork_numPhysicalNodes, METH_O, NULL},
 	 { "StateNetwork_sumNodeWeight", _wrap_StateNetwork_sumNodeWeight, METH_O, NULL},
-	 { "StateNetwork_nodeLinkMap", _wrap_StateNetwork_nodeLinkMap, METH_VARARGS, NULL},
+	 { "StateNetwork_numAggregatedLinks", _wrap_StateNetwork_numAggregatedLinks, METH_O, NULL},
 	 { "StateNetwork_numLinks", _wrap_StateNetwork_numLinks, METH_O, NULL},
 	 { "StateNetwork_sumLinkWeight", _wrap_StateNetwork_sumLinkWeight, METH_O, NULL},
 	 { "StateNetwork_numSelfLinks", _wrap_StateNetwork_numSelfLinks, METH_O, NULL},
@@ -59557,7 +59494,6 @@ static swig_type_info _swigt__p_std__lessT_unsigned_int_t = {"_p_std__lessT_unsi
 static swig_type_info _swigt__p_std__mapT_std__pairT_unsigned_int_unsigned_int_t_double_t = {"_p_std__mapT_std__pairT_unsigned_int_unsigned_int_t_double_t", "std::map< std::pair< unsigned int,unsigned int >,double,std::less< std::pair< unsigned int,unsigned int > >,std::allocator< std::pair< std::pair< unsigned int,unsigned int > const,double > > > *|std::map< std::pair< unsigned int,unsigned int >,double > *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_std__mapT_unsigned_int_double_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_double_t_t_t = {"_p_std__mapT_unsigned_int_double_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_double_t_t_t", "std::map< unsigned int,double,std::less< unsigned int >,std::allocator< std::pair< unsigned int const,double > > > *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_std__mapT_unsigned_int_infomap__StateNetwork__StateNode_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__StateNode_t_t_t = {"_p_std__mapT_unsigned_int_infomap__StateNetwork__StateNode_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__StateNode_t_t_t", "infomap::StateNetwork::NodeMap *|std::map< unsigned int,infomap::StateNetwork::StateNode,std::less< unsigned int >,std::allocator< std::pair< unsigned int const,infomap::StateNetwork::StateNode > > > *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_std__mapT_unsigned_int_std__mapT_unsigned_int_infomap__StateNetwork__LinkData_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__LinkData_t_t_t_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_std__mapT_unsigned_int_infomap__StateNetwork__LinkData_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__LinkData_t_t_t_t_t_t = {"_p_std__mapT_unsigned_int_std__mapT_unsigned_int_infomap__StateNetwork__LinkData_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__LinkData_t_t_t_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_std__mapT_unsigned_int_infomap__StateNetwork__LinkData_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__LinkData_t_t_t_t_t_t", "infomap::StateNetwork::NodeLinkMap *|std::map< unsigned int,std::map< unsigned int,infomap::StateNetwork::LinkData,std::less< unsigned int >,std::allocator< std::pair< unsigned int const,infomap::StateNetwork::LinkData > > >,std::less< unsigned int >,std::allocator< std::pair< unsigned int const,std::map< unsigned int,infomap::StateNetwork::LinkData,std::less< unsigned int >,std::allocator< std::pair< unsigned int const,infomap::StateNetwork::LinkData > > > > > > *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_std__mapT_unsigned_int_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t_t_t_t = {"_p_std__mapT_unsigned_int_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t_t_t_t", "std::map< unsigned int,std::map< unsigned int,unsigned int,std::less< unsigned int >,std::allocator< std::pair< unsigned int const,unsigned int > > >,std::less< unsigned int >,std::allocator< std::pair< unsigned int const,std::map< unsigned int,unsigned int,std::less< unsigned int >,std::allocator< std::pair< unsigned int const,unsigned int > > > > > > *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_std__mapT_unsigned_int_std__string_t = {"_p_std__mapT_unsigned_int_std__string_t", "std::map< unsigned int,std::string,std::less< unsigned int >,std::allocator< std::pair< unsigned int const,std::string > > > *|std::map< unsigned int,std::string > *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_std__mapT_unsigned_int_std__vectorT_int_std__allocatorT_int_t_t_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_std__vectorT_int_std__allocatorT_int_t_t_t_t_t = {"_p_std__mapT_unsigned_int_std__vectorT_int_std__allocatorT_int_t_t_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_std__vectorT_int_std__allocatorT_int_t_t_t_t_t", "std::map< unsigned int,std::vector< int,std::allocator< int > >,std::less< unsigned int >,std::allocator< std::pair< unsigned int const,std::vector< int,std::allocator< int > > > > > *", 0, 0, (void*)0, 0};
@@ -59673,7 +59609,6 @@ static swig_type_info *swig_type_initial[] = {
   &_swigt__p_std__mapT_std__pairT_unsigned_int_unsigned_int_t_double_t,
   &_swigt__p_std__mapT_unsigned_int_double_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_double_t_t_t,
   &_swigt__p_std__mapT_unsigned_int_infomap__StateNetwork__StateNode_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__StateNode_t_t_t,
-  &_swigt__p_std__mapT_unsigned_int_std__mapT_unsigned_int_infomap__StateNetwork__LinkData_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__LinkData_t_t_t_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_std__mapT_unsigned_int_infomap__StateNetwork__LinkData_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__LinkData_t_t_t_t_t_t,
   &_swigt__p_std__mapT_unsigned_int_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t_t_t_t,
   &_swigt__p_std__mapT_unsigned_int_std__string_t,
   &_swigt__p_std__mapT_unsigned_int_std__vectorT_int_std__allocatorT_int_t_t_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_std__vectorT_int_std__allocatorT_int_t_t_t_t_t,
@@ -59789,7 +59724,6 @@ static swig_cast_info _swigc__p_std__lessT_unsigned_int_t[] = {  {&_swigt__p_std
 static swig_cast_info _swigc__p_std__mapT_std__pairT_unsigned_int_unsigned_int_t_double_t[] = {  {&_swigt__p_std__mapT_std__pairT_unsigned_int_unsigned_int_t_double_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_std__mapT_unsigned_int_double_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_double_t_t_t[] = {  {&_swigt__p_std__mapT_unsigned_int_double_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_double_t_t_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_std__mapT_unsigned_int_infomap__StateNetwork__StateNode_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__StateNode_t_t_t[] = {  {&_swigt__p_std__mapT_unsigned_int_infomap__StateNetwork__StateNode_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__StateNode_t_t_t, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_std__mapT_unsigned_int_std__mapT_unsigned_int_infomap__StateNetwork__LinkData_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__LinkData_t_t_t_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_std__mapT_unsigned_int_infomap__StateNetwork__LinkData_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__LinkData_t_t_t_t_t_t[] = {  {&_swigt__p_std__mapT_unsigned_int_std__mapT_unsigned_int_infomap__StateNetwork__LinkData_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__LinkData_t_t_t_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_std__mapT_unsigned_int_infomap__StateNetwork__LinkData_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__LinkData_t_t_t_t_t_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_std__mapT_unsigned_int_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t_t_t_t[] = {  {&_swigt__p_std__mapT_unsigned_int_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t_t_t_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_std__mapT_unsigned_int_std__string_t[] = {  {&_swigt__p_std__mapT_unsigned_int_std__string_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_std__mapT_unsigned_int_std__vectorT_int_std__allocatorT_int_t_t_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_std__vectorT_int_std__allocatorT_int_t_t_t_t_t[] = {  {&_swigt__p_std__mapT_unsigned_int_std__vectorT_int_std__allocatorT_int_t_t_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_std__vectorT_int_std__allocatorT_int_t_t_t_t_t, 0, 0, 0},{0, 0, 0, 0}};
@@ -59905,7 +59839,6 @@ static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_std__mapT_std__pairT_unsigned_int_unsigned_int_t_double_t,
   _swigc__p_std__mapT_unsigned_int_double_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_double_t_t_t,
   _swigc__p_std__mapT_unsigned_int_infomap__StateNetwork__StateNode_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__StateNode_t_t_t,
-  _swigc__p_std__mapT_unsigned_int_std__mapT_unsigned_int_infomap__StateNetwork__LinkData_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__LinkData_t_t_t_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_std__mapT_unsigned_int_infomap__StateNetwork__LinkData_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__LinkData_t_t_t_t_t_t,
   _swigc__p_std__mapT_unsigned_int_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t_t_t_t,
   _swigc__p_std__mapT_unsigned_int_std__string_t,
   _swigc__p_std__mapT_unsigned_int_std__vectorT_int_std__allocatorT_int_t_t_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_std__vectorT_int_std__allocatorT_int_t_t_t_t_t,

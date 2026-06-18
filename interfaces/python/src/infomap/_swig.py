@@ -2091,8 +2091,8 @@ class StateNetwork(object):
     def sumNodeWeight(self):
         return _infomap.StateNetwork_sumNodeWeight(self)
 
-    def nodeLinkMap(self, *args):
-        return _infomap.StateNetwork_nodeLinkMap(self, *args)
+    def numAggregatedLinks(self):
+        return _infomap.StateNetwork_numAggregatedLinks(self)
 
     def numLinks(self):
         return _infomap.StateNetwork_numLinks(self)

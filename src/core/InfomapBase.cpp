@@ -259,13 +259,23 @@ public:
     console.metric("Average degree", io::toPrecision(m_network.numLinks() * 2.0 / m_infomap.numLeafNodes(), 1, true));
     console.metric("Top modules", fmt::format(FMT_STRING("{} ({} non-trivial)"), m_infomap.numTopModules(), m_infomap.numNonTrivialTopModules()));
     console.metric("Levels", fmt::to_string(result.bestNumLevels));
-    console.metric("One-level codelength", io::toPrecision(m_infomap.getOneLevelCodelength()));
+    console.metric("One-level codelength", io::toPrecision(m_infomap.getReferenceOneLevelCodelength()));
     console.metric("Best codelength", io::toPrecision(result.bestHierarchicalCodelength));
 #if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
     if (m_infomap.lossy) {
+      console.metric("Objective J", io::toPrecision(result.bestHierarchicalCodelength));
       console.metric("Lossy rate", io::toPrecision(m_infomap.getLossyRate()));
       console.metric("Lossy distortion", io::toPrecision(m_infomap.getLossyDistortion()));
       console.metric("Lambda", io::toPrecision(m_infomap.lossyLambda));
+      const auto noise = m_infomap.noiseTopModules();
+      std::string noiseSummary = std::to_string(noise.size()) + " of " + std::to_string(m_infomap.numTopModules());
+      if (!noise.empty()) {
+        noiseSummary += " (index:";
+        for (auto i : noise)
+          noiseSummary += " " + std::to_string(i);
+        noiseSummary += ")";
+      }
+      console.metric("Noise modules", noiseSummary);
     }
 #endif
     console.metric("Relative savings", fmt::format(FMT_STRING("{}%"), io::toPrecision(m_infomap.getRelativeCodelengthSavings() * 100, 2, true)));
@@ -535,6 +545,11 @@ private:
 
   void calculateFlowAndInitNetwork()
   {
+    // Build the consumed CSR link storage before flow: FlowCalculator reads CSR
+    // weights and writes computed flows directly into the CSR arrays, which
+    // initNetwork and the output writers then consume.
+    m_network.finalizeLinks();
+
     {
       auto timer = m_timing.scope("flow_calculation_s");
       calculateFlow(m_network, m_infomap);
@@ -1483,20 +1498,12 @@ void InfomapBase::generateSubNetwork(Network& network)
     Console::detail(1, "rescale link flow with global Markov time {:g}", markovTime);
   }
 
-  for (auto& linkIt : network.nodeLinkMap()) {
-    unsigned int linkSourceId = linkIt.first;
-    unsigned int sourceIndex = nodeIndexMap[linkSourceId];
-    const auto& subLinks = linkIt.second;
-    for (auto& subIt : subLinks) {
-      unsigned int linkTargetId = subIt.first;
-      unsigned int targetIndex = nodeIndexMap[linkTargetId];
-      // Ignore self-links in optimization as it doesn't change enter/exit flow on modular level
-      if (sourceIndex != targetIndex) {
-        auto& linkData = subIt.second;
-        m_leafNodes[sourceIndex]->addOutEdge(*m_leafNodes[targetIndex], linkData.weight, linkData.flow * markovTime);
-      }
+  network.forEachLink([&](unsigned int sourceIndex, unsigned int targetIndex, double weight, double& flow) {
+    // Ignore self-links in optimization as it doesn't change enter/exit flow on modular level
+    if (sourceIndex != targetIndex) {
+      m_leafNodes[sourceIndex]->addOutEdge(*m_leafNodes[targetIndex], weight, flow * markovTime);
     }
-  }
+  });
 
   if (variableMarkovTime) {
     Console::detail(1, "rescale link flow with variable Markov time");
@@ -1635,6 +1642,26 @@ void InfomapBase::init()
   m_oneLevelCodelength = calcCodelength(m_root);
   Console::detail(1, "one-level codelength: {}", io::toPrecision(m_oneLevelCodelength));
 }
+
+#if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
+std::vector<unsigned int> InfomapBase::noiseTopModules() const
+{
+  std::vector<unsigned int> noise;
+  if (!lossy)
+    return noise;
+  // A module is noise iff its naming overhead exceeds the priced dynamics it covers:
+  // l_i = plogp(P_i) - sum_alpha plogp(p_alpha) > lambda * H_i. The per-module leaf
+  // sums (P_i, F_i, H_i) are carried on the module node by consolidateModules.
+  unsigned int index = 1;
+  for (const InfoNode& module : m_root) {
+    const double loss = infomath::plogp(module.data.flow) - module.lossyFlowLogFlow;
+    if (loss > lossyLambda * module.lossyEntropy + 1e-12)
+      noise.push_back(index);
+    ++index;
+  }
+  return noise;
+}
+#endif
 
 // ===================================================
 // Run: *
