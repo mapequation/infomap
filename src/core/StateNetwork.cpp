@@ -259,17 +259,36 @@ bool StateNetwork::undirectedToDirected()
 
 void StateNetwork::clearLinks()
 {
-  m_nodeLinkMap.clear();
+  // Release ALL link storage so none of it survives into the optimize phase.
+  // releaseInputLinksIfCli() calls this before runTrials(); the pre-CSR build
+  // freed its nested map here, so the CSR must be freed too (vector::clear keeps
+  // capacity, so swap with empty). Keep m_numLinks / m_linksFinalized untouched
+  // so a post-clear numLinks() still reports the count, as before.
+  NodeLinkMap().swap(m_nodeLinkMap);
+  std::vector<LinkTriple>().swap(m_linkBuffer);
+  std::vector<unsigned int>().swap(m_nodeIds);
+  std::vector<unsigned int>().swap(m_linkOffsets);
+  std::vector<unsigned int>().swap(m_linkTargets);
+  std::vector<double>().swap(m_linkWeights);
+  std::vector<double>().swap(m_linkFlows);
 }
 
 void StateNetwork::clear()
 {
   m_nodes.clear();
-  m_nodeLinkMap.clear();
+  NodeLinkMap().swap(m_nodeLinkMap);
+  std::vector<LinkTriple>().swap(m_linkBuffer);
+  std::vector<unsigned int>().swap(m_nodeIds);
+  std::vector<unsigned int>().swap(m_linkOffsets);
+  std::vector<unsigned int>().swap(m_linkTargets);
+  std::vector<double>().swap(m_linkWeights);
+  std::vector<double>().swap(m_linkFlows);
   m_physNodes.clear();
   m_outWeights.clear();
   m_names.clear();
 
+  m_linksFinalized = false;
+  m_rawLinkCount = 0;
   m_haveDirectedInput = false;
   m_haveMemoryInput = false;
   m_numStateNodesFound = 0;
