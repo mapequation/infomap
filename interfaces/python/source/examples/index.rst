@@ -19,6 +19,8 @@ Choose a notebook
   entity and relationship tables and compare with Leiden.
 - :doc:`run-infomap-on-hpc` — native CLI recipes for scheduler-aware HPC runs
   and Python shard merging.
+- :doc:`benchmark-performance` — estimate run time and memory from network size,
+  threads, trials, and hierarchy depth, with empirical scaling laws.
 
 Additional tutorial notebooks
 -----------------------------
@@ -60,6 +62,7 @@ Source notebooks
 - `compare-infomap-scanpy-workflow.ipynb <https://github.com/mapequation/infomap/blob/master/examples/notebooks/compare-infomap-scanpy-workflow.ipynb>`_
 - `run-infomap-on-graphrag-tables.ipynb <https://github.com/mapequation/infomap/blob/master/examples/notebooks/run-infomap-on-graphrag-tables.ipynb>`_
 - `run-infomap-on-hpc.ipynb <https://github.com/mapequation/infomap/blob/master/examples/notebooks/run-infomap-on-hpc.ipynb>`_
+- `benchmark-performance.ipynb <https://github.com/mapequation/infomap/blob/master/examples/notebooks/benchmark-performance.ipynb>`_
 
 .. toctree::
    :hidden:
@@ -71,3 +74,4 @@ Source notebooks
    compare-infomap-scanpy-workflow
    run-infomap-on-graphrag-tables
    run-infomap-on-hpc
+   benchmark-performance
