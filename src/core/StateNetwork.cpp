@@ -274,6 +274,10 @@ void StateNetwork::clearLinks()
   // freed its nested map here, so the CSR must be freed too (vector::clear keeps
   // capacity, so swap with empty). Keep m_numLinks / m_linksFinalized untouched
   // so a post-clear numLinks() still reports the count, as before.
+  // NOTE: m_linksFinalized stays true while the CSR is freed, so a forEachLink()
+  // after clearLinks() yields nothing (it sees an empty node list). That's only
+  // safe because clearLinks() runs after the last link consumer (before the
+  // optimize trials); don't iterate links after calling it.
   NodeLinkMap().swap(m_nodeLinkMap);
   std::vector<LinkTriple>().swap(m_linkBuffer);
   std::vector<unsigned int>().swap(m_nodeIds);
@@ -500,6 +504,10 @@ void StateNetwork::definalize()
   // Move CSR rows back into the flat buffer so building can continue. Merged
   // weights become single occurrences; a later finalizeLinks() re-sorts and
   // re-merges them (and any newly appended links).
+  // NOTE: interleaving addLink with finalizing reads (numLinks()/outWeights()/
+  // forEachLink()) re-runs the full sort+merge on every addLink-after-finalize.
+  // The parse path appends all links first and finalizes once, so this is cheap
+  // there; callers doing repeated query/append cycles pay O(L log L) per append.
   m_linkBuffer.clear();
   m_rawLinkCount = 0;
   for (unsigned int s = 0; s < m_nodeIds.size(); ++s) {

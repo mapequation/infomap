@@ -134,6 +134,34 @@ TEST_CASE("undirectedToDirected expands a mode-A network [fast][core][csr]")
   CHECK(network.numLinks() == 4);
 }
 
+TEST_CASE("addLink after finalize re-merges via definalize, preserving FP order [fast][core][csr]")
+{
+  Config config;
+  config.silent = true;
+  Network network(config);
+  network.addLink(1, 2, 0.1);
+  network.addLink(1, 2, 0.2);
+  network.finalizeLinks(); // (1,2) merged to (0.1 + 0.2)
+  CHECK(network.numLinks() == 1);
+
+  // addLink after finalize -> definalize() restores the buffer, appends, and a
+  // later finalize re-sorts + re-merges (accumulate / addLink-after-run path).
+  network.addLink(1, 2, 0.3);
+  network.addLink(1, 3, 4.0);
+  network.finalizeLinks();
+
+  CHECK(network.numLinks() == 2);
+  double w12 = -1.0, w13 = -1.0;
+  network.forEachLink([&](unsigned int s, unsigned int t, double w, double&) {
+    if (network.nodeId(s) == 1 && network.nodeId(t) == 2) w12 = w;
+    if (network.nodeId(s) == 1 && network.nodeId(t) == 3) w13 = w;
+  });
+  // The merged (0.1 + 0.2) is preserved as one occurrence, then + 0.3 in arrival
+  // order -- bit-identical to merging all three occurrences in one pass.
+  CHECK(w12 == ((0.1 + 0.2) + 0.3));
+  CHECK(w13 == doctest::Approx(4.0));
+}
+
 TEST_CASE("Network reads states fixture as higher-order input [fast][core]")
 {
   Config config;
