@@ -91,7 +91,11 @@ TEST_CASE("Network aggregates duplicate links after finalize [fast][core]")
   CHECK(network.numLinks() == 1); // aggregated
   CHECK(network.numAggregatedLinks() == 1);
   CHECK(network.sumLinkWeight() == doctest::Approx(3.5)); // occurrence sum (eager)
-  CHECK(network.outWeights().at(1) == doctest::Approx(3.5)); // derived at finalize
+  // Aggregated CSR weight read straight from the consumed store (mode A no longer
+  // derives outWeights).
+  double mergedWeight = -1.0;
+  network.forEachLink([&](unsigned int, unsigned int, double w, double&) { mergedWeight = w; });
+  CHECK(mergedWeight == doctest::Approx(3.5));
 }
 
 TEST_CASE("Network reads states fixture as higher-order input [fast][core]")

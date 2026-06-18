@@ -405,32 +405,42 @@ void StateNetwork::buildCsrFromBuffer()
     m_nodeIds.push_back(n.first);
   }
 
-  // Stable sort by (source, target): preserves arrival order within each
-  // (src,tgt) group so the left-to-right weight merge below sums in the same
-  // order the old nested map's '+=' did -- bit-for-bit identical aggregation.
-  std::stable_sort(m_linkBuffer.begin(), m_linkBuffer.end(),
-                   [](const LinkTriple& a, const LinkTriple& b) {
-                     return a.source != b.source ? a.source < b.source : a.target < b.target;
-                   });
+  // Sort an index permutation rather than the 16-byte triples: std::sort is
+  // in-place (no N-element temporary, unlike stable_sort), and the index array
+  // is 4 B/link instead of 16, cutting the finalize transient peak. The
+  // comparator orders by (source, target) and breaks ties on the arrival index,
+  // a total order whose ties preserve arrival order -- so the left-to-right
+  // weight merge below sums duplicates exactly as the old map's '+=' did,
+  // bit-for-bit identical.
+  const std::size_t numTriples = m_linkBuffer.size();
+  std::vector<unsigned int> order(numTriples);
+  for (std::size_t i = 0; i < numTriples; ++i) {
+    order[i] = static_cast<unsigned int>(i);
+  }
+  const auto& buf = m_linkBuffer;
+  std::sort(order.begin(), order.end(), [&buf](unsigned int a, unsigned int b) {
+    if (buf[a].source != buf[b].source) return buf[a].source < buf[b].source;
+    if (buf[a].target != buf[b].target) return buf[a].target < buf[b].target;
+    return a < b; // arrival-order tiebreak keeps the weight sum bit-exact
+  });
 
   const unsigned int numNodes = static_cast<unsigned int>(m_nodeIds.size());
   m_linkOffsets.assign(numNodes + 1, 0);
   m_linkTargets.clear();
   m_linkWeights.clear();
-  m_linkTargets.reserve(m_linkBuffer.size());
-  m_linkWeights.reserve(m_linkBuffer.size());
-  m_outWeights.clear();
+  m_linkTargets.reserve(numTriples);
+  m_linkWeights.reserve(numTriples);
 
-  std::size_t i = 0;
+  std::size_t k = 0;
   unsigned int curSourceIndex = 0;
-  while (i < m_linkBuffer.size()) {
-    const unsigned int src = m_linkBuffer[i].source;
-    const unsigned int tgt = m_linkBuffer[i].target;
-    double w = m_linkBuffer[i].weight;
-    std::size_t j = i + 1;
-    while (j < m_linkBuffer.size() && m_linkBuffer[j].source == src && m_linkBuffer[j].target == tgt) {
-      w += m_linkBuffer[j].weight; // left-to-right == arrival order (stable sort)
-      ++j;
+  while (k < numTriples) {
+    const unsigned int src = buf[order[k]].source;
+    const unsigned int tgt = buf[order[k]].target;
+    double w = buf[order[k]].weight;
+    std::size_t m = k + 1;
+    while (m < numTriples && buf[order[m]].source == src && buf[order[m]].target == tgt) {
+      w += buf[order[m]].weight; // arrival order via the index tiebreak
+      ++m;
     }
     const unsigned int srcIdx = indexOfId(src);
     while (curSourceIndex < srcIdx) {
@@ -438,18 +448,25 @@ void StateNetwork::buildCsrFromBuffer()
     }
     m_linkTargets.push_back(indexOfId(tgt));
     m_linkWeights.push_back(w);
-    m_outWeights[src] += w; // unused for first-order consumers; kept for API parity
-    i = j;
+    k = m;
   }
   while (curSourceIndex < numNodes) {
     m_linkOffsets[++curSourceIndex] = static_cast<unsigned int>(m_linkTargets.size());
   }
 
+  // Free the build buffer + permutation before sizing the flow array, to keep
+  // the transient peak down.
+  std::vector<LinkTriple>().swap(m_linkBuffer);
+  std::vector<unsigned int>().swap(order);
+
   m_numLinks = static_cast<unsigned int>(m_linkTargets.size());
   m_numAggregatedLinks = m_rawLinkCount - m_numLinks;
   m_linkFlows.assign(m_linkTargets.size(), 0.0);
 
-  std::vector<LinkTriple>().swap(m_linkBuffer); // free the build buffer
+  // m_outWeights is deliberately NOT derived in mode A: first-order consumers
+  // don't read it (only the multilayer mode-B expansion does, where it's kept
+  // eager in addLinkToMap). Leaving it empty avoids a ~per-source std::map.
+  m_outWeights.clear();
 }
 
 void StateNetwork::definalize()
