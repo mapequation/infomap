@@ -194,23 +194,22 @@ public:
   unsigned int numNodes() const { return m_nodes.size(); }
   unsigned int numPhysicalNodes() const { return m_physNodes.size(); }
   double sumNodeWeight() const { return m_sumNodeWeight; }
+#ifndef SWIG
+  // Mode B (multilayer) build representation, consumed only by the multilayer
+  // expansion in Network. Hidden from the bindings: external callers read links
+  // through getLinks()/getLinkResults(), which now serve the consumed CSR store.
   const NodeLinkMap& nodeLinkMap() const { return m_nodeLinkMap; }
   NodeLinkMap& nodeLinkMap() { return m_nodeLinkMap; }
+#endif
 
-  // --- CSR link storage access (valid after finalizeLinks / ensureFinalized) ---
+#ifndef SWIG
+  // --- CSR link storage access (internal; valid after finalize). Hidden from the
+  // bindings: these expose CSR index mechanics, so external callers read links
+  // through getLinks()/getLinkResults(), which serve the consumed CSR store. ---
   void finalizeLinks();
   void ensureFinalized() const
   {
     if (!m_linksFinalized) const_cast<StateNetwork*>(this)->finalizeLinks();
-  }
-  // Mode A (first-order) defers dedup to finalizeLinks(), so these counts are
-  // only valid afterwards -- ensure it. Mode B (multilayer) keeps them eager and
-  // must NOT finalize here: printSummary() reads numLinks() before the multilayer
-  // expansion populates the network.
-  unsigned int numAggregatedLinks() const
-  {
-    if (!m_useMapBuild) ensureFinalized();
-    return m_numAggregatedLinks;
   }
   unsigned int nodeId(unsigned int index) const { return m_nodeIds[index]; }
   unsigned int indexOfId(unsigned int id) const;
@@ -226,10 +225,26 @@ public:
       for (unsigned int e = m_linkOffsets[s]; e < m_linkOffsets[s + 1]; ++e)
         fn(s, m_linkTargets[e], m_linkWeights[e], m_linkFlows[e]);
   }
+#endif
 
+  // Mode A (first-order) defers dedup to finalizeLinks(), so these counts are
+  // only valid afterwards -- ensure it. Mode B (multilayer) keeps them eager and
+  // must NOT finalize here: printSummary() reads numLinks() before the multilayer
+  // expansion populates the network. The ensureFinalized() call is guarded so
+  // SWIG never parses a reference to the hidden method (the compiled library the
+  // wrapper calls still lazy-finalizes).
+  unsigned int numAggregatedLinks() const
+  {
+#ifndef SWIG
+    if (!m_useMapBuild) ensureFinalized();
+#endif
+    return m_numAggregatedLinks;
+  }
   unsigned int numLinks() const
   {
+#ifndef SWIG
     if (!m_useMapBuild) ensureFinalized();
+#endif
     return m_numLinks;
   }
   double sumLinkWeight() const { return m_sumLinkWeight; }
