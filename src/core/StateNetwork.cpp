@@ -11,6 +11,7 @@
 #include "../utils/FlowCalculator.h"
 #include "../utils/Log.h"
 #include "../io/SafeFile.h"
+#include <algorithm>
 #include <cstdlib>
 #include <deque>
 #include <stdexcept>
@@ -347,6 +348,60 @@ std::pair<StateNetwork::NodeMap::iterator, bool> StateNetwork::addStateNodeWithD
 {
   unsigned int stateId = physId << (numLayersLog2 + 1) | layerId;
   return addStateNode(stateId, physId);
+}
+
+unsigned int StateNetwork::indexOfId(unsigned int id) const
+{
+  return static_cast<unsigned int>(
+      std::lower_bound(m_nodeIds.begin(), m_nodeIds.end(), id) - m_nodeIds.begin());
+}
+
+void StateNetwork::finalizeLinks()
+{
+  if (m_linksFinalized) {
+    return;
+  }
+  // Alongside-map phase: every endpoint is already in m_nodes (addLink calls
+  // addNode), and m_nodeLinkMap is sorted+aggregated, so build CSR from it.
+  // The mode-A flat-buffer build and map-freeing land in a later task.
+  buildCsrFromMap();
+  m_linksFinalized = true;
+}
+
+void StateNetwork::buildCsrFromMap()
+{
+  m_nodeIds.clear();
+  m_nodeIds.reserve(m_nodes.size());
+  for (const auto& n : m_nodes) {
+    m_nodeIds.push_back(n.first);
+  }
+
+  const unsigned int numNodes = static_cast<unsigned int>(m_nodeIds.size());
+  m_linkOffsets.assign(numNodes + 1, 0);
+  m_linkTargets.clear();
+  m_linkWeights.clear();
+  m_linkFlows.clear();
+  m_linkTargets.reserve(m_numLinks);
+  m_linkWeights.reserve(m_numLinks);
+  m_linkFlows.reserve(m_numLinks);
+
+  unsigned int curSourceIndex = 0;
+  unsigned int linkCount = 0;
+  for (const auto& node : m_nodeLinkMap) {
+    const unsigned int srcIdx = indexOfId(node.first);
+    while (curSourceIndex < srcIdx) {
+      m_linkOffsets[++curSourceIndex] = linkCount;
+    }
+    for (const auto& link : node.second) {
+      m_linkTargets.push_back(indexOfId(link.first));
+      m_linkWeights.push_back(link.second.weight);
+      m_linkFlows.push_back(link.second.flow);
+      ++linkCount;
+    }
+  }
+  while (curSourceIndex < numNodes) {
+    m_linkOffsets[++curSourceIndex] = linkCount;
+  }
 }
 
 } // namespace infomap

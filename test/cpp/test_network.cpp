@@ -9,6 +9,7 @@
 #include <cstdio>
 #include <fstream>
 #include <string>
+#include <tuple>
 #include <vector>
 
 namespace {
@@ -286,6 +287,31 @@ TEST_CASE("NetworkInputParser preserves malformed multilayer errors [fast][core]
       infomap::input::parseNetworkInput(infomap::test::repoPath("test/fixtures/networks/invalid_multilayer.net"), sink, defaultInputOptions),
       "Can't parse multilayer link data from line '1 1 broken'",
       std::runtime_error);
+}
+
+TEST_CASE("StateNetwork builds CSR link storage after finalize [fast][core][csr]")
+{
+  Network network(Config{});
+  network.addLink(1, 2, 1.0);
+  network.addLink(1, 3, 2.0);
+  network.addLink(2, 3, 4.0);
+  network.finalizeLinks();
+
+  CHECK(network.numNodes() == 3);
+  CHECK(network.numLinks() == 3);
+  CHECK(network.outDegree(network.indexOfId(1)) == 2); // node 1 -> {2,3}
+  CHECK(network.outDegree(network.indexOfId(2)) == 1); // node 2 -> {3}
+  CHECK(network.isDangling(network.indexOfId(3)));      // node 3 has no out-links
+  CHECK(network.nodeId(0) == 1);                         // sorted ids {1,2,3}
+
+  std::vector<std::tuple<unsigned int, unsigned int, double>> seen;
+  network.forEachLink([&](unsigned int s, unsigned int t, double w, double&) {
+    seen.emplace_back(network.nodeId(s), network.nodeId(t), w);
+  });
+  REQUIRE(seen.size() == 3);
+  CHECK(std::get<0>(seen[0]) == 1);
+  CHECK(std::get<1>(seen[0]) == 2);
+  CHECK(std::get<2>(seen[2]) == doctest::Approx(4.0));
 }
 
 } // namespace
