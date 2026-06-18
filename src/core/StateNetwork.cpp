@@ -292,11 +292,9 @@ void StateNetwork::writeStateNetwork(const std::string& filename) const
   }
 
   outFile << "*Links\n";
-  for (auto& linkIt : m_nodeLinkMap) {
-    for (auto& subIt : linkIt.second) {
-      outFile << linkIt.first << " " << subIt.first << " " << subIt.second.weight << "\n";
-    }
-  }
+  forEachLink([&](unsigned int s, unsigned int t, double weight, double&) {
+    outFile << nodeId(s) << " " << nodeId(t) << " " << weight << "\n";
+  });
   outFile.commit();
 }
 
@@ -328,12 +326,9 @@ void StateNetwork::writePajekNetwork(const std::string& filename, bool printFlow
 
   outFile << (m_config.printAsUndirected() ? "*Edges" : "*Arcs") << "\n";
   outFile << "#source target " << (printFlow ? "flow" : "weight") << "\n";
-  for (auto& linkIt : m_nodeLinkMap) {
-    for (auto& subIt : linkIt.second) {
-      auto& linkData = subIt.second;
-      outFile << linkIt.first << " " << subIt.first << " " << (printFlow ? linkData.flow : linkData.weight) << "\n";
-    }
-  }
+  forEachLink([&](unsigned int s, unsigned int t, double weight, double& flow) {
+    outFile << nodeId(s) << " " << nodeId(t) << " " << (printFlow ? flow : weight) << "\n";
+  });
   outFile.commit();
 }
 
