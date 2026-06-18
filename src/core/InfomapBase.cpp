@@ -29,6 +29,7 @@
 #include "../utils/FileURI.h"
 #include "../utils/FlowCalculator.h"
 #include "../utils/MemoryUsage.h"
+#include "../utils/PhaseProfile.h"
 #include "../utils/Console.h"
 #include "../utils/ThreadConfig.h"
 #include "../utils/TimingRegistry.h"
@@ -549,6 +550,7 @@ private:
       auto timer = m_timing.scope("flow_calculation_s");
       calculateFlow(m_network, m_infomap);
     }
+    phaseprofile::mark("flow");
 
     if (m_network.isBipartite()) {
       m_infomap.bipartite = true;
@@ -558,6 +560,7 @@ private:
       auto timer = m_timing.scope("init_network_s");
       m_infomap.initNetwork(m_network);
     }
+    phaseprofile::mark("init");
 
     if (m_infomap.numLeafNodes() == 0)
       throw std::domain_error("No nodes to partition");
@@ -943,10 +946,12 @@ void InfomapBase::run(const std::string& parameters)
   }
 #endif
 
+  phaseprofile::mark("start");
   m_network.postProcessInputData();
   if (m_network.numNodes() == 0) {
     m_network.readInputData(networkFile);
   }
+  phaseprofile::mark("read_build");
 
   if (!metaDataFile.empty()) {
     initMetaData(metaDataFile);
@@ -971,6 +976,7 @@ void InfomapBase::run(Network& network)
   runSession.printSummary(runResult);
   totalTimer.stop();
   timing.setPhase("total_s", totalTimer.getElapsedTimeInSec());
+  phaseprofile::mark("run_end");
   runSession.writeRunReports(runResult);
 }
 

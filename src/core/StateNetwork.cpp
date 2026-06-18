@@ -11,6 +11,7 @@
 #include "../utils/FlowCalculator.h"
 #include "../utils/Log.h"
 #include "../io/SafeFile.h"
+#include <cstdlib>
 #include <deque>
 #include <stdexcept>
 #include <utility>
@@ -101,6 +102,13 @@ std::pair<std::map<unsigned int, std::string>::iterator, bool> StateNetwork::add
 
 bool StateNetwork::addLink(unsigned int sourceId, unsigned int targetId, double weight)
 {
+  // THROWAWAY instrumentation: measure pure parse cost by skipping all storage
+  // work (node + link map inserts). Combine with INFOMAP_STOP_AFTER=read_build.
+  static const bool skipBuild = std::getenv("INFOMAP_SKIP_BUILD") != nullptr;
+  if (skipBuild) {
+    return false;
+  }
+
   if (weight < m_config.weightThreshold || weight <= 0) {
     ++m_numLinksIgnoredByWeightThreshold;
     m_totalLinkWeightIgnored += weight;
