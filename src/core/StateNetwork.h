@@ -134,6 +134,10 @@ protected:
   // Attributes
   std::map<unsigned int, std::string> m_names;
   std::map<unsigned int, PhysNode> m_physNodes;
+  // Unique physical-id count, tracked independently of m_physNodes so the map
+  // can be released once redundant (postProcessInputData, first-order input)
+  // while numPhysicalNodes() stays correct.
+  unsigned int m_numPhysicalNodesFound = 0;
 
   // Bipartite
   unsigned int m_bipartiteStartId = 0;
@@ -192,7 +196,7 @@ public:
   // Getters
   const NodeMap& nodes() const { return m_nodes; }
   unsigned int numNodes() const { return m_nodes.size(); }
-  unsigned int numPhysicalNodes() const { return m_physNodes.size(); }
+  unsigned int numPhysicalNodes() const { return m_numPhysicalNodesFound; }
   double sumNodeWeight() const { return m_sumNodeWeight; }
 #ifndef SWIG
   // Mode B (multilayer) build representation, consumed only by the multilayer

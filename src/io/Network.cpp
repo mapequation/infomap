@@ -97,6 +97,11 @@ void Network::postProcessInputData()
     for (auto& it : m_physNodes) {
       addNode(it.second.physId, it.second.weight);
     }
+    // The physical nodes now mirror the state nodes 1:1, and nothing reads
+    // m_physNodes' contents past this point (only numPhysicalNodes(), which is
+    // backed by a counter). Release the map -- a per-source std::map -- to cut
+    // the build peak. std::map::clear() deallocates its nodes.
+    m_physNodes.clear();
   }
 }
 
