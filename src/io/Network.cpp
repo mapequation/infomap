@@ -166,6 +166,9 @@ void Network::addMultilayerLink(unsigned int stateId1, unsigned int layer1, unsi
     ++m_numInterLayerLinks;
   }
 
+  // Multilayer builds the state network through the nested map (mode B); set
+  // before addLink so the main network never enters the flat-buffer path.
+  m_useMapBuild = true;
   addLink(stateId1, stateId2, weight);
 }
 
@@ -706,7 +709,13 @@ void Network::simulateInterLayerLinks()
 void Network::addMultilayerIntraLink(unsigned int layer, unsigned int n1, unsigned int n2, double weight)
 {
   m_higherOrderInputMethodCalled = true;
-  bool added = m_networks[layer].addLink(n1, n2, weight);
+  // Mode B for both the main network (gets expansion links later) and the
+  // transient per-layer network (its nested map + outWeights are read directly
+  // during expansion). Set before addLink so neither enters the buffer path.
+  m_useMapBuild = true;
+  auto& layerNetwork = m_networks[layer];
+  layerNetwork.m_useMapBuild = true;
+  bool added = layerNetwork.addLink(n1, n2, weight);
   if (added) {
     ++m_numIntraLayerLinks;
     m_maxNodeIdInIntraLayerNetworks = std::max(m_maxNodeIdInIntraLayerNetworks, std::max(n1, n2));
@@ -735,6 +744,9 @@ void Network::addMultilayerInterLink(unsigned int layer1, unsigned int n, unsign
     throw std::runtime_error(fmt::format(FMT_STRING("Inter-layer link (layer1, node, layer2): {}, {}, {} must have layer1 != layer2"), layer1, n, layer2));
   }
   m_higherOrderInputMethodCalled = true;
+  // Multilayer main network builds via the nested map (mode B); set before
+  // printSummary() can read numLinks() so it never triggers a premature finalize.
+  m_useMapBuild = true;
 
   auto& interLinks = m_interLinks[LayerNode(layer1, n)];
   auto it = interLinks.find(layer2);

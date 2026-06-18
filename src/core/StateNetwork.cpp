@@ -129,8 +129,35 @@ bool StateNetwork::addLink(unsigned int sourceId, unsigned int targetId, double 
   addNode(sourceId);
   addNode(targetId);
 
-  ++m_numLinks;
   m_sumLinkWeight += weight;
+
+  if (m_useMapBuild) {
+    return addLinkToMap(sourceId, targetId, weight); // mode B (multilayer)
+  }
+
+  // mode A (first-order): deferred storage -- append now, aggregate in
+  // finalizeLinks(). New-vs-aggregated isn't known until then, so the return
+  // value becomes "accepted" (passed the filters above) rather than "new unique".
+  if (m_linksFinalized) {
+    definalize(); // re-entered build (e.g. accumulate=true read, addLink after run)
+  }
+  ++m_rawLinkCount;
+  m_linkBuffer.push_back({ sourceId, targetId, weight });
+  return true;
+}
+
+bool StateNetwork::addLinkToMap(unsigned int sourceId, unsigned int targetId, double weight)
+{
+  // Mode B (multilayer): eager aggregation into the nested map, exactly as the
+  // pre-CSR build did. Multilayer expansion reads this map and outWeights()
+  // mid-build, so both must stay populated with the original arrival-order sums.
+  if (m_linksFinalized) {
+    // A link added after a CSR build: the map is still the source of truth in
+    // mode B, so just invalidate the cached CSR for the next finalize.
+    m_linksFinalized = false;
+  }
+
+  ++m_numLinks;
 
   bool addedNewLink = true;
 
@@ -353,15 +380,96 @@ unsigned int StateNetwork::indexOfId(unsigned int id) const
 
 void StateNetwork::finalizeLinks()
 {
-  // Alongside-map phase: every endpoint is already in m_nodes (addLink calls
-  // addNode), and m_nodeLinkMap is sorted+aggregated, so build CSR from it.
-  // The mode-A flat-buffer build and map-freeing land in a later task.
-  // Note: deliberately rebuilds unconditionally (no idempotency guard yet) so a
-  // premature lazy finalize from a pre-flow output writer can't pin a stale CSR
-  // before all links exist; the explicit pre-flow call rebuilds from the
-  // complete map. The mode-aware guard is restored once the buffer is freed.
-  buildCsrFromMap();
+  // Idempotent: build the consumed CSR exactly once. A second call would rebuild
+  // from a freed buffer (mode A -> empty CSR) or re-read flow-less map entries
+  // (mode B -> wiped flows), so mutations after finalize go through definalize()
+  // / addLinkToMap() which reset m_linksFinalized instead of rebuilding here.
+  if (m_linksFinalized) {
+    return;
+  }
+  if (m_useMapBuild) {
+    buildCsrFromMap(); // mode B (multilayer): sorted+aggregated map -> CSR
+  } else {
+    buildCsrFromBuffer(); // mode A (first-order): sort + merge the flat buffer -> CSR
+  }
   m_linksFinalized = true;
+}
+
+void StateNetwork::buildCsrFromBuffer()
+{
+  // Node index = sorted position in m_nodes (every link endpoint was addNode'd
+  // during addLink), so index->id is direct and id->index is a binary search.
+  m_nodeIds.clear();
+  m_nodeIds.reserve(m_nodes.size());
+  for (const auto& n : m_nodes) {
+    m_nodeIds.push_back(n.first);
+  }
+
+  // Stable sort by (source, target): preserves arrival order within each
+  // (src,tgt) group so the left-to-right weight merge below sums in the same
+  // order the old nested map's '+=' did -- bit-for-bit identical aggregation.
+  std::stable_sort(m_linkBuffer.begin(), m_linkBuffer.end(),
+                   [](const LinkTriple& a, const LinkTriple& b) {
+                     return a.source != b.source ? a.source < b.source : a.target < b.target;
+                   });
+
+  const unsigned int numNodes = static_cast<unsigned int>(m_nodeIds.size());
+  m_linkOffsets.assign(numNodes + 1, 0);
+  m_linkTargets.clear();
+  m_linkWeights.clear();
+  m_linkTargets.reserve(m_linkBuffer.size());
+  m_linkWeights.reserve(m_linkBuffer.size());
+  m_outWeights.clear();
+
+  std::size_t i = 0;
+  unsigned int curSourceIndex = 0;
+  while (i < m_linkBuffer.size()) {
+    const unsigned int src = m_linkBuffer[i].source;
+    const unsigned int tgt = m_linkBuffer[i].target;
+    double w = m_linkBuffer[i].weight;
+    std::size_t j = i + 1;
+    while (j < m_linkBuffer.size() && m_linkBuffer[j].source == src && m_linkBuffer[j].target == tgt) {
+      w += m_linkBuffer[j].weight; // left-to-right == arrival order (stable sort)
+      ++j;
+    }
+    const unsigned int srcIdx = indexOfId(src);
+    while (curSourceIndex < srcIdx) {
+      m_linkOffsets[++curSourceIndex] = static_cast<unsigned int>(m_linkTargets.size());
+    }
+    m_linkTargets.push_back(indexOfId(tgt));
+    m_linkWeights.push_back(w);
+    m_outWeights[src] += w; // unused for first-order consumers; kept for API parity
+    i = j;
+  }
+  while (curSourceIndex < numNodes) {
+    m_linkOffsets[++curSourceIndex] = static_cast<unsigned int>(m_linkTargets.size());
+  }
+
+  m_numLinks = static_cast<unsigned int>(m_linkTargets.size());
+  m_numAggregatedLinks = m_rawLinkCount - m_numLinks;
+  m_linkFlows.assign(m_linkTargets.size(), 0.0);
+
+  std::vector<LinkTriple>().swap(m_linkBuffer); // free the build buffer
+}
+
+void StateNetwork::definalize()
+{
+  // Move CSR rows back into the flat buffer so building can continue. Merged
+  // weights become single occurrences; a later finalizeLinks() re-sorts and
+  // re-merges them (and any newly appended links).
+  m_linkBuffer.clear();
+  m_rawLinkCount = 0;
+  for (unsigned int s = 0; s < m_nodeIds.size(); ++s) {
+    for (unsigned int e = m_linkOffsets[s]; e < m_linkOffsets[s + 1]; ++e) {
+      m_linkBuffer.push_back({ m_nodeIds[s], m_nodeIds[m_linkTargets[e]], m_linkWeights[e] });
+      ++m_rawLinkCount;
+    }
+  }
+  m_linkOffsets.clear();
+  m_linkTargets.clear();
+  m_linkWeights.clear();
+  m_linkFlows.clear();
+  m_linksFinalized = false;
 }
 
 void StateNetwork::buildCsrFromMap()

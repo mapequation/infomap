@@ -203,7 +203,15 @@ public:
   {
     if (!m_linksFinalized) const_cast<StateNetwork*>(this)->finalizeLinks();
   }
-  unsigned int numAggregatedLinks() const { return m_numAggregatedLinks; }
+  // Mode A (first-order) defers dedup to finalizeLinks(), so these counts are
+  // only valid afterwards -- ensure it. Mode B (multilayer) keeps them eager and
+  // must NOT finalize here: printSummary() reads numLinks() before the multilayer
+  // expansion populates the network.
+  unsigned int numAggregatedLinks() const
+  {
+    if (!m_useMapBuild) ensureFinalized();
+    return m_numAggregatedLinks;
+  }
   unsigned int nodeId(unsigned int index) const { return m_nodeIds[index]; }
   unsigned int indexOfId(unsigned int id) const;
   unsigned int outDegree(unsigned int index) const { return m_linkOffsets[index + 1] - m_linkOffsets[index]; }
@@ -219,7 +227,11 @@ public:
         fn(s, m_linkTargets[e], m_linkWeights[e], m_linkFlows[e]);
   }
 
-  unsigned int numLinks() const { return m_numLinks; }
+  unsigned int numLinks() const
+  {
+    if (!m_useMapBuild) ensureFinalized();
+    return m_numLinks;
+  }
   double sumLinkWeight() const { return m_sumLinkWeight; }
   unsigned int numSelfLinks() const { return m_numSelfLinks; }
   double sumSelfLinkWeight() const { return m_sumSelfLinkWeight; }
@@ -266,9 +278,15 @@ protected:
 
   std::pair<NodeMap::iterator, bool> addStateNodeWithDeterministicId(unsigned int physId, unsigned int layerId, unsigned int numLayersLog2);
 
-  // Build the consumed CSR arrays. Mode B (current): from the already-sorted,
-  // already-aggregated m_nodeLinkMap. Mode A (later): from the flat m_linkBuffer.
+  // Build the consumed CSR arrays. Mode B (multilayer): from the already-sorted,
+  // already-aggregated m_nodeLinkMap. Mode A (first-order): from m_linkBuffer.
   void buildCsrFromMap();
+  void buildCsrFromBuffer();
+  // Mode B eager aggregation into the nested map (the pre-CSR build path).
+  bool addLinkToMap(unsigned int sourceId, unsigned int targetId, double weight);
+  // Move CSR rows back into the flat buffer so a finalized network can keep
+  // building (mode A accumulate / addLink-after-run).
+  void definalize();
 };
 
 } // namespace infomap

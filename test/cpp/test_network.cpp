@@ -74,19 +74,24 @@ private:
   }
 };
 
-TEST_CASE("Network aggregates duplicate links [fast][core]")
+TEST_CASE("Network aggregates duplicate links after finalize [fast][core]")
 {
   Config config;
   config.silent = true;
   Network network(config);
 
+  // Deferred dedup (mode A): addLink reports "accepted" (passed filters), not
+  // "new-unique" -- aggregation happens in finalizeLinks().
   CHECK(network.addLink(1, 2, 1.0));
-  CHECK_FALSE(network.addLink(1, 2, 2.5));
+  CHECK(network.addLink(1, 2, 2.5));
+
+  network.finalizeLinks();
 
   CHECK(network.numNodes() == 2);
-  CHECK(network.numLinks() == 1);
-  CHECK(network.sumLinkWeight() == doctest::Approx(3.5));
-  CHECK(network.outWeights().at(1) == doctest::Approx(3.5));
+  CHECK(network.numLinks() == 1); // aggregated
+  CHECK(network.numAggregatedLinks() == 1);
+  CHECK(network.sumLinkWeight() == doctest::Approx(3.5)); // occurrence sum (eager)
+  CHECK(network.outWeights().at(1) == doctest::Approx(3.5)); // derived at finalize
 }
 
 TEST_CASE("Network reads states fixture as higher-order input [fast][core]")
