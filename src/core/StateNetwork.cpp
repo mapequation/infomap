@@ -11,6 +11,7 @@
 #include "../utils/FlowCalculator.h"
 #include "../utils/Log.h"
 #include "../io/SafeFile.h"
+#include <algorithm>
 #include <deque>
 #include <stdexcept>
 #include <utility>
@@ -63,7 +64,11 @@ std::pair<StateNetwork::NodeMap::iterator, bool> StateNetwork::addNode(unsigned 
 
 StateNetwork::PhysNode& StateNetwork::addPhysicalNode(unsigned int physId)
 {
-  auto& physNode = m_physNodes[physId];
+  auto result = m_physNodes.emplace(physId, PhysNode(physId));
+  if (result.second) {
+    ++m_numPhysicalNodesFound; // count uniques so numPhysicalNodes() survives a freed map
+  }
+  auto& physNode = result.first->second;
   physNode.physId = physId;
   m_sumNodeWeight += 1.0;
   return physNode;
@@ -120,8 +125,35 @@ bool StateNetwork::addLink(unsigned int sourceId, unsigned int targetId, double 
   addNode(sourceId);
   addNode(targetId);
 
-  ++m_numLinks;
   m_sumLinkWeight += weight;
+
+  if (m_useMapBuild) {
+    return addLinkToMap(sourceId, targetId, weight); // mode B (multilayer)
+  }
+
+  // mode A (first-order): deferred storage -- append now, aggregate in
+  // finalizeLinks(). New-vs-aggregated isn't known until then, so the return
+  // value becomes "accepted" (passed the filters above) rather than "new unique".
+  if (m_linksFinalized) {
+    definalize(); // re-entered build (e.g. accumulate=true read, addLink after run)
+  }
+  ++m_rawLinkCount;
+  m_linkBuffer.push_back({ sourceId, targetId, weight });
+  return true;
+}
+
+bool StateNetwork::addLinkToMap(unsigned int sourceId, unsigned int targetId, double weight)
+{
+  // Mode B (multilayer): eager aggregation into the nested map, exactly as the
+  // pre-CSR build did. Multilayer expansion reads this map and outWeights()
+  // mid-build, so both must stay populated with the original arrival-order sums.
+  if (m_linksFinalized) {
+    // A link added after a CSR build: the map is still the source of truth in
+    // mode B, so just invalidate the cached CSR for the next finalize.
+    m_linksFinalized = false;
+  }
+
+  ++m_numLinks;
 
   bool addedNewLink = true;
 
@@ -164,6 +196,10 @@ void StateNetwork::addLinks(const std::vector<unsigned int>& sourceIds, const st
 
 bool StateNetwork::removeLink(unsigned int sourceId, unsigned int targetId)
 {
+  // removeLink operates on the nested map. For a mode-A (flat-buffer) network the
+  // map is empty, so materialize it from CSR and switch to map build first;
+  // otherwise this would silently no-op for ordinary/state networks.
+  ensureMapBuild();
   auto itSource = m_nodeLinkMap.find(sourceId);
   if (itSource == m_nodeLinkMap.end()) {
     return false;
@@ -181,7 +217,10 @@ bool StateNetwork::removeLink(unsigned int sourceId, unsigned int targetId)
   targetMap.erase(itTarget);
   if (targetMap.empty()) {
     m_nodeLinkMap.erase(itSource);
-  } else {
+  } else if (m_numAggregatedLinks > 0) {
+    // Guard the unsigned counter: it's 0 for networks with no aggregated
+    // duplicates (per-edge occurrence counts aren't tracked, so this can't be
+    // exact, but must not underflow now that numAggregatedLinks() is exposed).
     --m_numAggregatedLinks;
   }
 
@@ -206,6 +245,9 @@ bool StateNetwork::undirectedToDirected()
   if (!m_config.isUndirectedFlow()) {
     return false;
   }
+  // Reads/extends the nested map; materialize it from CSR for mode-A networks
+  // (no-op for the multilayer sub-networks that already build the map).
+  ensureMapBuild();
   std::deque<StateLink> oppositeLinks;
   for (auto& linkIt : m_nodeLinkMap) {
     unsigned int sourceId = linkIt.first;
@@ -227,20 +269,48 @@ bool StateNetwork::undirectedToDirected()
 
 void StateNetwork::clearLinks()
 {
-  m_nodeLinkMap.clear();
+  // Release ALL link storage so none of it survives into the optimize phase.
+  // releaseInputLinksIfCli() calls this before runTrials(); the pre-CSR build
+  // freed its nested map here, so the CSR (and outWeights) must be freed too
+  // (vector::clear keeps capacity, so swap with empty).
+  NodeLinkMap().swap(m_nodeLinkMap);
+  std::vector<LinkTriple>().swap(m_linkBuffer);
+  std::vector<unsigned int>().swap(m_nodeIds);
+  std::vector<unsigned int>().swap(m_linkOffsets);
+  std::vector<unsigned int>().swap(m_linkTargets);
+  std::vector<double>().swap(m_linkWeights);
+  std::vector<double>().swap(m_linkFlows);
+  std::map<unsigned int, double>().swap(m_outWeights);
+  // Mark finalized (CSR is "built" -- it's just empty) and zero the raw count so a
+  // lazy finalize triggered after clearLinks() can't rebuild a bogus CSR or compute
+  // m_numAggregatedLinks = m_rawLinkCount - 0. m_numLinks/m_numAggregatedLinks keep
+  // their pre-clear values so a post-clear numLinks() still reports the count (as
+  // before); forEachLink() yields nothing by design (empty node list).
+  m_rawLinkCount = 0;
+  m_linksFinalized = true;
 }
 
 void StateNetwork::clear()
 {
   m_nodes.clear();
-  m_nodeLinkMap.clear();
+  NodeLinkMap().swap(m_nodeLinkMap);
+  std::vector<LinkTriple>().swap(m_linkBuffer);
+  std::vector<unsigned int>().swap(m_nodeIds);
+  std::vector<unsigned int>().swap(m_linkOffsets);
+  std::vector<unsigned int>().swap(m_linkTargets);
+  std::vector<double>().swap(m_linkWeights);
+  std::vector<double>().swap(m_linkFlows);
   m_physNodes.clear();
   m_outWeights.clear();
   m_names.clear();
 
+  m_linksFinalized = false;
+  m_rawLinkCount = 0;
+  m_useMapBuild = false; // reset build mode so a reused instance defaults to mode A
   m_haveDirectedInput = false;
   m_haveMemoryInput = false;
   m_numStateNodesFound = 0;
+  m_numPhysicalNodesFound = 0;
   m_numLinks = 0;
   m_numSelfLinksFound = 0;
   m_sumLinkWeight = 0.0;
@@ -283,11 +353,9 @@ void StateNetwork::writeStateNetwork(const std::string& filename) const
   }
 
   outFile << "*Links\n";
-  for (auto& linkIt : m_nodeLinkMap) {
-    for (auto& subIt : linkIt.second) {
-      outFile << linkIt.first << " " << subIt.first << " " << subIt.second.weight << "\n";
-    }
-  }
+  forEachLink([&](unsigned int s, unsigned int t, double weight, double&) {
+    outFile << nodeId(s) << " " << nodeId(t) << " " << weight << "\n";
+  });
   outFile.commit();
 }
 
@@ -319,12 +387,9 @@ void StateNetwork::writePajekNetwork(const std::string& filename, bool printFlow
 
   outFile << (m_config.printAsUndirected() ? "*Edges" : "*Arcs") << "\n";
   outFile << "#source target " << (printFlow ? "flow" : "weight") << "\n";
-  for (auto& linkIt : m_nodeLinkMap) {
-    for (auto& subIt : linkIt.second) {
-      auto& linkData = subIt.second;
-      outFile << linkIt.first << " " << subIt.first << " " << (printFlow ? linkData.flow : linkData.weight) << "\n";
-    }
-  }
+  forEachLink([&](unsigned int s, unsigned int t, double weight, double& flow) {
+    outFile << nodeId(s) << " " << nodeId(t) << " " << (printFlow ? flow : weight) << "\n";
+  });
   outFile.commit();
 }
 
@@ -339,6 +404,221 @@ std::pair<StateNetwork::NodeMap::iterator, bool> StateNetwork::addStateNodeWithD
 {
   unsigned int stateId = physId << (numLayersLog2 + 1) | layerId;
   return addStateNode(stateId, physId);
+}
+
+unsigned int StateNetwork::indexOfId(unsigned int id) const
+{
+  // Precondition: `id` must exist in m_nodeIds (i.e. be one of nodes()). Every
+  // link endpoint is addNode'd before finalize and all callers query ids drawn
+  // from nodes(), so this holds; the result is then a valid index in [0,numNodes).
+  // For an absent id this returns the lower_bound insertion point (possibly
+  // numNodes), which the CSR accessors would read out of bounds -- don't call it
+  // with an unknown id.
+  return static_cast<unsigned int>(
+      std::lower_bound(m_nodeIds.begin(), m_nodeIds.end(), id) - m_nodeIds.begin());
+}
+
+void StateNetwork::finalizeLinks()
+{
+  // Idempotent: build the consumed CSR exactly once. A second call would rebuild
+  // from a freed buffer (mode A -> empty CSR) or re-read flow-less map entries
+  // (mode B -> wiped flows), so mutations after finalize go through definalize()
+  // / addLinkToMap() which reset m_linksFinalized instead of rebuilding here.
+  if (m_linksFinalized) {
+    return;
+  }
+  if (m_useMapBuild) {
+    buildCsrFromMap(); // mode B (multilayer): sorted+aggregated map -> CSR
+  } else {
+    buildCsrFromBuffer(); // mode A (first-order): sort + merge the flat buffer -> CSR
+  }
+  m_linksFinalized = true;
+}
+
+void StateNetwork::buildCsrFromBuffer()
+{
+  // Node index = sorted position in m_nodes (every link endpoint was addNode'd
+  // during addLink), so index->id is direct and id->index is a binary search.
+  m_nodeIds.clear();
+  m_nodeIds.reserve(m_nodes.size());
+  for (const auto& n : m_nodes) {
+    m_nodeIds.push_back(n.first);
+  }
+
+  // Sort an index permutation rather than the 16-byte triples: std::sort is
+  // in-place (no N-element temporary, unlike stable_sort), and the index array
+  // is 4 B/link instead of 16, cutting the finalize transient peak. The
+  // comparator orders by (source, target) and breaks ties on the arrival index,
+  // a total order whose ties preserve arrival order -- so the left-to-right
+  // weight merge below sums duplicates exactly as the old map's '+=' did,
+  // bit-for-bit identical.
+  const std::size_t numTriples = m_linkBuffer.size();
+  std::vector<unsigned int> order(numTriples);
+  for (std::size_t i = 0; i < numTriples; ++i) {
+    order[i] = static_cast<unsigned int>(i);
+  }
+  const auto& buf = m_linkBuffer;
+  std::sort(order.begin(), order.end(), [&buf](unsigned int a, unsigned int b) {
+    if (buf[a].source != buf[b].source) return buf[a].source < buf[b].source;
+    if (buf[a].target != buf[b].target) return buf[a].target < buf[b].target;
+    return a < b; // arrival-order tiebreak keeps the weight sum bit-exact
+  });
+
+  const unsigned int numNodes = static_cast<unsigned int>(m_nodeIds.size());
+  m_linkOffsets.assign(numNodes + 1, 0);
+  m_linkTargets.clear();
+  m_linkWeights.clear();
+  m_linkTargets.reserve(numTriples);
+  m_linkWeights.reserve(numTriples);
+
+  std::size_t k = 0;
+  unsigned int curSourceIndex = 0;
+  while (k < numTriples) {
+    const unsigned int src = buf[order[k]].source;
+    const unsigned int tgt = buf[order[k]].target;
+    double w = buf[order[k]].weight;
+    std::size_t m = k + 1;
+    while (m < numTriples && buf[order[m]].source == src && buf[order[m]].target == tgt) {
+      w += buf[order[m]].weight; // arrival order via the index tiebreak
+      ++m;
+    }
+    const unsigned int srcIdx = indexOfId(src);
+    while (curSourceIndex < srcIdx) {
+      m_linkOffsets[++curSourceIndex] = static_cast<unsigned int>(m_linkTargets.size());
+    }
+    m_linkTargets.push_back(indexOfId(tgt));
+    m_linkWeights.push_back(w);
+    k = m;
+  }
+  while (curSourceIndex < numNodes) {
+    m_linkOffsets[++curSourceIndex] = static_cast<unsigned int>(m_linkTargets.size());
+  }
+
+  // Free the build buffer + permutation before sizing the flow array, to keep
+  // the transient peak down.
+  std::vector<LinkTriple>().swap(m_linkBuffer);
+  std::vector<unsigned int>().swap(order);
+
+  m_numLinks = static_cast<unsigned int>(m_linkTargets.size());
+  m_numAggregatedLinks = m_rawLinkCount - m_numLinks;
+  m_linkFlows.assign(m_linkTargets.size(), 0.0);
+
+  // m_outWeights is deliberately NOT derived in mode A: first-order consumers
+  // don't read it (only the multilayer mode-B expansion does, where it's kept
+  // eager in addLinkToMap). Leaving it empty avoids a ~per-source std::map.
+  m_outWeights.clear();
+}
+
+void StateNetwork::definalize()
+{
+  // Move CSR rows back into the flat buffer so building can continue. Merged
+  // weights become single occurrences; a later finalizeLinks() re-sorts and
+  // re-merges them (and any newly appended links).
+  // NOTE: interleaving addLink with finalizing reads (numLinks()/outWeights()/
+  // forEachLink()) re-runs the full sort+merge on every addLink-after-finalize.
+  // The parse path appends all links first and finalizes once, so this is cheap
+  // there; callers doing repeated query/append cycles pay O(L log L) per append.
+  m_linkBuffer.clear();
+  m_linkBuffer.reserve(m_linkTargets.size()); // final size is known -> single allocation
+  m_rawLinkCount = 0;
+  for (unsigned int s = 0; s < m_nodeIds.size(); ++s) {
+    for (unsigned int e = m_linkOffsets[s]; e < m_linkOffsets[s + 1]; ++e) {
+      m_linkBuffer.push_back({ m_nodeIds[s], m_nodeIds[m_linkTargets[e]], m_linkWeights[e] });
+      ++m_rawLinkCount;
+    }
+  }
+  m_linkOffsets.clear();
+  m_linkTargets.clear();
+  m_linkWeights.clear();
+  m_linkFlows.clear();
+  m_linksFinalized = false;
+}
+
+void StateNetwork::buildCsrFromMap()
+{
+  m_nodeIds.clear();
+  m_nodeIds.reserve(m_nodes.size());
+  for (const auto& n : m_nodes) {
+    m_nodeIds.push_back(n.first);
+  }
+
+  const unsigned int numNodes = static_cast<unsigned int>(m_nodeIds.size());
+  m_linkOffsets.assign(numNodes + 1, 0);
+  m_linkTargets.clear();
+  m_linkWeights.clear();
+  m_linkFlows.clear();
+  m_linkTargets.reserve(m_numLinks);
+  m_linkWeights.reserve(m_numLinks);
+  m_linkFlows.reserve(m_numLinks);
+
+  unsigned int curSourceIndex = 0;
+  unsigned int linkCount = 0;
+  for (const auto& node : m_nodeLinkMap) {
+    const unsigned int srcIdx = indexOfId(node.first);
+    while (curSourceIndex < srcIdx) {
+      m_linkOffsets[++curSourceIndex] = linkCount;
+    }
+    for (const auto& link : node.second) {
+      m_linkTargets.push_back(indexOfId(link.first));
+      m_linkWeights.push_back(link.second.weight);
+      m_linkFlows.push_back(link.second.flow);
+      ++linkCount;
+    }
+  }
+  while (curSourceIndex < numNodes) {
+    m_linkOffsets[++curSourceIndex] = linkCount;
+  }
+}
+
+void StateNetwork::ensureMapBuild()
+{
+  // Materialize the nested map (mode B) from the consumed CSR so the map-based
+  // mutation APIs (removeLink, undirectedToDirected) work on a mode-A network.
+  // No-op when already building the map (e.g. multilayer sub-networks), so those
+  // paths are unchanged. The network then stays in map-build mode; a later
+  // finalizeLinks() rebuilds the CSR via buildCsrFromMap().
+  if (m_useMapBuild) {
+    return;
+  }
+  ensureFinalized();
+  NodeLinkMap().swap(m_nodeLinkMap);
+  m_outWeights.clear();
+  for (unsigned int s = 0; s < m_nodeIds.size(); ++s) {
+    if (m_linkOffsets[s] == m_linkOffsets[s + 1]) {
+      continue; // dangling: the historic nested map only held sources with out-links
+    }
+    const unsigned int srcId = m_nodeIds[s];
+    auto& outLinks = m_nodeLinkMap[srcId];
+    for (unsigned int e = m_linkOffsets[s]; e < m_linkOffsets[s + 1]; ++e) {
+      LinkData linkData(m_linkWeights[e]);
+      linkData.flow = m_linkFlows[e];
+      outLinks[m_nodeIds[m_linkTargets[e]]] = linkData;
+      m_outWeights[srcId] += m_linkWeights[e];
+    }
+  }
+  m_useMapBuild = true;
+  m_linksFinalized = false; // map is now the build rep; CSR will be rebuilt on finalize
+}
+
+void StateNetwork::deriveOutWeightsIfNeeded()
+{
+  // Mode A doesn't keep m_outWeights during build (first-order consumers don't
+  // read it). Derive it on demand from CSR when the public outWeights() getter is
+  // called, so the bound API still returns per-source out-weights. Cleared on
+  // every (re)finalize, so it stays consistent.
+  if (m_useMapBuild || !m_outWeights.empty()) {
+    return;
+  }
+  ensureFinalized(); // mode A: m_numLinks/CSR are only valid after finalize
+  for (unsigned int s = 0; s < m_nodeIds.size(); ++s) {
+    double w = 0.0;
+    for (unsigned int e = m_linkOffsets[s]; e < m_linkOffsets[s + 1]; ++e) {
+      w += m_linkWeights[e];
+    }
+    if (w != 0.0) {
+      m_outWeights[m_nodeIds[s]] = w;
+    }
+  }
 }
 
 } // namespace infomap

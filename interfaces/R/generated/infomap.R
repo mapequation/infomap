@@ -16938,61 +16938,19 @@ attr(`StateNetwork_sumNodeWeight`, 'returnType') = 'numeric'
 attr(`StateNetwork_sumNodeWeight`, "inputTypes") = c('_p_infomap__StateNetwork')
 class(`StateNetwork_sumNodeWeight`) = c("SWIGFunction", class('StateNetwork_sumNodeWeight'))
 
-# Start of StateNetwork_nodeLinkMap
+# Start of StateNetwork_numAggregatedLinks
 
-`StateNetwork_nodeLinkMap__SWIG_0` = function(self, .copy = FALSE)
+`StateNetwork_numAggregatedLinks` = function(self, .copy = FALSE)
 {
   if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;ans = .Call('R_swig_StateNetwork_nodeLinkMap__SWIG_0', self, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_std__mapT_unsigned_int_std__mapT_unsigned_int_infomap__StateNetwork__LinkData_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__LinkData_t_t_t_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_std__mapT_unsigned_int_infomap__StateNetwork__LinkData_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__LinkData_t_t_t_t_t_t", ref=ans);
-  
-  ans
+  ;.Call('R_swig_StateNetwork_numAggregatedLinks', self, as.logical(.copy), PACKAGE='infomap');
   
 }
 
-attr(`StateNetwork_nodeLinkMap__SWIG_0`, 'returnType') = '_p_std__mapT_unsigned_int_std__mapT_unsigned_int_infomap__StateNetwork__LinkData_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__LinkData_t_t_t_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_std__mapT_unsigned_int_infomap__StateNetwork__LinkData_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__LinkData_t_t_t_t_t_t'
-attr(`StateNetwork_nodeLinkMap__SWIG_0`, "inputTypes") = c('_p_infomap__StateNetwork')
-class(`StateNetwork_nodeLinkMap__SWIG_0`) = c("SWIGFunction", class('StateNetwork_nodeLinkMap__SWIG_0'))
+attr(`StateNetwork_numAggregatedLinks`, 'returnType') = 'integer'
+attr(`StateNetwork_numAggregatedLinks`, "inputTypes") = c('_p_infomap__StateNetwork')
+class(`StateNetwork_numAggregatedLinks`) = c("SWIGFunction", class('StateNetwork_numAggregatedLinks'))
 
-# Start of StateNetwork_nodeLinkMap
-
-`StateNetwork_nodeLinkMap__SWIG_1` = function(self, .copy = FALSE)
-{
-  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;ans = .Call('R_swig_StateNetwork_nodeLinkMap__SWIG_1', self, as.logical(.copy), PACKAGE='infomap');
-  ans <- if (is.null(ans)) ans
-  else new("_p_std__mapT_unsigned_int_std__mapT_unsigned_int_infomap__StateNetwork__LinkData_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__LinkData_t_t_t_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_std__mapT_unsigned_int_infomap__StateNetwork__LinkData_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__LinkData_t_t_t_t_t_t", ref=ans);
-  
-  ans
-  
-}
-
-attr(`StateNetwork_nodeLinkMap__SWIG_1`, 'returnType') = '_p_std__mapT_unsigned_int_std__mapT_unsigned_int_infomap__StateNetwork__LinkData_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__LinkData_t_t_t_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_std__mapT_unsigned_int_infomap__StateNetwork__LinkData_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__LinkData_t_t_t_t_t_t'
-attr(`StateNetwork_nodeLinkMap__SWIG_1`, "inputTypes") = c('_p_infomap__StateNetwork')
-class(`StateNetwork_nodeLinkMap__SWIG_1`) = c("SWIGFunction", class('StateNetwork_nodeLinkMap__SWIG_1'))
-
-`StateNetwork_nodeLinkMap` <- function(...) {
-  argtypes <- mapply(class, list(...));
-  argv <- list(...);
-  argc <- length(argtypes);
-  f <- NULL;
-# dispatch functions 2
-  if (argc == 1) {
-    if ( extends(argtypes[1], '_p_infomap__StateNetwork') || is.null(argv[[1]]) ) {
-      f <- StateNetwork_nodeLinkMap__SWIG_1; 
-    }
-    else if ( extends(argtypes[1], '_p_infomap__StateNetwork') || is.null(argv[[1]]) ) {
-      f <- StateNetwork_nodeLinkMap__SWIG_0; 
-    }
-  };
-  if (is.null(f)) {
-    stop("cannot find overloaded function for StateNetwork_nodeLinkMap with argtypes (",toString(argtypes),")");
-  };
-  f(...);
-}
-
-# Dispatch function
 # Start of StateNetwork_numLinks
 
 `StateNetwork_numLinks` = function(self, .copy = FALSE)
@@ -17352,7 +17310,7 @@ class(`StateNetwork_writePajekNetwork__SWIG_1`) = c("SWIGFunction", class('State
 setMethod('$', '_p_infomap__StateNetwork', function(x, name)
 
 {
-  accessorFuns = list('setConfig' = StateNetwork_setConfig, 'addStateNode' = StateNetwork_addStateNode, 'addNode' = StateNetwork_addNode, 'addPhysicalNode' = StateNetwork_addPhysicalNode, 'addName' = StateNetwork_addName, 'addLink' = StateNetwork_addLink, 'addLinks' = StateNetwork_addLinks, 'removeLink' = StateNetwork_removeLink, 'undirectedToDirected' = StateNetwork_undirectedToDirected, 'clear' = StateNetwork_clear, 'clearLinks' = StateNetwork_clearLinks, 'nodes' = StateNetwork_nodes, 'numNodes' = StateNetwork_numNodes, 'numPhysicalNodes' = StateNetwork_numPhysicalNodes, 'sumNodeWeight' = StateNetwork_sumNodeWeight, 'nodeLinkMap' = StateNetwork_nodeLinkMap, 'numLinks' = StateNetwork_numLinks, 'sumLinkWeight' = StateNetwork_sumLinkWeight, 'numSelfLinks' = StateNetwork_numSelfLinks, 'sumSelfLinkWeight' = StateNetwork_sumSelfLinkWeight, 'sumWeightedDegree' = StateNetwork_sumWeightedDegree, 'sumDegree' = StateNetwork_sumDegree, 'outWeights' = StateNetwork_outWeights, 'names' = StateNetwork_names, 'haveNodeWeights' = StateNetwork_haveNodeWeights, 'haveStateNodeWeights' = StateNetwork_haveStateNodeWeights, 'haveFileInput' = StateNetwork_haveFileInput, 'metaData' = StateNetwork_metaData, 'haveDirectedInput' = StateNetwork_haveDirectedInput, 'haveMemoryInput' = StateNetwork_haveMemoryInput, 'higherOrderInputMethodCalled' = StateNetwork_higherOrderInputMethodCalled, 'isBipartite' = StateNetwork_isBipartite, 'bipartiteStartId' = StateNetwork_bipartiteStartId, 'setBipartiteStartId' = StateNetwork_setBipartiteStartId, 'writeStateNetwork' = StateNetwork_writeStateNetwork, 'writePajekNetwork' = StateNetwork_writePajekNetwork);
+  accessorFuns = list('setConfig' = StateNetwork_setConfig, 'addStateNode' = StateNetwork_addStateNode, 'addNode' = StateNetwork_addNode, 'addPhysicalNode' = StateNetwork_addPhysicalNode, 'addName' = StateNetwork_addName, 'addLink' = StateNetwork_addLink, 'addLinks' = StateNetwork_addLinks, 'removeLink' = StateNetwork_removeLink, 'undirectedToDirected' = StateNetwork_undirectedToDirected, 'clear' = StateNetwork_clear, 'clearLinks' = StateNetwork_clearLinks, 'nodes' = StateNetwork_nodes, 'numNodes' = StateNetwork_numNodes, 'numPhysicalNodes' = StateNetwork_numPhysicalNodes, 'sumNodeWeight' = StateNetwork_sumNodeWeight, 'numAggregatedLinks' = StateNetwork_numAggregatedLinks, 'numLinks' = StateNetwork_numLinks, 'sumLinkWeight' = StateNetwork_sumLinkWeight, 'numSelfLinks' = StateNetwork_numSelfLinks, 'sumSelfLinkWeight' = StateNetwork_sumSelfLinkWeight, 'sumWeightedDegree' = StateNetwork_sumWeightedDegree, 'sumDegree' = StateNetwork_sumDegree, 'outWeights' = StateNetwork_outWeights, 'names' = StateNetwork_names, 'haveNodeWeights' = StateNetwork_haveNodeWeights, 'haveStateNodeWeights' = StateNetwork_haveStateNodeWeights, 'haveFileInput' = StateNetwork_haveFileInput, 'metaData' = StateNetwork_metaData, 'haveDirectedInput' = StateNetwork_haveDirectedInput, 'haveMemoryInput' = StateNetwork_haveMemoryInput, 'higherOrderInputMethodCalled' = StateNetwork_higherOrderInputMethodCalled, 'isBipartite' = StateNetwork_isBipartite, 'bipartiteStartId' = StateNetwork_bipartiteStartId, 'setBipartiteStartId' = StateNetwork_setBipartiteStartId, 'writeStateNetwork' = StateNetwork_writeStateNetwork, 'writePajekNetwork' = StateNetwork_writePajekNetwork);
   ;        idx = pmatch(name, names(accessorFuns));
   if(is.na(idx)) 
   return(callNextMethod(x, name));

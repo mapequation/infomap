@@ -121,14 +121,9 @@ public:
   {
     std::map<std::pair<unsigned int, unsigned int>, double> links;
 
-    for (const auto& node : m_network.nodeLinkMap()) {
-      const auto sourceId = node.first;
-
-      for (const auto& link : node.second) {
-        const auto targetId = link.first;
-        links[{ sourceId, targetId }] = flow ? link.second.flow : link.second.weight;
-      }
-    }
+    m_network.forEachLink([&](unsigned int s, unsigned int t, double weight, double& linkFlow) {
+      links[{ m_network.nodeId(s), m_network.nodeId(t) }] = flow ? linkFlow : weight;
+    });
 
     return links;
   }
@@ -139,14 +134,9 @@ public:
     std::vector<LinkResult> links;
     links.reserve(m_network.numLinks());
 
-    for (const auto& node : m_network.nodeLinkMap()) {
-      const auto sourceId = node.first;
-
-      for (const auto& link : node.second) {
-        const auto targetId = link.first;
-        links.emplace_back(sourceId, targetId, link.second.weight, link.second.flow);
-      }
-    }
+    m_network.forEachLink([&](unsigned int s, unsigned int t, double weight, double& linkFlow) {
+      links.emplace_back(m_network.nodeId(s), m_network.nodeId(t), weight, linkFlow);
+    });
 
     return links;
   }
