@@ -162,6 +162,21 @@ TEST_CASE("addLink after finalize re-merges via definalize, preserving FP order 
   CHECK(w13 == doctest::Approx(4.0));
 }
 
+TEST_CASE("clearLinks before finalize leaves no garbage counts [fast][core][csr]")
+{
+  Config config;
+  config.silent = true;
+  Network network(config);
+  network.addLink(1, 2, 1.0);
+  network.addLink(1, 2, 2.0); // duplicate: would aggregate on finalize
+  network.clearLinks();       // cleared while still unfinalized (mode A)
+
+  // A lazy finalize here must NOT rebuild from cleared buffers and compute
+  // m_numAggregatedLinks = m_rawLinkCount - 0.
+  CHECK(network.numLinks() == 0);
+  CHECK(network.numAggregatedLinks() == 0);
+}
+
 TEST_CASE("Network reads states fixture as higher-order input [fast][core]")
 {
   Config config;

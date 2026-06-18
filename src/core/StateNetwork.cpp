@@ -271,13 +271,8 @@ void StateNetwork::clearLinks()
 {
   // Release ALL link storage so none of it survives into the optimize phase.
   // releaseInputLinksIfCli() calls this before runTrials(); the pre-CSR build
-  // freed its nested map here, so the CSR must be freed too (vector::clear keeps
-  // capacity, so swap with empty). Keep m_numLinks / m_linksFinalized untouched
-  // so a post-clear numLinks() still reports the count, as before.
-  // NOTE: m_linksFinalized stays true while the CSR is freed, so a forEachLink()
-  // after clearLinks() yields nothing (it sees an empty node list). That's only
-  // safe because clearLinks() runs after the last link consumer (before the
-  // optimize trials); don't iterate links after calling it.
+  // freed its nested map here, so the CSR (and outWeights) must be freed too
+  // (vector::clear keeps capacity, so swap with empty).
   NodeLinkMap().swap(m_nodeLinkMap);
   std::vector<LinkTriple>().swap(m_linkBuffer);
   std::vector<unsigned int>().swap(m_nodeIds);
@@ -285,6 +280,14 @@ void StateNetwork::clearLinks()
   std::vector<unsigned int>().swap(m_linkTargets);
   std::vector<double>().swap(m_linkWeights);
   std::vector<double>().swap(m_linkFlows);
+  std::map<unsigned int, double>().swap(m_outWeights);
+  // Mark finalized (CSR is "built" -- it's just empty) and zero the raw count so a
+  // lazy finalize triggered after clearLinks() can't rebuild a bogus CSR or compute
+  // m_numAggregatedLinks = m_rawLinkCount - 0. m_numLinks/m_numAggregatedLinks keep
+  // their pre-clear values so a post-clear numLinks() still reports the count (as
+  // before); forEachLink() yields nothing by design (empty node list).
+  m_rawLinkCount = 0;
+  m_linksFinalized = true;
 }
 
 void StateNetwork::clear()
@@ -303,6 +306,7 @@ void StateNetwork::clear()
 
   m_linksFinalized = false;
   m_rawLinkCount = 0;
+  m_useMapBuild = false; // reset build mode so a reused instance defaults to mode A
   m_haveDirectedInput = false;
   m_haveMemoryInput = false;
   m_numStateNodesFound = 0;
