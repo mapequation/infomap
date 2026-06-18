@@ -556,6 +556,12 @@ private:
       m_infomap.bipartite = true;
     }
 
+    // Build the consumed CSR link storage. Migration phase: finalize runs AFTER
+    // flow so the CSR is built from the flow-populated map (correct weights AND
+    // flows) for CSR readers, while map consumers remain unaffected. When
+    // FlowCalculator is migrated to write CSR directly, this moves to before flow.
+    m_network.finalizeLinks();
+
     {
       auto timer = m_timing.scope("init_network_s");
       m_infomap.initNetwork(m_network);
