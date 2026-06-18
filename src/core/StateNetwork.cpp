@@ -408,6 +408,12 @@ std::pair<StateNetwork::NodeMap::iterator, bool> StateNetwork::addStateNodeWithD
 
 unsigned int StateNetwork::indexOfId(unsigned int id) const
 {
+  // Precondition: `id` must exist in m_nodeIds (i.e. be one of nodes()). Every
+  // link endpoint is addNode'd before finalize and all callers query ids drawn
+  // from nodes(), so this holds; the result is then a valid index in [0,numNodes).
+  // For an absent id this returns the lower_bound insertion point (possibly
+  // numNodes), which the CSR accessors would read out of bounds -- don't call it
+  // with an unknown id.
   return static_cast<unsigned int>(
       std::lower_bound(m_nodeIds.begin(), m_nodeIds.end(), id) - m_nodeIds.begin());
 }
@@ -513,6 +519,7 @@ void StateNetwork::definalize()
   // The parse path appends all links first and finalizes once, so this is cheap
   // there; callers doing repeated query/append cycles pay O(L log L) per append.
   m_linkBuffer.clear();
+  m_linkBuffer.reserve(m_linkTargets.size()); // final size is known -> single allocation
   m_rawLinkCount = 0;
   for (unsigned int s = 0; s < m_nodeIds.size(); ++s) {
     for (unsigned int e = m_linkOffsets[s]; e < m_linkOffsets[s + 1]; ++e) {

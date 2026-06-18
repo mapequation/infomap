@@ -177,6 +177,27 @@ TEST_CASE("clearLinks before finalize leaves no garbage counts [fast][core][csr]
   CHECK(network.numAggregatedLinks() == 0);
 }
 
+TEST_CASE("Isolated/dangling node is in-bounds in mode-A CSR [fast][core][csr]")
+{
+  Config config;
+  config.silent = true;
+  Network network(config);
+  network.addLink(1, 2, 1.0);
+  network.addNode(9); // isolated node with the largest id -> last CSR index
+  network.finalizeLinks();
+
+  CHECK(network.numNodes() == 3);
+  CHECK(network.numLinks() == 1);
+  // The largest-id node sits at the last CSR index; outDegree()/isDangling()
+  // read m_linkOffsets[index+1] and must stay in bounds.
+  CHECK(network.isDangling(network.indexOfId(9)));
+  CHECK(network.outDegree(network.indexOfId(9)) == 0);
+  CHECK_FALSE(network.isDangling(network.indexOfId(1)));
+  unsigned int emitted = 0;
+  network.forEachLink([&](unsigned int, unsigned int, double, double&) { ++emitted; });
+  CHECK(emitted == 1); // the isolated node contributes no link
+}
+
 TEST_CASE("Network reads states fixture as higher-order input [fast][core]")
 {
   Config config;
