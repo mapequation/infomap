@@ -356,8 +356,10 @@ void StateNetwork::finalizeLinks()
   // Alongside-map phase: every endpoint is already in m_nodes (addLink calls
   // addNode), and m_nodeLinkMap is sorted+aggregated, so build CSR from it.
   // The mode-A flat-buffer build and map-freeing land in a later task.
-  // Note: always rebuilds so that an explicit call after calculateFlow picks up
-  // the updated flow values in m_nodeLinkMap (ensureFinalized caches lazily).
+  // Note: deliberately rebuilds unconditionally (no idempotency guard yet) so a
+  // premature lazy finalize from a pre-flow output writer can't pin a stale CSR
+  // before all links exist; the explicit pre-flow call rebuilds from the
+  // complete map. The mode-aware guard is restored once the buffer is freed.
   buildCsrFromMap();
   m_linksFinalized = true;
 }

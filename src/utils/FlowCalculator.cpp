@@ -63,7 +63,7 @@ FlowCalculator::FlowCalculator(StateNetwork& network, const Config& config)
   sumLinkOutWeight.assign(numNodes, 0.0);
 
   unsigned int nodeIndex = 0;
-  const auto& nodeLinkMap = network.nodeLinkMap();
+  network.ensureFinalized(); // CSR is the consumed link store; build it if needed
 
   if (network.isBipartite()) {
     // Preserve node order
@@ -87,7 +87,7 @@ FlowCalculator::FlowCalculator(StateNetwork& network, const Config& config)
       // with dangling nodes first to optimize calculation of dangling rank
 
       for (const auto& node : network.nodes()) {
-        const auto isDangling = nodeLinkMap.find(node.second.id) == nodeLinkMap.end();
+        const auto isDangling = network.isDangling(network.indexOfId(node.second.id));
         if (!isDangling) continue;
 
         const auto& nodeId = node.second.id;
@@ -97,7 +97,7 @@ FlowCalculator::FlowCalculator(StateNetwork& network, const Config& config)
       nonDanglingStartIndex = nodeIndex;
 
       for (const auto& node : network.nodes()) {
-        const auto isDangling = nodeLinkMap.find(node.second.id) == nodeLinkMap.end();
+        const auto isDangling = network.isDangling(network.indexOfId(node.second.id));
         if (isDangling) continue;
 
         const auto& nodeId = node.second.id;
@@ -113,10 +113,10 @@ FlowCalculator::FlowCalculator(StateNetwork& network, const Config& config)
   if (network.isBipartite()) {
     const auto bipartiteStartId = network.bipartiteStartId();
 
-    for (const auto& node : nodeLinkMap) {
-      const auto sourceIsFeature = node.first >= bipartiteStartId;
+    for (unsigned int s = 0; s < numNodes; ++s) {
+      const auto sourceIsFeature = network.nodeId(s) >= bipartiteStartId;
       if (sourceIsFeature) continue;
-      bipartiteLinkStartIndex += node.second.size();
+      bipartiteLinkStartIndex += network.outDegree(s);
     }
   }
 
@@ -124,44 +124,42 @@ FlowCalculator::FlowCalculator(StateNetwork& network, const Config& config)
   unsigned int featureLinkIndex = bipartiteLinkStartIndex; // bipartite case
   double undirectedLinkNormalization = 2 * sumLinkWeight - network.sumSelfLinkWeight();
 
-  for (const auto& node : nodeLinkMap) {
-    const auto sourceId = node.first;
+  // CSR iterates links in (source, target) id order, identical to the nested
+  // map, so flowLinks indices match. Translate CSR index -> id -> FlowCalculator
+  // internal index (the directed model reorders dangling nodes first).
+  network.forEachLink([&](unsigned int srcIdx, unsigned int tgtIdx, double linkWeight, double&) {
+    const auto sourceId = network.nodeId(srcIdx);
     const auto sourceIndex = nodeIndexMap[sourceId];
+    const auto targetIndex = nodeIndexMap[network.nodeId(tgtIdx)];
 
-    for (const auto& link : node.second) {
-      const auto targetId = link.first;
-      const auto targetIndex = nodeIndexMap[targetId];
-      const auto linkWeight = link.second.weight;
+    ++nodeOutDegree[sourceIndex];
+    sumLinkOutWeight[sourceIndex] += linkWeight;
+    nodeFlow[sourceIndex] += linkWeight / undirectedLinkNormalization;
 
-      ++nodeOutDegree[sourceIndex];
-      sumLinkOutWeight[sourceIndex] += linkWeight;
-      nodeFlow[sourceIndex] += linkWeight / undirectedLinkNormalization;
+    if (network.isBipartite() && sourceId >= network.bipartiteStartId()) {
+      // Link from feature node to ordinary node
+      flowLinks[featureLinkIndex].source = sourceIndex;
+      flowLinks[featureLinkIndex].target = targetIndex;
+      flowLinks[featureLinkIndex].flow = linkWeight;
+      ++featureLinkIndex;
+    } else {
+      // Ordinary link, or unipartite
+      flowLinks[linkIndex].source = sourceIndex;
+      flowLinks[linkIndex].target = targetIndex;
+      flowLinks[linkIndex].flow = linkWeight;
+      ++linkIndex;
+    }
 
-      if (network.isBipartite() && sourceId >= network.bipartiteStartId()) {
-        // Link from feature node to ordinary node
-        flowLinks[featureLinkIndex].source = sourceIndex;
-        flowLinks[featureLinkIndex].target = targetIndex;
-        flowLinks[featureLinkIndex].flow = linkWeight;
-        ++featureLinkIndex;
-      } else {
-        // Ordinary link, or unipartite
-        flowLinks[linkIndex].source = sourceIndex;
-        flowLinks[linkIndex].target = targetIndex;
-        flowLinks[linkIndex].flow = linkWeight;
-        ++linkIndex;
+    if (sourceIndex != targetIndex) {
+      if (config.isUndirectedFlow()) {
+        ++nodeOutDegree[targetIndex];
+        sumLinkOutWeight[targetIndex] += linkWeight;
       }
-
-      if (sourceIndex != targetIndex) {
-        if (config.isUndirectedFlow()) {
-          ++nodeOutDegree[targetIndex];
-          sumLinkOutWeight[targetIndex] += linkWeight;
-        }
-        if (config.flowModel != FlowModel::outdirdir) {
-          nodeFlow[targetIndex] += linkWeight / undirectedLinkNormalization;
-        }
+      if (config.flowModel != FlowModel::outdirdir) {
+        nodeFlow[targetIndex] += linkWeight / undirectedLinkNormalization;
       }
     }
-  }
+  });
 
   bool normalizeNodeFlow = false;
 
@@ -1188,17 +1186,14 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
   unsigned int linkIndex = 0;
   auto featureLinkIndex = bipartiteLinkStartIndex;
 
-  for (auto& node : network.m_nodeLinkMap) {
-    for (auto& link : node.second) {
-      auto& linkData = link.second;
-      if (network.isBipartite() && node.first >= network.bipartiteStartId()) {
-        linkData.flow = flowLinks[featureLinkIndex++].flow;
-      } else {
-        linkData.flow = flowLinks[linkIndex++].flow;
-      }
-      sumLinkFlow += linkData.flow;
+  network.forEachLink([&](unsigned int srcIdx, unsigned int, double, double& flow) {
+    if (network.isBipartite() && network.nodeId(srcIdx) >= network.bipartiteStartId()) {
+      flow = flowLinks[featureLinkIndex++].flow;
+    } else {
+      flow = flowLinks[linkIndex++].flow;
     }
-  }
+    sumLinkFlow += flow;
+  });
 
   double fractionIntraFlow = config.isMultilayerNetwork() && config.regularized ? 1 : 0;
 
@@ -1223,12 +1218,11 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
 
       // Remove self-link flow
       unsigned int norm = config.isUndirectedFlow() ? 2 : 1;
-      auto& outLinks = network.m_nodeLinkMap[node.id];
-      for (auto& link : outLinks) {
-        auto& linkData = link.second;
-        if (node.id == link.first) {
-          node.enterFlow -= linkData.flow / norm;
-          node.exitFlow -= linkData.flow / norm;
+      const auto srcIdx = network.indexOfId(node.id);
+      for (unsigned int e = network.m_linkOffsets[srcIdx]; e < network.m_linkOffsets[srcIdx + 1]; ++e) {
+        if (network.m_linkTargets[e] == srcIdx) { // self-link: target index == source index
+          node.enterFlow -= network.m_linkFlows[e] / norm;
+          node.exitFlow -= network.m_linkFlows[e] / norm;
           break;
         }
       }
@@ -1253,18 +1247,17 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
       for (auto& nodeIt : network.m_nodes) {
         auto& node = nodeIt.second;
         const auto sourceIndex = nodeIndexMap[node.id];
-        auto& outLinks = network.m_nodeLinkMap[node.id];
-        double danglingFlow = outLinks.empty() ? node.flow : 0.0;
+        const auto srcIdx = network.indexOfId(node.id);
+        double danglingFlow = network.isDangling(srcIdx) ? node.flow : 0.0;
         if (config.recordedTeleportation) {
           // Don't let self-teleportation add to the enter/exit flow (i.e. multiply with (1.0 - node.data.teleportWeight))
           exitFlow[sourceIndex] += alpha * node.flow * (1.0 - node.weight);
           enterFlow[sourceIndex] += (alpha * (1.0 - node.flow) + (1 - alpha) * (sumDanglingFlow - danglingFlow)) * node.weight;
         }
-        for (auto& link : outLinks) {
-          auto& linkData = link.second;
-          const auto targetIndex = nodeIndexMap[link.first];
-          exitFlow[sourceIndex] += linkData.flow;
-          enterFlow[targetIndex] += linkData.flow;
+        for (unsigned int e = network.m_linkOffsets[srcIdx]; e < network.m_linkOffsets[srcIdx + 1]; ++e) {
+          const auto targetIndex = nodeIndexMap[network.nodeId(network.m_linkTargets[e])];
+          exitFlow[sourceIndex] += network.m_linkFlows[e];
+          enterFlow[targetIndex] += network.m_linkFlows[e];
         }
       }
     }
