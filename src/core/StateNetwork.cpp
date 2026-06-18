@@ -217,7 +217,10 @@ bool StateNetwork::removeLink(unsigned int sourceId, unsigned int targetId)
   targetMap.erase(itTarget);
   if (targetMap.empty()) {
     m_nodeLinkMap.erase(itSource);
-  } else {
+  } else if (m_numAggregatedLinks > 0) {
+    // Guard the unsigned counter: it's 0 for networks with no aggregated
+    // duplicates (per-edge occurrence counts aren't tracked, so this can't be
+    // exact, but must not underflow now that numAggregatedLinks() is exposed).
     --m_numAggregatedLinks;
   }
 
@@ -562,6 +565,9 @@ void StateNetwork::ensureMapBuild()
   NodeLinkMap().swap(m_nodeLinkMap);
   m_outWeights.clear();
   for (unsigned int s = 0; s < m_nodeIds.size(); ++s) {
+    if (m_linkOffsets[s] == m_linkOffsets[s + 1]) {
+      continue; // dangling: the historic nested map only held sources with out-links
+    }
     const unsigned int srcId = m_nodeIds[s];
     auto& outLinks = m_nodeLinkMap[srcId];
     for (unsigned int e = m_linkOffsets[s]; e < m_linkOffsets[s + 1]; ++e) {
@@ -581,10 +587,10 @@ void StateNetwork::deriveOutWeightsIfNeeded()
   // read it). Derive it on demand from CSR when the public outWeights() getter is
   // called, so the bound API still returns per-source out-weights. Cleared on
   // every (re)finalize, so it stays consistent.
-  if (m_useMapBuild || !m_outWeights.empty() || m_numLinks == 0) {
+  if (m_useMapBuild || !m_outWeights.empty()) {
     return;
   }
-  ensureFinalized();
+  ensureFinalized(); // mode A: m_numLinks/CSR are only valid after finalize
   for (unsigned int s = 0; s < m_nodeIds.size(); ++s) {
     double w = 0.0;
     for (unsigned int e = m_linkOffsets[s]; e < m_linkOffsets[s + 1]; ++e) {

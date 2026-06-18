@@ -98,7 +98,7 @@ TEST_CASE("Network aggregates duplicate links after finalize [fast][core]")
   CHECK(mergedWeight == doctest::Approx(3.5));
 }
 
-TEST_CASE("Mode-A map APIs work: outWeights / removeLink / undirectedToDirected [fast][core][csr]")
+TEST_CASE("Mode-A map APIs work: outWeights / removeLink [fast][core][csr]")
 {
   Config config;
   config.silent = true;
@@ -106,9 +106,9 @@ TEST_CASE("Mode-A map APIs work: outWeights / removeLink / undirectedToDirected 
   network.addLink(1, 2, 1.0);
   network.addLink(1, 3, 2.0);
   network.addLink(2, 3, 4.0);
-  network.finalizeLinks();
 
-  // outWeights() is derived on demand for the flat-buffer (mode-A) build.
+  // outWeights() is derived on demand for the flat-buffer (mode-A) build, and
+  // must finalize lazily -- no explicit finalizeLinks() call here.
   CHECK(network.outWeights().at(1) == doctest::Approx(3.0));
   CHECK(network.outWeights().at(2) == doctest::Approx(4.0));
 
