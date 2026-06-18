@@ -98,6 +98,42 @@ TEST_CASE("Network aggregates duplicate links after finalize [fast][core]")
   CHECK(mergedWeight == doctest::Approx(3.5));
 }
 
+TEST_CASE("Mode-A map APIs work: outWeights / removeLink / undirectedToDirected [fast][core][csr]")
+{
+  Config config;
+  config.silent = true;
+  Network network(config);
+  network.addLink(1, 2, 1.0);
+  network.addLink(1, 3, 2.0);
+  network.addLink(2, 3, 4.0);
+  network.finalizeLinks();
+
+  // outWeights() is derived on demand for the flat-buffer (mode-A) build.
+  CHECK(network.outWeights().at(1) == doctest::Approx(3.0));
+  CHECK(network.outWeights().at(2) == doctest::Approx(4.0));
+
+  // removeLink materializes the nested map from CSR and removes the link.
+  CHECK(network.numLinks() == 3);
+  CHECK(network.removeLink(1, 2));
+  CHECK(network.numLinks() == 2);
+  CHECK_FALSE(network.removeLink(1, 2)); // already gone
+  CHECK(network.outWeights().at(1) == doctest::Approx(2.0)); // 3.0 - 1.0
+}
+
+TEST_CASE("undirectedToDirected expands a mode-A network [fast][core][csr]")
+{
+  Config config("--two-level --silent");
+  Network network(config);
+  network.addLink(1, 2, 1.0);
+  network.addLink(2, 3, 2.0);
+  network.finalizeLinks();
+  CHECK(network.numLinks() == 2);
+
+  REQUIRE(config.isUndirectedFlow());
+  CHECK(network.undirectedToDirected()); // adds the two opposite links
+  CHECK(network.numLinks() == 4);
+}
+
 TEST_CASE("Network reads states fixture as higher-order input [fast][core]")
 {
   Config config;

@@ -196,6 +196,10 @@ void StateNetwork::addLinks(const std::vector<unsigned int>& sourceIds, const st
 
 bool StateNetwork::removeLink(unsigned int sourceId, unsigned int targetId)
 {
+  // removeLink operates on the nested map. For a mode-A (flat-buffer) network the
+  // map is empty, so materialize it from CSR and switch to map build first;
+  // otherwise this would silently no-op for ordinary/state networks.
+  ensureMapBuild();
   auto itSource = m_nodeLinkMap.find(sourceId);
   if (itSource == m_nodeLinkMap.end()) {
     return false;
@@ -238,6 +242,9 @@ bool StateNetwork::undirectedToDirected()
   if (!m_config.isUndirectedFlow()) {
     return false;
   }
+  // Reads/extends the nested map; materialize it from CSR for mode-A networks
+  // (no-op for the multilayer sub-networks that already build the map).
+  ensureMapBuild();
   std::deque<StateLink> oppositeLinks;
   for (auto& linkIt : m_nodeLinkMap) {
     unsigned int sourceId = linkIt.first;
@@ -538,6 +545,54 @@ void StateNetwork::buildCsrFromMap()
   }
   while (curSourceIndex < numNodes) {
     m_linkOffsets[++curSourceIndex] = linkCount;
+  }
+}
+
+void StateNetwork::ensureMapBuild()
+{
+  // Materialize the nested map (mode B) from the consumed CSR so the map-based
+  // mutation APIs (removeLink, undirectedToDirected) work on a mode-A network.
+  // No-op when already building the map (e.g. multilayer sub-networks), so those
+  // paths are unchanged. The network then stays in map-build mode; a later
+  // finalizeLinks() rebuilds the CSR via buildCsrFromMap().
+  if (m_useMapBuild) {
+    return;
+  }
+  ensureFinalized();
+  NodeLinkMap().swap(m_nodeLinkMap);
+  m_outWeights.clear();
+  for (unsigned int s = 0; s < m_nodeIds.size(); ++s) {
+    const unsigned int srcId = m_nodeIds[s];
+    auto& outLinks = m_nodeLinkMap[srcId];
+    for (unsigned int e = m_linkOffsets[s]; e < m_linkOffsets[s + 1]; ++e) {
+      LinkData linkData(m_linkWeights[e]);
+      linkData.flow = m_linkFlows[e];
+      outLinks[m_nodeIds[m_linkTargets[e]]] = linkData;
+      m_outWeights[srcId] += m_linkWeights[e];
+    }
+  }
+  m_useMapBuild = true;
+  m_linksFinalized = false; // map is now the build rep; CSR will be rebuilt on finalize
+}
+
+void StateNetwork::deriveOutWeightsIfNeeded()
+{
+  // Mode A doesn't keep m_outWeights during build (first-order consumers don't
+  // read it). Derive it on demand from CSR when the public outWeights() getter is
+  // called, so the bound API still returns per-source out-weights. Cleared on
+  // every (re)finalize, so it stays consistent.
+  if (m_useMapBuild || !m_outWeights.empty() || m_numLinks == 0) {
+    return;
+  }
+  ensureFinalized();
+  for (unsigned int s = 0; s < m_nodeIds.size(); ++s) {
+    double w = 0.0;
+    for (unsigned int e = m_linkOffsets[s]; e < m_linkOffsets[s + 1]; ++e) {
+      w += m_linkWeights[e];
+    }
+    if (w != 0.0) {
+      m_outWeights[m_nodeIds[s]] = w;
+    }
   }
 }
 

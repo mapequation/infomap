@@ -257,7 +257,13 @@ public:
   // Use convention of counting self-links only once, treating them as directed
   double sumWeightedDegree() const { return 2 * sumLinkWeight() - sumSelfLinkWeight(); }
   unsigned int sumDegree() const { return 2 * numLinks() - numSelfLinks(); }
-  std::map<unsigned int, double>& outWeights() { return m_outWeights; }
+  std::map<unsigned int, double>& outWeights()
+  {
+#ifndef SWIG
+    deriveOutWeightsIfNeeded(); // mode A derives it lazily; mode B keeps it eager
+#endif
+    return m_outWeights;
+  }
   std::map<unsigned int, std::string>& names() { return m_names; }
   const std::map<unsigned int, std::string>& names() const { return m_names; }
   bool haveNodeWeights() const { return m_haveNodeWeights; }
@@ -303,6 +309,11 @@ protected:
   void buildCsrFromBuffer();
   // Mode B eager aggregation into the nested map (the pre-CSR build path).
   bool addLinkToMap(unsigned int sourceId, unsigned int targetId, double weight);
+  // Materialize the nested map from CSR so map-based mutation APIs work on a
+  // mode-A network (no-op in map-build mode).
+  void ensureMapBuild();
+  // Lazily fill m_outWeights from CSR for mode-A networks when outWeights() is read.
+  void deriveOutWeightsIfNeeded();
   // Move CSR rows back into the flat buffer so a finalized network can keep
   // building (mode A accumulate / addLink-after-run).
   void definalize();
