@@ -358,12 +358,11 @@ unsigned int StateNetwork::indexOfId(unsigned int id) const
 
 void StateNetwork::finalizeLinks()
 {
-  if (m_linksFinalized) {
-    return;
-  }
   // Alongside-map phase: every endpoint is already in m_nodes (addLink calls
   // addNode), and m_nodeLinkMap is sorted+aggregated, so build CSR from it.
   // The mode-A flat-buffer build and map-freeing land in a later task.
+  // Note: always rebuilds so that an explicit call after calculateFlow picks up
+  // the updated flow values in m_nodeLinkMap (ensureFinalized caches lazily).
   buildCsrFromMap();
   m_linksFinalized = true;
 }

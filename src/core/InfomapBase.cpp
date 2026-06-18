@@ -1494,20 +1494,12 @@ void InfomapBase::generateSubNetwork(Network& network)
     Console::detail(1, "rescale link flow with global Markov time {:g}", markovTime);
   }
 
-  for (auto& linkIt : network.nodeLinkMap()) {
-    unsigned int linkSourceId = linkIt.first;
-    unsigned int sourceIndex = nodeIndexMap[linkSourceId];
-    const auto& subLinks = linkIt.second;
-    for (auto& subIt : subLinks) {
-      unsigned int linkTargetId = subIt.first;
-      unsigned int targetIndex = nodeIndexMap[linkTargetId];
-      // Ignore self-links in optimization as it doesn't change enter/exit flow on modular level
-      if (sourceIndex != targetIndex) {
-        auto& linkData = subIt.second;
-        m_leafNodes[sourceIndex]->addOutEdge(*m_leafNodes[targetIndex], linkData.weight, linkData.flow * markovTime);
-      }
+  network.forEachLink([&](unsigned int sourceIndex, unsigned int targetIndex, double weight, double& flow) {
+    // Ignore self-links in optimization as it doesn't change enter/exit flow on modular level
+    if (sourceIndex != targetIndex) {
+      m_leafNodes[sourceIndex]->addOutEdge(*m_leafNodes[targetIndex], weight, flow * markovTime);
     }
-  }
+  });
 
   if (variableMarkovTime) {
     Console::detail(1, "rescale link flow with variable Markov time");
