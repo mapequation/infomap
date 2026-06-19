@@ -9,6 +9,11 @@ tier = "smoke"
 description = "HPC recipe notebook for native trial sharding, scheduler-aware threads, and Python shard merging."
 
 [[notebooks]]
+path = "benchmark-performance.ipynb"
+tier = "smoke"
+description = "Performance and run-planning guide: renders committed time/memory benchmarks (data/benchmark-results.csv) to estimate runs by size, threads, trials, and depth. RUN_BENCHMARK=False by default; set True to regenerate locally."
+
+[[notebooks]]
 path = "run-infomap-on-graphrag-tables.ipynb"
 tier = "smoke"
 description = "GraphRAG-style Parquet workflow with Infomap hierarchy output and a Leiden comparison."
