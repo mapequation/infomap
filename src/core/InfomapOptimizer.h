@@ -442,11 +442,8 @@ INFOMAP_HOT inline unsigned int InfomapOptimizer<Objective>::optimizeActiveNetwo
   }
 
   do {
-    // Cooperative cancellation checkpoint (issue #412). This serial outer loop
-    // runs between the inner (possibly parallel) node-move sweeps, so throwing
-    // here never unwinds through an OpenMP region. On the owner thread it polls
-    // the host callback; on worker threads (sub-Infomaps / parallel trials) it
-    // only observes the shared cancel flag.
+    // Cancellation checkpoint (#412): between the inner sweeps, so a throw here
+    // never unwinds through an OpenMP region.
     m_infomap->pollInterrupt();
     ++coreLoopCount;
     unsigned int numNodesMoved = shouldUseInnerParallelization()
@@ -705,10 +702,8 @@ INFOMAP_HOT unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestMod
     // but chunk size 1 costs one scheduler round-trip per iteration.
 #pragma omp for schedule(dynamic, 512)
     for (unsigned int i = 0; i < numNodes; ++i) {
-      // Cooperative cancellation (issue #412): once cancelled, drain the sweep
-      // cheaply without throwing (an exception must not escape this OpenMP
-      // region). The serial outer loop throws at its next checkpoint. The load
-      // is relaxed and effectively free on the no-handler path.
+      // Once cancelled, drain the sweep without throwing (no exception may leave
+      // this OpenMP region); the outer loop throws at its next checkpoint (#412).
       if (m_infomap->interruptRequested())
         continue;
       deltaFlow.startRound();

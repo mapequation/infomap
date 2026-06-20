@@ -1942,26 +1942,19 @@ void addMultilayerInterLinksFromNumpy2D(InfomapWrapper& infomap, PyObject* links
 #include <R_ext/Utils.h>   // R_CheckUserInterrupt
 #include <Rinternals.h>    // R_ToplevelExec
 namespace {
-// R_CheckUserInterrupt longjmps to R's top level when an interrupt is pending.
-// R_ToplevelExec runs it inside a context that catches that longjmp (so it never
-// unwinds the C++ stack and skips destructors) and reports it as a non-TRUE
-// result. Must run on R's main thread only — guaranteed by the owner-thread gate.
-// NOTE: because R_ToplevelExec consumes the interrupt, a cancelled run surfaces
-// to R as a regular error (SWIG_RuntimeError -> Rf_error: "Infomap run
-// interrupted."), NOT an R "interrupt" condition — handle it with
-// tryCatch(error=), not tryCatch(interrupt=).
+// R_ToplevelExec contains R_CheckUserInterrupt's longjmp (so C++ destructors run)
+// and reports a pending interrupt as a non-TRUE result. R main thread only.
+// A cancel surfaces to R as a plain error (-> Rf_error), NOT an "interrupt"
+// condition — handle with tryCatch(error=), not tryCatch(interrupt=).
 void infomapRCheckInterrupt(void*) { R_CheckUserInterrupt(); }
 bool infomapHostInterruptPoll(void*) { return R_ToplevelExec(infomapRCheckInterrupt, nullptr) != TRUE; }
 } // namespace
 #elif defined(SWIGPYTHON)
 namespace infomap { extern InterruptCallback g_runInterruptCallback; } // defined in main.cpp
 namespace {
-// PyErr_CheckSignals runs pending Python signal handlers (e.g. turns a queued
-// SIGINT into KeyboardInterrupt) and returns non-zero if one raised. Needs the
-// GIL and the main thread, both held when the core calls back on the owner
-// thread during a normal im.run(). Off the main thread it is a no-op, so a run
-// launched from a non-main Python thread is simply non-interruptible (not an
-// error).
+// PyErr_CheckSignals runs pending Python signal handlers (turns a queued SIGINT
+// into KeyboardInterrupt). Needs the GIL + main thread; off the main thread it is
+// a no-op, so such a run is simply non-interruptible.
 bool infomapHostInterruptPoll(void*) { return PyErr_CheckSignals() != 0; }
 } // namespace
 #endif
@@ -41088,7 +41081,6 @@ R_swig_InfomapBase_run__SWIG_0 ( SEXP self, SEXP parameters)
         
         
         
-        
         SWIG_exception(SWIG_RuntimeError, "Infomap run interrupted.");
       } catch (const std::exception& e) {
         arg1->clearInterruptHandler();
@@ -41132,7 +41124,6 @@ R_swig_InfomapBase_run__SWIG_1 ( SEXP self)
         (arg1)->run();
       } catch (const infomap::InterruptionError&) {
         arg1->clearInterruptHandler();
-        
         
         
         
@@ -41189,7 +41180,6 @@ R_swig_InfomapBase_run__SWIG_2 ( SEXP self, SEXP network)
         (arg1)->run(*arg2);
       } catch (const infomap::InterruptionError&) {
         arg1->clearInterruptHandler();
-        
         
         
         
@@ -48845,7 +48835,6 @@ R_swig_InfomapWrapper_run__SWIG_0 ( SEXP self, SEXP parameters)
         
         
         
-        
         SWIG_exception(SWIG_RuntimeError, "Infomap run interrupted.");
       } catch (const std::exception& e) {
         arg1->clearInterruptHandler();
@@ -48889,7 +48878,6 @@ R_swig_InfomapWrapper_run__SWIG_1 ( SEXP self)
         (arg1)->run();
       } catch (const infomap::InterruptionError&) {
         arg1->clearInterruptHandler();
-        
         
         
         
@@ -48946,7 +48934,6 @@ R_swig_InfomapWrapper_run__SWIG_2 ( SEXP self, SEXP network)
         (arg1)->run(*arg2);
       } catch (const infomap::InterruptionError&) {
         arg1->clearInterruptHandler();
-        
         
         
         

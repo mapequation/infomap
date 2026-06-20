@@ -27,8 +27,7 @@ enum class ExitCode : std::uint8_t {
   // MemoryEstimateExceeded = 4,
   // NoValidTrials = 5,
   InternalError = 7,
-  // Cooperative cancellation via Ctrl-C (issue #412); 128 + SIGINT(2), the
-  // shell convention for a process terminated by an interrupt.
+  // Ctrl-C / cooperative cancellation; 128 + SIGINT(2), the shell convention (#412).
   Interrupted = 130,
 };
 

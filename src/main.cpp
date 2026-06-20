@@ -24,26 +24,18 @@
 
 namespace infomap {
 
-// Process-global interrupt poll for the single-call run(flags) CLI entry.
-// run() installs it on the InfomapWrapper it creates, so the pip-installed
-// `infomap` console script (which routes through this AS_LIB free function) is
-// interruptible too. The Python binding registers a PyErr_CheckSignals poll in
-// its module init; the native CLI sets its own SIGINT-flag poll below. Default
-// null = no polling (unchanged behavior, e.g. the R extension never sets it).
+// Poll that run() installs on its InfomapWrapper, so the single-call entry (the
+// pip `infomap` console script, via this AS_LIB free function) is interruptible.
+// The Python binding registers a PyErr_CheckSignals poll here at module init;
+// the native CLI uses its own below. Null = no polling (e.g. the R extension).
 InterruptCallback g_runInterruptCallback = nullptr;
 
 #ifndef AS_LIB
 namespace {
-  // CLI cooperative Ctrl-C (issue #412). The handler only assigns a
-  // volatile sig_atomic_t — the single operation guaranteed async-signal-safe in
-  // every C++ standard (the core/CLI builds as C++14). The run polls it on the
-  // main thread through the interrupt hook and cancels cleanly at the next
-  // checkpoint, instead of the default SIGINT hard-killing the process mid-run
-  // (which could leave a half-written output file). Cross-thread visibility to
-  // the OpenMP workers is handled downstream: the main-thread poll flips the
-  // run's lock-free atomic cancel flag, which the workers observe. Library builds
-  // (-DAS_LIB, used by the Python/R bindings) never install this — they own their
-  // own signal handling — so the shared infomap::run() entry is untouched there.
+  // Native CLI Ctrl-C (#412). The handler only assigns a volatile sig_atomic_t —
+  // the one async-signal-safe operation under the C++14 core build (not a
+  // std::atomic, which is signal-safe only from C++17). The owner-thread poll
+  // reads it and flips the run's lock-free atomic cancel flag that workers see.
   volatile std::sig_atomic_t g_cliInterruptRequested = 0;
   extern "C" void cliHandleInterrupt(int) { g_cliInterruptRequested = 1; }
   bool cliInterruptPoll(void*) { return g_cliInterruptRequested != 0; }
@@ -72,15 +64,12 @@ int run(const std::string& flags)
     }
     InfomapWrapper im(config);
 #ifndef AS_LIB
-    // Native CLI: install a SIGINT-flag poll directly. Clear the process-global
-    // flag first so a Ctrl-C from an earlier run() in the same process can't
-    // make this run abort at its first checkpoint (run() can be called more than
-    // once when embedded; the core resets its own atomic but not this flag).
+    // Clear the flag first: a Ctrl-C from an earlier run() in this process must
+    // not abort the next one at its first checkpoint.
     g_cliInterruptRequested = 0;
     std::signal(SIGINT, cliHandleInterrupt);
     im.setInterruptHandler(&cliInterruptPoll);
 #else
-    // Library builds (Python console script): poll whatever the binding registered.
     if (g_runInterruptCallback != nullptr)
       im.setInterruptHandler(g_runInterruptCallback);
 #endif
@@ -89,11 +78,8 @@ int run(const std::string& flags)
     // Help / version / json-parameters CLI flags requested a clean exit.
     return 0;
   } catch (const InterruptionError&) {
-    // Ctrl-C / cooperative cancellation.
 #ifdef AS_LIB
-    // Let the binding surface it (Python: the pending KeyboardInterrupt set by
-    // PyErr_CheckSignals propagates; see the run() %exception in Infomap.i).
-    throw;
+    throw; // let the binding surface it (Python: the pending KeyboardInterrupt)
 #else
     std::cerr << "\nInterrupted.\n";
     return exitCodeValue(ExitCode::Interrupted);

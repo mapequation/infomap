@@ -377,9 +377,8 @@ private:
 
       InfomapBase worker(workerConfig);
       worker.m_initialPartition = m_infomap.m_initialPartition;
-      // Share the main instance's cancel flag so an interrupt is observed across
-      // all trial workers (issue #412). Workers never call the host callback;
-      // they only read this flag and unwind, caught by the per-trial handler below.
+      // Share the cancel flag so workers observe a cancel; they only read it and
+      // unwind, caught by the per-trial handler below (issue #412).
       worker.inheritRuntimeContext(m_infomap);
 
       for (unsigned int trialIndex = static_cast<unsigned int>(workerIndex); trialIndex < m_numTrials; trialIndex += numWorkers) {
@@ -452,9 +451,8 @@ private:
       }
     }
 
-    // A cancelled run surfaces as a clean InterruptionError, not a generic
-    // "Parallel trial failed" (workers catch it as a std::exception above, but
-    // the run was interrupted, not a real failure). Issue #412.
+    // Surface a cancel as InterruptionError, not the generic "Parallel trial
+    // failed" the std::exception handler above would otherwise report (#412).
     if (m_infomap.interruptRequested()) {
       throw InterruptionError();
     }
@@ -994,9 +992,8 @@ void InfomapBase::run(Network& network)
   if (!isMainInfomap())
     throw std::logic_error("Can't run a non-main Infomap with an input network");
 
-  // Stamp the owner thread so the interrupt callback is only ever invoked here,
-  // and clear any cancellation left over from a previous (interrupted) run so
-  // the instance is reusable. Then honour a cancel requested before the run.
+  // Stamp the owner thread (gates the callback) and clear any leftover cancel so
+  // the instance is reusable after an interrupted run (issue #412).
   m_ownerThreadId = std::this_thread::get_id();
   m_cancelRequested.store(false, std::memory_order_relaxed);
   pollInterrupt();
@@ -2351,10 +2348,8 @@ unsigned int InfomapBase::findHierarchicalSuperModules(unsigned int superLevelLi
     auto& superInfomap = getSuperInfomap(tmp)
                              .setTwoLevel(true);
     superInfomap.initNetwork(m_root, true); //.initSuperNetwork();
-    // An InterruptionError from this run() unwinds cleanly: `tmp` owns the super
-    // Infomap, so ~InfoNode frees it on unwinding. Unlike the sub-Infomap sites
-    // (which dispose eagerly before rethrowing), no explicit catch is needed
-    // here because the owner is a local. Issue #412.
+    // No interrupt catch needed: local `tmp` owns the super-Infomap, so
+    // ~InfoNode frees it if run() throws InterruptionError (#412).
     superInfomap.run();
     if (shouldMuteNestedMainRun) {
       Log::setSilent(isSilent);
@@ -2655,8 +2650,7 @@ unsigned int InfomapBase::recursivePartition()
 #endif
     {
       for (auto moduleIndex : spawnOrder) {
-        // Stop spawning once cancelled (issue #412); in-flight tasks bail at
-        // their own entry check. Never throw inside the task region.
+        // Stop spawning once cancelled; never throw inside the task region (#412).
         if (interruptRequested())
           break;
         InfoNode* module = partitionQueue[moduleIndex];
@@ -2675,10 +2669,8 @@ unsigned int InfomapBase::recursivePartition()
   if (shouldMuteNestedMainRun)
     Log::setSilent(isSilent);
 
-  // The task region has joined: now we are back on the thread that entered
-  // recursivePartition (owner thread in serial runs, a trial worker under
-  // --parallel-trials). Throwing here is safe — outside any OpenMP block — and
-  // aborts the recursion if a cancel was requested while tasks were running.
+  // Tasks have joined: throwing here is safe (outside any OpenMP block) and
+  // aborts the recursion if a cancel was requested while tasks ran (#412).
   checkCancelled();
 
   // Aggregate the recorded statistics level by level, visiting the records in
@@ -2808,9 +2800,8 @@ void InfomapBase::partitionModuleRecursively(InfoNode& module, unsigned int leve
   if (module.disposeInfomap())
     module.codelength = calcCodelength(module);
 
-  // Cooperative cancellation (issue #412). This runs inside an OpenMP task, so
-  // we must NOT throw here — bail without spawning a sub-Infomap and let the
-  // owner thread throw once after the task region (see recursivePartition).
+  // Inside an OpenMP task: bail without throwing; recursivePartition throws once
+  // after the region (#412).
   if (interruptRequested()) {
     record.leafCodelength = module.codelength;
     return;
@@ -2828,10 +2819,8 @@ void InfomapBase::partitionModuleRecursively(InfoNode& module, unsigned int leve
   auto& subInfomap = getSubInfomap(module)
                          .initNetwork(module);
   // Run two-level partition + find hierarchically super modules (skip recursion).
-  // An interrupt raised inside the sub-run (on this worker thread) must not
-  // escape the enclosing OpenMP task: contain it, free the sub-Infomap working
-  // set, and bail. The shared cancel flag stays set, so recursivePartition
-  // throws once on the owner/trial thread after the region.
+  // Contain an interrupt from the sub-run so it can't escape the enclosing
+  // OpenMP task; free the sub-Infomap and bail (the flag stays set) (#412).
   try {
     subInfomap.setOnlySuperModules(true).run();
   } catch (const InterruptionError&) {
@@ -2956,8 +2945,7 @@ void InfomapBase::partitionModuleRecursively(InfoNode& module, unsigned int leve
   });
 
   for (auto subModuleIndex : spawnOrder) {
-    // Stop spawning new work once cancelled; in-flight child tasks bail at their
-    // own entry check and the owner thread throws after the region.
+    // Stop spawning once cancelled (in-flight children bail at their own check).
     if (interruptRequested())
       break;
     InfoNode* subModule = materializedSubModules[subModuleIndex];

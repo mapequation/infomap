@@ -43,17 +43,13 @@ namespace detail {
   struct PerLevelStat;
 } // namespace detail
 
-// Cooperative cancellation hook for embedders (igraph, R, Python, ...). The
-// callback returns true to request that the current run stop at the next safe
-// checkpoint. It is invoked ONLY on the owner thread (the thread that called
-// run()), so it is safe to enter host-language APIs such as R_CheckUserInterrupt
-// from it. Worker threads never call it; they only observe a thread-safe flag.
-// See issue #412.
+// Cooperative cancellation hook (issue #412). Return true to stop the run at the
+// next checkpoint. Invoked only on the owner thread, so it is safe to enter
+// host-language APIs (R_CheckUserInterrupt, PyErr_CheckSignals) from it.
 using InterruptCallback = bool (*)(void* userData);
 
-// Thrown out of run() when a run is cancelled cooperatively. Derives from
-// std::runtime_error so existing catch(const std::exception&) paths still unwind
-// and release resources cleanly.
+// Thrown out of run() on cancellation; std::runtime_error so existing
+// catch(std::exception) unwinding still applies.
 class InterruptionError : public std::runtime_error {
 public:
   InterruptionError() : std::runtime_error("Infomap run interrupted.") {}
@@ -244,9 +240,8 @@ public:
   // Cooperative interruption (issue #412)
   // ===================================================
 
-  // Register a cancellation poll handler. It is called only on the owner thread
-  // at safe checkpoints during run(); return true from it to abort the run with
-  // an InterruptionError. The default (no handler) path is unchanged.
+  // Polled on the owner thread during run(); return true to abort with an
+  // InterruptionError. No handler = unchanged behavior.
   InfomapBase& setInterruptHandler(InterruptCallback callback, void* userData = nullptr)
   {
     m_interruptCallback = callback;
@@ -263,11 +258,8 @@ public:
 
   bool hasInterruptHandler() const { return m_interruptCallback != nullptr; }
 
-  // Thread-safe, non-throwing. Any thread (e.g. a host UI/cancel thread) may call
-  // this to request cancellation; the owner thread and all worker threads observe
-  // the flag at their next checkpoint. The store is relaxed (the flag carries no
-  // companion data), so visibility is eventual — the real cross-thread ordering
-  // comes from the OpenMP region/taskwait joins, not from this flag.
+  // Thread-safe push from any thread; observed at the next checkpoint. Relaxed
+  // (the flag carries no companion data) — ordering comes from the OpenMP joins.
   void requestInterrupt() noexcept { m_cancel->store(true, std::memory_order_relaxed); }
 
   bool interruptRequested() const noexcept { return m_cancel->load(std::memory_order_relaxed); }
@@ -345,30 +337,24 @@ private:
 
   bool haveHardPartition() const { return !m_originalLeafNodes.empty(); }
 
-  // Share the cancellation flag (and only that) with a sub/worker Infomap so a
-  // cancel requested anywhere in the run tree is observed everywhere. The host
-  // callback is deliberately NOT inherited: only the main Infomap on the owner
-  // thread ever invokes it; sub/worker instances only read the shared flag.
+  // Share the cancel flag (only) with a sub/worker Infomap. The callback is NOT
+  // inherited — only the main instance, on the owner thread, ever invokes it.
   InfomapBase& inheritRuntimeContext(const InfomapBase& other)
   {
     m_cancel = other.m_cancel;
     return *this;
   }
 
-  // Worker-safe: reads the shared atomic only, never the host callback. May be
-  // called from any thread, but only throw where unwinding is legal (not from
-  // inside an OpenMP structured block).
+  // Flag-only, any thread. Call only where a throw can unwind legally — NOT
+  // inside an OpenMP structured block.
   void checkCancelled() const
   {
     if (m_cancel->load(std::memory_order_relaxed))
       throw InterruptionError();
   }
 
-  // Owner-thread checkpoint: invoke the host callback (safe to enter R/Python
-  // here), promote a true result into the shared flag, then throw if cancelled.
   // The thread-id guard keeps the callback off worker threads even when this
-  // very object's methods run inside the task graph; off-thread it degrades to
-  // a plain flag check.
+  // object's methods run inside the task graph (off-thread it is a flag check).
   void pollInterrupt()
   {
     if (m_interruptCallback != nullptr
@@ -693,12 +679,9 @@ protected:
   std::string m_initialParameters;
   std::string m_currentParameters;
 
-  // Cooperative interruption (issue #412). m_cancelRequested is the canonical
-  // flag owned by the main instance; m_cancel points at it (self by default,
-  // re-pointed at the main's flag for sub/worker instances via
-  // inheritRuntimeContext) so the whole run tree shares one observable flag.
-  // The callback lives only on the main instance and is only ever called on the
-  // owner thread (stamped in run(Network&)).
+  // Cooperative interruption (issue #412). m_cancel points at m_cancelRequested
+  // (self) or, for sub/worker instances, at the main's flag (inheritRuntimeContext),
+  // so the run tree shares one flag. m_ownerThreadId is stamped in run(Network&).
   std::atomic<bool> m_cancelRequested { false };
   std::atomic<bool>* m_cancel = &m_cancelRequested;
   InterruptCallback m_interruptCallback = nullptr;

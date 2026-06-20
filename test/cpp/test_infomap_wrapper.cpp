@@ -165,10 +165,8 @@ bool interruptAfter(void* data)
   return false;
 }
 
-// A network of `clusters` weakly-linked 4-cliques: big and modular enough that
-// the run builds a real hierarchy and spawns OpenMP tasks in recursivePartition,
-// so the in-task cancellation paths are actually exercised (ninetriangles is too
-// small for that).
+// `clusters` weakly-linked 4-cliques — big enough to build a hierarchy and spawn
+// OpenMP tasks, so the in-task cancellation paths are actually exercised.
 void buildClusteredNetwork(InfomapWrapper& im, unsigned int clusters)
 {
   for (unsigned int c = 0; c < clusters; ++c) {
@@ -203,11 +201,9 @@ TEST_CASE("The in-optimizer cancellation checkpoint is reached during a run [fas
   im.run();
 
   infomap::test::checkRunSanity(im);
-  // The owner-thread checkpoints outside optimization are exactly two for a
-  // single-trial run: run() entry and the per-trial loop. Anything beyond that
-  // must come from the optimizer core loop, so > 2 proves the in-optimizer poll
-  // fires. Guards against silently dropping it (which would drop count to 2 and
-  // leave mid-run cancellation untested) — see review finding F1.
+  // A single-trial run has exactly two non-optimizer checkpoints (run() entry +
+  // per-trial loop); > 2 proves the in-optimizer poll fires. Guards against
+  // dropping it (count would fall to 2, leaving mid-run cancellation untested).
   CHECK(polls > 2);
 }
 
@@ -246,12 +242,10 @@ TEST_CASE("requestInterrupt() aborts the run even when the handler returns false
   CHECK_THROWS_AS(im.run(), infomap::InterruptionError);
 }
 
-// Runs `seed-1 ninetriangles`, cancels inside the optimization phase, clears the
-// handler, and reruns to completion — returning the recovered result. NOTE we do
-// NOT compare against a *fresh* instance: the RNG is seeded once at construction
-// and not reset per run(), so an interrupted run advances it by a different
-// amount than a clean run, and a reused instance legitimately differs from a
-// fresh one on this RNG-sensitive network (that is not corruption).
+// Cancel inside optimization, clear the handler, rerun, return the result.
+// We do NOT compare against a *fresh* instance: the RNG is seeded once at
+// construction (not per run()), so a reused instance legitimately differs from a
+// fresh one here — that is RNG continuation, not corruption.
 std::pair<std::vector<std::vector<unsigned int>>, double> interruptThenRecover()
 {
   InfomapWrapper im("--silent --seed 1 --num-trials 1 --no-file-output");
@@ -268,10 +262,8 @@ std::pair<std::vector<std::vector<unsigned int>>, double> interruptThenRecover()
 
 TEST_CASE("An interrupted instance recovers to a sane, deterministic result [fast][core][lifecycle][crash]")
 {
-  // Two instances driven through the identical interrupt+clear+rerun sequence
-  // must produce the identical result: the interrupted run left no corrupt or
-  // nondeterministic state and the cancel flag was reset (F4). A sane recovered
-  // partition (>1 module, finite codelength) is checked via checkRunSanity.
+  // Identical interrupt+clear+rerun on two instances must give identical results:
+  // no corrupt/nondeterministic state left behind, flag reset (F4).
   const auto a = interruptThenRecover();
   const auto b = interruptThenRecover();
 
@@ -280,13 +272,10 @@ TEST_CASE("An interrupted instance recovers to a sane, deterministic result [fas
   CHECK(a.first.size() > 1);
 }
 
-// Cancelling a run from another thread while OpenMP workers are in flight must
-// never let an exception escape an OpenMP region (which would std::terminate),
-// and a cancelled run must surface as InterruptionError — never a generic
-// "Parallel trial failed" / wrong-type error (review finding F3). Both tests are
-// outcome-robust: completing the run (canceller lost the race) is also fine; the
-// only failures are a process terminate (we never reach the assertion) or the
-// wrong exception type.
+// Cancelling from another thread mid-run must never let an exception escape an
+// OpenMP region (std::terminate), and must surface as InterruptionError, not a
+// "Parallel trial failed" / wrong-type error (F3). Outcome-robust: completing
+// (canceller lost the race) is fine too; only terminate or wrong-type fail.
 TEST_CASE("Cancelling a --parallel-trials run never terminates and surfaces InterruptionError [fast][core][lifecycle][crash]")
 {
   InfomapWrapper im("--silent --seed 1 --num-trials 200 --parallel-trials --no-file-output");
