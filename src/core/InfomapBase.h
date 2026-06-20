@@ -258,8 +258,10 @@ public:
 
   bool hasInterruptHandler() const { return m_interruptCallback != nullptr; }
 
-  // Thread-safe push from any thread; observed at the next checkpoint. Relaxed
-  // (the flag carries no companion data) — ordering comes from the OpenMP joins.
+  // Thread-safe push to cancel an in-progress run, observed at the next
+  // checkpoint. A request made before run() is cleared at run entry (so it does
+  // not pre-cancel a fresh run). Relaxed (no companion data) — ordering comes
+  // from the OpenMP joins.
   void requestInterrupt() noexcept { m_cancel->store(true, std::memory_order_relaxed); }
 
   bool interruptRequested() const noexcept { return m_cancel->load(std::memory_order_relaxed); }

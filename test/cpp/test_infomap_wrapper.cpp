@@ -288,9 +288,12 @@ TEST_CASE("Cancelling a --parallel-trials run never terminates and surfaces Inte
   // chance the flag is set while the parallel-trial workers are running.
   im.setInterruptHandler([](void* d) { static_cast<std::atomic<bool>*>(d)->store(true); return false; }, &started);
   std::thread canceller([&] {
-    while (!started.load() && !done.load()) { }
-    while (!done.load())
+    while (!started.load() && !done.load())
+      std::this_thread::yield();
+    while (!done.load()) {
       im.requestInterrupt();
+      std::this_thread::yield();
+    }
   });
 
   std::string outcome;
@@ -320,9 +323,12 @@ TEST_CASE("Cancelling a recursive run from another thread never terminates [fast
   std::atomic<bool> done { false };
   im.setInterruptHandler([](void* d) { static_cast<std::atomic<bool>*>(d)->store(true); return false; }, &started);
   std::thread canceller([&] {
-    while (!started.load() && !done.load()) { }
-    while (!done.load())
+    while (!started.load() && !done.load())
+      std::this_thread::yield();
+    while (!done.load()) {
       im.requestInterrupt();
+      std::this_thread::yield();
+    }
   });
 
   std::string outcome;
