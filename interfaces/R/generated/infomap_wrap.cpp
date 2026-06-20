@@ -1938,6 +1938,28 @@ void addMultilayerInterLinksFromNumpy2D(InfomapWrapper& infomap, PyObject* links
 #endif
 
 
+#if defined(SWIGR)
+#include <R_ext/Utils.h>   // R_CheckUserInterrupt
+#include <Rinternals.h>    // R_ToplevelExec
+namespace {
+// R_ToplevelExec contains R_CheckUserInterrupt's longjmp (so C++ destructors run)
+// and reports a pending interrupt as a non-TRUE result. R main thread only.
+// A cancel surfaces to R as a plain error (-> Rf_error), NOT an "interrupt"
+// condition — handle with tryCatch(error=), not tryCatch(interrupt=).
+void infomapRCheckInterrupt(void*) { R_CheckUserInterrupt(); }
+bool infomapHostInterruptPoll(void*) { return R_ToplevelExec(infomapRCheckInterrupt, nullptr) != TRUE; }
+} // namespace
+#elif defined(SWIGPYTHON)
+namespace infomap { extern InterruptCallback g_runInterruptCallback; } // defined in main.cpp
+namespace {
+// PyErr_CheckSignals runs pending Python signal handlers (turns a queued SIGINT
+// into KeyboardInterrupt). Needs the GIL + main thread; off the main thread it is
+// a no-op, so such a run is simply non-interruptible.
+bool infomapHostInterruptPoll(void*) { return PyErr_CheckSignals() != 0; }
+} // namespace
+#endif
+
+
 #include <string>
 
 
@@ -41050,11 +41072,21 @@ R_swig_InfomapBase_run__SWIG_0 ( SEXP self, SEXP parameters)
       arg2 = ptr;
     }
     {
+      arg1->setInterruptHandler(&infomapHostInterruptPoll, nullptr);
       try {
         (arg1)->run((std::string const &)*arg2);
+      } catch (const infomap::InterruptionError&) {
+        arg1->clearInterruptHandler();
+        
+        
+        
+        
+        SWIG_exception(SWIG_RuntimeError, "Infomap run interrupted.");
       } catch (const std::exception& e) {
+        arg1->clearInterruptHandler();
         SWIG_exception(SWIG_RuntimeError, e.what());
       }
+      arg1->clearInterruptHandler();
     }
     r_ans = R_NilValue;
     if (SWIG_IsNewObj(res2)) delete arg2;
@@ -41087,11 +41119,21 @@ R_swig_InfomapBase_run__SWIG_1 ( SEXP self)
     }
     arg1 = reinterpret_cast< infomap::InfomapBase * >(argp1);
     {
+      arg1->setInterruptHandler(&infomapHostInterruptPoll, nullptr);
       try {
         (arg1)->run();
+      } catch (const infomap::InterruptionError&) {
+        arg1->clearInterruptHandler();
+        
+        
+        
+        
+        SWIG_exception(SWIG_RuntimeError, "Infomap run interrupted.");
       } catch (const std::exception& e) {
+        arg1->clearInterruptHandler();
         SWIG_exception(SWIG_RuntimeError, e.what());
       }
+      arg1->clearInterruptHandler();
     }
     r_ans = R_NilValue;
     vmaxset(r_vmax);
@@ -41133,11 +41175,21 @@ R_swig_InfomapBase_run__SWIG_2 ( SEXP self, SEXP network)
     }
     arg2 = reinterpret_cast< infomap::Network * >(argp2);
     {
+      arg1->setInterruptHandler(&infomapHostInterruptPoll, nullptr);
       try {
         (arg1)->run(*arg2);
+      } catch (const infomap::InterruptionError&) {
+        arg1->clearInterruptHandler();
+        
+        
+        
+        
+        SWIG_exception(SWIG_RuntimeError, "Infomap run interrupted.");
       } catch (const std::exception& e) {
+        arg1->clearInterruptHandler();
         SWIG_exception(SWIG_RuntimeError, e.what());
       }
+      arg1->clearInterruptHandler();
     }
     r_ans = R_NilValue;
     vmaxset(r_vmax);
@@ -48774,11 +48826,21 @@ R_swig_InfomapWrapper_run__SWIG_0 ( SEXP self, SEXP parameters)
       arg2 = ptr;
     }
     {
+      arg1->setInterruptHandler(&infomapHostInterruptPoll, nullptr);
       try {
         (arg1)->run((std::string const &)*arg2);
+      } catch (const infomap::InterruptionError&) {
+        arg1->clearInterruptHandler();
+        
+        
+        
+        
+        SWIG_exception(SWIG_RuntimeError, "Infomap run interrupted.");
       } catch (const std::exception& e) {
+        arg1->clearInterruptHandler();
         SWIG_exception(SWIG_RuntimeError, e.what());
       }
+      arg1->clearInterruptHandler();
     }
     r_ans = R_NilValue;
     if (SWIG_IsNewObj(res2)) delete arg2;
@@ -48811,11 +48873,21 @@ R_swig_InfomapWrapper_run__SWIG_1 ( SEXP self)
     }
     arg1 = reinterpret_cast< infomap::InfomapWrapper * >(argp1);
     {
+      arg1->setInterruptHandler(&infomapHostInterruptPoll, nullptr);
       try {
         (arg1)->run();
+      } catch (const infomap::InterruptionError&) {
+        arg1->clearInterruptHandler();
+        
+        
+        
+        
+        SWIG_exception(SWIG_RuntimeError, "Infomap run interrupted.");
       } catch (const std::exception& e) {
+        arg1->clearInterruptHandler();
         SWIG_exception(SWIG_RuntimeError, e.what());
       }
+      arg1->clearInterruptHandler();
     }
     r_ans = R_NilValue;
     vmaxset(r_vmax);
@@ -48857,11 +48929,21 @@ R_swig_InfomapWrapper_run__SWIG_2 ( SEXP self, SEXP network)
     }
     arg2 = reinterpret_cast< infomap::Network * >(argp2);
     {
+      arg1->setInterruptHandler(&infomapHostInterruptPoll, nullptr);
       try {
         (arg1)->run(*arg2);
+      } catch (const infomap::InterruptionError&) {
+        arg1->clearInterruptHandler();
+        
+        
+        
+        
+        SWIG_exception(SWIG_RuntimeError, "Infomap run interrupted.");
       } catch (const std::exception& e) {
+        arg1->clearInterruptHandler();
         SWIG_exception(SWIG_RuntimeError, e.what());
       }
+      arg1->clearInterruptHandler();
     }
     r_ans = R_NilValue;
     vmaxset(r_vmax);

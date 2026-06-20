@@ -314,6 +314,7 @@ private:
       runTrialsUntilConverged(result);
     } else {
       for (unsigned int i = 0; i < m_numTrials; ++i) {
+        m_infomap.pollInterrupt();
         runTrial(i, result);
       }
     }
@@ -331,6 +332,7 @@ private:
     unsigned int trialsSinceImprovement = 0;
     unsigned int i = 0;
     for (; i < m_numTrials; ++i) {
+      m_infomap.pollInterrupt();
       const double bestBefore = result.bestHierarchicalCodelength;
       runTrial(i, result);
 
@@ -375,6 +377,9 @@ private:
 
       InfomapBase worker(workerConfig);
       worker.m_initialPartition = m_infomap.m_initialPartition;
+      // Share the cancel flag so workers observe a cancel; they only read it and
+      // unwind, caught by the per-trial handler below (issue #412).
+      worker.inheritRuntimeContext(m_infomap);
 
       for (unsigned int trialIndex = static_cast<unsigned int>(workerIndex); trialIndex < m_numTrials; trialIndex += numWorkers) {
         try {
@@ -444,6 +449,12 @@ private:
           }
         }
       }
+    }
+
+    // Surface a cancel as InterruptionError, not the generic "Parallel trial
+    // failed" the std::exception handler above would otherwise report (#412).
+    if (m_infomap.interruptRequested()) {
+      throw InterruptionError();
     }
 
     if (hasError) {
@@ -980,6 +991,12 @@ void InfomapBase::run(Network& network)
 {
   if (!isMainInfomap())
     throw std::logic_error("Can't run a non-main Infomap with an input network");
+
+  // Stamp the owner thread (gates the callback) and clear any leftover cancel so
+  // the instance is reusable after an interrupted run (issue #412).
+  m_ownerThreadId = std::this_thread::get_id();
+  m_cancelRequested.store(false, std::memory_order_relaxed);
+  pollInterrupt();
 
   TimingRegistry timing;
   Stopwatch totalTimer(true);
@@ -1717,8 +1734,14 @@ void InfomapBase::hierarchicalPartition()
 
           subInfomap.initPartition(modules);
 
-          // Run two-level partition + find hierarchically super modules (skip recursion)
-          subInfomap.setOnlySuperModules(true).run();
+          // Run two-level partition + find hierarchically super modules (skip recursion).
+          // Free the sub-Infomap on interrupt before unwinding (issue #412).
+          try {
+            subInfomap.setOnlySuperModules(true).run();
+          } catch (const InterruptionError&) {
+            module.disposeInfomap();
+            throw;
+          }
 
           // Collect sub Infomap modules
           i = 0;
@@ -2210,7 +2233,13 @@ unsigned int InfomapBase::coarseTune()
       InfomapBase& subInfomap = getSubInfomap(node)
                                     .setTwoLevel(true)
                                     .setTuneIterationLimit(1);
-      subInfomap.initNetwork(node).run();
+      // Free the sub-Infomap on interrupt before unwinding (issue #412).
+      try {
+        subInfomap.initNetwork(node).run();
+      } catch (const InterruptionError&) {
+        node.disposeInfomap();
+        throw;
+      }
 
       auto originalLeafIt = node.begin_child();
       for (auto& subLeafPtr : subInfomap.leafNodes()) {
@@ -2319,6 +2348,8 @@ unsigned int InfomapBase::findHierarchicalSuperModules(unsigned int superLevelLi
     auto& superInfomap = getSuperInfomap(tmp)
                              .setTwoLevel(true);
     superInfomap.initNetwork(m_root, true); //.initSuperNetwork();
+    // No interrupt catch needed: local `tmp` owns the super-Infomap, so
+    // ~InfoNode frees it if run() throws InterruptionError (#412).
     superInfomap.run();
     if (shouldMuteNestedMainRun) {
       Log::setSilent(isSilent);
@@ -2619,6 +2650,9 @@ unsigned int InfomapBase::recursivePartition()
 #endif
     {
       for (auto moduleIndex : spawnOrder) {
+        // Stop spawning once cancelled; never throw inside the task region (#412).
+        if (interruptRequested())
+          break;
         InfoNode* module = partitionQueue[moduleIndex];
         detail::PartitionTaskRecord* record = &rootRecords[moduleIndex];
 #ifdef _OPENMP
@@ -2634,6 +2668,10 @@ unsigned int InfomapBase::recursivePartition()
 
   if (shouldMuteNestedMainRun)
     Log::setSilent(isSilent);
+
+  // Tasks have joined: throwing here is safe (outside any OpenMP block) and
+  // aborts the recursion if a cancel was requested while tasks ran (#412).
+  checkCancelled();
 
   // Aggregate the recorded statistics level by level, visiting the records in
   // the same order as the former level-synchronous queue concatenated them, so
@@ -2762,6 +2800,13 @@ void InfomapBase::partitionModuleRecursively(InfoNode& module, unsigned int leve
   if (module.disposeInfomap())
     module.codelength = calcCodelength(module);
 
+  // Inside an OpenMP task: bail without throwing; recursivePartition throws once
+  // after the region (#412).
+  if (interruptRequested()) {
+    record.leafCodelength = module.codelength;
+    return;
+  }
+
   // If only trivial substructure is to be found, no need to create infomap instance to find sub-module structures.
   if (module.childDegree() <= 2) {
     module.codelength = calcCodelength(module);
@@ -2773,8 +2818,17 @@ void InfomapBase::partitionModuleRecursively(InfoNode& module, unsigned int leve
 
   auto& subInfomap = getSubInfomap(module)
                          .initNetwork(module);
-  // Run two-level partition + find hierarchically super modules (skip recursion)
-  subInfomap.setOnlySuperModules(true).run();
+  // Run two-level partition + find hierarchically super modules (skip recursion).
+  // Contain an interrupt from the sub-run so it can't escape the enclosing
+  // OpenMP task; free the sub-Infomap and bail (the flag stays set) (#412).
+  try {
+    subInfomap.setOnlySuperModules(true).run();
+  } catch (const InterruptionError&) {
+    module.disposeInfomap();
+    module.codelength = oldModuleCodelength;
+    record.leafCodelength = module.codelength;
+    return;
+  }
 
   double subCodelength = subInfomap.getHierarchicalCodelength();
   double subIndexCodelength = subInfomap.root().codelength;
@@ -2891,6 +2945,9 @@ void InfomapBase::partitionModuleRecursively(InfoNode& module, unsigned int leve
   });
 
   for (auto subModuleIndex : spawnOrder) {
+    // Stop spawning once cancelled (in-flight children bail at their own check).
+    if (interruptRequested())
+      break;
     InfoNode* subModule = materializedSubModules[subModuleIndex];
     detail::PartitionTaskRecord* childRecord = &record.children[subModuleIndex];
     // Small subtrees run inline: spawning them as tasks costs more in task

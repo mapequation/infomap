@@ -18,7 +18,29 @@
 #include <omp.h>
 #endif
 
+#ifndef AS_LIB
+#include <csignal>
+#endif
+
 namespace infomap {
+
+// Poll that run() installs on its InfomapWrapper, so the single-call entry (the
+// pip `infomap` console script, via this AS_LIB free function) is interruptible.
+// The Python binding registers a PyErr_CheckSignals poll here at module init;
+// the native CLI uses its own below. Null = no polling (e.g. the R extension).
+InterruptCallback g_runInterruptCallback = nullptr;
+
+#ifndef AS_LIB
+namespace {
+  // Native CLI Ctrl-C (#412). The handler only assigns a volatile sig_atomic_t —
+  // the one async-signal-safe operation under the C++14 core build (not a
+  // std::atomic, which is signal-safe only from C++17). The owner-thread poll
+  // reads it and flips the run's lock-free atomic cancel flag that workers see.
+  volatile std::sig_atomic_t g_cliInterruptRequested = 0;
+  extern "C" void cliHandleInterrupt(int) { g_cliInterruptRequested = 1; }
+  bool cliInterruptPoll(void*) { return g_cliInterruptRequested != 0; }
+} // namespace
+#endif
 
 int run(const std::string& flags)
 {
@@ -40,10 +62,28 @@ int run(const std::string& flags)
       std::cout << configFingerprint(config) << '\n';
       return 0;
     }
-    InfomapWrapper(config).run();
+    InfomapWrapper im(config);
+#ifndef AS_LIB
+    // Clear the flag first: a Ctrl-C from an earlier run() in this process must
+    // not abort the next one at its first checkpoint.
+    g_cliInterruptRequested = 0;
+    std::signal(SIGINT, cliHandleInterrupt);
+    im.setInterruptHandler(&cliInterruptPoll);
+#else
+    if (g_runInterruptCallback != nullptr)
+      im.setInterruptHandler(g_runInterruptCallback);
+#endif
+    im.run();
   } catch (const CleanExit&) {
     // Help / version / json-parameters CLI flags requested a clean exit.
     return 0;
+  } catch (const InterruptionError&) {
+#ifdef AS_LIB
+    throw; // let the binding surface it (Python: the pending KeyboardInterrupt)
+#else
+    std::cerr << "\nInterrupted.\n";
+    return exitCodeValue(ExitCode::Interrupted);
+#endif
   } catch (const InfomapError& e) {
     std::cerr << "Error: " << e.what() << '\n';
     return exitCodeValue(e.code());

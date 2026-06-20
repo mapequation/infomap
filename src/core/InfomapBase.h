@@ -27,10 +27,12 @@
 #include <deque>
 #include <map>
 #include <array>
+#include <atomic>
 #include <stdexcept>
 #include <limits>
 #include <memory>
 #include <string>
+#include <thread>
 #include <ostream>
 
 namespace infomap {
@@ -40,6 +42,18 @@ namespace detail {
   struct PartitionTaskRecord;
   struct PerLevelStat;
 } // namespace detail
+
+// Cooperative cancellation hook (issue #412). Return true to stop the run at the
+// next checkpoint. Invoked only on the owner thread, so it is safe to enter
+// host-language APIs (R_CheckUserInterrupt, PyErr_CheckSignals) from it.
+using InterruptCallback = bool (*)(void* userData);
+
+// Thrown out of run() on cancellation; std::runtime_error so existing
+// catch(std::exception) unwinding still applies.
+class InterruptionError : public std::runtime_error {
+public:
+  InterruptionError() : std::runtime_error("Infomap run interrupted.") {}
+};
 
 class InfomapBase : public InfomapConfig<InfomapBase> {
   template <typename Objective>
@@ -222,6 +236,36 @@ public:
 
   void run(Network& network);
 
+  // ===================================================
+  // Cooperative interruption (issue #412)
+  // ===================================================
+
+  // Polled on the owner thread during run(); return true to abort with an
+  // InterruptionError. No handler = unchanged behavior.
+  InfomapBase& setInterruptHandler(InterruptCallback callback, void* userData = nullptr)
+  {
+    m_interruptCallback = callback;
+    m_interruptUserData = userData;
+    return *this;
+  }
+
+  InfomapBase& clearInterruptHandler()
+  {
+    m_interruptCallback = nullptr;
+    m_interruptUserData = nullptr;
+    return *this;
+  }
+
+  bool hasInterruptHandler() const { return m_interruptCallback != nullptr; }
+
+  // Thread-safe push to cancel an in-progress run, observed at the next
+  // checkpoint. A request made before run() is cleared at run entry (so it does
+  // not pre-cancel a fresh run). Relaxed (no companion data) — ordering comes
+  // from the OpenMP joins.
+  void requestInterrupt() noexcept { m_cancel->store(true, std::memory_order_relaxed); }
+
+  bool interruptRequested() const noexcept { return m_cancel->load(std::memory_order_relaxed); }
+
 private:
   class RunSession;
 
@@ -253,7 +297,8 @@ private:
     auto& subInfomap = node.setInfomap(getNewInfomapInstance())
                            .setIsMain(false)
                            .setSubLevel(m_subLevel + 1)
-                           .setNonMainConfig(*this);
+                           .setNonMainConfig(*this)
+                           .inheritRuntimeContext(*this);
     // Carry the full-network properties down so entropy bias correction stays consistent
     // across the hierarchy (this used to be a shared static).
     subInfomap.m_optimizer->inheritNetworkPropertiesFrom(*m_optimizer);
@@ -265,7 +310,8 @@ private:
     auto& superInfomap = node.setInfomap(getNewInfomapInstanceWithoutMemory())
                              .setIsMain(false)
                              .setSubLevel(m_subLevel + SUPER_LEVEL_ADDITION)
-                             .setNonMainConfig(*this);
+                             .setNonMainConfig(*this)
+                             .inheritRuntimeContext(*this);
     superInfomap.m_optimizer->inheritNetworkPropertiesFrom(*m_optimizer);
     return superInfomap;
   }
@@ -292,6 +338,33 @@ private:
   bool isMainInfomap() const { return m_isMain; }
 
   bool haveHardPartition() const { return !m_originalLeafNodes.empty(); }
+
+  // Share the cancel flag (only) with a sub/worker Infomap. The callback is NOT
+  // inherited — only the main instance, on the owner thread, ever invokes it.
+  InfomapBase& inheritRuntimeContext(const InfomapBase& other)
+  {
+    m_cancel = other.m_cancel;
+    return *this;
+  }
+
+  // Flag-only, any thread. Call only where a throw can unwind legally — NOT
+  // inside an OpenMP structured block.
+  void checkCancelled() const
+  {
+    if (m_cancel->load(std::memory_order_relaxed))
+      throw InterruptionError();
+  }
+
+  // The thread-id guard keeps the callback off worker threads even when this
+  // object's methods run inside the task graph (off-thread it is a flag check).
+  void pollInterrupt()
+  {
+    if (m_interruptCallback != nullptr
+        && std::this_thread::get_id() == m_ownerThreadId
+        && m_interruptCallback(m_interruptUserData))
+      m_cancel->store(true, std::memory_order_relaxed);
+    checkCancelled();
+  }
 
   // ===================================================
   // Run: *
@@ -607,6 +680,15 @@ protected:
   Stopwatch m_elapsedTime = Stopwatch(false);
   std::string m_initialParameters;
   std::string m_currentParameters;
+
+  // Cooperative interruption (issue #412). m_cancel points at m_cancelRequested
+  // (self) or, for sub/worker instances, at the main's flag (inheritRuntimeContext),
+  // so the run tree shares one flag. m_ownerThreadId is stamped in run(Network&).
+  std::atomic<bool> m_cancelRequested { false };
+  std::atomic<bool>* m_cancel = &m_cancelRequested;
+  InterruptCallback m_interruptCallback = nullptr;
+  void* m_interruptUserData = nullptr;
+  std::thread::id m_ownerThreadId;
 
   std::unique_ptr<InfomapOptimizerBase> m_optimizer;
 };

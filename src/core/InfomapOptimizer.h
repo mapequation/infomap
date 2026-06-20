@@ -442,6 +442,9 @@ INFOMAP_HOT inline unsigned int InfomapOptimizer<Objective>::optimizeActiveNetwo
   }
 
   do {
+    // Cancellation checkpoint (#412): between the inner sweeps, so a throw here
+    // never unwinds through an OpenMP region.
+    m_infomap->pollInterrupt();
     ++coreLoopCount;
     unsigned int numNodesMoved = shouldUseInnerParallelization()
         ? tryMoveEachNodeIntoBestModuleInParallel()
@@ -699,6 +702,10 @@ INFOMAP_HOT unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestMod
     // but chunk size 1 costs one scheduler round-trip per iteration.
 #pragma omp for schedule(dynamic, 512)
     for (unsigned int i = 0; i < numNodes; ++i) {
+      // Once cancelled, drain the sweep without throwing (no exception may leave
+      // this OpenMP region); the outer loop throws at its next checkpoint (#412).
+      if (m_infomap->interruptRequested())
+        continue;
       deltaFlow.startRound();
 
       // Pick nodes in random order
