@@ -231,12 +231,16 @@ public:
   }
 #endif
 
-  // Mode A (first-order) defers dedup to finalizeLinks(), so these counts are
-  // only valid afterwards -- ensure it. Mode B (multilayer) keeps them eager and
-  // must NOT finalize here: printSummary() reads numLinks() before the multilayer
-  // expansion populates the network. The ensureFinalized() call is guarded so
-  // SWIG never parses a reference to the hidden method (the compiled library the
-  // wrapper calls still lazy-finalizes).
+  // Mode A (first-order and the main multilayer network) defers dedup to
+  // finalizeLinks(), so these counts are only valid afterwards -- ensure it. An
+  // early read (e.g. an in-memory numLinks() before the multilayer expansion
+  // populates the main network) just finalizes early; the next addLink re-opens
+  // the buffer via definalize(). Mode B (the
+  // transient per-layer networks) keeps the counts eager and must NOT finalize:
+  // those networks are read through nodeLinkMap()/outWeights() and discarded,
+  // never consumed as CSR. The ensureFinalized() call is guarded so SWIG never
+  // parses a reference to the hidden method (the compiled library the wrapper
+  // calls still lazy-finalizes).
   unsigned int numAggregatedLinks() const
   {
 #ifndef SWIG

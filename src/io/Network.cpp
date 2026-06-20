@@ -171,9 +171,12 @@ void Network::addMultilayerLink(unsigned int stateId1, unsigned int layer1, unsi
     ++m_numInterLayerLinks;
   }
 
-  // Multilayer builds the state network through the nested map (mode B); set
-  // before addLink so the main network never enters the flat-buffer path.
-  m_useMapBuild = true;
+  // The main expanded network builds through the flat buffer (mode A), exactly
+  // like ordinary/state networks: this is a write-only sink during expansion
+  // (the only main-map read was already dead code) and during explicit
+  // *Multilayer parsing, so aggregation can be deferred to finalizeLinks()
+  // instead of paying a per-source std::map. Mode is left at its default (A);
+  // only the transient per-layer networks stay mode B (see addMultilayerIntraLink).
   addLink(stateId1, stateId2, weight);
 }
 
@@ -714,10 +717,11 @@ void Network::simulateInterLayerLinks()
 void Network::addMultilayerIntraLink(unsigned int layer, unsigned int n1, unsigned int n2, double weight)
 {
   m_higherOrderInputMethodCalled = true;
-  // Mode B for both the main network (gets expansion links later) and the
-  // transient per-layer network (its nested map + outWeights are read directly
-  // during expansion). Set before addLink so neither enters the buffer path.
-  m_useMapBuild = true;
+  // The main network gets its expansion links later and builds via the flat
+  // buffer (mode A) like ordinary/state networks, so it is left at its default
+  // mode. Only the transient per-layer network stays mode B: its nested map +
+  // outWeights are read directly during expansion, so set before addLink so it
+  // does not enter the buffer path.
   auto& layerNetwork = m_networks[layer];
   layerNetwork.m_useMapBuild = true;
   bool added = layerNetwork.addLink(n1, n2, weight);
@@ -749,10 +753,11 @@ void Network::addMultilayerInterLink(unsigned int layer1, unsigned int n, unsign
     throw std::runtime_error(fmt::format(FMT_STRING("Inter-layer link (layer1, node, layer2): {}, {}, {} must have layer1 != layer2"), layer1, n, layer2));
   }
   m_higherOrderInputMethodCalled = true;
-  // Multilayer main network builds via the nested map (mode B); set before
-  // printSummary() can read numLinks() so it never triggers a premature finalize.
-  m_useMapBuild = true;
-
+  // Inter-layer links are buffered in m_interLinks and only realized on the main
+  // network during expansion, which builds via the flat buffer (mode A). The main
+  // network is left at its default mode here. (File input expands before any
+  // numLinks() read; an in-memory numLinks() read before expansion just finalizes
+  // an empty buffer, which the first expansion addLink re-opens via definalize().)
   auto& interLinks = m_interLinks[LayerNode(layer1, n)];
   auto it = interLinks.find(layer2);
 
