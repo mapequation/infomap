@@ -4031,15 +4031,22 @@ namespace {
 // R_ToplevelExec runs it inside a context that catches that longjmp (so it never
 // unwinds the C++ stack and skips destructors) and reports it as a non-TRUE
 // result. Must run on R's main thread only — guaranteed by the owner-thread gate.
+// NOTE: because R_ToplevelExec consumes the interrupt, a cancelled run surfaces
+// to R as a regular error (SWIG_RuntimeError -> Rf_error: "Infomap run
+// interrupted."), NOT an R "interrupt" condition — handle it with
+// tryCatch(error=), not tryCatch(interrupt=).
 void infomapRCheckInterrupt(void*) { R_CheckUserInterrupt(); }
 bool infomapHostInterruptPoll(void*) { return R_ToplevelExec(infomapRCheckInterrupt, nullptr) != TRUE; }
 } // namespace
 #elif defined(SWIGPYTHON)
+namespace infomap { extern InterruptCallback g_runInterruptCallback; } // defined in main.cpp
 namespace {
 // PyErr_CheckSignals runs pending Python signal handlers (e.g. turns a queued
 // SIGINT into KeyboardInterrupt) and returns non-zero if one raised. Needs the
 // GIL and the main thread, both held when the core calls back on the owner
-// thread during a normal im.run().
+// thread during a normal im.run(). Off the main thread it is a no-op, so a run
+// launched from a non-main Python thread is simply non-interruptible (not an
+// error).
 bool infomapHostInterruptPoll(void*) { return PyErr_CheckSignals() != 0; }
 } // namespace
 #endif
@@ -55449,6 +55456,9 @@ SWIGINTERN PyObject *_wrap_run(PyObject *self, PyObject *args) {
   {
     try {
       result = (int)infomap::run((std::string const &)*arg1);
+    } catch (const infomap::InterruptionError&) {
+      if (PyErr_Occurred()) SWIG_fail;
+      SWIG_exception(SWIG_RuntimeError, "Infomap run interrupted.");
     } catch (const std::exception& e) {
       SWIG_exception(SWIG_RuntimeError, e.what());
     }
@@ -60729,6 +60739,9 @@ SWIGINTERN int SWIG_mod_exec(PyObject *m) {
 #endif
   
   SWIG_InstallConstants(d,swig_const_table);
+  
+  
+  infomap::g_runInterruptCallback = &infomapHostInterruptPoll;
   
   SWIG_Python_SetConstant(d, "FlowModel_undirected",SWIG_From_int(static_cast< int >(infomap::FlowModel::undirected)));
   SWIG_Python_SetConstant(d, "FlowModel_directed",SWIG_From_int(static_cast< int >(infomap::FlowModel::directed)));

@@ -332,15 +332,22 @@ namespace {
 // R_ToplevelExec runs it inside a context that catches that longjmp (so it never
 // unwinds the C++ stack and skips destructors) and reports it as a non-TRUE
 // result. Must run on R's main thread only — guaranteed by the owner-thread gate.
+// NOTE: because R_ToplevelExec consumes the interrupt, a cancelled run surfaces
+// to R as a regular error (SWIG_RuntimeError -> Rf_error: "Infomap run
+// interrupted."), NOT an R "interrupt" condition — handle it with
+// tryCatch(error=), not tryCatch(interrupt=).
 void infomapRCheckInterrupt(void*) { R_CheckUserInterrupt(); }
 bool infomapHostInterruptPoll(void*) { return R_ToplevelExec(infomapRCheckInterrupt, nullptr) != TRUE; }
 } // namespace
 #elif defined(SWIGPYTHON)
+namespace infomap { extern InterruptCallback g_runInterruptCallback; } // defined in main.cpp
 namespace {
 // PyErr_CheckSignals runs pending Python signal handlers (e.g. turns a queued
 // SIGINT into KeyboardInterrupt) and returns non-zero if one raised. Needs the
 // GIL and the main thread, both held when the core calls back on the owner
-// thread during a normal im.run().
+// thread during a normal im.run(). Off the main thread it is a no-op, so a run
+// launched from a non-main Python thread is simply non-interruptible (not an
+// error).
 bool infomapHostInterruptPoll(void*) { return PyErr_CheckSignals() != 0; }
 } // namespace
 #endif
@@ -365,6 +372,15 @@ bool infomapHostInterruptPoll(void*) { return PyErr_CheckSignals() != 0; }
   }
   arg1->clearInterruptHandler();
 }
+#endif
+
+#ifdef SWIGPYTHON
+// Register the same poll as the default that the C++ run(flags) free function
+// installs on its internal InfomapWrapper, so the pip `infomap` console script
+// (infomap:main -> run(args)) is interruptible too — not just the OO API.
+%init %{
+  infomap::g_runInterruptCallback = &infomapHostInterruptPoll;
+%}
 #endif
 
 %include "std_string.i"
@@ -411,6 +427,22 @@ def build_info():
     enabled_features = tuple(feature for feature in features.split(",") if feature)
     return {"enabled_features": enabled_features}
 %}
+#endif
+
+#ifdef SWIGPYTHON
+// The free run(flags) entry catches its own exceptions and returns an int, but
+// rethrows InterruptionError under AS_LIB so a Ctrl-C surfaces here: propagate
+// the pending KeyboardInterrupt rather than masking it with a RuntimeError.
+%exception infomap::run {
+  try {
+    $action
+  } catch (const infomap::InterruptionError&) {
+    if (PyErr_Occurred()) SWIG_fail;
+    SWIG_exception(SWIG_RuntimeError, "Infomap run interrupted.");
+  } catch (const std::exception& e) {
+    SWIG_exception(SWIG_RuntimeError, e.what());
+  }
+}
 #endif
 
 namespace infomap {

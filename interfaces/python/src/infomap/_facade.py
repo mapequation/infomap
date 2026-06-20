@@ -1834,10 +1834,14 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
 
 
 def main():
-    import sys
-
     args = " ".join(sys.argv[1:])
-    return run(args)  # noqa: F405
+    try:
+        return run(args)  # noqa: F405
+    except KeyboardInterrupt:
+        # Ctrl-C during the run: cancelled cooperatively (issue #412). Exit like
+        # the native CLI — a clean message and 130 (128 + SIGINT), no traceback.
+        print("Interrupted.", file=sys.stderr)
+        return 130
 
 
 if __name__ == "__main__":

@@ -24,6 +24,14 @@
 
 namespace infomap {
 
+// Process-global interrupt poll for the single-call run(flags) CLI entry.
+// run() installs it on the InfomapWrapper it creates, so the pip-installed
+// `infomap` console script (which routes through this AS_LIB free function) is
+// interruptible too. The Python binding registers a PyErr_CheckSignals poll in
+// its module init; the native CLI sets its own SIGINT-flag poll below. Default
+// null = no polling (unchanged behavior, e.g. the R extension never sets it).
+InterruptCallback g_runInterruptCallback = nullptr;
+
 #ifndef AS_LIB
 namespace {
   // CLI cooperative Ctrl-C (issue #412). The handler only assigns a
@@ -64,16 +72,29 @@ int run(const std::string& flags)
     }
     InfomapWrapper im(config);
 #ifndef AS_LIB
+    // Native CLI: install a SIGINT-flag poll directly. Clear the process-global
+    // flag first so a Ctrl-C from an earlier run() in the same process can't
+    // make this run abort at its first checkpoint (run() can be called more than
+    // once when embedded; the core resets its own atomic but not this flag).
+    g_cliInterruptRequested = 0;
     std::signal(SIGINT, cliHandleInterrupt);
     im.setInterruptHandler(&cliInterruptPoll);
+#else
+    // Library builds (Python console script): poll whatever the binding registered.
+    if (g_runInterruptCallback != nullptr)
+      im.setInterruptHandler(g_runInterruptCallback);
 #endif
     im.run();
   } catch (const CleanExit&) {
     // Help / version / json-parameters CLI flags requested a clean exit.
     return 0;
-#ifndef AS_LIB
   } catch (const InterruptionError&) {
-    // Ctrl-C: cancelled cleanly at a checkpoint.
+    // Ctrl-C / cooperative cancellation.
+#ifdef AS_LIB
+    // Let the binding surface it (Python: the pending KeyboardInterrupt set by
+    // PyErr_CheckSignals propagates; see the run() %exception in Infomap.i).
+    throw;
+#else
     std::cerr << "\nInterrupted.\n";
     return exitCodeValue(ExitCode::Interrupted);
 #endif
