@@ -519,6 +519,32 @@
     "min": "1"
   },
   {
+    "long": "--preferred-number-of-levels",
+    "short": "",
+    "description": "Soft preference for the depth of the hierarchy. Steering to a shallower depth is reliable at a small codelength cost; deeper is best-effort, bounded by what the optimizer proposes. No-op with --two-level or strength 0.",
+    "group": "Algorithm",
+    "required": true,
+    "advanced": true,
+    "incremental": false,
+    "longType": "integer",
+    "shortType": "n",
+    "default": "0",
+    "min": "1"
+  },
+  {
+    "long": "--preferred-number-of-levels-strength",
+    "short": "",
+    "description": "Scale the strength of --preferred-number-of-levels. 0 disables the preference; larger values increase the cost of deviating from the preferred depth.",
+    "group": "Algorithm",
+    "required": true,
+    "advanced": true,
+    "incremental": false,
+    "longType": "number",
+    "shortType": "f",
+    "default": "1",
+    "min": "0"
+  },
+  {
     "long": "--multilayer-relax-rate",
     "short": "",
     "description": "Set the probability of relaxing from a state node to neighboring layers instead of staying in the current layer.",

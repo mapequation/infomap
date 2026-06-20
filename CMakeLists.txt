@@ -178,6 +178,7 @@ if(BUILD_TESTING)
     add_infomap_cpp_test(infomap_cpp_output_view_tests test/cpp/test_output_view.cpp "fast;core;output")
     add_infomap_cpp_test(infomap_cpp_object_pool_tests test/cpp/test_object_pool.cpp "fast;core;memory")
     add_infomap_cpp_test(infomap_cpp_lossy_tests test/cpp/test_lossy.cpp "fast;core;lossy")
+    add_infomap_cpp_test(infomap_cpp_preferred_levels_tests test/cpp/test_preferred_levels.cpp "fast;core;preferred-levels")
 
     add_test(
         NAME print_json_parameters

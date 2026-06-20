@@ -127,6 +127,8 @@ class Config(object):
     regularizationStrength = property(_infomap.Config_regularizationStrength_get, _infomap.Config_regularizationStrength_set)
     teleportationProbability = property(_infomap.Config_teleportationProbability_get, _infomap.Config_teleportationProbability_set)
     preferredNumberOfModules = property(_infomap.Config_preferredNumberOfModules_get, _infomap.Config_preferredNumberOfModules_set)
+    preferredNumberOfLevels = property(_infomap.Config_preferredNumberOfLevels_get, _infomap.Config_preferredNumberOfLevels_set)
+    preferredNumberOfLevelsStrength = property(_infomap.Config_preferredNumberOfLevelsStrength_get, _infomap.Config_preferredNumberOfLevelsStrength_set)
     entropyBiasCorrection = property(_infomap.Config_entropyBiasCorrection_get, _infomap.Config_entropyBiasCorrection_set)
     entropyBiasCorrectionMultiplier = property(_infomap.Config_entropyBiasCorrectionMultiplier_get, _infomap.Config_entropyBiasCorrectionMultiplier_set)
     seedToRandomNumberGenerator = property(_infomap.Config_seedToRandomNumberGenerator_get, _infomap.Config_seedToRandomNumberGenerator_set)
