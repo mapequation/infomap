@@ -232,10 +232,10 @@ public:
 #endif
 
   // Mode A (first-order and the main multilayer network) defers dedup to
-  // finalizeLinks(), so these counts are only valid afterwards -- ensure it. A
-  // read before the build is complete (e.g. printSummary() calling numLinks()
-  // before the multilayer expansion populates the main network) just finalizes
-  // early; the next addLink re-opens the buffer via definalize(). Mode B (the
+  // finalizeLinks(), so these counts are only valid afterwards -- ensure it. An
+  // early read (e.g. an in-memory numLinks() before the multilayer expansion
+  // populates the main network) just finalizes early; the next addLink re-opens
+  // the buffer via definalize(). Mode B (the
   // transient per-layer networks) keeps the counts eager and must NOT finalize:
   // those networks are read through nodeLinkMap()/outWeights() and discarded,
   // never consumed as CSR. The ensureFinalized() call is guarded so SWIG never

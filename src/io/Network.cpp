@@ -754,10 +754,10 @@ void Network::addMultilayerInterLink(unsigned int layer1, unsigned int n, unsign
   }
   m_higherOrderInputMethodCalled = true;
   // Inter-layer links are buffered in m_interLinks and only realized on the main
-  // network during expansion, which builds via the flat buffer (mode A). The
-  // main network is left at its default mode here. printSummary() reading
-  // numLinks() before expansion now finalizes an empty buffer (cheap); the first
-  // expansion addLink re-opens it via definalize().
+  // network during expansion, which builds via the flat buffer (mode A). The main
+  // network is left at its default mode here. (File input expands before any
+  // numLinks() read; an in-memory numLinks() read before expansion just finalizes
+  // an empty buffer, which the first expansion addLink re-opens via definalize().)
   auto& interLinks = m_interLinks[LayerNode(layer1, n)];
   auto it = interLinks.find(layer2);
 
