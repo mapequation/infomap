@@ -18,7 +18,29 @@
 #include <omp.h>
 #endif
 
+#ifndef AS_LIB
+#include <csignal>
+#endif
+
 namespace infomap {
+
+#ifndef AS_LIB
+namespace {
+  // CLI cooperative Ctrl-C (issue #412). The handler only assigns a
+  // volatile sig_atomic_t — the single operation guaranteed async-signal-safe in
+  // every C++ standard (the core/CLI builds as C++14). The run polls it on the
+  // main thread through the interrupt hook and cancels cleanly at the next
+  // checkpoint, instead of the default SIGINT hard-killing the process mid-run
+  // (which could leave a half-written output file). Cross-thread visibility to
+  // the OpenMP workers is handled downstream: the main-thread poll flips the
+  // run's lock-free atomic cancel flag, which the workers observe. Library builds
+  // (-DAS_LIB, used by the Python/R bindings) never install this — they own their
+  // own signal handling — so the shared infomap::run() entry is untouched there.
+  volatile std::sig_atomic_t g_cliInterruptRequested = 0;
+  extern "C" void cliHandleInterrupt(int) { g_cliInterruptRequested = 1; }
+  bool cliInterruptPoll(void*) { return g_cliInterruptRequested != 0; }
+} // namespace
+#endif
 
 int run(const std::string& flags)
 {
@@ -40,10 +62,21 @@ int run(const std::string& flags)
       std::cout << configFingerprint(config) << '\n';
       return 0;
     }
-    InfomapWrapper(config).run();
+    InfomapWrapper im(config);
+#ifndef AS_LIB
+    std::signal(SIGINT, cliHandleInterrupt);
+    im.setInterruptHandler(&cliInterruptPoll);
+#endif
+    im.run();
   } catch (const CleanExit&) {
     // Help / version / json-parameters CLI flags requested a clean exit.
     return 0;
+#ifndef AS_LIB
+  } catch (const InterruptionError&) {
+    // Ctrl-C: cancelled cleanly at a checkpoint.
+    std::cerr << "\nInterrupted.\n";
+    return exitCodeValue(ExitCode::Interrupted);
+#endif
   } catch (const InfomapError& e) {
     std::cerr << "Error: " << e.what() << '\n';
     return exitCodeValue(e.code());
