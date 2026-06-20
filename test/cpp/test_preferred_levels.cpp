@@ -17,11 +17,10 @@ namespace {
 // here so the steering tests below have a known starting depth to steer away from.
 constexpr unsigned int kUnconstrainedLevels = 3;
 
-// Strength large enough to flip the single hierarchy-stage accept on this small
-// fixture. The default strength (1.0) is calibrated for larger networks; on a
-// 36-node fixture a stronger preference is needed to overcome the codelength
-// margin, which is exactly what --preferred-number-of-levels-strength is for.
-constexpr double kSteeringStrength = 5.0;
+// The default strength (1.0) steers this 36-node fixture, the same value that
+// steers the ~500k-node nets: the depth preference is an MDL prior expressed in
+// real bits, so its strength is network-size independent (no per-network tuning).
+constexpr double kSteeringStrength = 1.0;
 
 std::string treeOf(const std::string& extraFlags)
 {

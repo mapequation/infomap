@@ -76,37 +76,31 @@ namespace {
   // bias = harder to accept (push shallower at/above the target).
   // ===========================================================================
 
-  // Per-step base: the fraction of the local reference codelength that one unit
-  // of depth distance (at strength 1) contributes to the bias. Kept as a local
-  // constant rather than a Config member or static constexpr (the latter would
-  // risk C++14 odr-use issues across translation units) since it is not a
-  // user-facing knob; --preferred-number-of-levels-strength scales it.
-  constexpr double prefLevelsBaseStep = 0.02;
-
-  // Signed bias for an accept test happening at hierarchy depth `currentDepth`
-  // (in the same "Levels" convention: a flat two-level solution has depth 2).
-  // `target` is the preferred depth (0 disables the preference) and `strength`
-  // scales the bias (non-positive disables it: the CLI enforces min 0, but the
-  // public Config field is binding-settable, so a negative would otherwise
-  // invert the bias). `referenceCodelength` is a STABLE
-  // codelength scale at this site so the bias is network-size independent.
-  // Returns a value to be ADDED to the threshold's `old` term, i.e. accept iff
-  //   candidate < old - minImprovement + bias.
-  // A larger RHS makes acceptance easier, so:
-  // depth < N  -> bias > 0 (accept more sub/super levels -> deeper)
-  // depth >= N -> bias < 0 (accept fewer -> shallower)
-  double prefLevelsBias(unsigned int target, double strength, unsigned int currentDepth, double referenceCodelength)
+  // Signed depth-prior bias for a hierarchy-stage accept test, expressed in real
+  // bits of description length (directly commensurable with the map-equation
+  // codelength). We model each "create this level?" decision as a Bernoulli with
+  // a prior probability of descending to depth `currentDepth` of
+  //   p = sigmoid(strength * (target - currentDepth + 0.5)).
+  // Augmenting the objective with the prior's -log2 P(depth) makes the accept
+  // test's bias the log-odds log2(p / (1 - p)), which simplifies to the closed
+  // form below (the sigmoid cancels). `target` is the preferred depth (0 disables
+  // the preference); `strength` is the prior's sharpness (non-positive disables
+  // it: the CLI enforces min 0, but the public Config field is binding-settable,
+  // so a negative would otherwise invert the bias). The result is ADDED to the
+  // threshold's `old` term, i.e. accept iff candidate < old - minImprovement + bias.
+  // The +0.5 puts the sign flip between depth `target` and `target + 1`:
+  //   currentDepth <= target -> bias > 0 (accept the level, toward target)
+  //   currentDepth >  target -> bias < 0 (reject, stay shallower).
+  // Because the bias depends only on depth (not a collapsing codelength scale) it
+  // stays stable across super-iterations, and its strength is network-size
+  // independent, so a single default strength works across network sizes.
+  double prefLevelsBias(unsigned int target, double strength, unsigned int currentDepth)
   {
     if (target == 0 || strength <= 0.0)
       return 0.0;
-    const int delta = static_cast<int>(target) - static_cast<int>(currentDepth);
-    // delta > 0: below target, want deeper -> positive bias.
-    // delta < 0: above target, want shallower -> negative bias.
-    // delta == 0: on target -> no bias (returns 0.0 below).
-    // Scale by distance so far-off depths are pushed harder.
-    const double mag = strength * prefLevelsBaseStep * static_cast<double>(std::abs(delta))
-        * std::abs(referenceCodelength);
-    return delta > 0 ? mag : (delta < 0 ? -mag : 0.0);
+    constexpr double ln2 = 0.6931471805599453;
+    const double delta = static_cast<double>(static_cast<int>(target) - static_cast<int>(currentDepth));
+    return strength * (delta + 0.5) / ln2;
   }
 
   std::string compressionSummary(const std::vector<std::string>& compression)
@@ -2392,7 +2386,7 @@ unsigned int InfomapBase::findHierarchicalSuperModules(unsigned int superLevelLi
     // skeleton monotonically as strength grows instead of half-building it.
     const double superPrefBias = twoLevel
         ? 0.0
-        : prefLevelsBias(preferredNumberOfLevels, preferredNumberOfLevelsStrength, prefBaseDepth + numLevelsCreated + 1, hierarchicalCodelength);
+        : prefLevelsBias(preferredNumberOfLevels, preferredNumberOfLevelsStrength, prefBaseDepth + numLevelsCreated + 1);
     bool improvedCodelength = superCodelength < oldIndexLength - minimumCodelengthImprovement + superPrefBias;
     if (!improvedCodelength) {
       Console::detail(1, "super: index codebook not improved over one-level");
@@ -2851,7 +2845,7 @@ void InfomapBase::partitionModuleRecursively(InfoNode& module, unsigned int leve
   // collapsing across the recursion.
   const double subPrefBias = twoLevel
       ? 0.0
-      : prefLevelsBias(preferredNumberOfLevels, preferredNumberOfLevelsStrength, level + 1, oldModuleCodelength);
+      : prefLevelsBias(preferredNumberOfLevels, preferredNumberOfLevelsStrength, level + 1);
   bool improvedCodelength = subCodelength < oldModuleCodelength - minimumCodelengthImprovement + subPrefBias;
 
   if (trivialSubPartition || !improvedCodelength) {
