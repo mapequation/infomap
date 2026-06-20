@@ -86,7 +86,9 @@ namespace {
   // Signed bias for an accept test happening at hierarchy depth `currentDepth`
   // (in the same "Levels" convention: a flat two-level solution has depth 2).
   // `target` is the preferred depth (0 disables the preference) and `strength`
-  // scales the bias (0 disables it). `referenceCodelength` is a STABLE
+  // scales the bias (non-positive disables it: the CLI enforces min 0, but the
+  // public Config field is binding-settable, so a negative would otherwise
+  // invert the bias). `referenceCodelength` is a STABLE
   // codelength scale at this site so the bias is network-size independent.
   // Returns a value to be ADDED to the threshold's `old` term, i.e. accept iff
   //   candidate < old - minImprovement + bias.
@@ -95,11 +97,12 @@ namespace {
   // depth >= N -> bias < 0 (accept fewer -> shallower)
   double prefLevelsBias(unsigned int target, double strength, unsigned int currentDepth, double referenceCodelength)
   {
-    if (target == 0 || strength == 0.0)
+    if (target == 0 || strength <= 0.0)
       return 0.0;
     const int delta = static_cast<int>(target) - static_cast<int>(currentDepth);
-    // delta > 0: below target, want deeper, bias positive.
-    // delta <= 0: at/above target, want shallower, bias negative.
+    // delta > 0: below target, want deeper -> positive bias.
+    // delta < 0: above target, want shallower -> negative bias.
+    // delta == 0: on target -> no bias (returns 0.0 below).
     // Scale by distance so far-off depths are pushed harder.
     const double mag = strength * prefLevelsBaseStep * static_cast<double>(std::abs(delta))
         * std::abs(referenceCodelength);
