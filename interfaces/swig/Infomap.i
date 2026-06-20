@@ -319,6 +319,54 @@ void addMultilayerInterLinksFromNumpy2D(InfomapWrapper& infomap, PyObject* links
 #define SWIG_PYTHON_CAST_MODE
 %}
 
+// --- Cooperative interruption host bridge (issue #412) ---
+// run() installs a host poll handler that the core invokes ONLY on the owner
+// (here: the R / Python main) thread; worker threads only read the shared flag.
+// The C++ seam itself is %ignore'd in InfomapBase.i — this is the language glue.
+%{
+#if defined(SWIGR)
+#include <R_ext/Utils.h>   // R_CheckUserInterrupt
+#include <Rinternals.h>    // R_ToplevelExec
+namespace {
+// R_CheckUserInterrupt longjmps to R's top level when an interrupt is pending.
+// R_ToplevelExec runs it inside a context that catches that longjmp (so it never
+// unwinds the C++ stack and skips destructors) and reports it as a non-TRUE
+// result. Must run on R's main thread only — guaranteed by the owner-thread gate.
+void infomapRCheckInterrupt(void*) { R_CheckUserInterrupt(); }
+bool infomapHostInterruptPoll(void*) { return R_ToplevelExec(infomapRCheckInterrupt, nullptr) != TRUE; }
+} // namespace
+#elif defined(SWIGPYTHON)
+namespace {
+// PyErr_CheckSignals runs pending Python signal handlers (e.g. turns a queued
+// SIGINT into KeyboardInterrupt) and returns non-zero if one raised. Needs the
+// GIL and the main thread, both held when the core calls back on the owner
+// thread during a normal im.run().
+bool infomapHostInterruptPoll(void*) { return PyErr_CheckSignals() != 0; }
+} // namespace
+#endif
+%}
+
+#if defined(SWIGR) || defined(SWIGPYTHON)
+%exception infomap::InfomapBase::run {
+  arg1->setInterruptHandler(&infomapHostInterruptPoll, nullptr);
+  try {
+    $action
+  } catch (const infomap::InterruptionError&) {
+    arg1->clearInterruptHandler();
+#if defined(SWIGPYTHON)
+    // PyErr_CheckSignals already set KeyboardInterrupt — propagate it rather
+    // than masking it with a generic RuntimeError.
+    if (PyErr_Occurred()) SWIG_fail;
+#endif
+    SWIG_exception(SWIG_RuntimeError, "Infomap run interrupted.");
+  } catch (const std::exception& e) {
+    arg1->clearInterruptHandler();
+    SWIG_exception(SWIG_RuntimeError, e.what());
+  }
+  arg1->clearInterruptHandler();
+}
+#endif
+
 %include "std_string.i"
 %include "Config.i"
 %include "InfomapBase.i"

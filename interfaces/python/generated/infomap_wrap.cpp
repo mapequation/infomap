@@ -4023,6 +4023,28 @@ void addMultilayerInterLinksFromNumpy2D(InfomapWrapper& infomap, PyObject* links
 #endif
 
 
+#if defined(SWIGR)
+#include <R_ext/Utils.h>   // R_CheckUserInterrupt
+#include <Rinternals.h>    // R_ToplevelExec
+namespace {
+// R_CheckUserInterrupt longjmps to R's top level when an interrupt is pending.
+// R_ToplevelExec runs it inside a context that catches that longjmp (so it never
+// unwinds the C++ stack and skips destructors) and reports it as a non-TRUE
+// result. Must run on R's main thread only — guaranteed by the owner-thread gate.
+void infomapRCheckInterrupt(void*) { R_CheckUserInterrupt(); }
+bool infomapHostInterruptPoll(void*) { return R_ToplevelExec(infomapRCheckInterrupt, nullptr) != TRUE; }
+} // namespace
+#elif defined(SWIGPYTHON)
+namespace {
+// PyErr_CheckSignals runs pending Python signal handlers (e.g. turns a queued
+// SIGINT into KeyboardInterrupt) and returns non-zero if one raised. Needs the
+// GIL and the main thread, both held when the core calls back on the owner
+// thread during a normal im.run().
+bool infomapHostInterruptPoll(void*) { return PyErr_CheckSignals() != 0; }
+} // namespace
+#endif
+
+
 #include <string>
 
 
@@ -48191,11 +48213,22 @@ SWIGINTERN PyObject *_wrap_InfomapBase_run__SWIG_0(PyObject *self, Py_ssize_t no
     arg2 = ptr;
   }
   {
+    arg1->setInterruptHandler(&infomapHostInterruptPoll, nullptr);
     try {
       (arg1)->run((std::string const &)*arg2);
+    } catch (const infomap::InterruptionError&) {
+      arg1->clearInterruptHandler();
+      
+      // PyErr_CheckSignals already set KeyboardInterrupt — propagate it rather
+      // than masking it with a generic RuntimeError.
+      if (PyErr_Occurred()) SWIG_fail;
+      
+      SWIG_exception(SWIG_RuntimeError, "Infomap run interrupted.");
     } catch (const std::exception& e) {
+      arg1->clearInterruptHandler();
       SWIG_exception(SWIG_RuntimeError, e.what());
     }
+    arg1->clearInterruptHandler();
   }
   resultobj = SWIG_Py_Void();
   if (SWIG_IsNewObj(res2)) delete arg2;
@@ -48220,11 +48253,22 @@ SWIGINTERN PyObject *_wrap_InfomapBase_run__SWIG_1(PyObject *self, Py_ssize_t no
   }
   arg1 = reinterpret_cast< infomap::InfomapBase * >(argp1);
   {
+    arg1->setInterruptHandler(&infomapHostInterruptPoll, nullptr);
     try {
       (arg1)->run();
+    } catch (const infomap::InterruptionError&) {
+      arg1->clearInterruptHandler();
+      
+      // PyErr_CheckSignals already set KeyboardInterrupt — propagate it rather
+      // than masking it with a generic RuntimeError.
+      if (PyErr_Occurred()) SWIG_fail;
+      
+      SWIG_exception(SWIG_RuntimeError, "Infomap run interrupted.");
     } catch (const std::exception& e) {
+      arg1->clearInterruptHandler();
       SWIG_exception(SWIG_RuntimeError, e.what());
     }
+    arg1->clearInterruptHandler();
   }
   resultobj = SWIG_Py_Void();
   return resultobj;
@@ -48258,11 +48302,22 @@ SWIGINTERN PyObject *_wrap_InfomapBase_run__SWIG_2(PyObject *self, Py_ssize_t no
   }
   arg2 = reinterpret_cast< infomap::Network * >(argp2);
   {
+    arg1->setInterruptHandler(&infomapHostInterruptPoll, nullptr);
     try {
       (arg1)->run(*arg2);
+    } catch (const infomap::InterruptionError&) {
+      arg1->clearInterruptHandler();
+      
+      // PyErr_CheckSignals already set KeyboardInterrupt — propagate it rather
+      // than masking it with a generic RuntimeError.
+      if (PyErr_Occurred()) SWIG_fail;
+      
+      SWIG_exception(SWIG_RuntimeError, "Infomap run interrupted.");
     } catch (const std::exception& e) {
+      arg1->clearInterruptHandler();
       SWIG_exception(SWIG_RuntimeError, e.what());
     }
+    arg1->clearInterruptHandler();
   }
   resultobj = SWIG_Py_Void();
   return resultobj;
@@ -57926,11 +57981,22 @@ SWIGINTERN PyObject *_wrap_InfomapWrapper_run__SWIG_0(PyObject *self, Py_ssize_t
     arg2 = ptr;
   }
   {
+    arg1->setInterruptHandler(&infomapHostInterruptPoll, nullptr);
     try {
       (arg1)->run((std::string const &)*arg2);
+    } catch (const infomap::InterruptionError&) {
+      arg1->clearInterruptHandler();
+      
+      // PyErr_CheckSignals already set KeyboardInterrupt — propagate it rather
+      // than masking it with a generic RuntimeError.
+      if (PyErr_Occurred()) SWIG_fail;
+      
+      SWIG_exception(SWIG_RuntimeError, "Infomap run interrupted.");
     } catch (const std::exception& e) {
+      arg1->clearInterruptHandler();
       SWIG_exception(SWIG_RuntimeError, e.what());
     }
+    arg1->clearInterruptHandler();
   }
   resultobj = SWIG_Py_Void();
   if (SWIG_IsNewObj(res2)) delete arg2;
@@ -57955,11 +58021,22 @@ SWIGINTERN PyObject *_wrap_InfomapWrapper_run__SWIG_1(PyObject *self, Py_ssize_t
   }
   arg1 = reinterpret_cast< infomap::InfomapWrapper * >(argp1);
   {
+    arg1->setInterruptHandler(&infomapHostInterruptPoll, nullptr);
     try {
       (arg1)->run();
+    } catch (const infomap::InterruptionError&) {
+      arg1->clearInterruptHandler();
+      
+      // PyErr_CheckSignals already set KeyboardInterrupt — propagate it rather
+      // than masking it with a generic RuntimeError.
+      if (PyErr_Occurred()) SWIG_fail;
+      
+      SWIG_exception(SWIG_RuntimeError, "Infomap run interrupted.");
     } catch (const std::exception& e) {
+      arg1->clearInterruptHandler();
       SWIG_exception(SWIG_RuntimeError, e.what());
     }
+    arg1->clearInterruptHandler();
   }
   resultobj = SWIG_Py_Void();
   return resultobj;
@@ -57993,11 +58070,22 @@ SWIGINTERN PyObject *_wrap_InfomapWrapper_run__SWIG_2(PyObject *self, Py_ssize_t
   }
   arg2 = reinterpret_cast< infomap::Network * >(argp2);
   {
+    arg1->setInterruptHandler(&infomapHostInterruptPoll, nullptr);
     try {
       (arg1)->run(*arg2);
+    } catch (const infomap::InterruptionError&) {
+      arg1->clearInterruptHandler();
+      
+      // PyErr_CheckSignals already set KeyboardInterrupt — propagate it rather
+      // than masking it with a generic RuntimeError.
+      if (PyErr_Occurred()) SWIG_fail;
+      
+      SWIG_exception(SWIG_RuntimeError, "Infomap run interrupted.");
     } catch (const std::exception& e) {
+      arg1->clearInterruptHandler();
       SWIG_exception(SWIG_RuntimeError, e.what());
     }
+    arg1->clearInterruptHandler();
   }
   resultobj = SWIG_Py_Void();
   return resultobj;
