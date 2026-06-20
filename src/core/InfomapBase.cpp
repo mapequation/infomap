@@ -2351,6 +2351,10 @@ unsigned int InfomapBase::findHierarchicalSuperModules(unsigned int superLevelLi
     auto& superInfomap = getSuperInfomap(tmp)
                              .setTwoLevel(true);
     superInfomap.initNetwork(m_root, true); //.initSuperNetwork();
+    // An InterruptionError from this run() unwinds cleanly: `tmp` owns the super
+    // Infomap, so ~InfoNode frees it on unwinding. Unlike the sub-Infomap sites
+    // (which dispose eagerly before rethrowing), no explicit catch is needed
+    // here because the owner is a local. Issue #412.
     superInfomap.run();
     if (shouldMuteNestedMainRun) {
       Log::setSilent(isSilent);

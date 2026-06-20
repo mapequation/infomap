@@ -265,7 +265,9 @@ public:
 
   // Thread-safe, non-throwing. Any thread (e.g. a host UI/cancel thread) may call
   // this to request cancellation; the owner thread and all worker threads observe
-  // the same flag and stop at the next checkpoint.
+  // the flag at their next checkpoint. The store is relaxed (the flag carries no
+  // companion data), so visibility is eventual — the real cross-thread ordering
+  // comes from the OpenMP region/taskwait joins, not from this flag.
   void requestInterrupt() noexcept { m_cancel->store(true, std::memory_order_relaxed); }
 
   bool interruptRequested() const noexcept { return m_cancel->load(std::memory_order_relaxed); }

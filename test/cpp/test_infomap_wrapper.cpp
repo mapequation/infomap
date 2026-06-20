@@ -6,11 +6,13 @@
 
 #include "TestUtils.h"
 
+#include <atomic>
 #include <cstdio>
 #include <iostream>
 #include <set>
 #include <sstream>
 #include <string>
+#include <thread>
 #include <tuple>
 #include <vector>
 
@@ -145,6 +147,13 @@ double runSingleTrialFixtureWith(unsigned int seed, const std::string& extraFlag
 bool alwaysInterrupt(void*) { return true; }
 bool neverInterrupt(void*) { return false; }
 
+// Counts how many times the owner-thread checkpoint polled the handler.
+bool countPolls(void* data)
+{
+  ++*static_cast<int*>(data);
+  return false;
+}
+
 // Returns false for the first *(int*)data polls, then true — lets the run get
 // past the entry checkpoint so a later poll point is exercised.
 bool interruptAfter(void* data)
@@ -156,6 +165,25 @@ bool interruptAfter(void* data)
   return false;
 }
 
+// A network of `clusters` weakly-linked 4-cliques: big and modular enough that
+// the run builds a real hierarchy and spawns OpenMP tasks in recursivePartition,
+// so the in-task cancellation paths are actually exercised (ninetriangles is too
+// small for that).
+void buildClusteredNetwork(InfomapWrapper& im, unsigned int clusters)
+{
+  for (unsigned int c = 0; c < clusters; ++c) {
+    const unsigned int b = c * 4 + 1;
+    im.addLink(b, b + 1);
+    im.addLink(b, b + 2);
+    im.addLink(b, b + 3);
+    im.addLink(b + 1, b + 2);
+    im.addLink(b + 1, b + 3);
+    im.addLink(b + 2, b + 3);
+    if (c > 0)
+      im.addLink(b, b - 4);
+  }
+}
+
 TEST_CASE("Run throws InterruptionError when the handler requests cancellation [fast][core][lifecycle][crash]")
 {
   InfomapWrapper im("--silent --seed 1 --num-trials 1 --no-file-output");
@@ -165,27 +193,41 @@ TEST_CASE("Run throws InterruptionError when the handler requests cancellation [
   CHECK_THROWS_AS(im.run(), infomap::InterruptionError);
 }
 
-TEST_CASE("Interruption part-way through a run still aborts it [fast][core][lifecycle][crash]")
+TEST_CASE("The in-optimizer cancellation checkpoint is reached during a run [fast][core][lifecycle]")
 {
   InfomapWrapper im("--silent --seed 1 --num-trials 1 --no-file-output");
   im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
-  int polls = 1; // pass the entry checkpoint, then cancel at the next one
-  im.setInterruptHandler(&interruptAfter, &polls);
-
-  CHECK_THROWS_AS(im.run(), infomap::InterruptionError);
-}
-
-TEST_CASE("A non-cancelling interrupt handler leaves the run unchanged [fast][core][lifecycle]")
-{
-  InfomapWrapper im(infomap::test::defaultFlags());
-  infomap::test::addEdgeFixtureLinks(im, "graphs/twotriangles_unweighted.edges");
-  im.setInterruptHandler(&neverInterrupt);
+  int polls = 0;
+  im.setInterruptHandler(&countPolls, &polls);
 
   im.run();
 
   infomap::test::checkRunSanity(im);
-  CHECK(im.numTopModules() == 2);
-  infomap::test::checkCanonicalPartition(im, { { 1, 2, 3 }, { 4, 5, 6 } });
+  // The owner-thread checkpoints outside optimization are exactly two for a
+  // single-trial run: run() entry and the per-trial loop. Anything beyond that
+  // must come from the optimizer core loop, so > 2 proves the in-optimizer poll
+  // fires. Guards against silently dropping it (which would drop count to 2 and
+  // leave mid-run cancellation untested) — see review finding F1.
+  CHECK(polls > 2);
+}
+
+TEST_CASE("A non-cancelling handler produces the same result as a no-handler run [fast][core][lifecycle]")
+{
+  // Reference: no handler installed at all.
+  InfomapWrapper ref("--silent --seed 1 --num-trials 1 --no-file-output");
+  ref.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+  ref.run();
+
+  InfomapWrapper im("--silent --seed 1 --num-trials 1 --no-file-output");
+  im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+  im.setInterruptHandler(&neverInterrupt);
+  im.run();
+
+  infomap::test::checkRunSanity(im);
+  // Installing a (non-cancelling) handler must not change the objective or the
+  // partition — the poll points are inert on the no-cancel path (F5).
+  CHECK(infomap::test::canonicalPartition(im.getModules()) == infomap::test::canonicalPartition(ref.getModules()));
+  CHECK(im.codelength() == doctest::Approx(ref.codelength()));
 }
 
 TEST_CASE("requestInterrupt() aborts the run even when the handler returns false [fast][core][lifecycle][crash]")
@@ -204,21 +246,112 @@ TEST_CASE("requestInterrupt() aborts the run even when the handler returns false
   CHECK_THROWS_AS(im.run(), infomap::InterruptionError);
 }
 
-TEST_CASE("An interrupted instance runs cleanly after the handler is cleared [fast][core][lifecycle][crash]")
+// Runs `seed-1 ninetriangles`, cancels inside the optimization phase, clears the
+// handler, and reruns to completion — returning the recovered result. NOTE we do
+// NOT compare against a *fresh* instance: the RNG is seeded once at construction
+// and not reset per run(), so an interrupted run advances it by a different
+// amount than a clean run, and a reused instance legitimately differs from a
+// fresh one on this RNG-sensitive network (that is not corruption).
+std::pair<std::vector<std::vector<unsigned int>>, double> interruptThenRecover()
 {
   InfomapWrapper im("--silent --seed 1 --num-trials 1 --no-file-output");
   im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
-
-  int polls = 3; // get into the optimization phase before cancelling
+  int polls = 3; // cancel inside the optimization phase
   im.setInterruptHandler(&interruptAfter, &polls);
   CHECK_THROWS_AS(im.run(), infomap::InterruptionError);
 
-  // After clearing the handler the same instance must run to completion, proving
-  // the interrupted run left no corrupt state and the cancel flag was reset.
   im.clearInterruptHandler();
   im.run();
   infomap::test::checkRunSanity(im);
-  CHECK(im.numTopModules() > 1);
+  return { infomap::test::canonicalPartition(im.getModules()), im.codelength() };
+}
+
+TEST_CASE("An interrupted instance recovers to a sane, deterministic result [fast][core][lifecycle][crash]")
+{
+  // Two instances driven through the identical interrupt+clear+rerun sequence
+  // must produce the identical result: the interrupted run left no corrupt or
+  // nondeterministic state and the cancel flag was reset (F4). A sane recovered
+  // partition (>1 module, finite codelength) is checked via checkRunSanity.
+  const auto a = interruptThenRecover();
+  const auto b = interruptThenRecover();
+
+  CHECK(a.first == b.first);
+  CHECK(a.second == doctest::Approx(b.second));
+  CHECK(a.first.size() > 1);
+}
+
+// Cancelling a run from another thread while OpenMP workers are in flight must
+// never let an exception escape an OpenMP region (which would std::terminate),
+// and a cancelled run must surface as InterruptionError — never a generic
+// "Parallel trial failed" / wrong-type error (review finding F3). Both tests are
+// outcome-robust: completing the run (canceller lost the race) is also fine; the
+// only failures are a process terminate (we never reach the assertion) or the
+// wrong exception type.
+TEST_CASE("Cancelling a --parallel-trials run never terminates and surfaces InterruptionError [fast][core][lifecycle][crash]")
+{
+  InfomapWrapper im("--silent --seed 1 --num-trials 200 --parallel-trials --no-file-output");
+  buildClusteredNetwork(im, 800);
+
+  std::atomic<bool> started { false };
+  std::atomic<bool> done { false };
+  // The handler only signals that the run is underway (never cancels), so the
+  // canceller waits until then before flipping the shared flag — maximising the
+  // chance the flag is set while the parallel-trial workers are running.
+  im.setInterruptHandler([](void* d) { static_cast<std::atomic<bool>*>(d)->store(true); return false; }, &started);
+  std::thread canceller([&] {
+    while (!started.load() && !done.load()) { }
+    while (!done.load())
+      im.requestInterrupt();
+  });
+
+  std::string outcome;
+  try {
+    im.run();
+    outcome = "completed";
+  } catch (const infomap::InterruptionError&) {
+    outcome = "interrupted";
+  } catch (const std::exception& e) {
+    outcome = std::string("wrong-type: ") + e.what();
+  }
+  done.store(true);
+  canceller.join();
+
+  // Completing (the canceller lost the race) or InterruptionError are both fine;
+  // a wrong-type exception fails, and a std::terminate would crash before here.
+  INFO("run outcome: " << outcome);
+  CHECK(outcome.rfind("wrong-type:", 0) != 0);
+}
+
+TEST_CASE("Cancelling a recursive run from another thread never terminates [fast][core][lifecycle][crash]")
+{
+  InfomapWrapper im("--silent --seed 1 --num-trials 1 --no-file-output");
+  buildClusteredNetwork(im, 1200);
+
+  std::atomic<bool> started { false };
+  std::atomic<bool> done { false };
+  im.setInterruptHandler([](void* d) { static_cast<std::atomic<bool>*>(d)->store(true); return false; }, &started);
+  std::thread canceller([&] {
+    while (!started.load() && !done.load()) { }
+    while (!done.load())
+      im.requestInterrupt();
+  });
+
+  std::string outcome;
+  try {
+    im.run();
+    outcome = "completed";
+  } catch (const infomap::InterruptionError&) {
+    outcome = "interrupted";
+  } catch (const std::exception& e) {
+    outcome = std::string("wrong-type: ") + e.what();
+  }
+  done.store(true);
+  canceller.join();
+
+  // Completing (the canceller lost the race) or InterruptionError are both fine;
+  // a wrong-type exception fails, and a std::terminate would crash before here.
+  INFO("run outcome: " << outcome);
+  CHECK(outcome.rfind("wrong-type:", 0) != 0);
 }
 
 TEST_CASE("Infomap partitions the unweighted two-triangle fixture into two modules [fast][core][lifecycle]")
