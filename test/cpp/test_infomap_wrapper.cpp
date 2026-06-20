@@ -140,6 +140,87 @@ double runSingleTrialFixtureWith(unsigned int seed, const std::string& extraFlag
   return im.codelength();
 }
 
+// Interrupt-handler callbacks (signature `bool(*)(void*)`): return true to
+// request cooperative cancellation of the current run.
+bool alwaysInterrupt(void*) { return true; }
+bool neverInterrupt(void*) { return false; }
+
+// Returns false for the first *(int*)data polls, then true — lets the run get
+// past the entry checkpoint so a later poll point is exercised.
+bool interruptAfter(void* data)
+{
+  auto* remaining = static_cast<int*>(data);
+  if (*remaining <= 0)
+    return true;
+  --*remaining;
+  return false;
+}
+
+TEST_CASE("Run throws InterruptionError when the handler requests cancellation [fast][core][lifecycle][crash]")
+{
+  InfomapWrapper im("--silent --seed 1 --num-trials 1 --no-file-output");
+  im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+  im.setInterruptHandler(&alwaysInterrupt);
+
+  CHECK_THROWS_AS(im.run(), infomap::InterruptionError);
+}
+
+TEST_CASE("Interruption part-way through a run still aborts it [fast][core][lifecycle][crash]")
+{
+  InfomapWrapper im("--silent --seed 1 --num-trials 1 --no-file-output");
+  im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+  int polls = 1; // pass the entry checkpoint, then cancel at the next one
+  im.setInterruptHandler(&interruptAfter, &polls);
+
+  CHECK_THROWS_AS(im.run(), infomap::InterruptionError);
+}
+
+TEST_CASE("A non-cancelling interrupt handler leaves the run unchanged [fast][core][lifecycle]")
+{
+  InfomapWrapper im(infomap::test::defaultFlags());
+  infomap::test::addEdgeFixtureLinks(im, "graphs/twotriangles_unweighted.edges");
+  im.setInterruptHandler(&neverInterrupt);
+
+  im.run();
+
+  infomap::test::checkRunSanity(im);
+  CHECK(im.numTopModules() == 2);
+  infomap::test::checkCanonicalPartition(im, { { 1, 2, 3 }, { 4, 5, 6 } });
+}
+
+TEST_CASE("requestInterrupt() aborts the run even when the handler returns false [fast][core][lifecycle][crash]")
+{
+  InfomapWrapper im("--silent --seed 1 --num-trials 1 --no-file-output");
+  im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+  // The handler never returns true; it sets the cancel flag directly, proving
+  // the thread-safe flag path is observed independently of the callback return.
+  im.setInterruptHandler(
+      [](void* data) {
+        static_cast<InfomapWrapper*>(data)->requestInterrupt();
+        return false;
+      },
+      &im);
+
+  CHECK_THROWS_AS(im.run(), infomap::InterruptionError);
+}
+
+TEST_CASE("An interrupted instance runs cleanly after the handler is cleared [fast][core][lifecycle][crash]")
+{
+  InfomapWrapper im("--silent --seed 1 --num-trials 1 --no-file-output");
+  im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+
+  int polls = 3; // get into the optimization phase before cancelling
+  im.setInterruptHandler(&interruptAfter, &polls);
+  CHECK_THROWS_AS(im.run(), infomap::InterruptionError);
+
+  // After clearing the handler the same instance must run to completion, proving
+  // the interrupted run left no corrupt state and the cancel flag was reset.
+  im.clearInterruptHandler();
+  im.run();
+  infomap::test::checkRunSanity(im);
+  CHECK(im.numTopModules() > 1);
+}
+
 TEST_CASE("Infomap partitions the unweighted two-triangle fixture into two modules [fast][core][lifecycle]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());

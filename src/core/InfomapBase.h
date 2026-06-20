@@ -27,10 +27,12 @@
 #include <deque>
 #include <map>
 #include <array>
+#include <atomic>
 #include <stdexcept>
 #include <limits>
 #include <memory>
 #include <string>
+#include <thread>
 #include <ostream>
 
 namespace infomap {
@@ -40,6 +42,22 @@ namespace detail {
   struct PartitionTaskRecord;
   struct PerLevelStat;
 } // namespace detail
+
+// Cooperative cancellation hook for embedders (igraph, R, Python, ...). The
+// callback returns true to request that the current run stop at the next safe
+// checkpoint. It is invoked ONLY on the owner thread (the thread that called
+// run()), so it is safe to enter host-language APIs such as R_CheckUserInterrupt
+// from it. Worker threads never call it; they only observe a thread-safe flag.
+// See issue #412.
+using InterruptCallback = bool (*)(void* userData);
+
+// Thrown out of run() when a run is cancelled cooperatively. Derives from
+// std::runtime_error so existing catch(const std::exception&) paths still unwind
+// and release resources cleanly.
+class InterruptionError : public std::runtime_error {
+public:
+  InterruptionError() : std::runtime_error("Infomap run interrupted.") {}
+};
 
 class InfomapBase : public InfomapConfig<InfomapBase> {
   template <typename Objective>
@@ -222,6 +240,36 @@ public:
 
   void run(Network& network);
 
+  // ===================================================
+  // Cooperative interruption (issue #412)
+  // ===================================================
+
+  // Register a cancellation poll handler. It is called only on the owner thread
+  // at safe checkpoints during run(); return true from it to abort the run with
+  // an InterruptionError. The default (no handler) path is unchanged.
+  InfomapBase& setInterruptHandler(InterruptCallback callback, void* userData = nullptr)
+  {
+    m_interruptCallback = callback;
+    m_interruptUserData = userData;
+    return *this;
+  }
+
+  InfomapBase& clearInterruptHandler()
+  {
+    m_interruptCallback = nullptr;
+    m_interruptUserData = nullptr;
+    return *this;
+  }
+
+  bool hasInterruptHandler() const { return m_interruptCallback != nullptr; }
+
+  // Thread-safe, non-throwing. Any thread (e.g. a host UI/cancel thread) may call
+  // this to request cancellation; the owner thread and all worker threads observe
+  // the same flag and stop at the next checkpoint.
+  void requestInterrupt() noexcept { m_cancel->store(true, std::memory_order_relaxed); }
+
+  bool interruptRequested() const noexcept { return m_cancel->load(std::memory_order_relaxed); }
+
 private:
   class RunSession;
 
@@ -253,7 +301,8 @@ private:
     auto& subInfomap = node.setInfomap(getNewInfomapInstance())
                            .setIsMain(false)
                            .setSubLevel(m_subLevel + 1)
-                           .setNonMainConfig(*this);
+                           .setNonMainConfig(*this)
+                           .inheritRuntimeContext(*this);
     // Carry the full-network properties down so entropy bias correction stays consistent
     // across the hierarchy (this used to be a shared static).
     subInfomap.m_optimizer->inheritNetworkPropertiesFrom(*m_optimizer);
@@ -265,7 +314,8 @@ private:
     auto& superInfomap = node.setInfomap(getNewInfomapInstanceWithoutMemory())
                              .setIsMain(false)
                              .setSubLevel(m_subLevel + SUPER_LEVEL_ADDITION)
-                             .setNonMainConfig(*this);
+                             .setNonMainConfig(*this)
+                             .inheritRuntimeContext(*this);
     superInfomap.m_optimizer->inheritNetworkPropertiesFrom(*m_optimizer);
     return superInfomap;
   }
@@ -292,6 +342,39 @@ private:
   bool isMainInfomap() const { return m_isMain; }
 
   bool haveHardPartition() const { return !m_originalLeafNodes.empty(); }
+
+  // Share the cancellation flag (and only that) with a sub/worker Infomap so a
+  // cancel requested anywhere in the run tree is observed everywhere. The host
+  // callback is deliberately NOT inherited: only the main Infomap on the owner
+  // thread ever invokes it; sub/worker instances only read the shared flag.
+  InfomapBase& inheritRuntimeContext(const InfomapBase& other)
+  {
+    m_cancel = other.m_cancel;
+    return *this;
+  }
+
+  // Worker-safe: reads the shared atomic only, never the host callback. May be
+  // called from any thread, but only throw where unwinding is legal (not from
+  // inside an OpenMP structured block).
+  void checkCancelled() const
+  {
+    if (m_cancel->load(std::memory_order_relaxed))
+      throw InterruptionError();
+  }
+
+  // Owner-thread checkpoint: invoke the host callback (safe to enter R/Python
+  // here), promote a true result into the shared flag, then throw if cancelled.
+  // The thread-id guard keeps the callback off worker threads even when this
+  // very object's methods run inside the task graph; off-thread it degrades to
+  // a plain flag check.
+  void pollInterrupt()
+  {
+    if (m_interruptCallback != nullptr
+        && std::this_thread::get_id() == m_ownerThreadId
+        && m_interruptCallback(m_interruptUserData))
+      m_cancel->store(true, std::memory_order_relaxed);
+    checkCancelled();
+  }
 
   // ===================================================
   // Run: *
@@ -607,6 +690,18 @@ protected:
   Stopwatch m_elapsedTime = Stopwatch(false);
   std::string m_initialParameters;
   std::string m_currentParameters;
+
+  // Cooperative interruption (issue #412). m_cancelRequested is the canonical
+  // flag owned by the main instance; m_cancel points at it (self by default,
+  // re-pointed at the main's flag for sub/worker instances via
+  // inheritRuntimeContext) so the whole run tree shares one observable flag.
+  // The callback lives only on the main instance and is only ever called on the
+  // owner thread (stamped in run(Network&)).
+  std::atomic<bool> m_cancelRequested { false };
+  std::atomic<bool>* m_cancel = &m_cancelRequested;
+  InterruptCallback m_interruptCallback = nullptr;
+  void* m_interruptUserData = nullptr;
+  std::thread::id m_ownerThreadId;
 
   std::unique_ptr<InfomapOptimizerBase> m_optimizer;
 };
