@@ -8,6 +8,9 @@
 
 #include "TestUtils.h"
 
+#include <cstdio>
+#include <sstream>
+
 using infomap::InfomapWrapper;
 
 namespace {
@@ -24,10 +27,26 @@ constexpr double kSteeringStrength = 1.0;
 
 std::string treeOf(const std::string& extraFlags)
 {
+  // writeTree() writes a .tree file and returns its PATH, not the contents, so
+  // capture the actual tree by writing to a unique temp file and reading it back
+  // (a fresh path per call avoids the overwrite guard on repeated comparisons).
+  // Strip the leading "#" comment lines: they echo the command line and a timing
+  // line, which differ across runs/flags even when the partition is identical, so
+  // comparing the stripped body is the real byte-identity check.
+  static int counter = 0;
+  const std::string path = "preferred_levels_test_" + std::to_string(counter++) + ".tree";
   InfomapWrapper im(infomap::test::defaultFlags(extraFlags));
   infomap::test::readNetworkFixture(im, "unbalanced_hierarchy.net");
   im.run();
-  return im.writeTree(""); // empty filename returns the tree as a string
+  im.writeTree(path);
+  const std::string raw = infomap::test::readTextFile(path);
+  std::remove(path.c_str());
+  std::string body;
+  std::istringstream in(raw);
+  for (std::string line; std::getline(in, line);) {
+    if (line.empty() || line[0] != '#') body += line + '\n';
+  }
+  return body;
 }
 
 unsigned int levelsOf(const std::string& extraFlags)

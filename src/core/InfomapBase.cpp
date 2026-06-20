@@ -2373,17 +2373,11 @@ unsigned int InfomapBase::findHierarchicalSuperModules(unsigned int superLevelLi
     // No-op when twoLevel (this path isn't reached then anyway) or when the
     // preference is unset/zero-strength.
     //
-    // SOUNDNESS: the reference scale must be STABLE across super iterations,
-    // NOT `oldIndexLength`. `oldIndexLength` collapses geometrically
-    // (0.25 -> 0.005 -> 7e-5 -> ...), so after the first accepted super level the
-    // bias magnitude vanishes and deeper super levels become un-rejectable. That
-    // asymmetry — the recursion site uses the *stable* `oldModuleCodelength`, so
-    // it keeps its teeth — is exactly what let the super phase build a deep index
-    // skeleton that the recursion then truncated, yielding a degenerate coarse
-    // partition. Using the stable `hierarchicalCodelength` (full working
-    // codelength, ~constant across super iters) gives the super site consistent
-    // suppression strength at every level, so shallower steering collapses the
-    // skeleton monotonically as strength grows instead of half-building it.
+    // Depth prior (issue #308): superPrefBias is a real -log2 P term in bits,
+    // added directly to the index-codebook comparison below. It depends only on
+    // the depth this super level would create -- not on any codelength scale --
+    // so it needs no stable reference and stays well-behaved across super
+    // iterations (no geometric collapse, no half-built skeletons).
     const double superPrefBias = twoLevel
         ? 0.0
         : prefLevelsBias(preferredNumberOfLevels, preferredNumberOfLevelsStrength, prefBaseDepth + numLevelsCreated + 1);
