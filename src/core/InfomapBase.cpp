@@ -60,40 +60,11 @@ namespace infomap {
 
 namespace {
 
-  // ===========================================================================
-  // Soft --preferred-number-of-levels, issue #308 (hierarchy-stage bias,
-  // Option C). The preference is a signed offset added to the accept-test
-  // margin at the two multilevel hierarchy-stage accept sites. It is soft and
-  // asymmetric:
-  //   * SHALLOWER than the unconstrained depth is reliable: a negative bias
-  //     raises the acceptance bar, steering the tree toward the target at a
-  //     small codelength cost.
-  //   * DEEPER is best-effort only: a positive bias lowers the bar, but the
-  //     extra levels still have to be proposed by the optimizer. We do not
-  //     rewrite the propose/search path, so deeper steering is bounded by what
-  //     the optimizer offers.
-  // Positive bias = easier to accept (push deeper below the target); negative
-  // bias = harder to accept (push shallower at/above the target).
-  // ===========================================================================
-
-  // Signed depth-prior bias for a hierarchy-stage accept test, expressed in real
-  // bits of description length (directly commensurable with the map-equation
-  // codelength). We model each "create this level?" decision as a Bernoulli with
-  // a prior probability of descending to depth `currentDepth` of
-  //   p = sigmoid(strength * (target - currentDepth + 0.5)).
-  // Augmenting the objective with the prior's -log2 P(depth) makes the accept
-  // test's bias the log-odds log2(p / (1 - p)), which simplifies to the closed
-  // form below (the sigmoid cancels). `target` is the preferred depth (0 disables
-  // the preference); `strength` is the prior's sharpness (non-positive disables
-  // it: the CLI enforces min 0, but the public Config field is binding-settable,
-  // so a negative would otherwise invert the bias). The result is ADDED to the
-  // threshold's `old` term, i.e. accept iff candidate < old - minImprovement + bias.
-  // The +0.5 puts the sign flip between depth `target` and `target + 1`:
-  //   currentDepth <= target -> bias > 0 (accept the level, toward target)
-  //   currentDepth >  target -> bias < 0 (reject, stay shallower).
-  // Because the bias depends only on depth (not a collapsing codelength scale) it
-  // stays stable across super-iterations, and its strength is network-size
-  // independent, so a single default strength works across network sizes.
+  // Depth-prior bias (bits) for a hierarchy-stage accept test: the log-odds of a
+  // Bernoulli depth prior, added to the codelength comparison. > 0 below the target
+  // depth (toward deeper), < 0 above. Disabled for target 0 or strength <= 0 (a
+  // negative would invert it; the public Config field is binding-settable).
+  // Derivation: issue #308.
   double prefLevelsBias(unsigned int target, double strength, unsigned int currentDepth)
   {
     if (target == 0 || strength <= 0.0)
@@ -2326,10 +2297,7 @@ unsigned int InfomapBase::findHierarchicalSuperModules(unsigned int superLevelLi
   double hierarchicalCodelength = getCodelength();
   double workingHierarchicalCodelength = hierarchicalCodelength;
 
-  // #308: depth of the tree before adding super (index) levels. Each accepted
-  // super-level adds one level ABOVE, so the depth this iteration would create
-  // is baseDepth + numLevelsCreated + 1.
-  const unsigned int prefBaseDepth = numLevels();
+  const unsigned int prefBaseDepth = numLevels(); // #308: depth before super levels are added
 
   if (!haveModules())
     throw std::logic_error("Trying to find hierarchical super modules without any modules");
@@ -2366,18 +2334,7 @@ unsigned int InfomapBase::findHierarchicalSuperModules(unsigned int superLevelLi
       break;
     }
 
-    // #308: bias the super-level (index level above) accept test. The depth
-    // this super-level would create is prefBaseDepth + numLevelsCreated + 1.
-    // Below target -> positive bias lowers the bar (accept more super levels,
-    // deeper); at/above target -> negative bias raises the bar (shallower).
-    // No-op when twoLevel (this path isn't reached then anyway) or when the
-    // preference is unset/zero-strength.
-    //
-    // Depth prior (issue #308): superPrefBias is a real -log2 P term in bits,
-    // added directly to the index-codebook comparison below. It depends only on
-    // the depth this super level would create -- not on any codelength scale --
-    // so it needs no stable reference and stays well-behaved across super
-    // iterations (no geometric collapse, no half-built skeletons).
+    // #308: bias the super-level accept test by the depth it would create.
     const double superPrefBias = twoLevel
         ? 0.0
         : prefLevelsBias(preferredNumberOfLevels, preferredNumberOfLevelsStrength, prefBaseDepth + numLevelsCreated + 1);
@@ -2825,18 +2782,7 @@ void InfomapBase::partitionModuleRecursively(InfoNode& module, unsigned int leve
   InfoNode& subRoot = *module.getInfomapRoot();
   unsigned int numSubModules = subRoot.childDegree();
   bool trivialSubPartition = numSubModules == 1 || numSubModules == module.childDegree();
-  // #308: bias the recursive-refinement accept test using the LOCAL recursion
-  // depth. `level` is this module's depth; accepting its sub-partition pushes
-  // leaves to level+1, so the depth created is ~level+1. Below target ->
-  // positive bias lowers the bar (refine more, deeper); at/above target ->
-  // negative bias raises the bar (refine less, shallower). No-op when twoLevel
-  // (recursion isn't entered then) or when the preference is unset/zero-strength.
-  // Using the LOCAL `level` (rather than a flow-weighted depth statistic) is a
-  // known limitation: it treats every branch's depth independently, so for very
-  // unbalanced hierarchies the steered depth can differ from a flow-weighted
-  // target. A flow-weighted regularizer (issue #308 track D) is left as future
-  // work; the stable `oldModuleCodelength` reference keeps this site's bias from
-  // collapsing across the recursion.
+  // #308: bias the refinement accept test by the local recursion depth (level + 1).
   const double subPrefBias = twoLevel
       ? 0.0
       : prefLevelsBias(preferredNumberOfLevels, preferredNumberOfLevelsStrength, level + 1);
