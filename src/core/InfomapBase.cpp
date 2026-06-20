@@ -60,6 +60,20 @@ namespace infomap {
 
 namespace {
 
+  // Depth-prior bias (bits) for a hierarchy-stage accept test: the log-odds of a
+  // Bernoulli depth prior, added to the codelength comparison. > 0 below the target
+  // depth (toward deeper), < 0 above. Disabled for target 0 or strength <= 0 (a
+  // negative would invert it; the public Config field is binding-settable).
+  // Derivation: issue #308.
+  double prefLevelsBias(unsigned int target, double strength, unsigned int currentDepth)
+  {
+    if (target == 0 || strength <= 0.0)
+      return 0.0;
+    constexpr double ln2 = 0.6931471805599453;
+    const double delta = static_cast<double>(static_cast<int>(target) - static_cast<int>(currentDepth));
+    return strength * (delta + 0.5) / ln2;
+  }
+
   std::string compressionSummary(const std::vector<std::string>& compression)
   {
     if (compression.empty())
@@ -2283,6 +2297,8 @@ unsigned int InfomapBase::findHierarchicalSuperModules(unsigned int superLevelLi
   double hierarchicalCodelength = getCodelength();
   double workingHierarchicalCodelength = hierarchicalCodelength;
 
+  const unsigned int prefBaseDepth = numLevels(); // #308: depth before super levels are added
+
   if (!haveModules())
     throw std::logic_error("Trying to find hierarchical super modules without any modules");
 
@@ -2318,7 +2334,11 @@ unsigned int InfomapBase::findHierarchicalSuperModules(unsigned int superLevelLi
       break;
     }
 
-    bool improvedCodelength = superCodelength < oldIndexLength - minimumCodelengthImprovement;
+    // #308: bias the super-level accept test by the depth it would create.
+    const double superPrefBias = twoLevel
+        ? 0.0
+        : prefLevelsBias(preferredNumberOfLevels, preferredNumberOfLevelsStrength, prefBaseDepth + numLevelsCreated + 1);
+    bool improvedCodelength = superCodelength < oldIndexLength - minimumCodelengthImprovement + superPrefBias;
     if (!improvedCodelength) {
       Console::detail(1, "super: index codebook not improved over one-level");
       break;
@@ -2762,7 +2782,11 @@ void InfomapBase::partitionModuleRecursively(InfoNode& module, unsigned int leve
   InfoNode& subRoot = *module.getInfomapRoot();
   unsigned int numSubModules = subRoot.childDegree();
   bool trivialSubPartition = numSubModules == 1 || numSubModules == module.childDegree();
-  bool improvedCodelength = subCodelength < oldModuleCodelength - minimumCodelengthImprovement;
+  // #308: bias the refinement accept test by the local recursion depth (level + 1).
+  const double subPrefBias = twoLevel
+      ? 0.0
+      : prefLevelsBias(preferredNumberOfLevels, preferredNumberOfLevelsStrength, level + 1);
+  bool improvedCodelength = subCodelength < oldModuleCodelength - minimumCodelengthImprovement + subPrefBias;
 
   if (trivialSubPartition || !improvedCodelength) {
     Console::detail(1, "disposing unaccepted sub Infomap instance");
