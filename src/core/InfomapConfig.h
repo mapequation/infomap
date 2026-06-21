@@ -14,6 +14,7 @@
 #include "../utils/Random.h"
 #include "../utils/Log.h"
 #include <string>
+#include <utility>
 
 namespace infomap {
 
@@ -58,7 +59,11 @@ public:
 
   Infomap& setConfig(const Config& conf)
   {
-    *this = conf;
+    // Assign only the Config base so an injected RNG engine on m_rand survives a
+    // config update (a plain `*this = conf` would convert conf to a temporary
+    // InfomapConfig and overwrite m_rand with a fresh default engine). The
+    // default-engine case is unchanged: m_rand stays default and is reseeded. (#411)
+    static_cast<Config&>(*this) = conf;
     m_rand.seed(conf.seedToRandomNumberGenerator);
     Log::precision(conf.verboseNumberPrecision);
     return get();
@@ -69,6 +74,37 @@ public:
     cloneAsNonMain(conf);
     return get();
   }
+
+#ifndef SWIG
+  // Sub/non-main Infomaps are created from the Config base, so they would start
+  // with a fresh default RNG. This overload propagates the parent's m_rand
+  // (cloning any injected engine) so the whole run tree shares the engine, then
+  // reseeds deterministically — matching the default behaviour when no engine is
+  // injected. Native-only; not exposed through the language bindings. (#411)
+  Infomap& setNonMainConfig(const InfomapConfig& conf)
+  {
+    cloneAsNonMain(conf);
+    m_rand = conf.m_rand;
+    m_rand.seed(conf.seedToRandomNumberGenerator);
+    return get();
+  }
+
+  /**
+   * Install a seedable, standard-engine-compatible RNG for native embedders
+   * (e.g. igraph), keeping Infomap's default behaviour unchanged when unused.
+   *
+   * Example:
+   *   im.setRandomEngine(MyEngine{});
+   *   im.reseed(123);
+   */
+  template <typename Engine>
+  Infomap& setRandomEngine(Engine engine)
+  {
+    m_rand.setEngine(std::move(engine));
+    m_rand.seed(seedToRandomNumberGenerator);
+    return get();
+  }
+#endif
 
   Infomap& setNumTrials(unsigned int N)
   {
