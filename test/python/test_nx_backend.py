@@ -105,10 +105,25 @@ def test_seed_and_num_trials_forwarded_to_infomap(monkeypatch):
     assert captured["two_level"] is True
 
 
-def test_multigraph_is_rejected():
-    G = nx.MultiGraph([(0, 1), (0, 1), (1, 2)])
-    with pytest.raises(nx.NetworkXNotImplemented):
-        nx.community.infomap_communities(G, backend="infomap")
+@pytest.mark.parametrize(
+    ("multi", "simple"),
+    [(nx.MultiGraph, nx.Graph), (nx.MultiDiGraph, nx.DiGraph)],
+)
+def test_multigraph_parallel_edges_are_summed(multi, simple):
+    """The backend accepts (di)multigraphs: add_networkx_graph sums parallel
+    edges, so the result matches the equivalent weighted simple graph. Two
+    triangles with heavy (3x parallel) intra-group edges and a single light
+    bridge -- the two groups are distinct only if the parallel edges are summed,
+    so this would fail if they were dropped or counted once."""
+    intra = [(0, 1), (1, 2), (2, 0), (3, 4), (4, 5), (5, 3)]
+    MG = multi([e for e in intra for _ in range(3)] + [(2, 3)])
+    SG = simple()
+    SG.add_weighted_edges_from([(*e, 3) for e in intra] + [(2, 3, 1)])
+    mg_part = nx.community.infomap_communities(MG, backend="infomap", seed=42)
+    assert nx.community.is_partition(MG, mg_part)
+    assert len(mg_part) >= 2  # structure recovered, not collapsed to one module
+    sg_part = nx.community.infomap_communities(SG, backend="infomap", seed=42)
+    assert _normalized(mg_part) == _normalized(sg_part)
 
 
 def test_isolated_node_is_retained():

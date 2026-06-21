@@ -26,12 +26,8 @@ def _build_infomap(G, weight, options):
     for recovering the original node labels. Graph-ingestion options are routed
     to :meth:`Infomap.add_networkx_graph`; everything else configures Infomap.
     """
-    if G.is_multigraph():
-        import networkx as nx
-
-        raise nx.NetworkXNotImplemented(
-            "the infomap backend does not support multigraphs"
-        )
+    # Multigraphs are accepted: add_networkx_graph sums parallel edges, matching
+    # the native infomap_communities (and Louvain).
     options = dict(options)
     options.setdefault("silent", True)
     options.setdefault("no_file_output", True)
