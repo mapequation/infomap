@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
+from math import isfinite
 from typing import Any
 
 
@@ -175,6 +176,18 @@ def add_networkx_graph(
         first = nodes[0]
     except IndexError:
         return {}
+
+    # Flow is a probability distribution, so edge weights must be finite and
+    # non-negative (as already enforced for scipy and edge-index input). Reject
+    # ill-defined weights up front rather than building a meaningless map.
+    if weight is not None:
+        for _, _, data in g.edges.data():
+            w = data.get(weight, 1.0)
+            if not isfinite(w) or w < 0:
+                raise ValueError(
+                    "edge weights must be finite and non-negative; Infomap does "
+                    "not support negative or non-finite weights."
+                )
 
     if not infomap.flowModelIsSet and g.is_directed():
         infomap.setDirected(True)

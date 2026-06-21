@@ -53,6 +53,10 @@ def _build_infomap(G, weight, options):
 
 def _run_infomap(G, weight, seed, num_trials, infomap_kwargs, *, two_level):
     """Build, run, and return ``(im, mapping)`` for the optimizing functions."""
+    # Match the native infomap_communities contract (ValueError, not the C++
+    # RuntimeError) so the two code paths agree.
+    if not isinstance(num_trials, int) or num_trials < 1:
+        raise ValueError("num_trials must be a positive integer")
     options = dict(infomap_kwargs)
     if seed is not None:
         # NetworkX passes a random-state object (py_random_state); Infomap's C++

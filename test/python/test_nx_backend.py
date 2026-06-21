@@ -185,3 +185,22 @@ def test_backend_map_equation_directed_matches_native():
     native = map_equation(G, communities)
     backend = nx.community.map_equation(G, communities, backend="infomap")
     assert backend == pytest.approx(native, abs=1e-6)
+
+
+def test_backend_invalid_num_trials():
+    """num_trials must be a positive integer; the backend raises ValueError (the
+    native contract), not the C++ RuntimeError, so the two paths agree."""
+    G = nx.karate_club_graph()
+    for bad in (0, -1, 1.5):
+        with pytest.raises(ValueError, match="num_trials"):
+            nx.community.infomap_communities(G, backend="infomap", num_trials=bad)
+
+
+def test_backend_rejects_negative_weight():
+    """Negative weights are rejected at ingestion, matching native
+    infomap_communities rather than silently producing a meaningless map."""
+    G = nx.Graph()
+    G.add_edge(0, 1, weight=-1.0)
+    G.add_edge(1, 2, weight=2.0)
+    with pytest.raises(ValueError):
+        nx.community.infomap_communities(G, backend="infomap")
