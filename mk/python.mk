@@ -14,6 +14,7 @@ PYTHON_LINT_TARGETS := \
 	interfaces/python/src/infomap/_bindings.py \
 	interfaces/python/src/infomap/_facade.py \
 	interfaces/python/src/infomap/_networkx.py \
+	interfaces/python/src/infomap/_nx_backend.py \
 	interfaces/python/src/infomap/_optional.py \
 	interfaces/python/src/infomap/_options.py \
 	interfaces/python/src/infomap/_results.py \
@@ -28,6 +29,7 @@ PYTHON_FORMAT_TARGETS := \
 	interfaces/python/src/infomap/_bindings.py \
 	interfaces/python/src/infomap/_facade.py \
 	interfaces/python/src/infomap/_networkx.py \
+	interfaces/python/src/infomap/_nx_backend.py \
 	interfaces/python/src/infomap/_optional.py \
 	interfaces/python/src/infomap/_results.py \
 	interfaces/python/src/infomap/_version.py \
