@@ -537,48 +537,6 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnNo
         continue;
       }
 
-      if (m_config.multilayerRelaxToSelf) {
-        double sumOutWeightOtherLayers = sumOutWeightAllLayers - sumOutLinkWeightLayer1;
-        for (auto& it2 : m_networks) {
-          auto layer2 = it2.first;
-          if (!withinRelaxLimit(layer1, layer2)) {
-            continue;
-          }
-          auto& network2 = it2.second;
-          if (layer2 == layer1) {
-            // Intra-layer step: follow the node's own out-links (relax mass removed).
-            auto& homeOutlinks = network2.nodeLinkMap()[n1];
-            for (auto& outLink : homeOutlinks) {
-              auto& n2 = outLink.first;
-              double intraWeight = outLink.second.weight;
-              double weight = (1.0 - relaxRate) / sumOutLinkWeightLayer1 * intraWeight;
-              if (weight < 1e-16) {
-                continue;
-              }
-              unsigned int stateId2i = addMultilayerNode(layer2, n2);
-              addLink(stateId1, stateId2i, weight);
-            }
-          } else {
-            // Inter-layer step: couple only to the same physical node in the target layer.
-            if (sumOutWeightOtherLayers <= 0) {
-              continue;
-            }
-            double targetOutWeight = network2.outWeights()[n1];
-            if (targetOutWeight <= 0) {
-              continue; // n1 absent/dangling in the target layer -> skip
-            }
-            double weight = relaxRate * targetOutWeight / sumOutWeightOtherLayers;
-            if (weight < 1e-16) {
-              continue;
-            }
-            unsigned int stateId2 = addMultilayerNode(layer2, n1);
-            addLink(stateId1, stateId2, weight);
-            ++m_numInterLayerLinks;
-          }
-        }
-        continue; // next physical node
-      }
-
       for (auto& it2 : m_networks) {
         auto layer2 = it2.first;
         if (!withinRelaxLimit(layer1, layer2)) {
@@ -586,6 +544,25 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnNo
         }
         auto& network2 = it2.second;
         bool isIntra = layer2 == layer1;
+
+        if (m_config.multilayerRelaxToSelf && !isIntra) {
+          // Couple only to the same physical node in the target layer, carrying
+          // the same per-layer relaxation mass the spread model distributes over
+          // the node's neighbours there (r * s_j(n) / S_n). The home layer is
+          // left to the spread model below.
+          double targetOutWeight = network2.outWeights()[n1];
+          if (targetOutWeight <= 0) {
+            continue; // n1 absent/dangling in the target layer
+          }
+          double weight = relaxRate * targetOutWeight / sumOutWeightAllLayers;
+          if (weight < 1e-16) {
+            continue;
+          }
+          unsigned int stateId2 = addMultilayerNode(layer2, n1);
+          addLink(stateId1, stateId2, weight);
+          ++m_numInterLayerLinks;
+          continue;
+        }
 
         double linkWeightNormalizationFactor = relaxRate / sumOutWeightAllLayers;
         if (isIntra) {

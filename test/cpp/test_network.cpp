@@ -276,12 +276,13 @@ TEST_CASE("multilayer-relax-to-self couples diagonal nodes in the simulated path
     if (network.nodeId(s) == s11) out[network.nodeId(t)] = w;
   });
 
-  // Exactly the home-layer intra link and one diagonal inter link.
+  // Home layer unchanged from spread; one diagonal inter link carrying the
+  // spread per-layer aggregate.
   CHECK(out.size() == 2);
   CHECK(out.count(sid(1, 2)) == 1);
-  CHECK(out.at(sid(1, 2)) == doctest::Approx(0.85)); // (1-0.15)/1 * 1
+  CHECK(out.at(sid(1, 2)) == doctest::Approx(0.8875)); // home = spread: 0.15/4 + 0.85/1
   CHECK(out.count(sid(2, 1)) == 1);
-  CHECK(out.at(sid(2, 1)) == doctest::Approx(0.15)); // 0.15 * 3 / 3
+  CHECK(out.at(sid(2, 1)) == doctest::Approx(0.1125)); // diagonal aggregate: 0.15 * 3/4
   // No inter links to neighbours in the target layer.
   CHECK(out.count(sid(2, 2)) == 0);
   CHECK(out.count(sid(2, 3)) == 0);
