@@ -461,14 +461,14 @@ void FlowCalculator::calcDirectedFlow(const StateNetwork& network, const Config&
 void FlowCalculator::calcDirectedRelaxToSelfFlow(const StateNetwork& network, const Config& config) noexcept
 {
   // Node flow for --multilayer-relax-to-self. This mirrors calcDirectedFlow but
-  // uses a two-step transition: an intra link is an ordinary one-hop, while a
-  // diagonal link (the same physical node in another layer) is transient -- its
-  // flow is relayed through the target's intra out-links (the deferred relax
-  // intra-step) within the same iteration, so the diagonal node accrues no visit.
-  // The fused diagonal+intra step equals the default spread model's transition,
-  // so the stationary node flow is exactly spread's on the compact O(L*k) network
-  // -- the same two-step trick as calcDirectedBipartiteFlow. The matching link
-  // flow is produced in finalize().
+  // uses a two-step transition: an intra-layer link is an ordinary one-hop, while
+  // an inter-layer link (to the same physical node in another layer) is transient
+  // -- its flow is relayed through the target's intra-layer out-links (the deferred
+  // relax intra-step) within the same iteration, so the inter-layer target accrues
+  // no visit. The fused inter+intra step equals the default spread model's
+  // transition, so the stationary node flow is exactly spread's on the compact
+  // O(L*k) network -- the same two-step trick as calcDirectedBipartiteFlow. The
+  // matching link flow is produced in finalize().
   m_flowMethod = "directed multilayer relax-to-self (two-step)";
   m_teleportation = fmt::format(FMT_STRING("{}, to {}"), config.recordedTeleportation ? "recorded" : "unrecorded", config.teleportToNodes ? "nodes" : "links");
 
@@ -500,45 +500,45 @@ void FlowCalculator::calcDirectedRelaxToSelfFlow(const StateNetwork& network, co
     }
   }
 
-  // Classify links (diagonal vs intra) and accumulate per-node intra out-mass.
+  // Classify links (inter-layer vs intra-layer) and accumulate per-node intra-layer out-mass.
   std::vector<unsigned int> physId(numNodes, 0);
   for (const auto& nodeIt : network.nodes()) {
     physId[nodeIndexMap[nodeIt.second.id]] = nodeIt.second.physicalId;
   }
-  std::vector<char> isDiagonal(flowLinks.size(), 0);
+  std::vector<char> isInterLayer(flowLinks.size(), 0);
   std::vector<double> intraOutSum(numNodes, 0.0);
   for (unsigned int k = 0; k < flowLinks.size(); ++k) {
     const auto& link = flowLinks[k];
     if (physId[link.source] == physId[link.target] && link.source != link.target) {
-      isDiagonal[k] = 1;
+      isInterLayer[k] = 1;
     } else {
       intraOutSum[link.source] += link.flow;
     }
   }
 
   std::vector<double> nodeFlowTmp(numNodes, 0.0);
-  std::vector<double> diagArrived(numNodes, 0.0);
+  std::vector<double> interArrived(numNodes, 0.0);
   double danglingRank;
 
-  // One fused transition step. First pass: every intra link makes the ordinary
-  // one-hop dst += beta * P(src->dst) * src[src], while flow arriving on a diagonal
-  // link is held back in diagArrived (the diagonal node is not visited). Second
-  // pass: push that held-back flow on through the target's intra out-links, split
-  // by their transition probability -- the deferred relax intra-step.
+  // One fused transition step. First pass: every intra-layer link makes the ordinary
+  // one-hop dst += beta * P(src->dst) * src[src], while flow arriving on an inter-layer
+  // link is held back in interArrived (its target is not visited). Second pass: push
+  // that held-back flow on through the target's intra-layer out-links, split by their
+  // transition probability -- the deferred relax intra-step.
   const auto twoStep = [&](const double beta, const std::vector<double>& src, std::vector<double>& dst) {
-    std::fill(diagArrived.begin(), diagArrived.end(), 0.0);
+    std::fill(interArrived.begin(), interArrived.end(), 0.0);
     for (unsigned int k = 0; k < flowLinks.size(); ++k) {
       const auto& link = flowLinks[k];
-      if (isDiagonal[k]) {
-        diagArrived[link.target] += beta * link.flow * src[link.source];
+      if (isInterLayer[k]) {
+        interArrived[link.target] += beta * link.flow * src[link.source];
       } else {
         dst[link.target] += beta * link.flow * src[link.source];
       }
     }
     for (unsigned int k = 0; k < flowLinks.size(); ++k) {
       const auto& link = flowLinks[k];
-      if (!isDiagonal[k] && intraOutSum[link.source] > 0.0) {
-        dst[link.target] += diagArrived[link.source] * link.flow / intraOutSum[link.source];
+      if (!isInterLayer[k] && intraOutSum[link.source] > 0.0) {
+        dst[link.target] += interArrived[link.source] * link.flow / intraOutSum[link.source];
       }
     }
   };
@@ -583,7 +583,7 @@ void FlowCalculator::calcDirectedRelaxToSelfFlow(const StateNetwork& network, co
   }
 
   // Update the links with their global flow from the PageRank values.
-  // (Diagonal links keep a transient value here; finalize() reroutes it.)
+  // (Inter-layer links keep a transient value here; finalize() reroutes it.)
   for (auto& link : flowLinks) {
     link.flow *= beta * nodeFlowTmp[link.source] / sumNodeRank;
   }
@@ -1299,14 +1299,14 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
   }
 
   // Link flow for --multilayer-relax-to-self. calcDirectedRelaxToSelfFlow gave the
-  // nodes spread's flow with a two-step walk; the links need the same treatment. A
-  // diagonal link (i,n)->(j,n) is only the first half of a fused relax step -- the
-  // jump is not coded -- so it must carry no flow of its own. Move each diagonal
-  // link's flow onto the target's intra out-links, split by transition probability
-  // (the deferred intra-step), and drop the diagonal link. The compact one-step
-  // network then carries spread's two-step link flow, while the diagonal state
-  // nodes stay coded so a physical node's copies are held together by the coding
-  // economy of the state network. (Same idea as the bipartite Markov-time-2 handling above.)
+  // nodes spread's flow with a two-step walk; the links need the same treatment. An
+  // inter-layer link (i,n)->(j,n) is only the first half of a fused relax step -- the
+  // jump is not coded -- so it must carry no flow of its own. Move each inter-layer
+  // link's flow onto the target's intra-layer out-links, split by transition
+  // probability (the deferred intra-step), and drop the inter-layer link. The compact
+  // one-step network then carries spread's two-step link flow, while the state nodes
+  // stay coded so a physical node's copies are held together by the coding economy of
+  // the state network. (Same idea as the bipartite Markov-time-2 handling above.)
   if (config.multilayerRelaxToSelf && !network.isBipartite()) {
     std::vector<unsigned int> physId(numNodes, 0);
     for (const auto& nodeIt : network.nodes()) {
@@ -1319,8 +1319,8 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
     std::vector<double> delta(flowLinks.size(), 0.0);
     for (unsigned int k = 0; k < flowLinks.size(); ++k) {
       const auto& link = flowLinks[k];
-      const bool diagonal = physId[link.source] == physId[link.target] && link.source != link.target;
-      if (!diagonal) {
+      const bool interLayer = physId[link.source] == physId[link.target] && link.source != link.target;
+      if (!interLayer) {
         continue;
       }
       const unsigned int t = link.target;
@@ -1331,7 +1331,7 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
         }
       }
       if (sumIntra <= 0.0) {
-        continue; // dangling target: leave the diagonal link as is
+        continue; // dangling target: leave the inter-layer link as is
       }
       const double f = link.flow;
       for (const auto l : outLinks[t]) {
@@ -1339,7 +1339,7 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
           delta[l] += f * flowLinks[l].flow / sumIntra;
         }
       }
-      delta[k] -= f; // drop the diagonal link (jump not coded)
+      delta[k] -= f; // drop the inter-layer link (jump not coded)
     }
     for (unsigned int k = 0; k < flowLinks.size(); ++k) {
       flowLinks[k].flow += delta[k];
