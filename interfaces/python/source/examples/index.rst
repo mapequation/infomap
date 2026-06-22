@@ -21,6 +21,9 @@ Choose a notebook
   and Python shard merging.
 - :doc:`benchmark-performance` — estimate run time and memory from network size,
   threads, trials, and hierarchy depth, with empirical scaling laws.
+- :doc:`multilayer-coupling-schemes` — compare the two multilayer relaxation
+  coupling schemes (spread vs couple-to-self) on state-network size, speed, and
+  partition agreement.
 
 Additional tutorial notebooks
 -----------------------------
@@ -63,6 +66,7 @@ Source notebooks
 - `run-infomap-on-graphrag-tables.ipynb <https://github.com/mapequation/infomap/blob/master/examples/notebooks/run-infomap-on-graphrag-tables.ipynb>`_
 - `run-infomap-on-hpc.ipynb <https://github.com/mapequation/infomap/blob/master/examples/notebooks/run-infomap-on-hpc.ipynb>`_
 - `benchmark-performance.ipynb <https://github.com/mapequation/infomap/blob/master/examples/notebooks/benchmark-performance.ipynb>`_
+- `multilayer-coupling-schemes.ipynb <https://github.com/mapequation/infomap/blob/master/examples/notebooks/multilayer-coupling-schemes.ipynb>`_
 
 .. toctree::
    :hidden:
@@ -75,3 +79,4 @@ Source notebooks
    run-infomap-on-graphrag-tables
    run-infomap-on-hpc
    benchmark-performance
+   multilayer-coupling-schemes
