@@ -761,6 +761,12 @@ const std::vector<ParameterSpec>& parameterCatalog()
         .advanced()
         .configTarget(&Config::multilayerRelaxByJensenShannonDivergence),
     param()
+        .longName("multilayer-relax-to-self")
+        .description("On relaxation, link to the same physical node in the target layer instead of spreading to its out-neighbours.")
+        .group("Algorithm")
+        .advanced()
+        .configTarget(&Config::multilayerRelaxToSelf),
+    param()
         .shortName('s')
         .longName("seed")
         .description("Set the random number generator seed for reproducible results.")
