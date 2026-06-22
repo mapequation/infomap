@@ -460,30 +460,40 @@ void FlowCalculator::calcDirectedFlow(const StateNetwork& network, const Config&
 
 void FlowCalculator::calcDirectedRelaxToSelfFlow(const StateNetwork& network, const Config& config) noexcept
 {
-  // Two-step PageRank for --multilayer-relax-to-self. Intra links are terminal
-  // one-hops; a diagonal (same physical node, other layer) link is transient:
-  // its flow is pushed through the target's intra links (the deferred relax
-  // intra-step) within the same iteration, so the diagonal node accrues no
-  // visit. The fused step equals the spread model's transition, so the node
-  // flow is spread's flow on the compact network. (Cf. calcDirectedBipartiteFlow.)
+  // Node flow for --multilayer-relax-to-self. This mirrors calcDirectedFlow but
+  // uses a two-step transition: an intra link is an ordinary one-hop, while a
+  // diagonal link (the same physical node in another layer) is transient -- its
+  // flow is relayed through the target's intra out-links (the deferred relax
+  // intra-step) within the same iteration, so the diagonal node accrues no visit.
+  // The fused diagonal+intra step equals the default spread model's transition,
+  // so the stationary node flow is exactly spread's on the compact O(L*k) network
+  // -- the same two-step trick as calcDirectedBipartiteFlow. The matching link
+  // flow is produced in finalize().
   m_flowMethod = "directed multilayer relax-to-self (two-step)";
   m_teleportation = fmt::format(FMT_STRING("{}, to {}"), config.recordedTeleportation ? "recorded" : "unrecorded", config.teleportToNodes ? "nodes" : "links");
 
+  // Calculate the teleport rate distribution
   if (config.teleportToNodes) {
     double sumNodeWeights = 0.0;
+
     for (const auto& nodeIt : network.nodes()) {
-      nodeTeleportWeights[nodeIndexMap[nodeIt.second.id]] = nodeIt.second.weight;
-      sumNodeWeights += nodeIt.second.weight;
+      auto& node = nodeIt.second;
+      nodeTeleportWeights[nodeIndexMap[node.id]] = node.weight;
+      sumNodeWeights += node.weight;
     }
+
     normalize(nodeTeleportWeights, sumNodeWeights);
   } else {
+    // Teleport to links
+
+    // Teleport proportionally to out-degree, or in-degree if recorded teleportation.
     for (const auto& link : flowLinks) {
       auto toNode = config.recordedTeleportation ? link.target : link.source;
       nodeTeleportWeights[toNode] += link.flow / sumLinkWeight;
     }
   }
 
-  // Normalize link weights to transition probabilities.
+  // Normalize link weights with respect to its source nodes total out-link weight;
   for (auto& link : flowLinks) {
     if (sumLinkOutWeight[link.source] > 0) {
       link.flow /= sumLinkOutWeight[link.source];
@@ -510,8 +520,11 @@ void FlowCalculator::calcDirectedRelaxToSelfFlow(const StateNetwork& network, co
   std::vector<double> diagArrived(numNodes, 0.0);
   double danglingRank;
 
-  // One fused two-step transition: dst += beta * P(src->dst), with diagonal flow
-  // relayed through the target's intra links instead of resting on the diagonal.
+  // One fused transition step. First pass: every intra link makes the ordinary
+  // one-hop dst += beta * P(src->dst) * src[src], while flow arriving on a diagonal
+  // link is held back in diagArrived (the diagonal node is not visited). Second
+  // pass: push that held-back flow on through the target's intra out-links, split
+  // by their transition probability -- the deferred relax intra-step.
   const auto twoStep = [&](const double beta, const std::vector<double>& src, std::vector<double>& dst) {
     std::fill(diagArrived.begin(), diagArrived.end(), 0.0);
     for (unsigned int k = 0; k < flowLinks.size(); ++k) {
@@ -557,7 +570,9 @@ void FlowCalculator::calcDirectedRelaxToSelfFlow(const StateNetwork& network, co
 
   double sumNodeRank = 1.0;
   double beta = result.beta;
+
   if (!config.recordedTeleportation) {
+    // Take one last (un-teleported) two-step iteration and normalize node flow.
     sumNodeRank = 1.0 - danglingRank;
     nodeFlow.assign(numNodes, 0.0);
     twoStep(1.0, nodeFlowTmp, nodeFlow);
@@ -567,6 +582,8 @@ void FlowCalculator::calcDirectedRelaxToSelfFlow(const StateNetwork& network, co
     beta = 1.0;
   }
 
+  // Update the links with their global flow from the PageRank values.
+  // (Diagonal links keep a transient value here; finalize() reroutes it.)
   for (auto& link : flowLinks) {
     link.flow *= beta * nodeFlowTmp[link.source] / sumNodeRank;
   }
@@ -1281,12 +1298,15 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
     }
   }
 
-  // Variant B for --multilayer-relax-to-self: the relaxing walker takes the
-  // vertical link (i,n)->(j,n) and then an intra-step in layer j. Reroute the
-  // vertical-link flow as that deferred intra-step at the target and drop the
-  // vertical link itself ("the jump is not recorded"), so the one-step network
-  // carries the two-step (spread) flow. The diagonal state nodes stay coded, so
-  // a node's copies are held together by the physical-node coding economy.
+  // Link flow for --multilayer-relax-to-self. calcDirectedRelaxToSelfFlow gave the
+  // nodes spread's flow with a two-step walk; the links need the same treatment. A
+  // diagonal link (i,n)->(j,n) is only the first half of a fused relax step -- the
+  // jump is not coded -- so it must carry no flow of its own. Move each diagonal
+  // link's flow onto the target's intra out-links, split by transition probability
+  // (the deferred intra-step), and drop the diagonal link. The compact one-step
+  // network then carries spread's two-step link flow, while the diagonal state
+  // nodes stay coded so a physical node's copies are held together by the coding
+  // economy of the state network. (Same idea as the bipartite Markov-time-2 handling above.)
   if (config.multilayerRelaxToSelf && !network.isBipartite()) {
     std::vector<unsigned int> physId(numNodes, 0);
     for (const auto& nodeIt : network.nodes()) {
@@ -1299,8 +1319,8 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
     std::vector<double> delta(flowLinks.size(), 0.0);
     for (unsigned int k = 0; k < flowLinks.size(); ++k) {
       const auto& link = flowLinks[k];
-      const bool vertical = physId[link.source] == physId[link.target] && link.source != link.target;
-      if (!vertical) {
+      const bool diagonal = physId[link.source] == physId[link.target] && link.source != link.target;
+      if (!diagonal) {
         continue;
       }
       const unsigned int t = link.target;
@@ -1311,7 +1331,7 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
         }
       }
       if (sumIntra <= 0.0) {
-        continue; // dangling target: leave the vertical link as is
+        continue; // dangling target: leave the diagonal link as is
       }
       const double f = link.flow;
       for (const auto l : outLinks[t]) {
@@ -1319,7 +1339,7 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
           delta[l] += f * flowLinks[l].flow / sumIntra;
         }
       }
-      delta[k] -= f; // drop the vertical link (jump not recorded)
+      delta[k] -= f; // drop the diagonal link (jump not coded)
     }
     for (unsigned int k = 0; k < flowLinks.size(); ++k) {
       flowLinks[k].flow += delta[k];
