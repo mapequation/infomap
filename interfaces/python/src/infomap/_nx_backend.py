@@ -84,7 +84,7 @@ def _grouped(node_modules, mapping):
 class BackendInterface:
     @staticmethod
     def infomap_communities(
-        G, weight="weight", seed=None, num_trials=1, **infomap_kwargs
+        G, *, weight="weight", seed=None, num_trials=1, **infomap_kwargs
     ):
         im, mapping = _run_infomap(
             G, weight, seed, num_trials, infomap_kwargs, two_level=True
@@ -93,7 +93,7 @@ class BackendInterface:
 
     @staticmethod
     def infomap_partitions(
-        G, weight="weight", seed=None, num_trials=1, **infomap_kwargs
+        G, *, weight="weight", seed=None, num_trials=1, **infomap_kwargs
     ):
         im, mapping = _run_infomap(
             G, weight, seed, num_trials, infomap_kwargs, two_level=False
