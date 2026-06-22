@@ -719,4 +719,39 @@ TEST_CASE("multilayer-relax-to-self reproduces spread's codelength bit-exactly [
   infomap::test::checkApproxCodelength(toself.second, spread.second, 1e-9);
 }
 
+TEST_CASE("multilayer-relax-to-self matches spread on a single-node overlap [fast][core][flow][multilayer]")
+{
+  // Two triangles sharing only the central ego node (1): layer 1 = {1,2,3},
+  // layer 2 = {1,4,5}. The optimum splits the ego's two copies into the two
+  // layer-local communities -- a genuine overlap (the point of state nodes).
+  // Keeping the inter-layer link flow makes couple-to-self charge the ego's
+  // layer switch exactly like spread (its copies are co-modular with their own
+  // neighbours), so the same partition has bit-identical codelength.
+  std::vector<MultilayerIntraLink> intraLinks;
+  const auto both = [&](unsigned int layer, unsigned int a, unsigned int b) {
+    intraLinks.push_back({ layer, a, b, 1.0 });
+    intraLinks.push_back({ layer, b, a, 1.0 });
+  };
+  both(1, 1, 2);
+  both(1, 1, 3);
+  both(1, 2, 3); // layer 1 triangle {1,2,3}
+  both(2, 1, 4);
+  both(2, 1, 5);
+  both(2, 4, 5); // layer 2 triangle {1,4,5}
+
+  const auto run = [&](const std::string& extra) {
+    InfomapWrapper im(infomap::test::defaultFlags("--two-level -N 20 " + extra));
+    addMultilayerIntraLinks(im, intraLinks);
+    im.run();
+    return std::make_pair(im.numTopModules(), im.codelength());
+  };
+
+  const auto spread = run("");
+  const auto toself = run("--multilayer-relax-to-self");
+
+  CHECK(spread.first == 2); // the two triangles
+  CHECK(toself.first == spread.first);
+  infomap::test::checkApproxCodelength(toself.second, spread.second, 1e-9);
+}
+
 } // namespace

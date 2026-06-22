@@ -583,7 +583,8 @@ void FlowCalculator::calcDirectedRelaxToSelfFlow(const StateNetwork& network, co
   }
 
   // Update the links with their global flow from the PageRank values.
-  // (Inter-layer links keep a transient value here; finalize() reroutes it.)
+  // (Inter-layer links get their transit flow here; finalize() also relays it onto
+  // the target's intra-layer links for the matching two-step link flow.)
   for (auto& link : flowLinks) {
     link.flow *= beta * nodeFlowTmp[link.source] / sumNodeRank;
   }
@@ -1299,14 +1300,21 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
   }
 
   // Link flow for --multilayer-relax-to-self. calcDirectedRelaxToSelfFlow gave the
-  // nodes spread's flow with a two-step walk; the links need the same treatment. An
-  // inter-layer link (i,n)->(j,n) is only the first half of a fused relax step -- the
-  // jump is not coded -- so it must carry no flow of its own. Move each inter-layer
-  // link's flow onto the target's intra-layer out-links, split by transition
-  // probability (the deferred intra-step), and drop the inter-layer link. The compact
-  // one-step network then carries spread's two-step link flow, while the state nodes
-  // stay coded so a physical node's copies are held together by the coding economy of
-  // the state network. (Same idea as the bipartite Markov-time-2 handling above.)
+  // nodes spread's flow with a two-step walk; the links get the matching two-step
+  // (Markov-time-2) treatment so module-exit flows -- and thus the codelength -- match
+  // spread. The relax flow from (i,n) crosses to layer j via the inter-layer link
+  // (i,n)->(j,n) and then continues along (j,n)'s intra-layer out-links, so keep BOTH:
+  // the inter-layer link keeps its own flow (the layer switch, charged to (i,n)'s
+  // module when a node's copies are split across modules), and that flow is also
+  // relayed onto (j,n)'s intra out-links (the onward step, charged within the target
+  // layer). The codelength depends only on node flows and module-exit flows, so the
+  // extra within-module relay volume is harmless. This is exact when (j,n) is
+  // co-modular with its target-layer neighbours -- always for coherent partitions, and
+  // for simple overlaps (e.g. one node shared between two layer-local communities). It
+  // is approximate only when those neighbours are cross-community (the relay then
+  // charges a second crossing the one-hop spread model does not); reproducing that
+  // exactly would need spread's O(L^2*k) links. (Same Markov-time-2 idea as the
+  // bipartite handling above.)
   if (config.multilayerRelaxToSelf && !network.isBipartite()) {
     std::vector<unsigned int> physId(numNodes, 0);
     for (const auto& nodeIt : network.nodes()) {
@@ -1339,7 +1347,7 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
           delta[l] += f * flowLinks[l].flow / sumIntra;
         }
       }
-      delta[k] -= f; // drop the inter-layer link (jump not coded)
+      // The inter-layer link keeps its own flow (the layer switch); it is not dropped.
     }
     for (unsigned int k = 0; k < flowLinks.size(); ++k) {
       flowLinks[k].flow += delta[k];
