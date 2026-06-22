@@ -31,9 +31,6 @@ extensions = [
     "myst_nb",
 ]
 
-# Render $...$ and $$...$$ math in MyST markdown and notebook cells.
-myst_enable_extensions = ["dollarmath"]
-
 templates_path = ["_templates"]
 exclude_patterns = []
 
@@ -95,4 +92,3 @@ ogp_site_url = "https://mapequation.org/infomap-python-docs/"
 ogp_image = "https://mapequation.github.io/assets/img/twocolormapicon_whiteboarder.svg"
 ogp_site_name = "Infomap Python API"
 ogp_description_length = 200
-
