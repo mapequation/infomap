@@ -193,6 +193,8 @@ FlowCalculator::FlowCalculator(StateNetwork& network, const Config& config)
         } else {
           calcDirectedRegularizedFlow(network, config);
         }
+      } else if (config.isMultilayerNetwork() && config.multilayerRelaxToSelf) {
+        calcDirectedRelaxToSelfFlow(network, config);
       } else {
         calcDirectedFlow(network, config);
       }
@@ -451,6 +453,120 @@ void FlowCalculator::calcDirectedFlow(const StateNetwork& network, const Config&
 
   // Update the links with their global flow from the PageRank values.
   // Note: beta is set to 1 if unrecorded teleportation
+  for (auto& link : flowLinks) {
+    link.flow *= beta * nodeFlowTmp[link.source] / sumNodeRank;
+  }
+}
+
+void FlowCalculator::calcDirectedRelaxToSelfFlow(const StateNetwork& network, const Config& config) noexcept
+{
+  // Two-step PageRank for --multilayer-relax-to-self. Intra links are terminal
+  // one-hops; a diagonal (same physical node, other layer) link is transient:
+  // its flow is pushed through the target's intra links (the deferred relax
+  // intra-step) within the same iteration, so the diagonal node accrues no
+  // visit. The fused step equals the spread model's transition, so the node
+  // flow is spread's flow on the compact network. (Cf. calcDirectedBipartiteFlow.)
+  m_flowMethod = "directed multilayer relax-to-self (two-step)";
+  m_teleportation = fmt::format(FMT_STRING("{}, to {}"), config.recordedTeleportation ? "recorded" : "unrecorded", config.teleportToNodes ? "nodes" : "links");
+
+  if (config.teleportToNodes) {
+    double sumNodeWeights = 0.0;
+    for (const auto& nodeIt : network.nodes()) {
+      nodeTeleportWeights[nodeIndexMap[nodeIt.second.id]] = nodeIt.second.weight;
+      sumNodeWeights += nodeIt.second.weight;
+    }
+    normalize(nodeTeleportWeights, sumNodeWeights);
+  } else {
+    for (const auto& link : flowLinks) {
+      auto toNode = config.recordedTeleportation ? link.target : link.source;
+      nodeTeleportWeights[toNode] += link.flow / sumLinkWeight;
+    }
+  }
+
+  // Normalize link weights to transition probabilities.
+  for (auto& link : flowLinks) {
+    if (sumLinkOutWeight[link.source] > 0) {
+      link.flow /= sumLinkOutWeight[link.source];
+    }
+  }
+
+  // Classify links (diagonal vs intra) and accumulate per-node intra out-mass.
+  std::vector<unsigned int> physId(numNodes, 0);
+  for (const auto& nodeIt : network.nodes()) {
+    physId[nodeIndexMap[nodeIt.second.id]] = nodeIt.second.physicalId;
+  }
+  std::vector<char> isDiagonal(flowLinks.size(), 0);
+  std::vector<double> intraOutSum(numNodes, 0.0);
+  for (unsigned int k = 0; k < flowLinks.size(); ++k) {
+    const auto& link = flowLinks[k];
+    if (physId[link.source] == physId[link.target] && link.source != link.target) {
+      isDiagonal[k] = 1;
+    } else {
+      intraOutSum[link.source] += link.flow;
+    }
+  }
+
+  std::vector<double> nodeFlowTmp(numNodes, 0.0);
+  std::vector<double> diagArrived(numNodes, 0.0);
+  double danglingRank;
+
+  // One fused two-step transition: dst += beta * P(src->dst), with diagonal flow
+  // relayed through the target's intra links instead of resting on the diagonal.
+  const auto twoStep = [&](const double beta, const std::vector<double>& src, std::vector<double>& dst) {
+    std::fill(diagArrived.begin(), diagArrived.end(), 0.0);
+    for (unsigned int k = 0; k < flowLinks.size(); ++k) {
+      const auto& link = flowLinks[k];
+      if (isDiagonal[k]) {
+        diagArrived[link.target] += beta * link.flow * src[link.source];
+      } else {
+        dst[link.target] += beta * link.flow * src[link.source];
+      }
+    }
+    for (unsigned int k = 0; k < flowLinks.size(); ++k) {
+      const auto& link = flowLinks[k];
+      if (!isDiagonal[k] && intraOutSum[link.source] > 0.0) {
+        dst[link.target] += diagArrived[link.source] * link.flow / intraOutSum[link.source];
+      }
+    }
+  };
+
+  const auto iteration = [&](const auto iter, const double alpha, const double beta) {
+    danglingRank = std::accumulate(cbegin(nodeFlow), cbegin(nodeFlow) + nonDanglingStartIndex, 0.0);
+    const auto teleportationFlow = alpha + beta * danglingRank;
+    for (unsigned int i = 0; i < numNodes; ++i) {
+      nodeFlowTmp[i] = teleportationFlow * nodeTeleportWeights[i];
+    }
+    twoStep(beta, nodeFlow, nodeFlowTmp);
+
+    double nodeFlowDiff = -1.0;
+    double error = 0.0;
+    for (unsigned int i = 0; i < numNodes; ++i) {
+      nodeFlowDiff += nodeFlowTmp[i];
+      error += std::abs(nodeFlowTmp[i] - nodeFlow[i]);
+    }
+    nodeFlow = nodeFlowTmp;
+    if (std::abs(nodeFlowDiff) > 1.0e-10) {
+      Console::detail(1, "normalizing flow after {} power iterations with error {:g}", iter, nodeFlowDiff);
+      normalize(nodeFlow, nodeFlowDiff + 1.0);
+    }
+    return error;
+  };
+
+  const auto result = powerIterate(config.teleportationProbability, config.maxFlowIterations, iteration);
+  recordPageRank(result.iterations, result.error, result.converged);
+
+  double sumNodeRank = 1.0;
+  double beta = result.beta;
+  if (!config.recordedTeleportation) {
+    sumNodeRank = 1.0 - danglingRank;
+    nodeFlow.assign(numNodes, 0.0);
+    twoStep(1.0, nodeFlowTmp, nodeFlow);
+    if (sumNodeRank > 0.0) {
+      normalize(nodeFlow, sumNodeRank);
+    }
+    beta = 1.0;
+  }
+
   for (auto& link : flowLinks) {
     link.flow *= beta * nodeFlowTmp[link.source] / sumNodeRank;
   }
