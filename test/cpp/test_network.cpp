@@ -316,6 +316,85 @@ TEST_CASE("default simulated path still spreads to neighbours [fast][core][multi
   CHECK(out.count(sid(2, 4)) == 1);
 }
 
+TEST_CASE("multilayer-relax-to-self couples diagonal nodes in the explicit *Inter path [fast][core][multilayer]")
+{
+  Network network(Config("--silent --directed --multilayer-relax-to-self", false));
+  // Intra
+  network.addMultilayerIntraLink(1, 1, 2, 1.0);
+  network.addMultilayerIntraLink(2, 1, 2, 1.0);
+  network.addMultilayerIntraLink(2, 1, 3, 1.0);
+  // Explicit inter link from (layer1, node1) to layer2
+  network.addMultilayerInterLink(1, 1, 2, 0.5);
+
+  network.postProcessInputData();
+
+  const auto& map = network.layerNodeToStateId();
+  auto sid = [&](unsigned layer, unsigned phys) { return map.at(layer).at(phys); };
+  const unsigned s11 = sid(1, 1);
+
+  std::map<unsigned int, double> out;
+  network.forEachLink([&](unsigned s, unsigned t, double w, double) {
+    if (network.nodeId(s) == s11) out[network.nodeId(t)] = w;
+  });
+
+  CHECK(out.count(sid(1, 2)) == 1); // intra, full weight
+  CHECK(out.at(sid(1, 2)) == doctest::Approx(1.0));
+  CHECK(out.count(sid(2, 1)) == 1); // single diagonal inter link
+  CHECK(out.at(sid(2, 1)) == doctest::Approx(0.5)); // == interWeight
+  CHECK(out.count(sid(2, 2)) == 0); // not spread to neighbours
+  CHECK(out.count(sid(2, 3)) == 0);
+}
+
+TEST_CASE("explicit *Inter to-self links even when the node is absent in the target layer [fast][core][multilayer]")
+{
+  Network network(Config("--silent --directed --multilayer-relax-to-self", false));
+  network.addMultilayerIntraLink(1, 1, 2, 1.0);
+  // Layer 2 exists but node 1 has NO intra out-links there.
+  network.addMultilayerIntraLink(2, 5, 6, 1.0);
+  network.addMultilayerInterLink(1, 1, 2, 0.5);
+
+  network.postProcessInputData();
+
+  const auto& map = network.layerNodeToStateId();
+  auto sid = [&](unsigned layer, unsigned phys) { return map.at(layer).at(phys); };
+  const unsigned s11 = sid(1, 1);
+
+  std::map<unsigned int, double> out;
+  network.forEachLink([&](unsigned s, unsigned t, double w, double) {
+    if (network.nodeId(s) == s11) out[network.nodeId(t)] = w;
+  });
+
+  // The explicit coupling is still created even though (2,1) is dangling.
+  CHECK(out.count(sid(2, 1)) == 1);
+  CHECK(out.at(sid(2, 1)) == doctest::Approx(0.5));
+}
+
+TEST_CASE("multilayer-relax-to-self adds reverse diagonal inter link for undirected flow [fast][core][multilayer]")
+{
+  Network network(Config("--silent --multilayer-relax-to-self", false)); // undirected (default)
+  network.addMultilayerIntraLink(1, 1, 2, 1.0);
+  network.addMultilayerIntraLink(2, 1, 2, 1.0);
+  network.addMultilayerInterLink(1, 1, 2, 0.5);
+
+  network.postProcessInputData();
+
+  const auto& map = network.layerNodeToStateId();
+  auto sid = [&](unsigned layer, unsigned phys) { return map.at(layer).at(phys); };
+
+  std::map<unsigned int, std::map<unsigned int, double>> out; // src -> (tgt -> w)
+  network.forEachLink([&](unsigned s, unsigned t, double w, double) {
+    out[network.nodeId(s)][network.nodeId(t)] = w;
+  });
+
+  // Forward and reverse diagonal coupling, both with interWeight.
+  CHECK(out[sid(1, 1)].count(sid(2, 1)) == 1);
+  CHECK(out[sid(1, 1)].at(sid(2, 1)) == doctest::Approx(0.5));
+  CHECK(out[sid(2, 1)].count(sid(1, 1)) == 1);
+  CHECK(out[sid(2, 1)].at(sid(1, 1)) == doctest::Approx(0.5));
+  // Never spread to neighbours.
+  CHECK(out[sid(1, 1)].count(sid(2, 2)) == 0);
+}
+
 TEST_CASE("NetworkBuilder validates bipartite intake while building Network state [fast][core][parser]")
 {
   const std::string path = "invalid_bipartite_test.net";

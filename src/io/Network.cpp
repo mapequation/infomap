@@ -268,6 +268,14 @@ void Network::generateStateNetworkFromMultilayerWithInterLinks()
     for (auto& it2 : it.second) {
       unsigned int layer2 = it2.first;
       double interWeight = it2.second;
+
+      if (m_config.multilayerRelaxToSelf) {
+        unsigned int stateId2 = addMultilayerNode(layer2, physId);
+        addLink(stateId1, stateId2, interWeight);
+        ++m_numInterLayerLinks;
+        continue;
+      }
+
       auto& targetNetwork = m_networks[layer2];
 
       auto& targetLinks = targetNetwork.nodeLinkMap();
@@ -297,6 +305,19 @@ void Network::generateStateNetworkFromMultilayerWithInterLinks()
       auto& layerNode = it.first;
       unsigned int layer2 = layerNode.layer;
       unsigned int physId = layerNode.node;
+
+      if (m_config.multilayerRelaxToSelf) {
+        unsigned int stateId2 = addMultilayerNode(layer2, physId);
+        for (auto& it2 : it.second) {
+          unsigned int layer1 = it2.first;
+          double interWeight = it2.second;
+          unsigned int stateId1 = addMultilayerNode(layer1, physId);
+          addLink(stateId1, stateId2, interWeight);
+          ++m_numInterLayerLinks;
+        }
+        continue;
+      }
+
       auto& targetNetwork = m_networks[layer2];
       auto& targetLinks = targetNetwork.nodeLinkMap();
       auto& outlinks = targetLinks[physId];
