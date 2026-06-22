@@ -268,8 +268,9 @@ class InfomapOptions:
         Weight multilayer relaxation by out-link similarity measured with Jensen-Shannon
         divergence.
     multilayer_relax_to_self : bool, optional
-        On relaxation, link to the same physical node in the target layer instead of
-        spreading to its out-neighbours.
+        On relaxation, link a state node to its own physical node in the target layer
+        instead of spreading to its out-neighbors. Builds a smaller state network with
+        the same flow as the default.
     seed : int, optional
         Set the random number generator seed for reproducible results.
     num_trials : int, optional

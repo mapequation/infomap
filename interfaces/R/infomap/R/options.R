@@ -262,7 +262,7 @@ OPTION_DEFAULTS <- list(
 #'   \item{`multilayer_relax_limit_up`}{Limit relaxation upward to this many higher neighboring layer ids. Use a negative value to allow relaxation to any higher layer.}
 #'   \item{`multilayer_relax_limit_down`}{Limit relaxation downward to this many lower neighboring layer ids. Use a negative value to allow relaxation to any lower layer.}
 #'   \item{`multilayer_relax_by_jsd`}{Weight multilayer relaxation by out-link similarity measured with Jensen-Shannon divergence.}
-#'   \item{`multilayer_relax_to_self`}{On relaxation, link to the same physical node in the target layer instead of spreading to its out-neighbours.}
+#'   \item{`multilayer_relax_to_self`}{On relaxation, link a state node to its own physical node in the target layer instead of spreading to its out-neighbors. Builds a smaller state network with the same flow as the default.}
 #' }
 #'
 #' Accuracy

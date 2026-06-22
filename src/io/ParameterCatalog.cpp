@@ -762,7 +762,7 @@ const std::vector<ParameterSpec>& parameterCatalog()
         .configTarget(&Config::multilayerRelaxByJensenShannonDivergence),
     param()
         .longName("multilayer-relax-to-self")
-        .description("On relaxation, link to the same physical node in the target layer instead of spreading to its out-neighbours.")
+        .description("On relaxation, link a state node to its own physical node in the target layer instead of spreading to its out-neighbors. Builds a smaller state network with the same flow as the default.")
         .group("Algorithm")
         .advanced()
         .configTarget(&Config::multilayerRelaxToSelf),
