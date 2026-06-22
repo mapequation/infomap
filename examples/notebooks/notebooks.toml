@@ -102,3 +102,8 @@ description = "python-igraph comparison of Infomap, Louvain, and Leiden."
 path = "compare-infomap-scanpy-workflow.ipynb"
 tier = "smoke"
 description = "Scanpy and AnnData comparison of Infomap and Leiden."
+
+[[notebooks]]
+path = "Multilayer Coupling Schemes.ipynb"
+tier = "manual"
+description = "Explains and benchmarks the two multilayer relaxation coupling schemes: spread-to-neighbours (default) vs couple-physical-nodes-only (--multilayer-relax-to-self)."
