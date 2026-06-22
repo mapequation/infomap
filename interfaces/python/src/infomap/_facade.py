@@ -421,6 +421,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         multilayer_relax_limit_up=-1,
         multilayer_relax_limit_down=-1,
         multilayer_relax_by_jsd=False,
+        multilayer_relax_to_self=False,
         # accuracy
         seed=123,
         num_trials=1,
@@ -1727,6 +1728,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         multilayer_relax_limit_up=-1,
         multilayer_relax_limit_down=-1,
         multilayer_relax_by_jsd=False,
+        multilayer_relax_to_self=False,
         # accuracy
         seed=123,
         num_trials=1,

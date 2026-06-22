@@ -63,7 +63,8 @@ ALGORITHM_OPTIONS <- list(
   list(type = "value", name = "multilayer_relax_limit", flag = "--multilayer-relax-limit", default = NULL, include = .skip_when_null),
   list(type = "value", name = "multilayer_relax_limit_up", flag = "--multilayer-relax-limit-up", default = NULL, include = .skip_when_null),
   list(type = "value", name = "multilayer_relax_limit_down", flag = "--multilayer-relax-limit-down", default = NULL, include = .skip_when_null),
-  list(type = "flag", name = "multilayer_relax_by_jsd", flag = "--multilayer-relax-by-jsd", default = FALSE)
+  list(type = "flag", name = "multilayer_relax_by_jsd", flag = "--multilayer-relax-by-jsd", default = FALSE),
+  list(type = "flag", name = "multilayer_relax_to_self", flag = "--multilayer-relax-to-self", default = FALSE)
 )
 
 ACCURACY_OPTIONS <- list(
@@ -99,10 +100,11 @@ OPTION_FIELD_NAMES <- c(
   "markov_time", "variable_markov_time", "variable_markov_damping", "variable_markov_min_scale",
   "preferred_number_of_modules", "preferred_number_of_levels", "preferred_number_of_levels_strength", "multilayer_relax_rate",
   "multilayer_relax_limit", "multilayer_relax_limit_up", "multilayer_relax_limit_down", "multilayer_relax_by_jsd",
-  "seed", "num_trials", "core_loop_limit", "core_level_limit",
-  "tune_iteration_limit", "core_loop_codelength_threshold", "tune_iteration_relative_threshold", "fast_hierarchical_solution",
-  "inner_parallelization", "parallel_trials", "converge", "num_threads",
-  "threads", "prefer_modular_solution", "num_random_moves", "max_degree_for_random_moves"
+  "multilayer_relax_to_self", "seed", "num_trials", "core_loop_limit",
+  "core_level_limit", "tune_iteration_limit", "core_loop_codelength_threshold", "tune_iteration_relative_threshold",
+  "fast_hierarchical_solution", "inner_parallelization", "parallel_trials", "converge",
+  "num_threads", "threads", "prefer_modular_solution", "num_random_moves",
+  "max_degree_for_random_moves"
 )
 
 OPTION_DEFAULTS <- list(
@@ -162,6 +164,7 @@ OPTION_DEFAULTS <- list(
   multilayer_relax_limit_up = NULL,
   multilayer_relax_limit_down = NULL,
   multilayer_relax_by_jsd = FALSE,
+  multilayer_relax_to_self = FALSE,
   seed = 123L,
   num_trials = 1L,
   core_loop_limit = 10L,
@@ -259,6 +262,7 @@ OPTION_DEFAULTS <- list(
 #'   \item{`multilayer_relax_limit_up`}{Limit relaxation upward to this many higher neighboring layer ids. Use a negative value to allow relaxation to any higher layer.}
 #'   \item{`multilayer_relax_limit_down`}{Limit relaxation downward to this many lower neighboring layer ids. Use a negative value to allow relaxation to any lower layer.}
 #'   \item{`multilayer_relax_by_jsd`}{Weight multilayer relaxation by out-link similarity measured with Jensen-Shannon divergence.}
+#'   \item{`multilayer_relax_to_self`}{On relaxation, link to the same physical node in the target layer instead of spreading to its out-neighbours.}
 #' }
 #'
 #' Accuracy

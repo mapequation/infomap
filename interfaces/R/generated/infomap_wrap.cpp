@@ -6381,6 +6381,67 @@ R_swig_Config_multilayerJSRelaxLimit_get ( SEXP self, SEXP s_swig_copy)
 
 
 SWIGEXPORT SEXP
+R_swig_Config_multilayerRelaxToSelf_set ( SEXP self, SEXP s_multilayerRelaxToSelf)
+{
+  {
+    infomap::Config *arg1 = 0 ;
+    bool arg2 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_infomap__Config, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Config_multilayerRelaxToSelf_set" "', argument " "1"" of type '" "infomap::Config *""'"); 
+    }
+    arg1 = reinterpret_cast< infomap::Config * >(argp1);
+    arg2 = LOGICAL(s_multilayerRelaxToSelf)[0] ? true : false;
+    if (arg1) (arg1)->multilayerRelaxToSelf = arg2;
+    r_ans = R_NilValue;
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
+R_swig_Config_multilayerRelaxToSelf_get ( SEXP self, SEXP s_swig_copy)
+{
+  {
+    bool result;
+    infomap::Config *arg1 = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_infomap__Config, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Config_multilayerRelaxToSelf_get" "', argument " "1"" of type '" "infomap::Config *""'"); 
+    }
+    arg1 = reinterpret_cast< infomap::Config * >(argp1);
+    result = (bool) ((arg1)->multilayerRelaxToSelf);
+    r_ans = Rf_ScalarLogical(result);
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
 R_swig_Config_maxFlowIterations_set ( SEXP self, SEXP s_maxFlowIterations)
 {
   {
@@ -50110,6 +50171,7 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
    {"R_swig_InfomapIterator_modularCentrality", (DL_FUNC) &R_swig_InfomapIterator_modularCentrality, 2},
    {"R_swig_InfomapIterator_physicalId_set", (DL_FUNC) &R_swig_InfomapIterator_physicalId_set, 2},
    {"R_swig_InfoNode_collapsedLastChild_get", (DL_FUNC) &R_swig_InfoNode_collapsedLastChild_get, 1},
+   {"R_swig_Config_multilayerRelaxToSelf_set", (DL_FUNC) &R_swig_Config_multilayerRelaxToSelf_set, 2},
    {"R_swig_InfomapParentIterator_previous_get", (DL_FUNC) &R_swig_InfomapParentIterator_previous_get, 1},
    {"R_swig_InfoNode_NotEqual", (DL_FUNC) &R_swig_InfoNode_NotEqual, 3},
    {"R_swig_FlowData_teleportWeight_get", (DL_FUNC) &R_swig_FlowData_teleportWeight_get, 2},
@@ -50770,6 +50832,7 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
    {"R_swig_InfomapBase_writeClu__SWIG_3", (DL_FUNC) &R_swig_InfomapBase_writeClu__SWIG_3, 2},
    {"R_swig_InfomapWrapper_addLinks", (DL_FUNC) &R_swig_InfomapWrapper_addLinks, 4},
    {"R_swig_InfomapIterator_physicalId_get", (DL_FUNC) &R_swig_InfomapIterator_physicalId_get, 2},
+   {"R_swig_Config_multilayerRelaxToSelf_get", (DL_FUNC) &R_swig_Config_multilayerRelaxToSelf_get, 2},
    {"R_swig_Config_weightThreshold_set", (DL_FUNC) &R_swig_Config_weightThreshold_set, 2},
    {"R_swig_StateNetwork_bipartiteStartId", (DL_FUNC) &R_swig_StateNetwork_bipartiteStartId, 2},
    {"R_swig_InfomapConfigInfomapBase_reseed", (DL_FUNC) &R_swig_InfomapConfigInfomapBase_reseed, 3},

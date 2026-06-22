@@ -75,6 +75,7 @@ export type Arguments = Partial<{
   multilayerRelaxLimitUp: number;
   multilayerRelaxLimitDown: number;
   multilayerRelaxByJsd: boolean;
+  multilayerRelaxToSelf: boolean;
   // accuracy
   seed: number;
   numTrials: number;
@@ -222,6 +223,8 @@ export default function argumentsToString(args: Arguments) {
     result += " --multilayer-relax-limit-down " + args.multilayerRelaxLimitDown;
 
   if (args.multilayerRelaxByJsd) result += " --multilayer-relax-by-jsd";
+
+  if (args.multilayerRelaxToSelf) result += " --multilayer-relax-to-self";
 
   if (args.seed != null) result += " --seed " + args.seed;
 
