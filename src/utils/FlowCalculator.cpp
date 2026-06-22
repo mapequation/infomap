@@ -1165,6 +1165,51 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
     }
   }
 
+  // Variant B for --multilayer-relax-to-self: the relaxing walker takes the
+  // vertical link (i,n)->(j,n) and then an intra-step in layer j. Reroute the
+  // vertical-link flow as that deferred intra-step at the target and drop the
+  // vertical link itself ("the jump is not recorded"), so the one-step network
+  // carries the two-step (spread) flow. The diagonal state nodes stay coded, so
+  // a node's copies are held together by the physical-node coding economy.
+  if (config.multilayerRelaxToSelf && !network.isBipartite()) {
+    std::vector<unsigned int> physId(numNodes, 0);
+    for (const auto& nodeIt : network.nodes()) {
+      physId[nodeIndexMap[nodeIt.second.id]] = nodeIt.second.physicalId;
+    }
+    std::vector<std::vector<unsigned int>> outLinks(numNodes);
+    for (unsigned int k = 0; k < flowLinks.size(); ++k) {
+      outLinks[flowLinks[k].source].push_back(k);
+    }
+    std::vector<double> delta(flowLinks.size(), 0.0);
+    for (unsigned int k = 0; k < flowLinks.size(); ++k) {
+      const auto& link = flowLinks[k];
+      const bool vertical = physId[link.source] == physId[link.target] && link.source != link.target;
+      if (!vertical) {
+        continue;
+      }
+      const unsigned int t = link.target;
+      double sumIntra = 0.0;
+      for (const auto l : outLinks[t]) {
+        if (physId[flowLinks[l].target] != physId[t]) {
+          sumIntra += flowLinks[l].flow;
+        }
+      }
+      if (sumIntra <= 0.0) {
+        continue; // dangling target: leave the vertical link as is
+      }
+      const double f = link.flow;
+      for (const auto l : outLinks[t]) {
+        if (physId[flowLinks[l].target] != physId[t]) {
+          delta[l] += f * flowLinks[l].flow / sumIntra;
+        }
+      }
+      delta[k] -= f; // drop the vertical link (jump not recorded)
+    }
+    for (unsigned int k = 0; k < flowLinks.size(); ++k) {
+      flowLinks[k].flow += delta[k];
+    }
+  }
+
   if (config.useNodeWeightsAsFlow) {
     addFlowNote("Using node weights as flow");
 
