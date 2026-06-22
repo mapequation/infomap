@@ -8,6 +8,7 @@
 
 #include <cstdio>
 #include <fstream>
+#include <map>
 #include <string>
 #include <tuple>
 #include <vector>
@@ -250,6 +251,69 @@ TEST_CASE("Network rejects explicit multilayer input with regularized flow [fast
       network.readInputData(infomap::test::repoPath("test/fixtures/networks/multilayer.net")),
       "Regularized multilayer flow requires *Intra/*Inter input; explicit *Multilayer input is not supported with --regularized.",
       std::runtime_error);
+}
+
+TEST_CASE("multilayer-relax-to-self couples diagonal nodes in the simulated path [fast][core][multilayer]")
+{
+  // Directed so out-links are exactly as added (no undirected->directed expansion).
+  Network network(Config("--silent --directed --multilayer-relax-to-self", false));
+  // Layer 1: node 1 -> 2
+  network.addMultilayerIntraLink(1, 1, 2, 1.0);
+  network.addMultilayerIntraLink(1, 2, 1, 1.0);
+  // Layer 2: node 1 has three out-neighbours
+  network.addMultilayerIntraLink(2, 1, 2, 1.0);
+  network.addMultilayerIntraLink(2, 1, 3, 1.0);
+  network.addMultilayerIntraLink(2, 1, 4, 1.0);
+
+  network.postProcessInputData();
+
+  const auto& map = network.layerNodeToStateId();
+  auto sid = [&](unsigned layer, unsigned phys) { return map.at(layer).at(phys); };
+  const unsigned s11 = sid(1, 1);
+
+  std::map<unsigned int, double> out; // target state id -> weight
+  network.forEachLink([&](unsigned s, unsigned t, double w, double) {
+    if (network.nodeId(s) == s11) out[network.nodeId(t)] = w;
+  });
+
+  // Exactly the home-layer intra link and one diagonal inter link.
+  CHECK(out.size() == 2);
+  CHECK(out.count(sid(1, 2)) == 1);
+  CHECK(out.at(sid(1, 2)) == doctest::Approx(0.85)); // (1-0.15)/1 * 1
+  CHECK(out.count(sid(2, 1)) == 1);
+  CHECK(out.at(sid(2, 1)) == doctest::Approx(0.15)); // 0.15 * 3 / 3
+  // No inter links to neighbours in the target layer.
+  CHECK(out.count(sid(2, 2)) == 0);
+  CHECK(out.count(sid(2, 3)) == 0);
+  CHECK(out.count(sid(2, 4)) == 0);
+}
+
+TEST_CASE("default simulated path still spreads to neighbours [fast][core][multilayer]")
+{
+  Network network(Config("--silent --directed", false));
+  network.addMultilayerIntraLink(1, 1, 2, 1.0);
+  network.addMultilayerIntraLink(1, 2, 1, 1.0);
+  network.addMultilayerIntraLink(2, 1, 2, 1.0);
+  network.addMultilayerIntraLink(2, 1, 3, 1.0);
+  network.addMultilayerIntraLink(2, 1, 4, 1.0);
+
+  network.postProcessInputData();
+
+  const auto& map = network.layerNodeToStateId();
+  auto sid = [&](unsigned layer, unsigned phys) { return map.at(layer).at(phys); };
+  const unsigned s11 = sid(1, 1);
+
+  std::map<unsigned int, double> out;
+  network.forEachLink([&](unsigned s, unsigned t, double w, double) {
+    if (network.nodeId(s) == s11) out[network.nodeId(t)] = w;
+  });
+
+  // Home intra link + three spread inter links to the target-layer neighbours.
+  CHECK(out.size() == 4);
+  CHECK(out.count(sid(2, 1)) == 0); // no diagonal coupling
+  CHECK(out.count(sid(2, 2)) == 1);
+  CHECK(out.count(sid(2, 3)) == 1);
+  CHECK(out.count(sid(2, 4)) == 1);
 }
 
 TEST_CASE("NetworkBuilder validates bipartite intake while building Network state [fast][core][parser]")

@@ -515,6 +515,49 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnNo
       if (sumOutWeightAllLayers <= 0) {
         continue;
       }
+
+      if (m_config.multilayerRelaxToSelf) {
+        double sumOutWeightOtherLayers = sumOutWeightAllLayers - sumOutLinkWeightLayer1;
+        for (auto& it2 : m_networks) {
+          auto layer2 = it2.first;
+          if (!withinRelaxLimit(layer1, layer2)) {
+            continue;
+          }
+          auto& network2 = it2.second;
+          if (layer2 == layer1) {
+            // Intra-layer step: follow the node's own out-links (relax mass removed).
+            auto& homeOutlinks = network2.nodeLinkMap()[n1];
+            for (auto& outLink : homeOutlinks) {
+              auto& n2 = outLink.first;
+              double intraWeight = outLink.second.weight;
+              double weight = (1.0 - relaxRate) / sumOutLinkWeightLayer1 * intraWeight;
+              if (weight < 1e-16) {
+                continue;
+              }
+              unsigned int stateId2i = addMultilayerNode(layer2, n2);
+              addLink(stateId1, stateId2i, weight);
+            }
+          } else {
+            // Inter-layer step: couple only to the same physical node in the target layer.
+            if (sumOutWeightOtherLayers <= 0) {
+              continue;
+            }
+            double targetOutWeight = network2.outWeights()[n1];
+            if (targetOutWeight <= 0) {
+              continue; // n1 absent/dangling in the target layer -> skip
+            }
+            double weight = relaxRate * targetOutWeight / sumOutWeightOtherLayers;
+            if (weight < 1e-16) {
+              continue;
+            }
+            unsigned int stateId2 = addMultilayerNode(layer2, n1);
+            addLink(stateId1, stateId2, weight);
+            ++m_numInterLayerLinks;
+          }
+        }
+        continue; // next physical node
+      }
+
       for (auto& it2 : m_networks) {
         auto layer2 = it2.first;
         if (!withinRelaxLimit(layer1, layer2)) {
