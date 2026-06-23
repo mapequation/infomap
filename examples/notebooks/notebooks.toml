@@ -4,6 +4,11 @@ tier = "smoke"
 description = "Flagship Infomap Python quickstart with notebook-native summary and static network visualization."
 
 [[notebooks]]
+path = "options-guide.ipynb"
+tier = "smoke"
+description = "Goal-oriented guide to Infomap's options with runnable examples and a complete reference table generated from the installed package."
+
+[[notebooks]]
 path = "run-infomap-on-hpc.ipynb"
 tier = "smoke"
 description = "HPC recipe notebook for native trial sharding, scheduler-aware threads, and Python shard merging."
