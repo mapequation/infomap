@@ -44,7 +44,13 @@ const packageEntries = {
   network: path.join(sourceRoot, "network.ts"),
   react: path.join(sourceRoot, "react.ts"),
   result: path.join(sourceRoot, "result.ts"),
+  node: path.join(sourceRoot, "node.ts"),
 };
+
+// The Emscripten Node artifacts (copied into the package by
+// prepare_npm_package.py) stay external so node.js/cli.js import them at runtime
+// rather than inlining the wasm twice.
+const external = ["react", /infomap\.(node|cli)\.mjs$/];
 
 const basePlugins = [
   workerSourcePlugin(),
@@ -70,7 +76,7 @@ export default [
       format: "es",
       sourcemap: true,
     },
-    external: ["react"],
+    external,
     plugins: basePlugins,
   },
   {
@@ -78,11 +84,29 @@ export default [
     output: {
       dir: outputDir,
       entryFileNames: "[name].cjs",
+      // Shared chunks must also be .cjs: a .js chunk holding CommonJS code can't
+      // be require()'d in this "type": "module" package (Node treats .js as ESM).
+      chunkFileNames: "[name]-[hash].cjs",
       format: "cjs",
       exports: "named",
       sourcemap: true,
+      // Keep `await import("./infomap.node.mjs")` as a real dynamic import so the
+      // CommonJS build can load the ES-module artifact instead of require()'ing it.
+      dynamicImportInCjs: true,
     },
-    external: ["react"],
+    external,
+    plugins: basePlugins,
+  },
+  {
+    // `infomap` bin: ESM only, with a shebang. Backed by the NODERAWFS artifact.
+    input: path.join(sourceRoot, "cli.ts"),
+    output: {
+      file: path.join(outputDir, "cli.js"),
+      format: "es",
+      banner: "#!/usr/bin/env node",
+      sourcemap: true,
+    },
+    external,
     plugins: basePlugins,
   },
   {

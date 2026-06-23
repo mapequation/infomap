@@ -17,9 +17,15 @@ for (const file of [
   "arguments.js",
   "filetypes.js",
   "network.js",
+  "node.js",
+  "node.cjs",
+  "cli.js",
+  "infomap.node.mjs",
+  "infomap.cli.mjs",
   "index.d.ts",
   "react.d.ts",
   "result.d.ts",
+  "node.d.ts",
   "package.json",
 ]) {
   assert.ok(

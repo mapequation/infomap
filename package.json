@@ -10,6 +10,7 @@
   "files": [
     "*.js",
     "*.cjs",
+    "*.mjs",
     "*.d.ts",
     "*.map",
     "LICENSE_GPLv3.txt"
@@ -54,7 +55,16 @@
       "require": "./network.cjs",
       "default": "./network.js"
     },
+    "./node": {
+      "types": "./node.d.ts",
+      "import": "./node.js",
+      "require": "./node.cjs",
+      "default": "./node.js"
+    },
     "./package.json": "./package.json"
+  },
+  "bin": {
+    "infomap": "./cli.js"
   },
   "sideEffects": false,
   "scripts": {

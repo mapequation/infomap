@@ -18,6 +18,7 @@ KEEP_PACKAGE_FIELDS = [
     "types",
     "type",
     "exports",
+    "bin",
     "sideEffects",
     "repository",
     "keywords",
@@ -43,6 +44,14 @@ def main():
     parser.add_argument("--readme", default="interfaces/js/README.md")
     parser.add_argument("--readme-rst", default="README.rst")
     parser.add_argument("--license", default="LICENSE_GPLv3.txt")
+    parser.add_argument(
+        "--node-module",
+        help="Emscripten Node library artifact to stage (infomap.node.mjs).",
+    )
+    parser.add_argument(
+        "--cli-module",
+        help="Emscripten Node bin artifact to stage (infomap.cli.mjs).",
+    )
     parser.add_argument("--output-dir", default="dist/npm/package")
     args = parser.parse_args()
 
@@ -56,6 +65,11 @@ def main():
     copy_file(args.readme, output_dir, "README.md")
     copy_file(args.readme_rst, output_dir, "README.rst")
     copy_file(args.license, output_dir, "LICENSE_GPLv3.txt")
+
+    if args.node_module:
+        copy_file(args.node_module, output_dir)
+    if args.cli_module:
+        copy_file(args.cli_module, output_dir)
 
 
 if __name__ == "__main__":
