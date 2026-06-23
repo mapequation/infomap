@@ -9,6 +9,8 @@ Choose a notebook
 -----------------
 
 - :doc:`quickstart` — first end-to-end Infomap workflow in Python.
+- :doc:`options-guide` — what every Infomap option is for, with runnable
+  examples and a complete reference table.
 - :doc:`compare-infomap-louvain-networkx` — compare Infomap and Louvain with
   NetworkX when your graph already lives in NetworkX.
 - :doc:`compare-infomap-louvain-leiden-igraph` — compare Infomap, Louvain, and
@@ -57,6 +59,7 @@ Source notebooks
 ----------------
 
 - `quickstart.ipynb <https://github.com/mapequation/infomap/blob/master/examples/notebooks/quickstart.ipynb>`_
+- `options-guide.ipynb <https://github.com/mapequation/infomap/blob/master/examples/notebooks/options-guide.ipynb>`_
 - `compare-infomap-louvain-networkx.ipynb <https://github.com/mapequation/infomap/blob/master/examples/notebooks/compare-infomap-louvain-networkx.ipynb>`_
 - `compare-infomap-louvain-leiden-igraph.ipynb <https://github.com/mapequation/infomap/blob/master/examples/notebooks/compare-infomap-louvain-leiden-igraph.ipynb>`_
 - `compare-infomap-scanpy-workflow.ipynb <https://github.com/mapequation/infomap/blob/master/examples/notebooks/compare-infomap-scanpy-workflow.ipynb>`_
@@ -69,6 +72,7 @@ Source notebooks
    :maxdepth: 1
 
    quickstart
+   options-guide
    compare-infomap-louvain-networkx
    compare-infomap-louvain-leiden-igraph
    compare-infomap-scanpy-workflow
