@@ -669,5 +669,12 @@ TEST_CASE("Config parses --trial-results and --no-final-output [fast][core][conf
   CHECK(c.noFinalOutput);
 }
 
+TEST_CASE("Config parses --multilayer-relax-to-self [fast][core][config][cli]")
+{
+  CHECK_FALSE(Config("input.net --silent --no-file-output", true).multilayerRelaxToSelf);
+  const Config c("input.net --silent --no-file-output --multilayer-relax-to-self", true);
+  CHECK(c.multilayerRelaxToSelf);
+}
+
 
 } // namespace

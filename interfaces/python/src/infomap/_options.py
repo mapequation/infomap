@@ -66,6 +66,7 @@ _ALGORITHM_OPTION_SPECS = (
     ("value", "multilayer_relax_limit_up", "--multilayer-relax-limit-up", lambda value: value != -1),
     ("value", "multilayer_relax_limit_down", "--multilayer-relax-limit-down", lambda value: value != -1),
     ("flag", "multilayer_relax_by_jsd", "--multilayer-relax-by-jsd", None),
+    ("flag", "multilayer_relax_to_self", "--multilayer-relax-to-self", None),
 )
 
 _ACCURACY_OPTION_SPECS = (
@@ -266,6 +267,10 @@ class InfomapOptions:
     multilayer_relax_by_jsd : bool, optional
         Weight multilayer relaxation by out-link similarity measured with Jensen-Shannon
         divergence.
+    multilayer_relax_to_self : bool, optional
+        On relaxation, link a state node to its own physical node in the target layer
+        instead of spreading to its out-neighbors. Builds a smaller state network with
+        the same flow as the default.
     seed : int, optional
         Set the random number generator seed for reproducible results.
     num_trials : int, optional
@@ -380,6 +385,7 @@ class InfomapOptions:
     multilayer_relax_limit_up: int = -1
     multilayer_relax_limit_down: int = -1
     multilayer_relax_by_jsd: bool = False
+    multilayer_relax_to_self: bool = False
     # accuracy
     seed: int = 123
     num_trials: int = 1
@@ -506,6 +512,7 @@ def _construct_args(
     multilayer_relax_limit_up=-1,
     multilayer_relax_limit_down=-1,
     multilayer_relax_by_jsd=False,
+    multilayer_relax_to_self=False,
     # accuracy
     seed=123,
     num_trials=1,

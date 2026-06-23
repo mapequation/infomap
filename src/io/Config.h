@@ -93,6 +93,7 @@ struct Config {
   double multilayerJSRelaxRate = 0.15;
   bool multilayerRelaxByJensenShannonDivergence = false;
   int multilayerJSRelaxLimit = -1;
+  bool multilayerRelaxToSelf = false; // Couple only physical nodes across layers instead of spreading to neighbours
   unsigned int maxFlowIterations = 400;
 
   // Clustering
@@ -234,6 +235,7 @@ struct Config {
     multilayerJSRelaxRate = other.multilayerJSRelaxRate;
     multilayerRelaxByJensenShannonDivergence = other.multilayerRelaxByJensenShannonDivergence;
     multilayerJSRelaxLimit = other.multilayerJSRelaxLimit;
+    multilayerRelaxToSelf = other.multilayerRelaxToSelf;
     maxFlowIterations = other.maxFlowIterations;
     twoLevel = other.twoLevel;
     noCoarseTune = other.noCoarseTune;
