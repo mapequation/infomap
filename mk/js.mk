@@ -1,5 +1,13 @@
 WORKER_FILENAME := infomap.worker.js
 JS_WORKER_TARGET := build/js/$(WORKER_FILENAME)
+# Node builds: a MEMFS library artifact (in-memory, quiet) backs the
+# @mapequation/infomap/node API, and a NODERAWFS artifact (real files) backs the
+# `infomap` bin. Both are MODULARIZE'd ES modules with the wasm inlined
+# (SINGLE_FILE) so each ships as a single self-contained file.
+JS_NODE_TARGET := build/js/infomap.node.mjs
+JS_CLI_TARGET := build/js/infomap.cli.mjs
+JS_NODE_TEST := interfaces/js/test/node/test-node.mjs
+EMXX_NODE_FLAGS := -std=c++14 -O3 $(INFOMAP_VENDOR_CPPFLAGS) -s SINGLE_FILE=1 -s ALLOW_MEMORY_GROWTH=1 -s DISABLE_EXCEPTION_CATCHING=0 -s ENVIRONMENT=node -s MODULARIZE=1 -s EXPORT_ES6=1 -s INVOKE_RUN=0 -s EXIT_RUNTIME=0
 PRE_WORKER_MODULE := interfaces/js/pre-worker-module.js
 JS_METADATA_DIR := interfaces/js/generated
 JS_PARAMETERS_JSON := $(JS_METADATA_DIR)/parameters.json
@@ -11,13 +19,13 @@ NPM_STAGE_DIR := dist/npm/package
 NPM_UNPACK_DIR := dist/npm/unpacked
 NPM_PACK_JSON := dist/npm/npm-pack.json
 
-.PHONY: build-js build-js-metadata test-js-metadata test-js clean-js format-js
+.PHONY: build-js build-js-metadata test-js-metadata test-js build-node test-node clean-js format-js
 
-build-js: $(JS_WORKER_TARGET) $(JS_METADATA_FILES)
+build-js: $(JS_WORKER_TARGET) $(JS_NODE_TARGET) $(JS_CLI_TARGET) $(JS_METADATA_FILES)
 	$(RM) -r $(NPM_STAGE_DIR)
 	@mkdir -p $(NPM_STAGE_DIR)
 	$(NPM) run build:package
-	@$(PYTHON_FOR_BUILD_CONFIG) scripts/prepare_npm_package.py --source-package package.json --readme interfaces/js/README.md --readme-rst README.rst --license LICENSE_GPLv3.txt --output-dir $(NPM_STAGE_DIR)
+	@$(PYTHON_FOR_BUILD_CONFIG) scripts/prepare_npm_package.py --source-package package.json --readme interfaces/js/README.md --readme-rst README.rst --license LICENSE_GPLv3.txt --node-module $(JS_NODE_TARGET) --cli-module $(JS_CLI_TARGET) --output-dir $(NPM_STAGE_DIR)
 	@echo "Built $^ into $(NPM_STAGE_DIR)"
 
 build-js-metadata: build-native
@@ -54,6 +62,27 @@ test-js: build-js
 	tar -xzf dist/npm/"$$pkg" -C $(NPM_UNPACK_DIR)
 	$(NPM) run test:package
 	$(NPM) run test:browser
+
+build-node: $(JS_NODE_TARGET) $(JS_CLI_TARGET)
+	@echo "Built $(JS_NODE_TARGET) (library, MEMFS) and $(JS_CLI_TARGET) (bin, NODERAWFS)"
+
+# Library artifact: MEMFS keeps everything in memory, so src/node.ts can write a
+# network, run, and read results back without touching disk, and Infomap's output
+# stays capturable (quiet by default). FS is exported for that staging.
+$(JS_NODE_TARGET): $(SOURCES) $(HEADERS) $(MK_FILES) Makefile
+	@echo "Compiling the Infomap Node library (MEMFS) with Emscripten..."
+	@mkdir -p $(dir $@)
+	$(EMXX) $(EMXX_NODE_FLAGS) -s EXPORTED_RUNTIME_METHODS=callMain,FS -o $@ $(SOURCES)
+
+# Bin artifact: NODERAWFS maps the filesystem to the real one, so the `infomap`
+# command reads and writes files exactly like the native binary on any path.
+$(JS_CLI_TARGET): $(SOURCES) $(HEADERS) $(MK_FILES) Makefile
+	@echo "Compiling the Infomap Node CLI (NODERAWFS) with Emscripten..."
+	@mkdir -p $(dir $@)
+	$(EMXX) $(EMXX_NODE_FLAGS) -s NODERAWFS=1 -s EXPORTED_RUNTIME_METHODS=callMain -o $@ $(SOURCES)
+
+test-node: build-node
+	$(NODE) $(JS_NODE_TEST)
 
 clean-js:
 	$(RM) -r build/js dist/npm

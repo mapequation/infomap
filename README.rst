@@ -5,8 +5,8 @@ Infomap
 
 Infomap is a network clustering algorithm based on the `Map equation`_.
 This repository contains the native CLI, the Python package, the R package,
-the JavaScript web worker, the Docker images, the tutorial notebooks, and the
-source for the published Python documentation.
+the JavaScript browser worker and Node.js package, the Docker images, the
+tutorial notebooks, and the source for the published Python documentation.
 
 Start with `mapequation.org/infomap/`_ for the user guide, the
 `Infomap Python API`_ for Python examples and tutorial notebooks, and
@@ -160,11 +160,33 @@ standard completion directories.
 JavaScript package
 ^^^^^^^^^^^^^^^^^^
 
-The browser worker package is published on `NPM`_:
+The package is published on `NPM`_ and provides a browser web worker, a Node.js
+module, and an ``infomap`` command line tool:
 
 .. code-block:: bash
 
     npm install @mapequation/infomap
+
+Quick start in Node.js with the ``@mapequation/infomap/node`` entry point:
+
+.. code-block:: javascript
+
+    import { run } from "@mapequation/infomap/node";
+
+    const network = "0 1\n0 2\n0 3\n1 2\n3 4\n3 5\n4 5";
+    const result = await run(network, { args: ["-o", "tree,json", "-2"] });
+
+    console.log(result.json.codelength);
+    console.log(result.tree);
+
+Installing the package also provides an ``infomap`` command that behaves like
+the native binary:
+
+.. code-block:: bash
+
+    npx @mapequation/infomap network.net . --tree
+
+Browser worker and React usage are documented on the `NPM`_ package page.
 
 .. _NPM: https://www.npmjs.com/package/@mapequation/infomap
 
