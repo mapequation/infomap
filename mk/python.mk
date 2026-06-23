@@ -141,7 +141,7 @@ endef
 _build-docs-site:
 	@$(call BUILD_DOCS_SITE,$(SPHINX_TARGET_DIR))
 
-build-docs: dev-python-install
+build-docs: build-native dev-python-install
 	@rm -rf "$(DOCS_BUILD_DIR)"
 	@$(call BUILD_DOCS_SITE,$(DOCS_BUILD_DIR))
 	mkdir -p docs; \

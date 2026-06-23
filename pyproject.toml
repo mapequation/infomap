@@ -95,6 +95,7 @@ examples = [
   "pandas",
   "pyarrow",
   "scikit-learn",
+  "scanpy[leiden]",
   "scipy",
 ]
 notebooks = [
