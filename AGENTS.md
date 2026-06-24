@@ -18,9 +18,9 @@ Do not bundle unrelated cleanup into the same change.
 - `src/`: C++ runtime behavior, algorithms, parsing, IO, and CLI semantics
 - `interfaces/python/`: Python package sources, tracked SWIG outputs, and Sphinx source
 - `interfaces/R/`: R package skeleton (`infomap/`) and tracked SWIG-generated R outputs (`generated/`)
-- `interfaces/js/`: JavaScript package sources, legacy parser package, and TypeScript sources
+- `interfaces/js/`: JavaScript package sources and TypeScript sources
 - `interfaces/swig/`: SWIG interface files shared by Python and R bindings
-- `test/`: Python-facing regression tests and fixtures
+- `test/`: C++ doctest suites (`test/cpp/`), Python regression tests (`test/python/`), native benchmarks (`test/bench/`), and shared fixtures
 - `examples/python/`: executable Python examples used by `make test-python`
 - `examples/R/`: executable R examples used by `make test-r-examples`
 - `.github/workflows/`: CI, release, and packaging workflows
