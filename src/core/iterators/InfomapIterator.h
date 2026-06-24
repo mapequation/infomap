@@ -113,7 +113,7 @@ public:
   {
     InfomapModuleIterator copy(*this);
     ++(*this);
-    return std::move(copy);
+    return copy;
   }
 
   InfomapIterator copy() const noexcept override
@@ -152,7 +152,7 @@ public:
   {
     InfomapLeafModuleIterator copy(*this);
     ++(*this);
-    return std::move(copy);
+    return copy;
   }
 
   InfomapIterator copy() const noexcept override
@@ -191,7 +191,7 @@ public:
   {
     InfomapLeafIterator copy(*this);
     ++(*this);
-    return std::move(copy);
+    return copy;
   }
 
   InfomapIterator copy() const noexcept override
@@ -245,7 +245,7 @@ public:
   {
     InfomapIteratorPhysical copy(*this);
     ++(*this);
-    return std::move(copy);
+    return copy;
   }
 
   InfomapIterator copy() const noexcept override
@@ -293,7 +293,7 @@ public:
   {
     InfomapLeafIteratorPhysical copy(*this);
     ++(*this);
-    return std::move(copy);
+    return copy;
   }
 
   InfomapIterator copy() const noexcept override

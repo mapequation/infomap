@@ -149,8 +149,15 @@ def _base_compile_flags(compiler_family):
         return ["/std:c++14", "/utf-8"]
 
     flags = ["-Wall", "-Wextra", "-pedantic", "-Wnon-virtual-dtor", "-std=c++14"]
-    if compiler_family in {"clang", "gnu"}:
+    if compiler_family == "clang":
         flags.append("-Wshadow")
+    elif compiler_family == "gnu":
+        # GCC's plain -Wshadow flags constructor/method parameters that shadow a
+        # member (the pervasive `Foo(double flow) : flow(flow)` idiom), emitting
+        # thousands of header warnings clang deliberately ignores. -Wshadow=local
+        # matches clang: warn on a local shadowing another local/parameter, not on
+        # field shadowing — keeping the useful detection without the noise.
+        flags.append("-Wshadow=local")
     return flags
 
 

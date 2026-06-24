@@ -688,7 +688,9 @@ INFOMAP_HOT unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestMod
     m_threadModuleEnumeration.resize(numThreads);
   }
 
+#ifdef _OPENMP
 #pragma omp parallel
+#endif
   {
 #ifdef _OPENMP
     const auto threadNum = static_cast<unsigned int>(omp_get_thread_num());
@@ -700,7 +702,9 @@ INFOMAP_HOT unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestMod
 
     // Chunked dynamic scheduling: load varies per node (dirty nodes cluster),
     // but chunk size 1 costs one scheduler round-trip per iteration.
+#ifdef _OPENMP
 #pragma omp for schedule(dynamic, 512)
+#endif
     for (unsigned int i = 0; i < numNodes; ++i) {
       // Once cancelled, drain the sweep without throwing (no exception may leave
       // this OpenMP region); the outer loop throws at its next checkpoint (#412).
