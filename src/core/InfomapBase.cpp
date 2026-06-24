@@ -2464,13 +2464,7 @@ unsigned int InfomapBase::findHierarchicalSuperModulesFast(unsigned int superLev
     workingHierarchicalCodelength += codelength - oldIndexLength;
 
     Log(1) << hideIf(!acceptSolution) << ((hierarchicalCodelength - workingHierarchicalCodelength) / hierarchicalCodelength * 100) << "% " << std::flush;
-    Console::note(1, "Found {} super modules in {} effective loops with hierarchical codelength {:g} + {:g} = {:g}{}",
-                  numActiveModules(),
-                  numEffectiveLoops,
-                  indexCodelength,
-                  workingHierarchicalCodelength - indexCodelength,
-                  workingHierarchicalCodelength,
-                  acceptSolution ? "" : ", discarding the solution.");
+    Console::note(1, "Found {} super modules in {} effective loops with hierarchical codelength {:g} + {:g} = {:g}{}", numActiveModules(), numEffectiveLoops, indexCodelength, workingHierarchicalCodelength - indexCodelength, workingHierarchicalCodelength, acceptSolution ? "" : ", discarding the solution.");
     Log(1) << std::flush;
     Log(1).print("{:g} -> {}\n", oldIndexLength, io::stringify(*this));
 
