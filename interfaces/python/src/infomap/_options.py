@@ -59,8 +59,6 @@ _ALGORITHM_OPTION_SPECS = (
     ("value", "variable_markov_damping", "--variable-markov-damping", lambda value: value != 1.0),
     ("value", "variable_markov_min_scale", "--variable-markov-min-scale", lambda value: value != 1.0),
     ("value", "preferred_number_of_modules", "--preferred-number-of-modules", lambda value: value is not None),
-    ("value", "preferred_number_of_levels", "--preferred-number-of-levels", lambda value: value is not None),
-    ("value", "preferred_number_of_levels_strength", "--preferred-number-of-levels-strength", lambda value: value != 1.0),
     ("value", "multilayer_relax_rate", "--multilayer-relax-rate", lambda value: value != 0.15),
     ("value", "multilayer_relax_limit", "--multilayer-relax-limit", lambda value: value != -1),
     ("value", "multilayer_relax_limit_up", "--multilayer-relax-limit-up", lambda value: value != -1),
@@ -245,13 +243,6 @@ class InfomapOptions:
         Local Markov time is max scale divided by local scale.
     preferred_number_of_modules : int, optional
         Penalize solutions by how far their number of modules differs from this value.
-    preferred_number_of_levels : int, optional
-        Soft preference for the depth of the hierarchy. Steering to a shallower depth is
-        reliable at a small codelength cost; deeper is best-effort, bounded by what the
-        optimizer proposes. No-op with --two-level or strength 0.
-    preferred_number_of_levels_strength : float, optional
-        Scale the strength of --preferred-number-of-levels. 0 disables the preference;
-        larger values increase the cost of deviating from the preferred depth.
     multilayer_relax_rate : float, optional
         Set the probability of relaxing from a state node to neighboring layers instead
         of staying in the current layer.
@@ -378,8 +369,6 @@ class InfomapOptions:
     variable_markov_damping: float = 1.0
     variable_markov_min_scale: float = 1.0
     preferred_number_of_modules: int | None = None
-    preferred_number_of_levels: int | None = None
-    preferred_number_of_levels_strength: float = 1.0
     multilayer_relax_rate: float = 0.15
     multilayer_relax_limit: int = -1
     multilayer_relax_limit_up: int = -1
@@ -505,8 +494,6 @@ def _construct_args(
     variable_markov_damping=1.0,
     variable_markov_min_scale=1.0,
     preferred_number_of_modules=None,
-    preferred_number_of_levels=None,
-    preferred_number_of_levels_strength=1.0,
     multilayer_relax_rate=0.15,
     multilayer_relax_limit=-1,
     multilayer_relax_limit_up=-1,

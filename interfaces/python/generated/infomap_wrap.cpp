@@ -9891,114 +9891,6 @@ fail:
 }
 
 
-SWIGINTERN PyObject *_wrap_Config_preferredNumberOfLevels_set(PyObject *self, PyObject *args) {
-  PyObject *resultobj = 0;
-  infomap::Config *arg1 = 0 ;
-  unsigned int arg2 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  unsigned int val2 ;
-  int ecode2 = 0 ;
-  PyObject *swig_obj[2] ;
-  
-  (void)self;
-  if (!SWIG_Python_UnpackTuple(args, "Config_preferredNumberOfLevels_set", 2, 2, swig_obj)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__Config, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Config_preferredNumberOfLevels_set" "', argument " "1"" of type '" "infomap::Config *""'"); 
-  }
-  arg1 = reinterpret_cast< infomap::Config * >(argp1);
-  ecode2 = SWIG_AsVal_unsigned_SS_int(swig_obj[1], &val2);
-  if (!SWIG_IsOK(ecode2)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "Config_preferredNumberOfLevels_set" "', argument " "2"" of type '" "unsigned int""'");
-  } 
-  arg2 = static_cast< unsigned int >(val2);
-  if (arg1) (arg1)->preferredNumberOfLevels = arg2;
-  resultobj = SWIG_Py_Void();
-  return resultobj;
-fail:
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_Config_preferredNumberOfLevels_get(PyObject *self, PyObject *args) {
-  PyObject *resultobj = 0;
-  infomap::Config *arg1 = 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  PyObject *swig_obj[1] ;
-  unsigned int result;
-  
-  (void)self;
-  if (!args) SWIG_fail;
-  swig_obj[0] = args;
-  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__Config, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Config_preferredNumberOfLevels_get" "', argument " "1"" of type '" "infomap::Config *""'"); 
-  }
-  arg1 = reinterpret_cast< infomap::Config * >(argp1);
-  result = (unsigned int) ((arg1)->preferredNumberOfLevels);
-  resultobj = SWIG_From_unsigned_SS_int(static_cast< unsigned int >(result));
-  return resultobj;
-fail:
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_Config_preferredNumberOfLevelsStrength_set(PyObject *self, PyObject *args) {
-  PyObject *resultobj = 0;
-  infomap::Config *arg1 = 0 ;
-  double arg2 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  double val2 ;
-  int ecode2 = 0 ;
-  PyObject *swig_obj[2] ;
-  
-  (void)self;
-  if (!SWIG_Python_UnpackTuple(args, "Config_preferredNumberOfLevelsStrength_set", 2, 2, swig_obj)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__Config, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Config_preferredNumberOfLevelsStrength_set" "', argument " "1"" of type '" "infomap::Config *""'"); 
-  }
-  arg1 = reinterpret_cast< infomap::Config * >(argp1);
-  ecode2 = SWIG_AsVal_double(swig_obj[1], &val2);
-  if (!SWIG_IsOK(ecode2)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "Config_preferredNumberOfLevelsStrength_set" "', argument " "2"" of type '" "double""'");
-  } 
-  arg2 = static_cast< double >(val2);
-  if (arg1) (arg1)->preferredNumberOfLevelsStrength = arg2;
-  resultobj = SWIG_Py_Void();
-  return resultobj;
-fail:
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_Config_preferredNumberOfLevelsStrength_get(PyObject *self, PyObject *args) {
-  PyObject *resultobj = 0;
-  infomap::Config *arg1 = 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  PyObject *swig_obj[1] ;
-  double result;
-  
-  (void)self;
-  if (!args) SWIG_fail;
-  swig_obj[0] = args;
-  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__Config, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Config_preferredNumberOfLevelsStrength_get" "', argument " "1"" of type '" "infomap::Config *""'"); 
-  }
-  arg1 = reinterpret_cast< infomap::Config * >(argp1);
-  result = (double) ((arg1)->preferredNumberOfLevelsStrength);
-  resultobj = SWIG_From_double(static_cast< double >(result));
-  return resultobj;
-fail:
-  return NULL;
-}
-
-
 SWIGINTERN PyObject *_wrap_Config_entropyBiasCorrection_set(PyObject *self, PyObject *args) {
   PyObject *resultobj = 0;
   infomap::Config *arg1 = 0 ;
@@ -58589,10 +58481,6 @@ static PyMethodDef SwigMethods[] = {
 	 { "Config_teleportationProbability_get", _wrap_Config_teleportationProbability_get, METH_O, NULL},
 	 { "Config_preferredNumberOfModules_set", _wrap_Config_preferredNumberOfModules_set, METH_VARARGS, NULL},
 	 { "Config_preferredNumberOfModules_get", _wrap_Config_preferredNumberOfModules_get, METH_O, NULL},
-	 { "Config_preferredNumberOfLevels_set", _wrap_Config_preferredNumberOfLevels_set, METH_VARARGS, NULL},
-	 { "Config_preferredNumberOfLevels_get", _wrap_Config_preferredNumberOfLevels_get, METH_O, NULL},
-	 { "Config_preferredNumberOfLevelsStrength_set", _wrap_Config_preferredNumberOfLevelsStrength_set, METH_VARARGS, NULL},
-	 { "Config_preferredNumberOfLevelsStrength_get", _wrap_Config_preferredNumberOfLevelsStrength_get, METH_O, NULL},
 	 { "Config_entropyBiasCorrection_set", _wrap_Config_entropyBiasCorrection_set, METH_VARARGS, NULL},
 	 { "Config_entropyBiasCorrection_get", _wrap_Config_entropyBiasCorrection_get, METH_O, NULL},
 	 { "Config_entropyBiasCorrectionMultiplier_set", _wrap_Config_entropyBiasCorrectionMultiplier_set, METH_VARARGS, NULL},
