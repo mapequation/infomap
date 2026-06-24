@@ -1,11 +1,15 @@
 ---
 name: infomap
-description: Use when helping researchers use Infomap, the map equation, or the Infomap CLI, Python package, or R package for community detection workflows, including reproducible analysis, method selection, notebooks, and multilayer, memory/state, metadata, bipartite, or flow-model choices.
+description: Use when helping someone USE Infomap as an analysis tool — running the map equation for community detection via the Infomap CLI, Python package, R package, or notebooks; choosing a network representation or flow model (multilayer, memory/state, metadata, bipartite); reproducible analysis; result interpretation; or method selection. NOT for developing the Infomap software itself: editing its source (src/, the C++/SWIG bindings, CMake, CI, vendored libs) or building/debugging/testing the codebase is ordinary software development, not an Infomap analysis task.
 ---
 
 # Infomap Research Workflows
 
 Use this skill to help researchers run, explain, adapt, or troubleshoot Infomap analyses with the CLI, Python package, R package, and survey companion notebooks.
+
+## When NOT to use this skill
+
+This skill is for *using* Infomap to analyze networks. It is **not** for developing Infomap itself. If the task is editing, building, profiling, debugging, or testing the Infomap source — the C++ in `src/`, the SWIG Python/R bindings, CMake/CI, vendored libraries, the CLI parameter catalog, or the repo's own test suite — that is ordinary software development; do not use this skill, even when working inside the Infomap repository. The presence of Infomap source files or CLI/option names in the task is not a trigger; the trigger is a user analyzing a network with Infomap.
 
 ## First classify the task
 
