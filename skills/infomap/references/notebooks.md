@@ -24,6 +24,14 @@ Notebook runtimes can grow quickly when examples download data, build layouts, c
 
 ## Notebook topics
 
+Flagship notebooks (start here for most tasks):
+
+- `quickstart.ipynb` — Python quickstart with a notebook-native summary and a small network visualization;
+- `options-guide.ipynb` — goal-oriented tour of Infomap's options with a reference table generated from the installed package;
+- `run-infomap-on-hpc.ipynb` — native trial sharding, scheduler-aware threads, and Python shard merging;
+- `benchmark-performance.ipynb` — committed time/memory benchmarks for planning runs by size, threads, trials, and depth;
+- `run-infomap-on-graphrag-tables.ipynb` — GraphRAG-style Parquet workflow with a Leiden comparison.
+
 The survey companion notebooks cover:
 
 - two-level map equation and two-level search;
