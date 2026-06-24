@@ -121,7 +121,6 @@ Internal-supported images:
 
 - Python build/test image (`docker/python.Dockerfile`)
 - Ubuntu compatibility image (`docker/ubuntu.Dockerfile`)
-- RStudio image (`docker/rstudio.Dockerfile`)
 
 Supported images should stay aligned with the current Make-based workflows and
 retain smoke coverage in CI.

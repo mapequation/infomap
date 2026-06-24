@@ -388,7 +388,6 @@ Internal-supported images:
 
 - Python build/test image: `docker/python.Dockerfile`
 - Ubuntu compatibility image: `docker/ubuntu.Dockerfile`
-- RStudio image: `docker/rstudio.Dockerfile`
 
 Use Docker Compose v2 commands with the local compose file, for example:
 

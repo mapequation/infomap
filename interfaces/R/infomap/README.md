@@ -20,7 +20,7 @@ Source install from a release tarball — pick the version from the
 [GitHub releases page](https://github.com/mapequation/infomap/releases):
 
 ```r
-# Replace VERSION with the desired tag, e.g. "2.9.2".
+# Replace VERSION with the desired tag, e.g. "2.13.0".
 install.packages(
   paste0("https://github.com/mapequation/infomap/releases/download/v",
          "VERSION", "/infomap_", "VERSION", ".tar.gz"),
@@ -75,6 +75,32 @@ as.data.frame(im)         # one row per node, with path / flow / name / module_i
 See `?cluster_infomap` for the one-call helper, `?Infomap` for the
 low-level constructor plus the `InfomapClass` method and active-binding
 reference, and `?infomap_options` for the complete list of named options.
+
+## Multilayer networks
+
+Cluster a multilayer network with `cluster_infomap_multilayer()`. Pass a
+data frame of intra-layer links (`layer`, `node_from`, `node_to`) and let
+Infomap couple layers automatically via `multilayer_relax_rate`, or pass
+full multilayer links (`layer_from`, `node_from`, `layer_to`, `node_to`,
+optional `weight`) to set inter-layer couplings explicitly:
+
+```r
+intra <- data.frame(
+  layer     = c(1, 1, 1, 2, 2, 2),
+  node_from = c(1, 2, 3, 1, 2, 3),
+  node_to   = c(2, 3, 1, 2, 3, 1)
+)
+
+result <- cluster_infomap_multilayer(intra, silent = TRUE, num_trials = 10)
+result$codelength
+result$nodes        # one row per state node, including a `layer_id` column
+```
+
+For weighted inter-layer couplings that come from a different source than
+the intra-layer links, use the low-level R6 API with
+`im$add_multilayer_intra_link()` and `im$add_multilayer_inter_link()`. See
+`?cluster_infomap_multilayer` and `examples/R/example-multilayer.R` for a
+full walkthrough.
 
 ## Working with igraph
 

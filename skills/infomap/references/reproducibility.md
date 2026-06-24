@@ -25,7 +25,7 @@ Record:
 
 ## Runtime planning
 
-Use these local benchmark results only as order-of-magnitude guidance. They were measured on macOS arm64 with Infomap 2.10.1, `seed=123`, no file output, and wall-clock time around `read_file + run`. Python used the package API from a virtual environment; R includes one-shot `Rscript` startup overhead.
+Use these local benchmark results only as order-of-magnitude guidance. They were measured on macOS arm64 with Infomap 2.10.1, `seed=123`, no file output, and wall-clock time around `read_file + run`; the 2.11–2.13 releases added several performance improvements, so treat these numbers as upper bounds and prefer the regenerated figures in `examples/notebooks/benchmark-performance.ipynb`. Python used the package API from a virtual environment; R includes one-shot `Rscript` startup overhead.
 
 | Network | Size | States | Links | Trials | CLI | Python | R |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -36,6 +36,8 @@ Use these local benchmark results only as order-of-magnitude guidance. They were
 | first-order edge list | 16.9 MB | 0 | 1M | 1 | 3.80s | 4.11s | 8.22s |
 | first-order edge list | 16.9 MB | 0 | 1M | 5 | 16.68s | 17.55s | 41.40s |
 | state network | 19.2 MB | 400k | 800k | 1 | 10.62s | 11.51s | 26.49s |
+
+For large or repeated runs, prefer convergence-aware and parallel options over a fixed high trial count: `--converge` stops trials on a codelength plateau, `--parallel-trials` runs independent trials concurrently, and `--num-threads` auto-detects cpuset/SLURM/OpenMP limits. On HPC, shard trials across jobs with `--trial-offset`/`--trial-results` and merge with the `infomap.merge` helper (see `run-infomap-on-hpc.ipynb`).
 
 Practical gating:
 
