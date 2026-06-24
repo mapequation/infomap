@@ -825,8 +825,11 @@ TEST_CASE("getMultilayerStateId resolves physical (layer, node) to the generated
 
   const auto& map = im.network().layerNodeToStateId();
   REQUIRE(!map.empty());
-  for (const auto& [layerId, nodes] : map) {
-    for (const auto& [nodeId, stateId] : nodes) {
+  for (const auto& layerEntry : map) {
+    const auto layerId = layerEntry.first;
+    for (const auto& nodeEntry : layerEntry.second) {
+      const auto nodeId = nodeEntry.first;
+      const auto stateId = nodeEntry.second;
       CHECK(im.getMultilayerStateId(layerId, nodeId) == stateId);
     }
   }
