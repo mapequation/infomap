@@ -105,13 +105,13 @@ protected:
   bool m_higherOrderInputMethodCalled = false;
   NodeMap m_nodes; // Nodes indexed by state id (equal physical id for first-order networks)
   // --- Link build representations (one active per instance) ---
-  NodeLinkMap m_nodeLinkMap;                   // mode B (multilayer) build rep
+  NodeLinkMap m_nodeLinkMap; // mode B (multilayer) build rep
   mutable std::vector<LinkTriple> m_linkBuffer; // mode A (first-order) build rep
-  bool m_useMapBuild = false;                  // true => mode B
+  bool m_useMapBuild = false; // true => mode B
   mutable bool m_linksFinalized = false;
-  mutable unsigned int m_rawLinkCount = 0;     // pre-aggregation occurrences (mode A)
+  mutable unsigned int m_rawLinkCount = 0; // pre-aggregation occurrences (mode A)
   // --- Consumed CSR representation (valid after finalizeLinks) ---
-  mutable std::vector<unsigned int> m_nodeIds;     // sorted unique ids; index->id
+  mutable std::vector<unsigned int> m_nodeIds; // sorted unique ids; index->id
   mutable std::vector<unsigned int> m_linkOffsets; // size numNodes+1
   mutable std::vector<unsigned int> m_linkTargets; // dense target indices
   mutable std::vector<double> m_linkWeights;

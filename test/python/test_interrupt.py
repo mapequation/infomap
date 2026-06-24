@@ -46,7 +46,8 @@ def _write_clustered_network(path, clusters=1500):
 
 # Reads the network file in argv[1], prints READY, then runs. Exit codes:
 # 42 = KeyboardInterrupt (expected), 0 = completed (interrupt ignored), 43 = other.
-_OO_CHILD = """
+_OO_CHILD = (
+    """
 import sys, infomap
 im = infomap.Infomap("--silent --num-trials %s --no-file-output --seed 1")
 im.read_file(sys.argv[1])
@@ -60,7 +61,9 @@ except KeyboardInterrupt:
 except BaseException as exc:  # noqa: BLE001
     print("OTHER", type(exc).__name__)
     sys.exit(43)
-""" % _TRIALS
+"""
+    % _TRIALS
+)
 
 # Drives the pip console-script entry (infomap:main) without needing it on PATH.
 _CLI_CHILD = "import sys; from infomap import main; sys.exit(main())"
@@ -115,7 +118,18 @@ def test_cli_main_exits_130_on_sigint(tmp_path):
     _write_clustered_network(net)
 
     code, _out, err, elapsed = _run_until_ready_then_sigint(
-        [sys.executable, "-c", _CLI_CHILD, str(net), str(tmp_path / "out"), "--silent", "-N", _TRIALS, "--seed", "1"],
+        [
+            sys.executable,
+            "-c",
+            _CLI_CHILD,
+            str(net),
+            str(tmp_path / "out"),
+            "--silent",
+            "-N",
+            _TRIALS,
+            "--seed",
+            "1",
+        ],
         want_ready=False,
     )
 
