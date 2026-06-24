@@ -86,7 +86,7 @@ description = "Requires the separate map-equation-similarity package."
 [[notebooks]]
 path = "9.3 Infomap Bioregions.ipynb"
 tier = "manual"
-description = "Requires geospatial dependencies and external data access."
+description = "Requires geospatial dependencies (geopandas, shapely); uses synthetic data, no external download."
 
 [[notebooks]]
 path = "9.4 Model Selection with Correlational Data.ipynb"
