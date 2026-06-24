@@ -188,7 +188,9 @@ public:
         m_childDegree(other.m_childDegree),
         m_childrenChanged(other.m_childrenChanged),
         m_numLeafMembers(other.m_numLeafMembers),
-        m_extras(other.m_extras ? std::make_unique<InfoNodeExtras>(*other.m_extras) : nullptr) {}
+        m_extras(other.m_extras ? std::make_unique<InfoNodeExtras>(*other.m_extras) : nullptr)
+  {
+  }
 
   ~InfoNode() noexcept;
 
@@ -520,7 +522,7 @@ private:
 // InfoNode legitimately exceeds these release-layout bounds without any real
 // regression. The guard's job is to catch re-bloat in normal builds, not to
 // constrain debug-iterator layouts.
-#if !defined(_GLIBCXX_DEBUG) && !defined(_GLIBCXX_DEBUG_PEDANTIC)            \
+#if !defined(_GLIBCXX_DEBUG) && !defined(_GLIBCXX_DEBUG_PEDANTIC)                            \
     && !defined(_LIBCPP_DEBUG) && !(defined(_LIBCPP_DEBUG_LEVEL) && _LIBCPP_DEBUG_LEVEL > 0) \
     && !(defined(_ITERATOR_DEBUG_LEVEL) && _ITERATOR_DEBUG_LEVEL > 0)
 #if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
