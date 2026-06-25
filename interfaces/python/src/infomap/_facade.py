@@ -93,6 +93,18 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
     For more examples, see the examples directory.
     """
 
+    def _init_from_options(self, args, options):
+        self._core = Core(_package_construct_args()(args, **options.to_kwargs()))
+        self._network = _NetworkBuilder(self._core)
+        self._multilayer = _MultilayerBuilder(self._core)
+        self.node_id_to_label = {}
+        # Run-generation token: incremented on every run(). A Result stamps the
+        # generation it was created in; node-level access on a stale Result
+        # (engine re-ran since) raises instead of reading freed memory. The C++
+        # result tree is rebuilt on every run() (design §7).
+        self._generation = 0
+        self._result = None
+
     def __init__(
         self,
         args=None,
@@ -187,16 +199,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             Raw Infomap arguments to prepend before rendered keyword options.
         """
         options = InfomapOptions.from_mapping(locals())
-        self._core = Core(_package_construct_args()(args, **options.to_kwargs()))
-        self._network = _NetworkBuilder(self._core)
-        self._multilayer = _MultilayerBuilder(self._core)
-        self.node_id_to_label = {}
-        # Run-generation token: incremented on every run(). A Result stamps the
-        # generation it was created in; node-level access on a stale Result
-        # (engine re-ran since) raises instead of reading freed memory. The C++
-        # result tree is rebuilt on every run() (design §7).
-        self._generation = 0
-        self._result = None
+        self._init_from_options(args, options)
 
     def __getattr__(self, name):
         # Transitional: forward not-yet-migrated SWIG calls (e.g. the io
@@ -1328,6 +1331,22 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         finally:
             self.initial_partition = old_partition
 
+    def _run_from_options(self, args, initial_partition, options):
+        args = _package_construct_args()(args, **options.to_kwargs())
+
+        if initial_partition is not None:
+            with self._initial_partition(initial_partition):
+                self._core.run(args)
+        else:
+            self._core.run(args)
+
+        # Stamp a fresh Result with the new generation. The C++ result tree is
+        # rebuilt on every run(), so any previously returned Result becomes
+        # stale for node-level access (its eager scalars stay valid).
+        self._generation += 1
+        self._result = Result(self, generation=self._generation)
+        return self._result
+
     def run(
         self,
         args=None,
@@ -1430,20 +1449,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         initial_partition
         """
         options = InfomapOptions.from_mapping(locals())
-        args = _package_construct_args()(args, **options.to_kwargs())
-
-        if initial_partition is not None:
-            with self._initial_partition(initial_partition):
-                self._core.run(args)
-        else:
-            self._core.run(args)
-
-        # Stamp a fresh Result with the new generation. The C++ result tree is
-        # rebuilt on every run(), so any previously returned Result becomes
-        # stale for node-level access (its eager scalars stay valid).
-        self._generation += 1
-        self._result = Result(self, generation=self._generation)
-        return self._result
+        return self._run_from_options(args, initial_partition, options)
 
     def run_with_options(self, options, *, args=None, initial_partition=None):
         """Run Infomap using a reusable :class:`InfomapOptions` instance."""
