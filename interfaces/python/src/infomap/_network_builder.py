@@ -87,18 +87,18 @@ class _NetworkBuilder:
         )
 
     def remove_link(self, source_id, target_id):
-        return self._core.network.removeLink(source_id, target_id)
+        return self._core.network().removeLink(source_id, target_id)
 
     def remove_links(self, links):
         for link in links:
             self.remove_link(*link)
 
     def set_meta_data(self, node_id, meta_category):
-        return self._core.network.addMetaData(node_id, meta_category)
+        return self._core.network().addMetaData(node_id, meta_category)
 
     @property
     def bipartite_start_id(self):
-        return self._core.network.bipartiteStartId()
+        return self._core.network().bipartiteStartId()
 
     @bipartite_start_id.setter
     def bipartite_start_id(self, start_id):

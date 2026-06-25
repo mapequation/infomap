@@ -50,7 +50,7 @@ class _InfomapWritersMixin:
         depth_level : int, optional
             The depth in the hierarchical tree to write.
         """
-        return self.writeClu(filename, states, depth_level)
+        return self._core.writeClu(filename, states, depth_level)
 
     def write_tree(self, filename, states=False):
         """Write result to a tree file.
@@ -66,7 +66,7 @@ class _InfomapWritersMixin:
         states : bool, optional
             If the state nodes should be included. Default ``False``.
         """
-        return self.writeTree(filename, states)
+        return self._core.writeTree(filename, states)
 
     def write_flow_tree(self, filename, states=False):
         """Write result to a ftree file.
@@ -82,7 +82,7 @@ class _InfomapWritersMixin:
         states : bool, optional
             If the state nodes should be included. Default ``False``.
         """
-        return self.writeFlowTree(filename, states)
+        return self._core.writeFlowTree(filename, states)
 
     def write_newick(self, filename, states=False):
         """Write result to a Newick file.
@@ -98,7 +98,7 @@ class _InfomapWritersMixin:
         states : bool, optional
             If the state nodes should be included. Default ``False``.
         """
-        return self.writeNewickTree(filename, states)
+        return self._core.writeNewickTree(filename, states)
 
     def write_json(self, filename, states=False):
         """Write result to a JSON file.
@@ -114,7 +114,7 @@ class _InfomapWritersMixin:
         states : bool, optional
             If the state nodes should be included. Default ``False``.
         """
-        return self.writeJsonTree(filename, states)
+        return self._core.writeJsonTree(filename, states)
 
     def write_csv(self, filename, states=False):
         """Write result to a CSV file.
@@ -130,7 +130,7 @@ class _InfomapWritersMixin:
         states : bool, optional
             If the state nodes should be included. Default ``False``.
         """
-        return self.writeCsvTree(filename, states)
+        return self._core.writeCsvTree(filename, states)
 
     def write_state_network(self, filename):
         """Write internal state network to file.
@@ -143,7 +143,7 @@ class _InfomapWritersMixin:
         ----------
         filename : str
         """
-        return self.network.writeStateNetwork(filename)
+        return self._core.network().writeStateNetwork(filename)
 
     def write_pajek(self, filename, flow=False):
         """Write network to a Pajek file.
@@ -158,4 +158,4 @@ class _InfomapWritersMixin:
         flow : bool, optional
             If the flow should be included. Default ``False``.
         """
-        return self.network.writePajekNetwork(filename, flow)
+        return self._core.network().writePajekNetwork(filename, flow)

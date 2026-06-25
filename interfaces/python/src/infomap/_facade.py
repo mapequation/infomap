@@ -4,6 +4,7 @@ from contextlib import contextmanager
 
 from ._bindings import *  # noqa: F401,F403
 from ._bindings import __all__ as _BINDINGS_ALL
+from ._core import Core
 from ._edge_index import add_edge_index as _add_edge_index
 from ._igraph import add_igraph_graph as _add_igraph_graph
 from ._igraph import find_igraph_communities
@@ -50,7 +51,7 @@ __all__ = [
 ]
 
 
-class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # noqa: F405
+class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
     """Infomap
 
     This class is a thin wrapper around Infomap C++ compiled with SWIG.
@@ -182,10 +183,20 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
             Raw Infomap arguments to prepend before rendered keyword options.
         """
         options = InfomapOptions.from_mapping(locals())
-        super().__init__(_package_construct_args()(args, **options.to_kwargs()))
-        self._network = _NetworkBuilder(self)
-        self._multilayer = _MultilayerBuilder(self)
+        self._core = Core(_package_construct_args()(args, **options.to_kwargs()))
+        self._network = _NetworkBuilder(self._core)
+        self._multilayer = _MultilayerBuilder(self._core)
         self.node_id_to_label = {}
+
+    def __getattr__(self, name):
+        # Transitional: forward not-yet-migrated SWIG calls (e.g. the io
+        # adapters' setDirected/flowModelIsSet/network) to Core. Removed in
+        # Phase 5 once adapters route through Core. Keeps undocumented calls
+        # working at runtime while they are absent from the discoverable
+        # (dir()/inspect) surface.
+        if name == "_core":
+            raise AttributeError(name)
+        return getattr(self._core, name)
 
     def __repr__(self):
         return _repr_text(self)
@@ -326,7 +337,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
             If the network data should be accumulated to already added
             nodes and links. Default ``True``.
         """
-        return super().readInputData(filename, accumulate)
+        return self._core.readInputData(filename, accumulate)
 
     def add_node(self, node_id, name=None, teleportation_weight=None):
         """Add a node.
@@ -1267,7 +1278,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         physical = getattr(self, "_physical_initial_partition", None)
         if physical is not None:
             return physical
-        return super().getInitialPartition()
+        return self._core.getInitialPartition()
 
     @initial_partition.setter
     def initial_partition(self, module_ids):
@@ -1289,10 +1300,10 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
                 layer_ids.append(int(layer_id))
                 node_ids.append(int(node_id))
                 modules.append(int(module))
-            super().setMultilayerInitialPartition(layer_ids, node_ids, modules)
+            self._core.setMultilayerInitialPartition(layer_ids, node_ids, modules)
             self._physical_initial_partition = dict(module_ids)
         else:
-            super().setInitialPartition(module_ids)
+            self._core.setInitialPartition(module_ids)
             self._physical_initial_partition = None
 
     @contextmanager
@@ -1413,9 +1424,9 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
 
         if initial_partition is not None:
             with self._initial_partition(initial_partition):
-                return super().run(args)
+                return self._core.run(args)
 
-        return super().run(args)
+        return self._core.run(args)
 
     def run_with_options(self, options, *, args=None, initial_partition=None):
         """Run Infomap using a reusable :class:`InfomapOptions` instance."""
@@ -1430,7 +1441,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
     @property
     def network(self):
         """Get the internal network."""
-        return super().network()
+        return self._core.network()
 
     @property
     def codelength(self):
@@ -1446,7 +1457,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         float
             The codelength
         """
-        return super().codelength()
+        return self._core.codelength()
 
     @property
     def codelengths(self):
@@ -1461,7 +1472,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         tuple of float
             The codelengths for each trial
         """
-        return super().codelengths()
+        return self._core.codelengths()
 
     @property
     def elapsed_time(self):
@@ -1472,7 +1483,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         float
             The elapsed run time in seconds.
         """
-        return super().elapsedTime()
+        return self._core.elapsedTime()
 
 
 def main():

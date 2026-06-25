@@ -28,3 +28,10 @@ def test_core_does_not_recurse_before_init():
     # __getattr__ must not blow up looking for _im before it is set.
     with pytest.raises(AttributeError):
         Core.__new__(Core).addLink
+
+
+@pytest.mark.fast
+def test_infomap_does_not_inherit_swig():
+    assert not issubclass(Infomap, InfomapWrapper), (
+        "Infomap must compose Core, not inherit the SWIG wrapper."
+    )

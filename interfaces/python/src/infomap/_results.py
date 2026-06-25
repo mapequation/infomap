@@ -195,7 +195,7 @@ class _InfomapResultsMixin:
         dict of int
             Dict with node ids as keys and module ids as values.
         """
-        return super().getModules(depth_level, states)
+        return self._core.getModules(depth_level, states)
 
     def get_multilevel_modules(self, states=False):
         """Get a dict with node ids as keys and a tuple of module ids as values.
@@ -281,7 +281,7 @@ class _InfomapResultsMixin:
         dict of list of int
             Dict with node ids as keys and tuple of module ids as values.
         """
-        return super().getMultilevelModules(states)
+        return self._core.getMultilevelModules(states)
 
     @property
     def modules(self):
@@ -382,8 +382,8 @@ class _InfomapResultsMixin:
             An iterator over each node in the tree, depth first from the root
         """
         if self.have_memory and not states:
-            return super().iterTreePhysical(depth_level)
-        return super().iterTree(depth_level)
+            return self._core.iterTreePhysical(depth_level)
+        return self._core.iterTree(depth_level)
 
     def get_nodes(self, depth_level=1, states=False):
         """A view of the nodes in the hierarchical tree, iterating depth first
@@ -420,9 +420,9 @@ class _InfomapResultsMixin:
             An iterator over each node in the tree, depth first from the root
         """
         if self.have_memory and not states:
-            # super().iterLeafNodesPhysical(depth_level) is unreliable in python
-            return _LeafIterWrapper(super().iterTreePhysical(depth_level))
-        return super().iterLeafNodes(depth_level)
+            # self._core.iterLeafNodesPhysical(depth_level) is unreliable in python
+            return _LeafIterWrapper(self._core.iterTreePhysical(depth_level))
+        return self._core.iterLeafNodes(depth_level)
 
     @property
     def tree(self):
@@ -479,7 +479,7 @@ class _InfomapResultsMixin:
             An iterator over each leaf module in the tree, depth first from the
             root
         """
-        return super().iterLeafModules()
+        return self._core.iterLeafModules()
 
     @property
     def nodes(self):
@@ -722,7 +722,7 @@ class _InfomapResultsMixin:
         str
             The node name if it exists, else the ``default``.
         """
-        name = super().getName(node_id)
+        name = self._core.getName(node_id)
         if name == "":
             return default
         return name
@@ -740,7 +740,7 @@ class _InfomapResultsMixin:
         dict of string
             A dict with node ids as keys and node names as values.
         """
-        return super().getNames()
+        return self._core.getNames()
 
     @property
     def names(self):
@@ -758,7 +758,7 @@ class _InfomapResultsMixin:
         dict of string
             A dict with node ids as keys and node names as values.
         """
-        return super().getNames()
+        return self._core.getNames()
 
     def get_links(self, data="weight"):
         """A view of the currently assigned links and their weights or flow.
@@ -940,7 +940,7 @@ class _InfomapResultsMixin:
         int
             The number of top modules
         """
-        return super().numTopModules()
+        return self._core.numTopModules()
 
     @property
     def num_non_trivial_top_modules(self):
@@ -953,7 +953,7 @@ class _InfomapResultsMixin:
         int
             The number of non-trivial top modules
         """
-        return super().numNonTrivialTopModules()
+        return self._core.numNonTrivialTopModules()
 
     @property
     def num_leaf_modules(self):
@@ -1032,7 +1032,7 @@ class _InfomapResultsMixin:
         int
             The max depth
         """
-        return super().maxTreeDepth()
+        return self._core.maxTreeDepth()
 
     @property
     def num_levels(self):
@@ -1059,7 +1059,7 @@ class _InfomapResultsMixin:
         bool
             True if the network is a multilayer or memory network.
         """
-        return super().haveMemory()
+        return self._core.haveMemory()
 
     @property
     def index_codelength(self):
@@ -1075,7 +1075,7 @@ class _InfomapResultsMixin:
         float
             The two-level index codelength
         """
-        return super().getIndexCodelength()
+        return self._core.getIndexCodelength()
 
     @property
     def module_codelength(self):
@@ -1097,7 +1097,7 @@ class _InfomapResultsMixin:
         float
             The module codelength
         """
-        return super().getModuleCodelength()
+        return self._core.getModuleCodelength()
 
     @property
     def one_level_codelength(self):
@@ -1112,7 +1112,7 @@ class _InfomapResultsMixin:
         float
             The one-level codelength
         """
-        return super().getOneLevelCodelength()
+        return self._core.getOneLevelCodelength()
 
     @property
     def relative_codelength_savings(self):
@@ -1136,7 +1136,7 @@ class _InfomapResultsMixin:
         float
             The relative codelength savings
         """
-        return super().getRelativeCodelengthSavings()
+        return self._core.getRelativeCodelengthSavings()
 
     @property
     def entropy_rate(self):
@@ -1165,7 +1165,7 @@ class _InfomapResultsMixin:
         float
             The entropy rate
         """
-        return super().getEntropyRate()
+        return self._core.getEntropyRate()
 
     @property
     def meta_codelength(self):
@@ -1182,7 +1182,7 @@ class _InfomapResultsMixin:
         float
             The meta codelength
         """
-        return super().getMetaCodelength()
+        return self._core.getMetaCodelength()
 
     @property
     def meta_entropy(self):
@@ -1197,4 +1197,4 @@ class _InfomapResultsMixin:
         float
             The meta entropy
         """
-        return super().getMetaCodelength(True)
+        return self._core.getMetaCodelength(True)
