@@ -37,6 +37,21 @@ struct LinkResult {
 };
 #endif
 
+// Python-visible (no SWIGPYTHON guard): single-traversal bulk node data.
+// Parallel std::vector columns reuse the existing vector_uint/vector_double
+// SWIG templates; the ragged path is stored CSR-style (flat values + lengths).
+struct NodeData {
+  std::vector<unsigned int> node_id; // physicalId
+  std::vector<unsigned int> state_id; // stateId
+  std::vector<unsigned int> module_id; // moduleId at `level`
+  std::vector<double> flow;
+  std::vector<unsigned int> depth;
+  std::vector<unsigned int> layer_id;
+  std::vector<unsigned int> child_index;
+  std::vector<unsigned int> path_flat; // CSR values: all path entries concatenated
+  std::vector<unsigned int> path_len; // CSR lengths: per-node path length
+};
+
 // Wrapper class for the Python API
 struct InfomapWrapper : public InfomapBase {
 public:
@@ -157,6 +172,41 @@ public:
     return modules;
   }
 
+  // Single-traversal bulk node data; NodeData is defined at namespace scope
+  // (above) so SWIG wraps its parallel-vector members for Python.
+  NodeData getNodeData(int level = 1, bool states = false)
+  {
+    // Mirror _results.get_nodes: physical iterator for higher-order networks
+    // unless state-level data is requested.
+    if (haveMemory() && !states) {
+      return collectLeafData(iterTreePhysical(level));
+    }
+    return collectLeafData(iterLeafNodes(level));
+  }
+
+private:
+  template <typename Iter>
+  NodeData collectLeafData(Iter it) const
+  {
+    NodeData d;
+    for (; !it.isEnd(); ++it) {
+      auto& node = *it;
+      if (!node.isLeaf()) continue;
+      d.node_id.push_back(node.physicalId);
+      d.state_id.push_back(node.stateId);
+      d.module_id.push_back(it.moduleId());
+      d.flow.push_back(node.data.flow);
+      d.depth.push_back(it.depth());
+      d.layer_id.push_back(node.layerId);
+      d.child_index.push_back(it.childIndex());
+      const auto& p = it.path();
+      d.path_len.push_back(static_cast<unsigned int>(p.size()));
+      d.path_flat.insert(d.path_flat.end(), p.begin(), p.end());
+    }
+    return d;
+  }
+
+public:
   using InfomapBase::codelength;
   using InfomapBase::getEntropyRate;
 #if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
