@@ -39,3 +39,16 @@ def test_from_networkx_passes_options():
     im = Infomap.from_networkx(G, num_trials=5, silent=True, no_file_output=True)
     im.run()
     assert len(im.codelengths) == 5  # num_trials forwarded through the constructor
+
+
+@pytest.mark.fast
+def test_from_igraph_matches_manual_build():
+    ig = pytest.importorskip("igraph")
+    g = ig.Graph.Formula("a-b, a-c, b-c")
+    a = Infomap(silent=True, no_file_output=True, seed=42)
+    a.add_igraph_graph(g)
+    a.run()
+    b = Infomap.from_igraph(g, silent=True, no_file_output=True, seed=42)
+    b.run()
+    assert b.codelength == pytest.approx(a.codelength)
+    assert b.node_id_to_label == a.node_id_to_label
