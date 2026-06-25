@@ -2,15 +2,13 @@
 
 import pytest
 
-from infomap import Infomap
-from infomap._multilayer_builder import _MultilayerBuilder
-from infomap._network_builder import _NetworkBuilder
+from infomap import Infomap, Network
 
 
 @pytest.mark.fast
 def test_network_builder_is_used_and_builds():
     im = Infomap(silent=True, no_file_output=True)
-    assert isinstance(im._network, _NetworkBuilder)
+    assert isinstance(im._network, Network)
     im.add_node(1, "a")
     im.add_node(2)
     im.add_links([(1, 2), (2, 3)])
@@ -40,7 +38,8 @@ def test_repr_html_and_summary_render():
 @pytest.mark.fast
 def test_multilayer_builder_is_used_and_builds():
     im = Infomap(silent=True, no_file_output=True)
-    assert isinstance(im._multilayer, _MultilayerBuilder)
+    # The unified Network owns the multilayer verbs too (no separate builder).
+    assert isinstance(im._network, Network)
     im.add_multilayer_intra_links([(1, 1, 2), (1, 2, 1), (2, 2, 3), (2, 3, 2)])
     im.add_multilayer_inter_links([(1, 2, 2), (2, 2, 1)])
     im.run()

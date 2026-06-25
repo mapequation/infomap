@@ -25,8 +25,7 @@ OWNED_MODULES = {
     "infomap._facade",
     "infomap._results",
     "infomap._writers",
-    "infomap._network_builder",
-    "infomap._multilayer_builder",
+    "infomap.network",
     "infomap._summary",
 }
 
