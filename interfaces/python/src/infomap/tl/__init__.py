@@ -127,7 +127,7 @@ def infomap(
     ``adata.obs[key_added]``, and stores run metadata in ``adata.uns[key_added]``.
     Scanpy itself is not imported.
     """
-    from ._facade import Infomap
+    from .._facade import Infomap
 
     pd = _import_pandas()
     n_obs = _validate_anndata_like(adata)
