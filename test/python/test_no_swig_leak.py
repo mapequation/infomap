@@ -1,13 +1,70 @@
-"""Guard: the transitional SWIG-forwarding ``__getattr__`` is gone.
+"""Guard: the SWIG engine is reachable ONLY through the ``_core`` boundary.
 
-Phase 5 removed ``Infomap.__getattr__`` (the forward into ``self._core``).
-Undocumented SWIG names must no longer resolve on an ``Infomap`` instance,
-while the documented public surface keeps working.
+Phase 5 removed ``Infomap.__getattr__`` (the forward into ``self._core``), so
+undocumented SWIG names no longer resolve on an ``Infomap`` instance.
+
+Phase 5b removed the package-level SWIG re-exports (``from ._bindings import *``
+in ``_facade.py``), so raw SWIG types are no longer attributes of the ``infomap``
+package. The import guard below enforces the architectural invariant: only
+``_core.py`` and ``_bindings.py`` may import the ``_swig`` / ``_bindings``
+modules. Every other module must talk to the engine through ``Core``.
 """
+
+import ast
+from pathlib import Path
 
 import pytest
 
+import infomap
 from infomap import Infomap
+
+PACKAGE_DIR = Path(infomap.__file__).parent
+
+# Only these modules are allowed to import the SWIG layer.
+_ALLOWED_ENGINE_IMPORTERS = {"_core.py", "_bindings.py"}
+# Module names that constitute the SWIG boundary.
+_ENGINE_MODULES = {"_swig", "_bindings"}
+
+
+def _imports_engine_module(source: str) -> bool:
+    """True if the module imports ``_swig`` or ``_bindings`` (the SWIG layer)."""
+    tree = ast.parse(source)
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ImportFrom):
+            # ``from ._swig import X`` / ``from infomap._bindings import X``
+            mod = (node.module or "").split(".")
+            if any(part in _ENGINE_MODULES for part in mod):
+                return True
+            # ``from . import _swig`` / ``from . import _bindings``
+            for alias in node.names:
+                if alias.name in _ENGINE_MODULES:
+                    return True
+        elif isinstance(node, ast.Import):
+            # ``import infomap._swig`` etc.
+            for alias in node.names:
+                if any(part in _ENGINE_MODULES for part in alias.name.split(".")):
+                    return True
+    return False
+
+
+def test_only_core_and_bindings_import_the_swig_layer():
+    offenders = []
+    for path in sorted(PACKAGE_DIR.glob("**/*.py")):
+        if path.name in _ALLOWED_ENGINE_IMPORTERS:
+            continue
+        if _imports_engine_module(path.read_text(encoding="utf-8")):
+            offenders.append(str(path.relative_to(PACKAGE_DIR)))
+    assert offenders == [], (
+        "These modules import the SWIG layer directly; route them through "
+        f"infomap._core instead: {offenders}"
+    )
+
+
+def test_package_does_not_re_export_raw_swig_types():
+    # Phase 5b: the package-level ``from ._bindings import *`` re-export is gone.
+    assert not hasattr(infomap, "InfomapWrapper")
+    assert not hasattr(infomap, "InfoNode")
+    assert not hasattr(infomap, "FlowData")
 
 
 def test_infomap_defines_no_getattr_forward():

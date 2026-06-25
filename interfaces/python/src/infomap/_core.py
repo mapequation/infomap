@@ -5,11 +5,18 @@ forwards every unknown attribute to it. Every other module in the package talks
 to `Core`, never to `InfomapWrapper` directly, so the binding can later be
 swapped (nanobind/pybind11) by rewriting only this file. Phase 1 preserves
 behaviour exactly -- typed accessors and bulk extraction arrive in Phase 2.
+
+The two module-level engine functions that are part of the public package
+surface (``build_info`` and ``run`` — the ``python -m infomap`` CLI driver) are
+re-exported here so the rest of the package reaches them through this single
+boundary instead of importing the SWIG layer directly.
 """
 
 from __future__ import annotations
 
 from ._bindings import InfomapWrapper  # noqa: F401  (the only engine import)
+from ._bindings import build_info as build_info  # module-level engine function
+from ._bindings import run as run  # module-level engine function (CLI driver)
 
 
 class Core:

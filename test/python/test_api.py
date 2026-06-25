@@ -8,6 +8,7 @@ import pytest
 import infomap as infomap_module
 import infomap._summary as summary_module
 import infomap._results as results_module
+from infomap._bindings import InfomapWrapper
 
 
 pytestmark = pytest.mark.fast
@@ -309,7 +310,7 @@ def test_from_options_uses_package_construct_args(monkeypatch):
         captured["rendered_args"] = args
 
     monkeypatch.setattr(infomap_module, "_construct_args", fake_construct_args)
-    monkeypatch.setattr(infomap_module.InfomapWrapper, "__init__", fake_init)
+    monkeypatch.setattr(InfomapWrapper, "__init__", fake_init)
 
     options = infomap_module.InfomapOptions(
         silent=True,

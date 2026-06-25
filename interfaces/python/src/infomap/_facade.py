@@ -2,9 +2,8 @@ import sys
 from collections import namedtuple
 from contextlib import contextmanager
 
-from ._bindings import *  # noqa: F401,F403
-from ._bindings import __all__ as _BINDINGS_ALL
 from ._core import Core
+from ._core import build_info, run
 from ._edge_index import add_edge_index as _add_edge_index
 from ._igraph import add_igraph_graph as _add_igraph_graph
 from ._igraph import find_igraph_communities
@@ -39,19 +38,20 @@ MultilayerNode = namedtuple("MultilayerNode", "layer_id, node_id")
 
 
 __all__ = [
-    *_BINDINGS_ALL,
     "Infomap",
     "InfomapOptions",
     "MultilayerNode",
     "Network",
     "Result",
     "Settings",
+    "build_info",
     "entropy",
     "find_communities",
     "find_igraph_communities",
     "main",
     "perplexity",
     "plogp",
+    "run",
 ]
 
 
@@ -1914,7 +1914,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
 def main():
     args = " ".join(sys.argv[1:])
     try:
-        return run(args)  # noqa: F405
+        return run(args)
     except KeyboardInterrupt:
         # Ctrl-C during the run: cancelled cooperatively (issue #412). Exit like
         # the native CLI — a clean message and 130 (128 + SIGINT), no traceback.

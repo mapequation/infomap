@@ -6,6 +6,7 @@ import sys
 import pytest
 
 import infomap as infomap_module
+from infomap._bindings import InfomapWrapper
 
 
 pytestmark = pytest.mark.fast
@@ -64,7 +65,7 @@ def test_run_forwards_variable_markov_options(monkeypatch):
         return args
 
     monkeypatch.setattr(infomap_module, "_construct_args", fake_construct_args)
-    monkeypatch.setattr(infomap_module.InfomapWrapper, "run", fake_run)
+    monkeypatch.setattr(InfomapWrapper, "run", fake_run)
 
     result = im.run(variable_markov_time=True, variable_markov_damping=0.25)
 
