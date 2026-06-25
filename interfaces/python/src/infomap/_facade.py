@@ -7,12 +7,8 @@ from ._bindings import __all__ as _BINDINGS_ALL
 from ._edge_index import add_edge_index as _add_edge_index
 from ._igraph import add_igraph_graph as _add_igraph_graph
 from ._igraph import find_igraph_communities
+from ._multilayer_builder import _MultilayerBuilder
 from ._network_builder import _NetworkBuilder
-from ._network_input import flat_multilayer_unpacker as _flat_multilayer_unpacker
-from ._network_input import is_numpy_input as _is_numpy_input
-from ._network_input import normalize_numpy_links as _normalize_numpy_links
-from ._network_input import paired_multilayer_unpacker as _paired_multilayer_unpacker
-from ._network_input import split_optional_weight_rows as _split_optional_weight_rows
 from ._networkx import add_networkx_graph as _add_networkx_graph
 from ._networkx import find_communities
 from ._options import (
@@ -183,6 +179,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         options = InfomapOptions.from_mapping(locals())
         super().__init__(_package_construct_args()(args, **options.to_kwargs()))
         self._network = _NetworkBuilder(self)
+        self._multilayer = _MultilayerBuilder(self)
 
     def __repr__(self):
         return _repr_text(self)
@@ -613,10 +610,8 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         weight : float, optional
 
         """
-        source_layer_id, source_node_id = source_multilayer_node
-        target_layer_id, target_node_id = target_multilayer_node
-        return super().addMultilayerLink(
-            source_layer_id, source_node_id, target_layer_id, target_node_id, weight
+        return self._multilayer.add_multilayer_link(
+            source_multilayer_node, target_multilayer_node, weight
         )
 
     def add_multilayer_intra_link(
@@ -656,7 +651,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
 
 
         """
-        return super().addMultilayerIntraLink(
+        return self._multilayer.add_multilayer_intra_link(
             layer_id, source_node_id, target_node_id, weight
         )
 
@@ -686,36 +681,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
             ``(layer_id, source_node_id, target_node_id, [weight])``.
             NumPy arrays must be 2-dimensional with 3 or 4 columns.
         """
-        if _is_numpy_input(links):
-            links_array = _normalize_numpy_links(
-                links,
-                name="multilayer intra-link",
-                valid_columns=(3, 4),
-                column_description="(layer_id, source_node_id, target_node_id, [weight])",
-            )
-            return super().addMultilayerIntraLinksFromNumpy2D(
-                links_array,
-                links_array.shape[0],
-                links_array.shape[1],
-                links_array.dtype.kind,
-                links_array.dtype.itemsize,
-            )
-
-        layer_ids, source_node_ids, target_node_ids, weights = (
-            _split_optional_weight_rows(
-                links,
-                row_name="multilayer intra-link",
-                valid_lengths=(3, 4),
-                unpack=_flat_multilayer_unpacker(
-                    ("layer_id", "source_node_id", "target_node_id"),
-                ),
-                length_description="3 or 4 values",
-            )
-        )
-
-        return super().addMultilayerIntraLinks(
-            layer_ids, source_node_ids, target_node_ids, weights
-        )
+        return self._multilayer.add_multilayer_intra_links(links)
 
     def add_multilayer_inter_link(
         self, source_layer_id, node_id, target_layer_id, weight=1.0
@@ -758,7 +724,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         weight : float, optional
 
         """
-        return super().addMultilayerInterLink(
+        return self._multilayer.add_multilayer_inter_link(
             source_layer_id, node_id, target_layer_id, weight
         )
 
@@ -788,36 +754,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
             ``(source_layer_id, node_id, target_layer_id, [weight])``.
             NumPy arrays must be 2-dimensional with 3 or 4 columns.
         """
-        if _is_numpy_input(links):
-            links_array = _normalize_numpy_links(
-                links,
-                name="multilayer inter-link",
-                valid_columns=(3, 4),
-                column_description="(source_layer_id, node_id, target_layer_id, [weight])",
-            )
-            return super().addMultilayerInterLinksFromNumpy2D(
-                links_array,
-                links_array.shape[0],
-                links_array.shape[1],
-                links_array.dtype.kind,
-                links_array.dtype.itemsize,
-            )
-
-        source_layer_ids, node_ids, target_layer_ids, weights = (
-            _split_optional_weight_rows(
-                links,
-                row_name="multilayer inter-link",
-                valid_lengths=(3, 4),
-                unpack=_flat_multilayer_unpacker(
-                    ("source_layer_id", "node_id", "target_layer_id"),
-                ),
-                length_description="3 or 4 values",
-            )
-        )
-
-        return super().addMultilayerInterLinks(
-            source_layer_ids, node_ids, target_layer_ids, weights
-        )
+        return self._multilayer.add_multilayer_inter_links(links)
 
     def add_multilayer_links(self, links):
         """Add several multilayer links.
@@ -847,50 +784,10 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
             ``(source_layer_id, source_node_id, target_layer_id,
             target_node_id, [weight])``.
         """
-        if _is_numpy_input(links):
-            links_array = _normalize_numpy_links(
-                links,
-                name="multilayer link",
-                valid_columns=(4, 5),
-                column_description=(
-                    "(source_layer_id, source_node_id, target_layer_id, "
-                    "target_node_id, [weight])"
-                ),
-            )
-            return super().addMultilayerLinksFromNumpy2D(
-                links_array,
-                links_array.shape[0],
-                links_array.shape[1],
-                links_array.dtype.kind,
-                links_array.dtype.itemsize,
-            )
-
-        (
-            source_layer_ids,
-            source_node_ids,
-            target_layer_ids,
-            target_node_ids,
-            weights,
-        ) = _split_optional_weight_rows(
-            links,
-            row_name="multilayer link",
-            valid_lengths=(2, 3),
-            unpack=_paired_multilayer_unpacker(),
-            length_description="2 or 3 values",
-        )
-
-        return super().addMultilayerLinks(
-            source_layer_ids,
-            source_node_ids,
-            target_layer_ids,
-            target_node_ids,
-            weights,
-        )
+        return self._multilayer.add_multilayer_links(links)
 
     def remove_multilayer_link(self):
-        raise NotImplementedError(
-            "Removing multilayer links is not supported by the Python API."
-        )
+        return self._multilayer.remove_multilayer_link()
 
     def set_meta_data(self, node_id, meta_category):
         """Set meta data to a node.

@@ -3,6 +3,7 @@
 import pytest
 
 from infomap import Infomap
+from infomap._multilayer_builder import _MultilayerBuilder
 from infomap._network_builder import _NetworkBuilder
 
 
@@ -30,3 +31,14 @@ def test_repr_html_and_summary_render():
     assert isinstance(summary, dict)
     assert summary["status"] == "run"
     assert summary["nodes"] == 3
+
+
+@pytest.mark.fast
+def test_multilayer_builder_is_used_and_builds():
+    im = Infomap(silent=True, no_file_output=True)
+    assert isinstance(im._multilayer, _MultilayerBuilder)
+    im.add_multilayer_intra_links([(1, 1, 2), (1, 2, 1), (2, 2, 3), (2, 3, 2)])
+    im.add_multilayer_inter_links([(1, 2, 2), (2, 2, 1)])
+    im.run()
+    assert im.num_top_modules >= 1
+    assert im.have_memory
