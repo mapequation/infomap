@@ -7,15 +7,15 @@ import numpy as np
 import pytest
 
 from infomap import Infomap
+from infomap._bindings import InfomapWrapper
 
 
 def _owner(method_name):
-    """Class in Infomap's MRO that defines method_name, so patching it
-    intercepts both ``super().m(...)`` and ``self._im.m(...)`` call styles."""
-    for cls in Infomap.__mro__:
-        if method_name in cls.__dict__:
-            return cls
-    raise AssertionError(f"{method_name} not found in Infomap MRO")
+    """The SWIG class that actually defines the bulk constructor; patching it
+    intercepts the call regardless of the Core forwarding in between."""
+    if method_name in InfomapWrapper.__dict__ or hasattr(InfomapWrapper, method_name):
+        return InfomapWrapper
+    raise AssertionError(f"{method_name} not found on InfomapWrapper")
 
 
 @pytest.fixture
