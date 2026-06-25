@@ -717,16 +717,6 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         return self._run_from_options(args, initial_partition, options)
     # === END generated ===
 
-    def __getattr__(self, name):
-        # Transitional: forward not-yet-migrated SWIG calls (e.g. the io
-        # adapters' setDirected/flowModelIsSet/network) to Core. Removed in
-        # Phase 5 once adapters route through Core. Keeps undocumented calls
-        # working at runtime while they are absent from the discoverable
-        # (dir()/inspect) surface.
-        if name == "_core":
-            raise AttributeError(name)
-        return getattr(self._core, name)
-
     def __repr__(self):
         return _repr_text(self)
 

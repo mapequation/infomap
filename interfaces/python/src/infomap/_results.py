@@ -814,7 +814,7 @@ class _InfomapResultsMixin:
 
         return (
             (source, target, value)
-            for (source, target), value in self.getLinks(data != "weight").items()
+            for (source, target), value in self._core.getLinks(data != "weight").items()
         )
 
     @property
