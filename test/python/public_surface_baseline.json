@@ -247,6 +247,14 @@
     "property": false,
     "signature": "(edge_index, *, edge_weight=None, num_nodes=None, directed=True, node_ids=None, args=None, **infomap_options)"
   },
+  "from_igraph": {
+    "property": false,
+    "signature": "(g, *, edge_weights=None, vertex_weights=None, node_id='node_id', layer_id='layer_id', multilayer_inter_intra_format=True, args=None, **infomap_options)"
+  },
+  "from_networkx": {
+    "property": false,
+    "signature": "(g, *, weight='weight', node_id='node_id', layer_id='layer_id', multilayer_inter_intra_format=True, args=None, **infomap_options)"
+  },
   "from_options": {
     "property": false,
     "signature": "(options, args=None)"
