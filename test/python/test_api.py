@@ -6,7 +6,7 @@ import networkx as nx
 import pytest
 
 import infomap as infomap_module
-import infomap._facade as facade_module
+import infomap._summary as summary_module
 import infomap._results as results_module
 
 
@@ -458,10 +458,10 @@ def test_top_module_flow_bars_caps_tail_as_other(monkeypatch):
             assert depth_level == 1
             return [FakeModule(module_id, 1.0) for module_id in range(1, 21)]
 
-    monkeypatch.setattr(facade_module, "_REPR_MAX_FLOW_FRACTION", 0.5)
-    monkeypatch.setattr(facade_module, "_REPR_MAX_MODULES", 4)
+    monkeypatch.setattr(summary_module, "_REPR_MAX_FLOW_FRACTION", 0.5)
+    monkeypatch.setattr(summary_module, "_REPR_MAX_MODULES", 4)
 
-    bars = facade_module._top_module_flow_bars(FakeInfomap())
+    bars = summary_module._top_module_flow_bars(FakeInfomap())
 
     assert len(bars) == 5
     assert [bar["label"] for bar in bars[:-1]] == [

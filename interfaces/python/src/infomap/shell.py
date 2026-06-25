@@ -7,7 +7,7 @@ from pathlib import Path
 
 import infomap
 from . import Infomap, InfomapOptions, MultilayerNode
-from ._facade import _summary_data
+from ._summary import summary_data as _summary_data
 
 
 def _format_value(value):
