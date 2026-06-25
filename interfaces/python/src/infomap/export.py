@@ -33,7 +33,7 @@ def _import_igraph() -> Any:
 
 
 def _require_modules(infomap: Any) -> None:
-    if not infomap.haveModules():
+    if not infomap._core.haveModules():
         raise ValueError(
             "Infomap results are not available. Run Infomap before exporting."
         )

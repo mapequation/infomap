@@ -176,8 +176,8 @@ def add_networkx_graph(
     except IndexError:
         return {}
 
-    if not infomap.flowModelIsSet and g.is_directed():
-        infomap.setDirected(True)
+    if not infomap._core.flowModelIsSet and g.is_directed():
+        infomap._core.setDirected(True)
 
     node_map = _label_to_internal_id(nodes)
     is_string_id = isinstance(first, str)

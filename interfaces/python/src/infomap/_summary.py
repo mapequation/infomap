@@ -41,11 +41,11 @@ def summary_data(im):
     data.update(
         {
             "status": "run",
-            "state_input": im.stateInput,
-            "multilayer_input": im.multilayerInput,
-            "multilayer_network": im.isMultilayerNetwork(),
+            "state_input": im._core.stateInput,
+            "multilayer_input": im._core.multilayerInput,
+            "multilayer_network": im._core.isMultilayerNetwork(),
             "levels": im.num_levels,
-            "leaf_nodes": im.numLeafNodes(),
+            "leaf_nodes": im._core.numLeafNodes(),
             "top_modules": im.num_top_modules,
             "non_trivial_top_modules": im.num_non_trivial_top_modules,
             "leaf_modules": im.num_leaf_modules,

@@ -538,7 +538,7 @@ def _links_array(graph: GraphRAGGraph):
 
 
 def _require_modules(im):
-    if not im.haveModules():
+    if not im._core.haveModules():
         raise ValueError(
             "Infomap results are not available. Run Infomap before exporting."
         )

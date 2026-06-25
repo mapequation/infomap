@@ -120,6 +120,10 @@ def test_find_igraph_communities_sets_directed_for_directed_graph(monkeypatch):
     class FakeInfomap:
         flowModelIsSet = False
 
+        @property
+        def _core(self):
+            return self
+
         def __init__(self, **options):
             self.options = options
             self.directed = False
@@ -159,6 +163,10 @@ def test_add_igraph_graph_supports_edge_weight_inputs():
 
     class Recorder:
         flowModelIsSet = True
+
+        @property
+        def _core(self):
+            return self
 
         def __init__(self):
             self.links = []
@@ -249,6 +257,10 @@ def test_find_igraph_communities_rejects_trial_and_vertex_weight_conflicts():
 
 class _Recorder:
     flowModelIsSet = True
+
+    @property
+    def _core(self):
+        return self
 
     def set_name(self, node_id, name):
         pass

@@ -150,8 +150,8 @@ def add_edge_index(
 
     internal_to_label = {index: label for index, label in enumerate(labels)}
 
-    if not infomap.flowModelIsSet and directed:
-        infomap.setDirected(True)
+    if not infomap._core.flowModelIsSet and directed:
+        infomap._core.setDirected(True)
 
     for internal_id, label in internal_to_label.items():
         infomap.add_node(internal_id, name=label if isinstance(label, str) else None)

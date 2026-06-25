@@ -28,6 +28,10 @@ class FakeInfomap:
         self.elapsed_time = 0.0
         self.meta_codelength = 0.0
 
+    @property
+    def _core(self):
+        return self
+
     def read_file(self, filename):
         self.loaded.append(filename)
         self.num_nodes = 6

@@ -30,6 +30,10 @@ class IncompleteTensor:
 class Recorder:
     flowModelIsSet = False
 
+    @property
+    def _core(self):
+        return self
+
     def __init__(self):
         self.directed = False
         self.nodes = []

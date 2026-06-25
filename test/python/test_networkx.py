@@ -62,6 +62,10 @@ def test_find_communities_sets_directed_for_digraph(monkeypatch):
     class FakeInfomap:
         flowModelIsSet = False
 
+        @property
+        def _core(self):
+            return self
+
         def __init__(self, **options):
             self.options = options
             self.directed = False
@@ -99,6 +103,10 @@ def test_find_communities_accepts_initial_partition_with_original_labels(monkeyp
 
     class FakeInfomap:
         flowModelIsSet = True
+
+        @property
+        def _core(self):
+            return self
 
         def __init__(self, **options):
             self.options = options
