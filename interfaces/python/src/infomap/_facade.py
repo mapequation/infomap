@@ -4,11 +4,6 @@ from contextlib import contextmanager
 
 from ._core import Core
 from ._core import build_info, run
-from ._edge_index import add_edge_index as _add_edge_index
-from ._igraph import add_igraph_graph as _add_igraph_graph
-from ._igraph import find_igraph_communities
-from ._networkx import add_networkx_graph as _add_networkx_graph
-from ._networkx import find_communities
 from ._options import (
     InfomapOptions,
     Settings,
@@ -16,15 +11,20 @@ from ._options import (
 )
 from ._results import _InfomapResultsMixin
 from ._results import entropy, perplexity, plogp
-from .network import Network
-from .result import Result
-from ._scipy import add_scipy_sparse_matrix as _add_scipy_sparse_matrix
 from ._summary import (
     repr_html as _repr_html,
     repr_text as _repr_text,
     summary_data as _summary_data,
 )
-from ._writers import _InfomapWritersMixin
+from .io.edge_index import add_edge_index as _add_edge_index
+from .io.igraph import add_igraph_graph as _add_igraph_graph
+from .io.igraph import find_igraph_communities
+from .io.networkx import add_networkx_graph as _add_networkx_graph
+from .io.networkx import find_communities
+from .io.scipy import add_scipy_sparse_matrix as _add_scipy_sparse_matrix
+from .io.writers import _InfomapWritersMixin
+from .network import Network
+from .result import Result
 
 
 def _package_construct_args():

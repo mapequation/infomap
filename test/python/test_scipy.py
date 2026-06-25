@@ -5,7 +5,7 @@ import math
 
 import pytest
 from infomap import Infomap
-from infomap._scipy import _import_sparse
+from infomap.io.scipy import _import_sparse
 
 scipy = pytest.importorskip("scipy")
 sp = scipy.sparse

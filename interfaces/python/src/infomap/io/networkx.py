@@ -68,7 +68,7 @@ def run_networkx(
     initial_partition: Any = None,
     **infomap_options: Any,
 ) -> tuple[Any, dict[int, Any]]:
-    from ._facade import Infomap
+    from .._facade import Infomap
 
     options = {"silent": True, "no_file_output": True}
     options.update(infomap_options)

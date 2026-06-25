@@ -24,7 +24,7 @@ BASELINE = Path(__file__).parent / "public_surface_baseline.json"
 OWNED_MODULES = {
     "infomap._facade",
     "infomap._results",
-    "infomap._writers",
+    "infomap.io.writers",
     "infomap.network",
     "infomap._summary",
 }

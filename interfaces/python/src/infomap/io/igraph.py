@@ -250,7 +250,7 @@ def find_igraph_communities(
         clustering.codelength = 0.0
         return clustering
 
-    from ._facade import Infomap
+    from .._facade import Infomap
 
     options = {"silent": True, "no_file_output": True, "num_trials": trials}
     options.update(infomap_options)

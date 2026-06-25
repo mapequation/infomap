@@ -5,7 +5,7 @@ import math
 import numpy as np
 import pytest
 from infomap import Infomap
-from infomap._edge_index import add_edge_index
+from infomap.io.edge_index import add_edge_index
 
 
 class FakeTensor:

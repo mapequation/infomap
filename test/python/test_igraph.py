@@ -9,7 +9,7 @@ import pytest
 
 import infomap
 import infomap._facade as facade
-from infomap._igraph import _import_igraph, add_igraph_graph
+from infomap.io.igraph import _import_igraph, add_igraph_graph
 
 
 pytestmark = pytest.mark.fast
