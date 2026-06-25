@@ -18,6 +18,7 @@ from ._options import (
 )
 from ._results import _InfomapResultsMixin
 from ._results import entropy, perplexity, plogp
+from .result import Result
 from ._scipy import add_scipy_sparse_matrix as _add_scipy_sparse_matrix
 from ._summary import (
     repr_html as _repr_html,
@@ -42,6 +43,7 @@ __all__ = [
     "Infomap",
     "InfomapOptions",
     "MultilayerNode",
+    "Result",
     "entropy",
     "find_communities",
     "find_igraph_communities",
@@ -187,6 +189,12 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         self._network = _NetworkBuilder(self._core)
         self._multilayer = _MultilayerBuilder(self._core)
         self.node_id_to_label = {}
+        # Run-generation token: incremented on every run(). A Result stamps the
+        # generation it was created in; node-level access on a stale Result
+        # (engine re-ran since) raises instead of reading freed memory. The C++
+        # result tree is rebuilt on every run() (design §7).
+        self._generation = 0
+        self._result = None
 
     def __getattr__(self, name):
         # Transitional: forward not-yet-migrated SWIG calls (e.g. the io
@@ -1424,9 +1432,16 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
 
         if initial_partition is not None:
             with self._initial_partition(initial_partition):
-                return self._core.run(args)
+                self._core.run(args)
+        else:
+            self._core.run(args)
 
-        return self._core.run(args)
+        # Stamp a fresh Result with the new generation. The C++ result tree is
+        # rebuilt on every run(), so any previously returned Result becomes
+        # stale for node-level access (its eager scalars stay valid).
+        self._generation += 1
+        self._result = Result(self, generation=self._generation)
+        return self._result
 
     def run_with_options(self, options, *, args=None, initial_partition=None):
         """Run Infomap using a reusable :class:`InfomapOptions` instance."""

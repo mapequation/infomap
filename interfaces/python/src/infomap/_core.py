@@ -16,6 +16,18 @@ class Core:
     def __init__(self, args):
         self._im = InfomapWrapper(args)
 
+    def get_node_data(self, level=1, states=False):
+        """Single-traversal bulk node data over the result tree.
+
+        Returns the SWIG ``NodeData`` snapshot of parallel columns
+        (``node_id``, ``state_id``, ``module_id``, ``flow``, ``depth``,
+        ``layer_id``, ``child_index``) plus the CSR-encoded ragged path
+        (``path_flat`` + ``path_len``). The sanctioned bulk-extraction entry
+        point for ``Result``; mirrors the iterator choice of the legacy
+        per-node accessors.
+        """
+        return self._im.getNodeData(level, states)
+
     def __getattr__(self, name):
         # Only called for attributes missing on Core itself. Guard against
         # recursion before _im exists (e.g. during unpickling/__new__).

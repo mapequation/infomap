@@ -68,7 +68,9 @@ def test_run_forwards_variable_markov_options(monkeypatch):
 
     result = im.run(variable_markov_time=True, variable_markov_damping=0.25)
 
-    assert result == "--synthetic"
+    # run() now returns a Result; the rendered args are still forwarded to the
+    # engine's run().
+    assert isinstance(result, infomap_module.Result)
     assert captured["rendered_args"] == "--synthetic"
     assert captured["kwargs"]["variable_markov_time"] is True
     assert captured["kwargs"]["variable_markov_damping"] == 0.25
