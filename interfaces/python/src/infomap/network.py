@@ -6,8 +6,7 @@
 single-layer nodes/links, state nodes, names, the three multilayer link
 families, meta data, the bipartite start id, file reading, and node/link counts.
 
-It is pure input construction and validation -- it does not run Infomap or hold
-results. :class:`infomap.Infomap` composes a :class:`Network` over its own
+:class:`infomap.Infomap` composes a :class:`Network` over its own
 settings-configured ``Core`` (shared instance) and delegates its building verbs
 to it, so ``im.add_link(...)`` keeps working unchanged.
 
@@ -16,8 +15,12 @@ C++ bulk constructors through ``Core`` (list -> ``addLinks``, numpy ->
 ``addLinksFromNumpy2D``, and the multilayer equivalents) -- no per-element Python
 loop is introduced.
 
-A standalone ``Network()`` is a builder only for now; running it through the
-functional entry point (``infomap.run(net)``) arrives in a later phase.
+A :class:`Network` can be run directly via :func:`infomap.run` (or
+:meth:`Network.run`): the ``Network`` owns its ``Core`` and provides the minimal
+engine contract a :class:`infomap.result.Result` needs -- a mutable
+``_generation`` token bumped on every run plus its ``_core`` handle -- so the
+same :class:`~infomap.result.Result` construction works for a ``Network`` as for
+an :class:`Infomap`.
 """
 
 from __future__ import annotations
@@ -45,6 +48,180 @@ class Network:
         if core is None:
             core = Core("--silent --no-file-output")
         self._core = core
+        # Run-generation token: incremented on every run(). A Result stamps the
+        # generation it was created in; node-level access on a stale Result
+        # (engine re-ran since) raises instead of reading freed memory. This is
+        # the minimal engine contract Result needs, mirroring Infomap.
+        self._generation = 0
+
+    # ----------------------------------------
+    # Constructors from graph libraries
+    # ----------------------------------------
+
+    @classmethod
+    def from_file(cls, path, *, accumulate=True):
+        """Build a :class:`Network` by reading a network file.
+
+        Parameters
+        ----------
+        path : str or os.PathLike
+            Path to an Infomap-readable network file.
+        accumulate : bool, optional
+            Accumulate onto already added nodes and links. Default ``True``.
+        """
+        net = cls()
+        net.read_file(str(path), accumulate=accumulate)
+        return net
+
+    @classmethod
+    def from_networkx(
+        cls,
+        g,
+        *,
+        weight="weight",
+        node_id="node_id",
+        layer_id="layer_id",
+        multilayer_inter_intra_format=True,
+    ):
+        """Build a :class:`Network` from a NetworkX graph.
+
+        Loads ``g`` via the same adapter :meth:`Infomap.add_networkx_graph`
+        uses. The ``{internal_id: label}`` mapping is stored on
+        :attr:`node_id_to_label`.
+        """
+        from .io.networkx import add_networkx_graph as _add_networkx_graph
+
+        net = cls()
+        net.node_id_to_label = _add_networkx_graph(
+            net,
+            g,
+            weight=weight,
+            node_id=node_id,
+            layer_id=layer_id,
+            multilayer_inter_intra_format=multilayer_inter_intra_format,
+        )
+        return net
+
+    @classmethod
+    def from_igraph(
+        cls,
+        g,
+        *,
+        edge_weights=None,
+        vertex_weights=None,
+        node_id="node_id",
+        layer_id="layer_id",
+        multilayer_inter_intra_format=True,
+    ):
+        """Build a :class:`Network` from a python-igraph graph.
+
+        Loads ``g`` via the same adapter :meth:`Infomap.add_igraph_graph` uses.
+        The ``{internal_id: label}`` mapping is stored on
+        :attr:`node_id_to_label`.
+        """
+        from .io.igraph import add_igraph_graph as _add_igraph_graph
+
+        net = cls()
+        net.node_id_to_label = _add_igraph_graph(
+            net,
+            g,
+            edge_weights=edge_weights,
+            vertex_weights=vertex_weights,
+            node_id=node_id,
+            layer_id=layer_id,
+            multilayer_inter_intra_format=multilayer_inter_intra_format,
+        )
+        return net
+
+    @classmethod
+    def from_scipy_sparse_matrix(
+        cls,
+        A,
+        *,
+        directed=False,
+        weighted=True,
+        node_ids=None,
+    ):
+        """Build a :class:`Network` from a SciPy sparse adjacency matrix.
+
+        Loads ``A`` via the same adapter
+        :meth:`Infomap.add_scipy_sparse_matrix` uses. The
+        ``{internal_id: label}`` mapping is stored on
+        :attr:`node_id_to_label`.
+        """
+        from .io.scipy import add_scipy_sparse_matrix as _add_scipy_sparse_matrix
+
+        net = cls()
+        net.node_id_to_label = _add_scipy_sparse_matrix(
+            net,
+            A,
+            directed=directed,
+            weighted=weighted,
+            node_ids=node_ids,
+        )
+        return net
+
+    @classmethod
+    def from_edge_index(
+        cls,
+        edge_index,
+        *,
+        edge_weight=None,
+        num_nodes=None,
+        directed=True,
+        node_ids=None,
+    ):
+        """Build a :class:`Network` from a PyG-style edge index.
+
+        Loads ``edge_index`` via the same adapter
+        :meth:`Infomap.add_edge_index` uses. The ``{internal_id: label}``
+        mapping is stored on :attr:`node_id_to_label`.
+        """
+        from .io.edge_index import add_edge_index as _add_edge_index
+
+        net = cls()
+        net.node_id_to_label = _add_edge_index(
+            net,
+            edge_index,
+            edge_weight=edge_weight,
+            num_nodes=num_nodes,
+            directed=directed,
+            node_ids=node_ids,
+        )
+        return net
+
+    # ----------------------------------------
+    # Run
+    # ----------------------------------------
+
+    def run(self, *, settings=None, args=None):
+        """Run Infomap on this network and return a :class:`Result`.
+
+        Parameters
+        ----------
+        settings : Settings, InfomapOptions, mapping, or None, optional
+            Configuration rendered to Infomap CLI flags for this run.
+        args : str, optional
+            Raw Infomap arguments prepended before the rendered settings.
+
+        Returns
+        -------
+        Result
+            An immutable snapshot of the run, bound to this ``Network``.
+        """
+        from ._options import InfomapOptions, _construct_args
+        from .result import build_result
+
+        if settings is None:
+            options = InfomapOptions()
+        elif isinstance(settings, InfomapOptions):
+            options = settings
+        else:
+            options = InfomapOptions.from_mapping(dict(settings))
+
+        rendered_args = _construct_args(args, **options.to_kwargs())
+        self._core.run(rendered_args)
+        return build_result(self)
 
     # ----------------------------------------
     # Input
@@ -394,6 +571,17 @@ class Network:
     # ----------------------------------------
     # Properties
     # ----------------------------------------
+
+    @property
+    def network(self):
+        """The underlying SWIG state network.
+
+        Exposed so the graph adapters (which reach for
+        ``infomap.network.add_multilayer_node`` / ``add_multilayer_state_link``)
+        work identically when building onto a :class:`Network` or an
+        :class:`Infomap`.
+        """
+        return self._core.network()
 
     @property
     def bipartite_start_id(self):

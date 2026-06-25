@@ -49,6 +49,21 @@ class _StaleResultError(RuntimeError):
     """Raised when node-level data is read from a Result after a re-run."""
 
 
+def build_result(engine: Any) -> "Result":
+    """Bump the engine's run-generation token and return a fresh ``Result``.
+
+    The single place that stamps a ``Result`` with the new generation, shared by
+    :meth:`Infomap._run_from_options` and :meth:`Network.run`. The C++ result
+    tree is rebuilt on every ``run()``, so any previously returned ``Result``
+    becomes stale for node-level access (its eager scalars stay valid).
+
+    The engine only needs the minimal contract a ``Result`` reads: a mutable
+    ``_generation`` integer and a ``_core`` handle.
+    """
+    engine._generation += 1
+    return Result(engine, generation=engine._generation)
+
+
 class TreeNode:
     """A lightweight, immutable view over a single leaf row of a ``Result``.
 

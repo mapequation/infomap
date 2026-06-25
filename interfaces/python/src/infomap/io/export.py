@@ -273,6 +273,151 @@ def annotate_igraph_graph(
     )
 
 
+def _result_nodes(result: Any):
+    """Yield the leaf state nodes of a ``Result`` (generation-guarded)."""
+    return result.nodes(states=True)
+
+
+def _result_links(result: Any) -> dict:
+    """Return ``{(source_state_id, target_state_id): weight}`` for a ``Result``.
+
+    Read through the bound engine's ``Core``; the ``Result`` already validated
+    the run-generation when its node data was materialized above.
+    """
+    return dict(result._engine._core.getLinks(False))
+
+
+def to_networkx(
+    result: Any,
+    *,
+    module_attribute: str | None = _DEFAULT_MODULE_ATTRIBUTE,
+    path_attribute: str | None = _DEFAULT_PATH_ATTRIBUTE,
+    include_hierarchy: bool = True,
+    flow_attribute: str | None = "flow",
+) -> Any:
+    """Build a NetworkX graph from a :class:`~infomap.result.Result`.
+
+    Nodes are the result's (state) nodes, keyed by ``state_id``, carrying the
+    Infomap node ``name`` plus the module/path/flow attributes (the same
+    attribute scheme as :func:`annotate_networkx_graph`). Edges come from the
+    partitioned network.
+
+    Parameters
+    ----------
+    result : Result
+        A result returned by :func:`infomap.run` or :meth:`Infomap.run`.
+    module_attribute : str or None, optional
+        Node attribute for the top-level module id. Default
+        ``"infomap_module"``. Use ``None`` to omit.
+    path_attribute : str or None, optional
+        Node attribute for the colon-joined tree path. Default
+        ``"infomap_path"``. Use ``None`` to omit.
+    include_hierarchy : bool, optional
+        Also write per-level ``infomap_level_{n}`` attributes. Default
+        ``True``.
+    flow_attribute : str or None, optional
+        Node attribute for the node flow. Default ``"flow"``. Use ``None`` to
+        omit.
+
+    Returns
+    -------
+    networkx.Graph or networkx.DiGraph
+        ``DiGraph`` when the partitioned network is directed, else ``Graph``.
+    """
+    nx = _import_networkx()
+
+    directed = bool(result._engine._core.directed)
+    graph = nx.DiGraph() if directed else nx.Graph()
+
+    for node in _result_nodes(result):
+        attributes = {"name": node.name}
+        attributes.update(
+            _string_attributes(
+                node.path,
+                module_attribute=module_attribute,
+                path_attribute=path_attribute,
+                include_hierarchy=include_hierarchy,
+                flow=node.flow,
+                flow_attribute=flow_attribute,
+            )
+        )
+        graph.add_node(node.state_id, **attributes)
+
+    for (source, target), weight in _result_links(result).items():
+        graph.add_edge(source, target, weight=weight)
+
+    return graph
+
+
+def to_igraph(
+    result: Any,
+    *,
+    module_attribute: str | None = _DEFAULT_MODULE_ATTRIBUTE,
+    path_attribute: str | None = _DEFAULT_PATH_ATTRIBUTE,
+    include_hierarchy: bool = True,
+    flow_attribute: str | None = "flow",
+) -> Any:
+    """Build a python-igraph graph from a :class:`~infomap.result.Result`.
+
+    Vertices are the result's (state) nodes in ``state_id`` order, carrying the
+    Infomap node ``name`` plus the module/path/flow attributes (the same
+    attribute scheme as :func:`annotate_igraph_graph`). Edges come from the
+    partitioned network.
+
+    Parameters
+    ----------
+    result : Result
+        A result returned by :func:`infomap.run` or :meth:`Infomap.run`.
+    module_attribute, path_attribute, include_hierarchy, flow_attribute
+        See :func:`to_networkx`.
+
+    Returns
+    -------
+    igraph.Graph
+        Directed when the partitioned network is directed, else undirected.
+    """
+    ig = _import_igraph()
+
+    nodes = list(_result_nodes(result))
+    state_ids = [node.state_id for node in nodes]
+    # igraph vertices are dense 0..n-1; map state ids onto that range.
+    index_by_state_id = {state_id: index for index, state_id in enumerate(state_ids)}
+    n_vertices = len(nodes)
+
+    directed = bool(result._engine._core.directed)
+    graph = ig.Graph(n=n_vertices, directed=directed)
+
+    values_by_attribute: dict[str, list[Any]] = {"name": [None] * n_vertices}
+    for index, node in enumerate(nodes):
+        values_by_attribute["name"][index] = node.name
+        attributes = _string_attributes(
+            node.path,
+            module_attribute=module_attribute,
+            path_attribute=path_attribute,
+            include_hierarchy=include_hierarchy,
+            flow=node.flow,
+            flow_attribute=flow_attribute,
+        )
+        for attribute, value in attributes.items():
+            values_by_attribute.setdefault(attribute, [None] * n_vertices)
+            values_by_attribute[attribute][index] = value
+
+    for attribute, values in values_by_attribute.items():
+        graph.vs[attribute] = values
+
+    edges = []
+    weights = []
+    for (source, target), weight in _result_links(result).items():
+        if source in index_by_state_id and target in index_by_state_id:
+            edges.append((index_by_state_id[source], index_by_state_id[target]))
+            weights.append(weight)
+    if edges:
+        graph.add_edges(edges)
+        graph.es["weight"] = weights
+
+    return graph
+
+
 def write_graphml(graph: Any, im: Any, path: str | Path, **options: Any) -> None:
     """Write a GraphML file with Infomap result attributes on nodes."""
     if _is_igraph_graph(graph):
