@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
-import sys
 from pathlib import Path
 
 from parameter_catalog import GROUPS, ParameterCatalog
@@ -17,6 +17,53 @@ OVERRIDES = REPO_ROOT / "interfaces" / "parameters" / "overrides.json"
 PYTHON_OUT = Path("interfaces/python/src/infomap/_options.py")
 R_OUT = Path("interfaces/R/infomap/R/options.R")
 TS_OUT = Path("interfaces/js/src/arguments.ts")
+FACADE_OUT = Path("interfaces/python/src/infomap/_facade.py")
+
+FACADE_BEGIN = (
+    "    # === BEGIN generated: Infomap option signatures "
+    "(scripts/generate_binding_options.py) ==="
+)
+FACADE_END = "    # === END generated ==="
+
+# Hand-curated keyword order for the public Infomap.__init__ / Infomap.run
+# signatures. This order is intentionally NOT the catalog order; it is the
+# long-standing public API order and is part of the frozen public surface
+# (test/python/test_public_surface.py pins the exact signature string).
+# Catalog params supply each name's type, default, and docstring; this list
+# only fixes their ORDER and where the facade-only `pretty` no-op sits.
+# `_validate_facade_order` guards that this stays in sync with the catalog.
+_FACADE_OPTION_ORDER = (
+    "cluster_data", "no_infomap", "skip_adjust_bipartite_flow",
+    "bipartite_teleportation", "weight_threshold", "include_self_links",
+    "no_self_links", "node_limit", "matchable_multilayer_ids",
+    "assign_to_neighbouring_module", "meta_data", "meta_data_rate",
+    "meta_data_unweighted", "tree", "ftree", "clu", "verbosity_level",
+    "silent", "pretty", "out_name", "no_file_output", "clu_level", "output",
+    "hide_bipartite_nodes", "print_all_trials", "no_overwrite",
+    "print_config_fingerprint", "timing_json", "summary_json", "manifest_json",
+    "memory_report", "two_level", "flow_model", "directed",
+    "recorded_teleportation", "use_node_weights_as_flow", "to_nodes",
+    "teleportation_probability", "regularized", "regularization_strength",
+    "entropy_corrected", "entropy_correction_strength", "markov_time",
+    "variable_markov_time", "variable_markov_damping",
+    "variable_markov_min_scale", "preferred_number_of_modules",
+    "preferred_number_of_levels", "preferred_number_of_levels_strength",
+    "multilayer_relax_rate", "multilayer_relax_limit",
+    "multilayer_relax_limit_up", "multilayer_relax_limit_down",
+    "multilayer_relax_by_jsd", "multilayer_relax_to_self", "seed",
+    "num_trials", "core_loop_limit", "core_level_limit",
+    "tune_iteration_limit", "core_loop_codelength_threshold",
+    "tune_iteration_relative_threshold", "fast_hierarchical_solution",
+    "prefer_modular_solution", "inner_parallelization", "parallel_trials",
+    "converge", "num_threads", "threads", "trial_offset", "trial_results",
+    "no_final_output", "num_random_moves", "max_degree_for_random_moves",
+)
+
+# Facade-only parameters that are NOT catalog options (rendered verbatim).
+# `pretty` is a deprecated no-op kept for backward compatibility.
+_FACADE_ONLY_PARAMS = {
+    "pretty": {"default": "False", "doc_type": None, "doc": None},
+}
 
 
 def load_parameters(infomap_bin: Path) -> list[dict]:
@@ -59,6 +106,49 @@ def wrap_doc(text: str, prefix: str, width: int = 88) -> list[str]:
             line = candidate
     lines.append(line.rstrip() if line.strip() else prefix.rstrip())
     return lines
+
+
+def _validate_facade_order(catalog: ParameterCatalog) -> None:
+    catalog_names = set()
+    for group in GROUPS:
+        if group == "Input":
+            catalog_names.add("include_self_links")
+        for param in catalog.grouped()[group]:
+            catalog_names.add(param.name("python"))
+    ordered = set(_FACADE_OPTION_ORDER) - set(_FACADE_ONLY_PARAMS)
+    missing = catalog_names - ordered
+    extra = ordered - catalog_names
+    if missing or extra:
+        raise RuntimeError(
+            "scripts/generate_binding_options.py:_FACADE_OPTION_ORDER drifted "
+            "from the parameter catalog. Add new params to the curated order "
+            "(and decide their position), and remove deleted ones.\n"
+            f"  in catalog, missing from order: {sorted(missing)}\n"
+            f"  in order, not in catalog: {sorted(extra)}"
+        )
+
+
+def _facade_param_index(catalog: ParameterCatalog) -> dict:
+    index = {}
+    include_self_links = catalog.binding_only_entry("python", "include_self_links")
+    for group in GROUPS:
+        for param in catalog.grouped()[group]:
+            index[param.name("python")] = {
+                "type": param.python_type(),
+                "default": param.python_default_expr(),
+                "doc_type": param.python_doc_type(),
+                "doc": param.python_doc_description(),
+            }
+    index["include_self_links"] = {
+        "type": include_self_links.type,
+        "default": include_self_links.default,
+        "doc_type": "bool, optional",
+        "doc": (
+            "Deprecated. Self-links are included by default; use "
+            "no_self_links=True to exclude them."
+        ),
+    }
+    return index
 
 
 def generate_python(catalog: ParameterCatalog) -> str:
@@ -542,35 +632,163 @@ def generate_ts(catalog: ParameterCatalog) -> str:
     return "\n".join(lines)
 
 
-def outputs(infomap_bin: Path) -> dict[Path, str]:
+def _render_facade_signature(names, index, indent="        "):
+    lines = []
+    for name in names:
+        if name in _FACADE_ONLY_PARAMS:
+            default = _FACADE_ONLY_PARAMS[name]["default"]
+        else:
+            default = index[name]["default"]
+        lines.append(f"{indent}{name}={default},")
+    return lines
+
+
+def _render_facade_docstring_params(names, index):
+    lines = []
+    for name in names:
+        if name in _FACADE_ONLY_PARAMS:
+            continue
+        info = index[name]
+        lines.append(f"        {name} : {info['doc_type']}")
+        lines.extend(wrap_doc(info["doc"], "            "))
+    return lines
+
+
+def generate_facade(catalog: ParameterCatalog) -> str:
+    _validate_facade_order(catalog)
+    index = _facade_param_index(catalog)
+    names = list(_FACADE_OPTION_ORDER)
+
+    lines = [FACADE_BEGIN]
+    # ---- __init__ ----
+    lines.append("    def __init__(")
+    lines.append("        self,")
+    lines.append("        args=None,")
+    lines.extend(_render_facade_signature(names, index))
+    lines.append("    ):")
+    lines.append('        """Create a new Infomap instance.')
+    lines.append("")
+    lines.append("        Keyword arguments mirror the Infomap CLI flags. Use")
+    lines.append(
+        "        :class:`Settings` (alias :class:`InfomapOptions`) for a reusable"
+    )
+    lines.append("        configuration object and the full parameter reference.")
+    lines.append("")
+    lines.append("        Parameters")
+    lines.append("        ----------")
+    lines.append("        args : str, optional")
+    lines.extend(
+        wrap_doc(
+            "Raw Infomap arguments to prepend before rendered keyword options.",
+            "            ",
+        )
+    )
+    lines.extend(_render_facade_docstring_params(names, index))
+    lines.append('        """')
+    lines.append("        options = InfomapOptions.from_mapping(locals())")
+    lines.append("        self._init_from_options(args, options)")
+    lines.append("")
+    # ---- run ----
+    lines.append("    def run(")
+    lines.append("        self,")
+    lines.append("        args=None,")
+    lines.append("        initial_partition=None,")
+    lines.extend(_render_facade_signature(names, index))
+    lines.append("    ):")
+    lines.append('        """Run Infomap.')
+    lines.append("")
+    lines.append("        Keyword arguments mirror the Infomap CLI flags. Use")
+    lines.append("        :class:`Settings` for the full parameter reference and")
+    lines.append(
+        "        :meth:`run_with_options` when reusing a saved configuration."
+    )
+    lines.append("")
+    lines.append("        Parameters")
+    lines.append("        ----------")
+    lines.append("        args : str, optional")
+    lines.extend(
+        wrap_doc(
+            "Raw Infomap arguments to prepend before rendered keyword options.",
+            "            ",
+        )
+    )
+    lines.append("        initial_partition : dict, optional")
+    lines.extend(
+        wrap_doc(
+            "Initial partition to use for this run only. See initial_partition.",
+            "            ",
+        )
+    )
+    lines.extend(_render_facade_docstring_params(names, index))
+    lines.append("")
+    lines.append("        See Also")
+    lines.append("        --------")
+    lines.append("        initial_partition")
+    lines.append('        """')
+    lines.append("        options = InfomapOptions.from_mapping(locals())")
+    lines.append(
+        "        return self._run_from_options(args, initial_partition, options)"
+    )
+    lines.append(FACADE_END)
+    return "\n".join(lines)
+
+
+def _splice_marker_block(path: Path, block: str) -> str:
+    text = path.read_text(encoding="utf-8")
+    begin_idx = text.find(FACADE_BEGIN)
+    end_idx = text.find(FACADE_END)
+    if begin_idx == -1 or end_idx == -1:
+        raise RuntimeError(
+            f"Marker block not found in {path}. Expected lines:\n"
+            f"  {FACADE_BEGIN}\n  {FACADE_END}"
+        )
+    end_idx += len(FACADE_END)
+    return text[:begin_idx] + block + text[end_idx:]
+
+
+def outputs(infomap_bin: Path):
     overrides = load_overrides()
     catalog = ParameterCatalog(load_parameters(infomap_bin), overrides)
-    return {
+    generated = {
         PYTHON_OUT: generate_python(catalog),
         R_OUT: generate_r(catalog),
         TS_OUT: generate_ts(catalog),
     }
+    facade_block = generate_facade(catalog)
+    return generated, facade_block
 
 
-def write_outputs(generated: dict[Path, str], output_root: Path) -> None:
+def write_outputs(generated, facade_block, output_root: Path) -> None:
     for rel_path, text in generated.items():
         path = output_root / rel_path
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(text, encoding="utf-8")
+    facade_path = output_root / FACADE_OUT
+    facade_path.write_text(
+        _splice_marker_block(facade_path, facade_block), encoding="utf-8"
+    )
 
 
-def check_outputs(generated: dict[Path, str], output_root: Path) -> int:
+def check_outputs(generated, facade_block, output_root: Path) -> int:
     failures = []
     for rel_path, text in generated.items():
         path = output_root / rel_path
         if not path.exists() or path.read_text(encoding="utf-8") != text:
             failures.append(rel_path)
+    facade_path = output_root / FACADE_OUT
+    if not facade_path.exists():
+        failures.append(FACADE_OUT)
+    else:
+        spliced = _splice_marker_block(facade_path, facade_block)
+        if facade_path.read_text(encoding="utf-8") != spliced:
+            failures.append(FACADE_OUT)
     if not failures:
         print("Tracked binding option outputs are fresh.")
         return 0
-    if sys.platform and "GITHUB_ACTIONS" in __import__("os").environ:
+    if "GITHUB_ACTIONS" in os.environ:
         print(
-            "::error title=Tracked binding option outputs are stale::Run make build-binding-options and commit the updated files."
+            "::error title=Tracked binding option outputs are stale::"
+            "Run make build-binding-options and commit the updated files."
         )
     print("Tracked binding option outputs are stale:")
     for path in failures:
@@ -587,13 +805,14 @@ def main() -> int:
     parser.add_argument("--check", action="store_true")
     args = parser.parse_args()
 
-    generated = outputs(Path(args.infomap_bin))
+    generated, facade_block = outputs(Path(args.infomap_bin))
     output_root = Path(args.output_root)
     if args.check:
-        return check_outputs(generated, output_root)
-    write_outputs(generated, output_root)
+        return check_outputs(generated, facade_block, output_root)
+    write_outputs(generated, facade_block, output_root)
     for path in generated:
         print(f"Updated {path}")
+    print(f"Updated {FACADE_OUT} (generated signature block)")
     return 0
 
 

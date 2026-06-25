@@ -105,10 +105,10 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         self._generation = 0
         self._result = None
 
+    # === BEGIN generated: Infomap option signatures (scripts/generate_binding_options.py) ===
     def __init__(
         self,
         args=None,
-        # input
         cluster_data=None,
         no_infomap=False,
         skip_adjust_bipartite_flow=False,
@@ -122,7 +122,6 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         meta_data=None,
         meta_data_rate=1.0,
         meta_data_unweighted=False,
-        # output
         tree=False,
         ftree=False,
         clu=False,
@@ -141,7 +140,6 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         summary_json=None,
         manifest_json=None,
         memory_report=False,
-        # algorithm
         two_level=False,
         flow_model=None,
         directed=None,
@@ -166,7 +164,6 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         multilayer_relax_limit_down=-1,
         multilayer_relax_by_jsd=False,
         multilayer_relax_to_self=False,
-        # accuracy
         seed=123,
         num_trials=1,
         core_loop_limit=10,
@@ -190,16 +187,536 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         """Create a new Infomap instance.
 
         Keyword arguments mirror the Infomap CLI flags. Use
-        :class:`InfomapOptions` for a reusable configuration object and the full
-        parameter reference.
+        :class:`Settings` (alias :class:`InfomapOptions`) for a reusable
+        configuration object and the full parameter reference.
 
         Parameters
         ----------
         args : str, optional
             Raw Infomap arguments to prepend before rendered keyword options.
+        cluster_data : str, optional
+            Read an initial partition from a clu file or a hierarchy from a tree/ftree
+            file. Tree input may use physical or state nodes for higher-order networks.
+        no_infomap : bool, optional
+            Skip optimization. Use this to calculate codelength for --cluster-data or to
+            print non-modular statistics.
+        skip_adjust_bipartite_flow : bool, optional
+            Keep flow on bipartite nodes instead of distributing it to primary nodes.
+        bipartite_teleportation : bool, optional
+            Use bipartite teleportation instead of the default two-step unipartite
+            teleportation.
+        weight_threshold : float, optional
+            Ignore input links with weight below this threshold.
+        include_self_links : bool, optional
+            Deprecated. Self-links are included by default; use no_self_links=True to
+            exclude them.
+        no_self_links : bool, optional
+            Exclude self-links from the input network.
+        node_limit : int, optional
+            Read only nodes up to this node id and ignore links connected to higher node
+            ids.
+        matchable_multilayer_ids : int, optional
+            Construct state ids from node ids and layer ids that stay comparable across
+            networks. Set at least to the largest layer id among networks to match.
+        assign_to_neighbouring_module : bool, optional
+            With --cluster-data, assign nodes missing module ids to a neighboring node's
+            module when possible.
+        meta_data : str, optional
+            Read metadata to encode from a clu-format file.
+        meta_data_rate : float, optional
+            With --meta-data, set the metadata encoding rate. The default encodes
+            metadata at each step.
+        meta_data_unweighted : bool, optional
+            With --meta-data, encode metadata without weighting by node flow.
+        tree : bool, optional
+            Write the modular hierarchy to a tree file. Enabled by default when no other
+            output format is selected.
+        ftree : bool, optional
+            Write the modular hierarchy and aggregated links between nested modules to
+            an ftree file. Used by Network Navigator.
+        clu : bool, optional
+            Write top-level module ids for each node to a clu file.
+        verbosity_level : int, optional
+            Verbosity level on the console. 1 keeps the default output level, 2 renders
+            -vv and so on.
+        silent : bool, optional
+            Suppress console output.
+        out_name : str, optional
+            Base name for output files, for example [out_directory]/[out-name].tree.
+        no_file_output : bool, optional
+            Do not write output files.
+        clu_level : int, optional
+            With --clu or --output clu, write module ids at this depth from the root.
+            Use -1 for bottom-level modules.
+        output : sequence of str, optional
+            Write selected output formats as a comma-separated list without spaces, e.g.
+            -o clu,tree,ftree. Options: clu, tree, ftree, newick, json, csv, network,
+            states, flow.
+        hide_bipartite_nodes : bool, optional
+            Hide bipartite nodes in output by projecting the solution to primary nodes.
+        print_all_trials : bool, optional
+            Write each trial to separate output files. Has effect only when --num-trials
+            is greater than 1.
+        no_overwrite : bool, optional
+            Fail with an output error if any target output file already exists. By
+            default existing files are replaced.
+        print_config_fingerprint : bool, optional
+            Print the canonical configuration fingerprint and exit.
+        timing_json : str, optional
+            Write machine-readable run timing JSON to this path. Use - for stdout.
+        summary_json : str, optional
+            Write machine-readable final run summary JSON to this path. Use - for
+            stdout.
+        manifest_json : str, optional
+            Write a machine-readable run manifest JSON to this path. Use - for stdout.
+        memory_report : bool, optional
+            Include peak RSS and best-effort bytes per node/link estimates in timing
+            JSON. Requires --timing-json.
+        two_level : bool, optional
+            Optimize a two-level partition instead of the default multi-level hierarchy.
+        flow_model : str, optional
+            Choose how Infomap derives flow from the input links. Options: undirected,
+            directed, undirdir, outdirdir, rawdir, precomputed.
+        directed : bool, optional
+            Treat input links as directed. Shorthand for --flow-model directed.
+        recorded_teleportation : bool, optional
+            When teleportation is used to calculate flow, also record teleportation
+            steps in the codelength.
+        use_node_weights_as_flow : bool, optional
+            Use node weights from the API or Pajek node records as normalized node flow.
+        to_nodes : bool, optional
+            Teleport to nodes instead of links. Uses uniform node weights unless node
+            weights are provided.
+        teleportation_probability : float, optional
+            Set the probability of teleporting to a random node or link when calculating
+            flow.
+        regularized : bool, optional
+            Add a fully connected Bayesian prior network to reduce overfitting to
+            missing links. Activates --recorded-teleportation.
+        regularization_strength : float, optional
+            Scale the relative strength of the Bayesian prior network used by
+            --regularized.
+        entropy_corrected : bool, optional
+            Correct for negative entropy bias in small samples, especially solutions
+            with many modules.
+        entropy_correction_strength : float, optional
+            Scale the default correction used by --entropy-corrected.
+        markov_time : float, optional
+            Scale link flow to change the cost of moving between modules. Higher values
+            result in fewer modules.
+        variable_markov_time : bool, optional
+            Vary Markov time locally to reduce overpartitioning in sparse areas while
+            keeping higher resolution in dense areas.
+        variable_markov_damping : float, optional
+            With --variable-markov-time, set damping between local effective degree (0)
+            and local entropy (1).
+        variable_markov_min_scale : float, optional
+            With --variable-markov-time, set the minimum local scale for zero-entropy
+            nodes. Local Markov time is max scale divided by local scale.
+        preferred_number_of_modules : int, optional
+            Penalize solutions by how far their number of modules differs from this
+            value.
+        preferred_number_of_levels : int, optional
+            Soft preference for the depth of the hierarchy. Steering to a shallower
+            depth is reliable at a small codelength cost; deeper is best-effort, bounded
+            by what the optimizer proposes. No-op with --two-level or strength 0.
+        preferred_number_of_levels_strength : float, optional
+            Scale the strength of --preferred-number-of-levels. 0 disables the
+            preference; larger values increase the cost of deviating from the preferred
+            depth.
+        multilayer_relax_rate : float, optional
+            Set the probability of relaxing from a state node to neighboring layers
+            instead of staying in the current layer.
+        multilayer_relax_limit : int, optional
+            Limit relaxation to this many neighboring layer ids in each direction. Use a
+            negative value to allow relaxation to any layer.
+        multilayer_relax_limit_up : int, optional
+            Limit relaxation upward to this many higher neighboring layer ids. Use a
+            negative value to allow relaxation to any higher layer.
+        multilayer_relax_limit_down : int, optional
+            Limit relaxation downward to this many lower neighboring layer ids. Use a
+            negative value to allow relaxation to any lower layer.
+        multilayer_relax_by_jsd : bool, optional
+            Weight multilayer relaxation by out-link similarity measured with
+            Jensen-Shannon divergence.
+        multilayer_relax_to_self : bool, optional
+            On relaxation, link a state node to its own physical node in the target
+            layer instead of spreading to its out-neighbors. Builds a smaller state
+            network with the same flow as the default.
+        seed : int, optional
+            Set the random number generator seed for reproducible results.
+        num_trials : int, optional
+            Run this many independent trials and keep the best solution.
+        core_loop_limit : int, optional
+            Limit how many core loops try to move each node to the best module.
+        core_level_limit : int, optional
+            Limit how many times core loops are reapplied to the aggregated modular
+            network to find larger structures. 0 means no limit.
+        tune_iteration_limit : int, optional
+            Limit the main iterations in the two-level partition algorithm. 0 means no
+            limit.
+        core_loop_codelength_threshold : float, optional
+            Require at least this codelength improvement to accept a new solution in a
+            core loop.
+        tune_iteration_relative_threshold : float, optional
+            Require each tune iteration to improve codelength by this fraction of the
+            initial two-level codelength.
+        fast_hierarchical_solution : int, optional
+            Find top modules fast. Use 2 to keep all fast levels and 3 to skip the
+            recursive part.
+        prefer_modular_solution : bool, optional
+            Prefer a modular solution even when one module gives a lower codelength.
+        inner_parallelization : bool, optional
+            Experimental: use batched parallel node moves for coarse optimization.
+            Performance gains are workload-dependent, often require a relaxed
+            core-loop-codelength-threshold and low tune-iteration-limit, and may produce
+            a different partition than serial optimization.
+        parallel_trials : bool, optional
+            Run independent trials in parallel with OpenMP. --num-trials remains the
+            total number of trials; the number of parallel workers follows the OpenMP
+            thread count (e.g. OMP_NUM_THREADS), clamped to --num-trials. Peak memory
+            scales with the worker count. Nested OpenMP and --inner-parallelization are
+            disabled inside workers.
+        converge : bool, optional
+            Treat the trial count as a cap and stop early once the best codelength has
+            plateaued (no meaningful improvement over several consecutive trials). Runs
+            trials serially; cannot be combined with parallel trials or distributed
+            sharding. With no explicit trial count, a default cap is used.
+        num_threads : str, optional
+            Effective thread budget: 'auto' (resolve from --num-threads >
+            INFOMAP_NUM_THREADS > SLURM_CPUS_PER_TASK > OMP_NUM_THREADS > cpuset >
+            hardware), or a positive integer. 1 forces fully serial. Governs the
+            recursive partition, parallel trials, and inner parallelization.
+        threads : str, optional
+            Alias for --num-threads.
+        trial_offset : int, optional
+            Global index of the first trial this process runs; trial i uses seed =
+            base_seed + (trial_offset + i). Default 0 (single-process behavior).
+        trial_results : str, optional
+            Write this shard's per-trial results (codelengths, seeds, best-tree
+            reference, fingerprints) as JSON to this path, for deterministic merging of
+            distributed shard runs into a final solution.
+        no_final_output : bool, optional
+            Skip writing this process's aggregate best result. Per-trial outputs and
+            --trial-results are still written.
+        num_random_moves : int, optional
+            Try this many random moves in each core loop to merge weakly connected
+            nodes.
+        max_degree_for_random_moves : int, optional
+            Try random moves only for nodes with degree at most this value.
         """
         options = InfomapOptions.from_mapping(locals())
         self._init_from_options(args, options)
+
+    def run(
+        self,
+        args=None,
+        initial_partition=None,
+        cluster_data=None,
+        no_infomap=False,
+        skip_adjust_bipartite_flow=False,
+        bipartite_teleportation=False,
+        weight_threshold=None,
+        include_self_links=None,
+        no_self_links=False,
+        node_limit=None,
+        matchable_multilayer_ids=None,
+        assign_to_neighbouring_module=False,
+        meta_data=None,
+        meta_data_rate=1.0,
+        meta_data_unweighted=False,
+        tree=False,
+        ftree=False,
+        clu=False,
+        verbosity_level=1,
+        silent=False,
+        pretty=False,
+        out_name=None,
+        no_file_output=False,
+        clu_level=None,
+        output=None,
+        hide_bipartite_nodes=False,
+        print_all_trials=False,
+        no_overwrite=False,
+        print_config_fingerprint=False,
+        timing_json=None,
+        summary_json=None,
+        manifest_json=None,
+        memory_report=False,
+        two_level=False,
+        flow_model=None,
+        directed=None,
+        recorded_teleportation=False,
+        use_node_weights_as_flow=False,
+        to_nodes=False,
+        teleportation_probability=0.15,
+        regularized=False,
+        regularization_strength=1.0,
+        entropy_corrected=False,
+        entropy_correction_strength=1.0,
+        markov_time=1.0,
+        variable_markov_time=False,
+        variable_markov_damping=1.0,
+        variable_markov_min_scale=1.0,
+        preferred_number_of_modules=None,
+        preferred_number_of_levels=None,
+        preferred_number_of_levels_strength=1.0,
+        multilayer_relax_rate=0.15,
+        multilayer_relax_limit=-1,
+        multilayer_relax_limit_up=-1,
+        multilayer_relax_limit_down=-1,
+        multilayer_relax_by_jsd=False,
+        multilayer_relax_to_self=False,
+        seed=123,
+        num_trials=1,
+        core_loop_limit=10,
+        core_level_limit=None,
+        tune_iteration_limit=None,
+        core_loop_codelength_threshold=1e-10,
+        tune_iteration_relative_threshold=1e-05,
+        fast_hierarchical_solution=None,
+        prefer_modular_solution=False,
+        inner_parallelization=False,
+        parallel_trials=False,
+        converge=False,
+        num_threads=None,
+        threads=None,
+        trial_offset=None,
+        trial_results=None,
+        no_final_output=False,
+        num_random_moves=None,
+        max_degree_for_random_moves=None,
+    ):
+        """Run Infomap.
+
+        Keyword arguments mirror the Infomap CLI flags. Use
+        :class:`Settings` for the full parameter reference and
+        :meth:`run_with_options` when reusing a saved configuration.
+
+        Parameters
+        ----------
+        args : str, optional
+            Raw Infomap arguments to prepend before rendered keyword options.
+        initial_partition : dict, optional
+            Initial partition to use for this run only. See initial_partition.
+        cluster_data : str, optional
+            Read an initial partition from a clu file or a hierarchy from a tree/ftree
+            file. Tree input may use physical or state nodes for higher-order networks.
+        no_infomap : bool, optional
+            Skip optimization. Use this to calculate codelength for --cluster-data or to
+            print non-modular statistics.
+        skip_adjust_bipartite_flow : bool, optional
+            Keep flow on bipartite nodes instead of distributing it to primary nodes.
+        bipartite_teleportation : bool, optional
+            Use bipartite teleportation instead of the default two-step unipartite
+            teleportation.
+        weight_threshold : float, optional
+            Ignore input links with weight below this threshold.
+        include_self_links : bool, optional
+            Deprecated. Self-links are included by default; use no_self_links=True to
+            exclude them.
+        no_self_links : bool, optional
+            Exclude self-links from the input network.
+        node_limit : int, optional
+            Read only nodes up to this node id and ignore links connected to higher node
+            ids.
+        matchable_multilayer_ids : int, optional
+            Construct state ids from node ids and layer ids that stay comparable across
+            networks. Set at least to the largest layer id among networks to match.
+        assign_to_neighbouring_module : bool, optional
+            With --cluster-data, assign nodes missing module ids to a neighboring node's
+            module when possible.
+        meta_data : str, optional
+            Read metadata to encode from a clu-format file.
+        meta_data_rate : float, optional
+            With --meta-data, set the metadata encoding rate. The default encodes
+            metadata at each step.
+        meta_data_unweighted : bool, optional
+            With --meta-data, encode metadata without weighting by node flow.
+        tree : bool, optional
+            Write the modular hierarchy to a tree file. Enabled by default when no other
+            output format is selected.
+        ftree : bool, optional
+            Write the modular hierarchy and aggregated links between nested modules to
+            an ftree file. Used by Network Navigator.
+        clu : bool, optional
+            Write top-level module ids for each node to a clu file.
+        verbosity_level : int, optional
+            Verbosity level on the console. 1 keeps the default output level, 2 renders
+            -vv and so on.
+        silent : bool, optional
+            Suppress console output.
+        out_name : str, optional
+            Base name for output files, for example [out_directory]/[out-name].tree.
+        no_file_output : bool, optional
+            Do not write output files.
+        clu_level : int, optional
+            With --clu or --output clu, write module ids at this depth from the root.
+            Use -1 for bottom-level modules.
+        output : sequence of str, optional
+            Write selected output formats as a comma-separated list without spaces, e.g.
+            -o clu,tree,ftree. Options: clu, tree, ftree, newick, json, csv, network,
+            states, flow.
+        hide_bipartite_nodes : bool, optional
+            Hide bipartite nodes in output by projecting the solution to primary nodes.
+        print_all_trials : bool, optional
+            Write each trial to separate output files. Has effect only when --num-trials
+            is greater than 1.
+        no_overwrite : bool, optional
+            Fail with an output error if any target output file already exists. By
+            default existing files are replaced.
+        print_config_fingerprint : bool, optional
+            Print the canonical configuration fingerprint and exit.
+        timing_json : str, optional
+            Write machine-readable run timing JSON to this path. Use - for stdout.
+        summary_json : str, optional
+            Write machine-readable final run summary JSON to this path. Use - for
+            stdout.
+        manifest_json : str, optional
+            Write a machine-readable run manifest JSON to this path. Use - for stdout.
+        memory_report : bool, optional
+            Include peak RSS and best-effort bytes per node/link estimates in timing
+            JSON. Requires --timing-json.
+        two_level : bool, optional
+            Optimize a two-level partition instead of the default multi-level hierarchy.
+        flow_model : str, optional
+            Choose how Infomap derives flow from the input links. Options: undirected,
+            directed, undirdir, outdirdir, rawdir, precomputed.
+        directed : bool, optional
+            Treat input links as directed. Shorthand for --flow-model directed.
+        recorded_teleportation : bool, optional
+            When teleportation is used to calculate flow, also record teleportation
+            steps in the codelength.
+        use_node_weights_as_flow : bool, optional
+            Use node weights from the API or Pajek node records as normalized node flow.
+        to_nodes : bool, optional
+            Teleport to nodes instead of links. Uses uniform node weights unless node
+            weights are provided.
+        teleportation_probability : float, optional
+            Set the probability of teleporting to a random node or link when calculating
+            flow.
+        regularized : bool, optional
+            Add a fully connected Bayesian prior network to reduce overfitting to
+            missing links. Activates --recorded-teleportation.
+        regularization_strength : float, optional
+            Scale the relative strength of the Bayesian prior network used by
+            --regularized.
+        entropy_corrected : bool, optional
+            Correct for negative entropy bias in small samples, especially solutions
+            with many modules.
+        entropy_correction_strength : float, optional
+            Scale the default correction used by --entropy-corrected.
+        markov_time : float, optional
+            Scale link flow to change the cost of moving between modules. Higher values
+            result in fewer modules.
+        variable_markov_time : bool, optional
+            Vary Markov time locally to reduce overpartitioning in sparse areas while
+            keeping higher resolution in dense areas.
+        variable_markov_damping : float, optional
+            With --variable-markov-time, set damping between local effective degree (0)
+            and local entropy (1).
+        variable_markov_min_scale : float, optional
+            With --variable-markov-time, set the minimum local scale for zero-entropy
+            nodes. Local Markov time is max scale divided by local scale.
+        preferred_number_of_modules : int, optional
+            Penalize solutions by how far their number of modules differs from this
+            value.
+        preferred_number_of_levels : int, optional
+            Soft preference for the depth of the hierarchy. Steering to a shallower
+            depth is reliable at a small codelength cost; deeper is best-effort, bounded
+            by what the optimizer proposes. No-op with --two-level or strength 0.
+        preferred_number_of_levels_strength : float, optional
+            Scale the strength of --preferred-number-of-levels. 0 disables the
+            preference; larger values increase the cost of deviating from the preferred
+            depth.
+        multilayer_relax_rate : float, optional
+            Set the probability of relaxing from a state node to neighboring layers
+            instead of staying in the current layer.
+        multilayer_relax_limit : int, optional
+            Limit relaxation to this many neighboring layer ids in each direction. Use a
+            negative value to allow relaxation to any layer.
+        multilayer_relax_limit_up : int, optional
+            Limit relaxation upward to this many higher neighboring layer ids. Use a
+            negative value to allow relaxation to any higher layer.
+        multilayer_relax_limit_down : int, optional
+            Limit relaxation downward to this many lower neighboring layer ids. Use a
+            negative value to allow relaxation to any lower layer.
+        multilayer_relax_by_jsd : bool, optional
+            Weight multilayer relaxation by out-link similarity measured with
+            Jensen-Shannon divergence.
+        multilayer_relax_to_self : bool, optional
+            On relaxation, link a state node to its own physical node in the target
+            layer instead of spreading to its out-neighbors. Builds a smaller state
+            network with the same flow as the default.
+        seed : int, optional
+            Set the random number generator seed for reproducible results.
+        num_trials : int, optional
+            Run this many independent trials and keep the best solution.
+        core_loop_limit : int, optional
+            Limit how many core loops try to move each node to the best module.
+        core_level_limit : int, optional
+            Limit how many times core loops are reapplied to the aggregated modular
+            network to find larger structures. 0 means no limit.
+        tune_iteration_limit : int, optional
+            Limit the main iterations in the two-level partition algorithm. 0 means no
+            limit.
+        core_loop_codelength_threshold : float, optional
+            Require at least this codelength improvement to accept a new solution in a
+            core loop.
+        tune_iteration_relative_threshold : float, optional
+            Require each tune iteration to improve codelength by this fraction of the
+            initial two-level codelength.
+        fast_hierarchical_solution : int, optional
+            Find top modules fast. Use 2 to keep all fast levels and 3 to skip the
+            recursive part.
+        prefer_modular_solution : bool, optional
+            Prefer a modular solution even when one module gives a lower codelength.
+        inner_parallelization : bool, optional
+            Experimental: use batched parallel node moves for coarse optimization.
+            Performance gains are workload-dependent, often require a relaxed
+            core-loop-codelength-threshold and low tune-iteration-limit, and may produce
+            a different partition than serial optimization.
+        parallel_trials : bool, optional
+            Run independent trials in parallel with OpenMP. --num-trials remains the
+            total number of trials; the number of parallel workers follows the OpenMP
+            thread count (e.g. OMP_NUM_THREADS), clamped to --num-trials. Peak memory
+            scales with the worker count. Nested OpenMP and --inner-parallelization are
+            disabled inside workers.
+        converge : bool, optional
+            Treat the trial count as a cap and stop early once the best codelength has
+            plateaued (no meaningful improvement over several consecutive trials). Runs
+            trials serially; cannot be combined with parallel trials or distributed
+            sharding. With no explicit trial count, a default cap is used.
+        num_threads : str, optional
+            Effective thread budget: 'auto' (resolve from --num-threads >
+            INFOMAP_NUM_THREADS > SLURM_CPUS_PER_TASK > OMP_NUM_THREADS > cpuset >
+            hardware), or a positive integer. 1 forces fully serial. Governs the
+            recursive partition, parallel trials, and inner parallelization.
+        threads : str, optional
+            Alias for --num-threads.
+        trial_offset : int, optional
+            Global index of the first trial this process runs; trial i uses seed =
+            base_seed + (trial_offset + i). Default 0 (single-process behavior).
+        trial_results : str, optional
+            Write this shard's per-trial results (codelengths, seeds, best-tree
+            reference, fingerprints) as JSON to this path, for deterministic merging of
+            distributed shard runs into a final solution.
+        no_final_output : bool, optional
+            Skip writing this process's aggregate best result. Per-trial outputs and
+            --trial-results are still written.
+        num_random_moves : int, optional
+            Try this many random moves in each core loop to merge weakly connected
+            nodes.
+        max_degree_for_random_moves : int, optional
+            Try random moves only for nodes with degree at most this value.
+
+        See Also
+        --------
+        initial_partition
+        """
+        options = InfomapOptions.from_mapping(locals())
+        return self._run_from_options(args, initial_partition, options)
+    # === END generated ===
 
     def __getattr__(self, name):
         # Transitional: forward not-yet-migrated SWIG calls (e.g. the io
@@ -1346,110 +1863,6 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         self._generation += 1
         self._result = Result(self, generation=self._generation)
         return self._result
-
-    def run(
-        self,
-        args=None,
-        initial_partition=None,
-        # input
-        cluster_data=None,
-        no_infomap=False,
-        skip_adjust_bipartite_flow=False,
-        bipartite_teleportation=False,
-        weight_threshold=None,
-        include_self_links=None,
-        no_self_links=False,
-        node_limit=None,
-        matchable_multilayer_ids=None,
-        assign_to_neighbouring_module=False,
-        meta_data=None,
-        meta_data_rate=1.0,
-        meta_data_unweighted=False,
-        # output
-        tree=False,
-        ftree=False,
-        clu=False,
-        verbosity_level=1,
-        silent=False,
-        pretty=False,
-        out_name=None,
-        no_file_output=False,
-        clu_level=None,
-        output=None,
-        hide_bipartite_nodes=False,
-        print_all_trials=False,
-        no_overwrite=False,
-        print_config_fingerprint=False,
-        timing_json=None,
-        summary_json=None,
-        manifest_json=None,
-        memory_report=False,
-        # algorithm
-        two_level=False,
-        flow_model=None,
-        directed=None,
-        recorded_teleportation=False,
-        use_node_weights_as_flow=False,
-        to_nodes=False,
-        teleportation_probability=0.15,
-        regularized=False,
-        regularization_strength=1.0,
-        entropy_corrected=False,
-        entropy_correction_strength=1.0,
-        markov_time=1.0,
-        variable_markov_time=False,
-        variable_markov_damping=1.0,
-        variable_markov_min_scale=1.0,
-        preferred_number_of_modules=None,
-        preferred_number_of_levels=None,
-        preferred_number_of_levels_strength=1.0,
-        multilayer_relax_rate=0.15,
-        multilayer_relax_limit=-1,
-        multilayer_relax_limit_up=-1,
-        multilayer_relax_limit_down=-1,
-        multilayer_relax_by_jsd=False,
-        multilayer_relax_to_self=False,
-        # accuracy
-        seed=123,
-        num_trials=1,
-        core_loop_limit=10,
-        core_level_limit=None,
-        tune_iteration_limit=None,
-        core_loop_codelength_threshold=1e-10,
-        tune_iteration_relative_threshold=1e-05,
-        fast_hierarchical_solution=None,
-        prefer_modular_solution=False,
-        inner_parallelization=False,
-        parallel_trials=False,
-        converge=False,
-        num_threads=None,
-        threads=None,
-        trial_offset=None,
-        trial_results=None,
-        no_final_output=False,
-        num_random_moves=None,
-        max_degree_for_random_moves=None,
-    ):
-        """Run Infomap.
-
-        Keyword arguments mirror the Infomap CLI flags. Use
-        :class:`InfomapOptions` for the full parameter reference and
-        :meth:`run_with_options` when reusing a saved configuration.
-
-        Parameters
-        ----------
-        args : str, optional
-            Raw Infomap arguments to prepend before rendered keyword options.
-        initial_partition : dict, optional
-            Initial partition to use for this run only. See
-            :attr:`initial_partition`.
-
-        See Also
-        --------
-        initial_partition
-        """
-        options = InfomapOptions.from_mapping(locals())
-        return self._run_from_options(args, initial_partition, options)
 
     def run_with_options(self, options, *, args=None, initial_partition=None):
         """Run Infomap using a reusable :class:`InfomapOptions` instance."""
