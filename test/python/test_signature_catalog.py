@@ -1,6 +1,13 @@
 """Guard: the ``Infomap.__init__`` / ``Infomap.run`` keyword signatures must stay
 in sync with the GENERATED ``InfomapOptions`` field catalog (the single source of
 truth). This closes the divergence risk of hand-maintaining the ~90-param lists.
+
+Phase 3: the ``__init__``/``run`` signatures are themselves GENERATED into a
+marker block in ``_facade.py`` from this same catalog (by
+``scripts/generate_binding_options.py``), so this guard is belt-and-suspenders.
+Byte-level freshness of the generated block is enforced by
+``make test-binding-options-freshness``; the tests below enforce the runtime
+set-equality invariant independently of the generator.
 """
 
 import inspect
