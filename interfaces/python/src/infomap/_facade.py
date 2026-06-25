@@ -180,6 +180,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         super().__init__(_package_construct_args()(args, **options.to_kwargs()))
         self._network = _NetworkBuilder(self)
         self._multilayer = _MultilayerBuilder(self)
+        self.node_id_to_label = {}
 
     def __repr__(self):
         return _repr_text(self)
@@ -938,7 +939,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
             Dict with the internal node ids as keys and original labels as
             values.
         """
-        return _add_networkx_graph(
+        mapping = _add_networkx_graph(
             self,
             g,
             weight=weight,
@@ -946,6 +947,8 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
             layer_id=layer_id,
             multilayer_inter_intra_format=multilayer_inter_intra_format,
         )
+        self.node_id_to_label = mapping
+        return mapping
 
     def add_scipy_sparse_matrix(self, A, directed=False, weighted=True, node_ids=None):
         """Add links and nodes from a SciPy sparse adjacency matrix.
@@ -1061,7 +1064,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
             Dict with igraph vertex indices as keys and vertex names as values
             when names are present, otherwise vertex indices as values.
         """
-        return _add_igraph_graph(
+        mapping = _add_igraph_graph(
             self,
             g,
             edge_weights=edge_weights,
@@ -1070,6 +1073,8 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
             layer_id=layer_id,
             multilayer_inter_intra_format=multilayer_inter_intra_format,
         )
+        self.node_id_to_label = mapping
+        return mapping
 
     # ----------------------------------------
     # Run
