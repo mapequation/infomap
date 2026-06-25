@@ -10,10 +10,8 @@ per-element Python loop is introduced.
 
 from __future__ import annotations
 
+from ._network_input import add_bulk_links as _add_bulk_links
 from ._network_input import first_order_unpacker as _first_order_unpacker
-from ._network_input import is_numpy_input as _is_numpy_input
-from ._network_input import normalize_numpy_links as _normalize_numpy_links
-from ._network_input import split_optional_weight_rows as _split_optional_weight_rows
 
 
 class _NetworkBuilder:
@@ -75,31 +73,18 @@ class _NetworkBuilder:
         return self._im.addLink(source_id, target_id, weight)
 
     def add_links(self, links):
-        if _is_numpy_input(links):
-            links_array = _normalize_numpy_links(
-                links,
-                name="link",
-                valid_columns=(2, 3),
-                column_description="(source_id, target_id, [weight])",
-                require_32_or_64_bit=True,
-            )
-            return self._im.addLinksFromNumpy2D(
-                links_array,
-                links_array.shape[0],
-                links_array.shape[1],
-                links_array.dtype.kind,
-                links_array.dtype.itemsize,
-            )
-
-        source_ids, target_ids, weights = _split_optional_weight_rows(
+        return _add_bulk_links(
             links,
-            row_name="link",
+            numpy_method=self._im.addLinksFromNumpy2D,
+            list_method=self._im.addLinks,
+            name="link",
+            valid_columns=(2, 3),
+            column_description="(source_id, target_id, [weight])",
             valid_lengths=(2, 3),
             unpack=_first_order_unpacker(),
             length_description="2 or 3 values",
+            require_32_or_64_bit=True,
         )
-
-        return self._im.addLinks(source_ids, target_ids, weights)
 
     def remove_link(self, source_id, target_id):
         return self._im.network.removeLink(source_id, target_id)

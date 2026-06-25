@@ -52,3 +52,23 @@ def test_from_igraph_matches_manual_build():
     b.run()
     assert b.codelength == pytest.approx(a.codelength)
     assert b.node_id_to_label == a.node_id_to_label
+
+
+@pytest.mark.fast
+def test_add_scipy_sparse_matrix_sets_node_id_to_label():
+    import numpy as np
+
+    sparse = pytest.importorskip("scipy.sparse")
+    A = sparse.csr_matrix(np.array([[0, 1, 0], [1, 0, 1], [0, 1, 0]]))
+    im = Infomap(silent=True, no_file_output=True)
+    mapping = im.add_scipy_sparse_matrix(A)
+    assert mapping  # non-empty {internal_id: external_id}
+    assert im.node_id_to_label == mapping
+
+
+@pytest.mark.fast
+def test_add_edge_index_sets_node_id_to_label():
+    im = Infomap(silent=True, no_file_output=True)
+    mapping = im.add_edge_index([[0, 1, 2], [1, 2, 0]])
+    assert mapping
+    assert im.node_id_to_label == mapping

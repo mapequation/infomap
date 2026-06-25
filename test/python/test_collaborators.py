@@ -26,7 +26,11 @@ def test_repr_html_and_summary_render():
     im.add_links([(1, 2), (2, 3), (3, 1)])
     im.run()
     html = im._repr_html_()
-    assert isinstance(html, str) and "<div" in html
+    # Assert real rendered content, not just that some <div> exists.
+    assert isinstance(html, str)
+    assert "infomap-metric" in html
+    assert "Codelength" in html  # primary metric label shown after a run
+    assert "Top-module flow" in html  # flow strip rendered for a run network
     summary = im.summary()
     assert isinstance(summary, dict)
     assert summary["status"] == "run"

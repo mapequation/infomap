@@ -8,11 +8,9 @@ inputs go straight to the C++ bulk constructors.
 
 from __future__ import annotations
 
+from ._network_input import add_bulk_links as _add_bulk_links
 from ._network_input import flat_multilayer_unpacker as _flat_multilayer_unpacker
-from ._network_input import is_numpy_input as _is_numpy_input
-from ._network_input import normalize_numpy_links as _normalize_numpy_links
 from ._network_input import paired_multilayer_unpacker as _paired_multilayer_unpacker
-from ._network_input import split_optional_weight_rows as _split_optional_weight_rows
 
 
 class _MultilayerBuilder:
@@ -36,35 +34,18 @@ class _MultilayerBuilder:
         )
 
     def add_multilayer_intra_links(self, links):
-        if _is_numpy_input(links):
-            links_array = _normalize_numpy_links(
-                links,
-                name="multilayer intra-link",
-                valid_columns=(3, 4),
-                column_description="(layer_id, source_node_id, target_node_id, [weight])",
-            )
-            return self._im.addMultilayerIntraLinksFromNumpy2D(
-                links_array,
-                links_array.shape[0],
-                links_array.shape[1],
-                links_array.dtype.kind,
-                links_array.dtype.itemsize,
-            )
-
-        layer_ids, source_node_ids, target_node_ids, weights = (
-            _split_optional_weight_rows(
-                links,
-                row_name="multilayer intra-link",
-                valid_lengths=(3, 4),
-                unpack=_flat_multilayer_unpacker(
-                    ("layer_id", "source_node_id", "target_node_id"),
-                ),
-                length_description="3 or 4 values",
-            )
-        )
-
-        return self._im.addMultilayerIntraLinks(
-            layer_ids, source_node_ids, target_node_ids, weights
+        return _add_bulk_links(
+            links,
+            numpy_method=self._im.addMultilayerIntraLinksFromNumpy2D,
+            list_method=self._im.addMultilayerIntraLinks,
+            name="multilayer intra-link",
+            valid_columns=(3, 4),
+            column_description="(layer_id, source_node_id, target_node_id, [weight])",
+            valid_lengths=(3, 4),
+            unpack=_flat_multilayer_unpacker(
+                ("layer_id", "source_node_id", "target_node_id"),
+            ),
+            length_description="3 or 4 values",
         )
 
     def add_multilayer_inter_link(
@@ -75,76 +56,34 @@ class _MultilayerBuilder:
         )
 
     def add_multilayer_inter_links(self, links):
-        if _is_numpy_input(links):
-            links_array = _normalize_numpy_links(
-                links,
-                name="multilayer inter-link",
-                valid_columns=(3, 4),
-                column_description="(source_layer_id, node_id, target_layer_id, [weight])",
-            )
-            return self._im.addMultilayerInterLinksFromNumpy2D(
-                links_array,
-                links_array.shape[0],
-                links_array.shape[1],
-                links_array.dtype.kind,
-                links_array.dtype.itemsize,
-            )
-
-        source_layer_ids, node_ids, target_layer_ids, weights = (
-            _split_optional_weight_rows(
-                links,
-                row_name="multilayer inter-link",
-                valid_lengths=(3, 4),
-                unpack=_flat_multilayer_unpacker(
-                    ("source_layer_id", "node_id", "target_layer_id"),
-                ),
-                length_description="3 or 4 values",
-            )
-        )
-
-        return self._im.addMultilayerInterLinks(
-            source_layer_ids, node_ids, target_layer_ids, weights
+        return _add_bulk_links(
+            links,
+            numpy_method=self._im.addMultilayerInterLinksFromNumpy2D,
+            list_method=self._im.addMultilayerInterLinks,
+            name="multilayer inter-link",
+            valid_columns=(3, 4),
+            column_description="(source_layer_id, node_id, target_layer_id, [weight])",
+            valid_lengths=(3, 4),
+            unpack=_flat_multilayer_unpacker(
+                ("source_layer_id", "node_id", "target_layer_id"),
+            ),
+            length_description="3 or 4 values",
         )
 
     def add_multilayer_links(self, links):
-        if _is_numpy_input(links):
-            links_array = _normalize_numpy_links(
-                links,
-                name="multilayer link",
-                valid_columns=(4, 5),
-                column_description=(
-                    "(source_layer_id, source_node_id, target_layer_id, "
-                    "target_node_id, [weight])"
-                ),
-            )
-            return self._im.addMultilayerLinksFromNumpy2D(
-                links_array,
-                links_array.shape[0],
-                links_array.shape[1],
-                links_array.dtype.kind,
-                links_array.dtype.itemsize,
-            )
-
-        (
-            source_layer_ids,
-            source_node_ids,
-            target_layer_ids,
-            target_node_ids,
-            weights,
-        ) = _split_optional_weight_rows(
+        return _add_bulk_links(
             links,
-            row_name="multilayer link",
+            numpy_method=self._im.addMultilayerLinksFromNumpy2D,
+            list_method=self._im.addMultilayerLinks,
+            name="multilayer link",
+            valid_columns=(4, 5),
+            column_description=(
+                "(source_layer_id, source_node_id, target_layer_id, "
+                "target_node_id, [weight])"
+            ),
             valid_lengths=(2, 3),
             unpack=_paired_multilayer_unpacker(),
             length_description="2 or 3 values",
-        )
-
-        return self._im.addMultilayerLinks(
-            source_layer_ids,
-            source_node_ids,
-            target_layer_ids,
-            target_node_ids,
-            weights,
         )
 
     def remove_multilayer_link(self):

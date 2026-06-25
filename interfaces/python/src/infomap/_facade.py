@@ -61,9 +61,9 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
 
     >>> from infomap import Infomap
     >>> im = Infomap(silent=True)
-    >>> im.add_node(1)
-    >>> im.add_node(2)
-    >>> im.add_link(1, 2)
+    >>> _ = im.add_node(1)
+    >>> _ = im.add_node(2)
+    >>> _ = im.add_link(1, 2)
     >>> im.run()
     >>> im.codelength
     1.0
@@ -359,7 +359,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
 
         >>> from infomap import Infomap
         >>> im = Infomap()
-        >>> im.add_nodes(range(4))
+        >>> _ = im.add_nodes(range(4))
 
 
         Add named nodes
@@ -371,7 +371,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         ...     (2, "Node 2"),
         ...     (3, "Node 3")
         ... )
-        >>> im.add_nodes(nodes)
+        >>> _ = im.add_nodes(nodes)
         >>> im.names
         {1: 'Node 1', 2: 'Node 2', 3: 'Node 3'}
 
@@ -385,7 +385,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         ...     (2, "Node 2", 0.2),
         ...     (3, "Node 3", 0.8)
         ... )
-        >>> im.add_nodes(nodes)
+        >>> _ = im.add_nodes(nodes)
         >>> im.names
         {1: 'Node 1', 2: 'Node 2', 3: 'Node 3'}
 
@@ -398,7 +398,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         ...     2: "Node 2",
         ...     3: "Node 3"
         ... }
-        >>> im.add_nodes(nodes)
+        >>> _ = im.add_nodes(nodes)
         >>> im.names
         {1: 'Node 1', 2: 'Node 2', 3: 'Node 3'}
 
@@ -412,7 +412,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         ...     2: ("Node 2", 0.2),
         ...     3: ("Node 3", 0.8)
         ... }
-        >>> im.add_nodes(nodes)
+        >>> _ = im.add_nodes(nodes)
         >>> im.names
         {1: 'Node 1', 2: 'Node 2', 3: 'Node 3'}
 
@@ -461,7 +461,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         ...     (2, 1),
         ...     (3, 2)
         ... )
-        >>> im.add_state_nodes(states)
+        >>> _ = im.add_state_nodes(states)
 
 
         With dict
@@ -473,7 +473,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         ...     2: 1,
         ...     3: 2
         ... }
-        >>> im.add_state_nodes(states)
+        >>> _ = im.add_state_nodes(states)
 
 
         Parameters
@@ -509,7 +509,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         ...     (1, "Node 1"),
         ...     (2, "Node 2")
         ... )
-        >>> im.set_names(names)
+        >>> _ = im.set_names(names)
         >>> im.names
         {1: 'Node 1', 2: 'Node 2'}
 
@@ -522,7 +522,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         ...     1: "Node 1",
         ...     2: "Node 2"
         ... }
-        >>> im.set_names(names)
+        >>> _ = im.set_names(names)
         >>> im.names
         {1: 'Node 1', 2: 'Node 2'}
 
@@ -572,9 +572,9 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         ...     (1, 2),
         ...     (1, 3)
         ... )
-        >>> im.add_links(links)
+        >>> _ = im.add_links(links)
         >>> import numpy as np
-        >>> im.add_links(np.array([[2, 3, 1.0], [3, 4, 2.0]]))
+        >>> _ = im.add_links(np.array([[2, 3, 1.0], [3, 4, 2.0]]))
 
 
         See Also
@@ -624,8 +624,8 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         ...     (1, 2),
         ...     (1, 3)
         ... )
-        >>> im.add_links(links)
-        >>> im.remove_links(links)
+        >>> _ = im.add_links(links)
+        >>> _ = im.remove_links(links)
         >>> im.num_links
         0
 
@@ -657,7 +657,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         >>> im = Infomap()
         >>> source_multilayer_node = (0, 1) # layer_id, node_id
         >>> target_multilayer_node = (1, 2) # layer_id, node_id
-        >>> im.add_multilayer_link(source_multilayer_node, target_multilayer_node)
+        >>> _ = im.add_multilayer_link(source_multilayer_node, target_multilayer_node)
 
 
         Usage with MultilayerNode
@@ -666,7 +666,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         >>> im = Infomap()
         >>> source_multilayer_node = MultilayerNode(layer_id=0, node_id=1)
         >>> target_multilayer_node = MultilayerNode(layer_id=1, node_id=2)
-        >>> im.add_multilayer_link(source_multilayer_node, target_multilayer_node)
+        >>> _ = im.add_multilayer_link(source_multilayer_node, target_multilayer_node)
 
         Notes
         -----
@@ -701,10 +701,10 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
 
         >>> from infomap import Infomap
         >>> im = Infomap()
-        >>> im.add_multilayer_intra_link(1, 1, 2)
-        >>> im.add_multilayer_intra_link(1, 2, 3)
-        >>> im.add_multilayer_intra_link(2, 1, 3)
-        >>> im.add_multilayer_intra_link(2, 3, 4)
+        >>> _ = im.add_multilayer_intra_link(1, 1, 2)
+        >>> _ = im.add_multilayer_intra_link(1, 2, 3)
+        >>> _ = im.add_multilayer_intra_link(2, 1, 3)
+        >>> _ = im.add_multilayer_intra_link(2, 3, 4)
 
         Notes
         -----
@@ -744,7 +744,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         ...     (1, 2, 3, 2.0),
         ...     (2, 1, 3),
         ... )
-        >>> im.add_multilayer_intra_links(links)
+        >>> _ = im.add_multilayer_intra_links(links)
 
         See Also
         --------
@@ -788,10 +788,10 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
 
         >>> from infomap import Infomap
         >>> im = Infomap()
-        >>> im.add_multilayer_inter_link(1, 1, 2)
-        >>> im.add_multilayer_inter_link(1, 2, 2)
-        >>> im.add_multilayer_inter_link(2, 1, 1)
-        >>> im.add_multilayer_inter_link(2, 3, 1)
+        >>> _ = im.add_multilayer_inter_link(1, 1, 2)
+        >>> _ = im.add_multilayer_inter_link(1, 2, 2)
+        >>> _ = im.add_multilayer_inter_link(2, 1, 1)
+        >>> _ = im.add_multilayer_inter_link(2, 3, 1)
 
         Parameters
         ----------
@@ -819,7 +819,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         ...     (1, 2, 2, 2.0),
         ...     (2, 3, 1),
         ... )
-        >>> im.add_multilayer_inter_links(links)
+        >>> _ = im.add_multilayer_inter_links(links)
 
         See Also
         --------
@@ -847,7 +847,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         ...     ((0, 1), (1, 2)),
         ...     ((0, 3), (1, 2))
         ... )
-        >>> im.add_multilayer_links(links)
+        >>> _ = im.add_multilayer_links(links)
 
 
         See Also
@@ -877,17 +877,17 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
 
         >>> from infomap import Infomap
         >>> im = Infomap(silent=True, num_trials=10)
-        >>> im.add_links((
+        >>> _ = im.add_links((
         ...     (1, 2), (1, 3), (2, 3),
         ...     (3, 4),
         ...     (4, 5), (4, 6), (5, 6)
         ... ))
-        >>> im.set_meta_data(1, 0)
-        >>> im.set_meta_data(2, 0)
-        >>> im.set_meta_data(3, 1)
-        >>> im.set_meta_data(4, 1)
-        >>> im.set_meta_data(5, 0)
-        >>> im.set_meta_data(6, 0)
+        >>> _ = im.set_meta_data(1, 0)
+        >>> _ = im.set_meta_data(2, 0)
+        >>> _ = im.set_meta_data(3, 1)
+        >>> _ = im.set_meta_data(4, 1)
+        >>> _ = im.set_meta_data(5, 0)
+        >>> _ = im.set_meta_data(6, 0)
         >>> im.run(meta_data_rate=0)
         >>> im.num_top_modules
         2
@@ -1053,13 +1053,15 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
             Dict with internal integer node ids as keys and external node ids
             as values.
         """
-        return _add_scipy_sparse_matrix(
+        mapping = _add_scipy_sparse_matrix(
             self,
             A,
             directed=directed,
             weighted=weighted,
             node_ids=node_ids,
         )
+        self.node_id_to_label = mapping
+        return mapping
 
     def add_edge_index(
         self,
@@ -1093,7 +1095,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
             Dict with internal integer node ids as keys and external node ids
             as values.
         """
-        return _add_edge_index(
+        mapping = _add_edge_index(
             self,
             edge_index,
             edge_weight=edge_weight,
@@ -1101,6 +1103,8 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
             directed=directed,
             node_ids=node_ids,
         )
+        self.node_id_to_label = mapping
+        return mapping
 
     def add_igraph_graph(
         self,
@@ -1169,14 +1173,14 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
 
         >>> from infomap import Infomap
         >>> im = Infomap(silent=True, num_trials=10)
-        >>> im.add_node(1, "Left 1")
-        >>> im.add_node(2, "Left 2")
+        >>> _ = im.add_node(1, "Left 1")
+        >>> _ = im.add_node(2, "Left 2")
         >>> im.bipartite_start_id = 3
-        >>> im.add_node(3, "Right 3")
-        >>> im.add_node(4, "Right 4")
-        >>> im.add_link(1, 3)
-        >>> im.add_link(1, 4)
-        >>> im.add_link(2, 4)
+        >>> _ = im.add_node(3, "Right 3")
+        >>> _ = im.add_node(4, "Right 4")
+        >>> _ = im.add_link(1, 3)
+        >>> _ = im.add_link(1, 4)
+        >>> _ = im.add_link(2, 4)
         >>> im.run()
         >>> tol = 1e-4
         >>> abs(im.codelength - 0.9182958340544896) < tol
@@ -1211,14 +1215,14 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
 
         >>> from infomap import Infomap
         >>> im = Infomap(silent=True)
-        >>> im.add_node(1)
-        >>> im.add_node(2)
-        >>> im.add_node(3)
-        >>> im.add_node(4)
-        >>> im.add_link(1, 2)
-        >>> im.add_link(1, 3)
-        >>> im.add_link(2, 3)
-        >>> im.add_link(2, 4)
+        >>> _ = im.add_node(1)
+        >>> _ = im.add_node(2)
+        >>> _ = im.add_node(3)
+        >>> _ = im.add_node(4)
+        >>> _ = im.add_link(1, 2)
+        >>> _ = im.add_link(1, 3)
+        >>> _ = im.add_link(2, 3)
+        >>> _ = im.add_link(2, 4)
         >>> im.initial_partition = {
         ...     1: 0,
         ...     2: 0,
@@ -1245,8 +1249,8 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
 
         >>> from infomap import Infomap, MultilayerNode
         >>> im = Infomap(silent=True)
-        >>> im.add_multilayer_intra_link(1, 1, 2)
-        >>> im.add_multilayer_intra_link(2, 1, 3)
+        >>> _ = im.add_multilayer_intra_link(1, 1, 2)
+        >>> _ = im.add_multilayer_intra_link(2, 1, 3)
         >>> im.initial_partition = {(1, 1): 0, MultilayerNode(2, 1): 1}
 
         Parameters
