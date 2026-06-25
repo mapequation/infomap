@@ -8,8 +8,6 @@ from ._core import Core
 from ._edge_index import add_edge_index as _add_edge_index
 from ._igraph import add_igraph_graph as _add_igraph_graph
 from ._igraph import find_igraph_communities
-from ._multilayer_builder import _MultilayerBuilder
-from ._network_builder import _NetworkBuilder
 from ._networkx import add_networkx_graph as _add_networkx_graph
 from ._networkx import find_communities
 from ._options import (
@@ -19,6 +17,7 @@ from ._options import (
 )
 from ._results import _InfomapResultsMixin
 from ._results import entropy, perplexity, plogp
+from .network import Network
 from .result import Result
 from ._scipy import add_scipy_sparse_matrix as _add_scipy_sparse_matrix
 from ._summary import (
@@ -44,6 +43,7 @@ __all__ = [
     "Infomap",
     "InfomapOptions",
     "MultilayerNode",
+    "Network",
     "Result",
     "Settings",
     "entropy",
@@ -95,8 +95,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
 
     def _init_from_options(self, args, options):
         self._core = Core(_package_construct_args()(args, **options.to_kwargs()))
-        self._network = _NetworkBuilder(self._core)
-        self._multilayer = _MultilayerBuilder(self._core)
+        self._network = Network(core=self._core)
         self.node_id_to_label = {}
         # Run-generation token: incremented on every run(). A Result stamps the
         # generation it was created in; node-level access on a stale Result
@@ -1225,7 +1224,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         weight : float, optional
 
         """
-        self._multilayer.add_multilayer_link(
+        self._network.add_multilayer_link(
             source_multilayer_node, target_multilayer_node, weight
         )
         return self
@@ -1267,7 +1266,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
 
 
         """
-        self._multilayer.add_multilayer_intra_link(
+        self._network.add_multilayer_intra_link(
             layer_id, source_node_id, target_node_id, weight
         )
         return self
@@ -1298,7 +1297,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             ``(layer_id, source_node_id, target_node_id, [weight])``.
             NumPy arrays must be 2-dimensional with 3 or 4 columns.
         """
-        self._multilayer.add_multilayer_intra_links(links)
+        self._network.add_multilayer_intra_links(links)
         return self
 
     def add_multilayer_inter_link(
@@ -1342,7 +1341,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         weight : float, optional
 
         """
-        self._multilayer.add_multilayer_inter_link(
+        self._network.add_multilayer_inter_link(
             source_layer_id, node_id, target_layer_id, weight
         )
         return self
@@ -1373,7 +1372,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             ``(source_layer_id, node_id, target_layer_id, [weight])``.
             NumPy arrays must be 2-dimensional with 3 or 4 columns.
         """
-        self._multilayer.add_multilayer_inter_links(links)
+        self._network.add_multilayer_inter_links(links)
         return self
 
     def add_multilayer_links(self, links):
@@ -1404,11 +1403,11 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             ``(source_layer_id, source_node_id, target_layer_id,
             target_node_id, [weight])``.
         """
-        self._multilayer.add_multilayer_links(links)
+        self._network.add_multilayer_links(links)
         return self
 
     def remove_multilayer_link(self):
-        return self._multilayer.remove_multilayer_link()
+        return self._network.remove_multilayer_link()
 
     def set_meta_data(self, node_id, meta_category):
         """Set meta data to a node.
