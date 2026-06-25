@@ -1,0 +1,1086 @@
+{
+  "activeNetwork": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "adaptDefaults": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "addLink": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "addLinks": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "addLinksFromNumpy2D": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "addMultilayerInterLink": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "addMultilayerInterLinks": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "addMultilayerInterLinksFromNumpy2D": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "addMultilayerIntraLink": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "addMultilayerIntraLinks": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "addMultilayerIntraLinksFromNumpy2D": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "addMultilayerLink": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "addMultilayerLinks": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "addMultilayerLinksFromNumpy2D": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "addName": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "addNode": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "addPhysicalNode": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "addStateNode": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "add_edge_index": {
+    "property": false,
+    "signature": "(self, edge_index, edge_weight=None, num_nodes=None, directed=True, node_ids=None)"
+  },
+  "add_igraph_graph": {
+    "property": false,
+    "signature": "(self, g, edge_weights=None, vertex_weights=None, node_id='node_id', layer_id='layer_id', multilayer_inter_intra_format=True)"
+  },
+  "add_link": {
+    "property": false,
+    "signature": "(self, source_id, target_id, weight=1.0)"
+  },
+  "add_links": {
+    "property": false,
+    "signature": "(self, links)"
+  },
+  "add_multilayer_inter_link": {
+    "property": false,
+    "signature": "(self, source_layer_id, node_id, target_layer_id, weight=1.0)"
+  },
+  "add_multilayer_inter_links": {
+    "property": false,
+    "signature": "(self, links)"
+  },
+  "add_multilayer_intra_link": {
+    "property": false,
+    "signature": "(self, layer_id, source_node_id, target_node_id, weight=1.0)"
+  },
+  "add_multilayer_intra_links": {
+    "property": false,
+    "signature": "(self, links)"
+  },
+  "add_multilayer_link": {
+    "property": false,
+    "signature": "(self, source_multilayer_node, target_multilayer_node, weight=1.0)"
+  },
+  "add_multilayer_links": {
+    "property": false,
+    "signature": "(self, links)"
+  },
+  "add_networkx_graph": {
+    "property": false,
+    "signature": "(self, g, weight='weight', node_id='node_id', layer_id='layer_id', multilayer_inter_intra_format=True)"
+  },
+  "add_node": {
+    "property": false,
+    "signature": "(self, node_id, name=None, teleportation_weight=None)"
+  },
+  "add_nodes": {
+    "property": false,
+    "signature": "(self, nodes)"
+  },
+  "add_scipy_sparse_matrix": {
+    "property": false,
+    "signature": "(self, A, directed=False, weighted=True, node_ids=None)"
+  },
+  "add_state_node": {
+    "property": false,
+    "signature": "(self, state_id, node_id)"
+  },
+  "add_state_nodes": {
+    "property": false,
+    "signature": "(self, state_nodes)"
+  },
+  "additionalInput": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "assignToNeighbouringModule": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "begin": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "bipartite": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "bipartiteTeleportation": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "bipartite_start_id": {
+    "property": true,
+    "signature": "(self)"
+  },
+  "cloneAsNonMain": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "cluLevel": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "clusterDataFile": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "clusterDataIsHard": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "codelength": {
+    "property": true,
+    "signature": "(self)"
+  },
+  "codelengths": {
+    "property": true,
+    "signature": "(self)"
+  },
+  "convergeTrials": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "coreLoopLimit": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "directed": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "effective_num_leaf_modules": {
+    "property": true,
+    "signature": "(self)"
+  },
+  "effective_num_top_modules": {
+    "property": true,
+    "signature": "(self)"
+  },
+  "elapsedTime": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "elapsed_time": {
+    "property": true,
+    "signature": "(self)"
+  },
+  "end": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "entropyBiasCorrection": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "entropyBiasCorrectionMultiplier": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "entropy_rate": {
+    "property": true,
+    "signature": "(self)"
+  },
+  "fastHierarchicalSolution": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "flowModel": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "flowModelIsSet": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "flow_links": {
+    "property": true,
+    "signature": "(self)"
+  },
+  "from_edge_index": {
+    "property": false,
+    "signature": "(edge_index, *, edge_weight=None, num_nodes=None, directed=True, node_ids=None, args=None, **infomap_options)"
+  },
+  "from_options": {
+    "property": false,
+    "signature": "(options, args=None)"
+  },
+  "from_scipy_sparse_matrix": {
+    "property": false,
+    "signature": "(A, *, directed=False, weighted=True, node_ids=None, args=None, **infomap_options)"
+  },
+  "getCodelength": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "getConfig": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "getElapsedTime": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "getEntropyRate": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "getHierarchicalCodelength": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "getIndexCodelength": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "getInitialPartition": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "getLinks": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "getMaxEntropy": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "getMaxFlow": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "getMetaCodelength": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "getModuleCodelength": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "getModules": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "getMultilayerStateId": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "getMultilevelModules": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "getName": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "getNames": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "getOneLevelCodelength": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "getRelativeCodelengthSavings": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "getStartDate": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "get_dataframe": {
+    "property": false,
+    "signature": "(self, columns: 'Sequence[str] | None' = None, *, states: 'bool' = True, depth_level: 'int' = 1) -> 'Any'"
+  },
+  "get_effective_num_modules": {
+    "property": false,
+    "signature": "(self, depth_level=1)"
+  },
+  "get_links": {
+    "property": false,
+    "signature": "(self, data='weight')"
+  },
+  "get_modules": {
+    "property": false,
+    "signature": "(self, depth_level=1, states=False)"
+  },
+  "get_multilevel_modules": {
+    "property": false,
+    "signature": "(self, states=False)"
+  },
+  "get_name": {
+    "property": false,
+    "signature": "(self, node_id, default=None)"
+  },
+  "get_names": {
+    "property": false,
+    "signature": "(self)"
+  },
+  "get_nodes": {
+    "property": false,
+    "signature": "(self, depth_level=1, states=False)"
+  },
+  "get_tree": {
+    "property": false,
+    "signature": "(self, depth_level=1, states=False)"
+  },
+  "haveMemory": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "haveMetaData": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "haveModularResultOutput": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "haveModules": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "haveNonTrivialModules": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "haveOutput": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "have_memory": {
+    "property": true,
+    "signature": "(self)"
+  },
+  "hideBipartiteNodes": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "index_codelength": {
+    "property": true,
+    "signature": "(self)"
+  },
+  "initial_partition": {
+    "property": true,
+    "signature": "(self)"
+  },
+  "innerParallelization": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "isBipartite": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "isCLI": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "isMultilayerNetwork": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "isUndirectedClustering": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "isUndirectedFlow": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "iterLeafModules": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "iterLeafNodes": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "iterLeafNodesPhysical": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "iterModules": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "iterTree": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "iterTreePhysical": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "leafNodes": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "leaf_modules": {
+    "property": true,
+    "signature": "(self)"
+  },
+  "levelAggregationLimit": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "links": {
+    "property": true,
+    "signature": "(self)"
+  },
+  "markovTime": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "markovTimeNoSelfLinks": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "matchableMultilayerIds": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "maxDegreeForRandomMoves": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "maxFlowIterations": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "maxTreeDepth": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "max_depth": {
+    "property": true,
+    "signature": "(self)"
+  },
+  "metaDataFile": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "metaDataRate": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "meta_codelength": {
+    "property": true,
+    "signature": "(self)"
+  },
+  "meta_entropy": {
+    "property": true,
+    "signature": "(self)"
+  },
+  "minimumCodelengthImprovement": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "minimumRelativeTuneIterationImprovement": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "minimumSingleNodeCodelengthImprovement": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "module_codelength": {
+    "property": true,
+    "signature": "(self)"
+  },
+  "modules": {
+    "property": true,
+    "signature": "(self)"
+  },
+  "multilayerInput": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "multilayerJSRelaxLimit": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "multilayerJSRelaxRate": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "multilayerRelaxByJensenShannonDivergence": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "multilayerRelaxLimit": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "multilayerRelaxLimitDown": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "multilayerRelaxLimitUp": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "multilayerRelaxRate": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "multilayerRelaxToSelf": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "multilevel_modules": {
+    "property": true,
+    "signature": "(self)"
+  },
+  "names": {
+    "property": true,
+    "signature": "(self)"
+  },
+  "network": {
+    "property": true,
+    "signature": "(self)"
+  },
+  "networkFile": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "noCoarseTune": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "noFileOutput": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "noInfomap": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "noSelfLinks": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "nodeLimit": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "nodes": {
+    "property": true,
+    "signature": "(self)"
+  },
+  "numActiveModules": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "numLeafNodes": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "numLevels": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "numMetaDataDimensions": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "numNonTrivialTopModules": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "numRandomMoves": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "numTopModules": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "numTrials": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "num_leaf_modules": {
+    "property": true,
+    "signature": "(self)"
+  },
+  "num_levels": {
+    "property": true,
+    "signature": "(self)"
+  },
+  "num_links": {
+    "property": true,
+    "signature": "(self)"
+  },
+  "num_nodes": {
+    "property": true,
+    "signature": "(self)"
+  },
+  "num_non_trivial_top_modules": {
+    "property": true,
+    "signature": "(self)"
+  },
+  "num_physical_nodes": {
+    "property": true,
+    "signature": "(self)"
+  },
+  "num_top_modules": {
+    "property": true,
+    "signature": "(self)"
+  },
+  "one_level_codelength": {
+    "property": true,
+    "signature": "(self)"
+  },
+  "onlySuperModules": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "outDirectory": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "outName": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "outputFormats": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "parallelTrials": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "parsedOptions": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "parsedString": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "physical_nodes": {
+    "property": true,
+    "signature": "(self)"
+  },
+  "physical_tree": {
+    "property": true,
+    "signature": "(self)"
+  },
+  "preferModularSolution": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "preferredNumberOfLevels": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "preferredNumberOfLevelsStrength": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "preferredNumberOfModules": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "prettyOutput": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "printAllTrials": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "printAsUndirected": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "printClu": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "printCsv": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "printFlowNetwork": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "printFlowTree": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "printJson": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "printNewick": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "printPajekNetwork": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "printStateNetwork": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "printStates": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "printTree": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "randomizeCoreLoopLimit": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "readInputData": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "read_file": {
+    "property": false,
+    "signature": "(self, filename, accumulate=True)"
+  },
+  "recordedTeleportation": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "regularizationStrength": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "regularized": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "relative_codelength_savings": {
+    "property": true,
+    "signature": "(self)"
+  },
+  "remove_link": {
+    "property": false,
+    "signature": "(self, source_id, target_id)"
+  },
+  "remove_links": {
+    "property": false,
+    "signature": "(self, links)"
+  },
+  "remove_multilayer_link": {
+    "property": false,
+    "signature": "(self)"
+  },
+  "reseed": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "root": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "run": {
+    "property": false,
+    "signature": "(self, args=None, initial_partition=None, cluster_data=None, no_infomap=False, skip_adjust_bipartite_flow=False, bipartite_teleportation=False, weight_threshold=None, include_self_links=None, no_self_links=False, node_limit=None, matchable_multilayer_ids=None, assign_to_neighbouring_module=False, meta_data=None, meta_data_rate=1.0, meta_data_unweighted=False, tree=False, ftree=False, clu=False, verbosity_level=1, silent=False, pretty=False, out_name=None, no_file_output=False, clu_level=None, output=None, hide_bipartite_nodes=False, print_all_trials=False, no_overwrite=False, print_config_fingerprint=False, timing_json=None, summary_json=None, manifest_json=None, memory_report=False, two_level=False, flow_model=None, directed=None, recorded_teleportation=False, use_node_weights_as_flow=False, to_nodes=False, teleportation_probability=0.15, regularized=False, regularization_strength=1.0, entropy_corrected=False, entropy_correction_strength=1.0, markov_time=1.0, variable_markov_time=False, variable_markov_damping=1.0, variable_markov_min_scale=1.0, preferred_number_of_modules=None, preferred_number_of_levels=None, preferred_number_of_levels_strength=1.0, multilayer_relax_rate=0.15, multilayer_relax_limit=-1, multilayer_relax_limit_up=-1, multilayer_relax_limit_down=-1, multilayer_relax_by_jsd=False, multilayer_relax_to_self=False, seed=123, num_trials=1, core_loop_limit=10, core_level_limit=None, tune_iteration_limit=None, core_loop_codelength_threshold=1e-10, tune_iteration_relative_threshold=1e-05, fast_hierarchical_solution=None, prefer_modular_solution=False, inner_parallelization=False, parallel_trials=False, converge=False, num_threads=None, threads=None, trial_offset=None, trial_results=None, no_final_output=False, num_random_moves=None, max_degree_for_random_moves=None)"
+  },
+  "run_with_options": {
+    "property": false,
+    "signature": "(self, options, *, args=None, initial_partition=None)"
+  },
+  "seedToRandomNumberGenerator": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "setBipartiteStartId": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "setConfig": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "setDirected": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "setFastHierarchicalSolution": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "setFlowModel": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "setInitialPartition": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "setMarkovTime": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "setMultilayerInitialPartition": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "setMultilayerInput": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "setNoCoarseTune": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "setNoInfomap": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "setNonMainConfig": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "setNumTrials": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "setOnlySuperModules": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "setStateInput": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "setStateOutput": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "setTuneIterationLimit": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "setTwoLevel": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "setVerbosity": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "set_meta_data": {
+    "property": false,
+    "signature": "(self, node_id, meta_category)"
+  },
+  "set_name": {
+    "property": false,
+    "signature": "(self, node_id, name)"
+  },
+  "set_names": {
+    "property": false,
+    "signature": "(self, names)"
+  },
+  "silent": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "skipAdjustBipartiteFlow": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "startDate": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "stateInput": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "stateOutput": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "summary": {
+    "property": false,
+    "signature": "(self)"
+  },
+  "teleportToNodes": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "teleportationProbability": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "thisown": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "toString": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "to_dataframe": {
+    "property": false,
+    "signature": "(self, columns: 'Sequence[str] | None' = None, *, states: 'bool' = False, level: 'int' = 1, index: 'str | bool | None' = None, sort: 'bool | str | Sequence[str]' = False, depth_level: 'int | None' = None) -> 'Any'"
+  },
+  "tree": {
+    "property": true,
+    "signature": "(self)"
+  },
+  "tuneIterationLimit": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "twoLevel": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "unweightedMetaData": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "useNodeWeightsAsFlow": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "variableMarkovTime": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "variableMarkovTimeDamping": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "variableMarkovTimeMinLocalScale": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "verboseNumberPrecision": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "verbosity": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "version": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "weightThreshold": {
+    "property": true,
+    "signature": "<unpinned>"
+  },
+  "write": {
+    "property": false,
+    "signature": "(self, filename, *args, **kwargs)"
+  },
+  "writeClu": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "writeCsvTree": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "writeFlowTree": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "writeJsonTree": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "writeNewickTree": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "writeTree": {
+    "property": false,
+    "signature": "<unpinned>"
+  },
+  "write_clu": {
+    "property": false,
+    "signature": "(self, filename, states=False, depth_level=1)"
+  },
+  "write_csv": {
+    "property": false,
+    "signature": "(self, filename, states=False)"
+  },
+  "write_flow_tree": {
+    "property": false,
+    "signature": "(self, filename, states=False)"
+  },
+  "write_json": {
+    "property": false,
+    "signature": "(self, filename, states=False)"
+  },
+  "write_newick": {
+    "property": false,
+    "signature": "(self, filename, states=False)"
+  },
+  "write_pajek": {
+    "property": false,
+    "signature": "(self, filename, flow=False)"
+  },
+  "write_state_network": {
+    "property": false,
+    "signature": "(self, filename)"
+  },
+  "write_tree": {
+    "property": false,
+    "signature": "(self, filename, states=False)"
+  }
+}
