@@ -107,7 +107,7 @@ def _join_args(base_args, parts):
     return f"{base_args} {' '.join(parts)}"
 
 
-@dataclass(slots=True)
+@dataclass(frozen=True, slots=True)
 class InfomapOptions:
     """Reusable Infomap keyword options.
 
@@ -449,6 +449,10 @@ class InfomapOptions:
 
 
 _OPTION_FIELD_NAMES = tuple(field.name for field in fields(InfomapOptions))
+
+
+# Settings is the canonical public name; InfomapOptions stays as a back-compat alias.
+Settings = InfomapOptions
 
 
 def _construct_args(

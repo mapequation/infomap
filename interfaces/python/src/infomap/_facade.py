@@ -14,6 +14,7 @@ from ._networkx import add_networkx_graph as _add_networkx_graph
 from ._networkx import find_communities
 from ._options import (
     InfomapOptions,
+    Settings,
     _construct_args,
 )
 from ._results import _InfomapResultsMixin
@@ -44,6 +45,7 @@ __all__ = [
     "InfomapOptions",
     "MultilayerNode",
     "Result",
+    "Settings",
     "entropy",
     "find_communities",
     "find_igraph_communities",
