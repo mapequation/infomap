@@ -211,6 +211,13 @@ def add_networkx_graph(
     is_state_network = None not in node_ids.values()
     is_multilayer_network = None not in layer_ids.values()
 
+    if is_multilayer_network and not is_state_network:
+        raise ValueError(
+            f"A multilayer network (every node carries a {layer_id!r} attribute) "
+            f"also requires a {node_id!r} attribute on every node to identify the "
+            f"physical node each state node maps to; some nodes are missing it."
+        )
+
     phys_map = {}
     if is_state_network:
         phys_labels = [node_ids[node] for node in nodes]

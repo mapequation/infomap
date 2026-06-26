@@ -224,3 +224,17 @@ def test_add_networkx_multilayer_diagonal_link_raises():
     im_full = infomap.Infomap(silent=True, no_file_output=True)
     mapping = im_full.add_networkx_graph(graph, multilayer_inter_intra_format=False)
     assert set(mapping.values()) == set(graph.nodes)
+
+
+def test_add_networkx_layer_id_without_node_id_raises_clear_error():
+    # layer_id present but node_id missing: a multilayer network needs node_id to
+    # know each state node's physical node. Must be a clear ValueError, not the
+    # bare KeyError(None) the implicit phys_map lookup would otherwise raise.
+    graph = nx.Graph()
+    graph.add_node("a", layer_id=1)
+    graph.add_node("b", layer_id=2)
+    graph.add_edge("a", "b")
+
+    im = infomap.Infomap(silent=True, no_file_output=True)
+    with pytest.raises(ValueError, match="node_id"):
+        im.add_networkx_graph(graph)

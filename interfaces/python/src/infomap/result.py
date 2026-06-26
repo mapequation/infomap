@@ -326,6 +326,24 @@ class Result:
                 "(the C++ result tree is rebuilt on every run())."
             )
 
+    def _guard_iteration(self, iterator):
+        """Wrap a live SWIG iterator so the run generation is re-checked before
+        every step, not only when the iterator was acquired.
+
+        ``tree()`` / ``leaf_modules()`` hand back live engine iterators rather
+        than materialized snapshots. Without this guard, acquiring one and then
+        re-running the engine before consuming it would walk a rebuilt C++ tree;
+        instead the first step raises :class:`_StaleResultError`.
+        """
+        iterator = iter(iterator)
+        while True:
+            self._check_generation()
+            try:
+                item = next(iterator)
+            except StopIteration:
+                return
+            yield item
+
     def _snapshot(self, level: int, states: bool) -> _Snapshot:
         self._check_generation()
         key = (level, states)
@@ -505,11 +523,16 @@ class Result:
 
         Returns
         -------
-        InfomapIterator or InfomapIteratorPhysical
-            An iterator over each node in the tree, depth first from the root.
+        generator
+            Yields each node in the tree (the live ``InfomapIterator`` /
+            ``InfomapIteratorPhysical`` positions), depth first from the root.
+            The iterator is generation-guarded: consuming it after the bound
+            engine re-runs raises instead of walking a rebuilt C++ tree.
         """
         self._check_generation()
-        return self._tree_iterator(self._engine._core, depth, states)
+        return self._guard_iteration(
+            self._tree_iterator(self._engine._core, depth, states)
+        )
 
     def multilevel_modules(self, *, states: bool = False) -> dict:
         """Map ``node_id`` (or ``state_id`` when ``states``) to a tuple of
@@ -528,11 +551,13 @@ class Result:
 
         Returns
         -------
-        InfomapLeafModuleIterator
-            An iterator over each leaf module in the tree.
+        generator
+            Yields each leaf module (the live ``InfomapLeafModuleIterator``
+            positions). The iterator is generation-guarded: consuming it after
+            the bound engine re-runs raises instead of walking a rebuilt tree.
         """
         self._check_generation()
-        return self._engine._core.iterLeafModules()
+        return self._guard_iteration(self._engine._core.iterLeafModules())
 
     def links(self, data: str = "weight"):
         """A view of the partitioned links and their weights or flow.

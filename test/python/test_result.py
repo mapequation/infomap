@@ -117,12 +117,34 @@ def test_stale_result_raises_on_node_access_but_keeps_scalars():
         list(first.nodes())
     with pytest.raises(RuntimeError, match="stale Result"):
         first.to_dataframe(columns=["node_id"])
+    with pytest.raises(RuntimeError, match="stale Result"):
+        list(first.tree())
+    with pytest.raises(RuntimeError, match="stale Result"):
+        list(first.leaf_modules())
 
     # Eager scalars captured at run() time stay valid on the stale Result.
     assert first.codelength == first_codelength
 
     # The current Result still works.
     assert second.modules() == im.get_modules()
+
+
+@pytest.mark.fast
+def test_stale_result_raises_when_iterator_acquired_before_rerun():
+    # tree()/leaf_modules() hand back live engine iterators. Acquiring one and
+    # *then* re-running must raise on consumption -- the guard fires before each
+    # step, not only at call time -- rather than walking a rebuilt C++ tree.
+    im = _two_triangles()
+    first = im.run()
+    tree_it = first.tree()
+    leaf_it = first.leaf_modules()
+
+    im.run()  # rebuilds the C++ tree
+
+    with pytest.raises(RuntimeError, match="stale Result"):
+        list(tree_it)
+    with pytest.raises(RuntimeError, match="stale Result"):
+        list(leaf_it)
 
 
 @pytest.mark.fast
