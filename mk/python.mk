@@ -46,6 +46,7 @@ PYTHON_BUILD_ENV = \
 	test-python \
 	test-python-unit \
 	test-python-doctest \
+	test-python-typecheck \
 	test-python-examples \
 	test-python-notebooks-smoke \
 	test-python-notebooks-full \
@@ -102,6 +103,13 @@ test-python-doctest:
 
 test-python-examples:
 	@cd examples/python && for f in *.py; do $(PYTHON) "$$f" > /dev/null || exit 1; done
+
+# Static type check of the hand-written package. Config + scope (include the
+# package, exclude the SWIG-generated _swig.py) live in [tool.pyright] in
+# pyproject.toml. Not part of the default `test-python` aggregate -- run it
+# explicitly or in a dedicated CI job.
+test-python-typecheck:
+	@$(PYRIGHT)
 
 test-python-notebooks-smoke:
 	@cd $(NOTEBOOK_DIR) && $(PYTHON) ../../scripts/notebook_manifest.py --manifest notebooks.toml --suite smoke --print0 | \

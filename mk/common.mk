@@ -20,6 +20,7 @@ PYTHON_FOR_BUILD_CONFIG ?= $(shell command -v $(PYTHON) 2>/dev/null || command -
 PIP ?= $(PYTHON) -m pip
 PYTEST ?= $(PYTHON) -m pytest
 RUFF ?= $(PYTHON) -m ruff
+PYRIGHT ?= $(PYTHON) -m pyright
 NPM ?= npm
 NODE ?= node
 SWIG ?= swig
