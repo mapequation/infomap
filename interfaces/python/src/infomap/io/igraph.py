@@ -131,7 +131,23 @@ def add_igraph_graph(
     layer_id: str = "layer_id",
     multilayer_inter_intra_format: bool = True,
 ) -> dict[int, Any]:
-    """Add a python-igraph graph to an Infomap instance."""
+    """Add a python-igraph graph to an Infomap instance.
+
+    Directedness
+    ------------
+    Auto-detected from the graph: when ``g.is_directed()`` is true and no flow
+    model has been set on the instance, the ``directed`` flag is enabled. (The
+    graph-library adapters diverge here: networkx and igraph auto-detect via
+    ``is_directed()``; ``add_scipy_sparse_matrix`` defaults ``directed=False``;
+    ``add_edge_index`` defaults ``directed=True``.)
+
+    Weight parameter
+    ----------------
+    This adapter names its edge-weight parameter ``edge_weights`` (an edge
+    attribute name, an explicit per-edge sequence, or ``None`` for unit
+    weights). The other adapters use different names: networkx ``weight``, scipy
+    ``weighted`` (a bool), edge_index ``edge_weight``.
+    """
     _validate_igraph_graph(g)
     if vertex_weights is not None:
         raise ValueError("`vertex_weights` is not supported by infomap's igraph adapter yet.")

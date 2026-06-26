@@ -74,6 +74,23 @@ def add_scipy_sparse_matrix(
     weighted: bool = True,
     node_ids: Sequence[Any] | None = None,
 ) -> dict[int, Any]:
+    """Add links and nodes from a SciPy sparse adjacency matrix.
+
+    Directedness
+    ------------
+    Controlled by the ``directed`` parameter, which defaults to ``False``
+    (undirected; ``A[i, j]`` and ``A[j, i]`` are folded together). This default
+    differs from the other adapters: networkx and igraph auto-detect via
+    ``is_directed()``, and ``add_edge_index`` defaults ``directed=True``.
+
+    Weight parameter
+    ----------------
+    This adapter names its weight control ``weighted`` -- a bool: when ``True``
+    (the default) the matrix values are used as link weights, when ``False``
+    every nonzero entry is weight ``1.0``. The other adapters take a named
+    column/attribute/array instead: networkx ``weight``, igraph ``edge_weights``,
+    edge_index ``edge_weight``.
+    """
     sparse = _import_sparse()
     matrix = _validate_sparse_matrix(sparse, A)
     labels = _validate_node_ids(node_ids, matrix.shape[0])

@@ -133,6 +133,22 @@ def add_edge_index(
     directed: bool = True,
     node_ids: Sequence[Any] | None = None,
 ) -> dict[int, Any]:
+    """Add links and nodes from a PyG-style ``edge_index``.
+
+    Directedness
+    ------------
+    Controlled by the ``directed`` parameter, which defaults to ``True``
+    (each column of ``edge_index`` is a directed source->target edge). This
+    default differs from the other adapters: networkx and igraph auto-detect via
+    ``is_directed()``, and ``add_scipy_sparse_matrix`` defaults ``directed=False``.
+
+    Weight parameter
+    ----------------
+    This adapter names its edge-weight parameter ``edge_weight`` (a
+    one-dimensional array with one value per edge, or ``None`` for unit
+    weights). The other adapters use different names: networkx ``weight``,
+    igraph ``edge_weights``, scipy ``weighted`` (a bool).
+    """
     edge_index_array = _validate_edge_index(edge_index)
     n_nodes = _validate_num_nodes(edge_index_array, num_nodes)
     labels = _validate_node_ids(node_ids, n_nodes)

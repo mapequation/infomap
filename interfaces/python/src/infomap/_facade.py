@@ -1603,6 +1603,18 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             Dict with the internal node ids as keys and original labels as
             values.
 
+        Notes
+        -----
+        Directedness is auto-detected via ``g.is_directed()`` (see above). The
+        graph-library adapters diverge on this: networkx and igraph auto-detect,
+        :meth:`add_scipy_sparse_matrix` defaults ``directed=False``, and
+        :meth:`add_edge_index` defaults ``directed=True``. They also name their
+        weight parameter differently: networkx ``weight``, igraph
+        ``edge_weights``, scipy ``weighted`` (bool), edge_index ``edge_weight``.
+
+        Parallel edges in an ``nx.MultiGraph``/``nx.MultiDiGraph`` are each
+        forwarded to ``add_link`` and self-loops are passed through.
+
         .. deprecated::
             Use :meth:`Network.from_networkx` or ``infomap.run(graph)``.
         """
@@ -1656,6 +1668,13 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             Dict with internal integer node ids as keys and external node ids
             as values.
 
+        Notes
+        -----
+        Unlike the networkx/igraph adapters (which auto-detect directedness via
+        ``is_directed()``), this adapter defaults ``directed=False`` and names
+        its weight control ``weighted`` (a bool). :meth:`add_edge_index` instead
+        defaults ``directed=True``.
+
         .. deprecated::
             Use :meth:`Network.from_scipy_sparse_matrix` or
             ``infomap.run(matrix)``.
@@ -1708,6 +1727,13 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         dict
             Dict with internal integer node ids as keys and external node ids
             as values.
+
+        Notes
+        -----
+        Unlike the networkx/igraph adapters (which auto-detect directedness via
+        ``is_directed()``), this adapter defaults ``directed=True`` and names its
+        weight parameter ``edge_weight``. :meth:`add_scipy_sparse_matrix` instead
+        defaults ``directed=False``.
 
         .. deprecated::
             Use :meth:`Network.from_edge_index` or ``infomap.run(edge_index)``.
@@ -1780,6 +1806,15 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         dict
             Dict with igraph vertex indices as keys and vertex names as values
             when names are present, otherwise vertex indices as values.
+
+        Notes
+        -----
+        Directedness is auto-detected via ``g.is_directed()`` (as for networkx).
+        The graph-library adapters diverge on this: networkx and igraph
+        auto-detect, :meth:`add_scipy_sparse_matrix` defaults ``directed=False``,
+        and :meth:`add_edge_index` defaults ``directed=True``. They also name
+        their weight parameter differently: igraph ``edge_weights``, networkx
+        ``weight``, scipy ``weighted`` (bool), edge_index ``edge_weight``.
 
         .. deprecated::
             Use :meth:`Network.from_igraph` or ``infomap.run(graph)``.

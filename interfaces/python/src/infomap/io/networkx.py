@@ -172,6 +172,29 @@ def add_networkx_graph(
     layer_id: str = "layer_id",
     multilayer_inter_intra_format: bool = True,
 ) -> dict[int, Any]:
+    """Add a NetworkX-style graph to an Infomap instance.
+
+    Directedness
+    ------------
+    Auto-detected from the graph: when ``g.is_directed()`` is true (e.g. an
+    ``nx.DiGraph``) and no flow model has been set on the instance, the
+    ``directed`` flag is enabled. (The graph-library adapters diverge here:
+    networkx and igraph auto-detect via ``is_directed()``; ``add_scipy_sparse_matrix``
+    defaults ``directed=False``; ``add_edge_index`` defaults ``directed=True``.)
+
+    Weight parameter
+    ----------------
+    This adapter names its edge-weight parameter ``weight`` (the edge-data key
+    to read; ``None`` treats every edge as weight 1). The other adapters use
+    different names: igraph ``edge_weights``, scipy ``weighted`` (a bool),
+    edge_index ``edge_weight``.
+
+    MultiGraph / self-loops
+    -----------------------
+    Parallel edges from an ``nx.MultiGraph``/``nx.MultiDiGraph`` are each
+    forwarded to ``add_link`` (their weights accumulate in the engine), and
+    self-loops (``g.add_edge(n, n)``) are passed through to ``add_link`` as-is.
+    """
     try:
         nodes = list(g.nodes)
         first = nodes[0]

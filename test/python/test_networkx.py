@@ -155,6 +155,34 @@ def test_find_communities_partitions_state_network_nodes():
     assert _flatten(communities) == set(graph.nodes)
 
 
+def test_add_networkx_multigraph_with_parallel_edges_and_self_loop():
+    # A MultiGraph forwards each parallel edge to add_link (weights accumulate in
+    # the engine) and passes self-loops through. Exercise both add_networkx_graph
+    # + run and the functional infomap.run(g) entry point and assert a sensible
+    # clustering rather than a crash.
+    graph = nx.MultiGraph()
+    graph.add_edge("a", "b")
+    graph.add_edge("a", "b")  # parallel edge
+    graph.add_edge("b", "c")
+    graph.add_edge("c", "d")
+    graph.add_edge("d", "a")
+    graph.add_edge("a", "a")  # self-loop
+
+    im = infomap.Infomap(silent=True, no_file_output=True, seed=123, num_trials=1)
+    mapping = im.add_networkx_graph(graph)
+    result = im.run()
+
+    assert set(mapping.values()) == set(graph.nodes)
+    assert result.num_top_modules >= 1
+    assert isinstance(result.codelength, float)
+
+    # The functional entry point accepts the same MultiGraph directly.
+    functional = infomap.run(
+        graph, silent=True, no_file_output=True, seed=123, num_trials=1
+    )
+    assert sum(1 for _ in functional.nodes()) == graph.number_of_nodes()
+
+
 def test_find_communities_partitions_multilayer_network_nodes():
     graph = nx.Graph()
     graph.add_node("state-b-layer-1", node_id="beta", layer_id=1)
