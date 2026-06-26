@@ -156,25 +156,25 @@ def run(
     # 3. A networkx graph.
     if _is_networkx_graph(input):
         im = Infomap(**resolved)
-        im.add_networkx_graph(input)
+        im._add_networkx_graph_impl(input)
         return im.run(initial_partition=initial_partition)
 
     # 4. An igraph graph.
     if _is_igraph_graph(input):
         im = Infomap(**resolved)
-        im.add_igraph_graph(input)
+        im._add_igraph_graph_impl(input)
         return im.run(initial_partition=initial_partition)
 
     # 5. A SciPy sparse adjacency matrix.
     if _is_scipy_sparse(input):
         im = Infomap(**resolved)
-        im.add_scipy_sparse_matrix(input)
+        im._add_scipy_sparse_matrix_impl(input)
         return im.run(initial_partition=initial_partition)
 
     # 6. A (2, E) edge index (ndarray or tensor).
     if _is_edge_index(input):
         im = Infomap(**resolved)
-        im.add_edge_index(input)
+        im._add_edge_index_impl(input)
         return im.run(initial_partition=initial_partition)
 
     # 7. An iterable of (u, v[, w]) links.
