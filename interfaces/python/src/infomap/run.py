@@ -110,6 +110,26 @@ def run(
     -------
     Result
         An immutable snapshot of the run.
+
+    Examples
+    --------
+    One call from an iterable of ``(u, v[, w])`` links to a :class:`Result`:
+
+    >>> from infomap import run
+    >>> result = run(
+    ...     [(1, 2), (1, 3), (2, 3), (4, 5), (4, 6), (5, 6), (3, 4)],
+    ...     silent=True,
+    ... )
+    >>> result.num_top_modules
+    2
+    >>> for node_id, module_id in sorted(result.modules().items()):
+    ...     print(node_id, module_id)
+    1 1
+    2 1
+    3 1
+    4 2
+    5 2
+    6 2
     """
     # Imported lazily to avoid an import cycle with the facade, which exposes
     # this function as ``infomap.run``.

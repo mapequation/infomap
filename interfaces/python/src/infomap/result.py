@@ -155,9 +155,49 @@ class _Snapshot:
 class Result:
     """Immutable snapshot of an Infomap run.
 
-    Returned by :meth:`Infomap.run` (and the functional layer) and used to back
-    the legacy on-instance accessors. Holds eager scalars; node/tree/dataframe
-    data is materialized lazily and guarded against the engine being re-run.
+    Returned by :meth:`Infomap.run` (and the functional :func:`infomap.run`) and
+    used to back the legacy on-instance accessors. Holds eager scalars;
+    node/tree/dataframe data is materialized lazily and guarded against the
+    engine being re-run.
+
+    Read scalars as **properties** and collections as **methods** (with
+    defaults):
+
+    Examples
+    --------
+    Run Infomap and read the partition off the ``Result``:
+
+    >>> from infomap import Infomap
+    >>> im = Infomap(silent=True)
+    >>> _ = im.add_links(((1, 2), (1, 3), (2, 3), (4, 5), (4, 6), (5, 6), (3, 4)))
+    >>> result = im.run()
+    >>> result.num_top_modules
+    2
+    >>> for node_id, module_id in sorted(result.modules().items()):
+    ...     print(node_id, module_id)
+    1 1
+    2 1
+    3 1
+    4 2
+    5 2
+    6 2
+
+    Per-node views via :meth:`nodes` (a physical-node default; pass
+    ``states=True`` for state nodes):
+
+    >>> for node in sorted(result.nodes(), key=lambda n: n.node_id):
+    ...     print(node.node_id, node.module_id, f"{node.flow:.4f}")
+    1 1 0.1429
+    2 1 0.1429
+    3 1 0.2143
+    4 2 0.2143
+    5 2 0.1429
+    6 2 0.1429
+
+    A ``Result`` is a snapshot, not a live handle: re-running the same
+    ``Infomap`` rebuilds the C++ result tree, so node-level access on the old
+    ``Result`` raises. Eager scalars (``codelength``, ``num_top_modules``, ...)
+    stay valid.
     """
 
     __slots__ = (

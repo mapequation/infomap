@@ -35,6 +35,44 @@ from ._network_input import paired_multilayer_unpacker as _paired_multilayer_unp
 class Network:
     """A first-class Infomap network input builder.
 
+    Build a network with the fluent ``add_*``/``set_*`` verbs (each returns
+    ``self``), then run it via :meth:`run` or the functional :func:`infomap.run`.
+    Both return an immutable :class:`~infomap.Result`.
+
+    Examples
+    --------
+    Build a small network and run it directly:
+
+    >>> from infomap import Network
+    >>> net = (
+    ...     Network()
+    ...     .add_link(1, 2)
+    ...     .add_link(1, 3)
+    ...     .add_link(2, 3)
+    ...     .add_link(3, 4)
+    ...     .add_link(4, 5)
+    ...     .add_link(4, 6)
+    ...     .add_link(5, 6)
+    ... )
+    >>> result = net.run(settings={"silent": True})
+    >>> result.num_top_modules
+    2
+    >>> for node_id, module_id in sorted(result.modules().items()):
+    ...     print(node_id, module_id)
+    1 1
+    2 1
+    3 1
+    4 2
+    5 2
+    6 2
+
+    A :class:`Network` can also be handed to :func:`infomap.run`:
+
+    >>> from infomap import run
+    >>> result = run(net, silent=True)
+    >>> result.num_top_modules
+    2
+
     Parameters
     ----------
     core : infomap._core.Core, optional
