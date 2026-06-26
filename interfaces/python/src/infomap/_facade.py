@@ -789,64 +789,6 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         )
         return im
 
-    @classmethod
-    def from_networkx(
-        cls,
-        g,
-        *,
-        weight="weight",
-        node_id="node_id",
-        layer_id="layer_id",
-        multilayer_inter_intra_format=True,
-        args=None,
-        **infomap_options,
-    ):
-        """Create an :class:`Infomap` instance from a NetworkX graph.
-
-        Builds the instance with the given Infomap options and loads ``g`` via
-        :meth:`add_networkx_graph`. The ``{internal_id: label}`` mapping is
-        available afterwards on :attr:`node_id_to_label`.
-        """
-        im = cls(args=args, **infomap_options)
-        im.add_networkx_graph(
-            g,
-            weight=weight,
-            node_id=node_id,
-            layer_id=layer_id,
-            multilayer_inter_intra_format=multilayer_inter_intra_format,
-        )
-        return im
-
-    @classmethod
-    def from_igraph(
-        cls,
-        g,
-        *,
-        edge_weights=None,
-        vertex_weights=None,
-        node_id="node_id",
-        layer_id="layer_id",
-        multilayer_inter_intra_format=True,
-        args=None,
-        **infomap_options,
-    ):
-        """Create an :class:`Infomap` instance from a python-igraph graph.
-
-        Builds the instance with the given Infomap options and loads ``g`` via
-        :meth:`add_igraph_graph`. The ``{internal_id: label}`` mapping is
-        available afterwards on :attr:`node_id_to_label`.
-        """
-        im = cls(args=args, **infomap_options)
-        im.add_igraph_graph(
-            g,
-            edge_weights=edge_weights,
-            vertex_weights=vertex_weights,
-            node_id=node_id,
-            layer_id=layer_id,
-            multilayer_inter_intra_format=multilayer_inter_intra_format,
-        )
-        return im
-
     # ----------------------------------------
     # Input
     # ----------------------------------------
