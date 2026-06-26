@@ -3,11 +3,16 @@
 Phase 5 removed ``Infomap.__getattr__`` (the forward into ``self._core``), so
 undocumented SWIG names no longer resolve on an ``Infomap`` instance.
 
-Phase 5b removed the package-level SWIG re-exports (``from ._bindings import *``
-in ``_facade.py``), so raw SWIG types are no longer attributes of the ``infomap``
-package. The import guard below enforces the architectural invariant: only
-``_core.py`` and ``_bindings.py`` may import the ``_swig`` / ``_bindings``
-modules. Every other module must talk to the engine through ``Core``.
+Phase 5b removed the package-level wildcard SWIG re-export (``from ._bindings
+import *`` in ``_facade.py``), so raw/undocumented SWIG types (``InfomapWrapper``,
+``FlowData``, ``vector_*``, ``Config``, ...) are no longer attributes of the
+``infomap`` package. The *documented* tree-walking types (``InfoNode`` and the
+iterators, ``source/api/iterators.rst``) are deliberately kept — re-exported
+through ``_core`` — and are pinned by ``test_public_types.py``.
+
+The import guard below enforces the architectural invariant: only ``_core.py``
+and ``_bindings.py`` may import the ``_swig`` / ``_bindings`` modules. Every
+other module must talk to the engine through ``Core``.
 """
 
 import ast
@@ -61,10 +66,12 @@ def test_only_core_and_bindings_import_the_swig_layer():
 
 
 def test_package_does_not_re_export_raw_swig_types():
-    # Phase 5b: the package-level ``from ._bindings import *`` re-export is gone.
+    # Phase 5b: the package-level ``from ._bindings import *`` re-export is gone,
+    # so the raw/undocumented SWIG types stay hidden. (The documented iterator
+    # types -- InfoNode etc. -- ARE re-exported; see test_public_types.py.)
     assert not hasattr(infomap, "InfomapWrapper")
-    assert not hasattr(infomap, "InfoNode")
     assert not hasattr(infomap, "FlowData")
+    assert not hasattr(infomap, "Config")
 
 
 def test_infomap_defines_no_getattr_forward():

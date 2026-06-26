@@ -20,6 +20,20 @@ from ._bindings import InfomapWrapper  # noqa: F401  (the only engine import)
 from ._bindings import build_info as build_info  # module-level engine function
 from ._bindings import run as run  # module-level engine function (CLI driver)
 
+# Documented tree-walking iterator/node types returned by ``Infomap.tree`` /
+# ``leaf_modules`` and the physical variants (source/api/iterators.rst). They are
+# public API, so they're re-exported through this single boundary -- like
+# ``build_info``/``run`` above -- for the facade to surface, rather than letting
+# any other module import the SWIG layer. Raw/undocumented SWIG containers
+# (vector_*, Config, StateNetwork, FlowModel, FlowData, ...) are deliberately
+# NOT re-exported.
+from ._bindings import InfoNode as InfoNode
+from ._bindings import InfomapIterator as InfomapIterator
+from ._bindings import InfomapIteratorPhysical as InfomapIteratorPhysical
+from ._bindings import InfomapLeafIterator as InfomapLeafIterator
+from ._bindings import InfomapLeafIteratorPhysical as InfomapLeafIteratorPhysical
+from ._bindings import InfomapLeafModuleIterator as InfomapLeafModuleIterator
+
 
 class Core:
     def __init__(self, args):

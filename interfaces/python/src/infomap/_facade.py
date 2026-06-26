@@ -5,6 +5,20 @@ from contextlib import contextmanager
 from ._core import Core
 from ._core import build_info
 from ._core import run as _cli_run
+
+# Documented tree-walking iterator/node types returned by ``Infomap.tree`` /
+# ``leaf_modules`` / the physical variants (source/api/iterators.rst). Surfaced
+# at the package top level so ``from infomap import InfoNode`` and
+# ``isinstance(node, infomap.InfomapIterator)`` keep working. Reached through the
+# ``_core`` boundary, never ``_swig``/``_bindings`` directly.
+from ._core import (
+    InfoNode,
+    InfomapIterator,
+    InfomapIteratorPhysical,
+    InfomapLeafIterator,
+    InfomapLeafIteratorPhysical,
+    InfomapLeafModuleIterator,
+)
 from ._network_input import add_bulk_links as _add_bulk_links
 from ._network_input import first_order_unpacker as _first_order_unpacker
 from ._network_input import flat_multilayer_unpacker as _flat_multilayer_unpacker
@@ -47,7 +61,13 @@ MultilayerNode = namedtuple("MultilayerNode", "layer_id, node_id")
 
 
 __all__ = [
+    "InfoNode",
     "Infomap",
+    "InfomapIterator",
+    "InfomapIteratorPhysical",
+    "InfomapLeafIterator",
+    "InfomapLeafIteratorPhysical",
+    "InfomapLeafModuleIterator",
     "InfomapOptions",
     "MultilayerNode",
     "Network",
