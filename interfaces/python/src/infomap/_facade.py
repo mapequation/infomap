@@ -68,33 +68,58 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
 
     Examples
     --------
-    Create an instance and add nodes and links:
+    Build a network, run Infomap, and read the results off the returned
+    :class:`~infomap.Result`:
 
     >>> from infomap import Infomap
     >>> im = Infomap(silent=True)
     >>> _ = im.add_node(1)
     >>> _ = im.add_node(2)
     >>> _ = im.add_link(1, 2)
-    >>> im.run()
-    >>> im.codelength
+    >>> result = im.run()
+    >>> result.codelength
     1.0
 
 
-    Create an instance and read a network file:
+    Read a network file and inspect a few metrics on the result:
 
     >>> from infomap import Infomap
     >>> im = Infomap(silent=True, num_trials=10)
     >>> im.read_file("ninetriangles.net")
-    >>> im.run()
+    >>> result = im.run()
     >>> tol = 1e-4
-    >>> abs(im.codelength - 3.4622731375264144) < tol
+    >>> abs(result.codelength - 3.4622731375264144) < tol
     True
+    >>> result.num_top_modules
+    5
+
+
+    Iterate the partition via :meth:`Result.modules` (``node_id -> module_id``)
+    or :meth:`Result.nodes` (per-node views):
+
+    >>> from infomap import Infomap
+    >>> im = Infomap(silent=True)
+    >>> _ = im.add_links(((1, 2), (1, 3), (2, 3), (4, 5), (4, 6), (5, 6), (3, 4)))
+    >>> result = im.run()
+    >>> for node_id, module_id in sorted(result.modules().items()):
+    ...     print(node_id, module_id)
+    1 1
+    2 1
+    3 1
+    4 2
+    5 2
+    6 2
 
 
     Every ``add_*``/``set_*`` method returns ``self``, so construction can be
     chained (use the plural form for many items)::
 
-        Infomap(silent=True).add_links(links).set_name(1, "a").run()
+        result = Infomap(silent=True).add_links(links).set_name(1, "a").run()
+
+    ``run()`` returns an immutable :class:`~infomap.Result`; read collections
+    via methods (``result.modules()``, ``result.nodes()``, ``result.tree()``,
+    ``result.links()``, ``result.to_dataframe()``) and scalars via properties
+    (``result.codelength``, ``result.num_top_modules``).
 
     For more examples, see the examples directory.
     """
@@ -1398,11 +1423,11 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         >>> _ = im.set_meta_data(4, 1)
         >>> _ = im.set_meta_data(5, 0)
         >>> _ = im.set_meta_data(6, 0)
-        >>> im.run(meta_data_rate=0)
-        >>> im.num_top_modules
+        >>> result = im.run(meta_data_rate=0)
+        >>> result.num_top_modules
         2
-        >>> im.run(meta_data_rate=2)
-        >>> im.num_top_modules
+        >>> result = im.run(meta_data_rate=2)
+        >>> result.num_top_modules
         3
 
 
@@ -1439,8 +1464,8 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         >>> mapping = im.add_networkx_graph(G)
         >>> mapping
         {0: 'a', 1: 'b', 2: 'c'}
-        >>> im.run()
-        >>> for node in im.nodes:
+        >>> result = im.run()
+        >>> for node in result.nodes():
         ...     print(node.node_id, node.module_id, node.flow, mapping[node.node_id])
         0 1 0.5 a
         1 1 0.25 b
@@ -1467,8 +1492,8 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         >>> mapping = im.add_networkx_graph(G)
         >>> mapping
         {0: 'a', 1: 'b', 2: 'c', 3: 'd', 4: 'e', 5: 'f'}
-        >>> im.run()
-        >>> for node in im.nodes:
+        >>> result = im.run()
+        >>> for node in result.nodes(states=True):
         ...     print(node.state_id, node.node_id, node.module_id, node.flow)
         0 1 1 0.16666666666666666
         1 2 1 0.16666666666666666
@@ -1490,8 +1515,8 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         >>> G.add_edge(22, 32)
         >>> im = Infomap(silent=True)
         >>> mapping = im.add_networkx_graph(G)
-        >>> im.run()
-        >>> for node in sorted(im.nodes, key=lambda n: n.state_id):
+        >>> result = im.run()
+        >>> for node in sorted(result.nodes(states=True), key=lambda n: n.state_id):
         ...     print(node.state_id, node.module_id, f"{node.flow:.2f}", node.node_id, node.layer_id)
         11 1 0.28 1 1
         21 1 0.28 2 1
@@ -1785,9 +1810,9 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         >>> _ = im.add_link(1, 3)
         >>> _ = im.add_link(1, 4)
         >>> _ = im.add_link(2, 4)
-        >>> im.run()
+        >>> result = im.run()
         >>> tol = 1e-4
-        >>> abs(im.codelength - 0.9182958340544896) < tol
+        >>> abs(result.codelength - 0.9182958340544896) < tol
         True
 
 
@@ -1833,9 +1858,9 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         ...     3: 1,
         ...     4: 1
         ... }
-        >>> im.run(no_infomap=True)
+        >>> result = im.run(no_infomap=True)
         >>> tol = 1e-4
-        >>> abs(im.codelength - 3.4056390622295662) < tol
+        >>> abs(result.codelength - 3.4056390622295662) < tol
         True
 
 
