@@ -641,9 +641,7 @@ def generate_facade(catalog: ParameterCatalog) -> str:
     lines.append('        """Create a new Infomap instance.')
     lines.append("")
     lines.append("        Keyword arguments mirror the Infomap CLI flags. Use")
-    lines.append(
-        "        :class:`Options` (alias :class:`InfomapOptions`) for a reusable"
-    )
+    lines.append("        :class:`Options` for a reusable")
     lines.append("        configuration object and the full parameter reference.")
     lines.append("")
     lines.append("        Parameters")

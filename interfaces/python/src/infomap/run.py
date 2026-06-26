@@ -32,14 +32,14 @@ def _resolve_options(options: Any, overrides: dict) -> dict:
     elif isinstance(options, Mapping):
         resolved = dict(options)
     else:
-        # Options / InfomapOptions instance. ``to_kwargs`` is reached via a
+        # Options instance. ``to_kwargs`` is reached via a
         # duck-typed getattr on an untyped object; ``callable()`` narrows it to a
         # ``-> object`` callable, so type its kwargs-dict result as Any (it
         # returns a kwargs dict by contract).
         to_kwargs = getattr(options, "to_kwargs", None)
         if not callable(to_kwargs):
             raise TypeError(
-                "options must be an Options/InfomapOptions instance, a mapping, "
+                "options must be an Options instance, a mapping, "
                 "or None"
             )
         kwargs: Any = to_kwargs()
@@ -102,7 +102,7 @@ def run(
             (2, E) array/tensor, str or Path, or iterable of links
         The network to partition. See the module docstring for the dispatch
         table.
-    options : Options, InfomapOptions, mapping, or None, optional
+    options : Options, mapping, or None, optional
         Base configuration. Keyword ``overrides`` take precedence.
     initial_partition : mapping, optional
         Initial module assignment for this run only.

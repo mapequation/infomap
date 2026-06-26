@@ -245,7 +245,7 @@ class Network:
 
         Parameters
         ----------
-        settings : Options, InfomapOptions, mapping, or None, optional
+        settings : Options, mapping, or None, optional
             Configuration rendered to Infomap CLI flags for this run.
         args : str, optional
             Raw Infomap arguments prepended before the rendered settings.

@@ -217,7 +217,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         """Create a new Infomap instance.
 
         Keyword arguments mirror the Infomap CLI flags. Use
-        :class:`Options` (alias :class:`InfomapOptions`) for a reusable
+        :class:`Options` for a reusable
         configuration object and the full parameter reference.
 
         Parameters

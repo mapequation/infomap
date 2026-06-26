@@ -67,7 +67,7 @@ def test_create_namespace_preloads_default_infomap(monkeypatch, tmp_path):
     namespace = shell.create_namespace(network_file)
 
     assert namespace["im"].loaded == [str(network_file)]
-    assert namespace["InfomapOptions"] is shell.InfomapOptions
+    assert namespace["Options"] is shell.Options
 
 
 def test_summary_prints_partial_state_before_run(monkeypatch, capsys):
@@ -129,7 +129,7 @@ def test_options_delegates_to_generated_options(monkeypatch):
     monkeypatch.setattr(shell, "Infomap", FakeInfomap)
     namespace = shell.create_namespace()
 
-    assert namespace["options"]() is shell.InfomapOptions
+    assert namespace["options"]() is shell.Options
 
 
 def test_main_loads_file_and_uses_injected_launcher(monkeypatch, tmp_path):
