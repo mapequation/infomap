@@ -236,6 +236,17 @@ def test_add_igraph_graph_rejects_float_node_id_collision():
         add_igraph_graph(_Recorder(), graph)
 
 
+def test_add_igraph_graph_rejects_float_node_id_collision_in_label_branch():
+    ig = pytest.importorskip("igraph")
+    graph = ig.Graph(edges=[(0, 1), (1, 2)], directed=False)
+    # A non-numeric label forces the string/label branch; 1 and 1.0 are ==-equal
+    # with the same hash, so they would silently merge there too. Must raise.
+    graph.vs["node_id"] = [1, 1.0, "x"]
+
+    with pytest.raises(ValueError, match=r"distinct but collide"):
+        add_igraph_graph(_Recorder(), graph)
+
+
 def test_add_igraph_graph_allows_repeated_integer_node_ids(make_infomap):
     ig = pytest.importorskip("igraph")
     graph = ig.Graph(edges=[(0, 1), (1, 2)], directed=False)

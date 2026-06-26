@@ -1,12 +1,19 @@
 """Immutable :class:`Result` returned by :meth:`Infomap.run`.
 
-A ``Result`` is a *snapshot*, not a live handle. Cheap scalar metrics
-(codelength, module counts, codelength components) are captured eagerly when
-``run()`` returns. The expensive node/tree/dataframe data is materialized
-**lazily on first access** by a single C++ traversal
-(``_core.get_node_data``), guarded by a run-generation token: the C++ result
-tree is destroyed and rebuilt on every ``run()`` (design §7), so reading node
-data from a ``Result`` whose ``Infomap`` has re-run since raises a clear error
+Cheap scalar metrics (codelength, module counts, codelength components) are
+captured eagerly when ``run()`` returns, so they stay valid forever. The two
+kinds of node-level access differ:
+
+- ``modules()`` / ``nodes()`` / ``to_dataframe()`` are true **snapshots** --
+  materialized lazily on first access by a single C++ traversal
+  (``_core.get_node_data``) and cached as plain Python data.
+- ``tree()`` / ``leaf_modules()`` return **live engine iterators**, not
+  snapshots, but each is wrapped so the generation is re-checked before every
+  step.
+
+Both kinds are guarded by a run-generation token: the C++ result tree is
+destroyed and rebuilt on every ``run()`` (design §7), so reading node-level data
+from a ``Result`` whose ``Infomap`` has re-run since raises a clear error
 instead of touching freed memory.
 
 The §9 conventions apply to the new surface: scalars are properties,
