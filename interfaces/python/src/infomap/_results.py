@@ -225,14 +225,14 @@ class _InfomapResultsMixin:
         >>> from infomap import Infomap
         >>> im = Infomap(silent=True)
         >>> im.read_file("twotriangles.net")
-        >>> im.run()
+        >>> _ = im.run()
         >>> im.get_modules()
         {1: 1, 2: 1, 3: 1, 4: 2, 5: 2, 6: 2}
 
         >>> from infomap import Infomap
         >>> im = Infomap(silent=True)
         >>> im.read_file("states.net")
-        >>> im.run()
+        >>> _ = im.run()
         >>> im.get_modules(states=True)
         {1: 1, 2: 1, 3: 1, 4: 2, 5: 2, 6: 2}
 
@@ -287,7 +287,7 @@ class _InfomapResultsMixin:
         >>> from infomap import Infomap
         >>> im = Infomap(silent=True, num_trials=10)
         >>> im.read_file("ninetriangles.net")
-        >>> im.run()
+        >>> _ = im.run()
         >>> for modules in sorted(im.get_multilevel_modules().values()):
         ...     print(modules)
         (1, 1)
@@ -321,7 +321,7 @@ class _InfomapResultsMixin:
         >>> from infomap import Infomap
         >>> im = Infomap(silent=True)
         >>> im.read_file("states.net")
-        >>> im.run()
+        >>> _ = im.run()
         >>> for node, modules in im.get_multilevel_modules(states=True).items():
         ...     print(node, modules)
         1 (1,)
@@ -381,7 +381,7 @@ class _InfomapResultsMixin:
         >>> from infomap import Infomap
         >>> im = Infomap(silent=True, num_trials=5)
         >>> im.read_file("twotriangles.net")
-        >>> im.run()
+        >>> _ = im.run()
         >>> for node_id, module_id in im.modules:
         ...     print(node_id, module_id)
         ...
@@ -650,7 +650,7 @@ class _InfomapResultsMixin:
         >>> from infomap import Infomap
         >>> im = Infomap(silent=True)
         >>> im.read_file("twotriangles.net")
-        >>> im.run()
+        >>> _ = im.run()
         >>> im.to_dataframe(columns=["path", "flow", "name", "node_id"], states=True)
              path      flow name  node_id
         0  (1, 1)  0.214286    C        3
@@ -892,7 +892,7 @@ class _InfomapResultsMixin:
         >>> from infomap import Infomap
         >>> im = Infomap(silent=True)
         >>> im.read_file("twotriangles.net")
-        >>> im.run()
+        >>> _ = im.run()
         >>> for link in im.get_links():
         ...     print(link)
         (1, 2, 1.0)
@@ -948,7 +948,7 @@ class _InfomapResultsMixin:
         >>> from infomap import Infomap
         >>> im = Infomap(silent=True)
         >>> im.read_file("twotriangles.net")
-        >>> im.run()
+        >>> _ = im.run()
         >>> for link in im.links:
         ...     print(link)
         (1, 2, 1.0)
@@ -988,7 +988,7 @@ class _InfomapResultsMixin:
         >>> from infomap import Infomap
         >>> im = Infomap(silent=True)
         >>> im.read_file("twotriangles.net")
-        >>> im.run()
+        >>> _ = im.run()
         >>> for link in im.flow_links:
         ...     print(link)
         (1, 2, 0.14285714285714285)
@@ -1332,7 +1332,7 @@ class _InfomapResultsMixin:
         >>> from infomap import Infomap
         >>> im = Infomap(silent=True, no_infomap=True)
         >>> im.read_file("twotriangles.net")
-        >>> im.run()
+        >>> _ = im.run()
         >>> f"{im.entropy_rate:.5f}"
         '1.25070'
 
