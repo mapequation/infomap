@@ -89,7 +89,13 @@ __all__ = [
 class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
     """Infomap
 
-    This class is a thin wrapper around Infomap C++ compiled with SWIG.
+    The stateful entry point to the algorithm: build a network with the
+    ``add_*`` verbs, then call :meth:`run` to get an immutable
+    :class:`~infomap.Result`. Internally it composes a :class:`~infomap.Network`
+    (input) and an :class:`~infomap.Options` config over a single ``Core``
+    boundary to the SWIG-compiled engine, rather than exposing that engine
+    directly. For one-shot use prefer the functional :func:`infomap.run`; for
+    incremental construction prefer :class:`~infomap.Network`.
 
     Examples
     --------
