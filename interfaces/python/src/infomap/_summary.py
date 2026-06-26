@@ -80,7 +80,7 @@ def _format_percent(value):
 def _top_module_flow_bars(im):
     modules = [
         (module.module_id, module.flow)
-        for module in im.get_tree(depth=1)
+        for module in im.get_tree(depth_level=1)
         if module.depth == 1
     ]
     total_flow = sum(flow for _, flow in modules)

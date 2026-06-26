@@ -97,7 +97,7 @@ class _LeafIterWrapper:
 
 
 class _InfomapResultsMixin:
-    def get_modules(self, depth=1, states=False, depth_level=None):
+    def get_modules(self, depth_level=1, states=False):
         """Get a dict with node ids as keys and module ids as values for a given depth in the hierarchical tree.
 
         ::
@@ -139,13 +139,13 @@ class _InfomapResultsMixin:
         Assuming the nodes are labelled 1-5 from left to right, then the first three nodes
         are in module 1, and the last two nodes are in module 2::
 
-            > im.get_modules(depth=1)
+            > im.get_modules(depth_level=1)
             {1: 1, 2: 1, 3: 1, 4: 2, 5: 2}
 
         However, at level 2, the first two nodes are in module 1, the third node in module 2,
         and the last two nodes are in module 3::
 
-            > im.get_modules(depth=2)
+            > im.get_modules(depth_level=2)
             {1: 1, 2: 1, 3: 2, 4: 3, 5: 3}
 
 
@@ -177,7 +177,7 @@ class _InfomapResultsMixin:
 
         Parameters
         ----------
-        depth : int, optional
+        depth_level : int, optional
             The level in the hierarchical tree. Set to ``1`` (default) to
             return the top modules (coarsest level). Set to ``2`` for second
             coarsest level etc. Set to ``-1`` to return the bottom level
@@ -189,24 +189,13 @@ class _InfomapResultsMixin:
             module. Note that the same physical node may end up on different
             paths in the tree.
             Default ``false``.
-        depth_level : int, optional
-            .. deprecated::
-                Use ``depth`` instead. Will be removed in a future major
-                release.
 
         Returns
         -------
         dict of int
             Dict with node ids as keys and module ids as values.
         """
-        if depth_level is not None:
-            warnings.warn(
-                "depth_level is deprecated; use depth.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            depth = depth_level
-        return self._core.getModules(depth, states)
+        return self._core.getModules(depth_level, states)
 
     def get_multilevel_modules(self, states=False):
         """Get a dict with node ids as keys and a tuple of module ids as values.
@@ -332,7 +321,7 @@ class _InfomapResultsMixin:
         tuple of int, int
             An iterator of ``(node_id, module_id)`` pairs.
         """
-        return self.get_modules(depth=1, states=False).items()
+        return self.get_modules(depth_level=1, states=False).items()
 
     @property
     def multilevel_modules(self):
@@ -358,13 +347,13 @@ class _InfomapResultsMixin:
         """
         return self.get_multilevel_modules().items()
 
-    def get_tree(self, depth=1, states=False, depth_level=None):
+    def get_tree(self, depth_level=1, states=False):
         """A view of the hierarchical tree, iterating
         over the modules as well as the leaf-nodes.
 
         Parameters
         ----------
-        depth : int, optional
+        depth_level : int, optional
             The module level returned by ``iterator.module_id``. Set to ``1``
             (default) to return the top modules (coarsest level). Set to ``2``
             for second coarsest level etc. Set to ``-1`` to return the bottom
@@ -376,10 +365,6 @@ class _InfomapResultsMixin:
             module. Note that the same physical node may end up on different
             paths in the tree.
             Default ``false``.
-        depth_level : int, optional
-            .. deprecated::
-                Use ``depth`` instead. Will be removed in a future major
-                release.
 
         Notes
         ----
@@ -396,24 +381,17 @@ class _InfomapResultsMixin:
         InfomapIterator or InfomapIteratorPhysical
             An iterator over each node in the tree, depth first from the root
         """
-        if depth_level is not None:
-            warnings.warn(
-                "depth_level is deprecated; use depth.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            depth = depth_level
         if self.have_memory and not states:
-            return self._core.iterTreePhysical(depth)
-        return self._core.iterTree(depth)
+            return self._core.iterTreePhysical(depth_level)
+        return self._core.iterTree(depth_level)
 
-    def get_nodes(self, depth=1, states=False, depth_level=None):
+    def get_nodes(self, depth_level=1, states=False):
         """A view of the nodes in the hierarchical tree, iterating depth first
         from the root.
 
         Parameters
         ----------
-        depth : int, optional
+        depth_level : int, optional
             The module level returned by ``iterator.module_id``. Set to ``1``
             (default) to return the top modules (coarsest level). Set to ``2``
             for second coarsest level etc. Set to ``-1`` to return the bottom
@@ -425,10 +403,6 @@ class _InfomapResultsMixin:
             module. Note that the same physical node may end up on different
             paths in the tree.
             See notes on ``physical_tree``. Default ``false``.
-        depth_level : int, optional
-            .. deprecated::
-                Use ``depth`` instead. Will be removed in a future major
-                release.
 
         Notes
         -----
@@ -445,24 +419,17 @@ class _InfomapResultsMixin:
         InfomapIterator or InfomapIteratorPhysical
             An iterator over each node in the tree, depth first from the root
         """
-        if depth_level is not None:
-            warnings.warn(
-                "depth_level is deprecated; use depth.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            depth = depth_level
         if self.have_memory and not states:
-            # self._core.iterLeafNodesPhysical(depth) is unreliable in python
-            return _LeafIterWrapper(self._core.iterTreePhysical(depth))
-        return self._core.iterLeafNodes(depth)
+            # self._core.iterLeafNodesPhysical(depth_level) is unreliable in python
+            return _LeafIterWrapper(self._core.iterTreePhysical(depth_level))
+        return self._core.iterLeafNodes(depth_level)
 
     @property
     def tree(self):
         """A view of the hierarchical tree, iterating
         over the modules as well as the leaf-nodes.
 
-        Convenience method for ``get_tree(depth=1, states=True)``.
+        Convenience method for ``get_tree(depth_level=1, states=True)``.
 
         See Also
         --------
@@ -474,7 +441,7 @@ class _InfomapResultsMixin:
         InfomapIterator
             An iterator over each node in the tree, depth first from the root
         """
-        return self.get_tree(depth=1, states=True)
+        return self.get_tree(depth_level=1, states=True)
 
     @property
     def physical_tree(self):
@@ -482,7 +449,7 @@ class _InfomapResultsMixin:
         over the modules as well as the leaf-nodes.
         All state nodes with the same ``node_id`` are merged to one physical node.
 
-        Convenience method for ``get_tree(depth=1, states=False)``.
+        Convenience method for ``get_tree(depth_level=1, states=False)``.
 
         See Also
         --------
@@ -495,7 +462,7 @@ class _InfomapResultsMixin:
             An iterator over each physical node in the tree, depth first from
             the root
         """
-        return self.get_tree(depth=1, states=False)
+        return self.get_tree(depth_level=1, states=False)
 
     @property
     def leaf_modules(self):
@@ -519,7 +486,7 @@ class _InfomapResultsMixin:
         """A view of the nodes in the hierarchical tree, iterating depth first
         from the root.
 
-        Convenience method for ``get_nodes(depth=1, states=True)``.
+        Convenience method for ``get_nodes(depth_level=1, states=True)``.
 
         See Also
         --------
@@ -532,7 +499,7 @@ class _InfomapResultsMixin:
             An iterator over each leaf node in the tree, depth first from the
             root
         """
-        return self.get_nodes(depth=1, states=True)
+        return self.get_nodes(depth_level=1, states=True)
 
     @property
     def physical_nodes(self):
@@ -540,7 +507,7 @@ class _InfomapResultsMixin:
         from the root.
         All state nodes with the same ``node_id`` are merged to one physical node.
 
-        Convenience method for ``get_nodes(depth=1, states=False)``.
+        Convenience method for ``get_nodes(depth_level=1, states=False)``.
 
         See Also
         --------
@@ -553,15 +520,14 @@ class _InfomapResultsMixin:
             An iterator over each physical leaf node in the tree, depth first
             from the root
         """
-        return self.get_nodes(depth=1, states=False)
+        return self.get_nodes(depth_level=1, states=False)
 
     def get_dataframe(
         self,
         columns: Sequence[str] | None = None,
         *,
         states: bool = True,
-        depth: int = 1,
-        depth_level: int | None = None,
+        depth_level: int = 1,
     ) -> Any:
         """Get a Pandas DataFrame with the selected columns.
 
@@ -610,12 +576,8 @@ class _InfomapResultsMixin:
         states : bool, optional
             Use state-node iterators when ``True`` and physical-node iterators
             when ``False``. Default ``True``.
-        depth : int, optional
-            Depth level passed to :meth:`get_nodes`. Default ``1``.
         depth_level : int, optional
-            .. deprecated::
-                Use ``depth`` instead. Will be removed in a future major
-                release.
+            Depth level passed to :meth:`get_nodes`. Default ``1``.
 
         Raises
         ------
@@ -643,18 +605,10 @@ class _InfomapResultsMixin:
                 '`python -m pip install "infomap[pandas]"`.'
             )
 
-        if depth_level is not None:
-            warnings.warn(
-                "depth_level is deprecated; use depth.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            depth = depth_level
-
         if columns is None:
             columns = _DEFAULT_DATAFRAME_COLUMNS
 
-        nodes = self.get_nodes(depth=depth, states=states)
+        nodes = self.get_nodes(depth_level=depth_level, states=states)
 
         return pandas.DataFrame(
             [
@@ -702,9 +656,7 @@ class _InfomapResultsMixin:
             Sort by one or more columns. Use ``True`` to sort by
             ``["module_id", "node_id"]`` when available. Default ``False``.
         depth_level : int, optional
-            .. deprecated::
-                Use ``level`` instead. Will be removed in a future major
-                release.
+            Backward-compatible alias for ``level``.
         """
         if pandas is None:
             raise ImportError(
@@ -713,11 +665,6 @@ class _InfomapResultsMixin:
             )
 
         if depth_level is not None:
-            warnings.warn(
-                "depth_level is deprecated; use level.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
             level = depth_level
         if columns is None:
             columns = _DEFAULT_TO_DATAFRAME_COLUMNS
@@ -736,7 +683,7 @@ class _InfomapResultsMixin:
         ]
         data = {column: [] for column in requested_columns}
 
-        for node in self.get_nodes(depth=level, states=states):
+        for node in self.get_nodes(depth_level=level, states=states):
             for column, getter in zip(requested_columns, column_getters, strict=True):
                 data[column].append(getter(node))
 
@@ -1022,40 +969,31 @@ class _InfomapResultsMixin:
             num_leaf_modules += 1
         return num_leaf_modules
 
-    def get_effective_num_modules(self, depth=1, depth_level=None):
+    def get_effective_num_modules(self, depth_level=1):
         """The flow weighted effective number of modules.
 
         Measured as the perplexity of the module flow distribution.
 
         Parameters
         ----------
-        depth : int, optional
+        depth_level : int, optional
             The module level returned by ``iterator.depth``.
             Set to ``1`` (default) to return the top modules (coarsest level).
             Set to ``2`` for second coarsest level etc. Set to ``-1`` to return
             the bottom level modules (finest level).
-        depth_level : int, optional
-            .. deprecated::
-                Use ``depth`` instead. Will be removed in a future major
-                release.
 
         Returns
         -------
         float
             The effective number of modules
         """
-        if depth_level is not None:
-            warnings.warn(
-                "depth_level is deprecated; use depth.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            depth = depth_level
         return perplexity(
             [
                 module.flow
-                for module in self.get_tree(depth)
-                if depth == -1 and module.is_leaf_module or module.depth == depth
+                for module in self.get_tree(depth_level)
+                if depth_level == -1
+                and module.is_leaf_module
+                or module.depth == depth_level
             ]
         )
 
@@ -1070,7 +1008,7 @@ class _InfomapResultsMixin:
         float
             The effective number of top modules
         """
-        return self.get_effective_num_modules(depth=1)
+        return self.get_effective_num_modules(depth_level=1)
 
     @property
     def effective_num_leaf_modules(self):
@@ -1083,7 +1021,7 @@ class _InfomapResultsMixin:
         float
             The effective number of top modules
         """
-        return self.get_effective_num_modules(depth=-1)
+        return self.get_effective_num_modules(depth_level=-1)
 
     @property
     def max_depth(self):
