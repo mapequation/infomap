@@ -6,6 +6,10 @@ from contextlib import contextmanager
 from ._core import Core
 from ._core import build_info
 from ._core import run as _cli_run
+from ._network_input import add_bulk_links as _add_bulk_links
+from ._network_input import first_order_unpacker as _first_order_unpacker
+from ._network_input import flat_multilayer_unpacker as _flat_multilayer_unpacker
+from ._network_input import paired_multilayer_unpacker as _paired_multilayer_unpacker
 from ._options import (
     InfomapOptions,
     Settings,
@@ -110,11 +114,6 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
     5 2
     6 2
 
-
-    Every ``add_*``/``set_*`` method returns ``self``, so construction can be
-    chained (use the plural form for many items)::
-
-        result = Infomap(silent=True).add_links(links).set_name(1, "a").run()
 
     ``run()`` returns an immutable :class:`~infomap.Result`; read collections
     via methods (``result.modules()``, ``result.nodes()``, ``result.tree()``,
@@ -878,8 +877,17 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         teleportation_weight : float, optional
             Used for teleporting between layers in multilayer networks.
         """
-        self._network.add_node(node_id, name, teleportation_weight)
-        return self
+        if name is None:
+            name = ""
+
+        if len(name) and teleportation_weight is not None:
+            return self._core.addNode(node_id, name, teleportation_weight)
+        elif len(name) and teleportation_weight is None:
+            return self._core.addNode(node_id, name)
+        elif not len(name) and teleportation_weight is not None:
+            return self._core.addNode(node_id, teleportation_weight)
+
+        return self._core.addNode(node_id)
 
     def add_nodes(self, nodes):
         """Add nodes.
@@ -958,8 +966,18 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             Iterable of tuples on the form
             ``(node_id, [name], [teleportation_weight])``
         """
-        self._network.add_nodes(nodes)
-        return self
+        try:
+            for node, attr in nodes.items():
+                if isinstance(attr, str):
+                    self.add_node(node, attr)
+                else:
+                    self.add_node(node, *attr)
+        except AttributeError:
+            for node in nodes:
+                if isinstance(node, int):
+                    self.add_node(node)
+                else:
+                    self.add_node(*node)
 
     def add_state_node(self, state_id, node_id):
         """Add a state node.
@@ -975,8 +993,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         node_id : int
             Id of the physical node the state node should be added to.
         """
-        self._network.add_state_node(state_id, node_id)
-        return self
+        return self._core.addStateNode(state_id, node_id)
 
     def add_state_nodes(self, state_nodes):
         """Add state nodes.
@@ -1017,8 +1034,12 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             Iterable of tuples of the form ``(state_id, node_id)``
             or dict of the form ``{state_id: node_id}``.
         """
-        self._network.add_state_nodes(state_nodes)
-        return self
+        try:
+            for node in state_nodes.items():
+                self.add_state_node(*node)
+        except AttributeError:
+            for node in state_nodes:
+                self.add_state_node(*node)
 
     def set_name(self, node_id, name):
         """Set the name of a node.
@@ -1028,8 +1049,9 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         node_id : int
         name : str
         """
-        self._network.set_name(node_id, name)
-        return self
+        if name is None:
+            name = ""
+        return self._core.addName(node_id, name)
 
     def set_names(self, names):
         """Set names to several nodes at once.
@@ -1072,8 +1094,12 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             Iterable of tuples on the form ``(node_id, name)``
             or dict of the form ``{node_id: name}``.
         """
-        self._network.set_names(names)
-        return self
+        try:
+            for name in names.items():
+                self.set_name(*name)
+        except AttributeError:
+            for name in names:
+                self.set_name(*name)
 
     def add_link(self, source_id, target_id, weight=1.0):
         """Add a link.
@@ -1092,8 +1118,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         target_id : int
         weight : float, optional
         """
-        self._network.add_link(source_id, target_id, weight)
-        return self
+        return self._core.addLink(source_id, target_id, weight)
 
     def add_links(self, links):
         """Add several links.
@@ -1125,8 +1150,18 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             2-dimensional with 2 or 3 columns, where the first two columns are
             source and target ids and the optional third column is link weight.
         """
-        self._network.add_links(links)
-        return self
+        return _add_bulk_links(
+            links,
+            numpy_method=self._core.addLinksFromNumpy2D,
+            list_method=self._core.addLinks,
+            name="link",
+            valid_columns=(2, 3),
+            column_description="(source_id, target_id, [weight])",
+            valid_lengths=(2, 3),
+            unpack=_first_order_unpacker(),
+            length_description="2 or 3 values",
+            require_32_or_64_bit=True,
+        )
 
     def remove_link(self, source_id, target_id):
         """Remove a link.
@@ -1144,8 +1179,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         source_id : int
         target_id : int
         """
-        self._network.remove_link(source_id, target_id)
-        return self
+        return self._core.network().removeLink(source_id, target_id)
 
     def remove_links(self, links):
         """Remove several links.
@@ -1174,8 +1208,8 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         links : iterable of tuples
             Iterable of tuples of the form ``(source_id, target_id)``
         """
-        self._network.remove_links(links)
-        return self
+        for link in links:
+            self.remove_link(*link)
 
     def add_multilayer_link(
         self, source_multilayer_node, target_multilayer_node, weight=1.0
@@ -1219,10 +1253,11 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         weight : float, optional
 
         """
-        self._network.add_multilayer_link(
-            source_multilayer_node, target_multilayer_node, weight
+        source_layer_id, source_node_id = source_multilayer_node
+        target_layer_id, target_node_id = target_multilayer_node
+        return self._core.addMultilayerLink(
+            source_layer_id, source_node_id, target_layer_id, target_node_id, weight
         )
-        return self
 
     def add_multilayer_intra_link(
         self, layer_id, source_node_id, target_node_id, weight=1.0
@@ -1261,10 +1296,9 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
 
 
         """
-        self._network.add_multilayer_intra_link(
+        return self._core.addMultilayerIntraLink(
             layer_id, source_node_id, target_node_id, weight
         )
-        return self
 
     def add_multilayer_intra_links(self, links):
         """Add several intra-layer links.
@@ -1292,8 +1326,19 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             ``(layer_id, source_node_id, target_node_id, [weight])``.
             NumPy arrays must be 2-dimensional with 3 or 4 columns.
         """
-        self._network.add_multilayer_intra_links(links)
-        return self
+        return _add_bulk_links(
+            links,
+            numpy_method=self._core.addMultilayerIntraLinksFromNumpy2D,
+            list_method=self._core.addMultilayerIntraLinks,
+            name="multilayer intra-link",
+            valid_columns=(3, 4),
+            column_description="(layer_id, source_node_id, target_node_id, [weight])",
+            valid_lengths=(3, 4),
+            unpack=_flat_multilayer_unpacker(
+                ("layer_id", "source_node_id", "target_node_id"),
+            ),
+            length_description="3 or 4 values",
+        )
 
     def add_multilayer_inter_link(
         self, source_layer_id, node_id, target_layer_id, weight=1.0
@@ -1336,10 +1381,9 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         weight : float, optional
 
         """
-        self._network.add_multilayer_inter_link(
+        return self._core.addMultilayerInterLink(
             source_layer_id, node_id, target_layer_id, weight
         )
-        return self
 
     def add_multilayer_inter_links(self, links):
         """Add several inter-layer links.
@@ -1367,8 +1411,19 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             ``(source_layer_id, node_id, target_layer_id, [weight])``.
             NumPy arrays must be 2-dimensional with 3 or 4 columns.
         """
-        self._network.add_multilayer_inter_links(links)
-        return self
+        return _add_bulk_links(
+            links,
+            numpy_method=self._core.addMultilayerInterLinksFromNumpy2D,
+            list_method=self._core.addMultilayerInterLinks,
+            name="multilayer inter-link",
+            valid_columns=(3, 4),
+            column_description="(source_layer_id, node_id, target_layer_id, [weight])",
+            valid_lengths=(3, 4),
+            unpack=_flat_multilayer_unpacker(
+                ("source_layer_id", "node_id", "target_layer_id"),
+            ),
+            length_description="3 or 4 values",
+        )
 
     def add_multilayer_links(self, links):
         """Add several multilayer links.
@@ -1398,8 +1453,20 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             ``(source_layer_id, source_node_id, target_layer_id,
             target_node_id, [weight])``.
         """
-        self._network.add_multilayer_links(links)
-        return self
+        return _add_bulk_links(
+            links,
+            numpy_method=self._core.addMultilayerLinksFromNumpy2D,
+            list_method=self._core.addMultilayerLinks,
+            name="multilayer link",
+            valid_columns=(4, 5),
+            column_description=(
+                "(source_layer_id, source_node_id, target_layer_id, "
+                "target_node_id, [weight])"
+            ),
+            valid_lengths=(2, 3),
+            unpack=_paired_multilayer_unpacker(),
+            length_description="2 or 3 values",
+        )
 
     def remove_multilayer_link(self):
         return self._network.remove_multilayer_link()
@@ -1436,8 +1503,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         node_id : int
         meta_category : int
         """
-        self._network.set_meta_data(node_id, meta_category)
-        return self
+        return self._core.network().addMetaData(node_id, meta_category)
 
     def add_networkx_graph(
         self,
@@ -1826,11 +1892,11 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         int
             The node id where the second node type starts.
         """
-        return self._network.bipartite_start_id
+        return self._core.network().bipartiteStartId()
 
     @bipartite_start_id.setter
     def bipartite_start_id(self, start_id):
-        self._network.bipartite_start_id = start_id
+        self._core.setBipartiteStartId(start_id)
 
     @property
     def initial_partition(self):
