@@ -3,7 +3,7 @@ from matplotlib import cm
 from matplotlib import colors as mpl_colors
 from pathlib import Path
 
-from infomap._networkx import run_networkx
+from infomap.io.networkx import run_networkx
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
