@@ -8,32 +8,13 @@ PYTHON_TEST_DIR := test/python
 NOTEBOOK_DIR := examples/notebooks
 NOTEBOOK_MANIFEST := $(NOTEBOOK_DIR)/notebooks.toml
 NOTEBOOK_TIMEOUT ?= 300
+# Lint/format the whole package source tree plus the examples. Ruff skips the
+# SWIG-generated _swig.py via the extend-exclude in pyproject.toml.
 PYTHON_LINT_TARGETS := \
-	interfaces/python/src/infomap/__init__.py \
-	interfaces/python/src/infomap/__main__.py \
-	interfaces/python/src/infomap/_bindings.py \
-	interfaces/python/src/infomap/_facade.py \
-	interfaces/python/src/infomap/_networkx.py \
-	interfaces/python/src/infomap/_optional.py \
-	interfaces/python/src/infomap/_options.py \
-	interfaces/python/src/infomap/_results.py \
-	interfaces/python/src/infomap/_version.py \
-	interfaces/python/src/infomap/_writers.py \
-	interfaces/python/src/infomap/graphrag.py \
-	interfaces/python/src/infomap/tl.py \
+	interfaces/python/src/infomap \
 	examples/python
 PYTHON_FORMAT_TARGETS := \
-	interfaces/python/src/infomap/__init__.py \
-	interfaces/python/src/infomap/__main__.py \
-	interfaces/python/src/infomap/_bindings.py \
-	interfaces/python/src/infomap/_facade.py \
-	interfaces/python/src/infomap/_networkx.py \
-	interfaces/python/src/infomap/_optional.py \
-	interfaces/python/src/infomap/_results.py \
-	interfaces/python/src/infomap/_version.py \
-	interfaces/python/src/infomap/_writers.py \
-	interfaces/python/src/infomap/graphrag.py \
-	interfaces/python/src/infomap/tl.py \
+	interfaces/python/src/infomap \
 	examples/python \
 	test/python
 PYTEST_ARGS ?=
@@ -114,7 +95,10 @@ test-python-doctest:
 	cd "$$tmp_dir" && $(PYTEST) --doctest-modules -q \
 		"$(CURDIR)/interfaces/python/src/infomap/_facade.py" \
 		"$(CURDIR)/interfaces/python/src/infomap/_results.py" \
-		"$(CURDIR)/interfaces/python/src/infomap/_writers.py"
+		"$(CURDIR)/interfaces/python/src/infomap/result.py" \
+		"$(CURDIR)/interfaces/python/src/infomap/network.py" \
+		"$(CURDIR)/interfaces/python/src/infomap/run.py" \
+		"$(CURDIR)/interfaces/python/src/infomap/io/writers.py"
 
 test-python-examples:
 	@cd examples/python && for f in *.py; do $(PYTHON) "$$f" > /dev/null || exit 1; done
