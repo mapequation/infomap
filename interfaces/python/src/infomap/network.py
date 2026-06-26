@@ -263,7 +263,7 @@ class Network:
         elif isinstance(options, Options):
             resolved = options
         else:
-            resolved = Options.from_mapping(dict(options))
+            resolved = Options(**dict(options))
 
         rendered_args = _construct_args(args, **resolved.to_kwargs())
         self._core.run(rendered_args)

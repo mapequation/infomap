@@ -461,7 +461,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         max_degree_for_random_moves : int, optional
             Try random moves only for nodes with degree at most this value.
         """
-        options = Options.from_mapping(locals())
+        options = Options._from_locals(locals())
         self._init_from_options(args, options)
 
     def run(
@@ -770,7 +770,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         --------
         initial_partition
         """
-        options = Options.from_mapping(locals())
+        options = Options._from_locals(locals())
         return self._run_from_options(args, initial_partition, options)
     # === END generated ===
 
