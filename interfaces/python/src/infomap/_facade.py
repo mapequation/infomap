@@ -1,5 +1,4 @@
 import sys
-import warnings
 from collections import namedtuple
 from contextlib import contextmanager
 
@@ -757,20 +756,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         args=None,
         **infomap_options,
     ):
-        """Create an :class:`Infomap` instance from a SciPy sparse adjacency matrix.
-
-        .. deprecated::
-            Use ``Network.from_scipy_sparse_matrix(...)`` or
-            ``infomap.run(graph)`` instead. Will be removed in a future major
-            release.
-        """
-        warnings.warn(
-            "Infomap.from_scipy_sparse_matrix is deprecated; use "
-            "Network.from_scipy_sparse_matrix(...) or infomap.run(graph). "
-            "Will be removed in a future major release.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
+        """Create an :class:`Infomap` instance from a SciPy sparse adjacency matrix."""
         im = cls(args=args, **infomap_options)
         im.add_scipy_sparse_matrix(
             A,
@@ -792,19 +778,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         args=None,
         **infomap_options,
     ):
-        """Create an :class:`Infomap` instance from a PyG-style edge index.
-
-        .. deprecated::
-            Use ``Network.from_edge_index(...)`` or ``infomap.run(graph)``
-            instead. Will be removed in a future major release.
-        """
-        warnings.warn(
-            "Infomap.from_edge_index is deprecated; use "
-            "Network.from_edge_index(...) or infomap.run(graph). "
-            "Will be removed in a future major release.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
+        """Create an :class:`Infomap` instance from a PyG-style edge index."""
         im = cls(args=args, **infomap_options)
         im.add_edge_index(
             edge_index,
@@ -832,18 +806,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         Builds the instance with the given Infomap options and loads ``g`` via
         :meth:`add_networkx_graph`. The ``{internal_id: label}`` mapping is
         available afterwards on :attr:`node_id_to_label`.
-
-        .. deprecated::
-            Use ``Network.from_networkx(...)`` or ``infomap.run(graph)``
-            instead. Will be removed in a future major release.
         """
-        warnings.warn(
-            "Infomap.from_networkx is deprecated; use "
-            "Network.from_networkx(...) or infomap.run(graph). "
-            "Will be removed in a future major release.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
         im = cls(args=args, **infomap_options)
         im.add_networkx_graph(
             g,
@@ -872,18 +835,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         Builds the instance with the given Infomap options and loads ``g`` via
         :meth:`add_igraph_graph`. The ``{internal_id: label}`` mapping is
         available afterwards on :attr:`node_id_to_label`.
-
-        .. deprecated::
-            Use ``Network.from_igraph(...)`` or ``infomap.run(graph)``
-            instead. Will be removed in a future major release.
         """
-        warnings.warn(
-            "Infomap.from_igraph is deprecated; use "
-            "Network.from_igraph(...) or infomap.run(graph). "
-            "Will be removed in a future major release.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
         im = cls(args=args, **infomap_options)
         im.add_igraph_graph(
             g,
