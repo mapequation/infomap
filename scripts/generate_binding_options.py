@@ -25,44 +25,17 @@ FACADE_BEGIN = (
 )
 FACADE_END = "    # === END generated ==="
 
-# Hand-curated keyword order for the public Infomap.__init__ / Infomap.run
-# signatures. This order is intentionally NOT the catalog order; it is the
-# long-standing public API order and is part of the frozen public surface
-# (test/python/test_public_surface.py pins the exact signature string).
-# Catalog params supply each name's type, default, and docstring; this list
-# only fixes their ORDER and where the facade-only `pretty` no-op sits.
-# `_validate_facade_order` guards that this stays in sync with the catalog.
-_FACADE_OPTION_ORDER = (
-    "cluster_data", "no_infomap", "skip_adjust_bipartite_flow",
-    "bipartite_teleportation", "weight_threshold", "include_self_links",
-    "no_self_links", "node_limit", "matchable_multilayer_ids",
-    "assign_to_neighbouring_module", "meta_data", "meta_data_rate",
-    "meta_data_unweighted", "tree", "ftree", "clu", "verbosity_level",
-    "silent", "pretty", "out_name", "no_file_output", "clu_level", "output",
-    "hide_bipartite_nodes", "print_all_trials", "no_overwrite",
-    "print_config_fingerprint", "timing_json", "summary_json", "manifest_json",
-    "memory_report", "two_level", "flow_model", "directed",
-    "recorded_teleportation", "use_node_weights_as_flow", "to_nodes",
-    "teleportation_probability", "regularized", "regularization_strength",
-    "entropy_corrected", "entropy_correction_strength", "markov_time",
-    "variable_markov_time", "variable_markov_damping",
-    "variable_markov_min_scale", "preferred_number_of_modules",
-    "preferred_number_of_levels", "preferred_number_of_levels_strength",
-    "multilayer_relax_rate", "multilayer_relax_limit",
-    "multilayer_relax_limit_up", "multilayer_relax_limit_down",
-    "multilayer_relax_by_jsd", "multilayer_relax_to_self", "seed",
-    "num_trials", "core_loop_limit", "core_level_limit",
-    "tune_iteration_limit", "core_loop_codelength_threshold",
-    "tune_iteration_relative_threshold", "fast_hierarchical_solution",
-    "prefer_modular_solution", "inner_parallelization", "parallel_trials",
-    "converge", "num_threads", "threads", "trial_offset", "trial_results",
-    "no_final_output", "num_random_moves", "max_degree_for_random_moves",
-)
-
 # Facade-only parameters that are NOT catalog options (rendered verbatim).
-# `pretty` is a deprecated no-op kept for backward compatibility.
+# `pretty` is a deprecated no-op kept for backward compatibility. It is inserted
+# into the natural catalog order right after the catalog param named here.
 _FACADE_ONLY_PARAMS = {
     "pretty": {"default": "False", "doc_type": None, "doc": None},
+}
+
+# Where each facade-only param is spliced into the natural catalog order: it is
+# emitted immediately after this catalog parameter in Infomap.__init__/run.
+_FACADE_ONLY_AFTER = {
+    "pretty": "silent",
 }
 
 
@@ -108,37 +81,17 @@ def wrap_doc(text: str, prefix: str, width: int = 88) -> list[str]:
     return lines
 
 
-def _validate_facade_order(catalog: ParameterCatalog) -> None:
-    catalog_names = set()
-    for group in GROUPS:
-        if group == "Input":
-            catalog_names.add("include_self_links")
-        for param in catalog.grouped()[group]:
-            catalog_names.add(param.name("python"))
-    ordered = set(_FACADE_OPTION_ORDER) - set(_FACADE_ONLY_PARAMS)
-    missing = catalog_names - ordered
-    extra = ordered - catalog_names
-    if missing or extra:
-        raise RuntimeError(
-            "scripts/generate_binding_options.py:_FACADE_OPTION_ORDER drifted "
-            "from the parameter catalog. Add new params to the curated order "
-            "(and decide their position), and remove deleted ones.\n"
-            f"  in catalog, missing from order: {sorted(missing)}\n"
-            f"  in order, not in catalog: {sorted(extra)}"
-        )
+def _facade_params(catalog: ParameterCatalog):
+    """Natural-order facade parameters: ``(ordered_names, info_by_name)``.
 
-
-def _facade_param_index(catalog: ParameterCatalog) -> dict:
+    The order is the catalog order -- the same order the generator emits the
+    dataclass fields and ``_construct_args`` -- with ``include_self_links``
+    leading the ``Input`` group and each facade-only param (e.g. ``pretty``)
+    spliced in right after its anchor catalog param.
+    """
     index = {}
+    names: list[str] = []
     include_self_links = catalog.binding_only_entry("python", "include_self_links")
-    for group in GROUPS:
-        for param in catalog.grouped()[group]:
-            index[param.name("python")] = {
-                "type": param.python_type(),
-                "default": param.python_default_expr(),
-                "doc_type": param.python_doc_type(),
-                "doc": param.python_doc_description(),
-            }
     index["include_self_links"] = {
         "type": include_self_links.type,
         "default": include_self_links.default,
@@ -148,7 +101,28 @@ def _facade_param_index(catalog: ParameterCatalog) -> dict:
             "no_self_links=True to exclude them."
         ),
     }
-    return index
+    # Map each anchor catalog name to the facade-only params that follow it.
+    after = {}
+    for facade_name, anchor in _FACADE_ONLY_AFTER.items():
+        after.setdefault(anchor, []).append(facade_name)
+    for facade_name, info in _FACADE_ONLY_PARAMS.items():
+        index[facade_name] = info
+
+    for group in GROUPS:
+        if group == "Input":
+            names.append("include_self_links")
+        for param in catalog.grouped()[group]:
+            name = param.name("python")
+            index[name] = {
+                "type": param.python_type(),
+                "default": param.python_default_expr(),
+                "doc_type": param.python_doc_type(),
+                "doc": param.python_doc_description(),
+            }
+            names.append(name)
+            for facade_name in after.get(name, ()):
+                names.append(facade_name)
+    return names, index
 
 
 def generate_python(catalog: ParameterCatalog) -> str:
@@ -655,9 +629,7 @@ def _render_facade_docstring_params(names, index):
 
 
 def generate_facade(catalog: ParameterCatalog) -> str:
-    _validate_facade_order(catalog)
-    index = _facade_param_index(catalog)
-    names = list(_FACADE_OPTION_ORDER)
+    names, index = _facade_params(catalog)
 
     lines = [FACADE_BEGIN]
     # ---- __init__ ----

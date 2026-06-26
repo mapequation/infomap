@@ -138,27 +138,24 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
     def __init__(
         self,
         args=None,
-        cluster_data=None,
-        no_infomap=False,
+        include_self_links=None,
         skip_adjust_bipartite_flow=False,
         bipartite_teleportation=False,
         weight_threshold=None,
-        include_self_links=None,
         no_self_links=False,
         node_limit=None,
         matchable_multilayer_ids=None,
+        cluster_data=None,
         assign_to_neighbouring_module=False,
         meta_data=None,
         meta_data_rate=1.0,
         meta_data_unweighted=False,
+        no_infomap=False,
+        out_name=None,
+        no_file_output=False,
         tree=False,
         ftree=False,
         clu=False,
-        verbosity_level=1,
-        silent=False,
-        pretty=False,
-        out_name=None,
-        no_file_output=False,
         clu_level=None,
         output=None,
         hide_bipartite_nodes=False,
@@ -169,6 +166,12 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         summary_json=None,
         manifest_json=None,
         memory_report=False,
+        trial_offset=None,
+        trial_results=None,
+        no_final_output=False,
+        verbosity_level=1,
+        silent=False,
+        pretty=False,
         two_level=False,
         flow_model=None,
         directed=None,
@@ -201,15 +204,12 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         core_loop_codelength_threshold=1e-10,
         tune_iteration_relative_threshold=1e-05,
         fast_hierarchical_solution=None,
-        prefer_modular_solution=False,
         inner_parallelization=False,
         parallel_trials=False,
         converge=False,
         num_threads=None,
         threads=None,
-        trial_offset=None,
-        trial_results=None,
-        no_final_output=False,
+        prefer_modular_solution=False,
         num_random_moves=None,
         max_degree_for_random_moves=None,
     ):
@@ -223,12 +223,9 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         ----------
         args : str, optional
             Raw Infomap arguments to prepend before rendered keyword options.
-        cluster_data : str, optional
-            Read an initial partition from a clu file or a hierarchy from a tree/ftree
-            file. Tree input may use physical or state nodes for higher-order networks.
-        no_infomap : bool, optional
-            Skip optimization. Use this to calculate codelength for --cluster-data or to
-            print non-modular statistics.
+        include_self_links : bool, optional
+            Deprecated. Self-links are included by default; use no_self_links=True to
+            exclude them.
         skip_adjust_bipartite_flow : bool, optional
             Keep flow on bipartite nodes instead of distributing it to primary nodes.
         bipartite_teleportation : bool, optional
@@ -236,9 +233,6 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             teleportation.
         weight_threshold : float, optional
             Ignore input links with weight below this threshold.
-        include_self_links : bool, optional
-            Deprecated. Self-links are included by default; use no_self_links=True to
-            exclude them.
         no_self_links : bool, optional
             Exclude self-links from the input network.
         node_limit : int, optional
@@ -247,6 +241,9 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         matchable_multilayer_ids : int, optional
             Construct state ids from node ids and layer ids that stay comparable across
             networks. Set at least to the largest layer id among networks to match.
+        cluster_data : str, optional
+            Read an initial partition from a clu file or a hierarchy from a tree/ftree
+            file. Tree input may use physical or state nodes for higher-order networks.
         assign_to_neighbouring_module : bool, optional
             With --cluster-data, assign nodes missing module ids to a neighboring node's
             module when possible.
@@ -257,6 +254,13 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             metadata at each step.
         meta_data_unweighted : bool, optional
             With --meta-data, encode metadata without weighting by node flow.
+        no_infomap : bool, optional
+            Skip optimization. Use this to calculate codelength for --cluster-data or to
+            print non-modular statistics.
+        out_name : str, optional
+            Base name for output files, for example [out_directory]/[out-name].tree.
+        no_file_output : bool, optional
+            Do not write output files.
         tree : bool, optional
             Write the modular hierarchy to a tree file. Enabled by default when no other
             output format is selected.
@@ -265,15 +269,6 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             an ftree file. Used by Network Navigator.
         clu : bool, optional
             Write top-level module ids for each node to a clu file.
-        verbosity_level : int, optional
-            Verbosity level on the console. 1 keeps the default output level, 2 renders
-            -vv and so on.
-        silent : bool, optional
-            Suppress console output.
-        out_name : str, optional
-            Base name for output files, for example [out_directory]/[out-name].tree.
-        no_file_output : bool, optional
-            Do not write output files.
         clu_level : int, optional
             With --clu or --output clu, write module ids at this depth from the root.
             Use -1 for bottom-level modules.
@@ -301,6 +296,21 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         memory_report : bool, optional
             Include peak RSS and best-effort bytes per node/link estimates in timing
             JSON. Requires --timing-json.
+        trial_offset : int, optional
+            Global index of the first trial this process runs; trial i uses seed =
+            base_seed + (trial_offset + i). Default 0 (single-process behavior).
+        trial_results : str, optional
+            Write this shard's per-trial results (codelengths, seeds, best-tree
+            reference, fingerprints) as JSON to this path, for deterministic merging of
+            distributed shard runs into a final solution.
+        no_final_output : bool, optional
+            Skip writing this process's aggregate best result. Per-trial outputs and
+            --trial-results are still written.
+        verbosity_level : int, optional
+            Verbosity level on the console. 1 keeps the default output level, 2 renders
+            -vv and so on.
+        silent : bool, optional
+            Suppress console output.
         two_level : bool, optional
             Optimize a two-level partition instead of the default multi-level hierarchy.
         flow_model : str, optional
@@ -393,8 +403,6 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         fast_hierarchical_solution : int, optional
             Find top modules fast. Use 2 to keep all fast levels and 3 to skip the
             recursive part.
-        prefer_modular_solution : bool, optional
-            Prefer a modular solution even when one module gives a lower codelength.
         inner_parallelization : bool, optional
             Experimental: use batched parallel node moves for coarse optimization.
             Performance gains are workload-dependent, often require a relaxed
@@ -418,16 +426,8 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             recursive partition, parallel trials, and inner parallelization.
         threads : str, optional
             Alias for --num-threads.
-        trial_offset : int, optional
-            Global index of the first trial this process runs; trial i uses seed =
-            base_seed + (trial_offset + i). Default 0 (single-process behavior).
-        trial_results : str, optional
-            Write this shard's per-trial results (codelengths, seeds, best-tree
-            reference, fingerprints) as JSON to this path, for deterministic merging of
-            distributed shard runs into a final solution.
-        no_final_output : bool, optional
-            Skip writing this process's aggregate best result. Per-trial outputs and
-            --trial-results are still written.
+        prefer_modular_solution : bool, optional
+            Prefer a modular solution even when one module gives a lower codelength.
         num_random_moves : int, optional
             Try this many random moves in each core loop to merge weakly connected
             nodes.
@@ -441,27 +441,24 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         self,
         args=None,
         initial_partition=None,
-        cluster_data=None,
-        no_infomap=False,
+        include_self_links=None,
         skip_adjust_bipartite_flow=False,
         bipartite_teleportation=False,
         weight_threshold=None,
-        include_self_links=None,
         no_self_links=False,
         node_limit=None,
         matchable_multilayer_ids=None,
+        cluster_data=None,
         assign_to_neighbouring_module=False,
         meta_data=None,
         meta_data_rate=1.0,
         meta_data_unweighted=False,
+        no_infomap=False,
+        out_name=None,
+        no_file_output=False,
         tree=False,
         ftree=False,
         clu=False,
-        verbosity_level=1,
-        silent=False,
-        pretty=False,
-        out_name=None,
-        no_file_output=False,
         clu_level=None,
         output=None,
         hide_bipartite_nodes=False,
@@ -472,6 +469,12 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         summary_json=None,
         manifest_json=None,
         memory_report=False,
+        trial_offset=None,
+        trial_results=None,
+        no_final_output=False,
+        verbosity_level=1,
+        silent=False,
+        pretty=False,
         two_level=False,
         flow_model=None,
         directed=None,
@@ -504,15 +507,12 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         core_loop_codelength_threshold=1e-10,
         tune_iteration_relative_threshold=1e-05,
         fast_hierarchical_solution=None,
-        prefer_modular_solution=False,
         inner_parallelization=False,
         parallel_trials=False,
         converge=False,
         num_threads=None,
         threads=None,
-        trial_offset=None,
-        trial_results=None,
-        no_final_output=False,
+        prefer_modular_solution=False,
         num_random_moves=None,
         max_degree_for_random_moves=None,
     ):
@@ -528,12 +528,9 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             Raw Infomap arguments to prepend before rendered keyword options.
         initial_partition : dict, optional
             Initial partition to use for this run only. See initial_partition.
-        cluster_data : str, optional
-            Read an initial partition from a clu file or a hierarchy from a tree/ftree
-            file. Tree input may use physical or state nodes for higher-order networks.
-        no_infomap : bool, optional
-            Skip optimization. Use this to calculate codelength for --cluster-data or to
-            print non-modular statistics.
+        include_self_links : bool, optional
+            Deprecated. Self-links are included by default; use no_self_links=True to
+            exclude them.
         skip_adjust_bipartite_flow : bool, optional
             Keep flow on bipartite nodes instead of distributing it to primary nodes.
         bipartite_teleportation : bool, optional
@@ -541,9 +538,6 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             teleportation.
         weight_threshold : float, optional
             Ignore input links with weight below this threshold.
-        include_self_links : bool, optional
-            Deprecated. Self-links are included by default; use no_self_links=True to
-            exclude them.
         no_self_links : bool, optional
             Exclude self-links from the input network.
         node_limit : int, optional
@@ -552,6 +546,9 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         matchable_multilayer_ids : int, optional
             Construct state ids from node ids and layer ids that stay comparable across
             networks. Set at least to the largest layer id among networks to match.
+        cluster_data : str, optional
+            Read an initial partition from a clu file or a hierarchy from a tree/ftree
+            file. Tree input may use physical or state nodes for higher-order networks.
         assign_to_neighbouring_module : bool, optional
             With --cluster-data, assign nodes missing module ids to a neighboring node's
             module when possible.
@@ -562,6 +559,13 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             metadata at each step.
         meta_data_unweighted : bool, optional
             With --meta-data, encode metadata without weighting by node flow.
+        no_infomap : bool, optional
+            Skip optimization. Use this to calculate codelength for --cluster-data or to
+            print non-modular statistics.
+        out_name : str, optional
+            Base name for output files, for example [out_directory]/[out-name].tree.
+        no_file_output : bool, optional
+            Do not write output files.
         tree : bool, optional
             Write the modular hierarchy to a tree file. Enabled by default when no other
             output format is selected.
@@ -570,15 +574,6 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             an ftree file. Used by Network Navigator.
         clu : bool, optional
             Write top-level module ids for each node to a clu file.
-        verbosity_level : int, optional
-            Verbosity level on the console. 1 keeps the default output level, 2 renders
-            -vv and so on.
-        silent : bool, optional
-            Suppress console output.
-        out_name : str, optional
-            Base name for output files, for example [out_directory]/[out-name].tree.
-        no_file_output : bool, optional
-            Do not write output files.
         clu_level : int, optional
             With --clu or --output clu, write module ids at this depth from the root.
             Use -1 for bottom-level modules.
@@ -606,6 +601,21 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         memory_report : bool, optional
             Include peak RSS and best-effort bytes per node/link estimates in timing
             JSON. Requires --timing-json.
+        trial_offset : int, optional
+            Global index of the first trial this process runs; trial i uses seed =
+            base_seed + (trial_offset + i). Default 0 (single-process behavior).
+        trial_results : str, optional
+            Write this shard's per-trial results (codelengths, seeds, best-tree
+            reference, fingerprints) as JSON to this path, for deterministic merging of
+            distributed shard runs into a final solution.
+        no_final_output : bool, optional
+            Skip writing this process's aggregate best result. Per-trial outputs and
+            --trial-results are still written.
+        verbosity_level : int, optional
+            Verbosity level on the console. 1 keeps the default output level, 2 renders
+            -vv and so on.
+        silent : bool, optional
+            Suppress console output.
         two_level : bool, optional
             Optimize a two-level partition instead of the default multi-level hierarchy.
         flow_model : str, optional
@@ -698,8 +708,6 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         fast_hierarchical_solution : int, optional
             Find top modules fast. Use 2 to keep all fast levels and 3 to skip the
             recursive part.
-        prefer_modular_solution : bool, optional
-            Prefer a modular solution even when one module gives a lower codelength.
         inner_parallelization : bool, optional
             Experimental: use batched parallel node moves for coarse optimization.
             Performance gains are workload-dependent, often require a relaxed
@@ -723,16 +731,8 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             recursive partition, parallel trials, and inner parallelization.
         threads : str, optional
             Alias for --num-threads.
-        trial_offset : int, optional
-            Global index of the first trial this process runs; trial i uses seed =
-            base_seed + (trial_offset + i). Default 0 (single-process behavior).
-        trial_results : str, optional
-            Write this shard's per-trial results (codelengths, seeds, best-tree
-            reference, fingerprints) as JSON to this path, for deterministic merging of
-            distributed shard runs into a final solution.
-        no_final_output : bool, optional
-            Skip writing this process's aggregate best result. Per-trial outputs and
-            --trial-results are still written.
+        prefer_modular_solution : bool, optional
+            Prefer a modular solution even when one module gives a lower codelength.
         num_random_moves : int, optional
             Try this many random moves in each core loop to merge weakly connected
             nodes.
