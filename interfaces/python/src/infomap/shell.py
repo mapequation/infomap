@@ -64,7 +64,7 @@ def create_namespace(network_file=None):
 def launch_shell(namespace, banner, *, use_ipython=True):
     if use_ipython:
         try:
-            from IPython import start_ipython
+            from IPython import start_ipython  # pyright: ignore[reportMissingImports]  # optional dep, no stubs
         except ImportError:
             pass
         else:

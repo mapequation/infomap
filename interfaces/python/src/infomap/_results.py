@@ -2,9 +2,13 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from math import log2
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from ._optional import get_pandas
+
+
+if TYPE_CHECKING:
+    from ._core import Core
 
 
 pandas = get_pandas()
@@ -96,6 +100,13 @@ class _LeafIterWrapper:
 
 
 class _InfomapResultsMixin:
+    # Attributes provided by the composing ``Infomap`` host. Declared under
+    # TYPE_CHECKING so pyright resolves these mixin accesses without affecting
+    # runtime (annotations only; the host supplies the real values).
+    if TYPE_CHECKING:
+        _core: Core
+        network: Any  # the untyped SWIG network instance
+
     # -- internal, non-deprecated implementations -------------------------------
     # The deprecated public accessors below delegate to these shared internals
     # so that internal callers can reach the same data without going through a

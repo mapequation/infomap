@@ -50,7 +50,7 @@ class GraphRAGRunResult:
 def _import_parquet_stack():
     try:
         import pandas as pd
-        import pyarrow  # noqa: F401
+        import pyarrow  # noqa: F401  # pyright: ignore[reportMissingImports]  # optional dep, no stubs
     except ImportError as err:
         raise ImportError(
             "GraphRAG Parquet support requires pandas and pyarrow. "
@@ -204,21 +204,23 @@ def read_graphrag(
             )
             endpoint_to_node_id[endpoint] = entity_id_to_node_id[endpoint]
 
+    # pandas' own type hints under-model these correct runtime patterns:
+    # ``Series.map`` accepts a Mapping, and ``to_numeric(...).to_numpy(dtype=...)``
+    # is valid on its Series result. Targeted ignores for this optional-dep
+    # (``infomap[graphrag]``) stub gap.
     sources = (
         relationships_table[source_col]
-        .map(endpoint_to_node_id)
+        .map(endpoint_to_node_id)  # pyright: ignore[reportArgumentType]
         .to_numpy(dtype="uint64")
     )
     targets = (
         relationships_table[target_col]
-        .map(endpoint_to_node_id)
+        .map(endpoint_to_node_id)  # pyright: ignore[reportArgumentType]
         .to_numpy(dtype="uint64")
     )
     weights = None
     if weight_col is not None:
-        weights = pd.to_numeric(relationships_table[weight_col]).to_numpy(
-            dtype="float64"
-        )
+        weights = pd.to_numeric(relationships_table[weight_col]).to_numpy(dtype="float64")  # pyright: ignore[reportAttributeAccessIssue, reportArgumentType]
 
     relationship_ids = list(range(len(relationships_table)))
     if (
@@ -453,9 +455,11 @@ def _relationship_text_unit_ids_by_prefix(nodes, graph: GraphRAGGraph):
 
     text_unit_ids_by_prefix: dict[tuple[int, ...], list[Any]] = {}
     for row in common_prefixes[["prefix", "text_unit_ids"]].itertuples(index=False):
+        # pandas types ``itertuples`` rows as ``tuple[Any, ...]`` rather than the
+        # named tuple produced at runtime; field access is valid (stub gap).
         _append_unique_text_units(
-            text_unit_ids_by_prefix.setdefault(row.prefix, []),
-            _text_unit_values(row.text_unit_ids),
+            text_unit_ids_by_prefix.setdefault(row.prefix, []),  # pyright: ignore[reportAttributeAccessIssue]
+            _text_unit_values(row.text_unit_ids),  # pyright: ignore[reportAttributeAccessIssue]
         )
     return text_unit_ids_by_prefix
 

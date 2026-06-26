@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 from numbers import Integral
 from typing import Any
 
@@ -14,8 +14,12 @@ def _as_numpy_array(value: Any, *, name: str):
         ) from exc
 
     if hasattr(value, "detach") and callable(value.detach):
+        # Duck-typed torch.Tensor: detach().cpu().numpy(). The hasattr narrowing
+        # would otherwise collapse the result of detach() to ``object``; keep it
+        # ``Any`` so the chained tensor methods type-check soundly.
+        tensor: Any = value
         try:
-            value = value.detach().cpu().numpy()
+            value = tensor.detach().cpu().numpy()
         except AttributeError as exc:
             raise ValueError(
                 f"`{name}` tensor inputs must support detach().cpu().numpy()."
@@ -108,18 +112,23 @@ def _edge_items(edge_index: Any, weights: Any, *, directed: bool):
         return
 
     edges: dict[tuple[int, int], float] = {}
+    # Normalise both branches to fixed (source, target, weight) 3-tuples so the
+    # unpacking below has a single, well-typed shape.
+    triples: Iterable[tuple[Any, Any, float]]
     if weights is None:
-        edge_values = zip(edge_index[0], edge_index[1], strict=True)
+        triples = (
+            (source, target, 1.0)
+            for source, target in zip(edge_index[0], edge_index[1], strict=True)
+        )
     else:
-        edge_values = zip(edge_index[0], edge_index[1], weights, strict=True)
+        triples = (
+            (source, target, float(weight))
+            for source, target, weight in zip(
+                edge_index[0], edge_index[1], weights, strict=True
+            )
+        )
 
-    for edge_value in edge_values:
-        if weights is None:
-            source, target = edge_value
-            weight = 1.0
-        else:
-            source, target, weight = edge_value
-            weight = float(weight)
+    for source, target, weight in triples:
         source_id = int(source)
         target_id = int(target)
         edge = (

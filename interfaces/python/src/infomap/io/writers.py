@@ -1,7 +1,20 @@
+from __future__ import annotations
+
 import os
+from typing import TYPE_CHECKING
+
+
+if TYPE_CHECKING:
+    from .._core import Core
 
 
 class _InfomapWritersMixin:
+    # Attribute provided by the composing ``Infomap`` host. Declared under
+    # TYPE_CHECKING so pyright resolves these mixin accesses without affecting
+    # runtime (annotations only; the host supplies the real value).
+    if TYPE_CHECKING:
+        _core: Core
+
     def write(self, filename, *args, **kwargs):
         """Write results to file.
 

@@ -32,14 +32,18 @@ def _resolve_options(options: Any, overrides: dict) -> dict:
     elif isinstance(options, Mapping):
         resolved = dict(options)
     else:
-        # Options / InfomapOptions instance.
+        # Options / InfomapOptions instance. ``to_kwargs`` is reached via a
+        # duck-typed getattr on an untyped object; ``callable()`` narrows it to a
+        # ``-> object`` callable, so type its kwargs-dict result as Any (it
+        # returns a kwargs dict by contract).
         to_kwargs = getattr(options, "to_kwargs", None)
         if not callable(to_kwargs):
             raise TypeError(
                 "options must be an Options/InfomapOptions instance, a mapping, "
                 "or None"
             )
-        resolved = to_kwargs()
+        kwargs: Any = to_kwargs()
+        resolved = kwargs
     resolved.update(overrides)
     return resolved
 
@@ -56,7 +60,7 @@ def _is_networkx_graph(obj: Any) -> bool:
 
 def _is_igraph_graph(obj: Any) -> bool:
     try:
-        import igraph as ig
+        import igraph as ig  # pyright: ignore[reportMissingImports]  # optional dep, no stubs
     except ImportError:
         return False
     return isinstance(obj, ig.Graph)

@@ -35,6 +35,8 @@ from .run import run
 
 
 def _package_construct_args():
+    if __package__ is None:
+        return _construct_args
     package_module = sys.modules.get(__package__)
     if package_module is None:
         return _construct_args

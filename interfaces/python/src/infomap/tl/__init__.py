@@ -152,7 +152,7 @@ def infomap(
         weighted=use_weights,
         node_ids=obs_names,
     )
-    im.run()
+    result = im.run()
 
     labels = _module_labels(im, mapping, obs_names)
     categories = sorted({int(label) for label in labels})
@@ -169,8 +169,8 @@ def infomap(
             "args": args,
             **options,
         },
-        "n_modules": im._result.num_top_modules,
-        "codelength": im._result.codelength,
+        "n_modules": result.num_top_modules,
+        "codelength": result.codelength,
     }
 
     if copy:

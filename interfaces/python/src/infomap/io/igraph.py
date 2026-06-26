@@ -74,8 +74,11 @@ def _integer_like(value, *, name):
         raise ValueError(f"`{name}` values must be integer-like or non-missing labels.")
     if isinstance(value, Integral):
         return int(value)
-    if isinstance(value, Real) and math.isfinite(value) and int(value) == value:
-        return int(value)
+    # Non-Integral Real (e.g. a float): convert through float, which is what a
+    # finite integer-valued Real already is here. ``Real`` is an ABC pyright
+    # cannot convert directly, but ``float(value)`` is sound and equivalent.
+    if isinstance(value, Real) and math.isfinite(value) and int(float(value)) == value:
+        return int(float(value))
     raise ValueError(f"`{name}` values must be integer-like.")
 
 
@@ -141,6 +144,7 @@ def add_igraph_graph(
         infomap.set_name(_node_id, name)
 
     if is_multilayer_network:
+        assert layers is not None  # implied by is_multilayer_network (see above)
         for vertex_id in vertices:
             infomap.network.add_multilayer_node(
                 vertex_id,
@@ -158,6 +162,7 @@ def add_igraph_graph(
 
     edges = g.get_edgelist()
     if is_multilayer_network:
+        assert layers is not None  # implied by is_multilayer_network (see above)
         for edge_index, (source, target) in enumerate(edges):
             source_layer_id = layers[source]
             target_layer_id = layers[target]

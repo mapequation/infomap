@@ -14,6 +14,8 @@ boundary instead of importing the SWIG layer directly.
 
 from __future__ import annotations
 
+from typing import Any
+
 from ._bindings import InfomapWrapper  # noqa: F401  (the only engine import)
 from ._bindings import build_info as build_info  # module-level engine function
 from ._bindings import run as run  # module-level engine function (CLI driver)
@@ -35,9 +37,11 @@ class Core:
         """
         return self._im.getNodeData(level, states)
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> Any:
         # Only called for attributes missing on Core itself. Guard against
         # recursion before _im exists (e.g. during unpickling/__new__).
+        # The ``Any`` return models the dynamic forwarding proxy honestly: the
+        # SWIG instance is untyped, so any forwarded ``core.<x>`` access is Any.
         if name == "_im":
             raise AttributeError(name)
         return getattr(self._im, name)
