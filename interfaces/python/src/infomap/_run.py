@@ -218,12 +218,7 @@ def run(
 
     # 1. An already-built Network: run it in place.
     if isinstance(input, Network):
-        if initial_partition is not None:
-            raise TypeError(
-                "initial_partition is not supported when running a Network; set "
-                "it on the Network's engine or use an Infomap instance instead."
-            )
-        return input.run(options=resolved)
+        return input.run(options=resolved, initial_partition=initial_partition)
 
     # 2. A network file path.
     if isinstance(input, (str, Path)):

@@ -221,11 +221,26 @@ def test_run_rejects_unsupported_input():
         infomap.run(42)
 
 
-def test_run_network_rejects_initial_partition():
+def test_run_network_accepts_initial_partition():
     net = Network()
     net.add_links(_LINKS)
-    with pytest.raises(TypeError):
-        infomap.run(net, initial_partition={1: 0, 2: 0})
+    result = infomap.run(
+        net, initial_partition={1: 0, 2: 0}, silent=True, num_trials=1, seed=1
+    )
+    assert isinstance(result, Result)
+
+
+def test_network_run_initial_partition_matches_infomap():
+    partition = {1: 0, 2: 0, 3: 0, 4: 1, 5: 1, 6: 1}
+
+    net = Network()
+    net.add_links(_LINKS)
+    net_result = net.run(options=_SETTINGS, initial_partition=partition)
+
+    im = Infomap(**_SETTINGS)
+    im.add_links(_LINKS)
+    im.run(initial_partition=partition)
+    assert net_result.codelength == pytest.approx(im.codelength)
 
 
 # -- adapter-argument guard (run() configures the engine, not input building) --

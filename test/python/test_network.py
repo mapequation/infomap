@@ -6,10 +6,9 @@ Covers:
 (b) fluent mutators return ``self``;
 (c) ``num_nodes`` / ``num_links`` report correct counts.
 
-A standalone ``Network`` is a builder only in this phase. To run it for the
-parity check we drive its own ``Core`` boundary directly with run args that
-mirror the ``Infomap`` settings -- the functional ``run(net)`` entry point
-arrives in a later phase.
+A standalone ``Network`` runs via :meth:`Network.run` or the functional
+``infomap.run(net)`` entry point; the parity checks here compare its run result
+against the identical graph built and run through ``Infomap``.
 """
 
 import pytest

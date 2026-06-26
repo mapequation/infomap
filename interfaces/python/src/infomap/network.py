@@ -27,7 +27,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from ._core import Core
+from ._core import Core, apply_initial_partition
 from ._network_input import add_bulk_links as _add_bulk_links
 from ._network_input import first_order_unpacker as _first_order_unpacker
 from ._network_input import flat_multilayer_unpacker as _flat_multilayer_unpacker
@@ -46,6 +46,12 @@ class Network:
     Build a network with the fluent ``add_*``/``set_*`` verbs (each returns
     ``self``), then run it via :meth:`run` or the functional :func:`infomap.run`.
     Both return an immutable :class:`~infomap.Result`.
+
+    ``Network`` is an in-memory builder: it runs silently and does not write
+    output files (its engine is created with ``--silent --no-file-output``, and
+    that cannot be turned off per run). Read results off the returned
+    :class:`~infomap.Result`. If you need Infomap to write ``.tree``/``.clu``
+    output files, use :class:`~infomap.Infomap` instead.
 
     Examples
     --------
@@ -240,7 +246,7 @@ class Network:
     # Run
     # ----------------------------------------
 
-    def run(self, *, options=None, args=None):
+    def run(self, *, options=None, args=None, initial_partition=None):
         """Run Infomap on this network and return a :class:`Result`.
 
         Parameters
@@ -249,6 +255,11 @@ class Network:
             Configuration rendered to Infomap CLI flags for this run.
         args : str, optional
             Raw Infomap arguments prepended before the rendered options.
+        initial_partition : mapping, optional
+            Initial module assignment for this run only, keyed by internal node
+            id (``{node_or_state_id: module_id}``) or, for a multilayer network,
+            ``{(layer_id, node_id): module_id}``. The internal ids are the ones
+            you built the network with (the values of :attr:`node_id_to_label`).
 
         Returns
         -------
@@ -266,7 +277,15 @@ class Network:
             resolved = Options(**dict(options))
 
         rendered_args = _construct_args(args, **resolved.to_kwargs())
-        self._core.run(rendered_args)
+        if initial_partition is None:
+            self._core.run(rendered_args)
+        else:
+            apply_initial_partition(self._core, initial_partition)
+            try:
+                self._core.run(rendered_args)
+            finally:
+                # Applies to this run only, mirroring Infomap.run().
+                apply_initial_partition(self._core, {})
         return build_result(self)
 
     # ----------------------------------------

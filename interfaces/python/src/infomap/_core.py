@@ -59,3 +59,35 @@ class Core:
         if name == "_im":
             raise AttributeError(name)
         return getattr(self._im, name)
+
+
+def apply_initial_partition(core: Any, module_ids) -> bool:
+    """Set an initial partition on ``core`` for the next run.
+
+    Accepts ``{node_or_state_id: module_id}`` (integers) or, for a multilayer
+    network, ``{(layer_id, node_id): module_id}``. Returns ``True`` when the
+    multilayer form was applied. Shared by ``Infomap.initial_partition`` and
+    ``Network.run`` so the validation/dispatch lives in one place.
+    """
+    if module_ids is None:
+        module_ids = {}
+    if module_ids and any(isinstance(key, tuple) for key in module_ids):
+        if not all(isinstance(key, tuple) for key in module_ids):
+            raise ValueError(
+                "initial_partition keys must be either all integers "
+                "(node/state ids) or all (layer_id, node_id) tuples, not mixed"
+            )
+        if not all(len(key) == 2 for key in module_ids):
+            raise ValueError(
+                "multilayer initial_partition keys must be (layer_id, node_id) "
+                "2-tuples (or MultilayerNode)"
+            )
+        layer_ids, node_ids, modules = [], [], []
+        for (layer_id, node_id), module in module_ids.items():
+            layer_ids.append(int(layer_id))
+            node_ids.append(int(node_id))
+            modules.append(int(module))
+        core.setMultilayerInitialPartition(layer_ids, node_ids, modules)
+        return True
+    core.setInitialPartition(module_ids)
+    return False

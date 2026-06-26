@@ -98,7 +98,7 @@ test-python-doctest:
 		"$(CURDIR)/interfaces/python/src/infomap/_results.py" \
 		"$(CURDIR)/interfaces/python/src/infomap/result.py" \
 		"$(CURDIR)/interfaces/python/src/infomap/network.py" \
-		"$(CURDIR)/interfaces/python/src/infomap/run.py" \
+		"$(CURDIR)/interfaces/python/src/infomap/_run.py" \
 		"$(CURDIR)/interfaces/python/src/infomap/io/writers.py"
 
 test-python-examples:

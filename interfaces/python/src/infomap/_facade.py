@@ -3,6 +3,7 @@ from collections import namedtuple
 from contextlib import contextmanager
 
 from ._core import Core
+from ._core import apply_initial_partition
 from ._core import build_info
 from ._core import run as _cli_run
 
@@ -45,7 +46,7 @@ from .io.export import to_igraph, to_networkx
 from .io.scipy import add_scipy_sparse_matrix as _add_scipy_sparse_matrix
 from .io.writers import _InfomapWritersMixin
 from .network import Network
-from .run import run
+from ._run import run
 
 
 def _package_construct_args():
@@ -1986,28 +1987,10 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
 
     @initial_partition.setter
     def initial_partition(self, module_ids):
-        if module_ids is None:
-            module_ids = {}
-        if module_ids and any(isinstance(key, tuple) for key in module_ids):
-            if not all(isinstance(key, tuple) for key in module_ids):
-                raise ValueError(
-                    "initial_partition keys must be either all integers "
-                    "(node/state ids) or all (layer_id, node_id) tuples, not mixed"
-                )
-            if not all(len(key) == 2 for key in module_ids):
-                raise ValueError(
-                    "multilayer initial_partition keys must be (layer_id, node_id) "
-                    "2-tuples (or MultilayerNode)"
-                )
-            layer_ids, node_ids, modules = [], [], []
-            for (layer_id, node_id), module in module_ids.items():
-                layer_ids.append(int(layer_id))
-                node_ids.append(int(node_id))
-                modules.append(int(module))
-            self._core.setMultilayerInitialPartition(layer_ids, node_ids, modules)
+        if apply_initial_partition(self._core, module_ids):
+            # Cache the tuple-keyed form so the getter can round-trip it.
             self._physical_initial_partition = dict(module_ids)
         else:
-            self._core.setInitialPartition(module_ids)
             self._physical_initial_partition = None
 
     @contextmanager
