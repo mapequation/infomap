@@ -27,7 +27,7 @@ _REPR_OTHER_COLOR = "#8f9499"
 
 def summary_data(im):
     # Read state via the engine core / Result snapshot, never the deprecated
-    # public Infomap accessors, so summary()/repr() emit no DeprecationWarnings.
+    # public Infomap accessors, keeping summary()/repr() on the supported surface.
     core = im._core
     data = {
         "nodes": im.num_nodes,

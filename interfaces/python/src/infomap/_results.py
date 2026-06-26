@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import warnings
 from collections.abc import Sequence
 from math import log2
 from typing import Any
@@ -96,20 +95,11 @@ class _LeafIterWrapper:
         raise StopIteration
 
 
-def _warn_result_accessor(member: str, replacement: str) -> None:
-    warnings.warn(
-        f"Infomap.{member} is deprecated; run() returns a Result and you "
-        f"should read it via {replacement}.",
-        DeprecationWarning,
-        stacklevel=3,
-    )
-
-
 class _InfomapResultsMixin:
     # -- internal, non-deprecated implementations -------------------------------
-    # The deprecated public accessors below delegate to these so that a single
-    # public call emits exactly one DeprecationWarning (no nested warnings), and
-    # so internal callers can reach the same data warning-free.
+    # The deprecated public accessors below delegate to these shared internals
+    # so that internal callers can reach the same data without going through a
+    # deprecated public accessor.
 
     def _get_modules_impl(self, depth_level=1, states=False):
         return self._core.getModules(depth_level, states)
@@ -268,7 +258,6 @@ class _InfomapResultsMixin:
         .. deprecated::
             Use ``result = im.run(); result.modules(depth, states=states)``.
         """
-        _warn_result_accessor("get_modules()", "result.modules(depth, states=states)")
         return self._get_modules_impl(depth_level, states)
 
     def get_multilevel_modules(self, states=False):
@@ -358,9 +347,6 @@ class _InfomapResultsMixin:
         .. deprecated::
             Use ``result = im.run(); result.multilevel_modules(states=states)``.
         """
-        _warn_result_accessor(
-            "get_multilevel_modules()", "result.multilevel_modules(states=states)"
-        )
         return self._get_multilevel_modules_impl(states)
 
     @property
@@ -404,7 +390,6 @@ class _InfomapResultsMixin:
         .. deprecated::
             Use ``result = im.run(); result.modules()``.
         """
-        _warn_result_accessor("modules", "result.modules()")
         return self._get_modules_impl(depth_level=1, states=False).items()
 
     @property
@@ -432,7 +417,6 @@ class _InfomapResultsMixin:
         .. deprecated::
             Use ``result = im.run(); result.multilevel_modules()``.
         """
-        _warn_result_accessor("multilevel_modules", "result.multilevel_modules()")
         return self._get_multilevel_modules_impl().items()
 
     def get_tree(self, depth_level=1, states=False):
@@ -472,7 +456,6 @@ class _InfomapResultsMixin:
         .. deprecated::
             Use ``result = im.run(); result.tree(depth, states=states)``.
         """
-        _warn_result_accessor("get_tree()", "result.tree(depth, states=states)")
         return self._get_tree_impl(depth_level, states)
 
     def get_nodes(self, depth_level=1, states=False):
@@ -512,7 +495,6 @@ class _InfomapResultsMixin:
         .. deprecated::
             Use ``result = im.run(); result.nodes(depth, states=states)``.
         """
-        _warn_result_accessor("get_nodes()", "result.nodes(depth, states=states)")
         return self._get_nodes_impl(depth_level, states)
 
     @property
@@ -535,7 +517,6 @@ class _InfomapResultsMixin:
         .. deprecated::
             Use ``result = im.run(); result.tree(states=True)``.
         """
-        _warn_result_accessor("tree", "result.tree(states=True)")
         return self._get_tree_impl(depth_level=1, states=True)
 
     @property
@@ -560,7 +541,6 @@ class _InfomapResultsMixin:
         .. deprecated::
             Use ``result = im.run(); result.tree(states=False)``.
         """
-        _warn_result_accessor("physical_tree", "result.tree(states=False)")
         return self._get_tree_impl(depth_level=1, states=False)
 
     @property
@@ -581,7 +561,6 @@ class _InfomapResultsMixin:
         .. deprecated::
             Use ``result = im.run(); result.leaf_modules()``.
         """
-        _warn_result_accessor("leaf_modules", "result.leaf_modules()")
         return self._leaf_modules_impl()
 
     @property
@@ -605,7 +584,6 @@ class _InfomapResultsMixin:
         .. deprecated::
             Use ``result = im.run(); result.nodes(states=True)``.
         """
-        _warn_result_accessor("nodes", "result.nodes(states=True)")
         return self._get_nodes_impl(depth_level=1, states=True)
 
     @property
@@ -630,7 +608,6 @@ class _InfomapResultsMixin:
         .. deprecated::
             Use ``result = im.run(); result.nodes(states=False)``.
         """
-        _warn_result_accessor("physical_nodes", "result.nodes(states=False)")
         return self._get_nodes_impl(depth_level=1, states=False)
 
     def get_dataframe(
@@ -703,7 +680,6 @@ class _InfomapResultsMixin:
         pandas.DataFrame
             A DataFrame containing the selected columns.
         """
-        _warn_result_accessor("get_dataframe()", "result.to_dataframe()")
 
         if pandas is None:
             raise ImportError(
@@ -767,7 +743,6 @@ class _InfomapResultsMixin:
         .. deprecated::
             Use ``result = im.run(); result.to_dataframe(...)``.
         """
-        _warn_result_accessor("to_dataframe()", "result.to_dataframe()")
 
         if pandas is None:
             raise ImportError(
@@ -836,7 +811,6 @@ class _InfomapResultsMixin:
         .. deprecated::
             Use ``result = im.run(); result.names.get(node_id)``.
         """
-        _warn_result_accessor("get_name()", "result.names")
         return self._get_name_impl(node_id, default)
 
     def get_names(self):
@@ -855,7 +829,6 @@ class _InfomapResultsMixin:
         .. deprecated::
             Use ``result = im.run(); result.names``.
         """
-        _warn_result_accessor("get_names()", "result.names")
         return self._get_names_impl()
 
     @property
@@ -877,7 +850,6 @@ class _InfomapResultsMixin:
         .. deprecated::
             Use ``result = im.run(); result.names``.
         """
-        _warn_result_accessor("names", "result.names")
         return self._get_names_impl()
 
     def get_links(self, data="weight"):
@@ -932,7 +904,6 @@ class _InfomapResultsMixin:
         .. deprecated::
             Use ``result = im.run(); result.links(data=data)``.
         """
-        _warn_result_accessor("get_links()", "result.links(data=data)")
         return self._get_links_impl(data)
 
     @property
@@ -972,7 +943,6 @@ class _InfomapResultsMixin:
         .. deprecated::
             Use ``result = im.run(); result.links()``.
         """
-        _warn_result_accessor("links", "result.links()")
         return self._get_links_impl()
 
     @property
@@ -1012,7 +982,6 @@ class _InfomapResultsMixin:
         .. deprecated::
             Use ``result = im.run(); result.links(data="flow")``.
         """
-        _warn_result_accessor("flow_links", 'result.links(data="flow")')
         return self._get_links_impl(data="flow")
 
     @property
@@ -1069,7 +1038,6 @@ class _InfomapResultsMixin:
         .. deprecated::
             Use ``result = im.run(); result.num_top_modules``.
         """
-        _warn_result_accessor("num_top_modules", "result.num_top_modules")
         return self._core.numTopModules()
 
     @property
@@ -1086,9 +1054,6 @@ class _InfomapResultsMixin:
         .. deprecated::
             Use ``result = im.run(); result.num_non_trivial_top_modules``.
         """
-        _warn_result_accessor(
-            "num_non_trivial_top_modules", "result.num_non_trivial_top_modules"
-        )
         return self._core.numNonTrivialTopModules()
 
     @property
@@ -1103,7 +1068,6 @@ class _InfomapResultsMixin:
         .. deprecated::
             Use ``result = im.run(); result.num_leaf_modules``.
         """
-        _warn_result_accessor("num_leaf_modules", "result.num_leaf_modules")
         return self._num_leaf_modules_impl()
 
     def get_effective_num_modules(self, depth_level=1):
@@ -1127,9 +1091,6 @@ class _InfomapResultsMixin:
         .. deprecated::
             Use ``result = im.run(); result.effective_num_modules(depth)``.
         """
-        _warn_result_accessor(
-            "get_effective_num_modules()", "result.effective_num_modules(depth)"
-        )
         return self._get_effective_num_modules_impl(depth_level)
 
     @property
@@ -1146,9 +1107,6 @@ class _InfomapResultsMixin:
         .. deprecated::
             Use ``result = im.run(); result.effective_num_top_modules``.
         """
-        _warn_result_accessor(
-            "effective_num_top_modules", "result.effective_num_top_modules"
-        )
         return self._get_effective_num_modules_impl(depth_level=1)
 
     @property
@@ -1165,9 +1123,6 @@ class _InfomapResultsMixin:
         .. deprecated::
             Use ``result = im.run(); result.effective_num_leaf_modules``.
         """
-        _warn_result_accessor(
-            "effective_num_leaf_modules", "result.effective_num_leaf_modules"
-        )
         return self._get_effective_num_modules_impl(depth_level=-1)
 
     @property
@@ -1182,7 +1137,6 @@ class _InfomapResultsMixin:
         .. deprecated::
             Use ``result = im.run(); result.max_depth``.
         """
-        _warn_result_accessor("max_depth", "result.max_depth")
         return self._max_depth_impl()
 
     @property
@@ -1202,7 +1156,6 @@ class _InfomapResultsMixin:
         .. deprecated::
             Use ``result = im.run(); result.num_levels``.
         """
-        _warn_result_accessor("num_levels", "result.num_levels")
         return self._max_depth_impl()
 
     @property
@@ -1217,7 +1170,6 @@ class _InfomapResultsMixin:
         .. deprecated::
             Use ``result = im.run(); result.have_memory``.
         """
-        _warn_result_accessor("have_memory", "result.have_memory")
         return self._core.haveMemory()
 
     @property
@@ -1237,7 +1189,6 @@ class _InfomapResultsMixin:
         .. deprecated::
             Use ``result = im.run(); result.index_codelength``.
         """
-        _warn_result_accessor("index_codelength", "result.index_codelength")
         return self._core.getIndexCodelength()
 
     @property
@@ -1263,7 +1214,6 @@ class _InfomapResultsMixin:
         .. deprecated::
             Use ``result = im.run(); result.module_codelength``.
         """
-        _warn_result_accessor("module_codelength", "result.module_codelength")
         return self._core.getModuleCodelength()
 
     @property
@@ -1282,7 +1232,6 @@ class _InfomapResultsMixin:
         .. deprecated::
             Use ``result = im.run(); result.one_level_codelength``.
         """
-        _warn_result_accessor("one_level_codelength", "result.one_level_codelength")
         return self._core.getOneLevelCodelength()
 
     @property
@@ -1310,9 +1259,6 @@ class _InfomapResultsMixin:
         .. deprecated::
             Use ``result = im.run(); result.relative_codelength_savings``.
         """
-        _warn_result_accessor(
-            "relative_codelength_savings", "result.relative_codelength_savings"
-        )
         return self._core.getRelativeCodelengthSavings()
 
     @property
@@ -1345,7 +1291,6 @@ class _InfomapResultsMixin:
         .. deprecated::
             Use ``result = im.run(); result.entropy_rate``.
         """
-        _warn_result_accessor("entropy_rate", "result.entropy_rate")
         return self._core.getEntropyRate()
 
     @property
@@ -1366,7 +1311,6 @@ class _InfomapResultsMixin:
         .. deprecated::
             Use ``result = im.run(); result.meta_codelength``.
         """
-        _warn_result_accessor("meta_codelength", "result.meta_codelength")
         return self._core.getMetaCodelength()
 
     @property
@@ -1385,5 +1329,4 @@ class _InfomapResultsMixin:
         .. deprecated::
             Use ``result = im.run(); result.meta_entropy``.
         """
-        _warn_result_accessor("meta_entropy", "result.meta_entropy")
         return self._core.getMetaCodelength(True)

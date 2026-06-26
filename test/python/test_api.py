@@ -95,11 +95,10 @@ def test_get_dataframe_supports_states_and_depth_level(
     states_im.read_file(str(example_network_path("states.net")))
     states_im.run()
 
-    with pytest.deprecated_call(match="get_dataframe.*to_dataframe"):
-        physical_df = states_im.get_dataframe(
-            columns=["node_id", "module_id"],
-            states=False,
-        )
+    physical_df = states_im.get_dataframe(
+        columns=["node_id", "module_id"],
+        states=False,
+    )
     expected_physical = [
         (node.node_id, node.module_id)
         for node in states_im.get_nodes(depth_level=1, states=False)
@@ -110,12 +109,11 @@ def test_get_dataframe_supports_states_and_depth_level(
     hierarchical_im.read_file(str(example_network_path("ninetriangles.net")))
     hierarchical_im.run()
 
-    with pytest.deprecated_call(match="get_dataframe.*to_dataframe"):
-        depth_df = hierarchical_im.get_dataframe(
-            columns=["node_id", "module_id"],
-            states=False,
-            depth_level=2,
-        )
+    depth_df = hierarchical_im.get_dataframe(
+        columns=["node_id", "module_id"],
+        states=False,
+        depth_level=2,
+    )
     expected_depth = [
         (node.node_id, node.module_id)
         for node in hierarchical_im.get_nodes(depth_level=2, states=False)
@@ -131,8 +129,7 @@ def test_to_dataframe_alias_matches_get_dataframe(make_infomap, example_network_
     im.run()
 
     columns = ["node_id", "module_id"]
-    with pytest.deprecated_call(match="get_dataframe.*to_dataframe"):
-        expected = im.get_dataframe(columns=columns, states=False)
+    expected = im.get_dataframe(columns=columns, states=False)
     actual = im.to_dataframe(columns=columns, states=False)
 
     assert actual.equals(expected)
@@ -191,8 +188,7 @@ def test_to_dataframe_caches_names_for_name_column(
     # to_dataframe reads names through the internal, non-deprecated helper.
     monkeypatch.setattr(type(im), "_get_names_impl", fake_names)
 
-    with pytest.deprecated_call():
-        dataframe = im.to_dataframe(columns=["node_id", "name"])
+    dataframe = im.to_dataframe(columns=["node_id", "name"])
 
     assert access_count == 1
     assert set(dataframe["name"]) == {"A", "B", "C", "D", "E", "F"}
@@ -213,16 +209,15 @@ def test_to_dataframe_supports_true_sort_and_depth_level_alias(
         depth_level=2,
         sort=True,
     )
-    with pytest.deprecated_call(match="get_dataframe.*to_dataframe"):
-        expected = (
-            im.get_dataframe(
-                columns=["node_id", "module_id"],
-                states=False,
-                depth_level=2,
-            )
-            .sort_values(["module_id", "node_id"])
-            .reset_index(drop=True)
+    expected = (
+        im.get_dataframe(
+            columns=["node_id", "module_id"],
+            states=False,
+            depth_level=2,
         )
+        .sort_values(["module_id", "node_id"])
+        .reset_index(drop=True)
+    )
 
     assert dataframe.equals(expected)
 
@@ -242,10 +237,7 @@ def test_get_dataframe_missing_pandas_message(monkeypatch, make_infomap):
     im = make_infomap(no_infomap=True)
     monkeypatch.setattr(results_module, "pandas", None)
 
-    with (
-        pytest.deprecated_call(match="get_dataframe.*to_dataframe"),
-        pytest.raises(ImportError, match=r"infomap\[pandas\]"),
-    ):
+    with pytest.raises(ImportError, match=r"infomap\[pandas\]"):
         im.get_dataframe()
 
 

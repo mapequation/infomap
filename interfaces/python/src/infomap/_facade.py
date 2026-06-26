@@ -1,5 +1,4 @@
 import sys
-import warnings
 from collections import namedtuple
 from contextlib import contextmanager
 
@@ -771,12 +770,6 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             Pass options to :func:`infomap.run` or :meth:`Infomap.run`
             instead, e.g. ``infomap.run(graph, options=options)``.
         """
-        warnings.warn(
-            "Infomap.from_options() is deprecated; pass an Options instance "
-            "to infomap.run(input, options=options) or Infomap.run() instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
         if not isinstance(options, Options):
             raise TypeError("options must be an Options instance")
         return cls(args=args, **options.to_kwargs())
@@ -798,12 +791,6 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             Use :meth:`Network.from_scipy_sparse_matrix` or
             ``infomap.run(matrix)``.
         """
-        warnings.warn(
-            "Infomap.from_scipy_sparse_matrix() is deprecated; use "
-            "Network.from_scipy_sparse_matrix() or infomap.run(matrix).",
-            DeprecationWarning,
-            stacklevel=2,
-        )
         im = cls(args=args, **infomap_options)
         im._add_scipy_sparse_matrix_impl(
             A,
@@ -830,12 +817,6 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         .. deprecated::
             Use :meth:`Network.from_edge_index` or ``infomap.run(edge_index)``.
         """
-        warnings.warn(
-            "Infomap.from_edge_index() is deprecated; use "
-            "Network.from_edge_index() or infomap.run(edge_index).",
-            DeprecationWarning,
-            stacklevel=2,
-        )
         im = cls(args=args, **infomap_options)
         im._add_edge_index_impl(
             edge_index,
@@ -1623,12 +1604,6 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         .. deprecated::
             Use :meth:`Network.from_networkx` or ``infomap.run(graph)``.
         """
-        warnings.warn(
-            "Infomap.add_networkx_graph() is deprecated; use "
-            "Network.from_networkx() or infomap.run(graph).",
-            DeprecationWarning,
-            stacklevel=2,
-        )
         return self._add_networkx_graph_impl(
             g,
             weight=weight,
@@ -1683,12 +1658,6 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             Use :meth:`Network.from_scipy_sparse_matrix` or
             ``infomap.run(matrix)``.
         """
-        warnings.warn(
-            "Infomap.add_scipy_sparse_matrix() is deprecated; use "
-            "Network.from_scipy_sparse_matrix() or infomap.run(matrix).",
-            DeprecationWarning,
-            stacklevel=2,
-        )
         return self._add_scipy_sparse_matrix_impl(
             A, directed=directed, weighted=weighted, node_ids=node_ids
         )
@@ -1741,12 +1710,6 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         .. deprecated::
             Use :meth:`Network.from_edge_index` or ``infomap.run(edge_index)``.
         """
-        warnings.warn(
-            "Infomap.add_edge_index() is deprecated; use "
-            "Network.from_edge_index() or infomap.run(edge_index).",
-            DeprecationWarning,
-            stacklevel=2,
-        )
         return self._add_edge_index_impl(
             edge_index,
             edge_weight=edge_weight,
@@ -1819,12 +1782,6 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         .. deprecated::
             Use :meth:`Network.from_igraph` or ``infomap.run(graph)``.
         """
-        warnings.warn(
-            "Infomap.add_igraph_graph() is deprecated; use "
-            "Network.from_igraph() or infomap.run(graph).",
-            DeprecationWarning,
-            stacklevel=2,
-        )
         return self._add_igraph_graph_impl(
             g,
             edge_weights=edge_weights,
@@ -2024,12 +1981,6 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         .. deprecated::
             Use ``infomap.run(input, options=options)`` instead.
         """
-        warnings.warn(
-            "Infomap.run_with_options() is deprecated; use "
-            "infomap.run(input, options=options) instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
         if not isinstance(options, Options):
             raise TypeError("options must be an Options instance")
         return self.run(
@@ -2060,12 +2011,6 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         .. deprecated::
             Use ``result = im.run(); result.codelength``.
         """
-        warnings.warn(
-            "Infomap.codelength is deprecated; run() returns a Result and you "
-            "should read it via result.codelength.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
         return self._core.codelength()
 
     @property
@@ -2084,12 +2029,6 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         .. deprecated::
             Use ``result = im.run(); result.codelengths``.
         """
-        warnings.warn(
-            "Infomap.codelengths is deprecated; run() returns a Result and you "
-            "should read it via result.codelengths.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
         return self._core.codelengths()
 
     @property
@@ -2104,12 +2043,6 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         .. deprecated::
             Use ``result = im.run(); result.elapsed_time``.
         """
-        warnings.warn(
-            "Infomap.elapsed_time is deprecated; run() returns a Result and "
-            "you should read it via result.elapsed_time.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
         return self._core.elapsedTime()
 
 
