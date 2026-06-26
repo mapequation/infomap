@@ -255,15 +255,15 @@ class Network:
         Result
             An immutable snapshot of the run, bound to this ``Network``.
         """
-        from ._options import InfomapOptions, _construct_args
+        from ._options import Options, _construct_args
         from .result import build_result
 
         if settings is None:
-            options = InfomapOptions()
-        elif isinstance(settings, InfomapOptions):
+            options = Options()
+        elif isinstance(settings, Options):
             options = settings
         else:
-            options = InfomapOptions.from_mapping(dict(settings))
+            options = Options.from_mapping(dict(settings))
 
         rendered_args = _construct_args(args, **options.to_kwargs())
         self._core.run(rendered_args)

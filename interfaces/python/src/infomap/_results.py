@@ -630,7 +630,8 @@ class _InfomapResultsMixin:
     ) -> Any:
         """Get a Pandas DataFrame with the selected columns.
 
-        Deprecated. Use :meth:`to_dataframe` for dataframe exports.
+        .. deprecated::
+            Use ``result = im.run(); result.to_dataframe(...)``.
 
         Examples
         --------

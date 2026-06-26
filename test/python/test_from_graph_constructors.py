@@ -29,7 +29,7 @@ def test_add_scipy_sparse_matrix_sets_node_id_to_label():
     A = sparse.csr_matrix(np.array([[0, 1, 0], [1, 0, 1], [0, 1, 0]]))
     im = Infomap(silent=True, no_file_output=True)
     mapping = im.add_scipy_sparse_matrix(A)
-    assert mapping  # non-empty {internal_id: external_id}
+    assert mapping == {0: 0, 1: 1, 2: 2}  # {internal_id: external_id}
     assert im.node_id_to_label == mapping
 
 
@@ -37,5 +37,5 @@ def test_add_scipy_sparse_matrix_sets_node_id_to_label():
 def test_add_edge_index_sets_node_id_to_label():
     im = Infomap(silent=True, no_file_output=True)
     mapping = im.add_edge_index([[0, 1, 2], [1, 2, 0]])
-    assert mapping
+    assert mapping == {0: 0, 1: 1, 2: 2}
     assert im.node_id_to_label == mapping

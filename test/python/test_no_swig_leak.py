@@ -25,20 +25,30 @@ from infomap import Infomap
 
 PACKAGE_DIR = Path(infomap.__file__).parent
 
-# Only these modules are allowed to import the SWIG layer.
-_ALLOWED_ENGINE_IMPORTERS = {"_core.py", "_bindings.py"}
-# Module names that constitute the SWIG boundary.
-_ENGINE_MODULES = {"_swig", "_bindings"}
+# Only these modules are allowed to touch the SWIG layer. ``_swig.py`` is the
+# generated SWIG module itself (it imports the ``_infomap`` C extension); the
+# hand-written boundary is ``_core.py`` -> ``_bindings.py`` -> ``_swig.py``.
+_ALLOWED_ENGINE_IMPORTERS = {"_core.py", "_bindings.py", "_swig.py"}
+# Module names that constitute the SWIG boundary, including the raw C extension.
+_ENGINE_MODULES = {"_swig", "_bindings", "_infomap"}
+
+
+def _names_an_engine_module(value: str) -> bool:
+    return any(part in _ENGINE_MODULES for part in value.split("."))
 
 
 def _imports_engine_module(source: str) -> bool:
-    """True if the module imports ``_swig`` or ``_bindings`` (the SWIG layer)."""
+    """True if the module reaches the SWIG layer by any import mechanism.
+
+    Covers static ``import``/``from`` forms plus dynamic
+    ``importlib.import_module("infomap._swig")`` and ``__import__("...")`` calls
+    with a string-literal module name.
+    """
     tree = ast.parse(source)
     for node in ast.walk(tree):
         if isinstance(node, ast.ImportFrom):
             # ``from ._swig import X`` / ``from infomap._bindings import X``
-            mod = (node.module or "").split(".")
-            if any(part in _ENGINE_MODULES for part in mod):
+            if _names_an_engine_module(node.module or ""):
                 return True
             # ``from . import _swig`` / ``from . import _bindings``
             for alias in node.names:
@@ -47,7 +57,25 @@ def _imports_engine_module(source: str) -> bool:
         elif isinstance(node, ast.Import):
             # ``import infomap._swig`` etc.
             for alias in node.names:
-                if any(part in _ENGINE_MODULES for part in alias.name.split(".")):
+                if _names_an_engine_module(alias.name):
+                    return True
+        elif isinstance(node, ast.Call):
+            # ``importlib.import_module("infomap._swig")`` / ``__import__("...")``
+            func = node.func
+            func_name = (
+                func.attr
+                if isinstance(func, ast.Attribute)
+                else func.id
+                if isinstance(func, ast.Name)
+                else ""
+            )
+            if func_name in {"import_module", "__import__"} and node.args:
+                first = node.args[0]
+                if (
+                    isinstance(first, ast.Constant)
+                    and isinstance(first.value, str)
+                    and _names_an_engine_module(first.value)
+                ):
                     return True
     return False
 

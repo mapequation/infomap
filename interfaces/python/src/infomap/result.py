@@ -41,6 +41,7 @@ _SNAPSHOT_COLUMNS = (
     "depth",
     "layer_id",
     "child_index",
+    "modular_centrality",
     "path",
 )
 
@@ -79,6 +80,7 @@ class TreeNode:
         "depth",
         "layer_id",
         "child_index",
+        "modular_centrality",
         "path",
         "name",
     )
@@ -93,6 +95,7 @@ class TreeNode:
         depth: int,
         layer_id: int,
         child_index: int,
+        modular_centrality: float,
         path: tuple,
         name: Any,
     ) -> None:
@@ -103,6 +106,7 @@ class TreeNode:
         object.__setattr__(self, "depth", depth)
         object.__setattr__(self, "layer_id", layer_id)
         object.__setattr__(self, "child_index", child_index)
+        object.__setattr__(self, "modular_centrality", modular_centrality)
         object.__setattr__(self, "path", path)
         object.__setattr__(self, "name", name)
 
@@ -127,6 +131,7 @@ class _Snapshot:
         "depth",
         "layer_id",
         "child_index",
+        "modular_centrality",
         "path",
     )
 
@@ -138,6 +143,7 @@ class _Snapshot:
         self.depth = list(node_data.depth)
         self.layer_id = list(node_data.layer_id)
         self.child_index = list(node_data.child_index)
+        self.modular_centrality = list(node_data.modular_centrality)
         # Rebuild ragged path tuples from CSR (flat values + per-node lengths).
         path_flat = list(node_data.path_flat)
         path_len = list(node_data.path_len)
@@ -291,8 +297,7 @@ class Result:
             [
                 module.flow
                 for module in cls._tree_iterator(core, depth, False)
-                if depth == -1
-                and module.is_leaf_module
+                if (depth == -1 and module.is_leaf_module)
                 or module.depth == depth
             ]
         )
@@ -476,6 +481,7 @@ class Result:
                 depth=snapshot.depth[i],
                 layer_id=snapshot.layer_id[i],
                 child_index=snapshot.child_index[i],
+                modular_centrality=snapshot.modular_centrality[i],
                 path=snapshot.path[i],
                 name=names.get(node_id, node_id),
             )

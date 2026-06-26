@@ -48,6 +48,7 @@ struct NodeData {
   std::vector<unsigned int> depth;
   std::vector<unsigned int> layer_id;
   std::vector<unsigned int> child_index;
+  std::vector<double> modular_centrality;
   std::vector<unsigned int> path_flat; // CSR values: all path entries concatenated
   std::vector<unsigned int> path_len; // CSR lengths: per-node path length
 };
@@ -199,6 +200,7 @@ private:
       d.depth.push_back(it.depth());
       d.layer_id.push_back(node.layerId);
       d.child_index.push_back(it.childIndex());
+      d.modular_centrality.push_back(it.modularCentrality());
       const auto& p = it.path();
       d.path_len.push_back(static_cast<unsigned int>(p.size()));
       d.path_flat.insert(d.path_flat.end(), p.begin(), p.end());

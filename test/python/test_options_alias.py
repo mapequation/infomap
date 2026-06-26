@@ -43,4 +43,8 @@ def test_options_roundtrips_through_facade():
     im = infomap.Infomap.from_options(o, args=None)
     im.add_link(1, 2)
     result = im.run_with_options(o)
-    assert result is not None
+    assert isinstance(result.codelength, float)
+    assert result.num_top_modules >= 1
+    modules = result.modules()
+    assert set(modules) == {1, 2}  # both nodes partitioned
+    assert len(set(modules.values())) == 1  # one link -> one shared module

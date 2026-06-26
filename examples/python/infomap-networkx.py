@@ -112,7 +112,7 @@ G.add_node(32, node_id=3, layer_id=2)
 G.add_edge(11, 21)
 G.add_edge(22, 32)
 # Pass multilayer_inter_intra_format=False for full multilayer format via a Network
-result = run(G, silent=False)
+result = run(G, silent=True)
 print("#node_id module_id flow state_id layer_id")
 for node in result.nodes(states=True):
     print(

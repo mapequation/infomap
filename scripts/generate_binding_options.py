@@ -108,11 +108,13 @@ def _facade_params(catalog: ParameterCatalog):
     for facade_name, info in _FACADE_ONLY_PARAMS.items():
         index[facade_name] = info
 
+    catalog_names = set()
     for group in GROUPS:
         if group == "Input":
             names.append("include_self_links")
         for param in catalog.grouped()[group]:
             name = param.name("python")
+            catalog_names.add(name)
             index[name] = {
                 "type": param.python_type(),
                 "default": param.python_default_expr(),
@@ -122,6 +124,14 @@ def _facade_params(catalog: ParameterCatalog):
             names.append(name)
             for facade_name in after.get(name, ()):
                 names.append(facade_name)
+    # A facade-only param is spliced in after its anchor catalog param; if the
+    # anchor were renamed/removed the param would be silently dropped. Fail loud.
+    missing_anchors = set(after) - catalog_names
+    if missing_anchors:
+        raise ValueError(
+            "facade-only param anchor(s) not present in the catalog -- the "
+            f"param(s) would be silently dropped: {sorted(missing_anchors)}"
+        )
     return names, index
 
 
@@ -729,13 +739,17 @@ def outputs(infomap_bin: Path):
 
 
 def write_outputs(generated, facade_block, output_root: Path) -> None:
+    # newline="\n": emit LF on every platform so regenerating on Windows can't
+    # introduce CRLF diffs against the committed (LF) outputs.
     for rel_path, text in generated.items():
         path = output_root / rel_path
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(text, encoding="utf-8")
+        path.write_text(text, encoding="utf-8", newline="\n")
     facade_path = output_root / FACADE_OUT
     facade_path.write_text(
-        _splice_marker_block(facade_path, facade_block), encoding="utf-8"
+        _splice_marker_block(facade_path, facade_block),
+        encoding="utf-8",
+        newline="\n",
     )
 
 

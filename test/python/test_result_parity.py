@@ -72,6 +72,8 @@ _DATAFRAME_VARIANTS = [
     {"columns": ["node_id", "community", "flow"]},
     {"columns": ["path", "flow", "name", "node_id"]},
     {"columns": ["node_id", "state_id", "depth", "layer_id", "child_index", "flow"]},
+    {"columns": ["node_id", "module_id", "modular_centrality"]},
+    {"columns": ["modular_centrality"], "states": True},
     {
         "columns": ["node_id", "community", "flow"],
         "index": "node_id",

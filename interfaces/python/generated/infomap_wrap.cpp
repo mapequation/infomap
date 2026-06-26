@@ -55895,6 +55895,60 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_NodeData_modular_centrality_set(PyObject *self, PyObject *args) {
+  PyObject *resultobj = 0;
+  infomap::NodeData *arg1 = 0 ;
+  std::vector< double,std::allocator< double > > *arg2 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  void *argp2 = 0 ;
+  int res2 = 0 ;
+  PyObject *swig_obj[2] ;
+  
+  (void)self;
+  if (!SWIG_Python_UnpackTuple(args, "NodeData_modular_centrality_set", 2, 2, swig_obj)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__NodeData, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "NodeData_modular_centrality_set" "', argument " "1"" of type '" "infomap::NodeData *""'"); 
+  }
+  arg1 = reinterpret_cast< infomap::NodeData * >(argp1);
+  res2 = SWIG_ConvertPtr(swig_obj[1], &argp2,SWIGTYPE_p_std__vectorT_double_t, 0 |  0 );
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "NodeData_modular_centrality_set" "', argument " "2"" of type '" "std::vector< double,std::allocator< double > > *""'"); 
+  }
+  arg2 = reinterpret_cast< std::vector< double,std::allocator< double > > * >(argp2);
+  if (arg1) (arg1)->modular_centrality = *arg2;
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_NodeData_modular_centrality_get(PyObject *self, PyObject *args) {
+  PyObject *resultobj = 0;
+  infomap::NodeData *arg1 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  std::vector< double,std::allocator< double > > *result = 0 ;
+  
+  (void)self;
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__NodeData, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "NodeData_modular_centrality_get" "', argument " "1"" of type '" "infomap::NodeData *""'"); 
+  }
+  arg1 = reinterpret_cast< infomap::NodeData * >(argp1);
+  result = (std::vector< double,std::allocator< double > > *)& ((arg1)->modular_centrality);
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_std__vectorT_double_t, 0 |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_NodeData_path_flat_set(PyObject *self, PyObject *args) {
   PyObject *resultobj = 0;
   infomap::NodeData *arg1 = 0 ;
@@ -60309,6 +60363,8 @@ static PyMethodDef SwigMethods[] = {
 	 { "NodeData_layer_id_get", _wrap_NodeData_layer_id_get, METH_O, NULL},
 	 { "NodeData_child_index_set", _wrap_NodeData_child_index_set, METH_VARARGS, NULL},
 	 { "NodeData_child_index_get", _wrap_NodeData_child_index_get, METH_O, NULL},
+	 { "NodeData_modular_centrality_set", _wrap_NodeData_modular_centrality_set, METH_VARARGS, NULL},
+	 { "NodeData_modular_centrality_get", _wrap_NodeData_modular_centrality_get, METH_O, NULL},
 	 { "NodeData_path_flat_set", _wrap_NodeData_path_flat_set, METH_VARARGS, NULL},
 	 { "NodeData_path_flat_get", _wrap_NodeData_path_flat_get, METH_O, NULL},
 	 { "NodeData_path_len_set", _wrap_NodeData_path_len_set, METH_VARARGS, NULL},

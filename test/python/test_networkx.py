@@ -194,3 +194,33 @@ def test_find_communities_partitions_multilayer_network_nodes():
     communities = infomap.find_communities(graph, seed=123, num_trials=1)
 
     assert _flatten(communities) == set(graph.nodes)
+
+
+# -- error / edge paths (parity with test_scipy.py / test_igraph.py) -----------
+
+
+def test_add_networkx_graph_empty_returns_empty_mapping():
+    im = infomap.Infomap(silent=True, no_file_output=True)
+    assert im.add_networkx_graph(nx.Graph()) == {}
+
+
+def test_find_communities_empty_graph_returns_empty_list():
+    assert infomap.find_communities(nx.Graph()) == []
+
+
+def test_add_networkx_multilayer_diagonal_link_raises():
+    # In the default intra/inter format a link that changes BOTH layer and
+    # physical node is a "diagonal" link the format cannot express.
+    graph = nx.Graph()
+    graph.add_node("a-layer-1", node_id=1, layer_id=1)
+    graph.add_node("b-layer-2", node_id=2, layer_id=2)
+    graph.add_edge("a-layer-1", "b-layer-2")
+
+    im = infomap.Infomap(silent=True, no_file_output=True)
+    with pytest.raises(RuntimeError, match="diagonal"):
+        im.add_networkx_graph(graph)
+
+    # The documented workaround (full multilayer format) accepts the same graph.
+    im_full = infomap.Infomap(silent=True, no_file_output=True)
+    mapping = im_full.add_networkx_graph(graph, multilayer_inter_intra_format=False)
+    assert set(mapping.values()) == set(graph.nodes)

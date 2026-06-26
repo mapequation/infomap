@@ -101,11 +101,25 @@ def _node_ids(values):
                 )
         return ids, {_node_id: str(_node_id) for _node_id in dict.fromkeys(ids)}
 
-    label_to_id = {}
+    # Non-numeric (or mixed) labels: key by identity-as-written. Dict equality
+    # would otherwise merge textually distinct but ``==``-equal keys (e.g. 1 and
+    # 1.0, or 1 and True) into one physical node. Apply the same guard as the
+    # all-integer branch above: collapse genuine duplicates, but reject a
+    # repr-distinct collision instead of silently merging two vertices.
+    label_to_id: dict[Any, int] = {}
+    canonical: dict[Any, Any] = {}
     ids = []
     for label in values:
-        if label not in label_to_id:
+        if label in label_to_id:
+            seen = canonical[label]
+            if repr(seen) != repr(label):
+                raise ValueError(
+                    f"`node_id` labels {seen!r} and {label!r} are distinct but "
+                    f"collide as the same key. Use distinct node ids."
+                )
+        else:
             label_to_id[label] = len(label_to_id)
+            canonical[label] = label
         ids.append(label_to_id[label])
     names = {_node_id: str(label) for label, _node_id in label_to_id.items()}
     return ids, names

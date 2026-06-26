@@ -3041,6 +3041,7 @@ class NodeData(object):
     depth = property(_infomap.NodeData_depth_get, _infomap.NodeData_depth_set)
     layer_id = property(_infomap.NodeData_layer_id_get, _infomap.NodeData_layer_id_set)
     child_index = property(_infomap.NodeData_child_index_get, _infomap.NodeData_child_index_set)
+    modular_centrality = property(_infomap.NodeData_modular_centrality_get, _infomap.NodeData_modular_centrality_set)
     path_flat = property(_infomap.NodeData_path_flat_get, _infomap.NodeData_path_flat_set)
     path_len = property(_infomap.NodeData_path_len_get, _infomap.NodeData_path_len_set)
 
