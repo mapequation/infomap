@@ -12,7 +12,7 @@ from ._network_input import flat_multilayer_unpacker as _flat_multilayer_unpacke
 from ._network_input import paired_multilayer_unpacker as _paired_multilayer_unpacker
 from ._options import (
     InfomapOptions,
-    Settings,
+    Options,
     _construct_args,
 )
 from ._results import _InfomapResultsMixin
@@ -50,8 +50,8 @@ __all__ = [
     "InfomapOptions",
     "MultilayerNode",
     "Network",
+    "Options",
     "Result",
-    "Settings",
     "build_info",
     "entropy",
     "find_communities",
@@ -216,7 +216,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         """Create a new Infomap instance.
 
         Keyword arguments mirror the Infomap CLI flags. Use
-        :class:`Settings` (alias :class:`InfomapOptions`) for a reusable
+        :class:`Options` (alias :class:`InfomapOptions`) for a reusable
         configuration object and the full parameter reference.
 
         Parameters
@@ -434,7 +434,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         max_degree_for_random_moves : int, optional
             Try random moves only for nodes with degree at most this value.
         """
-        options = InfomapOptions.from_mapping(locals())
+        options = Options.from_mapping(locals())
         self._init_from_options(args, options)
 
     def run(
@@ -519,8 +519,8 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         """Run Infomap.
 
         Keyword arguments mirror the Infomap CLI flags. Use
-        :class:`Settings` for the full parameter reference and
-        :meth:`run_with_options` when reusing a saved configuration.
+        :class:`Options` for the full parameter reference and
+        :func:`infomap.run` with ``options=`` when reusing a saved configuration.
 
         Parameters
         ----------
@@ -743,7 +743,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         --------
         initial_partition
         """
-        options = InfomapOptions.from_mapping(locals())
+        options = Options.from_mapping(locals())
         return self._run_from_options(args, initial_partition, options)
     # === END generated ===
 
@@ -765,20 +765,20 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
 
     @classmethod
     def from_options(cls, options, args=None):
-        """Create an :class:`Infomap` instance from :class:`Settings`.
+        """Create an :class:`Infomap` instance from :class:`Options`.
 
         .. deprecated::
-            Pass settings to :func:`infomap.run` or :meth:`Infomap.run`
-            instead, e.g. ``infomap.run(graph, settings=settings)``.
+            Pass options to :func:`infomap.run` or :meth:`Infomap.run`
+            instead, e.g. ``infomap.run(graph, options=options)``.
         """
         warnings.warn(
-            "Infomap.from_options() is deprecated; pass a Settings instance "
-            "to infomap.run(..., settings=settings) or Infomap.run() instead.",
+            "Infomap.from_options() is deprecated; pass an Options instance "
+            "to infomap.run(input, options=options) or Infomap.run() instead.",
             DeprecationWarning,
             stacklevel=2,
         )
-        if not isinstance(options, InfomapOptions):
-            raise TypeError("options must be a Settings instance")
+        if not isinstance(options, Options):
+            raise TypeError("options must be an Options instance")
         return cls(args=args, **options.to_kwargs())
 
     @classmethod
@@ -2019,19 +2019,19 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         return self._result
 
     def run_with_options(self, options, *, args=None, initial_partition=None):
-        """Run Infomap using a reusable :class:`Settings` instance.
+        """Run Infomap using a reusable :class:`Options` instance.
 
         .. deprecated::
-            Use ``infomap.run(input, settings=settings)`` instead.
+            Use ``infomap.run(input, options=options)`` instead.
         """
         warnings.warn(
             "Infomap.run_with_options() is deprecated; use "
-            "infomap.run(input, settings=settings) instead.",
+            "infomap.run(input, options=options) instead.",
             DeprecationWarning,
             stacklevel=2,
         )
-        if not isinstance(options, InfomapOptions):
-            raise TypeError("options must be a Settings instance")
+        if not isinstance(options, Options):
+            raise TypeError("options must be an Options instance")
         return self.run(
             args=args,
             initial_partition=initial_partition,

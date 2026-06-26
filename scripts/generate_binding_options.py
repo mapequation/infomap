@@ -176,14 +176,14 @@ def generate_python(catalog: ParameterCatalog) -> str:
             "",
             "",
             "@dataclass(frozen=True, slots=True)",
-            "class InfomapOptions:",
+            "class Options:",
             '    """Reusable Infomap keyword options.',
             "",
             "    This class mirrors the keyword arguments accepted by :class:`infomap.Infomap`",
             "    and :meth:`infomap.Infomap.run`. Use :meth:`to_args` to render command-line",
             "    flags, :meth:`from_mapping` to construct options from existing keyword",
-            "    dicts, or the convenience methods :meth:`infomap.Infomap.from_options` and",
-            "    :meth:`infomap.Infomap.run_with_options` to apply a reusable configuration.",
+            "    dicts, or pass an instance to :func:`infomap.run` via",
+            "    ``infomap.run(input, options=options)`` to apply a reusable configuration.",
             "",
             "    Parameters",
             "    ----------",
@@ -260,11 +260,11 @@ def generate_python(catalog: ParameterCatalog) -> str:
             "        return _join_args(base_args, rendered_args)",
             "",
             "",
-            "_OPTION_FIELD_NAMES = tuple(field.name for field in fields(InfomapOptions))",
+            "_OPTION_FIELD_NAMES = tuple(field.name for field in fields(Options))",
             "",
             "",
-            "# Settings is the canonical public name; InfomapOptions stays as a back-compat alias.",
-            "Settings = InfomapOptions",
+            "# Options is the canonical public name; InfomapOptions stays as a back-compat alias.",
+            "InfomapOptions = Options",
             "",
             "",
             "def _construct_args(",
@@ -280,7 +280,7 @@ def generate_python(catalog: ParameterCatalog) -> str:
     lines.extend(
         [
             "):",
-            "    return InfomapOptions.from_mapping(locals()).to_args(base_args=args)",
+            "    return Options.from_mapping(locals()).to_args(base_args=args)",
             "",
         ]
     )
@@ -642,7 +642,7 @@ def generate_facade(catalog: ParameterCatalog) -> str:
     lines.append("")
     lines.append("        Keyword arguments mirror the Infomap CLI flags. Use")
     lines.append(
-        "        :class:`Settings` (alias :class:`InfomapOptions`) for a reusable"
+        "        :class:`Options` (alias :class:`InfomapOptions`) for a reusable"
     )
     lines.append("        configuration object and the full parameter reference.")
     lines.append("")
@@ -657,7 +657,7 @@ def generate_facade(catalog: ParameterCatalog) -> str:
     )
     lines.extend(_render_facade_docstring_params(names, index))
     lines.append('        """')
-    lines.append("        options = InfomapOptions.from_mapping(locals())")
+    lines.append("        options = Options.from_mapping(locals())")
     lines.append("        self._init_from_options(args, options)")
     lines.append("")
     # ---- run ----
@@ -670,9 +670,9 @@ def generate_facade(catalog: ParameterCatalog) -> str:
     lines.append('        """Run Infomap.')
     lines.append("")
     lines.append("        Keyword arguments mirror the Infomap CLI flags. Use")
-    lines.append("        :class:`Settings` for the full parameter reference and")
+    lines.append("        :class:`Options` for the full parameter reference and")
     lines.append(
-        "        :meth:`run_with_options` when reusing a saved configuration."
+        "        :func:`infomap.run` with ``options=`` when reusing a saved configuration."
     )
     lines.append("")
     lines.append("        Parameters")
@@ -697,7 +697,7 @@ def generate_facade(catalog: ParameterCatalog) -> str:
     lines.append("        --------")
     lines.append("        initial_partition")
     lines.append('        """')
-    lines.append("        options = InfomapOptions.from_mapping(locals())")
+    lines.append("        options = Options.from_mapping(locals())")
     lines.append(
         "        return self._run_from_options(args, initial_partition, options)"
     )

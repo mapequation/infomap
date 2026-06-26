@@ -113,20 +113,20 @@ def test_from_graph_classmethod_warns():
 
 @pytest.mark.fast
 def test_run_with_options_warns_and_matches():
-    from infomap import Settings
+    from infomap import Options
 
     im = _two_triangles()
     with pytest.warns(DeprecationWarning):
-        result = im.run_with_options(Settings(num_trials=2))
-    # Equivalent to running with the same settings via the canonical path.
+        result = im.run_with_options(Options(num_trials=2))
+    # Equivalent to running with the same options via the canonical path.
     assert result.codelength == im._result.codelength
 
 
 @pytest.mark.fast
 def test_from_options_warns():
-    from infomap import Settings
+    from infomap import Options
 
     with pytest.warns(DeprecationWarning):
-        im = Infomap.from_options(Settings(num_trials=2), args=None)
+        im = Infomap.from_options(Options(num_trials=2), args=None)
     im.add_link(1, 2)
     assert im.run().num_top_modules >= 1

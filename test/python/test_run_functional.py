@@ -70,10 +70,10 @@ def test_run_network_matches_oo():
     assert result.codelength == pytest.approx(expected)
 
 
-def test_run_settings_object_and_overrides():
-    settings = infomap.Settings(silent=True, num_trials=5, seed=999)
+def test_run_options_object_and_overrides():
+    options = infomap.Options(silent=True, num_trials=5, seed=999)
     # Override seed back to the canonical value; overrides must win.
-    result = infomap.run(_LINKS, settings=settings, seed=123)
+    result = infomap.run(_LINKS, options=options, seed=123)
     expected = _oo_codelength(lambda im: im.add_links(_LINKS), **_SETTINGS)
     assert result.codelength == pytest.approx(expected)
 

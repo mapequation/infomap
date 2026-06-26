@@ -7,14 +7,14 @@ returns an immutable :class:`infomap.result.Result`.
 Dispatch by input type:
 
 - :class:`infomap.Network` -> run the already-built network in place (the
-  ``Network`` owns its ``Core``; we render the settings, drive the engine, and
+  ``Network`` owns its ``Core``; we render the options, drive the engine, and
   stamp a ``Result`` bound to the ``Network``).
 - ``networkx.Graph`` / ``igraph.Graph`` / SciPy sparse matrix / a ``(2, E)``
   edge index (ndarray or tensor) / a ``str``/``Path`` network file / an iterable
   of ``(u, v[, w])`` links -> build an :class:`infomap.Infomap`, load via the
   matching adapter, then ``im.run()``.
 
-The settings are passed positionally as ``settings`` (a :class:`Settings`
+The options are passed as the keyword ``options`` (an :class:`Options`
 instance or mapping) and/or as keyword ``**overrides``; overrides win.
 """
 
@@ -25,18 +25,18 @@ from pathlib import Path
 from typing import Any
 
 
-def _resolve_settings(settings: Any, overrides: dict) -> dict:
-    """Merge a ``Settings``/mapping with keyword overrides into a kwargs dict."""
-    if settings is None:
+def _resolve_options(options: Any, overrides: dict) -> dict:
+    """Merge an ``Options``/mapping with keyword overrides into a kwargs dict."""
+    if options is None:
         resolved: dict = {}
-    elif isinstance(settings, Mapping):
-        resolved = dict(settings)
+    elif isinstance(options, Mapping):
+        resolved = dict(options)
     else:
-        # Settings / InfomapOptions instance.
-        to_kwargs = getattr(settings, "to_kwargs", None)
+        # Options / InfomapOptions instance.
+        to_kwargs = getattr(options, "to_kwargs", None)
         if not callable(to_kwargs):
             raise TypeError(
-                "settings must be a Settings/InfomapOptions instance, a mapping, "
+                "options must be an Options/InfomapOptions instance, a mapping, "
                 "or None"
             )
         resolved = to_kwargs()
@@ -86,7 +86,7 @@ def _is_edge_index(obj: Any) -> bool:
 def run(
     input: Any,
     *,
-    settings: Any = None,
+    options: Any = None,
     initial_partition: Any = None,
     **overrides: Any,
 ):
@@ -98,13 +98,13 @@ def run(
             (2, E) array/tensor, str or Path, or iterable of links
         The network to partition. See the module docstring for the dispatch
         table.
-    settings : Settings, InfomapOptions, mapping, or None, optional
+    options : Options, InfomapOptions, mapping, or None, optional
         Base configuration. Keyword ``overrides`` take precedence.
     initial_partition : mapping, optional
         Initial module assignment for this run only.
     **overrides
-        Individual Infomap settings (CLI-flag keyword arguments) that override
-        ``settings``.
+        Individual Infomap options (CLI-flag keyword arguments) that override
+        ``options``.
 
     Returns
     -------
@@ -136,7 +136,7 @@ def run(
     from ._facade import Infomap
     from .network import Network
 
-    resolved = _resolve_settings(settings, overrides)
+    resolved = _resolve_options(options, overrides)
 
     # 1. An already-built Network: run it in place.
     if isinstance(input, Network):
