@@ -4,6 +4,8 @@ from collections.abc import Iterable, Sequence
 from numbers import Integral
 from typing import Any
 
+from ._arrays import undirected_edge_items
+
 
 def _as_numpy_array(value: Any, *, name: str):
     try:
@@ -100,47 +102,26 @@ def _validate_edge_weight(edge_weight: Any, num_edges: int):
 
 
 def _edge_items(edge_index: Any, weights: Any, *, directed: bool):
-    if directed:
-        if weights is None:
-            for source, target in zip(edge_index[0], edge_index[1], strict=True):
-                yield int(source), int(target), 1.0
-        else:
-            for source, target, weight in zip(
-                edge_index[0], edge_index[1], weights, strict=True
-            ):
-                yield int(source), int(target), float(weight)
-        return
-
-    edges: dict[tuple[int, int], float] = {}
-    # Normalise both branches to fixed (source, target, weight) 3-tuples so the
-    # unpacking below has a single, well-typed shape.
-    triples: Iterable[tuple[Any, Any, float]]
+    # Normalise both weighted/unweighted shapes to fixed (source, target, weight)
+    # integer-coerced triples so the directed and undirected paths share one form.
+    triples: Iterable[tuple[int, int, float]]
     if weights is None:
         triples = (
-            (source, target, 1.0)
+            (int(source), int(target), 1.0)
             for source, target in zip(edge_index[0], edge_index[1], strict=True)
         )
     else:
         triples = (
-            (source, target, float(weight))
+            (int(source), int(target), float(weight))
             for source, target, weight in zip(
                 edge_index[0], edge_index[1], weights, strict=True
             )
         )
 
-    for source, target, weight in triples:
-        source_id = int(source)
-        target_id = int(target)
-        edge = (
-            (source_id, target_id) if source_id <= target_id else (target_id, source_id)
-        )
-        if edge in edges:
-            edges[edge] = max(edges[edge], weight)
-        else:
-            edges[edge] = weight
-
-    for (source, target), weight in edges.items():
-        yield source, target, weight
+    if directed:
+        yield from triples
+        return
+    yield from undirected_edge_items(triples)
 
 
 def add_edge_index(

@@ -5,6 +5,8 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
+from ._arrays import require_modules as _require_modules
+
 
 _DEFAULT_MODULE_ATTRIBUTE = "infomap_module"
 _DEFAULT_PATH_ATTRIBUTE = "infomap_path"
@@ -30,13 +32,6 @@ def _import_igraph() -> Any:
             'Install it with `python -m pip install "infomap[igraph]"`.'
         ) from exc
     return ig
-
-
-def _require_modules(infomap: Any) -> None:
-    if not infomap._core.haveModules():
-        raise ValueError(
-            "Infomap results are not available. Run Infomap before exporting."
-        )
 
 
 def _string_attributes(

@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from ..io._arrays import require_modules as _require_modules
+
 __all__ = [
     "GraphRAGGraph",
     "GraphRAGRunResult",
@@ -273,8 +275,10 @@ def _output_paths(output):
 def _nodes_table(im, graph: GraphRAGGraph):
     result = im._result
     multilevel_modules = result.multilevel_modules()
+    # Only node_id/module_id/flow are read below; module_path is derived from
+    # multilevel_modules, not the dataframe "path"/"name" columns.
     nodes = result.to_dataframe(
-        columns=["node_id", "module_id", "flow", "path", "name"],
+        columns=["node_id", "module_id", "flow"],
         sort=True,
     )
     nodes["node_id"] = nodes["node_id"].map(int)
@@ -540,13 +544,6 @@ def _links_array(graph: GraphRAGGraph):
     if graph.weights is not None:
         columns.append(graph.weights)
     return np.column_stack(columns)
-
-
-def _require_modules(im):
-    if not im._core.haveModules():
-        raise ValueError(
-            "Infomap results are not available. Run Infomap before exporting."
-        )
 
 
 def _build_tables(im, graph: GraphRAGGraph):

@@ -3,6 +3,8 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Any
 
+from ._arrays import undirected_edge_items
+
 
 def _import_sparse() -> Any:
     try:
@@ -52,26 +54,16 @@ def _validate_weights(coo: Any) -> None:
 
 
 def _edge_items(coo: Any, *, directed: bool, weighted: bool):
+    triples = (
+        (int(source), int(target), float(value) if weighted else 1.0)
+        for source, target, value in zip(coo.row, coo.col, coo.data, strict=True)
+    )
     if directed:
-        for source, target, value in zip(coo.row, coo.col, coo.data, strict=True):
-            yield int(source), int(target), float(value) if weighted else 1.0
+        yield from triples
         return
-
-    edges: dict[tuple[int, int], float] = {}
-    for source, target, value in zip(coo.row, coo.col, coo.data, strict=True):
-        source_id = int(source)
-        target_id = int(target)
-        edge = (
-            (source_id, target_id) if source_id <= target_id else (target_id, source_id)
-        )
-        weight = float(value) if weighted else 1.0
-        if edge in edges:
-            edges[edge] = max(edges[edge], weight)
-        else:
-            edges[edge] = weight
-
-    for (source, target), weight in edges.items():
-        yield source, target, weight
+    # The coo matrix already had sum_duplicates() applied, so same-(i,j) weights
+    # are summed; undirected_edge_items then dedups across (i,j)/(j,i) keeping max.
+    yield from undirected_edge_items(triples)
 
 
 def add_scipy_sparse_matrix(

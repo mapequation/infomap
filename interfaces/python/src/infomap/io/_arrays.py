@@ -7,12 +7,22 @@ This module holds the pieces that more than one adapter needs, so the
   ``scipy`` and ``edge_index`` adapters.
 * :func:`community_node_data` -- the single, non-deprecated way the community
   helpers read leaf state nodes back out of a finished run.
+* :func:`require_modules` -- the shared "did Infomap actually run?" guard used by
+  the export and GraphRAG helpers before they read results.
 """
 
 from __future__ import annotations
 
 from collections.abc import Iterator
 from typing import Any, NamedTuple
+
+
+def require_modules(infomap: Any) -> None:
+    """Raise if ``infomap`` has no module assignments yet (i.e. has not run)."""
+    if not infomap._core.haveModules():
+        raise ValueError(
+            "Infomap results are not available. Run Infomap before exporting."
+        )
 
 
 def undirected_edge_items(
