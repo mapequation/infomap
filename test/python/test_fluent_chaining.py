@@ -51,7 +51,7 @@ def test_network_fluent_chain_builds_and_runs():
         .set_name(1, "a")
     )
     assert isinstance(net, Network)
-    result = net.run(settings={"silent": True, "no_file_output": True, "seed": 1})
+    result = net.run(options={"silent": True, "no_file_output": True, "seed": 1})
     assert result.num_top_modules >= 1
 
 

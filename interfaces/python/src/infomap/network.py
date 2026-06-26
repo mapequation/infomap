@@ -7,7 +7,7 @@ single-layer nodes/links, state nodes, names, the three multilayer link
 families, meta data, the bipartite start id, file reading, and node/link counts.
 
 :class:`infomap.Infomap` composes a :class:`Network` over its own
-settings-configured ``Core`` (shared instance) and delegates its building verbs
+options-configured ``Core`` (shared instance) and delegates its building verbs
 to it, so ``im.add_link(...)`` keeps working unchanged.
 
 Mutators return ``self`` for fluent chaining. Bulk inputs route straight to the
@@ -62,7 +62,7 @@ class Network:
     ...     .add_link(4, 6)
     ...     .add_link(5, 6)
     ... )
-    >>> result = net.run(settings={"silent": True})
+    >>> result = net.run(options={"silent": True})
     >>> result.num_top_modules
     2
     >>> for node_id, module_id in sorted(result.modules().items()):
@@ -86,7 +86,7 @@ class Network:
     core : infomap._core.Core, optional
         The engine boundary to build onto. If ``None``, a default silent,
         no-file-output ``Core`` is created and owned by this ``Network``. When
-        composed by :class:`infomap.Infomap`, the shared, settings-configured
+        composed by :class:`infomap.Infomap`, the shared, options-configured
         ``Core`` is passed in.
     """
 
@@ -240,15 +240,15 @@ class Network:
     # Run
     # ----------------------------------------
 
-    def run(self, *, settings=None, args=None):
+    def run(self, *, options=None, args=None):
         """Run Infomap on this network and return a :class:`Result`.
 
         Parameters
         ----------
-        settings : Options, mapping, or None, optional
+        options : Options, mapping, or None, optional
             Configuration rendered to Infomap CLI flags for this run.
         args : str, optional
-            Raw Infomap arguments prepended before the rendered settings.
+            Raw Infomap arguments prepended before the rendered options.
 
         Returns
         -------
@@ -258,14 +258,14 @@ class Network:
         from ._options import Options, _construct_args
         from .result import build_result
 
-        if settings is None:
-            options = Options()
-        elif isinstance(settings, Options):
-            options = settings
+        if options is None:
+            resolved = Options()
+        elif isinstance(options, Options):
+            resolved = options
         else:
-            options = Options.from_mapping(dict(settings))
+            resolved = Options.from_mapping(dict(options))
 
-        rendered_args = _construct_args(args, **options.to_kwargs())
+        rendered_args = _construct_args(args, **resolved.to_kwargs())
         self._core.run(rendered_args)
         return build_result(self)
 

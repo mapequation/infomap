@@ -1,7 +1,7 @@
 """Functional entry point: :func:`infomap.run`.
 
 ``run`` is the one-call front door to community detection. It accepts any
-supported network representation, runs Infomap with the given settings, and
+supported network representation, runs Infomap with the given options, and
 returns an immutable :class:`infomap.result.Result`.
 
 Dispatch by input type:
@@ -149,7 +149,7 @@ def run(
                 "initial_partition is not supported when running a Network; set "
                 "it on the Network's engine or use an Infomap instance instead."
             )
-        return input.run(settings=resolved)
+        return input.run(options=resolved)
 
     # 2. A network file path.
     if isinstance(input, (str, Path)):

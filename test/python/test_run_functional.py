@@ -81,7 +81,7 @@ def test_run_options_object_and_overrides():
 def test_network_run_matches_infomap_run():
     net = Network()
     net.add_links(_LINKS)
-    from_method = net.run(settings=_SETTINGS)
+    from_method = net.run(options=_SETTINGS)
 
     expected = _oo_codelength(lambda im: im.add_links(_LINKS), **_SETTINGS)
     assert from_method.codelength == pytest.approx(expected)
@@ -91,7 +91,7 @@ def test_network_from_networkx_parity():
     graph = nx.karate_club_graph()
 
     net = Network.from_networkx(graph)
-    net_result = net.run(settings=_SETTINGS)
+    net_result = net.run(options=_SETTINGS)
 
     expected = _oo_codelength(lambda im: im.add_networkx_graph(graph), **_SETTINGS)
     assert net_result.codelength == pytest.approx(expected)
@@ -103,7 +103,7 @@ def test_network_from_file_parity(example_network_path):
     settings = {"silent": True, "num_trials": 10, "seed": 123}
 
     net = Network.from_file(path)
-    result = net.run(settings=settings)
+    result = net.run(options=settings)
 
     expected = _oo_codelength(lambda im: im.read_file(str(path)), **settings)
     assert result.codelength == pytest.approx(expected)
@@ -132,14 +132,14 @@ def test_to_networkx_round_trip():
 def test_network_result_generation_guard_after_rerun():
     net = Network()
     net.add_links(_LINKS)
-    result = net.run(settings=_SETTINGS)
+    result = net.run(options=_SETTINGS)
 
     # Eager scalars stay valid; node-level access is fine before the re-run.
     assert result.codelength > 0
     assert len(list(result.nodes())) > 0
 
     codelength_before = result.codelength
-    net.run(settings={"silent": True, "seed": 1})
+    net.run(options={"silent": True, "seed": 1})
 
     # Eager scalars captured at run() time remain valid on the stale Result.
     assert result.codelength == codelength_before
@@ -195,7 +195,7 @@ def test_network_from_igraph_parity():
     graph = ig.Graph.Famous("Zachary")
 
     net = Network.from_igraph(graph)
-    net_result = net.run(settings=_SETTINGS)
+    net_result = net.run(options=_SETTINGS)
 
     expected = _oo_codelength(lambda im: im.add_igraph_graph(graph), **_SETTINGS)
     assert net_result.codelength == pytest.approx(expected)
