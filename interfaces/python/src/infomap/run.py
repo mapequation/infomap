@@ -87,6 +87,57 @@ def _is_edge_index(obj: Any) -> bool:
     return hasattr(obj, "dtype")
 
 
+# Adapter-only keyword arguments per input type. run() forwards keywords to the
+# *engine* (Infomap options); these instead configure how the *input* is read,
+# so they live on the matching Network.from_* constructor. Listing them lets
+# run() reject a misdirected keyword with a clear pointer -- instead of a bare
+# "unexpected keyword" TypeError, or (for `directed` on scipy/edge_index inputs)
+# silently building a different graph than the user asked for.
+_ADAPTER_KWARGS = {
+    "file": ("Network.from_file", frozenset({"accumulate"})),
+    "networkx": (
+        "Network.from_networkx",
+        frozenset({"weight", "node_id", "layer_id", "multilayer_inter_intra_format"}),
+    ),
+    "igraph": (
+        "Network.from_igraph",
+        frozenset(
+            {
+                "edge_weights",
+                "vertex_weights",
+                "node_id",
+                "layer_id",
+                "multilayer_inter_intra_format",
+            }
+        ),
+    ),
+    "scipy": (
+        "Network.from_scipy_sparse_matrix",
+        frozenset({"directed", "weighted", "node_ids"}),
+    ),
+    "edge_index": (
+        "Network.from_edge_index",
+        frozenset({"edge_weight", "num_nodes", "directed", "node_ids"}),
+    ),
+}
+
+
+def _reject_adapter_kwargs(kind: str, user_keys: set) -> None:
+    constructor, adapter_kwargs = _ADAPTER_KWARGS[kind]
+    misdirected = sorted(adapter_kwargs & user_keys)
+    if not misdirected:
+        return
+    names = ", ".join(repr(name) for name in misdirected)
+    raise TypeError(
+        f"infomap.run() forwards keyword arguments to the engine, but {names} "
+        f"configure how the {kind} input is read, not the engine. Build the "
+        f"network explicitly and run it, e.g. "
+        f"infomap.run({constructor}(..., {misdirected[0]}=...), num_trials=10). "
+        f"run() builds input with default settings; Network.from_* is the path "
+        f"for non-default input."
+    )
+
+
 def run(
     input: Any,
     *,
@@ -108,12 +159,28 @@ def run(
         Initial module assignment for this run only.
     **overrides
         Individual Infomap options (CLI-flag keyword arguments) that override
-        ``options``.
+        ``options``. These configure the *engine*, not how the input is read.
 
     Returns
     -------
     Result
         An immutable snapshot of the run.
+
+    Notes
+    -----
+    Keyword arguments go to the engine; the input adapters always build with
+    their defaults (e.g. networkx reads the ``"weight"`` edge attribute, a
+    SciPy matrix is treated as undirected). For non-default input building -- a
+    different weight attribute, explicit directedness, a state/multilayer
+    layout -- build the network first and run it::
+
+        infomap.run(Network.from_networkx(g, weight="capacity"), num_trials=10)
+        infomap.run(Network.from_scipy_sparse_matrix(A, directed=True))
+
+    Passing an adapter argument to ``run()`` directly (``run(g, weight=...)``,
+    ``run(A, directed=True)``) raises with a pointer to the matching
+    ``Network.from_*`` constructor, rather than silently ignoring it or building
+    a different graph.
 
     Examples
     --------
@@ -141,6 +208,13 @@ def run(
     from .network import Network
 
     resolved = _resolve_options(options, overrides)
+    # Keys the user actually supplied (kwargs + a mapping `options`), used to
+    # reject adapter-only arguments below. An Options *instance* is excluded on
+    # purpose: its to_kwargs() carries every field (e.g. directed=None) the user
+    # never set, which would false-positive the guard.
+    user_keys = set(overrides)
+    if isinstance(options, Mapping):
+        user_keys |= set(options)
 
     # 1. An already-built Network: run it in place.
     if isinstance(input, Network):
@@ -153,30 +227,35 @@ def run(
 
     # 2. A network file path.
     if isinstance(input, (str, Path)):
+        _reject_adapter_kwargs("file", user_keys)
         im = Infomap(**resolved)
         im.read_file(str(input))
         return im.run(initial_partition=initial_partition)
 
     # 3. A networkx graph.
     if _is_networkx_graph(input):
+        _reject_adapter_kwargs("networkx", user_keys)
         im = Infomap(**resolved)
         im._add_networkx_graph_impl(input)
         return im.run(initial_partition=initial_partition)
 
     # 4. An igraph graph.
     if _is_igraph_graph(input):
+        _reject_adapter_kwargs("igraph", user_keys)
         im = Infomap(**resolved)
         im._add_igraph_graph_impl(input)
         return im.run(initial_partition=initial_partition)
 
     # 5. A SciPy sparse adjacency matrix.
     if _is_scipy_sparse(input):
+        _reject_adapter_kwargs("scipy", user_keys)
         im = Infomap(**resolved)
         im._add_scipy_sparse_matrix_impl(input)
         return im.run(initial_partition=initial_partition)
 
     # 6. A (2, E) edge index (ndarray or tensor).
     if _is_edge_index(input):
+        _reject_adapter_kwargs("edge_index", user_keys)
         im = Infomap(**resolved)
         im._add_edge_index_impl(input)
         return im.run(initial_partition=initial_partition)

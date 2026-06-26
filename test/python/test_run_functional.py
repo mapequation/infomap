@@ -151,13 +151,15 @@ def test_network_result_generation_guard_after_rerun():
 def test_run_edge_index_matches_oo():
     np = pytest.importorskip("numpy")
     edge_index = np.array([[0, 1, 0, 2, 3, 3, 4], [1, 2, 2, 3, 4, 5, 5]])
-    settings = {"silent": True, "num_trials": 5, "seed": 123, "directed": False}
+    engine = {"silent": True, "num_trials": 5, "seed": 123}
 
-    result = infomap.run(edge_index, **settings)
+    # `directed` is an edge_index adapter argument, so it goes on the builder,
+    # not on run() (which would now reject it). This is the documented path.
+    result = infomap.run(Network.from_edge_index(edge_index, directed=False), **engine)
     assert isinstance(result, Result)
 
     expected = _oo_codelength(
-        lambda im: im.add_edge_index(edge_index, directed=False), **settings
+        lambda im: im.add_edge_index(edge_index, directed=False), **engine
     )
     assert result.codelength == pytest.approx(expected)
 
@@ -224,3 +226,48 @@ def test_run_network_rejects_initial_partition():
     net.add_links(_LINKS)
     with pytest.raises(TypeError):
         infomap.run(net, initial_partition={1: 0, 2: 0})
+
+
+# -- adapter-argument guard (run() configures the engine, not input building) --
+
+
+def test_run_rejects_networkx_adapter_kwarg():
+    graph = nx.Graph()
+    graph.add_edge("a", "b", capacity=5.0)
+    with pytest.raises(TypeError, match="Network.from_networkx"):
+        infomap.run(graph, weight="capacity", silent=True)
+
+
+def test_run_rejects_scipy_directed_kwarg():
+    sp = pytest.importorskip("scipy.sparse")
+    A = sp.csr_matrix([[0, 2], [3, 0]])
+    # `directed` is ambiguous (engine flow flag vs scipy adapter param); for a
+    # scipy input run() must reject it rather than silently folding the matrix.
+    with pytest.raises(TypeError, match="Network.from_scipy_sparse_matrix"):
+        infomap.run(A, directed=True, silent=True)
+
+
+def test_run_rejects_edge_index_adapter_kwarg():
+    import numpy as np
+
+    edge_index = np.array([[0, 1, 2], [1, 2, 0]])
+    with pytest.raises(TypeError, match="Network.from_edge_index"):
+        infomap.run(edge_index, edge_weight=[1.0, 1.0, 1.0], silent=True)
+
+
+def test_run_allows_directed_on_edge_list():
+    # `directed` is a legitimate engine flag for inputs with no `directed`
+    # adapter param (a plain edge list); it must NOT be rejected there.
+    result = infomap.run(_LINKS, directed=True, silent=True, num_trials=1, seed=1)
+    assert isinstance(result, Result)
+
+
+def test_run_options_instance_does_not_false_positive_guard():
+    # An Options instance expands to every field (directed=None included) via
+    # to_kwargs(); that must not trip the scipy `directed` guard.
+    sp = pytest.importorskip("scipy.sparse")
+    from infomap import Options
+
+    A = sp.csr_matrix([[0, 1], [1, 0]])
+    result = infomap.run(A, options=Options(silent=True, num_trials=1, seed=1))
+    assert isinstance(result, Result)
