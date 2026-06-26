@@ -3,6 +3,8 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
+from ._arrays import community_node_data
+
 
 def _label_to_internal_id(labels):
     if not labels:
@@ -26,7 +28,7 @@ def _stable_unique_labels(labels):
 def _communities_from_infomap(infomap, node_mapping):
     communities = {}
 
-    for node in infomap.nodes:
+    for node in community_node_data(infomap):
         original_node = node_mapping[node.state_id]
         communities.setdefault(node.module_id, set()).add(original_node)
 
@@ -39,7 +41,7 @@ def _set_networkx_node_attributes(
     if module_attribute is None and flow_attribute is None:
         return
 
-    for node in infomap.nodes:
+    for node in community_node_data(infomap):
         original_node = node_mapping[node.state_id]
         if module_attribute is not None:
             g.nodes[original_node][module_attribute] = node.module_id

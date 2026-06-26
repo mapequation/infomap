@@ -5,6 +5,8 @@ from collections.abc import Iterable
 from numbers import Integral, Real
 from typing import Any
 
+from ._arrays import community_node_data
+
 
 def _import_igraph() -> Any:
     try:
@@ -209,15 +211,27 @@ def add_igraph_graph(
     return {vertex_id: names[vertex_id] for vertex_id in vertices}
 
 
-def _membership_and_flows(infomap, g):
+def _membership_and_flows(infomap, g, node_mapping):
+    # Map results back through the ``node_mapping`` the adapter built rather than
+    # assuming the engine hands back exactly the dense ``state_id`` range
+    # ``[0, g.vcount())``. ``add_igraph_graph`` registers one state node per
+    # igraph vertex, using the vertex index as the state id, so the mapping's
+    # keys are precisely the state ids that correspond to a real vertex.
+    #
+    # Multilayer runs can mint *additional* leaf state nodes (inter-layer
+    # relaxation, matchable ids) whose state ids fall outside that range. The old
+    # path skipped them with a numeric ``state_id >= vcount`` bounds check and
+    # then raised "Could not align ..." if that left any real vertex unset.
+    # Selecting the registered vertices via ``node_mapping`` membership is robust
+    # to those extra ids and mirrors how the networkx helper maps results back.
     membership = [None] * g.vcount()
     flows = [None] * g.vcount()
     module_ids = {}
 
-    for node in infomap.nodes:
-        vertex_id = node.state_id
-        if vertex_id < 0 or vertex_id >= g.vcount():
+    for node in community_node_data(infomap):
+        if node.state_id not in node_mapping:
             continue
+        vertex_id = node.state_id
         if node.module_id not in module_ids:
             module_ids[node.module_id] = len(module_ids)
         membership[vertex_id] = module_ids[node.module_id]
@@ -261,7 +275,7 @@ def find_igraph_communities(
     options.update(infomap_options)
 
     infomap = Infomap(**options)
-    add_igraph_graph(
+    node_mapping = add_igraph_graph(
         infomap,
         g,
         edge_weights=edge_weights,
@@ -272,7 +286,7 @@ def find_igraph_communities(
     )
     infomap.run()
 
-    membership, flows = _membership_and_flows(infomap, g)
+    membership, flows = _membership_and_flows(infomap, g, node_mapping)
     if module_attribute is not None:
         g.vs[module_attribute] = membership
     if flow_attribute is not None:

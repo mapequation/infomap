@@ -69,11 +69,14 @@ def test_find_communities_sets_directed_for_digraph(monkeypatch):
         def __init__(self, **options):
             self.options = options
             self.directed = False
-            self.nodes = [
-                SimpleNamespace(state_id=0, module_id=1, flow=0.5),
-                SimpleNamespace(state_id=1, module_id=1, flow=0.5),
-            ]
             instances.append(self)
+
+        def get_node_data(self, level=1, states=False):
+            return SimpleNamespace(
+                state_id=[0, 1],
+                module_id=[1, 1],
+                flow=[0.5, 0.5],
+            )
 
         def setDirected(self, value):
             self.directed = value
@@ -110,11 +113,14 @@ def test_find_communities_accepts_initial_partition_with_original_labels(monkeyp
 
         def __init__(self, **options):
             self.options = options
-            self.nodes = [
-                SimpleNamespace(state_id=0, module_id=1, flow=0.5),
-                SimpleNamespace(state_id=1, module_id=2, flow=0.5),
-            ]
             instances.append(self)
+
+        def get_node_data(self, level=1, states=False):
+            return SimpleNamespace(
+                state_id=[0, 1],
+                module_id=[1, 2],
+                flow=[0.5, 0.5],
+            )
 
         def add_node(self, node_id, name=None):
             pass
