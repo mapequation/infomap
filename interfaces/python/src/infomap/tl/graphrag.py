@@ -269,8 +269,9 @@ def _output_paths(output):
 
 
 def _nodes_table(im, graph: GraphRAGGraph):
-    multilevel_modules = im.get_multilevel_modules()
-    nodes = im.to_dataframe(
+    result = im._result
+    multilevel_modules = result.multilevel_modules()
+    nodes = result.to_dataframe(
         columns=["node_id", "module_id", "flow", "path", "name"],
         sort=True,
     )

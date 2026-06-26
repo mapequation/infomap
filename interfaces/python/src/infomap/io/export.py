@@ -62,14 +62,16 @@ def _string_attributes(
 
 
 def _flow_by_state_id(infomap: Any) -> dict[int, float]:
-    return {node.state_id: node.flow for node in infomap.nodes}
+    # Read through the engine core, not the deprecated Infomap.nodes property.
+    node_data = infomap._core.get_node_data(1, True)
+    return dict(zip(list(node_data.state_id), list(node_data.flow)))
 
 
 def _mapped_assignments(
     infomap: Any,
     node_mapping: Mapping[Any, Any] | None,
 ) -> dict[Any, tuple[int, ...]]:
-    assignments = infomap.get_multilevel_modules(states=True)
+    assignments = infomap._core.getMultilevelModules(True)
     if node_mapping is None:
         return assignments
     return {
@@ -218,7 +220,7 @@ def _annotate_igraph_graph(
 
     output_graph = graph.copy() if copy else graph
     n_vertices = output_graph.vcount()
-    assignments = im.get_multilevel_modules(states=True)
+    assignments = im._core.getMultilevelModules(True)
     flows = _flow_by_state_id(im) if flow_attribute is not None else {}
     graph_nodes = set(range(n_vertices))
     matching_nodes = _validate_node_sets(

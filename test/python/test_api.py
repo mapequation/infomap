@@ -180,7 +180,7 @@ def test_to_dataframe_caches_names_for_name_column(
     im = make_infomap(num_trials=10)
     im.read_file(str(example_network_path("twotriangles.net")))
     im.run()
-    names = dict(im.names)
+    names = dict(im._get_names_impl())
     access_count = 0
 
     def fake_names(self):
@@ -188,9 +188,11 @@ def test_to_dataframe_caches_names_for_name_column(
         access_count += 1
         return names
 
-    monkeypatch.setattr(type(im), "names", property(fake_names))
+    # to_dataframe reads names through the internal, non-deprecated helper.
+    monkeypatch.setattr(type(im), "_get_names_impl", fake_names)
 
-    dataframe = im.to_dataframe(columns=["node_id", "name"])
+    with pytest.deprecated_call():
+        dataframe = im.to_dataframe(columns=["node_id", "name"])
 
     assert access_count == 1
     assert set(dataframe["name"]) == {"A", "B", "C", "D", "E", "F"}
@@ -454,10 +456,13 @@ def test_top_module_flow_bars_caps_tail_as_other(monkeypatch):
             self.flow = flow
             self.depth = 1
 
-    class FakeInfomap:
-        def get_tree(self, depth_level=1):
-            assert depth_level == 1
+    class FakeResult:
+        def tree(self, depth=1):
+            assert depth == 1
             return [FakeModule(module_id, 1.0) for module_id in range(1, 21)]
+
+    class FakeInfomap:
+        _result = FakeResult()
 
     monkeypatch.setattr(summary_module, "_REPR_MAX_FLOW_FRACTION", 0.5)
     monkeypatch.setattr(summary_module, "_REPR_MAX_MODULES", 4)

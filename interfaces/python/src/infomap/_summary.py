@@ -26,6 +26,9 @@ _REPR_OTHER_COLOR = "#8f9499"
 
 
 def summary_data(im):
+    # Read state via the engine core / Result snapshot, never the deprecated
+    # public Infomap accessors, so summary()/repr() emit no DeprecationWarnings.
+    core = im._core
     data = {
         "nodes": im.num_nodes,
         "links": im.num_links,
@@ -35,33 +38,34 @@ def summary_data(im):
         "status": "not run",
     }
 
-    if im.num_top_modules == 0:
+    if core.numTopModules() == 0:
         return data
 
+    result = im._result
     data.update(
         {
             "status": "run",
-            "state_input": im._core.stateInput,
-            "multilayer_input": im._core.multilayerInput,
-            "multilayer_network": im._core.isMultilayerNetwork(),
-            "levels": im.num_levels,
-            "leaf_nodes": im._core.numLeafNodes(),
-            "top_modules": im.num_top_modules,
-            "non_trivial_top_modules": im.num_non_trivial_top_modules,
-            "leaf_modules": im.num_leaf_modules,
-            "effective_top_modules": im.effective_num_top_modules,
-            "effective_leaf_modules": im.effective_num_leaf_modules,
-            "codelength": im.codelength,
-            "index_codelength": im.index_codelength,
-            "module_codelength": im.module_codelength,
-            "one_level_codelength": im.one_level_codelength,
-            "relative_codelength_savings": im.relative_codelength_savings,
-            "entropy_rate": im.entropy_rate,
-            "elapsed_time": im.elapsed_time,
+            "state_input": core.stateInput,
+            "multilayer_input": core.multilayerInput,
+            "multilayer_network": core.isMultilayerNetwork(),
+            "levels": result.num_levels,
+            "leaf_nodes": core.numLeafNodes(),
+            "top_modules": result.num_top_modules,
+            "non_trivial_top_modules": result.num_non_trivial_top_modules,
+            "leaf_modules": result.num_leaf_modules,
+            "effective_top_modules": result.effective_num_top_modules,
+            "effective_leaf_modules": result.effective_num_leaf_modules,
+            "codelength": result.codelength,
+            "index_codelength": result.index_codelength,
+            "module_codelength": result.module_codelength,
+            "one_level_codelength": result.one_level_codelength,
+            "relative_codelength_savings": result.relative_codelength_savings,
+            "entropy_rate": result.entropy_rate,
+            "elapsed_time": result.elapsed_time,
         }
     )
-    if im.meta_codelength != 0:
-        data["meta_codelength"] = im.meta_codelength
+    if result.meta_codelength != 0:
+        data["meta_codelength"] = result.meta_codelength
     return data
 
 
@@ -80,7 +84,7 @@ def _format_percent(value):
 def _top_module_flow_bars(im):
     modules = [
         (module.module_id, module.flow)
-        for module in im.get_tree(depth_level=1)
+        for module in im._result.tree(1)
         if module.depth == 1
     ]
     total_flow = sum(flow for _, flow in modules)

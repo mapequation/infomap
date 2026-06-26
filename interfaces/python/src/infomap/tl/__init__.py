@@ -95,7 +95,7 @@ def _copy_anndata_like(adata: Any) -> Any:
 
 
 def _module_labels(im: Any, mapping: dict[int, Any], obs_names: list[Any]) -> list[str]:
-    modules = im.get_modules()
+    modules = im._result.modules()
     modules_by_obs_name = {
         mapping[internal_id]: module_id for internal_id, module_id in modules.items()
     }
@@ -169,8 +169,8 @@ def infomap(
             "args": args,
             **options,
         },
-        "n_modules": im.num_top_modules,
-        "codelength": im.codelength,
+        "n_modules": im._result.num_top_modules,
+        "codelength": im._result.codelength,
     }
 
     if copy:

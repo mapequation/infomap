@@ -5,12 +5,19 @@ from infomap import shell
 
 
 class FakeInfomap:
+    """Test double mirroring how ``_summary.summary_data`` reads state: the
+    not-run guard and network stats come from ``_core`` (a SWIG-style camelCase
+    handle), and all post-run metrics come from the ``Result`` snapshot.
+    """
+
     def __init__(self, *, pretty=False):
         self.pretty = pretty
         self.loaded = []
         self.num_nodes = 0
         self.num_links = 0
         self.num_physical_nodes = 0
+        # Metric fields are read by tests off ``im`` for convenience but flow to
+        # the summary through ``_core`` (top-modules guard) and ``_result``.
         self.num_top_modules = 0
         self.stateInput = False
         self.multilayerInput = False
@@ -31,6 +38,13 @@ class FakeInfomap:
     @property
     def _core(self):
         return self
+
+    @property
+    def _result(self):
+        return self
+
+    def numTopModules(self):
+        return self.num_top_modules
 
     def read_file(self, filename):
         self.loaded.append(filename)
