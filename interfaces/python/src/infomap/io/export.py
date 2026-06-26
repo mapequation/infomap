@@ -278,13 +278,12 @@ def _result_nodes(result: Any):
     return result.nodes(states=True)
 
 
-def _result_links(result: Any) -> dict:
-    """Return ``{(source_state_id, target_state_id): weight}`` for a ``Result``.
+def _result_links(result: Any):
+    """Yield ``(source_state_id, target_state_id, weight)`` for a ``Result``.
 
-    Read through the bound engine's ``Core``; the ``Result`` already validated
-    the run-generation when its node data was materialized above.
+    Reads through the public, generation-guarded ``Result.links`` accessor.
     """
-    return dict(result._engine._core.getLinks(False))
+    return result.links(data="weight")
 
 
 def to_networkx(
@@ -343,7 +342,7 @@ def to_networkx(
         )
         graph.add_node(node.state_id, **attributes)
 
-    for (source, target), weight in _result_links(result).items():
+    for source, target, weight in _result_links(result):
         graph.add_edge(source, target, weight=weight)
 
     return graph
@@ -407,7 +406,7 @@ def to_igraph(
 
     edges = []
     weights = []
-    for (source, target), weight in _result_links(result).items():
+    for source, target, weight in _result_links(result):
         if source in index_by_state_id and target in index_by_state_id:
             edges.append((index_by_state_id[source], index_by_state_id[target]))
             weights.append(weight)

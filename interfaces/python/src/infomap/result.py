@@ -20,7 +20,7 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any
 
 from ._optional import get_pandas
-from ._results import _to_dataframe_sort_columns
+from ._results import _to_dataframe_sort_columns, perplexity
 
 if TYPE_CHECKING:
     from ._facade import Infomap
@@ -177,6 +177,12 @@ class Result:
         "_relative_codelength_savings",
         "_entropy_rate",
         "_meta_codelength",
+        "_codelengths",
+        "_meta_entropy",
+        "_elapsed_time",
+        "_num_leaf_modules",
+        "_effective_num_top_modules",
+        "_effective_num_leaf_modules",
         "_snapshots",
         "__weakref__",
     )
@@ -209,8 +215,47 @@ class Result:
         )
         object.__setattr__(self, "_entropy_rate", core.getEntropyRate())
         object.__setattr__(self, "_meta_codelength", core.getMetaCodelength())
+        object.__setattr__(self, "_meta_entropy", core.getMetaCodelength(True))
+        object.__setattr__(self, "_codelengths", tuple(core.codelengths()))
+        object.__setattr__(self, "_elapsed_time", core.elapsedTime())
+        # Tree-derived scalars are captured eagerly while the C++ result tree is
+        # fresh (mirroring the legacy Infomap accessors over self._core).
+        object.__setattr__(
+            self, "_num_leaf_modules", sum(1 for _ in core.iterLeafModules())
+        )
+        object.__setattr__(
+            self,
+            "_effective_num_top_modules",
+            self._compute_effective_num_modules(core, 1),
+        )
+        object.__setattr__(
+            self,
+            "_effective_num_leaf_modules",
+            self._compute_effective_num_modules(core, -1),
+        )
         # Lazy node-data cache, keyed by (level, states).
         object.__setattr__(self, "_snapshots", {})
+
+    @staticmethod
+    def _tree_iterator(core, depth: int, states: bool):
+        """Mirror :meth:`Infomap.get_tree`: physical tree for higher-order
+        networks unless ``states`` is requested."""
+        if core.haveMemory() and not states:
+            return core.iterTreePhysical(depth)
+        return core.iterTree(depth)
+
+    @classmethod
+    def _compute_effective_num_modules(cls, core, depth: int) -> float:
+        """Mirror legacy ``Infomap.get_effective_num_modules`` over ``core``."""
+        return perplexity(
+            [
+                module.flow
+                for module in cls._tree_iterator(core, depth, False)
+                if depth == -1
+                and module.is_leaf_module
+                or module.depth == depth
+            ]
+        )
 
     def __setattr__(self, name: str, value: Any) -> None:
         raise AttributeError("Result is immutable")
@@ -227,13 +272,17 @@ class Result:
 
     # -- lazy node-data extraction ------------------------------------------
 
-    def _snapshot(self, level: int, states: bool) -> _Snapshot:
+    def _check_generation(self) -> None:
+        """Guard live C++ tree access against a re-run of the bound engine."""
         if self._engine._generation != self._generation:
             raise _StaleResultError(
                 "stale Result: the Infomap instance was re-run since this "
                 "Result was created; node-level data is no longer available "
                 "(the C++ result tree is rebuilt on every run())."
             )
+
+    def _snapshot(self, level: int, states: bool) -> _Snapshot:
+        self._check_generation()
         key = (level, states)
         snapshot = self._snapshots.get(key)
         if snapshot is None:
@@ -310,6 +359,42 @@ class Result:
         return self._meta_codelength
 
     @property
+    def meta_entropy(self) -> float:
+        """The meta entropy (unweighted by the meta data rate)."""
+        return self._meta_entropy
+
+    @property
+    def codelengths(self) -> tuple:
+        """The total (hierarchical) codelength for each trial."""
+        return self._codelengths
+
+    @property
+    def elapsed_time(self) -> float:
+        """The elapsed run time in seconds."""
+        return self._elapsed_time
+
+    @property
+    def num_leaf_modules(self) -> int:
+        """The number of leaf modules (bottom modules containing leaf nodes)."""
+        return self._num_leaf_modules
+
+    @property
+    def effective_num_top_modules(self) -> float:
+        """The flow-weighted effective number of top modules.
+
+        Measured as the perplexity of the top-module flow distribution.
+        """
+        return self._effective_num_top_modules
+
+    @property
+    def effective_num_leaf_modules(self) -> float:
+        """The flow-weighted effective number of leaf modules.
+
+        Measured as the perplexity of the leaf-module flow distribution.
+        """
+        return self._effective_num_leaf_modules
+
+    @property
     def have_memory(self) -> bool:
         """True for multilayer and memory networks."""
         return self._have_memory
@@ -354,6 +439,96 @@ class Result:
                 path=snapshot.path[i],
                 name=names.get(node_id, node_id),
             )
+
+    def tree(self, depth: int = 1, *, states: bool = False):
+        """A view of the hierarchical tree, iterating over the modules as well
+        as the leaf nodes, depth first from the root.
+
+        Equivalent to the legacy ``Infomap.get_tree(depth, states)``. For a
+        higher-order (multilayer/memory) network the physical tree is used
+        unless ``states`` is requested, mirroring the legacy semantics.
+
+        Parameters
+        ----------
+        depth : int, optional
+            The module level reported by ``iterator.module_id``. ``1``
+            (default) is the top (coarsest) level; ``-1`` the bottom (finest).
+        states : bool, optional
+            Iterate over state nodes when ``True``, physical nodes when
+            ``False`` (the default).
+
+        Returns
+        -------
+        InfomapIterator or InfomapIteratorPhysical
+            An iterator over each node in the tree, depth first from the root.
+        """
+        self._check_generation()
+        return self._tree_iterator(self._engine._core, depth, states)
+
+    def multilevel_modules(self, *, states: bool = False) -> dict:
+        """Map ``node_id`` (or ``state_id`` when ``states``) to a tuple of
+        ``module_id``, one per level from the top down.
+
+        Equivalent to the legacy ``Infomap.get_multilevel_modules(states)``.
+        """
+        self._check_generation()
+        return self._engine._core.getMultilevelModules(states)
+
+    def leaf_modules(self):
+        """A view of the leaf modules (bottom modules containing leaf nodes),
+        depth first from the root.
+
+        Equivalent to the legacy ``Infomap.leaf_modules`` iterator.
+
+        Returns
+        -------
+        InfomapLeafModuleIterator
+            An iterator over each leaf module in the tree.
+        """
+        self._check_generation()
+        return self._engine._core.iterLeafModules()
+
+    def links(self, data: str = "weight"):
+        """A view of the partitioned links and their weights or flow.
+
+        Equivalent to the legacy ``Infomap.get_links(data)``. The sources and
+        targets are state ids for a state or multilayer network.
+
+        Parameters
+        ----------
+        data : str, optional
+            The kind of value to return, one of ``"weight"`` or ``"flow"``.
+            Default ``"weight"``.
+
+        Returns
+        -------
+        generator of (int, int, float)
+            ``(source, target, weight_or_flow)`` tuples.
+        """
+        if data not in ("weight", "flow"):
+            raise RuntimeError('data must one of "weight" or "flow"')
+        self._check_generation()
+        return (
+            (source, target, value)
+            for (source, target), value in self._engine._core.getLinks(
+                data != "weight"
+            ).items()
+        )
+
+    def effective_num_modules(self, depth: int = 1) -> float:
+        """The flow-weighted effective number of modules at ``depth``.
+
+        Measured as the perplexity of the module flow distribution. Equivalent
+        to the legacy ``Infomap.get_effective_num_modules(depth)``.
+
+        Parameters
+        ----------
+        depth : int, optional
+            The module level. ``1`` (default) is the top (coarsest) level;
+            ``-1`` the bottom (leaf-module) level.
+        """
+        self._check_generation()
+        return self._compute_effective_num_modules(self._engine._core, depth)
 
     def to_dataframe(
         self,

@@ -170,3 +170,90 @@ def test_scalar_parity(network, example_network_path):
     assert result.meta_codelength == im.meta_codelength
     assert result.have_memory == im.have_memory
     assert result.names == im.names
+
+
+@pytest.mark.parametrize("network", sorted(_BUILDERS))
+def test_new_scalar_parity(network, example_network_path):
+    im = _BUILDERS[network](example_network_path)
+    result = im.run()
+
+    assert result.codelengths == tuple(im.codelengths)
+    assert result.meta_entropy == im.meta_entropy
+    # elapsed_time is captured eagerly from the same C++ value at run() time.
+    assert result.elapsed_time == im.elapsed_time
+    assert result.num_leaf_modules == im.num_leaf_modules
+    assert result.effective_num_top_modules == im.effective_num_top_modules
+    assert result.effective_num_leaf_modules == im.effective_num_leaf_modules
+
+
+@pytest.mark.parametrize("network", sorted(_BUILDERS))
+def test_tree_parity(network, example_network_path):
+    im = _BUILDERS[network](example_network_path)
+    result = im.run()
+
+    for depth in (1, 2, -1):
+        for states in (False, True):
+            legacy = [
+                (node.module_id, node.depth, node.flow, tuple(node.path))
+                for node in im.get_tree(depth, states)
+            ]
+            new = [
+                (node.module_id, node.depth, node.flow, tuple(node.path))
+                for node in result.tree(depth, states=states)
+            ]
+            assert new == legacy, (network, depth, states)
+
+
+@pytest.mark.parametrize("network", sorted(_BUILDERS))
+def test_multilevel_modules_parity(network, example_network_path):
+    im = _BUILDERS[network](example_network_path)
+    result = im.run()
+
+    for states in (False, True):
+        try:
+            legacy = im.get_multilevel_modules(states)
+            legacy_error = None
+        except RuntimeError as exc:
+            legacy, legacy_error = None, str(exc)
+
+        if legacy_error is not None:
+            with pytest.raises(RuntimeError, match="higher-order"):
+                result.multilevel_modules(states=states)
+        else:
+            assert result.multilevel_modules(states=states) == legacy, (
+                network,
+                states,
+            )
+
+
+@pytest.mark.parametrize("network", sorted(_BUILDERS))
+def test_leaf_modules_parity(network, example_network_path):
+    im = _BUILDERS[network](example_network_path)
+    result = im.run()
+
+    legacy = [(module.module_id, module.depth) for module in im.leaf_modules]
+    new = [(module.module_id, module.depth) for module in result.leaf_modules()]
+    assert new == legacy, network
+
+
+@pytest.mark.parametrize("network", sorted(_BUILDERS))
+def test_links_parity(network, example_network_path):
+    im = _BUILDERS[network](example_network_path)
+    result = im.run()
+
+    assert list(result.links()) == list(im.links)
+    assert list(result.links(data="weight")) == list(im.get_links())
+    assert list(result.links(data="flow")) == list(im.flow_links)
+    with pytest.raises(RuntimeError, match="weight"):
+        list(result.links(data="bogus"))
+
+
+@pytest.mark.parametrize("network", sorted(_BUILDERS))
+def test_effective_num_modules_parity(network, example_network_path):
+    im = _BUILDERS[network](example_network_path)
+    result = im.run()
+
+    for depth in (1, 2, -1):
+        assert result.effective_num_modules(depth) == im.get_effective_num_modules(
+            depth
+        ), (network, depth)
