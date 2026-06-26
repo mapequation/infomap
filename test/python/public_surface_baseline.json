@@ -117,11 +117,11 @@
   },
   "get_dataframe": {
     "property": false,
-    "signature": "(self, columns: 'Sequence[str] | None' = None, *, states: 'bool' = True, depth_level: 'int' = 1) -> 'Any'"
+    "signature": "(self, columns: 'Sequence[str] | None' = None, *, states: 'bool' = True, depth: 'int' = 1, depth_level: 'int | None' = None) -> 'Any'"
   },
   "get_effective_num_modules": {
     "property": false,
-    "signature": "(self, depth_level=1)"
+    "signature": "(self, depth=1, depth_level=None)"
   },
   "get_links": {
     "property": false,
@@ -129,7 +129,7 @@
   },
   "get_modules": {
     "property": false,
-    "signature": "(self, depth_level=1, states=False)"
+    "signature": "(self, depth=1, states=False, depth_level=None)"
   },
   "get_multilevel_modules": {
     "property": false,
@@ -145,11 +145,11 @@
   },
   "get_nodes": {
     "property": false,
-    "signature": "(self, depth_level=1, states=False)"
+    "signature": "(self, depth=1, states=False, depth_level=None)"
   },
   "get_tree": {
     "property": false,
-    "signature": "(self, depth_level=1, states=False)"
+    "signature": "(self, depth=1, states=False, depth_level=None)"
   },
   "have_memory": {
     "property": true,

@@ -455,8 +455,8 @@ def test_top_module_flow_bars_caps_tail_as_other(monkeypatch):
             self.depth = 1
 
     class FakeInfomap:
-        def get_tree(self, depth_level=1):
-            assert depth_level == 1
+        def get_tree(self, depth=1):
+            assert depth == 1
             return [FakeModule(module_id, 1.0) for module_id in range(1, 21)]
 
     monkeypatch.setattr(summary_module, "_REPR_MAX_FLOW_FRACTION", 0.5)
