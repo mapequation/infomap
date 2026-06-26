@@ -155,7 +155,15 @@ def infomap(
     result = im.run()
 
     labels = _module_labels(im, mapping, obs_names)
-    categories = sorted({int(label) for label in labels})
+    try:
+        categories = sorted({int(label) for label in labels})
+    except (TypeError, ValueError) as exc:
+        # Infomap module labels are always ints; this is defensive so a
+        # malformed label surfaces a clear message rather than a raw cast error.
+        raise ValueError(
+            "Infomap module labels must be integer-castable to build the "
+            f"`adata.obs[{key_added!r}]` categories; got {labels!r}."
+        ) from exc
     adata.obs[key_added] = pd.Categorical(
         labels,
         categories=[str(category) for category in categories],

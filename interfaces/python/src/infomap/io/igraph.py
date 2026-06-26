@@ -87,6 +87,18 @@ def _integer_like(value, *, name):
 def _node_ids(values):
     if all(isinstance(value, Real) and not isinstance(value, bool) for value in values):
         ids = [_integer_like(value, name="node_id") for value in values]
+        # Coercing integer-valued floats to ints can make two textually distinct
+        # labels (e.g. 1 and 1.0, or 2 and 2.0) collapse onto the same physical
+        # id. Detect that here and name the colliding labels instead of silently
+        # merging two vertices into one physical node.
+        labels_by_id: dict[int, Any] = {}
+        for label, _node_id in zip(values, ids):
+            seen = labels_by_id.setdefault(_node_id, label)
+            if repr(seen) != repr(label):
+                raise ValueError(
+                    f"`node_id` labels {seen!r} and {label!r} both map to physical "
+                    f"id {_node_id}. Use distinct integer-valued node ids."
+                )
         return ids, {_node_id: str(_node_id) for _node_id in dict.fromkeys(ids)}
 
     label_to_id = {}

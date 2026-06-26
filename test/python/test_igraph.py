@@ -225,6 +225,30 @@ def test_find_igraph_communities_partitions_state_vertices():
     assert len(clustering.membership) == graph.vcount()
 
 
+def test_add_igraph_graph_rejects_float_node_id_collision():
+    ig = pytest.importorskip("igraph")
+    graph = ig.Graph(edges=[(0, 1), (1, 2)], directed=False)
+    # Distinct labels 1 (int) and 1.0 (float) would both coerce to physical id 1,
+    # silently merging two vertices into one physical node. Must raise instead.
+    graph.vs["node_id"] = [1, 1.0, 2]
+
+    with pytest.raises(ValueError, match=r"both map to physical id 1"):
+        add_igraph_graph(_Recorder(), graph)
+
+
+def test_add_igraph_graph_allows_repeated_integer_node_ids(make_infomap):
+    ig = pytest.importorskip("igraph")
+    graph = ig.Graph(edges=[(0, 1), (1, 2)], directed=False)
+    # Two vertices legitimately sharing physical id 5 (a state network) must be
+    # accepted -- only textually distinct labels colliding is an error.
+    graph.vs["node_id"] = [5, 5, 3]
+
+    im = make_infomap(no_infomap=True)
+    im.add_igraph_graph(graph)
+
+    assert dict(im.names) == {5: "5", 3: "3"}
+
+
 def test_add_igraph_graph_names_non_numeric_physical_ids(make_infomap):
     ig = pytest.importorskip("igraph")
     graph = ig.Graph(edges=[(0, 1), (1, 2)], directed=False)
