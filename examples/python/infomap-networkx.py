@@ -4,7 +4,7 @@ import matplotlib.colors as colors
 import matplotlib.pyplot as plt
 import networkx as nx
 
-from infomap import Infomap
+from infomap import run
 
 """
 Generate and draw a network with NetworkX, colored
@@ -65,15 +65,15 @@ def draw_network(G):
 G = nx.karate_club_graph()
 
 print("Building Infomap network from a NetworkX graph...")
-im = Infomap(two_level=True, silent=True, num_trials=20)
-im.add_networkx_graph(G)
-
 print("Find communities with Infomap...")
-im.run()
+result = run(G, two_level=True, silent=True, num_trials=20)
 
-print(f"Found {im.num_top_modules} modules with codelength {im.codelength:.8f} bits")
+print(
+    f"Found {result.num_top_modules} modules with codelength "
+    f"{result.codelength:.8f} bits"
+)
 
-nx.set_node_attributes(G, im.get_modules(), "community")
+nx.set_node_attributes(G, result.modules(), "community")
 
 draw_network(G)
 
@@ -91,11 +91,9 @@ G.add_edge("b", "c")
 G.add_edge("d", "e")
 G.add_edge("d", "f")
 G.add_edge("e", "f")
-im = Infomap(silent=True)
-im.add_networkx_graph(G)
-im.run()
+result = run(G, silent=True)
 print("#node_id module_id flow state_id")
-for node in im.nodes:
+for node in result.nodes(states=True):
     print(node.node_id, node.module_id, node.flow, node.state_id)
 # 1 1 0.16666666666666666 0
 # 2 1 0.16666666666666666 1
@@ -113,12 +111,10 @@ G.add_node(22, node_id=2, layer_id=2)
 G.add_node(32, node_id=3, layer_id=2)
 G.add_edge(11, 21)
 G.add_edge(22, 32)
-im = Infomap(silent=False)
-# Add multilayer_inter_intra_format=False for full multilayer format
-im.add_networkx_graph(G)
-im.run()
+# Pass multilayer_inter_intra_format=False for full multilayer format via a Network
+result = run(G, silent=False)
 print("#node_id module_id flow state_id layer_id")
-for node in im.nodes:
+for node in result.nodes(states=True):
     print(
         node.node_id, node.module_id, f"{node.flow:.2f}", node.state_id, node.layer_id
     )

@@ -1,13 +1,14 @@
 from infomap import Infomap
 
 
-def print_result(im):
+def print_result(result):
     print(
-        f"Found {im.num_top_modules} modules with codelength {im.codelength:.8f} bits"
+        f"Found {result.num_top_modules} modules with codelength "
+        f"{result.codelength:.8f} bits"
     )
 
     print("#layer_id node_id module_id:")
-    for node in im.nodes:
+    for node in result.nodes(states=True):
         print(f"{node.layer_id} {node.node_id} {node.module_id}")
 
 
@@ -19,9 +20,9 @@ im.add_multilayer_link((2, 1), (1, 2), 1.0)
 im.add_multilayer_link((1, 2), (2, 1), 1.0)
 im.add_multilayer_link((3, 2), (2, 3), 1.0)
 
-im.run()
+result = im.run()
 
-print_result(im)
+print_result(result)
 
 # Add only intra-layer links and let Infomap provide
 # inter-layer links by relaxing the random walker's
@@ -38,6 +39,6 @@ im.add_multilayer_intra_link(2, 3, 4)
 # from simulating those
 # im.add_multilayer_inter_link(1, 1, 2)
 
-im.run()
+result = im.run()
 
-print_result(im)
+print_result(result)

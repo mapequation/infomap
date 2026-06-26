@@ -44,18 +44,20 @@ partition2 = {
 # Set initial partition on the Infomap instance to keep it during multiple runs
 im.initial_partition = partition1
 
-im.run(no_infomap=True)
+result = im.run(no_infomap=True)
 
 print(
-    f"Partition one with {im.num_top_modules} modules -> codelength: {im.codelength:.8f} bits"
+    f"Partition one with {result.num_top_modules} modules -> "
+    f"codelength: {result.codelength:.8f} bits"
 )
 
 
 # Set initial partition as run parameter to only use it for this run (will be restored to partition1 after)
-im.run(initial_partition=partition2, no_infomap=True)
+result = im.run(initial_partition=partition2, no_infomap=True)
 
 print(
-    f"Partition two with {im.num_top_modules} modules -> codelength: {im.codelength:.8f} bits"
+    f"Partition two with {result.num_top_modules} modules -> "
+    f"codelength: {result.codelength:.8f} bits"
 )
 
 # Output:
