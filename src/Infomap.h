@@ -37,9 +37,14 @@ struct LinkResult {
 };
 #endif
 
-// Python-visible (no SWIGPYTHON guard): single-traversal bulk node data.
-// Parallel std::vector columns reuse the existing vector_uint/vector_double
-// SWIG templates; the ragged path is stored CSR-style (flat values + lengths).
+// Single-traversal bulk node data for the Python (and JS) bindings. Excluded
+// from the R binding (#ifndef SWIGR): R wraps the struct as an undocumented S4
+// class, which trips an R CMD check WARNING, and R has no use for the Python
+// extractor. The C++ compiler and the Python/JS SWIG passes leave SWIGR
+// undefined, so the struct stays available there. Parallel std::vector columns
+// reuse the existing vector_uint/vector_double SWIG templates; the ragged path
+// is stored CSR-style (flat values + lengths).
+#ifndef SWIGR
 struct NodeData {
   std::vector<unsigned int> node_id; // physicalId
   std::vector<unsigned int> state_id; // stateId
@@ -52,6 +57,7 @@ struct NodeData {
   std::vector<unsigned int> path_flat; // CSR values: all path entries concatenated
   std::vector<unsigned int> path_len; // CSR lengths: per-node path length
 };
+#endif
 
 // Wrapper class for the Python API
 struct InfomapWrapper : public InfomapBase {
@@ -174,7 +180,9 @@ public:
   }
 
   // Single-traversal bulk node data; NodeData is defined at namespace scope
-  // (above) so SWIG wraps its parallel-vector members for Python.
+  // (above) so SWIG wraps its parallel-vector members for Python. Excluded from
+  // the R binding together with NodeData (see the struct's #ifndef SWIGR note).
+#ifndef SWIGR
   NodeData getNodeData(int level = 1, bool states = false)
   {
     // Mirror _results.get_nodes: physical iterator for higher-order networks
@@ -184,8 +192,10 @@ public:
     }
     return collectLeafData(iterLeafNodes(level));
   }
+#endif
 
 private:
+#ifndef SWIGR
   template <typename Iter>
   NodeData collectLeafData(Iter it) const
   {
@@ -207,6 +217,7 @@ private:
     }
     return d;
   }
+#endif
 
 public:
   using InfomapBase::codelength;
