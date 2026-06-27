@@ -3,6 +3,11 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
+# The only public name here is the Scanpy-style ``infomap.tl.infomap`` entry
+# point; without this, the module-level imports (Any/Mapping/...) would leak
+# into the ``infomap.tl`` namespace.
+__all__ = ["infomap"]
+
 
 def _import_pandas() -> Any:
     try:

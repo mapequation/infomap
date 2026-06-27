@@ -42,3 +42,23 @@ def test_tree_returns_a_documented_iterator_type():
     im.run()
     node = next(iter(im.tree))
     assert isinstance(node, infomap.InfomapIterator)
+
+
+@pytest.mark.fast
+def test_treenode_is_importable_from_the_package():
+    # TreeNode is the return type of Result.nodes(); it must be importable from
+    # the top level (for isinstance / type hints), like Result itself.
+    assert hasattr(infomap, "TreeNode")
+    assert "TreeNode" in infomap.__all__
+    im = infomap.Infomap(silent=True, no_file_output=True)
+    im.add_link(0, 1)
+    assert isinstance(next(im.run().nodes()), infomap.TreeNode)
+
+
+@pytest.mark.fast
+def test_tl_namespace_exposes_only_the_entry_point():
+    # infomap.tl is the Scanpy-style entry point; its internal typing imports
+    # (Any/Mapping/...) must not be part of its public surface.
+    import infomap.tl as tl
+
+    assert tl.__all__ == ["infomap"]

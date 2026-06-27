@@ -31,7 +31,7 @@ from ._options import (
 )
 from ._results import _InfomapResultsMixin
 from ._results import entropy, perplexity, plogp
-from .result import Result, build_result
+from .result import Result, TreeNode, build_result
 from ._summary import (
     repr_html as _repr_html,
     repr_text as _repr_text,
@@ -74,6 +74,7 @@ __all__ = [
     "Network",
     "Options",
     "Result",
+    "TreeNode",
     "build_info",
     "entropy",
     "find_communities",
