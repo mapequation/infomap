@@ -57,8 +57,6 @@ ALGORITHM_OPTIONS <- list(
   list(type = "value", name = "variable_markov_damping", flag = "--variable-markov-damping", default = 1.0, include = .skip_when_not_equal(1.0)),
   list(type = "value", name = "variable_markov_min_scale", flag = "--variable-markov-min-scale", default = 1.0, include = .skip_when_not_equal(1.0)),
   list(type = "value", name = "preferred_number_of_modules", flag = "--preferred-number-of-modules", default = NULL, include = .skip_when_null),
-  list(type = "value", name = "preferred_number_of_levels", flag = "--preferred-number-of-levels", default = NULL, include = .skip_when_null),
-  list(type = "value", name = "preferred_number_of_levels_strength", flag = "--preferred-number-of-levels-strength", default = 1.0, include = .skip_when_not_equal(1.0)),
   list(type = "value", name = "multilayer_relax_rate", flag = "--multilayer-relax-rate", default = 0.15, include = .skip_when_not_equal(0.15)),
   list(type = "value", name = "multilayer_relax_limit", flag = "--multilayer-relax-limit", default = NULL, include = .skip_when_null),
   list(type = "value", name = "multilayer_relax_limit_up", flag = "--multilayer-relax-limit-up", default = NULL, include = .skip_when_null),
@@ -98,13 +96,12 @@ OPTION_FIELD_NAMES <- c(
   "recorded_teleportation", "use_node_weights_as_flow", "to_nodes", "teleportation_probability",
   "regularized", "regularization_strength", "entropy_corrected", "entropy_correction_strength",
   "markov_time", "variable_markov_time", "variable_markov_damping", "variable_markov_min_scale",
-  "preferred_number_of_modules", "preferred_number_of_levels", "preferred_number_of_levels_strength", "multilayer_relax_rate",
-  "multilayer_relax_limit", "multilayer_relax_limit_up", "multilayer_relax_limit_down", "multilayer_relax_by_jsd",
-  "multilayer_relax_to_self", "seed", "num_trials", "core_loop_limit",
-  "core_level_limit", "tune_iteration_limit", "core_loop_codelength_threshold", "tune_iteration_relative_threshold",
-  "fast_hierarchical_solution", "inner_parallelization", "parallel_trials", "converge",
-  "num_threads", "threads", "prefer_modular_solution", "num_random_moves",
-  "max_degree_for_random_moves"
+  "preferred_number_of_modules", "multilayer_relax_rate", "multilayer_relax_limit", "multilayer_relax_limit_up",
+  "multilayer_relax_limit_down", "multilayer_relax_by_jsd", "multilayer_relax_to_self", "seed",
+  "num_trials", "core_loop_limit", "core_level_limit", "tune_iteration_limit",
+  "core_loop_codelength_threshold", "tune_iteration_relative_threshold", "fast_hierarchical_solution", "inner_parallelization",
+  "parallel_trials", "converge", "num_threads", "threads",
+  "prefer_modular_solution", "num_random_moves", "max_degree_for_random_moves"
 )
 
 OPTION_DEFAULTS <- list(
@@ -157,8 +154,6 @@ OPTION_DEFAULTS <- list(
   variable_markov_damping = 1.0,
   variable_markov_min_scale = 1.0,
   preferred_number_of_modules = NULL,
-  preferred_number_of_levels = NULL,
-  preferred_number_of_levels_strength = 1.0,
   multilayer_relax_rate = 0.15,
   multilayer_relax_limit = NULL,
   multilayer_relax_limit_up = NULL,
@@ -255,8 +250,6 @@ OPTION_DEFAULTS <- list(
 #'   \item{`variable_markov_damping`}{With --variable-markov-time, set damping between local effective degree (0) and local entropy (1).}
 #'   \item{`variable_markov_min_scale`}{With --variable-markov-time, set the minimum local scale for zero-entropy nodes. Local Markov time is max scale divided by local scale.}
 #'   \item{`preferred_number_of_modules`}{Penalize solutions by how far their number of modules differs from this value.}
-#'   \item{`preferred_number_of_levels`}{Soft preference for the depth of the hierarchy. Steering to a shallower depth is reliable at a small codelength cost; deeper is best-effort, bounded by what the optimizer proposes. No-op with --two-level or strength 0.}
-#'   \item{`preferred_number_of_levels_strength`}{Scale the strength of --preferred-number-of-levels. 0 disables the preference; larger values increase the cost of deviating from the preferred depth.}
 #'   \item{`multilayer_relax_rate`}{Set the probability of relaxing from a state node to neighboring layers instead of staying in the current layer.}
 #'   \item{`multilayer_relax_limit`}{Limit relaxation to this many neighboring layer ids in each direction. Use a negative value to allow relaxation to any layer.}
 #'   \item{`multilayer_relax_limit_up`}{Limit relaxation upward to this many higher neighboring layer ids. Use a negative value to allow relaxation to any higher layer.}

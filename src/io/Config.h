@@ -104,8 +104,6 @@ struct Config {
   double regularizationStrength = 1.0; // Scale Bayesian prior constant ln(N)/N with this factor
   double teleportationProbability = 0.15;
   unsigned int preferredNumberOfModules = 0;
-  unsigned int preferredNumberOfLevels = 0; // 0 = off. Soft, asymmetric depth preference (issue #308)
-  double preferredNumberOfLevelsStrength = 1.0; // Scale the depth preference; 0 disables it
   bool entropyBiasCorrection = false;
   double entropyBiasCorrectionMultiplier = 1;
   unsigned long seedToRandomNumberGenerator = 123;

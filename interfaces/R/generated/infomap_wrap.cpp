@@ -6942,134 +6942,6 @@ R_swig_Config_preferredNumberOfModules_get ( SEXP self, SEXP s_swig_copy)
 
 
 SWIGEXPORT SEXP
-R_swig_Config_preferredNumberOfLevels_set ( SEXP self, SEXP s_preferredNumberOfLevels)
-{
-  {
-    infomap::Config *arg1 = 0 ;
-    unsigned int arg2 ;
-    void *argp1 = 0 ;
-    int res1 = 0 ;
-    int val2 ;
-    int ecode2 = 0 ;
-    unsigned int r_nprotect = 0;
-    SEXP r_ans = R_NilValue ;
-    VMAXTYPE r_vmax = vmaxget() ;
-    
-    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_infomap__Config, 0 |  0 );
-    if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Config_preferredNumberOfLevels_set" "', argument " "1"" of type '" "infomap::Config *""'"); 
-    }
-    arg1 = reinterpret_cast< infomap::Config * >(argp1);
-    ecode2 = SWIG_AsVal_int(s_preferredNumberOfLevels, &val2);
-    if (!SWIG_IsOK(ecode2)) {
-      SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "Config_preferredNumberOfLevels_set" "', argument " "2"" of type '" "unsigned int""'");
-    } 
-    arg2 = static_cast< unsigned int >(val2);
-    if (arg1) (arg1)->preferredNumberOfLevels = arg2;
-    r_ans = R_NilValue;
-    vmaxset(r_vmax);
-    if(r_nprotect)  Rf_unprotect(r_nprotect);
-    
-    return r_ans;
-    fail: SWIGUNUSED;
-  }
-  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
-  return R_NilValue;
-}
-
-
-SWIGEXPORT SEXP
-R_swig_Config_preferredNumberOfLevels_get ( SEXP self, SEXP s_swig_copy)
-{
-  {
-    unsigned int result;
-    infomap::Config *arg1 = 0 ;
-    void *argp1 = 0 ;
-    int res1 = 0 ;
-    unsigned int r_nprotect = 0;
-    SEXP r_ans = R_NilValue ;
-    VMAXTYPE r_vmax = vmaxget() ;
-    
-    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_infomap__Config, 0 |  0 );
-    if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Config_preferredNumberOfLevels_get" "', argument " "1"" of type '" "infomap::Config *""'"); 
-    }
-    arg1 = reinterpret_cast< infomap::Config * >(argp1);
-    result = (unsigned int) ((arg1)->preferredNumberOfLevels);
-    r_ans = SWIG_From_int(static_cast< int >(result));
-    vmaxset(r_vmax);
-    if(r_nprotect)  Rf_unprotect(r_nprotect);
-    
-    return r_ans;
-    fail: SWIGUNUSED;
-  }
-  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
-  return R_NilValue;
-}
-
-
-SWIGEXPORT SEXP
-R_swig_Config_preferredNumberOfLevelsStrength_set ( SEXP self, SEXP s_preferredNumberOfLevelsStrength)
-{
-  {
-    infomap::Config *arg1 = 0 ;
-    double arg2 ;
-    void *argp1 = 0 ;
-    int res1 = 0 ;
-    unsigned int r_nprotect = 0;
-    SEXP r_ans = R_NilValue ;
-    VMAXTYPE r_vmax = vmaxget() ;
-    
-    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_infomap__Config, 0 |  0 );
-    if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Config_preferredNumberOfLevelsStrength_set" "', argument " "1"" of type '" "infomap::Config *""'"); 
-    }
-    arg1 = reinterpret_cast< infomap::Config * >(argp1);
-    arg2 = static_cast< double >(REAL(s_preferredNumberOfLevelsStrength)[0]);
-    if (arg1) (arg1)->preferredNumberOfLevelsStrength = arg2;
-    r_ans = R_NilValue;
-    vmaxset(r_vmax);
-    if(r_nprotect)  Rf_unprotect(r_nprotect);
-    
-    return r_ans;
-    fail: SWIGUNUSED;
-  }
-  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
-  return R_NilValue;
-}
-
-
-SWIGEXPORT SEXP
-R_swig_Config_preferredNumberOfLevelsStrength_get ( SEXP self, SEXP s_swig_copy)
-{
-  {
-    double result;
-    infomap::Config *arg1 = 0 ;
-    void *argp1 = 0 ;
-    int res1 = 0 ;
-    unsigned int r_nprotect = 0;
-    SEXP r_ans = R_NilValue ;
-    VMAXTYPE r_vmax = vmaxget() ;
-    
-    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_infomap__Config, 0 |  0 );
-    if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Config_preferredNumberOfLevelsStrength_get" "', argument " "1"" of type '" "infomap::Config *""'"); 
-    }
-    arg1 = reinterpret_cast< infomap::Config * >(argp1);
-    result = (double) ((arg1)->preferredNumberOfLevelsStrength);
-    r_ans = SWIG_From_double(static_cast< double >(result));
-    vmaxset(r_vmax);
-    if(r_nprotect)  Rf_unprotect(r_nprotect);
-    
-    return r_ans;
-    fail: SWIGUNUSED;
-  }
-  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
-  return R_NilValue;
-}
-
-
-SWIGEXPORT SEXP
 R_swig_Config_entropyBiasCorrection_set ( SEXP self, SEXP s_entropyBiasCorrection)
 {
   {
@@ -50401,7 +50273,6 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
    {"R_swig_Network_addMultilayerInterLinks", (DL_FUNC) &R_swig_Network_addMultilayerInterLinks, 5},
    {"R_swig_aggregatePerLevelCodelength__SWIG_1", (DL_FUNC) &R_swig_aggregatePerLevelCodelength__SWIG_1, 2},
    {"R_swig_InfoNode_numLeafMembers", (DL_FUNC) &R_swig_InfoNode_numLeafMembers, 2},
-   {"R_swig_Config_preferredNumberOfLevelsStrength_get", (DL_FUNC) &R_swig_Config_preferredNumberOfLevelsStrength_get, 2},
    {"R_swig_InfoEdge_data_get", (DL_FUNC) &R_swig_InfoEdge_data_get, 1},
    {"R_swig_InfomapBase_iterLeafNodesPhysical__SWIG_0", (DL_FUNC) &R_swig_InfomapBase_iterLeafNodesPhysical__SWIG_0, 3},
    {"R_swig_InfomapIterator_remove", (DL_FUNC) &R_swig_InfomapIterator_remove, 2},
@@ -50462,7 +50333,6 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
    {"R_swig_InfomapBase_begin__SWIG_1", (DL_FUNC) &R_swig_InfomapBase_begin__SWIG_1, 2},
    {"R_swig_InfoNode_outEdges", (DL_FUNC) &R_swig_InfoNode_outEdges, 2},
    {"R_swig_InfoNode_isRoot", (DL_FUNC) &R_swig_InfoNode_isRoot, 2},
-   {"R_swig_Config_preferredNumberOfLevels_get", (DL_FUNC) &R_swig_Config_preferredNumberOfLevels_get, 2},
    {"R_swig_InfomapBase_iterModules__SWIG_0", (DL_FUNC) &R_swig_InfomapBase_iterModules__SWIG_0, 3},
    {"R_swig_Config_adaptDefaults", (DL_FUNC) &R_swig_Config_adaptDefaults, 1},
    {"R_swig_InfomapBase_iterModules__SWIG_1", (DL_FUNC) &R_swig_InfomapBase_iterModules__SWIG_1, 2},
@@ -50768,10 +50638,10 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
    {"R_swig_vector_double___len__", (DL_FUNC) &R_swig_vector_double___len__, 2},
    {"R_swig_InfomapIterator_disposeInfomap", (DL_FUNC) &R_swig_InfomapIterator_disposeInfomap, 2},
    {"R_swig_InfomapIterator_getInfomapRoot__SWIG_0", (DL_FUNC) &R_swig_InfomapIterator_getInfomapRoot__SWIG_0, 1},
+   {"R_swig_InfomapLeafIteratorPhysical_copy", (DL_FUNC) &R_swig_InfomapLeafIteratorPhysical_copy, 2},
    {"R_swig_Config_multilayerRelaxLimitDown_get", (DL_FUNC) &R_swig_Config_multilayerRelaxLimitDown_get, 2},
    {"R_swig_InfomapIterator_getInfomapRoot__SWIG_1", (DL_FUNC) &R_swig_InfomapIterator_getInfomapRoot__SWIG_1, 1},
    {"R_swig_InfomapIterator_numPhysicalNodes", (DL_FUNC) &R_swig_InfomapIterator_numPhysicalNodes, 2},
-   {"R_swig_InfomapLeafIteratorPhysical_copy", (DL_FUNC) &R_swig_InfomapLeafIteratorPhysical_copy, 2},
    {"R_swig_vector_double___setitem__", (DL_FUNC) &R_swig_vector_double___setitem__, 3},
    {"R_swig_InfoNode_collapsedFirstChild_set", (DL_FUNC) &R_swig_InfoNode_collapsedFirstChild_set, 2},
    {"R_swig_new_pair_uint_uint__SWIG_0", (DL_FUNC) &R_swig_new_pair_uint_uint__SWIG_0, 0},
@@ -50897,7 +50767,6 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
    {"R_swig_InfomapBase_iterTreePhysical__SWIG_0", (DL_FUNC) &R_swig_InfomapBase_iterTreePhysical__SWIG_0, 3},
    {"R_swig_InfomapBase_iterTreePhysical__SWIG_1", (DL_FUNC) &R_swig_InfomapBase_iterTreePhysical__SWIG_1, 2},
    {"R_swig_map_uint_string_clear", (DL_FUNC) &R_swig_map_uint_string_clear, 1},
-   {"R_swig_Config_preferredNumberOfLevelsStrength_set", (DL_FUNC) &R_swig_Config_preferredNumberOfLevelsStrength_set, 2},
    {"R_swig_delete_InfomapBase", (DL_FUNC) &R_swig_delete_InfomapBase, 1},
    {"R_swig_InfomapIterator_setInfomap", (DL_FUNC) &R_swig_InfomapIterator_setInfomap, 3},
    {"R_swig_InfoEdge_data_set", (DL_FUNC) &R_swig_InfoEdge_data_set, 2},
@@ -50957,7 +50826,6 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
    {"R_swig_InfomapParentIterator_infomapTree__SWIG_0", (DL_FUNC) &R_swig_InfomapParentIterator_infomapTree__SWIG_0, 3},
    {"R_swig_InfoNode_id", (DL_FUNC) &R_swig_InfoNode_id, 2},
    {"R_swig_InfomapParentIterator_infomapTree__SWIG_1", (DL_FUNC) &R_swig_InfomapParentIterator_infomapTree__SWIG_1, 2},
-   {"R_swig_Config_preferredNumberOfLevels_set", (DL_FUNC) &R_swig_Config_preferredNumberOfLevels_set, 2},
    {"R_swig_InfomapParentIterator_infomapTree__SWIG_2", (DL_FUNC) &R_swig_InfomapParentIterator_infomapTree__SWIG_2, 3},
    {"R_swig_InfomapParentIterator_infomapTree__SWIG_3", (DL_FUNC) &R_swig_InfomapParentIterator_infomapTree__SWIG_3, 2},
    {"R_swig_InfomapModuleIterator_PlusPlusPostfix", (DL_FUNC) &R_swig_InfomapModuleIterator_PlusPlusPostfix, 3},
