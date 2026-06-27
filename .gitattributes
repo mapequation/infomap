@@ -1,0 +1,27 @@
+# Generated-and-tracked files.
+#
+# These are committed (not .gitignored) on purpose: downstream builds consume
+# them without the generator toolchain. The SWIG wrappers let the PyPI sdist,
+# r-universe, CRAN, and `remotes::install_github` build without SWIG 4.4.1; the
+# option/metadata files and roxygen docs ship in the published packages.
+#
+# `linguist-generated=true` collapses them in GitHub pull-request diffs and
+# drops them from the repository language stats — without changing the build.
+# Regenerate with `make build-python-swig build-r-swig build-binding-options`
+# (+ js metadata) and `devtools::document()` for the R docs; CI verifies
+# freshness for everything except the roxygen output.
+
+# SWIG wrappers + the binding/metadata files that live in the generated/ dirs
+interfaces/**/generated/** linguist-generated=true
+
+# SWIG Python module wrapper (lives in the package source tree)
+interfaces/python/src/infomap/_swig.py linguist-generated=true
+
+# Option APIs generated from C++ metadata by scripts/generate_binding_options.py
+interfaces/python/src/infomap/_options.py linguist-generated=true
+interfaces/R/infomap/R/options.R          linguist-generated=true
+interfaces/js/src/arguments.ts            linguist-generated=true
+
+# roxygen2 output (regenerated with devtools::document())
+interfaces/R/infomap/NAMESPACE   linguist-generated=true
+interfaces/R/infomap/man/*.Rd    linguist-generated=true
