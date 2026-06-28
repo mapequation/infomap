@@ -238,3 +238,53 @@ def test_add_networkx_layer_id_without_node_id_raises_clear_error():
     im = infomap.Infomap(silent=True, no_file_output=True)
     with pytest.raises(ValueError, match="node_id"):
         im.add_networkx_graph(graph)
+
+
+# -- meta data via a node attribute -------------------------------------------
+
+_META_LINKS = [(0, 1), (1, 2), (2, 0), (3, 4), (4, 5), (5, 3), (2, 3)]
+
+
+def _nx_with_meta(values):
+    graph = nx.Graph()
+    graph.add_edges_from(_META_LINKS)
+    for node, category in values.items():
+        graph.nodes[node]["ct"] = category
+    return graph
+
+
+def test_from_networkx_meta_attribute_engages_and_encodes_strings():
+    # String categories that cross the two natural triangles incur a meta cost;
+    # categories aligned with the modules do not. Proves meta_attribute wires
+    # metadata and auto-encodes non-integer (string) labels.
+    crossing = infomap.run(
+        infomap.Network.from_networkx(
+            _nx_with_meta({0: "a", 1: "b", 2: "a", 3: "a", 4: "b", 5: "b"}),
+            meta_attribute="ct",
+        ),
+        silent=True, num_trials=5, seed=1, meta_data_rate=1.0,
+    )
+    aligned = infomap.run(
+        infomap.Network.from_networkx(
+            _nx_with_meta({0: "x", 1: "x", 2: "x", 3: "y", 4: "y", 5: "y"}),
+            meta_attribute="ct",
+        ),
+        silent=True, num_trials=5, seed=1, meta_data_rate=1.0,
+    )
+    assert crossing.meta_codelength > 0
+    assert aligned.meta_codelength == 0.0
+
+
+def test_from_networkx_meta_attribute_typo_raises():
+    graph = nx.Graph()
+    graph.add_edges_from([(0, 1), (1, 2)])
+    with pytest.raises(ValueError, match="not set on any node"):
+        infomap.Network.from_networkx(graph, meta_attribute="missing")
+
+
+def test_find_communities_accepts_meta_attribute():
+    graph = _nx_with_meta({0: "a", 1: "b", 2: "a", 3: "a", 4: "b", 5: "b"})
+    communities = infomap.find_communities(
+        graph, meta_attribute="ct", seed=1, num_trials=3, meta_data_rate=1.0
+    )
+    assert set().union(*communities) == set(graph.nodes)

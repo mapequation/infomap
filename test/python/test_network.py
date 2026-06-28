@@ -131,3 +131,16 @@ def test_multilayer_node_namedtuple_accepted():
     src = MultilayerNode(layer_id=0, node_id=1)
     dst = MultilayerNode(layer_id=1, node_id=2)
     assert net.add_multilayer_link(src, dst) is net
+
+
+def test_set_meta_data_bulk_mapping():
+    links = [(0, 1), (1, 2), (2, 0), (3, 4), (4, 5), (5, 3), (2, 3)]
+    net = Network()
+    net.add_links(links)
+    # Crossing categories incur a meta cost; proves the {node: category} bulk
+    # form sets per-node metadata (and returns self).
+    assert net.set_meta_data({0: 0, 1: 1, 2: 0, 3: 0, 4: 1, 5: 1}) is net
+    result = net.run(
+        options={"silent": True, "num_trials": 5, "seed": 1, "meta_data_rate": 1.0}
+    )
+    assert result.meta_codelength > 0

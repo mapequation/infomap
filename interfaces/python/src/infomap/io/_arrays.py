@@ -66,6 +66,28 @@ class CommunityNode(NamedTuple):
     flow: float
 
 
+def apply_node_meta_data(infomap: Any, id_meta_pairs: Any) -> dict:
+    """Set per-node Infomap meta data, encoding arbitrary category values to
+    integers (stable first-seen order) so non-integer labels -- cell types,
+    string classes -- work directly.
+
+    ``id_meta_pairs`` yields ``(internal_id, raw_category)``; entries whose
+    category is ``None`` or NaN are skipped. Returns the ``{raw_category: code}``
+    encoding (callers may ignore it -- the meta map equation only uses which
+    nodes share a category, not the integer values).
+    """
+    encoding: dict[Any, int] = {}
+    for internal_id, raw in id_meta_pairs:
+        if raw is None or (isinstance(raw, float) and raw != raw):
+            continue
+        code = encoding.get(raw)
+        if code is None:
+            code = len(encoding)
+            encoding[raw] = code
+        infomap.set_meta_data(internal_id, code)
+    return encoding
+
+
 def community_node_data(infomap: Any) -> Iterator[CommunityNode]:
     """Yield ``(state_id, module_id, flow)`` for each leaf state node.
 

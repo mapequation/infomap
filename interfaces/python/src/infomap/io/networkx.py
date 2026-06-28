@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
-from ._arrays import community_node_data
+from ._arrays import apply_node_meta_data, community_node_data
 
 
 def _label_to_internal_id(labels):
@@ -68,6 +68,7 @@ def run_networkx(
     layer_id: str = "layer_id",
     multilayer_inter_intra_format: bool = True,
     initial_partition: Any = None,
+    meta_attribute: str | None = None,
     **infomap_options: Any,
 ) -> tuple[Any, dict[int, Any]]:
     from .._facade import Infomap
@@ -83,6 +84,7 @@ def run_networkx(
         node_id=node_id,
         layer_id=layer_id,
         multilayer_inter_intra_format=multilayer_inter_intra_format,
+        meta_attribute=meta_attribute,
     )
     infomap.run(
         initial_partition=_to_internal_partition(initial_partition, node_mapping)
@@ -100,6 +102,7 @@ def find_communities(
     initial_partition: Any = None,
     module_attribute: str | None = None,
     flow_attribute: str | None = None,
+    meta_attribute: str | None = None,
     **infomap_options: Any,
 ) -> list[set[Any]]:
     """Find communities in a NetworkX-style graph.
@@ -150,6 +153,7 @@ def find_communities(
         layer_id=layer_id,
         multilayer_inter_intra_format=multilayer_inter_intra_format,
         initial_partition=initial_partition,
+        meta_attribute=meta_attribute,
         **infomap_options,
     )
 
@@ -171,6 +175,7 @@ def add_networkx_graph(
     node_id: str = "node_id",
     layer_id: str = "layer_id",
     multilayer_inter_intra_format: bool = True,
+    meta_attribute: str | None = None,
 ) -> dict[int, Any]:
     """Add a NetworkX-style graph to an Infomap instance.
 
@@ -292,5 +297,15 @@ def add_networkx_graph(
         for source, target, data in g.edges.data():
             edge_weight = data[weight] if weight is not None and weight in data else 1.0
             infomap.add_link(node_map[source], node_map[target], edge_weight)
+
+    if meta_attribute is not None:
+        encoding = apply_node_meta_data(
+            infomap,
+            ((node_map[node], value) for node, value in g.nodes.data(meta_attribute)),
+        )
+        if not encoding:
+            raise ValueError(
+                f"`meta_attribute` {meta_attribute!r} is not set on any node."
+            )
 
     return {node_id: label for label, node_id in node_map.items()}

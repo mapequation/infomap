@@ -361,6 +361,25 @@ def test_find_igraph_communities_skips_extra_minted_state_nodes(monkeypatch):
     assert clustering.membership == [0, 0]
 
 
+def test_from_igraph_meta_attribute_engages():
+    ig = pytest.importorskip("igraph")
+    links = [(0, 1), (1, 2), (2, 0), (3, 4), (4, 5), (5, 3), (2, 3)]
+    g = ig.Graph(edges=links, directed=False)
+    g.vs["ct"] = ["a", "b", "a", "a", "b", "b"]  # crossing the two triangles
+    result = infomap.run(
+        infomap.Network.from_igraph(g, meta_attribute="ct"),
+        silent=True, num_trials=5, seed=1, meta_data_rate=1.0,
+    )
+    assert result.meta_codelength > 0
+
+
+def test_from_igraph_meta_attribute_typo_raises():
+    ig = pytest.importorskip("igraph")
+    g = ig.Graph(edges=[(0, 1), (1, 2)], directed=False)
+    with pytest.raises(ValueError, match="does not exist"):
+        infomap.Network.from_igraph(g, meta_attribute="missing")
+
+
 def test_find_igraph_communities_rejects_trial_and_vertex_weight_conflicts():
     ig = pytest.importorskip("igraph")
     graph = ig.Graph(edges=[(0, 1)], directed=False)

@@ -5,7 +5,7 @@ from collections.abc import Iterable
 from numbers import Integral, Real
 from typing import Any
 
-from ._arrays import community_node_data
+from ._arrays import apply_node_meta_data, community_node_data
 
 
 def _import_igraph() -> Any:
@@ -144,6 +144,7 @@ def add_igraph_graph(
     node_id: str = "node_id",
     layer_id: str = "layer_id",
     multilayer_inter_intra_format: bool = True,
+    meta_attribute: str | None = None,
 ) -> dict[int, Any]:
     """Add a python-igraph graph to an Infomap instance.
 
@@ -248,6 +249,16 @@ def add_igraph_graph(
         for edge_index, (source, target) in enumerate(edges):
             infomap.add_link(source, target, weights[edge_index])
 
+    if meta_attribute is not None:
+        meta_values = _vertex_attribute(g, meta_attribute)
+        if meta_values is None:
+            raise ValueError(
+                f"`meta_attribute` vertex attribute {meta_attribute!r} does not exist."
+            )
+        # add_igraph_graph registers one node per vertex using the vertex index
+        # as the (state) id, so meta is keyed by vertex index.
+        apply_node_meta_data(infomap, zip(vertices, meta_values))
+
     if names is None:
         return {vertex_id: vertex_id for vertex_id in vertices}
     return {vertex_id: names[vertex_id] for vertex_id in vertices}
@@ -296,6 +307,7 @@ def find_igraph_communities(
     multilayer_inter_intra_format: bool = True,
     module_attribute: str | None = None,
     flow_attribute: str | None = None,
+    meta_attribute: str | None = None,
     **infomap_options: Any,
 ) -> Any:
     """Find communities in a python-igraph graph."""
@@ -325,6 +337,7 @@ def find_igraph_communities(
         node_id=node_id,
         layer_id=layer_id,
         multilayer_inter_intra_format=multilayer_inter_intra_format,
+        meta_attribute=meta_attribute,
     )
     infomap.run()
 

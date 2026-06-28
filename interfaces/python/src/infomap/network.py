@@ -134,12 +134,15 @@ class Network:
         node_id="node_id",
         layer_id="layer_id",
         multilayer_inter_intra_format=True,
+        meta_attribute=None,
     ):
         """Build a :class:`Network` from a NetworkX graph.
 
         Loads ``g`` via the same adapter :meth:`Infomap.add_networkx_graph`
         uses. The ``{internal_id: label}`` mapping is stored on
-        :attr:`node_id_to_label`.
+        :attr:`node_id_to_label`. Pass ``meta_attribute`` to use a node
+        attribute as Infomap meta data (values are encoded to integers, so
+        string categories work).
         """
         from .io.networkx import add_networkx_graph as _add_networkx_graph
 
@@ -151,6 +154,7 @@ class Network:
             node_id=node_id,
             layer_id=layer_id,
             multilayer_inter_intra_format=multilayer_inter_intra_format,
+            meta_attribute=meta_attribute,
         )
         return net
 
@@ -164,12 +168,15 @@ class Network:
         node_id="node_id",
         layer_id="layer_id",
         multilayer_inter_intra_format=True,
+        meta_attribute=None,
     ):
         """Build a :class:`Network` from a python-igraph graph.
 
         Loads ``g`` via the same adapter :meth:`Infomap.add_igraph_graph` uses.
         The ``{internal_id: label}`` mapping is stored on
-        :attr:`node_id_to_label`.
+        :attr:`node_id_to_label`. Pass ``meta_attribute`` to use a vertex
+        attribute as Infomap meta data (values are encoded to integers, so
+        string categories work).
         """
         from .io.igraph import add_igraph_graph as _add_igraph_graph
 
@@ -182,6 +189,7 @@ class Network:
             node_id=node_id,
             layer_id=layer_id,
             multilayer_inter_intra_format=multilayer_inter_intra_format,
+            meta_attribute=meta_attribute,
         )
         return net
 
@@ -622,14 +630,22 @@ class Network:
     # Meta data
     # ----------------------------------------
 
-    def set_meta_data(self, node_id, meta_category):
-        """Set meta data to a node.
+    def set_meta_data(self, node_id, meta_category=None):
+        """Set integer meta data for one node, or for many at once.
 
         Parameters
         ----------
-        node_id : int
-        meta_category : int
+        node_id : int or mapping
+            A node id, or a ``{node_id: meta_category}`` mapping to assign meta
+            data to several nodes in one call.
+        meta_category : int, optional
+            The meta category, when ``node_id`` is a single node id (ignored
+            when ``node_id`` is a mapping).
         """
+        if meta_category is None and hasattr(node_id, "items"):
+            for nid, category in node_id.items():
+                self._core.network().addMetaData(nid, category)
+            return self
         self._core.network().addMetaData(node_id, meta_category)
         return self
 
