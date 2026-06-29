@@ -16,7 +16,10 @@ is forwarded to :class:`infomap.Infomap`, e.g.::
 
 from __future__ import annotations
 
-from ._facade import Infomap
+# Safe at module top: unlike the io/ graph adapters (imported by the facade,
+# hence lazy to avoid a cycle), this backend module is only imported via the
+# networkx entry point, after the facade is fully loaded.
+from .._facade import Infomap
 
 
 def _build_infomap(G, weight, options):

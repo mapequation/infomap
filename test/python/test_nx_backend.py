@@ -77,7 +77,7 @@ def test_weight_none_treats_edges_as_unweighted():
 
 
 def test_seed_and_num_trials_forwarded_to_infomap(monkeypatch):
-    import infomap._nx_backend as backend
+    import infomap.io.nx_backend as backend
 
     captured: dict = {}
 

@@ -28,6 +28,20 @@ def _stable_unique_labels(labels):
     return unique
 
 
+def _validate_weights(g, weight):
+    """Edge weights feed a flow distribution, so they must be finite and
+    non-negative (as enforced for the scipy and edge-index adapters)."""
+    if weight is None:
+        return
+    for _, _, data in g.edges.data():
+        w = data.get(weight, 1.0)
+        if not isfinite(w) or w < 0:
+            raise ValueError(
+                "edge weights must be finite and non-negative; Infomap does "
+                "not support negative or non-finite weights."
+            )
+
+
 def _communities_from_infomap(infomap, node_mapping):
     communities = {}
 
@@ -215,17 +229,8 @@ def add_networkx_graph(
     except IndexError:
         return {}
 
-    # Flow is a probability distribution, so edge weights must be finite and
-    # non-negative (as already enforced for scipy and edge-index input). Reject
-    # ill-defined weights up front rather than building a meaningless map.
-    if weight is not None:
-        for _, _, data in g.edges.data():
-            w = data.get(weight, 1.0)
-            if not isfinite(w) or w < 0:
-                raise ValueError(
-                    "edge weights must be finite and non-negative; Infomap does "
-                    "not support negative or non-finite weights."
-                )
+    # Reject ill-defined weights up front rather than building a meaningless map.
+    _validate_weights(g, weight)
 
     if not infomap._core.flowModelIsSet and g.is_directed():
         infomap._core.setDirected(True)
