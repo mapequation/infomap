@@ -119,6 +119,7 @@ class Config(object):
     multilayerJSRelaxRate = property(_infomap.Config_multilayerJSRelaxRate_get, _infomap.Config_multilayerJSRelaxRate_set)
     multilayerRelaxByJensenShannonDivergence = property(_infomap.Config_multilayerRelaxByJensenShannonDivergence_get, _infomap.Config_multilayerRelaxByJensenShannonDivergence_set)
     multilayerJSRelaxLimit = property(_infomap.Config_multilayerJSRelaxLimit_get, _infomap.Config_multilayerJSRelaxLimit_set)
+    multilayerRelaxToSelf = property(_infomap.Config_multilayerRelaxToSelf_get, _infomap.Config_multilayerRelaxToSelf_set)
     maxFlowIterations = property(_infomap.Config_maxFlowIterations_get, _infomap.Config_maxFlowIterations_set)
     twoLevel = property(_infomap.Config_twoLevel_get, _infomap.Config_twoLevel_set)
     noCoarseTune = property(_infomap.Config_noCoarseTune_get, _infomap.Config_noCoarseTune_set)
@@ -127,6 +128,8 @@ class Config(object):
     regularizationStrength = property(_infomap.Config_regularizationStrength_get, _infomap.Config_regularizationStrength_set)
     teleportationProbability = property(_infomap.Config_teleportationProbability_get, _infomap.Config_teleportationProbability_set)
     preferredNumberOfModules = property(_infomap.Config_preferredNumberOfModules_get, _infomap.Config_preferredNumberOfModules_set)
+    preferredNumberOfLevels = property(_infomap.Config_preferredNumberOfLevels_get, _infomap.Config_preferredNumberOfLevels_set)
+    preferredNumberOfLevelsStrength = property(_infomap.Config_preferredNumberOfLevelsStrength_get, _infomap.Config_preferredNumberOfLevelsStrength_set)
     entropyBiasCorrection = property(_infomap.Config_entropyBiasCorrection_get, _infomap.Config_entropyBiasCorrection_set)
     entropyBiasCorrectionMultiplier = property(_infomap.Config_entropyBiasCorrectionMultiplier_get, _infomap.Config_entropyBiasCorrectionMultiplier_set)
     seedToRandomNumberGenerator = property(_infomap.Config_seedToRandomNumberGenerator_get, _infomap.Config_seedToRandomNumberGenerator_set)
@@ -2091,8 +2094,8 @@ class StateNetwork(object):
     def sumNodeWeight(self):
         return _infomap.StateNetwork_sumNodeWeight(self)
 
-    def nodeLinkMap(self, *args):
-        return _infomap.StateNetwork_nodeLinkMap(self, *args)
+    def numAggregatedLinks(self):
+        return _infomap.StateNetwork_numAggregatedLinks(self)
 
     def numLinks(self):
         return _infomap.StateNetwork_numLinks(self)
@@ -3028,6 +3031,26 @@ def build_info():
 
 def run(flags):
     return _infomap.run(flags)
+class NodeData(object):
+    thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc="The membership flag")
+    __repr__ = _swig_repr
+    node_id = property(_infomap.NodeData_node_id_get, _infomap.NodeData_node_id_set)
+    state_id = property(_infomap.NodeData_state_id_get, _infomap.NodeData_state_id_set)
+    module_id = property(_infomap.NodeData_module_id_get, _infomap.NodeData_module_id_set)
+    flow = property(_infomap.NodeData_flow_get, _infomap.NodeData_flow_set)
+    depth = property(_infomap.NodeData_depth_get, _infomap.NodeData_depth_set)
+    layer_id = property(_infomap.NodeData_layer_id_get, _infomap.NodeData_layer_id_set)
+    child_index = property(_infomap.NodeData_child_index_get, _infomap.NodeData_child_index_set)
+    modular_centrality = property(_infomap.NodeData_modular_centrality_get, _infomap.NodeData_modular_centrality_set)
+    path_flat = property(_infomap.NodeData_path_flat_get, _infomap.NodeData_path_flat_set)
+    path_len = property(_infomap.NodeData_path_len_get, _infomap.NodeData_path_len_set)
+
+    def __init__(self):
+        _infomap.NodeData_swiginit(self, _infomap.new_NodeData())
+    __swig_destroy__ = _infomap.delete_NodeData
+
+# Register NodeData in _infomap:
+_infomap.NodeData_swigregister(NodeData)
 class InfomapWrapper(InfomapBase):
     thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc="The membership flag")
     __repr__ = _swig_repr
@@ -3092,6 +3115,9 @@ class InfomapWrapper(InfomapBase):
 
     def getModules(self, level=1, states=False):
         return _infomap.InfomapWrapper_getModules(self, level, states)
+
+    def getNodeData(self, level=1, states=False):
+        return _infomap.InfomapWrapper_getNodeData(self, level, states)
 
     def codelength(self):
         return _infomap.InfomapWrapper_codelength(self)

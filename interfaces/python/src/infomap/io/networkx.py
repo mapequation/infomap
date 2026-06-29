@@ -4,11 +4,15 @@ from collections.abc import Mapping
 from math import isfinite
 from typing import Any
 
+from ._arrays import apply_node_meta_data, community_node_data
+
 
 def _label_to_internal_id(labels):
     if not labels:
         return {}
-    if isinstance(labels[0], int):
+    # Identity map only when EVERY label is an int (bools excluded): a mix like
+    # [1, "a"] must enumerate, or "a" would map to itself and reach add_node.
+    if all(isinstance(label, int) and not isinstance(label, bool) for label in labels):
         return {label: label for label in labels}
     return {label: index for index, label in enumerate(labels)}
 
@@ -27,7 +31,11 @@ def _stable_unique_labels(labels):
 def _communities_from_infomap(infomap, node_mapping):
     communities = {}
 
-    for node in infomap.nodes:
+    for node in community_node_data(infomap):
+        # Multilayer/relaxation runs can mint extra leaf state nodes whose ids
+        # aren't registered vertices; skip them (mirrors the igraph helper).
+        if node.state_id not in node_mapping:
+            continue
         original_node = node_mapping[node.state_id]
         communities.setdefault(node.module_id, set()).add(original_node)
 
@@ -40,7 +48,9 @@ def _set_networkx_node_attributes(
     if module_attribute is None and flow_attribute is None:
         return
 
-    for node in infomap.nodes:
+    for node in community_node_data(infomap):
+        if node.state_id not in node_mapping:
+            continue
         original_node = node_mapping[node.state_id]
         if module_attribute is not None:
             g.nodes[original_node][module_attribute] = node.module_id
@@ -67,9 +77,10 @@ def run_networkx(
     layer_id: str = "layer_id",
     multilayer_inter_intra_format: bool = True,
     initial_partition: Any = None,
+    meta_attribute: str | None = None,
     **infomap_options: Any,
 ) -> tuple[Any, dict[int, Any]]:
-    from ._facade import Infomap
+    from .._facade import Infomap
 
     options = {"silent": True, "no_file_output": True}
     options.update(infomap_options)
@@ -82,6 +93,7 @@ def run_networkx(
         node_id=node_id,
         layer_id=layer_id,
         multilayer_inter_intra_format=multilayer_inter_intra_format,
+        meta_attribute=meta_attribute,
     )
     infomap.run(
         initial_partition=_to_internal_partition(initial_partition, node_mapping)
@@ -99,6 +111,7 @@ def find_communities(
     initial_partition: Any = None,
     module_attribute: str | None = None,
     flow_attribute: str | None = None,
+    meta_attribute: str | None = None,
     **infomap_options: Any,
 ) -> list[set[Any]]:
     """Find communities in a NetworkX-style graph.
@@ -149,6 +162,7 @@ def find_communities(
         layer_id=layer_id,
         multilayer_inter_intra_format=multilayer_inter_intra_format,
         initial_partition=initial_partition,
+        meta_attribute=meta_attribute,
         **infomap_options,
     )
 
@@ -170,7 +184,31 @@ def add_networkx_graph(
     node_id: str = "node_id",
     layer_id: str = "layer_id",
     multilayer_inter_intra_format: bool = True,
+    meta_attribute: str | None = None,
 ) -> dict[int, Any]:
+    """Add a NetworkX-style graph to an Infomap instance.
+
+    Directedness
+    ------------
+    Auto-detected from the graph: when ``g.is_directed()`` is true (e.g. an
+    ``nx.DiGraph``) and no flow model has been set on the instance, the
+    ``directed`` flag is enabled. (The graph-library adapters diverge here:
+    networkx and igraph auto-detect via ``is_directed()``; ``add_scipy_sparse_matrix``
+    defaults ``directed=False``; ``add_edge_index`` defaults ``directed=True``.)
+
+    Weight parameter
+    ----------------
+    This adapter names its edge-weight parameter ``weight`` (the edge-data key
+    to read; ``None`` treats every edge as weight 1). The other adapters use
+    different names: igraph ``edge_weights``, scipy ``weighted`` (a bool),
+    edge_index ``edge_weight``.
+
+    MultiGraph / self-loops
+    -----------------------
+    Parallel edges from an ``nx.MultiGraph``/``nx.MultiDiGraph`` are each
+    forwarded to ``add_link`` (their weights accumulate in the engine), and
+    self-loops (``g.add_edge(n, n)``) are passed through to ``add_link`` as-is.
+    """
     try:
         nodes = list(g.nodes)
         first = nodes[0]
@@ -189,8 +227,8 @@ def add_networkx_graph(
                     "not support negative or non-finite weights."
                 )
 
-    if not infomap.flowModelIsSet and g.is_directed():
-        infomap.setDirected(True)
+    if not infomap._core.flowModelIsSet and g.is_directed():
+        infomap._core.setDirected(True)
 
     node_map = _label_to_internal_id(nodes)
     is_string_id = isinstance(first, str)
@@ -198,6 +236,13 @@ def add_networkx_graph(
     layer_ids = dict(g.nodes.data(layer_id))
     is_state_network = None not in node_ids.values()
     is_multilayer_network = None not in layer_ids.values()
+
+    if is_multilayer_network and not is_state_network:
+        raise ValueError(
+            f"A multilayer network (every node carries a {layer_id!r} attribute) "
+            f"also requires a {node_id!r} attribute on every node to identify the "
+            f"physical node each state node maps to; some nodes are missing it."
+        )
 
     phys_map = {}
     if is_state_network:
@@ -273,5 +318,15 @@ def add_networkx_graph(
         for source, target, data in g.edges.data():
             edge_weight = data[weight] if weight is not None and weight in data else 1.0
             infomap.add_link(node_map[source], node_map[target], edge_weight)
+
+    if meta_attribute is not None:
+        encoding = apply_node_meta_data(
+            infomap,
+            ((node_map[node], value) for node, value in g.nodes.data(meta_attribute)),
+        )
+        if not encoding:
+            raise ValueError(
+                f"`meta_attribute` {meta_attribute!r} is not set on any node."
+            )
 
     return {node_id: label for label, node_id in node_map.items()}

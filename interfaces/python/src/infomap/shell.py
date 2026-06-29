@@ -6,8 +6,8 @@ import sys
 from pathlib import Path
 
 import infomap
-from . import Infomap, InfomapOptions, MultilayerNode
-from ._facade import _summary_data
+from . import Infomap, MultilayerNode, Options
+from ._summary import summary_data as _summary_data
 
 
 def _format_value(value):
@@ -24,7 +24,7 @@ def _print_summary(data):
 def _make_banner(network_file=None):
     lines = [
         "Infomap shell",
-        "Imported: infomap, Infomap, InfomapOptions, MultilayerNode",
+        "Imported: infomap, Infomap, Options, MultilayerNode",
         "Created: im = Infomap()",
         "Helpers: summary(), options()",
     ]
@@ -41,7 +41,7 @@ def create_namespace(network_file=None):
     namespace = {
         "infomap": infomap,
         "Infomap": Infomap,
-        "InfomapOptions": InfomapOptions,
+        "Options": Options,
         "MultilayerNode": MultilayerNode,
         "im": im,
     }
@@ -53,8 +53,8 @@ def create_namespace(network_file=None):
         return data
 
     def options():
-        help(InfomapOptions)
-        return InfomapOptions
+        help(Options)
+        return Options
 
     namespace["summary"] = summary
     namespace["options"] = options
@@ -64,7 +64,7 @@ def create_namespace(network_file=None):
 def launch_shell(namespace, banner, *, use_ipython=True):
     if use_ipython:
         try:
-            from IPython import start_ipython
+            from IPython import start_ipython  # pyright: ignore[reportMissingImports]  # optional dep, no stubs
         except ImportError:
             pass
         else:

@@ -20,6 +20,7 @@ PYTHON_FOR_BUILD_CONFIG ?= $(shell command -v $(PYTHON) 2>/dev/null || command -
 PIP ?= $(PYTHON) -m pip
 PYTEST ?= $(PYTHON) -m pytest
 RUFF ?= $(PYTHON) -m ruff
+PYRIGHT ?= $(PYTHON) -m pyright
 NPM ?= npm
 NODE ?= node
 SWIG ?= swig
@@ -137,6 +138,7 @@ help:
 		"  build-binding-options Regenerate Python, R, and TypeScript option APIs from C++ metadata." \
 		"  build-js-metadata     Refresh the tracked JS parameter metadata." \
 		"  build-js              Build the JS worker bundle and npm package assets from tracked metadata." \
+		"  build-node            Build the Emscripten Node module (CLI + programmatic) into build/js/." \
 		"  build-docs            Build the Python docs site into docs/ (untracked output)." \
 		"" \
 		"Test" \
@@ -155,6 +157,7 @@ help:
 		"  test-binding-options-freshness Verify tracked binding option APIs are current." \
 		"  test-js-metadata      Regenerate JS metadata in a temp dir and verify tracked files are current." \
 		"  test-js               Run JS lint/typecheck/unit/browser/package verification for the built npm package." \
+		"  test-node             Build the Node module and smoke-test its CLI and programmatic API." \
 		"  test-fast             Run the fast native + Python feedback suite." \
 		"  test-sanitizers       Run the C++ test suite under ASan/UBSan." \
 		"  bench-native          Run the native benchmark and memory baseline harness." \
@@ -199,6 +202,7 @@ help:
 		"  make build-binding-options test-binding-options-freshness" \
 		"  make build-js-metadata test-js-metadata" \
 		"  make build-js test-js" \
+		"  make build-node test-node" \
 		"  make build-docs"
 
 build-binding-options: build-native

@@ -5,6 +5,9 @@ notebook for running Infomap in Jupyter, inspecting the notebook-native result
 summary, drawing a small readable partition, and exporting results for further
 analysis.
 
+Then read [`options-guide.ipynb`](options-guide.ipynb) for what every Infomap
+option is for, with runnable examples and a complete reference table.
+
 Most numbered notebooks accompany [Community Detection with the Map Equation
 and Infomap: Theory and Applications](https://doi.org/10.1145/3779648).
 Descriptive, unnumbered notebooks cover practical Python workflows that are

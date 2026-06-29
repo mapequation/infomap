@@ -19,26 +19,30 @@ im.add_link(1, 2)
 im.add_link(3, 2)
 im.add_link(4, 5)
 
-im.run()
+result = im.run()
 
-print(f"Found {im.num_top_modules} modules with codelength {im.codelength:.8f} bits")
+print(
+    f"Found {result.num_top_modules} modules with codelength "
+    f"{result.codelength:.8f} bits"
+)
 
 print("\n#node_id module")
-for node, module in im.get_modules(states=True).items():
+for node, module in result.modules(states=True).items():
     print(node, module)
 
 print("\nState nodes:")
 print("#state_id node_id module_id")
-for node in im.nodes:
+for node in result.nodes(states=True):
     print(node.state_id, node.node_id, node.module_id)
 
 print(
     "\nPhysical nodes (merging state nodes with same physical node id within modules):"
 )
 print("#node_id module_id")
-for node in im.physical_tree:
+for node in result.tree(states=False):
     if node.is_leaf:
         print(node.node_id, node.module_id)
 
-# for node in im.physical_nodes:
+# Or iterate the physical leaf nodes directly:
+# for node in result.nodes(states=False):
 #     print(node.node_id, node.module_id)

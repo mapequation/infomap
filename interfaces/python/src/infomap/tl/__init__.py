@@ -3,6 +3,11 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
+# The only public name here is the Scanpy-style ``infomap.tl.infomap`` entry
+# point; without this, the module-level imports (Any/Mapping/...) would leak
+# into the ``infomap.tl`` namespace.
+__all__ = ["infomap"]
+
 
 def _import_pandas() -> Any:
     try:
@@ -95,7 +100,7 @@ def _copy_anndata_like(adata: Any) -> Any:
 
 
 def _module_labels(im: Any, mapping: dict[int, Any], obs_names: list[Any]) -> list[str]:
-    modules = im.get_modules()
+    modules = im._result.modules()
     modules_by_obs_name = {
         mapping[internal_id]: module_id for internal_id, module_id in modules.items()
     }
@@ -127,7 +132,7 @@ def infomap(
     ``adata.obs[key_added]``, and stores run metadata in ``adata.uns[key_added]``.
     Scanpy itself is not imported.
     """
-    from ._facade import Infomap
+    from .._facade import Infomap
 
     pd = _import_pandas()
     n_obs = _validate_anndata_like(adata)
@@ -152,10 +157,18 @@ def infomap(
         weighted=use_weights,
         node_ids=obs_names,
     )
-    im.run()
+    result = im.run()
 
     labels = _module_labels(im, mapping, obs_names)
-    categories = sorted({int(label) for label in labels})
+    try:
+        categories = sorted({int(label) for label in labels})
+    except (TypeError, ValueError) as exc:
+        # Infomap module labels are always ints; this is defensive so a
+        # malformed label surfaces a clear message rather than a raw cast error.
+        raise ValueError(
+            "Infomap module labels must be integer-castable to build the "
+            f"`adata.obs[{key_added!r}]` categories; got {labels!r}."
+        ) from exc
     adata.obs[key_added] = pd.Categorical(
         labels,
         categories=[str(category) for category in categories],
@@ -169,8 +182,8 @@ def infomap(
             "args": args,
             **options,
         },
-        "n_modules": im.num_top_modules,
-        "codelength": im.codelength,
+        "n_modules": result.num_top_modules,
+        "codelength": result.codelength,
     }
 
     if copy:

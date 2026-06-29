@@ -25,10 +25,13 @@ make dev-r-install
 
 ```sh
 Rscript examples/R/example-minimal.R
-Rscript examples/R/example-igraph.R   # also requires `igraph`
+Rscript examples/R/example-igraph.R       # also requires `igraph`
+Rscript examples/R/example-multilayer.R
 ```
 
 `example-minimal.R` constructs a small directed network programmatically and
 prints the resulting partition. `example-igraph.R` shows how to import an
 existing `igraph` graph and convert the result back into an
-`igraph::communities` object.
+`igraph::communities` object. `example-multilayer.R` clusters a two-layer
+network with `cluster_infomap_multilayer()` and the lower-level
+`add_multilayer_intra_link()` / `add_multilayer_inter_link()` R6 API.

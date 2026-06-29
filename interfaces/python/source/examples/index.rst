@@ -9,6 +9,8 @@ Choose a notebook
 -----------------
 
 - :doc:`quickstart` — first end-to-end Infomap workflow in Python.
+- :doc:`options-guide` — what every Infomap option is for, with runnable
+  examples and a complete reference table.
 - :doc:`compare-infomap-louvain-networkx` — compare Infomap and Louvain with
   NetworkX when your graph already lives in NetworkX.
 - :doc:`compare-infomap-louvain-leiden-igraph` — compare Infomap, Louvain, and
@@ -19,6 +21,8 @@ Choose a notebook
   entity and relationship tables and compare with Leiden.
 - :doc:`run-infomap-on-hpc` — native CLI recipes for scheduler-aware HPC runs
   and Python shard merging.
+- :doc:`benchmark-performance` — estimate run time and memory from network size,
+  threads, trials, and hierarchy depth, with empirical scaling laws.
 
 Additional tutorial notebooks
 -----------------------------
@@ -55,19 +59,23 @@ Source notebooks
 ----------------
 
 - `quickstart.ipynb <https://github.com/mapequation/infomap/blob/master/examples/notebooks/quickstart.ipynb>`_
+- `options-guide.ipynb <https://github.com/mapequation/infomap/blob/master/examples/notebooks/options-guide.ipynb>`_
 - `compare-infomap-louvain-networkx.ipynb <https://github.com/mapequation/infomap/blob/master/examples/notebooks/compare-infomap-louvain-networkx.ipynb>`_
 - `compare-infomap-louvain-leiden-igraph.ipynb <https://github.com/mapequation/infomap/blob/master/examples/notebooks/compare-infomap-louvain-leiden-igraph.ipynb>`_
 - `compare-infomap-scanpy-workflow.ipynb <https://github.com/mapequation/infomap/blob/master/examples/notebooks/compare-infomap-scanpy-workflow.ipynb>`_
 - `run-infomap-on-graphrag-tables.ipynb <https://github.com/mapequation/infomap/blob/master/examples/notebooks/run-infomap-on-graphrag-tables.ipynb>`_
 - `run-infomap-on-hpc.ipynb <https://github.com/mapequation/infomap/blob/master/examples/notebooks/run-infomap-on-hpc.ipynb>`_
+- `benchmark-performance.ipynb <https://github.com/mapequation/infomap/blob/master/examples/notebooks/benchmark-performance.ipynb>`_
 
 .. toctree::
    :hidden:
    :maxdepth: 1
 
    quickstart
+   options-guide
    compare-infomap-louvain-networkx
    compare-infomap-louvain-leiden-igraph
    compare-infomap-scanpy-workflow
    run-infomap-on-graphrag-tables
    run-infomap-on-hpc
+   benchmark-performance

@@ -10,6 +10,8 @@ cmake-build-*/
 .cache/
 
 __pycache__/
+.venv/
+venv/
 node_modules/
 *.dSYM
 callgrind.*
@@ -62,5 +64,6 @@ examples/cpp/Infomap-igraph-interface-library/lib/
 *.ftree
 *.nwk
 *.csv
+!examples/notebooks/data/benchmark-results.csv
 /*.net
 test/tmp/

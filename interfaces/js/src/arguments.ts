@@ -68,11 +68,14 @@ export type Arguments = Partial<{
   variableMarkovDamping: number;
   variableMarkovMinScale: number;
   preferredNumberOfModules: number;
+  preferredNumberOfLevels: number;
+  preferredNumberOfLevelsStrength: number;
   multilayerRelaxRate: number;
   multilayerRelaxLimit: number;
   multilayerRelaxLimitUp: number;
   multilayerRelaxLimitDown: number;
   multilayerRelaxByJsd: boolean;
+  multilayerRelaxToSelf: boolean;
   // accuracy
   seed: number;
   numTrials: number;
@@ -199,6 +202,14 @@ export default function argumentsToString(args: Arguments) {
   if (args.preferredNumberOfModules != null)
     result += " --preferred-number-of-modules " + args.preferredNumberOfModules;
 
+  if (args.preferredNumberOfLevels != null)
+    result += " --preferred-number-of-levels " + args.preferredNumberOfLevels;
+
+  if (args.preferredNumberOfLevelsStrength != null)
+    result +=
+      " --preferred-number-of-levels-strength " +
+      args.preferredNumberOfLevelsStrength;
+
   if (args.multilayerRelaxRate != null)
     result += " --multilayer-relax-rate " + args.multilayerRelaxRate;
 
@@ -212,6 +223,8 @@ export default function argumentsToString(args: Arguments) {
     result += " --multilayer-relax-limit-down " + args.multilayerRelaxLimitDown;
 
   if (args.multilayerRelaxByJsd) result += " --multilayer-relax-by-jsd";
+
+  if (args.multilayerRelaxToSelf) result += " --multilayer-relax-to-self";
 
   if (args.seed != null) result += " --seed " + args.seed;
 

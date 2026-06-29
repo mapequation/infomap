@@ -136,3 +136,50 @@ def paired_multilayer_unpacker():
         ), weight
 
     return RowUnpacker(4, "(source_node, target_node, [weight])", unpack)
+
+
+def add_bulk_links(
+    links,
+    *,
+    numpy_method,
+    list_method,
+    name,
+    valid_columns,
+    column_description,
+    valid_lengths,
+    unpack,
+    length_description,
+    require_32_or_64_bit=False,
+):
+    """Route a links input to the right C++ bulk constructor.
+
+    NumPy input goes to ``numpy_method`` (an ``addXFromNumpy2D`` SWIG bound
+    method); any other iterable is normalized once and handed as parallel
+    sequences to ``list_method`` (an ``addX`` SWIG bound method). The hot path
+    stays in C++; no per-element Python loop is introduced. Shared by the
+    single-layer and multilayer bulk builders.
+    """
+    if is_numpy_input(links):
+        links_array = normalize_numpy_links(
+            links,
+            name=name,
+            valid_columns=valid_columns,
+            column_description=column_description,
+            require_32_or_64_bit=require_32_or_64_bit,
+        )
+        return numpy_method(
+            links_array,
+            links_array.shape[0],
+            links_array.shape[1],
+            links_array.dtype.kind,
+            links_array.dtype.itemsize,
+        )
+
+    sequences = split_optional_weight_rows(
+        links,
+        row_name=name,
+        valid_lengths=valid_lengths,
+        unpack=unpack,
+        length_description=length_description,
+    )
+    return list_method(*sequences)

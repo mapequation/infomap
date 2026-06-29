@@ -59,11 +59,14 @@ _ALGORITHM_OPTION_SPECS = (
     ("value", "variable_markov_damping", "--variable-markov-damping", lambda value: value != 1.0),
     ("value", "variable_markov_min_scale", "--variable-markov-min-scale", lambda value: value != 1.0),
     ("value", "preferred_number_of_modules", "--preferred-number-of-modules", lambda value: value is not None),
+    ("value", "preferred_number_of_levels", "--preferred-number-of-levels", lambda value: value is not None),
+    ("value", "preferred_number_of_levels_strength", "--preferred-number-of-levels-strength", lambda value: value != 1.0),
     ("value", "multilayer_relax_rate", "--multilayer-relax-rate", lambda value: value != 0.15),
     ("value", "multilayer_relax_limit", "--multilayer-relax-limit", lambda value: value != -1),
     ("value", "multilayer_relax_limit_up", "--multilayer-relax-limit-up", lambda value: value != -1),
     ("value", "multilayer_relax_limit_down", "--multilayer-relax-limit-down", lambda value: value != -1),
     ("flag", "multilayer_relax_by_jsd", "--multilayer-relax-by-jsd", None),
+    ("flag", "multilayer_relax_to_self", "--multilayer-relax-to-self", None),
 )
 
 _ACCURACY_OPTION_SPECS = (
@@ -104,15 +107,16 @@ def _join_args(base_args, parts):
     return f"{base_args} {' '.join(parts)}"
 
 
-@dataclass(slots=True)
-class InfomapOptions:
+@dataclass(frozen=True, slots=True)
+class Options:
     """Reusable Infomap keyword options.
 
     This class mirrors the keyword arguments accepted by :class:`infomap.Infomap`
-    and :meth:`infomap.Infomap.run`. Use :meth:`to_args` to render command-line
-    flags, :meth:`from_mapping` to construct options from existing keyword
-    dicts, or the convenience methods :meth:`infomap.Infomap.from_options` and
-    :meth:`infomap.Infomap.run_with_options` to apply a reusable configuration.
+    and :meth:`infomap.Infomap.run`. Construct it like any dataclass
+    (``Options(num_trials=10)``) -- unknown keys raise, as usual -- use
+    :meth:`to_args` to render command-line flags, or pass an instance to
+    :func:`infomap.run` via ``infomap.run(input, options=options)`` to apply a
+    reusable configuration.
 
     Parameters
     ----------
@@ -242,6 +246,13 @@ class InfomapOptions:
         Local Markov time is max scale divided by local scale.
     preferred_number_of_modules : int, optional
         Penalize solutions by how far their number of modules differs from this value.
+    preferred_number_of_levels : int, optional
+        Soft preference for the depth of the hierarchy. Steering to a shallower depth is
+        reliable at a small codelength cost; deeper is best-effort, bounded by what the
+        optimizer proposes. No-op with --two-level or strength 0.
+    preferred_number_of_levels_strength : float, optional
+        Scale the strength of --preferred-number-of-levels. 0 disables the preference;
+        larger values increase the cost of deviating from the preferred depth.
     multilayer_relax_rate : float, optional
         Set the probability of relaxing from a state node to neighboring layers instead
         of staying in the current layer.
@@ -257,6 +268,10 @@ class InfomapOptions:
     multilayer_relax_by_jsd : bool, optional
         Weight multilayer relaxation by out-link similarity measured with Jensen-Shannon
         divergence.
+    multilayer_relax_to_self : bool, optional
+        On relaxation, link a state node to its own physical node in the target layer
+        instead of spreading to its out-neighbors. Builds a smaller state network with
+        the same flow as the default.
     seed : int, optional
         Set the random number generator seed for reproducible results.
     num_trials : int, optional
@@ -364,11 +379,14 @@ class InfomapOptions:
     variable_markov_damping: float = 1.0
     variable_markov_min_scale: float = 1.0
     preferred_number_of_modules: int | None = None
+    preferred_number_of_levels: int | None = None
+    preferred_number_of_levels_strength: float = 1.0
     multilayer_relax_rate: float = 0.15
     multilayer_relax_limit: int = -1
     multilayer_relax_limit_up: int = -1
     multilayer_relax_limit_down: int = -1
     multilayer_relax_by_jsd: bool = False
+    multilayer_relax_to_self: bool = False
     # accuracy
     seed: int = 123
     num_trials: int = 1
@@ -388,7 +406,10 @@ class InfomapOptions:
     max_degree_for_random_moves: int | None = None
 
     @classmethod
-    def from_mapping(cls, mapping):
+    def _from_locals(cls, mapping):
+        # Internal: build from a locals() dict, dropping the non-field
+        # entries (self/args/cls). Public construction is the dataclass
+        # constructor, Options(**mapping), which rejects unknown keys.
         return cls(**{name: mapping[name] for name in _OPTION_FIELD_NAMES if name in mapping})
 
     def to_kwargs(self):
@@ -431,7 +452,11 @@ class InfomapOptions:
         return _join_args(base_args, rendered_args)
 
 
-_OPTION_FIELD_NAMES = tuple(field.name for field in fields(InfomapOptions))
+_OPTION_FIELD_NAMES = tuple(field.name for field in fields(Options))
+
+
+# Options is the canonical public name; InfomapOptions stays as a back-compat alias.
+InfomapOptions = Options
 
 
 def _construct_args(
@@ -488,11 +513,14 @@ def _construct_args(
     variable_markov_damping=1.0,
     variable_markov_min_scale=1.0,
     preferred_number_of_modules=None,
+    preferred_number_of_levels=None,
+    preferred_number_of_levels_strength=1.0,
     multilayer_relax_rate=0.15,
     multilayer_relax_limit=-1,
     multilayer_relax_limit_up=-1,
     multilayer_relax_limit_down=-1,
     multilayer_relax_by_jsd=False,
+    multilayer_relax_to_self=False,
     # accuracy
     seed=123,
     num_trials=1,
@@ -511,4 +539,4 @@ def _construct_args(
     num_random_moves=None,
     max_degree_for_random_moves=None,
 ):
-    return InfomapOptions.from_mapping(locals()).to_args(base_args=args)
+    return Options._from_locals(locals()).to_args(base_args=args)

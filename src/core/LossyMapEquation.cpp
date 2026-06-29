@@ -15,6 +15,7 @@
 #include "../utils/Log.h"
 
 #include <algorithm>
+#include <unordered_map>
 #include <vector>
 
 namespace infomap {
@@ -56,22 +57,27 @@ void LossyMapEquation::initNetwork(InfoNode& root)
     return;
 
   // Compute each leaf node's share of the Markov entropy rate, p_alpha * h_alpha,
-  // and its plogp(p_alpha), from edge weights. Undirected leaf networks store each
-  // link once, so include both out- and in-edges (same pattern as the entropy rate
-  // calculation in InfomapBase::generateSubNetwork). Accumulate the totals on the
-  // root so they survive tree rewrites that bypass consolidateModules.
+  // and its plogp(p_alpha), from edge weights. h_alpha is the entropy of the walk's
+  // transition over the node's distinct neighbours, so aggregate edge weights per
+  // neighbour first: an undirected edge may reach the node as both an out- and an
+  // in-edge (when the input lists the link in both directions) and genuine parallel
+  // edges may repeat a neighbour; summing per neighbour makes h_alpha independent of
+  // how the same undirected adjacency was written. Accumulate the totals on the root
+  // so they survive tree rewrites that bypass consolidateModules.
   root.lossyEntropy = 0.0;
   root.lossyFlowLogFlow = 0.0;
+  std::unordered_map<const InfoNode*, double> neighborWeight;
   for (InfoNode& node : root) {
+    neighborWeight.clear();
+    for (InfoEdge* e : node.outEdges())
+      neighborWeight[e->target] += e->data.weight;
+    for (InfoEdge* e : node.inEdges())
+      neighborWeight[e->source] += e->data.weight;
     double sumWLogW = 0.0;
     double strength = 0.0;
-    for (InfoEdge* e : node.outEdges()) {
-      sumWLogW += infomath::plogp(e->data.weight);
-      strength += e->data.weight;
-    }
-    for (InfoEdge* e : node.inEdges()) {
-      sumWLogW += infomath::plogp(e->data.weight);
-      strength += e->data.weight;
+    for (const auto& nw : neighborWeight) {
+      sumWLogW += infomath::plogp(nw.second);
+      strength += nw.second;
     }
     // h = -sum (w/s) log2 (w/s) = (plogp(s) - sum plogp(w)) / s
     double h = strength > 1e-16 ? (infomath::plogp(strength) - sumWLogW) / strength : 0.0;
@@ -130,6 +136,17 @@ void LossyMapEquation::calculateCodelength(std::vector<InfoNode*>& nodes)
 double LossyMapEquation::calcCodelength(const InfoNode& parent) const
 {
   double L = Base::calcCodelength(parent);
+
+  // The one-level baseline (the whole network as a single module) is the lossless
+  // map-equation code length L_1 = H(p_alpha): a fixed, lambda-independent upper
+  // reference. Capture it before any noise correction so reporting and relative
+  // savings use L_1 rather than the lambda-dependent corrected one-module objective
+  // (which still drives the optimizer via m_oneLevelCodelength). Only the root whose
+  // children are the leaf nodes equals L_1; once the root is a module-of-modules,
+  // Base::calcCodelength(root) is an index codebook, so guard on isLeafModule() to
+  // avoid overwriting L_1 with a partition-dependent value.
+  if (parent.isRoot() && parent.isLeafModule())
+    m_oneLevelLossless = L;
 
   // Corrections apply to modules that own a visit codebook, i.e. leaf modules in
   // the two-level partition. The root (and any module of modules) is an index

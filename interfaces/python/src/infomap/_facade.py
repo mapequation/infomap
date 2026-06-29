@@ -1,32 +1,57 @@
 import sys
 from collections import namedtuple
 from contextlib import contextmanager
-from html import escape
 
-from ._bindings import *  # noqa: F401,F403
-from ._bindings import __all__ as _BINDINGS_ALL
-from ._edge_index import add_edge_index as _add_edge_index
-from ._igraph import add_igraph_graph as _add_igraph_graph
-from ._igraph import find_igraph_communities
+from ._core import Core
+from ._core import apply_initial_partition
+from ._core import build_info
+from ._core import run as _cli_run
+
+# Documented tree-walking iterator/node types returned by ``Infomap.tree`` /
+# ``leaf_modules`` / the physical variants (source/api/iterators.rst). Surfaced
+# at the package top level so ``from infomap import InfoNode`` and
+# ``isinstance(node, infomap.InfomapIterator)`` keep working. Reached through the
+# ``_core`` boundary, never ``_swig``/``_bindings`` directly.
+from ._core import (
+    InfoNode,
+    InfomapIterator,
+    InfomapIteratorPhysical,
+    InfomapLeafIterator,
+    InfomapLeafIteratorPhysical,
+    InfomapLeafModuleIterator,
+)
+from ._network_input import add_bulk_links as _add_bulk_links
 from ._network_input import first_order_unpacker as _first_order_unpacker
 from ._network_input import flat_multilayer_unpacker as _flat_multilayer_unpacker
-from ._network_input import is_numpy_input as _is_numpy_input
-from ._network_input import normalize_numpy_links as _normalize_numpy_links
 from ._network_input import paired_multilayer_unpacker as _paired_multilayer_unpacker
-from ._network_input import split_optional_weight_rows as _split_optional_weight_rows
-from ._networkx import add_networkx_graph as _add_networkx_graph
-from ._networkx import find_communities
 from ._options import (
     InfomapOptions,
+    Options,
     _construct_args,
 )
 from ._results import _InfomapResultsMixin
 from ._results import entropy, perplexity, plogp
-from ._scipy import add_scipy_sparse_matrix as _add_scipy_sparse_matrix
-from ._writers import _InfomapWritersMixin
+from .result import Result, TreeNode, build_result
+from ._summary import (
+    repr_html as _repr_html,
+    repr_text as _repr_text,
+    summary_data as _summary_data,
+)
+from .io.edge_index import add_edge_index as _add_edge_index
+from .io.igraph import add_igraph_graph as _add_igraph_graph
+from .io.igraph import find_igraph_communities
+from .io.networkx import add_networkx_graph as _add_networkx_graph
+from .io.networkx import find_communities
+from .io.export import to_igraph, to_networkx
+from .io.scipy import add_scipy_sparse_matrix as _add_scipy_sparse_matrix
+from .io.writers import _InfomapWritersMixin
+from .network import Network
+from ._run import run
 
 
 def _package_construct_args():
+    if __package__ is None:
+        return _construct_args
     package_module = sys.modules.get(__package__)
     if package_module is None:
         return _construct_args
@@ -35,358 +60,131 @@ def _package_construct_args():
 
 MultilayerNode = namedtuple("MultilayerNode", "layer_id, node_id")
 
-_REPR_MAX_FLOW_FRACTION = 0.90
-_REPR_MAX_MODULES = 12
-_REPR_COLORS = (
-    "#4477aa",
-    "#ee6677",
-    "#228833",
-    "#ccbb44",
-    "#66ccee",
-    "#aa3377",
-    "#bbbbbb",
-    "#000000",
-    "#994455",
-    "#ddcc77",
-    "#117733",
-    "#88ccee",
-)
-_REPR_OTHER_COLOR = "#8f9499"
-
-
-def _summary_data(im):
-    data = {
-        "nodes": im.num_nodes,
-        "links": im.num_links,
-        "physical_nodes": im.num_physical_nodes,
-        "state_nodes": im.num_nodes - im.num_physical_nodes,
-        "higher_order": im.num_nodes != im.num_physical_nodes,
-        "status": "not run",
-    }
-
-    if im.num_top_modules == 0:
-        return data
-
-    data.update(
-        {
-            "status": "run",
-            "state_input": im.stateInput,
-            "multilayer_input": im.multilayerInput,
-            "multilayer_network": im.isMultilayerNetwork(),
-            "levels": im.num_levels,
-            "leaf_nodes": im.numLeafNodes(),
-            "top_modules": im.num_top_modules,
-            "non_trivial_top_modules": im.num_non_trivial_top_modules,
-            "leaf_modules": im.num_leaf_modules,
-            "effective_top_modules": im.effective_num_top_modules,
-            "effective_leaf_modules": im.effective_num_leaf_modules,
-            "codelength": im.codelength,
-            "index_codelength": im.index_codelength,
-            "module_codelength": im.module_codelength,
-            "one_level_codelength": im.one_level_codelength,
-            "relative_codelength_savings": im.relative_codelength_savings,
-            "entropy_rate": im.entropy_rate,
-            "elapsed_time": im.elapsed_time,
-        }
-    )
-    if im.meta_codelength != 0:
-        data["meta_codelength"] = im.meta_codelength
-    return data
-
-
-def _format_summary_value(value):
-    if isinstance(value, bool):
-        return "Yes" if value else "No"
-    if isinstance(value, float):
-        return f"{value:.6g}"
-    return str(value)
-
-
-def _format_percent(value):
-    return f"{100 * value:.3g}%"
-
-
-def _top_module_flow_bars(im):
-    modules = [
-        (module.module_id, module.flow)
-        for module in im.get_tree(depth_level=1)
-        if module.depth == 1
-    ]
-    total_flow = sum(flow for _, flow in modules)
-    if total_flow <= 0:
-        return []
-
-    bars = []
-    cumulative_flow = 0.0
-    for module_id, flow in sorted(modules, key=lambda item: item[1], reverse=True):
-        if bars and (
-            cumulative_flow >= _REPR_MAX_FLOW_FRACTION * total_flow
-            or len(bars) >= _REPR_MAX_MODULES
-        ):
-            break
-        bars.append(
-            {
-                "label": f"Module {module_id}",
-                "flow": flow,
-                "fraction": flow / total_flow,
-                "color": _REPR_COLORS[len(bars) % len(_REPR_COLORS)],
-            }
-        )
-        cumulative_flow += flow
-
-    other_flow = total_flow - cumulative_flow
-    if other_flow > 1e-12:
-        bars.append(
-            {
-                "label": "Other modules",
-                "flow": other_flow,
-                "fraction": other_flow / total_flow,
-                "color": _REPR_OTHER_COLOR,
-            }
-        )
-    return bars
-
-
-def _html_metric(label, value, *, value_class=""):
-    return (
-        '<div class="infomap-metric">'
-        f'<span class="infomap-metric-label">{escape(label)}</span>'
-        f'<span class="infomap-metric-value {escape(value_class)}">'
-        f"{escape(_format_summary_value(value))}"
-        "</span>"
-        "</div>"
-    )
-
-
-def _html_flow_strip(bars):
-    if not bars:
-        return ""
-
-    segments = []
-    legend = []
-    for bar in bars:
-        label = escape(bar["label"])
-        percent = escape(_format_percent(bar["fraction"]))
-        color = escape(bar["color"])
-        width = max(bar["fraction"] * 100, 0.25)
-        segments.append(
-            '<span class="infomap-flow-segment" '
-            f'style="width: {width:.6g}%; background: {color};" '
-            f'title="{label}: {percent}"></span>'
-        )
-        legend.append(
-            '<span class="infomap-flow-item">'
-            f'<span class="infomap-flow-swatch" style="background: {color};"></span>'
-            f"{label} {percent}"
-            "</span>"
-        )
-
-    return (
-        '<div class="infomap-flow">'
-        '<div class="infomap-section-label">Top-module flow</div>'
-        f'<div class="infomap-flow-strip">{"".join(segments)}</div>'
-        f'<div class="infomap-flow-legend">{"".join(legend)}</div>'
-        "</div>"
-    )
-
-
-def _repr_html(im):
-    summary = im.summary()
-    is_run = summary["status"] == "run"
-    status = "Run" if is_run else "Not run"
-    status_class = "is-run" if is_run else "is-not-run"
-
-    primary_fields = []
-    secondary_fields = [
-        ("Nodes", summary["nodes"]),
-        ("Links", summary["links"]),
-        ("Higher-order", summary["higher_order"]),
-    ]
-    if summary["physical_nodes"] != summary["nodes"]:
-        secondary_fields.insert(1, ("Physical nodes", summary["physical_nodes"]))
-
-    if is_run:
-        primary_fields = [
-            ("Codelength", summary["codelength"]),
-            (
-                "Relative savings",
-                _format_percent(summary["relative_codelength_savings"]),
-            ),
-            ("Top modules", summary["top_modules"]),
-            ("Effective modules", summary["effective_top_modules"]),
-        ]
-        secondary_fields.extend(
-            [
-                ("Levels", summary["levels"]),
-                ("Elapsed time", f"{summary['elapsed_time']:.3g}s"),
-            ]
-        )
-
-    metrics = [_html_metric("Status", status, value_class=status_class)]
-    metrics.extend(_html_metric(label, value) for label, value in primary_fields)
-    metrics.extend(_html_metric(label, value) for label, value in secondary_fields)
-    flow_strip = _html_flow_strip(_top_module_flow_bars(im)) if is_run else ""
-
-    return f"""
-<style>
-.infomap-card {{
-  --infomap-border: color-mix(in srgb, currentColor 18%, transparent);
-  --infomap-muted: color-mix(in srgb, currentColor 62%, transparent);
-  --infomap-soft: color-mix(in srgb, currentColor 7%, transparent);
-  border: 1px solid var(--infomap-border);
-  border-radius: 8px;
-  color: inherit;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  max-width: 720px;
-  padding: 14px 16px 16px;
-}}
-.infomap-title {{
-  font-size: 16px;
-  font-weight: 650;
-  line-height: 1.25;
-  margin: 0 0 12px;
-}}
-.infomap-grid {{
-  display: grid;
-  gap: 8px;
-  grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
-}}
-.infomap-metric {{
-  background: var(--infomap-soft);
-  border-radius: 6px;
-  min-width: 0;
-  padding: 8px 10px;
-}}
-.infomap-metric-label {{
-  color: var(--infomap-muted);
-  display: block;
-  font-size: 11px;
-  line-height: 1.25;
-  margin-bottom: 3px;
-}}
-.infomap-metric-value {{
-  display: block;
-  font-size: 15px;
-  font-weight: 620;
-  line-height: 1.25;
-  overflow-wrap: anywhere;
-}}
-.infomap-metric-value.is-run {{ color: #228833; }}
-.infomap-metric-value.is-not-run {{ color: var(--infomap-muted); }}
-.infomap-flow {{ margin-top: 14px; }}
-.infomap-section-label {{
-  color: var(--infomap-muted);
-  font-size: 11px;
-  margin-bottom: 6px;
-}}
-.infomap-flow-strip {{
-  border-radius: 999px;
-  display: flex;
-  height: 12px;
-  overflow: hidden;
-  width: 100%;
-}}
-.infomap-flow-segment {{ display: block; min-width: 1px; }}
-.infomap-flow-legend {{
-  color: var(--infomap-muted);
-  display: flex;
-  flex-wrap: wrap;
-  font-size: 11px;
-  gap: 6px 12px;
-  line-height: 1.3;
-  margin-top: 8px;
-}}
-.infomap-flow-item {{ white-space: nowrap; }}
-.infomap-flow-swatch {{
-  border-radius: 999px;
-  display: inline-block;
-  height: 8px;
-  margin-right: 4px;
-  vertical-align: -1px;
-  width: 8px;
-}}
-</style>
-<div class="infomap-card">
-  <div class="infomap-title">Infomap</div>
-  <div class="infomap-grid">{"".join(metrics)}</div>
-  {flow_strip}
-</div>
-"""
-
 
 __all__ = [
-    *_BINDINGS_ALL,
+    "InfoNode",
     "Infomap",
+    "InfomapIterator",
+    "InfomapIteratorPhysical",
+    "InfomapLeafIterator",
+    "InfomapLeafIteratorPhysical",
+    "InfomapLeafModuleIterator",
     "InfomapOptions",
     "MultilayerNode",
+    "Network",
+    "Options",
+    "Result",
+    "TreeNode",
+    "build_info",
     "entropy",
     "find_communities",
     "find_igraph_communities",
     "main",
     "perplexity",
     "plogp",
+    "run",
+    "to_igraph",
+    "to_networkx",
 ]
 
 
-class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # noqa: F405
+class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
     """Infomap
 
-    This class is a thin wrapper around Infomap C++ compiled with SWIG.
+    The stateful entry point to the algorithm: build a network with the
+    ``add_*`` verbs, then call :meth:`run` to get an immutable
+    :class:`~infomap.Result`. Internally it composes a :class:`~infomap.Network`
+    (input) and an :class:`~infomap.Options` config over a single ``Core``
+    boundary to the SWIG-compiled engine, rather than exposing that engine
+    directly. For one-shot use prefer the functional :func:`infomap.run`; for
+    incremental construction prefer :class:`~infomap.Network`.
 
     Examples
     --------
-    Create an instance and add nodes and links:
+    Build a network, run Infomap, and read the results off the returned
+    :class:`~infomap.Result`:
 
     >>> from infomap import Infomap
     >>> im = Infomap(silent=True)
     >>> im.add_node(1)
     >>> im.add_node(2)
     >>> im.add_link(1, 2)
-    >>> im.run()
-    >>> im.codelength
+    >>> result = im.run()
+    >>> result.codelength
     1.0
 
 
-    Create an instance and read a network file:
+    Read a network file and inspect a few metrics on the result:
 
     >>> from infomap import Infomap
     >>> im = Infomap(silent=True, num_trials=10)
     >>> im.read_file("ninetriangles.net")
-    >>> im.run()
+    >>> result = im.run()
     >>> tol = 1e-4
-    >>> abs(im.codelength - 3.4622731375264144) < tol
+    >>> abs(result.codelength - 3.4622731375264144) < tol
     True
+    >>> result.num_top_modules
+    5
 
+
+    Iterate the partition via :meth:`Result.modules` (``node_id -> module_id``)
+    or :meth:`Result.nodes` (per-node views):
+
+    >>> from infomap import Infomap
+    >>> im = Infomap(silent=True)
+    >>> im.add_links(((1, 2), (1, 3), (2, 3), (4, 5), (4, 6), (5, 6), (3, 4)))
+    >>> result = im.run()
+    >>> for node_id, module_id in sorted(result.modules().items()):
+    ...     print(node_id, module_id)
+    1 1
+    2 1
+    3 1
+    4 2
+    5 2
+    6 2
+
+
+    ``run()`` returns an immutable :class:`~infomap.Result`; read collections
+    via methods (``result.modules()``, ``result.nodes()``, ``result.tree()``,
+    ``result.links()``, ``result.to_dataframe()``) and scalars via properties
+    (``result.codelength``, ``result.num_top_modules``).
 
     For more examples, see the examples directory.
     """
 
+    def _init_from_options(self, args, options):
+        self._core = Core(_package_construct_args()(args, **options.to_kwargs()))
+        self._network = Network(core=self._core)
+        self.node_id_to_label = {}
+        # Run-generation token: incremented on every run(). A Result stamps the
+        # generation it was created in; node-level access on a stale Result
+        # (engine re-ran since) raises instead of reading freed memory. The C++
+        # result tree is rebuilt on every run() (design §7).
+        self._generation = 0
+        self._result = None
+
+    # === BEGIN generated: Infomap option signatures (scripts/generate_binding_options.py) ===
     def __init__(
         self,
         args=None,
-        # input
-        cluster_data=None,
-        no_infomap=False,
+        include_self_links=None,
         skip_adjust_bipartite_flow=False,
         bipartite_teleportation=False,
         weight_threshold=None,
-        include_self_links=None,
         no_self_links=False,
         node_limit=None,
         matchable_multilayer_ids=None,
+        cluster_data=None,
         assign_to_neighbouring_module=False,
         meta_data=None,
         meta_data_rate=1.0,
         meta_data_unweighted=False,
-        # output
+        no_infomap=False,
+        out_name=None,
+        no_file_output=False,
         tree=False,
         ftree=False,
         clu=False,
-        verbosity_level=1,
-        silent=False,
-        pretty=False,
-        out_name=None,
-        no_file_output=False,
         clu_level=None,
         output=None,
         hide_bipartite_nodes=False,
@@ -397,7 +195,12 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         summary_json=None,
         manifest_json=None,
         memory_report=False,
-        # algorithm
+        trial_offset=None,
+        trial_results=None,
+        no_final_output=False,
+        verbosity_level=1,
+        silent=False,
+        pretty=False,
         two_level=False,
         flow_model=None,
         directed=None,
@@ -414,12 +217,14 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         variable_markov_damping=1.0,
         variable_markov_min_scale=1.0,
         preferred_number_of_modules=None,
+        preferred_number_of_levels=None,
+        preferred_number_of_levels_strength=1.0,
         multilayer_relax_rate=0.15,
         multilayer_relax_limit=-1,
         multilayer_relax_limit_up=-1,
         multilayer_relax_limit_down=-1,
         multilayer_relax_by_jsd=False,
-        # accuracy
+        multilayer_relax_to_self=False,
         seed=123,
         num_trials=1,
         core_loop_limit=10,
@@ -428,49 +233,551 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         core_loop_codelength_threshold=1e-10,
         tune_iteration_relative_threshold=1e-05,
         fast_hierarchical_solution=None,
-        prefer_modular_solution=False,
         inner_parallelization=False,
         parallel_trials=False,
         converge=False,
         num_threads=None,
         threads=None,
-        trial_offset=None,
-        trial_results=None,
-        no_final_output=False,
+        prefer_modular_solution=False,
         num_random_moves=None,
         max_degree_for_random_moves=None,
     ):
         """Create a new Infomap instance.
 
         Keyword arguments mirror the Infomap CLI flags. Use
-        :class:`InfomapOptions` for a reusable configuration object and the full
-        parameter reference.
+        :class:`Options` for a reusable
+        configuration object and the full parameter reference.
 
         Parameters
         ----------
         args : str, optional
             Raw Infomap arguments to prepend before rendered keyword options.
+        include_self_links : bool, optional
+            Deprecated. Self-links are included by default; use no_self_links=True to
+            exclude them.
+        skip_adjust_bipartite_flow : bool, optional
+            Keep flow on bipartite nodes instead of distributing it to primary nodes.
+        bipartite_teleportation : bool, optional
+            Use bipartite teleportation instead of the default two-step unipartite
+            teleportation.
+        weight_threshold : float, optional
+            Ignore input links with weight below this threshold.
+        no_self_links : bool, optional
+            Exclude self-links from the input network.
+        node_limit : int, optional
+            Read only nodes up to this node id and ignore links connected to higher node
+            ids.
+        matchable_multilayer_ids : int, optional
+            Construct state ids from node ids and layer ids that stay comparable across
+            networks. Set at least to the largest layer id among networks to match.
+        cluster_data : str, optional
+            Read an initial partition from a clu file or a hierarchy from a tree/ftree
+            file. Tree input may use physical or state nodes for higher-order networks.
+        assign_to_neighbouring_module : bool, optional
+            With --cluster-data, assign nodes missing module ids to a neighboring node's
+            module when possible.
+        meta_data : str, optional
+            Read metadata to encode from a clu-format file.
+        meta_data_rate : float, optional
+            With --meta-data, set the metadata encoding rate. The default encodes
+            metadata at each step.
+        meta_data_unweighted : bool, optional
+            With --meta-data, encode metadata without weighting by node flow.
+        no_infomap : bool, optional
+            Skip optimization. Use this to calculate codelength for --cluster-data or to
+            print non-modular statistics.
+        out_name : str, optional
+            Base name for output files, for example [out_directory]/[out-name].tree.
+        no_file_output : bool, optional
+            Do not write output files.
+        tree : bool, optional
+            Write the modular hierarchy to a tree file. Enabled by default when no other
+            output format is selected.
+        ftree : bool, optional
+            Write the modular hierarchy and aggregated links between nested modules to
+            an ftree file. Used by Network Navigator.
+        clu : bool, optional
+            Write top-level module ids for each node to a clu file.
+        clu_level : int, optional
+            With --clu or --output clu, write module ids at this depth from the root.
+            Use -1 for bottom-level modules.
+        output : sequence of str, optional
+            Write selected output formats as a comma-separated list without spaces, e.g.
+            -o clu,tree,ftree. Options: clu, tree, ftree, newick, json, csv, network,
+            states, flow.
+        hide_bipartite_nodes : bool, optional
+            Hide bipartite nodes in output by projecting the solution to primary nodes.
+        print_all_trials : bool, optional
+            Write each trial to separate output files. Has effect only when --num-trials
+            is greater than 1.
+        no_overwrite : bool, optional
+            Fail with an output error if any target output file already exists. By
+            default existing files are replaced.
+        print_config_fingerprint : bool, optional
+            Print the canonical configuration fingerprint and exit.
+        timing_json : str, optional
+            Write machine-readable run timing JSON to this path. Use - for stdout.
+        summary_json : str, optional
+            Write machine-readable final run summary JSON to this path. Use - for
+            stdout.
+        manifest_json : str, optional
+            Write a machine-readable run manifest JSON to this path. Use - for stdout.
+        memory_report : bool, optional
+            Include peak RSS and best-effort bytes per node/link estimates in timing
+            JSON. Requires --timing-json.
+        trial_offset : int, optional
+            Global index of the first trial this process runs; trial i uses seed =
+            base_seed + (trial_offset + i). Default 0 (single-process behavior).
+        trial_results : str, optional
+            Write this shard's per-trial results (codelengths, seeds, best-tree
+            reference, fingerprints) as JSON to this path, for deterministic merging of
+            distributed shard runs into a final solution.
+        no_final_output : bool, optional
+            Skip writing this process's aggregate best result. Per-trial outputs and
+            --trial-results are still written.
+        verbosity_level : int, optional
+            Verbosity level on the console. 1 keeps the default output level, 2 renders
+            -vv and so on.
+        silent : bool, optional
+            Suppress console output.
+        two_level : bool, optional
+            Optimize a two-level partition instead of the default multi-level hierarchy.
+        flow_model : str, optional
+            Choose how Infomap derives flow from the input links. Options: undirected,
+            directed, undirdir, outdirdir, rawdir, precomputed.
+        directed : bool, optional
+            Treat input links as directed. Shorthand for --flow-model directed.
+        recorded_teleportation : bool, optional
+            When teleportation is used to calculate flow, also record teleportation
+            steps in the codelength.
+        use_node_weights_as_flow : bool, optional
+            Use node weights from the API or Pajek node records as normalized node flow.
+        to_nodes : bool, optional
+            Teleport to nodes instead of links. Uses uniform node weights unless node
+            weights are provided.
+        teleportation_probability : float, optional
+            Set the probability of teleporting to a random node or link when calculating
+            flow.
+        regularized : bool, optional
+            Add a fully connected Bayesian prior network to reduce overfitting to
+            missing links. Activates --recorded-teleportation.
+        regularization_strength : float, optional
+            Scale the relative strength of the Bayesian prior network used by
+            --regularized.
+        entropy_corrected : bool, optional
+            Correct for negative entropy bias in small samples, especially solutions
+            with many modules.
+        entropy_correction_strength : float, optional
+            Scale the default correction used by --entropy-corrected.
+        markov_time : float, optional
+            Scale link flow to change the cost of moving between modules. Higher values
+            result in fewer modules.
+        variable_markov_time : bool, optional
+            Vary Markov time locally to reduce overpartitioning in sparse areas while
+            keeping higher resolution in dense areas.
+        variable_markov_damping : float, optional
+            With --variable-markov-time, set damping between local effective degree (0)
+            and local entropy (1).
+        variable_markov_min_scale : float, optional
+            With --variable-markov-time, set the minimum local scale for zero-entropy
+            nodes. Local Markov time is max scale divided by local scale.
+        preferred_number_of_modules : int, optional
+            Penalize solutions by how far their number of modules differs from this
+            value.
+        preferred_number_of_levels : int, optional
+            Soft preference for the depth of the hierarchy. Steering to a shallower
+            depth is reliable at a small codelength cost; deeper is best-effort, bounded
+            by what the optimizer proposes. No-op with --two-level or strength 0.
+        preferred_number_of_levels_strength : float, optional
+            Scale the strength of --preferred-number-of-levels. 0 disables the
+            preference; larger values increase the cost of deviating from the preferred
+            depth.
+        multilayer_relax_rate : float, optional
+            Set the probability of relaxing from a state node to neighboring layers
+            instead of staying in the current layer.
+        multilayer_relax_limit : int, optional
+            Limit relaxation to this many neighboring layer ids in each direction. Use a
+            negative value to allow relaxation to any layer.
+        multilayer_relax_limit_up : int, optional
+            Limit relaxation upward to this many higher neighboring layer ids. Use a
+            negative value to allow relaxation to any higher layer.
+        multilayer_relax_limit_down : int, optional
+            Limit relaxation downward to this many lower neighboring layer ids. Use a
+            negative value to allow relaxation to any lower layer.
+        multilayer_relax_by_jsd : bool, optional
+            Weight multilayer relaxation by out-link similarity measured with
+            Jensen-Shannon divergence.
+        multilayer_relax_to_self : bool, optional
+            On relaxation, link a state node to its own physical node in the target
+            layer instead of spreading to its out-neighbors. Builds a smaller state
+            network with the same flow as the default.
+        seed : int, optional
+            Set the random number generator seed for reproducible results.
+        num_trials : int, optional
+            Run this many independent trials and keep the best solution.
+        core_loop_limit : int, optional
+            Limit how many core loops try to move each node to the best module.
+        core_level_limit : int, optional
+            Limit how many times core loops are reapplied to the aggregated modular
+            network to find larger structures. 0 means no limit.
+        tune_iteration_limit : int, optional
+            Limit the main iterations in the two-level partition algorithm. 0 means no
+            limit.
+        core_loop_codelength_threshold : float, optional
+            Require at least this codelength improvement to accept a new solution in a
+            core loop.
+        tune_iteration_relative_threshold : float, optional
+            Require each tune iteration to improve codelength by this fraction of the
+            initial two-level codelength.
+        fast_hierarchical_solution : int, optional
+            Find top modules fast. Use 2 to keep all fast levels and 3 to skip the
+            recursive part.
+        inner_parallelization : bool, optional
+            Experimental: use batched parallel node moves for coarse optimization.
+            Performance gains are workload-dependent, often require a relaxed
+            core-loop-codelength-threshold and low tune-iteration-limit, and may produce
+            a different partition than serial optimization.
+        parallel_trials : bool, optional
+            Run independent trials in parallel with OpenMP. --num-trials remains the
+            total number of trials; the number of parallel workers follows the OpenMP
+            thread count (e.g. OMP_NUM_THREADS), clamped to --num-trials. Peak memory
+            scales with the worker count. Nested OpenMP and --inner-parallelization are
+            disabled inside workers.
+        converge : bool, optional
+            Treat the trial count as a cap and stop early once the best codelength has
+            plateaued (no meaningful improvement over several consecutive trials). Runs
+            trials serially; cannot be combined with parallel trials or distributed
+            sharding. With no explicit trial count, a default cap is used.
+        num_threads : str, optional
+            Effective thread budget: 'auto' (resolve from --num-threads >
+            INFOMAP_NUM_THREADS > SLURM_CPUS_PER_TASK > OMP_NUM_THREADS > cpuset >
+            hardware), or a positive integer. 1 forces fully serial. Governs the
+            recursive partition, parallel trials, and inner parallelization.
+        threads : str, optional
+            Alias for --num-threads.
+        prefer_modular_solution : bool, optional
+            Prefer a modular solution even when one module gives a lower codelength.
+        num_random_moves : int, optional
+            Try this many random moves in each core loop to merge weakly connected
+            nodes.
+        max_degree_for_random_moves : int, optional
+            Try random moves only for nodes with degree at most this value.
         """
-        options = InfomapOptions.from_mapping(locals())
-        super().__init__(_package_construct_args()(args, **options.to_kwargs()))
+        options = Options._from_locals(locals())
+        self._init_from_options(args, options)
+
+    def run(
+        self,
+        args=None,
+        initial_partition=None,
+        include_self_links=None,
+        skip_adjust_bipartite_flow=False,
+        bipartite_teleportation=False,
+        weight_threshold=None,
+        no_self_links=False,
+        node_limit=None,
+        matchable_multilayer_ids=None,
+        cluster_data=None,
+        assign_to_neighbouring_module=False,
+        meta_data=None,
+        meta_data_rate=1.0,
+        meta_data_unweighted=False,
+        no_infomap=False,
+        out_name=None,
+        no_file_output=False,
+        tree=False,
+        ftree=False,
+        clu=False,
+        clu_level=None,
+        output=None,
+        hide_bipartite_nodes=False,
+        print_all_trials=False,
+        no_overwrite=False,
+        print_config_fingerprint=False,
+        timing_json=None,
+        summary_json=None,
+        manifest_json=None,
+        memory_report=False,
+        trial_offset=None,
+        trial_results=None,
+        no_final_output=False,
+        verbosity_level=1,
+        silent=False,
+        pretty=False,
+        two_level=False,
+        flow_model=None,
+        directed=None,
+        recorded_teleportation=False,
+        use_node_weights_as_flow=False,
+        to_nodes=False,
+        teleportation_probability=0.15,
+        regularized=False,
+        regularization_strength=1.0,
+        entropy_corrected=False,
+        entropy_correction_strength=1.0,
+        markov_time=1.0,
+        variable_markov_time=False,
+        variable_markov_damping=1.0,
+        variable_markov_min_scale=1.0,
+        preferred_number_of_modules=None,
+        preferred_number_of_levels=None,
+        preferred_number_of_levels_strength=1.0,
+        multilayer_relax_rate=0.15,
+        multilayer_relax_limit=-1,
+        multilayer_relax_limit_up=-1,
+        multilayer_relax_limit_down=-1,
+        multilayer_relax_by_jsd=False,
+        multilayer_relax_to_self=False,
+        seed=123,
+        num_trials=1,
+        core_loop_limit=10,
+        core_level_limit=None,
+        tune_iteration_limit=None,
+        core_loop_codelength_threshold=1e-10,
+        tune_iteration_relative_threshold=1e-05,
+        fast_hierarchical_solution=None,
+        inner_parallelization=False,
+        parallel_trials=False,
+        converge=False,
+        num_threads=None,
+        threads=None,
+        prefer_modular_solution=False,
+        num_random_moves=None,
+        max_degree_for_random_moves=None,
+    ):
+        """Run Infomap.
+
+        Keyword arguments mirror the Infomap CLI flags. Use
+        :class:`Options` for the full parameter reference and
+        :func:`infomap.run` with ``options=`` when reusing a saved configuration.
+
+        Parameters
+        ----------
+        args : str, optional
+            Raw Infomap arguments to prepend before rendered keyword options.
+        initial_partition : dict, optional
+            Initial partition to use for this run only. See initial_partition.
+        include_self_links : bool, optional
+            Deprecated. Self-links are included by default; use no_self_links=True to
+            exclude them.
+        skip_adjust_bipartite_flow : bool, optional
+            Keep flow on bipartite nodes instead of distributing it to primary nodes.
+        bipartite_teleportation : bool, optional
+            Use bipartite teleportation instead of the default two-step unipartite
+            teleportation.
+        weight_threshold : float, optional
+            Ignore input links with weight below this threshold.
+        no_self_links : bool, optional
+            Exclude self-links from the input network.
+        node_limit : int, optional
+            Read only nodes up to this node id and ignore links connected to higher node
+            ids.
+        matchable_multilayer_ids : int, optional
+            Construct state ids from node ids and layer ids that stay comparable across
+            networks. Set at least to the largest layer id among networks to match.
+        cluster_data : str, optional
+            Read an initial partition from a clu file or a hierarchy from a tree/ftree
+            file. Tree input may use physical or state nodes for higher-order networks.
+        assign_to_neighbouring_module : bool, optional
+            With --cluster-data, assign nodes missing module ids to a neighboring node's
+            module when possible.
+        meta_data : str, optional
+            Read metadata to encode from a clu-format file.
+        meta_data_rate : float, optional
+            With --meta-data, set the metadata encoding rate. The default encodes
+            metadata at each step.
+        meta_data_unweighted : bool, optional
+            With --meta-data, encode metadata without weighting by node flow.
+        no_infomap : bool, optional
+            Skip optimization. Use this to calculate codelength for --cluster-data or to
+            print non-modular statistics.
+        out_name : str, optional
+            Base name for output files, for example [out_directory]/[out-name].tree.
+        no_file_output : bool, optional
+            Do not write output files.
+        tree : bool, optional
+            Write the modular hierarchy to a tree file. Enabled by default when no other
+            output format is selected.
+        ftree : bool, optional
+            Write the modular hierarchy and aggregated links between nested modules to
+            an ftree file. Used by Network Navigator.
+        clu : bool, optional
+            Write top-level module ids for each node to a clu file.
+        clu_level : int, optional
+            With --clu or --output clu, write module ids at this depth from the root.
+            Use -1 for bottom-level modules.
+        output : sequence of str, optional
+            Write selected output formats as a comma-separated list without spaces, e.g.
+            -o clu,tree,ftree. Options: clu, tree, ftree, newick, json, csv, network,
+            states, flow.
+        hide_bipartite_nodes : bool, optional
+            Hide bipartite nodes in output by projecting the solution to primary nodes.
+        print_all_trials : bool, optional
+            Write each trial to separate output files. Has effect only when --num-trials
+            is greater than 1.
+        no_overwrite : bool, optional
+            Fail with an output error if any target output file already exists. By
+            default existing files are replaced.
+        print_config_fingerprint : bool, optional
+            Print the canonical configuration fingerprint and exit.
+        timing_json : str, optional
+            Write machine-readable run timing JSON to this path. Use - for stdout.
+        summary_json : str, optional
+            Write machine-readable final run summary JSON to this path. Use - for
+            stdout.
+        manifest_json : str, optional
+            Write a machine-readable run manifest JSON to this path. Use - for stdout.
+        memory_report : bool, optional
+            Include peak RSS and best-effort bytes per node/link estimates in timing
+            JSON. Requires --timing-json.
+        trial_offset : int, optional
+            Global index of the first trial this process runs; trial i uses seed =
+            base_seed + (trial_offset + i). Default 0 (single-process behavior).
+        trial_results : str, optional
+            Write this shard's per-trial results (codelengths, seeds, best-tree
+            reference, fingerprints) as JSON to this path, for deterministic merging of
+            distributed shard runs into a final solution.
+        no_final_output : bool, optional
+            Skip writing this process's aggregate best result. Per-trial outputs and
+            --trial-results are still written.
+        verbosity_level : int, optional
+            Verbosity level on the console. 1 keeps the default output level, 2 renders
+            -vv and so on.
+        silent : bool, optional
+            Suppress console output.
+        two_level : bool, optional
+            Optimize a two-level partition instead of the default multi-level hierarchy.
+        flow_model : str, optional
+            Choose how Infomap derives flow from the input links. Options: undirected,
+            directed, undirdir, outdirdir, rawdir, precomputed.
+        directed : bool, optional
+            Treat input links as directed. Shorthand for --flow-model directed.
+        recorded_teleportation : bool, optional
+            When teleportation is used to calculate flow, also record teleportation
+            steps in the codelength.
+        use_node_weights_as_flow : bool, optional
+            Use node weights from the API or Pajek node records as normalized node flow.
+        to_nodes : bool, optional
+            Teleport to nodes instead of links. Uses uniform node weights unless node
+            weights are provided.
+        teleportation_probability : float, optional
+            Set the probability of teleporting to a random node or link when calculating
+            flow.
+        regularized : bool, optional
+            Add a fully connected Bayesian prior network to reduce overfitting to
+            missing links. Activates --recorded-teleportation.
+        regularization_strength : float, optional
+            Scale the relative strength of the Bayesian prior network used by
+            --regularized.
+        entropy_corrected : bool, optional
+            Correct for negative entropy bias in small samples, especially solutions
+            with many modules.
+        entropy_correction_strength : float, optional
+            Scale the default correction used by --entropy-corrected.
+        markov_time : float, optional
+            Scale link flow to change the cost of moving between modules. Higher values
+            result in fewer modules.
+        variable_markov_time : bool, optional
+            Vary Markov time locally to reduce overpartitioning in sparse areas while
+            keeping higher resolution in dense areas.
+        variable_markov_damping : float, optional
+            With --variable-markov-time, set damping between local effective degree (0)
+            and local entropy (1).
+        variable_markov_min_scale : float, optional
+            With --variable-markov-time, set the minimum local scale for zero-entropy
+            nodes. Local Markov time is max scale divided by local scale.
+        preferred_number_of_modules : int, optional
+            Penalize solutions by how far their number of modules differs from this
+            value.
+        preferred_number_of_levels : int, optional
+            Soft preference for the depth of the hierarchy. Steering to a shallower
+            depth is reliable at a small codelength cost; deeper is best-effort, bounded
+            by what the optimizer proposes. No-op with --two-level or strength 0.
+        preferred_number_of_levels_strength : float, optional
+            Scale the strength of --preferred-number-of-levels. 0 disables the
+            preference; larger values increase the cost of deviating from the preferred
+            depth.
+        multilayer_relax_rate : float, optional
+            Set the probability of relaxing from a state node to neighboring layers
+            instead of staying in the current layer.
+        multilayer_relax_limit : int, optional
+            Limit relaxation to this many neighboring layer ids in each direction. Use a
+            negative value to allow relaxation to any layer.
+        multilayer_relax_limit_up : int, optional
+            Limit relaxation upward to this many higher neighboring layer ids. Use a
+            negative value to allow relaxation to any higher layer.
+        multilayer_relax_limit_down : int, optional
+            Limit relaxation downward to this many lower neighboring layer ids. Use a
+            negative value to allow relaxation to any lower layer.
+        multilayer_relax_by_jsd : bool, optional
+            Weight multilayer relaxation by out-link similarity measured with
+            Jensen-Shannon divergence.
+        multilayer_relax_to_self : bool, optional
+            On relaxation, link a state node to its own physical node in the target
+            layer instead of spreading to its out-neighbors. Builds a smaller state
+            network with the same flow as the default.
+        seed : int, optional
+            Set the random number generator seed for reproducible results.
+        num_trials : int, optional
+            Run this many independent trials and keep the best solution.
+        core_loop_limit : int, optional
+            Limit how many core loops try to move each node to the best module.
+        core_level_limit : int, optional
+            Limit how many times core loops are reapplied to the aggregated modular
+            network to find larger structures. 0 means no limit.
+        tune_iteration_limit : int, optional
+            Limit the main iterations in the two-level partition algorithm. 0 means no
+            limit.
+        core_loop_codelength_threshold : float, optional
+            Require at least this codelength improvement to accept a new solution in a
+            core loop.
+        tune_iteration_relative_threshold : float, optional
+            Require each tune iteration to improve codelength by this fraction of the
+            initial two-level codelength.
+        fast_hierarchical_solution : int, optional
+            Find top modules fast. Use 2 to keep all fast levels and 3 to skip the
+            recursive part.
+        inner_parallelization : bool, optional
+            Experimental: use batched parallel node moves for coarse optimization.
+            Performance gains are workload-dependent, often require a relaxed
+            core-loop-codelength-threshold and low tune-iteration-limit, and may produce
+            a different partition than serial optimization.
+        parallel_trials : bool, optional
+            Run independent trials in parallel with OpenMP. --num-trials remains the
+            total number of trials; the number of parallel workers follows the OpenMP
+            thread count (e.g. OMP_NUM_THREADS), clamped to --num-trials. Peak memory
+            scales with the worker count. Nested OpenMP and --inner-parallelization are
+            disabled inside workers.
+        converge : bool, optional
+            Treat the trial count as a cap and stop early once the best codelength has
+            plateaued (no meaningful improvement over several consecutive trials). Runs
+            trials serially; cannot be combined with parallel trials or distributed
+            sharding. With no explicit trial count, a default cap is used.
+        num_threads : str, optional
+            Effective thread budget: 'auto' (resolve from --num-threads >
+            INFOMAP_NUM_THREADS > SLURM_CPUS_PER_TASK > OMP_NUM_THREADS > cpuset >
+            hardware), or a positive integer. 1 forces fully serial. Governs the
+            recursive partition, parallel trials, and inner parallelization.
+        threads : str, optional
+            Alias for --num-threads.
+        prefer_modular_solution : bool, optional
+            Prefer a modular solution even when one module gives a lower codelength.
+        num_random_moves : int, optional
+            Try this many random moves in each core loop to merge weakly connected
+            nodes.
+        max_degree_for_random_moves : int, optional
+            Try random moves only for nodes with degree at most this value.
+
+        See Also
+        --------
+        initial_partition
+        """
+        options = Options._from_locals(locals())
+        return self._run_from_options(args, initial_partition, options)
+    # === END generated ===
 
     def __repr__(self):
-        summary = _summary_data(self)
-        fields = (
-            "nodes",
-            "links",
-            "physical_nodes",
-            "state_nodes",
-            "status",
-            "multilayer_network",
-            "levels",
-            "top_modules",
-            "codelength",
-        )
-        details = [
-            f"{field}={summary[field]!r}" for field in fields if field in summary
-        ]
-        return f"Infomap({', '.join(details)})"
+        return _repr_text(self)
 
     def summary(self):
         """Return a compact dictionary with network and result state.
@@ -487,9 +794,14 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
 
     @classmethod
     def from_options(cls, options, args=None):
-        """Create an :class:`Infomap` instance from :class:`InfomapOptions`."""
-        if not isinstance(options, InfomapOptions):
-            raise TypeError("options must be an InfomapOptions instance")
+        """Create an :class:`Infomap` instance from :class:`Options`.
+
+        .. deprecated::
+            Pass options to :func:`infomap.run` or :meth:`Infomap.run`
+            instead, e.g. ``infomap.run(graph, options=options)``.
+        """
+        if not isinstance(options, Options):
+            raise TypeError("options must be an Options instance")
         return cls(args=args, **options.to_kwargs())
 
     @classmethod
@@ -503,9 +815,14 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         args=None,
         **infomap_options,
     ):
-        """Create an :class:`Infomap` instance from a SciPy sparse adjacency matrix."""
+        """Create an :class:`Infomap` instance from a SciPy sparse adjacency matrix.
+
+        .. deprecated::
+            Use :meth:`Network.from_scipy_sparse_matrix` or
+            ``infomap.run(matrix)``.
+        """
         im = cls(args=args, **infomap_options)
-        im.add_scipy_sparse_matrix(
+        im._add_scipy_sparse_matrix_impl(
             A,
             directed=directed,
             weighted=weighted,
@@ -525,9 +842,13 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         args=None,
         **infomap_options,
     ):
-        """Create an :class:`Infomap` instance from a PyG-style edge index."""
+        """Create an :class:`Infomap` instance from a PyG-style edge index.
+
+        .. deprecated::
+            Use :meth:`Network.from_edge_index` or ``infomap.run(edge_index)``.
+        """
         im = cls(args=args, **infomap_options)
-        im.add_edge_index(
+        im._add_edge_index_impl(
             edge_index,
             edge_weight=edge_weight,
             num_nodes=num_nodes,
@@ -550,7 +871,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
             If the network data should be accumulated to already added
             nodes and links. Default ``True``.
         """
-        return super().readInputData(filename, accumulate)
+        return self._core.readInputData(filename, accumulate)
 
     def add_node(self, node_id, name=None, teleportation_weight=None):
         """Add a node.
@@ -571,13 +892,13 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
             name = ""
 
         if len(name) and teleportation_weight is not None:
-            return super().addNode(node_id, name, teleportation_weight)
+            return self._core.addNode(node_id, name, teleportation_weight)
         elif len(name) and teleportation_weight is None:
-            return super().addNode(node_id, name)
+            return self._core.addNode(node_id, name)
         elif not len(name) and teleportation_weight is not None:
-            return super().addNode(node_id, teleportation_weight)
+            return self._core.addNode(node_id, teleportation_weight)
 
-        return super().addNode(node_id)
+        return self._core.addNode(node_id)
 
     def add_nodes(self, nodes):
         """Add nodes.
@@ -683,7 +1004,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         node_id : int
             Id of the physical node the state node should be added to.
         """
-        return super().addStateNode(state_id, node_id)
+        return self._core.addStateNode(state_id, node_id)
 
     def add_state_nodes(self, state_nodes):
         """Add state nodes.
@@ -741,7 +1062,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         """
         if name is None:
             name = ""
-        return super().addName(node_id, name)
+        return self._core.addName(node_id, name)
 
     def set_names(self, names):
         """Set names to several nodes at once.
@@ -808,7 +1129,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         target_id : int
         weight : float, optional
         """
-        return super().addLink(source_id, target_id, weight)
+        return self._core.addLink(source_id, target_id, weight)
 
     def add_links(self, links):
         """Add several links.
@@ -840,31 +1161,18 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
             2-dimensional with 2 or 3 columns, where the first two columns are
             source and target ids and the optional third column is link weight.
         """
-        if _is_numpy_input(links):
-            links_array = _normalize_numpy_links(
-                links,
-                name="link",
-                valid_columns=(2, 3),
-                column_description="(source_id, target_id, [weight])",
-                require_32_or_64_bit=True,
-            )
-            return super().addLinksFromNumpy2D(
-                links_array,
-                links_array.shape[0],
-                links_array.shape[1],
-                links_array.dtype.kind,
-                links_array.dtype.itemsize,
-            )
-
-        source_ids, target_ids, weights = _split_optional_weight_rows(
+        return _add_bulk_links(
             links,
-            row_name="link",
+            numpy_method=self._core.addLinksFromNumpy2D,
+            list_method=self._core.addLinks,
+            name="link",
+            valid_columns=(2, 3),
+            column_description="(source_id, target_id, [weight])",
             valid_lengths=(2, 3),
             unpack=_first_order_unpacker(),
             length_description="2 or 3 values",
+            require_32_or_64_bit=True,
         )
-
-        return super().addLinks(source_ids, target_ids, weights)
 
     def remove_link(self, source_id, target_id):
         """Remove a link.
@@ -882,7 +1190,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         source_id : int
         target_id : int
         """
-        return self.network.removeLink(source_id, target_id)
+        return self._core.network().removeLink(source_id, target_id)
 
     def remove_links(self, links):
         """Remove several links.
@@ -958,7 +1266,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         """
         source_layer_id, source_node_id = source_multilayer_node
         target_layer_id, target_node_id = target_multilayer_node
-        return super().addMultilayerLink(
+        return self._core.addMultilayerLink(
             source_layer_id, source_node_id, target_layer_id, target_node_id, weight
         )
 
@@ -999,7 +1307,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
 
 
         """
-        return super().addMultilayerIntraLink(
+        return self._core.addMultilayerIntraLink(
             layer_id, source_node_id, target_node_id, weight
         )
 
@@ -1029,35 +1337,18 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
             ``(layer_id, source_node_id, target_node_id, [weight])``.
             NumPy arrays must be 2-dimensional with 3 or 4 columns.
         """
-        if _is_numpy_input(links):
-            links_array = _normalize_numpy_links(
-                links,
-                name="multilayer intra-link",
-                valid_columns=(3, 4),
-                column_description="(layer_id, source_node_id, target_node_id, [weight])",
-            )
-            return super().addMultilayerIntraLinksFromNumpy2D(
-                links_array,
-                links_array.shape[0],
-                links_array.shape[1],
-                links_array.dtype.kind,
-                links_array.dtype.itemsize,
-            )
-
-        layer_ids, source_node_ids, target_node_ids, weights = (
-            _split_optional_weight_rows(
-                links,
-                row_name="multilayer intra-link",
-                valid_lengths=(3, 4),
-                unpack=_flat_multilayer_unpacker(
-                    ("layer_id", "source_node_id", "target_node_id"),
-                ),
-                length_description="3 or 4 values",
-            )
-        )
-
-        return super().addMultilayerIntraLinks(
-            layer_ids, source_node_ids, target_node_ids, weights
+        return _add_bulk_links(
+            links,
+            numpy_method=self._core.addMultilayerIntraLinksFromNumpy2D,
+            list_method=self._core.addMultilayerIntraLinks,
+            name="multilayer intra-link",
+            valid_columns=(3, 4),
+            column_description="(layer_id, source_node_id, target_node_id, [weight])",
+            valid_lengths=(3, 4),
+            unpack=_flat_multilayer_unpacker(
+                ("layer_id", "source_node_id", "target_node_id"),
+            ),
+            length_description="3 or 4 values",
         )
 
     def add_multilayer_inter_link(
@@ -1101,7 +1392,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         weight : float, optional
 
         """
-        return super().addMultilayerInterLink(
+        return self._core.addMultilayerInterLink(
             source_layer_id, node_id, target_layer_id, weight
         )
 
@@ -1131,35 +1422,18 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
             ``(source_layer_id, node_id, target_layer_id, [weight])``.
             NumPy arrays must be 2-dimensional with 3 or 4 columns.
         """
-        if _is_numpy_input(links):
-            links_array = _normalize_numpy_links(
-                links,
-                name="multilayer inter-link",
-                valid_columns=(3, 4),
-                column_description="(source_layer_id, node_id, target_layer_id, [weight])",
-            )
-            return super().addMultilayerInterLinksFromNumpy2D(
-                links_array,
-                links_array.shape[0],
-                links_array.shape[1],
-                links_array.dtype.kind,
-                links_array.dtype.itemsize,
-            )
-
-        source_layer_ids, node_ids, target_layer_ids, weights = (
-            _split_optional_weight_rows(
-                links,
-                row_name="multilayer inter-link",
-                valid_lengths=(3, 4),
-                unpack=_flat_multilayer_unpacker(
-                    ("source_layer_id", "node_id", "target_layer_id"),
-                ),
-                length_description="3 or 4 values",
-            )
-        )
-
-        return super().addMultilayerInterLinks(
-            source_layer_ids, node_ids, target_layer_ids, weights
+        return _add_bulk_links(
+            links,
+            numpy_method=self._core.addMultilayerInterLinksFromNumpy2D,
+            list_method=self._core.addMultilayerInterLinks,
+            name="multilayer inter-link",
+            valid_columns=(3, 4),
+            column_description="(source_layer_id, node_id, target_layer_id, [weight])",
+            valid_lengths=(3, 4),
+            unpack=_flat_multilayer_unpacker(
+                ("source_layer_id", "node_id", "target_layer_id"),
+            ),
+            length_description="3 or 4 values",
         )
 
     def add_multilayer_links(self, links):
@@ -1190,50 +1464,23 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
             ``(source_layer_id, source_node_id, target_layer_id,
             target_node_id, [weight])``.
         """
-        if _is_numpy_input(links):
-            links_array = _normalize_numpy_links(
-                links,
-                name="multilayer link",
-                valid_columns=(4, 5),
-                column_description=(
-                    "(source_layer_id, source_node_id, target_layer_id, "
-                    "target_node_id, [weight])"
-                ),
-            )
-            return super().addMultilayerLinksFromNumpy2D(
-                links_array,
-                links_array.shape[0],
-                links_array.shape[1],
-                links_array.dtype.kind,
-                links_array.dtype.itemsize,
-            )
-
-        (
-            source_layer_ids,
-            source_node_ids,
-            target_layer_ids,
-            target_node_ids,
-            weights,
-        ) = _split_optional_weight_rows(
+        return _add_bulk_links(
             links,
-            row_name="multilayer link",
+            numpy_method=self._core.addMultilayerLinksFromNumpy2D,
+            list_method=self._core.addMultilayerLinks,
+            name="multilayer link",
+            valid_columns=(4, 5),
+            column_description=(
+                "(source_layer_id, source_node_id, target_layer_id, "
+                "target_node_id, [weight])"
+            ),
             valid_lengths=(2, 3),
             unpack=_paired_multilayer_unpacker(),
             length_description="2 or 3 values",
         )
 
-        return super().addMultilayerLinks(
-            source_layer_ids,
-            source_node_ids,
-            target_layer_ids,
-            target_node_ids,
-            weights,
-        )
-
     def remove_multilayer_link(self):
-        raise NotImplementedError(
-            "Removing multilayer links is not supported by the Python API."
-        )
+        return self._network.remove_multilayer_link()
 
     def set_meta_data(self, node_id, meta_category):
         """Set meta data to a node.
@@ -1254,11 +1501,11 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         >>> im.set_meta_data(4, 1)
         >>> im.set_meta_data(5, 0)
         >>> im.set_meta_data(6, 0)
-        >>> im.run(meta_data_rate=0)
-        >>> im.num_top_modules
+        >>> result = im.run(meta_data_rate=0)
+        >>> result.num_top_modules
         2
-        >>> im.run(meta_data_rate=2)
-        >>> im.num_top_modules
+        >>> result = im.run(meta_data_rate=2)
+        >>> result.num_top_modules
         3
 
 
@@ -1267,7 +1514,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         node_id : int
         meta_category : int
         """
-        return self.network.addMetaData(node_id, meta_category)
+        return self._core.network().addMetaData(node_id, meta_category)
 
     def add_networkx_graph(
         self,
@@ -1276,6 +1523,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         node_id="node_id",
         layer_id="layer_id",
         multilayer_inter_intra_format=True,
+        meta_attribute=None,
     ):
         """Add a NetworkX graph.
 
@@ -1294,8 +1542,8 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         >>> mapping = im.add_networkx_graph(G)
         >>> mapping
         {0: 'a', 1: 'b', 2: 'c'}
-        >>> im.run()
-        >>> for node in im.nodes:
+        >>> result = im.run()
+        >>> for node in result.nodes():
         ...     print(node.node_id, node.module_id, node.flow, mapping[node.node_id])
         0 1 0.5 a
         1 1 0.25 b
@@ -1322,8 +1570,8 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         >>> mapping = im.add_networkx_graph(G)
         >>> mapping
         {0: 'a', 1: 'b', 2: 'c', 3: 'd', 4: 'e', 5: 'f'}
-        >>> im.run()
-        >>> for node in im.nodes:
+        >>> result = im.run()
+        >>> for node in result.nodes(states=True):
         ...     print(node.state_id, node.node_id, node.module_id, node.flow)
         0 1 1 0.16666666666666666
         1 2 1 0.16666666666666666
@@ -1345,8 +1593,8 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         >>> G.add_edge(22, 32)
         >>> im = Infomap(silent=True)
         >>> mapping = im.add_networkx_graph(G)
-        >>> im.run()
-        >>> for node in sorted(im.nodes, key=lambda n: n.state_id):
+        >>> result = im.run()
+        >>> for node in sorted(result.nodes(states=True), key=lambda n: n.state_id):
         ...     print(node.state_id, node.module_id, f"{node.flow:.2f}", node.node_id, node.layer_id)
         11 1 0.28 1 1
         21 1 0.28 2 1
@@ -1383,15 +1631,51 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         dict
             Dict with the internal node ids as keys and original labels as
             values.
+
+        Notes
+        -----
+        Directedness is auto-detected via ``g.is_directed()`` (see above). The
+        graph-library adapters diverge on this: networkx and igraph auto-detect,
+        :meth:`add_scipy_sparse_matrix` defaults ``directed=False``, and
+        :meth:`add_edge_index` defaults ``directed=True``. They also name their
+        weight parameter differently: networkx ``weight``, igraph
+        ``edge_weights``, scipy ``weighted`` (bool), edge_index ``edge_weight``.
+
+        Parallel edges in an ``nx.MultiGraph``/``nx.MultiDiGraph`` are each
+        forwarded to ``add_link`` and self-loops are passed through.
+
+        .. deprecated::
+            Use :meth:`Network.from_networkx` or ``infomap.run(graph)``.
         """
-        return _add_networkx_graph(
+        return self._add_networkx_graph_impl(
+            g,
+            weight=weight,
+            node_id=node_id,
+            layer_id=layer_id,
+            multilayer_inter_intra_format=multilayer_inter_intra_format,
+            meta_attribute=meta_attribute,
+        )
+
+    def _add_networkx_graph_impl(
+        self,
+        g,
+        weight="weight",
+        node_id="node_id",
+        layer_id="layer_id",
+        multilayer_inter_intra_format=True,
+        meta_attribute=None,
+    ):
+        mapping = _add_networkx_graph(
             self,
             g,
             weight=weight,
             node_id=node_id,
             layer_id=layer_id,
             multilayer_inter_intra_format=multilayer_inter_intra_format,
+            meta_attribute=meta_attribute,
         )
+        self.node_id_to_label = mapping
+        return mapping
 
     def add_scipy_sparse_matrix(self, A, directed=False, weighted=True, node_ids=None):
         """Add links and nodes from a SciPy sparse adjacency matrix.
@@ -1415,14 +1699,34 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         dict
             Dict with internal integer node ids as keys and external node ids
             as values.
+
+        Notes
+        -----
+        Unlike the networkx/igraph adapters (which auto-detect directedness via
+        ``is_directed()``), this adapter defaults ``directed=False`` and names
+        its weight control ``weighted`` (a bool). :meth:`add_edge_index` instead
+        defaults ``directed=True``.
+
+        .. deprecated::
+            Use :meth:`Network.from_scipy_sparse_matrix` or
+            ``infomap.run(matrix)``.
         """
-        return _add_scipy_sparse_matrix(
+        return self._add_scipy_sparse_matrix_impl(
+            A, directed=directed, weighted=weighted, node_ids=node_ids
+        )
+
+    def _add_scipy_sparse_matrix_impl(
+        self, A, directed=False, weighted=True, node_ids=None
+    ):
+        mapping = _add_scipy_sparse_matrix(
             self,
             A,
             directed=directed,
             weighted=weighted,
             node_ids=node_ids,
         )
+        self.node_id_to_label = mapping
+        return mapping
 
     def add_edge_index(
         self,
@@ -1455,8 +1759,34 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         dict
             Dict with internal integer node ids as keys and external node ids
             as values.
+
+        Notes
+        -----
+        Unlike the networkx/igraph adapters (which auto-detect directedness via
+        ``is_directed()``), this adapter defaults ``directed=True`` and names its
+        weight parameter ``edge_weight``. :meth:`add_scipy_sparse_matrix` instead
+        defaults ``directed=False``.
+
+        .. deprecated::
+            Use :meth:`Network.from_edge_index` or ``infomap.run(edge_index)``.
         """
-        return _add_edge_index(
+        return self._add_edge_index_impl(
+            edge_index,
+            edge_weight=edge_weight,
+            num_nodes=num_nodes,
+            directed=directed,
+            node_ids=node_ids,
+        )
+
+    def _add_edge_index_impl(
+        self,
+        edge_index,
+        edge_weight=None,
+        num_nodes=None,
+        directed=True,
+        node_ids=None,
+    ):
+        mapping = _add_edge_index(
             self,
             edge_index,
             edge_weight=edge_weight,
@@ -1464,6 +1794,8 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
             directed=directed,
             node_ids=node_ids,
         )
+        self.node_id_to_label = mapping
+        return mapping
 
     def add_igraph_graph(
         self,
@@ -1472,6 +1804,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         vertex_weights=None,
         node_id="node_id",
         layer_id="layer_id",
+        meta_attribute=None,
         multilayer_inter_intra_format=True,
     ):
         """Add a python-igraph graph.
@@ -1506,8 +1839,40 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         dict
             Dict with igraph vertex indices as keys and vertex names as values
             when names are present, otherwise vertex indices as values.
+
+        Notes
+        -----
+        Directedness is auto-detected via ``g.is_directed()`` (as for networkx).
+        The graph-library adapters diverge on this: networkx and igraph
+        auto-detect, :meth:`add_scipy_sparse_matrix` defaults ``directed=False``,
+        and :meth:`add_edge_index` defaults ``directed=True``. They also name
+        their weight parameter differently: igraph ``edge_weights``, networkx
+        ``weight``, scipy ``weighted`` (bool), edge_index ``edge_weight``.
+
+        .. deprecated::
+            Use :meth:`Network.from_igraph` or ``infomap.run(graph)``.
         """
-        return _add_igraph_graph(
+        return self._add_igraph_graph_impl(
+            g,
+            edge_weights=edge_weights,
+            vertex_weights=vertex_weights,
+            node_id=node_id,
+            layer_id=layer_id,
+            multilayer_inter_intra_format=multilayer_inter_intra_format,
+            meta_attribute=meta_attribute,
+        )
+
+    def _add_igraph_graph_impl(
+        self,
+        g,
+        edge_weights=None,
+        vertex_weights=None,
+        node_id="node_id",
+        layer_id="layer_id",
+        multilayer_inter_intra_format=True,
+        meta_attribute=None,
+    ):
+        mapping = _add_igraph_graph(
             self,
             g,
             edge_weights=edge_weights,
@@ -1515,7 +1880,10 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
             node_id=node_id,
             layer_id=layer_id,
             multilayer_inter_intra_format=multilayer_inter_intra_format,
+            meta_attribute=meta_attribute,
         )
+        self.node_id_to_label = mapping
+        return mapping
 
     # ----------------------------------------
     # Run
@@ -1538,9 +1906,9 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         >>> im.add_link(1, 3)
         >>> im.add_link(1, 4)
         >>> im.add_link(2, 4)
-        >>> im.run()
+        >>> result = im.run()
         >>> tol = 1e-4
-        >>> abs(im.codelength - 0.9182958340544896) < tol
+        >>> abs(result.codelength - 0.9182958340544896) < tol
         True
 
 
@@ -1554,11 +1922,11 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         int
             The node id where the second node type starts.
         """
-        return self.network.bipartiteStartId()
+        return self._core.network().bipartiteStartId()
 
     @bipartite_start_id.setter
     def bipartite_start_id(self, start_id):
-        super().setBipartiteStartId(start_id)
+        self._core.setBipartiteStartId(start_id)
 
     @property
     def initial_partition(self):
@@ -1586,9 +1954,9 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         ...     3: 1,
         ...     4: 1
         ... }
-        >>> im.run(no_infomap=True)
+        >>> result = im.run(no_infomap=True)
         >>> tol = 1e-4
-        >>> abs(im.codelength - 3.4056390622295662) < tol
+        >>> abs(result.codelength - 3.4056390622295662) < tol
         True
 
 
@@ -1624,32 +1992,14 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         physical = getattr(self, "_physical_initial_partition", None)
         if physical is not None:
             return physical
-        return super().getInitialPartition()
+        return self._core.getInitialPartition()
 
     @initial_partition.setter
     def initial_partition(self, module_ids):
-        if module_ids is None:
-            module_ids = {}
-        if module_ids and any(isinstance(key, tuple) for key in module_ids):
-            if not all(isinstance(key, tuple) for key in module_ids):
-                raise ValueError(
-                    "initial_partition keys must be either all integers "
-                    "(node/state ids) or all (layer_id, node_id) tuples, not mixed"
-                )
-            if not all(len(key) == 2 for key in module_ids):
-                raise ValueError(
-                    "multilayer initial_partition keys must be (layer_id, node_id) "
-                    "2-tuples (or MultilayerNode)"
-                )
-            layer_ids, node_ids, modules = [], [], []
-            for (layer_id, node_id), module in module_ids.items():
-                layer_ids.append(int(layer_id))
-                node_ids.append(int(node_id))
-                modules.append(int(module))
-            super().setMultilayerInitialPartition(layer_ids, node_ids, modules)
+        if apply_initial_partition(self._core, module_ids):
+            # Cache the tuple-keyed form so the getter can round-trip it.
             self._physical_initial_partition = dict(module_ids)
         else:
-            super().setInitialPartition(module_ids)
             self._physical_initial_partition = None
 
     @contextmanager
@@ -1664,117 +2014,30 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         finally:
             self.initial_partition = old_partition
 
-    def run(
-        self,
-        args=None,
-        initial_partition=None,
-        # input
-        cluster_data=None,
-        no_infomap=False,
-        skip_adjust_bipartite_flow=False,
-        bipartite_teleportation=False,
-        weight_threshold=None,
-        include_self_links=None,
-        no_self_links=False,
-        node_limit=None,
-        matchable_multilayer_ids=None,
-        assign_to_neighbouring_module=False,
-        meta_data=None,
-        meta_data_rate=1.0,
-        meta_data_unweighted=False,
-        # output
-        tree=False,
-        ftree=False,
-        clu=False,
-        verbosity_level=1,
-        silent=False,
-        pretty=False,
-        out_name=None,
-        no_file_output=False,
-        clu_level=None,
-        output=None,
-        hide_bipartite_nodes=False,
-        print_all_trials=False,
-        no_overwrite=False,
-        print_config_fingerprint=False,
-        timing_json=None,
-        summary_json=None,
-        manifest_json=None,
-        memory_report=False,
-        # algorithm
-        two_level=False,
-        flow_model=None,
-        directed=None,
-        recorded_teleportation=False,
-        use_node_weights_as_flow=False,
-        to_nodes=False,
-        teleportation_probability=0.15,
-        regularized=False,
-        regularization_strength=1.0,
-        entropy_corrected=False,
-        entropy_correction_strength=1.0,
-        markov_time=1.0,
-        variable_markov_time=False,
-        variable_markov_damping=1.0,
-        variable_markov_min_scale=1.0,
-        preferred_number_of_modules=None,
-        multilayer_relax_rate=0.15,
-        multilayer_relax_limit=-1,
-        multilayer_relax_limit_up=-1,
-        multilayer_relax_limit_down=-1,
-        multilayer_relax_by_jsd=False,
-        # accuracy
-        seed=123,
-        num_trials=1,
-        core_loop_limit=10,
-        core_level_limit=None,
-        tune_iteration_limit=None,
-        core_loop_codelength_threshold=1e-10,
-        tune_iteration_relative_threshold=1e-05,
-        fast_hierarchical_solution=None,
-        prefer_modular_solution=False,
-        inner_parallelization=False,
-        parallel_trials=False,
-        converge=False,
-        num_threads=None,
-        threads=None,
-        trial_offset=None,
-        trial_results=None,
-        no_final_output=False,
-        num_random_moves=None,
-        max_degree_for_random_moves=None,
-    ):
-        """Run Infomap.
-
-        Keyword arguments mirror the Infomap CLI flags. Use
-        :class:`InfomapOptions` for the full parameter reference and
-        :meth:`run_with_options` when reusing a saved configuration.
-
-        Parameters
-        ----------
-        args : str, optional
-            Raw Infomap arguments to prepend before rendered keyword options.
-        initial_partition : dict, optional
-            Initial partition to use for this run only. See
-            :attr:`initial_partition`.
-
-        See Also
-        --------
-        initial_partition
-        """
-        options = InfomapOptions.from_mapping(locals())
+    def _run_from_options(self, args, initial_partition, options):
         args = _package_construct_args()(args, **options.to_kwargs())
 
         if initial_partition is not None:
             with self._initial_partition(initial_partition):
-                return super().run(args)
+                self._core.run(args)
+        else:
+            self._core.run(args)
 
-        return super().run(args)
+        # Stamp a fresh Result with the new generation (shared helper). The C++
+        # result tree is rebuilt on every run(), so any previously returned
+        # Result becomes stale for node-level access (its eager scalars stay
+        # valid).
+        self._result = build_result(self)
+        return self._result
 
     def run_with_options(self, options, *, args=None, initial_partition=None):
-        """Run Infomap using a reusable :class:`InfomapOptions` instance."""
-        if not isinstance(options, InfomapOptions):
-            raise TypeError("options must be an InfomapOptions instance")
+        """Run Infomap using a reusable :class:`Options` instance.
+
+        .. deprecated::
+            Use ``infomap.run(input, options=options)`` instead.
+        """
+        if not isinstance(options, Options):
+            raise TypeError("options must be an Options instance")
         return self.run(
             args=args,
             initial_partition=initial_partition,
@@ -1784,7 +2047,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
     @property
     def network(self):
         """Get the internal network."""
-        return super().network()
+        return self._core.network()
 
     @property
     def codelength(self):
@@ -1799,8 +2062,11 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         -------
         float
             The codelength
+
+        .. deprecated::
+            Use ``result = im.run(); result.codelength``.
         """
-        return super().codelength()
+        return self._core.codelength()
 
     @property
     def codelengths(self):
@@ -1814,8 +2080,11 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         -------
         tuple of float
             The codelengths for each trial
+
+        .. deprecated::
+            Use ``result = im.run(); result.codelengths``.
         """
-        return super().codelengths()
+        return self._core.codelengths()
 
     @property
     def elapsed_time(self):
@@ -1825,15 +2094,22 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         -------
         float
             The elapsed run time in seconds.
+
+        .. deprecated::
+            Use ``result = im.run(); result.elapsed_time``.
         """
-        return super().elapsedTime()
+        return self._core.elapsedTime()
 
 
 def main():
-    import sys
-
     args = " ".join(sys.argv[1:])
-    return run(args)  # noqa: F405
+    try:
+        return _cli_run(args)
+    except KeyboardInterrupt:
+        # Ctrl-C during the run: cancelled cooperatively (issue #412). Exit like
+        # the native CLI — a clean message and 130 (128 + SIGINT), no traceback.
+        print("Interrupted.", file=sys.stderr)
+        return 130
 
 
 if __name__ == "__main__":

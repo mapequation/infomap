@@ -97,6 +97,11 @@ void Network::postProcessInputData()
     for (auto& it : m_physNodes) {
       addNode(it.second.physId, it.second.weight);
     }
+    // The physical nodes now mirror the state nodes 1:1, and nothing reads
+    // m_physNodes' contents past this point (only numPhysicalNodes(), which is
+    // backed by a counter). Release the map -- a per-source std::map -- to cut
+    // the build peak. std::map::clear() deallocates its nodes.
+    m_physNodes.clear();
   }
 }
 
@@ -166,6 +171,12 @@ void Network::addMultilayerLink(unsigned int stateId1, unsigned int layer1, unsi
     ++m_numInterLayerLinks;
   }
 
+  // The main expanded network builds through the flat buffer (mode A), exactly
+  // like ordinary/state networks: this is a write-only sink during expansion
+  // (the only main-map read was already dead code) and during explicit
+  // *Multilayer parsing, so aggregation can be deferred to finalizeLinks()
+  // instead of paying a per-source std::map. Mode is left at its default (A);
+  // only the transient per-layer networks stay mode B (see addMultilayerIntraLink).
   addLink(stateId1, stateId2, weight);
 }
 
@@ -257,6 +268,14 @@ void Network::generateStateNetworkFromMultilayerWithInterLinks()
     for (auto& it2 : it.second) {
       unsigned int layer2 = it2.first;
       double interWeight = it2.second;
+
+      if (m_config.multilayerRelaxToSelf) {
+        unsigned int stateId2 = addMultilayerNode(layer2, physId);
+        addLink(stateId1, stateId2, interWeight);
+        ++m_numInterLayerLinks;
+        continue;
+      }
+
       auto& targetNetwork = m_networks[layer2];
 
       auto& targetLinks = targetNetwork.nodeLinkMap();
@@ -286,6 +305,19 @@ void Network::generateStateNetworkFromMultilayerWithInterLinks()
       auto& layerNode = it.first;
       unsigned int layer2 = layerNode.layer;
       unsigned int physId = layerNode.node;
+
+      if (m_config.multilayerRelaxToSelf) {
+        unsigned int stateId2 = addMultilayerNode(layer2, physId);
+        for (auto& it2 : it.second) {
+          unsigned int layer1 = it2.first;
+          double interWeight = it2.second;
+          unsigned int stateId1 = addMultilayerNode(layer1, physId);
+          addLink(stateId1, stateId2, interWeight);
+          ++m_numInterLayerLinks;
+        }
+        continue;
+      }
+
       auto& targetNetwork = m_networks[layer2];
       auto& targetLinks = targetNetwork.nodeLinkMap();
       auto& outlinks = targetLinks[physId];
@@ -504,6 +536,7 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnNo
       if (sumOutWeightAllLayers <= 0) {
         continue;
       }
+
       for (auto& it2 : m_networks) {
         auto layer2 = it2.first;
         if (!withinRelaxLimit(layer1, layer2)) {
@@ -511,6 +544,25 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnNo
         }
         auto& network2 = it2.second;
         bool isIntra = layer2 == layer1;
+
+        if (m_config.multilayerRelaxToSelf && !isIntra) {
+          // Couple only to the same physical node in the target layer, carrying
+          // the same per-layer relaxation mass the spread model distributes over
+          // the node's neighbours there (r * s_j(n) / S_n). The home layer is
+          // left to the spread model below.
+          double targetOutWeight = network2.outWeights()[n1];
+          if (targetOutWeight <= 0) {
+            continue; // n1 absent/dangling in the target layer
+          }
+          double weight = relaxRate * targetOutWeight / sumOutWeightAllLayers;
+          if (weight < 1e-16) {
+            continue;
+          }
+          unsigned int stateId2 = addMultilayerNode(layer2, n1);
+          addLink(stateId1, stateId2, weight);
+          ++m_numInterLayerLinks;
+          continue;
+        }
 
         double linkWeightNormalizationFactor = relaxRate / sumOutWeightAllLayers;
         if (isIntra) {
@@ -706,7 +758,14 @@ void Network::simulateInterLayerLinks()
 void Network::addMultilayerIntraLink(unsigned int layer, unsigned int n1, unsigned int n2, double weight)
 {
   m_higherOrderInputMethodCalled = true;
-  bool added = m_networks[layer].addLink(n1, n2, weight);
+  // The main network gets its expansion links later and builds via the flat
+  // buffer (mode A) like ordinary/state networks, so it is left at its default
+  // mode. Only the transient per-layer network stays mode B: its nested map +
+  // outWeights are read directly during expansion, so set before addLink so it
+  // does not enter the buffer path.
+  auto& layerNetwork = m_networks[layer];
+  layerNetwork.m_useMapBuild = true;
+  bool added = layerNetwork.addLink(n1, n2, weight);
   if (added) {
     ++m_numIntraLayerLinks;
     m_maxNodeIdInIntraLayerNetworks = std::max(m_maxNodeIdInIntraLayerNetworks, std::max(n1, n2));
@@ -735,7 +794,11 @@ void Network::addMultilayerInterLink(unsigned int layer1, unsigned int n, unsign
     throw std::runtime_error(fmt::format(FMT_STRING("Inter-layer link (layer1, node, layer2): {}, {}, {} must have layer1 != layer2"), layer1, n, layer2));
   }
   m_higherOrderInputMethodCalled = true;
-
+  // Inter-layer links are buffered in m_interLinks and only realized on the main
+  // network during expansion, which builds via the flat buffer (mode A). The main
+  // network is left at its default mode here. (File input expands before any
+  // numLinks() read; an in-memory numLinks() read before expansion just finalizes
+  // an empty buffer, which the first expansion addLink re-opens via definalize().)
   auto& interLinks = m_interLinks[LayerNode(layer1, n)];
   auto it = interLinks.find(layer2);
 

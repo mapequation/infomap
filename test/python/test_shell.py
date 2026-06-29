@@ -5,12 +5,19 @@ from infomap import shell
 
 
 class FakeInfomap:
+    """Test double mirroring how ``_summary.summary_data`` reads state: the
+    not-run guard and network stats come from ``_core`` (a SWIG-style camelCase
+    handle), and all post-run metrics come from the ``Result`` snapshot.
+    """
+
     def __init__(self, *, pretty=False):
         self.pretty = pretty
         self.loaded = []
         self.num_nodes = 0
         self.num_links = 0
         self.num_physical_nodes = 0
+        # Metric fields are read by tests off ``im`` for convenience but flow to
+        # the summary through ``_core`` (top-modules guard) and ``_result``.
         self.num_top_modules = 0
         self.stateInput = False
         self.multilayerInput = False
@@ -27,6 +34,17 @@ class FakeInfomap:
         self.entropy_rate = 0.0
         self.elapsed_time = 0.0
         self.meta_codelength = 0.0
+
+    @property
+    def _core(self):
+        return self
+
+    @property
+    def _result(self):
+        return self
+
+    def numTopModules(self):
+        return self.num_top_modules
 
     def read_file(self, filename):
         self.loaded.append(filename)
@@ -49,7 +67,7 @@ def test_create_namespace_preloads_default_infomap(monkeypatch, tmp_path):
     namespace = shell.create_namespace(network_file)
 
     assert namespace["im"].loaded == [str(network_file)]
-    assert namespace["InfomapOptions"] is shell.InfomapOptions
+    assert namespace["Options"] is shell.Options
 
 
 def test_summary_prints_partial_state_before_run(monkeypatch, capsys):
@@ -111,7 +129,7 @@ def test_options_delegates_to_generated_options(monkeypatch):
     monkeypatch.setattr(shell, "Infomap", FakeInfomap)
     namespace = shell.create_namespace()
 
-    assert namespace["options"]() is shell.InfomapOptions
+    assert namespace["options"]() is shell.Options
 
 
 def test_main_loads_file_and_uses_injected_launcher(monkeypatch, tmp_path):

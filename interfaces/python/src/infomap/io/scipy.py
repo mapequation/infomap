@@ -3,6 +3,8 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Any
 
+from ._arrays import undirected_edge_items
+
 
 def _import_sparse() -> Any:
     try:
@@ -52,26 +54,16 @@ def _validate_weights(coo: Any) -> None:
 
 
 def _edge_items(coo: Any, *, directed: bool, weighted: bool):
+    triples = (
+        (int(source), int(target), float(value) if weighted else 1.0)
+        for source, target, value in zip(coo.row, coo.col, coo.data, strict=True)
+    )
     if directed:
-        for source, target, value in zip(coo.row, coo.col, coo.data, strict=True):
-            yield int(source), int(target), float(value) if weighted else 1.0
+        yield from triples
         return
-
-    edges: dict[tuple[int, int], float] = {}
-    for source, target, value in zip(coo.row, coo.col, coo.data, strict=True):
-        source_id = int(source)
-        target_id = int(target)
-        edge = (
-            (source_id, target_id) if source_id <= target_id else (target_id, source_id)
-        )
-        weight = float(value) if weighted else 1.0
-        if edge in edges:
-            edges[edge] = max(edges[edge], weight)
-        else:
-            edges[edge] = weight
-
-    for (source, target), weight in edges.items():
-        yield source, target, weight
+    # The coo matrix already had sum_duplicates() applied, so same-(i,j) weights
+    # are summed; undirected_edge_items then dedups across (i,j)/(j,i) keeping max.
+    yield from undirected_edge_items(triples)
 
 
 def add_scipy_sparse_matrix(
@@ -82,6 +74,23 @@ def add_scipy_sparse_matrix(
     weighted: bool = True,
     node_ids: Sequence[Any] | None = None,
 ) -> dict[int, Any]:
+    """Add links and nodes from a SciPy sparse adjacency matrix.
+
+    Directedness
+    ------------
+    Controlled by the ``directed`` parameter, which defaults to ``False``
+    (undirected; ``A[i, j]`` and ``A[j, i]`` are folded together). This default
+    differs from the other adapters: networkx and igraph auto-detect via
+    ``is_directed()``, and ``add_edge_index`` defaults ``directed=True``.
+
+    Weight parameter
+    ----------------
+    This adapter names its weight control ``weighted`` -- a bool: when ``True``
+    (the default) the matrix values are used as link weights, when ``False``
+    every nonzero entry is weight ``1.0``. The other adapters take a named
+    column/attribute/array instead: networkx ``weight``, igraph ``edge_weights``,
+    edge_index ``edge_weight``.
+    """
     sparse = _import_sparse()
     matrix = _validate_sparse_matrix(sparse, A)
     labels = _validate_node_ids(node_ids, matrix.shape[0])
@@ -91,8 +100,8 @@ def add_scipy_sparse_matrix(
 
     internal_to_label = {index: label for index, label in enumerate(labels)}
 
-    if not infomap.flowModelIsSet and directed:
-        infomap.setDirected(True)
+    if not infomap._core.flowModelIsSet and directed:
+        infomap._core.setDirected(True)
 
     for internal_id, label in internal_to_label.items():
         infomap.add_node(internal_id, name=label if isinstance(label, str) else None)

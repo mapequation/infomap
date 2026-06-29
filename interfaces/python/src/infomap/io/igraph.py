@@ -5,6 +5,8 @@ from collections.abc import Iterable
 from numbers import Integral, Real
 from typing import Any
 
+from ._arrays import apply_node_meta_data, community_node_data
+
 
 def _import_igraph() -> Any:
     try:
@@ -74,21 +76,50 @@ def _integer_like(value, *, name):
         raise ValueError(f"`{name}` values must be integer-like or non-missing labels.")
     if isinstance(value, Integral):
         return int(value)
-    if isinstance(value, Real) and math.isfinite(value) and int(value) == value:
-        return int(value)
+    # Non-Integral Real (e.g. a float): convert through float, which is what a
+    # finite integer-valued Real already is here. ``Real`` is an ABC pyright
+    # cannot convert directly, but ``float(value)`` is sound and equivalent.
+    if isinstance(value, Real) and math.isfinite(value) and int(float(value)) == value:
+        return int(float(value))
     raise ValueError(f"`{name}` values must be integer-like.")
 
 
 def _node_ids(values):
     if all(isinstance(value, Real) and not isinstance(value, bool) for value in values):
         ids = [_integer_like(value, name="node_id") for value in values]
+        # Coercing integer-valued floats to ints can make two textually distinct
+        # labels (e.g. 1 and 1.0, or 2 and 2.0) collapse onto the same physical
+        # id. Detect that here and name the colliding labels instead of silently
+        # merging two vertices into one physical node.
+        labels_by_id: dict[int, Any] = {}
+        for label, _node_id in zip(values, ids):
+            seen = labels_by_id.setdefault(_node_id, label)
+            if repr(seen) != repr(label):
+                raise ValueError(
+                    f"`node_id` labels {seen!r} and {label!r} both map to physical "
+                    f"id {_node_id}. Use distinct integer-valued node ids."
+                )
         return ids, {_node_id: str(_node_id) for _node_id in dict.fromkeys(ids)}
 
-    label_to_id = {}
+    # Non-numeric (or mixed) labels: key by identity-as-written. Dict equality
+    # would otherwise merge textually distinct but ``==``-equal keys (e.g. 1 and
+    # 1.0, or 1 and True) into one physical node. Apply the same guard as the
+    # all-integer branch above: collapse genuine duplicates, but reject a
+    # repr-distinct collision instead of silently merging two vertices.
+    label_to_id: dict[Any, int] = {}
+    canonical: dict[Any, Any] = {}
     ids = []
     for label in values:
-        if label not in label_to_id:
+        if label in label_to_id:
+            seen = canonical[label]
+            if repr(seen) != repr(label):
+                raise ValueError(
+                    f"`node_id` labels {seen!r} and {label!r} are distinct but "
+                    f"collide as the same key. Use distinct node ids."
+                )
+        else:
             label_to_id[label] = len(label_to_id)
+            canonical[label] = label
         ids.append(label_to_id[label])
     names = {_node_id: str(label) for label, _node_id in label_to_id.items()}
     return ids, names
@@ -113,14 +144,31 @@ def add_igraph_graph(
     node_id: str = "node_id",
     layer_id: str = "layer_id",
     multilayer_inter_intra_format: bool = True,
+    meta_attribute: str | None = None,
 ) -> dict[int, Any]:
-    """Add a python-igraph graph to an Infomap instance."""
+    """Add a python-igraph graph to an Infomap instance.
+
+    Directedness
+    ------------
+    Auto-detected from the graph: when ``g.is_directed()`` is true and no flow
+    model has been set on the instance, the ``directed`` flag is enabled. (The
+    graph-library adapters diverge here: networkx and igraph auto-detect via
+    ``is_directed()``; ``add_scipy_sparse_matrix`` defaults ``directed=False``;
+    ``add_edge_index`` defaults ``directed=True``.)
+
+    Weight parameter
+    ----------------
+    This adapter names its edge-weight parameter ``edge_weights`` (an edge
+    attribute name, an explicit per-edge sequence, or ``None`` for unit
+    weights). The other adapters use different names: networkx ``weight``, scipy
+    ``weighted`` (a bool), edge_index ``edge_weight``.
+    """
     _validate_igraph_graph(g)
     if vertex_weights is not None:
         raise ValueError("`vertex_weights` is not supported by infomap's igraph adapter yet.")
 
-    if not infomap.flowModelIsSet and g.is_directed():
-        infomap.setDirected(True)
+    if not infomap._core.flowModelIsSet and g.is_directed():
+        infomap._core.setDirected(True)
 
     names = _vertex_names(g)
     weights = _edge_weights(g, edge_weights)
@@ -141,6 +189,7 @@ def add_igraph_graph(
         infomap.set_name(_node_id, name)
 
     if is_multilayer_network:
+        assert layers is not None  # implied by is_multilayer_network (see above)
         for vertex_id in vertices:
             infomap.network.add_multilayer_node(
                 vertex_id,
@@ -158,6 +207,7 @@ def add_igraph_graph(
 
     edges = g.get_edgelist()
     if is_multilayer_network:
+        assert layers is not None  # implied by is_multilayer_network (see above)
         for edge_index, (source, target) in enumerate(edges):
             source_layer_id = layers[source]
             target_layer_id = layers[target]
@@ -199,20 +249,42 @@ def add_igraph_graph(
         for edge_index, (source, target) in enumerate(edges):
             infomap.add_link(source, target, weights[edge_index])
 
+    if meta_attribute is not None:
+        meta_values = _vertex_attribute(g, meta_attribute)
+        if meta_values is None:
+            raise ValueError(
+                f"`meta_attribute` vertex attribute {meta_attribute!r} does not exist."
+            )
+        # add_igraph_graph registers one node per vertex using the vertex index
+        # as the (state) id, so meta is keyed by vertex index.
+        apply_node_meta_data(infomap, zip(vertices, meta_values))
+
     if names is None:
         return {vertex_id: vertex_id for vertex_id in vertices}
     return {vertex_id: names[vertex_id] for vertex_id in vertices}
 
 
-def _membership_and_flows(infomap, g):
+def _membership_and_flows(infomap, g, node_mapping):
+    # Map results back through the ``node_mapping`` the adapter built rather than
+    # assuming the engine hands back exactly the dense ``state_id`` range
+    # ``[0, g.vcount())``. ``add_igraph_graph`` registers one state node per
+    # igraph vertex, using the vertex index as the state id, so the mapping's
+    # keys are precisely the state ids that correspond to a real vertex.
+    #
+    # Multilayer runs can mint *additional* leaf state nodes (inter-layer
+    # relaxation, matchable ids) whose state ids fall outside that range. The old
+    # path skipped them with a numeric ``state_id >= vcount`` bounds check and
+    # then raised "Could not align ..." if that left any real vertex unset.
+    # Selecting the registered vertices via ``node_mapping`` membership is robust
+    # to those extra ids and mirrors how the networkx helper maps results back.
     membership = [None] * g.vcount()
     flows = [None] * g.vcount()
     module_ids = {}
 
-    for node in infomap.nodes:
-        vertex_id = node.state_id
-        if vertex_id < 0 or vertex_id >= g.vcount():
+    for node in community_node_data(infomap):
+        if node.state_id not in node_mapping:
             continue
+        vertex_id = node.state_id
         if node.module_id not in module_ids:
             module_ids[node.module_id] = len(module_ids)
         membership[vertex_id] = module_ids[node.module_id]
@@ -235,6 +307,7 @@ def find_igraph_communities(
     multilayer_inter_intra_format: bool = True,
     module_attribute: str | None = None,
     flow_attribute: str | None = None,
+    meta_attribute: str | None = None,
     **infomap_options: Any,
 ) -> Any:
     """Find communities in a python-igraph graph."""
@@ -250,13 +323,13 @@ def find_igraph_communities(
         clustering.codelength = 0.0
         return clustering
 
-    from ._facade import Infomap
+    from .._facade import Infomap
 
     options = {"silent": True, "no_file_output": True, "num_trials": trials}
     options.update(infomap_options)
 
     infomap = Infomap(**options)
-    add_igraph_graph(
+    node_mapping = add_igraph_graph(
         infomap,
         g,
         edge_weights=edge_weights,
@@ -264,10 +337,11 @@ def find_igraph_communities(
         node_id=node_id,
         layer_id=layer_id,
         multilayer_inter_intra_format=multilayer_inter_intra_format,
+        meta_attribute=meta_attribute,
     )
     infomap.run()
 
-    membership, flows = _membership_and_flows(infomap, g)
+    membership, flows = _membership_and_flows(infomap, g, node_mapping)
     if module_attribute is not None:
         g.vs[module_attribute] = membership
     if flow_attribute is not None:

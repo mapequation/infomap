@@ -60,6 +60,20 @@ namespace infomap {
 
 namespace {
 
+  // Depth-prior bias (bits) for a hierarchy-stage accept test: the log-odds of a
+  // Bernoulli depth prior, added to the codelength comparison. > 0 below the target
+  // depth (toward deeper), < 0 above. Disabled for target 0 or strength <= 0 (a
+  // negative would invert it; the public Config field is binding-settable).
+  // Derivation: issue #308.
+  double prefLevelsBias(unsigned int target, double strength, unsigned int currentDepth)
+  {
+    if (target == 0 || strength <= 0.0)
+      return 0.0;
+    constexpr double ln2 = 0.6931471805599453;
+    const double delta = static_cast<double>(static_cast<int>(target) - static_cast<int>(currentDepth));
+    return strength * (delta + 0.5) / ln2;
+  }
+
   std::string compressionSummary(const std::vector<std::string>& compression)
   {
     if (compression.empty())
@@ -259,13 +273,23 @@ public:
     console.metric("Average degree", io::toPrecision(m_network.numLinks() * 2.0 / m_infomap.numLeafNodes(), 1, true));
     console.metric("Top modules", fmt::format(FMT_STRING("{} ({} non-trivial)"), m_infomap.numTopModules(), m_infomap.numNonTrivialTopModules()));
     console.metric("Levels", fmt::to_string(result.bestNumLevels));
-    console.metric("One-level codelength", io::toPrecision(m_infomap.getOneLevelCodelength()));
+    console.metric("One-level codelength", io::toPrecision(m_infomap.getReferenceOneLevelCodelength()));
     console.metric("Best codelength", io::toPrecision(result.bestHierarchicalCodelength));
 #if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
     if (m_infomap.lossy) {
+      console.metric("Objective J", io::toPrecision(result.bestHierarchicalCodelength));
       console.metric("Lossy rate", io::toPrecision(m_infomap.getLossyRate()));
       console.metric("Lossy distortion", io::toPrecision(m_infomap.getLossyDistortion()));
       console.metric("Lambda", io::toPrecision(m_infomap.lossyLambda));
+      const auto noise = m_infomap.noiseTopModules();
+      std::string noiseSummary = std::to_string(noise.size()) + " of " + std::to_string(m_infomap.numTopModules());
+      if (!noise.empty()) {
+        noiseSummary += " (index:";
+        for (auto i : noise)
+          noiseSummary += " " + std::to_string(i);
+        noiseSummary += ")";
+      }
+      console.metric("Noise modules", noiseSummary);
     }
 #endif
     console.metric("Relative savings", fmt::format(FMT_STRING("{}%"), io::toPrecision(m_infomap.getRelativeCodelengthSavings() * 100, 2, true)));
@@ -290,6 +314,7 @@ private:
       runTrialsUntilConverged(result);
     } else {
       for (unsigned int i = 0; i < m_numTrials; ++i) {
+        m_infomap.pollInterrupt();
         runTrial(i, result);
       }
     }
@@ -307,6 +332,7 @@ private:
     unsigned int trialsSinceImprovement = 0;
     unsigned int i = 0;
     for (; i < m_numTrials; ++i) {
+      m_infomap.pollInterrupt();
       const double bestBefore = result.bestHierarchicalCodelength;
       runTrial(i, result);
 
@@ -351,6 +377,9 @@ private:
 
       InfomapBase worker(workerConfig);
       worker.m_initialPartition = m_infomap.m_initialPartition;
+      // Share the cancel flag so workers observe a cancel; they only read it and
+      // unwind, caught by the per-trial handler below (issue #412).
+      worker.inheritRuntimeContext(m_infomap);
 
       for (unsigned int trialIndex = static_cast<unsigned int>(workerIndex); trialIndex < m_numTrials; trialIndex += numWorkers) {
         try {
@@ -420,6 +449,12 @@ private:
           }
         }
       }
+    }
+
+    // Surface a cancel as InterruptionError, not the generic "Parallel trial
+    // failed" the std::exception handler above would otherwise report (#412).
+    if (m_infomap.interruptRequested()) {
+      throw InterruptionError();
     }
 
     if (hasError) {
@@ -535,6 +570,11 @@ private:
 
   void calculateFlowAndInitNetwork()
   {
+    // Build the consumed CSR link storage before flow: FlowCalculator reads CSR
+    // weights and writes computed flows directly into the CSR arrays, which
+    // initNetwork and the output writers then consume.
+    m_network.finalizeLinks();
+
     {
       auto timer = m_timing.scope("flow_calculation_s");
       calculateFlow(m_network, m_infomap);
@@ -951,6 +991,12 @@ void InfomapBase::run(Network& network)
 {
   if (!isMainInfomap())
     throw std::logic_error("Can't run a non-main Infomap with an input network");
+
+  // Stamp the owner thread (gates the callback) and clear any leftover cancel so
+  // the instance is reusable after an interrupted run (issue #412).
+  m_ownerThreadId = std::this_thread::get_id();
+  m_cancelRequested.store(false, std::memory_order_relaxed);
+  pollInterrupt();
 
   TimingRegistry timing;
   Stopwatch totalTimer(true);
@@ -1472,20 +1518,12 @@ void InfomapBase::generateSubNetwork(Network& network)
     Console::detail(1, "rescale link flow with global Markov time {:g}", markovTime);
   }
 
-  for (auto& linkIt : network.nodeLinkMap()) {
-    unsigned int linkSourceId = linkIt.first;
-    unsigned int sourceIndex = nodeIndexMap[linkSourceId];
-    const auto& subLinks = linkIt.second;
-    for (auto& subIt : subLinks) {
-      unsigned int linkTargetId = subIt.first;
-      unsigned int targetIndex = nodeIndexMap[linkTargetId];
-      // Ignore self-links in optimization as it doesn't change enter/exit flow on modular level
-      if (sourceIndex != targetIndex) {
-        auto& linkData = subIt.second;
-        m_leafNodes[sourceIndex]->addOutEdge(*m_leafNodes[targetIndex], linkData.weight, linkData.flow * markovTime);
-      }
+  network.forEachLink([&](unsigned int sourceIndex, unsigned int targetIndex, double weight, double& flow) {
+    // Ignore self-links in optimization as it doesn't change enter/exit flow on modular level
+    if (sourceIndex != targetIndex) {
+      m_leafNodes[sourceIndex]->addOutEdge(*m_leafNodes[targetIndex], weight, flow * markovTime);
     }
-  }
+  });
 
   if (variableMarkovTime) {
     Console::detail(1, "rescale link flow with variable Markov time");
@@ -1625,6 +1663,26 @@ void InfomapBase::init()
   Console::detail(1, "one-level codelength: {}", io::toPrecision(m_oneLevelCodelength));
 }
 
+#if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
+std::vector<unsigned int> InfomapBase::noiseTopModules() const
+{
+  std::vector<unsigned int> noise;
+  if (!lossy)
+    return noise;
+  // A module is noise iff its naming overhead exceeds the priced dynamics it covers:
+  // l_i = plogp(P_i) - sum_alpha plogp(p_alpha) > lambda * H_i. The per-module leaf
+  // sums (P_i, F_i, H_i) are carried on the module node by consolidateModules.
+  unsigned int index = 1;
+  for (const InfoNode& module : m_root) {
+    const double loss = infomath::plogp(module.data.flow) - module.lossyFlowLogFlow;
+    if (loss > lossyLambda * module.lossyEntropy + 1e-12)
+      noise.push_back(index);
+    ++index;
+  }
+  return noise;
+}
+#endif
+
 // ===================================================
 // Run: *
 // ===================================================
@@ -1676,8 +1734,14 @@ void InfomapBase::hierarchicalPartition()
 
           subInfomap.initPartition(modules);
 
-          // Run two-level partition + find hierarchically super modules (skip recursion)
-          subInfomap.setOnlySuperModules(true).run();
+          // Run two-level partition + find hierarchically super modules (skip recursion).
+          // Free the sub-Infomap on interrupt before unwinding (issue #412).
+          try {
+            subInfomap.setOnlySuperModules(true).run();
+          } catch (const InterruptionError&) {
+            module.disposeInfomap();
+            throw;
+          }
 
           // Collect sub Infomap modules
           i = 0;
@@ -2169,7 +2233,13 @@ unsigned int InfomapBase::coarseTune()
       InfomapBase& subInfomap = getSubInfomap(node)
                                     .setTwoLevel(true)
                                     .setTuneIterationLimit(1);
-      subInfomap.initNetwork(node).run();
+      // Free the sub-Infomap on interrupt before unwinding (issue #412).
+      try {
+        subInfomap.initNetwork(node).run();
+      } catch (const InterruptionError&) {
+        node.disposeInfomap();
+        throw;
+      }
 
       auto originalLeafIt = node.begin_child();
       for (auto& subLeafPtr : subInfomap.leafNodes()) {
@@ -2256,6 +2326,8 @@ unsigned int InfomapBase::findHierarchicalSuperModules(unsigned int superLevelLi
   double hierarchicalCodelength = getCodelength();
   double workingHierarchicalCodelength = hierarchicalCodelength;
 
+  const unsigned int prefBaseDepth = numLevels(); // #308: depth before super levels are added
+
   if (!haveModules())
     throw std::logic_error("Trying to find hierarchical super modules without any modules");
 
@@ -2276,6 +2348,8 @@ unsigned int InfomapBase::findHierarchicalSuperModules(unsigned int superLevelLi
     auto& superInfomap = getSuperInfomap(tmp)
                              .setTwoLevel(true);
     superInfomap.initNetwork(m_root, true); //.initSuperNetwork();
+    // No interrupt catch needed: local `tmp` owns the super-Infomap, so
+    // ~InfoNode frees it if run() throws InterruptionError (#412).
     superInfomap.run();
     if (shouldMuteNestedMainRun) {
       Log::setSilent(isSilent);
@@ -2291,7 +2365,11 @@ unsigned int InfomapBase::findHierarchicalSuperModules(unsigned int superLevelLi
       break;
     }
 
-    bool improvedCodelength = superCodelength < oldIndexLength - minimumCodelengthImprovement;
+    // #308: bias the super-level accept test by the depth it would create.
+    const double superPrefBias = twoLevel
+        ? 0.0
+        : prefLevelsBias(preferredNumberOfLevels, preferredNumberOfLevelsStrength, prefBaseDepth + numLevelsCreated + 1);
+    bool improvedCodelength = superCodelength < oldIndexLength - minimumCodelengthImprovement + superPrefBias;
     if (!improvedCodelength) {
       Console::detail(1, "super: index codebook not improved over one-level");
       break;
@@ -2386,13 +2464,7 @@ unsigned int InfomapBase::findHierarchicalSuperModulesFast(unsigned int superLev
     workingHierarchicalCodelength += codelength - oldIndexLength;
 
     Log(1) << hideIf(!acceptSolution) << ((hierarchicalCodelength - workingHierarchicalCodelength) / hierarchicalCodelength * 100) << "% " << std::flush;
-    Console::note(1, "Found {} super modules in {} effective loops with hierarchical codelength {:g} + {:g} = {:g}{}",
-                  numActiveModules(),
-                  numEffectiveLoops,
-                  indexCodelength,
-                  workingHierarchicalCodelength - indexCodelength,
-                  workingHierarchicalCodelength,
-                  acceptSolution ? "" : ", discarding the solution.");
+    Console::note(1, "Found {} super modules in {} effective loops with hierarchical codelength {:g} + {:g} = {:g}{}", numActiveModules(), numEffectiveLoops, indexCodelength, workingHierarchicalCodelength - indexCodelength, workingHierarchicalCodelength, acceptSolution ? "" : ", discarding the solution.");
     Log(1) << std::flush;
     Log(1).print("{:g} -> {}\n", oldIndexLength, io::stringify(*this));
 
@@ -2572,6 +2644,9 @@ unsigned int InfomapBase::recursivePartition()
 #endif
     {
       for (auto moduleIndex : spawnOrder) {
+        // Stop spawning once cancelled; never throw inside the task region (#412).
+        if (interruptRequested())
+          break;
         InfoNode* module = partitionQueue[moduleIndex];
         detail::PartitionTaskRecord* record = &rootRecords[moduleIndex];
 #ifdef _OPENMP
@@ -2587,6 +2662,10 @@ unsigned int InfomapBase::recursivePartition()
 
   if (shouldMuteNestedMainRun)
     Log::setSilent(isSilent);
+
+  // Tasks have joined: throwing here is safe (outside any OpenMP block) and
+  // aborts the recursion if a cancel was requested while tasks ran (#412).
+  checkCancelled();
 
   // Aggregate the recorded statistics level by level, visiting the records in
   // the same order as the former level-synchronous queue concatenated them, so
@@ -2715,6 +2794,13 @@ void InfomapBase::partitionModuleRecursively(InfoNode& module, unsigned int leve
   if (module.disposeInfomap())
     module.codelength = calcCodelength(module);
 
+  // Inside an OpenMP task: bail without throwing; recursivePartition throws once
+  // after the region (#412).
+  if (interruptRequested()) {
+    record.leafCodelength = module.codelength;
+    return;
+  }
+
   // If only trivial substructure is to be found, no need to create infomap instance to find sub-module structures.
   if (module.childDegree() <= 2) {
     module.codelength = calcCodelength(module);
@@ -2726,8 +2812,17 @@ void InfomapBase::partitionModuleRecursively(InfoNode& module, unsigned int leve
 
   auto& subInfomap = getSubInfomap(module)
                          .initNetwork(module);
-  // Run two-level partition + find hierarchically super modules (skip recursion)
-  subInfomap.setOnlySuperModules(true).run();
+  // Run two-level partition + find hierarchically super modules (skip recursion).
+  // Contain an interrupt from the sub-run so it can't escape the enclosing
+  // OpenMP task; free the sub-Infomap and bail (the flag stays set) (#412).
+  try {
+    subInfomap.setOnlySuperModules(true).run();
+  } catch (const InterruptionError&) {
+    module.disposeInfomap();
+    module.codelength = oldModuleCodelength;
+    record.leafCodelength = module.codelength;
+    return;
+  }
 
   double subCodelength = subInfomap.getHierarchicalCodelength();
   double subIndexCodelength = subInfomap.root().codelength;
@@ -2735,7 +2830,11 @@ void InfomapBase::partitionModuleRecursively(InfoNode& module, unsigned int leve
   InfoNode& subRoot = *module.getInfomapRoot();
   unsigned int numSubModules = subRoot.childDegree();
   bool trivialSubPartition = numSubModules == 1 || numSubModules == module.childDegree();
-  bool improvedCodelength = subCodelength < oldModuleCodelength - minimumCodelengthImprovement;
+  // #308: bias the refinement accept test by the local recursion depth (level + 1).
+  const double subPrefBias = twoLevel
+      ? 0.0
+      : prefLevelsBias(preferredNumberOfLevels, preferredNumberOfLevelsStrength, level + 1);
+  bool improvedCodelength = subCodelength < oldModuleCodelength - minimumCodelengthImprovement + subPrefBias;
 
   if (trivialSubPartition || !improvedCodelength) {
     Console::detail(1, "disposing unaccepted sub Infomap instance");
@@ -2840,6 +2939,9 @@ void InfomapBase::partitionModuleRecursively(InfoNode& module, unsigned int leve
   });
 
   for (auto subModuleIndex : spawnOrder) {
+    // Stop spawning once cancelled (in-flight children bail at their own check).
+    if (interruptRequested())
+      break;
     InfoNode* subModule = materializedSubModules[subModuleIndex];
     detail::PartitionTaskRecord* childRecord = &record.children[subModuleIndex];
     // Small subtrees run inline: spawning them as tasks costs more in task

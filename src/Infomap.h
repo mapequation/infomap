@@ -37,6 +37,28 @@ struct LinkResult {
 };
 #endif
 
+// Single-traversal bulk node data for the Python (and JS) bindings. Excluded
+// from the R binding (#ifndef SWIGR): R wraps the struct as an undocumented S4
+// class, which trips an R CMD check WARNING, and R has no use for the Python
+// extractor. The C++ compiler and the Python/JS SWIG passes leave SWIGR
+// undefined, so the struct stays available there. Parallel std::vector columns
+// reuse the existing vector_uint/vector_double SWIG templates; the ragged path
+// is stored CSR-style (flat values + lengths).
+#ifndef SWIGR
+struct NodeData {
+  std::vector<unsigned int> node_id; // physicalId
+  std::vector<unsigned int> state_id; // stateId
+  std::vector<unsigned int> module_id; // moduleId at `level`
+  std::vector<double> flow;
+  std::vector<unsigned int> depth;
+  std::vector<unsigned int> layer_id;
+  std::vector<unsigned int> child_index;
+  std::vector<double> modular_centrality;
+  std::vector<unsigned int> path_flat; // CSR values: all path entries concatenated
+  std::vector<unsigned int> path_len; // CSR lengths: per-node path length
+};
+#endif
+
 // Wrapper class for the Python API
 struct InfomapWrapper : public InfomapBase {
 public:
@@ -121,14 +143,9 @@ public:
   {
     std::map<std::pair<unsigned int, unsigned int>, double> links;
 
-    for (const auto& node : m_network.nodeLinkMap()) {
-      const auto sourceId = node.first;
-
-      for (const auto& link : node.second) {
-        const auto targetId = link.first;
-        links[{ sourceId, targetId }] = flow ? link.second.flow : link.second.weight;
-      }
-    }
+    m_network.forEachLink([&](unsigned int s, unsigned int t, double weight, double& linkFlow) {
+      links[{ m_network.nodeId(s), m_network.nodeId(t) }] = flow ? linkFlow : weight;
+    });
 
     return links;
   }
@@ -139,14 +156,9 @@ public:
     std::vector<LinkResult> links;
     links.reserve(m_network.numLinks());
 
-    for (const auto& node : m_network.nodeLinkMap()) {
-      const auto sourceId = node.first;
-
-      for (const auto& link : node.second) {
-        const auto targetId = link.first;
-        links.emplace_back(sourceId, targetId, link.second.weight, link.second.flow);
-      }
-    }
+    m_network.forEachLink([&](unsigned int s, unsigned int t, double weight, double& linkFlow) {
+      links.emplace_back(m_network.nodeId(s), m_network.nodeId(t), weight, linkFlow);
+    });
 
     return links;
   }
@@ -167,11 +179,52 @@ public:
     return modules;
   }
 
+  // Single-traversal bulk node data; NodeData is defined at namespace scope
+  // (above) so SWIG wraps its parallel-vector members for Python. Excluded from
+  // the R binding together with NodeData (see the struct's #ifndef SWIGR note).
+#ifndef SWIGR
+  NodeData getNodeData(int level = 1, bool states = false)
+  {
+    // Mirror _results.get_nodes: physical iterator for higher-order networks
+    // unless state-level data is requested.
+    if (haveMemory() && !states) {
+      return collectLeafData(iterTreePhysical(level));
+    }
+    return collectLeafData(iterLeafNodes(level));
+  }
+#endif
+
+private:
+#ifndef SWIGR
+  template <typename Iter>
+  NodeData collectLeafData(Iter it) const
+  {
+    NodeData d;
+    for (; !it.isEnd(); ++it) {
+      auto& node = *it;
+      if (!node.isLeaf()) continue;
+      d.node_id.push_back(node.physicalId);
+      d.state_id.push_back(node.stateId);
+      d.module_id.push_back(it.moduleId());
+      d.flow.push_back(node.data.flow);
+      d.depth.push_back(it.depth());
+      d.layer_id.push_back(node.layerId);
+      d.child_index.push_back(it.childIndex());
+      d.modular_centrality.push_back(it.modularCentrality());
+      const auto& p = it.path();
+      d.path_len.push_back(static_cast<unsigned int>(p.size()));
+      d.path_flat.insert(d.path_flat.end(), p.begin(), p.end());
+    }
+    return d;
+  }
+#endif
+
+public:
   using InfomapBase::codelength;
   using InfomapBase::getEntropyRate;
 #if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
-  using InfomapBase::getLossyRate;
   using InfomapBase::getLossyDistortion;
+  using InfomapBase::getLossyRate;
 #endif
   using InfomapBase::getMultilevelModules;
   using InfomapBase::iterLeafNodes;

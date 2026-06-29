@@ -63,7 +63,7 @@ FlowCalculator::FlowCalculator(StateNetwork& network, const Config& config)
   sumLinkOutWeight.assign(numNodes, 0.0);
 
   unsigned int nodeIndex = 0;
-  const auto& nodeLinkMap = network.nodeLinkMap();
+  network.ensureFinalized(); // CSR is the consumed link store; build it if needed
 
   if (network.isBipartite()) {
     // Preserve node order
@@ -87,7 +87,7 @@ FlowCalculator::FlowCalculator(StateNetwork& network, const Config& config)
       // with dangling nodes first to optimize calculation of dangling rank
 
       for (const auto& node : network.nodes()) {
-        const auto isDangling = nodeLinkMap.find(node.second.id) == nodeLinkMap.end();
+        const auto isDangling = network.isDangling(network.indexOfId(node.second.id));
         if (!isDangling) continue;
 
         const auto& nodeId = node.second.id;
@@ -97,7 +97,7 @@ FlowCalculator::FlowCalculator(StateNetwork& network, const Config& config)
       nonDanglingStartIndex = nodeIndex;
 
       for (const auto& node : network.nodes()) {
-        const auto isDangling = nodeLinkMap.find(node.second.id) == nodeLinkMap.end();
+        const auto isDangling = network.isDangling(network.indexOfId(node.second.id));
         if (isDangling) continue;
 
         const auto& nodeId = node.second.id;
@@ -113,10 +113,10 @@ FlowCalculator::FlowCalculator(StateNetwork& network, const Config& config)
   if (network.isBipartite()) {
     const auto bipartiteStartId = network.bipartiteStartId();
 
-    for (const auto& node : nodeLinkMap) {
-      const auto sourceIsFeature = node.first >= bipartiteStartId;
+    for (unsigned int s = 0; s < numNodes; ++s) {
+      const auto sourceIsFeature = network.nodeId(s) >= bipartiteStartId;
       if (sourceIsFeature) continue;
-      bipartiteLinkStartIndex += node.second.size();
+      bipartiteLinkStartIndex += network.outDegree(s);
     }
   }
 
@@ -124,44 +124,42 @@ FlowCalculator::FlowCalculator(StateNetwork& network, const Config& config)
   unsigned int featureLinkIndex = bipartiteLinkStartIndex; // bipartite case
   double undirectedLinkNormalization = 2 * sumLinkWeight - network.sumSelfLinkWeight();
 
-  for (const auto& node : nodeLinkMap) {
-    const auto sourceId = node.first;
+  // CSR iterates links in (source, target) id order, identical to the nested
+  // map, so flowLinks indices match. Translate CSR index -> id -> FlowCalculator
+  // internal index (the directed model reorders dangling nodes first).
+  network.forEachLink([&](unsigned int srcIdx, unsigned int tgtIdx, double linkWeight, double&) {
+    const auto sourceId = network.nodeId(srcIdx);
     const auto sourceIndex = nodeIndexMap[sourceId];
+    const auto targetIndex = nodeIndexMap[network.nodeId(tgtIdx)];
 
-    for (const auto& link : node.second) {
-      const auto targetId = link.first;
-      const auto targetIndex = nodeIndexMap[targetId];
-      const auto linkWeight = link.second.weight;
+    ++nodeOutDegree[sourceIndex];
+    sumLinkOutWeight[sourceIndex] += linkWeight;
+    nodeFlow[sourceIndex] += linkWeight / undirectedLinkNormalization;
 
-      ++nodeOutDegree[sourceIndex];
-      sumLinkOutWeight[sourceIndex] += linkWeight;
-      nodeFlow[sourceIndex] += linkWeight / undirectedLinkNormalization;
+    if (network.isBipartite() && sourceId >= network.bipartiteStartId()) {
+      // Link from feature node to ordinary node
+      flowLinks[featureLinkIndex].source = sourceIndex;
+      flowLinks[featureLinkIndex].target = targetIndex;
+      flowLinks[featureLinkIndex].flow = linkWeight;
+      ++featureLinkIndex;
+    } else {
+      // Ordinary link, or unipartite
+      flowLinks[linkIndex].source = sourceIndex;
+      flowLinks[linkIndex].target = targetIndex;
+      flowLinks[linkIndex].flow = linkWeight;
+      ++linkIndex;
+    }
 
-      if (network.isBipartite() && sourceId >= network.bipartiteStartId()) {
-        // Link from feature node to ordinary node
-        flowLinks[featureLinkIndex].source = sourceIndex;
-        flowLinks[featureLinkIndex].target = targetIndex;
-        flowLinks[featureLinkIndex].flow = linkWeight;
-        ++featureLinkIndex;
-      } else {
-        // Ordinary link, or unipartite
-        flowLinks[linkIndex].source = sourceIndex;
-        flowLinks[linkIndex].target = targetIndex;
-        flowLinks[linkIndex].flow = linkWeight;
-        ++linkIndex;
+    if (sourceIndex != targetIndex) {
+      if (config.isUndirectedFlow()) {
+        ++nodeOutDegree[targetIndex];
+        sumLinkOutWeight[targetIndex] += linkWeight;
       }
-
-      if (sourceIndex != targetIndex) {
-        if (config.isUndirectedFlow()) {
-          ++nodeOutDegree[targetIndex];
-          sumLinkOutWeight[targetIndex] += linkWeight;
-        }
-        if (config.flowModel != FlowModel::outdirdir) {
-          nodeFlow[targetIndex] += linkWeight / undirectedLinkNormalization;
-        }
+      if (config.flowModel != FlowModel::outdirdir) {
+        nodeFlow[targetIndex] += linkWeight / undirectedLinkNormalization;
       }
     }
-  }
+  });
 
   bool normalizeNodeFlow = false;
 
@@ -195,6 +193,8 @@ FlowCalculator::FlowCalculator(StateNetwork& network, const Config& config)
         } else {
           calcDirectedRegularizedFlow(network, config);
         }
+      } else if (config.isMultilayerNetwork() && config.multilayerRelaxToSelf) {
+        calcDirectedRelaxToSelfFlow(network, config);
       } else {
         calcDirectedFlow(network, config);
       }
@@ -453,6 +453,138 @@ void FlowCalculator::calcDirectedFlow(const StateNetwork& network, const Config&
 
   // Update the links with their global flow from the PageRank values.
   // Note: beta is set to 1 if unrecorded teleportation
+  for (auto& link : flowLinks) {
+    link.flow *= beta * nodeFlowTmp[link.source] / sumNodeRank;
+  }
+}
+
+void FlowCalculator::calcDirectedRelaxToSelfFlow(const StateNetwork& network, const Config& config) noexcept
+{
+  // Node flow for --multilayer-relax-to-self. This mirrors calcDirectedFlow but
+  // uses a two-step transition: an intra-layer link is an ordinary one-hop, while
+  // an inter-layer link (to the same physical node in another layer) is transient
+  // -- its flow is relayed through the target's intra-layer out-links (the deferred
+  // relax intra-step) within the same iteration, so the inter-layer target accrues
+  // no visit. The fused inter+intra step equals the default spread model's
+  // transition, so the stationary node flow is exactly spread's on the compact
+  // O(L*k) network -- the same two-step trick as calcDirectedBipartiteFlow. The
+  // matching link flow is produced in finalize().
+  m_flowMethod = "directed multilayer relax-to-self (two-step)";
+  m_teleportation = fmt::format(FMT_STRING("{}, to {}"), config.recordedTeleportation ? "recorded" : "unrecorded", config.teleportToNodes ? "nodes" : "links");
+
+  // Calculate the teleport rate distribution
+  if (config.teleportToNodes) {
+    double sumNodeWeights = 0.0;
+
+    for (const auto& nodeIt : network.nodes()) {
+      auto& node = nodeIt.second;
+      nodeTeleportWeights[nodeIndexMap[node.id]] = node.weight;
+      sumNodeWeights += node.weight;
+    }
+
+    normalize(nodeTeleportWeights, sumNodeWeights);
+  } else {
+    // Teleport to links
+
+    // Teleport proportionally to out-degree, or in-degree if recorded teleportation.
+    for (const auto& link : flowLinks) {
+      auto toNode = config.recordedTeleportation ? link.target : link.source;
+      nodeTeleportWeights[toNode] += link.flow / sumLinkWeight;
+    }
+  }
+
+  // Normalize link weights with respect to its source nodes total out-link weight;
+  for (auto& link : flowLinks) {
+    if (sumLinkOutWeight[link.source] > 0) {
+      link.flow /= sumLinkOutWeight[link.source];
+    }
+  }
+
+  // Classify links (inter-layer vs intra-layer) and accumulate per-node intra-layer out-mass.
+  std::vector<unsigned int> physId(numNodes, 0);
+  for (const auto& nodeIt : network.nodes()) {
+    physId[nodeIndexMap[nodeIt.second.id]] = nodeIt.second.physicalId;
+  }
+  std::vector<char> isInterLayer(flowLinks.size(), 0);
+  std::vector<double> intraOutSum(numNodes, 0.0);
+  for (unsigned int k = 0; k < flowLinks.size(); ++k) {
+    const auto& link = flowLinks[k];
+    if (physId[link.source] == physId[link.target] && link.source != link.target) {
+      isInterLayer[k] = 1;
+    } else {
+      intraOutSum[link.source] += link.flow;
+    }
+  }
+
+  std::vector<double> nodeFlowTmp(numNodes, 0.0);
+  std::vector<double> interArrived(numNodes, 0.0);
+  double danglingRank;
+
+  // One fused transition step. First pass: every intra-layer link makes the ordinary
+  // one-hop dst += beta * P(src->dst) * src[src], while flow arriving on an inter-layer
+  // link is held back in interArrived (its target is not visited). Second pass: push
+  // that held-back flow on through the target's intra-layer out-links, split by their
+  // transition probability -- the deferred relax intra-step.
+  const auto twoStep = [&](const double beta, const std::vector<double>& src, std::vector<double>& dst) {
+    std::fill(interArrived.begin(), interArrived.end(), 0.0);
+    for (unsigned int k = 0; k < flowLinks.size(); ++k) {
+      const auto& link = flowLinks[k];
+      if (isInterLayer[k]) {
+        interArrived[link.target] += beta * link.flow * src[link.source];
+      } else {
+        dst[link.target] += beta * link.flow * src[link.source];
+      }
+    }
+    for (unsigned int k = 0; k < flowLinks.size(); ++k) {
+      const auto& link = flowLinks[k];
+      if (!isInterLayer[k] && intraOutSum[link.source] > 0.0) {
+        dst[link.target] += interArrived[link.source] * link.flow / intraOutSum[link.source];
+      }
+    }
+  };
+
+  const auto iteration = [&](const auto iter, const double alpha, const double beta) {
+    danglingRank = std::accumulate(cbegin(nodeFlow), cbegin(nodeFlow) + nonDanglingStartIndex, 0.0);
+    const auto teleportationFlow = alpha + beta * danglingRank;
+    for (unsigned int i = 0; i < numNodes; ++i) {
+      nodeFlowTmp[i] = teleportationFlow * nodeTeleportWeights[i];
+    }
+    twoStep(beta, nodeFlow, nodeFlowTmp);
+
+    double nodeFlowDiff = -1.0;
+    double error = 0.0;
+    for (unsigned int i = 0; i < numNodes; ++i) {
+      nodeFlowDiff += nodeFlowTmp[i];
+      error += std::abs(nodeFlowTmp[i] - nodeFlow[i]);
+    }
+    nodeFlow = nodeFlowTmp;
+    if (std::abs(nodeFlowDiff) > 1.0e-10) {
+      Console::detail(1, "normalizing flow after {} power iterations with error {:g}", iter, nodeFlowDiff);
+      normalize(nodeFlow, nodeFlowDiff + 1.0);
+    }
+    return error;
+  };
+
+  const auto result = powerIterate(config.teleportationProbability, config.maxFlowIterations, iteration);
+  recordPageRank(result.iterations, result.error, result.converged);
+
+  double sumNodeRank = 1.0;
+  double beta = result.beta;
+
+  if (!config.recordedTeleportation) {
+    // Take one last (un-teleported) two-step iteration and normalize node flow.
+    sumNodeRank = 1.0 - danglingRank;
+    nodeFlow.assign(numNodes, 0.0);
+    twoStep(1.0, nodeFlowTmp, nodeFlow);
+    if (sumNodeRank > 0.0) {
+      normalize(nodeFlow, sumNodeRank);
+    }
+    beta = 1.0;
+  }
+
+  // Update the links with their global flow from the PageRank values.
+  // (Inter-layer links get their transit flow here; finalize() also relays it onto
+  // the target's intra-layer links for the matching two-step link flow.)
   for (auto& link : flowLinks) {
     link.flow *= beta * nodeFlowTmp[link.source] / sumNodeRank;
   }
@@ -1167,6 +1299,61 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
     }
   }
 
+  // Link flow for --multilayer-relax-to-self. calcDirectedRelaxToSelfFlow gave the
+  // nodes spread's flow with a two-step walk; the links get the matching two-step
+  // (Markov-time-2) treatment so module-exit flows -- and thus the codelength -- match
+  // spread. The relax flow from (i,n) crosses to layer j via the inter-layer link
+  // (i,n)->(j,n) and then continues along (j,n)'s intra-layer out-links, so keep BOTH:
+  // the inter-layer link keeps its own flow (the layer switch, charged to (i,n)'s
+  // module when a node's copies are split across modules), and that flow is also
+  // relayed onto (j,n)'s intra out-links (the onward step, charged within the target
+  // layer). The codelength depends only on node flows and module-exit flows, so the
+  // extra within-module relay volume is harmless. This is exact when (j,n) is
+  // co-modular with its target-layer neighbours -- always for coherent partitions, and
+  // for simple overlaps (e.g. one node shared between two layer-local communities). It
+  // is approximate only when those neighbours are cross-community (the relay then
+  // charges a second crossing the one-hop spread model does not); reproducing that
+  // exactly would need spread's O(L^2*k) links. (Same Markov-time-2 idea as the
+  // bipartite handling above.)
+  if (config.multilayerRelaxToSelf && !network.isBipartite()) {
+    std::vector<unsigned int> physId(numNodes, 0);
+    for (const auto& nodeIt : network.nodes()) {
+      physId[nodeIndexMap[nodeIt.second.id]] = nodeIt.second.physicalId;
+    }
+    std::vector<std::vector<unsigned int>> outLinks(numNodes);
+    for (unsigned int k = 0; k < flowLinks.size(); ++k) {
+      outLinks[flowLinks[k].source].push_back(k);
+    }
+    std::vector<double> delta(flowLinks.size(), 0.0);
+    for (unsigned int k = 0; k < flowLinks.size(); ++k) {
+      const auto& link = flowLinks[k];
+      const bool interLayer = physId[link.source] == physId[link.target] && link.source != link.target;
+      if (!interLayer) {
+        continue;
+      }
+      const unsigned int t = link.target;
+      double sumIntra = 0.0;
+      for (const auto l : outLinks[t]) {
+        if (physId[flowLinks[l].target] != physId[t]) {
+          sumIntra += flowLinks[l].flow;
+        }
+      }
+      if (sumIntra <= 0.0) {
+        continue; // dangling target: leave the inter-layer link as is
+      }
+      const double f = link.flow;
+      for (const auto l : outLinks[t]) {
+        if (physId[flowLinks[l].target] != physId[t]) {
+          delta[l] += f * flowLinks[l].flow / sumIntra;
+        }
+      }
+      // The inter-layer link keeps its own flow (the layer switch); it is not dropped.
+    }
+    for (unsigned int k = 0; k < flowLinks.size(); ++k) {
+      flowLinks[k].flow += delta[k];
+    }
+  }
+
   if (config.useNodeWeightsAsFlow) {
     addFlowNote("Using node weights as flow");
 
@@ -1188,17 +1375,14 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
   unsigned int linkIndex = 0;
   auto featureLinkIndex = bipartiteLinkStartIndex;
 
-  for (auto& node : network.m_nodeLinkMap) {
-    for (auto& link : node.second) {
-      auto& linkData = link.second;
-      if (network.isBipartite() && node.first >= network.bipartiteStartId()) {
-        linkData.flow = flowLinks[featureLinkIndex++].flow;
-      } else {
-        linkData.flow = flowLinks[linkIndex++].flow;
-      }
-      sumLinkFlow += linkData.flow;
+  network.forEachLink([&](unsigned int srcIdx, unsigned int, double, double& flow) {
+    if (network.isBipartite() && network.nodeId(srcIdx) >= network.bipartiteStartId()) {
+      flow = flowLinks[featureLinkIndex++].flow;
+    } else {
+      flow = flowLinks[linkIndex++].flow;
     }
-  }
+    sumLinkFlow += flow;
+  });
 
   double fractionIntraFlow = config.isMultilayerNetwork() && config.regularized ? 1 : 0;
 
@@ -1223,12 +1407,11 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
 
       // Remove self-link flow
       unsigned int norm = config.isUndirectedFlow() ? 2 : 1;
-      auto& outLinks = network.m_nodeLinkMap[node.id];
-      for (auto& link : outLinks) {
-        auto& linkData = link.second;
-        if (node.id == link.first) {
-          node.enterFlow -= linkData.flow / norm;
-          node.exitFlow -= linkData.flow / norm;
+      const auto srcIdx = network.indexOfId(node.id);
+      for (unsigned int e = network.m_linkOffsets[srcIdx]; e < network.m_linkOffsets[srcIdx + 1]; ++e) {
+        if (network.m_linkTargets[e] == srcIdx) { // self-link: target index == source index
+          node.enterFlow -= network.m_linkFlows[e] / norm;
+          node.exitFlow -= network.m_linkFlows[e] / norm;
           break;
         }
       }
@@ -1253,18 +1436,17 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
       for (auto& nodeIt : network.m_nodes) {
         auto& node = nodeIt.second;
         const auto sourceIndex = nodeIndexMap[node.id];
-        auto& outLinks = network.m_nodeLinkMap[node.id];
-        double danglingFlow = outLinks.empty() ? node.flow : 0.0;
+        const auto srcIdx = network.indexOfId(node.id);
+        double danglingFlow = network.isDangling(srcIdx) ? node.flow : 0.0;
         if (config.recordedTeleportation) {
           // Don't let self-teleportation add to the enter/exit flow (i.e. multiply with (1.0 - node.data.teleportWeight))
           exitFlow[sourceIndex] += alpha * node.flow * (1.0 - node.weight);
           enterFlow[sourceIndex] += (alpha * (1.0 - node.flow) + (1 - alpha) * (sumDanglingFlow - danglingFlow)) * node.weight;
         }
-        for (auto& link : outLinks) {
-          auto& linkData = link.second;
-          const auto targetIndex = nodeIndexMap[link.first];
-          exitFlow[sourceIndex] += linkData.flow;
-          enterFlow[targetIndex] += linkData.flow;
+        for (unsigned int e = network.m_linkOffsets[srcIdx]; e < network.m_linkOffsets[srcIdx + 1]; ++e) {
+          const auto targetIndex = nodeIndexMap[network.nodeId(network.m_linkTargets[e])];
+          exitFlow[sourceIndex] += network.m_linkFlows[e];
+          enterFlow[targetIndex] += network.m_linkFlows[e];
         }
       }
     }

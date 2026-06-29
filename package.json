@@ -1,6 +1,6 @@
 {
   "name": "@mapequation/infomap",
-  "version": "2.12.0",
+  "version": "2.13.0",
   "description": "Infomap network clustering algorithm",
   "browser": "./index.umd.js",
   "module": "./index.js",
@@ -10,6 +10,7 @@
   "files": [
     "*.js",
     "*.cjs",
+    "*.mjs",
     "*.d.ts",
     "*.map",
     "LICENSE_GPLv3.txt"
@@ -54,7 +55,16 @@
       "require": "./network.cjs",
       "default": "./network.js"
     },
+    "./node": {
+      "types": "./node.d.ts",
+      "import": "./node.js",
+      "require": "./node.cjs",
+      "default": "./node.js"
+    },
     "./package.json": "./package.json"
+  },
+  "bin": {
+    "infomap": "./cli.js"
   },
   "sideEffects": false,
   "scripts": {
@@ -107,7 +117,7 @@
     "@rollup/plugin-json": "^6.1.0",
     "@rollup/plugin-node-resolve": "^16.0.3",
     "@rollup/plugin-typescript": "^12.1.4",
-    "@types/node": "^25.9.1",
+    "@types/node": "^26.0.0",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
     "jsdom": "^26.1.0",

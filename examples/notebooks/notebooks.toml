@@ -4,9 +4,19 @@ tier = "smoke"
 description = "Flagship Infomap Python quickstart with notebook-native summary and static network visualization."
 
 [[notebooks]]
+path = "options-guide.ipynb"
+tier = "smoke"
+description = "Goal-oriented guide to Infomap's options with runnable examples and a complete reference table generated from the installed package."
+
+[[notebooks]]
 path = "run-infomap-on-hpc.ipynb"
 tier = "smoke"
 description = "HPC recipe notebook for native trial sharding, scheduler-aware threads, and Python shard merging."
+
+[[notebooks]]
+path = "benchmark-performance.ipynb"
+tier = "smoke"
+description = "Performance and run-planning guide: renders committed time/memory benchmarks (data/benchmark-results.csv) to estimate runs by size, threads, trials, and depth. RUN_BENCHMARK=False by default; set True to regenerate locally."
 
 [[notebooks]]
 path = "run-infomap-on-graphrag-tables.ipynb"
@@ -76,7 +86,7 @@ description = "Requires the separate map-equation-similarity package."
 [[notebooks]]
 path = "9.3 Infomap Bioregions.ipynb"
 tier = "manual"
-description = "Requires geospatial dependencies and external data access."
+description = "Requires geospatial dependencies (geopandas, shapely); uses synthetic data, no external download."
 
 [[notebooks]]
 path = "9.4 Model Selection with Correlational Data.ipynb"

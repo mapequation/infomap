@@ -74,6 +74,7 @@ test = [
   "anndata",
   "igraph",
   "jsonschema>=4.18",
+  "pyright",
   "pytest",
   "networkx",
   "pyarrow",
@@ -95,6 +96,7 @@ examples = [
   "pandas",
   "pyarrow",
   "scikit-learn",
+  "scanpy[leiden]",
   "scipy",
 ]
 notebooks = [
@@ -159,6 +161,32 @@ extend-exclude = [
   "F821",
   "F405",
 ]
+
+[tool.pyright]
+# Type-check the hand-written package only. The SWIG-generated _swig.py is
+# excluded (same boundary as ruff's extend-exclude); its ~50 generated-binding
+# diagnostics are noise. Symbols it exports are still resolved for importers
+# because pyright parses excluded files it sees imported -- it just won't report
+# diagnostics inside them.
+include = ["interfaces/python/src/infomap"]
+exclude = [
+  "interfaces/python/src/infomap/_swig.py",
+  "**/__pycache__",
+  "**/.venv",
+  "build",
+  "dist",
+]
+# Check against the lowest supported runtime so we don't lean on newer-version
+# syntax. The package declares requires-python >= 3.11.
+pythonVersion = "3.11"
+typeCheckingMode = "standard"
+# Optional scientific deps (numpy, pandas, torch, ...) often ship without type
+# stubs; don't nag about that -- it isn't our code's problem.
+reportMissingModuleSource = false
+# __all__ is built dynamically in the re-export modules (__init__/_bindings)
+# because they forward the generated/SWIG-wrapped surface via globals() and
+# _facade.__all__. That is intentional, not a bug to statically inline.
+reportUnsupportedDunderAll = false
 
 [tool.pytest.ini_options]
 testpaths = ["test/python"]

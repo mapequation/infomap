@@ -70,6 +70,7 @@ public:
 #if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
   double getLossyRate() const override;
   double getLossyDistortion() const override;
+  double getLossyOneLevelLossless() const override;
 #endif
 
   void setNetworkProperties(const StateNetwork& network) override;
@@ -199,6 +200,18 @@ inline double InfomapOptimizer<Objective>::getLossyRate() const
 
 template <typename Objective>
 inline double InfomapOptimizer<Objective>::getLossyDistortion() const
+{
+  return 0.0;
+}
+
+template <>
+inline double InfomapOptimizer<LossyMapEquation>::getLossyOneLevelLossless() const
+{
+  return m_objective.getOneLevelLossless();
+}
+
+template <typename Objective>
+inline double InfomapOptimizer<Objective>::getLossyOneLevelLossless() const
 {
   return 0.0;
 }
@@ -429,6 +442,9 @@ INFOMAP_HOT inline unsigned int InfomapOptimizer<Objective>::optimizeActiveNetwo
   }
 
   do {
+    // Cancellation checkpoint (#412): between the inner sweeps, so a throw here
+    // never unwinds through an OpenMP region.
+    m_infomap->pollInterrupt();
     ++coreLoopCount;
     unsigned int numNodesMoved = shouldUseInnerParallelization()
         ? tryMoveEachNodeIntoBestModuleInParallel()
@@ -672,7 +688,9 @@ INFOMAP_HOT unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestMod
     m_threadModuleEnumeration.resize(numThreads);
   }
 
+#ifdef _OPENMP
 #pragma omp parallel
+#endif
   {
 #ifdef _OPENMP
     const auto threadNum = static_cast<unsigned int>(omp_get_thread_num());
@@ -684,8 +702,14 @@ INFOMAP_HOT unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestMod
 
     // Chunked dynamic scheduling: load varies per node (dirty nodes cluster),
     // but chunk size 1 costs one scheduler round-trip per iteration.
+#ifdef _OPENMP
 #pragma omp for schedule(dynamic, 512)
+#endif
     for (unsigned int i = 0; i < numNodes; ++i) {
+      // Once cancelled, drain the sweep without throwing (no exception may leave
+      // this OpenMP region); the outer loop throws at its next checkpoint (#412).
+      if (m_infomap->interruptRequested())
+        continue;
       deltaFlow.startRound();
 
       // Pick nodes in random order

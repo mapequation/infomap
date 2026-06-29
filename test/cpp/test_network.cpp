@@ -8,7 +8,9 @@
 
 #include <cstdio>
 #include <fstream>
+#include <map>
 #include <string>
+#include <tuple>
 #include <vector>
 
 namespace {
@@ -73,19 +75,128 @@ private:
   }
 };
 
-TEST_CASE("Network aggregates duplicate links [fast][core]")
+TEST_CASE("Network aggregates duplicate links after finalize [fast][core]")
 {
   Config config;
   config.silent = true;
   Network network(config);
 
+  // Deferred dedup (mode A): addLink reports "accepted" (passed filters), not
+  // "new-unique" -- aggregation happens in finalizeLinks().
   CHECK(network.addLink(1, 2, 1.0));
-  CHECK_FALSE(network.addLink(1, 2, 2.5));
+  CHECK(network.addLink(1, 2, 2.5));
+
+  network.finalizeLinks();
 
   CHECK(network.numNodes() == 2);
+  CHECK(network.numLinks() == 1); // aggregated
+  CHECK(network.numAggregatedLinks() == 1);
+  CHECK(network.sumLinkWeight() == doctest::Approx(3.5)); // occurrence sum (eager)
+  // Aggregated CSR weight read straight from the consumed store (mode A no longer
+  // derives outWeights).
+  double mergedWeight = -1.0;
+  network.forEachLink([&](unsigned int, unsigned int, double w, double&) { mergedWeight = w; });
+  CHECK(mergedWeight == doctest::Approx(3.5));
+}
+
+TEST_CASE("Mode-A map APIs work: outWeights / removeLink [fast][core][csr]")
+{
+  Config config;
+  config.silent = true;
+  Network network(config);
+  network.addLink(1, 2, 1.0);
+  network.addLink(1, 3, 2.0);
+  network.addLink(2, 3, 4.0);
+
+  // outWeights() is derived on demand for the flat-buffer (mode-A) build, and
+  // must finalize lazily -- no explicit finalizeLinks() call here.
+  CHECK(network.outWeights().at(1) == doctest::Approx(3.0));
+  CHECK(network.outWeights().at(2) == doctest::Approx(4.0));
+
+  // removeLink materializes the nested map from CSR and removes the link.
+  CHECK(network.numLinks() == 3);
+  CHECK(network.removeLink(1, 2));
+  CHECK(network.numLinks() == 2);
+  CHECK_FALSE(network.removeLink(1, 2)); // already gone
+  CHECK(network.outWeights().at(1) == doctest::Approx(2.0)); // 3.0 - 1.0
+}
+
+TEST_CASE("undirectedToDirected expands a mode-A network [fast][core][csr]")
+{
+  Config config("--two-level --silent");
+  Network network(config);
+  network.addLink(1, 2, 1.0);
+  network.addLink(2, 3, 2.0);
+  network.finalizeLinks();
+  CHECK(network.numLinks() == 2);
+
+  REQUIRE(config.isUndirectedFlow());
+  CHECK(network.undirectedToDirected()); // adds the two opposite links
+  CHECK(network.numLinks() == 4);
+}
+
+TEST_CASE("addLink after finalize re-merges via definalize, preserving FP order [fast][core][csr]")
+{
+  Config config;
+  config.silent = true;
+  Network network(config);
+  network.addLink(1, 2, 0.1);
+  network.addLink(1, 2, 0.2);
+  network.finalizeLinks(); // (1,2) merged to (0.1 + 0.2)
   CHECK(network.numLinks() == 1);
-  CHECK(network.sumLinkWeight() == doctest::Approx(3.5));
-  CHECK(network.outWeights().at(1) == doctest::Approx(3.5));
+
+  // addLink after finalize -> definalize() restores the buffer, appends, and a
+  // later finalize re-sorts + re-merges (accumulate / addLink-after-run path).
+  network.addLink(1, 2, 0.3);
+  network.addLink(1, 3, 4.0);
+  network.finalizeLinks();
+
+  CHECK(network.numLinks() == 2);
+  double w12 = -1.0, w13 = -1.0;
+  network.forEachLink([&](unsigned int s, unsigned int t, double w, double&) {
+    if (network.nodeId(s) == 1 && network.nodeId(t) == 2) w12 = w;
+    if (network.nodeId(s) == 1 && network.nodeId(t) == 3) w13 = w;
+  });
+  // The merged (0.1 + 0.2) is preserved as one occurrence, then + 0.3 in arrival
+  // order -- bit-identical to merging all three occurrences in one pass.
+  CHECK(w12 == ((0.1 + 0.2) + 0.3));
+  CHECK(w13 == doctest::Approx(4.0));
+}
+
+TEST_CASE("clearLinks before finalize leaves no garbage counts [fast][core][csr]")
+{
+  Config config;
+  config.silent = true;
+  Network network(config);
+  network.addLink(1, 2, 1.0);
+  network.addLink(1, 2, 2.0); // duplicate: would aggregate on finalize
+  network.clearLinks();       // cleared while still unfinalized (mode A)
+
+  // A lazy finalize here must NOT rebuild from cleared buffers and compute
+  // m_numAggregatedLinks = m_rawLinkCount - 0.
+  CHECK(network.numLinks() == 0);
+  CHECK(network.numAggregatedLinks() == 0);
+}
+
+TEST_CASE("Isolated/dangling node is in-bounds in mode-A CSR [fast][core][csr]")
+{
+  Config config;
+  config.silent = true;
+  Network network(config);
+  network.addLink(1, 2, 1.0);
+  network.addNode(9); // isolated node with the largest id -> last CSR index
+  network.finalizeLinks();
+
+  CHECK(network.numNodes() == 3);
+  CHECK(network.numLinks() == 1);
+  // The largest-id node sits at the last CSR index; outDegree()/isDangling()
+  // read m_linkOffsets[index+1] and must stay in bounds.
+  CHECK(network.isDangling(network.indexOfId(9)));
+  CHECK(network.outDegree(network.indexOfId(9)) == 0);
+  CHECK_FALSE(network.isDangling(network.indexOfId(1)));
+  unsigned int emitted = 0;
+  network.forEachLink([&](unsigned int, unsigned int, double, double&) { ++emitted; });
+  CHECK(emitted == 1); // the isolated node contributes no link
 }
 
 TEST_CASE("Network reads states fixture as higher-order input [fast][core]")
@@ -140,6 +251,149 @@ TEST_CASE("Network rejects explicit multilayer input with regularized flow [fast
       network.readInputData(infomap::test::repoPath("test/fixtures/networks/multilayer.net")),
       "Regularized multilayer flow requires *Intra/*Inter input; explicit *Multilayer input is not supported with --regularized.",
       std::runtime_error);
+}
+
+TEST_CASE("multilayer-relax-to-self couples diagonal nodes in the simulated path [fast][core][multilayer]")
+{
+  // Directed so out-links are exactly as added (no undirected->directed expansion).
+  Network network(Config("--silent --directed --multilayer-relax-to-self", false));
+  // Layer 1: node 1 -> 2
+  network.addMultilayerIntraLink(1, 1, 2, 1.0);
+  network.addMultilayerIntraLink(1, 2, 1, 1.0);
+  // Layer 2: node 1 has three out-neighbours
+  network.addMultilayerIntraLink(2, 1, 2, 1.0);
+  network.addMultilayerIntraLink(2, 1, 3, 1.0);
+  network.addMultilayerIntraLink(2, 1, 4, 1.0);
+
+  network.postProcessInputData();
+
+  const auto& map = network.layerNodeToStateId();
+  auto sid = [&](unsigned layer, unsigned phys) { return map.at(layer).at(phys); };
+  const unsigned s11 = sid(1, 1);
+
+  std::map<unsigned int, double> out; // target state id -> weight
+  network.forEachLink([&](unsigned s, unsigned t, double w, double) {
+    if (network.nodeId(s) == s11) out[network.nodeId(t)] = w;
+  });
+
+  // Home layer unchanged from spread; one diagonal inter link carrying the
+  // spread per-layer aggregate.
+  CHECK(out.size() == 2);
+  CHECK(out.count(sid(1, 2)) == 1);
+  CHECK(out.at(sid(1, 2)) == doctest::Approx(0.8875)); // home = spread: 0.15/4 + 0.85/1
+  CHECK(out.count(sid(2, 1)) == 1);
+  CHECK(out.at(sid(2, 1)) == doctest::Approx(0.1125)); // diagonal aggregate: 0.15 * 3/4
+  // No inter links to neighbours in the target layer.
+  CHECK(out.count(sid(2, 2)) == 0);
+  CHECK(out.count(sid(2, 3)) == 0);
+  CHECK(out.count(sid(2, 4)) == 0);
+}
+
+TEST_CASE("default simulated path still spreads to neighbours [fast][core][multilayer]")
+{
+  Network network(Config("--silent --directed", false));
+  network.addMultilayerIntraLink(1, 1, 2, 1.0);
+  network.addMultilayerIntraLink(1, 2, 1, 1.0);
+  network.addMultilayerIntraLink(2, 1, 2, 1.0);
+  network.addMultilayerIntraLink(2, 1, 3, 1.0);
+  network.addMultilayerIntraLink(2, 1, 4, 1.0);
+
+  network.postProcessInputData();
+
+  const auto& map = network.layerNodeToStateId();
+  auto sid = [&](unsigned layer, unsigned phys) { return map.at(layer).at(phys); };
+  const unsigned s11 = sid(1, 1);
+
+  std::map<unsigned int, double> out;
+  network.forEachLink([&](unsigned s, unsigned t, double w, double) {
+    if (network.nodeId(s) == s11) out[network.nodeId(t)] = w;
+  });
+
+  // Home intra link + three spread inter links to the target-layer neighbours.
+  CHECK(out.size() == 4);
+  CHECK(out.count(sid(2, 1)) == 0); // no diagonal coupling
+  CHECK(out.count(sid(2, 2)) == 1);
+  CHECK(out.count(sid(2, 3)) == 1);
+  CHECK(out.count(sid(2, 4)) == 1);
+}
+
+TEST_CASE("multilayer-relax-to-self couples diagonal nodes in the explicit *Inter path [fast][core][multilayer]")
+{
+  Network network(Config("--silent --directed --multilayer-relax-to-self", false));
+  // Intra
+  network.addMultilayerIntraLink(1, 1, 2, 1.0);
+  network.addMultilayerIntraLink(2, 1, 2, 1.0);
+  network.addMultilayerIntraLink(2, 1, 3, 1.0);
+  // Explicit inter link from (layer1, node1) to layer2
+  network.addMultilayerInterLink(1, 1, 2, 0.5);
+
+  network.postProcessInputData();
+
+  const auto& map = network.layerNodeToStateId();
+  auto sid = [&](unsigned layer, unsigned phys) { return map.at(layer).at(phys); };
+  const unsigned s11 = sid(1, 1);
+
+  std::map<unsigned int, double> out;
+  network.forEachLink([&](unsigned s, unsigned t, double w, double) {
+    if (network.nodeId(s) == s11) out[network.nodeId(t)] = w;
+  });
+
+  CHECK(out.count(sid(1, 2)) == 1); // intra, full weight
+  CHECK(out.at(sid(1, 2)) == doctest::Approx(1.0));
+  CHECK(out.count(sid(2, 1)) == 1); // single diagonal inter link
+  CHECK(out.at(sid(2, 1)) == doctest::Approx(0.5)); // == interWeight
+  CHECK(out.count(sid(2, 2)) == 0); // not spread to neighbours
+  CHECK(out.count(sid(2, 3)) == 0);
+}
+
+TEST_CASE("explicit *Inter to-self links even when the node is absent in the target layer [fast][core][multilayer]")
+{
+  Network network(Config("--silent --directed --multilayer-relax-to-self", false));
+  network.addMultilayerIntraLink(1, 1, 2, 1.0);
+  // Layer 2 exists but node 1 has NO intra out-links there.
+  network.addMultilayerIntraLink(2, 5, 6, 1.0);
+  network.addMultilayerInterLink(1, 1, 2, 0.5);
+
+  network.postProcessInputData();
+
+  const auto& map = network.layerNodeToStateId();
+  auto sid = [&](unsigned layer, unsigned phys) { return map.at(layer).at(phys); };
+  const unsigned s11 = sid(1, 1);
+
+  std::map<unsigned int, double> out;
+  network.forEachLink([&](unsigned s, unsigned t, double w, double) {
+    if (network.nodeId(s) == s11) out[network.nodeId(t)] = w;
+  });
+
+  // The explicit coupling is still created even though (2,1) is dangling.
+  CHECK(out.count(sid(2, 1)) == 1);
+  CHECK(out.at(sid(2, 1)) == doctest::Approx(0.5));
+}
+
+TEST_CASE("multilayer-relax-to-self adds reverse diagonal inter link for undirected flow [fast][core][multilayer]")
+{
+  Network network(Config("--silent --multilayer-relax-to-self", false)); // undirected (default)
+  network.addMultilayerIntraLink(1, 1, 2, 1.0);
+  network.addMultilayerIntraLink(2, 1, 2, 1.0);
+  network.addMultilayerInterLink(1, 1, 2, 0.5);
+
+  network.postProcessInputData();
+
+  const auto& map = network.layerNodeToStateId();
+  auto sid = [&](unsigned layer, unsigned phys) { return map.at(layer).at(phys); };
+
+  std::map<unsigned int, std::map<unsigned int, double>> out; // src -> (tgt -> w)
+  network.forEachLink([&](unsigned s, unsigned t, double w, double) {
+    out[network.nodeId(s)][network.nodeId(t)] = w;
+  });
+
+  // Forward and reverse diagonal coupling, both with interWeight.
+  CHECK(out[sid(1, 1)].count(sid(2, 1)) == 1);
+  CHECK(out[sid(1, 1)].at(sid(2, 1)) == doctest::Approx(0.5));
+  CHECK(out[sid(2, 1)].count(sid(1, 1)) == 1);
+  CHECK(out[sid(2, 1)].at(sid(1, 1)) == doctest::Approx(0.5));
+  // Never spread to neighbours.
+  CHECK(out[sid(1, 1)].count(sid(2, 2)) == 0);
 }
 
 TEST_CASE("NetworkBuilder validates bipartite intake while building Network state [fast][core][parser]")
@@ -286,6 +540,31 @@ TEST_CASE("NetworkInputParser preserves malformed multilayer errors [fast][core]
       infomap::input::parseNetworkInput(infomap::test::repoPath("test/fixtures/networks/invalid_multilayer.net"), sink, defaultInputOptions),
       "Can't parse multilayer link data from line '1 1 broken'",
       std::runtime_error);
+}
+
+TEST_CASE("StateNetwork builds CSR link storage after finalize [fast][core][csr]")
+{
+  Network network(Config{});
+  network.addLink(1, 2, 1.0);
+  network.addLink(1, 3, 2.0);
+  network.addLink(2, 3, 4.0);
+  network.finalizeLinks();
+
+  CHECK(network.numNodes() == 3);
+  CHECK(network.numLinks() == 3);
+  CHECK(network.outDegree(network.indexOfId(1)) == 2); // node 1 -> {2,3}
+  CHECK(network.outDegree(network.indexOfId(2)) == 1); // node 2 -> {3}
+  CHECK(network.isDangling(network.indexOfId(3)));      // node 3 has no out-links
+  CHECK(network.nodeId(0) == 1);                         // sorted ids {1,2,3}
+
+  std::vector<std::tuple<unsigned int, unsigned int, double>> seen;
+  network.forEachLink([&](unsigned int s, unsigned int t, double w, double&) {
+    seen.emplace_back(network.nodeId(s), network.nodeId(t), w);
+  });
+  REQUIRE(seen.size() == 3);
+  CHECK(std::get<0>(seen[0]) == 1);
+  CHECK(std::get<1>(seen[0]) == 2);
+  CHECK(std::get<2>(seen[2]) == doctest::Approx(4.0));
 }
 
 } // namespace

@@ -3,8 +3,9 @@
 
 # @mapequation/infomap
 
-`@mapequation/infomap` packages Infomap as a browser web worker built with
-Emscripten.
+`@mapequation/infomap` packages Infomap, compiled to WebAssembly with
+Emscripten. It ships a browser web worker, a Node.js module
+(`@mapequation/infomap/node`), and an `infomap` command line tool.
 
 Infomap is a network clustering algorithm based on the
 [Map equation](https://www.mapequation.org/publications.html#Rosvall-Axelsson-Bergstrom-2009-Map-equation).
@@ -117,9 +118,56 @@ With JSDelivr, the package is available as `window.infomap.default`.
 </html>
 ```
 
+## Use in Node.js
+
+The `@mapequation/infomap/node` entrypoint runs Infomap in Node.js. It exposes
+an async `run(network, options)` that resolves to the output files, keyed by
+format (the default `@mapequation/infomap` entrypoint targets the browser and
+relies on worker APIs that are unavailable in Node).
+
+```js
+import { run } from "@mapequation/infomap/node";
+
+const network = `#source target
+0 1
+0 2
+0 3
+1 2
+3 4
+3 5
+4 5`;
+
+const result = await run(network, { args: ["-o", "tree,json", "-2"] });
+
+console.log(result.json.codelength);
+console.log(result.tree); // .tree file contents as a string
+```
+
+`options.args` accepts a string or an array of Infomap CLI options, and the
+result contains only the formats Infomap produced. The network is processed in
+memory and Infomap's console output is suppressed. The same entrypoint works
+with CommonJS:
+
+```js
+const { run } = require("@mapequation/infomap/node");
+```
+
+## Command line
+
+Installing the package provides an `infomap` command that behaves like the
+native binary, reading and writing real files (`network_file out_directory
+[options]`):
+
+```bash
+npx @mapequation/infomap network.net . --tree --clu
+npx @mapequation/infomap --help
+```
+
 ## Package notes
 
 - `@mapequation/infomap/react` is the supported React entrypoint.
+- `@mapequation/infomap/node` is the Node.js entrypoint; the default
+  `@mapequation/infomap` entrypoint is browser-only.
 
 ## More information
 

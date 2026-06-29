@@ -27,6 +27,8 @@ enum class ExitCode : std::uint8_t {
   // MemoryEstimateExceeded = 4,
   // NoValidTrials = 5,
   InternalError = 7,
+  // Ctrl-C / cooperative cancellation; 128 + SIGINT(2), the shell convention (#412).
+  Interrupted = 130,
 };
 
 class InfomapError : public std::runtime_error {

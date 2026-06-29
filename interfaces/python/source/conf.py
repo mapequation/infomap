@@ -86,6 +86,10 @@ copybutton_prompt_is_regexp = True
 # Execute rendered notebook pages and cache outputs between documentation builds.
 nb_execution_mode = "cache"
 
+# Fail the build if any rendered notebook raises during execution, so broken
+# example notebooks surface as CI errors instead of silent warnings.
+nb_execution_raise_on_error = True
+
 # -- Open Graph --------------------------------------------------------------
 
 ogp_site_url = "https://mapequation.org/infomap-python-docs/"
