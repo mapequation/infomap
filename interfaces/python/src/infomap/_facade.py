@@ -1523,6 +1523,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         node_id="node_id",
         layer_id="layer_id",
         multilayer_inter_intra_format=True,
+        meta_attribute=None,
     ):
         """Add a NetworkX graph.
 
@@ -1652,6 +1653,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             node_id=node_id,
             layer_id=layer_id,
             multilayer_inter_intra_format=multilayer_inter_intra_format,
+            meta_attribute=meta_attribute,
         )
 
     def _add_networkx_graph_impl(
@@ -1661,6 +1663,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         node_id="node_id",
         layer_id="layer_id",
         multilayer_inter_intra_format=True,
+        meta_attribute=None,
     ):
         mapping = _add_networkx_graph(
             self,
@@ -1669,6 +1672,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             node_id=node_id,
             layer_id=layer_id,
             multilayer_inter_intra_format=multilayer_inter_intra_format,
+            meta_attribute=meta_attribute,
         )
         self.node_id_to_label = mapping
         return mapping
@@ -1800,6 +1804,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         vertex_weights=None,
         node_id="node_id",
         layer_id="layer_id",
+        meta_attribute=None,
         multilayer_inter_intra_format=True,
     ):
         """Add a python-igraph graph.
@@ -1854,6 +1859,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             node_id=node_id,
             layer_id=layer_id,
             multilayer_inter_intra_format=multilayer_inter_intra_format,
+            meta_attribute=meta_attribute,
         )
 
     def _add_igraph_graph_impl(
@@ -1864,6 +1870,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         node_id="node_id",
         layer_id="layer_id",
         multilayer_inter_intra_format=True,
+        meta_attribute=None,
     ):
         mapping = _add_igraph_graph(
             self,
@@ -1873,6 +1880,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             node_id=node_id,
             layer_id=layer_id,
             multilayer_inter_intra_format=multilayer_inter_intra_format,
+            meta_attribute=meta_attribute,
         )
         self.node_id_to_label = mapping
         return mapping

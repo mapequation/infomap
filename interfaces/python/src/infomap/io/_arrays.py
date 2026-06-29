@@ -13,6 +13,7 @@ This module holds the pieces that more than one adapter needs, so the
 
 from __future__ import annotations
 
+import math
 from collections.abc import Iterator
 from typing import Any, NamedTuple
 
@@ -78,7 +79,7 @@ def apply_node_meta_data(infomap: Any, id_meta_pairs: Any) -> dict:
     """
     encoding: dict[Any, int] = {}
     for internal_id, raw in id_meta_pairs:
-        if raw is None or (isinstance(raw, float) and raw != raw):
+        if raw is None or (isinstance(raw, float) and math.isnan(raw)):
             continue
         code = encoding.get(raw)
         if code is None:

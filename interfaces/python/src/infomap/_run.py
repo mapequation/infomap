@@ -75,16 +75,24 @@ def _is_scipy_sparse(obj: Any) -> bool:
 
 
 def _is_edge_index(obj: Any) -> bool:
-    """A ``(2, E)`` ndarray or tensor of integer node ids."""
-    # Tensors expose detach(); ndarrays expose shape + dtype.
+    """A ``(2, E)`` ndarray or tensor of **integer** node ids.
+
+    The integer-dtype requirement disambiguates from a weighted NumPy link
+    matrix (rows of ``(source, target, weight)``), which carries a float
+    weight column and so is routed to ``add_links`` instead. Edge-index node
+    ids are always integers.
+    """
     shape = getattr(obj, "shape", None)
-    if shape is None:
+    if shape is None or len(shape) != 2 or shape[0] != 2:
         return False
-    if len(shape) != 2 or shape[0] != 2:
+    dtype = getattr(obj, "dtype", None)
+    if dtype is None:
         return False
-    # Distinguish from a 2-row plain Python list (handled as an edge iterable):
-    # require an array/tensor-like object (numpy/torch carry a dtype).
-    return hasattr(obj, "dtype")
+    kind = getattr(dtype, "kind", None)
+    if kind is not None:  # numpy / array-api dtype: 'i'/'u' integer, 'f' float
+        return kind in "iu"
+    # torch dtypes have no ``.kind``; exclude floating/complex by name.
+    return "int" in str(dtype).lower()
 
 
 # Adapter-only keyword arguments per input type. run() forwards keywords to the
@@ -97,7 +105,15 @@ _ADAPTER_KWARGS = {
     "file": ("Network.from_file", frozenset({"accumulate"})),
     "networkx": (
         "Network.from_networkx",
-        frozenset({"weight", "node_id", "layer_id", "multilayer_inter_intra_format"}),
+        frozenset(
+            {
+                "weight",
+                "node_id",
+                "layer_id",
+                "multilayer_inter_intra_format",
+                "meta_attribute",
+            }
+        ),
     ),
     "igraph": (
         "Network.from_igraph",
@@ -108,6 +124,7 @@ _ADAPTER_KWARGS = {
                 "node_id",
                 "layer_id",
                 "multilayer_inter_intra_format",
+                "meta_attribute",
             }
         ),
     ),
@@ -181,6 +198,11 @@ def run(
     ``run(A, directed=True)``) raises with a pointer to the matching
     ``Network.from_*`` constructor, rather than silently ignoring it or building
     a different graph.
+
+    A 2-row *integer* array/tensor is read as a ``(2, E)`` edge index. A weighted
+    link matrix (rows of ``(source, target, weight)``) has a float column and is
+    read as link rows; to pass integer link rows explicitly, use a list of
+    tuples or ``Network().add_links(...)``.
 
     Examples
     --------

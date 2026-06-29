@@ -120,6 +120,9 @@ class TreeNode:
     def __setattr__(self, name: str, value: Any) -> None:
         raise AttributeError("TreeNode is immutable")
 
+    def __delattr__(self, name: str) -> None:
+        raise AttributeError("TreeNode is immutable")
+
     def __repr__(self) -> str:
         return (
             f"TreeNode(node_id={self.node_id}, module_id={self.module_id}, "
@@ -218,6 +221,7 @@ class Result:
         "_generation",
         "_names",
         "_have_memory",
+        "_directed",
         "_codelength",
         "_num_top_modules",
         "_num_non_trivial_top_modules",
@@ -247,6 +251,9 @@ class Result:
         # Names are needed for the "name" column; capture eagerly (cheap dict).
         object.__setattr__(self, "_names", dict(core.getNames()))
         object.__setattr__(self, "_have_memory", core.haveMemory())
+        # Captured eagerly so a Result is a stable artifact: exporters read the
+        # directedness off the snapshot, not the live engine.
+        object.__setattr__(self, "_directed", bool(core.directed))
         # Eager scalar metrics (O(1), no tree traversal).
         object.__setattr__(self, "_codelength", core.codelength())
         object.__setattr__(self, "_num_top_modules", core.numTopModules())
@@ -581,17 +588,20 @@ class Result:
         Returns
         -------
         generator of (int, int, float)
-            ``(source, target, weight_or_flow)`` tuples.
+            ``(source, target, weight_or_flow)`` tuples. The generator is
+            generation-guarded like :meth:`tree`: consuming it after the bound
+            engine re-runs raises instead of reading the rebuilt engine.
         """
         if data not in ("weight", "flow"):
             raise RuntimeError('data must one of "weight" or "flow"')
         self._check_generation()
-        return (
-            (source, target, value)
-            for (source, target), value in self._engine._core.getLinks(
-                data != "weight"
-            ).items()
-        )
+        flow = data != "weight"
+
+        def _link_items():
+            for (source, target), value in self._engine._core.getLinks(flow).items():
+                yield (source, target, value)
+
+        return self._guard_iteration(_link_items())
 
     def effective_num_modules(self, depth: int = 1) -> float:
         """The flow-weighted effective number of modules at ``depth``.

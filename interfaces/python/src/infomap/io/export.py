@@ -321,8 +321,9 @@ def to_networkx(
         ``DiGraph`` when the partitioned network is directed, else ``Graph``.
     """
     nx = _import_networkx()
+    result._check_generation()
 
-    directed = bool(result._engine._core.directed)
+    directed = bool(result._directed)
     graph = nx.DiGraph() if directed else nx.Graph()
 
     for node in _result_nodes(result):
@@ -380,7 +381,7 @@ def to_igraph(
     index_by_state_id = {state_id: index for index, state_id in enumerate(state_ids)}
     n_vertices = len(nodes)
 
-    directed = bool(result._engine._core.directed)
+    directed = bool(result._directed)
     graph = ig.Graph(n=n_vertices, directed=directed)
 
     values_by_attribute: dict[str, list[Any]] = {"name": [None] * n_vertices}

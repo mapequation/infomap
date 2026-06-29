@@ -9,7 +9,9 @@ from ._arrays import apply_node_meta_data, community_node_data
 def _label_to_internal_id(labels):
     if not labels:
         return {}
-    if isinstance(labels[0], int):
+    # Identity map only when EVERY label is an int (bools excluded): a mix like
+    # [1, "a"] must enumerate, or "a" would map to itself and reach add_node.
+    if all(isinstance(label, int) and not isinstance(label, bool) for label in labels):
         return {label: label for label in labels}
     return {label: index for index, label in enumerate(labels)}
 
@@ -29,6 +31,10 @@ def _communities_from_infomap(infomap, node_mapping):
     communities = {}
 
     for node in community_node_data(infomap):
+        # Multilayer/relaxation runs can mint extra leaf state nodes whose ids
+        # aren't registered vertices; skip them (mirrors the igraph helper).
+        if node.state_id not in node_mapping:
+            continue
         original_node = node_mapping[node.state_id]
         communities.setdefault(node.module_id, set()).add(original_node)
 
@@ -42,6 +48,8 @@ def _set_networkx_node_attributes(
         return
 
     for node in community_node_data(infomap):
+        if node.state_id not in node_mapping:
+            continue
         original_node = node_mapping[node.state_id]
         if module_attribute is not None:
             g.nodes[original_node][module_attribute] = node.module_id

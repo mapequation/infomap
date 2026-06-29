@@ -288,3 +288,70 @@ def test_find_communities_accepts_meta_attribute():
         graph, meta_attribute="ct", seed=1, num_trials=3, meta_data_rate=1.0
     )
     assert set().union(*communities) == set(graph.nodes)
+
+
+def test_infomap_add_networkx_graph_accepts_meta_attribute():
+    graph = _nx_with_meta({0: "a", 1: "b", 2: "a", 3: "a", 4: "b", 5: "b"})
+    im = infomap.Infomap(
+        silent=True, no_file_output=True, seed=1, num_trials=5, meta_data_rate=1.0
+    )
+    im.add_networkx_graph(graph, meta_attribute="ct")
+    result = im.run()
+    assert result.meta_codelength > 0
+
+
+# -- mixed labels + extra state ids (parity with the igraph helper) -----------
+
+
+def test_label_to_internal_id_enumerates_mixed_int_and_string():
+    from infomap.io.networkx import _label_to_internal_id
+
+    # An int first label must NOT trigger identity mapping for the whole set:
+    # "a" would otherwise map to itself and reach add_node.
+    assert _label_to_internal_id([1, "a"]) == {1: 0, "a": 1}
+
+
+def test_add_networkx_graph_handles_mixed_int_string_labels():
+    graph = nx.Graph([(1, "a"), ("a", 2)])
+    im = infomap.Infomap(silent=True, no_file_output=True, seed=1, num_trials=1)
+    mapping = im.add_networkx_graph(graph)
+    assert set(mapping.values()) == {1, "a", 2}
+    assert im.run().num_top_modules >= 1
+
+
+def test_find_communities_skips_unregistered_state_ids(monkeypatch):
+    # community_node_data can surface extra leaf state ids (multilayer
+    # relaxation) that are not registered vertices; the networkx helper must
+    # skip them, not KeyError -- the same protection the igraph helper has.
+    class FakeInfomap:
+        flowModelIsSet = False
+
+        @property
+        def _core(self):
+            return self
+
+        def __init__(self, **options):
+            pass
+
+        def get_node_data(self, level=1, states=False):
+            return SimpleNamespace(
+                state_id=[0, 1, 99],  # 99 is not a registered vertex
+                module_id=[1, 1, 2],
+                flow=[0.4, 0.4, 0.2],
+            )
+
+        def setDirected(self, value):
+            pass
+
+        def add_node(self, node_id, name=None):
+            pass
+
+        def add_link(self, source_id, target_id, weight=1.0):
+            pass
+
+        def run(self, initial_partition=None):
+            pass
+
+    monkeypatch.setattr(facade, "Infomap", FakeInfomap)
+    communities = infomap.find_communities(nx.Graph([("x", "y")]))
+    assert _flatten(communities) == {"x", "y"}

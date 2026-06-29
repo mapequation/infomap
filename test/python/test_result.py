@@ -168,3 +168,34 @@ def test_result_node_data_is_cached_per_level_states():
         assert call_count == 1  # one (level=1, states=False) traversal, cached
     finally:
         type(im._core).get_node_data = original
+
+
+@pytest.mark.fast
+def test_stale_result_raises_on_links_acquired_before_rerun():
+    im = _two_triangles()
+    first = im.run()
+    links = first.links(data="flow")  # acquire before rerun
+    im.run()
+    with pytest.raises(RuntimeError, match="stale Result"):
+        list(links)
+
+
+@pytest.mark.fast
+def test_directed_is_an_eager_snapshot_and_export_guards():
+    pytest.importorskip("networkx")
+    import infomap
+
+    im = _two_triangles()
+    first = im.run()
+    assert isinstance(first._directed, bool)  # captured eagerly in __init__
+    assert infomap.to_networkx(first).number_of_nodes() > 0
+    im.run()  # rerun -> export of the stale Result must raise, not read the engine
+    with pytest.raises(RuntimeError, match="stale Result"):
+        infomap.to_networkx(first)
+
+
+@pytest.mark.fast
+def test_treenode_is_immutable_to_delete():
+    node = next(_two_triangles().run().nodes())
+    with pytest.raises(AttributeError):
+        del node.node_id

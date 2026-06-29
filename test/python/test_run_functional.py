@@ -286,3 +286,24 @@ def test_run_options_instance_does_not_false_positive_guard():
     A = sp.csr_matrix([[0, 1], [1, 0]])
     result = infomap.run(A, options=Options(silent=True, num_trials=1, seed=1))
     assert isinstance(result, Result)
+
+
+def test_run_float_link_matrix_is_links_not_edge_index():
+    np = pytest.importorskip("numpy")
+    # A weighted link matrix (rows of (source, target, weight)) is (2, 3) and
+    # float; it must be read as link rows, not misrouted to the edge_index path.
+    links = np.array([[1, 2, 1.5], [2, 3, 2.0]])
+    result = infomap.run(links, silent=True, num_trials=1, seed=1)
+    expected = _oo_codelength(
+        lambda im: im.add_links(links), silent=True, num_trials=1, seed=1
+    )
+    assert result.codelength == pytest.approx(expected)
+
+
+def test_run_rejects_networkx_meta_attribute_kwarg():
+    graph = nx.Graph()
+    graph.add_edge("a", "b")
+    graph.nodes["a"]["ct"] = 0
+    graph.nodes["b"]["ct"] = 1
+    with pytest.raises(TypeError, match="Network.from_networkx"):
+        infomap.run(graph, meta_attribute="ct", silent=True)
