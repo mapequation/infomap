@@ -168,7 +168,7 @@ im.run()
 
 modules = im.get_modules()   # {node_id: module_id}
 
-print(f"Bipartite mode active:   {im.isBipartite()}")
+print(f"Bipartite start id:      {im.bipartite_start_id}")
 print(f"Top-level modules found: {im.num_top_modules}")
 print(f"Codelength (bits/step):  {im.codelength:.4f}\n")
 
