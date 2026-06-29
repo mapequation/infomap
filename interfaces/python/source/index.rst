@@ -2,10 +2,11 @@ Infomap Python API
 ==================
 
 Infomap is a network clustering algorithm based on the `Map equation`_. This
-site documents the Python package: installation, a quick start, usage patterns
-for NetworkX, igraph and multilayer graphs, and the full API reference.
+site is the home for using Infomap in Python: learn the ideas behind the map
+equation, run it on your own networks, go deep on flow models and richer
+representations, fit it into common workflows, and look up the full API.
 
-.. _Map equation: https://www.mapequation.org/publications.html#Rosvall-Axelsson-Bergstrom-2009-Map-equation
+.. _Map equation: https://www.mapequation.org/publications.html
 
 Quick start
 -----------
@@ -27,42 +28,47 @@ Quick start
 Continue to :doc:`installation` for optional integrations and shell completion,
 or jump to :doc:`quickstart` for the smallest Python API examples.
 
-For Jupyter, start with the flagship
-`quickstart notebook <https://github.com/mapequation/infomap/blob/master/examples/notebooks/quickstart.ipynb>`_.
-It shows the notebook-native Infomap result summary, dataframe inspection, and
-a copyable static network partition helper.
+Where to go
+-----------
 
-Choose a path
--------------
+.. grid:: 1 2 2 2
+   :gutter: 3
 
-- New to Infomap in Python? Start with :doc:`quickstart`.
-- Working in NetworkX, igraph, sparse matrices, or multilayer graphs? Use
-  :doc:`usage`.
-- Working with AnnData or Scanpy? Use :doc:`scanpy`.
-- Need GraphML or GEXF files? Use :doc:`export`.
-- Learning from executable workflows? Use :doc:`examples/index`.
-- Running many native trials on a cluster? Use
-  :doc:`examples/run-infomap-on-hpc`.
-- Need exact signatures and return types? Use :doc:`api/index`.
+   .. grid-item-card:: Concepts
+      :link: concepts/index
+      :link-type: doc
 
-Core pages
-----------
+      What the map equation is and why it works: flow, codelength, and
+      hierarchy, taught from the ground up.
 
-- :doc:`installation` — install the package, optional integrations, and the
-  ``infomap`` CLI entry point.
-- :doc:`quickstart` — small Python API examples for first runs and result
-  access.
-- :doc:`usage` — API patterns for common graph containers and result access.
-- :doc:`examples/index` — executed notebooks for practical Infomap workflows
-  and survey companion material.
+   .. grid-item-card:: Working with Infomap
+      :link: working-with-infomap/index
+      :link-type: doc
+
+      Build networks from your data, run Infomap, tune the options, and read
+      and visualise the results.
+
+   .. grid-item-card:: Flow models & representations
+      :link: flow-models/index
+      :link-type: doc
+
+      Multilayer, memory, temporal, metadata, bipartite, and higher-order
+      networks: Infomap's deeper modelling surface.
+
+   .. grid-item-card:: Workflows & integrations
+      :link: workflows/index
+      :link-type: doc
+
+      Compare with Louvain and Leiden, and use Infomap with Scanpy, GraphRAG,
+      and on HPC.
 
 External resources
 ------------------
 
-- `Infomap user guide <https://www.mapequation.org/infomap/>`_ — algorithm,
-  options, and file formats.
+- `Infomap user guide <https://www.mapequation.org/infomap/>`_ is the portal,
+  the command-line tool, and the **other interfaces (C++, R, JavaScript)**.
 - `PyPI project <https://pypi.org/project/infomap/>`_
-- `GitHub repository <https://github.com/mapequation/infomap>`_ —
+- `GitHub repository <https://github.com/mapequation/infomap>`_ for
   source, issues, and discussions.
 - `CHANGELOG <https://github.com/mapequation/infomap/blob/master/CHANGELOG.md>`_
 
@@ -72,8 +78,19 @@ External resources
 
    installation
    quickstart
-   examples/index
-   usage
-   export
-   scanpy
+   concepts/index
+   working-with-infomap/index
+   flow-models/index
+   robustness/index
+   workflows/index
+
+.. toctree::
+   :hidden:
+   :caption: Reference
+   :maxdepth: 1
+
+   faq
    api/index
+   references
+   citing
+   article-companion/index

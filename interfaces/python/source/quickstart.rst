@@ -1,9 +1,9 @@
 Quick start
 ===========
 
-This page shows the smallest useful Python API calls. For a worked notebook
-with plotting, dataframe inspection, and export, see
-:doc:`examples/quickstart`.
+This page shows the smallest useful Python API calls. For worked examples with
+plotting, dataframe inspection, and export, see
+:doc:`working-with-infomap/index`.
 
 Run on a graph
 --------------
@@ -62,20 +62,16 @@ reproducible reports.
 Explore interactively
 ---------------------
 
-Start a Python shell with Infomap preloaded:
-
-.. code-block:: bash
-
-    infomap-shell
-
-This opens a shell with ``im = Infomap()`` ready to use. Run
-``options()`` to inspect options and ``summary()`` to inspect the current
-network or result.
+The ``infomap-shell`` command opens a Python shell with ``im = Infomap()``
+preloaded, plus ``options()`` and ``summary()`` helpers; see
+:doc:`installation` for details.
 
 Next steps
 ----------
 
-- :doc:`usage` covers NetworkX, igraph, SciPy sparse matrices, edge-index,
-  state networks, and multilayer networks.
-- :doc:`examples/index` contains executed workflow notebooks.
-- :doc:`api/index` is the full API reference.
+- :doc:`concepts/index` explains *why* Infomap finds the communities it does:
+  flow, the map equation, and hierarchy.
+- :doc:`working-with-infomap/index` covers every input format, the options worth
+  tuning, and how to read, visualise, and export results.
+- :doc:`flow-models/index` covers richer networks: memory, multilayer, temporal,
+  metadata, bipartite, and hypergraphs.
