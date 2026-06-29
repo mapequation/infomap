@@ -3031,6 +3031,26 @@ def build_info():
 
 def run(flags):
     return _infomap.run(flags)
+class NodeData(object):
+    thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc="The membership flag")
+    __repr__ = _swig_repr
+    node_id = property(_infomap.NodeData_node_id_get, _infomap.NodeData_node_id_set)
+    state_id = property(_infomap.NodeData_state_id_get, _infomap.NodeData_state_id_set)
+    module_id = property(_infomap.NodeData_module_id_get, _infomap.NodeData_module_id_set)
+    flow = property(_infomap.NodeData_flow_get, _infomap.NodeData_flow_set)
+    depth = property(_infomap.NodeData_depth_get, _infomap.NodeData_depth_set)
+    layer_id = property(_infomap.NodeData_layer_id_get, _infomap.NodeData_layer_id_set)
+    child_index = property(_infomap.NodeData_child_index_get, _infomap.NodeData_child_index_set)
+    modular_centrality = property(_infomap.NodeData_modular_centrality_get, _infomap.NodeData_modular_centrality_set)
+    path_flat = property(_infomap.NodeData_path_flat_get, _infomap.NodeData_path_flat_set)
+    path_len = property(_infomap.NodeData_path_len_get, _infomap.NodeData_path_len_set)
+
+    def __init__(self):
+        _infomap.NodeData_swiginit(self, _infomap.new_NodeData())
+    __swig_destroy__ = _infomap.delete_NodeData
+
+# Register NodeData in _infomap:
+_infomap.NodeData_swigregister(NodeData)
 class InfomapWrapper(InfomapBase):
     thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc="The membership flag")
     __repr__ = _swig_repr
@@ -3095,6 +3115,9 @@ class InfomapWrapper(InfomapBase):
 
     def getModules(self, level=1, states=False):
         return _infomap.InfomapWrapper_getModules(self, level, states)
+
+    def getNodeData(self, level=1, states=False):
+        return _infomap.InfomapWrapper_getNodeData(self, level, states)
 
     def codelength(self):
         return _infomap.InfomapWrapper_codelength(self)

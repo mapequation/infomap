@@ -107,15 +107,16 @@ def _join_args(base_args, parts):
     return f"{base_args} {' '.join(parts)}"
 
 
-@dataclass(slots=True)
-class InfomapOptions:
+@dataclass(frozen=True, slots=True)
+class Options:
     """Reusable Infomap keyword options.
 
     This class mirrors the keyword arguments accepted by :class:`infomap.Infomap`
-    and :meth:`infomap.Infomap.run`. Use :meth:`to_args` to render command-line
-    flags, :meth:`from_mapping` to construct options from existing keyword
-    dicts, or the convenience methods :meth:`infomap.Infomap.from_options` and
-    :meth:`infomap.Infomap.run_with_options` to apply a reusable configuration.
+    and :meth:`infomap.Infomap.run`. Construct it like any dataclass
+    (``Options(num_trials=10)``) -- unknown keys raise, as usual -- use
+    :meth:`to_args` to render command-line flags, or pass an instance to
+    :func:`infomap.run` via ``infomap.run(input, options=options)`` to apply a
+    reusable configuration.
 
     Parameters
     ----------
@@ -405,7 +406,10 @@ class InfomapOptions:
     max_degree_for_random_moves: int | None = None
 
     @classmethod
-    def from_mapping(cls, mapping):
+    def _from_locals(cls, mapping):
+        # Internal: build from a locals() dict, dropping the non-field
+        # entries (self/args/cls). Public construction is the dataclass
+        # constructor, Options(**mapping), which rejects unknown keys.
         return cls(**{name: mapping[name] for name in _OPTION_FIELD_NAMES if name in mapping})
 
     def to_kwargs(self):
@@ -448,7 +452,11 @@ class InfomapOptions:
         return _join_args(base_args, rendered_args)
 
 
-_OPTION_FIELD_NAMES = tuple(field.name for field in fields(InfomapOptions))
+_OPTION_FIELD_NAMES = tuple(field.name for field in fields(Options))
+
+
+# Options is the canonical public name; InfomapOptions stays as a back-compat alias.
+InfomapOptions = Options
 
 
 def _construct_args(
@@ -531,4 +539,4 @@ def _construct_args(
     num_random_moves=None,
     max_degree_for_random_moves=None,
 ):
-    return InfomapOptions.from_mapping(locals()).to_args(base_args=args)
+    return Options._from_locals(locals()).to_args(base_args=args)

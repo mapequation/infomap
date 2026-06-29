@@ -189,6 +189,23 @@ def test_tl_infomap_writes_metadata():
     assert isinstance(metadata["codelength"], float)
 
 
+def test_tl_infomap_rejects_non_int_castable_module_labels(monkeypatch):
+    data = _adata()
+
+    import infomap.tl as tl
+
+    # Defensive guard: Infomap module labels are always ints, but if a label is
+    # not int-castable, surface a clear message instead of a raw cast error.
+    monkeypatch.setattr(
+        tl,
+        "_module_labels",
+        lambda im, mapping, obs_names: ["1", "not-an-int", "2", "1"],
+    )
+
+    with pytest.raises(ValueError, match="integer-castable"):
+        infomap.tl.infomap(data, seed=123, num_trials=1)
+
+
 def test_tl_infomap_preserves_obs_name_order_for_string_node_ids(monkeypatch):
     data = _adata()
     seen_node_ids = []

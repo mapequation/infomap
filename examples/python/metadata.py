@@ -20,17 +20,25 @@ im.set_meta_data(3, 1)
 im.set_meta_data(4, 3)
 im.set_meta_data(5, 3)
 
-im.run()
+result = im.run()
 
-print(f"\nFound {im.num_top_modules} modules with codelength {im.codelength:.8f} bits")
 print(
-    f" - Codelength = index codelength ({im.index_codelength:.8f}) + module codelength ({im.module_codelength:.8f})"
+    f"\nFound {result.num_top_modules} modules with codelength "
+    f"{result.codelength:.8f} bits"
 )
 print(
-    f" - Module codelength = {(im.module_codelength - im.meta_codelength):.8f} + meta codelength ({im.meta_codelength:.8f})"
+    f" - Codelength = index codelength ({result.index_codelength:.8f}) "
+    f"+ module codelength ({result.module_codelength:.8f})"
 )
-print(f" - Meta codelength = eta ({eta}) * meta entropy ({im.meta_entropy:.8f})")
+print(
+    f" - Module codelength = "
+    f"{(result.module_codelength - result.meta_codelength):.8f} "
+    f"+ meta codelength ({result.meta_codelength:.8f})"
+)
+print(f" - Meta codelength = eta ({eta}) * meta entropy ({result.meta_entropy:.8f})")
 
 print("\n#node module meta")
-for node in im.nodes:
-    print(f"{node.node_id} {node.module_id} {node.meta_data}")
+# meta_data lives on the C++ tree node, so iterate result.tree() leaf nodes.
+for node in result.tree():
+    if node.is_leaf:
+        print(f"{node.node_id} {node.module_id} {node.meta_data}")

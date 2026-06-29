@@ -13,10 +13,13 @@ im.add_link(6, 2, 0.5)
 im.add_link(6, 3)
 im.add_link(6, 4)
 
-im.run()
+result = im.run()
 
-print(f"Found {im.num_top_modules} modules with codelength {im.codelength:.8f} bits")
+print(
+    f"Found {result.num_top_modules} modules with codelength "
+    f"{result.codelength:.8f} bits"
+)
 
 print("\n#node module:")
-for node, module in im.modules:
+for node, module in result.modules().items():
     print(node, module)

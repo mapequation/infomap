@@ -1,8 +1,10 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 from numbers import Integral
 from typing import Any
+
+from ._arrays import undirected_edge_items
 
 
 def _as_numpy_array(value: Any, *, name: str):
@@ -14,8 +16,12 @@ def _as_numpy_array(value: Any, *, name: str):
         ) from exc
 
     if hasattr(value, "detach") and callable(value.detach):
+        # Duck-typed torch.Tensor: detach().cpu().numpy(). The hasattr narrowing
+        # would otherwise collapse the result of detach() to ``object``; keep it
+        # ``Any`` so the chained tensor methods type-check soundly.
+        tensor: Any = value
         try:
-            value = value.detach().cpu().numpy()
+            value = tensor.detach().cpu().numpy()
         except AttributeError as exc:
             raise ValueError(
                 f"`{name}` tensor inputs must support detach().cpu().numpy()."
@@ -96,42 +102,26 @@ def _validate_edge_weight(edge_weight: Any, num_edges: int):
 
 
 def _edge_items(edge_index: Any, weights: Any, *, directed: bool):
-    if directed:
-        if weights is None:
-            for source, target in zip(edge_index[0], edge_index[1], strict=True):
-                yield int(source), int(target), 1.0
-        else:
+    # Normalise both weighted/unweighted shapes to fixed (source, target, weight)
+    # integer-coerced triples so the directed and undirected paths share one form.
+    triples: Iterable[tuple[int, int, float]]
+    if weights is None:
+        triples = (
+            (int(source), int(target), 1.0)
+            for source, target in zip(edge_index[0], edge_index[1], strict=True)
+        )
+    else:
+        triples = (
+            (int(source), int(target), float(weight))
             for source, target, weight in zip(
                 edge_index[0], edge_index[1], weights, strict=True
-            ):
-                yield int(source), int(target), float(weight)
-        return
-
-    edges: dict[tuple[int, int], float] = {}
-    if weights is None:
-        edge_values = zip(edge_index[0], edge_index[1], strict=True)
-    else:
-        edge_values = zip(edge_index[0], edge_index[1], weights, strict=True)
-
-    for edge_value in edge_values:
-        if weights is None:
-            source, target = edge_value
-            weight = 1.0
-        else:
-            source, target, weight = edge_value
-            weight = float(weight)
-        source_id = int(source)
-        target_id = int(target)
-        edge = (
-            (source_id, target_id) if source_id <= target_id else (target_id, source_id)
+            )
         )
-        if edge in edges:
-            edges[edge] = max(edges[edge], weight)
-        else:
-            edges[edge] = weight
 
-    for (source, target), weight in edges.items():
-        yield source, target, weight
+    if directed:
+        yield from triples
+        return
+    yield from undirected_edge_items(triples)
 
 
 def add_edge_index(
@@ -143,6 +133,22 @@ def add_edge_index(
     directed: bool = True,
     node_ids: Sequence[Any] | None = None,
 ) -> dict[int, Any]:
+    """Add links and nodes from a PyG-style ``edge_index``.
+
+    Directedness
+    ------------
+    Controlled by the ``directed`` parameter, which defaults to ``True``
+    (each column of ``edge_index`` is a directed source->target edge). This
+    default differs from the other adapters: networkx and igraph auto-detect via
+    ``is_directed()``, and ``add_scipy_sparse_matrix`` defaults ``directed=False``.
+
+    Weight parameter
+    ----------------
+    This adapter names its edge-weight parameter ``edge_weight`` (a
+    one-dimensional array with one value per edge, or ``None`` for unit
+    weights). The other adapters use different names: networkx ``weight``,
+    igraph ``edge_weights``, scipy ``weighted`` (a bool).
+    """
     edge_index_array = _validate_edge_index(edge_index)
     n_nodes = _validate_num_nodes(edge_index_array, num_nodes)
     labels = _validate_node_ids(node_ids, n_nodes)
@@ -150,8 +156,8 @@ def add_edge_index(
 
     internal_to_label = {index: label for index, label in enumerate(labels)}
 
-    if not infomap.flowModelIsSet and directed:
-        infomap.setDirected(True)
+    if not infomap._core.flowModelIsSet and directed:
+        infomap._core.setDirected(True)
 
     for internal_id, label in internal_to_label.items():
         infomap.add_node(internal_id, name=label if isinstance(label, str) else None)

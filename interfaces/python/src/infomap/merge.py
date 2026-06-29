@@ -30,11 +30,23 @@ import json
 import os
 import shutil
 import sys
-from typing import Dict, Iterable, List, Sequence, Tuple
+from typing import Iterable, List, Sequence, Tuple, TypedDict
 
 __all__ = ["merge_trial_results", "MergeError"]
 
 SUPPORTED_FORMATS = ("tree", "clu")
+
+
+class MergeSummary(TypedDict):
+    """Summary returned by :func:`merge_trial_results`."""
+
+    trial: int
+    codelength: float
+    winner_tree: str
+    num_shards: int
+    num_trials: int
+    missing: List[int]
+    outputs: List[str]
 
 # Top-level keys every shard results file must contain.
 _REQUIRED_FILE_KEYS = (
@@ -155,7 +167,8 @@ def _write_clu_from_tree(tree_path: str, clu_path: str) -> None:
     the first component of the colon-separated path. We read node_id (last
     token), flow (second token) and path (first token); the name is ignored.
     """
-    rows: List[Tuple[int, int, str]] = []
+    # node_id may be a non-numeric label, so it stays str when not all-digits.
+    rows: List[Tuple[int | str, int, str]] = []
     with open(tree_path, "r", encoding="utf-8") as fh:
         for line in fh:
             line = line.strip()
@@ -184,7 +197,7 @@ def merge_trial_results(
     out_name: str,
     formats: Sequence[str] = SUPPORTED_FORMATS,
     require_complete: bool = False,
-) -> Dict[str, object]:
+) -> MergeSummary:
     """Merge distributed Infomap trial-results shards into final output.
 
     Parameters

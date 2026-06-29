@@ -11,11 +11,14 @@ im.add_link(4, 5)
 im.add_link(4, 6)
 im.add_link(5, 6)
 
-im.run()
+result = im.run()
 
-print(f"Found {im.num_top_modules} modules with codelength {im.codelength:.8f} bits")
+print(
+    f"Found {result.num_top_modules} modules with codelength "
+    f"{result.codelength:.8f} bits"
+)
 
-modules = im.get_modules()
+modules = result.modules()
 
 print("Modify the network and test partition...")
 
@@ -26,6 +29,9 @@ im.remove_link(5, 6)
 
 # Run again with the optimal partition from the original network as initial solution
 # Set no_infomap to skip optimization and just calculate the codelength
-im.run(initial_partition=modules, no_infomap=True)
+result = im.run(initial_partition=modules, no_infomap=True)
 
-print(f"Found {im.num_top_modules} modules with codelength {im.codelength:.8f} bits")
+print(
+    f"Found {result.num_top_modules} modules with codelength "
+    f"{result.codelength:.8f} bits"
+)

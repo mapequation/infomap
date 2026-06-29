@@ -6,8 +6,9 @@ import networkx as nx
 import pytest
 
 import infomap as infomap_module
-import infomap._facade as facade_module
+import infomap._summary as summary_module
 import infomap._results as results_module
+from infomap._bindings import InfomapWrapper
 
 
 pytestmark = pytest.mark.fast
@@ -94,11 +95,10 @@ def test_get_dataframe_supports_states_and_depth_level(
     states_im.read_file(str(example_network_path("states.net")))
     states_im.run()
 
-    with pytest.deprecated_call(match="get_dataframe.*to_dataframe"):
-        physical_df = states_im.get_dataframe(
-            columns=["node_id", "module_id"],
-            states=False,
-        )
+    physical_df = states_im.get_dataframe(
+        columns=["node_id", "module_id"],
+        states=False,
+    )
     expected_physical = [
         (node.node_id, node.module_id)
         for node in states_im.get_nodes(depth_level=1, states=False)
@@ -109,12 +109,11 @@ def test_get_dataframe_supports_states_and_depth_level(
     hierarchical_im.read_file(str(example_network_path("ninetriangles.net")))
     hierarchical_im.run()
 
-    with pytest.deprecated_call(match="get_dataframe.*to_dataframe"):
-        depth_df = hierarchical_im.get_dataframe(
-            columns=["node_id", "module_id"],
-            states=False,
-            depth_level=2,
-        )
+    depth_df = hierarchical_im.get_dataframe(
+        columns=["node_id", "module_id"],
+        states=False,
+        depth_level=2,
+    )
     expected_depth = [
         (node.node_id, node.module_id)
         for node in hierarchical_im.get_nodes(depth_level=2, states=False)
@@ -130,8 +129,7 @@ def test_to_dataframe_alias_matches_get_dataframe(make_infomap, example_network_
     im.run()
 
     columns = ["node_id", "module_id"]
-    with pytest.deprecated_call(match="get_dataframe.*to_dataframe"):
-        expected = im.get_dataframe(columns=columns, states=False)
+    expected = im.get_dataframe(columns=columns, states=False)
     actual = im.to_dataframe(columns=columns, states=False)
 
     assert actual.equals(expected)
@@ -179,7 +177,7 @@ def test_to_dataframe_caches_names_for_name_column(
     im = make_infomap(num_trials=10)
     im.read_file(str(example_network_path("twotriangles.net")))
     im.run()
-    names = dict(im.names)
+    names = dict(im._get_names_impl())
     access_count = 0
 
     def fake_names(self):
@@ -187,7 +185,8 @@ def test_to_dataframe_caches_names_for_name_column(
         access_count += 1
         return names
 
-    monkeypatch.setattr(type(im), "names", property(fake_names))
+    # to_dataframe reads names through the internal, non-deprecated helper.
+    monkeypatch.setattr(type(im), "_get_names_impl", fake_names)
 
     dataframe = im.to_dataframe(columns=["node_id", "name"])
 
@@ -210,16 +209,15 @@ def test_to_dataframe_supports_true_sort_and_depth_level_alias(
         depth_level=2,
         sort=True,
     )
-    with pytest.deprecated_call(match="get_dataframe.*to_dataframe"):
-        expected = (
-            im.get_dataframe(
-                columns=["node_id", "module_id"],
-                states=False,
-                depth_level=2,
-            )
-            .sort_values(["module_id", "node_id"])
-            .reset_index(drop=True)
+    expected = (
+        im.get_dataframe(
+            columns=["node_id", "module_id"],
+            states=False,
+            depth_level=2,
         )
+        .sort_values(["module_id", "node_id"])
+        .reset_index(drop=True)
+    )
 
     assert dataframe.equals(expected)
 
@@ -239,10 +237,7 @@ def test_get_dataframe_missing_pandas_message(monkeypatch, make_infomap):
     im = make_infomap(no_infomap=True)
     monkeypatch.setattr(results_module, "pandas", None)
 
-    with (
-        pytest.deprecated_call(match="get_dataframe.*to_dataframe"),
-        pytest.raises(ImportError, match=r"infomap\[pandas\]"),
-    ):
+    with pytest.raises(ImportError, match=r"infomap\[pandas\]"):
         im.get_dataframe()
 
 
@@ -309,7 +304,7 @@ def test_from_options_uses_package_construct_args(monkeypatch):
         captured["rendered_args"] = args
 
     monkeypatch.setattr(infomap_module, "_construct_args", fake_construct_args)
-    monkeypatch.setattr(infomap_module.InfomapWrapper, "__init__", fake_init)
+    monkeypatch.setattr(InfomapWrapper, "__init__", fake_init)
 
     options = infomap_module.InfomapOptions(
         silent=True,
@@ -453,15 +448,18 @@ def test_top_module_flow_bars_caps_tail_as_other(monkeypatch):
             self.flow = flow
             self.depth = 1
 
-    class FakeInfomap:
-        def get_tree(self, depth_level=1):
-            assert depth_level == 1
+    class FakeResult:
+        def tree(self, depth=1):
+            assert depth == 1
             return [FakeModule(module_id, 1.0) for module_id in range(1, 21)]
 
-    monkeypatch.setattr(facade_module, "_REPR_MAX_FLOW_FRACTION", 0.5)
-    monkeypatch.setattr(facade_module, "_REPR_MAX_MODULES", 4)
+    class FakeInfomap:
+        _result = FakeResult()
 
-    bars = facade_module._top_module_flow_bars(FakeInfomap())
+    monkeypatch.setattr(summary_module, "_REPR_MAX_FLOW_FRACTION", 0.5)
+    monkeypatch.setattr(summary_module, "_REPR_MAX_MODULES", 4)
+
+    bars = summary_module._top_module_flow_bars(FakeInfomap())
 
     assert len(bars) == 5
     assert [bar["label"] for bar in bars[:-1]] == [

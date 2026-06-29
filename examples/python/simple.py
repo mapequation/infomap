@@ -25,16 +25,19 @@ im.add_link(5, 3)
 
 print("Run Infomap...")
 
-im.run()
+result = im.run()
 
-print(f"Found {im.num_top_modules} modules with codelength {im.codelength:.8f} bits")
+print(
+    f"Found {result.num_top_modules} modules with codelength "
+    f"{result.codelength:.8f} bits"
+)
 
 print("\n#node_id module_id")
-for node, module in im.modules:
+for node, module in result.modules().items():
     print(node, module)
 
 print("\n#node_id module_id path depth child_index flow [name]:")
-for node in im.nodes:
+for node in result.nodes():
     print(
         node.node_id,
         node.module_id,
@@ -42,11 +45,11 @@ for node in im.nodes:
         node.depth,
         node.child_index,
         f"{node.flow:.5f}",
-        im.get_name(node.node_id, default=node.node_id),
+        node.name,
     )
 
 print("\n#path flow enter_flow exit_flow is_leaf")
-for node in im.tree:
+for node in result.tree(states=True):
     print(
         node.path,
         f"{node.flow:.5f}",

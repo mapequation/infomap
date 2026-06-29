@@ -5,7 +5,7 @@ import math
 
 import pytest
 from infomap import Infomap
-from infomap._scipy import _import_sparse
+from infomap.io.scipy import _import_sparse
 
 scipy = pytest.importorskip("scipy")
 sp = scipy.sparse
@@ -158,6 +158,9 @@ def test_add_scipy_sparse_matrix_unweighted_ignores_values(make_infomap):
 
     assert weighted.num_links == 1
     assert unweighted.num_links == 1
+    # The unweighted path must replace the matrix value (5) with unit weight.
+    assert {(s, t): w for s, t, w in weighted.get_links()} == {(0, 1): 5.0}
+    assert {(s, t): w for s, t, w in unweighted.get_links()} == {(0, 1): 1.0}
 
 
 def test_from_scipy_sparse_matrix_runs_empty_graph_with_nodes():

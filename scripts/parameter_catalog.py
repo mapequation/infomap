@@ -117,7 +117,10 @@ class Parameter:
         return self.raw.get("bindingDefaults", {}).get(language, {})
 
     def python_default_value(self) -> str:
-        if value := self.binding_default("python").get("value"):
+        # ``is not None`` (not truthiness): a future binding default of "" / "0"
+        # is a real value, not "unset".
+        value = self.binding_default("python").get("value")
+        if value is not None:
             return value
         if not self.required:
             return "False"
@@ -173,7 +176,8 @@ class Parameter:
         return self.description
 
     def r_default(self) -> str:
-        if value := self.binding_default("r").get("value"):
+        value = self.binding_default("r").get("value")
+        if value is not None:
             return value
         if not self.required:
             return "FALSE"
