@@ -4,6 +4,13 @@ import fileToString, {
   type TreeStateNode as StateNode,
 } from "./filetypes";
 import networkToString from "./network";
+export type {
+  InfomapNetworkJson,
+  InfomapNetworkJsonNode,
+  InfomapNetworkJsonState,
+  InfomapNetworkJsonEdge,
+  InfomapNetworkJsonType,
+} from "./network";
 import type { RunOptions } from "./run-options";
 import { createInfomapWorker } from "./worker";
 import parameters from "../generated/parameters.json";

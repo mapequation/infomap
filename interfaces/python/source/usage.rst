@@ -333,6 +333,57 @@ For the NetworkX-style wrapper:
 
     communities = infomap.find_communities(graph)
 
+JSON network input
+------------------
+
+Infomap reads the ``infomap-network`` v1.0 format, a small JSON input
+format that is convenient to produce from Python, notebooks, and web tools.
+The format is detected by content, so a ``.json`` file is passed to
+:meth:`~infomap.Infomap.read_file` like any other network:
+
+.. code-block:: python
+
+    from infomap import Infomap
+
+    im = Infomap(silent=True)
+    im.read_file("network.json")
+    im.run()
+
+A minimal document needs only ``format``, ``version``, and ``edges``:
+
+.. code-block:: json
+
+    {
+      "format": "infomap-network",
+      "version": "1.0",
+      "edges": [{ "source": 1, "target": 2, "weight": 1.0 }]
+    }
+
+``type`` defaults to ``standard``; the other values are ``bipartite``
+(requires ``bipartiteStartId``), ``multilayer`` (with ``multilayer`` set to
+``full``, ``intra``, or ``intra-inter`` and ``layers`` on each edge), and
+``state`` (edges are state ids, with an optional ``states`` array). Parsing is
+order- and emitter-independent, so key order (e.g. alphabetically sorted
+output) does not matter.
+
+Two optional conveniences replace separate input files:
+
+- ``nodes[].meta`` embeds one-dimensional integer metadata. Its presence
+  enables metadata coding exactly like ``--meta-data`` or
+  :meth:`~infomap.Infomap.set_meta_data` (it is not a passive annotation). An
+  external ``--meta-data`` file still composes with a JSON network and
+  overrides the embedded values, with a warning.
+- ``nodes[].path`` (and ``states[].path`` for state networks) embeds an
+  initial partition: ``[3]`` is equivalent to a ``.clu`` module and ``[1, 2]``
+  to a ``.tree`` path. ``--cluster-data`` overrides it, with a warning.
+
+All ids are non-negative integers; integral-valued doubles such as ``10.0``
+are accepted but ``1.5`` is rejected. Edge weights are passed to the same core
+network builder as the text formats, so weights ``<= 0`` are ignored (not an
+error); node and state weights must be non-negative. The JSON Schema in
+``test/schemas/json/infomap-network.schema.json`` is the normative
+specification of what the parser accepts.
+
 igraph API semantics
 --------------------
 

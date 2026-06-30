@@ -3,6 +3,7 @@
 #include "io/Config.h"
 #include "io/Network.h"
 #include "io/NetworkInputParser.h"
+#include "io/JsonNetworkInputParser.h"
 
 #include "TestUtils.h"
 
@@ -38,6 +39,13 @@ struct FakeInputSink {
   std::vector<infomap::input::ParsedLink> bipartiteLinks;
   std::vector<std::vector<int>> metaDataRows;
 
+  struct InitialPath {
+    unsigned int id;
+    std::vector<unsigned int> path;
+    bool stateLevel;
+  };
+  std::vector<InitialPath> initialPaths;
+
   unsigned int numPhysicalNodes() const { return vertices.size(); }
   unsigned int numLinks() const { return links.size(); }
   unsigned int numIntraLayerLinks() const { return intraLinks.size() + countExplicitIntraLinks(); }
@@ -58,6 +66,7 @@ struct FakeInputSink {
   void onBipartiteStart(unsigned int startId) { bipartiteStartId = startId; }
   void onBipartiteLink(const std::string&, const infomap::input::ParsedLink& link) { bipartiteLinks.push_back(link); }
   void onMetaData(unsigned int, const std::vector<int>& metaData) { metaDataRows.push_back(metaData); }
+  void onInitialPartitionPath(unsigned int id, const std::vector<unsigned int>& path, bool stateLevel) { initialPaths.push_back({ id, path, stateLevel }); }
 
 private:
   unsigned int countExplicitIntraLinks() const
@@ -570,6 +579,357 @@ TEST_CASE("NetworkInputParser preserves malformed multilayer errors [fast][core]
       infomap::input::parseNetworkInput(infomap::test::repoPath("test/fixtures/networks/invalid_multilayer.net"), sink, defaultInputOptions),
       "Can't parse multilayer link data from line '1 1 broken'",
       std::runtime_error);
+}
+
+TEST_CASE("looksLikeJsonNetwork detects JSON by content [fast][core][parser][json]")
+{
+  CHECK(infomap::input::looksLikeJsonNetwork(infomap::test::repoPath("test/fixtures/networks/json/standard_minimal.json")));
+  CHECK_FALSE(infomap::input::looksLikeJsonNetwork(infomap::test::repoPath("test/fixtures/networks/states.net")));
+}
+
+TEST_CASE("JSON parser emits link events for a standard network [fast][core][parser][json]")
+{
+  FakeInputSink sink;
+
+  infomap::input::parseJsonNetworkInput(infomap::test::repoPath("test/fixtures/networks/json/standard_minimal.json"), sink, defaultInputOptions);
+
+  CHECK(sink.vertices.empty());
+  CHECK(sink.links.size() == 3);
+  CHECK(sink.links.front().source == 1);
+  CHECK(sink.links.front().target == 2);
+  CHECK(sink.links.front().weight == doctest::Approx(1.0));
+}
+
+TEST_CASE("JSON parser emits vertex events with names and weights [fast][core][parser][json]")
+{
+  FakeInputSink sink;
+
+  infomap::input::parseJsonNetworkInput(infomap::test::repoPath("test/fixtures/networks/json/standard.json"), sink, defaultInputOptions);
+
+  CHECK(sink.vertices.size() == 2);
+  CHECK(sink.vertices.front().id == 1);
+  CHECK(sink.vertices.front().name == "Species A");
+  CHECK(sink.vertices.front().hasWeight);
+  CHECK(sink.vertices.front().weight == doctest::Approx(2.0));
+  CHECK(sink.vertices.back().id == 2);
+  CHECK_FALSE(sink.vertices.back().hasWeight);
+  CHECK(sink.links.size() == 1);
+}
+
+TEST_CASE("JSON parser is emitter-independent (edges before discriminators) [fast][core][parser][json]")
+{
+  FakeInputSink sink;
+
+  infomap::input::parseJsonNetworkInput(infomap::test::repoPath("test/fixtures/networks/json/standard_keys_sorted.json"), sink, defaultInputOptions);
+
+  CHECK(sink.links.size() == 1);
+  CHECK(sink.links.front().source == 1);
+  CHECK(sink.links.front().target == 2);
+}
+
+TEST_CASE("JSON parser accepts integral-valued doubles as ids [fast][core][parser][json]")
+{
+  FakeInputSink sink;
+
+  infomap::input::parseJsonNetworkInput(infomap::test::repoPath("test/fixtures/networks/json/coercion_integral_double.json"), sink, defaultInputOptions);
+
+  CHECK(sink.vertices.size() == 1);
+  CHECK(sink.vertices.front().id == 10);
+  CHECK(sink.links.size() == 1);
+  CHECK(sink.links.front().source == 10);
+  CHECK(sink.links.front().target == 11);
+}
+
+TEST_CASE("JSON parser rejects non-integral ids [fast][core][parser][json]")
+{
+  FakeInputSink sink;
+
+  CHECK_THROWS_AS(
+      infomap::input::parseJsonNetworkInput(infomap::test::repoPath("test/fixtures/networks/json/invalid/noninteger_id.json"), sink, defaultInputOptions),
+      std::runtime_error);
+}
+
+TEST_CASE("Network builds a standard network from JSON via format detection [fast][core][parser][json]")
+{
+  Config config;
+  config.silent = true;
+  Network network(config);
+
+  network.readInputData(infomap::test::repoPath("test/fixtures/networks/json/standard_minimal.json"));
+
+  CHECK_FALSE(network.haveMemoryInput());
+  CHECK(network.numNodes() == 3);
+  CHECK(network.numLinks() == 3);
+}
+
+TEST_CASE("JSON parser tolerates unknown fields [fast][core][parser][json]")
+{
+  const std::string path = "json_unknown_field_test.json";
+  {
+    std::ofstream out(path.c_str());
+    out << R"({"format":"infomap-network","version":"1.0",)"
+        << R"("description":"a comment","customRootAttr":42,)"
+        << R"("edges":[{"source":1,"target":2,"wieght":5.0}]})";
+  }
+
+  FakeInputSink sink;
+  infomap::input::parseJsonNetworkInput(path, sink, defaultInputOptions);
+
+  CHECK(sink.links.size() == 1);
+  CHECK(sink.links.front().weight == doctest::Approx(1.0)); // typo'd weight ignored, default used
+
+  std::remove(path.c_str());
+}
+
+TEST_CASE("JSON parser emits bipartite events [fast][core][parser][json]")
+{
+  FakeInputSink sink;
+  sink.onBipartiteStart(0);
+
+  infomap::input::parseJsonNetworkInput(infomap::test::repoPath("test/fixtures/networks/json/bipartite.json"), sink, defaultInputOptions);
+
+  CHECK(sink.bipartiteStartId == 4);
+  CHECK(sink.bipartiteLinks.size() == 1);
+  CHECK(sink.bipartiteLinks.front().source == 1);
+  CHECK(sink.bipartiteLinks.front().target == 4);
+  CHECK(sink.vertices.size() == 2);
+}
+
+TEST_CASE("JSON parser rejects bipartite without start id [fast][core][parser][json]")
+{
+  FakeInputSink sink;
+
+  CHECK_THROWS_AS(
+      infomap::input::parseJsonNetworkInput(infomap::test::repoPath("test/fixtures/networks/json/invalid/bipartite_no_start.json"), sink, defaultInputOptions),
+      std::runtime_error);
+}
+
+TEST_CASE("JSON parser emits explicit state events [fast][core][parser][json]")
+{
+  FakeInputSink sink;
+
+  infomap::input::parseJsonNetworkInput(infomap::test::repoPath("test/fixtures/networks/json/state.json"), sink, defaultInputOptions);
+
+  CHECK(sink.vertices.size() == 2);
+  CHECK(sink.stateNodes.size() == 2);
+  CHECK(sink.stateNodes.front().node.id == 1);
+  CHECK(sink.stateNodes.front().node.physicalId == 1);
+  CHECK(sink.stateNodes.front().hasWeight);
+  CHECK(sink.stateNodes.front().node.weight == doctest::Approx(0.4));
+  CHECK(sink.links.size() == 1);
+}
+
+TEST_CASE("JSON parser infers identity states when states[] omitted [fast][core][parser][json]")
+{
+  const std::string path = "json_state_inferred_test.json";
+  {
+    std::ofstream out(path.c_str());
+    out << R"({"format":"infomap-network","version":"1.0","type":"state",)"
+        << R"("edges":[{"source":1,"target":2},{"source":2,"target":3}]})";
+  }
+
+  FakeInputSink sink;
+  infomap::input::parseJsonNetworkInput(path, sink, defaultInputOptions);
+
+  CHECK(sink.stateNodes.size() == 3); // 1, 2, 3 inferred once each
+  CHECK(sink.stateNodes.front().node.id == sink.stateNodes.front().node.physicalId);
+  CHECK(sink.links.size() == 2);
+
+  std::remove(path.c_str());
+}
+
+TEST_CASE("JSON parser emits full multilayer events [fast][core][parser][json]")
+{
+  FakeInputSink sink;
+
+  infomap::input::parseJsonNetworkInput(infomap::test::repoPath("test/fixtures/networks/json/multilayer_full.json"), sink, defaultInputOptions);
+
+  REQUIRE(sink.multilayerLinks.size() == 1);
+  CHECK(sink.multilayerLinks.front().sourceLayer == 1);
+  CHECK(sink.multilayerLinks.front().sourceNode == 1);
+  CHECK(sink.multilayerLinks.front().targetLayer == 2);
+  CHECK(sink.multilayerLinks.front().targetNode == 2);
+}
+
+TEST_CASE("JSON parser emits intra-layer multilayer events [fast][core][parser][json]")
+{
+  FakeInputSink sink;
+
+  infomap::input::parseJsonNetworkInput(infomap::test::repoPath("test/fixtures/networks/json/multilayer_intra.json"), sink, defaultInputOptions);
+
+  REQUIRE(sink.intraLinks.size() == 1);
+  CHECK(sink.intraLinks.front().layer == 1);
+  CHECK(sink.intraLinks.front().sourceNode == 1);
+  CHECK(sink.intraLinks.front().targetNode == 2);
+}
+
+TEST_CASE("JSON parser emits intra-inter multilayer events [fast][core][parser][json]")
+{
+  FakeInputSink sink;
+
+  infomap::input::parseJsonNetworkInput(infomap::test::repoPath("test/fixtures/networks/json/multilayer_intra_inter.json"), sink, defaultInputOptions);
+
+  REQUIRE(sink.intraLinks.size() == 1);
+  REQUIRE(sink.interLinks.size() == 1);
+  CHECK(sink.intraLinks.front().layer == 1);
+  CHECK(sink.interLinks.front().sourceLayer == 1);
+  CHECK(sink.interLinks.front().node == 1);
+  CHECK(sink.interLinks.front().targetLayer == 2);
+}
+
+TEST_CASE("JSON parser rejects full multilayer edge with one layer [fast][core][parser][json]")
+{
+  FakeInputSink sink;
+
+  CHECK_THROWS_AS(
+      infomap::input::parseJsonNetworkInput(infomap::test::repoPath("test/fixtures/networks/json/invalid/multilayer_full_one_layer.json"), sink, defaultInputOptions),
+      std::runtime_error);
+}
+
+TEST_CASE("JSON parser rejects intra-inter inter-layer edge with source != target [fast][core][parser][json]")
+{
+  const std::string path = "json_intra_inter_bad_test.json";
+  {
+    std::ofstream out(path.c_str());
+    out << R"({"format":"infomap-network","version":"1.0","type":"multilayer","multilayer":"intra-inter",)"
+        << R"("edges":[{"layers":[1,2],"source":1,"target":2}]})";
+  }
+
+  FakeInputSink sink;
+  CHECK_THROWS_AS(infomap::input::parseJsonNetworkInput(path, sink, defaultInputOptions), std::runtime_error);
+
+  std::remove(path.c_str());
+}
+
+TEST_CASE("Network builds a higher-order state network from JSON [fast][core][parser][json]")
+{
+  // Two states (1, 2) on the same physical node 1 makes this genuinely
+  // higher-order; the RFC state.json example uses an identity mapping that the
+  // core (correctly) does not treat as memory input.
+  const std::string path = "json_state_higher_order_test.json";
+  {
+    std::ofstream out(path.c_str());
+    out << R"({"format":"infomap-network","version":"1.0","type":"state",)"
+        << R"("states":[{"id":1,"node":1},{"id":2,"node":1},{"id":3,"node":2}],)"
+        << R"("edges":[{"source":1,"target":3},{"source":2,"target":3}]})";
+  }
+
+  Config config;
+  config.silent = true;
+  Network network(config);
+
+  network.readInputData(path);
+
+  CHECK(network.haveMemoryInput());
+  CHECK(network.numNodes() == 3);
+  CHECK(network.numPhysicalNodes() == 2);
+
+  std::remove(path.c_str());
+}
+
+TEST_CASE("Network builds a multilayer network from JSON [fast][core][parser][json]")
+{
+  Config config;
+  config.silent = true;
+  Network network(config);
+
+  network.readInputData(infomap::test::repoPath("test/fixtures/networks/json/multilayer_intra.json"));
+
+  CHECK(network.haveMemoryInput());
+  CHECK(network.isMultilayerNetwork());
+}
+
+TEST_CASE("JSON parser emits embedded meta events [fast][core][parser][json]")
+{
+  FakeInputSink sink;
+
+  infomap::input::parseJsonNetworkInput(infomap::test::repoPath("test/fixtures/networks/json/standard.json"), sink, defaultInputOptions);
+
+  REQUIRE(sink.metaDataRows.size() == 2);
+  CHECK(sink.metaDataRows.front().size() == 1);
+  CHECK(sink.metaDataRows.front().front() == 10);
+  CHECK(sink.metaDataRows.back().front() == 20);
+}
+
+TEST_CASE("Network loads embedded meta from JSON (presence enables, like set_meta_data) [fast][core][parser][json]")
+{
+  Config config;
+  config.silent = true;
+  Network network(config);
+
+  network.readInputData(infomap::test::repoPath("test/fixtures/networks/json/standard.json"));
+
+  CHECK(network.numMetaDataColumns() == 1);
+  CHECK(network.metaData().size() == 2);
+  CHECK(network.metaData().at(1).front() == 10);
+  CHECK(network.metaData().at(2).front() == 20);
+}
+
+TEST_CASE("JSON parser emits node initial-partition paths [fast][core][parser][json]")
+{
+  FakeInputSink sink;
+
+  infomap::input::parseJsonNetworkInput(infomap::test::repoPath("test/fixtures/networks/json/standard.json"), sink, defaultInputOptions);
+
+  REQUIRE(sink.initialPaths.size() == 2);
+  CHECK(sink.initialPaths.front().id == 1);
+  CHECK(sink.initialPaths.front().path == std::vector<unsigned int> { 1 });
+  CHECK_FALSE(sink.initialPaths.front().stateLevel);
+  CHECK(sink.initialPaths.back().path == std::vector<unsigned int> { 1, 2 });
+}
+
+TEST_CASE("JSON parser emits state-level initial-partition paths [fast][core][parser][json]")
+{
+  FakeInputSink sink;
+
+  infomap::input::parseJsonNetworkInput(infomap::test::repoPath("test/fixtures/networks/json/state.json"), sink, defaultInputOptions);
+
+  REQUIRE(sink.initialPaths.size() == 2);
+  CHECK(sink.initialPaths.front().stateLevel);
+  CHECK(sink.initialPaths.front().path == std::vector<unsigned int> { 1 });
+  CHECK(sink.initialPaths.back().path == std::vector<unsigned int> { 1, 2 });
+}
+
+TEST_CASE("JSON parser rejects path on a multilayer node [fast][core][parser][json]")
+{
+  FakeInputSink sink;
+
+  CHECK_THROWS_AS(
+      infomap::input::parseJsonNetworkInput(infomap::test::repoPath("test/fixtures/networks/json/invalid/multilayer_node_path.json"), sink, defaultInputOptions),
+      std::runtime_error);
+}
+
+TEST_CASE("Network retains embedded initial-partition paths from JSON [fast][core][parser][json]")
+{
+  Config config;
+  config.silent = true;
+  Network network(config);
+
+  network.readInputData(infomap::test::repoPath("test/fixtures/networks/json/twotriangles_paths.json"));
+
+  CHECK(network.initialPartitionPaths().size() == 6);
+}
+
+TEST_CASE("External --meta-data composes with a JSON network [fast][core][parser][json]")
+{
+  const std::string meta = "json_external_meta_test.meta";
+  {
+    std::ofstream out(meta.c_str());
+    out << "1 5\n2 5\n3 7\n";
+  }
+
+  Config config;
+  config.silent = true;
+  Network network(config);
+
+  network.readInputData(infomap::test::repoPath("test/fixtures/networks/json/standard_minimal.json"));
+  network.readMetaData(meta);
+
+  CHECK(network.numMetaDataColumns() == 1);
+  CHECK(network.metaData().size() == 3);
+  CHECK(network.metaData().at(3).front() == 7);
+
+  std::remove(meta.c_str());
 }
 
 TEST_CASE("StateNetwork builds CSR link storage after finalize [fast][core][csr]")

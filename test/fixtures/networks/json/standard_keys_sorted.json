@@ -1,0 +1,9 @@
+{
+  "directed": false,
+  "edges": [
+    { "source": 1, "target": 2, "weight": 1.0 }
+  ],
+  "format": "infomap-network",
+  "type": "standard",
+  "version": "1.0"
+}

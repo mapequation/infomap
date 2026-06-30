@@ -1,0 +1,13 @@
+{
+  "format": "infomap-network",
+  "version": "1.0",
+  "type": "bipartite",
+  "bipartiteStartId": 4,
+  "nodes": [
+    { "id": 1, "name": "Node 1" },
+    { "id": 4, "name": "Feature 1" }
+  ],
+  "edges": [
+    { "source": 1, "target": 4, "weight": 1.0 }
+  ]
+}

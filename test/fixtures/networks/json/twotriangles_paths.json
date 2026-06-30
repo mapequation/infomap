@@ -1,0 +1,21 @@
+{
+  "format": "infomap-network",
+  "version": "1.0",
+  "nodes": [
+    { "id": 1, "path": [1] },
+    { "id": 2, "path": [1] },
+    { "id": 3, "path": [2] },
+    { "id": 4, "path": [2] },
+    { "id": 5, "path": [3] },
+    { "id": 6, "path": [3] }
+  ],
+  "edges": [
+    { "source": 1, "target": 2 },
+    { "source": 1, "target": 3 },
+    { "source": 2, "target": 3 },
+    { "source": 3, "target": 4 },
+    { "source": 4, "target": 5 },
+    { "source": 4, "target": 6 },
+    { "source": 5, "target": 6 }
+  ]
+}
