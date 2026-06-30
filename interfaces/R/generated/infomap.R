@@ -23633,6 +23633,42 @@ attr(`InfomapWrapper_getNames`, 'returnType') = '_p_std__mapT_unsigned_int_std__
 attr(`InfomapWrapper_getNames`, "inputTypes") = c('_p_infomap__InfomapWrapper')
 class(`InfomapWrapper_getNames`) = c("SWIGFunction", class('InfomapWrapper_getNames'))
 
+# Start of InfomapWrapper_getStateNames
+
+`InfomapWrapper_getStateNames` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;ans = .Call('R_swig_InfomapWrapper_getStateNames', self, as.logical(.copy), PACKAGE='infomap');
+  ans <- if (is.null(ans)) ans
+  else new("_p_std__mapT_unsigned_int_std__string_t", ref=ans);
+  
+  ans
+  
+}
+
+attr(`InfomapWrapper_getStateNames`, 'returnType') = '_p_std__mapT_unsigned_int_std__string_t'
+attr(`InfomapWrapper_getStateNames`, "inputTypes") = c('_p_infomap__InfomapWrapper')
+class(`InfomapWrapper_getStateNames`) = c("SWIGFunction", class('InfomapWrapper_getStateNames'))
+
+# Start of InfomapWrapper_getStateName
+
+`InfomapWrapper_getStateName` = function(self, stateId, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  stateId = as.integer(stateId);
+  
+  if(length(stateId) > 1) {
+    warning("using only the first element of stateId");
+  };
+  
+  ;.Call('R_swig_InfomapWrapper_getStateName', self, stateId, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`InfomapWrapper_getStateName`, 'returnType') = 'character'
+attr(`InfomapWrapper_getStateName`, "inputTypes") = c('_p_infomap__InfomapWrapper', 'integer')
+class(`InfomapWrapper_getStateName`) = c("SWIGFunction", class('InfomapWrapper_getStateName'))
+
 # Start of InfomapWrapper_addPhysicalNode
 
 `InfomapWrapper_addPhysicalNode__SWIG_0` = function(self, id, name)
@@ -24501,7 +24537,7 @@ class(`InfomapWrapper_run__SWIG_2`) = c("SWIGFunction", class('InfomapWrapper_ru
 setMethod('$', '_p_infomap__InfomapWrapper', function(x, name)
 
 {
-  accessorFuns = list('readInputData' = InfomapWrapper_readInputData, 'addNode' = InfomapWrapper_addNode, 'addName' = InfomapWrapper_addName, 'getName' = InfomapWrapper_getName, 'getNames' = InfomapWrapper_getNames, 'addPhysicalNode' = InfomapWrapper_addPhysicalNode, 'addStateNode' = InfomapWrapper_addStateNode, 'addLink' = InfomapWrapper_addLink, 'addLinks' = InfomapWrapper_addLinks, 'addMultilayerLink' = InfomapWrapper_addMultilayerLink, 'addMultilayerLinks' = InfomapWrapper_addMultilayerLinks, 'addMultilayerIntraLink' = InfomapWrapper_addMultilayerIntraLink, 'addMultilayerIntraLinks' = InfomapWrapper_addMultilayerIntraLinks, 'addMultilayerInterLink' = InfomapWrapper_addMultilayerInterLink, 'addMultilayerInterLinks' = InfomapWrapper_addMultilayerInterLinks, 'getMultilayerStateId' = InfomapWrapper_getMultilayerStateId, 'setBipartiteStartId' = InfomapWrapper_setBipartiteStartId, 'getLinks' = InfomapWrapper_getLinks, 'getLinkResults' = InfomapWrapper_getLinkResults, 'getModules' = InfomapWrapper_getModules, 'codelength' = InfomapWrapper_codelength, 'getEntropyRate' = InfomapWrapper_getEntropyRate, 'getMultilevelModules' = InfomapWrapper_getMultilevelModules, 'iterLeafNodes' = InfomapWrapper_iterLeafNodes, 'iterTree' = InfomapWrapper_iterTree, 'run' = InfomapWrapper_run);
+  accessorFuns = list('readInputData' = InfomapWrapper_readInputData, 'addNode' = InfomapWrapper_addNode, 'addName' = InfomapWrapper_addName, 'getName' = InfomapWrapper_getName, 'getNames' = InfomapWrapper_getNames, 'getStateNames' = InfomapWrapper_getStateNames, 'getStateName' = InfomapWrapper_getStateName, 'addPhysicalNode' = InfomapWrapper_addPhysicalNode, 'addStateNode' = InfomapWrapper_addStateNode, 'addLink' = InfomapWrapper_addLink, 'addLinks' = InfomapWrapper_addLinks, 'addMultilayerLink' = InfomapWrapper_addMultilayerLink, 'addMultilayerLinks' = InfomapWrapper_addMultilayerLinks, 'addMultilayerIntraLink' = InfomapWrapper_addMultilayerIntraLink, 'addMultilayerIntraLinks' = InfomapWrapper_addMultilayerIntraLinks, 'addMultilayerInterLink' = InfomapWrapper_addMultilayerInterLink, 'addMultilayerInterLinks' = InfomapWrapper_addMultilayerInterLinks, 'getMultilayerStateId' = InfomapWrapper_getMultilayerStateId, 'setBipartiteStartId' = InfomapWrapper_setBipartiteStartId, 'getLinks' = InfomapWrapper_getLinks, 'getLinkResults' = InfomapWrapper_getLinkResults, 'getModules' = InfomapWrapper_getModules, 'codelength' = InfomapWrapper_codelength, 'getEntropyRate' = InfomapWrapper_getEntropyRate, 'getMultilevelModules' = InfomapWrapper_getMultilevelModules, 'iterLeafNodes' = InfomapWrapper_iterLeafNodes, 'iterTree' = InfomapWrapper_iterTree, 'run' = InfomapWrapper_run);
   ;        idx = pmatch(name, names(accessorFuns));
   if(is.na(idx)) 
   return(callNextMethod(x, name));

@@ -3074,6 +3074,12 @@ class InfomapWrapper(InfomapBase):
     def getNames(self):
         return _infomap.InfomapWrapper_getNames(self)
 
+    def getStateNames(self):
+        return _infomap.InfomapWrapper_getStateNames(self)
+
+    def getStateName(self, stateId):
+        return _infomap.InfomapWrapper_getStateName(self, stateId)
+
     def addPhysicalNode(self, *args):
         return _infomap.InfomapWrapper_addPhysicalNode(self, *args)
 
@@ -3157,6 +3163,9 @@ class InfomapWrapper(InfomapBase):
 
     def getNames(self):
         return dict(_infomap.InfomapWrapper_getNames(self))
+
+    def getStateNames(self):
+        return dict(_infomap.InfomapWrapper_getStateNames(self))
 
     def getLinks(self, flow=False):
         return dict(_infomap.InfomapWrapper_getLinks(self, flow))

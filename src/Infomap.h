@@ -88,6 +88,31 @@ public:
 
   const std::map<unsigned int, std::string>& getNames() const { return m_network.names(); }
 
+  // State-id -> name for higher-order (state/memory) networks. Physical names
+  // live in getNames(), keyed by physical id; state nodes carry their own
+  // optional name parsed from the *States section (StateNode::name). Only
+  // non-empty names are returned, so a first-order network (no per-state names)
+  // yields an empty map and callers fall back to the physical name.
+  std::map<unsigned int, std::string> getStateNames() const
+  {
+    std::map<unsigned int, std::string> stateNames;
+    for (const auto& entry : m_network.nodes()) {
+      if (!entry.second.name.empty())
+        stateNames[entry.first] = entry.second.name;
+    }
+    return stateNames;
+  }
+
+  // Name of a single state node, or "" if the id is unknown or unnamed. The
+  // scalar counterpart of getStateNames(), mirroring getName(); the R binding
+  // walks state nodes calling this since SWIG-R exposes std::map opaquely.
+  std::string getStateName(unsigned int stateId) const
+  {
+    const auto& nodes = m_network.nodes();
+    auto it = nodes.find(stateId);
+    return it != nodes.end() ? it->second.name : "";
+  }
+
   void addPhysicalNode(unsigned int id, const std::string& name = "") { m_network.addPhysicalNode(id, name); }
   void addStateNode(unsigned int id, unsigned int physId) { m_network.addStateNode(id, physId); }
 

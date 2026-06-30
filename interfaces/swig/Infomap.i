@@ -481,6 +481,9 @@ int run(const std::string& flags);
         def getNames(self):
             return dict(_infomap.InfomapWrapper_getNames(self))
 
+        def getStateNames(self):
+            return dict(_infomap.InfomapWrapper_getStateNames(self))
+
         def getLinks(self, flow=False):
             return dict(_infomap.InfomapWrapper_getLinks(self, flow))
     %}

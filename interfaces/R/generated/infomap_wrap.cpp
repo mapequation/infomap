@@ -47328,6 +47328,86 @@ R_swig_InfomapWrapper_getNames ( SEXP self, SEXP s_swig_copy)
 
 
 SWIGEXPORT SEXP
+R_swig_InfomapWrapper_getStateNames ( SEXP self, SEXP s_swig_copy)
+{
+  {
+    std::map< unsigned int,std::string,std::less< unsigned int >,std::allocator< std::pair< unsigned int const,std::string > > > result;
+    infomap::InfomapWrapper *arg1 = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_infomap__InfomapWrapper, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "InfomapWrapper_getStateNames" "', argument " "1"" of type '" "infomap::InfomapWrapper const *""'"); 
+    }
+    arg1 = reinterpret_cast< infomap::InfomapWrapper * >(argp1);
+    {
+      try {
+        result = ((infomap::InfomapWrapper const *)arg1)->getStateNames();
+      } catch (const std::exception& e) {
+        SWIG_exception(SWIG_RuntimeError, e.what());
+      }
+    }
+    r_ans = swig::from(static_cast< std::map< unsigned int,std::string,std::less< unsigned int >,std::allocator< std::pair< unsigned int const,std::string > > > >(result));
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
+R_swig_InfomapWrapper_getStateName ( SEXP self, SEXP stateId, SEXP s_swig_copy)
+{
+  {
+    std::string result;
+    infomap::InfomapWrapper *arg1 = 0 ;
+    unsigned int arg2 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int val2 ;
+    int ecode2 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_infomap__InfomapWrapper, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "InfomapWrapper_getStateName" "', argument " "1"" of type '" "infomap::InfomapWrapper const *""'"); 
+    }
+    arg1 = reinterpret_cast< infomap::InfomapWrapper * >(argp1);
+    ecode2 = SWIG_AsVal_int(stateId, &val2);
+    if (!SWIG_IsOK(ecode2)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "InfomapWrapper_getStateName" "', argument " "2"" of type '" "unsigned int""'");
+    } 
+    arg2 = static_cast< unsigned int >(val2);
+    {
+      try {
+        result = ((infomap::InfomapWrapper const *)arg1)->getStateName(arg2);
+      } catch (const std::exception& e) {
+        SWIG_exception(SWIG_RuntimeError, e.what());
+      }
+    }
+    r_ans = SWIG_From_std_string(static_cast< std::string >(result));
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
 R_swig_InfomapWrapper_addPhysicalNode__SWIG_0 ( SEXP self, SEXP id, SEXP name)
 {
   {
@@ -50016,6 +50096,7 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
    {"R_swig_Config_haveMetaData", (DL_FUNC) &R_swig_Config_haveMetaData, 2},
    {"R_swig_InfomapBase_getElapsedTime", (DL_FUNC) &R_swig_InfomapBase_getElapsedTime, 2},
    {"R_swig_vector_double_pop", (DL_FUNC) &R_swig_vector_double_pop, 2},
+   {"R_swig_InfomapWrapper_getStateName", (DL_FUNC) &R_swig_InfomapWrapper_getStateName, 3},
    {"R_swig_Config_multilayerRelaxLimitUp_get", (DL_FUNC) &R_swig_Config_multilayerRelaxLimitUp_get, 2},
    {"R_swig_InfomapWrapper_getName", (DL_FUNC) &R_swig_InfomapWrapper_getName, 3},
    {"R_swig_InfomapIterator_getMetaData__SWIG_0", (DL_FUNC) &R_swig_InfomapIterator_getMetaData__SWIG_0, 3},
@@ -50426,6 +50507,7 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
    {"R_swig_InfomapIterator_initClean", (DL_FUNC) &R_swig_InfomapIterator_initClean, 1},
    {"R_swig_InfomapParentIterator_disposeInfomap", (DL_FUNC) &R_swig_InfomapParentIterator_disposeInfomap, 2},
    {"R_swig_InfomapIterator_expandChildren", (DL_FUNC) &R_swig_InfomapIterator_expandChildren, 2},
+   {"R_swig_InfomapWrapper_getStateNames", (DL_FUNC) &R_swig_InfomapWrapper_getStateNames, 2},
    {"R_swig_Config_noSelfLinks_set", (DL_FUNC) &R_swig_Config_noSelfLinks_set, 2},
    {"R_swig_Config_numRandomMoves_set", (DL_FUNC) &R_swig_Config_numRandomMoves_set, 2},
    {"R_swig_InfoNode_children__SWIG_0", (DL_FUNC) &R_swig_InfoNode_children__SWIG_0, 2},

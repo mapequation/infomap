@@ -54,9 +54,14 @@ def _to_dataframe_sort_columns(sort, dataframe_columns):
     return sort_columns
 
 
-def _to_dataframe_column_getter(requested, resolved, names):
+def _to_dataframe_column_getter(requested, resolved, names, state_names):
     if resolved == "name":
         return lambda node: names.get(node.node_id, node.node_id)
+
+    if resolved == "state_name":
+        return lambda node: state_names.get(node.state_id) or names.get(
+            node.node_id, node.node_id
+        )
 
     def get_column_value(node):
         try:
@@ -72,6 +77,7 @@ def _to_dataframe_column_getter(requested, resolved, names):
                         "layer_id",
                         "modular_centrality",
                         "state_id",
+                        "state_name",
                     }
                 )
             )
@@ -147,6 +153,9 @@ class _InfomapResultsMixin:
 
     def _get_names_impl(self):
         return self._core.getNames()
+
+    def _get_state_names_impl(self):
+        return self._core.getStateNames()
 
     def _leaf_modules_impl(self):
         return self._core.iterLeafModules()
@@ -736,7 +745,10 @@ class _InfomapResultsMixin:
         ----------
         columns : sequence of str, optional
             Columns to include. ``"community"`` is accepted as an alias for
-            ``"module_id"``. Default
+            ``"module_id"``. ``"name"`` resolves the physical node name; the
+            opt-in ``"state_name"`` resolves the per-state-node name for a
+            higher-order network (falling back to the physical name, then
+            ``node_id``). Default
             ``["node_id", "module_id", "flow", "path", "name"]``.
         states : bool, optional
             Use state-node iterators when ``True`` and physical-node iterators
@@ -772,9 +784,14 @@ class _InfomapResultsMixin:
             _DATAFRAME_COLUMN_ALIASES.get(column, column)
             for column in requested_columns
         ]
-        names = self._get_names_impl() if "name" in resolved_columns else None
+        # "state_name" falls back to the physical name, so it needs both maps.
+        need_names = bool({"name", "state_name"} & set(resolved_columns))
+        names = self._get_names_impl() if need_names else None
+        state_names = (
+            self._get_state_names_impl() if "state_name" in resolved_columns else None
+        )
         column_getters = [
-            _to_dataframe_column_getter(requested, resolved, names)
+            _to_dataframe_column_getter(requested, resolved, names, state_names)
             for requested, resolved in zip(
                 requested_columns, resolved_columns, strict=True
             )
@@ -863,6 +880,49 @@ class _InfomapResultsMixin:
             Use ``result = im.run(); result.names``.
         """
         return self._get_names_impl()
+
+    def get_state_names(self):
+        """Get all state-node names.
+
+        Populated for higher-order (state/memory) networks whose ``*States``
+        section names the state nodes; empty otherwise. Physical node names are
+        available separately via :meth:`get_names`.
+
+        See Also
+        --------
+        get_names
+        state_names
+
+        Returns
+        -------
+        dict of string
+            A dict with state ids as keys and state-node names as values.
+
+        .. deprecated::
+            Use ``result = im.run(); result.state_names``.
+        """
+        return self._get_state_names_impl()
+
+    @property
+    def state_names(self):
+        """Get all state-node names.
+
+        Short-hand for ``get_state_names``.
+
+        See Also
+        --------
+        get_state_names
+        names
+
+        Returns
+        -------
+        dict of string
+            A dict with state ids as keys and state-node names as values.
+
+        .. deprecated::
+            Use ``result = im.run(); result.state_names``.
+        """
+        return self._get_state_names_impl()
 
     def get_links(self, data="weight"):
         """A view of the currently assigned links and their weights or flow.

@@ -154,6 +154,8 @@ merged within a module).}
 \item \href{#method-Infomap-get_links}{\code{InfomapClass$get_links()}}
 \item \href{#method-Infomap-get_name}{\code{InfomapClass$get_name()}}
 \item \href{#method-Infomap-get_names}{\code{InfomapClass$get_names()}}
+\item \href{#method-Infomap-get_state_name}{\code{InfomapClass$get_state_name()}}
+\item \href{#method-Infomap-get_state_names}{\code{InfomapClass$get_state_names()}}
 \item \href{#method-Infomap-write_clu}{\code{InfomapClass$write_clu()}}
 \item \href{#method-Infomap-write_tree}{\code{InfomapClass$write_tree()}}
 \item \href{#method-Infomap-write_flow_tree}{\code{InfomapClass$write_flow_tree()}}
@@ -829,6 +831,47 @@ Get all assigned node names.
 
 \subsection{Returns}{
 A named character vector mapping node id to name.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Infomap-get_state_name"></a>}}
+\if{latex}{\out{\hypertarget{method-Infomap-get_state_name}{}}}
+\subsection{Method \code{get_state_name()}}{
+Look up a state node's name.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InfomapClass$get_state_name(state_id, default = NULL)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{state_id}}{Integer state node id.}
+
+\item{\code{default}}{Value returned when the state node has no name.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+Character (or \code{default}).
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Infomap-get_state_names"></a>}}
+\if{latex}{\out{\hypertarget{method-Infomap-get_state_names}{}}}
+\subsection{Method \code{get_state_names()}}{
+Get all assigned state node names.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InfomapClass$get_state_names()}\if{html}{\out{</div>}}
+}
+
+\subsection{Details}{
+Populated for higher-order (state/memory) networks whose \code{*States}
+section names the state nodes; empty otherwise. Physical node names
+are available separately via \code{get_names()}.
+}
+
+\subsection{Returns}{
+A named character vector mapping state id to name.
 }
 }
 \if{html}{\out{<hr>}}

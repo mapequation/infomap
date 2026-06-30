@@ -82,6 +82,8 @@ _DATAFRAME_VARIANTS = [
     {"columns": ["node_id", "module_id"], "depth_level": 2, "sort": True},
     {"columns": ["node_id", "module_id"], "level": -1},
     {"columns": ["node_id", "name"]},
+    {"columns": ["state_id", "node_id", "name", "state_name"], "states": True},
+    {"columns": ["node_id", "state_name"]},
 ]
 
 
@@ -172,6 +174,7 @@ def test_scalar_parity(network, example_network_path):
     assert result.meta_codelength == im.meta_codelength
     assert result.have_memory == im.have_memory
     assert result.names == im.names
+    assert result.state_names == im.state_names
 
 
 @pytest.mark.parametrize("network", sorted(_BUILDERS))
