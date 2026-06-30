@@ -160,6 +160,7 @@ Build the aggregated physical network and run Infomap with first-order flow.
 ```{code-cell} python
 import networkx as nx
 import infomap
+from infomap import Network, run
 from docs_viz import draw_partition
 
 # Directed graph: two streams share junction B (node 1)
@@ -172,11 +173,8 @@ g.add_edges_from([(0, 1), (1, 2), (2, 0),   # stream 1
 
 node_name = {0: "A", 1: "B", 2: "C", 3: "D"}
 
-im1 = infomap.Infomap(two_level=True, silent=True)
-im1.add_networkx_graph(g)
-im1.run()
-
-modules1 = im1.get_modules()   # {node_id: module_id}
+result1 = infomap.run(g, two_level=True, silent=True)
+modules1 = result1.modules()   # {node_id: module_id}
 
 print("First-order: node → module")
 for nid, mod in sorted(modules1.items()):
@@ -196,33 +194,34 @@ state node per incoming stream. Node B gets **two** state nodes:
 - state 11 (physical 1): flow that arrived from stream 2
 
 ```{code-cell} python
-im2 = infomap.Infomap(two_level=True, silent=True)
+net = Network()
 
 # Declare state nodes: add_state_node(state_id, physical_id)
-im2.add_state_node(0,  0)   # phys A, state 0
-im2.add_state_node(2,  2)   # phys C, state 2
-im2.add_state_node(3,  3)   # phys D, state 3
-im2.add_state_node(10, 1)   # phys B, state 10 (stream 1 context)
-im2.add_state_node(11, 1)   # phys B, state 11 (stream 2 context)
+net.add_state_node(0,  0)   # phys A, state 0
+net.add_state_node(2,  2)   # phys C, state 2
+net.add_state_node(3,  3)   # phys D, state 3
+net.add_state_node(10, 1)   # phys B, state 10 (stream 1 context)
+net.add_state_node(11, 1)   # phys B, state 11 (stream 2 context)
 
 # Add directed links between STATE nodes
 # Stream 1: A(0) → B_s1(10) → C(2) → A(0)
-im2.add_link(0,  10, 1.0)
-im2.add_link(10, 2,  1.0)
-im2.add_link(2,  0,  1.0)
+net.add_link(0,  10, 1.0)
+net.add_link(10, 2,  1.0)
+net.add_link(2,  0,  1.0)
 
 # Stream 2: D(3) → B_s2(11) → D(3)
-im2.add_link(3,  11, 1.0)
-im2.add_link(11, 3,  1.0)
+net.add_link(3,  11, 1.0)
+net.add_link(11, 3,  1.0)
 
-im2.run()
+result2 = run(net, two_level=True, silent=True)
 
-print(f"have_memory: {im2.have_memory}")
-print(f"num_physical_nodes: {im2.num_physical_nodes}")
+n_physical = len({node.node_id for node in result2.nodes(states=True)})
+print(f"have_memory: {result2.have_memory}")
+print(f"physical nodes: {n_physical}")
 print()
 
-# For memory networks, get_modules requires states=True
-state_modules = im2.get_modules(states=True)   # {state_id: module_id}
+# For memory networks, modules() requires states=True
+state_modules = result2.modules(states=True)   # {state_id: module_id}
 
 print("State node assignments:")
 phys_label = {0: "A", 2: "C", 3: "D", 10: "B (stream-1 ctx)", 11: "B (stream-2 ctx)"}
@@ -232,15 +231,15 @@ for sid, mod in sorted(state_modules.items()):
 
 ### Step 3: Read overlapping physical-node membership
 
-Iterate `physical_nodes` to see which physical node appears in more than one
-module. Each row in the iterator exposes `.node_id` (physical), `.state_id`,
-and `.module_id`.
+Iterate `result.nodes(states=True)` to see which physical node appears in more
+than one module. Each state node exposes `.node_id` (the physical node it
+belongs to), `.state_id`, and `.module_id`.
 
 ```{code-cell} python
 from collections import defaultdict
 
 phys_to_modules = defaultdict(list)
-for node in im2.physical_nodes:
+for node in result2.nodes(states=True):
     phys_to_modules[node.node_id].append(node.module_id)
 
 print("Physical node membership after second-order analysis:")
@@ -267,8 +266,8 @@ primary = {pid: mods[0] for pid, mods in phys_to_modules.items()}
 
 # Physical-node flow: sum the flow of every state node sharing that physical id.
 flow = {}
-for node in im2.nodes:
-    flow[node.node_id] = flow.get(node.node_id, 0.0) + node.data.flow
+for node in result2.nodes(states=True):
+    flow[node.node_id] = flow.get(node.node_id, 0.0) + node.flow
 
 fig = draw_partition(g, primary, flow=flow)
 fig.axes[0].set_title(
@@ -303,43 +302,44 @@ finds two communities (A–B–C and B–D) that properly overlap at junction B.
 **Declaring state nodes**
 
 ```python
-im.add_state_node(state_id: int, physical_id: int)
+net = Network()
+net.add_state_node(state_id, physical_id)
 ```
 
 Creates a state node with a unique integer `state_id` mapped to `physical_id`.
 If the physical node does not yet exist it is created automatically. Use
-{py:meth}`infomap.Infomap.set_name` afterward if you want a human-readable
-label on the physical node.
+{meth}`infomap.Network.set_name` afterwards for a human-readable label.
 
 **Adding state-level links**
 
 ```python
-im.add_link(source_state_id: int, target_state_id: int, weight: float = 1.0)
+net.add_link(source_state_id, target_state_id, weight=1.0)
 ```
 
-Links connect *state nodes*, not physical nodes. The same `add_link` is used
-for both first-order and higher-order networks; in a state-node network the
-integer ids refer to state node ids.
+Links connect *state nodes*, not physical nodes. The same `add_link` serves both
+first-order and higher-order networks; in a state-node network the integer ids
+refer to state node ids.
 
 **Querying results**
 
 ```python
-im.have_memory          # True when state nodes were added
-im.num_physical_nodes   # count of distinct physical nodes
+result = run(net)
+result.have_memory                            # True when state nodes were added
 
-# For memory networks you must pass states=True
-state_modules = im.get_modules(states=True)   # {state_id: module_id}
+# For memory networks, pass states=True
+state_modules = result.modules(states=True)   # {state_id: module_id}
 
-# Iterate physical-level results with overlap information
-for node in im.physical_nodes:
+# Group state nodes by their physical node to find overlap
+for node in result.nodes(states=True):
     node.node_id    # physical node id
     node.state_id   # state node id
     node.module_id  # module assignment for this state node
+    node.flow       # state-node visit frequency
 ```
 
-Because a physical node can appear multiple times in `im.physical_nodes` (once
-per state node), collecting all module assignments requires grouping by
-`node_id` as shown in the worked example.
+Because a physical node has one entry per state node in
+`result.nodes(states=True)`, collecting all its module assignments requires
+grouping by `node_id`, as shown in the worked example.
 
 ## Going deeper
 
