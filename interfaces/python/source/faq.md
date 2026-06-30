@@ -143,7 +143,7 @@ Number the nodes so the second type starts at a fixed id, then set
 
 Not directly: encode the hypergraph as a network first (e.g. a bipartite
 incidence network via `Network().bipartite_start_id`). The representation you choose
-changes the communities found. See {doc}`Hypergraphs and higher-order networks <flow-models/hypergraphs>`.
+changes the communities found. See {doc}`Bipartite networks <flow-models/bipartite>`.
 
 ### My sparse network gives lots of tiny modules: how do I avoid overfitting?
 

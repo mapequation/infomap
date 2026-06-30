@@ -35,7 +35,6 @@ documentation.
 - [5.3 Modeling temporal data](https://github.com/mapequation/infomap/blob/master/examples/notebooks/5.3%20Modeling%20Temporal%20Data.ipynb).
   Gentler path: {doc}`Temporal networks </flow-models/temporal>`.
 - [5.4 Modeling multi-body interactions](https://github.com/mapequation/infomap/blob/master/examples/notebooks/5.4%20Modeling%20Multi-body%20Interactions.ipynb).
-  Gentler path: {doc}`Hypergraphs and higher-order networks </flow-models/hypergraphs>`.
 
 ## Metadata, bipartite, and incomplete data
 

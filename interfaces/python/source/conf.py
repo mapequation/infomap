@@ -84,7 +84,9 @@ myst_enable_extensions = [
 myst_heading_anchors = 3  # auto slugs for h1-h3 so "going deeper" deep-links resolve
 
 templates_path = ["_templates"]
-exclude_patterns = []
+# The hypergraphs chapter is kept in the source tree but excluded from the build
+# on request. Remove it from this list to render it again.
+exclude_patterns = ["flow-models/hypergraphs.md"]
 
 # Number figures so captions read "Fig. N", matching the textbook feel.
 numfig = True

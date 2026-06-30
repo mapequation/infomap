@@ -16,8 +16,6 @@ behind the first three chapters below.
   objective.
 - {doc}`Bipartite networks <bipartite>`: two node types and the bipartite map
   equation.
-- {doc}`Hypergraphs <hypergraphs>`: multi-body interactions, and how the
-  representation you choose shapes the communities.
 
 ```{toctree}
 :hidden:
@@ -28,5 +26,4 @@ multilayer
 temporal
 metadata
 bipartite
-hypergraphs
 ```
