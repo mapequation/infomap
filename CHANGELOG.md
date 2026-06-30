@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. Releases are automated with [release-please](https://github.com/googleapis/release-please), using [Conventional Commits](https://www.conventionalcommits.org) to determine version bumps and changelog entries.
 
+## [2.14.0](https://github.com/mapequation/infomap/compare/v2.13.0...v2.14.0) (2026-06-30)
+
+
+### Features
+
+* expose state node names in Python and R results ([#700](https://github.com/mapequation/infomap/issues/700)) ([37e0854](https://github.com/mapequation/infomap/commit/37e085457338979a0390e36ac6411c68908bbc20)), closes [#699](https://github.com/mapequation/infomap/issues/699)
+* **python:** redesign the Python API — Network, Result, Options, functional run() ([#694](https://github.com/mapequation/infomap/issues/694)) ([459d786](https://github.com/mapequation/infomap/commit/459d786ad5ce9fd2f71afaad57e6f64c8ff1b1ef))
+
+
+### Bug Fixes
+
+* reject ill-defined link weights at ingestion ([#698](https://github.com/mapequation/infomap/issues/698)) ([c2696a1](https://github.com/mapequation/infomap/commit/c2696a180a0436a4dfc1f830765ea912fe92432c))
+
 ## [2.13.0](https://github.com/mapequation/infomap/compare/v2.12.0...v2.13.0) (2026-06-23)
 
 
