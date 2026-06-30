@@ -50,8 +50,8 @@ to draw boundaries around statistical accidents, and produces many tiny
 "communities" that would dissolve if you observed a few more links.
 
 Regularization addresses this by blending what you observed with what you would
-expect from an uninformative prior: a featureless Erdős–Rényi network with no
-community structure. In sparse regions the prior pulls the transition rates
+expect from an uninformative prior: a featureless, fully-connected prior network
+with no community structure of its own. In sparse regions the prior pulls the transition rates
 toward the flat background and evens out the apparent cost differences that drive
 spurious splitting. Where evidence is abundant, the data dominate and the prior
 barely matters.
@@ -137,7 +137,7 @@ print(f"Full graph : {g_full.number_of_nodes()} nodes, {g_full.number_of_edges()
 # Remove 60 % of edges to simulate missing link observations
 edges = list(g_full.edges())
 random.shuffle(edges)
-removal_fraction = 0.60
+removal_fraction = 0.70
 g_sparse = g_full.copy()
 g_sparse.remove_edges_from(edges[: int(removal_fraction * len(edges))])
 print(f"Sparse graph: {g_sparse.number_of_nodes()} nodes, {g_sparse.number_of_edges()} edges")
@@ -169,19 +169,21 @@ print(f"Standard      : {result_std.num_top_modules} modules  (codelength {resul
 print(f"Regularized   : {result_reg.num_top_modules} modules  (codelength {result_reg.codelength:.4f} bits/step)")
 ```
 
-Standard Infomap finds seven modules in the 60 %-sparse graph, two more than the
-five planted communities. Regularization recovers exactly five, matching the
-ground truth. The standard codelength looks small, but that is the trap: the
-objective underestimates the true description length on a sparse graph, so the
-algorithm commits to a finer partition than the data warrant.
+On this 70 %-sparse graph standard Infomap over-partitions: it reports many more
+modules than the five planted communities (see the counts above), because the
+objective underestimates the true description length on a sparse graph and
+commits to a finer partition than the data warrant. Regularization merges the
+noise-driven splits and pulls the count back toward five. It does not always land
+exactly on the ground truth, and at this severe sparsity the principled default
+`regularization_strength=1.0` over-regularizes, collapsing toward a single
+module, which is why this example uses a gentler `0.5`.
 
 ```{admonition} Module size distributions
 :class: note
-Standard Infomap produces two singleton-like clusters of three nodes each
-alongside the five main groups. These small modules absorb nodes that lost
-most of their links through random removal, leaving them weakly connected to
-any community. Regularization treats those same nodes as part of the nearest
-genuine module because the prior pseudocounts smooth out the sparse links.
+The spurious modules standard Infomap adds are small groups of nodes that lost
+most of their links through random removal, leaving them weakly connected to any
+community. Regularization treats those nodes as part of the nearest genuine
+module because the prior pseudocounts smooth out the sparse links.
 ```
 
 ### Visualise the regularized partition

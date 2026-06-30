@@ -57,7 +57,8 @@ the description grows.
 
 The map equation, $L(\mathsf{M})$, is the average description length per step
 under the best two-level code for partition $\mathsf{M}$. **Minimising $L$ over
-all partitions is equivalent to finding the communities.**
+all partitions is how Infomap defines and finds communities: the partition that
+best compresses the flow.**
 
 ## Theory
 
