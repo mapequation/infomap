@@ -144,25 +144,27 @@ from Layer 2. Node 1 is bi-modular: module 1 in Layer 1, module 2 in Layer 2.
 
 ```{code-cell} python
 import infomap
+from infomap import Network, run
 
-im = infomap.Infomap(multilayer_relax_rate=0.15, seed=123, num_trials=10, silent=True)
+net = Network()
 
 # Layer 1: tight triangle {1, 2, 3}
 for src, tgt in [(1, 2), (2, 3), (1, 3)]:
-    im.add_multilayer_intra_link(1, src, tgt, weight=1.0)
-    im.add_multilayer_intra_link(1, tgt, src, weight=1.0)
+    net.add_multilayer_intra_link(1, src, tgt, weight=1.0)
+    net.add_multilayer_intra_link(1, tgt, src, weight=1.0)
 
 # Layer 2: tight triangle {1, 4, 5}
 for src, tgt in [(1, 4), (4, 5), (1, 5)]:
-    im.add_multilayer_intra_link(2, src, tgt, weight=1.0)
-    im.add_multilayer_intra_link(2, tgt, src, weight=1.0)
+    net.add_multilayer_intra_link(2, src, tgt, weight=1.0)
+    net.add_multilayer_intra_link(2, tgt, src, weight=1.0)
 
-im.run()
+result = run(net, multilayer_relax_rate=0.15, seed=123, num_trials=10, silent=True)
 
-print(f"Modules found : {im.num_top_modules}")
-print(f"Codelength    : {im.codelength:.4f} bits")
-print(f"Physical nodes: {im.num_physical_nodes}")
-print(f"State nodes   : {sum(1 for _ in im.nodes)}")
+state_nodes = list(result.nodes(states=True))
+print(f"Modules found : {result.num_top_modules}")
+print(f"Codelength    : {result.codelength:.4f} bits")
+print(f"Physical nodes: {len({n.node_id for n in state_nodes})}")
+print(f"State nodes   : {len(state_nodes)}")
 ```
 
 Infomap operates on six state nodes (one per physical-node–layer pair) and
@@ -171,7 +173,7 @@ finds two modules. Now inspect the per-state-node partition to see the overlap:
 ```{code-cell} python
 print(f"{'Layer':>6}  {'Phys node':>10}  {'Module':>8}")
 print("-" * 30)
-for node in sorted(im.nodes, key=lambda n: (n.layer_id, n.node_id)):
+for node in sorted(result.nodes(states=True), key=lambda n: (n.layer_id, n.node_id)):
     print(f"{node.layer_id:>6}  {node.node_id:>10}  {node.module_id:>8}")
 ```
 
@@ -179,22 +181,22 @@ Physical node **1** appears twice, once in each layer, in a different module eac
 time. Nodes 2 and 3 sit only in module 1 (the Layer 1 triangle), nodes 4 and 5
 only in module 2 (the Layer 2 triangle).
 
-The `get_modules` method on multilayer networks requires `states=True` because
-each physical node can belong to multiple modules:
+`result.modules(states=True)` is required on multilayer networks, because each
+physical node can belong to multiple modules:
 
 ```{code-cell} python
-state_modules = im.get_modules(states=True)
+state_modules = result.modules(states=True)
 print("state_id -> module_id:", state_modules)
 ```
 
-You can recover the full per-layer picture from `im.nodes`:
+You can recover the full per-layer picture from `result.nodes(states=True)`:
 
 ```{code-cell} python
 from collections import defaultdict
 
 # physical node -> list of (layer, module) pairs
 phys_memberships = defaultdict(list)
-for node in im.nodes:
+for node in result.nodes(states=True):
     phys_memberships[node.node_id].append((node.layer_id, node.module_id))
 
 print(f"{'Phys node':>10}  {'(layer, module) assignments'}")
@@ -224,12 +226,13 @@ layers = {
 }
 
 # Module assignment and flow per physical node, recorded separately per layer.
+state_nodes = list(result.nodes(states=True))
 module_in_layer = {
-    layer: {n.node_id: n.module_id for n in im.nodes if n.layer_id == layer}
+    layer: {n.node_id: n.module_id for n in state_nodes if n.layer_id == layer}
     for layer in (1, 2)
 }
 flow_in_layer = {
-    layer: {n.node_id: n.data.flow for n in im.nodes if n.layer_id == layer}
+    layer: {n.node_id: n.flow for n in state_nodes if n.layer_id == layer}
     for layer in (1, 2)
 }
 colours = module_palette(
@@ -269,20 +272,15 @@ layer nearly independently; high values merge them into a single partition.
 ```{code-cell} python
 results = []
 for r in [0.01, 0.15, 0.50, 0.90, 1.00]:
-    im_r = infomap.Infomap(
-        multilayer_relax_rate=r,
-        seed=123,
-        num_trials=10,
-        silent=True,
-    )
+    net_r = Network()
     for src, tgt in [(1, 2), (2, 3), (1, 3)]:
-        im_r.add_multilayer_intra_link(1, src, tgt, 1.0)
-        im_r.add_multilayer_intra_link(1, tgt, src, 1.0)
+        net_r.add_multilayer_intra_link(1, src, tgt, 1.0)
+        net_r.add_multilayer_intra_link(1, tgt, src, 1.0)
     for src, tgt in [(1, 4), (4, 5), (1, 5)]:
-        im_r.add_multilayer_intra_link(2, src, tgt, 1.0)
-        im_r.add_multilayer_intra_link(2, tgt, src, 1.0)
-    im_r.run()
-    results.append((r, im_r.num_top_modules, im_r.codelength))
+        net_r.add_multilayer_intra_link(2, src, tgt, 1.0)
+        net_r.add_multilayer_intra_link(2, tgt, src, 1.0)
+    result_r = run(net_r, multilayer_relax_rate=r, seed=123, num_trials=10, silent=True)
+    results.append((r, result_r.num_top_modules, result_r.codelength))
 
 print(f"{'relax rate':>12}  {'modules':>8}  {'codelength':>12}")
 print("-" * 36)
@@ -306,23 +304,23 @@ model. The inter-layer link specifies a coupling weight through a shared physica
 node:
 
 ```{code-cell} python
-im2 = infomap.Infomap(seed=123, num_trials=10, silent=True)
+net_inter = Network()
 
 # Intra-layer links (same as before)
 for src, tgt in [(1, 2), (2, 3), (1, 3)]:
-    im2.add_multilayer_intra_link(1, src, tgt, 1.0)
-    im2.add_multilayer_intra_link(1, tgt, src, 1.0)
+    net_inter.add_multilayer_intra_link(1, src, tgt, 1.0)
+    net_inter.add_multilayer_intra_link(1, tgt, src, 1.0)
 for src, tgt in [(1, 4), (4, 5), (1, 5)]:
-    im2.add_multilayer_intra_link(2, src, tgt, 1.0)
-    im2.add_multilayer_intra_link(2, tgt, src, 1.0)
+    net_inter.add_multilayer_intra_link(2, src, tgt, 1.0)
+    net_inter.add_multilayer_intra_link(2, tgt, src, 1.0)
 
 # Explicit inter-layer coupling: node 1 bridges layer 1 <-> layer 2
-im2.add_multilayer_inter_link(source_layer_id=1, node_id=1, target_layer_id=2, weight=0.15)
-im2.add_multilayer_inter_link(source_layer_id=2, node_id=1, target_layer_id=1, weight=0.15)
+net_inter.add_multilayer_inter_link(source_layer_id=1, node_id=1, target_layer_id=2, weight=0.15)
+net_inter.add_multilayer_inter_link(source_layer_id=2, node_id=1, target_layer_id=1, weight=0.15)
 
-im2.run()
-print(f"Modules found : {im2.num_top_modules}")
-print(f"Codelength    : {im2.codelength:.4f} bits")
+result_inter = run(net_inter, seed=123, num_trials=10, silent=True)
+print(f"Modules found : {result_inter.num_top_modules}")
+print(f"Codelength    : {result_inter.codelength:.4f} bits")
 ```
 
 When you provide explicit inter-layer links, Infomap does not use the relax-rate
@@ -330,23 +328,24 @@ model; the coupling is fully specified by the link weights you supply.
 
 ## API pointers
 
-- {py:class}`infomap.Infomap` takes the constructor parameter
-  `multilayer_relax_rate` (default `0.15`), the relax rate used when no explicit
-  inter-layer links are provided.
-- {py:meth}`infomap.Infomap.add_multilayer_intra_link` adds a link within a
-  layer: `add_multilayer_intra_link(layer_id, source_node_id, target_node_id,
+- {meth}`infomap.Network.add_multilayer_intra_link` adds a link within a layer:
+  `add_multilayer_intra_link(layer_id, source_node_id, target_node_id,
   weight=1.0)`.
-- {py:meth}`infomap.Infomap.add_multilayer_inter_link` adds a coupling between
+- {meth}`infomap.Network.add_multilayer_inter_link` adds a coupling between
   layers through a shared physical node:
   `add_multilayer_inter_link(source_layer_id, node_id, target_layer_id,
   weight=1.0)`.
-- {py:meth}`infomap.Infomap.get_modules` needs `states=True` on multilayer
-  networks to return state-node assignments; `states=False` raises a
-  `RuntimeError` on higher-order networks.
-- `im.nodes` iterates over state nodes; each exposes `.node_id` (physical),
-  `.state_id`, `.layer_id`, and `.module_id`.
+- `multilayer_relax_rate` (default `0.15`) is an engine option on
+  {func}`infomap.run`: the relax rate used when no explicit inter-layer links are
+  provided.
+- {meth}`infomap.Result.modules` needs `states=True` on multilayer networks to
+  return state-node assignments; `states=False` raises a `RuntimeError` on
+  higher-order networks.
+- {meth}`infomap.Result.nodes` with `states=True` iterates state nodes; each
+  exposes `.node_id` (physical), `.state_id`, `.layer_id`, `.module_id`, and
+  `.flow`.
 
-Two constructor parameters give finer control:
+Two further engine options give finer control:
 - `multilayer_relax_limit` caps how many relax steps can occur in a row (`-1`
   for unlimited).
 - `multilayer_relax_to_self`, when `True`, restricts relaxed steps to the
