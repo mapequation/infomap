@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from math import isfinite
-from numbers import Real
 from typing import Any
 
 from ._arrays import apply_node_meta_data, community_node_data
@@ -30,25 +28,18 @@ def _stable_unique_labels(labels):
 
 
 def _edge_weight(data, weight):
-    """Effective link weight for an edge's data dict, read and validated in one
-    place so the single ingestion pass also rejects ill-defined weights.
+    """Effective link weight for an edge's data dict: a missing key or a
+    ``None`` value means the edge is unweighted (1.0).
 
-    A missing key or a ``None`` value means the edge is unweighted (1.0). A
-    present value must be a finite, non-negative real: Infomap reads weights as
-    a flow distribution, and the C++ engine does not itself reject negative or
-    non-finite weights (it silently returns a meaningless codelength)."""
+    Weight validity (finite, non-negative) is enforced once by the C++ engine
+    at ingestion, not re-checked per edge here. networkx graphs are read
+    edge-by-edge in Python, so a per-edge Python check is the costly place to
+    validate -- unlike the vectorized scipy/edge_index adapters, which validate
+    a whole array cheaply."""
     if weight is None:
         return 1.0
     w = data.get(weight)
-    if w is None:
-        return 1.0
-    if not isinstance(w, Real) or not isfinite(w) or w < 0:
-        raise ValueError(
-            f"edge weight {w!r} (attribute {weight!r}) must be a finite, "
-            "non-negative number; Infomap does not support negative or "
-            "non-finite weights."
-        )
-    return float(w)
+    return 1.0 if w is None else w
 
 
 def _communities_from_infomap(infomap, node_mapping):

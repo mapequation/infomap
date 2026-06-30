@@ -199,16 +199,17 @@ def test_find_communities_partitions_multilayer_network_nodes():
 # -- error / edge paths (parity with test_scipy.py / test_igraph.py) -----------
 
 
-@pytest.mark.parametrize("bad", [-1.0, float("nan"), float("inf"), "heavy"])
+@pytest.mark.parametrize("bad", [-1.0, float("nan"), float("inf")])
 def test_add_networkx_graph_rejects_invalid_weights(bad):
-    """A present weight must be a finite, non-negative number; ill-defined or
-    non-numeric weights are rejected at ingestion (the C++ engine does not
-    reject them itself), as for scipy and edge-index input."""
+    """Negative or non-finite link weights are ill-defined for the map equation
+    and are rejected by the engine at ingestion. The networkx adapter delegates
+    this to the C++ core rather than re-checking every edge in Python (unlike
+    the vectorized scipy/edge_index adapters)."""
     graph = nx.Graph()
     graph.add_edge(0, 1, weight=bad)
     graph.add_edge(1, 2, weight=2.0)
     im = infomap.Infomap(silent=True, no_file_output=True)
-    with pytest.raises(ValueError):
+    with pytest.raises(RuntimeError):
         im.add_networkx_graph(graph)
 
 

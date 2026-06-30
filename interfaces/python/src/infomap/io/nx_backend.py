@@ -50,7 +50,15 @@ def _build_infomap(G, weight, options):
             "multilayer_inter_intra_format"
         )
     im = Infomap(**options)
-    mapping = im.add_networkx_graph(G, **add_graph_kwargs)
+    try:
+        mapping = im.add_networkx_graph(G, **add_graph_kwargs)
+    except RuntimeError as exc:
+        # The C++ engine validates link weights (cheaper than a per-edge Python
+        # pass) but raises RuntimeError. Translate that one case to ValueError
+        # so the backend matches native infomap_communities' contract.
+        if "weight" in str(exc).lower():
+            raise ValueError(str(exc)) from exc
+        raise
     return im, mapping
 
 
