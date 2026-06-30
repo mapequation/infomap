@@ -83,9 +83,9 @@ The three network representations encode this two-step walk differently
 
 | Representation | Links grow as | Modules include | Supports overlap |
 |---|---|---|---|
-| Unipartite (clique expansion) | $O(|e|^2)$ per hyperedge | Original nodes only | No |
-| Bipartite (explicit hyperedge nodes) | $O(|e|)$ per hyperedge | Nodes + hyperedge-nodes | No |
-| Multilayer (one layer per hyperedge) | $O(|e|^2)$ per layer | State nodes (node × layer) | Yes |
+| Unipartite (clique expansion) | $O(\lvert e\rvert^2)$ per hyperedge | Original nodes only | No |
+| Bipartite (explicit hyperedge nodes) | $O(\lvert e\rvert)$ per hyperedge | Nodes + hyperedge-nodes | No |
+| Multilayer (one layer per hyperedge) | $O(\lvert e\rvert^2)$ per layer | State nodes (node × layer) | Yes |
 
 For the **bipartite** representation, the transition probabilities factor
 naturally:
