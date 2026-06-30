@@ -31,6 +31,9 @@ incremental, repeated-run workflows.
    * - :doc:`iterators`
      - :class:`InfoNode` and the tree-walking iterators returned by
        :meth:`Infomap.tree`, :meth:`Infomap.leaf_modules`, and friends.
+   * - :doc:`integrations`
+     - Scanpy (:func:`infomap.tl.infomap`), GraphRAG, and the distributed-trial
+       merge tool.
 
 .. toctree::
    :hidden:
@@ -43,3 +46,4 @@ incremental, repeated-run workflows.
    export
    infomap
    iterators
+   integrations

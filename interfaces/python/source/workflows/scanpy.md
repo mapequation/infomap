@@ -178,15 +178,13 @@ matrix is a standard SciPy CSR matrix and can be passed straight to
 ```{code-cell} python
 A = adata.obsp["connectivities"]
 
-im = infomap.Infomap(silent=True, seed=123, num_trials=5)
-im.add_scipy_sparse_matrix(A)
-im.run()
+result = infomap.run(A, silent=True, seed=123, num_trials=5)
 
-print(f"Modules:    {im.num_top_modules}")
-print(f"Codelength: {im.codelength:.4f} bits/step")
+print(f"Modules:    {result.num_top_modules}")
+print(f"Codelength: {result.codelength:.4f} bits/step")
 
 # Write labels back into adata.obs
-modules = im.get_modules()  # {node_index: module_id}
+modules = result.modules()  # {node_index: module_id}
 adata.obs["infomap_lowlevel"] = pd.Categorical(
     [str(modules[i]) for i in range(adata.n_obs)]
 )
@@ -220,15 +218,15 @@ sc.pl.umap(
   `adata.obsp["connectivities"]` by default and accepts `neighbors_key`, `obsp`,
   and `adjacency` to point at a different graph. It writes a categorical column
   to `adata.obs[key_added]` and metadata to `adata.uns[key_added]`.
-- {meth}`infomap.Infomap.add_scipy_sparse_matrix` is the low-level entry point
-  for any SciPy sparse matrix; use it when you need hierarchical output or flow
-  values.
-- {meth}`infomap.Infomap.get_modules` returns `{node_index: module_id}` and
-  accepts `depth_level` for sub-module assignments.
-- {attr}`infomap.Infomap.codelength` is the map equation value for the best
+- {func}`infomap.run` partitions any SciPy sparse matrix directly (use
+  {meth}`infomap.Network.from_scipy_sparse_matrix` for non-default loading); reach
+  for it when you need hierarchical output or flow values.
+- {meth}`infomap.Result.modules` returns `{node_index: module_id}` and accepts
+  `depth` for sub-module assignments.
+- {attr}`infomap.Result.codelength` is the map equation value for the best
   partition; it is also at `adata.uns[key_added]["codelength"]` after
   `tl.infomap`.
-- {attr}`infomap.Infomap.num_top_modules` is the number of top-level modules.
+- {attr}`infomap.Result.num_top_modules` is the number of top-level modules.
 
 Key `infomap.tl.infomap` keyword arguments:
 

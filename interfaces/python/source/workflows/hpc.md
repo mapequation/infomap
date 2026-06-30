@@ -135,35 +135,38 @@ shard_specs = [
     {"shard_id": 2, "seed": 30, "num_trials": 4},
 ]
 
+from infomap import Network, run
+
 best_codelength = float("inf")
-best_im = None
+best_result = None
 best_shard_id = None
 
 for spec in shard_specs:
-    im = infomap.Infomap(
+    net = Network()
+    for u, v in edges:
+        net.add_link(u, v)
+    result = run(
+        net,
         num_trials=spec["num_trials"],
         seed=spec["seed"],
         silent=True,
     )
-    for u, v in edges:
-        im.add_link(u, v)
-    im.run()
 
     print(
         f"shard {spec['shard_id']}: seed={spec['seed']}"
-        f"  codelength={im.codelength:.6f}"
-        f"  modules={im.get_modules()}"
+        f"  codelength={result.codelength:.6f}"
+        f"  modules={result.modules()}"
     )
 
-    if im.codelength < best_codelength:
-        best_codelength = im.codelength
-        best_im = im
+    if result.codelength < best_codelength:
+        best_codelength = result.codelength
+        best_result = result
         best_shard_id = spec["shard_id"]
 
 print()
 print(f"Best shard: {best_shard_id}")
 print(f"Best codelength: {best_codelength:.6f}")
-print(f"Partition: {best_im.get_modules()}")
+print(f"Partition: {best_result.modules()}")
 ```
 
 The two dense groups (`{0,1,2,3}` and `{4,5,6,7}`) form separate modules
@@ -306,13 +309,13 @@ sacct -j <job-id> --format=JobID,State,ExitCode,Elapsed,MaxRSS
 
 ## API pointers
 
-- {py:class}`infomap.Infomap` is the main entry point; it accepts `num_trials`,
-  `seed`, `num_threads`, `parallel_trials`, `trial_offset`, and `trial_results`
-  as keyword arguments.
-- `im.codelength` is the codelength of the best solution found.
-- `im.get_modules()` returns a `{node_id: module_id}` mapping for the top-level
+- {func}`infomap.run` is the main entry point; it accepts `num_trials`, `seed`,
+  `num_threads`, `parallel_trials`, `trial_offset`, and `trial_results` as
+  engine options.
+- `result.codelength` is the codelength of the best solution found.
+- `result.modules()` returns a `{node_id: module_id}` mapping for the top-level
   partition.
-- {py:func}`infomap.merge.merge_trial_results` is the programmatic equivalent of
+- {func}`infomap.merge.merge_trial_results` is the programmatic equivalent of
   `python -m infomap.merge`.
 - {doc}`/working-with-infomap/running-and-options` is the full option reference,
   including `parallel_trials`, `inner_parallelization`, `converge`, and the
