@@ -1,10 +1,14 @@
 # Citing Infomap
 
 When you use Infomap in published work, cite **both** the 2008 PNAS paper (which
-credits the map equation method) and the MapEquation software package (which
-identifies the implementation and version, ensuring reproducibility). Do not cite
-the survey article in place of these; cite the survey only when you mean the
-survey itself.
+introduced the map equation) and the MapEquation software package (which
+identifies the implementation and version, for reproducibility). These are the
+canonical references for the method and the tool.
+
+The survey {cite:t}`smiljanic2026survey` is the best single reference for the
+wider map-equation framework, its flow models, and its extensions. Cite it too
+when your work builds on that broader treatment, and as the primary reference for
+results that originate in the survey itself.
 
 ## BibTeX
 

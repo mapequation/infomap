@@ -47,22 +47,26 @@ it tends to stay for several steps before leaving. Tight modules compress well;
 loose ones do not. The method responds to edge direction and edge weights,
 because they control where the random walk goes.
 
-**What Louvain and Leiden optimise.** Both methods maximise *modularity*, a
-score that measures whether the fraction of within-community edges exceeds the
-fraction you would expect from a random graph with the same degree sequence. The
-standard modularity null model is undirected, so by default both ignore edge
-direction. Louvain and Leiden optimise the same objective; Leiden adds a
-refinement step that guarantees internally connected communities and tends to
-find better optima {cite:p}`traag2019leiden`.
+**What Louvain and Leiden optimise.** Both are usually run to maximise
+*modularity*, a score that measures whether the fraction of within-community
+edges exceeds the fraction you would expect from a random graph with the same
+degree sequence. The standard modularity null model is undirected, so by default
+both ignore edge direction. Leiden is in fact a general optimiser: it maximises
+whichever quality function you hand it, and can instead optimise a
+resolution-limit-free objective such as the Constant Potts Model. It also adds a
+refinement step that guarantees internally connected communities and finds better
+optima than Louvain's greedy moves {cite:p}`traag2019leiden`. This chapter uses
+the modularity objective for both, the most common default.
 
 **When they diverge.** On a directed graph where flow is asymmetric (say a web
 subgraph where one cluster mostly *sends* links to another), Infomap picks up the
 source cluster as a separate module, because the random walker rarely walks
 *back* into it. Modularity ignores flow direction unless you pass a directed null
 model, so it can miss this asymmetry. The *modularity resolution limit* is
-another source of divergence: Louvain and Leiden tend to merge small but
-well-defined communities in very large graphs, while Infomap's flow-based
-criterion scales more gracefully.
+another source of divergence: modularity merges small but well-defined
+communities in large graphs regardless of how cohesive they are. The map equation
+has a resolution limit too, but a much weaker one, so it resolves structure that
+modularity blends (shown below).
 
 ## Theory
 
@@ -89,22 +93,25 @@ L(\mathsf{M}) =
 $$
 
 where the two terms are the average coding cost for *crossing* module boundaries
-and *staying inside* modules respectively. {cite:t}`rosvall2008maps` showed
-that on networks where edges encode real flow, the map equation produces
-more interpretable communities than modularity because it is grounded in the
-dynamics rather than a static null model.
+and *staying inside* modules respectively. {cite:t}`rosvall2008maps` showed that
+on networks where edges encode real flow, the map equation recovers communities
+that reflect the flow dynamics, which a static-density score like modularity does
+not capture.
 
 :::{toggle}
 **Resolution limit and scale**
 
 Modularity has a resolution limit: communities smaller than roughly
 $\sqrt{2m}$ edges tend to be merged regardless of how internally cohesive they
-are {cite:p}`fortunato2007resolution`. Leiden partially mitigates this with the
-`resolution_parameter` argument. Infomap does not have an analogous hard
-limit, though very small and loosely connected modules may be merged into
-larger ones when the map equation finds a shorter description without them.
-To detect communities at a specific scale with Infomap, see
-`preferred_number_of_modules` in the options guide.
+are {cite:p}`fortunato2007resolution`. Leiden inherits this when it maximises
+modularity, but escapes it with a resolution-limit-free objective such as the
+Constant Potts Model, or by tuning its `resolution_parameter`. The map equation
+has its own resolution limit, but a much weaker one: it depends on a module's cut
+size rather than the total link count, so it resolves far smaller modules
+({doc}`/concepts/hierarchy-and-the-multilevel-map` derives the bound). It does not
+vanish, so very small, loosely connected modules can still be absorbed when a
+shorter description exists without them; tune the scale with `markov_time` or
+`preferred_number_of_modules`.
 :::
 
 ## A worked example
@@ -179,17 +186,16 @@ for name, vec in [("Infomap", infomap_vec), ("Louvain", louvain_vec), ("Leiden",
 pd.DataFrame(rows).set_index("Method")
 ```
 
-On this graph Infomap and Leiden both return the four planted communities
-exactly (AMI = NMI = 1.0), while Louvain merges two of the four into one
-larger community. This is a classic instance of the modularity resolution
-limit: the two merged communities are each small enough that the modularity
-gain from separating them does not exceed the penalty from refining the
-partition further.
+On this clean benchmark all three methods recover the four planted communities
+exactly (AMI = NMI = 1.0). That is the common case: when the structure is
+well-separated and undirected, the flow-based and modularity-based objectives
+coincide. Agreement across objectives like this is a useful signal that the
+partition is robust rather than an artefact of one method's bias.
 
-The takeaway is not that Louvain is wrong; it optimises a different objective. If
-you care about the planted structure here, the flow-based criterion and Leiden's
-refinement step both recover it. On larger networks with communities of mixed
-sizes the story can differ.
+The methods part ways in two regimes: when edge direction carries real flow
+asymmetry, and when the graph is large enough for the modularity resolution limit
+to bite. The section below demonstrates the resolution limit and explains the
+directed case.
 
 ### Visualise the Infomap partition
 
@@ -215,29 +221,43 @@ between them.
 
 ## When results diverge most
 
-On a directed graph where links carry real flow, Infomap's advantage is
-clearest. Consider two directed cycles connected by a one-way bridge:
+Agreement on a clean benchmark is the common case. The objectives part ways in
+two documented regimes.
+
+**The resolution limit.** Modularity cannot resolve communities below a size set
+by the whole graph. On a ring of many small cliques it merges adjacent cliques,
+however clearly separated they are {cite:p}`fortunato2007resolution`:
 
 ```{code-cell} python
-# Two directed cycles connected by a one-way bridge: cycle A → cycle B.
-# From Infomap's perspective the random walker circulates in A, occasionally
-# crosses to B, and then stays in B: two clear flow communities.
-g_dir = nx.DiGraph()
-g_dir.add_edges_from([(0, 1), (1, 2), (2, 3), (3, 4), (4, 0)])   # cycle A
-g_dir.add_edges_from([(5, 6), (6, 7), (7, 8), (8, 9), (9, 5)])   # cycle B
-g_dir.add_edge(2, 5)                                               # bridge A→B
+ring = nx.ring_of_cliques(15, 4)   # 15 cliques of 4 nodes, joined in a ring
 
-result_dir = infomap.run(g_dir, two_level=True, seed=123, num_trials=10,
-                         silent=True, directed=True)
-modules_dir = result_dir.modules()
-print("Infomap (directed):", modules_dir)
-print(f"  → {result_dir.num_top_modules} modules")
+infomap_n = infomap.run(
+    ring, two_level=True, seed=123, num_trials=20, silent=True
+).num_top_modules
+
+louvain_n = len(nx.community.louvain_communities(ring, seed=123))
+
+ring_ig = ig.Graph(edges=list(ring.edges()), n=ring.number_of_nodes(), directed=False)
+leiden_n = len(ring_ig.community_leiden(objective_function="modularity", n_iterations=20))
+
+print(f"Planted cliques     : 15")
+print(f"Infomap             : {infomap_n} modules")
+print(f"Louvain (modularity): {louvain_n} modules")
+print(f"Leiden  (modularity): {leiden_n} modules")
 ```
 
-Infomap assigns the two cycles to separate modules even though the graph is
-weakly connected. A modularity-based method on the same graph would use the
-undirected degree sequence as its null model and might merge them, because the
-bridge edge makes them locally "balanced" from a static-degree perspective.
+Infomap recovers all 15 cliques; Louvain and Leiden, both maximising modularity,
+merge them into 9. Because *both* modularity optimisers merge, the cause is the
+modularity objective itself, not the search quality, a better optimiser does not
+help. Leiden escapes it by switching to a resolution-limit-free objective such as
+the Constant Potts Model, or by raising its `resolution_parameter`; the map
+equation's own limit is far weaker, so it keeps the cliques apart.
+
+**Directed flow.** Infomap follows edge direction; the standard modularity null
+model does not. On small, balanced graphs the two still agree, but on genuinely
+flow-asymmetric networks, a web subgraph that mostly *sends* links one way or a
+citation cascade, the directed random walk concentrates where undirected edge
+density does not, and the partitions diverge {cite:p}`rosvall2008maps`.
 
 ## API pointers
 

@@ -26,8 +26,8 @@ The communities detected over this graph become the unit of retrieval: an LLM
 summarises each community, and those summaries are indexed for
 question-answering.
 
-The default community detector in most GraphRAG implementations is Leiden, which
-maximises modularity. Infomap takes a different approach: it finds the partition
+The default community detector in most GraphRAG implementations is Leiden, run
+with a modularity objective. Infomap takes a different approach: it finds the partition
 that minimises the code length of a random walk over the weighted graph (see
 {doc}`/concepts/the-map-equation`). On knowledge graphs where edge weights represent
 co-occurrence frequency, flow is a natural proxy for semantic proximity, and

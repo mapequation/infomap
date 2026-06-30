@@ -22,7 +22,7 @@ cluster labels, and compare with Leiden in a few lines.
 Single-cell RNA-seq pipelines, Scanpy chief among them, cluster cells by
 building a $k$-nearest-neighbor graph in PCA-reduced space and then running a
 graph-partitioning algorithm. Leiden is the standard default; it
-optimises a modularity-like objective by resolution parameter. Infomap optimises
+optimises a modularity-style objective with a tunable resolution parameter. Infomap optimises
 the map equation instead: it asks where a random walker on the connectivity graph
 spends its time, and names those flow-trapping regions as modules.
 

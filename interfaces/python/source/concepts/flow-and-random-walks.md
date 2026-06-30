@@ -25,9 +25,9 @@ system takes a currency that respects direction, weight, and how paths chain
 together, not only which edges are present.
 
 Clustering methods that maximise modularity count edge weights inside and
-outside groups, but they treat each edge on its own. They cannot express the
-idea that a random walker entering a dense cluster tends to stay there for many
-steps before it escapes. That persistence is what defines a community in Rosvall
+outside groups, but they treat each edge on its own. They do not model the way a
+random walker entering a dense cluster tends to stay there for many steps before
+it escapes. That persistence is what defines a community in Rosvall
 & Bergstrom's formulation: a module is a part of the network where flow
 **lingers** {cite:p}`rosvall2008maps`.
 
