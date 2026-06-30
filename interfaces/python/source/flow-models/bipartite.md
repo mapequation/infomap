@@ -128,6 +128,7 @@ preference clusters, each containing two users and two items.
 
 ```{code-cell} python
 import infomap
+from infomap import Network, run
 
 # Node-id convention:
 #   Users  → ids 0, 1, 2, 3         (type A: "left")
@@ -136,41 +137,41 @@ import infomap
 # All type-B ids must be >= BIPARTITE_START.
 BIPARTITE_START = 4
 
-im = infomap.Infomap(silent=True, num_trials=10, seed=123, two_level=True)
+net = Network()
 
 # Declare the bipartite boundary: everything from id 4 onwards is type B.
-im.bipartite_start_id = BIPARTITE_START
+net.bipartite_start_id = BIPARTITE_START
 
 # Cluster 1: users {0,1} prefer items {4,5}
-im.add_link(0, 4, 3.0)
-im.add_link(0, 5, 2.0)
-im.add_link(1, 4, 2.0)
-im.add_link(1, 5, 3.0)
+net.add_link(0, 4, 3.0)
+net.add_link(0, 5, 2.0)
+net.add_link(1, 4, 2.0)
+net.add_link(1, 5, 3.0)
 
 # Cluster 2: users {2,3} prefer items {6,7}
-im.add_link(2, 6, 3.0)
-im.add_link(2, 7, 2.0)
-im.add_link(3, 6, 2.0)
-im.add_link(3, 7, 3.0)
+net.add_link(2, 6, 3.0)
+net.add_link(2, 7, 2.0)
+net.add_link(3, 6, 2.0)
+net.add_link(3, 7, 3.0)
 
 # Weak cross-cluster signal
-im.add_link(0, 6, 0.2)
-im.add_link(2, 4, 0.2)
+net.add_link(0, 6, 0.2)
+net.add_link(2, 4, 0.2)
 
-print(f"Bipartite start id: {im.bipartite_start_id}")
+print(f"Bipartite start id: {net.bipartite_start_id}")
 print(f"Nodes with id >= {BIPARTITE_START} are treated as type-B (items).")
 ```
 
 ### Run and inspect modules
 
 ```{code-cell} python
-im.run()
+result = run(net, two_level=True, num_trials=10, seed=123, silent=True)
 
-modules = im.get_modules()   # {node_id: module_id}
+modules = result.modules()   # {node_id: module_id}
 
-print(f"Bipartite start id:      {im.bipartite_start_id}")
-print(f"Top-level modules found: {im.num_top_modules}")
-print(f"Codelength (bits/step):  {im.codelength:.4f}\n")
+print(f"Bipartite start id:      {net.bipartite_start_id}")
+print(f"Top-level modules found: {result.num_top_modules}")
+print(f"Codelength (bits/step):  {result.codelength:.4f}\n")
 
 for node_id, module_id in sorted(modules.items()):
     kind = "user" if node_id < BIPARTITE_START else "item"
@@ -204,7 +205,7 @@ for u, v, w in [
 ]:
     G.add_edge(u, v, weight=w)
 
-flow = {n.node_id: n.data.flow for n in im.nodes}
+flow = {n.node_id: n.flow for n in result.nodes()}
 fig = draw_partition(G, modules, flow=flow)
 glue("fig-bipartite", fig, display=False)
 plt.close(fig)
@@ -228,10 +229,10 @@ coherent user–item subgraph, not a user-only or item-only group.
   is a right node, ids below are left nodes. Set it before
   {meth}`~infomap.Infomap.run`. {attr}`infomap.Network.bipartite_start_id` is the
   same property on a :class:`~infomap.Network`.
-- {meth}`infomap.Infomap.add_link` adds a weighted edge between any two node ids;
+- {meth}`infomap.Network.add_link` adds a weighted edge between any two node ids;
   for bipartite networks the source and target should be opposite types.
-- {meth}`infomap.Infomap.get_modules` returns a `{node_id: module_id}` dict
-  covering both types.
+- {meth}`infomap.Result.modules` returns a `{node_id: module_id}` dict covering
+  both types.
 - The constructor flag `hide_bipartite_nodes=True` omits right-type nodes from
   the output, which helps when only the left-type assignments matter (projecting
   a user partition, say).

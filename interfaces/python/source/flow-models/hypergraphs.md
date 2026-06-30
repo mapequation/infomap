@@ -148,6 +148,7 @@ into the regular-node codelength.
 ```{code-cell} python
 import infomap
 import networkx as nx
+from infomap import Network, run
 
 # --- Define the hypergraph ---
 # Keys are hyperedge-node IDs; values are the member node IDs.
@@ -170,19 +171,19 @@ for he_id, members in hyperedges.items():
         G.add_edge(n, he_id)
 
 # --- Run Infomap on the bipartite encoding ---
-im = infomap.Infomap(two_level=True, num_trials=10, seed=123, silent=True)
+net = Network()
 for he_id, members in hyperedges.items():
     for n in members:
-        im.add_link(n, he_id)
+        net.add_link(n, he_id)
+net.bipartite_start_id = bipartite_start
 
-im.bipartite_start_id = bipartite_start
-im.run()
+result = run(net, two_level=True, num_trials=10, seed=123, silent=True)
 
-modules = im.get_modules()          # includes both regular and hyperedge-nodes
+modules = result.modules()          # includes both regular and hyperedge-nodes
 node_modules = {n: modules[n] for n in range(n_nodes)}
 
-print(f"Top-level modules found: {im.num_top_modules}")
-print(f"Codelength:              {im.codelength:.4f} bits/step")
+print(f"Top-level modules found: {result.num_top_modules}")
+print(f"Codelength:              {result.codelength:.4f} bits/step")
 print(f"Node → module:           {node_modules}")
 ```
 
@@ -199,7 +200,7 @@ from myst_nb import glue
 
 from docs_viz import draw_partition
 
-flow = {n.node_id: n.data.flow for n in im.nodes}
+flow = {n.node_id: n.flow for n in result.nodes()}
 fig = draw_partition(G, modules, flow=flow)
 glue("fig-hypergraphs", fig, display=False)
 plt.close(fig)
@@ -258,10 +259,8 @@ external tool):
 #
 # 3. Run Infomap on the generated network:
 import infomap
-im = infomap.Infomap("--two-level --num-trials 10")
-im.read_file("network.net")
-im.run()
-print(im.get_modules())
+result = infomap.run("network.net", two_level=True, num_trials=10)
+print(result.modules())
 #
 # For the multilayer hyperedge-similarity representation, replace
 # --representation bipartite with --representation multilayer --similarity
@@ -289,17 +288,16 @@ for the bipartite case.
 
 ## API pointers
 
-- {attr}`infomap.Infomap.bipartite_start_id` gets or sets the node id at which
-  the second node type (hyperedge-nodes) begins. Set it before `run()`. The
-  setter `setBipartiteStartId(start_id)` does the same.
-- {meth}`infomap.Infomap.add_link` adds a weighted or unweighted directed edge;
+- {attr}`infomap.Network.bipartite_start_id` gets or sets the node id at which
+  the second node type (hyperedge-nodes) begins. Set it before the run.
+- {meth}`infomap.Network.add_link` adds a weighted or unweighted directed edge;
   use it for every `(node, hyperedge_node)` membership pair.
-- {meth}`infomap.Infomap.get_modules` returns a `{node_id: module_id}` dict
-  covering all nodes, including hyperedge-nodes.
-- {attr}`infomap.Infomap.codelength` is the map equation value after the run; the
+- {meth}`infomap.Result.modules` returns a `{node_id: module_id}` dict covering
+  all nodes, including hyperedge-nodes.
+- {attr}`infomap.Result.codelength` is the map equation value after the run; the
   flow of hyperedge-nodes is folded back into regular-node flow before
   evaluation.
-- {attr}`infomap.Infomap.num_top_modules` is the number of top-level modules in
+- {attr}`infomap.Result.num_top_modules` is the number of top-level modules in
   the optimal partition.
 
 ## Going deeper
