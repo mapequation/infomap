@@ -148,12 +148,11 @@ print(f"({removal_fraction:.0%} of links removed)")
 
 ```{code-cell} python
 # Standard Infomap: no regularization
-im_std = infomap.Infomap(two_level=True, seed=99, num_trials=10, silent=True)
-im_std.add_networkx_graph(g_sparse)
-im_std.run()
+result_std = infomap.run(g_sparse, two_level=True, seed=99, num_trials=10, silent=True)
 
 # Regularized Infomap: Bayesian map equation with regularization_strength=0.5
-im_reg = infomap.Infomap(
+result_reg = infomap.run(
+    g_sparse,
     two_level=True,
     seed=99,
     num_trials=10,
@@ -161,15 +160,13 @@ im_reg = infomap.Infomap(
     regularized=True,
     regularization_strength=0.5,
 )
-im_reg.add_networkx_graph(g_sparse)
-im_reg.run()
 
-modules_std = im_std.get_modules()
-modules_reg = im_reg.get_modules()
+modules_std = result_std.modules()
+modules_reg = result_reg.modules()
 
 print(f"Ground truth  : {n_communities} communities")
-print(f"Standard      : {im_std.num_top_modules} modules  (codelength {im_std.codelength:.4f} bits/step)")
-print(f"Regularized   : {im_reg.num_top_modules} modules  (codelength {im_reg.codelength:.4f} bits/step)")
+print(f"Standard      : {result_std.num_top_modules} modules  (codelength {result_std.codelength:.4f} bits/step)")
+print(f"Regularized   : {result_reg.num_top_modules} modules  (codelength {result_reg.codelength:.4f} bits/step)")
 ```
 
 Standard Infomap finds seven modules in the 60 %-sparse graph, two more than the
@@ -195,7 +192,7 @@ from myst_nb import glue
 
 from docs_viz import draw_partition
 
-flow = {n.node_id: n.data.flow for n in im_reg.nodes}
+flow = {n.node_id: n.flow for n in result_reg.nodes()}
 fig = draw_partition(g_sparse, modules_reg, flow=flow)
 glue("fig-incomplete-data", fig, display=False)
 plt.close(fig)
@@ -214,8 +211,8 @@ attract spurious module boundaries.
 
 ## API pointers
 
-Pass `regularized=True` to {class}`infomap.Infomap` to activate the Bayesian
-map equation. One optional keyword controls the prior strength:
+Pass `regularized=True` to {func}`infomap.run` to activate the Bayesian map
+equation. One optional keyword controls the prior strength:
 
 - `regularized=True` enables the Bayesian regularized map equation, which adds a
   fully connected prior network to reduce overfitting to missing links. It works
@@ -231,15 +228,15 @@ map equation. One optional keyword controls the prior strength:
   reason to trust community boundaries in sparse data ($C < 1$) or to suppress
   them harder ($C > 1$).
 
-All other {class}`infomap.Infomap` keywords (`num_trials`, `seed`, `two_level`,
-`directed`, `flow_model`, and so on) compose freely with `regularized=True`.
+All other engine options (`num_trials`, `seed`, `two_level`, `directed`, and so
+on) compose freely with `regularized=True`.
 
-- {attr}`infomap.Infomap.codelength` is the map equation value for the winning
+- {attr}`infomap.Result.codelength` is the map equation value for the winning
   partition; with regularization it reflects the Bayesian-corrected description
   length.
-- {attr}`infomap.Infomap.num_top_modules` is the number of top-level modules
+- {attr}`infomap.Result.num_top_modules` is the number of top-level modules
   found.
-- {meth}`infomap.Infomap.get_modules` returns a `{node_id: module_id}` dict.
+- {meth}`infomap.Result.modules` returns a `{node_id: module_id}` dict.
 
 ## Going deeper
 
