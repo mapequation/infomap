@@ -109,7 +109,7 @@ described here.
 We construct a synthetic network with five planted communities of twelve
 nodes each using a stochastic block model: edges appear within communities
 with probability 0.7 and between communities with probability 0.02. We then
-remove 60 % of the edges uniformly at random to simulate incomplete
+remove 70 % of the edges uniformly at random to simulate incomplete
 observations.
 
 ### Build the network
@@ -119,22 +119,28 @@ import networkx as nx
 import infomap
 import random
 
-# Reproducible construction
+# Reproducible construction. We sample the planted-partition graph with Python's
+# `random` rather than a library sampler, so the exact graph, and the module
+# counts below, do not depend on the NumPy or NetworkX version.
 random.seed(99)
 
 n_communities = 5
 n_per_community = 12
+n = n_communities * n_per_community
+community = {i: i // n_per_community for i in range(n)}
 
-# Ground truth: 5 modules of 12 nodes each
-g_full = nx.stochastic_block_model(
-    sizes=[n_per_community] * n_communities,
-    p=[[0.7 if i == j else 0.02 for j in range(n_communities)]
-       for i in range(n_communities)],
-    seed=99,
-)
+# Ground truth: 5 modules of 12 nodes. An edge forms within a community with
+# probability 0.7 and between communities with probability 0.02.
+g_full = nx.Graph()
+g_full.add_nodes_from(range(n))
+for i in range(n):
+    for j in range(i + 1, n):
+        p = 0.7 if community[i] == community[j] else 0.02
+        if random.random() < p:
+            g_full.add_edge(i, j)
 print(f"Full graph : {g_full.number_of_nodes()} nodes, {g_full.number_of_edges()} edges")
 
-# Remove 60 % of edges to simulate missing link observations
+# Remove 70 % of edges to simulate missing link observations.
 edges = list(g_full.edges())
 random.shuffle(edges)
 removal_fraction = 0.70
@@ -206,10 +212,10 @@ A sparse network partitioned with the regularized map equation
 modules instead of breaking them into noise-driven singletons.
 ```
 
-Each colour is one of the five recovered modules. Even with 60 % of links
-missing, the regularized map equation finds groups that match the planted
-partition, because the prior absorbs the statistical noise that would otherwise
-attract spurious module boundaries.
+Each colour is one regularized module. Even with most links removed, the
+regularized map equation recovers far fewer, larger modules than the
+unregularized run, close to the planted five, because the prior absorbs the
+statistical noise that would otherwise attract spurious module boundaries.
 
 ## API pointers
 
