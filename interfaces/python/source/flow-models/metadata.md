@@ -159,6 +159,7 @@ attribute-pure modules.
 ```{code-cell} python
 import infomap
 import networkx as nx
+from infomap import Network, run
 
 # Two triangles joined by a bridge edge
 G = nx.Graph()
@@ -173,21 +174,21 @@ G.add_edges_from([
 # Category 1: nodes 3, 4        (bridge-adjacent nodes)
 metadata = {1: 0, 2: 0, 3: 1, 4: 1, 5: 0, 6: 0}
 
-im = infomap.Infomap(silent=True, num_trials=10)
+net = Network()
 for u, v in G.edges():
-    im.add_link(u, v)
+    net.add_link(u, v)
 for node_id, category in metadata.items():
-    im.set_meta_data(node_id, category)
+    net.set_meta_data(node_id, category)
 ```
 
 ### Topology only (rate = 0)
 
 ```{code-cell} python
-im.run(meta_data_rate=0)
-mods_topo = im.get_modules()
+result_topo = run(net, meta_data_rate=0, silent=True, num_trials=10)
+mods_topo = result_topo.modules()
 
-print(f"Topology-only partition: {im.num_top_modules} modules")
-print(f"  Codelength: {im.codelength:.4f} bits/step\n")
+print(f"Topology-only partition: {result_topo.num_top_modules} modules")
+print(f"  Codelength: {result_topo.codelength:.4f} bits/step\n")
 
 header = f"  {'node':>5}  {'module':>6}  {'attribute':>10}"
 print(header)
@@ -204,11 +205,11 @@ right.
 ### Metadata-aware (rate = 2)
 
 ```{code-cell} python
-im.run(meta_data_rate=2.0)
-mods_meta = im.get_modules()
+result_meta = run(net, meta_data_rate=2.0, silent=True, num_trials=10)
+mods_meta = result_meta.modules()
 
-print(f"Metadata-aware partition: {im.num_top_modules} modules")
-print(f"  Codelength: {im.codelength:.4f} bits/step\n")
+print(f"Metadata-aware partition: {result_meta.num_top_modules} modules")
+print(f"  Codelength: {result_meta.codelength:.4f} bits/step\n")
 
 header = f"  {'node':>5}  {'module':>6}  {'attribute':>10}"
 print(header)
@@ -226,13 +227,13 @@ encoding cost is zero: each module is attribute-pure.
 
 ```{admonition} Codelength goes up: is that wrong?
 :class: note
-The codelength reported by `im.codelength` is the *topological* map equation
-value: it measures only how well the partition compresses the random walk on
-the topology. When you raise `meta_data_rate`, the optimizer minimizes the
-*combined* cost $L_\eta$, which can accept a higher topological codelength in
-exchange for lower attribute encoding cost. The printed `im.codelength` does
-not include the metadata term, so it is normal for it to increase as the rate
-rises.
+The codelength reported by `result.codelength` is the *topological* map equation
+value: it measures only how well the partition compresses the random walk on the
+topology. When you raise `meta_data_rate`, the optimiser minimises the *combined*
+cost $L_\eta$, which can accept a higher topological codelength in exchange for
+lower attribute encoding cost. The reported `result.codelength` does not include
+the metadata term, so it is normal for it to increase as the rate rises; read
+`result.meta_entropy` for the metadata side.
 ```
 
 ### Visualise the metadata-aware partition
@@ -243,7 +244,7 @@ from myst_nb import glue
 
 from docs_viz import draw_partition
 
-flow = {n.node_id: n.data.flow for n in im.nodes}
+flow = {n.node_id: n.flow for n in result_meta.nodes()}
 fig = draw_partition(G, mods_meta, flow=flow)
 glue("fig-metadata", fig, display=False)
 plt.close(fig)
@@ -262,22 +263,16 @@ centre.
 
 ## API pointers
 
-- {py:class}`infomap.Infomap` takes the constructor parameter `meta_data_rate`
-  (float, default `1.0`; it has no effect unless metadata is declared), which
-  sets $\eta$, the weight of the attribute codebook term. Pass `meta_data_rate=0`
-  to suppress all metadata influence.
-- {py:meth}`infomap.Infomap.set_meta_data` declares the attribute for a node:
-  `set_meta_data(node_id: int, meta_category: int)`. Each node takes one integer
-  category label; call it once per node before `run()`.
-- {py:meth}`infomap.Infomap.run` also accepts the `meta_data_rate` keyword
-  (float, default `1.0`), overriding the constructor value.
-- `im.meta_entropy` is the metadata entropy term of the best partition, in
-  bits/step.
-- `im.numMetaDataDimensions` is the number of distinct attribute dimensions
-  declared (`set_meta_data` supports one).
-- `im.haveMetaData()` returns `True` once any node has been annotated.
+- {meth}`infomap.Network.set_meta_data` declares the attribute for a node:
+  `set_meta_data(node_id, meta_category)`. Each node takes one integer category
+  label; call it once per node before the run.
+- `meta_data_rate` (an engine option on {func}`infomap.run`, default `1.0`; no
+  effect unless metadata is declared) sets $\eta$, the weight of the attribute
+  codebook term. Pass `meta_data_rate=0` to suppress all metadata influence.
+- {attr}`infomap.Result.meta_entropy` is the metadata entropy term of the best
+  partition, in bits per step.
 
-Two more constructor parameters:
+Two further engine options:
 - `meta_data` is a path to a metadata file listing `node_id category` pairs.
 - `meta_data_unweighted`, when `True`, ignores node visit frequencies when
   computing the metadata codebook and treats all nodes as equally visited.
