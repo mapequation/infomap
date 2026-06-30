@@ -100,6 +100,76 @@ def test_result_modules_raises_on_higher_order_without_states(network_fixture_pa
     assert result.modules(states=True) == im.get_modules(1, True)
 
 
+_STATES_NET_STATE_NAMES = {
+    1: "α~_i",
+    2: "β~_j",
+    3: "γ~_k",
+    4: "δ~_i",
+    5: "ε~_l",
+    6: "ζ~_m",
+}
+_STATES_NET_PHYSICAL_NAMES = {1: "i", 2: "j", 3: "k", 4: "l", 5: "m"}
+
+
+@pytest.mark.fast
+def test_state_names_accessor_exposes_state_node_names(network_fixture_path):
+    im = Infomap(silent=True, no_file_output=True)
+    im.read_file(str(network_fixture_path("states.net")))
+    result = im.run()
+
+    # New accessor: state_id -> state-node name (parsed from the *States section).
+    assert result.state_names == _STATES_NET_STATE_NAMES
+    # Physical names stay keyed by node_id, unchanged.
+    assert result.names == _STATES_NET_PHYSICAL_NAMES
+
+
+@pytest.mark.fast
+def test_to_dataframe_state_name_column_distinguishes_state_nodes(
+    network_fixture_path,
+):
+    pytest.importorskip("pandas")
+    im = Infomap(silent=True, no_file_output=True)
+    im.read_file(str(network_fixture_path("states.net")))
+    result = im.run()
+
+    df = result.to_dataframe(
+        states=True, columns=["state_id", "node_id", "name", "state_name"]
+    )
+
+    # The "state_name" column carries the per-state-node name.
+    assert dict(zip(df["state_id"], df["state_name"])) == _STATES_NET_STATE_NAMES
+    # The "name" column is unchanged: the physical name keyed by node_id.
+    assert all(
+        name == _STATES_NET_PHYSICAL_NAMES[node_id]
+        for node_id, name in zip(df["node_id"], df["name"])
+    )
+    # State nodes 1 and 4 are both physical node 1: the physical name collapses
+    # them to "i", while state_name keeps them distinct.
+    node1 = df[df["node_id"] == 1]
+    assert sorted(node1["state_name"]) == ["α~_i", "δ~_i"]
+    assert list(node1["name"]) == ["i", "i"]
+
+    # nodes() exposes the same state_name on each TreeNode.
+    assert {n.state_id: n.state_name for n in result.nodes(states=True)} == (
+        _STATES_NET_STATE_NAMES
+    )
+
+
+@pytest.mark.fast
+def test_state_name_falls_back_to_physical_name_for_first_order(example_network_path):
+    pytest.importorskip("pandas")
+    im = Infomap(silent=True, no_file_output=True)
+    im.read_file(str(example_network_path("twotriangles.net")))
+    result = im.run()
+
+    # A first-order network has no per-state names.
+    assert result.state_names == {}
+
+    df = result.to_dataframe(columns=["node_id", "name", "state_name"])
+    # state_name falls back to the physical name.
+    assert list(df["state_name"]) == list(df["name"])
+
+
 @pytest.mark.fast
 def test_stale_result_raises_on_node_access_but_keeps_scalars():
     im = _two_triangles()

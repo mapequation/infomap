@@ -90,6 +90,7 @@ class TreeNode:
         "modular_centrality",
         "path",
         "name",
+        "state_name",
     )
 
     def __init__(
@@ -105,6 +106,7 @@ class TreeNode:
         modular_centrality: float,
         path: tuple,
         name: Any,
+        state_name: Any,
     ) -> None:
         object.__setattr__(self, "node_id", node_id)
         object.__setattr__(self, "state_id", state_id)
@@ -116,6 +118,7 @@ class TreeNode:
         object.__setattr__(self, "modular_centrality", modular_centrality)
         object.__setattr__(self, "path", path)
         object.__setattr__(self, "name", name)
+        object.__setattr__(self, "state_name", state_name)
 
     def __setattr__(self, name: str, value: Any) -> None:
         raise AttributeError("TreeNode is immutable")
@@ -220,6 +223,7 @@ class Result:
         "_engine",
         "_generation",
         "_names",
+        "_state_names",
         "_have_memory",
         "_directed",
         "_codelength",
@@ -250,6 +254,10 @@ class Result:
         object.__setattr__(self, "_generation", generation)
         # Names are needed for the "name" column; capture eagerly (cheap dict).
         object.__setattr__(self, "_names", dict(core.getNames()))
+        # State-node names ({state_id: name}) for the optional "state_name"
+        # column; empty for first-order networks. Captured eagerly alongside the
+        # physical names so a Result stays a self-contained snapshot.
+        object.__setattr__(self, "_state_names", dict(core.getStateNames()))
         object.__setattr__(self, "_have_memory", core.haveMemory())
         # Captured eagerly so a Result is a stable artifact: exporters read the
         # directedness off the snapshot, not the live engine.
@@ -481,6 +489,16 @@ class Result:
         """All node names, as ``{node_id: name}``."""
         return dict(self._names)
 
+    @property
+    def state_names(self) -> dict:
+        """All state-node names, as ``{state_id: name}``.
+
+        Populated for higher-order (state/memory) networks whose ``*States``
+        section names the state nodes; empty otherwise. Physical node names are
+        available separately via :attr:`names`.
+        """
+        return dict(self._state_names)
+
     # -- collection accessors (§9: methods with defaults) -------------------
 
     def modules(self, depth: int = 1, *, states: bool = False) -> dict:
@@ -503,8 +521,10 @@ class Result:
         """Iterate leaf :class:`TreeNode` views, depth first from the root."""
         snapshot = self._snapshot(depth, states)
         names = self._names
+        state_names = self._state_names
         for i in range(len(snapshot)):
             node_id = snapshot.node_id[i]
+            name = names.get(node_id, node_id)
             yield TreeNode(
                 node_id=node_id,
                 state_id=snapshot.state_id[i],
@@ -515,7 +535,8 @@ class Result:
                 child_index=snapshot.child_index[i],
                 modular_centrality=snapshot.modular_centrality[i],
                 path=snapshot.path[i],
-                name=names.get(node_id, node_id),
+                name=name,
+                state_name=state_names.get(snapshot.state_id[i]) or name,
             )
 
     def tree(self, depth: int = 1, *, states: bool = False):
@@ -632,8 +653,11 @@ class Result:
 
         Byte-identical to the legacy ``Infomap.to_dataframe``. Default columns
         ``("node_id", "module_id", "flow", "path", "name")``; ``"community"``
-        is an alias for ``"module_id"``; ``"name"`` is resolved via the node
-        name map (falling back to the integer ``node_id``).
+        is an alias for ``"module_id"``; ``"name"`` is resolved via the physical
+        node name map (falling back to the integer ``node_id``). The opt-in
+        ``"state_name"`` column resolves the per-state-node name for a
+        higher-order network (falling back to the physical name, then
+        ``node_id``); see :attr:`state_names`.
         """
         if pandas is None:
             raise ImportError(
@@ -675,6 +699,12 @@ class Result:
     ) -> list:
         if resolved == "name":
             return [names.get(nid, nid) for nid in snapshot.node_id]
+        if resolved == "state_name":
+            state_names = self._state_names
+            return [
+                state_names.get(sid) or names.get(nid, nid)
+                for sid, nid in zip(snapshot.state_id, snapshot.node_id)
+            ]
         if resolved in _SNAPSHOT_COLUMNS:
             return list(getattr(snapshot, resolved))
         available = ", ".join(
@@ -687,6 +717,7 @@ class Result:
                     "layer_id",
                     "modular_centrality",
                     "state_id",
+                    "state_name",
                 }
             )
         )

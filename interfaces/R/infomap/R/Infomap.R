@@ -1169,6 +1169,41 @@ InfomapClass <- R6::R6Class(
       out[nzchar(out)]
     },
 
+    #' @description Look up a state node's name.
+    #' @param state_id Integer state node id.
+    #' @param default Value returned when the state node has no name.
+    #' @return Character (or `default`).
+    get_state_name = function(state_id, default = NULL) {
+      name <- private$.swig$getStateName(as.integer(state_id))
+      if (identical(name, "")) {
+        return(default)
+      }
+      name
+    },
+
+    #' @description Get all assigned state node names.
+    #' @details
+    #' Populated for higher-order (state/memory) networks whose `*States`
+    #' section names the state nodes; empty otherwise. Physical node names
+    #' are available separately via `get_names()`.
+    #' @return A named character vector mapping state id to name.
+    get_state_names = function() {
+      # SWIG R returns std::map as an opaque pointer, so walk state nodes
+      # and ask for each name individually.
+      ids <- self$get_nodes(depth_level = 1L, states = TRUE)$state_id
+      ids <- unique(ids)
+      out <- vapply(
+        ids,
+        function(id) {
+          name <- private$.swig$getStateName(as.integer(id))
+          if (is.null(name)) "" else name
+        },
+        character(1L)
+      )
+      names(out) <- as.character(ids)
+      out[nzchar(out)]
+    },
+
     # ----------------------------------------
     # Writers
     # ----------------------------------------

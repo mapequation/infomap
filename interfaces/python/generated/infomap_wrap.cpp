@@ -56833,6 +56833,73 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_InfomapWrapper_getStateNames(PyObject *self, PyObject *args) {
+  PyObject *resultobj = 0;
+  infomap::InfomapWrapper *arg1 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  std::map< unsigned int,std::string,std::less< unsigned int >,std::allocator< std::pair< unsigned int const,std::string > > > result;
+  
+  (void)self;
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__InfomapWrapper, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "InfomapWrapper_getStateNames" "', argument " "1"" of type '" "infomap::InfomapWrapper const *""'"); 
+  }
+  arg1 = reinterpret_cast< infomap::InfomapWrapper * >(argp1);
+  {
+    try {
+      result = ((infomap::InfomapWrapper const *)arg1)->getStateNames();
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = swig::from(static_cast< std::map< unsigned int,std::string,std::less< unsigned int >,std::allocator< std::pair< unsigned int const,std::string > > > >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_InfomapWrapper_getStateName(PyObject *self, PyObject *args) {
+  PyObject *resultobj = 0;
+  infomap::InfomapWrapper *arg1 = 0 ;
+  unsigned int arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  unsigned int val2 ;
+  int ecode2 = 0 ;
+  PyObject *swig_obj[2] ;
+  std::string result;
+  
+  (void)self;
+  if (!SWIG_Python_UnpackTuple(args, "InfomapWrapper_getStateName", 2, 2, swig_obj)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__InfomapWrapper, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "InfomapWrapper_getStateName" "', argument " "1"" of type '" "infomap::InfomapWrapper const *""'"); 
+  }
+  arg1 = reinterpret_cast< infomap::InfomapWrapper * >(argp1);
+  ecode2 = SWIG_AsVal_unsigned_SS_int(swig_obj[1], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "InfomapWrapper_getStateName" "', argument " "2"" of type '" "unsigned int""'");
+  } 
+  arg2 = static_cast< unsigned int >(val2);
+  {
+    try {
+      result = ((infomap::InfomapWrapper const *)arg1)->getStateName(arg2);
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_From_std_string(static_cast< std::string >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_InfomapWrapper_addPhysicalNode__SWIG_0(PyObject *self, Py_ssize_t nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
   infomap::InfomapWrapper *arg1 = 0 ;
@@ -60380,6 +60447,8 @@ static PyMethodDef SwigMethods[] = {
 	 { "InfomapWrapper_addName", _wrap_InfomapWrapper_addName, METH_VARARGS, NULL},
 	 { "InfomapWrapper_getName", _wrap_InfomapWrapper_getName, METH_VARARGS, NULL},
 	 { "InfomapWrapper_getNames", _wrap_InfomapWrapper_getNames, METH_O, NULL},
+	 { "InfomapWrapper_getStateNames", _wrap_InfomapWrapper_getStateNames, METH_O, NULL},
+	 { "InfomapWrapper_getStateName", _wrap_InfomapWrapper_getStateName, METH_VARARGS, NULL},
 	 { "InfomapWrapper_addPhysicalNode", _wrap_InfomapWrapper_addPhysicalNode, METH_VARARGS, NULL},
 	 { "InfomapWrapper_addStateNode", _wrap_InfomapWrapper_addStateNode, METH_VARARGS, NULL},
 	 { "InfomapWrapper_addLink", _wrap_InfomapWrapper_addLink, METH_VARARGS, NULL},
