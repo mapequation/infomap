@@ -3,6 +3,11 @@ Top-level functions
 
 .. currentmodule:: infomap
 
+Running Infomap
+---------------
+
+.. autofunction:: run
+
 Graph-package entry points
 --------------------------
 

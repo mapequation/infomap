@@ -226,10 +226,8 @@ coherent user–item subgraph, not a user-only or item-only group.
 - {attr}`infomap.Infomap.bipartite_start_id` declares the first node id of the
   second type: assign `im.bipartite_start_id = n` and every node with id `>= n`
   is a right node, ids below are left nodes. Set it before
-  {meth}`~infomap.Infomap.run`. The method
-  {meth}`infomap.Infomap.setBipartiteStartId` does the same.
-- {meth}`infomap.Infomap.isBipartite` returns `True` once a start id is set and
-  links are present.
+  {meth}`~infomap.Infomap.run`. {attr}`infomap.Network.bipartite_start_id` is the
+  same property on a :class:`~infomap.Network`.
 - {meth}`infomap.Infomap.add_link` adds a weighted edge between any two node ids;
   for bipartite networks the source and target should be opposite types.
 - {meth}`infomap.Infomap.get_modules` returns a `{node_id: module_id}` dict
