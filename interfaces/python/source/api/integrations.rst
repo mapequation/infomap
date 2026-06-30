@@ -27,3 +27,6 @@ Distributed trials
 .. currentmodule:: infomap.merge
 
 .. autofunction:: merge_trial_results
+
+.. autoclass:: MergeSummary
+   :members:

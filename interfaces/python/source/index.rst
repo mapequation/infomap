@@ -21,9 +21,10 @@ Quick start
     import infomap
 
     graph = nx.karate_club_graph()
-    communities = infomap.find_communities(graph, seed=123, num_trials=20)
+    result = infomap.run(graph, seed=123, num_trials=20)
 
-    print(communities)
+    print(result.num_top_modules, "modules")
+    print(result.modules())
 
 Continue to :doc:`installation` for optional integrations and shell completion,
 or jump to :doc:`quickstart` for the smallest Python API examples.
@@ -91,6 +92,7 @@ External resources
 
    faq
    api/index
+   the-infomap-class
    references
    citing
    article-companion/index
