@@ -181,11 +181,9 @@ each result to the code that produced it.
 
 ```{code-cell} python
 # Two runs with the same seed produce the same partition.
-for run in range(2):
-    im = infomap.Infomap(two_level=True, seed=123, num_trials=10, silent=True)
-    im.add_networkx_graph(G_ring)
-    im.run()
-    print(f"Run {run + 1}: modules={im.num_top_modules}, L={im.codelength:.4f}")
+for attempt in range(2):
+    result = infomap.run(G_ring, two_level=True, seed=123, num_trials=10, silent=True)
+    print(f"Run {attempt + 1}: modules={result.num_top_modules}, L={result.codelength:.4f}")
 ```
 
 ### `num_trials` and solution quality
@@ -199,20 +197,16 @@ landscape has many near-degenerate minima, and a single trial is unreliable.
 # On the noisy graph, different seeds land in different local minima.
 print("Single trial (num_trials=1), five different seeds:")
 for seed in [1, 7, 42, 99, 123]:
-    im = infomap.Infomap(two_level=True, seed=seed, num_trials=1, silent=True)
-    im.add_networkx_graph(G_noisy)
-    im.run()
-    print(f"  seed={seed}: L={im.codelength:.4f}, modules={im.num_top_modules}")
+    result = infomap.run(G_noisy, two_level=True, seed=seed, num_trials=1, silent=True)
+    print(f"  seed={seed}: L={result.codelength:.4f}, modules={result.num_top_modules}")
 ```
 
 ```{code-cell} python
 # More trials explore more of the landscape and find a lower, stable minimum.
 print("Fixed seed=123, varying num_trials:")
 for num_trials in [1, 5, 20]:
-    im = infomap.Infomap(two_level=True, seed=123, num_trials=num_trials, silent=True)
-    im.add_networkx_graph(G_noisy)
-    im.run()
-    print(f"  num_trials={num_trials:2d}: L={im.codelength:.4f}, modules={im.num_top_modules}")
+    result = infomap.run(G_noisy, two_level=True, seed=123, num_trials=num_trials, silent=True)
+    print(f"  num_trials={num_trials:2d}: L={result.codelength:.4f}, modules={result.num_top_modules}")
 ```
 
 Notice how `num_trials=1` with `seed=123` lands at a higher codelength (worse
@@ -271,18 +265,16 @@ def hierarchical_graph():
 G_hier = hierarchical_graph()
 
 for two_level in [False, True]:
-    im = infomap.Infomap(two_level=two_level, seed=123, num_trials=10, silent=True)
-    im.add_networkx_graph(G_hier)
-    im.run()
+    result = infomap.run(G_hier, two_level=two_level, seed=123, num_trials=10, silent=True)
 
-    m_top = im.get_modules(depth_level=1)    # top-level groups
-    m_leaf = im.get_modules(depth_level=-1)  # finest-level assignments
+    m_top = result.modules(depth=1)    # top-level groups
+    m_leaf = result.modules(depth=-1)  # finest-level assignments
 
     print(f"two_level={two_level}:")
-    print(f"  levels={im.num_levels}, top modules={im.num_top_modules}")
+    print(f"  levels={result.num_levels}, top modules={result.num_top_modules}")
     print(f"  distinct groups at depth 1:      {len(set(m_top.values()))}")
     print(f"  distinct groups at finest level: {len(set(m_leaf.values()))}")
-    print(f"  L={im.codelength:.4f}")
+    print(f"  L={result.codelength:.4f}")
 ```
 
 With `two_level=False`, the multilevel solution finds 2 top modules (the two
@@ -291,9 +283,9 @@ main branches) and resolves the 8 cliques at the finest level, reached with
 captures the real hierarchy. With `two_level=True`, the 8 cliques become the
 top-level modules and the nested structure is invisible.
 
-Use `get_modules(depth_level=k)` to access any level of the hierarchy. The
-default `get_modules()` returns level 1, the coarsest (top modules); pass
-`depth_level=-1` for the finest (leaf) level.
+Use `result.modules(depth=k)` to access any level of the hierarchy. The default
+`result.modules()` returns level 1, the coarsest (top modules); pass `depth=-1`
+for the finest (leaf) level.
 
 ### `directed` and the flow model
 
@@ -323,11 +315,9 @@ G_dir.add_edge(11, 0)
 print(f"Directed graph: {G_dir.number_of_nodes()} nodes, {G_dir.number_of_edges()} edges")
 
 for directed in [False, True]:
-    im = infomap.Infomap(directed=directed, two_level=True,
+    result = infomap.run(G_dir, directed=directed, two_level=True,
                          seed=123, num_trials=10, silent=True)
-    im.add_networkx_graph(G_dir)
-    im.run()
-    print(f"directed={directed}: modules={im.num_top_modules}, L={im.codelength:.4f}")
+    print(f"directed={directed}: modules={result.num_top_modules}, L={result.codelength:.4f}")
 ```
 
 Both settings recover three modules here because the graph is strongly
@@ -359,11 +349,9 @@ print(f"  graph: {G_ring.number_of_nodes()} nodes, {G_ring.number_of_edges()} ed
 print()
 
 for mt in [0.5, 1.0, 2.0, 4.0, 8.0]:
-    im = infomap.Infomap(two_level=True, markov_time=mt,
+    result = infomap.run(G_ring, two_level=True, markov_time=mt,
                          seed=123, num_trials=10, silent=True)
-    im.add_networkx_graph(G_ring)
-    im.run()
-    print(f"  markov_time={mt:.1f}: {im.num_top_modules} modules")
+    print(f"  markov_time={mt:.1f}: {result.num_top_modules} modules")
 ```
 
 At `markov_time=1.0` (the default) Infomap recovers all 8 cliques. As the
@@ -387,10 +375,8 @@ for label, kwargs in [
     ("regularized",                    {"regularized": True}),
     ("regularized, strength=2",        {"regularized": True, "regularization_strength": 2.0}),
 ]:
-    im = infomap.Infomap(two_level=True, seed=123, num_trials=10, silent=True, **kwargs)
-    im.add_networkx_graph(G_karate)
-    im.run()
-    print(f"{label}: modules={im.num_top_modules}, L={im.codelength:.4f}")
+    result = infomap.run(G_karate, two_level=True, seed=123, num_trials=10, silent=True, **kwargs)
+    print(f"{label}: modules={result.num_top_modules}, L={result.codelength:.4f}")
 ```
 
 Higher `regularization_strength` merges more modules. Use this when you have
@@ -409,16 +395,14 @@ from myst_nb import glue
 # Codelength from one trial per seed ...
 single_L = []
 for s in range(1, 13):
-    im_s = infomap.Infomap(two_level=True, seed=s, num_trials=1, silent=True)
-    im_s.add_networkx_graph(G_noisy)
-    im_s.run()
-    single_L.append(im_s.codelength)
+    single_L.append(
+        infomap.run(G_noisy, two_level=True, seed=s, num_trials=1, silent=True).codelength
+    )
 
 # ... versus the best of 20 trials.
-im_best = infomap.Infomap(two_level=True, seed=123, num_trials=20, silent=True)
-im_best.add_networkx_graph(G_noisy)
-im_best.run()
-best_L = im_best.codelength
+best_L = infomap.run(
+    G_noisy, two_level=True, seed=123, num_trials=20, silent=True
+).codelength
 
 fig, ax = plt.subplots(figsize=(6, 3.2))
 ax.scatter(range(1, len(single_L) + 1), single_L,
@@ -439,25 +423,40 @@ line): one trial can settle in a worse local minimum, while many trials reliably
 reach the best partition. That gap is what `num_trials` buys you.
 ```
 
+## Reusable configuration
+
+When you run several networks with the same settings, capture them once as an
+{class}`~infomap.Options` and pass the instance to each run. Keyword overrides on
+the call still take precedence:
+
+```{code-cell} python
+from infomap import Options
+
+options = Options(two_level=True, seed=123, num_trials=10, silent=True)
+for name, graph in [("ring of cliques", G_ring), ("karate club", G_karate)]:
+    result = infomap.run(graph, options=options)
+    print(f"{name}: {result.num_top_modules} modules, L={result.codelength:.4f}")
+```
+
 ## API pointers
 
-The options discussed in this chapter are all keyword arguments to
-{class}`infomap.Infomap`. After running, results are available as properties
-and methods:
+The options in this chapter are keyword arguments to {func}`infomap.run` (and to
+{class}`infomap.Infomap` and {meth}`infomap.Network.run`). After a run, the
+metrics live on the returned {class}`~infomap.Result`:
 
-- **{attr}`infomap.Infomap.codelength`** is the map equation value
+- **{attr}`infomap.Result.codelength`** is the map equation value
   $L(\mathsf{M}^*)$ for the best partition found across all trials.
-- **{attr}`infomap.Infomap.num_top_modules`** counts the modules at the top
+- **{attr}`infomap.Result.num_top_modules`** counts the modules at the top
   level of the hierarchy.
-- **{attr}`infomap.Infomap.num_levels`** is the depth of the module hierarchy.
-- **{meth}`infomap.Infomap.get_modules`** returns a `{node_id: module_id}` dict;
-  pass `depth_level=k` (1 = coarsest) to access intermediate levels.
-- **{attr}`infomap.Infomap.one_level_codelength`** evaluates $L$ on a flat
+- **{attr}`infomap.Result.num_levels`** is the depth of the module hierarchy.
+- **{meth}`infomap.Result.modules`** returns a `{node_id: module_id}` dict;
+  pass `depth=k` (1 = coarsest) to access intermediate levels.
+- **{attr}`infomap.Result.one_level_codelength`** evaluates $L$ on a flat
   single-module partition, a natural baseline.
-- **{attr}`infomap.Infomap.relative_codelength_savings`** is the fractional gain
+- **{attr}`infomap.Result.relative_codelength_savings`** is the fractional gain
   over that baseline, $(L_\text{one} - L^*) / L_\text{one}$.
 
-Kwargs verified from `help(infomap.Infomap.__init__)`:
+These are the keyword arguments to {func}`infomap.run`:
 
 | Option | Type | Default | What it controls |
 |---|---|---|---|
@@ -473,9 +472,8 @@ Kwargs verified from `help(infomap.Infomap.__init__)`:
 | `regularization_strength` | float | 1.0 | How strongly to regularize |
 | `silent` | bool | False | Suppress console output |
 
-For reusable configurations across multiple runs, see
-{class}`infomap.InfomapOptions` and the `Infomap.from_options` /
-`Infomap.run_with_options` methods in the {doc}`/api/index`.
+For the full set of options as a searchable table, see the
+{class}`~infomap.Options` reference in the {doc}`/api/index`.
 
 ## Going deeper
 
