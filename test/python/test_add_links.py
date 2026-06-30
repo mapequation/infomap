@@ -1,3 +1,5 @@
+import math
+
 import pytest
 
 
@@ -62,6 +64,20 @@ def test_add_links_rejects_invalid_link_lengths(make_infomap):
         im.add_links([(1, 2, 3, 4)])
 
 
+def test_add_link_rejects_ill_defined_weights(make_infomap):
+    # The C++ core rejects negative, NaN and infinite weights at ingestion
+    # (they are never valid for the map equation); the error surfaces through
+    # the binding rather than silently computing a meaningless result.
+    im = make_infomap()
+
+    for bad in (-1.0, math.nan, math.inf, -math.inf):
+        with pytest.raises(RuntimeError, match="finite and non-negative"):
+            im.add_link(0, 1, bad)
+
+    # Zero stays allowed (no flow, well-defined) and is filtered, not rejected.
+    im.add_link(0, 1, 0.0)
+
+
 def test_add_links_keeps_single_argument_api(make_infomap):
     im = make_infomap()
 
@@ -112,7 +128,6 @@ def test_add_links_accepts_numpy_array_with_duplicates_and_existing_links(make_i
             [2, 2, 5.0],
             [4, 4, 0.4],
             [7, 8, 0.0],
-            [9, 9, -1.0],
             [1, 2, 3.0],
         ]
     )
