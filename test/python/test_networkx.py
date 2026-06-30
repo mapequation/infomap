@@ -199,16 +199,27 @@ def test_find_communities_partitions_multilayer_network_nodes():
 # -- error / edge paths (parity with test_scipy.py / test_igraph.py) -----------
 
 
-@pytest.mark.parametrize("bad", [-1.0, float("nan"), float("inf")])
+@pytest.mark.parametrize("bad", [-1.0, float("nan"), float("inf"), "heavy"])
 def test_add_networkx_graph_rejects_invalid_weights(bad):
-    """Edge weights must be finite and non-negative; ill-defined weights are
-    rejected at ingestion, as for scipy and edge-index input."""
+    """A present weight must be a finite, non-negative number; ill-defined or
+    non-numeric weights are rejected at ingestion (the C++ engine does not
+    reject them itself), as for scipy and edge-index input."""
     graph = nx.Graph()
     graph.add_edge(0, 1, weight=bad)
     graph.add_edge(1, 2, weight=2.0)
     im = infomap.Infomap(silent=True, no_file_output=True)
     with pytest.raises(ValueError):
         im.add_networkx_graph(graph)
+
+
+def test_add_networkx_graph_treats_missing_or_none_weight_as_unweighted():
+    """A missing weight key or an explicit None value means the edge is
+    unweighted (1.0); it must not raise or be read as a bad weight."""
+    graph = nx.Graph()
+    graph.add_edge(0, 1, weight=None)  # explicit None -> unweighted
+    graph.add_edge(1, 2)  # missing key -> unweighted
+    communities = infomap.find_communities(graph, seed=123, num_trials=1)
+    assert _flatten(communities) == set(graph.nodes)
 
 
 def test_add_networkx_graph_empty_returns_empty_mapping():

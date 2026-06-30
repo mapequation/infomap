@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from math import isfinite
+from numbers import Real
 from typing import Any
 
 from ._arrays import apply_node_meta_data, community_node_data
@@ -28,18 +29,26 @@ def _stable_unique_labels(labels):
     return unique
 
 
-def _validate_weights(g, weight):
-    """Edge weights feed a flow distribution, so they must be finite and
-    non-negative (as enforced for the scipy and edge-index adapters)."""
+def _edge_weight(data, weight):
+    """Effective link weight for an edge's data dict, read and validated in one
+    place so the single ingestion pass also rejects ill-defined weights.
+
+    A missing key or a ``None`` value means the edge is unweighted (1.0). A
+    present value must be a finite, non-negative real: Infomap reads weights as
+    a flow distribution, and the C++ engine does not itself reject negative or
+    non-finite weights (it silently returns a meaningless codelength)."""
     if weight is None:
-        return
-    for _, _, data in g.edges.data():
-        w = data.get(weight, 1.0)
-        if not isfinite(w) or w < 0:
-            raise ValueError(
-                "edge weights must be finite and non-negative; Infomap does "
-                "not support negative or non-finite weights."
-            )
+        return 1.0
+    w = data.get(weight)
+    if w is None:
+        return 1.0
+    if not isinstance(w, Real) or not isfinite(w) or w < 0:
+        raise ValueError(
+            f"edge weight {w!r} (attribute {weight!r}) must be a finite, "
+            "non-negative number; Infomap does not support negative or "
+            "non-finite weights."
+        )
+    return float(w)
 
 
 def _communities_from_infomap(infomap, node_mapping):
@@ -229,9 +238,6 @@ def add_networkx_graph(
     except IndexError:
         return {}
 
-    # Reject ill-defined weights up front rather than building a meaningless map.
-    _validate_weights(g, weight)
-
     if not infomap._core.flowModelIsSet and g.is_directed():
         infomap._core.setDirected(True)
 
@@ -288,7 +294,7 @@ def add_networkx_graph(
             target_layer_id = layer_ids[target]
             source_node_id = phys_map[node_ids[source]]
             target_node_id = phys_map[node_ids[target]]
-            edge_weight = data[weight] if weight is not None and weight in data else 1.0
+            edge_weight = _edge_weight(data, weight)
 
             if multilayer_inter_intra_format:
                 if source_layer_id == target_layer_id:
@@ -321,7 +327,7 @@ def add_networkx_graph(
                 )
     else:
         for source, target, data in g.edges.data():
-            edge_weight = data[weight] if weight is not None and weight in data else 1.0
+            edge_weight = _edge_weight(data, weight)
             infomap.add_link(node_map[source], node_map[target], edge_weight)
 
     if meta_attribute is not None:
