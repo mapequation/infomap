@@ -113,6 +113,7 @@ transitions automatically using a relax rate of 0.25.
 import infomap
 import networkx as nx
 import matplotlib.pyplot as plt
+from infomap import Network, run
 from docs_viz import draw_partition, module_palette
 
 # Three time windows; (source, target) pairs active in each window.
@@ -127,15 +128,14 @@ edges_by_layer = {
 
 # Build the multilayer network.  One intra-layer link per active edge;
 # Infomap generates inter-layer transitions from the relax rate.
-im = infomap.Infomap(multilayer_relax_rate=0.25, silent=True, seed=123)
-
+net = Network()
 for layer_id, edges in edges_by_layer.items():
     for u, v in edges:
-        im.add_multilayer_intra_link(layer_id, u, v)
+        net.add_multilayer_intra_link(layer_id, u, v)
 
-im.run()
-print(f"Top-level modules : {im.num_top_modules}")
-print(f"Codelength        : {im.codelength:.4f} bits/step")
+result = run(net, multilayer_relax_rate=0.25, silent=True, seed=123)
+print(f"Top-level modules : {result.num_top_modules}")
+print(f"Codelength        : {result.codelength:.4f} bits/step")
 ```
 
 Infomap finds two top-level modules, one per persistent community, and keeps
@@ -146,7 +146,7 @@ Now extract the per-layer module assignments from the state nodes:
 ```{code-cell} python
 # Build a per-layer lookup: layer_id -> {physical_node_id: module_id}
 layer_modules = {}
-for node in im.nodes:
+for node in result.nodes(states=True):
     layer_modules.setdefault(node.layer_id, {})[node.node_id] = node.module_id
 
 for t in sorted(layer_modules):
@@ -174,8 +174,8 @@ colours = module_palette(
 
 # Per-window flow, so a node's radius tracks how often the walk visits it then.
 layer_flow = {}
-for node in im.nodes:
-    layer_flow.setdefault(node.layer_id, {})[node.node_id] = node.data.flow
+for node in result.nodes(states=True):
+    layer_flow.setdefault(node.layer_id, {})[node.node_id] = node.flow
 
 for t, ax in zip([1, 2, 3], axes):
     G = nx.Graph()
@@ -239,30 +239,31 @@ networks, including temporal multilayer networks.
 
 ## API pointers
 
-- {meth}`infomap.Infomap.add_multilayer_intra_link` adds an edge within a single
+- {meth}`infomap.Network.add_multilayer_intra_link` adds an edge within a single
   time-window layer: `add_multilayer_intra_link(layer_id, source, target,
   weight=1.0)`.
-- {meth}`infomap.Infomap.add_multilayer_inter_link` adds an explicit inter-layer
+- {meth}`infomap.Network.add_multilayer_inter_link` adds an explicit inter-layer
   transition for a physical node: `add_multilayer_inter_link(source_layer_id,
   node_id, target_layer_id, weight=1.0)`. Use it when you have empirical coupling
   weights; omit it to let Infomap generate transitions from
   `multilayer_relax_rate`.
-- {meth}`infomap.Infomap.add_multilayer_link` adds a fully specified multilayer
+- {meth}`infomap.Network.add_multilayer_link` adds a fully specified multilayer
   link `(layer, node) -> (layer, node)` when you want complete control over the
   state-node graph.
-- `infomap.Infomap(multilayer_relax_rate=r)` sets the inter-layer relax rate
-  $r \in [0, 1]$ when you use `add_multilayer_intra_link` without explicit
-  inter-layer links. 0.15–0.25 is a typical starting point.
-- `infomap.Infomap(multilayer_relax_limit=k)` restricts relaxation to layers
-  within index distance $k$, enforcing temporal ordering.
-- `infomap.Infomap(multilayer_relax_by_jsd=True)` uses neighbourhood flow
-  coupling (Jensen-Shannon divergence) instead of uniform coupling; reach for it
-  when communities are intermittent (Aslak et al. 2017).
-- `im.nodes` iterates over state nodes after `im.run()`; each exposes `.node_id`,
-  `.layer_id`, and `.module_id` to reconstruct per-layer community assignments.
-- {meth}`infomap.Infomap.get_modules` returns a `{state_id: module_id}` dict when
-  called with `states=True`; use `im.nodes` for the layer-aware view shown in the
-  worked example.
+- `multilayer_relax_rate` (an engine option on {func}`infomap.run`) sets the
+  inter-layer relax rate $r \in [0, 1]$ when you use `add_multilayer_intra_link`
+  without explicit inter-layer links. 0.15–0.25 is a typical starting point.
+- `multilayer_relax_limit` restricts relaxation to layers within a given index
+  distance, enforcing temporal ordering.
+- `multilayer_relax_by_jsd=True` uses neighbourhood flow coupling
+  (Jensen-Shannon divergence) instead of uniform coupling; reach for it when
+  communities are intermittent (Aslak et al. 2017).
+- {meth}`infomap.Result.nodes` with `states=True` iterates state nodes; each
+  exposes `.node_id`, `.layer_id`, and `.module_id` to reconstruct per-layer
+  community assignments.
+- {meth}`infomap.Result.modules` returns a `{state_id: module_id}` dict when
+  called with `states=True`; use `result.nodes(states=True)` for the layer-aware
+  view shown in the worked example.
 
 ## Going deeper
 
