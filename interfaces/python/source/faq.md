@@ -7,12 +7,12 @@ to the chapter that explains it properly; this page is a map, not a copy.
 
 ### How do I load my graph into Infomap?
 
-Infomap accepts NetworkX (`im.add_networkx_graph(g)`), python-igraph
-(`im.add_igraph_graph(g)`), a SciPy sparse adjacency matrix
-(`im.add_scipy_sparse_matrix(A)`), a pandas edge list
-(`im.add_links(df[[...]].to_numpy())`), or the raw API (`im.add_node`,
-`im.add_link`). The quickest path for a NetworkX graph is
-`infomap.find_communities(g)`. See {doc}`Inputs: building networks <working-with-infomap/inputs>`.
+Hand any of these to `infomap.run(...)`: a NetworkX or python-igraph graph, a
+SciPy sparse adjacency matrix, a `(2, E)` edge index, an edge list, or a network
+file. For non-default loading, build a `Network` with `Network.from_networkx`,
+`from_igraph`, `from_scipy_sparse_matrix`, or the `add_*` verbs. The quickest
+path for a NetworkX graph is `infomap.run(g)` (or `infomap.find_communities(g)`
+for a `list[set]`). See {doc}`Building a network <working-with-infomap/inputs>`.
 
 ## Results and determinism
 
@@ -35,12 +35,12 @@ spread signals degeneracy. See {doc}`Running Infomap and tuning options <working
 Infomap requires a seed ≥ 1; use any positive integer for reproducible runs.
 See {doc}`Running Infomap and tuning options <working-with-infomap/running-and-options>`.
 
-### What does `im.codelength` actually measure?
+### What does `result.codelength` actually measure?
 
 It is the value of the map equation: the average number of bits per step needed
 to describe a random walk under the best code for the partition Infomap found.
 Lower means a more compressive, and usually more meaningful, partition.
-Compare it to `im.one_level_codelength` (no modules) to see how much structure
+Compare it to `result.one_level_codelength` (no modules) to see how much structure
 was found. See {doc}`The map equation <concepts/the-map-equation>`.
 
 ## Number and size of modules
@@ -63,8 +63,8 @@ and {doc}`Hierarchy and the multilevel map equation <concepts/hierarchy-and-the-
 ### Does Infomap choose the hierarchy depth for me, and how do I read each level?
 
 Yes: multilevel is the default, and Infomap adds levels only when they shorten
-the description. Read a given level with `im.get_modules(depth_level=k)`
-(`k=1` is the coarsest, `depth_level=-1` the finest). Check `im.num_levels`.
+the description. Read a given level with `result.modules(depth=k)`
+(`k=1` is the coarsest, `depth=-1` the finest). Check `result.num_levels`.
 See {doc}`Hierarchy and the multilevel map equation <concepts/hierarchy-and-the-multilevel-map>`.
 
 ## Flow and directed networks
@@ -84,27 +84,28 @@ See {doc}`Flow and random walks <concepts/flow-and-random-walks>`.
 
 ## Output and export
 
-### What's the difference between `get_modules()` and `to_dataframe()`?
+### What's the difference between `result.modules()` and `result.to_dataframe()`?
 
-`get_modules()` returns a lightweight `{node_id: module_id}` dict, ideal for
-colouring or feeding another algorithm. `to_dataframe([...])` returns a pandas
-DataFrame with node id, module id, flow, and hierarchical path, better for
-filtering, grouping, and export. See {doc}`Reading results and iterating <working-with-infomap/results-and-iteration>`.
+`result.modules()` returns a lightweight `{node_id: module_id}` dict, ideal for
+colouring or feeding another algorithm. `result.to_dataframe([...])` returns a
+pandas DataFrame with node id, module id, flow, and hierarchical path, better for
+filtering, grouping, and export. See {doc}`Reading the Result <working-with-infomap/results-and-iteration>`.
 
 ### How do I export results to Gephi or to `.tree` / `.clu` files?
 
-Write native formats with `im.write_tree(path)` and `im.write_clu(path)`, or
-graph-interchange formats with `infomap.export.write_graphml(g, im, path)` and
-`write_gexf(...)` for Gephi. `.clu` is one row per node; `.tree` carries the
-full hierarchy. See {doc}`Visualising and exporting <working-with-infomap/visualizing-and-exporting>`.
+For Gephi, annotate the graph with `infomap.to_networkx(result)` (or `to_igraph`)
+and write it with `nx.write_graphml` / `nx.write_gexf`. For the native formats,
+the stateful `Infomap` writes them with `im.write_tree(path)` and
+`im.write_clu(path)`: `.clu` is one row per node, `.tree` carries the full
+hierarchy. See {doc}`Visualising and exporting <working-with-infomap/visualizing-and-exporting>`.
 
 ## Flow models and representations
 
-### Why does `get_modules()` raise "Cannot get modules on higher-order network without states"?
+### Why does `result.modules()` raise "Cannot get modules on higher-order network without states"?
 
 Multilayer and memory networks partition *state nodes*, so a physical node can
-belong to several modules. Call `im.get_modules(states=True)`, then map state
-nodes back to physical nodes (and layers) via `im.nodes`. See
+belong to several modules. Call `result.modules(states=True)`, then map state
+nodes back to physical nodes (and layers) via `result.nodes(states=True)`. See
 {doc}`Multilayer networks <flow-models/multilayer>` and {doc}`Memory and state networks <flow-models/memory-and-state>`.
 
 ### What multilayer relax rate should I use?
@@ -116,8 +117,8 @@ relax rate is ignored. See {doc}`Multilayer networks <flow-models/multilayer>`.
 
 ### How do I model a network with memory (higher-order flow)?
 
-Declare state nodes with `im.add_state_node(state_id, physical_id)` and link the
-state nodes with `im.add_link`. Memory lets a physical node appear in overlapping
+Declare state nodes on a `Network` with `add_state_node(state_id, physical_id)`
+and link them with `add_link`. Memory lets a physical node appear in overlapping
 modules. See {doc}`Memory and state networks <flow-models/memory-and-state>`.
 
 ### How do I cluster a time-varying (temporal) network?
@@ -128,20 +129,20 @@ identity across time. See {doc}`Temporal networks <flow-models/temporal>`.
 
 ### My codelength goes up when I set `meta_data_rate > 0`: is that wrong?
 
-No. `im.codelength` reports only the topological map equation; the search
+No. `result.codelength` reports only the topological map equation; the search
 minimises the *combined* objective, trading higher topological codelength for
 attribute-homogeneous modules. See {doc}`Networks with metadata <flow-models/metadata>`.
 
 ### How do I tell Infomap my network is bipartite?
 
 Number the nodes so the second type starts at a fixed id, then set
-`im.bipartite_start_id = start_id` before `im.run()`. See
+`Network().bipartite_start_id = start_id`, then `infomap.run(net)`. See
 {doc}`Bipartite networks <flow-models/bipartite>`.
 
 ### Can I run Infomap directly on a hypergraph?
 
 Not directly: encode the hypergraph as a network first (e.g. a bipartite
-incidence network via `im.bipartite_start_id`). The representation you choose
+incidence network via `Network().bipartite_start_id`). The representation you choose
 changes the communities found. See {doc}`Hypergraphs and higher-order networks <flow-models/hypergraphs>`.
 
 ### My sparse network gives lots of tiny modules: how do I avoid overfitting?

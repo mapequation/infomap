@@ -35,8 +35,8 @@ pandas categorical column to `adata.obs`, and records run metadata in
 
 Beyond the high-level helper, the sparse matrix underlying any `adata.obsp`
 slot is a standard SciPy CSR matrix; you can hand it directly to
-`im.add_scipy_sparse_matrix()` and use the full Infomap API (hierarchical
-modules, codelength access, multiple trials) without any AnnData involvement.
+`infomap.run()` and use the full Result API (hierarchical modules, codelength,
+multiple trials) without any AnnData involvement.
 
 ## Intuition
 
@@ -173,7 +173,7 @@ to sit at cluster boundaries.
 If you want hierarchical modules, flow values, or finer control over Infomap
 options, skip the `tl` helper and use the core API directly. The connectivity
 matrix is a standard SciPy CSR matrix and can be passed straight to
-`im.add_scipy_sparse_matrix`.
+`infomap.run()`.
 
 ```{code-cell} python
 A = adata.obsp["connectivities"]

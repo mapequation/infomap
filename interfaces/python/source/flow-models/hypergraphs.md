@@ -219,7 +219,7 @@ communities stay separate across the bridge.
 
 ```{admonition} Interpreting the bipartite result
 :class: note
-When you call `im.get_modules()` on a bipartite run, the returned dictionary
+When you call `result.modules()` on a bipartite run, the returned dictionary
 contains entries for both regular nodes and hyperedge-nodes. If you only care
 about the original-node partition, filter to `{n: modules[n] for n in range(n_nodes)}`.
 The codelength printed by Infomap already accounts for only the regular-node
