@@ -6,8 +6,10 @@
 
 #include "TestUtils.h"
 
+#include <cmath>
 #include <cstdio>
 #include <fstream>
+#include <limits>
 #include <map>
 #include <string>
 #include <tuple>
@@ -97,6 +99,34 @@ TEST_CASE("Network aggregates duplicate links after finalize [fast][core]")
   double mergedWeight = -1.0;
   network.forEachLink([&](unsigned int, unsigned int, double w, double&) { mergedWeight = w; });
   CHECK(mergedWeight == doctest::Approx(3.5));
+}
+
+TEST_CASE("addLink rejects ill-defined weights [fast][core]")
+{
+  Config config;
+  config.silent = true;
+  Network network(config);
+
+  // Negative, NaN and infinite weights are never valid for the map equation
+  // (weights feed a flow distribution), so ingestion must reject them rather
+  // than silently computing a meaningless result.
+  CHECK_THROWS_AS(network.addLink(0, 1, -1.0), std::invalid_argument);
+  CHECK_THROWS_AS(network.addLink(0, 1, std::numeric_limits<double>::quiet_NaN()), std::invalid_argument);
+  CHECK_THROWS_AS(network.addLink(0, 1, std::numeric_limits<double>::infinity()), std::invalid_argument);
+  CHECK_THROWS_AS(network.addLink(0, 1, -std::numeric_limits<double>::infinity()), std::invalid_argument);
+
+  // No link survived rejection.
+  CHECK(network.numLinks() == 0);
+
+  // Zero-weight links are well-defined (no flow) and stay allowed -- they are
+  // silently filtered by the weight threshold, not rejected.
+  CHECK_FALSE(network.addLink(0, 1, 0.0));
+  CHECK(network.numLinks() == 0);
+
+  // A finite, positive weight is accepted as before.
+  CHECK(network.addLink(0, 1, 2.0));
+  network.finalizeLinks();
+  CHECK(network.numLinks() == 1);
 }
 
 TEST_CASE("Mode-A map APIs work: outWeights / removeLink [fast][core][csr]")
