@@ -10,8 +10,10 @@
 #include "StateNetwork.h"
 #include "../utils/FlowCalculator.h"
 #include "../utils/Log.h"
+#include "../utils/format.h"
 #include "../io/SafeFile.h"
 #include <algorithm>
+#include <cmath>
 #include <deque>
 #include <stdexcept>
 #include <utility>
@@ -106,7 +108,21 @@ std::pair<std::map<unsigned int, std::string>::iterator, bool> StateNetwork::add
 
 bool StateNetwork::addLink(unsigned int sourceId, unsigned int targetId, double weight)
 {
-  if (weight < m_config.weightThreshold || weight <= 0) {
+  // Reject ill-defined weights at ingestion. Link weights feed a flow
+  // distribution, so negative, NaN and infinite values are never valid for the
+  // map equation -- without this guard the engine silently computes a
+  // meaningless result. Zero is well-defined (no flow) and stays allowed; it is
+  // filtered by the weight threshold below. This is the single funnel for the
+  // in-memory API, file parsing and multilayer expansion, so the language
+  // bindings (R, JS, native CLI) no longer need to re-implement the check.
+  if (!std::isfinite(weight) || weight < 0) {
+    throw std::invalid_argument(
+        fmt::format(FMT_STRING("Link weight must be finite and non-negative, got {} for link ({}, {})"), weight, sourceId, targetId));
+  }
+
+  // weight is finite and >= 0 past the guard above, so this drops zero-weight
+  // links (no flow) and anything below the configured threshold.
+  if (weight < m_config.weightThreshold || weight == 0) {
     ++m_numLinksIgnoredByWeightThreshold;
     m_totalLinkWeightIgnored += weight;
     return false;
