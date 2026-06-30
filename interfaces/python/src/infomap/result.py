@@ -172,8 +172,9 @@ class Result:
     """Immutable snapshot of an Infomap run.
 
     Returned by :meth:`Infomap.run` (and the functional :func:`infomap.run`) and
-    used to back the legacy on-instance accessors. Holds eager scalars;
-    node/tree/dataframe data is materialized lazily and guarded against the
+    used to back the legacy on-instance accessors. Holds eager O(1) scalars;
+    tree-derived metrics (the ``effective_num_*`` modules) and
+    node/tree/dataframe data are materialized lazily and guarded against the
     engine being re-run.
 
     Read scalars as **properties** and collections as **methods** (with
@@ -238,8 +239,7 @@ class Result:
         "_meta_entropy",
         "_elapsed_time",
         "_num_leaf_modules",
-        "_effective_num_top_modules",
-        "_effective_num_leaf_modules",
+        "_effective_cache",
         "_snapshots",
         "__weakref__",
     )
@@ -283,16 +283,12 @@ class Result:
         object.__setattr__(
             self, "_num_leaf_modules", sum(1 for _ in core.iterLeafModules())
         )
-        object.__setattr__(
-            self,
-            "_effective_num_top_modules",
-            self._compute_effective_num_modules(core, 1),
-        )
-        object.__setattr__(
-            self,
-            "_effective_num_leaf_modules",
-            self._compute_effective_num_modules(core, -1),
-        )
+        # The effective-number-of-modules metrics each require a full Python-side
+        # tree traversal, so they are computed lazily on first access and cached,
+        # keyed by depth (see ``_effective_num_modules_cached``). Computing them
+        # eagerly here roughly doubled run() wall-clock for callers that never
+        # read them.
+        object.__setattr__(self, "_effective_cache", {})
         # Lazy node-data cache, keyed by (level, states).
         object.__setattr__(self, "_snapshots", {})
 
@@ -303,6 +299,22 @@ class Result:
         if core.haveMemory() and not states:
             return core.iterTreePhysical(depth)
         return core.iterTree(depth)
+
+    def _effective_num_modules_cached(self, depth: int) -> float:
+        """Lazily compute and cache the effective number of modules at ``depth``.
+
+        Each computation walks the result tree, so it is deferred until first
+        access and memoized. The generation guard fires only if the bound engine
+        was re-run *before* the first read at this depth; a value read while the
+        Result was fresh stays valid afterwards (snapshot semantics).
+        """
+        cache = self._effective_cache
+        if depth not in cache:
+            self._check_generation()
+            cache[depth] = self._compute_effective_num_modules(
+                self._engine._core, depth
+            )
+        return cache[depth]
 
     @classmethod
     def _compute_effective_num_modules(cls, core, depth: int) -> float:
@@ -460,16 +472,18 @@ class Result:
         """The flow-weighted effective number of top modules.
 
         Measured as the perplexity of the top-module flow distribution.
+        Computed lazily on first access (see :meth:`effective_num_modules`).
         """
-        return self._effective_num_top_modules
+        return self._effective_num_modules_cached(1)
 
     @property
     def effective_num_leaf_modules(self) -> float:
         """The flow-weighted effective number of leaf modules.
 
         Measured as the perplexity of the leaf-module flow distribution.
+        Computed lazily on first access (see :meth:`effective_num_modules`).
         """
-        return self._effective_num_leaf_modules
+        return self._effective_num_modules_cached(-1)
 
     @property
     def have_memory(self) -> bool:
@@ -615,8 +629,7 @@ class Result:
             The module level. ``1`` (default) is the top (coarsest) level;
             ``-1`` the bottom (leaf-module) level.
         """
-        self._check_generation()
-        return self._compute_effective_num_modules(self._engine._core, depth)
+        return self._effective_num_modules_cached(depth)
 
     def to_dataframe(
         self,

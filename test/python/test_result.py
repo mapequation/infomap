@@ -56,6 +56,62 @@ def test_run_returns_result_with_eager_scalars():
 
 
 @pytest.mark.fast
+def test_effective_num_modules_is_computed_lazily(monkeypatch):
+    """``effective_num_*`` must not traverse the result tree until read.
+
+    Computing them eagerly in ``Result.__init__`` walked the whole tree (twice)
+    on every ``run()``, roughly doubling ``run()`` wall-clock for mid-size
+    networks even when the caller never reads them.
+    """
+    import infomap.result as result_mod
+
+    calls: list[int] = []
+    original = result_mod.Result._compute_effective_num_modules.__func__
+
+    def counting(cls, core, depth):
+        calls.append(depth)
+        return original(cls, core, depth)
+
+    monkeypatch.setattr(
+        result_mod.Result,
+        "_compute_effective_num_modules",
+        classmethod(counting),
+    )
+
+    im = _two_triangles()
+    result = im.run()
+
+    # Nothing computed just by running.
+    assert calls == []
+
+    # First read computes; depth is the only thing requested.
+    _ = result.effective_num_top_modules
+    assert calls == [1]
+    _ = result.effective_num_leaf_modules
+    assert calls == [1, -1]
+
+    # Cached: a second read does not recompute.
+    _ = result.effective_num_top_modules
+    _ = result.effective_num_leaf_modules
+    assert calls == [1, -1]
+
+
+@pytest.mark.fast
+def test_effective_num_modules_cached_value_survives_rerun():
+    """Once read, the snapshot value is cached and stays valid after a re-run."""
+    im = _two_triangles()
+    result = im.run()
+
+    top = result.effective_num_top_modules
+    leaf = result.effective_num_leaf_modules
+
+    im.run()  # rebuilds the C++ tree
+
+    assert result.effective_num_top_modules == top
+    assert result.effective_num_leaf_modules == leaf
+
+
+@pytest.mark.fast
 def test_result_modules_matches_get_modules():
     im = _two_triangles()
     result = im.run()
