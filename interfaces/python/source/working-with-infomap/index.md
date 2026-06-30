@@ -5,8 +5,9 @@ visualise, and export the result. These chapters are task-oriented; for the idea
 behind them see {doc}`/concepts/index`, and for the smallest possible example see
 {doc}`/quickstart`.
 
-- {doc}`Inputs <inputs>`: every way to get your data in: NetworkX, igraph, SciPy
-  sparse matrices, edge lists, and the raw API.
+- {doc}`Building a network <inputs>`: every way to get your data in with
+  {func}`infomap.run` and {class}`~infomap.Network`: NetworkX, igraph, SciPy
+  sparse matrices, edge indices, edge lists, and incremental construction.
 - {doc}`Running Infomap <running-and-options>`: the few options that matter, with
   rules of thumb for trials, seeds, directedness, and resolution.
 - {doc}`Reading results and iterating <results-and-iteration>`: modules, flow, the
