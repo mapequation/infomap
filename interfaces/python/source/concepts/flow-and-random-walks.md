@@ -135,16 +135,14 @@ print("Edges:", list(G.edges()))
 
 ```{code-cell} python
 # Run Infomap on the directed network
-im = infomap.Infomap(directed=True, silent=True, seed=123, num_trials=10)
-im.add_networkx_graph(G)
-im.run()
+result = infomap.run(G, directed=True, silent=True, seed=123, num_trials=10)
 
 # Read per-node flow (stationary visit frequency) and module assignments
-flow    = {node.node_id: node.data.flow  for node in im.nodes}
-modules = {node.node_id: node.module_id  for node in im.nodes}
+flow    = {node.node_id: node.flow       for node in result.nodes()}
+modules = {node.node_id: node.module_id  for node in result.nodes()}
 
-print(f"Modules found : {im.num_top_modules}")
-print(f"Codelength    : {im.codelength:.4f} bits/step")
+print(f"Modules found : {result.num_top_modules}")
+print(f"Codelength    : {result.codelength:.4f} bits/step")
 print()
 print(f"{'Node':>5}  {'Cycle':>7}  {'Module':>8}  {'Flow':>8}")
 print(f"{'----':>5}  {'-----':>7}  {'------':>8}  {'------':>8}")
@@ -192,18 +190,19 @@ teleportation bookkeeping {cite:p}`lambiotte2012smart`.
 
 ## API pointers
 
-- {py:class}`infomap.Infomap` is the entry point; pass `directed=True` to use
-  the directed flow model with unrecorded teleportation.
-- {py:meth}`infomap.Infomap.add_networkx_graph` loads a `networkx.DiGraph`
-  (or `Graph`) directly.
-- {py:meth}`infomap.Infomap.add_link` adds individual edges programmatically.
-- {py:meth}`infomap.Infomap.run` executes the search.
-- {py:attr}`infomap.Infomap.nodes` iterates over result nodes; each exposes
-  `.node_id`, `.module_id`, and `.data.flow`.
-- {py:meth}`infomap.Infomap.to_dataframe` returns `flow`, `module_id`,
-  `node_id` (and more) as a pandas DataFrame in one call.
-- {py:attr}`infomap.Infomap.codelength` is the map-equation value at the
-  partition found, in bits per step.
+- {func}`infomap.run` is the entry point; pass `directed=True` to use the
+  directed flow model with unrecorded teleportation. It returns a
+  {class}`~infomap.Result`.
+- {meth}`infomap.Network.from_networkx` loads a `networkx.DiGraph` (or `Graph`)
+  for non-default options; passing the graph straight to {func}`infomap.run`
+  works for the common case.
+- {meth}`infomap.Network.add_link` adds individual edges programmatically.
+- {meth}`infomap.Result.nodes` iterates per-node views; each exposes `.node_id`,
+  `.module_id`, and `.flow`.
+- {meth}`infomap.Result.to_dataframe` returns `flow`, `module_id`, `node_id`
+  (and more) as a pandas DataFrame in one call.
+- {attr}`infomap.Result.codelength` is the map-equation value at the partition
+  found, in bits per step.
 
 ## Going deeper
 

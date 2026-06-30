@@ -190,14 +190,16 @@ Infomap runs in multilevel mode by default; no flag required. Do **not** pass
 Infomap from finding deeper structure.
 
 ```{code-cell} python
-im = infomap.Infomap(silent=True, num_trials=10, seed=123)
-for u, v in G.edges():
-    im.add_link(u, v)
-im.run()
+from infomap import Network, run
 
-print(f"Tree depth (num_levels): {im.num_levels}")
-print(f"Top-level modules:       {im.num_top_modules}")
-print(f"Map equation codelength: {im.codelength:.4f} bits/step")
+net = Network()
+for u, v in G.edges():
+    net.add_link(u, v)
+result = run(net, silent=True, num_trials=10, seed=123)
+
+print(f"Tree depth (num_levels): {result.num_levels}")
+print(f"Top-level modules:       {result.num_top_modules}")
+print(f"Map equation codelength: {result.codelength:.4f} bits/step")
 ```
 
 Infomap determined that this network has **3 levels** entirely on its own:
@@ -208,10 +210,10 @@ No depth argument was passed.
 
 ```{code-cell} python
 # Coarsest level (depth 1): the two super-groups A and B
-modules_l1 = im.get_modules(depth_level=1)
+modules_l1 = result.modules(depth=1)
 
 # Finer level (depth 2): the four individual cliques
-modules_l2 = im.get_modules(depth_level=2)
+modules_l2 = result.modules(depth=2)
 
 print("Level-1 assignment (super-groups):")
 print(modules_l1)
@@ -220,10 +222,10 @@ print("\nLevel-2 assignment (cliques):")
 print(modules_l2)
 ```
 
-`get_modules(depth_level=1)` returns the coarsest grouping: two modules of ten
-nodes each, matching super-groups A and B. `get_modules(depth_level=2)` returns
-the finer partition, four modules of five nodes each, one per clique. Pass
-`depth_level=-1` for the finest (leaf) level whatever the tree depth.
+`result.modules(depth=1)` returns the coarsest grouping: two modules of ten
+nodes each, matching super-groups A and B. `result.modules(depth=2)` returns the
+finer partition, four modules of five nodes each, one per clique. Pass
+`depth=-1` for the finest (leaf) level whatever the tree depth.
 
 ### Visualise both levels side by side
 
@@ -236,7 +238,7 @@ from docs_viz import draw_partition
 fig, axes = plt.subplots(1, 2, figsize=(9, 4), layout="constrained")
 
 # Same flow in both panels; only the level of the grouping differs.
-flow = {n.node_id: n.data.flow for n in im.nodes}
+flow = {n.node_id: n.flow for n in result.nodes()}
 
 draw_partition(G, modules_l1, ax=axes[0], flow=flow)
 axes[0].set_title("Level 1: super-groups", fontsize=11)
@@ -271,20 +273,20 @@ compressed than either a flat two-level partition or a one-level description.
 
 ## API pointers
 
-- {attr}`infomap.Infomap.num_levels` gives the tree depth Infomap discovered
+- {attr}`infomap.Result.num_levels` gives the tree depth Infomap discovered
   (alias `max_depth`), so you can read the number of levels without walking the
   tree.
-- {attr}`infomap.Infomap.num_top_modules` counts the modules at level 1, the
+- {attr}`infomap.Result.num_top_modules` counts the modules at level 1, the
   coarsest partition.
-- {meth}`infomap.Infomap.get_modules` returns a `{node_id: module_id}` dict.
-  Its `depth_level` selects the level:
-  - `depth_level=1` (default) gives the top modules.
-  - `depth_level=2, 3, …` give progressively finer levels.
-  - `depth_level=-1` gives the leaf (finest) modules.
-- {meth}`infomap.Infomap.get_effective_num_modules` gives the flow-weighted
-  effective number of modules at a `depth_level`, which helps when module sizes
-  are uneven and a plain count overstates them.
-- Constructor argument `two_level=True` restricts the search to two levels.
+- {meth}`infomap.Result.modules` returns a `{node_id: module_id}` dict. Its
+  `depth` selects the level:
+  - `depth=1` (default) gives the top modules.
+  - `depth=2, 3, …` give progressively finer levels.
+  - `depth=-1` gives the leaf (finest) modules.
+- {meth}`infomap.Result.effective_num_modules` gives the flow-weighted effective
+  number of modules at a `depth`, which helps when module sizes are uneven and a
+  plain count overstates them.
+- The engine option `two_level=True` restricts the search to two levels.
   **Leave it off** for the full hierarchical result.
 
 ## Going deeper

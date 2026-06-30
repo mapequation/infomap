@@ -140,14 +140,12 @@ g = nx.karate_club_graph()
 print(f"Nodes: {g.number_of_nodes()}, Edges: {g.number_of_edges()}")
 
 # Two-level search, 10 independent trials, fixed seed for reproducibility.
-im = infomap.Infomap(two_level=True, seed=123, num_trials=10, silent=True)
-im.add_networkx_graph(g)
-im.run()
+result = infomap.run(g, two_level=True, seed=123, num_trials=10, silent=True)
 
-modules = im.get_modules()        # {node_id: module_id}
-n_top   = im.num_top_modules
-L       = im.codelength           # the map equation value for the best partition
-L_one   = im.one_level_codelength # cost with all nodes in one module
+modules = result.modules()            # {node_id: module_id}
+n_top   = result.num_top_modules
+L       = result.codelength           # the map equation value for the best partition
+L_one   = result.one_level_codelength # cost with all nodes in one module
 
 print(f"\nCodelengths (bits per step):")
 print(f"  One-level (no modules):           {L_one:.4f}")
@@ -176,7 +174,7 @@ import matplotlib.pyplot as plt
 from docs_viz import draw_partition
 from myst_nb import glue
 
-flow = {n.node_id: n.data.flow for n in im.nodes}
+flow = {n.node_id: n.flow for n in result.nodes()}
 fig = draw_partition(g, modules, flow=flow)
 glue("fig-map-equation", fig, display=False)
 plt.close(fig)
@@ -191,13 +189,14 @@ module because naming it shortens the overall code.
 
 ## API pointers
 
-- {py:class}`infomap.Infomap` is the entry point; pass `two_level=True` to
-  constrain the search to a flat (non-hierarchical) partition.
-- `im.codelength` is the per-step description length in bits for the best
-  partition found; `im.one_level_codelength` is the cost with no modules, and
-  `im.relative_codelength_savings` reports the gain between them.
-- `im.num_top_modules` counts the top-level modules; `im.get_modules()` returns a
-  `{node_id: module_id}` mapping.
+- {func}`infomap.run` is the entry point; pass `two_level=True` to constrain the
+  search to a flat (non-hierarchical) partition. It returns a
+  {class}`~infomap.Result`.
+- `result.codelength` is the per-step description length in bits for the best
+  partition found; `result.one_level_codelength` is the cost with no modules, and
+  `result.relative_codelength_savings` reports the gain between them.
+- `result.num_top_modules` counts the top-level modules; `result.modules()`
+  returns a `{node_id: module_id}` mapping.
 - `preferred_number_of_modules=k` softly steers the search toward `k` modules.
 
 ## Going deeper

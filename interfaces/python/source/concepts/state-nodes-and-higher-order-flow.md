@@ -74,25 +74,26 @@ and link them, then read the partition back with `get_modules(states=True)`.
 
 ```{code-cell} python
 import infomap
+from infomap import Network, run
 
-im = infomap.Infomap(two_level=True, seed=123, num_trials=10, silent=True)
+net = Network()
 
 # Physical node 1 has two state nodes (10 and 11), one in each group.
 # Group A: states 10,2,3 ; Group B: states 11,4,5. Physical 1 bridges them.
-im.add_state_node(10, 1); im.add_state_node(11, 1)
+net.add_state_node(10, 1); net.add_state_node(11, 1)
 for s in (2, 3, 4, 5):
-    im.add_state_node(s, s)
+    net.add_state_node(s, s)
 
 for a, b in [(10, 2), (2, 3), (3, 10)]:          # triangle A
-    im.add_link(a, b); im.add_link(b, a)
+    net.add_link(a, b); net.add_link(b, a)
 for a, b in [(11, 4), (4, 5), (5, 11)]:          # triangle B
-    im.add_link(a, b); im.add_link(b, a)
+    net.add_link(a, b); net.add_link(b, a)
 
-im.run()
+result = run(net, two_level=True, seed=123, num_trials=10, silent=True)
 
-print(f"Modules: {im.num_top_modules}")
+print(f"Modules: {result.num_top_modules}")
 phys_to_modules = {}
-for node in im.nodes:
+for node in result.nodes(states=True):
     phys_to_modules.setdefault(node.node_id, set()).add(node.module_id)
 for pid, mods in sorted(phys_to_modules.items()):
     print(f"  physical node {pid}: module(s) {sorted(mods)}")
@@ -122,9 +123,9 @@ directly, but the partition you read back is always over state nodes.
 
 ## API pointers
 
-- `im.add_state_node(state_id, physical_id)` declares a state node;
-  `im.add_link` then links state nodes.
-- `im.get_modules(states=True)` is required to read a higher-order partition;
-  `im.nodes` exposes each node's `.node_id` (physical), `.state_id`, and
-  `.module_id`.
-- `im.have_memory` is `True` once a higher-order network is built.
+- `Network().add_state_node(state_id, physical_id)` declares a state node;
+  `add_link` then links state nodes.
+- `result.modules(states=True)` is required to read a higher-order partition;
+  `result.nodes(states=True)` exposes each node's `.node_id` (physical),
+  `.state_id`, `.module_id`, and `.flow`.
+- `result.have_memory` is `True` once a higher-order network is built.

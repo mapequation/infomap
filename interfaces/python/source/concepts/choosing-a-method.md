@@ -134,13 +134,11 @@ true_labels = [n // 10 for n in sorted(g.nodes())]
 
 ```{code-cell} python
 # ── Infomap ──────────────────────────────────────────────────────────────────
-im = infomap.Infomap(two_level=True, seed=123, num_trials=10, silent=True)
-im.add_networkx_graph(g)
-im.run()
+result = infomap.run(g, two_level=True, seed=123, num_trials=10, silent=True)
 
-modules = im.get_modules()                         # {node_id: module_id}
+modules = result.modules()                         # {node_id: module_id}
 infomap_vec = [modules[n] for n in sorted(g.nodes())]
-print(f"Infomap:  {im.num_top_modules} modules   codelength {im.codelength:.4f} bits/step")
+print(f"Infomap:  {result.num_top_modules} modules   codelength {result.codelength:.4f} bits/step")
 
 # ── Louvain (NetworkX) ───────────────────────────────────────────────────────
 louvain_communities = nx.community.louvain_communities(g, weight=None, seed=123)
@@ -200,7 +198,7 @@ import matplotlib.pyplot as plt
 from docs_viz import draw_partition
 from myst_nb import glue
 
-flow = {n.node_id: n.data.flow for n in im.nodes}
+flow = {n.node_id: n.flow for n in result.nodes()}
 fig = draw_partition(g, modules, flow=flow)
 glue("fig-choosing-a-method", fig, display=False)
 plt.close(fig)
@@ -229,13 +227,11 @@ g_dir.add_edges_from([(0, 1), (1, 2), (2, 3), (3, 4), (4, 0)])   # cycle A
 g_dir.add_edges_from([(5, 6), (6, 7), (7, 8), (8, 9), (9, 5)])   # cycle B
 g_dir.add_edge(2, 5)                                               # bridge A→B
 
-im_dir = infomap.Infomap(two_level=True, seed=123, num_trials=10,
+result_dir = infomap.run(g_dir, two_level=True, seed=123, num_trials=10,
                          silent=True, directed=True)
-im_dir.add_networkx_graph(g_dir)
-im_dir.run()
-modules_dir = im_dir.get_modules()
+modules_dir = result_dir.modules()
 print("Infomap (directed):", modules_dir)
-print(f"  → {im_dir.num_top_modules} modules")
+print(f"  → {result_dir.num_top_modules} modules")
 ```
 
 Infomap assigns the two cycles to separate modules even though the graph is
