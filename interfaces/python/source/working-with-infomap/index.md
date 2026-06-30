@@ -10,7 +10,8 @@ behind them see {doc}`/concepts/index`, and for the smallest possible example se
   sparse matrices, edge indices, edge lists, and incremental construction.
 - {doc}`Running Infomap <running-and-options>`: the few options that matter, with
   rules of thumb for trials, seeds, directedness, and resolution.
-- {doc}`Reading results and iterating <results-and-iteration>`: modules, flow, the
+- {doc}`Reading the Result <results-and-iteration>`: the immutable
+  {class}`~infomap.Result` surface: scalar metrics, modules, per-node flow, the
   hierarchical tree, and a pandas DataFrame of assignments.
 - {doc}`Visualising and exporting <visualizing-and-exporting>`: draw the partition
   and write `.tree`, `.clu`, GraphML, or GEXF for Gephi and other tools.
