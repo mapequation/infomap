@@ -120,7 +120,9 @@ bool StateNetwork::addLink(unsigned int sourceId, unsigned int targetId, double 
         fmt::format(FMT_STRING("Link weight must be finite and non-negative, got {} for link ({}, {})"), weight, sourceId, targetId));
   }
 
-  if (weight < m_config.weightThreshold || weight <= 0) {
+  // weight is finite and >= 0 past the guard above, so this drops zero-weight
+  // links (no flow) and anything below the configured threshold.
+  if (weight < m_config.weightThreshold || weight == 0) {
     ++m_numLinksIgnoredByWeightThreshold;
     m_totalLinkWeightIgnored += weight;
     return false;
