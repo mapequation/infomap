@@ -74,6 +74,7 @@ test = [
   "anndata",
   "igraph",
   "jsonschema>=4.18",
+  "pre-commit",
   "pyright",
   "pytest",
   "networkx",

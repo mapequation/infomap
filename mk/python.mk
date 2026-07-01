@@ -47,6 +47,7 @@ PYTHON_BUILD_ENV = \
 	test-python-unit \
 	test-python-doctest \
 	test-python-typecheck \
+	test-python-typecheck-core \
 	test-python-examples \
 	test-python-notebooks-smoke \
 	test-python-notebooks-full \
@@ -110,6 +111,15 @@ test-python-examples:
 # explicitly or in a dedicated CI job.
 test-python-typecheck:
 	@$(PYRIGHT)
+
+# Type check only the core API/algorithm surface, excluding the optional
+# third-party integration adapters (io/, tl/) whose pyright diagnostics vary
+# with which optional deps + stub packages are installed. Used by the pre-push
+# hook so the gate is deterministic across dev machines; the full-scope check
+# above (and pyproject's [tool.pyright]) still covers everything. Scope lives in
+# interfaces/python/pyrightconfig-core.json.
+test-python-typecheck-core:
+	@$(PYRIGHT) -p interfaces/python/pyrightconfig-core.json
 
 test-python-notebooks-smoke:
 	@cd $(NOTEBOOK_DIR) && $(PYTHON) ../../scripts/notebook_manifest.py --manifest notebooks.toml --suite smoke --print0 | \

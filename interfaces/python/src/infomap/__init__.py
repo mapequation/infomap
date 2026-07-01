@@ -37,7 +37,7 @@ __all__ = list(_VERSION_ALL)
 try:
     from ._facade import __all__ as _FACADE_ALL
     from ._facade import *  # noqa: F401,F403
-    from ._facade import _construct_args as _construct_args
+    from ._options import _construct_args as _construct_args
 
     from . import tl as tl
 
