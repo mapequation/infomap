@@ -10,6 +10,8 @@ kernelspec:
 
 # Temporal networks
 
+{bdg-warning-line}`Flow model`
+
 ```{admonition} In one sentence
 :class: tip
 Model time-varying interactions as one layer per snapshot, let inter-layer
@@ -17,7 +19,7 @@ coupling carry community identity across time, and let Infomap reveal which
 groups persist, drift, and dissolve.
 ```
 
-## Motivation
+## Communities that come and go
 
 Most real interaction data have a timestamp. Friendship ties strengthen and
 dissolve, researchers switch between fields, proteins bind at some times and not
@@ -48,7 +50,7 @@ module labels. {cite:t}`holmgren2023change` extended this work to visualise how 
 structure changes between snapshots, including alluvial diagrams that show
 modules merging and splitting over time.
 
-## Intuition
+## Layers as time windows
 
 Picture six colleagues. In the morning (T = 1) they split into two coffee-break
 groups: {Alice, Bob, Carol} and {Dave, Eve, Frank}. At midday (T = 2) the
@@ -70,7 +72,7 @@ as working on the aggregate network. Values in between, around 0.1 to 0.3, let
 temporal context bleed across layers, which is what you want when communities
 evolve smoothly but are not identical across windows.
 
-## Theory
+## Coupling snapshots across time
 
 A temporal network is a {doc}`multilayer network </flow-models/multilayer>` whose
 layers are time windows: each node gets one
@@ -97,7 +99,7 @@ share nodes.
 walker may relax in layer index, so the walk crosses only into nearby time
 windows rather than jumping across the whole sequence.
 
-## A worked example
+## Six colleagues over three windows
 
 We build a tiny temporal network with six nodes and three time windows to show
 how Infomap tracks communities as they drift.

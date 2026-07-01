@@ -10,6 +10,8 @@ kernelspec:
 
 # Bipartite networks
 
+{bdg-warning-line}`Flow model`
+
 ```{admonition} In one sentence
 :class: tip
 A bipartite network has two node types with links only between them. The
@@ -17,7 +19,7 @@ bipartite map equation exploits that alternating structure to compress
 random-walk descriptions and reveal sharper community structure.
 ```
 
-## Motivation
+## Two node types, links between them
 
 Many networks are not just "nodes and edges" but two distinct kinds of
 entities connected to each other: users rating movies, species visiting
@@ -45,7 +47,7 @@ nodes come first and all type-B nodes start at a threshold id, declare that
 threshold by setting `im.bipartite_start_id`, and Infomap switches to the
 bipartite map equation {cite:p}`blocker2020bipartite` for the optimisation.
 
-## Intuition
+## Two codebooks per module
 
 In the standard map equation, each module has one codebook covering all
 its nodes. The sender picks a codeword, and the receiver does not know in
@@ -65,7 +67,7 @@ In all 21 real-world networks studied by {cite:t}`blocker2020bipartite`, the
 bipartite map equation compressed the walk description more than the
 unipartite variant, and detected richer community hierarchies.
 
-## Theory
+## The bipartite map equation
 
 For an undirected bipartite graph with left nodes $N_L$ and right nodes
 $N_R$, a random walker alternates between the two types. The standard map
@@ -116,7 +118,7 @@ sweep the resolution continuously; see {cite:t}`blocker2020bipartite`, §3, for 
 full derivation.
 :::
 
-## A worked example
+## Users and items in shared clusters
 
 The scenario: four users and four items. Users 0 and 1 strongly prefer
 items 4 and 5; users 2 and 3 strongly prefer items 6 and 7. A few weak

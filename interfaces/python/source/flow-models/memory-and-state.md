@@ -10,6 +10,8 @@ kernelspec:
 
 # Memory and state networks
 
+{bdg-warning-line}`Flow model`
+
 ```{admonition} In one sentence
 :class: tip
 When where flow goes next depends on where it came from, you need a *memory
@@ -17,7 +19,7 @@ network*: state nodes encode the context, and the map equation on state nodes
 reveals overlapping communities that a first-order model cannot see.
 ```
 
-## Motivation
+## When flow remembers where it came from
 
 Standard community detection treats a network as a memoryless system. At every
 node, a random walker continues to the next node proportional to link weights,
@@ -42,7 +44,7 @@ research communities depending on where a citation arrives from. In a
 first-order model it lands in a single module. Memory networks restore
 the overlap.
 
-## Intuition
+## Splitting a node by its history
 
 The core idea is to split each physical location into multiple *state nodes*,
 one for each relevant piece of context. In a second-order model the context is
@@ -65,7 +67,7 @@ their state nodes. The map equation encodes flow at the state-node level but
 names physical nodes in its codebook, so it correctly records a physical node
 whose state nodes land in different modules as *overlapping* {cite:p}`edler2017higher`.
 
-## Theory
+## Memory as a state-node network
 
 A standard first-order network has physical nodes $i$ and transition
 probabilities $P_{ij} = w_{ij}/w_i$. In a second-order model, the walker's
@@ -140,7 +142,7 @@ These expressions reduce to the standard first-order map equation when each
 physical node has exactly one state node {cite:p}`rosvall2008maps`.
 :::
 
-## A worked example
+## A junction shared by two flows
 
 The example below constructs a small four-node network where two independent
 streams of flow pass through a shared junction node **B**:

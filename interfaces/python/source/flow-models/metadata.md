@@ -10,6 +10,8 @@ kernelspec:
 
 # Networks with metadata
 
+{bdg-warning-line}`Flow model`
+
 ```{admonition} In one sentence
 :class: tip
 Node attributes (roles, labels, categories) can guide community detection. The
@@ -18,7 +20,7 @@ length, and a single rate parameter sets how much the attributes matter relative
 to the topology.
 ```
 
-## Motivation
+## When attributes should guide clustering
 
 Network topology alone does not always capture the communities you care about.
 Nodes carry attributes (the profession of a person in a social network, the
@@ -48,7 +50,7 @@ differently: it biases the random walk itself so that walkers tend to stay near
 nodes with similar attributes. Both approaches capture the interplay between
 topology and metadata; the Emmons & Mucha formulation is what Infomap implements.
 
-## Intuition
+## An attribute codebook
 
 Think of the city-map analogy again. In standard Infomap, every street in a
 city carries its own local codebook that names its streets, and switching cities
@@ -70,7 +72,7 @@ attribute, using topology only to settle borderline cases.
 The approach is continuously tunable: you set the blend with $\eta$ and watch
 how the community structure changes as attributes gain or lose weight.
 
-## Theory
+## The metadata map equation
 
 For a partition $\mathsf{M}$ of $n$ nodes into $m$ modules and a set $U$ of
 discrete attribute values, the metadata map equation from
@@ -140,7 +142,7 @@ and attributes, rather than a local codebook penalty. The two frameworks share a
 spirit but differ in mechanism.
 :::
 
-## A worked example
+## Two triangles, two attributes
 
 The network below has **six nodes** arranged as two triangles connected by a
 bridge edge. Nodes 3 and 4, one in each triangle, share attribute category 1,
