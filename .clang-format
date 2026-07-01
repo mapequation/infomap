@@ -19,7 +19,7 @@ DerivePointerAlignment: false
 ReflowComments: true
 SortIncludes: Never
 SortUsingDeclarations: true
-Standard: c++14
+Standard: c++17
 SpaceInEmptyBlock: false
 UseTab: Never
 IndentWidth: 2

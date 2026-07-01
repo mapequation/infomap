@@ -7,7 +7,7 @@ JS_WORKER_TARGET := build/js/$(WORKER_FILENAME)
 JS_NODE_TARGET := build/js/infomap.node.mjs
 JS_CLI_TARGET := build/js/infomap.cli.mjs
 JS_NODE_TEST := interfaces/js/test/node/test-node.mjs
-EMXX_NODE_FLAGS := -std=c++14 -O3 $(INFOMAP_VENDOR_CPPFLAGS) -s SINGLE_FILE=1 -s ALLOW_MEMORY_GROWTH=1 -s DISABLE_EXCEPTION_CATCHING=0 -s ENVIRONMENT=node -s MODULARIZE=1 -s EXPORT_ES6=1 -s INVOKE_RUN=0 -s EXIT_RUNTIME=0
+EMXX_NODE_FLAGS := -std=c++17 -O3 $(INFOMAP_VENDOR_CPPFLAGS) -s SINGLE_FILE=1 -s ALLOW_MEMORY_GROWTH=1 -s DISABLE_EXCEPTION_CATCHING=0 -s ENVIRONMENT=node -s MODULARIZE=1 -s EXPORT_ES6=1 -s INVOKE_RUN=0 -s EXIT_RUNTIME=0
 PRE_WORKER_MODULE := interfaces/js/pre-worker-module.js
 JS_METADATA_DIR := interfaces/js/generated
 JS_PARAMETERS_JSON := $(JS_METADATA_DIR)/parameters.json
@@ -46,7 +46,7 @@ $(JS_WORKER_OUTPUT_FORMATS): $(JS_OUTPUT_FORMATS_JSON) interfaces/js/scripts/wri
 $(JS_WORKER_TARGET): $(SOURCES) $(HEADERS) $(PRE_WORKER_MODULES) $(MK_FILES) Makefile
 	@echo "Compiling Infomap to run in a worker in the browser..."
 	@mkdir -p $(dir $@)
-	$(EMXX) -std=c++14 -O3 $(INFOMAP_VENDOR_CPPFLAGS) -s SINGLE_FILE=1 -s ALLOW_MEMORY_GROWTH=1 -s DISABLE_EXCEPTION_CATCHING=0 -s ENVIRONMENT=worker $(foreach file,$(PRE_WORKER_MODULES),--pre-js $(file)) -o $@ $(SOURCES)
+	$(EMXX) -std=c++17 -O3 $(INFOMAP_VENDOR_CPPFLAGS) -s SINGLE_FILE=1 -s ALLOW_MEMORY_GROWTH=1 -s DISABLE_EXCEPTION_CATCHING=0 -s ENVIRONMENT=worker $(foreach file,$(PRE_WORKER_MODULES),--pre-js $(file)) -o $@ $(SOURCES)
 
 test-js: build-js
 	$(RM) -r $(NPM_UNPACK_DIR) $(NPM_STAGE_DIR)/*.tgz $(NPM_PACK_JSON)
