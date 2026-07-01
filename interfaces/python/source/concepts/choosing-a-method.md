@@ -10,6 +10,8 @@ kernelspec:
 
 # Choosing a method: Infomap, Louvain, and Leiden
 
+{bdg-info-line}`Concept`
+
 ```{admonition} In one sentence
 :class: tip
 Infomap, Louvain, and Leiden each define "community" differently: Infomap by the
@@ -17,7 +19,7 @@ flow a random walker traps, Louvain and Leiden by modularity. None is uniformly
 best; the right method follows from the question you are asking.
 ```
 
-## Motivation
+## Which method, and when they agree
 
 If you search for "community detection" in any network-science paper you will
 find Louvain and Leiden cited alongside Infomap. All three are fast,
@@ -41,7 +43,7 @@ of which you ultimately prefer. Agreement across objectives is evidence of
 robust community structure; disagreement highlights ambiguous regions worth
 examining.
 
-## Intuition
+## What each method optimises
 
 **What Infomap optimises.** Infomap compresses a description of a random walk on
 your network (the map equation). A module is real when a random walker entering
@@ -70,7 +72,7 @@ communities in large graphs regardless of how cohesive they are. The map equatio
 has a resolution limit too, but a much weaker one, so it resolves structure that
 modularity blends (shown below).
 
-## Theory
+## Modularity vs the map equation
 
 Modularity for a partition $\mathsf{C}$ is
 
@@ -116,7 +118,7 @@ modules when a shorter description exists without them; tune the scale with `mar
 `preferred_number_of_modules`.
 :::
 
-## A worked example
+## Do the three methods agree?
 
 We use `nx.planted_partition_graph`, which generates a network with four
 equally-sized communities whose ground truth is known by construction.

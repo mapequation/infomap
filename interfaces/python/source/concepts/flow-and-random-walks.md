@@ -10,13 +10,15 @@ kernelspec:
 
 # Flow and random walks
 
+{bdg-info-line}`Concept`
+
 ```{admonition} In one sentence
 :class: tip
 Infomap finds communities by asking where a random walker lingers. Flow is that
 walker's stationary visit frequency, and modules are the regions that trap it.
 ```
 
-## Motivation
+## What flow captures
 
 Every network encodes a pattern of movement. Hyperlinks carry web surfers from
 page to page, citations pull readers toward influential papers, synaptic
@@ -35,7 +37,7 @@ walker visits each node and how often it crosses module boundaries. Both
 come from **flow**, so flow is the first thing to understand about why Infomap
 partitions a network the way it does.
 
-## Intuition
+## Where the walker lingers
 
 Picture a walker that starts at some node and, at each step, follows one of the
 outgoing edges at random. It spends more time in densely connected regions and
@@ -62,7 +64,7 @@ trajectory, removes most of the blurring and makes the partition robust to the
 value of $\tau$. Infomap uses unrecorded teleportation by default for directed
 networks.
 
-## Theory
+## Flow as a stationary distribution
 
 A directed, weighted network on $n$ nodes defines a transition matrix
 $T_{ij} = w_{ij} / w_j^{\text{out}}$, where $w_{ij}$ is the edge weight from
@@ -112,7 +114,7 @@ the flow across module boundaries. See {cite:t}`lambiotte2012smart` for the
 formal derivation.
 :::
 
-## A worked example
+## Two cycles joined by a one-way bridge
 
 We build a tiny directed network by hand: two tight 3-cycles connected by a
 single bridge edge.

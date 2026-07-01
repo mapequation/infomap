@@ -10,6 +10,8 @@ kernelspec:
 
 # State nodes and higher-order flow
 
+{bdg-info-line}`Concept`
+
 ```{admonition} In one sentence
 :class: tip
 A *state node* lets one real-world node carry several flow contexts at once. It
@@ -17,7 +19,7 @@ is the single idea behind memory, multilayer, and temporal networks, and it is
 what lets a node belong to more than one community.
 ```
 
-## Motivation
+## When first-order flow is too simple
 
 The map equation in the previous chapters assumes **first-order** flow: where the
 walker goes next depends only on where it is now. That is often too simple. Where
@@ -31,7 +33,7 @@ The fix is to stop treating a node as a single thing. This one mechanism, the
 multilayer and multiplex networks, and temporal networks are all the same
 construction with different notions of "context."
 
-## Intuition
+## Physical nodes vs state nodes
 
 Separate two ideas that an ordinary network conflates:
 
@@ -49,7 +51,7 @@ different modules, that physical node belongs to several communities at once,
 with no separate overlapping-community algorithm. Alice-at-work and Alice-at-home
 can sit in different groups; a hub airport can belong to several regional systems.
 
-## Theory
+## The map equation on state nodes
 
 A higher-order network is a set of state nodes $\{\alpha_i\}$ (state $i$ of
 physical node $\alpha$) with transitions between them. The map equation is
@@ -66,7 +68,7 @@ nodes of the same physical node in the same module before computing the module
 codebook entropy. That summation is the whole difference, and it is what makes
 physical nodes naturally multi-modular.
 
-## A worked example
+## One physical node in two modules
 
 The smallest illustration: a physical node that two state nodes split between two
 groups. Build state nodes directly with `add_state_node(state_id, physical_id)`

@@ -10,13 +10,15 @@ kernelspec:
 
 # Hierarchy and the multilevel map equation
 
+{bdg-info-line}`Concept`
+
 ```{admonition} In one sentence
 :class: tip
 The multilevel map equation lets Infomap discover how many levels of nested
 structure your network contains, with no resolution parameter to tune.
 ```
 
-## Motivation
+## Why one flat level isn't enough
 
 Real networks rarely organise into one flat layer of modules. Scientific
 disciplines hold sub-fields that hold research topics. Cities hold
@@ -38,7 +40,7 @@ only when that level shortens the total description, so the depth of the output
 tree reflects real structure rather than an analyst's choice. Infomap runs in
 multilevel mode by default, so you opt out, not in.
 
-## Intuition
+## Nested addresses
 
 Think of the two-level map as a street address with two parts: *city* and
 *street*. That works for a small country. For the whole world you need at least
@@ -59,7 +61,7 @@ nodes are modules at different granularities. You can read off the coarse
 super-group membership at depth 1, the fine-grained clique membership at
 depth 2, and so on.
 
-## Theory
+## Nested codebooks
 
 The two-level map equation (see the {doc}`map equation chapter </concepts/the-map-equation>`)
 uses one index codebook to describe inter-module movements and one codebook
@@ -138,7 +140,7 @@ structure the hierarchical method all but eliminates the resolution limit; see
 {cite:t}`kawamoto2015resolution`, §IV.
 :::
 
-## A worked example
+## Four cliques, two super-groups
 
 We construct a toy network with a clear two-level hierarchy and let Infomap
 find it automatically. The network has four cliques of five nodes each,
