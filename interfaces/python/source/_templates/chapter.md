@@ -14,7 +14,7 @@ kernelspec:
 # brackets>) are prompts, not headings to keep. A reader who opens the page
 # mid-scroll should know from the page-TOC alone what each section says. The
 # published chapters model this: "When flow remembers where it came from",
-# "Two questions you can ask of a network", "Four cliques, two super-groups".
+# "Two questions you can ask of a network", "Nine triangles, three super-groups".
 # Never ship a heading literally called Motivation / Intuition / Theory.
 ---
 

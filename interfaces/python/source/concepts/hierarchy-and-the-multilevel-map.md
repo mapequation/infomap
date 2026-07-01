@@ -58,7 +58,7 @@ description, then stops. No resolution parameter, no manual depth.
 
 The result is a tree of modules. Each leaf is a network node. Internal tree
 nodes are modules at different granularities. You can read off the coarse
-super-group membership at depth 1, the fine-grained clique membership at
+super-group membership at depth 1, the fine-grained triangle membership at
 depth 2, and so on.
 
 ## Nested codebooks
@@ -140,14 +140,13 @@ structure the hierarchical method all but eliminates the resolution limit; see
 {cite:p}`kawamoto2015resolution`, §IV.
 :::
 
-## Four cliques, two super-groups
+## Nine triangles, three super-groups
 
-We construct a toy network with a clear two-level hierarchy and let Infomap
-find it automatically. The network has four cliques of five nodes each,
-arranged in two super-groups: cliques A1 and A2 are densely connected to
-each other (forming super-group A), cliques B1 and B2 are densely connected
-to each other (forming super-group B), and only a single bridge link connects
-the two super-groups.
+The nine-triangles network from the examples on mapequation.org is built for
+exactly this: twenty-seven nodes in nine triangles, arranged in three
+super-groups of three triangles each. Weight-1 links join the triangles inside
+a super-group; the three links between super-groups are weaker, 0.8. We build
+it and let Infomap find the nesting automatically.
 
 ### Build the network
 
@@ -155,31 +154,27 @@ the two super-groups.
 import networkx as nx
 import infomap
 
+links = []
+
+# Nine triangles: nodes {1, 2, 3}, {4, 5, 6}, ..., {25, 26, 27}
+for t in range(9):
+    a, b, c = 3 * t + 1, 3 * t + 2, 3 * t + 3
+    links += [(a, b, 1.0), (a, c, 1.0), (b, c, 1.0)]
+
+# Weight-1 links join the three triangles inside each super-group
+for base in (0, 9, 18):
+    links += [
+        (base + 2, base + 4, 1.0),
+        (base + 3, base + 7, 1.0),
+        (base + 6, base + 8, 1.0),
+    ]
+
+# Weaker links join the three super-groups into a ring
+links += [(5, 10, 0.8), (9, 19, 0.8), (18, 23, 0.8)]
+
 G = nx.Graph()
-
-def add_clique(G, nodes):
-    """Add all edges of a complete subgraph."""
-    for i, u in enumerate(nodes):
-        for v in nodes[i + 1:]:
-            G.add_edge(u, v)
-
-# Four cliques of five nodes each
-A1 = list(range(0, 5))
-A2 = list(range(5, 10))
-B1 = list(range(10, 15))
-B2 = list(range(15, 20))
-
-for clique in [A1, A2, B1, B2]:
-    add_clique(G, clique)
-
-# Dense inter-clique edges within each super-group
-for i in range(3):
-    G.add_edge(A1[i], A2[i])   # A1 ↔ A2
-for i in range(3):
-    G.add_edge(B1[i], B2[i])   # B1 ↔ B2
-
-# Single sparse bridge between super-groups
-G.add_edge(A1[0], B1[0])
+for u, v, w in links:
+    G.add_edge(u, v, weight=w)
 
 print(f"Nodes: {G.number_of_nodes()}, Edges: {G.number_of_edges()}")
 ```
@@ -194,38 +189,43 @@ Infomap from finding deeper structure.
 from infomap import Network, run
 
 net = Network()
-for u, v in G.edges():
-    net.add_link(u, v)
+for u, v, w in links:
+    net.add_link(u, v, w)
 result = run(net, silent=True, num_trials=10, seed=123)
 
 print(f"Tree depth (num_levels): {result.num_levels}")
 print(f"Top-level modules:       {result.num_top_modules}")
 print(f"Map equation codelength: {result.codelength:.4f} bits/step")
+
+# The prose below relies on this structure; fail the build if it drifts.
+assert result.num_top_modules == 3
 ```
 
 Infomap discovered the nesting on its own, with no depth argument: as
-`num_levels` shows above, the tree runs from a root through two coarse
-super-groups down to the four fine cliques.
+`num_levels` shows above, the tree runs from a root through three coarse
+super-groups down to the nine fine triangles.
 
 ### Read module assignments at each level
 
 ```{code-cell} python
-# Coarsest level (depth 1): the two super-groups A and B
+# Coarsest level (depth 1): the three super-groups
 modules_l1 = result.modules(depth=1)
 
-# Finer level (depth 2): the four individual cliques
+# Finer level (depth 2): the nine individual triangles
 modules_l2 = result.modules(depth=2)
 
 print("Level-1 assignment (super-groups):")
 print(modules_l1)
 
-print("\nLevel-2 assignment (cliques):")
+print("\nLevel-2 assignment (triangles):")
 print(modules_l2)
+
+assert len(set(modules_l2.values())) == 9
 ```
 
-`result.modules(depth=1)` returns the coarsest grouping: two modules of ten
-nodes each, matching super-groups A and B. `result.modules(depth=2)` returns the
-finer partition, four modules of five nodes each, one per clique. Pass
+`result.modules(depth=1)` returns the coarsest grouping: three modules of nine
+nodes each, one per super-group. `result.modules(depth=2)` returns the finer
+partition, nine modules of three nodes each, one per triangle. Pass
 `depth=-1` for the finest (leaf) level whatever the tree depth.
 
 ### Visualise both levels side by side
@@ -245,7 +245,7 @@ draw_partition(G, modules_l1, ax=axes[0], flow=flow)
 axes[0].set_title("Level 1: super-groups", fontsize=11)
 
 draw_partition(G, modules_l2, ax=axes[1], flow=flow)
-axes[1].set_title("Level 2: cliques", fontsize=11)
+axes[1].set_title("Level 2: triangles", fontsize=11)
 
 fig.suptitle("Two levels of hierarchy, discovered automatically", fontsize=12)
 glue("fig-hierarchy-and-the-multilevel-map", fig, display=False)
@@ -254,16 +254,15 @@ plt.close(fig)
 
 ```{glue:figure} fig-hierarchy-and-the-multilevel-map
 The same nested network at two levels of the hierarchy Infomap discovers.
-Left: the two coarse super-groups. Right: the four fine cliques nested
+Left: the three coarse super-groups. Right: the nine fine triangles nested
 inside them. Both panels share one layout, so the levels read against each
 other.
 ```
 
-The left panel shows the two super-groups: all ten nodes in super-group A
-share one colour, all ten in super-group B share another. The right panel
-reveals the finer structure: each clique gets its own colour. Both views are
-consistent descriptions of the *same* Infomap result, read at different depths
-of the output tree.
+The left panel shows the three super-groups: all nine nodes in a super-group
+share one colour. The right panel reveals the finer structure: each triangle
+gets its own colour. Both views are consistent descriptions of the *same*
+Infomap result, read at different depths of the output tree.
 
 This matches the theoretical picture {cite:p}`rosvall2011multilevel`: the
 network has dense intra-clique flow, moderately dense intra-super-group flow
