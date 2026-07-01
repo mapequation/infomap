@@ -306,6 +306,16 @@ Two further engine options:
 - `meta_data_unweighted`, when `True`, ignores node visit frequencies when
   computing the metadata codebook and treats all nodes as equally visited.
 
+## Options
+
+Metadata influence is set by these engine options on {func}`infomap.run`:
+
+| Option | Default | Effect |
+|---|---|---|
+| `meta_data_rate` | `1.0` | Weight $\eta$ of the attribute codebook; `0` ignores metadata |
+| `meta_data_unweighted` | `False` | Treat all nodes as equally visited in the metadata term |
+| `meta_data` | `None` | Path to a `node_id category` file instead of `set_meta_data` |
+
 ## Going deeper
 
 - {cite:t}`smiljanic2026survey`, §6.1, covers metadata-aware community detection.

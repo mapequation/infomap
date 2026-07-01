@@ -262,6 +262,13 @@ coherent user–item subgraph, not a user-only or item-only group.
   the output, which helps when only the left-type assignments matter (projecting
   a user partition, say).
 
+## Options
+
+| Option | Where | Effect |
+|---|---|---|
+| `bipartite_start_id` | {class}`~infomap.Network` attribute | First node id of the second type; declares the network bipartite |
+| `hide_bipartite_nodes` | {func}`infomap.run` | Omit the second-type nodes from the output |
+
 ## Going deeper
 
 - {cite:t}`smiljanic2026survey`, §6.2, covers bipartite networks.

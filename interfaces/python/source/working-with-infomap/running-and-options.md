@@ -42,94 +42,14 @@ apart is most of the battle:
 - **Search options** (`seed`, `num_trials`, `converge`) change *how hard the
   search works*, not which partition Infomap looks for. They buy reliability.
 
-The rest of this page is one task per option that matters. The flow-model theory
-behind them lives in {doc}`/concepts/flow-and-random-walks` and
-{doc}`/concepts/choosing-a-method`.
-
-## How it works, in brief
-
-Enough to use the options well; the full treatment is in
-{doc}`/concepts/flow-and-random-walks` and {doc}`/concepts/choosing-a-method`.
-
-### The search landscape: why `num_trials` matters
-
-Finding the partition that minimises $L(\mathsf{M})$ is NP-hard, so Infomap
-uses a stochastic greedy search. Each call to `run()` starts from a different
-random initialisation (set by `seed`) and climbs downhill to a local minimum.
-On a rugged landscape, different starting points often find different minima
-{cite:p}`calatayud2019solution`. Infomap keeps the trial with the lowest codelength, so
-more trials buy a more reliable partition at the cost of more compute.
-
-`seed` fixes the random number generator for exact reproducibility. With the
-same `seed` and `num_trials` on the same machine, you get the same partition
-every time. With `seed` fixed and `num_trials=1`, a different `seed` value may
-find a different minimum.
-
-### Directed flow and teleportation
-
-For undirected networks the random walk's stationary distribution is
-proportional to degree, and no extra mechanism is needed. For directed networks
-not every node is reachable, so Infomap uses a random-surfer model: with
-probability $\tau$ the walker teleports to another node, and with probability
-$1-\tau$ it follows a link. The default $\tau = 0.15$ is the conventional
-PageRank value (one minus the 0.85 damping factor).
-
-{cite:t}`lambiotte2012smart` showed that *what counts as a step* matters for
-clustering (see {doc}`/concepts/flow-and-random-walks` for the full treatment of
-teleportation). With *recorded* teleportation, the teleportation steps contribute to
-the flow that defines module membership. With *unrecorded* teleportation (the
-Infomap default), only steps along links count. This "smart teleportation" keeps
-the partition stable as $\tau$ changes, because the artificial jumps no longer
-blur module boundaries. Test it yourself: sweep `teleportation_probability` from
-0.05 to 0.5 and watch unrecorded teleportation hold its partition across the
-range while recorded teleportation drifts.
-
-### Resolution scale: `markov_time`
-
-The map equation balances description cost at the timescale of one random-walk
-step. At that scale, a module is worth naming separately when the walker spends
-longer inside it than outside. {cite:t}`kheirkhahzadeh2016markov` showed that rescaling
-the transition rates by a factor $t$, the Markov time, shifts the resolution:
-larger $t$ makes module crossings costlier and merges small modules into larger
-ones, while smaller $t$ splits them.
-
-The map equation has a far weaker resolution limit than modularity, and the
-multilevel search loosens it further; {doc}`/concepts/hierarchy-and-the-multilevel-map`
-and {doc}`/concepts/choosing-a-method` cover why. For most networks, let Infomap
-find the multilevel hierarchy first, then reach for `markov_time` when you need a
-specific scale.
-
-### Regularization
-
-Sparse or under-sampled networks can be over-partitioned: Infomap splits on
-sampling noise instead of real structure. `regularized=True` adds a Bayesian
-prior network that penalises splits unsupported by the data, merging weakly
-supported modules. Scale the penalty with `regularization_strength` (default
-1.0). This option is most useful when your network has many nodes with very few
-links, or when you suspect significant missing data.
-
-:::{toggle}
-**Smart teleportation in detail**
-
-The recorded node teleportation scheme commonly used with PageRank teleports
-the walker to a uniformly random node. {cite:t}`lambiotte2012smart` showed
-this creates artificial connections between modules: the teleportation
-probability $\tau$ adds mixing between communities. In the map equation this
-means that as $\tau$ increases, modules that are otherwise well-separated start
-to look connected through the teleportation channel, eventually merging into
-one flat cluster.
-
-Unrecorded link teleportation (Infomap's default) avoids this by not encoding
-teleportation steps in the module codebooks. The walker may still jump, but the
-jump does not count as a module exit or entry. The stationary distribution is
-$\pi_i^{\mathrm{unrec}} = \sum_l T_{il} \pi_{l;\alpha}$, i.e. the distribution
-you would get by taking one more link-following step after a recorded walk.
-Because only link-following steps define community membership, the partition
-depends on the topology of the links, not on the value of $\tau$. Benchmarks
-confirm this: with unrecorded teleportation the partition is essentially
-independent of $\tau$ over a wide range, while recorded teleportation collapses
-to a single module at high $\tau$.
-:::
+The rest of this page is one task per option that matters. The theory behind
+them lives in Concepts: {doc}`/concepts/flow-and-random-walks` for flow and
+teleportation, {doc}`/concepts/hierarchy-and-the-multilevel-map` and
+{doc}`/concepts/choosing-a-method` for resolution, and
+{doc}`/robustness/incomplete-data` for regularization. In brief: the search is
+stochastic, so `num_trials` restarts buy reliability
+{cite:p}`calatayud2019solution`; the flow model (`directed` with unrecorded
+teleportation, `markov_time`, `regularized`) decides what the random walk *is*.
 
 ## The options that matter
 

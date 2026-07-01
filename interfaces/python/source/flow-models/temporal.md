@@ -259,6 +259,16 @@ at <https://www.mapequation.org/alluvial> accepts Infomap output directly, and
   called with `states=True`; use `result.nodes(states=True)` for the layer-aware
   view shown in the worked example.
 
+## Options
+
+Temporal coupling is set by the multilayer engine options on {func}`infomap.run`:
+
+| Option | Default | Effect |
+|---|---|---|
+| `multilayer_relax_rate` | `0.15` | Inter-layer coupling; higher couples windows more, toward the aggregate |
+| `multilayer_relax_limit` | `-1` | Caps how far in layer index the walker may relax; enforces temporal ordering |
+| `multilayer_relax_by_jsd` | `False` | Couple windows by neighbourhood-flow similarity instead of uniformly |
+
 ## Going deeper
 
 - {cite:t}`smiljanic2026survey`, §5.3, covers temporal networks and the multilayer
