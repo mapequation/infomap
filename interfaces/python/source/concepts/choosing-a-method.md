@@ -96,9 +96,19 @@ The clearest way to build intuition is to look at one network under each lens.
 import networkx as nx
 import infomap
 import igraph as ig
+import random
 
-# A network with clear community structure.
-g = nx.planted_partition_graph(4, 12, 0.7, 0.05, seed=123)
+# Four well-separated groups by construction. Sampling with Python's `random`
+# keeps the graph identical across NetworkX versions.
+rng = random.Random(123)
+n_groups, n_per = 4, 12
+g = nx.Graph()
+g.add_nodes_from(range(n_groups * n_per))
+for i in range(n_groups * n_per):
+    for j in range(i + 1, n_groups * n_per):
+        p = 0.7 if i // n_per == j // n_per else 0.05
+        if rng.random() < p:
+            g.add_edge(i, j)
 
 # Infomap: compress the flow
 result = infomap.run(g, two_level=True, seed=123, num_trials=10, silent=True)
@@ -142,9 +152,9 @@ flow lens and the modularity lens tend to carve it the same way; the group count
 print above. Colours identify groups within a panel, not across panels.
 ```
 
-On well-separated, undirected structure like this the objectives largely coincide:
-compressing the flow and maximising within-group density point at the same groups.
-That is the common case, and the agreement is reassuring rather than surprising.
+On well-separated, undirected structure like this the two objectives agree:
+compressing the flow and maximising within-group density pick out the same
+groups. That agreement is the common case.
 
 ## Where the lenses read a network differently
 
