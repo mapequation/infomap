@@ -26,9 +26,8 @@ together, not only which edges are present.
 
 Counting edges inside and outside groups misses something dynamic: the way a
 random walker entering a dense cluster tends to stay there for many steps before
-it escapes. That persistence is what defines a community in Rosvall & Bergstrom's
-formulation: a module is a part of the network where flow **lingers**
-{cite:p}`rosvall2008maps`.
+it escapes. That persistence is what defines a community in flow-based clustering: a module
+is a part of the network where flow **lingers** {cite:p}`rosvall2008maps`.
 
 The map equation, Infomap's objective function, measures how far a description
 of the walker's trajectory compresses. To do that it needs to know how often the
