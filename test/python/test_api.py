@@ -235,7 +235,9 @@ def test_to_dataframe_rejects_unknown_columns(make_infomap, example_network_path
 
 def test_get_dataframe_missing_pandas_message(monkeypatch, make_infomap):
     im = make_infomap(no_infomap=True)
-    monkeypatch.setattr(results_module, "pandas", None)
+    # pandas is now resolved lazily via get_pandas() inside the accessor, so
+    # simulate its absence by making that lookup return None.
+    monkeypatch.setattr(results_module, "get_pandas", lambda: None)
 
     with pytest.raises(ImportError, match=r"infomap\[pandas\]"):
         im.get_dataframe()
