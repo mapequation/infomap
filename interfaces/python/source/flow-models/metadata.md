@@ -51,8 +51,8 @@ topology and metadata; the Emmons & Mucha formulation is what Infomap implements
 ## Intuition
 
 Think of the city-map analogy again. In standard Infomap, every street in a
-city is named by its local codebook, and switching cities costs an inter-module
-codeword. Now suppose each node also has a colour, its attribute, and you want
+city carries its own local codebook that names its streets, and switching cities
+costs an inter-module codeword. Now suppose each node also has a colour, its attribute, and you want
 modules where all nodes share a colour.
 
 The metadata codebook adds a second layer of naming within each module: it also
@@ -267,7 +267,7 @@ centre.
   `set_meta_data(node_id, meta_category)`. Each node takes one integer category
   label; call it once per node before the run.
 - `meta_data_rate` (an engine option on {func}`infomap.run`, default `1.0`; no
-  effect unless metadata is declared) sets $\eta$, the weight of the attribute
+  effect unless you declare metadata) sets $\eta$, the weight of the attribute
   codebook term. Pass `meta_data_rate=0` to suppress all metadata influence.
 - {attr}`infomap.Result.meta_entropy` is the metadata entropy term of the best
   partition, in bits per step.

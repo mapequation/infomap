@@ -94,8 +94,8 @@ similar couple strongly. {cite:t}`aslak2017temporal` showed this matters for
 coupling every window together would merge distinct occurrences that happen to
 share nodes.
 
-**Temporal ordering** can be enforced with `multilayer_relax_limit`, which caps
-how far the walker may relax in layer index, so it crosses only into nearby time
+`multilayer_relax_limit` enforces **temporal ordering**: it caps how far the
+walker may relax in layer index, so the walk crosses only into nearby time
 windows rather than jumping across the whole sequence.
 
 ## A worked example
@@ -200,7 +200,7 @@ tracks.
 ```
 
 The blue and orange groups are consistent in T = 1 and T = 3. In T = 2 the
-midday shuffle is captured: node 3 switches from the blue community to the orange
+midday shuffle appears: node 3 switches from the blue community to the orange
 one, and node 4 switches the other way. Because the relax rate couples the
 layers, Infomap does not treat the T = 2 partition as independent; it sees that
 the same two underlying communities are at work and labels them consistently
@@ -209,8 +209,8 @@ instead of assigning arbitrary new module ids.
 ### What the relax rate controls
 
 Lowering `multilayer_relax_rate` toward zero makes each layer more autonomous,
-which helps when snapshots are far apart in time and community identity should
-not be assumed to persist. Raising it toward 1 pushes Infomap toward the
+which helps when snapshots are far apart in time and you should not assume
+community identity persists. Raising it toward 1 pushes Infomap toward the
 aggregate static solution. The default 0.15–0.25 is usually a good choice for
 networks where communities evolve smoothly; {cite:t}`aslak2017temporal` found
 neighbourhood flow coupling robust across a broad range of relax rates (0.15 to

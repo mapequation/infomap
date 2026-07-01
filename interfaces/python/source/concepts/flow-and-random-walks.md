@@ -32,8 +32,8 @@ stay there for many steps before it escapes. That persistence is what defines a 
 **lingers** {cite:p}`rosvall2008maps`.
 
 The map equation, Infomap's objective function, measures how far a description
-of the walker's trajectory compresses. To do that it needs to know how often
-each node is visited and how often the walker crosses module boundaries. Both
+of the walker's trajectory compresses. To do that it needs to know how often the
+walker visits each node and how often it crosses module boundaries. Both
 come from **flow**, so flow is the first thing to understand about why Infomap
 partitions a network the way it does.
 
@@ -104,8 +104,8 @@ here we only establish the flow it is built from.
 For an unweighted undirected network the transition matrix is
 $T_{ij} = A_{ij}/k_j$ where $k_j$ is the degree of node $j$, and the
 stationary distribution is $\pi_i = k_i / (2|E|)$, proportional to degree.
-For a weighted directed network $\pi$ is the leading left eigenvector of $T$ and
-must be computed iteratively (the power method).
+For a weighted directed network $\pi$ is the leading left eigenvector of $T$,
+which the power method computes iteratively.
 
 For directed networks with teleportation, Infomap first computes $\pi$ for the
 recorded walk (including teleportation steps), then re-weights it to count only

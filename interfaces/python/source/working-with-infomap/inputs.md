@@ -245,7 +245,7 @@ print(result.to_dataframe(["node_id", "name", "module_id", "flow"]).to_string(in
 ```
 
 `add_node(node_id, name=None, teleportation_weight=None)` registers a node and
-an optional label; a node referenced only by `add_link` is created
+an optional label; `add_link` creates any node it references
 automatically. `add_link(source, target, weight=1.0)` adds one link, and
 `add_links(rows)` adds many from an iterable or a NumPy ``(n, 2)`` / ``(n, 3)``
 array. The flow model (directed or undirected) is an engine option on the run,

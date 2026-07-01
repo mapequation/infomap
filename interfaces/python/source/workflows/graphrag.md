@@ -59,7 +59,7 @@ $$
 
 over all partitions $\mathsf{M}$ of the entity graph. The first term is the cost
 of naming module crossings; the second is the cost of naming nodes within
-modules. Edge weights are used directly as flow volumes, so a heavy
+modules. Infomap uses edge weights directly as flow volumes, so a heavy
 co-occurrence link between two entities makes them harder to separate. See
 {doc}`/concepts/the-map-equation` for the full derivation.
 

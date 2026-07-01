@@ -172,7 +172,7 @@ to sit at cluster boundaries.
 
 If you want hierarchical modules, flow values, or finer control over Infomap
 options, skip the `tl` helper and use the core API directly. The connectivity
-matrix is a standard SciPy CSR matrix and can be passed straight to
+matrix is a standard SciPy CSR matrix that you can pass straight to
 `infomap.run()`.
 
 ```{code-cell} python

@@ -32,10 +32,10 @@ where a cluster comes in.
 Two strategies cover most HPC use cases:
 
 1. **Single-node parallelism.** Your scheduler gives you a node with many
-   cores. Run all trials on that node with `parallel_trials=True`. The
-   thread budget is controlled by `num_threads`, which reads
-   scheduler-set variables (`SLURM_CPUS_PER_TASK`, `OMP_NUM_THREADS`,
-   cpuset) automatically when set to `"auto"`.
+   cores. Run all trials on that node with `parallel_trials=True`.
+   `num_threads` controls the thread budget and reads scheduler-set variables
+   (`SLURM_CPUS_PER_TASK`, `OMP_NUM_THREADS`, cpuset) automatically when set to
+   `"auto"`.
 
 2. **Job-array sharding.** Your network is large, or you want more trials
    than one node can finish in time. Divide the total trial budget across

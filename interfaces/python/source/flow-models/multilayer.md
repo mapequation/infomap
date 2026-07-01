@@ -87,7 +87,7 @@ running Infomap on the aggregated single-layer network (but still allowing
 overlap).
 
 The map equation then encodes the random walker's trajectory through these state
-nodes. If two state nodes $(i, \alpha)$ and $(i, \beta)$ are assigned to the
+nodes. If two state nodes $(i, \alpha)$ and $(i, \beta)$ land in the
 same module, they share a codeword, because they represent the same physical
 object. If they land in different modules, physical node $i$ is bi-modular, a
 member of two overlapping communities.
@@ -124,9 +124,9 @@ L(\mathsf{M}) =
       H(\mathcal{P}^{\boldsymbol{\imath}})
 $$
 
-over partitions of state nodes into modules, where visit rates of the same
-physical node in the same module are summed before computing the module
-codebook entropy $H(\mathcal{P}^{\boldsymbol{\imath}})$. This is the only
+over partitions of state nodes into modules, where the map equation sums the
+visit rates of the same physical node in the same module before computing the
+module codebook entropy $H(\mathcal{P}^{\boldsymbol{\imath}})$. This is the only
 difference from the standard first-order map equation, and it is precisely what
 makes physical nodes naturally bi-modular (De Domenico et al. 2015; Edler et al. 2017).
 :::
@@ -181,7 +181,7 @@ Physical node **1** appears twice, once in each layer, in a different module eac
 time. Nodes 2 and 3 sit only in module 1 (the Layer 1 triangle), nodes 4 and 5
 only in module 2 (the Layer 2 triangle).
 
-`result.modules(states=True)` is required on multilayer networks, because each
+On multilayer networks you must call `result.modules(states=True)`, because each
 physical node can belong to multiple modules:
 
 ```{code-cell} python
@@ -266,7 +266,7 @@ other cluster in that context.
 
 ### Relax rate sensitivity
 
-The relax rate controls how strongly layers are coupled. Low values treat each
+The relax rate controls how strongly the layers couple. Low values treat each
 layer nearly independently; high values merge them into a single partition.
 
 ```{code-cell} python
@@ -324,7 +324,7 @@ print(f"Codelength    : {result_inter.codelength:.4f} bits")
 ```
 
 When you provide explicit inter-layer links, Infomap does not use the relax-rate
-model; the coupling is fully specified by the link weights you supply.
+model; the link weights you supply fully specify the coupling.
 
 ## API pointers
 

@@ -41,7 +41,7 @@ It is the value of the map equation: the average number of bits per step needed
 to describe a random walk under the best code for the partition Infomap found.
 Lower means a more compressive, and usually more meaningful, partition.
 Compare it to `result.one_level_codelength` (no modules) to see how much structure
-was found. See {doc}`The map equation <concepts/the-map-equation>`.
+Infomap found. See {doc}`The map equation <concepts/the-map-equation>`.
 
 ## Number and size of modules
 

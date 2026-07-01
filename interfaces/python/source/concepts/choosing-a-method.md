@@ -106,16 +106,16 @@ not capture.
 :::{toggle}
 **Resolution limit and scale**
 
-Modularity has a resolution limit: communities smaller than roughly
-$\sqrt{2m}$ edges tend to be merged regardless of how internally cohesive they
-are {cite:p}`fortunato2007resolution`. Leiden inherits this when it maximises
+Modularity has a resolution limit: it tends to merge communities smaller than
+roughly $\sqrt{2m}$ edges regardless of how internally cohesive they are
+{cite:p}`fortunato2007resolution`. Leiden inherits this when it maximises
 modularity, but escapes it with a resolution-limit-free objective such as the
 Constant Potts Model, or by tuning its `resolution_parameter`. The map equation
 has its own resolution limit, but a much weaker one: it depends on a module's cut
 size rather than the total link count, so it resolves far smaller modules
 ({doc}`/concepts/hierarchy-and-the-multilevel-map` derives the bound). It does not
-vanish, so very small, loosely connected modules can still be absorbed when a
-shorter description exists without them; tune the scale with `markov_time` or
+vanish, so the map equation can still absorb very small, loosely connected
+modules when a shorter description exists without them; tune the scale with `markov_time` or
 `preferred_number_of_modules`.
 :::
 

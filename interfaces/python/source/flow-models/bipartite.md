@@ -61,7 +61,7 @@ codewords and compressing the description.
 
 The practical effect is higher resolution: the bipartite variant
 partitions more finely, grouping nodes into tighter clusters that reflect
-genuine co-use patterns rather than being averaged out across node types.
+genuine co-use patterns rather than washing out across node types.
 In all 21 real-world networks studied by {cite:t}`blocker2020bipartite`, the
 bipartite map equation compressed the walk description more than the
 unipartite variant, and detected richer community hierarchies.

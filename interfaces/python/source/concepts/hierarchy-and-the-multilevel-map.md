@@ -102,8 +102,8 @@ $$
 The point is that $q_{\circlearrowright}^i$, the rate at which the walker uses
 module $i$'s sub-index codebook, depends only on the *local* traffic within
 module $i$, not on the global network. That is why the resolution limit relaxes
-so far: whether to split module $i$ further is judged against the traffic inside
-$i$, not against a global cut size that grows with the whole network (Kawamoto &
+so far: Infomap judges whether to split module $i$ further against the traffic
+inside $i$, not against a global cut size that grows with the whole network (Kawamoto &
 Rosvall 2015, §IV).
 
 Infomap searches for the hierarchical partition that minimises the total $L$
@@ -129,13 +129,12 @@ Contrast this with modularity, where the limit scales as $\sqrt{L}$ with
 total link count $L$. The map equation's dependence on the cut size $C$
 rather than $L$ is already much less restrictive, but it does not vanish.
 
-In the *hierarchical* map equation the analogous update is evaluated with
-the effective network size equal to the super-module plus its boundary
-links, not the full graph. Because a super-module is much smaller than the
-full network, the cut size against which a fine-level split is judged is
-tiny, and fine-level modules that would be swallowed at the two-level stage
-are correctly resolved. For networks with a pronounced nested structure the
-resolution limit of the hierarchical method is effectively eliminated
+The *hierarchical* map equation evaluates the analogous update with the effective
+network size equal to the super-module plus its boundary links, not the full
+graph. Because a super-module is much smaller than the full network, the cut size
+that gates a fine-level split is tiny, so the search resolves fine-level modules
+that the two-level stage would swallow. For networks with a pronounced nested
+structure the hierarchical method all but eliminates the resolution limit
 (Kawamoto & Rosvall 2015, §IV).
 :::
 
@@ -204,7 +203,7 @@ print(f"Map equation codelength: {result.codelength:.4f} bits/step")
 
 Infomap determined that this network has **3 levels** entirely on its own:
 a root, two coarse super-groups, and four fine cliques underneath them.
-No depth argument was passed.
+We passed no depth argument.
 
 ### Read module assignments at each level
 

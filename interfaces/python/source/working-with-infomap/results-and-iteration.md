@@ -104,8 +104,8 @@ result = infomap.run(g, two_level=True, seed=123, num_trials=10, silent=True)
 
 ### The Result object
 
-A :class:`~infomap.Result` is an immutable snapshot of one run. Scalar metrics
-are captured the moment `run()` returns, so they stay valid forever. Node-level
+A :class:`~infomap.Result` is an immutable snapshot of one run. `run()` captures
+the scalar metrics the moment it returns, so they stay valid forever. Node-level
 collections are materialised lazily on first access and then cached. The two
 kinds of access read differently, and the surface follows one convention:
 

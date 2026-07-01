@@ -39,7 +39,7 @@ channelled by history appears to leak freely across boundaries. Second, and more
 striking, it hides *overlapping* communities. In a second-order model, a
 multidisciplinary journal such as *PNAS* belongs simultaneously to several
 research communities depending on where a citation arrives from. In a
-first-order model it is forced into a single module. Memory networks restore
+first-order model it lands in a single module. Memory networks restore
 the overlap.
 
 ## Intuition
@@ -62,8 +62,8 @@ Infomap handles this with the **physical node / state node** distinction (see
 State nodes carry the dynamics: they have links and stationary visit rates.
 Physical nodes represent the real objects you care about: they aggregate all
 their state nodes. The map equation encodes flow at the state-node level but
-names physical nodes in its codebook, so a physical node whose state nodes land
-in different modules is correctly recorded as *overlapping* {cite:p}`edler2017higher`.
+names physical nodes in its codebook, so it correctly records a physical node
+whose state nodes land in different modules as *overlapping* {cite:p}`edler2017higher`.
 
 ## Theory
 
@@ -110,7 +110,7 @@ L(\mathsf{M}) = q_{\curvearrowright} H(\mathcal{Q})
 + \sum_{m=1}^{M} p^{\circlearrowright}_m H(\mathcal{P}_m)
 $$
 
-The within-module codebook entropy $H(\mathcal{P}_m)$ is computed over
+The within-module codebook entropy $H(\mathcal{P}_m)$ ranges over
 physical nodes, not state nodes:
 
 $$
@@ -150,8 +150,8 @@ streams of flow pass through a shared junction node **B**:
 
 In a first-order view, node B sits at the intersection and ends up lumped with
 whichever stream has more traffic. In a second-order view, the two streams
-through B are distinguished by which state node carries them, and B is
-correctly assigned to *both* modules simultaneously.
+through B travel on different state nodes, so Infomap assigns B to *both*
+modules at once.
 
 ### Step 1: First-order baseline
 
@@ -253,9 +253,9 @@ correctly identified as overlapping.
 
 ### Step 4: Visualise
 
-The physical graph is coloured by the *primary* module assignment (the first
-module each physical node belongs to). The visualisation shows the two
-communities; the caption reminds you that B is shared.
+We colour the physical graph by each node's *primary* module (the first module
+it belongs to). The visualisation shows the two communities; the caption reminds
+you that B is shared.
 
 ```{code-cell} python
 import matplotlib.pyplot as plt
@@ -307,7 +307,7 @@ net.add_state_node(state_id, physical_id)
 ```
 
 Creates a state node with a unique integer `state_id` mapped to `physical_id`.
-If the physical node does not yet exist it is created automatically. Use
+If the physical node does not yet exist, `add_state_node` creates it. Use
 {meth}`infomap.Network.set_name` afterwards for a human-readable label.
 
 **Adding state-level links**

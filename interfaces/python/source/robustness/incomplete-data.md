@@ -24,7 +24,8 @@ Network data collected from real systems are almost always incomplete. A survey
 captures a subset of acquaintances; a citation database crawls only a fraction
 of references; a protein–protein interaction screen misses true binding partners.
 When links are missing, the network is sparser than reality, and community
-detection methods that take the observed network at face value will be misled.
+detection methods that take the observed network at face value draw the wrong
+boundaries.
 
 The standard map equation is prone to this. It minimises a Shannon
 entropy-based description length that systematically *underestimates* the true
@@ -64,7 +65,7 @@ pseudocount so the model is not overconfident about what it has not seen.
 
 {cite:t}`smiljanic2020missing` introduced the regularized map equation for
 undirected, unweighted networks; {cite:t}`smiljanic2021incomplete` extended it to
-weighted and directed networks. Both are implemented in Infomap under the single
+weighted and directed networks. Infomap implements both under the single
 flag `regularized=True`.
 
 The mechanism is Bayesian. Rather than trust the observed network at face value,

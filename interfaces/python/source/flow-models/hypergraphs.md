@@ -51,12 +51,12 @@ the walk:
 
 - **Unipartite (clique expansion):** Replace each room with a complete graph
   among its occupants. The walker moves directly from person to person. Simple,
-  but inflates the link count quadratically with hyperedge size, and the flow
-  between co-authors in a large hyperedge is diluted.
+  but inflates the link count quadratically with hyperedge size and dilutes the
+  flow between co-authors in a large hyperedge.
 
 - **Bipartite (explicit hyperedge nodes):** Add a node for the room itself.
-  The walker steps *node → room → node*. Hyperedge membership is represented
-  explicitly, the link count grows linearly with hyperedge size, and community
+  The walker steps *node → room → node*, representing hyperedge membership
+  explicitly; the link count grows linearly with hyperedge size, and community
   detection also assigns the room nodes to modules.
 
 - **Multilayer (one layer per hyperedge):** Give each room its own floor of a
@@ -64,9 +64,9 @@ the walk:
   then occasionally takes the stairs to a different floor. Allows flows to
   linger within hyperedges and supports overlapping communities.
 
-The key insight from {cite:t}`eriksson2021hypergraph` is that all three representations
-can be designed to give identical *node-visit rates* for the same random-walk
-model, yet they produce different *link flows* and therefore different optimal
+The key insight from {cite:t}`eriksson2021hypergraph` is that you can design all
+three representations to give identical *node-visit rates* for the same
+random-walk model, yet they produce different *link flows* and therefore different optimal
 partitions. Bipartite representations tend to favour fewer, larger modules;
 unipartite and multilayer representations resolve finer structure.
 
@@ -95,9 +95,9 @@ $$P_{u \to e} = \frac{\omega(e)}{d(u)}, \qquad P_{e \to v} = \frac{\gamma_e(v)}{
 where $d(u) = \sum_{e \in E(u)} \omega(e)$ is the total incident hyperedge
 weight of $u$ and $\delta(e) = \sum_{v \in e} \gamma_e(v)$ is the total node
 weight within $e$. Infomap treats the bipartite network as any weighted
-directed graph, except that hyperedge-nodes are flagged as a second node type
-via `bipartite_start_id`; their stationary flow is then redistributed back to
-the regular nodes before the map equation is evaluated, so the codelength
+directed graph, except that you flag hyperedge-nodes as a second node type via
+`bipartite_start_id`; Infomap then redistributes their stationary flow back to
+the regular nodes before evaluating the map equation, so the codelength
 reflects only the original-node community structure.
 
 :::{toggle}
@@ -112,8 +112,8 @@ where $E(u,v)$ is the set of hyperedges containing both $u$ and $v$. Each
 hyperedge becomes a weighted clique.
 
 Eriksson, Carletti, Lambiotte, Rojas and Rosvall (2022) extended this to a
-*size-biased* random walk with parameter $\sigma$: by setting
-$\omega(E_\alpha) \propto (|E_\alpha| - 1)^{\sigma+1}$, the walker is biased
+*size-biased* random walk with parameter $\sigma$: setting
+$\omega(E_\alpha) \propto (|E_\alpha| - 1)^{\sigma+1}$ biases the walker
 toward large hyperedges ($\sigma > 0$) or small ones ($\sigma < 0$). At
 $\sigma = 0$ the walk reduces to the clique-expanded multigraph. This
 parameterisation lets the researcher encode an explicit hypothesis about
@@ -142,7 +142,7 @@ run Infomap.
 **Bipartite encoding:** assign regular nodes IDs 0–7 and hyperedge-nodes IDs 8–12.
 Every membership $(n, H_k)$ becomes a directed edge in both directions, forming
 an undirected bipartite graph. Setting `bipartite_start_id = 8` tells Infomap
-that nodes 8 and above are hyperedge-nodes whose flow should be folded back
+that nodes 8 and above are hyperedge-nodes whose flow Infomap folds back
 into the regular-node codelength.
 
 ```{code-cell} python
@@ -223,7 +223,7 @@ When you call `result.modules()` on a bipartite run, the returned dictionary
 contains entries for both regular nodes and hyperedge-nodes. If you only care
 about the original-node partition, filter to `{n: modules[n] for n in range(n_nodes)}`.
 The codelength printed by Infomap already accounts for only the regular-node
-flow; hyperedge-node flows are folded back before the map equation is evaluated.
+flow; Infomap folds hyperedge-node flows back before evaluating the map equation.
 ```
 
 ## Beyond bipartite: full flow-based hypergraph models
@@ -294,8 +294,8 @@ for the bipartite case.
   use it for every `(node, hyperedge_node)` membership pair.
 - {meth}`infomap.Result.modules` returns a `{node_id: module_id}` dict covering
   all nodes, including hyperedge-nodes.
-- {attr}`infomap.Result.codelength` is the map equation value after the run; the
-  flow of hyperedge-nodes is folded back into regular-node flow before
+- {attr}`infomap.Result.codelength` is the map equation value after the run;
+  Infomap folds hyperedge-node flow back into regular-node flow before
   evaluation.
 - {attr}`infomap.Result.num_top_modules` is the number of top-level modules in
   the optimal partition.

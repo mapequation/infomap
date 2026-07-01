@@ -32,9 +32,9 @@ reason about on its own. You need two things:
 
 The cleanest export turns the result into an annotated graph with
 :func:`infomap.to_networkx` or :func:`infomap.to_igraph`, which you then write
-with the graph library's own writer (GraphML, GEXF). The engine's native text
-formats, `.tree` and `.clu`, are written by the stateful
-:class:`~infomap.Infomap`.
+with the graph library's own writer (GraphML, GEXF). The stateful
+:class:`~infomap.Infomap` writes the engine's native text formats, `.tree` and
+`.clu`.
 
 ## Intuition
 
@@ -176,8 +176,8 @@ For igraph users, :func:`infomap.to_igraph` returns the same annotation on an
 
 ### Export to .tree and .clu
 
-The engine's native text formats are written by the stateful
-:class:`~infomap.Infomap`: build one, run it, and call its `write_*` methods.
+The stateful :class:`~infomap.Infomap` writes the engine's native text formats:
+build one, run it, and call its `write_*` methods.
 These formats feed the mapequation.org Network Navigator and alluvial diagrams.
 
 ```{code-cell} python

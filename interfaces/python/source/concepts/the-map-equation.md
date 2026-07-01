@@ -89,8 +89,8 @@ $L$ lands on the community structure the flow reveals. **Lower codelength = bett
 compression = more pronounced community structure with respect to the flow**, so
 when you compare two partitions of the same network, the smaller $L$ wins.
 
-For undirected networks, node visit frequencies equal normalised link weights and
-no teleportation is needed. For directed networks Infomap uses a random-surfer
+For undirected networks, node visit frequencies equal normalised link weights, so
+Infomap needs no teleportation. For directed networks Infomap uses a random-surfer
 model with teleportation probability $\tau = 0.15$ (the conventional choice, one
 minus PageRank's 0.85 damping factor) to guarantee an ergodic stationary
 distribution.
@@ -98,8 +98,8 @@ distribution.
 :::{toggle}
 **Full term-by-term form**
 
-Following {cite:t}`rosvall2009map`, the index codebook is used at total exit rate
-$q_{\curvearrowright} = \sum_i q_{i\curvearrowright}$, with entropy
+Following {cite:t}`rosvall2009map`, the two-level code uses the index codebook at
+total exit rate $q_{\curvearrowright} = \sum_i q_{i\curvearrowright}$, with entropy
 
 $$
 H(\mathcal{Q}) = -\sum_{i=1}^m

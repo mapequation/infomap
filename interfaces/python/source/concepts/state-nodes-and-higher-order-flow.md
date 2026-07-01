@@ -61,9 +61,9 @@ L(\mathsf{M}) =
   + \sum_{i=1}^{m} p_{\circlearrowright}^i H(\mathcal{P}^i),
 $$
 
-but it is evaluated over state nodes, and the visit rates of state nodes of the
-same physical node in the same module are summed before the module codebook
-entropy is computed. That summation is the whole difference, and it is what makes
+but it runs over state nodes: the map equation sums the visit rates of state
+nodes of the same physical node in the same module before computing the module
+codebook entropy. That summation is the whole difference, and it is what makes
 physical nodes naturally multi-modular.
 
 ## A minimal example
@@ -125,7 +125,7 @@ directly, but the partition you read back is always over state nodes.
 
 - `Network().add_state_node(state_id, physical_id)` declares a state node;
   `add_link` then links state nodes.
-- `result.modules(states=True)` is required to read a higher-order partition;
+- you need `result.modules(states=True)` to read a higher-order partition;
   `result.nodes(states=True)` exposes each node's `.node_id` (physical),
   `.state_id`, `.module_id`, and `.flow`.
 - `result.have_memory` is `True` once a higher-order network is built.
