@@ -292,7 +292,7 @@ compressed than either a flat two-level partition or a one-level description.
 
 ## Going deeper
 
-- {cite:t}`smiljanic2026survey`, §3, covers the multilevel derivation and worked
-  examples.
+- The survey (§3) covers the multilevel derivation and worked examples
+  {cite:p}`smiljanic2026survey`.
 - Source paper for the multilevel map equation {cite:p}`rosvall2011multilevel`.
 - The resolution limit it relaxes {cite:p}`kawamoto2015resolution`.

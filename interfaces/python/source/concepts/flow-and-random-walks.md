@@ -206,7 +206,7 @@ teleportation bookkeeping {cite:p}`lambiotte2012smart`.
 
 ## Going deeper
 
-- {cite:t}`smiljanic2026survey`, §2–3, for the broader treatment.
+- The survey (§2–3) gives the broader treatment {cite:p}`smiljanic2026survey`.
 - Source paper for flow-based community detection {cite:p}`rosvall2008maps`.
 - Teleportation in directed networks {cite:p}`lambiotte2012smart`.
 - Companion material: the {doc}`survey companion notebooks </article-companion/index>`

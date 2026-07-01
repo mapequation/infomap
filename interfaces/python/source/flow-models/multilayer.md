@@ -293,8 +293,8 @@ for r, m, cl in results:
 At low relax rates the two triangle clusters remain distinct (2 modules). As
 $r \to 1$ the layers fuse and the partition collapses to 1 module, the same as
 running Infomap on the aggregated network. The default $r = 0.15$ is the working
-value from {cite:t}`domenico2015multilayer`, who found the partition only weakly
-dependent on the relax rate; robustness holds across a wide range of empirical
+value from the original multilayer study, where the partition depended only
+weakly on the relax rate {cite:p}`domenico2015multilayer`; robustness holds across a wide range of empirical
 multilayer networks at around $r \approx 0.25$ {cite:p}`edler2017higher`.
 
 ### Using explicit inter-layer links
@@ -359,7 +359,7 @@ Multilayer flow is controlled by three engine options on {func}`infomap.run`:
 
 ## Going deeper
 
-- {cite:t}`smiljanic2026survey`, §5.2, covers multilayer networks.
+- The survey (§5.2) covers multilayer networks {cite:p}`smiljanic2026survey`.
 - Companion notebook: `examples/notebooks/5.2 Multilayer Networks.ipynb`
-- {cite:t}`domenico2015multilayer` is the source paper for multilayer flows.
+- Source paper for multilayer flows {cite:p}`domenico2015multilayer`.
 - Higher-order flows with Infomap {cite:p}`edler2017higher`.

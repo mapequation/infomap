@@ -35,9 +35,9 @@ temporal dimension.
 
 The cost of ignoring time is that naive approaches miss intermittent
 communities, groups that form, dissolve, and re-form in a recurring pattern.
-{cite:t}`aslak2017temporal` showed this on face-to-face contact networks:
-workplace social groups recur daily on a timescale of tens of minutes, but
-uniform aggregation smears them into background noise. Recovering that
+Face-to-face contact networks make this concrete: workplace social groups recur
+daily on a timescale of tens of minutes, but uniform aggregation smears them
+into background noise {cite:p}`aslak2017temporal`. Recovering that
 intermittent structure takes a model that couples information across time while
 respecting the boundaries between distinct interaction contexts.
 
@@ -90,10 +90,10 @@ gradually.
 **Neighbourhood flow coupling** (`multilayer_relax_by_jsd`) makes the coupling
 proportional to the Jensen-Shannon *similarity* (one minus the divergence)
 between a node's link patterns in two windows, so windows where its context looks
-similar couple strongly. {cite:t}`aslak2017temporal` showed this matters for
-*intermittent communities* (groups that appear, vanish, and reappear), where
-coupling every window together would merge distinct occurrences that happen to
-share nodes.
+similar couple strongly. This matters for *intermittent communities* (groups
+that appear, vanish, and reappear), where coupling every window together would
+merge distinct occurrences that happen to share nodes
+{cite:p}`aslak2017temporal`.
 
 `multilayer_relax_limit` enforces **temporal ordering**: it caps how far the
 walker may relax in layer index, so the walk crosses only into nearby time
@@ -213,9 +213,9 @@ Lowering `multilayer_relax_rate` toward zero makes each layer more autonomous,
 which helps when snapshots are far apart in time and you should not assume
 community identity persists. Raising it toward 1 pushes Infomap toward the
 aggregate static solution. The default is `0.15`; values in the 0.15–0.25 range
-are usually a good choice for networks where communities evolve smoothly; {cite:t}`aslak2017temporal` found
-neighbourhood flow coupling robust across a broad range of relax rates (0.15 to
-0.7) on their benchmark networks.
+are usually a good choice for networks where communities evolve smoothly, and
+neighbourhood flow coupling stays robust across a broad range of relax rates
+(0.15 to 0.7) on benchmark networks {cite:p}`aslak2017temporal`.
 
 For long time series, `multilayer_relax_limit` caps how far the random walker
 may jump between layers, so coupling stays between temporally nearby windows
@@ -271,11 +271,11 @@ Temporal coupling is set by the multilayer engine options on {func}`infomap.run`
 
 ## Going deeper
 
-- {cite:t}`smiljanic2026survey`, §5.3, covers temporal networks and the multilayer
-  representation.
+- The survey (§5.3) covers temporal networks and the multilayer representation
+  {cite:p}`smiljanic2026survey`.
 - Companion notebook: `examples/notebooks/5.3 Modeling Temporal Data.ipynb`
   discusses the Pajek format and the `multilayer_relax_by_jsd` option.
-- {cite:t}`aslak2017temporal` introduces neighbourhood flow coupling, validated on
-  face-to-face contact networks.
+- Source paper for neighbourhood flow coupling, validated on face-to-face
+  contact networks {cite:p}`aslak2017temporal`.
 - Alluvial diagrams for higher-order networks, with an interactive generator at
   <https://www.mapequation.org/alluvial> {cite:p}`holmgren2023change`.

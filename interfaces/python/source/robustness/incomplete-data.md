@@ -65,9 +65,9 @@ pseudocount so the model is not overconfident about what it has not seen.
 
 ## The regularized map equation
 
-{cite:t}`smiljanic2020missing` introduced the regularized map equation for
-undirected, unweighted networks; {cite:t}`smiljanic2021incomplete` extended it to
-weighted and directed networks. Infomap implements both under the single
+The regularized map equation first covered undirected, unweighted networks
+{cite:p}`smiljanic2020missing`, then weighted and directed networks
+{cite:p}`smiljanic2021incomplete`. Infomap implements both under the single
 flag `regularized=True`.
 
 The mechanism is Bayesian. Rather than trust the observed network at face value,
@@ -252,14 +252,14 @@ on) compose freely with `regularized=True`.
 
 ## Going deeper
 
-- {cite:t}`smiljanic2026survey`, §7, sets incomplete data, overfitting, and the
-  regularized map equation in context.
+- The survey (§7) sets incomplete data, overfitting, and the regularized map
+  equation in context {cite:p}`smiljanic2026survey`.
 - Companion notebook: `examples/notebooks/7 Networks with incomplete data.ipynb`
   runs link-removal experiments with cross-validation and a degree-corrected
   stochastic block model comparison.
-- {cite:t}`smiljanic2020missing` introduces the regularized map equation for
-  undirected unweighted networks.
-- {cite:t}`smiljanic2021incomplete` extends it to weighted and directed networks
-  via an empirical Bayes estimate of transition rates.
-- {cite:t}`neuman2025reliable` scores how reliable each module is, so you can tell
-  a robust partition from one driven by sampling noise.
+- Source paper for the regularized map equation, on undirected, unweighted
+  networks {cite:p}`smiljanic2020missing`.
+- The extension to weighted and directed networks, via an empirical Bayes
+  estimate of transition rates {cite:p}`smiljanic2021incomplete`.
+- Module-level reliability scores that tell a robust partition from one driven
+  by sampling noise {cite:p}`neuman2025reliable`.

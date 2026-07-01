@@ -5,7 +5,7 @@ introduced the map equation) and the MapEquation software package (which
 identifies the implementation and version, for reproducibility). These are the
 canonical references for the method and the tool.
 
-The survey {cite:t}`smiljanic2026survey` is the best single reference for the
+The survey {cite:p}`smiljanic2026survey` is the best single reference for the
 wider map-equation framework, its flow models, and its extensions. Cite it too
 when your work builds on that broader treatment, and as the primary reference for
 results that originate in the survey itself.

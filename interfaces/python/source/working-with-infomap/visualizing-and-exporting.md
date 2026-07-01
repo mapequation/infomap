@@ -295,7 +295,7 @@ print("Temp directory removed.")
 
 - {doc}`/api/index` gives the complete export signatures with every keyword
   argument.
-- {cite:t}`smiljanic2026survey`, §4, sets flow-based community detection against
-  modularity-based methods.
+- The survey (§4) sets flow-based community detection against modularity-based
+  methods {cite:p}`smiljanic2026survey`.
 - The `.ftree` format adds intra-module link flows and is the basis for alluvial
   diagrams on mapequation.org.

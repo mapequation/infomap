@@ -271,7 +271,7 @@ coherent user–item subgraph, not a user-only or item-only group.
 
 ## Going deeper
 
-- {cite:t}`smiljanic2026survey`, §6.2, covers bipartite networks.
+- The survey (§6.2) covers bipartite networks {cite:p}`smiljanic2026survey`.
 - Companion notebook: `examples/notebooks/6.2 Bipartite Networks.ipynb` applies
   both the standard and bipartite map equations to a real weighted plant–ant web
   (Fonseca & Ganade 1996) and shows how the bipartite variant finds finer modules.

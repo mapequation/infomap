@@ -299,5 +299,5 @@ To draw the partition or write it to disk, see
   entry point above.
 - **Richer network representations**: {doc}`/flow-models/index` covers data with
   memory, layers, or explicit state nodes.
-- {cite:t}`smiljanic2026survey`, §4, treats flow modelling in depth, including
-  undirected versus directed links.
+- The survey (§4) treats flow modelling in depth, including undirected versus
+  directed links {cite:p}`smiljanic2026survey`.

@@ -187,4 +187,4 @@ network tells you which lens to trust.
   resolution limit.
 - The map equation versus modularity on flow and non-flow networks
   {cite:p}`rosvall2008maps`.
-- {cite:t}`smiljanic2026survey`, §3, treats the two in the broader survey.
+- The survey (§3) treats the two objectives side by side {cite:p}`smiljanic2026survey`.

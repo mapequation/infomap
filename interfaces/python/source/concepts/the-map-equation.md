@@ -204,8 +204,8 @@ module because naming it shortens the overall code.
 
 ## Going deeper
 
-- {cite:t}`smiljanic2026survey`, §3, derives the map equation and compares it with
-  modularity in depth.
+- The survey (§3) derives the map equation and compares it with modularity in
+  depth {cite:p}`smiljanic2026survey`.
 - Companion notebook: `examples/notebooks/3.1 The two-level map equation.ipynb`.
 - Source paper {cite:p}`rosvall2008maps`; a longer pedagogical account with the
   fast stochastic search algorithm {cite:p}`rosvall2009map`.

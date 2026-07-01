@@ -75,9 +75,9 @@ networks with weak or diffuse community structure.
 :::{toggle}
 **The solution landscape and degeneracy**
 
-{cite:t}`calatayud2019solution` showed that even for networks with clear community
-structure, Infomap produces a cloud of near-optimal partitions with similar
-codelengths but meaningfully different node assignments. The variance of that
+Even for networks with clear community structure, Infomap produces a cloud of
+near-optimal partitions with similar codelengths but meaningfully different node
+assignments {cite:p}`calatayud2019solution`. The variance of that
 cloud grows as community structure weakens (higher mixing parameter $\mu$ in LFR
 benchmarks). For networks with $\mu \le 0.2$, 50 trials are usually enough for the
 solution landscape to be "complete", so further trials rarely reveal a different
@@ -318,6 +318,6 @@ networks spread wider, and the spread itself tells you something.
 - `converge=True` treats `num_trials` as a cap and stops once the best codelength
   plateaus; pair it with a high cap on networks whose degeneracy you have not yet
   characterised. The [solution-landscape tooling](https://github.com/mapequation/solution-landscape)
-  follows the clustering approach from {cite:t}`calatayud2019solution`.
-- {cite:t}`smiljanic2026survey`, §4, covers the multilevel map equation and
-  hierarchical community detection in full.
+  follows the solution-landscape clustering approach {cite:p}`calatayud2019solution`.
+- The survey (§4) covers the multilevel map equation and hierarchical community
+  detection in full {cite:p}`smiljanic2026survey`.

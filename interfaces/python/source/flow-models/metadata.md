@@ -45,9 +45,9 @@ $\eta = 0$ you recover ordinary Infomap. As $\eta$ grows you favour
 attribute-homogeneous modules more, accepting a longer topological description in
 return.
 
-A closely related approach by {cite:t}`bassolas2022metadata` encodes the metadata
-differently: it biases the random walk itself so that walkers tend to stay near
-nodes with similar attributes. Both approaches capture the interplay between
+A closely related approach encodes the metadata differently: it biases the
+random walk itself so that walkers tend to stay near nodes with similar
+attributes {cite:p}`bassolas2022metadata`. Both approaches capture the interplay between
 topology and metadata; the Emmons & Mucha formulation is what Infomap implements.
 
 ## An attribute codebook
@@ -134,7 +134,8 @@ term, regardless of $\eta$. The optimization therefore pushes modules toward
 homogeneity as $\eta$ increases, even splitting topologically tight groups if
 their attribute mixture is expensive to encode.
 
-A complementary approach, the metadata-dependent random walk of {cite:t}`bassolas2022metadata`, modifies the walk itself: a walker at node $i$ is absorbed at node $j$
+A complementary approach, the metadata-dependent random walk
+{cite:p}`bassolas2022metadata`, modifies the walk itself: a walker at node $i$ is absorbed at node $j$
 with a probability that depends on the metadata at both $i$ and $j$. Running the
 standard map equation on this absorption-modified flow graph produces
 metadata-informed communities through long-range interactions between topology
@@ -318,7 +319,8 @@ Metadata influence is set by these engine options on {func}`infomap.run`:
 
 ## Going deeper
 
-- {cite:t}`smiljanic2026survey`, §6.1, covers metadata-aware community detection.
+- The survey (§6.1) covers metadata-aware community detection
+  {cite:p}`smiljanic2026survey`.
 - Companion notebook: `examples/notebooks/6.1 Networks with Metadata.ipynb`
 - {cite:t}`emmons2019metadata` is the source paper Infomap implements.
-- {cite:t}`bassolas2022metadata` is the related metadata-dependent random walk.
+- The related metadata-dependent random walk {cite:p}`bassolas2022metadata`.

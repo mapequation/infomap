@@ -345,10 +345,10 @@ grouping by `node_id`, as shown in the worked example.
 
 ## Going deeper
 
-- {cite:t}`smiljanic2026survey`, §5.1, covers higher-order and memory flows.
+- The survey (§5.1) covers higher-order and memory flows {cite:p}`smiljanic2026survey`.
 - Companion notebook: `examples/notebooks/5.1 Memory Networks.ipynb` works a
   full-size example with empirical pathway data and sparse-Markov-chain model
   selection.
 - Source paper for memory networks {cite:p}`rosvall2014memory`.
 - Higher-order flows with Infomap {cite:p}`edler2017higher`.
-- {cite:t}`persson2016sparse` introduces sparse Markov chains for memory flows.
+- Sparse Markov chains for memory flows {cite:p}`persson2016sparse`.

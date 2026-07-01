@@ -155,7 +155,7 @@ directly, but the partition you read back is always over state nodes.
 
 ## Going deeper
 
-- {cite:t}`smiljanic2026survey`, §5, treats higher-order flow and state nodes in
-  full.
+- The survey (§5) treats higher-order flow and state nodes in full
+  {cite:p}`smiljanic2026survey`.
 - Higher-order flows in memory and multilayer networks with Infomap
   {cite:p}`edler2017higher`.

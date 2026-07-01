@@ -295,7 +295,8 @@ for label, kwargs in [
 
 Higher `regularization_strength` merges more modules. Use this when you have
 prior reason to believe that small modules in your result reflect sampling noise
-rather than real structure. The Bayesian derivation is in {cite:t}`smiljanic2020missing`.
+rather than real structure. The Bayesian derivation is in the source paper
+{cite:p}`smiljanic2020missing`.
 
 ### Why trials matter, visualised
 
@@ -405,12 +406,12 @@ For the full set of options as a searchable table, see the
 - **Options guide notebook** `examples/notebooks/options-guide.ipynb` lists every
   option in a searchable table, generated from the installed package so it matches
   your version. Start here for the exhaustive reference.
-- {cite:t}`smiljanic2026survey`, §4, covers method selection and the flow-model
-  justification.
-- {cite:t}`calatayud2019solution` makes the quantitative case for multiple trials.
+- The survey (§4) covers method selection and the flow-model justification
+  {cite:p}`smiljanic2026survey`.
+- The quantitative case for multiple trials {cite:p}`calatayud2019solution`.
 - Why unrecorded teleportation produces robust directed partitions
   {cite:p}`lambiotte2012smart`.
 - Why the map equation's resolution limit is less restrictive than modularity's
   {cite:p}`kawamoto2015resolution`.
-- {cite:t}`kheirkhahzadeh2016markov` introduces the Markov-time mechanism and its
-  efficient resolution sweeps.
+- The Markov-time mechanism and its efficient resolution sweeps
+  {cite:p}`kheirkhahzadeh2016markov`.
