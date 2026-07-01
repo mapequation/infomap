@@ -1,0 +1,201 @@
+# FAQ & common pitfalls
+
+Short answers to the questions that trip people up most often. Each one links
+to the chapter that explains it properly; this page is a map, not a copy.
+
+## Getting data in
+
+### How do I load my graph into Infomap?
+
+Hand any of these to `infomap.run(...)`: a NetworkX or python-igraph graph, a
+SciPy sparse adjacency matrix, a `(2, E)` edge index, an edge list, or a network
+file. For non-default loading, build a `Network` with `Network.from_networkx`,
+`from_igraph`, `from_scipy_sparse_matrix`, or the `add_*` verbs. The quickest
+path for a NetworkX graph is `infomap.run(g)` (or `infomap.find_communities(g)`
+for a `list[set]`). See {doc}`Building a network <working-with-infomap/inputs>`.
+
+## Results and determinism
+
+### Why do repeated runs give slightly different partitions?
+
+Infomap's search is stochastic: each trial starts from a different random node
+order and can settle in a different local optimum. Run several trials with
+`num_trials=` (Infomap keeps the lowest-codelength result) and set `seed=` for
+reproducibility. See {doc}`Codelength and the two-level map equation <concepts/the-map-equation>`.
+
+### How many trials should I use, and how do I know the result is reliable?
+
+For exploration, 1–5 trials; for results you publish, use `num_trials=20` or
+more (or `converge=True`). To gauge reliability, run several single-trial fits
+and compare codelengths: a tight spread means the partition is stable, a wide
+spread signals degeneracy. See {doc}`Running Infomap and tuning options <working-with-infomap/running-and-options>`.
+
+### Why does `seed=0` raise an error?
+
+Infomap requires a seed ≥ 1; use any positive integer for reproducible runs.
+See {doc}`Running Infomap and tuning options <working-with-infomap/running-and-options>`.
+
+### What does `result.codelength` actually measure?
+
+It is the value of the map equation: the average number of bits per step needed
+to describe a random walk under the best code for the partition Infomap found.
+Lower means a more compressive, and usually more meaningful, partition.
+Compare it to `result.one_level_codelength` (no modules) to see how much structure
+Infomap found. See {doc}`The map equation <concepts/the-map-equation>`.
+
+## Number and size of modules
+
+### Why does Infomap find more (or fewer) modules than I expected?
+
+Infomap minimises a flow-based description length, not a target count or a
+sociological ground truth. Boundary nodes where the random walker mixes can form
+their own module if naming it shortens the overall description. More modules than
+you expected is often right, not a bug. See
+{doc}`The map equation <concepts/the-map-equation>`.
+
+### Two-level or multilevel: when should I pass `two_level=True`?
+
+Pass `two_level=True` for a flat partition (every node in exactly one top
+module). Omit it (the default) to let Infomap discover hierarchical structure.
+See {doc}`Codelength and the two-level map equation <concepts/the-map-equation>`
+and {doc}`Hierarchy and the multilevel map equation <concepts/hierarchy-and-the-multilevel-map>`.
+
+### Does Infomap choose the hierarchy depth for me, and how do I read each level?
+
+Yes: multilevel is the default, and Infomap adds levels only when they shorten
+the description. Read a given level with `result.modules(depth=k)`
+(`k=1` is the coarsest, `depth=-1` the finest). Check `result.num_levels`.
+See {doc}`Hierarchy and the multilevel map equation <concepts/hierarchy-and-the-multilevel-map>`.
+
+## Flow and directed networks
+
+### What is "flow" in Infomap's output?
+
+Flow is each node's stationary visit frequency for the random walk Infomap uses
+to model how information moves; it sums to 1 across nodes. Communities are
+regions where flow lingers. See {doc}`Flow and random walks <concepts/flow-and-random-walks>`.
+
+### Why does Infomap teleport on directed networks?
+
+A directed walk can get trapped in sinks, leaving the stationary distribution
+ill-defined. Teleportation restores ergodicity; Infomap uses an unrecorded
+scheme so the artificial jumps don't inflate apparent cross-module traffic.
+See {doc}`Flow and random walks <concepts/flow-and-random-walks>`.
+
+## Output and export
+
+### What's the difference between `result.modules()` and `result.to_dataframe()`?
+
+`result.modules()` returns a lightweight `{node_id: module_id}` dict, ideal for
+colouring or feeding another algorithm. `result.to_dataframe([...])` returns a
+pandas DataFrame with node id, module id, flow, and hierarchical path, better for
+filtering, grouping, and export. See {doc}`Reading the Result <working-with-infomap/results-and-iteration>`.
+
+### How do I export results to Gephi or to `.tree` / `.clu` files?
+
+For Gephi, annotate the graph with `infomap.to_networkx(result)` (or `to_igraph`)
+and write it with `nx.write_graphml` / `nx.write_gexf`. For the native formats,
+the stateful `Infomap` writes them with `im.write_tree(path)` and
+`im.write_clu(path)`: `.clu` is one row per node, `.tree` carries the full
+hierarchy. See {doc}`Visualising and exporting <working-with-infomap/visualizing-and-exporting>`.
+
+## Flow models and representations
+
+### Why does `result.modules()` raise "Cannot get modules on higher-order network without states"?
+
+Multilayer and memory networks partition *state nodes*, so a physical node can
+belong to several modules. Call `result.modules(states=True)`, then map state
+nodes back to physical nodes (and layers) via `result.nodes(states=True)`. See
+{doc}`Multilayer networks <flow-models/multilayer>` and {doc}`Memory and state networks <flow-models/memory-and-state>`.
+
+### What multilayer relax rate should I use?
+
+The default `multilayer_relax_rate=0.15` suits many networks; higher rates couple
+layers more (toward the aggregate), lower rates keep layers independent. If you
+have real inter-layer links, add them with `add_multilayer_inter_link` and the
+relax rate is ignored. See {doc}`Multilayer networks <flow-models/multilayer>`.
+
+### How do I model a network with memory (higher-order flow)?
+
+Declare state nodes on a `Network` with `add_state_node(state_id, physical_id)`
+and link them with `add_link`. Memory lets a physical node appear in overlapping
+modules. See {doc}`Memory and state networks <flow-models/memory-and-state>`.
+
+### How do I cluster a time-varying (temporal) network?
+
+Represent each time window as a layer of a multilayer network
+(`add_multilayer_intra_link` per window) and let the relax rate carry community
+identity across time. See {doc}`Temporal networks <flow-models/temporal>`.
+
+### My codelength goes up when I set `meta_data_rate > 0`: is that wrong?
+
+No. `result.codelength` reports only the topological map equation; the search
+minimises the *combined* objective, trading higher topological codelength for
+attribute-homogeneous modules. See {doc}`Networks with metadata <flow-models/metadata>`.
+
+### How do I tell Infomap my network is bipartite?
+
+Number the nodes so the second type starts at a fixed id, then set
+`Network().bipartite_start_id = start_id`, then `infomap.run(net)`. See
+{doc}`Bipartite networks <flow-models/bipartite>`.
+
+### Can I run Infomap directly on a hypergraph?
+
+Not directly: encode the hypergraph as a network first (e.g. a bipartite
+incidence network via `Network().bipartite_start_id`). The representation you choose
+changes the communities found. See {doc}`Bipartite networks <flow-models/bipartite>`.
+
+### My sparse network gives lots of tiny modules: how do I avoid overfitting?
+
+Standard Infomap overfits sparse or incomplete data. Pass `regularized=True`
+(tune with `regularization_strength=`) for a Bayesian prior that yields fewer,
+more reliable modules. See {doc}`Incomplete data and regularization <robustness/incomplete-data>`.
+
+## Workflows and integrations
+
+### How do I compare Infomap with Louvain or Leiden, and which is "right"?
+
+Run each and compare the partitions with `sklearn.metrics.adjusted_mutual_info_score`
+(AMI) or `normalized_mutual_info_score` (NMI). Neither is universally right: Infomap
+minimises a flow-based description length, while Louvain and Leiden maximise
+modularity, whose resolution limit can merge small communities (Leiden can avoid
+it with a Constant Potts Model objective). See {doc}`Comparing Infomap, Louvain, and Leiden <concepts/choosing-a-method>`.
+
+### How do I use Infomap inside a Scanpy / AnnData workflow?
+
+After `sc.pp.neighbors(adata)`, call `infomap.tl.infomap(adata, key_added="infomap")`.
+It clusters `adata.obsp["connectivities"]` and writes labels to `adata.obs` (and the
+codelength to `adata.uns["infomap"]`). See {doc}`Scanpy and AnnData <workflows/scanpy>`.
+
+### Can I run Infomap on GraphRAG entity/relationship tables?
+
+Yes: the `infomap.graphrag` adapter reads entity/relationship tables (columns `id`,
+`title`, `source`, `target`, `weight`) and returns a community hierarchy. Use
+`run_graphrag_communities(...)` (omit `output_dir` to stay in memory). See
+{doc}`GraphRAG tables <workflows/graphrag>`.
+
+### How do I make Infomap use only the cores my scheduler allocated?
+
+Pass `num_threads="auto"` and Infomap honours `SLURM_CPUS_PER_TASK`, `OMP_NUM_THREADS`,
+and the process cpuset in priority order. See {doc}`Running at scale (HPC) <workflows/hpc>`.
+
+### How do I run many trials across cluster jobs and combine them?
+
+Give each job a non-overlapping range with `trial_offset=` / `trial_results=`, then merge
+the shard files with `python -m infomap.merge` (it keeps the best codelength). See
+{doc}`Running at scale (HPC) <workflows/hpc>`.
+
+## Method and citation
+
+### Is the map equation the same as modularity?
+
+No. Modularity counts link weights against a random-wiring null model; the map
+equation compresses random-walk trajectories. They agree when flow concentrates
+in modules and diverge otherwise (notably on directed source–sink networks).
+See {doc}`The map equation <concepts/the-map-equation>`.
+
+### How do I cite Infomap?
+
+Cite both the 2008 PNAS paper and the MapEquation software package, not the
+survey article. BibTeX and guidance on citing specific extensions are in
+{doc}`How to cite Infomap <citing>`.

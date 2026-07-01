@@ -87,9 +87,14 @@ docs = [
   "furo",
   "myst-nb",
   "sphinx-copybutton",
+  "sphinx-design",
+  "sphinx-reredirects",
+  "sphinx-togglebutton",
+  "sphinxcontrib-bibtex",
   "sphinxext-opengraph",
 ]
 examples = [
+  "igraph",
   "matplotlib",
   "networkx",
   "numpy",
