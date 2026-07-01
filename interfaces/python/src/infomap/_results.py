@@ -11,7 +11,6 @@ if TYPE_CHECKING:
     from ._core import Core
 
 
-pandas = get_pandas()
 _DEFAULT_DATAFRAME_COLUMNS = ("path", "flow", "name", "node_id")
 _DEFAULT_TO_DATAFRAME_COLUMNS = ("node_id", "module_id", "flow", "path", "name")
 _DATAFRAME_COLUMN_ALIASES = {"community": "module_id"}
@@ -702,6 +701,7 @@ class _InfomapResultsMixin:
             A DataFrame containing the selected columns.
         """
 
+        pandas = get_pandas()
         if pandas is None:
             raise ImportError(
                 "Cannot import package `pandas`. Install it with "
@@ -768,6 +768,7 @@ class _InfomapResultsMixin:
             Use ``result = im.run(); result.to_dataframe(...)``.
         """
 
+        pandas = get_pandas()
         if pandas is None:
             raise ImportError(
                 "Cannot import package `pandas`. Install it with "

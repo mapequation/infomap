@@ -33,8 +33,6 @@ if TYPE_CHECKING:
     from ._facade import Infomap
 
 
-pandas = get_pandas()
-
 _DEFAULT_TO_DATAFRAME_COLUMNS = ("node_id", "module_id", "flow", "path", "name")
 _DATAFRAME_COLUMN_ALIASES = {"community": "module_id"}
 
@@ -672,6 +670,7 @@ class Result:
         higher-order network (falling back to the physical name, then
         ``node_id``); see :attr:`state_names`.
         """
+        pandas = get_pandas()
         if pandas is None:
             raise ImportError(
                 "Cannot import package `pandas`. Install it with "
