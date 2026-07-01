@@ -408,9 +408,9 @@ For the full set of options as a searchable table, see the
 - {cite:t}`smiljanic2026survey`, §4, covers method selection and the flow-model
   justification.
 - {cite:t}`calatayud2019solution` makes the quantitative case for multiple trials.
-- {cite:t}`lambiotte2012smart` explains why unrecorded teleportation produces
-  robust directed partitions.
-- {cite:t}`kawamoto2015resolution` shows why the map equation's resolution limit is
-  less restrictive than modularity's.
+- Why unrecorded teleportation produces robust directed partitions
+  {cite:p}`lambiotte2012smart`.
+- Why the map equation's resolution limit is less restrictive than modularity's
+  {cite:p}`kawamoto2015resolution`.
 - {cite:t}`kheirkhahzadeh2016markov` introduces the Markov-time mechanism and its
   efficient resolution sweeps.

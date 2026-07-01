@@ -277,5 +277,5 @@ Temporal coupling is set by the multilayer engine options on {func}`infomap.run`
   discusses the Pajek format and the `multilayer_relax_by_jsd` option.
 - {cite:t}`aslak2017temporal` introduces neighbourhood flow coupling, validated on
   face-to-face contact networks.
-- {cite:t}`holmgren2023change` extends alluvial diagrams to higher-order networks,
-  with an interactive generator at <https://www.mapequation.org/alluvial>.
+- Alluvial diagrams for higher-order networks, with an interactive generator at
+  <https://www.mapequation.org/alluvial> {cite:p}`holmgren2023change`.

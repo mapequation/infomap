@@ -110,7 +110,7 @@ which the power method computes iteratively.
 For directed networks with teleportation, Infomap first computes $\pi$ for the
 recorded walk (including teleportation steps), then re-weights it to count only
 link-traversal steps (the unrecorded scheme), so teleportation does not inflate
-the flow across module boundaries. See {cite:t}`lambiotte2012smart` for the
+the flow across module boundaries. See {cite:p}`lambiotte2012smart` for the
 formal derivation.
 :::
 
@@ -207,7 +207,7 @@ teleportation bookkeeping {cite:p}`lambiotte2012smart`.
 ## Going deeper
 
 - {cite:t}`smiljanic2026survey`, §2–3, for the broader treatment.
-- {cite:t}`rosvall2008maps` is the source paper for flow-based community detection.
-- {cite:t}`lambiotte2012smart` covers teleportation in directed networks.
+- Source paper for flow-based community detection {cite:p}`rosvall2008maps`.
+- Teleportation in directed networks {cite:p}`lambiotte2012smart`.
 - Companion material: the {doc}`survey companion notebooks </article-companion/index>`
   demonstrate flow on larger real-world networks.

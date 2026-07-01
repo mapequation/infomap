@@ -126,7 +126,7 @@ hard lower bound on average codeword length, so $L(\mathsf{M})$ is the shortest
 possible two-level description per step. Combining and simplifying gives a form
 that updates cheaply when one node moves between modules, by tracking only
 $q_{i\curvearrowright}$ and $\sum_{\alpha\in i} p_\alpha$ per module; see
-{cite:t}`rosvall2009map` for the fast stochastic search that exploits it.
+{cite:p}`rosvall2009map` for the fast stochastic search that exploits it.
 :::
 
 ## Does compression reveal the karate club's split?
@@ -207,5 +207,5 @@ module because naming it shortens the overall code.
 - {cite:t}`smiljanic2026survey`, §3, derives the map equation and compares it with
   modularity in depth.
 - Companion notebook: `examples/notebooks/3.1 The two-level map equation.ipynb`.
-- {cite:t}`rosvall2008maps` is the source paper; {cite:t}`rosvall2009map` is a
-  longer pedagogical account with the fast stochastic search algorithm.
+- Source paper {cite:p}`rosvall2008maps`; a longer pedagogical account with the
+  fast stochastic search algorithm {cite:p}`rosvall2009map`.

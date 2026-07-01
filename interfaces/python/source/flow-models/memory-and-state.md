@@ -128,7 +128,7 @@ where $\pi_{i \cap m} = \sum_{\alpha_i \in \mathsf{M}_m} \pi_{\alpha_i}$
 aggregates all state nodes of physical node $i$ that are assigned to module
 $m$. This aggregation is what enables overlapping physical-node membership:
 state nodes of the same physical node in different modules each contribute to
-separate codebook entries; see {cite:t}`edler2017higher`, §3.2.
+separate codebook entries; see {cite:p}`edler2017higher`, §3.2.
 
 The exit rate from module $m$ is
 
@@ -349,6 +349,6 @@ grouping by `node_id`, as shown in the worked example.
 - Companion notebook: `examples/notebooks/5.1 Memory Networks.ipynb` works a
   full-size example with empirical pathway data and sparse-Markov-chain model
   selection.
-- {cite:t}`rosvall2014memory` is the source paper for memory networks.
-- {cite:t}`edler2017higher` maps higher-order flows with Infomap.
+- Source paper for memory networks {cite:p}`rosvall2014memory`.
+- Higher-order flows with Infomap {cite:p}`edler2017higher`.
 - {cite:t}`persson2016sparse` introduces sparse Markov chains for memory flows.

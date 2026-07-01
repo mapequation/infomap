@@ -362,4 +362,4 @@ Multilayer flow is controlled by three engine options on {func}`infomap.run`:
 - {cite:t}`smiljanic2026survey`, §5.2, covers multilayer networks.
 - Companion notebook: `examples/notebooks/5.2 Multilayer Networks.ipynb`
 - {cite:t}`domenico2015multilayer` is the source paper for multilayer flows.
-- {cite:t}`edler2017higher` maps higher-order flows with Infomap.
+- Higher-order flows with Infomap {cite:p}`edler2017higher`.

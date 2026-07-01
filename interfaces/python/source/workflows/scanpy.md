@@ -259,4 +259,4 @@ Key `infomap.tl.infomap` keyword arguments:
 - {doc}`/working-with-infomap/inputs` shows how `add_scipy_sparse_matrix` handles
   directed, undirected, and weighted graphs.
 - {doc}`/concepts/the-map-equation` is the objective Infomap minimises.
-- {cite:t}`rosvall2008maps` is the source paper.
+- The map equation's source paper {cite:p}`rosvall2008maps`.

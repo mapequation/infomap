@@ -157,5 +157,5 @@ directly, but the partition you read back is always over state nodes.
 
 - {cite:t}`smiljanic2026survey`, §5, treats higher-order flow and state nodes in
   full.
-- {cite:t}`edler2017higher` maps higher-order flows in memory and multilayer
-  networks with Infomap.
+- Higher-order flows in memory and multilayer networks with Infomap
+  {cite:p}`edler2017higher`.

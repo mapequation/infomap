@@ -185,6 +185,6 @@ network tells you which lens to trust.
   internally disconnected communities.
 - {cite:t}`fortunato2007resolution` is the original proof of modularity's
   resolution limit.
-- {cite:t}`rosvall2008maps` contrasts the map equation and modularity on flow and
-  non-flow networks.
+- The map equation versus modularity on flow and non-flow networks
+  {cite:p}`rosvall2008maps`.
 - {cite:t}`smiljanic2026survey`, §3, treats the two in the broader survey.

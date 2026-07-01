@@ -114,7 +114,7 @@ $\alpha \in [0, \tfrac{1}{2}]$. The available node-type information is
 $\mathcal{I}(\alpha) = 1 - H(\alpha, 1{-}\alpha)$. At $\alpha = 0$,
 $\mathcal{I} = 1$ bit (full bipartite); at $\alpha = \tfrac{1}{2}$,
 $\mathcal{I} = 0$ (standard map equation recovered). Intermediate values
-sweep the resolution continuously; see {cite:t}`blocker2020bipartite`, §3, for the
+sweep the resolution continuously; see {cite:p}`blocker2020bipartite`, §3, for the
 full derivation.
 :::
 
@@ -275,4 +275,4 @@ coherent user–item subgraph, not a user-only or item-only group.
 - Companion notebook: `examples/notebooks/6.2 Bipartite Networks.ipynb` applies
   both the standard and bipartite map equations to a real weighted plant–ant web
   (Fonseca & Ganade 1996) and shows how the bipartite variant finds finer modules.
-- {cite:t}`blocker2020bipartite` is the source paper.
+- Source paper {cite:p}`blocker2020bipartite`.

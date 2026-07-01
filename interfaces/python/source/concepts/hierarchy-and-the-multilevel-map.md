@@ -106,7 +106,7 @@ module $i$'s sub-index codebook, depends only on the *local* traffic within
 module $i$, not on the global network. That is why the resolution limit relaxes
 so far: Infomap judges whether to split module $i$ further against the traffic
 inside $i$, not against a global cut size that grows with the whole network; see
-{cite:t}`kawamoto2015resolution`, §IV.
+{cite:p}`kawamoto2015resolution`, §IV.
 
 Infomap searches for the hierarchical partition that minimises the total $L$
 using a fast stochastic recursive algorithm: it first generates top-level
@@ -137,7 +137,7 @@ graph. Because a super-module is much smaller than the full network, the cut siz
 that gates a fine-level split is tiny, so the search resolves fine-level modules
 that the two-level stage would swallow. For networks with a pronounced nested
 structure the hierarchical method all but eliminates the resolution limit; see
-{cite:t}`kawamoto2015resolution`, §IV.
+{cite:p}`kawamoto2015resolution`, §IV.
 :::
 
 ## Four cliques, two super-groups
@@ -294,5 +294,5 @@ compressed than either a flat two-level partition or a one-level description.
 
 - {cite:t}`smiljanic2026survey`, §3, covers the multilevel derivation and worked
   examples.
-- {cite:t}`rosvall2011multilevel` is the source paper for the multilevel map equation.
-- {cite:t}`kawamoto2015resolution` derives the resolution limit it relaxes.
+- Source paper for the multilevel map equation {cite:p}`rosvall2011multilevel`.
+- The resolution limit it relaxes {cite:p}`kawamoto2015resolution`.
