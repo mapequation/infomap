@@ -20,8 +20,9 @@ common workflows, and the full API.
 
 .. _map equation: https://www.mapequation.org/publications.html
 
-.. image:: /_static/hero-karate.svg
-   :alt: Zachary's karate club partitioned by Infomap, nodes coloured by module
+.. image:: /_static/hero-modular.svg
+   :alt: A weighted example network partitioned by Infomap into four modules,
+         nodes coloured by module and sized by flow
    :align: center
    :width: 360px
 
