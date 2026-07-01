@@ -14,8 +14,10 @@ kernelspec:
 :class: tip
 Infomap, Louvain, and Leiden each define "community" differently: Infomap finds
 modules that trap random-walk flow, while Louvain and Leiden maximise modularity.
-On directed or flow-structured networks those definitions diverge in ways that
-matter for your analysis.
+A third family fits a generative model by statistical inference. None is
+uniformly best; the right method follows from the question you are asking, and on
+directed or flow-structured networks the flow-based and modularity-based answers
+can diverge in ways worth understanding.
 ```
 
 ## Motivation
@@ -29,10 +31,13 @@ The short answer: the right choice depends on what you mean by "community." If
 your network represents real flows (web traffic, information spreading, transport
 routes, citation chains), Infomap's flow-based objective is the natural match. If
 your network captures static pairwise similarity and you want groups that are
-dense internally relative to a null model, Louvain and Leiden fit better. On many
-undirected networks the three methods agree closely. On directed networks, or
-networks with strong flow asymmetry, they can produce qualitatively different
-partitions.
+dense internally relative to a null model, Louvain and Leiden are an excellent
+fit. And if you want to ask whether the structure is statistically justified at
+all, and to control overfitting, fitting a stochastic block model by statistical
+inference (as in tools like graph-tool) is built for that. On many undirected
+networks these methods agree closely; on directed networks, or networks with
+strong flow asymmetry, the flow-based and modularity-based partitions can differ
+qualitatively.
 
 Running all three and comparing their output is a useful sanity check regardless
 of which you ultimately prefer. Agreement across objectives is evidence of

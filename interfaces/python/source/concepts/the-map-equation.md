@@ -31,9 +31,9 @@ through the network, passengers through airports, clicks across the web, message
 through a social graph, which partition best compresses a description of that
 movement? The answer is the partition with the shortest **codelength**: the
 fewest bits per step needed to describe a random walk. A short codelength means
-the partition found real structure in the flow, not just in edge density. When
-links carry movement, the two views can disagree sharply, and the map equation is
-built for the flow.
+the partition captures real structure in the flow. Both questions are legitimate
+and often agree; they simply differ, and when links carry movement the two views
+can disagree, with the map equation the one built for the flow.
 
 ## Intuition
 
