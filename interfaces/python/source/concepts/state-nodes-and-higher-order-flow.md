@@ -70,43 +70,56 @@ physical nodes naturally multi-modular.
 
 ## One physical node in two modules
 
-The smallest illustration: a physical node that two state nodes split between two
-groups. Build state nodes directly with `add_state_node(state_id, physical_id)`
-and link them, then read the partition back with `result.modules(states=True)`.
+The classic illustration is the network that documents the
+[states input format](https://www.mapequation.org/infomap/#InputStates) on
+mapequation.org (it ships with Infomap as `examples/networks/states.net`).
+Five physical nodes *i*, *j*, *k*, *l*, *m*, where *i* carries two state
+nodes: from state $\alpha_i$ the walker mostly continues to *j* and *k*, from
+state $\delta_i$ mostly to *l* and *m*. The weak 0.2-links let it occasionally
+switch sides, so the two contexts are coupled but distinct.
+
+Build state nodes directly with `add_state_node(state_id, physical_id)` and
+link them, then read the partition back with `result.nodes(states=True)`:
 
 ```{code-cell} python
 import infomap
 from infomap import Network, run
 
+state_names = {1: "α", 2: "β", 3: "γ", 4: "δ", 5: "ε", 6: "ζ"}
+phys_names = {1: "i", 2: "j", 3: "k", 4: "l", 5: "m"}
+
 net = Network()
+for state, phys in [(1, 1), (2, 2), (3, 3), (4, 1), (5, 4), (6, 5)]:
+    net.add_state_node(state, phys)
 
-# Physical node 1 has two state nodes (10 and 11), one in each group.
-# Group A: states 10,2,3 ; Group B: states 11,4,5. Physical 1 bridges them.
-net.add_state_node(10, 1); net.add_state_node(11, 1)
-for s in (2, 3, 4, 5):
-    net.add_state_node(s, s)
+links = [
+    (1, 2, 0.8), (1, 3, 0.8), (1, 5, 0.2), (1, 6, 0.2),  # α: mostly to j, k
+    (2, 1, 1.0), (2, 3, 1.0), (3, 1, 1.0), (3, 2, 1.0),
+    (4, 5, 0.8), (4, 6, 0.8), (4, 2, 0.2), (4, 3, 0.2),  # δ: mostly to l, m
+    (5, 4, 1.0), (5, 6, 1.0), (6, 4, 1.0), (6, 5, 1.0),
+]
+for src, tgt, w in links:
+    net.add_link(src, tgt, w)
 
-for a, b in [(10, 2), (2, 3), (3, 10)]:          # triangle A
-    net.add_link(a, b); net.add_link(b, a)
-for a, b in [(11, 4), (4, 5), (5, 11)]:          # triangle B
-    net.add_link(a, b); net.add_link(b, a)
-
-result = run(net, two_level=True, seed=123, num_trials=10, silent=True)
+result = run(net, two_level=True, directed=True, seed=123, num_trials=10, silent=True)
 
 print(f"Modules: {result.num_top_modules}")
-phys_to_modules = {}
-for node in result.nodes(states=True):
-    phys_to_modules.setdefault(node.node_id, set()).add(node.module_id)
-for pid, mods in sorted(phys_to_modules.items()):
-    print(f"  physical node {pid}: module(s) {sorted(mods)}")
+for node in sorted(result.nodes(states=True), key=lambda n: n.state_id):
+    name = f"{state_names[node.state_id]} (physical {phys_names[node.node_id]})"
+    print(f"  state {name}: module {node.module_id}")
+
+# The prose below relies on this structure; fail the build if it drifts.
+mods_of_i = {n.module_id for n in result.nodes(states=True) if n.node_id == 1}
+assert result.num_top_modules == 2 and len(mods_of_i) == 2
 ```
 
-Physical node 1 appears in both modules; every other node sits in one. That
+Physical node *i* appears in both modules, through $\alpha_i$ on the *j*–*k*
+side and $\delta_i$ on the *l*–*m* side; every other node sits in one. That
 two-module membership is the overlap the state-node construction buys you.
 
-Draw the two triangles, colouring each state node by the module Infomap
-assigned it. State nodes 10 and 11 are physical node 1 in its two contexts;
-they take different colours, and that colour split *is* the overlap.
+Draw the state-level network, colouring each state node by the module Infomap
+assigned it. The two states of *i* take different colours, and that colour
+split *is* the overlap:
 
 ```{code-cell} python
 import matplotlib.pyplot as plt
@@ -115,11 +128,12 @@ from docs_viz import draw_partition
 from myst_nb import glue
 
 g = nx.Graph()
-g.add_edges_from([(10, 2), (2, 3), (3, 10), (11, 4), (4, 5), (5, 11)])
+for src, tgt, w in links:
+    g.add_edge(state_names[src], state_names[tgt], weight=w)
 
 # Colour each state node by its module; size it by its flow.
-state_module = {n.state_id: n.module_id for n in result.nodes(states=True)}
-state_flow = {n.state_id: n.flow for n in result.nodes(states=True)}
+state_module = {state_names[n.state_id]: n.module_id for n in result.nodes(states=True)}
+state_flow = {state_names[n.state_id]: n.flow for n in result.nodes(states=True)}
 
 fig = draw_partition(g, state_module, with_labels=True, node_size=600, flow=state_flow)
 glue("fig-state-nodes", fig, display=False)
@@ -127,9 +141,10 @@ plt.close(fig)
 ```
 
 ```{glue:figure} fig-state-nodes
-The two triangles, coloured by module. State nodes 10 and 11 are physical node 1
-in its two contexts; they land in different modules, so physical node 1 belongs
-to both. Every other node sits in a single module.
+The states-format example network, coloured by module. States α and δ are
+physical node *i* in its two contexts; they land in different modules, so *i*
+belongs to both. The figure shows the undirected skeleton; the walk itself
+follows the weighted, directed links.
 ```
 
 ## Where this goes next
