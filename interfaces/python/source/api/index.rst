@@ -34,6 +34,9 @@ incremental, repeated-run workflows.
    * - :doc:`integrations`
      - Scanpy (:func:`infomap.tl.infomap`), GraphRAG, and the distributed-trial
        merge tool.
+   * - :doc:`datasets`
+     - The bundled example networks, one loader per network
+       (:func:`infomap.datasets.two_triangles` and friends).
 
 .. toctree::
    :hidden:
@@ -47,3 +50,4 @@ incremental, repeated-run workflows.
    infomap
    iterators
    integrations
+   datasets
