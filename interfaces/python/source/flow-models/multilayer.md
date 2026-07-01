@@ -167,6 +167,10 @@ print(f"Modules found : {result.num_top_modules}")
 print(f"Codelength    : {result.codelength:.4f} bits")
 print(f"Physical nodes: {len({n.node_id for n in state_nodes})}")
 print(f"State nodes   : {len(state_nodes)}")
+
+# The prose below relies on this structure; fail the build if it drifts.
+assert result.num_top_modules == 2
+assert len({n.module_id for n in state_nodes if n.node_id == 1}) == 2
 ```
 
 Infomap operates on six state nodes (one per physical-node–layer pair) and
@@ -180,8 +184,8 @@ for node in sorted(result.nodes(states=True), key=lambda n: (n.layer_id, n.node_
 ```
 
 Physical node **1** appears twice, once in each layer, in a different module each
-time. Nodes 2 and 3 sit only in module 1 (the Layer 1 triangle), nodes 4 and 5
-only in module 2 (the Layer 2 triangle).
+time. Nodes 2 and 3 sit only in the Layer 1 triangle's module, nodes 4 and 5
+only in the Layer 2 triangle's module; the table above shows the module ids.
 
 On multilayer networks you must call `result.modules(states=True)`, because each
 physical node can belong to multiple modules:
