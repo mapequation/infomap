@@ -8,71 +8,52 @@ kernelspec:
   name: python3
 ---
 
-# Choosing a method: Infomap, Louvain, and Leiden
+# Reading Infomap through Louvain and Leiden
 
 {bdg-info-line}`Concept`
 
 ```{admonition} In one sentence
 :class: tip
-Infomap, Louvain, and Leiden each define "community" differently: Infomap by the
-flow a random walker traps, Louvain and Leiden by modularity. None is uniformly
-best; the right method follows from the question you are asking.
+If you already use Louvain or Leiden, you can read Infomap through the same lens:
+all three partition a network, but Infomap optimises the compression of flow
+where Louvain and Leiden optimise modularity.
 ```
 
-## Which method, and when they agree
+## Same job, a different objective
 
-If you search for "community detection" in any network-science paper you will
-find Louvain and Leiden cited alongside Infomap. All three are fast,
-widely-used, and return a partition of your nodes. So which one should you use,
-and how do you know when they agree?
+Louvain and Leiden are the community-detection methods most researchers meet
+first, and both return a partition of your nodes just as Infomap does. This page
+is a translation, not a benchmark: it maps Infomap onto ideas you already have,
+so you can read its output with the intuition you built on modularity.
 
-The short answer: the right choice depends on what you mean by "community." If
-your network represents real flows (web traffic, information spreading, transport
-routes, citation chains), Infomap's flow-based objective is the natural match. If
-your network captures static pairwise similarity and you want groups that are
-dense internally relative to a null model, Louvain and Leiden are an excellent
-fit. And if you want to ask whether the structure is statistically justified at
-all, and to control overfitting, fitting a stochastic block model by statistical
-inference (as in tools like graph-tool) is built for that. On many undirected
-networks these methods agree closely; on directed networks, or networks with
-strong flow asymmetry, the flow-based and modularity-based partitions can differ
-qualitatively.
+One difference explains the rest, and it is the *objective*. Louvain and Leiden
+score a partition by **modularity**: whether more edges fall inside groups than a
+random graph with the same degrees would predict. Infomap scores it by the **map
+equation**: how few bits describe a random walk on the network under that
+partition (see {doc}`/concepts/the-map-equation`). Modularity asks how the network
+is wired; the map equation asks how it is used.
 
-Running all three and comparing their output is a useful sanity check regardless
-of which you ultimately prefer. Agreement across objectives is evidence of
-robust community structure; disagreement highlights ambiguous regions worth
-examining.
+Running both is a useful sanity check. Where the two lenses agree, the grouping is
+robust to the choice of objective; where they differ, you have found a region
+whose grouping depends on what you mean by "community", which is worth knowing.
 
-## What each method optimises
+## What each objective optimises
 
-**What Infomap optimises.** Infomap compresses a description of a random walk on
-your network (the map equation). A module is real when a random walker entering
-it tends to stay for several steps before leaving. Tight modules compress well;
-loose ones do not. The method responds to edge direction and edge weights,
-because they control where the random walk goes.
+**Modularity (Louvain, Leiden).** Both are usually run to maximise modularity, a
+static-density score against a degree-preserving null model. That null model is
+undirected, so by default both ignore edge direction. Leiden is a general
+optimiser: it maximises whichever quality function you give it, adds a refinement
+step that guarantees internally connected communities, and reaches better optima
+than Louvain's greedy moves {cite:p}`traag2019leiden`. This page uses the
+modularity objective for both, the most common default.
 
-**What Louvain and Leiden optimise.** Both are usually run to maximise
-*modularity*, a score that measures whether the fraction of within-community
-edges exceeds the fraction you would expect from a random graph with the same
-degree sequence. The standard modularity null model is undirected, so by default
-both ignore edge direction. Leiden is in fact a general optimiser: it maximises
-whichever quality function you hand it, and can instead optimise a
-resolution-limit-free objective such as the Constant Potts Model. It also adds a
-refinement step that guarantees internally connected communities and finds better
-optima than Louvain's greedy moves {cite:p}`traag2019leiden`. This chapter uses
-the modularity objective for both, the most common default.
+**The map equation (Infomap).** Infomap compresses a description of a random walk
+(see {doc}`/concepts/the-map-equation`). A group is worth naming when a walker
+entering it tends to stay for several steps before leaving. Because the walk
+follows edge direction and weight, Infomap reads those where an undirected
+modularity null model does not.
 
-**When they diverge.** On a directed graph where flow is asymmetric (say a web
-subgraph where one cluster mostly *sends* links to another), Infomap picks up the
-source cluster as a separate module, because the random walker rarely walks
-*back* into it. Modularity ignores flow direction unless you pass a directed null
-model, so it can miss this asymmetry. The *modularity resolution limit* is
-another source of divergence: modularity merges small but well-defined
-communities in large graphs regardless of how cohesive they are. The map equation
-has a resolution limit too, but a much weaker one, so it resolves structure that
-modularity blends (shown below).
-
-## Modularity vs the map equation
+## Modularity and the map equation
 
 Modularity for a partition $\mathsf{C}$ is
 
@@ -81,14 +62,8 @@ Q = \frac{1}{2m} \sum_{i,j} \left[ A_{ij} - \frac{k_i k_j}{2m} \right]
 \delta(c_i, c_j),
 $$
 
-where $A_{ij}$ is the adjacency matrix, $k_i$ is degree, $m$ is the total
-number of edges, and $\delta(c_i, c_j)$ is 1 when nodes $i$ and $j$ belong
-to the same community. Louvain maximises $Q$ by greedy node moves; Leiden
-adds a refinement phase that guarantees every returned community is internally
-connected.
-
-The map equation $L(\mathsf{M})$ (see {doc}`/concepts/the-map-equation` for the
-full derivation) is instead
+where $A_{ij}$ is the adjacency matrix, $k_i$ is degree, and $m$ is the number of
+edges. The map equation $L(\mathsf{M})$ is instead
 
 $$
 L(\mathsf{M}) =
@@ -96,201 +71,120 @@ L(\mathsf{M}) =
   + \sum_{i=1}^{m} p_{\circlearrowright}^i H(\mathcal{P}^i),
 $$
 
-where the two terms are the average coding cost for *crossing* module boundaries
-and *staying inside* modules respectively. {cite:t}`rosvall2008maps` showed that
-on networks where edges encode real flow, the map equation recovers communities
-that reflect the flow dynamics, which a static-density score like modularity does
-not capture.
+the average cost of coding a random walk: bits for *crossing* module boundaries
+plus bits for *moving inside* them. One reads structure off edge density; the
+other off the dynamics the edges carry.
 
 :::{toggle}
-**Resolution limit and scale**
+**A note on the resolution limit**
 
-Modularity has a resolution limit: it tends to merge communities smaller than
-roughly $\sqrt{2m}$ edges regardless of how internally cohesive they are
-{cite:p}`fortunato2007resolution`. Leiden inherits this when it maximises
-modularity, but escapes it with a resolution-limit-free objective such as the
-Constant Potts Model, or by tuning its `resolution_parameter`. The map equation
-has its own resolution limit, but a much weaker one: it depends on a module's cut
-size rather than the total link count, so it resolves far smaller modules
-({doc}`/concepts/hierarchy-and-the-multilevel-map` derives the bound). It does not
-vanish, so the map equation can still absorb very small, loosely connected
-modules when a shorter description exists without them; tune the scale with `markov_time` or
-`preferred_number_of_modules`.
+Modularity has a resolution limit: it tends not to separate communities smaller
+than roughly $\sqrt{2m}$ edges, however cohesive they are
+{cite:p}`fortunato2007resolution`. Leiden can sidestep it with a
+resolution-limit-free objective such as the Constant Potts Model, or by tuning its
+`resolution_parameter`. The map equation has a resolution limit too, weaker but
+not absent ({doc}`/concepts/hierarchy-and-the-multilevel-map` derives the bound);
+tune its scale with `markov_time` or `preferred_number_of_modules`. These are
+properties of the objectives, not verdicts on them.
 :::
 
-## Do the three methods agree?
+## The same network through three lenses
 
-We use `nx.planted_partition_graph`, which generates a network with four
-equally-sized communities whose ground truth is known by construction.
-
-### Build the graph
+The clearest way to build intuition is to look at one network under each lens.
 
 ```{code-cell} python
 import networkx as nx
 import infomap
 import igraph as ig
-from sklearn.metrics import adjusted_mutual_info_score, normalized_mutual_info_score
 
-# Four planted communities of 10 nodes each.
-# p_in=0.7: 70 % chance of an edge within a community.
-# p_out=0.05: 5 % chance across communities.
-g = nx.planted_partition_graph(4, 10, 0.7, 0.05, seed=123)
-print(f"Nodes: {g.number_of_nodes()}, Edges: {g.number_of_edges()}")
+# A network with clear community structure.
+g = nx.planted_partition_graph(4, 12, 0.7, 0.05, seed=123)
 
-# Ground truth: nodes 0–9 → group 0, 10–19 → group 1, etc.
-true_labels = [n // 10 for n in sorted(g.nodes())]
-```
-
-### Run all three methods
-
-```{code-cell} python
-# ── Infomap ──────────────────────────────────────────────────────────────────
+# Infomap: compress the flow
 result = infomap.run(g, two_level=True, seed=123, num_trials=10, silent=True)
+infomap_mods = result.modules()
 
-modules = result.modules()                         # {node_id: module_id}
-infomap_vec = [modules[n] for n in sorted(g.nodes())]
-print(f"Infomap:  {result.num_top_modules} modules   codelength {result.codelength:.4f} bits/step")
+# Louvain and Leiden: maximise modularity
+louvain = nx.community.louvain_communities(g, seed=123)
+louvain_mods = {n: c for c, comm in enumerate(louvain) for n in comm}
 
-# ── Louvain (NetworkX) ───────────────────────────────────────────────────────
-louvain_communities = nx.community.louvain_communities(g, weight=None, seed=123)
-louvain_labels = {}
-for cid, comm in enumerate(louvain_communities):
-    for node in comm:
-        louvain_labels[node] = cid
-louvain_vec = [louvain_labels[n] for n in sorted(g.nodes())]
-print(f"Louvain:  {len(louvain_communities)} communities")
-
-# ── Leiden (igraph) ──────────────────────────────────────────────────────────
 ig_g = ig.Graph(edges=list(g.edges()), n=g.number_of_nodes(), directed=False)
 leiden = ig_g.community_leiden(objective_function="modularity", n_iterations=10)
-leiden_vec = leiden.membership
-print(f"Leiden:   {len(leiden)} communities   modularity {leiden.modularity:.4f}")
+leiden_mods = {n: m for n, m in enumerate(leiden.membership)}
+
+print(f"Infomap (flow):        {len(set(infomap_mods.values()))} groups")
+print(f"Louvain (modularity):  {len(louvain)} groups")
+print(f"Leiden  (modularity):  {len(leiden)} groups")
 ```
-
-### Compare with ground truth
-
-Adjusted Mutual Information (AMI) and Normalised Mutual Information (NMI) are
-standard label-comparison metrics from information theory. Both equal 1.0 for
-a perfect match with the ground truth and 0 for chance-level agreement. AMI
-corrects for the fact that a random partition with many small communities
-inflates NMI.
-
-```{code-cell} python
-import pandas as pd
-
-rows = []
-for name, vec in [("Infomap", infomap_vec), ("Louvain", louvain_vec), ("Leiden", leiden_vec)]:
-    rows.append({
-        "Method": name,
-        "Communities": len(set(vec)),
-        "AMI vs truth": round(adjusted_mutual_info_score(true_labels, vec), 3),
-        "NMI vs truth": round(normalized_mutual_info_score(true_labels, vec), 3),
-    })
-
-pd.DataFrame(rows).set_index("Method")
-```
-
-On this clean benchmark the three methods agree, recovering the four planted
-communities (see the AMI and NMI scores above; 1.0 is a perfect match). That is
-the common case: when the structure is well-separated and undirected, the
-flow-based and modularity-based objectives coincide. Agreement across objectives like this is a useful signal that the
-partition is robust rather than an artefact of one method's bias.
-
-The methods part ways in two regimes: when edge direction carries real flow
-asymmetry, and when the graph is large enough for the modularity resolution limit
-to bite. The section below demonstrates the resolution limit and explains the
-directed case.
-
-### Visualise the Infomap partition
 
 ```{code-cell} python
 import matplotlib.pyplot as plt
-from docs_viz import draw_partition
 from myst_nb import glue
+from docs_viz import draw_partition
 
-flow = {n.node_id: n.flow for n in result.nodes()}
-fig = draw_partition(g, modules, flow=flow)
+fig, axes = plt.subplots(1, 3, figsize=(11, 3.6), layout="constrained")
+for ax, (name, mods) in zip(
+    axes,
+    [("Infomap (flow)", infomap_mods),
+     ("Louvain (modularity)", louvain_mods),
+     ("Leiden (modularity)", leiden_mods)],
+):
+    draw_partition(g, mods, ax=ax)
+    ax.set_title(name, fontsize=11)
+fig.suptitle("The same network through three lenses", fontsize=12)
 glue("fig-choosing-a-method", fig, display=False)
 plt.close(fig)
 ```
 
 ```{glue:figure} fig-choosing-a-method
-The benchmark network coloured by Infomap's partition. The chapter scores
-this against Louvain and Leiden on the same graph with AMI and NMI.
+One network partitioned by each objective. On clearly separated structure the
+flow lens and the modularity lens tend to carve it the same way; the group counts
+print above. Colours identify groups within a panel, not across panels.
 ```
 
-Each colour is one Infomap module. The four planted communities appear as
-distinct colour groups, with the handful of cross-community edges visible
-between them.
+On well-separated, undirected structure like this the objectives largely coincide:
+compressing the flow and maximising within-group density point at the same groups.
+That is the common case, and the agreement is reassuring rather than surprising.
 
-## When results diverge most
+## Where the lenses read a network differently
 
-Agreement on a clean benchmark is the common case. The objectives part ways in
-two documented regimes.
+Two situations are worth flagging to a Louvain or Leiden user, because they are
+where Infomap's answer will differ, and why:
 
-**The resolution limit.** Modularity cannot resolve communities below a size set
-by the whole graph. On a ring of many small cliques it merges adjacent cliques,
-however clearly separated they are {cite:p}`fortunato2007resolution`:
+- **Directed flow.** Infomap follows edge direction; the standard modularity null
+  model does not. On a network with real flow asymmetry, a citation cascade or a
+  web subgraph that mostly *sends* links one way, the random walk concentrates
+  where undirected edge density alone does not, so a directed Infomap run reads
+  the structure differently {cite:p}`rosvall2008maps`.
+- **Scale.** The two objectives have different resolution limits (see the toggle
+  above), so on a network with many small groups they need not agree on how finely
+  to divide it. Neither is more correct; they optimise different things.
 
-```{code-cell} python
-ring = nx.ring_of_cliques(15, 4)   # 15 cliques of 4 nodes, joined in a ring
-
-infomap_n = infomap.run(
-    ring, two_level=True, seed=123, num_trials=20, silent=True
-).num_top_modules
-
-louvain_n = len(nx.community.louvain_communities(ring, seed=123))
-
-ring_ig = ig.Graph(edges=list(ring.edges()), n=ring.number_of_nodes(), directed=False)
-leiden_n = len(ring_ig.community_leiden(objective_function="modularity", n_iterations=20))
-
-print(f"Planted cliques     : 15")
-print(f"Infomap             : {infomap_n} modules")
-print(f"Louvain (modularity): {louvain_n} modules")
-print(f"Leiden  (modularity): {leiden_n} modules")
-```
-
-Infomap recovers all 15 cliques (the counts are printed above); Louvain and
-Leiden, both maximising modularity, merge adjacent cliques into fewer, larger
-modules. Because *both* modularity optimisers merge, the cause is the modularity
-objective itself, not the search quality; a better optimiser does not help. Leiden escapes it by switching to a resolution-limit-free objective such as
-the Constant Potts Model, or by raising its `resolution_parameter`; the map
-equation's own limit is far weaker, so it keeps the cliques apart.
-
-**Directed flow.** Infomap follows edge direction; the standard modularity null
-model does not. On small, balanced graphs the two still agree, but on genuinely
-flow-asymmetric networks, a web subgraph that mostly *sends* links one way or a
-citation cascade, the directed random walk concentrates where undirected edge
-density does not, and the partitions diverge {cite:p}`rosvall2008maps`.
+Neither point is a benchmark. They are the two places where "community by flow"
+and "community by density" genuinely mean different things, so knowing your
+network tells you which lens to trust.
 
 ## API pointers
 
-- {class}`infomap.Infomap` is the main class; keyword arguments configure the
-  options. Pass `directed=True` for directed-flow treatment and `two_level=True`
-  to restrict to a flat partition.
-- {func}`infomap.find_communities` is a convenience wrapper that returns a
-  `list[set]` of communities in NetworkX partition style.
-- {func}`infomap.find_igraph_communities` is the igraph equivalent, returning a
-  `VertexClustering` so Infomap results plug into igraph's modularity and
-  plotting utilities.
-- `sklearn.metrics.adjusted_mutual_info_score` and `normalized_mutual_info_score`
-  are label-comparison metrics for partition evaluation; both accept flat integer
-  label vectors.
+- {func}`infomap.run` returns an immutable {class}`~infomap.Result`; pass
+  `directed=True` for directed-flow treatment and `two_level=True` for a flat
+  partition.
+- {func}`infomap.find_communities` returns a NetworkX-style `list[set]`, and
+  {func}`infomap.find_igraph_communities` returns an `igraph.VertexClustering`, so
+  an Infomap result plugs into igraph's own inspection and plotting utilities
+  alongside Louvain and Leiden.
 
 ## Going deeper
 
-- {doc}`/concepts/the-map-equation` explains why Infomap minimises description
-  length rather than maximising modularity, with the full two-level code
-  derivation.
+- {doc}`/concepts/the-map-equation` derives why Infomap minimises description
+  length rather than maximising modularity.
 - Companion notebooks: `examples/notebooks/compare-infomap-louvain-networkx.ipynb`
-  (NetworkX workflow, GraphML/GEXF export) and
-  `examples/notebooks/compare-infomap-louvain-leiden-igraph.ipynb` (igraph-native
-  `VertexClustering` and the `find_igraph_communities` helper).
-- {cite:t}`rosvall2008maps` compares the map equation and modularity on flow and
-  non-flow networks.
+  and `examples/notebooks/compare-infomap-louvain-leiden-igraph.ipynb` show the
+  side-by-side workflow with NetworkX and igraph.
 - {cite:t}`traag2019leiden` introduces Leiden and shows Louvain can return
   internally disconnected communities.
 - {cite:t}`fortunato2007resolution` is the original proof of modularity's
   resolution limit.
-- {cite:t}`smiljanic2026survey`, §3, compares the map equation and modularity in
-  the broader survey.
+- {cite:t}`rosvall2008maps` contrasts the map equation and modularity on flow and
+  non-flow networks.
+- {cite:t}`smiljanic2026survey`, §3, treats the two in the broader survey.

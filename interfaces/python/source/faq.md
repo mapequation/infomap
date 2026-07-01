@@ -153,13 +153,12 @@ more reliable modules. See {doc}`Incomplete data and regularization <robustness/
 
 ## Workflows and integrations
 
-### How do I compare Infomap with Louvain or Leiden, and which is "right"?
+### How does Infomap relate to Louvain and Leiden?
 
-Run each and compare the partitions with `sklearn.metrics.adjusted_mutual_info_score`
-(AMI) or `normalized_mutual_info_score` (NMI). Neither is universally right: Infomap
-minimises a flow-based description length, while Louvain and Leiden maximise
-modularity, whose resolution limit can merge small communities (Leiden can avoid
-it with a Constant Potts Model objective). See {doc}`Comparing Infomap, Louvain, and Leiden <concepts/choosing-a-method>`.
+All three partition a network, but Infomap optimises the compression of flow while
+Louvain and Leiden maximise modularity (density against a null model). They tend to
+agree on clear structure and read a network differently when flow direction or
+scale matters. See {doc}`Reading Infomap through Louvain and Leiden <concepts/choosing-a-method>`.
 
 ### How do I use Infomap inside a Scanpy / AnnData workflow?
 

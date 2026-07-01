@@ -15,8 +15,8 @@ it does before running it on your own data.
 - {doc}`State nodes and higher-order flow <state-nodes-and-higher-order-flow>`: the
   one mechanism behind the memory, multilayer, and temporal models; read it before
   the Flow models section.
-- {doc}`Choosing a method <choosing-a-method>`: Infomap versus Louvain and Leiden,
-  and when the flow-based and modularity-based views diverge.
+- {doc}`Reading Infomap through Louvain and Leiden <choosing-a-method>`: understand
+  Infomap in the terms you already use for modularity.
 
 ```{toctree}
 :hidden:
