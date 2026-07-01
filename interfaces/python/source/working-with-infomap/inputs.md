@@ -220,6 +220,51 @@ read as weighted links. For an explicit edge index with its own options, use
 `Network.from_edge_index(edge_index, edge_weight=..., directed=...)`.
 ```
 
+## Network files
+
+Infomap reads its native Pajek-style `.net` files (and plain link lists)
+directly from a path. The example below is the two-triangles network that
+ships with Infomap as `examples/networks/twotriangles.net`: triangles A–B–C
+and D–E–F, joined by the single link C–D. Named vertices come back on the
+result's nodes.
+
+```{code-cell} python
+import tempfile
+from pathlib import Path
+
+import infomap
+
+content = """*Vertices
+1 "A"
+2 "B"
+3 "C"
+4 "D"
+5 "E"
+6 "F"
+*Edges
+1 2
+1 3
+2 3
+3 4
+4 5
+4 6
+5 6
+"""
+path = Path(tempfile.mkdtemp()) / "twotriangles.net"
+path.write_text(content)
+
+result = infomap.run(str(path), two_level=True, seed=123, num_trials=5, silent=True)
+print(f"file route: {result.num_top_modules} modules, {result.codelength:.4f} bits/step")
+for node in result.nodes():
+    print(f"  {node.name}: module {node.module_id}")
+```
+
+`Network.from_file(path)` is the two-step form when you want to inspect or
+extend the network before running. The
+[input-format reference](https://www.mapequation.org/infomap/#Input) on
+mapequation.org documents every section a `.net` file can carry, including
+`*States`, `*Bipartite`, and `*Multilayer`.
+
 ## Building incrementally with Network
 
 When you assemble a network programmatically, read a custom file format, or wire

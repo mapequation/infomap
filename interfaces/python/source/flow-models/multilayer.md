@@ -135,30 +135,37 @@ makes physical nodes naturally bi-modular {cite:p}`domenico2015multilayer,edler2
 
 ## Two triangles bridged by one node
 
-The network below has **five physical nodes** and two layers.
+The network is the example the
+[multilayer input format](https://www.mapequation.org/infomap/#InputMultilayer)
+is documented with on mapequation.org (it ships with Infomap as
+`examples/networks/multilayer.net`): **five physical nodes** *i*, *j*, *k*,
+*l*, *m* in two layers.
 
-- **Layer 1** contains a tight triangle: nodes 1–2–3.
-- **Layer 2** contains a tight triangle: nodes 1–4–5.
+- **Layer 1** contains a tight triangle: *i*, *l*, *m*.
+- **Layer 2** contains a tight triangle: *i*, *j*, *k*.
 
-Physical node **1** is the bridge: it participates in both layers. With a low
-relax rate, the map equation finds two modules, {1,2,3} from Layer 1 and {1,4,5}
-from Layer 2. Node 1 is bi-modular: module 1 in Layer 1, module 2 in Layer 2.
+Physical node *i* is the bridge: it participates in both layers. With a low
+relax rate, the map equation finds two modules, {*i*, *l*, *m*} from Layer 1
+and {*i*, *j*, *k*} from Layer 2. Node *i* is bi-modular: one module per layer.
 
 ```{code-cell} python
 import infomap
 from infomap import Network, run
 
+names = {1: "i", 2: "j", 3: "k", 4: "l", 5: "m"}
+
+# (layer, source, target, weight): i sends weight 0.8 to its triangle
+# partners and receives weight 1.0 back; the partners link with weight 1.0.
+intra_links = [
+    (1, 1, 4, 0.8), (1, 4, 1, 1.0), (1, 1, 5, 0.8), (1, 5, 1, 1.0),
+    (1, 4, 5, 1.0), (1, 5, 4, 1.0),
+    (2, 1, 2, 0.8), (2, 2, 1, 1.0), (2, 1, 3, 0.8), (2, 3, 1, 1.0),
+    (2, 2, 3, 1.0), (2, 3, 2, 1.0),
+]
+
 net = Network()
-
-# Layer 1: tight triangle {1, 2, 3}
-for src, tgt in [(1, 2), (2, 3), (1, 3)]:
-    net.add_multilayer_intra_link(1, src, tgt, weight=1.0)
-    net.add_multilayer_intra_link(1, tgt, src, weight=1.0)
-
-# Layer 2: tight triangle {1, 4, 5}
-for src, tgt in [(1, 4), (4, 5), (1, 5)]:
-    net.add_multilayer_intra_link(2, src, tgt, weight=1.0)
-    net.add_multilayer_intra_link(2, tgt, src, weight=1.0)
+for layer, src, tgt, w in intra_links:
+    net.add_multilayer_intra_link(layer, src, tgt, w)
 
 result = run(net, multilayer_relax_rate=0.15, seed=123, num_trials=10, silent=True)
 
@@ -180,12 +187,13 @@ finds two modules. Now inspect the per-state-node partition to see the overlap:
 print(f"{'Layer':>6}  {'Phys node':>10}  {'Module':>8}")
 print("-" * 30)
 for node in sorted(result.nodes(states=True), key=lambda n: (n.layer_id, n.node_id)):
-    print(f"{node.layer_id:>6}  {node.node_id:>10}  {node.module_id:>8}")
+    print(f"{node.layer_id:>6}  {names[node.node_id]:>10}  {node.module_id:>8}")
 ```
 
-Physical node **1** appears twice, once in each layer, in a different module each
-time. Nodes 2 and 3 sit only in the Layer 1 triangle's module, nodes 4 and 5
-only in the Layer 2 triangle's module; the table above shows the module ids.
+Physical node *i* appears twice, once in each layer, in a different module each
+time. Nodes *l* and *m* sit only in the Layer 1 triangle's module, nodes *j*
+and *k* only in the Layer 2 triangle's module; the table above shows the
+module ids.
 
 On multilayer networks you must call `result.modules(states=True)`, because each
 physical node can belong to multiple modules:
@@ -208,16 +216,16 @@ for node in result.nodes(states=True):
 print(f"{'Phys node':>10}  {'(layer, module) assignments'}")
 print("-" * 45)
 for pid, assignments in sorted(phys_memberships.items()):
-    print(f"{pid:>10}  {sorted(assignments)}")
+    print(f"{names[pid]:>10}  {sorted(assignments)}")
 ```
 
-Physical node 1 has two assignments; all others have one. That is the
+Physical node *i* has two assignments; all others have one. That is the
 multilayer overlap in action.
 
 Now draw both layers side by side, colouring each node by the module it lands
 in. A shared palette keeps a module the same colour across panels, so physical
-node 1 shows up in a different colour in each layer: that colour change *is* the
-bi-modular overlap made visible.
+node *i* shows up in a different colour in each layer: that colour change *is*
+the bi-modular overlap made visible.
 
 ```{code-cell} python
 from myst_nb import glue
@@ -227,18 +235,18 @@ import networkx as nx
 from docs_viz import draw_partition, module_palette
 
 layers = {
-    1: ([(1, 2), (2, 3), (1, 3)], "Layer 1"),
-    2: ([(1, 4), (4, 5), (1, 5)], "Layer 2"),
+    1: ([("i", "l"), ("l", "m"), ("i", "m")], "Layer 1"),
+    2: ([("i", "j"), ("j", "k"), ("i", "k")], "Layer 2"),
 }
 
 # Module assignment and flow per physical node, recorded separately per layer.
 state_nodes = list(result.nodes(states=True))
 module_in_layer = {
-    layer: {n.node_id: n.module_id for n in state_nodes if n.layer_id == layer}
+    layer: {names[n.node_id]: n.module_id for n in state_nodes if n.layer_id == layer}
     for layer in (1, 2)
 }
 flow_in_layer = {
-    layer: {n.node_id: n.flow for n in state_nodes if n.layer_id == layer}
+    layer: {names[n.node_id]: n.flow for n in state_nodes if n.layer_id == layer}
     for layer in (1, 2)
 }
 colours = module_palette(
@@ -255,19 +263,19 @@ for ax, (layer, (edges, title)) in zip(axes, layers.items()):
     )
     ax.set_title(title, fontsize=11)
 
-fig.suptitle("Physical node 1 is bi-modular: one colour per layer", fontsize=12)
+fig.suptitle("Physical node i is bi-modular: one colour per layer", fontsize=12)
 glue("fig-multilayer", fig, display=False)
 plt.close(fig)
 ```
 
 ```{glue:figure} fig-multilayer
 The two layers drawn separately, coloured by module with a shared palette.
-Physical node 1 appears in both layers in a different colour: the bi-modular
+Physical node *i* appears in both layers in a different colour: the bi-modular
 overlap that state nodes make possible.
 ```
 
 The three Layer-1 nodes share one colour: they form a single module. In Layer 2
-the same physical node 1 takes a different colour, because it belongs to the
+the same physical node *i* takes a different colour, because it belongs to the
 other cluster in that context.
 
 ### Relax rate sensitivity
@@ -279,12 +287,8 @@ layer nearly independently; high values merge them into a single partition.
 results = []
 for r in [0.01, 0.15, 0.50, 0.90, 1.00]:
     net_r = Network()
-    for src, tgt in [(1, 2), (2, 3), (1, 3)]:
-        net_r.add_multilayer_intra_link(1, src, tgt, 1.0)
-        net_r.add_multilayer_intra_link(1, tgt, src, 1.0)
-    for src, tgt in [(1, 4), (4, 5), (1, 5)]:
-        net_r.add_multilayer_intra_link(2, src, tgt, 1.0)
-        net_r.add_multilayer_intra_link(2, tgt, src, 1.0)
+    for layer, src, tgt, w in intra_links:
+        net_r.add_multilayer_intra_link(layer, src, tgt, w)
     result_r = run(net_r, multilayer_relax_rate=r, seed=123, num_trials=10, silent=True)
     results.append((r, result_r.num_top_modules, result_r.codelength))
 
@@ -305,24 +309,28 @@ multilayer networks at around $r \approx 0.25$ {cite:p}`edler2017higher`.
 
 When your data include observed inter-layer transitions (for example, passenger
 bookings that start on one airline and continue on another), you can supply them
-directly with `add_multilayer_inter_link` instead of relying on the relax-rate
-model. The inter-layer link specifies a coupling weight through a shared physical
-node:
+directly instead of relying on the relax-rate model. Node-aligned couplings
+through a shared physical node use `add_multilayer_inter_link`; fully general
+links between any two `(layer, node)` pairs use `add_multilayer_link`. The
+example network's file form specifies four such links, from *i* in each layer
+to its triangle partners in the other layer:
 
 ```{code-cell} python
 net_inter = Network()
 
 # Intra-layer links (same as before)
-for src, tgt in [(1, 2), (2, 3), (1, 3)]:
-    net_inter.add_multilayer_intra_link(1, src, tgt, 1.0)
-    net_inter.add_multilayer_intra_link(1, tgt, src, 1.0)
-for src, tgt in [(1, 4), (4, 5), (1, 5)]:
-    net_inter.add_multilayer_intra_link(2, src, tgt, 1.0)
-    net_inter.add_multilayer_intra_link(2, tgt, src, 1.0)
+for layer, src, tgt, w in intra_links:
+    net_inter.add_multilayer_intra_link(layer, src, tgt, w)
 
-# Explicit inter-layer coupling: node 1 bridges layer 1 <-> layer 2
-net_inter.add_multilayer_inter_link(source_layer_id=1, node_id=1, target_layer_id=2, weight=0.15)
-net_inter.add_multilayer_inter_link(source_layer_id=2, node_id=1, target_layer_id=1, weight=0.15)
+# Explicit inter-layer links: from i to the other layer's triangle partners.
+inter_links = [
+    ((1, 1), (2, 2), 0.2),  # i in layer 1 -> j in layer 2
+    ((1, 1), (2, 3), 0.2),  # i in layer 1 -> k in layer 2
+    ((2, 1), (1, 4), 0.2),  # i in layer 2 -> l in layer 1
+    ((2, 1), (1, 5), 0.2),  # i in layer 2 -> m in layer 1
+]
+for src, tgt, w in inter_links:
+    net_inter.add_multilayer_link(src, tgt, w)
 
 result_inter = run(net_inter, seed=123, num_trials=10, silent=True)
 print(f"Modules found : {result_inter.num_top_modules}")
@@ -340,6 +348,10 @@ model; the link weights you supply fully specify the coupling.
 - {meth}`infomap.Network.add_multilayer_inter_link` adds a coupling between
   layers through a shared physical node:
   `add_multilayer_inter_link(source_layer_id, node_id, target_layer_id,
+  weight=1.0)`.
+- {meth}`infomap.Network.add_multilayer_link` adds a fully general link between
+  any two `(layer_id, node_id)` pairs:
+  `add_multilayer_link(source_multilayer_node, target_multilayer_node,
   weight=1.0)`.
 - `multilayer_relax_rate` (default `0.15`) is an engine option on
   {func}`infomap.run`: the relax rate used when no explicit inter-layer links are
