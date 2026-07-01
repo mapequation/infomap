@@ -100,7 +100,7 @@ distribution.
 :::{toggle}
 **Full term-by-term form**
 
-Following {cite:t}`rosvall2009map`, the two-level code uses the index codebook at
+The two-level code {cite:p}`rosvall2009map` uses the index codebook at
 total exit rate $q_{\curvearrowright} = \sum_i q_{i\curvearrowright}$, with entropy
 
 $$

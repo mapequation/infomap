@@ -46,7 +46,7 @@ give each time window its own layer, connect a node's copies across layers with
 inter-layer transitions, and run the standard map equation optimisation. The
 multilayer coding scheme tracks physical identity across layers, so a node that
 stays in the same community across several time windows receives consistent
-module labels. {cite:t}`holmgren2023change` extended this work to visualise how modular
+module labels. Later work {cite:p}`holmgren2023change` extended this to visualise how modular
 structure changes between snapshots, including alluvial diagrams that show
 modules merging and splitting over time.
 
@@ -228,8 +228,8 @@ directions), which suits ordered data such as geologic time series.
 The side-by-side panels above suit small networks. For larger datasets with many
 modules and time steps, the standard MapEquation visualisation is an **alluvial
 diagram**, which tracks how modules merge and split across steps; the generator
-at <https://www.mapequation.org/alluvial> accepts Infomap output directly, and
-{cite:t}`holmgren2023change` generalise it to higher-order and temporal networks.
+at <https://www.mapequation.org/alluvial> accepts Infomap output directly and
+generalises to higher-order and temporal networks {cite:p}`holmgren2023change`.
 
 ## API pointers
 

@@ -58,10 +58,10 @@ the walk fails to reach every node; it is not *ergodic*. The fix is
 **teleportation**: with small probability $\tau$ (default 0.15, the conventional
 PageRank value) the walker teleports to another node instead of following an edge.
 That guarantees a unique stationary distribution, but the jumps add long-range
-links that blur module boundaries. {cite:t}`lambiotte2012smart` showed that
-*unrecorded* teleportation, which leaves the jump steps out of the recorded
-trajectory, removes most of the blurring and makes the partition robust to the
-value of $\tau$. Infomap uses unrecorded teleportation by default for directed
+links that blur module boundaries. *unrecorded*
+teleportation, which leaves the jump steps out of the recorded trajectory,
+removes most of the blurring and makes the partition robust to the value of
+$\tau$ {cite:p}`lambiotte2012smart`. Infomap uses unrecorded teleportation by default for directed
 networks.
 
 ## Flow as a stationary distribution

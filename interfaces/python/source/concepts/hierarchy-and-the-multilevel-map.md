@@ -27,7 +27,7 @@ inside tissues inside organs inside organisms. A plain two-level partition, one
 index codebook over one set of leaf modules, sees only one cross-section of that
 structure at a time.
 
-This limit carries a measurable information-theoretic cost. {cite:t}`kawamoto2015resolution` showed that any two-level method has a *resolution limit*: modules below a
+This limit carries a measurable information-theoretic cost. Any two-level method has a *resolution limit* {cite:p}`kawamoto2015resolution`: modules below a
 certain size (scaling exponentially with their internal link count) go missing,
 because merging them into a larger module shortens the two-level description. In
 a nested network the bind is plain. The two-level method must choose between
@@ -118,8 +118,8 @@ no depth parameter required.
 :::{toggle}
 **Resolution limit: why two-level fails and hierarchy helps**
 
-{cite:t}`kawamoto2015resolution` derived the resolution limit of the two-level map
-equation analytically. For an undirected network with cut size $C$ (total
+The two-level map equation's resolution limit can be derived analytically
+{cite:p}`kawamoto2015resolution`. For an undirected network with cut size $C$ (total
 number of links crossing module boundaries), the two-level method can fail
 to detect a module with $l_c$ internal links when
 
@@ -265,7 +265,7 @@ reveals the finer structure: each clique gets its own colour. Both views are
 consistent descriptions of the *same* Infomap result, read at different depths
 of the output tree.
 
-This matches the theoretical picture from {cite:t}`rosvall2011multilevel`: the
+This matches the theoretical picture {cite:p}`rosvall2011multilevel`: the
 network has dense intra-clique flow, moderately dense intra-super-group flow
 (clique pairs), and sparse inter-super-group flow (the single bridge). Three
 levels of nested index codebooks capture exactly those three scales, and the
