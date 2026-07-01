@@ -21,6 +21,7 @@ PIP ?= $(PYTHON) -m pip
 PYTEST ?= $(PYTHON) -m pytest
 RUFF ?= $(PYTHON) -m ruff
 PYRIGHT ?= $(PYTHON) -m pyright
+PRECOMMIT ?= $(PYTHON) -m pre_commit
 NPM ?= npm
 NODE ?= node
 SWIG ?= swig
@@ -120,7 +121,7 @@ endif
 endif
 endif
 
-.PHONY: help doctor dev-bootstrap clean build-binding-options
+.PHONY: help doctor dev-bootstrap hooks clean build-binding-options
 
 help:
 	@printf "%s\n" \
@@ -173,7 +174,8 @@ help:
 		"  format-r-check        Verify R sources are Air-format clean." \
 		"  tidy-native           Run clang-tidy over C++ source files." \
 		"  dev-cpp-check         Run the fast C++ developer feedback suite." \
-		"  dev-bootstrap         Install Python dev dependencies and run npm ci." \
+		"  dev-bootstrap         Install Python dev dependencies, run npm ci, and install git hooks." \
+		"  hooks                 Install the pre-commit git hook (lint/format on commit)." \
 		"  dev-python-install    Install the built Python package in editable mode." \
 		"  dev-python-notebooks-install Install notebook execution dependencies." \
 		"  clean                 Remove native, Python, and JS build outputs." \
@@ -265,12 +267,29 @@ doctor:
 dev-bootstrap:
 	@$(PIP) install -e '.[test,docs,examples,release]'
 	@$(NPM) ci
+	@$(MAKE) --no-print-directory hooks
 	@printf "%s\n" \
 		"Bootstrap complete." \
 		"Next steps:" \
 		"  make build-native" \
 		"  make build-python dev-python-install" \
 		"  make test-fast"
+
+# Install the pre-commit git hook. Idempotent; safe to re-run. Never fails the
+# build: a native-only checkout may not have pre-commit yet, and a repo with
+# core.hooksPath set (pre-commit refuses to auto-install there) can still lint
+# via `pre-commit run --all-files` or CI.
+hooks:
+	@if ! $(PRECOMMIT) --version >/dev/null 2>&1; then \
+		printf "pre-commit not installed; run 'make dev-bootstrap' or 'pip install pre-commit'.\n"; \
+	elif $(PRECOMMIT) install --hook-type pre-commit --hook-type pre-push >/dev/null 2>&1; then \
+		printf "pre-commit and pre-push git hooks installed.\n"; \
+	else \
+		printf "pre-commit is installed but the git hook was not auto-installed:\n"; \
+		printf "  core.hooksPath is set (%s), so pre-commit refuses to manage it.\n" "$$(git config core.hooksPath)"; \
+		printf "  Run 'git config --unset core.hooksPath && make hooks', or just use\n"; \
+		printf "  'pre-commit run --all-files' / rely on CI.\n"; \
+	fi
 
 clean: clean-native clean-python clean-r clean-js
 	@true
