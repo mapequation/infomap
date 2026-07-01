@@ -10,6 +10,8 @@ kernelspec:
 
 # Multilayer networks
 
+{bdg-warning-line}`Flow model`
+
 ```{admonition} In one sentence
 :class: tip
 A multilayer network lets the same physical node live in several layers at once,
@@ -17,7 +19,7 @@ so Infomap can discover that a person belongs to one community at work and a
 different one at home, without collapsing those contexts into one network.
 ```
 
-## Motivation
+## When one network flattens the picture
 
 Many real systems involve the same actors interacting through *several kinds of
 relationship at once*. Scientists collaborate on journal papers, present at
@@ -38,7 +40,7 @@ equation can assign a physical node to several modules, one per layer where its
 local structure places it. You get non-overlapping partitions within each layer
 and physically meaningful overlap across them.
 
-## Intuition
+## One node, several layers
 
 Think of a research collaboration network. Layer 1 records co-authorship on
 machine-learning papers; Layer 2 records co-authorship on statistics papers.
@@ -61,7 +63,7 @@ the walk but gives state nodes of the same physical node a shared codeword withi
 a module. So a physical node that lands in two modules is
 bi-modular, with a flow signature that differs by layer {cite:p}`edler2017higher`.
 
-## Theory
+## State nodes and the relax rate
 
 A multilayer network has $L$ layers over a shared set of physical nodes. Each
 physical node $i$ in layer $\alpha$ becomes a **state node** $(i, \alpha)$.
@@ -131,7 +133,7 @@ difference from the standard first-order map equation, and it is precisely what
 makes physical nodes naturally bi-modular {cite:p}`domenico2015multilayer,edler2017higher`.
 :::
 
-## A worked example
+## Two triangles bridged by one node
 
 The network below has **five physical nodes** and two layers.
 
@@ -345,11 +347,15 @@ model; the link weights you supply fully specify the coupling.
   exposes `.node_id` (physical), `.state_id`, `.layer_id`, `.module_id`, and
   `.flow`.
 
-Two further engine options give finer control:
-- `multilayer_relax_limit` caps how many relax steps can occur in a row (`-1`
-  for unlimited).
-- `multilayer_relax_to_self`, when `True`, restricts relaxed steps to the
-  physical node's own neighbours in other layers (node-aligned coupling).
+## Options
+
+Multilayer flow is controlled by three engine options on {func}`infomap.run`:
+
+| Option | Default | Effect |
+|---|---|---|
+| `multilayer_relax_rate` | `0.15` | Inter-layer coupling used when no explicit inter-layer links are given |
+| `multilayer_relax_limit` | `-1` | Caps how many relax steps can occur in a row (`-1` for unlimited) |
+| `multilayer_relax_to_self` | `False` | Restricts relaxed steps to the node's own neighbours in other layers (node-aligned coupling) |
 
 ## Going deeper
 

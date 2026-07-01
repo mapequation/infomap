@@ -10,52 +10,46 @@ kernelspec:
 
 # Running Infomap
 
-```{admonition} In one sentence
-:class: tip
-Most Infomap runs need only three arguments (`seed`, `num_trials`, and either
-`two_level` or `directed`). This chapter explains why those choices matter more
-than picking from the full list of flags.
+{bdg-success-line}`How-to`
+
+Most runs need only three choices: a `seed`, how many `num_trials` to run, and
+either `two_level` or `directed` for the flow model. The shortest useful run:
+
+```python
+import networkx as nx
+import infomap
+
+result = infomap.run(
+    nx.karate_club_graph(),
+    seed=123,        # reproducible
+    num_trials=10,   # keep the best of 10 restarts
+    two_level=True,  # flat partition; omit for the multilevel default
+)
+print(result.num_top_modules, result.codelength)
 ```
 
-## Motivation
+Everything below is when and why to reach for the other options. For the *why*
+behind the flow model itself, see {doc}`/concepts/index`.
 
-Infomap has dozens of options. The temptation is to pick a handful at random
-and hope for the best, or to reach for every knob labelled "accuracy" out of
-caution. Neither strategy works well in practice.
+## What matters
 
-Most options fall into one of two categories. The first changes *how the random
-walk is defined*: whether flow is directed, how readily it teleports out of dead
-ends, what timescale it runs at. These options encode your scientific beliefs
-about the system, and getting them wrong produces a partition that is
-numerically impressive but structurally meaningless. The second category changes
-*how hard the search works*: how many independent restarts to attempt, whether
-to stop early once the codelength has converged. These options affect
-reliability, not which partition Infomap looks for.
+Infomap has dozens of options, but they fall into two groups, and telling them
+apart is most of the battle:
 
-Knowing which knob is which, and why, lets you reach for the right one without
-trial and error.
+- **Flow-model options** (`directed`, `markov_time`, `teleportation_probability`)
+  change *how the random walk is defined*. They encode your beliefs about the
+  system; the wrong choice gives a partition that scores well but means little.
+- **Search options** (`seed`, `num_trials`, `converge`) change *how hard the
+  search works*, not which partition Infomap looks for. They buy reliability.
 
-## Intuition
+The rest of this page is one task per option that matters. The flow-model theory
+behind them lives in {doc}`/concepts/flow-and-random-walks` and
+{doc}`/concepts/choosing-a-method`.
 
-Think of Infomap as a hiker searching for the lowest valley on a rugged
-landscape. Each point on the landscape is a possible partition of your network.
-The elevation is the map equation value, $L(\mathsf{M})$: lower is better.
+## How it works, in brief
 
-The *flow model* options (`directed`, `markov_time`, `teleportation_probability`)
-reshape the landscape itself. Change them and the hiker stands on different
-terrain. The *search* options (`seed`, `num_trials`) set how widely the hiker
-explores the landscape you put them on. They do not move the valleys, only
-decide whether the hiker reaches the deepest one.
-
-Two complications make the landscape interesting. First, the map equation
-landscape is not convex; Infomap's greedy local search can get trapped in a
-shallow minimum, which is why independent restarts (`num_trials`) matter
-{cite:p}`calatayud2019solution`. Second, for directed networks the landscape depends on
-teleportation, the artificial mechanism that keeps the walk ergodic on networks
-with disconnected components or sinks. How you handle teleportation changes the
-partition, so make the choice deliberately {cite:p}`lambiotte2012smart`.
-
-## Theory
+Enough to use the options well; the full treatment is in
+{doc}`/concepts/flow-and-random-walks` and {doc}`/concepts/choosing-a-method`.
 
 ### The search landscape: why `num_trials` matters
 
@@ -137,10 +131,9 @@ independent of $\tau$ over a wide range, while recorded teleportation collapses
 to a single module at high $\tau$.
 :::
 
-## A worked example
+## The options that matter
 
-We build a small hierarchical graph and a noisy planted-partition graph to
-demonstrate the options that most commonly need adjusting.
+One task per option, each on a small graph you can run as you read.
 
 ### Setting up
 
@@ -439,6 +432,17 @@ for name, graph in [("ring of cliques", G_ring), ("karate club", G_karate)]:
     print(f"{name}: {result.num_top_modules} modules, L={result.codelength:.4f}")
 ```
 
+## Pitfalls
+
+- **`seed=0` raises.** Infomap requires `seed >= 1`; use any positive integer.
+- **Codelength rises when you add metadata.** `result.codelength` reports only the
+  topological term; the search still minimises the combined objective (see
+  {doc}`/flow-models/metadata`).
+- **More trials never hurt correctness, only runtime.** If repeated runs disagree,
+  raise `num_trials` (or pass `converge=True`) rather than trusting one fit.
+- **Sparse or under-sampled data over-splits.** Reach for `regularized=True`
+  (see {doc}`/robustness/incomplete-data`).
+
 ## API pointers
 
 The options in this chapter are keyword arguments to {func}`infomap.run` (and to
@@ -476,7 +480,7 @@ These are the keyword arguments to {func}`infomap.run`:
 For the full set of options as a searchable table, see the
 {class}`~infomap.Options` reference in the {doc}`/api/index`.
 
-## Going deeper
+## See also
 
 - **Options guide notebook** `examples/notebooks/options-guide.ipynb` lists every
   option in a searchable table, generated from the installed package so it matches

@@ -10,6 +10,8 @@ kernelspec:
 
 # The map equation
 
+{bdg-info-line}`Concept`
+
 ```{admonition} In one sentence
 :class: tip
 The map equation measures how many bits it takes to describe a random walk on
@@ -17,7 +19,7 @@ your network. That number is the *codelength*; Infomap finds the partition that
 makes it smallest, which is the partition where flow stays trapped in modules.
 ```
 
-## Motivation
+## Two questions you can ask of a network
 
 When you split a network into communities, how do you know the split is *good*?
 You need a quality function: a single number that scores any candidate partition.
@@ -35,7 +37,7 @@ the partition captures real structure in the flow. Both questions are legitimate
 and often agree; they simply differ, and when links carry movement the two views
 can disagree, with the map equation the one built for the flow.
 
-## Intuition
+## Reusing street names
 
 Picture narrating a random walker's journey to a friend, one step at a time, in
 as few words as possible. The trick is the one paper maps already use: reuse
@@ -60,7 +62,7 @@ under the best two-level code for partition $\mathsf{M}$. **Minimising $L$ over
 all partitions is how Infomap defines and finds communities: the partition that
 best compresses the flow.**
 
-## Theory
+## The map equation, term by term
 
 For a partition $\mathsf{M}$ into $m$ modules, the map equation is the minimum
 average bits per step for a two-level code of an infinite random walk:
@@ -127,7 +129,7 @@ $q_{i\curvearrowright}$ and $\sum_{\alpha\in i} p_\alpha$ per module; see
 {cite:t}`rosvall2009map` for the fast stochastic search that exploits it.
 :::
 
-## A worked example
+## Does compression reveal the karate club's split?
 
 Zachary's karate club is a classic benchmark: 34 people, 78 friendships, and a
 known split into two factions. It is small enough to explore interactively and
