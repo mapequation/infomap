@@ -295,8 +295,8 @@ for label, kwargs in [
 
 Higher `regularization_strength` merges more modules. Use this when you have
 prior reason to believe that small modules in your result reflect sampling noise
-rather than real structure. The Bayesian derivation is in the source paper
-{cite:p}`smiljanic2020missing`.
+rather than real structure. The Bayesian derivation is in
+{cite:t}`smiljanic2020missing`.
 
 ### Why trials matter, visualised
 

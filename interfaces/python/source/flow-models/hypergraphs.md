@@ -64,10 +64,10 @@ the walk:
   then occasionally takes the stairs to a different floor. Allows flows to
   linger within hyperedges and supports overlapping communities.
 
-The key insight: you can design all three representations to give identical
-*node-visit rates* for the same random-walk model, yet they produce different
-*link flows* and therefore different optimal partitions
-{cite:p}`eriksson2021hypergraph`. Bipartite representations tend to favour fewer, larger modules;
+The key insight from {cite:t}`eriksson2021hypergraph` is that you can design
+all three representations to give identical *node-visit rates* for the same
+random-walk model, yet they produce different *link flows* and therefore
+different optimal partitions. Bipartite representations tend to favour fewer, larger modules;
 unipartite and multilayer representations resolve finer structure.
 
 ## Theory
@@ -111,8 +111,8 @@ $$P_{uv} = \sum_{e \in E(u,v)} P_{u \to e} \cdot P_{e \to v} = \sum_{e \in E(u,v
 where $E(u,v)$ is the set of hyperedges containing both $u$ and $v$. Each
 hyperedge becomes a weighted clique.
 
-A later extension introduces a
-*size-biased* random walk with parameter $\sigma$ {cite:p}`eriksson2022flow`: setting
+{cite:t}`eriksson2022flow` extends this to a
+*size-biased* random walk with parameter $\sigma$: setting
 $\omega(E_\alpha) \propto (|E_\alpha| - 1)^{\sigma+1}$ biases the walker
 toward large hyperedges ($\sigma > 0$) or small ones ($\sigma < 0$). At
 $\sigma = 0$ the walk reduces to the clique-expanded multigraph. This

@@ -77,8 +77,8 @@ workflow chapters: end instead with a "## Pitfalls" section.}
 ## Going deeper
 
 - The survey (§{N}) covers {topic} {cite:p}`smiljanic2026survey`.
-  {Cite MapEquation-group papers parenthetically with {cite:p} and keep the
-  finding, not the author, as the subject; third-party papers may take a
-  narrative {cite:t}.}
+  {Write whichever citation form reads best: parenthetical {cite:p} when the
+  finding is the point, narrative {cite:t} when the paper itself is the
+  subject. The one hard rule: the prose never congratulates its own authors.}
 - Companion notebook: {`examples/notebooks/<name>.ipynb`}
 - Source paper for {topic} {cite:p}`{key}`.

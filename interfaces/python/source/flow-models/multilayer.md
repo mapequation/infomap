@@ -297,8 +297,8 @@ for r, m, cl in results:
 At low relax rates the two triangle clusters remain distinct (2 modules). As
 $r \to 1$ the layers fuse and the partition collapses to 1 module, the same as
 running Infomap on the aggregated network. The default $r = 0.15$ is the working
-value from the original multilayer study, where the partition depended only
-weakly on the relax rate {cite:p}`domenico2015multilayer`; robustness holds across a wide range of empirical
+value from {cite:t}`domenico2015multilayer`, who found the partition only
+weakly dependent on the relax rate; robustness holds across a wide range of empirical
 multilayer networks at around $r \approx 0.25$ {cite:p}`edler2017higher`.
 
 ### Using explicit inter-layer links

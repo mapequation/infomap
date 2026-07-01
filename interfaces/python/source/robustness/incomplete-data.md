@@ -65,9 +65,9 @@ pseudocount so the model is not overconfident about what it has not seen.
 
 ## The regularized map equation
 
-The regularized map equation first covered undirected, unweighted networks
-{cite:p}`smiljanic2020missing`, then weighted and directed networks
-{cite:p}`smiljanic2021incomplete`. Infomap implements both under the single
+{cite:t}`smiljanic2020missing` introduced the regularized map equation for
+undirected, unweighted networks; {cite:t}`smiljanic2021incomplete` extended it
+to weighted and directed networks. Infomap implements both under the single
 flag `regularized=True`.
 
 The mechanism is Bayesian. Rather than trust the observed network at face value,
