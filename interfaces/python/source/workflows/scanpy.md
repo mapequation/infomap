@@ -22,13 +22,13 @@ cluster labels, and compare with Leiden in a few lines.
 ## Infomap in a single-cell pipeline
 
 Single-cell RNA-seq pipelines, Scanpy chief among them, cluster cells by
-building a $k$-nearest-neighbor graph in PCA-reduced space and then running a
+building a $k$-nearest-neighbour graph in PCA-reduced space and then running a
 graph-partitioning algorithm. Leiden is the standard default; it
 optimises a modularity-style objective with a tunable resolution parameter. Infomap optimises
 the map equation instead: it asks where a random walker on the connectivity graph
 spends its time, and names those flow-trapping regions as modules.
 
-Because both algorithms take the same weighted neighbor graph as input and
+Because both algorithms take the same weighted neighbour graph as input and
 produce a partition of observations as output, swapping in Infomap requires
 almost no code change. The `infomap.tl.infomap()` function follows Scanpy `tl`
 conventions: it reads `adata.obsp["connectivities"]` by default, writes a
@@ -42,7 +42,7 @@ multiple trials) without any AnnData involvement.
 
 ## The neighbour graph as flow
 
-The neighbor graph Scanpy builds is a network: cells are nodes, and each edge
+The neighbour graph Scanpy builds is a network: cells are nodes, and each edge
 carries a connectivity weight that reflects how similar two cells are in PCA
 space. Infomap treats that graph as a flow network and asks: if a random walker
 hops between connected cells proportional to edge weights, where does it tend to
@@ -66,7 +66,7 @@ especially for datasets where cluster sizes vary widely.
 
 The example is fully synthetic and small so the build completes in a few
 seconds. Three tight Gaussian blobs in 10-dimensional space give Scanpy's
-neighbor graph a clear community structure that both algorithms should recover.
+neighbour graph a clear community structure that both algorithms should recover.
 
 ```{code-cell} python
 import warnings
@@ -99,7 +99,7 @@ print("True cluster sizes:", adata.obs["true_label"].value_counts().to_dict())
 
 ### Build the kNN graph
 
-`sc.pp.neighbors` computes a weighted $k$-nearest-neighbor graph and stores two
+`sc.pp.neighbors` computes a weighted $k$-nearest-neighbour graph and stores two
 sparse matrices in `adata.obsp`:
 
 - **`connectivities`**: symmetrised connectivity weights used by clustering tools.
@@ -200,7 +200,7 @@ AnnData bookkeeping; the core API gives you everything else.
 
 ### Visualise with UMAP
 
-Scanpy's UMAP embedding uses the same neighbor graph and gives a 2-D view of
+Scanpy's UMAP embedding uses the same neighbour graph and gives a 2-D view of
 cell layout. Colouring by ground truth, Infomap, and Leiden side by side is the
 standard visual QC step.
 

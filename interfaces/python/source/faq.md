@@ -35,7 +35,7 @@ spread signals degeneracy. See {doc}`Running Infomap and tuning options <working
 Infomap requires a seed ≥ 1; use any positive integer for reproducible runs.
 See {doc}`Running Infomap and tuning options <working-with-infomap/running-and-options>`.
 
-### What does `result.codelength` actually measure?
+### What does `result.codelength` measure?
 
 It is the value of the map equation: the average number of bits per step needed
 to describe a random walk under the best code for the partition Infomap found.

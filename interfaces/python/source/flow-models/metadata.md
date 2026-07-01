@@ -130,7 +130,7 @@ The attribute codebook term encodes the metadata value at each step *within the
 module*. This is strictly more expensive than the topological encoding when
 modules are heterogeneous: a purely attribute-homogeneous partition where every
 module has exactly one attribute value incurs zero metadata cost in the third
-term, regardless of $\eta$. The optimization therefore pushes modules toward
+term, regardless of $\eta$. The optimisation therefore pushes modules toward
 homogeneity as $\eta$ increases, even splitting topologically tight groups if
 their attribute mixture is expensive to encode.
 
