@@ -284,6 +284,16 @@ degenerate solution landscape where more trials are warranted. The karate club
 shows a small spread because its community structure is pronounced; large noisy
 networks spread wider, and the spread itself tells you something.
 
+## Pitfalls
+
+- **A `Result` goes stale if its network runs again.** Reading `nodes()` or
+  `modules()` on a `Result` after a later `run()` on the same network raises;
+  finish reading a result before you re-run. The scalar properties stay readable.
+- **Module ids carry no order or meaning.** They are stable within one run but
+  arbitrary across runs; compare partitions with a metric, not id equality.
+- **`modules()` returns the top level by default.** Pass `depth=-1` for the
+  finest level of a multilevel result.
+
 ## API pointers
 
 - {attr}`infomap.Result.codelength` is $L(\mathsf{M}^*)$, the map equation value

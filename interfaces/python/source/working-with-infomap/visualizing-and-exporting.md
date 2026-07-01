@@ -254,6 +254,16 @@ shutil.rmtree(tmp)
 print("Temp directory removed.")
 ```
 
+## Pitfalls
+
+- **Alluvial diagrams live on mapequation.org, not in this package.** Write a
+  `.ftree` and open it in the Network Navigator; the docs helper draws static
+  module-coloured layouts only.
+- **`.clu` records the top level.** Pass `depth_level` to `write_clu` for a
+  deeper level; `.tree` / `.ftree` carry the full hierarchy.
+- **`to_networkx` returns a copy.** It annotates a new graph and leaves your
+  original untouched.
+
 ## API pointers
 
 **Visualisation**

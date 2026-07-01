@@ -263,6 +263,17 @@ nodes, communities = write_graphrag_communities(
 communities[["id", "level", "size", "entity_ids"]]
 ```
 
+## Pitfalls
+
+- **The tables need specific columns.** Entities need `id` and `title`;
+  relationships need `source`, `target`, `weight` (matching entity `title` by
+  default). Point the adapter elsewhere with `entity_title_col` / `endpoint_col`
+  / `weight_col`.
+- **Community ids are labels, not an order.** `infomap-1` and the like identify
+  groups; the numbering is arbitrary across runs.
+- **Omit `output_dir` to stay in memory.** Pass it only when you want the Parquet
+  tables written to disk.
+
 ## API pointers
 
 - {func}`infomap.graphrag.read_graphrag` translates entity/relationship
