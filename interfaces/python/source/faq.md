@@ -196,6 +196,8 @@ See {doc}`The map equation <concepts/the-map-equation>`.
 
 ### How do I cite Infomap?
 
-Cite both the 2008 PNAS paper and the MapEquation software package, not the
-survey article. BibTeX and guidance on citing specific extensions are in
+Cite both the 2008 PNAS paper (the map equation) and the MapEquation software
+package (the implementation and version, for reproducibility). Cite the survey
+{cite:t}`smiljanic2026survey` as well when your work builds on the wider
+framework. BibTeX and guidance on citing specific extensions are in
 {doc}`How to cite Infomap <citing>`.
