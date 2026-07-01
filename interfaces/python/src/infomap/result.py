@@ -258,8 +258,11 @@ class Result:
         object.__setattr__(self, "_state_names", dict(core.getStateNames()))
         object.__setattr__(self, "_have_memory", core.haveMemory())
         # Captured eagerly so a Result is a stable artifact: exporters read the
-        # directedness off the snapshot, not the live engine.
-        object.__setattr__(self, "_directed", bool(core.directed))
+        # directedness off the snapshot, not the live engine. Derived from the
+        # effective flow model, not the --directed CLI bool, so
+        # ``flow_model="directed"`` (and the datasets loaders that bake it)
+        # export directed graphs just like ``directed=True`` does.
+        object.__setattr__(self, "_directed", not core.isUndirectedFlow())
         # Eager scalar metrics (O(1), no tree traversal).
         object.__setattr__(self, "_codelength", core.codelength())
         object.__setattr__(self, "_num_top_modules", core.numTopModules())
