@@ -10,6 +10,8 @@ kernelspec:
 
 # GraphRAG tables
 
+{bdg-primary-line}`Workflow`
+
 ```{admonition} In one sentence
 :class: tip
 The `infomap.graphrag` adapter reads the entity and relationship Parquet tables
@@ -18,7 +20,7 @@ and returns GraphRAG-style community tables ready to drop into a retrieval
 pipeline.
 ```
 
-## Motivation
+## Communities as retrieval units
 
 GraphRAG pipelines turn a document corpus into a knowledge graph: an *entities*
 table of named concepts and a *relationships* table of weighted co-occurrences.
@@ -35,7 +37,7 @@ Infomap's compression objective rewards tight topical clusters. The adapter in
 `infomap.graphrag` handles the column mapping, node-id translation, hierarchy
 extraction, and Parquet output so you do not have to.
 
-## Intuition
+## A map of ideas
 
 Think of the entity graph as a map of ideas. A random reader picking up a
 document about "Alpha" will next likely encounter "Beta" and "Gamma" before
@@ -47,7 +49,7 @@ entities that bridge communities carry higher description cost.
 The adapter translates this result into GraphRAG's own table schema so the
 downstream summarisation and retrieval steps need no changes.
 
-## Theory
+## What Infomap optimises here
 
 Infomap minimises the map equation
 
@@ -68,7 +70,7 @@ directed-flow or teleportation assumptions are needed. Infomap operates in
 undirected mode by default when all edges are symmetric, which is the standard
 output of a co-occurrence extraction step.
 
-## A worked example
+## From entity tables to communities
 
 ### Build a synthetic GraphRAG dataset
 

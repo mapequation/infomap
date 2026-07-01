@@ -10,6 +10,8 @@ kernelspec:
 
 # Visualising and exporting
 
+{bdg-success-line}`How-to`
+
 ```{admonition} In one sentence
 :class: tip
 Once Infomap has partitioned your network, you want to *see* the structure and
@@ -18,7 +20,7 @@ graph export (`to_networkx` / `to_igraph` for GraphML and GEXF), and the native
 `.tree` / `.clu` formats written by the stateful Infomap.
 ```
 
-## Motivation
+## A picture and a file
 
 Running Infomap is only half the job. The partition lives in memory on the
 :class:`~infomap.Result`, but a mapping from node ids to module ids is hard to
@@ -36,7 +38,7 @@ with the graph library's own writer (GraphML, GEXF). The stateful
 :class:`~infomap.Infomap` writes the engine's native text formats, `.tree` and
 `.clu`.
 
-## Intuition
+## Paint the partition
 
 Think of the partition as a layer of paint over your network. The visualisation
 helper applies that paint: each module gets one colour, nodes sit where a spring
@@ -55,7 +57,7 @@ The export formats take different cuts through the same result:
 - `.clu` is the simplest format: node id, module, and flow per line. It loads
   with pandas or numpy in one line.
 
-## A worked example
+## Colour and export the karate club
 
 We use the Zachary karate club throughout this chapter (34 people, 78
 friendships, a well-known fission into factions) because it is small enough to

@@ -10,6 +10,8 @@ kernelspec:
 
 # Running at scale (HPC)
 
+{bdg-primary-line}`Workflow`
+
 ```{admonition} In one sentence
 :class: tip
 Infomap trials are independent work units: run many in parallel on a
@@ -18,7 +20,7 @@ array with `trial_offset` and merge the best result afterwards with
 `python -m infomap.merge`.
 ```
 
-## Motivation
+## When one node isn't enough
 
 Infomap is a stochastic optimiser. It starts from a random initial state
 and greedily minimises the map equation, so different random seeds can
@@ -47,7 +49,7 @@ Two strategies cover most HPC use cases:
 Both strategies produce the same result as a sequential run with the same
 seed, total trial count, and algorithm settings.
 
-## Intuition
+## Trials as independent work units
 
 Think of `num_trials` as a budget and `trial_offset` as a slice pointer.
 If you want 100 trials in total and split them across four array tasks:
@@ -100,7 +102,7 @@ wall-clock time on very large graphs but may produce a slightly different
 partition. If you set both, `parallel_trials` takes precedence and inner
 parallelisation is disabled inside the trial workers.
 
-## A worked example
+## Sharding trials across jobs
 
 The following cells demonstrate the sharding pattern locally in Python.
 On a cluster, each shard would be a separate job-array task running the

@@ -10,6 +10,8 @@ kernelspec:
 
 # Scanpy and AnnData
 
+{bdg-primary-line}`Workflow`
+
 ```{admonition} In one sentence
 :class: tip
 Pull Infomap straight into your single-cell analysis pipeline: point it at the
@@ -17,7 +19,7 @@ kNN connectivity graph Scanpy already built, get back AnnData-compatible
 cluster labels, and compare with Leiden in a few lines.
 ```
 
-## Motivation
+## Infomap in a single-cell pipeline
 
 Single-cell RNA-seq pipelines, Scanpy chief among them, cluster cells by
 building a $k$-nearest-neighbor graph in PCA-reduced space and then running a
@@ -38,7 +40,7 @@ slot is a standard SciPy CSR matrix; you can hand it directly to
 `infomap.run()` and use the full Result API (hierarchical modules, codelength,
 multiple trials) without any AnnData involvement.
 
-## Intuition
+## The neighbour graph as flow
 
 The neighbor graph Scanpy builds is a network: cells are nodes, and each edge
 carries a connectivity weight that reflects how similar two cells are in PCA
@@ -58,7 +60,7 @@ Leiden's partition depends on its resolution parameter, and the connectivity
 graph may be asymmetric. Running both and comparing is a useful sanity check,
 especially for datasets where cluster sizes vary widely.
 
-## A worked example
+## Cluster three cell populations
 
 ### Setup: synthetic AnnData with three clusters
 

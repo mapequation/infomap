@@ -10,6 +10,8 @@ kernelspec:
 
 # Incomplete data and regularization
 
+{bdg-secondary-line}`Robustness`
+
 ```{admonition} In one sentence
 :class: tip
 When your network is missing links, standard Infomap overfits and splits nodes
@@ -18,7 +20,7 @@ principled prior over transition rates so that only well-supported communities
 survive.
 ```
 
-## Motivation
+## Missing links break the objective
 
 Network data collected from real systems are almost always incomplete. A survey
 captures a subset of acquaintances; a citation database crawls only a fraction
@@ -39,7 +41,7 @@ This problem is not about the search algorithm or the number of trials; it is a
 bias in how the objective function responds to sparse data. The fix is a
 regularization mechanism baked into the objective itself.
 
-## Intuition
+## Blend the data with a prior
 
 Think about what "community" means in information-theoretic terms: a group of
 nodes where a random walker lingers. When the network is nearly complete, you
@@ -61,7 +63,7 @@ The picture is similar to Bayesian smoothing for language models: a bigram
 count of zero does not mean two words never co-occur; you add a small
 pseudocount so the model is not overconfident about what it has not seen.
 
-## Theory
+## The regularized map equation
 
 {cite:t}`smiljanic2020missing` introduced the regularized map equation for
 undirected, unweighted networks; {cite:t}`smiljanic2021incomplete` extended it to
@@ -105,7 +107,7 @@ entropy estimate itself; it is independent of the prior-network regularization
 described here.
 :::
 
-## A worked example
+## A 70%-sparse planted partition
 
 We construct a synthetic network with five planted communities of twelve
 nodes each using a stochastic block model: edges appear within communities

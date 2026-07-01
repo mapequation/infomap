@@ -10,6 +10,8 @@ kernelspec:
 
 # Building a network
 
+{bdg-success-line}`How-to`
+
 ```{admonition} In one sentence
 :class: tip
 Hand your network to :func:`infomap.run` however it already lives in memory:
@@ -17,7 +19,7 @@ NetworkX, igraph, a SciPy sparse matrix, an edge index, or raw link tuples. For
 non-default loading, build it explicitly with a :class:`~infomap.Network`.
 ```
 
-## Motivation
+## Meet your data where it lives
 
 Community detection sits at the end of a data pipeline, not the beginning.
 Your network might be a NetworkX graph from a scraping step, a SciPy sparse

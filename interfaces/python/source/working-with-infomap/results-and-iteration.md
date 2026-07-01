@@ -10,6 +10,8 @@ kernelspec:
 
 # Reading the Result
 
+{bdg-success-line}`How-to`
+
 ```{admonition} In one sentence
 :class: tip
 `infomap.run` returns an immutable :class:`~infomap.Result`: summary statistics
@@ -18,7 +20,7 @@ tabular output through `to_dataframe()`, three views of the same partition, each
 richer than the last.
 ```
 
-## Motivation
+## Which accessor to reach for
 
 Running Infomap is one step; making use of the result is another. The partition
 is richer than a list of labels: every node carries a flow value that quantifies
@@ -33,7 +35,7 @@ visualisation and clustering workflows, the node-by-node view that gives you flo
 alongside module membership, and the DataFrame export that connects Infomap to
 pandas. It also explains why a single run may not be enough.
 
-## Intuition
+## Three layers of detail
 
 Think of the :class:`~infomap.Result` as three concentric layers of detail.
 
@@ -54,7 +56,7 @@ module boundaries.
 `result.to_dataframe()` materialises all three layers into one tabular object you
 can filter, group, merge, and export.
 
-## Theory
+## Why more than one trial
 
 Infomap minimises the map equation $L(\mathsf{M})$ over many independent
 optimisation trials. Each trial starts from a different random partition and runs
@@ -84,7 +86,7 @@ characterise the degeneracy rather than just find the best partition, consider
 the dedicated [solution-landscape tooling](https://github.com/mapequation/solution-landscape).
 :::
 
-## A worked example
+## Reading a karate-club result
 
 We use the Zachary karate club graph throughout: small enough to inspect
 interactively, familiar enough to judge the result, and a benchmark with known
