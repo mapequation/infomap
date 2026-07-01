@@ -66,7 +66,7 @@ import random
 G_ring = nx.ring_of_cliques(8, 5)   # 8 cliques × 5 nodes = 40 nodes
 
 # ── Helper: build a weakly-structured graph (noisy, degenerate landscape) ───
-def make_weak_sbm(n_communities=6, n_per=8, p_in=0.55, p_out=0.08, seed=123):
+def make_weak_structure(n_communities=6, n_per=8, p_in=0.55, p_out=0.08, seed=123):
     """Planted-partition graph with intentionally weak community signal."""
     rng = random.Random(seed)
     G = nx.Graph()
@@ -80,9 +80,9 @@ def make_weak_sbm(n_communities=6, n_per=8, p_in=0.55, p_out=0.08, seed=123):
                 G.add_edge(i, j)
     return G
 
-G_noisy = make_weak_sbm()
+G_noisy = make_weak_structure()
 print(f"Ring of cliques: {G_ring.number_of_nodes()} nodes, {G_ring.number_of_edges()} edges")
-print(f"Noisy SBM:       {G_noisy.number_of_nodes()} nodes, {G_noisy.number_of_edges()} edges")
+print(f"Weak structure:  {G_noisy.number_of_nodes()} nodes, {G_noisy.number_of_edges()} edges")
 ```
 
 ### `seed` and reproducibility

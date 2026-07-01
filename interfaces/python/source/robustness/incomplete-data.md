@@ -110,8 +110,8 @@ described here.
 ## A 70%-sparse planted partition
 
 We construct a synthetic network with five planted communities of twelve
-nodes each using a stochastic block model: edges appear within communities
-with probability 0.7 and between communities with probability 0.02. We then
+nodes each: edges appear within communities with probability 0.7 and between
+communities with probability 0.02. We then
 remove 70 % of the edges uniformly at random to simulate incomplete
 observations.
 
@@ -255,8 +255,7 @@ on) compose freely with `regularized=True`.
 - The survey (§7) sets incomplete data, overfitting, and the regularized map
   equation in context {cite:p}`smiljanic2026survey`.
 - Companion notebook: `examples/notebooks/7 Networks with incomplete data.ipynb`
-  runs link-removal experiments with cross-validation and a degree-corrected
-  stochastic block model comparison.
+  runs link-removal experiments with cross-validation.
 - Source paper for the regularized map equation, on undirected, unweighted
   networks {cite:p}`smiljanic2020missing`.
 - The extension to weighted and directed networks, via an empirical Bayes
