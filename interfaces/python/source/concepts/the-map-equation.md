@@ -160,14 +160,14 @@ gap is the evidence the karate club has community structure. The walker does not
 spread evenly; it lingers in pockets, and naming those pockets shortens the
 description.
 
-```{admonition} Why three modules?
+```{admonition} Why more than two modules?
 :class: note
 The club famously split into two factions, but Infomap minimises the description
-length of the flow, not a sociological label. The nodes on the boundary between
-the factions form a transitional cluster where the walker's affiliation is split,
-and naming it shortens the code. Whether that third group means something is
-yours to judge. If you need exactly two modules, pass
-`preferred_number_of_modules=2`.
+length of the flow, not a sociological label. Nodes on the boundary between the
+factions can form their own transitional cluster where the walker's affiliation
+is split, and naming it shortens the code, so Infomap often reports more than two
+modules here. Whether that extra group means something is yours to judge. If you
+need exactly two modules, pass `preferred_number_of_modules=2`.
 ```
 
 ```{code-cell} python
@@ -184,7 +184,7 @@ plt.close(fig)
 ```{glue:figure} fig-map-equation
 Zachary's karate club, coloured by the modules Infomap finds. The walker lingers
 inside each colour and crosses between them only rarely, which is exactly the
-structure the map equation compresses. The boundary nodes form a small third
+structure the map equation compresses. The boundary nodes form a small extra
 module because naming it shortens the overall code.
 ```
 

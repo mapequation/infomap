@@ -110,7 +110,7 @@ out-strength of node $i$ from layer $\alpha$.
 
 When no empirical inter-layer data are available, setting
 $D_i^{\alpha\beta} = (1-r)\delta_{\alpha\beta}S_i + r\,s_i^\beta$ recovers the
-relax-rate formula above (De Domenico et al. 2015). At $r = 0.15$ the
+relax-rate formula above {cite:p}`domenico2015multilayer`. At $r = 0.15$ the
 walker stays in a layer for about $1/r \approx 6$ steps before switching, enough
 coupling for layers to inform each other without fusing.
 
@@ -128,7 +128,7 @@ over partitions of state nodes into modules, where the map equation sums the
 visit rates of the same physical node in the same module before computing the
 module codebook entropy $H(\mathcal{P}^{\boldsymbol{\imath}})$. This is the only
 difference from the standard first-order map equation, and it is precisely what
-makes physical nodes naturally bi-modular (De Domenico et al. 2015; Edler et al. 2017).
+makes physical nodes naturally bi-modular {cite:p}`domenico2015multilayer,edler2017higher`.
 :::
 
 ## A worked example

@@ -12,12 +12,9 @@ kernelspec:
 
 ```{admonition} In one sentence
 :class: tip
-Infomap, Louvain, and Leiden each define "community" differently: Infomap finds
-modules that trap random-walk flow, while Louvain and Leiden maximise modularity.
-A third family fits a generative model by statistical inference. None is
-uniformly best; the right method follows from the question you are asking, and on
-directed or flow-structured networks the flow-based and modularity-based answers
-can diverge in ways worth understanding.
+Infomap, Louvain, and Leiden each define "community" differently: Infomap by the
+flow a random walker traps, Louvain and Leiden by modularity. None is uniformly
+best; the right method follows from the question you are asking.
 ```
 
 ## Motivation
@@ -191,10 +188,10 @@ for name, vec in [("Infomap", infomap_vec), ("Louvain", louvain_vec), ("Leiden",
 pd.DataFrame(rows).set_index("Method")
 ```
 
-On this clean benchmark all three methods recover the four planted communities
-exactly (AMI = NMI = 1.0). That is the common case: when the structure is
-well-separated and undirected, the flow-based and modularity-based objectives
-coincide. Agreement across objectives like this is a useful signal that the
+On this clean benchmark the three methods agree, recovering the four planted
+communities (see the AMI and NMI scores above; 1.0 is a perfect match). That is
+the common case: when the structure is well-separated and undirected, the
+flow-based and modularity-based objectives coincide. Agreement across objectives like this is a useful signal that the
 partition is robust rather than an artefact of one method's bias.
 
 The methods part ways in two regimes: when edge direction carries real flow
@@ -251,10 +248,10 @@ print(f"Louvain (modularity): {louvain_n} modules")
 print(f"Leiden  (modularity): {leiden_n} modules")
 ```
 
-Infomap recovers all 15 cliques; Louvain and Leiden, both maximising modularity,
-merge them into 9. Because *both* modularity optimisers merge, the cause is the
-modularity objective itself, not the search quality, a better optimiser does not
-help. Leiden escapes it by switching to a resolution-limit-free objective such as
+Infomap recovers all 15 cliques (the counts are printed above); Louvain and
+Leiden, both maximising modularity, merge adjacent cliques into fewer, larger
+modules. Because *both* modularity optimisers merge, the cause is the modularity
+objective itself, not the search quality; a better optimiser does not help. Leiden escapes it by switching to a resolution-limit-free objective such as
 the Constant Potts Model, or by raising its `resolution_parameter`; the map
 equation's own limit is far weaker, so it keeps the cliques apart.
 

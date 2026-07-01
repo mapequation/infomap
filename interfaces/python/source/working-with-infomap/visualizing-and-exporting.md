@@ -256,8 +256,9 @@ print("Temp directory removed.")
 
 **Visualisation**
 
-- {func}`docs_viz.draw_partition` draws a module-coloured spring layout and
-  accepts an existing `ax` for multi-panel figures.
+- `draw_partition` (the docs helper in `_ext/docs_viz.py`) draws a
+  module-coloured spring layout and accepts an existing `ax` for multi-panel
+  figures.
 
 **In-memory graph export**
 

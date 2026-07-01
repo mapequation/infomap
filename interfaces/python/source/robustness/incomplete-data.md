@@ -29,7 +29,7 @@ boundaries.
 
 The standard map equation is prone to this. It minimises a Shannon
 entropy-based description length that systematically *underestimates* the true
-entropy when data are sparse (Basharin 1959). As underestimation worsens when
+entropy when data are sparse {cite:p}`basharin1959entropy`. As underestimation worsens when
 communities lose links, the map equation's two cost terms fall out of balance:
 the module codebooks look cheap to shrink, so the optimiser splits nodes into
 smaller and smaller groups, down to groups of two or three nodes with no
@@ -157,7 +157,8 @@ print(f"({removal_fraction:.0%} of links removed)")
 # Standard Infomap: no regularization
 result_std = infomap.run(g_sparse, two_level=True, seed=99, num_trials=10, silent=True)
 
-# Regularized Infomap: Bayesian map equation with regularization_strength=0.5
+# Regularized Infomap. We use regularization_strength=0.5 (gentler than the
+# default 1.0, which over-regularizes this 70%-sparse graph toward one module).
 result_reg = infomap.run(
     g_sparse,
     two_level=True,

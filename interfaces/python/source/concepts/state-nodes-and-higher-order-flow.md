@@ -66,11 +66,11 @@ nodes of the same physical node in the same module before computing the module
 codebook entropy. That summation is the whole difference, and it is what makes
 physical nodes naturally multi-modular.
 
-## A minimal example
+## A worked example
 
 The smallest illustration: a physical node that two state nodes split between two
 groups. Build state nodes directly with `add_state_node(state_id, physical_id)`
-and link them, then read the partition back with `get_modules(states=True)`.
+and link them, then read the partition back with `result.modules(states=True)`.
 
 ```{code-cell} python
 import infomap
@@ -102,6 +102,34 @@ for pid, mods in sorted(phys_to_modules.items()):
 Physical node 1 appears in both modules; every other node sits in one. That
 two-module membership is the overlap the state-node construction buys you.
 
+Draw the two triangles, colouring each state node by the module Infomap
+assigned it. State nodes 10 and 11 are physical node 1 in its two contexts;
+they take different colours, and that colour split *is* the overlap.
+
+```{code-cell} python
+import matplotlib.pyplot as plt
+import networkx as nx
+from docs_viz import draw_partition
+from myst_nb import glue
+
+g = nx.Graph()
+g.add_edges_from([(10, 2), (2, 3), (3, 10), (11, 4), (4, 5), (5, 11)])
+
+# Colour each state node by its module; size it by its flow.
+state_module = {n.state_id: n.module_id for n in result.nodes(states=True)}
+state_flow = {n.state_id: n.flow for n in result.nodes(states=True)}
+
+fig = draw_partition(g, state_module, with_labels=True, node_size=600, flow=state_flow)
+glue("fig-state-nodes", fig, display=False)
+plt.close(fig)
+```
+
+```{glue:figure} fig-state-nodes
+The two triangles, coloured by module. State nodes 10 and 11 are physical node 1
+in its two contexts; they land in different modules, so physical node 1 belongs
+to both. Every other node sits in a single module.
+```
+
 ## Where this goes next
 
 Each *Flow models* chapter is this idea with a specific kind of context:
@@ -114,18 +142,18 @@ They build the state nodes for you through higher-level APIs
 (`add_multilayer_intra_link`, time-window layers) rather than `add_state_node`
 directly, but the partition you read back is always over state nodes.
 
+## API pointers
+
+- `Network().add_state_node(state_id, physical_id)` declares a state node;
+  `add_link` then links state nodes.
+- You need `result.modules(states=True)` to read a higher-order partition;
+  `result.nodes(states=True)` exposes each node's `.node_id` (physical),
+  `.state_id`, `.module_id`, and `.flow`.
+- `result.have_memory` is `True` once a higher-order network is built.
+
 ## Going deeper
 
 - {cite:t}`smiljanic2026survey`, §5, treats higher-order flow and state nodes in
   full.
 - {cite:t}`edler2017higher` maps higher-order flows in memory and multilayer
   networks with Infomap.
-
-## API pointers
-
-- `Network().add_state_node(state_id, physical_id)` declares a state node;
-  `add_link` then links state nodes.
-- you need `result.modules(states=True)` to read a higher-order partition;
-  `result.nodes(states=True)` exposes each node's `.node_id` (physical),
-  `.state_id`, `.module_id`, and `.flow`.
-- `result.have_memory` is `True` once a higher-order network is built.

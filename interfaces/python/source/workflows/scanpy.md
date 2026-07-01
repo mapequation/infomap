@@ -53,10 +53,10 @@ compactly because it rarely needs to name a new module. Cells at cluster
 boundaries attract visits from multiple modules, so they end up in whichever
 module provides the best compression.
 
-This flow-centric view often agrees with Leiden, but it can diverge when the
-resolution parameter is not tuned carefully or when the connectivity structure
-is asymmetric. Running both and comparing is a useful sanity check, especially
-for datasets where cluster sizes vary widely.
+This flow-centric view often agrees with Leiden, but the two can diverge:
+Leiden's partition depends on its resolution parameter, and the connectivity
+graph may be asymmetric. Running both and comparing is a useful sanity check,
+especially for datasets where cluster sizes vary widely.
 
 ## A worked example
 

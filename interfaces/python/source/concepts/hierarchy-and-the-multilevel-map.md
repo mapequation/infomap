@@ -61,7 +61,7 @@ depth 2, and so on.
 
 ## Theory
 
-The two-level map equation (see the [map equation chapter](the-map-equation.md))
+The two-level map equation (see the {doc}`map equation chapter </concepts/the-map-equation>`)
 uses one index codebook to describe inter-module movements and one codebook
 per module to describe intra-module node visits:
 
@@ -103,8 +103,8 @@ The point is that $q_{\circlearrowright}^i$, the rate at which the walker uses
 module $i$'s sub-index codebook, depends only on the *local* traffic within
 module $i$, not on the global network. That is why the resolution limit relaxes
 so far: Infomap judges whether to split module $i$ further against the traffic
-inside $i$, not against a global cut size that grows with the whole network (Kawamoto &
-Rosvall 2015, §IV).
+inside $i$, not against a global cut size that grows with the whole network; see
+{cite:t}`kawamoto2015resolution`, §IV.
 
 Infomap searches for the hierarchical partition that minimises the total $L$
 using a fast stochastic recursive algorithm: it first generates top-level
@@ -134,8 +134,8 @@ network size equal to the super-module plus its boundary links, not the full
 graph. Because a super-module is much smaller than the full network, the cut size
 that gates a fine-level split is tiny, so the search resolves fine-level modules
 that the two-level stage would swallow. For networks with a pronounced nested
-structure the hierarchical method all but eliminates the resolution limit
-(Kawamoto & Rosvall 2015, §IV).
+structure the hierarchical method all but eliminates the resolution limit; see
+{cite:t}`kawamoto2015resolution`, §IV.
 :::
 
 ## A worked example
@@ -201,9 +201,9 @@ print(f"Top-level modules:       {result.num_top_modules}")
 print(f"Map equation codelength: {result.codelength:.4f} bits/step")
 ```
 
-Infomap determined that this network has **3 levels** entirely on its own:
-a root, two coarse super-groups, and four fine cliques underneath them.
-We passed no depth argument.
+Infomap discovered the nesting on its own, with no depth argument: as
+`num_levels` shows above, the tree runs from a root through two coarse
+super-groups down to the four fine cliques.
 
 ### Read module assignments at each level
 

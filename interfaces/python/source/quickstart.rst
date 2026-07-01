@@ -115,4 +115,4 @@ Next steps
 - :doc:`working-with-infomap/index` covers every input format, the options worth
   tuning, and how to read, visualise, and export results.
 - :doc:`flow-models/index` covers richer networks: memory, multilayer, temporal,
-  metadata, bipartite, and hypergraphs.
+  metadata, and bipartite.

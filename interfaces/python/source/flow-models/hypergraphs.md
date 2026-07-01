@@ -35,7 +35,7 @@ context explicitly.
 
 The catch: Infomap clusters a *network*, not a hypergraph directly. You must
 translate the hypergraph into a network first, and the translation is not
-unique. As Eriksson, Edler, Rojas, de Domenico and Rosvall (2021) showed
+unique. As {cite:t}`eriksson2021hypergraph` showed
 systematically, three broad families of representation exist (unipartite,
 bipartite, and multilayer), and each implies a different random-walk model,
 different link-flow volumes, and so different community structure. The choice of
@@ -78,8 +78,8 @@ $u$, pick a hyperedge $e \in E(u)$ with probability proportional to its weight
 $\omega(e)$, then pick a destination node $v \in e$ with probability
 proportional to its node weight $\gamma_e(v)$ within that hyperedge.
 
-The three network representations encode this two-step walk differently
-(Eriksson et al. 2021, Table 1):
+The three network representations encode this two-step walk differently, as
+{cite:t}`eriksson2021hypergraph` set out (their Table 1):
 
 | Representation | Links grow as | Modules include | Supports overlap |
 |---|---|---|---|
@@ -111,7 +111,7 @@ $$P_{uv} = \sum_{e \in E(u,v)} P_{u \to e} \cdot P_{e \to v} = \sum_{e \in E(u,v
 where $E(u,v)$ is the set of hyperedges containing both $u$ and $v$. Each
 hyperedge becomes a weighted clique.
 
-Eriksson, Carletti, Lambiotte, Rojas and Rosvall (2022) extended this to a
+{cite:t}`eriksson2022flow` extended this to a
 *size-biased* random walk with parameter $\sigma$: setting
 $\omega(E_\alpha) \propto (|E_\alpha| - 1)^{\sigma+1}$ biases the walker
 toward large hyperedges ($\sigma > 0$) or small ones ($\sigma < 0$). At
@@ -267,7 +267,7 @@ print(result.modules())
 # The output is a *-multilayer.net file; pass --multilayer to Infomap.
 ```
 
-The key modelling choices and their effects (Eriksson et al. 2021, Table 1):
+The key modelling choices and their effects, from {cite:t}`eriksson2021hypergraph`, Table 1:
 
 | Walk model | Representation | Best for |
 |---|---|---|

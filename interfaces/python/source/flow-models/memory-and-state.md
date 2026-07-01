@@ -31,7 +31,7 @@ return to Seattle, the New York traveller to New York. A standard network model,
 which sees only "a traveller at Chicago," cannot capture that distinction.
 Researchers studying hospital patient transfers, citation patterns, and email
 forwarding chains have found the same memory effect, where the path already
-taken constrains the next step (Rosvall et al. 2014).
+taken constrains the next step {cite:p}`rosvall2014memory`.
 
 Ignoring this memory distorts community structure in two related ways. First,
 it makes modules look larger and less specific, because flow that is actually
@@ -126,7 +126,7 @@ where $\pi_{i \cap m} = \sum_{\alpha_i \in \mathsf{M}_m} \pi_{\alpha_i}$
 aggregates all state nodes of physical node $i$ that are assigned to module
 $m$. This aggregation is what enables overlapping physical-node membership:
 state nodes of the same physical node in different modules each contribute to
-separate codebook entries (Edler et al. 2017, §3.2).
+separate codebook entries; see {cite:t}`edler2017higher`, §3.2.
 
 The exit rate from module $m$ is
 
@@ -287,12 +287,12 @@ communities, so a single colour can show only one of its two memberships.
 
 ### Contrast
 
-| Node | First-order module | Second-order modules |
-|------|-------------------|----------------------|
-| A    | 1                 | {1}                  |
-| B    | 1                 | {1, 2}               |
-| C    | 1                 | {1}                  |
-| D    | 1                 | {2}                  |
+| Node | First-order | Second-order |
+|------|-------------|--------------|
+| A    | one shared module | stream 1 |
+| B    | one shared module | streams 1 **and** 2 (overlap) |
+| C    | one shared module | stream 1 |
+| D    | one shared module | stream 2 |
 
 The first-order model sees one community of four nodes. The second-order model
 finds two communities (A–B–C and B–D) that properly overlap at junction B.

@@ -1,12 +1,29 @@
 Infomap Python API
 ==================
 
-Infomap is a network clustering algorithm based on the `Map equation`_. This
-site is the home for using Infomap in Python: learn the ideas behind the map
-equation, run it on your own networks, go deep on flow models and richer
-representations, fit it into common workflows, and look up the full API.
+Infomap is a network community-detection method built on a distinctive idea: it
+finds the modules that best compress the flow of a random walk on your network,
+instead of counting edges against a null model. That flow-based view, the
+`map equation`_, is what sets it apart:
 
-.. _Map equation: https://www.mapequation.org/publications.html
+- **It models how a system is used, not only how it is wired.** Link direction
+  and weight steer the walk, so citation, transport, and information networks
+  cluster by their real dynamics.
+- **It finds hierarchy with no resolution parameter to tune.** Infomap reads the
+  number of nested levels straight off the data.
+- **It spans an unusually broad range of flow models:** multilayer, memory,
+  temporal, metadata, and bipartite networks, all through the same objective.
+
+This site is the authoritative home for using Infomap in Python: the ideas behind
+the map equation, how to run it on your own networks, the deeper flow models,
+common workflows, and the full API.
+
+.. _map equation: https://www.mapequation.org/publications.html
+
+.. image:: /_static/hero-karate.svg
+   :alt: Zachary's karate club partitioned by Infomap, nodes coloured by module
+   :align: center
+   :width: 360px
 
 Quick start
 -----------
@@ -66,8 +83,9 @@ Where to go
 External resources
 ------------------
 
-- `Infomap user guide <https://www.mapequation.org/infomap/>`_ is the portal,
-  the command-line tool, and the **other interfaces (C++, R, JavaScript)**.
+- The `Infomap user guide <https://www.mapequation.org/infomap/>`_ on
+  mapequation.org is the project portal and documents the command-line tool and
+  the **other interfaces (C++, R, JavaScript)**.
 - `PyPI project <https://pypi.org/project/infomap/>`_
 - `GitHub repository <https://github.com/mapequation/infomap>`_ for
   source, issues, and discussions.

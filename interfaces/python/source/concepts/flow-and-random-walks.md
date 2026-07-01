@@ -24,12 +24,11 @@ connections route neural signals. Revealing the large-scale structure of such a
 system takes a currency that respects direction, weight, and how paths chain
 together, not only which edges are present.
 
-Clustering methods that maximise modularity count edge weights inside and outside
-groups; modularity scores density against a null model, not dynamics. By that
-design it does not model the way a random walker entering a dense cluster tends to
-stay there for many steps before it escapes. That persistence is what defines a community in Rosvall
-& Bergstrom's formulation: a module is a part of the network where flow
-**lingers** {cite:p}`rosvall2008maps`.
+Counting edges inside and outside groups misses something dynamic: the way a
+random walker entering a dense cluster tends to stay there for many steps before
+it escapes. That persistence is what defines a community in Rosvall & Bergstrom's
+formulation: a module is a part of the network where flow **lingers**
+{cite:p}`rosvall2008maps`.
 
 The map equation, Infomap's objective function, measures how far a description
 of the walker's trajectory compresses. To do that it needs to know how often the
@@ -104,7 +103,7 @@ here we only establish the flow it is built from.
 For an unweighted undirected network the transition matrix is
 $T_{ij} = A_{ij}/k_j$ where $k_j$ is the degree of node $j$, and the
 stationary distribution is $\pi_i = k_i / (2|E|)$, proportional to degree.
-For a weighted directed network $\pi$ is the leading left eigenvector of $T$,
+For a weighted directed network $\pi$ is the leading right eigenvector of $T$,
 which the power method computes iteratively.
 
 For directed networks with teleportation, Infomap first computes $\pi$ for the

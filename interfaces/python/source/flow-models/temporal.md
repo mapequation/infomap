@@ -81,9 +81,8 @@ The multilayer chapter covers that machinery, including the relax-rate transitio
 probabilities and how state nodes of one physical node share a codeword within a
 module. What is specific to *time* is how the windows should be coupled.
 
-**Uniform relaxation** (the default when you set `multilayer_relax_rate` and
-provide only intra-layer links) couples every layer to every other with equal
-weight. It is the simplest choice and works well when communities change
+**Uniform relaxation** (the default) couples every layer to every other with
+equal weight. It is the simplest choice and works well when communities change
 gradually.
 
 **Neighbourhood flow coupling** (`multilayer_relax_by_jsd`) makes the coupling
@@ -153,9 +152,9 @@ for t in sorted(layer_modules):
     print(f"Layer {t}: {dict(sorted(layer_modules[t].items()))}")
 ```
 
-The output shows the community drift clearly: node 3 leaves module 1 at midday
-(T = 2), while node 4 temporarily joins it, then both return to their original
-affiliations by afternoon (T = 3).
+The output shows the community drift clearly: node 3 leaves its morning group at
+midday (T = 2), while node 4 temporarily joins that group, then both return to
+their original affiliations by afternoon (T = 3).
 
 Finally, draw all three time windows side by side, with nodes coloured by module:
 
@@ -211,8 +210,8 @@ instead of assigning arbitrary new module ids.
 Lowering `multilayer_relax_rate` toward zero makes each layer more autonomous,
 which helps when snapshots are far apart in time and you should not assume
 community identity persists. Raising it toward 1 pushes Infomap toward the
-aggregate static solution. The default 0.15–0.25 is usually a good choice for
-networks where communities evolve smoothly; {cite:t}`aslak2017temporal` found
+aggregate static solution. The default is `0.15`; values in the 0.15–0.25 range
+are usually a good choice for networks where communities evolve smoothly; {cite:t}`aslak2017temporal` found
 neighbourhood flow coupling robust across a broad range of relax rates (0.15 to
 0.7) on their benchmark networks.
 
@@ -222,20 +221,13 @@ rather than all pairs. Setting `multilayer_relax_limit=1` confines coupling to
 the immediately neighbouring windows (layer index distance 1, in both
 directions), which suits ordered data such as geologic time series.
 
-### Visualising change with alluvial diagrams
+### Visualising change over time
 
-The side-by-side panel figure above is good for small networks. For larger
-datasets with many modules and many time steps, the standard visualisation is an
-**alluvial diagram**: stacked blocks represent modules at each time step, and
-stream fields connect blocks that share nodes across adjacent steps. The width
-of each stream field is proportional to the flow volume of the shared nodes,
-making splits and merges immediately visible.
-
-The MapEquation alluvial diagram generator at
-<https://www.mapequation.org/alluvial> accepts Infomap output directly and
-supports multilayer network partitions with state nodes. Holmgren, Edler and
-Rosvall (2023) describe the generalisation of alluvial diagrams to higher-order
-networks, including temporal multilayer networks.
+The side-by-side panels above suit small networks. For larger datasets with many
+modules and time steps, the standard MapEquation visualisation is an **alluvial
+diagram**, which tracks how modules merge and split across steps; the generator
+at <https://www.mapequation.org/alluvial> accepts Infomap output directly, and
+{cite:t}`holmgren2023change` generalise it to higher-order and temporal networks.
 
 ## API pointers
 
@@ -257,7 +249,7 @@ networks, including temporal multilayer networks.
   distance, enforcing temporal ordering.
 - `multilayer_relax_by_jsd=True` uses neighbourhood flow coupling
   (Jensen-Shannon divergence) instead of uniform coupling; reach for it when
-  communities are intermittent (Aslak et al. 2017).
+  communities are intermittent {cite:p}`aslak2017temporal`.
 - {meth}`infomap.Result.nodes` with `states=True` iterates state nodes; each
   exposes `.node_id`, `.layer_id`, and `.module_id` to reconstruct per-layer
   community assignments.

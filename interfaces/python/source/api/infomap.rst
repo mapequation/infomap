@@ -155,4 +155,3 @@ Full reference
 .. autoclass:: Infomap
    :members:
    :inherited-members:
-   :show-inheritance:

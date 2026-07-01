@@ -183,9 +183,9 @@ result.communities[[
 ]]
 ```
 
-Infomap separates the two triangles into community `infomap-1`
-(Alpha/Beta/Gamma) and `infomap-2` (Delta/Epsilon/Zeta). The weak bridge edge
-between Gamma and Delta carries too little flow to merge the groups.
+Infomap separates the two triangles into their own communities,
+{Alpha, Beta, Gamma} and {Delta, Epsilon, Zeta}. The weak bridge edge between
+Gamma and Delta carries too little flow to merge the groups.
 
 ### Visualise the partition
 
@@ -276,7 +276,7 @@ communities[["id", "level", "size", "entity_ids"]]
   the edge arrays, and the bidirectional entity-id ↔ node-id mappings.
 - {class}`infomap.graphrag.GraphRAGRunResult` bundles the `Infomap` object, the
   `GraphRAGGraph`, and the two output DataFrames.
-- {meth}`infomap.Infomap.codelength` and {attr}`infomap.Infomap.num_top_modules`
+- {attr}`infomap.Infomap.codelength` and {attr}`infomap.Infomap.num_top_modules`
   report the quality and structure of the solution after a run.
 
 ## Going deeper

@@ -104,7 +104,7 @@ metadata entropy matters relative to the topological terms.
 
 At $\eta = 0$ the metadata term vanishes and $L_0$ is the ordinary map equation.
 At $\eta = 1$ the encoding assigns equal cost to the topological and attribute
-channels, the original content map equation of Smith et al. (2016). For
+channels, the original content map equation of {cite:t}`smith2016content`. For
 $\eta > 1$ the attribute channel weighs more, pulling the partition toward
 attribute-homogeneous modules.
 
@@ -235,6 +235,33 @@ lower attribute encoding cost. The reported `result.codelength` does not include
 the metadata term, so it is normal for it to increase as the rate rises; read
 `result.meta_entropy` for the metadata side.
 ```
+
+### Sweeping the metadata rate
+
+`meta_data_rate` ($\eta$) is a dial, not a switch. Sweep it to watch the
+partition move from purely topological toward attribute-homogeneous:
+
+```{code-cell} python
+# A fresh network for the sweep, so re-running does not invalidate `result_meta`
+# above (reading a Result after its network runs again raises a stale-result error).
+net_sweep = Network()
+for u, v in G.edges():
+    net_sweep.add_link(u, v)
+for node_id, category in metadata.items():
+    net_sweep.set_meta_data(node_id, category)
+
+print(f"{'meta_data_rate':>14}  {'modules':>8}  {'codelength':>12}")
+print("-" * 38)
+for eta in [0.0, 0.5, 1.0, 2.0, 5.0]:
+    r = run(net_sweep, meta_data_rate=eta, num_trials=10, seed=123, silent=True)
+    print(f"{eta:>14.1f}  {r.num_top_modules:>8}  {r.codelength:>12.4f}")
+```
+
+At $\eta = 0$ the partition is the topological one; as $\eta$ grows the search
+increasingly favours attribute-homogeneous modules, and the reported
+`codelength` (the topological term only) rises as it trades topological
+compression for a cleaner attribute encoding. The counts printed above show where
+the balance tips for this network.
 
 ### Visualise the metadata-aware partition
 

@@ -277,11 +277,12 @@ for two_level in [False, True]:
     print(f"  L={result.codelength:.4f}")
 ```
 
-With `two_level=False`, the multilevel solution finds 2 top modules (the two
-main branches) and resolves the 8 cliques at the finest level, reached with
-`get_modules(depth_level=-1)`. The codelength is lower because the deeper code
-captures the real hierarchy. With `two_level=True`, the 8 cliques become the
-top-level modules and the nested structure is invisible.
+With `two_level=False`, the multilevel solution recovers the built-in nesting:
+the two main branches at the top and the eight cliques at the finest level,
+reached with `result.modules(depth=-1)` (the cell above prints the exact counts).
+The codelength is lower because the deeper code captures the real hierarchy. With
+`two_level=True`, the eight cliques become the top-level modules and the nested
+structure is invisible.
 
 Use `result.modules(depth=k)` to access any level of the hierarchy. The default
 `result.modules()` returns level 1, the coarsest (top modules); pass `depth=-1`
@@ -339,7 +340,7 @@ The map equation operates at the natural timescale of one random-walk step.
 frequently (favoring more, smaller modules) and values above 1 encode it less
 frequently (favoring fewer, larger modules). This is the principled way to
 examine structure at a specific resolution when the data does not have a natural
-scale (Kheirkhahzadeh et al. 2016).
+scale {cite:p}`kheirkhahzadeh2016markov`.
 
 ```{code-cell} python
 # The ring of cliques has 8 genuine cliques. markov_time merges them

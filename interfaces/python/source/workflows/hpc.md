@@ -155,7 +155,7 @@ for spec in shard_specs:
     print(
         f"shard {spec['shard_id']}: seed={spec['seed']}"
         f"  codelength={result.codelength:.6f}"
-        f"  modules={result.modules()}"
+        f"  modules={result.num_top_modules}"
     )
 
     if result.codelength < best_codelength:

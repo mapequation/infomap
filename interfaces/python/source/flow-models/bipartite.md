@@ -14,8 +14,7 @@ kernelspec:
 :class: tip
 A bipartite network has two node types with links only between them. The
 bipartite map equation exploits that alternating structure to compress
-random-walk descriptions and reveal sharper community structure (Blöcker &
-Rosvall 2020).
+random-walk descriptions and reveal sharper community structure.
 ```
 
 ## Motivation
@@ -44,7 +43,7 @@ compression and sharper module detection.
 Infomap supports this natively. You assign integer node ids so that all type-A
 nodes come first and all type-B nodes start at a threshold id, declare that
 threshold by setting `im.bipartite_start_id`, and Infomap switches to the
-bipartite map equation (Blöcker & Rosvall 2020) for the optimisation.
+bipartite map equation {cite:p}`blocker2020bipartite` for the optimisation.
 
 ## Intuition
 
@@ -71,7 +70,7 @@ unipartite variant, and detected richer community hierarchies.
 For an undirected bipartite graph with left nodes $N_L$ and right nodes
 $N_R$, a random walker alternates between the two types. The standard map
 equation treats all nodes symmetrically; the bipartite map equation
-(Blöcker & Rosvall 2020) separates each module's codebook into a
+{cite:p}`blocker2020bipartite` separates each module's codebook into a
 left-to-right part and a right-to-left part:
 
 $$
@@ -179,11 +178,35 @@ for node_id, module_id in sorted(modules.items()):
 ```
 
 Both users *and* items in the same preference cluster land in the same
-module. Module 1 contains users {0, 1} and items {4, 5}; module 2
-contains users {2, 3} and items {6, 7}. The bipartite map equation
+module: users {0, 1} group with items {4, 5}, and users {2, 3} with items
+{6, 7}. The bipartite map equation
 recovers the two-cluster structure even though it never sees a
 user–user or item–item link; it exploits the alternating walk constraint
 to group nodes by their co-occurrence patterns.
+
+### Standard vs. bipartite map equation
+
+Declaring the boundary changes the *objective*, not the data. Run the same links
+without setting `bipartite_start_id`, and Infomap uses the standard (unipartite)
+map equation instead:
+
+```{code-cell} python
+net_std = Network()
+for u, v, w in [
+    (0, 4, 3.0), (0, 5, 2.0), (1, 4, 2.0), (1, 5, 3.0),
+    (2, 6, 3.0), (2, 7, 2.0), (3, 6, 2.0), (3, 7, 3.0),
+    (0, 6, 0.2), (2, 4, 0.2),
+]:
+    net_std.add_link(u, v, w)
+result_std = run(net_std, two_level=True, num_trials=10, seed=123, silent=True)
+
+print(f"standard  map equation: {result_std.num_top_modules} modules, L={result_std.codelength:.4f}")
+print(f"bipartite map equation: {result.num_top_modules} modules, L={result.codelength:.4f}")
+```
+
+Compare the two codelengths above. {cite:t}`blocker2020bipartite` show that across
+21 real-world bipartite networks the bipartite map equation compresses the walk
+further and resolves richer community hierarchies than the unipartite variant.
 
 ### Visualise
 
