@@ -160,6 +160,15 @@ Louvain and Leiden maximise modularity (density against a null model). They tend
 agree on clear structure and read a network differently when flow direction or
 scale matters. See {doc}`Reading Infomap through Louvain and Leiden <concepts/choosing-a-method>`.
 
+### How does Infomap relate to statistical inference methods such as stochastic block models?
+
+They answer different questions. Infomap asks how well a partition compresses
+the flow of a random walk on the network you observed; inference methods ask how
+plausibly a generative model explains the observed edges, and they bring their
+own machinery for model selection. For that family of methods,
+[graph-tool's documentation](https://graph-tool.skewed.de/) is a good starting
+point.
+
 ### How do I use Infomap inside a Scanpy / AnnData workflow?
 
 After `sc.pp.neighbors(adata)`, call `infomap.tl.infomap(adata, key_added="infomap")`.
