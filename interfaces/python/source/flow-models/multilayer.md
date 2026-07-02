@@ -51,8 +51,9 @@ current layer most of the time and crosses to another at rate $r$, the **relax
 rate**. When it rarely crosses ($r$ small), each layer behaves on its own and
 Alice lands in a different module in each of her layers. When it crosses freely
 ($r = 1$), the layers fuse and Alice gets one module. The default $r = 0.15$
-switches layers about once in six steps, enough coupling to respect the
-multiplex structure without washing out the per-layer signal.
+relaxes the layer constraint about once in six steps (the relaxed step can
+land back in the current layer, so actual switches are rarer), enough coupling
+to respect the multiplex structure without washing out the per-layer signal.
 
 The key step is the **physical node / state node** distinction
 ({doc}`/concepts/state-nodes-and-higher-order-flow`): here a state node is a
@@ -111,8 +112,10 @@ out-strength of node $i$ from layer $\alpha$.
 When no empirical inter-layer data are available, setting
 $D_i^{\alpha\beta} = (1-r)\delta_{\alpha\beta}S_i + r\,s_i^\beta$ recovers the
 relax-rate formula above {cite:p}`domenico2015multilayer`. At $r = 0.15$ the
-walker stays in a layer for about $1/r \approx 6$ steps before switching, enough
-coupling for layers to inform each other without fusing.
+walker takes a relaxed step about once every $1/r \approx 6$ steps (and
+switches layers less often still, since the relaxed step is strength-weighted
+over all layers including the current one), enough coupling for layers to
+inform each other without fusing.
 
 The map equation then minimises
 

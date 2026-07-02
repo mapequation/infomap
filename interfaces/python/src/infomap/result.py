@@ -32,6 +32,9 @@ from ._results import _to_dataframe_sort_columns, perplexity
 if TYPE_CHECKING:
     from ._facade import Infomap
 
+# build_result is internal plumbing shared by Infomap.run and Network.run;
+# only the result types are public API.
+__all__ = ["Result", "TreeNode"]
 
 _DEFAULT_TO_DATAFRAME_COLUMNS = ("node_id", "module_id", "flow", "path", "name")
 _DATAFRAME_COLUMN_ALIASES = {"community": "module_id"}

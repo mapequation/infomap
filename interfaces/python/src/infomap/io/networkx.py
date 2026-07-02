@@ -5,6 +5,10 @@ from typing import Any
 
 from ._arrays import apply_node_meta_data, community_node_data
 
+# run_networkx and add_networkx_graph are internal plumbing shared with the
+# facade and the docs notebooks; only find_communities is public API.
+__all__ = ["find_communities"]
+
 
 def _label_to_internal_id(labels):
     if not labels:

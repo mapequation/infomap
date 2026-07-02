@@ -44,9 +44,10 @@ $\eta = 0$ you recover ordinary Infomap. As $\eta$ grows you favour
 attribute-homogeneous modules more, accepting a longer topological description in
 return.
 
-A closely related approach encodes the metadata differently: it biases the
-random walk itself so that walkers tend to stay near nodes with similar
-attributes {cite:p}`bassolas2022metadata`. Both approaches capture the interplay between
+A closely related approach couples metadata to the map equation differently:
+it leaves the walk unchanged but makes the *encoding* of the walk depend on
+the metadata, which maps nonlocal relationships between attributes and
+network structure {cite:p}`bassolas2022metadata`. Both approaches capture the interplay between
 topology and metadata; the Emmons & Mucha formulation is what Infomap implements.
 
 ## An attribute codebook
@@ -130,13 +131,13 @@ term, regardless of $\eta$. The optimisation therefore pushes modules toward
 homogeneity as $\eta$ increases, even splitting topologically tight groups if
 their attribute mixture is expensive to encode.
 
-A complementary approach, the metadata-dependent random walk
-{cite:p}`bassolas2022metadata`, modifies the walk itself: a walker at node $i$ is absorbed at node $j$
-with a probability that depends on the metadata at both $i$ and $j$. Running the
-standard map equation on this absorption-modified flow graph produces
-metadata-informed communities through long-range interactions between topology
-and attributes, rather than a local codebook penalty. The two frameworks share a
-spirit but differ in mechanism.
+A complementary approach, metadata-dependent encoding of random walks
+{cite:p}`bassolas2022metadata`, leaves the walk dynamics unchanged and instead
+makes the *encoding* of the walk depend on the metadata of the nodes the
+walker visits. That captures nonlocal relationships between metadata and
+network structure, rather than the local per-module codebook penalty used
+here. The two frameworks share a spirit but differ in where the metadata
+enters the encoding.
 :::
 
 ## Two triangles, two attributes

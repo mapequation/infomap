@@ -45,9 +45,11 @@ types still receive module assignments.
 
 ```{admonition} Which type goes first?
 :class: note
-Put the nodes whose communities you care about below the threshold. Their
-flow is what the code describes, and `hide_bipartite_nodes=True` can then
-drop the other type from the output entirely.
+Put the nodes whose communities you care about below the threshold: their
+flow is what the code describes. If you also write native output files with
+the stateful {class}`~infomap.Infomap`, `hide_bipartite_nodes=True` drops the
+other type from those files (it does not filter the in-memory
+{class}`~infomap.Result`).
 ```
 
 Two options change this treatment: `skip_adjust_bipartite_flow=True` keeps
@@ -189,16 +191,17 @@ module spans both node types.
   for bipartite networks the source and target should be opposite types.
 - {meth}`infomap.Result.modules` returns a `{node_id: module_id}` dict covering
   both types.
-- The constructor flag `hide_bipartite_nodes=True` omits right-type nodes from
-  the output, which helps when only the left-type assignments matter (projecting
-  a user partition, say).
+- The option `hide_bipartite_nodes=True` omits right-type nodes from written
+  output files (`.tree`, `.clu`, …), which helps when only the left-type
+  assignments matter (projecting a user partition, say). It does not filter
+  {meth}`infomap.Result.modules`, which always covers both types.
 
 ## Options
 
 | Option | Where | Effect |
 |---|---|---|
 | `bipartite_start_id` | {class}`~infomap.Network` attribute | First node id of the second type; declares the network bipartite |
-| `hide_bipartite_nodes` | {func}`infomap.run` | Omit the second-type nodes from the output |
+| `hide_bipartite_nodes` | {func}`infomap.run` | Omit the second-type nodes from written output files (the in-memory result keeps both types) |
 | `skip_adjust_bipartite_flow` | {func}`infomap.run` | Keep flow on the second-type nodes instead of folding it onto the first type |
 | `bipartite_teleportation` | {func}`infomap.run` | On directed runs, teleport with bipartite-aware jumps instead of the two-step unipartite scheme |
 

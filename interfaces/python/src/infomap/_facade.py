@@ -4,7 +4,7 @@ from contextlib import contextmanager
 
 from ._core import Core
 from ._core import apply_initial_partition
-from ._core import build_info
+from ._core import build_info as _engine_build_info
 from ._core import run as _cli_run
 
 # Documented tree-walking iterator/node types returned by ``Infomap.tree`` /
@@ -1488,6 +1488,14 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         )
 
     def remove_multilayer_link(self):
+        """Unsupported operation kept for interface parity.
+
+        Raises
+        ------
+        NotImplementedError
+            Always; removing multilayer links is not supported by the
+            Python API. Rebuild the network without the link instead.
+        """
         return self._network.remove_multilayer_link()
 
     def set_meta_data(self, node_id, meta_category):
@@ -2119,7 +2127,33 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         return self._core.elapsedTime()
 
 
+def build_info():
+    """Report how the compiled Infomap extension was built.
+
+    Returns
+    -------
+    dict
+        A dict with an ``enabled_features`` tuple naming the optional
+        features the native engine was compiled with (empty for a standard
+        build).
+
+    Examples
+    --------
+    >>> import infomap
+    >>> sorted(infomap.build_info())
+    ['enabled_features']
+    """
+    return _engine_build_info()
+
+
 def main():
+    """Run the ``infomap`` command-line interface.
+
+    This is the console-script entry point behind the ``infomap`` command
+    (and ``python -m infomap``): it joins ``sys.argv[1:]`` into a native CLI
+    invocation and returns the process exit code, suitable for
+    ``sys.exit``. A keyboard interrupt exits cleanly with code 130.
+    """
     args = " ".join(sys.argv[1:])
     try:
         return _cli_run(args)

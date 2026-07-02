@@ -50,9 +50,10 @@ seed, total trial count, and algorithm settings.
 
 ## Trials as independent work units
 
-`num_trials` is the total trial budget, and `trial_offset` shifts where a
-task's trials begin in that budget. If you want 100 trials in total and split
-them across four array tasks:
+Each task runs `num_trials` trials of its own — the *per-shard* count — and
+`trial_offset` positions those trials within the global budget. If you want
+100 trials in total and split them across four array tasks, each task gets
+`num_trials=25`:
 
 - task 0: trials 0–24, offset 0
 - task 1: trials 25–49, offset 25

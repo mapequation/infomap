@@ -117,8 +117,10 @@ For production figures, copy
 ### Export to GraphML and GEXF
 
 For a single file bundling the network topology and the Infomap result,
-{func}`infomap.to_networkx` returns a copy of the graph annotated with the
-partition, which NetworkX then writes:
+{func}`infomap.to_networkx` builds a *new* NetworkX graph from the result:
+nodes are the result's (state) nodes, keyed by `state_id` and carrying the
+Infomap node `name` plus the partition attributes, and edges come from the
+partitioned network. NetworkX then writes it:
 
 ```{code-cell} python
 import os
@@ -127,7 +129,7 @@ from infomap import to_networkx
 
 tmp = tempfile.mkdtemp()
 
-annotated = to_networkx(result)   # adds infomap_module, infomap_path, flow, ...
+annotated = to_networkx(result)   # new graph with infomap_module, infomap_path, flow, ...
 graphml_path = os.path.join(tmp, "karate.graphml")
 gexf_path = os.path.join(tmp, "karate.gexf")
 nx.write_graphml(annotated, graphml_path)
@@ -137,14 +139,20 @@ print(f"GraphML: {os.path.getsize(graphml_path):,} bytes")
 print(f"GEXF:    {os.path.getsize(gexf_path):,} bytes")
 ```
 
-The annotated graph carries these Infomap node attributes:
+The exported graph carries these Infomap node attributes, all stored as
+strings for GraphML/GEXF compatibility:
 
 | Attribute | Value |
 |---|---|
-| `infomap_module` | Top-level module id (string) |
-| `infomap_path` | Colon-separated path, e.g. `"1"` or `"2:3"` |
-| `infomap_level_1`, `infomap_level_2`, … | One attribute per hierarchy level |
+| `infomap_module` | Top-level module id |
+| `infomap_path` | Colon-separated tree path ending in the node's position within its module, e.g. `"1:1"` or `"2:3:4"` |
+| `infomap_level_1`, `infomap_level_2`, … | One attribute per path component (the last is the node's position within its final module) |
 | `flow` | Stationary visit frequency |
+
+Because the graph is rebuilt from the result, your original graph's node
+attributes are *not* carried over. To keep them, annotate your own graph in
+place with {func}`infomap.find_communities` (see below) or
+{func}`infomap.io.export.annotate_networkx_graph`.
 
 Open the GraphML file in Gephi, select **Appearance → Nodes → Partition**, and
 choose `infomap_module` to colour the graph by community.
@@ -245,8 +253,12 @@ print("Temp directory removed.")
   module-coloured layouts only.
 - **`.clu` records the top level.** Pass `depth_level` to `write_clu` for a
   deeper level; `.tree` / `.ftree` carry the full hierarchy.
-- **`to_networkx` returns a copy.** It annotates a new graph and leaves your
-  original untouched.
+- **`to_networkx` builds a new graph, not a copy of yours.** Its nodes are the
+  result's (state) nodes keyed by `state_id`, so your original graph — and any
+  attributes on it — is left untouched and *not* carried into the export. Use
+  {func}`infomap.find_communities` or
+  {func}`infomap.io.export.annotate_networkx_graph` to annotate your own graph
+  instead.
 
 ## API pointers
 
@@ -258,10 +270,10 @@ print("Temp directory removed.")
 
 **In-memory graph export**
 
-- {func}`infomap.to_networkx` returns a NetworkX copy annotated with
-  `infomap_module`, `infomap_path`, per-level ids, and `flow`; write it with
-  `nx.write_graphml` / `nx.write_gexf`.
-- {func}`infomap.to_igraph` returns the same annotation on an `igraph.Graph`.
+- {func}`infomap.to_networkx` builds a NetworkX graph from the result's (state)
+  nodes, annotated with `infomap_module`, `infomap_path`, per-level ids, and
+  `flow` (all strings); write it with `nx.write_graphml` / `nx.write_gexf`.
+- {func}`infomap.to_igraph` builds the same graph as an `igraph.Graph`.
 - {func}`infomap.io.export.write_graphml`, {func}`infomap.io.export.write_gexf`,
   and {func}`infomap.io.export.annotate_networkx_graph` are convenience wrappers
   around that pattern. They take a post-run stateful {class}`~infomap.Infomap`,

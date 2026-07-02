@@ -20,3 +20,9 @@ Information-theoretic primitives
 .. autofunction:: entropy
 .. autofunction:: perplexity
 .. autofunction:: plogp
+
+Build and CLI entry points
+--------------------------
+
+.. autofunction:: build_info
+.. autofunction:: main

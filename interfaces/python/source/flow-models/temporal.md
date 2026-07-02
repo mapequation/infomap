@@ -35,7 +35,7 @@ The cost of ignoring time is that naive approaches miss *intermittent*
 communities: groups that form, dissolve, and re-form in a recurring pattern.
 Face-to-face contact networks make this concrete: workplace social groups recur
 daily on a timescale of tens of minutes, but uniform aggregation smears them
-into background noise {cite:p}`aslak2017temporal`. Recovering that
+into background noise {cite:p}`aslak2018temporal`. Recovering that
 intermittent structure takes a model that couples information across time while
 respecting the boundaries between distinct interaction contexts.
 
@@ -78,8 +78,9 @@ The multilayer chapter covers that machinery, including the relax-rate transitio
 probabilities and how state nodes of one physical node share a codeword within a
 module. What is specific to *time* is how the windows should be coupled.
 
-**Uniform relaxation** (the default) couples every layer to every other with
-equal weight. It is the simplest choice and works well when communities change
+**Uniform relaxation** (the default) lets the walker relax to any window,
+weighted only by the node's link strength there — no window is privileged over
+another. It is the simplest choice and works well when communities change
 gradually.
 
 **Neighbourhood flow coupling** (`multilayer_relax_by_jsd`) makes the coupling
@@ -88,7 +89,7 @@ between a node's link patterns in two windows, so windows where its context look
 similar couple strongly. This matters for *intermittent communities* (groups
 that appear, vanish, and reappear), where coupling every window together would
 merge distinct occurrences that happen to share nodes
-{cite:p}`aslak2017temporal`.
+{cite:p}`aslak2018temporal`.
 
 `multilayer_relax_limit` enforces **temporal ordering**: it caps how far the
 walker may relax in layer index, so the walk crosses only into nearby time
@@ -207,7 +208,7 @@ community identity persists. Raising it toward 1 pushes Infomap toward the
 aggregate static solution. The default is `0.15`; values in the 0.15–0.25 range
 are usually a good choice for networks where communities evolve smoothly, and
 neighbourhood flow coupling stays robust across a broad range of relax rates
-(0.15 to 0.7) on benchmark networks {cite:p}`aslak2017temporal`.
+(0.15 to 0.7) on benchmark networks {cite:p}`aslak2018temporal`.
 
 For long time series, `multilayer_relax_limit` caps how far the random walker
 may jump between layers, so coupling stays between temporally nearby windows
@@ -243,7 +244,7 @@ generalises to higher-order and temporal networks {cite:p}`holmgren2023change`.
   distance, enforcing temporal ordering.
 - `multilayer_relax_by_jsd=True` uses neighbourhood flow coupling
   (Jensen-Shannon divergence) instead of uniform coupling; reach for it when
-  communities are intermittent {cite:p}`aslak2017temporal`.
+  communities are intermittent {cite:p}`aslak2018temporal`.
 - {meth}`infomap.Result.nodes` with `states=True` iterates state nodes; each
   exposes `.node_id`, `.layer_id`, and `.module_id` to reconstruct per-layer
   community assignments.
@@ -263,7 +264,7 @@ Temporal coupling is set by the multilayer engine options on {func}`infomap.run`
 
 ## Going deeper
 
-- {cite:t}`aslak2017temporal` introduce neighbourhood flow coupling and
+- {cite:t}`aslak2018temporal` introduce neighbourhood flow coupling and
   validate it on face-to-face contact networks.
 - Alluvial diagrams for higher-order networks, with an interactive generator at
   <https://www.mapequation.org/alluvial> {cite:p}`holmgren2023change`.

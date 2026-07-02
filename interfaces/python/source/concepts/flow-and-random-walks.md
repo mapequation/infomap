@@ -85,9 +85,12 @@ $$
 and the unique stationary solution $\pi$ exists for any $\tau > 0$. At a dangling
 node the walker has no out-links to follow, so it teleports with probability one
 rather than at rate $\tau$. The $1/n$ term is the simplest, uniform
-teleportation; by default Infomap teleports to a node with probability
-proportional to its in-strength. The teleportation steps are unrecorded, as
-described above.
+teleportation; by default Infomap instead teleports to a random *link*
+(proportionally to its weight) and lands at the link's source, so a node
+receives teleporting walkers in proportion to its out-strength. The next
+recorded step is then always a real link traversal. With recorded
+teleportation (`recorded_teleportation=True`) the walker lands at the link's
+target instead, proportionally to in-strength.
 
 These per-node flows $\pi_i$, together with how often the walker crosses between
 candidate modules, are the inputs the map equation needs. The next chapter,

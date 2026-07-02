@@ -622,6 +622,14 @@ class Network:
         return self
 
     def remove_multilayer_link(self):
+        """Unsupported operation kept for interface parity.
+
+        Raises
+        ------
+        NotImplementedError
+            Always; removing multilayer links is not supported by the
+            Python API. Rebuild the network without the link instead.
+        """
         raise NotImplementedError(
             "Removing multilayer links is not supported by the Python API."
         )

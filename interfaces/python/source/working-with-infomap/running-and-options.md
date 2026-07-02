@@ -21,7 +21,8 @@ hard Infomap looks.
 ```
 
 Most runs need only three choices: a `seed`, how many `num_trials` to run, and
-either `two_level` or `directed` for the flow model. The shortest useful run:
+whether the flow is `directed`; add `two_level` if you want a flat partition
+instead of the multilevel default. The shortest useful run:
 
 ```python
 import networkx as nx
@@ -32,6 +33,7 @@ result = infomap.run(
     seed=123,        # reproducible
     num_trials=10,   # keep the best of 10 restarts
     two_level=True,  # flat partition; omit for the multilevel default
+    silent=True,     # skip the engine's console log
 )
 print(result.num_top_modules, result.codelength)
 ```
@@ -257,8 +259,8 @@ your domain says walkers teleport much more or less often.
 
 The map equation operates at the natural timescale of one random-walk step.
 `markov_time` shifts this timescale: values below 1 encode the walk more
-frequently (favoring more, smaller modules) and values above 1 encode it less
-frequently (favoring fewer, larger modules). This is the principled way to
+frequently (favouring more, smaller modules) and values above 1 encode it less
+frequently (favouring fewer, larger modules). This is the principled way to
 examine structure at a specific resolution when the data does not have a natural
 scale {cite:p}`kheirkhahzadeh2016markov`.
 
@@ -287,21 +289,27 @@ specifically want to study structure at a given scale, or when reviewers ask
 ### `regularized` for sparse data
 
 ```{code-cell} python
-# On the karate club, regularization merges weakly supported modules
-# into fewer, larger communities.
+# On the small karate club the regularization prior competes with the data:
+# at half strength the three modules survive, and at the default strength
+# the prior already outweighs the data and collapses them into one.
 G_karate = nx.karate_club_graph()
 
 for label, kwargs in [
-    ("baseline",                       {}),
-    ("regularized",                    {"regularized": True}),
-    ("regularized, strength=2",        {"regularized": True, "regularization_strength": 2.0}),
+    ("baseline",                  {}),
+    ("regularized, strength=0.5", {"regularized": True, "regularization_strength": 0.5}),
+    ("regularized (default 1.0)", {"regularized": True}),
 ]:
     result = infomap.run(G_karate, two_level=True, seed=123, num_trials=10, silent=True, **kwargs)
     print(f"{label}: modules={result.num_top_modules}, L={result.codelength:.4f}")
 ```
 
-Higher `regularization_strength` merges more modules. Use this when you have
-prior reason to believe that small modules in your result reflect sampling noise
+Higher `regularization_strength` merges more modules — on a network this small
+the default strength already merges everything, which is why the option is
+meant for large, sparse, or incompletely sampled data rather than well-sampled
+toy graphs. For a gradual version of the same sweep, where a planted partition
+goes from 14 modules through 7 to 1 as the strength grows, see
+{doc}`/robustness/incomplete-data`. Use regularization when you have prior
+reason to believe that small modules in your result reflect sampling noise
 rather than real structure. The Bayesian derivation is in
 {cite:t}`smiljanic2020missing`.
 

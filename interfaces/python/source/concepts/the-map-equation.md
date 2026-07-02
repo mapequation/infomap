@@ -110,8 +110,8 @@ $$
 
 and module $i$'s codebook (one codeword per node plus an exit symbol, with
 $p_{\circlearrowright}^i = q_{i\curvearrowright} + \sum_{\alpha\in i} p_\alpha$,
-where $p_\alpha$ is node $\alpha$'s visit frequency from chapter 1) has
-entropy
+where $p_\alpha$ is node $\alpha$'s visit frequency from
+{doc}`flow-and-random-walks`) has entropy
 
 $$
 H(\mathcal{P}^i)
@@ -133,7 +133,10 @@ $q_{i\curvearrowright}$ and $\sum_{\alpha\in i} p_\alpha$ per module; see
 
 Zachary's karate club is a classic benchmark: 34 people, 78 friendships, and a
 known split into two factions. It is small enough to explore interactively and
-has real structure Infomap reliably recovers.
+has real structure Infomap reliably recovers. Note that the NetworkX graph
+carries integer edge weights (interaction counts), and the adapter reads them
+by default, so the walk — and the codelengths below — are weighted; recomputing
+them by hand from the bare topology gives slightly different values.
 
 ```{code-cell} python
 import networkx as nx

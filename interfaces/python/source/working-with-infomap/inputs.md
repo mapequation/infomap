@@ -51,8 +51,10 @@ read* belong to the ``Network.from_*`` constructors; passing one to
 {func}`infomap.run` raises with a pointer to the right constructor rather than
 silently building a different graph. For a NetworkX or igraph graph the
 directedness is read from the graph object itself, so no ``directed`` argument
-is needed; for a SciPy matrix or edge index, pass ``directed=`` to the matching
-``from_*`` constructor.
+is needed. For a SciPy matrix or edge index, pass ``directed=`` to the matching
+``from_*`` constructor — and note that the two routes default differently:
+a SciPy matrix is read as *undirected* unless you say otherwise, while a
+``(2, E)`` edge index follows the PyG convention and is read as *directed*.
 
 Two library-idiomatic one-shot helpers return native types instead of a
 {class}`~infomap.Result`: {func}`infomap.find_communities` (a NetworkX-style
@@ -215,8 +217,11 @@ iterable of tuples: ``infomap.run([(0, 1, 1.0), (1, 2, 1.0), ...])``.
 ```{admonition} Edge index vs link rows
 :class: note
 A two-row *integer* array is read as a ``(2, E)`` edge index (the PyG / GNN
-convention). Rows of ``(source, target, weight)`` have a float column and are
-read as weighted links. For an explicit edge index with its own options, use
+convention) and, following that convention, defaults to a **directed** flow
+model — pass ``directed=False`` to `Network.from_edge_index` if your edge
+index lists an undirected graph. Rows of ``(source, target, weight)`` have a
+float column and are read as weighted links. For an explicit edge index with
+its own options, use
 `Network.from_edge_index(edge_index, edge_weight=..., directed=...)`.
 ```
 

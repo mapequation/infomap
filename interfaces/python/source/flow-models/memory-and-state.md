@@ -212,7 +212,9 @@ net.add_link(2,  0,  1.0)
 net.add_link(3,  11, 1.0)
 net.add_link(11, 3,  1.0)
 
-result2 = run(net, two_level=True, silent=True)
+# directed=True matches step 1 (a bare Network defaults to undirected flow,
+# unlike the DiGraph route, which enables it automatically)
+result2 = run(net, two_level=True, silent=True, directed=True)
 
 n_physical = len({node.node_id for node in result2.nodes(states=True)})
 print(f"have_memory: {result2.have_memory}")
