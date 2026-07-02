@@ -147,61 +147,24 @@ belongs to both. The figure shows the undirected skeleton; the walk itself
 follows the weighted, directed links.
 ```
 
-### The same network as a `.net` file
+### The same network ships with the package
 
-Infomap's native file format carries this construction directly: a `*States`
-section declares each `state_id physical_id [name]`, and `*Links` connect
-state ids. This is `examples/networks/states.net` verbatim, and running it
-reproduces the partition above exactly:
+The construction above is the states-format reference example, so it comes
+bundled: {func}`infomap.datasets.states` returns it as a ready-to-run
+{class}`~infomap.Network`, loaded from the same `.net` file that documents
+the `*States` format (each state declared as `state_id physical_id [name]`,
+with `*Links` connecting state ids). Running it reproduces the partition
+above exactly:
 
 ```{code-cell} python
-import tempfile
-from pathlib import Path
+net_pkg = infomap.datasets.states()
+result_pkg = infomap.run(net_pkg, two_level=True, seed=123, num_trials=10, silent=True)
 
-content = """# A network in state format
-*Vertices 5
-1 "i"
-2 "j"
-3 "k"
-4 "l"
-5 "m"
-*States
-# state_id node_id name
-1 1 "α~_i"
-2 2 "β~_j"
-3 3 "γ~_k"
-4 1 "δ~_i"
-5 4 "ε~_l"
-6 5 "ζ~_m"
-*Links
-# source target weight
-1 2 0.8
-1 3 0.8
-1 5 0.2
-1 6 0.2
-2 1 1
-2 3 1
-3 1 1
-3 2 1
-4 5 0.8
-4 6 0.8
-4 2 0.2
-4 3 0.2
-5 4 1
-5 6 1
-6 4 1
-6 5 1
-"""
-path = Path(tempfile.mkdtemp()) / "states.net"
-path.write_text(content)
+print(f"Modules: {result_pkg.num_top_modules}, "
+      f"codelength {result_pkg.codelength:.4f} bits per step")
 
-result_file = infomap.run(str(path), two_level=True, directed=True,
-                          seed=123, num_trials=10, silent=True)
-print(f"Modules: {result_file.num_top_modules}, "
-      f"codelength {result_file.codelength:.4f} bits per step")
-
-# Same network, same partition: the file route reproduces the API construction.
-assert result_file.codelength == result.codelength
+# Same network, same partition as the construction above.
+assert result_pkg.codelength == result.codelength
 ```
 
 ## Where this goes next

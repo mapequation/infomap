@@ -305,24 +305,52 @@ value from {cite:t}`domenico2015multilayer`, who found the partition only
 weakly dependent on the relax rate; robustness holds across a wide range of empirical
 multilayer networks at around $r \approx 0.25$ {cite:p}`edler2017higher`.
 
-### Using explicit inter-layer links
+### Node-aligned inter-layer links
 
-When your data include observed inter-layer transitions (for example, passenger
-bookings that start on one airline and continue on another), you can supply them
-directly instead of relying on the relax-rate model. Node-aligned couplings
-through a shared physical node use `add_multilayer_inter_link`; fully general
-links between any two `(layer, node)` pairs use `add_multilayer_link`. The
-example network's file form specifies four such links, from *i* in each layer
-to its triangle partners in the other layer:
+When the observed coupling is a node switching layer "in place" (a person
+moving between the work and family contexts, a passenger changing airline at
+the same airport), supply node-aligned inter-layer links with
+`add_multilayer_inter_link` instead of relying on the relax-rate model. This
+is the `*Intra`/`*Inter` file form, and the bundled
+{func}`infomap.datasets.multilayer_intra_inter` network is its reference
+example: the same two triangles, with *i* coupled to itself across the layers.
 
 ```{code-cell} python
-net_inter = Network()
+net_aligned = Network()
 
 # Intra-layer links (same as before)
 for layer, src, tgt, w in intra_links:
-    net_inter.add_multilayer_intra_link(layer, src, tgt, w)
+    net_aligned.add_multilayer_intra_link(layer, src, tgt, w)
 
-# Explicit inter-layer links: from i to the other layer's triangle partners.
+# i couples to itself across the layers, weight 0.4 each way.
+net_aligned.add_multilayer_inter_link(1, 1, 2, 0.4)
+net_aligned.add_multilayer_inter_link(2, 1, 1, 0.4)
+
+result_aligned = run(net_aligned, seed=123, num_trials=10, silent=True)
+print(f"Modules found : {result_aligned.num_top_modules}")
+print(f"Codelength    : {result_aligned.codelength:.4f} bits")
+
+# The same construction ships with the package; the two must agree exactly.
+result_pkg = infomap.run(infomap.datasets.multilayer_intra_inter(),
+                         seed=123, num_trials=10, silent=True)
+assert result_aligned.codelength == result_pkg.codelength
+```
+
+### Fully explicit links
+
+The most general form gives every link as a `(layer, node)` pair with
+`add_multilayer_link`, including inter-layer links between *different*
+physical nodes. This is the `*Multilayer` file form, and
+{func}`infomap.datasets.multilayer` is its reference example: the twelve
+intra-layer links from before plus four inter-layer links, from *i* to the
+other layer's triangle partners.
+
+```{code-cell} python
+net_full = Network()
+
+for layer, src, tgt, w in intra_links:
+    net_full.add_multilayer_link((layer, src), (layer, tgt), w)
+
 inter_links = [
     ((1, 1), (2, 2), 0.2),  # i in layer 1 -> j in layer 2
     ((1, 1), (2, 3), 0.2),  # i in layer 1 -> k in layer 2
@@ -330,15 +358,51 @@ inter_links = [
     ((2, 1), (1, 5), 0.2),  # i in layer 2 -> m in layer 1
 ]
 for src, tgt, w in inter_links:
-    net_inter.add_multilayer_link(src, tgt, w)
+    net_full.add_multilayer_link(src, tgt, w)
 
-result_inter = run(net_inter, seed=123, num_trials=10, silent=True)
-print(f"Modules found : {result_inter.num_top_modules}")
-print(f"Codelength    : {result_inter.codelength:.4f} bits")
+result_full = run(net_full, seed=123, num_trials=10, silent=True)
+print(f"Modules found : {result_full.num_top_modules}")
+print(f"Codelength    : {result_full.codelength:.4f} bits")
+
+result_pkg = infomap.run(infomap.datasets.multilayer(),
+                         seed=123, num_trials=10, silent=True)
+assert result_full.codelength == result_pkg.codelength
 ```
 
 When you provide explicit inter-layer links, Infomap does not use the relax-rate
-model; the link weights you supply fully specify the coupling.
+model; the link weights you supply fully specify the coupling. The two
+construction forms take different paths, however: the typed
+`add_multilayer_intra_link`/`add_multilayer_inter_link` methods build per-layer
+networks that Infomap expands, while `add_multilayer_link` writes state-level
+links directly. Mixing them in one network does not reproduce the file form;
+pick one form per network.
+
+### Relaxing to the same node only
+
+Back in the relax-rate model, `multilayer_relax_to_self=True` links a relaxing
+state node to its *own physical node* in the target layer instead of spreading
+directly to its out-neighbours there. The flow is the same; the state network
+is smaller, which matters on large networks:
+
+```{code-cell} python
+net_self = Network()
+for layer, src, tgt, w in intra_links:
+    net_self.add_multilayer_intra_link(layer, src, tgt, w)
+
+result_self = run(net_self, multilayer_relax_rate=0.15,
+                  multilayer_relax_to_self=True,
+                  seed=123, num_trials=10, silent=True)
+
+n_links_self = len(list(result_self.links()))
+n_links_default = len(list(result.links()))
+print(f"Modules found: {result_self.num_top_modules}")
+print(f"Codelength   : {result_self.codelength:.4f} bits")
+print(f"State links  : {n_links_self} (vs {n_links_default} without the flag)")
+
+# Same flow, smaller state network.
+assert abs(result_self.codelength - result.codelength) < 1e-10
+assert n_links_self < n_links_default
+```
 
 ## API pointers
 
@@ -353,6 +417,9 @@ model; the link weights you supply fully specify the coupling.
   any two `(layer_id, node_id)` pairs:
   `add_multilayer_link(source_multilayer_node, target_multilayer_node,
   weight=1.0)`.
+- {func}`infomap.datasets.multilayer`, {func}`infomap.datasets.multilayer_intra`,
+  and {func}`infomap.datasets.multilayer_intra_inter` load the bundled example
+  networks for the three file forms, ready to run.
 - `multilayer_relax_rate` (default `0.15`) is an engine option on
   {func}`infomap.run`: the relax rate used when no explicit inter-layer links are
   provided.
@@ -365,13 +432,17 @@ model; the link weights you supply fully specify the coupling.
 
 ## Options
 
-Multilayer flow is controlled by three engine options on {func}`infomap.run`:
+The relax-rate model is controlled by these engine options on {func}`infomap.run`
+(all of them are ignored when the network carries explicit inter-layer links):
 
 | Option | Default | Effect |
 |---|---|---|
-| `multilayer_relax_rate` | `0.15` | Inter-layer coupling used when no explicit inter-layer links are given |
-| `multilayer_relax_limit` | `-1` | Caps how many relax steps can occur in a row (`-1` for unlimited) |
-| `multilayer_relax_to_self` | `False` | Restricts relaxed steps to the node's own neighbours in other layers (node-aligned coupling) |
+| `multilayer_relax_rate` | `0.15` | Probability per step of relaxing to another layer |
+| `multilayer_relax_limit` | `-1` | Relax only to layers at most this many layer ids away (`-1` for any layer) |
+| `multilayer_relax_limit_up` | `-1` | The same cap, counting only towards higher layer ids |
+| `multilayer_relax_limit_down` | `-1` | The same cap, counting only towards lower layer ids |
+| `multilayer_relax_by_jsd` | `False` | Weight relaxation by neighbourhood similarity; see {doc}`/flow-models/temporal` |
+| `multilayer_relax_to_self` | `False` | Relax to the node's own copy in the target layer instead of spreading to its out-neighbours; smaller state network, same flow |
 
 ## Going deeper
 

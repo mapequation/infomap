@@ -263,7 +263,9 @@ for node in result.nodes():
 extend the network before running. The
 [input-format reference](https://www.mapequation.org/infomap/#Input) on
 mapequation.org documents every section a `.net` file can carry, including
-`*States`, `*Bipartite`, and `*Multilayer`.
+`*States`, `*Bipartite`, and `*Multilayer` — and the reference example for
+each format ships pre-loaded in {mod}`infomap.datasets`
+(`infomap.datasets.two_triangles()` returns this very network, ready to run).
 
 ## Building incrementally with Network
 
