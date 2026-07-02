@@ -110,7 +110,7 @@ target_include_directories(infomap_core PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/ven
 # fmt is included from headers under src/ (utils/format.h), so it must be PUBLIC
 # to propagate to the CLI, benchmark, and cpp-test targets that consume src/.
 target_include_directories(infomap_core PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/vendor/fmt/include")
-target_compile_features(infomap_core PUBLIC cxx_std_14)
+target_compile_features(infomap_core PUBLIC cxx_std_17)
 set_target_properties(infomap_core PROPERTIES CXX_EXTENSIONS OFF)
 target_compile_options(infomap_core PRIVATE ${INFOMAP_COMPILE_FLAGS})
 target_compile_definitions(infomap_core PUBLIC ${INFOMAP_ENABLED_FEATURE_DEFINES})
