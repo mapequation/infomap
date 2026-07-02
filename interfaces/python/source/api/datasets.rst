@@ -1,7 +1,7 @@
 Datasets
 ========
 
-.. currentmodule:: infomap.datasets
+.. module:: infomap.datasets
 
 The canonical example networks from the format documentation on
 mapequation.org, bundled with the package. Each loader reads its file with the

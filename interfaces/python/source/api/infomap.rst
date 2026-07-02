@@ -11,12 +11,20 @@ four calls.
 
    im = infomap.Infomap(num_trials=10, seed=42)   # 1. configure
    im.add_networkx_graph(graph)                    # 2. build
-   im.run()                                         # 3. search
-   im.get_modules()                                 # 4. read
+   result = im.run()                                # 3. search
+   result.modules()                                 # 4. read
 
 Everything else on this page refines one of those four steps. The tables below
 group the members by purpose; the full reference, with signatures and
 docstrings, follows underneath.
+
+.. note::
+
+   ``run()`` returns a :class:`Result`; read metrics and modules from it. The
+   on-instance accessors below (``get_modules``, ``codelength``, …) predate the
+   Result API and remain for backward compatibility. For one-shot use, prefer
+   :func:`infomap.run`; the stateful class is the way to build incrementally
+   and to write the native output files. See :doc:`/the-infomap-class`.
 
 Building a network
 ------------------
@@ -104,6 +112,8 @@ Reading the partition
    ~Infomap.get_name
    ~Infomap.get_names
    ~Infomap.names
+   ~Infomap.state_names
+   ~Infomap.get_state_names
 
 Solution metrics
 ----------------

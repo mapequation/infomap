@@ -310,7 +310,61 @@ def find_igraph_communities(
     meta_attribute: str | None = None,
     **infomap_options: Any,
 ) -> Any:
-    """Find communities in a python-igraph graph."""
+    """Find communities in a python-igraph graph.
+
+    This helper builds an :class:`~infomap.Infomap` instance from ``g`` (via
+    :meth:`Infomap.add_igraph_graph`), runs Infomap, and returns the top-level
+    partition as an igraph clustering.
+
+    Parameters
+    ----------
+    g : igraph.Graph
+        A python-igraph graph.
+    edge_weights : str, sequence, or None, optional
+        Edge weight attribute name, explicit sequence with one value per
+        edge, or ``None`` to treat every edge as weight 1. Default ``None``.
+    vertex_weights : None, optional
+        Accepted for igraph API familiarity but not supported yet.
+    trials : int, optional
+        Number of independent trials; the best solution is kept. Default
+        ``10``. Alias for the ``num_trials`` Infomap option.
+    node_id : str, optional
+        Vertex attribute for physical node ids, implying a state network.
+    layer_id : str, optional
+        Vertex attribute for layer ids, implying a multilayer network when
+        ``node_id`` is also present.
+    multilayer_inter_intra_format : bool, optional
+        Use intra/inter format to simulate inter-layer links. Default
+        ``True``.
+    module_attribute : str, optional
+        If set, write each vertex's module id back to this vertex attribute
+        on ``g``.
+    flow_attribute : str, optional
+        If set, write each vertex's flow back to this vertex attribute on
+        ``g``.
+    meta_attribute : str, optional
+        Vertex attribute to read categorical meta data from. Values are
+        encoded to integers in first-seen order and set as Infomap meta
+        data; vertices with missing values are skipped. Raises
+        :class:`ValueError` if the attribute does not exist.
+    **infomap_options
+        Keyword arguments passed to :class:`infomap.Infomap`. By default,
+        ``silent=True`` and ``no_file_output=True`` are used unless
+        explicitly overridden.
+
+    Returns
+    -------
+    igraph.VertexClustering
+        The top-level partition, with the codelength of the solution attached
+        as a ``codelength`` attribute. For an empty graph, an empty
+        clustering with ``codelength`` 0.0 is returned without running
+        Infomap.
+
+    Raises
+    ------
+    ValueError
+        If both ``trials`` and ``num_trials`` are passed.
+    """
     ig = _validate_igraph_graph(g)
     if "num_trials" in infomap_options:
         raise ValueError("Pass only one of `trials` and `num_trials`.")

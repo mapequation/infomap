@@ -89,8 +89,9 @@ because each codebook must name many nodes with long codewords. When you compare
 two partitions of the same network, the one with smaller $L$ compresses the flow
 better and captures more of its community structure.
 
-For undirected networks, node visit frequencies equal normalised link weights, so
-Infomap needs no teleportation. For directed networks Infomap uses a random-surfer
+For undirected networks, a node's visit frequency equals its normalised strength
+(its total incident link weight divided by the network total), so Infomap needs
+no teleportation. For directed networks Infomap uses a random-surfer
 model with teleportation probability $\tau = 0.15$ (the conventional choice, one
 minus PageRank's 0.85 damping factor) to guarantee an ergodic stationary
 distribution.
@@ -108,7 +109,8 @@ H(\mathcal{Q}) = -\sum_{i=1}^m
 $$
 
 and module $i$'s codebook (one codeword per node plus an exit symbol, with
-$p_{\circlearrowright}^i = q_{i\curvearrowright} + \sum_{\alpha\in i} p_\alpha$) has
+$p_{\circlearrowright}^i = q_{i\curvearrowright} + \sum_{\alpha\in i} p_\alpha$,
+where $p_\alpha$ is node $\alpha$'s visit frequency from chapter 1) has
 entropy
 
 $$
@@ -164,8 +166,8 @@ The club famously split into two factions, but Infomap minimises the description
 length of the flow, not a sociological label. Nodes on the boundary between the
 factions can form their own transitional cluster where the walker's affiliation
 is split, and naming it shortens the code, so Infomap often reports more than two
-modules here. If you need exactly two modules, pass
-`preferred_number_of_modules=2`.
+modules here. To steer the search toward two modules, pass
+`preferred_number_of_modules=2` — a soft preference, not a hard constraint.
 ```
 
 ```{code-cell} python

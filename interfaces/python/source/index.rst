@@ -31,7 +31,7 @@ Quick start
 
 .. code-block:: bash
 
-    pip install infomap
+    pip install "infomap[networkx]"
 
 .. code-block:: python
 
@@ -39,7 +39,7 @@ Quick start
     import infomap
 
     graph = nx.karate_club_graph()
-    result = infomap.run(graph, seed=123, num_trials=20)
+    result = infomap.run(graph, seed=123, num_trials=20, silent=True)
 
     print(result.num_top_modules, "modules")
     print(result.modules())
@@ -81,12 +81,19 @@ Where to go
       Use Infomap with Scanpy and GraphRAG, and run it at scale on HPC
       schedulers.
 
+   .. grid-item-card:: Robustness & reliability
+      :link: robustness/index
+      :link-type: doc
+
+      Tell a partition that reflects real structure from one driven by
+      sampling noise, and regularize incomplete data.
+
 External resources
 ------------------
 
 - The `Infomap user guide <https://www.mapequation.org/infomap/>`_ on
   mapequation.org is the project portal and documents the command-line tool and
-  the **other interfaces (C++, R, JavaScript)**.
+  the other interfaces (C++, R, JavaScript).
 - `PyPI project <https://pypi.org/project/infomap/>`_
 - `GitHub repository <https://github.com/mapequation/infomap>`_ for
   source, issues, and discussions.
@@ -112,6 +119,7 @@ External resources
    faq
    api/index
    the-infomap-class
+   examples/index
    references
    citing
    article-companion/index

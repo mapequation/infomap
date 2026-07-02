@@ -130,7 +130,7 @@ edges = [
 
 ```{code-cell} python
 # On a cluster each entry below would be a separate job-array task.
-# --trial-offset shifts the global trial index so seeds never overlap.
+# Each shard uses a distinct base seed so their trial seeds never overlap.
 shard_specs = [
     {"shard_id": 0, "seed": 10, "num_trials": 4},
     {"shard_id": 1, "seed": 20, "num_trials": 4},
@@ -267,8 +267,9 @@ Key points about this script:
   uses exactly the cores the scheduler allocated.
 - `--parallel-trials` runs the 25 per-shard trials concurrently across
   those cores.
-- `--trial-results` writes the shard JSON; `--no-final-output` skips
-  writing a per-shard best-result tree (the merge produces the final one).
+- `--trial-results` writes the shard JSON along with a per-shard best-result
+  tree; `--no-final-output` skips the aggregate default output (the merge
+  produces the final result).
 - All shards use the same `--seed 123`. Trial `i` in shard `k` uses seed
   `123 + offset_k + i`, which guarantees globally unique seeds.
 

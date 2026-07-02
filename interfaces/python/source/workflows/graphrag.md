@@ -14,11 +14,13 @@ kernelspec:
 
 ```{admonition} At a glance
 :class: tip
-The `infomap.graphrag` adapter reads the entity and relationship Parquet tables
-produced by a GraphRAG pipeline, runs Infomap on the resulting weighted graph,
-and returns GraphRAG-style community tables ready to drop into a retrieval
-pipeline.
+The `infomap.tl.graphrag` adapter reads the entity and relationship Parquet
+tables produced by a GraphRAG pipeline, runs Infomap on the resulting weighted
+graph, and returns GraphRAG-style community tables ready to drop into a
+retrieval pipeline.
 ```
+
+Install the GraphRAG support with `pip install "infomap[graphrag]"`.
 
 ## Communities as retrieval units
 
@@ -34,10 +36,10 @@ finds the partition that minimises the description length of a random walk over
 the weighted graph (see {doc}`/concepts/the-map-equation`). Whether that flow
 view groups your entities more usefully than modularity depends on the graph;
 running both and comparing is reasonable. What this page provides is the
-plumbing: the adapter in `infomap.graphrag` handles the column mapping, node-id
-translation, hierarchy extraction, and Parquet output, so an Infomap partition
-drops into GraphRAG's own table schema and the downstream summarisation and
-retrieval steps run unchanged.
+plumbing: the adapter in `infomap.tl.graphrag` handles the column mapping,
+node-id translation, hierarchy extraction, and Parquet output, so an Infomap
+partition drops into GraphRAG's own table schema and the downstream
+summarisation and retrieval steps run unchanged.
 
 ## What Infomap optimises here
 
@@ -53,7 +55,7 @@ default.
 
 ### Build a synthetic GraphRAG dataset
 
-The `infomap.graphrag` adapter expects two Parquet tables (or two DataFrames)
+The `infomap.tl.graphrag` adapter expects two Parquet tables (or two DataFrames)
 with specific column names:
 
 | Table | Required columns | Notes |
@@ -107,7 +109,7 @@ expects. You can call it directly to preview the mapping before running the full
 pipeline, which helps when debugging column-name mismatches.
 
 ```{code-cell} python
-from infomap.graphrag import read_graphrag
+from infomap.tl.graphrag import read_graphrag
 
 graph = read_graphrag(entities, relationships)
 
@@ -125,7 +127,7 @@ weighted graph, runs Infomap, and returns a `GraphRAGRunResult` with two tables:
 each hierarchy level).
 
 ```{code-cell} python
-from infomap.graphrag import run_graphrag_communities
+from infomap.tl.graphrag import run_graphrag_communities
 
 result = run_graphrag_communities(
     input_dir=input_dir,
@@ -227,7 +229,7 @@ You can also write the tables separately using `write_graphrag_communities` if
 you have already run Infomap and just want to export:
 
 ```{code-cell} python
-from infomap.graphrag import write_graphrag_communities
+from infomap.tl.graphrag import write_graphrag_communities
 
 nodes, communities = write_graphrag_communities(
     result_with_output.infomap,
@@ -250,18 +252,18 @@ communities[["id", "level", "size", "entity_ids"]]
 
 ## API pointers
 
-- {func}`infomap.graphrag.read_graphrag` translates entity/relationship
+- {func}`infomap.tl.graphrag.read_graphrag` translates entity/relationship
   DataFrames or Parquet paths into a `GraphRAGGraph` with mapped node ids. Key
   parameters: `entity_id_col`, `entity_title_col`, `source_col`, `target_col`,
   `weight_col`, `endpoint_col` (`"title"` or `"id"`).
-- {func}`infomap.graphrag.run_graphrag_communities` is the one-call pipeline: it
+- {func}`infomap.tl.graphrag.run_graphrag_communities` is the one-call pipeline: it
   reads tables, runs Infomap, and optionally writes outputs. It returns a
   `GraphRAGRunResult` with `.infomap`, `.graph`, `.nodes`, and `.communities`.
-- {func}`infomap.graphrag.write_graphrag_communities` writes a pre-run Infomap
+- {func}`infomap.tl.graphrag.write_graphrag_communities` writes a pre-run Infomap
   result to disk as GraphRAG-compatible Parquet tables.
-- {class}`infomap.graphrag.GraphRAGGraph` holds the entity/relationship tables,
+- {class}`infomap.tl.graphrag.GraphRAGGraph` holds the entity/relationship tables,
   the edge arrays, and the bidirectional entity-id ↔ node-id mappings.
-- {class}`infomap.graphrag.GraphRAGRunResult` bundles the `Infomap` object, the
+- {class}`infomap.tl.graphrag.GraphRAGRunResult` bundles the `Infomap` object, the
   `GraphRAGGraph`, and the two output DataFrames.
 - {attr}`infomap.Infomap.codelength` and {attr}`infomap.Infomap.num_top_modules`
   report the quality and structure of the solution after a run.

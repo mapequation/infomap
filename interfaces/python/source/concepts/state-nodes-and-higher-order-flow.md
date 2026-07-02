@@ -51,8 +51,8 @@ hub airport can belong to several regional systems.
 
 ## The map equation on state nodes
 
-A higher-order network is a set of state nodes $\{\alpha_i\}$ (state $i$ of
-physical node $\alpha$) with transitions between them. The map equation is
+A higher-order network is a set of state nodes $\{\alpha_i\}$ (state node
+$\alpha$ of physical node $i$) with transitions between them. The map equation is
 unchanged in form,
 
 $$

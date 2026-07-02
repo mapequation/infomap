@@ -1,7 +1,8 @@
 Installation
 ============
 
-Infomap is available on `PyPI`_. Install it with:
+Infomap requires Python 3.11 or later and is available on `PyPI`_. Install it
+with:
 
 .. code-block:: bash
 
@@ -27,6 +28,7 @@ Install optional integrations for common research workflows:
     pip install "infomap[pandas]"
     pip install "infomap[scipy]"
     pip install "infomap[anndata]"
+    pip install "infomap[graphrag]"
 
 Or install all optional integrations at once:
 
@@ -42,13 +44,13 @@ available with:
 
 .. code-block:: bash
 
-    infomap -v
+    infomap -V
 
 Command line usage:
 
 .. code-block:: bash
 
-    infomap [options] network_data destination
+    infomap network_file out_directory [options]
 
 For a list of available options, run:
 
@@ -71,7 +73,7 @@ It also creates ``im = Infomap()`` and provides ``summary()`` and
 
 .. code-block:: bash
 
-    infomap-shell examples/networks/twotriangles.net
+    infomap-shell mynetwork.net
 
 Shell completion
 ----------------
@@ -89,3 +91,5 @@ Install shell completion scripts manually with:
 For Zsh, make sure ``~/.zfunc`` is in ``fpath`` and ``compinit`` is loaded from
 ``~/.zshrc``. For Bash, make sure ``bash-completion`` is sourced from
 ``~/.bashrc``.
+
+Next, continue to :doc:`quickstart` for the smallest Python API examples.

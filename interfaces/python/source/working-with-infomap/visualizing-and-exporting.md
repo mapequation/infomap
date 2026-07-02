@@ -15,8 +15,8 @@ kernelspec:
 ```{admonition} At a glance
 :class: tip
 This chapter covers the docs visualisation helper, the in-memory
-graph export (`to_networkx` / `to_igraph` for GraphML and GEXF), and the native
-`.tree` / `.clu` formats written by the stateful Infomap.
+graph export (`to_networkx` / `to_igraph` for GraphML and, via NetworkX, GEXF),
+and the native `.tree` / `.clu` formats written by the stateful Infomap.
 ```
 
 ## A picture and a file
@@ -30,7 +30,7 @@ covers two ways to get it out:
 
 The in-memory export turns the result into an annotated graph with
 {func}`infomap.to_networkx` or {func}`infomap.to_igraph`, which you then write
-with the graph library's own writer (GraphML, GEXF). The stateful
+with the graph library's own writer (GraphML for both; GEXF is NetworkX-only). The stateful
 {class}`~infomap.Infomap` writes the engine's native text formats, `.tree` and
 `.clu`.
 
@@ -111,7 +111,7 @@ axes[1].set_title("seed=99")
 fig.tight_layout()
 ```
 
-The helper is short (~40 lines). For production figures, copy
+For production figures, copy
 `interfaces/python/source/_ext/docs_viz.py` and adapt it.
 
 ### Export to GraphML and GEXF
@@ -262,9 +262,10 @@ print("Temp directory removed.")
   `infomap_module`, `infomap_path`, per-level ids, and `flow`; write it with
   `nx.write_graphml` / `nx.write_gexf`.
 - {func}`infomap.to_igraph` returns the same annotation on an `igraph.Graph`.
-- {func}`infomap.export.write_graphml`, {func}`infomap.export.write_gexf`, and
-  {func}`infomap.export.annotate_networkx_graph` are convenience wrappers around
-  that pattern.
+- {func}`infomap.io.export.write_graphml`, {func}`infomap.io.export.write_gexf`,
+  and {func}`infomap.io.export.annotate_networkx_graph` are convenience wrappers
+  around that pattern. They take a post-run stateful {class}`~infomap.Infomap`,
+  not a {class}`~infomap.Result`. (`write_gexf` supports NetworkX only.)
 
 **Native engine formats** (written by the stateful {class}`~infomap.Infomap`)
 

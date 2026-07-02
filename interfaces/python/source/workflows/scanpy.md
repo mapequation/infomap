@@ -211,7 +211,8 @@ sc.pl.umap(
 ## Pitfalls
 
 - **Scanpy is not a dependency of `infomap`.** `infomap.tl.infomap` reads an
-  AnnData you already built; install Scanpy yourself.
+  AnnData you already built. Install the AnnData support with
+  `pip install "infomap[anndata]"`, and install Scanpy itself separately.
 - **Results follow the neighbour graph.** They depend on your `sc.pp.neighbors`
   settings (`n_neighbors`, the representation), so build that graph deliberately.
 - **Compare with another method.** Cross-tabulate against Leiden; the cells that

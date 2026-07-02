@@ -29,7 +29,11 @@ FACADE_END = "    # === END generated ==="
 # `pretty` is a deprecated no-op kept for backward compatibility. It is inserted
 # into the natural catalog order right after the catalog param named here.
 _FACADE_ONLY_PARAMS = {
-    "pretty": {"default": "False", "doc_type": None, "doc": None},
+    "pretty": {
+        "default": "False",
+        "doc_type": "bool, optional",
+        "doc": "Deprecated. Accepted for backward compatibility; has no effect.",
+    },
 }
 
 # Where each facade-only param is spliced into the natural catalog order: it is
@@ -235,9 +239,32 @@ def generate_python(catalog: ParameterCatalog) -> str:
             "        return cls(**{name: mapping[name] for name in _OPTION_FIELD_NAMES if name in mapping})",
             "",
             "    def to_kwargs(self):",
+            '        """Return the options as a keyword-argument dict.',
+            "",
+            "        Returns",
+            "        -------",
+            "        dict",
+            "            A dict with one entry per option field, suitable for",
+            "            ``Infomap(**options.to_kwargs())``.",
+            '        """',
             "        return {name: getattr(self, name) for name in _OPTION_FIELD_NAMES}",
             "",
             "    def to_args(self, base_args: str | None = None):",
+            '        """Render the options as an Infomap command-line argument string.',
+            "",
+            "        Options that keep their default values render no flags.",
+            "",
+            "        Parameters",
+            "        ----------",
+            "        base_args : str, optional",
+            "            Raw Infomap arguments to prepend before the rendered flags.",
+            "",
+            "        Returns",
+            "        -------",
+            "        str",
+            "            The rendered argument string, prefixed by ``base_args`` if",
+            "            given.",
+            '        """',
             "        options = self.to_kwargs()",
             "        rendered_args = []",
             "",
@@ -634,9 +661,9 @@ def _render_facade_signature(names, index, indent="        "):
 def _render_facade_docstring_params(names, index):
     lines = []
     for name in names:
-        if name in _FACADE_ONLY_PARAMS:
-            continue
         info = index[name]
+        if info["doc"] is None:
+            continue
         lines.append(f"        {name} : {info['doc_type']}")
         lines.extend(wrap_doc(info["doc"], "            "))
     return lines
@@ -704,6 +731,11 @@ def generate_facade(catalog: ParameterCatalog) -> str:
         )
     )
     lines.extend(_render_facade_docstring_params(names, index))
+    lines.append("")
+    lines.append("        Returns")
+    lines.append("        -------")
+    lines.append("        Result")
+    lines.append("            The result of this run. See :class:`~infomap.Result`.")
     lines.append("")
     lines.append("        See Also")
     lines.append("        --------")

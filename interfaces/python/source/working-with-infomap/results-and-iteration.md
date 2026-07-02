@@ -19,7 +19,7 @@ as properties, per-node assignments through `modules()` and `nodes()`, and
 tabular output through `to_dataframe()`.
 ```
 
-## Which accessor to reach for
+## What the Result holds
 
 The partition is more than a list of labels: every node carries a flow value
 that quantifies how much of the random walk visits it, and the full hierarchical
@@ -149,7 +149,8 @@ is stable across calls for the same run.
 
 For hierarchical results with more than two levels, pass `depth=k` to slice the
 tree at depth $k$. Level 1 gives top modules; level 2 gives sub-modules, and so
-on up to `result.num_levels`.
+on down to the finest module level, `result.num_levels - 1` (the leaf nodes
+themselves occupy the last level).
 
 ```{code-cell} python
 # Three clusters, each with three dense sub-communities.
@@ -175,8 +176,10 @@ print(f"Sub-modules      (depth 2): {sorted(set(sub_mods.values()))}")
 ### Iterating over nodes
 
 When you need flow alongside module membership, iterate over `result.nodes()`.
-Each node is an immutable view exposing `node_id`, `module_id`, and `flow` (plus
-`path`, `name`, and `layer_id`):
+Each node is an immutable view; the attributes you reach for most are `node_id`,
+`module_id`, and `flow`, alongside `path`, `name`, and `layer_id`. See
+{class}`~infomap.TreeNode` for the full set (including `state_id`, `depth`, and
+`modular_centrality`):
 
 ```{code-cell} python
 print(f"{'node_id':>8}  {'module_id':>10}  {'flow':>10}")
@@ -226,6 +229,10 @@ low flow are peripheral communities that the walker rarely visits.
 
 ### Visualising the partition
 
+`draw_partition` is a small helper that ships with these docs (in
+`_ext/docs_viz.py`), not part of the `infomap` package; see
+{doc}`visualizing-and-exporting` for the full treatment of plotting and export.
+
 ```{code-cell} python
 import matplotlib.pyplot as plt
 from myst_nb import glue
@@ -269,9 +276,9 @@ print(f"Best (10-trial run): {result.codelength:.6f}")
 
 A tight spread means most trials recover the same strong community structure. A
 wide spread, or a best-of-10 value below the single-trial minimum, signals a
-degenerate solution landscape where more trials are warranted. The karate club
-shows a small spread because its community structure is pronounced. Large noisy
-networks spread wider.
+degenerate solution landscape where more trials are warranted. The karate club's
+community structure is pronounced enough that every trial finds the same
+codelength; large noisy networks spread wider.
 
 ## Pitfalls
 

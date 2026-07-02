@@ -28,6 +28,13 @@ The same call accepts a NetworkX or igraph graph, a SciPy sparse matrix, a
 links. Keyword arguments configure the engine: ``seed``, ``num_trials``,
 ``directed`` for a directed flow model, and so on.
 
+Without any graph library installed, the bundled example networks in
+:mod:`infomap.datasets` work directly:
+
+.. code-block:: python
+
+    result = infomap.run(infomap.datasets.two_triangles(), silent=True)
+
 Build a network step by step
 -----------------------------
 
@@ -104,7 +111,8 @@ The stateful Infomap class
 Existing code that builds an :class:`infomap.Infomap` instance, calls ``add_*``,
 and then ``run()`` keeps working unchanged: ``run()`` now returns the same
 :class:`~infomap.Result`. New code should prefer :func:`infomap.run` for
-one-shot use and :class:`~infomap.Network` for incremental construction.
+one-shot use and :class:`~infomap.Network` for incremental construction. See
+:doc:`the-infomap-class` for the full migration guide.
 
 Next steps
 ----------
