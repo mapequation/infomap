@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file. Releases are automated with [release-please](https://github.com/googleapis/release-please), using [Conventional Commits](https://www.conventionalcommits.org) to determine version bumps and changelog entries.
 
+## [2.15.0](https://github.com/mapequation/infomap/compare/v2.14.0...v2.15.0) (2026-07-02)
+
+
+### Features
+
+* **python:** add infomap.datasets with the bundled example networks ([#712](https://github.com/mapequation/infomap/issues/712)) ([3e083f3](https://github.com/mapequation/infomap/commit/3e083f3578a03a88a039fca4bd43cf7c1a634d76))
+
+
+### Bug Fixes
+
+* **python:** import pandas lazily to avoid OpenMP duplicate-runtime abort ([#709](https://github.com/mapequation/infomap/issues/709)) ([eaffa4a](https://github.com/mapequation/infomap/commit/eaffa4a481f8164b5067eaabe36d3a0cab80a5b1))
+
+
+### Performance Improvements
+
+* **python:** compute effective-num-modules lazily in Result ([#701](https://github.com/mapequation/infomap/issues/701)) ([c147cb0](https://github.com/mapequation/infomap/commit/c147cb0ba4561d41790f0743e529d2d390416de4))
+
 ## [2.14.0](https://github.com/mapequation/infomap/compare/v2.13.0...v2.14.0) (2026-06-30)
 
 
