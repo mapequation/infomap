@@ -27,6 +27,21 @@ def _stable_unique_labels(labels):
     return unique
 
 
+def _edge_weight(data, weight):
+    """Effective link weight for an edge's data dict: a missing key or a
+    ``None`` value means the edge is unweighted (1.0).
+
+    Weight validity (finite, non-negative) is enforced once by the C++ engine
+    at ingestion, not re-checked per edge here. networkx graphs are read
+    edge-by-edge in Python, so a per-edge Python check is the costly place to
+    validate -- unlike the vectorized scipy/edge_index adapters, which validate
+    a whole array cheaply."""
+    if weight is None:
+        return 1.0
+    w = data.get(weight)
+    return 1.0 if w is None else w
+
+
 def _communities_from_infomap(infomap, node_mapping):
     communities = {}
 
@@ -270,7 +285,7 @@ def add_networkx_graph(
             target_layer_id = layer_ids[target]
             source_node_id = phys_map[node_ids[source]]
             target_node_id = phys_map[node_ids[target]]
-            edge_weight = data[weight] if weight is not None and weight in data else 1.0
+            edge_weight = _edge_weight(data, weight)
 
             if multilayer_inter_intra_format:
                 if source_layer_id == target_layer_id:
@@ -303,7 +318,7 @@ def add_networkx_graph(
                 )
     else:
         for source, target, data in g.edges.data():
-            edge_weight = data[weight] if weight is not None and weight in data else 1.0
+            edge_weight = _edge_weight(data, weight)
             infomap.add_link(node_map[source], node_map[target], edge_weight)
 
     if meta_attribute is not None:
