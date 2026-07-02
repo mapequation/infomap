@@ -41,14 +41,18 @@ attribute or explicit directedness, build the network first with a
 | igraph `Graph` | `infomap.run(g)` | `Network.from_igraph(g, edge_weights=…)` |
 | SciPy sparse adjacency | `infomap.run(A)` | `Network.from_scipy_sparse_matrix(A, directed=…)` |
 | `(2, E)` edge index | `infomap.run(edge_index)` | `Network.from_edge_index(ei, …)` |
-| link rows (pandas / NumPy / tuples) | `infomap.run(rows)` | `Network().add_links(rows)` |
+| link rows (NumPy array / tuples) | `infomap.run(rows)` | `Network().add_links(rows)` |
+| pandas `DataFrame` of links | `infomap.run(df.to_numpy())` | `Network().add_links(df.to_numpy())` |
 | network file | `infomap.run("graph.net")` | `Network.from_file(path)` |
 
 Keyword arguments to {func}`infomap.run` configure the *engine* (``seed``,
-``num_trials``, ``directed``, …). Arguments that govern *how the input is read*
-belong to the ``Network.from_*`` constructors; passing one to {func}`infomap.run`
-raises with a pointer to the right constructor rather than silently building a
-different graph.
+``num_trials``, ``markov_time``, …). Arguments that govern *how the input is
+read* belong to the ``Network.from_*`` constructors; passing one to
+{func}`infomap.run` raises with a pointer to the right constructor rather than
+silently building a different graph. For a NetworkX or igraph graph the
+directedness is read from the graph object itself, so no ``directed`` argument
+is needed; for a SciPy matrix or edge index, pass ``directed=`` to the matching
+``from_*`` constructor.
 
 Two library-idiomatic one-shot helpers return native types instead of a
 {class}`~infomap.Result`: {func}`infomap.find_communities` (a NetworkX-style
@@ -101,8 +105,8 @@ named = {net.node_id_to_label[nid]: mid for nid, mid in result.modules().items()
 print("Named assignments:", named)
 ```
 
-**Directed graphs**: pass a `DiGraph` and add ``directed=True`` to use a
-directed-flow model with teleportation. **Weighted edges** are read from the
+**Directed graphs**: pass a `DiGraph` and the adapter selects the directed-flow
+model with teleportation automatically. **Weighted edges** are read from the
 ``"weight"`` attribute by default; for a different attribute, build with
 ``Network.from_networkx(g, weight="capacity")`` and run the network.
 
@@ -168,9 +172,9 @@ result = infomap.run(A, two_level=True, seed=123, num_trials=5, silent=True)
 print(f"SciPy route: {result.num_top_modules} modules, {result.codelength:.4f} bits/step")
 ```
 
-To read the matrix as **directed** (``A[i, j]`` is an edge from row ``i`` to
-column ``j``) or to ignore the stored values (``weighted=False``), build with the
-constructor and run the network:
+How the matrix is read is set on the constructor: ``directed=True`` reads
+``A[i, j]`` as an edge from row ``i`` to column ``j``, and ``weighted=False``
+ignores the stored values. Here with the defaults spelled out:
 
 ```{code-cell} python
 net = Network.from_scipy_sparse_matrix(A, directed=False, weighted=True)
@@ -178,8 +182,8 @@ result = run(net, two_level=True, seed=123, num_trials=5, silent=True)
 print(f"via Network: {result.num_top_modules} modules")
 ```
 
-`node_ids` gives external ids in matrix-row order; the mapping is stored on
-{attr}`~infomap.Network.node_id_to_label`, the same pattern as
+Pass ``node_ids=`` to give the matrix rows external ids; the mapping is stored
+on {attr}`~infomap.Network.node_id_to_label`, the same pattern as
 ``from_networkx``.
 
 ## Edge lists: pandas, NumPy, tuples

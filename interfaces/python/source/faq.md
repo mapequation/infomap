@@ -12,16 +12,18 @@ SciPy sparse adjacency matrix, a `(2, E)` edge index, an edge list, or a network
 file. For non-default loading, build a `Network` with `Network.from_networkx`,
 `from_igraph`, `from_scipy_sparse_matrix`, or the `add_*` verbs. The quickest
 path for a NetworkX graph is `infomap.run(g)` (or `infomap.find_communities(g)`
-for a `list[set]`). See {doc}`Building a network <working-with-infomap/inputs>`.
+for a `list[set]`). Bundled example networks live in {mod}`infomap.datasets`.
+See {doc}`Building a network <working-with-infomap/inputs>`.
 
 ## Results and determinism
 
-### Why do repeated runs give slightly different partitions?
+### Why do different seeds give slightly different partitions?
 
 Infomap's search is stochastic: each trial starts from a different random node
-order and can settle in a different local optimum. Run several trials with
-`num_trials=` (Infomap keeps the lowest-codelength result) and set `seed=` for
-reproducibility. See {doc}`The map equation <concepts/the-map-equation>`.
+order and can settle in a different local optimum, so changing `seed=` can
+change the partition. Repeated runs with the same seed are identical (the
+default is `seed=123`). Run several trials with `num_trials=` and Infomap
+keeps the lowest-codelength result. See {doc}`The map equation <concepts/the-map-equation>`.
 
 ### How many trials should I use, and how do I know the result is reliable?
 
@@ -129,20 +131,22 @@ identity across time. See {doc}`Temporal networks <flow-models/temporal>`.
 
 ### My codelength goes up when I set `meta_data_rate > 0`: is that wrong?
 
-No. `result.codelength` reports only the topological map equation; the search
-minimises the *combined* objective, trading higher topological codelength for
-attribute-homogeneous modules. See {doc}`Networks with metadata <flow-models/metadata>`.
+No. `result.codelength` reports the *combined* objective the search minimises:
+the map equation plus `meta_data_rate` times the metadata codelength. The
+search trades higher topological codelength for
+attribute-homogeneous modules, and the metadata term adds to the reported
+value. See {doc}`Networks with metadata <flow-models/metadata>`.
 
 ### How do I tell Infomap my network is bipartite?
 
-Number the nodes so the second type starts at a fixed id, then set
-`Network().bipartite_start_id = start_id`, then `infomap.run(net)`. See
-{doc}`Bipartite networks <flow-models/bipartite>`.
+Number the nodes so the second type starts at a fixed id, set
+`net.bipartite_start_id = start_id` on your `Network`, then `infomap.run(net)`.
+See {doc}`Bipartite networks <flow-models/bipartite>`.
 
 ### Can I run Infomap directly on a hypergraph?
 
 Not directly: encode the hypergraph as a network first (e.g. a bipartite
-incidence network via `Network().bipartite_start_id`). The representation you choose
+incidence network with `bipartite_start_id` set). The representation you choose
 changes the communities found. See {doc}`Bipartite networks <flow-models/bipartite>`.
 
 ### My sparse network gives lots of tiny modules: how do I avoid overfitting?
@@ -172,8 +176,9 @@ point.
 ### How do I use Infomap inside a Scanpy / AnnData workflow?
 
 After `sc.pp.neighbors(adata)`, call `infomap.tl.infomap(adata, key_added="infomap")`.
-It clusters `adata.obsp["connectivities"]` and writes labels to `adata.obs` (and the
-codelength to `adata.uns["infomap"]`). See {doc}`Scanpy and AnnData <workflows/scanpy>`.
+It clusters `adata.obsp["connectivities"]` and writes labels to `adata.obs` (and a
+run-metadata dict, including the codelength, to `adata.uns["infomap"]`). See
+{doc}`Scanpy and AnnData <workflows/scanpy>`.
 
 ### Can I run Infomap on GraphRAG entity/relationship tables?
 
@@ -184,8 +189,10 @@ Yes: the `infomap.graphrag` adapter reads entity/relationship tables (columns `i
 
 ### How do I make Infomap use only the cores my scheduler allocated?
 
-Pass `num_threads="auto"` and Infomap honours `SLURM_CPUS_PER_TASK`, `OMP_NUM_THREADS`,
-and the process cpuset in priority order. See {doc}`Running at scale (HPC) <workflows/hpc>`.
+The default `num_threads="auto"` already resolves the budget from, in priority
+order, `INFOMAP_NUM_THREADS`, `SLURM_CPUS_PER_TASK`, `OMP_NUM_THREADS`, the
+process cpuset, and finally the hardware. Set `num_threads=` to a positive
+integer to override. See {doc}`Running at scale (HPC) <workflows/hpc>`.
 
 ### How do I run many trials across cluster jobs and combine them?
 

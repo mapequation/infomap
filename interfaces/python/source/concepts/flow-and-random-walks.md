@@ -45,10 +45,9 @@ visit frequency.
 
 The modules are the regions where the walker stays for many steps before it
 moves on. Inside such a region the walker's path is long and locally
-predictable, broken only by rare crossings. A two-level code exploits those long
-stretches: reuse short codewords inside each region, and pay a brief exit toll
-only when the walker crosses to another. Infomap returns the partition with the
-shortest average description length.
+predictable, broken only by rare crossings. The next chapter turns those long
+stretches into a two-level code and defines the description length that Infomap
+minimises.
 
 **Directed** networks need one more ingredient. A directed graph can have
 dangling nodes (no out-edges) or sink components the walker can never leave, so
@@ -83,10 +82,12 @@ $$
 p_{i,\,t+1} = (1 - \tau)\sum_j T_{ij}\,p_{j,t} + \tau\,\frac{1}{n},
 $$
 
-and the unique stationary solution $\pi$ exists for any $\tau > 0$. The $1/n$
-term is the simplest, uniform teleportation; by default Infomap teleports to a
-node with probability proportional to its in-strength. The teleportation steps
-are unrecorded, as described above.
+and the unique stationary solution $\pi$ exists for any $\tau > 0$. At a dangling
+node the walker has no out-links to follow, so it teleports with probability one
+rather than at rate $\tau$. The $1/n$ term is the simplest, uniform
+teleportation; by default Infomap teleports to a node with probability
+proportional to its in-strength. The teleportation steps are unrecorded, as
+described above.
 
 These per-node flows $\pi_i$, together with how often the walker crosses between
 candidate modules, are the inputs the map equation needs. The next chapter,

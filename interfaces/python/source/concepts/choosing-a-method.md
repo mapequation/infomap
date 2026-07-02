@@ -67,17 +67,17 @@ edges. The map equation $L(\mathsf{M})$ is instead
 $$
 L(\mathsf{M}) =
   q_{\curvearrowright} H(\mathcal{Q})
-  + \sum_{i=1}^{m} p_{\circlearrowright}^i H(\mathcal{P}^i),
+  + \sum_{i} p_{\circlearrowright}^i H(\mathcal{P}^i),
 $$
 
-the average cost of coding a random walk: bits for *crossing* module boundaries
-plus bits for *moving inside* them.
+summed over the modules $i$: the average cost of coding a random walk, bits for
+*crossing* module boundaries plus bits for *moving inside* them.
 
 :::{toggle}
 **A note on the resolution limit**
 
-Modularity has a resolution limit: it tends not to separate communities smaller
-than roughly $\sqrt{2m}$ edges, however cohesive they are
+Modularity has a resolution limit: it tends not to separate communities with
+fewer than roughly $\sqrt{m/2}$ internal links, however cohesive they are
 {cite:p}`fortunato2007resolution`. Leiden can sidestep it with a
 resolution-limit-free objective such as the Constant Potts Model, or by tuning its
 `resolution_parameter`. The map equation has a resolution limit too, weaker but
@@ -117,6 +117,7 @@ louvain = nx.community.louvain_communities(g, seed=123)
 louvain_mods = {n: c for c, comm in enumerate(louvain) for n in comm}
 
 ig_g = ig.Graph(edges=list(g.edges()), n=g.number_of_nodes(), directed=False)
+random.seed(123)  # python-igraph draws from the global RNG
 leiden = ig_g.community_leiden(objective_function="modularity", n_iterations=10)
 leiden_mods = {n: m for n, m in enumerate(leiden.membership)}
 

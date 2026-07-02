@@ -9,7 +9,7 @@ Scanpy / AnnData
 GraphRAG
 --------
 
-.. currentmodule:: infomap.graphrag
+.. currentmodule:: infomap.tl.graphrag
 
 .. autofunction:: read_graphrag
 .. autofunction:: run_graphrag_communities
@@ -30,3 +30,5 @@ Distributed trials
 
 .. autoclass:: MergeSummary
    :members:
+
+.. autoexception:: MergeError

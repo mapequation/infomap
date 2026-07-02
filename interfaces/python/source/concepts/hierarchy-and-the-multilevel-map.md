@@ -26,7 +26,7 @@ neighbourhoods that hold blocks. A plain two-level partition, one
 index codebook over one set of leaf modules, sees only one cross-section of that
 structure at a time.
 
-Any two-level method has a *resolution limit* {cite:p}`kawamoto2015resolution`: modules with too
+The two-level map equation has a *resolution limit* {cite:p}`kawamoto2015resolution`: modules with too
 few internal links go missing (the threshold grows with the logarithm of the
 total boundary-crossing traffic; the toggle below gives the exact bound),
 because merging them into a larger module shortens the two-level description. In
@@ -48,7 +48,7 @@ smaller unit often enough that the added name pays for itself in shorter
 directions overall.
 
 The multilevel map equation applies the same logic to random-walk descriptions.
-Each level of hierarchy is a set of nested index codebooks. When a walker stays
+Each level of hierarchy adds a set of nested codebooks. When a walker stays
 inside a module for a long time, giving that module its own sub-codebook for the
 nodes it visits shortens the description. The same objective, description
 length, decides whether to add another sub-level: Infomap keeps adding levels
@@ -122,9 +122,9 @@ $$
 \frac{4^{l_c}}{l_c + 1} \lesssim C.
 $$
 
-Contrast this with modularity, where the limit scales as $\sqrt{L}$ with
-total link count $L$. The map equation's dependence on the cut size $C$
-rather than $L$ is already much less restrictive, but it does not vanish.
+Contrast this with modularity, where the limit scales as $\sqrt{m}$ with
+total link count $m$. The map equation's dependence on the cut size $C$
+rather than $m$ is already much less restrictive, but it does not vanish.
 
 The *hierarchical* map equation evaluates the analogous update with the effective
 network size equal to the super-module plus its boundary links, not the full
@@ -255,10 +255,11 @@ other.
 This matches the theoretical picture {cite:p}`rosvall2011multilevel`: the
 network has dense intra-triangle flow, moderately dense intra-super-group flow
 (the unit-weight links joining a super-group's triangles), and weak
-inter-super-group flow (the three 0.8 links). Three levels of nested index
-codebooks capture exactly those three scales, and the hierarchical map
-equation confirms that the three-level description is more compressed than
-either a flat two-level partition or a one-level description.
+inter-super-group flow (the three 0.8 links). Three nested levels of codebooks
+capture exactly those three scales (two levels of index codebooks over the
+module codebooks), and the hierarchical map equation confirms that the
+three-level description is more compressed than either a flat two-level
+partition or a one-level description.
 
 ## API pointers
 

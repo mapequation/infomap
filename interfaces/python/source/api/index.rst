@@ -27,7 +27,7 @@ incremental, repeated-run workflows.
      - :func:`to_networkx` / :func:`to_igraph` and the GraphML / GEXF writers.
    * - :doc:`infomap`
      - The stateful :class:`Infomap` class with all configuration and run
-       methods.
+       methods; new code usually wants :func:`run` instead.
    * - :doc:`iterators`
      - :class:`InfoNode` and the tree-walking iterators returned by
        :meth:`Infomap.tree`, :meth:`Infomap.leaf_modules`, and friends.

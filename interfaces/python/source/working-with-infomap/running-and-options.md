@@ -14,8 +14,8 @@ kernelspec:
 
 ```{admonition} At a glance
 :class: tip
-Most runs need only a `seed`, a `num_trials` count, and a flow-model choice
-(`two_level` or `directed`). The rest of Infomap's options split into flow-model
+Most runs need only a `seed`, a `num_trials` count, and perhaps a flow-model
+choice such as `directed`. The rest of Infomap's options split into flow-model
 settings, which define the random walk, and search settings, which control how
 hard Infomap looks.
 ```
@@ -127,11 +127,13 @@ for num_trials in [1, 5, 20]:
     print(f"  num_trials={num_trials:2d}: L={result.codelength:.4f}, modules={result.num_top_modules}")
 ```
 
-Notice how `num_trials=1` with `seed=123` lands at a higher codelength (worse
-minimum) than `num_trials=20` with the same seed. The extra trials escape the
-local trap and find a partition that compresses the random walk more
-efficiently. The codelength converges: once you are reliably in the deepest
-valley, adding more trials does not change the answer {cite:p}`calatayud2019solution`.
+Here the single trial with `seed=123` lands at a higher codelength (worse
+minimum) than `num_trials=20` with the same seed: a single trial can settle in a
+local trap, and the extra trials find a partition that compresses the random
+walk more efficiently. Which single trial gets stuck depends on the seed, so
+the gap is not guaranteed for any particular seed. The codelength converges:
+once you are reliably in the deepest valley, adding more trials does not change
+the answer {cite:p}`calatayud2019solution`.
 
 **Rule of thumb.** Use `num_trials=1` for quick exploration. Use
 `num_trials=10` for most analyses. Use `num_trials=50` (or `converge=True`
@@ -216,8 +218,8 @@ direction on the same graph often misses the real community structure, because
 it treats every link as symmetric.
 
 ```{code-cell} python
-# A directed graph: three directed cycles connected by directed bridges.
-# The directed structure groups nodes by which cycle's flow they participate in.
+# A directed graph: three directed cliques connected by directed bridges.
+# The directed structure groups nodes by which clique's flow they participate in.
 G_dir = nx.DiGraph()
 # Three directed cliques
 for offset in [0, 4, 8]:
@@ -371,8 +373,9 @@ for name, graph in [("ring of cliques", G_ring), ("karate club", G_karate)]:
 
 ## API pointers
 
-The options in this chapter are keyword arguments to {func}`infomap.run` (and to
-{class}`infomap.Infomap` and {meth}`infomap.Network.run`). After a run, the
+The options in this chapter are keyword arguments to {func}`infomap.run` and to
+{class}`infomap.Infomap` ({meth}`infomap.Network.run` takes them bundled via
+its `options=` argument instead). After a run, the
 metrics live on the returned {class}`~infomap.Result`:
 
 - **{attr}`infomap.Result.codelength`** is the map equation value
@@ -408,9 +411,9 @@ For the full set of options as a searchable table, see the
 
 ## See also
 
-- **Options guide notebook** `examples/notebooks/options-guide.ipynb` lists every
-  option in a searchable table, generated from the installed package so it matches
-  your version. Start here for the exhaustive reference.
+- The {doc}`options guide notebook </examples/options-guide>` lists every
+  option in a searchable table, generated from the installed package so it
+  matches your version. Start here for the exhaustive reference.
 - The survey (§4) covers method selection and the flow-model justification
   {cite:p}`smiljanic2026survey`.
 - The quantitative case for multiple trials {cite:p}`calatayud2019solution`.
