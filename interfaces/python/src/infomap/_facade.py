@@ -120,9 +120,8 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
     >>> im = Infomap(silent=True, num_trials=10)
     >>> im.read_file("ninetriangles.net")
     >>> result = im.run()
-    >>> tol = 1e-4
-    >>> abs(result.codelength - 3.385830820341408) < tol
-    True
+    >>> result.codelength
+    3.3858
     >>> result.num_top_modules
     3
 
@@ -1907,9 +1906,8 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         >>> im.add_link(1, 4)
         >>> im.add_link(2, 4)
         >>> result = im.run()
-        >>> tol = 1e-4
-        >>> abs(result.codelength - 0.9182958340544896) < tol
-        True
+        >>> result.codelength
+        0.9183
 
 
         Parameters
@@ -1955,9 +1953,8 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         ...     4: 1
         ... }
         >>> result = im.run(no_infomap=True)
-        >>> tol = 1e-4
-        >>> abs(result.codelength - 3.4056390622295662) < tol
-        True
+        >>> result.codelength
+        3.4056
 
 
         Notes
