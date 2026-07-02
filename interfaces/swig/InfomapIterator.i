@@ -35,12 +35,11 @@ are leaf nodes). Returned by :meth:`Infomap.leaf_modules`.";
 %feature("docstring") infomap::InfomapIteratorPhysical
 "Like :class:`InfomapIterator`, but aggregates state nodes belonging to the
 same physical node within each leaf module. Returned by
-:meth:`Infomap.physical_tree`.";
+:meth:`Infomap.physical_tree` for memory networks.";
 
 %feature("docstring") infomap::InfomapLeafIteratorPhysical
 "Iterator over the leaf nodes of the partition tree, aggregating state nodes
-belonging to the same physical node within each leaf module. Returned by
-:meth:`Infomap.physical_nodes`.";
+belonging to the same physical node within each leaf module.";
 
 %feature("docstring") infomap::InfomapParentIterator
 "Iterator that walks upward from a node, parent by parent, until the root.";

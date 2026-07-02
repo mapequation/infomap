@@ -20,7 +20,7 @@ For contributing, security reporting, and maintainer workflows, see
    :target: https://github.com/mapequation/infomap/actions/workflows/ci.yml
    :alt: CI
 
-.. _Map equation: https://www.mapequation.org/publications.html#Rosvall-Axelsson-Bergstrom-2009-Map-equation?utm_source=infomap&utm_medium=readme&utm_campaign=infomap
+.. _Map equation: https://www.mapequation.org/publications.html?utm_source=infomap&utm_medium=readme&utm_campaign=infomap#Rosvall-Axelsson-Bergstrom-2009-Map-equation
 .. _`mapequation.org/infomap/`: https://www.mapequation.org/infomap/?utm_source=infomap&utm_medium=readme&utm_campaign=infomap
 .. _`CHANGELOG.md`: https://github.com/mapequation/infomap/blob/master/CHANGELOG.md
 .. _`CONTRIBUTING.md`: https://github.com/mapequation/infomap/blob/master/CONTRIBUTING.md
@@ -49,7 +49,7 @@ Install optional integrations for common Python graph and analysis workflows:
     pip install "infomap[igraph]"
     pip install "infomap[pandas]"
 
-Upgrades use the usual `pip` flow:
+Upgrades use the usual ``pip`` flow:
 
 .. code-block:: bash
 
@@ -84,9 +84,9 @@ For direct control over Infomap-specific options and result access:
 
 .. code-block:: python
 
-    from infomap import Infomap, InfomapOptions
+    from infomap import Infomap, Options
 
-    options = InfomapOptions(two_level=True, silent=True, num_trials=20, seed=123)
+    options = Options(two_level=True, silent=True, num_trials=20, seed=123)
     im = Infomap.from_options(options)
     im.add_link(0, 1)
     im.add_link(1, 2)
@@ -324,7 +324,7 @@ For contact information, see `mapequation.org/about.html`_.
 Terms of use
 ------------
 
-Infomap is released under a dual licence.
+Infomap is released under a dual license.
 
 The code is available under the GNU General Public License version 3 or any
 later version; see `LICENSE_GPLv3.txt`_.

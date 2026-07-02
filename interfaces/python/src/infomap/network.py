@@ -83,15 +83,15 @@ class Network:
 
     Parameters
     ----------
-    core : infomap._core.Core, optional
-        The engine boundary to build onto. If ``None``, a default silent,
+    core : optional
+        Internal engine handle to build onto. If ``None``, a default silent,
         no-file-output ``Core`` is created and owned by this ``Network``. When
         composed by :class:`infomap.Infomap`, the shared, options-configured
         ``Core`` is passed in.
     """
 
     #: ``{internal_id: label}`` mapping set by the library constructors
-    #: (``from_networkx``/``from_igraph``/``from_scipy_sparse``/``from_edge_index``).
+    #: (``from_networkx``/``from_igraph``/``from_scipy_sparse_matrix``/``from_edge_index``).
     #: Bare annotation: declares the instance attribute for type-checkers without
     #: creating it at runtime (no behaviour change).
     node_id_to_label: dict[int, Any]

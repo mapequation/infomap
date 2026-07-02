@@ -131,7 +131,8 @@ edges = [
 
 ```{code-cell} python
 # On a cluster each entry below would be a separate job-array task.
-# Each shard uses a distinct base seed so their trial seeds never overlap.
+# Each shard uses a distinct base seed so their trial seeds never overlap;
+# the SLURM recipe below instead shares one seed and offsets with trial_offset.
 shard_specs = [
     {"shard_id": 0, "seed": 10, "num_trials": 4},
     {"shard_id": 1, "seed": 20, "num_trials": 4},

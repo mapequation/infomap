@@ -592,9 +592,10 @@ class _InfomapResultsMixin:
 
         Returns
         -------
-        InfomapIteratorPhysical
+        iterator
             An iterator over each physical node in the tree, depth first from
-            the root
+            the root (:class:`InfomapIteratorPhysical` for memory networks,
+            :class:`InfomapIterator` for first-order networks)
 
         .. deprecated::
             Use ``result = im.run(); result.tree(states=False)``.
@@ -655,13 +656,13 @@ class _InfomapResultsMixin:
         See Also
         --------
         get_nodes
-        InfomapLeafIteratorPhysical
 
         Returns
         -------
-        InfomapLeafIteratorPhysical
+        iterator
             An iterator over each physical leaf node in the tree, depth first
-            from the root
+            from the root (the concrete iterator type depends on whether the
+            network has memory)
 
         .. deprecated::
             Use ``result = im.run(); result.nodes(states=False)``.

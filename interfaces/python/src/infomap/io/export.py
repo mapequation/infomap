@@ -302,7 +302,7 @@ def annotate_igraph_graph(
     Writes each vertex's module assignment (and optionally its tree path,
     per-level module ids, and flow) as string-valued vertex attributes,
     suitable for GraphML export. Vertices are matched to Infomap state ids by
-    igraph vertex index, as assigned by :meth:`Infomap.add_igraph_graph`.
+    igraph vertex index, as assigned by :meth:`infomap.Infomap.add_igraph_graph`.
 
     Parameters
     ----------
@@ -370,11 +370,11 @@ def to_networkx(
     include_hierarchy: bool = True,
     flow_attribute: str | None = "flow",
 ) -> Any:
-    """Build a NetworkX graph from a :class:`~infomap.result.Result`.
+    """Build a NetworkX graph from a :class:`~infomap.Result`.
 
     Nodes are the result's (state) nodes, keyed by ``state_id``, carrying the
     Infomap node ``name`` plus the module/path/flow attributes (the same
-    attribute scheme as :func:`~infomap.export.annotate_networkx_graph`). Edges come from the
+    attribute scheme as :func:`~infomap.io.export.annotate_networkx_graph`). Edges come from the
     partitioned network.
 
     Parameters
@@ -433,11 +433,11 @@ def to_igraph(
     include_hierarchy: bool = True,
     flow_attribute: str | None = "flow",
 ) -> Any:
-    """Build a python-igraph graph from a :class:`~infomap.result.Result`.
+    """Build a python-igraph graph from a :class:`~infomap.Result`.
 
     Vertices are the result's (state) nodes in ``state_id`` order, carrying the
     Infomap node ``name`` plus the module/path/flow attributes (the same
-    attribute scheme as :func:`~infomap.export.annotate_igraph_graph`). Edges come from the
+    attribute scheme as :func:`~infomap.io.export.annotate_igraph_graph`). Edges come from the
     partitioned network.
 
     Parameters

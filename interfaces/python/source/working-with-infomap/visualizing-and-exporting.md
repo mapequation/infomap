@@ -172,7 +172,9 @@ For igraph users, {func}`infomap.to_igraph` returns the same annotation on an
 
 The stateful {class}`~infomap.Infomap` writes the engine's native text formats:
 build one, run it, and call its `write_*` methods.
-These formats feed the mapequation.org Network Navigator and alluvial diagrams.
+These formats feed the mapequation.org tools: `.ftree` opens in the Network
+Navigator, and `.tree`/`.clu` load in the alluvial diagram generator and other
+scripts.
 
 ```{code-cell} python
 im = infomap.Infomap(two_level=True, seed=123, num_trials=10, silent=True)
@@ -275,9 +277,10 @@ print("Temp directory removed.")
   `flow` (all strings); write it with `nx.write_graphml` / `nx.write_gexf`.
 - {func}`infomap.to_igraph` builds the same graph as an `igraph.Graph`.
 - {func}`infomap.io.export.write_graphml`, {func}`infomap.io.export.write_gexf`,
-  and {func}`infomap.io.export.annotate_networkx_graph` are convenience wrappers
-  around that pattern. They take a post-run stateful {class}`~infomap.Infomap`,
-  not a {class}`~infomap.Result`. (`write_gexf` supports NetworkX only.)
+  and {func}`infomap.io.export.annotate_networkx_graph` instead annotate *your
+  own* graph with the partition. They take a post-run stateful
+  {class}`~infomap.Infomap`, not a {class}`~infomap.Result`. (`write_gexf`
+  supports NetworkX only.)
 
 **Native engine formats** (written by the stateful {class}`~infomap.Infomap`)
 

@@ -39,8 +39,9 @@ what you mean by "community".
 ## What each objective optimises
 
 **Modularity (Louvain, Leiden).** Both are usually run to maximise modularity, a
-static-density score against a degree-preserving null model. That null model is
-undirected, so by default both ignore edge direction. Leiden is a general
+static-density score against a degree-preserving null model. Standard
+modularity's null model is undirected, so edge direction is ignored unless you
+switch to a directed-modularity variant. Leiden is a general
 optimiser: it maximises whichever quality function you give it, adds a refinement
 step that guarantees internally connected communities, and reaches better optima
 than Louvain's greedy moves {cite:p}`traag2019leiden`. This page uses the

@@ -10,5 +10,8 @@ Options and multilayer inputs
 .. autoclass:: Options
    :members:
 
+.. autodata:: InfomapOptions
+   :no-value:
+
 .. autoclass:: MultilayerNode
    :members:

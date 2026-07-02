@@ -119,8 +119,8 @@ relax rate is ignored. See {doc}`Multilayer networks <flow-models/multilayer>`.
 
 ### How do I model a network with memory (higher-order flow)?
 
-Declare state nodes on a `Network` with `add_state_node(state_id, physical_id)`
-and link them with `add_link`. Memory lets a physical node appear in overlapping
+Declare state nodes on a `Network` with `add_state_node(state_id, node_id)`,
+where `node_id` is the physical node, and link them with `add_link`. Memory lets a physical node appear in overlapping
 modules. See {doc}`Memory and state networks <flow-models/memory-and-state>`.
 
 ### How do I cluster a time-varying (temporal) network?

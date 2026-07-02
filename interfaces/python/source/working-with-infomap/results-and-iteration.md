@@ -109,8 +109,9 @@ lazily on first access and then cached. The surface follows one convention:
   `result.nodes()`, `result.to_dataframe()`.
 
 A `Result` from an earlier run of a reused stateful {class}`~infomap.Infomap`
-raises if you read its node data after a later `run()`. The scalar properties
-stay readable.
+raises if you read its node data after a later `run()`. The eagerly captured
+scalar properties stay readable (the lazily computed `effective_num_*`
+properties must have been read at least once before the re-run).
 
 ### Summary statistics
 
@@ -284,7 +285,8 @@ codelength; large noisy networks spread wider.
 
 - **A `Result` goes stale if its network runs again.** Reading `nodes()` or
   `modules()` on a `Result` after a later `run()` on the same network raises;
-  finish reading a result before you re-run. The scalar properties stay readable.
+  finish reading a result before you re-run. The eagerly captured scalar
+  properties stay readable.
 - **Module ids carry no order or meaning.** They are stable within one run but
   arbitrary across runs; compare partitions with a metric, not id equality.
 - **`modules()` returns the top level by default.** Pass `depth=-1` for the

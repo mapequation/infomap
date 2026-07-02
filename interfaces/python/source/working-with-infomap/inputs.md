@@ -83,8 +83,10 @@ print(f"Modules:    {result.modules()}")     # {node_id: module_id}
 ```
 
 **Non-integer node labels** (strings, compound keys) work out of the box. The
-loader maps them to internal integers; the cleanest way to read assignments back
-in your own labels is the ``"name"`` column of the result DataFrame:
+loader maps them to internal integers. For string labels, the cleanest way to
+read assignments back in your own labels is the ``"name"`` column of the result
+DataFrame; for other label types (tuples, frozensets), use
+{class}`~infomap.Network` and its label mapping as shown below:
 
 ```{code-cell} python
 g_str = nx.Graph([("alice", "bob"), ("bob", "carol"), ("dave", "eve")])
@@ -210,8 +212,9 @@ print(f"pandas route: {result.num_top_modules} modules, {result.codelength:.4f} 
 ```
 
 Source and target columns must hold integers. Convert string labels to integer
-codes first (``pandas.factorize``), then read names back through the result
-DataFrame or your own reverse mapping. An equally valid one-call form is an
+codes first (``pandas.factorize``) and keep the ``uniques`` array it returns as
+your reverse mapping — this route registers no node names, so the result
+DataFrame's ``"name"`` column cannot recover the labels. An equally valid one-call form is an
 iterable of tuples: ``infomap.run([(0, 1, 1.0), (1, 2, 1.0), ...])``.
 
 ```{admonition} Edge index vs link rows
@@ -342,8 +345,8 @@ To draw the partition or write it to disk, see
   are one-shot helpers returning a NetworkX ``list[set]`` and an
   ``igraph.VertexClustering`` respectively.
 - {meth}`infomap.Result.modules` returns `{node_id: module_id}`;
-  {meth}`infomap.Result.to_dataframe` returns node id, module id, flow, and name
-  as a DataFrame.
+  {meth}`infomap.Result.to_dataframe` returns node id, module id, flow, path,
+  and name as a DataFrame.
 
 ## Going deeper
 
