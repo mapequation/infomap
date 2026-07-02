@@ -21,6 +21,7 @@ exclude: |
     | ^interfaces/python/generated/
     | ^interfaces/R/generated/
     | ^interfaces/python/src/infomap/_swig\.py$
+    | ^interfaces/python/src/infomap/datasets/data/
     | ^examples/networks/
     | ^LICENSE_GPLv3\.txt$
   )

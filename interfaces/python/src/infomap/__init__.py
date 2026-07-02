@@ -39,9 +39,11 @@ try:
     from ._facade import *  # noqa: F401,F403
     from ._options import _construct_args as _construct_args
 
+    from . import datasets as datasets
     from . import tl as tl
 
     __all__.extend(_FACADE_ALL)
+    __all__.append("datasets")
     __all__.append("tl")
 except ImportError:
     # Allow setuptools to read package metadata before the extension is built.
