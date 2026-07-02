@@ -100,7 +100,8 @@ test-python-doctest:
 		"$(CURDIR)/interfaces/python/src/infomap/result.py" \
 		"$(CURDIR)/interfaces/python/src/infomap/network.py" \
 		"$(CURDIR)/interfaces/python/src/infomap/_run.py" \
-		"$(CURDIR)/interfaces/python/src/infomap/io/writers.py"
+		"$(CURDIR)/interfaces/python/src/infomap/io/writers.py" \
+		"$(CURDIR)/interfaces/python/src/infomap/datasets/__init__.py"
 
 test-python-examples:
 	@cd examples/python && for f in *.py; do $(PYTHON) "$$f" > /dev/null || exit 1; done

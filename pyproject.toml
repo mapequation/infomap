@@ -141,7 +141,7 @@ infomap-shell = "infomap.shell:main"
 include-package-data = true
 
 [tool.setuptools.package-data]
-infomap = ["py.typed"]
+infomap = ["py.typed", "datasets/data/*.net"]
 
 [tool.setuptools.package-dir]
 "" = "interfaces/python/src"
