@@ -71,10 +71,39 @@ def build_result(engine: Any) -> "Result":
 
 
 class TreeNode:
-    """A lightweight, immutable view over a single leaf row of a ``Result``.
+    """A lightweight, immutable view over a single leaf node of a ``Result``.
 
-    This is *our* type, not a SWIG object: attribute access reads from the
-    snapshot arrays the ``Result`` already materialized.
+    Yielded by :meth:`Result.nodes`. A plain Python object: attribute access
+    reads from the snapshot data the ``Result`` already materialized, without
+    touching the underlying C++ engine, so it stays valid after a re-run.
+
+    Attributes
+    ----------
+    node_id : int
+        The physical node id.
+    state_id : int
+        The state node id. Equals ``node_id`` for first-order networks.
+    module_id : int
+        The module id at the depth level the nodes were requested for.
+    flow : float
+        The node flow (the fraction of flow the node receives).
+    depth : int
+        The depth of the node in the tree (number of levels below the root;
+        equals ``len(path)``).
+    layer_id : int
+        The layer id for multilayer networks, otherwise ``0``.
+    child_index : int
+        The zero-based index of the node among its parent module's children.
+    modular_centrality : float
+        A flow-based centrality score of the node within its parent module.
+    path : tuple of int
+        The tree path from the root as a tuple of one-based child indices
+        (the colon-separated path in tree output files).
+    name : str or int
+        The physical node name, or ``node_id`` if the node is unnamed.
+    state_name : str or int
+        The state-node name for higher-order networks, falling back to
+        ``name`` when no state name is set.
     """
 
     __slots__ = (

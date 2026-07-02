@@ -339,6 +339,8 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             -vv and so on.
         silent : bool, optional
             Suppress console output.
+        pretty : bool, optional
+            Deprecated. Accepted for backward compatibility; has no effect.
         two_level : bool, optional
             Optimize a two-level partition instead of the default multi-level hierarchy.
         flow_model : str, optional
@@ -644,6 +646,8 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             -vv and so on.
         silent : bool, optional
             Suppress console output.
+        pretty : bool, optional
+            Deprecated. Accepted for backward compatibility; has no effect.
         two_level : bool, optional
             Optimize a two-level partition instead of the default multi-level hierarchy.
         flow_model : str, optional
@@ -766,6 +770,11 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             nodes.
         max_degree_for_random_moves : int, optional
             Try random moves only for nodes with degree at most this value.
+
+        Returns
+        -------
+        Result
+            The result of this run. See :class:`~infomap.Result`.
 
         See Also
         --------
@@ -1624,6 +1633,12 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         multilayer_inter_intra_format : bool, optional
             Use intra/inter format to simulate inter-layer links. Default
             ``True``.
+        meta_attribute : str, optional
+            Node attribute to read categorical meta data from, for use with
+            the meta-data map equation. Values are encoded to integers in
+            first-seen order and set as Infomap meta data; nodes with missing
+            values are skipped. Raises :class:`ValueError` if the attribute
+            is not set on any node.
 
         Returns
         -------
@@ -1829,6 +1844,12 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         layer_id : str, optional
             Vertex attribute for layer ids, implying a multilayer network when
             ``node_id`` is also present.
+        meta_attribute : str, optional
+            Vertex attribute to read categorical meta data from, for use with
+            the meta-data map equation. Values are encoded to integers in
+            first-seen order and set as Infomap meta data; vertices with
+            missing values are skipped. Raises :class:`ValueError` if the
+            attribute does not exist.
         multilayer_inter_intra_format : bool, optional
             Use intra/inter format to simulate inter-layer links. Default
             ``True``.

@@ -512,6 +512,14 @@ class vector_uint(object):
 # Register vector_uint in _infomap:
 _infomap.vector_uint_swigregister(vector_uint)
 class InfoNode(object):
+    r"""
+    A node in the hierarchical partition tree.
+
+    Yielded by the tree-walking iterators on :class:`Infomap`
+    (:meth:`Infomap.tree`, :meth:`Infomap.nodes`, and friends). Exposes the
+    node's ids, flow, and position in the tree as properties.
+    """
+
     thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc="The membership flag")
     __repr__ = _swig_repr
     data = property(_infomap.InfoNode_data_get, _infomap.InfoNode_data_set)
@@ -941,6 +949,13 @@ class deque_uint(object):
 # Register deque_uint in _infomap:
 _infomap.deque_uint_swigregister(deque_uint)
 class InfomapIterator(object):
+    r"""
+    Depth-first pre-order iterator over the full partition tree, modules and
+    leaf nodes alike. Returned by :meth:`Infomap.tree`. Each step exposes the
+    current node's attributes (``module_id``, ``path``, ``depth``, ``flow``, ...)
+    directly on the iterator.
+    """
+
     thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc="The membership flag")
     __repr__ = _swig_repr
     __swig_destroy__ = _infomap.delete_InfomapIterator
@@ -1254,6 +1269,11 @@ class InfomapIterator(object):
 # Register InfomapIterator in _infomap:
 _infomap.InfomapIterator_swigregister(InfomapIterator)
 class InfomapModuleIterator(InfomapIterator):
+    r"""
+    Depth-first iterator over the module nodes of the partition tree, skipping
+    leaf nodes.
+    """
+
     thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc="The membership flag")
     __repr__ = _swig_repr
     __swig_destroy__ = _infomap.delete_InfomapModuleIterator
@@ -1282,6 +1302,11 @@ class InfomapModuleIterator(InfomapIterator):
 # Register InfomapModuleIterator in _infomap:
 _infomap.InfomapModuleIterator_swigregister(InfomapModuleIterator)
 class InfomapLeafModuleIterator(InfomapIterator):
+    r"""
+    Iterator over the leaf modules of the partition tree (modules whose children
+    are leaf nodes). Returned by :meth:`Infomap.leaf_modules`.
+    """
+
     thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc="The membership flag")
     __repr__ = _swig_repr
     __swig_destroy__ = _infomap.delete_InfomapLeafModuleIterator
@@ -1391,6 +1416,11 @@ class InfomapLeafModuleIterator(InfomapIterator):
 # Register InfomapLeafModuleIterator in _infomap:
 _infomap.InfomapLeafModuleIterator_swigregister(InfomapLeafModuleIterator)
 class InfomapLeafIterator(InfomapIterator):
+    r"""
+    Iterator over the leaf nodes of the partition tree. Returned by
+    :meth:`Infomap.nodes`.
+    """
+
     thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc="The membership flag")
     __repr__ = _swig_repr
     __swig_destroy__ = _infomap.delete_InfomapLeafIterator
@@ -1501,6 +1531,12 @@ class InfomapLeafIterator(InfomapIterator):
 # Register InfomapLeafIterator in _infomap:
 _infomap.InfomapLeafIterator_swigregister(InfomapLeafIterator)
 class InfomapIteratorPhysical(InfomapIterator):
+    r"""
+    Like :class:`InfomapIterator`, but aggregates state nodes belonging to the
+    same physical node within each leaf module. Returned by
+    :meth:`Infomap.physical_tree`.
+    """
+
     thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc="The membership flag")
     __repr__ = _swig_repr
     __swig_destroy__ = _infomap.delete_InfomapIteratorPhysical
@@ -1608,6 +1644,12 @@ class InfomapIteratorPhysical(InfomapIterator):
 # Register InfomapIteratorPhysical in _infomap:
 _infomap.InfomapIteratorPhysical_swigregister(InfomapIteratorPhysical)
 class InfomapLeafIteratorPhysical(InfomapIteratorPhysical):
+    r"""
+    Iterator over the leaf nodes of the partition tree, aggregating state nodes
+    belonging to the same physical node within each leaf module. Returned by
+    :meth:`Infomap.physical_nodes`.
+    """
+
     thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc="The membership flag")
     __repr__ = _swig_repr
     __swig_destroy__ = _infomap.delete_InfomapLeafIteratorPhysical
@@ -1718,6 +1760,8 @@ class InfomapLeafIteratorPhysical(InfomapIteratorPhysical):
 # Register InfomapLeafIteratorPhysical in _infomap:
 _infomap.InfomapLeafIteratorPhysical_swigregister(InfomapLeafIteratorPhysical)
 class InfomapParentIterator(object):
+    r"""Iterator that walks upward from a node, parent by parent, until the root."""
+
     thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc="The membership flag")
     __repr__ = _swig_repr
     __swig_destroy__ = _infomap.delete_InfomapParentIterator

@@ -35,12 +35,6 @@ from ._network_input import paired_multilayer_unpacker as _paired_multilayer_unp
 
 
 class Network:
-    # ``{internal_id: label}`` mapping set by the library constructors
-    # (``from_networkx``/``from_igraph``/``from_scipy_sparse``/``from_edge_index``).
-    # Bare annotation: declares the instance attribute for type-checkers without
-    # creating it at runtime (no behaviour change).
-    node_id_to_label: dict[int, Any]
-
     """A first-class Infomap network input builder.
 
     Build a network with the fluent ``add_*``/``set_*`` verbs (each returns
@@ -95,6 +89,12 @@ class Network:
         composed by :class:`infomap.Infomap`, the shared, options-configured
         ``Core`` is passed in.
     """
+
+    #: ``{internal_id: label}`` mapping set by the library constructors
+    #: (``from_networkx``/``from_igraph``/``from_scipy_sparse``/``from_edge_index``).
+    #: Bare annotation: declares the instance attribute for type-checkers without
+    #: creating it at runtime (no behaviour change).
+    node_id_to_label: dict[int, Any]
 
     def __init__(self, core=None):
         if core is None:

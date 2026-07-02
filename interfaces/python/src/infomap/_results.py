@@ -17,14 +17,53 @@ _DATAFRAME_COLUMN_ALIASES = {"community": "module_id"}
 
 
 def plogp(p):
+    """Compute ``x * log2(x)`` for each value in ``p``.
+
+    Parameters
+    ----------
+    p : iterable of float
+        Probabilities.
+
+    Returns
+    -------
+    generator of float
+        ``x * log2(x)`` for each ``x`` in ``p``, or ``0`` where ``x <= 0``.
+    """
     return (x * log2(x) if x > 0 else 0 for x in p)
 
 
 def entropy(p):
+    """Compute the Shannon entropy of a probability distribution in bits.
+
+    Parameters
+    ----------
+    p : iterable of float
+        Probabilities.
+
+    Returns
+    -------
+    float
+        The entropy ``-sum(x * log2(x) for x in p)``.
+    """
     return -sum(plogp(p))
 
 
 def perplexity(p):
+    """Compute the perplexity of a probability distribution.
+
+    The perplexity is ``2 ** entropy(p)``, interpretable as the effective
+    number of outcomes in the distribution.
+
+    Parameters
+    ----------
+    p : iterable of float
+        Probabilities.
+
+    Returns
+    -------
+    float
+        The perplexity.
+    """
     return 2 ** entropy(p)
 
 
@@ -648,7 +687,7 @@ class _InfomapResultsMixin:
         >>> im = Infomap(silent=True)
         >>> im.read_file("twotriangles.net")
         >>> _ = im.run()
-        >>> im.to_dataframe(columns=["path", "flow", "name", "node_id"], states=True)
+        >>> im.get_dataframe(columns=["path", "flow", "name", "node_id"], states=True)
              path      flow name  node_id
         0  (1, 1)  0.214286    C        3
         1  (1, 2)  0.142857    A        1
@@ -656,7 +695,7 @@ class _InfomapResultsMixin:
         3  (2, 1)  0.214286    D        4
         4  (2, 2)  0.142857    E        5
         5  (2, 3)  0.142857    F        6
-        >>> im.to_dataframe(columns=["node_id", "module_id"], states=True)
+        >>> im.get_dataframe(columns=["node_id", "module_id"], states=True)
            node_id  module_id
         0        3          1
         1        1          1

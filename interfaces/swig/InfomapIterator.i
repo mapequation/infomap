@@ -13,6 +13,39 @@ namespace std {
 
 %include "InfoNode.i"
 
+#ifdef SWIGPYTHON
+%feature("docstring") infomap::InfomapIterator
+"Depth-first pre-order iterator over the full partition tree, modules and
+leaf nodes alike. Returned by :meth:`Infomap.tree`. Each step exposes the
+current node's attributes (``module_id``, ``path``, ``depth``, ``flow``, ...)
+directly on the iterator.";
+
+%feature("docstring") infomap::InfomapModuleIterator
+"Depth-first iterator over the module nodes of the partition tree, skipping
+leaf nodes.";
+
+%feature("docstring") infomap::InfomapLeafModuleIterator
+"Iterator over the leaf modules of the partition tree (modules whose children
+are leaf nodes). Returned by :meth:`Infomap.leaf_modules`.";
+
+%feature("docstring") infomap::InfomapLeafIterator
+"Iterator over the leaf nodes of the partition tree. Returned by
+:meth:`Infomap.nodes`.";
+
+%feature("docstring") infomap::InfomapIteratorPhysical
+"Like :class:`InfomapIterator`, but aggregates state nodes belonging to the
+same physical node within each leaf module. Returned by
+:meth:`Infomap.physical_tree`.";
+
+%feature("docstring") infomap::InfomapLeafIteratorPhysical
+"Iterator over the leaf nodes of the partition tree, aggregating state nodes
+belonging to the same physical node within each leaf module. Returned by
+:meth:`Infomap.physical_nodes`.";
+
+%feature("docstring") infomap::InfomapParentIterator
+"Iterator that walks upward from a node, parent by parent, until the root.";
+#endif
+
 /* Parse the header file to generate wrappers */
 %include "src/core/iterators/InfomapIterator.h"
 

@@ -413,9 +413,32 @@ class Options:
         return cls(**{name: mapping[name] for name in _OPTION_FIELD_NAMES if name in mapping})
 
     def to_kwargs(self):
+        """Return the options as a keyword-argument dict.
+
+        Returns
+        -------
+        dict
+            A dict with one entry per option field, suitable for
+            ``Infomap(**options.to_kwargs())``.
+        """
         return {name: getattr(self, name) for name in _OPTION_FIELD_NAMES}
 
     def to_args(self, base_args: str | None = None):
+        """Render the options as an Infomap command-line argument string.
+
+        Options that keep their default values render no flags.
+
+        Parameters
+        ----------
+        base_args : str, optional
+            Raw Infomap arguments to prepend before the rendered flags.
+
+        Returns
+        -------
+        str
+            The rendered argument string, prefixed by ``base_args`` if
+            given.
+        """
         options = self.to_kwargs()
         rendered_args = []
 
