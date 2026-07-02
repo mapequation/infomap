@@ -12,6 +12,14 @@ kernelspec:
 
 {bdg-success-line}`How-to`
 
+```{admonition} At a glance
+:class: tip
+Most runs need only a `seed`, a `num_trials` count, and a flow-model choice
+(`two_level` or `directed`). The rest of Infomap's options split into flow-model
+settings, which define the random walk, and search settings, which control how
+hard Infomap looks.
+```
+
 Most runs need only three choices: a `seed`, how many `num_trials` to run, and
 either `two_level` or `directed` for the flow model. The shortest useful run:
 

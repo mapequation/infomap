@@ -13,8 +13,8 @@ behind the first three chapters below.
   windows.
 - {doc}`Networks with metadata <metadata>`: folding node attributes into the
   objective.
-- {doc}`Bipartite networks <bipartite>`: two node types and the bipartite map
-  equation.
+- {doc}`Bipartite networks <bipartite>`: two node types, and how declaring the
+  boundary changes the flow model.
 
 ```{toctree}
 :hidden:
