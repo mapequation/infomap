@@ -515,9 +515,10 @@ class InfoNode(object):
     r"""
     A node in the hierarchical partition tree.
 
-    Yielded by the tree-walking iterators on :class:`Infomap`
-    (:meth:`Infomap.tree`, :meth:`Infomap.nodes`, and friends). Exposes the
-    node's ids, flow, and position in the tree as properties.
+    The underlying node type of the tree-walking iterators on :class:`Infomap`
+    (:meth:`Infomap.tree`, :meth:`Infomap.nodes`, and friends); the iterators
+    proxy its attributes and expose it directly via their ``current()`` method.
+    Exposes the node's ids, flow, and position in the tree as properties.
     """
 
     thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc="The membership flag")
@@ -1534,7 +1535,7 @@ class InfomapIteratorPhysical(InfomapIterator):
     r"""
     Like :class:`InfomapIterator`, but aggregates state nodes belonging to the
     same physical node within each leaf module. Returned by
-    :meth:`Infomap.physical_tree`.
+    :meth:`Infomap.physical_tree` for memory networks.
     """
 
     thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc="The membership flag")
@@ -1646,8 +1647,7 @@ _infomap.InfomapIteratorPhysical_swigregister(InfomapIteratorPhysical)
 class InfomapLeafIteratorPhysical(InfomapIteratorPhysical):
     r"""
     Iterator over the leaf nodes of the partition tree, aggregating state nodes
-    belonging to the same physical node within each leaf module. Returned by
-    :meth:`Infomap.physical_nodes`.
+    belonging to the same physical node within each leaf module.
     """
 
     thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc="The membership flag")

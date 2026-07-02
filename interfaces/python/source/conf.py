@@ -15,7 +15,7 @@ os.environ["PYTHONPATH"] = os.pathsep.join(
 # -- Project information -----------------------------------------------------
 
 project = "Infomap"
-copyright = "2020, Daniel Edler, Anton Holmgren, Martin Rosvall"
+copyright = "2020-2026, Daniel Edler, Anton Holmgren, Martin Rosvall"
 author = "Daniel Edler, Anton Holmgren, Martin Rosvall"
 
 version_module_path = (

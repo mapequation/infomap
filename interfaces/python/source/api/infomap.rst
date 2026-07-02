@@ -9,10 +9,10 @@ four calls.
 
 .. code-block:: python
 
-   im = infomap.Infomap(num_trials=10, seed=42)   # 1. configure
-   im.add_networkx_graph(graph)                    # 2. build
-   result = im.run()                                # 3. search
-   result.modules()                                 # 4. read
+   im = infomap.Infomap(num_trials=10, seed=42)  # 1. configure
+   im.add_networkx_graph(graph)                  # 2. build
+   result = im.run()                             # 3. search
+   result.modules()                              # 4. read
 
 Everything else on this page refines one of those four steps. The tables below
 group the members by purpose; the full reference, with signatures and

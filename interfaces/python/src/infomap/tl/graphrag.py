@@ -157,7 +157,7 @@ def read_graphrag(
     Assigns a 1-based Infomap node id to every entity (and to any relationship
     endpoint that does not appear in the entity table) and converts the
     relationships to source/target/weight arrays ready for
-    :meth:`Infomap.add_links`.
+    :meth:`infomap.Infomap.add_links`.
 
     Parameters
     ----------

@@ -244,8 +244,8 @@ Key `infomap.tl.infomap` keyword arguments:
 | `adjacency` | `None` | Pass a sparse matrix directly |
 | `directed` | `False` | Treat graph as directed |
 | `use_weights` | `True` | Use edge weights; `False` for unweighted |
-| `seed` | (none) | Random seed forwarded to Infomap |
-| `num_trials` | (none) | Independent restarts; more trials give a more stable partition |
+| `seed` | Infomap's `123` | Random seed forwarded to Infomap |
+| `num_trials` | Infomap's `1` | Independent restarts; more trials give a more stable partition |
 
 ## Going deeper
 

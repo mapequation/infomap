@@ -51,9 +51,9 @@ hub airport can belong to several regional systems.
 
 ## The map equation on state nodes
 
-A higher-order network is a set of state nodes $\{\alpha_i\}$ (state node
-$\alpha$ of physical node $i$) with transitions between them. The map equation is
-unchanged in form,
+A higher-order network is a set of state nodes, each attached to a physical
+node, with transitions between them. The map equation is unchanged in form
+(the sum still runs over the $m$ modules),
 
 $$
 L(\mathsf{M}) =
@@ -75,7 +75,8 @@ nodes: from state $\alpha_i$ the walker mostly continues to *j* and *k*, from
 state $\delta_i$ mostly to *l* and *m*. The weak 0.2-links let it occasionally
 switch sides, so the two contexts are coupled but distinct.
 
-Build state nodes directly with `add_state_node(state_id, physical_id)` and
+Build state nodes directly with `add_state_node(state_id, node_id)`, where
+`node_id` is the physical node, and
 link them, then read the partition back with `result.nodes(states=True)`:
 
 ```{code-cell} python
@@ -177,8 +178,8 @@ directly, but the partition you read back is always over state nodes.
 
 ## API pointers
 
-- `Network().add_state_node(state_id, physical_id)` declares a state node;
-  `add_link` then links state nodes.
+- `Network().add_state_node(state_id, node_id)` declares a state node on the
+  physical node `node_id`; `add_link` then links state nodes.
 - You need `result.modules(states=True)` to read a higher-order partition;
   `result.nodes(states=True)` exposes each node's `.node_id` (physical),
   `.state_id`, `.module_id`, and `.flow`.

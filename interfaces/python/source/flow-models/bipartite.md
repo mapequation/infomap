@@ -22,7 +22,7 @@ random walk directly, returning modules that mix both node types.
 ## Two node types, links between them
 
 Many networks connect two distinct kinds of entities: users rating movies,
-species visiting flowers, papers citing authors. Links go exclusively
+species visiting flowers, authors writing papers. Links go exclusively
 *between* the two types, never within them. This is a bipartite network.
 
 A common workaround is to project one type onto the other, replacing
@@ -201,7 +201,7 @@ module spans both node types.
 | Option | Where | Effect |
 |---|---|---|
 | `bipartite_start_id` | {class}`~infomap.Network` attribute | First node id of the second type; declares the network bipartite |
-| `hide_bipartite_nodes` | {func}`infomap.run` | Omit the second-type nodes from written output files (the in-memory result keeps both types) |
+| `hide_bipartite_nodes` | {class}`~infomap.Infomap` (file-writing runs) | Omit the second-type nodes from written output files (the in-memory result keeps both types) |
 | `skip_adjust_bipartite_flow` | {func}`infomap.run` | Keep flow on the second-type nodes instead of folding it onto the first type |
 | `bipartite_teleportation` | {func}`infomap.run` | On directed runs, teleport with bipartite-aware jumps instead of the two-step unipartite scheme |
 

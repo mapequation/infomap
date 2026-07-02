@@ -90,7 +90,8 @@ two partitions of the same network, the one with smaller $L$ compresses the flow
 better and captures more of its community structure.
 
 For undirected networks, a node's visit frequency equals its normalised strength
-(its total incident link weight divided by the network total), so Infomap needs
+(its total incident link weight divided by twice the total link weight, the sum
+of all node strengths), so Infomap needs
 no teleportation. For directed networks Infomap uses a random-surfer
 model with teleportation probability $\tau = 0.15$ (the conventional choice, one
 minus PageRank's 0.85 damping factor) to guarantee an ergodic stationary
@@ -110,8 +111,8 @@ $$
 
 and module $i$'s codebook (one codeword per node plus an exit symbol, with
 $p_{\circlearrowright}^i = q_{i\curvearrowright} + \sum_{\alpha\in i} p_\alpha$,
-where $p_\alpha$ is node $\alpha$'s visit frequency from
-{doc}`flow-and-random-walks`) has entropy
+where $p_\alpha$ is node $\alpha$'s visit frequency, the stationary flow
+$\pi_\alpha$ of {doc}`flow-and-random-walks`) has entropy
 
 $$
 H(\mathcal{P}^i)

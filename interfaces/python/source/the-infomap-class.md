@@ -17,7 +17,8 @@ The {class}`infomap.Infomap` class is the stateful entry point: build a network
 with the `add_*` verbs, then call `run()` for an immutable
 {class}`~infomap.Result`. New code should prefer {func}`infomap.run` for one-shot
 use and {class}`~infomap.Network` for incremental construction; existing
-`Infomap` code keeps working unchanged.
+`Infomap` code keeps working essentially unchanged (see
+[Removed accessors](#removed-accessors) for the few exceptions).
 ```
 
 ## When to use it

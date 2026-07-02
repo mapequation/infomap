@@ -195,7 +195,7 @@ state node per incoming stream. Node B gets **two** state nodes:
 ```{code-cell} python
 net = Network()
 
-# Declare state nodes: add_state_node(state_id, physical_id)
+# Declare state nodes: add_state_node(state_id, node_id) — node_id is physical
 net.add_state_node(0,  0)   # phys A, state 0
 net.add_state_node(2,  2)   # phys C, state 2
 net.add_state_node(3,  3)   # phys D, state 3
@@ -300,22 +300,23 @@ finds two communities (A–B–C and B–D) that overlap at junction B.
 
 ```python
 net = Network()
-net.add_state_node(state_id, physical_id)
+net.add_state_node(state_id, node_id)
 ```
 
-Creates a state node with a unique integer `state_id` mapped to `physical_id`.
+Creates a state node with a unique integer `state_id` mapped to the physical
+node `node_id`.
 If the physical node does not yet exist, `add_state_node` creates it. Use
 {meth}`infomap.Network.set_name` afterwards for a human-readable label.
 
 **Adding state-level links**
 
 ```python
-net.add_link(source_state_id, target_state_id, weight=1.0)
+net.add_link(source_id, target_id, weight=1.0)
 ```
 
 Links connect *state nodes*, not physical nodes. The same `add_link` serves both
-first-order and higher-order networks; in a state-node network the integer ids
-refer to state node ids.
+first-order and higher-order networks; in a state-node network `source_id` and
+`target_id` refer to state node ids.
 
 **Querying results**
 
@@ -345,5 +346,5 @@ grouping by `node_id`, as shown in the worked example.
   implementation of higher-order flows {cite:p}`edler2017higher`.
 - The survey (§5.1) covers higher-order and memory flows
   {cite:p}`smiljanic2026survey`. Its companion notebook,
-  `examples/notebooks/5.1 Memory Networks.ipynb`, works a full-size example
-  with empirical pathway data and sparse-Markov-chain model selection.
+  `examples/notebooks/5.1 Memory Networks.ipynb`, works the `*States` file
+  format and the `add_state_node` API on a small journal-citation example.
