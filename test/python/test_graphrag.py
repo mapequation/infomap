@@ -356,8 +356,9 @@ def test_write_graphrag_communities_exports_hierarchy(tmp_path, example_network_
     from infomap.graphrag import read_graphrag, write_graphrag_communities
 
     edges = [
-        tuple(line.split())
+        tuple(line.split()[:2])
         for line in example_network_path("ninetriangles.net").read_text().splitlines()
+        if line.strip() and not line.startswith("#")
     ]
     entities = pd.DataFrame(
         {
@@ -427,7 +428,7 @@ def test_write_graphrag_communities_exports_hierarchy(tmp_path, example_network_
             communities["level"] == communities["level"].max()
         ].iterrows()
     }
-    assert deepest_relationships[("1", "2", "3")] == ["r0", "r1", "r3"]
+    assert deepest_relationships[("1", "2", "3")] == ["r0", "r1", "r2"]
 
 
 def test_write_graphrag_communities_exports_text_unit_ids(tmp_path):

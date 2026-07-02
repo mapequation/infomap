@@ -77,11 +77,12 @@ def two_triangles() -> Network:
 def nine_triangles() -> Network:
     """Nine triangles with two-level hierarchical structure.
 
-    27 nodes and 39 unweighted links: nine triangles grouped three-and-three
-    into three super-groups. Densely connected triangles sit inside more
-    loosely connected groups, so a hierarchical (multilevel) solution
-    describes the flow more efficiently than a two-level one. Use it to
-    explore :attr:`~infomap.Result.num_levels` and the multilevel tree.
+    27 nodes and 39 links: nine triangles grouped three-and-three into three
+    super-groups, with unit-weight links inside each super-group and weaker
+    0.8 links between them. The optimal solution is hierarchical: three
+    super-group modules at the top level, each nesting its three triangles.
+    Use it to explore :attr:`~infomap.Result.num_levels` and the multilevel
+    tree.
 
     Returns
     -------
@@ -94,6 +95,8 @@ def nine_triangles() -> Network:
     >>> net = infomap.datasets.nine_triangles()
     >>> net.num_nodes, net.num_links
     (27, 39)
+    >>> net.run(options={"seed": 123, "num_trials": 10}).num_top_modules
+    3
     """
     return _load("ninetriangles.net")
 

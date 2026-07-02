@@ -146,7 +146,8 @@ The nine-triangles network from the examples on mapequation.org is built for
 exactly this: twenty-seven nodes in nine triangles, arranged in three
 super-groups of three triangles each. Weight-1 links join the triangles inside
 a super-group; the three links between super-groups are weaker, 0.8. We build
-it and let Infomap find the nesting automatically.
+it by hand and let Infomap find the nesting automatically; it also ships
+ready-made as {func}`infomap.datasets.nine_triangles`.
 
 ### Build the network
 
@@ -199,6 +200,11 @@ print(f"Map equation codelength: {result.codelength:.4f} bits/step")
 
 # The prose below relies on this structure; fail the build if it drifts.
 assert result.num_top_modules == 3
+
+# The bundled copy is the same network; the two must agree exactly.
+result_pkg = infomap.run(infomap.datasets.nine_triangles(),
+                         silent=True, num_trials=10, seed=123)
+assert result.codelength == result_pkg.codelength
 ```
 
 Infomap discovered the nesting on its own, with no depth argument: as
