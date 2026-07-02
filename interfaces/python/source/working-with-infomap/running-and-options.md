@@ -10,137 +10,55 @@ kernelspec:
 
 # Running Infomap
 
-```{admonition} In one sentence
+{bdg-success-line}`How-to`
+
+```{admonition} At a glance
 :class: tip
-Most Infomap runs need only three arguments (`seed`, `num_trials`, and either
-`two_level` or `directed`). This chapter explains why those choices matter more
-than picking from the full list of flags.
+Most runs need only a `seed`, a `num_trials` count, and a flow-model choice
+(`two_level` or `directed`). The rest of Infomap's options split into flow-model
+settings, which define the random walk, and search settings, which control how
+hard Infomap looks.
 ```
 
-## Motivation
+Most runs need only three choices: a `seed`, how many `num_trials` to run, and
+either `two_level` or `directed` for the flow model. The shortest useful run:
 
-Infomap has dozens of options. The temptation is to pick a handful at random
-and hope for the best, or to reach for every knob labelled "accuracy" out of
-caution. Neither strategy works well in practice.
+```python
+import networkx as nx
+import infomap
 
-Most options fall into one of two categories. The first changes *how the random
-walk is defined*: whether flow is directed, how readily it teleports out of dead
-ends, what timescale it runs at. These options encode your scientific beliefs
-about the system, and getting them wrong produces a partition that is
-numerically impressive but structurally meaningless. The second category changes
-*how hard the search works*: how many independent restarts to attempt, whether
-to stop early once the codelength has converged. These options affect
-reliability, not which partition Infomap looks for.
+result = infomap.run(
+    nx.karate_club_graph(),
+    seed=123,        # reproducible
+    num_trials=10,   # keep the best of 10 restarts
+    two_level=True,  # flat partition; omit for the multilevel default
+)
+print(result.num_top_modules, result.codelength)
+```
 
-Knowing which knob is which, and why, lets you reach for the right one without
-trial and error.
+Everything below is when and why to reach for the other options. For the *why*
+behind the flow model itself, see {doc}`/concepts/index`.
 
-## Intuition
+## Two kinds of options
 
-Think of Infomap as a hiker searching for the lowest valley on a rugged
-landscape. Each point on the landscape is a possible partition of your network.
-The elevation is the map equation value, $L(\mathsf{M})$: lower is better.
+Infomap has dozens of options, but they fall into two groups:
 
-The *flow model* options (`directed`, `markov_time`, `teleportation_probability`)
-reshape the landscape itself. Change them and the hiker stands on different
-terrain. The *search* options (`seed`, `num_trials`) set how widely the hiker
-explores the landscape you put them on. They do not move the valleys, only
-decide whether the hiker reaches the deepest one.
+- **Flow-model options** (`directed`, `markov_time`, `teleportation_probability`)
+  change *how the random walk is defined*. They encode your beliefs about the
+  system; the wrong choice gives a partition that scores well but means little.
+- **Search options** (`seed`, `num_trials`, `converge`) change *how hard the
+  search works*, not which partition Infomap looks for. They only affect how
+  reliably the stochastic search finds the optimum {cite:p}`calatayud2019solution`.
 
-Two complications make the landscape interesting. First, the map equation
-landscape is not convex; Infomap's greedy local search can get trapped in a
-shallow minimum, which is why independent restarts (`num_trials`) matter
-{cite:p}`calatayud2019solution`. Second, for directed networks the landscape depends on
-teleportation, the artificial mechanism that keeps the walk ergodic on networks
-with disconnected components or sinks. How you handle teleportation changes the
-partition, so make the choice deliberately {cite:p}`lambiotte2012smart`.
+The theory behind them lives in Concepts:
+{doc}`/concepts/flow-and-random-walks` for flow and teleportation,
+{doc}`/concepts/hierarchy-and-the-multilevel-map` and
+{doc}`/concepts/choosing-a-method` for resolution, and
+{doc}`/robustness/incomplete-data` for regularization.
 
-## Theory
+## The options, one task each
 
-### The search landscape: why `num_trials` matters
-
-Finding the partition that minimises $L(\mathsf{M})$ is NP-hard, so Infomap
-uses a stochastic greedy search. Each call to `run()` starts from a different
-random initialisation (set by `seed`) and climbs downhill to a local minimum.
-On a rugged landscape, different starting points often find different minima
-{cite:p}`calatayud2019solution`. Infomap keeps the trial with the lowest codelength, so
-more trials buy a more reliable partition at the cost of more compute.
-
-`seed` fixes the random number generator for exact reproducibility. With the
-same `seed` and `num_trials` on the same machine, you get the same partition
-every time. With `seed` fixed and `num_trials=1`, a different `seed` value may
-find a different minimum.
-
-### Directed flow and teleportation
-
-For undirected networks the random walk's stationary distribution is
-proportional to degree, and no extra mechanism is needed. For directed networks
-not every node is reachable, so Infomap uses a random-surfer model: with
-probability $\tau$ the walker teleports to another node, and with probability
-$1-\tau$ it follows a link. The default $\tau = 0.15$ is the conventional
-PageRank value (one minus the 0.85 damping factor).
-
-{cite:t}`lambiotte2012smart` showed that *what counts as a step* matters for
-clustering (see {doc}`/concepts/flow-and-random-walks` for the full treatment of
-teleportation). With *recorded* teleportation, the teleportation steps contribute to
-the flow that defines module membership. With *unrecorded* teleportation (the
-Infomap default), only steps along links count. This "smart teleportation" keeps
-the partition stable as $\tau$ changes, because the artificial jumps no longer
-blur module boundaries. Test it yourself: sweep `teleportation_probability` from
-0.05 to 0.5 and watch unrecorded teleportation hold its partition across the
-range while recorded teleportation drifts.
-
-### Resolution scale: `markov_time`
-
-The map equation balances description cost at the timescale of one random-walk
-step. At that scale, a module is worth naming separately when the walker spends
-longer inside it than outside. {cite:t}`kheirkhahzadeh2016markov` showed that rescaling
-the transition rates by a factor $t$, the Markov time, shifts the resolution:
-larger $t$ makes module crossings costlier and merges small modules into larger
-ones, while smaller $t$ splits them.
-
-The map equation has a far weaker resolution limit than modularity, and the
-multilevel search loosens it further; {doc}`/concepts/hierarchy-and-the-multilevel-map`
-and {doc}`/concepts/choosing-a-method` cover why. For most networks, let Infomap
-find the multilevel hierarchy first, then reach for `markov_time` when you need a
-specific scale.
-
-### Regularization
-
-Sparse or under-sampled networks can be over-partitioned: Infomap splits on
-sampling noise instead of real structure. `regularized=True` adds a Bayesian
-prior network that penalises splits unsupported by the data, merging weakly
-supported modules. Scale the penalty with `regularization_strength` (default
-1.0). This option is most useful when your network has many nodes with very few
-links, or when you suspect significant missing data.
-
-:::{toggle}
-**Smart teleportation in detail**
-
-The recorded node teleportation scheme commonly used with PageRank teleports
-the walker to a uniformly random node. {cite:t}`lambiotte2012smart` showed
-this creates artificial connections between modules: the teleportation
-probability $\tau$ adds mixing between communities. In the map equation this
-means that as $\tau$ increases, modules that are otherwise well-separated start
-to look connected through the teleportation channel, eventually merging into
-one flat cluster.
-
-Unrecorded link teleportation (Infomap's default) avoids this by not encoding
-teleportation steps in the module codebooks. The walker may still jump, but the
-jump does not count as a module exit or entry. The stationary distribution is
-$\pi_i^{\mathrm{unrec}} = \sum_l T_{il} \pi_{l;\alpha}$, i.e. the distribution
-you would get by taking one more link-following step after a recorded walk.
-Because only link-following steps define community membership, the partition
-depends on the topology of the links, not on the value of $\tau$. Benchmarks
-confirm this: with unrecorded teleportation the partition is essentially
-independent of $\tau$ over a wide range, while recorded teleportation collapses
-to a single module at high $\tau$.
-:::
-
-## A worked example
-
-We build a small hierarchical graph and a noisy planted-partition graph to
-demonstrate the options that most commonly need adjusting.
+Each option below comes with a small graph you can run as you read.
 
 ### Setting up
 
@@ -153,7 +71,7 @@ import random
 G_ring = nx.ring_of_cliques(8, 5)   # 8 cliques × 5 nodes = 40 nodes
 
 # ── Helper: build a weakly-structured graph (noisy, degenerate landscape) ───
-def make_weak_sbm(n_communities=6, n_per=8, p_in=0.55, p_out=0.08, seed=123):
+def make_weak_structure(n_communities=6, n_per=8, p_in=0.55, p_out=0.08, seed=123):
     """Planted-partition graph with intentionally weak community signal."""
     rng = random.Random(seed)
     G = nx.Graph()
@@ -167,9 +85,9 @@ def make_weak_sbm(n_communities=6, n_per=8, p_in=0.55, p_out=0.08, seed=123):
                 G.add_edge(i, j)
     return G
 
-G_noisy = make_weak_sbm()
+G_noisy = make_weak_structure()
 print(f"Ring of cliques: {G_ring.number_of_nodes()} nodes, {G_ring.number_of_edges()} edges")
-print(f"Noisy SBM:       {G_noisy.number_of_nodes()} nodes, {G_noisy.number_of_edges()} edges")
+print(f"Weak structure:  {G_noisy.number_of_nodes()} nodes, {G_noisy.number_of_edges()} edges")
 ```
 
 ### `seed` and reproducibility
@@ -277,11 +195,12 @@ for two_level in [False, True]:
     print(f"  L={result.codelength:.4f}")
 ```
 
-With `two_level=False`, the multilevel solution finds 2 top modules (the two
-main branches) and resolves the 8 cliques at the finest level, reached with
-`get_modules(depth_level=-1)`. The codelength is lower because the deeper code
-captures the real hierarchy. With `two_level=True`, the 8 cliques become the
-top-level modules and the nested structure is invisible.
+With `two_level=False`, the multilevel solution recovers the built-in nesting:
+the two main branches at the top and the eight cliques at the finest level,
+reached with `result.modules(depth=-1)` (the cell above prints the exact counts).
+The codelength is lower because the deeper code captures the real hierarchy. With
+`two_level=True`, the eight cliques become the top-level modules and the nested
+structure is invisible.
 
 Use `result.modules(depth=k)` to access any level of the hierarchy. The default
 `result.modules()` returns level 1, the coarsest (top modules); pass `depth=-1`
@@ -339,7 +258,7 @@ The map equation operates at the natural timescale of one random-walk step.
 frequently (favoring more, smaller modules) and values above 1 encode it less
 frequently (favoring fewer, larger modules). This is the principled way to
 examine structure at a specific resolution when the data does not have a natural
-scale (Kheirkhahzadeh et al. 2016).
+scale {cite:p}`kheirkhahzadeh2016markov`.
 
 ```{code-cell} python
 # The ring of cliques has 8 genuine cliques. markov_time merges them
@@ -381,7 +300,8 @@ for label, kwargs in [
 
 Higher `regularization_strength` merges more modules. Use this when you have
 prior reason to believe that small modules in your result reflect sampling noise
-rather than real structure. The Bayesian derivation is in {cite:t}`smiljanic2020missing`.
+rather than real structure. The Bayesian derivation is in
+{cite:t}`smiljanic2020missing`.
 
 ### Why trials matter, visualised
 
@@ -418,9 +338,8 @@ plt.close(fig)
 
 ```{glue:figure} fig-running-and-options
 Each grey point is the codelength from a single trial with a different seed.
-They scatter, and the higher ones sit above the best-of-20-trials value (blue
-line): one trial can settle in a worse local minimum, while many trials reliably
-reach the best partition. That gap is what `num_trials` buys you.
+One trial can settle in a worse local minimum; many trials reliably reach the
+best-of-20 value (blue line).
 ```
 
 ## Reusable configuration
@@ -437,6 +356,18 @@ for name, graph in [("ring of cliques", G_ring), ("karate club", G_karate)]:
     result = infomap.run(graph, options=options)
     print(f"{name}: {result.num_top_modules} modules, L={result.codelength:.4f}")
 ```
+
+## Pitfalls
+
+- **`seed=0` raises.** Infomap requires `seed >= 1`; use any positive integer.
+- **Codelengths are not comparable across `meta_data_rate` values.**
+  `result.codelength` reports the combined objective, the topological term plus
+  the weighted attribute term, so it rises with the rate even when the
+  partition does not change (see {doc}`/flow-models/metadata`).
+- **More trials never hurt correctness, only runtime.** If repeated runs disagree,
+  raise `num_trials` (or pass `converge=True`) rather than trusting one fit.
+- **Sparse or under-sampled data over-splits.** Reach for `regularized=True`
+  (see {doc}`/robustness/incomplete-data`).
 
 ## API pointers
 
@@ -475,17 +406,17 @@ These are the keyword arguments to {func}`infomap.run`:
 For the full set of options as a searchable table, see the
 {class}`~infomap.Options` reference in the {doc}`/api/index`.
 
-## Going deeper
+## See also
 
 - **Options guide notebook** `examples/notebooks/options-guide.ipynb` lists every
   option in a searchable table, generated from the installed package so it matches
   your version. Start here for the exhaustive reference.
-- {cite:t}`smiljanic2026survey`, §4, covers method selection and the flow-model
-  justification.
-- {cite:t}`calatayud2019solution` makes the quantitative case for multiple trials.
-- {cite:t}`lambiotte2012smart` explains why unrecorded teleportation produces
-  robust directed partitions.
-- {cite:t}`kawamoto2015resolution` shows why the map equation's resolution limit is
-  less restrictive than modularity's.
-- {cite:t}`kheirkhahzadeh2016markov` introduces the Markov-time mechanism and its
-  efficient resolution sweeps.
+- The survey (§4) covers method selection and the flow-model justification
+  {cite:p}`smiljanic2026survey`.
+- The quantitative case for multiple trials {cite:p}`calatayud2019solution`.
+- Why unrecorded teleportation produces robust directed partitions
+  {cite:p}`lambiotte2012smart`.
+- Why the map equation's resolution limit is less restrictive than modularity's
+  {cite:p}`kawamoto2015resolution`.
+- The Markov-time mechanism and its efficient resolution sweeps
+  {cite:p}`kheirkhahzadeh2016markov`.

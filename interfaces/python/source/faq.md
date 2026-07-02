@@ -1,7 +1,7 @@
 # FAQ & common pitfalls
 
-Short answers to the questions that trip people up most often. Each one links
-to the chapter that explains it properly; this page is a map, not a copy.
+Short answers to the questions that trip people up most often. Each answer
+links to the chapter that explains it properly.
 
 ## Getting data in
 
@@ -21,7 +21,7 @@ for a `list[set]`). See {doc}`Building a network <working-with-infomap/inputs>`.
 Infomap's search is stochastic: each trial starts from a different random node
 order and can settle in a different local optimum. Run several trials with
 `num_trials=` (Infomap keeps the lowest-codelength result) and set `seed=` for
-reproducibility. See {doc}`Codelength and the two-level map equation <concepts/the-map-equation>`.
+reproducibility. See {doc}`The map equation <concepts/the-map-equation>`.
 
 ### How many trials should I use, and how do I know the result is reliable?
 
@@ -35,7 +35,7 @@ spread signals degeneracy. See {doc}`Running Infomap and tuning options <working
 Infomap requires a seed ≥ 1; use any positive integer for reproducible runs.
 See {doc}`Running Infomap and tuning options <working-with-infomap/running-and-options>`.
 
-### What does `result.codelength` actually measure?
+### What does `result.codelength` measure?
 
 It is the value of the map equation: the average number of bits per step needed
 to describe a random walk under the best code for the partition Infomap found.
@@ -49,15 +49,15 @@ Infomap found. See {doc}`The map equation <concepts/the-map-equation>`.
 
 Infomap minimises a flow-based description length, not a target count or a
 sociological ground truth. Boundary nodes where the random walker mixes can form
-their own module if naming it shortens the overall description. More modules than
-you expected is often right, not a bug. See
+their own module if naming it shortens the overall description, so an unexpected
+module count is not necessarily an error. See
 {doc}`The map equation <concepts/the-map-equation>`.
 
 ### Two-level or multilevel: when should I pass `two_level=True`?
 
 Pass `two_level=True` for a flat partition (every node in exactly one top
 module). Omit it (the default) to let Infomap discover hierarchical structure.
-See {doc}`Codelength and the two-level map equation <concepts/the-map-equation>`
+See {doc}`The map equation <concepts/the-map-equation>`
 and {doc}`Hierarchy and the multilevel map equation <concepts/hierarchy-and-the-multilevel-map>`.
 
 ### Does Infomap choose the hierarchy depth for me, and how do I read each level?
@@ -153,13 +153,21 @@ more reliable modules. See {doc}`Incomplete data and regularization <robustness/
 
 ## Workflows and integrations
 
-### How do I compare Infomap with Louvain or Leiden, and which is "right"?
+### How does Infomap relate to Louvain and Leiden?
 
-Run each and compare the partitions with `sklearn.metrics.adjusted_mutual_info_score`
-(AMI) or `normalized_mutual_info_score` (NMI). Neither is universally right: Infomap
-minimises a flow-based description length, while Louvain and Leiden maximise
-modularity, whose resolution limit can merge small communities (Leiden can avoid
-it with a Constant Potts Model objective). See {doc}`Comparing Infomap, Louvain, and Leiden <concepts/choosing-a-method>`.
+All three partition a network, but Infomap optimises the compression of flow while
+Louvain and Leiden maximise modularity (density against a null model). They tend to
+agree on clear structure and read a network differently when flow direction or
+scale matters. See {doc}`Reading Infomap through Louvain and Leiden <concepts/choosing-a-method>`.
+
+### How does Infomap relate to statistical inference methods such as stochastic block models?
+
+They answer different questions. Infomap asks how well a partition compresses
+the flow of a random walk on the network you observed; inference methods ask how
+plausibly a generative model explains the observed edges, and they bring their
+own machinery for model selection. For that family of methods,
+[graph-tool's documentation](https://graph-tool.skewed.de/) is a good starting
+point.
 
 ### How do I use Infomap inside a Scanpy / AnnData workflow?
 
@@ -198,6 +206,6 @@ See {doc}`The map equation <concepts/the-map-equation>`.
 
 Cite both the 2008 PNAS paper (the map equation) and the MapEquation software
 package (the implementation and version, for reproducibility). Cite the survey
-{cite:t}`smiljanic2026survey` as well when your work builds on the wider
+{cite:p}`smiljanic2026survey` as well when your work builds on the wider
 framework. BibTeX and guidance on citing specific extensions are in
 {doc}`How to cite Infomap <citing>`.

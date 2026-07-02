@@ -84,6 +84,10 @@ test = [
   "scipy",
 ]
 docs = [
+  # Building the docs executes the chapter code cells via myst-nb, so a full
+  # build also needs the `examples` extra (matplotlib, networkx, igraph, pandas,
+  # scikit-learn, scanpy, ...). Use `pip install -e ".[docs,examples]"`, which is
+  # what `make build-docs` installs.
   "sphinx",
   "furo",
   "myst-nb",
@@ -190,6 +194,9 @@ reportUnsupportedDunderAll = false
 
 [tool.pytest.ini_options]
 testpaths = ["test/python"]
+# NUMBER lets doctests state floats at the precision that matters
+# (`>>> result.codelength` -> `3.3858`) instead of an abs(...) < tol dance.
+doctest_optionflags = ["NUMBER"]
 markers = [
   "fast: Stable correctness checks intended for fast feedback and nightly correctness runs.",
   "slow: Broader or more expensive checks that should stay out of the default fast suite.",

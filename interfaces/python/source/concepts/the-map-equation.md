@@ -10,14 +10,16 @@ kernelspec:
 
 # The map equation
 
-```{admonition} In one sentence
+{bdg-info-line}`Concept`
+
+```{admonition} At a glance
 :class: tip
 The map equation measures how many bits it takes to describe a random walk on
 your network. That number is the *codelength*; Infomap finds the partition that
 makes it smallest, which is the partition where flow stays trapped in modules.
 ```
 
-## Motivation
+## Two questions you can ask of a network
 
 When you split a network into communities, how do you know the split is *good*?
 You need a quality function: a single number that scores any candidate partition.
@@ -27,15 +29,14 @@ than a random baseline would predict. Modularity asks a question about how the
 network was wired.
 
 The map equation asks a question about how it is *used*. Given that flow moves
-through the network, passengers through airports, clicks across the web, messages
-through a social graph, which partition best compresses a description of that
-movement? The answer is the partition with the shortest **codelength**: the
-fewest bits per step needed to describe a random walk. A short codelength means
-the partition captures real structure in the flow. Both questions are legitimate
-and often agree; they simply differ, and when links carry movement the two views
-can disagree, with the map equation the one built for the flow.
+through the network, say passengers through airports or clicks across the web,
+which partition best compresses a description of that movement? The answer is
+the partition with the shortest **codelength**: the fewest bits per step needed
+to describe a random walk. Both questions are legitimate and often give the
+same answer. They can disagree when links carry real movement, because only the
+map equation models that movement.
 
-## Intuition
+## Reusing street names
 
 Picture narrating a random walker's journey to a friend, one step at a time, in
 as few words as possible. The trick is the one paper maps already use: reuse
@@ -47,20 +48,20 @@ into a new one. Stay inside a city and you spend the day saying short street
 names; you rarely pay to name the city.
 
 A network with communities works the same way. Give each module its own small
-**module codebook** of short codewords for the nodes inside it, and add one tiny
+**module codebook** of short codewords for the nodes inside it, and add one
 **index codebook** whose only job is to announce "switch to module 2." If the
 walker wanders inside a module for long stretches and crosses between modules
-only rarely, you almost always speak in short module codewords and seldom pay for
-the index. The description shrinks. A partition that ignores the real structure
-keeps the walker crossing boundaries, so you pay the index cost constantly and
-the description grows.
+only rarely, you almost always speak in short module codewords, seldom pay for
+the index, and the description shrinks. A partition that ignores the real
+structure keeps the walker crossing boundaries, so you pay the index cost
+constantly and the description grows.
 
 The map equation, $L(\mathsf{M})$, is the average description length per step
 under the best two-level code for partition $\mathsf{M}$. **Minimising $L$ over
 all partitions is how Infomap defines and finds communities: the partition that
 best compresses the flow.**
 
-## Theory
+## The map equation, term by term
 
 For a partition $\mathsf{M}$ into $m$ modules, the map equation is the minimum
 average bits per step for a two-level code of an infinite random walk:
@@ -84,10 +85,9 @@ The two terms are the two codebooks:
 
 The best partition balances the two. Too many modules and the between term grows,
 because the walker keeps crossing boundaries. Too few and the within term grows,
-because each codebook must name many nodes with long codewords. The minimum of
-$L$ lands on the community structure the flow reveals. **Lower codelength = better
-compression = more pronounced community structure with respect to the flow**, so
-when you compare two partitions of the same network, the smaller $L$ wins.
+because each codebook must name many nodes with long codewords. When you compare
+two partitions of the same network, the one with smaller $L$ compresses the flow
+better and captures more of its community structure.
 
 For undirected networks, node visit frequencies equal normalised link weights, so
 Infomap needs no teleportation. For directed networks Infomap uses a random-surfer
@@ -98,7 +98,7 @@ distribution.
 :::{toggle}
 **Full term-by-term form**
 
-Following {cite:t}`rosvall2009map`, the two-level code uses the index codebook at
+The two-level code {cite:p}`rosvall2009map` uses the index codebook at
 total exit rate $q_{\curvearrowright} = \sum_i q_{i\curvearrowright}$, with entropy
 
 $$
@@ -124,10 +124,10 @@ hard lower bound on average codeword length, so $L(\mathsf{M})$ is the shortest
 possible two-level description per step. Combining and simplifying gives a form
 that updates cheaply when one node moves between modules, by tracking only
 $q_{i\curvearrowright}$ and $\sum_{\alpha\in i} p_\alpha$ per module; see
-{cite:t}`rosvall2009map` for the fast stochastic search that exploits it.
+{cite:p}`rosvall2009map` for the fast stochastic search that exploits it.
 :::
 
-## A worked example
+## Compression on the karate club
 
 Zachary's karate club is a classic benchmark: 34 people, 78 friendships, and a
 known split into two factions. It is small enough to explore interactively and
@@ -154,19 +154,17 @@ print(f"  Infomap partition ({n_top} modules): {L:.4f}")
 print(f"  Compression gain:                 {(L_one - L) / L_one * 100:.1f}%")
 ```
 
-The modular description wins: the one-level codelength, the price of describing
-every node with one flat codebook, runs higher than the Infomap codelength. That
-gap is the evidence the karate club has community structure. The walker does not
-spread evenly; it lingers in pockets, and naming those pockets shortens the
-description.
+The one-level codelength, the price of describing every node with one flat
+codebook, runs higher than the Infomap codelength. That gap is the evidence the
+karate club has community structure.
 
-```{admonition} Why three modules?
+```{admonition} Why more than two modules?
 :class: note
 The club famously split into two factions, but Infomap minimises the description
-length of the flow, not a sociological label. The nodes on the boundary between
-the factions form a transitional cluster where the walker's affiliation is split,
-and naming it shortens the code. Whether that third group means something is
-yours to judge. If you need exactly two modules, pass
+length of the flow, not a sociological label. Nodes on the boundary between the
+factions can form their own transitional cluster where the walker's affiliation
+is split, and naming it shortens the code, so Infomap often reports more than two
+modules here. If you need exactly two modules, pass
 `preferred_number_of_modules=2`.
 ```
 
@@ -184,7 +182,7 @@ plt.close(fig)
 ```{glue:figure} fig-map-equation
 Zachary's karate club, coloured by the modules Infomap finds. The walker lingers
 inside each colour and crosses between them only rarely, which is exactly the
-structure the map equation compresses. The boundary nodes form a small third
+structure the map equation compresses. The boundary nodes form a small extra
 module because naming it shortens the overall code.
 ```
 
@@ -202,8 +200,8 @@ module because naming it shortens the overall code.
 
 ## Going deeper
 
-- {cite:t}`smiljanic2026survey`, §3, derives the map equation and compares it with
-  modularity in depth.
-- Companion notebook: `examples/notebooks/3.1 The two-level map equation.ipynb`.
-- {cite:t}`rosvall2008maps` is the source paper; {cite:t}`rosvall2009map` is a
-  longer pedagogical account with the fast stochastic search algorithm.
+- Source paper {cite:p}`rosvall2008maps`; a longer pedagogical account with the
+  fast stochastic search algorithm {cite:p}`rosvall2009map`.
+- The survey (§3) derives the map equation and compares it with modularity in
+  depth {cite:p}`smiljanic2026survey`; its companion notebook is
+  `examples/notebooks/3.1 The two-level map equation.ipynb`.

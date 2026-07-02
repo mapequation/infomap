@@ -1,4 +1,4 @@
-# Integrations & scaling
+# Workflows & integrations
 
 How Infomap fits into the wider ecosystem and how to run it on real workloads.
 For *which* method to choose in the first place, see

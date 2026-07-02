@@ -10,25 +10,27 @@ kernelspec:
 
 # Scanpy and AnnData
 
-```{admonition} In one sentence
+{bdg-primary-line}`Workflow`
+
+```{admonition} At a glance
 :class: tip
 Pull Infomap straight into your single-cell analysis pipeline: point it at the
 kNN connectivity graph Scanpy already built, get back AnnData-compatible
 cluster labels, and compare with Leiden in a few lines.
 ```
 
-## Motivation
+## Infomap in a single-cell pipeline
 
 Single-cell RNA-seq pipelines, Scanpy chief among them, cluster cells by
-building a $k$-nearest-neighbor graph in PCA-reduced space and then running a
+building a $k$-nearest-neighbour graph in PCA-reduced space and then running a
 graph-partitioning algorithm. Leiden is the standard default; it
 optimises a modularity-style objective with a tunable resolution parameter. Infomap optimises
 the map equation instead: it asks where a random walker on the connectivity graph
 spends its time, and names those flow-trapping regions as modules.
 
-Because both algorithms take the same weighted neighbor graph as input and
-produce a partition of observations as output, swapping in Infomap requires
-almost no code change. The `infomap.tl.infomap()` function follows Scanpy `tl`
+Both algorithms take the same weighted neighbour graph as input and produce a
+partition of observations as output, so swapping in Infomap means calling a
+different function. The `infomap.tl.infomap()` function follows Scanpy `tl`
 conventions: it reads `adata.obsp["connectivities"]` by default, writes a
 pandas categorical column to `adata.obs`, and records run metadata in
 `adata.uns`. Scanpy itself is not imported by the Infomap package.
@@ -38,33 +40,28 @@ slot is a standard SciPy CSR matrix; you can hand it directly to
 `infomap.run()` and use the full Result API (hierarchical modules, codelength,
 multiple trials) without any AnnData involvement.
 
-## Intuition
+## The neighbour graph as flow
 
-The neighbor graph Scanpy builds is a network: cells are nodes, and each edge
-carries a connectivity weight that reflects how similar two cells are in PCA
-space. Infomap treats that graph as a flow network and asks: if a random walker
-hops between connected cells proportional to edge weights, where does it tend to
-get trapped?
+The neighbour graph Scanpy builds is a network: cells are nodes, and each edge
+carries a connectivity weight reflecting how similar two cells are in PCA space.
+Infomap treats it as a flow network and looks for regions where a random walker,
+hopping between cells in proportion to edge weights, tends to get trapped. A
+cluster of cells with strong internal connectivity and weak cross-cluster links
+is exactly such a region, and those regions become the modules
+(see {doc}`/concepts/the-map-equation`).
 
-A cluster of cells with strong internal connectivity and weak cross-cluster
-connections is exactly the kind of structure that traps a random walk. Those
-traps correspond to low map-equation cost: the walker can be described
-compactly because it rarely needs to name a new module. Cells at cluster
-boundaries attract visits from multiple modules, so they end up in whichever
-module provides the best compression.
+This flow-centric view often agrees with Leiden, but the two can diverge:
+Leiden's partition depends on its resolution parameter, and the connectivity
+graph may be asymmetric. Running both and comparing is a useful sanity check,
+especially for datasets where cluster sizes vary widely.
 
-This flow-centric view often agrees with Leiden, but it can diverge when the
-resolution parameter is not tuned carefully or when the connectivity structure
-is asymmetric. Running both and comparing is a useful sanity check, especially
-for datasets where cluster sizes vary widely.
-
-## A worked example
+## Cluster three cell populations
 
 ### Setup: synthetic AnnData with three clusters
 
 The example is fully synthetic and small so the build completes in a few
 seconds. Three tight Gaussian blobs in 10-dimensional space give Scanpy's
-neighbor graph a clear community structure that both algorithms should recover.
+neighbour graph a clear community structure that both algorithms should recover.
 
 ```{code-cell} python
 import warnings
@@ -97,7 +94,7 @@ print("True cluster sizes:", adata.obs["true_label"].value_counts().to_dict())
 
 ### Build the kNN graph
 
-`sc.pp.neighbors` computes a weighted $k$-nearest-neighbor graph and stores two
+`sc.pp.neighbors` computes a weighted $k$-nearest-neighbour graph and stores two
 sparse matrices in `adata.obsp`:
 
 - **`connectivities`**: symmetrised connectivity weights used by clustering tools.
@@ -192,13 +189,12 @@ adata.obs["infomap_lowlevel"] = pd.Categorical(
 adata.obs[["infomap", "infomap_lowlevel"]].value_counts()
 ```
 
-The low-level and `tl`-helper results match because both call the same
-underlying Infomap engine with the same options. The `tl` helper adds the
-AnnData bookkeeping; the core API gives you everything else.
+The two agree because the `tl` helper and the core API call the same engine with
+the same options; the helper only adds the AnnData bookkeeping.
 
 ### Visualise with UMAP
 
-Scanpy's UMAP embedding uses the same neighbor graph and gives a 2-D view of
+Scanpy's UMAP embedding uses the same neighbour graph and gives a 2-D view of
 cell layout. Colouring by ground truth, Infomap, and Leiden side by side is the
 standard visual QC step.
 
@@ -211,6 +207,15 @@ sc.pl.umap(
     show=True,
 )
 ```
+
+## Pitfalls
+
+- **Scanpy is not a dependency of `infomap`.** `infomap.tl.infomap` reads an
+  AnnData you already built; install Scanpy yourself.
+- **Results follow the neighbour graph.** They depend on your `sc.pp.neighbors`
+  settings (`n_neighbors`, the representation), so build that graph deliberately.
+- **Compare with another method.** Cross-tabulate against Leiden; the cells that
+  switch labels between the two are where the objectives disagree.
 
 ## API pointers
 
@@ -248,4 +253,4 @@ Key `infomap.tl.infomap` keyword arguments:
 - {doc}`/working-with-infomap/inputs` shows how `add_scipy_sparse_matrix` handles
   directed, undirected, and weighted graphs.
 - {doc}`/concepts/the-map-equation` is the objective Infomap minimises.
-- {cite:t}`rosvall2008maps` is the source paper.
+- The map equation's source paper {cite:p}`rosvall2008maps`.

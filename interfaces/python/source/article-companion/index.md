@@ -22,28 +22,28 @@ documentation.
 - [3.1 The two-level map equation](https://github.com/mapequation/infomap/blob/master/examples/notebooks/3.1%20The%20two-level%20map%20equation.ipynb):
   the core objective. Gentler path: {doc}`The map equation </concepts/the-map-equation>`.
 - [4.1 The two-level phase](https://github.com/mapequation/infomap/blob/master/examples/notebooks/4.1%20The%20Two-level%20Phase.ipynb):
-  the search algorithm. Gentler path: {doc}`Codelength and the two-level map equation </concepts/the-map-equation>`.
+  the search algorithm. Related: {doc}`Running Infomap </working-with-infomap/running-and-options>`.
 - [4.3 Solution landscape](https://github.com/mapequation/infomap/blob/master/examples/notebooks/4.3%20Solution%20Landscape.ipynb):
   degenerate solutions and reliability. Related: {doc}`Reading results and iterating </working-with-infomap/results-and-iteration>`.
 
 ## Higher-order representations
 
 - [5.1 Memory networks](https://github.com/mapequation/infomap/blob/master/examples/notebooks/5.1%20Memory%20Networks.ipynb).
-  Gentler path: {doc}`Memory and state networks </flow-models/memory-and-state>`.
+  See also: {doc}`Memory and state networks </flow-models/memory-and-state>`.
 - [5.2 Multilayer networks](https://github.com/mapequation/infomap/blob/master/examples/notebooks/5.2%20Multilayer%20Networks.ipynb).
-  Gentler path: {doc}`Multilayer networks </flow-models/multilayer>`.
+  See also: {doc}`Multilayer networks </flow-models/multilayer>`.
 - [5.3 Modeling temporal data](https://github.com/mapequation/infomap/blob/master/examples/notebooks/5.3%20Modeling%20Temporal%20Data.ipynb).
-  Gentler path: {doc}`Temporal networks </flow-models/temporal>`.
+  See also: {doc}`Temporal networks </flow-models/temporal>`.
 - [5.4 Modeling multi-body interactions](https://github.com/mapequation/infomap/blob/master/examples/notebooks/5.4%20Modeling%20Multi-body%20Interactions.ipynb).
 
 ## Metadata, bipartite, and incomplete data
 
 - [6.1 Networks with metadata](https://github.com/mapequation/infomap/blob/master/examples/notebooks/6.1%20Networks%20with%20Metadata.ipynb).
-  Gentler path: {doc}`Networks with metadata </flow-models/metadata>`.
+  See also: {doc}`Networks with metadata </flow-models/metadata>`.
 - [6.2 Bipartite networks](https://github.com/mapequation/infomap/blob/master/examples/notebooks/6.2%20Bipartite%20Networks.ipynb).
-  Gentler path: {doc}`Bipartite networks </flow-models/bipartite>`.
+  See also: {doc}`Bipartite networks </flow-models/bipartite>`.
 - [7 Networks with incomplete data](https://github.com/mapequation/infomap/blob/master/examples/notebooks/7%20Networks%20with%20incomplete%20data.ipynb).
-  Gentler path: {doc}`Incomplete data and regularization </robustness/incomplete-data>`.
+  See also: {doc}`Incomplete data and regularization </robustness/incomplete-data>`.
 
 ## Applications
 

@@ -154,6 +154,12 @@ jobs:
         if: ${{ !matrix.smoke-only }}
         run: make test-python-unit
 
+      # Cheap (~1 s) and the only guard keeping docstring examples in sync
+      # with the bundled example networks, so quick mode runs it too.
+      - name: Run Python doctests
+        if: ${{ !matrix.smoke-only }}
+        run: make test-python-doctest
+
   tests-full:
     if: ${{ always() && inputs.run-tests && inputs.mode == 'full' && (needs.swig-freshness.result == 'success' || needs.swig-freshness.result == 'skipped') }}
     name: Python ${{ matrix.os }} / ${{ matrix.python-version }}

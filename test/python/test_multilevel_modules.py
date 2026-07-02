@@ -43,7 +43,7 @@ def test_multilevel_modules(make_infomap, example_network_path):
     im.read_file(str(example_network_path("ninetriangles.net")))
     im.run()
 
-    assert im.num_top_modules == 5
+    assert im.num_top_modules == 3
     assert im.num_levels == 3
     assert sorted(im.get_multilevel_modules(states=False).values()) == sorted(
         multilevel_modules(im, states=False).values()

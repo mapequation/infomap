@@ -295,7 +295,7 @@ def to_networkx(
 
     Nodes are the result's (state) nodes, keyed by ``state_id``, carrying the
     Infomap node ``name`` plus the module/path/flow attributes (the same
-    attribute scheme as :func:`annotate_networkx_graph`). Edges come from the
+    attribute scheme as :func:`~infomap.export.annotate_networkx_graph`). Edges come from the
     partitioned network.
 
     Parameters
@@ -358,7 +358,7 @@ def to_igraph(
 
     Vertices are the result's (state) nodes in ``state_id`` order, carrying the
     Infomap node ``name`` plus the module/path/flow attributes (the same
-    attribute scheme as :func:`annotate_igraph_graph`). Edges come from the
+    attribute scheme as :func:`~infomap.export.annotate_igraph_graph`). Edges come from the
     partitioned network.
 
     Parameters

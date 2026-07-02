@@ -3,7 +3,7 @@ API reference
 
 .. currentmodule:: infomap
 
-The functional front door is :func:`run`, which returns an immutable
+The main entry point is :func:`run`, which returns an immutable
 :class:`Result`. Build inputs with :class:`Network`, capture configuration with
 :class:`Options`, and convert results to graph objects with :func:`to_networkx`
 and :func:`to_igraph`. The stateful :class:`Infomap` class composes these for

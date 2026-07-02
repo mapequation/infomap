@@ -11,11 +11,11 @@ same parser the Infomap CLI uses and returns a fresh
     import infomap
 
     net = infomap.datasets.two_triangles()
-    result = net.run()
+    result = infomap.run(net)
 
 :func:`modular_wd` and :func:`states` encode directed flow, so those loaders
 return a ``Network`` pre-configured with ``--flow-model directed``; a
-``flow_model`` passed at :meth:`~infomap.Network.run` still wins.
+``flow_model`` passed at :func:`infomap.run` still wins.
 
 Basic examples
 --------------

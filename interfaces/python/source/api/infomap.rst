@@ -3,9 +3,9 @@ Infomap class
 
 .. currentmodule:: infomap
 
-:class:`Infomap` is the single entry point for the whole workflow: build a
-network, run the search, then read the partition back. The golden path is four
-calls.
+:class:`Infomap` is the stateful entry point for the whole workflow: build a
+network, run the search, then read the partition back. The typical usage is
+four calls.
 
 .. code-block:: python
 
@@ -155,4 +155,3 @@ Full reference
 .. autoclass:: Infomap
    :members:
    :inherited-members:
-   :show-inheritance:

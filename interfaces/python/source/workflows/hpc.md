@@ -10,7 +10,9 @@ kernelspec:
 
 # Running at scale (HPC)
 
-```{admonition} In one sentence
+{bdg-primary-line}`Workflow`
+
+```{admonition} At a glance
 :class: tip
 Infomap trials are independent work units: run many in parallel on a
 single node with `parallel_trials`, or split them across a scheduler job
@@ -18,7 +20,7 @@ array with `trial_offset` and merge the best result afterwards with
 `python -m infomap.merge`.
 ```
 
-## Motivation
+## When one node isn't enough
 
 Infomap is a stochastic optimiser. It starts from a random initial state
 and greedily minimises the map equation, so different random seeds can
@@ -26,8 +28,7 @@ find different local optima. The standard way to get a reliable partition
 is to run many independent trials and keep the one with the lowest
 codelength. On small networks, tens of trials on a laptop is enough. On
 real-world networks with millions of nodes and links, each trial can take
-minutes, and you may want hundreds of trials to trust the result. That is
-where a cluster comes in.
+minutes, and you may want hundreds of trials to trust the result.
 
 Two strategies cover most HPC use cases:
 
@@ -47,10 +48,11 @@ Two strategies cover most HPC use cases:
 Both strategies produce the same result as a sequential run with the same
 seed, total trial count, and algorithm settings.
 
-## Intuition
+## Trials as independent work units
 
-Think of `num_trials` as a budget and `trial_offset` as a slice pointer.
-If you want 100 trials in total and split them across four array tasks:
+`num_trials` is the total trial budget, and `trial_offset` shifts where a
+task's trials begin in that budget. If you want 100 trials in total and split
+them across four array tasks:
 
 - task 0: trials 0–24, offset 0
 - task 1: trials 25–49, offset 25
@@ -100,7 +102,7 @@ wall-clock time on very large graphs but may produce a slightly different
 partition. If you set both, `parallel_trials` takes precedence and inner
 parallelisation is disabled inside the trial workers.
 
-## A worked example
+## Sharding trials across jobs
 
 The following cells demonstrate the sharding pattern locally in Python.
 On a cluster, each shard would be a separate job-array task running the
@@ -155,7 +157,7 @@ for spec in shard_specs:
     print(
         f"shard {spec['shard_id']}: seed={spec['seed']}"
         f"  codelength={result.codelength:.6f}"
-        f"  modules={result.modules()}"
+        f"  modules={result.num_top_modules}"
     )
 
     if result.codelength < best_codelength:

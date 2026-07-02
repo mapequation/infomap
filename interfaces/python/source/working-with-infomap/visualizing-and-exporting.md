@@ -10,38 +10,31 @@ kernelspec:
 
 # Visualising and exporting
 
-```{admonition} In one sentence
+{bdg-success-line}`How-to`
+
+```{admonition} At a glance
 :class: tip
-Once Infomap has partitioned your network, you want to *see* the structure and
-*save* it. This chapter covers the docs visualisation helper, the in-memory
+This chapter covers the docs visualisation helper, the in-memory
 graph export (`to_networkx` / `to_igraph` for GraphML and GEXF), and the native
 `.tree` / `.clu` formats written by the stateful Infomap.
 ```
 
-## Motivation
+## A picture and a file
 
-Running Infomap is only half the job. The partition lives in memory on the
-:class:`~infomap.Result`, but a mapping from node ids to module ids is hard to
-reason about on its own. You need two things:
+The partition lives in memory on the {class}`~infomap.Result`. This chapter
+covers two ways to get it out:
 
-1. **A picture**: a network layout where every module gets a distinct colour, so
-   you can see at a glance whether the detected communities match your intuition
-   about the data.
-2. **Persistent output**: files your collaborators, downstream scripts, and
-   visualisation tools can open without re-running the algorithm.
+1. **A picture**: a network layout where every module gets a distinct colour.
+2. **Persistent output**: files that other tools and scripts can open without
+   re-running the algorithm.
 
-The cleanest export turns the result into an annotated graph with
-:func:`infomap.to_networkx` or :func:`infomap.to_igraph`, which you then write
+The in-memory export turns the result into an annotated graph with
+{func}`infomap.to_networkx` or {func}`infomap.to_igraph`, which you then write
 with the graph library's own writer (GraphML, GEXF). The stateful
-:class:`~infomap.Infomap` writes the engine's native text formats, `.tree` and
+{class}`~infomap.Infomap` writes the engine's native text formats, `.tree` and
 `.clu`.
 
-## Intuition
-
-Think of the partition as a layer of paint over your network. The visualisation
-helper applies that paint: each module gets one colour, nodes sit where a spring
-layout places them, and the edges fade into the background so the clusters stand
-out.
+## Export formats
 
 The export formats take different cuts through the same result:
 
@@ -55,11 +48,9 @@ The export formats take different cuts through the same result:
 - `.clu` is the simplest format: node id, module, and flow per line. It loads
   with pandas or numpy in one line.
 
-## A worked example
+## Colour and export the karate club
 
-We use the Zachary karate club throughout this chapter (34 people, 78
-friendships, a well-known fission into factions) because it is small enough to
-explore interactively and produces a legible figure.
+The examples below use the Zachary karate club (34 people, 78 friendships).
 
 ### Run Infomap
 
@@ -103,10 +94,6 @@ tightly connected nodes together, so the colour boundaries line up with the
 visual gaps in the drawing.
 ```
 
-Each colour represents one top-level module. The spring layout pulls tightly
-connected groups together, so the colour boundaries usually line up with the
-visual gaps in the drawing.
-
 `draw_partition` accepts several optional keyword arguments that are useful when
 you adapt the pattern in your own code. `seed` fixes the layout, `node_size` sets
 the base marker area, and `flow` scales each marker so its radius grows as the
@@ -124,14 +111,13 @@ axes[1].set_title("seed=99")
 fig.tight_layout()
 ```
 
-The helper is intentionally short (~40 lines). For production figures, copy
-`interfaces/python/source/_ext/docs_viz.py` and adapt the palette, layout
-algorithm, edge styling, and node labels to your taste.
+The helper is short (~40 lines). For production figures, copy
+`interfaces/python/source/_ext/docs_viz.py` and adapt it.
 
 ### Export to GraphML and GEXF
 
 For a single file bundling the network topology and the Infomap result,
-:func:`infomap.to_networkx` returns a copy of the graph annotated with the
+{func}`infomap.to_networkx` returns a copy of the graph annotated with the
 partition, which NetworkX then writes:
 
 ```{code-cell} python
@@ -171,12 +157,12 @@ with open(graphml_path) as f:
             break
 ```
 
-For igraph users, :func:`infomap.to_igraph` returns the same annotation on an
+For igraph users, {func}`infomap.to_igraph` returns the same annotation on an
 `igraph.Graph`.
 
 ### Export to .tree and .clu
 
-The stateful :class:`~infomap.Infomap` writes the engine's native text formats:
+The stateful {class}`~infomap.Infomap` writes the engine's native text formats:
 build one, run it, and call its `write_*` methods.
 These formats feed the mapequation.org Network Navigator and alluvial diagrams.
 
@@ -227,7 +213,7 @@ number only; pass `depth_level` to `write_clu` to report a different level.
 ### The find_communities shortcut
 
 For a one-liner where you only need the NetworkX graph annotated in place,
-:func:`infomap.find_communities` writes the module attribute directly onto the
+{func}`infomap.find_communities` writes the module attribute directly onto the
 graph and returns the community sets. Call a NetworkX writer yourself afterwards:
 
 ```python
@@ -252,12 +238,23 @@ shutil.rmtree(tmp)
 print("Temp directory removed.")
 ```
 
+## Pitfalls
+
+- **Alluvial diagrams live on mapequation.org, not in this package.** Write a
+  `.ftree` and open it in the Network Navigator; the docs helper draws static
+  module-coloured layouts only.
+- **`.clu` records the top level.** Pass `depth_level` to `write_clu` for a
+  deeper level; `.tree` / `.ftree` carry the full hierarchy.
+- **`to_networkx` returns a copy.** It annotates a new graph and leaves your
+  original untouched.
+
 ## API pointers
 
 **Visualisation**
 
-- {func}`docs_viz.draw_partition` draws a module-coloured spring layout and
-  accepts an existing `ax` for multi-panel figures.
+- `draw_partition` (the docs helper in `_ext/docs_viz.py`) draws a
+  module-coloured spring layout and accepts an existing `ax` for multi-panel
+  figures.
 
 **In-memory graph export**
 
@@ -282,7 +279,7 @@ print("Temp directory removed.")
 
 - {doc}`/api/index` gives the complete export signatures with every keyword
   argument.
-- {cite:t}`smiljanic2026survey`, §4, sets flow-based community detection against
-  modularity-based methods.
+- The survey (§4) sets flow-based community detection against modularity-based
+  methods {cite:p}`smiljanic2026survey`.
 - The `.ftree` format adds intra-module link flows and is the basis for alluvial
   diagrams on mapequation.org.

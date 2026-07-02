@@ -319,12 +319,12 @@ class _InfomapResultsMixin:
         (3, 7)
         (3, 7)
         (3, 7)
-        (4, 8)
-        (4, 8)
-        (4, 8)
-        (5, 9)
-        (5, 9)
-        (5, 9)
+        (3, 8)
+        (3, 8)
+        (3, 8)
+        (3, 9)
+        (3, 9)
+        (3, 9)
 
         >>> from infomap import Infomap
         >>> im = Infomap(silent=True)

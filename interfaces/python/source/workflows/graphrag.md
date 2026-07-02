@@ -10,7 +10,9 @@ kernelspec:
 
 # GraphRAG tables
 
-```{admonition} In one sentence
+{bdg-primary-line}`Workflow`
+
+```{admonition} At a glance
 :class: tip
 The `infomap.graphrag` adapter reads the entity and relationship Parquet tables
 produced by a GraphRAG pipeline, runs Infomap on the resulting weighted graph,
@@ -18,7 +20,7 @@ and returns GraphRAG-style community tables ready to drop into a retrieval
 pipeline.
 ```
 
-## Motivation
+## Communities as retrieval units
 
 GraphRAG pipelines turn a document corpus into a knowledge graph: an *entities*
 table of named concepts and a *relationships* table of weighted co-occurrences.
@@ -27,48 +29,27 @@ summarises each community, and those summaries are indexed for
 question-answering.
 
 The default community detector in most GraphRAG implementations is Leiden, run
-with a modularity objective. Infomap takes a different approach: it finds the partition
-that minimises the code length of a random walk over the weighted graph (see
-{doc}`/concepts/the-map-equation`). On knowledge graphs where edge weights represent
-co-occurrence frequency, flow is a natural proxy for semantic proximity, and
-Infomap's compression objective rewards tight topical clusters. The adapter in
-`infomap.graphrag` handles the column mapping, node-id translation, hierarchy
-extraction, and Parquet output so you do not have to.
+with a modularity objective. Infomap optimises a different quality function: it
+finds the partition that minimises the description length of a random walk over
+the weighted graph (see {doc}`/concepts/the-map-equation`). Whether that flow
+view groups your entities more usefully than modularity depends on the graph;
+running both and comparing is reasonable. What this page provides is the
+plumbing: the adapter in `infomap.graphrag` handles the column mapping, node-id
+translation, hierarchy extraction, and Parquet output, so an Infomap partition
+drops into GraphRAG's own table schema and the downstream summarisation and
+retrieval steps run unchanged.
 
-## Intuition
+## What Infomap optimises here
 
-Think of the entity graph as a map of ideas. A random reader picking up a
-document about "Alpha" will next likely encounter "Beta" and "Gamma" before
-jumping to the "Delta" side of the graph. Infomap encodes that tendency: it
-groups entities that a conceptual random walk visits together into the same
-community. Communities that trap the walk well compress into short codewords;
-entities that bridge communities carry higher description cost.
+Infomap minimises the map equation over partitions of the entity graph (see
+{doc}`/concepts/the-map-equation`). Two things are specific to GraphRAG input.
+Infomap uses the relationship weights directly as flow volumes, so a heavy
+co-occurrence link between two entities makes them harder to separate. And the
+typical GraphRAG graph is undirected and symmetric, so no directed-flow or
+teleportation assumptions are needed; Infomap runs in undirected mode by
+default.
 
-The adapter translates this result into GraphRAG's own table schema so the
-downstream summarisation and retrieval steps need no changes.
-
-## Theory
-
-Infomap minimises the map equation
-
-$$
-L(\mathsf{M}) =
-  q_{\curvearrowright} H(\mathcal{Q})
-  + \sum_{i=1}^{m} p_{\circlearrowright}^i H(\mathcal{P}^i)
-$$
-
-over all partitions $\mathsf{M}$ of the entity graph. The first term is the cost
-of naming module crossings; the second is the cost of naming nodes within
-modules. Infomap uses edge weights directly as flow volumes, so a heavy
-co-occurrence link between two entities makes them harder to separate. See
-{doc}`/concepts/the-map-equation` for the full derivation.
-
-For the typical undirected, weighted knowledge graph produced by GraphRAG, no
-directed-flow or teleportation assumptions are needed. Infomap operates in
-undirected mode by default when all edges are symmetric, which is the standard
-output of a co-occurrence extraction step.
-
-## A worked example
+## From entity tables to communities
 
 ### Build a synthetic GraphRAG dataset
 
@@ -183,9 +164,9 @@ result.communities[[
 ]]
 ```
 
-Infomap separates the two triangles into community `infomap-1`
-(Alpha/Beta/Gamma) and `infomap-2` (Delta/Epsilon/Zeta). The weak bridge edge
-between Gamma and Delta carries too little flow to merge the groups.
+Infomap separates the two triangles into their own communities,
+{Alpha, Beta, Gamma} and {Delta, Epsilon, Zeta}. The weak bridge edge between
+Gamma and Delta carries too little flow to merge the groups.
 
 ### Visualise the partition
 
@@ -220,11 +201,6 @@ The GraphRAG entity graph coloured by community. Infomap separates the two
 tightly linked entity groups; the thin bridge between them carries too
 little flow to merge them.
 ```
-
-The two colour groups match the triangle communities. The thin bridge edge
-between Gamma and Delta connects the two clusters but does not pull them
-together, because the flow through it is weak next to the internal triangle
-edges.
 
 ### Write output to disk
 
@@ -261,6 +237,17 @@ nodes, communities = write_graphrag_communities(
 communities[["id", "level", "size", "entity_ids"]]
 ```
 
+## Pitfalls
+
+- **The tables need specific columns.** Entities need `id` and `title`;
+  relationships need `source`, `target`, `weight` (matching entity `title` by
+  default). Point the adapter elsewhere with `entity_title_col` / `endpoint_col`
+  / `weight_col`.
+- **Community ids are labels, not an order.** `infomap-1` and the like identify
+  groups; the numbering is arbitrary across runs.
+- **Omit `output_dir` to stay in memory.** Pass it only when you want the Parquet
+  tables written to disk.
+
 ## API pointers
 
 - {func}`infomap.graphrag.read_graphrag` translates entity/relationship
@@ -276,7 +263,7 @@ communities[["id", "level", "size", "entity_ids"]]
   the edge arrays, and the bidirectional entity-id ↔ node-id mappings.
 - {class}`infomap.graphrag.GraphRAGRunResult` bundles the `Infomap` object, the
   `GraphRAGGraph`, and the two output DataFrames.
-- {meth}`infomap.Infomap.codelength` and {attr}`infomap.Infomap.num_top_modules`
+- {attr}`infomap.Infomap.codelength` and {attr}`infomap.Infomap.num_top_modules`
   report the quality and structure of the solution after a run.
 
 ## Going deeper

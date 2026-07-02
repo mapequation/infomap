@@ -99,8 +99,7 @@ html_static_path = ["_static"]
 html_css_files = ["custom.css"]
 html_js_files = ["analytics.js"]
 html_logo = "https://mapequation.github.io/assets/img/twocolormapicon_whiteboarder.svg"
-# TODO: add a real favicon (.ico or .svg) and re-enable:
-# html_favicon = "_static/favicon.ico"
+html_favicon = "https://mapequation.github.io/assets/img/twocolormapicon_whiteboarder.svg"
 
 # Hide Furo's "view page source" header icon (the eye); with the source in a
 # different repo there is nothing useful to link to.

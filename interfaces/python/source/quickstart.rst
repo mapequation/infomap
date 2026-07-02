@@ -1,16 +1,15 @@
 Quick start
 ===========
 
-The shortest path to a partition: hand a graph to :func:`infomap.run` and read
-the result off the :class:`~infomap.Result` it returns. For worked examples with
-plotting, dataframe inspection, and export, see
-:doc:`working-with-infomap/index`.
+This page shows the smallest useful calls: run Infomap on a graph and read the
+result. For worked examples with plotting, dataframe inspection, and export,
+see :doc:`working-with-infomap/index`.
 
 Run on a graph
 --------------
 
-:func:`infomap.run` is the one-call front door. Give it a network and it returns
-an immutable :class:`~infomap.Result`:
+:func:`infomap.run` accepts a network and returns an immutable
+:class:`~infomap.Result`:
 
 .. code-block:: python
 
@@ -64,7 +63,8 @@ Reusable configuration
 ----------------------
 
 Capture a configuration once as an :class:`~infomap.Options` and reuse it across
-runs. Keyword overrides on :func:`infomap.run` still win over the bound options:
+runs. Keyword arguments on :func:`infomap.run` take precedence over the bound
+options:
 
 .. code-block:: python
 
@@ -76,9 +76,8 @@ runs. Keyword overrides on :func:`infomap.run` still win over the bound options:
 Read the result
 ---------------
 
-A :class:`~infomap.Result` reports scalar metrics as **properties** and
-collections as **methods** (with defaults), so a model never goes stale under
-you:
+A :class:`~infomap.Result` reports scalar metrics as properties and collections
+as methods with defaults:
 
 .. code-block:: python
 
@@ -115,4 +114,4 @@ Next steps
 - :doc:`working-with-infomap/index` covers every input format, the options worth
   tuning, and how to read, visualise, and export results.
 - :doc:`flow-models/index` covers richer networks: memory, multilayer, temporal,
-  metadata, bipartite, and hypergraphs.
+  metadata, and bipartite.

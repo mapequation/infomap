@@ -10,7 +10,9 @@ kernelspec:
 
 # Hypergraphs and higher-order networks
 
-```{admonition} In one sentence
+{bdg-warning-line}`Flow model`
+
+```{admonition} At a glance
 :class: tip
 A hyperedge can connect any number of nodes at once, but to apply Infomap you
 first decide how to represent that multi-body interaction as a network: the
@@ -35,10 +37,10 @@ context explicitly.
 
 The catch: Infomap clusters a *network*, not a hypergraph directly. You must
 translate the hypergraph into a network first, and the translation is not
-unique. As Eriksson, Edler, Rojas, de Domenico and Rosvall (2021) showed
-systematically, three broad families of representation exist (unipartite,
-bipartite, and multilayer), and each implies a different random-walk model,
-different link-flow volumes, and so different community structure. The choice of
+unique. Three broad families of representation exist (unipartite, bipartite,
+and multilayer), and each implies a different random-walk model, different
+link-flow volumes, and so different community structure
+{cite:p}`eriksson2021hypergraph`. The choice of
 representation is a modelling decision in its own right, not a preprocessing
 detail.
 
@@ -64,10 +66,10 @@ the walk:
   then occasionally takes the stairs to a different floor. Allows flows to
   linger within hyperedges and supports overlapping communities.
 
-The key insight from {cite:t}`eriksson2021hypergraph` is that you can design all
-three representations to give identical *node-visit rates* for the same
-random-walk model, yet they produce different *link flows* and therefore different optimal
-partitions. Bipartite representations tend to favour fewer, larger modules;
+The key insight from {cite:t}`eriksson2021hypergraph` is that you can design
+all three representations to give identical *node-visit rates* for the same
+random-walk model, yet they produce different *link flows* and therefore
+different optimal partitions. Bipartite representations tend to favour fewer, larger modules;
 unipartite and multilayer representations resolve finer structure.
 
 ## Theory
@@ -79,7 +81,7 @@ $\omega(e)$, then pick a destination node $v \in e$ with probability
 proportional to its node weight $\gamma_e(v)$ within that hyperedge.
 
 The three network representations encode this two-step walk differently
-(Eriksson et al. 2021, Table 1):
+(Table 1 in {cite:p}`eriksson2021hypergraph`):
 
 | Representation | Links grow as | Modules include | Supports overlap |
 |---|---|---|---|
@@ -111,7 +113,7 @@ $$P_{uv} = \sum_{e \in E(u,v)} P_{u \to e} \cdot P_{e \to v} = \sum_{e \in E(u,v
 where $E(u,v)$ is the set of hyperedges containing both $u$ and $v$. Each
 hyperedge becomes a weighted clique.
 
-Eriksson, Carletti, Lambiotte, Rojas and Rosvall (2022) extended this to a
+{cite:t}`eriksson2022flow` extends this to a
 *size-biased* random walk with parameter $\sigma$: setting
 $\omega(E_\alpha) \propto (|E_\alpha| - 1)^{\sigma+1}$ biases the walker
 toward large hyperedges ($\sigma > 0$) or small ones ($\sigma < 0$). At
@@ -212,10 +214,9 @@ module. Each hyperedge becomes its own node linking the members it joins, so
 multi-body interactions turn into ordinary two-node flow.
 ```
 
-The visualisation shows the bipartite structure directly: the eight circular
-node-positions (left and right clusters) are the regular nodes; the five square
-positions are the hyperedge-nodes. Colour indicates module, and the two
-communities stay separate across the bridge.
+The visualisation shows the bipartite structure directly: the eight member
+nodes and the five hyperedge-nodes all appear in the drawing, coloured by
+module, and the two communities stay separate across the bridge.
 
 ```{admonition} Interpreting the bipartite result
 :class: note
@@ -267,7 +268,7 @@ print(result.modules())
 # The output is a *-multilayer.net file; pass --multilayer to Infomap.
 ```
 
-The key modelling choices and their effects (Eriksson et al. 2021, Table 1):
+The key modelling choices and their effects (Table 1 in {cite:p}`eriksson2021hypergraph`):
 
 | Walk model | Representation | Best for |
 |---|---|---|
@@ -302,13 +303,13 @@ for the bipartite case.
 
 ## Going deeper
 
-- {cite:t}`smiljanic2026survey`, §5.4, covers higher-order representations
-  including hypergraphs.
+- The survey (§5.4) covers higher-order representations including hypergraphs
+  {cite:p}`smiljanic2026survey`.
 - Companion notebook: `examples/notebooks/5.4 Modeling Multi-body Interactions.ipynb`
   walks through real hypergraph datasets with the mapping-hypergraphs tool.
-- {cite:t}`eriksson2021hypergraph` shows how the representation choice shapes the
-  communities found.
-- {cite:t}`eriksson2022flow` compares the map equation with Markov stability on
-  hypergraphs.
+- How the representation choice shapes the communities found
+  {cite:p}`eriksson2021hypergraph`.
+- The map equation compared with Markov stability on hypergraphs
+  {cite:p}`eriksson2022flow`.
 - The `mapping-hypergraphs` tool (Rust, MapEquation team):
   <https://github.com/mapequation/mapping-hypergraphs>

@@ -1,8 +1,7 @@
 # Flow models & representations
 
-Infomap's depth is here: the same map equation applied to richer ways of turning
-your data into flow. Each chapter adds a different kind of *context* a node can
-carry. If you have not met state nodes yet, read
+These chapters apply the same map equation to richer ways of turning your data
+into flow. Each chapter adds a different kind of *context* a node can carry. If you have not met state nodes yet, read
 {doc}`/concepts/state-nodes-and-higher-order-flow` first; it is the mechanism
 behind the first three chapters below.
 
@@ -14,8 +13,8 @@ behind the first three chapters below.
   windows.
 - {doc}`Networks with metadata <metadata>`: folding node attributes into the
   objective.
-- {doc}`Bipartite networks <bipartite>`: two node types and the bipartite map
-  equation.
+- {doc}`Bipartite networks <bipartite>`: two node types, and how declaring the
+  boundary changes the flow model.
 
 ```{toctree}
 :hidden:

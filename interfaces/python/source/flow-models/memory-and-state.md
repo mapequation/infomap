@@ -10,39 +10,38 @@ kernelspec:
 
 # Memory and state networks
 
-```{admonition} In one sentence
+{bdg-warning-line}`Flow model`
+
+```{admonition} At a glance
 :class: tip
 When where flow goes next depends on where it came from, you need a *memory
 network*: state nodes encode the context, and the map equation on state nodes
 reveals overlapping communities that a first-order model cannot see.
 ```
 
-## Motivation
+## Flow with memory
 
-Standard community detection treats a network as a memoryless system. At every
-node, a random walker continues to the next node proportional to link weights,
-and nothing about the history of the walk matters. This first-order Markov
-assumption is often a reasonable starting point, but in many real systems the
-dynamics carry memory: where flow goes next depends on where it has been.
+The standard map equation models a memoryless random walk: at every node the
+walker continues proportional to link weights, regardless of how it got there
+(see {doc}`/concepts/the-map-equation`). In many real systems the dynamics
+carry memory: where flow goes next depends on where it has been.
 
 Consider air passengers. A traveller arriving at Chicago from Seattle behaves
 differently from one arriving from New York: the Seattle traveller tends to
 return to Seattle, the New York traveller to New York. A standard network model,
 which sees only "a traveller at Chicago," cannot capture that distinction.
-Researchers studying hospital patient transfers, citation patterns, and email
-forwarding chains have found the same memory effect, where the path already
-taken constrains the next step (Rosvall et al. 2014).
+The same memory effect, where the path already taken constrains the next step,
+appears in citation patterns and patient transfers {cite:p}`rosvall2014memory`.
 
 Ignoring this memory distorts community structure in two related ways. First,
 it makes modules look larger and less specific, because flow that is actually
-channelled by history appears to leak freely across boundaries. Second, and more
-striking, it hides *overlapping* communities. In a second-order model, a
+channelled by history appears to leak freely across boundaries. Second, it
+hides *overlapping* communities. In a second-order model, a
 multidisciplinary journal such as *PNAS* belongs simultaneously to several
-research communities depending on where a citation arrives from. In a
-first-order model it lands in a single module. Memory networks restore
-the overlap.
+research communities depending on where a citation arrives from; a
+first-order model assigns it to a single module.
 
-## Intuition
+## Splitting a node by its history
 
 The core idea is to split each physical location into multiple *state nodes*,
 one for each relevant piece of context. In a second-order model the context is
@@ -65,7 +64,7 @@ their state nodes. The map equation encodes flow at the state-node level but
 names physical nodes in its codebook, so it correctly records a physical node
 whose state nodes land in different modules as *overlapping* {cite:p}`edler2017higher`.
 
-## Theory
+## Memory as a state-node network
 
 A standard first-order network has physical nodes $i$ and transition
 probabilities $P_{ij} = w_{ij}/w_i$. In a second-order model, the walker's
@@ -126,7 +125,7 @@ where $\pi_{i \cap m} = \sum_{\alpha_i \in \mathsf{M}_m} \pi_{\alpha_i}$
 aggregates all state nodes of physical node $i$ that are assigned to module
 $m$. This aggregation is what enables overlapping physical-node membership:
 state nodes of the same physical node in different modules each contribute to
-separate codebook entries (Edler et al. 2017, §3.2).
+separate codebook entries; see {cite:p}`edler2017higher`, §3.2.
 
 The exit rate from module $m$ is
 
@@ -140,7 +139,7 @@ These expressions reduce to the standard first-order map equation when each
 physical node has exactly one state node {cite:p}`rosvall2008maps`.
 :::
 
-## A worked example
+## A junction shared by two flows
 
 The example below constructs a small four-node network where two independent
 streams of flow pass through a shared junction node **B**:
@@ -183,7 +182,7 @@ print(f"Distinct modules: {len(set(modules1.values()))}")
 ```
 
 With first-order flow the walker mixes the two streams at B, and all four
-nodes collapse into a single module. The junction obscures the boundary.
+nodes collapse into a single module.
 
 ### Step 2: Second-order state-node network
 
@@ -248,14 +247,10 @@ for phys_id, mods in sorted(phys_to_modules.items()):
     print(f"  {node_name[phys_id]} (phys {phys_id}): modules {mods}{overlap}")
 ```
 
-Node B appears in **both** module 1 and module 2; it bridges the two streams,
-correctly identified as overlapping.
-
 ### Step 4: Visualise
 
-We colour the physical graph by each node's *primary* module (the first module
-it belongs to). The visualisation shows the two communities; the caption reminds
-you that B is shared.
+Colour the physical graph by each node's *primary* module (the first module it
+belongs to).
 
 ```{code-cell} python
 import matplotlib.pyplot as plt
@@ -287,15 +282,15 @@ communities, so a single colour can show only one of its two memberships.
 
 ### Contrast
 
-| Node | First-order module | Second-order modules |
-|------|-------------------|----------------------|
-| A    | 1                 | {1}                  |
-| B    | 1                 | {1, 2}               |
-| C    | 1                 | {1}                  |
-| D    | 1                 | {2}                  |
+| Node | First-order | Second-order |
+|------|-------------|--------------|
+| A    | one shared module | stream 1 |
+| B    | one shared module | streams 1 **and** 2 (overlap) |
+| C    | one shared module | stream 1 |
+| D    | one shared module | stream 2 |
 
 The first-order model sees one community of four nodes. The second-order model
-finds two communities (A–B–C and B–D) that properly overlap at junction B.
+finds two communities (A–B–C and B–D) that overlap at junction B.
 
 ## API pointers
 
@@ -343,10 +338,10 @@ grouping by `node_id`, as shown in the worked example.
 
 ## Going deeper
 
-- {cite:t}`smiljanic2026survey`, §5.1, covers higher-order and memory flows.
-- Companion notebook: `examples/notebooks/5.1 Memory Networks.ipynb` works a
-  full-size example with empirical pathway data and sparse-Markov-chain model
-  selection.
-- {cite:t}`rosvall2014memory` is the source paper for memory networks.
-- {cite:t}`edler2017higher` maps higher-order flows with Infomap.
-- {cite:t}`persson2016sparse` introduces sparse Markov chains for memory flows.
+- Source paper for memory networks {cite:p}`rosvall2014memory`; sparse Markov
+  chains for memory flows {cite:p}`persson2016sparse`; the Infomap
+  implementation of higher-order flows {cite:p}`edler2017higher`.
+- The survey (§5.1) covers higher-order and memory flows
+  {cite:p}`smiljanic2026survey`. Its companion notebook,
+  `examples/notebooks/5.1 Memory Networks.ipynb`, works a full-size example
+  with empirical pathway data and sparse-Markov-chain model selection.
