@@ -271,11 +271,12 @@ gets its own colour. Both views are consistent descriptions of the *same*
 Infomap result, read at different depths of the output tree.
 
 This matches the theoretical picture {cite:p}`rosvall2011multilevel`: the
-network has dense intra-clique flow, moderately dense intra-super-group flow
-(clique pairs), and sparse inter-super-group flow (the single bridge). Three
-levels of nested index codebooks capture exactly those three scales, and the
-hierarchical map equation confirms that the three-level description is more
-compressed than either a flat two-level partition or a one-level description.
+network has dense intra-triangle flow, moderately dense intra-super-group flow
+(the unit-weight links joining a super-group's triangles), and weak
+inter-super-group flow (the three 0.8 links). Three levels of nested index
+codebooks capture exactly those three scales, and the hierarchical map
+equation confirms that the three-level description is more compressed than
+either a flat two-level partition or a one-level description.
 
 ## API pointers
 

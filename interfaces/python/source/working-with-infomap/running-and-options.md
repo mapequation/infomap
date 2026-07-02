@@ -356,9 +356,10 @@ for name, graph in [("ring of cliques", G_ring), ("karate club", G_karate)]:
 ## Pitfalls
 
 - **`seed=0` raises.** Infomap requires `seed >= 1`; use any positive integer.
-- **Codelength rises when you add metadata.** `result.codelength` reports only the
-  topological term; the search still minimises the combined objective (see
-  {doc}`/flow-models/metadata`).
+- **Codelengths are not comparable across `meta_data_rate` values.**
+  `result.codelength` reports the combined objective, the topological term plus
+  the weighted attribute term, so it rises with the rate even when the
+  partition does not change (see {doc}`/flow-models/metadata`).
 - **More trials never hurt correctness, only runtime.** If repeated runs disagree,
   raise `num_trials` (or pass `converge=True`) rather than trusting one fit.
 - **Sparse or under-sampled data over-splits.** Reach for `regularized=True`

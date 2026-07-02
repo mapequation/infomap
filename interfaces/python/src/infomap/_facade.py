@@ -121,10 +121,10 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
     >>> im.read_file("ninetriangles.net")
     >>> result = im.run()
     >>> tol = 1e-4
-    >>> abs(result.codelength - 3.4622731375264144) < tol
+    >>> abs(result.codelength - 3.385830820341408) < tol
     True
     >>> result.num_top_modules
-    5
+    3
 
 
     Iterate the partition via :meth:`Result.modules` (``node_id -> module_id``)

@@ -230,13 +230,12 @@ encoding cost is zero: each module is attribute-pure.
 
 ```{admonition} Codelength goes up: is that wrong?
 :class: note
-The codelength reported by `result.codelength` is the *topological* map equation
-value: it measures only how well the partition compresses the random walk on the
-topology. When you raise `meta_data_rate`, the optimiser minimises the *combined*
-cost $L_\eta$, which can accept a higher topological codelength in exchange for
-lower attribute encoding cost. The reported `result.codelength` does not include
-the metadata term, so it is normal for it to increase as the rate rises; read
-`result.meta_entropy` for the metadata side.
+`result.codelength` reports the *combined* objective $L_\eta$: the topological
+map-equation value plus $\eta$ times the attribute term. It therefore rises
+with `meta_data_rate` even when the partition does not change at all, simply
+because the weighted attribute term grows, so the numbers are not comparable
+across rates. `result.meta_entropy` isolates the attribute term; the
+topological part is `result.codelength - meta_data_rate * result.meta_entropy`.
 ```
 
 ### Sweeping the metadata rate
@@ -261,10 +260,10 @@ for eta in [0.0, 0.5, 1.0, 2.0, 5.0]:
 ```
 
 At $\eta = 0$ the partition is the topological one; as $\eta$ grows the search
-increasingly favours attribute-homogeneous modules, and the reported
-`codelength` (the topological term only) rises as it trades topological
-compression for a cleaner attribute encoding. The counts printed above show where
-the balance tips for this network.
+increasingly favours attribute-homogeneous modules. The reported `codelength`
+is the combined objective, so it rises with $\eta$ even while the partition
+stays put; the module counts printed above show where the balance tips for
+this network.
 
 ### Visualise the metadata-aware partition
 

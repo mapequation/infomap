@@ -313,7 +313,9 @@ the same airport), supply node-aligned inter-layer links with
 `add_multilayer_inter_link` instead of relying on the relax-rate model. This
 is the `*Intra`/`*Inter` file form, and the bundled
 {func}`infomap.datasets.multilayer_intra_inter` network is its reference
-example: the same two triangles, with *i* coupled to itself across the layers.
+example: the same two triangles, with an inter-layer link through *i* in each
+direction. The transition happens at *i*; the flow it carries continues to
+*i*'s neighbours in the target layer.
 
 ```{code-cell} python
 net_aligned = Network()
@@ -322,7 +324,7 @@ net_aligned = Network()
 for layer, src, tgt, w in intra_links:
     net_aligned.add_multilayer_intra_link(layer, src, tgt, w)
 
-# i couples to itself across the layers, weight 0.4 each way.
+# i switches layer in place: one inter-layer link through i each way.
 net_aligned.add_multilayer_inter_link(1, 1, 2, 0.4)
 net_aligned.add_multilayer_inter_link(2, 1, 1, 0.4)
 
@@ -432,8 +434,11 @@ assert n_links_self < n_links_default
 
 ## Options
 
-The relax-rate model is controlled by these engine options on {func}`infomap.run`
-(all of them are ignored when the network carries explicit inter-layer links):
+The relax-rate model is controlled by these engine options on {func}`infomap.run`.
+They apply when Infomap simulates the coupling; with explicit inter-layer links
+only `multilayer_relax_to_self` still has an effect, deciding whether a
+node-aligned inter link attaches to the node's own copy or spreads over its
+out-neighbours in the target layer:
 
 | Option | Default | Effect |
 |---|---|---|
