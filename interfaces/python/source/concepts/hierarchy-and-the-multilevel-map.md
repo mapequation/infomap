@@ -68,7 +68,7 @@ per module to describe intra-module node visits:
 $$
 L(\mathsf{M}) =
   q_{\curvearrowright} H(\mathcal{Q})
-  + \sum_{i=1}^{m} p_{\circlearrowright}^i H(\mathcal{P}^i).
+  + \sum_{i} p_{\circlearrowright}^i H(\mathcal{P}^i).
 $$
 
 The hierarchical extension {cite:p}`rosvall2011multilevel` replaces the single
@@ -81,7 +81,7 @@ becomes a recursive sum:
 $$
 L(\mathsf{M}) =
   q_{\curvearrowright} H(\mathcal{Q})
-  + \sum_{i=1}^{m} L(\mathsf{M}^i),
+  + \sum_{i} L(\mathsf{M}^i),
 $$
 
 where each sub-map $\mathsf{M}^i$ contributes
@@ -89,7 +89,7 @@ where each sub-map $\mathsf{M}^i$ contributes
 $$
 L(\mathsf{M}^i) =
   q_{\circlearrowright}^i H(\mathcal{Q}^i)
-  + \sum_{j=1}^{m^i} L(\mathsf{M}^{ij}),
+  + \sum_{j} L(\mathsf{M}^{ij}),
 $$
 
 and the recursion bottoms out at the leaf level with

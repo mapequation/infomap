@@ -182,7 +182,7 @@ run-metadata dict, including the codelength, to `adata.uns["infomap"]`). See
 
 ### Can I run Infomap on GraphRAG entity/relationship tables?
 
-Yes: the `infomap.graphrag` adapter reads entity/relationship tables (columns `id`,
+Yes: the `infomap.tl.graphrag` adapter reads entity/relationship tables (columns `id`,
 `title`, `source`, `target`, `weight`) and returns a community hierarchy. Use
 `run_graphrag_communities(...)` (omit `output_dir` to stay in memory). See
 {doc}`GraphRAG tables <workflows/graphrag>`.
