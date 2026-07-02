@@ -189,10 +189,10 @@ Yes: the `infomap.tl.graphrag` adapter reads entity/relationship tables (columns
 
 ### How do I make Infomap use only the cores my scheduler allocated?
 
-The default `num_threads="auto"` already resolves the budget from, in priority
-order, `INFOMAP_NUM_THREADS`, `SLURM_CPUS_PER_TASK`, `OMP_NUM_THREADS`, the
-process cpuset, and finally the hardware. Set `num_threads=` to a positive
-integer to override. See {doc}`Running at scale (HPC) <workflows/hpc>`.
+By default (`num_threads` unset, i.e. the engine's `auto` mode) the thread
+budget resolves from, in priority order, `INFOMAP_NUM_THREADS`,
+`SLURM_CPUS_PER_TASK`, `OMP_NUM_THREADS`, the process cpuset, and finally the
+hardware. Set `num_threads=` to a positive integer to override. See {doc}`Running at scale (HPC) <workflows/hpc>`.
 
 ### How do I run many trials across cluster jobs and combine them?
 

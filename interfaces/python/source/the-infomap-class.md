@@ -58,7 +58,7 @@ Each stateful pattern has a direct functional or `Network` equivalent:
 | Top-level modules | `im.get_modules()` | `result.modules()` |
 | Modules at level *k* | `im.get_modules(depth_level=k)` | `result.modules(depth=k)` |
 | State-node modules | `im.get_modules(states=True)` | `result.modules(states=True)` |
-| Per-node flow | `for n in im.nodes: n.data.flow` | `for n in result.nodes(): n.flow` |
+| Per-node flow | `for n in im.nodes: n.data.flow` | `for n in result.nodes(states=True): n.flow` (`im.nodes` iterates state nodes; plain `result.nodes()` gives physical nodes, identical for first-order networks) |
 | DataFrame | `im.to_dataframe([...])` | `result.to_dataframe([...])` |
 | Scalar metrics | `im.codelength`, `im.num_top_modules` | `result.codelength`, `result.num_top_modules` |
 | Graph-file export | `infomap.io.export.write_graphml(graph, im, path)` | `nx.write_graphml(infomap.to_networkx(result), path)` |
