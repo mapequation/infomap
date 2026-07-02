@@ -1,5 +1,5 @@
-Infomap Python API
-==================
+Infomap Python documentation
+============================
 
 Infomap is a network community-detection method: it finds the modules that best
 compress the flow of a random walk on your network, instead of counting edges
@@ -78,8 +78,8 @@ Where to go
       :link: workflows/index
       :link-type: doc
 
-      Compare with Louvain and Leiden, and use Infomap with Scanpy, GraphRAG,
-      and on HPC.
+      Use Infomap with Scanpy and GraphRAG, and run it at scale on HPC
+      schedulers.
 
 External resources
 ------------------
