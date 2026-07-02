@@ -12,7 +12,7 @@ kernelspec:
 
 {bdg-primary-line}`Workflow`
 
-```{admonition} In one sentence
+```{admonition} At a glance
 :class: tip
 Pull Infomap straight into your single-cell analysis pipeline: point it at the
 kNN connectivity graph Scanpy already built, get back AnnData-compatible
@@ -28,9 +28,9 @@ optimises a modularity-style objective with a tunable resolution parameter. Info
 the map equation instead: it asks where a random walker on the connectivity graph
 spends its time, and names those flow-trapping regions as modules.
 
-Because both algorithms take the same weighted neighbour graph as input and
-produce a partition of observations as output, swapping in Infomap requires
-almost no code change. The `infomap.tl.infomap()` function follows Scanpy `tl`
+Both algorithms take the same weighted neighbour graph as input and produce a
+partition of observations as output, so swapping in Infomap means calling a
+different function. The `infomap.tl.infomap()` function follows Scanpy `tl`
 conventions: it reads `adata.obsp["connectivities"]` by default, writes a
 pandas categorical column to `adata.obs`, and records run metadata in
 `adata.uns`. Scanpy itself is not imported by the Infomap package.
@@ -43,17 +43,12 @@ multiple trials) without any AnnData involvement.
 ## The neighbour graph as flow
 
 The neighbour graph Scanpy builds is a network: cells are nodes, and each edge
-carries a connectivity weight that reflects how similar two cells are in PCA
-space. Infomap treats that graph as a flow network and asks: if a random walker
-hops between connected cells proportional to edge weights, where does it tend to
-get trapped?
-
-A cluster of cells with strong internal connectivity and weak cross-cluster
-connections is exactly the kind of structure that traps a random walk. Those
-traps correspond to low map-equation cost: the walker can be described
-compactly because it rarely needs to name a new module. Cells at cluster
-boundaries attract visits from multiple modules, so they end up in whichever
-module provides the best compression.
+carries a connectivity weight reflecting how similar two cells are in PCA space.
+Infomap treats it as a flow network and looks for regions where a random walker,
+hopping between cells in proportion to edge weights, tends to get trapped. A
+cluster of cells with strong internal connectivity and weak cross-cluster links
+is exactly such a region, and those regions become the modules
+(see {doc}`/concepts/the-map-equation`).
 
 This flow-centric view often agrees with Leiden, but the two can diverge:
 Leiden's partition depends on its resolution parameter, and the connectivity
@@ -194,9 +189,8 @@ adata.obs["infomap_lowlevel"] = pd.Categorical(
 adata.obs[["infomap", "infomap_lowlevel"]].value_counts()
 ```
 
-The low-level and `tl`-helper results match because both call the same
-underlying Infomap engine with the same options. The `tl` helper adds the
-AnnData bookkeeping; the core API gives you everything else.
+The two agree because the `tl` helper and the core API call the same engine with
+the same options; the helper only adds the AnnData bookkeeping.
 
 ### Visualise with UMAP
 
@@ -220,8 +214,8 @@ sc.pl.umap(
   AnnData you already built; install Scanpy yourself.
 - **Results follow the neighbour graph.** They depend on your `sc.pp.neighbors`
   settings (`n_neighbors`, the representation), so build that graph deliberately.
-- **Compare, don't assume.** Cross-tabulate against Leiden; the cells that switch
-  labels between the two are where the objectives disagree.
+- **Compare with another method.** Cross-tabulate against Leiden; the cells that
+  switch labels between the two are where the objectives disagree.
 
 ## API pointers
 

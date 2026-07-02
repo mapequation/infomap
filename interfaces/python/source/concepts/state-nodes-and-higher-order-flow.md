@@ -12,26 +12,24 @@ kernelspec:
 
 {bdg-info-line}`Concept`
 
-```{admonition} In one sentence
+```{admonition} At a glance
 :class: tip
 A *state node* lets one real-world node carry several flow contexts at once. It
-is the single idea behind memory, multilayer, and temporal networks, and it is
-what lets a node belong to more than one community.
+is the mechanism behind memory, multilayer, and temporal networks, and it lets
+a node belong to more than one community.
 ```
 
 ## When first-order flow is too simple
 
 The map equation in the previous chapters assumes **first-order** flow: where the
 walker goes next depends only on where it is now. That is often too simple. Where
-a traveller flies next depends on where they came *from*; which colleagues a
-person interacts with depends on *which* setting (work, home, a conference); who
-is connected depends on *when*. Collapsing that context into a plain network
-averages it away, and the communities you get average it away too.
+a traveller flies next depends on where they came *from*, and which colleagues a
+person interacts with depends on the setting (work, home, a conference).
+Collapsing that context into a plain network averages it away.
 
-The fix is to stop treating a node as a single thing. This one mechanism, the
-**state node**, underlies every chapter in *Flow models*: memory networks,
-multilayer and multiplex networks, and temporal networks are all the same
-construction with different notions of "context."
+The fix is to stop treating a node as a single thing. Memory, multilayer and
+multiplex, and temporal networks all rest on the same construction, the
+**state node**, with different notions of "context."
 
 ## Physical nodes vs state nodes
 
@@ -44,12 +42,12 @@ Separate two ideas that an ordinary network conflates:
 Infomap runs its random walk over the state nodes, and the map equation
 partitions *those*. The only change from the first-order map equation is that
 state nodes belonging to the **same physical node within the same module share a
-codeword**, because they are the same object, so naming it costs once.
+codeword**, because they are the same object.
 
-The payoff is **overlap for free**. If a physical node's state nodes land in
-different modules, that physical node belongs to several communities at once,
-with no separate overlapping-community algorithm. Alice-at-work and Alice-at-home
-can sit in different groups; a hub airport can belong to several regional systems.
+If a physical node's state nodes land in different modules, that physical node
+belongs to several communities at once, with no separate overlapping-community
+algorithm. Alice-at-work and Alice-at-home can sit in different groups, and a
+hub airport can belong to several regional systems.
 
 ## The map equation on state nodes
 
@@ -65,8 +63,7 @@ $$
 
 but it runs over state nodes: the map equation sums the visit rates of state
 nodes of the same physical node in the same module before computing the module
-codebook entropy. That summation is the whole difference, and it is what makes
-physical nodes naturally multi-modular.
+codebook entropy.
 
 ## One physical node in two modules
 
@@ -114,12 +111,10 @@ assert result.num_top_modules == 2 and len(mods_of_i) == 2
 ```
 
 Physical node *i* appears in both modules, through $\alpha_i$ on the *j*–*k*
-side and $\delta_i$ on the *l*–*m* side; every other node sits in one. That
-two-module membership is the overlap the state-node construction buys you.
+side and $\delta_i$ on the *l*–*m* side. Every other node sits in one module.
 
 Draw the state-level network, colouring each state node by the module Infomap
-assigned it. The two states of *i* take different colours, and that colour
-split *is* the overlap:
+assigned it:
 
 ```{code-cell} python
 import matplotlib.pyplot as plt
@@ -158,7 +153,8 @@ above exactly:
 
 ```{code-cell} python
 net_pkg = infomap.datasets.states()
-result_pkg = infomap.run(net_pkg, two_level=True, seed=123, num_trials=10, silent=True)
+result_pkg = infomap.run(net_pkg, two_level=True, directed=True,
+                         seed=123, num_trials=10, silent=True)
 
 print(f"Modules: {result_pkg.num_top_modules}, "
       f"codelength {result_pkg.codelength:.4f} bits per step")
@@ -175,7 +171,7 @@ Each *Flow models* chapter is this idea with a specific kind of context:
 - {doc}`/flow-models/multilayer`: context is *which layer* (relationship type).
 - {doc}`/flow-models/temporal`: context is *which time window*.
 
-They build the state nodes for you through higher-level APIs
+They build the state nodes through higher-level APIs
 (`add_multilayer_intra_link`, time-window layers) rather than `add_state_node`
 directly, but the partition you read back is always over state nodes.
 
@@ -190,7 +186,7 @@ directly, but the partition you read back is always over state nodes.
 
 ## Going deeper
 
+- {cite:t}`edler2017higher` develop higher-order flows in memory and multilayer
+  networks with Infomap.
 - The survey (§5) treats higher-order flow and state nodes in full
   {cite:p}`smiljanic2026survey`.
-- Higher-order flows in memory and multilayer networks with Infomap
-  {cite:p}`edler2017higher`.

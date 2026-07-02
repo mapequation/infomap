@@ -12,29 +12,27 @@ kernelspec:
 
 {bdg-warning-line}`Flow model`
 
-```{admonition} In one sentence
+```{admonition} At a glance
 :class: tip
 Model time-varying interactions as one layer per snapshot, let inter-layer
-coupling carry community identity across time, and let Infomap reveal which
-groups persist, drift, and dissolve.
+coupling carry community identity across time, and let Infomap reveal how
+groups change from one window to the next.
 ```
 
 ## Communities that come and go
 
 Most real interaction data have a timestamp. Friendship ties strengthen and
-dissolve, researchers switch between fields, proteins bind at some times and not
-others. A static graph that aggregates all those interactions collapses the
-dynamics into a single picture and hides the change.
+dissolve, and researchers switch between fields. A static graph that aggregates
+all those interactions collapses the dynamics into a single picture and hides
+the change.
 
-Temporal networks take time seriously. Instead of one graph you get a sequence
-of snapshots, one per time window, and the question shifts from "which nodes form
-communities?" to "how do those communities evolve?" A cluster of colleagues who
-meet every morning and disperse at noon differs from a cluster that meets every
-day without end. You can tell them apart only if your analysis respects the
-temporal dimension.
+In a temporal network you instead get a sequence of snapshots, one per time
+window, and the question shifts from "which nodes form communities?" to "how do
+those communities evolve?" A cluster of colleagues who meet every morning and
+disperse at noon differs from a cluster that meets every day.
 
-The cost of ignoring time is that naive approaches miss intermittent
-communities, groups that form, dissolve, and re-form in a recurring pattern.
+The cost of ignoring time is that naive approaches miss *intermittent*
+communities: groups that form, dissolve, and re-form in a recurring pattern.
 Face-to-face contact networks make this concrete: workplace social groups recur
 daily on a timescale of tens of minutes, but uniform aggregation smears them
 into background noise {cite:p}`aslak2017temporal`. Recovering that
@@ -65,12 +63,8 @@ with some probability, Infomap can follow the communities as they shift. Nodes
 that are consistently co-grouped across time share more flow, and the map
 equation finds the partition that best compresses that multi-window journey.
 
-The key parameter is the **inter-layer relax rate** $r$. When $r = 0$ the layers
-are independent and Infomap finds communities inside each snapshot without
-reference to the others. When $r = 1$ the walker ignores layer identity, the same
-as working on the aggregate network. Values in between, around 0.1 to 0.3, let
-temporal context bleed across layers, which is what you want when communities
-evolve smoothly but are not identical across windows.
+The strength of that coupling is set by the **inter-layer relax rate** $r$;
+{doc}`/flow-models/multilayer` describes the mechanism.
 
 ## Coupling snapshots across time
 
@@ -78,7 +72,8 @@ A temporal network is a {doc}`multilayer network </flow-models/multilayer>` whos
 layers are time windows: each node gets one
 {doc}`state node </concepts/state-nodes-and-higher-order-flow>` per window,
 intra-layer links connect state nodes within a snapshot, and an inter-layer
-**relax rate** $r$ carries the walker, and community identity, across windows.
+**relax rate** $r$ carries the walker (and with it community identity) across
+windows.
 The multilayer chapter covers that machinery, including the relax-rate transition
 probabilities and how state nodes of one physical node share a codeword within a
 module. What is specific to *time* is how the windows should be coupled.
@@ -154,7 +149,7 @@ for t in sorted(layer_modules):
     print(f"Layer {t}: {dict(sorted(layer_modules[t].items()))}")
 ```
 
-The output shows the community drift clearly: node 3 leaves its morning group at
+The output shows the community drift: node 3 leaves its morning group at
 midday (T = 2), while node 4 temporarily joins that group, then both return to
 their original affiliations by afternoon (T = 3).
 
@@ -200,12 +195,9 @@ midday and return by afternoon: the community drift the multilayer coupling
 tracks.
 ```
 
-The blue and orange groups are consistent in T = 1 and T = 3. In T = 2 the
-midday shuffle appears: node 3 switches from the blue community to the orange
-one, and node 4 switches the other way. Because the relax rate couples the
-layers, Infomap does not treat the T = 2 partition as independent; it sees that
-the same two underlying communities are at work and labels them consistently
-instead of assigning arbitrary new module ids.
+Because the relax rate couples the layers, Infomap does not treat the T = 2
+partition as independent: the same two underlying communities keep their module
+ids across all three windows instead of being assigned arbitrary new ones.
 
 ### What the relax rate controls
 
@@ -271,11 +263,11 @@ Temporal coupling is set by the multilayer engine options on {func}`infomap.run`
 
 ## Going deeper
 
-- The survey (§5.3) covers temporal networks and the multilayer representation
-  {cite:p}`smiljanic2026survey`.
-- Companion notebook: `examples/notebooks/5.3 Modeling Temporal Data.ipynb`
-  discusses the Pajek format and the `multilayer_relax_by_jsd` option.
-- Source paper for neighbourhood flow coupling, validated on face-to-face
-  contact networks {cite:p}`aslak2017temporal`.
+- {cite:t}`aslak2017temporal` introduce neighbourhood flow coupling and
+  validate it on face-to-face contact networks.
 - Alluvial diagrams for higher-order networks, with an interactive generator at
   <https://www.mapequation.org/alluvial> {cite:p}`holmgren2023change`.
+- The survey (§5.3) covers temporal networks and the multilayer representation
+  {cite:p}`smiljanic2026survey`; its companion notebook
+  `examples/notebooks/5.3 Modeling Temporal Data.ipynb` discusses the Pajek
+  format and the `multilayer_relax_by_jsd` option.

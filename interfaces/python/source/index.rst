@@ -1,10 +1,10 @@
 Infomap Python API
 ==================
 
-Infomap is a network community-detection method built on a distinctive idea: it
-finds the modules that best compress the flow of a random walk on your network,
-instead of counting edges against a null model. That flow-based view, the
-`map equation`_, is what sets it apart:
+Infomap is a network community-detection method: it finds the modules that best
+compress the flow of a random walk on your network, instead of counting edges
+against a null model. Three properties follow from that flow-based view, the
+`map equation`_:
 
 - **It models how a system is used, not only how it is wired.** Link direction
   and weight steer the walk, so citation, transport, and information networks

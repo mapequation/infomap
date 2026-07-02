@@ -31,29 +31,26 @@ print(result.num_top_modules, result.codelength)
 Everything below is when and why to reach for the other options. For the *why*
 behind the flow model itself, see {doc}`/concepts/index`.
 
-## What matters
+## Two kinds of options
 
-Infomap has dozens of options, but they fall into two groups, and telling them
-apart is most of the battle:
+Infomap has dozens of options, but they fall into two groups:
 
 - **Flow-model options** (`directed`, `markov_time`, `teleportation_probability`)
   change *how the random walk is defined*. They encode your beliefs about the
   system; the wrong choice gives a partition that scores well but means little.
 - **Search options** (`seed`, `num_trials`, `converge`) change *how hard the
-  search works*, not which partition Infomap looks for. They buy reliability.
+  search works*, not which partition Infomap looks for. They only affect how
+  reliably the stochastic search finds the optimum {cite:p}`calatayud2019solution`.
 
-The rest of this page is one task per option that matters. The theory behind
-them lives in Concepts: {doc}`/concepts/flow-and-random-walks` for flow and
-teleportation, {doc}`/concepts/hierarchy-and-the-multilevel-map` and
+The theory behind them lives in Concepts:
+{doc}`/concepts/flow-and-random-walks` for flow and teleportation,
+{doc}`/concepts/hierarchy-and-the-multilevel-map` and
 {doc}`/concepts/choosing-a-method` for resolution, and
-{doc}`/robustness/incomplete-data` for regularization. In brief: the search is
-stochastic, so `num_trials` restarts buy reliability
-{cite:p}`calatayud2019solution`; the flow model (`directed` with unrecorded
-teleportation, `markov_time`, `regularized`) decides what the random walk *is*.
+{doc}`/robustness/incomplete-data` for regularization.
 
-## The options that matter
+## The options, one task each
 
-One task per option, each on a small graph you can run as you read.
+Each option below comes with a small graph you can run as you read.
 
 ### Setting up
 
@@ -333,9 +330,8 @@ plt.close(fig)
 
 ```{glue:figure} fig-running-and-options
 Each grey point is the codelength from a single trial with a different seed.
-They scatter, and the higher ones sit above the best-of-20-trials value (blue
-line): one trial can settle in a worse local minimum, while many trials reliably
-reach the best partition. That gap is what `num_trials` buys you.
+One trial can settle in a worse local minimum; many trials reliably reach the
+best-of-20 value (blue line).
 ```
 
 ## Reusable configuration

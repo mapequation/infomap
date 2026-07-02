@@ -12,33 +12,31 @@ kernelspec:
 
 {bdg-info-line}`Concept`
 
-```{admonition} In one sentence
+```{admonition} At a glance
 :class: tip
 The multilevel map equation lets Infomap discover how many levels of nested
 structure your network contains, with no resolution parameter to tune.
 ```
 
-## Why one flat level isn't enough
+## Limits of a two-level partition
 
 Real networks rarely organise into one flat layer of modules. Scientific
-disciplines hold sub-fields that hold research topics. Cities hold
-neighbourhoods that hold blocks. Biological systems nest by definition: cells
-inside tissues inside organs inside organisms. A plain two-level partition, one
+disciplines hold sub-fields that hold research topics, and cities hold
+neighbourhoods that hold blocks. A plain two-level partition, one
 index codebook over one set of leaf modules, sees only one cross-section of that
 structure at a time.
 
-This limit carries a measurable information-theoretic cost. Any two-level method has a *resolution limit* {cite:p}`kawamoto2015resolution`: modules below a
-certain size (scaling exponentially with their internal link count) go missing,
+Any two-level method has a *resolution limit* {cite:p}`kawamoto2015resolution`: modules with too
+few internal links go missing (the threshold grows with the logarithm of the
+total boundary-crossing traffic; the toggle below gives the exact bound),
 because merging them into a larger module shortens the two-level description. In
-a nested network the bind is plain. The two-level method must choose between
-resolving the fine-grained modules and capturing the coarse super-groups; it
-cannot hold both at once.
+a nested network the two-level method must choose between resolving the
+fine-grained modules and capturing the coarse super-groups.
 
 The multilevel map equation lifts the limit by allowing nested index codebooks
-to any depth. It reads the *right number of levels* off the data: it adds a level
-only when that level shortens the total description, so the depth of the output
-tree reflects real structure rather than an analyst's choice. Infomap runs in
-multilevel mode by default, so you opt out, not in.
+to any depth. It adds a level only when that level shortens the total
+description, so the depth of the output tree is read off the data. Multilevel is
+the default; pass `two_level=True` to disable it.
 
 ## Nested addresses
 
@@ -52,9 +50,9 @@ directions overall.
 The multilevel map equation applies the same logic to random-walk descriptions.
 Each level of hierarchy is a set of nested index codebooks. When a walker stays
 inside a module for a long time, giving that module its own sub-codebook for the
-nodes it visits pays off. The same objective, description length, decides whether
-to add another sub-level: Infomap keeps adding levels until none shortens the
-description, then stops. No resolution parameter, no manual depth.
+nodes it visits shortens the description. The same objective, description
+length, decides whether to add another sub-level: Infomap keeps adding levels
+until none shortens the description, then stops.
 
 The result is a tree of modules. Each leaf is a network node. Internal tree
 nodes are modules at different granularities. You can read off the coarse
@@ -101,19 +99,16 @@ L(\mathsf{M}^{ij\ldots k}) =
   p_{\circlearrowright}^{ij\ldots k} H(\mathcal{P}^{ij\ldots k}).
 $$
 
-The point is that $q_{\circlearrowright}^i$, the rate at which the walker uses
-module $i$'s sub-index codebook, depends only on the *local* traffic within
-module $i$, not on the global network. That is why the resolution limit relaxes
-so far: Infomap judges whether to split module $i$ further against the traffic
-inside $i$, not against a global cut size that grows with the whole network; see
-{cite:p}`kawamoto2015resolution`, §IV.
+The rate $q_{\circlearrowright}^i$ at which the walker uses module $i$'s
+sub-index codebook depends on the *local* traffic within module $i$, not on a
+global cut size that grows with the whole network. This is why the resolution
+limit relaxes; see {cite:p}`kawamoto2015resolution`, §IV.
 
 Infomap searches for the hierarchical partition that minimises the total $L$
 using a fast stochastic recursive algorithm: it first generates top-level
 modules, then recursively applies the same procedure inside each module to
 find sub-modules, adding or removing levels wherever the description
-shortens. The search converges to a locally optimal hierarchical tree with
-no depth parameter required.
+shortens. The search converges to a locally optimal hierarchical tree.
 
 :::{toggle}
 **Resolution limit: why two-level fails and hierarchy helps**
@@ -182,10 +177,6 @@ print(f"Nodes: {G.number_of_nodes()}, Edges: {G.number_of_edges()}")
 
 ### Run multilevel Infomap
 
-Infomap runs in multilevel mode by default; no flag required. Do **not** pass
-`two_level=True`, which restricts the output to a single flat level and stops
-Infomap from finding deeper structure.
-
 ```{code-cell} python
 from infomap import Network, run
 
@@ -198,7 +189,7 @@ print(f"Tree depth (num_levels): {result.num_levels}")
 print(f"Top-level modules:       {result.num_top_modules}")
 print(f"Map equation codelength: {result.codelength:.4f} bits/step")
 
-# The prose below relies on this structure; fail the build if it drifts.
+# The text below reads these exact counts; assert so the build catches drift.
 assert result.num_top_modules == 3
 
 # The bundled copy is the same network; the two must agree exactly.
@@ -207,8 +198,7 @@ result_pkg = infomap.run(infomap.datasets.nine_triangles(),
 assert result.codelength == result_pkg.codelength
 ```
 
-Infomap discovered the nesting on its own, with no depth argument: as
-`num_levels` shows above, the tree runs from a root through three coarse
+As `num_levels` shows, the tree runs from a root through three coarse
 super-groups down to the nine fine triangles.
 
 ### Read module assignments at each level
@@ -229,10 +219,7 @@ print(modules_l2)
 assert len(set(modules_l2.values())) == 9
 ```
 
-`result.modules(depth=1)` returns the coarsest grouping: three modules of nine
-nodes each, one per super-group. `result.modules(depth=2)` returns the finer
-partition, nine modules of three nodes each, one per triangle. Pass
-`depth=-1` for the finest (leaf) level whatever the tree depth.
+Pass `depth=-1` for the finest (leaf) level whatever the tree depth.
 
 ### Visualise both levels side by side
 
@@ -265,11 +252,6 @@ inside them. Both panels share one layout, so the levels read against each
 other.
 ```
 
-The left panel shows the three super-groups: all nine nodes in a super-group
-share one colour. The right panel reveals the finer structure: each triangle
-gets its own colour. Both views are consistent descriptions of the *same*
-Infomap result, read at different depths of the output tree.
-
 This matches the theoretical picture {cite:p}`rosvall2011multilevel`: the
 network has dense intra-triangle flow, moderately dense intra-super-group flow
 (the unit-weight links joining a super-group's triangles), and weak
@@ -298,7 +280,7 @@ either a flat two-level partition or a one-level description.
 
 ## Going deeper
 
-- The survey (§3) covers the multilevel derivation and worked examples
+- Source paper for the multilevel map equation {cite:p}`rosvall2011multilevel`;
+  the resolution limit it relaxes is derived in {cite:p}`kawamoto2015resolution`.
+- The survey (§3) adds the multilevel derivation and worked examples
   {cite:p}`smiljanic2026survey`.
-- Source paper for the multilevel map equation {cite:p}`rosvall2011multilevel`.
-- The resolution limit it relaxes {cite:p}`kawamoto2015resolution`.

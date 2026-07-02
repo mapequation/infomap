@@ -10,7 +10,9 @@ kernelspec:
 
 # Hypergraphs and higher-order networks
 
-```{admonition} In one sentence
+{bdg-warning-line}`Flow model`
+
+```{admonition} At a glance
 :class: tip
 A hyperedge can connect any number of nodes at once, but to apply Infomap you
 first decide how to represent that multi-body interaction as a network: the
@@ -212,10 +214,9 @@ module. Each hyperedge becomes its own node linking the members it joins, so
 multi-body interactions turn into ordinary two-node flow.
 ```
 
-The visualisation shows the bipartite structure directly: the eight circular
-node-positions (left and right clusters) are the regular nodes; the five square
-positions are the hyperedge-nodes. Colour indicates module, and the two
-communities stay separate across the bridge.
+The visualisation shows the bipartite structure directly: the eight member
+nodes and the five hyperedge-nodes all appear in the drawing, coloured by
+module, and the two communities stay separate across the bridge.
 
 ```{admonition} Interpreting the bipartite result
 :class: note

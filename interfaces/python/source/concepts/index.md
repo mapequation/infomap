@@ -5,7 +5,7 @@ order. Start here if you want to understand *why* Infomap finds the communities
 it does before running it on your own data.
 
 - {doc}`Flow and random walks <flow-and-random-walks>`: what "flow" means and why
-  Infomap models a random walker; the foundation everything else rests on.
+  Infomap models a random walker.
 - {doc}`The map equation <the-map-equation>`: the objective Infomap minimises,
   codelength, the bits needed to describe that walk, and the partition that makes
   it shortest.
@@ -13,7 +13,7 @@ it does before running it on your own data.
   how Infomap discovers nested structure to any depth, with no resolution
   parameter to tune.
 - {doc}`State nodes and higher-order flow <state-nodes-and-higher-order-flow>`: the
-  one mechanism behind the memory, multilayer, and temporal models; read it before
+  mechanism behind the memory, multilayer, and temporal models; read it before
   the Flow models section.
 - {doc}`Reading Infomap through Louvain and Leiden <choosing-a-method>`: understand
   Infomap in the terms you already use for modularity.

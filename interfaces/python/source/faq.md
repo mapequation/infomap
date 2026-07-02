@@ -1,7 +1,7 @@
 # FAQ & common pitfalls
 
-Short answers to the questions that trip people up most often. Each one links
-to the chapter that explains it properly; this page is a map, not a copy.
+Short answers to the questions that trip people up most often. Each answer
+links to the chapter that explains it properly.
 
 ## Getting data in
 
@@ -21,7 +21,7 @@ for a `list[set]`). See {doc}`Building a network <working-with-infomap/inputs>`.
 Infomap's search is stochastic: each trial starts from a different random node
 order and can settle in a different local optimum. Run several trials with
 `num_trials=` (Infomap keeps the lowest-codelength result) and set `seed=` for
-reproducibility. See {doc}`Codelength and the two-level map equation <concepts/the-map-equation>`.
+reproducibility. See {doc}`The map equation <concepts/the-map-equation>`.
 
 ### How many trials should I use, and how do I know the result is reliable?
 
@@ -49,15 +49,15 @@ Infomap found. See {doc}`The map equation <concepts/the-map-equation>`.
 
 Infomap minimises a flow-based description length, not a target count or a
 sociological ground truth. Boundary nodes where the random walker mixes can form
-their own module if naming it shortens the overall description. More modules than
-you expected is often right, not a bug. See
+their own module if naming it shortens the overall description, so an unexpected
+module count is not necessarily an error. See
 {doc}`The map equation <concepts/the-map-equation>`.
 
 ### Two-level or multilevel: when should I pass `two_level=True`?
 
 Pass `two_level=True` for a flat partition (every node in exactly one top
 module). Omit it (the default) to let Infomap discover hierarchical structure.
-See {doc}`Codelength and the two-level map equation <concepts/the-map-equation>`
+See {doc}`The map equation <concepts/the-map-equation>`
 and {doc}`Hierarchy and the multilevel map equation <concepts/hierarchy-and-the-multilevel-map>`.
 
 ### Does Infomap choose the hierarchy depth for me, and how do I read each level?

@@ -12,9 +12,9 @@ kernelspec:
 
 {bdg-warning-line}`Flow model`
 
-```{admonition} In one sentence
+```{admonition} At a glance
 :class: tip
-Node attributes (roles, labels, categories) can guide community detection. The
+Node attributes (such as roles or categories) can guide community detection. The
 metadata map equation adds an attribute-homogeneity term to the description
 length, and a single rate parameter sets how much the attributes matter relative
 to the topology.
@@ -23,18 +23,17 @@ to the topology.
 ## When attributes should guide clustering
 
 Network topology alone does not always capture the communities you care about.
-Nodes carry attributes (the profession of a person in a social network, the
-functional category of a protein, the land-use type of a region), and those
-attributes may align with topological structure or cut across it. When they
-align, ignoring them throws away information you already have. When they cut
-across topology, you face a real scientific question: should a community be
-defined by where flow is trapped, or by who shares a role?
+Nodes carry attributes (the profession of a person in a social network, or the
+functional category of a protein), and those attributes may align with
+topological structure or cut across it. When they align, ignoring them throws
+away information you already have. When they cut across topology, you have to
+decide whether a community should be defined by where flow is trapped or by who
+shares a role.
 
 Standard Infomap treats all nodes as identical; only the link weights influence
 the partition. You can annotate nodes with attributes in a post-processing step,
-but the partition itself never sees them. Attributes earn their keep *during
-community detection* when you want modules whose members share a label, grouped
-by domain meaning as well as by how tightly they connect.
+but the partition itself never sees them. For attributes to influence the
+partition, they have to enter during community detection.
 
 The metadata map equation {cite:p}`emmons2019metadata` solves this by adding an
 *attribute codebook term* to the map equation. Encoding the random walk now
@@ -52,10 +51,10 @@ topology and metadata; the Emmons & Mucha formulation is what Infomap implements
 
 ## An attribute codebook
 
-Think of the city-map analogy again. In standard Infomap, every street in a
-city carries its own local codebook that names its streets, and switching cities
-costs an inter-module codeword. Now suppose each node also has a colour, its attribute, and you want
-modules where all nodes share a colour.
+In the standard map equation, each module has a local codebook that names its
+nodes, and switching modules costs an inter-module codeword
+({doc}`/concepts/the-map-equation`). Now suppose each node also has a colour
+(its attribute) and you want modules where all nodes share a colour.
 
 The metadata codebook adds a second layer of naming within each module: it also
 encodes the attribute value at every step. If a module holds nodes of one colour,
@@ -68,9 +67,6 @@ toward homogeneous modules. The algorithm minimises the *combined* cost:
 topological compression plus attribute encoding. At low $\eta$ the result looks
 like ordinary Infomap. At high $\eta$ it looks more like grouping nodes by
 attribute, using topology only to settle borderline cases.
-
-The approach is continuously tunable: you set the blend with $\eta$ and watch
-how the community structure changes as attributes gain or lose weight.
 
 ## The metadata map equation
 
@@ -201,9 +197,7 @@ for nid in sorted(mods_topo):
 ```
 
 At rate 0, Infomap finds the two topological communities: {1, 2, 3} and
-{4, 5, 6}. Each module mixes both attribute categories: node 3 (attribute 1)
-sits alongside nodes 1 and 2 (attribute 0), and the mirror image holds on the
-right.
+{4, 5, 6}. Each module mixes both attribute categories.
 
 ### Metadata-aware (rate = 2)
 
@@ -240,7 +234,7 @@ topological part is `result.codelength - meta_data_rate * result.meta_entropy`.
 
 ### Sweeping the metadata rate
 
-`meta_data_rate` ($\eta$) is a dial, not a switch. Sweep it to watch the
+`meta_data_rate` ($\eta$) takes any non-negative value. Sweeping it shows the
 partition move from purely topological toward attribute-homogeneous:
 
 ```{code-cell} python
@@ -259,11 +253,7 @@ for eta in [0.0, 0.5, 1.0, 2.0, 5.0]:
     print(f"{eta:>14.1f}  {r.num_top_modules:>8}  {r.codelength:>12.4f}")
 ```
 
-At $\eta = 0$ the partition is the topological one; as $\eta$ grows the search
-increasingly favours attribute-homogeneous modules. The reported `codelength`
-is the combined objective, so it rises with $\eta$ even while the partition
-stays put; the module counts printed above show where the balance tips for
-this network.
+The module counts printed above show where the balance tips for this network.
 
 ### Visualise the metadata-aware partition
 
@@ -285,10 +275,9 @@ folded into the objective. A higher metadata rate trades a little
 topological compression for modules more homogeneous in the attribute.
 ```
 
-Each colour is one module. The three attribute-homogeneous groups are visible:
-the two outer node pairs (one on each triangle) share the same attribute and land
-in separate modules, while the bridge pair {3, 4} forms its own cluster in the
-centre.
+The three attribute-homogeneous groups are visible: the two outer node pairs
+(one on each triangle) share the same attribute and land in separate modules,
+while the bridge pair {3, 4} forms its own cluster in the centre.
 
 ## API pointers
 
@@ -318,8 +307,9 @@ Metadata influence is set by these engine options on {func}`infomap.run`:
 
 ## Going deeper
 
+- {cite:t}`emmons2019metadata` is the source paper Infomap implements; a
+  related metadata-dependent random walk is developed in
+  {cite:p}`bassolas2022metadata`.
 - The survey (§6.1) covers metadata-aware community detection
-  {cite:p}`smiljanic2026survey`.
-- Companion notebook: `examples/notebooks/6.1 Networks with Metadata.ipynb`
-- {cite:t}`emmons2019metadata` is the source paper Infomap implements.
-- The related metadata-dependent random walk {cite:p}`bassolas2022metadata`.
+  {cite:p}`smiljanic2026survey`, with companion notebook
+  `examples/notebooks/6.1 Networks with Metadata.ipynb`.

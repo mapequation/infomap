@@ -12,33 +12,31 @@ kernelspec:
 
 {bdg-warning-line}`Flow model`
 
-```{admonition} In one sentence
+```{admonition} At a glance
 :class: tip
 A multilayer network lets the same physical node live in several layers at once,
 so Infomap can discover that a person belongs to one community at work and a
 different one at home, without collapsing those contexts into one network.
 ```
 
-## When one network flattens the picture
+## Why aggregating layers loses structure
 
-Many real systems involve the same actors interacting through *several kinds of
-relationship at once*. Scientists collaborate on journal papers, present at
-conferences, and correspond by email. Passengers fly between airports on
-different airlines. People message each other through different apps. Collapse
-all these interaction types into one network and you lose the contextual
-information that defines who belongs to which community in each setting.
+Many real systems involve the same actors interacting through several kinds of
+relationship at once: scientists collaborate on papers and correspond by email,
+passengers fly between airports on different airlines. Collapse the interaction
+types into one network and you lose the contextual information that defines who
+belongs to which community in each setting.
 
 A **multilayer network** preserves those contexts by keeping each interaction
-type in its own layer. The same physical entity (a scientist, an airport, a
-person) exists in each layer where it participates, but its neighbourhood and
-community membership can differ from layer to layer. Aggregating the layers into
-one network can distort both the topology and the community structure {cite:p}`domenico2015multilayer`.
+type in its own layer. The same physical entity exists in each layer where it
+participates, but its neighbourhood and community membership can differ from
+layer to layer. Aggregating the layers into one network can distort both the
+topology and the community structure {cite:p}`domenico2015multilayer`.
 
-The payoff is **overlapping community detection without an extra algorithm**.
-Because each layer contributes state nodes for the same physical nodes, the map
-equation can assign a physical node to several modules, one per layer where its
-local structure places it. You get non-overlapping partitions within each layer
-and physically meaningful overlap across them.
+Overlapping communities come out of the same machinery. Because each layer
+contributes state nodes for the same physical nodes, the map equation can
+assign a physical node to several modules, one per layer where its local
+structure places it.
 
 ## One node, several layers
 
@@ -175,7 +173,7 @@ print(f"Codelength    : {result.codelength:.4f} bits")
 print(f"Physical nodes: {len({n.node_id for n in state_nodes})}")
 print(f"State nodes   : {len(state_nodes)}")
 
-# The prose below relies on this structure; fail the build if it drifts.
+# Guard the example: the discussion assumes two modules and a bi-modular i.
 assert result.num_top_modules == 2
 assert len({n.module_id for n in state_nodes if n.node_id == 1}) == 2
 ```
@@ -219,13 +217,11 @@ for pid, assignments in sorted(phys_memberships.items()):
     print(f"{names[pid]:>10}  {sorted(assignments)}")
 ```
 
-Physical node *i* has two assignments; all others have one. That is the
-multilayer overlap in action.
+Physical node *i* has two assignments; all others have one.
 
 Now draw both layers side by side, colouring each node by the module it lands
 in. A shared palette keeps a module the same colour across panels, so physical
-node *i* shows up in a different colour in each layer: that colour change *is*
-the bi-modular overlap made visible.
+node *i* shows up in a different colour in each layer.
 
 ```{code-cell} python
 from myst_nb import glue
@@ -273,10 +269,6 @@ The two layers drawn separately, coloured by module with a shared palette.
 Physical node *i* appears in both layers in a different colour: the bi-modular
 overlap that state nodes make possible.
 ```
-
-The three Layer-1 nodes share one colour: they form a single module. In Layer 2
-the same physical node *i* takes a different colour, because it belongs to the
-other cluster in that context.
 
 ### Relax rate sensitivity
 
@@ -451,7 +443,7 @@ out-neighbours in the target layer:
 
 ## Going deeper
 
-- The survey (§5.2) covers multilayer networks {cite:p}`smiljanic2026survey`.
-- Companion notebook: `examples/notebooks/5.2 Multilayer Networks.ipynb`
-- Source paper for multilayer flows {cite:p}`domenico2015multilayer`.
-- Higher-order flows with Infomap {cite:p}`edler2017higher`.
+- Source paper for multilayer flows {cite:p}`domenico2015multilayer`; the
+  higher-order treatment in Infomap follows {cite:p}`edler2017higher`.
+- The survey (§5.2) covers multilayer networks {cite:p}`smiljanic2026survey`,
+  with companion notebook `examples/notebooks/5.2 Multilayer Networks.ipynb`.

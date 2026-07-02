@@ -25,10 +25,10 @@ kernelspec:
 `{bdg-success-line}\`How-to\`` · `{bdg-primary-line}\`Workflow\`` ·
 `{bdg-secondary-line}\`Robustness\``}
 
-```{admonition} In one sentence
+```{admonition} At a glance
 :class: tip
-{One-sentence "why you care", eight to fifteen words. Lead with the flow /
-compression lens.}
+{One or two plain sentences: what this chapter covers and why you care. No
+triads, no slogans.}
 ```
 
 ## <The question this answers: name it after the content>
@@ -76,9 +76,14 @@ workflow chapters: end instead with a "## Pitfalls" section.}
 
 ## Going deeper
 
-- The survey (§{N}) covers {topic} {cite:p}`smiljanic2026survey`.
-  {Write whichever citation form reads best: parenthetical {cite:p} when the
-  finding is the point, narrative {cite:t} when the paper itself is the
-  subject. The one hard rule: the prose never congratulates its own authors.}
-- Companion notebook: {`examples/notebooks/<name>.ipynb`}
+{Two or three bullets, ordered by usefulness for THIS chapter — usually the
+source paper first, then the survey section with its companion notebook folded
+into the same bullet. Vary the sentence shapes between chapters; identical
+fill-in-the-blank bullets across chapters read as mail-merge. Citation form:
+parenthetical {cite:p} when the finding is the point, narrative {cite:t} when
+the paper itself is the subject. The one hard rule: the prose never
+congratulates its own authors.}
+
 - Source paper for {topic} {cite:p}`{key}`.
+- The survey (§{N}) covers {topic} {cite:p}`smiljanic2026survey`; its companion
+  notebook is {`examples/notebooks/<name>.ipynb`}.

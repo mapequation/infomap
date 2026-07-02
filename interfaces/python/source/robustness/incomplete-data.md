@@ -12,7 +12,7 @@ kernelspec:
 
 {bdg-secondary-line}`Robustness`
 
-```{admonition} In one sentence
+```{admonition} At a glance
 :class: tip
 When your network is missing links, standard Infomap overfits and splits nodes
 into many small spurious modules. The Bayesian regularized map equation adds a
@@ -23,11 +23,10 @@ survive.
 ## Missing links break the objective
 
 Network data collected from real systems are almost always incomplete. A survey
-captures a subset of acquaintances; a citation database crawls only a fraction
-of references; a protein–protein interaction screen misses true binding partners.
-When links are missing, the network is sparser than reality, and community
-detection methods that take the observed network at face value draw the wrong
-boundaries.
+captures only a subset of acquaintances, and a citation database crawls only a
+fraction of references. When links are missing, the network is sparser than
+reality, and community detection methods that take the observed network at face
+value draw the wrong boundaries.
 
 The standard map equation is prone to this. It minimises a Shannon
 entropy-based description length that systematically *underestimates* the true
@@ -35,29 +34,26 @@ entropy when data are sparse {cite:p}`basharin1959entropy`. As underestimation w
 communities lose links, the map equation's two cost terms fall out of balance:
 the module codebooks look cheap to shrink, so the optimiser splits nodes into
 smaller and smaller groups, down to groups of two or three nodes with no
-principled support. Those modules are an artefact of noise, not real structure.
+principled support. Those modules are an artefact of noise.
 
 This problem is not about the search algorithm or the number of trials; it is a
 bias in how the objective function responds to sparse data. The fix is a
 regularization mechanism baked into the objective itself.
 
-## Blend the data with a prior
+## Regularization as a Bayesian prior
 
-Think about what "community" means in information-theoretic terms: a group of
-nodes where a random walker lingers. When the network is nearly complete, you
-can trust the observed degree of each node as a reliable estimate of how
-strongly it attracts the walker. When many links are missing, the observed
-degree is just a noisy sample of the true degree. Relying on that sample
-blindly inflates apparent differences between nodes, encourages the algorithm
-to draw boundaries around statistical accidents, and produces many tiny
-"communities" that would dissolve if you observed a few more links.
+In the map equation, a community is a group of nodes where a random walker
+lingers (see {doc}`/concepts/the-map-equation`). When the network is nearly
+complete, the observed degree of each node is a reliable estimate of how strongly
+it attracts the walker. When many links are missing, the observed degree is just
+a noisy sample of the true degree. Relying on that sample blindly inflates
+apparent differences between nodes, encourages the algorithm to draw boundaries
+around statistical accidents, and produces many tiny "communities" that would
+dissolve if you observed a few more links.
 
-Regularization addresses this by blending what you observed with what you would
-expect from an uninformative prior: a featureless, fully-connected prior network
-with no community structure of its own. In sparse regions the prior pulls the transition rates
-toward the flat background and evens out the apparent cost differences that drive
-spurious splitting. Where evidence is abundant, the data dominate and the prior
-barely matters.
+Regularization addresses this by blending what you observed with an uninformative
+prior: a featureless, fully-connected network with no community structure of its
+own.
 
 The picture is similar to Bayesian smoothing for language models: a bigram
 count of zero does not mean two words never co-occur; you add a small
@@ -76,8 +72,8 @@ community structure, the continuous configuration model. The random walker then
 moves on the combination: most steps follow observed links, but with a small,
 data-dependent probability the walker takes a prior step toward any node. Nodes
 with few observed links lean more on the prior; nodes with many links lean on
-their data. Where evidence is abundant the data dominate and the prior barely
-matters; where the network is sparse the prior evens out the apparent cost
+their data. Where evidence is abundant, the data dominate and the prior barely
+matters. Where the network is sparse, the prior evens out the apparent cost
 differences that drive spurious splitting.
 
 The strength of the prior is $\lambda = C\,\ln N / N$, where $N$ is the number of
@@ -217,9 +213,8 @@ modules instead of breaking them into noise-driven singletons.
 ```
 
 Each colour is one regularized module. Even with most links removed, the
-regularized map equation recovers far fewer, larger modules than the
-unregularized run, close to the planted five, because the prior absorbs the
-statistical noise that would otherwise attract spurious module boundaries.
+regularized run recovers far fewer, larger modules than the unregularized one,
+close to the planted five.
 
 ## API pointers
 
@@ -252,13 +247,13 @@ on) compose freely with `regularized=True`.
 
 ## Going deeper
 
-- The survey (§7) sets incomplete data, overfitting, and the regularized map
-  equation in context {cite:p}`smiljanic2026survey`.
-- Companion notebook: `examples/notebooks/7 Networks with incomplete data.ipynb`
-  runs link-removal experiments with cross-validation.
-- Source paper for the regularized map equation, on undirected, unweighted
-  networks {cite:p}`smiljanic2020missing`.
-- The extension to weighted and directed networks, via an empirical Bayes
-  estimate of transition rates {cite:p}`smiljanic2021incomplete`.
+- Source papers: the regularized map equation on undirected, unweighted
+  networks {cite:p}`smiljanic2020missing`, and its extension to weighted and
+  directed networks via an empirical Bayes estimate of transition rates
+  {cite:p}`smiljanic2021incomplete`.
 - Module-level reliability scores that tell a robust partition from one driven
   by sampling noise {cite:p}`neuman2025reliable`.
+- The survey (§7) sets incomplete data, overfitting, and the regularized map
+  equation in context {cite:p}`smiljanic2026survey`; its companion notebook
+  `examples/notebooks/7 Networks with incomplete data.ipynb` runs link-removal
+  experiments with cross-validation.

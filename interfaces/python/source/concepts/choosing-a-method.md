@@ -12,7 +12,7 @@ kernelspec:
 
 {bdg-info-line}`Concept`
 
-```{admonition} In one sentence
+```{admonition} At a glance
 :class: tip
 If you already use Louvain or Leiden, you can read Infomap through the same lens:
 all three partition a network, but Infomap optimises the compression of flow
@@ -23,19 +23,18 @@ where Louvain and Leiden optimise modularity.
 
 Louvain and Leiden are the community-detection methods most researchers meet
 first, and both return a partition of your nodes just as Infomap does. This page
-is a translation, not a benchmark: it maps Infomap onto ideas you already have,
-so you can read its output with the intuition you built on modularity.
+maps Infomap onto the concepts you already know from them.
 
-One difference explains the rest, and it is the *objective*. Louvain and Leiden
+The main difference is the objective. Louvain and Leiden
 score a partition by **modularity**: whether more edges fall inside groups than a
 random graph with the same degrees would predict. Infomap scores it by the **map
 equation**: how few bits describe a random walk on the network under that
 partition (see {doc}`/concepts/the-map-equation`). Modularity asks how the network
 is wired; the map equation asks how it is used.
 
-Running both is a useful sanity check. Where the two lenses agree, the grouping is
-robust to the choice of objective; where they differ, you have found a region
-whose grouping depends on what you mean by "community", which is worth knowing.
+Running both is a useful sanity check. Where the two agree, the grouping is
+robust to the choice of objective; where they differ, the grouping depends on
+what you mean by "community".
 
 ## What each objective optimises
 
@@ -72,8 +71,7 @@ L(\mathsf{M}) =
 $$
 
 the average cost of coding a random walk: bits for *crossing* module boundaries
-plus bits for *moving inside* them. One reads structure off edge density; the
-other off the dynamics the edges carry.
+plus bits for *moving inside* them.
 
 :::{toggle}
 **A note on the resolution limit**
@@ -88,9 +86,9 @@ tune its scale with `markov_time` or `preferred_number_of_modules`. These are
 properties of the objectives, not verdicts on them.
 :::
 
-## The same network through three lenses
+## One network under each objective
 
-The clearest way to build intuition is to look at one network under each lens.
+Here is one clearly structured network partitioned by all three methods.
 
 ```{code-cell} python
 import networkx as nx
@@ -141,25 +139,23 @@ for ax, (name, mods) in zip(
 ):
     draw_partition(g, mods, ax=ax)
     ax.set_title(name, fontsize=11)
-fig.suptitle("The same network through three lenses", fontsize=12)
+fig.suptitle("The same network under each objective", fontsize=12)
 glue("fig-choosing-a-method", fig, display=False)
 plt.close(fig)
 ```
 
 ```{glue:figure} fig-choosing-a-method
-One network partitioned by each objective. On clearly separated structure the
-flow lens and the modularity lens tend to carve it the same way; the group counts
-print above. Colours identify groups within a panel, not across panels.
+One network partitioned by each objective; the group counts print above.
+Colours identify groups within a panel, not across panels.
 ```
 
-On well-separated, undirected structure like this the two objectives agree:
-compressing the flow and maximising within-group density pick out the same
-groups. That agreement is the common case.
+On well-separated, undirected structure like this the two objectives agree,
+which is the common case: compressing the flow and maximising within-group
+density pick out the same groups.
 
-## Where the lenses read a network differently
+## Where the objectives differ
 
-Two situations are worth flagging to a Louvain or Leiden user, because they are
-where Infomap's answer will differ, and why:
+Infomap's answer differs from a modularity partition in two situations:
 
 - **Directed flow.** Infomap follows edge direction; the standard modularity null
   model does not. On a network with real flow asymmetry, a citation cascade or a
@@ -170,9 +166,8 @@ where Infomap's answer will differ, and why:
   above), so on a network with many small groups they need not agree on how finely
   to divide it. Neither is more correct; they optimise different things.
 
-Neither point is a benchmark. They are the two places where "community by flow"
-and "community by density" genuinely mean different things, so knowing your
-network tells you which lens to trust.
+These are the two places where "community by flow" and "community by density"
+genuinely mean different things; knowing your network tells you which to trust.
 
 ## API pointers
 

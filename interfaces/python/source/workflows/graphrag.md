@@ -12,7 +12,7 @@ kernelspec:
 
 {bdg-primary-line}`Workflow`
 
-```{admonition} In one sentence
+```{admonition} At a glance
 :class: tip
 The `infomap.graphrag` adapter reads the entity and relationship Parquet tables
 produced by a GraphRAG pipeline, runs Infomap on the resulting weighted graph,
@@ -29,25 +29,15 @@ summarises each community, and those summaries are indexed for
 question-answering.
 
 The default community detector in most GraphRAG implementations is Leiden, run
-with a modularity objective. Infomap takes a different approach: it finds the partition
-that minimises the code length of a random walk over the weighted graph (see
-{doc}`/concepts/the-map-equation`). On knowledge graphs where edge weights represent
-co-occurrence frequency, flow is a natural proxy for semantic proximity, and
-Infomap's compression objective rewards tight topical clusters. The adapter in
-`infomap.graphrag` handles the column mapping, node-id translation, hierarchy
-extraction, and Parquet output so you do not have to.
-
-## A map of ideas
-
-Think of the entity graph as a map of ideas. A random reader picking up a
-document about "Alpha" will next likely encounter "Beta" and "Gamma" before
-jumping to the "Delta" side of the graph. Infomap encodes that tendency: it
-groups entities that a conceptual random walk visits together into the same
-community. Communities that trap the walk well compress into short codewords;
-entities that bridge communities carry higher description cost.
-
-The adapter translates this result into GraphRAG's own table schema so the
-downstream summarisation and retrieval steps need no changes.
+with a modularity objective. Infomap optimises a different quality function: it
+finds the partition that minimises the description length of a random walk over
+the weighted graph (see {doc}`/concepts/the-map-equation`). Whether that flow
+view groups your entities more usefully than modularity depends on the graph;
+running both and comparing is reasonable. What this page provides is the
+plumbing: the adapter in `infomap.graphrag` handles the column mapping, node-id
+translation, hierarchy extraction, and Parquet output, so an Infomap partition
+drops into GraphRAG's own table schema and the downstream summarisation and
+retrieval steps run unchanged.
 
 ## What Infomap optimises here
 
@@ -222,11 +212,6 @@ The GraphRAG entity graph coloured by community. Infomap separates the two
 tightly linked entity groups; the thin bridge between them carries too
 little flow to merge them.
 ```
-
-The two colour groups match the triangle communities. The thin bridge edge
-between Gamma and Delta connects the two clusters but does not pull them
-together, because the flow through it is weak next to the internal triangle
-edges.
 
 ### Write output to disk
 

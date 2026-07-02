@@ -12,30 +12,26 @@ kernelspec:
 
 {bdg-success-line}`How-to`
 
-```{admonition} In one sentence
+```{admonition} At a glance
 :class: tip
-Hand your network to :func:`infomap.run` however it already lives in memory:
+Hand your network to {func}`infomap.run` however it already lives in memory:
 NetworkX, igraph, a SciPy sparse matrix, an edge index, or raw link tuples. For
-non-default loading, build it explicitly with a :class:`~infomap.Network`.
+non-default loading, build it explicitly with a {class}`~infomap.Network`.
 ```
 
-## Meet your data where it lives
+## Run from the format you already have
 
-Community detection sits at the end of a data pipeline, not the beginning.
 Your network might be a NetworkX graph from a scraping step, a SciPy sparse
-adjacency matrix from a machine-learning preprocessing step, or a DataFrame from
-a SQL query. Converting everything to a common intermediate format costs time,
-introduces bugs, and hides the original structure of your data.
-
-:func:`infomap.run` meets you where you are. It dispatches on the type of its
-argument, builds the same internal flow network whatever the source, and returns
-an immutable :class:`~infomap.Result`. So the partition from a NetworkX graph is
+adjacency matrix from a machine-learning pipeline, or a DataFrame from a SQL
+query. {func}`infomap.run` dispatches on the type of its argument, builds the
+same internal flow network whatever the source, and returns an immutable
+{class}`~infomap.Result`. The partition from a NetworkX graph is therefore
 numerically identical to the partition from a SciPy matrix built on the same
 edges.
 
 When you need to control *how* a graph is read, a different edge-weight
 attribute or explicit directedness, build the network first with a
-:class:`~infomap.Network` and run that.
+{class}`~infomap.Network` and run that.
 
 ## Input routes at a glance
 
@@ -48,15 +44,15 @@ attribute or explicit directedness, build the network first with a
 | link rows (pandas / NumPy / tuples) | `infomap.run(rows)` | `Network().add_links(rows)` |
 | network file | `infomap.run("graph.net")` | `Network.from_file(path)` |
 
-Keyword arguments to :func:`infomap.run` configure the *engine* (``seed``,
+Keyword arguments to {func}`infomap.run` configure the *engine* (``seed``,
 ``num_trials``, ``directed``, …). Arguments that govern *how the input is read*
-belong to the ``Network.from_*`` constructors; passing one to :func:`infomap.run`
+belong to the ``Network.from_*`` constructors; passing one to {func}`infomap.run`
 raises with a pointer to the right constructor rather than silently building a
 different graph.
 
 Two library-idiomatic one-shot helpers return native types instead of a
-:class:`~infomap.Result`: :func:`infomap.find_communities` (a NetworkX-style
-``list[set]``) and :func:`infomap.find_igraph_communities` (an
+{class}`~infomap.Result`: {func}`infomap.find_communities` (a NetworkX-style
+``list[set]``) and {func}`infomap.find_igraph_communities` (an
 ``igraph.VertexClustering``).
 
 ## NetworkX
@@ -92,7 +88,7 @@ print(result.to_dataframe(["name", "module_id"]).to_string(index=False))
 ```
 
 When you need the integer-to-label mapping itself, build a
-:class:`~infomap.Network`: its :attr:`~infomap.Network.node_id_to_label` records
+{class}`~infomap.Network`: its {attr}`~infomap.Network.node_id_to_label` records
 it.
 
 ```{code-cell} python
@@ -110,7 +106,7 @@ directed-flow model with teleportation. **Weighted edges** are read from the
 ``"weight"`` attribute by default; for a different attribute, build with
 ``Network.from_networkx(g, weight="capacity")`` and run the network.
 
-**One-shot in NetworkX style**: :func:`infomap.find_communities` returns a
+**One-shot in NetworkX style**: {func}`infomap.find_communities` returns a
 ``list[set]`` in your original labels, for quick exploration:
 
 ```{code-cell} python
@@ -141,7 +137,7 @@ result = run(net, two_level=True, seed=123, num_trials=5, silent=True)
 print(f"igraph (weighted): {result.num_top_modules} modules, {result.codelength:.4f} bits/step")
 ```
 
-:func:`infomap.find_igraph_communities` is the one-shot variant; it returns an
+{func}`infomap.find_igraph_communities` is the one-shot variant; it returns an
 ``igraph.VertexClustering`` with a ``.codelength`` attribute, matching igraph's
 own community functions.
 
@@ -156,7 +152,7 @@ Infomap-specific options (multilayer, state networks, convergence control), or a
 ## SciPy sparse adjacency matrix
 
 Graph ML pipelines and spectral methods often produce sparse adjacency matrices
-directly. :func:`infomap.run` accepts CSR, CSC, COO, and the other SciPy sparse
+directly. {func}`infomap.run` accepts CSR, CSC, COO, and the other SciPy sparse
 formats and treats the matrix as undirected:
 
 ```{code-cell} python
@@ -183,7 +179,7 @@ print(f"via Network: {result.num_top_modules} modules")
 ```
 
 `node_ids` gives external ids in matrix-row order; the mapping is stored on
-:attr:`~infomap.Network.node_id_to_label`, the same pattern as
+{attr}`~infomap.Network.node_id_to_label`, the same pattern as
 ``from_networkx``.
 
 ## Edge lists: pandas, NumPy, tuples
@@ -270,8 +266,8 @@ format also ships pre-loaded in {mod}`infomap.datasets`
 ## Building incrementally with Network
 
 When you assemble a network programmatically, read a custom file format, or wire
-up a handful of edges, use :class:`~infomap.Network` directly. Its ``add_*``
-verbs return the network, so calls chain, and :func:`infomap.run` takes the
+up a handful of edges, use {class}`~infomap.Network` directly. Its ``add_*``
+verbs return the network, so calls chain, and {func}`infomap.run` takes the
 built network:
 
 ```{code-cell} python
@@ -323,14 +319,14 @@ To draw the partition or write it to disk, see
 
 ## API pointers
 
-- {func}`infomap.run` is the one-call front door; it dispatches on the input
-  type and returns an immutable :class:`~infomap.Result`.
+- {func}`infomap.run` dispatches on the input type and returns an immutable
+  {class}`~infomap.Result`.
 - {class}`infomap.Network` builds a network explicitly. Its constructors
   {meth}`~infomap.Network.from_networkx`, {meth}`~infomap.Network.from_igraph`,
   {meth}`~infomap.Network.from_scipy_sparse_matrix`,
   {meth}`~infomap.Network.from_edge_index`, and
   {meth}`~infomap.Network.from_file` take the adapter options that
-  :func:`infomap.run` does not.
+  {func}`infomap.run` does not.
 - {meth}`infomap.Network.add_node`, {meth}`infomap.Network.add_link`, and
   {meth}`infomap.Network.add_links` build a network incrementally.
 - {func}`infomap.find_communities` and {func}`infomap.find_igraph_communities`

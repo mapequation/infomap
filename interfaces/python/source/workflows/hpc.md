@@ -12,7 +12,7 @@ kernelspec:
 
 {bdg-primary-line}`Workflow`
 
-```{admonition} In one sentence
+```{admonition} At a glance
 :class: tip
 Infomap trials are independent work units: run many in parallel on a
 single node with `parallel_trials`, or split them across a scheduler job
@@ -28,8 +28,7 @@ find different local optima. The standard way to get a reliable partition
 is to run many independent trials and keep the one with the lowest
 codelength. On small networks, tens of trials on a laptop is enough. On
 real-world networks with millions of nodes and links, each trial can take
-minutes, and you may want hundreds of trials to trust the result. That is
-where a cluster comes in.
+minutes, and you may want hundreds of trials to trust the result.
 
 Two strategies cover most HPC use cases:
 
@@ -51,8 +50,9 @@ seed, total trial count, and algorithm settings.
 
 ## Trials as independent work units
 
-Think of `num_trials` as a budget and `trial_offset` as a slice pointer.
-If you want 100 trials in total and split them across four array tasks:
+`num_trials` is the total trial budget, and `trial_offset` shifts where a
+task's trials begin in that budget. If you want 100 trials in total and split
+them across four array tasks:
 
 - task 0: trials 0–24, offset 0
 - task 1: trials 25–49, offset 25

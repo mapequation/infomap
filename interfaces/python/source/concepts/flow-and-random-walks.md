@@ -12,7 +12,7 @@ kernelspec:
 
 {bdg-info-line}`Concept`
 
-```{admonition} In one sentence
+```{admonition} At a glance
 :class: tip
 Infomap finds communities by asking where a random walker lingers. Flow is that
 walker's stationary visit frequency, and modules are the regions that trap it.
@@ -21,10 +21,9 @@ walker's stationary visit frequency, and modules are the regions that trap it.
 ## What flow captures
 
 Every network encodes a pattern of movement. Hyperlinks carry web surfers from
-page to page, citations pull readers toward influential papers, synaptic
-connections route neural signals. Revealing the large-scale structure of such a
-system takes a currency that respects direction, weight, and how paths chain
-together, not only which edges are present.
+page to page, and citations pull readers toward influential papers. Revealing
+the large-scale structure of such a system takes a currency that respects
+direction, weight, and how paths chain together.
 
 Counting edges inside and outside groups misses something dynamic: the way a
 random walker entering a dense cluster tends to stay there for many steps before
@@ -34,10 +33,9 @@ is a part of the network where flow **lingers** {cite:p}`rosvall2008maps`.
 The map equation, Infomap's objective function, measures how far a description
 of the walker's trajectory compresses. To do that it needs to know how often the
 walker visits each node and how often it crosses module boundaries. Both
-come from **flow**, so flow is the first thing to understand about why Infomap
-partitions a network the way it does.
+come from **flow**.
 
-## Where the walker lingers
+## The random walk
 
 Picture a walker that starts at some node and, at each step, follows one of the
 outgoing edges at random. It spends more time in densely connected regions and
@@ -49,8 +47,8 @@ The modules are the regions where the walker stays for many steps before it
 moves on. Inside such a region the walker's path is long and locally
 predictable, broken only by rare crossings. A two-level code exploits those long
 stretches: reuse short codewords inside each region, and pay a brief exit toll
-only when the walker crosses to another. The partition with the shortest average
-toll is the one Infomap returns.
+only when the walker crosses to another. Infomap returns the partition with the
+shortest average description length.
 
 **Directed** networks need one more ingredient. A directed graph can have
 dangling nodes (no out-edges) or sink components the walker can never leave, so
@@ -87,15 +85,12 @@ $$
 
 and the unique stationary solution $\pi$ exists for any $\tau > 0$. The $1/n$
 term is the simplest, uniform teleportation; by default Infomap teleports to a
-node with probability proportional to its in-strength. Infomap also uses
-*unrecorded* teleportation {cite:p}`lambiotte2012smart`: the teleportation hops
-are not counted in the code length, so they do not artificially inflate
-cross-module traffic.
+node with probability proportional to its in-strength. The teleportation steps
+are unrecorded, as described above.
 
 These per-node flows $\pi_i$, together with how often the walker crosses between
-candidate modules, are everything the objective needs. The next chapter,
-{doc}`the-map-equation`, turns them into the quantity Infomap actually minimises;
-here we only establish the flow it is built from.
+candidate modules, are the inputs the map equation needs. The next chapter,
+{doc}`the-map-equation`, turns them into the quantity Infomap minimises.
 
 :::{toggle}
 **Computing the flow**
@@ -174,17 +169,13 @@ for long stretches and crosses to the other only occasionally; those
 persistent visits are the flow the map equation compresses.
 ```
 
-The two colours are the two detected modules. The bridge edge crosses the colour
-boundary, where flow leaks from one community into the other.
-
 ```{admonition} Teleportation and directed ergodicity
 :class: note
 Without teleportation a directed walk can get stuck in cycle B and never return
 to A (no edge leaves B). Teleportation at rate $\tau = 0.15$ restores ergodicity
-so every node stays reachable, while Infomap's unrecorded scheme keeps those
-artificial hops from inflating the apparent flow across module boundaries. The
-community structure then reflects the *link topology* rather than the
-teleportation bookkeeping {cite:p}`lambiotte2012smart`.
+so every node stays reachable, and because the jumps are unrecorded they do not
+inflate the apparent flow across module boundaries
+{cite:p}`lambiotte2012smart`.
 ```
 
 ## API pointers
@@ -205,8 +196,8 @@ teleportation bookkeeping {cite:p}`lambiotte2012smart`.
 
 ## Going deeper
 
-- The survey (§2–3) gives the broader treatment {cite:p}`smiljanic2026survey`.
-- Source paper for flow-based community detection {cite:p}`rosvall2008maps`.
-- Teleportation in directed networks {cite:p}`lambiotte2012smart`.
-- Companion material: the {doc}`survey companion notebooks </article-companion/index>`
+- Source paper for flow-based community detection {cite:p}`rosvall2008maps`;
+  teleportation in directed networks is developed in {cite:p}`lambiotte2012smart`.
+- The survey (§2–3) gives the broader treatment {cite:p}`smiljanic2026survey`,
+  and the {doc}`survey companion notebooks </article-companion/index>`
   demonstrate flow on larger real-world networks.
