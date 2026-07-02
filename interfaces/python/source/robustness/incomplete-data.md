@@ -105,11 +105,10 @@ described here.
 
 ## A 70%-sparse planted partition
 
-We construct a synthetic network with five planted communities of twelve
-nodes each: edges appear within communities with probability 0.7 and between
-communities with probability 0.02. We then
-remove 70 % of the edges uniformly at random to simulate incomplete
-observations.
+The example below constructs a synthetic network with five planted communities
+of twelve nodes each: edges appear within communities with probability 0.7 and
+between communities with probability 0.02. It then removes 70 % of the edges
+uniformly at random to simulate incomplete observations.
 
 ### Build the network
 

@@ -83,8 +83,8 @@ the dedicated [solution-landscape tooling](https://github.com/mapequation/soluti
 
 ## Reading a karate-club result
 
-We use the Zachary karate club graph throughout: small enough to inspect
-interactively, with well-known community structure.
+The examples below use the Zachary karate club graph, a 34-node network with
+well-known community structure.
 
 ### Run Infomap
 

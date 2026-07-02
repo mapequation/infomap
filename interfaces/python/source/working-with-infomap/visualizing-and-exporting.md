@@ -50,8 +50,7 @@ The export formats take different cuts through the same result:
 
 ## Colour and export the karate club
 
-We use the Zachary karate club throughout this chapter (34 people, 78
-friendships). It is small enough to produce a legible figure.
+The examples below use the Zachary karate club (34 people, 78 friendships).
 
 ### Run Infomap
 

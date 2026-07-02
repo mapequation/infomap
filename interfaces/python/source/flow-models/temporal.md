@@ -96,13 +96,13 @@ windows rather than jumping across the whole sequence.
 
 ## Six colleagues over three windows
 
-We build a tiny temporal network with six nodes and three time windows to show
+The example below builds a tiny temporal network with six nodes and three time windows to show
 how Infomap tracks communities as they drift.
 
 **Setup.** The six nodes represent people. In window T = 1 and again in T = 3
 they interact in two stable triangles: {1, 2, 3} and {4, 5, 6}. In window T = 2
 the groups reshuffle: {1, 2, 4} form one cluster while {3, 5, 6} form another.
-We add each layer as intra-layer links and let Infomap generate the inter-layer
+Add each layer as intra-layer links and let Infomap generate the inter-layer
 transitions automatically using a relax rate of 0.25.
 
 ```{code-cell} python

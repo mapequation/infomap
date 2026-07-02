@@ -110,8 +110,8 @@ formal derivation.
 
 ## Two cycles joined by a one-way bridge
 
-We build a tiny directed network by hand: two tight 3-cycles connected by a
-single bridge edge.
+The example below builds a tiny directed network by hand: two tight 3-cycles
+connected by a single bridge edge.
 
 ```{code-cell} python
 import networkx as nx
@@ -171,11 +171,9 @@ persistent visits are the flow the map equation compresses.
 
 ```{admonition} Teleportation and directed ergodicity
 :class: note
-Without teleportation a directed walk can get stuck in cycle B and never return
-to A (no edge leaves B). Teleportation at rate $\tau = 0.15$ restores ergodicity
-so every node stays reachable, and because the jumps are unrecorded they do not
-inflate the apparent flow across module boundaries
-{cite:p}`lambiotte2012smart`.
+This example needs teleportation: without it a directed walk can get stuck in
+cycle B and never return to A, since no edge leaves B. Teleportation at rate
+$\tau = 0.15$ restores ergodicity so every node stays reachable.
 ```
 
 ## API pointers

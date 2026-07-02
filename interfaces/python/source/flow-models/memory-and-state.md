@@ -249,8 +249,8 @@ for phys_id, mods in sorted(phys_to_modules.items()):
 
 ### Step 4: Visualise
 
-We colour the physical graph by each node's *primary* module (the first module
-it belongs to).
+Colour the physical graph by each node's *primary* module (the first module it
+belongs to).
 
 ```{code-cell} python
 import matplotlib.pyplot as plt
