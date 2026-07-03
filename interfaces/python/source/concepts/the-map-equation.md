@@ -91,11 +91,10 @@ better and captures more of its community structure.
 
 For undirected networks, a node's visit frequency equals its normalised strength
 (its total incident link weight divided by twice the total link weight, the sum
-of all node strengths), so Infomap needs
-no teleportation. For directed networks Infomap uses a random-surfer
-model with teleportation probability $\tau = 0.15$ (the conventional choice, one
-minus PageRank's 0.85 damping factor) to guarantee an ergodic stationary
-distribution.
+of all node strengths), so Infomap needs no teleportation. For directed networks
+Infomap uses a random-surfer model with teleportation to guarantee an ergodic
+stationary distribution; see {doc}`/concepts/flow-and-random-walks` for how
+teleportation is defined and why the partition barely depends on its rate.
 
 :::{toggle}
 **Full term-by-term form**

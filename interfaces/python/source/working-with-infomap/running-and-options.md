@@ -138,9 +138,10 @@ once you are reliably in the deepest valley, adding more trials does not change
 the answer {cite:p}`calatayud2019solution`.
 
 **Rule of thumb.** Use `num_trials=1` for quick exploration. Use
-`num_trials=10` for most analyses. Use `num_trials=50` (or `converge=True`
-with a higher cap) when you need high confidence in the global minimum or when
-you are comparing partitions across networks.
+`num_trials=10` for most analyses. Use `num_trials=20` or more (up to around
+`50`, or `converge=True` with a higher cap) when you need high confidence in
+the global minimum, when you are comparing partitions across networks, or on
+networks with weak or diffuse community structure.
 
 ```{admonition} converge=True
 :class: note
@@ -249,11 +250,11 @@ pronounced: the directed walk respects asymmetric flow and tends to find tighter
 modules corresponding to true circulation patterns.
 
 **Teleportation probability.** The default `teleportation_probability=0.15`
-is the conventional PageRank value (one minus the 0.85 damping factor) and works
-well for most networks. Because
-Infomap uses unrecorded teleportation {cite:p}`lambiotte2012smart`, the partition
-barely responds to this value, so the default is rarely worth changing unless
-your domain says walkers teleport much more or less often.
+(the conventional PageRank value) works well for most networks. Because Infomap
+uses unrecorded teleportation {cite:p}`lambiotte2012smart`, the partition barely
+responds to this value, so the default is rarely worth changing unless your
+domain says walkers teleport much more or less often. See
+{doc}`/concepts/flow-and-random-walks` for what teleportation does to the flow.
 
 ### `markov_time` as a resolution dial
 
@@ -417,7 +418,7 @@ These are the keyword arguments to {func}`infomap.run`:
 For the full set of options as a searchable table, see the
 {class}`~infomap.Options` reference in the {doc}`/api/index`.
 
-## See also
+## Going deeper
 
 - The {doc}`options guide notebook </examples/options-guide>` lists every
   option in a searchable table, generated from the installed package so it

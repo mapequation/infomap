@@ -123,7 +123,9 @@ napoleon_numpy_docstring = True
 napoleon_google_docstring = False
 napoleon_include_init_with_doc = True
 
-autodoc_default_options = {"exclude-members": "thisown"}
+# remove_multilayer_link is an unimplemented stub kept only for interface
+# parity (it always raises NotImplementedError), so keep it out of the reference.
+autodoc_default_options = {"exclude-members": "thisown, remove_multilayer_link"}
 autodoc_member_order = "groupwise"  # methods, then attributes; not one flat A-Z list
 
 # Summary tables on the API pages link to the autodoc entries on the same page;

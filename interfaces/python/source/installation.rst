@@ -16,26 +16,6 @@ Upgrade an existing installation with:
 
 .. _PyPI: https://pypi.org/project/infomap/
 
-Optional integrations
----------------------
-
-Install optional integrations for common research workflows:
-
-.. code-block:: bash
-
-    pip install "infomap[networkx]"
-    pip install "infomap[igraph]"
-    pip install "infomap[pandas]"
-    pip install "infomap[scipy]"
-    pip install "infomap[anndata]"
-    pip install "infomap[graphrag]"
-
-Or install all optional integrations at once:
-
-.. code-block:: bash
-
-    pip install "infomap[all]"
-
 Command line interface
 ----------------------
 

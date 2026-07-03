@@ -294,6 +294,20 @@ communities, so a single colour can show only one of its two memberships.
 The first-order model sees one community of four nodes. The second-order model
 finds two communities (A–B–C and B–D) that overlap at junction B.
 
+## Options
+
+Unlike the relax-rate multilayer model, the second-order model adds no dedicated
+engine flag on {func}`infomap.run`: it is defined *structurally* by the state
+nodes you declare on the {class}`~infomap.Network`. The knobs that shape and read
+a state network are:
+
+| Option | Where | Effect |
+|---|---|---|
+| `add_state_node(state_id, node_id)` | {meth}`infomap.Network.add_state_node` | Declare one state node (a context) on a physical node |
+| `add_state_nodes(state_nodes)` | {meth}`infomap.Network.add_state_nodes` | Declare many state nodes at once |
+| `directed` | {func}`infomap.run` | Follow link direction; a bare `Network` defaults to undirected flow, unlike the `DiGraph` route, which enables it automatically |
+| `states=True` | {meth}`infomap.Result.modules`, {meth}`infomap.Result.nodes` | Return state-node assignments; required on higher-order networks, where `states=False` raises |
+
 ## API pointers
 
 **Declaring state nodes**

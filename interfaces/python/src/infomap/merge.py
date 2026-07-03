@@ -18,7 +18,7 @@ Example (after a SLURM job array wrote ``results_0.json`` … ``results_3.json``
 
 or programmatically::
 
-    from infomap import merge_trial_results
+    from infomap.merge import merge_trial_results
     summary = merge_trial_results(["results_*.json"], out_name="final")
 """
 

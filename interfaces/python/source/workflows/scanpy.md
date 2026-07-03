@@ -251,7 +251,7 @@ Key `infomap.tl.infomap` keyword arguments:
 
 - Companion notebook: `examples/notebooks/compare-infomap-scanpy-workflow.ipynb`
   gives a fuller comparison with AMI/NMI scoring and graph-selection notes.
-- {doc}`/working-with-infomap/inputs` shows how `add_scipy_sparse_matrix` handles
-  directed, undirected, and weighted graphs.
+- {doc}`/working-with-infomap/inputs` shows how `Network.from_scipy_sparse_matrix`
+  handles directed, undirected, and weighted graphs.
 - {doc}`/concepts/the-map-equation` is the objective Infomap minimises.
 - The map equation's source paper {cite:p}`rosvall2008maps`.

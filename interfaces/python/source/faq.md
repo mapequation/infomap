@@ -27,10 +27,11 @@ keeps the lowest-codelength result. See {doc}`The map equation <concepts/the-map
 
 ### How many trials should I use, and how do I know the result is reliable?
 
-For exploration, 1–5 trials; for results you publish, use `num_trials=20` or
-more (or `converge=True`). To gauge reliability, run several single-trial fits
-and compare codelengths: a tight spread means the partition is stable, a wide
-spread signals degeneracy. See {doc}`Running Infomap and tuning options <working-with-infomap/running-and-options>`.
+For exploration, a single trial (up to about 5); `num_trials=10` for most
+analyses; and `num_trials=20` or more (or `converge=True`) for results you
+publish. To gauge reliability, run several single-trial fits and compare
+codelengths: a tight spread means the partition is stable, a wide spread signals
+degeneracy. See {doc}`Running Infomap and tuning options <working-with-infomap/running-and-options>`.
 
 ### Why does `seed=0` raise an error?
 
@@ -148,6 +149,8 @@ See {doc}`Bipartite networks <flow-models/bipartite>`.
 Not directly: encode the hypergraph as a network first (e.g. a bipartite
 incidence network with `bipartite_start_id` set). The representation you choose
 changes the communities found. See {doc}`Bipartite networks <flow-models/bipartite>`.
+
+## Robustness and reliability
 
 ### My sparse network gives lots of tiny modules: how do I avoid overfitting?
 

@@ -2,21 +2,16 @@ Infomap Python documentation
 ============================
 
 Infomap is a network community-detection method: it finds the modules that best
-compress the flow of a random walk on your network, instead of counting edges
-against a null model. Three properties follow from that flow-based view, the
-`map equation`_:
+compress the flow of a random walk on your network. Three properties follow from
+that flow-based view, the `map equation`_:
 
 - **It models how a system is used, not only how it is wired.** Link direction
   and weight steer the walk, so citation, transport, and information networks
   cluster by their real dynamics.
-- **It finds hierarchy with no resolution parameter to tune.** Infomap reads the
-  number of nested levels straight off the data.
-- **It spans an unusually broad range of flow models:** multilayer, memory,
+- **It finds hierarchy with no resolution parameter to tune.** The number of
+  nested levels is inferred directly from the data.
+- **It spans a broad range of flow models:** multilayer, memory,
   temporal, metadata, and bipartite networks, all through the same objective.
-
-This site is the authoritative home for using Infomap in Python: the ideas behind
-the map equation, how to run it on your own networks, the deeper flow models,
-common workflows, and the full API.
 
 .. _map equation: https://www.mapequation.org/publications.html
 
@@ -31,7 +26,7 @@ Quick start
 
 .. code-block:: bash
 
-    pip install "infomap[networkx]"
+    pip install infomap
 
 .. code-block:: python
 
@@ -44,7 +39,7 @@ Quick start
     print(result.num_top_modules, "modules")
     print(result.modules())
 
-Continue to :doc:`installation` for optional integrations and shell completion,
+Continue to :doc:`installation` for the command-line tool and shell completion,
 or jump to :doc:`quickstart` for the smallest Python API examples.
 
 Where to go
@@ -85,8 +80,8 @@ Where to go
       :link: robustness/index
       :link-type: doc
 
-      Tell a partition that reflects real structure from one driven by
-      sampling noise, and regularize incomplete data.
+      Keep sparse or incompletely sampled networks from fragmenting into
+      spurious modules with the regularized map equation.
 
 External resources
 ------------------
@@ -108,8 +103,8 @@ External resources
    concepts/index
    working-with-infomap/index
    flow-models/index
-   robustness/index
    workflows/index
+   robustness/index
 
 .. toctree::
    :hidden:
