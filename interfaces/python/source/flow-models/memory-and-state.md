@@ -139,160 +139,155 @@ These expressions reduce to the standard first-order map equation when each
 physical node has exactly one state node {cite:p}`rosvall2008maps`.
 :::
 
-## A junction shared by two flows
+## Node i, visited in two contexts
 
-The example below constructs a small four-node network where two independent
-streams of flow pass through a shared junction node **B**:
+The bundled `states()` network makes the memory effect concrete. Five physical
+nodes *i*, *j*, *k*, *l*, *m* carry the flow, and node *i* is visited in two
+different contexts:
 
-- **Stream 1:** $A \to B \to C \to A$ (a tight triangle)
-- **Stream 2:** $D \to B \to D$ (an out-and-back trip)
+- arriving from the *j*–*k* side, flow tends to continue back into *j* and *k*;
+- arriving from the *l*–*m* side, it tends to continue back into *l* and *m*.
 
-In a first-order view, node B sits at the intersection and ends up lumped with
-whichever stream has more traffic. In a second-order view, the two streams
-through B travel on different state nodes, so Infomap assigns B to *both*
-modules at once.
+A memoryless walker cannot tell the two apart: at *i* it mixes both streams and
+the distinction is lost. A memory model splits *i* into two **state nodes**, one
+per context, so each keeps its own onward flow, and *i* ends up in *both*
+communities at once. This is the same bridging role node *i* plays in the
+{doc}`multilayer example </flow-models/multilayer>`, reached through memory
+rather than layers.
 
-### Step 1: First-order baseline
+### First order: one blurred community
 
-Build the aggregated physical network and run Infomap with first-order flow.
+Start with the memoryless baseline. Aggregate the two contexts of *i* into a
+single node and run standard, first-order flow.
 
 ```{code-cell} python
-import networkx as nx
 import infomap
-from infomap import Network, run
+import networkx as nx
+from infomap import run
 from docs_viz import draw_partition
 
-# Directed graph: two streams share junction B (node 1)
-# Stream 1: A(0)→B(1)→C(2)→A(0)
-# Stream 2: D(3)→B(1)→D(3)
+# Physical network: i links to both pairs; {j,k} and {l,m} are the two groups.
 g = nx.DiGraph()
-g.add_nodes_from([0, 1, 2, 3])
-g.add_edges_from([(0, 1), (1, 2), (2, 0),   # stream 1
-                  (3, 1), (1, 3)])            # stream 2
+g.add_weighted_edges_from([
+    ("i", "j", 1.0), ("i", "k", 1.0), ("i", "l", 1.0), ("i", "m", 1.0),
+    ("j", "i", 1.0), ("j", "k", 1.0), ("k", "i", 1.0), ("k", "j", 1.0),
+    ("l", "i", 1.0), ("l", "m", 1.0), ("m", "i", 1.0), ("m", "l", 1.0),
+])
 
-node_name = {0: "A", 1: "B", 2: "C", 3: "D"}
+result_first = run(g, two_level=True, directed=True, seed=123, num_trials=20, silent=True)
+print(f"First-order modules: {result_first.num_top_modules}")
+print(f"Codelength         : {result_first.codelength:.4f} bits")
 
-result1 = infomap.run(g, two_level=True, silent=True)
-modules1 = result1.modules()   # {node_id: module_id}
-
-print("First-order: node → module")
-for nid, mod in sorted(modules1.items()):
-    print(f"  {node_name[nid]} → module {mod}")
-print(f"Distinct modules: {len(set(modules1.values()))}")
+assert result_first.num_top_modules == 1
 ```
 
-With first-order flow the walker mixes the two streams at B, and all four
-nodes collapse into a single module.
+With no memory the walker at *i* continues to *j*, *k*, *l*, *m* with equal
+probability, so flow leaks freely between the two pairs. Infomap finds a single
+module: the structure is in the wiring, but not in the memoryless flow.
 
-### Step 2: Second-order state-node network
+### Second order: i splits, communities overlap
 
-Now build the same network as a state-node graph. Each physical node gets one
-state node per incoming stream. Node B gets **two** state nodes:
-
-- state 10 (physical 1): flow that arrived from stream 1
-- state 11 (physical 1): flow that arrived from stream 2
+Now the state network. The bundled `states()` loader carries the two contexts of
+*i* as two state nodes, with directed, weighted links (it comes pre-configured
+for directed flow).
 
 ```{code-cell} python
-net = Network()
+result = run(infomap.datasets.states(), num_trials=20, seed=123, silent=True)
 
-# Declare state nodes: add_state_node(state_id, node_id) — node_id is physical
-net.add_state_node(0,  0)   # phys A, state 0
-net.add_state_node(2,  2)   # phys C, state 2
-net.add_state_node(3,  3)   # phys D, state 3
-net.add_state_node(10, 1)   # phys B, state 10 (stream 1 context)
-net.add_state_node(11, 1)   # phys B, state 11 (stream 2 context)
+print(f"State nodes  : {len(list(result.nodes(states=True)))}")
+print(f"Modules found: {result.num_top_modules}")
+print(f"Codelength   : {result.codelength:.4f} bits")
 
-# Add directed links between STATE nodes
-# Stream 1: A(0) → B_s1(10) → C(2) → A(0)
-net.add_link(0,  10, 1.0)
-net.add_link(10, 2,  1.0)
-net.add_link(2,  0,  1.0)
-
-# Stream 2: D(3) → B_s2(11) → D(3)
-net.add_link(3,  11, 1.0)
-net.add_link(11, 3,  1.0)
-
-# directed=True matches step 1 (a bare Network defaults to undirected flow,
-# unlike the DiGraph route, which enables it automatically)
-result2 = run(net, two_level=True, silent=True, directed=True)
-
-n_physical = len({node.node_id for node in result2.nodes(states=True)})
-print(f"have_memory: {result2.have_memory}")
-print(f"physical nodes: {n_physical}")
-print()
-
-# For memory networks, modules() requires states=True
-state_modules = result2.modules(states=True)   # {state_id: module_id}
-
-print("State node assignments:")
-phys_label = {0: "A", 2: "C", 3: "D", 10: "B (stream-1 ctx)", 11: "B (stream-2 ctx)"}
-for sid, mod in sorted(state_modules.items()):
-    print(f"  state {sid:>2} ({phys_label.get(sid, '?')}) → module {mod}")
+# Two communities, at a lower codelength than the first-order run.
+assert result.num_top_modules == 2
 ```
 
-### Step 3: Read overlapping physical-node membership
+Two modules, and a lower codelength than the first-order run: the memory model
+describes the flow more efficiently *and* recovers the two groups the aggregate
+hid.
 
-Iterate `result.nodes(states=True)` to see which physical node appears in more
-than one module. Each state node exposes `.node_id` (the physical node it
-belongs to), `.state_id`, and `.module_id`.
+### Read the overlap
+
+Each physical node has one entry per state node in `result.nodes(states=True)`.
+Group by `node_id` to find the physical node that lands in more than one module.
+Each state node exposes `.node_id` (the physical node it belongs to),
+`.state_id`, and `.module_id`.
 
 ```{code-cell} python
 from collections import defaultdict
 
-phys_to_modules = defaultdict(list)
-for node in result2.nodes(states=True):
-    phys_to_modules[node.node_id].append(node.module_id)
+name = {1: "i", 2: "j", 3: "k", 4: "l", 5: "m"}
+phys_to_modules = defaultdict(set)
+for node in result.nodes(states=True):
+    phys_to_modules[node.node_id].add(node.module_id)
 
-print("Physical node membership after second-order analysis:")
-for phys_id, mods in sorted(phys_to_modules.items()):
-    overlap = " ← OVERLAP" if len(mods) > 1 else ""
-    print(f"  {node_name[phys_id]} (phys {phys_id}): modules {mods}{overlap}")
+for pid, mods in sorted(phys_to_modules.items()):
+    tag = "  ← overlap" if len(mods) > 1 else ""
+    print(f"  {name[pid]}: modules {sorted(mods)}{tag}")
 ```
 
-### Step 4: Visualise
+Physical node *i* carries two state nodes that land in different modules, so it
+belongs to both communities; *j*, *k*, *l*, *m* each sit in one. Overlapping
+membership falls straight out of the state-node formalism.
 
-Colour the physical graph by each node's *primary* module (the first module it
-belongs to).
+### Visualise
+
+Draw the state network directly. The two state nodes of *i* sit side by side in
+the centre, ringed together as the one physical node they share; each takes the
+colour of its own module, so the overlap is visible at a glance.
 
 ```{code-cell} python
 import matplotlib.pyplot as plt
+from matplotlib.patches import Ellipse
 from myst_nb import glue
 
-# Primary module per physical node (first listed)
-primary = {pid: mods[0] for pid, mods in phys_to_modules.items()}
+# State-level links keyed by state id (the *States file); states 1 and 4 are
+# both physical node i.
+state_links = [
+    (1, 2, 0.8), (1, 3, 0.8), (1, 5, 0.2), (1, 6, 0.2),
+    (2, 1, 1.0), (2, 3, 1.0), (3, 1, 1.0), (3, 2, 1.0),
+    (4, 5, 0.8), (4, 6, 0.8), (4, 2, 0.2), (4, 3, 0.2),
+    (5, 4, 1.0), (5, 6, 1.0), (6, 4, 1.0), (6, 5, 1.0),
+]
+state_phys = {1: "i", 2: "j", 3: "k", 4: "i", 5: "l", 6: "m"}
+state_module = {n.state_id: n.module_id for n in result.nodes(states=True)}
 
-# Physical-node flow: sum the flow of every state node sharing that physical id.
-flow = {}
-for node in result2.nodes(states=True):
-    flow[node.node_id] = flow.get(node.node_id, 0.0) + node.flow
+G = nx.DiGraph()
+G.add_weighted_edges_from(state_links)
 
-fig = draw_partition(g, primary, flow=flow)
-fig.axes[0].set_title(
-    "Second-order: B overlaps modules 1 and 2\n"
-    "(colour shows primary assignment)",
-    fontsize=9,
-)
+# Two triangles, with i's two state nodes centred so the split reads clearly.
+pos = {2: (-1.7, 0.9), 3: (-1.7, -0.9), 1: (-0.5, 0.0),
+       5: (1.7, 0.9), 6: (1.7, -0.9), 4: (0.5, 0.0)}
+
+fig, ax = plt.subplots(figsize=(6.0, 4.4))
+draw_partition(G, state_module, ax=ax, pos=pos, node_size=650)
+nx.draw_networkx_labels(G, pos, labels=state_phys, ax=ax, font_size=11, font_color="white")
+ax.add_patch(Ellipse((0.0, 0.0), 2.0, 1.15, fill=False, ls=(0, (4, 3)), ec="0.35", lw=1.3))
+ax.annotate("one physical node i,\ntwo state nodes", (0.0, -0.72),
+            ha="center", va="top", fontsize=8.5, color="0.35")
+ax.set_xlim(-2.4, 2.4)
+ax.set_ylim(-1.7, 1.4)
 glue("fig-memory-and-state", fig, display=False)
 plt.close(fig)
 ```
 
 ```{glue:figure} fig-memory-and-state
-The physical nodes coloured by their primary module. Node B sits on the
-boundary: with second-order (state-node) flow it belongs to both
-communities, so a single colour can show only one of its two memberships.
+The state network of the `states()` example. Physical node *i* appears as two
+state nodes (centre), one in each community; *j*, *k* join *i*'s first context
+and *l*, *m* its second. Colour shows the module; the dashed ring marks the two
+state nodes that are the same physical node.
 ```
 
 ### Contrast
 
-| Node | First-order | Second-order |
+| Node | First order | Second order |
 |------|-------------|--------------|
-| A    | one shared module | stream 1 |
-| B    | one shared module | streams 1 **and** 2 (overlap) |
-| C    | one shared module | stream 1 |
-| D    | one shared module | stream 2 |
+| *i*  | one merged module | **both** communities (overlap) |
+| *j*, *k* | one merged module | with *i*'s first context |
+| *l*, *m* | one merged module | with *i*'s second context |
 
-The first-order model sees one community of four nodes. The second-order model
-finds two communities (A–B–C and B–D) that overlap at junction B.
+The first-order model blurs the two streams through *i* into a single community.
+The second-order model keeps them apart and lets *i* belong to both.
 
 ## Options
 

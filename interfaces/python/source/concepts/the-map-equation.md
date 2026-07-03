@@ -25,10 +25,9 @@ When you split a network into communities, how do you know the split is *good*?
 You need a quality function: a single number that scores any candidate partition.
 
 Many methods use modularity, which counts whether more edges fall inside modules
-than a random baseline would predict. Modularity asks a question about how the
-network was wired.
+than a random baseline would predict. Modularity asks how the network was wired.
 
-The map equation asks a question about how it is *used*. Given that flow moves
+The map equation asks how it is *used*. Given that flow moves
 through the network, say passengers through airports or clicks across the web,
 which partition best compresses a description of that movement? The answer is
 the partition with the shortest **codelength**: the fewest bits per step needed

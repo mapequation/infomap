@@ -36,9 +36,10 @@ the module codebooks look cheap to shrink, so the optimiser splits nodes into
 smaller and smaller groups, down to groups of two or three nodes with no
 principled support. Those modules are an artefact of noise.
 
-This problem is not about the search algorithm or the number of trials; it is a
-bias in how the objective function responds to sparse data. The fix is a
-regularization mechanism baked into the objective itself.
+The search algorithm and the number of trials are not the cause. The bias is in
+the objective itself: on sparse data it rewards splitting communities that the
+evidence does not support. The fix is a regularization mechanism built into the
+objective.
 
 ## Regularization as a Bayesian prior
 

@@ -150,6 +150,9 @@ each node carries and can move module boundaries.
 
 ### Visualise
 
+Lay the two node types out as two columns, users on the left and items on the
+right, so the community structure reads as horizontal bands.
+
 ```{code-cell} python
 import matplotlib.pyplot as plt
 from myst_nb import glue
@@ -159,8 +162,7 @@ from docs_viz import draw_partition
 
 # Build a NetworkX graph matching the Infomap network above
 G = nx.Graph()
-G.add_nodes_from(range(4))              # users
-G.add_nodes_from(range(4, 8))           # items
+G.add_nodes_from(range(8))
 for u, v, w in [
     (0, 4, 3.0), (0, 5, 2.0), (1, 4, 2.0), (1, 5, 3.0),
     (2, 6, 3.0), (2, 7, 2.0), (3, 6, 2.0), (3, 7, 3.0),
@@ -168,16 +170,28 @@ for u, v, w in [
 ]:
     G.add_edge(u, v, weight=w)
 
-flow = {n.node_id: n.flow for n in result.nodes()}
-fig = draw_partition(G, modules, flow=flow)
+# Two columns: users left, items right. The default bipartite run folds item
+# flow onto the users, so items would draw as near-invisible dots if sized by
+# flow; size every node the same and let colour carry the module structure.
+pos = {u: (0.0, 3 - u) for u in range(4)}
+pos.update({v: (2.2, 3 - (v - 4)) for v in range(4, 8)})
+
+fig, ax = plt.subplots(figsize=(5.4, 4.2))
+draw_partition(G, modules, ax=ax, pos=pos, with_labels=True, node_size=620)
+ax.text(0.0, 3.7, "users", ha="center", color="0.35", weight="bold")
+ax.text(2.2, 3.7, "items", ha="center", color="0.35", weight="bold")
+ax.set_xlim(-0.6, 2.8)
+ax.set_ylim(-0.6, 4.0)
+fig.tight_layout()
 glue("fig-bipartite", fig, display=False)
 plt.close(fig)
 ```
 
 ```{glue:figure} fig-bipartite
-A small weighted bipartite network (users 0-3, items 4-7) coloured by
-module. Each user groups with the items it interacts with most, so every
-module spans both node types.
+The bipartite network as two columns, users on the left and items on the right,
+coloured by module. Each module is a band spanning both types: users {0, 1} with
+items {4, 5}, users {2, 3} with items {6, 7}. The thin diagonals are the two
+weak cross-cluster links.
 ```
 
 ## API pointers

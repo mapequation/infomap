@@ -20,10 +20,10 @@ walker's stationary visit frequency, and modules are the regions that trap it.
 
 ## What flow captures
 
-Every network encodes a pattern of movement. Hyperlinks carry web surfers from
-page to page, and citations pull readers toward influential papers. Revealing
-the large-scale structure of such a system takes a currency that respects
-direction, weight, and how paths chain together.
+Networks describe movement. Hyperlinks route web surfers between pages; readers
+follow citations to the papers that shape a field. To see the large-scale
+structure of that movement you need a currency that respects direction, weight,
+and how paths chain together.
 
 Counting edges inside and outside groups misses something dynamic: the way a
 random walker entering a dense cluster tends to stay there for many steps before

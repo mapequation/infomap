@@ -208,7 +208,7 @@ community identity persists. Raising it toward 1 pushes Infomap toward the
 aggregate static solution. The default is `0.15`; values in the 0.15–0.25 range
 are usually a good choice for networks where communities evolve smoothly, and
 neighbourhood flow coupling stays robust across a broad range of relax rates
-(0.15 to 0.7) on benchmark networks {cite:p}`aslak2018temporal`.
+(about 0.15 to 0.7) on their synthetic benchmarks {cite:p}`aslak2018temporal`.
 
 For long time series, `multilayer_relax_limit` caps how far the random walker
 may jump between layers, so coupling stays between temporally nearby windows

@@ -56,7 +56,7 @@ is needed. For a SciPy matrix or edge index, pass ``directed=`` to the matching
 a SciPy matrix is read as *undirected* unless you say otherwise, while a
 ``(2, E)`` edge index follows the PyG convention and is read as *directed*.
 
-Two library-idiomatic one-shot helpers return native types instead of a
+Two one-shot helpers return native types instead of a
 {class}`~infomap.Result`: {func}`infomap.find_communities` (a NetworkX-style
 ``list[set]``) and {func}`infomap.find_igraph_communities` (an
 ``igraph.VertexClustering``).
@@ -79,7 +79,7 @@ result = infomap.run(g, two_level=True, seed=123, num_trials=5, silent=True)
 
 print(f"Modules:    {result.num_top_modules}")
 print(f"Codelength: {result.codelength:.4f} bits/step")
-print(f"Modules:    {result.modules()}")     # {node_id: module_id}
+print(f"Assignment: {result.modules()}")     # {node_id: module_id}
 ```
 
 **Non-integer node labels** (strings, compound keys) work out of the box. The

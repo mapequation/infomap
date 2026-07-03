@@ -42,6 +42,7 @@ def draw_partition(
     weight="weight",
     module_colors=None,
     flow=None,
+    pos=None,
 ):
     """Draw ``graph`` with nodes colored by their module.
 
@@ -80,6 +81,11 @@ def draw_partition(
         each marker's *area* is set proportional to the node's flow, so its
         *radius* grows as the square root of the flow; the average-flow node
         keeps ``node_size``. Without it every node draws at ``node_size``.
+    pos : dict, optional
+        Precomputed ``{node -> (x, y)}`` layout, used as-is. Lets a caller pass
+        a bipartite two-column layout, or share one layout across the panels of
+        a multi-panel figure so a node keeps its position. Without it a
+        reproducible spring layout is computed from ``seed``.
 
     Returns
     -------
@@ -96,7 +102,8 @@ def draw_partition(
     color_of = module_colors or module_palette(modules[n] for n in ordered)
     node_colors = [color_of[modules[n]] for n in ordered]
 
-    pos = nx.spring_layout(graph, seed=seed)
+    if pos is None:
+        pos = nx.spring_layout(graph, seed=seed)
 
     # Node marker area is proportional to flow, so the radius grows as the
     # square root of the flow; the average-flow node keeps ``node_size``.

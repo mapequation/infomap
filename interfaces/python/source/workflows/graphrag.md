@@ -35,10 +35,9 @@ with a modularity objective. Infomap optimises a different quality function: it
 finds the partition that minimises the description length of a random walk over
 the weighted graph (see {doc}`/concepts/the-map-equation`). Whether that flow
 view groups your entities more usefully than modularity depends on the graph;
-running both and comparing is reasonable. What this page provides is the
-plumbing: the adapter in `infomap.tl.graphrag` handles the column mapping,
-node-id translation, hierarchy extraction, and Parquet output, so an Infomap
-partition drops into GraphRAG's own table schema and the downstream
+running both and comparing is reasonable. The `infomap.tl.graphrag` adapter maps
+the columns, translates node ids, extracts the hierarchy, and writes Parquet, so
+an Infomap partition drops into GraphRAG's table schema and the downstream
 summarisation and retrieval steps run unchanged.
 
 ## What Infomap optimises here
