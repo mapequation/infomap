@@ -67,7 +67,7 @@ Where to go
       :link-type: doc
 
       Multilayer, memory, temporal, metadata, bipartite, and higher-order
-      networks: Infomap's deeper modelling surface.
+      networks: the representations beyond a plain graph.
 
    .. grid-item-card:: Workflows & integrations
       :link: workflows/index

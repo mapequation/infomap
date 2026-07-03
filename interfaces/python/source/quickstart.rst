@@ -55,9 +55,8 @@ directly:
 
     print(result.codelength)
 
-For non-default loading from a graph library, the ``from_*`` constructors take
-the adapter options that :func:`infomap.run` does not, such as a different edge
-weight attribute or explicit directedness:
+The ``from_*`` constructors take the adapter options that :func:`infomap.run`
+does not, such as a different edge-weight attribute or explicit directedness:
 
 .. code-block:: python
 

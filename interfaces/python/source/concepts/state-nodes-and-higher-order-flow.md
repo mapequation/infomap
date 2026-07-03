@@ -70,14 +70,14 @@ codebook entropy.
 The classic illustration is the network that documents the
 [states input format](https://www.mapequation.org/infomap/#InputStates) on
 mapequation.org (it ships with Infomap as `examples/networks/states.net`).
-Five physical nodes *i*, *j*, *k*, *l*, *m*, where *i* carries two state
+It has five physical nodes *i*, *j*, *k*, *l*, *m*, where *i* carries two state
 nodes: from state $\alpha_i$ the walker mostly continues to *j* and *k*, from
 state $\delta_i$ mostly to *l* and *m*. The weak 0.2-links let it occasionally
 switch sides, so the two contexts are coupled but distinct.
 
 Build state nodes directly with `add_state_node(state_id, node_id)`, where
-`node_id` is the physical node, and
-link them, then read the partition back with `result.nodes(states=True)`:
+`node_id` is the physical node, link them with `add_link`, then read the
+partition back with `result.nodes(states=True)`:
 
 ```{code-cell} python
 import infomap
