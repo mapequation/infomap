@@ -10,7 +10,7 @@ that flow-based view, the `map equation`_:
   cluster by their real dynamics.
 - **It finds hierarchy with no resolution parameter to tune.** The number of
   nested levels is inferred directly from the data.
-- **It spans an unusually broad range of flow models:** multilayer, memory,
+- **It spans a broad range of flow models:** multilayer, memory,
   temporal, metadata, and bipartite networks, all through the same objective.
 
 .. _map equation: https://www.mapequation.org/publications.html
@@ -26,7 +26,7 @@ Quick start
 
 .. code-block:: bash
 
-    pip install "infomap[networkx]"
+    pip install infomap
 
 .. code-block:: python
 
@@ -39,7 +39,7 @@ Quick start
     print(result.num_top_modules, "modules")
     print(result.modules())
 
-Continue to :doc:`installation` for optional integrations and shell completion,
+Continue to :doc:`installation` for the command-line tool and shell completion,
 or jump to :doc:`quickstart` for the smallest Python API examples.
 
 Where to go
