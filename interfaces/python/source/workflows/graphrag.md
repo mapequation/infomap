@@ -136,8 +136,8 @@ result = run_graphrag_communities(
     num_trials=5,
 )
 
-print(f"Map equation codelength: {result.result.codelength:.4f} bits/step")
-print(f"Top-level communities:   {result.result.num_top_modules}")
+print(f"Map equation codelength: {result.infomap.codelength:.4f} bits/step")
+print(f"Top-level communities:   {result.infomap.num_top_modules}")
 ```
 
 ### Per-entity community assignments
@@ -258,18 +258,15 @@ communities[["id", "level", "size", "entity_ids"]]
   `weight_col`, `endpoint_col` (`"title"` or `"id"`).
 - {func}`infomap.tl.graphrag.run_graphrag_communities` is the one-call pipeline: it
   reads tables, runs Infomap, and optionally writes outputs. It returns a
-  `GraphRAGRunResult` with `.infomap`, `.graph`, `.nodes`, `.communities`, and
-  `.result`.
+  `GraphRAGRunResult` with `.infomap`, `.graph`, `.nodes`, and `.communities`.
 - {func}`infomap.tl.graphrag.write_graphrag_communities` writes a pre-run Infomap
   result to disk as GraphRAG-compatible Parquet tables.
 - {class}`infomap.tl.graphrag.GraphRAGGraph` holds the entity/relationship tables,
   the edge arrays, and the bidirectional entity-id ↔ node-id mappings.
 - {class}`infomap.tl.graphrag.GraphRAGRunResult` bundles the `Infomap` object, the
-  `GraphRAGGraph`, the two output DataFrames, and the run's
-  {class}`~infomap.Result`.
-- {attr}`infomap.Result.codelength` and {attr}`infomap.Result.num_top_modules`
-  (on `GraphRAGRunResult.result`) report the quality and structure of the
-  solution after a run.
+  `GraphRAGGraph`, and the two output DataFrames.
+- {attr}`infomap.Infomap.codelength` and {attr}`infomap.Infomap.num_top_modules`
+  report the quality and structure of the solution after a run.
 
 ## Going deeper
 

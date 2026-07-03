@@ -47,7 +47,6 @@ class GraphRAGRunResult:
     output_dir: Path | None
     nodes: Any
     communities: Any
-    result: Any = None
 
 
 def _import_parquet_stack():
@@ -684,10 +683,8 @@ def run_graphrag_communities(
     Returns
     -------
     GraphRAGRunResult
-        The Infomap instance, the parsed graph, the output directory, the
-        nodes/communities tables, and the immutable :class:`~infomap.Result`
-        from the run (``result``), which exposes ``codelength``,
-        ``num_top_modules``, and the other metrics.
+        The Infomap instance, the parsed graph, the output directory, and
+        the nodes/communities tables.
 
     Raises
     ------
@@ -732,7 +729,7 @@ def run_graphrag_communities(
         **infomap_options,
     )
     im.add_links(_links_array(graph))
-    run_result = im.run()
+    im.run()
     nodes, communities = _build_tables(im, graph)
     if paths["dir"] is not None:
         nodes.to_parquet(paths["nodes"], index=False)
@@ -743,5 +740,4 @@ def run_graphrag_communities(
         output_dir=paths["dir"],
         nodes=nodes,
         communities=communities,
-        result=run_result,
     )
