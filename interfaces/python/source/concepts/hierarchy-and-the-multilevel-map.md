@@ -26,12 +26,13 @@ neighbourhoods that hold blocks. A plain two-level partition, one
 index codebook over one set of leaf modules, sees only one cross-section of that
 structure at a time.
 
-The two-level map equation has a *resolution limit* {cite:p}`kawamoto2015resolution`: modules with too
-few internal links go missing (the threshold grows with the logarithm of the
-total boundary-crossing traffic; the toggle below gives the exact bound),
-because merging them into a larger module shortens the two-level description. In
-a nested network the two-level method must choose between resolving the
-fine-grained modules and capturing the coarse super-groups.
+The two-level map equation has a *resolution limit*
+{cite:p}`kawamoto2015resolution`: modules with too few internal links go
+missing, because merging them into a larger module shortens the two-level
+description. The threshold grows with the logarithm of the total
+boundary-crossing traffic; the toggle below gives the exact bound. In a nested
+network the two-level method must choose between resolving the fine-grained
+modules and capturing the coarse super-groups.
 
 The multilevel map equation lifts the limit by allowing nested index codebooks
 to any depth. It adds a level only when that level shortens the total

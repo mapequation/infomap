@@ -6,8 +6,8 @@ it does before running it on your own data.
 
 - {doc}`Flow and random walks <flow-and-random-walks>`: what "flow" means and why
   Infomap models a random walker.
-- {doc}`The map equation <the-map-equation>`: the objective Infomap minimises —
-  the codelength, i.e. the bits needed to describe that walk — and the partition
+- {doc}`The map equation <the-map-equation>`: the objective Infomap minimises
+  (the codelength, the bits needed to describe that walk) and the partition
   that makes it shortest.
 - {doc}`Hierarchy and the multilevel map equation <hierarchy-and-the-multilevel-map>`:
   how Infomap discovers nested structure to any depth, with no resolution

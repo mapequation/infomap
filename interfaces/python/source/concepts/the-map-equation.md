@@ -30,16 +30,14 @@ network was wired.
 
 The map equation asks a question about how it is *used*. Given that flow moves
 through the network, say passengers through airports or clicks across the web,
-which partition best compresses a description of that movement? The answer is
-the partition with the shortest **codelength**: the fewest bits per step needed
-to describe a random walk. Both questions are legitimate and often give the
-same answer. They can disagree when links carry real movement, because only the
-map equation models that movement.
+which partition best compresses a description of that movement? Both questions
+are legitimate and often give the same answer. They can disagree when links
+carry real movement, because only the map equation models that movement.
 
 ## Reusing street names
 
 Picture narrating a random walker's journey to a friend, one step at a time, in
-as few words as possible. The trick is the one paper maps already use: reuse
+as few words as possible. The trick is what paper maps have always done: reuse
 names.
 
 Street names repeat across cities. Almost every town has a Main Street. Within
@@ -133,10 +131,12 @@ $q_{i\curvearrowright}$ and $\sum_{\alpha\in i} p_\alpha$ per module; see
 
 Zachary's karate club is a classic benchmark: 34 people, 78 friendships, and a
 known split into two factions. It is small enough to explore interactively and
-has real structure Infomap reliably recovers. Note that the NetworkX graph
-carries integer edge weights (interaction counts), and the adapter reads them
-by default, so the walk — and the codelengths below — are weighted; recomputing
-them by hand from the bare topology gives slightly different values.
+has real structure that Infomap recovers.
+
+The NetworkX version carries integer edge weights (interaction counts), and the
+adapter uses them by default, so the walk and the codelengths below are
+weighted. Computing them by hand from the unweighted topology gives slightly
+different values.
 
 ```{code-cell} python
 import networkx as nx
@@ -170,7 +170,8 @@ length of the flow, not a sociological label. Nodes on the boundary between the
 factions can form their own transitional cluster where the walker's affiliation
 is split, and naming it shortens the code, so Infomap often reports more than two
 modules here. To steer the search toward two modules, pass
-`preferred_number_of_modules=2` — a soft preference, not a hard constraint.
+`preferred_number_of_modules=2`, a soft preference rather than a hard
+constraint.
 ```
 
 ```{code-cell} python

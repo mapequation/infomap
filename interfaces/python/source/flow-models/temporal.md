@@ -79,8 +79,8 @@ probabilities and how state nodes of one physical node share a codeword within a
 module. What is specific to *time* is how the windows should be coupled.
 
 **Uniform relaxation** (the default) lets the walker relax to any window,
-weighted only by the node's link strength there — no window is privileged over
-another. It is the simplest choice and works well when communities change
+weighted only by the node's link strength there, and no window is privileged
+over another. It is the simplest choice and works well when communities change
 gradually.
 
 **Neighbourhood flow coupling** (`multilayer_relax_by_jsd`) makes the coupling

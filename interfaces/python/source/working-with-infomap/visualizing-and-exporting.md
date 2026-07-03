@@ -256,8 +256,8 @@ print("Temp directory removed.")
 - **`.clu` records the top level.** Pass `depth_level` to `write_clu` for a
   deeper level; `.tree` / `.ftree` carry the full hierarchy.
 - **`to_networkx` builds a new graph, not a copy of yours.** Its nodes are the
-  result's (state) nodes keyed by `state_id`, so your original graph — and any
-  attributes on it — is left untouched and *not* carried into the export. Use
+  result's (state) nodes keyed by `state_id`, so your original graph is left
+  untouched: its attributes are *not* carried into the export. Use
   {func}`infomap.find_communities` or
   {func}`infomap.io.export.annotate_networkx_graph` to annotate your own graph
   instead.

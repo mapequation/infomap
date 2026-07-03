@@ -304,7 +304,7 @@ for label, kwargs in [
     print(f"{label}: modules={result.num_top_modules}, L={result.codelength:.4f}")
 ```
 
-Higher `regularization_strength` merges more modules — on a network this small
+Higher `regularization_strength` merges more modules. On a network this small
 the default strength already merges everything, which is why the option is
 meant for large, sparse, or incompletely sampled data rather than well-sampled
 toy graphs. For a gradual version of the same sweep, where a planted partition
