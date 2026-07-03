@@ -85,8 +85,8 @@ Where to go
       :link: robustness/index
       :link-type: doc
 
-      Tell a partition that reflects real structure from one driven by
-      sampling noise, and regularize incomplete data.
+      Keep sparse or incompletely sampled networks from fragmenting into
+      spurious modules with the regularized map equation.
 
 External resources
 ------------------

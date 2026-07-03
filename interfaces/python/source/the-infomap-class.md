@@ -10,6 +10,8 @@ kernelspec:
 
 # The stateful Infomap class
 
+{bdg-success-line}`How-to`
+
 ```{admonition} At a glance
 :class: tip
 

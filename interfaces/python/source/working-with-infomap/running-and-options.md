@@ -250,11 +250,11 @@ pronounced: the directed walk respects asymmetric flow and tends to find tighter
 modules corresponding to true circulation patterns.
 
 **Teleportation probability.** The default `teleportation_probability=0.15`
-is the conventional PageRank value (one minus the 0.85 damping factor) and works
-well for most networks. Because
-Infomap uses unrecorded teleportation {cite:p}`lambiotte2012smart`, the partition
-barely responds to this value, so the default is rarely worth changing unless
-your domain says walkers teleport much more or less often.
+(the conventional PageRank value) works well for most networks. Because Infomap
+uses unrecorded teleportation {cite:p}`lambiotte2012smart`, the partition barely
+responds to this value, so the default is rarely worth changing unless your
+domain says walkers teleport much more or less often. See
+{doc}`/concepts/flow-and-random-walks` for what teleportation does to the flow.
 
 ### `markov_time` as a resolution dial
 

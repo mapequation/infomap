@@ -63,11 +63,11 @@ returning a local minimum {cite:p}`calatayud2019solution`.
 Infomap keeps only the partition with the lowest codelength across all trials.
 That partition is what the {class}`~infomap.Result` reports through
 `codelength`, `modules()`, and `nodes()`. The implication is practical: a single
-trial is fine for exploration, `num_trials=10` covers most analyses, and for
-results you intend to publish or act on use `num_trials=20` or more on networks
-with weak or diffuse community structure. See
-{doc}`Running Infomap </working-with-infomap/running-and-options>` for the full
-rule of thumb.
+trial is fine for exploration, but results you intend to publish or act on
+warrant more. See {doc}`Running Infomap </working-with-infomap/running-and-options>`
+for the full `num_trials` rule of thumb and a visualisation of the effect; the
+rest of this chapter is about *reading and comparing* the partition you get
+back.
 
 :::{toggle}
 **The solution landscape and degeneracy**

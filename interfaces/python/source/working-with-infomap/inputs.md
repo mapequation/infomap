@@ -329,6 +329,30 @@ for route, res in runs.items():
 To draw the partition or write it to disk, see
 {doc}`visualizing-and-exporting`.
 
+## Pitfalls
+
+- **Read-time options belong on the constructor, not the run.** `weight`,
+  `edge_weights`, `directed`, and `weighted` govern *how the input is read*, so
+  they live on the `Network.from_*` constructors. Passing them to
+  {func}`infomap.run` raises with a pointer to the right constructor rather than
+  silently building a different graph.
+- **SciPy and edge-index routes default to different directedness.** A SciPy
+  sparse matrix is read as *undirected* unless you pass `directed=True`, while a
+  `(2, E)` integer edge index follows the PyG convention and is read as
+  *directed*. NetworkX and igraph instead take directedness from the graph
+  object. Spell the flag out when it matters.
+- **A two-row integer array is an edge index, not two links.** Rows of
+  `(source, target, weight)` need a float weight column to be read as links; a
+  bare 2×E integer array is interpreted as a `(2, E)` edge index (and so as
+  directed). Use `Network.from_edge_index(..., directed=False)` if that is not
+  what you meant.
+- **The raw edge-list route registers no node names.** Running a NumPy array or
+  tuples directly stores no labels, so the result's `"name"` column cannot
+  recover string ids. Convert labels with `pandas.factorize` first and keep the
+  `uniques` array as your reverse mapping, or build a {class}`~infomap.Network`
+  (whose {attr}`~infomap.Network.node_id_to_label` records the mapping). Source
+  and target columns must hold integers.
+
 ## API pointers
 
 - {func}`infomap.run` dispatches on the input type and returns an immutable
