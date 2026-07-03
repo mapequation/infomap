@@ -223,8 +223,9 @@ for pid, assignments in sorted(phys_memberships.items()):
 Physical node *i* has two assignments; all others have one.
 
 Now draw both layers side by side, colouring each node by the module it lands
-in. A shared palette keeps a module the same colour across panels, so physical
-node *i* shows up in a different colour in each layer.
+in. A shared palette and a shared layout fix each module's colour and node *i*'s
+position across panels, so *i* sits in the same spot in a different colour in
+each layer.
 
 ```{code-cell} python
 from myst_nb import glue
@@ -233,10 +234,16 @@ import matplotlib.pyplot as plt
 import networkx as nx
 from docs_viz import draw_partition, module_palette
 
-layers = {
-    1: ([("i", "l"), ("l", "m"), ("i", "m")], "Layer 1"),
-    2: ([("i", "j"), ("j", "k"), ("i", "k")], "Layer 2"),
+# Layer triangles, and one shared layout: node i sits at the same spot (bottom
+# centre) in both panels, and each layer's two partners take the same upper
+# corners, so only colour and labels change between the panels.
+layer_edges = {
+    1: [("i", "l"), ("l", "m"), ("i", "m")],
+    2: [("i", "j"), ("j", "k"), ("i", "k")],
 }
+pos = {"i": (0.0, -0.75),
+       "l": (-0.95, 0.6), "m": (0.95, 0.6),
+       "j": (-0.95, 0.6), "k": (0.95, 0.6)}
 
 # Module assignment and flow per physical node, recorded separately per layer.
 state_nodes = list(result.nodes(states=True))
@@ -253,24 +260,30 @@ colours = module_palette(
 )
 
 fig, axes = plt.subplots(1, 2, figsize=(8, 4), layout="constrained")
-for ax, (layer, (edges, title)) in zip(axes, layers.items()):
+for ax, layer in zip(axes, (1, 2)):
     G = nx.Graph()
-    G.add_edges_from(edges)
+    G.add_edges_from(layer_edges[layer])
     draw_partition(
         G, module_in_layer[layer], ax=ax, module_colors=colours,
-        with_labels=True, node_size=600, flow=flow_in_layer[layer],
+        with_labels=True, node_size=650, flow=flow_in_layer[layer],
+        pos={n: pos[n] for n in G},
     )
-    ax.set_title(title, fontsize=11)
+    ax.set_title(f"Layer {layer}", fontsize=11)
+    ax.set_xlim(-1.4, 1.4)
+    ax.set_ylim(-1.15, 1.0)
 
-fig.suptitle("Physical node i is bi-modular: one colour per layer", fontsize=12)
+fig.suptitle(
+    "Physical node i is the bridge: the same node, a different module per layer",
+    fontsize=12,
+)
 glue("fig-multilayer", fig, display=False)
 plt.close(fig)
 ```
 
 ```{glue:figure} fig-multilayer
-The two layers drawn separately, coloured by module with a shared palette.
-Physical node *i* appears in both layers in a different colour: the bi-modular
-overlap that state nodes make possible.
+The two layers drawn with one shared layout, coloured by module. Physical node
+*i* holds the same position in both panels but takes a different colour: the
+bi-modular overlap that state nodes make possible.
 ```
 
 ### Relax rate sensitivity
@@ -378,8 +391,10 @@ pick one form per network.
 
 Back in the relax-rate model, `multilayer_relax_to_self=True` links a relaxing
 state node to its *own physical node* in the target layer instead of spreading
-directly to its out-neighbours there. The flow is the same; the state network
-is smaller, which matters on large networks:
+directly to its out-neighbours there. It shrinks the state network, which
+matters on large networks. For a coherent partition the flow is unchanged; it
+can differ slightly only when a node's target-layer neighbours split across
+modules:
 
 ```{code-cell} python
 net_self = Network()
@@ -442,7 +457,7 @@ out-neighbours in the target layer:
 | `multilayer_relax_limit_up` | `-1` | The same cap, counting only towards higher layer ids |
 | `multilayer_relax_limit_down` | `-1` | The same cap, counting only towards lower layer ids |
 | `multilayer_relax_by_jsd` | `False` | Weight relaxation by neighbourhood similarity; see {doc}`/flow-models/temporal` |
-| `multilayer_relax_to_self` | `False` | Relax to the node's own copy in the target layer instead of spreading to its out-neighbours; smaller state network, same flow |
+| `multilayer_relax_to_self` | `False` | Relax to the node's own copy in the target layer instead of spreading to its out-neighbours; smaller state network, identical flow for coherent partitions |
 
 ## Going deeper
 

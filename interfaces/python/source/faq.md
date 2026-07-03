@@ -1,7 +1,7 @@
 # FAQ & common pitfalls
 
-Short answers to the questions that trip people up most often. Each answer
-links to the chapter that explains it properly.
+Short answers to the questions that trip people up most often, each linking to
+the chapter that covers it in full.
 
 ## Getting data in
 
@@ -52,7 +52,7 @@ Infomap found. See {doc}`The map equation <concepts/the-map-equation>`.
 
 Infomap minimises a flow-based description length, not a target count or a
 sociological ground truth. Boundary nodes where the random walker mixes can form
-their own module if naming it shortens the overall description, so an unexpected
+their own module when doing so shortens the overall description, so an unexpected
 module count is not necessarily an error. See
 {doc}`The map equation <concepts/the-map-equation>`.
 
@@ -121,8 +121,9 @@ relax rate is ignored. See {doc}`Multilayer networks <flow-models/multilayer>`.
 ### How do I model a network with memory (higher-order flow)?
 
 Declare state nodes on a `Network` with `add_state_node(state_id, node_id)`,
-where `node_id` is the physical node, and link them with `add_link`. Memory lets a physical node appear in overlapping
-modules. See {doc}`Memory and state networks <flow-models/memory-and-state>`.
+where `node_id` is the physical node, and link them with `add_link`. Memory lets a
+physical node appear in overlapping modules, so read the partition with
+`result.modules(states=True)`. See {doc}`Memory and state networks <flow-models/memory-and-state>`.
 
 ### How do I cluster a time-varying (temporal) network?
 
@@ -199,8 +200,9 @@ hardware. Set `num_threads=` to a positive integer to override. See {doc}`Runnin
 
 ### How do I run many trials across cluster jobs and combine them?
 
-Give each job a non-overlapping range with `trial_offset=` / `trial_results=`, then merge
-the shard files with `python -m infomap.merge` (it keeps the best codelength). See
+Give each job a non-overlapping range with `trial_offset=` and write its shard
+with `trial_results=`, then merge the shard files with `python -m infomap.merge`
+(it keeps the best codelength). See
 {doc}`Running at scale (HPC) <workflows/hpc>`.
 
 ## Method and citation

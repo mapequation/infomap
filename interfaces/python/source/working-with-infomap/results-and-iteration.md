@@ -21,10 +21,9 @@ tabular output through `to_dataframe()`.
 
 ## What the Result holds
 
-The partition is more than a list of labels: every node carries a flow value
-that quantifies how much of the random walk visits it, and the full hierarchical
-tree encodes nested module structure that a flat assignment vector cannot
-represent.
+A {class}`~infomap.Result` holds more than labels. Each node carries a flow
+value, the share of the random walk that visits it, and the hierarchical tree
+records nested modules that a flat assignment vector cannot.
 
 This chapter covers the summary statistics, the assignment dict, the per-node
 view with flow, and the DataFrame export. It also explains why a single run may
@@ -45,8 +44,7 @@ Anything that expects a node-colouring can consume it directly.
 The **inner layer** is per-node flow. Each node's `flow` records the stationary
 probability of a random walk visiting it under the best partition. High-flow
 nodes are influential hubs; low-flow nodes are peripheral. This layer lets you
-rank nodes within a module, build flow-weighted summaries, and flag nodes near
-module boundaries.
+rank nodes within a module or build flow-weighted summaries.
 
 `result.to_dataframe()` materialises all three layers into one tabular object you
 can filter, group, merge, and export.
@@ -181,8 +179,8 @@ print(f"Sub-modules      (depth 2): {sorted(set(sub_mods.values()))}")
 When you need flow alongside module membership, iterate over `result.nodes()`.
 Each node is an immutable view; the attributes you reach for most are `node_id`,
 `module_id`, and `flow`, alongside `path`, `name`, and `layer_id`. See
-{class}`~infomap.TreeNode` for the full set (including `state_id`, `depth`, and
-`modular_centrality`):
+{class}`~infomap.TreeNode` for the full set (including `state_id`, `state_name`,
+`depth`, `child_index`, and `modular_centrality`):
 
 ```{code-cell} python
 print(f"{'node_id':>8}  {'module_id':>10}  {'flow':>10}")

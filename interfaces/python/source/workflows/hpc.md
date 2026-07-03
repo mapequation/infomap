@@ -91,9 +91,9 @@ common mistake of allocating 8 cores but Infomap running with 64 threads
 and fighting every other job on the node.
 
 `parallel_trials=True` runs independent trials concurrently using OpenMP.
-The number of concurrent workers is clamped to `min(num_threads,
-num_trials)`. Peak memory scales with the worker count, so check your
-memory allocation if you raise thread counts significantly. (The
+The number of concurrent workers is clamped to `min(num_trials, OpenMP
+thread count)`, which `num_threads` sets. Peak memory scales with the worker
+count, so check your memory allocation if you raise thread counts significantly. (The
 {doc}`benchmark-performance <../examples/benchmark-performance>`
 notebook has run-time and memory scaling curves to help plan allocations.)
 

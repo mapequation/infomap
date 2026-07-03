@@ -27,9 +27,9 @@ a traveller flies next depends on where they came *from*, and which colleagues a
 person interacts with depends on the setting (work, home, a conference).
 Collapsing that context into a plain network averages it away.
 
-The fix is to stop treating a node as a single thing. Memory, multilayer and
-multiplex, and temporal networks all rest on the same construction, the
-**state node**, with different notions of "context."
+The fix is to stop treating a node as a single thing. Memory, multilayer, and
+temporal networks all rest on the same construction, the **state node**, with
+different notions of "context."
 
 ## Physical nodes vs state nodes
 

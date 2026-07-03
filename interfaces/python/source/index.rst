@@ -5,9 +5,9 @@ Infomap is a network community-detection method: it finds the modules that best
 compress the flow of a random walk on your network. Three properties follow from
 that flow-based view, the `map equation`_:
 
-- **It models how a system is used, not only how it is wired.** Link direction
-  and weight steer the walk, so citation, transport, and information networks
-  cluster by their real dynamics.
+- **It models how a system is used, not just how it is wired.** Link direction
+  and weight steer the walk, so a citation or transport network clusters by where
+  flow actually goes.
 - **It finds hierarchy with no resolution parameter to tune.** The number of
   nested levels is inferred directly from the data.
 - **It spans a broad range of flow models:** multilayer, memory,

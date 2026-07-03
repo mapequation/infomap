@@ -29,8 +29,7 @@ The main difference is the objective. Louvain and Leiden
 score a partition by **modularity**: whether more edges fall inside groups than a
 random graph with the same degrees would predict. Infomap scores it by the **map
 equation**: how few bits describe a random walk on the network under that
-partition (see {doc}`/concepts/the-map-equation`). Modularity asks how the network
-is wired; the map equation asks how it is used.
+partition (see {doc}`/concepts/the-map-equation`).
 
 Running both is a useful sanity check. Where the two agree, the grouping is
 robust to the choice of objective; where they differ, the grouping depends on
