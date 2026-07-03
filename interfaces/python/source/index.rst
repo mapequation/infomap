@@ -108,8 +108,8 @@ External resources
    concepts/index
    working-with-infomap/index
    flow-models/index
-   robustness/index
    workflows/index
+   robustness/index
 
 .. toctree::
    :hidden:

@@ -547,8 +547,8 @@ class _InfomapResultsMixin:
 
         Returns
         -------
-        InfomapIterator or InfomapIteratorPhysical
-            An iterator over each node in the tree, depth first from the root
+        InfomapLeafIterator or InfomapIteratorPhysical
+            An iterator over each leaf node, depth first from the root
 
         .. deprecated::
             Use ``result = im.run(); result.nodes(depth, states=states)``.

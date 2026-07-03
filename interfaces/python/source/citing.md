@@ -40,8 +40,9 @@ there; it includes the current release version.
 
 If your analysis uses a specific flow model or network type, you may also need to
 cite the paper that introduced that extension. Each chapter under
-{doc}`/flow-models/index` names its source paper in its "Going deeper" section,
-and they are collected on the {doc}`References page </references>`.
+{doc}`/flow-models/index` and {doc}`/robustness/index` names its source paper in
+its "Going deeper" section, and they are collected on the
+{doc}`References page </references>`.
 
 ## Going deeper
 

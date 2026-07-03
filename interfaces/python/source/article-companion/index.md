@@ -7,8 +7,9 @@ Equation and Infomap: Theory and Applications* ([doi:10.1145/3779648](https://do
 section by section. They are more academic and article-aligned than the rest of
 this site. **For a gentler, Python-first path, start with the chapters**:
 {doc}`Concepts </concepts/index>`, {doc}`Working with Infomap </working-with-infomap/index>`,
-{doc}`Flow models </flow-models/index>`, and {doc}`Workflows </workflows/index>`.
-Treat these notebooks as deeper companion reading.
+{doc}`Flow models </flow-models/index>`, {doc}`Workflows </workflows/index>`, and
+{doc}`Robustness </robustness/index>`. Treat these notebooks as deeper companion
+reading.
 ```
 
 The notebooks live in the Infomap repository under

@@ -322,9 +322,11 @@ sacct -j <job-id> --format=JobID,State,ExitCode,Elapsed,MaxRSS
   partition.
 - {func}`infomap.merge.merge_trial_results` is the programmatic equivalent of
   `python -m infomap.merge`.
-- {doc}`/working-with-infomap/running-and-options` is the full option reference,
-  including `parallel_trials`, `inner_parallelization`, `converge`, and the
-  complete `num_threads` resolution chain.
+- {doc}`/working-with-infomap/running-and-options` covers the search and
+  flow-model options (`seed`, `num_trials`, `converge`, `directed`, …); the
+  parallelism options used here (`parallel_trials`, `inner_parallelization`,
+  `num_threads`, `trial_offset`) are documented on this page and in the
+  {doc}`Options reference </api/options>`.
 
 ## Going deeper
 
@@ -334,6 +336,5 @@ sacct -j <job-id> --format=JobID,State,ExitCode,Elapsed,MaxRSS
 - **Performance planning**: `examples/notebooks/benchmark-performance.ipynb` has
   empirical run-time and memory scaling curves to help you choose trial counts,
   thread budgets, and memory allocations before submitting large jobs.
-- {doc}`/working-with-infomap/running-and-options` is the options guide, with
-  literature grounding for `parallel_trials`, `inner_parallelization`, and thread
-  control.
+- {doc}`/working-with-infomap/running-and-options` is the options guide for the
+  search and flow-model settings that shape each trial before you scale it out.
