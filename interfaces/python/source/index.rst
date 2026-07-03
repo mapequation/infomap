@@ -1,17 +1,17 @@
 Infomap Python documentation
 ============================
 
-Infomap is a network community-detection method: it finds the modules that best
-compress the flow of a random walk on your network. Three properties follow from
-that flow-based view, the `map equation`_:
+Infomap is a network community-detection method that finds the modules that best
+compress the flow of a random walk on your network. Infomap optimizes the
+objective function called the `map equation`_:
 
-- **It models how a system is used, not just how it is wired.** Link direction
-  and weight steer the walk, so a citation or transport network clusters by where
-  flow actually goes.
-- **It finds hierarchy with no resolution parameter to tune.** The number of
+- **It models system-wide dynamics based on the system's wiring.** Link direction
+  and weight steer the walk, so citation, transport, and information networks
+  cluster by their real dynamics.
+- **It finds hierarchical solutions with no tuning parameters.** The number of
   nested levels is inferred directly from the data.
-- **It spans a broad range of flow models:** multilayer, memory,
-  temporal, metadata, and bipartite networks, all through the same objective.
+- **It spans a broad range of flow models:** multilayer, memory, temporal,
+  metadata, and bipartite networks, all through the same objective function.
 
 .. _map equation: https://www.mapequation.org/publications.html
 
