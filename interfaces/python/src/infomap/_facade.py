@@ -146,7 +146,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
     ``result.links()``, ``result.to_dataframe()``) and scalars via properties
     (``result.codelength``, ``result.num_top_modules``).
 
-    For more examples, see the examples directory.
+    For more examples, see :doc:`/quickstart` and :doc:`/examples/index`.
     """
 
     def _init_from_options(self, args, options):
@@ -979,9 +979,9 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
 
         Parameters
         ----------
-        nodes : iterable of tuples or iterable of int or dict of int: str or dict of int: tuple of (str, float)
+        nodes : iterable of tuples or iterable of int or dict
             Iterable of tuples on the form
-            ``(node_id, [name], [teleportation_weight])``
+            ``(node_id, [name], [teleportation_weight])``.
         """
         try:
             for node, attr in nodes.items():

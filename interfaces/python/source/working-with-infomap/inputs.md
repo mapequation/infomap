@@ -52,9 +52,8 @@ read* belong to the ``Network.from_*`` constructors; passing one to
 silently building a different graph. For a NetworkX or igraph graph the
 directedness is read from the graph object itself, so no ``directed`` argument
 is needed. For a SciPy matrix or edge index, pass ``directed=`` to the matching
-``from_*`` constructor. Note that the two routes default differently: a SciPy
-matrix is read as *undirected* unless you say otherwise, while a ``(2, E)`` edge
-index follows the PyG convention and is read as *directed*.
+``from_*`` constructor; the two routes default differently, so it is worth
+spelling out (see Pitfalls).
 
 Two one-shot helpers return native types instead of a
 {class}`~infomap.Result`: {func}`infomap.find_communities` (a NetworkX-style
@@ -333,10 +332,9 @@ To draw the partition or write it to disk, see
 ## Pitfalls
 
 - **Read-time options belong on the constructor, not the run.** `weight`,
-  `edge_weights`, `directed`, and `weighted` govern *how the input is read*, so
-  they live on the `Network.from_*` constructors. Passing them to
-  {func}`infomap.run` raises with a pointer to the right constructor rather than
-  silently building a different graph.
+  `edge_weights`, `directed`, and `weighted` live on the `Network.from_*`
+  constructors; {func}`infomap.run` raises if you pass one, naming the
+  constructor to use.
 - **SciPy and edge-index routes default to different directedness.** A SciPy
   sparse matrix is read as *undirected* unless you pass `directed=True`, while a
   `(2, E)` integer edge index follows the PyG convention and is read as

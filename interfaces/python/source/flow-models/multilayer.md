@@ -33,10 +33,9 @@ participates, but its neighbourhood and community membership can differ from
 layer to layer. Aggregating the layers into one network can distort both the
 topology and the community structure {cite:p}`domenico2015multilayer`.
 
-Overlapping communities come out of the same machinery. Because each layer
-contributes state nodes for the same physical nodes, the map equation can
-assign a physical node to several modules, one per layer where its local
-structure places it.
+Multilayer networks also express **overlapping communities**: because the same
+physical entity lives in several layers, Infomap can place it in a different
+module in each. The next sections show the mechanism.
 
 ## One node, several layers
 
