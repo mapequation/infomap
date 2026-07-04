@@ -51,21 +51,14 @@ can filter, group, merge, and export.
 
 ## Why more than one trial
 
-Infomap minimises the map equation $L(\mathsf{M})$ over many independent
-optimisation trials. Each trial starts from a different random partition and runs
-a greedy hill-climbing search. The search is stochastic and the solution
-landscape is degenerate (many partitions reach near-identical codelengths with
-different node assignments), so running several trials lowers the risk of
-returning a local minimum {cite:p}`calatayud2019solution`.
-
-Infomap keeps only the partition with the lowest codelength across all trials.
-That partition is what the {class}`~infomap.Result` reports through
-`codelength`, `modules()`, and `nodes()`. The implication is practical: a single
-trial is fine for exploration, but results you intend to publish or act on
-warrant more. See {doc}`Running Infomap </working-with-infomap/running-and-options>`
-for the full `num_trials` rule of thumb and a visualisation of the effect; the
-rest of this chapter is about *reading and comparing* the partition you get
-back.
+Infomap keeps only the partition with the lowest codelength across the
+`num_trials` independent searches, and that partition is what the
+{class}`~infomap.Result` reports through `codelength`, `modules()`, and
+`nodes()`. A single trial can settle in a local minimum, so one run is fine for
+exploration but results you publish or act on warrant more; see
+{doc}`Running Infomap </working-with-infomap/running-and-options>` for why a
+single trial gets stuck and the full `num_trials` rule of thumb. The rest of this
+chapter is about *reading and comparing* the partition you get back.
 
 :::{toggle}
 **The solution landscape and degeneracy**

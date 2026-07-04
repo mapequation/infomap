@@ -22,13 +22,12 @@ array with `trial_offset` and merge the best result afterwards with
 
 ## When one node isn't enough
 
-Infomap is a stochastic optimiser. It starts from a random initial state
-and greedily minimises the map equation, so different random seeds can
-find different local optima. The standard way to get a reliable partition
-is to run many independent trials and keep the one with the lowest
-codelength. On small networks, tens of trials on a laptop is enough. On
-real-world networks with millions of nodes and links, each trial can take
-minutes, and you may want hundreds of trials to trust the result.
+Infomap is a stochastic optimiser, so more independent trials give a more
+reliable partition (see {doc}`/working-with-infomap/running-and-options` for
+why). That is cheap on small networks — tens of trials on a laptop — but on
+real-world networks with millions of nodes and links each trial can take minutes,
+and the hundreds of trials you may want are more than one node can finish in
+reasonable wall-clock time.
 
 Two strategies cover most HPC use cases:
 

@@ -107,11 +107,8 @@ out-strength of node $i$ from layer $\alpha$.
 
 When no empirical inter-layer data are available, setting
 $D_i^{\alpha\beta} = (1-r)\delta_{\alpha\beta}S_i + r\,s_i^\beta$ recovers the
-relax-rate formula above {cite:p}`domenico2015multilayer`. At $r = 0.15$ the
-walker takes a relaxed step about once every $1/r \approx 7$ steps (and
-switches layers less often still, since the relaxed step is strength-weighted
-over all layers including the current one), enough coupling for layers to
-inform each other without fusing.
+relax-rate formula above {cite:p}`domenico2015multilayer`, with the default
+$r = 0.15$ interpreted as in the narrative introduction.
 
 The map equation then minimises
 

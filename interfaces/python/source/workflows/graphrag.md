@@ -31,11 +31,10 @@ summarises each community, and those summaries are indexed for
 question-answering.
 
 The default community detector in most GraphRAG implementations is Leiden, run
-with a modularity objective. Infomap optimises a different quality function: it
-finds the partition that minimises the description length of a random walk over
-the weighted graph (see {doc}`/concepts/the-map-equation`). Whether that flow
-view groups your entities more usefully than modularity depends on the graph;
-running both and comparing is reasonable. The `infomap.tl.graphrag` adapter maps
+with a modularity objective; Infomap optimises the map equation instead (see
+{doc}`/concepts/choosing-a-method`). Whether that flow view groups your entities
+more usefully than modularity depends on the graph; running both and comparing is
+reasonable. The `infomap.tl.graphrag` adapter maps
 the columns, translates node ids, extracts the hierarchy, and writes Parquet, so
 an Infomap partition drops into GraphRAG's table schema and the downstream
 summarisation and retrieval steps run unchanged.
