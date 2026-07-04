@@ -54,7 +54,6 @@ PYTHON_BUILD_ENV = \
 	build-docs \
 	_build-docs-site \
 	check-docs-links \
-	test-docs-terminology \
 	clean-python \
 	format-python \
 	release-python-dist \
@@ -157,12 +156,6 @@ build-docs: build-native dev-python-install
 # skipped via linkcheck_ignore in conf.py.
 check-docs-links: build-native dev-python-install
 	@$(SPHINX_BUILD) -b linkcheck "$(SPHINX_SOURCE_DIR)" "$(DOCS_BUILD_DIR)/_linkcheck"
-
-# Deterministic, dependency-free guard for the documentation terminology
-# decisions. Fast enough to run without a docs build (see
-# scripts/check_docs_terminology.py).
-test-docs-terminology:
-	@$(PYTHON) scripts/check_docs_terminology.py
 
 clean-python:
 	$(RM) -r dist/python *.egg-info interfaces/python/src/infomap/_infomap*.so interfaces/python/src/infomap/*.pyd

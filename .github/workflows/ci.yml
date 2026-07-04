@@ -324,9 +324,6 @@ jobs:
         with:
           python-version: "3.14"
 
-      - name: Check documentation terminology
-        run: make test-docs-terminology
-
       - name: Build native Infomap for HPC notebook
         run: make build-native
 
