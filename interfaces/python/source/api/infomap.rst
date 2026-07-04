@@ -30,11 +30,10 @@ docstrings, follows underneath.
 Building a network
 ------------------
 
-To load a whole graph, matrix, or edge index, do not build it on the stateful
-class: pass it straight to :func:`infomap.run`, or construct a :class:`Network`
-with its ``from_*`` classmethods. The graph-library and matrix adapters below are
-kept only for backward compatibility and are deprecated. Only
-:meth:`~Infomap.read_file`, which reads a native network file, is current.
+The graph-library and matrix adapters below are deprecated; load graphs with
+:func:`infomap.run` or the :class:`Network` ``from_*`` classmethods instead (see
+the note above). Only :meth:`~Infomap.read_file`, which reads a native network
+file, is current.
 
 .. autosummary::
 

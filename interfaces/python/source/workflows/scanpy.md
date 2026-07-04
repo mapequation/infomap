@@ -44,11 +44,8 @@ multiple trials) without any AnnData involvement.
 
 The neighbour graph Scanpy builds is a network: cells are nodes, and each edge
 carries a connectivity weight reflecting how similar two cells are in PCA space.
-Infomap treats it as a flow network and looks for regions where a random walker,
-hopping between cells in proportion to edge weights, tends to get trapped. A
-cluster of cells with strong internal connectivity and weak cross-cluster links
-is exactly such a region, and those regions become the modules
-(see {doc}`/concepts/the-map-equation`).
+Infomap reads it as a flow network and partitions it by compression, so densely
+connected cell groups become modules (see {doc}`/concepts/the-map-equation`).
 
 This flow-centric view often agrees with Leiden, but the two can diverge:
 Leiden's partition depends on its resolution parameter, and the connectivity

@@ -54,12 +54,11 @@ relaxes the layer constraint about once in seven steps (the relaxed step can
 land back in the current layer, so actual switches are rarer), enough coupling
 to respect the multiplex structure without washing out the per-layer signal.
 
-The key step is the **physical node / state node** distinction
-({doc}`/concepts/state-nodes-and-higher-order-flow`): here a state node is a
-physical node's presence in one layer. The map equation tracks state nodes for
-the walk but gives state nodes of the same physical node a shared codeword within
-a module. So a physical node that lands in two modules is
-bi-modular, with a flow signature that differs by layer {cite:p}`edler2017higher`.
+The key step is that here a state node is a physical node's presence in one
+layer; the rest of the physical-node/state-node mechanism is generic
+({doc}`/concepts/state-nodes-and-higher-order-flow`). A physical node that lands
+in two modules is thus bi-modular, with a flow signature that differs by layer
+{cite:p}`edler2017higher`.
 
 ## State nodes and the relax rate
 
@@ -86,11 +85,9 @@ layers. Setting $r = 0$ decouples layers completely; $r = 1$ is equivalent to
 running Infomap on the aggregated single-layer network (but still allowing
 overlap).
 
-The map equation then encodes the random walker's trajectory through these state
-nodes. If two state nodes $(i, \alpha)$ and $(i, \beta)$ land in the
-same module, they share a codeword, because they represent the same physical
-object. If they land in different modules, physical node $i$ is bi-modular, a
-member of two overlapping communities.
+The relax-rate walk above runs over these state nodes; when $(i, \alpha)$ and
+$(i, \beta)$ split across modules, physical node $i$ is bi-modular — the generic
+overlap mechanism of {doc}`/concepts/state-nodes-and-higher-order-flow`.
 
 :::{toggle}
 **State node transition probabilities (full derivation)**
@@ -128,9 +125,10 @@ $$
 
 over partitions of state nodes into modules, where the map equation sums the
 visit rates of the same physical node in the same module before computing the
-module codebook entropy $H(\mathcal{P}^{\boldsymbol{\imath}})$. This is the only
-difference from the standard first-order map equation, and it is precisely what
-makes physical nodes naturally bi-modular {cite:p}`domenico2015multilayer,edler2017higher`.
+module codebook entropy $H(\mathcal{P}^{\boldsymbol{\imath}})$. As in
+{doc}`/concepts/state-nodes-and-higher-order-flow`, this state-node aggregation is
+the sole change from the first-order map equation
+{cite:p}`domenico2015multilayer,edler2017higher`.
 :::
 
 ## Two triangles bridged by one node

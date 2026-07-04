@@ -248,12 +248,10 @@ clustered. On noisier real-world directed networks the difference is more
 pronounced: the directed walk respects asymmetric flow and tends to find tighter
 modules corresponding to true circulation patterns.
 
-**Teleportation probability.** The default `teleportation_probability=0.15`
-(the conventional PageRank value) works well for most networks. Because Infomap
-uses unrecorded teleportation {cite:p}`lambiotte2012smart`, the partition barely
-responds to this value, so the default is rarely worth changing unless your
-domain says walkers teleport much more or less often. See
-{doc}`/concepts/flow-and-random-walks` for what teleportation does to the flow.
+**Teleportation probability.** `teleportation_probability` ($\tau$) sets the
+random-surfer teleportation rate; the default `0.15` is rarely worth changing.
+See {doc}`/concepts/flow-and-random-walks` for why unrecorded teleportation makes
+the partition robust to $\tau$.
 
 ### `markov_time` as a resolution dial
 
@@ -288,11 +286,11 @@ specifically want to study structure at a given scale, or when reviewers ask
 
 ### `regularized` for sparse data
 
-`regularized=True` blends the observed flow with a structureless prior, and
-`regularization_strength` scales the blend; higher values merge more modules. It
-is meant for large, sparse, or incompletely sampled networks, where small modules
-often reflect missing links rather than real structure. On a graph as small as
-the karate club the prior quickly overwhelms the data:
+`regularized=True` enables the Bayesian regularized map equation for sparse or
+incompletely sampled networks, and `regularization_strength` scales the prior
+(higher merges more modules); see {doc}`/robustness/incomplete-data` for why
+sparse data over-split and how the prior fixes it. On a graph as small as the
+karate club the prior quickly overwhelms the data:
 
 ```{code-cell} python
 # On the small karate club the regularization prior competes with the data:
@@ -310,12 +308,8 @@ for label, kwargs in [
 ```
 
 The default strength already merges everything on a network this small. For a
-gradual version of the same sweep, where a planted partition goes from 14 modules
-through 7 to 1 as the strength grows, see {doc}`/robustness/incomplete-data`. Use
-regularization when you have prior reason to believe that small modules in your
-result reflect sampling noise rather than real structure. The Bayesian derivation
-is in
-{cite:t}`smiljanic2020missing`.
+worked example on a sparsely sampled planted partition, see
+{doc}`/robustness/incomplete-data`.
 
 ### Why trials matter, visualised
 

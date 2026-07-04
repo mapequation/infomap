@@ -68,8 +68,8 @@ Each stateful pattern has a direct functional or `Network` equivalent:
 
 The two consistent shifts: building a network is a {class}`~infomap.Network`
 (or a direct {func}`infomap.run` call) rather than the stateful instance, and
-reading results goes through the immutable {class}`~infomap.Result` whose scalars
-are properties and whose collections are methods with defaults.
+reading results goes through the immutable {class}`~infomap.Result`
+(see {doc}`/working-with-infomap/results-and-iteration`).
 
 ## Removed accessors
 
