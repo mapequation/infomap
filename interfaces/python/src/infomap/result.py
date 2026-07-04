@@ -485,12 +485,12 @@ class Result:
 
     @property
     def meta_codelength(self) -> float:
-        """The meta codelength (meta entropy times meta data rate)."""
+        """The meta codelength (meta entropy times metadata rate)."""
         return self._meta_codelength
 
     @property
     def meta_entropy(self) -> float:
-        """The meta entropy (unweighted by the meta data rate)."""
+        """The meta entropy (unweighted by the metadata rate)."""
         return self._meta_entropy
 
     @property
@@ -587,8 +587,8 @@ class Result:
             )
 
     def tree(self, depth: int = 1, *, states: bool = False):
-        """A view of the hierarchical tree, iterating over the modules as well
-        as the leaf nodes, depth first from the root.
+        """Iterate the hierarchical tree, modules and leaf nodes alike, depth
+        first from the root.
 
         Equivalent to the legacy ``Infomap.get_tree(depth, states)``. For a
         higher-order (multilayer/memory) network the physical tree is used
@@ -626,7 +626,7 @@ class Result:
         return self._engine._core.getMultilevelModules(states)
 
     def leaf_modules(self):
-        """A view of the leaf modules (bottom modules containing leaf nodes),
+        """Iterate the leaf modules (bottom modules containing leaf nodes),
         depth first from the root.
 
         Equivalent to the legacy ``Infomap.leaf_modules`` iterator.
@@ -642,7 +642,7 @@ class Result:
         return self._guard_iteration(self._engine._core.iterLeafModules())
 
     def links(self, data: str = "weight"):
-        """A view of the partitioned links and their weights or flow.
+        """Iterate the partitioned links with their weight or flow.
 
         Equivalent to the legacy ``Infomap.get_links(data)``. The sources and
         targets are state ids for a state or multilayer network.
@@ -672,7 +672,7 @@ class Result:
         return self._guard_iteration(_link_items())
 
     def effective_num_modules(self, depth: int = 1) -> float:
-        """The flow-weighted effective number of modules at ``depth``.
+        """Return the flow-weighted effective number of modules at ``depth``.
 
         Measured as the perplexity of the module flow distribution. Equivalent
         to the legacy ``Infomap.get_effective_num_modules(depth)``.
@@ -695,7 +695,7 @@ class Result:
         sort: bool | str | Sequence[str] = False,
         depth_level: int | None = None,
     ) -> Any:
-        """A pandas DataFrame of the leaf nodes.
+        """Return a pandas DataFrame of the leaf nodes.
 
         Byte-identical to the legacy ``Infomap.to_dataframe``. Default columns
         ``("node_id", "module_id", "flow", "path", "name")``; ``"community"``

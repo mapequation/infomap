@@ -27,7 +27,7 @@ keeps the lowest-codelength result. See {doc}`The map equation <concepts/the-map
 
 ### How many trials should I use, and how do I know the result is reliable?
 
-For exploration, a single trial (up to about 5); `num_trials=10` for most
+For exploration, one to about five trials; `num_trials=10` for most
 analyses; and `num_trials=20` or more (or `converge=True`) for results you
 publish. To gauge reliability, run several single-trial fits and compare
 codelengths: a tight spread means the partition is stable, a wide spread signals

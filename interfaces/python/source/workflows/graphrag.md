@@ -31,19 +31,17 @@ summarises each community, and those summaries are indexed for
 question-answering.
 
 The default community detector in most GraphRAG implementations is Leiden, run
-with a modularity objective. Infomap optimises a different quality function: it
-finds the partition that minimises the description length of a random walk over
-the weighted graph (see {doc}`/concepts/the-map-equation`). Whether that flow
-view groups your entities more usefully than modularity depends on the graph;
-running both and comparing is reasonable. The `infomap.tl.graphrag` adapter maps
+with a modularity objective; Infomap optimises the map equation instead (see
+{doc}`/concepts/choosing-a-method`). Whether that flow view groups your entities
+more usefully than modularity depends on the graph; running both and comparing is
+reasonable. The `infomap.tl.graphrag` adapter maps
 the columns, translates node ids, extracts the hierarchy, and writes Parquet, so
 an Infomap partition drops into GraphRAG's table schema and the downstream
 summarisation and retrieval steps run unchanged.
 
 ## What Infomap optimises here
 
-Infomap minimises the map equation over partitions of the entity graph (see
-{doc}`/concepts/the-map-equation`). Two things are specific to GraphRAG input.
+Two things about the objective are specific to GraphRAG input.
 Infomap uses the relationship weights directly as flow volumes, so a heavy
 co-occurrence link between two entities makes them harder to separate. And the
 typical GraphRAG graph is undirected and symmetric, so no directed-flow or
@@ -62,9 +60,9 @@ with specific column names:
 | `entities` | `id`, `title` | `id` must be unique; `title` used as endpoint key by default |
 | `relationships` | `source`, `target`, `weight` | `source`/`target` match entity `title` values; `id` column for relationship ids |
 
-Here you build a minimal example: two tight triangles (Alpha–Beta–Gamma and
+The minimal example below is two tight triangles (Alpha–Beta–Gamma and
 Delta–Epsilon–Zeta) linked by one weak bridge edge. The two communities are
-obvious by design, so you can verify the result at a glance.
+obvious by design, so the result is easy to verify at a glance.
 
 ```{code-cell} python
 import pandas as pd

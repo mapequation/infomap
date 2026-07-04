@@ -20,9 +20,8 @@ settings, which define the random walk, and search settings, which control how
 hard Infomap looks.
 ```
 
-Most runs need only three choices: a `seed`, how many `num_trials` to run, and
-whether the flow is `directed`; add `two_level` if you want a flat partition
-instead of the multilevel default. The shortest useful run:
+Add `two_level` if you want a flat partition instead of the multilevel default.
+The shortest useful run:
 
 ```python
 import networkx as nx
@@ -249,12 +248,10 @@ clustered. On noisier real-world directed networks the difference is more
 pronounced: the directed walk respects asymmetric flow and tends to find tighter
 modules corresponding to true circulation patterns.
 
-**Teleportation probability.** The default `teleportation_probability=0.15`
-(the conventional PageRank value) works well for most networks. Because Infomap
-uses unrecorded teleportation {cite:p}`lambiotte2012smart`, the partition barely
-responds to this value, so the default is rarely worth changing unless your
-domain says walkers teleport much more or less often. See
-{doc}`/concepts/flow-and-random-walks` for what teleportation does to the flow.
+**Teleportation probability.** `teleportation_probability` ($\tau$) sets the
+random-surfer teleportation rate; the default `0.15` is rarely worth changing.
+See {doc}`/concepts/flow-and-random-walks` for why unrecorded teleportation makes
+the partition robust to $\tau$.
 
 ### `markov_time` as a resolution dial
 
@@ -289,6 +286,12 @@ specifically want to study structure at a given scale, or when reviewers ask
 
 ### `regularized` for sparse data
 
+`regularized=True` enables the Bayesian regularized map equation for sparse or
+incompletely sampled networks, and `regularization_strength` scales the prior
+(higher merges more modules); see {doc}`/robustness/incomplete-data` for why
+sparse data over-split and how the prior fixes it. On a graph as small as the
+karate club the prior quickly overwhelms the data:
+
 ```{code-cell} python
 # On the small karate club the regularization prior competes with the data:
 # at half strength the three modules survive, and at the default strength
@@ -304,20 +307,14 @@ for label, kwargs in [
     print(f"{label}: modules={result.num_top_modules}, L={result.codelength:.4f}")
 ```
 
-Higher `regularization_strength` merges more modules. On a network this small
-the default strength already merges everything, which is why the option is
-meant for large, sparse, or incompletely sampled data rather than well-sampled
-toy graphs. For a gradual version of the same sweep, where a planted partition
-goes from 14 modules through 7 to 1 as the strength grows, see
-{doc}`/robustness/incomplete-data`. Use regularization when you have prior
-reason to believe that small modules in your result reflect sampling noise
-rather than real structure. The Bayesian derivation is in
-{cite:t}`smiljanic2020missing`.
+The default strength already merges everything on a network this small. For a
+worked example on a sparsely sampled planted partition, see
+{doc}`/robustness/incomplete-data`.
 
 ### Why trials matter, visualised
 
-A picture of the effect: run the noisy graph many times with a single trial each
-(varying the seed) and compare those codelengths against the best of 20 trials.
+A picture of the effect: run the noisy graph once per seed with a single trial,
+and compare those codelengths against the lowest a longer search finds.
 
 ```{code-cell} python
 import matplotlib.pyplot as plt
@@ -330,15 +327,19 @@ for s in range(1, 13):
         infomap.run(G_noisy, two_level=True, seed=s, num_trials=1, silent=True).codelength
     )
 
-# ... versus the best of 20 trials.
-best_L = infomap.run(
-    G_noisy, two_level=True, seed=123, num_trials=20, silent=True
-).codelength
+# ... versus the lowest codelength a longer search finds. Several seeds at 50
+# trials each, so the reference is the best partition rather than one lucky (or
+# unlucky) run; take the floor of everything shown so the line is a true minimum.
+best_L = min(
+    infomap.run(G_noisy, two_level=True, seed=s, num_trials=50, silent=True).codelength
+    for s in (1, 42, 123)
+)
+best_L = min([best_L, *single_L])
 
 fig, ax = plt.subplots(figsize=(6, 3.2))
 ax.scatter(range(1, len(single_L) + 1), single_L,
            color="0.45", zorder=3, label="single trial (num_trials=1)")
-ax.axhline(best_L, color="tab:blue", lw=2, label=f"best of 20 trials = {best_L:.3f}")
+ax.axhline(best_L, color="tab:blue", lw=2, label=f"lowest codelength found = {best_L:.3f}")
 ax.set_xlabel("seed")
 ax.set_ylabel("codelength (bits/step)")
 ax.legend(loc="best", fontsize=8)
@@ -348,9 +349,10 @@ plt.close(fig)
 ```
 
 ```{glue:figure} fig-running-and-options
-Each grey point is the codelength from a single trial with a different seed.
-One trial can settle in a worse local minimum; many trials reliably reach the
-best-of-20 value (blue line).
+Each grey point is one trial's codelength for a different seed, scattered widely.
+A single trial rarely reaches the best partition Infomap can find (blue line) —
+most settle in a worse local minimum. Running more trials and keeping the lowest
+codelength is what gets you there; here only seed 7 finds it in one trial.
 ```
 
 ## Reusable configuration

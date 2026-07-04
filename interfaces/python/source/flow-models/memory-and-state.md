@@ -56,13 +56,12 @@ detour. Model the intersection at first order and it appears in one community.
 Model the actual pathways and the two streams belong to different communities,
 with the intersection *overlapping* between them.
 
-Infomap handles this with the **physical node / state node** distinction (see
-{doc}`/concepts/state-nodes-and-higher-order-flow` for the general mechanism).
-State nodes carry the dynamics: they have links and stationary visit rates.
-Physical nodes represent the real objects you care about: they aggregate all
-their state nodes. The map equation encodes flow at the state-node level but
-names physical nodes in its codebook, so it correctly records a physical node
-whose state nodes land in different modules as *overlapping* {cite:p}`edler2017higher`.
+Infomap handles this with the **physical node / state node** distinction: in a
+memory network a state node encodes the walker's recent history, such as "arrived
+from $j$". The generic machinery — the walk runs on state nodes, the codebook
+names physical nodes, and a physical node whose state nodes split across modules
+is *overlapping* — is developed in
+{doc}`/concepts/state-nodes-and-higher-order-flow` {cite:p}`edler2017higher`.
 
 ## Memory as a state-node network
 
@@ -86,11 +85,10 @@ $$
 \pi_k = \sum_{\overrightarrow{jk}} \pi_{\overrightarrow{jk}}
 $$
 
-When multiple state nodes of the same physical node land in the same module,
-the map equation aggregates their visit rates into a single codebook entry for
-that physical node. A physical node whose state nodes are *split across
-modules* is therefore assigned to multiple modules; overlapping community
-membership arises from the state-node formalism {cite:p}`edler2017higher`.
+Aggregating a physical node's state-node visit rates this way is what yields
+overlapping membership when those state nodes fall in different modules; the
+general argument is in {doc}`/concepts/state-nodes-and-higher-order-flow`
+{cite:p}`edler2017higher`.
 
 You do not have to commit to a full second-order model. The *sparse memory
 network* framework {cite:p}`persson2016sparse` lets you lump state nodes with

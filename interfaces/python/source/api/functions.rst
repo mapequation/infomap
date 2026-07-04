@@ -3,6 +3,9 @@ Top-level functions
 
 .. currentmodule:: infomap
 
+The functional API and its building blocks. Most work goes through :func:`run`;
+the rest are graph-package convenience wrappers and standalone primitives.
+
 Running Infomap
 ---------------
 
@@ -16,6 +19,8 @@ Graph-package entry points
 
 Information-theoretic primitives
 --------------------------------
+
+The building blocks behind the map equation, exposed for standalone use.
 
 .. autofunction:: entropy
 .. autofunction:: perplexity

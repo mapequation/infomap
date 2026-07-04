@@ -4,7 +4,7 @@
 (``_NetworkBuilder`` + ``_MultilayerBuilder``) into one public class. It owns a
 :class:`infomap._core.Core` handle and exposes the core building verbs:
 single-layer nodes/links, state nodes, names, the three multilayer link
-families, meta data, the bipartite start id, file reading, and node/link counts.
+families, metadata, the bipartite start id, file reading, and node/link counts.
 
 :class:`infomap.Infomap` composes a :class:`Network` over its own
 options-configured ``Core`` (shared instance) and delegates its building verbs
@@ -141,7 +141,7 @@ class Network:
         Loads ``g`` via the same adapter :meth:`Infomap.add_networkx_graph`
         uses. The ``{internal_id: label}`` mapping is stored on
         :attr:`node_id_to_label`. Pass ``meta_attribute`` to use a node
-        attribute as Infomap meta data (values are encoded to integers, so
+        attribute as Infomap metadata (values are encoded to integers, so
         string categories work).
         """
         from .io.networkx import add_networkx_graph as _add_networkx_graph
@@ -175,7 +175,7 @@ class Network:
         Loads ``g`` via the same adapter :meth:`Infomap.add_igraph_graph` uses.
         The ``{internal_id: label}`` mapping is stored on
         :attr:`node_id_to_label`. Pass ``meta_attribute`` to use a vertex
-        attribute as Infomap meta data (values are encoded to integers, so
+        attribute as Infomap metadata (values are encoded to integers, so
         string categories work).
         """
         from .io.igraph import add_igraph_graph as _add_igraph_graph
@@ -635,17 +635,17 @@ class Network:
         )
 
     # ----------------------------------------
-    # Meta data
+    # Metadata
     # ----------------------------------------
 
     def set_meta_data(self, node_id, meta_category=None):
-        """Set integer meta data for one node, or for many at once.
+        """Set integer metadata for one node, or for many at once.
 
         Parameters
         ----------
         node_id : int or mapping
-            A node id, or a ``{node_id: meta_category}`` mapping to assign meta
-            data to several nodes in one call.
+            A node id, or a ``{node_id: meta_category}`` mapping to assign
+            metadata to several nodes in one call.
         meta_category : int, optional
             The meta category, when ``node_id`` is a single node id (ignored
             when ``node_id`` is a mapping).

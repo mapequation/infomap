@@ -343,9 +343,9 @@ def find_igraph_communities(
         If set, write each vertex's flow back to this vertex attribute on
         ``g``.
     meta_attribute : str, optional
-        Vertex attribute to read categorical meta data from. Values are
-        encoded to integers in first-seen order and set as Infomap meta
-        data; vertices with missing values are skipped. Raises
+        Vertex attribute to read categorical metadata from. Values are
+        encoded to integers in first-seen order and set as Infomap
+        metadata; vertices with missing values are skipped. Raises
         :class:`ValueError` if the attribute does not exist.
     **infomap_options
         Keyword arguments passed to :class:`infomap.Infomap`. By default,

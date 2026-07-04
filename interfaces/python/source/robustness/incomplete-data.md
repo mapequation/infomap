@@ -30,8 +30,8 @@ value draw the wrong boundaries.
 
 The standard map equation is prone to this. It minimises a Shannon
 entropy-based description length that systematically *underestimates* the true
-entropy when data are sparse {cite:p}`basharin1959entropy`. As underestimation worsens when
-communities lose links, the map equation's two cost terms fall out of balance:
+entropy when data are sparse {cite:p}`basharin1959entropy`. The bias grows as
+communities lose links, and the map equation's two cost terms fall out of balance:
 the module codebooks look cheap to shrink, so the optimiser splits nodes into
 smaller and smaller groups, down to groups of two or three nodes with no
 principled support. Those modules are an artefact of noise.
@@ -67,13 +67,13 @@ undirected, unweighted networks; {cite:t}`smiljanic2021incomplete` extended it
 to weighted and directed networks. Infomap implements both under the single
 flag `regularized=True`.
 
-The mechanism is Bayesian. Rather than trust the observed network at face value,
-Infomap blends it with a fully connected **prior network** that carries no
-community structure, the continuous configuration model. The random walker then
-moves on the combination: most steps follow observed links, but with a small,
-data-dependent probability the walker takes a prior step toward any node. Nodes
-with few observed links lean more on the prior; nodes with many links lean on
-their data. Where evidence is abundant, the data dominate and the prior barely
+Infomap's **prior network** is the continuous configuration model: fully
+connected, with no community structure of its own. The random walker moves on the
+combination of it and the observed network — most steps follow observed links,
+but with a small, data-dependent probability the walker takes a prior step toward
+any node. Nodes with few observed links lean more on the prior; nodes with many
+links lean on their data. Where evidence is abundant, the data dominate and the
+prior barely
 matters. Where the network is sparse, the prior evens out the apparent cost
 differences that drive spurious splitting.
 

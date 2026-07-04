@@ -23,17 +23,16 @@ cluster labels, and compare with Leiden in a few lines.
 
 Single-cell RNA-seq pipelines, Scanpy chief among them, cluster cells by
 building a $k$-nearest-neighbour graph in PCA-reduced space and then running a
-graph-partitioning algorithm. Leiden is the standard default; it
-optimises a modularity-style objective with a tunable resolution parameter.
-Infomap optimises the map equation instead: it finds where a random walker on the
-connectivity graph gets trapped and treats those flow-trapping regions as modules.
+graph-partitioning algorithm. Leiden, the standard default, optimises a
+modularity-style objective with a tunable resolution parameter; Infomap optimises
+the map equation instead. {doc}`/concepts/choosing-a-method` compares the two.
 
 Both algorithms take the same weighted neighbour graph as input and produce a
 partition of observations as output, so swapping in Infomap means calling a
 different function. The `infomap.tl.infomap()` function follows Scanpy `tl`
 conventions: it reads `adata.obsp["connectivities"]` by default, writes a
 pandas categorical column to `adata.obs`, and records run metadata in
-`adata.uns`. Scanpy itself is not imported by the Infomap package.
+`adata.uns`.
 
 Beyond the high-level helper, the sparse matrix underlying any `adata.obsp`
 slot is a standard SciPy CSR matrix; you can hand it directly to
@@ -44,11 +43,8 @@ multiple trials) without any AnnData involvement.
 
 The neighbour graph Scanpy builds is a network: cells are nodes, and each edge
 carries a connectivity weight reflecting how similar two cells are in PCA space.
-Infomap treats it as a flow network and looks for regions where a random walker,
-hopping between cells in proportion to edge weights, tends to get trapped. A
-cluster of cells with strong internal connectivity and weak cross-cluster links
-is exactly such a region, and those regions become the modules
-(see {doc}`/concepts/the-map-equation`).
+Infomap reads it as a flow network and partitions it by compression, so densely
+connected cell groups become modules (see {doc}`/concepts/the-map-equation`).
 
 This flow-centric view often agrees with Leiden, but the two can diverge:
 Leiden's partition depends on its resolution parameter, and the connectivity

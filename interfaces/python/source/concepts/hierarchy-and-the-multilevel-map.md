@@ -123,10 +123,12 @@ $$
 \frac{4^{l_c}}{l_c + 1} \lesssim C.
 $$
 
-Contrast this with modularity, whose resolution limit scales as roughly
-$\sqrt{L}$ in the total link count $L$ (see {doc}`/concepts/choosing-a-method`).
-The map equation's dependence on the cut size $C$ rather than $L$ is already much
-less restrictive, but it does not vanish.
+Contrast this with modularity, whose resolution limit grows with the size of the
+whole network: it cannot resolve communities with fewer than roughly
+$\sqrt{m/2}$ internal links, where $m$ is the total link count (see
+{doc}`/concepts/choosing-a-method`). The map equation's dependence on the local
+cut size $C$ rather than the global $m$ is already much less restrictive, but it
+does not vanish.
 
 The *hierarchical* map equation evaluates the analogous update with the effective
 network size equal to the super-module plus its boundary links, not the full

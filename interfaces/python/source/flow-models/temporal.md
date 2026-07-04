@@ -97,8 +97,7 @@ windows rather than jumping across the whole sequence.
 
 ## Six colleagues over three windows
 
-The example below builds a tiny temporal network with six nodes and three time windows to show
-how Infomap tracks communities as they drift.
+The example below shows how Infomap tracks communities as they drift.
 
 **Setup.** The six nodes represent people. In window T = 1 and again in T = 3
 they interact in two stable triangles: {1, 2, 3} and {4, 5, 6}. In window T = 2
@@ -243,7 +242,8 @@ generalises to higher-order and temporal networks {cite:p}`holmgren2023change`.
 - `multilayer_relax_limit` restricts relaxation to layers within a given index
   distance, enforcing temporal ordering.
 - `multilayer_relax_by_jsd=True` uses neighbourhood flow coupling
-  (Jensen-Shannon divergence) instead of uniform coupling; reach for it when
+  (Jensen-Shannon similarity, one minus the divergence) instead of uniform
+  coupling; reach for it when
   communities are intermittent {cite:p}`aslak2018temporal`.
 - {meth}`infomap.Result.nodes` with `states=True` iterates state nodes; each
   exposes `.node_id`, `.layer_id`, and `.module_id` to reconstruct per-layer

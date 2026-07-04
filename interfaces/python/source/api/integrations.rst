@@ -1,6 +1,9 @@
 Integrations
 ============
 
+Adapters that connect Infomap to other tools: single-cell analysis with Scanpy,
+GraphRAG entity tables, and merging distributed trial runs.
+
 Scanpy / AnnData
 ----------------
 

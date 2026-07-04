@@ -33,10 +33,9 @@ participates, but its neighbourhood and community membership can differ from
 layer to layer. Aggregating the layers into one network can distort both the
 topology and the community structure {cite:p}`domenico2015multilayer`.
 
-Overlapping communities come out of the same machinery. Because each layer
-contributes state nodes for the same physical nodes, the map equation can
-assign a physical node to several modules, one per layer where its local
-structure places it.
+Multilayer networks also express **overlapping communities**: because the same
+physical entity lives in several layers, Infomap can place it in a different
+module in each. The next sections show the mechanism.
 
 ## One node, several layers
 
@@ -55,12 +54,11 @@ relaxes the layer constraint about once in seven steps (the relaxed step can
 land back in the current layer, so actual switches are rarer), enough coupling
 to respect the multiplex structure without washing out the per-layer signal.
 
-The key step is the **physical node / state node** distinction
-({doc}`/concepts/state-nodes-and-higher-order-flow`): here a state node is a
-physical node's presence in one layer. The map equation tracks state nodes for
-the walk but gives state nodes of the same physical node a shared codeword within
-a module. So a physical node that lands in two modules is
-bi-modular, with a flow signature that differs by layer {cite:p}`edler2017higher`.
+The key step is that here a state node is a physical node's presence in one
+layer; the rest of the physical-node/state-node mechanism is generic
+({doc}`/concepts/state-nodes-and-higher-order-flow`). A physical node that lands
+in two modules is thus bi-modular, with a flow signature that differs by layer
+{cite:p}`edler2017higher`.
 
 ## State nodes and the relax rate
 
@@ -87,11 +85,9 @@ layers. Setting $r = 0$ decouples layers completely; $r = 1$ is equivalent to
 running Infomap on the aggregated single-layer network (but still allowing
 overlap).
 
-The map equation then encodes the random walker's trajectory through these state
-nodes. If two state nodes $(i, \alpha)$ and $(i, \beta)$ land in the
-same module, they share a codeword, because they represent the same physical
-object. If they land in different modules, physical node $i$ is bi-modular, a
-member of two overlapping communities.
+The relax-rate walk above runs over these state nodes; when $(i, \alpha)$ and
+$(i, \beta)$ split across modules, physical node $i$ is bi-modular — the generic
+overlap mechanism of {doc}`/concepts/state-nodes-and-higher-order-flow`.
 
 :::{toggle}
 **State node transition probabilities (full derivation)**
@@ -111,11 +107,8 @@ out-strength of node $i$ from layer $\alpha$.
 
 When no empirical inter-layer data are available, setting
 $D_i^{\alpha\beta} = (1-r)\delta_{\alpha\beta}S_i + r\,s_i^\beta$ recovers the
-relax-rate formula above {cite:p}`domenico2015multilayer`. At $r = 0.15$ the
-walker takes a relaxed step about once every $1/r \approx 7$ steps (and
-switches layers less often still, since the relaxed step is strength-weighted
-over all layers including the current one), enough coupling for layers to
-inform each other without fusing.
+relax-rate formula above {cite:p}`domenico2015multilayer`, with the default
+$r = 0.15$ interpreted as in the narrative introduction.
 
 The map equation then minimises
 
@@ -129,9 +122,10 @@ $$
 
 over partitions of state nodes into modules, where the map equation sums the
 visit rates of the same physical node in the same module before computing the
-module codebook entropy $H(\mathcal{P}^{\boldsymbol{\imath}})$. This is the only
-difference from the standard first-order map equation, and it is precisely what
-makes physical nodes naturally bi-modular {cite:p}`domenico2015multilayer,edler2017higher`.
+module codebook entropy $H(\mathcal{P}^{\boldsymbol{\imath}})$. As in
+{doc}`/concepts/state-nodes-and-higher-order-flow`, this state-node aggregation is
+the sole change from the first-order map equation
+{cite:p}`domenico2015multilayer,edler2017higher`.
 :::
 
 ## Two triangles bridged by one node
@@ -310,8 +304,9 @@ At low relax rates the two triangle clusters remain distinct (2 modules). As
 $r \to 1$ the layers fuse and the partition collapses to 1 module, the same as
 running Infomap on the aggregated network. The default $r = 0.15$ is the working
 value from {cite:t}`domenico2015multilayer`, who found the partition only
-weakly dependent on the relax rate; robustness holds across a wide range of empirical
-multilayer networks at around $r \approx 0.25$ {cite:p}`edler2017higher`.
+weakly dependent on the relax rate; later work confirmed that the partition stays
+robust across empirical multilayer networks for relax rates up to about
+$r \approx 0.25$ {cite:p}`edler2017higher`.
 
 ### Node-aligned inter-layer links
 

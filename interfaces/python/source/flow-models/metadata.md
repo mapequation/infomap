@@ -44,11 +44,10 @@ $\eta = 0$ you recover ordinary Infomap. As $\eta$ grows you favour
 attribute-homogeneous modules more, accepting a longer topological description in
 return.
 
-A closely related approach couples metadata to the map equation differently:
-it leaves the walk unchanged but makes the *encoding* of the walk depend on
-the metadata, which maps nonlocal relationships between attributes and
-network structure {cite:p}`bassolas2022metadata`. Both approaches capture the interplay between
-topology and metadata; the Emmons & Mucha formulation is what Infomap implements.
+A complementary approach instead makes the walk's *encoding* depend on the
+metadata, rather than adding an attribute term to the objective
+{cite:p}`bassolas2022metadata`. Infomap implements the Emmons & Mucha
+formulation described here.
 
 ## An attribute codebook
 
@@ -103,7 +102,7 @@ metadata entropy matters relative to the topological terms.
 
 At $\eta = 0$ the metadata term vanishes and $L_0$ is the ordinary map equation.
 At $\eta = 1$ the encoding assigns equal cost to the topological and attribute
-channels, the original content map equation of {cite:t}`smith2016content`. For
+channels, the original *content map equation* of {cite:t}`smith2016content`. For
 $\eta > 1$ the attribute channel weighs more, pulling the partition toward
 attribute-homogeneous modules.
 

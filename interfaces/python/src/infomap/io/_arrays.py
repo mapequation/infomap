@@ -68,7 +68,7 @@ class CommunityNode(NamedTuple):
 
 
 def apply_node_meta_data(infomap: Any, id_meta_pairs: Any) -> dict:
-    """Set per-node Infomap meta data, encoding arbitrary category values to
+    """Set per-node Infomap metadata, encoding arbitrary category values to
     integers (stable first-seen order) so non-integer labels -- cell types,
     string classes -- work directly.
 

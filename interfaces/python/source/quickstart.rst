@@ -109,9 +109,8 @@ The stateful Infomap class
 
 Existing code that builds an :class:`infomap.Infomap` instance, calls ``add_*``,
 and then ``run()`` keeps working unchanged: ``run()`` now returns the same
-:class:`~infomap.Result`. New code should prefer :func:`infomap.run` for
-one-shot use and :class:`~infomap.Network` for incremental construction. See
-:doc:`the-infomap-class` for the full migration guide.
+:class:`~infomap.Result`. For when to choose each entry point and the full
+migration guide, see :doc:`the-infomap-class`.
 
 Next steps
 ----------

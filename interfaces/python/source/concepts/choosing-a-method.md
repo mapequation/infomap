@@ -47,14 +47,13 @@ than Louvain's greedy moves {cite:p}`traag2019leiden`. This page uses the
 modularity objective for both, the most common default.
 
 **The map equation (Infomap).** Infomap compresses a description of a random walk
-(see {doc}`/concepts/the-map-equation`). A group is worth naming when a walker
-entering it tends to stay for several steps before leaving. Because the walk
-follows edge direction and weight, Infomap reads those where an undirected
-modularity null model does not.
+({doc}`/concepts/the-map-equation`); because the walk follows edge direction and
+weight, Infomap reads structure that an undirected modularity null model does
+not.
 
 ## Modularity and the map equation
 
-Modularity for a partition $\mathsf{C}$ is
+The same contrast, now in formulas. Modularity for a partition $\mathsf{C}$ is
 
 $$
 Q = \frac{1}{2m} \sum_{i,j} \left[ A_{ij} - \frac{k_i k_j}{2m} \right]
@@ -70,8 +69,8 @@ L(\mathsf{M}) =
   + \sum_{i} p_{\circlearrowright}^i H(\mathcal{P}^i),
 $$
 
-summed over the modules $i$: the average cost of coding a random walk, bits for
-*crossing* module boundaries plus bits for *moving inside* them.
+summed over the modules $i$ — the between-module and within-module coding costs
+derived term by term in {doc}`/concepts/the-map-equation`.
 
 :::{toggle}
 **A note on the resolution limit**

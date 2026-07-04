@@ -52,9 +52,8 @@ read* belong to the ``Network.from_*`` constructors; passing one to
 silently building a different graph. For a NetworkX or igraph graph the
 directedness is read from the graph object itself, so no ``directed`` argument
 is needed. For a SciPy matrix or edge index, pass ``directed=`` to the matching
-``from_*`` constructor. Note that the two routes default differently: a SciPy
-matrix is read as *undirected* unless you say otherwise, while a ``(2, E)`` edge
-index follows the PyG convention and is read as *directed*.
+``from_*`` constructor; the two routes default differently, so it is worth
+spelling out (see Pitfalls).
 
 Two one-shot helpers return native types instead of a
 {class}`~infomap.Result`: {func}`infomap.find_communities` (a NetworkX-style
@@ -192,8 +191,10 @@ on {attr}`~infomap.Network.node_id_to_label`, the same pattern as
 
 ## Edge lists: pandas, NumPy, tuples
 
-A weighted edge list, rows of ``(source, target, weight)``, runs directly.
-Pandas DataFrames convert in one call with ``to_numpy()``:
+A weighted edge list, rows of ``(source, target, weight)``, runs directly. An
+iterable of tuples is the same input in one call:
+``infomap.run([(0, 1, 1.0), (1, 2, 1.0), ...])``. Pandas DataFrames convert in
+one call with ``to_numpy()``:
 
 ```{code-cell} python
 import pandas as pd
@@ -214,8 +215,7 @@ print(f"pandas route: {result.num_top_modules} modules, {result.codelength:.4f} 
 Source and target columns must hold integers. Convert string labels to integer
 codes first (``pandas.factorize``) and keep the ``uniques`` array it returns as
 your reverse mapping. This route registers no node names, so the result
-DataFrame's ``"name"`` column cannot recover the labels. An equally valid one-call form is an
-iterable of tuples: ``infomap.run([(0, 1, 1.0), (1, 2, 1.0), ...])``.
+DataFrame's ``"name"`` column cannot recover the labels.
 
 ```{admonition} Edge index vs link rows
 :class: note
@@ -332,10 +332,9 @@ To draw the partition or write it to disk, see
 ## Pitfalls
 
 - **Read-time options belong on the constructor, not the run.** `weight`,
-  `edge_weights`, `directed`, and `weighted` govern *how the input is read*, so
-  they live on the `Network.from_*` constructors. Passing them to
-  {func}`infomap.run` raises with a pointer to the right constructor rather than
-  silently building a different graph.
+  `edge_weights`, `directed`, and `weighted` live on the `Network.from_*`
+  constructors; {func}`infomap.run` raises if you pass one, naming the
+  constructor to use.
 - **SciPy and edge-index routes default to different directedness.** A SciPy
   sparse matrix is read as *undirected* unless you pass `directed=True`, while a
   `(2, E)` integer edge index follows the PyG convention and is read as

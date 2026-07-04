@@ -4,13 +4,14 @@ Infomap class
 .. currentmodule:: infomap
 
 :class:`Infomap` is the stateful entry point for the whole workflow: build a
-network, run the search, then read the partition back. The typical usage is
-four calls.
+network, run the search, then read the partition back. Its remaining strength is
+building a network incrementally, one link at a time:
 
 .. code-block:: python
 
    im = infomap.Infomap(num_trials=10, seed=42)  # 1. configure
-   im.add_networkx_graph(graph)                  # 2. build
+   im.add_link(0, 1)                             # 2. build incrementally
+   im.add_link(1, 2)
    result = im.run()                             # 3. search
    result.modules()                              # 4. read
 
@@ -29,20 +30,20 @@ docstrings, follows underneath.
 Building a network
 ------------------
 
-Most users need only one of the first group. The rest are for higher-order
-inputs and fine control.
-
-**From a graph library, matrix, or file** (the common entry points):
+The graph-library and matrix adapters below are deprecated; load graphs with
+:func:`infomap.run` or the :class:`Network` ``from_*`` classmethods instead (see
+the note above). Only :meth:`~Infomap.read_file`, which reads a native network
+file, is current.
 
 .. autosummary::
 
+   ~Infomap.read_file
    ~Infomap.add_networkx_graph
    ~Infomap.add_igraph_graph
    ~Infomap.add_scipy_sparse_matrix
    ~Infomap.from_scipy_sparse_matrix
    ~Infomap.add_edge_index
    ~Infomap.from_edge_index
-   ~Infomap.read_file
 
 **Links and nodes directly:**
 

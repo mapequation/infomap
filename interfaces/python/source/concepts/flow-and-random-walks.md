@@ -64,7 +64,7 @@ Infomap uses unrecorded teleportation by default for directed networks.
 
 A directed, weighted network on $n$ nodes defines a transition matrix
 $T_{ij} = w_{ij} / w_j^{\text{out}}$, where $w_{ij}$ is the edge weight from
-$j$ to $i$ and $w_j^{\text{out}}$ is node $j$'s total out-weight.  The
+$j$ to $i$ and $w_j^{\text{out}}$ is node $j$'s total out-weight. The
 **stationary distribution** $\pi$ satisfies
 
 $$
@@ -82,15 +82,17 @@ $$
 p_{i,\,t+1} = (1 - \tau)\sum_j T_{ij}\,p_{j,t} + \tau\,\frac{1}{n},
 $$
 
-and the unique stationary solution $\pi$ exists for any $\tau > 0$. At a dangling
-node the walker has no out-links to follow, so it teleports with probability one
-rather than at rate $\tau$. The $1/n$ term is the simplest, uniform
-teleportation; by default Infomap instead teleports to a random *link*
-(proportionally to its weight) and lands at the link's source, so a node
-receives teleporting walkers in proportion to its out-strength. The next
-recorded step is then always a real link traversal. With recorded
-teleportation (`recorded_teleportation=True`) the walker lands at the link's
-target instead, proportionally to in-strength.
+and the unique stationary solution $\pi$ exists for any $\tau > 0$. (At a
+dangling node, with no out-links to follow, the walker teleports with
+probability one rather than at rate $\tau$.)
+
+Where the walker lands after a teleport is a modelling choice. The $1/n$ term
+above is the simplest: uniform teleportation to any node. By default Infomap
+instead teleports to a random *link* (proportionally to its weight) and lands at
+the link's source, so a node receives teleporting walkers in proportion to its
+out-strength, and the next recorded step is always a real link traversal. With
+recorded teleportation (`recorded_teleportation=True`) the walker lands at the
+link's target instead, proportionally to in-strength.
 
 These per-node flows $\pi_i$, together with how often the walker crosses between
 candidate modules, are the inputs the map equation needs. The next chapter,

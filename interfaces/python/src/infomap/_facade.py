@@ -89,9 +89,7 @@ __all__ = [
 
 
 class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
-    """Infomap
-
-    The stateful entry point to the algorithm: build a network with the
+    """The stateful entry point to the algorithm: build a network with the
     ``add_*`` verbs, then call :meth:`run` to get an immutable
     :class:`~infomap.Result`. Internally it composes a :class:`~infomap.Network`
     (input) and an :class:`~infomap.Options` config over a single ``Core``
@@ -148,7 +146,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
     ``result.links()``, ``result.to_dataframe()``) and scalars via properties
     (``result.codelength``, ``result.num_top_modules``).
 
-    For more examples, see the examples directory.
+    For more examples, see :doc:`/quickstart` and :doc:`/examples/index`.
     """
 
     def _init_from_options(self, args, options):
@@ -981,9 +979,9 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
 
         Parameters
         ----------
-        nodes : iterable of tuples or iterable of int or dict of int: str or dict of int: tuple of (str, float)
+        nodes : iterable of tuples or iterable of int or dict
             Iterable of tuples on the form
-            ``(node_id, [name], [teleportation_weight])``
+            ``(node_id, [name], [teleportation_weight])``.
         """
         try:
             for node, attr in nodes.items():
@@ -1499,7 +1497,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         return self._network.remove_multilayer_link()
 
     def set_meta_data(self, node_id, meta_category):
-        """Set meta data to a node.
+        """Set metadata for a node.
 
         Examples
         --------
@@ -1642,9 +1640,9 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             Use intra/inter format to simulate inter-layer links. Default
             ``True``.
         meta_attribute : str, optional
-            Node attribute to read categorical meta data from, for use with
+            Node attribute to read categorical metadata from, for use with
             the meta-data map equation. Values are encoded to integers in
-            first-seen order and set as Infomap meta data; nodes with missing
+            first-seen order and set as Infomap metadata; nodes with missing
             values are skipped. Raises :class:`ValueError` if the attribute
             is not set on any node.
 
@@ -1853,9 +1851,9 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             Vertex attribute for layer ids, implying a multilayer network when
             ``node_id`` is also present.
         meta_attribute : str, optional
-            Vertex attribute to read categorical meta data from, for use with
+            Vertex attribute to read categorical metadata from, for use with
             the meta-data map equation. Values are encoded to integers in
-            first-seen order and set as Infomap meta data; vertices with
+            first-seen order and set as Infomap metadata; vertices with
             missing values are skipped. Raises :class:`ValueError` if the
             attribute does not exist.
         multilayer_inter_intra_format : bool, optional
@@ -1937,12 +1935,6 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         >>> result = im.run()
         >>> result.codelength
         0.9183
-
-
-        Parameters
-        ----------
-        start_id : int
-            The node id where the second node type starts.
 
         Returns
         -------

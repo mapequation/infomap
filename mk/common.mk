@@ -31,6 +31,12 @@ RSCRIPT ?= Rscript
 AIR ?= $(shell command -v air 2>/dev/null || command -v /opt/homebrew/bin/air 2>/dev/null || echo air)
 SPHINX_BUILD_BIN := $(shell command -v sphinx-build 2>/dev/null || true)
 SPHINX_BUILD ?= $(if $(SPHINX_BUILD_BIN),$(SPHINX_BUILD_BIN),$(PYTHON) -m sphinx)
+# Treat Sphinx warnings as errors so broken cross-references, missing labels, and
+# unresolved autodoc targets fail the build instead of shipping silently.
+# --keep-going reports every warning in one pass rather than stopping at the
+# first. Override with `make build-docs SPHINXOPTS=` to build leniently offline
+# (e.g. when intersphinx inventories are unreachable).
+SPHINXOPTS ?= -W --keep-going
 CMAKE ?= $(shell command -v cmake 2>/dev/null || command -v /opt/homebrew/bin/cmake 2>/dev/null || echo cmake)
 CTEST ?= $(shell command -v ctest 2>/dev/null || command -v /opt/homebrew/bin/ctest 2>/dev/null || echo ctest)
 CLANG_FORMAT ?= $(shell command -v clang-format 2>/dev/null || command -v /opt/homebrew/bin/clang-format 2>/dev/null || command -v /opt/homebrew/opt/llvm/bin/clang-format 2>/dev/null || echo clang-format)
