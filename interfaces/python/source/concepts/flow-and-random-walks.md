@@ -64,7 +64,7 @@ Infomap uses unrecorded teleportation by default for directed networks.
 
 A directed, weighted network on $n$ nodes defines a transition matrix
 $T_{ij} = w_{ij} / w_j^{\text{out}}$, where $w_{ij}$ is the edge weight from
-$j$ to $i$ and $w_j^{\text{out}}$ is node $j$'s total out-weight.  The
+$j$ to $i$ and $w_j^{\text{out}}$ is node $j$'s total out-weight. The
 **stationary distribution** $\pi$ satisfies
 
 $$

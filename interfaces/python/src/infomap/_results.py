@@ -1410,7 +1410,7 @@ class _InfomapResultsMixin:
     def meta_codelength(self):
         """Get the meta codelength.
 
-        This is the meta entropy times the meta data rate.
+        This is the meta entropy times the metadata rate.
 
         See Also
         --------
@@ -1428,7 +1428,7 @@ class _InfomapResultsMixin:
 
     @property
     def meta_entropy(self):
-        """Get the meta entropy (unweighted by meta data rate).
+        """Get the meta entropy (unweighted by metadata rate).
 
         See Also
         --------

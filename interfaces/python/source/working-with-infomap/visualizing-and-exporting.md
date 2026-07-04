@@ -47,6 +47,8 @@ The export formats take different cuts through the same result:
   its id. It is the most informative single-file summary.
 - `.clu` is the simplest format: node id, module, and flow per line. It loads
   with pandas or numpy in one line.
+- `.ftree` is a `.tree` plus the intra-module link flows. It is what the
+  Network Navigator reads to lay out and explore the modules.
 
 ## Colour and export the karate club
 

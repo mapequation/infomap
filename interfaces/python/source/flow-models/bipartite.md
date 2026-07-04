@@ -197,16 +197,16 @@ weak cross-cluster links.
 ## API pointers
 
 - {attr}`infomap.Infomap.bipartite_start_id` declares the first node id of the
-  second type: assign `im.bipartite_start_id = n` and every node with id `>= n`
-  is a right node, ids below are left nodes. Set it before
+  type-B block: assign `im.bipartite_start_id = n` and every node with id `>= n`
+  is a type-B node, ids below are type-A. Set it before
   {meth}`~infomap.Infomap.run`. {attr}`infomap.Network.bipartite_start_id` is the
   same property on a {class}`~infomap.Network`.
 - {meth}`infomap.Network.add_link` adds a weighted edge between any two node ids;
   for bipartite networks the source and target should be opposite types.
 - {meth}`infomap.Result.modules` returns a `{node_id: module_id}` dict covering
   both types.
-- The option `hide_bipartite_nodes=True` omits right-type nodes from written
-  output files (`.tree`, `.clu`, …), which helps when only the left-type
+- The option `hide_bipartite_nodes=True` omits type-B nodes from written
+  output files (`.tree`, `.clu`, …), which helps when only the type-A
   assignments matter (projecting a user partition, say). It does not filter
   {meth}`infomap.Result.modules`, which always covers both types.
 
@@ -214,9 +214,9 @@ weak cross-cluster links.
 
 | Option | Where | Effect |
 |---|---|---|
-| `bipartite_start_id` | {class}`~infomap.Network` attribute | First node id of the second type; declares the network bipartite |
-| `hide_bipartite_nodes` | {class}`~infomap.Infomap` (file-writing runs) | Omit the second-type nodes from written output files (the in-memory result keeps both types) |
-| `skip_adjust_bipartite_flow` | {func}`infomap.run` | Keep flow on the second-type nodes instead of folding it onto the first type |
+| `bipartite_start_id` | {class}`~infomap.Network` attribute | First node id of the type-B block (the second type); declares the network bipartite |
+| `hide_bipartite_nodes` | {class}`~infomap.Infomap` (file-writing runs) | Omit the type-B nodes from written output files (the in-memory result keeps both types) |
+| `skip_adjust_bipartite_flow` | {func}`infomap.run` | Keep flow on the type-B nodes instead of folding it onto type-A |
 | `bipartite_teleportation` | {func}`infomap.run` | On directed runs, teleport with bipartite-aware jumps instead of the two-step unipartite scheme |
 
 ## Going deeper

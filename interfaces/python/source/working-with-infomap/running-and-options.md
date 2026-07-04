@@ -20,9 +20,8 @@ settings, which define the random walk, and search settings, which control how
 hard Infomap looks.
 ```
 
-Most runs need only three choices: a `seed`, how many `num_trials` to run, and
-whether the flow is `directed`; add `two_level` if you want a flat partition
-instead of the multilevel default. The shortest useful run:
+Add `two_level` if you want a flat partition instead of the multilevel default.
+The shortest useful run:
 
 ```python
 import networkx as nx
@@ -289,6 +288,12 @@ specifically want to study structure at a given scale, or when reviewers ask
 
 ### `regularized` for sparse data
 
+`regularized=True` blends the observed flow with a structureless prior, and
+`regularization_strength` scales the blend; higher values merge more modules. It
+is meant for large, sparse, or incompletely sampled networks, where small modules
+often reflect missing links rather than real structure. On a graph as small as
+the karate club the prior quickly overwhelms the data:
+
 ```{code-cell} python
 # On the small karate club the regularization prior competes with the data:
 # at half strength the three modules survive, and at the default strength
@@ -304,14 +309,12 @@ for label, kwargs in [
     print(f"{label}: modules={result.num_top_modules}, L={result.codelength:.4f}")
 ```
 
-Higher `regularization_strength` merges more modules. On a network this small
-the default strength already merges everything, which is why the option is
-meant for large, sparse, or incompletely sampled data rather than well-sampled
-toy graphs. For a gradual version of the same sweep, where a planted partition
-goes from 14 modules through 7 to 1 as the strength grows, see
-{doc}`/robustness/incomplete-data`. Use regularization when you have prior
-reason to believe that small modules in your result reflect sampling noise
-rather than real structure. The Bayesian derivation is in
+The default strength already merges everything on a network this small. For a
+gradual version of the same sweep, where a planted partition goes from 14 modules
+through 7 to 1 as the strength grows, see {doc}`/robustness/incomplete-data`. Use
+regularization when you have prior reason to believe that small modules in your
+result reflect sampling noise rather than real structure. The Bayesian derivation
+is in
 {cite:t}`smiljanic2020missing`.
 
 ### Why trials matter, visualised

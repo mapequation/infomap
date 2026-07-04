@@ -8,7 +8,7 @@ kernelspec:
   name: python3
 ---
 
-# Reading the Result
+# Reading the result
 
 {bdg-success-line}`How-to`
 

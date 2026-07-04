@@ -143,9 +143,9 @@ def find_communities(
     flow_attribute : str, optional
         If set, write each node's flow back to this node attribute on ``g``.
     meta_attribute : str, optional
-        Node attribute to read categorical meta data from, for use with the
+        Node attribute to read categorical metadata from, for use with the
         meta-data map equation. Values are encoded to integers in first-seen
-        order and set as Infomap meta data; nodes with missing values are
+        order and set as Infomap metadata; nodes with missing values are
         skipped. Raises :class:`ValueError` if the attribute is not set on
         any node.
     initial_partition : mapping, optional

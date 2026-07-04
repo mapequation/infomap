@@ -42,8 +42,7 @@ summarisation and retrieval steps run unchanged.
 
 ## What Infomap optimises here
 
-Infomap minimises the map equation over partitions of the entity graph (see
-{doc}`/concepts/the-map-equation`). Two things are specific to GraphRAG input.
+Two things about the objective are specific to GraphRAG input.
 Infomap uses the relationship weights directly as flow volumes, so a heavy
 co-occurrence link between two entities makes them harder to separate. And the
 typical GraphRAG graph is undirected and symmetric, so no directed-flow or
