@@ -34,9 +34,9 @@ Two strategies cover most HPC use cases:
 
 1. **Single-node parallelism.** Your scheduler gives you a node with many
    cores. Run all trials on that node with `parallel_trials=True`.
-   `num_threads` controls the thread budget and reads scheduler-set variables
-   (`SLURM_CPUS_PER_TASK`, `OMP_NUM_THREADS`, cpuset) automatically when set to
-   `"auto"`.
+   `num_threads` controls the thread budget; left unset (its default, the same
+   as `"auto"`) it reads scheduler-set variables (`SLURM_CPUS_PER_TASK`,
+   `OMP_NUM_THREADS`, cpuset) automatically.
 
 2. **Job-array sharding.** Your network is large, or you want more trials
    than one node can finish in time. Divide the total trial budget across
@@ -72,9 +72,9 @@ Infomap, and takes negligible time compared with the runs themselves.
 
 ## Threading and scheduler awareness
 
-The `num_threads` option accepts either a positive integer or the string
-`"auto"`. With `"auto"`, Infomap resolves the thread budget from the first
-source that provides a value in this priority order:
+The `num_threads` option accepts a positive integer or the string `"auto"`, and
+defaults to `"auto"` when left unset. In `"auto"` mode Infomap resolves the
+thread budget from the first source that provides a value in this priority order:
 
 1. `--num-threads` / `num_threads` explicit integer
 2. Environment variable `INFOMAP_NUM_THREADS`
@@ -84,10 +84,10 @@ source that provides a value in this priority order:
 5. The process cpuset (cgroup limit)
 6. Hardware thread count
 
-Using `num_threads="auto"` means your job script does not need to forward
-scheduler environment variables manually: if the scheduler sets
-`SLURM_CPUS_PER_TASK=8`, Infomap will use 8 threads. This prevents the
-common mistake of allocating 8 cores but Infomap running with 64 threads
+Because `"auto"` is the default, your job script does not need to set
+`num_threads` or forward scheduler environment variables manually: if the
+scheduler sets `SLURM_CPUS_PER_TASK=8`, Infomap will use 8 threads. This prevents
+the common mistake of allocating 8 cores but Infomap running with 64 threads
 and fighting every other job on the node.
 
 `parallel_trials=True` runs independent trials concurrently using OpenMP.
