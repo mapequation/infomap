@@ -102,7 +102,7 @@ metadata entropy matters relative to the topological terms.
 
 At $\eta = 0$ the metadata term vanishes and $L_0$ is the ordinary map equation.
 At $\eta = 1$ the encoding assigns equal cost to the topological and attribute
-channels, the original content map equation of {cite:t}`smith2016content`. For
+channels, the original *content map equation* of {cite:t}`smith2016content`. For
 $\eta > 1$ the attribute channel weighs more, pulling the partition toward
 attribute-homogeneous modules.
 

@@ -180,11 +180,9 @@ shards is the result you keep.
 
 ### What the merge step does at scale
 
-At cluster scale you do not hold all `Infomap` objects in memory: each
-job writes a shard result JSON and exits. The merge step reads those JSON
-files and copies the winning tree. The code cell above mimics the
-selection logic; the actual cluster workflow uses the CLI or the Python
-helper shown in the next section.
+The code cell above mimics the selection logic in memory. At cluster scale you do
+not hold all `Infomap` objects at once — each job writes its shard JSON and exits
+— so the real workflow uses the CLI or the Python helper shown next.
 
 ## Using `infomap.merge`
 

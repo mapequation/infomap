@@ -54,7 +54,7 @@ modularity null model does not.
 
 ## Modularity and the map equation
 
-Modularity for a partition $\mathsf{C}$ is
+The same contrast, now in formulas. Modularity for a partition $\mathsf{C}$ is
 
 $$
 Q = \frac{1}{2m} \sum_{i,j} \left[ A_{ij} - \frac{k_i k_j}{2m} \right]

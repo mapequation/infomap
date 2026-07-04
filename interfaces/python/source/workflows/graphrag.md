@@ -61,9 +61,9 @@ with specific column names:
 | `entities` | `id`, `title` | `id` must be unique; `title` used as endpoint key by default |
 | `relationships` | `source`, `target`, `weight` | `source`/`target` match entity `title` values; `id` column for relationship ids |
 
-Here you build a minimal example: two tight triangles (Alpha–Beta–Gamma and
+The minimal example below is two tight triangles (Alpha–Beta–Gamma and
 Delta–Epsilon–Zeta) linked by one weak bridge edge. The two communities are
-obvious by design, so you can verify the result at a glance.
+obvious by design, so the result is easy to verify at a glance.
 
 ```{code-cell} python
 import pandas as pd

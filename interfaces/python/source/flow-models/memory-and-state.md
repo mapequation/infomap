@@ -61,8 +61,8 @@ Infomap handles this with the **physical node / state node** distinction (see
 State nodes carry the dynamics: they have links and stationary visit rates.
 Physical nodes represent the real objects you care about: they aggregate all
 their state nodes. The map equation encodes flow at the state-node level but
-names physical nodes in its codebook, so it correctly records a physical node
-whose state nodes land in different modules as *overlapping* {cite:p}`edler2017higher`.
+names physical nodes in its codebook. A physical node whose state nodes land in
+different modules is therefore recorded as *overlapping* {cite:p}`edler2017higher`.
 
 ## Memory as a state-node network
 

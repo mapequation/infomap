@@ -33,7 +33,7 @@ partition of observations as output, so swapping in Infomap means calling a
 different function. The `infomap.tl.infomap()` function follows Scanpy `tl`
 conventions: it reads `adata.obsp["connectivities"]` by default, writes a
 pandas categorical column to `adata.obs`, and records run metadata in
-`adata.uns`. Scanpy itself is not imported by the Infomap package.
+`adata.uns`.
 
 Beyond the high-level helper, the sparse matrix underlying any `adata.obsp`
 slot is a standard SciPy CSR matrix; you can hand it directly to

@@ -1936,12 +1936,6 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         >>> result.codelength
         0.9183
 
-
-        Parameters
-        ----------
-        start_id : int
-            The node id where the second node type starts.
-
         Returns
         -------
         int
