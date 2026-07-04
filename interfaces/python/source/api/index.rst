@@ -30,7 +30,7 @@ incremental, repeated-run workflows.
        methods; new code usually wants :func:`run` instead.
    * - :doc:`iterators`
      - :class:`InfoNode` and the tree-walking iterators returned by
-       :meth:`Infomap.tree`, :meth:`Infomap.leaf_modules`, and friends.
+       :meth:`Result.tree`, :meth:`Result.leaf_modules`, and friends.
    * - :doc:`integrations`
      - Scanpy (:func:`infomap.tl.infomap`), GraphRAG, and the distributed-trial
        merge tool.

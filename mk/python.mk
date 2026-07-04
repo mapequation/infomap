@@ -53,6 +53,7 @@ PYTHON_BUILD_ENV = \
 	test-python-notebooks-full \
 	build-docs \
 	_build-docs-site \
+	check-docs-links \
 	clean-python \
 	format-python \
 	release-python-dist \
@@ -133,7 +134,7 @@ test-python-notebooks-full:
 define BUILD_DOCS_SITE
 set -e; \
 mkdir -p "$(1)"; \
-$(SPHINX_BUILD) -b html "$(SPHINX_SOURCE_DIR)" "$(1)"; \
+$(SPHINX_BUILD) $(SPHINXOPTS) -b html "$(SPHINX_SOURCE_DIR)" "$(1)"; \
 searchindex="$(1)/searchindex.js"; \
 if [ -f "$$searchindex" ] && [ -n "$$(tail -c 1 "$$searchindex" 2>/dev/null)" ]; then \
 	printf '\n' >> "$$searchindex"; \
@@ -149,6 +150,12 @@ build-docs: build-native dev-python-install
 	@$(call BUILD_DOCS_SITE,$(DOCS_BUILD_DIR))
 	mkdir -p docs; \
 	rsync $(DOCS_SYNC_ARGS) "$(DOCS_BUILD_DIR)/" docs/
+
+# Verify external links resolve. Hits the network, so run it on demand or on a
+# schedule rather than as a blocking per-PR gate; DOI hosts that 403 the bot are
+# skipped via linkcheck_ignore in conf.py.
+check-docs-links: build-native dev-python-install
+	@$(SPHINX_BUILD) -b linkcheck "$(SPHINX_SOURCE_DIR)" "$(DOCS_BUILD_DIR)/_linkcheck"
 
 clean-python:
 	$(RM) -r dist/python *.egg-info interfaces/python/src/infomap/_infomap*.so interfaces/python/src/infomap/*.pyd
