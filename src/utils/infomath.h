@@ -35,7 +35,8 @@
 #define INFOMAP_AVX2_LOG 1
 #endif
 
-namespace infomap::infomath {
+namespace infomap {
+namespace infomath {
 
   using std::log2;
 
@@ -214,6 +215,7 @@ namespace infomap::infomath {
     return tsallisEntropyUniform(k, q) * baseCorrection + offsetCorrection;
   }
 
-} // namespace infomap::infomath
+} // namespace infomath
+} // namespace infomap
 
 #endif // INFOMATH_H_

@@ -76,11 +76,11 @@ public:
   // Getters
   // ===================================================
 
-  [[nodiscard]] double getIndexCodelength() const { return indexCodelength; }
+  double getIndexCodelength() const { return indexCodelength; }
 
-  [[nodiscard]] double getModuleCodelength() const { return moduleCodelength; }
+  double getModuleCodelength() const { return moduleCodelength; }
 
-  [[nodiscard]] double getCodelength() const { return codelength; }
+  double getCodelength() const { return codelength; }
 
   // ===================================================
   // IO

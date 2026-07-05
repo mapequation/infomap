@@ -19,6 +19,24 @@
 
 namespace infomap {
 
+const std::string ArgType::integer = "integer";
+const std::string ArgType::number = "number";
+const std::string ArgType::string = "string";
+const std::string ArgType::path = "path";
+const std::string ArgType::probability = "probability";
+const std::string ArgType::option = "option";
+const std::string ArgType::list = "list";
+
+const std::unordered_map<std::string, char> ArgType::toShort = {
+  { "integer", 'n' },
+  { "number", 'f' },
+  { "string", 's' },
+  { "path", 'p' },
+  { "probability", 'P' },
+  { "option", 'o' },
+  { "list", 'l' },
+};
+
 namespace {
 
   using ShortOptionMap = std::map<char, Option*>;

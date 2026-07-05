@@ -33,6 +33,11 @@ std::ostream& Log::defaultStream()
 }
 #endif
 
+std::ostream* Log::s_ostream = nullptr;
+unsigned int Log::s_verboseLevel = 0;
+bool Log::s_silent = false;
+thread_local unsigned int Log::s_threadMuteDepth = 0;
+
 void Log::setNoOutput()
 {
   static NullStreambuf nullBuf;

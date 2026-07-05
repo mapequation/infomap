@@ -109,11 +109,11 @@ public:
 
   [[nodiscard]] unsigned int numLeafNodes() const { return m_leafNodes.size(); }
 
-  [[nodiscard]] const std::vector<InfoNode*>& leafNodes() const { return m_leafNodes; }
+  const std::vector<InfoNode*>& leafNodes() const { return m_leafNodes; }
 
   [[nodiscard]] unsigned int numTopModules() const { return m_root.childDegree(); }
 
-  [[nodiscard]] unsigned int numActiveModules() const { return m_optimizer->numActiveModules(); }
+  unsigned int numActiveModules() const { return m_optimizer->numActiveModules(); }
 
   [[nodiscard]] unsigned int numNonTrivialTopModules() const { return m_numNonTrivialTopModules; }
 
@@ -182,10 +182,10 @@ public:
   [[nodiscard]] double getLossyDistortion() const { return m_optimizer->getLossyDistortion(); }
   [[nodiscard]] double getLossyOneLevelLossless() const { return m_optimizer->getLossyOneLevelLossless(); }
   // 1-based indices of the top modules that are noise modules (l_i > lambda * H_i).
-  [[nodiscard]] std::vector<unsigned int> noiseTopModules() const;
+  std::vector<unsigned int> noiseTopModules() const;
 #endif
-  [[nodiscard]] double getMaxEntropy() const { return m_maxEntropy; }
-  [[nodiscard]] double getMaxFlow() const { return m_maxFlow; }
+  double getMaxEntropy() { return m_maxEntropy; }
+  double getMaxFlow() { return m_maxFlow; }
 
   const Date& getStartDate() const { return m_startDate; }
   const Stopwatch& getElapsedTime() const { return m_elapsedTime; }
@@ -654,7 +654,7 @@ protected:
   // resolved to state ids in initTrialPartition once the network is built.
   std::vector<std::array<unsigned int, 3>> m_multilayerInitialPartition;
 
-  static constexpr unsigned int SUPER_LEVEL_ADDITION = 1 << 20;
+  const unsigned int SUPER_LEVEL_ADDITION = 1 << 20;
   bool m_isMain = true;
   unsigned int m_subLevel = 0;
 
