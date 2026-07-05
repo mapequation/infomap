@@ -27,6 +27,13 @@
 
 namespace infomap {
 
+constexpr int FlowModel::undirected;
+constexpr int FlowModel::directed;
+constexpr int FlowModel::undirdir;
+constexpr int FlowModel::outdirdir;
+constexpr int FlowModel::rawdir;
+constexpr int FlowModel::precomputed;
+
 namespace {
 
   const std::vector<std::pair<std::string, FlowModel>>& flowModelMappings()
