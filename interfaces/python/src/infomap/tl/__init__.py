@@ -131,6 +131,51 @@ def infomap(
     ``adata.obsp["connectivities"]``, writes categorical module labels to
     ``adata.obs[key_added]``, and stores run metadata in ``adata.uns[key_added]``.
     Scanpy itself is not imported.
+
+    Parameters
+    ----------
+    adata : AnnData
+        An AnnData-like object with ``.obs``, ``.obsp``, ``.uns``, and
+        ``.obs_names``.
+    adjacency : sparse matrix, optional
+        Square observation-by-observation adjacency matrix to use instead of
+        reading one from ``adata.obsp``. Mutually exclusive with
+        ``neighbors_key`` and ``obsp``.
+    directed : bool, optional
+        Treat the adjacency as directed. Default ``False``.
+    use_weights : bool, optional
+        Use the adjacency values as link weights. If ``False``, every nonzero
+        entry is treated as weight 1. Default ``True``.
+    key_added : str, optional
+        Key under which module labels are written to ``adata.obs`` and run
+        metadata to ``adata.uns``. Default ``"infomap"``.
+    neighbors_key : str, optional
+        Read the adjacency from the ``obsp`` key named by
+        ``adata.uns[neighbors_key]["connectivities_key"]``. Mutually
+        exclusive with ``adjacency`` and ``obsp``.
+    obsp : str, optional
+        Read the adjacency from ``adata.obsp[obsp]``. Default
+        ``"connectivities"``. Mutually exclusive with ``adjacency`` and
+        ``neighbors_key``.
+    copy : bool, optional
+        Operate on (and return) a copy of ``adata`` instead of modifying it
+        in place. Default ``False``.
+    args : str, optional
+        Raw Infomap CLI arguments passed to :class:`~infomap.Infomap`.
+    **infomap_options
+        Keyword arguments passed to :class:`~infomap.Infomap`. By default,
+        ``silent=True`` and ``no_file_output=True`` are used unless
+        explicitly overridden.
+
+    Returns
+    -------
+    AnnData or None
+        The annotated copy when ``copy=True``, otherwise ``None`` and
+        ``adata`` is modified in place. In both cases,
+        ``adata.obs[key_added]`` holds the module labels as a categorical
+        (string categories sorted by integer value) and
+        ``adata.uns[key_added]`` holds a dict with the run ``params``, the
+        number of top modules ``n_modules``, and the ``codelength``.
     """
     from .._facade import Infomap
 

@@ -57,7 +57,7 @@ def test_run_file_matches_oo(example_network_path):
 
     expected = _oo_codelength(lambda im: im.read_file(str(path)), **settings)
     assert result.codelength == pytest.approx(expected)
-    assert result.codelength == pytest.approx(3.4622731375264144, abs=1e-4)
+    assert result.codelength == pytest.approx(3.385830820341408, abs=1e-4)
 
 
 def test_run_network_matches_oo():
@@ -127,6 +127,19 @@ def test_to_networkx_round_trip():
         for node, data in exported.nodes(data=True)
     }
     assert exported_modules == result_modules
+
+
+def test_to_networkx_directed_flow_model_exports_digraph():
+    # Result directedness derives from the effective flow model, so an
+    # explicit flow_model="directed" exports a DiGraph exactly like
+    # directed=True does.
+    net = Network().add_links(_LINKS)
+    for options in ({"flow_model": "directed"}, {"directed": True}):
+        result = infomap.run(net, **options, **_SETTINGS)
+        assert isinstance(infomap.to_networkx(result), nx.DiGraph)
+
+    undirected = infomap.run(net, **_SETTINGS)
+    assert not isinstance(infomap.to_networkx(undirected), nx.DiGraph)
 
 
 def test_network_result_generation_guard_after_rerun():

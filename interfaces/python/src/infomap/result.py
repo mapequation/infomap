@@ -32,8 +32,9 @@ from ._results import _to_dataframe_sort_columns, perplexity
 if TYPE_CHECKING:
     from ._facade import Infomap
 
-
-pandas = get_pandas()
+# build_result is internal plumbing shared by Infomap.run and Network.run;
+# only the result types are public API.
+__all__ = ["Result", "TreeNode"]
 
 _DEFAULT_TO_DATAFRAME_COLUMNS = ("node_id", "module_id", "flow", "path", "name")
 _DATAFRAME_COLUMN_ALIASES = {"community": "module_id"}
@@ -73,10 +74,39 @@ def build_result(engine: Any) -> "Result":
 
 
 class TreeNode:
-    """A lightweight, immutable view over a single leaf row of a ``Result``.
+    """A lightweight, immutable view over a single leaf node of a ``Result``.
 
-    This is *our* type, not a SWIG object: attribute access reads from the
-    snapshot arrays the ``Result`` already materialized.
+    Yielded by :meth:`Result.nodes`. A plain Python object: attribute access
+    reads from the snapshot data the ``Result`` already materialized, without
+    touching the underlying C++ engine, so it stays valid after a re-run.
+
+    Attributes
+    ----------
+    node_id : int
+        The physical node id.
+    state_id : int
+        The state node id. Equals ``node_id`` for first-order networks.
+    module_id : int
+        The module id at the depth level the nodes were requested for.
+    flow : float
+        The node flow (the fraction of flow the node receives).
+    depth : int
+        The depth of the node in the tree (number of levels below the root;
+        equals ``len(path)``).
+    layer_id : int
+        The layer id for multilayer networks, otherwise ``0``.
+    child_index : int
+        The zero-based index of the node among its parent module's children.
+    modular_centrality : float
+        A flow-based centrality score of the node within its parent module.
+    path : tuple of int
+        The tree path from the root as a tuple of one-based child indices
+        (the colon-separated path in tree output files).
+    name : str or int
+        The physical node name, or ``node_id`` if the node is unnamed.
+    state_name : str or int
+        The state-node name for higher-order networks, falling back to
+        ``name`` when no state name is set.
     """
 
     __slots__ = (
@@ -260,8 +290,11 @@ class Result:
         object.__setattr__(self, "_state_names", dict(core.getStateNames()))
         object.__setattr__(self, "_have_memory", core.haveMemory())
         # Captured eagerly so a Result is a stable artifact: exporters read the
-        # directedness off the snapshot, not the live engine.
-        object.__setattr__(self, "_directed", bool(core.directed))
+        # directedness off the snapshot, not the live engine. Derived from the
+        # effective flow model, not the --directed CLI bool, so
+        # ``flow_model="directed"`` (and the datasets loaders that bake it)
+        # export directed graphs just like ``directed=True`` does.
+        object.__setattr__(self, "_directed", not core.isUndirectedFlow())
         # Eager scalar metrics (O(1), no tree traversal).
         object.__setattr__(self, "_codelength", core.codelength())
         object.__setattr__(self, "_num_top_modules", core.numTopModules())
@@ -452,12 +485,12 @@ class Result:
 
     @property
     def meta_codelength(self) -> float:
-        """The meta codelength (meta entropy times meta data rate)."""
+        """The meta codelength (meta entropy times metadata rate)."""
         return self._meta_codelength
 
     @property
     def meta_entropy(self) -> float:
-        """The meta entropy (unweighted by the meta data rate)."""
+        """The meta entropy (unweighted by the metadata rate)."""
         return self._meta_entropy
 
     @property
@@ -554,8 +587,8 @@ class Result:
             )
 
     def tree(self, depth: int = 1, *, states: bool = False):
-        """A view of the hierarchical tree, iterating over the modules as well
-        as the leaf nodes, depth first from the root.
+        """Iterate the hierarchical tree, modules and leaf nodes alike, depth
+        first from the root.
 
         Equivalent to the legacy ``Infomap.get_tree(depth, states)``. For a
         higher-order (multilayer/memory) network the physical tree is used
@@ -593,7 +626,7 @@ class Result:
         return self._engine._core.getMultilevelModules(states)
 
     def leaf_modules(self):
-        """A view of the leaf modules (bottom modules containing leaf nodes),
+        """Iterate the leaf modules (bottom modules containing leaf nodes),
         depth first from the root.
 
         Equivalent to the legacy ``Infomap.leaf_modules`` iterator.
@@ -609,7 +642,7 @@ class Result:
         return self._guard_iteration(self._engine._core.iterLeafModules())
 
     def links(self, data: str = "weight"):
-        """A view of the partitioned links and their weights or flow.
+        """Iterate the partitioned links with their weight or flow.
 
         Equivalent to the legacy ``Infomap.get_links(data)``. The sources and
         targets are state ids for a state or multilayer network.
@@ -639,7 +672,7 @@ class Result:
         return self._guard_iteration(_link_items())
 
     def effective_num_modules(self, depth: int = 1) -> float:
-        """The flow-weighted effective number of modules at ``depth``.
+        """Return the flow-weighted effective number of modules at ``depth``.
 
         Measured as the perplexity of the module flow distribution. Equivalent
         to the legacy ``Infomap.get_effective_num_modules(depth)``.
@@ -662,7 +695,7 @@ class Result:
         sort: bool | str | Sequence[str] = False,
         depth_level: int | None = None,
     ) -> Any:
-        """A pandas DataFrame of the leaf nodes.
+        """Return a pandas DataFrame of the leaf nodes.
 
         Byte-identical to the legacy ``Infomap.to_dataframe``. Default columns
         ``("node_id", "module_id", "flow", "path", "name")``; ``"community"``
@@ -672,6 +705,7 @@ class Result:
         higher-order network (falling back to the physical name, then
         ``node_id``); see :attr:`state_names`.
         """
+        pandas = get_pandas()
         if pandas is None:
             raise ImportError(
                 "Cannot import package `pandas`. Install it with "

@@ -152,7 +152,43 @@ def read_graphrag(
     relationship_id_col="id",
     endpoint_col="title",
 ) -> GraphRAGGraph:
-    """Read GraphRAG-style entity and relationship Parquet tables."""
+    """Read GraphRAG-style entity and relationship Parquet tables.
+
+    Assigns a 1-based Infomap node id to every entity (and to any relationship
+    endpoint that does not appear in the entity table) and converts the
+    relationships to source/target/weight arrays ready for
+    :meth:`infomap.Infomap.add_links`.
+
+    Parameters
+    ----------
+    entities : str, pathlib.Path, or pandas.DataFrame
+        Entity table, or a path to a Parquet file containing it.
+    relationships : str, pathlib.Path, or pandas.DataFrame
+        Relationship table, or a path to a Parquet file containing it.
+    entity_id_col : str, optional
+        Entity table column with unique entity ids. Default ``"id"``.
+    entity_title_col : str, optional
+        Entity table column with entity titles. Default ``"title"``.
+    source_col : str, optional
+        Relationship table column with source endpoints. Default ``"source"``.
+    target_col : str, optional
+        Relationship table column with target endpoints. Default ``"target"``.
+    weight_col : str or None, optional
+        Relationship table column with link weights, or ``None`` for
+        unweighted links. Default ``"weight"``.
+    relationship_id_col : str or None, optional
+        Relationship table column with relationship ids. If missing or
+        ``None``, positional indices are used. Default ``"id"``.
+    endpoint_col : str, optional
+        Which entity column the relationship endpoints reference: ``"title"``
+        (default, requires unique titles) or ``"id"``.
+
+    Returns
+    -------
+    GraphRAGGraph
+        The tables together with the link arrays and the mappings between
+        Infomap node ids and entity ids/titles.
+    """
     pd = _import_parquet_stack()
     entities_table = _read_table(entities)
     relationships_table = _read_table(relationships)
@@ -554,7 +590,30 @@ def _build_tables(im, graph: GraphRAGGraph):
 
 
 def write_graphrag_communities(im, *, graph: GraphRAGGraph, output):
-    """Write experimental GraphRAG-compatible community tables."""
+    """Write GraphRAG-compatible community tables from a finished run.
+
+    Parameters
+    ----------
+    im : Infomap
+        An :class:`~infomap.Infomap` instance that has been run on the links
+        of ``graph``.
+    graph : GraphRAGGraph
+        The graph returned by :func:`read_graphrag` for the same network.
+    output : str or pathlib.Path
+        Output directory, or a ``.parquet`` path for the communities table
+        (its parent directory is then used for the nodes table). Writes
+        ``infomap_nodes.parquet`` and ``communities.parquet``.
+
+    Returns
+    -------
+    tuple of (pandas.DataFrame, pandas.DataFrame)
+        The ``(nodes, communities)`` tables that were written.
+
+    Raises
+    ------
+    ValueError
+        If ``output`` is ``None``.
+    """
     _import_parquet_stack()
     paths = _output_paths(output)
     if paths["dir"] is None:
@@ -587,7 +646,53 @@ def run_graphrag_communities(
     num_trials=5,
     **infomap_options,
 ) -> GraphRAGRunResult:
-    """Read GraphRAG tables, run Infomap, and write MVP community outputs."""
+    """Read GraphRAG tables, run Infomap, and write community outputs.
+
+    End-to-end convenience wrapper around :func:`read_graphrag`, an Infomap
+    run, and :func:`write_graphrag_communities`.
+
+    Parameters
+    ----------
+    input_dir : str or pathlib.Path
+        Directory containing the entity and relationship Parquet files.
+    output_dir : str or pathlib.Path, optional
+        Where to write ``infomap_nodes.parquet``, ``communities.parquet``,
+        and the run summary ``infomap_run.json``. If ``None``, nothing is
+        written and only the in-memory result is returned.
+    args : str, optional
+        Raw Infomap CLI arguments passed to :class:`~infomap.Infomap`.
+    entities_name : str, optional
+        Entity file name inside ``input_dir``. Default ``"entities.parquet"``.
+    relationships_name : str, optional
+        Relationship file name inside ``input_dir``. Default
+        ``"relationships.parquet"``.
+    entity_id_col, entity_title_col, source_col, target_col : str, optional
+        Column names passed to :func:`read_graphrag`.
+    weight_col, relationship_id_col, endpoint_col : str, optional
+        Column names passed to :func:`read_graphrag`; see there for details.
+    silent : bool, optional
+        Suppress Infomap console output. Default ``True``.
+    seed : int, optional
+        Random number generator seed. Default ``123``.
+    num_trials : int, optional
+        Number of independent trials; the best solution is kept. Default
+        ``5``.
+    **infomap_options
+        Additional keyword arguments passed to :class:`~infomap.Infomap`.
+
+    Returns
+    -------
+    GraphRAGRunResult
+        The Infomap instance, the parsed graph, the output directory, and
+        the nodes/communities tables.
+
+    Raises
+    ------
+    TypeError
+        If ``options=`` is passed; use ``args=`` for raw CLI arguments.
+    ValueError
+        If ``summary_json`` is passed; it is managed through ``output_dir``.
+    """
     from infomap import Infomap
 
     if "options" in infomap_options:

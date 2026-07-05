@@ -181,7 +181,48 @@ def annotate_networkx_graph(
     copy: bool = True,
     strict: bool = True,
 ) -> Any:
-    """Return a NetworkX graph annotated with Infomap result attributes."""
+    """Return a NetworkX graph annotated with Infomap result attributes.
+
+    Writes each node's module assignment (and optionally its tree path,
+    per-level module ids, and flow) as string-valued node attributes, suitable
+    for GraphML/GEXF export.
+
+    Parameters
+    ----------
+    graph : networkx.Graph
+        The graph to annotate.
+    im : Infomap
+        An :class:`~infomap.Infomap` instance that has been run (note: the
+        stateful instance, not a :class:`~infomap.Result`). Raises if
+        :meth:`~infomap.Infomap.run` has not been called.
+    node_mapping : mapping, optional
+        Mapping from internal Infomap (state) ids to graph node labels, as
+        returned by the ``add_*_graph`` adapters. If omitted, graph nodes are
+        assumed to be the internal ids.
+    module_attribute : str or None, optional
+        Node attribute for the top-level module id. Default
+        ``"infomap_module"``. Use ``None`` to omit.
+    path_attribute : str or None, optional
+        Node attribute for the colon-joined tree path. Default
+        ``"infomap_path"``. Use ``None`` to omit.
+    include_hierarchy : bool, optional
+        Also write per-level ``infomap_level_{n}`` attributes (and the path
+        attribute). Default ``True``.
+    flow_attribute : str or None, optional
+        Node attribute for the node flow. Default ``None`` (omitted).
+    copy : bool, optional
+        Annotate a copy of ``graph`` instead of modifying it in place.
+        Default ``True``.
+    strict : bool, optional
+        Raise :class:`ValueError` when the graph nodes and the Infomap
+        assignments do not match exactly. If ``False``, only the matching
+        nodes are annotated and a warning is emitted. Default ``True``.
+
+    Returns
+    -------
+    networkx.Graph
+        The annotated graph (a copy when ``copy=True``, otherwise ``graph``).
+    """
     return _annotate_networkx_graph(
         graph,
         im,
@@ -256,7 +297,45 @@ def annotate_igraph_graph(
     copy: bool = True,
     strict: bool = True,
 ) -> Any:
-    """Return a python-igraph graph annotated with Infomap result attributes."""
+    """Return a python-igraph graph annotated with Infomap result attributes.
+
+    Writes each vertex's module assignment (and optionally its tree path,
+    per-level module ids, and flow) as string-valued vertex attributes,
+    suitable for GraphML export. Vertices are matched to Infomap state ids by
+    igraph vertex index, as assigned by :meth:`infomap.Infomap.add_igraph_graph`.
+
+    Parameters
+    ----------
+    graph : igraph.Graph
+        The graph to annotate.
+    im : Infomap
+        An :class:`~infomap.Infomap` instance that has been run (note: the
+        stateful instance, not a :class:`~infomap.Result`). Raises if
+        :meth:`~infomap.Infomap.run` has not been called.
+    module_attribute : str or None, optional
+        Vertex attribute for the top-level module id. Default
+        ``"infomap_module"``. Use ``None`` to omit.
+    path_attribute : str or None, optional
+        Vertex attribute for the colon-joined tree path. Default
+        ``"infomap_path"``. Use ``None`` to omit.
+    include_hierarchy : bool, optional
+        Also write per-level ``infomap_level_{n}`` attributes (and the path
+        attribute). Default ``True``.
+    flow_attribute : str or None, optional
+        Vertex attribute for the node flow. Default ``None`` (omitted).
+    copy : bool, optional
+        Annotate a copy of ``graph`` instead of modifying it in place.
+        Default ``True``.
+    strict : bool, optional
+        Raise :class:`ValueError` when the graph vertices and the Infomap
+        assignments do not match exactly. If ``False``, only the matching
+        vertices are annotated and a warning is emitted. Default ``True``.
+
+    Returns
+    -------
+    igraph.Graph
+        The annotated graph (a copy when ``copy=True``, otherwise ``graph``).
+    """
     return _annotate_igraph_graph(
         graph,
         im,
@@ -291,11 +370,11 @@ def to_networkx(
     include_hierarchy: bool = True,
     flow_attribute: str | None = "flow",
 ) -> Any:
-    """Build a NetworkX graph from a :class:`~infomap.result.Result`.
+    """Build a NetworkX graph from a :class:`~infomap.Result`.
 
     Nodes are the result's (state) nodes, keyed by ``state_id``, carrying the
     Infomap node ``name`` plus the module/path/flow attributes (the same
-    attribute scheme as :func:`annotate_networkx_graph`). Edges come from the
+    attribute scheme as :func:`~infomap.io.export.annotate_networkx_graph`). Edges come from the
     partitioned network.
 
     Parameters
@@ -354,11 +433,11 @@ def to_igraph(
     include_hierarchy: bool = True,
     flow_attribute: str | None = "flow",
 ) -> Any:
-    """Build a python-igraph graph from a :class:`~infomap.result.Result`.
+    """Build a python-igraph graph from a :class:`~infomap.Result`.
 
     Vertices are the result's (state) nodes in ``state_id`` order, carrying the
     Infomap node ``name`` plus the module/path/flow attributes (the same
-    attribute scheme as :func:`annotate_igraph_graph`). Edges come from the
+    attribute scheme as :func:`~infomap.io.export.annotate_igraph_graph`). Edges come from the
     partitioned network.
 
     Parameters
@@ -416,7 +495,31 @@ def to_igraph(
 
 
 def write_graphml(graph: Any, im: Any, path: str | Path, **options: Any) -> None:
-    """Write a GraphML file with Infomap result attributes on nodes."""
+    """Write a GraphML file with Infomap result attributes on nodes.
+
+    Annotates ``graph`` (without modifying it) and writes it as GraphML.
+    Accepts both NetworkX and python-igraph graphs; the graph type selects
+    the annotate helper and writer.
+
+    Parameters
+    ----------
+    graph : networkx.Graph or igraph.Graph
+        The graph to annotate and write.
+    im : Infomap
+        An :class:`~infomap.Infomap` instance that has been run (note: the
+        stateful instance, not a :class:`~infomap.Result`).
+    path : str or pathlib.Path
+        Output file path.
+    **options
+        Passed through to :func:`annotate_networkx_graph` or
+        :func:`annotate_igraph_graph` (e.g. ``module_attribute``,
+        ``flow_attribute``, ``strict``). The special key ``writer_options``
+        (a dict) is instead passed to the underlying GraphML writer.
+
+    Returns
+    -------
+    None
+    """
     if _is_igraph_graph(graph):
         writer_options = {}
         writer_options.update(options.pop("writer_options", {}))
@@ -442,7 +545,36 @@ def write_graphml(graph: Any, im: Any, path: str | Path, **options: Any) -> None
 
 
 def write_gexf(graph: Any, im: Any, path: str | Path, **options: Any) -> None:
-    """Write a GEXF file with Infomap result attributes on NetworkX nodes."""
+    """Write a GEXF file with Infomap result attributes on NetworkX nodes.
+
+    Annotates ``graph`` (without modifying it) and writes it as GEXF via
+    NetworkX.
+
+    Parameters
+    ----------
+    graph : networkx.Graph
+        The graph to annotate and write.
+    im : Infomap
+        An :class:`~infomap.Infomap` instance that has been run (note: the
+        stateful instance, not a :class:`~infomap.Result`).
+    path : str or pathlib.Path
+        Output file path.
+    **options
+        Passed through to :func:`annotate_networkx_graph` (e.g.
+        ``module_attribute``, ``flow_attribute``, ``strict``). The special
+        key ``writer_options`` (a dict) is instead passed to
+        ``networkx.write_gexf``.
+
+    Returns
+    -------
+    None
+
+    Raises
+    ------
+    NotImplementedError
+        If ``graph`` is a python-igraph graph: python-igraph has no native
+        GEXF writer. Use :func:`write_graphml` or pass a NetworkX graph.
+    """
     if _is_igraph_graph(graph):
         raise NotImplementedError(
             "GEXF export for igraph graphs is not supported because "

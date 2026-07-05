@@ -14,6 +14,16 @@ namespace std {
     %template(vector_uint) std::vector<unsigned int>;
 }
 
+#ifdef SWIGPYTHON
+%feature("docstring") infomap::InfoNode
+"A node in the hierarchical partition tree.
+
+The underlying node type of the tree-walking iterators on :class:`Infomap`
+(:meth:`Infomap.tree`, :meth:`Infomap.nodes`, and friends); the iterators
+proxy its attributes and expose it directly via their ``current()`` method.
+Exposes the node's ids, flow, and position in the tree as properties.";
+#endif
+
 /* Parse the header file to generate wrappers */
 %include "src/core/InfoNode.h"
 

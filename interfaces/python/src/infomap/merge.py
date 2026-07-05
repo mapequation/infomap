@@ -18,7 +18,7 @@ Example (after a SLURM job array wrote ``results_0.json`` … ``results_3.json``
 
 or programmatically::
 
-    from infomap import merge_trial_results
+    from infomap.merge import merge_trial_results
     summary = merge_trial_results(["results_*.json"], out_name="final")
 """
 
@@ -40,12 +40,20 @@ SUPPORTED_FORMATS = ("tree", "clu")
 class MergeSummary(TypedDict):
     """Summary returned by :func:`merge_trial_results`."""
 
+    #: Global index of the winning trial (lowest codelength, ties broken by
+    #: lowest index).
     trial: int
+    #: Codelength of the winning trial.
     codelength: float
+    #: Resolved path to the winning trial's ``.tree`` file.
     winner_tree: str
+    #: Number of shard result files merged.
     num_shards: int
+    #: Number of distinct global trial indices covered by the shards.
     num_trials: int
+    #: Global trial indices missing from ``[0, max_index]``, if any.
     missing: List[int]
+    #: Paths of the output files written.
     outputs: List[str]
 
 # Top-level keys every shard results file must contain.
@@ -202,19 +210,20 @@ def merge_trial_results(
 
     Parameters
     ----------
-    patterns:
+    patterns : sequence of str
         Shard result file paths or glob patterns (each may be comma-separated).
-    out_name:
+    out_name : str
         Output basename; ``<out_name>.tree`` / ``<out_name>.clu`` are written.
-    formats:
+    formats : sequence of str, optional
         Which output formats to write. Only ``tree`` and ``clu`` are supported
         (the merge has no network, so link-bearing formats cannot be produced).
-    require_complete:
+    require_complete : bool, optional
         If True, raise when any global trial index in ``[0, max]`` is missing.
+        Default ``False``.
 
     Returns
     -------
-    dict
+    MergeSummary
         Summary with the winning ``trial`` index, ``codelength``, the resolved
         winner tree path, the number of shards/trials, any ``missing`` indices,
         and the list of ``outputs`` written.

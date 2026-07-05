@@ -5,6 +5,10 @@ from typing import Any
 
 from ._arrays import apply_node_meta_data, community_node_data
 
+# run_networkx and add_networkx_graph are internal plumbing shared with the
+# facade and the docs notebooks; only find_communities is public API.
+__all__ = ["find_communities"]
+
 
 def _label_to_internal_id(labels):
     if not labels:
@@ -138,6 +142,12 @@ def find_communities(
         ``g``.
     flow_attribute : str, optional
         If set, write each node's flow back to this node attribute on ``g``.
+    meta_attribute : str, optional
+        Node attribute to read categorical metadata from, for use with the
+        meta-data map equation. Values are encoded to integers in first-seen
+        order and set as Infomap metadata; nodes with missing values are
+        skipped. Raises :class:`ValueError` if the attribute is not set on
+        any node.
     initial_partition : mapping, optional
         Initial module assignment passed to :meth:`infomap.Infomap.run`.
         Keys may use the original NetworkX node labels.

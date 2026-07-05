@@ -1,0 +1,122 @@
+# Pre-commit hooks for Infomap.
+#
+# These mirror -- and slightly exceed -- the lint gates already enforced in CI,
+# so contributors get the feedback locally before pushing instead of on a red
+# CI run.
+#
+#   Install once:   make hooks           (or: pre-commit install)
+#   Run manually:   pre-commit run --all-files
+#
+# Generated and vendored artifacts are never touched by any hook: the SWIG and R
+# outputs are freshness-checked in CI and must stay byte-for-byte reproducible,
+# vendored third-party code is upstream's to format, and LICENSE text must remain
+# verbatim.
+exclude: |
+  (?x)(
+      ^vendor/
+    | /vendor/
+    | ^node_modules/
+    | ^build/
+    | ^dist/
+    | ^interfaces/python/generated/
+    | ^interfaces/R/generated/
+    | ^interfaces/python/src/infomap/_swig\.py$
+    | ^interfaces/python/src/infomap/datasets/data/
+    | ^examples/networks/
+    | ^LICENSE_GPLv3\.txt$
+  )
+
+ci:
+  autoupdate_schedule: monthly
+  autoupdate_commit_msg: "build(deps): pre-commit autoupdate"
+
+repos:
+  # Python lint. CI already runs `ruff check` on the package + examples/python
+  # (via `make test-python-doctest`); this runs it repo-wide with autofix.
+  # Pinned to the ruff version in the project venv so local and hook agree.
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.8
+    hooks:
+      - id: ruff
+        name: ruff (lint)
+        args: [--fix]
+        # Notebooks are published-article companions with a couple of known
+        # findings; they are linted deliberately, not as a drive-by here.
+        exclude: ^examples/notebooks/
+    # ruff-format is intentionally NOT enabled: the committed tree predates the
+    # current ruff formatter, so turning it on would reformat ~31 files. Adopt it
+    # as its own deliberate reformat commit if/when desired.
+
+  # C++ formatting for the core sources. The equivalent CI job is currently
+  # disabled (see #479), but `src/` is already clean under this clang-format
+  # version, so the hook keeps it that way locally. Scope matches the Makefile's
+  # HEADERS/SOURCES (find src -name '*.h'/'*.cpp').
+  - repo: https://github.com/pre-commit/mirrors-clang-format
+    rev: v20.1.7
+    hooks:
+      - id: clang-format
+        name: clang-format (C++ src)
+        files: ^src/.*\.(cpp|h)$
+
+  # Generic safety nets. These only *check*, they never rewrite files.
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-yaml
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: check-case-conflict
+      - id: check-added-large-files
+        args: [--maxkb=1024]
+    # end-of-file-fixer / trailing-whitespace are intentionally omitted: on the
+    # current tree they would rewrite ~15 files across notebooks, hand-written
+    # SWIG .i sources (which feed the freshness-checked generators), and data
+    # fixtures. Add them behind a dedicated cleanup commit if that churn is
+    # acceptable, ideally scoped to src/ and the Python package.
+
+  # Repo-native gates, run through the same tools CI uses so local and CI agree.
+  # Each is scoped by file type via `files:`, so a contributor only needs a given
+  # toolchain (node, air) when they actually touch that language's files. These
+  # are fast and static -- none of them build or regenerate anything. Heavier
+  # gates (clang-tidy, pyright, SWIG/binding freshness) stay CI-only.
+  - repo: local
+    hooks:
+      - id: cpp-stream-policy
+        name: C++ stream policy
+        language: system
+        entry: python3 scripts/check_cpp_stream_policy.py
+        pass_filenames: false
+        files: ^src/.*\.(cpp|h)$
+      - id: biome-lint
+        name: biome (JS lint)
+        language: system
+        entry: npm run --silent lint
+        pass_filenames: false
+        files: ^(interfaces/js/|package\.json$)
+      - id: biome-format
+        name: biome (JS format)
+        language: system
+        entry: npm run --silent format:check
+        pass_filenames: false
+        files: ^(interfaces/js/|package\.json$)
+      - id: air-format
+        name: air (R format)
+        language: system
+        # Run the curated Make target rather than a bare `\.R$` glob: the target's
+        # R_FORMAT_TARGETS deliberately excludes generated (options.R) and helper
+        # (bootstrap.R, scripts/r_check.R) files that must not be reformatted.
+        entry: make format-r-check
+        pass_filenames: false
+        files: \.R$
+      # pyright runs at PUSH time, not on every commit: it is slower and its
+      # results depend on installed deps. Scoped to the core surface (io/, tl/
+      # excluded) so it stays deterministic across dev machines -- see the
+      # test-python-typecheck-core target. Full-scope pyright stays a manual /
+      # future-CI check.
+      - id: pyright-core
+        name: pyright (core, pre-push)
+        language: system
+        entry: make test-python-typecheck-core
+        pass_filenames: false
+        files: \.py$
+        stages: [pre-push]

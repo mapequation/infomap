@@ -850,8 +850,8 @@ TEST_CASE("Hierarchical partition is invariant to the OpenMP thread count [fast]
   // statistics are aggregated in a fixed order. Lock that guarantee in by
   // comparing a multi-level run at 1 thread against one at several threads.
   auto runHierarchical = [&]() {
-    // Seed 1 yields a three-level solution on ninetriangles (the default
-    // test seed 123 happens to stop at two levels, leaving nothing to check).
+    // ninetriangles yields a three-level solution, giving the recursive
+    // phase real hierarchy to check.
     InfomapWrapper im("--seed 1 --num-trials 1 --silent");
     im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
     im.run();

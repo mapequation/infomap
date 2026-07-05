@@ -71,7 +71,15 @@ test_that("state node names are exposed via get_state_names() and the data.frame
 
 test_that("as.data.frame omits state_name for first-order networks", {
   im <- Infomap(silent = TRUE, num_trials = 1L)
-  im$add_links(list(c(1, 2), c(2, 3), c(3, 1), c(3, 4), c(4, 5), c(5, 6), c(6, 4)))
+  im$add_links(list(
+    c(1, 2),
+    c(2, 3),
+    c(3, 1),
+    c(3, 4),
+    c(4, 5),
+    c(5, 6),
+    c(6, 4)
+  ))
   im$run()
 
   expect_false(im$have_memory)

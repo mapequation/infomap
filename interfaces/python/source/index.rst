@@ -1,11 +1,25 @@
-Infomap Python API
-==================
+Infomap Python documentation
+============================
 
-Infomap is a network clustering algorithm based on the `Map equation`_. This
-site documents the Python package: installation, a quick start, usage patterns
-for NetworkX, igraph and multilayer graphs, and the full API reference.
+Infomap is a network community-detection method that finds the modules that best
+compress the flow of a random walk on your network. Infomap optimizes the
+objective function called the `map equation`_:
 
-.. _Map equation: https://www.mapequation.org/publications.html#Rosvall-Axelsson-Bergstrom-2009-Map-equation
+- **It models system-wide dynamics based on the system's wiring.** Link direction
+  and weight steer the walk, so citation, transport, and information networks
+  cluster by their real dynamics.
+- **It finds hierarchical solutions with no tuning parameters.** The number of
+  nested levels is inferred directly from the data.
+- **It spans a broad range of flow models:** multilayer, memory, temporal,
+  metadata, and bipartite networks, all through the same objective function.
+
+.. _map equation: https://www.mapequation.org/publications.html
+
+.. image:: /_static/hero-modular.svg
+   :alt: A weighted example network partitioned by Infomap into four modules,
+         nodes coloured by module and sized by flow
+   :align: center
+   :width: 360px
 
 Quick start
 -----------
@@ -20,49 +34,63 @@ Quick start
     import infomap
 
     graph = nx.karate_club_graph()
-    communities = infomap.find_communities(graph, seed=123, num_trials=20)
+    result = infomap.run(graph, seed=123, num_trials=20, silent=True)
 
-    print(communities)
+    print(result.num_top_modules, "modules")
+    print(result.modules())
 
-Continue to :doc:`installation` for optional integrations and shell completion,
+Continue to :doc:`installation` for the command-line tool and shell completion,
 or jump to :doc:`quickstart` for the smallest Python API examples.
 
-For Jupyter, start with the flagship
-`quickstart notebook <https://github.com/mapequation/infomap/blob/master/examples/notebooks/quickstart.ipynb>`_.
-It shows the notebook-native Infomap result summary, dataframe inspection, and
-a copyable static network partition helper.
+Where to go
+-----------
 
-Choose a path
--------------
+.. grid:: 1 2 2 2
+   :gutter: 3
 
-- New to Infomap in Python? Start with :doc:`quickstart`.
-- Working in NetworkX, igraph, sparse matrices, or multilayer graphs? Use
-  :doc:`usage`.
-- Working with AnnData or Scanpy? Use :doc:`scanpy`.
-- Need GraphML or GEXF files? Use :doc:`export`.
-- Learning from executable workflows? Use :doc:`examples/index`.
-- Running many native trials on a cluster? Use
-  :doc:`examples/run-infomap-on-hpc`.
-- Need exact signatures and return types? Use :doc:`api/index`.
+   .. grid-item-card:: Concepts
+      :link: concepts/index
+      :link-type: doc
 
-Core pages
-----------
+      What the map equation is and why it works: flow, codelength, and
+      hierarchy, taught from the ground up.
 
-- :doc:`installation` — install the package, optional integrations, and the
-  ``infomap`` CLI entry point.
-- :doc:`quickstart` — small Python API examples for first runs and result
-  access.
-- :doc:`usage` — API patterns for common graph containers and result access.
-- :doc:`examples/index` — executed notebooks for practical Infomap workflows
-  and survey companion material.
+   .. grid-item-card:: Working with Infomap
+      :link: working-with-infomap/index
+      :link-type: doc
+
+      Build networks from your data, run Infomap, tune the options, and read
+      and visualise the results.
+
+   .. grid-item-card:: Flow models & representations
+      :link: flow-models/index
+      :link-type: doc
+
+      Multilayer, memory, temporal, metadata, bipartite, and higher-order
+      networks: the representations beyond a plain graph.
+
+   .. grid-item-card:: Workflows & integrations
+      :link: workflows/index
+      :link-type: doc
+
+      Use Infomap with Scanpy and GraphRAG, and run it at scale on HPC
+      schedulers.
+
+   .. grid-item-card:: Robustness & reliability
+      :link: robustness/index
+      :link-type: doc
+
+      Keep sparse or incompletely sampled networks from fragmenting into
+      spurious modules with the regularized map equation.
 
 External resources
 ------------------
 
-- `Infomap user guide <https://www.mapequation.org/infomap/>`_ — algorithm,
-  options, and file formats.
+- The `Infomap user guide <https://www.mapequation.org/infomap/>`_ on
+  mapequation.org is the project portal and documents the command-line tool and
+  the other interfaces (C++, R, JavaScript).
 - `PyPI project <https://pypi.org/project/infomap/>`_
-- `GitHub repository <https://github.com/mapequation/infomap>`_ —
+- `GitHub repository <https://github.com/mapequation/infomap>`_ for
   source, issues, and discussions.
 - `CHANGELOG <https://github.com/mapequation/infomap/blob/master/CHANGELOG.md>`_
 
@@ -72,8 +100,21 @@ External resources
 
    installation
    quickstart
-   examples/index
-   usage
-   export
-   scanpy
+   concepts/index
+   working-with-infomap/index
+   flow-models/index
+   workflows/index
+   robustness/index
+
+.. toctree::
+   :hidden:
+   :caption: Reference
+   :maxdepth: 1
+
+   faq
    api/index
+   the-infomap-class
+   examples/index
+   references
+   citing
+   article-companion/index
