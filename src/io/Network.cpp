@@ -828,9 +828,7 @@ unsigned int Network::addMultilayerNode(unsigned int layerId, unsigned int physi
 
   // Create state node if not already exist, return state node id
   auto& layerIt = m_layerNodeToStateId[layerId];
-  auto it = layerIt.find(physicalId);
-
-  if (it != layerIt.end()) {
+  if (auto it = layerIt.find(physicalId); it != layerIt.end()) {
     return it->second;
   }
 
@@ -846,7 +844,7 @@ unsigned int Network::addMultilayerNode(unsigned int layerId, unsigned int physi
   auto& stateNode = ret.first->second;
   stateNode.layerId = layerId;
   stateNode.weight = weight;
-  m_layerNodeToStateId[layerId][physicalId] = stateNode.id;
+  layerIt[physicalId] = stateNode.id;
   m_layers.insert(layerId);
   return stateNode.id;
 }
@@ -857,9 +855,7 @@ unsigned int Network::addMultilayerNode(unsigned int stateId, unsigned int layer
 
   // Create state node if not already exist, return state node id
   auto& layerIt = m_layerNodeToStateId[layerId];
-  auto it = layerIt.find(physicalId);
-
-  if (it != layerIt.end()) {
+  if (auto it = layerIt.find(physicalId); it != layerIt.end()) {
     return it->second;
   }
 
@@ -867,7 +863,7 @@ unsigned int Network::addMultilayerNode(unsigned int stateId, unsigned int layer
   auto& stateNode = ret.first->second;
   stateNode.layerId = layerId;
   stateNode.weight = weight;
-  m_layerNodeToStateId[layerId][physicalId] = stateNode.id;
+  layerIt[physicalId] = stateNode.id;
   m_layers.insert(layerId);
   return stateNode.id;
 }

@@ -415,12 +415,12 @@ private:
           m_timing.recordTrial(trialIndex, threadNumber, trialSeed, trialTime, trialCodelength, trialTopModules, trialNumLevels);
 
           if (worker.printAllTrials && m_numTrials > 1) {
-            std::lock_guard<std::mutex> lock(outputMutex);
+            std::scoped_lock lock(outputMutex);
             auto outputTimer = m_timing.scope("output_s");
             worker.writeResult(static_cast<int>(globalIndex + 1));
           }
 
-          std::lock_guard<std::mutex> lock(bestResultMutex);
+          std::scoped_lock lock(bestResultMutex);
           const auto bestIndexMissing = result.bestTrialIndex >= m_numTrials;
           const auto isBetter = trialCodelength < result.bestHierarchicalCodelength - 1e-10;
           const auto isEarlierTie = std::abs(trialCodelength - result.bestHierarchicalCodelength) < 1e-10 && trialIndex < result.bestTrialIndex;
@@ -433,14 +433,14 @@ private:
             result.bestTree = std::move(trialTree);
           }
         } catch (const std::exception& e) {
-          std::lock_guard<std::mutex> lock(errorMutex);
+          std::scoped_lock lock(errorMutex);
           if (!hasError || trialIndex < firstErrorTrial) {
             hasError = true;
             firstErrorTrial = trialIndex;
             firstError = e.what();
           }
         } catch (...) {
-          std::lock_guard<std::mutex> lock(errorMutex);
+          std::scoped_lock lock(errorMutex);
           if (!hasError || trialIndex < firstErrorTrial) {
             hasError = true;
             firstErrorTrial = trialIndex;
