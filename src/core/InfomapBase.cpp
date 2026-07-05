@@ -240,8 +240,7 @@ public:
     Console console;
     console.section(fmt::format(FMT_STRING("Summary after {}{}"), m_trialsRun, m_trialsRun > 1 ? " trials" : " trial"));
     if (m_autoStopped) {
-      const unsigned int patience = Config::convergePatience;
-      Console::detail(0, "auto: stopped after {} trials (no improvement in last {})", m_trialsRun, patience);
+      Console::detail(0, "auto: stopped after {} trials (no improvement in last {})", m_trialsRun, Config::convergePatience);
     }
     std::string codelengthRange;
     std::string topModulesRange;
