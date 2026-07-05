@@ -654,7 +654,7 @@ protected:
   // resolved to state ids in initTrialPartition once the network is built.
   std::vector<std::array<unsigned int, 3>> m_multilayerInitialPartition;
 
-  const unsigned int SUPER_LEVEL_ADDITION = 1 << 20;
+  static constexpr unsigned int SUPER_LEVEL_ADDITION = 1 << 20;
   bool m_isMain = true;
   unsigned int m_subLevel = 0;
 

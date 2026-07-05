@@ -800,12 +800,12 @@ void Network::addMultilayerInterLink(unsigned int layer1, unsigned int n, unsign
   // numLinks() read; an in-memory numLinks() read before expansion just finalizes
   // an empty buffer, which the first expansion addLink re-opens via definalize().)
   auto& interLinks = m_interLinks[LayerNode(layer1, n)];
-  auto it = interLinks.find(layer2);
+  auto [it, inserted] = interLinks.try_emplace(layer2, 0.0);
 
-  if (it == interLinks.end()) {
+  if (inserted) {
     ++m_numInterLayerLinks;
   }
-  interLinks[layer2] += interWeight;
+  it->second += interWeight;
 }
 
 void Network::addMultilayerInterLinks(const std::vector<unsigned int>& sourceLayerIds,
