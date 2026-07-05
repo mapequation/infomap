@@ -102,57 +102,57 @@ public:
   // ===================================================
 
   Network& network() { return m_network; }
-  [[nodiscard]] const Network& network() const { return m_network; }
+  const Network& network() const { return m_network; }
 
   InfoNode& root() { return m_root; }
-  [[nodiscard]] const InfoNode& root() const { return m_root; }
+  const InfoNode& root() const { return m_root; }
 
-  [[nodiscard]] unsigned int numLeafNodes() const { return m_leafNodes.size(); }
+  unsigned int numLeafNodes() const { return m_leafNodes.size(); }
 
   const std::vector<InfoNode*>& leafNodes() const { return m_leafNodes; }
 
-  [[nodiscard]] unsigned int numTopModules() const { return m_root.childDegree(); }
+  unsigned int numTopModules() const { return m_root.childDegree(); }
 
   unsigned int numActiveModules() const { return m_optimizer->numActiveModules(); }
 
-  [[nodiscard]] unsigned int numNonTrivialTopModules() const { return m_numNonTrivialTopModules; }
+  unsigned int numNonTrivialTopModules() const { return m_numNonTrivialTopModules; }
 
-  [[nodiscard]] bool haveModules() const { return !m_root.isLeaf() && !m_root.firstChild->isLeaf(); }
+  bool haveModules() const { return !m_root.isLeaf() && !m_root.firstChild->isLeaf(); }
 
-  [[nodiscard]] bool haveNonTrivialModules() const { return numNonTrivialTopModules() > 0; }
+  bool haveNonTrivialModules() const { return numNonTrivialTopModules() > 0; }
 
   /**
    * Number of node levels below the root in current Infomap instance, 1 if no modules
    */
-  [[nodiscard]] unsigned int numLevels() const;
+  unsigned int numLevels() const;
 
   /**
    * Get maximum depth of any child in the tree, following possible sub Infomap instances
    */
-  [[nodiscard]] unsigned int maxTreeDepth() const;
+  unsigned int maxTreeDepth() const;
 
-  [[nodiscard]] double getCodelength() const { return m_optimizer->getCodelength(); }
+  double getCodelength() const { return m_optimizer->getCodelength(); }
 
-  [[nodiscard]] double getMetaCodelength(bool unweighted = false) const { return m_optimizer->getMetaCodelength(unweighted); }
+  double getMetaCodelength(bool unweighted = false) const { return m_optimizer->getMetaCodelength(unweighted); }
 
-  [[nodiscard]] double codelength() const { return m_hierarchicalCodelength; }
+  double codelength() const { return m_hierarchicalCodelength; }
 
-  [[nodiscard]] const std::vector<double>& codelengths() const { return m_codelengths; }
+  const std::vector<double>& codelengths() const { return m_codelengths; }
 
-  [[nodiscard]] double getIndexCodelength() const { return m_optimizer->getIndexCodelength(); }
+  double getIndexCodelength() const { return m_optimizer->getIndexCodelength(); }
 
-  [[nodiscard]] double getModuleCodelength() const { return m_hierarchicalCodelength - m_optimizer->getIndexCodelength(); }
+  double getModuleCodelength() const { return m_hierarchicalCodelength - m_optimizer->getIndexCodelength(); }
 
-  [[nodiscard]] double getHierarchicalCodelength() const { return m_hierarchicalCodelength; }
+  double getHierarchicalCodelength() const { return m_hierarchicalCodelength; }
 
-  [[nodiscard]] double getOneLevelCodelength() const { return m_oneLevelCodelength; }
+  double getOneLevelCodelength() const { return m_oneLevelCodelength; }
 
 #ifndef SWIG
   // One-level reference reported to the user. In lossy mode this is the lossless
   // L_1 = H(p_alpha) (a lambda-independent upper bound), not the lambda-dependent
   // corrected one-module objective that m_oneLevelCodelength holds for the optimizer.
   // Guarded from SWIG so it is not exposed as a new binding; callers below use it.
-  [[nodiscard]] double getReferenceOneLevelCodelength() const
+  double getReferenceOneLevelCodelength() const
   {
 #if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
     if (lossy)
@@ -162,25 +162,25 @@ public:
   }
 #endif
 
-  [[nodiscard]] double getRelativeCodelengthSavings() const
+  double getRelativeCodelengthSavings() const
   {
     auto oneLevelCodelength = getReferenceOneLevelCodelength();
     return oneLevelCodelength < 1e-16 ? 0 : 1.0 - codelength() / oneLevelCodelength;
   }
 
 #ifndef SWIG
-  [[nodiscard]] double getRelativeCodelengthSavings(double codelength) const
+  double getRelativeCodelengthSavings(double codelength) const
   {
     auto oneLevelCodelength = getReferenceOneLevelCodelength();
     return oneLevelCodelength < 1e-16 ? 0 : 1.0 - codelength / oneLevelCodelength;
   }
 #endif
 
-  [[nodiscard]] double getEntropyRate() { return m_entropyRate; }
+  double getEntropyRate() { return m_entropyRate; }
 #if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
-  [[nodiscard]] double getLossyRate() const { return m_optimizer->getLossyRate(); }
-  [[nodiscard]] double getLossyDistortion() const { return m_optimizer->getLossyDistortion(); }
-  [[nodiscard]] double getLossyOneLevelLossless() const { return m_optimizer->getLossyOneLevelLossless(); }
+  double getLossyRate() const { return m_optimizer->getLossyRate(); }
+  double getLossyDistortion() const { return m_optimizer->getLossyDistortion(); }
+  double getLossyOneLevelLossless() const { return m_optimizer->getLossyOneLevelLossless(); }
   // 1-based indices of the top modules that are noise modules (l_i > lambda * H_i).
   std::vector<unsigned int> noiseTopModules() const;
 #endif
@@ -192,7 +192,7 @@ public:
 
   std::vector<InfoNode*>& activeNetwork() const { return *m_activeNetwork; }
 
-  [[nodiscard]] std::map<unsigned int, std::vector<unsigned int>> getMultilevelModules(bool states = false);
+  std::map<unsigned int, std::vector<unsigned int>> getMultilevelModules(bool states = false);
 
   // ===================================================
   // IO
