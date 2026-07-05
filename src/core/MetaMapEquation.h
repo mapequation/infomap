@@ -151,7 +151,7 @@ private:
    * @param addRemoveOrNothing +1, -1 or 0 to calculate codelength
    * as if current node was added, removed or untouched in current module
    */
-  double getCurrentModuleMetaCodelength(unsigned int module, InfoNode& current, int addRemoveOrNothing);
+  double getCurrentModuleMetaCodelength(MetaCollection& metaCollection, InfoNode& current, int addRemoveOrNothing);
 
   // ===================================================
   // Private member variables

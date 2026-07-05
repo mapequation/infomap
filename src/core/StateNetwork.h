@@ -194,15 +194,15 @@ public:
   virtual void clearLinks();
 
   // Getters
-  const NodeMap& nodes() const { return m_nodes; }
-  unsigned int numNodes() const { return m_nodes.size(); }
-  unsigned int numPhysicalNodes() const { return m_numPhysicalNodesFound; }
-  double sumNodeWeight() const { return m_sumNodeWeight; }
+  [[nodiscard]] const NodeMap& nodes() const { return m_nodes; }
+  [[nodiscard]] unsigned int numNodes() const { return m_nodes.size(); }
+  [[nodiscard]] unsigned int numPhysicalNodes() const { return m_numPhysicalNodesFound; }
+  [[nodiscard]] double sumNodeWeight() const { return m_sumNodeWeight; }
 #ifndef SWIG
   // Mode B (multilayer) build representation, consumed only by the multilayer
   // expansion in Network. Hidden from the bindings: external callers read links
   // through getLinks()/getLinkResults(), which now serve the consumed CSR store.
-  const NodeLinkMap& nodeLinkMap() const { return m_nodeLinkMap; }
+  [[nodiscard]] const NodeLinkMap& nodeLinkMap() const { return m_nodeLinkMap; }
   NodeLinkMap& nodeLinkMap() { return m_nodeLinkMap; }
 #endif
 
@@ -215,10 +215,10 @@ public:
   {
     if (!m_linksFinalized) const_cast<StateNetwork*>(this)->finalizeLinks();
   }
-  unsigned int nodeId(unsigned int index) const { return m_nodeIds[index]; }
-  unsigned int indexOfId(unsigned int id) const;
-  unsigned int outDegree(unsigned int index) const { return m_linkOffsets[index + 1] - m_linkOffsets[index]; }
-  bool isDangling(unsigned int index) const { return outDegree(index) == 0; }
+  [[nodiscard]] unsigned int nodeId(unsigned int index) const { return m_nodeIds[index]; }
+  [[nodiscard]] unsigned int indexOfId(unsigned int id) const;
+  [[nodiscard]] unsigned int outDegree(unsigned int index) const { return m_linkOffsets[index + 1] - m_linkOffsets[index]; }
+  [[nodiscard]] bool isDangling(unsigned int index) const { return outDegree(index) == 0; }
   // fn(srcIndex, targetIndex, weight, double& flow) in (src,tgt) order. flow is
   // writable (CSR arrays are mutable) so FlowCalculator can write flow back.
   template <typename Fn>
@@ -241,26 +241,26 @@ public:
   // never consumed as CSR. The ensureFinalized() call is guarded so SWIG never
   // parses a reference to the hidden method (the compiled library the wrapper
   // calls still lazy-finalizes).
-  unsigned int numAggregatedLinks() const
+  [[nodiscard]] unsigned int numAggregatedLinks() const
   {
 #ifndef SWIG
     if (!m_useMapBuild) ensureFinalized();
 #endif
     return m_numAggregatedLinks;
   }
-  unsigned int numLinks() const
+  [[nodiscard]] unsigned int numLinks() const
   {
 #ifndef SWIG
     if (!m_useMapBuild) ensureFinalized();
 #endif
     return m_numLinks;
   }
-  double sumLinkWeight() const { return m_sumLinkWeight; }
-  unsigned int numSelfLinks() const { return m_numSelfLinks; }
-  double sumSelfLinkWeight() const { return m_sumSelfLinkWeight; }
+  [[nodiscard]] double sumLinkWeight() const { return m_sumLinkWeight; }
+  [[nodiscard]] unsigned int numSelfLinks() const { return m_numSelfLinks; }
+  [[nodiscard]] double sumSelfLinkWeight() const { return m_sumSelfLinkWeight; }
   // Use convention of counting self-links only once, treating them as directed
-  double sumWeightedDegree() const { return 2 * sumLinkWeight() - sumSelfLinkWeight(); }
-  unsigned int sumDegree() const { return 2 * numLinks() - numSelfLinks(); }
+  [[nodiscard]] double sumWeightedDegree() const { return 2 * sumLinkWeight() - sumSelfLinkWeight(); }
+  [[nodiscard]] unsigned int sumDegree() const { return 2 * numLinks() - numSelfLinks(); }
   std::map<unsigned int, double>& outWeights()
   {
 #ifndef SWIG
@@ -269,24 +269,24 @@ public:
     return m_outWeights;
   }
   std::map<unsigned int, std::string>& names() { return m_names; }
-  const std::map<unsigned int, std::string>& names() const { return m_names; }
-  bool haveNodeWeights() const { return m_haveNodeWeights; }
-  bool haveStateNodeWeights() const { return m_haveStateNodeWeights; }
-  bool haveFileInput() const { return m_haveFileInput; }
+  [[nodiscard]] const std::map<unsigned int, std::string>& names() const { return m_names; }
+  [[nodiscard]] bool haveNodeWeights() const { return m_haveNodeWeights; }
+  [[nodiscard]] bool haveStateNodeWeights() const { return m_haveStateNodeWeights; }
+  [[nodiscard]] bool haveFileInput() const { return m_haveFileInput; }
 
-  virtual const std::map<unsigned int, std::vector<int>>& metaData() const = 0;
+  [[nodiscard]] virtual const std::map<unsigned int, std::vector<int>>& metaData() const = 0;
 
-  bool haveDirectedInput() const { return m_haveDirectedInput; }
-  bool haveMemoryInput() const { return m_haveMemoryInput; }
-  bool higherOrderInputMethodCalled() const { return m_higherOrderInputMethodCalled; }
+  [[nodiscard]] bool haveDirectedInput() const { return m_haveDirectedInput; }
+  [[nodiscard]] bool haveMemoryInput() const { return m_haveMemoryInput; }
+  [[nodiscard]] bool higherOrderInputMethodCalled() const { return m_higherOrderInputMethodCalled; }
   // Bipartite
-  bool isBipartite() const { return m_bipartiteStartId > 0; }
-  unsigned int bipartiteStartId() const { return m_bipartiteStartId; }
+  [[nodiscard]] bool isBipartite() const { return m_bipartiteStartId > 0; }
+  [[nodiscard]] unsigned int bipartiteStartId() const { return m_bipartiteStartId; }
   void setBipartiteStartId(unsigned int value) { m_bipartiteStartId = value; }
   // Multilayer
 #ifndef SWIG
-  unsigned int numLayers() const { return m_layers.size(); }
-  const std::set<unsigned int>& layers() const { return m_layers; }
+  [[nodiscard]] unsigned int numLayers() const { return m_layers.size(); }
+  [[nodiscard]] const std::set<unsigned int>& layers() const { return m_layers; }
 #endif
 
   /**

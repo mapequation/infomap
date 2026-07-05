@@ -33,14 +33,22 @@ namespace infomap {
 struct CleanExit {};
 
 struct ArgType {
-  static const std::string integer;
-  static const std::string number;
-  static const std::string string;
-  static const std::string path;
-  static const std::string probability;
-  static const std::string option;
-  static const std::string list;
-  static const std::unordered_map<std::string, char> toShort;
+  inline static const std::string integer = "integer";
+  inline static const std::string number = "number";
+  inline static const std::string string = "string";
+  inline static const std::string path = "path";
+  inline static const std::string probability = "probability";
+  inline static const std::string option = "option";
+  inline static const std::string list = "list";
+  inline static const std::unordered_map<std::string, char> toShort = {
+    { "integer", 'n' },
+    { "number", 'f' },
+    { "string", 's' },
+    { "path", 'p' },
+    { "probability", 'P' },
+    { "option", 'o' },
+    { "list", 'l' },
+  };
 };
 
 struct Option {

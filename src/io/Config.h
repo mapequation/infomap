@@ -311,18 +311,18 @@ struct Config {
   [[nodiscard]] bool isRegularizedMultilayerFlow() const { return isMultilayerNetwork() && regularized; }
 #endif
 
-  bool haveMemory() const { return stateInput; }
+  [[nodiscard]] bool haveMemory() const { return stateInput; }
   [[nodiscard]] bool printStates() const { return stateOutput; }
 
-  bool haveMetaData() const { return !metaDataFile.empty() || numMetaDataDimensions != 0; }
+  [[nodiscard]] bool haveMetaData() const { return !metaDataFile.empty() || numMetaDataDimensions != 0; }
 
-  bool haveOutput() const { return !noFileOutput; }
+  [[nodiscard]] bool haveOutput() const { return !noFileOutput; }
 
 #ifndef SWIG
-  bool overwriteOutput() const { return !noOverwriteOutput; }
+  [[nodiscard]] bool overwriteOutput() const { return !noOverwriteOutput; }
 #endif
 
-  bool haveModularResultOutput() const
+  [[nodiscard]] bool haveModularResultOutput() const
   {
     return printTree || printFlowTree || printNewick || printJson || printCsv || printClu;
   }

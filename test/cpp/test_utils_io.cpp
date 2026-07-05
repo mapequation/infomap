@@ -11,6 +11,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
+#include <filesystem>
 #include <iomanip>
 #include <iostream>
 #include <limits>
@@ -329,7 +330,7 @@ TEST_CASE("ensureDirectoryExists creates a deep directory chain [fast][core][uti
 
   infomap::ensureDirectoryExists(leaf);
 
-  CHECK(infomap::isDirectory(leaf));
+  CHECK(std::filesystem::is_directory(leaf));
   // Idempotent: a second call on an existing chain is a no-op, not an error.
   CHECK_NOTHROW(infomap::ensureDirectoryExists(leaf));
 }
