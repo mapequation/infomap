@@ -1216,13 +1216,13 @@ InfomapBase& InfomapBase::initTree(const NodePaths& tree)
     Path prefix;
     for (size_t i = 0; i + 1 < path.size(); ++i) {
       prefix.push_back(path[i]);
-      auto inserted = moduleByPathPrefix.emplace(prefix, nullptr);
-      if (inserted.second) {
+      auto [it, inserted] = moduleByPathPrefix.emplace(prefix, nullptr);
+      if (inserted) {
         auto* module = &allocNode();
         parent->addChild(module);
-        inserted.first->second = module;
+        it->second = module;
       }
-      parent = inserted.first->second;
+      parent = it->second;
     }
 
     parent->addChild(leafNode);

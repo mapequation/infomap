@@ -54,13 +54,11 @@ namespace {
     for (auto& optionArgument : options) {
       auto& opt = *optionArgument;
       if (opt.shortName != '\0') {
-        auto inserted = lookup.shortOptions.insert(std::make_pair(opt.shortName, &opt));
-        if (!inserted.second)
+        if (!lookup.shortOptions.try_emplace(opt.shortName, &opt).second)
           throw std::runtime_error(fmt::format(FMT_STRING("Duplication of option '{}'"), opt.shortName));
       }
 
-      auto inserted = lookup.longOptions.insert(std::make_pair(opt.longName, &opt));
-      if (!inserted.second)
+      if (!lookup.longOptions.try_emplace(opt.longName, &opt).second)
         throw std::runtime_error(fmt::format(FMT_STRING("Duplication of option \"{}\""), opt.longName));
     }
     return lookup;
