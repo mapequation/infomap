@@ -1125,8 +1125,10 @@ void FlowCalculator::calcUndirectedRegularizedFlow(const StateNetwork& network, 
 }
 
 #if INFOMAP_FEATURE_REGULARIZED_MULTILAYER
-void FlowCalculator::calcUndirectedRegularizedMultilayerFlow([[maybe_unused]] const StateNetwork& network, [[maybe_unused]] const Config& config)
+void FlowCalculator::calcUndirectedRegularizedMultilayerFlow(const StateNetwork& network, const Config& config)
 {
+  (void)network;
+  (void)config;
   throw std::runtime_error("Undirected regularized multilayer flow is not implemented.");
 }
 #endif // INFOMAP_FEATURE_REGULARIZED_MULTILAYER
