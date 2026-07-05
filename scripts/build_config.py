@@ -146,9 +146,9 @@ def _base_compile_flags(compiler_family):
         # otherwise), and it makes the Unicode pretty-output literals (•, →, ╰─)
         # encode correctly. mingw-gcc (R/Windows) and clang/Emscripten (JS)
         # already use a UTF-8 source charset, so this is MSVC-only.
-        return ["/std:c++14", "/utf-8"]
+        return ["/std:c++17", "/utf-8"]
 
-    flags = ["-Wall", "-Wextra", "-pedantic", "-Wnon-virtual-dtor", "-std=c++14"]
+    flags = ["-Wall", "-Wextra", "-pedantic", "-Wnon-virtual-dtor", "-std=c++17"]
     if compiler_family == "clang":
         flags.append("-Wshadow")
     elif compiler_family == "gnu":
