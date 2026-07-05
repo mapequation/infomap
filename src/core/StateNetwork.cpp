@@ -66,11 +66,11 @@ std::pair<StateNetwork::NodeMap::iterator, bool> StateNetwork::addNode(unsigned 
 
 StateNetwork::PhysNode& StateNetwork::addPhysicalNode(unsigned int physId)
 {
-  auto result = m_physNodes.emplace(physId, PhysNode(physId));
-  if (result.second) {
+  auto [it, inserted] = m_physNodes.emplace(physId, PhysNode(physId));
+  if (inserted) {
     ++m_numPhysicalNodesFound; // count uniques so numPhysicalNodes() survives a freed map
   }
-  auto& physNode = result.first->second;
+  auto& physNode = it->second;
   physNode.physId = physId;
   m_sumNodeWeight += 1.0;
   return physNode;
@@ -103,7 +103,7 @@ StateNetwork::PhysNode& StateNetwork::addPhysicalNode(unsigned int physId, doubl
 
 std::pair<std::map<unsigned int, std::string>::iterator, bool> StateNetwork::addName(unsigned int id, const std::string& name)
 {
-  return m_names.insert(std::make_pair(id, name));
+  return m_names.try_emplace(id, name);
 }
 
 bool StateNetwork::addLink(unsigned int sourceId, unsigned int targetId, double weight)

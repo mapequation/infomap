@@ -1000,18 +1000,17 @@ inline void InfomapOptimizer<Objective>::consolidateModules(bool replaceExisting
         // If undirected, the order may be swapped to aggregate the edge on an opposite one
         if (m_infomap->isUndirectedClustering() && m1 > m2)
           std::swap(m1, m2);
-        auto ret = moduleLinks.insert(std::make_pair(NodePair(m1, m2), edge.data.flow));
-        if (!ret.second) {
-          ret.first->second += edge.data.flow;
+        auto [it, inserted] = moduleLinks.try_emplace(NodePair(m1, m2), edge.data.flow);
+        if (!inserted) {
+          it->second += edge.data.flow;
         }
       }
     }
   }
 
   // Add the aggregated edge flow structure to the new modules
-  for (auto& e : moduleLinks) {
-    const auto& nodePair = e.first;
-    modules[nodePair.first]->addOutEdge(*modules[nodePair.second], 0.0, e.second);
+  for (const auto& [nodePair, flow] : moduleLinks) {
+    modules[nodePair.first]->addOutEdge(*modules[nodePair.second], 0.0, flow);
   }
 
   if (replaceExistingModules) {
