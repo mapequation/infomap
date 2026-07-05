@@ -28,8 +28,7 @@
 #include <string>
 #include <vector>
 
-namespace infomap {
-namespace input {
+namespace infomap::input {
 
   struct NetworkInputOptions {
     bool undirectedFlow = true;
@@ -529,7 +528,6 @@ namespace input {
     Console::detail(1, "parsed {} columns of meta data for {} nodes", numMetaDataColumns, numMetaDataRows);
   }
 
-} // namespace input
-} // namespace infomap
+} // namespace infomap::input
 
 #endif // NETWORK_INPUT_PARSER_H_
