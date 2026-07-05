@@ -75,7 +75,7 @@ public:
 
   void addPhase(const std::string& phase, double seconds)
   {
-    std::scoped_lock lock(m_mutex);
+    std::lock_guard<std::mutex> lock(m_mutex);
     for (auto& entry : m_phases) {
       if (entry.first == phase) {
         entry.second += seconds;
@@ -87,7 +87,7 @@ public:
 
   void setPhase(const std::string& phase, double seconds)
   {
-    std::scoped_lock lock(m_mutex);
+    std::lock_guard<std::mutex> lock(m_mutex);
     for (auto& entry : m_phases) {
       if (entry.first == phase) {
         entry.second = seconds;
@@ -99,13 +99,13 @@ public:
 
   void resetTrials(unsigned int numTrials)
   {
-    std::scoped_lock lock(m_mutex);
+    std::lock_guard<std::mutex> lock(m_mutex);
     m_trials.assign(numTrials, TrialTimingRecord());
   }
 
   void recordTrial(unsigned int trialIndex, int thread, unsigned long seed, double timeSec, double codelength, unsigned int topModules, unsigned int numLevels)
   {
-    std::scoped_lock lock(m_mutex);
+    std::lock_guard<std::mutex> lock(m_mutex);
     if (trialIndex >= m_trials.size()) {
       m_trials.resize(trialIndex + 1);
     }
@@ -123,13 +123,13 @@ public:
 
   std::vector<std::pair<std::string, double>> phases() const
   {
-    std::scoped_lock lock(m_mutex);
+    std::lock_guard<std::mutex> lock(m_mutex);
     return m_phases;
   }
 
   std::vector<TrialTimingRecord> trials() const
   {
-    std::scoped_lock lock(m_mutex);
+    std::lock_guard<std::mutex> lock(m_mutex);
     return m_trials;
   }
 

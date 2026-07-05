@@ -75,8 +75,7 @@ namespace {
   void writeJsonObjectPrefix(std::ostream& outStream, const Json& json)
   {
     const auto dumped = json.dump();
-    // Drop the trailing '}' without copying the whole dump into a substr.
-    outStream.write(dumped.data(), static_cast<std::streamsize>(dumped.size() - 1));
+    outStream << dumped.substr(0, dumped.size() - 1);
   }
 
 } // namespace

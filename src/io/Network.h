@@ -83,11 +83,11 @@ public:
    */
   virtual void readMetaData(const std::string& filename);
 
-  [[nodiscard]] unsigned int numMetaDataColumns() const { return m_numMetaDataColumns; }
-  [[nodiscard]] const std::map<unsigned int, std::vector<int>>& metaData() const override { return m_metaData; }
+  unsigned int numMetaDataColumns() const { return m_numMetaDataColumns; }
+  const std::map<unsigned int, std::vector<int>>& metaData() const override { return m_metaData; }
 
-  [[nodiscard]] bool isMultilayerNetwork() const { return !m_layerNodeToStateId.empty(); }
-  [[nodiscard]] const std::map<unsigned int, std::map<unsigned int, unsigned int>>& layerNodeToStateId() const { return m_layerNodeToStateId; }
+  bool isMultilayerNetwork() const { return !m_layerNodeToStateId.empty(); }
+  const std::map<unsigned int, std::map<unsigned int, unsigned int>>& layerNodeToStateId() const { return m_layerNodeToStateId; }
 
   void postProcessInputData();
   void generateStateNetworkFromMultilayer();

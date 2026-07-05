@@ -40,16 +40,16 @@ class ClusterMap {
 public:
   void readClusterData(const std::string& filename, bool includeFlow = false, const std::map<unsigned int, std::map<unsigned int, unsigned int>>* layerNodeToStateId = nullptr);
 
-  [[nodiscard]] const std::map<unsigned int, unsigned int>& clusterIds() const noexcept
+  const std::map<unsigned int, unsigned int>& clusterIds() const noexcept
   {
     return m_clusterIds;
   }
 
-  [[nodiscard]] const TreePaths& treePaths() const noexcept { return m_treePaths; }
+  const TreePaths& treePaths() const noexcept { return m_treePaths; }
 
-  [[nodiscard]] const std::string& extension() const noexcept { return m_extension; }
+  const std::string& extension() const noexcept { return m_extension; }
 
-  [[nodiscard]] TreeLeafIdType treeLeafIdType() const noexcept { return m_treeLeafIdType; }
+  TreeLeafIdType treeLeafIdType() const noexcept { return m_treeLeafIdType; }
 
 private:
   void readTree(const std::string& filename, bool includeFlow, const std::map<unsigned int, std::map<unsigned int, unsigned int>>* layerNodeToStateId = nullptr);

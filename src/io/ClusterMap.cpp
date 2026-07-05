@@ -126,8 +126,10 @@ void ClusterMap::readTree(const std::string& filename, bool includeFlow, const s
 
     if (isMultilayer && m_treeLeafIdType == TreeLeafIdType::state) {
       // Re-map state id from layer/node ids in case the multilayer state ids differ
-      if (auto it = layerNodeToStateId->find(layerId); it != layerNodeToStateId->end()) {
-        if (auto nodeIdToStateId = it->second.find(nodeId); nodeIdToStateId != it->second.end()) {
+      auto it = layerNodeToStateId->find(layerId);
+      if (it != layerNodeToStateId->end()) {
+        auto nodeIdToStateId = it->second.find(nodeId);
+        if (nodeIdToStateId != it->second.end()) {
           stateId = nodeIdToStateId->second;
           multilayerNodeFound = true;
         }
@@ -165,6 +167,7 @@ void ClusterMap::readClu(const std::string& filename, bool includeFlow, const st
   SafeInFile input(filename);
   std::string line;
   std::istringstream lineStream;
+  std::map<unsigned int, unsigned int> clusterData;
 
   while (!std::getline(input, line).fail()) {
     if (line.empty() || line[0] == '#' || line[0] == '*')
@@ -197,8 +200,11 @@ void ClusterMap::readClu(const std::string& filename, bool includeFlow, const st
         throw std::runtime_error(fmt::format(FMT_STRING("Couldn't parse layer id from line '{}'"), line));
 
       // get new state id from map
-      if (auto it = layerNodeToStateId->find(layerId); it != layerNodeToStateId->end()) {
-        if (auto nodeIdToStateId = it->second.find(nodeId); nodeIdToStateId != it->second.end()) {
+      auto it = layerNodeToStateId->find(layerId);
+
+      if (it != layerNodeToStateId->end()) {
+        auto nodeIdToStateId = it->second.find(nodeId);
+        if (nodeIdToStateId != it->second.end()) {
           stateId = nodeIdToStateId->second;
           multilayerNodeFound = true;
         }
