@@ -109,11 +109,11 @@ public:
 
   [[nodiscard]] unsigned int numLeafNodes() const { return m_leafNodes.size(); }
 
-  const std::vector<InfoNode*>& leafNodes() const { return m_leafNodes; }
+  [[nodiscard]] const std::vector<InfoNode*>& leafNodes() const { return m_leafNodes; }
 
   [[nodiscard]] unsigned int numTopModules() const { return m_root.childDegree(); }
 
-  unsigned int numActiveModules() const { return m_optimizer->numActiveModules(); }
+  [[nodiscard]] unsigned int numActiveModules() const { return m_optimizer->numActiveModules(); }
 
   [[nodiscard]] unsigned int numNonTrivialTopModules() const { return m_numNonTrivialTopModules; }
 
@@ -182,10 +182,10 @@ public:
   [[nodiscard]] double getLossyDistortion() const { return m_optimizer->getLossyDistortion(); }
   [[nodiscard]] double getLossyOneLevelLossless() const { return m_optimizer->getLossyOneLevelLossless(); }
   // 1-based indices of the top modules that are noise modules (l_i > lambda * H_i).
-  std::vector<unsigned int> noiseTopModules() const;
+  [[nodiscard]] std::vector<unsigned int> noiseTopModules() const;
 #endif
-  double getMaxEntropy() { return m_maxEntropy; }
-  double getMaxFlow() { return m_maxFlow; }
+  [[nodiscard]] double getMaxEntropy() const { return m_maxEntropy; }
+  [[nodiscard]] double getMaxFlow() const { return m_maxFlow; }
 
   const Date& getStartDate() const { return m_startDate; }
   const Stopwatch& getElapsedTime() const { return m_elapsedTime; }

@@ -37,13 +37,13 @@ public:
       : std::runtime_error(message),
         m_code(code) {}
 
-  ExitCode code() const { return m_code; }
+  [[nodiscard]] ExitCode code() const { return m_code; }
 
 private:
   ExitCode m_code;
 };
 
-inline int exitCodeValue(ExitCode code)
+[[nodiscard]] constexpr int exitCodeValue(ExitCode code)
 {
   return static_cast<int>(code);
 }
