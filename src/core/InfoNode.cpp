@@ -355,8 +355,7 @@ void InfoNode::calcChildDegree() noexcept
     m_childDegree = 1;
   else {
     m_childDegree = 0;
-    for (auto& child : children()) {
-      (void)child;
+    for ([[maybe_unused]] auto& child : children()) {
       ++m_childDegree;
     }
   }

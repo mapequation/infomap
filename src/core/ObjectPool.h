@@ -102,7 +102,7 @@ public:
   }
 
   template <typename... Args>
-  T* alloc(Args&&... args)
+  [[nodiscard]] T* alloc(Args&&... args)
   {
     T* slot;
     if (!m_free.empty()) {
@@ -144,8 +144,8 @@ public:
     m_chunks.emplace_back(n - m_free.size());
   }
 
-  std::size_t liveCount() const noexcept { return m_liveCount; }
-  std::size_t chunkCount() const noexcept { return m_chunks.size(); }
+  [[nodiscard]] std::size_t liveCount() const noexcept { return m_liveCount; }
+  [[nodiscard]] std::size_t chunkCount() const noexcept { return m_chunks.size(); }
 };
 
 } // namespace infomap
