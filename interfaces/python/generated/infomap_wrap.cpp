@@ -47810,12 +47810,12 @@ SWIGINTERN PyObject *_wrap_InfomapBase_getMaxEntropy(PyObject *self, PyObject *a
   swig_obj[0] = args;
   res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__InfomapBase, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "InfomapBase_getMaxEntropy" "', argument " "1"" of type '" "infomap::InfomapBase *""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "InfomapBase_getMaxEntropy" "', argument " "1"" of type '" "infomap::InfomapBase const *""'"); 
   }
   arg1 = reinterpret_cast< infomap::InfomapBase * >(argp1);
   {
     try {
-      result = (double)(arg1)->getMaxEntropy();
+      result = (double)((infomap::InfomapBase const *)arg1)->getMaxEntropy();
     } catch (const std::exception& e) {
       SWIG_exception(SWIG_RuntimeError, e.what());
     }
@@ -47840,12 +47840,12 @@ SWIGINTERN PyObject *_wrap_InfomapBase_getMaxFlow(PyObject *self, PyObject *args
   swig_obj[0] = args;
   res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__InfomapBase, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "InfomapBase_getMaxFlow" "', argument " "1"" of type '" "infomap::InfomapBase *""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "InfomapBase_getMaxFlow" "', argument " "1"" of type '" "infomap::InfomapBase const *""'"); 
   }
   arg1 = reinterpret_cast< infomap::InfomapBase * >(argp1);
   {
     try {
-      result = (double)(arg1)->getMaxFlow();
+      result = (double)((infomap::InfomapBase const *)arg1)->getMaxFlow();
     } catch (const std::exception& e) {
       SWIG_exception(SWIG_RuntimeError, e.what());
     }
