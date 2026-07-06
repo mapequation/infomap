@@ -10,6 +10,8 @@
 #ifndef RANDOM_H_
 #define RANDOM_H_
 
+#include "infomath.h"
+
 #include <cstdint>
 #include <memory>
 #include <numeric>
@@ -179,7 +181,9 @@ public:
 
   unsigned int randInt(unsigned int min, unsigned int max)
   {
-    if (m_customEngine)
+    // Hinted so the default path stays the fall-through: no engine installed
+    // is the common case, and randInt() runs once per optimizer draw.
+    if (INFOMAP_UNLIKELY(m_customEngine != nullptr))
       return m_customEngine->randInt(min, max);
     return m_uniform(m_randGen, typename UniformUIntDistribution::param_type(min, max));
   }
