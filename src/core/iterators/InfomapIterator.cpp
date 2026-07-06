@@ -160,9 +160,9 @@ InfomapIterator& InfomapIteratorPhysical::operator++() noexcept
       auto firstLeafIt = *this;
       // If on a leaf node, loop through and aggregate to physical nodes
       while (!isEnd() && m_current->isLeaf()) {
-        auto ret = m_physNodes.insert(std::make_pair(m_current->physicalId, InfoNode(*m_current)));
-        auto& physNode = ret.first->second;
-        if (ret.second) {
+        auto [it, inserted] = m_physNodes.insert(std::make_pair(m_current->physicalId, InfoNode(*m_current)));
+        auto& physNode = it->second;
+        if (inserted) {
           // New physical node, use same parent as the state leaf node
           physNode.parent = m_current->parent;
         } else {

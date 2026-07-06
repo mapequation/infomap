@@ -299,30 +299,30 @@ struct Config {
     flowModelIsSet = true;
   }
 
-  bool isUndirectedClustering() const { return flowModel == FlowModel::undirected; }
+  [[nodiscard]] bool isUndirectedClustering() const { return flowModel == FlowModel::undirected; }
 
-  bool isUndirectedFlow() const { return flowModel == FlowModel::undirected || flowModel == FlowModel::undirdir; }
+  [[nodiscard]] bool isUndirectedFlow() const { return flowModel == FlowModel::undirected || flowModel == FlowModel::undirdir; }
 
-  bool printAsUndirected() const { return isUndirectedClustering(); }
+  [[nodiscard]] bool printAsUndirected() const { return isUndirectedClustering(); }
 
-  bool isMultilayerNetwork() const { return multilayerInput || !additionalInput.empty(); }
-  bool isBipartite() const { return bipartite; }
+  [[nodiscard]] bool isMultilayerNetwork() const { return multilayerInput || !additionalInput.empty(); }
+  [[nodiscard]] bool isBipartite() const { return bipartite; }
 #ifndef SWIG
-  bool isRegularizedMultilayerFlow() const { return isMultilayerNetwork() && regularized; }
+  [[nodiscard]] bool isRegularizedMultilayerFlow() const { return isMultilayerNetwork() && regularized; }
 #endif
 
-  bool haveMemory() const { return stateInput; }
-  bool printStates() const { return stateOutput; }
+  [[nodiscard]] bool haveMemory() const { return stateInput; }
+  [[nodiscard]] bool printStates() const { return stateOutput; }
 
-  bool haveMetaData() const { return !metaDataFile.empty() || numMetaDataDimensions != 0; }
+  [[nodiscard]] bool haveMetaData() const { return !metaDataFile.empty() || numMetaDataDimensions != 0; }
 
-  bool haveOutput() const { return !noFileOutput; }
+  [[nodiscard]] bool haveOutput() const { return !noFileOutput; }
 
 #ifndef SWIG
-  bool overwriteOutput() const { return !noOverwriteOutput; }
+  [[nodiscard]] bool overwriteOutput() const { return !noOverwriteOutput; }
 #endif
 
-  bool haveModularResultOutput() const
+  [[nodiscard]] bool haveModularResultOutput() const
   {
     return printTree || printFlowTree || printNewick || printJson || printCsv || printClu;
   }

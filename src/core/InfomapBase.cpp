@@ -240,8 +240,7 @@ public:
     Console console;
     console.section(fmt::format(FMT_STRING("Summary after {}{}"), m_trialsRun, m_trialsRun > 1 ? " trials" : " trial"));
     if (m_autoStopped) {
-      const unsigned int patience = Config::convergePatience;
-      Console::detail(0, "auto: stopped after {} trials (no improvement in last {})", m_trialsRun, patience);
+      Console::detail(0, "auto: stopped after {} trials (no improvement in last {})", m_trialsRun, Config::convergePatience);
     }
     std::string codelengthRange;
     std::string topModulesRange;
@@ -416,12 +415,12 @@ private:
           m_timing.recordTrial(trialIndex, threadNumber, trialSeed, trialTime, trialCodelength, trialTopModules, trialNumLevels);
 
           if (worker.printAllTrials && m_numTrials > 1) {
-            std::lock_guard<std::mutex> lock(outputMutex);
+            std::scoped_lock lock(outputMutex);
             auto outputTimer = m_timing.scope("output_s");
             worker.writeResult(static_cast<int>(globalIndex + 1));
           }
 
-          std::lock_guard<std::mutex> lock(bestResultMutex);
+          std::scoped_lock lock(bestResultMutex);
           const auto bestIndexMissing = result.bestTrialIndex >= m_numTrials;
           const auto isBetter = trialCodelength < result.bestHierarchicalCodelength - 1e-10;
           const auto isEarlierTie = std::abs(trialCodelength - result.bestHierarchicalCodelength) < 1e-10 && trialIndex < result.bestTrialIndex;
@@ -434,14 +433,14 @@ private:
             result.bestTree = std::move(trialTree);
           }
         } catch (const std::exception& e) {
-          std::lock_guard<std::mutex> lock(errorMutex);
+          std::scoped_lock lock(errorMutex);
           if (!hasError || trialIndex < firstErrorTrial) {
             hasError = true;
             firstErrorTrial = trialIndex;
             firstError = e.what();
           }
         } catch (...) {
-          std::lock_guard<std::mutex> lock(errorMutex);
+          std::scoped_lock lock(errorMutex);
           if (!hasError || trialIndex < firstErrorTrial) {
             hasError = true;
             firstErrorTrial = trialIndex;
@@ -1217,13 +1216,13 @@ InfomapBase& InfomapBase::initTree(const NodePaths& tree)
     Path prefix;
     for (size_t i = 0; i + 1 < path.size(); ++i) {
       prefix.push_back(path[i]);
-      auto inserted = moduleByPathPrefix.emplace(prefix, nullptr);
-      if (inserted.second) {
+      auto [it, inserted] = moduleByPathPrefix.emplace(prefix, nullptr);
+      if (inserted) {
         auto* module = &allocNode();
         parent->addChild(module);
-        inserted.first->second = module;
+        it->second = module;
       }
-      parent = inserted.first->second;
+      parent = it->second;
     }
 
     parent->addChild(leafNode);

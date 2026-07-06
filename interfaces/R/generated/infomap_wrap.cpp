@@ -40648,12 +40648,12 @@ R_swig_InfomapBase_getMaxEntropy ( SEXP self, SEXP s_swig_copy)
     
     res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_infomap__InfomapBase, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "InfomapBase_getMaxEntropy" "', argument " "1"" of type '" "infomap::InfomapBase *""'"); 
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "InfomapBase_getMaxEntropy" "', argument " "1"" of type '" "infomap::InfomapBase const *""'"); 
     }
     arg1 = reinterpret_cast< infomap::InfomapBase * >(argp1);
     {
       try {
-        result = (double)(arg1)->getMaxEntropy();
+        result = (double)((infomap::InfomapBase const *)arg1)->getMaxEntropy();
       } catch (const std::exception& e) {
         SWIG_exception(SWIG_RuntimeError, e.what());
       }
@@ -40684,12 +40684,12 @@ R_swig_InfomapBase_getMaxFlow ( SEXP self, SEXP s_swig_copy)
     
     res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_infomap__InfomapBase, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "InfomapBase_getMaxFlow" "', argument " "1"" of type '" "infomap::InfomapBase *""'"); 
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "InfomapBase_getMaxFlow" "', argument " "1"" of type '" "infomap::InfomapBase const *""'"); 
     }
     arg1 = reinterpret_cast< infomap::InfomapBase * >(argp1);
     {
       try {
-        result = (double)(arg1)->getMaxFlow();
+        result = (double)((infomap::InfomapBase const *)arg1)->getMaxFlow();
       } catch (const std::exception& e) {
         SWIG_exception(SWIG_RuntimeError, e.what());
       }

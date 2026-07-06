@@ -38,19 +38,19 @@ public:
   // Getters
   // ===================================================
 
-  double getIndexCodelength() const { return indexCodelength; }
+  [[nodiscard]] double getIndexCodelength() const { return indexCodelength; }
 
-  double getModuleCodelength() const { return moduleCodelength - m_sumCorrection; }
+  [[nodiscard]] double getModuleCodelength() const { return moduleCodelength - m_sumCorrection; }
 
-  double getCodelength() const { return codelength - m_sumCorrection; } // J_lambda
+  [[nodiscard]] double getCodelength() const { return codelength - m_sumCorrection; } // J_lambda
 
-  double getLossyRate() const { return codelength - m_sumNoiseLoss; } // L_lossy
+  [[nodiscard]] double getLossyRate() const { return codelength - m_sumNoiseLoss; } // L_lossy
 
-  double getLossyDistortion() const { return m_sumNoiseEntropy; } // D
+  [[nodiscard]] double getLossyDistortion() const { return m_sumNoiseEntropy; } // D
 
   // L_1 = H(p_alpha): the lossless one-level reference, captured in calcCodelength
   // of the root. Independent of lambda; used for reporting and relative savings.
-  double getOneLevelLossless() const { return m_oneLevelLossless; }
+  [[nodiscard]] double getOneLevelLossless() const { return m_oneLevelLossless; }
 
   // ===================================================
   // IO

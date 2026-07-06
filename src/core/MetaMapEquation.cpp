@@ -175,20 +175,24 @@ INFOMAP_HOT double MetaMapEquation::getDeltaCodelengthOnMovingNode(InfoNode& cur
   unsigned int oldModuleIndex = oldModuleDelta.module;
   unsigned int newModuleIndex = newModuleDelta.module;
 
+  // Hoist the two module lookups: the four codelength queries below only touch
+  // these two modules, so a single map traversal each suffices.
+  auto& oldModuleMeta = m_moduleToMetaCollection[oldModuleIndex];
+  auto& newModuleMeta = m_moduleToMetaCollection[newModuleIndex];
+
   // Remove codelength of old and new module before changes
-  deltaMetaL -= getCurrentModuleMetaCodelength(oldModuleIndex, current, 0);
-  deltaMetaL -= getCurrentModuleMetaCodelength(newModuleIndex, current, 0);
+  deltaMetaL -= getCurrentModuleMetaCodelength(oldModuleMeta, current, 0);
+  deltaMetaL -= getCurrentModuleMetaCodelength(newModuleMeta, current, 0);
   // Add codelength of old module with current node removed
-  deltaMetaL += getCurrentModuleMetaCodelength(oldModuleIndex, current, -1);
+  deltaMetaL += getCurrentModuleMetaCodelength(oldModuleMeta, current, -1);
   // Add codelength of old module with current node added
-  deltaMetaL += getCurrentModuleMetaCodelength(newModuleIndex, current, 1);
+  deltaMetaL += getCurrentModuleMetaCodelength(newModuleMeta, current, 1);
 
   return deltaL + deltaMetaL * metaDataRate;
 }
 
-double MetaMapEquation::getCurrentModuleMetaCodelength(unsigned int module, InfoNode& current, int addRemoveOrNothing)
+double MetaMapEquation::getCurrentModuleMetaCodelength(MetaCollection& currentMetaCollection, InfoNode& current, int addRemoveOrNothing)
 {
-  auto& currentMetaCollection = m_moduleToMetaCollection[module];
   const MetaCollection* nodeMeta = current.metaCollectionPtr();
 
   double moduleMetaCodelength = 0.0;
@@ -227,16 +231,21 @@ void MetaMapEquation::updateCodelengthOnMovingNode(InfoNode& current,
   unsigned int oldModuleIndex = oldModuleDelta.module;
   unsigned int newModuleIndex = newModuleDelta.module;
 
+  // Hoist the two module lookups; the references stay valid across
+  // updateMetaData, which mutates these collections in place.
+  auto& oldModuleMeta = m_moduleToMetaCollection[oldModuleIndex];
+  auto& newModuleMeta = m_moduleToMetaCollection[newModuleIndex];
+
   // Remove codelength of old and new module before changes
-  deltaMetaL -= getCurrentModuleMetaCodelength(oldModuleIndex, current, 0);
-  deltaMetaL -= getCurrentModuleMetaCodelength(newModuleIndex, current, 0);
+  deltaMetaL -= getCurrentModuleMetaCodelength(oldModuleMeta, current, 0);
+  deltaMetaL -= getCurrentModuleMetaCodelength(newModuleMeta, current, 0);
 
   // Update meta data from moving node
   updateMetaData(current, oldModuleIndex, newModuleIndex);
 
   // Add codelength of old and new module after changes
-  deltaMetaL += getCurrentModuleMetaCodelength(oldModuleIndex, current, 0);
-  deltaMetaL += getCurrentModuleMetaCodelength(newModuleIndex, current, 0);
+  deltaMetaL += getCurrentModuleMetaCodelength(oldModuleMeta, current, 0);
+  deltaMetaL += getCurrentModuleMetaCodelength(newModuleMeta, current, 0);
 
   metaCodelength += deltaMetaL;
 }
