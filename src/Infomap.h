@@ -79,21 +79,21 @@ public:
   void addNode(unsigned int id, std::string name, double weight) { m_network.addNode(id, std::move(name), weight); }
 
   void addName(unsigned int id, const std::string& name) { m_network.addName(id, name); }
-  [[nodiscard]] std::string getName(unsigned int id) const
+  std::string getName(unsigned int id) const
   {
     auto& names = m_network.names();
     auto it = names.find(id);
     return it != names.end() ? it->second : "";
   }
 
-  [[nodiscard]] const std::map<unsigned int, std::string>& getNames() const { return m_network.names(); }
+  const std::map<unsigned int, std::string>& getNames() const { return m_network.names(); }
 
   // State-id -> name for higher-order (state/memory) networks. Physical names
   // live in getNames(), keyed by physical id; state nodes carry their own
   // optional name parsed from the *States section (StateNode::name). Only
   // non-empty names are returned, so a first-order network (no per-state names)
   // yields an empty map and callers fall back to the physical name.
-  [[nodiscard]] std::map<unsigned int, std::string> getStateNames() const
+  std::map<unsigned int, std::string> getStateNames() const
   {
     std::map<unsigned int, std::string> stateNames;
     for (const auto& entry : m_network.nodes()) {
@@ -106,7 +106,7 @@ public:
   // Name of a single state node, or "" if the id is unknown or unnamed. The
   // scalar counterpart of getStateNames(), mirroring getName(); the R binding
   // walks state nodes calling this since SWIG-R exposes std::map opaquely.
-  [[nodiscard]] std::string getStateName(unsigned int stateId) const
+  std::string getStateName(unsigned int stateId) const
   {
     const auto& nodes = m_network.nodes();
     auto it = nodes.find(stateId);
@@ -150,7 +150,7 @@ public:
   // add_multilayer_* / setMultilayerInitialPartition APIs. The network must be
   // built first (state nodes are created on the fly). Throws std::out_of_range
   // if the combination is not present (issue #616).
-  [[nodiscard]] unsigned int getMultilayerStateId(unsigned int layerId, unsigned int nodeId) const
+  unsigned int getMultilayerStateId(unsigned int layerId, unsigned int nodeId) const
   {
     const auto& map = m_network.layerNodeToStateId();
     auto layerIt = map.find(layerId);
@@ -164,7 +164,7 @@ public:
 
   void setBipartiteStartId(unsigned int startId) { m_network.setBipartiteStartId(startId); }
 
-  [[nodiscard]] std::map<std::pair<unsigned int, unsigned int>, double> getLinks(bool flow) const
+  std::map<std::pair<unsigned int, unsigned int>, double> getLinks(bool flow) const
   {
     std::map<std::pair<unsigned int, unsigned int>, double> links;
 
@@ -176,7 +176,7 @@ public:
   }
 
 #ifndef SWIGPYTHON
-  [[nodiscard]] std::vector<LinkResult> getLinkResults() const
+  std::vector<LinkResult> getLinkResults() const
   {
     std::vector<LinkResult> links;
     links.reserve(m_network.numLinks());
@@ -189,7 +189,7 @@ public:
   }
 #endif
 
-  [[nodiscard]] std::map<unsigned int, unsigned int> getModules(int level = 1, bool states = false)
+  std::map<unsigned int, unsigned int> getModules(int level = 1, bool states = false)
   {
     if (haveMemory() && !states) {
       throw std::runtime_error("Cannot get modules on higher-order network without states.");
@@ -208,7 +208,7 @@ public:
   // (above) so SWIG wraps its parallel-vector members for Python. Excluded from
   // the R binding together with NodeData (see the struct's #ifndef SWIGR note).
 #ifndef SWIGR
-  [[nodiscard]] NodeData getNodeData(int level = 1, bool states = false)
+  NodeData getNodeData(int level = 1, bool states = false)
   {
     // Mirror _results.get_nodes: physical iterator for higher-order networks
     // unless state-level data is requested.

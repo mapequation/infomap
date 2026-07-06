@@ -10,7 +10,8 @@
 #include "convert.h"
 #include "format.h"
 
-namespace infomap::io {
+namespace infomap {
+namespace io {
 
   std::string toPrecision(double value, unsigned int precision, bool fixed)
   {
@@ -23,4 +24,5 @@ namespace infomap::io {
                  : fmt::format(FMT_STRING("{:.{}g}"), value, precision);
   }
 
-} // namespace infomap::io
+} // namespace io
+} // namespace infomap

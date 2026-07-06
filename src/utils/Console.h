@@ -138,12 +138,10 @@ private:
 class Console::Progress {
 public:
   explicit Progress(std::string label);
-  // Pinned RAII handle for the on-screen line: neither copyable nor movable.
-  // Console::progress() hands one back by value purely via C++17 guaranteed
-  // copy elision — the returned prvalue is constructed directly in the caller,
-  // so no move is needed. Forbidding moves also makes double-ownership of the
-  // live line (two instances each committing a newline) structurally impossible.
-  Progress(Progress&&) = delete;
+  // Movable so Console::progress() can return one by value; the moved-from
+  // instance relinquishes the on-screen line (m_live = false) so only the live
+  // owner commits a newline on destruction. Copying would duplicate ownership.
+  Progress(Progress&& other) noexcept;
   Progress(const Progress&) = delete;
   Progress& operator=(const Progress&) = delete;
   Progress& operator=(Progress&&) = delete;

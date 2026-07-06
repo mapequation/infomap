@@ -164,10 +164,10 @@ private:
 #ifndef INFOMAP_R
   static std::ostream& defaultStream();
 #endif
-  inline static std::ostream* s_ostream = nullptr;
-  inline static unsigned int s_verboseLevel = 0;
-  inline static bool s_silent = false;
-  inline static thread_local unsigned int s_threadMuteDepth = 0;
+  static std::ostream* s_ostream;
+  static unsigned int s_verboseLevel;
+  static bool s_silent;
+  static thread_local unsigned int s_threadMuteDepth;
 };
 
 struct hideIf {

@@ -85,6 +85,12 @@ Console::Progress Console::progress(const std::string& label) const
 
 Console::Progress::Progress(std::string label) : m_label(std::move(label)) {}
 
+Console::Progress::Progress(Progress&& other) noexcept
+    : m_console(other.m_console), m_label(std::move(other.m_label)), m_live(other.m_live)
+{
+  other.m_live = false;
+}
+
 Console::Progress::~Progress()
 {
   // If updates were drawn but finish() was never reached (e.g. an early return
