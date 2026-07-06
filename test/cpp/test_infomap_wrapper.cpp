@@ -309,6 +309,58 @@ TEST_CASE("Sub-Infomap creation inherits the injected RNG engine [fast][core][li
   CHECK(subInfomap.codelength() >= -1e-12);
 }
 
+// An igraph-shaped engine: only seed() + randInt(min, max), no
+// UniformRandomBitGenerator surface at all. That this type compiles at the
+// setRandomEngine() call site proves bounded-draw engines never have to supply
+// raw bits — the host's own bounded mapping (igraph_rng_get_integer et al.) is
+// used as-is, so results stay platform-stable for the host. (#411)
+struct BoundedTrackingEngine {
+  std::shared_ptr<TrackingEngine::Stats> stats;
+  unsigned int state = 0;
+
+  explicit BoundedTrackingEngine(std::shared_ptr<TrackingEngine::Stats> sharedStats) : stats(std::move(sharedStats)) {}
+
+  void seed(unsigned int seedValue)
+  {
+    state = seedValue;
+    stats->recordSeed(seedValue);
+  }
+
+  unsigned int randInt(unsigned int min, unsigned int max)
+  {
+    ++stats->drawCount;
+    state = state * 1664525u + 1013904223u;
+    return min + state % (max - min + 1u);
+  }
+};
+
+TEST_CASE("A bounded-draw engine without a bit generator drives the run [fast][core][lifecycle][rng]")
+{
+  auto stats = std::make_shared<TrackingEngine::Stats>();
+  InfomapWrapper im(infomap::test::defaultFlags());
+  im.setRandomEngine(BoundedTrackingEngine(stats));
+  im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+
+  im.run();
+  infomap::test::checkRunSanity(im);
+
+  const auto drawsAfterFirstRun = stats->drawCount.load();
+  CHECK(drawsAfterFirstRun > 0);
+
+  const auto firstPartition = infomap::test::canonicalPartition(im.getModules());
+  const auto firstCodelength = im.codelength();
+
+  im.reseed(123);
+  im.run();
+  infomap::test::checkRunSanity(im);
+
+  // Same bounded engine + same seed -> identical result; every draw went
+  // through the engine's own bounded mapping.
+  CHECK(infomap::test::canonicalPartition(im.getModules()) == firstPartition);
+  CHECK(im.codelength() == doctest::Approx(firstCodelength));
+  CHECK(stats->drawCount.load() > drawsAfterFirstRun);
+}
+
 TEST_CASE("Multi-trial run reports the best trial codelength [fast][core][lifecycle]")
 {
   InfomapWrapper im("--silent --seed 1 --num-trials 5");

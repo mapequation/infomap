@@ -90,8 +90,19 @@ public:
   }
 
   /**
-   * Install a seedable, standard-engine-compatible RNG for native embedders
-   * (e.g. igraph), keeping Infomap's default behaviour unchanged when unused.
+   * Install a seedable RNG engine for native embedders (e.g. igraph), keeping
+   * Infomap's default behaviour unchanged when unused.
+   *
+   * Two engine shapes are accepted, both with seed(unsigned int) (which may be
+   * a no-op when the host owns seeding):
+   *
+   * - unsigned int randInt(unsigned int min, unsigned int max): the engine's
+   *   own bounded draw is used as-is. Recommended for hosts with a bounded-draw
+   *   API (e.g. igraph_rng_get_integer), whose integer mapping stays
+   *   platform-stable. Takes precedence when both shapes are present.
+   * - A standard UniformRandomBitGenerator: its bits are mapped with
+   *   std::uniform_int_distribution, whose sequence is implementation-defined
+   *   (may differ between standard libraries).
    *
    * Example:
    *   im.setRandomEngine(MyEngine{});
