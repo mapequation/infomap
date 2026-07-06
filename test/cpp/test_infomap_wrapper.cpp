@@ -6,6 +6,7 @@
 
 #include "TestUtils.h"
 
+#include <atomic>
 #include <cstdio>
 #include <iostream>
 #include <limits>
@@ -177,14 +178,15 @@ TEST_CASE("Infomap can rerun the same multi-trial instance safely [fast][core][l
 }
 
 // A copy-constructible, seedable UniformRandomBitGenerator (a small LCG) that
-// records every seed value it receives — stands in for a host RNG (igraph etc.)
-// to exercise the pluggable-engine seam (issue #411).
+// records every seed value it receives and counts every draw — stands in for a
+// host RNG (igraph etc.) to exercise the pluggable-engine seam (issue #411).
 struct TrackingEngine {
   using result_type = infomap::RandGen::result_type;
 
   struct Stats {
     mutable std::mutex mutex;
     std::vector<unsigned int> seedValues;
+    std::atomic<unsigned long> drawCount { 0 };
 
     void recordSeed(unsigned int seedValue)
     {
@@ -215,6 +217,7 @@ struct TrackingEngine {
 
   result_type operator()()
   {
+    ++stats->drawCount;
     state = state * 1664525u + 1013904223u;
     return state;
   }
@@ -230,10 +233,19 @@ TEST_CASE("A custom RNG engine drives the run and reseeding stays deterministic 
   im.run();
   infomap::test::checkRunSanity(im);
 
+  // A positive draw count proves the injected engine supplies the draws
+  // themselves — a regression where only seed() is forwarded (draws falling
+  // back to the default mt19937) would still pass the determinism checks below.
+  const auto drawsAfterFirstRun = stats->drawCount.load();
+  CHECK(drawsAfterFirstRun > 0);
+
   const auto firstPartition = infomap::test::canonicalPartition(im.getModules());
   const auto firstCodelength = im.codelength();
 
+  const auto seedsBeforeReseed = stats->snapshot().size();
   im.reseed(123);
+  // reseed() forwards exactly one seed() call to the injected engine.
+  REQUIRE(stats->snapshot().size() == seedsBeforeReseed + 1);
   im.run();
   infomap::test::checkRunSanity(im);
 
@@ -245,6 +257,7 @@ TEST_CASE("A custom RNG engine drives the run and reseeding stays deterministic 
   REQUIRE(seedValues.size() >= 2);
   CHECK(seedValues[0] == 123u);
   CHECK(seedValues[1] == 123u);
+  CHECK(stats->drawCount.load() > drawsAfterFirstRun);
 }
 
 TEST_CASE("setConfig preserves the injected RNG engine and applies the new seed [fast][core][lifecycle][rng]")
