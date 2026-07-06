@@ -104,6 +104,11 @@ public:
    *   std::uniform_int_distribution, whose sequence is implementation-defined
    *   (may differ between standard libraries).
    *
+   * The engine drives all draws except the opt-in inner-parallel move loop
+   * (--inner-parallelization, default off), which uses per-node mt19937s
+   * seeded from the config seed — a host RNG is never shared across OpenMP
+   * worker threads.
+   *
    * Example:
    *   im.setRandomEngine(MyEngine{});
    *   im.reseed(123);
