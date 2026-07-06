@@ -10,6 +10,7 @@
 #include "NetworkBuilder.h"
 #include "Network.h"
 #include "NetworkInputParser.h"
+#include "JsonNetworkInputParser.h"
 #include "../utils/FileURI.h"
 #include "../utils/format.h"
 
@@ -111,6 +112,11 @@ public:
     m_network.addMetaData(nodeId, metaData);
   }
 
+  void onInitialPartitionPath(unsigned int id, const std::vector<unsigned int>& path, bool stateLevel)
+  {
+    m_network.addInitialPartitionPath(id, path, stateLevel ? TreeLeafIdType::state : TreeLeafIdType::physical);
+  }
+
 private:
   Network& m_network;
 };
@@ -121,7 +127,11 @@ void buildNetworkFromInput(Network& network, const std::string& filename)
 
   NetworkIntakeAdapter sink(network);
   sink.onFileInput();
-  input::parseNetworkInput(filename, sink, sink.inputOptions());
+  if (input::looksLikeJsonNetwork(filename)) {
+    input::parseJsonNetworkInput(filename, sink, sink.inputOptions());
+  } else {
+    input::parseNetworkInput(filename, sink, sink.inputOptions());
+  }
   sink.onNetworkParsed();
 }
 
