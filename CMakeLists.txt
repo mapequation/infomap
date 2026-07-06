@@ -278,6 +278,7 @@ if(BUILD_TESTING)
             infomap_cpp_object_pool_tests
             infomap_cpp_lossy_tests
             infomap_cpp_preferred_levels_tests
+            infomap_cpp_random_tests
             infomap_cli
     )
 endif()
