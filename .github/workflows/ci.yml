@@ -114,6 +114,11 @@ jobs:
               - "package.json"
               - "package-lock.json"
               - "interfaces/js/**"
+              # The binding-options freshness gate runs in the JS workflow, so
+              # changes to the generator or its inputs must trigger it.
+              - "interfaces/parameters/**"
+              - "scripts/generate_binding_options.py"
+              - "scripts/parameter_catalog.py"
               - "scripts/generate_js_metadata.py"
               - "scripts/prepare_npm_package.py"
               - ".github/actions/setup-js-build/action.yml"
