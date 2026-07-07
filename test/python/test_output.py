@@ -141,3 +141,38 @@ def test_tree_cluster_data_roundtrip(
     continued.read_file(network_path)
     continued.run()
     assert continued.codelength <= expected_codelength + 1e-9
+
+
+def test_writers_accept_pathlike_filenames(
+    make_infomap, load_graph_fixture, output_dir
+):
+    im = _run_small_network(make_infomap, load_graph_fixture)
+
+    tree_path = output_dir / "pathlike.tree"
+    clu_path = output_dir / "pathlike.clu"
+
+    im.write_tree(tree_path)
+    im.write_clu(clu_path)
+    im.write(output_dir / "pathlike2.tree")
+
+    assert tree_path.is_file()
+    assert clu_path.is_file()
+    assert (output_dir / "pathlike2.tree").is_file()
+
+
+def test_write_without_extension_raises_value_error(
+    make_infomap, load_graph_fixture, output_dir
+):
+    im = _run_small_network(make_infomap, load_graph_fixture)
+
+    with pytest.raises(ValueError, match="no extension"):
+        im.write(str(output_dir / "noext"))
+
+
+def test_write_with_unknown_extension_raises_not_implemented(
+    make_infomap, load_graph_fixture, output_dir
+):
+    im = _run_small_network(make_infomap, load_graph_fixture)
+
+    with pytest.raises(NotImplementedError, match="bogus"):
+        im.write(str(output_dir / "file.bogus"))

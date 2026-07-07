@@ -32,7 +32,7 @@ import shutil
 import sys
 from typing import Iterable, List, Sequence, Tuple, TypedDict
 
-__all__ = ["merge_trial_results", "MergeError"]
+__all__ = ["merge_trial_results", "MergeError", "MergeSummary"]
 
 SUPPORTED_FORMATS = ("tree", "clu")
 
@@ -108,6 +108,11 @@ def _load_shard(path: str) -> dict:
     if not isinstance(data["trials"], list):
         raise MergeError(f"shard file '{path}' has a non-list 'trials' field")
     for trial in data["trials"]:
+        # Without this check a string entry would pass the `key not in trial`
+        # test below via substring containment and crash much later in
+        # _select_winner instead of raising a MergeError here.
+        if not isinstance(trial, dict):
+            raise MergeError(f"shard file '{path}' has a non-object entry in 'trials'")
         for key in _REQUIRED_TRIAL_KEYS:
             if key not in trial:
                 raise MergeError(
@@ -202,7 +207,7 @@ def _write_clu_from_tree(tree_path: str, clu_path: str) -> None:
 
 def merge_trial_results(
     patterns: Sequence[str],
-    out_name: str,
+    out_name: str | os.PathLike[str],
     formats: Sequence[str] = SUPPORTED_FORMATS,
     require_complete: bool = False,
 ) -> MergeSummary:
@@ -212,7 +217,7 @@ def merge_trial_results(
     ----------
     patterns : sequence of str
         Shard result file paths or glob patterns (each may be comma-separated).
-    out_name : str
+    out_name : str or os.PathLike
         Output basename; ``<out_name>.tree`` / ``<out_name>.clu`` are written.
     formats : sequence of str, optional
         Which output formats to write. Only ``tree`` and ``clu`` are supported
@@ -228,6 +233,7 @@ def merge_trial_results(
         winner tree path, the number of shards/trials, any ``missing`` indices,
         and the list of ``outputs`` written.
     """
+    out_name = os.fspath(out_name)
     bad = [f for f in formats if f not in SUPPORTED_FORMATS]
     if bad:
         raise MergeError(
@@ -264,7 +270,11 @@ def merge_trial_results(
     if "tree" in formats:
         tree_out = out_name + ".tree"
         os.makedirs(os.path.dirname(tree_out) or ".", exist_ok=True)
-        shutil.copyfile(winner_tree, tree_out)
+        # Copy via a sibling temp file + os.replace so the final output
+        # appears atomically, mirroring _write_clu_from_tree.
+        tree_tmp = tree_out + ".tmp"
+        shutil.copyfile(winner_tree, tree_tmp)
+        os.replace(tree_tmp, tree_out)
         outputs.append(tree_out)
     if "clu" in formats:
         clu_out = out_name + ".clu"

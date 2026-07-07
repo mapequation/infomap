@@ -16,6 +16,29 @@ _DEFAULT_TO_DATAFRAME_COLUMNS = ("node_id", "module_id", "flow", "path", "name")
 _DATAFRAME_COLUMN_ALIASES = {"community": "module_id"}
 
 
+def _unknown_dataframe_column_error(requested) -> ValueError:
+    # Shared by the legacy accessors and Result._column so both surfaces
+    # report the same message and column inventory.
+    available = ", ".join(
+        sorted(
+            {
+                *_DEFAULT_TO_DATAFRAME_COLUMNS,
+                "child_index",
+                "community",
+                "depth",
+                "layer_id",
+                "modular_centrality",
+                "state_id",
+                "state_name",
+            }
+        )
+    )
+    return ValueError(
+        f"Unknown DataFrame column {requested!r}. "
+        f"Available columns include: {available}."
+    )
+
+
 def plogp(p):
     """Compute ``x * log2(x)`` for each value in ``p``.
 
@@ -105,24 +128,7 @@ def _to_dataframe_column_getter(requested, resolved, names, state_names):
         try:
             return getattr(node, resolved)
         except AttributeError as exc:
-            available = ", ".join(
-                sorted(
-                    {
-                        *_DEFAULT_TO_DATAFRAME_COLUMNS,
-                        "child_index",
-                        "community",
-                        "depth",
-                        "layer_id",
-                        "modular_centrality",
-                        "state_id",
-                        "state_name",
-                    }
-                )
-            )
-            raise ValueError(
-                f"Unknown DataFrame column {requested!r}. "
-                f"Available columns include: {available}."
-            ) from exc
+            raise _unknown_dataframe_column_error(requested) from exc
 
     return get_column_value
 
@@ -175,7 +181,7 @@ class _InfomapResultsMixin:
 
     def _get_links_impl(self, data="weight"):
         if data not in ("weight", "flow"):
-            raise RuntimeError('data must one of "weight" or "flow"')
+            raise ValueError('data must be one of "weight" or "flow"')
         return (
             (source, target, value)
             for (source, target), value in self._core.getLinks(
