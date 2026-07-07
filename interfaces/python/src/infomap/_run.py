@@ -185,11 +185,12 @@ def run(
 
     Notes
     -----
-    ``run`` is quiet by default: unless ``silent`` is given, it runs with
-    ``silent=True``. Pass ``silent=False`` (as a keyword or in a mapping) for
-    the engine log. An :class:`Options` instance is a total configuration and
-    always carries an explicit ``silent`` (``False`` unless set), which is
-    respected as-is. The stateful :class:`Infomap` keeps its verbose default.
+    The Python API is quiet by default (``silent=True``, here and on
+    :class:`Infomap`, :class:`Network`, and :class:`Options`). Pass
+    ``silent=False`` for the engine log — except for :class:`Network` input,
+    whose engine is silent for its whole lifetime (``silent=False`` warns
+    there; see :meth:`Network.run`). The ``infomap`` command-line interface
+    keeps its verbose default.
 
     Keyword arguments go to the engine; the input adapters always build with
     their defaults (e.g. networkx reads the ``"weight"`` edge attribute, a
@@ -233,12 +234,6 @@ def run(
     from .network import Network
 
     resolved = _resolve_options(options, overrides)
-    # The functional front door defaults to a quiet engine. Absent (or an
-    # explicit None) means the user made no choice; an Options instance always
-    # carries an explicit silent bool (it is a total configuration), so its
-    # value is respected like any user-supplied one.
-    if resolved.get("silent") is None:
-        resolved["silent"] = True
     # Keys the user actually supplied (kwargs + a mapping `options`), used to
     # reject adapter-only arguments below. An Options *instance* is excluded on
     # purpose: its to_kwargs() carries every field (e.g. directed=None) the user

@@ -976,6 +976,8 @@ const std::vector<ParameterSpec>& parameterCatalog()
         .longName("silent")
         .description("Suppress console output.")
         .group("Output")
+        .bindingDefaults("True", "FALSE")
+        .pythonDoc("Suppress console output. The Python API is quiet by default; construct with silent=False for the engine log. The command-line interface is unaffected.")
         .configTarget(&Config::silent),
     param()
         .longName("pretty")

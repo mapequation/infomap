@@ -25,6 +25,7 @@ an :class:`Infomap`.
 
 from __future__ import annotations
 
+import warnings
 from typing import Any
 
 from ._core import Core, apply_initial_partition
@@ -273,6 +274,13 @@ class Network:
         -------
         Result
             An immutable snapshot of the run, bound to this ``Network``.
+
+        Notes
+        -----
+        A ``Network`` engine is silent for its whole lifetime; ``silent=False``
+        cannot re-enable the engine log here and warns instead. For the log,
+        run through the stateful :class:`~infomap.Infomap` (constructed with
+        ``silent=False``) or pass the input directly to :func:`infomap.run`.
         """
         from ._options import Options, _construct_args
         from .result import build_result
@@ -283,6 +291,16 @@ class Network:
             resolved = options
         else:
             resolved = Options(**dict(options))
+
+        if resolved.silent is False:
+            warnings.warn(
+                "A Network engine is silent for its whole lifetime; "
+                "silent=False has no effect here. For the engine log, run "
+                "through Infomap(silent=False) or pass the input directly "
+                "to infomap.run().",
+                UserWarning,
+                stacklevel=2,
+            )
 
         rendered_args = _construct_args(args, **resolved.to_kwargs())
         if initial_partition is None:

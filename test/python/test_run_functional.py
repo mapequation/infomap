@@ -83,16 +83,56 @@ def test_run_options_mapping_silent_false_prints_engine_log(capfd):
 
 
 def test_run_options_instance_silent_is_respected(capfd):
-    # An Options instance is a total configuration: to_kwargs() always carries
-    # an explicit silent (False unless set), which run() respects as-is.
     from infomap import Options
 
     _engine_log(capfd)
     infomap.run(_LINKS, options=Options(num_trials=1, seed=1))
+    assert _engine_log(capfd) == ""
+
+    infomap.run(_LINKS, options=Options(num_trials=1, seed=1, silent=False))
     assert _engine_log(capfd) != ""
 
-    infomap.run(_LINKS, options=Options(num_trials=1, seed=1, silent=True))
+
+def test_options_default_is_silent():
+    from infomap import Options
+
+    assert Options().silent is True
+    assert Options(silent=False).silent is False
+
+
+def test_stateful_infomap_is_silent_by_default(capfd):
+    _engine_log(capfd)  # drain log buffered by earlier (unflushed) tests
+    im = Infomap(num_trials=1, seed=1, no_file_output=True)
+    im.add_links(_LINKS)
+    im.run()
     assert _engine_log(capfd) == ""
+
+
+def test_stateful_infomap_silent_false_prints_engine_log(capfd):
+    _engine_log(capfd)
+    im = Infomap(silent=False, num_trials=1, seed=1, no_file_output=True)
+    im.add_links(_LINKS)
+    im.run()
+    assert _engine_log(capfd) != ""
+
+
+def test_network_run_is_silent_by_default(capfd):
+    _engine_log(capfd)
+    net = Network().add_links(_LINKS)
+    net.run(options={"num_trials": 1, "seed": 1})
+    assert _engine_log(capfd) == ""
+
+
+def test_network_run_silent_false_warns():
+    # A Network engine is constructed silent for its whole lifetime (a flag
+    # cannot be switched off per run), so an explicit silent=False warns
+    # instead of being silently ignored.
+    net = Network().add_links(_LINKS)
+    with pytest.warns(UserWarning, match="silent for its whole lifetime"):
+        net.run(options={"silent": False, "num_trials": 1, "seed": 1})
+
+    with pytest.warns(UserWarning, match="silent for its whole lifetime"):
+        infomap.run(net, silent=False, num_trials=1, seed=1)
 
 
 def test_run_networkx_matches_oo():

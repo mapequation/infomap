@@ -28,6 +28,7 @@ def test_construct_args_renders_expected_cli_flags():
         "--existing",
         "--no-infomap",
         "--no-file-output",
+        "--silent",
         "-vvv",
         "--output",
         "json,tree",
@@ -80,7 +81,7 @@ def test_run_forwards_variable_markov_options(monkeypatch):
 def test_construct_args_renders_variable_markov_min_scale():
     args = infomap_module._construct_args(variable_markov_min_scale=0.5)
 
-    assert shlex.split(args) == ["--variable-markov-min-scale", "0.5"]
+    assert shlex.split(args) == ["--silent", "--variable-markov-min-scale", "0.5"]
 
 
 def test_infomap_facade_signatures_match_options():
