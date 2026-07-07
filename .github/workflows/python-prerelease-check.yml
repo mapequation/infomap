@@ -1,0 +1,22 @@
+name: Python prerelease check
+
+# Weekly (and on-demand) test-build of the Python wheels against prerelease
+# CPython (3.15) so C-API or build breakage surfaces well before the final
+# release. Non-blocking: this workflow builds nothing that ships and never
+# gates PRs or merges. Schedules only run on the default branch.
+
+on:
+  schedule:
+    - cron: "0 6 * * 1" # Mondays 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  prerelease-wheels:
+    uses: ./.github/workflows/_python-package.yml
+    with:
+      run-tests: false
+      build-release-artifacts: false
+      prerelease-python-check: true
