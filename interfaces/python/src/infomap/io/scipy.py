@@ -3,18 +3,14 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Any
 
+from .._optional import require_scipy_sparse
 from ._arrays import undirected_edge_items
 
 
 def _import_sparse() -> Any:
-    try:
-        import scipy.sparse as sparse
-    except ImportError as exc:
-        raise ImportError(
-            "The 'scipy' package is required for SciPy sparse matrix support. "
-            'Install it with `python -m pip install "infomap[scipy]"`.'
-        ) from exc
-    return sparse
+    # Thin delegate kept for backwards compatibility (tests import it); the
+    # shared guard lives in infomap._optional.
+    return require_scipy_sparse()
 
 
 def _validate_sparse_matrix(sparse: Any, A: Any) -> Any:

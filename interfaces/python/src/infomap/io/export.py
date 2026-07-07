@@ -5,6 +5,7 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from .._optional import require_igraph, require_networkx
 from ._arrays import require_modules as _require_modules
 
 if TYPE_CHECKING:
@@ -19,25 +20,13 @@ _DEFAULT_PATH_ATTRIBUTE = "infomap_path"
 
 
 def _import_networkx() -> Any:
-    try:
-        import networkx as nx
-    except ImportError as exc:
-        raise ImportError(
-            "The 'networkx' package is required for NetworkX export support. "
-            'Install it with `python -m pip install "infomap[networkx]"`.'
-        ) from exc
-    return nx
+    # Thin delegate; the shared guard lives in infomap._optional.
+    return require_networkx("NetworkX export support")
 
 
 def _import_igraph() -> Any:
-    try:
-        import igraph as ig
-    except ImportError as exc:
-        raise ImportError(
-            "The 'igraph' package is required for igraph export support. "
-            'Install it with `python -m pip install "infomap[igraph]"`.'
-        ) from exc
-    return ig
+    # Thin delegate; the shared guard lives in infomap._optional.
+    return require_igraph("igraph export support")
 
 
 def _node_attributes(

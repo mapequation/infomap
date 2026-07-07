@@ -26,7 +26,7 @@ from __future__ import annotations
 from collections.abc import Iterator, Sequence
 from typing import TYPE_CHECKING, Any
 
-from ._optional import get_pandas
+from ._optional import require_pandas
 from ._results import (
     _DATAFRAME_COLUMN_ALIASES,
     _DEFAULT_TO_DATAFRAME_COLUMNS,
@@ -723,12 +723,7 @@ class Result:
         higher-order network (falling back to the physical name, then
         ``node_id``); see :attr:`state_names`.
         """
-        pandas = get_pandas()
-        if pandas is None:
-            raise ImportError(
-                "Cannot import package `pandas`. Install it with "
-                '`python -m pip install "infomap[pandas]"`.'
-            )
+        pandas = require_pandas("the DataFrame accessors")
 
         if depth_level is not None:
             level = depth_level

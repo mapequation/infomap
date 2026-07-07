@@ -4,7 +4,7 @@ from collections.abc import Sequence
 from math import log2
 from typing import TYPE_CHECKING, Any
 
-from ._optional import get_pandas
+from ._optional import require_pandas
 
 
 if TYPE_CHECKING:
@@ -747,12 +747,7 @@ class _InfomapResultsMixin:
             A DataFrame containing the selected columns.
         """
 
-        pandas = get_pandas()
-        if pandas is None:
-            raise ImportError(
-                "Cannot import package `pandas`. Install it with "
-                '`python -m pip install "infomap[pandas]"`.'
-            )
+        pandas = require_pandas("the DataFrame accessors")
 
         if columns is None:
             columns = _DEFAULT_DATAFRAME_COLUMNS
@@ -814,12 +809,7 @@ class _InfomapResultsMixin:
             Use ``result = im.run(); result.to_dataframe(...)``.
         """
 
-        pandas = get_pandas()
-        if pandas is None:
-            raise ImportError(
-                "Cannot import package `pandas`. Install it with "
-                '`python -m pip install "infomap[pandas]"`.'
-            )
+        pandas = require_pandas("the DataFrame accessors")
 
         if depth_level is not None:
             level = depth_level

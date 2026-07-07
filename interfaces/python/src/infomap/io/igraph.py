@@ -5,18 +5,14 @@ from collections.abc import Iterable
 from numbers import Integral, Real
 from typing import Any
 
+from .._optional import require_igraph
 from ._arrays import apply_node_meta_data, community_node_data
 
 
 def _import_igraph() -> Any:
-    try:
-        import igraph as ig
-    except ImportError as exc:
-        raise ImportError(
-            "The 'igraph' package is required for igraph graph support. "
-            'Install it with `python -m pip install "infomap[igraph]"`.'
-        ) from exc
-    return ig
+    # Thin delegate kept for backwards compatibility (tests import it); the
+    # shared guard lives in infomap._optional.
+    return require_igraph("igraph graph support")
 
 
 def _validate_igraph_graph(g: Any) -> Any:
