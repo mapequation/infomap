@@ -170,6 +170,13 @@ jobs:
         if: ${{ !matrix.smoke-only }}
         run: make test-python-doctest
 
+      # Deterministic core-scope gate (io/ and tl/ excluded); mirrors the
+      # pre-push hook. Full-scope pyright stays a manual check because its
+      # diagnostics vary with installed optional deps.
+      - name: Type check Python core surface
+        if: ${{ !matrix.smoke-only }}
+        run: make test-python-typecheck-core
+
   tests-full:
     if: ${{ always() && inputs.run-tests && inputs.mode == 'full' && (needs.swig-freshness.result == 'success' || needs.swig-freshness.result == 'skipped') }}
     name: Python ${{ matrix.os }} / ${{ matrix.python-version }}
@@ -257,6 +264,12 @@ jobs:
       - name: Run Python doctests
         if: matrix.run-full-suite
         run: make test-python-doctest
+
+      # Deterministic core-scope gate (io/ and tl/ excluded); mirrors the
+      # pre-push hook.
+      - name: Type check Python core surface
+        if: matrix.run-full-suite
+        run: make test-python-typecheck-core
 
       - name: Run Python example smoke tests
         if: matrix.run-full-suite

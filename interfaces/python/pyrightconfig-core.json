@@ -1,13 +1,10 @@
 {
+  "extends": "../../pyproject.toml",
   "include": ["src/infomap"],
   "exclude": [
     "src/infomap/_swig.py",
     "src/infomap/io",
     "src/infomap/tl",
     "**/__pycache__"
-  ],
-  "pythonVersion": "3.11",
-  "typeCheckingMode": "standard",
-  "reportMissingModuleSource": false,
-  "reportUnsupportedDunderAll": false
+  ]
 }

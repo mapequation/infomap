@@ -22,7 +22,10 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from .result import Result
 
 
 def _resolve_options(options: Any, overrides: dict) -> dict:
@@ -161,7 +164,7 @@ def run(
     options: Any = None,
     initial_partition: Any = None,
     **overrides: Any,
-):
+) -> "Result":
     """Run Infomap on ``input`` and return a :class:`Result`.
 
     Parameters
