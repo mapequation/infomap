@@ -741,6 +741,64 @@ class Result:
 
         return dataframe
 
+    def to_networkx(
+        self,
+        *,
+        module_attribute: str | None = "infomap_module",
+        path_attribute: str | None = "infomap_path",
+        include_hierarchy: bool = True,
+        flow_attribute: str | None = "flow",
+    ) -> Any:
+        """Build a NetworkX graph of the partitioned network.
+
+        Equivalent to :func:`infomap.to_networkx`; see it for the parameters
+        and the attribute scheme.
+
+        Returns
+        -------
+        networkx.Graph or networkx.DiGraph
+            ``DiGraph`` when the partitioned network is directed, else
+            ``Graph``.
+        """
+        from .io.export import to_networkx
+
+        return to_networkx(
+            self,
+            module_attribute=module_attribute,
+            path_attribute=path_attribute,
+            include_hierarchy=include_hierarchy,
+            flow_attribute=flow_attribute,
+        )
+
+    def to_igraph(
+        self,
+        *,
+        module_attribute: str | None = "infomap_module",
+        path_attribute: str | None = "infomap_path",
+        include_hierarchy: bool = True,
+        flow_attribute: str | None = "flow",
+    ) -> Any:
+        """Build a python-igraph graph of the partitioned network.
+
+        Equivalent to :func:`infomap.to_igraph`; see it for the parameters
+        and the attribute scheme.
+
+        Returns
+        -------
+        igraph.Graph
+            Directed when the partitioned network is directed, else
+            undirected.
+        """
+        from .io.export import to_igraph
+
+        return to_igraph(
+            self,
+            module_attribute=module_attribute,
+            path_attribute=path_attribute,
+            include_hierarchy=include_hierarchy,
+            flow_attribute=flow_attribute,
+        )
+
     def _column(
         self, resolved: str, requested: str, snapshot: _Snapshot, names: dict
     ) -> list:
