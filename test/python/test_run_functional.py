@@ -156,6 +156,15 @@ def test_to_networkx_graph_survives_graphml_and_gexf(tmp_path):
     nx.write_gexf(exported, tmp_path / "karate.gexf")
 
 
+def test_result_to_networkx_method_matches_function():
+    graph = nx.karate_club_graph()
+    result = infomap.run(graph, **_SETTINGS)
+
+    from_method = result.to_networkx(flow_attribute="f")
+    from_function = infomap.to_networkx(result, flow_attribute="f")
+    assert nx.utils.graphs_equal(from_method, from_function)
+
+
 def test_to_networkx_directed_flow_model_exports_digraph():
     # Result directedness derives from the effective flow model, so an
     # explicit flow_model="directed" exports a DiGraph exactly like
@@ -269,6 +278,19 @@ def test_to_igraph_graph_survives_graphml(tmp_path):
     exported.write_graphml(str(path))
     read_back = ig.Graph.Read_GraphML(str(path))
     assert all(value is not None for value in read_back.vs["infomap_module"])
+
+
+def test_result_to_igraph_method_matches_function():
+    ig = pytest.importorskip("igraph")
+    graph = ig.Graph.Famous("Zachary")
+    result = infomap.run(graph, **_SETTINGS)
+
+    from_method = result.to_igraph(flow_attribute="f")
+    from_function = infomap.to_igraph(result, flow_attribute="f")
+    assert from_method.vcount() == from_function.vcount()
+    assert from_method.get_edgelist() == from_function.get_edgelist()
+    for attribute in from_function.vs.attributes():
+        assert from_method.vs[attribute] == from_function.vs[attribute]
 
 
 def test_run_rejects_unsupported_input():

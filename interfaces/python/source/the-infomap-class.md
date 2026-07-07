@@ -64,7 +64,7 @@ Each stateful pattern has a direct functional or `Network` equivalent:
 | Per-node flow | `for n in im.nodes: n.data.flow` | `for n in result.nodes(states=True): n.flow` (`im.nodes` iterates state nodes; plain `result.nodes()` gives physical nodes, identical for first-order networks) |
 | DataFrame | `im.to_dataframe([...])` | `result.to_dataframe([...])` |
 | Scalar metrics | `im.codelength`, `im.num_top_modules` | `result.codelength`, `result.num_top_modules` |
-| Graph-file export | `infomap.io.export.write_graphml(graph, im, path)` | `nx.write_graphml(infomap.to_networkx(result), path)` |
+| Graph-file export | `infomap.io.export.write_graphml(graph, im, path)` | `nx.write_graphml(result.to_networkx(), path)` |
 
 The two consistent shifts: building a network is a {class}`~infomap.Network`
 (or a direct {func}`infomap.run` call) rather than the stateful instance, and

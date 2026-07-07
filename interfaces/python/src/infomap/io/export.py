@@ -410,6 +410,7 @@ def to_networkx(
 
     See Also
     --------
+    infomap.Result.to_networkx : The same conversion as a ``Result`` method.
     annotate_networkx_graph : Annotate an existing graph in place instead
         (string-valued attributes).
     """
@@ -468,6 +469,7 @@ def to_igraph(
 
     See Also
     --------
+    infomap.Result.to_igraph : The same conversion as a ``Result`` method.
     annotate_igraph_graph : Annotate an existing graph in place instead
         (string-valued attributes).
     """

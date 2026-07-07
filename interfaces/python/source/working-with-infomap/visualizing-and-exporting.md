@@ -119,10 +119,11 @@ For production figures, copy
 ### Export to GraphML and GEXF
 
 For a single file bundling the network topology and the Infomap result,
-{func}`infomap.to_networkx` builds a *new* NetworkX graph from the result:
-nodes are the result's (state) nodes, keyed by `state_id` and carrying the
-Infomap node `name` plus the partition attributes, and edges come from the
-partitioned network. NetworkX then writes it:
+{func}`infomap.to_networkx` (also available as
+{meth}`result.to_networkx() <infomap.Result.to_networkx>`) builds a *new*
+NetworkX graph from the result: nodes are the result's (state) nodes, keyed by
+`state_id` and carrying the Infomap node `name` plus the partition attributes,
+and edges come from the partitioned network. NetworkX then writes it:
 
 ```{code-cell} python
 import os
