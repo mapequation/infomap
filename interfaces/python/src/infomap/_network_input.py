@@ -167,13 +167,14 @@ def add_bulk_links(
             column_description=column_description,
             require_32_or_64_bit=require_32_or_64_bit,
         )
-        return numpy_method(
+        numpy_method(
             links_array,
             links_array.shape[0],
             links_array.shape[1],
             links_array.dtype.kind,
             links_array.dtype.itemsize,
         )
+        return
 
     sequences = split_optional_weight_rows(
         links,
@@ -182,4 +183,4 @@ def add_bulk_links(
         unpack=unpack,
         length_description=length_description,
     )
-    return list_method(*sequences)
+    list_method(*sequences)

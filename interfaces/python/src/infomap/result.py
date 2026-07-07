@@ -567,6 +567,31 @@ class Result:
         higher-order (multilayer/memory) network, requesting physical-node
         modules without ``states`` is ambiguous and raises, mirroring the C++
         ``getModules`` guard.
+
+        Parameters
+        ----------
+        depth : int, optional
+            The depth in the hierarchical tree of the reported module ids.
+            ``1`` (default) is the top (coarsest) level; ``-1`` the bottom
+            (finest) level.
+        states : bool, optional
+            Key the mapping by ``state_id`` when ``True``, by ``node_id``
+            when ``False`` (the default).
+
+        Returns
+        -------
+        dict of int to int
+            ``{node_or_state_id: module_id}`` for every leaf node.
+
+        Raises
+        ------
+        RuntimeError
+            For a higher-order network when ``states`` is ``False``.
+
+        See Also
+        --------
+        multilevel_modules : Module ids for every level at once.
+        tree : Walk the full hierarchical tree.
         """
         if self._have_memory and not states:
             # RuntimeError (not ValueError) on purpose: the legacy
@@ -581,7 +606,24 @@ class Result:
         return dict(zip(ids, snapshot.module_id))
 
     def nodes(self, depth: int = 1, *, states: bool = False) -> Iterator[TreeNode]:
-        """Iterate leaf :class:`TreeNode` views, depth first from the root."""
+        """Iterate leaf :class:`TreeNode` views, depth first from the root.
+
+        Parameters
+        ----------
+        depth : int, optional
+            The module level reported by ``node.module_id``. ``1`` (default)
+            is the top (coarsest) level; ``-1`` the bottom (finest).
+        states : bool, optional
+            Iterate state nodes when ``True``. When ``False`` (the default),
+            iterate physical nodes, merging state nodes with the same
+            ``node_id`` if they are in the same module; the same physical
+            node may then appear on different paths in the tree.
+
+        Yields
+        ------
+        TreeNode
+            An immutable snapshot view per leaf node.
+        """
         snapshot = self._snapshot(depth, states)
         names = self._names
         state_names = self._state_names
@@ -639,6 +681,21 @@ class Result:
         ``module_id``, one per level from the top down.
 
         Equivalent to the legacy ``Infomap.get_multilevel_modules(states)``.
+
+        Parameters
+        ----------
+        states : bool, optional
+            Key the mapping by ``state_id`` when ``True``, by ``node_id``
+            when ``False`` (the default).
+
+        Returns
+        -------
+        dict of int to tuple of int
+            ``{node_or_state_id: (top_module_id, ..., leaf_module_id)}``.
+
+        See Also
+        --------
+        modules : Module ids for a single level.
         """
         self._check_generation()
         return self._engine._core.getMultilevelModules(states)
@@ -708,25 +765,78 @@ class Result:
         columns: Sequence[str] | None = None,
         *,
         states: bool = False,
-        level: int = 1,
+        depth: int | None = None,
         index: str | bool | None = None,
         sort: bool | str | Sequence[str] = False,
+        level: int | None = None,
         depth_level: int | None = None,
     ) -> "pandas.DataFrame":
         """Return a pandas DataFrame of the leaf nodes.
 
-        Byte-identical to the legacy ``Infomap.to_dataframe``. Default columns
-        ``("node_id", "module_id", "flow", "path", "name")``; ``"community"``
-        is an alias for ``"module_id"``; ``"name"`` is resolved via the physical
-        node name map (falling back to the integer ``node_id``). The opt-in
-        ``"state_name"`` column resolves the per-state-node name for a
-        higher-order network (falling back to the physical name, then
-        ``node_id``); see :attr:`state_names`.
+        Byte-identical to the legacy ``Infomap.to_dataframe``.
+
+        Parameters
+        ----------
+        columns : sequence of str, optional
+            Columns to include. ``"community"`` is accepted as an alias for
+            ``"module_id"``. ``"name"`` resolves the physical node name
+            (falling back to the integer ``node_id``); the opt-in
+            ``"state_name"`` resolves the per-state-node name for a
+            higher-order network (falling back to the physical name, then
+            ``node_id``); see :attr:`state_names`. Default
+            ``["node_id", "module_id", "flow", "path", "name"]``.
+        states : bool, optional
+            Use state nodes when ``True`` and physical nodes when ``False``
+            (the default).
+        depth : int, optional
+            The module level reported by ``module_id``, as in
+            :meth:`modules`. ``1`` (default) is the top (coarsest) level;
+            ``-1`` the bottom (finest).
+        index : str, bool, or None, optional
+            Column to set as the DataFrame index. Use ``False`` or ``None``
+            (the default) to keep the default RangeIndex.
+        sort : bool, str, or sequence of str, optional
+            Sort by one or more columns. Use ``True`` to sort by
+            ``["module_id", "node_id"]`` when available. Default ``False``.
+        level : int, optional
+            .. deprecated::
+                Alias for ``depth``.
+        depth_level : int, optional
+            .. deprecated::
+                Alias for ``depth``.
+
+        Returns
+        -------
+        pandas.DataFrame
+            One row per leaf node, with the requested columns.
+
+        Raises
+        ------
+        ImportError
+            If pandas is not installed.
+        ValueError
+            If an unknown column is requested, or if ``depth`` and one of its
+            aliases are given conflicting values.
         """
         pandas = require_pandas("the DataFrame accessors")
 
-        if depth_level is not None:
-            level = depth_level
+        supplied = {
+            name: value
+            for name, value in (
+                ("depth", depth),
+                ("level", level),
+                ("depth_level", depth_level),
+            )
+            if value is not None
+        }
+        if len(set(supplied.values())) > 1:
+            raise ValueError(
+                f"Conflicting values for the tree depth: {supplied!r}. "
+                "Pass only `depth` (`level` and `depth_level` are deprecated "
+                "aliases)."
+            )
+        resolved_depth = next(iter(supplied.values()), 1)
+
         if columns is None:
             columns = _DEFAULT_TO_DATAFRAME_COLUMNS
 
@@ -736,7 +846,7 @@ class Result:
             for column in requested_columns
         ]
 
-        snapshot = self._snapshot(level, states)
+        snapshot = self._snapshot(resolved_depth, states)
         names = self._names
 
         data = {}

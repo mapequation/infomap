@@ -367,13 +367,16 @@ class Network:
             Iterable of tuples on the form
             ``(node_id, [name], [teleportation_weight])``.
         """
-        try:
+        # Gate on the mapping protocol instead of catching AttributeError
+        # around the loop: an AttributeError raised mid-iteration inside the
+        # body would otherwise fall through and re-process earlier items.
+        if hasattr(nodes, "items"):
             for node, attr in nodes.items():
                 if isinstance(attr, str):
                     self.add_node(node, attr)
                 else:
                     self.add_node(node, *attr)
-        except AttributeError:
+        else:
             for node in nodes:
                 if isinstance(node, int):
                     self.add_node(node)
@@ -402,10 +405,13 @@ class Network:
             Iterable of tuples of the form ``(state_id, node_id)``
             or dict of the form ``{state_id: node_id}``.
         """
-        try:
+        # Gate on the mapping protocol instead of catching AttributeError
+        # around the loop: an AttributeError raised mid-iteration inside the
+        # body would otherwise fall through and re-process earlier items.
+        if hasattr(state_nodes, "items"):
             for node in state_nodes.items():
                 self.add_state_node(*node)
-        except AttributeError:
+        else:
             for node in state_nodes:
                 self.add_state_node(*node)
         return self
@@ -432,10 +438,13 @@ class Network:
             Iterable of tuples on the form ``(node_id, name)``
             or dict of the form ``{node_id: name}``.
         """
-        try:
+        # Gate on the mapping protocol instead of catching AttributeError
+        # around the loop: an AttributeError raised mid-iteration inside the
+        # body would otherwise fall through and re-process earlier items.
+        if hasattr(names, "items"):
             for name in names.items():
                 self.set_name(*name)
-        except AttributeError:
+        else:
             for name in names:
                 self.set_name(*name)
         return self

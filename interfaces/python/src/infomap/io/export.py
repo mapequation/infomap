@@ -15,6 +15,15 @@ if TYPE_CHECKING:
     from ..result import Result
 
 
+__all__ = [
+    "annotate_igraph_graph",
+    "annotate_networkx_graph",
+    "to_igraph",
+    "to_networkx",
+    "write_gexf",
+    "write_graphml",
+]
+
 _DEFAULT_MODULE_ATTRIBUTE = "infomap_module"
 _DEFAULT_PATH_ATTRIBUTE = "infomap_path"
 
@@ -128,6 +137,20 @@ def _is_igraph_graph(graph: Any) -> bool:
     return isinstance(graph, ig.Graph)
 
 
+def _resolve_run_source(im_or_result: Any) -> Any:
+    """Return an engine-bearing object for the annotate/write helpers.
+
+    Accepts a run :class:`~infomap.Infomap` / :class:`~infomap.Network`
+    (returned unchanged) or the :class:`~infomap.Result` it produced, which
+    is generation-checked and unwrapped to its engine — so the annotate/write
+    helpers share the ``to_networkx``/``to_igraph`` input contract.
+    """
+    if hasattr(im_or_result, "_check_generation"):  # Result
+        im_or_result._check_generation()
+        return im_or_result._engine
+    return im_or_result
+
+
 def _annotate_networkx_graph(
     graph: Any,
     im: Any,
@@ -141,6 +164,7 @@ def _annotate_networkx_graph(
     strict: bool = True,
     warning_stacklevel: int,
 ) -> Any:
+    im = _resolve_run_source(im)
     _require_modules(im)
 
     output_graph = graph.copy() if copy else graph
@@ -192,10 +216,10 @@ def annotate_networkx_graph(
     ----------
     graph : networkx.Graph
         The graph to annotate.
-    im : Infomap
-        An :class:`~infomap.Infomap` instance that has been run (note: the
-        stateful instance, not a :class:`~infomap.Result`). Raises if
-        :meth:`~infomap.Infomap.run` has not been called.
+    im : Infomap or Result
+        A run :class:`~infomap.Infomap` instance, or the
+        :class:`~infomap.Result` it returned (the result's engine is used).
+        Raises if :meth:`~infomap.Infomap.run` has not been called.
     node_mapping : mapping, optional
         Mapping from internal Infomap (state) ids to graph node labels, as
         returned by the ``add_*_graph`` adapters. If omitted, graph nodes are
@@ -253,6 +277,7 @@ def _annotate_igraph_graph(
     ig = _import_igraph()
     if not isinstance(graph, ig.Graph):
         raise TypeError("`graph` must be an igraph.Graph.")
+    im = _resolve_run_source(im)
     _require_modules(im)
 
     output_graph = graph.copy() if copy else graph
@@ -310,10 +335,10 @@ def annotate_igraph_graph(
     ----------
     graph : igraph.Graph
         The graph to annotate.
-    im : Infomap
-        An :class:`~infomap.Infomap` instance that has been run (note: the
-        stateful instance, not a :class:`~infomap.Result`). Raises if
-        :meth:`~infomap.Infomap.run` has not been called.
+    im : Infomap or Result
+        A run :class:`~infomap.Infomap` instance, or the
+        :class:`~infomap.Result` it returned (the result's engine is used).
+        Raises if :meth:`~infomap.Infomap.run` has not been called.
     module_attribute : str or None, optional
         Vertex attribute for the top-level module id. Default
         ``"infomap_module"``. Use ``None`` to omit.
@@ -521,9 +546,9 @@ def write_graphml(graph: Any, im: Any, path: str | Path, **options: Any) -> None
     ----------
     graph : networkx.Graph or igraph.Graph
         The graph to annotate and write.
-    im : Infomap
-        An :class:`~infomap.Infomap` instance that has been run (note: the
-        stateful instance, not a :class:`~infomap.Result`).
+    im : Infomap or Result
+        A run :class:`~infomap.Infomap` instance, or the
+        :class:`~infomap.Result` it returned (the result's engine is used).
     path : str or pathlib.Path
         Output file path.
     **options
@@ -570,9 +595,9 @@ def write_gexf(graph: Any, im: Any, path: str | Path, **options: Any) -> None:
     ----------
     graph : networkx.Graph
         The graph to annotate and write.
-    im : Infomap
-        An :class:`~infomap.Infomap` instance that has been run (note: the
-        stateful instance, not a :class:`~infomap.Result`).
+    im : Infomap or Result
+        A run :class:`~infomap.Infomap` instance, or the
+        :class:`~infomap.Result` it returned (the result's engine is used).
     path : str or pathlib.Path
         Output file path.
     **options

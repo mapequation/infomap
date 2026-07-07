@@ -19,9 +19,10 @@ File writers
 
 .. currentmodule:: infomap.io.export
 
-These helpers take a post-run stateful :class:`~infomap.Infomap` instance, not
-a :class:`~infomap.Result`. (``infomap.export`` is a back-compatibility alias
-for :mod:`!infomap.io.export`.)
+These helpers accept a post-run stateful :class:`~infomap.Infomap` instance or
+the :class:`~infomap.Result` it returned. They live in the public
+``infomap.io`` namespace; ``infomap.export`` is a back-compatibility alias for
+:mod:`!infomap.io.export`.
 
 .. autofunction:: annotate_networkx_graph
 .. autofunction:: annotate_igraph_graph

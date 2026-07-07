@@ -119,6 +119,10 @@ def find_communities(
 ) -> list[set[Any]]:
     """Find communities in a NetworkX-style graph.
 
+    This is the NetworkX variant; its igraph counterpart is
+    :func:`~infomap.find_igraph_communities`. The unqualified name is kept
+    for backward compatibility.
+
     This helper is duck-typed and does not import NetworkX. It accepts the same
     graph objects as :meth:`Infomap.add_networkx_graph`, runs Infomap, and
     returns communities using the original graph node labels.

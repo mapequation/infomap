@@ -156,3 +156,18 @@ def test_main_rejects_missing_preload_file(capsys):
 
     assert result == 1
     assert "Error: No such file: missing.net" in capsys.readouterr().err
+
+
+def test_main_reports_unreadable_preload_file(monkeypatch, capsys, tmp_path):
+    class UnreadableInfomap(FakeInfomap):
+        def read_file(self, filename):
+            raise RuntimeError("parse error")
+
+    monkeypatch.setattr(shell, "Infomap", UnreadableInfomap)
+    garbage = tmp_path / "garbage.net"
+    garbage.write_text("not a network\n")
+
+    result = shell.main([str(garbage)], launcher=lambda *args, **kwargs: None)
+
+    assert result == 1
+    assert f"Error: Could not read {garbage}: parse error" in capsys.readouterr().err

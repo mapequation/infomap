@@ -176,3 +176,14 @@ def test_write_with_unknown_extension_raises_not_implemented(
 
     with pytest.raises(NotImplementedError, match="bogus"):
         im.write(str(output_dir / "file.bogus"))
+
+
+def test_infomap_set_meta_data_accepts_bulk_mapping(make_infomap):
+    links = [(0, 1), (1, 2), (2, 0), (3, 4), (4, 5), (5, 3), (2, 3)]
+    im = make_infomap(num_trials=5, seed=1)
+    im.add_links(links)
+    # Mirrors Network.set_meta_data: the {node: category} bulk form sets
+    # per-node metadata in one call (and returns None, not self).
+    assert im.set_meta_data({0: 0, 1: 1, 2: 0, 3: 0, 4: 1, 5: 1}) is None
+    result = im.run(meta_data_rate=1.0)
+    assert result.meta_codelength > 0

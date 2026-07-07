@@ -14,6 +14,9 @@ GraphRAG
 
 .. currentmodule:: infomap.tl.graphrag
 
+These names are also re-exported from the ``infomap.tl`` namespace, e.g.
+``infomap.tl.read_graphrag``.
+
 .. autofunction:: read_graphrag
 .. autofunction:: run_graphrag_communities
 .. autofunction:: write_graphrag_communities

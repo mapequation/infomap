@@ -325,3 +325,56 @@ def test_treenode_is_immutable_to_delete():
     node = next(_two_triangles().run().nodes())
     with pytest.raises(AttributeError):
         del node.node_id
+
+
+def test_to_dataframe_depth_and_deprecated_aliases_agree(
+    make_infomap, example_network_path
+):
+    pytest.importorskip("pandas")
+
+    im = make_infomap(num_trials=10)
+    im.read_file(str(example_network_path("ninetriangles.net")))
+    result = im.run()
+
+    by_depth = result.to_dataframe(columns=["node_id", "module_id"], depth=2)
+    by_level = result.to_dataframe(columns=["node_id", "module_id"], level=2)
+    by_depth_level = result.to_dataframe(
+        columns=["node_id", "module_id"], depth_level=2
+    )
+
+    assert by_depth.equals(by_level)
+    assert by_depth.equals(by_depth_level)
+
+    # Equal values across the primary kwarg and an alias are accepted.
+    both = result.to_dataframe(columns=["node_id"], depth=2, depth_level=2)
+    assert both.equals(result.to_dataframe(columns=["node_id"], depth=2))
+
+
+def test_to_dataframe_conflicting_depth_aliases_raise(
+    make_infomap, example_network_path
+):
+    pytest.importorskip("pandas")
+
+    im = make_infomap(num_trials=10)
+    im.read_file(str(example_network_path("ninetriangles.net")))
+    result = im.run()
+
+    with pytest.raises(ValueError, match="Conflicting values for the tree depth"):
+        result.to_dataframe(depth=1, level=2)
+
+
+def test_to_dataframe_deprecated_aliases_stay_silent(
+    make_infomap, example_network_path
+):
+    # Docs-only deprecation policy: the aliases must not warn at runtime.
+    pytest.importorskip("pandas")
+    import warnings
+
+    im = make_infomap(num_trials=10)
+    im.read_file(str(example_network_path("ninetriangles.net")))
+    result = im.run()
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", DeprecationWarning)
+        result.to_dataframe(level=2)
+        result.to_dataframe(depth_level=2)

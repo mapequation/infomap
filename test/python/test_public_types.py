@@ -56,9 +56,28 @@ def test_treenode_is_importable_from_the_package():
 
 
 @pytest.mark.fast
-def test_tl_namespace_exposes_only_the_entry_point():
-    # infomap.tl is the Scanpy-style entry point; its internal typing imports
-    # (Any/Mapping/...) must not be part of its public surface.
+def test_tl_namespace_exposes_curated_names_only():
+    # infomap.tl is the Scanpy-style tools namespace; its internal typing
+    # imports (Any/Mapping/...) must not be part of its public surface, and
+    # the GraphRAG tools are re-exported here as first-class members.
     import infomap.tl as tl
 
-    assert tl.__all__ == ["infomap"]
+    assert tl.__all__ == [
+        "GraphRAGGraph",
+        "GraphRAGRunResult",
+        "infomap",
+        "read_graphrag",
+        "run_graphrag_communities",
+        "write_graphrag_communities",
+    ]
+    for name in tl.__all__:
+        assert hasattr(tl, name)
+
+
+@pytest.mark.fast
+def test_io_namespace_is_public():
+    import infomap
+
+    assert "io" in infomap.__all__
+    assert infomap.io.export.__all__ == sorted(infomap.io.export.__all__)
+    from infomap.io.export import to_networkx  # noqa: F401
