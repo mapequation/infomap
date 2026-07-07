@@ -23,7 +23,7 @@ Output is byte-identical to the legacy ``Infomap`` accessors (parity is a gate).
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Iterator, Sequence
 from typing import TYPE_CHECKING, Any
 
 from ._optional import get_pandas
@@ -36,6 +36,10 @@ from ._results import (
 )
 
 if TYPE_CHECKING:
+    import igraph  # pyright: ignore[reportMissingImports]  # optional dep, no stubs
+    import networkx
+    import pandas
+
     from ._facade import Infomap
 
 # build_result is internal plumbing shared by Infomap.run and Network.run;
@@ -535,13 +539,18 @@ class Result:
         return self._have_memory
 
     @property
-    def names(self) -> dict:
-        """All node names, as ``{node_id: name}``."""
+    def names(self) -> dict[int, str]:
+        """All node names, as ``{node_id: name}``.
+
+        Returns a copy; mutating it does not affect the :class:`Result`.
+        """
         return dict(self._names)
 
     @property
-    def state_names(self) -> dict:
+    def state_names(self) -> dict[int, str]:
         """All state-node names, as ``{state_id: name}``.
+
+        Returns a copy; mutating it does not affect the :class:`Result`.
 
         Populated for higher-order (state/memory) networks whose ``*States``
         section names the state nodes; empty otherwise. Physical node names are
@@ -551,7 +560,7 @@ class Result:
 
     # -- collection accessors (§9: methods with defaults) -------------------
 
-    def modules(self, depth: int = 1, *, states: bool = False) -> dict:
+    def modules(self, depth: int = 1, *, states: bool = False) -> dict[int, int]:
         """Map ``node_id`` (or ``state_id`` when ``states``) to ``module_id``.
 
         Equivalent to the legacy ``Infomap.get_modules(depth, states)``: for a
@@ -571,7 +580,7 @@ class Result:
         ids = snapshot.state_id if states else snapshot.node_id
         return dict(zip(ids, snapshot.module_id))
 
-    def nodes(self, depth: int = 1, *, states: bool = False):
+    def nodes(self, depth: int = 1, *, states: bool = False) -> Iterator[TreeNode]:
         """Iterate leaf :class:`TreeNode` views, depth first from the root."""
         snapshot = self._snapshot(depth, states)
         names = self._names
@@ -623,7 +632,9 @@ class Result:
             self._tree_iterator(self._engine._core, depth, states)
         )
 
-    def multilevel_modules(self, *, states: bool = False) -> dict:
+    def multilevel_modules(
+        self, *, states: bool = False
+    ) -> dict[int, tuple[int, ...]]:
         """Map ``node_id`` (or ``state_id`` when ``states``) to a tuple of
         ``module_id``, one per level from the top down.
 
@@ -648,7 +659,7 @@ class Result:
         self._check_generation()
         return self._guard_iteration(self._engine._core.iterLeafModules())
 
-    def links(self, data: str = "weight"):
+    def links(self, data: str = "weight") -> Iterator[tuple[int, int, float]]:
         """Iterate the partitioned links with their weight or flow.
 
         Equivalent to the legacy ``Infomap.get_links(data)``. The sources and
@@ -701,7 +712,7 @@ class Result:
         index: str | bool | None = None,
         sort: bool | str | Sequence[str] = False,
         depth_level: int | None = None,
-    ) -> Any:
+    ) -> "pandas.DataFrame":
         """Return a pandas DataFrame of the leaf nodes.
 
         Byte-identical to the legacy ``Infomap.to_dataframe``. Default columns
@@ -755,7 +766,7 @@ class Result:
         path_attribute: str | None = "infomap_path",
         include_hierarchy: bool = True,
         flow_attribute: str | None = "flow",
-    ) -> Any:
+    ) -> "networkx.Graph":
         """Build a NetworkX graph of the partitioned network.
 
         Equivalent to :func:`infomap.to_networkx`; see it for the parameters
@@ -784,7 +795,7 @@ class Result:
         path_attribute: str | None = "infomap_path",
         include_hierarchy: bool = True,
         flow_attribute: str | None = "flow",
-    ) -> Any:
+    ) -> "igraph.Graph":
         """Build a python-igraph graph of the partitioned network.
 
         Equivalent to :func:`infomap.to_igraph`; see it for the parameters

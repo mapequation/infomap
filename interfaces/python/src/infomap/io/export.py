@@ -3,9 +3,15 @@ from __future__ import annotations
 import warnings
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from ._arrays import require_modules as _require_modules
+
+if TYPE_CHECKING:
+    import igraph  # pyright: ignore[reportMissingImports]  # optional dep, no stubs
+    import networkx
+
+    from ..result import Result
 
 
 _DEFAULT_MODULE_ATTRIBUTE = "infomap_module"
@@ -186,7 +192,7 @@ def annotate_networkx_graph(
     flow_attribute: str | None = None,
     copy: bool = True,
     strict: bool = True,
-) -> Any:
+) -> "networkx.Graph":
     """Return a NetworkX graph annotated with Infomap result attributes.
 
     Writes each node's module assignment (and optionally its tree path,
@@ -303,7 +309,7 @@ def annotate_igraph_graph(
     flow_attribute: str | None = None,
     copy: bool = True,
     strict: bool = True,
-) -> Any:
+) -> "igraph.Graph":
     """Return a python-igraph graph annotated with Infomap result attributes.
 
     Writes each vertex's module assignment (and optionally its tree path,
@@ -370,13 +376,13 @@ def _result_links(result: Any):
 
 
 def to_networkx(
-    result: Any,
+    result: "Result",
     *,
     module_attribute: str | None = _DEFAULT_MODULE_ATTRIBUTE,
     path_attribute: str | None = _DEFAULT_PATH_ATTRIBUTE,
     include_hierarchy: bool = True,
     flow_attribute: str | None = "flow",
-) -> Any:
+) -> "networkx.Graph":
     """Build a NetworkX graph from a :class:`~infomap.Result`.
 
     Nodes are the result's (state) nodes, keyed by ``state_id``, carrying the
@@ -441,13 +447,13 @@ def to_networkx(
 
 
 def to_igraph(
-    result: Any,
+    result: "Result",
     *,
     module_attribute: str | None = _DEFAULT_MODULE_ATTRIBUTE,
     path_attribute: str | None = _DEFAULT_PATH_ATTRIBUTE,
     include_hierarchy: bool = True,
     flow_attribute: str | None = "flow",
-) -> Any:
+) -> "igraph.Graph":
     """Build a python-igraph graph from a :class:`~infomap.Result`.
 
     Vertices are the result's (state) nodes in ``state_id`` order, carrying the

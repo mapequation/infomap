@@ -75,7 +75,9 @@ test = [
   "igraph",
   "jsonschema>=4.18",
   "pre-commit",
-  "pyright",
+  # Pinned: pyright gates CI (test-python-typecheck-core), and new pyright
+  # releases routinely add diagnostics. Bump deliberately.
+  "pyright==1.1.411",
   "pytest",
   "networkx",
   "pyarrow",

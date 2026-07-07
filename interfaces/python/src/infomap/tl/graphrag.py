@@ -2,9 +2,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from ..io._arrays import require_modules as _require_modules
+
+if TYPE_CHECKING:
+    import pandas
 
 __all__ = [
     "GraphRAGGraph",
@@ -141,16 +144,16 @@ def _register_node(
 
 
 def read_graphrag(
-    entities,
-    relationships,
+    entities: "str | Path | pandas.DataFrame",
+    relationships: "str | Path | pandas.DataFrame",
     *,
-    entity_id_col="id",
-    entity_title_col="title",
-    source_col="source",
-    target_col="target",
-    weight_col="weight",
-    relationship_id_col="id",
-    endpoint_col="title",
+    entity_id_col: str = "id",
+    entity_title_col: str = "title",
+    source_col: str = "source",
+    target_col: str = "target",
+    weight_col: str = "weight",
+    relationship_id_col: str = "id",
+    endpoint_col: str = "title",
 ) -> GraphRAGGraph:
     """Read GraphRAG-style entity and relationship Parquet tables.
 
@@ -589,7 +592,9 @@ def _build_tables(im, graph: GraphRAGGraph):
     return nodes, communities
 
 
-def write_graphrag_communities(im, *, graph: GraphRAGGraph, output):
+def write_graphrag_communities(
+    im: Any, *, graph: GraphRAGGraph, output: str | Path
+) -> "tuple[pandas.DataFrame, pandas.DataFrame]":
     """Write GraphRAG-compatible community tables from a finished run.
 
     Parameters
@@ -629,22 +634,22 @@ def write_graphrag_communities(im, *, graph: GraphRAGGraph, output):
 
 def run_graphrag_communities(
     *,
-    input_dir,
-    output_dir=None,
-    args=None,
-    entities_name="entities.parquet",
-    relationships_name="relationships.parquet",
-    entity_id_col="id",
-    entity_title_col="title",
-    source_col="source",
-    target_col="target",
-    weight_col="weight",
-    relationship_id_col="id",
-    endpoint_col="title",
-    silent=True,
-    seed=123,
-    num_trials=5,
-    **infomap_options,
+    input_dir: str | Path,
+    output_dir: str | Path | None = None,
+    args: str | None = None,
+    entities_name: str = "entities.parquet",
+    relationships_name: str = "relationships.parquet",
+    entity_id_col: str = "id",
+    entity_title_col: str = "title",
+    source_col: str = "source",
+    target_col: str = "target",
+    weight_col: str = "weight",
+    relationship_id_col: str = "id",
+    endpoint_col: str = "title",
+    silent: bool = True,
+    seed: int = 123,
+    num_trials: int = 5,
+    **infomap_options: Any,
 ) -> GraphRAGRunResult:
     """Read GraphRAG tables, run Infomap, and write community outputs.
 
