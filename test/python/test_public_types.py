@@ -76,8 +76,6 @@ def test_tl_namespace_exposes_curated_names_only():
 
 @pytest.mark.fast
 def test_io_namespace_is_public():
-    import infomap
-
     assert "io" in infomap.__all__
     assert infomap.io.export.__all__ == sorted(infomap.io.export.__all__)
     from infomap.io.export import to_networkx  # noqa: F401

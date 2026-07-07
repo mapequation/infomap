@@ -9,7 +9,7 @@ import json
 
 import pytest
 
-from infomap.merge import MergeError, merge_trial_results
+from infomap.merge import MergeError, MergeSummary, merge_trial_results
 
 
 def _write_tree(path, modules):
@@ -212,10 +212,10 @@ def test_merge_no_matching_files(tmp_path):
 
 
 def test_merge_summary_is_public():
-    import infomap.merge as merge_module
+    from infomap import merge
 
-    assert "MergeSummary" in merge_module.__all__
-    from infomap.merge import MergeSummary  # noqa: F401
+    assert "MergeSummary" in merge.__all__
+    assert merge.MergeSummary is MergeSummary
 
 
 def test_merge_rejects_non_object_trial_entry(tmp_path):
