@@ -799,10 +799,10 @@ class Result:
             Sort by one or more columns. Use ``True`` to sort by
             ``["module_id", "node_id"]`` when available. Default ``False``.
         level : int, optional
-            .. deprecated::
+            .. deprecated:: 2.15
                 Alias for ``depth``.
         depth_level : int, optional
-            .. deprecated::
+            .. deprecated:: 2.15
                 Alias for ``depth``.
 
         Returns

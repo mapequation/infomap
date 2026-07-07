@@ -822,7 +822,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
     def from_options(cls, options, args=None):
         """Create an :class:`Infomap` instance from :class:`Options`.
 
-        .. deprecated::
+        .. deprecated:: 2.14
             Pass options to :func:`infomap.run` or :meth:`Infomap.run`
             instead, e.g. ``infomap.run(graph, options=options)``.
         """
@@ -843,7 +843,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
     ):
         """Create an :class:`Infomap` instance from a SciPy sparse adjacency matrix.
 
-        .. deprecated::
+        .. deprecated:: 2.14
             Use :meth:`Network.from_scipy_sparse_matrix` or
             ``infomap.run(matrix)``.
         """
@@ -870,7 +870,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
     ):
         """Create an :class:`Infomap` instance from a PyG-style edge index.
 
-        .. deprecated::
+        .. deprecated:: 2.14
             Use :meth:`Network.from_edge_index` or ``infomap.run(edge_index)``.
         """
         im = cls(args=args, **infomap_options)
@@ -1705,7 +1705,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         Parallel edges in an ``nx.MultiGraph``/``nx.MultiDiGraph`` are each
         forwarded to ``add_link`` and self-loops are passed through.
 
-        .. deprecated::
+        .. deprecated:: 2.14
             Use :meth:`Network.from_networkx` or ``infomap.run(graph)``.
         """
         return self._add_networkx_graph_impl(
@@ -1768,7 +1768,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         its weight control ``weighted`` (a bool). :meth:`add_edge_index` instead
         defaults ``directed=True``.
 
-        .. deprecated::
+        .. deprecated:: 2.14
             Use :meth:`Network.from_scipy_sparse_matrix` or
             ``infomap.run(matrix)``.
         """
@@ -1828,7 +1828,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         weight parameter ``edge_weight``. :meth:`add_scipy_sparse_matrix` instead
         defaults ``directed=False``.
 
-        .. deprecated::
+        .. deprecated:: 2.14
             Use :meth:`Network.from_edge_index` or ``infomap.run(edge_index)``.
         """
         return self._add_edge_index_impl(
@@ -1916,7 +1916,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         their weight parameter differently: igraph ``edge_weights``, networkx
         ``weight``, scipy ``weighted`` (bool), edge_index ``edge_weight``.
 
-        .. deprecated::
+        .. deprecated:: 2.14
             Use :meth:`Network.from_igraph` or ``infomap.run(graph)``.
         """
         return self._add_igraph_graph_impl(
@@ -2092,7 +2092,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
     def run_with_options(self, options, *, args=None, initial_partition=None):
         """Run Infomap using a reusable :class:`Options` instance.
 
-        .. deprecated::
+        .. deprecated:: 2.14
             Use ``infomap.run(input, options=options)`` instead.
         """
         if not isinstance(options, Options):
@@ -2122,7 +2122,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         float
             The codelength
 
-        .. deprecated::
+        .. deprecated:: 2.14
             Use ``result = im.run(); result.codelength``.
         """
         return self._core.codelength()
@@ -2140,7 +2140,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         tuple of float
             The codelengths for each trial
 
-        .. deprecated::
+        .. deprecated:: 2.14
             Use ``result = im.run(); result.codelengths``.
         """
         return self._core.codelengths()
@@ -2154,7 +2154,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         float
             The elapsed run time in seconds.
 
-        .. deprecated::
+        .. deprecated:: 2.14
             Use ``result = im.run(); result.elapsed_time``.
         """
         return self._core.elapsedTime()
