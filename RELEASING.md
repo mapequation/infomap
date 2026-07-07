@@ -181,6 +181,27 @@ last `vX.Y.Z` tag:
 If the proposed bump does not match the commit log
 (`git log vLAST..master --oneline`), investigate before merging.
 
+### Python API deprecation policy
+
+Deprecations in the Python package are **docs-only for members**: a
+deprecated method, property, or class carries a `.. deprecated:: <version>`
+note in its docstring but emits **no** runtime `DeprecationWarning`, keeps
+working, and must return the same values as its non-deprecated replacement.
+`test/python/test_deprecations.py` enforces all three properties.
+
+Two rules refine this:
+
+- **Explicitly passed deprecated parameters warn at runtime** (e.g.
+  `include_self_links`, `pretty`): silently ignoring or rewriting an
+  argument the caller actually typed hides a migration the caller needs to
+  make. `test/python/test_wrapper_args.py` pins these warnings.
+- **Removal is a major-version event** (`feat!:` / `BREAKING CHANGE`),
+  never part of a minor or patch release.
+
+Always include the version in the directive (`.. deprecated:: 2.14`) —
+Sphinx renders an empty version otherwise. Use the release in which the
+deprecation first shipped.
+
 ### Red flags that block merge
 
 - **Tag format regressed.** PR title shows `infomap-vX.Y.Z` instead of
