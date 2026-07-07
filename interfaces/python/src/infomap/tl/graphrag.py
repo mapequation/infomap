@@ -53,14 +53,10 @@ class GraphRAGRunResult:
 
 
 def _import_parquet_stack():
-    try:
-        import pandas as pd
-        import pyarrow  # noqa: F401  # pyright: ignore[reportMissingImports]  # optional dep, no stubs
-    except ImportError as err:
-        raise ImportError(
-            "GraphRAG Parquet support requires pandas and pyarrow. "
-            'Install them with `python -m pip install "infomap[graphrag]"`.'
-        ) from err
+    from .._optional import require_pandas, require_pyarrow
+
+    pd = require_pandas("GraphRAG Parquet support", extra="graphrag")
+    require_pyarrow("GraphRAG Parquet support")
     return pd
 
 

@@ -4,16 +4,12 @@ from collections.abc import Iterable, Sequence
 from numbers import Integral
 from typing import Any
 
+from .._optional import require_numpy
 from ._arrays import undirected_edge_items
 
 
 def _as_numpy_array(value: Any, *, name: str):
-    try:
-        import numpy as np
-    except ImportError as exc:
-        raise ImportError(
-            "The 'numpy' package is required for edge_index support."
-        ) from exc
+    np = require_numpy("edge_index support")
 
     if hasattr(value, "detach") and callable(value.detach):
         # Duck-typed torch.Tensor: detach().cpu().numpy(). The hasattr narrowing

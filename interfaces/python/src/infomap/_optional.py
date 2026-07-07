@@ -1,9 +1,72 @@
 from __future__ import annotations
 
+import importlib
 from typing import Any
 
 _pandas: Any = None
 _pandas_loaded = False
+
+
+def _require(package: str, *, feature: str, extra: str | None) -> Any:
+    """Import ``package`` or raise an ImportError with a uniform install hint.
+
+    The shared guard behind the ``require_*`` helpers, so every optional
+    dependency reports the same message shape. ``extra`` names the infomap
+    extra that provides the package; ``None`` falls back to a bare pip hint
+    for packages without a dedicated extra.
+    """
+    try:
+        return importlib.import_module(package)
+    except ImportError as exc:
+        hint = (
+            f'`python -m pip install "infomap[{extra}]"`'
+            if extra
+            else f"`python -m pip install {package}`"
+        )
+        raise ImportError(
+            f"The {package.partition('.')[0]!r} package is required for "
+            f"{feature}. Install it with {hint}."
+        ) from exc
+
+
+def require_networkx(feature: str = "NetworkX support") -> Any:
+    """Return the networkx module, raising a uniform ImportError if absent."""
+    return _require("networkx", feature=feature, extra="networkx")
+
+
+def require_igraph(feature: str = "igraph support") -> Any:
+    """Return the igraph module, raising a uniform ImportError if absent."""
+    return _require("igraph", feature=feature, extra="igraph")
+
+
+def require_scipy_sparse(feature: str = "SciPy sparse matrix support") -> Any:
+    """Return scipy.sparse, raising a uniform ImportError if absent."""
+    return _require("scipy.sparse", feature=feature, extra="scipy")
+
+
+def require_numpy(feature: str = "array support") -> Any:
+    """Return the numpy module, raising a uniform ImportError if absent.
+
+    There is no numpy-only extra, so the hint is a bare pip install.
+    """
+    return _require("numpy", feature=feature, extra=None)
+
+
+def require_pyarrow(feature: str = "Parquet support") -> Any:
+    """Return the pyarrow module, raising a uniform ImportError if absent."""
+    return _require("pyarrow", feature=feature, extra="graphrag")
+
+
+def require_pandas(feature: str = "DataFrame support", *, extra: str = "pandas") -> Any:
+    """Return the pandas module, raising a uniform ImportError if absent.
+
+    Layered on :func:`get_pandas` so the lazy, cached import (and its macOS
+    OpenMP rationale) stays in one place.
+    """
+    pandas = get_pandas()
+    if pandas is None:
+        _require("pandas", feature=feature, extra=extra)
+    return pandas
 
 
 def get_pandas() -> Any:

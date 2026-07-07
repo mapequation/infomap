@@ -10,14 +10,12 @@ __all__ = ["infomap"]
 
 
 def _import_pandas() -> Any:
-    try:
-        import pandas as pd
-    except ImportError as exc:
-        raise ImportError(
-            "The 'pandas' package is required for AnnData support. "
-            'Install it with `python -m pip install "infomap[anndata]"`.'
-        ) from exc
-    return pd
+    # Thin delegate; the shared guard lives in infomap._optional. Only pandas
+    # is imported here -- the entry point works with any AnnData-like object
+    # without the anndata package -- so the hint names the pandas extra.
+    from .._optional import require_pandas
+
+    return require_pandas("AnnData support")
 
 
 def _validate_anndata_like(adata: Any) -> int:
