@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import builtins
+import importlib
 import subprocess
 import sys
 from types import SimpleNamespace
@@ -9,6 +9,7 @@ import pytest
 
 import infomap
 import infomap._facade as facade
+from infomap import _optional
 from infomap.io.igraph import _import_igraph, add_igraph_graph
 
 
@@ -31,14 +32,16 @@ def test_import_infomap_does_not_import_igraph():
 
 
 def test_missing_igraph_error_mentions_extra(monkeypatch):
-    original_import = builtins.__import__
+    # The guard imports via importlib.import_module (infomap._optional), so
+    # block it there rather than through builtins.__import__.
+    original_import_module = importlib.import_module
 
     def fake_import(name, *args, **kwargs):
         if name == "igraph":
             raise ImportError("missing igraph")
-        return original_import(name, *args, **kwargs)
+        return original_import_module(name, *args, **kwargs)
 
-    monkeypatch.setattr(builtins, "__import__", fake_import)
+    monkeypatch.setattr(_optional.importlib, "import_module", fake_import)
 
     with pytest.raises(ImportError, match=r"infomap\[igraph\]"):
         _import_igraph()
