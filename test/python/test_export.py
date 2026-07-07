@@ -57,12 +57,18 @@ def test_networkx_export_supports_custom_module_attribute():
         im,
         node_mapping=mapping,
         module_attribute="community",
+        flow_attribute="flow",
     )
 
+    # The annotate family keeps its documented all-strings contract.
     assert set(nx.get_node_attributes(annotated, "community")) == set(graph.nodes)
     assert all(
         isinstance(value, str)
         for value in nx.get_node_attributes(annotated, "community").values()
+    )
+    assert all(
+        isinstance(value, str)
+        for value in nx.get_node_attributes(annotated, "flow").values()
     )
 
 
