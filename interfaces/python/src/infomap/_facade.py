@@ -196,7 +196,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         trial_results=None,
         no_final_output=False,
         verbosity_level=1,
-        silent=False,
+        silent=True,
         pretty=False,
         two_level=False,
         flow_model=None,
@@ -336,7 +336,8 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             Verbosity level on the console. 1 keeps the default output level, 2 renders
             -vv and so on.
         silent : bool, optional
-            Suppress console output.
+            Suppress console output. The Python API is quiet by default; construct with
+            silent=False for the engine log. The command-line interface is unaffected.
         pretty : bool, optional
             Deprecated. Accepted for backward compatibility; has no effect.
         two_level : bool, optional
@@ -643,7 +644,8 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             Verbosity level on the console. 1 keeps the default output level, 2 renders
             -vv and so on.
         silent : bool, optional
-            Suppress console output.
+            Suppress console output. The Python API is quiet by default; construct with
+            silent=False for the engine log. The command-line interface is unaffected.
         pretty : bool, optional
             Deprecated. Accepted for backward compatibility; has no effect.
         two_level : bool, optional

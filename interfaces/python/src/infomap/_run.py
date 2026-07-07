@@ -185,6 +185,13 @@ def run(
 
     Notes
     -----
+    The Python API is quiet by default (``silent=True``, here and on
+    :class:`Infomap`, :class:`Network`, and :class:`Options`). Pass
+    ``silent=False`` for the engine log — except for :class:`Network` input,
+    whose engine is silent for its whole lifetime (``silent=False`` warns
+    there; see :meth:`Network.run`). The ``infomap`` command-line interface
+    keeps its verbose default.
+
     Keyword arguments go to the engine; the input adapters always build with
     their defaults (e.g. networkx reads the ``"weight"`` edge attribute, a
     SciPy matrix is treated as undirected). For non-default input building -- a
@@ -209,10 +216,7 @@ def run(
     One call from an iterable of ``(u, v[, w])`` links to a :class:`Result`:
 
     >>> from infomap import run
-    >>> result = run(
-    ...     [(1, 2), (1, 3), (2, 3), (4, 5), (4, 6), (5, 6), (3, 4)],
-    ...     silent=True,
-    ... )
+    >>> result = run([(1, 2), (1, 3), (2, 3), (4, 5), (4, 6), (5, 6), (3, 4)])
     >>> result.num_top_modules
     2
     >>> for node_id, module_id in sorted(result.modules().items()):

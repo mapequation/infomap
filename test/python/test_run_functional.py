@@ -9,6 +9,8 @@ honours the same run-generation guard as the ``Infomap``-backed one.
 
 from __future__ import annotations
 
+import sys
+
 import networkx as nx
 import pytest
 
@@ -37,6 +39,100 @@ def test_run_edgelist_matches_oo():
 
     expected = _oo_codelength(lambda im: im.add_links(_LINKS), **_SETTINGS)
     assert result.codelength == pytest.approx(expected)
+
+
+def _engine_log(capfd) -> str:
+    """Read the engine log from the fd-level capture.
+
+    The engine writes via ``std::cout``; under pytest's fd-level capture
+    stdout is a pipe, so the C runtime fully buffers the log and it must be
+    flushed before reading (silence assertions would otherwise pass vacuously).
+    """
+    import ctypes
+
+    if sys.platform == "win32":
+        ctypes.cdll.msvcrt.fflush(None)
+    else:
+        ctypes.CDLL(None).fflush(None)
+    return capfd.readouterr().out
+
+
+def test_run_is_silent_by_default(capfd):
+    _engine_log(capfd)  # drain log buffered by earlier (unflushed) tests
+    infomap.run(_LINKS, num_trials=1, seed=1)
+    assert _engine_log(capfd) == ""
+
+
+def test_run_network_input_is_silent_by_default(capfd):
+    _engine_log(capfd)  # drain log buffered by earlier (unflushed) tests
+    net = Network().add_links(_LINKS)
+    infomap.run(net, num_trials=1, seed=1)
+    assert _engine_log(capfd) == ""
+
+
+def test_run_silent_false_override_prints_engine_log(capfd):
+    _engine_log(capfd)
+    infomap.run(_LINKS, silent=False, num_trials=1, seed=1)
+    assert _engine_log(capfd) != ""
+
+
+def test_run_options_mapping_silent_false_prints_engine_log(capfd):
+    _engine_log(capfd)
+    infomap.run(_LINKS, options={"silent": False, "num_trials": 1, "seed": 1})
+    assert _engine_log(capfd) != ""
+
+
+def test_run_options_instance_silent_is_respected(capfd):
+    from infomap import Options
+
+    _engine_log(capfd)
+    infomap.run(_LINKS, options=Options(num_trials=1, seed=1))
+    assert _engine_log(capfd) == ""
+
+    infomap.run(_LINKS, options=Options(num_trials=1, seed=1, silent=False))
+    assert _engine_log(capfd) != ""
+
+
+def test_options_default_is_silent():
+    from infomap import Options
+
+    assert Options().silent is True
+    assert Options(silent=False).silent is False
+
+
+def test_stateful_infomap_is_silent_by_default(capfd):
+    _engine_log(capfd)  # drain log buffered by earlier (unflushed) tests
+    im = Infomap(num_trials=1, seed=1, no_file_output=True)
+    im.add_links(_LINKS)
+    im.run()
+    assert _engine_log(capfd) == ""
+
+
+def test_stateful_infomap_silent_false_prints_engine_log(capfd):
+    _engine_log(capfd)
+    im = Infomap(silent=False, num_trials=1, seed=1, no_file_output=True)
+    im.add_links(_LINKS)
+    im.run()
+    assert _engine_log(capfd) != ""
+
+
+def test_network_run_is_silent_by_default(capfd):
+    _engine_log(capfd)
+    net = Network().add_links(_LINKS)
+    net.run(options={"num_trials": 1, "seed": 1})
+    assert _engine_log(capfd) == ""
+
+
+def test_network_run_silent_false_warns():
+    # A Network engine is constructed silent for its whole lifetime (a flag
+    # cannot be switched off per run), so an explicit silent=False warns
+    # instead of being silently ignored.
+    net = Network().add_links(_LINKS)
+    with pytest.warns(UserWarning, match="silent for its whole lifetime"):
+        net.run(options={"silent": False, "num_trials": 1, "seed": 1})
+
+    with pytest.warns(UserWarning, match="silent for its whole lifetime"):
+        infomap.run(net, silent=False, num_trials=1, seed=1)
 
 
 def test_run_networkx_matches_oo():

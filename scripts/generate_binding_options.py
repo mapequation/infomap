@@ -99,6 +99,7 @@ def _facade_params(catalog: ParameterCatalog):
     index["include_self_links"] = {
         "type": include_self_links.type,
         "default": include_self_links.default,
+        "run_default": include_self_links.default,
         "doc_type": "bool, optional",
         "doc": (
             "Deprecated. Self-links are included by default; use "
@@ -122,6 +123,18 @@ def _facade_params(catalog: ParameterCatalog):
             index[name] = {
                 "type": param.python_type(),
                 "default": param.python_default_expr(),
+                # ``Infomap.run`` re-renders its keywords on top of the
+                # constructed state, and a rendered flag can only switch on. A
+                # generic boolean flag whose binding default is truthy
+                # (silent=True) would re-render every run and override the
+                # constructor's choice, so the run signature keeps the flag's
+                # no-op default. Other policies (repeated_short etc.) render
+                # nothing at their binding default already.
+                "run_default": (
+                    "False"
+                    if param.render_policy == "flag"
+                    else param.python_default_expr()
+                ),
                 "doc_type": param.python_doc_type(),
                 "doc": param.python_doc_description(),
             }
@@ -647,11 +660,13 @@ def generate_ts(catalog: ParameterCatalog) -> str:
     return "\n".join(lines)
 
 
-def _render_facade_signature(names, index, indent="        "):
+def _render_facade_signature(names, index, indent="        ", context="init"):
     lines = []
     for name in names:
         if name in _FACADE_ONLY_PARAMS:
             default = _FACADE_ONLY_PARAMS[name]["default"]
+        elif context == "run":
+            default = index[name]["run_default"]
         else:
             default = index[name]["default"]
         lines.append(f"{indent}{name}={default},")
@@ -704,7 +719,7 @@ def generate_facade(catalog: ParameterCatalog) -> str:
     lines.append("        self,")
     lines.append("        args=None,")
     lines.append("        initial_partition=None,")
-    lines.extend(_render_facade_signature(names, index))
+    lines.extend(_render_facade_signature(names, index, context="run"))
     lines.append("    ):")
     lines.append('        """Run Infomap.')
     lines.append("")

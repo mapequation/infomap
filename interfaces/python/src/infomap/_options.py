@@ -203,7 +203,8 @@ class Options:
         Verbosity level on the console. 1 keeps the default output level, 2 renders -vv
         and so on.
     silent : bool, optional
-        Suppress console output.
+        Suppress console output. The Python API is quiet by default; construct with
+        silent=False for the engine log. The command-line interface is unaffected.
     two_level : bool, optional
         Optimize a two-level partition instead of the default multi-level hierarchy.
     flow_model : str, optional
@@ -361,7 +362,7 @@ class Options:
     trial_results: str | None = None
     no_final_output: bool = False
     verbosity_level: int = 1
-    silent: bool = False
+    silent: bool = True
     # algorithm
     two_level: bool = False
     flow_model: str | None = None
@@ -518,7 +519,7 @@ def _construct_args(
     trial_results=None,
     no_final_output=False,
     verbosity_level=1,
-    silent=False,
+    silent=True,
     # algorithm
     two_level=False,
     flow_model=None,
