@@ -34,7 +34,7 @@ def _import_igraph() -> Any:
     return ig
 
 
-def _string_attributes(
+def _node_attributes(
     path: tuple[int, ...],
     *,
     module_attribute: str | None,
@@ -42,17 +42,22 @@ def _string_attributes(
     include_hierarchy: bool,
     flow: Any = None,
     flow_attribute: str | None = None,
-) -> dict[str, str]:
-    attributes = {}
+    stringify: bool = False,
+) -> dict[str, Any]:
+    # The annotate family stringifies every value (its documented contract);
+    # the to_* builders keep native ints and floats. The path is a string
+    # either way.
+    coerce = str if stringify else (lambda value: value)
+    attributes: dict[str, Any] = {}
     if module_attribute is not None:
-        attributes[module_attribute] = str(path[0])
+        attributes[module_attribute] = coerce(path[0])
     if include_hierarchy:
         if path_attribute is not None:
             attributes[path_attribute] = ":".join(str(module_id) for module_id in path)
         for level, module_id in enumerate(path, start=1):
-            attributes[f"infomap_level_{level}"] = str(module_id)
+            attributes[f"infomap_level_{level}"] = coerce(module_id)
     if flow_attribute is not None and flow is not None:
-        attributes[flow_attribute] = str(flow)
+        attributes[flow_attribute] = coerce(flow)
     return attributes
 
 
@@ -156,13 +161,14 @@ def _annotate_networkx_graph(
 
     for node in matching_nodes:
         output_graph.nodes[node].update(
-            _string_attributes(
+            _node_attributes(
                 assignments[node],
                 module_attribute=module_attribute,
                 path_attribute=path_attribute,
                 include_hierarchy=include_hierarchy,
                 flow=flows.get(node),
                 flow_attribute=flow_attribute,
+                stringify=True,
             )
         )
 
@@ -268,13 +274,14 @@ def _annotate_igraph_graph(
 
     values_by_attribute: dict[str, list[str | None]] = {}
     for vertex_id in matching_nodes:
-        attributes = _string_attributes(
+        attributes = _node_attributes(
             assignments[vertex_id],
             module_attribute=module_attribute,
             path_attribute=path_attribute,
             include_hierarchy=include_hierarchy,
             flow=flows.get(vertex_id),
             flow_attribute=flow_attribute,
+            stringify=True,
         )
         for attribute, value in attributes.items():
             values_by_attribute.setdefault(attribute, [None] * n_vertices)
@@ -373,9 +380,11 @@ def to_networkx(
     """Build a NetworkX graph from a :class:`~infomap.Result`.
 
     Nodes are the result's (state) nodes, keyed by ``state_id``, carrying the
-    Infomap node ``name`` plus the module/path/flow attributes (the same
-    attribute scheme as :func:`~infomap.io.export.annotate_networkx_graph`). Edges come from the
-    partitioned network.
+    Infomap node ``name`` plus the module/path/flow attributes. Edges come
+    from the partitioned network, with their weights as ``weight``. The
+    attribute values keep their native types: module ids are :class:`int`,
+    flows and weights are :class:`float`, and the tree path is a
+    colon-joined :class:`str` such as ``"1:3"``.
 
     Parameters
     ----------
@@ -398,6 +407,11 @@ def to_networkx(
     -------
     networkx.Graph or networkx.DiGraph
         ``DiGraph`` when the partitioned network is directed, else ``Graph``.
+
+    See Also
+    --------
+    annotate_networkx_graph : Annotate an existing graph in place instead
+        (string-valued attributes).
     """
     nx = _import_networkx()
     result._check_generation()
@@ -408,7 +422,7 @@ def to_networkx(
     for node in _result_nodes(result):
         attributes = {"name": node.name}
         attributes.update(
-            _string_attributes(
+            _node_attributes(
                 node.path,
                 module_attribute=module_attribute,
                 path_attribute=path_attribute,
@@ -436,9 +450,9 @@ def to_igraph(
     """Build a python-igraph graph from a :class:`~infomap.Result`.
 
     Vertices are the result's (state) nodes in ``state_id`` order, carrying the
-    Infomap node ``name`` plus the module/path/flow attributes (the same
-    attribute scheme as :func:`~infomap.io.export.annotate_igraph_graph`). Edges come from the
-    partitioned network.
+    Infomap node ``name`` plus the module/path/flow attributes. Edges come
+    from the partitioned network, with their weights as ``weight``. The
+    attribute values keep their native types, as in :func:`to_networkx`.
 
     Parameters
     ----------
@@ -451,6 +465,11 @@ def to_igraph(
     -------
     igraph.Graph
         Directed when the partitioned network is directed, else undirected.
+
+    See Also
+    --------
+    annotate_igraph_graph : Annotate an existing graph in place instead
+        (string-valued attributes).
     """
     ig = _import_igraph()
 
@@ -466,7 +485,7 @@ def to_igraph(
     values_by_attribute: dict[str, list[Any]] = {"name": [None] * n_vertices}
     for index, node in enumerate(nodes):
         values_by_attribute["name"][index] = node.name
-        attributes = _string_attributes(
+        attributes = _node_attributes(
             node.path,
             module_attribute=module_attribute,
             path_attribute=path_attribute,

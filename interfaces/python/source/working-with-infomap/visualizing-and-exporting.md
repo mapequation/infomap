@@ -141,15 +141,18 @@ print(f"GraphML: {os.path.getsize(graphml_path):,} bytes")
 print(f"GEXF:    {os.path.getsize(gexf_path):,} bytes")
 ```
 
-The exported graph carries these Infomap node attributes, all stored as
-strings for GraphML/GEXF compatibility:
+The exported graph carries these Infomap node attributes:
 
 | Attribute | Value |
 |---|---|
-| `infomap_module` | Top-level module id |
-| `infomap_path` | Colon-separated tree path ending in the node's position within its module, e.g. `"1:1"` or `"2:3:4"` |
-| `infomap_level_1`, `infomap_level_2`, … | One attribute per path component (the last is the node's position within its final module) |
-| `flow` | Stationary visit frequency |
+| `infomap_module` | Top-level module id (`int`) |
+| `infomap_path` | Colon-separated tree path ending in the node's position within its module, e.g. `"1:1"` or `"2:3:4"` (`str`) |
+| `infomap_level_1`, `infomap_level_2`, … | One attribute per path component (the last is the node's position within its final module) (`int`) |
+| `flow` | Stationary visit frequency (`float`) |
+
+GraphML and GEXF store the types alongside the values, so module ids and flows
+come back as numbers when the file is read — Gephi's numeric colour scales and
+sorting work directly.
 
 Because the graph is rebuilt from the result, your original graph's node
 attributes are *not* carried over. To keep them, annotate your own graph in

@@ -121,12 +121,39 @@ def test_to_networkx_round_trip():
     assert all("flow" in data for _, data in exported.nodes(data=True))
 
     # The exported partition matches the result's module assignment.
-    result_modules = result.modules()
     exported_modules = {
-        node: int(data["infomap_module"])
-        for node, data in exported.nodes(data=True)
+        node: data["infomap_module"] for node, data in exported.nodes(data=True)
     }
-    assert exported_modules == result_modules
+    assert exported_modules == result.modules()
+
+
+def test_to_networkx_attributes_have_native_types():
+    graph = nx.karate_club_graph()
+    result = infomap.run(graph, **_SETTINGS)
+
+    exported = infomap.to_networkx(result)
+    for _, data in exported.nodes(data=True):
+        assert isinstance(data["infomap_module"], int)
+        assert isinstance(data["infomap_path"], str)
+        assert isinstance(data["infomap_level_1"], int)
+        assert isinstance(data["flow"], float)
+    for _, _, data in exported.edges(data=True):
+        assert isinstance(data["weight"], float)
+
+
+def test_to_networkx_graph_survives_graphml_and_gexf(tmp_path):
+    graph = nx.karate_club_graph()
+    result = infomap.run(graph, **_SETTINGS)
+    exported = infomap.to_networkx(result)
+
+    graphml_path = tmp_path / "karate.graphml"
+    nx.write_graphml(exported, graphml_path)
+    read_back = nx.read_graphml(graphml_path)
+    node = next(iter(read_back.nodes))
+    assert isinstance(read_back.nodes[node]["infomap_module"], int)
+    assert isinstance(read_back.nodes[node]["flow"], float)
+
+    nx.write_gexf(exported, tmp_path / "karate.gexf")
 
 
 def test_to_networkx_directed_flow_model_exports_digraph():
@@ -227,6 +254,21 @@ def test_to_igraph_round_trip():
     assert exported.ecount() == graph.ecount()
     assert "infomap_module" in exported.vs.attributes()
     assert "flow" in exported.vs.attributes()
+    assert all(isinstance(value, int) for value in exported.vs["infomap_module"])
+    assert all(isinstance(value, str) for value in exported.vs["infomap_path"])
+    assert all(isinstance(value, float) for value in exported.vs["flow"])
+
+
+def test_to_igraph_graph_survives_graphml(tmp_path):
+    ig = pytest.importorskip("igraph")
+    graph = ig.Graph.Famous("Zachary")
+    result = infomap.run(graph, **_SETTINGS)
+    exported = infomap.to_igraph(result)
+
+    path = tmp_path / "karate.graphml"
+    exported.write_graphml(str(path))
+    read_back = ig.Graph.Read_GraphML(str(path))
+    assert all(value is not None for value in read_back.vs["infomap_module"])
 
 
 def test_run_rejects_unsupported_input():
