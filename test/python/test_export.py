@@ -236,3 +236,26 @@ def test_write_gexf_rejects_igraph_graph(tmp_path):
 
     with pytest.raises(NotImplementedError, match="python-igraph does not provide"):
         write_gexf(graph, im, tmp_path / "communities.gexf")
+
+
+def test_annotate_accepts_result_and_matches_infomap_input():
+    graph = nx.Graph([(0, 1), (1, 2), (2, 0)])
+    im = Infomap(silent=True, num_trials=1, seed=123)
+    im.add_networkx_graph(graph)
+    result = im.run()
+
+    via_im = annotate_networkx_graph(graph, im)
+    via_result = annotate_networkx_graph(graph, result)
+
+    assert dict(via_result.nodes(data=True)) == dict(via_im.nodes(data=True))
+
+
+def test_annotate_rejects_stale_result():
+    graph = nx.Graph([(0, 1), (1, 2), (2, 0)])
+    im = Infomap(silent=True, num_trials=1, seed=123)
+    im.add_networkx_graph(graph)
+    stale = im.run()
+    im.run()  # rebuilds the C++ result tree; `stale` is now generation-stale
+
+    with pytest.raises(RuntimeError, match="re-run"):
+        annotate_networkx_graph(graph, stale)

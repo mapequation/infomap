@@ -40,10 +40,12 @@ try:
     from ._options import _construct_args as _construct_args
 
     from . import datasets as datasets
+    from . import io as io
     from . import tl as tl
 
     __all__.extend(_FACADE_ALL)
     __all__.append("datasets")
+    __all__.append("io")
     __all__.append("tl")
 except ImportError:
     # Allow setuptools to read package metadata before the extension is built.

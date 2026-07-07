@@ -3,10 +3,28 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
-# The only public name here is the Scanpy-style ``infomap.tl.infomap`` entry
-# point; without this, the module-level imports (Any/Mapping/...) would leak
-# into the ``infomap.tl`` namespace.
-__all__ = ["infomap"]
+# The GraphRAG tools are conceptually part of the ``tl`` namespace, so their
+# public names are re-exported here. tl.graphrag has no module-scope
+# third-party imports, so this keeps ``import infomap`` dependency-free.
+from .graphrag import (
+    GraphRAGGraph as GraphRAGGraph,
+    GraphRAGRunResult as GraphRAGRunResult,
+    read_graphrag as read_graphrag,
+    run_graphrag_communities as run_graphrag_communities,
+    write_graphrag_communities as write_graphrag_communities,
+)
+
+# A curated __all__: without it, the module-level imports (Any/Mapping/...)
+# would leak into the ``infomap.tl`` namespace. ``infomap`` is the
+# Scanpy-style entry point defined below.
+__all__ = [
+    "GraphRAGGraph",
+    "GraphRAGRunResult",
+    "infomap",
+    "read_graphrag",
+    "run_graphrag_communities",
+    "write_graphrag_communities",
+]
 
 
 def _import_pandas() -> Any:

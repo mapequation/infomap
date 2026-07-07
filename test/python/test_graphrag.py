@@ -276,7 +276,7 @@ def test_read_graphrag_rejects_duplicate_entity_ids(tmp_path):
 
 
 def test_output_paths_treats_dotted_output_as_directory(tmp_path):
-    from infomap.graphrag import _output_paths
+    from infomap.tl.graphrag import _output_paths
 
     output_dir = tmp_path / "output.v1"
     paths = _output_paths(output_dir)

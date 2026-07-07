@@ -10,7 +10,6 @@ from __future__ import annotations
 from .tl.graphrag import (
     GraphRAGGraph as GraphRAGGraph,
     GraphRAGRunResult as GraphRAGRunResult,
-    _output_paths as _output_paths,
     read_graphrag as read_graphrag,
     run_graphrag_communities as run_graphrag_communities,
     write_graphrag_communities as write_graphrag_communities,
