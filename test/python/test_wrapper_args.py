@@ -164,3 +164,27 @@ def test_cli_completion_invalid_shell_exits_without_traceback():
     assert result.returncode == 1
     assert "Unsupported completion shell 'fish'" in result.stderr
     assert "Traceback" not in result.stderr
+
+
+def test_pretty_warns_when_passed_explicitly():
+    with pytest.deprecated_call(match="pretty is deprecated and has no effect"):
+        infomap_module.Infomap(silent=True, no_file_output=True, pretty=True)
+
+    im = infomap_module.Infomap(silent=True, no_file_output=True)
+    im.add_link(0, 1)
+    with pytest.deprecated_call(match="pretty is deprecated and has no effect"):
+        im.run(pretty=False)
+
+
+def test_include_self_links_warning_points_at_caller():
+    import warnings
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always", DeprecationWarning)
+        infomap_module.Infomap(
+            silent=True, no_file_output=True, include_self_links=True
+        )
+
+    matching = [w for w in caught if "include_self_links" in str(w.message)]
+    assert matching, "expected an include_self_links DeprecationWarning"
+    assert matching[0].filename == __file__

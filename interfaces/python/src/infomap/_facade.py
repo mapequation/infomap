@@ -1,4 +1,5 @@
 import sys
+import warnings
 from collections import namedtuple
 from contextlib import contextmanager
 
@@ -197,7 +198,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         no_final_output=False,
         verbosity_level=1,
         silent=True,
-        pretty=False,
+        pretty=None,
         two_level=False,
         flow_model=None,
         directed=None,
@@ -338,8 +339,9 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         silent : bool, optional
             Suppress console output. The Python API is quiet by default; construct with
             silent=False for the engine log. The command-line interface is unaffected.
-        pretty : bool, optional
-            Deprecated. Accepted for backward compatibility; has no effect.
+        pretty : bool | None, optional
+            Deprecated. Accepted for backward compatibility; has no effect. Passing it
+            explicitly emits a DeprecationWarning.
         two_level : bool, optional
             Optimize a two-level partition instead of the default multi-level hierarchy.
         flow_model : str, optional
@@ -463,6 +465,12 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         max_degree_for_random_moves : int, optional
             Try random moves only for nodes with degree at most this value.
         """
+        if pretty is not None:
+            warnings.warn(
+                "pretty is deprecated and has no effect",
+                DeprecationWarning,
+                stacklevel=2,
+            )
         options = Options._from_locals(locals())
         self._init_from_options(args, options)
 
@@ -503,7 +511,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         no_final_output=False,
         verbosity_level=1,
         silent=False,
-        pretty=False,
+        pretty=None,
         two_level=False,
         flow_model=None,
         directed=None,
@@ -550,6 +558,9 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         Keyword arguments mirror the Infomap CLI flags. Use
         :class:`Options` for the full parameter reference and
         :func:`infomap.run` with ``options=`` when reusing a saved configuration.
+
+        Boolean flags default to off here and render only when set; a
+        flag chosen at construction stays in effect for every run.
 
         Parameters
         ----------
@@ -646,8 +657,9 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         silent : bool, optional
             Suppress console output. The Python API is quiet by default; construct with
             silent=False for the engine log. The command-line interface is unaffected.
-        pretty : bool, optional
-            Deprecated. Accepted for backward compatibility; has no effect.
+        pretty : bool | None, optional
+            Deprecated. Accepted for backward compatibility; has no effect. Passing it
+            explicitly emits a DeprecationWarning.
         two_level : bool, optional
             Optimize a two-level partition instead of the default multi-level hierarchy.
         flow_model : str, optional
@@ -780,6 +792,12 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         --------
         initial_partition
         """
+        if pretty is not None:
+            warnings.warn(
+                "pretty is deprecated and has no effect",
+                DeprecationWarning,
+                stacklevel=2,
+            )
         options = Options._from_locals(locals())
         return self._run_from_options(args, initial_partition, options)
     # === END generated ===
