@@ -7,7 +7,6 @@ import pytest
 
 import infomap as infomap_module
 import infomap._summary as summary_module
-import infomap._results as results_module
 from infomap._bindings import InfomapWrapper
 
 
@@ -235,9 +234,19 @@ def test_to_dataframe_rejects_unknown_columns(make_infomap, example_network_path
 
 def test_get_dataframe_missing_pandas_message(monkeypatch, make_infomap):
     im = make_infomap(no_infomap=True)
-    # pandas is now resolved lazily via get_pandas() inside the accessor, so
-    # simulate its absence by making that lookup return None.
-    monkeypatch.setattr(results_module, "get_pandas", lambda: None)
+    # pandas resolves lazily via require_pandas (infomap._optional); simulate
+    # its absence by blocking both the cached lookup and the direct import.
+    from infomap import _optional
+
+    original_import_module = importlib.import_module
+
+    def missing_pandas_import(name, *args, **kwargs):
+        if name == "pandas":
+            raise ImportError("missing pandas")
+        return original_import_module(name, *args, **kwargs)
+
+    monkeypatch.setattr(_optional, "get_pandas", lambda: None)
+    monkeypatch.setattr(_optional.importlib, "import_module", missing_pandas_import)
 
     with pytest.raises(ImportError, match=r"infomap\[pandas\]"):
         im.get_dataframe()
