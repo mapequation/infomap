@@ -209,3 +209,37 @@ def test_merge_no_matching_files(tmp_path):
         merge_trial_results(
             [str(tmp_path / "nope_*.json")], out_name=str(tmp_path / "o")
         )
+
+
+def test_merge_summary_is_public():
+    import infomap.merge as merge_module
+
+    assert "MergeSummary" in merge_module.__all__
+    from infomap.merge import MergeSummary  # noqa: F401
+
+
+def test_merge_rejects_non_object_trial_entry(tmp_path):
+    json_path = _shard(
+        tmp_path, "a", offset=0, trials=[(0, 6.0)], best_tree_modules={1: 1}
+    )
+    data = json.loads((tmp_path / "a.json").read_text(encoding="utf-8"))
+    # A string entry contains the substring "trial", so it would pass a plain
+    # `key not in trial` containment check.
+    data["trials"].append("trial=1 codelength=6.5")
+    (tmp_path / "a.json").write_text(json.dumps(data), encoding="utf-8")
+
+    with pytest.raises(MergeError, match="non-object entry in 'trials'"):
+        merge_trial_results([json_path], out_name=str(tmp_path / "o"))
+
+
+def test_merge_accepts_pathlike_out_name(tmp_path):
+    _shard(tmp_path, "a", offset=0, trials=[(0, 6.0)], best_tree_modules={1: 1})
+    summary = merge_trial_results(
+        [str(tmp_path / "a.json")], out_name=tmp_path / "final"
+    )
+    assert (tmp_path / "final.tree").is_file()
+    assert (tmp_path / "final.clu").is_file()
+    assert summary["outputs"] == [
+        str(tmp_path / "final.tree"),
+        str(tmp_path / "final.clu"),
+    ]

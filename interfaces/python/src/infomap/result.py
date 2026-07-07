@@ -27,7 +27,13 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any
 
 from ._optional import get_pandas
-from ._results import _to_dataframe_sort_columns, perplexity
+from ._results import (
+    _DATAFRAME_COLUMN_ALIASES,
+    _DEFAULT_TO_DATAFRAME_COLUMNS,
+    _to_dataframe_sort_columns,
+    _unknown_dataframe_column_error,
+    perplexity,
+)
 
 if TYPE_CHECKING:
     from ._facade import Infomap
@@ -35,9 +41,6 @@ if TYPE_CHECKING:
 # build_result is internal plumbing shared by Infomap.run and Network.run;
 # only the result types are public API.
 __all__ = ["Result", "TreeNode"]
-
-_DEFAULT_TO_DATAFRAME_COLUMNS = ("node_id", "module_id", "flow", "path", "name")
-_DATAFRAME_COLUMN_ALIASES = {"community": "module_id"}
 
 # Columns served directly from the NodeData snapshot. "name" and "module_id"
 # (the "community" alias) are resolved separately.
@@ -557,6 +560,10 @@ class Result:
         ``getModules`` guard.
         """
         if self._have_memory and not states:
+            # RuntimeError (not ValueError) on purpose: the legacy
+            # Infomap.get_modules path surfaces the C++ std::runtime_error
+            # thrown by getModules (src/Infomap.h), and parity tests pin the
+            # error type across both surfaces.
             raise RuntimeError(
                 "Cannot get modules on higher-order network without states."
             )
@@ -661,7 +668,7 @@ class Result:
             engine re-runs raises instead of reading the rebuilt engine.
         """
         if data not in ("weight", "flow"):
-            raise RuntimeError('data must one of "weight" or "flow"')
+            raise ValueError('data must be one of "weight" or "flow"')
         self._check_generation()
         flow = data != "weight"
 
@@ -812,21 +819,4 @@ class Result:
             ]
         if resolved in _SNAPSHOT_COLUMNS:
             return list(getattr(snapshot, resolved))
-        available = ", ".join(
-            sorted(
-                {
-                    *_DEFAULT_TO_DATAFRAME_COLUMNS,
-                    "child_index",
-                    "community",
-                    "depth",
-                    "layer_id",
-                    "modular_centrality",
-                    "state_id",
-                    "state_name",
-                }
-            )
-        )
-        raise ValueError(
-            f"Unknown DataFrame column {requested!r}. "
-            f"Available columns include: {available}."
-        )
+        raise _unknown_dataframe_column_error(requested)

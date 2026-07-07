@@ -249,7 +249,7 @@ def test_links_parity(network, example_network_path):
     assert list(result.links()) == list(im.links)
     assert list(result.links(data="weight")) == list(im.get_links())
     assert list(result.links(data="flow")) == list(im.flow_links)
-    with pytest.raises(RuntimeError, match="weight"):
+    with pytest.raises(ValueError, match="weight"):
         list(result.links(data="bogus"))
 
 

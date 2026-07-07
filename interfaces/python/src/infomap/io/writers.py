@@ -15,23 +15,35 @@ class _InfomapWritersMixin:
     if TYPE_CHECKING:
         _core: Core
 
-    def write(self, filename, *args, **kwargs):
-        """Write results to file.
+    def write(self, filename: str | os.PathLike[str], *args, **kwargs) -> None:
+        """Write results to file, inferring the format from the extension.
+
+        An existing file at ``filename`` is overwritten.
 
         Raises
         ------
+        ValueError
+            If ``filename`` has no extension to infer the format from.
         NotImplementedError
             If the file format is not supported.
 
         Parameters
         ----------
-        filename : str
+        filename : str or os.PathLike
             The filename.
         """
+        filename = os.fspath(filename)
         _, ext = os.path.splitext(filename)
 
         # remove the dot
         ext = ext[1:]
+
+        if not ext:
+            raise ValueError(
+                f"Cannot infer an output format from {filename!r}: the filename "
+                "has no extension. Add one of .clu, .tree, .ftree, .nwk, .net, "
+                ".json or .csv, or call a specific writer such as write_clu()."
+            )
 
         if ext == "ftree":
             ext = "flow_tree"
@@ -40,15 +52,22 @@ class _InfomapWritersMixin:
         elif ext == "net":
             ext = "pajek"
 
-        writer = "write_{}".format(ext)
+        writer = f"write_{ext}"
 
         if hasattr(self, writer):
             return getattr(self, writer)(filename, *args, **kwargs)
 
-        raise NotImplementedError("No method found for writing {} files".format(ext))
+        raise NotImplementedError(f"No method found for writing {ext} files")
 
-    def write_clu(self, filename, states=False, depth_level=1):
+    def write_clu(
+        self,
+        filename: str | os.PathLike[str],
+        states: bool = False,
+        depth_level: int = 1,
+    ) -> None:
         """Write result to a clu file.
+
+        An existing file at ``filename`` is overwritten.
 
         See Also
         --------
@@ -57,16 +76,20 @@ class _InfomapWritersMixin:
 
         Parameters
         ----------
-        filename : str
+        filename : str or os.PathLike
         states : bool, optional
             If the state nodes should be included. Default ``False``.
         depth_level : int, optional
             The depth in the hierarchical tree to write.
         """
-        return self._core.writeClu(filename, states, depth_level)
+        self._core.writeClu(os.fspath(filename), states, depth_level)
 
-    def write_tree(self, filename, states=False):
+    def write_tree(
+        self, filename: str | os.PathLike[str], states: bool = False
+    ) -> None:
         """Write result to a tree file.
+
+        An existing file at ``filename`` is overwritten.
 
         See Also
         --------
@@ -75,15 +98,19 @@ class _InfomapWritersMixin:
 
         Parameters
         ----------
-        filename : str
+        filename : str or os.PathLike
         states : bool, optional
             If the state nodes should be included. Default ``False``.
         """
-        return self._core.writeTree(filename, states)
+        self._core.writeTree(os.fspath(filename), states)
 
-    def write_flow_tree(self, filename, states=False):
+    def write_flow_tree(
+        self, filename: str | os.PathLike[str], states: bool = False
+    ) -> None:
         """Write result to a ftree file.
 
+        An existing file at ``filename`` is overwritten.
+
         See Also
         --------
         write_clu
@@ -91,15 +118,19 @@ class _InfomapWritersMixin:
 
         Parameters
         ----------
-        filename : str
+        filename : str or os.PathLike
         states : bool, optional
             If the state nodes should be included. Default ``False``.
         """
-        return self._core.writeFlowTree(filename, states)
+        self._core.writeFlowTree(os.fspath(filename), states)
 
-    def write_newick(self, filename, states=False):
+    def write_newick(
+        self, filename: str | os.PathLike[str], states: bool = False
+    ) -> None:
         """Write result to a Newick file.
 
+        An existing file at ``filename`` is overwritten.
+
         See Also
         --------
         write_clu
@@ -107,15 +138,19 @@ class _InfomapWritersMixin:
 
         Parameters
         ----------
-        filename : str
+        filename : str or os.PathLike
         states : bool, optional
             If the state nodes should be included. Default ``False``.
         """
-        return self._core.writeNewickTree(filename, states)
+        self._core.writeNewickTree(os.fspath(filename), states)
 
-    def write_json(self, filename, states=False):
+    def write_json(
+        self, filename: str | os.PathLike[str], states: bool = False
+    ) -> None:
         """Write result to a JSON file.
 
+        An existing file at ``filename`` is overwritten.
+
         See Also
         --------
         write_clu
@@ -123,15 +158,19 @@ class _InfomapWritersMixin:
 
         Parameters
         ----------
-        filename : str
+        filename : str or os.PathLike
         states : bool, optional
             If the state nodes should be included. Default ``False``.
         """
-        return self._core.writeJsonTree(filename, states)
+        self._core.writeJsonTree(os.fspath(filename), states)
 
-    def write_csv(self, filename, states=False):
+    def write_csv(
+        self, filename: str | os.PathLike[str], states: bool = False
+    ) -> None:
         """Write result to a CSV file.
 
+        An existing file at ``filename`` is overwritten.
+
         See Also
         --------
         write_clu
@@ -139,14 +178,16 @@ class _InfomapWritersMixin:
 
         Parameters
         ----------
-        filename : str
+        filename : str or os.PathLike
         states : bool, optional
             If the state nodes should be included. Default ``False``.
         """
-        return self._core.writeCsvTree(filename, states)
+        self._core.writeCsvTree(os.fspath(filename), states)
 
-    def write_state_network(self, filename):
+    def write_state_network(self, filename: str | os.PathLike[str]) -> None:
         """Write internal state network to file.
+
+        An existing file at ``filename`` is overwritten.
 
         See Also
         --------
@@ -154,12 +195,16 @@ class _InfomapWritersMixin:
 
         Parameters
         ----------
-        filename : str
+        filename : str or os.PathLike
         """
-        return self._core.network().writeStateNetwork(filename)
+        self._core.network().writeStateNetwork(os.fspath(filename))
 
-    def write_pajek(self, filename, flow=False):
+    def write_pajek(
+        self, filename: str | os.PathLike[str], flow: bool = False
+    ) -> None:
         """Write network to a Pajek file.
+
+        An existing file at ``filename`` is overwritten.
 
         See Also
         --------
@@ -167,8 +212,8 @@ class _InfomapWritersMixin:
 
         Parameters
         ----------
-        filename : str
+        filename : str or os.PathLike
         flow : bool, optional
             If the flow should be included. Default ``False``.
         """
-        return self._core.network().writePajekNetwork(filename, flow)
+        self._core.network().writePajekNetwork(os.fspath(filename), flow)
