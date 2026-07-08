@@ -3066,6 +3066,12 @@ class map_pair_uint_uint_double(object):
 # Register map_pair_uint_uint_double in _infomap:
 _infomap.map_pair_uint_uint_double_swigregister(map_pair_uint_uint_double)
 
+def _set_log_callback(callback):
+    return _infomap._set_log_callback(callback)
+
+def _drain_log_queue():
+    return _infomap._drain_log_queue()
+
 def _enabled_features_string():
     return _infomap._enabled_features_string()
 

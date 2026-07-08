@@ -17,6 +17,16 @@ Graph-package entry points
 .. autofunction:: find_communities
 .. autofunction:: find_igraph_communities
 
+Engine log
+----------
+
+The engine log becomes Python log records on the ``"infomap"`` logger when
+that logger has handlers; see the routing rules in
+:doc:`/working-with-infomap/running-and-options`.
+
+.. autofunction:: enable_log
+.. autofunction:: disable_log
+
 Information-theoretic primitives
 --------------------------------
 

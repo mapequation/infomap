@@ -15,11 +15,25 @@
 #include <ostream>
 #include <limits>
 #include <iomanip>
+#include <string>
 #include <type_traits>
 
 namespace infomap {
 
 struct hideIf;
+
+/// Receiver for complete log lines, installed with Log::setSink. Each line is
+/// delivered newline-stripped, tagged with the verbosity level of the Log
+/// object that wrote it (0 = default output, >= 1 = -v/-vv detail).
+/// writeLine may be called from any thread that logs (at elevated verbosity,
+/// OpenMP task threads emit detail lines); implementations synchronize
+/// themselves. Visibility filtering (silent, verbosity, thread-mute) happens
+/// upstream, so the sink only ever sees lines that would have been printed.
+class LogSink {
+public:
+  virtual ~LogSink() = default;
+  virtual void writeLine(unsigned int level, const std::string& line) = 0;
+};
 
 class Log {
   using ostreamFuncPtr = std::add_pointer_t<std::ostream&(std::ostream&)>;
@@ -121,6 +135,21 @@ public:
   /// Guarantee zero output: redirect to a null sink and set silent.
   static void setNoOutput();
 
+  /// Install a line sink that replaces stream output entirely: every visible
+  /// log line is delivered to @p sink (tagged with its message level) instead
+  /// of the configured output stream. Pass nullptr to uninstall and restore
+  /// stream output. The caller owns the sink and must keep it alive until it
+  /// is uninstalled; install/uninstall must not race with a running engine
+  /// (Log state is process-global, like init()/setOutputStream()).
+  static void setSink(LogSink* sink);
+
+  static LogSink* sink() { return s_sink; }
+
+  /// Flush the calling thread's partially assembled sink lines (text written
+  /// without a trailing newline) through to the sink. Call after an engine
+  /// run returns so a trailing partial line is not silently dropped.
+  static void flushSinkLines();
+
   static std::ostream& getOutputStream() { return ostream(); }
 
   /// Whether the active Log sink is the process stdout, i.e. not redirected via
@@ -129,7 +158,10 @@ public:
   /// avoid emitting ANSI into a redirected sink.
   static bool isWritingToStdout();
 
-  static std::streamsize precision() { return ostream().precision(); }
+  static std::streamsize precision()
+  {
+    return s_sink ? sinkPrecision() : ostream().precision();
+  }
 
   static std::streamsize precision(std::streamsize precision)
   {
@@ -140,6 +172,8 @@ public:
     // the stream; do not "fix" this by querying ostream() here (that reintroduces the race).
     if (s_threadMuteDepth > 0)
       return precision;
+    if (s_sink)
+      return sinkPrecision(precision);
     return ostream().precision(precision);
   }
 
@@ -151,7 +185,11 @@ private:
   unsigned int m_level;
   unsigned int m_maxLevel;
   bool m_visible;
-  std::ostream& m_ostream = ostream();
+  // With a sink installed, bind to the calling thread's per-level line
+  // assembler so every line is tagged with the level it was written at and
+  // concurrent threads cannot tear each other's lines. m_level is declared
+  // before m_ostream, so it is initialized first.
+  std::ostream& m_ostream = streamFor(m_level);
 
   static std::ostream& ostream()
   {
@@ -161,10 +199,21 @@ private:
     return s_ostream ? *s_ostream : defaultStream();
 #endif
   }
+  static std::ostream& streamFor(unsigned int level)
+  {
+    return s_sink ? sinkStream(level) : ostream();
+  }
+  // Thread-local per-level line assembler; defined in Log.cpp.
+  static std::ostream& sinkStream(unsigned int level);
+  // Set/get the line-assembler precision for the calling thread (and the
+  // default applied to assemblers created later); defined in Log.cpp.
+  static std::streamsize sinkPrecision(std::streamsize precision);
+  static std::streamsize sinkPrecision();
 #ifndef INFOMAP_R
   static std::ostream& defaultStream();
 #endif
   static std::ostream* s_ostream;
+  static LogSink* s_sink;
   static unsigned int s_verboseLevel;
   static bool s_silent;
   static thread_local unsigned int s_threadMuteDepth;

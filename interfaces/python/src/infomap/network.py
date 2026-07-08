@@ -29,6 +29,7 @@ import warnings
 from typing import Any
 
 from ._core import Core, apply_initial_partition
+from ._logging import engine_log_routing as _engine_log_routing
 from .errors import NetworkParseError, _translate_engine_errors
 from ._network_input import add_bulk_links as _add_bulk_links
 from ._network_input import first_order_unpacker as _first_order_unpacker
@@ -307,12 +308,12 @@ class Network:
         # classify=True mirrors Infomap.run(): input failures surfacing at
         # run time (cluster_data, meta_data) become NetworkParseError.
         if initial_partition is None:
-            with _translate_engine_errors(classify=True):
+            with _engine_log_routing(), _translate_engine_errors(classify=True):
                 self._core.run(rendered_args)
         else:
             apply_initial_partition(self._core, initial_partition)
             try:
-                with _translate_engine_errors(classify=True):
+                with _engine_log_routing(), _translate_engine_errors(classify=True):
                     self._core.run(rendered_args)
             finally:
                 # Applies to this run only, mirroring Infomap.run().
@@ -338,7 +339,7 @@ class Network:
         NetworkParseError
             If the file cannot be opened or its content cannot be parsed.
         """
-        with _translate_engine_errors(NetworkParseError):
+        with _engine_log_routing(), _translate_engine_errors(NetworkParseError):
             self._core.readInputData(filename, accumulate)
         return self
 

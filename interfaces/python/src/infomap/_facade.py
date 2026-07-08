@@ -34,6 +34,10 @@ from ._options import (
     OutputFormat,
     _construct_args,
 )
+from ._logging import apply_engine_log_overrides as _apply_engine_log_overrides
+from ._logging import disable_log, enable_log
+from ._logging import engine_log_routing as _engine_log_routing
+from ._logging import is_routed as _is_log_routed
 from ._results import _InfomapResultsMixin
 from ._results import entropy, perplexity, plogp
 from .errors import NetworkParseError, _translate_engine_errors
@@ -82,6 +86,8 @@ __all__ = [
     "Result",
     "TreeNode",
     "build_info",
+    "disable_log",
+    "enable_log",
     "entropy",
     "find_communities",
     "find_igraph_communities",
@@ -156,7 +162,16 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
     """
 
     def _init_from_options(self, args, options):
-        self._core = Core(_package_construct_args()(args, **options.to_kwargs()))
+        # In routed log mode (handlers on the "infomap" logger), logging is
+        # the emission control: strip --silent from the constructor args (the
+        # C++ engine composes constructor + run args additively, so a --silent
+        # baked in here could never be undone at run time) and let a
+        # DEBUG-enabled logger raise the engine verbosity.
+        kwargs = _apply_engine_log_overrides(options.to_kwargs())
+        # Remembered so run() can explain why a routed run of an instance
+        # constructed *before* logging was configured produces no records.
+        self._engine_constructed_silent = bool(kwargs.get("silent", True))
+        self._core = Core(_package_construct_args()(args, **kwargs))
         self._network = Network(core=self._core)
         self.node_id_to_label = {}
         # Run-generation token: incremented on every run(). A Result stamps the
@@ -1573,7 +1588,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         NetworkParseError
             If the file cannot be opened or its content cannot be parsed.
         """
-        with _translate_engine_errors(NetworkParseError):
+        with _engine_log_routing(), _translate_engine_errors(NetworkParseError):
             self._core.readInputData(filename, accumulate)
 
     def add_node(self, node_id, name=None, teleportation_weight=None):
@@ -2751,17 +2766,30 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             self.initial_partition = old_partition
 
     def _run_from_options(self, args, initial_partition, options):
-        args = _package_construct_args()(args, **options.to_kwargs())
+        kwargs = options.to_kwargs()
+        if _is_log_routed():
+            if self._engine_constructed_silent:
+                warnings.warn(
+                    "the 'infomap' logger has handlers, but this Infomap "
+                    "instance was created silent before logging was "
+                    "configured, so the run emits no log records. Configure "
+                    "logging (e.g. infomap.enable_log()) before creating the "
+                    "instance, or create it with silent=False.",
+                    UserWarning,
+                    stacklevel=3,
+                )
+            kwargs = _apply_engine_log_overrides(kwargs)
+        args = _package_construct_args()(args, **kwargs)
 
         # classify=True: the engine reads auxiliary input (cluster_data,
         # meta_data) at run time, so input failures surfacing here become
         # NetworkParseError; everything else is InfomapError.
         if initial_partition is not None:
             with self._initial_partition(initial_partition):
-                with _translate_engine_errors(classify=True):
+                with _engine_log_routing(), _translate_engine_errors(classify=True):
                     self._core.run(args)
         else:
-            with _translate_engine_errors(classify=True):
+            with _engine_log_routing(), _translate_engine_errors(classify=True):
                 self._core.run(args)
 
         # Stamp a fresh Result with the new generation (shared helper). The C++
