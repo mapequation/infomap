@@ -48,6 +48,9 @@ ALGORITHM_OPTIONS <- list(
   list(type = "flag", name = "use_node_weights_as_flow", flag = "--use-node-weights-as-flow", default = FALSE),
   list(type = "flag", name = "to_nodes", flag = "--to-nodes", default = FALSE),
   list(type = "value", name = "teleportation_probability", flag = "--teleportation-probability", default = 0.15, include = .skip_when_not_equal(0.15)),
+  list(type = "value", name = "max_flow_iterations", flag = "--max-flow-iterations", default = 400L, include = .skip_when_not_equal(400L)),
+  list(type = "value", name = "min_flow_iterations", flag = "--min-flow-iterations", default = 50L, include = .skip_when_not_equal(50L)),
+  list(type = "value", name = "flow_tolerance", flag = "--flow-tolerance", default = 1e-15, include = .skip_when_not_equal(1e-15)),
   list(type = "flag", name = "regularized", flag = "--regularized", default = FALSE),
   list(type = "value", name = "regularization_strength", flag = "--regularization-strength", default = 1.0, include = .skip_when_not_equal(1.0)),
   list(type = "flag", name = "entropy_corrected", flag = "--entropy-corrected", default = FALSE),
@@ -96,15 +99,15 @@ OPTION_FIELD_NAMES <- c(
   "trial_offset", "trial_results", "no_final_output", "verbosity_level",
   "silent", "two_level", "flow_model", "directed",
   "recorded_teleportation", "use_node_weights_as_flow", "to_nodes", "teleportation_probability",
-  "regularized", "regularization_strength", "entropy_corrected", "entropy_correction_strength",
-  "markov_time", "variable_markov_time", "variable_markov_damping", "variable_markov_min_scale",
-  "preferred_number_of_modules", "preferred_number_of_levels", "preferred_number_of_levels_strength", "multilayer_relax_rate",
-  "multilayer_relax_limit", "multilayer_relax_limit_up", "multilayer_relax_limit_down", "multilayer_relax_by_jsd",
-  "multilayer_relax_to_self", "seed", "num_trials", "core_loop_limit",
-  "core_level_limit", "tune_iteration_limit", "core_loop_codelength_threshold", "tune_iteration_relative_threshold",
-  "fast_hierarchical_solution", "inner_parallelization", "parallel_trials", "converge",
-  "num_threads", "threads", "prefer_modular_solution", "num_random_moves",
-  "max_degree_for_random_moves"
+  "max_flow_iterations", "min_flow_iterations", "flow_tolerance", "regularized",
+  "regularization_strength", "entropy_corrected", "entropy_correction_strength", "markov_time",
+  "variable_markov_time", "variable_markov_damping", "variable_markov_min_scale", "preferred_number_of_modules",
+  "preferred_number_of_levels", "preferred_number_of_levels_strength", "multilayer_relax_rate", "multilayer_relax_limit",
+  "multilayer_relax_limit_up", "multilayer_relax_limit_down", "multilayer_relax_by_jsd", "multilayer_relax_to_self",
+  "seed", "num_trials", "core_loop_limit", "core_level_limit",
+  "tune_iteration_limit", "core_loop_codelength_threshold", "tune_iteration_relative_threshold", "fast_hierarchical_solution",
+  "inner_parallelization", "parallel_trials", "converge", "num_threads",
+  "threads", "prefer_modular_solution", "num_random_moves", "max_degree_for_random_moves"
 )
 
 OPTION_DEFAULTS <- list(
@@ -148,6 +151,9 @@ OPTION_DEFAULTS <- list(
   use_node_weights_as_flow = FALSE,
   to_nodes = FALSE,
   teleportation_probability = 0.15,
+  max_flow_iterations = 400L,
+  min_flow_iterations = 50L,
+  flow_tolerance = 1e-15,
   regularized = FALSE,
   regularization_strength = 1.0,
   entropy_corrected = FALSE,
@@ -246,6 +252,9 @@ OPTION_DEFAULTS <- list(
 #'   \item{`use_node_weights_as_flow`}{Use node weights from the API or Pajek node records as normalized node flow.}
 #'   \item{`to_nodes`}{Teleport to nodes instead of links. Uses uniform node weights unless node weights are provided.}
 #'   \item{`teleportation_probability`}{Set the probability of teleporting to a random node or link when calculating flow.}
+#'   \item{`max_flow_iterations`}{Limit the power iteration used to calculate flow (directed and regularized flow models) to this many iterations.}
+#'   \item{`min_flow_iterations`}{Require at least this many power iterations before the flow calculation can converge, even if --flow-tolerance is already met.}
+#'   \item{`flow_tolerance`}{Convergence tolerance for the power iteration used to calculate flow. Iteration stops once the per-iteration change in flow drops to or below this value, after --min-flow-iterations have run.}
 #'   \item{`regularized`}{Add a fully connected Bayesian prior network to reduce overfitting to missing links. Activates --recorded-teleportation.}
 #'   \item{`regularization_strength`}{Scale the relative strength of the Bayesian prior network used by --regularized.}
 #'   \item{`entropy_corrected`}{Correct for negative entropy bias in small samples, especially solutions with many modules.}

@@ -59,6 +59,9 @@ export type Arguments = Partial<{
   useNodeWeightsAsFlow: boolean;
   toNodes: boolean;
   teleportationProbability: number;
+  maxFlowIterations: number;
+  minFlowIterations: number;
+  flowTolerance: number;
   regularized: boolean;
   regularizationStrength: number;
   entropyCorrected: boolean;
@@ -177,6 +180,15 @@ export default function argumentsToString(args: Arguments) {
 
   if (args.teleportationProbability != null)
     result += " --teleportation-probability " + args.teleportationProbability;
+
+  if (args.maxFlowIterations != null)
+    result += " --max-flow-iterations " + args.maxFlowIterations;
+
+  if (args.minFlowIterations != null)
+    result += " --min-flow-iterations " + args.minFlowIterations;
+
+  if (args.flowTolerance != null)
+    result += " --flow-tolerance " + args.flowTolerance;
 
   if (args.regularized) result += " --regularized";
 

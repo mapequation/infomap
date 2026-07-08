@@ -95,6 +95,8 @@ struct Config {
   int multilayerJSRelaxLimit = -1;
   bool multilayerRelaxToSelf = false; // Couple only physical nodes across layers instead of spreading to neighbours
   unsigned int maxFlowIterations = 400;
+  unsigned int minFlowIterations = 50;
+  double flowTolerance = 1.0e-15; // Convergence tolerance for flow calculation (PageRank)
 
   // Clustering
   bool twoLevel = false;
@@ -237,6 +239,8 @@ struct Config {
     multilayerJSRelaxLimit = other.multilayerJSRelaxLimit;
     multilayerRelaxToSelf = other.multilayerRelaxToSelf;
     maxFlowIterations = other.maxFlowIterations;
+    minFlowIterations = other.minFlowIterations;
+    flowTolerance = other.flowTolerance;
     twoLevel = other.twoLevel;
     noCoarseTune = other.noCoarseTune;
     recordedTeleportation = other.recordedTeleportation;

@@ -334,7 +334,7 @@ struct IterationResult {
 };
 
 template <typename Iteration>
-IterationResult powerIterate(double alpha, unsigned int maxIterations, Iteration&& iter)
+IterationResult powerIterate(const Config& config, double alpha, Iteration&& iter)
 {
   unsigned int iterations = 0;
   double beta = 1.0 - alpha;
@@ -351,9 +351,9 @@ IterationResult powerIterate(double alpha, unsigned int maxIterations, Iteration
     }
 
     ++iterations;
-  } while (iterations < maxIterations && (err > 1.0e-15 || iterations < 50));
+  } while (iterations < config.maxFlowIterations && (err > config.flowTolerance || iterations < config.minFlowIterations));
 
-  const bool converged = iterations < maxIterations;
+  const bool converged = iterations < config.maxFlowIterations;
   if (!converged) {
     Log() << "\n";
     Console::warn(0, "PageRank calculation did not converge after {} iterations with error {:g}.", iterations, err);
@@ -432,7 +432,7 @@ void FlowCalculator::calcDirectedFlow(const StateNetwork& network, const Config&
     return error;
   };
 
-  const auto result = powerIterate(config.teleportationProbability, config.maxFlowIterations, iteration);
+  const auto result = powerIterate(config, config.teleportationProbability, iteration);
   recordPageRank(result.iterations, result.error, result.converged);
 
   double sumNodeRank = 1.0;
@@ -565,7 +565,7 @@ void FlowCalculator::calcDirectedRelaxToSelfFlow(const StateNetwork& network, co
     return error;
   };
 
-  const auto result = powerIterate(config.teleportationProbability, config.maxFlowIterations, iteration);
+  const auto result = powerIterate(config, config.teleportationProbability, iteration);
   recordPageRank(result.iterations, result.error, result.converged);
 
   double sumNodeRank = 1.0;
@@ -724,7 +724,7 @@ void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, co
     }
 
     ++iterations;
-  } while (iterations < config.maxFlowIterations && (err > 1.0e-15 || iterations < 50));
+  } while (iterations < config.maxFlowIterations && (err > config.flowTolerance || iterations < config.minFlowIterations));
 
   recordPageRank(iterations, err, iterations < config.maxFlowIterations);
   if (iterations >= config.maxFlowIterations) {
@@ -990,9 +990,9 @@ void FlowCalculator::calcDirectedRegularizedMultilayerFlow(const StateNetwork& n
     }
 
     ++iterations;
-  } while (iterations < maxIterations && (err > 1.0e-15 || iterations < 50));
+  } while (iterations < maxIterations && (err > config.flowTolerance || iterations < config.minFlowIterations));
 
-  if (iterations == maxIterations && err > 1e-14) {
+  if (iterations == maxIterations && err > config.flowTolerance) {
     Console::warn(0, "PageRank calculation stopped after the maximum of {} iterations with diff {:g}.", iterations, err);
   } else {
   }
@@ -1234,7 +1234,7 @@ void FlowCalculator::calcDirectedBipartiteFlow(const StateNetwork& network, cons
     return error;
   };
 
-  const auto result = powerIterate(config.teleportationProbability, config.maxFlowIterations, iteration);
+  const auto result = powerIterate(config, config.teleportationProbability, iteration);
   recordPageRank(result.iterations, result.error, result.converged);
 
   double sumNodeRank = 1.0;
