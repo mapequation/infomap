@@ -122,6 +122,24 @@ class Parameter:
         common = self.overrides.get("tiers", {}).get(language, {}).get("common", [])
         return "common" if self.flag in common else "advanced"
 
+    def policy(self, surface: str) -> dict[str, str]:
+        """The 3.0 cleanup-policy decision for this parameter on ``surface``.
+
+        Declared in the overrides file (``policy.parameters``, keyed by CLI
+        flag); a parameter without an entry defaults to ``keep``. Returns a
+        dict with at least ``action`` and, for every non-keep action, a
+        ``replacement`` (and ``aliasOf`` for ``alias``). See issue #755.
+        """
+        entry = (
+            self.overrides.get("policy", {})
+            .get("parameters", {})
+            .get(self.flag, {})
+            .get(surface)
+        )
+        if entry is None:
+            return {"action": self.overrides.get("policy", {}).get("default", "keep")}
+        return entry
+
     def python_inert_without_outdir(self) -> bool:
         """True for output-artifact parameters that are inert via kwargs.
 
@@ -275,6 +293,69 @@ class ParameterCatalog:
             for language, entries in overrides.get("hiddenBindings", {}).items()
         }
         self._validate_tiers()
+        self._validate_policy()
+
+    def _validate_policy(self) -> None:
+        # Fail loud on typos and incomplete decisions: the policy is the 3.0
+        # contract input (#755), so an unknown flag, surface, or action -- or
+        # a removal without replacement guidance -- must break the build, not
+        # silently fall back to "keep".
+        policy = self.overrides.get("policy")
+        if policy is None:
+            return
+        surfaces = set(policy.get("surfaces", []))
+        actions = set(policy.get("vocabulary", {}))
+        known_flags = {param.flag for param in self.parameters}
+        for entries in self.binding_only_parameters.values():
+            known_flags.update(entry.flag for entry in entries)
+        known_flags.update(policy.get("cliOnlyParameters", []))
+
+        for flag, per_surface in policy.get("parameters", {}).items():
+            if flag not in known_flags:
+                raise RuntimeError(
+                    f"policy.parameters lists unknown flag {flag!r} (not in the "
+                    "parameter catalog, bindingOnly, or cliOnlyParameters)"
+                )
+            for surface, decision in per_surface.items():
+                if surface not in surfaces:
+                    raise RuntimeError(
+                        f"policy for {flag} names unknown surface {surface!r}; "
+                        f"declared surfaces: {sorted(surfaces)}"
+                    )
+                action = decision.get("action")
+                if action not in actions:
+                    raise RuntimeError(
+                        f"policy for {flag}/{surface} has unknown action "
+                        f"{action!r}; declared actions: {sorted(actions)}"
+                    )
+                if action != "keep" and not decision.get("replacement"):
+                    raise RuntimeError(
+                        f"policy for {flag}/{surface} ({action}) is missing "
+                        "the required replacement guidance"
+                    )
+                if action == "alias" and not decision.get("aliasOf"):
+                    raise RuntimeError(
+                        f"policy for {flag}/{surface} is an alias but is "
+                        "missing aliasOf"
+                    )
+                if action == "alias" and decision.get("aliasOf") not in known_flags:
+                    raise RuntimeError(
+                        f"policy for {flag}/{surface} aliases unknown flag "
+                        f"{decision.get('aliasOf')!r}"
+                    )
+
+        # Everything a generated surface already hides must be policy-hidden;
+        # the policy is the umbrella, hiddenBindings the implementation.
+        for language, hidden in self.hidden_bindings.items():
+            for flag in sorted(hidden):
+                decision = (
+                    policy.get("parameters", {}).get(flag, {}).get(language, {})
+                )
+                if decision.get("action") != "hide":
+                    raise RuntimeError(
+                        f"hiddenBindings.{language} hides {flag} but the policy "
+                        f"does not declare {language}: hide for it"
+                    )
 
     def _validate_tiers(self) -> None:
         # Fail loud on typos: every tier entry must name a real catalog flag,

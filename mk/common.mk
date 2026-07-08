@@ -216,6 +216,10 @@ help:
 build-binding-options: build-native
 	@$(PYTHON_FOR_BUILD_CONFIG) $(BINDING_OPTIONS_SCRIPT) --infomap-bin ./Infomap --output-root .
 
+# Render the 3.0 parameter-policy surface matrix (issue #755) as Markdown.
+print-parameter-policy: build-native
+	@$(PYTHON_FOR_BUILD_CONFIG) scripts/render_parameter_policy.py --binary ./Infomap
+
 doctor:
 	@printf "%s\n" "Infomap doctor" ""
 	@printf "Platform: %s\n" "$(UNAME_S)"
