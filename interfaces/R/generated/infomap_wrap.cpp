@@ -1631,6 +1631,7 @@ template <typename T> T SwigValueInit() {
 /* Includes the header in the wrapper code */
 #include "src/Infomap.h"
 #include "src/io/Features.h"
+#include "src/utils/Log.h"
 #ifdef SWIGPYTHON
 namespace infomap {
 int run(const std::string& flags);
@@ -1640,7 +1641,11 @@ int run(const std::string& flags);
 #include <cstdint>
 #include <cstring>
 #include <limits>
+#include <mutex>
 #include <stdexcept>
+#include <string>
+#include <utility>
+#include <vector>
 #endif
 // SWIG strips namespaces, so include infomap in global namespace in wrapper code
 using namespace infomap;
