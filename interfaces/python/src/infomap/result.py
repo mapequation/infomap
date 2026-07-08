@@ -28,6 +28,7 @@ from typing import TYPE_CHECKING, Any
 
 from ._optional import require_pandas
 from .errors import InfomapError, StaleResultError, _translate_engine_errors
+from .io.writers import _ResultWritersMixin
 from ._results import (
     _DATAFRAME_COLUMN_ALIASES,
     _DEFAULT_TO_DATAFRAME_COLUMNS,
@@ -210,7 +211,7 @@ class _Snapshot:
         return len(self.node_id)
 
 
-class Result:
+class Result(_ResultWritersMixin):
     """Immutable snapshot of an Infomap run.
 
     Returned by :meth:`Infomap.run` (and the functional :func:`infomap.run`) and
@@ -218,6 +219,12 @@ class Result:
     tree-derived metrics (the ``effective_num_*`` modules) and
     node/tree/dataframe data are materialized lazily and guarded against the
     engine being re-run.
+
+    Carries the result-artifact file writers (``write_tree``, ``write_clu``,
+    ``write_flow_tree``, ...): write the mapequation.org tool files straight
+    off the result, whatever built it. Like all node-level access, writing is
+    generation-guarded — a stale ``Result`` raises instead of writing the
+    rebuilt tree.
 
     Read scalars as **properties** and collections as **methods** (with
     defaults):
@@ -392,6 +399,12 @@ class Result:
         )
 
     # -- lazy node-data extraction ------------------------------------------
+
+    def _writer_core(self):
+        # The writer mixin's core hook: file writers read the live C++ result
+        # tree, so they are generation-guarded like every node-level access.
+        self._check_generation()
+        return self._engine._core
 
     def _check_generation(self) -> None:
         """Guard live C++ tree access against a re-run of the bound engine."""

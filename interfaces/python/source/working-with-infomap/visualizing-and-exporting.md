@@ -16,7 +16,8 @@ kernelspec:
 :class: tip
 This chapter covers the docs visualisation helper, the in-memory
 graph export (`to_networkx` / `to_igraph` for GraphML and, via NetworkX, GEXF),
-and the native `.tree` / `.clu` formats written by the stateful Infomap.
+and the native `.tree` / `.clu` formats written straight off the
+{class}`~infomap.Result`.
 ```
 
 ## A picture and a file
@@ -30,9 +31,9 @@ covers two ways to get it out:
 
 The in-memory export turns the result into an annotated graph with
 {func}`infomap.to_networkx` or {func}`infomap.to_igraph`, which you then write
-with the graph library's own writer (GraphML for both; GEXF is NetworkX-only). The stateful
-{class}`~infomap.Infomap` writes the engine's native text formats, `.tree` and
-`.clu`.
+with the graph library's own writer (GraphML for both; GEXF is NetworkX-only).
+The {class}`~infomap.Result` writes the engine's native text formats, `.tree`
+and `.clu`, directly.
 
 ## Export formats
 
@@ -176,21 +177,17 @@ For igraph users, {func}`infomap.to_igraph` returns the same annotation on an
 
 ### Export to .tree and .clu
 
-The stateful {class}`~infomap.Infomap` writes the engine's native text formats:
-build one, run it, and call its `write_*` methods.
-These formats feed the mapequation.org tools: `.ftree` opens in the Network
+The {class}`~infomap.Result` carries the engine's native text writers, so the
+`result` from the run above writes the files directly — whatever built the
+network. These formats feed the mapequation.org tools: `.ftree` opens in the Network
 Navigator, and `.tree`/`.clu` load in the alluvial diagram generator and other
 scripts.
 
 ```{code-cell} python
-im = infomap.Infomap(two_level=True, seed=123, num_trials=10)
-im.add_networkx_graph(g)
-im.run()
-
 tree_path = os.path.join(tmp, "karate.tree")   # full hierarchy with flow
 clu_path = os.path.join(tmp, "karate.clu")      # flat node_id, module, flow
-im.write_tree(tree_path)
-im.write_clu(clu_path)
+result.write_tree(tree_path)
+result.write_clu(clu_path)
 
 print(f"Wrote {os.path.getsize(tree_path):,} byte tree file")
 print(f"Wrote {os.path.getsize(clu_path):,} byte clu file")
@@ -224,7 +221,8 @@ The `.tree` path column uses colon-separated integers: `1:3` means the third
 node listed inside top module 1. For hierarchical runs with more than two levels
 you will see paths like `2:1:4`. The `.clu` format uses the top-level module
 number only; pass `depth_level` to `write_clu` to report a different level.
-`im.write_flow_tree` writes a `.ftree` file that adds intra-module link flows.
+`result.write_flow_tree` writes a `.ftree` file that adds intra-module link
+flows.
 
 ### The find_communities shortcut
 
@@ -288,14 +286,16 @@ print("Temp directory removed.")
   {class}`~infomap.Infomap`, not a {class}`~infomap.Result`. (`write_gexf`
   supports NetworkX only.)
 
-**Native engine formats** (written by the stateful {class}`~infomap.Infomap`)
+**Native engine formats** (written by the {class}`~infomap.Result`)
 
-- {meth}`infomap.Infomap.write_tree` writes a `.tree` file with the hierarchical
+- {meth}`infomap.Result.write_tree` writes a `.tree` file with the hierarchical
   path, flow, name, and node id for every node.
-- {meth}`infomap.Infomap.write_clu` writes a `.clu` flat table; pass
+- {meth}`infomap.Result.write_clu` writes a `.clu` flat table; pass
   `depth_level` to choose the level.
-- {meth}`infomap.Infomap.write_flow_tree` writes a `.ftree` file that adds
+- {meth}`infomap.Result.write_flow_tree` writes a `.ftree` file that adds
   intra-module link flows.
+- {meth}`infomap.Result.write` dispatches on the file extension. The stateful
+  {class}`~infomap.Infomap` keeps the same writers through 2.x.
 
 ## Going deeper
 

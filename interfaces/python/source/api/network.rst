@@ -10,4 +10,5 @@ library with a ``from_*`` constructor, or build it incrementally with the
 
 .. autoclass:: Network
    :members:
+   :inherited-members:
    :show-inheritance:

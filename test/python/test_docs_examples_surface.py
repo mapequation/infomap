@@ -180,12 +180,6 @@ ALLOWLIST: dict[str, set[str]] = {
         "to_dataframe",
         "add_networkx_graph",
     },
-    # Result has no file writers yet (#760), so exporting .tree/.clu from a
-    # NetworkX source still requires the deprecated Infomap adapter. Remove
-    # this entry when #760 lands.
-    "interfaces/python/source/working-with-infomap/visualizing-and-exporting.md": {
-        "add_networkx_graph",
-    },
 }
 
 

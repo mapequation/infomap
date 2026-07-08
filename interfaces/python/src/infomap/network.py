@@ -31,13 +31,14 @@ from typing import Any
 from ._core import Core, apply_initial_partition
 from ._logging import engine_log_routing as _engine_log_routing
 from .errors import NetworkParseError, _translate_engine_errors
+from .io.writers import _NetworkWritersMixin
 from ._network_input import add_bulk_links as _add_bulk_links
 from ._network_input import first_order_unpacker as _first_order_unpacker
 from ._network_input import flat_multilayer_unpacker as _flat_multilayer_unpacker
 from ._network_input import paired_multilayer_unpacker as _paired_multilayer_unpacker
 
 
-class Network:
+class Network(_NetworkWritersMixin):
     """A first-class Infomap network input builder.
 
     Build a network with the fluent ``add_*``/``set_*`` verbs (each returns
