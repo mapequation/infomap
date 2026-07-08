@@ -34,6 +34,7 @@ from ._options import (
     OutputFormat,
     _construct_args,
 )
+from ._logging import engine_log_routing as _engine_log_routing
 from ._results import _InfomapResultsMixin
 from ._results import entropy, perplexity, plogp
 from .errors import NetworkParseError, _translate_engine_errors
@@ -1523,7 +1524,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         NetworkParseError
             If the file cannot be opened or its content cannot be parsed.
         """
-        with _translate_engine_errors(NetworkParseError):
+        with _engine_log_routing(), _translate_engine_errors(NetworkParseError):
             self._core.readInputData(filename, accumulate)
 
     def add_node(self, node_id, name=None, teleportation_weight=None):
@@ -2708,10 +2709,10 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         # NetworkParseError; everything else is InfomapError.
         if initial_partition is not None:
             with self._initial_partition(initial_partition):
-                with _translate_engine_errors(classify=True):
+                with _engine_log_routing(), _translate_engine_errors(classify=True):
                     self._core.run(args)
         else:
-            with _translate_engine_errors(classify=True):
+            with _engine_log_routing(), _translate_engine_errors(classify=True):
                 self._core.run(args)
 
         # Stamp a fresh Result with the new generation (shared helper). The C++

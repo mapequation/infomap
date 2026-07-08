@@ -22,6 +22,12 @@ from ._bindings import InfomapWrapper  # noqa: F401  (the only engine import)
 from ._bindings import build_info as build_info  # module-level engine function
 from ._bindings import run as run  # module-level engine function (CLI driver)
 
+# Engine log-sink hooks (issue #745), re-exported through this single boundary
+# for infomap._logging: install/remove the process-global line sink, and drain
+# lines queued by non-GIL-holding threads after an engine call returns.
+from ._bindings import _drain_log_queue as drain_log_queue  # noqa: F401
+from ._bindings import _set_log_callback as set_log_callback  # noqa: F401
+
 # Documented tree-walking iterator/node types returned by ``Infomap.tree`` /
 # ``leaf_modules`` and the physical variants (source/api/iterators.rst). They are
 # public API, so they're re-exported through this single boundary -- like

@@ -3717,6 +3717,7 @@ namespace swig {
 /* Includes the header in the wrapper code */
 #include "src/Infomap.h"
 #include "src/io/Features.h"
+#include "src/utils/Log.h"
 #ifdef SWIGPYTHON
 namespace infomap {
 int run(const std::string& flags);
@@ -3726,7 +3727,11 @@ int run(const std::string& flags);
 #include <cstdint>
 #include <cstring>
 #include <limits>
+#include <mutex>
 #include <stdexcept>
+#include <string>
+#include <utility>
+#include <vector>
 #endif
 // SWIG strips namespaces, so include infomap in global namespace in wrapper code
 using namespace infomap;
@@ -7094,6 +7099,106 @@ SWIGINTERN PyObject *std_map_Sl_std_pair_Sl_unsigned_SS_int_Sc_unsigned_SS_int_S
     }
 SWIGINTERN void std_map_Sl_std_pair_Sl_unsigned_SS_int_Sc_unsigned_SS_int_Sg__Sc_double_Sg__erase__SWIG_1(std::map< std::pair< unsigned int,unsigned int >,double > *self,std::map< std::pair< unsigned int,unsigned int >,double >::iterator position){ self->erase(position); }
 SWIGINTERN void std_map_Sl_std_pair_Sl_unsigned_SS_int_Sc_unsigned_SS_int_Sg__Sc_double_Sg__erase__SWIG_2(std::map< std::pair< unsigned int,unsigned int >,double > *self,std::map< std::pair< unsigned int,unsigned int >,double >::iterator first,std::map< std::pair< unsigned int,unsigned int >,double >::iterator last){ self->erase(first, last); }
+
+namespace {
+
+// Bridges infomap::Log lines to a Python callable `callback(level, line)`.
+//
+// Threading contract (see issue #745): the SWIG module never releases the
+// GIL, so during run() the *calling* thread holds it for the whole call and
+// may enter Python directly. Lines written by other threads (OpenMP task
+// threads emit -vv detail lines) must NEVER acquire the GIL — the calling
+// thread waits for them at OpenMP barriers while holding it, so a worker
+// blocking in PyGILState_Ensure() would deadlock. Such lines are queued
+// under a mutex and drained by the next GIL-holding write, or by
+// _drain_log_queue() after run() returns.
+class PythonLogSink : public infomap::LogSink {
+public:
+  explicit PythonLogSink(PyObject* callable) : m_callable(callable)
+  {
+    Py_INCREF(m_callable);
+  }
+
+  // Only constructed/destroyed from Python calls (GIL held).
+  ~PythonLogSink() override { Py_DECREF(m_callable); }
+
+  PythonLogSink(const PythonLogSink&) = delete;
+  PythonLogSink& operator=(const PythonLogSink&) = delete;
+
+  void writeLine(unsigned int level, const std::string& line) override
+  {
+    if (!PyGILState_Check()) {
+      std::lock_guard<std::mutex> lock(m_mutex);
+      m_queued.emplace_back(level, line);
+      return;
+    }
+    drainQueued();
+    deliver(level, line);
+  }
+
+  void drainQueued()
+  {
+    // Caller must hold the GIL.
+    std::vector<std::pair<unsigned int, std::string>> pending;
+    {
+      std::lock_guard<std::mutex> lock(m_mutex);
+      pending.swap(m_queued);
+    }
+    for (const auto& entry : pending)
+      deliver(entry.first, entry.second);
+  }
+
+private:
+  void deliver(unsigned int level, const std::string& line)
+  {
+    PyObject* result = PyObject_CallFunction(m_callable, "(Is)", level, line.c_str());
+    if (result == nullptr) {
+      // A raising log callback must not kill the engine run — same policy
+      // as the logging module's own handler-error swallowing.
+      PyErr_WriteUnraisable(m_callable);
+      return;
+    }
+    Py_DECREF(result);
+  }
+
+  PyObject* m_callable;
+  std::mutex m_mutex;
+  std::vector<std::pair<unsigned int, std::string>> m_queued;
+};
+
+PythonLogSink* g_pythonLogSink = nullptr;
+
+} // namespace
+
+
+namespace infomap {
+// Install `callback(level, line)` as the process-global engine log sink,
+// replacing stream output; pass None to uninstall and restore stream output.
+// Called with the GIL held (any Python call). Must not race with a running
+// engine — Log state is process-global.
+void _set_log_callback(PyObject* callback)
+{
+  if (g_pythonLogSink != nullptr) {
+    Log::setSink(nullptr);
+    delete g_pythonLogSink;
+    g_pythonLogSink = nullptr;
+  }
+  if (callback != Py_None) {
+    g_pythonLogSink = new PythonLogSink(callback);
+    Log::setSink(g_pythonLogSink);
+  }
+}
+
+// Deliver lines queued by non-GIL-holding threads and flush the calling
+// thread's trailing partial line. Call after an engine run returns.
+void _drain_log_queue()
+{
+  Log::flushSinkLines();
+  if (g_pythonLogSink != nullptr)
+    g_pythonLogSink->drainQueued();
+}
+}
+
 
 namespace infomap {
 std::string pythonEnabledFeaturesString()
@@ -55457,6 +55562,48 @@ SWIGINTERN PyObject *map_pair_uint_uint_double_swiginit(PyObject *SWIGUNUSEDPARM
   return SWIG_Python_InitShadowInstance(args);
 }
 
+SWIGINTERN PyObject *_wrap__set_log_callback(PyObject *self, PyObject *args) {
+  PyObject *resultobj = 0;
+  PyObject *arg1 = 0 ;
+  PyObject *swig_obj[1] ;
+  
+  (void)self;
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  arg1 = swig_obj[0];
+  {
+    try {
+      infomap::_set_log_callback(arg1);
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap__drain_log_queue(PyObject *self, PyObject *args) {
+  PyObject *resultobj = 0;
+  
+  (void)self;
+  if (!SWIG_Python_UnpackTuple(args, "_drain_log_queue", 0, 0, 0)) SWIG_fail;
+  {
+    try {
+      infomap::_drain_log_queue();
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap__enabled_features_string(PyObject *self, PyObject *args) {
   PyObject *resultobj = 0;
   std::string result;
@@ -60414,6 +60561,8 @@ static PyMethodDef SwigMethods[] = {
 	 { "delete_map_pair_uint_uint_double", _wrap_delete_map_pair_uint_uint_double, METH_O, NULL},
 	 { "map_pair_uint_uint_double_swigregister", map_pair_uint_uint_double_swigregister, METH_O, NULL},
 	 { "map_pair_uint_uint_double_swiginit", map_pair_uint_uint_double_swiginit, METH_VARARGS, NULL},
+	 { "_set_log_callback", _wrap__set_log_callback, METH_O, NULL},
+	 { "_drain_log_queue", _wrap__drain_log_queue, METH_NOARGS, NULL},
 	 { "_enabled_features_string", _wrap__enabled_features_string, METH_NOARGS, NULL},
 	 { "run", _wrap_run, METH_O, NULL},
 	 { "NodeData_node_id_set", _wrap_NodeData_node_id_set, METH_VARARGS, NULL},
