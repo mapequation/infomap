@@ -63,5 +63,16 @@
         "reason": "Existing TypeScript argument helper exposes CLI about flags."
       }
     ]
+  },
+  "tiers": {
+    "python": {
+      "common": [
+        "--seed",
+        "--num-trials",
+        "--two-level",
+        "--directed",
+        "--markov-time"
+      ]
+    }
   }
 }

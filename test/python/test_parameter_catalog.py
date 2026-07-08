@@ -117,3 +117,75 @@ def test_parameter_catalog_classifies_binding_render_policies():
         == "deprecated_alias"
     )
     assert catalog.binding_only_entry("ts", "help").render_policy == "binding_only"
+
+
+def _minimal_param(flag, group="Accuracy", **extra):
+    param = {
+        "long": flag,
+        "short": "",
+        "description": f"Test parameter {flag}.",
+        "group": group,
+        "required": False,
+        "advanced": False,
+        "incremental": False,
+        "default": False,
+    }
+    param.update(extra)
+    return param
+
+
+def test_parameter_tier_defaults_to_advanced_and_reads_overrides():
+    parameters = [
+        _minimal_param("--seed", required=True, longType="integer"),
+        _minimal_param("--two-level"),
+        _minimal_param("--core-loop-limit", required=True, longType="integer"),
+    ]
+    overrides = {"tiers": {"python": {"common": ["--seed", "--two-level"]}}}
+
+    catalog = ParameterCatalog(parameters, overrides)
+    tiers = {param.flag: param.tier("python") for param in catalog.parameters}
+
+    assert tiers == {
+        "--seed": "common",
+        "--two-level": "common",
+        "--core-loop-limit": "advanced",
+    }
+    # Tier declarations are per language; an undeclared language is all-advanced.
+    assert all(param.tier("r") == "advanced" for param in catalog.parameters)
+
+
+def test_parameter_catalog_rejects_unknown_tier_flag():
+    import pytest
+
+    parameters = [_minimal_param("--seed", required=True, longType="integer")]
+    overrides = {"tiers": {"python": {"common": ["--seeed"]}}}
+
+    with pytest.raises(RuntimeError, match=r"--seeed"):
+        ParameterCatalog(parameters, overrides)
+
+
+def test_parameter_catalog_rejects_unknown_tier_name():
+    import pytest
+
+    parameters = [_minimal_param("--seed", required=True, longType="integer")]
+    overrides = {"tiers": {"python": {"comon": ["--seed"]}}}
+
+    with pytest.raises(RuntimeError, match="comon"):
+        ParameterCatalog(parameters, overrides)
+
+
+def test_python_common_tier_matches_issue_738_decision(test_paths):
+    import json
+
+    overrides = json.loads(
+        (test_paths.repo_root / "interfaces" / "parameters" / "overrides.json")
+        .read_text(encoding="utf-8")
+    )
+
+    assert overrides["tiers"]["python"]["common"] == [
+        "--seed",
+        "--num-trials",
+        "--two-level",
+        "--directed",
+        "--markov-time",
+    ]
