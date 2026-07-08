@@ -145,7 +145,7 @@ and {*i*, *j*, *k*} from Layer 2. Node *i* is bi-modular: one module per layer.
 
 ```{code-cell} python
 import infomap
-from infomap import Network, run
+from infomap import Network, Options, run
 
 names = {1: "i", 2: "j", 3: "k", 4: "l", 5: "m"}
 
@@ -162,7 +162,7 @@ net = Network()
 for layer, src, tgt, w in intra_links:
     net.add_multilayer_intra_link(layer, src, tgt, w)
 
-result = run(net, multilayer_relax_rate=0.15, seed=123, num_trials=10, silent=True)
+result = run(net, options=Options(multilayer_relax_rate=0.15), seed=123, num_trials=10)
 
 state_nodes = list(result.nodes(states=True))
 print(f"Modules found : {result.num_top_modules}")
@@ -291,7 +291,7 @@ for r in [0.01, 0.15, 0.50, 0.90, 1.00]:
     net_r = Network()
     for layer, src, tgt, w in intra_links:
         net_r.add_multilayer_intra_link(layer, src, tgt, w)
-    result_r = run(net_r, multilayer_relax_rate=r, seed=123, num_trials=10, silent=True)
+    result_r = run(net_r, options=Options(multilayer_relax_rate=r), seed=123, num_trials=10)
     results.append((r, result_r.num_top_modules, result_r.codelength))
 
 print(f"{'relax rate':>12}  {'modules':>8}  {'codelength':>12}")
@@ -331,13 +331,13 @@ for layer, src, tgt, w in intra_links:
 net_aligned.add_multilayer_inter_link(1, 1, 2, 0.4)
 net_aligned.add_multilayer_inter_link(2, 1, 1, 0.4)
 
-result_aligned = run(net_aligned, seed=123, num_trials=10, silent=True)
+result_aligned = run(net_aligned, seed=123, num_trials=10)
 print(f"Modules found : {result_aligned.num_top_modules}")
 print(f"Codelength    : {result_aligned.codelength:.4f} bits")
 
 # The same construction ships with the package; the two must agree exactly.
 result_pkg = infomap.run(infomap.datasets.multilayer_intra_inter(),
-                         seed=123, num_trials=10, silent=True)
+                         seed=123, num_trials=10)
 assert result_aligned.codelength == result_pkg.codelength
 ```
 
@@ -365,12 +365,12 @@ inter_links = [
 for src, tgt, w in inter_links:
     net_full.add_multilayer_link(src, tgt, w)
 
-result_full = run(net_full, seed=123, num_trials=10, silent=True)
+result_full = run(net_full, seed=123, num_trials=10)
 print(f"Modules found : {result_full.num_top_modules}")
 print(f"Codelength    : {result_full.codelength:.4f} bits")
 
 result_pkg = infomap.run(infomap.datasets.multilayer(),
-                         seed=123, num_trials=10, silent=True)
+                         seed=123, num_trials=10)
 assert result_full.codelength == result_pkg.codelength
 ```
 
@@ -396,9 +396,10 @@ net_self = Network()
 for layer, src, tgt, w in intra_links:
     net_self.add_multilayer_intra_link(layer, src, tgt, w)
 
-result_self = run(net_self, multilayer_relax_rate=0.15,
-                  multilayer_relax_to_self=True,
-                  seed=123, num_trials=10, silent=True)
+result_self = run(net_self,
+                  options=Options(multilayer_relax_rate=0.15,
+                                  multilayer_relax_to_self=True),
+                  seed=123, num_trials=10)
 
 n_links_self = len(list(result_self.links()))
 n_links_default = len(list(result.links()))

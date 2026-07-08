@@ -88,7 +88,7 @@ import pandas as pd
 
 g = nx.karate_club_graph()
 
-result = infomap.run(g, two_level=True, seed=123, num_trials=10, silent=True)
+result = infomap.run(g, two_level=True, seed=123, num_trials=10)
 ```
 
 ### The Result object
@@ -158,7 +158,7 @@ for cluster in range(3):
         g_hier.add_edge(base, cluster * 30 + ((sub + 1) % 3) * 10)
     g_hier.add_edge(cluster * 30, ((cluster + 1) % 3) * 30)
 
-result_hier = infomap.run(g_hier, seed=123, num_trials=10, silent=True)
+result_hier = infomap.run(g_hier, seed=123, num_trials=10)
 
 print(f"Hierarchy levels: {result_hier.num_levels}")
 top_mods = result_hier.modules(depth=1)
@@ -257,7 +257,7 @@ searches from different seeds and comparing their codelengths:
 
 ```{code-cell} python
 codelengths = [
-    infomap.run(g, two_level=True, seed=seed, num_trials=1, silent=True).codelength
+    infomap.run(g, two_level=True, seed=seed, num_trials=1).codelength
     for seed in range(1, 11)
 ]
 

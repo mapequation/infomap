@@ -108,7 +108,7 @@ for i in range(n_groups * n_per):
             g.add_edge(i, j)
 
 # Infomap: compress the flow
-result = infomap.run(g, two_level=True, seed=123, num_trials=10, silent=True)
+result = infomap.run(g, two_level=True, seed=123, num_trials=10)
 infomap_mods = result.modules()
 
 # Louvain and Leiden: maximise modularity

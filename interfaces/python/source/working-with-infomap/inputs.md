@@ -74,7 +74,7 @@ g.add_weighted_edges_from([
     (2, 3, 0.5),                               # weak bridge
 ])
 
-result = infomap.run(g, two_level=True, seed=123, num_trials=5, silent=True)
+result = infomap.run(g, two_level=True, seed=123, num_trials=5)
 
 print(f"Modules:    {result.num_top_modules}")
 print(f"Codelength: {result.codelength:.4f} bits/step")
@@ -90,7 +90,7 @@ DataFrame; for other label types (tuples, frozensets), use
 ```{code-cell} python
 g_str = nx.Graph([("alice", "bob"), ("bob", "carol"), ("dave", "eve")])
 
-result = infomap.run(g_str, two_level=True, seed=123, silent=True)
+result = infomap.run(g_str, two_level=True, seed=123)
 print(result.to_dataframe(["name", "module_id"]).to_string(index=False))
 ```
 
@@ -102,7 +102,7 @@ it.
 from infomap import Network, run
 
 net = Network.from_networkx(g_str)
-result = run(net, seed=123, silent=True)
+result = run(net, seed=123)
 
 named = {net.node_id_to_label[nid]: mid for nid, mid in result.modules().items()}
 print("Named assignments:", named)
@@ -129,7 +129,7 @@ import igraph as ig
 edges = [(0, 1), (1, 2), (2, 0), (3, 4), (4, 5), (5, 3), (2, 3)]
 g_ig = ig.Graph(n=6, edges=edges)
 
-result = infomap.run(g_ig, two_level=True, seed=123, num_trials=5, silent=True)
+result = infomap.run(g_ig, two_level=True, seed=123, num_trials=5)
 print(f"igraph route: {result.num_top_modules} modules, {result.codelength:.4f} bits/step")
 ```
 
@@ -140,7 +140,7 @@ g_ig_w = ig.Graph(n=6, edges=edges)
 g_ig_w.es["weight"] = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.5]
 
 net = Network.from_igraph(g_ig_w, edge_weights="weight")
-result = run(net, two_level=True, seed=123, num_trials=5, silent=True)
+result = run(net, two_level=True, seed=123, num_trials=5)
 print(f"igraph (weighted): {result.num_top_modules} modules, {result.codelength:.4f} bits/step")
 ```
 
@@ -171,7 +171,7 @@ cols = [1, 0, 2, 1, 0, 2,  4, 3, 5, 4, 3, 5,  3, 2]
 data = [1.0] * 12 + [0.5, 0.5]
 A = sp.coo_matrix((data, (rows, cols)), shape=(6, 6))
 
-result = infomap.run(A, two_level=True, seed=123, num_trials=5, silent=True)
+result = infomap.run(A, two_level=True, seed=123, num_trials=5)
 print(f"SciPy route: {result.num_top_modules} modules, {result.codelength:.4f} bits/step")
 ```
 
@@ -181,7 +181,7 @@ ignores the stored values. Here with the defaults spelled out:
 
 ```{code-cell} python
 net = Network.from_scipy_sparse_matrix(A, directed=False, weighted=True)
-result = run(net, two_level=True, seed=123, num_trials=5, silent=True)
+result = run(net, two_level=True, seed=123, num_trials=5)
 print(f"via Network: {result.num_top_modules} modules")
 ```
 
@@ -207,8 +207,7 @@ edges_df = pd.DataFrame({
 
 result = infomap.run(
     edges_df[["source", "target", "weight"]].to_numpy(),
-    two_level=True, seed=123, num_trials=5, silent=True,
-)
+    two_level=True, seed=123, num_trials=5, )
 print(f"pandas route: {result.num_top_modules} modules, {result.codelength:.4f} bits/step")
 ```
 
@@ -261,7 +260,7 @@ content = """*Vertices
 path = Path(tempfile.mkdtemp()) / "twotriangles.net"
 path.write_text(content)
 
-result = infomap.run(str(path), two_level=True, seed=123, num_trials=5, silent=True)
+result = infomap.run(str(path), two_level=True, seed=123, num_trials=5)
 print(f"file route: {result.num_top_modules} modules, {result.codelength:.4f} bits/step")
 for node in result.nodes():
     print(f"  {node.name}: module {node.module_id}")
@@ -316,7 +315,7 @@ network = {
 path = Path(tempfile.mkdtemp()) / "twotriangles.json"
 path.write_text(json.dumps(network))
 
-result = infomap.run(str(path), two_level=True, seed=123, num_trials=5, silent=True)
+result = infomap.run(str(path), two_level=True, seed=123, num_trials=5)
 print(f"json route: {result.num_top_modules} modules, {result.codelength:.4f} bits/step")
 ```
 
@@ -366,7 +365,7 @@ net.add_link(0, 1); net.add_link(1, 2); net.add_link(2, 0)   # triangle A
 net.add_link(3, 4); net.add_link(4, 5); net.add_link(5, 3)   # triangle B
 net.add_link(2, 3, 0.5)                                       # weak bridge
 
-result = run(net, two_level=True, seed=123, num_trials=5, silent=True)
+result = run(net, two_level=True, seed=123, num_trials=5)
 print(result.to_dataframe(["node_id", "name", "module_id", "flow"]).to_string(index=False))
 ```
 
@@ -384,12 +383,11 @@ across them:
 
 ```{code-cell} python
 runs = {
-    "NetworkX":     infomap.run(g, two_level=True, seed=123, num_trials=5, silent=True),
-    "SciPy sparse": infomap.run(A, two_level=True, seed=123, num_trials=5, silent=True),
+    "NetworkX":     infomap.run(g, two_level=True, seed=123, num_trials=5),
+    "SciPy sparse": infomap.run(A, two_level=True, seed=123, num_trials=5),
     "edge list":    infomap.run(
         edges_df[["source", "target", "weight"]].to_numpy(),
-        two_level=True, seed=123, num_trials=5, silent=True,
-    ),
+        two_level=True, seed=123, num_trials=5, ),
 }
 for route, res in runs.items():
     print(f"  {res.codelength:.4f}  {route}")

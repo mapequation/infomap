@@ -105,7 +105,7 @@ print(f"Nodes with id >= {BIPARTITE_START} are treated as type-B (items).")
 ### Run and inspect modules
 
 ```{code-cell} python
-result = run(net, two_level=True, num_trials=10, seed=123, silent=True)
+result = run(net, two_level=True, num_trials=10, seed=123)
 
 modules = result.modules()   # {node_id: module_id}
 
@@ -136,7 +136,7 @@ for u, v, w in [
     (0, 6, 0.2), (2, 4, 0.2),
 ]:
     net_std.add_link(u, v, w)
-result_std = run(net_std, two_level=True, num_trials=10, seed=123, silent=True)
+result_std = run(net_std, two_level=True, num_trials=10, seed=123)
 
 print(f"unipartite run: {result_std.num_top_modules} modules, L={result_std.codelength:.4f}")
 print(f"bipartite run:  {result.num_top_modules} modules, L={result.codelength:.4f}")

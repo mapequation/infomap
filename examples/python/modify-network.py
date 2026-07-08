@@ -1,17 +1,17 @@
-from infomap import Infomap
+from infomap import Network, Options
 
-im = Infomap(two_level=True, silent=True)
+net = Network()
 
 # Add weight as an optional third argument
-im.add_link(1, 2)
-im.add_link(1, 3)
-im.add_link(2, 3)
-im.add_link(3, 4)
-im.add_link(4, 5)
-im.add_link(4, 6)
-im.add_link(5, 6)
+net.add_link(1, 2)
+net.add_link(1, 3)
+net.add_link(2, 3)
+net.add_link(3, 4)
+net.add_link(4, 5)
+net.add_link(4, 6)
+net.add_link(5, 6)
 
-result = im.run()
+result = net.run(options=Options(two_level=True))
 
 print(
     f"Found {result.num_top_modules} modules with codelength "
@@ -23,13 +23,15 @@ modules = result.modules()
 print("Modify the network and test partition...")
 
 # Do some modification to the network
-im.add_link(1, 5)
+net.add_link(1, 5)
 # Note that removing links will not remove nodes if they become unconnected
-im.remove_link(5, 6)
+net.remove_link(5, 6)
 
-# Run again with the optimal partition from the original network as initial solution
-# Set no_infomap to skip optimization and just calculate the codelength
-result = im.run(initial_partition=modules, no_infomap=True)
+# Run again with the optimal partition from the original network as initial
+# solution. no_infomap skips optimization and just calculates the codelength.
+result = net.run(
+    options=Options(two_level=True, no_infomap=True), initial_partition=modules
+)
 
 print(
     f"Found {result.num_top_modules} modules with codelength "

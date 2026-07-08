@@ -1,6 +1,6 @@
 from infomap import Infomap
 
-im = Infomap(two_level=True, silent=True)
+im = Infomap(two_level=True)
 
 im.set_name(1, "PRE")
 im.set_name(2, "SCIENCE")

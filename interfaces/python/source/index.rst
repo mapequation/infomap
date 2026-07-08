@@ -34,7 +34,7 @@ Quick start
     import infomap
 
     graph = nx.karate_club_graph()
-    result = infomap.run(graph, seed=123, num_trials=20, silent=True)
+    result = infomap.run(graph, seed=123, num_trials=20)
 
     print(result.num_top_modules, "modules")
     print(result.modules())

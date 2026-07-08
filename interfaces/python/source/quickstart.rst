@@ -17,7 +17,7 @@ Run on a graph
     import infomap
 
     graph = nx.karate_club_graph()
-    result = infomap.run(graph, seed=123, num_trials=20, silent=True)
+    result = infomap.run(graph, seed=123, num_trials=20)
 
     print(result.num_top_modules)   # 3
     print(result.codelength)        # 4.0874 bits per step
@@ -33,7 +33,7 @@ Without any graph library installed, the bundled example networks in
 
 .. code-block:: python
 
-    result = infomap.run(infomap.datasets.two_triangles(), silent=True)
+    result = infomap.run(infomap.datasets.two_triangles())
 
 Build a network step by step
 -----------------------------
@@ -51,7 +51,7 @@ directly:
     net.add_link(0, 1)
     net.add_link(1, 2)
     net.add_link(2, 0)
-    result = run(net, silent=True)
+    result = run(net)
 
     print(result.codelength)
 
@@ -63,7 +63,7 @@ does not, such as a different edge-weight attribute or explicit directedness:
     from infomap import Network, run
 
     net = Network.from_networkx(graph, weight="capacity")
-    result = run(net, num_trials=20, silent=True)
+    result = run(net, num_trials=20)
 
 Reusable configuration
 ----------------------

@@ -145,7 +145,7 @@ g = nx.karate_club_graph()
 print(f"Nodes: {g.number_of_nodes()}, Edges: {g.number_of_edges()}")
 
 # Two-level search, 10 independent trials, fixed seed for reproducibility.
-result = infomap.run(g, two_level=True, seed=123, num_trials=10, silent=True)
+result = infomap.run(g, two_level=True, seed=123, num_trials=10)
 
 modules = result.modules()            # {node_id: module_id}
 n_top   = result.num_top_modules

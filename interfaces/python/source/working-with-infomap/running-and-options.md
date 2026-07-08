@@ -32,7 +32,6 @@ result = infomap.run(
     seed=123,        # reproducible
     num_trials=10,   # keep the best of 10 restarts
     two_level=True,  # flat partition; omit for the multilevel default
-    silent=True,     # skip the engine's console log
 )
 print(result.num_top_modules, result.codelength)
 ```
@@ -101,7 +100,7 @@ each result to the code that produced it.
 ```{code-cell} python
 # Two runs with the same seed produce the same partition.
 for attempt in range(2):
-    result = infomap.run(G_ring, two_level=True, seed=123, num_trials=10, silent=True)
+    result = infomap.run(G_ring, two_level=True, seed=123, num_trials=10)
     print(f"Run {attempt + 1}: modules={result.num_top_modules}, L={result.codelength:.4f}")
 ```
 
@@ -116,7 +115,7 @@ landscape has many near-degenerate minima, and a single trial is unreliable.
 # On the noisy graph, different seeds land in different local minima.
 print("Single trial (num_trials=1), five different seeds:")
 for seed in [1, 7, 42, 99, 123]:
-    result = infomap.run(G_noisy, two_level=True, seed=seed, num_trials=1, silent=True)
+    result = infomap.run(G_noisy, two_level=True, seed=seed, num_trials=1)
     print(f"  seed={seed}: L={result.codelength:.4f}, modules={result.num_top_modules}")
 ```
 
@@ -124,7 +123,7 @@ for seed in [1, 7, 42, 99, 123]:
 # More trials explore more of the landscape and find a lower, stable minimum.
 print("Fixed seed=123, varying num_trials:")
 for num_trials in [1, 5, 20]:
-    result = infomap.run(G_noisy, two_level=True, seed=123, num_trials=num_trials, silent=True)
+    result = infomap.run(G_noisy, two_level=True, seed=123, num_trials=num_trials)
     print(f"  num_trials={num_trials:2d}: L={result.codelength:.4f}, modules={result.num_top_modules}")
 ```
 
@@ -187,7 +186,7 @@ def hierarchical_graph():
 G_hier = hierarchical_graph()
 
 for two_level in [False, True]:
-    result = infomap.run(G_hier, two_level=two_level, seed=123, num_trials=10, silent=True)
+    result = infomap.run(G_hier, two_level=two_level, seed=123, num_trials=10)
 
     m_top = result.modules(depth=1)    # top-level groups
     m_leaf = result.modules(depth=-1)  # finest-level assignments
@@ -239,7 +238,7 @@ print(f"Directed graph: {G_dir.number_of_nodes()} nodes, {G_dir.number_of_edges(
 
 for directed in [False, True]:
     result = infomap.run(G_dir, directed=directed, two_level=True,
-                         seed=123, num_trials=10, silent=True)
+                         seed=123, num_trials=10)
     print(f"directed={directed}: modules={result.num_top_modules}, L={result.codelength:.4f}")
 ```
 
@@ -271,7 +270,7 @@ print()
 
 for mt in [0.5, 1.0, 2.0, 4.0, 8.0]:
     result = infomap.run(G_ring, two_level=True, markov_time=mt,
-                         seed=123, num_trials=10, silent=True)
+                         seed=123, num_trials=10)
     print(f"  markov_time={mt:.1f}: {result.num_top_modules} modules")
 ```
 
@@ -303,7 +302,7 @@ for label, kwargs in [
     ("regularized, strength=0.5", {"regularized": True, "regularization_strength": 0.5}),
     ("regularized (default 1.0)", {"regularized": True}),
 ]:
-    result = infomap.run(G_karate, two_level=True, seed=123, num_trials=10, silent=True, **kwargs)
+    result = infomap.run(G_karate, two_level=True, seed=123, num_trials=10, **kwargs)
     print(f"{label}: modules={result.num_top_modules}, L={result.codelength:.4f}")
 ```
 
@@ -324,14 +323,14 @@ from myst_nb import glue
 single_L = []
 for s in range(1, 13):
     single_L.append(
-        infomap.run(G_noisy, two_level=True, seed=s, num_trials=1, silent=True).codelength
+        infomap.run(G_noisy, two_level=True, seed=s, num_trials=1).codelength
     )
 
 # ... versus the lowest codelength a longer search finds. Several seeds at 50
 # trials each, so the reference is the best partition rather than one lucky (or
 # unlucky) run; take the floor of everything shown so the line is a true minimum.
 best_L = min(
-    infomap.run(G_noisy, two_level=True, seed=s, num_trials=50, silent=True).codelength
+    infomap.run(G_noisy, two_level=True, seed=s, num_trials=50).codelength
     for s in (1, 42, 123)
 )
 best_L = min([best_L, *single_L])

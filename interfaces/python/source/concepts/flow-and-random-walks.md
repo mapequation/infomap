@@ -135,7 +135,7 @@ print("Edges:", list(G.edges()))
 
 ```{code-cell} python
 # Run Infomap on the directed network
-result = infomap.run(G, directed=True, silent=True, seed=123, num_trials=10)
+result = infomap.run(G, directed=True, seed=123, num_trials=10)
 
 # Read per-node flow (stationary visit frequency) and module assignments
 flow    = {node.node_id: node.flow       for node in result.nodes()}
