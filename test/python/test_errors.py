@@ -25,12 +25,20 @@ from infomap import (
     NetworkParseError,
     NotRunError,
     StaleResultError,
+    errors as errors_module,
 )
-from infomap.errors import __all__ as _ERRORS_ALL
 from infomap.result import _StaleResultError
 
 
 pytestmark = pytest.mark.fast
+
+# The taxonomy classes as exported at the package top level, keyed by name.
+_TOP_LEVEL_EXPORTS = {
+    "InfomapError": InfomapError,
+    "NetworkParseError": NetworkParseError,
+    "NotRunError": NotRunError,
+    "StaleResultError": StaleResultError,
+}
 
 
 @pytest.fixture
@@ -62,10 +70,9 @@ def test_taxonomy_mro_keeps_runtime_error_through_2x():
 
 
 def test_module_all_matches_package_exports():
-    for name in _ERRORS_ALL:
-        import infomap
-
-        assert getattr(infomap, name) is getattr(infomap.errors, name)
+    assert sorted(errors_module.__all__) == sorted(_TOP_LEVEL_EXPORTS)
+    for name, exported in _TOP_LEVEL_EXPORTS.items():
+        assert getattr(errors_module, name) is exported
 
 
 def test_stale_result_private_alias_is_the_public_class():
