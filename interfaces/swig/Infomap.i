@@ -478,6 +478,11 @@ namespace infomap {
 // engine — Log state is process-global.
 void _set_log_callback(PyObject* callback)
 {
+  // Fail fast on a non-callable: installing it would turn every log write
+  // into a swallowed PyErr_WriteUnraisable, silently disabling the log.
+  if (callback != Py_None && PyCallable_Check(callback) == 0) {
+    throw std::runtime_error("log callback must be callable (or None to uninstall)");
+  }
   if (g_pythonLogSink != nullptr) {
     Log::setSink(nullptr);
     delete g_pythonLogSink;

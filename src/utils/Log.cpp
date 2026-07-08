@@ -13,6 +13,7 @@
 #include <iostream>
 #endif
 #include <array>
+#include <atomic>
 #include <memory>
 #include <streambuf>
 
@@ -90,8 +91,10 @@ namespace {
   constexpr unsigned int kNumSinkLevels = 4;
 
   // The default precision applied to assemblers created after Log::init set
-  // it (worker threads create theirs lazily on first write).
-  std::streamsize g_sinkDefaultPrecision = 6;
+  // it. Atomic: worker threads read it when lazily creating their
+  // thread-local assemblers (first -vv detail write) while the calling
+  // thread may be inside a Log::precision save/restore pair.
+  std::atomic<std::streamsize> g_sinkDefaultPrecision { 6 };
 
   using SinkStreams = std::array<std::unique_ptr<SinkStream>, kNumSinkLevels>;
 
