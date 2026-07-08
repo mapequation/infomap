@@ -9,6 +9,7 @@ are methods with defaults (``modules(depth=1)``, ``nodes()``, ``to_dataframe()``
 
 .. autoclass:: Result
    :members:
+   :inherited-members:
 
 :class:`TreeNode` is the lightweight, immutable per-node view yielded by
 :meth:`Result.nodes`.
