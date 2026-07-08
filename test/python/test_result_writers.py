@@ -13,8 +13,7 @@ from pathlib import Path
 
 import pytest
 
-import infomap
-from infomap import Infomap, Network, Options, StaleResultError
+from infomap import Network, Options, StaleResultError, run
 
 
 pytestmark = pytest.mark.fast
@@ -81,7 +80,7 @@ def test_stale_result_writers_raise(run_result, tmp_path):
 
 
 def test_functional_run_result_writes_without_the_stateful_class(tmp_path):
-    result = infomap.run(_LINKS, two_level=True, seed=123)
+    result = run(_LINKS, two_level=True, seed=123)
 
     result.write_tree(tmp_path / "functional.tree")
 
@@ -133,7 +132,7 @@ def test_result_writers_accept_path_objects(run_result, tmp_path):
 def test_result_stays_slots_based():
     # The writer mixin must not reintroduce a __dict__ on the slots-based,
     # immutable Result.
-    result = infomap.run(_LINKS, two_level=True, seed=123)
+    result = run(_LINKS, two_level=True, seed=123)
 
     assert not hasattr(result, "__dict__")
     with pytest.raises(AttributeError, match="immutable"):
