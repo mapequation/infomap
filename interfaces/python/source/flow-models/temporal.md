@@ -109,7 +109,7 @@ transitions automatically using a relax rate of 0.25.
 import infomap
 import networkx as nx
 import matplotlib.pyplot as plt
-from infomap import Network, run
+from infomap import Network, Options, run
 from docs_viz import draw_partition, module_palette
 
 # Three time windows; (source, target) pairs active in each window.
@@ -129,7 +129,7 @@ for layer_id, edges in edges_by_layer.items():
     for u, v in edges:
         net.add_multilayer_intra_link(layer_id, u, v)
 
-result = run(net, multilayer_relax_rate=0.25, silent=True, seed=123)
+result = run(net, options=Options(multilayer_relax_rate=0.25), seed=123)
 print(f"Top-level modules : {result.num_top_modules}")
 print(f"Codelength        : {result.codelength:.4f} bits/step")
 ```

@@ -99,7 +99,7 @@ links = [
 for src, tgt, w in links:
     net.add_link(src, tgt, w)
 
-result = run(net, two_level=True, directed=True, seed=123, num_trials=10, silent=True)
+result = run(net, two_level=True, directed=True, seed=123, num_trials=10)
 
 print(f"Modules: {result.num_top_modules}")
 for node in sorted(result.nodes(states=True), key=lambda n: n.state_id):
@@ -155,7 +155,7 @@ above exactly:
 ```{code-cell} python
 net_pkg = infomap.datasets.states()
 result_pkg = infomap.run(net_pkg, two_level=True, directed=True,
-                         seed=123, num_trials=10, silent=True)
+                         seed=123, num_trials=10)
 
 print(f"Modules: {result_pkg.num_top_modules}, "
       f"codelength {result_pkg.codelength:.4f} bits per step")

@@ -1,21 +1,21 @@
-from infomap import Infomap
+from infomap import Network, Options
 
 # Compare codelengths for two different partitions of a network
 # composed of two triangles {0,1,2} and {5,6,7} connected by a
 # chain of two nodes in the middle {3,4}.
 
-im = Infomap(two_level=True, silent=True)
+net = Network()
 
 # Add weight as an optional third argument
-im.add_link(0, 1)
-im.add_link(0, 2)
-im.add_link(1, 2)
-im.add_link(2, 3)
-im.add_link(3, 4)
-im.add_link(4, 5)
-im.add_link(5, 6)
-im.add_link(5, 7)
-im.add_link(6, 7)
+net.add_link(0, 1)
+net.add_link(0, 2)
+net.add_link(1, 2)
+net.add_link(2, 3)
+net.add_link(3, 4)
+net.add_link(4, 5)
+net.add_link(5, 6)
+net.add_link(5, 7)
+net.add_link(6, 7)
 
 # Three modules, with the chain in its own module
 partition1 = {
@@ -41,10 +41,11 @@ partition2 = {
     7: 2,
 }
 
-# Set initial partition on the Infomap instance to keep it during multiple runs
-im.initial_partition = partition1
+# no_infomap skips optimization and just calculates the codelength
+# of the given partition
+opts = Options(two_level=True, no_infomap=True)
 
-result = im.run(no_infomap=True)
+result = net.run(options=opts, initial_partition=partition1)
 
 print(
     f"Partition one with {result.num_top_modules} modules -> "
@@ -52,8 +53,7 @@ print(
 )
 
 
-# Set initial partition as run parameter to only use it for this run (will be restored to partition1 after)
-result = im.run(initial_partition=partition2, no_infomap=True)
+result = net.run(options=opts, initial_partition=partition2)
 
 print(
     f"Partition two with {result.num_top_modules} modules -> "

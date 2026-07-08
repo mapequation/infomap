@@ -171,7 +171,7 @@ matrix is a standard SciPy CSR matrix that you can pass straight to
 ```{code-cell} python
 A = adata.obsp["connectivities"]
 
-result = infomap.run(A, silent=True, seed=123, num_trials=5)
+result = infomap.run(A, seed=123, num_trials=5)
 
 print(f"Modules:    {result.num_top_modules}")
 print(f"Codelength: {result.codelength:.4f} bits/step")

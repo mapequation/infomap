@@ -187,7 +187,7 @@ from infomap import Network, run
 net = Network()
 for u, v, w in links:
     net.add_link(u, v, w)
-result = run(net, silent=True, num_trials=10, seed=123)
+result = run(net, num_trials=10, seed=123)
 
 print(f"Tree depth (num_levels): {result.num_levels}")
 print(f"Top-level modules:       {result.num_top_modules}")
@@ -198,7 +198,7 @@ assert result.num_top_modules == 3
 
 # The bundled copy is the same network; the two must agree exactly.
 result_pkg = infomap.run(infomap.datasets.nine_triangles(),
-                         silent=True, num_trials=10, seed=123)
+                         num_trials=10, seed=123)
 assert result.codelength == result_pkg.codelength
 ```
 

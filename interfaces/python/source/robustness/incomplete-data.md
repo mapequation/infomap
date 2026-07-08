@@ -153,7 +153,7 @@ print(f"({removal_fraction:.0%} of links removed)")
 
 ```{code-cell} python
 # Standard Infomap: no regularization
-result_std = infomap.run(g_sparse, two_level=True, seed=99, num_trials=10, silent=True)
+result_std = infomap.run(g_sparse, two_level=True, seed=99, num_trials=10)
 
 # Regularized Infomap. We use regularization_strength=0.5 (gentler than the
 # default 1.0, which over-regularizes this 70%-sparse graph toward one module).
@@ -162,9 +162,7 @@ result_reg = infomap.run(
     two_level=True,
     seed=99,
     num_trials=10,
-    silent=True,
-    regularized=True,
-    regularization_strength=0.5,
+    options=infomap.Options(regularized=True, regularization_strength=0.5),
 )
 
 modules_std = result_std.modules()

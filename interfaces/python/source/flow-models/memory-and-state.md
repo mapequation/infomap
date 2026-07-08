@@ -172,7 +172,7 @@ g.add_weighted_edges_from([
     ("l", "i", 1.0), ("l", "m", 1.0), ("m", "i", 1.0), ("m", "l", 1.0),
 ])
 
-result_first = run(g, two_level=True, directed=True, seed=123, num_trials=20, silent=True)
+result_first = run(g, two_level=True, directed=True, seed=123, num_trials=20)
 print(f"First-order modules: {result_first.num_top_modules}")
 print(f"Codelength         : {result_first.codelength:.4f} bits")
 
@@ -190,7 +190,7 @@ Now the state network. The bundled `states()` loader carries the two contexts of
 for directed flow).
 
 ```{code-cell} python
-result = run(infomap.datasets.states(), num_trials=20, seed=123, silent=True)
+result = run(infomap.datasets.states(), num_trials=20, seed=123)
 
 print(f"State nodes  : {len(list(result.nodes(states=True)))}")
 print(f"Modules found: {result.num_top_modules}")

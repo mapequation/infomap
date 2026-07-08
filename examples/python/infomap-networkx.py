@@ -66,7 +66,7 @@ G = nx.karate_club_graph()
 
 print("Building Infomap network from a NetworkX graph...")
 print("Find communities with Infomap...")
-result = run(G, two_level=True, silent=True, num_trials=20)
+result = run(G, two_level=True, num_trials=20)
 
 print(
     f"Found {result.num_top_modules} modules with codelength "
@@ -91,7 +91,7 @@ G.add_edge("b", "c")
 G.add_edge("d", "e")
 G.add_edge("d", "f")
 G.add_edge("e", "f")
-result = run(G, silent=True)
+result = run(G)
 print("#node_id module_id flow state_id")
 for node in result.nodes(states=True):
     print(node.node_id, node.module_id, node.flow, node.state_id)
@@ -112,7 +112,7 @@ G.add_node(32, node_id=3, layer_id=2)
 G.add_edge(11, 21)
 G.add_edge(22, 32)
 # Pass multilayer_inter_intra_format=False for full multilayer format via a Network
-result = run(G, silent=True)
+result = run(G)
 print("#node_id module_id flow state_id layer_id")
 for node in result.nodes(states=True):
     print(

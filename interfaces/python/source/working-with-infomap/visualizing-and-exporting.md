@@ -62,7 +62,7 @@ import infomap
 
 g = nx.karate_club_graph()
 
-result = infomap.run(g, two_level=True, seed=123, num_trials=10, silent=True)
+result = infomap.run(g, two_level=True, seed=123, num_trials=10)
 modules = result.modules()           # {node_id: module_id}
 
 print(f"Nodes: {g.number_of_nodes()}, Edges: {g.number_of_edges()}")
@@ -183,7 +183,7 @@ Navigator, and `.tree`/`.clu` load in the alluvial diagram generator and other
 scripts.
 
 ```{code-cell} python
-im = infomap.Infomap(two_level=True, seed=123, num_trials=10, silent=True)
+im = infomap.Infomap(two_level=True, seed=123, num_trials=10)
 im.add_networkx_graph(g)
 im.run()
 

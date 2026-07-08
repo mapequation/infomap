@@ -158,7 +158,7 @@ attribute-pure modules.
 ```{code-cell} python
 import infomap
 import networkx as nx
-from infomap import Network, run
+from infomap import Network, Options, run
 
 # Two triangles joined by a bridge edge
 G = nx.Graph()
@@ -183,7 +183,7 @@ for node_id, category in metadata.items():
 ### Topology only (rate = 0)
 
 ```{code-cell} python
-result_topo = run(net, meta_data_rate=0, silent=True, num_trials=10)
+result_topo = run(net, options=Options(meta_data_rate=0), num_trials=10)
 mods_topo = result_topo.modules()
 
 print(f"Topology-only partition: {result_topo.num_top_modules} modules")
@@ -202,7 +202,7 @@ At rate 0, Infomap finds the two topological communities: {1, 2, 3} and
 ### Metadata-aware (rate = 2)
 
 ```{code-cell} python
-result_meta = run(net, meta_data_rate=2.0, silent=True, num_trials=10)
+result_meta = run(net, options=Options(meta_data_rate=2.0), num_trials=10)
 mods_meta = result_meta.modules()
 
 print(f"Metadata-aware partition: {result_meta.num_top_modules} modules")
@@ -249,7 +249,7 @@ for node_id, category in metadata.items():
 print(f"{'meta_data_rate':>14}  {'modules':>8}  {'codelength':>12}")
 print("-" * 38)
 for eta in [0.0, 0.5, 1.0, 2.0, 5.0]:
-    r = run(net_sweep, meta_data_rate=eta, num_trials=10, seed=123, silent=True)
+    r = run(net_sweep, options=Options(meta_data_rate=eta), num_trials=10, seed=123)
     print(f"{eta:>14.1f}  {r.num_top_modules:>8}  {r.codelength:>12.4f}")
 ```
 

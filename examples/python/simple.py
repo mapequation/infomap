@@ -1,6 +1,6 @@
 from infomap import Infomap
 
-im = Infomap(two_level=True, silent=True)
+im = Infomap(two_level=True)
 
 # Optionally add nodes with names
 im.add_node(0, "Node 0")

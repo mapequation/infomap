@@ -35,7 +35,7 @@ and its results are identical to the functional path.
 ```{code-cell} python
 from infomap import Infomap
 
-im = Infomap(silent=True, seed=123, num_trials=10)
+im = Infomap(seed=123, num_trials=10)
 im.add_link(0, 1)
 im.add_link(1, 2)
 im.add_link(2, 0)
