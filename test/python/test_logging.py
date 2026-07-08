@@ -19,7 +19,7 @@ import sys
 
 import pytest
 
-from infomap import Infomap
+from infomap import Infomap, disable_log, enable_log
 
 
 pytestmark = pytest.mark.fast
@@ -201,13 +201,11 @@ def test_instance_constructed_before_logging_config_warns(infomap_log_handler):
 
 
 def test_enable_log_is_a_one_line_opt_in(capfd):
-    import infomap as infomap_package
-
-    handler = infomap_package.enable_log()
+    handler = enable_log()
     try:
         assert handler in logging.getLogger("infomap").handlers
         # Idempotent: a second call reuses the handler.
-        assert infomap_package.enable_log() is handler
+        assert enable_log() is handler
         assert logging.getLogger("infomap").handlers.count(handler) == 1
         _engine_stdout(capfd)
 
@@ -219,7 +217,7 @@ def test_enable_log_is_a_one_line_opt_in(capfd):
         assert "Infomap v" in out
         assert "\x1b[" not in out
     finally:
-        infomap_package.disable_log()
+        disable_log()
 
     assert handler not in logging.getLogger("infomap").handlers
     _engine_stdout(capfd)
