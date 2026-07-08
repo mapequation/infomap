@@ -13,7 +13,9 @@ attaches one, so these tests double as the guard for that rule.
 
 from __future__ import annotations
 
+import ctypes
 import logging
+import sys
 
 import pytest
 
@@ -21,6 +23,22 @@ from infomap import Infomap
 
 
 pytestmark = pytest.mark.fast
+
+
+def _engine_stdout(capfd) -> str:
+    """Read the engine's stdout from the fd-level capture.
+
+    The engine writes via ``std::cout``; under pytest's fd-level capture
+    stdout is a pipe, so the C runtime fully buffers the log and it must be
+    flushed before reading (mirrors test_run_functional._engine_log —
+    silence/emptiness assertions would otherwise pass or fail on stale
+    buffer contents).
+    """
+    if sys.platform == "win32":
+        ctypes.cdll.msvcrt.fflush(None)
+    else:
+        ctypes.CDLL(None).fflush(None)
+    return capfd.readouterr().out
 
 
 class ListHandler(logging.Handler):
@@ -53,7 +71,7 @@ def _run_triangle(**kwargs):
 
 
 def test_engine_log_routes_to_logging_and_not_stdout(infomap_log_handler, capfd):
-    capfd.readouterr()
+    _engine_stdout(capfd)  # drain log buffered by earlier (unflushed) tests
 
     _run_triangle(silent=False)
 
@@ -63,7 +81,7 @@ def test_engine_log_routes_to_logging_and_not_stdout(infomap_log_handler, capfd)
     messages = [record.getMessage() for record in records]
     assert any("Infomap" in message for message in messages)
     # Routed mode replaces stdout output entirely.
-    assert capfd.readouterr().out == ""
+    assert _engine_stdout(capfd) == ""
 
 
 def test_default_lines_are_info_and_detail_lines_are_debug(infomap_log_handler):
@@ -105,13 +123,13 @@ def test_routing_disengages_when_handlers_are_removed(infomap_log_handler, capfd
     logger.removeHandler(infomap_log_handler)
     try:
         infomap_log_handler.records.clear()
-        capfd.readouterr()
+        _engine_stdout(capfd)
 
         _run_triangle(silent=False)
 
         # Back to the classic stdout path, no records.
         assert infomap_log_handler.records == []
-        assert capfd.readouterr().out != ""
+        assert _engine_stdout(capfd) != ""
     finally:
         logger.addHandler(infomap_log_handler)  # fixture teardown removes it
 
@@ -120,20 +138,20 @@ def test_propagated_root_handlers_do_not_engage_routing(capfd):
     # pytest attaches a capture handler to the root logger; the "infomap"
     # logger itself has none here. The engine must keep writing to stdout.
     assert not logging.getLogger("infomap").handlers
-    capfd.readouterr()
+    _engine_stdout(capfd)
 
     _run_triangle(silent=False)
 
-    assert capfd.readouterr().out != ""
+    assert _engine_stdout(capfd) != ""
 
 
 def test_read_file_routes_through_logging(infomap_log_handler, capfd, test_paths):
-    capfd.readouterr()
+    _engine_stdout(capfd)
     im = Infomap(silent=False)
 
     im.read_file(str(test_paths.example_networks / "ninetriangles.net"))
 
-    assert capfd.readouterr().out == ""
+    assert _engine_stdout(capfd) == ""
 
 
 @pytest.mark.filterwarnings("ignore::pytest.PytestUnraisableExceptionWarning")
