@@ -41,3 +41,30 @@ def test_init_options_match_catalog():
 def test_run_options_match_catalog():
     params = set(inspect.signature(Infomap.run).parameters) - NON_OPTION_RUN
     assert params == set(_OPTION_FIELD_NAMES)
+
+
+def test_generated_signatures_are_annotated():
+    import inspect
+
+    from infomap import Infomap, Result
+    from infomap._options import FlowModel, OutputFormat  # noqa: F401  (generated aliases)
+
+    init_signature = inspect.signature(Infomap.__init__)
+    run_signature = inspect.signature(Infomap.run)
+
+    # Every generated parameter carries an annotation (args/self included).
+    for signature in (init_signature, run_signature):
+        unannotated = [
+            name
+            for name, parameter in signature.parameters.items()
+            if name != "self" and parameter.annotation is inspect.Parameter.empty
+        ]
+        assert unannotated == []
+
+    assert init_signature.return_annotation is None
+    assert run_signature.return_annotation in (Result, "Result")
+
+    # Choice parameters are typed through the generated Literal aliases.
+    assert "Literal" in str(run_signature.parameters["flow_model"].annotation)
+    assert "Literal" in str(run_signature.parameters["output"].annotation)
+    assert run_signature.parameters["num_trials"].annotation is int

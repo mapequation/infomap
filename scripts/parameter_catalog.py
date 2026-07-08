@@ -147,15 +147,34 @@ class Parameter:
             return "lambda value: value is not None"
         return f"lambda value: value != {default}"
 
+    def python_literal_alias(self) -> tuple[str, str] | None:
+        """The ``(alias_name, Literal[...])`` pair for a choices parameter.
+
+        Choice parameters are typed through a generated module-level alias
+        (``FlowModel = Literal["undirected", ...]``) instead of an inline
+        ``Literal`` so the generated signatures stay within the line-length
+        budget. Returns ``None`` for parameters without choices.
+        """
+        if not self.choices:
+            return None
+        camel = "".join(part.capitalize() for part in self.name("python").split("_"))
+        # A comma_list alias names the *element* type (list[OutputFormat]).
+        alias = f"{camel}Format" if self.render_policy == "comma_list" else camel
+        literal = "Literal[" + ", ".join(json.dumps(c) for c in self.choices) + "]"
+        return alias, literal
+
     def python_type(self) -> str:
         if self.render_policy == "repeated_short":
             return "int | None" if self.python_default_value() == "None" else "int"
         if self.render_policy == "directed_alias":
             return "bool | None"
         if self.choices:
+            literal_alias = self.python_literal_alias()
+            assert literal_alias is not None
+            alias, _ = literal_alias
             if self.render_policy == "comma_list":
-                return "list[str] | tuple[str, ...] | None"
-            return "str | None"
+                return f"list[{alias}] | tuple[{alias}, ...] | None"
+            return f"{alias} | None"
         if not self.required:
             return "bool"
         if self.long_type in {"integer", "probability", "number"}:
