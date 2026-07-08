@@ -109,17 +109,20 @@ test-python-examples:
 
 # Static type check of the hand-written package. Config + scope (include the
 # package, exclude the SWIG-generated _swig.py) live in [tool.pyright] in
-# pyproject.toml. Not part of the default `test-python` aggregate -- run it
-# explicitly or in a dedicated CI job.
+# pyproject.toml. Not part of the default `test-python` aggregate -- gated in
+# CI's full-suite Python leg, where the [test]+[examples] extras pin the
+# optional-dep set and pyright itself is version-pinned, so the diagnostics
+# are reproducible there. Optional-dep upgrades that surface new diagnostics
+# show up in the corresponding dependabot PR, which is where they belong.
 test-python-typecheck:
 	@$(PYRIGHT)
 
 # Type check only the core API/algorithm surface, excluding the optional
 # third-party integration adapters (io/, tl/) whose pyright diagnostics vary
 # with which optional deps + stub packages are installed. Used by the pre-push
-# hook so the gate is deterministic across dev machines; the full-scope check
-# above (and pyproject's [tool.pyright]) still covers everything. Scope lives in
-# interfaces/python/pyrightconfig-core.json.
+# hook (and CI quick mode) so the gate is deterministic across dev machines;
+# the full-scope check above covers everything in CI's full-suite leg. Scope
+# lives in interfaces/python/pyrightconfig-core.json.
 test-python-typecheck-core:
 	@$(PYRIGHT) -p interfaces/python/pyrightconfig-core.json
 

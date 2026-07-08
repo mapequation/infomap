@@ -85,7 +85,9 @@ def run_networkx(
 ) -> tuple[Any, dict[int, Any]]:
     from .._facade import Infomap
 
-    options = {"silent": True, "no_file_output": True}
+    # dict[str, Any]: the caller's infomap_options carry arbitrary option
+    # value types, not just the bools of the two seeds.
+    options: dict[str, Any] = {"silent": True, "no_file_output": True}
     options.update(infomap_options)
 
     infomap = Infomap(**options)
