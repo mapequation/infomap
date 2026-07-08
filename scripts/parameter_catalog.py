@@ -122,6 +122,22 @@ class Parameter:
         common = self.overrides.get("tiers", {}).get(language, {}).get("common", [])
         return "common" if self.flag in common else "advanced"
 
+    def python_inert_without_outdir(self) -> bool:
+        """True for output-artifact parameters that are inert via kwargs.
+
+        In library mode (``isCLI=false``, the only mode the Python API uses)
+        the engine forces ``noFileOutput`` on when no output directory is
+        given (``src/io/Config.cpp``), and the directory can only arrive via
+        the positional ``args`` argument. The flags are declared in the
+        overrides file (``apiNotes.python.inertWithoutOutputDir``).
+        """
+        inert = (
+            self.overrides.get("apiNotes", {})
+            .get("python", {})
+            .get("inertWithoutOutputDir", [])
+        )
+        return self.flag in inert
+
     def uses_generic_spec(self) -> bool:
         return self.render_policy in {"flag", "value"}
 
@@ -277,6 +293,13 @@ class ParameterCatalog:
                 raise RuntimeError(
                     f"tiers.{language}.common lists flag(s) not in the "
                     f"parameter catalog: {missing}"
+                )
+        for language, notes in self.overrides.get("apiNotes", {}).items():
+            missing = sorted(set(notes.get("inertWithoutOutputDir", [])) - known_flags)
+            if missing:
+                raise RuntimeError(
+                    f"apiNotes.{language}.inertWithoutOutputDir lists flag(s) "
+                    f"not in the parameter catalog: {missing}"
                 )
 
     def grouped(self) -> dict[str, list[Parameter]]:
