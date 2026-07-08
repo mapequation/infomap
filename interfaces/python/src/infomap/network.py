@@ -29,6 +29,7 @@ import warnings
 from typing import Any
 
 from ._core import Core, apply_initial_partition
+from .errors import NetworkParseError, _translate_engine_errors
 from ._network_input import add_bulk_links as _add_bulk_links
 from ._network_input import first_order_unpacker as _first_order_unpacker
 from ._network_input import flat_multilayer_unpacker as _flat_multilayer_unpacker
@@ -303,12 +304,16 @@ class Network:
             )
 
         rendered_args = _construct_args(args, **resolved.to_kwargs())
+        # classify=True mirrors Infomap.run(): input failures surfacing at
+        # run time (cluster_data, meta_data) become NetworkParseError.
         if initial_partition is None:
-            self._core.run(rendered_args)
+            with _translate_engine_errors(classify=True):
+                self._core.run(rendered_args)
         else:
             apply_initial_partition(self._core, initial_partition)
             try:
-                self._core.run(rendered_args)
+                with _translate_engine_errors(classify=True):
+                    self._core.run(rendered_args)
             finally:
                 # Applies to this run only, mirroring Infomap.run().
                 apply_initial_partition(self._core, {})
@@ -327,8 +332,14 @@ class Network:
         accumulate : bool, optional
             If the network data should be accumulated to already added
             nodes and links. Default ``True``.
+
+        Raises
+        ------
+        NetworkParseError
+            If the file cannot be opened or its content cannot be parsed.
         """
-        self._core.readInputData(filename, accumulate)
+        with _translate_engine_errors(NetworkParseError):
+            self._core.readInputData(filename, accumulate)
         return self
 
     # ----------------------------------------

@@ -1,3 +1,12 @@
+# The error taxonomy is pure Python and importable without the compiled
+# bindings, so it lives outside the guarded block below.
+from .errors import (
+    __all__ as _ERRORS_ALL,
+    InfomapError as InfomapError,
+    NetworkParseError as NetworkParseError,
+    NotRunError as NotRunError,
+    StaleResultError as StaleResultError,
+)
 from ._version import (
     __author__ as __author__,
     __classifiers__ as __classifiers__,
@@ -27,6 +36,7 @@ _VERSION_ALL = [
 ]
 
 __all__ = list(_VERSION_ALL)
+__all__.extend(_ERRORS_ALL)
 
 # The distributed-trial merge tool lives in the pure-Python ``infomap.merge``
 # module (use ``from infomap.merge import merge_trial_results`` or the CLI

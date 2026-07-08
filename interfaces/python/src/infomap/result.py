@@ -27,6 +27,7 @@ from collections.abc import Iterator, Sequence
 from typing import TYPE_CHECKING, Any
 
 from ._optional import require_pandas
+from .errors import InfomapError, StaleResultError, _translate_engine_errors
 from ._results import (
     _DATAFRAME_COLUMN_ALIASES,
     _DEFAULT_TO_DATAFRAME_COLUMNS,
@@ -61,8 +62,9 @@ _SNAPSHOT_COLUMNS = (
 )
 
 
-class _StaleResultError(RuntimeError):
-    """Raised when node-level data is read from a Result after a re-run."""
+# Backwards-compatible alias: the stale-result error predates the public
+# taxonomy (infomap.errors) under this private name.
+_StaleResultError = StaleResultError
 
 
 def build_result(engine: Any) -> "Result":
@@ -394,7 +396,7 @@ class Result:
     def _check_generation(self) -> None:
         """Guard live C++ tree access against a re-run of the bound engine."""
         if self._engine._generation != self._generation:
-            raise _StaleResultError(
+            raise StaleResultError(
                 "stale Result: the Infomap instance was re-run since this "
                 "Result was created; node-level data is no longer available "
                 "(the C++ result tree is rebuilt on every run())."
@@ -407,7 +409,7 @@ class Result:
         ``tree()`` / ``leaf_modules()`` hand back live engine iterators rather
         than materialized snapshots. Without this guard, acquiring one and then
         re-running the engine before consuming it would walk a rebuilt C++ tree;
-        instead the first step raises :class:`_StaleResultError`.
+        instead the first step raises :class:`~infomap.StaleResultError`.
         """
         iterator = iter(iterator)
         while True:
@@ -585,7 +587,7 @@ class Result:
 
         Raises
         ------
-        RuntimeError
+        InfomapError
             For a higher-order network when ``states`` is ``False``.
 
         See Also
@@ -594,11 +596,11 @@ class Result:
         tree : Walk the full hierarchical tree.
         """
         if self._have_memory and not states:
-            # RuntimeError (not ValueError) on purpose: the legacy
-            # Infomap.get_modules path surfaces the C++ std::runtime_error
-            # thrown by getModules (src/Infomap.h), and parity tests pin the
-            # error type across both surfaces.
-            raise RuntimeError(
+            # InfomapError (not ValueError) on purpose: the legacy
+            # Infomap.get_modules path translates the C++ std::runtime_error
+            # thrown by getModules (src/Infomap.h) to the same taxonomy type,
+            # and parity tests pin the error type across both surfaces.
+            raise InfomapError(
                 "Cannot get modules on higher-order network without states."
             )
         snapshot = self._snapshot(depth, states)
@@ -698,7 +700,8 @@ class Result:
         modules : Module ids for a single level.
         """
         self._check_generation()
-        return self._engine._core.getMultilevelModules(states)
+        with _translate_engine_errors():
+            return self._engine._core.getMultilevelModules(states)
 
     def leaf_modules(self):
         """Iterate the leaf modules (bottom modules containing leaf nodes),

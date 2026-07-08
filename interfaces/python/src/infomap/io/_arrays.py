@@ -17,11 +17,13 @@ import math
 from collections.abc import Iterator
 from typing import Any, NamedTuple
 
+from ..errors import NotRunError
+
 
 def require_modules(infomap: Any) -> None:
     """Raise if ``infomap`` has no module assignments yet (i.e. has not run)."""
     if not infomap._core.haveModules():
-        raise ValueError(
+        raise NotRunError(
             "Infomap results are not available. Run Infomap before exporting."
         )
 
