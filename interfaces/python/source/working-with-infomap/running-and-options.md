@@ -422,39 +422,50 @@ For the full set of options as a searchable table, see the
 ## Routing the engine log through Python logging
 
 The Python API is quiet by default. When you do want the engine's progress
-log — in application logs, a notebook, or a file — attach a handler to the
-standard `"infomap"` logger and run with `silent=False`. Every visible engine
-log line then becomes a log record instead of stdout output: default lines at
-`INFO`, `-v`/`-vv` detail lines (`verbosity_level=2` and up) at `DEBUG`.
+log — in a notebook, application logs, or a file — one line opts in:
 
 ```{code-cell} python
-import logging
 import infomap
 
-logger = logging.getLogger("infomap")
-handler = logging.StreamHandler()
-handler.setFormatter(logging.Formatter("%(levelname)s infomap: %(message)s"))
-logger.addHandler(handler)
-logger.setLevel(logging.INFO)
+infomap.enable_log()
 
-result = infomap.run(
-    [(1, 2), (1, 3), (2, 3), (3, 4), (4, 5), (4, 6), (5, 6)],
-    options=infomap.Options(silent=False),
-)
+result = infomap.run([(1, 2), (1, 3), (2, 3), (3, 4), (4, 5), (4, 6), (5, 6)])
 
-logger.removeHandler(handler)
+infomap.disable_log()
 print(f"Found {result.num_top_modules} modules")
 ```
 
-How the routing engages:
+{func}`~infomap.enable_log` attaches a plain handler to the standard
+`"infomap"` logger; that is all the opt-in is. For full control — formats,
+files, your logging pipeline — skip the helper and configure the logger with
+standard {mod}`logging`; any handler attached directly to it engages the same
+routing:
 
+```python
+import logging
+
+logging.getLogger("infomap").addHandler(my_handler)
+logging.getLogger("infomap").setLevel(logging.INFO)
+```
+
+How the routing behaves:
+
+- **Logging is the control.** With handlers attached, every engine run emits
+  records — no `silent=False` needed, and `silent=` is ignored for emission.
+  Tune volume with logger/handler levels (`logging.WARNING` silences the
+  engine's INFO lines); remove the handlers to go back to classic stdout
+  output gated by `silent=`.
+- **Levels map naturally.** Default lines arrive at `INFO`. A logger enabled
+  for `DEBUG` (`infomap.enable_log(logging.DEBUG)`) automatically raises the
+  engine verbosity to `-vv`, so its detail lines arrive at `DEBUG`.
 - **Only handlers attached directly to `logging.getLogger("infomap")` count.**
   `logging.basicConfig(...)` alone does not reroute the engine log — without
   an `"infomap"` handler, `silent=False` prints to stdout exactly as before.
-- **`silent` still gates emission.** With the quiet default, no records are
-  produced even when a handler is attached; pass
-  `options=Options(silent=False)` (or `silent=False` on
-  {class}`~infomap.Infomap`) to emit.
+- **Configure logging before creating a stateful engine.** The engine bakes
+  its silence in at construction, so an {class}`~infomap.Infomap` created
+  *before* logging was configured cannot emit records (its runs warn to
+  explain why). The one-shot {func}`infomap.run` always respects the current
+  logging configuration.
 - **Routed output is plain lines.** The colors and the live progress line are
   terminal features; log records get one clean line each.
 - **{class}`~infomap.Network` engines are silent for their whole lifetime**

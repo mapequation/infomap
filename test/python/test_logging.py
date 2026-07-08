@@ -84,8 +84,37 @@ def test_engine_log_routes_to_logging_and_not_stdout(infomap_log_handler, capfd)
     assert _engine_stdout(capfd) == ""
 
 
-def test_default_lines_are_info_and_detail_lines_are_debug(infomap_log_handler):
-    _run_triangle(silent=False, verbosity_level=2)
+def test_routed_mode_emits_without_silent_false(infomap_log_handler, capfd):
+    # Logging is the control in routed mode: configuring the logger is the
+    # whole opt-in, no silent=False needed (and silent=True is ignored).
+    _engine_stdout(capfd)
+
+    _run_triangle()
+
+    assert infomap_log_handler.records
+    assert _engine_stdout(capfd) == ""
+
+    infomap_log_handler.records.clear()
+    _run_triangle(silent=True)
+
+    assert infomap_log_handler.records
+
+
+def test_routed_mode_is_silenced_with_logger_levels(infomap_log_handler):
+    logger = logging.getLogger("infomap")
+    logger.setLevel(logging.WARNING)
+
+    _run_triangle()
+
+    # The engine emits, but logging drops the INFO records: the pythonic
+    # silence in routed mode.
+    assert infomap_log_handler.records == []
+
+
+def test_debug_logger_raises_engine_verbosity_automatically(infomap_log_handler):
+    # The fixture leaves the logger enabled for DEBUG, so the run gets -vv
+    # detail without any verbosity_level kwarg.
+    _run_triangle()
 
     levels = {record.levelno for record in infomap_log_handler.records}
     assert logging.INFO in levels
@@ -99,10 +128,13 @@ def test_default_lines_are_info_and_detail_lines_are_debug(infomap_log_handler):
     assert any("run Infomap" in message for message in debug_messages)
 
 
-def test_silent_default_emits_no_records(infomap_log_handler):
+def test_info_logger_keeps_default_engine_verbosity(infomap_log_handler):
+    logging.getLogger("infomap").setLevel(logging.INFO)
+
     _run_triangle()
 
-    assert infomap_log_handler.records == []
+    levels = {record.levelno for record in infomap_log_handler.records}
+    assert levels == {logging.INFO}
 
 
 def test_records_are_plain_lines_without_ansi(infomap_log_handler):
@@ -151,6 +183,50 @@ def test_read_file_routes_through_logging(infomap_log_handler, capfd, test_paths
 
     im.read_file(str(test_paths.example_networks / "ninetriangles.net"))
 
+    assert _engine_stdout(capfd) == ""
+
+
+def test_instance_constructed_before_logging_config_warns(infomap_log_handler):
+    logger = logging.getLogger("infomap")
+    logger.removeHandler(infomap_log_handler)
+    im = Infomap()  # constructed silent: no handlers at this point
+    im.add_link(1, 2)
+    logger.addHandler(infomap_log_handler)
+
+    with pytest.warns(UserWarning, match="before logging was configured"):
+        im.run()
+
+    # The engine baked --silent in at construction, so no records exist.
+    assert infomap_log_handler.records == []
+
+
+def test_enable_log_is_a_one_line_opt_in(capfd):
+    import infomap as infomap_package
+
+    handler = infomap_package.enable_log()
+    try:
+        assert handler in logging.getLogger("infomap").handlers
+        # Idempotent: a second call reuses the handler.
+        assert infomap_package.enable_log() is handler
+        assert logging.getLogger("infomap").handlers.count(handler) == 1
+        _engine_stdout(capfd)
+
+        _run_triangle()
+
+        # The helper's stdout handler prints the records: one opt-in line,
+        # engine progress visible, no silent=False anywhere.
+        out = _engine_stdout(capfd)
+        assert "Infomap v" in out
+        assert "\x1b[" not in out
+    finally:
+        infomap_package.disable_log()
+
+    assert handler not in logging.getLogger("infomap").handlers
+    _engine_stdout(capfd)
+
+    _run_triangle()
+
+    # Classic quiet default is back.
     assert _engine_stdout(capfd) == ""
 
 
