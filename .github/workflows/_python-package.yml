@@ -265,11 +265,12 @@ jobs:
         if: matrix.run-full-suite
         run: make test-python-doctest
 
-      # Deterministic core-scope gate (io/ and tl/ excluded); mirrors the
-      # pre-push hook.
-      - name: Type check Python core surface
+      # Full scope including the io/ and tl/ integration adapters. The
+      # [test]+[examples] extras installed above pin the optional-dep set and
+      # pyright is version-pinned, so the diagnostics are reproducible here.
+      - name: Type check Python package
         if: matrix.run-full-suite
-        run: make test-python-typecheck-core
+        run: make test-python-typecheck
 
       - name: Run Python example smoke tests
         if: matrix.run-full-suite

@@ -111,8 +111,8 @@ repos:
       # pyright runs at PUSH time, not on every commit: it is slower and its
       # results depend on installed deps. Scoped to the core surface (io/, tl/
       # excluded) so it stays deterministic across dev machines -- see the
-      # test-python-typecheck-core target. Full-scope pyright stays a manual /
-      # future-CI check.
+      # test-python-typecheck-core target. Full-scope pyright runs in CI's
+      # full-suite Python leg, where the extras pin the optional-dep set.
       - id: pyright-core
         name: pyright (core, pre-push)
         language: system

@@ -208,7 +208,9 @@ def infomap(
     )
     _validate_adjacency_shape(matrix, n_obs=n_obs)
 
-    options = {"silent": True, "no_file_output": True}
+    # dict[str, Any]: the caller's infomap_options carry arbitrary option
+    # value types, not just the bools of the two seeds.
+    options: dict[str, Any] = {"silent": True, "no_file_output": True}
     options.update(infomap_options)
     im = Infomap(args=args, **options)
     obs_names = list(adata.obs_names)
