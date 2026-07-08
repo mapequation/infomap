@@ -3,6 +3,8 @@ from __future__ import annotations
 import os
 from typing import TYPE_CHECKING
 
+from ..errors import _translate_engine_errors
+
 
 if TYPE_CHECKING:
     from .._core import Core
@@ -82,7 +84,8 @@ class _InfomapWritersMixin:
         depth_level : int, optional
             The depth in the hierarchical tree to write.
         """
-        self._core.writeClu(os.fspath(filename), states, depth_level)
+        with _translate_engine_errors():
+            self._core.writeClu(os.fspath(filename), states, depth_level)
 
     def write_tree(
         self, filename: str | os.PathLike[str], states: bool = False
@@ -102,7 +105,8 @@ class _InfomapWritersMixin:
         states : bool, optional
             If the state nodes should be included. Default ``False``.
         """
-        self._core.writeTree(os.fspath(filename), states)
+        with _translate_engine_errors():
+            self._core.writeTree(os.fspath(filename), states)
 
     def write_flow_tree(
         self, filename: str | os.PathLike[str], states: bool = False
@@ -122,7 +126,8 @@ class _InfomapWritersMixin:
         states : bool, optional
             If the state nodes should be included. Default ``False``.
         """
-        self._core.writeFlowTree(os.fspath(filename), states)
+        with _translate_engine_errors():
+            self._core.writeFlowTree(os.fspath(filename), states)
 
     def write_newick(
         self, filename: str | os.PathLike[str], states: bool = False
@@ -142,7 +147,8 @@ class _InfomapWritersMixin:
         states : bool, optional
             If the state nodes should be included. Default ``False``.
         """
-        self._core.writeNewickTree(os.fspath(filename), states)
+        with _translate_engine_errors():
+            self._core.writeNewickTree(os.fspath(filename), states)
 
     def write_json(
         self, filename: str | os.PathLike[str], states: bool = False
@@ -162,7 +168,8 @@ class _InfomapWritersMixin:
         states : bool, optional
             If the state nodes should be included. Default ``False``.
         """
-        self._core.writeJsonTree(os.fspath(filename), states)
+        with _translate_engine_errors():
+            self._core.writeJsonTree(os.fspath(filename), states)
 
     def write_csv(
         self, filename: str | os.PathLike[str], states: bool = False
@@ -182,7 +189,8 @@ class _InfomapWritersMixin:
         states : bool, optional
             If the state nodes should be included. Default ``False``.
         """
-        self._core.writeCsvTree(os.fspath(filename), states)
+        with _translate_engine_errors():
+            self._core.writeCsvTree(os.fspath(filename), states)
 
     def write_state_network(self, filename: str | os.PathLike[str]) -> None:
         """Write internal state network to file.
@@ -197,7 +205,8 @@ class _InfomapWritersMixin:
         ----------
         filename : str or os.PathLike
         """
-        self._core.network().writeStateNetwork(os.fspath(filename))
+        with _translate_engine_errors():
+            self._core.network().writeStateNetwork(os.fspath(filename))
 
     def write_pajek(
         self, filename: str | os.PathLike[str], flow: bool = False
@@ -216,4 +225,5 @@ class _InfomapWritersMixin:
         flow : bool, optional
             If the flow should be included. Default ``False``.
         """
-        self._core.network().writePajekNetwork(os.fspath(filename), flow)
+        with _translate_engine_errors():
+            self._core.network().writePajekNetwork(os.fspath(filename), flow)

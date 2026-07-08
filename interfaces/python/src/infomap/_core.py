@@ -16,6 +16,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from .errors import _translate_engine_errors
+
 from ._bindings import InfomapWrapper  # noqa: F401  (the only engine import)
 from ._bindings import build_info as build_info  # module-level engine function
 from ._bindings import run as run  # module-level engine function (CLI driver)
@@ -37,7 +39,10 @@ from ._bindings import InfomapLeafModuleIterator as InfomapLeafModuleIterator
 
 class Core:
     def __init__(self, args):
-        self._im = InfomapWrapper(args)
+        # Argument/config errors ("Unrecognized option: ...", option
+        # conflicts) are thrown while the wrapper parses ``args``.
+        with _translate_engine_errors():
+            self._im = InfomapWrapper(args)
 
     def get_node_data(self, level=1, states=False):
         """Single-traversal bulk node data over the result tree.

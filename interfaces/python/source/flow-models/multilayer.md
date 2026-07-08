@@ -432,8 +432,8 @@ assert n_links_self < n_links_default
   {func}`infomap.run`: the relax rate used when no explicit inter-layer links are
   provided.
 - {meth}`infomap.Result.modules` needs `states=True` on multilayer networks to
-  return state-node assignments; `states=False` raises a `RuntimeError` on
-  higher-order networks.
+  return state-node assignments; `states=False` raises an
+  {class}`~infomap.InfomapError` on higher-order networks.
 - {meth}`infomap.Result.nodes` with `states=True` iterates state nodes; each
   exposes `.node_id` (physical), `.state_id`, `.layer_id`, `.module_id`, and
   `.flow`.

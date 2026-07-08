@@ -5,6 +5,7 @@ from math import log2
 from typing import TYPE_CHECKING, Any
 
 from ._optional import require_pandas
+from .errors import _translate_engine_errors
 
 
 if TYPE_CHECKING:
@@ -163,10 +164,15 @@ class _InfomapResultsMixin:
     # deprecated public accessor.
 
     def _get_modules_impl(self, depth_level=1, states=False):
-        return self._core.getModules(depth_level, states)
+        # The C++ higher-order guard ("Cannot get modules on higher-order
+        # network without states.") surfaces here; translate it so the legacy
+        # path raises the same taxonomy type as Result.modules().
+        with _translate_engine_errors():
+            return self._core.getModules(depth_level, states)
 
     def _get_multilevel_modules_impl(self, states=False):
-        return self._core.getMultilevelModules(states)
+        with _translate_engine_errors():
+            return self._core.getMultilevelModules(states)
 
     def _get_tree_impl(self, depth_level=1, states=False):
         if self._core.haveMemory() and not states:

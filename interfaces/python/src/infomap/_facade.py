@@ -36,6 +36,7 @@ from ._options import (
 )
 from ._results import _InfomapResultsMixin
 from ._results import entropy, perplexity, plogp
+from .errors import NetworkParseError, _translate_engine_errors
 from .result import Result, TreeNode, build_result
 from ._summary import (
     repr_html as _repr_html,
@@ -1516,8 +1517,14 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         accumulate : bool, optional
             If the network data should be accumulated to already added
             nodes and links. Default ``True``.
+
+        Raises
+        ------
+        NetworkParseError
+            If the file cannot be opened or its content cannot be parsed.
         """
-        self._core.readInputData(filename, accumulate)
+        with _translate_engine_errors(NetworkParseError):
+            self._core.readInputData(filename, accumulate)
 
     def add_node(self, node_id, name=None, teleportation_weight=None):
         """Add a node.
@@ -2696,11 +2703,16 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
     def _run_from_options(self, args, initial_partition, options):
         args = _package_construct_args()(args, **options.to_kwargs())
 
+        # classify=True: the engine reads auxiliary input (cluster_data,
+        # meta_data) at run time, so input failures surfacing here become
+        # NetworkParseError; everything else is InfomapError.
         if initial_partition is not None:
             with self._initial_partition(initial_partition):
-                self._core.run(args)
+                with _translate_engine_errors(classify=True):
+                    self._core.run(args)
         else:
-            self._core.run(args)
+            with _translate_engine_errors(classify=True):
+                self._core.run(args)
 
         # Stamp a fresh Result with the new generation (shared helper). The C++
         # result tree is rebuilt on every run(), so any previously returned
