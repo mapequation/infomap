@@ -39,6 +39,8 @@ _FACADE_ONLY_PARAMS = {
             "Deprecated. Accepted for backward compatibility; has no effect. "
             "Passing it explicitly emits a DeprecationWarning."
         ),
+        # Deprecated no-op; never part of the common signature tier.
+        "tier": "advanced",
     },
 }
 
@@ -122,6 +124,8 @@ def _facade_params(catalog: ParameterCatalog):
             "Deprecated. Self-links are included by default; use "
             "no_self_links=True to exclude them."
         ),
+        # Deprecated alias; never part of the common signature tier.
+        "tier": "advanced",
     }
     # Map each anchor catalog name to the facade-only params that follow it.
     after = {}
@@ -140,6 +144,12 @@ def _facade_params(catalog: ParameterCatalog):
             index[name] = {
                 "type": param.python_type(),
                 "default": param.python_default_expr(),
+                # Signature-tier metadata (issue #738/#739): "common" params
+                # stay as real keyword parameters in the 3.0 signatures;
+                # "advanced" params move to Options. Not yet consumed by the
+                # emitters -- the deprecation pass (#741) and the 3.0
+                # signature cut (#748) read it from here.
+                "tier": param.tier("python"),
                 # ``Infomap.run`` re-renders its keywords on top of the
                 # constructed state, and a rendered flag can only switch on. A
                 # generic boolean flag whose binding default is truthy

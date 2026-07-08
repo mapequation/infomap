@@ -110,6 +110,18 @@ class Parameter:
             return camel_name(self.flag)
         return snake_name(self.flag)
 
+    def tier(self, language: str) -> str:
+        """The binding-surface tier of this parameter: ``common`` or ``advanced``.
+
+        Tier membership is declared per language in the overrides file
+        (``tiers.<language>.common``, keyed by CLI flag); every parameter not
+        listed there is ``advanced``. The tier decides which parameters stay
+        as real keyword parameters in the 3.0 signatures (see issue #738) —
+        everything else is carried by the options object.
+        """
+        common = self.overrides.get("tiers", {}).get(language, {}).get("common", [])
+        return "common" if self.flag in common else "advanced"
+
     def uses_generic_spec(self) -> bool:
         return self.render_policy in {"flag", "value"}
 
@@ -227,6 +239,26 @@ class ParameterCatalog:
             language: {entry["flag"] for entry in entries}
             for language, entries in overrides.get("hiddenBindings", {}).items()
         }
+        self._validate_tiers()
+
+    def _validate_tiers(self) -> None:
+        # Fail loud on typos: every tier entry must name a real catalog flag,
+        # and only the known tier names are accepted. A silently dropped tier
+        # entry would put a parameter in the wrong 3.0 signature.
+        known_flags = {param.flag for param in self.parameters}
+        for language, tiers in self.overrides.get("tiers", {}).items():
+            unknown_tiers = set(tiers) - {"common"}
+            if unknown_tiers:
+                raise RuntimeError(
+                    f"Unknown tier name(s) for {language}: {sorted(unknown_tiers)}; "
+                    "only 'common' is declared (everything else is advanced)"
+                )
+            missing = sorted(set(tiers.get("common", [])) - known_flags)
+            if missing:
+                raise RuntimeError(
+                    f"tiers.{language}.common lists flag(s) not in the "
+                    f"parameter catalog: {missing}"
+                )
 
     def grouped(self) -> dict[str, list[Parameter]]:
         return {
