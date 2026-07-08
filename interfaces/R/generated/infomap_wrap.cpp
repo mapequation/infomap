@@ -6509,6 +6509,134 @@ R_swig_Config_maxFlowIterations_get ( SEXP self, SEXP s_swig_copy)
 
 
 SWIGEXPORT SEXP
+R_swig_Config_minFlowIterations_set ( SEXP self, SEXP s_minFlowIterations)
+{
+  {
+    infomap::Config *arg1 = 0 ;
+    unsigned int arg2 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int val2 ;
+    int ecode2 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_infomap__Config, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Config_minFlowIterations_set" "', argument " "1"" of type '" "infomap::Config *""'"); 
+    }
+    arg1 = reinterpret_cast< infomap::Config * >(argp1);
+    ecode2 = SWIG_AsVal_int(s_minFlowIterations, &val2);
+    if (!SWIG_IsOK(ecode2)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "Config_minFlowIterations_set" "', argument " "2"" of type '" "unsigned int""'");
+    } 
+    arg2 = static_cast< unsigned int >(val2);
+    if (arg1) (arg1)->minFlowIterations = arg2;
+    r_ans = R_NilValue;
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
+R_swig_Config_minFlowIterations_get ( SEXP self, SEXP s_swig_copy)
+{
+  {
+    unsigned int result;
+    infomap::Config *arg1 = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_infomap__Config, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Config_minFlowIterations_get" "', argument " "1"" of type '" "infomap::Config *""'"); 
+    }
+    arg1 = reinterpret_cast< infomap::Config * >(argp1);
+    result = (unsigned int) ((arg1)->minFlowIterations);
+    r_ans = SWIG_From_int(static_cast< int >(result));
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
+R_swig_Config_flowTolerance_set ( SEXP self, SEXP s_flowTolerance)
+{
+  {
+    infomap::Config *arg1 = 0 ;
+    double arg2 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_infomap__Config, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Config_flowTolerance_set" "', argument " "1"" of type '" "infomap::Config *""'"); 
+    }
+    arg1 = reinterpret_cast< infomap::Config * >(argp1);
+    arg2 = static_cast< double >(REAL(s_flowTolerance)[0]);
+    if (arg1) (arg1)->flowTolerance = arg2;
+    r_ans = R_NilValue;
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
+R_swig_Config_flowTolerance_get ( SEXP self, SEXP s_swig_copy)
+{
+  {
+    double result;
+    infomap::Config *arg1 = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_infomap__Config, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Config_flowTolerance_get" "', argument " "1"" of type '" "infomap::Config *""'"); 
+    }
+    arg1 = reinterpret_cast< infomap::Config * >(argp1);
+    result = (double) ((arg1)->flowTolerance);
+    r_ans = SWIG_From_double(static_cast< double >(result));
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
 R_swig_Config_twoLevel_set ( SEXP self, SEXP s_twoLevel)
 {
   {
@@ -50094,6 +50222,7 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
    {"R_swig_Config_nodeLimit_set", (DL_FUNC) &R_swig_Config_nodeLimit_set, 2},
    {"R_swig_InfoNode_owner_set", (DL_FUNC) &R_swig_InfoNode_owner_set, 2},
    {"R_swig_Config_haveMetaData", (DL_FUNC) &R_swig_Config_haveMetaData, 2},
+   {"R_swig_Config_flowTolerance_get", (DL_FUNC) &R_swig_Config_flowTolerance_get, 2},
    {"R_swig_InfomapBase_getElapsedTime", (DL_FUNC) &R_swig_InfomapBase_getElapsedTime, 2},
    {"R_swig_vector_double_pop", (DL_FUNC) &R_swig_vector_double_pop, 2},
    {"R_swig_InfomapWrapper_getStateName", (DL_FUNC) &R_swig_InfomapWrapper_getStateName, 3},
@@ -50102,6 +50231,7 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
    {"R_swig_InfomapIterator_getMetaData__SWIG_0", (DL_FUNC) &R_swig_InfomapIterator_getMetaData__SWIG_0, 3},
    {"R_swig_vector_double_get_allocator", (DL_FUNC) &R_swig_vector_double_get_allocator, 2},
    {"R_swig_map_uint_uint_size", (DL_FUNC) &R_swig_map_uint_uint_size, 2},
+   {"R_swig_Config_minFlowIterations_get", (DL_FUNC) &R_swig_Config_minFlowIterations_get, 2},
    {"R_swig_InfomapIterator_getMetaData__SWIG_1", (DL_FUNC) &R_swig_InfomapIterator_getMetaData__SWIG_1, 2},
    {"R_swig_StateNetwork_addNode__SWIG_0", (DL_FUNC) &R_swig_StateNetwork_addNode__SWIG_0, 3},
    {"R_swig_StateNetwork_addNode__SWIG_1", (DL_FUNC) &R_swig_StateNetwork_addNode__SWIG_1, 4},
@@ -50170,11 +50300,11 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
    {"R_swig_InfoNode_begin__SWIG_0", (DL_FUNC) &R_swig_InfoNode_begin__SWIG_0, 2},
    {"R_swig_new_InfomapModuleIterator__SWIG_1", (DL_FUNC) &R_swig_new_InfomapModuleIterator__SWIG_1, 2},
    {"R_swig_delete_map_uint_vector_uint", (DL_FUNC) &R_swig_delete_map_uint_vector_uint, 1},
-   {"R_swig_InfomapLeafIteratorPhysical_init", (DL_FUNC) &R_swig_InfomapLeafIteratorPhysical_init, 1},
    {"R_swig_InfoNode_getInfomapRoot__SWIG_1", (DL_FUNC) &R_swig_InfoNode_getInfomapRoot__SWIG_1, 1},
    {"R_swig_InfoNode_begin__SWIG_1", (DL_FUNC) &R_swig_InfoNode_begin__SWIG_1, 2},
    {"R_swig_new_InfomapModuleIterator__SWIG_2", (DL_FUNC) &R_swig_new_InfomapModuleIterator__SWIG_2, 1},
    {"R_swig_Config_setStateInput", (DL_FUNC) &R_swig_Config_setStateInput, 1},
+   {"R_swig_InfomapLeafIteratorPhysical_init", (DL_FUNC) &R_swig_InfomapLeafIteratorPhysical_init, 1},
    {"R_swig_InfomapParentIterator_physicalNodes_set", (DL_FUNC) &R_swig_InfomapParentIterator_physicalNodes_set, 2},
    {"R_swig_InfomapParentIterator_expandChildren", (DL_FUNC) &R_swig_InfomapParentIterator_expandChildren, 2},
    {"R_swig_InfoNode_isFirst", (DL_FUNC) &R_swig_InfoNode_isFirst, 2},
@@ -50580,11 +50710,13 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
    {"R_swig_InfomapBase_network__SWIG_1", (DL_FUNC) &R_swig_InfomapBase_network__SWIG_1, 2},
    {"R_swig_Config_recordedTeleportation_get", (DL_FUNC) &R_swig_Config_recordedTeleportation_get, 2},
    {"R_swig_InfoNode_layerId_set", (DL_FUNC) &R_swig_InfoNode_layerId_set, 2},
+   {"R_swig_Config_flowTolerance_set", (DL_FUNC) &R_swig_Config_flowTolerance_set, 2},
    {"R_swig_Network_metaData", (DL_FUNC) &R_swig_Network_metaData, 2},
    {"R_swig_InfomapParentIterator_NotEqual", (DL_FUNC) &R_swig_InfomapParentIterator_NotEqual, 3},
    {"R_swig_Config_multilayerRelaxLimitUp_set", (DL_FUNC) &R_swig_Config_multilayerRelaxLimitUp_set, 2},
    {"R_swig_Config_setStateOutput", (DL_FUNC) &R_swig_Config_setStateOutput, 1},
    {"R_swig_InfoNode_isDangling", (DL_FUNC) &R_swig_InfoNode_isDangling, 2},
+   {"R_swig_Config_minFlowIterations_set", (DL_FUNC) &R_swig_Config_minFlowIterations_set, 2},
    {"R_swig_Network_addMetaData__SWIG_0", (DL_FUNC) &R_swig_Network_addMetaData__SWIG_0, 3},
    {"R_swig_Network_addMetaData__SWIG_1", (DL_FUNC) &R_swig_Network_addMetaData__SWIG_1, 3},
    {"R_swig_swap__SWIG_0", (DL_FUNC) &R_swig_swap__SWIG_0, 2},
@@ -51206,9 +51338,9 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
    {"R_swig_InfomapIterator_addOutEdge__SWIG_1", (DL_FUNC) &R_swig_InfomapIterator_addOutEdge__SWIG_1, 3},
    {"R_swig_InfomapParentIterator_begin_tree__SWIG_3", (DL_FUNC) &R_swig_InfomapParentIterator_begin_tree__SWIG_3, 2},
    {"R_swig_Config_assignToNeighbouringModule_get", (DL_FUNC) &R_swig_Config_assignToNeighbouringModule_get, 2},
-   {"R_swig_new_InfomapLeafIteratorPhysical__SWIG_4", (DL_FUNC) &R_swig_new_InfomapLeafIteratorPhysical__SWIG_4, 1},
    {"R_swig_Config_convergeTrials_set", (DL_FUNC) &R_swig_Config_convergeTrials_set, 2},
    {"R_swig_InfomapLeafModuleIterator_current__SWIG_0", (DL_FUNC) &R_swig_InfomapLeafModuleIterator_current__SWIG_0, 1},
+   {"R_swig_new_InfomapLeafIteratorPhysical__SWIG_4", (DL_FUNC) &R_swig_new_InfomapLeafIteratorPhysical__SWIG_4, 1},
    {"R_swig_InfomapBase_getRelativeCodelengthSavings", (DL_FUNC) &R_swig_InfomapBase_getRelativeCodelengthSavings, 2},
    {"R_swig_InfomapLeafModuleIterator_current__SWIG_1", (DL_FUNC) &R_swig_InfomapLeafModuleIterator_current__SWIG_1, 1},
    {"R_swig_InfoNode_infomapTree__SWIG_0", (DL_FUNC) &R_swig_InfoNode_infomapTree__SWIG_0, 3},

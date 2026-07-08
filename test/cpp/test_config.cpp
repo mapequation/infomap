@@ -611,6 +611,22 @@ TEST_CASE("Config defaults numThreads to auto when flag absent [fast][core][conf
   CHECK(config.numThreads == 0);
 }
 
+TEST_CASE("Config parses --max-flow-iterations, --min-flow-iterations, and --flow-tolerance [fast][core][config][cli]")
+{
+  const Config config("input.net --silent --no-file-output --max-flow-iterations 123 --min-flow-iterations 7 --flow-tolerance 1e-8", true);
+  CHECK(config.maxFlowIterations == 123);
+  CHECK(config.minFlowIterations == 7);
+  CHECK(config.flowTolerance == doctest::Approx(1e-8));
+}
+
+TEST_CASE("Config defaults flow iteration limits and tolerance when flags are absent [fast][core][config][cli]")
+{
+  const Config config("input.net --silent --no-file-output", true);
+  CHECK(config.maxFlowIterations == 400);
+  CHECK(config.minFlowIterations == 50);
+  CHECK(config.flowTolerance == doctest::Approx(1e-15));
+}
+
 TEST_CASE("Config rejects non-numeric, non-auto --num-threads [fast][core][config][cli]")
 {
   CHECK_THROWS(Config("input.net --silent --no-file-output --num-threads banana", true));

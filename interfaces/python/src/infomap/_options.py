@@ -79,6 +79,9 @@ _ALGORITHM_OPTION_SPECS = (
     ("flag", "use_node_weights_as_flow", "--use-node-weights-as-flow", None),
     ("flag", "to_nodes", "--to-nodes", None),
     ("value", "teleportation_probability", "--teleportation-probability", lambda value: value != 0.15),
+    ("value", "max_flow_iterations", "--max-flow-iterations", lambda value: value != 400),
+    ("value", "min_flow_iterations", "--min-flow-iterations", lambda value: value != 50),
+    ("value", "flow_tolerance", "--flow-tolerance", lambda value: value != 1e-15),
     ("flag", "regularized", "--regularized", None),
     ("value", "regularization_strength", "--regularization-strength", lambda value: value != 1.0),
     ("flag", "entropy_corrected", "--entropy-corrected", None),
@@ -252,6 +255,16 @@ class Options:
     teleportation_probability : float, optional
         Set the probability of teleporting to a random node or link when calculating
         flow.
+    max_flow_iterations : int, optional
+        Limit the power iteration used to calculate flow (directed and regularized flow
+        models) to this many iterations.
+    min_flow_iterations : int, optional
+        Require at least this many power iterations before the flow calculation can
+        converge, even if --flow-tolerance is already met.
+    flow_tolerance : float, optional
+        Convergence tolerance for the power iteration used to calculate flow. Iteration
+        stops once the per-iteration change in flow drops to or below this value, after
+        --min-flow-iterations have run.
     regularized : bool, optional
         Add a fully connected Bayesian prior network to reduce overfitting to missing
         links. Activates --recorded-teleportation.
@@ -400,6 +413,9 @@ class Options:
     use_node_weights_as_flow: bool = False
     to_nodes: bool = False
     teleportation_probability: float = 0.15
+    max_flow_iterations: int = 400
+    min_flow_iterations: int = 50
+    flow_tolerance: float = 1e-15
     regularized: bool = False
     regularization_strength: float = 1.0
     entropy_corrected: bool = False
@@ -557,6 +573,9 @@ def _construct_args(
     use_node_weights_as_flow=False,
     to_nodes=False,
     teleportation_probability=0.15,
+    max_flow_iterations=400,
+    min_flow_iterations=50,
+    flow_tolerance=1e-15,
     regularized=False,
     regularization_strength=1.0,
     entropy_corrected=False,

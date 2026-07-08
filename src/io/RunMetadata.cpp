@@ -156,6 +156,8 @@ std::string canonicalConfigJson(const Config& config)
   addCanonicalNumber(json, "core_loop_codelength_threshold", config.minimumCodelengthImprovement);
   addCanonicalNumber(json, "tune_iteration_relative_threshold", config.minimumRelativeTuneIterationImprovement);
   addCanonicalNumber(json, "max_flow_iterations", config.maxFlowIterations);
+  addCanonicalNumber(json, "min_flow_iterations", config.minFlowIterations);
+  addCanonicalNumber(json, "flow_tolerance", config.flowTolerance);
   json["prefer_modular_solution"] = config.preferModularSolution;
   addCanonicalNumber(json, "num_random_moves", config.numRandomMoves);
   addCanonicalNumber(json, "max_degree_for_random_moves", config.maxDegreeForRandomMoves);

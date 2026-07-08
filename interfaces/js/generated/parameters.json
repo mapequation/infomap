@@ -414,6 +414,45 @@
     "max": "1"
   },
   {
+    "long": "--max-flow-iterations",
+    "short": "",
+    "description": "Limit the power iteration used to calculate flow (directed and regularized flow models) to this many iterations.",
+    "group": "Algorithm",
+    "required": true,
+    "advanced": true,
+    "incremental": false,
+    "longType": "integer",
+    "shortType": "n",
+    "default": "400",
+    "min": "1"
+  },
+  {
+    "long": "--min-flow-iterations",
+    "short": "",
+    "description": "Require at least this many power iterations before the flow calculation can converge, even if --flow-tolerance is already met.",
+    "group": "Algorithm",
+    "required": true,
+    "advanced": true,
+    "incremental": false,
+    "longType": "integer",
+    "shortType": "n",
+    "default": "50",
+    "min": "0"
+  },
+  {
+    "long": "--flow-tolerance",
+    "short": "",
+    "description": "Convergence tolerance for the power iteration used to calculate flow. Iteration stops once the per-iteration change in flow drops to or below this value, after --min-flow-iterations have run.",
+    "group": "Algorithm",
+    "required": true,
+    "advanced": true,
+    "incremental": false,
+    "longType": "number",
+    "shortType": "f",
+    "default": "1e-15",
+    "min": "0"
+  },
+  {
     "long": "--regularized",
     "short": "",
     "description": "Add a fully connected Bayesian prior network to reduce overfitting to missing links. Activates --recorded-teleportation.",

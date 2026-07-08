@@ -211,6 +211,9 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         use_node_weights_as_flow: bool = False,
         to_nodes: bool = False,
         teleportation_probability: float = 0.15,
+        max_flow_iterations: int = 400,
+        min_flow_iterations: int = 50,
+        flow_tolerance: float = 1e-15,
         regularized: bool = False,
         regularization_strength: float = 1.0,
         entropy_corrected: bool = False,
@@ -553,6 +556,28 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             .. deprecated:: 2.15
                 Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
                 instead; this keyword leaves the ``Infomap`` signature in 3.0.
+        max_flow_iterations : int, optional
+            Limit the power iteration used to calculate flow (directed and regularized
+            flow models) to this many iterations.
+
+            .. deprecated:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
+                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+        min_flow_iterations : int, optional
+            Require at least this many power iterations before the flow calculation can
+            converge, even if --flow-tolerance is already met.
+
+            .. deprecated:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
+                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+        flow_tolerance : float, optional
+            Convergence tolerance for the power iteration used to calculate flow.
+            Iteration stops once the per-iteration change in flow drops to or below this
+            value, after --min-flow-iterations have run.
+
+            .. deprecated:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
+                instead; this keyword leaves the ``Infomap`` signature in 3.0.
         regularized : bool, optional
             Add a fully connected Bayesian prior network to reduce overfitting to
             missing links. Activates --recorded-teleportation.
@@ -832,6 +857,9 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         use_node_weights_as_flow: bool = False,
         to_nodes: bool = False,
         teleportation_probability: float = 0.15,
+        max_flow_iterations: int = 400,
+        min_flow_iterations: int = 50,
+        flow_tolerance: float = 1e-15,
         regularized: bool = False,
         regularization_strength: float = 1.0,
         entropy_corrected: bool = False,
@@ -1175,6 +1203,28 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         teleportation_probability : float, optional
             Set the probability of teleporting to a random node or link when calculating
             flow.
+
+            .. deprecated:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
+                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+        max_flow_iterations : int, optional
+            Limit the power iteration used to calculate flow (directed and regularized
+            flow models) to this many iterations.
+
+            .. deprecated:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
+                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+        min_flow_iterations : int, optional
+            Require at least this many power iterations before the flow calculation can
+            converge, even if --flow-tolerance is already met.
+
+            .. deprecated:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
+                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+        flow_tolerance : float, optional
+            Convergence tolerance for the power iteration used to calculate flow.
+            Iteration stops once the per-iteration change in flow drops to or below this
+            value, after --min-flow-iterations have run.
 
             .. deprecated:: 2.15
                 Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
