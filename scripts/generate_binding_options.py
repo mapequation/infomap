@@ -147,10 +147,12 @@ def _facade_params(catalog: ParameterCatalog):
                 "default": param.python_default_expr(),
                 # Signature-tier metadata (issue #738/#739): "common" params
                 # stay as real keyword parameters in the 3.0 signatures;
-                # "advanced" params move to Options. Not yet consumed by the
-                # emitters -- the deprecation pass (#741) and the 3.0
-                # signature cut (#748) read it from here.
+                # "advanced" params are docs-only deprecated on the facade
+                # (#741) and move to Options in 3.0 (#748).
                 "tier": param.tier("python"),
+                # Output-artifact params are inert through kwargs (library
+                # mode forces noFileOutput without an output directory).
+                "inert_without_outdir": param.python_inert_without_outdir(),
                 # ``Infomap.run`` re-renders its keywords on top of the
                 # constructed state, and a rendered flag can only switch on. A
                 # generic boolean flag whose binding default is truthy
@@ -749,6 +751,26 @@ def _render_facade_signature(names, index, indent="        ", context="init"):
     return lines
 
 
+# The release in which the advanced-tier facade kwargs were docs-only
+# deprecated (issue #741). Bump alongside the next such pass, if any.
+_ADVANCED_TIER_DEPRECATED_IN = "2.15"
+
+# Parameters whose docstrings already carry their own deprecation text and
+# migration path; the generic advanced-tier directive would be noise on top.
+_SELF_DEPRECATED_PARAMS = {"include_self_links", "pretty"}
+
+_INERT_WITHOUT_OUTDIR_NOTE = (
+    "Has no effect in the Python API unless an output directory is passed "
+    "via `args` (library mode disables file output otherwise; use the "
+    "`write_*` methods to write results)."
+)
+
+_ADVANCED_TIER_NOTE = (
+    "Pass it via `Options` to `infomap.run()` or `Network.run()` instead; "
+    "this keyword leaves the `Infomap` signature in 3.0."
+)
+
+
 def _render_facade_docstring_params(names, index):
     lines = []
     for name in names:
@@ -757,6 +779,15 @@ def _render_facade_docstring_params(names, index):
             continue
         lines.append(f"        {name} : {info['doc_type']}")
         lines.extend(wrap_doc(info["doc"], "            "))
+        if info.get("inert_without_outdir"):
+            lines.append("")
+            lines.extend(wrap_doc(_INERT_WITHOUT_OUTDIR_NOTE, "            "))
+        if info.get("tier") == "advanced" and name not in _SELF_DEPRECATED_PARAMS:
+            lines.append("")
+            lines.append(
+                f"            .. deprecated:: {_ADVANCED_TIER_DEPRECATED_IN}"
+            )
+            lines.extend(wrap_doc(_ADVANCED_TIER_NOTE, "                "))
     return lines
 
 

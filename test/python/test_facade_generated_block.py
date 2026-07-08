@@ -68,3 +68,28 @@ def test_generated_signatures_are_annotated():
     assert "Literal" in str(run_signature.parameters["flow_model"].annotation)
     assert "Literal" in str(run_signature.parameters["output"].annotation)
     assert run_signature.parameters["num_trials"].annotation is int
+
+
+def test_docstring_deprecation_follows_the_signature_tier():
+    from infomap import Infomap
+
+    for doc in (Infomap.__init__.__doc__, Infomap.run.__doc__):
+        assert doc is not None
+        # Advanced-tier parameters carry the docs-only deprecation directive.
+        assert ".. deprecated:: 2.15" in doc
+        # Common-tier parameters (#738) do not: no directive may appear
+        # between a common param's entry and the next parameter entry.
+        for common, following in [
+            ("seed : ", "num_trials : "),
+            ("num_trials : ", "core_loop_limit : "),
+            ("two_level : ", "flow_model : "),
+            ("directed : ", "recorded_teleportation : "),
+            ("markov_time : ", "variable_markov_time : "),
+        ]:
+            start = doc.index(common)
+            end = doc.index(following, start)
+            assert ".. deprecated::" not in doc[start:end], common
+        # Output-artifact params carry the inertness note from #748.
+        start = doc.index("output : ")
+        end = doc.index("hide_bipartite_nodes : ", start)
+        assert "Has no effect in the Python API" in doc[start:end]

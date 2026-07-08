@@ -74,5 +74,21 @@
         "--markov-time"
       ]
     }
+  },
+  "apiNotes": {
+    "python": {
+      "inertWithoutOutputDir": [
+        "--output",
+        "--tree",
+        "--ftree",
+        "--clu",
+        "--clu-level",
+        "--out-name",
+        "--no-file-output",
+        "--hide-bipartite-nodes",
+        "--print-all-trials",
+        "--no-overwrite"
+      ]
+    }
   }
 }

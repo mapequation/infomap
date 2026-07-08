@@ -145,3 +145,17 @@ def test_from_options_silent():
 def test_deprecated_member_still_documents_deprecation():
     """The docs-only policy: deprecated members keep their ``.. deprecated::`` note."""
     assert ".. deprecated::" in Infomap.codelength.__doc__
+
+
+# -- advanced-tier keyword parameters (docs-only deprecated, #741) -----------
+
+
+@pytest.mark.fast
+def test_advanced_tier_kwargs_stay_silent_and_functional():
+    """Advanced-tier kwargs are deprecated by documentation only: passing
+    them explicitly emits no DeprecationWarning and keeps working."""
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", DeprecationWarning)
+        im = _two_triangles(core_loop_limit=5, flow_model="undirected")
+        result = im.run(markov_time=1.0, core_loop_limit=5)
+    assert result.num_top_modules >= 1
