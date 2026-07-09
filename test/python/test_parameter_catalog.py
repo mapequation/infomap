@@ -29,10 +29,6 @@ def test_parameter_catalog_classifies_binding_render_policies():
             "incremental": False,
             "longType": "integer",
             "default": "1",
-            "bindingDefaults": {
-                "python": {"value": "1"},
-                "r": {"value": "1L"},
-            },
         },
         {
             "long": "--verbose",
@@ -43,21 +39,7 @@ def test_parameter_catalog_classifies_binding_render_policies():
             "advanced": False,
             "incremental": True,
             "default": False,
-            "bindingNames": {
-                "python": "verbosity_level",
-                "r": "verbosity_level",
-                "ts": "verbose",
-            },
             "renderPolicy": "repeated_short",
-            "bindingDocs": {
-                "python": {
-                    "description": "Verbosity level on the console.",
-                },
-            },
-            "bindingDefaults": {
-                "python": {"value": "1"},
-                "r": {"value": "1L"},
-            },
         },
         {
             "long": "--output",

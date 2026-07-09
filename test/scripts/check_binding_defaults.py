@@ -10,12 +10,15 @@ is not rendered, so the engine quietly uses a different default. The byte-level
 freshness check cannot catch this because it regenerates identical output from
 the unchanged override.
 
-This check compares each declared binding default against the engine default
-from ``--print-json-parameters``. Value-typed parameters must match
+This check compares each declared binding default -- for *every* binding
+language present in the entry (Python and R today) -- against the engine
+default from ``--print-json-parameters``. Value-typed parameters must match
 numerically; the handful of boolean *flags* whose binding default intentionally
 diverges (tri-state ``None``, integer verbosity, quiet-by-default) are listed
 below with the reason, so an accidental drift on any other parameter still
-fails loud.
+fails loud. A tri-state "unset" literal (Python ``None``, R ``NULL``) carries
+no scalar to compare and is skipped -- that is how a parameter opts a language
+out of the engine default (e.g. R ``NULL`` for the multilayer relax limits).
 
 Usage:  check_binding_defaults.py <path-to-Infomap-binary>
 """
@@ -46,6 +49,20 @@ def _as_bool(value: str) -> bool:
     return value.strip().lower() in {"true", "1"}
 
 
+# Per-language "unset" literals: a tri-state default that carries no scalar to
+# compare against the engine, so the parameter opts that language out of the
+# engine default.
+_UNSET_LITERALS = {"python": {"None"}, "r": {"NULL"}}
+
+
+def _numeric(language: str, value: str) -> float:
+    """Parse a language default literal as a float (R integer suffix aside)."""
+    literal = value.strip()
+    if language == "r" and literal.endswith("L"):
+        literal = literal[:-1]
+    return float(literal)
+
+
 def main() -> int:
     cli = sys.argv[1]
     result = subprocess.run(
@@ -73,23 +90,31 @@ def main() -> int:
             )
             continue
         engine_default = str(param.get("default"))
-        python_default = per_language["python"]
         # Value-typed parameters carry a longType (integer/number/probability);
         # boolean flags have none.
-        if param.get("longType") is None:
-            if flag in INTENTIONAL_FLAG_DIVERGENCES:
+        is_flag = param.get("longType") is None
+        for language, binding_default in per_language.items():
+            if binding_default.strip() in _UNSET_LITERALS.get(language, set()):
+                # Tri-state "unset": no scalar to compare (e.g. R NULL).
                 continue
-            if _as_bool(python_default) != _as_bool(engine_default):
+            if is_flag:
+                if flag in INTENTIONAL_FLAG_DIVERGENCES:
+                    continue
+                if _as_bool(binding_default) != _as_bool(engine_default):
+                    drift.append(
+                        f"{flag} [{language}]: engine default {engine_default!r} != "
+                        f"binding default {binding_default!r}"
+                    )
+                continue
+            try:
+                matches = _numeric(language, binding_default) == float(engine_default)
+            except ValueError:
+                matches = False
+            if not matches:
                 drift.append(
-                    f"{flag}: engine default {engine_default!r} != binding default "
-                    f"{python_default!r}"
+                    f"{flag} [{language}]: engine default {engine_default!r} != "
+                    f"binding default {binding_default!r}"
                 )
-            continue
-        if float(engine_default) != float(python_default):
-            drift.append(
-                f"{flag}: engine default {engine_default!r} != binding default "
-                f"{python_default!r}"
-            )
 
     if drift:
         print("Binding defaults drifted from engine defaults:", file=sys.stderr)

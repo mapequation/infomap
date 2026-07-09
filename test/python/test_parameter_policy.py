@@ -56,10 +56,27 @@ _EXTRA_FLAGS = {
 } | set(OVERRIDES["policy"].get("cliOnlyParameters", []))
 
 
+def _overrides_section_flags(overrides: dict) -> set[str]:
+    # Flags referenced by the names/defaults/docs sections. Many are keep-tier
+    # (so absent from the policy decisions) but must still exist in the catalog
+    # -- the catalog validates these sections too (issue #755).
+    flags: set[str] = set()
+    for section in ("names", "defaults", "docs"):
+        flags.update(overrides.get(section, {}))
+    return flags
+
+
 def _fake_parameters() -> list[dict]:
-    # A minimal stand-in for the C++ catalog: every flag the policy decides
-    # on (minus binding-only/CLI-only extras) plus one policy-less parameter.
-    flags = sorted((_policy_flags(OVERRIDES) - _EXTRA_FLAGS) | {"--core-loop-limit"})
+    # A minimal stand-in for the C++ catalog: every flag the policy decides on
+    # or the override sections reference (minus binding-only/CLI-only extras)
+    # plus one policy-less parameter.
+    flags = sorted(
+        (
+            (_policy_flags(OVERRIDES) | _overrides_section_flags(OVERRIDES))
+            - _EXTRA_FLAGS
+        )
+        | {"--core-loop-limit"}
+    )
     return [
         {"long": flag, "short": "", "group": "Algorithm", "description": "x"}
         for flag in flags
