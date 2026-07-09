@@ -16,7 +16,7 @@ import warnings
 
 import pytest
 
-from infomap import Infomap
+from infomap import Infomap, Options, run
 
 
 def _two_triangles(**kwargs) -> Infomap:
@@ -216,12 +216,10 @@ def test_advanced_tier_kwarg_silent_through_options_and_adapters():
     """The Options path and the internal adapters funnel through the same
     Infomap()/run() but from inside the package, so they never warn -- using
     Options is the sanctioned, nag-free migration."""
-    import infomap
-
     with warnings.catch_warnings(record=True) as records:
         warnings.simplefilter("always")
-        infomap.run(
+        run(
             [(0, 1), (1, 2), (2, 0)],
-            options=infomap.Options(regularized=True, core_loop_limit=5),
+            options=Options(regularized=True, core_loop_limit=5),
         )
     assert _pending(records) == []
