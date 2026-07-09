@@ -84,16 +84,15 @@ For direct control over Infomap-specific options and result access:
 
 .. code-block:: python
 
-    from infomap import Infomap, Options
+    from infomap import Infomap
 
-    options = Options(two_level=True, silent=True, num_trials=20, seed=123)
-    im = Infomap.from_options(options)
+    im = Infomap(two_level=True, num_trials=20, seed=123)
     im.add_link(0, 1)
     im.add_link(1, 2)
-    im.run()
+    result = im.run()
 
-    print(im.num_top_modules, im.codelength)
-    print(im.to_dataframe(columns=["node_id", "module_id", "flow"], index="node_id"))
+    print(result.num_top_modules, result.codelength)
+    print(result.to_dataframe(columns=["node_id", "module_id", "flow"], index="node_id"))
 
 .. _PyPI: https://pypi.org/project/infomap/
 .. _`Infomap Python API`: https://mapequation.org/infomap-python-docs/

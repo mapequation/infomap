@@ -63,11 +63,20 @@ Two one-shot helpers return native types instead of a
 pass ``trials`` or ``num_trials``, not both.
 
 The ``from_*`` constructors deliberately name their input-reading arguments in
-each library's own idiom — NetworkX ``weight`` (an attribute name), igraph
-``edge_weights``/``vertex_weights``, SciPy ``weighted`` (a bool), edge-index
-``edge_weight`` (an array) — rather than forcing one spelling across sources.
-The ``directed`` defaults likewise follow each source's convention (a SciPy
-adjacency matrix is undirected by default, a ``(2, E)`` edge index directed).
+each library's own idiom rather than forcing one spelling across sources, and
+their ``directed`` defaults follow each source's own convention. The weight
+argument and directedness therefore differ by source:
+
+| Source | Weight argument | Directedness |
+| --- | --- | --- |
+| NetworkX | `weight` (attribute name, default `"weight"`) | read from the graph (`Graph` vs `DiGraph`) |
+| igraph | `edge_weights` (attribute name; also `vertex_weights`) | read from the graph (`g.is_directed()`) |
+| SciPy sparse | `weighted` (bool) | `directed=` (default `False`) |
+| `(2, E)` edge index | `edge_weight` (array) | `directed=` (default `True`) |
+
+Because NetworkX and igraph carry directedness on the graph object, they take
+no ``directed`` argument; SciPy and the edge index do, and they default
+differently, so pass ``directed=`` explicitly when it matters.
 
 ## NetworkX
 

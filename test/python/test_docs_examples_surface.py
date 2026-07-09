@@ -129,8 +129,50 @@ def _advanced_kwargs() -> set[str]:
     return set(_OPTION_FIELD_NAMES) - _load_common_tier()
 
 
+def _rst_python_blocks(text: str) -> str:
+    """The bodies of ``.. code-block:: python`` directives in an RST file.
+
+    The repo-root README mixes Python, R, and shell snippets in one file, so a
+    whole-file scan would flag the R example's ``silent = TRUE``. Restrict it to
+    the Python directives. (Docs under ``source/`` are Python-only, so they are
+    still scanned whole.)
+    """
+    lines = text.splitlines()
+    blocks: list[str] = []
+    index = 0
+    directive = re.compile(r"^\s*\.\.\s+code(?:-block)?::\s*python\s*$")
+    while index < len(lines):
+        if not directive.match(lines[index]):
+            index += 1
+            continue
+        index += 1
+        body: list[str] = []
+        # Skip blank lines between the directive and its indented body.
+        while index < len(lines) and not lines[index].strip():
+            index += 1
+        for line in lines[index:]:
+            if line.strip() and not line.startswith((" ", "\t")):
+                break
+            body.append(line)
+            index += 1
+        blocks.append("\n".join(body))
+    return "\n".join(blocks)
+
+
+def _scannable_text(path: Path) -> str:
+    text = path.read_text(encoding="utf-8", errors="ignore")
+    if path.name == "README.rst":
+        return _rst_python_blocks(text)
+    return text
+
+
 def _source_files() -> list[Path]:
     files = sorted(EXAMPLES.glob("*.py"))
+    # The repo-root README is the front door; keep its Python snippet on the
+    # supported surface too (it lives outside source/, so it needs listing).
+    readme = REPO_ROOT / "README.rst"
+    if readme.is_file():
+        files.append(readme)
     files += sorted(
         path
         for path in DOCS.rglob("*.md")
@@ -200,7 +242,7 @@ def test_docs_and_examples_avoid_the_deprecated_surface():
     violations: list[str] = []
 
     for path in _source_files():
-        text = path.read_text(encoding="utf-8", errors="ignore")
+        text = _scannable_text(path)
         rel = path.relative_to(REPO_ROOT)
 
         for match in _IM_RECEIVER.finditer(text):

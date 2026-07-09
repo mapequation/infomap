@@ -472,6 +472,13 @@ How the routing behaves:
   (see {meth}`Network.run <infomap.Network.run>`), so records come from the
   stateful {class}`~infomap.Infomap` and non-`Network` {func}`infomap.run`
   inputs. The `infomap` command-line interface is unaffected.
+- **`silent` is fixed at construction for the stateful engine.** Because the
+  engine bakes silence in when the {class}`~infomap.Infomap` is built, passing
+  `silent=False` to {meth}`Infomap.run <infomap.Infomap.run>` on an instance
+  constructed silent (the default) cannot re-enable the classic stdout log —
+  construct with `silent=False`, or route the log through logging. The one-shot
+  {func}`infomap.run` builds a fresh engine per call, so its `silent=` takes
+  effect there.
 
 ## Going deeper
 
