@@ -37,6 +37,115 @@ FlowModel = Literal[
     "undirected", "directed", "undirdir", "outdirdir", "rawdir", "precomputed"
 ]
 
+_ADVANCED_TIER_KWARGS = {
+    "skip_adjust_bipartite_flow": (False, False, "keep", None),
+    "bipartite_teleportation": (False, False, "keep", None),
+    "weight_threshold": (None, None, "keep", None),
+    "no_self_links": (False, False, "keep", None),
+    "node_limit": (None, None, "keep", None),
+    "matchable_multilayer_ids": (None, None, "keep", None),
+    "cluster_data": (None, None, "keep", None),
+    "assign_to_neighbouring_module": (False, False, "keep", None),
+    "meta_data": (None, None, "keep", None),
+    "meta_data_rate": (1.0, 1.0, "keep", None),
+    "meta_data_unweighted": (False, False, "keep", None),
+    "no_infomap": (False, False, "keep", None),
+    "out_name": (None, None, "args-only", "Use Result.write_tree/write_flow_tree/write_clu (write_clu takes depth_level) or Network.write_pajek/write_state_network. The flag only acts when an output directory is passed via the raw args escape hatch."),
+    "no_file_output": (False, False, "args-only", "Use Result.write_tree/write_flow_tree/write_clu (write_clu takes depth_level) or Network.write_pajek/write_state_network. The flag only acts when an output directory is passed via the raw args escape hatch."),
+    "tree": (False, False, "args-only", "Use Result.write_tree/write_flow_tree/write_clu (write_clu takes depth_level) or Network.write_pajek/write_state_network. The flag only acts when an output directory is passed via the raw args escape hatch."),
+    "ftree": (False, False, "args-only", "Use Result.write_tree/write_flow_tree/write_clu (write_clu takes depth_level) or Network.write_pajek/write_state_network. The flag only acts when an output directory is passed via the raw args escape hatch."),
+    "clu": (False, False, "args-only", "Use Result.write_tree/write_flow_tree/write_clu (write_clu takes depth_level) or Network.write_pajek/write_state_network. The flag only acts when an output directory is passed via the raw args escape hatch."),
+    "clu_level": (None, None, "args-only", "Use Result.write_tree/write_flow_tree/write_clu (write_clu takes depth_level) or Network.write_pajek/write_state_network. The flag only acts when an output directory is passed via the raw args escape hatch."),
+    "output": (None, None, "args-only", "Use Result.write_tree/write_flow_tree/write_clu (write_clu takes depth_level) or Network.write_pajek/write_state_network. The flag only acts when an output directory is passed via the raw args escape hatch."),
+    "hide_bipartite_nodes": (False, False, "args-only", "Use Result.write_tree/write_flow_tree/write_clu (write_clu takes depth_level) or Network.write_pajek/write_state_network. The flag only acts when an output directory is passed via the raw args escape hatch."),
+    "print_all_trials": (False, False, "args-only", "Use Result.write_tree/write_flow_tree/write_clu (write_clu takes depth_level) or Network.write_pajek/write_state_network. The flag only acts when an output directory is passed via the raw args escape hatch."),
+    "no_overwrite": (False, False, "args-only", "Use Result.write_tree/write_flow_tree/write_clu (write_clu takes depth_level) or Network.write_pajek/write_state_network. The flag only acts when an output directory is passed via the raw args escape hatch."),
+    "print_config_fingerprint": (False, False, "remove", "A print-and-exit CLI diagnostic; run the infomap binary."),
+    "timing_json": (None, None, "keep", None),
+    "summary_json": (None, None, "keep", None),
+    "manifest_json": (None, None, "keep", None),
+    "memory_report": (False, False, "keep", None),
+    "trial_offset": (None, None, "keep", None),
+    "trial_results": (None, None, "keep", None),
+    "no_final_output": (False, False, "keep", None),
+    "verbosity_level": (1, 1, "remove", "A DEBUG-enabled 'infomap' logger (infomap.enable_log(logging.DEBUG)) raises engine verbosity; logger levels filter the records."),
+    "silent": (True, False, "remove", "The Python API is quiet by default; logging is the control. Attach handlers to logging.getLogger('infomap') (e.g. infomap.enable_log()) for the engine log."),
+    "flow_model": (None, None, "keep", None),
+    "recorded_teleportation": (False, False, "keep", None),
+    "use_node_weights_as_flow": (False, False, "keep", None),
+    "to_nodes": (False, False, "keep", None),
+    "teleportation_probability": (0.15, 0.15, "keep", None),
+    "max_flow_iterations": (400, 400, "keep", None),
+    "min_flow_iterations": (50, 50, "keep", None),
+    "flow_tolerance": (1e-15, 1e-15, "keep", None),
+    "regularized": (False, False, "keep", None),
+    "regularization_strength": (1.0, 1.0, "keep", None),
+    "entropy_corrected": (False, False, "keep", None),
+    "entropy_correction_strength": (1.0, 1.0, "keep", None),
+    "variable_markov_time": (False, False, "keep", None),
+    "variable_markov_damping": (1.0, 1.0, "keep", None),
+    "variable_markov_min_scale": (1.0, 1.0, "keep", None),
+    "preferred_number_of_modules": (None, None, "keep", None),
+    "preferred_number_of_levels": (None, None, "keep", None),
+    "preferred_number_of_levels_strength": (1.0, 1.0, "keep", None),
+    "multilayer_relax_rate": (0.15, 0.15, "keep", None),
+    "multilayer_relax_limit": (-1, -1, "keep", None),
+    "multilayer_relax_limit_up": (-1, -1, "keep", None),
+    "multilayer_relax_limit_down": (-1, -1, "keep", None),
+    "multilayer_relax_by_jsd": (False, False, "keep", None),
+    "multilayer_relax_to_self": (False, False, "keep", None),
+    "core_loop_limit": (10, 10, "keep", None),
+    "core_level_limit": (None, None, "keep", None),
+    "tune_iteration_limit": (None, None, "keep", None),
+    "core_loop_codelength_threshold": (1e-10, 1e-10, "keep", None),
+    "tune_iteration_relative_threshold": (1e-05, 1e-05, "keep", None),
+    "fast_hierarchical_solution": (None, None, "keep", None),
+    "inner_parallelization": (False, False, "keep", None),
+    "parallel_trials": (False, False, "keep", None),
+    "converge": (False, False, "keep", None),
+    "num_threads": (None, None, "keep", None),
+    "threads": (None, None, "remove", "Use num_threads; threads is a redundant alias of the same engine option."),
+    "prefer_modular_solution": (False, False, "keep", None),
+    "num_random_moves": (None, None, "keep", None),
+    "max_degree_for_random_moves": (None, None, "keep", None),
+}
+
+
+def _warn_advanced_tier_kwargs(passed, context):
+    # Advanced-tier keywords are docs-only deprecated on the Infomap()/run()
+    # signatures (issue #741) and move off them in 3.0. Emit a
+    # PendingDeprecationWarning -- silent by default, so it nags no one until
+    # 3.0 nears -- when one is set to a non-default value on a direct call.
+    # Internal funnels (the Options path builds Infomap(**resolved), the graph
+    # adapters, the from_* class methods) reach the same methods from inside
+    # the package; the caller-frame check skips them so only user-typed
+    # keywords are flagged.
+    caller = sys._getframe(2)
+    if caller.f_code.co_filename.startswith(_PACKAGE_PREFIX):
+        return
+    baseline = 1 if context == "run" else 0
+    for name, spec in _ADVANCED_TIER_KWARGS.items():
+        default = spec[baseline]
+        if passed.get(name, default) != default:
+            action, replacement = spec[2], spec[3]
+            lead = (
+                f"'{name}' is deprecated on the Infomap() and run() "
+                "signatures and leaves them in 3.0. "
+            )
+            if action in ("keep", "alias"):
+                guidance = (
+                    "Pass it via Options to infomap.run() or "
+                    "Network.run() instead."
+                )
+            elif replacement is not None:
+                guidance = replacement
+            else:
+                guidance = ""
+            warnings.warn(
+                lead + guidance, PendingDeprecationWarning, stacklevel=3
+            )
+
+
 _INPUT_OPTION_SPECS = (
     ("flag", "skip_adjust_bipartite_flow", "--skip-adjust-bipartite-flow", None),
     ("flag", "bipartite_teleportation", "--bipartite-teleportation", None),

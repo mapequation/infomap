@@ -33,6 +33,7 @@ from ._options import (
     Options,
     OutputFormat,
     _construct_args,
+    _warn_advanced_tier_kwargs,
 )
 from ._logging import apply_engine_log_overrides as _apply_engine_log_overrides
 from ._logging import disable_log, enable_log
@@ -171,6 +172,8 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         # Remembered so run() can explain why a routed run of an instance
         # constructed *before* logging was configured produces no records.
         self._engine_constructed_silent = bool(kwargs.get("silent", True))
+        # The stale-silent advisory in _run_from_options fires at most once.
+        self._warned_stale_silent = False
         self._core = Core(_package_construct_args()(args, **kwargs))
         self._network = Network(core=self._core)
         self.node_id_to_label = {}
@@ -363,8 +366,10 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             methods to write results).
 
             .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+                This keyword leaves the ``Infomap`` signature in 3.0. Use
+                Result.write_tree/write_flow_tree/write_clu (write_clu takes
+                depth_level) or Network.write_pajek/write_state_network. The flag only
+                acts when an output directory is passed via the raw args escape hatch.
         no_file_output : bool, optional
             Do not write output files.
 
@@ -373,8 +378,10 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             methods to write results).
 
             .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+                This keyword leaves the ``Infomap`` signature in 3.0. Use
+                Result.write_tree/write_flow_tree/write_clu (write_clu takes
+                depth_level) or Network.write_pajek/write_state_network. The flag only
+                acts when an output directory is passed via the raw args escape hatch.
         tree : bool, optional
             Write the modular hierarchy to a tree file. Enabled by default when no other
             output format is selected.
@@ -384,8 +391,10 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             methods to write results).
 
             .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+                This keyword leaves the ``Infomap`` signature in 3.0. Use
+                Result.write_tree/write_flow_tree/write_clu (write_clu takes
+                depth_level) or Network.write_pajek/write_state_network. The flag only
+                acts when an output directory is passed via the raw args escape hatch.
         ftree : bool, optional
             Write the modular hierarchy and aggregated links between nested modules to
             an ftree file. Used by Network Navigator.
@@ -395,8 +404,10 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             methods to write results).
 
             .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+                This keyword leaves the ``Infomap`` signature in 3.0. Use
+                Result.write_tree/write_flow_tree/write_clu (write_clu takes
+                depth_level) or Network.write_pajek/write_state_network. The flag only
+                acts when an output directory is passed via the raw args escape hatch.
         clu : bool, optional
             Write top-level module ids for each node to a clu file.
 
@@ -405,8 +416,10 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             methods to write results).
 
             .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+                This keyword leaves the ``Infomap`` signature in 3.0. Use
+                Result.write_tree/write_flow_tree/write_clu (write_clu takes
+                depth_level) or Network.write_pajek/write_state_network. The flag only
+                acts when an output directory is passed via the raw args escape hatch.
         clu_level : int, optional
             With --clu or --output clu, write module ids at this depth from the root.
             Use -1 for bottom-level modules.
@@ -416,8 +429,10 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             methods to write results).
 
             .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+                This keyword leaves the ``Infomap`` signature in 3.0. Use
+                Result.write_tree/write_flow_tree/write_clu (write_clu takes
+                depth_level) or Network.write_pajek/write_state_network. The flag only
+                acts when an output directory is passed via the raw args escape hatch.
         output : sequence of str, optional
             Write selected output formats as a comma-separated list without spaces, e.g.
             -o clu,tree,ftree. Options: clu, tree, ftree, newick, json, csv, network,
@@ -428,8 +443,10 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             methods to write results).
 
             .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+                This keyword leaves the ``Infomap`` signature in 3.0. Use
+                Result.write_tree/write_flow_tree/write_clu (write_clu takes
+                depth_level) or Network.write_pajek/write_state_network. The flag only
+                acts when an output directory is passed via the raw args escape hatch.
         hide_bipartite_nodes : bool, optional
             Hide bipartite nodes in output by projecting the solution to primary nodes.
 
@@ -438,8 +455,10 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             methods to write results).
 
             .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+                This keyword leaves the ``Infomap`` signature in 3.0. Use
+                Result.write_tree/write_flow_tree/write_clu (write_clu takes
+                depth_level) or Network.write_pajek/write_state_network. The flag only
+                acts when an output directory is passed via the raw args escape hatch.
         print_all_trials : bool, optional
             Write each trial to separate output files. Has effect only when --num-trials
             is greater than 1.
@@ -449,8 +468,10 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             methods to write results).
 
             .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+                This keyword leaves the ``Infomap`` signature in 3.0. Use
+                Result.write_tree/write_flow_tree/write_clu (write_clu takes
+                depth_level) or Network.write_pajek/write_state_network. The flag only
+                acts when an output directory is passed via the raw args escape hatch.
         no_overwrite : bool, optional
             Fail with an output error if any target output file already exists. By
             default existing files are replaced.
@@ -460,14 +481,16 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             methods to write results).
 
             .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+                This keyword leaves the ``Infomap`` signature in 3.0. Use
+                Result.write_tree/write_flow_tree/write_clu (write_clu takes
+                depth_level) or Network.write_pajek/write_state_network. The flag only
+                acts when an output directory is passed via the raw args escape hatch.
         print_config_fingerprint : bool, optional
             Print the canonical configuration fingerprint and exit.
 
             .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+                This keyword leaves the ``Infomap`` signature in 3.0. A print-and-exit
+                CLI diagnostic; run the infomap binary.
         timing_json : str, optional
             Write machine-readable run timing JSON to this path. Use - for stdout.
 
@@ -521,15 +544,18 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             -vv and so on.
 
             .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+                This keyword leaves the ``Infomap`` signature in 3.0. A DEBUG-enabled
+                'infomap' logger (infomap.enable_log(logging.DEBUG)) raises engine
+                verbosity; logger levels filter the records.
         silent : bool, optional
             Suppress console output. The Python API is quiet by default; construct with
             silent=False for the engine log. The command-line interface is unaffected.
 
             .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+                This keyword leaves the ``Infomap`` signature in 3.0. The Python API is
+                quiet by default; logging is the control. Attach handlers to
+                logging.getLogger('infomap') (e.g. infomap.enable_log()) for the engine
+                log.
         pretty : bool | None, optional
             Deprecated. Accepted for backward compatibility; has no effect. Passing it
             explicitly emits a DeprecationWarning.
@@ -796,8 +822,8 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             Alias for --num-threads.
 
             .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+                This keyword leaves the ``Infomap`` signature in 3.0. Use num_threads;
+                threads is a redundant alias of the same engine option.
         prefer_modular_solution : bool, optional
             Prefer a modular solution even when one module gives a lower codelength.
 
@@ -824,6 +850,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
                 DeprecationWarning,
                 stacklevel=2,
             )
+        _warn_advanced_tier_kwargs(locals(), "init")
         options = Options._from_locals(locals())
         self._init_from_options(args, options)
 
@@ -1014,8 +1041,10 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             methods to write results).
 
             .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+                This keyword leaves the ``Infomap`` signature in 3.0. Use
+                Result.write_tree/write_flow_tree/write_clu (write_clu takes
+                depth_level) or Network.write_pajek/write_state_network. The flag only
+                acts when an output directory is passed via the raw args escape hatch.
         no_file_output : bool, optional
             Do not write output files.
 
@@ -1024,8 +1053,10 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             methods to write results).
 
             .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+                This keyword leaves the ``Infomap`` signature in 3.0. Use
+                Result.write_tree/write_flow_tree/write_clu (write_clu takes
+                depth_level) or Network.write_pajek/write_state_network. The flag only
+                acts when an output directory is passed via the raw args escape hatch.
         tree : bool, optional
             Write the modular hierarchy to a tree file. Enabled by default when no other
             output format is selected.
@@ -1035,8 +1066,10 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             methods to write results).
 
             .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+                This keyword leaves the ``Infomap`` signature in 3.0. Use
+                Result.write_tree/write_flow_tree/write_clu (write_clu takes
+                depth_level) or Network.write_pajek/write_state_network. The flag only
+                acts when an output directory is passed via the raw args escape hatch.
         ftree : bool, optional
             Write the modular hierarchy and aggregated links between nested modules to
             an ftree file. Used by Network Navigator.
@@ -1046,8 +1079,10 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             methods to write results).
 
             .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+                This keyword leaves the ``Infomap`` signature in 3.0. Use
+                Result.write_tree/write_flow_tree/write_clu (write_clu takes
+                depth_level) or Network.write_pajek/write_state_network. The flag only
+                acts when an output directory is passed via the raw args escape hatch.
         clu : bool, optional
             Write top-level module ids for each node to a clu file.
 
@@ -1056,8 +1091,10 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             methods to write results).
 
             .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+                This keyword leaves the ``Infomap`` signature in 3.0. Use
+                Result.write_tree/write_flow_tree/write_clu (write_clu takes
+                depth_level) or Network.write_pajek/write_state_network. The flag only
+                acts when an output directory is passed via the raw args escape hatch.
         clu_level : int, optional
             With --clu or --output clu, write module ids at this depth from the root.
             Use -1 for bottom-level modules.
@@ -1067,8 +1104,10 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             methods to write results).
 
             .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+                This keyword leaves the ``Infomap`` signature in 3.0. Use
+                Result.write_tree/write_flow_tree/write_clu (write_clu takes
+                depth_level) or Network.write_pajek/write_state_network. The flag only
+                acts when an output directory is passed via the raw args escape hatch.
         output : sequence of str, optional
             Write selected output formats as a comma-separated list without spaces, e.g.
             -o clu,tree,ftree. Options: clu, tree, ftree, newick, json, csv, network,
@@ -1079,8 +1118,10 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             methods to write results).
 
             .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+                This keyword leaves the ``Infomap`` signature in 3.0. Use
+                Result.write_tree/write_flow_tree/write_clu (write_clu takes
+                depth_level) or Network.write_pajek/write_state_network. The flag only
+                acts when an output directory is passed via the raw args escape hatch.
         hide_bipartite_nodes : bool, optional
             Hide bipartite nodes in output by projecting the solution to primary nodes.
 
@@ -1089,8 +1130,10 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             methods to write results).
 
             .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+                This keyword leaves the ``Infomap`` signature in 3.0. Use
+                Result.write_tree/write_flow_tree/write_clu (write_clu takes
+                depth_level) or Network.write_pajek/write_state_network. The flag only
+                acts when an output directory is passed via the raw args escape hatch.
         print_all_trials : bool, optional
             Write each trial to separate output files. Has effect only when --num-trials
             is greater than 1.
@@ -1100,8 +1143,10 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             methods to write results).
 
             .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+                This keyword leaves the ``Infomap`` signature in 3.0. Use
+                Result.write_tree/write_flow_tree/write_clu (write_clu takes
+                depth_level) or Network.write_pajek/write_state_network. The flag only
+                acts when an output directory is passed via the raw args escape hatch.
         no_overwrite : bool, optional
             Fail with an output error if any target output file already exists. By
             default existing files are replaced.
@@ -1111,14 +1156,16 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             methods to write results).
 
             .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+                This keyword leaves the ``Infomap`` signature in 3.0. Use
+                Result.write_tree/write_flow_tree/write_clu (write_clu takes
+                depth_level) or Network.write_pajek/write_state_network. The flag only
+                acts when an output directory is passed via the raw args escape hatch.
         print_config_fingerprint : bool, optional
             Print the canonical configuration fingerprint and exit.
 
             .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+                This keyword leaves the ``Infomap`` signature in 3.0. A print-and-exit
+                CLI diagnostic; run the infomap binary.
         timing_json : str, optional
             Write machine-readable run timing JSON to this path. Use - for stdout.
 
@@ -1172,15 +1219,18 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             -vv and so on.
 
             .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+                This keyword leaves the ``Infomap`` signature in 3.0. A DEBUG-enabled
+                'infomap' logger (infomap.enable_log(logging.DEBUG)) raises engine
+                verbosity; logger levels filter the records.
         silent : bool, optional
             Suppress console output. The Python API is quiet by default; construct with
             silent=False for the engine log. The command-line interface is unaffected.
 
             .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+                This keyword leaves the ``Infomap`` signature in 3.0. The Python API is
+                quiet by default; logging is the control. Attach handlers to
+                logging.getLogger('infomap') (e.g. infomap.enable_log()) for the engine
+                log.
         pretty : bool | None, optional
             Deprecated. Accepted for backward compatibility; has no effect. Passing it
             explicitly emits a DeprecationWarning.
@@ -1447,8 +1497,8 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             Alias for --num-threads.
 
             .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+                This keyword leaves the ``Infomap`` signature in 3.0. Use num_threads;
+                threads is a redundant alias of the same engine option.
         prefer_modular_solution : bool, optional
             Prefer a modular solution even when one module gives a lower codelength.
 
@@ -1484,6 +1534,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
                 DeprecationWarning,
                 stacklevel=2,
             )
+        _warn_advanced_tier_kwargs(locals(), "run")
         options = Options._from_locals(locals())
         return self._run_from_options(args, initial_partition, options)
     # === END generated ===
@@ -2768,7 +2819,10 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
     def _run_from_options(self, args, initial_partition, options):
         kwargs = options.to_kwargs()
         if _is_log_routed():
-            if self._engine_constructed_silent:
+            # Warn once per instance: a run loop would otherwise repeat the
+            # same advisory on every call and train the user to ignore it.
+            if self._engine_constructed_silent and not self._warned_stale_silent:
+                self._warned_stale_silent = True
                 warnings.warn(
                     "the 'infomap' logger has handlers, but this Infomap "
                     "instance was created silent before logging was "
