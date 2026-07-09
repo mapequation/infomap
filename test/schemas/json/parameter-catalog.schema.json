@@ -11,22 +11,6 @@
     }
   },
   "$defs": {
-    "bindingDefault": {
-      "type": "object",
-      "required": ["value"],
-      "additionalProperties": false,
-      "properties": {
-        "value": { "type": "string" }
-      }
-    },
-    "bindingDoc": {
-      "type": "object",
-      "required": ["description"],
-      "additionalProperties": false,
-      "properties": {
-        "description": { "type": "string" }
-      }
-    },
     "parameter": {
       "type": "object",
       "required": [
@@ -63,37 +47,7 @@
         },
         "min": { "type": "string" },
         "max": { "type": "string" },
-        "bindingNames": {
-          "type": "object",
-          "minProperties": 1,
-          "additionalProperties": false,
-          "properties": {
-            "python": { "type": "string" },
-            "r": { "type": "string" },
-            "ts": { "type": "string" }
-          }
-        },
-        "renderPolicy": { "type": "string" },
-        "bindingDocs": {
-          "type": "object",
-          "minProperties": 1,
-          "additionalProperties": false,
-          "properties": {
-            "python": { "$ref": "#/$defs/bindingDoc" },
-            "r": { "$ref": "#/$defs/bindingDoc" },
-            "ts": { "$ref": "#/$defs/bindingDoc" }
-          }
-        },
-        "bindingDefaults": {
-          "type": "object",
-          "minProperties": 1,
-          "additionalProperties": false,
-          "properties": {
-            "python": { "$ref": "#/$defs/bindingDefault" },
-            "r": { "$ref": "#/$defs/bindingDefault" },
-            "ts": { "$ref": "#/$defs/bindingDefault" }
-          }
-        }
+        "renderPolicy": { "type": "string" }
       },
       "allOf": [
         {
