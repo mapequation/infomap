@@ -152,7 +152,7 @@ for spec in shard_specs:
         net,
         num_trials=spec["num_trials"],
         seed=spec["seed"],
-        )
+    )
 
     print(
         f"shard {spec['shard_id']}: seed={spec['seed']}"
