@@ -3,7 +3,7 @@ from matplotlib import cm
 from matplotlib import colors as mpl_colors
 from pathlib import Path
 
-from infomap.io.networkx import run_networkx
+from infomap.io.networkx import _run_networkx
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
@@ -142,7 +142,7 @@ def _module_series(infomap_result, node_mapping):
 
 
 def partition(G, initial_partition=None, **infomap_args):
-    im, node_mapping = run_networkx(
+    im, node_mapping = _run_networkx(
         G,
         initial_partition=initial_partition,
         **infomap_args,

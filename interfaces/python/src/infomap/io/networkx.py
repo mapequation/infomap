@@ -5,7 +5,7 @@ from typing import Any
 
 from ._arrays import apply_node_meta_data, community_node_data
 
-# run_networkx and add_networkx_graph are internal plumbing shared with the
+# _run_networkx and add_networkx_graph are internal plumbing shared with the
 # facade and the docs notebooks; only find_communities is public API.
 __all__ = ["find_communities"]
 
@@ -72,7 +72,7 @@ def _to_internal_partition(initial_partition, node_mapping):
     }
 
 
-def run_networkx(
+def _run_networkx(
     g: Any,
     *,
     weight: str | None = "weight",
@@ -190,7 +190,7 @@ def find_communities(
     if "num_trials" not in infomap_options:
         infomap_options["num_trials"] = trials if trials is not None else 10
 
-    infomap, node_mapping = run_networkx(
+    infomap, node_mapping = _run_networkx(
         g,
         weight=weight,
         node_id=node_id,
