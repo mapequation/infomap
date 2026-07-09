@@ -716,12 +716,7 @@ void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, co
   double err = 0.0;
 
   do {
-    double oldErr = err;
     err = iteration(iterations);
-
-    // Perturb the system if equilibrium
-    if (std::abs(err - oldErr) < 1e-15) {
-    }
 
     ++iterations;
   } while (iterations < config.maxFlowIterations && (err > config.flowTolerance || iterations < config.minFlowIterations));
@@ -978,23 +973,16 @@ void FlowCalculator::calcDirectedRegularizedMultilayerFlow(const StateNetwork& n
   };
 
   unsigned int iterations = 0;
-  unsigned int maxIterations = 200;
   double err = 0.0;
 
   do {
-    double oldErr = err;
     err = iteration(iterations);
 
-    // Perturb the system if equilibrium
-    if (std::abs(err - oldErr) < 1e-15) {
-    }
-
     ++iterations;
-  } while (iterations < maxIterations && (err > config.flowTolerance || iterations < config.minFlowIterations));
+  } while (iterations < config.maxFlowIterations && (err > config.flowTolerance || iterations < config.minFlowIterations));
 
-  if (iterations == maxIterations && err > config.flowTolerance) {
+  if (iterations == config.maxFlowIterations && err > config.flowTolerance) {
     Console::warn(0, "PageRank calculation stopped after the maximum of {} iterations with diff {:g}.", iterations, err);
-  } else {
   }
 
   for (unsigned int i = 0; i < layerTeleFlow.size(); ++i) {
