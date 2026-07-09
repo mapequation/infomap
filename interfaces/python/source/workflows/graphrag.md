@@ -133,8 +133,9 @@ result = run_graphrag_communities(
     num_trials=5,
 )
 
-print(f"Map equation codelength: {result.infomap.codelength:.4f} bits/step")
-print(f"Top-level communities:   {result.infomap.num_top_modules}")
+partition = result.result  # the immutable Result from the run
+print(f"Map equation codelength: {partition.codelength:.4f} bits/step")
+print(f"Top-level communities:   {partition.num_top_modules}")
 ```
 
 ### Per-entity community assignments
