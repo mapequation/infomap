@@ -1,10 +1,15 @@
 """The 3.0 parameter cleanup policy (#755): schema, validation, coverage.
 
-The policy lives in ``interfaces/parameters/overrides.json`` (``policy``
-section), keyed by CLI flag with one decision per surface (cli/python/r/ts).
-``scripts/parameter_catalog.py`` fail-loud-validates it when the catalog is
-constructed (so the binding generator refuses to run on a broken policy),
-and ``scripts/render_parameter_policy.py`` renders the surface matrix.
+The policy is the single per-parameter, per-surface record in
+``interfaces/parameters/overrides.json``: per-parameter entries take
+precedence over group rules (one decision applied to a parameter list),
+everything else defaults to ``keep``. Tier membership (``tier: common``),
+kwarg inertness (``inertWithoutOutputDir``), and hidden generated surfaces
+(``hide`` decisions) all live on the decisions -- there are no parallel
+sections to keep consistent. ``scripts/parameter_catalog.py``
+fail-loud-validates the policy when the catalog is constructed (so the
+binding generator refuses to run on a broken policy), and
+``scripts/render_parameter_policy.py`` renders the surface matrix.
 
 These tests exercise the validation with the real overrides file plus
 deliberately broken variants, without needing the compiled engine: the
@@ -34,10 +39,15 @@ OVERRIDES = json.loads(
     )
 )
 
-# A minimal stand-in for the C++ catalog: one parameter per policy entry
-# (minus bindingOnly/cliOnly extras) plus a policy-less parameter, enough for
-# the validator to resolve every flag it checks.
-_POLICY_FLAGS = set(OVERRIDES["policy"]["parameters"])
+
+def _policy_flags(overrides: dict) -> set[str]:
+    policy = overrides["policy"]
+    flags = set(policy["parameters"])
+    for group in policy.get("groups", {}).values():
+        flags.update(group.get("parameters", []))
+    return flags
+
+
 _EXTRA_FLAGS = {
     entry["flag"]
     for entries in OVERRIDES.get("bindingOnly", {}).values()
@@ -47,14 +57,9 @@ _EXTRA_FLAGS = {
 
 
 def _fake_parameters() -> list[dict]:
-    # Include everything the other override sections (tiers, apiNotes)
-    # validate against, so their fail-loud checks stay satisfied.
-    tier_flags = {
-        flag
-        for tiers in OVERRIDES.get("tiers", {}).values()
-        for flag in tiers.get("common", [])
-    }
-    flags = sorted((_POLICY_FLAGS - _EXTRA_FLAGS) | tier_flags | {"--seed"})
+    # A minimal stand-in for the C++ catalog: every flag the policy decides
+    # on (minus binding-only/CLI-only extras) plus one policy-less parameter.
+    flags = sorted((_policy_flags(OVERRIDES) - _EXTRA_FLAGS) | {"--core-loop-limit"})
     return [
         {"long": flag, "short": "", "group": "Algorithm", "description": "x"}
         for flag in flags
@@ -68,12 +73,15 @@ def _catalog(overrides: dict) -> ParameterCatalog:
 def test_real_policy_validates_and_defaults_to_keep():
     catalog = _catalog(OVERRIDES)
 
-    seed = next(param for param in catalog.parameters if param.flag == "--seed")
+    plain = next(
+        param for param in catalog.parameters if param.flag == "--core-loop-limit"
+    )
     for surface in OVERRIDES["policy"]["surfaces"]:
-        assert seed.policy(surface) == {"action": "keep"}
+        assert plain.policy(surface) == {"action": "keep"}
+        assert plain.tier(surface) == "advanced"
 
 
-def test_policy_accessor_returns_the_decision():
+def test_per_parameter_decisions_resolve():
     catalog = _catalog(OVERRIDES)
     silent = next(param for param in catalog.parameters if param.flag == "--silent")
 
@@ -82,6 +90,39 @@ def test_policy_accessor_returns_the_decision():
     assert decision["action"] == "remove"
     assert "logging" in decision["replacement"]
     assert silent.policy("cli") == {"action": "keep"}
+
+
+def test_group_rules_resolve_and_carry_attributes():
+    catalog = _catalog(OVERRIDES)
+    tree = next(param for param in catalog.parameters if param.flag == "--tree")
+
+    decision = tree.policy("python")
+
+    assert decision["action"] == "args-only"
+    assert tree.python_inert_without_outdir() is True
+    # Other surfaces are untouched by the group.
+    assert tree.policy("cli") == {"action": "keep"}
+
+
+def test_tier_is_a_policy_attribute():
+    catalog = _catalog(OVERRIDES)
+    seed = next(param for param in catalog.parameters if param.flag == "--seed")
+
+    assert seed.tier("python") == "common"
+    assert seed.tier("r") == "advanced"
+    assert seed.policy("python")["action"] == "keep"
+
+
+def test_hidden_bindings_are_derived_from_hide_decisions():
+    catalog = _catalog(OVERRIDES)
+
+    assert "--num-threads" in catalog.hidden_bindings["ts"]
+    assert "--threads" in catalog.hidden_bindings["ts"]
+    visible = {param.flag for param in catalog.visible_parameters("ts")}
+    assert "--num-threads" not in visible
+    assert "--num-threads" in {
+        param.flag for param in catalog.visible_parameters("python")
+    }
 
 
 def test_unknown_flag_fails_loud():
@@ -132,13 +173,51 @@ def test_alias_requires_a_known_target():
         _catalog(overrides)
 
 
-def test_hidden_bindings_must_be_policy_hidden():
-    # The policy is the umbrella: everything a generated surface already
-    # hides (hiddenBindings) must carry an explicit hide decision.
+def test_unknown_tier_fails_loud():
     overrides = copy.deepcopy(OVERRIDES)
-    del overrides["policy"]["parameters"]["--num-threads"]
+    overrides["policy"]["parameters"]["--seed"]["python"]["tier"] = "premium"
 
-    with pytest.raises(RuntimeError, match=r"hiddenBindings.ts hides --num-threads"):
+    with pytest.raises(RuntimeError, match="unknown tier 'premium'"):
+        _catalog(overrides)
+
+
+def test_tier_on_removed_parameter_fails_loud():
+    overrides = copy.deepcopy(OVERRIDES)
+    overrides["policy"]["parameters"]["--silent"]["python"]["tier"] = "common"
+
+    with pytest.raises(RuntimeError, match="tiers only apply to kept"):
+        _catalog(overrides)
+
+
+def test_cli_only_parameter_rejects_binding_decisions():
+    overrides = copy.deepcopy(OVERRIDES)
+    overrides["policy"]["parameters"]["--pretty"]["python"] = {
+        "action": "remove",
+        "replacement": "x",
+    }
+
+    with pytest.raises(RuntimeError, match="declares it CLI-only"):
+        _catalog(overrides)
+
+
+def test_conflicting_group_claims_fail_loud():
+    overrides = copy.deepcopy(OVERRIDES)
+    overrides["policy"]["groups"]["duplicate"] = {
+        "parameters": ["--tree"],
+        "python": {"action": "remove", "replacement": "x"},
+    }
+
+    with pytest.raises(RuntimeError, match="both decide --tree/python"):
+        _catalog(overrides)
+
+
+def test_group_with_unknown_flag_fails_loud():
+    overrides = copy.deepcopy(OVERRIDES)
+    overrides["policy"]["groups"]["python-output-artifacts"]["parameters"].append(
+        "--bogus"
+    )
+
+    with pytest.raises(RuntimeError, match="unknown flag '--bogus'"):
         _catalog(overrides)
 
 
@@ -150,8 +229,20 @@ def test_matrix_covers_every_parameter_and_replacement():
 
     for param in catalog.parameters:
         assert f"`{param.flag}`" in matrix
+    # Non-existent surface cells render as an em dash, not a fabricated keep.
+    assert "| `--pretty` | CLI-only (hidden) | **remove** | — | — | — |" in matrix
     # Every non-keep decision surfaces its replacement guidance.
-    for flag, per_surface in OVERRIDES["policy"]["parameters"].items():
-        for decision in per_surface.values():
-            if decision["action"] != "keep":
-                assert decision["replacement"] in matrix
+    policy = OVERRIDES["policy"]
+    decisions = [
+        decision
+        for per_surface in policy["parameters"].values()
+        for decision in per_surface.values()
+    ] + [
+        group[surface]
+        for group in policy.get("groups", {}).values()
+        for surface in group
+        if surface != "parameters"
+    ]
+    for decision in decisions:
+        if decision["action"] != "keep":
+            assert decision["replacement"] in matrix

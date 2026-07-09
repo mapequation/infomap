@@ -114,7 +114,12 @@ def _load_common_tier() -> set[str]:
             encoding="utf-8"
         )
     )
-    flags = overrides["tiers"]["python"]["common"]
+    flags = [
+        flag
+        for flag, per_surface in overrides["policy"]["parameters"].items()
+        if per_surface.get("python", {}).get("tier") == "common"
+    ]
+    assert flags, "no common-tier parameters found in the policy"
     return {flag.removeprefix("--").replace("-", "_") for flag in flags}
 
 

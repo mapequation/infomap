@@ -22,7 +22,11 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from parameter_catalog import GROUPS, ParameterCatalog  # noqa: E402
+from parameter_catalog import (  # noqa: E402
+    GROUPS,
+    ParameterCatalog,
+    resolve_policy_decision,
+)
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 OVERRIDES_PATH = REPO_ROOT / "interfaces" / "parameters" / "overrides.json"
@@ -67,11 +71,21 @@ def render(catalog: ParameterCatalog) -> str:
     lines.append(header)
     lines.append("|" + "---|" * (2 + len(surfaces)))
 
-    def add_row(flag: str, group: str, decisions: dict[str, dict[str, str]]) -> None:
+    def add_row(
+        flag: str,
+        group: str,
+        decisions: dict[str, dict[str, str]],
+        exists_on: set[str],
+    ) -> None:
         cells = []
         for surface in surfaces:
+            if surface not in exists_on:
+                cells.append("—")
+                continue
             decision = decisions[surface]
             cell = format_action(decision)
+            if decision.get("tier") == "common":
+                cell += " (common tier)"
             if decision["action"] != "keep":
                 cell = f"**{cell}**"
                 notes.append(
@@ -81,34 +95,42 @@ def render(catalog: ParameterCatalog) -> str:
             cells.append(cell)
         lines.append(f"| `{flag}` | {group} | " + " | ".join(cells) + " |")
 
+    all_surfaces = set(surfaces)
     for group in GROUPS:
         for param in catalog.grouped()[group]:
             add_row(
                 param.flag,
                 group,
                 {surface: param.policy(surface) for surface in surfaces},
+                exists_on=all_surfaces,
             )
 
-    # Parameters outside the C++ binding catalog: binding-only compatibility
-    # parameters and hidden CLI-only flags still need policy rows.
-    extra_flags: dict[str, str] = {}
+    # Parameters outside the C++ binding catalog exist only where declared:
+    # binding-only compatibility parameters on their languages (they are also
+    # real CLI flags -- accepted, erroring, or hidden), and CLI-only flags on
+    # the CLI alone. Other cells render as "—".
+    extra_flags: dict[str, tuple[str, set[str]]] = {}
     for language, entries in catalog.binding_only_parameters.items():
         for entry in entries:
-            if entry.flag.startswith("--") and entry.flag not in extra_flags:
-                extra_flags[entry.flag] = f"bindingOnly ({language})"
+            if not entry.flag.startswith("--"):
+                continue
+            group_label, exists_on = extra_flags.get(
+                entry.flag, ("bindingOnly", {"cli"})
+            )
+            exists_on = exists_on | {language}
+            extra_flags[entry.flag] = (group_label, exists_on)
     for flag in policy.get("cliOnlyParameters", []):
-        extra_flags.setdefault(flag, "CLI-only (hidden)")
+        extra_flags.setdefault(flag, ("CLI-only (hidden)", {"cli"}))
 
-    parameters_policy = policy.get("parameters", {})
-    default_action = {"action": policy.get("default", "keep")}
-    for flag, group in sorted(extra_flags.items()):
+    for flag, (group_label, exists_on) in sorted(extra_flags.items()):
         add_row(
             flag,
-            group,
+            group_label,
             {
-                surface: parameters_policy.get(flag, {}).get(surface, default_action)
+                surface: resolve_policy_decision(catalog.overrides, flag, surface)
                 for surface in surfaces
             },
+            exists_on=exists_on,
         )
 
     lines.append("")

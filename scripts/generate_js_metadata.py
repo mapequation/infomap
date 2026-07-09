@@ -48,11 +48,19 @@ def public_parameter_metadata(parameters):
 
 
 def hidden_js_parameter_flags():
+    # Derived from the policy section: a ts `hide` decision removes the
+    # parameter from the JavaScript surface (issue #755).
     overrides = json.loads(OVERRIDES.read_text(encoding="utf-8"))
-    return {
-        entry["flag"]
-        for entry in overrides.get("hiddenBindings", {}).get("ts", [])
+    policy = overrides.get("policy", {})
+    hidden = {
+        flag
+        for flag, per_surface in policy.get("parameters", {}).items()
+        if per_surface.get("ts", {}).get("action") == "hide"
     }
+    for group in policy.get("groups", {}).values():
+        if group.get("ts", {}).get("action") == "hide":
+            hidden.update(group.get("parameters", []))
+    return hidden
 
 
 def write_json(path, payload):

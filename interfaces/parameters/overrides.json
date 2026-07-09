@@ -1,36 +1,4 @@
 {
-  "hiddenBindings": {
-    "ts": [
-      {
-        "flag": "--parallel-trials",
-        "reason": "The JavaScript package runs Infomap in a single-threaded worker, so exposing OpenMP trial scheduling would be misleading."
-      },
-      {
-        "flag": "--inner-parallelization",
-        "reason": "The JavaScript package runs Infomap in a single-threaded worker, so exposing OpenMP node-move scheduling would be misleading."
-      },
-      {
-        "flag": "--num-threads",
-        "reason": "The JavaScript package runs Infomap in a single-threaded WASM worker, so an OpenMP thread budget is meaningless there."
-      },
-      {
-        "flag": "--threads",
-        "reason": "Alias of --num-threads; the single-threaded JavaScript worker has no OpenMP thread budget."
-      },
-      {
-        "flag": "--trial-offset",
-        "reason": "Distributed trial sharding is for multi-process HPC runs; the single-threaded JavaScript WASM worker cannot shard."
-      },
-      {
-        "flag": "--trial-results",
-        "reason": "Per-shard result emission is for multi-process HPC merge workflows, not the JavaScript worker."
-      },
-      {
-        "flag": "--no-final-output",
-        "reason": "Only meaningful for shard runs feeding --merge-trial-results, which the JavaScript worker does not use."
-      }
-    ]
-  },
   "bindingOnly": {
     "python": [
       {
@@ -64,41 +32,14 @@
       }
     ]
   },
-  "tiers": {
-    "python": {
-      "common": [
-        "--seed",
-        "--num-trials",
-        "--two-level",
-        "--directed",
-        "--markov-time"
-      ]
-    }
-  },
-  "apiNotes": {
-    "python": {
-      "inertWithoutOutputDir": [
-        "--output",
-        "--tree",
-        "--ftree",
-        "--clu",
-        "--clu-level",
-        "--out-name",
-        "--no-file-output",
-        "--hide-bipartite-nodes",
-        "--print-all-trials",
-        "--no-overwrite"
-      ]
-    }
-  },
   "policy": {
     "vocabulary": {
-      "keep": "First-class option on the surface in 3.0 (the default for every parameter without an entry).",
+      "keep": "First-class option on the surface in 3.0 (the default for every parameter without an entry). May carry tier: 'common' for parameters that stay real keyword parameters in the 3.0 Python signatures (#738); everything else rides the options object.",
       "alias": "Kept as a documented alias of another parameter (aliasOf names the target).",
       "deprecate": "Marked deprecated in 2.x; the surface's cleanup issue decides removal.",
       "remove": "Removed from the surface in 3.0, deprecated through 2.x where it is currently exposed.",
-      "args-only": "Not a first-class option in 3.0; reachable through the raw args escape hatch on library surfaces.",
-      "hide": "Not exposed on the surface (enforced by hiddenBindings for generated surfaces)."
+      "args-only": "Not a first-class option in 3.0; reachable through the raw args escape hatch on library surfaces. inertWithoutOutputDir: true marks decisions where the flag is verifiably inert via kwargs in 2.x (library mode forces noFileOutput without an output directory).",
+      "hide": "Not exposed on the surface. Takes effect on regeneration, so it is only valid for parameters that are not currently exposed there."
     },
     "surfaces": [
       "cli",
@@ -110,29 +51,77 @@
     "cliOnlyParameters": [
       "--pretty"
     ],
+    "groups": {
+      "python-output-artifacts": {
+        "parameters": [
+          "--output",
+          "--tree",
+          "--ftree",
+          "--clu",
+          "--clu-level",
+          "--out-name",
+          "--no-file-output",
+          "--hide-bipartite-nodes",
+          "--print-all-trials",
+          "--no-overwrite"
+        ],
+        "python": {
+          "action": "args-only",
+          "inertWithoutOutputDir": true,
+          "replacement": "Use Result.write_tree/write_flow_tree/write_clu (write_clu takes depth_level) or Network.write_pajek/write_state_network. The flag only acts when an output directory is passed via the raw args escape hatch."
+        }
+      },
+      "ts-single-threaded-worker": {
+        "parameters": [
+          "--parallel-trials",
+          "--inner-parallelization",
+          "--num-threads",
+          "--threads",
+          "--trial-offset",
+          "--trial-results",
+          "--no-final-output"
+        ],
+        "ts": {
+          "action": "hide",
+          "replacement": "The JavaScript package runs Infomap in a single-threaded WASM worker: OpenMP scheduling, thread budgets, and multi-process trial sharding are meaningless there."
+        }
+      }
+    },
     "parameters": {
-      "--clu": {
+      "--seed": {
         "python": {
-          "action": "args-only",
-          "replacement": "Use Result.write_tree/write_flow_tree/write_clu (write_clu takes depth_level) or Network.write_pajek/write_state_network. The flag only acts when an output directory is passed via the raw args escape hatch."
+          "action": "keep",
+          "tier": "common"
         }
       },
-      "--clu-level": {
+      "--num-trials": {
         "python": {
-          "action": "args-only",
-          "replacement": "Use Result.write_tree/write_flow_tree/write_clu (write_clu takes depth_level) or Network.write_pajek/write_state_network. The flag only acts when an output directory is passed via the raw args escape hatch."
+          "action": "keep",
+          "tier": "common"
         }
       },
-      "--ftree": {
+      "--two-level": {
         "python": {
-          "action": "args-only",
-          "replacement": "Use Result.write_tree/write_flow_tree/write_clu (write_clu takes depth_level) or Network.write_pajek/write_state_network. The flag only acts when an output directory is passed via the raw args escape hatch."
+          "action": "keep",
+          "tier": "common"
         }
       },
-      "--hide-bipartite-nodes": {
+      "--directed": {
         "python": {
-          "action": "args-only",
-          "replacement": "Use Result.write_tree/write_flow_tree/write_clu (write_clu takes depth_level) or Network.write_pajek/write_state_network. The flag only acts when an output directory is passed via the raw args escape hatch."
+          "action": "keep",
+          "tier": "common"
+        }
+      },
+      "--markov-time": {
+        "python": {
+          "action": "keep",
+          "tier": "common"
+        }
+      },
+      "--pretty": {
+        "cli": {
+          "action": "remove",
+          "replacement": "Deprecated no-op since 2.x; pretty console output is always on."
         }
       },
       "--include-self-links": {
@@ -149,86 +138,6 @@
           "replacement": "Self-links are included by default; pass no_self_links = TRUE to exclude them."
         }
       },
-      "--inner-parallelization": {
-        "ts": {
-          "action": "hide",
-          "replacement": "The JavaScript package runs Infomap in a single-threaded worker, so exposing OpenMP node-move scheduling would be misleading."
-        }
-      },
-      "--no-file-output": {
-        "python": {
-          "action": "args-only",
-          "replacement": "Use Result.write_tree/write_flow_tree/write_clu (write_clu takes depth_level) or Network.write_pajek/write_state_network. The flag only acts when an output directory is passed via the raw args escape hatch."
-        }
-      },
-      "--no-final-output": {
-        "ts": {
-          "action": "hide",
-          "replacement": "Only meaningful for shard runs feeding --merge-trial-results, which the JavaScript worker does not use."
-        }
-      },
-      "--no-overwrite": {
-        "python": {
-          "action": "args-only",
-          "replacement": "Use Result.write_tree/write_flow_tree/write_clu (write_clu takes depth_level) or Network.write_pajek/write_state_network. The flag only acts when an output directory is passed via the raw args escape hatch."
-        }
-      },
-      "--num-threads": {
-        "ts": {
-          "action": "hide",
-          "replacement": "The JavaScript package runs Infomap in a single-threaded WASM worker, so an OpenMP thread budget is meaningless there."
-        }
-      },
-      "--out-name": {
-        "python": {
-          "action": "args-only",
-          "replacement": "Use Result.write_tree/write_flow_tree/write_clu (write_clu takes depth_level) or Network.write_pajek/write_state_network. The flag only acts when an output directory is passed via the raw args escape hatch."
-        }
-      },
-      "--output": {
-        "python": {
-          "action": "args-only",
-          "replacement": "Use Result.write_tree/write_flow_tree/write_clu (write_clu takes depth_level) or Network.write_pajek/write_state_network. The flag only acts when an output directory is passed via the raw args escape hatch."
-        }
-      },
-      "--parallel-trials": {
-        "ts": {
-          "action": "hide",
-          "replacement": "The JavaScript package runs Infomap in a single-threaded worker, so exposing OpenMP trial scheduling would be misleading."
-        }
-      },
-      "--pretty": {
-        "cli": {
-          "action": "remove",
-          "replacement": "Deprecated no-op since 2.x; pretty console output is always on."
-        }
-      },
-      "--print-all-trials": {
-        "python": {
-          "action": "args-only",
-          "replacement": "Use Result.write_tree/write_flow_tree/write_clu (write_clu takes depth_level) or Network.write_pajek/write_state_network. The flag only acts when an output directory is passed via the raw args escape hatch."
-        }
-      },
-      "--print-config-fingerprint": {
-        "python": {
-          "action": "remove",
-          "replacement": "A print-and-exit CLI diagnostic; run the infomap binary."
-        },
-        "r": {
-          "action": "remove",
-          "replacement": "A print-and-exit CLI diagnostic; run the infomap binary."
-        }
-      },
-      "--silent": {
-        "python": {
-          "action": "remove",
-          "replacement": "The Python API is quiet by default; logging is the control. Attach handlers to logging.getLogger('infomap') (e.g. infomap.enable_log()) for the engine log."
-        },
-        "r": {
-          "action": "deprecate",
-          "replacement": "Pending the R option-surface decision (#757); the library default is expected to stay quiet."
-        }
-      },
       "--threads": {
         "cli": {
           "action": "alias",
@@ -242,28 +151,16 @@
         "r": {
           "action": "remove",
           "replacement": "Use num_threads; threads is a redundant alias of the same engine option."
-        },
-        "ts": {
-          "action": "hide",
-          "replacement": "Alias of --num-threads; the single-threaded JavaScript worker has no OpenMP thread budget."
         }
       },
-      "--tree": {
+      "--silent": {
         "python": {
-          "action": "args-only",
-          "replacement": "Use Result.write_tree/write_flow_tree/write_clu (write_clu takes depth_level) or Network.write_pajek/write_state_network. The flag only acts when an output directory is passed via the raw args escape hatch."
-        }
-      },
-      "--trial-offset": {
-        "ts": {
-          "action": "hide",
-          "replacement": "Distributed trial sharding is for multi-process HPC runs; the single-threaded JavaScript WASM worker cannot shard."
-        }
-      },
-      "--trial-results": {
-        "ts": {
-          "action": "hide",
-          "replacement": "Per-shard result emission is for multi-process HPC merge workflows, not the JavaScript worker."
+          "action": "remove",
+          "replacement": "The Python API is quiet by default; logging is the control. Attach handlers to logging.getLogger('infomap') (e.g. infomap.enable_log()) for the engine log."
+        },
+        "r": {
+          "action": "deprecate",
+          "replacement": "Pending the R option-surface decision (#757); the library default is expected to stay quiet."
         }
       },
       "--verbose": {
@@ -274,6 +171,16 @@
         "r": {
           "action": "deprecate",
           "replacement": "Pending the R option-surface decision (#757)."
+        }
+      },
+      "--print-config-fingerprint": {
+        "python": {
+          "action": "remove",
+          "replacement": "A print-and-exit CLI diagnostic; run the infomap binary."
+        },
+        "r": {
+          "action": "remove",
+          "replacement": "A print-and-exit CLI diagnostic; run the infomap binary."
         }
       }
     }

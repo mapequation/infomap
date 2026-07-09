@@ -134,13 +134,24 @@ def _minimal_param(flag, group="Accuracy", **extra):
     return param
 
 
-def test_parameter_tier_defaults_to_advanced_and_reads_overrides():
+def _tier_policy(*flags):
+    return {
+        "vocabulary": {"keep": "keep"},
+        "surfaces": ["cli", "python", "r", "ts"],
+        "default": "keep",
+        "parameters": {
+            flag: {"python": {"action": "keep", "tier": "common"}} for flag in flags
+        },
+    }
+
+
+def test_parameter_tier_defaults_to_advanced_and_reads_policy():
     parameters = [
         _minimal_param("--seed", required=True, longType="integer"),
         _minimal_param("--two-level"),
         _minimal_param("--core-loop-limit", required=True, longType="integer"),
     ]
-    overrides = {"tiers": {"python": {"common": ["--seed", "--two-level"]}}}
+    overrides = {"policy": _tier_policy("--seed", "--two-level")}
 
     catalog = ParameterCatalog(parameters, overrides)
     tiers = {param.flag: param.tier("python") for param in catalog.parameters}
@@ -150,7 +161,7 @@ def test_parameter_tier_defaults_to_advanced_and_reads_overrides():
         "--two-level": "common",
         "--core-loop-limit": "advanced",
     }
-    # Tier declarations are per language; an undeclared language is all-advanced.
+    # Tier declarations are per surface; an undeclared surface is all-advanced.
     assert all(param.tier("r") == "advanced" for param in catalog.parameters)
 
 
@@ -158,7 +169,7 @@ def test_parameter_catalog_rejects_unknown_tier_flag():
     import pytest
 
     parameters = [_minimal_param("--seed", required=True, longType="integer")]
-    overrides = {"tiers": {"python": {"common": ["--seeed"]}}}
+    overrides = {"policy": _tier_policy("--seeed")}
 
     with pytest.raises(RuntimeError, match=r"--seeed"):
         ParameterCatalog(parameters, overrides)
@@ -168,7 +179,8 @@ def test_parameter_catalog_rejects_unknown_tier_name():
     import pytest
 
     parameters = [_minimal_param("--seed", required=True, longType="integer")]
-    overrides = {"tiers": {"python": {"comon": ["--seed"]}}}
+    overrides = {"policy": _tier_policy("--seed")}
+    overrides["policy"]["parameters"]["--seed"]["python"]["tier"] = "comon"
 
     with pytest.raises(RuntimeError, match="comon"):
         ParameterCatalog(parameters, overrides)
@@ -182,10 +194,11 @@ def test_python_common_tier_matches_issue_738_decision(test_paths):
         .read_text(encoding="utf-8")
     )
 
-    assert overrides["tiers"]["python"]["common"] == [
-        "--seed",
-        "--num-trials",
-        "--two-level",
-        "--directed",
-        "--markov-time",
-    ]
+    common = sorted(
+        flag
+        for flag, per_surface in overrides["policy"]["parameters"].items()
+        if per_surface.get("python", {}).get("tier") == "common"
+    )
+    assert common == sorted(
+        ["--seed", "--num-trials", "--two-level", "--directed", "--markov-time"]
+    )
