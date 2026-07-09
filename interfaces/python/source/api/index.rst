@@ -40,6 +40,9 @@ incremental, repeated-run workflows.
    * - :doc:`datasets`
      - The bundled example networks, one loader per network
        (:func:`infomap.datasets.two_triangles` and friends).
+   * - :doc:`deprecations`
+     - The deprecation contract: signature tiers, the 2.15 → 3.0 timeline, and
+       the compatibility aliases.
 
 .. toctree::
    :hidden:
@@ -55,3 +58,4 @@ incremental, repeated-run workflows.
    errors
    integrations
    datasets
+   deprecations

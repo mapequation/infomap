@@ -52,9 +52,10 @@ other type from those files (it does not filter the in-memory
 {class}`~infomap.Result`).
 ```
 
-Two options change this treatment: `skip_adjust_bipartite_flow=True` keeps
-flow on the type-B nodes so both types are coded, and
-`bipartite_teleportation=True` makes a directed run teleport with
+Two engine options change this treatment, passed via
+{class}`~infomap.Options` (e.g. `run(net, options=Options(skip_adjust_bipartite_flow=True))`):
+`skip_adjust_bipartite_flow=True` keeps flow on the type-B nodes so both types
+are coded, and `bipartite_teleportation=True` makes a directed run teleport with
 bipartite-aware jumps instead of the default two-step unipartite scheme.
 
 ## Users and items in shared clusters
@@ -216,8 +217,8 @@ weak cross-cluster links.
 |---|---|---|
 | `bipartite_start_id` | {class}`~infomap.Network` attribute | First node id of the type-B block (the second type); declares the network bipartite |
 | `hide_bipartite_nodes` | {class}`~infomap.Infomap` (file-writing runs) | Omit the type-B nodes from written output files (the in-memory result keeps both types) |
-| `skip_adjust_bipartite_flow` | {func}`infomap.run` | Keep flow on the type-B nodes instead of folding it onto type-A |
-| `bipartite_teleportation` | {func}`infomap.run` | On directed runs, teleport with bipartite-aware jumps instead of the two-step unipartite scheme |
+| `skip_adjust_bipartite_flow` | {class}`~infomap.Options` → {func}`infomap.run` | Keep flow on the type-B nodes instead of folding it onto type-A |
+| `bipartite_teleportation` | {class}`~infomap.Options` → {func}`infomap.run` | On directed runs, teleport with bipartite-aware jumps instead of the two-step unipartite scheme |
 
 ## Going deeper
 

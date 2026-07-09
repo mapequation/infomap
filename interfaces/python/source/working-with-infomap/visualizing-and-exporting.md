@@ -278,13 +278,15 @@ print("Temp directory removed.")
 
 - {func}`infomap.to_networkx` builds a NetworkX graph from the result's (state)
   nodes, annotated with `infomap_module`, `infomap_path`, per-level ids, and
-  `flow` (all strings); write it with `nx.write_graphml` / `nx.write_gexf`.
+  `flow` as native Python types (module ids and level ids as `int`, `flow` as
+  `float`, `infomap_path` as `str`); write it with `nx.write_graphml` /
+  `nx.write_gexf`.
 - {func}`infomap.to_igraph` builds the same graph as an `igraph.Graph`.
 - {func}`infomap.io.export.write_graphml`, {func}`infomap.io.export.write_gexf`,
   and {func}`infomap.io.export.annotate_networkx_graph` instead annotate *your
-  own* graph with the partition. They take a post-run stateful
-  {class}`~infomap.Infomap`, not a {class}`~infomap.Result`. (`write_gexf`
-  supports NetworkX only.)
+  own* graph with the partition. They accept either a post-run stateful
+  {class}`~infomap.Infomap` or the {class}`~infomap.Result` it returned.
+  (`write_gexf` supports NetworkX only.)
 
 **Native engine formats** (written by the {class}`~infomap.Result`)
 

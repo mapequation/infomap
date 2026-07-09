@@ -414,7 +414,7 @@ These are the keyword arguments to {func}`infomap.run`:
 | `markov_time` | float | 1.0 | Resolution scale |
 | `regularized` | bool | False | Bayesian regularization for sparse data |
 | `regularization_strength` | float | 1.0 | How strongly to regularize |
-| `silent` | bool | False | Suppress console output |
+| `silent` | bool | True | Suppress console output (the Python API is quiet by default) |
 
 For the full set of options as a searchable table, see the
 {class}`~infomap.Options` reference in the {doc}`/api/index`.
