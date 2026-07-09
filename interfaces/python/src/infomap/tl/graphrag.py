@@ -46,6 +46,10 @@ class GraphRAGRunResult:
     """Result object returned by :func:`run_graphrag_communities`."""
 
     infomap: Any
+    #: The immutable :class:`~infomap.Result` from the run. Read run metrics
+    #: from here (``result.result.codelength``, ``.num_top_modules``) rather
+    #: than the deprecated accessors on the stateful ``infomap`` instance.
+    result: Any
     graph: GraphRAGGraph
     output_dir: Path | None
     nodes: Any
@@ -730,13 +734,14 @@ def run_graphrag_communities(
         **infomap_options,
     )
     im.add_links(_links_array(graph))
-    im.run()
+    result = im.run()
     nodes, communities = _build_tables(im, graph)
     if paths["dir"] is not None:
         nodes.to_parquet(paths["nodes"], index=False)
         communities.to_parquet(paths["communities"], index=False)
     return GraphRAGRunResult(
         infomap=im,
+        result=result,
         graph=graph,
         output_dir=paths["dir"],
         nodes=nodes,

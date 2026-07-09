@@ -129,6 +129,10 @@ def enable_log(level: int = logging.INFO) -> logging.Handler:
     files, propagation), skip this helper and configure
     ``logging.getLogger("infomap")`` with standard :mod:`logging` instead.
 
+    Turns off propagation while active so records are not *also* emitted by a
+    root handler installed via ``logging.basicConfig`` (which would print each
+    line twice); :func:`disable_log` restores propagation.
+
     Parameters
     ----------
     level : int, optional
@@ -153,6 +157,9 @@ def enable_log(level: int = logging.INFO) -> logging.Handler:
         _helper_handler = handler
     if _helper_handler not in logger.handlers:
         logger.addHandler(_helper_handler)
+    # Don't double-print through a root handler (e.g. logging.basicConfig());
+    # disable_log() puts propagation back.
+    logger.propagate = False
     logger.setLevel(level)
     return _helper_handler
 
@@ -168,3 +175,5 @@ def disable_log() -> None:
     if _helper_handler is not None:
         logger.removeHandler(_helper_handler)
         _helper_handler = None
+        # Restore the default so records reach ancestor handlers again.
+        logger.propagate = True

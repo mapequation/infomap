@@ -511,7 +511,8 @@ def test_run_graphrag_communities_reads_runs_and_writes_outputs(tmp_path):
 
     run = json.loads((output_dir / "infomap_run.json").read_text())
     assert run["trials"] == 1
-    assert run["codelength"] == pytest.approx(result.infomap.codelength)
+    # Read metrics off the immutable Result, not the deprecated Infomap accessor.
+    assert run["codelength"] == pytest.approx(result.result.codelength)
     assert "options" not in run
     assert "seed" not in run
 
@@ -528,7 +529,7 @@ def test_run_graphrag_communities_defaults_to_reproducible_trials(tmp_path):
 
     run = json.loads((tmp_path / "result" / "infomap_run.json").read_text())
     assert run["trials"] == 5
-    assert result.infomap.codelength == pytest.approx(run["codelength"])
+    assert result.result.codelength == pytest.approx(run["codelength"])
 
 
 def test_run_graphrag_communities_accepts_args_passthrough(tmp_path):

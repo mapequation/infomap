@@ -298,7 +298,7 @@ def add_networkx_graph(
                     )
                 else:
                     if source_node_id != target_node_id:
-                        raise RuntimeError(
+                        raise ValueError(
                             "Multilayer intra/inter format does not support 'diagonal' links. Use `multilayer_inter_intra_format=False`"
                         )
                     infomap.add_multilayer_inter_link(

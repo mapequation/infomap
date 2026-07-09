@@ -94,16 +94,19 @@ class Network(_NetworkWritersMixin):
         ``Core`` is passed in.
     """
 
-    #: ``{internal_id: label}`` mapping set by the library constructors
-    #: (``from_networkx``/``from_igraph``/``from_scipy_sparse_matrix``/``from_edge_index``).
-    #: Bare annotation: declares the instance attribute for type-checkers without
-    #: creating it at runtime (no behaviour change).
+    #: ``{internal_id: label}`` mapping populated by the graph-library
+    #: constructors (``from_networkx``/``from_igraph``/``from_scipy_sparse_matrix``/
+    #: ``from_edge_index``). Empty on a manually built or file-loaded ``Network``,
+    #: mirroring :class:`~infomap.Infomap`, so the attribute is always present.
     node_id_to_label: dict[int, Any]
 
     def __init__(self, core=None):
         if core is None:
             core = Core("--silent --no-file-output")
         self._core = core
+        # Always present so attribute access never raises; the graph-library
+        # constructors replace it with the id->label mapping they build.
+        self.node_id_to_label = {}
         # Run-generation token: incremented on every run(). A Result stamps the
         # generation it was created in; node-level access on a stale Result
         # (engine re-ran since) raises instead of reading freed memory. This is

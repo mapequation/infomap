@@ -79,3 +79,15 @@ def test_io_namespace_is_public():
     assert "io" in infomap.__all__
     assert infomap.io.export.__all__ == sorted(infomap.io.export.__all__)
     from infomap.io.export import to_networkx  # noqa: F401
+
+
+@pytest.mark.fast
+def test_io_namespace_reexports_export_helpers():
+    # The result-export helpers are re-exported at the io namespace level
+    # (e.g. infomap.io.to_networkx), mirroring infomap.tl, so io has a curated
+    # public surface rather than only submodules.
+    import infomap.io as io
+
+    assert io.__all__ == list(infomap.io.export.__all__)
+    for name in io.__all__:
+        assert getattr(io, name) is getattr(infomap.io.export, name)
