@@ -148,7 +148,7 @@ def _reject_adapter_kwargs(kind: str, user_keys: set) -> None:
     if not misdirected:
         return
     names = ", ".join(repr(name) for name in misdirected)
-    raise TypeError(
+    message = (
         f"infomap.run() forwards keyword arguments to the engine, but {names} "
         f"configure how the {kind} input is read, not the engine. Build the "
         f"network explicitly and run it, e.g. "
@@ -156,6 +156,15 @@ def _reject_adapter_kwargs(kind: str, user_keys: set) -> None:
         f"run() builds input with default settings; Network.from_* is the path "
         f"for non-default input."
     )
+    if "directed" in misdirected:
+        # `directed` names the adapter's edge orientation, not the engine's
+        # flow model -- steer users away from that collision explicitly.
+        message += (
+            " (Here 'directed' sets the adapter's edge orientation; for the "
+            "engine's directed flow model pass flow_model='directed' via "
+            "Options.)"
+        )
+    raise TypeError(message)
 
 
 def run(

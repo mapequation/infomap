@@ -875,7 +875,12 @@ class Result(_ResultWritersMixin):
             sort_columns = _to_dataframe_sort_columns(sort, dataframe.columns)
             dataframe = dataframe.sort_values(sort_columns).reset_index(drop=True)
 
-        if index not in (None, False):
+        if index is not None and index is not False:
+            if index is True:
+                raise TypeError(
+                    "index=True is not a column. Pass a column name (str), or "
+                    "False/None (the default) to keep the RangeIndex."
+                )
             dataframe = dataframe.set_index(index)
 
         return dataframe
