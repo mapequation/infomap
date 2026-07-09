@@ -16,6 +16,7 @@ from __future__ import annotations
 import ctypes
 import logging
 import sys
+import warnings
 
 import pytest
 
@@ -198,6 +199,45 @@ def test_instance_constructed_before_logging_config_warns(infomap_log_handler):
 
     # The engine baked --silent in at construction, so no records exist.
     assert infomap_log_handler.records == []
+
+
+def test_disable_log_restores_user_propagate_choice():
+    logger = logging.getLogger("infomap")
+    original = logger.propagate
+    try:
+        logger.propagate = False  # a deliberate user choice
+        enable_log()
+        assert logger.propagate is False  # off while active
+        disable_log()
+        # Restored to the user's choice, not forced back to the True default.
+        assert logger.propagate is False
+
+        logger.propagate = True
+        enable_log()
+        disable_log()
+        assert logger.propagate is True
+    finally:
+        disable_log()
+        logger.propagate = original
+
+
+def test_stale_silent_advisory_warns_at_most_once(infomap_log_handler):
+    logger = logging.getLogger("infomap")
+    logger.removeHandler(infomap_log_handler)
+    im = Infomap()  # constructed silent before logging was configured
+    im.add_link(1, 2)
+    logger.addHandler(infomap_log_handler)
+
+    with warnings.catch_warnings(record=True) as records:
+        warnings.simplefilter("always")
+        im.run()
+        im.run()
+        im.run()
+
+    stale = [
+        r for r in records if "before logging was configured" in str(r.message)
+    ]
+    assert len(stale) == 1
 
 
 def test_enable_log_is_a_one_line_opt_in(capfd):

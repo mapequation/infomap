@@ -19,19 +19,25 @@ two tiers:
   the :class:`Infomap` signatures.
 - **Advanced tier** — the long tail of tuning and I/O options. From 2.15 these
   are ``.. deprecated::`` on the :class:`Infomap` signatures and leave them in
-  3.0. Pass them through :class:`Options` instead::
+  3.0. Most are *tuning* options that stay available — only their entry point
+  moves — so pass them through :class:`Options` instead::
 
       import infomap
 
       options = infomap.Options(regularized=True, flow_tolerance=1e-12)
       result = infomap.run("network.net", options=options)
 
-  The same :class:`Options` object works with :meth:`Network.run`. Every option
-  remains available — only its *entry point* moves from a per-call keyword to
-  :class:`Options`.
+  The same :class:`Options` object works with :meth:`Network.run`. A few
+  advanced options migrate elsewhere rather than to :class:`Options`, and each
+  keyword's ``.. deprecated::`` note states its own path: the file-output
+  options (``no_file_output``, ``tree``, ``clu``, ``out_name``, …) move to the
+  ``Result.write_*`` / ``Network.write_*`` methods, and ``silent`` / ``verbose``
+  give way to logging (see :doc:`/working-with-infomap/running-and-options`).
 
-The advanced-tier deprecations are documentation-only: no runtime warning fires,
-so existing code keeps running unchanged until 3.0.
+Passing an advanced-tier keyword to :class:`Infomap` or :meth:`Infomap.run`
+emits a :class:`PendingDeprecationWarning` (silent by default; surface it with
+``python -W`` or a logging filter). Routing the option through :class:`Options`
+is the warning-free path, so existing code keeps running unchanged until 3.0.
 
 Redesigned result access
 -------------------------

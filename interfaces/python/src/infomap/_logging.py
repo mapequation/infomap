@@ -113,6 +113,11 @@ def apply_engine_log_overrides(kwargs: dict) -> dict:
 
 
 _helper_handler: logging.Handler | None = None
+# The logger's ``propagate`` value captured when enable_log() first turned it
+# off, so disable_log() can restore exactly that -- rather than forcing the
+# library default back on and clobbering a user who set propagate=False on
+# purpose. ``None`` means "nothing captured / helper inactive".
+_saved_propagate: bool | None = None
 
 
 def enable_log(level: int = logging.INFO) -> logging.Handler:
@@ -150,7 +155,7 @@ def enable_log(level: int = logging.INFO) -> logging.Handler:
     >>> handler = infomap.enable_log()
     >>> infomap.disable_log()
     """
-    global _helper_handler
+    global _helper_handler, _saved_propagate
     if _helper_handler is None:
         handler = logging.StreamHandler(sys.stdout)
         handler.setFormatter(logging.Formatter("%(message)s"))
@@ -158,7 +163,10 @@ def enable_log(level: int = logging.INFO) -> logging.Handler:
     if _helper_handler not in logger.handlers:
         logger.addHandler(_helper_handler)
     # Don't double-print through a root handler (e.g. logging.basicConfig());
-    # disable_log() puts propagation back.
+    # disable_log() puts propagation back to whatever it was. Capture only on
+    # the first activation so repeated calls don't record the already-off value.
+    if _saved_propagate is None:
+        _saved_propagate = logger.propagate
     logger.propagate = False
     logger.setLevel(level)
     return _helper_handler
@@ -171,9 +179,12 @@ def disable_log() -> None:
     handlers remaining, the engine goes back to classic stdout output
     (gated by ``silent=``).
     """
-    global _helper_handler
+    global _helper_handler, _saved_propagate
     if _helper_handler is not None:
         logger.removeHandler(_helper_handler)
         _helper_handler = None
-        # Restore the default so records reach ancestor handlers again.
-        logger.propagate = True
+        # Restore propagation to whatever enable_log() found, so a user who set
+        # propagate=False on purpose keeps it (default library state is True).
+        if _saved_propagate is not None:
+            logger.propagate = _saved_propagate
+            _saved_propagate = None

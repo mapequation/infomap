@@ -164,6 +164,11 @@ def _facade_params(catalog: ParameterCatalog):
                 ),
                 "doc_type": param.python_doc_type(),
                 "doc": param.python_doc_description(),
+                # The 3.0 cleanup-policy decision (issue #755) drives both the
+                # docstring migration note and the runtime PendingDeprecationWarning
+                # so the two never diverge from render_parameter_policy.py.
+                "policy": param.policy("python"),
+                "init_default": param.python_default_expr(),
             }
             names.append(name)
             for facade_name in after.get(name, ()):
@@ -205,6 +210,84 @@ def _python_literal_alias_lines(catalog: ParameterCatalog) -> list[str]:
     return lines
 
 
+# Static runtime helper (issue #741): warn when an advanced-tier keyword is set
+# on a *direct* Infomap()/run() call. The message shape mirrors
+# _advanced_tier_note() -- keep/alias parameters point at Options, every other
+# action carries its policy replacement -- so the docstring and the warning
+# never diverge.
+_ADVANCED_TIER_WARNING_HELPER = [
+    "def _warn_advanced_tier_kwargs(passed, context):",
+    "    # Advanced-tier keywords are docs-only deprecated on the Infomap()/run()",
+    "    # signatures (issue #741) and move off them in 3.0. Emit a",
+    "    # PendingDeprecationWarning -- silent by default, so it nags no one until",
+    "    # 3.0 nears -- when one is set to a non-default value on a direct call.",
+    "    # Internal funnels (the Options path builds Infomap(**resolved), the graph",
+    "    # adapters, the from_* class methods) reach the same methods from inside",
+    "    # the package; the caller-frame check skips them so only user-typed",
+    "    # keywords are flagged.",
+    "    caller = sys._getframe(2)",
+    "    if caller.f_code.co_filename.startswith(_PACKAGE_PREFIX):",
+    "        return",
+    '    baseline = 1 if context == "run" else 0',
+    "    for name, spec in _ADVANCED_TIER_KWARGS.items():",
+    "        default = spec[baseline]",
+    "        if passed.get(name, default) != default:",
+    "            action, replacement = spec[2], spec[3]",
+    "            lead = (",
+    "                f\"'{name}' is deprecated on the Infomap() and run() \"",
+    '                "signatures and leaves them in 3.0. "',
+    "            )",
+    '            if action in ("keep", "alias"):',
+    "                guidance = (",
+    '                    "Pass it via Options to infomap.run() or "',
+    '                    "Network.run() instead."',
+    "                )",
+    "            elif replacement is not None:",
+    "                guidance = replacement",
+    "            else:",
+    '                guidance = ""',
+    "            warnings.warn(",
+    "                lead + guidance, PendingDeprecationWarning, stacklevel=3",
+    "            )",
+]
+
+
+def _advanced_tier_kwarg_lines(catalog: ParameterCatalog) -> list[str]:
+    """The runtime advanced-tier warning table plus its helper.
+
+    One entry per advanced-tier catalog parameter (self-deprecated aliases such
+    as ``pretty``/``include_self_links`` warn on their own): the ``init`` and
+    ``run`` "unset" defaults and the policy ``action``/``replacement`` that
+    shape the message. Built from the same policy the docstring note reads.
+    """
+    names, index = _facade_params(catalog)
+    lines: list[str] = ["_ADVANCED_TIER_KWARGS = {"]
+    for name in names:
+        info = index[name]
+        if info.get("tier") != "advanced" or "policy" not in info:
+            continue
+        if name in _SELF_DEPRECATED_PARAMS:
+            continue
+        policy = info["policy"]
+        action = policy.get("action", "keep")
+        replacement = (
+            "None"
+            if action in {"keep", "alias"}
+            else json.dumps(policy["replacement"])
+        )
+        lines.append(
+            f'    "{name}": ({info["init_default"]}, {info["run_default"]}, '
+            f'"{action}", {replacement}),'
+        )
+    lines.append("}")
+    lines.append("")
+    lines.append("")
+    lines.extend(_ADVANCED_TIER_WARNING_HELPER)
+    lines.append("")
+    lines.append("")
+    return lines
+
+
 def generate_python(catalog: ParameterCatalog) -> str:
     grouped = catalog.grouped()
     include_self_links = catalog.binding_only_entry("python", "include_self_links")
@@ -242,6 +325,7 @@ def generate_python(catalog: ParameterCatalog) -> str:
         "",
     ]
     lines.extend(_python_literal_alias_lines(catalog))
+    lines.extend(_advanced_tier_kwarg_lines(catalog))
     for group in GROUPS:
         spec_name = f"_{group.upper()}_OPTION_SPECS"
         lines.append(f"{spec_name} = (")
@@ -768,6 +852,25 @@ _ADVANCED_TIER_NOTE = (
 )
 
 
+def _advanced_tier_note(policy):
+    """The advanced-tier ``.. deprecated::`` note text for a parameter.
+
+    A ``keep``/``alias`` parameter stays available and only its entry point
+    moves, so it points at ``Options``. Every other action (``remove``,
+    ``args-only``, ...) carries its own migration path in the policy's
+    ``replacement`` (the #755 acceptance criterion), which is the correct
+    guidance -- telling the user to "pass it via Options" would contradict
+    both the policy and render_parameter_policy.py.
+    """
+    action = (policy or {}).get("action", "keep")
+    if action in {"keep", "alias"}:
+        return _ADVANCED_TIER_NOTE
+    return (
+        "This keyword leaves the `Infomap` signature in 3.0. "
+        + policy["replacement"]
+    )
+
+
 def _render_facade_docstring_params(names, index):
     lines = []
     for name in names:
@@ -784,7 +887,8 @@ def _render_facade_docstring_params(names, index):
             lines.append(
                 f"            .. deprecated:: {_ADVANCED_TIER_DEPRECATED_IN}"
             )
-            lines.extend(wrap_doc(_ADVANCED_TIER_NOTE, "                "))
+            note = _advanced_tier_note(info.get("policy"))
+            lines.extend(wrap_doc(note, "                "))
     return lines
 
 
@@ -816,6 +920,7 @@ def generate_facade(catalog: ParameterCatalog) -> str:
     lines.extend(_render_facade_docstring_params(names, index))
     lines.append('        """')
     lines.extend(_PRETTY_WARNING_LINES)
+    lines.append('        _warn_advanced_tier_kwargs(locals(), "init")')
     lines.append("        options = Options._from_locals(locals())")
     lines.append("        self._init_from_options(args, options)")
     lines.append("")
@@ -869,6 +974,7 @@ def generate_facade(catalog: ParameterCatalog) -> str:
     lines.append("        initial_partition")
     lines.append('        """')
     lines.extend(_PRETTY_WARNING_LINES)
+    lines.append('        _warn_advanced_tier_kwargs(locals(), "run")')
     lines.append("        options = Options._from_locals(locals())")
     lines.append(
         "        return self._run_from_options(args, initial_partition, options)"
