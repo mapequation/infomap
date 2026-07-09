@@ -119,9 +119,6 @@ class Parameter:
         return self.raw.get("choices") or self.overrides.get("choices", {}).get(self.flag)
 
     def name(self, language: str) -> str:
-        binding_names = self.raw.get("bindingNames", {})
-        if language in binding_names:
-            return binding_names[language]
         names = self.overrides.get("names", {}).get(self.flag, {})
         if language in names:
             return names[language]
@@ -167,12 +164,12 @@ class Parameter:
         return self.render_policy in {"flag", "value"}
 
     def binding_default(self, language: str) -> dict[str, str]:
-        return self.raw.get("bindingDefaults", {}).get(language, {})
+        return self.overrides.get("defaults", {}).get(self.flag, {}).get(language)
 
     def python_default_value(self) -> str:
-        # ``is not None`` (not truthiness): a future binding default of "" / "0"
-        # is a real value, not "unset".
-        value = self.binding_default("python").get("value")
+        # ``is not None`` (not truthiness): a binding default of "" / "0" is a
+        # real value, not "unset".
+        value = self.binding_default("python")
         if value is not None:
             return value
         if not self.required:
@@ -242,13 +239,13 @@ class Parameter:
         return "str, optional"
 
     def python_doc_description(self) -> str:
-        python_docs = self.raw.get("bindingDocs", {}).get("python", {})
-        if description := python_docs.get("description"):
+        docs = self.overrides.get("docs", {}).get(self.flag, {})
+        if description := docs.get("python"):
             return description
         return self.description
 
     def r_default(self) -> str:
-        value = self.binding_default("r").get("value")
+        value = self.binding_default("r")
         if value is not None:
             return value
         if not self.required:

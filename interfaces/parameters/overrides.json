@@ -1,4 +1,120 @@
 {
+  "names": {
+    "--verbose": {
+      "python": "verbosity_level",
+      "r": "verbosity_level",
+      "ts": "verbose"
+    }
+  },
+  "defaults": {
+    "--core-loop-codelength-threshold": {
+      "python": "1e-10",
+      "r": "1e-10"
+    },
+    "--core-loop-limit": {
+      "python": "10",
+      "r": "10L"
+    },
+    "--directed": {
+      "python": "None",
+      "r": "NULL"
+    },
+    "--entropy-correction-strength": {
+      "python": "1.0",
+      "r": "1.0"
+    },
+    "--fast-hierarchical-solution": {
+      "python": "None",
+      "r": "NULL"
+    },
+    "--flow-tolerance": {
+      "python": "1e-15",
+      "r": "1e-15"
+    },
+    "--markov-time": {
+      "python": "1.0",
+      "r": "1.0"
+    },
+    "--max-flow-iterations": {
+      "python": "400",
+      "r": "400L"
+    },
+    "--meta-data-rate": {
+      "python": "1.0",
+      "r": "1.0"
+    },
+    "--min-flow-iterations": {
+      "python": "50",
+      "r": "50L"
+    },
+    "--multilayer-relax-limit": {
+      "python": "-1",
+      "r": "NULL"
+    },
+    "--multilayer-relax-limit-down": {
+      "python": "-1",
+      "r": "NULL"
+    },
+    "--multilayer-relax-limit-up": {
+      "python": "-1",
+      "r": "NULL"
+    },
+    "--multilayer-relax-rate": {
+      "python": "0.15",
+      "r": "0.15"
+    },
+    "--num-trials": {
+      "python": "1",
+      "r": "1L"
+    },
+    "--preferred-number-of-levels-strength": {
+      "python": "1.0",
+      "r": "1.0"
+    },
+    "--regularization-strength": {
+      "python": "1.0",
+      "r": "1.0"
+    },
+    "--seed": {
+      "python": "123",
+      "r": "123L"
+    },
+    "--silent": {
+      "python": "True",
+      "r": "FALSE"
+    },
+    "--teleportation-probability": {
+      "python": "0.15",
+      "r": "0.15"
+    },
+    "--tune-iteration-relative-threshold": {
+      "python": "1e-05",
+      "r": "1e-05"
+    },
+    "--variable-markov-damping": {
+      "python": "1.0",
+      "r": "1.0"
+    },
+    "--variable-markov-min-scale": {
+      "python": "1.0",
+      "r": "1.0"
+    },
+    "--verbose": {
+      "python": "1",
+      "r": "1L"
+    }
+  },
+  "docs": {
+    "--fast-hierarchical-solution": {
+      "python": "Find top modules fast. Use 2 to keep all fast levels and 3 to skip the recursive part."
+    },
+    "--verbose": {
+      "python": "Verbosity level on the console. 1 keeps the default output level, 2 renders -vv and so on."
+    },
+    "--silent": {
+      "python": "Suppress console output. The Python API is quiet by default; construct with silent=False for the engine log. The command-line interface is unaffected."
+    }
+  },
   "bindingOnly": {
     "python": [
       {

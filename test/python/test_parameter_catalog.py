@@ -74,6 +74,14 @@ def test_parameter_catalog_classifies_binding_render_policies():
         },
     ]
     overrides = {
+        # Surface knowledge (names/defaults/docs) lives in overrides, not the
+        # engine catalog; the accessors read it from here.
+        "names": {"--verbose": {"python": "verbosity_level", "r": "verbosity_level"}},
+        "defaults": {
+            "--num-trials": {"python": "1", "r": "1L"},
+            "--verbose": {"python": "1", "r": "1L"},
+        },
+        "docs": {"--verbose": {"python": "Verbosity level on the console."}},
         "bindingOnly": {
             "python": [
                 {

@@ -522,7 +522,7 @@ TEST_CASE("Output plan applies trial suffix before format suffix [fast][core][co
   CHECK(artifacts.front().filename == "out/network_trial_2.tree");
 }
 
-TEST_CASE("Parameter catalog owns option choices and binding names [fast][core][config][cli]")
+TEST_CASE("Parameter catalog owns option choices and render policy [fast][core][config][cli]")
 {
   const infomap::ParameterSpec* output = nullptr;
   const infomap::ParameterSpec* verbose = nullptr;
@@ -547,10 +547,10 @@ TEST_CASE("Parameter catalog owns option choices and binding names [fast][core][
   CHECK(output->choices == infomap::outputFormatNames());
   CHECK(output->renderPolicy == "comma_list");
 
+  // Binding names/defaults/docs live in interfaces/parameters/overrides.json,
+  // not the engine catalog; the catalog owns only engine-level metadata and
+  // the render policy the generator keys on.
   REQUIRE(verbose != nullptr);
-  CHECK(verbose->pythonName == "verbosity_level");
-  CHECK(verbose->rName == "verbosity_level");
-  CHECK(verbose->tsName == "verbose");
   CHECK(verbose->renderPolicy == "repeated_short");
 
   REQUIRE(teleportation != nullptr);
