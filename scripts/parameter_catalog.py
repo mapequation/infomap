@@ -293,6 +293,7 @@ class ParameterCatalog:
             for language, entries in overrides.get("bindingOnly", {}).items()
         }
         self._validate_policy()
+        self._validate_override_sections()
         # Hidden bindings are derived from the policy: a `hide` decision on a
         # generated surface removes the parameter from that surface (the
         # policy is the single per-parameter record; see issue #755).
@@ -306,6 +307,44 @@ class ParameterCatalog:
             for language in surfaces
             if language != "cli"
         }
+
+    def _known_flags(self) -> set[str]:
+        known = {param.flag for param in self.parameters}
+        known |= {
+            entry.flag
+            for entries in self.binding_only_parameters.values()
+            for entry in entries
+        }
+        known |= set(self.overrides.get("policy", {}).get("cliOnlyParameters", []))
+        return known
+
+    def _validate_override_sections(self) -> None:
+        # The names/defaults/docs sections are keyed by CLI flag and then by
+        # binding language. They are inputs to the generator, not policy, so
+        # _validate_policy does not reach them -- but a typo'd flag or language
+        # key would silently fall back to a generated default (the same silent
+        # drift the policy check guards against, issue #755), so validate them
+        # here too.
+        surfaces = set(self.overrides.get("policy", {}).get("surfaces", []))
+        languages = surfaces - {"cli"} if surfaces else {"python", "r", "ts"}
+        known_flags = self._known_flags()
+        for section in ("names", "defaults", "docs"):
+            for flag, per_language in self.overrides.get(section, {}).items():
+                if flag not in known_flags:
+                    raise RuntimeError(
+                        f"overrides.{section} lists unknown flag {flag!r} (not in "
+                        "the parameter catalog, bindingOnly, or cliOnlyParameters)"
+                    )
+                if not isinstance(per_language, dict):
+                    raise RuntimeError(
+                        f"overrides.{section}[{flag!r}] must map language to value"
+                    )
+                for language in per_language:
+                    if language not in languages:
+                        raise RuntimeError(
+                            f"overrides.{section}[{flag!r}] names unknown language "
+                            f"{language!r}; known languages: {sorted(languages)}"
+                        )
 
     def _validate_policy(self) -> None:
         # Fail loud on typos and incomplete decisions: the policy is the 3.0
