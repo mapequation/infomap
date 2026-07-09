@@ -355,3 +355,44 @@ def test_find_communities_skips_unregistered_state_ids(monkeypatch):
     monkeypatch.setattr(facade, "Infomap", FakeInfomap)
     communities = infomap.find_communities(nx.Graph([("x", "y")]))
     assert _flatten(communities) == {"x", "y"}
+
+
+# -- trials parity with the igraph helper -------------------------------------
+
+
+def test_find_communities_trials_default_matches_igraph():
+    import inspect
+
+    nx_default = inspect.signature(infomap.find_communities).parameters["trials"].default
+    ig_default = (
+        inspect.signature(infomap.find_igraph_communities).parameters["trials"].default
+    )
+    # Both use the same sentinel; the effective default (10) is asserted below.
+    assert nx_default is None and ig_default is None
+
+
+def test_find_communities_rejects_trials_and_num_trials_conflict():
+    with pytest.raises(ValueError, match="trials.*num_trials"):
+        infomap.find_communities(nx.Graph([("a", "b")]), trials=1, num_trials=2)
+
+
+@pytest.mark.parametrize(
+    "kwargs, expected",
+    [
+        ({}, 10),                    # neither -> aligned default
+        ({"trials": 7}, 7),          # the convenience alias
+        ({"num_trials": 3}, 3),      # the engine option (back-compat)
+    ],
+)
+def test_find_communities_resolves_num_trials(monkeypatch, kwargs, expected):
+    captured = {}
+    real_infomap = facade.Infomap
+
+    class RecordingInfomap(real_infomap):
+        def __init__(self, *args, **options):
+            captured.update(options)
+            super().__init__(*args, **options)
+
+    monkeypatch.setattr(facade, "Infomap", RecordingInfomap)
+    infomap.find_communities(nx.Graph([("a", "b")]), seed=1, **kwargs)
+    assert captured["num_trials"] == expected

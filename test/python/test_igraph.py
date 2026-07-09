@@ -394,6 +394,25 @@ def test_find_igraph_communities_rejects_trial_and_vertex_weight_conflicts():
         infomap.find_igraph_communities(graph, vertex_weights=[1, 1])
 
 
+def test_find_igraph_communities_accepts_num_trials_alone(monkeypatch):
+    # `num_trials` (the engine option name) is accepted on its own, matching
+    # the networkx helper; only passing it *together* with `trials` conflicts.
+    import infomap._facade as facade
+
+    ig = pytest.importorskip("igraph")
+    captured = {}
+    real_infomap = facade.Infomap
+
+    class RecordingInfomap(real_infomap):
+        def __init__(self, *args, **options):
+            captured.update(options)
+            super().__init__(*args, **options)
+
+    monkeypatch.setattr(facade, "Infomap", RecordingInfomap)
+    infomap.find_igraph_communities(ig.Graph(edges=[(0, 1)]), num_trials=4, seed=1)
+    assert captured["num_trials"] == 4
+
+
 class _Recorder:
     flowModelIsSet = True
 

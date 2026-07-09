@@ -113,6 +113,7 @@ def find_communities(
     node_id: str = "node_id",
     layer_id: str = "layer_id",
     multilayer_inter_intra_format: bool = True,
+    trials: int | None = None,
     initial_partition: Any = None,
     module_attribute: str | None = None,
     flow_attribute: str | None = None,
@@ -143,6 +144,11 @@ def find_communities(
     multilayer_inter_intra_format : bool, optional
         Use intra/inter format to simulate inter-layer links. Default
         ``True``.
+    trials : int, optional
+        Number of independent trials; the best solution is kept. Convenience
+        alias for the ``num_trials`` Infomap option (matching
+        :func:`~infomap.find_igraph_communities`). Pass ``trials`` or
+        ``num_trials``, not both; if neither is given the default is ``10``.
     module_attribute : str, optional
         If set, write each node's module id back to this node attribute on
         ``g``.
@@ -166,9 +172,23 @@ def find_communities(
     -------
     list of set
         A partition of ``g.nodes`` grouped by top-level Infomap module.
+
+    Raises
+    ------
+    ValueError
+        If both ``trials`` and ``num_trials`` are passed.
     """
+    if trials is not None and "num_trials" in infomap_options:
+        raise ValueError("Pass only one of `trials` and `num_trials`.")
+
     if len(g.nodes) == 0:
         return []
+
+    # `num_trials` is the engine option; `trials` is the convenience alias.
+    # Default to 10 (a robust default for a one-call helper, matching the
+    # igraph variant) when the caller specified neither.
+    if "num_trials" not in infomap_options:
+        infomap_options["num_trials"] = trials if trials is not None else 10
 
     infomap, node_mapping = run_networkx(
         g,

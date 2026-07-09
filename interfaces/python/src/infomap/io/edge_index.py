@@ -7,6 +7,11 @@ from typing import Any
 from .._optional import require_numpy
 from ._arrays import undirected_edge_items
 
+# No user-facing API: the adapter (add_edge_index) is reached through
+# Network.from_edge_index / infomap.run(edge_index). Empty __all__ so the
+# submodule stops surfacing its plumbing.
+__all__: list[str] = []
+
 
 def _as_numpy_array(value: Any, *, name: str):
     np = require_numpy("edge_index support")

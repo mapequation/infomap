@@ -58,7 +58,16 @@ spelling out (see Pitfalls).
 Two one-shot helpers return native types instead of a
 {class}`~infomap.Result`: {func}`infomap.find_communities` (a NetworkX-style
 ``list[set]``) and {func}`infomap.find_igraph_communities` (an
-``igraph.VertexClustering``).
+``igraph.VertexClustering``). Both accept ``trials`` (a convenience alias for
+``num_trials``) and default to ``10`` — a robust default for a single call;
+pass ``trials`` or ``num_trials``, not both.
+
+The ``from_*`` constructors deliberately name their input-reading arguments in
+each library's own idiom — NetworkX ``weight`` (an attribute name), igraph
+``edge_weights``/``vertex_weights``, SciPy ``weighted`` (a bool), edge-index
+``edge_weight`` (an array) — rather than forcing one spelling across sources.
+The ``directed`` defaults likewise follow each source's convention (a SciPy
+adjacency matrix is undirected by default, a ``(2, E)`` edge index directed).
 
 ## NetworkX
 
