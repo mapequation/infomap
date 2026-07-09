@@ -46,7 +46,7 @@ inline void normalize(std::vector<T>& v, const T sum) noexcept
 template <typename T>
 inline void normalize(std::vector<T>& v) noexcept
 {
-  const auto sum = std::accumulate(cbegin(v), cend(v), T {});
+  const auto sum = std::accumulate(cbegin(v), cend(v), T { });
   normalize(v, sum);
 }
 
@@ -590,6 +590,22 @@ void FlowCalculator::calcDirectedRelaxToSelfFlow(const StateNetwork& network, co
   }
 }
 
+std::vector<unsigned int> FlowCalculator::physicalNodeIndex(const StateNetwork& network, unsigned int& numPhysicalNodes) const noexcept
+{
+  std::vector<unsigned int> physIndex(numNodes, 0);
+  std::unordered_map<unsigned int, unsigned int> physIdToIndex;
+  physIdToIndex.reserve(network.numPhysicalNodes());
+  numPhysicalNodes = 0;
+  for (const auto& node : network.nodes()) {
+    const auto result = physIdToIndex.emplace(node.second.physicalId, numPhysicalNodes);
+    if (result.second) {
+      ++numPhysicalNodes;
+    }
+    physIndex[nodeIndexMap.at(node.second.id)] = result.first->second;
+  }
+  return physIndex;
+}
+
 void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, const Config& config) noexcept
 {
   m_flowMethod = "directed regularized flow";
@@ -620,25 +636,42 @@ void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, co
     s_in[link.target] += link.flow;
   }
 
+  // Mass (average link weight) is a Bayesian prior on the physical node, not
+  // the state node, so aggregate degree and strength over all state nodes
+  // belonging to the same physical node before deriving u_out/u_in.
+  unsigned int numPhysNodes = 0;
+  const auto physIndex = physicalNodeIndex(network, numPhysNodes);
+  std::vector<unsigned int> k_out_phys(numPhysNodes, 0);
+  std::vector<unsigned int> k_in_phys(numPhysNodes, 0);
+  std::vector<double> s_out_phys(numPhysNodes, 0);
+  std::vector<double> s_in_phys(numPhysNodes, 0);
+  for (unsigned int i = 0; i < N; ++i) {
+    const auto p = physIndex[i];
+    k_out_phys[p] += k_out[i];
+    s_out_phys[p] += s_out[i];
+    k_in_phys[p] += k_in[i];
+    s_in_phys[p] += s_in[i];
+  }
+
   double min_u_out = std::numeric_limits<double>::max();
   double min_u_in = std::numeric_limits<double>::max();
-  for (unsigned int i = 0; i < N; ++i) {
-    if (k_out[i] > 0) {
-      min_u_out = std::min(min_u_out, s_out[i] / k_out[i]);
+  for (unsigned int p = 0; p < numPhysNodes; ++p) {
+    if (k_out_phys[p] > 0) {
+      min_u_out = std::min(min_u_out, s_out_phys[p] / k_out_phys[p]);
     }
-    if (k_in[i] > 0) {
-      min_u_in = std::min(min_u_in, s_in[i] / k_in[i]);
+    if (k_in_phys[p] > 0) {
+      min_u_in = std::min(min_u_in, s_in_phys[p] / k_in_phys[p]);
     }
   }
 
-  auto u_out = [&s_out, &k_out, min_u_out](auto i) { return k_out[i] == 0 ? min_u_out : s_out[i] / k_out[i]; };
-  auto u_in = [&s_in, &k_in, min_u_in](auto i) { return k_in[i] == 0 ? min_u_in : s_in[i] / k_in[i]; };
+  auto u_out = [&s_out_phys, &k_out_phys, &physIndex, min_u_out](auto i) { const auto p = physIndex[i]; return k_out_phys[p] == 0 ? min_u_out : s_out_phys[p] / k_out_phys[p]; };
+  auto u_in = [&s_in_phys, &k_in_phys, &physIndex, min_u_in](auto i) { const auto p = physIndex[i]; return k_in_phys[p] == 0 ? min_u_in : s_in_phys[p] / k_in_phys[p]; };
 
   unsigned int numNodesAsTeleportationTargets = config.noSelfLinks ? N - 1 : N;
   double lambda = config.regularizationStrength * std::log(N) / numNodesAsTeleportationTargets;
   if (network.numPhysicalNodes() < N) {
     // Adjust for higher-order network, lnN/N^2 recovers lnN/N on physical network, but divide by N again because physically unconstrained teleportation
-    unsigned int Np = network.numPhysicalNodes();
+    unsigned int Np = network.numPhysicalNodes(); // Ignore noSelfLinks here, since the teleportation is physically unconstrained
     lambda = config.regularizationStrength * std::log(Np) / (Np * Np * Np);
   }
   double u_t = average_weight;
@@ -1045,14 +1078,27 @@ void FlowCalculator::calcUndirectedRegularizedFlow(const StateNetwork& network, 
     }
   }
 
-  double min_u = std::numeric_limits<double>::max();
+  // Mass (average link weight) is a Bayesian prior on the physical node, not
+  // the state node, so aggregate degree and strength over all state nodes
+  // belonging to the same physical node before deriving u.
+  unsigned int numPhysNodes = 0;
+  const auto physIndex = physicalNodeIndex(network, numPhysNodes);
+  std::vector<unsigned int> k_phys(numPhysNodes, 0);
+  std::vector<double> s_phys(numPhysNodes, 0);
   for (unsigned int i = 0; i < N; ++i) {
-    if (k[i] > 0) {
-      min_u = std::min(min_u, s[i] / k[i]);
+    const auto p = physIndex[i];
+    k_phys[p] += k[i];
+    s_phys[p] += s[i];
+  }
+
+  double min_u = std::numeric_limits<double>::max();
+  for (unsigned int p = 0; p < numPhysNodes; ++p) {
+    if (k_phys[p] > 0) {
+      min_u = std::min(min_u, s_phys[p] / k_phys[p]);
     }
   }
 
-  auto u = [&s, &k, min_u](auto i) { return k[i] == 0 ? min_u : s[i] / k[i]; };
+  auto u = [&s_phys, &k_phys, &physIndex, min_u](auto i) { const auto p = physIndex[i]; return k_phys[p] == 0 ? min_u : s_phys[p] / k_phys[p]; };
 
   unsigned int numNodesAsTeleportationTargets = config.noSelfLinks ? N - 1 : N;
   double lambda = config.regularizationStrength * std::log(N) / numNodesAsTeleportationTargets;

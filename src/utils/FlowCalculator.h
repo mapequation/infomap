@@ -52,6 +52,11 @@ private:
   void addFlowNote(const std::string& note);
   void recordPageRank(unsigned int iterations, double error, bool converged) noexcept;
 
+  // Maps each state node's dense index (as used by flowLinks/nodeFlow) to a
+  // dense index of the physical node it belongs to, so regularization can
+  // aggregate mass (degree, strength) over all state nodes of a physical node.
+  std::vector<unsigned int> physicalNodeIndex(const StateNetwork& network, unsigned int& numPhysicalNodes) const noexcept;
+
   unsigned int numNodes;
   unsigned int nonDanglingStartIndex = 0;
   unsigned int bipartiteStartIndex = 0;
