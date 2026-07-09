@@ -73,6 +73,19 @@ INTENTIONAL_OPTIONAL_VALUE_PARAMS = {
     "--max-degree-for-random-moves": "Optional; unset means no degree cap.",
 }
 
+# Parameters that exist only in feature-enabled builds (guarded by
+# ``#if INFOMAP_FEATURE_*`` in src/io/ParameterCatalog.cpp). The bindings are
+# generated from a standard build that omits them, so they are deliberately
+# outside the binding surface and carry no overrides entries -- but the CI
+# 'native' binary may enable the feature, so ``--print-json-parameters`` lists
+# them here. Exclude them from the completeness check; a new feature parameter
+# that reaches this list fails loud until it is added (or genuinely bound).
+FEATURE_GATED_PARAMS = {
+    "--lossy",
+    "--lambda",
+    "--test-feature",
+}
+
 # The engine longTypes that render as a numeric Python default (int/float).
 _NUMERIC_LONG_TYPES = {"integer", "number", "probability"}
 
@@ -126,6 +139,8 @@ def main() -> int:
         flag for flag, langs in overrides["defaults"].items() if "python" in langs
     }
     for param in catalog_obj.parameters:
+        if param.flag in FEATURE_GATED_PARAMS:
+            continue  # feature-build-only; outside the standard binding surface
         if param.render_policy != "value":
             continue  # flags and special render policies handle defaults elsewhere
         if param.long_type not in _NUMERIC_LONG_TYPES:
