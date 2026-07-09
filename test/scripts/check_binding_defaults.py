@@ -20,6 +20,13 @@ fails loud. A tri-state "unset" literal (Python ``None``, R ``NULL``) carries
 no scalar to compare and is skipped -- that is how a parameter opts a language
 out of the engine default (e.g. R ``NULL`` for the multilayer relax limits).
 
+It also checks *completeness* on the Python surface: every numeric value-typed
+parameter must either declare a 'defaults' entry or be listed as intentionally
+optional. The drift comparison alone iterates only the 'defaults' entries that
+already exist, so it cannot catch a numeric parameter that was never added --
+one that would silently render as ``T | None = None`` and drop its documented
+engine default.
+
 Usage:  check_binding_defaults.py <path-to-Infomap-binary>
 """
 
@@ -43,6 +50,31 @@ INTENTIONAL_FLAG_DIVERGENCES = {
     "--fast-hierarchical-solution": "Optional int (None = unset) vs the CLI repeated -F flag.",
     "--verbose": "Integer verbosity_level (default level 1) vs the CLI repeated -v flag.",
 }
+
+# Numeric value-typed parameters that intentionally render as an unset ``None``
+# on the Python surface (``param: int | None = None``) instead of surfacing the
+# engine default, so they are deliberately absent from overrides 'defaults'.
+# Each entry documents why. The completeness check below fails loud on any
+# *other* numeric parameter missing from 'defaults': that one would silently
+# render as ``T | None = None`` and drop its documented engine default. Adding a
+# numeric parameter to the engine therefore forces a conscious choice -- give it
+# a 'defaults' entry, or list it here as intentionally optional.
+INTENTIONAL_OPTIONAL_VALUE_PARAMS = {
+    "--weight-threshold": "Optional link-weight cutoff; unset means no filtering.",
+    "--node-limit": "Optional node-id cap; unset reads all nodes.",
+    "--matchable-multilayer-ids": "Optional; unset disables cross-network state-id matching.",
+    "--clu-level": "Optional depth; unset uses the engine default level.",
+    "--trial-offset": "Optional distributed-shard offset; unset is single-process.",
+    "--preferred-number-of-modules": "Optional soft preference; unset disables it.",
+    "--preferred-number-of-levels": "Optional soft preference; unset disables it.",
+    "--core-level-limit": "Optional reapply cap; unset uses the engine default.",
+    "--tune-iteration-limit": "Optional iteration cap; unset uses the engine default.",
+    "--num-random-moves": "Optional; unset disables random-move merging.",
+    "--max-degree-for-random-moves": "Optional; unset means no degree cap.",
+}
+
+# The engine longTypes that render as a numeric Python default (int/float).
+_NUMERIC_LONG_TYPES = {"integer", "number", "probability"}
 
 
 def _as_bool(value: str) -> bool:
@@ -79,9 +111,36 @@ def main() -> int:
     # flags, so a policy entry (per-parameter, group, or cliOnlyParameters)
     # naming a stale or misspelled flag fails here in the fast tier -- the unit
     # tests can only synthesize the catalog from the policy's own flag set.
-    ParameterCatalog(parameters, overrides)
+    catalog_obj = ParameterCatalog(parameters, overrides)
 
     drift: list[str] = []
+
+    # Completeness: every numeric value-typed parameter rendered on the Python
+    # surface must either declare a 'defaults' entry (checked below for drift)
+    # or be listed as intentionally optional. Without this, a newly added engine
+    # parameter that nobody wired into 'defaults' silently renders as
+    # ``T | None = None`` -- its documented default lost -- and the drift loop
+    # (which only iterates *existing* 'defaults' entries) cannot see the gap.
+    python_hidden = catalog_obj.hidden_bindings.get("python", set())
+    python_defaults = {
+        flag for flag, langs in overrides["defaults"].items() if "python" in langs
+    }
+    for param in catalog_obj.parameters:
+        if param.render_policy != "value":
+            continue  # flags and special render policies handle defaults elsewhere
+        if param.long_type not in _NUMERIC_LONG_TYPES:
+            continue  # string/path values legitimately default to None (unset)
+        if param.flag in python_hidden:
+            continue  # not part of the generated Python signature
+        if param.flag in python_defaults:
+            continue  # concrete default surfaced; drift loop covers it
+        if param.flag in INTENTIONAL_OPTIONAL_VALUE_PARAMS:
+            continue
+        drift.append(
+            f"{param.flag} [python]: numeric value parameter has no 'defaults' "
+            "entry and is not listed as intentionally optional; it would render "
+            "as 'T | None = None' and drop its engine default"
+        )
     for flag, per_language in overrides["defaults"].items():
         param = catalog.get(flag)
         if param is None:
@@ -123,7 +182,7 @@ def main() -> int:
         print(
             "\nUpdate interfaces/parameters/overrides.json 'defaults' to match the "
             "engine, or add an intentional divergence to INTENTIONAL_FLAG_DIVERGENCES "
-            "in this script with a reason.",
+            "/ INTENTIONAL_OPTIONAL_VALUE_PARAMS in this script with a reason.",
             file=sys.stderr,
         )
         return 1
