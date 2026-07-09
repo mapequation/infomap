@@ -216,7 +216,7 @@ edges_df = pd.DataFrame({
 
 result = infomap.run(
     edges_df[["source", "target", "weight"]].to_numpy(),
-    two_level=True, seed=123, num_trials=5, )
+    two_level=True, seed=123, num_trials=5)
 print(f"pandas route: {result.num_top_modules} modules, {result.codelength:.4f} bits/step")
 ```
 
@@ -396,7 +396,7 @@ runs = {
     "SciPy sparse": infomap.run(A, two_level=True, seed=123, num_trials=5),
     "edge list":    infomap.run(
         edges_df[["source", "target", "weight"]].to_numpy(),
-        two_level=True, seed=123, num_trials=5, ),
+        two_level=True, seed=123, num_trials=5),
 }
 for route, res in runs.items():
     print(f"  {res.codelength:.4f}  {route}")

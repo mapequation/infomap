@@ -50,8 +50,8 @@ Compatibility aliases
   Self-links are included by default; pass ``no_self_links=True`` to exclude
   them. Passing ``include_self_links`` explicitly emits a
   :class:`DeprecationWarning`.
-- ``pretty`` is a deprecated no-op — pretty console output is always on. Passing
-  it explicitly emits a :class:`DeprecationWarning`.
+- ``pretty`` is a deprecated no-op — it is accepted for backward compatibility
+  but has no effect. Passing it explicitly emits a :class:`DeprecationWarning`.
 
 Error base classes
 ------------------

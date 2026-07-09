@@ -297,12 +297,12 @@ karate club the prior quickly overwhelms the data:
 # the prior already outweighs the data and collapses them into one.
 G_karate = nx.karate_club_graph()
 
-for label, kwargs in [
-    ("baseline",                  {}),
-    ("regularized, strength=0.5", {"regularized": True, "regularization_strength": 0.5}),
-    ("regularized (default 1.0)", {"regularized": True}),
+for label, options in [
+    ("baseline",                  infomap.Options()),
+    ("regularized, strength=0.5", infomap.Options(regularized=True, regularization_strength=0.5)),
+    ("regularized (default 1.0)", infomap.Options(regularized=True)),
 ]:
-    result = infomap.run(G_karate, two_level=True, seed=123, num_trials=10, **kwargs)
+    result = infomap.run(G_karate, options=options, two_level=True, seed=123, num_trials=10)
     print(f"{label}: modules={result.num_top_modules}, L={result.codelength:.4f}")
 ```
 
