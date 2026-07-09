@@ -238,7 +238,7 @@ g = nx.karate_club_graph()
 communities = infomap.find_communities(
     g,
     module_attribute="infomap_module",
-    seed=123, num_trials=10, silent=True,
+    seed=123, num_trials=10,
 )
 nx.write_graphml(g, "karate_infomap.graphml")
 print(f"Found {len(communities)} communities")
