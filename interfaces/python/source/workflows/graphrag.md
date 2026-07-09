@@ -128,7 +128,6 @@ from infomap.tl.graphrag import run_graphrag_communities
 
 result = run_graphrag_communities(
     input_dir=input_dir,
-    silent=True,
     seed=123,
     num_trials=5,
 )
@@ -215,7 +214,6 @@ output_dir = work_dir / "output"
 result_with_output = run_graphrag_communities(
     input_dir=input_dir,
     output_dir=output_dir,
-    silent=True,
     seed=123,
     num_trials=5,
 )
