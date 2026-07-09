@@ -6,6 +6,11 @@ from typing import Any
 from .._optional import require_scipy_sparse
 from ._arrays import undirected_edge_items
 
+# No user-facing API: the adapter (add_scipy_sparse_matrix) is reached through
+# Network.from_scipy_sparse_matrix / infomap.run(A). Empty __all__ so the
+# submodule stops surfacing its plumbing.
+__all__: list[str] = []
+
 
 def _import_sparse() -> Any:
     # Thin delegate kept for backwards compatibility (tests import it); the

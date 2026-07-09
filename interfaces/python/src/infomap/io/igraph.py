@@ -8,6 +8,11 @@ from typing import Any
 from .._optional import require_igraph
 from ._arrays import apply_node_meta_data, community_node_data
 
+# The only user-facing name here; the adapter (add_igraph_graph) and helpers are
+# reached through Network.from_igraph / infomap.run(). Curated so the submodule
+# stops surfacing its plumbing (require_igraph, community_node_data, ...).
+__all__ = ["find_igraph_communities"]
+
 
 def _import_igraph() -> Any:
     # Thin delegate kept for backwards compatibility (tests import it); the
@@ -297,7 +302,7 @@ def find_igraph_communities(
     *,
     edge_weights: str | Iterable[Any] | None = None,
     vertex_weights: Any = None,
-    trials: int = 10,
+    trials: int | None = None,
     node_id: str = "node_id",
     layer_id: str = "layer_id",
     multilayer_inter_intra_format: bool = True,
@@ -322,8 +327,9 @@ def find_igraph_communities(
     vertex_weights : None, optional
         Accepted for igraph API familiarity but not supported yet.
     trials : int, optional
-        Number of independent trials; the best solution is kept. Default
-        ``10``. Alias for the ``num_trials`` Infomap option.
+        Number of independent trials; the best solution is kept. Convenience
+        alias for the ``num_trials`` Infomap option. Pass ``trials`` or
+        ``num_trials``, not both; if neither is given the default is ``10``.
     node_id : str, optional
         Vertex attribute for physical node ids, implying a state network.
     layer_id : str, optional
@@ -362,7 +368,7 @@ def find_igraph_communities(
         If both ``trials`` and ``num_trials`` are passed.
     """
     ig = _validate_igraph_graph(g)
-    if "num_trials" in infomap_options:
+    if trials is not None and "num_trials" in infomap_options:
         raise ValueError("Pass only one of `trials` and `num_trials`.")
     if g.vcount() == 0:
         if module_attribute is not None:
@@ -375,7 +381,14 @@ def find_igraph_communities(
 
     from .._facade import Infomap
 
-    options = {"silent": True, "no_file_output": True, "num_trials": trials}
+    # `num_trials` is the engine option; `trials` is the convenience alias.
+    # Default to 10 when the caller specified neither; a caller-passed
+    # `num_trials` (only reachable when `trials` is None) wins via update().
+    options = {
+        "silent": True,
+        "no_file_output": True,
+        "num_trials": trials if trials is not None else 10,
+    }
     options.update(infomap_options)
 
     infomap = Infomap(**options)
