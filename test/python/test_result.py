@@ -363,6 +363,23 @@ def test_to_dataframe_conflicting_depth_aliases_raise(
         result.to_dataframe(depth=1, level=2)
 
 
+def test_to_dataframe_index_true_is_rejected(make_infomap, example_network_path):
+    pytest.importorskip("pandas")
+
+    im = make_infomap(num_trials=10)
+    im.read_file(str(example_network_path("ninetriangles.net")))
+    result = im.run()
+
+    # index=True has no column to key on; it must raise clearly instead of a
+    # bare pandas KeyError(True).
+    with pytest.raises(TypeError, match="index=True is not a column"):
+        result.to_dataframe(index=True)
+
+    # A real column key still works, and False/None keep the RangeIndex.
+    assert result.to_dataframe(index="node_id").index.name == "node_id"
+    assert result.to_dataframe(index=False).index.name is None
+
+
 def test_to_dataframe_deprecated_aliases_stay_silent(
     make_infomap, example_network_path
 ):
