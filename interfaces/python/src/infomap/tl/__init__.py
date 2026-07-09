@@ -214,7 +214,9 @@ def infomap(
     options.update(infomap_options)
     im = Infomap(args=args, **options)
     obs_names = list(adata.obs_names)
-    mapping = im.add_scipy_sparse_matrix(
+    # Use the internal impl rather than the deprecated public
+    # add_scipy_sparse_matrix accessor the rest of the API steers away from.
+    mapping = im._add_scipy_sparse_matrix_impl(
         matrix,
         directed=directed,
         weighted=use_weights,

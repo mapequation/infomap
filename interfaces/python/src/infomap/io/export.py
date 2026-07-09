@@ -470,10 +470,11 @@ def to_igraph(
 ) -> "igraph.Graph":
     """Build a python-igraph graph from a :class:`~infomap.Result`.
 
-    Vertices are the result's (state) nodes in ``state_id`` order, carrying the
-    Infomap node ``name`` plus the module/path/flow attributes. Edges come
-    from the partitioned network, with their weights as ``weight``. The
-    attribute values keep their native types, as in :func:`to_networkx`.
+    Vertices are the result's (state) nodes in the order the result yields
+    them, carrying the Infomap node ``name`` plus the module/path/flow
+    attributes. Edges come from the partitioned network, with their weights as
+    ``weight``. The attribute values keep their native types, as in
+    :func:`to_networkx`.
 
     Parameters
     ----------

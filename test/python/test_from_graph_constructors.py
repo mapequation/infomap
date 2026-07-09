@@ -3,13 +3,24 @@
 import networkx as nx
 import pytest
 
-from infomap import Infomap
+from infomap import Infomap, Network
 
 
 @pytest.mark.fast
 def test_node_id_to_label_initialized_empty():
     im = Infomap(silent=True, no_file_output=True)
     assert im.node_id_to_label == {}
+
+
+@pytest.mark.fast
+def test_network_node_id_to_label_initialized_empty():
+    # A manually built Network exposes an empty mapping instead of raising
+    # AttributeError, mirroring Infomap; the graph-library constructors
+    # replace it with the id->label mapping they build.
+    net = Network()
+    assert net.node_id_to_label == {}
+    net.add_link(1, 2)
+    assert net.node_id_to_label == {}
 
 
 @pytest.mark.fast

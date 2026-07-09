@@ -217,7 +217,7 @@ def test_add_networkx_multilayer_diagonal_link_raises():
     graph.add_edge("a-layer-1", "b-layer-2")
 
     im = infomap.Infomap(silent=True, no_file_output=True)
-    with pytest.raises(RuntimeError, match="diagonal"):
+    with pytest.raises(ValueError, match="diagonal"):
         im.add_networkx_graph(graph)
 
     # The documented workaround (full multilayer format) accepts the same graph.
