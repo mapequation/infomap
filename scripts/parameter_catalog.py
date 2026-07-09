@@ -7,6 +7,25 @@ from typing import Any
 
 GROUPS = ("Input", "Output", "Algorithm", "Accuracy")
 
+def resolve_policy_decision(
+    overrides: dict[str, Any], flag: str, surface: str
+) -> dict[str, Any]:
+    """Resolve the policy decision for ``flag`` on ``surface``.
+
+    Precedence: per-parameter entry, then group rule, then the ``keep``
+    default. Group uniqueness per (flag, surface) is enforced by
+    ``ParameterCatalog._validate_policy``.
+    """
+    policy = overrides.get("policy", {})
+    entry = policy.get("parameters", {}).get(flag, {}).get(surface)
+    if entry is not None:
+        return entry
+    for group in policy.get("groups", {}).values():
+        if flag in group.get("parameters", []) and surface in group:
+            return group[surface]
+    return {"action": policy.get("default", "keep")}
+
+
 def snake_name(flag: str) -> str:
     return flag.removeprefix("--").replace("-", "_")
 
@@ -100,9 +119,6 @@ class Parameter:
         return self.raw.get("choices") or self.overrides.get("choices", {}).get(self.flag)
 
     def name(self, language: str) -> str:
-        binding_names = self.raw.get("bindingNames", {})
-        if language in binding_names:
-            return binding_names[language]
         names = self.overrides.get("names", {}).get(self.flag, {})
         if language in names:
             return names[language]
@@ -113,14 +129,25 @@ class Parameter:
     def tier(self, language: str) -> str:
         """The binding-surface tier of this parameter: ``common`` or ``advanced``.
 
-        Tier membership is declared per language in the overrides file
-        (``tiers.<language>.common``, keyed by CLI flag); every parameter not
-        listed there is ``advanced``. The tier decides which parameters stay
+        Declared as a ``tier`` attribute on the parameter's policy decision
+        (``policy.parameters.<flag>.<language>.tier``); every parameter
+        without one is ``advanced``. The tier decides which parameters stay
         as real keyword parameters in the 3.0 signatures (see issue #738) —
         everything else is carried by the options object.
         """
-        common = self.overrides.get("tiers", {}).get(language, {}).get("common", [])
-        return "common" if self.flag in common else "advanced"
+        return self.policy(language).get("tier", "advanced")
+
+    def policy(self, surface: str) -> dict[str, str]:
+        """The 3.0 cleanup-policy decision for this parameter on ``surface``.
+
+        Declared in the overrides file (issue #755): per-parameter entries in
+        ``policy.parameters`` (keyed by CLI flag) take precedence, then group
+        rules in ``policy.groups`` (one decision applied to a parameter
+        list), then the ``keep`` default. Returns a dict with at least
+        ``action`` and, for every non-keep action, a ``replacement`` (plus
+        ``aliasOf`` for ``alias``).
+        """
+        return resolve_policy_decision(self.overrides, self.flag, surface)
 
     def python_inert_without_outdir(self) -> bool:
         """True for output-artifact parameters that are inert via kwargs.
@@ -128,26 +155,21 @@ class Parameter:
         In library mode (``isCLI=false``, the only mode the Python API uses)
         the engine forces ``noFileOutput`` on when no output directory is
         given (``src/io/Config.cpp``), and the directory can only arrive via
-        the positional ``args`` argument. The flags are declared in the
-        overrides file (``apiNotes.python.inertWithoutOutputDir``).
+        the positional ``args`` argument. Declared as
+        ``inertWithoutOutputDir: true`` on the python policy decision.
         """
-        inert = (
-            self.overrides.get("apiNotes", {})
-            .get("python", {})
-            .get("inertWithoutOutputDir", [])
-        )
-        return self.flag in inert
+        return bool(self.policy("python").get("inertWithoutOutputDir"))
 
     def uses_generic_spec(self) -> bool:
         return self.render_policy in {"flag", "value"}
 
     def binding_default(self, language: str) -> dict[str, str]:
-        return self.raw.get("bindingDefaults", {}).get(language, {})
+        return self.overrides.get("defaults", {}).get(self.flag, {}).get(language)
 
     def python_default_value(self) -> str:
-        # ``is not None`` (not truthiness): a future binding default of "" / "0"
-        # is a real value, not "unset".
-        value = self.binding_default("python").get("value")
+        # ``is not None`` (not truthiness): a binding default of "" / "0" is a
+        # real value, not "unset".
+        value = self.binding_default("python")
         if value is not None:
             return value
         if not self.required:
@@ -217,13 +239,13 @@ class Parameter:
         return "str, optional"
 
     def python_doc_description(self) -> str:
-        python_docs = self.raw.get("bindingDocs", {}).get("python", {})
-        if description := python_docs.get("description"):
+        docs = self.overrides.get("docs", {}).get(self.flag, {})
+        if description := docs.get("python"):
             return description
         return self.description
 
     def r_default(self) -> str:
-        value = self.binding_default("r").get("value")
+        value = self.binding_default("r")
         if value is not None:
             return value
         if not self.required:
@@ -270,37 +292,116 @@ class ParameterCatalog:
             ]
             for language, entries in overrides.get("bindingOnly", {}).items()
         }
+        self._validate_policy()
+        # Hidden bindings are derived from the policy: a `hide` decision on a
+        # generated surface removes the parameter from that surface (the
+        # policy is the single per-parameter record; see issue #755).
+        surfaces = overrides.get("policy", {}).get("surfaces", [])
         self.hidden_bindings = {
-            language: {entry["flag"] for entry in entries}
-            for language, entries in overrides.get("hiddenBindings", {}).items()
+            language: {
+                param.flag
+                for param in self.parameters
+                if param.policy(language)["action"] == "hide"
+            }
+            for language in surfaces
+            if language != "cli"
         }
-        self._validate_tiers()
 
-    def _validate_tiers(self) -> None:
-        # Fail loud on typos: every tier entry must name a real catalog flag,
-        # and only the known tier names are accepted. A silently dropped tier
-        # entry would put a parameter in the wrong 3.0 signature.
+    def _validate_policy(self) -> None:
+        # Fail loud on typos and incomplete decisions: the policy is the 3.0
+        # contract input (#755), so an unknown flag, surface, or action -- or
+        # a removal without replacement guidance -- must break the build, not
+        # silently fall back to "keep".
+        policy = self.overrides.get("policy")
+        if policy is None:
+            return
+        surfaces = set(policy.get("surfaces", []))
+        actions = set(policy.get("vocabulary", {}))
         known_flags = {param.flag for param in self.parameters}
-        for language, tiers in self.overrides.get("tiers", {}).items():
-            unknown_tiers = set(tiers) - {"common"}
-            if unknown_tiers:
+        binding_only_flags = {
+            entry.flag
+            for entries in self.binding_only_parameters.values()
+            for entry in entries
+        }
+        cli_only_flags = set(policy.get("cliOnlyParameters", []))
+        known_flags |= binding_only_flags | cli_only_flags
+
+        def check_decision(flag: str, surface: str, decision: dict[str, Any]) -> None:
+            if surface not in surfaces:
                 raise RuntimeError(
-                    f"Unknown tier name(s) for {language}: {sorted(unknown_tiers)}; "
-                    "only 'common' is declared (everything else is advanced)"
+                    f"policy for {flag} names unknown surface {surface!r}; "
+                    f"declared surfaces: {sorted(surfaces)}"
                 )
-            missing = sorted(set(tiers.get("common", [])) - known_flags)
-            if missing:
+            if flag in cli_only_flags and surface != "cli":
                 raise RuntimeError(
-                    f"tiers.{language}.common lists flag(s) not in the "
-                    f"parameter catalog: {missing}"
+                    f"policy for {flag} carries a {surface} decision, but "
+                    "cliOnlyParameters declares it CLI-only"
                 )
-        for language, notes in self.overrides.get("apiNotes", {}).items():
-            missing = sorted(set(notes.get("inertWithoutOutputDir", [])) - known_flags)
-            if missing:
+            action = decision.get("action")
+            if action not in actions:
                 raise RuntimeError(
-                    f"apiNotes.{language}.inertWithoutOutputDir lists flag(s) "
-                    f"not in the parameter catalog: {missing}"
+                    f"policy for {flag}/{surface} has unknown action "
+                    f"{action!r}; declared actions: {sorted(actions)}"
                 )
+            if action != "keep" and not decision.get("replacement"):
+                raise RuntimeError(
+                    f"policy for {flag}/{surface} ({action}) is missing "
+                    "the required replacement guidance"
+                )
+            if action == "alias" and not decision.get("aliasOf"):
+                raise RuntimeError(
+                    f"policy for {flag}/{surface} is an alias but is "
+                    "missing aliasOf"
+                )
+            if action == "alias" and decision.get("aliasOf") not in known_flags:
+                raise RuntimeError(
+                    f"policy for {flag}/{surface} aliases unknown flag "
+                    f"{decision.get('aliasOf')!r}"
+                )
+            tier = decision.get("tier")
+            if tier is not None and tier != "common":
+                raise RuntimeError(
+                    f"policy for {flag}/{surface} declares unknown tier "
+                    f"{tier!r}; only 'common' is declared (everything else "
+                    "is advanced)"
+                )
+            if tier is not None and action not in {"keep", "alias"}:
+                raise RuntimeError(
+                    f"policy for {flag}/{surface} declares a tier on action "
+                    f"{action!r}; tiers only apply to kept parameters"
+                )
+
+        for flag, per_surface in policy.get("parameters", {}).items():
+            if flag not in known_flags:
+                raise RuntimeError(
+                    f"policy.parameters lists unknown flag {flag!r} (not in the "
+                    "parameter catalog, bindingOnly, or cliOnlyParameters)"
+                )
+            for surface, decision in per_surface.items():
+                check_decision(flag, surface, decision)
+
+        # Group rules: every listed flag must exist, decisions must validate,
+        # and no two groups may decide the same (flag, surface) -- silent
+        # shadowing between groups would make the resolution order-dependent.
+        claimed: dict[tuple[str, str], str] = {}
+        for group_name, group in policy.get("groups", {}).items():
+            group_flags = group.get("parameters", [])
+            if not group_flags:
+                raise RuntimeError(f"policy group {group_name!r} lists no parameters")
+            decision_surfaces = [key for key in group if key != "parameters"]
+            for flag in group_flags:
+                if flag not in known_flags:
+                    raise RuntimeError(
+                        f"policy group {group_name!r} lists unknown flag {flag!r}"
+                    )
+                for surface in decision_surfaces:
+                    check_decision(flag, surface, group[surface])
+                    previous = claimed.setdefault((flag, surface), group_name)
+                    if previous != group_name:
+                        raise RuntimeError(
+                            f"policy groups {previous!r} and {group_name!r} both "
+                            f"decide {flag}/{surface}"
+                        )
 
     def grouped(self) -> dict[str, list[Parameter]]:
         return {

@@ -1,35 +1,119 @@
 {
-  "hiddenBindings": {
-    "ts": [
-      {
-        "flag": "--parallel-trials",
-        "reason": "The JavaScript package runs Infomap in a single-threaded worker, so exposing OpenMP trial scheduling would be misleading."
-      },
-      {
-        "flag": "--inner-parallelization",
-        "reason": "The JavaScript package runs Infomap in a single-threaded worker, so exposing OpenMP node-move scheduling would be misleading."
-      },
-      {
-        "flag": "--num-threads",
-        "reason": "The JavaScript package runs Infomap in a single-threaded WASM worker, so an OpenMP thread budget is meaningless there."
-      },
-      {
-        "flag": "--threads",
-        "reason": "Alias of --num-threads; the single-threaded JavaScript worker has no OpenMP thread budget."
-      },
-      {
-        "flag": "--trial-offset",
-        "reason": "Distributed trial sharding is for multi-process HPC runs; the single-threaded JavaScript WASM worker cannot shard."
-      },
-      {
-        "flag": "--trial-results",
-        "reason": "Per-shard result emission is for multi-process HPC merge workflows, not the JavaScript worker."
-      },
-      {
-        "flag": "--no-final-output",
-        "reason": "Only meaningful for shard runs feeding --merge-trial-results, which the JavaScript worker does not use."
-      }
-    ]
+  "names": {
+    "--verbose": {
+      "python": "verbosity_level",
+      "r": "verbosity_level",
+      "ts": "verbose"
+    }
+  },
+  "defaults": {
+    "--core-loop-codelength-threshold": {
+      "python": "1e-10",
+      "r": "1e-10"
+    },
+    "--core-loop-limit": {
+      "python": "10",
+      "r": "10L"
+    },
+    "--directed": {
+      "python": "None",
+      "r": "NULL"
+    },
+    "--entropy-correction-strength": {
+      "python": "1.0",
+      "r": "1.0"
+    },
+    "--fast-hierarchical-solution": {
+      "python": "None",
+      "r": "NULL"
+    },
+    "--flow-tolerance": {
+      "python": "1e-15",
+      "r": "1e-15"
+    },
+    "--markov-time": {
+      "python": "1.0",
+      "r": "1.0"
+    },
+    "--max-flow-iterations": {
+      "python": "400",
+      "r": "400L"
+    },
+    "--meta-data-rate": {
+      "python": "1.0",
+      "r": "1.0"
+    },
+    "--min-flow-iterations": {
+      "python": "50",
+      "r": "50L"
+    },
+    "--multilayer-relax-limit": {
+      "python": "-1",
+      "r": "NULL"
+    },
+    "--multilayer-relax-limit-down": {
+      "python": "-1",
+      "r": "NULL"
+    },
+    "--multilayer-relax-limit-up": {
+      "python": "-1",
+      "r": "NULL"
+    },
+    "--multilayer-relax-rate": {
+      "python": "0.15",
+      "r": "0.15"
+    },
+    "--num-trials": {
+      "python": "1",
+      "r": "1L"
+    },
+    "--preferred-number-of-levels-strength": {
+      "python": "1.0",
+      "r": "1.0"
+    },
+    "--regularization-strength": {
+      "python": "1.0",
+      "r": "1.0"
+    },
+    "--seed": {
+      "python": "123",
+      "r": "123L"
+    },
+    "--silent": {
+      "python": "True",
+      "r": "FALSE"
+    },
+    "--teleportation-probability": {
+      "python": "0.15",
+      "r": "0.15"
+    },
+    "--tune-iteration-relative-threshold": {
+      "python": "1e-05",
+      "r": "1e-05"
+    },
+    "--variable-markov-damping": {
+      "python": "1.0",
+      "r": "1.0"
+    },
+    "--variable-markov-min-scale": {
+      "python": "1.0",
+      "r": "1.0"
+    },
+    "--verbose": {
+      "python": "1",
+      "r": "1L"
+    }
+  },
+  "docs": {
+    "--fast-hierarchical-solution": {
+      "python": "Find top modules fast. Use 2 to keep all fast levels and 3 to skip the recursive part."
+    },
+    "--verbose": {
+      "python": "Verbosity level on the console. 1 keeps the default output level, 2 renders -vv and so on."
+    },
+    "--silent": {
+      "python": "Suppress console output. The Python API is quiet by default; construct with silent=False for the engine log. The command-line interface is unaffected."
+    }
   },
   "bindingOnly": {
     "python": [
@@ -64,31 +148,157 @@
       }
     ]
   },
-  "tiers": {
-    "python": {
-      "common": [
-        "--seed",
-        "--num-trials",
-        "--two-level",
-        "--directed",
-        "--markov-time"
-      ]
-    }
-  },
-  "apiNotes": {
-    "python": {
-      "inertWithoutOutputDir": [
-        "--output",
-        "--tree",
-        "--ftree",
-        "--clu",
-        "--clu-level",
-        "--out-name",
-        "--no-file-output",
-        "--hide-bipartite-nodes",
-        "--print-all-trials",
-        "--no-overwrite"
-      ]
+  "policy": {
+    "vocabulary": {
+      "keep": "First-class option on the surface in 3.0 (the default for every parameter without an entry). May carry tier: 'common' for parameters that stay real keyword parameters in the 3.0 Python signatures (#738); everything else rides the options object.",
+      "alias": "Kept as a documented alias of another parameter (aliasOf names the target).",
+      "deprecate": "Marked deprecated in 2.x; the surface's cleanup issue decides removal.",
+      "remove": "Removed from the surface in 3.0, deprecated through 2.x where it is currently exposed.",
+      "args-only": "Not a first-class option in 3.0; reachable through the raw args escape hatch on library surfaces. inertWithoutOutputDir: true marks decisions where the flag is verifiably inert via kwargs in 2.x (library mode forces noFileOutput without an output directory).",
+      "hide": "Not exposed on the surface. Takes effect on regeneration, so it is only valid for parameters that are not currently exposed there."
+    },
+    "surfaces": [
+      "cli",
+      "python",
+      "r",
+      "ts"
+    ],
+    "default": "keep",
+    "cliOnlyParameters": [
+      "--pretty"
+    ],
+    "groups": {
+      "python-output-artifacts": {
+        "parameters": [
+          "--output",
+          "--tree",
+          "--ftree",
+          "--clu",
+          "--clu-level",
+          "--out-name",
+          "--no-file-output",
+          "--hide-bipartite-nodes",
+          "--print-all-trials",
+          "--no-overwrite"
+        ],
+        "python": {
+          "action": "args-only",
+          "inertWithoutOutputDir": true,
+          "replacement": "Use Result.write_tree/write_flow_tree/write_clu (write_clu takes depth_level) or Network.write_pajek/write_state_network. The flag only acts when an output directory is passed via the raw args escape hatch."
+        }
+      },
+      "ts-single-threaded-worker": {
+        "parameters": [
+          "--parallel-trials",
+          "--inner-parallelization",
+          "--num-threads",
+          "--threads",
+          "--trial-offset",
+          "--trial-results",
+          "--no-final-output"
+        ],
+        "ts": {
+          "action": "hide",
+          "replacement": "The JavaScript package runs Infomap in a single-threaded WASM worker: OpenMP scheduling, thread budgets, and multi-process trial sharding are meaningless there."
+        }
+      }
+    },
+    "parameters": {
+      "--seed": {
+        "python": {
+          "action": "keep",
+          "tier": "common"
+        }
+      },
+      "--num-trials": {
+        "python": {
+          "action": "keep",
+          "tier": "common"
+        }
+      },
+      "--two-level": {
+        "python": {
+          "action": "keep",
+          "tier": "common"
+        }
+      },
+      "--directed": {
+        "python": {
+          "action": "keep",
+          "tier": "common"
+        }
+      },
+      "--markov-time": {
+        "python": {
+          "action": "keep",
+          "tier": "common"
+        }
+      },
+      "--pretty": {
+        "cli": {
+          "action": "remove",
+          "replacement": "Deprecated no-op since 2.x; pretty console output is always on."
+        }
+      },
+      "--include-self-links": {
+        "cli": {
+          "action": "remove",
+          "replacement": "Self-links are included by default; use --no-self-links to exclude them. The CLI flag is already a hard error in 2.x."
+        },
+        "python": {
+          "action": "remove",
+          "replacement": "Self-links are included by default; pass no_self_links=True to exclude them."
+        },
+        "r": {
+          "action": "remove",
+          "replacement": "Self-links are included by default; pass no_self_links = TRUE to exclude them."
+        }
+      },
+      "--threads": {
+        "cli": {
+          "action": "alias",
+          "aliasOf": "--num-threads",
+          "replacement": "Documented alias of --num-threads."
+        },
+        "python": {
+          "action": "remove",
+          "replacement": "Use num_threads; threads is a redundant alias of the same engine option."
+        },
+        "r": {
+          "action": "remove",
+          "replacement": "Use num_threads; threads is a redundant alias of the same engine option."
+        }
+      },
+      "--silent": {
+        "python": {
+          "action": "remove",
+          "replacement": "The Python API is quiet by default; logging is the control. Attach handlers to logging.getLogger('infomap') (e.g. infomap.enable_log()) for the engine log."
+        },
+        "r": {
+          "action": "deprecate",
+          "replacement": "Pending the R option-surface decision (#757); the library default is expected to stay quiet."
+        }
+      },
+      "--verbose": {
+        "python": {
+          "action": "remove",
+          "replacement": "A DEBUG-enabled 'infomap' logger (infomap.enable_log(logging.DEBUG)) raises engine verbosity; logger levels filter the records."
+        },
+        "r": {
+          "action": "deprecate",
+          "replacement": "Pending the R option-surface decision (#757)."
+        }
+      },
+      "--print-config-fingerprint": {
+        "python": {
+          "action": "remove",
+          "replacement": "A print-and-exit CLI diagnostic; run the infomap binary."
+        },
+        "r": {
+          "action": "remove",
+          "replacement": "A print-and-exit CLI diagnostic; run the infomap binary."
+        }
+      }
     }
   }
 }

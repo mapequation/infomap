@@ -23,29 +23,6 @@ namespace infomap {
 
 namespace {
 
-  bool isFloatingPointArgument(const ParameterSpec& parameter)
-  {
-    return parameter.argumentName == ArgType::number || parameter.argumentName == ArgType::probability;
-  }
-
-  std::string numericBindingDefault(const ParameterSpec& parameter)
-  {
-    auto value = parameter.defaultValue;
-    if (isFloatingPointArgument(parameter) && value.find_first_of(".eE") == std::string::npos) {
-      value += ".0";
-    }
-    return value;
-  }
-
-  std::string rBindingDefault(const ParameterSpec& parameter)
-  {
-    auto value = numericBindingDefault(parameter);
-    if (parameter.argumentName == ArgType::integer) {
-      value += "L";
-    }
-    return value;
-  }
-
   template <typename T>
   void registerOptionForTarget(ProgramInterface& api, T& target, const ParameterSpec& parameter);
 
@@ -131,37 +108,9 @@ namespace {
       return *this;
     }
 
-    SpecBuilder& bindingNames(std::string pythonName, std::string rName, std::string tsName)
-    {
-      parameter_.pythonName = std::move(pythonName);
-      parameter_.rName = std::move(rName);
-      parameter_.tsName = std::move(tsName);
-      return *this;
-    }
-
     SpecBuilder& renderPolicy(std::string value)
     {
       parameter_.renderPolicy = std::move(value);
-      return *this;
-    }
-
-    SpecBuilder& bindingDefaults()
-    {
-      parameter_.pythonDefault = numericBindingDefault(parameter_);
-      parameter_.rDefault = rBindingDefault(parameter_);
-      return *this;
-    }
-
-    SpecBuilder& bindingDefaults(std::string pythonDefault, std::string rDefault)
-    {
-      parameter_.pythonDefault = std::move(pythonDefault);
-      parameter_.rDefault = std::move(rDefault);
-      return *this;
-    }
-
-    SpecBuilder& pythonDoc(std::string value)
-    {
-      parameter_.pythonDocDescription = std::move(value);
       return *this;
     }
 
@@ -459,7 +408,6 @@ const std::vector<ParameterSpec>& parameterCatalog()
         .advanced()
         .defaultValue("1")
         .min("0")
-        .bindingDefaults()
         .configTarget(&Config::metaDataRate),
     param()
         .longName("meta-data-unweighted")
@@ -592,7 +540,6 @@ const std::vector<ParameterSpec>& parameterCatalog()
         .group("Algorithm")
         .defaultValue("false")
         .renderPolicy("directed_alias")
-        .bindingDefaults("None", "NULL")
         .configTarget(&Config::directed),
     param()
         .shortName('e')
@@ -622,7 +569,6 @@ const std::vector<ParameterSpec>& parameterCatalog()
         .advanced()
         .defaultValue("0.15")
         .range("0", "1")
-        .bindingDefaults()
         .configTarget(&Config::teleportationProbability),
     param()
         .longName("max-flow-iterations")
@@ -632,7 +578,6 @@ const std::vector<ParameterSpec>& parameterCatalog()
         .advanced()
         .defaultValue("400")
         .min("1")
-        .bindingDefaults()
         .configTarget(&Config::maxFlowIterations),
     param()
         .longName("min-flow-iterations")
@@ -642,7 +587,6 @@ const std::vector<ParameterSpec>& parameterCatalog()
         .advanced()
         .defaultValue("50")
         .min("0")
-        .bindingDefaults()
         .configTarget(&Config::minFlowIterations),
     param()
         .longName("flow-tolerance")
@@ -652,7 +596,6 @@ const std::vector<ParameterSpec>& parameterCatalog()
         .advanced()
         .defaultValue("1e-15")
         .min("0")
-        .bindingDefaults()
         .configTarget(&Config::flowTolerance),
     param()
         .longName("regularized")
@@ -668,7 +611,6 @@ const std::vector<ParameterSpec>& parameterCatalog()
         .advanced()
         .defaultValue("1")
         .min("0")
-        .bindingDefaults()
         .configTarget(&Config::regularizationStrength),
     param()
         .longName("entropy-corrected")
@@ -683,7 +625,6 @@ const std::vector<ParameterSpec>& parameterCatalog()
         .group("Algorithm")
         .advanced()
         .defaultValue("1")
-        .bindingDefaults()
         .configTarget(&Config::entropyBiasCorrectionMultiplier),
     param()
         .longName("markov-time")
@@ -693,7 +634,6 @@ const std::vector<ParameterSpec>& parameterCatalog()
         .advanced()
         .defaultValue("1")
         .min("0")
-        .bindingDefaults()
         .configTarget(&Config::markovTime),
     param()
         .longName("variable-markov-time")
@@ -708,7 +648,6 @@ const std::vector<ParameterSpec>& parameterCatalog()
         .group("Algorithm")
         .advanced()
         .defaultValue("1")
-        .bindingDefaults()
         .configTarget(&Config::variableMarkovTimeDamping),
     param()
         .longName("variable-markov-min-scale")
@@ -717,7 +656,6 @@ const std::vector<ParameterSpec>& parameterCatalog()
         .group("Algorithm")
         .advanced()
         .defaultValue("1")
-        .bindingDefaults()
         .configTarget(&Config::variableMarkovTimeMinLocalScale),
     param()
         .longName("preferred-number-of-modules")
@@ -745,7 +683,6 @@ const std::vector<ParameterSpec>& parameterCatalog()
         .advanced()
         .defaultValue("1")
         .min("0")
-        .bindingDefaults()
         .configTarget(&Config::preferredNumberOfLevelsStrength),
     param()
         .longName("multilayer-relax-rate")
@@ -755,7 +692,6 @@ const std::vector<ParameterSpec>& parameterCatalog()
         .advanced()
         .defaultValue("0.15")
         .range("0", "1")
-        .bindingDefaults()
         .configTarget(&Config::multilayerRelaxRate),
     param()
         .longName("multilayer-relax-limit")
@@ -764,7 +700,6 @@ const std::vector<ParameterSpec>& parameterCatalog()
         .group("Algorithm")
         .advanced()
         .defaultValue("-1")
-        .bindingDefaults("-1", "NULL")
         .configTarget(&Config::multilayerRelaxLimit),
     param()
         .longName("multilayer-relax-limit-up")
@@ -773,7 +708,6 @@ const std::vector<ParameterSpec>& parameterCatalog()
         .group("Algorithm")
         .advanced()
         .defaultValue("-1")
-        .bindingDefaults("-1", "NULL")
         .configTarget(&Config::multilayerRelaxLimitUp),
     param()
         .longName("multilayer-relax-limit-down")
@@ -782,7 +716,6 @@ const std::vector<ParameterSpec>& parameterCatalog()
         .group("Algorithm")
         .advanced()
         .defaultValue("-1")
-        .bindingDefaults("-1", "NULL")
         .configTarget(&Config::multilayerRelaxLimitDown),
     param()
         .longName("multilayer-relax-by-jsd")
@@ -804,7 +737,6 @@ const std::vector<ParameterSpec>& parameterCatalog()
         .group("Accuracy")
         .defaultValue("123")
         .min("1")
-        .bindingDefaults()
         .configTarget(&Config::seedToRandomNumberGenerator),
     param()
         .shortName('N')
@@ -814,7 +746,6 @@ const std::vector<ParameterSpec>& parameterCatalog()
         .group("Accuracy")
         .defaultValue("1")
         .min("1")
-        .bindingDefaults()
         .configTarget(&Config::numTrials),
     param()
         .shortName('M')
@@ -825,7 +756,6 @@ const std::vector<ParameterSpec>& parameterCatalog()
         .advanced()
         .defaultValue("10")
         .min("1")
-        .bindingDefaults()
         .configTarget(&Config::coreLoopLimit),
     param()
         .shortName('L')
@@ -855,7 +785,6 @@ const std::vector<ParameterSpec>& parameterCatalog()
         .advanced()
         .defaultValue("1e-10")
         .min("0")
-        .bindingDefaults()
         .configTarget(&Config::minimumCodelengthImprovement),
     param()
         .longName("tune-iteration-relative-threshold")
@@ -865,7 +794,6 @@ const std::vector<ParameterSpec>& parameterCatalog()
         .advanced()
         .defaultValue("1e-05")
         .min("0")
-        .bindingDefaults()
         .configTarget(&Config::minimumRelativeTuneIterationImprovement),
     param()
         .shortName('F')
@@ -876,8 +804,6 @@ const std::vector<ParameterSpec>& parameterCatalog()
         .incremental()
         .defaultValue("false")
         .renderPolicy("repeated_short")
-        .bindingDefaults("None", "NULL")
-        .pythonDoc("Find top modules fast. Use 2 to keep all fast levels and 3 to skip the recursive part.")
         .incrementalTarget(&Config::fastHierarchicalSolution),
     param()
         .longName("inner-parallelization")
@@ -949,7 +875,6 @@ const std::vector<ParameterSpec>& parameterCatalog()
         .advanced()
         .defaultValue("1")
         .min("0")
-        .bindingDefaults()
         .configTarget(&Config::lossyLambda),
 #endif
 #if INFOMAP_FEATURE_TEST_FEATURE
@@ -997,17 +922,12 @@ const std::vector<ParameterSpec>& parameterCatalog()
         .group("Output")
         .incremental()
         .defaultValue("false")
-        .bindingNames("verbosity_level", "verbosity_level", "verbose")
         .renderPolicy("repeated_short")
-        .bindingDefaults("1", "1L")
-        .pythonDoc("Verbosity level on the console. 1 keeps the default output level, 2 renders -vv and so on.")
         .incrementalTarget(&Config::verbosity),
     param()
         .longName("silent")
         .description("Suppress console output.")
         .group("Output")
-        .bindingDefaults("True", "FALSE")
-        .pythonDoc("Suppress console output. The Python API is quiet by default; construct with silent=False for the engine log. The command-line interface is unaffected.")
         .configTarget(&Config::silent),
     param()
         .longName("pretty")
@@ -1072,36 +992,8 @@ std::string parameterCatalogJson()
     if (!parameter.maxValue.empty()) {
       item["max"] = parameter.maxValue;
     }
-    if (!parameter.pythonName.empty() || !parameter.rName.empty() || !parameter.tsName.empty()) {
-      Json bindingNames;
-      if (!parameter.pythonName.empty()) {
-        bindingNames["python"] = parameter.pythonName;
-      }
-      if (!parameter.rName.empty()) {
-        bindingNames["r"] = parameter.rName;
-      }
-      if (!parameter.tsName.empty()) {
-        bindingNames["ts"] = parameter.tsName;
-      }
-      item["bindingNames"] = std::move(bindingNames);
-    }
     if (!parameter.renderPolicy.empty()) {
       item["renderPolicy"] = parameter.renderPolicy;
-    }
-    if (!parameter.pythonDocDescription.empty()) {
-      Json bindingDocs;
-      bindingDocs["python"]["description"] = parameter.pythonDocDescription;
-      item["bindingDocs"] = std::move(bindingDocs);
-    }
-    if (!parameter.pythonDefault.empty() || !parameter.rDefault.empty()) {
-      Json bindingDefaults;
-      if (!parameter.pythonDefault.empty()) {
-        bindingDefaults["python"]["value"] = parameter.pythonDefault;
-      }
-      if (!parameter.rDefault.empty()) {
-        bindingDefaults["r"]["value"] = parameter.rDefault;
-      }
-      item["bindingDefaults"] = std::move(bindingDefaults);
     }
     parameters.push_back(std::move(item));
   }

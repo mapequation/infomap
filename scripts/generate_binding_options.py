@@ -81,12 +81,9 @@ def load_overrides() -> dict:
                 raise RuntimeError(
                     f"bindingOnly entry for {language}:{entry.get('name')} must include a reason"
                 )
-    for language, entries in overrides.get("hiddenBindings", {}).items():
-        for entry in entries:
-            if not entry.get("reason"):
-                raise RuntimeError(
-                    f"hiddenBindings entry for {language}:{entry.get('flag')} must include a reason"
-                )
+    # Hidden bindings are derived from the policy section (hide decisions);
+    # their rationale is the schema-mandated replacement text, validated by
+    # ParameterCatalog._validate_policy.
     return overrides
 
 
