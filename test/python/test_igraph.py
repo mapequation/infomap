@@ -397,8 +397,6 @@ def test_find_igraph_communities_rejects_trial_and_vertex_weight_conflicts():
 def test_find_igraph_communities_accepts_num_trials_alone(monkeypatch):
     # `num_trials` (the engine option name) is accepted on its own, matching
     # the networkx helper; only passing it *together* with `trials` conflicts.
-    import infomap._facade as facade
-
     ig = pytest.importorskip("igraph")
     captured = {}
     real_infomap = facade.Infomap
