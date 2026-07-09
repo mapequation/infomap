@@ -16,6 +16,8 @@ Pins three contracts:
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 from infomap import (
@@ -166,3 +168,38 @@ def test_export_before_run_raises_not_run_error(make_infomap):
 
     with pytest.raises(NotRunError, match="Run Infomap"):
         annotate_networkx_graph(graph, im)
+
+
+def test_run_time_parse_message_fragments_still_appear_in_engine_source():
+    """Guard against silent drift of the run-time parse-error classifier.
+
+    ``errors._classify_run_message`` recognizes an *input* parse failure
+    surfacing from ``run()`` by matching hand-maintained fragments of the C++
+    engine's error strings (``_PARSE_MESSAGE_PREFIXES`` /
+    ``_PARSE_MESSAGE_SUBSTRINGS``). If the engine rewords one of those
+    messages, the fragment stops matching and the failure silently downgrades
+    from :class:`NetworkParseError` to a bare :class:`InfomapError` -- with no
+    other test failing, because the classifier still runs, just less
+    specifically. This asserts every fragment still occurs verbatim somewhere
+    in the C++ sources, so a rewording breaks the build and points here.
+    """
+    src_root = Path(__file__).resolve().parents[2] / "src"
+    if not src_root.is_dir():
+        pytest.skip("C++ sources not available in this layout")
+
+    sources = "\n".join(
+        path.read_text(encoding="utf-8", errors="replace")
+        for path in src_root.rglob("*")
+        if path.suffix in {".cpp", ".h"}
+    )
+    fragments = (
+        errors_module._PARSE_MESSAGE_PREFIXES
+        + errors_module._PARSE_MESSAGE_SUBSTRINGS
+    )
+    missing = [fragment for fragment in fragments if fragment not in sources]
+    assert not missing, (
+        f"run-time parse-error fragments no longer found in src/: {missing}. "
+        "The engine likely reworded a message; update errors._PARSE_MESSAGE_* "
+        "to match, or run() input failures will classify as InfomapError "
+        "instead of NetworkParseError."
+    )
