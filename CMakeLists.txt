@@ -192,6 +192,15 @@ if(BUILD_TESTING)
     set_tests_properties(print_json_parameters PROPERTIES LABELS "fast;core;parser;cli")
 
     add_test(
+        NAME binding_defaults
+        COMMAND
+            "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/test/scripts/check_binding_defaults.py"
+            "$<TARGET_FILE:infomap_cli>"
+    )
+    set_tests_properties(binding_defaults PROPERTIES LABELS "fast;core;parser;cli")
+
+    add_test(
         NAME shell_completion
         COMMAND
             "${Python3_EXECUTABLE}"
