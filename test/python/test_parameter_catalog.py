@@ -192,3 +192,59 @@ def test_python_common_tier_matches_issue_738_decision(test_paths):
     assert common == sorted(
         ["--seed", "--num-trials", "--two-level", "--directed", "--markov-time"]
     )
+
+
+def test_parameter_catalog_rejects_unknown_choices_flag():
+    import pytest
+
+    parameters = [_minimal_param("--seed", required=True, longType="integer")]
+    overrides = {
+        "policy": _tier_policy("--seed"),
+        "choices": {"--seeed": ["a", "b"]},
+    }
+
+    with pytest.raises(RuntimeError, match=r"--seeed"):
+        ParameterCatalog(parameters, overrides)
+
+
+def test_parameter_catalog_rejects_non_list_choices():
+    import pytest
+
+    parameters = [_minimal_param("--seed", required=True, longType="integer")]
+    overrides = {
+        "policy": _tier_policy("--seed"),
+        "choices": {"--seed": "clu"},
+    }
+
+    with pytest.raises(RuntimeError, match="list of strings"):
+        ParameterCatalog(parameters, overrides)
+
+
+def test_parameter_catalog_rejects_unknown_binding_only_language():
+    import pytest
+
+    parameters = [_minimal_param("--seed", required=True, longType="integer")]
+    overrides = {
+        "policy": _tier_policy("--seed"),
+        "bindingOnly": {"cpp": [{"name": "foo", "flag": "--foo", "reason": "x"}]},
+    }
+
+    with pytest.raises(RuntimeError, match="cpp"):
+        ParameterCatalog(parameters, overrides)
+
+
+def test_parameter_catalog_rejects_unknown_binding_only_entry_key():
+    import pytest
+
+    parameters = [_minimal_param("--seed", required=True, longType="integer")]
+    overrides = {
+        "policy": _tier_policy("--seed"),
+        "bindingOnly": {
+            "python": [
+                {"name": "foo", "flag": "--foo", "reason": "x", "typ": "bool"}
+            ]
+        },
+    }
+
+    with pytest.raises(RuntimeError, match="typ"):
+        ParameterCatalog(parameters, overrides)
