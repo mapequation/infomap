@@ -325,7 +325,8 @@ def generate_python(catalog: ParameterCatalog) -> str:
         "import os",
         "import sys",
         "import warnings",
-        "from dataclasses import dataclass, fields",
+        "from collections.abc import Mapping",
+        "from dataclasses import dataclass, fields, replace",
         "from typing import Literal",
         "",
         "",
@@ -510,6 +511,46 @@ def generate_python(catalog: ParameterCatalog) -> str:
             "",
             "# Options is the canonical public name; InfomapOptions stays as a back-compat alias.",
             "InfomapOptions = Options",
+            "",
+            "",
+            "_OPTION_DEFAULTS = Options()",
+            "# The only facade keyword whose Infomap.run() default differs from",
+            "# Infomap.__init__(): run() defaults silent to False. A keyword left at its",
+            "# run-context default must defer to the options= carrier rather than",
+            "# spuriously override it.",
+            '_RUN_DEFAULT_OVERRIDES = {"silent": False}',
+            "",
+            "",
+            "def _context_default(name, context):",
+            '    if context == "run" and name in _RUN_DEFAULT_OVERRIDES:',
+            "        return _RUN_DEFAULT_OVERRIDES[name]",
+            "    return getattr(_OPTION_DEFAULTS, name)",
+            "",
+            "",
+            "def _merge_options(base, keyword_options, context):",
+            '    """Merge the ``options=`` carrier with the facade keyword options.',
+            "",
+            "    ``base`` is the ``options=`` argument to ``Infomap()`` / ``Infomap.run()``",
+            "    (an :class:`Options`, a mapping, or ``None``); ``keyword_options`` is the",
+            "    :class:`Options` built from the facade's per-keyword parameters. A keyword",
+            "    left at its (context-appropriate) default defers to ``base``; a keyword",
+            "    set to a non-default value is an explicit override and wins -- mirroring",
+            '    the "overrides win over options" rule of :func:`infomap.run`.',
+            '    """',
+            "    if base is None:",
+            "        return keyword_options",
+            "    if isinstance(base, Mapping):",
+            "        base = Options(**base)",
+            "    elif not isinstance(base, Options):",
+            "        raise TypeError(",
+            '            "options must be an Options instance, a mapping, or None"',
+            "        )",
+            "    overrides = {",
+            "        name: getattr(keyword_options, name)",
+            "        for name in _OPTION_FIELD_NAMES",
+            "        if getattr(keyword_options, name) != _context_default(name, context)",
+            "    }",
+            "    return replace(base, **overrides)",
             "",
             "",
             "def _construct_args(",
@@ -879,6 +920,13 @@ _INERT_WITHOUT_OUTDIR_NOTE = (
     "`write_*` methods to write results)."
 )
 
+_FACADE_OPTIONS_DOC = (
+    "A reusable `Options` object (or a mapping) applied as the base "
+    "configuration; any keyword argument set to a non-default value overrides "
+    "it. This is the sanctioned, warning-free carrier for the advanced options "
+    "that leave the signature in 3.0."
+)
+
 # A kept keyword is permanent -- only its entry point relocates to Options in
 # 3.0 -- so its docstring uses ``.. versionchanged::`` rather than
 # ``.. deprecated::``. Marking a still-supported tuning knob "deprecated" makes
@@ -939,6 +987,7 @@ def generate_facade(catalog: ParameterCatalog) -> str:
     lines.append("        self,")
     lines.append("        args: str | None = None,")
     lines.extend(_render_facade_signature(names, index))
+    lines.append("        options: Options | Mapping | None = None,")
     lines.append("    ) -> None:")
     lines.append('        """Create a new Infomap instance.')
     lines.append("")
@@ -955,11 +1004,15 @@ def generate_facade(catalog: ParameterCatalog) -> str:
             "            ",
         )
     )
+    lines.append("        options : Options, mapping, or None, optional")
+    lines.extend(wrap_doc(_FACADE_OPTIONS_DOC, "            "))
     lines.extend(_render_facade_docstring_params(names, index))
     lines.append('        """')
     lines.extend(_PRETTY_WARNING_LINES)
     lines.append('        _warn_advanced_tier_kwargs(locals(), "init")')
-    lines.append("        options = Options._from_locals(locals())")
+    lines.append(
+        '        options = _merge_options(options, Options._from_locals(locals()), "init")'
+    )
     lines.append("        self._init_from_options(args, options)")
     lines.append("")
     # ---- run ----
@@ -968,6 +1021,7 @@ def generate_facade(catalog: ParameterCatalog) -> str:
     lines.append("        args: str | None = None,")
     lines.append("        initial_partition: dict | None = None,")
     lines.extend(_render_facade_signature(names, index, context="run"))
+    lines.append("        options: Options | Mapping | None = None,")
     lines.append('    ) -> "Result":')
     lines.append('        """Run Infomap.')
     lines.append("")
@@ -1000,6 +1054,8 @@ def generate_facade(catalog: ParameterCatalog) -> str:
             "            ",
         )
     )
+    lines.append("        options : Options, mapping, or None, optional")
+    lines.extend(wrap_doc(_FACADE_OPTIONS_DOC, "            "))
     lines.extend(_render_facade_docstring_params(names, index))
     lines.append("")
     lines.append("        Returns")
@@ -1013,7 +1069,9 @@ def generate_facade(catalog: ParameterCatalog) -> str:
     lines.append('        """')
     lines.extend(_PRETTY_WARNING_LINES)
     lines.append('        _warn_advanced_tier_kwargs(locals(), "run")')
-    lines.append("        options = Options._from_locals(locals())")
+    lines.append(
+        '        options = _merge_options(options, Options._from_locals(locals()), "run")'
+    )
     lines.append(
         "        return self._run_from_options(args, initial_partition, options)"
     )
