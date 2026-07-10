@@ -72,7 +72,11 @@ def test_run_network_input_is_silent_by_default(capfd):
 
 def test_run_silent_false_override_prints_engine_log(capfd):
     _engine_log(capfd)
-    infomap.run(_LINKS, silent=False, num_trials=1, seed=1)
+    # Passing silent as a bare keyword is pending-deprecated (it moves to logging
+    # in 3.0); in 2.x it still overrides the default and prints the engine log.
+    # The warning-free carrier equivalents are covered by the two tests below.
+    with pytest.warns(PendingDeprecationWarning, match="silent"):
+        infomap.run(_LINKS, silent=False, num_trials=1, seed=1)
     assert _engine_log(capfd) != ""
 
 
@@ -132,7 +136,7 @@ def test_network_run_silent_false_warns():
         net.run(options={"silent": False, "num_trials": 1, "seed": 1})
 
     with pytest.warns(UserWarning, match="silent for its whole lifetime"):
-        infomap.run(net, silent=False, num_trials=1, seed=1)
+        infomap.run(net, options={"silent": False, "num_trials": 1, "seed": 1})
 
 
 def test_run_networkx_matches_oo():
@@ -266,11 +270,11 @@ def test_to_networkx_directed_flow_model_exports_digraph():
     # explicit flow_model="directed" exports a DiGraph exactly like
     # directed=True does.
     net = Network().add_links(_LINKS)
-    for options in ({"flow_model": "directed"}, {"directed": True}):
-        result = infomap.run(net, **options, **_SETTINGS)
+    for flow_option in ({"flow_model": "directed"}, {"directed": True}):
+        result = infomap.run(net, options={**flow_option, **_SETTINGS})
         assert isinstance(infomap.to_networkx(result), nx.DiGraph)
 
-    undirected = infomap.run(net, **_SETTINGS)
+    undirected = infomap.run(net, options=_SETTINGS)
     assert not isinstance(infomap.to_networkx(undirected), nx.DiGraph)
 
 

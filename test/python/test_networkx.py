@@ -178,7 +178,8 @@ def test_add_networkx_multigraph_with_parallel_edges_and_self_loop():
 
     # The functional entry point accepts the same MultiGraph directly.
     functional = infomap.run(
-        graph, silent=True, no_file_output=True, seed=123, num_trials=1
+        graph,
+        options={"silent": True, "no_file_output": True, "seed": 123, "num_trials": 1},
     )
     assert sum(1 for _ in functional.nodes()) == graph.number_of_nodes()
 
