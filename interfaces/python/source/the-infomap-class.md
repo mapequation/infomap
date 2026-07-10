@@ -59,6 +59,7 @@ Each stateful pattern has a direct functional or `Network` equivalent:
 | Build incrementally | `im.add_node(...)`, `im.add_link(...)`, then `im.run()` | `net = Network(); net.add_node(...); net.add_link(...)`, then `infomap.run(net)` |
 | Reusable configuration | repeat the keyword arguments | `options = Options(**opts)`, then `infomap.run(g, options=options)` |
 | Top-level modules | `im.get_modules()` | `result.modules()` |
+| Iterate `(node_id, module_id)` pairs | `for k, v in im.modules:` | `for k, v in result.modules().items():` |
 | Modules at level *k* | `im.get_modules(depth_level=k)` | `result.modules(depth=k)` |
 | State-node modules | `im.get_modules(states=True)` | `result.modules(states=True)` |
 | Per-node flow | `for n in im.nodes: n.data.flow` | `for n in result.nodes(states=True): n.flow` (`im.nodes` iterates state nodes; plain `result.nodes()` gives physical nodes, identical for first-order networks) |
