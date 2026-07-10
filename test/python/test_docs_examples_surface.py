@@ -1,8 +1,8 @@
 """Our own examples and docs must not teach the deprecated API surface.
 
 Enforces the steering decided on the 3.0 roadmap (#742): the runnable
-examples, the flagship ``quickstart.ipynb`` notebook, and the documentation
-pages use the ``Result`` accessors, the
+examples, the example notebooks (and their ``_support.py`` helper), and the
+documentation pages use the ``Result`` accessors, the
 ``Network.from_*`` builders, and carry advanced configuration through
 ``Options`` — never the docs-only-deprecated legacy mirror or advanced-tier
 keyword arguments passed directly to ``Infomap(...)``/``run(...)``.
@@ -192,13 +192,15 @@ def _source_files() -> list[Path]:
     readme = REPO_ROOT / "README.rst"
     if readme.is_file():
         files.append(readme)
-    # The flagship quickstart notebook is the first thing README points Jupyter
-    # users to; hold it to the same supported surface as the .py examples. The
-    # survey-chapter notebooks and their _support.py helper are a separate,
-    # larger migration and are not yet scanned here.
-    quickstart = REPO_ROOT / "examples" / "notebooks" / "quickstart.ipynb"
-    if quickstart.is_file():
-        files.append(quickstart)
+    # The example notebooks (and their _support.py helper) are held to the same
+    # supported surface as the .py examples. Only code cells are scanned (see
+    # _notebook_code); markdown prose may still name the legacy surface.
+    notebooks = REPO_ROOT / "examples" / "notebooks"
+    if notebooks.is_dir():
+        files += sorted(notebooks.glob("*.ipynb"))
+        support = notebooks / "_support.py"
+        if support.is_file():
+            files.append(support)
     files += sorted(
         path
         for path in DOCS.rglob("*.md")
