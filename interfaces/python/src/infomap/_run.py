@@ -169,10 +169,31 @@ def _reject_adapter_kwargs(kind: str, user_keys: set) -> None:
     raise TypeError(message)
 
 
+# Sentinel for the common-tier keyword parameters below: it lets run() tell "the
+# caller passed this option" from "left at its default", so a supplied value
+# overrides the ``options`` carrier while an untouched one defers to it. Typed
+# ``Any`` so the honest per-parameter annotations (``seed: int`` ...) still
+# type-check against this shared default; the ``<unset>`` repr keeps
+# ``inspect.signature(infomap.run)`` readable for IDE/agent introspection.
+class _Unset:
+    __slots__ = ()
+
+    def __repr__(self) -> str:
+        return "<unset>"
+
+
+_UNSET: Any = _Unset()
+
+
 def run(
     input: Any,
     *,
     options: Any = None,
+    seed: int = _UNSET,
+    num_trials: int = _UNSET,
+    two_level: bool = _UNSET,
+    directed: bool | None = _UNSET,
+    markov_time: float = _UNSET,
     initial_partition: Any = None,
     **overrides: Any,
 ) -> "Result":
@@ -185,12 +206,35 @@ def run(
         The network to partition. See the module docstring for the dispatch
         table.
     options : Options, mapping, or None, optional
-        Base configuration. Keyword ``overrides`` take precedence.
+        Base configuration. Any keyword argument below takes precedence.
+    seed : int, optional
+        Random-number-generator seed for reproducible results (default 123).
+    num_trials : int, optional
+        Number of independent trials to run; the best solution is kept
+        (default 1).
+    two_level : bool, optional
+        Optimize a two-level partition instead of the default multilevel
+        hierarchy.
+    directed : bool, optional
+        Treat links as directed (shorthand for ``flow_model="directed"``).
+        For a graph, file, or link-iterable input this is an engine flag; for a
+        SciPy sparse matrix or a ``(2, E)`` edge index it names the input
+        adapter's orientation instead and is rejected here -- build the network
+        with ``Network.from_scipy_sparse_matrix(..., directed=True)`` /
+        ``Network.from_edge_index(..., directed=True)``, or pass
+        ``options=Options(flow_model="directed")``.
+    markov_time : float, optional
+        Scale link flow to change the cost of moving between modules; higher
+        values yield fewer modules.
     initial_partition : mapping, optional
         Initial module assignment for this run only.
     **overrides
-        Individual Infomap options (CLI-flag keyword arguments) that override
-        ``options``. These configure the *engine*, not how the input is read.
+        Any other Infomap engine option, as a keyword argument. These
+        advanced-tier options still work but are pending-deprecated on this
+        signature and leave it in 3.0 (issue #741); carry them via ``options``
+        (an :class:`Options` instance or a mapping) for the sanctioned,
+        warning-free path. They configure the *engine*, not how the input is
+        read.
 
     Returns
     -------
@@ -254,21 +298,39 @@ def run(
     from ._facade import Infomap
     from .network import Network
 
-    resolved = _resolve_options(options, overrides)
+    # The five common-tier options are first-class keyword parameters so they
+    # show up in inspect.signature(infomap.run) for IDE/agent introspection;
+    # every other engine option rides **overrides. Collect the common ones the
+    # caller actually supplied (still at _UNSET means "defer to options").
+    common = {
+        name: value
+        for name, value in (
+            ("seed", seed),
+            ("num_trials", num_trials),
+            ("two_level", two_level),
+            ("directed", directed),
+            ("markov_time", markov_time),
+        )
+        if value is not _UNSET
+    }
+
+    resolved = _resolve_options(options, {**overrides, **common})
     # Advanced-tier keywords are pending-deprecated on the run() signature and
     # move off it in 3.0 (issue #741). Warn only on bare **overrides typed
-    # directly on this call; an Options or mapping `options` carrier is the
-    # sanctioned path and stays silent. The helper's caller-frame check sees the
-    # user's frame here (frame 2 is run()'s caller), so an in-package caller of
-    # run() is not flagged and the later Infomap(**resolved) -- reached from
-    # inside the package -- does not double-warn.
+    # directly on this call; the common-tier parameters above never warn, and an
+    # Options or mapping `options` carrier is the sanctioned path and stays
+    # silent. The helper's caller-frame check sees the user's frame here (frame 2
+    # is run()'s caller), so an in-package caller of run() is not flagged and the
+    # later Infomap(**resolved) -- reached from inside the package -- does not
+    # double-warn.
     if overrides:
         _warn_advanced_tier_kwargs(overrides, "init")
-    # Keys the user actually supplied (kwargs + a mapping `options`), used to
-    # reject adapter-only arguments below. An Options *instance* is excluded on
-    # purpose: its to_kwargs() carries every field (e.g. directed=None) the user
-    # never set, which would false-positive the guard.
-    user_keys = set(overrides)
+    # Keys the user actually supplied (kwargs + common-tier params + a mapping
+    # `options`), used to reject adapter-only arguments below. An Options
+    # *instance* is excluded on purpose: its to_kwargs() carries every field
+    # (e.g. directed=None) the user never set, which would false-positive the
+    # guard.
+    user_keys = set(overrides) | set(common)
     if isinstance(options, Mapping):
         user_keys |= set(options)
 
