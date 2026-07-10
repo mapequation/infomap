@@ -66,21 +66,19 @@ Quick start with Python:
     import infomap
 
     graph = nx.karate_club_graph()
-    communities = infomap.find_communities(
-        graph,
-        seed=123,
-        num_trials=20,
-    )
+    result = infomap.run(graph, seed=123, num_trials=20)
 
-    print(communities)
+    print(result.num_top_modules, result.codelength)
+    print(result.modules())  # {node_id: module_id}
 
-For Jupyter, start with the
-`quickstart notebook <https://github.com/mapequation/infomap/blob/master/examples/notebooks/quickstart.ipynb>`_.
-It shows the notebook-native Infomap result summary, dataframe inspection, a
-copyable static network partition helper, and export paths for further
-analysis.
+``infomap.run`` accepts a NetworkX or igraph graph, a SciPy sparse matrix, a
+``(2, E)`` edge index, a network file path, or an iterable of links, and returns
+an immutable ``Result``. If you only need a node-to-community mapping keyed by
+the original node labels, use
+``infomap.find_communities(graph, seed=123, num_trials=20)``.
 
-For direct control over Infomap-specific options and result access:
+For incremental construction and direct control over Infomap options and result
+access, build with the ``Infomap`` class and read the returned ``Result``:
 
 .. code-block:: python
 
@@ -93,6 +91,11 @@ For direct control over Infomap-specific options and result access:
 
     print(result.num_top_modules, result.codelength)
     print(result.to_dataframe(columns=["node_id", "module_id", "flow"], index="node_id"))
+
+For Jupyter, start with the
+`quickstart notebook <https://github.com/mapequation/infomap/blob/master/examples/notebooks/quickstart.ipynb>`_.
+It shows the Infomap result summary, dataframe inspection, a copyable static
+network partition helper, and export paths for further analysis.
 
 .. _PyPI: https://pypi.org/project/infomap/
 .. _`Infomap Python API`: https://mapequation.org/infomap-python-docs/
