@@ -112,7 +112,7 @@
       "python": "Verbosity level on the console. 1 keeps the default output level, 2 renders -vv and so on."
     },
     "--silent": {
-      "python": "Suppress console output. The Python API is quiet by default; construct with silent=False for the engine log. The command-line interface is unaffected."
+      "python": "Suppress console output. The Python API is already quiet by default; to see the engine log, use infomap.enable_log() rather than this flag. The command-line interface is unaffected."
     }
   },
   "bindingOnly": {

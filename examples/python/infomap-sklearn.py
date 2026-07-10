@@ -11,7 +11,7 @@ grid = ParameterGrid({"markov_time": np.linspace(0.8, 2, 5)})
 
 for params in grid:
     result = net.run(
-        options={"two_level": True, "silent": True, "num_trials": 10, **params}
+        options={"two_level": True, "num_trials": 10, **params}
     )
     print(
         f"markov_time={params['markov_time']:0.1f}: "

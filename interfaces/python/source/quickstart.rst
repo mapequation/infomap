@@ -76,7 +76,7 @@ options:
 
     from infomap import Options, run
 
-    options = Options(num_trials=20, seed=123, silent=True)
+    options = Options(num_trials=20, seed=123)
     result = run(graph, options=options)
 
 Read the result

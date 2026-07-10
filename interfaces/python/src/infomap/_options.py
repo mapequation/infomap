@@ -402,8 +402,9 @@ class Options:
         'infomap' logger (infomap.enable_log(logging.DEBUG)) raises engine verbosity;
         logger levels filter the records.
     silent : bool, optional
-        Suppress console output. The Python API is quiet by default; construct with
-        silent=False for the engine log. The command-line interface is unaffected.
+        Suppress console output. The Python API is already quiet by default; to see the
+        engine log, use infomap.enable_log() rather than this flag. The command-line
+        interface is unaffected.
 
         Not a Python library option; it leaves the surface in 3.0. The Python API is
         quiet by default; logging is the control. Attach handlers to
