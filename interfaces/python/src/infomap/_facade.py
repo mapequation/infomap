@@ -59,7 +59,7 @@ from .io.export import to_igraph, to_networkx
 from .io.scipy import add_scipy_sparse_matrix as _add_scipy_sparse_matrix
 from .io.writers import _InfomapWritersMixin
 from .network import Network
-from ._run import run
+from ._run import _warn_inert_output_options, run
 
 
 def _package_construct_args():
@@ -165,6 +165,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
     """
 
     def _init_from_options(self, args, options):
+        _warn_inert_output_options(options, args)
         # In routed log mode (handlers on the "infomap" logger), logging is
         # the emission control: strip --silent from the constructor args (the
         # C++ engine composes constructor + run args additively, so a --silent
@@ -2946,6 +2947,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
 
     def _run_from_options(self, args, initial_partition, options):
         kwargs = options.to_kwargs()
+        _warn_inert_output_options(options, args)
         if _is_log_routed():
             # Warn once per instance: a run loop would otherwise repeat the
             # same advisory on every call and train the user to ignore it.

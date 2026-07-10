@@ -20,6 +20,7 @@ instance or mapping) and/or as keyword ``**overrides``; overrides win.
 
 from __future__ import annotations
 
+import warnings
 from collections.abc import Iterable, Mapping
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -80,6 +81,44 @@ def _explicit_option_kwargs(options: Any) -> dict:
         for name, value in kwargs.items()
         if value != getattr(_OPTION_DEFAULTS, name)
     }
+
+
+def _warn_inert_output_options(options: Any, args: Any) -> None:
+    """Warn when output-artifact options are set but cannot take effect.
+
+    The args-only options (``tree``, ``ftree``, ``clu``, ``clu_level``,
+    ``out_name``, ``output``, ``hide_bipartite_nodes``, ``print_all_trials``,
+    ``no_overwrite``) only write files when an output directory is supplied
+    through the raw ``args`` escape hatch. Set via :class:`Options` on the
+    normal library surface they construct and run without error but silently do
+    nothing, so point the caller at the ``Result`` / ``Network`` writers. When
+    the raw ``args`` escape is in use (``args`` truthy) they may act, so stay
+    quiet. ``no_file_output`` is excluded: it *suppresses* output and is used
+    defensively (e.g. by the graph finders), so setting it is harmless.
+    """
+    if args:
+        return
+    from ._options import _ADVANCED_TIER_KWARGS, _OPTION_DEFAULTS
+
+    inert = sorted(
+        name
+        for name, spec in _ADVANCED_TIER_KWARGS.items()
+        if spec[2] == "args-only"
+        and name != "no_file_output"
+        and getattr(options, name) != getattr(_OPTION_DEFAULTS, name)
+    )
+    if not inert:
+        return
+    warnings.warn(
+        f"{', '.join(inert)}: these output options have no effect on the "
+        "Python library surface -- they write files only with an output "
+        "directory passed through the raw args escape hatch. Write from the "
+        "Result instead (result.write_tree(path) / write_flow_tree / "
+        "write_clu) or from the Network (network.write_pajek / "
+        "write_state_network).",
+        UserWarning,
+        stacklevel=3,
+    )
 
 
 def _is_networkx_graph(obj: Any) -> bool:

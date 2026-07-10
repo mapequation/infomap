@@ -304,6 +304,7 @@ class Network(_NetworkWritersMixin):
         ``silent=False``) or pass the input directly to :func:`infomap.run`.
         """
         from ._options import Options, _construct_args
+        from ._run import _warn_inert_output_options
         from .result import build_result
 
         if options is None:
@@ -322,6 +323,8 @@ class Network(_NetworkWritersMixin):
                 UserWarning,
                 stacklevel=2,
             )
+
+        _warn_inert_output_options(resolved, args)
 
         rendered_args = _construct_args(args, **resolved.to_kwargs())
         # classify=True mirrors Infomap.run(): input failures surfacing at
