@@ -453,6 +453,10 @@ logging.getLogger("infomap").addHandler(my_handler)
 logging.getLogger("infomap").setLevel(logging.INFO)
 ```
 
+`silent=` and `verbose=` are pending-deprecated and leave the API in 3.0;
+`enable_log()` is the forward path for the engine log. The `silent=` behavior
+described below is documented for existing code.
+
 How the routing behaves:
 
 - **Logging is the control.** With handlers attached, every engine run emits

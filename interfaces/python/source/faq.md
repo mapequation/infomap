@@ -38,6 +38,18 @@ same names are properties -- another reason to read results off the returned
 `Result`, not the instance.) See
 {doc}`Reading the Result <working-with-infomap/results-and-iteration>`.
 
+### Why does `result.modules` give a bound method, or `result.modules().items` fail?
+
+Collections are **methods** -- call `result.modules()`, not `result.modules`.
+Accessing it without parentheses returns the method object, so
+`result.modules.items()` raises `AttributeError: 'function' object has no
+attribute 'items'`. And `result.modules()` returns a `{node_id: module_id}`
+dict: iterate `result.modules().items()`. Code ported from the stateful
+instance can also raise `TypeError: cannot unpack non-iterable int object` --
+its `modules` was a *property* that yielded `(node_id, module_id)` pairs, but
+iterating the `Result`'s dict yields keys, so unpack `result.modules().items()`
+instead. See {doc}`Reading the Result <working-with-infomap/results-and-iteration>`.
+
 ### How do I see Infomap's progress or engine log in Python?
 
 The Python API is quiet by default. Call `infomap.enable_log()` once to route the
