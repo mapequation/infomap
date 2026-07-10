@@ -85,6 +85,17 @@ _PARSE_MESSAGE_SUBSTRINGS = (
     "read permissions",
 )
 
+# The engine's own empty-network error (src/io/Network.cpp) is file-oriented
+# ("read network" from a file), which is meaningless on the in-memory Python
+# library surface where input is built with add_*/run(...). Re-message it with a
+# build-the-network pointer. Matched verbatim; test_errors guards against drift.
+_EMPTY_NETWORK_MESSAGE = "No input file to read network"
+_EMPTY_NETWORK_GUIDANCE = (
+    "cannot run Infomap on an empty network: no nodes or links were added. "
+    "Build the network first -- e.g. infomap.run([(0, 1), (1, 2), (2, 0)]), or "
+    "add input with add_link(...)/add_links(...)/read_file(...) before run()."
+)
+
 
 def _classify_run_message(message: str) -> type[InfomapError] | None:
     if message.startswith(_PARSE_MESSAGE_PREFIXES):
@@ -111,5 +122,10 @@ def _translate_engine_errors(
         raise
     except RuntimeError as error:
         message = str(error)
+        # The engine's file-oriented empty-network error is meaningless on the
+        # in-memory library surface (build with add_*/run(...), not a file), so
+        # re-message it with a build-the-network pointer regardless of classify.
+        if message == _EMPTY_NETWORK_MESSAGE:
+            raise InfomapError(_EMPTY_NETWORK_GUIDANCE) from None
         error_class = (_classify_run_message(message) if classify else None) or default
         raise error_class(message) from None

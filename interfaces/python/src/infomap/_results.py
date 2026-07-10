@@ -1,11 +1,80 @@
 from __future__ import annotations
 
+import functools
+import os
+import sys
+import warnings
 from collections.abc import Sequence
 from math import log2
 from typing import TYPE_CHECKING, Any
 
 from ._optional import require_pandas
 from .errors import _translate_engine_errors
+
+_PACKAGE_PREFIX = os.path.dirname(os.path.abspath(__file__)) + os.sep
+
+
+def _emit_accessor_deprecation(member: str, replacement: str) -> None:
+    """Emit the pending-deprecation warning for a legacy on-instance accessor.
+
+    The legacy result mirror on ``Infomap`` stays usable through 2.x and leaves
+    in 3.0 (#742). Like the advanced-tier keyword warning, this is a
+    ``PendingDeprecationWarning`` -- silent under the default filter, so it nags
+    no one until 3.0 nears, but it surfaces under ``-W`` and for tools that
+    escalate warnings. The caller-frame check keeps internal readers (the
+    summary card, ``_repr_html_``, any in-package reuse) quiet, so only user
+    code is flagged.
+    """
+    # frame 0 = this function, frame 1 = the accessor wrapper, frame 2 = the
+    # code that read the accessor (property __get__ is C-level, so it adds no
+    # Python frame for either methods or properties).
+    caller = sys._getframe(2)
+    if caller.f_code.co_filename.startswith(_PACKAGE_PREFIX):
+        return
+    warnings.warn(
+        f"Infomap.{member} is deprecated and leaves in 3.0; read {replacement} "
+        "off the Result returned by im.run() instead.",
+        PendingDeprecationWarning,
+        stacklevel=3,
+    )
+
+
+def _wrap_accessor(func, member: str, replacement: str):
+    @functools.wraps(func)
+    def wrapper(self, *args, **kwargs):
+        _emit_accessor_deprecation(member, replacement)
+        return func(self, *args, **kwargs)
+
+    return wrapper
+
+
+def _install_accessor_deprecations(cls, replacements) -> None:
+    """Wrap each deprecated accessor named in ``replacements`` so it emits the
+    pending-deprecation warning before delegating to the original.
+
+    Data-driven (mirroring ``_ADVANCED_TIER_KWARGS`` for the keyword surface) so
+    the deprecated members and their replacements live in one table. Members not
+    defined directly on ``cls`` are skipped. ``functools.wraps`` preserves each
+    member's ``__doc__`` (with its ``.. deprecated::`` note) and signature for
+    ``help()``/autodoc and IDE introspection.
+    """
+    for member, replacement in replacements.items():
+        attr = cls.__dict__.get(member)
+        if attr is None:
+            continue
+        if isinstance(attr, property):
+            setattr(
+                cls,
+                member,
+                property(
+                    _wrap_accessor(attr.fget, member, replacement),
+                    attr.fset,
+                    attr.fdel,
+                    attr.__doc__,
+                ),
+            )
+        elif callable(attr):
+            setattr(cls, member, _wrap_accessor(attr, member, replacement))
 
 
 if TYPE_CHECKING:
@@ -283,14 +352,14 @@ class _InfomapResultsMixin:
         --------
 
         >>> from infomap import Infomap
-        >>> im = Infomap(silent=True)
+        >>> im = Infomap()
         >>> im.read_file("twotriangles.net")
         >>> _ = im.run()
         >>> im.get_modules()
         {1: 1, 2: 1, 3: 1, 4: 2, 5: 2, 6: 2}
 
         >>> from infomap import Infomap
-        >>> im = Infomap(silent=True)
+        >>> im = Infomap()
         >>> im.read_file("states.net")
         >>> _ = im.run()
         >>> im.get_modules(states=True)
@@ -344,7 +413,7 @@ class _InfomapResultsMixin:
         --------
 
         >>> from infomap import Infomap
-        >>> im = Infomap(silent=True, num_trials=10)
+        >>> im = Infomap(num_trials=10)
         >>> im.read_file("ninetriangles.net")
         >>> _ = im.run()
         >>> for modules in sorted(im.get_multilevel_modules().values()):
@@ -378,7 +447,7 @@ class _InfomapResultsMixin:
         (3, 9)
 
         >>> from infomap import Infomap
-        >>> im = Infomap(silent=True)
+        >>> im = Infomap()
         >>> im.read_file("states.net")
         >>> _ = im.run()
         >>> for node, modules in im.get_multilevel_modules(states=True).items():
@@ -435,7 +504,7 @@ class _InfomapResultsMixin:
         Examples
         --------
         >>> from infomap import Infomap
-        >>> im = Infomap(silent=True, num_trials=5)
+        >>> im = Infomap(num_trials=5)
         >>> im.read_file("twotriangles.net")
         >>> _ = im.run()
         >>> for node_id, module_id in im.modules:
@@ -697,7 +766,7 @@ class _InfomapResultsMixin:
         --------
 
         >>> from infomap import Infomap
-        >>> im = Infomap(silent=True)
+        >>> im = Infomap()
         >>> im.read_file("twotriangles.net")
         >>> _ = im.run()
         >>> im.get_dataframe(columns=["path", "flow", "name", "node_id"], states=True)
@@ -977,7 +1046,7 @@ class _InfomapResultsMixin:
         --------
 
         >>> from infomap import Infomap
-        >>> im = Infomap(silent=True)
+        >>> im = Infomap()
         >>> im.read_file("twotriangles.net")
         >>> _ = im.run()
         >>> for link in im.get_links():
@@ -1032,7 +1101,7 @@ class _InfomapResultsMixin:
         --------
 
         >>> from infomap import Infomap
-        >>> im = Infomap(silent=True)
+        >>> im = Infomap()
         >>> im.read_file("twotriangles.net")
         >>> _ = im.run()
         >>> for link in im.links:
@@ -1071,7 +1140,7 @@ class _InfomapResultsMixin:
         --------
 
         >>> from infomap import Infomap
-        >>> im = Infomap(silent=True)
+        >>> im = Infomap()
         >>> im.read_file("twotriangles.net")
         >>> _ = im.run()
         >>> for link in im.flow_links:
@@ -1391,7 +1460,7 @@ class _InfomapResultsMixin:
         --------
 
         >>> from infomap import Infomap
-        >>> im = Infomap(silent=True)
+        >>> im = Infomap()
         >>> im.read_file("twotriangles.net")
         >>> _ = im.run()
         >>> f"{im.entropy_rate:.5f}"
@@ -1445,3 +1514,52 @@ class _InfomapResultsMixin:
             Use ``result = im.run(); result.meta_entropy``.
         """
         return self._core.getMetaCodelength(True)
+
+
+# The legacy result-mirror accessors on the stateful Infomap, mapped to the
+# Result member that replaces each. Kept in step with the docstring
+# ``.. deprecated::`` notes above and with result.py's _LEGACY_ACCESSOR_HINTS
+# (which redirects the same names typed on a Result). The non-deprecated
+# network-info properties (num_nodes, num_links, num_physical_nodes) are
+# intentionally absent -- they stay on the surface.
+_LEGACY_RESULT_ACCESSORS = {
+    "get_modules": "result.modules()",
+    "get_multilevel_modules": "result.multilevel_modules()",
+    "modules": "result.modules()",
+    "multilevel_modules": "result.multilevel_modules()",
+    "get_tree": "result.tree()",
+    "get_nodes": "result.nodes()",
+    "tree": "result.tree(states=True)",
+    "physical_tree": "result.tree(states=False)",
+    "leaf_modules": "result.leaf_modules()",
+    "nodes": "result.nodes(states=True)",
+    "physical_nodes": "result.nodes(states=False)",
+    "get_dataframe": "result.to_dataframe()",
+    "to_dataframe": "result.to_dataframe()",
+    "get_name": "result.names[node_id]",
+    "get_names": "result.names",
+    "names": "result.names",
+    "get_state_names": "result.state_names",
+    "state_names": "result.state_names",
+    "get_links": "result.links()",
+    "links": "result.links()",
+    "flow_links": 'result.links(data="flow")',
+    "num_top_modules": "result.num_top_modules",
+    "num_non_trivial_top_modules": "result.num_non_trivial_top_modules",
+    "num_leaf_modules": "result.num_leaf_modules",
+    "get_effective_num_modules": "result.effective_num_modules()",
+    "effective_num_top_modules": "result.effective_num_top_modules",
+    "effective_num_leaf_modules": "result.effective_num_leaf_modules",
+    "max_depth": "result.max_depth",
+    "num_levels": "result.num_levels",
+    "have_memory": "result.have_memory",
+    "index_codelength": "result.index_codelength",
+    "module_codelength": "result.module_codelength",
+    "one_level_codelength": "result.one_level_codelength",
+    "relative_codelength_savings": "result.relative_codelength_savings",
+    "entropy_rate": "result.entropy_rate",
+    "meta_codelength": "result.meta_codelength",
+    "meta_entropy": "result.meta_entropy",
+}
+
+_install_accessor_deprecations(_InfomapResultsMixin, _LEGACY_RESULT_ACCESSORS)
