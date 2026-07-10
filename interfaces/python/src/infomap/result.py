@@ -59,6 +59,20 @@ _LEGACY_ACCESSOR_HINTS = {
     "physical_tree": "result.tree()",
 }
 
+# Also accept the camelCase SWIG-style spellings (``result.getModules()``) an agent
+# may carry over from the low-level C++ core API, mapping each to the same Result
+# pointer as its snake_case twin.
+_LEGACY_ACCESSOR_HINTS.update(
+    {
+        "".join(
+            part.capitalize() if i else part
+            for i, part in enumerate(name.split("_"))
+        ): hint
+        for name, hint in list(_LEGACY_ACCESSOR_HINTS.items())
+        if name.startswith("get_")
+    }
+)
+
 if TYPE_CHECKING:
     import igraph  # pyright: ignore[reportMissingImports]  # optional dep, no stubs
     import networkx
