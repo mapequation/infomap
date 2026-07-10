@@ -250,6 +250,7 @@ ALLOWLIST: dict[str, set[str]] = {
     "interfaces/python/source/the-infomap-class.md": {
         "codelength",
         "get_modules",
+        "modules",
         "nodes",
         "num_top_modules",
         "to_dataframe",
