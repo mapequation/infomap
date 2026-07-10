@@ -132,27 +132,27 @@ def plot_network(G, node_color_attr="module", **kwargs):
     plt.show()
 
 
-def _module_series(infomap_result, node_mapping):
+def _module_series(result, node_mapping):
     modules = {
         node_mapping[node.state_id]: node.module_id
-        for node in infomap_result.nodes
+        for node in result.nodes(states=True)
         if node.state_id in node_mapping
     }
     return pd.Series(modules, name="module_id")
 
 
 def partition(G, initial_partition=None, **infomap_args):
-    im, node_mapping = _run_networkx(
+    _, result, node_mapping = _run_networkx(
         G,
         initial_partition=initial_partition,
         **infomap_args,
     )
-    modules = _module_series(im, node_mapping)
+    modules = _module_series(result, node_mapping)
     nx.set_node_attributes(G, modules.to_dict(), "module")
-    G.graph["M"] = im.num_top_modules
-    G.graph["L"] = im.codelength
-    G.graph["L_ind"] = im.index_codelength
-    G.graph["L_mod"] = im.module_codelength
+    G.graph["M"] = result.num_top_modules
+    G.graph["L"] = result.codelength
+    G.graph["L_ind"] = result.index_codelength
+    G.graph["L_mod"] = result.module_codelength
     return modules
 
 

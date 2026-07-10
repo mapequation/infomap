@@ -82,7 +82,7 @@ def _run_networkx(
     initial_partition: Any = None,
     meta_attribute: str | None = None,
     **infomap_options: Any,
-) -> tuple[Any, dict[int, Any]]:
+) -> tuple[Any, Any, dict[int, Any]]:
     from .._facade import Infomap
 
     # dict[str, Any]: the caller's infomap_options carry arbitrary option
@@ -100,10 +100,12 @@ def _run_networkx(
         multilayer_inter_intra_format=multilayer_inter_intra_format,
         meta_attribute=meta_attribute,
     )
-    infomap.run(
+    result = infomap.run(
         initial_partition=_to_internal_partition(initial_partition, node_mapping)
     )
-    return infomap, node_mapping
+    # Return the Result alongside the engine so callers can read off the
+    # supported Result surface instead of the deprecated instance mirror.
+    return infomap, result, node_mapping
 
 
 def find_communities(
@@ -190,7 +192,7 @@ def find_communities(
     if "num_trials" not in infomap_options:
         infomap_options["num_trials"] = trials if trials is not None else 10
 
-    infomap, node_mapping = _run_networkx(
+    infomap, _, node_mapping = _run_networkx(
         g,
         weight=weight,
         node_id=node_id,
