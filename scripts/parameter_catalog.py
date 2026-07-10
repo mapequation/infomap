@@ -345,6 +345,40 @@ class ParameterCatalog:
                             f"overrides.{section}[{flag!r}] names unknown language "
                             f"{language!r}; known languages: {sorted(languages)}"
                         )
+        # `choices` is keyed by CLI flag but maps to a plain list of allowed
+        # values (flag -> list[str]), not a per-language dict, so it is validated
+        # separately from the sections above.
+        for flag, values in self.overrides.get("choices", {}).items():
+            if flag not in known_flags:
+                raise RuntimeError(
+                    f"overrides.choices lists unknown flag {flag!r} (not in the "
+                    "parameter catalog, bindingOnly, or cliOnlyParameters)"
+                )
+            if not isinstance(values, list) or not all(
+                isinstance(value, str) for value in values
+            ):
+                raise RuntimeError(
+                    f"overrides.choices[{flag!r}] must be a list of strings"
+                )
+        # `bindingOnly` is keyed by binding language and lists parameters that
+        # exist only on that surface. Validate the language keys and reject stray
+        # entry keys so a typo fails loud instead of silently building a binding
+        # no generator consumes (issue #755).
+        allowed_entry_keys = {"name", "flag", "type", "default", "reason"}
+        for language, entries in self.overrides.get("bindingOnly", {}).items():
+            if language not in languages:
+                raise RuntimeError(
+                    f"overrides.bindingOnly names unknown language {language!r}; "
+                    f"known languages: {sorted(languages)}"
+                )
+            for entry in entries:
+                unknown = set(entry) - allowed_entry_keys
+                if unknown:
+                    raise RuntimeError(
+                        f"overrides.bindingOnly[{language!r}] entry {entry.get('name', entry)!r} "
+                        f"has unknown keys {sorted(unknown)}; allowed: "
+                        f"{sorted(allowed_entry_keys)}"
+                    )
 
     def _validate_policy(self) -> None:
         # Fail loud on typos and incomplete decisions: the policy is the 3.0
