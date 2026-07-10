@@ -5,9 +5,8 @@ options only as bare ``**infomap_options`` keyword arguments -- which forward to
 ``Infomap(...)`` and so leave no warning-free path once the advanced-tier
 keywords move off that signature in 3.0. These tests pin the ``options=``
 carrier added for that path: precedence (bare kwargs and ``trials`` win over the
-carrier), the finder's ``num_trials`` default surviving a carrier left at its
-own defaults, and the carrier never clobbering the finder's ``no_file_output`` /
-``silent`` defaults.
+carrier), ``num_trials`` defaulting to 1 like :func:`infomap.run`, and the
+finder staying quiet without forcing ``no_file_output``.
 """
 
 from __future__ import annotations
@@ -49,15 +48,14 @@ def _graph():
     [
         (Options(num_trials=7), {}, 7),          # carrier sets num_trials
         ({"num_trials": 5}, {}, 5),              # mapping carrier
-        (Options(regularized=True), {}, 10),     # carrier at default -> finder default 10
-        (Options(num_trials=1), {}, 10),         # explicit-but-default 1 -> treated as unset
+        (Options(regularized=True), {}, 1),      # carrier without num_trials -> default 1
         (Options(num_trials=7), {"num_trials": 3}, 3),  # bare kwarg wins
         (Options(num_trials=7), {"trials": 3}, 3),      # trials alias wins
     ],
 )
 def test_find_communities_options_carrier_num_trials(recorded, options, kwargs, expected):
     infomap.find_communities(_graph(), options=options, seed=1, **kwargs)
-    assert recorded["num_trials"] == expected
+    assert recorded.get("num_trials", 1) == expected
 
 
 @pytest.mark.filterwarnings("ignore::PendingDeprecationWarning")
@@ -67,12 +65,12 @@ def test_find_communities_carrier_carries_advanced_option(recorded):
 
 
 @pytest.mark.filterwarnings("ignore::PendingDeprecationWarning")
-def test_find_communities_carrier_does_not_disable_no_file_output(recorded):
-    # The carrier's *default* no_file_output=False must not clobber the finder's
-    # no_file_output=True (only fields the caller changed are folded in).
+def test_find_communities_carrier_keeps_engine_quiet_without_forcing_no_file_output(recorded):
+    # The finder keeps the engine quiet but no longer forces no_file_output --
+    # it is redundant on the library surface (no output directory -> no files).
     infomap.find_communities(_graph(), options=Options(regularized=True))
-    assert recorded["no_file_output"] is True
     assert recorded["silent"] is True
+    assert recorded["no_file_output"] is False
 
 
 def test_find_communities_options_carrier_returns_labels():
@@ -88,9 +86,9 @@ def test_find_igraph_communities_options_carrier_num_trials(recorded):
     ig = pytest.importorskip("igraph")
     g = ig.Graph.Formula("a-b, b-c")
     infomap.find_igraph_communities(g, options=Options(num_trials=7))
-    assert recorded["num_trials"] == 7
-    # A carrier at its defaults keeps the finder's num_trials default of 10.
+    assert recorded.get("num_trials", 1) == 7
+    # A carrier without num_trials uses the engine default (1), like run().
     infomap.find_igraph_communities(g, options=Options(regularized=True))
-    assert recorded["num_trials"] == 10
+    assert recorded.get("num_trials", 1) == 1
     assert recorded["regularized"] is True
-    assert recorded["no_file_output"] is True
+    assert recorded["silent"] is True

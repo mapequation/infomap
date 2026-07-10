@@ -98,7 +98,10 @@ def test_infomap_facade_signatures_match_options():
 
 
 def test_no_file_output_runs_without_output_directory(make_infomap, load_graph_fixture):
-    im = make_infomap(no_file_output=True)
+    # no_file_output is inert on the library surface (files come from the
+    # Result / Network writers), so it warns -- but the run still succeeds.
+    with pytest.warns(UserWarning, match="no_file_output"):
+        im = make_infomap(no_file_output=True)
     load_graph_fixture(im, "twotriangles_unweighted.edges")
 
     im.run()

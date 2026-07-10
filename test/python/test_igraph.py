@@ -160,7 +160,8 @@ def test_find_igraph_communities_sets_directed_for_directed_graph(monkeypatch):
     assert clustering.membership == [0, 0]
     assert instances[0].directed is True
     assert instances[0].options["silent"] is True
-    assert instances[0].options["no_file_output"] is True
+    # no_file_output is no longer forced (redundant on the library surface).
+    assert "no_file_output" not in instances[0].options
     assert instances[0].options["num_trials"] == 3
 
 

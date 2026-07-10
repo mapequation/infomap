@@ -330,13 +330,12 @@ def find_igraph_communities(
     options : Options, mapping, or None, optional
         Base engine configuration carried the 3.0-safe way -- an
         :class:`~infomap.Options` instance or a mapping. Any bare keyword below
-        (and an explicit ``trials`` / ``num_trials``) takes precedence. A
-        carrier left at its defaults does not disturb the finder defaults, so
-        ``num_trials`` still falls back to ``10``.
+        (and an explicit ``trials`` / ``num_trials``) takes precedence.
     trials : int, optional
         Number of independent trials; the best solution is kept. Convenience
         alias for the ``num_trials`` Infomap option. Pass ``trials`` or
-        ``num_trials``, not both; if neither is given the default is ``10``.
+        ``num_trials``, not both; if neither is given the engine default
+        ``num_trials=1`` applies -- raise it for research runs.
     node_id : str, optional
         Vertex attribute for physical node ids, implying a state network.
     layer_id : str, optional
@@ -357,9 +356,9 @@ def find_igraph_communities(
         metadata; vertices with missing values are skipped. Raises
         :class:`ValueError` if the attribute does not exist.
     **infomap_options
-        Keyword arguments passed to :class:`infomap.Infomap`. By default,
-        ``silent=True`` and ``no_file_output=True`` are used unless
-        explicitly overridden.
+        Engine options passed to :class:`infomap.Infomap`. ``silent=True`` is
+        applied unless overridden. Prefer carrying non-common options via the
+        ``options=`` argument above (the 3.0-safe path).
 
     Returns
     -------
@@ -387,17 +386,16 @@ def find_igraph_communities(
         return clustering
 
     from .._facade import Infomap
-    from .._run import _explicit_option_kwargs
+    from .._run import _resolve_options
 
-    # Fold the options= carrier under the caller's bare keyword arguments (bare
-    # kwargs win), then apply the `trials` alias and the finder's num_trials
-    # default. Only fields the carrier sets away from their defaults are taken,
-    # so it never clobbers the finder's silent/no_file_output defaults.
-    engine_options = {**_explicit_option_kwargs(options), **infomap_options}
+    # Merge the options= carrier under the caller's bare keyword arguments (bare
+    # kwargs win) and apply the `trials` alias. num_trials is left to the engine
+    # default (1), matching infomap.run(). The library surface writes no files
+    # without an output directory, so no_file_output is not forced.
+    engine_options = _resolve_options(options, infomap_options)
     if trials is not None:
         engine_options["num_trials"] = trials
-    engine_options.setdefault("num_trials", 10)
-    engine_options = {"silent": True, "no_file_output": True, **engine_options}
+    engine_options = {"silent": True, **engine_options}
 
     infomap = Infomap(**engine_options)
     node_mapping = add_igraph_graph(

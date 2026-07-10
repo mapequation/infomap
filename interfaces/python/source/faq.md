@@ -47,14 +47,15 @@ to stop. Prefer this over the legacy `silent` keyword, which is pending-deprecat
 and leaves the API in 3.0. See
 {doc}`Running Infomap and tuning options <working-with-infomap/running-and-options>`.
 
-### Why does `infomap.find_communities(g)` run more trials than `infomap.run(g)`?
+### What does `infomap.find_communities` return, and how does it differ from `infomap.run`?
 
-`find_communities` (and `find_igraph_communities`) default to `num_trials=10`,
-while `infomap.run` defaults to `num_trials=1`. Set it explicitly with
-`num_trials=` (or the `trials=` alias on the finders). The finders also return a
-different shape -- `find_communities` a NetworkX-style `list[set]` of node labels,
-`find_igraph_communities` an `igraph.VertexClustering` -- whereas `run` returns a
-{class}`~infomap.Result`. See {doc}`Reading the Result <working-with-infomap/results-and-iteration>`.
+The finders return the partition in the graph's own labels: `find_communities`
+a NetworkX-style `list[set]` of node labels, `find_igraph_communities` an
+`igraph.VertexClustering` (keyed by vertex index). `infomap.run` instead returns
+a {class}`~infomap.Result` with the codelength, hierarchy, dataframe, and
+exporters. All three default to `num_trials=1`, so raise it -- `num_trials=` (or
+the `trials=` alias on the finders) -- for research runs. See
+{doc}`Reading the Result <working-with-infomap/results-and-iteration>`.
 
 ## Results and determinism
 

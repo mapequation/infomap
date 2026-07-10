@@ -97,7 +97,9 @@ def test_find_communities_sets_directed_for_digraph(monkeypatch):
     assert communities == [{"source", "target"}]
     assert instances[0].directed is True
     assert instances[0].options["silent"] is True
-    assert instances[0].options["no_file_output"] is True
+    # no_file_output is no longer forced: the library surface writes no files
+    # without an output directory, so the finder leaves it at the engine default.
+    assert "no_file_output" not in instances[0].options
     assert instances[0].initial_partition is None
 
 
@@ -179,7 +181,7 @@ def test_add_networkx_multigraph_with_parallel_edges_and_self_loop():
     # The functional entry point accepts the same MultiGraph directly.
     functional = infomap.run(
         graph,
-        options={"silent": True, "no_file_output": True, "seed": 123, "num_trials": 1},
+        options={"silent": True, "seed": 123, "num_trials": 1},
     )
     assert sum(1 for _ in functional.nodes()) == graph.number_of_nodes()
 
@@ -368,7 +370,7 @@ def test_find_communities_trials_default_matches_igraph():
     ig_default = (
         inspect.signature(infomap.find_igraph_communities).parameters["trials"].default
     )
-    # Both use the same sentinel; the effective default (10) is asserted below.
+    # Both use the same sentinel; the effective default (1) is asserted below.
     assert nx_default is None and ig_default is None
 
 
@@ -380,7 +382,7 @@ def test_find_communities_rejects_trials_and_num_trials_conflict():
 @pytest.mark.parametrize(
     "kwargs, expected",
     [
-        ({}, 10),                    # neither -> aligned default
+        ({}, 1),                     # neither -> engine default (like run())
         ({"trials": 7}, 7),          # the convenience alias
         ({"num_trials": 3}, 3),      # the engine option (back-compat)
     ],
@@ -397,4 +399,6 @@ def test_find_communities_resolves_num_trials(monkeypatch, kwargs, expected):
 
     monkeypatch.setattr(facade, "Infomap", RecordingInfomap)
     infomap.find_communities(nx.Graph([("a", "b")]), seed=1, **kwargs)
-    assert captured["num_trials"] == expected
+    # num_trials is passed explicitly only when set; otherwise it falls to the
+    # engine default (1), same as run().
+    assert captured.get("num_trials", 1) == expected

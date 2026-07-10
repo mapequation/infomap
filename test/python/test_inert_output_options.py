@@ -45,9 +45,10 @@ def test_helper_stays_quiet_with_the_raw_args_escape():
         _warn_inert_output_options(Options(tree=True), "some_output_dir")
 
 
-def test_helper_excludes_the_no_file_output_suppressor():
-    with warnings.catch_warnings():
-        warnings.simplefilter("error")
+def test_helper_warns_on_no_file_output_too():
+    # no_file_output is inert on the library surface like the other output
+    # flags (file output is controlled by the writers), so it warns as well.
+    with pytest.warns(UserWarning, match="no_file_output"):
         _warn_inert_output_options(Options(no_file_output=True), None)
 
 
@@ -77,9 +78,9 @@ def test_plain_run_does_not_warn():
     assert _inert_userwarnings(records) == []
 
 
-def test_find_communities_does_not_warn_about_no_file_output():
-    # The finders build Infomap(no_file_output=True, ...) defensively; the
-    # excluded suppressor must not trip the inert-output warning.
+def test_find_communities_emits_no_inert_output_warning():
+    # The finders no longer force any output flag (no_file_output included), so
+    # a plain call trips nothing.
     nx = pytest.importorskip("networkx")
     with warnings.catch_warnings(record=True) as records:
         warnings.simplefilter("always")

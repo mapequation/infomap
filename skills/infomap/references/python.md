@@ -58,7 +58,7 @@ Use the published Python docs at `https://mapequation.org/infomap-python-docs/` 
 ## Choose the Python entry point
 
 - One-call partitioning from a graph, file, matrix, edge index, or link iterable: `infomap.run(input, seed=..., num_trials=...)`.
-- Just the partition in the graph's own node labels: `infomap.find_communities(graph, seed=..., num_trials=...)` returns a NetworkX-style `list[set]` of node labels — not a `{node: module}` dict. Its igraph counterpart `infomap.find_igraph_communities` returns an `igraph.VertexClustering` (keyed by vertex index), not the same shape. Both accept a `trials` alias and default to `num_trials=10` (not 1, unlike `run`).
+- Just the partition in the graph's own node labels: `infomap.find_communities(graph, seed=..., num_trials=...)` returns a NetworkX-style `list[set]` of node labels — not a `{node: module}` dict. Its igraph counterpart `infomap.find_igraph_communities` returns an `igraph.VertexClustering` (keyed by vertex index), not the same shape. Both accept a `trials` alias for `num_trials` and, like `run`, default to `num_trials=1` — raise it for research runs.
 - Non-default input building (weights, directedness, state/multilayer): `Network.from_*(...)` then `.run(options=Options(...))`.
 - AnnData/Scanpy observation graphs: use the `infomap.tl` helper if the installed package exposes it.
 

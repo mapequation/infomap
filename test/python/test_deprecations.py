@@ -126,7 +126,7 @@ def test_from_graph_classmethod_silent():
     matrix = scipy_sparse.csr_matrix([[0, 1, 0], [1, 0, 1], [0, 1, 0]])
     with warnings.catch_warnings():
         warnings.simplefilter("error", DeprecationWarning)
-        im = Infomap.from_scipy_sparse_matrix(matrix, silent=True, no_file_output=True)
+        im = Infomap.from_scipy_sparse_matrix(matrix, silent=True)
     assert im.num_links > 0
 
 
