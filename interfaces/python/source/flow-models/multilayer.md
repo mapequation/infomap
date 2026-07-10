@@ -428,9 +428,10 @@ assert n_links_self < n_links_default
 - {func}`infomap.datasets.multilayer`, {func}`infomap.datasets.multilayer_intra`,
   and {func}`infomap.datasets.multilayer_intra_inter` load the bundled example
   networks for the three file forms, ready to run.
-- `multilayer_relax_rate` (default `0.15`) is an engine option on
-  {func}`infomap.run`: the relax rate used when no explicit inter-layer links are
-  provided.
+- `multilayer_relax_rate` (default `0.15`) is an engine option carried via
+  `Options` to {func}`infomap.run`
+  (`options=Options(multilayer_relax_rate=...)`): the relax rate used when no
+  explicit inter-layer links are provided.
 - {meth}`infomap.Result.modules` needs `states=True` on multilayer networks to
   return state-node assignments; `states=False` raises an
   {class}`~infomap.InfomapError` on higher-order networks.
@@ -440,7 +441,8 @@ assert n_links_self < n_links_default
 
 ## Options
 
-The relax-rate model is controlled by these engine options on {func}`infomap.run`.
+The relax-rate model is controlled by these engine options, carried via `Options`
+to {func}`infomap.run` (`options=Options(...)`).
 They apply when Infomap simulates the coupling; with explicit inter-layer links
 only `multilayer_relax_to_self` still has an effect, deciding whether a
 node-aligned inter link attaches to the node's own copy or spreads over its

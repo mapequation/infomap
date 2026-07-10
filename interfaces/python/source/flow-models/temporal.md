@@ -236,8 +236,8 @@ generalises to higher-order and temporal networks {cite:p}`holmgren2023change`.
 - {meth}`infomap.Network.add_multilayer_link` adds a fully specified multilayer
   link `(layer, node) -> (layer, node)` when you want complete control over the
   state-node graph.
-- `multilayer_relax_rate` (an engine option on {func}`infomap.run`) sets the
-  inter-layer relax rate $r \in [0, 1]$ when you use `add_multilayer_intra_link`
+- `multilayer_relax_rate` (an engine option carried via `Options` to
+  {func}`infomap.run`) sets the inter-layer relax rate $r \in [0, 1]$ when you use `add_multilayer_intra_link`
   without explicit inter-layer links. 0.15–0.25 is a typical starting point.
 - `multilayer_relax_limit` restricts relaxation to layers within a given index
   distance, enforcing temporal ordering.
@@ -254,7 +254,8 @@ generalises to higher-order and temporal networks {cite:p}`holmgren2023change`.
 
 ## Options
 
-Temporal coupling is set by the multilayer engine options on {func}`infomap.run`:
+Temporal coupling is set by the multilayer engine options, carried via `Options`
+to {func}`infomap.run`:
 
 | Option | Default | Effect |
 |---|---|---|
