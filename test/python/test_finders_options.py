@@ -16,7 +16,6 @@ import pytest
 
 import infomap
 import infomap._facade as facade
-from infomap import Options
 
 
 pytestmark = pytest.mark.fast
@@ -46,11 +45,11 @@ def _graph():
 @pytest.mark.parametrize(
     "options, kwargs, expected",
     [
-        (Options(num_trials=7), {}, 7),          # carrier sets num_trials
+        (infomap.Options(num_trials=7), {}, 7),          # carrier sets num_trials
         ({"num_trials": 5}, {}, 5),              # mapping carrier
-        (Options(regularized=True), {}, 1),      # carrier without num_trials -> default 1
-        (Options(num_trials=7), {"num_trials": 3}, 3),  # bare kwarg wins
-        (Options(num_trials=7), {"trials": 3}, 3),      # trials alias wins
+        (infomap.Options(regularized=True), {}, 1),      # carrier without num_trials -> default 1
+        (infomap.Options(num_trials=7), {"num_trials": 3}, 3),  # bare kwarg wins
+        (infomap.Options(num_trials=7), {"trials": 3}, 3),      # trials alias wins
     ],
 )
 def test_find_communities_options_carrier_num_trials(recorded, options, kwargs, expected):
@@ -60,7 +59,7 @@ def test_find_communities_options_carrier_num_trials(recorded, options, kwargs, 
 
 @pytest.mark.filterwarnings("ignore::PendingDeprecationWarning")
 def test_find_communities_carrier_carries_advanced_option(recorded):
-    infomap.find_communities(_graph(), options=Options(regularized=True))
+    infomap.find_communities(_graph(), options=infomap.Options(regularized=True))
     assert recorded["regularized"] is True
 
 
@@ -68,7 +67,7 @@ def test_find_communities_carrier_carries_advanced_option(recorded):
 def test_find_communities_carrier_keeps_engine_quiet_without_forcing_no_file_output(recorded):
     # The finder keeps the engine quiet but no longer forces no_file_output --
     # it is redundant on the library surface (no output directory -> no files).
-    infomap.find_communities(_graph(), options=Options(regularized=True))
+    infomap.find_communities(_graph(), options=infomap.Options(regularized=True))
     assert recorded["silent"] is True
     assert recorded["no_file_output"] is False
 
@@ -76,7 +75,7 @@ def test_find_communities_carrier_keeps_engine_quiet_without_forcing_no_file_out
 def test_find_communities_options_carrier_returns_labels():
     # End-to-end: the carrier path still produces a valid partition.
     communities = infomap.find_communities(
-        _graph(), options=Options(num_trials=3, seed=123)
+        _graph(), options=infomap.Options(num_trials=3, seed=123)
     )
     assert set().union(*communities) == {"a", "b", "c"}
 
@@ -85,10 +84,10 @@ def test_find_communities_options_carrier_returns_labels():
 def test_find_igraph_communities_options_carrier_num_trials(recorded):
     ig = pytest.importorskip("igraph")
     g = ig.Graph.Formula("a-b, b-c")
-    infomap.find_igraph_communities(g, options=Options(num_trials=7))
+    infomap.find_igraph_communities(g, options=infomap.Options(num_trials=7))
     assert recorded.get("num_trials", 1) == 7
     # A carrier without num_trials uses the engine default (1), like run().
-    infomap.find_igraph_communities(g, options=Options(regularized=True))
+    infomap.find_igraph_communities(g, options=infomap.Options(regularized=True))
     assert recorded.get("num_trials", 1) == 1
     assert recorded["regularized"] is True
     assert recorded["silent"] is True

@@ -15,8 +15,7 @@ import warnings
 
 import pytest
 
-import infomap
-from infomap import Infomap, Options, run
+from infomap import Infomap, Network, Options, find_communities, run
 from infomap._run import _warn_inert_output_options
 
 
@@ -63,7 +62,7 @@ def test_infomap_construction_options_carrier_warns():
 
 
 def test_network_run_options_carrier_warns():
-    net = infomap.Network()
+    net = Network()
     net.add_link(0, 1)
     net.add_link(1, 2)
     net.add_link(2, 0)
@@ -84,5 +83,5 @@ def test_find_communities_emits_no_inert_output_warning():
     nx = pytest.importorskip("networkx")
     with warnings.catch_warnings(record=True) as records:
         warnings.simplefilter("always")
-        infomap.find_communities(nx.Graph([("a", "b"), ("b", "c")]))
+        find_communities(nx.Graph([("a", "b"), ("b", "c")]))
     assert _inert_userwarnings(records) == []
