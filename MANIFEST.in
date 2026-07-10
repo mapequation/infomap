@@ -7,3 +7,4 @@ recursive-include vendor/fmt *.h *.md LICENSE
 recursive-include interfaces/python/generated *.cpp
 recursive-include interfaces/python/src *.py
 recursive-include interfaces/python/src *.net
+recursive-include interfaces/python/src py.typed
