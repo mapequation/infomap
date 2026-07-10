@@ -106,7 +106,7 @@ def test_options_default_is_silent():
 
 def test_stateful_infomap_is_silent_by_default(capfd):
     _engine_log(capfd)  # drain log buffered by earlier (unflushed) tests
-    im = Infomap(num_trials=1, seed=1, no_file_output=True)
+    im = Infomap(num_trials=1, seed=1)
     im.add_links(_LINKS)
     im.run()
     assert _engine_log(capfd) == ""
@@ -114,7 +114,11 @@ def test_stateful_infomap_is_silent_by_default(capfd):
 
 def test_stateful_infomap_silent_false_prints_engine_log(capfd):
     _engine_log(capfd)
-    im = Infomap(silent=False, num_trials=1, seed=1, no_file_output=True)
+    # silent as a bare keyword is pending-deprecated (it moves to logging in
+    # 3.0) but still overrides the default in 2.x; the carrier/logging paths are
+    # the warning-free replacements.
+    with pytest.warns(PendingDeprecationWarning, match="silent"):
+        im = Infomap(silent=False, num_trials=1, seed=1)
     im.add_links(_LINKS)
     im.run()
     assert _engine_log(capfd) != ""

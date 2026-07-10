@@ -168,7 +168,7 @@ def test_add_networkx_multigraph_with_parallel_edges_and_self_loop():
     graph.add_edge("d", "a")
     graph.add_edge("a", "a")  # self-loop
 
-    im = infomap.Infomap(silent=True, no_file_output=True, seed=123, num_trials=1)
+    im = infomap.Infomap(silent=True, seed=123, num_trials=1)
     mapping = im.add_networkx_graph(graph)
     result = im.run()
 
@@ -201,7 +201,7 @@ def test_find_communities_partitions_multilayer_network_nodes():
 
 
 def test_add_networkx_graph_empty_returns_empty_mapping():
-    im = infomap.Infomap(silent=True, no_file_output=True)
+    im = infomap.Infomap(silent=True)
     assert im.add_networkx_graph(nx.Graph()) == {}
 
 
@@ -217,12 +217,12 @@ def test_add_networkx_multilayer_diagonal_link_raises():
     graph.add_node("b-layer-2", node_id=2, layer_id=2)
     graph.add_edge("a-layer-1", "b-layer-2")
 
-    im = infomap.Infomap(silent=True, no_file_output=True)
+    im = infomap.Infomap(silent=True)
     with pytest.raises(ValueError, match="diagonal"):
         im.add_networkx_graph(graph)
 
     # The documented workaround (full multilayer format) accepts the same graph.
-    im_full = infomap.Infomap(silent=True, no_file_output=True)
+    im_full = infomap.Infomap(silent=True)
     mapping = im_full.add_networkx_graph(graph, multilayer_inter_intra_format=False)
     assert set(mapping.values()) == set(graph.nodes)
 
@@ -236,7 +236,7 @@ def test_add_networkx_layer_id_without_node_id_raises_clear_error():
     graph.add_node("b", layer_id=2)
     graph.add_edge("a", "b")
 
-    im = infomap.Infomap(silent=True, no_file_output=True)
+    im = infomap.Infomap(silent=True)
     with pytest.raises(ValueError, match="node_id"):
         im.add_networkx_graph(graph)
 
@@ -294,7 +294,7 @@ def test_find_communities_accepts_meta_attribute():
 def test_infomap_add_networkx_graph_accepts_meta_attribute():
     graph = _nx_with_meta({0: "a", 1: "b", 2: "a", 3: "a", 4: "b", 5: "b"})
     im = infomap.Infomap(
-        silent=True, no_file_output=True, seed=1, num_trials=5, meta_data_rate=1.0
+        silent=True, seed=1, num_trials=5, meta_data_rate=1.0
     )
     im.add_networkx_graph(graph, meta_attribute="ct")
     result = im.run()
@@ -314,7 +314,7 @@ def test_label_to_internal_id_enumerates_mixed_int_and_string():
 
 def test_add_networkx_graph_handles_mixed_int_string_labels():
     graph = nx.Graph([(1, "a"), ("a", 2)])
-    im = infomap.Infomap(silent=True, no_file_output=True, seed=1, num_trials=1)
+    im = infomap.Infomap(silent=True, seed=1, num_trials=1)
     mapping = im.add_networkx_graph(graph)
     assert set(mapping.values()) == {1, "a", 2}
     assert im.run().num_top_modules >= 1
@@ -385,6 +385,7 @@ def test_find_communities_rejects_trials_and_num_trials_conflict():
         ({"num_trials": 3}, 3),      # the engine option (back-compat)
     ],
 )
+@pytest.mark.filterwarnings("ignore::PendingDeprecationWarning")
 def test_find_communities_resolves_num_trials(monkeypatch, kwargs, expected):
     captured = {}
     real_infomap = facade.Infomap

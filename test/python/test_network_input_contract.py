@@ -36,6 +36,7 @@ def test_json_standard_matches_in_memory(
     )
 
 
+@pytest.mark.filterwarnings("ignore::PendingDeprecationWarning")
 def test_json_embedded_meta_matches_set_meta_data(
     make_infomap, network_fixture_path, canonical_modules
 ):

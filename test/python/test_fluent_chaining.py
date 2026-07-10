@@ -60,7 +60,7 @@ def test_network_fluent_chain_builds_and_runs():
 
 @pytest.mark.fast
 def test_infomap_single_layer_mutators_do_not_return_self():
-    im = Infomap(silent=True, no_file_output=True)
+    im = Infomap(silent=True)
     assert im.add_node(1) is not im
     assert im.add_nodes([2, 3]) is not im
     assert im.add_state_node(10, 1) is not im
@@ -76,12 +76,12 @@ def test_infomap_single_layer_mutators_do_not_return_self():
 
 @pytest.mark.fast
 def test_infomap_multilayer_mutators_do_not_return_self():
-    a = Infomap(silent=True, no_file_output=True)
+    a = Infomap(silent=True)
     assert a.add_multilayer_intra_link(1, 1, 2) is not a
     assert a.add_multilayer_intra_links([(1, 2, 3)]) is not a
     assert a.add_multilayer_inter_link(1, 1, 2) is not a
     assert a.add_multilayer_inter_links([(2, 1, 1)]) is not a
-    b = Infomap(silent=True, no_file_output=True)
+    b = Infomap(silent=True)
     assert b.add_multilayer_link((0, 1), (1, 2)) is not b
     assert b.add_multilayer_links([((0, 3), (1, 2))]) is not b
 
@@ -91,7 +91,7 @@ def test_infomap_mutators_match_released_core_returns():
     # The released API returned the underlying SWIG call's result, routed now
     # through the shared Core. add_node returns whatever the binding returns
     # (an id or None), never self.
-    im = Infomap(silent=True, no_file_output=True)
+    im = Infomap(silent=True)
     assert not isinstance(im.add_node(3), Infomap)
     # remove_link mirrors network().removeLink, a bool: True if a link existed.
     im.add_link(3, 4)
@@ -101,7 +101,7 @@ def test_infomap_mutators_match_released_core_returns():
 
 @pytest.mark.fast
 def test_infomap_builds_and_runs_without_chaining():
-    im = Infomap(silent=True, no_file_output=True, seed=1)
+    im = Infomap(silent=True, seed=1)
     im.add_links([(1, 2), (2, 3), (3, 1), (3, 4), (4, 5), (5, 6), (6, 4)])
     im.add_node(7, "isolated-ish")
     im.set_name(1, "a")

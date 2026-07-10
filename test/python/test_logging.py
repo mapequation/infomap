@@ -23,7 +23,13 @@ import pytest
 from infomap import Infomap, disable_log, enable_log
 
 
-pytestmark = pytest.mark.fast
+# These tests drive the engine log -> Python logging routing, deliberately
+# using silent=False to produce engine output; the pending deprecation on the
+# silent keyword is expected here (it is asserted in test_deprecations.py).
+pytestmark = [
+    pytest.mark.fast,
+    pytest.mark.filterwarnings("ignore::PendingDeprecationWarning"),
+]
 
 
 def _engine_stdout(capfd) -> str:

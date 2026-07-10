@@ -36,7 +36,7 @@ def test_documented_iterator_types_in_dunder_all():
 
 @pytest.mark.fast
 def test_tree_returns_a_documented_iterator_type():
-    im = infomap.Infomap(silent=True, no_file_output=True)
+    im = infomap.Infomap(silent=True)
     im.add_link(0, 1)
     im.add_link(1, 2)
     im.run()
@@ -50,7 +50,7 @@ def test_treenode_is_importable_from_the_package():
     # the top level (for isinstance / type hints), like Result itself.
     assert hasattr(infomap, "TreeNode")
     assert "TreeNode" in infomap.__all__
-    im = infomap.Infomap(silent=True, no_file_output=True)
+    im = infomap.Infomap(silent=True)
     im.add_link(0, 1)
     assert isinstance(next(im.run().nodes()), infomap.TreeNode)
 

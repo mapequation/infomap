@@ -7,7 +7,7 @@ from infomap import Infomap, Network
 
 @pytest.mark.fast
 def test_network_builder_is_used_and_builds():
-    im = Infomap(silent=True, no_file_output=True)
+    im = Infomap(silent=True)
     assert isinstance(im._network, Network)
     im.add_node(1, "a")
     im.add_node(2)
@@ -20,7 +20,7 @@ def test_network_builder_is_used_and_builds():
 
 @pytest.mark.fast
 def test_repr_html_and_summary_render():
-    im = Infomap(silent=True, no_file_output=True)
+    im = Infomap(silent=True)
     im.add_links([(1, 2), (2, 3), (3, 1)])
     im.run()
     html = im._repr_html_()
@@ -37,7 +37,7 @@ def test_repr_html_and_summary_render():
 
 @pytest.mark.fast
 def test_multilayer_builder_is_used_and_builds():
-    im = Infomap(silent=True, no_file_output=True)
+    im = Infomap(silent=True)
     # The unified Network owns the multilayer verbs too (no separate builder).
     assert isinstance(im._network, Network)
     im.add_multilayer_intra_links([(1, 1, 2), (1, 2, 1), (2, 2, 3), (2, 3, 2)])

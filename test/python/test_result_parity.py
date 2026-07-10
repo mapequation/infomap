@@ -17,37 +17,37 @@ pytest.importorskip("pandas")
 
 
 def _simple(example_network_path) -> Infomap:
-    im = Infomap(silent=True, no_file_output=True, num_trials=5)
+    im = Infomap(silent=True, num_trials=5)
     im.read_file(str(example_network_path("twotriangles.net")))
     return im
 
 
 def _nine(example_network_path) -> Infomap:
-    im = Infomap(silent=True, no_file_output=True, num_trials=10)
+    im = Infomap(silent=True, num_trials=10)
     im.read_file(str(example_network_path("ninetriangles.net")))
     return im
 
 
 def _states(example_network_path) -> Infomap:
-    im = Infomap(silent=True, no_file_output=True)
+    im = Infomap(silent=True)
     im.read_file(str(example_network_path("states.net")))
     return im
 
 
 def _multilayer(example_network_path) -> Infomap:
-    im = Infomap(silent=True, no_file_output=True)
+    im = Infomap(silent=True)
     im.read_file(str(example_network_path("multilayer.net")))
     return im
 
 
 def _bipartite(example_network_path) -> Infomap:
-    im = Infomap(silent=True, no_file_output=True)
+    im = Infomap(silent=True)
     im.read_file(str(example_network_path("bipartite.net")))
     return im
 
 
 def _meta(example_network_path) -> Infomap:
-    im = Infomap(silent=True, no_file_output=True)
+    im = Infomap(silent=True)
     for source, target in [(0, 1), (1, 2), (2, 0), (2, 3), (3, 4), (4, 5), (5, 3)]:
         im.add_link(source, target)
     for node_id in range(6):

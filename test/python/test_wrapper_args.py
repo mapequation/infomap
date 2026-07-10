@@ -52,9 +52,12 @@ def test_construct_args_deduplicates_no_self_links():
     assert tokens.count("--no-self-links") == 1
 
 
+@pytest.mark.filterwarnings("ignore::PendingDeprecationWarning")
 def test_run_forwards_variable_markov_options(monkeypatch):
+    # Deliberately forwards advanced-tier engine kwargs through the stateful
+    # run() to assert they reach the engine; the pending-deprecation is expected.
     captured = {}
-    im = infomap_module.Infomap(silent=True, no_file_output=True)
+    im = infomap_module.Infomap(silent=True)
 
     def fake_construct_args(args=None, **kwargs):
         captured["args"] = args
@@ -168,9 +171,9 @@ def test_cli_completion_invalid_shell_exits_without_traceback():
 
 def test_pretty_warns_when_passed_explicitly():
     with pytest.deprecated_call(match="pretty is deprecated and has no effect"):
-        infomap_module.Infomap(silent=True, no_file_output=True, pretty=True)
+        infomap_module.Infomap(silent=True, pretty=True)
 
-    im = infomap_module.Infomap(silent=True, no_file_output=True)
+    im = infomap_module.Infomap(silent=True)
     im.add_link(0, 1)
     with pytest.deprecated_call(match="pretty is deprecated and has no effect"):
         im.run(pretty=False)
@@ -182,7 +185,7 @@ def test_include_self_links_warning_points_at_caller():
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always", DeprecationWarning)
         infomap_module.Infomap(
-            silent=True, no_file_output=True, include_self_links=True
+            silent=True, include_self_links=True
         )
 
     matching = [w for w in caught if "include_self_links" in str(w.message)]

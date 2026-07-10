@@ -20,7 +20,7 @@ from infomap import Infomap, Options, run
 
 
 def _two_triangles(**kwargs) -> Infomap:
-    im = Infomap(silent=True, no_file_output=True, num_trials=2, **kwargs)
+    im = Infomap(silent=True, num_trials=2, **kwargs)
     for source, target in [(0, 1), (1, 2), (2, 0), (2, 3), (3, 4), (4, 5), (5, 3)]:
         im.add_link(source, target)
     return im
@@ -95,7 +95,7 @@ def test_deprecated_accessor_emits_no_warning():
 def test_build_from_graph_accessor_silent():
     scipy_sparse = pytest.importorskip("scipy.sparse")
     matrix = scipy_sparse.csr_matrix([[0, 1, 0], [1, 0, 1], [0, 1, 0]])
-    im = Infomap(silent=True, no_file_output=True)
+    im = Infomap(silent=True)
     with warnings.catch_warnings():
         warnings.simplefilter("error", DeprecationWarning)
         im.add_scipy_sparse_matrix(matrix)
@@ -164,6 +164,10 @@ def test_advanced_tier_kwargs_emit_no_deprecation_warning_and_work():
     tools escalate by default) and keep working."""
     with warnings.catch_warnings():
         warnings.simplefilter("error", DeprecationWarning)
+        # Advanced-tier kwargs on the stateful surface do emit the softer
+        # PendingDeprecationWarning by design; this test is only about the
+        # louder DeprecationWarning, so ignore the pending one here.
+        warnings.simplefilter("ignore", PendingDeprecationWarning)
         im = _two_triangles(core_loop_limit=5, flow_model="undirected")
         result = im.run(markov_time=1.0, core_loop_limit=5)
     assert result.num_top_modules >= 1
