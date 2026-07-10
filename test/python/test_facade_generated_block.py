@@ -19,8 +19,8 @@ FACADE = Path(__file__).resolve().parents[2] / (
 BEGIN = "# === BEGIN generated: Infomap option signatures"
 END = "# === END generated ==="
 
-NON_OPTION_INIT = {"self", "args", "pretty"}
-NON_OPTION_RUN = {"self", "args", "initial_partition", "pretty"}
+NON_OPTION_INIT = {"self", "args", "pretty", "options"}
+NON_OPTION_RUN = {"self", "args", "initial_partition", "pretty", "options"}
 
 
 @pytest.mark.fast

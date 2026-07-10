@@ -1391,7 +1391,7 @@ class _InfomapResultsMixin:
         --------
 
         >>> from infomap import Infomap
-        >>> im = Infomap(silent=True, no_infomap=True)
+        >>> im = Infomap(silent=True)
         >>> im.read_file("twotriangles.net")
         >>> _ = im.run()
         >>> f"{im.entropy_rate:.5f}"

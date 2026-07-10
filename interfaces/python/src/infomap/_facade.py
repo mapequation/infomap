@@ -1,6 +1,7 @@
 import sys
 import warnings
 from collections import namedtuple
+from collections.abc import Mapping
 from contextlib import contextmanager
 
 from ._core import Core
@@ -33,6 +34,7 @@ from ._options import (
     Options,
     OutputFormat,
     _construct_args,
+    _merge_options,
     _warn_advanced_tier_kwargs,
 )
 from ._logging import apply_engine_log_overrides as _apply_engine_log_overrides
@@ -265,6 +267,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         prefer_modular_solution: bool = False,
         num_random_moves: int | None = None,
         max_degree_for_random_moves: int | None = None,
+        options: Options | Mapping | None = None,
     ) -> None:
         """Create a new Infomap instance.
 
@@ -276,6 +279,11 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         ----------
         args : str, optional
             Raw Infomap arguments to prepend before rendered keyword options.
+        options : Options, mapping, or None, optional
+            A reusable ``Options`` object (or a mapping) applied as the base
+            configuration; any keyword argument set to a non-default value overrides it.
+            This is the sanctioned, warning-free carrier for the advanced options that
+            leave the signature in 3.0.
         include_self_links : bool, optional
             Deprecated. Self-links are included by default; use no_self_links=True to
             exclude them.
@@ -907,7 +915,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
                 stacklevel=2,
             )
         _warn_advanced_tier_kwargs(locals(), "init")
-        options = Options._from_locals(locals())
+        options = _merge_options(options, Options._from_locals(locals()), "init")
         self._init_from_options(args, options)
 
     def run(
@@ -991,6 +999,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         prefer_modular_solution: bool = False,
         num_random_moves: int | None = None,
         max_degree_for_random_moves: int | None = None,
+        options: Options | Mapping | None = None,
     ) -> "Result":
         """Run Infomap.
 
@@ -1007,6 +1016,11 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             Raw Infomap arguments to prepend before rendered keyword options.
         initial_partition : dict, optional
             Initial partition to use for this run only. See initial_partition.
+        options : Options, mapping, or None, optional
+            A reusable ``Options`` object (or a mapping) applied as the base
+            configuration; any keyword argument set to a non-default value overrides it.
+            This is the sanctioned, warning-free carrier for the advanced options that
+            leave the signature in 3.0.
         include_self_links : bool, optional
             Deprecated. Self-links are included by default; use no_self_links=True to
             exclude them.
@@ -1647,7 +1661,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
                 stacklevel=2,
             )
         _warn_advanced_tier_kwargs(locals(), "run")
-        options = Options._from_locals(locals())
+        options = _merge_options(options, Options._from_locals(locals()), "run")
         return self._run_from_options(args, initial_partition, options)
     # === END generated ===
 
@@ -2391,7 +2405,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         Examples
         --------
 
-        >>> from infomap import Infomap
+        >>> from infomap import Infomap, Options
         >>> im = Infomap(silent=True, num_trials=10)
         >>> im.add_links((
         ...     (1, 2), (1, 3), (2, 3),
@@ -2402,10 +2416,10 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         >>> im.set_meta_data(4, 1)
         >>> im.set_meta_data(5, 0)
         >>> im.set_meta_data(6, 0)
-        >>> result = im.run(meta_data_rate=0)
+        >>> result = im.run(options=Options(meta_data_rate=0))
         >>> result.num_top_modules
         2
-        >>> result = im.run(meta_data_rate=2)
+        >>> result = im.run(options=Options(meta_data_rate=2))
         >>> result.num_top_modules
         3
 
@@ -2853,7 +2867,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         Examples
         --------
 
-        >>> from infomap import Infomap
+        >>> from infomap import Infomap, Options
         >>> im = Infomap(silent=True)
         >>> im.add_node(1)
         >>> im.add_node(2)
@@ -2869,7 +2883,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         ...     3: 1,
         ...     4: 1
         ... }
-        >>> result = im.run(no_infomap=True)
+        >>> result = im.run(options=Options(no_infomap=True))
         >>> result.codelength
         3.4056
 
