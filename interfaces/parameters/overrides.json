@@ -115,6 +115,11 @@
       "python": "Suppress console output. The Python API is already quiet by default; to see the engine log, use infomap.enable_log() rather than this flag. The command-line interface is unaffected."
     }
   },
+  "types": {
+    "--num-threads": {
+      "python": "str | int | None"
+    }
+  },
   "bindingOnly": {
     "python": [
       {

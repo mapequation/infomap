@@ -202,6 +202,13 @@ class Parameter:
         return alias, literal
 
     def python_type(self) -> str:
+        # A per-language override widens/pins an annotation the derived rules
+        # cannot express -- e.g. num_threads accepts 'auto' (str) or a positive
+        # integer, so its Python annotation is str | int | None even though the
+        # engine option is string-typed.
+        override = self.overrides.get("types", {}).get(self.flag, {}).get("python")
+        if override is not None:
+            return override
         if self.render_policy == "repeated_short":
             return "int | None" if self.python_default_value() == "None" else "int"
         if self.render_policy == "directed_alias":
@@ -328,7 +335,7 @@ class ParameterCatalog:
         surfaces = set(self.overrides.get("policy", {}).get("surfaces", []))
         languages = surfaces - {"cli"} if surfaces else {"python", "r", "ts"}
         known_flags = self._known_flags()
-        for section in ("names", "defaults", "docs"):
+        for section in ("names", "defaults", "docs", "types"):
             for flag, per_language in self.overrides.get(section, {}).items():
                 if flag not in known_flags:
                     raise RuntimeError(
