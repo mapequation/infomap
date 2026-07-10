@@ -1,0 +1,87 @@
+"""Output-artifact options set on the library surface warn instead of no-op.
+
+The args-only options (``tree``, ``clu``, ``out_name``, ``output`` ...) write
+files only when an output directory is supplied through the raw ``args`` escape
+hatch. Set via :class:`Options` on the normal library surface they used to
+construct and run without error but silently do nothing. These tests pin the
+``UserWarning`` that now points such calls at the ``Result`` / ``Network``
+writers, the raw-args escape staying quiet, and the ``no_file_output``
+suppressor (used defensively by the graph finders) never tripping it.
+"""
+
+from __future__ import annotations
+
+import warnings
+
+import pytest
+
+import infomap
+from infomap import Infomap, Options, run
+from infomap._run import _warn_inert_output_options
+
+
+pytestmark = pytest.mark.fast
+
+LINKS = [(0, 1), (1, 2), (2, 0)]
+
+
+def _inert_userwarnings(records):
+    return [
+        record
+        for record in records
+        if issubclass(record.category, UserWarning)
+        and "output options" in str(record.message)
+    ]
+
+
+def test_helper_warns_without_the_raw_args_escape():
+    with pytest.warns(UserWarning, match=r"tree.*write_tree"):
+        _warn_inert_output_options(Options(tree=True), None)
+
+
+def test_helper_stays_quiet_with_the_raw_args_escape():
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        _warn_inert_output_options(Options(tree=True), "some_output_dir")
+
+
+def test_helper_excludes_the_no_file_output_suppressor():
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        _warn_inert_output_options(Options(no_file_output=True), None)
+
+
+def test_run_options_carrier_output_flag_warns():
+    with pytest.warns(UserWarning, match="write_tree"):
+        run(LINKS, options=Options(tree=True))
+
+
+def test_infomap_construction_options_carrier_warns():
+    with pytest.warns(UserWarning, match="clu"):
+        Infomap(options=Options(clu=True))
+
+
+def test_network_run_options_carrier_warns():
+    net = infomap.Network()
+    net.add_link(0, 1)
+    net.add_link(1, 2)
+    net.add_link(2, 0)
+    with pytest.warns(UserWarning, match="out_name"):
+        net.run(options=Options(out_name="x"))
+
+
+def test_plain_run_does_not_warn():
+    with warnings.catch_warnings(record=True) as records:
+        warnings.simplefilter("always")
+        run(LINKS)
+    assert _inert_userwarnings(records) == []
+
+
+def test_find_communities_does_not_warn_about_no_file_output():
+    # The finders build Infomap(no_file_output=True, ...) defensively; the
+    # excluded suppressor must not trip the inert-output warning.
+    nx = pytest.importorskip("networkx")
+    with warnings.catch_warnings(record=True) as records:
+        warnings.simplefilter("always")
+        infomap.find_communities(nx.Graph([("a", "b"), ("b", "c")]))
+    assert _inert_userwarnings(records) == []
