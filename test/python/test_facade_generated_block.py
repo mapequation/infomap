@@ -75,9 +75,12 @@ def test_docstring_deprecation_follows_the_signature_tier():
 
     for doc in (Infomap.__init__.__doc__, Infomap.run.__doc__):
         assert doc is not None
-        # Advanced-tier parameters carry the docs-only deprecation directive.
+        # Both advanced-tier directives are present: kept keywords relocate to
+        # Options (versionchanged), removed/args-only keywords leave the API
+        # (deprecated). See _advanced_tier_directive in the generator.
+        assert ".. versionchanged:: 2.15" in doc
         assert ".. deprecated:: 2.15" in doc
-        # Common-tier parameters (#738) do not: no directive may appear
+        # Common-tier parameters (#738) carry neither directive: none may appear
         # between a common param's entry and the next parameter entry.
         for common, following in [
             ("seed : ", "num_trials : "),
@@ -88,8 +91,19 @@ def test_docstring_deprecation_follows_the_signature_tier():
         ]:
             start = doc.index(common)
             end = doc.index(following, start)
-            assert ".. deprecated::" not in doc[start:end], common
-        # Output-artifact params carry the inertness note from #748.
+            segment = doc[start:end]
+            assert ".. deprecated::" not in segment, common
+            assert ".. versionchanged::" not in segment, common
+        # A kept advanced param relocates to Options: versionchanged, NOT
+        # deprecated (marking a permanent tuning knob deprecated misleads).
+        start = doc.index("regularized : ")
+        segment = doc[start : doc.index("regularization_strength : ", start)]
+        assert ".. versionchanged:: 2.15" in segment
+        assert ".. deprecated::" not in segment
+        # A removed keyword truly leaves the API: deprecated.
+        start = doc.index("silent : ")
+        assert ".. deprecated:: 2.15" in doc[start : doc.index("pretty : ", start)]
+        # Output-artifact params are args-only: deprecated + the inertness note.
         start = doc.index("output : ")
         end = doc.index("hide_bipartite_nodes : ", start)
         assert "Has no effect in the Python API" in doc[start:end]
