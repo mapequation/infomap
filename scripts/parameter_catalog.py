@@ -163,7 +163,7 @@ class Parameter:
     def uses_generic_spec(self) -> bool:
         return self.render_policy in {"flag", "value"}
 
-    def binding_default(self, language: str) -> dict[str, str]:
+    def binding_default(self, language: str) -> str | None:
         return self.overrides.get("defaults", {}).get(self.flag, {}).get(language)
 
     def python_default_value(self) -> str:
