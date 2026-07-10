@@ -73,7 +73,7 @@ class Network(_NetworkWritersMixin):
     ...     .add_link(4, 6)
     ...     .add_link(5, 6)
     ... )
-    >>> result = net.run(options={"silent": True})
+    >>> result = net.run()
     >>> result.num_top_modules
     2
     >>> for node_id, module_id in sorted(result.modules().items()):
@@ -88,7 +88,7 @@ class Network(_NetworkWritersMixin):
     A :class:`Network` can also be handed to :func:`infomap.run`:
 
     >>> from infomap import run
-    >>> result = run(net, silent=True)
+    >>> result = run(net)
     >>> result.num_top_modules
     2
 

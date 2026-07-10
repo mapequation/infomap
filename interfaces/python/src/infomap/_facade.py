@@ -118,7 +118,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
     :class:`~infomap.Result`:
 
     >>> from infomap import Infomap
-    >>> im = Infomap(silent=True)
+    >>> im = Infomap()
     >>> im.add_node(1)
     >>> im.add_node(2)
     >>> im.add_link(1, 2)
@@ -130,7 +130,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
     Read a network file and inspect a few metrics on the result:
 
     >>> from infomap import Infomap
-    >>> im = Infomap(silent=True, num_trials=10)
+    >>> im = Infomap(num_trials=10)
     >>> im.read_file("ninetriangles.net")
     >>> result = im.run()
     >>> result.codelength
@@ -143,7 +143,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
     or :meth:`Result.nodes` (per-node views):
 
     >>> from infomap import Infomap
-    >>> im = Infomap(silent=True)
+    >>> im = Infomap()
     >>> im.add_links(((1, 2), (1, 3), (2, 3), (4, 5), (4, 6), (5, 6), (3, 4)))
     >>> result = im.run()
     >>> for node_id, module_id in sorted(result.modules().items()):

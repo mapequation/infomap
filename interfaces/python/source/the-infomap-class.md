@@ -46,8 +46,13 @@ print(result.modules())
 ```
 
 `im.run()` returns the same {class}`~infomap.Result` the functional API returns.
-The on-instance accessors (`im.get_modules()`, `im.codelength`, `im.nodes`) still
-work and are backed by that result.
+The on-instance result accessors (`im.get_modules()`, `im.codelength`,
+`im.nodes`) still work and are backed by that result, but they are **deprecated
+and leave in 3.0** -- read the equivalently named members off the returned
+{class}`~infomap.Result` instead. Mind the shape shift: `im.modules` is a
+property, while `result.modules()` is a method. These accessors emit no runtime
+warning today, so nothing flags the mistake; the migration table below maps each
+one across.
 
 ## Migrating to the functional API
 

@@ -66,8 +66,8 @@ Two one-shot helpers return native types instead of a
 {class}`~infomap.Result`: {func}`infomap.find_communities` (a NetworkX-style
 ``list[set]``) and {func}`infomap.find_igraph_communities` (an
 ``igraph.VertexClustering``). Both accept ``trials`` (a convenience alias for
-``num_trials``) and default to ``10`` — a robust default for a single call;
-pass ``trials`` or ``num_trials``, not both.
+``num_trials``) and, like {func}`infomap.run`, default to ``num_trials=1`` —
+raise it for research runs. Pass ``trials`` or ``num_trials``, not both.
 
 The ``from_*`` constructors deliberately name their input-reading arguments in
 each library's own idiom rather than forcing one spelling across sources, and

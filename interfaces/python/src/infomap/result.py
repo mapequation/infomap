@@ -270,7 +270,7 @@ class Result(_ResultWritersMixin):
     Run Infomap and read the partition off the ``Result``:
 
     >>> from infomap import Infomap
-    >>> im = Infomap(silent=True)
+    >>> im = Infomap()
     >>> im.add_links(((1, 2), (1, 3), (2, 3), (4, 5), (4, 6), (5, 6), (3, 4)))
     >>> result = im.run()
     >>> result.num_top_modules
