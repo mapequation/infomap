@@ -25,8 +25,9 @@ an :class:`Infomap`.
 
 from __future__ import annotations
 
+import os
 import warnings
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from ._core import Core, apply_initial_partition
 from ._logging import engine_log_routing as _engine_log_routing
@@ -36,6 +37,12 @@ from ._network_input import add_bulk_links as _add_bulk_links
 from ._network_input import first_order_unpacker as _first_order_unpacker
 from ._network_input import flat_multilayer_unpacker as _flat_multilayer_unpacker
 from ._network_input import paired_multilayer_unpacker as _paired_multilayer_unpacker
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
+
+    from ._options import Options
+    from .result import Result
 
 
 class Network(_NetworkWritersMixin):
@@ -100,7 +107,7 @@ class Network(_NetworkWritersMixin):
     #: mirroring :class:`~infomap.Infomap`, so the attribute is always present.
     node_id_to_label: dict[int, Any]
 
-    def __init__(self, core=None):
+    def __init__(self, core: Core | None = None) -> None:
         if core is None:
             core = Core("--silent --no-file-output")
         self._core = core
@@ -118,7 +125,9 @@ class Network(_NetworkWritersMixin):
     # ----------------------------------------
 
     @classmethod
-    def from_file(cls, path, *, accumulate=True):
+    def from_file(
+        cls, path: str | os.PathLike[str], *, accumulate: bool = True
+    ) -> Network:
         """Build a :class:`Network` by reading a network file.
 
         Parameters
@@ -135,14 +144,14 @@ class Network(_NetworkWritersMixin):
     @classmethod
     def from_networkx(
         cls,
-        g,
+        g: Any,
         *,
-        weight="weight",
-        node_id="node_id",
-        layer_id="layer_id",
-        multilayer_inter_intra_format=True,
-        meta_attribute=None,
-    ):
+        weight: str | None = "weight",
+        node_id: str = "node_id",
+        layer_id: str = "layer_id",
+        multilayer_inter_intra_format: bool = True,
+        meta_attribute: str | None = None,
+    ) -> Network:
         """Build a :class:`Network` from a NetworkX graph.
 
         Loads ``g`` via the same adapter :meth:`Infomap.add_networkx_graph`
@@ -168,15 +177,15 @@ class Network(_NetworkWritersMixin):
     @classmethod
     def from_igraph(
         cls,
-        g,
+        g: Any,
         *,
-        edge_weights=None,
-        vertex_weights=None,
-        node_id="node_id",
-        layer_id="layer_id",
-        multilayer_inter_intra_format=True,
-        meta_attribute=None,
-    ):
+        edge_weights: Any = None,
+        vertex_weights: Any = None,
+        node_id: str = "node_id",
+        layer_id: str = "layer_id",
+        multilayer_inter_intra_format: bool = True,
+        meta_attribute: str | None = None,
+    ) -> Network:
         """Build a :class:`Network` from a python-igraph graph.
 
         Loads ``g`` via the same adapter :meth:`Infomap.add_igraph_graph` uses.
@@ -203,12 +212,12 @@ class Network(_NetworkWritersMixin):
     @classmethod
     def from_scipy_sparse_matrix(
         cls,
-        A,
+        A: Any,
         *,
-        directed=False,
-        weighted=True,
-        node_ids=None,
-    ):
+        directed: bool = False,
+        weighted: bool = True,
+        node_ids: Any = None,
+    ) -> Network:
         """Build a :class:`Network` from a SciPy sparse adjacency matrix.
 
         Loads ``A`` via the same adapter
@@ -231,13 +240,13 @@ class Network(_NetworkWritersMixin):
     @classmethod
     def from_edge_index(
         cls,
-        edge_index,
+        edge_index: Any,
         *,
-        edge_weight=None,
-        num_nodes=None,
-        directed=True,
-        node_ids=None,
-    ):
+        edge_weight: Any = None,
+        num_nodes: int | None = None,
+        directed: bool = True,
+        node_ids: Any = None,
+    ) -> Network:
         """Build a :class:`Network` from a PyG-style edge index.
 
         Loads ``edge_index`` via the same adapter
@@ -261,7 +270,13 @@ class Network(_NetworkWritersMixin):
     # Run
     # ----------------------------------------
 
-    def run(self, *, options=None, args=None, initial_partition=None):
+    def run(
+        self,
+        *,
+        options: Options | Mapping[str, Any] | None = None,
+        args: str | None = None,
+        initial_partition: Mapping[Any, Any] | None = None,
+    ) -> Result:
         """Run Infomap on this network and return a :class:`Result`.
 
         Parameters
@@ -328,7 +343,7 @@ class Network(_NetworkWritersMixin):
     # Input
     # ----------------------------------------
 
-    def read_file(self, filename, accumulate=True):
+    def read_file(self, filename: str, accumulate: bool = True) -> Network:
         """Read network data from file.
 
         Parameters
@@ -351,7 +366,12 @@ class Network(_NetworkWritersMixin):
     # Single-layer nodes
     # ----------------------------------------
 
-    def add_node(self, node_id, name=None, teleportation_weight=None):
+    def add_node(
+        self,
+        node_id: int,
+        name: str | None = None,
+        teleportation_weight: float | None = None,
+    ) -> Network:
         """Add a node.
 
         Parameters
@@ -374,7 +394,7 @@ class Network(_NetworkWritersMixin):
             self._core.addNode(node_id)
         return self
 
-    def add_nodes(self, nodes):
+    def add_nodes(self, nodes: Any) -> Network:
         """Add nodes.
 
         Parameters
@@ -400,7 +420,7 @@ class Network(_NetworkWritersMixin):
                     self.add_node(*node)
         return self
 
-    def add_state_node(self, state_id, node_id):
+    def add_state_node(self, state_id: int, node_id: int) -> Network:
         """Add a state node.
 
         Parameters
@@ -412,7 +432,7 @@ class Network(_NetworkWritersMixin):
         self._core.addStateNode(state_id, node_id)
         return self
 
-    def add_state_nodes(self, state_nodes):
+    def add_state_nodes(self, state_nodes: Any) -> Network:
         """Add state nodes.
 
         Parameters
@@ -432,7 +452,7 @@ class Network(_NetworkWritersMixin):
                 self.add_state_node(*node)
         return self
 
-    def set_name(self, node_id, name):
+    def set_name(self, node_id: int, name: str | None) -> Network:
         """Set the name of a node.
 
         Parameters
@@ -445,7 +465,7 @@ class Network(_NetworkWritersMixin):
         self._core.addName(node_id, name)
         return self
 
-    def set_names(self, names):
+    def set_names(self, names: Any) -> Network:
         """Set names to several nodes at once.
 
         Parameters
@@ -469,7 +489,9 @@ class Network(_NetworkWritersMixin):
     # Single-layer links
     # ----------------------------------------
 
-    def add_link(self, source_id, target_id, weight=1.0):
+    def add_link(
+        self, source_id: int, target_id: int, weight: float = 1.0
+    ) -> Network:
         """Add a link.
 
         Parameters
@@ -481,7 +503,7 @@ class Network(_NetworkWritersMixin):
         self._core.addLink(source_id, target_id, weight)
         return self
 
-    def add_links(self, links):
+    def add_links(self, links: Any) -> Network:
         """Add several links.
 
         Parameters
@@ -505,7 +527,7 @@ class Network(_NetworkWritersMixin):
         )
         return self
 
-    def remove_link(self, source_id, target_id):
+    def remove_link(self, source_id: int, target_id: int) -> Network:
         """Remove a link.
 
         Parameters
@@ -516,7 +538,7 @@ class Network(_NetworkWritersMixin):
         self._core.network().removeLink(source_id, target_id)
         return self
 
-    def remove_links(self, links):
+    def remove_links(self, links: Any) -> Network:
         """Remove several links.
 
         Parameters
@@ -533,8 +555,11 @@ class Network(_NetworkWritersMixin):
     # ----------------------------------------
 
     def add_multilayer_link(
-        self, source_multilayer_node, target_multilayer_node, weight=1.0
-    ):
+        self,
+        source_multilayer_node: Any,
+        target_multilayer_node: Any,
+        weight: float = 1.0,
+    ) -> Network:
         """Add a multilayer link.
 
         Parameters
@@ -552,7 +577,7 @@ class Network(_NetworkWritersMixin):
         )
         return self
 
-    def add_multilayer_links(self, links):
+    def add_multilayer_links(self, links: Any) -> Network:
         """Add several multilayer links.
 
         Parameters
@@ -581,8 +606,12 @@ class Network(_NetworkWritersMixin):
         return self
 
     def add_multilayer_intra_link(
-        self, layer_id, source_node_id, target_node_id, weight=1.0
-    ):
+        self,
+        layer_id: int,
+        source_node_id: int,
+        target_node_id: int,
+        weight: float = 1.0,
+    ) -> Network:
         """Add an intra-layer link.
 
         Parameters
@@ -597,7 +626,7 @@ class Network(_NetworkWritersMixin):
         )
         return self
 
-    def add_multilayer_intra_links(self, links):
+    def add_multilayer_intra_links(self, links: Any) -> Network:
         """Add several intra-layer links.
 
         Parameters
@@ -623,8 +652,12 @@ class Network(_NetworkWritersMixin):
         return self
 
     def add_multilayer_inter_link(
-        self, source_layer_id, node_id, target_layer_id, weight=1.0
-    ):
+        self,
+        source_layer_id: int,
+        node_id: int,
+        target_layer_id: int,
+        weight: float = 1.0,
+    ) -> Network:
         """Add an inter-layer link.
 
         Parameters
@@ -639,7 +672,7 @@ class Network(_NetworkWritersMixin):
         )
         return self
 
-    def add_multilayer_inter_links(self, links):
+    def add_multilayer_inter_links(self, links: Any) -> Network:
         """Add several inter-layer links.
 
         Parameters
@@ -681,7 +714,9 @@ class Network(_NetworkWritersMixin):
     # Metadata
     # ----------------------------------------
 
-    def set_meta_data(self, node_id, meta_category=None):
+    def set_meta_data(
+        self, node_id: Any, meta_category: int | None = None
+    ) -> Network:
         """Set integer metadata for one node, or for many at once.
 
         Parameters
@@ -705,7 +740,7 @@ class Network(_NetworkWritersMixin):
     # ----------------------------------------
 
     @property
-    def network(self):
+    def network(self) -> Any:
         """The underlying SWIG state network.
 
         Exposed so the graph adapters (which reach for
@@ -716,7 +751,7 @@ class Network(_NetworkWritersMixin):
         return self._core.network()
 
     @property
-    def bipartite_start_id(self):
+    def bipartite_start_id(self) -> int:
         """Get or set the bipartite start id.
 
         Returns
@@ -727,11 +762,11 @@ class Network(_NetworkWritersMixin):
         return self._core.network().bipartiteStartId()
 
     @bipartite_start_id.setter
-    def bipartite_start_id(self, start_id):
+    def bipartite_start_id(self, start_id: int) -> None:
         self._core.setBipartiteStartId(start_id)
 
     @property
-    def num_nodes(self):
+    def num_nodes(self) -> int:
         """The number of state nodes if a higher-order network, else physical.
 
         Returns
@@ -742,7 +777,7 @@ class Network(_NetworkWritersMixin):
         return self._core.network().numNodes()
 
     @property
-    def num_links(self):
+    def num_links(self) -> int:
         """The number of links.
 
         Returns
