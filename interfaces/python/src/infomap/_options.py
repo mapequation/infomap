@@ -620,7 +620,7 @@ class Options:
     inner_parallelization: bool = False
     parallel_trials: bool = False
     converge: bool = False
-    num_threads: str | None = None
+    num_threads: str | int | None = None
     threads: str | None = None
     prefer_modular_solution: bool = False
     num_random_moves: int | None = None

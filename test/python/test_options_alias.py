@@ -38,6 +38,17 @@ def test_settings_alias_removed():
 
 
 @pytest.mark.fast
+def test_num_threads_annotation_accepts_str_and_int():
+    # The engine option is string-typed ('auto' or a number), but the Python
+    # surface also accepts an int (rendered into the CLI args). The annotation
+    # is widened to str | int | None via the parameter-catalog `types` override
+    # so a type checker agrees with the documented "or a positive integer".
+    assert "int" in Options.__annotations__["num_threads"]
+    assert Options(num_threads=1).num_threads == 1
+    assert Options(num_threads="auto").num_threads == "auto"
+
+
+@pytest.mark.fast
 def test_options_roundtrips_through_facade():
     o = Options(num_trials=3, two_level=True)
     im = infomap.Infomap.from_options(o, args=None)
