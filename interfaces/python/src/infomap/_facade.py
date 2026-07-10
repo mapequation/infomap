@@ -282,82 +282,94 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         skip_adjust_bipartite_flow : bool, optional
             Keep flow on bipartite nodes instead of distributing it to primary nodes.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         bipartite_teleportation : bool, optional
             Use bipartite teleportation instead of the default two-step unipartite
             teleportation.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         weight_threshold : float, optional
             Ignore input links with weight below this threshold.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         no_self_links : bool, optional
             Exclude self-links from the input network.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         node_limit : int, optional
             Read only nodes up to this node id and ignore links connected to higher node
             ids.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         matchable_multilayer_ids : int, optional
             Construct state ids from node ids and layer ids that stay comparable across
             networks. Set at least to the largest layer id among networks to match.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         cluster_data : str, optional
             Read an initial partition from a clu file or a hierarchy from a tree/ftree
             file. Tree input may use physical or state nodes for higher-order networks.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         assign_to_neighbouring_module : bool, optional
             With --cluster-data, assign nodes missing module ids to a neighboring node's
             module when possible.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         meta_data : str, optional
             Read metadata to encode from a clu-format file.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         meta_data_rate : float, optional
             With --meta-data, set the metadata encoding rate. The default encodes
             metadata at each step.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         meta_data_unweighted : bool, optional
             With --meta-data, encode metadata without weighting by node flow.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         no_infomap : bool, optional
             Skip optimization. Use this to calculate codelength for --cluster-data or to
             print non-modular statistics.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         out_name : str, optional
             Base name for output files, for example [out_directory]/[out-name].tree.
 
@@ -494,51 +506,58 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         timing_json : str, optional
             Write machine-readable run timing JSON to this path. Use - for stdout.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         summary_json : str, optional
             Write machine-readable final run summary JSON to this path. Use - for
             stdout.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         manifest_json : str, optional
             Write a machine-readable run manifest JSON to this path. Use - for stdout.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         memory_report : bool, optional
             Include peak RSS and best-effort bytes per node/link estimates in timing
             JSON. Requires --timing-json.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         trial_offset : int, optional
             Global index of the first trial this process runs; trial i uses seed =
             base_seed + (trial_offset + i). Default 0 (single-process behavior).
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         trial_results : str, optional
             Write this shard's per-trial results (codelengths, seeds, best-tree
             reference, fingerprints) as JSON to this path, for deterministic merging of
             distributed shard runs into a final solution.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         no_final_output : bool, optional
             Skip writing this process's aggregate best result. Per-trial outputs and
             --trial-results are still written.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         verbosity_level : int, optional
             Verbosity level on the console. 1 keeps the default output level, 2 renders
             -vv and so on.
@@ -565,87 +584,99 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             Choose how Infomap derives flow from the input links. Options: undirected,
             directed, undirdir, outdirdir, rawdir, precomputed.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         directed : bool, optional
             Treat input links as directed. Shorthand for --flow-model directed.
         recorded_teleportation : bool, optional
             When teleportation is used to calculate flow, also record teleportation
             steps in the codelength.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         use_node_weights_as_flow : bool, optional
             Use node weights from the API or Pajek node records as normalized node flow.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         to_nodes : bool, optional
             Teleport to nodes instead of links. Uses uniform node weights unless node
             weights are provided.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         teleportation_probability : float, optional
             Set the probability of teleporting to a random node or link when calculating
             flow.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         max_flow_iterations : int, optional
             Limit the power iteration used to calculate flow (directed and regularized
             flow models) to this many iterations.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         min_flow_iterations : int, optional
             Require at least this many power iterations before the flow calculation can
             converge, even if --flow-tolerance is already met.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         flow_tolerance : float, optional
             Convergence tolerance for the power iteration used to calculate flow.
             Iteration stops once the per-iteration change in flow drops to or below this
             value, after --min-flow-iterations have run.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         regularized : bool, optional
             Add a fully connected Bayesian prior network to reduce overfitting to
             missing links. Activates --recorded-teleportation.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         regularization_strength : float, optional
             Scale the relative strength of the Bayesian prior network used by
             --regularized.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         entropy_corrected : bool, optional
             Correct for negative entropy bias in small samples, especially solutions
             with many modules.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         entropy_correction_strength : float, optional
             Scale the default correction used by --entropy-corrected.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         markov_time : float, optional
             Scale link flow to change the cost of moving between modules. Higher values
             result in fewer modules.
@@ -653,89 +684,101 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             Vary Markov time locally to reduce overpartitioning in sparse areas while
             keeping higher resolution in dense areas.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         variable_markov_damping : float, optional
             With --variable-markov-time, set damping between local effective degree (0)
             and local entropy (1).
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         variable_markov_min_scale : float, optional
             With --variable-markov-time, set the minimum local scale for zero-entropy
             nodes. Local Markov time is max scale divided by local scale.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         preferred_number_of_modules : int, optional
             Penalize solutions by how far their number of modules differs from this
             value.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         preferred_number_of_levels : int, optional
             Soft preference for the depth of the hierarchy. Steering to a shallower
             depth is reliable at a small codelength cost; deeper is best-effort, bounded
             by what the optimizer proposes. No-op with --two-level or strength 0.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         preferred_number_of_levels_strength : float, optional
             Scale the strength of --preferred-number-of-levels. 0 disables the
             preference; larger values increase the cost of deviating from the preferred
             depth.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         multilayer_relax_rate : float, optional
             Set the probability of relaxing from a state node to neighboring layers
             instead of staying in the current layer.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         multilayer_relax_limit : int, optional
             Limit relaxation to this many neighboring layer ids in each direction. Use a
             negative value to allow relaxation to any layer.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         multilayer_relax_limit_up : int, optional
             Limit relaxation upward to this many higher neighboring layer ids. Use a
             negative value to allow relaxation to any higher layer.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         multilayer_relax_limit_down : int, optional
             Limit relaxation downward to this many lower neighboring layer ids. Use a
             negative value to allow relaxation to any lower layer.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         multilayer_relax_by_jsd : bool, optional
             Weight multilayer relaxation by out-link similarity measured with
             Jensen-Shannon divergence.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         multilayer_relax_to_self : bool, optional
             On relaxation, link a state node to its own physical node in the target
             layer instead of spreading to its out-neighbors. Builds a smaller state
             network with the same flow as the default.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         seed : int, optional
             Set the random number generator seed for reproducible results.
         num_trials : int, optional
@@ -743,53 +786,60 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         core_loop_limit : int, optional
             Limit how many core loops try to move each node to the best module.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         core_level_limit : int, optional
             Limit how many times core loops are reapplied to the aggregated modular
             network to find larger structures. 0 means no limit.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         tune_iteration_limit : int, optional
             Limit the main iterations in the two-level partition algorithm. 0 means no
             limit.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         core_loop_codelength_threshold : float, optional
             Require at least this codelength improvement to accept a new solution in a
             core loop.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         tune_iteration_relative_threshold : float, optional
             Require each tune iteration to improve codelength by this fraction of the
             initial two-level codelength.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         fast_hierarchical_solution : int, optional
             Find top modules fast. Use 2 to keep all fast levels and 3 to skip the
             recursive part.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         inner_parallelization : bool, optional
             Experimental: use batched parallel node moves for coarse optimization.
             Performance gains are workload-dependent, often require a relaxed
             core-loop-codelength-threshold and low tune-iteration-limit, and may produce
             a different partition than serial optimization.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         parallel_trials : bool, optional
             Run independent trials in parallel with OpenMP. --num-trials remains the
             total number of trials; the number of parallel workers follows the OpenMP
@@ -797,27 +847,30 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             scales with the worker count. Nested OpenMP and --inner-parallelization are
             disabled inside workers.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         converge : bool, optional
             Treat the trial count as a cap and stop early once the best codelength has
             plateaued (no meaningful improvement over several consecutive trials). Runs
             trials serially; cannot be combined with parallel trials or distributed
             sharding. With no explicit trial count, a default cap is used.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         num_threads : str, optional
             Effective thread budget: 'auto' (resolve from --num-threads >
             INFOMAP_NUM_THREADS > SLURM_CPUS_PER_TASK > OMP_NUM_THREADS > cpuset >
             hardware), or a positive integer. 1 forces fully serial. Governs the
             recursive partition, parallel trials, and inner parallelization.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         threads : str, optional
             Alias for --num-threads.
 
@@ -827,22 +880,25 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         prefer_modular_solution : bool, optional
             Prefer a modular solution even when one module gives a lower codelength.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         num_random_moves : int, optional
             Try this many random moves in each core loop to merge weakly connected
             nodes.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         max_degree_for_random_moves : int, optional
             Try random moves only for nodes with degree at most this value.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         """
         if pretty is not None:
             warnings.warn(
@@ -957,82 +1013,94 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         skip_adjust_bipartite_flow : bool, optional
             Keep flow on bipartite nodes instead of distributing it to primary nodes.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         bipartite_teleportation : bool, optional
             Use bipartite teleportation instead of the default two-step unipartite
             teleportation.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         weight_threshold : float, optional
             Ignore input links with weight below this threshold.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         no_self_links : bool, optional
             Exclude self-links from the input network.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         node_limit : int, optional
             Read only nodes up to this node id and ignore links connected to higher node
             ids.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         matchable_multilayer_ids : int, optional
             Construct state ids from node ids and layer ids that stay comparable across
             networks. Set at least to the largest layer id among networks to match.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         cluster_data : str, optional
             Read an initial partition from a clu file or a hierarchy from a tree/ftree
             file. Tree input may use physical or state nodes for higher-order networks.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         assign_to_neighbouring_module : bool, optional
             With --cluster-data, assign nodes missing module ids to a neighboring node's
             module when possible.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         meta_data : str, optional
             Read metadata to encode from a clu-format file.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         meta_data_rate : float, optional
             With --meta-data, set the metadata encoding rate. The default encodes
             metadata at each step.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         meta_data_unweighted : bool, optional
             With --meta-data, encode metadata without weighting by node flow.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         no_infomap : bool, optional
             Skip optimization. Use this to calculate codelength for --cluster-data or to
             print non-modular statistics.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         out_name : str, optional
             Base name for output files, for example [out_directory]/[out-name].tree.
 
@@ -1169,51 +1237,58 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         timing_json : str, optional
             Write machine-readable run timing JSON to this path. Use - for stdout.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         summary_json : str, optional
             Write machine-readable final run summary JSON to this path. Use - for
             stdout.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         manifest_json : str, optional
             Write a machine-readable run manifest JSON to this path. Use - for stdout.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         memory_report : bool, optional
             Include peak RSS and best-effort bytes per node/link estimates in timing
             JSON. Requires --timing-json.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         trial_offset : int, optional
             Global index of the first trial this process runs; trial i uses seed =
             base_seed + (trial_offset + i). Default 0 (single-process behavior).
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         trial_results : str, optional
             Write this shard's per-trial results (codelengths, seeds, best-tree
             reference, fingerprints) as JSON to this path, for deterministic merging of
             distributed shard runs into a final solution.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         no_final_output : bool, optional
             Skip writing this process's aggregate best result. Per-trial outputs and
             --trial-results are still written.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         verbosity_level : int, optional
             Verbosity level on the console. 1 keeps the default output level, 2 renders
             -vv and so on.
@@ -1240,87 +1315,99 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             Choose how Infomap derives flow from the input links. Options: undirected,
             directed, undirdir, outdirdir, rawdir, precomputed.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         directed : bool, optional
             Treat input links as directed. Shorthand for --flow-model directed.
         recorded_teleportation : bool, optional
             When teleportation is used to calculate flow, also record teleportation
             steps in the codelength.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         use_node_weights_as_flow : bool, optional
             Use node weights from the API or Pajek node records as normalized node flow.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         to_nodes : bool, optional
             Teleport to nodes instead of links. Uses uniform node weights unless node
             weights are provided.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         teleportation_probability : float, optional
             Set the probability of teleporting to a random node or link when calculating
             flow.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         max_flow_iterations : int, optional
             Limit the power iteration used to calculate flow (directed and regularized
             flow models) to this many iterations.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         min_flow_iterations : int, optional
             Require at least this many power iterations before the flow calculation can
             converge, even if --flow-tolerance is already met.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         flow_tolerance : float, optional
             Convergence tolerance for the power iteration used to calculate flow.
             Iteration stops once the per-iteration change in flow drops to or below this
             value, after --min-flow-iterations have run.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         regularized : bool, optional
             Add a fully connected Bayesian prior network to reduce overfitting to
             missing links. Activates --recorded-teleportation.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         regularization_strength : float, optional
             Scale the relative strength of the Bayesian prior network used by
             --regularized.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         entropy_corrected : bool, optional
             Correct for negative entropy bias in small samples, especially solutions
             with many modules.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         entropy_correction_strength : float, optional
             Scale the default correction used by --entropy-corrected.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         markov_time : float, optional
             Scale link flow to change the cost of moving between modules. Higher values
             result in fewer modules.
@@ -1328,89 +1415,101 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             Vary Markov time locally to reduce overpartitioning in sparse areas while
             keeping higher resolution in dense areas.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         variable_markov_damping : float, optional
             With --variable-markov-time, set damping between local effective degree (0)
             and local entropy (1).
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         variable_markov_min_scale : float, optional
             With --variable-markov-time, set the minimum local scale for zero-entropy
             nodes. Local Markov time is max scale divided by local scale.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         preferred_number_of_modules : int, optional
             Penalize solutions by how far their number of modules differs from this
             value.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         preferred_number_of_levels : int, optional
             Soft preference for the depth of the hierarchy. Steering to a shallower
             depth is reliable at a small codelength cost; deeper is best-effort, bounded
             by what the optimizer proposes. No-op with --two-level or strength 0.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         preferred_number_of_levels_strength : float, optional
             Scale the strength of --preferred-number-of-levels. 0 disables the
             preference; larger values increase the cost of deviating from the preferred
             depth.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         multilayer_relax_rate : float, optional
             Set the probability of relaxing from a state node to neighboring layers
             instead of staying in the current layer.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         multilayer_relax_limit : int, optional
             Limit relaxation to this many neighboring layer ids in each direction. Use a
             negative value to allow relaxation to any layer.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         multilayer_relax_limit_up : int, optional
             Limit relaxation upward to this many higher neighboring layer ids. Use a
             negative value to allow relaxation to any higher layer.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         multilayer_relax_limit_down : int, optional
             Limit relaxation downward to this many lower neighboring layer ids. Use a
             negative value to allow relaxation to any lower layer.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         multilayer_relax_by_jsd : bool, optional
             Weight multilayer relaxation by out-link similarity measured with
             Jensen-Shannon divergence.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         multilayer_relax_to_self : bool, optional
             On relaxation, link a state node to its own physical node in the target
             layer instead of spreading to its out-neighbors. Builds a smaller state
             network with the same flow as the default.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         seed : int, optional
             Set the random number generator seed for reproducible results.
         num_trials : int, optional
@@ -1418,53 +1517,60 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         core_loop_limit : int, optional
             Limit how many core loops try to move each node to the best module.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         core_level_limit : int, optional
             Limit how many times core loops are reapplied to the aggregated modular
             network to find larger structures. 0 means no limit.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         tune_iteration_limit : int, optional
             Limit the main iterations in the two-level partition algorithm. 0 means no
             limit.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         core_loop_codelength_threshold : float, optional
             Require at least this codelength improvement to accept a new solution in a
             core loop.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         tune_iteration_relative_threshold : float, optional
             Require each tune iteration to improve codelength by this fraction of the
             initial two-level codelength.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         fast_hierarchical_solution : int, optional
             Find top modules fast. Use 2 to keep all fast levels and 3 to skip the
             recursive part.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         inner_parallelization : bool, optional
             Experimental: use batched parallel node moves for coarse optimization.
             Performance gains are workload-dependent, often require a relaxed
             core-loop-codelength-threshold and low tune-iteration-limit, and may produce
             a different partition than serial optimization.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         parallel_trials : bool, optional
             Run independent trials in parallel with OpenMP. --num-trials remains the
             total number of trials; the number of parallel workers follows the OpenMP
@@ -1472,27 +1578,30 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             scales with the worker count. Nested OpenMP and --inner-parallelization are
             disabled inside workers.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         converge : bool, optional
             Treat the trial count as a cap and stop early once the best codelength has
             plateaued (no meaningful improvement over several consecutive trials). Runs
             trials serially; cannot be combined with parallel trials or distributed
             sharding. With no explicit trial count, a default cap is used.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         num_threads : str, optional
             Effective thread budget: 'auto' (resolve from --num-threads >
             INFOMAP_NUM_THREADS > SLURM_CPUS_PER_TASK > OMP_NUM_THREADS > cpuset >
             hardware), or a positive integer. 1 forces fully serial. Governs the
             recursive partition, parallel trials, and inner parallelization.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         threads : str, optional
             Alias for --num-threads.
 
@@ -1502,22 +1611,25 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         prefer_modular_solution : bool, optional
             Prefer a modular solution even when one module gives a lower codelength.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         num_random_moves : int, optional
             Try this many random moves in each core loop to merge weakly connected
             nodes.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
         max_degree_for_random_moves : int, optional
             Try random moves only for nodes with degree at most this value.
 
-            .. deprecated:: 2.15
-                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``
-                instead; this keyword leaves the ``Infomap`` signature in 3.0.
+            .. versionchanged:: 2.15
+                Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
+                keyword still works directly through 2.x and moves to ``Options`` in
+                3.0.
 
         Returns
         -------

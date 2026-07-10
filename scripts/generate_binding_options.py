@@ -9,6 +9,7 @@ import subprocess
 from pathlib import Path
 
 from parameter_catalog import GROUPS, ParameterCatalog
+from render_parameter_policy import render as render_parameter_policy_md
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -18,6 +19,9 @@ PYTHON_OUT = Path("interfaces/python/src/infomap/_options.py")
 R_OUT = Path("interfaces/R/infomap/R/options.R")
 TS_OUT = Path("interfaces/js/src/arguments.ts")
 FACADE_OUT = Path("interfaces/python/src/infomap/_facade.py")
+# The 3.0 parameter-policy matrix (issue #755), rendered from the same catalog
+# so it stays fresh under ``make test-binding-options-freshness``.
+PARAMETER_POLICY_OUT = Path("interfaces/parameters/policy.md")
 
 FACADE_BEGIN = (
     "    # === BEGIN generated: Infomap option signatures "
@@ -212,9 +216,9 @@ def _python_literal_alias_lines(catalog: ParameterCatalog) -> list[str]:
 
 # Static runtime helper (issue #741): warn when an advanced-tier keyword is set
 # on a *direct* Infomap()/run() call. The message shape mirrors
-# _advanced_tier_note() -- keep/alias parameters point at Options, every other
-# action carries its policy replacement -- so the docstring and the warning
-# never diverge.
+# _advanced_tier_directive() -- kept/aliased keywords point at Options, every
+# other action carries its policy replacement -- so the docstring and the
+# warning never diverge.
 _ADVANCED_TIER_WARNING_HELPER = [
     "def _warn_advanced_tier_kwargs(passed, context):",
     "    # Advanced-tier keywords are docs-only deprecated on the Infomap()/run()",
@@ -832,9 +836,10 @@ def _render_facade_signature(names, index, indent="        ", context="init"):
     return lines
 
 
-# The release in which the advanced-tier facade kwargs were docs-only
-# deprecated (issue #741). Bump alongside the next such pass, if any.
-_ADVANCED_TIER_DEPRECATED_IN = "2.15"
+# The release that recorded the advanced-tier facade-kwarg migration (issue
+# #741): kept kwargs get a ``.. versionchanged::`` note, removed/args-only ones
+# a ``.. deprecated::``. Bump alongside the next such pass, if any.
+_ADVANCED_TIER_CHANGED_IN = "2.15"
 
 # Parameters whose docstrings already carry their own deprecation text and
 # migration path; the generic advanced-tier directive would be noise on top.
@@ -846,26 +851,31 @@ _INERT_WITHOUT_OUTDIR_NOTE = (
     "`write_*` methods to write results)."
 )
 
-_ADVANCED_TIER_NOTE = (
-    "Pass it via `Options` to `infomap.run()` or `Network.run()` instead; "
-    "this keyword leaves the `Infomap` signature in 3.0."
+# A kept keyword is permanent -- only its entry point relocates to Options in
+# 3.0 -- so its docstring uses ``.. versionchanged::`` rather than
+# ``.. deprecated::``. Marking a still-supported tuning knob "deprecated" makes
+# agents and linters (which read the directive token literally) steer users
+# away from a valid option.
+_ADVANCED_TIER_KEEP_NOTE = (
+    "Pass it via `Options` to `infomap.run()` or `Network.run()`. This keyword "
+    "still works directly through 2.x and moves to `Options` in 3.0."
 )
 
 
-def _advanced_tier_note(policy):
-    """The advanced-tier ``.. deprecated::`` note text for a parameter.
+def _advanced_tier_directive(policy):
+    """The ``(directive, note)`` for an advanced-tier parameter's docstring.
 
-    A ``keep``/``alias`` parameter stays available and only its entry point
-    moves, so it points at ``Options``. Every other action (``remove``,
-    ``args-only``, ...) carries its own migration path in the policy's
-    ``replacement`` (the #755 acceptance criterion), which is the correct
-    guidance -- telling the user to "pass it via Options" would contradict
-    both the policy and render_parameter_policy.py.
+    A ``keep`` parameter stays fully supported and only relocates to
+    ``Options`` in 3.0, so it gets ``versionchanged``. Every other action
+    (``remove``, ``args-only``, ...) drops the keyword from the API, so it
+    gets ``deprecated`` plus its policy ``replacement`` migration path (the
+    #755 acceptance criterion); telling the user to "pass it via Options"
+    would contradict both the policy and render_parameter_policy.py.
     """
     action = (policy or {}).get("action", "keep")
-    if action in {"keep", "alias"}:
-        return _ADVANCED_TIER_NOTE
-    return (
+    if action == "keep":
+        return "versionchanged", _ADVANCED_TIER_KEEP_NOTE
+    return "deprecated", (
         "This keyword leaves the `Infomap` signature in 3.0. "
         + policy["replacement"]
     )
@@ -883,11 +893,11 @@ def _render_facade_docstring_params(names, index):
             lines.append("")
             lines.extend(wrap_doc(_INERT_WITHOUT_OUTDIR_NOTE, "            "))
         if info.get("tier") == "advanced" and name not in _SELF_DEPRECATED_PARAMS:
+            directive, note = _advanced_tier_directive(info.get("policy"))
             lines.append("")
             lines.append(
-                f"            .. deprecated:: {_ADVANCED_TIER_DEPRECATED_IN}"
+                f"            .. {directive}:: {_ADVANCED_TIER_CHANGED_IN}"
             )
-            note = _advanced_tier_note(info.get("policy"))
             lines.extend(wrap_doc(note, "                "))
     return lines
 
@@ -999,10 +1009,22 @@ def _splice_marker_block(path: Path, block: str) -> str:
 def outputs(infomap_bin: Path):
     overrides = load_overrides()
     catalog = ParameterCatalog(load_parameters(infomap_bin), overrides)
+    # The policy matrix is rendered from the same catalog and carried as one of
+    # the generated outputs, so ``make build-binding-options`` writes it and
+    # ``test-binding-options-freshness`` checks it like every other artifact.
+    policy_matrix = (
+        "<!-- Generated by scripts/generate_binding_options.py via "
+        "scripts/render_parameter_policy.py. Do not edit by hand: change "
+        "src/io/ParameterCatalog.cpp or interfaces/parameters/overrides.json, "
+        "then run `make build-binding-options`. -->\n\n"
+        + render_parameter_policy_md(catalog).rstrip("\n")
+        + "\n"
+    )
     generated = {
         PYTHON_OUT: generate_python(catalog),
         R_OUT: generate_r(catalog),
         TS_OUT: generate_ts(catalog),
+        PARAMETER_POLICY_OUT: policy_matrix,
     }
     facade_block = generate_facade(catalog)
     return generated, facade_block
