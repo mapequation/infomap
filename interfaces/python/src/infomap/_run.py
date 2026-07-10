@@ -54,47 +54,18 @@ def _resolve_options(options: Any, overrides: dict) -> dict:
     return resolved
 
 
-def _explicit_option_kwargs(options: Any) -> dict:
-    """The option fields a carrier sets away from their defaults.
-
-    The graph finders (:func:`infomap.find_communities` and
-    :func:`infomap.find_igraph_communities`) fold an ``options=`` carrier into
-    their own engine defaults (``silent`` and ``no_file_output`` on,
-    ``num_trials`` = 10). Taking only the fields the caller actually changed --
-    rather than the carrier's full ``to_kwargs()`` -- keeps a carrier left at
-    its defaults from silently turning those finder defaults off. A mapping is
-    returned as-is (its keys are explicit by construction); ``None`` yields an
-    empty dict.
-    """
-    if options is None:
-        return {}
-    if isinstance(options, Mapping):
-        return dict(options)
-    to_kwargs = getattr(options, "to_kwargs", None)
-    if not callable(to_kwargs):
-        raise TypeError("options must be an Options instance, a mapping, or None")
-    from ._options import _OPTION_DEFAULTS
-
-    kwargs: Any = to_kwargs()
-    return {
-        name: value
-        for name, value in kwargs.items()
-        if value != getattr(_OPTION_DEFAULTS, name)
-    }
-
-
 def _warn_inert_output_options(options: Any, args: Any) -> None:
     """Warn when output-artifact options are set but cannot take effect.
 
     The args-only options (``tree``, ``ftree``, ``clu``, ``clu_level``,
     ``out_name``, ``output``, ``hide_bipartite_nodes``, ``print_all_trials``,
-    ``no_overwrite``) only write files when an output directory is supplied
-    through the raw ``args`` escape hatch. Set via :class:`Options` on the
-    normal library surface they construct and run without error but silently do
-    nothing, so point the caller at the ``Result`` / ``Network`` writers. When
-    the raw ``args`` escape is in use (``args`` truthy) they may act, so stay
-    quiet. ``no_file_output`` is excluded: it *suppresses* output and is used
-    defensively (e.g. by the graph finders), so setting it is harmless.
+    ``no_overwrite``, ``no_file_output``) drive the engine's own file writer,
+    which only runs when an output directory is supplied through the raw
+    ``args`` escape hatch. On the normal library surface file output is instead
+    controlled by the ``Result`` / ``Network`` writers, so these flags -- set
+    via :class:`Options` -- construct and run without error but do nothing.
+    Point the caller at the writers. When the raw ``args`` escape is in use
+    (``args`` truthy) the flags may act, so stay quiet.
     """
     if args:
         return
@@ -104,15 +75,15 @@ def _warn_inert_output_options(options: Any, args: Any) -> None:
         name
         for name, spec in _ADVANCED_TIER_KWARGS.items()
         if spec[2] == "args-only"
-        and name != "no_file_output"
         and getattr(options, name) != getattr(_OPTION_DEFAULTS, name)
     )
     if not inert:
         return
     warnings.warn(
-        f"{', '.join(inert)}: these output options have no effect on the "
-        "Python library surface -- they write files only with an output "
-        "directory passed through the raw args escape hatch. Write from the "
+        f"{', '.join(inert)}: these output-file options have no effect on the "
+        "Python library surface -- file output is controlled by the Result / "
+        "Network writers, not option flags (the flags act only with an output "
+        "directory passed through the raw args escape hatch). Write from the "
         "Result instead (result.write_tree(path) / write_flow_tree / "
         "write_clu) or from the Network (network.write_pajek / "
         "write_state_network).",

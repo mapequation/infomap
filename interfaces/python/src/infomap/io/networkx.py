@@ -85,9 +85,11 @@ def _run_networkx(
 ) -> tuple[Any, Any, dict[int, Any]]:
     from .._facade import Infomap
 
-    # dict[str, Any]: the caller's infomap_options carry arbitrary option
-    # value types, not just the bools of the two seeds.
-    options: dict[str, Any] = {"silent": True, "no_file_output": True}
+    # dict[str, Any]: the caller's infomap_options carry arbitrary option value
+    # types, not just the silent bool. The library surface writes no files
+    # without an output directory, so no_file_output is not forced here (it is
+    # an inert, warned-about output flag like the others).
+    options: dict[str, Any] = {"silent": True}
     options.update(infomap_options)
 
     infomap = Infomap(**options)
@@ -150,14 +152,13 @@ def find_communities(
     options : Options, mapping, or None, optional
         Base engine configuration carried the 3.0-safe way -- an
         :class:`~infomap.Options` instance or a mapping. Any bare keyword below
-        (and an explicit ``trials`` / ``num_trials``) takes precedence. A
-        carrier left at its defaults does not disturb the finder defaults, so
-        ``num_trials`` still falls back to ``10``.
+        (and an explicit ``trials`` / ``num_trials``) takes precedence.
     trials : int, optional
         Number of independent trials; the best solution is kept. Convenience
         alias for the ``num_trials`` Infomap option (matching
         :func:`~infomap.find_igraph_communities`). Pass ``trials`` or
-        ``num_trials``, not both; if neither is given the default is ``10``.
+        ``num_trials``, not both; if neither is given the engine default
+        ``num_trials=1`` applies -- raise it for research runs.
     module_attribute : str, optional
         If set, write each node's module id back to this node attribute on
         ``g``.
@@ -173,9 +174,9 @@ def find_communities(
         Initial module assignment passed to :meth:`infomap.Infomap.run`.
         Keys may use the original NetworkX node labels.
     **infomap_options
-        Keyword arguments passed to :class:`infomap.Infomap`. By default,
-        ``silent=True`` and ``no_file_output=True`` are used unless explicitly
-        overridden.
+        Engine options passed to :class:`infomap.Infomap`. ``silent=True`` is
+        applied unless overridden. Prefer carrying non-common options via the
+        ``options=`` argument above (the 3.0-safe path).
 
     Returns
     -------
@@ -193,16 +194,14 @@ def find_communities(
     if len(g.nodes) == 0:
         return []
 
-    from .._run import _explicit_option_kwargs
+    from .._run import _resolve_options
 
-    # Fold the options= carrier under the caller's bare keyword arguments (bare
-    # kwargs win), then apply the `trials` alias and the finder's num_trials
-    # default. Only fields the carrier sets away from their defaults are taken,
-    # so it never clobbers _run_networkx's silent/no_file_output defaults.
-    engine_options = {**_explicit_option_kwargs(options), **infomap_options}
+    # Merge the options= carrier under the caller's bare keyword arguments (bare
+    # kwargs win) and apply the `trials` alias. num_trials is left to the engine
+    # default (1), matching infomap.run().
+    engine_options = _resolve_options(options, infomap_options)
     if trials is not None:
         engine_options["num_trials"] = trials
-    engine_options.setdefault("num_trials", 10)
 
     infomap, _, node_mapping = _run_networkx(
         g,

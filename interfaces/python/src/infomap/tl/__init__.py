@@ -179,9 +179,8 @@ def infomap(
     args : str, optional
         Raw Infomap CLI arguments passed to :class:`~infomap.Infomap`.
     **infomap_options
-        Keyword arguments passed to :class:`~infomap.Infomap`. By default,
-        ``silent=True`` and ``no_file_output=True`` are used unless
-        explicitly overridden.
+        Keyword arguments passed to :class:`~infomap.Infomap`. ``silent=True``
+        is applied unless explicitly overridden.
 
     Returns
     -------
@@ -208,9 +207,11 @@ def infomap(
     )
     _validate_adjacency_shape(matrix, n_obs=n_obs)
 
-    # dict[str, Any]: the caller's infomap_options carry arbitrary option
-    # value types, not just the bools of the two seeds.
-    options: dict[str, Any] = {"silent": True, "no_file_output": True}
+    # dict[str, Any]: the caller's infomap_options carry arbitrary option value
+    # types, not just the silent bool. no_file_output is not forced -- it is
+    # redundant on the library surface (no output directory -> no files) and an
+    # inert output flag the API warns about.
+    options: dict[str, Any] = {"silent": True}
     options.update(infomap_options)
     im = Infomap(args=args, **options)
     obs_names = list(adata.obs_names)
