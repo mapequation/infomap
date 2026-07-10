@@ -181,7 +181,6 @@ def test_tl_infomap_writes_metadata():
         "obsp": "connectivities",
         "args": "--silent",
         "silent": True,
-        "no_file_output": True,
         "seed": 123,
         "num_trials": 1,
     }
