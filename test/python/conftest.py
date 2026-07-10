@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import warnings
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, Union
@@ -160,7 +161,13 @@ def make_infomap():
     def _make_infomap(
         *, seed: int = 123, num_trials: int = 1, silent: bool = True, **kwargs
     ) -> Infomap:
-        return Infomap(seed=seed, num_trials=num_trials, silent=silent, **kwargs)
+        # This helper deliberately builds the supported stateful Infomap compat
+        # surface for feature tests, so advanced-tier kwargs are exercised on
+        # purpose. The pending-deprecation those emit is asserted in
+        # test_deprecations.py; here it is only noise, so silence it.
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", PendingDeprecationWarning)
+            return Infomap(seed=seed, num_trials=num_trials, silent=silent, **kwargs)
 
     return _make_infomap
 

@@ -31,7 +31,7 @@ def test_standalone_network_matches_infomap_delegated_build():
     net_modules = net._core.numTopModules()
 
     # Same graph via Infomap's delegated building verbs, same settings.
-    im = Infomap(silent=True, no_file_output=True, seed=123, num_trials=5)
+    im = Infomap(silent=True, seed=123, num_trials=5)
     im.add_links(_LINKS)
     im.run()
 
@@ -50,7 +50,7 @@ def test_multilayer_standalone_matches_infomap_delegated_build():
     net.add_multilayer_inter_links(inter)
     net._core.run(_RUN_ARGS)
 
-    im = Infomap(silent=True, no_file_output=True, seed=123, num_trials=5)
+    im = Infomap(silent=True, seed=123, num_trials=5)
     im.add_multilayer_intra_links(intra)
     im.add_multilayer_inter_links(inter)
     im.run()
@@ -112,7 +112,7 @@ def test_default_constructor_makes_owned_core():
 
 
 def test_shared_core_is_used_when_passed():
-    im = Infomap(silent=True, no_file_output=True)
+    im = Infomap(silent=True)
     net = Network(core=im._core)
     assert net._core is im._core
     net.add_link(1, 2)

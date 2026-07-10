@@ -36,14 +36,14 @@ def spy(monkeypatch):
 
 @pytest.mark.fast
 def test_list_links_route_to_bulk_addLinks(spy):
-    im = Infomap(silent=True, no_file_output=True)
+    im = Infomap(silent=True)
     im.add_links([(1, 2), (1, 3)])
     assert spy == {"addLinks": 1, "addLinksFromNumpy2D": 0}
 
 
 @pytest.mark.fast
 def test_numpy_links_route_to_bulk_numpy(spy):
-    im = Infomap(silent=True, no_file_output=True)
+    im = Infomap(silent=True)
     im.add_links(np.array([[1, 2, 1.0], [2, 3, 2.0]]))
     assert spy == {"addLinks": 0, "addLinksFromNumpy2D": 1}
 
@@ -96,10 +96,10 @@ def test_multilayer_bulk_routing(
 
         monkeypatch.setattr(owner, name, make(name), raising=True)
 
-    getattr(Infomap(silent=True, no_file_output=True), method)(list_in)
+    getattr(Infomap(silent=True), method)(list_in)
     assert calls[bulk] == 1, "list input must route to the bulk C++ constructor"
     assert calls[singular] == 0, "list input must NOT loop per-element in Python"
 
-    getattr(Infomap(silent=True, no_file_output=True), method)(numpy_in)
+    getattr(Infomap(silent=True), method)(numpy_in)
     assert calls[bulk_numpy] == 1, "numpy input must route to the FromNumpy2D constructor"
     assert calls[singular] == 0

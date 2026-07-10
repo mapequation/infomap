@@ -13,6 +13,7 @@ from infomap._bindings import InfomapWrapper
 pytestmark = pytest.mark.fast
 
 
+@pytest.mark.filterwarnings("ignore::PendingDeprecationWarning")
 def test_run_with_empty_initial_partition_overrides_persisted_partition(make_infomap):
     baseline = make_infomap()
     baseline.add_links([(1, 2), (1, 3), (2, 3), (2, 4)])
@@ -334,7 +335,7 @@ def test_from_options_uses_package_construct_args(monkeypatch):
 
 def test_run_with_options_forwards_to_run(monkeypatch):
     captured = {}
-    im = infomap_module.Infomap(silent=True, no_file_output=True)
+    im = infomap_module.Infomap(silent=True)
 
     def fake_run(self, **kwargs):
         captured["kwargs"] = kwargs

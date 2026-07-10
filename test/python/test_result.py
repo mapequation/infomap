@@ -6,7 +6,7 @@ from infomap import Infomap, Result
 
 
 def _two_triangles() -> Infomap:
-    im = Infomap(silent=True, no_file_output=True)
+    im = Infomap(silent=True)
     im.add_link(0, 1)
     im.add_link(1, 2)
     im.add_link(2, 0)
@@ -146,7 +146,7 @@ def test_result_nodes_yield_immutable_treenodes():
 
 @pytest.mark.fast
 def test_result_modules_raises_on_higher_order_without_states(network_fixture_path):
-    im = Infomap(silent=True, no_file_output=True)
+    im = Infomap(silent=True)
     im.read_file(str(network_fixture_path("states.net")))
     result = im.run()
     assert result.have_memory
@@ -169,7 +169,7 @@ _STATES_NET_PHYSICAL_NAMES = {1: "i", 2: "j", 3: "k", 4: "l", 5: "m"}
 
 @pytest.mark.fast
 def test_state_names_accessor_exposes_state_node_names(network_fixture_path):
-    im = Infomap(silent=True, no_file_output=True)
+    im = Infomap(silent=True)
     im.read_file(str(network_fixture_path("states.net")))
     result = im.run()
 
@@ -184,7 +184,7 @@ def test_to_dataframe_state_name_column_distinguishes_state_nodes(
     network_fixture_path,
 ):
     pytest.importorskip("pandas")
-    im = Infomap(silent=True, no_file_output=True)
+    im = Infomap(silent=True)
     im.read_file(str(network_fixture_path("states.net")))
     result = im.run()
 
@@ -214,7 +214,7 @@ def test_to_dataframe_state_name_column_distinguishes_state_nodes(
 @pytest.mark.fast
 def test_state_name_falls_back_to_physical_name_for_first_order(example_network_path):
     pytest.importorskip("pandas")
-    im = Infomap(silent=True, no_file_output=True)
+    im = Infomap(silent=True)
     im.read_file(str(example_network_path("twotriangles.net")))
     result = im.run()
 
