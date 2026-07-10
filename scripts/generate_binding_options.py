@@ -292,6 +292,30 @@ def _advanced_tier_kwarg_lines(catalog: ParameterCatalog) -> list[str]:
     return lines
 
 
+def _options_doc_policy_note(policy: dict) -> str:
+    """A short note for the Options docstring flagging fields that are not a
+    first-class engine option on the Python library surface.
+
+    An agent steered to ``inspect.getdoc(infomap.Options)`` as the parameter
+    reference would otherwise read args-only / removed / alias fields (``tree``,
+    ``silent``, ``out_name``, ``threads`` ...) as usable library knobs. Reuse the
+    policy's own replacement guidance so the note stays in step with the facade
+    docstrings and the runtime advanced-tier warning.
+    """
+    action = (policy or {}).get("action", "keep")
+    if action == "keep":
+        return ""
+    replacement = (policy or {}).get("replacement", "").strip()
+    lead = {
+        "args-only": "Args-only on the Python library surface.",
+        "remove": "Not a Python library option; it leaves the surface in 3.0.",
+        "alias": "Compatibility alias.",
+        "deprecate": "Deprecated.",
+        "hide": "Not exposed on the Python surface.",
+    }.get(action, "")
+    return f"{lead} {replacement}".strip()
+
+
 def generate_python(catalog: ParameterCatalog) -> str:
     grouped = catalog.grouped()
     include_self_links = catalog.binding_only_entry("python", "include_self_links")
@@ -386,6 +410,10 @@ def generate_python(catalog: ParameterCatalog) -> str:
             description = param.python_doc_description()
             lines.append(f"    {name} : {param.python_doc_type()}")
             lines.extend(wrap_doc(description, "        "))
+            note = _options_doc_policy_note(param.policy("python"))
+            if note:
+                lines.append("")
+                lines.extend(wrap_doc(note, "        "))
     lines.append("    include_self_links : bool, optional")
     lines.extend(
         wrap_doc(
