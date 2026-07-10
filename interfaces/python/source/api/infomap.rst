@@ -22,10 +22,14 @@ docstrings, follows underneath.
 .. note::
 
    ``run()`` returns a :class:`Result`; read metrics and modules from it. The
-   on-instance accessors below (``get_modules``, ``codelength``, …) predate the
-   Result API and remain for backward compatibility. For one-shot use, prefer
-   :func:`infomap.run`; the stateful class is the way to build incrementally
-   and to write the native output files. See :doc:`/the-infomap-class`.
+   on-instance result accessors below (``get_modules``, ``modules``,
+   ``codelength``, …) are **deprecated and leave in 3.0** -- read the
+   equivalently named members off the returned :class:`Result` instead. Mind the
+   shape shift: ``im.modules`` is a property, while ``result.modules()`` is a
+   method. These accessors emit no runtime warning today, so nothing flags the
+   mistake; see :doc:`/the-infomap-class` for the full migration table. For
+   one-shot use, prefer :func:`infomap.run`; the stateful class remains the way
+   to build incrementally and to write the native output files.
 
 Building a network
 ------------------
@@ -91,6 +95,11 @@ Running Infomap
 Reading the partition
 ---------------------
 
+Except for :attr:`~Infomap.network`, these accessors mirror the
+:class:`Result` API and are deprecated (they leave in 3.0). Read them off the
+:class:`Result` that ``run()`` returns -- e.g. ``result.modules()`` rather than
+``im.get_modules()``.
+
 .. autosummary::
 
    ~Infomap.get_modules
@@ -118,6 +127,10 @@ Reading the partition
 
 Solution metrics
 ----------------
+
+Most of these metrics are also available (and preferred) on the
+:class:`Result` that ``run()`` returns; those on-instance copies are deprecated
+and leave in 3.0.
 
 .. autosummary::
 
