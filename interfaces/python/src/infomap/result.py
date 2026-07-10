@@ -38,6 +38,27 @@ from ._results import (
     perplexity,
 )
 
+# Legacy Infomap instance-mirror accessor names, mapped to their Result form. An
+# agent that learned the pre-Result API -- or hits the method/property flip
+# (``im.modules`` is a property, ``result.modules()`` is a method) -- reaches
+# for these on a Result; ``__getattr__`` turns the miss into a pointer instead
+# of a bare AttributeError. Kept in step with the deprecated members in
+# ``_results.py``.
+_LEGACY_ACCESSOR_HINTS = {
+    "get_modules": "result.modules()",
+    "get_multilevel_modules": "result.multilevel_modules()",
+    "get_nodes": "result.nodes()",
+    "get_tree": "result.tree()",
+    "get_links": "result.links()",
+    "get_name": "result.names[node_id]",
+    "get_names": "result.names",
+    "get_state_names": "result.state_names",
+    "get_dataframe": "result.to_dataframe()",
+    "get_effective_num_modules": "result.effective_num_modules()",
+    "flow_links": 'result.links(data="flow")',
+    "physical_tree": "result.tree()",
+}
+
 if TYPE_CHECKING:
     import igraph  # pyright: ignore[reportMissingImports]  # optional dep, no stubs
     import networkx
@@ -391,6 +412,23 @@ class Result(_ResultWritersMixin):
 
     def __delattr__(self, name: str) -> None:
         raise AttributeError("Result is immutable")
+
+    def __getattr__(self, name: str):
+        # Only reached when normal lookup misses, so it never shadows a real
+        # property or method. A legacy Infomap accessor typed on a Result (e.g.
+        # ``result.get_modules()``, or ``result.modules`` by muscle memory from
+        # the instance where it was a property) becomes a pointer to the Result
+        # form; every other miss keeps the standard AttributeError so dunder and
+        # duck-typing probes degrade normally.
+        hint = _LEGACY_ACCESSOR_HINTS.get(name)
+        if hint is not None:
+            raise AttributeError(
+                f"{name!r} is a legacy Infomap accessor, not a Result member; "
+                f"use {hint} instead."
+            )
+        raise AttributeError(
+            f"{type(self).__name__!r} object has no attribute {name!r}"
+        )
 
     def __repr__(self) -> str:
         return (

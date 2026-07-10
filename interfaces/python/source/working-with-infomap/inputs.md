@@ -46,14 +46,21 @@ attribute or explicit directedness, build the network first with a
 | network file | `infomap.run("graph.net")` | `Network.from_file(path)` |
 
 Keyword arguments to {func}`infomap.run` configure the *engine* (``seed``,
-``num_trials``, ``markov_time``, …). Arguments that govern *how the input is
-read* belong to the ``Network.from_*`` constructors; passing one to
-{func}`infomap.run` raises with a pointer to the right constructor rather than
-silently building a different graph. For a NetworkX or igraph graph the
-directedness is read from the graph object itself, so no ``directed`` argument
-is needed. For a SciPy matrix or edge index, pass ``directed=`` to the matching
-``from_*`` constructor; the two routes default differently, so it is worth
-spelling out (see Pitfalls).
+``num_trials``, ``markov_time``, ``directed``, …). Arguments that govern *how
+the input is read* — ``weight``, ``edge_weights``, ``weighted`` — belong to the
+``Network.from_*`` constructors; passing one to {func}`infomap.run` raises with
+a pointer to the right constructor rather than silently building a different
+graph.
+
+``directed`` is the exception that carries two meanings. On {func}`infomap.run`
+and {class}`~infomap.Options` it selects the engine's *directed flow model* and
+works for a graph, file, or link input (``infomap.run(g, directed=True)``). On
+the SciPy and edge-index adapters it instead names the *edge orientation* used
+to read the matrix, so there it belongs on
+``Network.from_scipy_sparse_matrix`` / ``Network.from_edge_index`` — and passing
+``directed=`` to ``infomap.run(A, …)`` for those two inputs raises, to keep the
+two senses from colliding. NetworkX and igraph read edge orientation from the
+graph object itself.
 
 Two one-shot helpers return native types instead of a
 {class}`~infomap.Result`: {func}`infomap.find_communities` (a NetworkX-style
@@ -417,9 +424,13 @@ To draw the partition or write it to disk, see
 ## Pitfalls
 
 - **Read-time options belong on the constructor, not the run.** `weight`,
-  `edge_weights`, `directed`, and `weighted` live on the `Network.from_*`
-  constructors; {func}`infomap.run` raises if you pass one, naming the
-  constructor to use.
+  `edge_weights`, and `weighted` live on the `Network.from_*` constructors;
+  {func}`infomap.run` raises if you pass one, naming the constructor to use.
+  `directed` is split: on `infomap.run` / `Options` it is the engine's directed
+  *flow model* (`infomap.run(g, directed=True)` is fine), but for a SciPy matrix
+  or edge index it is the adapter's *edge orientation* and lives on
+  `Network.from_scipy_sparse_matrix` / `Network.from_edge_index` — `run` raises
+  if you pass `directed=` with those two inputs.
 - **SciPy and edge-index routes default to different directedness.** A SciPy
   sparse matrix is read as *undirected* unless you pass `directed=True`, while a
   `(2, E)` integer edge index follows the PyG convention and is read as

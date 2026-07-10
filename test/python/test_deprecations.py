@@ -88,6 +88,24 @@ def test_deprecated_accessor_emits_no_warning():
     assert deprecations == []
 
 
+@pytest.mark.fast
+def test_result_getattr_redirects_legacy_accessors():
+    """A legacy Infomap accessor typed on a Result raises an AttributeError that
+    names the Result replacement -- the method/property flip (``im.modules`` was
+    a property, ``result.modules()`` is a method) trips agents porting old code.
+    """
+    im = _two_triangles()
+    result = im.run()
+    with pytest.raises(AttributeError, match=r"result\.modules\(\)"):
+        result.get_modules
+    with pytest.raises(AttributeError, match=r'result\.links\(data="flow"\)'):
+        result.flow_links
+    # An unknown attribute keeps the standard AttributeError, so dunder and
+    # duck-typing probes still degrade normally.
+    with pytest.raises(AttributeError, match="has no attribute"):
+        result.definitely_not_a_real_attribute
+
+
 # -- build-from-graphs group -------------------------------------------------
 
 
