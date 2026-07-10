@@ -24,6 +24,8 @@ from collections.abc import Iterable, Mapping
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from ._options import _warn_advanced_tier_kwargs
+
 if TYPE_CHECKING:
     from .result import Result
 
@@ -204,6 +206,13 @@ def run(
     there; see :meth:`Network.run`). The ``infomap`` command-line interface
     keeps its verbose default.
 
+    Advanced engine options passed as bare keyword arguments (for example a
+    direct ``regularized=True``) are pending-deprecated on this signature and
+    leave it in 3.0 (issue #741); carry them via ``options`` instead -- either an
+    :class:`Options` instance or a plain mapping -- which is the sanctioned,
+    warning-free path. The common options (``seed``, ``num_trials``,
+    ``two_level``, ``directed``, ``markov_time``) stay on the signature.
+
     Keyword arguments go to the engine; the input adapters always build with
     their defaults (e.g. networkx reads the ``"weight"`` edge attribute, a
     SciPy matrix is treated as undirected). For non-default input building -- a
@@ -246,6 +255,15 @@ def run(
     from .network import Network
 
     resolved = _resolve_options(options, overrides)
+    # Advanced-tier keywords are pending-deprecated on the run() signature and
+    # move off it in 3.0 (issue #741). Warn only on bare **overrides typed
+    # directly on this call; an Options or mapping `options` carrier is the
+    # sanctioned path and stays silent. The helper's caller-frame check sees the
+    # user's frame here (frame 2 is run()'s caller), so an in-package caller of
+    # run() is not flagged and the later Infomap(**resolved) -- reached from
+    # inside the package -- does not double-warn.
+    if overrides:
+        _warn_advanced_tier_kwargs(overrides, "init")
     # Keys the user actually supplied (kwargs + a mapping `options`), used to
     # reject adapter-only arguments below. An Options *instance* is excluded on
     # purpose: its to_kwargs() carries every field (e.g. directed=None) the user

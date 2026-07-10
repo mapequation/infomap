@@ -223,3 +223,26 @@ def test_advanced_tier_kwarg_silent_through_options_and_adapters():
             options=Options(regularized=True, core_loop_limit=5),
         )
     assert _pending(records) == []
+
+
+@pytest.mark.fast
+def test_functional_run_direct_advanced_kwarg_emits_pending():
+    """A non-default advanced-tier kwarg typed directly on the functional
+    infomap.run() front door emits a PendingDeprecationWarning naming the
+    keyword. The front door funnels through Infomap(**resolved) from inside the
+    package, so run() flags the user's own kwargs itself (issue #741)."""
+    with warnings.catch_warnings(record=True) as records:
+        warnings.simplefilter("always")
+        run([(0, 1), (1, 2), (2, 0)], regularized=True)
+    assert any("regularized" in message for message in _pending(records))
+
+
+@pytest.mark.fast
+def test_functional_run_mapping_options_stays_silent():
+    """A plain-mapping options carrier is blessed exactly like Options(...):
+    advanced kwargs carried through it do not warn -- only bare keyword
+    overrides do."""
+    with warnings.catch_warnings(record=True) as records:
+        warnings.simplefilter("always")
+        run([(0, 1), (1, 2), (2, 0)], options={"regularized": True})
+    assert _pending(records) == []
