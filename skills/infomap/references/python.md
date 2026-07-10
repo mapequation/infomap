@@ -2,49 +2,79 @@
 
 Use this reference when the user works in Python, notebooks, NetworkX, python-igraph, SciPy, edge-index, AnnData, Scanpy, pandas, or graph export workflows.
 
-## Authority for current syntax
+## The recommended API shape (2.x, stable into 3.0)
 
-Do not treat this skill as the Python API manual. Before giving runnable code, inspect the installed package:
+Prefer this shape unless the user is maintaining older code:
+
+- `infomap.run(input, *, options=None, seed=..., num_trials=..., ...)` — the one-call front door. `input` can be a NetworkX/igraph graph, a SciPy sparse matrix, a `(2, E)` edge index, a file path, or an iterable of `(u, v[, w])` links. Returns an immutable `Result`.
+- `infomap.Network.from_networkx / from_igraph / from_scipy_sparse_matrix / from_edge_index / from_file` — build a network explicitly when the input needs non-default reading (a different weight attribute, explicit directedness, a state/multilayer layout), then `network.run(options=...)`.
+- `infomap.Options(...)` — a reusable dataclass-style configuration; the canonical carrier for engine options. Pass it as `infomap.run(input, options=Options(...))`.
+- `infomap.Result` — the immutable result. Read scalars as **properties** (`result.codelength`, `result.num_top_modules`) and collections as **methods** (`result.modules()`, `result.nodes()`, `result.tree()`, `result.to_dataframe()`).
+
+The stateful `infomap.Infomap` class still works and is a fine builder for incremental construction, but read results off the `Result` that `im.run()` returns — not off the instance. Instance accessors such as `im.modules`, `im.nodes`, `im.codelength`, and `im.get_modules()` are deprecated and leave in 3.0; note also that `im.modules`/`im.nodes` are *properties* while `result.modules()`/`result.nodes()` are *methods*.
+
+## Options and the 3.0 transition
+
+Only five keyword arguments stay directly on `infomap.run()` / `Infomap()` / `Infomap.run()`: **`seed`, `num_trials`, `two_level`, `directed`, `markov_time`**. Every other engine option (for example `regularized`, `flow_model`, `teleportation_probability`, `num_threads`, `multilayer_relax_rate`, `entropy_corrected`) moves off those signatures in 3.0 and should be carried via `Options`:
 
 ```python
-import inspect
-import importlib.metadata as md
+import infomap
+from infomap import Options
+
+result = infomap.run(
+    graph,
+    options=Options(regularized=True, flow_model="directed"),
+    seed=123,
+    num_trials=20,
+)
+```
+
+Passing those options as bare keyword arguments still works in 2.x but is pending-deprecated (it emits no visible warning today) and leaves the signature in 3.0. Generate `infomap.run(g, options=Options(regularized=True))`, not `infomap.run(g, regularized=True)`.
+
+The Python API is quiet by default. Do not reach for `silent=` (also going away); to see the engine log, attach a handler to the `infomap` logger, e.g. `infomap.enable_log()`.
+
+## Authority for current syntax
+
+This skill is not the API manual. Confirm names and signatures against the installed package before giving runnable code — but read the right surface:
+
+```python
+import inspect, importlib.metadata as md
 import infomap
 
 print(md.version("infomap"))
-print(infomap.__file__)
-print(inspect.signature(infomap.Infomap))
-print(inspect.getdoc(infomap.Infomap))
-print(inspect.signature(infomap.find_communities))
-print(inspect.getdoc(infomap.find_communities))
+print(inspect.signature(infomap.run))       # the functional front door
+print(inspect.getdoc(infomap.Options))      # the canonical parameter reference — one clean entry per option
+print(inspect.getdoc(infomap.Result))       # how to read results
 ```
 
-For optional helpers, check availability before using them:
+Prefer `inspect.getdoc(infomap.Options)` over `inspect.signature(infomap.Infomap)` for the parameter reference. The `Infomap`/`run` signatures still list ~70 keyword arguments whose docstrings are mostly per-parameter deprecation notes (options relocating to `Options` in 3.0), so the raw signature does not reveal which options are permanent. `Options` lists every option once, with no deprecation noise.
 
-```python
-hasattr(infomap, "InfomapOptions")
-hasattr(infomap, "tl") and hasattr(infomap.tl, "infomap")
-```
-
-If inspection is run from an Infomap source checkout, verify `infomap.__file__` so Python has not imported repo-local sources by accident. If needed, run from another working directory or a clean environment. Use the published Python docs at `https://mapequation.org/infomap-python-docs/` when internet access is available.
+Use the published Python docs at `https://mapequation.org/infomap-python-docs/` when internet access is available. If inspecting from an Infomap source checkout, verify `infomap.__file__` so Python has not imported repo-local sources by accident.
 
 ## Choose the Python entry point
 
-- Prefer a high-level community helper when the user has a NetworkX-style graph and only needs a partition with original labels. Verify the helper signature from the installed package.
-- Prefer the `Infomap` class when the user needs codelength, flow, hierarchy paths, output files, state/multilayer handling, repeated runs, or tabular results.
-- Prefer reusable option objects only if the installed package exposes them and the workflow benefits from a structured configuration.
-- Prefer the AnnData/Scanpy helper only if the installed package exposes it and the user is working with observation graphs.
+- One-call partitioning from a graph, file, matrix, edge index, or link iterable: `infomap.run(input, seed=..., num_trials=...)`.
+- Just a node→community mapping keyed by the original NetworkX labels: `infomap.find_communities(graph, seed=..., num_trials=...)` (igraph counterpart: `infomap.find_igraph_communities`).
+- Non-default input building (weights, directedness, state/multilayer): `Network.from_*(...)` then `.run(options=Options(...))`.
+- AnnData/Scanpy observation graphs: use the `infomap.tl` helper if the installed package exposes it.
 
 ## Generating code
 
-- Generate code after inspecting signatures or docs for the installed version.
-- Keep examples small. Use one trial for smoke tests; use a meaningful `num_trials` value for research runs only after runtime is acceptable.
+- Prefer the functional `run(...)` returning a `Result`; read scalars as properties and collections as methods.
+- Carry any non-common option via `Options`; keep only `seed`, `num_trials`, `two_level`, `directed`, `markov_time` as direct keywords.
+- Make runs reproducible: set `seed` (default 123) and a meaningful `num_trials` (default 1) for research runs; use `num_trials=1` for smoke tests.
 - Record package version, `infomap.__file__`, graph source, directed/weighted choice, seed, trials, non-default options, and output artifacts.
-- Preserve mappings when labels are converted to internal integer ids.
-- For state or multilayer output, state whether results are state-level or physical-node-level.
+- For state or multilayer output, say whether results are state-level (`result.nodes(states=True)`) or physical-node-level, and preserve any label→internal-id mapping.
 
-## Minimal patterns
+## Minimal pattern
 
-For simple graph partitioning, use the installed high-level helper if available. For richer results, instantiate `Infomap`, add/read the network with installed methods, run, then extract modules, codelength, and node/state tables using methods confirmed by `help(...)` or `inspect`.
+```python
+import infomap
 
-Avoid copying long API examples from this skill. The exact method names, signatures, and helper coverage should come from the installed package and published docs.
+result = infomap.run(graph, seed=123, num_trials=20)   # graph, file path, matrix, edge index, or links
+print(result.codelength, result.num_top_modules)       # scalars: properties (no parentheses)
+modules = result.modules()                              # {node_id: module_id} (method: parentheses)
+df = result.to_dataframe()                              # columns: node_id, module_id, flow, path, name
+```
+
+Confirm exact method names and option coverage against the installed package and published docs for the user's version; do not copy version-sensitive examples verbatim.

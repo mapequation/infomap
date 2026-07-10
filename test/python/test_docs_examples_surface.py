@@ -1,7 +1,8 @@
 """Our own examples and docs must not teach the deprecated API surface.
 
 Enforces the steering decided on the 3.0 roadmap (#742): the runnable
-examples and the documentation pages use the ``Result`` accessors, the
+examples, the flagship ``quickstart.ipynb`` notebook, and the documentation
+pages use the ``Result`` accessors, the
 ``Network.from_*`` builders, and carry advanced configuration through
 ``Options`` — never the docs-only-deprecated legacy mirror or advanced-tier
 keyword arguments passed directly to ``Infomap(...)``/``run(...)``.
@@ -159,10 +160,28 @@ def _rst_python_blocks(text: str) -> str:
     return "\n".join(blocks)
 
 
+def _notebook_code(text: str) -> str:
+    """The concatenated source of every code cell in a Jupyter notebook.
+
+    Markdown cells are prose; only code cells carry the runnable surface, so
+    (as with the README's Python-only blocks) we scan code cells alone.
+    """
+    notebook = json.loads(text)
+    sources: list[str] = []
+    for cell in notebook.get("cells", []):
+        if cell.get("cell_type") != "code":
+            continue
+        source = cell.get("source", "")
+        sources.append("".join(source) if isinstance(source, list) else source)
+    return "\n".join(sources)
+
+
 def _scannable_text(path: Path) -> str:
     text = path.read_text(encoding="utf-8", errors="ignore")
     if path.name == "README.rst":
         return _rst_python_blocks(text)
+    if path.suffix == ".ipynb":
+        return _notebook_code(text)
     return text
 
 
@@ -173,6 +192,13 @@ def _source_files() -> list[Path]:
     readme = REPO_ROOT / "README.rst"
     if readme.is_file():
         files.append(readme)
+    # The flagship quickstart notebook is the first thing README points Jupyter
+    # users to; hold it to the same supported surface as the .py examples. The
+    # survey-chapter notebooks and their _support.py helper are a separate,
+    # larger migration and are not yet scanned here.
+    quickstart = REPO_ROOT / "examples" / "notebooks" / "quickstart.ipynb"
+    if quickstart.is_file():
+        files.append(quickstart)
     files += sorted(
         path
         for path in DOCS.rglob("*.md")

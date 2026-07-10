@@ -43,7 +43,7 @@ Source discussions: [#61](https://github.com/mapequation/infomap/discussions/61)
 
 ## Multilayer output looks duplicated or confusing
 
-In multilayer/state networks, one physical node may appear as multiple state nodes. A physical node can therefore appear in multiple modules across layers or contexts. For Python, iterate `im.nodes` and inspect `node.node_id`, `node.layer_id`, `node.state_id`, and `node.module_id`. For R, use `as.data.frame(im, states = TRUE)` or result node tables when available.
+In multilayer/state networks, one physical node may appear as multiple state nodes. A physical node can therefore appear in multiple modules across layers or contexts. For Python, run Infomap and iterate `result.nodes(states=True)`, inspecting `node.node_id`, `node.layer_id`, `node.state_id`, and `node.module_id` on each node (or use `result.to_dataframe(states=True)` for a table). For R, use `as.data.frame(im, states = TRUE)` or result node tables when available.
 
 If output should distinguish layers, request state-level output. If output should merge physical nodes, say so explicitly and explain how merging affects interpretation.
 
