@@ -15,8 +15,8 @@ kernelspec:
 ```{admonition} At a glance
 :class: tip
 Infomap trials are independent work units: run many in parallel on a
-single node with `parallel_trials`, or split them across a scheduler job
-array with `trial_offset` and merge the best result afterwards with
+single node with `options=Options(parallel_trials=True)`, or split them across a
+scheduler job array with `trial_offset` and merge the best result afterwards with
 `python -m infomap.merge`.
 ```
 
@@ -32,8 +32,9 @@ reasonable wall-clock time.
 Two strategies cover most HPC use cases:
 
 1. **Single-node parallelism.** Your scheduler gives you a node with many
-   cores. Run all trials on that node with `parallel_trials=True`.
-   `num_threads` controls the thread budget; left unset (its default, the same
+   cores. Run all trials on that node with
+   `options=Options(parallel_trials=True)`. `num_threads` (also carried on
+   `Options`) controls the thread budget; left unset (its default, the same
    as `"auto"`) it reads scheduler-set variables (`SLURM_CPUS_PER_TASK`,
    `OMP_NUM_THREADS`, cpuset) automatically.
 

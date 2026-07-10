@@ -216,8 +216,9 @@ close to the planted five.
 
 ## API pointers
 
-Pass `regularized=True` to {func}`infomap.run` to activate the Bayesian map
-equation. One optional keyword controls the prior strength:
+Enable it via `options=infomap.Options(regularized=True)` on {func}`infomap.run`
+to activate the Bayesian map equation. One optional keyword controls the prior
+strength:
 
 - `regularized=True` enables the Bayesian regularized map equation, which adds a
   fully connected prior network to reduce overfitting to missing links. It works
@@ -233,8 +234,9 @@ equation. One optional keyword controls the prior strength:
   reason to trust community boundaries in sparse data ($C < 1$) or to suppress
   them harder ($C > 1$).
 
-All other engine options (`num_trials`, `seed`, `two_level`, `directed`, and so
-on) compose freely with `regularized=True`.
+The common keywords (`num_trials`, `seed`, `two_level`, `directed`) compose
+freely alongside it, e.g.
+`infomap.run(g, options=infomap.Options(regularized=True), num_trials=20, seed=123)`.
 
 - {attr}`infomap.Result.codelength` is the map equation value for the winning
   partition; with regularization it reflects the Bayesian-corrected description

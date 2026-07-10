@@ -98,8 +98,8 @@ filtering, grouping, and export. See {doc}`Reading the Result <working-with-info
 
 For Gephi, annotate the graph with `infomap.to_networkx(result)` (or `to_igraph`)
 and write it with `nx.write_graphml` / `nx.write_gexf`. For the native formats,
-the stateful `Infomap` writes them with `im.write_tree(path)` and
-`im.write_clu(path)`: `.clu` is one row per node, `.tree` carries the full
+write straight from the `Result` with `result.write_tree(path)` and
+`result.write_clu(path)`: `.clu` is one row per node, `.tree` carries the full
 hierarchy. See {doc}`Visualising and exporting <working-with-infomap/visualizing-and-exporting>`.
 
 ## Flow models and representations

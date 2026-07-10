@@ -168,9 +168,10 @@ The club famously split into two factions, but Infomap minimises the description
 length of the flow, not a sociological label. Nodes on the boundary between the
 factions can form their own transitional cluster where the walker's affiliation
 is split, and naming it shortens the code, so Infomap often reports more than two
-modules here. To steer the search toward two modules, pass
-`preferred_number_of_modules=2`, a soft preference rather than a hard
-constraint.
+modules here. To steer the search toward two modules, carry
+`preferred_number_of_modules=2` via `Options` —
+`infomap.run(g, options=infomap.Options(preferred_number_of_modules=2))` — a soft
+preference rather than a hard constraint.
 ```
 
 ```{code-cell} python
@@ -202,6 +203,8 @@ module because naming it shortens the overall code.
 - `result.num_top_modules` counts the top-level modules; `result.modules()`
   returns a `{node_id: module_id}` mapping.
 - `preferred_number_of_modules=k` softly steers the search toward `k` modules.
+  It is not one of the direct `run` keywords; carry it via
+  `options=infomap.Options(preferred_number_of_modules=k)`.
 
 ## Going deeper
 

@@ -36,16 +36,16 @@ for node_id, modules in result.multilevel_modules().items():
 
 pathlib.Path("output").mkdir(exist_ok=True)
 print(f"Writing top level modules to output/{name}.clu...")
-im.write(f"output/{name}.clu")
+result.write(f"output/{name}.clu")
 
 print(f"Writing second level modules to output/{name}_level2.clu...")
-im.write(f"output/{name}_level2.clu", depth_level=2)
+result.write(f"output/{name}_level2.clu", depth_level=2)
 
 print(f"Writing bottom level modules to output/{name}_level-1.clu...")
-im.write(f"output/{name}_level-1.clu", depth_level=-1)
+result.write(f"output/{name}_level-1.clu", depth_level=-1)
 
 print(f"Writing tree to output/{name}.tree...")
-im.write(f"output/{name}.tree")
+result.write(f"output/{name}.tree")
 
 print("Read back .clu file and only calculate codelength...")
 net2 = Network.from_file(filename)
