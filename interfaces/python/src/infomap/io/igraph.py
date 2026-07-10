@@ -302,6 +302,7 @@ def find_igraph_communities(
     *,
     edge_weights: str | Iterable[Any] | None = None,
     vertex_weights: Any = None,
+    options: Any = None,
     trials: int | None = None,
     node_id: str = "node_id",
     layer_id: str = "layer_id",
@@ -326,6 +327,12 @@ def find_igraph_communities(
         edge, or ``None`` to treat every edge as weight 1. Default ``None``.
     vertex_weights : None, optional
         Accepted for igraph API familiarity but not supported yet.
+    options : Options, mapping, or None, optional
+        Base engine configuration carried the 3.0-safe way -- an
+        :class:`~infomap.Options` instance or a mapping. Any bare keyword below
+        (and an explicit ``trials`` / ``num_trials``) takes precedence. A
+        carrier left at its defaults does not disturb the finder defaults, so
+        ``num_trials`` still falls back to ``10``.
     trials : int, optional
         Number of independent trials; the best solution is kept. Convenience
         alias for the ``num_trials`` Infomap option. Pass ``trials`` or
@@ -380,18 +387,19 @@ def find_igraph_communities(
         return clustering
 
     from .._facade import Infomap
+    from .._run import _explicit_option_kwargs
 
-    # `num_trials` is the engine option; `trials` is the convenience alias.
-    # Default to 10 when the caller specified neither; a caller-passed
-    # `num_trials` (only reachable when `trials` is None) wins via update().
-    options = {
-        "silent": True,
-        "no_file_output": True,
-        "num_trials": trials if trials is not None else 10,
-    }
-    options.update(infomap_options)
+    # Fold the options= carrier under the caller's bare keyword arguments (bare
+    # kwargs win), then apply the `trials` alias and the finder's num_trials
+    # default. Only fields the carrier sets away from their defaults are taken,
+    # so it never clobbers the finder's silent/no_file_output defaults.
+    engine_options = {**_explicit_option_kwargs(options), **infomap_options}
+    if trials is not None:
+        engine_options["num_trials"] = trials
+    engine_options.setdefault("num_trials", 10)
+    engine_options = {"silent": True, "no_file_output": True, **engine_options}
 
-    infomap = Infomap(**options)
+    infomap = Infomap(**engine_options)
     node_mapping = add_igraph_graph(
         infomap,
         g,

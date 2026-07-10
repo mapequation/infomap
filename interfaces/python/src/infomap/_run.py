@@ -53,6 +53,35 @@ def _resolve_options(options: Any, overrides: dict) -> dict:
     return resolved
 
 
+def _explicit_option_kwargs(options: Any) -> dict:
+    """The option fields a carrier sets away from their defaults.
+
+    The graph finders (:func:`infomap.find_communities` and
+    :func:`infomap.find_igraph_communities`) fold an ``options=`` carrier into
+    their own engine defaults (``silent`` and ``no_file_output`` on,
+    ``num_trials`` = 10). Taking only the fields the caller actually changed --
+    rather than the carrier's full ``to_kwargs()`` -- keeps a carrier left at
+    its defaults from silently turning those finder defaults off. A mapping is
+    returned as-is (its keys are explicit by construction); ``None`` yields an
+    empty dict.
+    """
+    if options is None:
+        return {}
+    if isinstance(options, Mapping):
+        return dict(options)
+    to_kwargs = getattr(options, "to_kwargs", None)
+    if not callable(to_kwargs):
+        raise TypeError("options must be an Options instance, a mapping, or None")
+    from ._options import _OPTION_DEFAULTS
+
+    kwargs: Any = to_kwargs()
+    return {
+        name: value
+        for name, value in kwargs.items()
+        if value != getattr(_OPTION_DEFAULTS, name)
+    }
+
+
 def _is_networkx_graph(obj: Any) -> bool:
     # Duck-typed, matching the networkx adapter: avoid importing networkx.
     return (

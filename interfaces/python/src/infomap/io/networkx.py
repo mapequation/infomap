@@ -115,6 +115,7 @@ def find_communities(
     node_id: str = "node_id",
     layer_id: str = "layer_id",
     multilayer_inter_intra_format: bool = True,
+    options: Any = None,
     trials: int | None = None,
     initial_partition: Any = None,
     module_attribute: str | None = None,
@@ -146,6 +147,12 @@ def find_communities(
     multilayer_inter_intra_format : bool, optional
         Use intra/inter format to simulate inter-layer links. Default
         ``True``.
+    options : Options, mapping, or None, optional
+        Base engine configuration carried the 3.0-safe way -- an
+        :class:`~infomap.Options` instance or a mapping. Any bare keyword below
+        (and an explicit ``trials`` / ``num_trials``) takes precedence. A
+        carrier left at its defaults does not disturb the finder defaults, so
+        ``num_trials`` still falls back to ``10``.
     trials : int, optional
         Number of independent trials; the best solution is kept. Convenience
         alias for the ``num_trials`` Infomap option (matching
@@ -186,11 +193,16 @@ def find_communities(
     if len(g.nodes) == 0:
         return []
 
-    # `num_trials` is the engine option; `trials` is the convenience alias.
-    # Default to 10 (a robust default for a one-call helper, matching the
-    # igraph variant) when the caller specified neither.
-    if "num_trials" not in infomap_options:
-        infomap_options["num_trials"] = trials if trials is not None else 10
+    from .._run import _explicit_option_kwargs
+
+    # Fold the options= carrier under the caller's bare keyword arguments (bare
+    # kwargs win), then apply the `trials` alias and the finder's num_trials
+    # default. Only fields the carrier sets away from their defaults are taken,
+    # so it never clobbers _run_networkx's silent/no_file_output defaults.
+    engine_options = {**_explicit_option_kwargs(options), **infomap_options}
+    if trials is not None:
+        engine_options["num_trials"] = trials
+    engine_options.setdefault("num_trials", 10)
 
     infomap, _, node_mapping = _run_networkx(
         g,
@@ -200,7 +212,7 @@ def find_communities(
         multilayer_inter_intra_format=multilayer_inter_intra_format,
         initial_partition=initial_partition,
         meta_attribute=meta_attribute,
-        **infomap_options,
+        **engine_options,
     )
 
     _set_networkx_node_attributes(
