@@ -15,6 +15,47 @@ path for a NetworkX graph is `infomap.run(g)` (or `infomap.find_communities(g)`
 for a `list[set]`). Bundled example networks live in {mod}`infomap.datasets`.
 See {doc}`Building a network <working-with-infomap/inputs>`.
 
+### Why does `infomap.run(A, directed=True)` raise `TypeError` for a matrix or edge index?
+
+For a SciPy sparse matrix or a `(2, E)` edge index, `directed` names the *input
+adapter's* edge orientation, not the engine's flow model, so `run()` rejects it
+rather than silently build a different graph. Build the network explicitly with
+`Network.from_scipy_sparse_matrix(A, directed=True)` or
+`Network.from_edge_index(ei, directed=True)`, or ask for the directed flow model
+with `options=infomap.Options(flow_model="directed")`. For a graph, file, or
+edge list, `infomap.run(g, directed=True)` works directly. See
+{doc}`Building a network <working-with-infomap/inputs>`.
+
+## Using the Python API
+
+### Why does `result.codelength()` raise `TypeError: 'float' object is not callable`?
+
+On a `Result`, scalar metrics are **properties** and collections are
+**methods**: read `result.codelength` and `result.num_top_modules` *without*
+parentheses, and call `result.modules()`, `result.nodes()`, `result.tree()`, and
+`result.to_dataframe()` *with* them. (On the stateful `Infomap` instance those
+same names are properties -- another reason to read results off the returned
+`Result`, not the instance.) See
+{doc}`Reading the Result <working-with-infomap/results-and-iteration>`.
+
+### How do I see Infomap's progress or engine log in Python?
+
+The Python API is quiet by default. Call `infomap.enable_log()` once to route the
+engine log through the standard `logging` module
+(`infomap.enable_log(logging.DEBUG)` for more detail), and `infomap.disable_log()`
+to stop. Prefer this over the legacy `silent` keyword, which is pending-deprecated
+and leaves the API in 3.0. See
+{doc}`Running Infomap and tuning options <working-with-infomap/running-and-options>`.
+
+### Why does `infomap.find_communities(g)` run more trials than `infomap.run(g)`?
+
+`find_communities` (and `find_igraph_communities`) default to `num_trials=10`,
+while `infomap.run` defaults to `num_trials=1`. Set it explicitly with
+`num_trials=` (or the `trials=` alias on the finders). The finders also return a
+different shape -- `find_communities` a NetworkX-style `list[set]` of node labels,
+`find_igraph_communities` an `igraph.VertexClustering` -- whereas `run` returns a
+{class}`~infomap.Result`. See {doc}`Reading the Result <working-with-infomap/results-and-iteration>`.
+
 ## Results and determinism
 
 ### Why do different seeds give slightly different partitions?
