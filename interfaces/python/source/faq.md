@@ -155,9 +155,9 @@ changes the communities found. See {doc}`Bipartite networks <flow-models/biparti
 
 ### My sparse network gives lots of tiny modules: how do I avoid overfitting?
 
-Standard Infomap overfits sparse or incomplete data. Pass `regularized=True`
-(tune with `regularization_strength=`) for a Bayesian prior that yields fewer,
-more reliable modules. See {doc}`Incomplete data and regularization <robustness/incomplete-data>`.
+Standard Infomap overfits sparse or incomplete data. Pass
+`options=infomap.Options(regularized=True)` (tune with `regularization_strength=`)
+for a Bayesian prior that yields fewer, more reliable modules. See {doc}`Incomplete data and regularization <robustness/incomplete-data>`.
 
 ## Workflows and integrations
 
@@ -196,14 +196,15 @@ Yes: the `infomap.tl.graphrag` adapter reads entity/relationship tables (columns
 By default (`num_threads` unset, i.e. the engine's `auto` mode) the thread
 budget resolves from, in priority order, `INFOMAP_NUM_THREADS`,
 `SLURM_CPUS_PER_TASK`, `OMP_NUM_THREADS`, the process cpuset, and finally the
-hardware. Set `num_threads=` to a positive integer to override. See {doc}`Running at scale (HPC) <workflows/hpc>`.
+hardware. Override it by carrying `num_threads` via `infomap.Options` (or set
+`INFOMAP_NUM_THREADS`). See {doc}`Running at scale (HPC) <workflows/hpc>`.
 
 ### How do I run many trials across cluster jobs and combine them?
 
-Give each job a non-overlapping range with `trial_offset=` and write its shard
-with `trial_results=`, then merge the shard files with `python -m infomap.merge`
-(it keeps the best codelength). See
-{doc}`Running at scale (HPC) <workflows/hpc>`.
+Give each job a non-overlapping range with `trial_offset` and write its shard
+with `trial_results` (carried via `infomap.Options`, or as CLI flags), then
+merge the shard files with `python -m infomap.merge` (it keeps the best
+codelength). See {doc}`Running at scale (HPC) <workflows/hpc>`.
 
 ## Method and citation
 

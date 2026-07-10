@@ -310,9 +310,11 @@ sacct -j <job-id> --format=JobID,State,ExitCode,Elapsed,MaxRSS
 
 ## API pointers
 
-- {func}`infomap.run` is the main entry point; it accepts `num_trials`, `seed`,
-  `num_threads`, `parallel_trials`, `trial_offset`, and `trial_results` as
-  engine options.
+- {func}`infomap.run` is the main entry point. `num_trials` and `seed` are
+  direct keyword arguments; the parallelism options `num_threads`,
+  `parallel_trials`, `trial_offset`, and `trial_results` are carried via
+  {class}`~infomap.Options` (`infomap.run(input, options=Options(...))`), as
+  they leave the bare signature in 3.0 (see {doc}`/api/deprecations`).
 - `result.codelength` is the codelength of the best solution found.
 - `result.modules()` returns a `{node_id: module_id}` mapping for the top-level
   partition.

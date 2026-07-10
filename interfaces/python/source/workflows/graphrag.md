@@ -261,7 +261,7 @@ communities[["id", "level", "size", "entity_ids"]]
   the edge arrays, and the bidirectional entity-id ↔ node-id mappings.
 - {class}`infomap.tl.graphrag.GraphRAGRunResult` bundles the `Infomap` object, the
   `GraphRAGGraph`, and the two output DataFrames.
-- {attr}`infomap.Infomap.codelength` and {attr}`infomap.Infomap.num_top_modules`
+- {attr}`infomap.Result.codelength` and {attr}`infomap.Result.num_top_modules`
   report the quality and structure of the solution after a run.
 
 ## Going deeper

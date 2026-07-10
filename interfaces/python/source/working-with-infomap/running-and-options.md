@@ -383,10 +383,15 @@ for name, graph in [("ring of cliques", G_ring), ("karate club", G_karate)]:
 
 ## API pointers
 
-The options in this chapter are keyword arguments to {func}`infomap.run` and to
-{class}`infomap.Infomap` ({meth}`infomap.Network.run` takes them bundled via
-its `options=` argument instead). After a run, the
-metrics live on the returned {class}`~infomap.Result`:
+The options in this chapter are fields of {class}`~infomap.Options`, the
+canonical way to configure a run: `infomap.run(input, options=Options(...))`
+(or {meth}`infomap.Network.run` with `options=`). Five common options —
+`seed`, `num_trials`, `two_level`, `directed`, and `markov_time` — are also
+accepted as direct keyword arguments to {func}`infomap.run` and
+{class}`infomap.Infomap`; carry every other option via `Options`, since as a
+bare keyword it is pending-deprecated and leaves those signatures in 3.0 (see
+{doc}`/api/deprecations`). After a run, the metrics live on the returned
+{class}`~infomap.Result`:
 
 - **{attr}`infomap.Result.codelength`** is the map equation value
   $L(\mathsf{M}^*)$ for the best partition found across all trials.
@@ -400,7 +405,8 @@ metrics live on the returned {class}`~infomap.Result`:
 - **{attr}`infomap.Result.relative_codelength_savings`** is the fractional gain
   over that baseline, $(L_\text{one} - L^*) / L_\text{one}$.
 
-These are the keyword arguments to {func}`infomap.run`:
+The most-used options — all fields of {class}`~infomap.Options`, with the five
+common ones also accepted directly on {func}`infomap.run`:
 
 | Option | Type | Default | What it controls |
 |---|---|---|---|
