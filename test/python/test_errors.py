@@ -86,6 +86,20 @@ def test_unrecognized_option_raises_infomap_error():
         Infomap(args="--bogus-flag", silent=True)
 
 
+def test_empty_network_run_raises_clear_infomap_error():
+    """An empty network gets a build-the-network pointer, not the engine's
+    file-oriented "No input file to read network" -- meaningless on the
+    in-memory library surface."""
+    import infomap
+
+    with pytest.raises(InfomapError, match="empty network"):
+        Infomap().run()
+    with pytest.raises(InfomapError, match="empty network"):
+        infomap.run([])
+    with pytest.raises(InfomapError, match="empty network"):
+        Network().run()
+
+
 def test_read_file_missing_file_raises_network_parse_error(make_infomap):
     with pytest.raises(NetworkParseError, match="Cannot open file"):
         make_infomap().read_file("/nonexistent/network.net")
@@ -195,11 +209,16 @@ def test_run_time_parse_message_fragments_still_appear_in_engine_source():
     fragments = (
         errors_module._PARSE_MESSAGE_PREFIXES
         + errors_module._PARSE_MESSAGE_SUBSTRINGS
+        # The empty-network message is re-worded verbatim into a friendly
+        # build-the-network pointer; if the engine rewords it, the match stops
+        # firing and the raw file-oriented message leaks back to the user.
+        + (errors_module._EMPTY_NETWORK_MESSAGE,)
     )
     missing = [fragment for fragment in fragments if fragment not in sources]
     assert not missing, (
-        f"run-time parse-error fragments no longer found in src/: {missing}. "
-        "The engine likely reworded a message; update errors._PARSE_MESSAGE_* "
-        "to match, or run() input failures will classify as InfomapError "
-        "instead of NetworkParseError."
+        f"run-time engine message fragments no longer found in src/: {missing}. "
+        "The engine likely reworded a message; update errors._PARSE_MESSAGE_* / "
+        "_EMPTY_NETWORK_MESSAGE to match, or run() input failures will classify "
+        "as InfomapError instead of NetworkParseError (or the empty-network "
+        "error will lose its friendly re-message)."
     )

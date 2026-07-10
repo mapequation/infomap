@@ -42,6 +42,7 @@ from ._logging import disable_log, enable_log
 from ._logging import engine_log_routing as _engine_log_routing
 from ._logging import is_routed as _is_log_routed
 from ._results import _InfomapResultsMixin
+from ._results import _install_accessor_deprecations
 from ._results import entropy, perplexity, plogp
 from .errors import NetworkParseError, _translate_engine_errors
 from .result import Result, TreeNode, build_result
@@ -2409,7 +2410,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         --------
 
         >>> from infomap import Infomap, Options
-        >>> im = Infomap(silent=True, num_trials=10)
+        >>> im = Infomap(num_trials=10)
         >>> im.add_links((
         ...     (1, 2), (1, 3), (2, 3),
         ...     (3, 4),
@@ -2465,7 +2466,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         >>> import networkx as nx
         >>> from infomap import Infomap
         >>> G = nx.Graph([("a", "b"), ("a", "c")])
-        >>> im = Infomap(silent=True)
+        >>> im = Infomap()
         >>> mapping = im.add_networkx_graph(G)
         >>> mapping
         {0: 'a', 1: 'b', 2: 'c'}
@@ -2493,7 +2494,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         >>> G.add_edge("d", "e")
         >>> G.add_edge("d", "f")
         >>> G.add_edge("e", "f")
-        >>> im = Infomap(silent=True)
+        >>> im = Infomap()
         >>> mapping = im.add_networkx_graph(G)
         >>> mapping
         {0: 'a', 1: 'b', 2: 'c', 3: 'd', 4: 'e', 5: 'f'}
@@ -2518,7 +2519,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         >>> G.add_node(32, node_id=3, layer_id=2)
         >>> G.add_edge(11, 21, weight=2)
         >>> G.add_edge(22, 32)
-        >>> im = Infomap(silent=True)
+        >>> im = Infomap()
         >>> mapping = im.add_networkx_graph(G)
         >>> result = im.run()
         >>> for node in sorted(result.nodes(states=True), key=lambda n: n.state_id):
@@ -2836,7 +2837,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         --------
 
         >>> from infomap import Infomap
-        >>> im = Infomap(silent=True, num_trials=10)
+        >>> im = Infomap(num_trials=10)
         >>> im.add_node(1, "Left 1")
         >>> im.add_node(2, "Left 2")
         >>> im.bipartite_start_id = 3
@@ -2871,7 +2872,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         --------
 
         >>> from infomap import Infomap, Options
-        >>> im = Infomap(silent=True)
+        >>> im = Infomap()
         >>> im.add_node(1)
         >>> im.add_node(2)
         >>> im.add_node(3)
@@ -2904,7 +2905,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         :meth:`run`.
 
         >>> from infomap import Infomap, MultilayerNode
-        >>> im = Infomap(silent=True)
+        >>> im = Infomap()
         >>> im.add_multilayer_intra_link(1, 1, 2)
         >>> im.add_multilayer_intra_link(2, 1, 3)
         >>> im.initial_partition = {(1, 1): 0, MultilayerNode(2, 1): 1}
@@ -3052,6 +3053,19 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             Use ``result = im.run(); result.elapsed_time``.
         """
         return self._core.elapsedTime()
+
+
+# The result-scalar accessors defined directly on Infomap (the mixin owns the
+# rest); wrap them to emit the same pending-deprecation warning. See
+# _results.py::_install_accessor_deprecations.
+_install_accessor_deprecations(
+    Infomap,
+    {
+        "codelength": "result.codelength",
+        "codelengths": "result.codelengths",
+        "elapsed_time": "result.elapsed_time",
+    },
+)
 
 
 def build_info():

@@ -50,9 +50,9 @@ The on-instance result accessors (`im.get_modules()`, `im.codelength`,
 `im.nodes`) still work and are backed by that result, but they are **deprecated
 and leave in 3.0** -- read the equivalently named members off the returned
 {class}`~infomap.Result` instead. Mind the shape shift: `im.modules` is a
-property, while `result.modules()` is a method. These accessors emit no runtime
-warning today, so nothing flags the mistake; the migration table below maps each
-one across.
+property, while `result.modules()` is a method. These accessors emit a
+silent-by-default `PendingDeprecationWarning` (surface it with `-W`); the
+migration table below maps each one across.
 
 ## Migrating to the functional API
 

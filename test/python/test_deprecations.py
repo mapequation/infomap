@@ -2,12 +2,18 @@
 the ``Result`` returned by :meth:`Infomap.run` and the ``Network`` / functional
 ``infomap.run`` builders.
 
-These members are deprecated by documentation only: each carries a
-``.. deprecated::`` note in its docstring, but they emit **no**
-``DeprecationWarning`` at runtime. Each deprecated member must therefore (a)
-still work and return the same value as its non-deprecated replacement, and (b)
-not raise under ``-W error::DeprecationWarning``. The package itself must also
-not emit any of these warnings during normal operation.
+The legacy result accessors emit a **silent-by-default**
+``PendingDeprecationWarning`` naming their ``Result`` replacement (the
+caller-frame guard keeps internal readers -- the summary card, ``_repr_html_``,
+in-package reuse -- quiet, so only user code is flagged). Each such member must
+therefore (a) still work and return the same value as its replacement, (b) emit
+that ``PendingDeprecationWarning`` when read from user code, and (c) never raise
+the louder ``DeprecationWarning`` that tools escalate by default. The package
+itself must emit neither warning during normal operation (construct, run, repr,
+summary).
+
+The build-from-graph accessors and config helpers stay documentation-only for
+now (no runtime warning); only the result mirror is instrumented.
 """
 
 from __future__ import annotations
@@ -20,7 +26,9 @@ from infomap import Infomap, Options, run
 
 
 def _two_triangles(**kwargs) -> Infomap:
-    im = Infomap(silent=True, num_trials=2, **kwargs)
+    # No silent= (advanced-tier, pending-deprecated); the API is quiet by
+    # default, so the helper stays warning-free at construction.
+    im = Infomap(num_trials=2, **kwargs)
     for source, target in [(0, 1), (1, 2), (2, 0), (2, 3), (3, 4), (4, 5), (5, 3)]:
         im.add_link(source, target)
     return im
@@ -31,9 +39,13 @@ def _two_triangles(**kwargs) -> Infomap:
 
 @pytest.mark.fast
 def test_no_self_warnings_on_import_construct_run_repr_summary():
-    """Constructing, running, repr() and summary() emit zero DeprecationWarnings."""
+    """Construct, run, repr() and summary() emit neither a DeprecationWarning nor
+    the accessors' PendingDeprecationWarning. The summary card and _repr_html_
+    read the legacy accessors internally, but the caller-frame guard keeps
+    in-package reads quiet."""
     with warnings.catch_warnings():
         warnings.simplefilter("error", DeprecationWarning)
+        warnings.simplefilter("error", PendingDeprecationWarning)
         im = _two_triangles()
         im.run()
         repr(im)
@@ -50,6 +62,7 @@ def test_result_method_accessor_silent_and_matches():
     result = im.run()
     with warnings.catch_warnings():
         warnings.simplefilter("error", DeprecationWarning)
+        warnings.simplefilter("ignore", PendingDeprecationWarning)
         legacy = im.get_modules()
     assert legacy == result.modules()
 
@@ -60,6 +73,7 @@ def test_result_property_accessor_silent_and_matches():
     result = im.run()
     with warnings.catch_warnings():
         warnings.simplefilter("error", DeprecationWarning)
+        warnings.simplefilter("ignore", PendingDeprecationWarning)
         legacy = list(im.flow_links)
     assert legacy == list(result.links(data="flow"))
 
@@ -70,6 +84,7 @@ def test_result_metric_property_silent_and_matches():
     result = im.run()
     with warnings.catch_warnings():
         warnings.simplefilter("error", DeprecationWarning)
+        warnings.simplefilter("ignore", PendingDeprecationWarning)
         legacy = im.codelength
         legacy_levels = im.num_levels
     assert legacy == result.codelength
@@ -77,15 +92,20 @@ def test_result_metric_property_silent_and_matches():
 
 
 @pytest.mark.fast
-def test_deprecated_accessor_emits_no_warning():
-    """Deprecated members are documentation-only: they emit no warning at all."""
+def test_deprecated_result_accessor_emits_pending_naming_replacement():
+    """A legacy result accessor read from user code emits a silent-by-default
+    PendingDeprecationWarning naming its Result replacement, and never the louder
+    DeprecationWarning."""
     im = _two_triangles()
     im.run()
     with warnings.catch_warnings(record=True) as records:
         warnings.simplefilter("always")
         im.get_modules()
-    deprecations = [r for r in records if issubclass(r.category, DeprecationWarning)]
-    assert deprecations == []
+    pending = [r for r in records if issubclass(r.category, PendingDeprecationWarning)]
+    assert any("result.modules()" in str(r.message) for r in pending)
+    # PendingDeprecationWarning is not a DeprecationWarning subclass, so the
+    # louder category that tools escalate by default stays silent.
+    assert not [r for r in records if issubclass(r.category, DeprecationWarning)]
 
 
 @pytest.mark.fast
