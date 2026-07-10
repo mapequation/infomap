@@ -29,6 +29,7 @@ from typing import TYPE_CHECKING, Any
 from ._optional import require_pandas
 from .errors import InfomapError, StaleResultError, _translate_engine_errors
 from .io.writers import _ResultWritersMixin
+from ._summary import repr_html as _summary_repr_html
 from ._results import (
     _DATAFRAME_COLUMN_ALIASES,
     _DEFAULT_TO_DATAFRAME_COLUMNS,
@@ -397,6 +398,20 @@ class Result(_ResultWritersMixin):
             f"num_top_modules={self._num_top_modules!r}, "
             f"num_levels={self._num_levels!r})"
         )
+
+    def _repr_html_(self) -> str | None:
+        """Rich HTML summary for notebooks -- the same card as :class:`Infomap`.
+
+        Rendered from the bound engine while this Result is still the engine's
+        current one (``im._result is self``), so the card shows exactly this
+        snapshot. Once the engine has been re-run this Result is stale: the live
+        result tree the top-module flow strip reads has been rebuilt, so we
+        decline HTML (return ``None``) and let the notebook fall back to the
+        concise text ``__repr__``. The eager scalars stay available there.
+        """
+        if self._engine._generation != self._generation:
+            return None
+        return _summary_repr_html(self._engine)
 
     # -- lazy node-data extraction ------------------------------------------
 
