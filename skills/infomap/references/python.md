@@ -31,6 +31,8 @@ result = infomap.run(
 
 Passing those options as bare keyword arguments still works in 2.x but is pending-deprecated (it emits no visible warning today) and leaves the signature in 3.0. Generate `infomap.run(g, options=Options(regularized=True))`, not `infomap.run(g, regularized=True)`.
 
+The `options=` carrier is accepted on the stateful `Infomap()` and `Infomap.run()` as well, not just `infomap.run()` and `Network.run()` — e.g. `im.run(options=Options(regularized=True))` — so the stateful builder has the same warning-free path (a bare keyword set to a non-default value still overrides the carrier).
+
 `directed` is a direct engine kwarg only for graph, file, and link-iterable inputs. For a SciPy sparse matrix or a `(2, E)` edge index it names the *input adapter's* orientation, so `infomap.run(A, directed=True)` raises `TypeError`; build the network explicitly with `Network.from_scipy_sparse_matrix(A, directed=True)` / `Network.from_edge_index(ei, directed=True)`, or pass `options=Options(flow_model="directed")`.
 
 The Python API is quiet by default. Do not reach for `silent=` (also going away); to see the engine log, attach a handler to the `infomap` logger, e.g. `infomap.enable_log()`.

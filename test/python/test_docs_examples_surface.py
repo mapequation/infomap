@@ -28,6 +28,7 @@ pytestmark = pytest.mark.fast
 REPO_ROOT = Path(__file__).resolve().parents[2]
 EXAMPLES = REPO_ROOT / "examples" / "python"
 DOCS = REPO_ROOT / "interfaces" / "python" / "source"
+SRC = REPO_ROOT / "interfaces" / "python" / "src" / "infomap"
 
 # The legacy result/build/config mirror on Infomap (docs-only deprecated
 # since 2.14; see test_deprecations.py). Curated by hand: introspecting
@@ -299,4 +300,45 @@ def test_docs_and_examples_avoid_the_deprecated_surface():
     assert not violations, (
         "our own examples/docs teach the deprecated or advanced-tier "
         "surface:\n" + "\n".join(sorted(set(violations)))
+    )
+
+
+# The package's own source modules are the help()/autodoc surface, so their
+# docstrings (and code) must not pass an advanced-tier option directly either --
+# otherwise an agent reading help(Infomap.set_meta_data) learns the 3.0-breaking
+# bare-kwarg pattern. Only the advanced-kwarg rule applies here; the
+# instance-accessor rules do NOT, because the deprecated members are *defined*
+# and documented on their own in these files. The console-quieting
+# silent/verbosity_level knobs are excluded: they default to silent, do not emit
+# the pending-deprecation warning, and are covered by the separate
+# silent->logging migration.
+_CONSOLE_KWARGS = {"silent", "verbosity_level"}
+
+
+def _source_module_files() -> list[Path]:
+    # _swig.py is the low-level SWIG-generated binding, not an authored surface.
+    return [p for p in sorted(SRC.rglob("*.py")) if p.name != "_swig.py"]
+
+
+@pytest.mark.fast
+def test_source_docstrings_avoid_direct_advanced_kwargs():
+    if not SRC.is_dir():
+        pytest.skip("package source not available (wheel/sdist test run)")
+
+    advanced = _advanced_kwargs() - _CONSOLE_KWARGS
+    violations: list[str] = []
+    for path in _source_module_files():
+        text = path.read_text(encoding="utf-8", errors="ignore")
+        rel = path.relative_to(REPO_ROOT)
+        for span in _call_argument_spans(text):
+            span = _strip_nested_option_calls(span)
+            for kwarg in _KWARG.findall(span):
+                if kwarg in advanced:
+                    violations.append(
+                        f"{rel}: advanced kwarg {kwarg}= passed directly "
+                        "(carry it via Options)"
+                    )
+    assert not violations, (
+        "source docstrings/code pass advanced-tier kwargs directly:\n"
+        + "\n".join(sorted(set(violations)))
     )

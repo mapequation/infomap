@@ -86,8 +86,12 @@ falls into one of three groups, with a sanctioned replacement:
 | Console flags -- `silent`, `verbose` | use logging: `infomap.enable_log()` for the engine log, and `infomap.enable_log(logging.DEBUG)` to raise its verbosity |
 
 The `options` carrier accepts an {class}`~infomap.Options` instance or a plain
-mapping; both are warning-free. Only bare keyword arguments typed directly on the
-call are flagged, so the common options (`seed`, `num_trials`, `two_level`,
+mapping, and is accepted on `Infomap()`, {meth}`Infomap.run`,
+{meth}`Network.run`, and {func}`infomap.run` alike — for example
+`im.run(options=Options(regularized=True))` gives the stateful builder the same
+warning-free path. A bare keyword argument set to a non-default value still
+overrides the carrier, and only bare keyword arguments typed directly on the call
+are flagged, so the common options (`seed`, `num_trials`, `two_level`,
 `directed`, `markov_time`) stay on the signature and are never deprecated.
 
 ## Removed accessors
