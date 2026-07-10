@@ -243,12 +243,11 @@ def run(
 
     Notes
     -----
-    The Python API is quiet by default (``silent=True``, here and on
-    :class:`Infomap`, :class:`Network`, and :class:`Options`). Pass
-    ``silent=False`` for the engine log — except for :class:`Network` input,
-    whose engine is silent for its whole lifetime (``silent=False`` warns
-    there; see :meth:`Network.run`). The ``infomap`` command-line interface
-    keeps its verbose default.
+    The Python API is quiet by default. To see the engine log, attach a
+    handler to the ``infomap`` logger with :func:`infomap.enable_log`
+    (``infomap.enable_log(logging.DEBUG)`` for more detail); the legacy
+    ``silent=`` keyword is pending-deprecated and leaves the signature in 3.0.
+    The ``infomap`` command-line interface keeps its verbose default.
 
     Advanced engine options passed as bare keyword arguments (for example a
     direct ``regularized=True``) are pending-deprecated on this signature and

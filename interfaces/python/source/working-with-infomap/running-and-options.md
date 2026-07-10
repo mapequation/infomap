@@ -363,7 +363,7 @@ the call still take precedence:
 ```{code-cell} python
 from infomap import Options
 
-options = Options(two_level=True, seed=123, num_trials=10, silent=True)
+options = Options(two_level=True, seed=123, num_trials=10)
 for name, graph in [("ring of cliques", G_ring), ("karate club", G_karate)]:
     result = infomap.run(graph, options=options)
     print(f"{name}: {result.num_top_modules} modules, L={result.codelength:.4f}")
@@ -420,7 +420,6 @@ common ones also accepted directly on {func}`infomap.run`:
 | `markov_time` | float | 1.0 | Resolution scale |
 | `regularized` | bool | False | Bayesian regularization for sparse data |
 | `regularization_strength` | float | 1.0 | How strongly to regularize |
-| `silent` | bool | True | Suppress console output (the Python API is quiet by default) |
 
 For the full set of options as a searchable table, see the
 {class}`~infomap.Options` reference in the {doc}`/api/index`.
