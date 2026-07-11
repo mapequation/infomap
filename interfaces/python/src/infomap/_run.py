@@ -26,6 +26,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
+    from ._options import Options
     from .result import Result
 
 
@@ -403,14 +404,14 @@ _UNSET: Any = _Unset()
 def run(
     input: Any,
     *,
-    options: Any = None,
+    options: "Options | Mapping[str, Any] | None" = None,
     seed: int = _UNSET,
     num_trials: int = _UNSET,
     two_level: bool = _UNSET,
     directed: bool | None = _UNSET,
     markov_time: float = _UNSET,
     args: str | None = None,
-    initial_partition: Any = None,
+    initial_partition: dict[Any, Any] | None = None,
     **overrides: Any,
 ) -> "Result":
     """Run Infomap on ``input`` and return a :class:`Result`.

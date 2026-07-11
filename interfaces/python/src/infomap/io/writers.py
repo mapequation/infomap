@@ -114,9 +114,9 @@ class _ResultWritersMixin(_WritersBase):
         self,
         filename: str | os.PathLike[str],
         states: bool = False,
-        depth_level: int = 1,
-        *,
         depth: int | None = None,
+        *,
+        depth_level: int | None = None,
     ) -> None:
         """Write result to a clu file.
 
@@ -133,19 +133,19 @@ class _ResultWritersMixin(_WritersBase):
         states : bool, optional
             If the state nodes should be included. Default ``False``.
         depth : int, optional
-            The depth in the hierarchical tree to write. This is the preferred
-            spelling, matching ``result.modules(depth=...)`` and
-            ``result.to_dataframe(depth=...)``; it overrides ``depth_level``
-            when given.
+            The depth in the hierarchical tree to write. Accepted positionally,
+            matching ``result.modules(depth=...)`` and
+            ``result.to_dataframe(depth=...)``. ``1`` (default) is the top
+            level, ``-1`` the bottom; it overrides ``depth_level`` when given.
         depth_level : int, optional
-            Legacy alias of ``depth`` (the historical ``write_clu`` keyword);
-            still accepted. ``1`` is the top level, ``-1`` the bottom.
+            Legacy keyword alias of ``depth`` (the historical ``write_clu``
+            keyword); still accepted.
         """
-        if depth is not None:
-            depth_level = depth
+        if depth is None:
+            depth = depth_level if depth_level is not None else 1
         core = self._writer_core()
         with _translate_engine_errors():
-            core.writeClu(os.fspath(filename), states, depth_level)
+            core.writeClu(os.fspath(filename), states, depth)
 
     def write_tree(
         self, filename: str | os.PathLike[str], states: bool = False
