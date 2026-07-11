@@ -155,10 +155,12 @@ filtering, grouping, and export. See {doc}`Reading the Result <working-with-info
 
 ### Why are `result.modules()` keys integers instead of my node labels?
 
-`infomap.run(graph)` maps your node labels to internal integer ids, so
+`infomap.run(graph)` maps non-integer node labels to internal integer ids, so
 `result.modules()` and `node.node_id` are keyed by those ids. The mapping is kept
-on `result.names` (`{internal_id: label}` for graph inputs) -- relabel with no
-rebuild:
+on `result.names` (`{internal_id: label}`). Note it is **empty when your labels
+are already integers** (contiguous or not) -- then the ids *are* your labels, so
+there is nothing to map. The `result.names.get(n, n)` idiom below therefore works
+either way (it falls back to the id when `names` has no entry):
 
 ```python
 named = {result.names.get(n, n): m for n, m in result.modules().items()}

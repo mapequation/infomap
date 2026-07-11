@@ -73,9 +73,11 @@ Quick start with Python:
 
 ``infomap.run`` accepts a NetworkX or igraph graph, a SciPy sparse matrix, a
 ``(2, E)`` edge index, a network file path, or an iterable of links, and returns
-an immutable ``Result``. If you only need a node-to-community mapping keyed by
-the original node labels, use
-``infomap.find_communities(graph, seed=123, num_trials=20)``.
+an immutable ``Result``. If you only need the communities in the graph's own
+node labels, use ``infomap.find_communities(graph, seed=123, num_trials=20)``,
+which returns a NetworkX-style ``list`` of ``set``\ s of node labels (its igraph
+counterpart ``infomap.find_igraph_communities`` returns an
+``igraph.VertexClustering``).
 
 For incremental construction and direct control over Infomap options and result
 access, build with the ``Infomap`` class and read the returned ``Result``:

@@ -457,8 +457,8 @@ logging.getLogger("infomap").setLevel(logging.INFO)
 ```
 
 {func}`~infomap.enable_log` (above) is the supported way to see the engine log;
-the `silent=` and `verbose=` keywords are pending-deprecated and leave the API
-in 3.0. One timing nuance if you route through logging: a stateful
+the `silent=` and `verbosity_level=` keywords are pending-deprecated and leave
+the API in 3.0. One timing nuance if you route through logging: a stateful
 {class}`~infomap.Infomap` bakes its silence in at construction, so configure
 logging *before* you build one (its runs warn otherwise), whereas the one-shot
 {func}`infomap.run` always respects the current configuration.

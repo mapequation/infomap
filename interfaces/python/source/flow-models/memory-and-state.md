@@ -299,7 +299,7 @@ a state network are:
 | `add_state_node(state_id, node_id)` | {meth}`infomap.Network.add_state_node` | Declare one state node (a context) on a physical node |
 | `add_state_nodes(state_nodes)` | {meth}`infomap.Network.add_state_nodes` | Declare many state nodes at once |
 | `directed` | {func}`infomap.run` | Follow link direction; a bare `Network` defaults to undirected flow, unlike the `DiGraph` route, which enables it automatically |
-| `states=True` | {meth}`infomap.Result.modules`, {meth}`infomap.Result.nodes` | Return state-node assignments; required on higher-order networks, where `states=False` raises |
+| `states=True` | {meth}`infomap.Result.modules`, {meth}`infomap.Result.nodes`, {meth}`infomap.Result.to_dataframe` | Return state-node assignments. On a higher-order network `modules(states=False)` raises (a physical node can belong to several modules, so its module id is ambiguous); `nodes`/`to_dataframe` with `states=False` instead return physical nodes and warn that `node_id` is not unique |
 
 ## API pointers
 
