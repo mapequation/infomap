@@ -395,3 +395,36 @@ def test_to_dataframe_deprecated_aliases_stay_silent(
         warnings.simplefilter("error", DeprecationWarning)
         result.to_dataframe(level=2)
         result.to_dataframe(depth_level=2)
+
+
+@pytest.mark.fast
+def test_result_repr_is_concise_text():
+    text = repr(_two_triangles().run())
+    assert text.startswith("Result(")
+    assert "codelength" in text
+
+
+@pytest.mark.fast
+def test_infomap_backed_result_renders_html_card():
+    html = _two_triangles().run()._repr_html_()
+    assert isinstance(html, str) and "infomap" in html.lower()
+
+
+@pytest.mark.fast
+def test_network_backed_result_html_declines_without_crashing():
+    import infomap
+
+    # datasets return a Network, so this Result is Network-backed; the rich card
+    # is engine-specific, so _repr_html_ declines (None) and the notebook falls
+    # back to the text repr instead of raising 'Network has no attribute summary'.
+    result = infomap.run(infomap.datasets.two_triangles(), seed=1)
+    assert result._repr_html_() is None
+    assert repr(result).startswith("Result(")
+
+
+@pytest.mark.fast
+def test_stale_result_html_declines():
+    im = _two_triangles()
+    first = im.run()
+    im.run()  # re-run makes `first` stale
+    assert first._repr_html_() is None
