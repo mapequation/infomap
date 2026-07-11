@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -586,6 +587,12 @@ def _links_array(graph: GraphRAGGraph):
 
 
 def _build_tables(im, graph: GraphRAGGraph):
+    # Accept a run Infomap instance or the Result it produced (the modern
+    # to_networkx/to_igraph input contract): _resolve_run_source unwraps a
+    # Result to its engine, generation-checked, and passes an Infomap through.
+    from ..io.export import _resolve_run_source
+
+    im = _resolve_run_source(im)
     _require_modules(im)
     nodes = _nodes_table(im, graph)
     communities = _communities_table(nodes, graph)
@@ -599,9 +606,12 @@ def write_graphrag_communities(
 
     Parameters
     ----------
-    im : Infomap
-        An :class:`~infomap.Infomap` instance that has been run on the links
-        of ``graph``.
+    im : Infomap or Result
+        A run :class:`~infomap.Infomap` instance, or the
+        :class:`~infomap.Result` it produced (e.g.
+        ``GraphRAGRunResult.result``), for the links of ``graph``. Passing the
+        ``Result`` matches the modern ``to_networkx`` / ``to_igraph`` contract
+        and avoids reaching back into the stateful instance.
     graph : GraphRAGGraph
         The graph returned by :func:`read_graphrag` for the same network.
     output : str or pathlib.Path
@@ -646,7 +656,7 @@ def run_graphrag_communities(
     weight_col: str = "weight",
     relationship_id_col: str = "id",
     endpoint_col: str = "title",
-    silent: bool = True,
+    silent: bool | None = None,
     seed: int = 123,
     num_trials: int = 5,
     **infomap_options: Any,
@@ -676,7 +686,10 @@ def run_graphrag_communities(
     weight_col, relationship_id_col, endpoint_col : str, optional
         Column names passed to :func:`read_graphrag`; see there for details.
     silent : bool, optional
-        Suppress Infomap console output. Default ``True``.
+        Deprecated and leaves in 3.0. The Infomap API is quiet by default, so
+        this is unnecessary; for the engine log call :func:`infomap.enable_log`
+        before running. Passing it explicitly emits a ``DeprecationWarning``
+        and is still honoured for backward compatibility.
     seed : int, optional
         Random number generator seed. Default ``123``.
     num_trials : int, optional
@@ -708,6 +721,14 @@ def run_graphrag_communities(
         raise ValueError(
             "run_graphrag_communities manages summary_json through output_dir."
         )
+    if silent is not None:
+        warnings.warn(
+            "silent= is deprecated on run_graphrag_communities and leaves in "
+            "3.0; the Infomap API is quiet by default. For the engine log, call "
+            "infomap.enable_log() before running.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
 
     input_path = Path(input_dir)
     graph = read_graphrag(
@@ -726,9 +747,10 @@ def run_graphrag_communities(
         paths["dir"].mkdir(parents=True, exist_ok=True)
         infomap_options["summary_json"] = str(paths["run"])
 
+    if silent is not None:
+        infomap_options["silent"] = silent
     im = Infomap(
         args=args,
-        silent=silent,
         seed=seed,
         num_trials=num_trials,
         **infomap_options,
