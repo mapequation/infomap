@@ -254,7 +254,10 @@ communities[["id", "level", "size", "entity_ids"]]
   `weight_col`, `endpoint_col` (`"title"` or `"id"`).
 - {func}`infomap.tl.graphrag.run_graphrag_communities` is the one-call pipeline: it
   reads tables, runs Infomap, and optionally writes outputs. It returns a
-  `GraphRAGRunResult` with `.infomap`, `.graph`, `.nodes`, and `.communities`.
+  `GraphRAGRunResult` with `.result`, `.infomap`, `.graph`, `.nodes`, and
+  `.communities`. Read run metrics such as `codelength` and the module counts off
+  `.result` (the immutable `Result`, e.g. `result.result.codelength`) rather than
+  the deprecated accessors on `.infomap`.
 - {func}`infomap.tl.graphrag.write_graphrag_communities` writes a pre-run Infomap
   result to disk as GraphRAG-compatible Parquet tables.
 - {class}`infomap.tl.graphrag.GraphRAGGraph` holds the entity/relationship tables,

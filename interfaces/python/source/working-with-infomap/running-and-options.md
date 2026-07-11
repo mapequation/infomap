@@ -453,41 +453,14 @@ logging.getLogger("infomap").addHandler(my_handler)
 logging.getLogger("infomap").setLevel(logging.INFO)
 ```
 
-`silent=` and `verbose=` are pending-deprecated and leave the API in 3.0;
-`enable_log()` is the forward path for the engine log. The `silent=` behavior
-described below is documented for existing code.
-
-How the routing behaves:
-
-- **Logging is the control.** With handlers attached, every engine run emits
-  records — no `silent=False` needed, and `silent=` is ignored for emission.
-  Tune volume with logger/handler levels (`logging.WARNING` silences the
-  engine's INFO lines); remove the handlers to go back to classic stdout
-  output gated by `silent=`.
-- **Levels map naturally.** Default lines arrive at `INFO`. A logger enabled
-  for `DEBUG` (`infomap.enable_log(logging.DEBUG)`) automatically raises the
-  engine verbosity to `-vv`, so its detail lines arrive at `DEBUG`.
-- **Only handlers attached directly to `logging.getLogger("infomap")` count.**
-  `logging.basicConfig(...)` alone does not reroute the engine log — without
-  an `"infomap"` handler, `silent=False` prints to stdout exactly as before.
-- **Configure logging before creating a stateful engine.** The engine bakes
-  its silence in at construction, so an {class}`~infomap.Infomap` created
-  *before* logging was configured cannot emit records (its runs warn to
-  explain why). The one-shot {func}`infomap.run` always respects the current
-  logging configuration.
-- **Routed output is plain lines.** The colors and the live progress line are
-  terminal features; log records get one clean line each.
-- **{class}`~infomap.Network` engines are silent for their whole lifetime**
-  (see {meth}`Network.run <infomap.Network.run>`), so records come from the
-  stateful {class}`~infomap.Infomap` and non-`Network` {func}`infomap.run`
-  inputs. The `infomap` command-line interface is unaffected.
-- **`silent` is fixed at construction for the stateful engine.** Because the
-  engine bakes silence in when the {class}`~infomap.Infomap` is built, passing
-  `silent=False` to {meth}`Infomap.run <infomap.Infomap.run>` on an instance
-  constructed silent (the default) cannot re-enable the classic stdout log —
-  construct with `silent=False`, or route the log through logging. The one-shot
-  {func}`infomap.run` builds a fresh engine per call, so its `silent=` takes
-  effect there.
+{func}`~infomap.enable_log` (above) is the supported way to see the engine log;
+the `silent=` and `verbose=` keywords are pending-deprecated and leave the API
+in 3.0. One timing nuance if you route through logging: a stateful
+{class}`~infomap.Infomap` bakes its silence in at construction, so configure
+logging *before* you build one (its runs warn otherwise), whereas the one-shot
+{func}`infomap.run` always respects the current configuration.
+{class}`~infomap.Network` engines stay silent for their whole lifetime (see
+{meth}`Network.run <infomap.Network.run>`).
 
 ## Going deeper
 

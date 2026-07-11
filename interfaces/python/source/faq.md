@@ -56,7 +56,12 @@ The Python API is quiet by default. Call `infomap.enable_log()` once to route th
 engine log through the standard `logging` module
 (`infomap.enable_log(logging.DEBUG)` for more detail), and `infomap.disable_log()`
 to stop. Prefer this over the legacy `silent` keyword, which is pending-deprecated
-and leaves the API in 3.0. See
+and leaves the API in 3.0. One caveat: `enable_log()` covers the `Infomap` class
+and `infomap.run(...)` on an edge list, graph, or file path, but a pre-built
+`Network` (including the bundled {mod}`infomap.datasets`) runs silently for its
+whole lifetime, so `enable_log()` does not capture its run (a `UserWarning` says
+as much) -- run through `Infomap(...)` or pass the raw input to `infomap.run` for
+those. See
 {doc}`Running Infomap and tuning options <working-with-infomap/running-and-options>`.
 
 ### What does `infomap.find_communities` return, and how does it differ from `infomap.run`?

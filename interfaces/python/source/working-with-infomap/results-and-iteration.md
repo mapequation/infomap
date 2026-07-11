@@ -103,8 +103,9 @@ lazily on first access and then cached. The surface follows one convention:
 
 A `Result` from an earlier run of a reused stateful {class}`~infomap.Infomap`
 raises if you read its node data after a later `run()`. The eagerly captured
-scalar properties stay readable (the lazily computed `effective_num_*`
-properties must have been read at least once before the re-run).
+scalar properties stay readable (the lazily computed `effective_num_top_modules`
+and `effective_num_leaf_modules` properties, and the `effective_num_modules(depth)`
+method, must have been read at least once before the re-run).
 
 ### Summary statistics
 
