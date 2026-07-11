@@ -7,8 +7,8 @@ Call :func:`infomap.run` on a network and read the immutable :class:`Result`::
     import infomap
 
     result = infomap.run(graph, seed=123, num_trials=20)
-    result.codelength        # scalar metrics are properties (no parentheses)
-    result.modules()         # collections are methods -> {node_id: module_id}
+    result.codelength        # metrics are properties (read without parentheses)
+    result.modules()         # call a method to slice -> {node_id: module_id}
     result.to_dataframe()    # per-node table: node_id, module_id, flow, path, name
     result.summary()         # {metric: value} scalar row, one per run for a sweep table
 

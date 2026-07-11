@@ -68,7 +68,8 @@ fig  # rendered inline
 
 {Flow-model chapters: a table of the options this model adds, each row linking
 the option to {func}\`infomap.run\` or {class}\`infomap.Network\`. How-to and
-workflow chapters: end instead with a "## Pitfalls" section.}
+workflow chapters: end with a short "## Pitfalls" section only when the chapter
+has concrete gotchas worth flagging -- it is optional, not required.}
 
 ## API pointers
 

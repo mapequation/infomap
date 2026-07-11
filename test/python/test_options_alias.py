@@ -26,6 +26,27 @@ def test_options_is_frozen():
 
 
 @pytest.mark.fast
+def test_options_replace_returns_tweaked_copy_without_mutating():
+    base = Options(num_trials=20, seed=123)
+    tweaked = base.replace(num_trials=5)
+    assert tweaked.num_trials == 5
+    assert tweaked.seed == 123  # carried over
+    assert base.num_trials == 20  # base unchanged
+    assert tweaked is not base
+
+
+@pytest.mark.fast
+def test_options_replace_validates_like_construction():
+    base = Options(num_trials=20)
+    # Unknown field -> the same "did you mean" TypeError as Options(...).
+    with pytest.raises(TypeError, match="did you mean 'num_trials'"):
+        base.replace(num_trial=5)
+    # Out-of-range value -> the same ValueError as Options(...).
+    with pytest.raises(ValueError, match="out of range"):
+        base.replace(seed=0)
+
+
+@pytest.mark.fast
 def test_options_exported_in_package_all():
     assert "Options" in infomap.__all__
     assert "InfomapOptions" in infomap.__all__
