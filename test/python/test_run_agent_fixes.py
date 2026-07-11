@@ -19,8 +19,7 @@ import warnings
 import networkx as nx
 import pytest
 
-import infomap
-from infomap import Infomap, Network, Options, run
+from infomap import Network, Options, find_communities, run
 from infomap.result import Result
 
 pytestmark = pytest.mark.fast
@@ -37,7 +36,7 @@ def test_run_rejects_dense_adjacency_matrix():
     # (num_nodes=2), silently partitioning a different graph.
     A = np.array([[0, 1, 1], [1, 0, 1], [1, 1, 0]])
     with pytest.raises(TypeError, match="dense adjacency matrix"):
-        infomap.run(A, seed=1)
+        run(A, seed=1)
 
 
 def test_run_rejects_larger_dense_matrix_with_matrix_hint():
@@ -45,7 +44,7 @@ def test_run_rejects_larger_dense_matrix_with_matrix_hint():
     A = np.ones((4, 4), dtype=int)
     np.fill_diagonal(A, 0)
     with pytest.raises(TypeError, match="dense adjacency matrix"):
-        infomap.run(A, seed=1)
+        run(A, seed=1)
 
 
 def test_run_still_reads_non_square_float_link_matrix_as_links():
@@ -53,13 +52,13 @@ def test_run_still_reads_non_square_float_link_matrix_as_links():
     # (2, 3) float link matrix: not square, so the guard leaves it alone and it
     # is read as (source, target, weight) rows.
     links = np.array([[1, 2, 1.5], [2, 3, 2.0]])
-    assert isinstance(infomap.run(links, seed=1, num_trials=1), Result)
+    assert isinstance(run(links, seed=1, num_trials=1), Result)
 
 
 def test_run_still_reads_integer_edge_index():
     np = pytest.importorskip("numpy")
     edge_index = np.array([[0, 1, 2, 3], [1, 2, 3, 0]])
-    assert isinstance(infomap.run(edge_index, seed=1, num_trials=1), Result)
+    assert isinstance(run(edge_index, seed=1, num_trials=1), Result)
 
 
 def test_run_2x2_matrix_is_not_flagged_int_or_float():
@@ -67,9 +66,9 @@ def test_run_2x2_matrix_is_not_flagged_int_or_float():
     # A 2x2 is too degenerate to tell an adjacency matrix from a (2, E) edge
     # index / two link rows, so the guard (N >= 3) leaves it alone: the integer
     # case routes as an edge index, the float case as two link rows. Both run.
-    assert isinstance(infomap.run(np.array([[0, 1], [1, 0]]), seed=1), Result)
+    assert isinstance(run(np.array([[0, 1], [1, 0]]), seed=1), Result)
     assert isinstance(
-        infomap.run(np.array([[0.0, 1.0], [1.0, 0.0]]), seed=1, num_trials=1),
+        run(np.array([[0.0, 1.0], [1.0, 0.0]]), seed=1, num_trials=1),
         Result,
     )
 
@@ -79,19 +78,19 @@ def test_run_2x2_matrix_is_not_flagged_int_or_float():
 
 def test_run_rejects_adapter_kwarg_on_link_iterable():
     with pytest.raises(TypeError, match="link-iterable or file input"):
-        infomap.run(_LINKS, weight="w", seed=1)
+        run(_LINKS, weight="w", seed=1)
 
 
 def test_run_link_iterable_weight_hint_points_at_tuples():
     with pytest.raises(TypeError, match="inside the tuples"):
-        infomap.run(_LINKS, edge_weight=[1.0], seed=1)
+        run(_LINKS, edge_weight=[1.0], seed=1)
 
 
 def test_run_still_allows_directed_on_link_iterable():
     # `directed` is a legitimate common-tier engine flag, not an adapter kwarg,
     # so the iterable guard must not reject it.
     assert isinstance(
-        infomap.run(_LINKS, directed=True, seed=1, num_trials=1), Result
+        run(_LINKS, directed=True, seed=1, num_trials=1), Result
     )
 
 
@@ -106,10 +105,10 @@ def test_run_graph_initial_partition_accepts_string_labels():
     labelled = {"a": 0, "b": 0, "c": 0, "d": 1, "e": 1, "f": 1}
     # Used to raise "must map integer node/state ids": run() now translates
     # labels to internal ids the way find_communities does.
-    result = infomap.run(graph, seed=1, num_trials=1, initial_partition=labelled)
+    result = run(graph, seed=1, num_trials=1, initial_partition=labelled)
     assert isinstance(result, Result)
     # find_communities accepts the same label-keyed partition.
-    communities = infomap.find_communities(
+    communities = find_communities(
         graph, seed=1, initial_partition=labelled
     )
     assert communities
@@ -117,7 +116,7 @@ def test_run_graph_initial_partition_accepts_string_labels():
 
 def test_run_integer_labelled_graph_initial_partition_unaffected():
     graph = nx.Graph([(0, 1), (1, 2), (2, 0), (3, 4), (4, 5), (5, 3), (2, 3)])
-    result = infomap.run(
+    result = run(
         graph, seed=1, num_trials=1, initial_partition={0: 0, 1: 0, 2: 0}
     )
     assert isinstance(result, Result)
@@ -190,7 +189,7 @@ def test_run_invalid_flow_model_is_value_error_not_parse_error():
     # Reaches the Options choice validator before the engine, so it is a clean
     # ValueError, not the engine's misleading NetworkParseError.
     with pytest.raises(ValueError, match="choose one of"):
-        infomap.run(_LINKS, options=Options(flow_model="bogus"), seed=1)
+        run(_LINKS, options=Options(flow_model="bogus"), seed=1)
 
 
 # -- inert removed console options warn instead of silently no-op -------------
@@ -203,21 +202,21 @@ def _user_warnings(records):
 def test_verbosity_level_via_options_warns():
     with warnings.catch_warnings(record=True) as records:
         warnings.simplefilter("always")
-        infomap.run(_LINKS, seed=1, options=Options(verbosity_level=3))
+        run(_LINKS, seed=1, options=Options(verbosity_level=3))
     assert any("no effect" in str(r.message) for r in _user_warnings(records))
 
 
 def test_print_config_fingerprint_via_options_warns():
     with warnings.catch_warnings(record=True) as records:
         warnings.simplefilter("always")
-        infomap.run(_LINKS, seed=1, options=Options(print_config_fingerprint=True))
+        run(_LINKS, seed=1, options=Options(print_config_fingerprint=True))
     assert any("no effect" in str(r.message) for r in _user_warnings(records))
 
 
 def test_default_console_options_do_not_warn():
     with warnings.catch_warnings(record=True) as records:
         warnings.simplefilter("always")
-        infomap.run(_LINKS, seed=1, options=Options(verbosity_level=1))
+        run(_LINKS, seed=1, options=Options(verbosity_level=1))
     assert not any(
         "no effect" in str(r.message) for r in _user_warnings(records)
     )
