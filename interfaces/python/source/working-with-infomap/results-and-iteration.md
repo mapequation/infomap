@@ -97,20 +97,21 @@ A {class}`~infomap.Result` is an immutable snapshot of one run. `run()` captures
 the scalar metrics when it returns. Node-level collections are materialised
 lazily on first access and then cached. The surface follows one convention:
 
-- **Scalars are properties**: `result.codelength`, `result.num_top_modules`.
-- **Collections are methods, with defaults**: `result.modules(depth=1)`,
-  `result.nodes()`, `result.to_dataframe()`.
-- **Exception — the label lookup tables** `result.names` and `result.state_names`
-  are `{node_id: name}` **properties**, read *without* parentheses (calling
-  `result.names()` raises a `TypeError` reminding you it is a property, to be read
-  without parentheses). They map a node id to its name, so they read as
-  attributes, not computed collections.
-- **Exception — two more worth memorizing**: the per-trial `result.codelengths`
-  is also a collection-valued **property** (a tuple; calling `result.codelengths()`
-  raises the same property-not-a-method `TypeError`), and
-  `result.effective_num_modules(depth)` is the one scalar read as a **method**
-  because it takes a depth — unlike its property-shaped siblings
-  `result.effective_num_top_modules` and `result.effective_num_leaf_modules`.
+- **Read intrinsic results as properties** — the scalar metrics
+  (`result.codelength`, `result.num_top_modules`) and the fixed label and
+  per-trial tables (`result.names`, `result.state_names`, `result.codelengths`).
+  There is nothing to choose, so you read them like attributes, without
+  parentheses.
+- **Call a method to slice, walk, or convert the partition** — either you pass a
+  view (`result.modules(depth=1)`, `result.nodes(states=True)`,
+  `result.effective_num_modules(depth)`) or you ask for a built structure
+  (`result.summary()`, `result.to_dataframe()`). The two canonical depths of
+  `effective_num_modules` are also exposed as the
+  `result.effective_num_top_modules` / `result.effective_num_leaf_modules`
+  properties.
+
+Reading a property like `result.names()` with parentheses raises a `TypeError`
+that points you to drop them.
 
 A `Result` from an earlier run of a reused stateful {class}`~infomap.Infomap`
 raises if you read its node data after a later `run()`. The eagerly captured

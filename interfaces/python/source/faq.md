@@ -30,18 +30,20 @@ edge list, `infomap.run(g, directed=True)` works directly. See
 
 ### Why does `result.codelength()` raise `TypeError: 'float' object is not callable`?
 
-On a `Result`, scalar metrics are **properties** and collections are
-**methods**: read `result.codelength` and `result.num_top_modules` *without*
-parentheses, and call `result.modules()`, `result.nodes()`, `result.tree()`, and
-`result.to_dataframe()` *with* them. (On the stateful `Infomap` instance those
-same names are properties -- another reason to read results off the returned
-`Result`, not the instance.) See
+On a `Result`, the run's intrinsic results are **properties** and anything that
+slices or converts the partition is a **method**: read `result.codelength` and
+`result.num_top_modules` *without* parentheses, and call `result.modules()`,
+`result.nodes()`, `result.tree()`, and `result.to_dataframe()` *with* them. The
+label and per-trial tables (`result.names`, `result.state_names`,
+`result.codelengths`) are intrinsic too, so they are properties. (On the
+stateful `Infomap` instance those same names are properties -- another reason to
+read results off the returned `Result`, not the instance.) See
 {doc}`Reading the Result <working-with-infomap/results-and-iteration>`.
 
 ### Why does `result.modules` give a bound method, or `result.modules().items` fail?
 
-Collections are **methods** -- call `result.modules()`, not `result.modules`.
-Accessing it without parentheses returns the method object, so
+Slicing the partition is a **method** -- call `result.modules()`, not
+`result.modules`. Accessing it without parentheses returns the method object, so
 `result.modules.items()` raises `AttributeError: 'function' object has no
 attribute 'items'`. And `result.modules()` returns a `{node_id: module_id}`
 dict: iterate `result.modules().items()`. Code ported from the stateful

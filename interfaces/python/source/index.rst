@@ -87,10 +87,10 @@ Where to go
       :link: faq
       :link-type: doc
 
-      Hit an error, or porting older code? Answers to the Python API traps --
-      scalars-are-properties vs collections-are-methods, ``directed=`` on a
-      matrix, writing ``.tree``/``.clu`` files -- plus the stateful-class
-      migration guide in :doc:`the-infomap-class`.
+      Hit an error, or porting older code? Answers on reading results
+      (properties vs methods), ``directed=`` on a matrix, and writing
+      ``.tree``/``.clu`` files -- plus the stateful-class migration guide in
+      :doc:`the-infomap-class`.
 
 External resources
 ------------------

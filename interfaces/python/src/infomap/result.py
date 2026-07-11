@@ -22,15 +22,16 @@ destroyed and rebuilt on every ``run()``, so reading node-level data from a
 ``Result`` whose ``Infomap`` has re-run since raises :class:`StaleResultError`
 instead of touching freed memory.
 
-Surface conventions: scalars are properties (``result.codelength``), collections
-are methods with defaults (``result.modules(depth=1, states=False)``). Two sets
-buck that rule and are worth memorizing: the label lookup tables ``names`` /
-``state_names`` and the per-trial ``codelengths`` are collection-valued
-*properties* (read without parentheses -- ``result.names``, not
-``result.names()``), while ``effective_num_modules(depth)`` is a scalar read as
-a *method* because it takes a depth (unlike ``effective_num_top_modules`` /
-``effective_num_leaf_modules``, which are properties). Output is byte-identical
-to the legacy ``Infomap`` accessors (parity is a gate).
+Surface conventions: read the run's intrinsic results as **properties** -- the
+scalar metrics (``result.codelength``) and the fixed label / per-trial tables
+(``result.names``, ``result.state_names``, ``result.codelengths``). Call a
+**method** to slice, walk, or convert the partition: either you pass a view
+(``result.modules(depth=1)``, ``result.nodes(states=True)``,
+``result.effective_num_modules(depth)``) or you ask for a built structure
+(``result.summary()``, ``result.to_dataframe()``). The two canonical depths of
+``effective_num_modules`` are also exposed as the ``effective_num_top_modules``
+/ ``effective_num_leaf_modules`` properties. Output is byte-identical to the
+legacy ``Infomap`` accessors (parity is a gate).
 """
 
 from __future__ import annotations
@@ -78,18 +79,19 @@ _LEGACY_ACCESSOR_HINTS = {
 def _property_not_callable() -> TypeError:
     return TypeError(
         "this is a property on Result, not a method -- read it without "
-        "parentheses (e.g. result.names, not result.names()). Most Result "
-        "collections are methods, but names, state_names and codelengths are "
-        "the property-valued exceptions."
+        "parentheses (e.g. result.names, not result.names()). Metrics and the "
+        "label/per-trial tables (names, state_names, codelengths) are read as "
+        "properties; the methods are the ones that slice or convert the "
+        "partition (modules(), nodes(), to_dataframe())."
     )
 
 
-# names / state_names / codelengths are the property-valued exceptions to
-# "collections are methods". An agent applying that rule writes
+# names / state_names / codelengths are intrinsic tables read as properties,
+# not methods. Someone who expects every collection to be a method writes
 # ``result.names()`` and would otherwise hit a bare ``TypeError: 'dict' object
 # is not callable`` with no pointer. Returning them as thin dict/tuple
-# subclasses whose __call__ explains the property-vs-method flip turns that
-# dead-end into an actionable message, while behaving exactly like the
+# subclasses whose __call__ explains the property-vs-method distinction turns
+# that dead-end into an actionable message, while behaving exactly like the
 # underlying dict/tuple for every other operation (equality by content,
 # indexing, len, iteration, ``isinstance(x, dict)``). They add no state, so
 # equality stays value-based (two equal-valued views compare equal regardless

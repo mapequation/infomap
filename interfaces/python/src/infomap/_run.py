@@ -150,7 +150,7 @@ def _warn_inert_output_options(options: Any, args: Any) -> None:
     # Console/diagnostic options classified 'remove' are also inert on the
     # library surface (the API is quiet by default; logging is the control),
     # but -- unlike the args-only flags above -- they used to warn about
-    # nothing, so an agent setting them via Options got no feedback and no
+    # nothing, so setting them via Options gave no feedback and no
     # effect. Point at the real control using each option's catalog
     # replacement text. ``silent`` is handled by the dedicated, context-aware
     # advisories on the Infomap/Network paths, so it is intentionally omitted.

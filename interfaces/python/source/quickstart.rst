@@ -19,36 +19,14 @@ The whole surface at a glance (each line is expanded below):
     # file path, iterable of (u, v[, w]) links, or a prebuilt Network
     result = infomap.run(graph, seed=123, num_trials=20)
 
-    result.codelength              # scalar metrics are PROPERTIES (no parentheses)
+    result.codelength              # metrics are properties (read without parentheses)
     result.num_top_modules
-    result.modules()               # collections are METHODS -> {node_id: module_id}
+    result.modules()               # call a method to slice -> {node_id: module_id}
     result.to_dataframe()          # per-node table: node_id, module_id, flow, path, name
     result.write_clu("out.clu")    # write .clu/.tree/.ftree from the Result
 
     # advanced engine options ride Options, not bare keywords:
     infomap.run(graph, options=Options(regularized=True, flow_model="directed"))
-
-Common pitfalls, each answered in the :doc:`FAQ <faq>`:
-
-- **Scalars are properties, collections are methods.** ``result.codelength``
-  (no ``()``) but ``result.modules()`` (with ``()``); the exceptions are
-  ``result.names`` / ``state_names`` / ``codelengths`` (properties).
-- **Only five options are direct keywords** on :func:`infomap.run`: ``seed``,
-  ``num_trials``, ``two_level``, ``directed``, ``markov_time``. Carry every other
-  engine option via :class:`~infomap.Options` (see :doc:`/api/deprecations`).
-  (``options`` and ``initial_partition`` are structural arguments to ``run``, not
-  engine options, so they are keywords too but are not part of "the five".)
-- **Output flags are inert on the library surface.** ``Options(tree=True)``
-  writes nothing; write from the ``Result`` (``write_tree`` / ``write_clu``) or
-  the ``Network`` (``write_pajek``).
-- **A matrix or edge index is not a graph.** ``infomap.run(A, directed=True)``
-  raises; build it with ``Network.from_scipy_sparse_matrix(A, directed=True)``.
-  (A *dense* adjacency matrix is not a supported input either -- convert it with
-  ``scipy.sparse.csr_matrix(A)``.)
-- **Result keys are internal ids, not graph labels.** For a graph with
-  non-integer labels, ``result.modules()`` keys are Infomap's internal ids;
-  recover labels with ``result.names.get(nid, nid)``, the ``name`` column of
-  ``to_dataframe()``, or ``infomap.find_communities`` (keyed by labels).
 
 Run on a graph
 --------------
@@ -164,6 +142,32 @@ Existing code that builds an :class:`infomap.Infomap` instance, calls ``add_*``,
 and then ``run()`` keeps working unchanged: ``run()`` now returns the same
 :class:`~infomap.Result`. For when to choose each entry point and the full
 migration guide, see :doc:`the-infomap-class`.
+
+Good to know
+------------
+
+A few conventions that trip people up, each expanded in the :doc:`FAQ <faq>`:
+
+- **Metrics are properties; slicing or converting are methods.**
+  ``result.codelength`` (no ``()``) but ``result.modules()`` (with ``()``). The
+  label and per-trial tables (``result.names`` / ``state_names`` /
+  ``codelengths``) are intrinsic results, so they read as properties too.
+- **Only five options are direct keywords** on :func:`infomap.run`: ``seed``,
+  ``num_trials``, ``two_level``, ``directed``, ``markov_time``. Carry every other
+  engine option via :class:`~infomap.Options` (see :doc:`/api/deprecations`).
+  (``options`` and ``initial_partition`` are structural arguments to ``run``, not
+  engine options, so they are keywords too but are not part of "the five".)
+- **Output flags are inert on the library surface.** ``Options(tree=True)``
+  writes nothing; write from the ``Result`` (``write_tree`` / ``write_clu``) or
+  the ``Network`` (``write_pajek``).
+- **A matrix or edge index is not a graph.** ``infomap.run(A, directed=True)``
+  raises; build it with ``Network.from_scipy_sparse_matrix(A, directed=True)``.
+  (A *dense* adjacency matrix is not a supported input either -- convert it with
+  ``scipy.sparse.csr_matrix(A)``.)
+- **Result keys are internal ids, not graph labels.** For a graph with
+  non-integer labels, ``result.modules()`` keys are Infomap's internal ids;
+  recover labels with ``result.names.get(nid, nid)``, the ``name`` column of
+  ``to_dataframe()``, or ``infomap.find_communities`` (keyed by labels).
 
 Next steps
 ----------
