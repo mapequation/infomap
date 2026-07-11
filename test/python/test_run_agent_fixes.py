@@ -62,6 +62,18 @@ def test_run_still_reads_integer_edge_index():
     assert isinstance(infomap.run(edge_index, seed=1, num_trials=1), Result)
 
 
+def test_run_2x2_matrix_is_not_flagged_int_or_float():
+    np = pytest.importorskip("numpy")
+    # A 2x2 is too degenerate to tell an adjacency matrix from a (2, E) edge
+    # index / two link rows, so the guard (N >= 3) leaves it alone: the integer
+    # case routes as an edge index, the float case as two link rows. Both run.
+    assert isinstance(infomap.run(np.array([[0, 1], [1, 0]]), seed=1), Result)
+    assert isinstance(
+        infomap.run(np.array([[0.0, 1.0], [1.0, 0.0]]), seed=1, num_trials=1),
+        Result,
+    )
+
+
 # -- adapter kwargs on a link iterable point at Network.from_* ----------------
 
 
