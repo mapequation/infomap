@@ -2,8 +2,6 @@
 
 All notable changes to this project will be documented in this file. Releases are automated with [release-please](https://github.com/googleapis/release-please), using [Conventional Commits](https://www.conventionalcommits.org) to determine version bumps and changelog entries.
 
-> **Deprecations & the 3.0 transition.** Infomap 3.0 is a cross-surface API and parameter cleanup ([#737](https://github.com/mapequation/infomap/issues/737)). In the Python API the advanced-tier keyword arguments are deprecated on the `Infomap()` / `infomap.run()` signatures and move to the `Options` object; output-file flags move to the `Result` / `Network` writers; and `silent` / `verbosity_level` give way to logging. Nothing is removed before 3.0. The authoritative, always-current references are the [deprecation policy](https://mapequation.org/infomap-python-docs/api/deprecations.html), the cross-surface [parameter policy matrix](interfaces/parameters/policy.md), and the machine-readable [`parameters.json`](interfaces/parameters/parameters.json) (per-option type, default, range, choices, and per-surface action). These are not duplicated per release below.
-
 ## [2.14.0](https://github.com/mapequation/infomap/compare/v2.13.0...v2.14.0) (2026-06-30)
 
 
