@@ -35,6 +35,7 @@ to the legacy ``Infomap`` accessors (parity is a gate).
 
 from __future__ import annotations
 
+import warnings
 from collections.abc import Iterator, Sequence
 from typing import TYPE_CHECKING, Any
 
@@ -72,6 +73,45 @@ _LEGACY_ACCESSOR_HINTS = {
     "physical_tree": "result.tree()",
     "physical_nodes": "result.nodes(states=False)",
 }
+
+
+def _property_not_callable(attr: str) -> TypeError:
+    return TypeError(
+        f"'{attr}' is a property on Result, not a method -- read it without "
+        f"parentheses (result.{attr}, not result.{attr}()). Most Result "
+        f"collections are methods, but names/state_names/codelengths are the "
+        f"property-valued exceptions."
+    )
+
+
+# names / state_names / codelengths are the property-valued exceptions to
+# "collections are methods". An agent applying that rule writes
+# ``result.names()`` and would otherwise hit a bare ``TypeError: 'dict' object
+# is not callable`` with no pointer. Returning them as thin dict/tuple
+# subclasses whose __call__ explains the property-vs-method flip turns that
+# dead-end into an actionable message, while behaving exactly like the
+# underlying dict/tuple for every other operation (equality, indexing, len,
+# iteration, ``isinstance(x, dict)``).
+class _PropertyDict(dict):
+    """A dict that flags the property-vs-method trap when called like a method."""
+
+    __slots__ = ("_attr",)
+
+    def __init__(self, mapping, attr: str):
+        super().__init__(mapping)
+        self._attr = attr
+
+    def __call__(self, *args, **kwargs):
+        raise _property_not_callable(self._attr)
+
+
+class _PropertyTuple(tuple):
+    """A tuple that flags the property-vs-method trap when called like a method."""
+
+    __slots__ = ()
+
+    def __call__(self, *args, **kwargs):
+        raise _property_not_callable("codelengths")
 
 # Also accept the camelCase SWIG-style spellings (``result.getModules()``) a caller
 # may carry over from the low-level C++ core API, mapping each to the same Result
@@ -623,8 +663,11 @@ class Result(_ResultWritersMixin):
 
     @property
     def codelengths(self) -> tuple:
-        """The total (hierarchical) codelength for each trial."""
-        return self._codelengths
+        """The total (hierarchical) codelength for each trial.
+
+        A property (read without parentheses); calling it raises with a hint.
+        """
+        return _PropertyTuple(self._codelengths)
 
     @property
     def elapsed_time(self) -> float:
@@ -641,7 +684,9 @@ class Result(_ResultWritersMixin):
         """The flow-weighted effective number of top modules.
 
         Measured as the perplexity of the top-module flow distribution.
-        Computed lazily on first access (see :meth:`effective_num_modules`).
+        Unlike the eager scalar properties, this is computed lazily on first
+        access (see :meth:`effective_num_modules`), so it can raise
+        :class:`StaleResultError` if the ``Infomap`` has re-run since.
         """
         return self._effective_num_modules_cached(1)
 
@@ -650,7 +695,9 @@ class Result(_ResultWritersMixin):
         """The flow-weighted effective number of leaf modules.
 
         Measured as the perplexity of the leaf-module flow distribution.
-        Computed lazily on first access (see :meth:`effective_num_modules`).
+        Unlike the eager scalar properties, this is computed lazily on first
+        access (see :meth:`effective_num_modules`), so it can raise
+        :class:`StaleResultError` if the ``Infomap`` has re-run since.
         """
         return self._effective_num_modules_cached(-1)
 
@@ -663,9 +710,16 @@ class Result(_ResultWritersMixin):
     def names(self) -> dict[int, str]:
         """All node names, as ``{node_id: name}``.
 
-        Returns a copy; mutating it does not affect the :class:`Result`.
+        Maps each internal ``node_id`` to the label of the input node. It is
+        populated only when the input labels are not already the integer ids --
+        for a graph whose nodes are integers (contiguous or not) the ids *are*
+        the labels, so this is **empty** and ``modules()`` is keyed by those
+        integers directly. The ``result.names.get(nid, nid)`` idiom therefore
+        recovers labels for both cases. A property (read without parentheses);
+        calling it raises with a hint. Returns a copy; mutating it does not
+        affect the :class:`Result`.
         """
-        return dict(self._names)
+        return _PropertyDict(self._names, "names")
 
     @property
     def state_names(self) -> dict[int, str]:
@@ -675,11 +729,29 @@ class Result(_ResultWritersMixin):
 
         Populated for higher-order (state/memory) networks whose ``*States``
         section names the state nodes; empty otherwise. Physical node names are
-        available separately via :attr:`names`.
+        available separately via :attr:`names`. A property (read without
+        parentheses); calling it raises with a hint.
         """
-        return dict(self._state_names)
+        return _PropertyDict(self._state_names, "state_names")
 
     # -- collection accessors (§9: methods with defaults) -------------------
+
+    def _warn_higher_order_physical(self, states: bool) -> None:
+        # nodes()/to_dataframe() default to states=False. On a higher-order
+        # (multilayer/memory) network a physical node can belong to several
+        # modules, so node_id is not unique and rows repeat -- unlike modules(),
+        # which raises here because a dict cannot hold the duplicate key. Warn so
+        # a silent df.set_index("node_id") / dict(zip(...)) collapse is caught.
+        if self._have_memory and not states:
+            warnings.warn(
+                "reading physical nodes (states=False) on a higher-order "
+                "(multilayer/memory) network: node_id is not unique here (a "
+                "physical node can appear in several modules), so rows may "
+                "repeat and indexing by node_id silently collapses them. Pass "
+                "states=True to read state nodes.",
+                UserWarning,
+                stacklevel=3,
+            )
 
     def modules(self, depth: int = 1, *, states: bool = False) -> dict[int, int]:
         """Map ``node_id`` (or ``state_id`` when ``states``) to ``module_id``.
@@ -742,6 +814,7 @@ class Result(_ResultWritersMixin):
         TreeNode
             An immutable snapshot view per leaf node.
         """
+        self._warn_higher_order_physical(states)
         snapshot = self._snapshot(depth, states)
         names = self._names
         state_names = self._state_names
@@ -904,14 +977,17 @@ class Result(_ResultWritersMixin):
         (``num_top_modules``, ``num_levels``); it is the shape to collect into a
         sweep table.
 
-        Only the eagerly captured O(1) scalars are included, so ``summary`` is
-        cheap and stays valid for the life of the ``Result``: it never walks
-        the tree and never raises :class:`~infomap.StaleResultError`, even
-        after the bound engine has re-run. The tree-derived ``effective_num_*``
-        metrics and the per-trial :attr:`codelengths` are intentionally left
-        out (read them off their properties when needed), as is the metadata
-        codelength -- add ``result.meta_codelength`` yourself for a metadata
-        run.
+        A curated set of the eagerly captured O(1) scalars is included, so
+        ``summary`` is cheap and stays valid for the life of the ``Result``: it
+        never walks the tree and never raises
+        :class:`~infomap.StaleResultError`, even after the bound engine has
+        re-run. The tree-derived ``effective_num_*`` metrics and the per-trial
+        :attr:`codelengths` are intentionally left out (read them off their
+        properties when needed). A few eager scalars are also omitted to keep
+        the row focused on the common case -- add them yourself when a sweep
+        needs them: ``meta_codelength`` / ``meta_entropy`` (metadata runs),
+        ``num_physical_nodes`` and ``have_memory`` (higher-order networks), and
+        ``max_depth``.
 
         Returns
         -------
@@ -1070,6 +1146,7 @@ class Result(_ResultWritersMixin):
             for column in requested_columns
         ]
 
+        self._warn_higher_order_physical(states)
         snapshot = self._snapshot(resolved_depth, states)
         names = self._names
 

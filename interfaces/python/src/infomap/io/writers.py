@@ -263,6 +263,30 @@ class _NetworkWritersMixin(_WritersBase):
 
     __slots__ = ()
 
+    @staticmethod
+    def _no_partition_writer(name: str) -> NotImplementedError:
+        # A Network holds only input; the partition artifacts come from a run.
+        # These stubs turn a bare AttributeError into a pointer. They live on
+        # the Network-only mixin; Infomap resolves the real writers first via
+        # MRO (_ResultWritersMixin precedes _NetworkWritersMixin), so it keeps
+        # its full historical writer set.
+        return NotImplementedError(
+            f"a Network serializes the input, not a partition, so it has no "
+            f"{name}(). Run it and write from the Result -- e.g. "
+            f"result = infomap.run(network); result.{name}(path). The Network "
+            f"itself writes the input via write_pajek(...) / "
+            f"write_state_network(...)."
+        )
+
+    def write_tree(self, *args, **kwargs):
+        raise self._no_partition_writer("write_tree")
+
+    def write_flow_tree(self, *args, **kwargs):
+        raise self._no_partition_writer("write_flow_tree")
+
+    def write_clu(self, *args, **kwargs):
+        raise self._no_partition_writer("write_clu")
+
     def write_state_network(self, filename: str | os.PathLike[str]) -> None:
         """Write internal state network to file.
 

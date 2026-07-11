@@ -54,6 +54,46 @@ def _resolve_options(options: Any, overrides: dict) -> dict:
     return resolved
 
 
+def _reject_unknown_options(resolved: dict) -> None:
+    """Reject unknown option keys with an actionable error.
+
+    Without this, an unknown keyword (a typo, or a CLI spelling such as
+    ``verbose`` for ``verbosity_level``) reaches the ``Options`` / ``Infomap``
+    constructors deep in dispatch and surfaces as a confusing
+    ``Options.__init__() got an unexpected keyword argument`` that leaks an
+    internal and offers no correction. Catch it up front, name the offending
+    key, suggest the nearest valid option, and point at the parameter reference.
+    """
+    from ._options import _OPTION_FIELD_NAMES
+
+    # Adapter kwargs (weight, meta_attribute, edge_weight, ...) are not engine
+    # options, but they are legitimate keywords that the per-input
+    # _reject_adapter_kwargs() rejects downstream with an input-specific
+    # message ("... use Network.from_networkx(..., weight=...)"). Let them pass
+    # here so that better-targeted error wins; only genuinely-unknown keys
+    # (typos, CLI spellings like ``verbose``) are caught below.
+    adapter_kwargs = set().union(*(kwargs for _, kwargs in _ADAPTER_KWARGS.values()))
+    allowed = set(_OPTION_FIELD_NAMES) | {"pretty"} | adapter_kwargs
+    unknown = [key for key in resolved if key not in allowed]
+    if not unknown:
+        return
+
+    import difflib
+
+    rendered = []
+    for key in unknown:
+        near = difflib.get_close_matches(key, allowed, n=1)
+        rendered.append(f"{key!r}" + (f" (did you mean {near[0]!r}?)" if near else ""))
+    raise TypeError(
+        "infomap.run() got unknown option(s): "
+        + ", ".join(rendered)
+        + ". Only seed, num_trials, two_level, directed and markov_time are "
+        "direct keyword options; carry any other engine option via "
+        "options=Options(...). See inspect.getdoc(infomap.Options) for the "
+        "full list of option names."
+    )
+
+
 # Args-only output options that nonetheless shape what the Result/Network
 # writers emit on the library surface, so they must NOT trigger the inert
 # warning below. ``hide_bipartite_nodes`` projects the secondary node type out
@@ -386,6 +426,7 @@ def run(
     }
 
     resolved = _resolve_options(options, {**overrides, **common})
+    _reject_unknown_options(resolved)
     # Advanced-tier keywords are pending-deprecated on the run() signature and
     # move off it in 3.0 (issue #741). Warn only on bare **overrides typed
     # directly on this call; the common-tier parameters above never warn, and an

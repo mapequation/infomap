@@ -159,7 +159,9 @@ _OPTION_DOMAINS = {
     "min_flow_iterations": (0, None),
     "flow_tolerance": (0.0, None),
     "regularization_strength": (0.0, None),
+    "entropy_correction_strength": (0.0, None),
     "markov_time": (0.0, None),
+    "variable_markov_damping": (0.0, 1.0),
     "preferred_number_of_modules": (1, None),
     "preferred_number_of_levels": (1, None),
     "preferred_number_of_levels_strength": (0.0, None),
@@ -205,6 +207,53 @@ def _validate_option_domains(options):
                 bounds = f"<= {high}"
             raise ValueError(
                 f"{name}={value!r} is out of range: {name} must be {bounds}."
+            )
+
+
+_OPTION_CHOICES = {
+    "output": (("clu", "tree", "ftree", "newick", "json", "csv", "network", "states", "flow",), True),
+    "flow_model": (("undirected", "directed", "undirdir", "outdirdir", "rawdir", "precomputed",), False),
+}
+
+
+def _validate_option_choices(options):
+    """Reject unrecognized choice/enum options with a clear ValueError.
+
+    Mirrors the catalog's allowed value set (the same values the type
+    checker sees via the generated Literals). Scalar choices (flow_model)
+    are checked directly; sequence choices (output) are checked per element.
+    num_threads is validated here too: 'auto' or a positive integer.
+    """
+    for name, (choices, is_sequence) in _OPTION_CHOICES.items():
+        value = options.get(name)
+        if value is None:
+            continue
+        values = value if is_sequence else (value,)
+        for item in values:
+            if item not in choices:
+                allowed = ", ".join(repr(choice) for choice in choices)
+                raise ValueError(
+                    f"{name}={item!r} is not valid: choose one of {allowed}."
+                )
+    num_threads = options.get("num_threads")
+    if num_threads is not None:
+        valid = (
+            num_threads == "auto"
+            or (
+                isinstance(num_threads, int)
+                and not isinstance(num_threads, bool)
+                and num_threads > 0
+            )
+            or (
+                isinstance(num_threads, str)
+                and num_threads.isdigit()
+                and int(num_threads) > 0
+            )
+        )
+        if not valid:
+            raise ValueError(
+                f"num_threads={num_threads!r} is not valid: use 'auto' or a "
+                "positive integer."
             )
 
 
@@ -329,15 +378,16 @@ class Options:
         Use bipartite teleportation instead of the default two-step unipartite
         teleportation.
     weight_threshold : float, optional
-        Ignore input links with weight below this threshold.
+        Ignore input links with weight below this threshold. Valid range: >= 0.0.
     no_self_links : bool, optional
         Exclude self-links from the input network.
     node_limit : int, optional
         Read only nodes up to this node id and ignore links connected to higher node
-        ids.
+        ids. Valid range: >= 1.
     matchable_multilayer_ids : int, optional
         Construct state ids from node ids and layer ids that stay comparable across
-        networks. Set at least to the largest layer id among networks to match.
+        networks. Set at least to the largest layer id among networks to match. Valid
+        range: >= 1.
     cluster_data : str, optional
         Read an initial partition from a clu file or a hierarchy from a tree/ftree file.
         Tree input may use physical or state nodes for higher-order networks.
@@ -348,7 +398,7 @@ class Options:
         Read metadata to encode from a clu-format file.
     meta_data_rate : float, optional
         With --meta-data, set the metadata encoding rate. The default encodes metadata
-        at each step.
+        at each step. Valid range: >= 0.0.
     meta_data_unweighted : bool, optional
         With --meta-data, encode metadata without weighting by node flow.
     no_infomap : bool, optional
@@ -393,7 +443,7 @@ class Options:
         directory is passed via the raw args escape hatch.
     clu_level : int, optional
         With --clu or --output clu, write module ids at this depth from the root. Use -1
-        for bottom-level modules.
+        for bottom-level modules. Valid range: >= -1.
 
         Args-only on the Python library surface. Use
         Result.write_tree/write_flow_tree/write_clu (write_clu takes depth_level) or
@@ -447,7 +497,7 @@ class Options:
         Requires --timing-json.
     trial_offset : int, optional
         Global index of the first trial this process runs; trial i uses seed = base_seed
-        + (trial_offset + i). Default 0 (single-process behavior).
+        + (trial_offset + i). Default 0 (single-process behavior). Valid range: >= 0.
     trial_results : str, optional
         Write this shard's per-trial results (codelengths, seeds, best-tree reference,
         fingerprints) as JSON to this path, for deterministic merging of distributed
@@ -487,51 +537,54 @@ class Options:
         weights are provided.
     teleportation_probability : float, optional
         Set the probability of teleporting to a random node or link when calculating
-        flow.
+        flow. Valid range: between 0.0 and 1.0 (inclusive).
     max_flow_iterations : int, optional
         Limit the power iteration used to calculate flow (directed and regularized flow
-        models) to this many iterations.
+        models) to this many iterations. Valid range: >= 1.
     min_flow_iterations : int, optional
         Require at least this many power iterations before the flow calculation can
-        converge, even if --flow-tolerance is already met.
+        converge, even if --flow-tolerance is already met. Valid range: >= 0.
     flow_tolerance : float, optional
         Convergence tolerance for the power iteration used to calculate flow. Iteration
         stops once the per-iteration change in flow drops to or below this value, after
-        --min-flow-iterations have run.
+        --min-flow-iterations have run. Valid range: >= 0.0.
     regularized : bool, optional
         Add a fully connected Bayesian prior network to reduce overfitting to missing
         links. Activates --recorded-teleportation.
     regularization_strength : float, optional
         Scale the relative strength of the Bayesian prior network used by --regularized.
+        Valid range: >= 0.0.
     entropy_corrected : bool, optional
         Correct for negative entropy bias in small samples, especially solutions with
         many modules.
     entropy_correction_strength : float, optional
-        Scale the default correction used by --entropy-corrected.
+        Scale the default correction used by --entropy-corrected. Valid range: >= 0.0.
     markov_time : float, optional
         Scale link flow to change the cost of moving between modules. Higher values
-        result in fewer modules.
+        result in fewer modules. Valid range: >= 0.0.
     variable_markov_time : bool, optional
         Vary Markov time locally to reduce overpartitioning in sparse areas while
         keeping higher resolution in dense areas.
     variable_markov_damping : float, optional
         With --variable-markov-time, set damping between local effective degree (0) and
-        local entropy (1).
+        local entropy (1). Valid range: between 0.0 and 1.0 (inclusive).
     variable_markov_min_scale : float, optional
         With --variable-markov-time, set the minimum local scale for zero-entropy nodes.
         Local Markov time is max scale divided by local scale.
     preferred_number_of_modules : int, optional
         Penalize solutions by how far their number of modules differs from this value.
+        Valid range: >= 1.
     preferred_number_of_levels : int, optional
         Soft preference for the depth of the hierarchy. Steering to a shallower depth is
         reliable at a small codelength cost; deeper is best-effort, bounded by what the
-        optimizer proposes. No-op with --two-level or strength 0.
+        optimizer proposes. No-op with --two-level or strength 0. Valid range: >= 1.
     preferred_number_of_levels_strength : float, optional
         Scale the strength of --preferred-number-of-levels. 0 disables the preference;
-        larger values increase the cost of deviating from the preferred depth.
+        larger values increase the cost of deviating from the preferred depth. Valid
+        range: >= 0.0.
     multilayer_relax_rate : float, optional
         Set the probability of relaxing from a state node to neighboring layers instead
-        of staying in the current layer.
+        of staying in the current layer. Valid range: between 0.0 and 1.0 (inclusive).
     multilayer_relax_limit : int, optional
         Limit relaxation to this many neighboring layer ids in each direction. Use a
         negative value to allow relaxation to any layer.
@@ -549,23 +602,25 @@ class Options:
         instead of spreading to its out-neighbors. Builds a smaller state network with
         the same flow as the default.
     seed : int, optional
-        Set the random number generator seed for reproducible results.
+        Set the random number generator seed for reproducible results. Valid range: >=
+        1.
     num_trials : int, optional
-        Run this many independent trials and keep the best solution.
+        Run this many independent trials and keep the best solution. Valid range: >= 1.
     core_loop_limit : int, optional
-        Limit how many core loops try to move each node to the best module.
+        Limit how many core loops try to move each node to the best module. Valid range:
+        >= 1.
     core_level_limit : int, optional
         Limit how many times core loops are reapplied to the aggregated modular network
-        to find larger structures. 0 means no limit.
+        to find larger structures. 0 means no limit. Valid range: >= 0.
     tune_iteration_limit : int, optional
         Limit the main iterations in the two-level partition algorithm. 0 means no
-        limit.
+        limit. Valid range: >= 0.
     core_loop_codelength_threshold : float, optional
         Require at least this codelength improvement to accept a new solution in a core
-        loop.
+        loop. Valid range: >= 0.0.
     tune_iteration_relative_threshold : float, optional
         Require each tune iteration to improve codelength by this fraction of the
-        initial two-level codelength.
+        initial two-level codelength. Valid range: >= 0.0.
     fast_hierarchical_solution : int, optional
         Find top modules fast. Use 2 to keep all fast levels and 3 to skip the recursive
         part.
@@ -599,8 +654,10 @@ class Options:
         Prefer a modular solution even when one module gives a lower codelength.
     num_random_moves : int, optional
         Try this many random moves in each core loop to merge weakly connected nodes.
+        Valid range: >= 0.
     max_degree_for_random_moves : int, optional
-        Try random moves only for nodes with degree at most this value.
+        Try random moves only for nodes with degree at most this value. Valid range: >=
+        0.
     include_self_links : bool, optional
         Deprecated. Self-links are included by default; use no_self_links=True to
         exclude them.
@@ -687,6 +744,14 @@ class Options:
     num_random_moves: int = 5
     max_degree_for_random_moves: int = 2
 
+    def __post_init__(self):
+        # Validate at construction so a bad value fails where it is
+        # written, not later at the to_args() render funnel. to_args()
+        # revalidates the merged result, so overrides are covered too.
+        options = self.to_kwargs()
+        _validate_option_domains(options)
+        _validate_option_choices(options)
+
     @classmethod
     def _from_locals(cls, mapping):
         # Internal: build from a locals() dict, dropping the non-field
@@ -723,6 +788,15 @@ class Options:
         """
         options = self.to_kwargs()
         _validate_option_domains(options)
+        _validate_option_choices(options)
+        if self.directed is not None and self.flow_model is not None:
+            warnings.warn(
+                f"both 'directed' and 'flow_model' are set; 'directed' "
+                f"takes precedence and flow_model={self.flow_model!r} is "
+                "ignored by the engine. Set only one (directed=True is shorthand for flow_model='directed').",
+                UserWarning,
+                stacklevel=_external_stacklevel(),
+            )
         rendered_args = []
 
         if self.include_self_links is not None:
@@ -753,6 +827,13 @@ class Options:
         _append_option_specs(rendered_args, options, _ACCURACY_OPTION_SPECS)
 
         if self.fast_hierarchical_solution is not None:
+            if self.fast_hierarchical_solution not in (1, 2, 3):
+                raise ValueError(
+                    "fast_hierarchical_solution="
+                    f"{self.fast_hierarchical_solution!r} is not valid: use "
+                    "1 (find top modules fast), 2 (keep all fast levels), "
+                    "or 3 (skip the recursive part), or None to disable."
+                )
             rendered_args.append(f"-{'F' * self.fast_hierarchical_solution}")
 
         return _join_args(base_args, rendered_args)

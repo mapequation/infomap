@@ -189,6 +189,19 @@ def find_communities(
     if trials is not None and "num_trials" in infomap_options:
         raise ValueError("Pass only one of `trials` and `num_trials`.")
 
+    if not hasattr(g, "nodes"):
+        # An igraph.Graph (has .vs/.vcount() but no .nodes view) is the common
+        # mix-up. It has a dedicated entry point because its partition shape
+        # differs: find_igraph_communities returns an igraph.VertexClustering,
+        # not a list[set]. Steer there instead of failing on ``len(g.nodes)``.
+        hint = ""
+        if hasattr(g, "vs") and hasattr(g, "vcount"):
+            hint = " For an igraph.Graph, use infomap.find_igraph_communities(g)."
+        raise TypeError(
+            "find_communities expects a networkx graph (with a `.nodes` view)."
+            + hint
+        )
+
     if len(g.nodes) == 0:
         return []
 
