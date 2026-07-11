@@ -119,9 +119,20 @@ result = infomap.run(g_str, two_level=True, seed=123)
 print(result.to_dataframe(["name", "module_id"]).to_string(index=False))
 ```
 
-When you need the integer-to-label mapping itself, build a
-{class}`~infomap.Network`: its {attr}`~infomap.Network.node_id_to_label` records
-it.
+When you want the assignment as a ``{label: module_id}`` dict, relabel
+{meth}`result.modules() <infomap.Result.modules>` through
+{attr}`result.names <infomap.Result.names>` -- the ``{internal_id: label}``
+mapping the loader records for graph inputs -- with no rebuild:
+
+```{code-cell} python
+result = infomap.run(g_str, seed=123)
+named = {result.names.get(nid, nid): mid for nid, mid in result.modules().items()}
+print("Named assignments:", named)
+```
+
+For label types that are not stored as node names (tuples, frozensets), build a
+{class}`~infomap.Network` and read its
+{attr}`~infomap.Network.node_id_to_label` instead:
 
 ```{code-cell} python
 from infomap import Network, run
