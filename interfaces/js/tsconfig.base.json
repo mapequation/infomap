@@ -16,7 +16,6 @@
     "moduleResolution": "Bundler",
     "lib": ["DOM", "ES2020"],
     "isolatedModules": true,
-    "skipLibCheck": true,
-    "baseUrl": "."
+    "skipLibCheck": true
   }
 }
