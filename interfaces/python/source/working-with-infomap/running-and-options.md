@@ -141,12 +141,13 @@ the answer {cite:p}`calatayud2019solution`.
 the global minimum, when you are comparing partitions across networks, or on
 networks with weak or diffuse community structure.
 
-```{admonition} converge=True
+```{admonition} converge
 :class: note
 `converge=True` treats `num_trials` as a cap and stops early once the best
 codelength has stopped improving. This gives you "as many trials as you need
 but no more," which is useful when you are unsure how many trials your network
-requires.
+requires. It is not one of the five common keywords, so carry it via `Options`:
+`infomap.run(graph, options=Options(converge=True), num_trials=50)`.
 ```
 
 ### `two_level` versus multilevel
@@ -377,7 +378,8 @@ for name, graph in [("ring of cliques", G_ring), ("karate club", G_karate)]:
   the weighted attribute term, so it rises with the rate even when the
   partition does not change (see {doc}`/flow-models/metadata`).
 - **More trials never hurt correctness, only runtime.** If repeated runs disagree,
-  raise `num_trials` (or pass `converge=True`) rather than trusting one fit.
+  raise `num_trials` (or cap trials with `options=Options(converge=True)`) rather
+  than trusting one fit.
 - **Sparse or under-sampled data over-splits.** Reach for `regularized=True`
   (see {doc}`/robustness/incomplete-data`).
 

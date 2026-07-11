@@ -1,24 +1,32 @@
 """Immutable :class:`Result` returned by :meth:`Infomap.run`.
 
 Cheap scalar metrics (codelength, module counts, codelength components) are
-captured eagerly when ``run()`` returns, so they stay valid forever. The two
-kinds of node-level access differ:
+captured eagerly when ``run()`` returns, so they stay valid forever.
 
-- ``modules()`` / ``nodes()`` / ``to_dataframe()`` are true **snapshots** --
-  materialized lazily on first access by a single C++ traversal
-  (``_core.get_node_data``) and cached as plain Python data.
-- ``tree()`` / ``leaf_modules()`` return **live engine iterators**, not
-  snapshots, but each is wrapped so the generation is re-checked before every
-  step.
+Node-level access comes in two shapes -- mind the difference when you need to
+reuse, index, or count the result:
 
-Both kinds are guarded by a run-generation token: the C++ result tree is
-destroyed and rebuilt on every ``run()`` (design §7), so reading node-level data
-from a ``Result`` whose ``Infomap`` has re-run since raises a clear error
+- **Reusable containers**: ``modules()`` / ``multilevel_modules()`` return a
+  plain ``dict``, and ``to_dataframe()`` returns a ``pandas.DataFrame``. These
+  are materialized lazily on first access by a single C++ traversal
+  (``_core.get_node_data``) and cached, so they support ``len()``, indexing, and
+  repeated iteration.
+- **Fresh iterators**: ``nodes()`` / ``links()`` / ``tree()`` /
+  ``leaf_modules()`` each return a one-shot generator. ``for node in
+  result.nodes(): ...`` works every call, but the returned object has no
+  ``len()`` and cannot be iterated twice or indexed -- wrap it in ``list(...)``
+  first if you need a reusable sequence.
+
+Both shapes are guarded by a run-generation token: the C++ result tree is
+destroyed and rebuilt on every ``run()``, so reading node-level data from a
+``Result`` whose ``Infomap`` has re-run since raises :class:`StaleResultError`
 instead of touching freed memory.
 
-The §9 conventions apply to the new surface: scalars are properties,
-collections are methods with defaults (``modules(depth=1, states=False)``).
-Output is byte-identical to the legacy ``Infomap`` accessors (parity is a gate).
+Surface conventions: scalars are properties (``result.codelength``), collections
+are methods with defaults (``result.modules(depth=1, states=False)``). The two
+label lookup tables ``names`` / ``state_names`` are the exception -- ``{node_id:
+name}`` dict-valued *properties*, read without parentheses. Output is
+byte-identical to the legacy ``Infomap`` accessors (parity is a gate).
 """
 
 from __future__ import annotations

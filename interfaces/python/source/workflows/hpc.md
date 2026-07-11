@@ -322,7 +322,7 @@ sacct -j <job-id> --format=JobID,State,ExitCode,Elapsed,MaxRSS
 - {func}`infomap.merge.merge_trial_results` is the programmatic equivalent of
   `python -m infomap.merge`.
 - {doc}`/working-with-infomap/running-and-options` covers the search and
-  flow-model options (`seed`, `num_trials`, `converge`, `directed`, …); the
+  flow-model options (`seed`, `num_trials`, `directed`, `markov_time`, …); the
   parallelism options used here (`parallel_trials`, `inner_parallelization`,
   `num_threads`, `trial_offset`) are documented on this page and in the
   {doc}`Options reference </api/options>`.
