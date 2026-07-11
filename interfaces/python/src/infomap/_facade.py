@@ -3,6 +3,7 @@ import warnings
 from collections import namedtuple
 from collections.abc import Mapping
 from contextlib import contextmanager
+from typing import Any
 
 from ._core import Core
 from ._core import apply_initial_partition
@@ -1547,7 +1548,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
     # Input
     # ----------------------------------------
 
-    def read_file(self, filename, accumulate=True):
+    def read_file(self, filename: str, accumulate: bool = True) -> None:
         """Read network data from file.
 
         Parameters
@@ -1565,7 +1566,12 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         with _engine_log_routing(), _translate_engine_errors(NetworkParseError):
             self._core.readInputData(filename, accumulate)
 
-    def add_node(self, node_id, name=None, teleportation_weight=None):
+    def add_node(
+        self,
+        node_id: int,
+        name: str | None = None,
+        teleportation_weight: float | None = None,
+    ) -> None:
         """Add a node.
 
         See Also
@@ -1592,7 +1598,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         else:
             self._core.addNode(node_id)
 
-    def add_nodes(self, nodes):
+    def add_nodes(self, nodes: Any) -> None:
         """Add nodes.
 
         See Also
@@ -1685,7 +1691,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
                 else:
                     self.add_node(*node)
 
-    def add_state_node(self, state_id, node_id):
+    def add_state_node(self, state_id: int, node_id: int) -> None:
         """Add a state node.
 
         Notes
@@ -1701,7 +1707,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         """
         self._core.addStateNode(state_id, node_id)
 
-    def add_state_nodes(self, state_nodes):
+    def add_state_nodes(self, state_nodes: Any) -> None:
         """Add state nodes.
 
         See Also
@@ -1750,7 +1756,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             for node in state_nodes:
                 self.add_state_node(*node)
 
-    def set_name(self, node_id, name):
+    def set_name(self, node_id: int, name: str | None) -> None:
         """Set the name of a node.
 
         Parameters
@@ -1762,7 +1768,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             name = ""
         self._core.addName(node_id, name)
 
-    def set_names(self, names):
+    def set_names(self, names: Any) -> None:
         """Set names to several nodes at once.
 
         Examples
@@ -1813,7 +1819,9 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             for name in names:
                 self.set_name(*name)
 
-    def add_link(self, source_id, target_id, weight=1.0):
+    def add_link(
+        self, source_id: int, target_id: int, weight: float = 1.0
+    ) -> None:
         """Add a link.
 
         Notes
@@ -1832,7 +1840,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         """
         self._core.addLink(source_id, target_id, weight)
 
-    def add_links(self, links):
+    def add_links(self, links: Any) -> None:
         """Add several links.
 
         Examples
@@ -1875,7 +1883,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             require_32_or_64_bit=True,
         )
 
-    def remove_link(self, source_id, target_id):
+    def remove_link(self, source_id: int, target_id: int) -> bool:
         """Remove a link.
 
         Notes
@@ -1898,7 +1906,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         """
         return self._core.network().removeLink(source_id, target_id)
 
-    def remove_links(self, links):
+    def remove_links(self, links: Any) -> None:
         """Remove several links.
 
         Examples
@@ -1929,8 +1937,11 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             self.remove_link(*link)
 
     def add_multilayer_link(
-        self, source_multilayer_node, target_multilayer_node, weight=1.0
-    ):
+        self,
+        source_multilayer_node: Any,
+        target_multilayer_node: Any,
+        weight: float = 1.0,
+    ) -> None:
         """Add a multilayer link.
 
         Adds a link between layers in a multilayer network.
@@ -1977,8 +1988,12 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         )
 
     def add_multilayer_intra_link(
-        self, layer_id, source_node_id, target_node_id, weight=1.0
-    ):
+        self,
+        layer_id: int,
+        source_node_id: int,
+        target_node_id: int,
+        weight: float = 1.0,
+    ) -> None:
         """Add an intra-layer link.
 
         Adds a link within a layer in a multilayer network.
@@ -2017,7 +2032,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             layer_id, source_node_id, target_node_id, weight
         )
 
-    def add_multilayer_intra_links(self, links):
+    def add_multilayer_intra_links(self, links: Any) -> None:
         """Add several intra-layer links.
 
         Examples
@@ -2058,8 +2073,12 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         )
 
     def add_multilayer_inter_link(
-        self, source_layer_id, node_id, target_layer_id, weight=1.0
-    ):
+        self,
+        source_layer_id: int,
+        node_id: int,
+        target_layer_id: int,
+        weight: float = 1.0,
+    ) -> None:
         """Add an inter-layer link.
 
         Adds a link between two layers in a multilayer network.
@@ -2102,7 +2121,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             source_layer_id, node_id, target_layer_id, weight
         )
 
-    def add_multilayer_inter_links(self, links):
+    def add_multilayer_inter_links(self, links: Any) -> None:
         """Add several inter-layer links.
 
         Examples
@@ -2142,7 +2161,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             length_description="3 or 4 values",
         )
 
-    def add_multilayer_links(self, links):
+    def add_multilayer_links(self, links: Any) -> None:
         """Add several multilayer links.
 
         Examples

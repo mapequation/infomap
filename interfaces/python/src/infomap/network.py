@@ -122,6 +122,9 @@ class Network(_NetworkWritersMixin):
         # the minimal engine contract Result needs, mirroring Infomap.
         self._generation = 0
 
+    def __repr__(self) -> str:
+        return f"Network(num_nodes={self.num_nodes}, num_links={self.num_links})"
+
     # ----------------------------------------
     # Constructors from graph libraries
     # ----------------------------------------
@@ -827,6 +830,16 @@ class Network(_NetworkWritersMixin):
     @bipartite_start_id.setter
     def bipartite_start_id(self, start_id: int) -> None:
         self._core.setBipartiteStartId(start_id)
+
+    def set_bipartite_start_id(self, start_id: int) -> Network:
+        """Set the bipartite start id, returning ``self`` for fluent chaining.
+
+        The chainable form of the :attr:`bipartite_start_id` setter, so a
+        bipartite network can be built in a single expression alongside the
+        ``add_*`` verbs.
+        """
+        self._core.setBipartiteStartId(start_id)
+        return self
 
     @property
     def num_nodes(self) -> int:

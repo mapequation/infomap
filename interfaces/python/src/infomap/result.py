@@ -38,6 +38,7 @@ from __future__ import annotations
 
 import warnings
 from collections.abc import Iterator, Sequence
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 from ._optional import require_pandas
@@ -96,6 +97,11 @@ if TYPE_CHECKING:
     import pandas
 
     from ._facade import Infomap
+    from ._swig import (
+        InfomapIterator,
+        InfomapIteratorPhysical,
+        InfomapLeafModuleIterator,
+    )
 
 # build_result is internal plumbing shared by Infomap.run and Network.run;
 # only the result types are public API.
@@ -136,6 +142,7 @@ def build_result(engine: Any) -> "Result":
     return Result(engine, generation=engine._generation)
 
 
+@dataclass(frozen=True, slots=True, kw_only=True, repr=False)
 class TreeNode:
     """A lightweight, immutable view over a single leaf node of a ``Result``.
 
@@ -172,52 +179,17 @@ class TreeNode:
         ``name`` when no state name is set.
     """
 
-    __slots__ = (
-        "node_id",
-        "state_id",
-        "module_id",
-        "flow",
-        "depth",
-        "layer_id",
-        "child_index",
-        "modular_centrality",
-        "path",
-        "name",
-        "state_name",
-    )
-
-    def __init__(
-        self,
-        *,
-        node_id: int,
-        state_id: int,
-        module_id: int,
-        flow: float,
-        depth: int,
-        layer_id: int,
-        child_index: int,
-        modular_centrality: float,
-        path: tuple,
-        name: Any,
-        state_name: Any,
-    ) -> None:
-        object.__setattr__(self, "node_id", node_id)
-        object.__setattr__(self, "state_id", state_id)
-        object.__setattr__(self, "module_id", module_id)
-        object.__setattr__(self, "flow", flow)
-        object.__setattr__(self, "depth", depth)
-        object.__setattr__(self, "layer_id", layer_id)
-        object.__setattr__(self, "child_index", child_index)
-        object.__setattr__(self, "modular_centrality", modular_centrality)
-        object.__setattr__(self, "path", path)
-        object.__setattr__(self, "name", name)
-        object.__setattr__(self, "state_name", state_name)
-
-    def __setattr__(self, name: str, value: Any) -> None:
-        raise AttributeError("TreeNode is immutable")
-
-    def __delattr__(self, name: str) -> None:
-        raise AttributeError("TreeNode is immutable")
+    node_id: int
+    state_id: int
+    module_id: int
+    flow: float
+    depth: int
+    layer_id: int
+    child_index: int
+    modular_centrality: float
+    path: tuple[int, ...]
+    name: str | int
+    state_name: str | int
 
     def __repr__(self) -> str:
         return (
@@ -800,7 +772,9 @@ class Result(_ResultWritersMixin):
                 state_name=state_names.get(snapshot.state_id[i]) or name,
             )
 
-    def tree(self, depth: int = 1, *, states: bool = False):
+    def tree(
+        self, depth: int = 1, *, states: bool = False
+    ) -> Iterator[InfomapIterator | InfomapIteratorPhysical]:
         """Iterate the hierarchical tree, modules and leaf nodes alike, depth
         first from the root.
 
@@ -857,7 +831,7 @@ class Result(_ResultWritersMixin):
         with _translate_engine_errors():
             return self._engine._core.getMultilevelModules(states)
 
-    def leaf_modules(self):
+    def leaf_modules(self) -> Iterator[InfomapLeafModuleIterator]:
         """Iterate the leaf modules (bottom modules containing leaf nodes),
         depth first from the root.
 
