@@ -23,7 +23,7 @@ from __future__ import annotations
 from importlib.resources import as_file as _as_file, files as _files
 
 from .._core import Core as _Core
-from ..network import Network  # public return type of every loader below
+from ..network import Network as _Network  # public return type of every loader below
 
 __all__ = [
     "bipartite",
@@ -38,17 +38,17 @@ __all__ = [
 ]
 
 
-def _load(filename: str, *, extra_args: str = "") -> Network:
+def _load(filename: str, *, extra_args: str = "") -> _Network:
     args = "--silent --no-file-output"
     if extra_args:
         args = f"{args} {extra_args}"
-    net = Network(core=_Core(args))
+    net = _Network(core=_Core(args))
     with _as_file(_files(__name__) / "data" / filename) as path:
         net.read_file(str(path))
     return net
 
 
-def two_triangles() -> Network:
+def two_triangles() -> _Network:
     """Two triangles joined by a single bridge.
 
     The minimal example of community structure: 6 nodes named ``A``--``F`` and
@@ -74,7 +74,7 @@ def two_triangles() -> Network:
     return _load("twotriangles.net")
 
 
-def nine_triangles() -> Network:
+def nine_triangles() -> _Network:
     """Nine triangles with two-level hierarchical structure.
 
     27 nodes and 39 links: nine triangles grouped three-and-three into three
@@ -101,7 +101,7 @@ def nine_triangles() -> Network:
     return _load("ninetriangles.net")
 
 
-def bipartite() -> Network:
+def bipartite() -> _Network:
     """A small bipartite network with named nodes.
 
     Figure 2 in the input-formats documentation on mapequation.org: 3 ordinary
@@ -124,7 +124,7 @@ def bipartite() -> Network:
     return _load("bipartite.net")
 
 
-def multilayer() -> Network:
+def multilayer() -> _Network:
     """A multilayer network in the explicit ``*Multilayer`` format.
 
     Figure 3 in the input-formats documentation on mapequation.org: 5 physical
@@ -151,7 +151,7 @@ def multilayer() -> Network:
     return _load("multilayer.net")
 
 
-def multilayer_intra_inter() -> Network:
+def multilayer_intra_inter() -> _Network:
     """A multilayer network in the ``*Intra``/``*Inter`` format.
 
     Figure 4 in the input-formats documentation on mapequation.org: the same 5
@@ -175,7 +175,7 @@ def multilayer_intra_inter() -> Network:
     return _load("multilayer_intra_inter.net")
 
 
-def multilayer_intra() -> Network:
+def multilayer_intra() -> _Network:
     """A multilayer network with intra-layer links only.
 
     Figure 5 in the input-formats documentation on mapequation.org: the same 5
@@ -199,7 +199,7 @@ def multilayer_intra() -> Network:
     return _load("multilayer_intra.net")
 
 
-def states() -> Network:
+def states() -> _Network:
     """A memory network in the ``*States`` format.
 
     Figure 6 in the input-formats documentation on mapequation.org: 5 physical
@@ -228,7 +228,7 @@ def states() -> Network:
     return _load("states.net", extra_args="--flow-model directed")
 
 
-def modular_w() -> Network:
+def modular_w() -> _Network:
     """A weighted network with four modules.
 
     25 nodes (ids 0--24) and 43 weighted, undirected links forming four
@@ -251,7 +251,7 @@ def modular_w() -> Network:
     return _load("modular_w.net")
 
 
-def modular_wd() -> Network:
+def modular_wd() -> _Network:
     """A weighted, directed network.
 
     The directed variant of :func:`modular_w`: 25 nodes (ids 1--25) and 48
