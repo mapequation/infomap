@@ -411,14 +411,21 @@ def run(
     two_level: bool = _UNSET,
     directed: bool | None = _UNSET,
     markov_time: float = _UNSET,
+    args: str | None = None,
     initial_partition: Any = None,
     **overrides: Any,
 ) -> "Result":
     """Run Infomap on ``input`` and return a :class:`Result`.
 
+    This is the canonical entry point. It accepts any supported network
+    representation -- including a prebuilt :class:`Network` or
+    :class:`Infomap` instance -- so ``net.run(**kw)`` and ``im.run(**kw)`` are
+    thin conveniences equivalent to ``infomap.run(net, **kw)`` /
+    ``infomap.run(im, **kw)``.
+
     Parameters
     ----------
-    input : Network, networkx.Graph, igraph.Graph, scipy sparse matrix, \
+    input : Network, Infomap, networkx.Graph, igraph.Graph, scipy sparse matrix, \
             (2, E) array/tensor, str or Path, or iterable of links
         The network to partition. See the module docstring for the dispatch
         table.
@@ -443,6 +450,9 @@ def run(
     markov_time : float, optional
         Scale link flow to change the cost of moving between modules; higher
         values yield fewer modules.
+    args : str, optional
+        Raw Infomap arguments prepended before the rendered options -- the
+        escape hatch for full CLI parity.
     initial_partition : mapping, optional
         Initial module assignment for this run only.
     **overrides
@@ -551,21 +561,29 @@ def run(
     if isinstance(options, Mapping):
         user_keys |= set(options)
 
-    # 1. An already-built Network: run it in place.
+    # 1. An already-built engine (Network or stateful Infomap): run it in
+    # place. These are the surfaces whose own run() methods are thin
+    # conveniences that route back through here.
     if isinstance(input, Network):
-        return input.run(options=resolved, initial_partition=initial_partition)
+        return input.run(
+            options=resolved, args=args, initial_partition=initial_partition
+        )
+    if isinstance(input, Infomap):
+        return input.run(
+            options=resolved, args=args, initial_partition=initial_partition
+        )
 
     # 2. A network file path.
     if isinstance(input, (str, Path)):
         _reject_adapter_kwargs("file", user_keys)
-        im = Infomap(**resolved)
+        im = Infomap(args=args, **resolved)
         im.read_file(str(input))
         return im.run(initial_partition=initial_partition)
 
     # 3. A networkx graph.
     if _is_networkx_graph(input):
         _reject_adapter_kwargs("networkx", user_keys)
-        im = Infomap(**resolved)
+        im = Infomap(args=args, **resolved)
         im._add_networkx_graph_impl(input)
         return im.run(
             initial_partition=_partition_to_internal_ids(
@@ -576,7 +594,7 @@ def run(
     # 4. An igraph graph.
     if _is_igraph_graph(input):
         _reject_adapter_kwargs("igraph", user_keys)
-        im = Infomap(**resolved)
+        im = Infomap(args=args, **resolved)
         im._add_igraph_graph_impl(input)
         return im.run(
             initial_partition=_partition_to_internal_ids(
@@ -587,7 +605,7 @@ def run(
     # 5. A SciPy sparse adjacency matrix.
     if _is_scipy_sparse(input):
         _reject_adapter_kwargs("scipy", user_keys)
-        im = Infomap(**resolved)
+        im = Infomap(args=args, **resolved)
         im._add_scipy_sparse_matrix_impl(input)
         return im.run(
             initial_partition=_partition_to_internal_ids(
@@ -598,7 +616,7 @@ def run(
     # 6. A (2, E) edge index (ndarray or tensor).
     if _is_edge_index(input):
         _reject_adapter_kwargs("edge_index", user_keys)
-        im = Infomap(**resolved)
+        im = Infomap(args=args, **resolved)
         im._add_edge_index_impl(input)
         return im.run(
             initial_partition=_partition_to_internal_ids(
@@ -655,7 +673,7 @@ def run(
     # 7. An iterable of (u, v[, w]) links.
     if isinstance(input, Iterable):
         _reject_iterable_adapter_kwargs(user_keys)
-        im = Infomap(**resolved)
+        im = Infomap(args=args, **resolved)
         im.add_links(input)
         return im.run(initial_partition=initial_partition)
 
