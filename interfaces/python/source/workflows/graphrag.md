@@ -228,7 +228,7 @@ you have already run Infomap and just want to export:
 from infomap.tl.graphrag import write_graphrag_communities
 
 nodes, communities = write_graphrag_communities(
-    result_with_output.infomap,
+    result_with_output.result,
     graph=result_with_output.graph,
     output=output_dir / "communities_alt.parquet",
 )

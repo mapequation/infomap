@@ -79,20 +79,24 @@ which returns a NetworkX-style ``list`` of ``set``\ s of node labels (its igraph
 counterpart ``infomap.find_igraph_communities`` returns an
 ``igraph.VertexClustering``).
 
-For incremental construction and direct control over Infomap options and result
-access, build with the ``Infomap`` class and read the returned ``Result``:
+For incremental construction -- adding nodes and links one at a time -- build a
+``Network`` and run it, reading results off the returned ``Result``:
 
 .. code-block:: python
 
-    from infomap import Infomap
+    from infomap import Network, run
 
-    im = Infomap(two_level=True, num_trials=20, seed=123)
-    im.add_link(0, 1)
-    im.add_link(1, 2)
-    result = im.run()
+    net = Network()
+    net.add_link(0, 1)
+    net.add_link(1, 2)
+    result = run(net, two_level=True, num_trials=20, seed=123)
 
     print(result.num_top_modules, result.codelength)
     print(result.to_dataframe(columns=["node_id", "module_id", "flow"], index="node_id"))
+
+To keep one configured engine and run it repeatedly -- or to maintain code
+written against the original API -- the stateful ``Infomap`` class works the same
+way (``im = Infomap(...); im.add_link(...); result = im.run()``).
 
 For Jupyter, start with the
 `quickstart notebook <https://github.com/mapequation/infomap/blob/master/examples/notebooks/quickstart.ipynb>`_.

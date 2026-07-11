@@ -43,6 +43,12 @@ Common pitfalls, each answered in the :doc:`FAQ <faq>`:
   the ``Network`` (``write_pajek``).
 - **A matrix or edge index is not a graph.** ``infomap.run(A, directed=True)``
   raises; build it with ``Network.from_scipy_sparse_matrix(A, directed=True)``.
+  (A *dense* adjacency matrix is not a supported input either -- convert it with
+  ``scipy.sparse.csr_matrix(A)``.)
+- **Result keys are internal ids, not graph labels.** For a graph with
+  non-integer labels, ``result.modules()`` keys are Infomap's internal ids;
+  recover labels with ``result.names.get(nid, nid)``, the ``name`` column of
+  ``to_dataframe()``, or ``infomap.find_communities`` (keyed by labels).
 
 Run on a graph
 --------------

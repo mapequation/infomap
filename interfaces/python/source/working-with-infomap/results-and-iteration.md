@@ -102,11 +102,12 @@ lazily on first access and then cached. The surface follows one convention:
   `result.nodes()`, `result.to_dataframe()`.
 - **Exception — the label lookup tables** `result.names` and `result.state_names`
   are `{node_id: name}` **properties**, read *without* parentheses (calling
-  `result.names()` raises `TypeError: 'dict' object is not callable`). They map a
-  node id to its name, so they read as attributes, not computed collections.
+  `result.names()` raises a `TypeError` reminding you it is a property, to be read
+  without parentheses). They map a node id to its name, so they read as
+  attributes, not computed collections.
 - **Exception — two more worth memorizing**: the per-trial `result.codelengths`
-  is also a collection-valued **property** (a tuple; `result.codelengths()`
-  raises `TypeError: 'tuple' object is not callable`), and
+  is also a collection-valued **property** (a tuple; calling `result.codelengths()`
+  raises the same property-not-a-method `TypeError`), and
   `result.effective_num_modules(depth)` is the one scalar read as a **method**
   because it takes a depth — unlike its property-shaped siblings
   `result.effective_num_top_modules` and `result.effective_num_leaf_modules`.
@@ -184,7 +185,14 @@ When you need flow alongside module membership, iterate over `result.nodes()`.
 Each node is an immutable view; the attributes you reach for most are `node_id`,
 `module_id`, and `flow`, alongside `path`, `name`, and `layer_id`. See
 {class}`~infomap.TreeNode` for the full set (including `state_id`, `state_name`,
-`depth`, `child_index`, and `modular_centrality`):
+`depth`, `child_index`, and `modular_centrality`).
+
+```{note}
+`result.nodes()`, `result.links()`, and `result.tree()` return **single-use
+iterators** — wrap one in `list(...)` if you need to reuse, index, or `len()` it.
+`result.modules()` and `result.to_dataframe()` return a materialized dict /
+DataFrame, so they are reusable.
+```
 
 ```{code-cell} python
 print(f"{'node_id':>8}  {'module_id':>10}  {'flow':>10}")
