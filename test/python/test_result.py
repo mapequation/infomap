@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from infomap import Infomap, Result
+from infomap import Infomap, Result, datasets, run
 
 
 def _two_triangles() -> Infomap:
@@ -412,12 +412,10 @@ def test_infomap_backed_result_renders_html_card():
 
 @pytest.mark.fast
 def test_network_backed_result_html_declines_without_crashing():
-    import infomap
-
     # datasets return a Network, so this Result is Network-backed; the rich card
     # is engine-specific, so _repr_html_ declines (None) and the notebook falls
     # back to the text repr instead of raising 'Network has no attribute summary'.
-    result = infomap.run(infomap.datasets.two_triangles(), seed=1)
+    result = run(datasets.two_triangles(), seed=1)
     assert result._repr_html_() is None
     assert repr(result).startswith("Result(")
 
