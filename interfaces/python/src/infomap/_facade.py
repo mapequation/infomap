@@ -113,6 +113,20 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
     directly. For one-shot use prefer the functional :func:`infomap.run`; for
     incremental construction prefer :class:`~infomap.Network`.
 
+    .. note::
+
+        Only ``seed``, ``num_trials``, ``two_level``, ``directed`` and
+        ``markov_time`` are first-class keyword options here. The 70+ other
+        keyword parameters in the ``__init__``/:meth:`run` signature are
+        per-option deprecation shims that move off these signatures in 3.0 --
+        carry every other engine option via :class:`~infomap.Options`
+        (``im.run(options=Options(regularized=True))``) rather than as a bare
+        keyword. The output-file flags (``tree``, ``clu``, ``output``,
+        ``out_name``, ``no_file_output`` ...) are inert here; write from the
+        :class:`~infomap.Result` / :class:`~infomap.Network` instead. For a
+        clean, one-entry-per-option parameter reference read
+        ``inspect.getdoc(infomap.Options)``, not the raw signature.
+
     Examples
     --------
     Build a network, run Infomap, and read the results off the returned
@@ -2757,9 +2771,12 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         g : igraph.Graph
             A python-igraph graph.
         edge_weights : str, sequence, or None, optional
-            Edge weight attribute name, explicit sequence with one value per
-            edge, or ``None`` to treat every edge as weight 1. Default
-            ``None``.
+            Edge weight attribute name or an explicit sequence with one value
+            per edge. Default ``None`` auto-detects a ``"weight"`` edge
+            attribute (mirroring the networkx adapter) and uses it when present,
+            treating the graph as unweighted otherwise. Pass an explicit
+            sequence of unit weights to force an unweighted run of a graph that
+            carries a ``"weight"`` attribute.
         vertex_weights : None, optional
             Accepted for igraph API familiarity but not supported yet.
         node_id : str, optional

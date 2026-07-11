@@ -43,6 +43,13 @@ def _validate_weight_values(values: Iterable[Any], *, name: str) -> list[float]:
 
 def _edge_weights(g: Any, edge_weights: str | Iterable[Any] | None) -> list[float]:
     if edge_weights is None:
+        # Mirror the networkx adapter's ``weight="weight"`` default: read a
+        # "weight" edge attribute when the graph carries one, otherwise treat
+        # every edge as weight 1. Previously this always returned unit weights,
+        # silently partitioning a weighted igraph graph as if it were unweighted
+        # (a wrong result with no warning, unlike networkx which reads weights).
+        if "weight" in g.es.attributes():
+            return _validate_weight_values(g.es["weight"], name="weight")
         return [1.0] * g.ecount()
 
     if isinstance(edge_weights, str):
@@ -323,8 +330,10 @@ def find_igraph_communities(
     g : igraph.Graph
         A python-igraph graph.
     edge_weights : str, sequence, or None, optional
-        Edge weight attribute name, explicit sequence with one value per
-        edge, or ``None`` to treat every edge as weight 1. Default ``None``.
+        Edge weight attribute name or an explicit sequence with one value per
+        edge. Default ``None`` auto-detects a ``"weight"`` edge attribute
+        (mirroring the networkx adapter) and uses it when present, treating the
+        graph as unweighted otherwise.
     vertex_weights : None, optional
         Accepted for igraph API familiarity but not supported yet.
     options : Options, mapping, or None, optional

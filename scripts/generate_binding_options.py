@@ -333,6 +333,81 @@ _VALIDATE_OPTION_DOMAINS_HELPER = [
 ]
 
 
+# Static runtime helper: validate choice-typed options against the catalog's
+# allowed value set. The engine rejects an unknown value late and generically
+# (e.g. RuntimeError("Unrecognized flow model: 'undirekted'")) without listing
+# the legal values, and a plausible-but-wrong string constructs fine and only
+# fails after the whole network is built. Catch it at the same to_args() funnel
+# as the numeric domains, naming the option and echoing the valid set.
+_VALIDATE_OPTION_CHOICES_HELPER = [
+    "def _validate_option_choices(options):",
+    '    """Reject unrecognized choice/enum options with a clear ValueError.',
+    "",
+    "    Mirrors the catalog's allowed value set (the same values the type",
+    "    checker sees via the generated Literals). Scalar choices (flow_model)",
+    "    are checked directly; sequence choices (output) are checked per element.",
+    "    num_threads is validated here too: 'auto' or a positive integer.",
+    '    """',
+    "    for name, (choices, is_sequence) in _OPTION_CHOICES.items():",
+    "        value = options.get(name)",
+    "        if value is None:",
+    "            continue",
+    "        values = value if is_sequence else (value,)",
+    "        for item in values:",
+    "            if item not in choices:",
+    '                allowed = ", ".join(repr(choice) for choice in choices)',
+    "                raise ValueError(",
+    '                    f"{name}={item!r} is not valid: choose one of {allowed}."',
+    "                )",
+    '    num_threads = options.get("num_threads")',
+    "    if num_threads is not None:",
+    "        valid = (",
+    '            num_threads == "auto"',
+    "            or (",
+    "                isinstance(num_threads, int)",
+    "                and not isinstance(num_threads, bool)",
+    "                and num_threads > 0",
+    "            )",
+    "            or (",
+    "                isinstance(num_threads, str)",
+    "                and num_threads.isdigit()",
+    "                and int(num_threads) > 0",
+    "            )",
+    "        )",
+    "        if not valid:",
+    "            raise ValueError(",
+    "                f\"num_threads={num_threads!r} is not valid: use 'auto' or a \"",
+    '                "positive integer."',
+    "            )",
+]
+
+
+def _option_choices_lines(catalog: ParameterCatalog) -> list[str]:
+    """The runtime choice-domain table plus its validator.
+
+    One entry per choice-typed parameter (``flow_model``, ``output``), keyed by
+    the Python name, mapping to ``(allowed_values, is_sequence)``. ``is_sequence``
+    marks the comma-list params (``output``) whose value is a sequence validated
+    per element. Built from the same ``param.choices`` the Literals are.
+    """
+    lines: list[str] = ["_OPTION_CHOICES = {"]
+    for group in GROUPS:
+        for param in catalog.grouped()[group]:
+            choices = param.choices
+            if not choices:
+                continue
+            is_sequence = "True" if param.render_policy == "comma_list" else "False"
+            rendered = ", ".join(json.dumps(choice) for choice in choices)
+            lines.append(
+                f'    "{param.name("python")}": (({rendered},), {is_sequence}),'
+            )
+    lines.append("}")
+    lines.extend(["", ""])
+    lines.extend(_VALIDATE_OPTION_CHOICES_HELPER)
+    lines.extend(["", ""])
+    return lines
+
+
 def _option_domain_lines(catalog: ParameterCatalog) -> list[str]:
     """The runtime numeric-domain table plus its validator.
 
@@ -353,6 +428,24 @@ def _option_domain_lines(catalog: ParameterCatalog) -> list[str]:
     lines.extend(_VALIDATE_OPTION_DOMAINS_HELPER)
     lines.extend(["", ""])
     return lines
+
+
+def _python_domain_doc(param) -> str:
+    """A one-line 'Valid range: ...' note for a numerically bounded option.
+
+    The bounds are enforced at construction/render (``_validate_option_domains``);
+    surfacing them in the docstring keeps a surprising-but-valid constraint like
+    ``seed >= 1`` from only showing up as a runtime error.
+    """
+    domain = param.python_domain()
+    if domain is None:
+        return ""
+    low, high = domain
+    if low != "None" and high != "None":
+        return f"Valid range: between {low} and {high} (inclusive)."
+    if low != "None":
+        return f"Valid range: >= {low}."
+    return f"Valid range: <= {high}."
 
 
 def _options_doc_policy_note(policy: dict) -> str:
@@ -419,6 +512,7 @@ def generate_python(catalog: ParameterCatalog) -> str:
     lines.extend(_python_literal_alias_lines(catalog))
     lines.extend(_advanced_tier_kwarg_lines(catalog))
     lines.extend(_option_domain_lines(catalog))
+    lines.extend(_option_choices_lines(catalog))
     for group in GROUPS:
         spec_name = f"_{group.upper()}_OPTION_SPECS"
         lines.append(f"{spec_name} = (")
@@ -473,6 +567,9 @@ def generate_python(catalog: ParameterCatalog) -> str:
         for param in grouped[group]:
             name = param.name("python")
             description = param.python_doc_description()
+            bound = _python_domain_doc(param)
+            if bound:
+                description = f"{description} {bound}"
             lines.append(f"    {name} : {param.python_doc_type()}")
             lines.extend(wrap_doc(description, "        "))
             note = _options_doc_policy_note(param.policy("python"))
@@ -499,6 +596,14 @@ def generate_python(catalog: ParameterCatalog) -> str:
             )
     lines.extend(
         [
+            "",
+            "    def __post_init__(self):",
+            "        # Validate at construction so a bad value fails where it is",
+            "        # written, not later at the to_args() render funnel. to_args()",
+            "        # revalidates the merged result, so overrides are covered too.",
+            "        options = self.to_kwargs()",
+            "        _validate_option_domains(options)",
+            "        _validate_option_choices(options)",
             "",
             "    @classmethod",
             "    def _from_locals(cls, mapping):",
@@ -536,6 +641,16 @@ def generate_python(catalog: ParameterCatalog) -> str:
             '        """',
             "        options = self.to_kwargs()",
             "        _validate_option_domains(options)",
+            "        _validate_option_choices(options)",
+            "        if self.directed is not None and self.flow_model is not None:",
+            "            warnings.warn(",
+            "                f\"both 'directed' and 'flow_model' are set; 'directed' \"",
+            "                f\"takes precedence and flow_model={self.flow_model!r} is \"",
+            '                "ignored by the engine. Set only one (directed=True is '
+            "shorthand for flow_model='directed').\",",
+            "                UserWarning,",
+            "                stacklevel=_external_stacklevel(),",
+            "            )",
             "        rendered_args = []",
             "",
             "        if self.include_self_links is not None:",
@@ -566,6 +681,13 @@ def generate_python(catalog: ParameterCatalog) -> str:
             "        _append_option_specs(rendered_args, options, _ACCURACY_OPTION_SPECS)",
             "",
             "        if self.fast_hierarchical_solution is not None:",
+            "            if self.fast_hierarchical_solution not in (1, 2, 3):",
+            "                raise ValueError(",
+            '                    "fast_hierarchical_solution="',
+            "                    f\"{self.fast_hierarchical_solution!r} is not valid: use \"",
+            '                    "1 (find top modules fast), 2 (keep all fast levels), "',
+            '                    "or 3 (skip the recursive part), or None to disable."',
+            "                )",
             "            rendered_args.append(f\"-{'F' * self.fast_hierarchical_solution}\")",
             "",
             "        return _join_args(base_args, rendered_args)",
