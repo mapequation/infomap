@@ -179,8 +179,8 @@ def infomap(
     args : str, optional
         Raw Infomap CLI arguments passed to :class:`~infomap.Infomap`.
     **infomap_options
-        Keyword arguments passed to :class:`~infomap.Infomap`. ``silent=True``
-        is applied unless explicitly overridden.
+        Keyword arguments passed to :class:`~infomap.Infomap`. The engine is
+        quiet by default; call ``infomap.enable_log()`` for the log.
 
     Returns
     -------
@@ -207,13 +207,11 @@ def infomap(
     )
     _validate_adjacency_shape(matrix, n_obs=n_obs)
 
-    # dict[str, Any]: the caller's infomap_options carry arbitrary option value
-    # types, not just the silent bool. no_file_output is not forced -- it is
-    # redundant on the library surface (no output directory -> no files) and an
-    # inert output flag the API warns about.
-    options: dict[str, Any] = {"silent": True}
-    options.update(infomap_options)
-    im = Infomap(args=args, **options)
+    # The Python API is quiet by default (Infomap defaults silent=True), so the
+    # helper does not force silent (a deprecated bare kwarg leaving in 3.0) or
+    # no_file_output (redundant on the library surface: no output directory ->
+    # no files). Both stay overridable through infomap_options.
+    im = Infomap(args=args, **infomap_options)
     obs_names = list(adata.obs_names)
     # Use the internal impl rather than the deprecated public
     # add_scipy_sparse_matrix accessor the rest of the API steers away from.
@@ -246,7 +244,7 @@ def infomap(
             "neighbors_key": neighbors_key,
             "obsp": resolved_obsp,
             "args": args,
-            **options,
+            **infomap_options,
         },
         "n_modules": result.num_top_modules,
         "codelength": result.codelength,

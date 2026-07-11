@@ -180,7 +180,6 @@ def test_tl_infomap_writes_metadata():
         "neighbors_key": None,
         "obsp": "connectivities",
         "args": "--silent",
-        "silent": True,
         "seed": 123,
         "num_trials": 1,
     }

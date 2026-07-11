@@ -85,14 +85,11 @@ def _run_networkx(
 ) -> tuple[Any, Any, dict[int, Any]]:
     from .._facade import Infomap
 
-    # dict[str, Any]: the caller's infomap_options carry arbitrary option value
-    # types, not just the silent bool. The library surface writes no files
-    # without an output directory, so no_file_output is not forced here (it is
-    # an inert, warned-about output flag like the others).
-    options: dict[str, Any] = {"silent": True}
-    options.update(infomap_options)
-
-    infomap = Infomap(**options)
+    # The Python API is quiet by default (Infomap defaults silent=True), so the
+    # finder does not force silent (a deprecated bare kwarg leaving in 3.0) or
+    # no_file_output (redundant: the library surface writes no files without an
+    # output directory). Both stay overridable through infomap_options.
+    infomap = Infomap(**infomap_options)
     node_mapping = add_networkx_graph(
         infomap,
         g,
@@ -174,9 +171,10 @@ def find_communities(
         Initial module assignment passed to :meth:`infomap.Infomap.run`.
         Keys may use the original NetworkX node labels.
     **infomap_options
-        Engine options passed to :class:`infomap.Infomap`. ``silent=True`` is
-        applied unless overridden. Prefer carrying non-common options via the
-        ``options=`` argument above (the 3.0-safe path).
+        Engine options passed to :class:`infomap.Infomap`. The engine is quiet
+        by default; call ``infomap.enable_log()`` for the log. Prefer carrying
+        non-common options via the ``options=`` argument above (the 3.0-safe
+        path).
 
     Returns
     -------

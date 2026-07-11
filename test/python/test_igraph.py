@@ -159,8 +159,10 @@ def test_find_igraph_communities_sets_directed_for_directed_graph(monkeypatch):
 
     assert clustering.membership == [0, 0]
     assert instances[0].directed is True
-    assert instances[0].options["silent"] is True
-    # no_file_output is no longer forced (redundant on the library surface).
+    # silent and no_file_output are no longer forced: the API is quiet by
+    # default and the library surface writes no files without an output
+    # directory, so the finder leaves both at the engine default.
+    assert "silent" not in instances[0].options
     assert "no_file_output" not in instances[0].options
     assert instances[0].options["num_trials"] == 3
 
