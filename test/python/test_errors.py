@@ -28,6 +28,7 @@ from infomap import (
     NotRunError,
     StaleResultError,
     errors as errors_module,
+    run,
 )
 from infomap.result import _StaleResultError
 
@@ -90,12 +91,10 @@ def test_empty_network_run_raises_clear_infomap_error():
     """An empty network gets a build-the-network pointer, not the engine's
     file-oriented "No input file to read network" -- meaningless on the
     in-memory library surface."""
-    import infomap
-
     with pytest.raises(InfomapError, match="empty network"):
         Infomap().run()
     with pytest.raises(InfomapError, match="empty network"):
-        infomap.run([])
+        run([])
     with pytest.raises(InfomapError, match="empty network"):
         Network().run()
 
