@@ -139,6 +139,21 @@ def _is_edge_index(obj: Any) -> bool:
     return "int" in str(dtype).lower()
 
 
+def _is_pandas_dataframe(obj: Any) -> bool:
+    """A pandas ``DataFrame``, duck-typed to avoid importing pandas.
+
+    Iterating a ``DataFrame`` yields its *column labels*, not its rows, so it
+    must not fall through to the ``(u, v[, w])`` link-iterable branch (where it
+    would fail deep in ``add_links`` with a message about the column labels).
+    ``run()`` rejects it up front with a pointer to the tabular conversions.
+    """
+    return (
+        hasattr(obj, "itertuples")
+        and hasattr(obj, "columns")
+        and hasattr(obj, "to_numpy")
+    )
+
+
 # Adapter-only keyword arguments per input type. run() forwards keywords to the
 # *engine* (Infomap options); these instead configure how the *input* is read,
 # so they live on the matching Network.from_* constructor. Listing them lets
@@ -189,9 +204,10 @@ def _reject_adapter_kwargs(kind: str, user_keys: set) -> None:
     if not misdirected:
         return
     names = ", ".join(repr(name) for name in misdirected)
+    verb = "configures" if len(misdirected) == 1 else "configure"
     message = (
         f"infomap.run() forwards keyword arguments to the engine, but {names} "
-        f"configure how the {kind} input is read, not the engine. Build the "
+        f"{verb} how the {kind} input is read, not the engine. Build the "
         f"network explicitly and run it, e.g. "
         f"infomap.run({constructor}(..., {misdirected[0]}=...), num_trials=10). "
         f"run() builds input with default settings; Network.from_* is the path "
@@ -410,6 +426,33 @@ def run(
         im = Infomap(**resolved)
         im._add_edge_index_impl(input)
         return im.run(initial_partition=initial_partition)
+
+    # A dict is iterable, but iterating it yields only its keys and silently
+    # drops the values -- a ``{(u, v): weight}`` edge dict would lose its
+    # weights (partitioning a different, unweighted graph with no error), a
+    # ``{node: neighbors}`` adjacency dict would yield bare ids. Reject it here,
+    # before the link-iterable branch, with the explicit conversion.
+    if isinstance(input, Mapping):
+        raise TypeError(
+            "infomap.run() does not accept a dict: iterating one yields only "
+            "its keys, silently dropping the values. For a {(source, target): "
+            "weight} edge dict pass [(u, v, w) for (u, v), w in d.items()]; for "
+            "a {node: [neighbors]} adjacency dict, expand it to (source, "
+            "target) link tuples first (or build a Network)."
+        )
+
+    # A pandas DataFrame is iterable too, but iterating one yields its column
+    # labels, not its edge rows. Point at the documented tabular paths.
+    if _is_pandas_dataframe(input):
+        raise TypeError(
+            "infomap.run() does not accept a pandas DataFrame directly: "
+            "iterating one yields its column labels, not its edge rows. Pass "
+            "the edge columns as an array, e.g. "
+            "infomap.run(df[['source', 'target']].to_numpy()) (add a weight "
+            "column for weighted links), or infomap.run(df.itertuples("
+            "index=False)); for non-default building use "
+            "Network().add_links(df.to_numpy())."
+        )
 
     # 7. An iterable of (u, v[, w]) links.
     if isinstance(input, Iterable):

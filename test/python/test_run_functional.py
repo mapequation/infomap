@@ -488,3 +488,41 @@ def test_run_rejects_networkx_meta_attribute_kwarg():
     graph.nodes["b"]["ct"] = 1
     with pytest.raises(TypeError, match="Network.from_networkx"):
         infomap.run(graph, meta_attribute="ct", silent=True)
+
+
+# -- input-dispatch guards for mapping / tabular inputs -----------------------
+
+
+def test_run_rejects_dict_input():
+    # A dict is iterable, but iterating it yields only its keys and drops the
+    # values -- a {(u, v): weight} edge dict would silently partition the
+    # unweighted graph. run() rejects it with the explicit conversion instead of
+    # quietly building a different network.
+    with pytest.raises(TypeError, match="does not accept a dict"):
+        infomap.run({(1, 2): 1.0, (2, 3): 1.0, (3, 1): 1.0})
+    with pytest.raises(TypeError, match="does not accept a dict"):
+        infomap.run({1: [2, 3], 2: [3]})
+
+
+def test_run_rejects_dataframe_input_and_conversions_work():
+    pd = pytest.importorskip("pandas")
+    # Iterating a DataFrame yields its column labels, not its edge rows, so
+    # run() rejects it up front with a pointer to the tabular conversions.
+    df = pd.DataFrame({"source": [1, 2, 3, 1], "target": [2, 3, 1, 3]})
+    with pytest.raises(TypeError, match="pandas DataFrame"):
+        infomap.run(df)
+    # The conversions the message points at still work.
+    assert isinstance(infomap.run(df.to_numpy(), num_trials=1, seed=1), Result)
+    assert isinstance(
+        infomap.run(df.itertuples(index=False), num_trials=1, seed=1), Result
+    )
+
+
+def test_run_initial_partition_rejects_non_mapping():
+    with pytest.raises(TypeError, match="must be a mapping"):
+        infomap.run(_LINKS, initial_partition=[0, 0, 0], num_trials=1, seed=1)
+
+
+def test_run_initial_partition_rejects_non_integer_values():
+    with pytest.raises(TypeError, match="integer node/state ids"):
+        infomap.run(_LINKS, initial_partition={1: (0, 0)}, num_trials=1, seed=1)

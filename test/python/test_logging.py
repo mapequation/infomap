@@ -274,6 +274,20 @@ def test_enable_log_is_a_one_line_opt_in(capfd):
     assert _engine_stdout(capfd) == ""
 
 
+def test_network_run_under_routing_warns(infomap_log_handler):
+    # A Network's engine is constructed --silent for its whole lifetime and
+    # that cannot be undone per run, so a routed run (handlers on the "infomap"
+    # logger, e.g. after enable_log()) emits no records. It warns instead of
+    # going silently dark -- the bundled datasets are Networks, so this also
+    # covers infomap.run(dataset) under enable_log().
+    from infomap import Network
+
+    net = Network().add_link(1, 2).add_link(2, 3).add_link(1, 3)
+    with pytest.warns(UserWarning, match="emits no log records"):
+        net.run(options={"num_trials": 1, "seed": 1})
+    assert infomap_log_handler.records == []
+
+
 @pytest.mark.filterwarnings("ignore::pytest.PytestUnraisableExceptionWarning")
 def test_raising_log_handler_does_not_kill_the_run(infomap_log_handler):
     class RaisingHandler(logging.Handler):
