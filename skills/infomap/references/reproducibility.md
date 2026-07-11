@@ -17,7 +17,7 @@ Record:
 ## Recommended defaults
 
 - Set `seed` for repeatability.
-- Use more than one trial for serious analyses; `num_trials=20` is a practical default in examples, but large or time-sensitive runs may need adjustment.
+- Use more than one trial for serious analyses; around `num_trials=10` suits most analyses and `num_trials=20` or more (or `Options(converge=True)`) for results you publish, though large or time-sensitive runs may need adjustment.
 - Separate smoke checks from research runs: use small inputs or one trial to validate setup, then ask before launching long runs, sweeps, repeated seeds, or notebook executions.
 - Save both machine-readable results and human-readable notes.
 - Preserve mappings from internal ids to original node labels.
@@ -37,7 +37,7 @@ Use these local benchmark results only as order-of-magnitude guidance. They were
 | first-order edge list | 16.9 MB | 0 | 1M | 5 | 16.68s | 17.55s | 41.40s |
 | state network | 19.2 MB | 400k | 800k | 1 | 10.62s | 11.51s | 26.49s |
 
-For large or repeated runs, prefer convergence-aware and parallel options over a fixed high trial count: `--converge` stops trials on a codelength plateau, `--parallel-trials` runs independent trials concurrently, and `--num-threads` auto-detects cpuset/SLURM/OpenMP limits. On HPC, shard trials across jobs with `--trial-offset`/`--trial-results` and merge the shards with `merge_trial_results` from `infomap.merge` (`from infomap.merge import merge_trial_results`) or the CLI `python -m infomap.merge` — `merge` is deliberately not imported into the top-level namespace (see `run-infomap-on-hpc.ipynb`). In the Python API these HPC scaling options (`converge`, `parallel_trials`, `num_threads`, `trial_offset`, `trial_results`) are advanced-tier: carry them via `options=infomap.Options(...)` (e.g. `options=Options(converge=True, parallel_trials=True, num_threads="auto")`), not as bare `run()` keywords.
+For large or repeated runs, prefer convergence-aware and parallel options over a fixed high trial count: `--converge` stops trials on a codelength plateau, `--parallel-trials` runs independent trials concurrently, and `--num-threads` auto-detects cpuset/SLURM/OpenMP limits. On HPC, shard trials across jobs with `--trial-offset`/`--trial-results` and merge the shards with `merge_trial_results` from `infomap.merge` (`from infomap.merge import merge_trial_results`) or the CLI `python -m infomap.merge` — `merge` is deliberately not imported into the top-level namespace (see `run-infomap-on-hpc.ipynb`). In the Python API these HPC scaling options (`converge`, `parallel_trials`, `num_threads`, `trial_offset`, `trial_results`) are advanced-tier: carry them via `options=infomap.Options(...)`, not as bare `run()` keywords. `converge` and `parallel_trials` are **mutually exclusive** (auto-convergence needs each trial's result before deciding whether to continue, so it runs serially; combining them raises `InfomapError`) — pick one: `options=Options(parallel_trials=True, num_threads="auto")` to run trials concurrently, or `options=Options(converge=True)` to stop on a codelength plateau. `converge` also cannot combine with the sharding options `trial_offset`/`trial_results`.
 
 Practical gating:
 
