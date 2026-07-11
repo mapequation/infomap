@@ -278,7 +278,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         parallel_trials: bool = False,
         converge: bool = False,
         num_threads: str | int | None = None,
-        threads: str | None = None,
+        threads: str | int | None = None,
         prefer_modular_solution: bool = False,
         num_random_moves: int = 5,
         max_degree_for_random_moves: int = 2,
@@ -881,7 +881,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
                 Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
                 keyword still works directly through 2.x and moves to ``Options`` in
                 3.0.
-        num_threads : str, optional
+        num_threads : str or int, optional
             Effective thread budget: 'auto' (resolve from --num-threads >
             INFOMAP_NUM_THREADS > SLURM_CPUS_PER_TASK > OMP_NUM_THREADS > cpuset >
             hardware), or a positive integer. 1 forces fully serial. Governs the
@@ -891,7 +891,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
                 Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
                 keyword still works directly through 2.x and moves to ``Options`` in
                 3.0.
-        threads : str, optional
+        threads : str or int, optional
             Alias for --num-threads.
 
             .. deprecated:: 2.15
@@ -1007,7 +1007,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         parallel_trials: bool = False,
         converge: bool = False,
         num_threads: str | int | None = None,
-        threads: str | None = None,
+        threads: str | int | None = None,
         prefer_modular_solution: bool = False,
         num_random_moves: int = 5,
         max_degree_for_random_moves: int = 2,
@@ -1615,7 +1615,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
                 Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
                 keyword still works directly through 2.x and moves to ``Options`` in
                 3.0.
-        num_threads : str, optional
+        num_threads : str or int, optional
             Effective thread budget: 'auto' (resolve from --num-threads >
             INFOMAP_NUM_THREADS > SLURM_CPUS_PER_TASK > OMP_NUM_THREADS > cpuset >
             hardware), or a positive integer. 1 forces fully serial. Governs the
@@ -1625,7 +1625,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
                 Pass it via ``Options`` to ``infomap.run()`` or ``Network.run()``. This
                 keyword still works directly through 2.x and moves to ``Options`` in
                 3.0.
-        threads : str, optional
+        threads : str or int, optional
             Alias for --num-threads.
 
             .. deprecated:: 2.15

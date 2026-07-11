@@ -257,6 +257,14 @@ class Parameter:
         return base if self.python_default_value() != "None" else f"{base} | None"
 
     def python_doc_type(self) -> str:
+        # Honor a per-language type override so the docstring type matches the
+        # actual field annotation (e.g. num_threads is str | int | None, not
+        # plain str). Render it in numpydoc form: drop the None sentinel, join
+        # unions with "or", mark optional.
+        override = self.overrides.get("types", {}).get(self.flag, {}).get("python")
+        if override is not None:
+            parts = [p.strip() for p in override.split("|") if p.strip() != "None"]
+            return f"{' or '.join(parts)}, optional"
         if self.render_policy == "repeated_short":
             return "int, optional"
         if self.render_policy == "directed_alias":

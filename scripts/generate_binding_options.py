@@ -22,6 +22,11 @@ FACADE_OUT = Path("interfaces/python/src/infomap/_facade.py")
 # The 3.0 parameter-policy matrix (issue #755), rendered from the same catalog
 # so it stays fresh under ``make test-binding-options-freshness``.
 PARAMETER_POLICY_OUT = Path("interfaces/parameters/policy.md")
+# A single machine-readable catalog joining each option's per-language binding
+# name, type, default, range, and choices with its per-surface policy decision
+# (action + replacement). Lets an agent look up "type/range/status of X" from
+# one parseable place instead of joining policy.md and the JS parameters.json.
+PARAMETERS_JSON_OUT = Path("interfaces/parameters/parameters.json")
 
 FACADE_BEGIN = (
     "    # === BEGIN generated: Infomap option signatures "
@@ -352,6 +357,15 @@ _VALIDATE_OPTION_CHOICES_HELPER = [
     "        value = options.get(name)",
     "        if value is None:",
     "            continue",
+    "        if is_sequence and isinstance(value, str):",
+    "            # A single format string is a natural guess, but a sequence",
+    "            # choice iterates it per character ('tree' -> 't','r',...),",
+    "            # yielding a baffling \"'t' is not valid\". Steer to a list.",
+    "            hint = f\"[{value!r}]\" if value in choices else \"['tree', 'clu']\"",
+    "            raise ValueError(",
+    "                f\"{name}={value!r} must be a list or tuple of formats \"",
+    "                f\"(e.g. {name}={hint}), not a single string.\"",
+    "            )",
     "        values = value if is_sequence else (value,)",
     "        for item in values:",
     "            if item not in choices:",
@@ -448,6 +462,42 @@ def _python_domain_doc(param) -> str:
     return f"Valid range: <= {high}."
 
 
+def _python_engine_default_doc(param) -> str:
+    """A one-line 'Engine default: N.' note for a None-sentinel numeric option.
+
+    Options whose Python default is a ``None`` sentinel render no flag unless
+    set, so the reference shows ``= None`` and hides the concrete value the
+    engine falls back to (e.g. ``clu_level`` -> 1, ``node_limit`` -> 0 meaning
+    "no limit"). Surface the catalog default so an agent reading the parameter
+    reference isn't left guessing. Restricted to numeric defaults to avoid
+    noise on choice/string options.
+    """
+    if param.python_default_value() != "None":
+        return ""
+    default = param.raw.get("default")
+    if default is None or default == "" or isinstance(default, bool):
+        return ""
+    # Catalog defaults arrive as strings; surface only numeric ones so choice,
+    # boolean, or path defaults don't produce a noisy or misleading note
+    # (float(False) succeeds, hence the explicit bool guard above).
+    try:
+        value = float(default)
+    except (TypeError, ValueError):
+        return ""
+    # Skip a sentinel default that falls outside the documented valid range
+    # (e.g. node_limit defaults to 0 meaning "no limit" while a set value must
+    # be >= 1) -- printing it next to "Valid range: >= 1" reads as a
+    # contradiction. Only surface a default the user could actually set.
+    domain = param.python_domain()
+    if domain is not None:
+        low, high = domain
+        if (low != "None" and value < float(low)) or (
+            high != "None" and value > float(high)
+        ):
+            return ""
+    return f"Engine default: {default}."
+
+
 def _options_doc_policy_note(policy: dict) -> str:
     """A short note for the Options docstring flagging fields that are not a
     first-class engine option on the Python library surface.
@@ -462,6 +512,17 @@ def _options_doc_policy_note(policy: dict) -> str:
     if action == "keep":
         return ""
     replacement = (policy or {}).get("replacement", "").strip()
+    if action == "args-only" and (policy or {}).get("inertWithoutOutputDir"):
+        # The standard inert output flags (tree, clu, output, ...) all share
+        # one long replacement string; repeating it per field bloats the
+        # reference an agent is told to read. State the rationale once in the
+        # class docstring and keep the per-field note to a short pointer.
+        # ``hide_bipartite_nodes`` is args-only but writer-effective (no
+        # inertWithoutOutputDir), so it falls through and keeps its own note.
+        return (
+            "Args-only in library mode: no effect here -- write from the "
+            "Result / Network (see the note under Parameters below)."
+        )
     lead = {
         "args-only": "Args-only on the Python library surface.",
         "remove": "Not a Python library option; it leaves the surface in 3.0.",
@@ -548,8 +609,33 @@ def generate_python(catalog: ParameterCatalog) -> str:
             "    return f\"{base_args} {' '.join(parts)}\"",
             "",
             "",
+            "class _OptionsMeta(type):",
+            "    # Intercept construction so an unknown keyword gets the same",
+            "    # actionable 'did you mean' guidance as infomap.run(), instead of",
+            "    # the bare dataclass 'unexpected keyword argument' TypeError.",
+            "    def __call__(cls, *args, **kwargs):",
+            "        unknown = [key for key in kwargs if key not in _OPTION_FIELD_NAMES]",
+            "        if unknown:",
+            "            import difflib",
+            "",
+            "            rendered = []",
+            "            for key in unknown:",
+            "                near = difflib.get_close_matches(key, _OPTION_FIELD_NAMES, n=1)",
+            "                rendered.append(",
+            "                    f\"{key!r}\"",
+            "                    + (f\" (did you mean {near[0]!r}?)\" if near else \"\")",
+            "                )",
+            "            raise TypeError(",
+            '                "Options() got unknown option(s): "',
+            '                + ", ".join(rendered)',
+            '                + ". See inspect.getdoc(infomap.Options) for the full "',
+            '                "list of option names."',
+            "            )",
+            "        return super().__call__(*args, **kwargs)",
+            "",
+            "",
             "@dataclass(frozen=True, slots=True)",
-            "class Options:",
+            "class Options(metaclass=_OptionsMeta):",
             '    """Reusable Infomap keyword options.',
             "",
             "    This class mirrors the keyword arguments accepted by :class:`infomap.Infomap`",
@@ -558,6 +644,13 @@ def generate_python(catalog: ParameterCatalog) -> str:
             "    :meth:`to_args` to render command-line flags, or pass an instance to",
             "    :func:`infomap.run` via ``infomap.run(input, options=options)`` to apply a",
             "    reusable configuration.",
+            "",
+            "    A field marked *args-only in library mode* below drives the engine's",
+            "    own file writer, which runs only with an output directory passed via",
+            "    the raw ``args`` escape hatch; on the normal library surface it writes",
+            "    nothing. Write results from the ``Result`` (``result.write_tree`` /",
+            "    ``write_clu`` / ...) or the ``Network`` (``write_pajek`` /",
+            "    ``write_state_network``) instead.",
             "",
             "    Parameters",
             "    ----------",
@@ -570,6 +663,9 @@ def generate_python(catalog: ParameterCatalog) -> str:
             bound = _python_domain_doc(param)
             if bound:
                 description = f"{description} {bound}"
+            engine_default = _python_engine_default_doc(param)
+            if engine_default:
+                description = f"{description} {engine_default}"
             lines.append(f"    {name} : {param.python_doc_type()}")
             lines.extend(wrap_doc(description, "        "))
             note = _options_doc_policy_note(param.policy("python"))
@@ -1278,6 +1374,53 @@ def _splice_marker_block(path: Path, block: str) -> str:
     return text[:begin_idx] + block + text[end_idx:]
 
 
+def generate_parameters_json(catalog: ParameterCatalog) -> str:
+    """One machine-readable catalog entry per option, for programmatic lookup.
+
+    Lets an agent answer "what is the type/default/range/enum of X, and is it
+    deprecated?" from a single parseable file -- joining per-language binding
+    names, type, default, numeric range, and choices with the per-surface
+    policy decision (action + replacement) -- instead of cross-referencing
+    ``policy.md`` (decisions, CLI-flag-keyed) and the JS ``parameters.json``
+    (types, no policy). Generated from the same catalog + overrides as every
+    other surface, so it cannot drift.
+    """
+    surfaces = ["cli", "python", "r", "ts"]
+    parameters = []
+    for group in GROUPS:
+        for param in catalog.grouped()[group]:
+            parameters.append(
+                {
+                    "flag": param.flag,
+                    "group": param.group,
+                    "type": param.long_type,
+                    "default": param.raw.get("default"),
+                    "min": param.raw.get("min"),
+                    "max": param.raw.get("max"),
+                    "choices": list(param.choices) if param.choices else None,
+                    "names": {
+                        "cli": param.flag,
+                        "python": param.name("python"),
+                        "r": param.name("r"),
+                        "ts": param.name("ts"),
+                    },
+                    "surfaces": {s: param.policy(s) for s in surfaces},
+                }
+            )
+    data = {
+        "_generated": (
+            "Generated by scripts/generate_binding_options.py from "
+            "./Infomap --print-json-parameters. Edit "
+            "src/io/ParameterCatalog.cpp or "
+            "interfaces/parameters/overrides.json, then run "
+            "make build-binding-options."
+        ),
+        "surfaces": surfaces,
+        "parameters": parameters,
+    }
+    return json.dumps(data, indent=2, ensure_ascii=False) + "\n"
+
+
 def outputs(infomap_bin: Path):
     overrides = load_overrides()
     catalog = ParameterCatalog(load_parameters(infomap_bin), overrides)
@@ -1297,6 +1440,7 @@ def outputs(infomap_bin: Path):
         R_OUT: generate_r(catalog),
         TS_OUT: generate_ts(catalog),
         PARAMETER_POLICY_OUT: policy_matrix,
+        PARAMETERS_JSON_OUT: generate_parameters_json(catalog),
     }
     facade_block = generate_facade(catalog)
     return generated, facade_block

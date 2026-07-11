@@ -103,8 +103,8 @@ Actions: **keep** = First-class option on the surface in 3.0 (the default for ev
 - `--trial-offset` (JS, hide): The JavaScript package runs Infomap in a single-threaded WASM worker: OpenMP scheduling, thread budgets, and multi-process trial sharding are meaningless there.
 - `--trial-results` (JS, hide): The JavaScript package runs Infomap in a single-threaded WASM worker: OpenMP scheduling, thread budgets, and multi-process trial sharding are meaningless there.
 - `--no-final-output` (JS, hide): The JavaScript package runs Infomap in a single-threaded WASM worker: OpenMP scheduling, thread budgets, and multi-process trial sharding are meaningless there.
-- `--verbose` (Python, remove): A DEBUG-enabled 'infomap' logger (infomap.enable_log(logging.DEBUG)) raises engine verbosity; logger levels filter the records.
-- `--verbose` (R, deprecate): Pending the R option-surface decision (#757).
+- `--verbose` (Python, remove): A DEBUG-enabled 'infomap' logger (infomap.enable_log(logging.DEBUG)) raises engine verbosity; logger levels filter the records. (Python name: `verbosity_level`)
+- `--verbose` (R, deprecate): Pending the R option-surface decision (#757). (R name: `verbosity_level`)
 - `--silent` (Python, remove): The Python API is quiet by default; logging is the control. Attach handlers to logging.getLogger('infomap') (e.g. infomap.enable_log()) for the engine log.
 - `--silent` (R, deprecate): Pending the R option-surface decision (#757); the library default is expected to stay quiet.
 - `--inner-parallelization` (JS, hide): The JavaScript package runs Infomap in a single-threaded WASM worker: OpenMP scheduling, thread budgets, and multi-process trial sharding are meaningless there.
