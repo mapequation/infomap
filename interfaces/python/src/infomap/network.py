@@ -31,6 +31,7 @@ from typing import TYPE_CHECKING, Any
 
 from ._core import Core, apply_initial_partition
 from ._logging import engine_log_routing as _engine_log_routing
+from ._logging import is_routed as _is_log_routed
 from .errors import NetworkParseError, _translate_engine_errors
 from .io.writers import _NetworkWritersMixin
 from ._network_input import add_bulk_links as _add_bulk_links
@@ -314,7 +315,23 @@ class Network(_NetworkWritersMixin):
         else:
             resolved = Options(**dict(options))
 
-        if resolved.silent is False:
+        if _is_log_routed():
+            # enable_log()/handlers on the "infomap" logger route the engine
+            # log, but a Network's Core is constructed --silent for its whole
+            # lifetime and that cannot be undone per run (the engine composes
+            # constructor + run args additively), so a routed run of a Network
+            # emits no records. Point the caller at a surface that can emit,
+            # mirroring the stale-silent advisory on the Infomap path.
+            warnings.warn(
+                "the 'infomap' logger has handlers, but a Network engine is "
+                "silent for its whole lifetime, so this run emits no log "
+                "records. For the engine log, run through Infomap(...) or pass "
+                "the input directly to infomap.run() (an edge list, graph, or "
+                "file path) instead.",
+                UserWarning,
+                stacklevel=2,
+            )
+        elif resolved.silent is False:
             warnings.warn(
                 "A Network engine is silent for its whole lifetime; "
                 "silent=False has no effect here. For the engine log, run "

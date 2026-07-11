@@ -82,6 +82,16 @@ def apply_initial_partition(core: Any, module_ids) -> bool:
     """
     if module_ids is None:
         module_ids = {}
+    # Accept a dict (the documented form) or the SWIG map the engine
+    # round-trips through here (getInitialPartition() returns a map_uint_uint,
+    # not a dict); reject a non-mapping (a list, a scalar) up front with a clear
+    # message instead of a raw SWIG TypeError from setInitialPartition.
+    if not hasattr(module_ids, "items"):
+        raise TypeError(
+            "initial_partition must be a mapping of {node_id: module_id} "
+            "(or {(layer_id, node_id): module_id} for a multilayer network), "
+            f"not {type(module_ids).__name__}."
+        )
     if module_ids and any(isinstance(key, tuple) for key in module_ids):
         if not all(isinstance(key, tuple) for key in module_ids):
             raise ValueError(
@@ -100,5 +110,19 @@ def apply_initial_partition(core: Any, module_ids) -> bool:
             modules.append(int(module))
         core.setMultilayerInitialPartition(layer_ids, node_ids, modules)
         return True
+    # First-order path. Validate int-castability for a user dict (the engine's
+    # own SWIG map is already integer-keyed and passes straight through) so a
+    # malformed value -- e.g. a {node: (path,)} tuple -- raises a clear error
+    # instead of a raw SWIG TypeError from setInitialPartition.
+    if isinstance(module_ids, dict):
+        try:
+            module_ids = {
+                int(node): int(module) for node, module in module_ids.items()
+            }
+        except (TypeError, ValueError) as exc:
+            raise TypeError(
+                "initial_partition must map integer node/state ids to integer "
+                "module ids, e.g. {1: 0, 2: 0, 3: 1}."
+            ) from exc
     core.setInitialPartition(module_ids)
     return False
