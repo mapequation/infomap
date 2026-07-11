@@ -75,12 +75,12 @@ _LEGACY_ACCESSOR_HINTS = {
 }
 
 
-def _property_not_callable(attr: str) -> TypeError:
+def _property_not_callable() -> TypeError:
     return TypeError(
-        f"'{attr}' is a property on Result, not a method -- read it without "
-        f"parentheses (result.{attr}, not result.{attr}()). Most Result "
-        f"collections are methods, but names/state_names/codelengths are the "
-        f"property-valued exceptions."
+        "this is a property on Result, not a method -- read it without "
+        "parentheses (e.g. result.names, not result.names()). Most Result "
+        "collections are methods, but names, state_names and codelengths are "
+        "the property-valued exceptions."
     )
 
 
@@ -90,19 +90,17 @@ def _property_not_callable(attr: str) -> TypeError:
 # is not callable`` with no pointer. Returning them as thin dict/tuple
 # subclasses whose __call__ explains the property-vs-method flip turns that
 # dead-end into an actionable message, while behaving exactly like the
-# underlying dict/tuple for every other operation (equality, indexing, len,
-# iteration, ``isinstance(x, dict)``).
+# underlying dict/tuple for every other operation (equality by content,
+# indexing, len, iteration, ``isinstance(x, dict)``). They add no state, so
+# equality stays value-based (two equal-valued views compare equal regardless
+# of which property produced them).
 class _PropertyDict(dict):
     """A dict that flags the property-vs-method trap when called like a method."""
 
-    __slots__ = ("_attr",)
-
-    def __init__(self, mapping, attr: str):
-        super().__init__(mapping)
-        self._attr = attr
+    __slots__ = ()
 
     def __call__(self, *args, **kwargs):
-        raise _property_not_callable(self._attr)
+        raise _property_not_callable()
 
 
 class _PropertyTuple(tuple):
@@ -111,7 +109,7 @@ class _PropertyTuple(tuple):
     __slots__ = ()
 
     def __call__(self, *args, **kwargs):
-        raise _property_not_callable("codelengths")
+        raise _property_not_callable()
 
 # Also accept the camelCase SWIG-style spellings (``result.getModules()``) a caller
 # may carry over from the low-level C++ core API, mapping each to the same Result
@@ -719,7 +717,7 @@ class Result(_ResultWritersMixin):
         calling it raises with a hint. Returns a copy; mutating it does not
         affect the :class:`Result`.
         """
-        return _PropertyDict(self._names, "names")
+        return _PropertyDict(self._names)
 
     @property
     def state_names(self) -> dict[int, str]:
@@ -732,7 +730,7 @@ class Result(_ResultWritersMixin):
         available separately via :attr:`names`. A property (read without
         parentheses); calling it raises with a hint.
         """
-        return _PropertyDict(self._state_names, "state_names")
+        return _PropertyDict(self._state_names)
 
     # -- collection accessors (§9: methods with defaults) -------------------
 

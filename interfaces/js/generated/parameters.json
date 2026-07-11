@@ -495,7 +495,8 @@
     "incremental": false,
     "longType": "number",
     "shortType": "f",
-    "default": "1"
+    "default": "1",
+    "min": "0"
   },
   {
     "long": "--markov-time",
@@ -530,7 +531,9 @@
     "incremental": false,
     "longType": "number",
     "shortType": "f",
-    "default": "1"
+    "default": "1",
+    "min": "0",
+    "max": "1"
   },
   {
     "long": "--variable-markov-min-scale",

@@ -646,8 +646,7 @@ def generate_python(catalog: ParameterCatalog) -> str:
             "            warnings.warn(",
             "                f\"both 'directed' and 'flow_model' are set; 'directed' \"",
             "                f\"takes precedence and flow_model={self.flow_model!r} is \"",
-            '                "ignored by the engine. Set only one (directed=True is '
-            "shorthand for flow_model='directed').\",",
+            '                "ignored by the engine. Set only one (directed=True is shorthand for flow_model=\'directed\').",',
             "                UserWarning,",
             "                stacklevel=_external_stacklevel(),",
             "            )",
