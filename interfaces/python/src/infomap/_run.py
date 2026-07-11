@@ -246,7 +246,7 @@ def _reject_adapter_kwargs(kind: str, user_keys: set) -> None:
 # overrides the ``options`` carrier while an untouched one defers to it. Typed
 # ``Any`` so the honest per-parameter annotations (``seed: int`` ...) still
 # type-check against this shared default; the ``<unset>`` repr keeps
-# ``inspect.signature(infomap.run)`` readable for IDE/agent introspection.
+# ``inspect.signature(infomap.run)`` readable for IDE and tooling introspection.
 class _Unset:
     __slots__ = ()
 
@@ -370,7 +370,7 @@ def run(
     from .network import Network
 
     # The five common-tier options are first-class keyword parameters so they
-    # show up in inspect.signature(infomap.run) for IDE/agent introspection;
+    # show up in inspect.signature(infomap.run) for IDE and tooling introspection;
     # every other engine option rides **overrides. Collect the common ones the
     # caller actually supplied (still at _UNSET means "defer to options").
     common = {

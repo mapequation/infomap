@@ -28,7 +28,7 @@ The whole surface at a glance (each line is expanded below):
     # advanced engine options ride Options, not bare keywords:
     infomap.run(graph, options=Options(regularized=True, flow_model="directed"))
 
-Gotchas an agent hits most, each answered in the :doc:`FAQ <faq>`:
+Common pitfalls, each answered in the :doc:`FAQ <faq>`:
 
 - **Scalars are properties, collections are methods.** ``result.codelength``
   (no ``()``) but ``result.modules()`` (with ``()``); the exceptions are
