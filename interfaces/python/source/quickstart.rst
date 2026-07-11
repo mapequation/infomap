@@ -25,8 +25,11 @@ Run on a graph
 
 The same call accepts a NetworkX or igraph graph, a SciPy sparse matrix, a
 ``(2, E)`` edge index, a network file path, or an iterable of ``(u, v[, w])``
-links. Keyword arguments configure the engine: ``seed``, ``num_trials``,
-``directed`` for a directed flow model, and so on.
+links. Five common options are direct keyword arguments — ``seed``,
+``num_trials``, ``two_level``, ``directed`` (a directed flow model), and
+``markov_time``; carry every other engine option (``regularized``,
+``flow_model``, ``teleportation_probability``, …) through
+:class:`~infomap.Options`, as shown under `Reusable configuration`_ below.
 
 Without any graph library installed, the bundled example networks in
 :mod:`infomap.datasets` work directly:

@@ -65,7 +65,7 @@ For metadata workflows, clarify:
 - what the metadata categories represent;
 - whether metadata should influence the compression objective or only be used for post hoc annotation;
 - whether metadata is categorical and available for every relevant node;
-- which interface supports the needed input path: Python can set metadata programmatically with `set_meta_data()`, while CLI/R workflows may use metadata option files or R6 methods depending on the current API.
+- which interface supports the needed input path: Python can set metadata programmatically (the stateful builder's `set_meta_data()`, or a metadata file via `Options` — confirm the current spelling from installed help), while CLI/R workflows may use metadata option files or R6 methods depending on the current API.
 
 For bipartite workflows, clarify:
 

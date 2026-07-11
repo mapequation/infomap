@@ -100,6 +100,10 @@ lazily on first access and then cached. The surface follows one convention:
 - **Scalars are properties**: `result.codelength`, `result.num_top_modules`.
 - **Collections are methods, with defaults**: `result.modules(depth=1)`,
   `result.nodes()`, `result.to_dataframe()`.
+- **Exception — the label lookup tables** `result.names` and `result.state_names`
+  are `{node_id: name}` **properties**, read *without* parentheses (calling
+  `result.names()` raises `TypeError: 'dict' object is not callable`). They map a
+  node id to its name, so they read as attributes, not computed collections.
 
 A `Result` from an earlier run of a reused stateful {class}`~infomap.Infomap`
 raises if you read its node data after a later `run()`. The eagerly captured
@@ -335,9 +339,9 @@ builds the same table. Both read only the eagerly captured scalars, so — unlik
 
 - {doc}`/api/index` is the complete property and method reference for
   {class}`infomap.Result`.
-- `converge=True` treats `num_trials` as a cap and stops once the best codelength
-  plateaus; pair it with a high cap on networks whose degeneracy you have not yet
-  characterised. The [solution-landscape tooling](https://github.com/mapequation/solution-landscape)
+- `options=Options(converge=True)` treats `num_trials` as a cap and stops once the
+  best codelength plateaus; pair it with a high cap on networks whose degeneracy you
+  have not yet characterised. The [solution-landscape tooling](https://github.com/mapequation/solution-landscape)
   follows the solution-landscape clustering approach {cite:p}`calatayud2019solution`.
 - The survey (§4) covers the multilevel map equation and hierarchical community
   detection in full {cite:p}`smiljanic2026survey`.

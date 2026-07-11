@@ -126,13 +126,13 @@ each hierarchy level).
 ```{code-cell} python
 from infomap.tl.graphrag import run_graphrag_communities
 
-result = run_graphrag_communities(
+run_result = run_graphrag_communities(
     input_dir=input_dir,
     seed=123,
     num_trials=5,
 )
 
-partition = result.result  # the immutable Result from the run
+partition = run_result.result  # the immutable Result from the run
 print(f"Map equation codelength: {partition.codelength:.4f} bits/step")
 print(f"Top-level communities:   {partition.num_top_modules}")
 ```
@@ -146,7 +146,7 @@ visiting that entity, a natural measure of entity centrality within its
 community.
 
 ```{code-cell} python
-result.nodes[["entity_title", "module_id", "module_path", "level", "flow"]]
+run_result.nodes[["entity_title", "module_id", "module_path", "level", "flow"]]
 ```
 
 ### GraphRAG-style community table
@@ -157,7 +157,7 @@ list of `entity_ids` the community contains, and the list of `relationship_ids`
 whose both endpoints fall within the community.
 
 ```{code-cell} python
-result.communities[[
+run_result.communities[[
     "id", "level", "title", "size",
     "entity_ids", "relationship_ids", "parent", "children",
 ]]
@@ -184,10 +184,10 @@ for _, row in relationships.iterrows():
     g.add_edge(row["source"], row["target"], weight=row["weight"])
 
 title_to_module = dict(
-    zip(result.nodes["entity_title"], result.nodes["module_id"])
+    zip(run_result.nodes["entity_title"], run_result.nodes["module_id"])
 )
 title_to_flow = dict(
-    zip(result.nodes["entity_title"], result.nodes["flow"])
+    zip(run_result.nodes["entity_title"], run_result.nodes["flow"])
 )
 
 fig = draw_partition(g, title_to_module, flow=title_to_flow)
@@ -256,7 +256,7 @@ communities[["id", "level", "size", "entity_ids"]]
   reads tables, runs Infomap, and optionally writes outputs. It returns a
   `GraphRAGRunResult` with `.result`, `.infomap`, `.graph`, `.nodes`, and
   `.communities`. Read run metrics such as `codelength` and the module counts off
-  `.result` (the immutable `Result`, e.g. `result.result.codelength`) rather than
+  `.result` (the immutable `Result`, e.g. `run_result.result.codelength`) rather than
   the deprecated accessors on `.infomap`.
 - {func}`infomap.tl.graphrag.write_graphrag_communities` writes a pre-run Infomap
   result to disk as GraphRAG-compatible Parquet tables.

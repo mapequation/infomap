@@ -60,6 +60,8 @@ Use the published Python docs at `https://mapequation.org/infomap-python-docs/` 
 - One-call partitioning from a graph, file, matrix, edge index, or link iterable: `infomap.run(input, seed=..., num_trials=...)`.
 - Just the partition in the graph's own node labels: `infomap.find_communities(graph, seed=..., num_trials=...)` returns a NetworkX-style `list[set]` of node labels — not a `{node: module}` dict. Its igraph counterpart `infomap.find_igraph_communities` returns an `igraph.VertexClustering` (keyed by vertex index), not the same shape. Both accept a `trials` alias for `num_trials` and, like `run`, default to `num_trials=1` — raise it for research runs.
 - Non-default input building (weights, directedness, state/multilayer): `Network.from_*(...)` then `.run(options=Options(...))`.
+- Encoding node metadata: read it from a clu-format file via `Options(meta_data=..., meta_data_rate=...)`, or set it per node on the stateful builder with `im.set_meta_data(node_id, category)` (confirm the current spelling from installed help).
+- Bipartite input: declare the second node type with the `Network` bipartite start id (e.g. `net.bipartite_start_id`); `Options(hide_bipartite_nodes=True)` projects that type out of the written `result.write_*` output.
 - AnnData/Scanpy observation graphs: use the `infomap.tl` helper if the installed package exposes it.
 
 ## Generating code
