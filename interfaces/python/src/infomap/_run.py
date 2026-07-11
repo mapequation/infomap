@@ -54,18 +54,34 @@ def _resolve_options(options: Any, overrides: dict) -> dict:
     return resolved
 
 
+# Args-only output options that nonetheless shape what the Result/Network
+# writers emit on the library surface, so they must NOT trigger the inert
+# warning below. ``hide_bipartite_nodes`` projects the secondary node type out
+# of write_tree/write_clu output (verified: it filters the written files while
+# leaving result.modules()/nodes() covering both types).
+_WRITER_EFFECTIVE_ARGS_ONLY = frozenset({"hide_bipartite_nodes"})
+
+
 def _warn_inert_output_options(options: Any, args: Any) -> None:
     """Warn when output-artifact options are set but cannot take effect.
 
     The args-only options (``tree``, ``ftree``, ``clu``, ``clu_level``,
-    ``out_name``, ``output``, ``hide_bipartite_nodes``, ``print_all_trials``,
-    ``no_overwrite``, ``no_file_output``) drive the engine's own file writer,
-    which only runs when an output directory is supplied through the raw
-    ``args`` escape hatch. On the normal library surface file output is instead
-    controlled by the ``Result`` / ``Network`` writers, so these flags -- set
-    via :class:`Options` -- construct and run without error but do nothing.
-    Point the caller at the writers. When the raw ``args`` escape is in use
+    ``out_name``, ``output``, ``print_all_trials``, ``no_overwrite``,
+    ``no_file_output``) drive the engine's own file writer, which only runs
+    when an output directory is supplied through the raw ``args`` escape hatch.
+    On the normal library surface file output is instead controlled by the
+    ``Result`` / ``Network`` writers, so these flags -- set via
+    :class:`Options` -- construct and run without error but do nothing. Point
+    the caller at the writers. When the raw ``args`` escape is in use
     (``args`` truthy) the flags may act, so stay quiet.
+
+    ``hide_bipartite_nodes`` is classified args-only too, but unlike the flags
+    above it is *not* inert on the library surface: it projects the type-B
+    (bipartite secondary) nodes out of what the ``Result`` writers emit
+    (``result.write_tree`` / ``write_clu`` drop them), while leaving the
+    in-memory result unchanged. Warning that it "has no effect" and to write
+    from the ``Result`` instead would be wrong -- the writers are exactly where
+    it takes effect -- so it is excluded here.
     """
     if args:
         return
@@ -75,6 +91,7 @@ def _warn_inert_output_options(options: Any, args: Any) -> None:
         name
         for name, spec in _ADVANCED_TIER_KWARGS.items()
         if spec[2] == "args-only"
+        and name not in _WRITER_EFFECTIVE_ARGS_ONLY
         and getattr(options, name) != getattr(_OPTION_DEFAULTS, name)
     )
     if not inert:

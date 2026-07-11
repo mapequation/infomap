@@ -70,6 +70,31 @@ def test_network_run_options_carrier_warns():
         net.run(options=Options(out_name="x"))
 
 
+def test_hide_bipartite_nodes_is_not_treated_as_inert():
+    # hide_bipartite_nodes is classified args-only, but unlike the other output
+    # flags it is NOT inert on the library surface: it projects the secondary
+    # (type-B) node type out of what the Result writers emit (write_tree /
+    # write_clu). Warning "no effect, write from the Result instead" would be
+    # wrong -- the writers are exactly where it takes effect -- so it must not
+    # trip the inert-output warning.
+    with warnings.catch_warnings(record=True) as records:
+        warnings.simplefilter("always")
+        _warn_inert_output_options(Options(hide_bipartite_nodes=True), None)
+    assert _inert_userwarnings(records) == []
+
+
+def test_hide_bipartite_nodes_excluded_but_genuine_inert_flag_still_warns():
+    # When hide_bipartite_nodes rides alongside a genuinely inert flag, the
+    # warning fires for the inert flag only and never names hide_bipartite_nodes.
+    with pytest.warns(UserWarning, match="no_file_output") as records:
+        _warn_inert_output_options(
+            Options(hide_bipartite_nodes=True, no_file_output=True), None
+        )
+    assert not any(
+        "hide_bipartite_nodes" in str(record.message) for record in records
+    )
+
+
 def test_plain_run_does_not_warn():
     with warnings.catch_warnings(record=True) as records:
         warnings.simplefilter("always")
