@@ -288,3 +288,22 @@ def test_functional_run_mapping_options_stays_silent():
         warnings.simplefilter("always")
         run([(0, 1), (1, 2), (2, 0)], options={"regularized": True})
     assert _pending(records) == []
+
+
+@pytest.mark.fast
+def test_legacy_result_accessor_replacements_resolve_on_result():
+    """Every deprecated instance accessor names a ``Result`` replacement that
+    actually exists -- a stale or typo'd "use X instead" hint would otherwise
+    ship silently and mislead an agent following the steering."""
+    import re
+
+    from infomap._results import _LEGACY_RESULT_ACCESSORS
+
+    result = run([(0, 1), (1, 2), (2, 0), (2, 3), (3, 4), (4, 5), (5, 3)], seed=1)
+    for member, replacement in _LEGACY_RESULT_ACCESSORS.items():
+        match = re.match(r"result\.([A-Za-z_][A-Za-z0-9_]*)", replacement)
+        assert match, f"{member!r} hint {replacement!r} is not a result.* form"
+        attr = match.group(1)
+        assert hasattr(result, attr), (
+            f"{member!r} points at result.{attr}, absent on Result"
+        )
