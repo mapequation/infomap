@@ -17,8 +17,7 @@ from __future__ import annotations
 
 import pytest
 
-import infomap
-from infomap import Infomap, Network, Options, run
+from infomap import Infomap, Network, Options, datasets, run
 from infomap._options import _OPTION_DOMAINS, _validate_option_domains
 
 pytestmark = pytest.mark.fast
@@ -92,7 +91,7 @@ def test_inclusive_boundaries_are_accepted(options):
     # Boundary values equal to a bound must render without error (mirrors the
     # C++ parser rejecting only value < min or value > max).
     options.to_args()
-    run(infomap.datasets.two_triangles(), options=options)
+    run(datasets.two_triangles(), options=options)
 
 
 def test_defaults_are_all_in_range():
