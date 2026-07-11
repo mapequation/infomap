@@ -76,43 +76,6 @@ _LEGACY_ACCESSOR_HINTS = {
 }
 
 
-def _property_not_callable() -> TypeError:
-    return TypeError(
-        "this is a property on Result, not a method -- read it without "
-        "parentheses (e.g. result.names, not result.names()). Metrics and the "
-        "label/per-trial tables (names, state_names, codelengths) are read as "
-        "properties; the methods are the ones that slice or convert the "
-        "partition (modules(), nodes(), to_dataframe())."
-    )
-
-
-# names / state_names / codelengths are intrinsic tables read as properties,
-# not methods. Someone who expects every collection to be a method writes
-# ``result.names()`` and would otherwise hit a bare ``TypeError: 'dict' object
-# is not callable`` with no pointer. Returning them as thin dict/tuple
-# subclasses whose __call__ explains the property-vs-method distinction turns
-# that dead-end into an actionable message, while behaving exactly like the
-# underlying dict/tuple for every other operation (equality by content,
-# indexing, len, iteration, ``isinstance(x, dict)``). They add no state, so
-# equality stays value-based (two equal-valued views compare equal regardless
-# of which property produced them).
-class _PropertyDict(dict):
-    """A dict that flags the property-vs-method trap when called like a method."""
-
-    __slots__ = ()
-
-    def __call__(self, *args, **kwargs):
-        raise _property_not_callable()
-
-
-class _PropertyTuple(tuple):
-    """A tuple that flags the property-vs-method trap when called like a method."""
-
-    __slots__ = ()
-
-    def __call__(self, *args, **kwargs):
-        raise _property_not_callable()
-
 # Also accept the camelCase SWIG-style spellings (``result.getModules()``) a caller
 # may carry over from the low-level C++ core API, mapping each to the same Result
 # pointer as its snake_case twin.
@@ -670,11 +633,8 @@ class Result(_ResultWritersMixin):
 
     @property
     def codelengths(self) -> tuple:
-        """The total (hierarchical) codelength for each trial.
-
-        A property (read without parentheses); calling it raises with a hint.
-        """
-        return _PropertyTuple(self._codelengths)
+        """The total (hierarchical) codelength for each trial."""
+        return self._codelengths
 
     @property
     def elapsed_time(self) -> float:
@@ -722,11 +682,10 @@ class Result(_ResultWritersMixin):
         for a graph whose nodes are integers (contiguous or not) the ids *are*
         the labels, so this is **empty** and ``modules()`` is keyed by those
         integers directly. The ``result.names.get(nid, nid)`` idiom therefore
-        recovers labels for both cases. A property (read without parentheses);
-        calling it raises with a hint. Returns a copy; mutating it does not
+        recovers labels for both cases. Returns a copy; mutating it does not
         affect the :class:`Result`.
         """
-        return _PropertyDict(self._names)
+        return dict(self._names)
 
     @property
     def state_names(self) -> dict[int, str]:
@@ -736,10 +695,9 @@ class Result(_ResultWritersMixin):
 
         Populated for higher-order (state/memory) networks whose ``*States``
         section names the state nodes; empty otherwise. Physical node names are
-        available separately via :attr:`names`. A property (read without
-        parentheses); calling it raises with a hint.
+        available separately via :attr:`names`.
         """
-        return _PropertyDict(self._state_names)
+        return dict(self._state_names)
 
     # -- collection accessors (§9: methods with defaults) -------------------
 

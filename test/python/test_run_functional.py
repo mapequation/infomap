@@ -72,11 +72,10 @@ def test_run_network_input_is_silent_by_default(capfd):
 
 def test_run_silent_false_override_prints_engine_log(capfd):
     _engine_log(capfd)
-    # Passing silent as a bare keyword is pending-deprecated (it moves to logging
-    # in 3.0); in 2.x it still overrides the default and prints the engine log.
-    # The warning-free carrier equivalents are covered by the two tests below.
-    with pytest.warns(PendingDeprecationWarning, match="silent"):
-        infomap.run(_LINKS, silent=False, num_trials=1, seed=1)
+    # silent=False as a bare keyword forwards to Options without a deprecation
+    # and overrides the default, printing the engine log. logging (enable_log)
+    # is the forward-looking control; the carrier equivalents are below.
+    infomap.run(_LINKS, silent=False, num_trials=1, seed=1)
     assert _engine_log(capfd) != ""
 
 

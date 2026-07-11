@@ -390,10 +390,12 @@ The options in this chapter are fields of {class}`~infomap.Options`, the
 canonical way to configure a run: `infomap.run(input, options=Options(...))`
 (or {meth}`infomap.Network.run` with `options=`). Five common options —
 `seed`, `num_trials`, `two_level`, `directed`, and `markov_time` — are also
-accepted as direct keyword arguments to {func}`infomap.run` and
-{class}`infomap.Infomap`; carry every other option via `Options`, since as a
-bare keyword it is pending-deprecated and leaves those signatures in 3.0 (see
-{doc}`/api/deprecations`). After a run, the metrics live on the returned
+accepted as direct keyword arguments to {func}`infomap.run`. Any other option
+can be passed as a bare keyword to {func}`infomap.run` too (it forwards to
+`Options`); prefer `Options` for a reusable or validated configuration. On the
+stateful {class}`infomap.Infomap` constructor and `run` method the advanced
+options remain accepted as keywords but are pending-deprecated on those
+signatures and leave them in 3.0 (see {doc}`/api/deprecations`). After a run, the metrics live on the returned
 {class}`~infomap.Result`:
 
 - **{attr}`infomap.Result.codelength`** is the map equation value

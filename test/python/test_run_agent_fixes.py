@@ -190,15 +190,16 @@ def test_run_threads_the_raw_args_escape_hatch():
 # -- Network.run accepts advanced overrides like its sibling run APIs --------
 
 
-def test_network_run_accepts_advanced_override_with_pending_deprecation():
+def test_network_run_accepts_advanced_override_without_warning():
     net = Network()
     net.add_links(_LINKS)
     with warnings.catch_warnings(record=True) as records:
         warnings.simplefilter("always")
         result = net.run(regularized=True, seed=1, num_trials=2)
     assert isinstance(result, Result)
-    # Pending-deprecated on the signature, exactly like infomap.run/Infomap.run.
-    assert any(
+    # A bare advanced engine kwarg forwards to Options without a deprecation,
+    # exactly like the functional infomap.run() front door.
+    assert not any(
         issubclass(r.category, PendingDeprecationWarning) for r in records
     )
 

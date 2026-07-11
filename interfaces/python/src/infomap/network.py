@@ -308,11 +308,10 @@ class Network(_NetworkWritersMixin):
             ``{(layer_id, node_id): module_id}``. The internal ids are the ones
             you built the network with (the values of :attr:`node_id_to_label`).
         **overrides
-            Any other Infomap engine option, as a keyword argument, matching
-            :func:`infomap.run` and :meth:`infomap.Infomap.run`. These
-            advanced-tier options still work but are pending-deprecated on this
-            signature and leave it in 3.0 (issue #741); carry them via
-            ``options`` for the sanctioned, warning-free path.
+            Any other Infomap engine option, as a keyword argument, forwarded
+            to :class:`Options` and matching :func:`infomap.run`. Convenient for
+            a one-off; for a reusable or validated configuration prefer
+            ``options=Options(...)``, the canonical carrier and full reference.
 
         Returns
         -------
@@ -326,11 +325,7 @@ class Network(_NetworkWritersMixin):
         run through the stateful :class:`~infomap.Infomap` (constructed with
         ``silent=False``) or pass the input directly to :func:`infomap.run`.
         """
-        from ._options import (
-            Options,
-            _construct_args,
-            _warn_advanced_tier_kwargs,
-        )
+        from ._options import Options, _construct_args
         from ._run import _warn_inert_output_options
         from .result import build_result
 
@@ -341,14 +336,9 @@ class Network(_NetworkWritersMixin):
         else:
             resolved = Options(**dict(options))
 
-        # Advanced-tier keywords are pending-deprecated on this signature (issue
-        # #741) and move off it in 3.0, matching infomap.run()/Infomap.run().
-        # Warn only on keywords typed directly here; the internal
-        # infomap.run(net, ...) funnel folds everything into `options` and
-        # passes no overrides, so it never double-warns.
-        if overrides:
-            _warn_advanced_tier_kwargs(overrides, "run")
-
+        # Advanced engine options passed as bare keywords forward to Options
+        # (the canonical carrier), matching infomap.run(); this convenience
+        # front door does not deprecate them.
         # The five common-tier keywords mirror infomap.run()/Infomap.run(): a
         # supplied value overrides the options carrier; an unset one defers to
         # it. Advanced-tier overrides win over the carrier too. replace()
