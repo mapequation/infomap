@@ -147,6 +147,67 @@ def _warn_advanced_tier_kwargs(passed, context):
             )
 
 
+_OPTION_DOMAINS = {
+    "weight_threshold": (0.0, None),
+    "node_limit": (1, None),
+    "matchable_multilayer_ids": (1, None),
+    "meta_data_rate": (0.0, None),
+    "clu_level": (-1, None),
+    "trial_offset": (0, None),
+    "teleportation_probability": (0.0, 1.0),
+    "max_flow_iterations": (1, None),
+    "min_flow_iterations": (0, None),
+    "flow_tolerance": (0.0, None),
+    "regularization_strength": (0.0, None),
+    "markov_time": (0.0, None),
+    "preferred_number_of_modules": (1, None),
+    "preferred_number_of_levels": (1, None),
+    "preferred_number_of_levels_strength": (0.0, None),
+    "multilayer_relax_rate": (0.0, 1.0),
+    "seed": (1, None),
+    "num_trials": (1, None),
+    "core_loop_limit": (1, None),
+    "core_level_limit": (0, None),
+    "tune_iteration_limit": (0, None),
+    "core_loop_codelength_threshold": (0.0, None),
+    "tune_iteration_relative_threshold": (0.0, None),
+    "num_random_moves": (0, None),
+    "max_degree_for_random_moves": (0, None),
+}
+
+
+def _validate_option_domains(options):
+    """Reject out-of-range numeric options with a clear ValueError.
+
+    The engine parser rejects an out-of-domain value (seed < 1, a
+    probability outside [0, 1], a negative markov time, ...) with a generic
+    "Cannot parse '<value>' as argument to option '<flag>'" -- misleading,
+    since the value parses fine as a number and only violates the option's
+    range. Catch it here first, naming the option and its valid range. Bounds
+    are inclusive, mirroring the C++ parser (reject value < min or > max).
+    """
+    for name, (low, high) in _OPTION_DOMAINS.items():
+        value = options.get(name)
+        if (
+            value is None
+            or isinstance(value, bool)
+            or not isinstance(value, (int, float))
+        ):
+            continue
+        if (low is not None and value < low) or (
+            high is not None and value > high
+        ):
+            if low is not None and high is not None:
+                bounds = f"between {low} and {high} (inclusive)"
+            elif low is not None:
+                bounds = f">= {low}"
+            else:
+                bounds = f"<= {high}"
+            raise ValueError(
+                f"{name}={value!r} is out of range: {name} must be {bounds}."
+            )
+
+
 _INPUT_OPTION_SPECS = (
     ("flag", "skip_adjust_bipartite_flow", "--skip-adjust-bipartite-flow", None),
     ("flag", "bipartite_teleportation", "--bipartite-teleportation", None),
@@ -661,6 +722,7 @@ class Options:
             given.
         """
         options = self.to_kwargs()
+        _validate_option_domains(options)
         rendered_args = []
 
         if self.include_self_links is not None:

@@ -185,6 +185,32 @@ class Parameter:
             return "lambda value: value is not None"
         return f"lambda value: value != {default}"
 
+    def python_domain(self) -> tuple[str, str] | None:
+        """The ``(low, high)`` numeric-domain literals for validation, or None.
+
+        Rendered only for numeric value-typed parameters that declare a bound in
+        the catalog (``min``/``max`` from ``--print-json-parameters``). Bounds
+        are inclusive, mirroring the C++ parser (``ProgramInterface.h`` rejects
+        ``value < min`` or ``value > max``). Each end is a Python literal, or
+        ``"None"`` for an absent bound. Special render policies (the repeated
+        ``-F``/``-v`` shorts, the ``--output`` list, the ``--directed`` alias)
+        carry no plain numeric range and are skipped.
+        """
+        if self.render_policy != "value":
+            return None
+        if self.long_type not in {"integer", "number", "probability"}:
+            return None
+        low, high = self.raw.get("min"), self.raw.get("max")
+        if low is None and high is None:
+            return None
+
+        def literal(bound: str | None) -> str:
+            if bound is None:
+                return "None"
+            return str(int(bound)) if self.long_type == "integer" else repr(float(bound))
+
+        return literal(low), literal(high)
+
     def python_literal_alias(self) -> tuple[str, str] | None:
         """The ``(alias_name, Literal[...])`` pair for a choices parameter.
 
