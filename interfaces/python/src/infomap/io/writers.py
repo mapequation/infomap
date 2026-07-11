@@ -47,6 +47,21 @@ class _ResultWritersMixin(_WritersBase):
 
     __slots__ = ()
 
+    # File extension -> writer method. The available set is host-dependent: a
+    # ``Result`` carries only the result-artifact writers, while ``.net``
+    # (Pajek) serializes the *input network* and lives on ``Network`` /
+    # ``Infomap``. The messages below are built from what THIS host can write
+    # (filtered by ``hasattr``), so a ``Result`` never advertises ``.net``.
+    _EXT_WRITERS = {
+        "clu": "write_clu",
+        "tree": "write_tree",
+        "ftree": "write_flow_tree",
+        "nwk": "write_newick",
+        "net": "write_pajek",
+        "json": "write_json",
+        "csv": "write_csv",
+    }
+
     def write(self, filename: str | os.PathLike[str], *args, **kwargs) -> None:
         """Write results to file, inferring the format from the extension.
 
@@ -57,7 +72,7 @@ class _ResultWritersMixin(_WritersBase):
         ValueError
             If ``filename`` has no extension to infer the format from.
         NotImplementedError
-            If the file format is not supported.
+            If the file format is not supported on this host.
 
         Parameters
         ----------
@@ -66,29 +81,33 @@ class _ResultWritersMixin(_WritersBase):
         """
         filename = os.fspath(filename)
         _, ext = os.path.splitext(filename)
+        ext = ext[1:]  # remove the dot
 
-        # remove the dot
-        ext = ext[1:]
+        available = [
+            f".{extension}"
+            for extension, method in self._EXT_WRITERS.items()
+            if hasattr(self, method)
+        ]
 
         if not ext:
             raise ValueError(
                 f"Cannot infer an output format from {filename!r}: the filename "
-                "has no extension. Add one of .clu, .tree, .ftree, .nwk, .net, "
-                ".json or .csv, or call a specific writer such as write_clu()."
+                f"has no extension. Add one of {', '.join(available)}, or call a "
+                "specific writer such as write_clu()."
             )
 
-        if ext == "ftree":
-            ext = "flow_tree"
-        elif ext == "nwk":
-            ext = "newick"
-        elif ext == "net":
-            ext = "pajek"
-
-        writer = f"write_{ext}"
-
-        if hasattr(self, writer):
+        writer = self._EXT_WRITERS.get(ext)
+        if writer is not None and hasattr(self, writer):
             return getattr(self, writer)(filename, *args, **kwargs)
-
+        if writer is not None:
+            # A known format this host cannot write: ``.net`` (Pajek) describes
+            # the input network, so it lives on Network, not on the Result.
+            raise NotImplementedError(
+                f"a {ext!r} file serializes the input network, not the "
+                "partition: write it from the Network with "
+                "network.write_pajek(...) / network.write_state_network(...). "
+                f"The Result writes partition artifacts: {', '.join(available)}."
+            )
         raise NotImplementedError(f"No method found for writing {ext} files")
 
     def write_clu(
@@ -96,6 +115,8 @@ class _ResultWritersMixin(_WritersBase):
         filename: str | os.PathLike[str],
         states: bool = False,
         depth_level: int = 1,
+        *,
+        depth: int | None = None,
     ) -> None:
         """Write result to a clu file.
 
@@ -111,9 +132,17 @@ class _ResultWritersMixin(_WritersBase):
         filename : str or os.PathLike
         states : bool, optional
             If the state nodes should be included. Default ``False``.
+        depth : int, optional
+            The depth in the hierarchical tree to write. This is the preferred
+            spelling, matching ``result.modules(depth=...)`` and
+            ``result.to_dataframe(depth=...)``; it overrides ``depth_level``
+            when given.
         depth_level : int, optional
-            The depth in the hierarchical tree to write.
+            Legacy alias of ``depth`` (the historical ``write_clu`` keyword);
+            still accepted. ``1`` is the top level, ``-1`` the bottom.
         """
+        if depth is not None:
+            depth_level = depth
         core = self._writer_core()
         with _translate_engine_errors():
             core.writeClu(os.fspath(filename), states, depth_level)

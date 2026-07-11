@@ -39,10 +39,10 @@ print(f"Writing top level modules to output/{name}.clu...")
 result.write(f"output/{name}.clu")
 
 print(f"Writing second level modules to output/{name}_level2.clu...")
-result.write(f"output/{name}_level2.clu", depth_level=2)
+result.write(f"output/{name}_level2.clu", depth=2)
 
 print(f"Writing bottom level modules to output/{name}_level-1.clu...")
-result.write(f"output/{name}_level-1.clu", depth_level=-1)
+result.write(f"output/{name}_level-1.clu", depth=-1)
 
 print(f"Writing tree to output/{name}.tree...")
 result.write(f"output/{name}.tree")

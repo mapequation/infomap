@@ -128,16 +128,15 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
     1.0
 
 
-    Read a network file and inspect a few metrics on the result:
+    Read a network file and inspect a few metrics on the result. Point
+    ``read_file`` at your own network file (Pajek, link list, ``*States`` ...);
+    the bundled :mod:`infomap.datasets` need no file at all::
 
-    >>> from infomap import Infomap
-    >>> im = Infomap(num_trials=10)
-    >>> im.read_file("ninetriangles.net")
-    >>> result = im.run()
-    >>> result.codelength
-    3.3858
-    >>> result.num_top_modules
-    3
+        im = Infomap(num_trials=10)
+        im.read_file("your-network.net")
+        result = im.run()
+        result.codelength        # e.g. 3.3858
+        result.num_top_modules   # e.g. 3
 
 
     Iterate the partition via :meth:`Result.modules` (``node_id -> module_id``)
