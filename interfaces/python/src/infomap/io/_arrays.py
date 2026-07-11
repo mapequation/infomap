@@ -24,7 +24,10 @@ def require_modules(infomap: Any) -> None:
     """Raise if ``infomap`` has no module assignments yet (i.e. has not run)."""
     if not infomap._core.haveModules():
         raise NotRunError(
-            "Infomap results are not available. Run Infomap before exporting."
+            "Infomap results are not available. Run Infomap before exporting -- "
+            "read the export off the Result that run() returns (e.g. "
+            "result = infomap.run(graph); result.to_networkx()), or call "
+            "im.run() on the instance first."
         )
 
 

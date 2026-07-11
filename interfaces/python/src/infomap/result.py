@@ -524,6 +524,13 @@ class Result(_ResultWritersMixin):
         """
         if self._engine._generation != self._generation:
             return None
+        # The rich card is rendered from the engine's state-card summary, which
+        # only the stateful Infomap engine provides. A Network-backed Result
+        # (e.g. from infomap.run(datasets.x()) or a prebuilt Network) declines
+        # HTML and falls back to the text __repr__ -- which works from the eager
+        # scalars -- rather than raising in a notebook.
+        if not hasattr(self._engine, "summary"):
+            return None
         return _summary_repr_html(self._engine)
 
     # -- lazy node-data extraction ------------------------------------------

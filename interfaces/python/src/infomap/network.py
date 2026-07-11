@@ -38,6 +38,7 @@ from ._network_input import add_bulk_links as _add_bulk_links
 from ._network_input import first_order_unpacker as _first_order_unpacker
 from ._network_input import flat_multilayer_unpacker as _flat_multilayer_unpacker
 from ._network_input import paired_multilayer_unpacker as _paired_multilayer_unpacker
+from ._run import _UNSET
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -275,6 +276,11 @@ class Network(_NetworkWritersMixin):
         self,
         *,
         options: Options | Mapping[str, Any] | None = None,
+        seed: int = _UNSET,
+        num_trials: int = _UNSET,
+        two_level: bool = _UNSET,
+        directed: bool | None = _UNSET,
+        markov_time: float = _UNSET,
         args: str | None = None,
         initial_partition: Mapping[Any, Any] | None = None,
     ) -> Result:
@@ -284,6 +290,11 @@ class Network(_NetworkWritersMixin):
         ----------
         options : Options, mapping, or None, optional
             Configuration rendered to Infomap CLI flags for this run.
+        seed, num_trials, two_level, directed, markov_time : optional
+            The five common-tier engine options, accepted directly here to match
+            :func:`infomap.run` and :meth:`infomap.Infomap.run`. A supplied value
+            overrides the ``options`` carrier; carry any other engine option via
+            ``options=Options(...)``.
         args : str, optional
             Raw Infomap arguments prepended before the rendered options.
         initial_partition : mapping, optional
@@ -304,6 +315,8 @@ class Network(_NetworkWritersMixin):
         run through the stateful :class:`~infomap.Infomap` (constructed with
         ``silent=False``) or pass the input directly to :func:`infomap.run`.
         """
+        from dataclasses import replace as _replace
+
         from ._options import Options, _construct_args
         from ._run import _warn_inert_output_options
         from .result import build_result
@@ -314,6 +327,23 @@ class Network(_NetworkWritersMixin):
             resolved = options
         else:
             resolved = Options(**dict(options))
+
+        # The five common-tier keywords mirror infomap.run()/Infomap.run(): a
+        # supplied value overrides the options carrier; an unset one defers to
+        # it. replace() re-validates through Options.__post_init__.
+        common = {
+            name: value
+            for name, value in (
+                ("seed", seed),
+                ("num_trials", num_trials),
+                ("two_level", two_level),
+                ("directed", directed),
+                ("markov_time", markov_time),
+            )
+            if value is not _UNSET
+        }
+        if common:
+            resolved = _replace(resolved, **common)
 
         if _is_log_routed():
             # enable_log()/handlers on the "infomap" logger route the engine
