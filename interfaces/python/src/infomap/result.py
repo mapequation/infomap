@@ -51,8 +51,8 @@ from ._results import (
     perplexity,
 )
 
-# Legacy Infomap instance-mirror accessor names, mapped to their Result form. An
-# agent that learned the pre-Result API -- or hits the method/property flip
+# Legacy Infomap instance-mirror accessor names, mapped to their Result form. A
+# caller that learned the pre-Result API -- or hits the method/property flip
 # (``im.modules`` is a property, ``result.modules()`` is a method) -- reaches
 # for these on a Result; ``__getattr__`` turns the miss into a pointer instead
 # of a bare AttributeError. Kept in step with the deprecated members in
@@ -73,7 +73,7 @@ _LEGACY_ACCESSOR_HINTS = {
     "physical_nodes": "result.nodes(states=False)",
 }
 
-# Also accept the camelCase SWIG-style spellings (``result.getModules()``) an agent
+# Also accept the camelCase SWIG-style spellings (``result.getModules()``) a caller
 # may carry over from the low-level C++ core API, mapping each to the same Result
 # pointer as its snake_case twin.
 _LEGACY_ACCESSOR_HINTS.update(
