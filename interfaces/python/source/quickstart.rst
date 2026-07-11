@@ -5,6 +5,43 @@ This page shows the smallest useful calls: run Infomap on a graph and read the
 result. For worked examples with plotting, dataframe inspection, and export,
 see :doc:`working-with-infomap/index`.
 
+Cheat sheet
+-----------
+
+The whole surface at a glance (each line is expanded below):
+
+.. code-block:: python
+
+    import infomap
+    from infomap import Options
+
+    # input: a networkx/igraph graph, SciPy sparse matrix, (2, E) edge index,
+    # file path, iterable of (u, v[, w]) links, or a prebuilt Network
+    result = infomap.run(graph, seed=123, num_trials=20)
+
+    result.codelength              # scalar metrics are PROPERTIES (no parentheses)
+    result.num_top_modules
+    result.modules()               # collections are METHODS -> {node_id: module_id}
+    result.to_dataframe()          # per-node table: node_id, module_id, flow, path, name
+    result.write_clu("out.clu")    # write .clu/.tree/.ftree from the Result
+
+    # advanced engine options ride Options, not bare keywords:
+    infomap.run(graph, options=Options(regularized=True, flow_model="directed"))
+
+Gotchas an agent hits most, each answered in the :doc:`FAQ <faq>`:
+
+- **Scalars are properties, collections are methods.** ``result.codelength``
+  (no ``()``) but ``result.modules()`` (with ``()``); the exceptions are
+  ``result.names`` / ``state_names`` / ``codelengths`` (properties).
+- **Only five options are direct keywords** on :func:`infomap.run`: ``seed``,
+  ``num_trials``, ``two_level``, ``directed``, ``markov_time``. Carry every other
+  engine option via :class:`~infomap.Options` (see :doc:`/api/deprecations`).
+- **Output flags are inert on the library surface.** ``Options(tree=True)``
+  writes nothing; write from the ``Result`` (``write_tree`` / ``write_clu``) or
+  the ``Network`` (``write_pajek``).
+- **A matrix or edge index is not a graph.** ``infomap.run(A, directed=True)``
+  raises; build it with ``Network.from_scipy_sparse_matrix(A, directed=True)``.
+
 Run on a graph
 --------------
 
@@ -19,8 +56,8 @@ Run on a graph
     graph = nx.karate_club_graph()
     result = infomap.run(graph, seed=123, num_trials=20)
 
-    print(result.num_top_modules)   # 3
-    print(result.codelength)        # 4.0874 bits per step
+    print(result.num_top_modules)   # e.g. 3
+    print(result.codelength)        # e.g. ~4.09 bits per step
     print(result.modules())         # {node_id: module_id}
 
 The same call accepts a NetworkX or igraph graph, a SciPy sparse matrix, a

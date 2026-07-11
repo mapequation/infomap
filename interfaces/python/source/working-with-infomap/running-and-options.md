@@ -286,7 +286,8 @@ specifically want to study structure at a given scale, or when reviewers ask
 
 ### `regularized` for sparse data
 
-`regularized=True` enables the Bayesian regularized map equation for sparse or
+Setting `regularized=True` (carried via `Options`, as in the loop below) enables
+the Bayesian regularized map equation for sparse or
 incompletely sampled networks, and `regularization_strength` scales the prior
 (higher merges more modules); see {doc}`/robustness/incomplete-data` for why
 sparse data over-split and how the prior fixes it. On a graph as small as the
@@ -380,8 +381,8 @@ for name, graph in [("ring of cliques", G_ring), ("karate club", G_karate)]:
 - **More trials never hurt correctness, only runtime.** If repeated runs disagree,
   raise `num_trials` (or cap trials with `options=Options(converge=True)`) rather
   than trusting one fit.
-- **Sparse or under-sampled data over-splits.** Reach for `regularized=True`
-  (see {doc}`/robustness/incomplete-data`).
+- **Sparse or under-sampled data over-splits.** Reach for
+  `options=Options(regularized=True)` (see {doc}`/robustness/incomplete-data`).
 
 ## API pointers
 

@@ -83,6 +83,15 @@ Where to go
       Keep sparse or incompletely sampled networks from fragmenting into
       spurious modules with the regularized map equation.
 
+   .. grid-item-card:: FAQ & common pitfalls
+      :link: faq
+      :link-type: doc
+
+      Hit an error, or porting older code? Answers to the Python API traps --
+      scalars-are-properties vs collections-are-methods, ``directed=`` on a
+      matrix, writing ``.tree``/``.clu`` files -- plus the stateful-class
+      migration guide in :doc:`the-infomap-class`.
+
 External resources
 ------------------
 
