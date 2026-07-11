@@ -239,15 +239,20 @@ def _is_dense_adjacency_matrix(obj: Any) -> bool:
     ``add_links`` it reads each row as a ``(source, target[, weight])`` link,
     silently partitioning a different graph. A ``(2, E)`` integer edge index and
     a float ``(E, 2|3)`` link matrix are matched before this check, so a
-    *square* 2-D array reaching here is almost certainly an adjacency matrix.
-    Detected duck-typed (NumPy, dense SciPy, array-api, torch) so we never
-    import NumPy.
+    *square ``N >= 3``* 2-D array reaching here is almost certainly an adjacency
+    matrix. Detected duck-typed (NumPy, dense SciPy, array-api, torch) so we
+    never import NumPy.
+
+    A 2-row array is deliberately *not* flagged: ``(2, E)`` is the documented
+    edge-index orientation, so a ``2 x 2`` is too degenerate to disambiguate
+    from an edge index / two link rows and is left to those paths (the integer
+    case is already an edge index; the float case reads as two link rows).
     """
     shape = getattr(obj, "shape", None)
     if shape is None or len(shape) != 2:
         return False
     rows, cols = shape[0], shape[1]
-    return rows == cols and rows >= 2
+    return rows == cols and rows >= 3
 
 
 # Adapter-only keyword arguments per input type. run() forwards keywords to the
