@@ -112,3 +112,5 @@ sweep = pd.DataFrame(records)                           # columns: markov_time +
 ```
 
 `result.to_series()` is the pandas-native single row (`pd.DataFrame([r.to_series() for r in results])`). `summary()`/`to_series()` read only the eager scalars, so they never raise on a re-run; they omit the lazy `effective_num_*`, the per-trial `codelengths`, and `meta_codelength` — add those columns explicitly if a sweep needs them.
+
+Do not confuse `result.summary()` (this method, on a `Result`) with `im.summary()` on the stateful `Infomap` instance. The instance method is a network/run *state card* — it works before a run and keys module counts with the short card names (`status`, `top_modules`, `levels`), not the `Result` property names. For a sweep table, always collect `Result.summary()` (`num_top_modules`, `num_levels`, …).

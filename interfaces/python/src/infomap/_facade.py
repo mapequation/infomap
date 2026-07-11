@@ -1673,12 +1673,24 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         return _repr_text(self)
 
     def summary(self):
-        """Return a compact dictionary with network and result state.
+        """Return a compact dictionary describing this instance's state.
 
-        Before :meth:`run`, the summary contains loaded network counts and
-        higher-order state-node information. After :meth:`run`, it also
-        includes module counts, codelength components, entropy rate, and elapsed
-        time.
+        A *state card* for the stateful builder (it also backs the notebook
+        HTML repr). Before :meth:`run` it holds loaded network counts and
+        higher-order state-node information, with ``status`` set to
+        ``"not run"``; after :meth:`run` it also includes module counts,
+        codelength components, entropy rate, and elapsed time. Module counts use
+        the short card keys (``top_modules``, ``levels``, ``leaf_modules``).
+
+        This is not :meth:`Result.summary`. For a finished run's result metrics
+        as a one-row-per-run record -- keyed by the :class:`Result` property
+        names (``num_top_modules``, ``num_levels``), the shape for collecting a
+        sweep into a :class:`pandas.DataFrame` -- read ``summary()`` off the
+        ``Result`` that :meth:`run` returns instead.
+
+        See Also
+        --------
+        Result.summary : the returned run's result metrics as a sweep row.
         """
         return _summary_data(self)
 

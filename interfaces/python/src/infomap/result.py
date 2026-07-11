@@ -865,6 +865,14 @@ class Result(_ResultWritersMixin):
         column reads the same as the attribute you would read off a single
         result (``df["codelength"]`` mirrors ``result.codelength``).
 
+        This is distinct from :meth:`Infomap.summary`. That method describes the
+        stateful *instance* -- network counts and run ``status``, available even
+        before a run -- and keys its module counts with the shorter card names
+        (``top_modules``, ``levels``). ``Result.summary`` reports only a finished
+        run's result metrics, keyed by the ``Result`` property names
+        (``num_top_modules``, ``num_levels``); it is the shape to collect into a
+        sweep table.
+
         Only the eagerly captured O(1) scalars are included, so ``summary`` is
         cheap and stays valid for the life of the ``Result``: it never walks
         the tree and never raises :class:`~infomap.StaleResultError`, even
@@ -883,6 +891,7 @@ class Result(_ResultWritersMixin):
         --------
         to_series : the same record as a :class:`pandas.Series`.
         to_dataframe : the per-node table for a single result.
+        Infomap.summary : the stateful instance's state card (different keys).
 
         Examples
         --------
