@@ -58,7 +58,7 @@ _ADVANCED_TIER_KWARGS = {
     "clu": (False, False, "args-only", "Use Result.write_tree/write_flow_tree/write_clu (write_clu takes depth_level) or Network.write_pajek/write_state_network. The flag only acts when an output directory is passed via the raw args escape hatch."),
     "clu_level": (None, None, "args-only", "Use Result.write_tree/write_flow_tree/write_clu (write_clu takes depth_level) or Network.write_pajek/write_state_network. The flag only acts when an output directory is passed via the raw args escape hatch."),
     "output": (None, None, "args-only", "Use Result.write_tree/write_flow_tree/write_clu (write_clu takes depth_level) or Network.write_pajek/write_state_network. The flag only acts when an output directory is passed via the raw args escape hatch."),
-    "hide_bipartite_nodes": (False, False, "args-only", "Use Result.write_tree/write_flow_tree/write_clu (write_clu takes depth_level) or Network.write_pajek/write_state_network. The flag only acts when an output directory is passed via the raw args escape hatch."),
+    "hide_bipartite_nodes": (False, False, "args-only", "It projects the secondary (type-B) bipartite nodes out of what result.write_tree/write_clu emit, leaving the in-memory result covering both node types. Set it via Options and write from the Result to use it."),
     "print_all_trials": (False, False, "args-only", "Use Result.write_tree/write_flow_tree/write_clu (write_clu takes depth_level) or Network.write_pajek/write_state_network. The flag only acts when an output directory is passed via the raw args escape hatch."),
     "no_overwrite": (False, False, "args-only", "Use Result.write_tree/write_flow_tree/write_clu (write_clu takes depth_level) or Network.write_pajek/write_state_network. The flag only acts when an output directory is passed via the raw args escape hatch."),
     "print_config_fingerprint": (False, False, "remove", "A print-and-exit CLI diagnostic; run the infomap binary."),
@@ -107,8 +107,8 @@ _ADVANCED_TIER_KWARGS = {
     "num_threads": (None, None, "keep", None),
     "threads": (None, None, "remove", "Use num_threads; threads is a redundant alias of the same engine option."),
     "prefer_modular_solution": (False, False, "keep", None),
-    "num_random_moves": (None, None, "keep", None),
-    "max_degree_for_random_moves": (None, None, "keep", None),
+    "num_random_moves": (5, 5, "keep", None),
+    "max_degree_for_random_moves": (2, 2, "keep", None),
 }
 
 
@@ -225,8 +225,8 @@ _ACCURACY_OPTION_SPECS = (
     ("value", "num_threads", "--num-threads", lambda value: value is not None),
     ("value", "threads", "--threads", lambda value: value is not None),
     ("flag", "prefer_modular_solution", "--prefer-modular-solution", None),
-    ("value", "num_random_moves", "--num-random-moves", lambda value: value is not None),
-    ("value", "max_degree_for_random_moves", "--max-degree-for-random-moves", lambda value: value is not None),
+    ("value", "num_random_moves", "--num-random-moves", lambda value: value != 5),
+    ("value", "max_degree_for_random_moves", "--max-degree-for-random-moves", lambda value: value != 2),
 )
 
 
@@ -350,10 +350,10 @@ class Options:
     hide_bipartite_nodes : bool, optional
         Hide bipartite nodes in output by projecting the solution to primary nodes.
 
-        Args-only on the Python library surface. Use
-        Result.write_tree/write_flow_tree/write_clu (write_clu takes depth_level) or
-        Network.write_pajek/write_state_network. The flag only acts when an output
-        directory is passed via the raw args escape hatch.
+        Args-only on the Python library surface. It projects the secondary (type-B)
+        bipartite nodes out of what result.write_tree/write_clu emit, leaving the
+        in-memory result covering both node types. Set it via Options and write from the
+        Result to use it.
     print_all_trials : bool, optional
         Write each trial to separate output files. Has effect only when --num-trials is
         greater than 1.
@@ -623,8 +623,8 @@ class Options:
     num_threads: str | int | None = None
     threads: str | None = None
     prefer_modular_solution: bool = False
-    num_random_moves: int | None = None
-    max_degree_for_random_moves: int | None = None
+    num_random_moves: int = 5
+    max_degree_for_random_moves: int = 2
 
     @classmethod
     def _from_locals(cls, mapping):
@@ -823,7 +823,7 @@ def _construct_args(
     num_threads=None,
     threads=None,
     prefer_modular_solution=False,
-    num_random_moves=None,
-    max_degree_for_random_moves=None,
+    num_random_moves=5,
+    max_degree_for_random_moves=2,
 ):
     return Options._from_locals(locals()).to_args(base_args=args)

@@ -35,6 +35,10 @@
       "python": "1.0",
       "r": "1.0"
     },
+    "--max-degree-for-random-moves": {
+      "python": "2",
+      "r": "2L"
+    },
     "--max-flow-iterations": {
       "python": "400",
       "r": "400L"
@@ -62,6 +66,10 @@
     "--multilayer-relax-rate": {
       "python": "0.15",
       "r": "0.15"
+    },
+    "--num-random-moves": {
+      "python": "5",
+      "r": "5L"
     },
     "--num-trials": {
       "python": "1",
@@ -182,7 +190,6 @@
           "--clu-level",
           "--out-name",
           "--no-file-output",
-          "--hide-bipartite-nodes",
           "--print-all-trials",
           "--no-overwrite"
         ],
@@ -237,6 +244,12 @@
         "python": {
           "action": "keep",
           "tier": "common"
+        }
+      },
+      "--hide-bipartite-nodes": {
+        "python": {
+          "action": "args-only",
+          "replacement": "It projects the secondary (type-B) bipartite nodes out of what result.write_tree/write_clu emit, leaving the in-memory result covering both node types. Set it via Options and write from the Result to use it."
         }
       },
       "--pretty": {

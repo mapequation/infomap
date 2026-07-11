@@ -69,8 +69,6 @@ INTENTIONAL_OPTIONAL_VALUE_PARAMS = {
     "--preferred-number-of-levels": "Optional soft preference; unset disables it.",
     "--core-level-limit": "Optional reapply cap; unset uses the engine default.",
     "--tune-iteration-limit": "Optional iteration cap; unset uses the engine default.",
-    "--num-random-moves": "Optional; unset disables random-move merging.",
-    "--max-degree-for-random-moves": "Optional; unset means no degree cap.",
 }
 
 # Parameters that exist only in feature-enabled builds (guarded by
