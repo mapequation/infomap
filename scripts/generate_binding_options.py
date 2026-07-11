@@ -514,10 +514,7 @@ def _options_doc_policy_note(policy: dict) -> str:
         # class docstring and keep the per-field note to a short pointer.
         # ``hide_bipartite_nodes`` is args-only but writer-effective (no
         # inertWithoutOutputDir), so it falls through and keeps its own note.
-        return (
-            "Args-only in library mode: no effect here -- write from the "
-            "Result / Network (see the note under Parameters below)."
-        )
+        return "Args-only in library mode (see the note above)."
     lead = {
         "args-only": "Args-only on the Python library surface.",
         "remove": "Not a Python library option; it leaves the surface in 3.0.",
@@ -1238,10 +1235,7 @@ _FACADE_OPTIONS_DOC = (
 # ``.. deprecated::``. Marking a still-supported tuning knob "deprecated" makes
 # agents and linters (which read the directive token literally) steer users
 # away from a valid option.
-_ADVANCED_TIER_KEEP_NOTE = (
-    "Pass it via `Options` to `infomap.run()` or `Network.run()`. This keyword "
-    "still works directly through 2.x and moves to `Options` in 3.0."
-)
+_ADVANCED_TIER_KEEP_NOTE = "Pass it via `Options`; moves off this signature in 3.0."
 
 
 def _advanced_tier_directive(policy):
