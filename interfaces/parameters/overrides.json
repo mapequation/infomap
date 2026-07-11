@@ -126,6 +126,9 @@
   "types": {
     "--num-threads": {
       "python": "str | int | None"
+    },
+    "--threads": {
+      "python": "str | int | None"
     }
   },
   "bindingOnly": {

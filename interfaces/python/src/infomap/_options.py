@@ -228,6 +228,15 @@ def _validate_option_choices(options):
         value = options.get(name)
         if value is None:
             continue
+        if is_sequence and isinstance(value, str):
+            # A single format string is a natural guess, but a sequence
+            # choice iterates it per character ('tree' -> 't','r',...),
+            # yielding a baffling "'t' is not valid". Steer to a list.
+            hint = f"[{value!r}]" if value in choices else "['tree', 'clu']"
+            raise ValueError(
+                f"{name}={value!r} must be a list or tuple of formats "
+                f"(e.g. {name}={hint}), not a single string."
+            )
         values = value if is_sequence else (value,)
         for item in values:
             if item not in choices:
@@ -359,8 +368,33 @@ def _join_args(base_args, parts):
     return f"{base_args} {' '.join(parts)}"
 
 
+class _OptionsMeta(type):
+    # Intercept construction so an unknown keyword gets the same
+    # actionable 'did you mean' guidance as infomap.run(), instead of
+    # the bare dataclass 'unexpected keyword argument' TypeError.
+    def __call__(cls, *args, **kwargs):
+        unknown = [key for key in kwargs if key not in _OPTION_FIELD_NAMES]
+        if unknown:
+            import difflib
+
+            rendered = []
+            for key in unknown:
+                near = difflib.get_close_matches(key, _OPTION_FIELD_NAMES, n=1)
+                rendered.append(
+                    f"{key!r}"
+                    + (f" (did you mean {near[0]!r}?)" if near else "")
+                )
+            raise TypeError(
+                "Options() got unknown option(s): "
+                + ", ".join(rendered)
+                + ". See inspect.getdoc(infomap.Options) for the full "
+                "list of option names."
+            )
+        return super().__call__(*args, **kwargs)
+
+
 @dataclass(frozen=True, slots=True)
-class Options:
+class Options(metaclass=_OptionsMeta):
     """Reusable Infomap keyword options.
 
     This class mirrors the keyword arguments accepted by :class:`infomap.Infomap`
@@ -370,6 +404,13 @@ class Options:
     :func:`infomap.run` via ``infomap.run(input, options=options)`` to apply a
     reusable configuration.
 
+    A field marked *args-only in library mode* below drives the engine's
+    own file writer, which runs only with an output directory passed via
+    the raw ``args`` escape hatch; on the normal library surface it writes
+    nothing. Write results from the ``Result`` (``result.write_tree`` /
+    ``write_clu`` / ...) or the ``Network`` (``write_pajek`` /
+    ``write_state_network``) instead.
+
     Parameters
     ----------
     skip_adjust_bipartite_flow : bool, optional
@@ -378,7 +419,8 @@ class Options:
         Use bipartite teleportation instead of the default two-step unipartite
         teleportation.
     weight_threshold : float, optional
-        Ignore input links with weight below this threshold. Valid range: >= 0.0.
+        Ignore input links with weight below this threshold. Valid range: >= 0.0. Engine
+        default: 0.
     no_self_links : bool, optional
         Exclude self-links from the input network.
     node_limit : int, optional
@@ -407,57 +449,43 @@ class Options:
     out_name : str, optional
         Base name for output files, for example [out_directory]/[out-name].tree.
 
-        Args-only on the Python library surface. Use
-        Result.write_tree/write_flow_tree/write_clu (write_clu takes depth_level) or
-        Network.write_pajek/write_state_network. The flag only acts when an output
-        directory is passed via the raw args escape hatch.
+        Args-only in library mode: no effect here -- write from the Result / Network
+        (see the note under Parameters below).
     no_file_output : bool, optional
         Do not write output files.
 
-        Args-only on the Python library surface. Use
-        Result.write_tree/write_flow_tree/write_clu (write_clu takes depth_level) or
-        Network.write_pajek/write_state_network. The flag only acts when an output
-        directory is passed via the raw args escape hatch.
+        Args-only in library mode: no effect here -- write from the Result / Network
+        (see the note under Parameters below).
     tree : bool, optional
         Write the modular hierarchy to a tree file. Enabled by default when no other
         output format is selected.
 
-        Args-only on the Python library surface. Use
-        Result.write_tree/write_flow_tree/write_clu (write_clu takes depth_level) or
-        Network.write_pajek/write_state_network. The flag only acts when an output
-        directory is passed via the raw args escape hatch.
+        Args-only in library mode: no effect here -- write from the Result / Network
+        (see the note under Parameters below).
     ftree : bool, optional
         Write the modular hierarchy and aggregated links between nested modules to an
         ftree file. Used by Network Navigator.
 
-        Args-only on the Python library surface. Use
-        Result.write_tree/write_flow_tree/write_clu (write_clu takes depth_level) or
-        Network.write_pajek/write_state_network. The flag only acts when an output
-        directory is passed via the raw args escape hatch.
+        Args-only in library mode: no effect here -- write from the Result / Network
+        (see the note under Parameters below).
     clu : bool, optional
         Write top-level module ids for each node to a clu file.
 
-        Args-only on the Python library surface. Use
-        Result.write_tree/write_flow_tree/write_clu (write_clu takes depth_level) or
-        Network.write_pajek/write_state_network. The flag only acts when an output
-        directory is passed via the raw args escape hatch.
+        Args-only in library mode: no effect here -- write from the Result / Network
+        (see the note under Parameters below).
     clu_level : int, optional
         With --clu or --output clu, write module ids at this depth from the root. Use -1
-        for bottom-level modules. Valid range: >= -1.
+        for bottom-level modules. Valid range: >= -1. Engine default: 1.
 
-        Args-only on the Python library surface. Use
-        Result.write_tree/write_flow_tree/write_clu (write_clu takes depth_level) or
-        Network.write_pajek/write_state_network. The flag only acts when an output
-        directory is passed via the raw args escape hatch.
+        Args-only in library mode: no effect here -- write from the Result / Network
+        (see the note under Parameters below).
     output : sequence of str, optional
         Write selected output formats as a comma-separated list without spaces, e.g. -o
         clu,tree,ftree. Options: clu, tree, ftree, newick, json, csv, network, states,
         flow.
 
-        Args-only on the Python library surface. Use
-        Result.write_tree/write_flow_tree/write_clu (write_clu takes depth_level) or
-        Network.write_pajek/write_state_network. The flag only acts when an output
-        directory is passed via the raw args escape hatch.
+        Args-only in library mode: no effect here -- write from the Result / Network
+        (see the note under Parameters below).
     hide_bipartite_nodes : bool, optional
         Hide bipartite nodes in output by projecting the solution to primary nodes.
 
@@ -469,18 +497,14 @@ class Options:
         Write each trial to separate output files. Has effect only when --num-trials is
         greater than 1.
 
-        Args-only on the Python library surface. Use
-        Result.write_tree/write_flow_tree/write_clu (write_clu takes depth_level) or
-        Network.write_pajek/write_state_network. The flag only acts when an output
-        directory is passed via the raw args escape hatch.
+        Args-only in library mode: no effect here -- write from the Result / Network
+        (see the note under Parameters below).
     no_overwrite : bool, optional
         Fail with an output error if any target output file already exists. By default
         existing files are replaced.
 
-        Args-only on the Python library surface. Use
-        Result.write_tree/write_flow_tree/write_clu (write_clu takes depth_level) or
-        Network.write_pajek/write_state_network. The flag only acts when an output
-        directory is passed via the raw args escape hatch.
+        Args-only in library mode: no effect here -- write from the Result / Network
+        (see the note under Parameters below).
     print_config_fingerprint : bool, optional
         Print the canonical configuration fingerprint and exit.
 
@@ -498,6 +522,7 @@ class Options:
     trial_offset : int, optional
         Global index of the first trial this process runs; trial i uses seed = base_seed
         + (trial_offset + i). Default 0 (single-process behavior). Valid range: >= 0.
+        Engine default: 0.
     trial_results : str, optional
         Write this shard's per-trial results (codelengths, seeds, best-tree reference,
         fingerprints) as JSON to this path, for deterministic merging of distributed
@@ -611,10 +636,11 @@ class Options:
         >= 1.
     core_level_limit : int, optional
         Limit how many times core loops are reapplied to the aggregated modular network
-        to find larger structures. 0 means no limit. Valid range: >= 0.
+        to find larger structures. 0 means no limit. Valid range: >= 0. Engine default:
+        0.
     tune_iteration_limit : int, optional
         Limit the main iterations in the two-level partition algorithm. 0 means no
-        limit. Valid range: >= 0.
+        limit. Valid range: >= 0. Engine default: 0.
     core_loop_codelength_threshold : float, optional
         Require at least this codelength improvement to accept a new solution in a core
         loop. Valid range: >= 0.0.
@@ -640,12 +666,12 @@ class Options:
         plateaued (no meaningful improvement over several consecutive trials). Runs
         trials serially; cannot be combined with parallel trials or distributed
         sharding. With no explicit trial count, a default cap is used.
-    num_threads : str, optional
+    num_threads : str or int, optional
         Effective thread budget: 'auto' (resolve from --num-threads >
         INFOMAP_NUM_THREADS > SLURM_CPUS_PER_TASK > OMP_NUM_THREADS > cpuset >
         hardware), or a positive integer. 1 forces fully serial. Governs the recursive
         partition, parallel trials, and inner parallelization.
-    threads : str, optional
+    threads : str or int, optional
         Alias for --num-threads.
 
         Not a Python library option; it leaves the surface in 3.0. Use num_threads;
@@ -739,7 +765,7 @@ class Options:
     parallel_trials: bool = False
     converge: bool = False
     num_threads: str | int | None = None
-    threads: str | None = None
+    threads: str | int | None = None
     prefer_modular_solution: bool = False
     num_random_moves: int = 5
     max_degree_for_random_moves: int = 2
