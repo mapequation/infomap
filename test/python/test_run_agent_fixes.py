@@ -19,7 +19,7 @@ import warnings
 import networkx as nx
 import pytest
 
-from infomap import Network, Options, find_communities, run
+from infomap import Infomap, Network, Options, find_communities, run
 from infomap.result import Result
 
 pytestmark = pytest.mark.fast
@@ -150,6 +150,74 @@ def test_network_run_keyword_overrides_options_carrier():
     # A supplied common-tier keyword wins over the same field in the carrier.
     result = net.run(options=Options(num_trials=1, seed=999), seed=1, num_trials=5)
     assert isinstance(result, Result)
+
+
+# -- run() is the canonical front door: it accepts a built engine ------------
+
+
+def test_run_accepts_a_built_infomap_instance():
+    im = Infomap()
+    im.add_links(_LINKS)
+    result = run(im, num_trials=3, seed=1)
+    assert isinstance(result, Result)
+
+
+def test_run_accepts_a_built_network_instance():
+    net = Network()
+    net.add_links(_LINKS)
+    result = run(net, num_trials=3, seed=1)
+    assert isinstance(result, Result)
+
+
+def test_run_on_instance_matches_the_convenience_method():
+    # net.run(**kw) is a thin convenience equivalent to run(net, **kw).
+    net1 = Network()
+    net1.add_links(_LINKS)
+    net2 = Network()
+    net2.add_links(_LINKS)
+    assert run(net1, num_trials=5, seed=7).codelength == pytest.approx(
+        net2.run(num_trials=5, seed=7).codelength
+    )
+
+
+def test_run_threads_the_raw_args_escape_hatch():
+    # args= (raw-CLI parity) is now available on the functional front door too,
+    # matching Infomap.run / Network.run.
+    result = run(_LINKS, args="--num-trials 2", seed=1)
+    assert isinstance(result, Result)
+
+
+# -- Network.run accepts advanced overrides like its sibling run APIs --------
+
+
+def test_network_run_accepts_advanced_override_with_pending_deprecation():
+    net = Network()
+    net.add_links(_LINKS)
+    with warnings.catch_warnings(record=True) as records:
+        warnings.simplefilter("always")
+        result = net.run(regularized=True, seed=1, num_trials=2)
+    assert isinstance(result, Result)
+    # Pending-deprecated on the signature, exactly like infomap.run/Infomap.run.
+    assert any(
+        issubclass(r.category, PendingDeprecationWarning) for r in records
+    )
+
+
+def test_network_run_advanced_override_matches_options_carrier():
+    net1 = Network()
+    net1.add_links(_LINKS)
+    net2 = Network()
+    net2.add_links(_LINKS)
+    direct = net1.run(regularized=True, seed=1, num_trials=2)
+    carried = net2.run(options=Options(regularized=True, seed=1, num_trials=2))
+    assert direct.codelength == pytest.approx(carried.codelength)
+
+
+def test_network_run_unknown_override_suggests_nearest():
+    net = Network()
+    net.add_links(_LINKS)
+    with pytest.raises(TypeError, match="did you mean"):
+        net.run(regularised=True)
 
 
 # -- Options rejects an unknown keyword with a suggestion ---------------------

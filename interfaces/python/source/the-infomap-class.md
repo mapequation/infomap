@@ -32,6 +32,14 @@ maintaining code written against the original API. Internally it composes a
 `Network` and an `Options` over the same engine boundary, so its building verbs
 and its results are identical to the functional path.
 
+{func}`infomap.run` is the canonical entry point. It accepts any input --
+including a prebuilt {class}`~infomap.Network` or a stateful
+{class}`~infomap.Infomap` instance -- so `net.run(**kw)` and `im.run(**kw)` are
+thin conveniences equivalent to `infomap.run(net, **kw)` /
+`infomap.run(im, **kw)`. All three take the same keywords (the five common-tier
+options directly, everything else via `options=`) and return the same
+{class}`~infomap.Result`.
+
 ```{code-cell} python
 from infomap import Infomap
 

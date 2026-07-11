@@ -23,8 +23,11 @@ import infomap
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
-# run()'s own structural parameters, not engine options.
-NON_OPTION_RUN = {"input", "options", "initial_partition"}
+# run()'s own structural parameters, not engine options. ``args`` is the raw
+# Infomap CLI escape hatch (full-parity arguments prepended before the rendered
+# options), matching Infomap.run / Network.run -- a structural argument like
+# ``options`` and ``initial_partition``, not a catalog option.
+NON_OPTION_RUN = {"input", "options", "args", "initial_partition"}
 
 
 def _common_tier_python_names() -> set[str]:
