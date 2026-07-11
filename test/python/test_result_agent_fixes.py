@@ -12,8 +12,7 @@ from __future__ import annotations
 
 import pytest
 
-import infomap
-from infomap import Infomap, StaleResultError, run
+from infomap import Infomap, InfomapError, StaleResultError, datasets, run
 
 pytestmark = pytest.mark.fast
 
@@ -21,12 +20,12 @@ _LINKS = [(1, 2), (2, 3), (1, 3), (3, 4), (4, 5), (5, 6), (4, 6)]
 
 
 def test_num_physical_nodes_first_order_equals_num_nodes():
-    result = run(infomap.datasets.two_triangles())
+    result = run(datasets.two_triangles())
     assert result.num_physical_nodes == result.num_nodes == 6
 
 
 def test_num_physical_nodes_higher_order_counts_physical_nodes():
-    result = run(infomap.datasets.states())
+    result = run(datasets.states())
     assert result.have_memory
     assert result.num_nodes == 6  # state nodes
     assert result.num_physical_nodes == 5  # distinct physical nodes
@@ -41,14 +40,14 @@ def test_num_physical_nodes_is_eager_and_survives_rerun():
 
 
 def test_physical_nodes_gives_a_result_pointer():
-    result = run(infomap.datasets.two_triangles())
+    result = run(datasets.two_triangles())
     with pytest.raises(AttributeError, match=r"result\.nodes\(states=False\)"):
         result.physical_nodes
 
 
 def test_higher_order_modules_message_points_at_states_true():
-    result = run(infomap.datasets.states())
-    with pytest.raises(infomap.InfomapError, match=r"states=True"):
+    result = run(datasets.states())
+    with pytest.raises(InfomapError, match=r"states=True"):
         result.modules(states=False)
 
 
@@ -65,7 +64,7 @@ def test_stale_result_message_carries_a_remedy():
 
 
 def test_write_clu_depth_alias_matches_depth_level(tmp_path):
-    result = run(infomap.datasets.nine_triangles(), num_trials=2, seed=123)
+    result = run(datasets.nine_triangles(), num_trials=2, seed=123)
     by_depth = tmp_path / "depth.clu"
     by_legacy = tmp_path / "legacy.clu"
     result.write_clu(by_depth, depth=2)
@@ -74,7 +73,7 @@ def test_write_clu_depth_alias_matches_depth_level(tmp_path):
 
 
 def test_write_clu_depth_overrides_depth_level(tmp_path):
-    result = run(infomap.datasets.nine_triangles(), num_trials=2, seed=123)
+    result = run(datasets.nine_triangles(), num_trials=2, seed=123)
     both = tmp_path / "both.clu"
     only = tmp_path / "only.clu"
     result.write_clu(both, depth=2, depth_level=1)  # depth wins
@@ -83,7 +82,7 @@ def test_write_clu_depth_overrides_depth_level(tmp_path):
 
 
 def test_result_write_no_extension_message_excludes_net(tmp_path):
-    result = run(infomap.datasets.two_triangles())
+    result = run(datasets.two_triangles())
     with pytest.raises(ValueError) as excinfo:
         result.write(tmp_path / "no_extension")
     message = str(excinfo.value)
@@ -92,6 +91,6 @@ def test_result_write_no_extension_message_excludes_net(tmp_path):
 
 
 def test_result_write_net_points_to_the_network(tmp_path):
-    result = run(infomap.datasets.two_triangles())
+    result = run(datasets.two_triangles())
     with pytest.raises(NotImplementedError, match="network.write_pajek"):
         result.write(tmp_path / "x.net")
