@@ -23,10 +23,14 @@ destroyed and rebuilt on every ``run()``, so reading node-level data from a
 instead of touching freed memory.
 
 Surface conventions: scalars are properties (``result.codelength``), collections
-are methods with defaults (``result.modules(depth=1, states=False)``). The two
-label lookup tables ``names`` / ``state_names`` are the exception -- ``{node_id:
-name}`` dict-valued *properties*, read without parentheses. Output is
-byte-identical to the legacy ``Infomap`` accessors (parity is a gate).
+are methods with defaults (``result.modules(depth=1, states=False)``). Two sets
+buck that rule and are worth memorizing: the label lookup tables ``names`` /
+``state_names`` and the per-trial ``codelengths`` are collection-valued
+*properties* (read without parentheses -- ``result.names``, not
+``result.names()``), while ``effective_num_modules(depth)`` is a scalar read as
+a *method* because it takes a depth (unlike ``effective_num_top_modules`` /
+``effective_num_leaf_modules``, which are properties). Output is byte-identical
+to the legacy ``Infomap`` accessors (parity is a gate).
 """
 
 from __future__ import annotations
@@ -41,6 +45,7 @@ from ._summary import repr_html as _summary_repr_html
 from ._results import (
     _DATAFRAME_COLUMN_ALIASES,
     _DEFAULT_TO_DATAFRAME_COLUMNS,
+    _HIGHER_ORDER_MODULES_MESSAGE,
     _to_dataframe_sort_columns,
     _unknown_dataframe_column_error,
     perplexity,
@@ -65,6 +70,7 @@ _LEGACY_ACCESSOR_HINTS = {
     "get_effective_num_modules": "result.effective_num_modules()",
     "flow_links": 'result.links(data="flow")',
     "physical_tree": "result.tree()",
+    "physical_nodes": "result.nodes(states=False)",
 }
 
 # Also accept the camelCase SWIG-style spellings (``result.getModules()``) an agent
@@ -327,6 +333,7 @@ class Result(_ResultWritersMixin):
         "_num_non_trivial_top_modules",
         "_num_levels",
         "_num_nodes",
+        "_num_physical_nodes",
         "_num_links",
         "_index_codelength",
         "_module_codelength",
@@ -368,6 +375,9 @@ class Result(_ResultWritersMixin):
         )
         object.__setattr__(self, "_num_levels", core.maxTreeDepth())
         object.__setattr__(self, "_num_nodes", core.network().numNodes())
+        object.__setattr__(
+            self, "_num_physical_nodes", core.network().numPhysicalNodes()
+        )
         object.__setattr__(self, "_num_links", core.network().numLinks())
         object.__setattr__(self, "_index_codelength", core.getIndexCodelength())
         object.__setattr__(self, "_module_codelength", core.getModuleCodelength())
@@ -492,7 +502,13 @@ class Result(_ResultWritersMixin):
             raise StaleResultError(
                 "stale Result: the Infomap instance was re-run since this "
                 "Result was created; node-level data is no longer available "
-                "(the C++ result tree is rebuilt on every run())."
+                "(the C++ result tree is rebuilt on every run()). The eager "
+                "scalars (codelength, module counts, summary()) stay valid on "
+                "this Result. To keep node-level data across re-runs, "
+                "materialize it before the next run -- dict(result.modules()), "
+                "result.to_dataframe(), or list(result.nodes()) -- or use "
+                "infomap.run(...), which builds a fresh engine per call and "
+                "never goes stale."
             )
 
     def _guard_iteration(self, iterator):
@@ -554,6 +570,16 @@ class Result(_ResultWritersMixin):
     def num_nodes(self) -> int:
         """The number of (state) nodes."""
         return self._num_nodes
+
+    @property
+    def num_physical_nodes(self) -> int:
+        """The number of physical nodes.
+
+        Equals :attr:`num_nodes` for a first-order network; for a higher-order
+        (multilayer/memory) network it counts the distinct physical nodes behind
+        the state nodes. Captured eagerly, so it stays valid after a re-run.
+        """
+        return self._num_physical_nodes
 
     @property
     def num_links(self) -> int:
@@ -689,13 +715,10 @@ class Result(_ResultWritersMixin):
         tree : Walk the full hierarchical tree.
         """
         if self._have_memory and not states:
-            # InfomapError (not ValueError) on purpose: the legacy
-            # Infomap.get_modules path translates the C++ std::runtime_error
-            # thrown by getModules (src/Infomap.h) to the same taxonomy type,
-            # and parity tests pin the error type across both surfaces.
-            raise InfomapError(
-                "Cannot get modules on higher-order network without states."
-            )
+            # InfomapError (not ValueError) on purpose, and the exact message is
+            # shared with the legacy Infomap.get_modules path (_results.py) so
+            # both surfaces are byte-identical -- parity tests pin type and text.
+            raise InfomapError(_HIGHER_ORDER_MODULES_MESSAGE)
         snapshot = self._snapshot(depth, states)
         ids = snapshot.state_id if states else snapshot.node_id
         return dict(zip(ids, snapshot.module_id))

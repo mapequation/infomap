@@ -9,9 +9,21 @@ from math import log2
 from typing import TYPE_CHECKING, Any
 
 from ._optional import require_pandas
-from .errors import _translate_engine_errors
+from .errors import InfomapError, _translate_engine_errors
 
 _PACKAGE_PREFIX = os.path.dirname(os.path.abspath(__file__)) + os.sep
+
+# Shared higher-order guard message: asking for physical-node modules on a
+# higher-order (multilayer/memory) network without states is ambiguous. Both the
+# legacy ``Infomap.get_modules`` path and ``Result.modules()`` raise this exact
+# text (and the same ``InfomapError`` type), so migrating between them stays
+# byte-identical -- parity is a gate -- while pointing at the ``states=True`` fix.
+_HIGHER_ORDER_MODULES_MESSAGE = (
+    "Cannot get modules on higher-order network without states. "
+    "Call result.modules(states=True) for the state-node partition, "
+    "then map state nodes back to physical nodes (and layers) with "
+    "result.nodes(states=True)."
+)
 
 
 def _emit_accessor_deprecation(member: str, replacement: str) -> None:
@@ -233,9 +245,12 @@ class _InfomapResultsMixin:
     # deprecated public accessor.
 
     def _get_modules_impl(self, depth_level=1, states=False):
-        # The C++ higher-order guard ("Cannot get modules on higher-order
-        # network without states.") surfaces here; translate it so the legacy
-        # path raises the same taxonomy type as Result.modules().
+        # Guard higher-order access in Python so the legacy path raises the same
+        # message and taxonomy type as Result.modules() (parity is a gate). The
+        # C++ getModules would otherwise throw a terser, differently-worded
+        # message here; raising the shared text keeps the two surfaces identical.
+        if self._core.haveMemory() and not states:
+            raise InfomapError(_HIGHER_ORDER_MODULES_MESSAGE)
         with _translate_engine_errors():
             return self._core.getModules(depth_level, states)
 
