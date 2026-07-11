@@ -9,7 +9,8 @@ Call :func:`infomap.run` on a network and read the immutable :class:`Result`::
     result = infomap.run(graph, seed=123, num_trials=20)
     result.codelength        # scalar metrics are properties (no parentheses)
     result.modules()         # collections are methods -> {node_id: module_id}
-    result.to_dataframe()    # columns: node_id, module_id, flow, path, name
+    result.to_dataframe()    # per-node table: node_id, module_id, flow, path, name
+    result.summary()         # {metric: value} scalar row, one per run for a sweep table
 
 ``run`` accepts a NetworkX or igraph graph, a SciPy sparse matrix, a ``(2, E)``
 edge index, a network file path, an iterable of ``(u, v[, w])`` links, or a

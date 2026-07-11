@@ -275,6 +275,31 @@ degenerate solution landscape where more trials are warranted. The karate club's
 community structure is pronounced enough that every trial finds the same
 codelength; large noisy networks spread wider.
 
+### Collecting a sweep into a table
+
+Sweeps over parameters or networks are the common case: vary a knob, keep the
+per-run metrics. {meth}`~infomap.Result.summary` returns those scalars as a
+plain dict whose keys match the `Result` property names, so each run drops
+straight into a one-row-per-run `pandas.DataFrame` — add your own
+swept-parameter columns alongside:
+
+```{code-cell} python
+records = []
+for markov_time in (0.75, 1.0, 1.5):
+    r = infomap.run(g, markov_time=markov_time, seed=123, num_trials=10)
+    records.append({"markov_time": markov_time, **r.summary()})
+
+sweep = pd.DataFrame(records)
+sweep[["markov_time", "codelength", "num_top_modules", "num_levels"]]
+```
+
+The same shape covers a sweep over several networks (add a `network` column) or
+repeated seeds (add a `seed` column, then `sweep.groupby("markov_time").agg(...)`
+to reduce trials to a mean and spread). {meth}`~infomap.Result.to_series` is the
+pandas-native single row, so `pandas.DataFrame([r.to_series() for r in results])`
+builds the same table. Both read only the eagerly captured scalars, so — unlike
+`to_dataframe()` — they never go stale after a re-run.
+
 ## Pitfalls
 
 - **A `Result` goes stale if its network runs again.** Reading `nodes()` or
@@ -302,6 +327,9 @@ codelength; large noisy networks spread wider.
   `module_id`, and `flow`.
 - {meth}`infomap.Result.to_dataframe` exports a table with columns `node_id`,
   `module_id`, `flow`, `path`, `name`.
+- {meth}`infomap.Result.summary` returns the scalar metrics as a
+  `{name: value}` dict — one row per run for building a sweep table with pandas.
+- {meth}`infomap.Result.to_series` is that same row as a `pandas.Series`.
 
 ## Going deeper
 

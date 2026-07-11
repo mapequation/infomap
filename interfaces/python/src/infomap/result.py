@@ -300,6 +300,11 @@ class Result(_ResultWritersMixin):
     ``Infomap`` rebuilds the C++ result tree, so node-level access on the old
     ``Result`` raises. Eager scalars (``codelength``, ``num_top_modules``, ...)
     stay valid.
+
+    For a sweep, :meth:`summary` returns the scalar metrics as a dict (one row
+    per run, so ``pandas.DataFrame(r.summary() for r in results)`` builds a
+    table) and :meth:`to_series` gives the pandas-native row; both read only the
+    eager scalars and stay valid after a re-run.
     """
 
     __slots__ = (

@@ -78,7 +78,8 @@ import infomap
 result = infomap.run(graph, seed=123, num_trials=20)   # graph, file path, matrix, edge index, or links
 print(result.codelength, result.num_top_modules)       # scalars: properties (no parentheses)
 modules = result.modules()                              # {node_id: module_id} (method: parentheses)
-df = result.to_dataframe()                              # columns: node_id, module_id, flow, path, name
+df = result.to_dataframe()                              # per-node table: node_id, module_id, flow, path, name
+row = result.summary()                                  # {metric: value} scalar row (one per run; keys = property names)
 ```
 
 Confirm exact method names and option coverage against the installed package and published docs for the user's version; do not copy version-sensitive examples verbatim.
@@ -94,3 +95,20 @@ To write the mapequation.org native files in Python, call the writers on the `Re
 - `network.write_state_network(path)` — the internal state/multilayer network
 
 The `tree`, `clu`, `output`, `out_name`, and `no_file_output` **option flags are inert on the Python library surface**: setting them via `Options` writes no file and only emits a `UserWarning` (they act only through the raw `args` escape hatch together with an output directory). Write from the `Result`/`Network` instead.
+
+## Sweeps (many runs → one table)
+
+There is no sweep helper; users write their own loop. Do not invent one. The blessed pattern is a `Result` per run plus `result.summary()` (a `{metric: value}` dict keyed by the `Result` property names) collected into a tidy one-row-per-run `pandas.DataFrame` — the scikit-learn `pd.DataFrame(records)` idiom:
+
+```python
+import infomap, pandas as pd
+
+records = []
+for markov_time in (0.75, 1.0, 1.5):                    # or: for graph in graphs / for seed in seeds
+    r = infomap.run(graph, markov_time=markov_time, seed=123, num_trials=20)
+    records.append({"markov_time": markov_time, **r.summary()})   # add the swept params yourself
+
+sweep = pd.DataFrame(records)                           # columns: markov_time + codelength, num_top_modules, ...
+```
+
+`result.to_series()` is the pandas-native single row (`pd.DataFrame([r.to_series() for r in results])`). `summary()`/`to_series()` read only the eager scalars, so they never raise on a re-run; they omit the lazy `effective_num_*`, the per-trial `codelengths`, and `meta_codelength` — add those columns explicitly if a sweep needs them.
