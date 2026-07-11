@@ -71,6 +71,26 @@ INTENTIONAL_OPTIONAL_VALUE_PARAMS = {
     "--tune-iteration-limit": "Optional iteration cap; unset uses the engine default.",
 }
 
+# The C++ description each Python `docs` override in overrides.json was written
+# against. A `docs.<flag>.python` override fully replaces the engine's own
+# description on the Python surface, and the byte-level freshness check cannot
+# see when the C++ text drifts out from under it (it regenerates identical bytes
+# from the unchanged override), so the agent-facing docstring silently goes
+# stale. This records the baseline; the check below fails loud when the live C++
+# description no longer matches, forcing a conscious re-review of the override.
+# Update both together when you intentionally revise a C++ description.
+DOCS_OVERRIDE_CPP_BASELINES = {
+    "--fast-hierarchical-solution": (
+        "Find top modules quickly. Use -FF to keep all fast levels. Use -FFF to "
+        "skip recursive refinement."
+    ),
+    "--verbose": (
+        "Increase console verbosity. Add more v flags to increase verbosity up "
+        "to -vvv."
+    ),
+    "--silent": "Suppress console output.",
+}
+
 # Parameters that exist only in feature-enabled builds (guarded by
 # ``#if INFOMAP_FEATURE_*`` in src/io/ParameterCatalog.cpp). The bindings are
 # generated from a standard build that omits them, so they are deliberately
@@ -187,6 +207,31 @@ def main() -> int:
                     f"{flag} [{language}]: engine default {engine_default!r} != "
                     f"binding default {binding_default!r}"
                 )
+
+    # Docs-override drift: a Python `docs` override replaces the engine's own
+    # description on the Python surface. The freshness check cannot see when the
+    # C++ text drifts under it, so compare each override's recorded baseline to
+    # the live C++ description and fail loud on a mismatch (or a missing baseline).
+    for flag, per_language in overrides.get("docs", {}).items():
+        if "python" not in per_language:
+            continue
+        param = catalog.get(flag)
+        if param is None:
+            continue  # missing-flag drift is already reported by the loop above
+        baseline = DOCS_OVERRIDE_CPP_BASELINES.get(flag)
+        live = param.get("description")
+        if baseline is None:
+            drift.append(
+                f"{flag} [python docs]: has a docs override but no recorded C++ "
+                "baseline; add one to DOCS_OVERRIDE_CPP_BASELINES so drift is caught"
+            )
+        elif live != baseline:
+            drift.append(
+                f"{flag} [python docs]: the C++ description changed under the docs "
+                f"override.\n      baseline: {baseline!r}\n      live:     {live!r}"
+                f"\n      Re-review overrides.json docs.{flag}.python, then update "
+                "DOCS_OVERRIDE_CPP_BASELINES."
+            )
 
     if drift:
         print("Binding defaults drifted from engine defaults:", file=sys.stderr)
