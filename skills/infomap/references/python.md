@@ -9,7 +9,7 @@ Prefer this shape unless the user is maintaining older code:
 - `infomap.run(input, *, options=None, seed=..., num_trials=..., ...)` — the one-call front door. `input` can be a NetworkX/igraph graph, a SciPy sparse matrix, a `(2, E)` edge index, a file path, or an iterable of `(u, v[, w])` links. Returns an immutable `Result`.
 - `infomap.Network.from_networkx / from_igraph / from_scipy_sparse_matrix / from_edge_index / from_file` — build a network explicitly when the input needs non-default reading (a different weight attribute, explicit directedness, a state/multilayer layout), then `network.run(options=...)`.
 - `infomap.Options(...)` — a reusable dataclass-style configuration; the canonical carrier for engine options. Pass it as `infomap.run(input, options=Options(...))`.
-- `infomap.Result` — the immutable result. Read scalars as **properties** (`result.codelength`, `result.num_top_modules`) and collections as **methods** (`result.modules()`, `result.nodes()`, `result.tree()`, `result.to_dataframe()`). Exceptions worth memorizing: `result.names` / `result.state_names` / `result.codelengths` are collection-valued **properties** (no parentheses — `result.names()` raises `TypeError: 'dict' object is not callable`), and `result.effective_num_modules(depth)` is a scalar read as a **method** because it takes a depth (unlike the property-shaped `result.effective_num_top_modules`).
+- `infomap.Result` — the immutable result. Read scalars as **properties** (`result.codelength`, `result.num_top_modules`) and collections as **methods** (`result.modules()`, `result.nodes()`, `result.tree()`, `result.to_dataframe()`). Exceptions worth memorizing: `result.names` / `result.state_names` / `result.codelengths` are collection-valued **properties** (no parentheses — calling `result.names()` raises a `TypeError` reminding you it is a property, read without parentheses), and `result.effective_num_modules(depth)` is a scalar read as a **method** because it takes a depth (unlike the property-shaped `result.effective_num_top_modules`).
 
 The stateful `infomap.Infomap` class still works and is a fine builder for incremental construction, but read results off the `Result` that `im.run()` returns — not off the instance. Instance accessors such as `im.modules`, `im.nodes`, `im.codelength`, and `im.get_modules()` are deprecated and leave in 3.0; note also that `im.modules`/`im.nodes` are *properties* while `result.modules()`/`result.nodes()` are *methods*.
 
@@ -62,7 +62,8 @@ Use the published Python docs at `https://mapequation.org/infomap-python-docs/` 
 - Non-default input building (weights, directedness, state/multilayer): `Network.from_*(...)` then `.run(options=Options(...))`.
 - Encoding node metadata: read it from a clu-format file via `Options(meta_data=..., meta_data_rate=...)`, or set it per node on the stateful builder with `im.set_meta_data(node_id, category)` (confirm the current spelling from installed help).
 - Bipartite input: declare the second node type with the `Network` bipartite start id (e.g. `net.bipartite_start_id`); `Options(hide_bipartite_nodes=True)` projects that type out of the written `result.write_*` output.
-- AnnData/Scanpy observation graphs: use the `infomap.tl` helper if the installed package exposes it.
+- Export the partition attached to a graph (GraphML/GEXF and other graph-library formats): `result.to_networkx(module_attribute="infomap_module")` / `result.to_igraph(...)` attach `infomap_module`/`infomap_path`/`flow` node attributes; write with the graph library's own writer (e.g. `networkx.write_graphml(result.to_networkx(...), path)`). There is no native GraphML/GEXF writer, so this is the path for that capability.
+- AnnData/Scanpy observation graphs: `infomap.tl.infomap(adata, key_added="infomap")` writes labels to `adata.obs[key_added]` and run metadata to `adata.uns[key_added]` (confirm the helper is exposed in the installed package).
 
 ## Generating code
 
@@ -83,6 +84,8 @@ modules = result.modules()                              # {node_id: module_id} (
 df = result.to_dataframe()                              # per-node table: node_id, module_id, flow, path, name
 row = result.summary()                                  # {metric: value} scalar row (one per run; keys = property names)
 ```
+
+For a graph with non-integer (e.g. string) labels, the keys of `result.modules()` are Infomap **internal ids**, not the original labels. Recover labels with `result.names.get(nid, nid)` (the map is empty — an identity no-op — when labels are already integers), or the `name` column of `result.to_dataframe()`, or use `infomap.find_communities(graph, ...)`, which returns communities keyed by the graph's own labels.
 
 Confirm exact method names and option coverage against the installed package and published docs for the user's version; do not copy version-sensitive examples verbatim.
 
