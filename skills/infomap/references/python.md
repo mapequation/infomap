@@ -82,3 +82,15 @@ df = result.to_dataframe()                              # columns: node_id, modu
 ```
 
 Confirm exact method names and option coverage against the installed package and published docs for the user's version; do not copy version-sensitive examples verbatim.
+
+## Writing native output files
+
+To write the mapequation.org native files in Python, call the writers on the `Result` (partition artifacts) or the `Network` (input serializations) — not the option flags:
+
+- `result.write_tree(path)` — `.tree`
+- `result.write_flow_tree(path)` — `.ftree`
+- `result.write_clu(path, depth_level=1)` — `.clu` at a chosen hierarchy depth
+- `network.write_pajek(path)` — Pajek serialization of the input network
+- `network.write_state_network(path)` — the internal state/multilayer network
+
+The `tree`, `clu`, `output`, `out_name`, and `no_file_output` **option flags are inert on the Python library surface**: setting them via `Options` writes no file and only emits a `UserWarning` (they act only through the raw `args` escape hatch together with an output directory). Write from the `Result`/`Network` instead.

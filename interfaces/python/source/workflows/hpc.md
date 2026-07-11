@@ -116,7 +116,7 @@ make the pattern self-contained and executable.
 import infomap
 
 # A small network: two dense groups connected by a single bridge.
-# On a real network this would be a large file loaded with im.read_file().
+# On a real network the links would come from a file, e.g. Network.from_file("graph.net").
 edges = [
     # group A: nodes 0-3
     (0, 1), (1, 2), (2, 3), (3, 0), (0, 2), (1, 3),

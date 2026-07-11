@@ -25,7 +25,7 @@ Identify the user's mode before answering:
 
 - Prefer **Python** for notebooks, scripts, NetworkX, python-igraph, SciPy sparse matrices, edge-index data, AnnData/Scanpy workflows, tabular outputs, and GraphML/GEXF export.
 - Prefer **R** for R-native analysis, R igraph workflows, R Markdown-style reports, and users who want `cluster_infomap()` or the R6 `Infomap` API.
-- Prefer **CLI** for file-based workflows, batch jobs, shell pipelines, native output files, or wrapper-independent runs.
+- Prefer **CLI** for file-based workflows, batch jobs, shell pipelines, or wrapper-independent runs. Native `.tree`/`.clu` output is not CLI-only — Python writes the same files via the `Result`/`Network` writers.
 
 When the user already chose an interface, stay there unless a different interface is clearly necessary.
 
@@ -50,8 +50,8 @@ When the user already chose an interface, stay there unless a different interfac
 ## Reference map
 
 - `references/method-selection.md`: survey-based guide from research problem to Infomap model.
-- `references/cli.md`: file-based CLI workflows and native outputs.
-- `references/python.md`: Python package workflows and integrations.
+- `references/cli.md`: file-based CLI workflows and CLI-driven native output.
+- `references/python.md`: Python package workflows, integrations, and writing native output files.
 - `references/r.md`: R package workflows and igraph interop.
 - `references/notebooks.md`: survey companion notebooks and Jupyter adaptation.
 - `references/reproducibility.md`: reporting, provenance, and method-section checklist.

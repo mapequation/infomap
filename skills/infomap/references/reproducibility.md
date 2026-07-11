@@ -37,7 +37,7 @@ Use these local benchmark results only as order-of-magnitude guidance. They were
 | first-order edge list | 16.9 MB | 0 | 1M | 5 | 16.68s | 17.55s | 41.40s |
 | state network | 19.2 MB | 400k | 800k | 1 | 10.62s | 11.51s | 26.49s |
 
-For large or repeated runs, prefer convergence-aware and parallel options over a fixed high trial count: `--converge` stops trials on a codelength plateau, `--parallel-trials` runs independent trials concurrently, and `--num-threads` auto-detects cpuset/SLURM/OpenMP limits. On HPC, shard trials across jobs with `--trial-offset`/`--trial-results` and merge with the `infomap.merge` helper (see `run-infomap-on-hpc.ipynb`).
+For large or repeated runs, prefer convergence-aware and parallel options over a fixed high trial count: `--converge` stops trials on a codelength plateau, `--parallel-trials` runs independent trials concurrently, and `--num-threads` auto-detects cpuset/SLURM/OpenMP limits. On HPC, shard trials across jobs with `--trial-offset`/`--trial-results` and merge the shards with `merge_trial_results` from `infomap.merge` (`from infomap.merge import merge_trial_results`) or the CLI `python -m infomap.merge` — `merge` is deliberately not imported into the top-level namespace (see `run-infomap-on-hpc.ipynb`). In the Python API these HPC scaling options (`converge`, `parallel_trials`, `num_threads`, `trial_offset`, `trial_results`) are advanced-tier: carry them via `options=infomap.Options(...)` (e.g. `options=Options(converge=True, parallel_trials=True, num_threads="auto")`), not as bare `run()` keywords.
 
 Practical gating:
 
