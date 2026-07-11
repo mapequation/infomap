@@ -9,13 +9,13 @@ Prefer this shape unless the user is maintaining older code:
 - `infomap.run(input, *, options=None, seed=..., num_trials=..., ...)` — the one-call front door. `input` can be a NetworkX/igraph graph, a SciPy sparse matrix, a `(2, E)` edge index, a file path, or an iterable of `(u, v[, w])` links. Returns an immutable `Result`.
 - `infomap.Network.from_networkx / from_igraph / from_scipy_sparse_matrix / from_edge_index / from_file` — build a network explicitly when the input needs non-default reading (a different weight attribute, explicit directedness, a state/multilayer layout), then `network.run(options=...)`.
 - `infomap.Options(...)` — a reusable dataclass-style configuration; the canonical carrier for engine options. Pass it as `infomap.run(input, options=Options(...))`.
-- `infomap.Result` — the immutable result. Read scalars as **properties** (`result.codelength`, `result.num_top_modules`) and collections as **methods** (`result.modules()`, `result.nodes()`, `result.tree()`, `result.to_dataframe()`).
+- `infomap.Result` — the immutable result. Read scalars as **properties** (`result.codelength`, `result.num_top_modules`) and collections as **methods** (`result.modules()`, `result.nodes()`, `result.tree()`, `result.to_dataframe()`). Exceptions worth memorizing: `result.names` / `result.state_names` / `result.codelengths` are collection-valued **properties** (no parentheses — `result.names()` raises `TypeError: 'dict' object is not callable`), and `result.effective_num_modules(depth)` is a scalar read as a **method** because it takes a depth (unlike the property-shaped `result.effective_num_top_modules`).
 
 The stateful `infomap.Infomap` class still works and is a fine builder for incremental construction, but read results off the `Result` that `im.run()` returns — not off the instance. Instance accessors such as `im.modules`, `im.nodes`, `im.codelength`, and `im.get_modules()` are deprecated and leave in 3.0; note also that `im.modules`/`im.nodes` are *properties* while `result.modules()`/`result.nodes()` are *methods*.
 
 ## Options and the 3.0 transition
 
-Only five keyword arguments stay directly on `infomap.run()` / `Infomap()` / `Infomap.run()`: **`seed`, `num_trials`, `two_level`, `directed`, `markov_time`**. Every other engine option (for example `regularized`, `flow_model`, `teleportation_probability`, `num_threads`, `multilayer_relax_rate`, `entropy_corrected`) moves off those signatures in 3.0 and should be carried via `Options`:
+Only five keyword arguments stay directly on `infomap.run()` / `Infomap()` / `Infomap.run()`: **`seed`, `num_trials`, `two_level`, `directed`, `markov_time`**. Every other engine option (for example `regularized`, `flow_model`, `teleportation_probability`, `num_threads`, `multilayer_relax_rate`, `entropy_corrected`) moves off those signatures in 3.0 and should be carried via `Options`. This five-name set lives in the code, not this skill: confirm it from `inspect.signature(infomap.run)` (the explicit keyword parameters) or the published `api/deprecations` reference rather than trusting a copied list.
 
 ```python
 import infomap
@@ -67,7 +67,7 @@ Use the published Python docs at `https://mapequation.org/infomap-python-docs/` 
 ## Generating code
 
 - Prefer the functional `run(...)` returning a `Result`; read scalars as properties and collections as methods.
-- Carry any non-common option via `Options`; keep only `seed`, `num_trials`, `two_level`, `directed`, `markov_time` as direct keywords.
+- Carry any non-common option via `Options`; only the five common keywords stay direct (listed under *Options and the 3.0 transition* above — verify against `inspect.signature(infomap.run)`, do not re-derive from memory).
 - Make runs reproducible: set `seed` (default 123) and a meaningful `num_trials` (default 1) for research runs; use `num_trials=1` for smoke tests.
 - Record package version, `infomap.__file__`, graph source, directed/weighted choice, seed, trials, non-default options, and output artifacts.
 - For state or multilayer output, say whether results are state-level (`result.nodes(states=True)`) or physical-node-level, and preserve any label→internal-id mapping.
