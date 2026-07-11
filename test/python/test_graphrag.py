@@ -485,6 +485,57 @@ def test_write_graphrag_communities_requires_run_results(tmp_path):
         write_graphrag_communities(im, graph=graph, output=tmp_path / "infomap")
 
 
+def test_write_graphrag_communities_accepts_a_result(tmp_path):
+    from infomap import Infomap
+    from infomap.graphrag import read_graphrag, write_graphrag_communities
+
+    entities_path, relationships_path = _write_graphrag_fixture(tmp_path)
+    graph = read_graphrag(entities_path, relationships_path)
+    im = Infomap(seed=123, num_trials=1)
+    _add_graphrag_links(im, graph)
+    result = im.run()
+
+    # The modern Result is accepted, matching the to_networkx/to_igraph
+    # contract, and produces the same tables as passing the instance.
+    from_result, _ = write_graphrag_communities(
+        result, graph=graph, output=tmp_path / "from_result"
+    )
+    from_instance, _ = write_graphrag_communities(
+        im, graph=graph, output=tmp_path / "from_instance"
+    )
+    assert list(from_result.columns) == list(from_instance.columns)
+    assert len(from_result) == len(from_instance) == im.num_nodes
+
+
+def test_write_graphrag_communities_rejects_a_stale_result(tmp_path):
+    from infomap import Infomap, StaleResultError
+    from infomap.graphrag import read_graphrag, write_graphrag_communities
+
+    entities_path, relationships_path = _write_graphrag_fixture(tmp_path)
+    graph = read_graphrag(entities_path, relationships_path)
+    im = Infomap(seed=123, num_trials=1)
+    _add_graphrag_links(im, graph)
+    stale = im.run()
+    im.run()  # rebuilds the tree; `stale` is now stale
+
+    with pytest.raises(StaleResultError):
+        write_graphrag_communities(stale, graph=graph, output=tmp_path / "stale")
+
+
+def test_run_graphrag_communities_silent_is_deprecated(tmp_path):
+    from infomap.graphrag import run_graphrag_communities
+
+    entities_path, _ = _write_graphrag_fixture(tmp_path)
+    with pytest.warns(DeprecationWarning, match="enable_log"):
+        run_graphrag_communities(
+            input_dir=entities_path.parent,
+            output_dir=None,
+            seed=123,
+            num_trials=1,
+            silent=True,
+        )
+
+
 def test_run_graphrag_communities_reads_runs_and_writes_outputs(tmp_path):
     from infomap.graphrag import run_graphrag_communities
 
