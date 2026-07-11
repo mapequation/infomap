@@ -292,6 +292,69 @@ def _advanced_tier_kwarg_lines(catalog: ParameterCatalog) -> list[str]:
     return lines
 
 
+# Static runtime helper: validate numeric options against the catalog's
+# inclusive min/max bounds. The engine parser rejects an out-of-domain value
+# with a generic "Cannot parse '<value>' as argument to option '<flag>'"
+# (ProgramInterface.cpp) -- misleading, since the value is a valid number and
+# only violates the option's range. This turns that into a clear ValueError
+# naming the option and its range, at the single to_args() render funnel every
+# entry point passes through (Infomap()/run()/infomap.run()/Network.run()).
+_VALIDATE_OPTION_DOMAINS_HELPER = [
+    "def _validate_option_domains(options):",
+    '    """Reject out-of-range numeric options with a clear ValueError.',
+    "",
+    "    The engine parser rejects an out-of-domain value (seed < 1, a",
+    "    probability outside [0, 1], a negative markov time, ...) with a generic",
+    "    \"Cannot parse '<value>' as argument to option '<flag>'\" -- misleading,",
+    "    since the value parses fine as a number and only violates the option's",
+    "    range. Catch it here first, naming the option and its valid range. Bounds",
+    "    are inclusive, mirroring the C++ parser (reject value < min or > max).",
+    '    """',
+    "    for name, (low, high) in _OPTION_DOMAINS.items():",
+    "        value = options.get(name)",
+    "        if (",
+    "            value is None",
+    "            or isinstance(value, bool)",
+    "            or not isinstance(value, (int, float))",
+    "        ):",
+    "            continue",
+    "        if (low is not None and value < low) or (",
+    "            high is not None and value > high",
+    "        ):",
+    "            if low is not None and high is not None:",
+    '                bounds = f"between {low} and {high} (inclusive)"',
+    "            elif low is not None:",
+    '                bounds = f">= {low}"',
+    "            else:",
+    '                bounds = f"<= {high}"',
+    "            raise ValueError(",
+    '                f"{name}={value!r} is out of range: {name} must be {bounds}."',
+    "            )",
+]
+
+
+def _option_domain_lines(catalog: ParameterCatalog) -> list[str]:
+    """The runtime numeric-domain table plus its validator.
+
+    One entry per numeric value-typed parameter that declares an inclusive
+    bound in the catalog (``min``/``max``); the validator (emitted right after)
+    reads it from the ``to_args`` render funnel.
+    """
+    lines: list[str] = ["_OPTION_DOMAINS = {"]
+    for group in GROUPS:
+        for param in catalog.grouped()[group]:
+            domain = param.python_domain()
+            if domain is None:
+                continue
+            low, high = domain
+            lines.append(f'    "{param.name("python")}": ({low}, {high}),')
+    lines.append("}")
+    lines.extend(["", ""])
+    lines.extend(_VALIDATE_OPTION_DOMAINS_HELPER)
+    lines.extend(["", ""])
+    return lines
+
+
 def _options_doc_policy_note(policy: dict) -> str:
     """A short note for the Options docstring flagging fields that are not a
     first-class engine option on the Python library surface.
@@ -355,6 +418,7 @@ def generate_python(catalog: ParameterCatalog) -> str:
     ]
     lines.extend(_python_literal_alias_lines(catalog))
     lines.extend(_advanced_tier_kwarg_lines(catalog))
+    lines.extend(_option_domain_lines(catalog))
     for group in GROUPS:
         spec_name = f"_{group.upper()}_OPTION_SPECS"
         lines.append(f"{spec_name} = (")
@@ -471,6 +535,7 @@ def generate_python(catalog: ParameterCatalog) -> str:
             "            given.",
             '        """',
             "        options = self.to_kwargs()",
+            "        _validate_option_domains(options)",
             "        rendered_args = []",
             "",
             "        if self.include_self_links is not None:",
