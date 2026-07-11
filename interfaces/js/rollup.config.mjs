@@ -3,7 +3,7 @@ import path from "node:path";
 import commonjs from "@rollup/plugin-commonjs";
 import json from "@rollup/plugin-json";
 import nodeResolve from "@rollup/plugin-node-resolve";
-import typescript from "@rollup/plugin-typescript";
+import esbuild from "rollup-plugin-esbuild";
 
 const sourceRoot = path.resolve("interfaces/js/src");
 const workerPath = path.resolve("build/js/infomap.worker.js");
@@ -60,10 +60,17 @@ const basePlugins = [
   }),
   commonjs(),
   json(),
-  typescript({
+  // esbuild only transpiles (TS -> JS); it inherits `target` from the tsconfig.
+  // Type-checking and .d.ts emit are handled separately by `tsc` in build:package.
+  // This keeps the bundler free of the TypeScript compiler API, which TypeScript
+  // 7 no longer ships (deferred to 7.1) and @rollup/plugin-typescript relied on.
+  esbuild({
     tsconfig: "./interfaces/js/tsconfig.json",
-    declaration: false,
     sourceMap: true,
+    // cli.ts uses top-level await in its ES-module bin output, which is valid
+    // there and is what TypeScript emitted before. esbuild otherwise gates it on
+    // an ES2022 target, so allow it explicitly while keeping the ES2020 target.
+    supported: { "top-level-await": true },
   }),
 ];
 
