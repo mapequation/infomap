@@ -843,6 +843,102 @@ class Result(_ResultWritersMixin):
         """
         return self._effective_num_modules_cached(depth)
 
+    def summary(self) -> dict[str, Any]:
+        """Return the result's scalar metrics as a plain ``dict``.
+
+        A one-row-per-run record for collecting a sweep into a table: write
+        the loop as you normally would and drop each summary into pandas,
+        adding your own swept-parameter columns alongside::
+
+            records = []
+            for markov_time in (0.5, 1.0, 2.0):
+                result = infomap.run(graph, markov_time=markov_time, seed=123)
+                records.append({"markov_time": markov_time, **result.summary()})
+            df = pandas.DataFrame(records)
+
+        The keys match the scalar :class:`Result` property names, so each
+        column reads the same as the attribute you would read off a single
+        result (``df["codelength"]`` mirrors ``result.codelength``).
+
+        Only the eagerly captured O(1) scalars are included, so ``summary`` is
+        cheap and stays valid for the life of the ``Result``: it never walks
+        the tree and never raises :class:`~infomap.StaleResultError`, even
+        after the bound engine has re-run. The tree-derived ``effective_num_*``
+        metrics and the per-trial :attr:`codelengths` are intentionally left
+        out (read them off their properties when needed), as is the metadata
+        codelength -- add ``result.meta_codelength`` yourself for a metadata
+        run.
+
+        Returns
+        -------
+        dict
+            ``{metric_name: value}`` for the scalar result metrics.
+
+        See Also
+        --------
+        to_series : the same record as a :class:`pandas.Series`.
+        to_dataframe : the per-node table for a single result.
+
+        Examples
+        --------
+        >>> import infomap
+        >>> result = infomap.run(infomap.datasets.two_triangles(), seed=123)
+        >>> summary = result.summary()
+        >>> summary["num_top_modules"]
+        2
+        >>> summary["codelength"] == result.codelength
+        True
+        >>> "num_levels" in summary
+        True
+        """
+        return {
+            "codelength": self._codelength,
+            "num_top_modules": self._num_top_modules,
+            "num_non_trivial_top_modules": self._num_non_trivial_top_modules,
+            "num_leaf_modules": self._num_leaf_modules,
+            "num_levels": self._num_levels,
+            "relative_codelength_savings": self._relative_codelength_savings,
+            "index_codelength": self._index_codelength,
+            "module_codelength": self._module_codelength,
+            "one_level_codelength": self._one_level_codelength,
+            "entropy_rate": self._entropy_rate,
+            "num_nodes": self._num_nodes,
+            "num_links": self._num_links,
+            "elapsed_time": self._elapsed_time,
+        }
+
+    def to_series(self) -> "pandas.Series":
+        """Return the result's scalar metrics as a :class:`pandas.Series`.
+
+        The pandas-native form of :meth:`summary`: a one-row record indexed by
+        metric name, so a sweep collects into one row per run with
+
+        ::
+
+            pandas.DataFrame([result.to_series() for result in results])
+
+        Like :meth:`summary`, this reads only the eager scalars, so it stays
+        valid after the bound engine re-runs.
+
+        Returns
+        -------
+        pandas.Series
+            The :meth:`summary` mapping as a Series indexed by metric name.
+
+        Raises
+        ------
+        ImportError
+            If pandas is not installed. Install it with
+            ``python -m pip install "infomap[pandas]"``.
+
+        See Also
+        --------
+        summary : the same record as a plain ``dict``.
+        to_dataframe : the per-node table for a single result.
+        """
+        pandas = require_pandas("the Series accessor")
+        return pandas.Series(self.summary())
+
     def to_dataframe(
         self,
         columns: Sequence[str] | None = None,
