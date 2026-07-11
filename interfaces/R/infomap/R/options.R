@@ -84,8 +84,8 @@ ACCURACY_OPTIONS <- list(
   list(type = "value", name = "num_threads", flag = "--num-threads", default = NULL, include = .skip_when_null),
   list(type = "value", name = "threads", flag = "--threads", default = NULL, include = .skip_when_null),
   list(type = "flag", name = "prefer_modular_solution", flag = "--prefer-modular-solution", default = FALSE),
-  list(type = "value", name = "num_random_moves", flag = "--num-random-moves", default = NULL, include = .skip_when_null),
-  list(type = "value", name = "max_degree_for_random_moves", flag = "--max-degree-for-random-moves", default = NULL, include = .skip_when_null)
+  list(type = "value", name = "num_random_moves", flag = "--num-random-moves", default = 5L, include = .skip_when_not_equal(5L)),
+  list(type = "value", name = "max_degree_for_random_moves", flag = "--max-degree-for-random-moves", default = 2L, include = .skip_when_not_equal(2L))
 )
 
 OPTION_FIELD_NAMES <- c(
@@ -185,8 +185,8 @@ OPTION_DEFAULTS <- list(
   num_threads = NULL,
   threads = NULL,
   prefer_modular_solution = FALSE,
-  num_random_moves = NULL,
-  max_degree_for_random_moves = NULL
+  num_random_moves = 5L,
+  max_degree_for_random_moves = 2L
 )
 
 #' Build a reusable Infomap options list

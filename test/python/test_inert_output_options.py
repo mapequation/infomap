@@ -95,6 +95,46 @@ def test_hide_bipartite_nodes_excluded_but_genuine_inert_flag_still_warns():
     )
 
 
+def test_writer_effective_set_matches_catalog_inertness():
+    # The hand-maintained _WRITER_EFFECTIVE_ARGS_ONLY in _run.py must equal the
+    # args-only Python options that are NOT flagged inertWithoutOutputDir in the
+    # parameter catalog (overrides.json). The generated docstrings read the
+    # inertWithoutOutputDir bit ("has no effect ... unless an output directory")
+    # while the runtime warning reads this set; if the two drift, an option is
+    # documented as inert while the writers honour it (the hide_bipartite_nodes
+    # bug) or vice versa. Tie them together so a policy edit can't silently
+    # reintroduce the mismatch.
+    import json
+    import sys
+    from pathlib import Path
+
+    from infomap._options import _ADVANCED_TIER_KWARGS
+    from infomap._run import _WRITER_EFFECTIVE_ARGS_ONLY
+
+    repo_root = Path(__file__).resolve().parents[2]
+    sys.path.insert(0, str(repo_root / "scripts"))
+    from parameter_catalog import resolve_policy_decision, snake_name
+
+    overrides = json.loads(
+        (repo_root / "interfaces" / "parameters" / "overrides.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    args_only_flags = {
+        "--" + name.replace("_", "-")
+        for name, spec in _ADVANCED_TIER_KWARGS.items()
+        if spec[2] == "args-only"
+    }
+    expected = {
+        snake_name(flag)
+        for flag in args_only_flags
+        if not resolve_policy_decision(overrides, flag, "python").get(
+            "inertWithoutOutputDir"
+        )
+    }
+    assert _WRITER_EFFECTIVE_ARGS_ONLY == expected
+
+
 def test_plain_run_does_not_warn():
     with warnings.catch_warnings(record=True) as records:
         warnings.simplefilter("always")

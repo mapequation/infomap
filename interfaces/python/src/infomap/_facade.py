@@ -267,8 +267,8 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         num_threads: str | int | None = None,
         threads: str | None = None,
         prefer_modular_solution: bool = False,
-        num_random_moves: int | None = None,
-        max_degree_for_random_moves: int | None = None,
+        num_random_moves: int = 5,
+        max_degree_for_random_moves: int = 2,
         options: Options | Mapping | None = None,
     ) -> None:
         """Create a new Infomap instance.
@@ -472,15 +472,11 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         hide_bipartite_nodes : bool, optional
             Hide bipartite nodes in output by projecting the solution to primary nodes.
 
-            Has no effect in the Python API unless an output directory is passed via
-            ``args`` (library mode disables file output otherwise; use the ``write_*``
-            methods to write results).
-
             .. deprecated:: 2.15
-                This keyword leaves the ``Infomap`` signature in 3.0. Use
-                Result.write_tree/write_flow_tree/write_clu (write_clu takes
-                depth_level) or Network.write_pajek/write_state_network. The flag only
-                acts when an output directory is passed via the raw args escape hatch.
+                This keyword leaves the ``Infomap`` signature in 3.0. It projects the
+                secondary (type-B) bipartite nodes out of what
+                result.write_tree/write_clu emit, leaving the in-memory result covering
+                both node types. Set it via Options and write from the Result to use it.
         print_all_trials : bool, optional
             Write each trial to separate output files. Has effect only when --num-trials
             is greater than 1.
@@ -1000,8 +996,8 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         num_threads: str | int | None = None,
         threads: str | None = None,
         prefer_modular_solution: bool = False,
-        num_random_moves: int | None = None,
-        max_degree_for_random_moves: int | None = None,
+        num_random_moves: int = 5,
+        max_degree_for_random_moves: int = 2,
         options: Options | Mapping | None = None,
     ) -> "Result":
         """Run Infomap.
@@ -1210,15 +1206,11 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         hide_bipartite_nodes : bool, optional
             Hide bipartite nodes in output by projecting the solution to primary nodes.
 
-            Has no effect in the Python API unless an output directory is passed via
-            ``args`` (library mode disables file output otherwise; use the ``write_*``
-            methods to write results).
-
             .. deprecated:: 2.15
-                This keyword leaves the ``Infomap`` signature in 3.0. Use
-                Result.write_tree/write_flow_tree/write_clu (write_clu takes
-                depth_level) or Network.write_pajek/write_state_network. The flag only
-                acts when an output directory is passed via the raw args escape hatch.
+                This keyword leaves the ``Infomap`` signature in 3.0. It projects the
+                secondary (type-B) bipartite nodes out of what
+                result.write_tree/write_clu emit, leaving the in-memory result covering
+                both node types. Set it via Options and write from the Result to use it.
         print_all_trials : bool, optional
             Write each trial to separate output files. Has effect only when --num-trials
             is greater than 1.
