@@ -51,7 +51,7 @@ print(inspect.getdoc(infomap.Options))      # the canonical parameter reference 
 print(inspect.getdoc(infomap.Result))       # how to read results
 ```
 
-Prefer `inspect.getdoc(infomap.Options)` over `inspect.signature(infomap.Infomap)` for the parameter reference. The `Infomap`/`run` signatures still list ~70 keyword arguments whose docstrings are mostly per-parameter deprecation notes (options relocating to `Options` in 3.0), so the raw signature does not reveal which options are permanent. `Options` lists every option once, with no deprecation noise.
+Prefer `inspect.getdoc(infomap.Options)` over `inspect.signature(infomap.Infomap)` for the parameter reference. The stateful `Infomap` and `Infomap.run` signatures still list ~70 keyword arguments whose docstrings are mostly per-parameter deprecation notes (options relocating to `Options` in 3.0), so the raw signature does not reveal which options are permanent. (The *functional* `inspect.signature(infomap.run)` is already clean — the five common keywords plus the structural `options`/`initial_partition` — so don't expect ~70 there.) `Options` lists every engine option once with a clean per-option docstring, without the ~70-way signature clutter.
 
 Use the published Python docs at `https://mapequation.org/infomap-python-docs/` when internet access is available. If inspecting from an Infomap source checkout, verify `infomap.__file__` so Python has not imported repo-local sources by accident.
 
@@ -68,7 +68,7 @@ Use the published Python docs at `https://mapequation.org/infomap-python-docs/` 
 
 - Prefer the functional `run(...)` returning a `Result`; read scalars as properties and collections as methods.
 - Carry any non-common option via `Options`; only the five common keywords stay direct (listed under *Options and the 3.0 transition* above — verify against `inspect.signature(infomap.run)`, do not re-derive from memory).
-- Make runs reproducible: set `seed` (default 123) and a meaningful `num_trials` (default 1) for research runs; use `num_trials=1` for smoke tests.
+- Make runs reproducible: set `seed` (default 123) and a meaningful `num_trials` (default 1) for research runs; use `num_trials=1` for smoke tests. For a no-dependency smoke run use a bundled network, e.g. `infomap.run(infomap.datasets.two_triangles(), num_trials=1)`.
 - Record package version, `infomap.__file__`, graph source, directed/weighted choice, seed, trials, non-default options, and output artifacts.
 - For state or multilayer output, say whether results are state-level (`result.nodes(states=True)`) or physical-node-level, and preserve any label→internal-id mapping.
 
@@ -96,7 +96,7 @@ To write the mapequation.org native files in Python, call the writers on the `Re
 - `network.write_pajek(path)` — Pajek serialization of the input network
 - `network.write_state_network(path)` — the internal state/multilayer network
 
-The `tree`, `clu`, `output`, `out_name`, and `no_file_output` **option flags are inert on the Python library surface**: setting them via `Options` writes no file and only emits a `UserWarning` (they act only through the raw `args` escape hatch together with an output directory). Write from the `Result`/`Network` instead.
+The `tree`, `ftree`, `clu`, `clu_level`, `output`, `out_name`, `no_file_output`, `print_all_trials`, and `no_overwrite` **option flags are inert on the Python library surface**: setting them via `Options` writes no file and only emits a `UserWarning` (they act only through the raw `args` escape hatch together with an output directory). Write from the `Result`/`Network` instead.
 
 ## Sweeps (many runs → one table)
 

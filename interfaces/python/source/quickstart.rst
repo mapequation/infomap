@@ -36,6 +36,8 @@ Common pitfalls, each answered in the :doc:`FAQ <faq>`:
 - **Only five options are direct keywords** on :func:`infomap.run`: ``seed``,
   ``num_trials``, ``two_level``, ``directed``, ``markov_time``. Carry every other
   engine option via :class:`~infomap.Options` (see :doc:`/api/deprecations`).
+  (``options`` and ``initial_partition`` are structural arguments to ``run``, not
+  engine options, so they are keywords too but are not part of "the five".)
 - **Output flags are inert on the library surface.** ``Options(tree=True)``
   writes nothing; write from the ``Result`` (``write_tree`` / ``write_clu``) or
   the ``Network`` (``write_pajek``).
@@ -137,6 +139,11 @@ as methods with defaults:
         node.node_id, node.module_id, node.flow
 
     result.to_dataframe(["node_id", "module_id", "flow"])
+
+``to_dataframe`` and ``to_series`` need pandas, an optional dependency: install
+it with ``pip install "infomap[pandas]"`` (a missing install raises an
+``ImportError`` that says exactly this). ``result.modules()`` and
+``result.nodes()`` need no extra dependency.
 
 Explore interactively
 ---------------------

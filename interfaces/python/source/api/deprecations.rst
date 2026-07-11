@@ -31,8 +31,11 @@ two tiers:
   advanced options migrate elsewhere rather than to :class:`Options`, and each
   keyword's ``.. deprecated::`` note states its own path: the file-output
   options (``no_file_output``, ``tree``, ``clu``, ``out_name``, …) move to the
-  ``Result.write_*`` / ``Network.write_*`` methods, and ``silent`` / ``verbose``
-  give way to logging (see :doc:`/working-with-infomap/running-and-options`).
+  ``Result.write_*`` / ``Network.write_*`` methods; ``silent`` and
+  ``verbosity_level`` give way to logging (see
+  :doc:`/working-with-infomap/running-and-options`); ``threads`` is superseded
+  by ``num_threads``; and ``print_config_fingerprint`` is a CLI-only diagnostic
+  with no library replacement.
 
 Passing an advanced-tier keyword to :class:`Infomap` or :meth:`Infomap.run`
 emits a :class:`PendingDeprecationWarning` (silent by default; surface it with

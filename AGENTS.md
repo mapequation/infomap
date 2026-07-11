@@ -32,6 +32,14 @@ Do not bundle unrelated cleanup into the same change.
 - `interfaces/js/README.md` is the source README for the public npm package
 - `interfaces/python/source/` owns the published Python docs source
 - `interfaces/python/generated/` and `interfaces/python/src/infomap/_swig.py` are tracked Python wrapper outputs
+- The option surface is generated from the C++ parameter catalog: the whole of
+  `interfaces/python/src/infomap/_options.py`, the marked signature block in
+  `interfaces/python/src/infomap/_facade.py`, `interfaces/parameters/policy.md`,
+  and the R/TS option files are produced by
+  `scripts/generate_binding_options.py` (`make build-binding-options`) from
+  `src/io/ParameterCatalog.cpp` + `interfaces/parameters/overrides.json`. Edit
+  those sources (and the generator for cross-cutting changes), then regenerate;
+  do not hand-edit the generated option code or docstrings
 - `interfaces/R/infomap/` owns the R package skeleton (`R/`, `DESCRIPTION`, `tests/`, `man/`)
 - `interfaces/R/generated/` are tracked SWIG-generated R outputs; refresh with `make build-r-swig`
 

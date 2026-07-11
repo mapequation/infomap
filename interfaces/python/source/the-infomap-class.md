@@ -88,7 +88,7 @@ falls into one of three groups, with a sanctioned replacement:
 |---|---|
 | Advanced tuning flags -- `regularized`, `core_loop_limit`, `flow_model`, and the like | carry them on the {class}`~infomap.Options` object: `run(g, options=Options(regularized=True))` |
 | Output-artifact flags -- `no_file_output`, `tree`, `clu`, `out_name` | write from the {class}`~infomap.Result` instead: `result.write_tree(path)`, `result.write_clu(path)`, or `network.write_pajek(path)` |
-| Console flags -- `silent`, `verbose` | use logging: `infomap.enable_log()` for the engine log, and `infomap.enable_log(logging.DEBUG)` to raise its verbosity |
+| Console flags -- `silent`, `verbosity_level` | use logging: `infomap.enable_log()` for the engine log, and `infomap.enable_log(logging.DEBUG)` to raise its verbosity |
 
 The `options` carrier accepts an {class}`~infomap.Options` instance or a plain
 mapping, and is accepted on `Infomap()`, {meth}`Infomap.run`,

@@ -296,7 +296,11 @@ print("Temp directory removed.")
   `depth_level` to choose the level.
 - {meth}`infomap.Result.write_flow_tree` writes a `.ftree` file that adds
   intra-module link flows.
-- {meth}`infomap.Result.write` dispatches on the file extension. The stateful
+- {meth}`infomap.Result.write_csv`, {meth}`infomap.Result.write_json`, and
+  {meth}`infomap.Result.write_newick` write the same partition as CSV, JSON, and
+  Newick for tooling that prefers those formats.
+- {meth}`infomap.Result.write` dispatches on the file extension (`.tree`,
+  `.ftree`, `.clu`, `.csv`, `.json`, `.nwk`). The stateful
   {class}`~infomap.Infomap` keeps the same writers through 2.x.
 
 ## Going deeper
