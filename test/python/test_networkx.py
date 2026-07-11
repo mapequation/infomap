@@ -96,9 +96,11 @@ def test_find_communities_sets_directed_for_digraph(monkeypatch):
 
     assert communities == [{"source", "target"}]
     assert instances[0].directed is True
-    assert instances[0].options["silent"] is True
-    # no_file_output is no longer forced: the library surface writes no files
-    # without an output directory, so the finder leaves it at the engine default.
+    # silent and no_file_output are no longer forced: the API is quiet by
+    # default (Infomap defaults silent=True) and the library surface writes no
+    # files without an output directory, so the finder leaves both at the engine
+    # default rather than passing the deprecated flags.
+    assert "silent" not in instances[0].options
     assert "no_file_output" not in instances[0].options
     assert instances[0].initial_partition is None
 

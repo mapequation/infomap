@@ -65,8 +65,9 @@ def test_find_communities_carrier_carries_advanced_option(recorded):
 
 @pytest.mark.filterwarnings("ignore::PendingDeprecationWarning")
 def test_find_communities_carrier_keeps_engine_quiet_without_forcing_no_file_output(recorded):
-    # The finder keeps the engine quiet but no longer forces no_file_output --
-    # it is redundant on the library surface (no output directory -> no files).
+    # The finder no longer force-sets silent or no_file_output; the Options
+    # carrier already defaults silent True and no_file_output False, so the
+    # engine reaches run() quiet and file-free without the finder touching them.
     infomap.find_communities(_graph(), options=infomap.Options(regularized=True))
     assert recorded["silent"] is True
     assert recorded["no_file_output"] is False

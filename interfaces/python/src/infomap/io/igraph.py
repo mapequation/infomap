@@ -356,9 +356,10 @@ def find_igraph_communities(
         metadata; vertices with missing values are skipped. Raises
         :class:`ValueError` if the attribute does not exist.
     **infomap_options
-        Engine options passed to :class:`infomap.Infomap`. ``silent=True`` is
-        applied unless overridden. Prefer carrying non-common options via the
-        ``options=`` argument above (the 3.0-safe path).
+        Engine options passed to :class:`infomap.Infomap`. The engine is quiet
+        by default; call ``infomap.enable_log()`` for the log. Prefer carrying
+        non-common options via the ``options=`` argument above (the 3.0-safe
+        path).
 
     Returns
     -------
@@ -390,12 +391,12 @@ def find_igraph_communities(
 
     # Merge the options= carrier under the caller's bare keyword arguments (bare
     # kwargs win) and apply the `trials` alias. num_trials is left to the engine
-    # default (1), matching infomap.run(). The library surface writes no files
-    # without an output directory, so no_file_output is not forced.
+    # default (1), matching infomap.run(). The engine is quiet by default, so
+    # silent is not forced (a deprecated bare kwarg leaving in 3.0); no_file_output
+    # is not forced either (redundant without an output directory).
     engine_options = _resolve_options(options, infomap_options)
     if trials is not None:
         engine_options["num_trials"] = trials
-    engine_options = {"silent": True, **engine_options}
 
     infomap = Infomap(**engine_options)
     node_mapping = add_igraph_graph(
