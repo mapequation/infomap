@@ -104,6 +104,12 @@ lazily on first access and then cached. The surface follows one convention:
   are `{node_id: name}` **properties**, read *without* parentheses (calling
   `result.names()` raises `TypeError: 'dict' object is not callable`). They map a
   node id to its name, so they read as attributes, not computed collections.
+- **Exception — two more worth memorizing**: the per-trial `result.codelengths`
+  is also a collection-valued **property** (a tuple; `result.codelengths()`
+  raises `TypeError: 'tuple' object is not callable`), and
+  `result.effective_num_modules(depth)` is the one scalar read as a **method**
+  because it takes a depth — unlike its property-shaped siblings
+  `result.effective_num_top_modules` and `result.effective_num_leaf_modules`.
 
 A `Result` from an earlier run of a reused stateful {class}`~infomap.Infomap`
 raises if you read its node data after a later `run()`. The eagerly captured
