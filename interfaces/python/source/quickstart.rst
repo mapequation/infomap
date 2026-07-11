@@ -25,7 +25,7 @@ The whole surface at a glance (each line is expanded below):
     result.to_dataframe()          # per-node table: node_id, module_id, flow, path, name
     result.write_clu("out.clu")    # write .clu/.tree/.ftree from the Result
 
-    # advanced engine options ride Options, not bare keywords:
+    # advanced engine options: Options is the reusable, validated carrier
     infomap.run(graph, options=Options(regularized=True, flow_model="directed"))
 
 Run on a graph
@@ -50,9 +50,10 @@ The same call accepts a NetworkX or igraph graph, a SciPy sparse matrix, a
 ``(2, E)`` edge index, a network file path, or an iterable of ``(u, v[, w])``
 links. Five common options are direct keyword arguments — ``seed``,
 ``num_trials``, ``two_level``, ``directed`` (a directed flow model), and
-``markov_time``; carry every other engine option (``regularized``,
-``flow_model``, ``teleportation_probability``, …) through
-:class:`~infomap.Options`, as shown under `Reusable configuration`_ below.
+``markov_time``. Any other engine option (``regularized``, ``flow_model``,
+``teleportation_probability``, …) can be passed as a keyword too, but for a
+reusable or validated configuration prefer :class:`~infomap.Options`, as shown
+under `Reusable configuration`_ below.
 
 Without any graph library installed, the bundled example networks in
 :mod:`infomap.datasets` work directly:
@@ -152,9 +153,10 @@ A few conventions that trip people up, each expanded in the :doc:`FAQ <faq>`:
   ``result.codelength`` (no ``()``) but ``result.modules()`` (with ``()``). The
   label and per-trial tables (``result.names`` / ``state_names`` /
   ``codelengths``) are intrinsic results, so they read as properties too.
-- **Only five options are direct keywords** on :func:`infomap.run`: ``seed``,
-  ``num_trials``, ``two_level``, ``directed``, ``markov_time``. Carry every other
-  engine option via :class:`~infomap.Options` (see :doc:`/api/deprecations`).
+- **Five common options are direct keywords** on :func:`infomap.run`: ``seed``,
+  ``num_trials``, ``two_level``, ``directed``, ``markov_time``. Any other engine
+  option can be passed as a keyword too (it forwards to :class:`~infomap.Options`);
+  prefer ``Options`` for a reusable or validated configuration.
   (``options`` and ``initial_partition`` are structural arguments to ``run``, not
   engine options, so they are keywords too but are not part of "the five".)
 - **Output flags are inert on the library surface.** ``Options(tree=True)``

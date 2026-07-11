@@ -10,6 +10,8 @@ from __future__ import annotations
 from .io.export import (
     annotate_igraph_graph as annotate_igraph_graph,
     annotate_networkx_graph as annotate_networkx_graph,
+    to_igraph as to_igraph,
+    to_networkx as to_networkx,
     write_gexf as write_gexf,
     write_graphml as write_graphml,
 )
@@ -17,6 +19,8 @@ from .io.export import (
 __all__ = [
     "annotate_igraph_graph",
     "annotate_networkx_graph",
+    "to_igraph",
+    "to_networkx",
     "write_gexf",
     "write_graphml",
 ]

@@ -268,15 +268,15 @@ def test_advanced_tier_kwarg_silent_through_options_and_adapters():
 
 
 @pytest.mark.fast
-def test_functional_run_direct_advanced_kwarg_emits_pending():
-    """A non-default advanced-tier kwarg typed directly on the functional
-    infomap.run() front door emits a PendingDeprecationWarning naming the
-    keyword. The front door funnels through Infomap(**resolved) from inside the
-    package, so run() flags the user's own kwargs itself (issue #741)."""
+def test_functional_run_direct_advanced_kwarg_does_not_warn():
+    """A bare advanced engine kwarg on the functional infomap.run() front door
+    forwards to Options without a deprecation warning: run(**kwargs) is a
+    permanent convenience, and only the giant explicit Infomap()/Infomap.run()
+    signatures are slimmed in 3.0 (issue #741)."""
     with warnings.catch_warnings(record=True) as records:
         warnings.simplefilter("always")
         run([(0, 1), (1, 2), (2, 0)], regularized=True)
-    assert any("regularized" in message for message in _pending(records))
+    assert _pending(records) == []
 
 
 @pytest.mark.fast

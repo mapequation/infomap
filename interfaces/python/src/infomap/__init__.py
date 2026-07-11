@@ -20,9 +20,11 @@ prebuilt :class:`Network`. The bundled example networks in
 
 Options
 -------
-Only ``seed``, ``num_trials``, ``two_level``, ``directed`` and ``markov_time``
-are keyword arguments on :func:`run`. Carry every other engine option (for
-example ``regularized`` or ``flow_model``) via :class:`Options`::
+``seed``, ``num_trials``, ``two_level``, ``directed`` and ``markov_time`` are
+first-class keyword arguments on :func:`run`. Any other engine option (for
+example ``regularized`` or ``flow_model``) can be passed as a keyword too --
+it is forwarded to :class:`Options` -- but for a reusable or validated
+configuration prefer :class:`Options`::
 
     from infomap import Options
 

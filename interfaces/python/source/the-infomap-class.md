@@ -102,10 +102,12 @@ The `options` carrier accepts an {class}`~infomap.Options` instance or a plain
 mapping, and is accepted on `Infomap()`, {meth}`Infomap.run`,
 {meth}`Network.run`, and {func}`infomap.run` alike — for example
 `im.run(options=Options(regularized=True))` gives the stateful builder the same
-warning-free path. A bare keyword argument set to a non-default value still
-overrides the carrier, and only bare keyword arguments typed directly on the call
-are flagged, so the common options (`seed`, `num_trials`, `two_level`,
-`directed`, `markov_time`) stay on the signature and are never deprecated.
+carrier. A bare keyword argument set to a non-default value still overrides the
+carrier. On the functional {func}`infomap.run` and {meth}`Network.run`, bare
+keywords forward to `Options` without a deprecation; on the stateful `Infomap()`
+constructor and {meth}`Infomap.run` the advanced options are pending-deprecated
+on the signature. The common options (`seed`, `num_trials`, `two_level`,
+`directed`, `markov_time`) stay on every signature and are never deprecated.
 
 ## Removed accessors
 

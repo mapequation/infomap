@@ -25,8 +25,6 @@ from collections.abc import Iterable, Mapping
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from ._options import _warn_advanced_tier_kwargs
-
 if TYPE_CHECKING:
     from .result import Result
 
@@ -456,12 +454,11 @@ def run(
     initial_partition : mapping, optional
         Initial module assignment for this run only.
     **overrides
-        Any other Infomap engine option, as a keyword argument. These
-        advanced-tier options still work but are pending-deprecated on this
-        signature and leave it in 3.0 (issue #741); carry them via ``options``
-        (an :class:`Options` instance or a mapping) for the sanctioned,
-        warning-free path. They configure the *engine*, not how the input is
-        read.
+        Any other Infomap engine option, as a keyword argument, forwarded to
+        :class:`Options`. Convenient for a one-off; for a reusable or validated
+        configuration prefer ``options=Options(...)`` (the canonical carrier and
+        the full parameter reference). They configure the *engine*, not how the
+        input is read.
 
     Returns
     -------
@@ -470,18 +467,16 @@ def run(
 
     Notes
     -----
-    The Python API is quiet by default. To see the engine log, attach a
-    handler to the ``infomap`` logger with :func:`infomap.enable_log`
-    (``infomap.enable_log(logging.DEBUG)`` for more detail); the legacy
-    ``silent=`` keyword is pending-deprecated and leaves the signature in 3.0.
-    The ``infomap`` command-line interface keeps its verbose default.
+    The Python API is quiet by default. To see the engine log, attach a handler
+    to the ``infomap`` logger with :func:`infomap.enable_log`
+    (``infomap.enable_log(logging.DEBUG)`` for more detail). The ``infomap``
+    command-line interface keeps its verbose default.
 
-    Advanced engine options passed as bare keyword arguments (for example a
-    direct ``regularized=True``) are pending-deprecated on this signature and
-    leave it in 3.0 (issue #741); carry them via ``options`` instead -- either an
-    :class:`Options` instance or a plain mapping -- which is the sanctioned,
-    warning-free path. The common options (``seed``, ``num_trials``,
-    ``two_level``, ``directed``, ``markov_time``) stay on the signature.
+    Advanced engine options can be passed either as bare keyword arguments (for
+    a one-off, e.g. ``regularized=True``) or via ``options`` -- an
+    :class:`Options` instance or a plain mapping, the reusable and validated
+    carrier and the full parameter reference. The two are equivalent; a keyword
+    argument takes precedence over the same field in ``options``.
 
     Keyword arguments go to the engine; the input adapters always build with
     their defaults (e.g. networkx reads the ``"weight"`` edge attribute, a
@@ -542,16 +537,10 @@ def run(
 
     resolved = _resolve_options(options, {**overrides, **common})
     _reject_unknown_options(resolved)
-    # Advanced-tier keywords are pending-deprecated on the run() signature and
-    # move off it in 3.0 (issue #741). Warn only on bare **overrides typed
-    # directly on this call; the common-tier parameters above never warn, and an
-    # Options or mapping `options` carrier is the sanctioned path and stays
-    # silent. The helper's caller-frame check sees the user's frame here (frame 2
-    # is run()'s caller), so an in-package caller of run() is not flagged and the
-    # later Infomap(**resolved) -- reached from inside the package -- does not
-    # double-warn.
-    if overrides:
-        _warn_advanced_tier_kwargs(overrides, "init")
+    # Advanced engine options passed as bare keywords forward to Options (the
+    # canonical carrier) without a deprecation on this functional front door;
+    # only the giant explicit Infomap()/Infomap.run() signatures are slimmed in
+    # 3.0 (issue #741). Unknown keys are still rejected above with a suggestion.
     # Keys the user actually supplied (kwargs + common-tier params + a mapping
     # `options`), used to reject adapter-only arguments below. An Options
     # *instance* is excluded on purpose: its to_kwargs() carries every field
@@ -631,24 +620,22 @@ def run(
     # before the link-iterable branch, with the explicit conversion.
     if isinstance(input, Mapping):
         raise TypeError(
-            "infomap.run() does not accept a dict: iterating one yields only "
-            "its keys, silently dropping the values. For a {(source, target): "
-            "weight} edge dict pass [(u, v, w) for (u, v), w in d.items()]; for "
-            "a {node: [neighbors]} adjacency dict, expand it to (source, "
-            "target) link tuples first (or build a Network)."
+            "infomap.run() does not accept a dict (iterating one yields only "
+            "its keys, dropping the values). Convert first: a {(source, "
+            "target): weight} edge dict -> [(u, v, w) for (u, v), w in "
+            "d.items()]; a {node: [neighbors]} adjacency dict -> its link "
+            "tuples."
         )
 
     # A pandas DataFrame is iterable too, but iterating one yields its column
     # labels, not its edge rows. Point at the documented tabular paths.
     if _is_pandas_dataframe(input):
         raise TypeError(
-            "infomap.run() does not accept a pandas DataFrame directly: "
-            "iterating one yields its column labels, not its edge rows. Pass "
-            "the edge columns as an array, e.g. "
+            "infomap.run() does not accept a pandas DataFrame directly "
+            "(iterating one yields its column labels, not edge rows). Pass the "
+            "edge columns as an array, e.g. "
             "infomap.run(df[['source', 'target']].to_numpy()) (add a weight "
-            "column for weighted links), or infomap.run(df.itertuples("
-            "index=False)); for non-default building use "
-            "Network().add_links(df.to_numpy())."
+            "column for weighted links)."
         )
 
     # A dense adjacency matrix is 2-D and iterable, but handing its rows to
@@ -660,14 +647,11 @@ def run(
     if _is_dense_adjacency_matrix(input):
         rows, cols = input.shape[0], input.shape[1]
         raise TypeError(
-            f"infomap.run() received a {rows}x{cols} 2-D array, which looks "
-            "like a dense adjacency matrix -- an unsupported input that would "
-            "otherwise be misread as link rows, silently partitioning a "
-            "different graph. Convert it to a SciPy sparse matrix and pass "
-            "that: infomap.run(scipy.sparse.csr_matrix(A)). If you really meant "
-            f"{rows} link rows of (source, target[, weight]), pass a list of "
-            "tuples or use Network().add_links(array) to select that reading "
-            "explicitly."
+            f"infomap.run() received a {rows}x{cols} 2-D array that looks like "
+            "a dense adjacency matrix, which would be misread as link rows and "
+            "silently partition a different graph. Pass it as a SciPy sparse "
+            "matrix: infomap.run(scipy.sparse.csr_matrix(A)). For literal "
+            "(source, target[, weight]) rows, pass a list of tuples."
         )
 
     # 7. An iterable of (u, v[, w]) links.

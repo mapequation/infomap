@@ -15,7 +15,7 @@ The stateful `infomap.Infomap` class still works and is a fine builder for incre
 
 ## Options and the 3.0 transition
 
-Only five keyword arguments stay directly on `infomap.run()` / `Infomap()` / `Infomap.run()`: **`seed`, `num_trials`, `two_level`, `directed`, `markov_time`**. Every other engine option (for example `regularized`, `flow_model`, `teleportation_probability`, `num_threads`, `multilayer_relax_rate`, `entropy_corrected`) moves off those signatures in 3.0 and should be carried via `Options`. This five-name set lives in the code, not this skill: confirm it from `inspect.signature(infomap.run)` (the explicit keyword parameters) or the published `api/deprecations` reference rather than trusting a copied list.
+Five options are first-class keyword arguments across `infomap.run()` / `Infomap()` / `Infomap.run()`: **`seed`, `num_trials`, `two_level`, `directed`, `markov_time`**. The functional `infomap.run()` and `Network.run()` also accept any other engine option (for example `regularized`, `flow_model`, `teleportation_probability`, `num_threads`, `multilayer_relax_rate`, `entropy_corrected`) as a bare keyword — it forwards to `Options` — so there is no friction for a one-off. The ~70 explicit advanced keywords on the *stateful* `Infomap()` / `Infomap.run()` signatures are pending-deprecated and move off those signatures in 3.0; `Options` is the recommended reusable, validated carrier and the parameter reference. This five-name set lives in the code, not this skill: confirm it from `inspect.signature(infomap.run)` (the explicit keyword parameters) or the published `api/deprecations` reference rather than trusting a copied list.
 
 ```python
 import infomap
@@ -29,7 +29,7 @@ result = infomap.run(
 )
 ```
 
-Passing those options as bare keyword arguments still works in 2.x but is pending-deprecated (it emits no visible warning today) and leaves the signature in 3.0. Generate `infomap.run(g, options=Options(regularized=True))`, not `infomap.run(g, regularized=True)`.
+On the functional `infomap.run()` and `Network.run()`, passing those options as bare keywords works and is not deprecated (it forwards to `Options`), so `infomap.run(g, regularized=True)` is fine. Prefer `infomap.run(g, options=Options(regularized=True))` when the configuration is reused across runs or you want it validated up front. On the stateful `Infomap()` / `Infomap.run()` the same advanced keywords are pending-deprecated and leave those signatures in 3.0 — carry them via `Options` there.
 
 The `options=` carrier is accepted on the stateful `Infomap()` and `Infomap.run()` as well, not just `infomap.run()` and `Network.run()` — e.g. `im.run(options=Options(regularized=True))` — so the stateful builder has the same warning-free path (a bare keyword set to a non-default value still overrides the carrier).
 
@@ -68,7 +68,7 @@ Use the published Python docs at `https://mapequation.org/infomap-python-docs/` 
 ## Generating code
 
 - Prefer the functional `run(...)` returning a `Result`; read scalars as properties and collections as methods.
-- Carry any non-common option via `Options`; only the five common keywords stay direct (listed under *Options and the 3.0 transition* above — verify against `inspect.signature(infomap.run)`, do not re-derive from memory).
+- Prefer `Options` for advanced options (reusable, validated, the reference); the functional `infomap.run()` / `Network.run()` also accept them as bare keywords. The five common keywords are listed under *Options and the 3.0 transition* above — verify against `inspect.signature(infomap.run)`, do not re-derive from memory.
 - Make runs reproducible: set `seed` (default 123) and a meaningful `num_trials` (default 1) for research runs; use `num_trials=1` for smoke tests. For a no-dependency smoke run use a bundled network, e.g. `infomap.run(infomap.datasets.two_triangles(), num_trials=1)`.
 - Record package version, `infomap.__file__`, graph source, directed/weighted choice, seed, trials, non-default options, and output artifacts.
 - For state or multilayer output, say whether results are state-level (`result.nodes(states=True)`) or physical-node-level, and preserve any label→internal-id mapping.
