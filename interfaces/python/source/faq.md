@@ -148,6 +148,21 @@ colouring or feeding another algorithm. `result.to_dataframe([...])` returns a
 pandas DataFrame with node id, module id, flow, and hierarchical path, better for
 filtering, grouping, and export. See {doc}`Reading the Result <working-with-infomap/results-and-iteration>`.
 
+### Why are `result.modules()` keys integers instead of my node labels?
+
+`infomap.run(graph)` maps your node labels to internal integer ids, so
+`result.modules()` and `node.node_id` are keyed by those ids. The mapping is kept
+on `result.names` (`{internal_id: label}` for graph inputs) -- relabel with no
+rebuild:
+
+```python
+named = {result.names.get(n, n): m for n, m in result.modules().items()}
+```
+
+`result.to_dataframe()` already includes a `name` column, and
+`infomap.find_communities(graph)` returns a `list[set]` in your original labels.
+See {doc}`Building a network <working-with-infomap/inputs>`.
+
 ### How do I export results to Gephi or to `.tree` / `.clu` files?
 
 For Gephi, annotate the graph with `infomap.to_networkx(result)` (or `to_igraph`)
