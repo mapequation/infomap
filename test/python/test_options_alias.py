@@ -5,6 +5,7 @@ Settings alias has been removed.
 """
 
 import dataclasses
+import warnings
 
 import pytest
 
@@ -54,6 +55,30 @@ def test_options_repr_shows_only_non_default_fields():
     assert repr(Options(num_trials=10)) == "Options(num_trials=10)"
     o = Options(num_trials=10, seed=1, flow_model="directed")
     assert eval(repr(o), {"Options": Options}) == o
+
+
+@pytest.mark.fast
+def test_directed_and_matching_flow_model_do_not_warn():
+    # directed=True is shorthand for flow_model="directed" (False -> undirected),
+    # so pairing them consistently is redundant but valid input -- to_args() must
+    # not second-guess it. Only a genuine disagreement warns (see below).
+    for directed, flow_model in ((True, "directed"), (False, "undirected")):
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")  # any warning fails the test
+            Options(directed=directed, flow_model=flow_model).to_args()
+
+
+@pytest.mark.fast
+def test_directed_conflicting_flow_model_warns():
+    # A real disagreement: 'directed' silently wins and the flow_model is lost,
+    # so the caller should hear about it.
+    with pytest.warns(UserWarning, match="disagree"):
+        Options(directed=True, flow_model="undirected").to_args()
+    with pytest.warns(UserWarning, match="disagree"):
+        Options(directed=False, flow_model="directed").to_args()
+    # A directed variant is distinct from plain "directed" and is dropped too.
+    with pytest.warns(UserWarning, match="disagree"):
+        Options(directed=True, flow_model="undirdir").to_args()
 
 
 @pytest.mark.fast
