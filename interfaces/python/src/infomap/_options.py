@@ -848,13 +848,21 @@ class Options(metaclass=_OptionsMeta):
         _validate_option_domains(options)
         _validate_option_choices(options)
         if self.directed is not None and self.flow_model is not None:
-            warnings.warn(
-                f"both 'directed' and 'flow_model' are set; 'directed' "
-                f"takes precedence and flow_model={self.flow_model!r} is "
-                "ignored by the engine. Set only one (directed=True is shorthand for flow_model='directed').",
-                UserWarning,
-                stacklevel=_external_stacklevel(),
-            )
+            # Only warn on a genuine conflict. directed=True is shorthand for
+            # flow_model="directed" (False -> "undirected"), so pairing it with
+            # the matching flow_model is redundant but consistent -- warning
+            # there second-guesses valid input. Warn only when the two disagree,
+            # where 'directed' silently wins and the flow_model is really lost.
+            implied_flow_model = "directed" if self.directed else "undirected"
+            if self.flow_model != implied_flow_model:
+                warnings.warn(
+                    f"both 'directed' and 'flow_model' are set and disagree; "
+                    f"'directed' takes precedence and flow_model="
+                    f"{self.flow_model!r} is ignored by the engine. Set only "
+                    "one (directed=True is shorthand for flow_model='directed').",
+                    UserWarning,
+                    stacklevel=_external_stacklevel(),
+                )
         rendered_args = []
 
         if self.include_self_links is not None:
