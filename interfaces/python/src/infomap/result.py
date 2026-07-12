@@ -36,7 +36,6 @@ legacy ``Infomap`` accessors (parity is a gate).
 
 from __future__ import annotations
 
-import warnings
 from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
@@ -482,15 +481,12 @@ class Result(_ResultWritersMixin):
         """Guard live C++ tree access against a re-run of the bound engine."""
         if self._engine._generation != self._generation:
             raise StaleResultError(
-                "stale Result: the Infomap instance was re-run since this "
-                "Result was created; node-level data is no longer available "
-                "(the C++ result tree is rebuilt on every run()). The eager "
-                "scalars (codelength, module counts, summary()) stay valid on "
-                "this Result. To keep node-level data across re-runs, "
-                "materialize it before the next run -- dict(result.modules()), "
-                "result.to_dataframe(), or list(result.nodes()) -- or use "
-                "infomap.run(...), which builds a fresh engine per call and "
-                "never goes stale."
+                "stale Result: the Infomap instance was re-run, so the C++ "
+                "result tree this Result read is gone. Eager scalars "
+                "(codelength, module counts, summary()) stay valid; to keep "
+                "node-level data across re-runs, materialize it first -- "
+                "dict(result.modules()) / result.to_dataframe() -- or use "
+                "infomap.run(), which never goes stale."
             )
 
     def _guard_iteration(self, iterator):
@@ -673,23 +669,6 @@ class Result(_ResultWritersMixin):
 
     # -- collection accessors (§9: methods with defaults) -------------------
 
-    def _warn_higher_order_physical(self, states: bool) -> None:
-        # nodes()/to_dataframe() default to states=False. On a higher-order
-        # (multilayer/memory) network a physical node can belong to several
-        # modules, so node_id is not unique and rows repeat -- unlike modules(),
-        # which raises here because a dict cannot hold the duplicate key. Warn so
-        # a silent df.set_index("node_id") / dict(zip(...)) collapse is caught.
-        if self._have_memory and not states:
-            warnings.warn(
-                "reading physical nodes (states=False) on a higher-order "
-                "(multilayer/memory) network: node_id is not unique here (a "
-                "physical node can appear in several modules), so rows may "
-                "repeat and indexing by node_id silently collapses them. Pass "
-                "states=True to read state nodes.",
-                UserWarning,
-                stacklevel=3,
-            )
-
     def modules(self, depth: int = 1, *, states: bool = False) -> dict[int, int]:
         """Map ``node_id`` (or ``state_id`` when ``states``) to ``module_id``.
 
@@ -751,7 +730,6 @@ class Result(_ResultWritersMixin):
         TreeNode
             An immutable snapshot view per leaf node.
         """
-        self._warn_higher_order_physical(states)
         snapshot = self._snapshot(depth, states)
         names = self._names
         state_names = self._state_names
@@ -1085,7 +1063,6 @@ class Result(_ResultWritersMixin):
             for column in requested_columns
         ]
 
-        self._warn_higher_order_physical(states)
         snapshot = self._snapshot(resolved_depth, states)
         names = self._names
 
