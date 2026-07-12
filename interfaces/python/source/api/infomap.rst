@@ -183,9 +183,8 @@ Full reference
    (``get_modules``, ``modules``, ``codelength``, ``to_dataframe``, …), and
    their example bodies show the legacy ``im.<accessor>`` form for reference
    only. In new code, read these off the :class:`Result` that ``run()`` returns
-   instead -- e.g. ``result = im.run(); result.modules()`` -- and mind the shape
-   shift: ``im.modules`` is a property, ``result.modules()`` a method. See
-   :doc:`/the-infomap-class` for the full migration table.
+   instead (see the note at the top of this page for the shape shift and the
+   migration table).
 
 .. autoclass:: Infomap
    :members:

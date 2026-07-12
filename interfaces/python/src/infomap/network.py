@@ -352,8 +352,7 @@ class Network(_NetworkWritersMixin):
         seed, num_trials, two_level, directed, markov_time : optional
             The five common-tier engine options, accepted directly here to match
             :func:`infomap.run` and :meth:`infomap.Infomap.run`. A supplied value
-            overrides the ``options`` carrier; carry any other engine option via
-            ``options=Options(...)``.
+            overrides the ``options`` carrier.
         args : str, optional
             Raw Infomap arguments prepended before the rendered options.
         initial_partition : mapping, optional
