@@ -73,7 +73,11 @@ has concrete gotchas worth flagging -- it is optional, not required.}
 
 ## API pointers
 
-- {`{func}` / `{class}` / `{meth}` / `{attr}` links into the API reference.}
+{Bare `{func}` / `{class}` / `{meth}` / `{attr}` links into the API reference --
+a discoverability index, NOT a recap. Do not re-describe what each symbol does;
+the body already did, and the duplicated descriptions drift. Keep it to a line
+or two, grouped if it helps; point cross-cutting metrics (e.g. Result
+attributes) at the chapter that owns them rather than re-listing them here.}
 
 ## Going deeper
 

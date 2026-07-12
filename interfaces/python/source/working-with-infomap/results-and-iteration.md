@@ -332,23 +332,14 @@ builds the same table. Both read only the eagerly captured scalars, so — unlik
 
 ## API pointers
 
-- {attr}`infomap.Result.codelength` is $L(\mathsf{M}^*)$, the map equation value
-  for the best partition.
-- {attr}`infomap.Result.one_level_codelength` is the baseline cost with all nodes
-  in a single module.
-- {attr}`infomap.Result.relative_codelength_savings` is the fractional gain
-  $(L_\text{one} - L^*) / L_\text{one}$.
-- {attr}`infomap.Result.num_top_modules` counts the top-level modules.
-- {attr}`infomap.Result.num_levels` is the depth of the hierarchical tree.
-- {meth}`infomap.Result.modules` returns a `{node_id: module_id}` dict and
-  accepts `depth=k` for hierarchy slicing.
-- {meth}`infomap.Result.nodes` yields per-node views with `node_id`,
-  `module_id`, and `flow`.
-- {meth}`infomap.Result.to_dataframe` exports a table with columns `node_id`,
-  `module_id`, `flow`, `path`, `name`.
-- {meth}`infomap.Result.summary` returns the scalar metrics as a
-  `{name: value}` dict — one row per run for building a sweep table with pandas.
-- {meth}`infomap.Result.to_series` is that same row as a `pandas.Series`.
+All on {class}`~infomap.Result`: metrics {attr}`~infomap.Result.codelength`,
+{attr}`~infomap.Result.one_level_codelength`,
+{attr}`~infomap.Result.relative_codelength_savings`,
+{attr}`~infomap.Result.num_top_modules`, {attr}`~infomap.Result.num_levels`;
+partition accessors {meth}`~infomap.Result.modules`,
+{meth}`~infomap.Result.nodes`, {meth}`~infomap.Result.to_dataframe`; and the
+per-run scalar row {meth}`~infomap.Result.summary` /
+{meth}`~infomap.Result.to_series`.
 
 ## Going deeper
 
