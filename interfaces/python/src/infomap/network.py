@@ -444,7 +444,10 @@ class Network(_NetworkWritersMixin):
                     stacklevel=2,
                 )
 
-        _warn_inert_output_options(resolved, args)
+        # engine_emits stays False: a Network's engine is --silent for its
+        # whole lifetime (see the advisory above), so verbosity_level can never
+        # take effect here and is correctly flagged inert.
+        _warn_inert_output_options(resolved, args, engine_emits=False)
 
         rendered_args = _construct_args(args, **resolved.to_kwargs())
         # classify=True mirrors Infomap.run(): input failures surfacing at

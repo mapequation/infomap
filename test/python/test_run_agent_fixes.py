@@ -275,6 +275,31 @@ def test_verbosity_level_via_options_warns():
     assert any("no effect" in str(r.message) for r in _user_warnings(records))
 
 
+def test_verbosity_level_not_flagged_inert_when_engine_emits():
+    # With silent=False the engine writes to stdout for life, where
+    # verbosity_level IS effective (-v/-vv/-vvv sets the detail). Flagging it
+    # "no effect" there would be the routed-DEBUG false positive (fixed in
+    # test_logging) all over again, so it must stay quiet -- on the functional
+    # front door and the stateful construct+run path alike.
+    with warnings.catch_warnings(record=True) as records:
+        warnings.simplefilter("always")
+        run(_LINKS, seed=1, options=Options(verbosity_level=3, silent=False))
+    assert not any(
+        "verbosity_level" in str(r.message) and "no effect" in str(r.message)
+        for r in _user_warnings(records)
+    )
+
+    with warnings.catch_warnings(record=True) as records:
+        warnings.simplefilter("always")
+        im = Infomap(silent=False, verbosity_level=3)
+        im.add_links(_LINKS)
+        im.run()
+    assert not any(
+        "verbosity_level" in str(r.message) and "no effect" in str(r.message)
+        for r in _user_warnings(records)
+    )
+
+
 def test_print_config_fingerprint_via_options_warns():
     with warnings.catch_warnings(record=True) as records:
         warnings.simplefilter("always")

@@ -181,7 +181,13 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
     """
 
     def _init_from_options(self, args, options):
-        _warn_inert_output_options(options, args)
+        # engine_emits: a classic silent=False construction leaves the engine
+        # writing to stdout for life, where verbosity_level is effective (so it
+        # is not flagged inert). Read the raw option before the routed override
+        # below strips silent.
+        _warn_inert_output_options(
+            options, args, engine_emits=options.silent is False
+        )
         # In routed log mode (handlers on the "infomap" logger), logging is
         # the emission control: strip --silent from the constructor args (the
         # C++ engine composes constructor + run args additively, so a --silent
@@ -2271,7 +2277,13 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
 
     def _run_from_options(self, args, initial_partition, options):
         kwargs = options.to_kwargs()
-        _warn_inert_output_options(options, args)
+        # engine_emits: whether this instance's engine emits at all. It was
+        # baked --silent (or not) at construction and cannot be undone per run,
+        # so a non-silent instance makes verbosity_level effective regardless of
+        # this run's silent default.
+        _warn_inert_output_options(
+            options, args, engine_emits=not self._engine_constructed_silent
+        )
         if _is_log_routed():
             # Warn once per instance: a run loop would otherwise repeat the
             # same advisory on every call and train the user to ignore it.
