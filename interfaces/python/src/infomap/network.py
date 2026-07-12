@@ -231,6 +231,12 @@ class Network(_NetworkWritersMixin):
         :meth:`Infomap.add_scipy_sparse_matrix` uses. The
         ``{internal_id: label}`` mapping is stored on
         :attr:`node_id_to_label`.
+
+        ``directed`` defaults to ``False``: a symmetric adjacency is the common
+        undirected case, so ``A[i, j]`` and ``A[j, i]`` are folded together.
+        This per-format default differs across the constructors --
+        :meth:`from_networkx` and :meth:`from_igraph` infer directedness from
+        the graph, while :meth:`from_edge_index` defaults to ``directed=True``.
         """
         from .io.scipy import add_scipy_sparse_matrix as _add_scipy_sparse_matrix
 
@@ -259,6 +265,13 @@ class Network(_NetworkWritersMixin):
         Loads ``edge_index`` via the same adapter
         :meth:`Infomap.add_edge_index` uses. The ``{internal_id: label}``
         mapping is stored on :attr:`node_id_to_label`.
+
+        ``directed`` defaults to ``True``: a PyG ``edge_index`` is directed by
+        convention -- each column is a ``source -> target`` edge, and undirected
+        graphs store both directions explicitly. This per-format default differs
+        across the constructors -- :meth:`from_networkx` and :meth:`from_igraph`
+        infer directedness from the graph, while
+        :meth:`from_scipy_sparse_matrix` defaults to ``directed=False``.
         """
         from .io.edge_index import add_edge_index as _add_edge_index
 
