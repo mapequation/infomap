@@ -151,9 +151,23 @@ def _warn_inert_output_options(options: Any, args: Any) -> None:
     # effect. Point at the real control using each option's catalog
     # replacement text. ``silent`` is handled by the dedicated, context-aware
     # advisories on the Infomap/Network paths, so it is intentionally omitted.
+    #
+    # verbosity_level is NOT inert under routed DEBUG logging: there
+    # apply_engine_log_overrides un-silences the engine and keeps a user-chosen
+    # level, so the -vv/-vvv detail records actually surface. Warning "no effect"
+    # in exactly the mode where it works -- and advising its removal -- would be
+    # the same mistake that was fixed for hide_bipartite_nodes, so drop it from
+    # the check there.
+    import logging
+
+    from ._logging import is_routed, logger as _engine_logger
+
+    removable = ["verbosity_level", "print_config_fingerprint"]
+    if is_routed() and _engine_logger.isEnabledFor(logging.DEBUG):
+        removable.remove("verbosity_level")
     inert_removed = [
         (name, _ADVANCED_TIER_KWARGS[name][3])
-        for name in ("verbosity_level", "print_config_fingerprint")
+        for name in removable
         if getattr(options, name) != getattr(_OPTION_DEFAULTS, name)
     ]
     if inert_removed:

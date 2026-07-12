@@ -20,7 +20,7 @@ import warnings
 
 import pytest
 
-from infomap import Infomap, disable_log, enable_log
+from infomap import Infomap, Options, disable_log, enable_log, run
 
 
 # These tests drive the engine log -> Python logging routing, deliberately
@@ -142,6 +142,24 @@ def test_info_logger_keeps_default_engine_verbosity(infomap_log_handler):
 
     levels = {record.levelno for record in infomap_log_handler.records}
     assert levels == {logging.INFO}
+
+
+def test_verbosity_level_not_flagged_inert_under_routed_debug(infomap_log_handler):
+    # Regression: verbosity_level IS effective under routed DEBUG logging (the
+    # fixture enables it), so it must not trigger the "no effect on the Python
+    # library surface" advisory there. Warning in exactly the mode where the
+    # option works -- and advising its removal -- is the mistake that was fixed
+    # for hide_bipartite_nodes. Outside routed DEBUG it stays inert and still
+    # warns (test_run_agent_fixes.test_verbosity_level_via_options_warns).
+    with warnings.catch_warnings(record=True) as records:
+        warnings.simplefilter("always")
+        run([(1, 2), (2, 3), (1, 3)], seed=1, options=Options(verbosity_level=3))
+    assert not any("no effect" in str(record.message) for record in records)
+    # Routing is genuinely engaged (guards against a vacuous pass): the run
+    # emitted DEBUG detail records rather than going to stdout.
+    assert any(
+        record.levelno == logging.DEBUG for record in infomap_log_handler.records
+    )
 
 
 def test_records_are_plain_lines_without_ansi(infomap_log_handler):
