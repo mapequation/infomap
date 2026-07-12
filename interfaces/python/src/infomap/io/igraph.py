@@ -339,7 +339,9 @@ def find_igraph_communities(
         Edge weight attribute name or an explicit sequence with one value per
         edge. Default ``None`` auto-detects a ``"weight"`` edge attribute
         (mirroring the networkx adapter) and uses it when present, treating the
-        graph as unweighted otherwise.
+        graph as unweighted otherwise. The ``edge_weights`` / ``vertex_weights``
+        names match python-igraph's own ``community_infomap`` signature; the
+        networkx counterpart :func:`~infomap.find_communities` uses ``weight``.
     vertex_weights : None, optional
         Accepted for igraph API familiarity but not supported yet.
     options : Options, mapping, or None, optional

@@ -166,6 +166,14 @@ class Network(_NetworkWritersMixin):
         :attr:`node_id_to_label`. Pass ``meta_attribute`` to use a node
         attribute as Infomap metadata (values are encoded to integers, so
         string categories work).
+
+        The ``weight`` parameter -- the edge-data key to read, or ``None`` to
+        treat every edge as unit weight -- matches networkx's own ``weight``
+        argument. Each sibling constructor names its weight parameter after its
+        own source library, so the spelling differs by design:
+        :meth:`from_igraph` ``edge_weights`` / ``vertex_weights``,
+        :meth:`from_scipy_sparse_matrix` ``weighted``, :meth:`from_edge_index`
+        ``edge_weight``.
         """
         from .io.networkx import add_networkx_graph as _add_networkx_graph
 
@@ -200,6 +208,14 @@ class Network(_NetworkWritersMixin):
         :attr:`node_id_to_label`. Pass ``meta_attribute`` to use a vertex
         attribute as Infomap metadata (values are encoded to integers, so
         string categories work).
+
+        The ``edge_weights`` / ``vertex_weights`` parameters match
+        python-igraph's own ``Graph.community_infomap(edge_weights,
+        vertex_weights)`` names. Each sibling constructor names its weight
+        parameter after its own source library, so the spelling differs by
+        design: :meth:`from_networkx` ``weight``,
+        :meth:`from_scipy_sparse_matrix` ``weighted``, :meth:`from_edge_index`
+        ``edge_weight``.
         """
         from .io.igraph import add_igraph_graph as _add_igraph_graph
 
@@ -237,6 +253,13 @@ class Network(_NetworkWritersMixin):
         This per-format default differs across the constructors --
         :meth:`from_networkx` and :meth:`from_igraph` infer directedness from
         the graph, while :meth:`from_edge_index` defaults to ``directed=True``.
+
+        ``weighted`` -- use the matrix values as weights, else treat every
+        stored entry as weight 1 -- is a local name: ``scipy.sparse.csgraph``
+        has no such flag. Each sibling constructor names its weight parameter
+        after its own source library, so the spelling differs by design:
+        :meth:`from_networkx` ``weight``, :meth:`from_igraph` ``edge_weights`` /
+        ``vertex_weights``, :meth:`from_edge_index` ``edge_weight``.
         """
         from .io.scipy import add_scipy_sparse_matrix as _add_scipy_sparse_matrix
 
@@ -272,6 +295,13 @@ class Network(_NetworkWritersMixin):
         across the constructors -- :meth:`from_networkx` and :meth:`from_igraph`
         infer directedness from the graph, while
         :meth:`from_scipy_sparse_matrix` defaults to ``directed=False``.
+
+        The ``edge_weight`` parameter -- a 1-D array with one value per edge, or
+        ``None`` for unit weights -- matches PyTorch Geometric's ``edge_weight``
+        name. Each sibling constructor names its weight parameter after its own
+        source library, so the spelling differs by design: :meth:`from_networkx`
+        ``weight``, :meth:`from_igraph` ``edge_weights`` / ``vertex_weights``,
+        :meth:`from_scipy_sparse_matrix` ``weighted``.
         """
         from .io.edge_index import add_edge_index as _add_edge_index
 
