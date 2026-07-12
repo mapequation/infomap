@@ -163,7 +163,8 @@ def infomap(
         Treat the adjacency as directed. Default ``False``.
     use_weights : bool, optional
         Use the adjacency values as link weights. If ``False``, every nonzero
-        entry is treated as weight 1. Default ``True``.
+        entry is treated as weight 1. Default ``True``. The name follows
+        Scanpy's ``tl.leiden`` / ``tl.louvain`` (``use_weights``).
     key_added : str, optional
         Key under which module labels are written to ``adata.obs`` and run
         metadata to ``adata.uns``. Default ``"infomap"``.

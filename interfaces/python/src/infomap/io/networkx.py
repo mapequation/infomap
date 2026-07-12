@@ -143,7 +143,10 @@ def find_communities(
         A NetworkX-compatible graph.
     weight : str or None, optional
         Key to look up link weight in edge data if present. Default
-        ``"weight"``. Use ``None`` to treat every edge as weight 1.
+        ``"weight"``. Use ``None`` to treat every edge as weight 1. The name
+        matches networkx; the igraph counterpart
+        :func:`~infomap.find_igraph_communities` uses ``edge_weights`` /
+        ``vertex_weights`` (python-igraph's own ``community_infomap`` names).
     node_id : str, optional
         Node attribute for physical node ids, implying a state network.
     layer_id : str, optional
