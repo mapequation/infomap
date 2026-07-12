@@ -184,19 +184,13 @@ $\tau = 0.15$ restores ergodicity so every node stays reachable.
 
 ## API pointers
 
-- {func}`infomap.run` is the entry point; pass `directed=True` to use the
-  directed flow model with unrecorded teleportation. It returns a
-  {class}`~infomap.Result`.
-- {meth}`infomap.Network.from_networkx` loads a `networkx.DiGraph` (or `Graph`)
-  for non-default options; passing the graph straight to {func}`infomap.run`
-  works for the common case.
-- {meth}`infomap.Network.add_link` adds individual edges programmatically.
-- {meth}`infomap.Result.nodes` iterates per-node views; each exposes `.node_id`,
-  `.module_id`, and `.flow`.
-- {meth}`infomap.Result.to_dataframe` returns `flow`, `module_id`, `node_id`
-  (and more) as a pandas DataFrame in one call.
-- {attr}`infomap.Result.codelength` is the map-equation value at the partition
-  found, in bits per step.
+{func}`infomap.run` is the entry point — pass `directed=True` for the directed
+flow model with unrecorded teleportation — and returns a
+{class}`~infomap.Result`; build non-default or programmatic input with
+{meth}`~infomap.Network.from_networkx` and {meth}`~infomap.Network.add_link`.
+The result's flow-bearing accessors ({meth}`~infomap.Result.nodes`,
+{meth}`~infomap.Result.to_dataframe`, {attr}`~infomap.Result.codelength`) are
+covered in {doc}`/working-with-infomap/results-and-iteration`.
 
 ## Going deeper
 

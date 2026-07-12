@@ -238,12 +238,10 @@ The common keywords (`num_trials`, `seed`, `two_level`, `directed`) compose
 freely alongside it, e.g.
 `infomap.run(g, options=infomap.Options(regularized=True), num_trials=20, seed=123)`.
 
-- {attr}`infomap.Result.codelength` is the map equation value for the winning
-  partition; with regularization it reflects the Bayesian-corrected description
-  length.
-- {attr}`infomap.Result.num_top_modules` is the number of top-level modules
-  found.
-- {meth}`infomap.Result.modules` returns a `{node_id: module_id}` dict.
+The run metrics — {attr}`~infomap.Result.codelength` (Bayesian-corrected under
+regularization), {attr}`~infomap.Result.num_top_modules`, and
+{meth}`~infomap.Result.modules` — are covered in
+{doc}`/working-with-infomap/results-and-iteration`.
 
 ## Going deeper
 

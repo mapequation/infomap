@@ -267,21 +267,13 @@ partition or a one-level description.
 
 ## API pointers
 
-- {attr}`infomap.Result.num_levels` gives the tree depth Infomap discovered
-  (alias `max_depth`), so you can read the number of levels without walking the
-  tree.
-- {attr}`infomap.Result.num_top_modules` counts the modules at level 1, the
-  coarsest partition.
-- {meth}`infomap.Result.modules` returns a `{node_id: module_id}` dict. Its
-  `depth` selects the level:
-  - `depth=1` (default) gives the top modules.
-  - `depth=2, 3, …` give progressively finer levels.
-  - `depth=-1` gives the leaf (finest) modules.
-- {meth}`infomap.Result.effective_num_modules` gives the flow-weighted effective
-  number of modules at a `depth`, which helps when module sizes are uneven and a
-  plain count overstates them.
-- The engine option `two_level=True` restricts the search to two levels.
-  **Leave it off** for the full hierarchical result.
+All on {class}`~infomap.Result`: {attr}`~infomap.Result.num_levels` (alias
+{attr}`~infomap.Result.max_depth`), {attr}`~infomap.Result.num_top_modules`,
+{meth}`~infomap.Result.modules` (pass `depth=k`, or `depth=-1` for the leaf
+level), and {meth}`~infomap.Result.effective_num_modules`; see
+{doc}`/working-with-infomap/results-and-iteration`. The engine option
+`two_level=True` restricts the search to two levels — leave it off for the full
+hierarchy.
 
 ## Going deeper
 
