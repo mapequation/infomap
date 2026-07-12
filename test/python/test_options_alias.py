@@ -47,6 +47,16 @@ def test_options_replace_validates_like_construction():
 
 
 @pytest.mark.fast
+def test_options_repr_shows_only_non_default_fields():
+    # A ~70-field frozen-dataclass repr is unreadable; the custom __repr__ shows
+    # only the fields set away from their defaults and stays round-trippable.
+    assert repr(Options()) == "Options()"
+    assert repr(Options(num_trials=10)) == "Options(num_trials=10)"
+    o = Options(num_trials=10, seed=1, flow_model="directed")
+    assert eval(repr(o), {"Options": Options}) == o
+
+
+@pytest.mark.fast
 def test_options_exported_in_package_all():
     assert "Options" in infomap.__all__
     assert "InfomapOptions" in infomap.__all__
