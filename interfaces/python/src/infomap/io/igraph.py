@@ -384,7 +384,11 @@ def find_igraph_communities(
         The top-level partition, with the codelength of the solution attached
         as a ``codelength`` attribute. For an empty graph, an empty
         clustering with ``codelength`` 0.0 is returned without running
-        Infomap.
+        Infomap. This is the same type python-igraph's own community methods
+        return (e.g. ``Graph.community_infomap``); the networkx counterpart
+        :func:`~infomap.find_communities` instead returns a ``list`` of
+        ``set`` -- each finder returns its ecosystem's idiomatic partition
+        type, so the shape differs by design.
 
     Raises
     ------
