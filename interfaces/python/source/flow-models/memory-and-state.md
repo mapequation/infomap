@@ -303,48 +303,14 @@ a state network are:
 
 ## API pointers
 
-**Declaring state nodes**
-
-```python
-net = Network()
-net.add_state_node(state_id, node_id)
-```
-
-Creates a state node with a unique integer `state_id` mapped to the physical
-node `node_id`.
-If the physical node does not yet exist, `add_state_node` creates it. Use
-{meth}`infomap.Network.set_name` afterwards for a human-readable label.
-
-**Adding state-level links**
-
-```python
-net.add_link(source_id, target_id, weight=1.0)
-```
-
-Links connect *state nodes*, not physical nodes. The same `add_link` serves both
-first-order and higher-order networks; in a state-node network `source_id` and
-`target_id` refer to state node ids.
-
-**Querying results**
-
-```python
-result = run(net)
-result.have_memory                            # True when state nodes were added
-
-# For memory networks, pass states=True
-state_modules = result.modules(states=True)   # {state_id: module_id}
-
-# Group state nodes by their physical node to find overlap
-for node in result.nodes(states=True):
-    node.node_id    # physical node id
-    node.state_id   # state node id
-    node.module_id  # module assignment for this state node
-    node.flow       # state-node visit frequency
-```
-
-Because a physical node has one entry per state node in
-`result.nodes(states=True)`, collecting all its module assignments requires
-grouping by `node_id`, as shown in the worked example.
+Build state nodes with {meth}`~infomap.Network.add_state_node` and link them with
+{meth}`~infomap.Network.add_link` (both take state ids; add labels with
+{meth}`~infomap.Network.set_name`). Read a higher-order run off
+{class}`~infomap.Result`: {attr}`~infomap.Result.have_memory`, and
+{meth}`~infomap.Result.modules` / {meth}`~infomap.Result.nodes` with
+`states=True` (each node exposes `.node_id`, `.state_id`, `.module_id`, `.flow`;
+group by `node_id` for overlap, as in the worked example above). See
+{doc}`/working-with-infomap/results-and-iteration` for the accessors.
 
 ## Going deeper
 

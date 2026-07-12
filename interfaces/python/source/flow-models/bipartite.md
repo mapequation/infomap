@@ -197,19 +197,13 @@ weak cross-cluster links.
 
 ## API pointers
 
-- {attr}`infomap.Infomap.bipartite_start_id` declares the first node id of the
-  type-B block: assign `im.bipartite_start_id = n` and every node with id `>= n`
-  is a type-B node, ids below are type-A. Set it before
-  {meth}`~infomap.Infomap.run`. {attr}`infomap.Network.bipartite_start_id` is the
-  same property on a {class}`~infomap.Network`.
-- {meth}`infomap.Network.add_link` adds a weighted edge between any two node ids;
-  for bipartite networks the source and target should be opposite types.
-- {meth}`infomap.Result.modules` returns a `{node_id: module_id}` dict covering
-  both types.
-- The option `hide_bipartite_nodes=True` omits type-B nodes from written
-  output files (`.tree`, `.clu`, …), which helps when only the type-A
-  assignments matter (projecting a user partition, say). It does not filter
-  {meth}`infomap.Result.modules`, which always covers both types.
+Set {attr}`~infomap.Infomap.bipartite_start_id` (or
+{attr}`~infomap.Network.bipartite_start_id`) to `n` before running: every node id
+`>= n` is a type-B node, ids below are type-A; link opposite types with
+{meth}`~infomap.Network.add_link`. {meth}`~infomap.Result.modules` covers both
+types. The option `hide_bipartite_nodes=True` omits type-B nodes from the written
+output files (`.tree`, `.clu`, …) — useful when only the type-A assignments
+matter — without changing what {meth}`~infomap.Result.modules` returns.
 
 ## Options
 

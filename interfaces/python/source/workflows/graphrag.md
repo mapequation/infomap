@@ -248,24 +248,16 @@ communities[["id", "level", "size", "entity_ids"]]
 
 ## API pointers
 
-- {func}`infomap.tl.graphrag.read_graphrag` translates entity/relationship
-  DataFrames or Parquet paths into a `GraphRAGGraph` with mapped node ids. Key
-  parameters: `entity_id_col`, `entity_title_col`, `source_col`, `target_col`,
-  `weight_col`, `endpoint_col` (`"title"` or `"id"`).
-- {func}`infomap.tl.graphrag.run_graphrag_communities` is the one-call pipeline: it
-  reads tables, runs Infomap, and optionally writes outputs. It returns a
-  `GraphRAGRunResult` with `.result`, `.infomap`, `.graph`, `.nodes`, and
-  `.communities`. Read run metrics such as `codelength` and the module counts off
-  `.result` (the immutable `Result`, e.g. `run_result.result.codelength`) rather than
-  the deprecated accessors on `.infomap`.
-- {func}`infomap.tl.graphrag.write_graphrag_communities` writes a pre-run Infomap
-  result to disk as GraphRAG-compatible Parquet tables.
-- {class}`infomap.tl.graphrag.GraphRAGGraph` holds the entity/relationship tables,
-  the edge arrays, and the bidirectional entity-id ↔ node-id mappings.
-- {class}`infomap.tl.graphrag.GraphRAGRunResult` bundles the `Infomap` object, the
-  `GraphRAGGraph`, and the two output DataFrames.
-- {attr}`infomap.Result.codelength` and {attr}`infomap.Result.num_top_modules`
-  report the quality and structure of the solution after a run.
+The `infomap.tl.graphrag` helpers:
+{func}`~infomap.tl.graphrag.read_graphrag` builds a
+{class}`~infomap.tl.graphrag.GraphRAGGraph` from entity/relationship tables or
+Parquet paths; {func}`~infomap.tl.graphrag.run_graphrag_communities` is the
+one-call pipeline, returning a {class}`~infomap.tl.graphrag.GraphRAGRunResult`
+(read run metrics off its `.result` — the immutable {class}`~infomap.Result`,
+e.g. `run_result.result.codelength` — not the deprecated accessors on
+`.infomap`); and {func}`~infomap.tl.graphrag.write_graphrag_communities` writes a
+finished result back to GraphRAG-compatible Parquet. The `Result` metrics are
+covered in {doc}`/working-with-infomap/results-and-iteration`.
 
 ## Going deeper
 

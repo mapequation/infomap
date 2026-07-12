@@ -194,17 +194,14 @@ module because naming it shortens the overall code.
 
 ## API pointers
 
-- {func}`infomap.run` is the entry point; pass `two_level=True` to constrain the
-  search to a flat (non-hierarchical) partition. It returns a
-  {class}`~infomap.Result`.
-- `result.codelength` is the per-step description length in bits for the best
-  partition found; `result.one_level_codelength` is the cost with no modules, and
-  `result.relative_codelength_savings` reports the gain between them.
-- `result.num_top_modules` counts the top-level modules; `result.modules()`
-  returns a `{node_id: module_id}` mapping.
-- `preferred_number_of_modules=k` softly steers the search toward `k` modules.
-  It is not one of the direct `run` keywords; carry it via
-  `options=infomap.Options(preferred_number_of_modules=k)`.
+The codelength metrics this chapter defines all live on
+{class}`~infomap.Result`: {attr}`~infomap.Result.codelength`,
+{attr}`~infomap.Result.one_level_codelength`,
+{attr}`~infomap.Result.relative_codelength_savings`, plus
+{attr}`~infomap.Result.num_top_modules` and {meth}`~infomap.Result.modules`;
+see {doc}`/working-with-infomap/results-and-iteration`. {func}`infomap.run`
+takes `two_level=True` for a flat partition, and steers the module count softly
+with `preferred_number_of_modules` (carried via {class}`~infomap.Options`).
 
 ## Going deeper
 

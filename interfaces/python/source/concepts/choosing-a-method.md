@@ -171,13 +171,11 @@ genuinely mean different things; knowing your network tells you which to trust.
 
 ## API pointers
 
-- {func}`infomap.run` returns an immutable {class}`~infomap.Result`; pass
-  `directed=True` for directed-flow treatment and `two_level=True` for a flat
-  partition.
-- {func}`infomap.find_communities` returns a NetworkX-style `list[set]`, and
-  {func}`infomap.find_igraph_communities` returns an `igraph.VertexClustering`, so
-  an Infomap result plugs into igraph's own inspection and plotting utilities
-  alongside Louvain and Leiden.
+{func}`infomap.run` returns an immutable {class}`~infomap.Result` (pass
+`directed=True` for directed flow, `two_level=True` for a flat partition).
+{func}`infomap.find_communities` and {func}`infomap.find_igraph_communities`
+return NetworkX- and igraph-native cluster objects, so an Infomap result drops
+into those libraries' own tooling alongside Louvain and Leiden.
 
 ## Going deeper
 

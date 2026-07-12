@@ -311,21 +311,16 @@ sacct -j <job-id> --format=JobID,State,ExitCode,Elapsed,MaxRSS
 
 ## API pointers
 
-- {func}`infomap.run` is the main entry point. `num_trials` and `seed` are
-  direct keyword arguments; the parallelism options `num_threads`,
-  `parallel_trials`, `trial_offset`, and `trial_results` are carried via
-  {class}`~infomap.Options` (`infomap.run(input, options=Options(...))`), as
-  they leave the bare signature in 3.0 (see {doc}`/api/deprecations`).
-- `result.codelength` is the codelength of the best solution found.
-- `result.modules()` returns a `{node_id: module_id}` mapping for the top-level
-  partition.
-- {func}`infomap.merge.merge_trial_results` is the programmatic equivalent of
-  `python -m infomap.merge`.
-- {doc}`/working-with-infomap/running-and-options` covers the search and
-  flow-model options (`seed`, `num_trials`, `directed`, `markov_time`, …); the
-  parallelism options used here (`parallel_trials`, `inner_parallelization`,
-  `num_threads`, `trial_offset`) are documented on this page and in the
-  {doc}`Options reference </api/options>`.
+{func}`infomap.run` takes `num_trials` and `seed` directly; the parallelism
+options `num_threads`, `parallel_trials`, `trial_offset`, and `trial_results` are
+carried via {class}`~infomap.Options` (they leave the bare signature in 3.0, see
+{doc}`/api/deprecations`). {func}`infomap.merge.merge_trial_results` is the
+programmatic equivalent of `python -m infomap.merge`. Read run metrics
+({attr}`~infomap.Result.codelength`, {meth}`~infomap.Result.modules`, …) off the
+{class}`~infomap.Result` — see
+{doc}`/working-with-infomap/results-and-iteration`; the search and flow-model
+options are in {doc}`/working-with-infomap/running-and-options` and the
+{doc}`Options reference </api/options>`.
 
 ## Going deeper
 

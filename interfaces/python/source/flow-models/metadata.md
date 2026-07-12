@@ -281,20 +281,13 @@ while the bridge pair {3, 4} forms its own cluster in the centre.
 
 ## API pointers
 
-- {meth}`infomap.Network.set_meta_data` declares the attribute for a node:
-  `set_meta_data(node_id, meta_category)`. Each node takes one integer category
-  label; call it once per node before the run.
-- `meta_data_rate` (an engine option carried via `Options` to {func}`infomap.run`,
-  default `1.0`; no effect unless you declare metadata) sets $\eta$, the weight of
-  the attribute codebook term. Pass `meta_data_rate=0` to suppress all metadata
-  influence.
-- {attr}`infomap.Result.meta_entropy` is the metadata entropy term of the best
-  partition, in bits per step.
-
-Two further engine options:
-- `meta_data` is a path to a metadata file listing `node_id category` pairs.
-- `meta_data_unweighted`, when `True`, ignores node visit frequencies when
-  computing the metadata codebook and treats all nodes as equally visited.
+Declare a node's attribute with {meth}`~infomap.Network.set_meta_data`
+(`set_meta_data(node_id, meta_category)` — one integer category per node, before
+the run). Carry the metadata engine options via {class}`~infomap.Options`:
+`meta_data_rate` sets $\eta$, the weight of the attribute codebook term (default
+`1.0`; `0` suppresses metadata influence); `meta_data` reads `node_id category`
+pairs from a file; and `meta_data_unweighted` treats all nodes as equally
+visited. The result's metadata term is {attr}`~infomap.Result.meta_entropy`.
 
 ## Options
 
