@@ -46,8 +46,10 @@ Redesigned result access
 -------------------------
 
 The stateful accessors on :class:`Infomap` (``get_modules``, ``codelength``,
-``num_top_modules``, and friends) are ``.. deprecated:: 2.14`` in favour of the
-immutable :class:`Result` that :func:`run` and :meth:`Infomap.run` return. Read
+``num_top_modules``, and friends) are ``.. deprecated:: 2.15`` in favour of the
+immutable :class:`Result` that :func:`run` and :meth:`Infomap.run` return, and
+reading one from user code emits the same silent-by-default
+:class:`PendingDeprecationWarning` as the advanced-tier keywords. Read
 scalars as properties (``result.codelength``) and collections as methods
 (``result.modules()``, ``result.nodes()``, ``result.tree()``). See
 :doc:`/working-with-infomap/results-and-iteration`.

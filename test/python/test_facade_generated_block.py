@@ -73,37 +73,50 @@ def test_generated_signatures_are_annotated():
 def test_docstring_deprecation_follows_the_signature_tier():
     from infomap import Infomap
 
-    for doc in (Infomap.__init__.__doc__, Infomap.run.__doc__):
-        assert doc is not None
-        # Both advanced-tier directives are present: kept keywords relocate to
-        # Options (versionchanged), removed/args-only keywords leave the API
-        # (deprecated). See _advanced_tier_directive in the generator.
-        assert ".. versionchanged:: 2.15" in doc
-        assert ".. deprecated:: 2.15" in doc
-        # Common-tier parameters (#738) carry neither directive: none may appear
-        # between a common param's entry and the next parameter entry.
-        for common, following in [
-            ("seed : ", "num_trials : "),
-            ("num_trials : ", "core_loop_limit : "),
-            ("two_level : ", "flow_model : "),
-            ("directed : ", "recorded_teleportation : "),
-            ("markov_time : ", "variable_markov_time : "),
-        ]:
-            start = doc.index(common)
-            end = doc.index(following, start)
-            segment = doc[start:end]
-            assert ".. deprecated::" not in segment, common
-            assert ".. versionchanged::" not in segment, common
-        # A kept advanced param relocates to Options: versionchanged, NOT
-        # deprecated (marking a permanent tuning knob deprecated misleads).
-        start = doc.index("regularized : ")
-        segment = doc[start : doc.index("regularization_strength : ", start)]
-        assert ".. versionchanged:: 2.15" in segment
-        assert ".. deprecated::" not in segment
-        # A removed keyword truly leaves the API: deprecated.
-        start = doc.index("silent : ")
-        assert ".. deprecated:: 2.15" in doc[start : doc.index("pretty : ", start)]
-        # Output-artifact params are args-only: deprecated + the inertness note.
-        start = doc.index("output : ")
-        end = doc.index("hide_bipartite_nodes : ", start)
-        assert "Has no effect in the Python API" in doc[start:end]
+    # The full per-option reference lives once, on Infomap.__init__; Infomap.run
+    # documents only its run-specific params and points back here rather than
+    # duplicating the ~500-line listing on both signatures.
+    doc = Infomap.__init__.__doc__
+    assert doc is not None
+    # Both advanced-tier directives are present: kept keywords relocate to
+    # Options (versionchanged), removed/args-only keywords leave the API
+    # (deprecated). See _advanced_tier_directive in the generator.
+    assert ".. versionchanged:: 2.15" in doc
+    assert ".. deprecated:: 2.15" in doc
+    # Common-tier parameters (#738) carry neither directive: none may appear
+    # between a common param's entry and the next parameter entry.
+    for common, following in [
+        ("seed : ", "num_trials : "),
+        ("num_trials : ", "core_loop_limit : "),
+        ("two_level : ", "flow_model : "),
+        ("directed : ", "recorded_teleportation : "),
+        ("markov_time : ", "variable_markov_time : "),
+    ]:
+        start = doc.index(common)
+        end = doc.index(following, start)
+        segment = doc[start:end]
+        assert ".. deprecated::" not in segment, common
+        assert ".. versionchanged::" not in segment, common
+    # A kept advanced param relocates to Options: versionchanged, NOT
+    # deprecated (marking a permanent tuning knob deprecated misleads).
+    start = doc.index("regularized : ")
+    segment = doc[start : doc.index("regularization_strength : ", start)]
+    assert ".. versionchanged:: 2.15" in segment
+    assert ".. deprecated::" not in segment
+    # A removed keyword truly leaves the API: deprecated.
+    start = doc.index("silent : ")
+    assert ".. deprecated:: 2.15" in doc[start : doc.index("pretty : ", start)]
+    # Output-artifact params are args-only: deprecated + the inertness note.
+    start = doc.index("output : ")
+    end = doc.index("hide_bipartite_nodes : ", start)
+    assert "Has no effect in the Python API" in doc[start:end]
+
+    # Infomap.run does NOT duplicate that reference: it points back to Infomap /
+    # Options for the per-option docs and carries none of the per-param
+    # directives itself.
+    run_doc = Infomap.run.__doc__
+    assert run_doc is not None
+    assert "per-option reference" in run_doc
+    assert "regularized : " not in run_doc
+    assert ".. deprecated::" not in run_doc
+    assert ".. versionchanged::" not in run_doc

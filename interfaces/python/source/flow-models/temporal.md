@@ -236,15 +236,6 @@ generalises to higher-order and temporal networks {cite:p}`holmgren2023change`.
 - {meth}`infomap.Network.add_multilayer_link` adds a fully specified multilayer
   link `(layer, node) -> (layer, node)` when you want complete control over the
   state-node graph.
-- `multilayer_relax_rate` (an engine option carried via `Options` to
-  {func}`infomap.run`) sets the inter-layer relax rate $r \in [0, 1]$ when you use `add_multilayer_intra_link`
-  without explicit inter-layer links. 0.15–0.25 is a typical starting point.
-- `multilayer_relax_limit` restricts relaxation to layers within a given index
-  distance, enforcing temporal ordering.
-- `multilayer_relax_by_jsd=True` uses neighbourhood flow coupling
-  (Jensen-Shannon similarity, one minus the divergence) instead of uniform
-  coupling; reach for it when
-  communities are intermittent {cite:p}`aslak2018temporal`.
 - {meth}`infomap.Result.nodes` with `states=True` iterates state nodes; each
   exposes `.node_id`, `.layer_id`, and `.module_id` to reconstruct per-layer
   community assignments.
@@ -255,11 +246,12 @@ generalises to higher-order and temporal networks {cite:p}`holmgren2023change`.
 ## Options
 
 Temporal coupling is set by the multilayer engine options, carried via `Options`
-to {func}`infomap.run`:
+to {func}`infomap.run`. They apply when you use `add_multilayer_intra_link`
+without explicit inter-layer links:
 
 | Option | Default | Effect |
 |---|---|---|
-| `multilayer_relax_rate` | `0.15` | Inter-layer coupling; higher couples windows more, toward the aggregate |
+| `multilayer_relax_rate` | `0.15` | Inter-layer coupling $r \in [0, 1]$; higher couples windows more, toward the aggregate (0.15–0.25 typical) |
 | `multilayer_relax_limit` | `-1` | Caps how far in layer index the walker may relax; enforces temporal ordering |
 | `multilayer_relax_by_jsd` | `False` | Couple windows by neighbourhood-flow similarity instead of uniformly |
 

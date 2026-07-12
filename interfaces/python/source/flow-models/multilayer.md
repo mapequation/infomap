@@ -428,10 +428,6 @@ assert n_links_self < n_links_default
 - {func}`infomap.datasets.multilayer`, {func}`infomap.datasets.multilayer_intra`,
   and {func}`infomap.datasets.multilayer_intra_inter` load the bundled example
   networks for the three file forms, ready to run.
-- `multilayer_relax_rate` (default `0.15`) is an engine option carried via
-  `Options` to {func}`infomap.run`
-  (`options=Options(multilayer_relax_rate=...)`): the relax rate used when no
-  explicit inter-layer links are provided.
 - {meth}`infomap.Result.modules` needs `states=True` on multilayer networks to
   return state-node assignments; `states=False` raises an
   {class}`~infomap.InfomapError` on higher-order networks.

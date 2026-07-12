@@ -183,24 +183,33 @@ If the proposed bump does not match the commit log
 
 ### Python API deprecation policy
 
-Deprecations in the Python package are **docs-only for members**: a
-deprecated method, property, or class carries a `.. deprecated:: <version>`
-note in its docstring but emits **no** runtime `DeprecationWarning`, keeps
-working, and must return the same values as its non-deprecated replacement.
-`test/python/test_deprecations.py` enforces all three properties.
+A deprecated method, property, class, or keyword carries a
+`.. deprecated:: <version>` note in its docstring, keeps working, and returns
+the same values as its non-deprecated replacement. How loudly it warns at
+runtime depends on how the caller reaches it — three tiers, all pinned by
+`test/python/test_deprecations.py` (plus `test/python/test_wrapper_args.py`
+for the parameters):
 
-Two rules refine this:
+- **Silent-by-default `PendingDeprecationWarning`** — the legacy stateful
+  surface: the `Result` accessors mirrored on `Infomap` (`get_modules`,
+  `codelength`, …), the advanced-tier keywords on `Infomap()` / `Infomap.run`,
+  and `from_options` / `run_with_options` / `from_scipy_sparse_matrix` /
+  `from_edge_index`. Silent under the default warning filter, so existing code
+  is not disrupted; surface it with `python -W` or a logging filter.
+- **Docs-only, no runtime warning** — the `add_*` build-from-graph adapters
+  (`add_networkx_graph`, `add_scipy_sparse_matrix`, `add_edge_index`,
+  `add_igraph_graph`). The `.. deprecated::` note is the only signal.
+- **Louder `DeprecationWarning`** — an explicitly passed deprecated *parameter*
+  (`include_self_links`, `pretty`): silently ignoring or rewriting an argument
+  the caller actually typed hides a migration they need to make.
 
-- **Explicitly passed deprecated parameters warn at runtime** (e.g.
-  `include_self_links`, `pretty`): silently ignoring or rewriting an
-  argument the caller actually typed hides a migration the caller needs to
-  make. `test/python/test_wrapper_args.py` pins these warnings.
-- **Removal is a major-version event** (`feat!:` / `BREAKING CHANGE`),
-  never part of a minor or patch release.
+**Removal is a major-version event** (`feat!:` / `BREAKING CHANGE`), never part
+of a minor or patch release.
 
-Always include the version in the directive (`.. deprecated:: 2.14`) —
-Sphinx renders an empty version otherwise. Use the release in which the
-deprecation first shipped.
+Always include the version in the directive (`.. deprecated:: 2.15`) — Sphinx
+renders an empty version otherwise. Use the release in which the deprecation
+first shipped; the 2.x → 3.0 wave deprecating the pre-redesign API is `2.15`
+(2.14.0 shipped the redesign but no versioned markers or runtime warnings).
 
 ### Red flags that block merge
 
