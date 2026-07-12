@@ -61,5 +61,5 @@ print(
 )
 
 # Output:
-# Partition one with 3 modules -> codelength: 2.5555555555555554
-# Partition two with 2 modules -> codelength: 2.60715482741224
+# Partition one with 3 modules -> codelength: 2.55555556 bits
+# Partition two with 2 modules -> codelength: 2.60715483 bits

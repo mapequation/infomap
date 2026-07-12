@@ -48,7 +48,7 @@ for node in result.nodes():
         node.name,
     )
 
-print("\n#path flow enter_flow exit_flow is_leaf")
+print("\n#path flow enter_flow exit_flow kind")
 for node in result.tree(states=True):
     print(
         node.path,
