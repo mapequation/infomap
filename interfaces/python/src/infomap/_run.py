@@ -86,10 +86,9 @@ def _reject_unknown_options(resolved: dict) -> None:
     raise TypeError(
         "infomap.run() got unknown option(s): "
         + ", ".join(rendered)
-        + ". Only seed, num_trials, two_level, directed and markov_time are "
-        "direct keyword options; carry any other engine option via "
-        "options=Options(...). See inspect.getdoc(infomap.Options) for the "
-        "full list of option names."
+        + ". Any engine option can be passed as a keyword (or carried via "
+        "options=Options(...)); see inspect.getdoc(infomap.Options) for the "
+        "option names."
     )
 
 
@@ -101,7 +100,9 @@ def _reject_unknown_options(resolved: dict) -> None:
 _WRITER_EFFECTIVE_ARGS_ONLY = frozenset({"hide_bipartite_nodes"})
 
 
-def _warn_inert_output_options(options: Any, args: Any) -> None:
+def _warn_inert_output_options(
+    options: Any, args: Any, *, engine_emits: bool = False
+) -> None:
     """Warn when output-artifact options are set but cannot take effect.
 
     The args-only options (``tree``, ``ftree``, ``clu``, ``clu_level``,
@@ -152,18 +153,20 @@ def _warn_inert_output_options(options: Any, args: Any) -> None:
     # replacement text. ``silent`` is handled by the dedicated, context-aware
     # advisories on the Infomap/Network paths, so it is intentionally omitted.
     #
-    # verbosity_level is NOT inert under routed DEBUG logging: there
-    # apply_engine_log_overrides un-silences the engine and keeps a user-chosen
-    # level, so the -vv/-vvv detail records actually surface. Warning "no effect"
-    # in exactly the mode where it works -- and advising its removal -- would be
-    # the same mistake that was fixed for hide_bipartite_nodes, so drop it from
-    # the check there.
+    # verbosity_level is inert only while the engine stays silent. It becomes
+    # effective whenever the engine actually emits: classic silent=False (stdout
+    # output, where -v/-vv/-vvv sets the detail level) or a DEBUG-enabled routed
+    # logger (where apply_engine_log_overrides un-silences and keeps a
+    # user-chosen level). The caller passes engine_emits for the silent=False
+    # case; is_routed()+DEBUG is checked here. Warning "no effect" in a mode
+    # where it works -- and advising its removal -- would be the same mistake
+    # that was fixed for hide_bipartite_nodes, so drop it from the check there.
     import logging
 
     from ._logging import is_routed, logger as _engine_logger
 
     removable = ["verbosity_level", "print_config_fingerprint"]
-    if is_routed() and _engine_logger.isEnabledFor(logging.DEBUG):
+    if engine_emits or (is_routed() and _engine_logger.isEnabledFor(logging.DEBUG)):
         removable.remove("verbosity_level")
     inert_removed = [
         (name, _ADVANCED_TIER_KWARGS[name][3])
@@ -321,9 +324,7 @@ def _reject_adapter_kwargs(kind: str, user_keys: set) -> None:
         f"infomap.run() forwards keyword arguments to the engine, but {names} "
         f"{verb} how the {kind} input is read, not the engine. Build the "
         f"network explicitly and run it, e.g. "
-        f"infomap.run({constructor}(..., {misdirected[0]}=...), num_trials=10). "
-        f"run() builds input with default settings; Network.from_* is the path "
-        f"for non-default input."
+        f"infomap.run({constructor}(..., {misdirected[0]}=...), num_trials=10)."
     )
     if "directed" in misdirected:
         # `directed` names the adapter's edge orientation, not the engine's
