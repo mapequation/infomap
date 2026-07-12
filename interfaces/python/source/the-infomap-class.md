@@ -99,15 +99,12 @@ falls into one of three groups, with a recommended replacement:
 | Console flags -- `silent`, `verbosity_level` | use logging: `infomap.enable_log()` for the engine log, and `infomap.enable_log(logging.DEBUG)` to raise its verbosity |
 
 The `options` carrier accepts an {class}`~infomap.Options` instance or a plain
-mapping, and is accepted on `Infomap()`, {meth}`Infomap.run`,
-{meth}`Network.run`, and {func}`infomap.run` alike — for example
+mapping and works the same on `Infomap()`, {meth}`Infomap.run`,
+{meth}`Network.run`, and {func}`infomap.run` — for example
 `im.run(options=Options(regularized=True))` gives the stateful builder the same
-carrier. A bare keyword argument set to a non-default value still overrides the
-carrier. On the functional {func}`infomap.run` and {meth}`Network.run`, bare
-keywords forward to `Options` without a deprecation; on the stateful `Infomap()`
-constructor and {meth}`Infomap.run` the advanced options are pending-deprecated
-on the signature. The common options (`seed`, `num_trials`, `two_level`,
-`directed`, `markov_time`) stay on every signature and are never deprecated.
+carrier — and a bare keyword set to a non-default value overrides it. The common
+options (`seed`, `num_trials`, `two_level`, `directed`, `markov_time`) stay on
+every signature and are never deprecated.
 
 ## Removed accessors
 
