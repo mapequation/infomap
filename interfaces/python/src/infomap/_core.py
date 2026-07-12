@@ -22,7 +22,7 @@ from ._bindings import InfomapWrapper  # noqa: F401  (the only engine import)
 from ._bindings import build_info as build_info  # module-level engine function
 from ._bindings import run as run  # module-level engine function (CLI driver)
 
-# Engine log-sink hooks (issue #745), re-exported through this single boundary
+# Engine log-sink hooks, re-exported through this single boundary
 # for infomap._logging: install/remove the process-global line sink, and drain
 # lines queued by non-GIL-holding threads after an engine call returns.
 from ._bindings import _drain_log_queue as drain_log_queue  # noqa: F401

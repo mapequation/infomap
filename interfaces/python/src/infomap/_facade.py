@@ -2426,7 +2426,7 @@ def main():
     try:
         return _cli_run(args)
     except KeyboardInterrupt:
-        # Ctrl-C during the run: cancelled cooperatively (issue #412). Exit like
+        # Ctrl-C during the run: cancelled cooperatively. Exit like
         # the native CLI — a clean message and 130 (128 + SIGINT), no traceback.
         print("Interrupted.", file=sys.stderr)
         return 130

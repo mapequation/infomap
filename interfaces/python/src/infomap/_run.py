@@ -539,7 +539,7 @@ def run(
     # Advanced engine options passed as bare keywords forward to Options (the
     # canonical carrier) without a deprecation on this functional front door;
     # only the giant explicit Infomap()/Infomap.run() signatures are slimmed in
-    # 3.0 (issue #741). Unknown keys are still rejected above with a suggestion.
+    # 3.0. Unknown keys are still rejected above with a suggestion.
     # Keys the user actually supplied (kwargs + common-tier params + a mapping
     # `options`), used to reject adapter-only arguments below. An Options
     # *instance* is excluded on purpose: its to_kwargs() carries every field
