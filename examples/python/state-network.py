@@ -26,7 +26,7 @@ print(
     f"{result.codelength:.8f} bits"
 )
 
-print("\n#node_id module")
+print("\n#state_id module_id")
 for node, module in result.modules(states=True).items():
     print(node, module)
 
