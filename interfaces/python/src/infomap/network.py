@@ -123,6 +123,12 @@ class Network(_NetworkWritersMixin):
         # (engine re-ran since) raises instead of reading freed memory. This is
         # the minimal engine contract Result needs, mirroring Infomap.
         self._generation = 0
+        # Warn at most once per Network that its engine is silent for its whole
+        # lifetime (routed logging / silent=False cannot re-enable it). A run
+        # loop -- e.g. a markov_time sweep over a bundled dataset under
+        # enable_log() -- would otherwise repeat the advisory on every call and
+        # train the user to ignore it, matching the Infomap path's guard.
+        self._warned_silent_advisory = False
 
     def __repr__(self) -> str:
         return f"Network(num_nodes={self.num_nodes}, num_links={self.num_links})"
@@ -406,31 +412,38 @@ class Network(_NetworkWritersMixin):
         if common or overrides:
             resolved = resolved.replace(**{**common, **overrides})
 
-        if _is_log_routed():
-            # enable_log()/handlers on the "infomap" logger route the engine
-            # log, but a Network's Core is constructed --silent for its whole
-            # lifetime and that cannot be undone per run (the engine composes
-            # constructor + run args additively), so a routed run of a Network
-            # emits no records. Point the caller at a surface that can emit,
-            # mirroring the stale-silent advisory on the Infomap path.
-            warnings.warn(
-                "the 'infomap' logger has handlers, but a Network engine is "
-                "silent for its whole lifetime, so this run emits no log "
-                "records. For the engine log, run through Infomap(...) or pass "
-                "the input directly to infomap.run() (an edge list, graph, or "
-                "file path) instead.",
-                UserWarning,
-                stacklevel=2,
-            )
-        elif resolved.silent is False:
-            warnings.warn(
-                "A Network engine is silent for its whole lifetime; "
-                "silent=False has no effect here. For the engine log, run "
-                "through Infomap(silent=False) or pass the input directly "
-                "to infomap.run().",
-                UserWarning,
-                stacklevel=2,
-            )
+        # Warn once per Network (see _warned_silent_advisory): the engine is
+        # silent for its whole lifetime, so both routed logging and an explicit
+        # silent=False are inert here. Repeating it every run would nag a sweep.
+        if not self._warned_silent_advisory:
+            if _is_log_routed():
+                # enable_log()/handlers on the "infomap" logger route the engine
+                # log, but a Network's Core is constructed --silent for its whole
+                # lifetime and that cannot be undone per run (the engine composes
+                # constructor + run args additively), so a routed run of a
+                # Network emits no records. Point the caller at a surface that
+                # can emit, mirroring the stale-silent advisory on the Infomap
+                # path.
+                self._warned_silent_advisory = True
+                warnings.warn(
+                    "the 'infomap' logger has handlers, but a Network engine is "
+                    "silent for its whole lifetime, so this run emits no log "
+                    "records. For the engine log, run through Infomap(...) or "
+                    "pass the input directly to infomap.run() (an edge list, "
+                    "graph, or file path) instead.",
+                    UserWarning,
+                    stacklevel=2,
+                )
+            elif resolved.silent is False:
+                self._warned_silent_advisory = True
+                warnings.warn(
+                    "A Network engine is silent for its whole lifetime; "
+                    "silent=False has no effect here. For the engine log, run "
+                    "through Infomap(silent=False) or pass the input directly "
+                    "to infomap.run().",
+                    UserWarning,
+                    stacklevel=2,
+                )
 
         _warn_inert_output_options(resolved, args)
 
