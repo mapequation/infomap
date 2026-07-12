@@ -307,3 +307,40 @@ def test_legacy_result_accessor_replacements_resolve_on_result():
         assert hasattr(result, attr), (
             f"{member!r} points at result.{attr}, absent on Result"
         )
+
+
+@pytest.mark.fast
+def test_deprecated_infomap_methods_emit_pending():
+    """The legacy ``from_options`` / ``run_with_options`` methods are documented
+    ``.. deprecated::`` and now emit a PendingDeprecationWarning naming their
+    replacement, aligning with the legacy result accessors (they previously
+    warned nowhere)."""
+    with warnings.catch_warnings(record=True) as records:
+        warnings.simplefilter("always")
+        Infomap.from_options(Options(num_trials=1))
+    assert any("from_options" in message for message in _pending(records))
+
+    with warnings.catch_warnings(record=True) as records:
+        warnings.simplefilter("always")
+        _two_triangles().run_with_options(Options(num_trials=1))
+    assert any("run_with_options" in message for message in _pending(records))
+
+
+@pytest.mark.fast
+def test_deprecated_infomap_graph_constructors_emit_pending():
+    """``from_scipy_sparse_matrix`` / ``from_edge_index`` emit the same
+    PendingDeprecationWarning as the other deprecated ``Infomap`` methods."""
+    sp = pytest.importorskip("scipy.sparse")
+    np = pytest.importorskip("numpy")
+
+    with warnings.catch_warnings(record=True) as records:
+        warnings.simplefilter("always")
+        Infomap.from_scipy_sparse_matrix(sp.csr_matrix((3, 3)))
+    assert any(
+        "from_scipy_sparse_matrix" in message for message in _pending(records)
+    )
+
+    with warnings.catch_warnings(record=True) as records:
+        warnings.simplefilter("always")
+        Infomap.from_edge_index(np.array([[0, 1], [1, 0]]))
+    assert any("from_edge_index" in message for message in _pending(records))
