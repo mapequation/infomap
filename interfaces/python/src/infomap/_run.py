@@ -135,13 +135,11 @@ def _warn_inert_output_options(options: Any, args: Any) -> None:
     )
     if inert:
         warnings.warn(
-            f"{', '.join(inert)}: these output-file options have no effect on "
-            "the Python library surface -- file output is controlled by the "
-            "Result / Network writers, not option flags (the flags act only "
-            "with an output directory passed through the raw args escape "
-            "hatch). Write from the Result instead (result.write_tree(path) / "
-            "write_flow_tree / write_clu) or from the Network "
-            "(network.write_pajek / write_state_network).",
+            f"{', '.join(inert)}: these output options have no effect here -- "
+            "on the Python library surface file output comes from the Result / "
+            "Network writers (result.write_tree(path) / write_clu, "
+            "network.write_pajek), not these flags (which act only with an "
+            "output directory via the raw args escape hatch).",
             UserWarning,
             stacklevel=3,
         )
