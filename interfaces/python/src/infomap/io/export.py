@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from .._optional import require_igraph, require_networkx
+from .._options import _external_stacklevel
 from ._arrays import require_modules as _require_modules
 
 if TYPE_CHECKING:
@@ -105,7 +106,6 @@ def _validate_node_sets(
     assignment_nodes: set[Any],
     *,
     strict: bool,
-    warning_stacklevel: int,
 ) -> set[Any]:
     missing_assignments = graph_nodes - assignment_nodes
     extra_assignments = assignment_nodes - graph_nodes
@@ -125,7 +125,7 @@ def _validate_node_sets(
             f"{len(missing_assignments)} graph nodes had no assignment and "
             f"{len(extra_assignments)} assignments had no graph node.",
             UserWarning,
-            stacklevel=warning_stacklevel,
+            stacklevel=_external_stacklevel(),
         )
     return graph_nodes & assignment_nodes
 
@@ -163,7 +163,6 @@ def _annotate_networkx_graph(
     flow_attribute: str | None = None,
     copy: bool = True,
     strict: bool = True,
-    warning_stacklevel: int,
 ) -> Any:
     im = _resolve_run_source(im)
     _require_modules(im)
@@ -176,7 +175,6 @@ def _annotate_networkx_graph(
         graph_nodes,
         set(assignments),
         strict=strict,
-        warning_stacklevel=warning_stacklevel,
     )
 
     for node in matching_nodes:
@@ -259,7 +257,6 @@ def annotate_networkx_graph(
         flow_attribute=flow_attribute,
         copy=copy,
         strict=strict,
-        warning_stacklevel=3,
     )
 
 
@@ -273,7 +270,6 @@ def _annotate_igraph_graph(
     flow_attribute: str | None = None,
     copy: bool = True,
     strict: bool = True,
-    warning_stacklevel: int,
 ) -> Any:
     ig = _import_igraph()
     if not isinstance(graph, ig.Graph):
@@ -290,7 +286,6 @@ def _annotate_igraph_graph(
         graph_nodes,
         set(assignments),
         strict=strict,
-        warning_stacklevel=warning_stacklevel,
     )
 
     values_by_attribute: dict[str, list[str | None]] = {}
@@ -373,7 +368,6 @@ def annotate_igraph_graph(
         flow_attribute=flow_attribute,
         copy=copy,
         strict=strict,
-        warning_stacklevel=3,
     )
 
 
@@ -574,7 +568,6 @@ def write_graphml(
         annotated_graph = _annotate_igraph_graph(
             graph,
             im,
-            warning_stacklevel=4,
             **options,
         )
         annotated_graph.write_graphml(str(path), **writer_options)
@@ -586,7 +579,6 @@ def write_graphml(
     annotated_graph = _annotate_networkx_graph(
         graph,
         im,
-        warning_stacklevel=4,
         **options,
     )
     nx.write_graphml(annotated_graph, path, **writer_options)
@@ -641,7 +633,6 @@ def write_gexf(
     annotated_graph = _annotate_networkx_graph(
         graph,
         im,
-        warning_stacklevel=4,
         **options,
     )
     nx.write_gexf(annotated_graph, path, **writer_options)
