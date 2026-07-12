@@ -1337,11 +1337,16 @@ def generate_facade(catalog: ParameterCatalog) -> str:
     lines.append('    ) -> "Result":')
     lines.append('        """Run Infomap.')
     lines.append("")
-    lines.append("        Keyword arguments mirror the Infomap CLI flags. Use")
-    lines.append("        :class:`Options` for the full parameter reference and")
     lines.append(
-        "        :func:`infomap.run` with ``options=`` when reusing a saved configuration."
+        "        The per-option keyword arguments match :class:`Infomap` and are"
     )
+    lines.append(
+        "        documented there; :class:`Options` is the full parameter"
+    )
+    lines.append(
+        "        reference. Reuse a saved configuration by passing"
+    )
+    lines.append("        :func:`infomap.run` an ``options=`` carrier.")
     lines.append("")
     lines.append(
         "        Boolean flags default to off here and render only when set; a"
@@ -1368,16 +1373,6 @@ def generate_facade(catalog: ParameterCatalog) -> str:
     )
     lines.append("        options : Options, mapping, or None, optional")
     lines.extend(wrap_doc(_FACADE_OPTIONS_DOC, "            "))
-    lines.extend(
-        wrap_doc(
-            "The remaining keyword arguments are the per-option tuning flags; "
-            "they behave exactly as on :class:`Infomap` -- see there, or "
-            ":class:`Options`, for the full per-option reference. The advanced "
-            "tier is pending-deprecated on this signature and moves to "
-            ":class:`Options` in 3.0.",
-            "        ",
-        )
-    )
     lines.append("")
     lines.append("        Returns")
     lines.append("        -------")

@@ -395,20 +395,9 @@ can be passed as a bare keyword to {func}`infomap.run` too (it forwards to
 `Options`); prefer `Options` for a reusable or validated configuration. On the
 stateful {class}`infomap.Infomap` constructor and `run` method the advanced
 options remain accepted as keywords but are pending-deprecated on those
-signatures and leave them in 3.0 (see {doc}`/api/deprecations`). After a run, the metrics live on the returned
-{class}`~infomap.Result`:
-
-- **{attr}`infomap.Result.codelength`** is the map equation value
-  $L(\mathsf{M}^*)$ for the best partition found across all trials.
-- **{attr}`infomap.Result.num_top_modules`** counts the modules at the top
-  level of the hierarchy.
-- **{attr}`infomap.Result.num_levels`** is the depth of the module hierarchy.
-- **{meth}`infomap.Result.modules`** returns a `{node_id: module_id}` dict;
-  pass `depth=k` (1 = coarsest) to access intermediate levels.
-- **{attr}`infomap.Result.one_level_codelength`** evaluates $L$ on a flat
-  single-module partition, a natural baseline.
-- **{attr}`infomap.Result.relative_codelength_savings`** is the fractional gain
-  over that baseline, $(L_\text{one} - L^*) / L_\text{one}$.
+signatures and leave them in 3.0 (see {doc}`/api/deprecations`). After a run the
+metrics live on the returned {class}`~infomap.Result`; see
+{doc}`results-and-iteration` for the metric properties and partition accessors.
 
 The most-used options — all fields of {class}`~infomap.Options`, with the five
 common ones also accepted directly on {func}`infomap.run`:

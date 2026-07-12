@@ -114,9 +114,10 @@ def test_docstring_deprecation_follows_the_signature_tier():
     # Infomap.run does NOT duplicate that reference: it points back to Infomap /
     # Options for the per-option docs and carries none of the per-param
     # directives itself.
-    run_doc = Infomap.run.__doc__
-    assert run_doc is not None
-    assert "per-option reference" in run_doc
-    assert "regularized : " not in run_doc
+    assert Infomap.run.__doc__ is not None
+    run_doc = " ".join(Infomap.run.__doc__.split())  # collapse wrap for phrase checks
+    assert ":class:`Infomap`" in run_doc
+    assert "full parameter reference" in run_doc
+    assert "regularized :" not in run_doc
     assert ".. deprecated::" not in run_doc
     assert ".. versionchanged::" not in run_doc

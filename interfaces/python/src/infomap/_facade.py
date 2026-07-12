@@ -905,9 +905,10 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
     ) -> "Result":
         """Run Infomap.
 
-        Keyword arguments mirror the Infomap CLI flags. Use
-        :class:`Options` for the full parameter reference and
-        :func:`infomap.run` with ``options=`` when reusing a saved configuration.
+        The per-option keyword arguments match :class:`Infomap` and are
+        documented there; :class:`Options` is the full parameter
+        reference. Reuse a saved configuration by passing
+        :func:`infomap.run` an ``options=`` carrier.
 
         Boolean flags default to off here and render only when set; a
         flag chosen at construction stays in effect for every run.
@@ -923,10 +924,6 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             configuration; any keyword argument set to a non-default value overrides it.
             This is the canonical, warning-free carrier for the advanced options that
             leave the signature in 3.0.
-        The remaining keyword arguments are the per-option tuning flags; they behave
-        exactly as on :class:``Infomap`` -- see there, or :class:``Options``, for the
-        full per-option reference. The advanced tier is pending-deprecated on this
-        signature and moves to :class:``Options`` in 3.0.
 
         Returns
         -------
