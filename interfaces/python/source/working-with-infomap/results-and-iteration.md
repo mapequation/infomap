@@ -25,10 +25,6 @@ A {class}`~infomap.Result` holds more than labels. Each node carries a flow
 value, the share of the random walk that visits it, and the hierarchical tree
 records nested modules that a flat assignment vector cannot.
 
-This chapter covers the summary statistics, the assignment dict, the per-node
-view with flow, and the DataFrame export. It also explains why a single run may
-not be enough.
-
 ## Three layers of detail
 
 Think of the {class}`~infomap.Result` as three concentric layers of detail.
@@ -51,14 +47,13 @@ can filter, group, merge, and export.
 
 ## Why more than one trial
 
-Infomap keeps only the partition with the lowest codelength across the
-`num_trials` independent searches, and that partition is what the
-{class}`~infomap.Result` reports through `codelength`, `modules()`, and
-`nodes()`. A single trial can settle in a local minimum, so one run is fine for
-exploration but results you publish or act on warrant more; see
-{doc}`Running Infomap </working-with-infomap/running-and-options>` for why a
-single trial gets stuck and the full `num_trials` rule of thumb. The rest of this
-chapter is about *reading and comparing* the partition you get back.
+The {class}`~infomap.Result` reports the best (lowest-codelength) partition
+across the `num_trials` independent searches. One run is fine for exploration,
+but a single trial can settle in a local minimum, so results you publish or act
+on warrant more — see
+{doc}`Running Infomap </working-with-infomap/running-and-options>` for why and
+the full `num_trials` rule of thumb. The rest of this chapter is about *reading
+and comparing* the partition you get back.
 
 :::{toggle}
 **The solution landscape and degeneracy**
