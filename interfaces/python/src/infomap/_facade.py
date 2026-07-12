@@ -44,6 +44,7 @@ from ._logging import engine_log_routing as _engine_log_routing
 from ._logging import is_routed as _is_log_routed
 from ._results import _InfomapResultsMixin
 from ._results import _install_accessor_deprecations
+from ._results import _warn_method_deprecated
 from ._results import entropy, perplexity, plogp
 from .errors import NetworkParseError, _translate_engine_errors
 from .result import Result, TreeNode, build_result
@@ -1487,6 +1488,11 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             Pass options to :func:`infomap.run` or :meth:`Infomap.run`
             instead, e.g. ``infomap.run(graph, options=options)``.
         """
+        _warn_method_deprecated(
+            "from_options",
+            "pass options to infomap.run() instead, e.g. "
+            "infomap.run(graph, options=options).",
+        )
         if not isinstance(options, Options):
             raise TypeError("options must be an Options instance")
         return cls(args=args, **options.to_kwargs())
@@ -1508,6 +1514,11 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             Use :meth:`Network.from_scipy_sparse_matrix` or
             ``infomap.run(matrix)``.
         """
+        _warn_method_deprecated(
+            "from_scipy_sparse_matrix",
+            "use Network.from_scipy_sparse_matrix() or infomap.run(matrix) "
+            "instead.",
+        )
         im = cls(args=args, **infomap_options)
         im._add_scipy_sparse_matrix_impl(
             A,
@@ -1534,6 +1545,10 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         .. deprecated:: 2.14
             Use :meth:`Network.from_edge_index` or ``infomap.run(edge_index)``.
         """
+        _warn_method_deprecated(
+            "from_edge_index",
+            "use Network.from_edge_index() or infomap.run(edge_index) instead.",
+        )
         im = cls(args=args, **infomap_options)
         im._add_edge_index_impl(
             edge_index,
@@ -2805,6 +2820,10 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         .. deprecated:: 2.14
             Use ``infomap.run(input, options=options)`` instead.
         """
+        _warn_method_deprecated(
+            "run_with_options",
+            "use infomap.run(input, options=options) instead.",
+        )
         if not isinstance(options, Options):
             raise TypeError("options must be an Options instance")
         return self.run(

@@ -51,6 +51,28 @@ def _emit_accessor_deprecation(member: str, replacement: str) -> None:
     )
 
 
+def _warn_method_deprecated(member: str, replacement: str) -> None:
+    """Emit the pending-deprecation warning for a legacy ``Infomap`` method.
+
+    Companion to :func:`_emit_accessor_deprecation` for the deprecated
+    constructor / run helpers (``from_options``, ``run_with_options``,
+    ``from_scipy_sparse_matrix``, ``from_edge_index``) whose replacement is a
+    different call, not a ``Result`` attribute -- so the message names the
+    replacement directly instead of "read ... off the Result". Same
+    ``PendingDeprecationWarning`` category, caller-frame guard, and stacklevel
+    as the accessor warning, so the whole deprecated surface signals uniformly.
+    Call it as the first statement of the deprecated method's body.
+    """
+    caller = sys._getframe(2)
+    if caller.f_code.co_filename.startswith(_PACKAGE_PREFIX):
+        return
+    warnings.warn(
+        f"Infomap.{member} is deprecated and leaves in 3.0; {replacement}",
+        PendingDeprecationWarning,
+        stacklevel=3,
+    )
+
+
 def _wrap_accessor(func, member: str, replacement: str):
     @functools.wraps(func)
     def wrapper(self, *args, **kwargs):
