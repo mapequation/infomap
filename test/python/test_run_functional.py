@@ -10,6 +10,7 @@ honours the same run-generation guard as the ``Infomap``-backed one.
 from __future__ import annotations
 
 import sys
+import warnings
 
 import networkx as nx
 import pytest
@@ -133,13 +134,31 @@ def test_network_run_is_silent_by_default(capfd):
 def test_network_run_silent_false_warns():
     # A Network engine is constructed silent for its whole lifetime (a flag
     # cannot be switched off per run), so an explicit silent=False warns
-    # instead of being silently ignored.
+    # instead of being silently ignored. Each fresh Network warns once (the
+    # advisory is once-per-instance, see the guard below), whether run via
+    # net.run() or the functional infomap.run().
+    with pytest.warns(UserWarning, match="silent for its whole lifetime"):
+        Network().add_links(_LINKS).run(
+            options={"silent": False, "num_trials": 1, "seed": 1}
+        )
+
+    with pytest.warns(UserWarning, match="silent for its whole lifetime"):
+        infomap.run(
+            Network().add_links(_LINKS),
+            options={"silent": False, "num_trials": 1, "seed": 1},
+        )
+
+
+def test_network_silent_advisory_warns_once_per_instance():
+    # The silent-for-life advisory is guarded once per Network so a run loop
+    # (e.g. a sweep) does not repeat it every call and train the user to ignore
+    # warnings -- matching the Infomap path's once-per-instance guard.
     net = Network().add_links(_LINKS)
     with pytest.warns(UserWarning, match="silent for its whole lifetime"):
         net.run(options={"silent": False, "num_trials": 1, "seed": 1})
-
-    with pytest.warns(UserWarning, match="silent for its whole lifetime"):
-        infomap.run(net, options={"silent": False, "num_trials": 1, "seed": 1})
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")  # any further warning fails the test
+        net.run(options={"silent": False, "num_trials": 1, "seed": 1})
 
 
 def test_run_networkx_matches_oo():
