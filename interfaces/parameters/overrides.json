@@ -166,7 +166,7 @@
   },
   "policy": {
     "vocabulary": {
-      "keep": "First-class option on the surface in 3.0 (the default for every parameter without an entry). May carry tier: 'common' for parameters that stay real keyword parameters in the 3.0 Python signatures (#738); everything else rides the options object.",
+      "keep": "First-class option on the surface in 3.0 (the default for every parameter without an entry). May carry tier: 'common' for parameters that stay real keyword parameters in the 3.0 Python signatures; everything else rides the options object.",
       "alias": "Kept as a documented alias of another parameter (aliasOf names the target).",
       "deprecate": "Marked deprecated in 2.x; the surface's cleanup issue decides removal.",
       "remove": "Removed from the surface in 3.0, deprecated through 2.x where it is currently exposed.",
@@ -297,7 +297,7 @@
         },
         "r": {
           "action": "deprecate",
-          "replacement": "Pending the R option-surface decision (#757); the library default is expected to stay quiet."
+          "replacement": "Pending the R option-surface decision; the library default is expected to stay quiet."
         }
       },
       "--verbose": {
@@ -307,7 +307,7 @@
         },
         "r": {
           "action": "deprecate",
-          "replacement": "Pending the R option-surface decision (#757)."
+          "replacement": "Pending the R option-surface decision."
         }
       },
       "--print-config-fingerprint": {

@@ -30,7 +30,7 @@ def _emit_accessor_deprecation(member: str, replacement: str) -> None:
     """Emit the pending-deprecation warning for a legacy on-instance accessor.
 
     The legacy result mirror on ``Infomap`` stays usable through 2.x and leaves
-    in 3.0 (#742). Like the advanced-tier keyword warning, this is a
+    in 3.0. Like the advanced-tier keyword warning, this is a
     ``PendingDeprecationWarning`` -- silent under the default filter, so it nags
     no one until 3.0 nears, but it surfaces under ``-W`` and for tools that
     escalate warnings. The caller-frame check keeps internal readers (the
