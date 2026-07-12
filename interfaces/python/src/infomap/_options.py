@@ -114,7 +114,7 @@ _ADVANCED_TIER_KWARGS = {
 
 def _warn_advanced_tier_kwargs(passed, context):
     # Advanced-tier keywords are docs-only deprecated on the Infomap()/run()
-    # signatures (issue #741) and move off them in 3.0. Emit a
+    # signatures and move off them in 3.0. Emit a
     # PendingDeprecationWarning -- silent by default, so it nags no one until
     # 3.0 nears -- when one is set to a non-default value on a direct call.
     # Internal funnels (the Options path builds Infomap(**resolved), the graph
