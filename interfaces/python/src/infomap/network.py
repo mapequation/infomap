@@ -41,6 +41,8 @@ from ._network_input import paired_multilayer_unpacker as _paired_multilayer_unp
 from ._run import _UNSET
 
 if TYPE_CHECKING:
+    import igraph  # pyright: ignore[reportMissingImports]  # optional dep, no stubs
+    import networkx
     from collections.abc import Mapping
 
     from ._options import Options
@@ -149,7 +151,7 @@ class Network(_NetworkWritersMixin):
     @classmethod
     def from_networkx(
         cls,
-        g: Any,
+        g: networkx.Graph,
         *,
         weight: str | None = "weight",
         node_id: str = "node_id",
@@ -182,7 +184,7 @@ class Network(_NetworkWritersMixin):
     @classmethod
     def from_igraph(
         cls,
-        g: Any,
+        g: igraph.Graph,
         *,
         edge_weights: Any = None,
         vertex_weights: Any = None,

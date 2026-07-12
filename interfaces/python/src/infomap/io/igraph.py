@@ -1,12 +1,17 @@
 from __future__ import annotations
 
 import math
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 from numbers import Integral, Real
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from .._optional import require_igraph
 from ._arrays import apply_node_meta_data, community_node_data
+
+if TYPE_CHECKING:
+    import igraph  # pyright: ignore[reportMissingImports]  # optional dep, no stubs
+
+    from .._options import Options
 
 # The only user-facing name here; the adapter (add_igraph_graph) and helpers are
 # reached through Network.from_igraph / infomap.run(). Curated so the submodule
@@ -305,11 +310,11 @@ def _membership_and_flows(infomap, g, node_mapping):
 
 
 def find_igraph_communities(
-    g: Any,
+    g: igraph.Graph,
     *,
     edge_weights: str | Iterable[Any] | None = None,
     vertex_weights: Any = None,
-    options: Any = None,
+    options: Options | Mapping[str, Any] | None = None,
     trials: int | None = None,
     node_id: str = "node_id",
     layer_id: str = "layer_id",
@@ -318,7 +323,7 @@ def find_igraph_communities(
     flow_attribute: str | None = None,
     meta_attribute: str | None = None,
     **infomap_options: Any,
-) -> Any:
+) -> igraph.VertexClustering:
     """Find communities in a python-igraph graph.
 
     This helper builds an :class:`~infomap.Infomap` instance from ``g`` (via

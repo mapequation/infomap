@@ -10,6 +10,9 @@ from ..io._arrays import require_modules as _require_modules
 if TYPE_CHECKING:
     import pandas
 
+    from .._facade import Infomap
+    from ..result import Result
+
 __all__ = [
     "GraphRAGGraph",
     "GraphRAGRunResult",
@@ -32,7 +35,7 @@ class GraphRAGGraph:
     relationships: Any
     sources: Any
     targets: Any
-    weights: Any | None
+    weights: Any
     entity_id_to_node_id: dict[Any, int]
     node_id_to_entity_id: dict[int, Any]
     node_id_to_entity_title: dict[int, Any]
@@ -46,15 +49,15 @@ class GraphRAGGraph:
 class GraphRAGRunResult:
     """Result object returned by :func:`run_graphrag_communities`."""
 
-    infomap: Any
+    infomap: Infomap
     #: The immutable :class:`~infomap.Result` from the run. Read run metrics
     #: from here (``result.result.codelength``, ``.num_top_modules``) rather
     #: than the deprecated accessors on the stateful ``infomap`` instance.
-    result: Any
+    result: Result
     graph: GraphRAGGraph
     output_dir: Path | None
-    nodes: Any
-    communities: Any
+    nodes: pandas.DataFrame
+    communities: pandas.DataFrame
 
 
 def _import_parquet_stack():
@@ -600,7 +603,7 @@ def _build_tables(im, graph: GraphRAGGraph):
 
 
 def write_graphrag_communities(
-    im: Any, *, graph: GraphRAGGraph, output: str | Path
+    im: Infomap | Result, *, graph: GraphRAGGraph, output: str | Path
 ) -> "tuple[pandas.DataFrame, pandas.DataFrame]":
     """Write GraphRAG-compatible community tables from a finished run.
 
