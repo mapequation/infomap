@@ -485,12 +485,6 @@ def run(
     (``infomap.enable_log(logging.DEBUG)`` for more detail). The ``infomap``
     command-line interface keeps its verbose default.
 
-    Advanced engine options can be passed either as bare keyword arguments (for
-    a one-off, e.g. ``regularized=True``) or via ``options`` -- an
-    :class:`Options` instance or a plain mapping, the reusable and validated
-    carrier and the full parameter reference. The two are equivalent; a keyword
-    argument takes precedence over the same field in ``options``.
-
     Keyword arguments go to the engine; the input adapters always build with
     their defaults (e.g. networkx reads the ``"weight"`` edge attribute, a
     SciPy matrix is treated as undirected). For non-default input building -- a
