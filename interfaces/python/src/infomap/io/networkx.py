@@ -1,9 +1,14 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from ._arrays import apply_node_meta_data, community_node_data
+
+if TYPE_CHECKING:
+    import networkx
+
+    from .._options import Options
 
 # _run_networkx and add_networkx_graph are internal plumbing shared with the
 # facade and the docs notebooks; only find_communities is public API.
@@ -108,15 +113,15 @@ def _run_networkx(
 
 
 def find_communities(
-    g: Any,
+    g: networkx.Graph,
     *,
     weight: str | None = "weight",
     node_id: str = "node_id",
     layer_id: str = "layer_id",
     multilayer_inter_intra_format: bool = True,
-    options: Any = None,
+    options: Options | Mapping[str, Any] | None = None,
     trials: int | None = None,
-    initial_partition: Any = None,
+    initial_partition: Mapping[Any, Any] | None = None,
     module_attribute: str | None = None,
     flow_attribute: str | None = None,
     meta_attribute: str | None = None,

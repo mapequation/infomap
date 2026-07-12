@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     import igraph  # pyright: ignore[reportMissingImports]  # optional dep, no stubs
     import networkx
 
+    from .._facade import Infomap
     from ..result import Result
 
 
@@ -195,8 +196,8 @@ def _annotate_networkx_graph(
 
 
 def annotate_networkx_graph(
-    graph: Any,
-    im: Any,
+    graph: networkx.Graph,
+    im: Infomap | Result,
     *,
     node_mapping: Mapping[Any, Any] | None = None,
     module_attribute: str | None = _DEFAULT_MODULE_ATTRIBUTE,
@@ -314,8 +315,8 @@ def _annotate_igraph_graph(
 
 
 def annotate_igraph_graph(
-    graph: Any,
-    im: Any,
+    graph: igraph.Graph,
+    im: Infomap | Result,
     *,
     module_attribute: str | None = _DEFAULT_MODULE_ATTRIBUTE,
     path_attribute: str | None = _DEFAULT_PATH_ATTRIBUTE,
@@ -536,7 +537,12 @@ def to_igraph(
     return graph
 
 
-def write_graphml(graph: Any, im: Any, path: str | Path, **options: Any) -> None:
+def write_graphml(
+    graph: networkx.Graph | igraph.Graph,
+    im: Infomap | Result,
+    path: str | Path,
+    **options: Any,
+) -> None:
     """Write a GraphML file with Infomap result attributes on nodes.
 
     Annotates ``graph`` (without modifying it) and writes it as GraphML.
@@ -586,7 +592,12 @@ def write_graphml(graph: Any, im: Any, path: str | Path, **options: Any) -> None
     nx.write_graphml(annotated_graph, path, **writer_options)
 
 
-def write_gexf(graph: Any, im: Any, path: str | Path, **options: Any) -> None:
+def write_gexf(
+    graph: networkx.Graph,
+    im: Infomap | Result,
+    path: str | Path,
+    **options: Any,
+) -> None:
     """Write a GEXF file with Infomap result attributes on NetworkX nodes.
 
     Annotates ``graph`` (without modifying it) and writes it as GEXF via
