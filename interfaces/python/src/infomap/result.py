@@ -97,7 +97,7 @@ if TYPE_CHECKING:
     import pandas
 
     from ._facade import Infomap
-    from ._swig import (
+    from ._core import (
         InfomapIterator,
         InfomapIteratorPhysical,
         InfomapLeafModuleIterator,
