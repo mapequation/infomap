@@ -90,7 +90,7 @@ reading results goes through the immutable {class}`~infomap.Result`
 Advanced engine keywords still work on `Infomap()` and `infomap.run()` in 2.x,
 but they are pending-deprecated and leave those signatures in 3.0 (issue #741):
 passing one directly emits a (default-silent) `PendingDeprecationWarning`. Each
-falls into one of three groups, with a sanctioned replacement:
+falls into one of three groups, with a recommended replacement:
 
 | Deprecated keyword | Where it moves |
 |---|---|

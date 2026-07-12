@@ -1238,7 +1238,7 @@ _INERT_WITHOUT_OUTDIR_NOTE = (
 _FACADE_OPTIONS_DOC = (
     "A reusable `Options` object (or a mapping) applied as the base "
     "configuration; any keyword argument set to a non-default value overrides "
-    "it. This is the sanctioned, warning-free carrier for the advanced options "
+    "it. This is the canonical, warning-free carrier for the advanced options "
     "that leave the signature in 3.0."
 )
 
@@ -1368,7 +1368,16 @@ def generate_facade(catalog: ParameterCatalog) -> str:
     )
     lines.append("        options : Options, mapping, or None, optional")
     lines.extend(wrap_doc(_FACADE_OPTIONS_DOC, "            "))
-    lines.extend(_render_facade_docstring_params(names, index))
+    lines.extend(
+        wrap_doc(
+            "The remaining keyword arguments are the per-option tuning flags; "
+            "they behave exactly as on :class:`Infomap` -- see there, or "
+            ":class:`Options`, for the full per-option reference. The advanced "
+            "tier is pending-deprecated on this signature and moves to "
+            ":class:`Options` in 3.0.",
+            "        ",
+        )
+    )
     lines.append("")
     lines.append("        Returns")
     lines.append("        -------")

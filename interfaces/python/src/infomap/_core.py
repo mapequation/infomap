@@ -56,7 +56,7 @@ class Core:
         Returns the SWIG ``NodeData`` snapshot of parallel columns
         (``node_id``, ``state_id``, ``module_id``, ``flow``, ``depth``,
         ``layer_id``, ``child_index``) plus the CSR-encoded ragged path
-        (``path_flat`` + ``path_len``). The sanctioned bulk-extraction entry
+        (``path_flat`` + ``path_len``). The canonical bulk-extraction entry
         point for ``Result``; mirrors the iterator choice of the legacy
         per-node accessors.
         """

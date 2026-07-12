@@ -12,8 +12,10 @@ the louder ``DeprecationWarning`` that tools escalate by default. The package
 itself must emit neither warning during normal operation (construct, run, repr,
 summary).
 
-The build-from-graph accessors and config helpers stay documentation-only for
-now (no runtime warning); only the result mirror is instrumented.
+The ``add_*`` build-from-graph adapters stay documentation-only for now (no
+runtime warning); the result mirror and the legacy config / constructor helpers
+(``from_options``, ``run_with_options``, ``from_scipy_sparse_matrix``,
+``from_edge_index``) emit the pending warning.
 """
 
 from __future__ import annotations

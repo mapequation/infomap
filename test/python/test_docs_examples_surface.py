@@ -30,8 +30,9 @@ EXAMPLES = REPO_ROOT / "examples" / "python"
 DOCS = REPO_ROOT / "interfaces" / "python" / "source"
 SRC = REPO_ROOT / "interfaces" / "python" / "src" / "infomap"
 
-# The legacy result/build/config mirror on Infomap (docs-only deprecated
-# since 2.14; see test_deprecations.py). Curated by hand: introspecting
+# The legacy result/build/config mirror on Infomap (deprecated in 2.15;
+# silent-by-default PendingDeprecationWarning; see test_deprecations.py).
+# Curated by hand: introspecting
 # docstrings would misclassify blessed members whose docstrings merely
 # *contain* parameter-level deprecation directives (e.g. run()).
 DEPRECATED_INSTANCE_MEMBERS = (
