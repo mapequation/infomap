@@ -1,4 +1,4 @@
-"""Routing of the engine console log into Python :mod:`logging` (#745).
+"""Routing of the engine console log into Python :mod:`logging`.
 
 The engine writes its console output through the C++ ``Log`` class. When the
 user has attached handlers to ``logging.getLogger("infomap")`` (one line:

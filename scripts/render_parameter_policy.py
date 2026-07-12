@@ -59,7 +59,7 @@ def render(catalog: ParameterCatalog) -> str:
     lines: list[str] = []
     notes: list[str] = []
 
-    lines.append("# Infomap 3.0 parameter policy (#755)")
+    lines.append("# Infomap 3.0 parameter policy")
     lines.append("")
     lines.append("Actions: " + "; ".join(
         f"**{name}** = {text}" for name, text in policy.get("vocabulary", {}).items()

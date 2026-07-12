@@ -1,6 +1,6 @@
 """File writers for the engine's native text formats.
 
-Three hosts share these mixins (#760):
+Three hosts share these mixins:
 
 - :class:`~infomap.Result` carries the *result-artifact* writers
   (``.tree``/``.ftree``/``.clu``/Newick/JSON/CSV): the artifacts are derived
