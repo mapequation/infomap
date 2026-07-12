@@ -2,8 +2,7 @@
 
 When you use Infomap in published work, cite **both** the 2008 PNAS paper (which
 introduced the map equation) and the MapEquation software package (which
-identifies the implementation and version, for reproducibility). These are the
-canonical references for the method and the tool.
+identifies the implementation and version, for reproducibility).
 
 The survey {cite:p}`smiljanic2026survey` is the best single reference for the
 wider map-equation framework, its flow models, and its extensions. Cite it too
