@@ -187,7 +187,13 @@ def find_communities(
     Returns
     -------
     list of set
-        A partition of ``g.nodes`` grouped by top-level Infomap module.
+        A partition of ``g.nodes`` grouped by top-level Infomap module. This is
+        the list-of-sets shape NetworkX's own community functions return (e.g.
+        ``networkx.community.louvain_communities``), which also keeps it drop-in
+        for a NetworkX ``community`` backend. The igraph counterpart
+        :func:`~infomap.find_igraph_communities` instead returns an
+        ``igraph.VertexClustering`` -- each finder returns its ecosystem's
+        idiomatic partition type, so the shape differs by design.
 
     Raises
     ------
