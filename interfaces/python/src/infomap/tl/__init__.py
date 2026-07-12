@@ -3,6 +3,8 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
+from ..errors import InfomapError
+
 # The GraphRAG tools are conceptually part of the ``tl`` namespace, so their
 # public names are re-exported here. tl.graphrag has no module-scope
 # third-party imports, so this keeps ``import infomap`` dependency-free.
@@ -123,7 +125,7 @@ def _module_labels(im: Any, mapping: dict[int, Any], obs_names: list[Any]) -> li
     try:
         return [str(modules_by_obs_name[obs_name]) for obs_name in obs_names]
     except KeyError as exc:
-        raise RuntimeError(
+        raise InfomapError(
             "Could not align Infomap modules with `adata.obs_names`."
         ) from exc
 

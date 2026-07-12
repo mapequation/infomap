@@ -6,6 +6,7 @@ from numbers import Integral, Real
 from typing import TYPE_CHECKING, Any
 
 from .._optional import require_igraph
+from ..errors import InfomapError
 from ._arrays import apply_node_meta_data, community_node_data
 
 if TYPE_CHECKING:
@@ -304,7 +305,7 @@ def _membership_and_flows(infomap, g, node_mapping):
         flows[vertex_id] = node.flow
 
     if any(value is None for value in membership):
-        raise RuntimeError("Could not align Infomap membership with igraph vertices.")
+        raise InfomapError("Could not align Infomap membership with igraph vertices.")
 
     return membership, flows
 
