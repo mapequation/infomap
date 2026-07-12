@@ -201,9 +201,9 @@ Set {attr}`~infomap.Infomap.bipartite_start_id` (or
 {attr}`~infomap.Network.bipartite_start_id`) to `n` before running: every node id
 `>= n` is a type-B node, ids below are type-A; link opposite types with
 {meth}`~infomap.Network.add_link`. {meth}`~infomap.Result.modules` covers both
-types. The option `hide_bipartite_nodes=True` omits type-B nodes from the written
-output files (`.tree`, `.clu`, …) — useful when only the type-A assignments
-matter — without changing what {meth}`~infomap.Result.modules` returns.
+types. The bipartite engine options (`hide_bipartite_nodes`,
+`skip_adjust_bipartite_flow`, `bipartite_teleportation`) are listed in the
+Options table below.
 
 ## Options
 

@@ -283,11 +283,10 @@ while the bridge pair {3, 4} forms its own cluster in the centre.
 
 Declare a node's attribute with {meth}`~infomap.Network.set_meta_data`
 (`set_meta_data(node_id, meta_category)` — one integer category per node, before
-the run). Carry the metadata engine options via {class}`~infomap.Options`:
-`meta_data_rate` sets $\eta$, the weight of the attribute codebook term (default
-`1.0`; `0` suppresses metadata influence); `meta_data` reads `node_id category`
-pairs from a file; and `meta_data_unweighted` treats all nodes as equally
-visited. The result's metadata term is {attr}`~infomap.Result.meta_entropy`.
+the run). The metadata engine options (`meta_data_rate`, `meta_data`,
+`meta_data_unweighted`) are carried via {class}`~infomap.Options` and listed in
+the Options table below. The result's metadata term is
+{attr}`~infomap.Result.meta_entropy`.
 
 ## Options
 

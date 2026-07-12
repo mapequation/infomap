@@ -386,18 +386,12 @@ for name, graph in [("ring of cliques", G_ring), ("karate club", G_karate)]:
 
 ## API pointers
 
-The options in this chapter are fields of {class}`~infomap.Options`, the
-canonical way to configure a run: `infomap.run(input, options=Options(...))`
-(or {meth}`infomap.Network.run` with `options=`). Five common options —
-`seed`, `num_trials`, `two_level`, `directed`, and `markov_time` — are also
-accepted as direct keyword arguments to {func}`infomap.run`. Any other option
-can be passed as a bare keyword to {func}`infomap.run` too (it forwards to
-`Options`); prefer `Options` for a reusable or validated configuration. On the
-stateful {class}`infomap.Infomap` constructor and `run` method the advanced
-options remain accepted as keywords but are pending-deprecated on those
-signatures and leave them in 3.0 (see {doc}`/api/deprecations`). After a run the
-metrics live on the returned {class}`~infomap.Result`; see
-{doc}`results-and-iteration` for the metric properties and partition accessors.
+{class}`~infomap.Options` is the canonical option carrier: {func}`infomap.run`
+and {meth}`infomap.Network.run` both take `options=`. On the stateful
+{class}`infomap.Infomap` the advanced keywords stay accepted but are
+pending-deprecated and leave the signature in 3.0 ({doc}`/api/deprecations`).
+After a run, metrics and partition accessors live on the returned
+{class}`~infomap.Result` ({doc}`results-and-iteration`).
 
 The most-used options — all fields of {class}`~infomap.Options`, with the five
 common ones also accepted directly on {func}`infomap.run`:
