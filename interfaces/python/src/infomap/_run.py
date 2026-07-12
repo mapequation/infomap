@@ -404,7 +404,7 @@ _UNSET: Any = _Unset()
 def run(
     input: Any,
     *,
-    options: "Options | Mapping[str, Any] | None" = None,
+    options: Options | Mapping[str, Any] | None = None,
     seed: int = _UNSET,
     num_trials: int = _UNSET,
     two_level: bool = _UNSET,
