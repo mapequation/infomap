@@ -49,7 +49,8 @@ def _sync_engine_routing() -> None:
     """Install or remove the engine-to-logging bridge for the next engine call."""
     # Imported lazily: _core imports _bindings at module load, and this module
     # is imported by the facade/network layers that _core must not depend on.
-    from ._core import drain_log_queue, set_log_callback
+    from ._core import _drain_log_queue as drain_log_queue
+    from ._core import _set_log_callback as set_log_callback
 
     global _installed
     should_route = bool(logger.handlers)
@@ -65,7 +66,7 @@ def _sync_engine_routing() -> None:
 
 def _drain() -> None:
     if _installed:
-        from ._core import drain_log_queue
+        from ._core import _drain_log_queue as drain_log_queue
 
         drain_log_queue()
 
