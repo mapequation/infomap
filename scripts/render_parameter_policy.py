@@ -89,9 +89,9 @@ def render(catalog: ParameterCatalog) -> str:
             if decision["action"] != "keep":
                 cell = f"**{cell}**"
                 # Surface the per-language binding name when it differs from the
-                # CLI flag (e.g. --verbose -> Python/R verbosity_level), so an
-                # agent searching the policy by the name it types in code finds
-                # the entry instead of only the CLI spelling.
+                # CLI flag (e.g. --verbose -> Python/R verbosity_level), so
+                # someone searching the policy by the name they type in code
+                # finds the entry instead of only the CLI spelling.
                 rename = (
                     catalog.overrides.get("names", {}).get(flag, {}).get(surface)
                 )

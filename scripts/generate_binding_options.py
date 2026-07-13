@@ -463,7 +463,7 @@ def _python_engine_default_doc(param) -> str:
     Options whose Python default is a ``None`` sentinel render no flag unless
     set, so the reference shows ``= None`` and hides the concrete value the
     engine falls back to (e.g. ``clu_level`` -> 1, ``node_limit`` -> 0 meaning
-    "no limit"). Surface the catalog default so an agent reading the parameter
+    "no limit"). Surface the catalog default so a reader of the parameter
     reference isn't left guessing. Restricted to numeric defaults to avoid
     noise on choice/string options.
     """
@@ -497,7 +497,7 @@ def _options_doc_policy_note(policy: dict) -> str:
     """A short note for the Options docstring flagging fields that are not a
     first-class engine option on the Python library surface.
 
-    An agent steered to ``inspect.getdoc(infomap.Options)`` as the parameter
+    Someone reading ``inspect.getdoc(infomap.Options)`` as the parameter
     reference would otherwise read args-only / removed / alias fields (``tree``,
     ``silent``, ``out_name``, ``threads`` ...) as usable library knobs. Reuse the
     policy's own replacement guidance so the note stays in step with the facade
@@ -510,7 +510,7 @@ def _options_doc_policy_note(policy: dict) -> str:
     if action == "args-only" and (policy or {}).get("inertWithoutOutputDir"):
         # The standard inert output flags (tree, clu, output, ...) all share
         # one long replacement string; repeating it per field bloats the
-        # reference an agent is told to read. State the rationale once in the
+        # reference users are pointed to. State the rationale once in the
         # class docstring and keep the per-field note to a short pointer.
         # ``hide_bipartite_nodes`` is args-only but writer-effective (no
         # inertWithoutOutputDir), so it falls through and keeps its own note.
@@ -1253,7 +1253,7 @@ _FACADE_OPTIONS_DOC = (
 # A kept keyword is permanent -- only its entry point relocates to Options in
 # 3.0 -- so its docstring uses ``.. versionchanged::`` rather than
 # ``.. deprecated::``. Marking a still-supported tuning knob "deprecated" makes
-# agents and linters (which read the directive token literally) steer users
+# tools and linters (which read the directive token literally) steer users
 # away from a valid option.
 _ADVANCED_TIER_KEEP_NOTE = "Pass it via `Options`; moves off this signature in 3.0."
 
