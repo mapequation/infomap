@@ -2,6 +2,85 @@
 
 All notable changes to this project will be documented in this file. Releases are automated with [release-please](https://github.com/googleapis/release-please), using [Conventional Commits](https://www.conventionalcommits.org) to determine version bumps and changelog entries.
 
+## [2.15.0](https://github.com/mapequation/infomap/compare/v2.14.0...v2.15.0) (2026-07-13)
+
+
+### Features
+
+* add a pluggable RNG seam for native embedders ([#423](https://github.com/mapequation/infomap/issues/423)) ([54103bd](https://github.com/mapequation/infomap/commit/54103bde73a492f6510c8e73e26cf6093076ef10))
+* add infomap-network v1.0 JSON input format ([#645](https://github.com/mapequation/infomap/issues/645)) ([#668](https://github.com/mapequation/infomap/issues/668)) ([a15e3c4](https://github.com/mapequation/infomap/commit/a15e3c47966dea0dd2be40c4b48f03cc21e6748b))
+* allow naming state nodes via addStateNode, wire through Python/R ([#799](https://github.com/mapequation/infomap/issues/799)) ([0638d54](https://github.com/mapequation/infomap/commit/0638d54a6aab8604fcb4c565082187e673514980))
+* expose max/min flow iterations and flow tolerance in the API ([#764](https://github.com/mapequation/infomap/issues/764)) ([3a4b868](https://github.com/mapequation/infomap/commit/3a4b86878fdcf7aff033766d89011cb11b1b1907))
+* **python:** accept an options= carrier on the graph community finders ([e4d2f1f](https://github.com/mapequation/infomap/commit/e4d2f1f7217553f5e041a4368db76c87cb00ebfe))
+* **python:** accept an options= carrier on the stateful Infomap ([d127c87](https://github.com/mapequation/infomap/commit/d127c87b33d29301d3459f2e01bd2772b2829db4))
+* **python:** add infomap.datasets with the bundled example networks ([#712](https://github.com/mapequation/infomap/issues/712)) ([3e083f3](https://github.com/mapequation/infomap/commit/3e083f3578a03a88a039fca4bd43cf7c1a634d76))
+* **python:** add Result.summary() and Result.to_series() ([#783](https://github.com/mapequation/infomap/issues/783)) ([8ddd19d](https://github.com/mapequation/infomap/commit/8ddd19dd1fd207cb558e36560d09f7a6be400755))
+* **python:** add Result.to_networkx and Result.to_igraph methods ([8e56bf2](https://github.com/mapequation/infomap/commit/8e56bf235d4b54c061a21c5d6abf9ab781682609))
+* **python:** add signature-tier metadata to the parameter catalog ([#751](https://github.com/mapequation/infomap/issues/751)) ([f7451bb](https://github.com/mapequation/infomap/commit/f7451bbb4afa25eaff90069912c79da1e6fefe56))
+* **python:** close builder/data-model gaps and type the Infomap facade ([b09384f](https://github.com/mapequation/infomap/commit/b09384f2ecdc86e47fd2b112f33abe60ac08d83b))
+* **python:** emit type annotations on the generated Infomap signatures ([#752](https://github.com/mapequation/infomap/issues/752)) ([46883c8](https://github.com/mapequation/infomap/commit/46883c8ab9ea69bace9e278360251e803389e273))
+* **python:** file writers on Result and Network ([#766](https://github.com/mapequation/infomap/issues/766)) ([e4537cf](https://github.com/mapequation/infomap/commit/e4537cfa754e306c7aa3a351fd746ad632d875b6))
+* **python:** guard run() inputs, validate initial_partition, advise on Network logging ([b84c3b2](https://github.com/mapequation/infomap/commit/b84c3b2872a9348b3a94d9571e09229f2938f6b3))
+* **python:** make infomap.run the canonical run entry point ([0210c27](https://github.com/mapequation/infomap/commit/0210c2728e45d78c165a98be07a33c59aef05969))
+* **python:** mark non-engine Options fields in the generated docstring ([3fa4176](https://github.com/mapequation/infomap/commit/3fa4176d0d00b46e476c95f0d00c965b58c15f3a))
+* **python:** public io namespace, tl re-exports, and API consistency cleanups ([f73e5dc](https://github.com/mapequation/infomap/commit/f73e5dc56a0bd5b282abedf8dcc9bc39cb52bb6c))
+* **python:** render the Infomap summary card as Result._repr_html_ ([1764c05](https://github.com/mapequation/infomap/commit/1764c05eec765143362a13a059e1fb7a8c129bb1))
+* **python:** route the engine log through Python logging ([#763](https://github.com/mapequation/infomap/issues/763)) ([182fc6a](https://github.com/mapequation/infomap/commit/182fc6ad911a352729cdf0ff117d20c21a6d63c3))
+* **python:** sand down Result/Network agent-usability edges ([9cfb82d](https://github.com/mapequation/infomap/commit/9cfb82d27ae490a401c7bb0295271d01a5d4f072))
+* **python:** steer Options errors and publish a machine-readable option catalog ([08f1911](https://github.com/mapequation/infomap/commit/08f191177ed8ada9656a6d82500e1c397e0fa2f2))
+* **python:** surface the common-tier options on the run() signature ([4354fe0](https://github.com/mapequation/infomap/commit/4354fe08233ed6aa7281612166b397c16765a1c2))
+* **python:** type the Network builder; ship py.typed in the sdist ([be70823](https://github.com/mapequation/infomap/commit/be70823d78e275166ab4cc1519fff51dad663802))
+* **python:** validate numeric options against the catalog's ranges ([d50903a](https://github.com/mapequation/infomap/commit/d50903a0cd58d097bc90d984c2d78740a67b2539))
+* **python:** validate option values and steer agents off usability traps ([450efce](https://github.com/mapequation/infomap/commit/450efce0fc3bf6f8dce206b969ca0072af38e9c7))
+* **python:** warn on legacy instance accessors; clearer empty-network error ([d731321](https://github.com/mapequation/infomap/commit/d7313213426a8d911f75be91962149b7a9b7f51f))
+* **python:** warn when args-only output options can't take effect ([b4c30aa](https://github.com/mapequation/infomap/commit/b4c30aa26daa64453fa5b3e87c6e3f5b57152878))
+* **python:** widen num_threads to str | int | None via a types override ([0ebf437](https://github.com/mapequation/infomap/commit/0ebf437fb786d8597c05df9f2c381e841b385466))
+
+
+### Bug Fixes
+
+* honor --max-flow-iterations in regularized multilayer flow ([94905a7](https://github.com/mapequation/infomap/commit/94905a7da3144e2801443d1583a68c9431d50d7d))
+* **python:** align and tidy the graph-library adapter surface ([90cebe0](https://github.com/mapequation/infomap/commit/90cebe0b9b7e417696fce331395a3d28a68779b9))
+* **python:** attribute the export mismatch warning to the caller; unify two error types ([72dacf2](https://github.com/mapequation/infomap/commit/72dacf293910de5bac4a5404f1944f4bc4d36746))
+* **python:** correct error types, path handling, and duplicated helpers ([6149487](https://github.com/mapequation/infomap/commit/61494879d946934c54f120b839ac71d19a3ed055))
+* **python:** correct factual slips surfaced by the API review ([9472b69](https://github.com/mapequation/infomap/commit/9472b69180941d5547bf793125935c28557253e2))
+* **python:** correct hide_bipartite_nodes docs and surface random-move defaults ([4a3bb7e](https://github.com/mapequation/infomap/commit/4a3bb7ef78f87b6d43f1beb955c563dd1cc2b9a0))
+* **python:** correct the binding_default return annotation ([1087300](https://github.com/mapequation/infomap/commit/1087300c3fa70acd0d3dc5fe43beb6ff478168b6))
+* **python:** don't flag a 2x2 array as a dense adjacency matrix ([132d754](https://github.com/mapequation/infomap/commit/132d7546a95c30c02008e249066756f39855086a))
+* **python:** don't flag verbosity_level inert under routed DEBUG logging ([25d588a](https://github.com/mapequation/infomap/commit/25d588a583dace77647e560c2e2e5612dac82ea5))
+* **python:** don't warn that hide_bipartite_nodes is inert ([4406f21](https://github.com/mapequation/infomap/commit/4406f212727ae3d99596d362964ce3fdf37572f7))
+* **python:** emit a runtime deprecation warning on the legacy Infomap methods ([31903e7](https://github.com/mapequation/infomap/commit/31903e73de670f6162c9d4adfd687f504bc31e99))
+* **python:** emit the advanced-tier deprecation warning from infomap.run() ([4c9d394](https://github.com/mapequation/infomap/commit/4c9d394fa2cb04aa8e60f81135285152bc897707))
+* **python:** extend Result legacy-accessor hints to camelCase spellings ([c32c17e](https://github.com/mapequation/infomap/commit/c32c17e5d6104a41f17a0929971322a8f0ced989))
+* **python:** import pandas lazily to avoid OpenMP duplicate-runtime abort ([#709](https://github.com/mapequation/infomap/issues/709)) ([eaffa4a](https://github.com/mapequation/infomap/commit/eaffa4a481f8164b5067eaabe36d3a0cab80a5b1))
+* **python:** keep native attribute types in to_networkx and to_igraph ([7c1b31b](https://github.com/mapequation/infomap/commit/7c1b31b0db284acb381a193b42ce26649590db99))
+* **python:** keep the option generator in sync with the directed/flow_model fix ([9822347](https://github.com/mapequation/infomap/commit/98223472e002022314853e00894d73dc6bc11e44))
+* **python:** make the Python API silent by default ([#735](https://github.com/mapequation/infomap/issues/735)) ([a53c0a6](https://github.com/mapequation/infomap/commit/a53c0a657763163971c970ec2103c4b6393d4e1c))
+* **python:** only warn on a real directed/flow_model conflict ([34ff4c6](https://github.com/mapequation/infomap/commit/34ff4c6ba1dda683634aa392a9642985f52bb133))
+* **python:** re-export engine log hooks under their private names ([c88f7ea](https://github.com/mapequation/infomap/commit/c88f7eac0300ee283cc4b7b2856de20a974664ad))
+* **python:** redirect legacy accessors on Result; correct the directed docs ([689d97f](https://github.com/mapequation/infomap/commit/689d97f650b42cbe5a1e5905042a96c33ea8e936))
+* **python:** regenerate JS parameter metadata and address review comments ([56b223c](https://github.com/mapequation/infomap/commit/56b223c17b38802c757163fe12e79b302cbd9345))
+* **python:** resolve API review findings ([f793470](https://github.com/mapequation/infomap/commit/f793470c28188c294b6e6397506b9b9e826b4306))
+* **python:** route result.py iterator types through _core, not _swig ([2bcc2be](https://github.com/mapequation/infomap/commit/2bcc2beb9b3319f6e185841ac6f08ac87c28de80))
+* **python:** sharpen run() front-door warnings and error messages ([01f1f4c](https://github.com/mapequation/infomap/commit/01f1f4c1ea46e17631ee22ba015c671ec3bebb59))
+* **python:** sharpen two error surfaces on the run/result API ([4830216](https://github.com/mapequation/infomap/commit/48302163ca137c5fabaa1193a751451989febb08))
+* **python:** stop the default Result read path nagging and trim guard lectures ([9e01007](https://github.com/mapequation/infomap/commit/9e0100776dec4890c4966450eebad3a815224dbc))
+* **python:** turn agent-facing run/Network/Result footguns into guided errors ([9a9723f](https://github.com/mapequation/infomap/commit/9a9723fbc3d73506852cf9c60812df625209e1a8))
+* **python:** validate the choices and bindingOnly override sections ([412f1c8](https://github.com/mapequation/infomap/commit/412f1c8b0ea251c057f7ef70c88d2a6639382fcb))
+* **python:** warn on deprecated pretty and attribute option warnings to user code ([894c628](https://github.com/mapequation/infomap/commit/894c628c2c2ff28c5de2755bf8fa26d01809cab0))
+* **python:** warn once per Network that its engine is silent for life ([3a72905](https://github.com/mapequation/infomap/commit/3a72905ab0175326ad0ab4787929ff54cb142764))
+* **python:** warning and logging behavior for the 3.0 deprecation surface ([d49061f](https://github.com/mapequation/infomap/commit/d49061fc95042bbfbfbc1234fd1bccf056b5c246))
+
+
+### Performance Improvements
+
+* **python:** compute effective-num-modules lazily in Result ([#701](https://github.com/mapequation/infomap/issues/701)) ([c147cb0](https://github.com/mapequation/infomap/commit/c147cb0ba4561d41790f0743e529d2d390416de4))
+
+
+### Reverts
+
+* C++17 follow-up refactors ([#725](https://github.com/mapequation/infomap/issues/725)–[#730](https://github.com/mapequation/infomap/issues/730)) ([#731](https://github.com/mapequation/infomap/issues/731)) ([094ba1f](https://github.com/mapequation/infomap/commit/094ba1f9f8e0a8ccd6a6d381c9775193f30c3322))
+
 ## [2.14.0](https://github.com/mapequation/infomap/compare/v2.13.0...v2.14.0) (2026-06-30)
 
 
