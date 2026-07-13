@@ -88,3 +88,12 @@ test_that("as.data.frame omits state_name for first-order networks", {
   df <- as.data.frame(im)
   expect_false("state_name" %in% names(df))
 })
+
+test_that("add_state_node accepts an optional per-state name", {
+  im <- Infomap(silent = TRUE)
+  im$add_state_node(1L, 1L, name = "a")
+  im$add_state_node(2L, 1L)
+
+  expect_equal(im$get_state_name(1L), "a")
+  expect_null(im$get_state_name(2L))
+})

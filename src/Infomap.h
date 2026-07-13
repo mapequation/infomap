@@ -115,6 +115,7 @@ public:
 
   void addPhysicalNode(unsigned int id, const std::string& name = "") { m_network.addPhysicalNode(id, name); }
   void addStateNode(unsigned int id, unsigned int physId) { m_network.addStateNode(id, physId); }
+  void addStateNode(unsigned int id, unsigned int physId, std::string name) { m_network.addStateNode(id, physId, std::move(name)); }
 
   void addLink(unsigned int sourceId, unsigned int targetId, double weight = 1.0) { m_network.addLink(sourceId, targetId, weight); }
   void addLink(unsigned int sourceId, unsigned int targetId, unsigned long weight) { m_network.addLink(sourceId, targetId, weight); }

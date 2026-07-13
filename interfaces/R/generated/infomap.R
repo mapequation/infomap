@@ -16559,12 +16559,42 @@ attr(`StateNetwork_addStateNode__SWIG_1`, 'returnType') = '_p_std__pairT_std__ma
 attr(`StateNetwork_addStateNode__SWIG_1`, "inputTypes") = c('_p_infomap__StateNetwork', 'integer', 'integer')
 class(`StateNetwork_addStateNode__SWIG_1`) = c("SWIGFunction", class('StateNetwork_addStateNode__SWIG_1'))
 
+# Start of StateNetwork_addStateNode
+
+`StateNetwork_addStateNode__SWIG_2` = function(self, id, physId, name, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  id = as.integer(id);
+  
+  if(length(id) > 1) {
+    warning("using only the first element of id");
+  };
+  
+  physId = as.integer(physId);
+  
+  if(length(physId) > 1) {
+    warning("using only the first element of physId");
+  };
+  
+  name = as(name, "character"); 
+  ;ans = .Call('R_swig_StateNetwork_addStateNode__SWIG_2', self, id, physId, name, as.logical(.copy), PACKAGE='infomap');
+  ans <- if (is.null(ans)) ans
+  else new("_p_std__pairT_std__mapT_unsigned_int_infomap__StateNetwork__StateNode_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__StateNode_t_t_t__iterator_bool_t", ref=ans);
+  
+  ans
+  
+}
+
+attr(`StateNetwork_addStateNode__SWIG_2`, 'returnType') = '_p_std__pairT_std__mapT_unsigned_int_infomap__StateNetwork__StateNode_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__StateNode_t_t_t__iterator_bool_t'
+attr(`StateNetwork_addStateNode__SWIG_2`, "inputTypes") = c('_p_infomap__StateNetwork', 'integer', 'integer', 'character')
+class(`StateNetwork_addStateNode__SWIG_2`) = c("SWIGFunction", class('StateNetwork_addStateNode__SWIG_2'))
+
 `StateNetwork_addStateNode` <- function(...) {
   argtypes <- mapply(class, list(...));
   argv <- list(...);
   argc <- length(argtypes);
   f <- NULL;
-# dispatch functions 2
+# dispatch functions 3
   if (argc == 2) {
     if (( extends(argtypes[1], '_p_infomap__StateNetwork') || is.null(argv[[1]]) ) && ( extends(argtypes[2], '_p_infomap__StateNetwork__StateNode') && length(argv[[2]]) == 1 )) {
       f <- StateNetwork_addStateNode__SWIG_0; 
@@ -16572,6 +16602,10 @@ class(`StateNetwork_addStateNode__SWIG_1`) = c("SWIGFunction", class('StateNetwo
   } else if (argc == 3) {
     if (( extends(argtypes[1], '_p_infomap__StateNetwork') || is.null(argv[[1]]) ) && ( (is.integer(argv[[2]]) || is.numeric(argv[[2]])) && length(argv[[2]]) == 1 ) && ( (is.integer(argv[[3]]) || is.numeric(argv[[3]])) && length(argv[[3]]) == 1 )) {
       f <- StateNetwork_addStateNode__SWIG_1; 
+    }
+  } else if (argc == 4) {
+    if (( extends(argtypes[1], '_p_infomap__StateNetwork') || is.null(argv[[1]]) ) && ( (is.integer(argv[[2]]) || is.numeric(argv[[2]])) && length(argv[[2]]) == 1 ) && ( (is.integer(argv[[3]]) || is.numeric(argv[[3]])) && length(argv[[3]]) == 1 ) && ( is.character(argv[[4]]) && length(argv[[4]]) == 1 )) {
+      f <- StateNetwork_addStateNode__SWIG_2; 
     }
   };
   if (is.null(f)) {
@@ -23797,7 +23831,7 @@ class(`InfomapWrapper_addPhysicalNode__SWIG_1`) = c("SWIGFunction", class('Infom
 # Dispatch function
 # Start of InfomapWrapper_addStateNode
 
-`InfomapWrapper_addStateNode` = function(self, id, physId)
+`InfomapWrapper_addStateNode__SWIG_0` = function(self, id, physId)
 {
   if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
   id = as.integer(id);
@@ -23812,14 +23846,62 @@ class(`InfomapWrapper_addPhysicalNode__SWIG_1`) = c("SWIGFunction", class('Infom
     warning("using only the first element of physId");
   };
   
-  ;.Call('R_swig_InfomapWrapper_addStateNode', self, id, physId, PACKAGE='infomap');
+  ;.Call('R_swig_InfomapWrapper_addStateNode__SWIG_0', self, id, physId, PACKAGE='infomap');
   
 }
 
-attr(`InfomapWrapper_addStateNode`, 'returnType') = 'void'
-attr(`InfomapWrapper_addStateNode`, "inputTypes") = c('_p_infomap__InfomapWrapper', 'integer', 'integer')
-class(`InfomapWrapper_addStateNode`) = c("SWIGFunction", class('InfomapWrapper_addStateNode'))
+attr(`InfomapWrapper_addStateNode__SWIG_0`, 'returnType') = 'void'
+attr(`InfomapWrapper_addStateNode__SWIG_0`, "inputTypes") = c('_p_infomap__InfomapWrapper', 'integer', 'integer')
+class(`InfomapWrapper_addStateNode__SWIG_0`) = c("SWIGFunction", class('InfomapWrapper_addStateNode__SWIG_0'))
 
+# Start of InfomapWrapper_addStateNode
+
+`InfomapWrapper_addStateNode__SWIG_1` = function(self, id, physId, name)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  id = as.integer(id);
+  
+  if(length(id) > 1) {
+    warning("using only the first element of id");
+  };
+  
+  physId = as.integer(physId);
+  
+  if(length(physId) > 1) {
+    warning("using only the first element of physId");
+  };
+  
+  name = as(name, "character"); 
+  ;.Call('R_swig_InfomapWrapper_addStateNode__SWIG_1', self, id, physId, name, PACKAGE='infomap');
+  
+}
+
+attr(`InfomapWrapper_addStateNode__SWIG_1`, 'returnType') = 'void'
+attr(`InfomapWrapper_addStateNode__SWIG_1`, "inputTypes") = c('_p_infomap__InfomapWrapper', 'integer', 'integer', 'character')
+class(`InfomapWrapper_addStateNode__SWIG_1`) = c("SWIGFunction", class('InfomapWrapper_addStateNode__SWIG_1'))
+
+`InfomapWrapper_addStateNode` <- function(...) {
+  argtypes <- mapply(class, list(...));
+  argv <- list(...);
+  argc <- length(argtypes);
+  f <- NULL;
+# dispatch functions 2
+  if (argc == 3) {
+    if (( extends(argtypes[1], '_p_infomap__InfomapWrapper') || is.null(argv[[1]]) ) && ( (is.integer(argv[[2]]) || is.numeric(argv[[2]])) && length(argv[[2]]) == 1 ) && ( (is.integer(argv[[3]]) || is.numeric(argv[[3]])) && length(argv[[3]]) == 1 )) {
+      f <- InfomapWrapper_addStateNode__SWIG_0; 
+    }
+  } else if (argc == 4) {
+    if (( extends(argtypes[1], '_p_infomap__InfomapWrapper') || is.null(argv[[1]]) ) && ( (is.integer(argv[[2]]) || is.numeric(argv[[2]])) && length(argv[[2]]) == 1 ) && ( (is.integer(argv[[3]]) || is.numeric(argv[[3]])) && length(argv[[3]]) == 1 ) && ( is.character(argv[[4]]) && length(argv[[4]]) == 1 )) {
+      f <- InfomapWrapper_addStateNode__SWIG_1; 
+    }
+  };
+  if (is.null(f)) {
+    stop("cannot find overloaded function for InfomapWrapper_addStateNode with argtypes (",toString(argtypes),")");
+  };
+  f(...);
+}
+
+# Dispatch function
 # Start of InfomapWrapper_addLink
 
 `InfomapWrapper_addLink__SWIG_0` = function(self, sourceId, targetId, weight)

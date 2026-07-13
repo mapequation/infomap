@@ -39655,13 +39655,67 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_StateNetwork_addStateNode__SWIG_2(PyObject *self, Py_ssize_t nobjs, PyObject **swig_obj) {
+  PyObject *resultobj = 0;
+  infomap::StateNetwork *arg1 = 0 ;
+  unsigned int arg2 ;
+  unsigned int arg3 ;
+  std::string arg4 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  unsigned int val2 ;
+  int ecode2 = 0 ;
+  unsigned int val3 ;
+  int ecode3 = 0 ;
+  SwigValueWrapper< std::pair< std::map< unsigned int,infomap::StateNetwork::StateNode,std::less< unsigned int >,std::allocator< std::pair< unsigned int const,infomap::StateNetwork::StateNode > > >::iterator,bool > > result;
+  
+  (void)self;
+  if ((nobjs < 4) || (nobjs > 4)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__StateNetwork, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "StateNetwork_addStateNode" "', argument " "1"" of type '" "infomap::StateNetwork *""'"); 
+  }
+  arg1 = reinterpret_cast< infomap::StateNetwork * >(argp1);
+  ecode2 = SWIG_AsVal_unsigned_SS_int(swig_obj[1], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "StateNetwork_addStateNode" "', argument " "2"" of type '" "unsigned int""'");
+  } 
+  arg2 = static_cast< unsigned int >(val2);
+  ecode3 = SWIG_AsVal_unsigned_SS_int(swig_obj[2], &val3);
+  if (!SWIG_IsOK(ecode3)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "StateNetwork_addStateNode" "', argument " "3"" of type '" "unsigned int""'");
+  } 
+  arg3 = static_cast< unsigned int >(val3);
+  {
+    std::string *ptr = (std::string *)0;
+    int res = SWIG_AsPtr_std_string(swig_obj[3], &ptr);
+    if (!SWIG_IsOK(res) || !ptr) {
+      SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "StateNetwork_addStateNode" "', argument " "4"" of type '" "std::string""'"); 
+    }
+    arg4 = *ptr;
+    if (SWIG_IsNewObj(res)) delete ptr;
+  }
+  {
+    try {
+      result = (arg1)->addStateNode(arg2,arg3,SWIG_STD_MOVE(arg4));
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_NewPointerObj((new std::pair< infomap::StateNetwork::NodeMap::iterator,bool >(result)), SWIGTYPE_p_std__pairT_std__mapT_unsigned_int_infomap__StateNetwork__StateNode_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__StateNode_t_t_t__iterator_bool_t, SWIG_POINTER_OWN |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_StateNetwork_addStateNode(PyObject *self, PyObject *args) {
   Py_ssize_t argc;
-  PyObject *argv[4] = {
+  PyObject *argv[5] = {
     0
   };
   
-  if (!(argc = SWIG_Python_UnpackTuple(args, "StateNetwork_addStateNode", 0, 3, argv))) SWIG_fail;
+  if (!(argc = SWIG_Python_UnpackTuple(args, "StateNetwork_addStateNode", 0, 4, argv))) SWIG_fail;
   --argc;
   if (argc == 2) {
     int _v = 0;
@@ -39697,12 +39751,38 @@ SWIGINTERN PyObject *_wrap_StateNetwork_addStateNode(PyObject *self, PyObject *a
       }
     }
   }
+  if (argc == 4) {
+    int _v = 0;
+    void *vptr = 0;
+    int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_infomap__StateNetwork, 0);
+    _v = SWIG_CheckState(res);
+    if (_v) {
+      {
+        int res = SWIG_AsVal_unsigned_SS_int(argv[1], NULL);
+        _v = SWIG_CheckState(res);
+      }
+      if (_v) {
+        {
+          int res = SWIG_AsVal_unsigned_SS_int(argv[2], NULL);
+          _v = SWIG_CheckState(res);
+        }
+        if (_v) {
+          int res = SWIG_AsPtr_std_string(argv[3], (std::string**)(0));
+          _v = SWIG_CheckState(res);
+          if (_v) {
+            return _wrap_StateNetwork_addStateNode__SWIG_2(self, argc, argv);
+          }
+        }
+      }
+    }
+  }
   
 fail:
   SWIG_Python_RaiseOrModifyTypeError("Wrong number or type of arguments for overloaded function 'StateNetwork_addStateNode'.\n"
     "  Possible C/C++ prototypes are:\n"
     "    infomap::StateNetwork::addStateNode(infomap::StateNetwork::StateNode const &)\n"
-    "    infomap::StateNetwork::addStateNode(unsigned int,unsigned int)\n");
+    "    infomap::StateNetwork::addStateNode(unsigned int,unsigned int)\n"
+    "    infomap::StateNetwork::addStateNode(unsigned int,unsigned int,std::string)\n");
   return 0;
 }
 
@@ -57297,7 +57377,7 @@ fail:
 }
 
 
-SWIGINTERN PyObject *_wrap_InfomapWrapper_addStateNode(PyObject *self, PyObject *args) {
+SWIGINTERN PyObject *_wrap_InfomapWrapper_addStateNode__SWIG_0(PyObject *self, Py_ssize_t nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
   infomap::InfomapWrapper *arg1 = 0 ;
   unsigned int arg2 ;
@@ -57308,10 +57388,9 @@ SWIGINTERN PyObject *_wrap_InfomapWrapper_addStateNode(PyObject *self, PyObject 
   int ecode2 = 0 ;
   unsigned int val3 ;
   int ecode3 = 0 ;
-  PyObject *swig_obj[3] ;
   
   (void)self;
-  if (!SWIG_Python_UnpackTuple(args, "InfomapWrapper_addStateNode", 3, 3, swig_obj)) SWIG_fail;
+  if ((nobjs < 3) || (nobjs > 3)) SWIG_fail;
   res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__InfomapWrapper, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
     SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "InfomapWrapper_addStateNode" "', argument " "1"" of type '" "infomap::InfomapWrapper *""'"); 
@@ -57338,6 +57417,123 @@ SWIGINTERN PyObject *_wrap_InfomapWrapper_addStateNode(PyObject *self, PyObject 
   return resultobj;
 fail:
   return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_InfomapWrapper_addStateNode__SWIG_1(PyObject *self, Py_ssize_t nobjs, PyObject **swig_obj) {
+  PyObject *resultobj = 0;
+  infomap::InfomapWrapper *arg1 = 0 ;
+  unsigned int arg2 ;
+  unsigned int arg3 ;
+  std::string arg4 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  unsigned int val2 ;
+  int ecode2 = 0 ;
+  unsigned int val3 ;
+  int ecode3 = 0 ;
+  
+  (void)self;
+  if ((nobjs < 4) || (nobjs > 4)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__InfomapWrapper, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "InfomapWrapper_addStateNode" "', argument " "1"" of type '" "infomap::InfomapWrapper *""'"); 
+  }
+  arg1 = reinterpret_cast< infomap::InfomapWrapper * >(argp1);
+  ecode2 = SWIG_AsVal_unsigned_SS_int(swig_obj[1], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "InfomapWrapper_addStateNode" "', argument " "2"" of type '" "unsigned int""'");
+  } 
+  arg2 = static_cast< unsigned int >(val2);
+  ecode3 = SWIG_AsVal_unsigned_SS_int(swig_obj[2], &val3);
+  if (!SWIG_IsOK(ecode3)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "InfomapWrapper_addStateNode" "', argument " "3"" of type '" "unsigned int""'");
+  } 
+  arg3 = static_cast< unsigned int >(val3);
+  {
+    std::string *ptr = (std::string *)0;
+    int res = SWIG_AsPtr_std_string(swig_obj[3], &ptr);
+    if (!SWIG_IsOK(res) || !ptr) {
+      SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "InfomapWrapper_addStateNode" "', argument " "4"" of type '" "std::string""'"); 
+    }
+    arg4 = *ptr;
+    if (SWIG_IsNewObj(res)) delete ptr;
+  }
+  {
+    try {
+      (arg1)->addStateNode(arg2,arg3,SWIG_STD_MOVE(arg4));
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_InfomapWrapper_addStateNode(PyObject *self, PyObject *args) {
+  Py_ssize_t argc;
+  PyObject *argv[5] = {
+    0
+  };
+  
+  if (!(argc = SWIG_Python_UnpackTuple(args, "InfomapWrapper_addStateNode", 0, 4, argv))) SWIG_fail;
+  --argc;
+  if (argc == 3) {
+    int _v = 0;
+    void *vptr = 0;
+    int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_infomap__InfomapWrapper, 0);
+    _v = SWIG_CheckState(res);
+    if (_v) {
+      {
+        int res = SWIG_AsVal_unsigned_SS_int(argv[1], NULL);
+        _v = SWIG_CheckState(res);
+      }
+      if (_v) {
+        {
+          int res = SWIG_AsVal_unsigned_SS_int(argv[2], NULL);
+          _v = SWIG_CheckState(res);
+        }
+        if (_v) {
+          return _wrap_InfomapWrapper_addStateNode__SWIG_0(self, argc, argv);
+        }
+      }
+    }
+  }
+  if (argc == 4) {
+    int _v = 0;
+    void *vptr = 0;
+    int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_infomap__InfomapWrapper, 0);
+    _v = SWIG_CheckState(res);
+    if (_v) {
+      {
+        int res = SWIG_AsVal_unsigned_SS_int(argv[1], NULL);
+        _v = SWIG_CheckState(res);
+      }
+      if (_v) {
+        {
+          int res = SWIG_AsVal_unsigned_SS_int(argv[2], NULL);
+          _v = SWIG_CheckState(res);
+        }
+        if (_v) {
+          int res = SWIG_AsPtr_std_string(argv[3], (std::string**)(0));
+          _v = SWIG_CheckState(res);
+          if (_v) {
+            return _wrap_InfomapWrapper_addStateNode__SWIG_1(self, argc, argv);
+          }
+        }
+      }
+    }
+  }
+  
+fail:
+  SWIG_Python_RaiseOrModifyTypeError("Wrong number or type of arguments for overloaded function 'InfomapWrapper_addStateNode'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    infomap::InfomapWrapper::addStateNode(unsigned int,unsigned int)\n"
+    "    infomap::InfomapWrapper::addStateNode(unsigned int,unsigned int,std::string)\n");
+  return 0;
 }
 
 

@@ -1205,7 +1205,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
                 else:
                     self.add_node(*node)
 
-    def add_state_node(self, state_id: int, node_id: int) -> None:
+    def add_state_node(self, state_id: int, node_id: int, name: str | None = None) -> None:
         """Add a state node.
 
         Notes
@@ -1218,8 +1218,13 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         state_id : int
         node_id : int
             Id of the physical node the state node should be added to.
+        name : str, optional
+            Name of the state node itself, as opposed to the physical node.
         """
-        self._core.addStateNode(state_id, node_id)
+        if name:
+            self._core.addStateNode(state_id, node_id, name)
+        else:
+            self._core.addStateNode(state_id, node_id)
 
     def add_state_nodes(self, state_nodes: Any) -> None:
         """Add state nodes.
@@ -1257,8 +1262,9 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         Parameters
         ----------
         state_nodes : iterable of tuples or dict of int: int
-            Iterable of tuples of the form ``(state_id, node_id)``
-            or dict of the form ``{state_id: node_id}``.
+            Iterable of tuples of the form ``(state_id, node_id)`` or
+            ``(state_id, node_id, name)``, or dict of the form
+            ``{state_id: node_id}``.
         """
         # Gate on the mapping protocol instead of catching AttributeError
         # around the loop: an AttributeError raised mid-iteration inside the

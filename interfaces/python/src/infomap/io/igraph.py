@@ -213,7 +213,8 @@ def add_igraph_graph(
             )
     elif is_state_network:
         for vertex_id in vertices:
-            infomap.add_state_node(vertex_id, phys[vertex_id])
+            name = names[vertex_id] if names is not None else None
+            infomap.add_state_node(vertex_id, phys[vertex_id], name=name)
     else:
         for vertex_id in vertices:
             name = names[vertex_id] if names is not None else None

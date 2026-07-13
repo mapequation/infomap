@@ -307,18 +307,27 @@ InfomapClass <- R6::R6Class(
     #' @description Add a state node.
     #' @param state_id Integer state node id.
     #' @param node_id Integer physical node id.
-    add_state_node = function(state_id, node_id) {
-      private$.swig$addStateNode(as.integer(state_id), as.integer(node_id))
+    #' @param name Optional name of the state node itself, as opposed to the
+    #'   physical node.
+    add_state_node = function(state_id, node_id, name = NULL) {
+      id <- as.integer(state_id)
+      phys_id <- as.integer(node_id)
+      if (!is.null(name)) {
+        private$.swig$addStateNode(id, phys_id, as.character(name))
+      } else {
+        private$.swig$addStateNode(id, phys_id)
+      }
       invisible(self)
     },
 
     #' @description Add many state nodes at once.
-    #' @param state_nodes A list of `c(state_id, node_id)` vectors, or a
-    #'   named list/vector mapping `state_id` to `node_id`.
+    #' @param state_nodes A list of `c(state_id, node_id)` or
+    #'   `c(state_id, node_id, name)` vectors, or a named list/vector mapping
+    #'   `state_id` to `node_id`.
     add_state_nodes = function(state_nodes) {
       if (is.null(names(state_nodes))) {
         for (entry in state_nodes) {
-          self$add_state_node(entry[[1L]], entry[[2L]])
+          do.call(self$add_state_node, as.list(entry))
         }
       } else {
         for (state_str in names(state_nodes)) {
@@ -841,7 +850,13 @@ InfomapClass <- R6::R6Class(
       has_layer <- length(layer_id) == 1L &&
         layer_id %in% igraph::vertex_attr_names(g)
 
-      vertex_names <- igraph::V(g)$name
+      # Only a real igraph "name" attribute should become a state node's name;
+      # unlike physical nodes (named below with a stringified-id fallback),
+      # state names are optional metadata, so an absent attribute must leave
+      # them unset rather than assigning synthetic "1", "2", ... names.
+      raw_vertex_names <- igraph::V(g)$name
+
+      vertex_names <- raw_vertex_names
       if (is.null(vertex_names)) {
         vertex_names <- as.character(seq_len(igraph::vcount(g)))
       }
@@ -874,7 +889,11 @@ InfomapClass <- R6::R6Class(
         # Multilayer state network.
         layers <- as.integer(igraph::vertex_attr(g, layer_id))
         for (i in seq_len(igraph::vcount(g))) {
-          self$add_state_node(vertex_ids[i], phys[i])
+          if (is.character(raw_vertex_names)) {
+            self$add_state_node(vertex_ids[i], phys[i], name = raw_vertex_names[i])
+          } else {
+            self$add_state_node(vertex_ids[i], phys[i])
+          }
         }
 
         if (isTRUE(multilayer_inter_intra_format)) {
@@ -929,7 +948,11 @@ InfomapClass <- R6::R6Class(
       } else if (has_phys) {
         # State network without explicit layer info.
         for (i in seq_len(igraph::vcount(g))) {
-          self$add_state_node(vertex_ids[i], phys[i])
+          if (is.character(raw_vertex_names)) {
+            self$add_state_node(vertex_ids[i], phys[i], name = raw_vertex_names[i])
+          } else {
+            self$add_state_node(vertex_ids[i], phys[i])
+          }
         }
         self$add_links(cbind(edges[, 1L], edges[, 2L], weights))
       } else {
