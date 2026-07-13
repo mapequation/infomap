@@ -251,11 +251,14 @@ def _is_dense_adjacency_matrix(obj: Any) -> bool:
     A dense ``N x N`` adjacency matrix (e.g. ``networkx.to_numpy_array(g)`` or a
     similarity matrix) is a natural but *unsupported* input: handed to
     ``add_links`` it reads each row as a ``(source, target[, weight])`` link,
-    silently partitioning a different graph. A ``(2, E)`` integer edge index and
-    a float ``(E, 2|3)`` link matrix are matched before this check, so a
-    *square ``N >= 3``* 2-D array reaching here is almost certainly an adjacency
-    matrix. Detected duck-typed (NumPy, dense SciPy, array-api, torch) so we
-    never import NumPy.
+    silently partitioning a different graph. A ``(2, E)`` integer edge index is
+    matched earlier, and a *non-square* float link matrix (the usual ``(E, 2|3)``
+    shape) falls through to the link-iterable path, so the 2-D arrays reaching
+    this check are the square ones (``N x N``, ``N >= 3``). A square array is
+    genuinely ambiguous -- an adjacency matrix, or exactly ``N`` ``(source,
+    target[, weight])`` link rows -- so it is rejected in favour of the
+    unambiguous forms rather than silently misread. Detected duck-typed (NumPy,
+    dense SciPy, array-api, torch) so we never import NumPy.
 
     A 2-row array is deliberately *not* flagged: ``(2, E)`` is the documented
     edge-index orientation, so a ``2 x 2`` is too degenerate to disambiguate

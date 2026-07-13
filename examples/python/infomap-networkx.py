@@ -118,7 +118,7 @@ for node in result.nodes(states=True):
     print(
         node.node_id, node.module_id, f"{node.flow:.2f}", node.state_id, node.layer_id
     )
-# 1 1 0.25 0 1
-# 2 1 0.25 1 1
-# 2 2 0.25 2 2
-# 3 2 0.25 3 2
+# 2 1 0.25 21 1
+# 1 1 0.25 11 1
+# 2 2 0.25 22 2
+# 3 2 0.25 32 2
