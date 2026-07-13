@@ -9,7 +9,7 @@ Prefer this shape unless the user is maintaining older code:
 - `infomap.run(input, *, options=None, seed=..., num_trials=..., ...)` — the one-call front door. `input` can be a NetworkX/igraph graph, a SciPy sparse matrix, a `(2, E)` edge index, a file path, or an iterable of `(u, v[, w])` links. Returns an immutable `Result`.
 - `infomap.Network.from_networkx / from_igraph / from_scipy_sparse_matrix / from_edge_index / from_file` — build a network explicitly when the input needs non-default reading (a different weight attribute, explicit directedness, a state/multilayer layout), then `network.run(options=...)`.
 - `infomap.Options(...)` — a reusable dataclass-style configuration; the canonical carrier for engine options. Pass it as `infomap.run(input, options=Options(...))`.
-- `infomap.Result` — the immutable result. Read scalars as **properties** (`result.codelength`, `result.num_top_modules`) and collections as **methods** (`result.modules()`, `result.nodes()`, `result.tree()`, `result.to_dataframe()`). Exceptions worth memorizing: `result.names` / `result.state_names` / `result.codelengths` are collection-valued **properties** (no parentheses — calling `result.names()` raises a `TypeError` reminding you it is a property, read without parentheses), and `result.effective_num_modules(depth)` is a scalar read as a **method** because it takes a depth (unlike the property-shaped `result.effective_num_top_modules`).
+- `infomap.Result` — the immutable result. Read scalars as **properties** (`result.codelength`, `result.num_top_modules`) and collections as **methods** (`result.modules()`, `result.nodes()`, `result.tree()`, `result.to_dataframe()`). Exceptions worth memorizing: `result.names` / `result.state_names` / `result.codelengths` are collection-valued **properties** (no parentheses — calling `result.names()` raises a plain `TypeError`, `'dict' object is not callable`), and `result.effective_num_modules(depth)` is a scalar read as a **method** because it takes a depth (unlike the property-shaped `result.effective_num_top_modules`).
 
 The stateful `infomap.Infomap` class still works and is a fine builder for incremental construction, but read results off the `Result` that `im.run()` returns — not off the instance. Instance accessors such as `im.modules`, `im.nodes`, `im.codelength`, and `im.get_modules()` are deprecated and leave in 3.0; note also that `im.modules`/`im.nodes` are *properties* while `result.modules()`/`result.nodes()` are *methods*.
 
@@ -29,7 +29,7 @@ result = infomap.run(
 )
 ```
 
-On the functional `infomap.run()` and `Network.run()`, passing those options as bare keywords works and is not deprecated (it forwards to `Options`), so `infomap.run(g, regularized=True)` is fine. Prefer `infomap.run(g, options=Options(regularized=True))` when the configuration is reused across runs or you want it validated up front. On the stateful `Infomap()` / `Infomap.run()` the same advanced keywords are pending-deprecated and leave those signatures in 3.0 — carry them via `Options` there.
+Prefer `infomap.run(g, options=Options(regularized=True))` when the configuration is reused across runs or you want it validated up front; a bare `infomap.run(g, regularized=True)` is fine for a one-off.
 
 The `options=` carrier is accepted on the stateful `Infomap()` and `Infomap.run()` as well, not just `infomap.run()` and `Network.run()` — e.g. `im.run(options=Options(regularized=True))` — so the stateful builder has the same warning-free path (a bare keyword set to a non-default value still overrides the carrier).
 
@@ -95,7 +95,7 @@ To write the mapequation.org native files in Python, call the writers on the `Re
 
 - `result.write_tree(path)` — `.tree`
 - `result.write_flow_tree(path)` — `.ftree`
-- `result.write_clu(path, depth_level=1)` — `.clu` at a chosen hierarchy depth
+- `result.write_clu(path, depth=1)` — `.clu` at a chosen hierarchy depth
 - `network.write_pajek(path)` — Pajek serialization of the input network
 - `network.write_state_network(path)` — the internal state/multilayer network
 

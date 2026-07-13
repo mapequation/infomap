@@ -216,32 +216,15 @@ close to the planted five.
 
 ## API pointers
 
-Enable it via `options=infomap.Options(regularized=True)` on {func}`infomap.run`
-to activate the Bayesian map equation. One optional keyword controls the prior
-strength:
-
-- `regularized=True` enables the Bayesian regularized map equation, which adds a
-  fully connected prior network to reduce overfitting to missing links. It works
-  for undirected, weighted, and directed networks
-  ({cite:p}`smiljanic2020missing` for undirected unweighted;
-  {cite:p}`smiljanic2021incomplete` for weighted and directed).
-- `regularization_strength=` (float, default `1.0`) is the constant $C$ scaling
-  the prior strength $\lambda = C\,\ln N / N$. The default places the prior at the
-  Erdős–Rényi
-  connectivity threshold. Lower values (e.g. `0.5`) are more permissive and find
-  more communities; higher values (e.g. `2.0`) impose a stronger prior and tend
-  toward fewer modules. Start with the default and adjust only when you have
-  reason to trust community boundaries in sparse data ($C < 1$) or to suppress
-  them harder ($C > 1$).
-
-The common keywords (`num_trials`, `seed`, `two_level`, `directed`) compose
-freely alongside it, e.g.
-`infomap.run(g, options=infomap.Options(regularized=True), num_trials=20, seed=123)`.
-
-The run metrics — {attr}`~infomap.Result.codelength` (Bayesian-corrected under
-regularization), {attr}`~infomap.Result.num_top_modules`, and
-{meth}`~infomap.Result.modules` — are covered in
-{doc}`/working-with-infomap/results-and-iteration`.
+- {func}`infomap.run` with `options=Options(regularized=True)` activates the
+  Bayesian regularized map equation; `regularization_strength` (the constant $C$
+  above, default `1.0`) tunes the prior. It applies to undirected, weighted, and
+  directed networks ({cite:p}`smiljanic2020missing`;
+  {cite:p}`smiljanic2021incomplete`).
+- Run metrics — {attr}`~infomap.Result.codelength` (Bayesian-corrected under
+  regularization), {attr}`~infomap.Result.num_top_modules`,
+  {meth}`~infomap.Result.modules` — are covered in
+  {doc}`/working-with-infomap/results-and-iteration`.
 
 ## Going deeper
 

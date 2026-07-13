@@ -27,7 +27,7 @@ The stable CLI pattern is:
 Infomap network_file out_directory [options]
 ```
 
-When the binary name is uncertain, write examples with `INFOMAP_BIN` and tell the agent to verify current option names from help before running.
+When the binary name is uncertain, write examples with `INFOMAP_BIN` and verify current option names from help before running.
 
 ## Generating commands
 

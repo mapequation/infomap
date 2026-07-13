@@ -81,9 +81,8 @@ argument and directedness therefore differ by source:
 | SciPy sparse | `weighted` (bool) | `directed=` (default `False`) |
 | `(2, E)` edge index | `edge_weight` (array) | `directed=` (default `True`) |
 
-Because NetworkX and igraph carry directedness on the graph object, they take
-no ``directed`` argument; SciPy and the edge index do, and they default
-differently, so pass ``directed=`` explicitly when it matters.
+SciPy and edge-index inputs default differently (undirected vs directed), so
+set ``directed=`` explicitly on them when direction matters.
 
 ## NetworkX
 

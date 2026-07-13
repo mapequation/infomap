@@ -216,9 +216,7 @@ sc.pl.umap(
 
 ## API pointers
 
-{func}`infomap.tl.infomap` is the AnnData-aware helper (it reads
-`adata.obsp["connectivities"]` by default and writes `adata.obs[key_added]` /
-`adata.uns[key_added]`, including `["codelength"]`); its keywords are below. For
+{func}`infomap.tl.infomap` is the AnnData-aware helper (keywords below). For
 hierarchical output or flow values, partition the graph directly with
 {func}`infomap.run` (or {meth}`~infomap.Network.from_scipy_sparse_matrix` for
 non-default loading) and read the {class}`~infomap.Result` — see

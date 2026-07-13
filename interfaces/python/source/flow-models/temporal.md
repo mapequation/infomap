@@ -225,23 +225,16 @@ generalises to higher-order and temporal networks {cite:p}`holmgren2023change`.
 
 ## API pointers
 
-- {meth}`infomap.Network.add_multilayer_intra_link` adds an edge within a single
-  time-window layer: `add_multilayer_intra_link(layer_id, source, target,
-  weight=1.0)`.
-- {meth}`infomap.Network.add_multilayer_inter_link` adds an explicit inter-layer
-  transition for a physical node: `add_multilayer_inter_link(source_layer_id,
-  node_id, target_layer_id, weight=1.0)`. Use it when you have empirical coupling
-  weights; omit it to let Infomap generate transitions from
-  `multilayer_relax_rate`.
-- {meth}`infomap.Network.add_multilayer_link` adds a fully specified multilayer
-  link `(layer, node) -> (layer, node)` when you want complete control over the
-  state-node graph.
-- {meth}`infomap.Result.nodes` with `states=True` iterates state nodes; each
-  exposes `.node_id`, `.layer_id`, and `.module_id` to reconstruct per-layer
-  community assignments.
-- {meth}`infomap.Result.modules` returns a `{state_id: module_id}` dict when
-  called with `states=True`; use `result.nodes(states=True)` for the layer-aware
-  view shown in the worked example.
+- Temporal networks use the multilayer construction API — see
+  {doc}`/flow-models/multilayer`'s pointers for
+  {meth}`~infomap.Network.add_multilayer_intra_link`,
+  {meth}`~infomap.Network.add_multilayer_inter_link`, and
+  {meth}`~infomap.Network.add_multilayer_link`. Omit the explicit inter-layer
+  links to let Infomap couple adjacent windows from `multilayer_relax_rate`.
+- Read per-window assignments with {meth}`~infomap.Result.nodes` (`states=True`;
+  each state node carries `.node_id`, `.layer_id`, `.module_id`) or
+  {meth}`~infomap.Result.modules` (`states=True` → `{state_id: module_id}`), as
+  in the worked example above.
 
 ## Options
 

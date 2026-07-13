@@ -153,12 +153,11 @@ A few conventions that trip people up, each expanded in the :doc:`FAQ <faq>`:
   ``result.codelength`` (no ``()``) but ``result.modules()`` (with ``()``). The
   label and per-trial tables (``result.names`` / ``state_names`` /
   ``codelengths``) are intrinsic results, so they read as properties too.
-- **Five common options are direct keywords** on :func:`infomap.run`: ``seed``,
-  ``num_trials``, ``two_level``, ``directed``, ``markov_time``. Any other engine
-  option can be passed as a keyword too (it forwards to :class:`~infomap.Options`);
-  prefer ``Options`` for a reusable or validated configuration.
-  (``options`` and ``initial_partition`` are structural arguments to ``run``, not
-  engine options, so they are keywords too but are not part of "the five".)
+- **Five common options are direct keywords; the rest ride ``Options``.** The
+  five are listed above; any other engine option also works as a bare keyword
+  (it forwards to :class:`~infomap.Options`). ``options`` and
+  ``initial_partition`` are *structural* arguments to ``run``, not engine
+  options and not part of "the five".
 - **Output flags are inert on the library surface.** ``Options(tree=True)``
   writes nothing; write from the ``Result`` (``write_tree`` / ``write_clu``) or
   the ``Network`` (``write_pajek``).

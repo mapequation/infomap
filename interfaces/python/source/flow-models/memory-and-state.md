@@ -303,13 +303,12 @@ a state network are:
 
 ## API pointers
 
-Build state nodes with {meth}`~infomap.Network.add_state_node` and link them with
-{meth}`~infomap.Network.add_link` (both take state ids; add labels with
-{meth}`~infomap.Network.set_name`). Read a higher-order run off
-{class}`~infomap.Result`: {attr}`~infomap.Result.have_memory`, and
-{meth}`~infomap.Result.modules` / {meth}`~infomap.Result.nodes` with
-`states=True` (each node exposes `.node_id`, `.state_id`, `.module_id`, `.flow`;
-group by `node_id` for overlap, as in the worked example above). See
+Build state input with {meth}`~infomap.Network.add_state_node` /
+{meth}`~infomap.Network.add_state_nodes` and {meth}`~infomap.Network.add_link`
+(label with {meth}`~infomap.Network.set_name`); read it off
+{class}`~infomap.Result` via {attr}`~infomap.Result.have_memory` and
+{meth}`~infomap.Result.modules` / {meth}`~infomap.Result.nodes` (`states=True`).
+The `states=True`/`states=False` shape is in the Options table above; see
 {doc}`/working-with-infomap/results-and-iteration` for the accessors.
 
 ## Going deeper

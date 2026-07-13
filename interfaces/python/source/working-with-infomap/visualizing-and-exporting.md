@@ -22,18 +22,12 @@ and the native `.tree` / `.clu` formats written straight off the
 
 ## A picture and a file
 
-The partition lives in memory on the {class}`~infomap.Result`. This chapter
-covers two ways to get it out:
+The partition lives in memory on the {class}`~infomap.Result`. Two ways to get
+it out:
 
 1. **A picture**: a network layout where every module gets a distinct colour.
 2. **Persistent output**: files that other tools and scripts can open without
    re-running the algorithm.
-
-The in-memory export turns the result into an annotated graph with
-{func}`infomap.to_networkx` or {func}`infomap.to_igraph`, which you then write
-with the graph library's own writer (GraphML for both; GEXF is NetworkX-only).
-The {class}`~infomap.Result` writes the engine's native text formats, `.tree`
-and `.clu`, directly.
 
 ## Export formats
 
@@ -220,7 +214,7 @@ for line in data_lines(clu_path):
 The `.tree` path column uses colon-separated integers: `1:3` means the third
 node listed inside top module 1. For hierarchical runs with more than two levels
 you will see paths like `2:1:4`. The `.clu` format uses the top-level module
-number only; pass `depth_level` to `write_clu` to report a different level.
+number only; pass `depth` to `write_clu` to report a different level.
 `result.write_flow_tree` writes a `.ftree` file that adds intra-module link
 flows.
 
@@ -257,7 +251,7 @@ print("Temp directory removed.")
 - **Alluvial diagrams live on mapequation.org, not in this package.** Write a
   `.ftree` and open it in the Network Navigator; the docs helper draws static
   module-coloured layouts only.
-- **`.clu` records the top level.** Pass `depth_level` to `write_clu` for a
+- **`.clu` records the top level.** Pass `depth` to `write_clu` for a
   deeper level; `.tree` / `.ftree` carry the full hierarchy.
 - **`to_networkx` builds a new graph, not a copy of yours.** Its nodes are the
   result's (state) nodes keyed by `state_id`, so your original graph is left
@@ -293,7 +287,7 @@ print("Temp directory removed.")
 - {meth}`infomap.Result.write_tree` writes a `.tree` file with the hierarchical
   path, flow, name, and node id for every node.
 - {meth}`infomap.Result.write_clu` writes a `.clu` flat table; pass
-  `depth_level` to choose the level.
+  `depth` to choose the level.
 - {meth}`infomap.Result.write_flow_tree` writes a `.ftree` file that adds
   intra-module link flows.
 - {meth}`infomap.Result.write_csv`, {meth}`infomap.Result.write_json`, and
