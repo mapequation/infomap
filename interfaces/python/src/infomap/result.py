@@ -71,7 +71,7 @@ _LEGACY_ACCESSOR_HINTS = {
     "get_dataframe": "result.to_dataframe()",
     "get_effective_num_modules": "result.effective_num_modules()",
     "flow_links": 'result.links(data="flow")',
-    "physical_tree": "result.tree()",
+    "physical_tree": "result.tree(states=False)",
     "physical_nodes": "result.nodes(states=False)",
 }
 

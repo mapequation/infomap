@@ -386,9 +386,9 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
 
             .. deprecated:: 2.15
                 This keyword leaves the ``Infomap`` signature in 3.0. Use
-                Result.write_tree/write_flow_tree/write_clu (write_clu takes
-                depth_level) or Network.write_pajek/write_state_network. The flag only
-                acts when an output directory is passed via the raw args escape hatch.
+                Result.write_tree/write_flow_tree/write_clu (write_clu takes depth) or
+                Network.write_pajek/write_state_network. The flag only acts when an
+                output directory is passed via the raw args escape hatch.
         no_file_output : bool, optional
             Do not write output files.
 
@@ -398,9 +398,9 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
 
             .. deprecated:: 2.15
                 This keyword leaves the ``Infomap`` signature in 3.0. Use
-                Result.write_tree/write_flow_tree/write_clu (write_clu takes
-                depth_level) or Network.write_pajek/write_state_network. The flag only
-                acts when an output directory is passed via the raw args escape hatch.
+                Result.write_tree/write_flow_tree/write_clu (write_clu takes depth) or
+                Network.write_pajek/write_state_network. The flag only acts when an
+                output directory is passed via the raw args escape hatch.
         tree : bool, optional
             Write the modular hierarchy to a tree file. Enabled by default when no other
             output format is selected.
@@ -411,9 +411,9 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
 
             .. deprecated:: 2.15
                 This keyword leaves the ``Infomap`` signature in 3.0. Use
-                Result.write_tree/write_flow_tree/write_clu (write_clu takes
-                depth_level) or Network.write_pajek/write_state_network. The flag only
-                acts when an output directory is passed via the raw args escape hatch.
+                Result.write_tree/write_flow_tree/write_clu (write_clu takes depth) or
+                Network.write_pajek/write_state_network. The flag only acts when an
+                output directory is passed via the raw args escape hatch.
         ftree : bool, optional
             Write the modular hierarchy and aggregated links between nested modules to
             an ftree file. Used by Network Navigator.
@@ -424,9 +424,9 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
 
             .. deprecated:: 2.15
                 This keyword leaves the ``Infomap`` signature in 3.0. Use
-                Result.write_tree/write_flow_tree/write_clu (write_clu takes
-                depth_level) or Network.write_pajek/write_state_network. The flag only
-                acts when an output directory is passed via the raw args escape hatch.
+                Result.write_tree/write_flow_tree/write_clu (write_clu takes depth) or
+                Network.write_pajek/write_state_network. The flag only acts when an
+                output directory is passed via the raw args escape hatch.
         clu : bool, optional
             Write top-level module ids for each node to a clu file.
 
@@ -436,9 +436,9 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
 
             .. deprecated:: 2.15
                 This keyword leaves the ``Infomap`` signature in 3.0. Use
-                Result.write_tree/write_flow_tree/write_clu (write_clu takes
-                depth_level) or Network.write_pajek/write_state_network. The flag only
-                acts when an output directory is passed via the raw args escape hatch.
+                Result.write_tree/write_flow_tree/write_clu (write_clu takes depth) or
+                Network.write_pajek/write_state_network. The flag only acts when an
+                output directory is passed via the raw args escape hatch.
         clu_level : int, optional
             With --clu or --output clu, write module ids at this depth from the root.
             Use -1 for bottom-level modules.
@@ -449,9 +449,9 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
 
             .. deprecated:: 2.15
                 This keyword leaves the ``Infomap`` signature in 3.0. Use
-                Result.write_tree/write_flow_tree/write_clu (write_clu takes
-                depth_level) or Network.write_pajek/write_state_network. The flag only
-                acts when an output directory is passed via the raw args escape hatch.
+                Result.write_tree/write_flow_tree/write_clu (write_clu takes depth) or
+                Network.write_pajek/write_state_network. The flag only acts when an
+                output directory is passed via the raw args escape hatch.
         output : sequence of str, optional
             Write selected output formats as a comma-separated list without spaces, e.g.
             -o clu,tree,ftree. Options: clu, tree, ftree, newick, json, csv, network,
@@ -463,9 +463,9 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
 
             .. deprecated:: 2.15
                 This keyword leaves the ``Infomap`` signature in 3.0. Use
-                Result.write_tree/write_flow_tree/write_clu (write_clu takes
-                depth_level) or Network.write_pajek/write_state_network. The flag only
-                acts when an output directory is passed via the raw args escape hatch.
+                Result.write_tree/write_flow_tree/write_clu (write_clu takes depth) or
+                Network.write_pajek/write_state_network. The flag only acts when an
+                output directory is passed via the raw args escape hatch.
         hide_bipartite_nodes : bool, optional
             Hide bipartite nodes in output by projecting the solution to primary nodes.
 
@@ -484,9 +484,9 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
 
             .. deprecated:: 2.15
                 This keyword leaves the ``Infomap`` signature in 3.0. Use
-                Result.write_tree/write_flow_tree/write_clu (write_clu takes
-                depth_level) or Network.write_pajek/write_state_network. The flag only
-                acts when an output directory is passed via the raw args escape hatch.
+                Result.write_tree/write_flow_tree/write_clu (write_clu takes depth) or
+                Network.write_pajek/write_state_network. The flag only acts when an
+                output directory is passed via the raw args escape hatch.
         no_overwrite : bool, optional
             Fail with an output error if any target output file already exists. By
             default existing files are replaced.
@@ -497,9 +497,9 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
 
             .. deprecated:: 2.15
                 This keyword leaves the ``Infomap`` signature in 3.0. Use
-                Result.write_tree/write_flow_tree/write_clu (write_clu takes
-                depth_level) or Network.write_pajek/write_state_network. The flag only
-                acts when an output directory is passed via the raw args escape hatch.
+                Result.write_tree/write_flow_tree/write_clu (write_clu takes depth) or
+                Network.write_pajek/write_state_network. The flag only acts when an
+                output directory is passed via the raw args escape hatch.
         print_config_fingerprint : bool, optional
             Print the canonical configuration fingerprint and exit.
 

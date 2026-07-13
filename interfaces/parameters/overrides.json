@@ -199,7 +199,7 @@
         "python": {
           "action": "args-only",
           "inertWithoutOutputDir": true,
-          "replacement": "Use Result.write_tree/write_flow_tree/write_clu (write_clu takes depth_level) or Network.write_pajek/write_state_network. The flag only acts when an output directory is passed via the raw args escape hatch."
+          "replacement": "Use Result.write_tree/write_flow_tree/write_clu (write_clu takes depth) or Network.write_pajek/write_state_network. The flag only acts when an output directory is passed via the raw args escape hatch."
         }
       },
       "ts-single-threaded-worker": {

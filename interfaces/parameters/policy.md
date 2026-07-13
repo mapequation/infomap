@@ -88,16 +88,16 @@ Actions: **keep** = First-class option on the surface in 3.0 (the default for ev
 
 ## Replacement guidance
 
-- `--out-name` (Python, args-only): Use Result.write_tree/write_flow_tree/write_clu (write_clu takes depth_level) or Network.write_pajek/write_state_network. The flag only acts when an output directory is passed via the raw args escape hatch.
-- `--no-file-output` (Python, args-only): Use Result.write_tree/write_flow_tree/write_clu (write_clu takes depth_level) or Network.write_pajek/write_state_network. The flag only acts when an output directory is passed via the raw args escape hatch.
-- `--tree` (Python, args-only): Use Result.write_tree/write_flow_tree/write_clu (write_clu takes depth_level) or Network.write_pajek/write_state_network. The flag only acts when an output directory is passed via the raw args escape hatch.
-- `--ftree` (Python, args-only): Use Result.write_tree/write_flow_tree/write_clu (write_clu takes depth_level) or Network.write_pajek/write_state_network. The flag only acts when an output directory is passed via the raw args escape hatch.
-- `--clu` (Python, args-only): Use Result.write_tree/write_flow_tree/write_clu (write_clu takes depth_level) or Network.write_pajek/write_state_network. The flag only acts when an output directory is passed via the raw args escape hatch.
-- `--clu-level` (Python, args-only): Use Result.write_tree/write_flow_tree/write_clu (write_clu takes depth_level) or Network.write_pajek/write_state_network. The flag only acts when an output directory is passed via the raw args escape hatch.
-- `--output` (Python, args-only): Use Result.write_tree/write_flow_tree/write_clu (write_clu takes depth_level) or Network.write_pajek/write_state_network. The flag only acts when an output directory is passed via the raw args escape hatch.
+- `--out-name` (Python, args-only): Use Result.write_tree/write_flow_tree/write_clu (write_clu takes depth) or Network.write_pajek/write_state_network. The flag only acts when an output directory is passed via the raw args escape hatch.
+- `--no-file-output` (Python, args-only): Use Result.write_tree/write_flow_tree/write_clu (write_clu takes depth) or Network.write_pajek/write_state_network. The flag only acts when an output directory is passed via the raw args escape hatch.
+- `--tree` (Python, args-only): Use Result.write_tree/write_flow_tree/write_clu (write_clu takes depth) or Network.write_pajek/write_state_network. The flag only acts when an output directory is passed via the raw args escape hatch.
+- `--ftree` (Python, args-only): Use Result.write_tree/write_flow_tree/write_clu (write_clu takes depth) or Network.write_pajek/write_state_network. The flag only acts when an output directory is passed via the raw args escape hatch.
+- `--clu` (Python, args-only): Use Result.write_tree/write_flow_tree/write_clu (write_clu takes depth) or Network.write_pajek/write_state_network. The flag only acts when an output directory is passed via the raw args escape hatch.
+- `--clu-level` (Python, args-only): Use Result.write_tree/write_flow_tree/write_clu (write_clu takes depth) or Network.write_pajek/write_state_network. The flag only acts when an output directory is passed via the raw args escape hatch.
+- `--output` (Python, args-only): Use Result.write_tree/write_flow_tree/write_clu (write_clu takes depth) or Network.write_pajek/write_state_network. The flag only acts when an output directory is passed via the raw args escape hatch.
 - `--hide-bipartite-nodes` (Python, args-only): It projects the secondary (type-B) bipartite nodes out of what result.write_tree/write_clu emit, leaving the in-memory result covering both node types. Set it via Options and write from the Result to use it.
-- `--print-all-trials` (Python, args-only): Use Result.write_tree/write_flow_tree/write_clu (write_clu takes depth_level) or Network.write_pajek/write_state_network. The flag only acts when an output directory is passed via the raw args escape hatch.
-- `--no-overwrite` (Python, args-only): Use Result.write_tree/write_flow_tree/write_clu (write_clu takes depth_level) or Network.write_pajek/write_state_network. The flag only acts when an output directory is passed via the raw args escape hatch.
+- `--print-all-trials` (Python, args-only): Use Result.write_tree/write_flow_tree/write_clu (write_clu takes depth) or Network.write_pajek/write_state_network. The flag only acts when an output directory is passed via the raw args escape hatch.
+- `--no-overwrite` (Python, args-only): Use Result.write_tree/write_flow_tree/write_clu (write_clu takes depth) or Network.write_pajek/write_state_network. The flag only acts when an output directory is passed via the raw args escape hatch.
 - `--print-config-fingerprint` (Python, remove): A print-and-exit CLI diagnostic; run the infomap binary.
 - `--print-config-fingerprint` (R, remove): A print-and-exit CLI diagnostic; run the infomap binary.
 - `--trial-offset` (JS, hide): The JavaScript package runs Infomap in a single-threaded WASM worker: OpenMP scheduling, thread budgets, and multi-process trial sharding are meaningless there.

@@ -105,8 +105,8 @@ lazily on first access and then cached. The surface follows one convention:
   `result.effective_num_top_modules` / `result.effective_num_leaf_modules`
   properties.
 
-Reading a property like `result.names()` with parentheses raises a `TypeError`
-that points you to drop them.
+Reading a collection-valued property like `result.names` with parentheses
+raises a plain `TypeError` (`'dict' object is not callable`); drop them.
 
 A `Result` from an earlier run of a reused stateful {class}`~infomap.Infomap`
 raises if you read its node data after a later `run()`. The eagerly captured

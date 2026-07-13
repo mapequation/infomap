@@ -17,10 +17,11 @@ two tiers:
 - **Common tier** — the handful of options most runs touch (``seed``,
   ``num_trials``, ``two_level``, ``directed``, ``markov_time``). These stay on
   the :class:`Infomap` signatures.
-- **Advanced tier** — the long tail of tuning and I/O options. From 2.15 these
-  are ``.. deprecated::`` on the :class:`Infomap` signatures and leave them in
-  3.0. Most are *tuning* options that stay available — only their entry point
-  moves — so pass them through :class:`Options` instead::
+- **Advanced tier** — the long tail of tuning and I/O options. From 2.15 they
+  carry a versioned note on the :class:`Infomap` signatures and leave those
+  signatures in 3.0. Most are *tuning* options that stay available — only their
+  entry point moves, marked ``.. versionchanged:: 2.15`` — so pass them through
+  :class:`Options` instead::
 
       import infomap
 
