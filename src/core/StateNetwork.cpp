@@ -39,6 +39,12 @@ std::pair<StateNetwork::NodeMap::iterator, bool> StateNetwork::addStateNode(unsi
   return addStateNode(StateNode(id, physId));
 }
 
+std::pair<StateNetwork::NodeMap::iterator, bool> StateNetwork::addStateNode(unsigned int id, unsigned int physId, std::string name)
+{
+  m_higherOrderInputMethodCalled = true;
+  return addStateNode(StateNode(id, physId, std::move(name)));
+}
+
 std::pair<StateNetwork::NodeMap::iterator, bool> StateNetwork::addNode(unsigned int id)
 {
   return addStateNode(StateNode(id));

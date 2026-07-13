@@ -3135,8 +3135,8 @@ class InfomapWrapper(InfomapBase):
     def addPhysicalNode(self, *args):
         return _infomap.InfomapWrapper_addPhysicalNode(self, *args)
 
-    def addStateNode(self, id, physId):
-        return _infomap.InfomapWrapper_addStateNode(self, id, physId)
+    def addStateNode(self, *args):
+        return _infomap.InfomapWrapper_addStateNode(self, *args)
 
     def addLink(self, *args):
         return _infomap.InfomapWrapper_addLink(self, *args)

@@ -326,9 +326,12 @@ def add_networkx_graph(
                     1.0,
                 )
         else:
-            for state_label in nodes:
+            for state_label, state_name in g.nodes.data("name"):
+                node_name = state_label if is_string_id else state_name
                 infomap.add_state_node(
-                    node_map[state_label], phys_map[node_ids[state_label]]
+                    node_map[state_label],
+                    phys_map[node_ids[state_label]],
+                    name=node_name,
                 )
     else:
         for node, name in g.nodes.data("name"):

@@ -161,6 +161,7 @@ public:
   // Mutators
   std::pair<NodeMap::iterator, bool> addStateNode(const StateNode& node);
   std::pair<NodeMap::iterator, bool> addStateNode(unsigned int id, unsigned int physId);
+  std::pair<NodeMap::iterator, bool> addStateNode(unsigned int id, unsigned int physId, std::string name);
   std::pair<NodeMap::iterator, bool> addNode(unsigned int id);
   std::pair<NodeMap::iterator, bool> addNode(unsigned int id, std::string name);
   std::pair<NodeMap::iterator, bool> addNode(unsigned int id, double weight);

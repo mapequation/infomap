@@ -33911,6 +33911,68 @@ R_swig_StateNetwork_addStateNode__SWIG_1 ( SEXP self, SEXP id, SEXP physId, SEXP
 
 
 SWIGEXPORT SEXP
+R_swig_StateNetwork_addStateNode__SWIG_2 ( SEXP self, SEXP id, SEXP physId, SEXP name, SEXP s_swig_copy)
+{
+  {
+    SwigValueWrapper< std::pair< std::map< unsigned int,infomap::StateNetwork::StateNode,std::less< unsigned int >,std::allocator< std::pair< unsigned int const,infomap::StateNetwork::StateNode > > >::iterator,bool > > result;
+    infomap::StateNetwork *arg1 = 0 ;
+    unsigned int arg2 ;
+    unsigned int arg3 ;
+    std::string arg4 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int val2 ;
+    int ecode2 = 0 ;
+    int val3 ;
+    int ecode3 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_infomap__StateNetwork, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "StateNetwork_addStateNode" "', argument " "1"" of type '" "infomap::StateNetwork *""'"); 
+    }
+    arg1 = reinterpret_cast< infomap::StateNetwork * >(argp1);
+    ecode2 = SWIG_AsVal_int(id, &val2);
+    if (!SWIG_IsOK(ecode2)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "StateNetwork_addStateNode" "', argument " "2"" of type '" "unsigned int""'");
+    } 
+    arg2 = static_cast< unsigned int >(val2);
+    ecode3 = SWIG_AsVal_int(physId, &val3);
+    if (!SWIG_IsOK(ecode3)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "StateNetwork_addStateNode" "', argument " "3"" of type '" "unsigned int""'");
+    } 
+    arg3 = static_cast< unsigned int >(val3);
+    {
+      std::string *ptr = (std::string *)0;
+      int res = SWIG_AsPtr_std_string(name, &ptr);
+      if (!SWIG_IsOK(res) || !ptr) {
+        SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "StateNetwork_addStateNode" "', argument " "4"" of type '" "std::string""'"); 
+      }
+      arg4 = *ptr;
+      if (SWIG_IsNewObj(res)) delete ptr;
+    }
+    {
+      try {
+        result = (arg1)->addStateNode(arg2,arg3,SWIG_STD_MOVE(arg4));
+      } catch (const std::exception& e) {
+        SWIG_exception(SWIG_RuntimeError, e.what());
+      }
+    }
+    r_ans = SWIG_R_NewPointerObj((new std::pair< infomap::StateNetwork::NodeMap::iterator,bool >(result)), SWIGTYPE_p_std__pairT_std__mapT_unsigned_int_infomap__StateNetwork__StateNode_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__StateNode_t_t_t__iterator_bool_t, SWIG_POINTER_OWN |  0 );
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
 R_swig_StateNetwork_addNode__SWIG_0 ( SEXP self, SEXP id, SEXP s_swig_copy)
 {
   {
@@ -47642,7 +47704,7 @@ R_swig_InfomapWrapper_addPhysicalNode__SWIG_1 ( SEXP self, SEXP id)
 
 
 SWIGEXPORT SEXP
-R_swig_InfomapWrapper_addStateNode ( SEXP self, SEXP id, SEXP physId)
+R_swig_InfomapWrapper_addStateNode__SWIG_0 ( SEXP self, SEXP id, SEXP physId)
 {
   {
     infomap::InfomapWrapper *arg1 = 0 ;
@@ -47676,6 +47738,67 @@ R_swig_InfomapWrapper_addStateNode ( SEXP self, SEXP id, SEXP physId)
     {
       try {
         (arg1)->addStateNode(arg2,arg3);
+      } catch (const std::exception& e) {
+        SWIG_exception(SWIG_RuntimeError, e.what());
+      }
+    }
+    r_ans = R_NilValue;
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
+R_swig_InfomapWrapper_addStateNode__SWIG_1 ( SEXP self, SEXP id, SEXP physId, SEXP name)
+{
+  {
+    infomap::InfomapWrapper *arg1 = 0 ;
+    unsigned int arg2 ;
+    unsigned int arg3 ;
+    std::string arg4 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int val2 ;
+    int ecode2 = 0 ;
+    int val3 ;
+    int ecode3 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_infomap__InfomapWrapper, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "InfomapWrapper_addStateNode" "', argument " "1"" of type '" "infomap::InfomapWrapper *""'"); 
+    }
+    arg1 = reinterpret_cast< infomap::InfomapWrapper * >(argp1);
+    ecode2 = SWIG_AsVal_int(id, &val2);
+    if (!SWIG_IsOK(ecode2)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "InfomapWrapper_addStateNode" "', argument " "2"" of type '" "unsigned int""'");
+    } 
+    arg2 = static_cast< unsigned int >(val2);
+    ecode3 = SWIG_AsVal_int(physId, &val3);
+    if (!SWIG_IsOK(ecode3)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "InfomapWrapper_addStateNode" "', argument " "3"" of type '" "unsigned int""'");
+    } 
+    arg3 = static_cast< unsigned int >(val3);
+    {
+      std::string *ptr = (std::string *)0;
+      int res = SWIG_AsPtr_std_string(name, &ptr);
+      if (!SWIG_IsOK(res) || !ptr) {
+        SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "InfomapWrapper_addStateNode" "', argument " "4"" of type '" "std::string""'"); 
+      }
+      arg4 = *ptr;
+      if (SWIG_IsNewObj(res)) delete ptr;
+    }
+    {
+      try {
+        (arg1)->addStateNode(arg2,arg3,SWIG_STD_MOVE(arg4));
       } catch (const std::exception& e) {
         SWIG_exception(SWIG_RuntimeError, e.what());
       }
@@ -50304,6 +50427,7 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
    {"R_swig_InfoNode_getInfomapRoot__SWIG_0", (DL_FUNC) &R_swig_InfoNode_getInfomapRoot__SWIG_0, 1},
    {"R_swig_InfoNode_begin__SWIG_0", (DL_FUNC) &R_swig_InfoNode_begin__SWIG_0, 2},
    {"R_swig_new_InfomapModuleIterator__SWIG_1", (DL_FUNC) &R_swig_new_InfomapModuleIterator__SWIG_1, 2},
+   {"R_swig_StateNetwork_addStateNode__SWIG_2", (DL_FUNC) &R_swig_StateNetwork_addStateNode__SWIG_2, 5},
    {"R_swig_delete_map_uint_vector_uint", (DL_FUNC) &R_swig_delete_map_uint_vector_uint, 1},
    {"R_swig_InfoNode_getInfomapRoot__SWIG_1", (DL_FUNC) &R_swig_InfoNode_getInfomapRoot__SWIG_1, 1},
    {"R_swig_InfoNode_begin__SWIG_1", (DL_FUNC) &R_swig_InfoNode_begin__SWIG_1, 2},
@@ -50946,7 +51070,9 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
    {"R_swig_FlowData_enterFlow_set", (DL_FUNC) &R_swig_FlowData_enterFlow_set, 2},
    {"R_swig_Config_printStateNetwork_get", (DL_FUNC) &R_swig_Config_printStateNetwork_get, 2},
    {"R_swig_InfomapLeafIteratorPhysical_modularCentrality", (DL_FUNC) &R_swig_InfomapLeafIteratorPhysical_modularCentrality, 2},
+   {"R_swig_InfomapWrapper_addStateNode__SWIG_0", (DL_FUNC) &R_swig_InfomapWrapper_addStateNode__SWIG_0, 3},
    {"R_swig_deque_uint_pop_front", (DL_FUNC) &R_swig_deque_uint_pop_front, 1},
+   {"R_swig_InfomapWrapper_addStateNode__SWIG_1", (DL_FUNC) &R_swig_InfomapWrapper_addStateNode__SWIG_1, 4},
    {"R_swig_delete_DeltaFlow", (DL_FUNC) &R_swig_delete_DeltaFlow, 1},
    {"R_swig_new_DeltaFlow__SWIG_0", (DL_FUNC) &R_swig_new_DeltaFlow__SWIG_0, 3},
    {"R_swig_InfoNode_calculatePath", (DL_FUNC) &R_swig_InfoNode_calculatePath, 2},
@@ -51292,7 +51418,6 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
    {"R_swig_new_InfomapConfigInfomapBase__SWIG_2", (DL_FUNC) &R_swig_new_InfomapConfigInfomapBase__SWIG_2, 1},
    {"R_swig_InfomapBase_writeCsvTree__SWIG_1", (DL_FUNC) &R_swig_InfomapBase_writeCsvTree__SWIG_1, 3},
    {"R_swig_InfomapBase_elapsedTime", (DL_FUNC) &R_swig_InfomapBase_elapsedTime, 2},
-   {"R_swig_InfomapWrapper_addStateNode", (DL_FUNC) &R_swig_InfomapWrapper_addStateNode, 3},
    {"R_swig_Config_clusterDataIsHard_get", (DL_FUNC) &R_swig_Config_clusterDataIsHard_get, 2},
    {"R_swig_new_InfomapConfigInfomapBase__SWIG_3", (DL_FUNC) &R_swig_new_InfomapConfigInfomapBase__SWIG_3, 1},
    {"R_swig_InfomapBase_writeCsvTree__SWIG_2", (DL_FUNC) &R_swig_InfomapBase_writeCsvTree__SWIG_2, 2},
