@@ -15,12 +15,14 @@
 #include "../utils/infomath.h"
 #include "../core/StateNetwork.h"
 #include <cmath>
+#include <cstdint>
 #include <numeric>
 #include <limits>
 #include <algorithm>
 #include <functional>
 #include <stdexcept>
 #include <unordered_map>
+#include <unordered_set>
 
 namespace infomap {
 
@@ -614,10 +616,7 @@ void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, co
   // Calculate node weights w_i = s_i/k_i, where s_i is the node strength (weighted degree) and k_i the (unweighted) degree
   unsigned int N = network.numNodes();
 
-  std::vector<unsigned int> k_out(N, 0);
-  std::vector<unsigned int> k_in(N, 0);
   std::vector<double> s_out(N, 0);
-  std::vector<double> s_in(N, 0);
   double sum_s = sumWeightedDegree;
   unsigned int sum_k = network.sumDegree();
   if (sum_k == 0) {
@@ -629,28 +628,34 @@ void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, co
   }
   double average_weight = sum_s / sum_k;
 
-  for (auto& link : flowLinks) {
-    k_out[link.source] += 1;
+  // Per-state out-strength, needed below for the recorded-teleportation rate.
+  for (const auto& link : flowLinks) {
     s_out[link.source] += link.flow;
-    k_in[link.target] += 1;
-    s_in[link.target] += link.flow;
   }
 
-  // Mass (average link weight) is a Bayesian prior on the physical node, not
-  // the state node, so aggregate degree and strength over all state nodes
-  // belonging to the same physical node before deriving u_out/u_in.
+  // Mass (average link weight) is a Bayesian prior on the physical node, not the
+  // state node. Aggregate the state links into the underlying physical network:
+  // parallel state links between the same physical pair collapse to a single
+  // physical link, so the degree counts distinct physical neighbours while the
+  // strength sums their weight. Summing per-state degrees instead would
+  // over-count the degree and deflate the mass.
   unsigned int numPhysNodes = 0;
   const auto physIndex = physicalNodeIndex(network, numPhysNodes);
   std::vector<unsigned int> k_out_phys(numPhysNodes, 0);
   std::vector<unsigned int> k_in_phys(numPhysNodes, 0);
   std::vector<double> s_out_phys(numPhysNodes, 0);
   std::vector<double> s_in_phys(numPhysNodes, 0);
-  for (unsigned int i = 0; i < N; ++i) {
-    const auto p = physIndex[i];
-    k_out_phys[p] += k_out[i];
-    s_out_phys[p] += s_out[i];
-    k_in_phys[p] += k_in[i];
-    s_in_phys[p] += s_in[i];
+  std::unordered_set<uint64_t> physLinkSeen;
+  physLinkSeen.reserve(flowLinks.size());
+  for (const auto& link : flowLinks) {
+    const auto ps = physIndex[link.source];
+    const auto pt = physIndex[link.target];
+    s_out_phys[ps] += link.flow;
+    s_in_phys[pt] += link.flow;
+    if (physLinkSeen.insert((static_cast<uint64_t>(ps) << 32) | pt).second) {
+      ++k_out_phys[ps];
+      ++k_in_phys[pt];
+    }
   }
 
   double min_u_out = std::numeric_limits<double>::max();
@@ -1056,7 +1061,6 @@ void FlowCalculator::calcUndirectedRegularizedFlow(const StateNetwork& network, 
 
   // Calculate node weights w_i = s_i/k_i, where s_i is the node strength (weighted degree) and k_i the (unweighted) degree
   unsigned int N = network.numNodes();
-  std::vector<unsigned int> k(N, 0);
   std::vector<double> s(N, 0);
   double sum_s = sumWeightedDegree;
   unsigned int sum_k = network.sumDegree();
@@ -1069,26 +1073,41 @@ void FlowCalculator::calcUndirectedRegularizedFlow(const StateNetwork& network, 
   }
   double average_weight = sum_s / sum_k;
 
-  for (auto& link : flowLinks) {
-    k[link.source] += 1;
+  // Per-state strength, needed below for node flow and the teleportation rate.
+  for (const auto& link : flowLinks) {
     s[link.source] += link.flow;
     if (link.source != link.target) {
-      k[link.target] += 1;
       s[link.target] += link.flow;
     }
   }
 
-  // Mass (average link weight) is a Bayesian prior on the physical node, not
-  // the state node, so aggregate degree and strength over all state nodes
-  // belonging to the same physical node before deriving u.
+  // Mass (average link weight) is a Bayesian prior on the physical node, not the
+  // state node. Aggregate the state links into the underlying physical network:
+  // parallel state links between the same physical pair collapse to a single
+  // physical link, so the degree counts distinct physical neighbours while the
+  // strength sums their weight. Summing per-state degrees instead would
+  // over-count the degree and deflate the mass.
   unsigned int numPhysNodes = 0;
   const auto physIndex = physicalNodeIndex(network, numPhysNodes);
   std::vector<unsigned int> k_phys(numPhysNodes, 0);
   std::vector<double> s_phys(numPhysNodes, 0);
-  for (unsigned int i = 0; i < N; ++i) {
-    const auto p = physIndex[i];
-    k_phys[p] += k[i];
-    s_phys[p] += s[i];
+  std::unordered_set<uint64_t> physLinkSeen;
+  physLinkSeen.reserve(flowLinks.size());
+  for (const auto& link : flowLinks) {
+    const auto a = physIndex[link.source];
+    const auto b = physIndex[link.target];
+    s_phys[a] += link.flow;
+    if (a != b) {
+      s_phys[b] += link.flow;
+    }
+    const auto lo = std::min(a, b);
+    const auto hi = std::max(a, b);
+    if (physLinkSeen.insert((static_cast<uint64_t>(lo) << 32) | hi).second) {
+      ++k_phys[a];
+      if (a != b) {
+        ++k_phys[b];
+      }
+    }
   }
 
   double min_u = std::numeric_limits<double>::max();
