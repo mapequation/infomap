@@ -81,9 +81,6 @@ argument and directedness therefore differ by source:
 | SciPy sparse | `weighted` (bool) | `directed=` (default `False`) |
 | `(2, E)` edge index | `edge_weight` (array) | `directed=` (default `True`) |
 
-SciPy and edge-index inputs default differently (undirected vs directed), so
-set ``directed=`` explicitly on them when direction matters.
-
 ## NetworkX
 
 ```{code-cell} python

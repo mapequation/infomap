@@ -14,7 +14,7 @@ kernelspec:
 
 ```{admonition} At a glance
 :class: tip
-This chapter covers the docs visualisation helper, the in-memory
+The docs visualisation helper, the in-memory
 graph export (`to_networkx` / `to_igraph` for GraphML and, via NetworkX, GEXF),
 and the native `.tree` / `.clu` formats written straight off the
 {class}`~infomap.Result`.
@@ -151,9 +151,7 @@ come back as numbers when the file is read — Gephi's numeric colour scales and
 sorting work directly.
 
 Because the graph is rebuilt from the result, your original graph's node
-attributes are *not* carried over. To keep them, annotate your own graph in
-place with {func}`infomap.find_communities` (see below) or
-{func}`infomap.io.export.annotate_networkx_graph`.
+attributes are *not* carried over.
 
 Open the GraphML file in Gephi, select **Appearance → Nodes → Partition**, and
 choose `infomap_module` to colour the graph by community.

@@ -20,7 +20,7 @@ Use notebooks when the user wants to:
 
 Use scripts instead when the user wants batch runs, CI, parameter sweeps, or stable pipeline execution.
 
-Notebook runtimes can grow quickly when examples download data, build layouts, compare methods, or run many trials. Do not start Docker, Jupyter, full notebook execution, parameter sweeps, or long comparison notebooks unless the user asks. For validation, prefer running one small extracted cell or a reduced toy example first.
+Notebook runtimes can grow quickly when examples download data, build layouts, compare methods, or run many trials.
 
 ## Notebook topics
 
