@@ -414,26 +414,16 @@ assert n_links_self < n_links_default
 
 ## API pointers
 
-- {meth}`infomap.Network.add_multilayer_intra_link` adds a link within a layer:
-  `add_multilayer_intra_link(layer_id, source_node_id, target_node_id,
-  weight=1.0)`.
-- {meth}`infomap.Network.add_multilayer_inter_link` adds a coupling between
-  layers through a shared physical node:
-  `add_multilayer_inter_link(source_layer_id, node_id, target_layer_id,
-  weight=1.0)`.
-- {meth}`infomap.Network.add_multilayer_link` adds a fully general link between
-  any two `(layer_id, node_id)` pairs:
-  `add_multilayer_link(source_multilayer_node, target_multilayer_node,
-  weight=1.0)`.
-- {func}`infomap.datasets.multilayer`, {func}`infomap.datasets.multilayer_intra`,
-  and {func}`infomap.datasets.multilayer_intra_inter` load the bundled example
-  networks for the three file forms, ready to run.
-- {meth}`infomap.Result.modules` needs `states=True` on multilayer networks to
-  return state-node assignments; `states=False` raises an
-  {class}`~infomap.InfomapError` on higher-order networks.
-- {meth}`infomap.Result.nodes` with `states=True` iterates state nodes; each
-  exposes `.node_id` (physical), `.state_id`, `.layer_id`, `.module_id`, and
-  `.flow`.
+- Build multilayer input with {meth}`~infomap.Network.add_multilayer_intra_link`,
+  {meth}`~infomap.Network.add_multilayer_inter_link`, and the fully general
+  {meth}`~infomap.Network.add_multilayer_link` (all used above), or load a bundled
+  example with {func}`~infomap.datasets.multilayer`,
+  {func}`~infomap.datasets.multilayer_intra`, and
+  {func}`~infomap.datasets.multilayer_intra_inter`.
+- Read a multilayer run with {meth}`~infomap.Result.modules` /
+  {meth}`~infomap.Result.nodes` passing `states=True` — `states=False` raises an
+  {class}`~infomap.InfomapError` on higher-order networks. Each state node carries
+  `.node_id` (physical), `.state_id`, `.layer_id`, `.module_id`, and `.flow`.
 
 ## Options
 

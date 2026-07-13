@@ -1,9 +1,8 @@
 # Working with Infomap
 
-These chapters cover the practical workflow: build a network from your data, run
-Infomap, then read, visualise, and export the result. They are task-oriented;
-for the ideas behind them see {doc}`/concepts/index`, and for the smallest
-possible example see {doc}`/quickstart`.
+These task-oriented chapters walk through the practical workflow. For the ideas
+behind them see {doc}`/concepts/index`, and for the smallest possible example
+see {doc}`/quickstart`.
 
 - {doc}`Building a network <inputs>`: every way to get your data in with
   {func}`infomap.run` and {class}`~infomap.Network`: NetworkX, igraph, SciPy

@@ -178,12 +178,12 @@ directly, but the partition you read back is always over state nodes.
 
 ## API pointers
 
-- `Network().add_state_node(state_id, node_id)` declares a state node on the
-  physical node `node_id`; `add_link` then links state nodes.
-- You need `result.modules(states=True)` to read a higher-order partition;
-  `result.nodes(states=True)` exposes each node's `.node_id` (physical),
-  `.state_id`, `.module_id`, and `.flow`.
-- `result.have_memory` is `True` once a higher-order network is built.
+- Declare state nodes with {meth}`~infomap.Network.add_state_node` and connect
+  them with {meth}`~infomap.Network.add_link` (both take state ids).
+- Read a higher-order partition with {meth}`~infomap.Result.modules` /
+  {meth}`~infomap.Result.nodes` passing `states=True`; each state node exposes
+  `.node_id` (physical), `.state_id`, `.module_id`, and `.flow`, and
+  {attr}`~infomap.Result.have_memory` is `True` once one is built.
 
 ## Going deeper
 

@@ -197,13 +197,12 @@ weak cross-cluster links.
 
 ## API pointers
 
-Set {attr}`~infomap.Infomap.bipartite_start_id` (or
-{attr}`~infomap.Network.bipartite_start_id`) to `n` before running: every node id
-`>= n` is a type-B node, ids below are type-A; link opposite types with
-{meth}`~infomap.Network.add_link`. {meth}`~infomap.Result.modules` covers both
-types. The bipartite engine options (`hide_bipartite_nodes`,
-`skip_adjust_bipartite_flow`, `bipartite_teleportation`) are listed in the
-Options table below.
+Declare the split by setting {attr}`~infomap.Network.bipartite_start_id` (or
+{attr}`~infomap.Infomap.bipartite_start_id`) before running, and link opposite
+types with {meth}`~infomap.Network.add_link`; {meth}`~infomap.Result.modules`
+covers both types. The bipartite engine options (`hide_bipartite_nodes`,
+`skip_adjust_bipartite_flow`, `bipartite_teleportation`) are in the Options
+table below.
 
 ## Options
 
