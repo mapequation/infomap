@@ -862,6 +862,18 @@ const std::vector<ParameterSpec>& parameterCatalog()
         .group("Output")
         .advanced()
         .configTarget(&Config::noFinalOutput),
+    param()
+        .longName("non-redundant")
+        .description("Use the non-redundant map equation L*: the exit codebook of a module excludes the module just left (no impossible immediate re-entry) and the first visit after entering uses a separate enter codebook (no impossible immediate exit). Implies --two-level. Requires undirected flow.")
+        .group("Algorithm")
+        .advanced()
+        .configTarget(&Config::nonRedundant),
+    param()
+        .longName("non-redundant-exact")
+        .description("With --non-redundant, drive the greedy search with the exact O(m) leave-one-out exit sweep instead of the default O(1) adaptive power-series approximation. The approximation is essentially exact when modules are many (its natural regime) and only diverges when they are few (where the exact sweep is cheap and the codelength is re-scored exactly anyway); use this flag to validate the approximation or on small networks. Slow on large networks.")
+        .group("Algorithm")
+        .advanced()
+        .configTarget(&Config::nonRedundantExact),
 #if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
     param()
         .longName("lossy")

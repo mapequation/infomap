@@ -151,6 +151,46 @@ namespace {
   }
 #endif
 
+  void applyAndValidateNonRedundantInteraction(Config& config)
+  {
+    if (!config.nonRedundant)
+      return;
+
+    // Default the hierarchical search to the "keep super structure" mode for L*.
+    // The full-recursion default (fastHierarchicalSolution == 0) removes the bottom-up
+    // super-module structure and re-optimizes each top module in isolation. That suits
+    // standard L (modules are independent given their boundary flow) but not L*, whose
+    // leave-one-out exit codebook couples siblings: the isolated rebuild loses that
+    // cross-module context and settles in a worse basin -- it can even end above the
+    // super-module structure it started from. Keeping that structure and refining
+    // downward (fastHierarchicalSolution == 1) gives a lower L* and is ~3x faster on
+    // large networks. Only default it in (unless the user asked for more super levels
+    // via -F / -FF); two-level runs have no hierarchy so leave them untouched. Standard
+    // L never reaches this code path, so its tuned default is unaffected.
+    if (!config.twoLevel && config.fastHierarchicalSolution == 0)
+      config.fastHierarchicalSolution = 1;
+
+    // Directed flow is supported: the enter and exit codebooks use the module enter
+    // and exit rates separately, so enter != exit is handled directly.
+    //
+    // Meta data is supported: MetaMapEquation reuses the base codebook terms (running
+    // the non-redundant path) and only adds an orthogonal, additive meta-data term.
+    //
+    // Memory/state and multilayer are NOT supported: MemMapEquation /
+    // RegularizedMultilayerMapEquation recompute the enter/exit/flow codebook terms with
+    // physical-node (and layer-teleport) corrections and bypass the base per-module
+    // methods, so the non-redundant codebook would have to be re-derived inside them.
+    if (config.stateInput || config.multilayerInput || !config.additionalInput.empty())
+      throw std::runtime_error("--non-redundant does not support memory or multilayer networks");
+    // Recorded teleportation and its Bayesian-prior form (--regularized) are supported.
+    // Intra-module teleportation is excluded from a module's boundary (enter/exit) flow
+    // (verified: a single all-network module has zero enter/exit under both), so a module
+    // exit still always crosses to a different module and the leave-one-out exit codebook
+    // stays valid. Regularization only changes the flow estimates, which flow through the
+    // enter/exit/flow statistics L* already consumes. See the "Regularized non-redundant
+    // map equation" notebook for the derivation.
+  }
+
   void applyFingerprintOnlyOutputInteraction(Config& config)
   {
     if (config.printConfigFingerprint) {
@@ -379,6 +419,7 @@ void Config::adaptDefaults()
 #if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
   applyAndValidateLossyInteraction(*this);
 #endif
+  applyAndValidateNonRedundantInteraction(*this);
   applyThreadBudgetInteraction(*this);
   validateRunReportOutput(*this);
   normalizeOutputDirectory(*this);

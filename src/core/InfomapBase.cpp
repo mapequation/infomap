@@ -2907,6 +2907,10 @@ void InfomapBase::partitionModuleRecursively(InfoNode& module, unsigned int leve
       newSubModule->lossyEntropy = cloneSubModule->lossyEntropy;
       newSubModule->lossyFlowLogFlow = cloneSubModule->lossyFlowLogFlow;
 #endif
+      // Non-redundant map equation: carry the leaf-sum F (new InfoNode(data) copies only
+      // FlowData). Keeps the invariant true on the materialized module node so any later
+      // read (e.g. a super-level partition over these modules) sees the correct aggregate.
+      newSubModule->nrFlowLogFlow = cloneSubModule->nrFlowLogFlow;
       cloneToMaterialized[cloneSubModule] = newSubModule;
       materializedSubModules[k] = newSubModule;
     }
@@ -3082,6 +3086,14 @@ void InfomapBase::initOptimizer(bool forceNoMemory)
       throw std::runtime_error("--lossy requires undirected flow");
   }
 #endif
+  // Config::adaptDefaults validates --non-redundant against the parsed flags, but memory /
+  // multilayer input is only known after the input file is parsed. Re-validate here so
+  // --non-redundant never silently falls through to MemMapEquation (which recomputes the
+  // codebook terms and would ignore the flag). Directed flow and meta data are supported
+  // (MetaMapEquation reuses the base non-redundant path and adds an additive term).
+  if (nonRedundant && (haveMemory() || isMultilayerNetwork()))
+    throw std::runtime_error("--non-redundant does not support memory or multilayer input");
+
   if (haveMetaData()) {
     m_optimizer = std::make_unique<InfomapOptimizer<MetaMapEquation>>();
   } else if (haveMemory() && !forceNoMemory) {

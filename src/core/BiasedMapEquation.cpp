@@ -216,6 +216,8 @@ void BiasedMapEquation::updateCodelengthOnMovingNode(InfoNode& current,
 
 void BiasedMapEquation::consolidateModules(std::vector<InfoNode*>& modules)
 {
+  Base::consolidateModules(modules); // carry the non-redundant per-module leaf aggregate (no-op otherwise)
+
   unsigned int numModules = 0;
   for (auto& module : modules) {
     if (module == nullptr)

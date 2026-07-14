@@ -110,6 +110,8 @@ struct Config {
   double preferredNumberOfLevelsStrength = 1.0; // Scale the depth preference; 0 disables it
   bool entropyBiasCorrection = false;
   double entropyBiasCorrectionMultiplier = 1;
+  bool nonRedundant = false; // Non-redundant map equation L*: exit codebook excludes the module just left; separate enter codebook for the first visit
+  bool nonRedundantExact = false; // With --non-redundant: drive the search with the exact O(m) leave-one-out exit sweep instead of the default O(1) adaptive power-series approximation (validation / small networks)
   unsigned long seedToRandomNumberGenerator = 123;
 #if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
   bool lossy = false; // Lossy map equation: noise modules share one visit codeword
@@ -249,6 +251,8 @@ struct Config {
     teleportationProbability = other.teleportationProbability;
     entropyBiasCorrection = other.entropyBiasCorrection;
     entropyBiasCorrectionMultiplier = other.entropyBiasCorrectionMultiplier;
+    nonRedundant = other.nonRedundant;
+    nonRedundantExact = other.nonRedundantExact;
     seedToRandomNumberGenerator = other.seedToRandomNumberGenerator;
     minimumCodelengthImprovement = other.minimumCodelengthImprovement;
     minimumSingleNodeCodelengthImprovement = other.minimumSingleNodeCodelengthImprovement;

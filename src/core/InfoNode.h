@@ -114,6 +114,11 @@ public:
   InfoNode* collapsedFirstChild = nullptr;
   InfoNode* collapsedLastChild = nullptr;
   double codelength = 0.0; // TODO: Better design for hierarchical stuff!?
+  // Non-redundant map equation (L*): sum of plogp(leaf visit flow) over the leaf
+  // nodes contained in this node. Additive across aggregation, so a consolidated
+  // module node carries the sum for all its leaves (set in consolidateModules).
+  // Unconditional (unlike the lossy fields) because --non-redundant is a runtime flag.
+  double nrFlowLogFlow = 0.0;
   bool dirty = false;
 
   std::vector<PhysData> physicalNodes;
@@ -179,6 +184,7 @@ public:
         collapsedFirstChild(other.collapsedFirstChild),
         collapsedLastChild(other.collapsedLastChild),
         codelength(other.codelength),
+        nrFlowLogFlow(other.nrFlowLogFlow),
         dirty(other.dirty),
         physicalNodes(other.physicalNodes),
 #if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
@@ -217,6 +223,7 @@ public:
     collapsedFirstChild = other.collapsedFirstChild;
     collapsedLastChild = other.collapsedLastChild;
     codelength = other.codelength;
+    nrFlowLogFlow = other.nrFlowLogFlow;
     dirty = other.dirty;
     physicalNodes = other.physicalNodes;
 #if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
@@ -528,7 +535,9 @@ private:
 #if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
 static_assert(sizeof(InfoNode) <= 320, "InfoNode grew beyond the shrink target (lossy build)");
 #else
-static_assert(sizeof(InfoNode) <= 304, "InfoNode grew beyond the shrink target");
+// +8 B vs the 304 shrink target for the unconditional non-redundant leaf aggregate
+// (nrFlowLogFlow); still below the lossy build's inline-two-doubles size.
+static_assert(sizeof(InfoNode) <= 312, "InfoNode grew beyond the shrink target");
 #endif
 #endif
 
