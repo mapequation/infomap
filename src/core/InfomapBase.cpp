@@ -1761,13 +1761,14 @@ std::vector<unsigned int> InfomapBase::noiseTopModules() const
 
 void InfomapBase::columnarPartition()
 {
-  Console::detail(1, "columnar partition (--flex)");
+  Console::detail(1, "columnar partition (--columnar)");
 
   // Optimize on the columnar SoA core: fine building blocks -> enter-flow
   // up-build -> up/down convergence sweep, best of a few up-merge settings.
+  // --tune-iteration-limit caps the tuning sweeps (0 = until convergence).
   ColumnarTwoLevel opt;
   opt.buildFromLeaves(m_leafNodes, isUndirectedClustering(), seedToRandomNumberGenerator);
-  const double columnarL = opt.optimizeColumnar();
+  const double columnarL = opt.optimizeColumnar(1, tuneIterationLimit);
 
   // Materialize the result into the InfoNode tree (sets m_hierarchicalCodelength
   // and prepares the tree exactly like the rest of the output pipeline expects).

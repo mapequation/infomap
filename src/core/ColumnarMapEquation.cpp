@@ -1174,10 +1174,14 @@ bool ColumnarTwoLevel::refineLayerWithinGrandparent(int k)
   return true;
 }
 
-double ColumnarTwoLevel::optimizeConverge(unsigned int bottomBlockLimit, unsigned int superAggLimit)
+double ColumnarTwoLevel::optimizeConverge(unsigned int bottomBlockLimit, unsigned int superAggLimit, unsigned int sweepLimit)
 {
   m_superAggLimit = superAggLimit;
   double L = optimizeHierarchical(bottomBlockLimit);
+
+  // sweepLimit caps the up/down tuning sweeps; 0 means run until convergence
+  // (the loop breaks early on a no-improvement sweep regardless of the cap).
+  const int maxSweeps = sweepLimit > 0 ? static_cast<int>(sweepLimit) : 1000;
 
   // Up/down sweep: refine each interior layer within its grandparent, bottom-up,
   // accepting a refine only if it lowers the true hierarchical codelength (the
@@ -1186,7 +1190,7 @@ double ColumnarTwoLevel::optimizeConverge(unsigned int bottomBlockLimit, unsigne
 #ifdef COLUMNAR_DEBUG
   std::fprintf(stderr, "[converge] start L=%.9f levels=%d superAgg=%u\n", L, (int)m_hierLevels.size(), superAggLimit);
 #endif
-  for (int sweep = 0; sweep < 20; ++sweep) {
+  for (int sweep = 0; sweep < maxSweeps; ++sweep) {
     bool improved = false;
     const int top = static_cast<int>(m_hierLevels.size()) - 1;
     for (int k = 0; k + 2 <= top; ++k) {
@@ -1248,7 +1252,7 @@ ColumnarTwoLevel::toNodePaths(const std::vector<InfoNode*>& leafNodes) const
   return paths;
 }
 
-double ColumnarTwoLevel::optimizeColumnar(unsigned int bottomBlockLimit)
+double ColumnarTwoLevel::optimizeColumnar(unsigned int bottomBlockLimit, unsigned int sweepLimit)
 {
   // The up-merge aggressiveness selects which basin the build lands in, and the
   // best setting varies by network (like Infomap's multi-trial search). Run the
@@ -1262,7 +1266,7 @@ double ColumnarTwoLevel::optimizeColumnar(unsigned int bottomBlockLimit)
   unsigned int bestTop = 0;
 
   for (unsigned int superAgg : kSuperAggSettings) {
-    const double L = optimizeConverge(bottomBlockLimit, superAgg);
+    const double L = optimizeConverge(bottomBlockLimit, superAgg, sweepLimit);
     if (L < bestL - kMinImprovement) {
       bestL = L;
       bestLevels = m_hierLevels;

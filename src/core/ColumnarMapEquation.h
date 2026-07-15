@@ -128,12 +128,15 @@ public:
   // passes per super-level instead of a full two-level merge), yielding more,
   // finer levels for the sweep to tune — the "don't over-merge on the way up"
   // building-block idea. 0 = full super-merge (as optimizeFlexible).
-  double optimizeConverge(unsigned int bottomBlockLimit = 1, unsigned int superAggLimit = 0);
+  // sweepLimit caps the number of up/down tuning sweeps (0 = until convergence).
+  double optimizeConverge(unsigned int bottomBlockLimit = 1, unsigned int superAggLimit = 0, unsigned int sweepLimit = 0);
 
-  // Top-level columnar engine entry (the `-F` search): run the up/down sweep at
-  // a small set of up-merge settings and keep the best partition, leaving its
-  // stacked hierarchy in the members ready to materialize into an InfoNode tree.
-  double optimizeColumnar(unsigned int bottomBlockLimit = 1);
+  // Top-level columnar engine entry (the `--columnar` search): run the up/down
+  // sweep at a small set of up-merge settings and keep the best partition,
+  // leaving its stacked hierarchy in the members ready to materialize into an
+  // InfoNode tree. sweepLimit caps the tuning sweeps per strategy (0 = until
+  // convergence; wired to --tune-iteration-limit).
+  double optimizeColumnar(unsigned int bottomBlockLimit = 1, unsigned int sweepLimit = 0);
 
   // Materialize the best hierarchy (m_hier*) as one module-path per leaf, in the
   // shape InfomapBase::initTree expects: coarsest-first (path[0] = top module),

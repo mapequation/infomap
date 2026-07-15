@@ -158,10 +158,11 @@ struct Config {
   // network and log its codelength against the OO result (use with --two-level
   // for an apples-to-apples two-level comparison).
   bool columnarTwoLevel = false;
-  // Engine selector (hierarchical-search rethink): use the non-recursive
-  // columnar search — fine building blocks, enter-flow up-build, and the up/down
-  // convergence sweep (best of a few up-merge settings) — instead of the
-  // recursive two-level-then-refine algorithm. Produces the normal output tree.
+  // Engine selector (hierarchical-search rethink, CLI --columnar / -C): use the
+  // non-recursive columnar search — fine building blocks, enter-flow up-build,
+  // and the up/down convergence sweep (best of a few up-merge settings, sweeps
+  // capped by tuneIterationLimit) — instead of the recursive two-level-then-
+  // refine algorithm. Produces the normal output tree.
   bool columnarSearch = false;
   bool preferModularSolution = false;
   bool innerParallelization = false;

@@ -826,8 +826,9 @@ const std::vector<ParameterSpec>& parameterCatalog()
         .advanced()
         .configTarget(&Config::columnarTwoLevel),
     param()
-        .longName("flex")
-        .description("Experimental engine: use the non-recursive columnar search (fine building blocks, enter-flow up-build, and the up/down convergence sweep) instead of the recursive two-level-then-refine algorithm. Base map equation only for now. Produces the normal output tree.")
+        .shortName('C')
+        .longName("columnar")
+        .description("Experimental engine (columnar-hierarchical-core): use the non-recursive columnar search (fine building blocks, enter-flow up-build, and the up/down convergence sweep) instead of the recursive two-level-then-refine algorithm. The number of tuning sweeps follows --tune-iteration-limit (0 = until convergence). Base map equation only for now. Produces the normal output tree.")
         .group("Accuracy")
         .advanced()
         .configTarget(&Config::columnarSearch),

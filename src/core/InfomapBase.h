@@ -467,8 +467,8 @@ private:
 
   void partition();
 
-  // Non-recursive columnar search engine (--flex): optimize on the columnar SoA
-  // core and materialize the result into the InfoNode tree via initTree.
+  // Non-recursive columnar search engine (--columnar): optimize on the columnar
+  // SoA core and materialize the result into the InfoNode tree via initTree.
   void columnarPartition();
 
   // ===================================================
