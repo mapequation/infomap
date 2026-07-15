@@ -38,8 +38,10 @@ Do not bundle unrelated cleanup into the same change.
   and the R/TS option files are produced by
   `scripts/generate_binding_options.py` (`make build-binding-options`) from
   `src/io/ParameterCatalog.cpp` + `interfaces/parameters/overrides.json`. Edit
-  those sources (and the generator for cross-cutting changes), then regenerate;
-  do not hand-edit the generated option code or docstrings
+  those sources (and the generator for cross-cutting changes), then regenerate
+  with `make build-binding-options` and confirm with
+  `make test-binding-options-freshness`; do not hand-edit the generated option
+  code or docstrings
 - `interfaces/R/infomap/` owns the R package skeleton (`R/`, `DESCRIPTION`, `tests/`, `man/`)
 - `interfaces/R/generated/` are tracked SWIG-generated R outputs; refresh with `make build-r-swig`
 
@@ -71,11 +73,15 @@ Common local setup:
 python3 -m venv .venv
 . .venv/bin/activate
 python -m pip install --upgrade pip
-python -m pip install -e '.[test,docs,examples,release]'
-npm ci
+make dev-bootstrap
 make doctor
 make build-native
 ```
+
+`make dev-bootstrap` is the canonical setup step: it installs the Python
+package with all extras (`.[test,docs,examples,release]`), runs `npm ci`, and
+installs the pre-commit git hooks (`make hooks`). Run it inside the active
+virtual environment.
 
 Use an active virtual environment for Python development. Some system-managed
 Python installs, including Homebrew Python on macOS and distro Python on Linux,
@@ -96,7 +102,8 @@ worker work, activate Emscripten 5.0.5 before running `make build-js` or
 
 Run the smallest sufficient verification for the changed surface:
 
-- `src/` changes: at least `make build-native`
+- `src/` changes: `make build-native`, then run the C++ tests with
+  `make test-native`
 - Python wrapper or packaging changes: `make build-python`,
   `make dev-python-install`, and `make test-python`
 - R wrapper or packaging changes: `make test-r` (R CMD check) plus
@@ -108,6 +115,10 @@ Run the smallest sufficient verification for the changed surface:
 - JavaScript worker or package changes: `npm ci` plus `make build-js` or `make test-js`
 - docs-only text changes: no code build needed; run `make build-docs` to verify the site still builds
 - workflow or release changes: run the smallest relevant local smoke check and say what remains unverified
+
+`make test-fast` runs a quick cross-cutting subset before committing: the C++
+stream-policy check, the C++ tests (`make test-native`), and the Python unit
+tests (`make test-python-unit`).
 
 Approximate local runtimes vary by machine and cache state:
 
@@ -125,6 +136,27 @@ Targeted checks:
 - Python marker subset: `make test-python-unit PYTEST_ARGS='-m "not slow and not perf"'`
 - Single JavaScript unit test: `npm run test:unit -- -t "name pattern"`
 - JavaScript typecheck only: `npm run typecheck`
+
+## Formatting And Linting
+
+Pre-commit hooks mirror the CI lint gates and give the same feedback locally.
+Install them once with `make hooks` (also run by `make dev-bootstrap`); on
+commit they run `ruff` (Python lint), `clang-format` (C++ `src/`), `biome`
+(JavaScript lint and format), and `air` (R format), plus a C++ stream-policy
+check, and `pyright` on the core Python surface at push time.
+
+Format on demand without the hooks:
+
+- C++: `make format-native` (check only: `make format-native-check`)
+- Python: `make format-python`
+- R: `make format-r` (check only: `make format-r-check`)
+- JavaScript: `make format-js`
+
+CI enforces C++ formatting through the required `cxx-format` job
+(`make format-native-check`), so format `src/` changes before committing.
+Generated and vendored files — `interfaces/python/generated/`,
+`interfaces/R/generated/`, `interfaces/python/src/infomap/_swig.py`, and
+`vendor/` — are excluded from every hook; never reformat them.
 
 ## Environment
 
