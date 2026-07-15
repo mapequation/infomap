@@ -76,7 +76,6 @@ endif
 
 HEADERS := $(shell find src -name "*.h")
 SOURCES := $(shell find src -name "*.cpp")
-SWIG_FILES := $(shell find interfaces/swig -name "*.i")
 MK_FILES := $(wildcard mk/*.mk)
 BINDING_OPTIONS_SCRIPT := scripts/generate_binding_options.py
 BUILD_CONFIG_SCRIPT := scripts/build_config.py
@@ -155,6 +154,8 @@ help:
 		"  test-python-unit      Run pytest for test/python." \
 		"  test-python-doctest   Run Python doctests and ruff checks for the installed package." \
 		"  test-python-examples  Run the Python example smoke tests." \
+		"  test-python-typecheck  Type-check the whole Python package with pyright." \
+		"  test-python-typecheck-core  Type-check the core Python surface (pre-push / quick-mode scope)." \
 		"  test-python-notebooks-smoke  Run PR-safe tutorial notebook smoke tests with nbmake." \
 		"  test-python-notebooks-full   Run all CI-maintained tutorial notebooks with nbmake." \
 		"  test-python-swig-freshness  Verify tracked SWIG outputs are up to date." \
@@ -178,11 +179,15 @@ help:
 		"  format-native-check   Verify C++ sources are clang-format clean." \
 		"  format-r              Rewrite R sources with Air." \
 		"  format-r-check        Verify R sources are Air-format clean." \
+		"  format-python         Rewrite Python sources with Ruff." \
+		"  format-js             Rewrite JS/TS sources with Biome." \
 		"  tidy-native           Run clang-tidy over C++ source files." \
+		"  print-parameter-policy  Render the parameter-policy surface matrix as Markdown." \
 		"  dev-cpp-check         Run the fast C++ developer feedback suite." \
 		"  dev-bootstrap         Install Python dev dependencies, run npm ci, and install git hooks." \
 		"  hooks                 Install the pre-commit git hook (lint/format on commit)." \
 		"  dev-python-install    Install the built Python package in editable mode." \
+		"  dev-r-install         Install the staged R package into the user library." \
 		"  dev-python-notebooks-install Install notebook execution dependencies." \
 		"  clean                 Remove native, Python, and JS build outputs." \
 		"  clean-native          Remove native build artifacts, libraries, and CMake build dirs." \
@@ -192,7 +197,9 @@ help:
 		"" \
 		"Docs / Release" \
 		"  build-docs            Build the Python docs site into docs/ after installing the local package." \
+		"  check-docs-links      Verify external documentation links resolve (linkcheck; hits the network)." \
 		"  release-python-dist   Build local sdist and wheel artifacts from the repo root." \
+		"  release-r-dist        Build the R source tarball and platform binary into dist/R/." \
 		"  release-python-testpypi  Publish the built distributions to TestPyPI." \
 		"  release-python-pypi      Publish the built distributions to PyPI." \
 		"" \
