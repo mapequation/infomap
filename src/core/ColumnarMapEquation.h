@@ -270,6 +270,17 @@ private:
   // is the k == 0 special case. Returns false if no grandparent layer exists.
   bool refineLayerWithinGrandparent(int k);
 
+  // Re-partition the top module grouping within the root (the whole network is
+  // the grandparent, exit flow 0). The up/down sweep refines layer k only within
+  // a layer-(k+2) grandparent, so the topmost grouping — which has no grandparent
+  // above it — is otherwise locked from the initial build. This closes that hole
+  // in the general tuning: after a leaf-module merge coarsens the bottom, it lets
+  // the super-structure regroup, and iterating merge <-> top-refine relaxes the
+  // same-parent merge restriction over sweeps. Enter-flow transform (grouping
+  // modules). Rebuilds m_hierAssign[top-1] and m_hierLevels[top]. Returns false
+  // if there is no sub-top layer to regroup.
+  bool refineTopLayer();
+
   // Mem-aware leaf-module coarsening: merge leaf modules (level-0 -> 1) within
   // their shared level-2 parent when it lowers the augmented objective. The base
   // map equation opposes merging well-separated modules, but a leaf-shaping

@@ -1565,6 +1565,70 @@ bool ColumnarTwoLevel::refineLayerWithinGrandparent(int k)
   return true;
 }
 
+bool ColumnarTwoLevel::refineTopLayer()
+{
+  const int top = static_cast<int>(m_hierLevels.size()) - 1;
+  if (top < 2)
+    return false; // need a layer below the top (layer top-1) to regroup
+  const int k = top - 1; // re-partition layer-k units into new top modules
+
+  const Level& base = m_hierLevels[k];
+  const int nU = base.n;
+
+  // One root group over all layer-k units; enter-flow transform (grouping
+  // modules, whose codeword usage is the enter flow), root exit = 0.
+  Level sub;
+  sub.n = nU;
+  sub.flow.resize(nU);
+  sub.enter.resize(nU);
+  sub.exit.resize(nU);
+  std::vector<int> outDeg(nU, 0), inDeg(nU, 0);
+  for (int j = 0; j < nU; ++j) {
+    sub.flow[j] = base.enter[j];
+    sub.enter[j] = base.enter[j];
+    sub.exit[j] = base.exit[j];
+    for (int e = base.outStart[j]; e < base.outStart[j + 1]; ++e) {
+      ++outDeg[j];
+      ++inDeg[base.outTarget[e]];
+    }
+  }
+  sub.outStart.assign(nU + 1, 0);
+  sub.inStart.assign(nU + 1, 0);
+  for (int j = 0; j < nU; ++j) {
+    sub.outStart[j + 1] = sub.outStart[j] + outDeg[j];
+    sub.inStart[j + 1] = sub.inStart[j] + inDeg[j];
+  }
+  sub.outTarget.assign(sub.outStart[nU], 0);
+  sub.outFlow.assign(sub.outStart[nU], 0.0);
+  sub.inTarget.assign(sub.inStart[nU], 0);
+  sub.inFlow.assign(sub.inStart[nU], 0.0);
+  std::vector<int> op(sub.outStart.begin(), sub.outStart.end() - 1);
+  std::vector<int> ip(sub.inStart.begin(), sub.inStart.end() - 1);
+  for (int j = 0; j < nU; ++j)
+    for (int e = base.outStart[j]; e < base.outStart[j + 1]; ++e) {
+      const int t = base.outTarget[e];
+      const double f = base.outFlow[e];
+      sub.outTarget[op[j]] = t;
+      sub.outFlow[op[j]] = f;
+      ++op[j];
+      sub.inTarget[ip[t]] = j;
+      sub.inFlow[ip[t]] = f;
+      ++ip[t];
+    }
+
+  ColumnarTwoLevel subOpt;
+  subOpt.buildFromLevel(sub, m_undirected, m_seed, 0.0);
+  subOpt.optimizeTwoLevel();
+  const int Ksub = static_cast<int>(subOpt.numTopModules());
+  if (Ksub <= 1 || Ksub == nU)
+    return false; // no useful regrouping (trivial partition)
+
+  m_hierAssign[k] = subOpt.leafTopModule();
+  m_hierLevels[top] = aggregateLevel(base, m_hierAssign[k], Ksub, m_undirected);
+  m_numTopModules = static_cast<unsigned int>(Ksub);
+  return true;
+}
+
 bool ColumnarTwoLevel::mergeLeafModulesWithinParents()
 {
   using infomath::plogp;
@@ -1791,6 +1855,29 @@ double ColumnarTwoLevel::optimizeConverge(unsigned int bottomBlockLimit, unsigne
 #ifdef COLUMNAR_DEBUG
           std::fprintf(stderr, "[converge] sweep=%d MERGE %.9f -> %.9f (leafmods %d)\n",
                        sweep, L, after, m_hierLevels[1].n);
+#endif
+          L = after;
+          improved = true;
+        } else {
+          m_hierLevels = std::move(savedLevels);
+          m_hierAssign = std::move(savedAssign);
+          m_numTopModules = static_cast<unsigned int>(m_hierLevels.back().n);
+        }
+      }
+    }
+
+    // Top-level regroup: refine the topmost module grouping within the root (the
+    // one layer the grandparent-based refine can never reach). Lets the
+    // super-structure adapt after a leaf-module merge; gated on the objective.
+    {
+      std::vector<Level> savedLevels = m_hierLevels;
+      std::vector<std::vector<int>> savedAssign = m_hierAssign;
+      if (refineTopLayer()) {
+        const double after = hierarchicalCodelengthFromStack();
+        if (after < L - kMinImprovement) {
+#ifdef COLUMNAR_DEBUG
+          std::fprintf(stderr, "[converge] sweep=%d TOP-REFINE %.9f -> %.9f (top %d)\n",
+                       sweep, L, after, m_hierLevels.back().n);
 #endif
           L = after;
           improved = true;
