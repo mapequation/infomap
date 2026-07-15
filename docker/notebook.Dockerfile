@@ -1,4 +1,6 @@
-ARG BASE_CONTAINER=jupyter/scipy-notebook:python-3.11
+# Jupyter Docker Stacks moved from Docker Hub (jupyter/*) to Quay
+# (quay.io/jupyter/*) in 2023; the Docker Hub images are no longer updated.
+ARG BASE_CONTAINER=quay.io/jupyter/scipy-notebook:python-3.11
 FROM $BASE_CONTAINER
 
 USER root
