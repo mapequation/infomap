@@ -27,3 +27,15 @@ updates:
     labels:
       - dependencies
     open-pull-requests-limit: 5
+
+  - package-ecosystem: docker
+    directory: /docker
+    schedule:
+      interval: monthly
+    labels:
+      - dependencies
+    open-pull-requests-limit: 5
+    groups:
+      docker:
+        patterns:
+          - "*"

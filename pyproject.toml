@@ -1,6 +1,7 @@
 [build-system]
 requires = [
-  "setuptools>=68",
+  # >=77 for PEP 639 SPDX license support (the `license` expression below).
+  "setuptools>=77",
   "wheel",
 ]
 build-backend = "setuptools.build_meta"

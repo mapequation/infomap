@@ -62,7 +62,7 @@ Baseline tools:
 
 - Python 3.11 or newer; use `python3` on macOS when `python` is unavailable
 - R 4.0 or newer for the R package; CI exercises both `release` and `oldrel`
-- Node.js 20 for the JavaScript worker package
+- Node.js 24 for the JavaScript worker package
 - `gcc` or `clang` with a working C++ toolchain
 - `swig` 4.4.1 only for refreshing tracked Python or R wrapper outputs
 - `em++` from Emscripten 5.0.5 for JavaScript worker builds
