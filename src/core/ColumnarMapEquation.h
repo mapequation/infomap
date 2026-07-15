@@ -335,6 +335,38 @@ private:
   std::vector<std::unordered_map<int, double>> m_moduleCatFlow; // f_{m,c}
 };
 
+/**
+ * Memory objective (state / higher-order networks): the leaf-module codebook is
+ * over PHYSICAL nodes, not state nodes — state nodes of the same physical node
+ * in the same module share a codeword (their flows sum). Working the
+ * T-normalized module term out, the module-flow*log(T) parts cancel between the
+ * state and physical versions, leaving a correction to the base (state-node)
+ * codelength of  C_state - sum_{module,phys} plogp(physFlow),  where
+ * C_state = sum_leaf plogp(stateFlow) is a constant and physFlow is the summed
+ * state flow of a physical node within a module. Leaf-module level only
+ * (module-of-modules delegates to base). Same O(1) move-loop hook as Meta with
+ * attribute = physical node id — the case the hook is designed for.
+ */
+class MemCorrection final : public ColumnarCorrection {
+public:
+  MemCorrection(std::vector<int> leafPhysical, std::vector<double> leafFlow);
+  double hierarchicalCorrection(const ColumnarTwoLevel& core) const override;
+
+  bool participatesInMoveLoop() const override { return true; }
+  double initMoveLoop(const std::vector<int>& leafModule, int numModules) override;
+  double moveDelta(int leaf, int oldMod, int newMod) const override;
+  void applyMove(int leaf, int oldMod, int newMod) override;
+
+private:
+  double physFlow(int module, int physical) const;
+
+  std::vector<int> m_leafPhysical; // per leaf (state node): physical node id
+  std::vector<double> m_leafFlow; // per leaf: state flow
+  double m_cState; // constant sum_leaf plogp(stateFlow)
+
+  std::vector<std::unordered_map<int, double>> m_modulePhysFlow; // physFlow_{m,p}
+};
+
 } // namespace infomap
 
 #endif // COLUMNAR_MAP_EQUATION_H_

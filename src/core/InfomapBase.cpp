@@ -1794,6 +1794,17 @@ void InfomapBase::columnarPartition()
     }
     opt.addCorrection(std::make_unique<MetaCorrection>(std::move(leafCategory), std::move(leafWeight), metaDataRate));
   }
+  // Memory (state / higher-order): physical-node leaf-module codebook. The
+  // regularized-multilayer teleport prior is a separate correction, deferred.
+  else if (haveMemory()) {
+    std::vector<int> leafPhysical(m_leafNodes.size(), 0);
+    std::vector<double> leafFlow(m_leafNodes.size(), 0.0);
+    for (std::size_t i = 0; i < m_leafNodes.size(); ++i) {
+      leafPhysical[i] = static_cast<int>(m_leafNodes[i]->physicalId);
+      leafFlow[i] = m_leafNodes[i]->data.flow;
+    }
+    opt.addCorrection(std::make_unique<MemCorrection>(std::move(leafPhysical), std::move(leafFlow)));
+  }
 
   const double columnarL = opt.optimizeColumnar(1, tuneIterationLimit);
 

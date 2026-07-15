@@ -1084,6 +1084,85 @@ void MetaCorrection::applyMove(int leaf, int oldMod, int newMod)
   m_moduleCatFlow[newMod][q] += w;
 }
 
+// ===================================================
+// MemCorrection (memory / state networks: physical-node codebook)
+// ===================================================
+
+MemCorrection::MemCorrection(std::vector<int> leafPhysical, std::vector<double> leafFlow)
+    : m_leafPhysical(std::move(leafPhysical)), m_leafFlow(std::move(leafFlow)), m_cState(0.0)
+{
+  using infomath::plogp;
+  for (double f : m_leafFlow)
+    m_cState += plogp(f);
+}
+
+double MemCorrection::physFlow(int module, int physical) const
+{
+  const auto& pf = m_modulePhysFlow[module];
+  const auto it = pf.find(physical);
+  return it == pf.end() ? 0.0 : it->second;
+}
+
+double MemCorrection::hierarchicalCorrection(const ColumnarTwoLevel& core) const
+{
+  using infomath::plogp;
+  if (core.hierNumLevels() < 2)
+    return 0.0;
+  const int nLeaves = core.numLeaves();
+  std::unordered_map<long long, double> physFlowMap; // key = (module<<32)|physical
+  for (int i = 0; i < nLeaves; ++i) {
+    const int m = core.hierLeafModule(i);
+    const long long key = (static_cast<long long>(m) << 32) | static_cast<unsigned int>(m_leafPhysical[i]);
+    physFlowMap[key] += m_leafFlow[i];
+  }
+  double sum = 0.0;
+  for (const auto& kv : physFlowMap)
+    sum += plogp(kv.second);
+  return m_cState - sum;
+}
+
+double MemCorrection::initMoveLoop(const std::vector<int>& leafModule, int numModules)
+{
+  using infomath::plogp;
+  m_modulePhysFlow.assign(numModules, {});
+  const int nLeaves = static_cast<int>(leafModule.size());
+  for (int i = 0; i < nLeaves; ++i)
+    m_modulePhysFlow[leafModule[i]][m_leafPhysical[i]] += m_leafFlow[i];
+  double sum = 0.0;
+  for (const auto& pf : m_modulePhysFlow)
+    for (const auto& kv : pf)
+      sum += plogp(kv.second);
+  return m_cState - sum;
+}
+
+double MemCorrection::moveDelta(int leaf, int oldMod, int newMod) const
+{
+  using infomath::plogp;
+  if (oldMod == newMod)
+    return 0.0;
+  const int p = m_leafPhysical[leaf];
+  const double f = m_leafFlow[leaf];
+  const double oc = physFlow(oldMod, p), nc = physFlow(newMod, p);
+  // term = C_state - sum plogp(physFlow); only phys p in the two modules changes.
+  return (plogp(oc) - plogp(oc - f)) + (plogp(nc) - plogp(nc + f));
+}
+
+void MemCorrection::applyMove(int leaf, int oldMod, int newMod)
+{
+  if (oldMod == newMod)
+    return;
+  const int p = m_leafPhysical[leaf];
+  const double f = m_leafFlow[leaf];
+  auto& oldPhys = m_modulePhysFlow[oldMod];
+  auto it = oldPhys.find(p);
+  if (it != oldPhys.end()) {
+    it->second -= f;
+    if (it->second <= 1e-16)
+      oldPhys.erase(it);
+  }
+  m_modulePhysFlow[newMod][p] += f;
+}
+
 bool ColumnarTwoLevel::refineBottomWithinParents()
 {
   if (m_hierLevels.size() < 3)
