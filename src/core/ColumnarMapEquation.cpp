@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
+#include <functional>
 #include <limits>
 #include <numeric>
 #include <random>
@@ -1141,6 +1142,33 @@ void MetaCorrection::applyMove(int leaf, int oldMod, int newMod)
   m_moduleCatFlow[newMod][q] += w;
 }
 
+double MetaCorrection::mergeDelta(int a, int b) const
+{
+  using infomath::plogp;
+  // contribution(m) = metaDataRate * (plogp(F_m) - sum_c plogp(f_{m,c})).
+  const double Fa = m_moduleFlow[a], Fb = m_moduleFlow[b];
+  double d = plogp(Fa + Fb) - plogp(Fa) - plogp(Fb); // change in the F term
+  const auto& ca = m_moduleCatFlow[a];
+  const auto& cb = m_moduleCatFlow[b];
+  for (const auto& kv : ca) {
+    const auto it = cb.find(kv.first);
+    const double bv = (it == cb.end()) ? 0.0 : it->second;
+    d -= plogp(kv.second + bv) - plogp(kv.second) - plogp(bv); // -sum_c plogp(f_c)
+  }
+  return m_metaDataRate * d;
+}
+
+void MetaCorrection::applyMerge(int a, int b)
+{
+  m_moduleFlow[b] += m_moduleFlow[a];
+  m_moduleFlow[a] = 0.0;
+  auto& ca = m_moduleCatFlow[a];
+  auto& cb = m_moduleCatFlow[b];
+  for (const auto& kv : ca)
+    cb[kv.first] += kv.second;
+  ca.clear();
+}
+
 std::unique_ptr<ColumnarCorrection> MetaCorrection::sliceForLeaves(const std::vector<int>& globalLeafIds) const
 {
   const int n = static_cast<int>(globalLeafIds.size());
@@ -1250,6 +1278,33 @@ void MemCorrection::proposeMoveTargets(int leaf, std::vector<int>& out) const
     return;
   for (int m : it->second)
     out.push_back(m);
+}
+
+double MemCorrection::mergeDelta(int a, int b) const
+{
+  using infomath::plogp;
+  // contribution(m) = -sum_p plogp(physFlow_m[p]); merging folds A's physical
+  // flows into B. Only physicals present in BOTH modules change the sum (a
+  // physical in only one keeps its single plogp term). Iterate the (smaller)
+  // A side; b-only physicals are handled when B is the A of another pair.
+  const auto& pa = m_modulePhysFlow[a];
+  const auto& pb = m_modulePhysFlow[b];
+  double dSum = 0.0; // change in sum_p plogp(physFlow)
+  for (const auto& kv : pa) {
+    const auto it = pb.find(kv.first);
+    const double bv = (it == pb.end()) ? 0.0 : it->second;
+    dSum += plogp(kv.second + bv) - plogp(kv.second) - plogp(bv);
+  }
+  return -dSum; // correction = C_state - sum_p plogp; delta correction = -dSum
+}
+
+void MemCorrection::applyMerge(int a, int b)
+{
+  auto& pa = m_modulePhysFlow[a];
+  auto& pb = m_modulePhysFlow[b];
+  for (const auto& kv : pa)
+    pb[kv.first] += kv.second;
+  pa.clear();
 }
 
 std::unique_ptr<ColumnarCorrection> MemCorrection::sliceForLeaves(const std::vector<int>& globalLeafIds) const
@@ -1510,6 +1565,177 @@ bool ColumnarTwoLevel::refineLayerWithinGrandparent(int k)
   return true;
 }
 
+bool ColumnarTwoLevel::mergeLeafModulesWithinParents()
+{
+  using infomath::plogp;
+  if (m_hierLevels.size() < 3)
+    return false; // need a level-2 parent term to price the merge against
+
+  // Corrections that reward coarsening (Mem/Meta). No participants => the base
+  // objective, where any merge only raises the codelength: nothing to do.
+  std::vector<ColumnarCorrection*> corr;
+  for (auto& c : m_corrections)
+    if (c->participatesInMoveLoop())
+      corr.push_back(c.get());
+  if (corr.empty())
+    return false;
+
+  const int K = m_hierLevels[1].n; // leaf modules (level-0 -> 1)
+  const int numParents = m_hierLevels[2].n;
+
+  // Seed the corrections' per-module state at the current leaf-module partition.
+  for (auto* c : corr)
+    c->initMoveLoop(m_hierAssign[0], K);
+
+  // Mutable leaf-module aggregates + parent map + adjacency (crossing flow).
+  std::vector<double> flow = m_hierLevels[1].flow;
+  std::vector<double> enter = m_hierLevels[1].enter;
+  std::vector<double> exit = m_hierLevels[1].exit;
+  std::vector<int> parent = m_hierAssign[1];
+  std::vector<std::unordered_map<int, double>> adjOut(K), adjIn(K);
+  {
+    const Level& L1 = m_hierLevels[1];
+    for (int a = 0; a < K; ++a)
+      for (int e = L1.outStart[a]; e < L1.outStart[a + 1]; ++e) {
+        const int t = L1.outTarget[e];
+        const double f = L1.outFlow[e];
+        adjOut[a][t] += f;
+        adjIn[t][a] += f;
+      }
+  }
+  // Parent module-of-modules "total use" = parent exit + sum of child enter.
+  std::vector<double> totalUse(numParents, 0.0);
+  for (int p = 0; p < numParents; ++p)
+    totalUse[p] = m_hierLevels[2].exit[p];
+  for (int a = 0; a < K; ++a)
+    totalUse[parent[a]] += enter[a];
+
+  std::vector<char> alive(K, 1);
+  std::vector<int> mergedInto(K);
+  for (int a = 0; a < K; ++a)
+    mergedInto[a] = a;
+
+  auto crossing = [&](int a, int b) {
+    double w = 0.0;
+    const auto o = adjOut[a].find(b);
+    if (o != adjOut[a].end()) w += o->second;
+    const auto i = adjIn[a].find(b);
+    if (i != adjIn[a].end()) w += i->second;
+    return w;
+  };
+  // Delta of folding module a into module b (both alive, same parent).
+  auto mergeCost = [&](int a, int b) {
+    const double w = crossing(a, b);
+    const double flowB2 = flow[a] + flow[b];
+    const double exitB2 = exit[a] + exit[b] - w;
+    const double enterB2 = enter[a] + enter[b] - w;
+    const double Ta = flow[a] + exit[a], Tb = flow[b] + exit[b], Tb2 = flowB2 + exitB2;
+    // Level-1 leaf-module term: plogp(T) - plogp(exit) - sum_leaf plogp(flow);
+    // the per-leaf sums cancel in the merge, leaving flows/exits only.
+    const double dL1 = (plogp(Tb2) - plogp(Ta) - plogp(Tb))
+                     - (plogp(exitB2) - plogp(exit[a]) - plogp(exit[b]));
+    // Parent module-of-modules term for the shared parent.
+    const int p = parent[b];
+    const double tu = totalUse[p];
+    const double dPar = (plogp(tu - w) - plogp(tu))
+                      - (plogp(enterB2) - plogp(enter[a]) - plogp(enter[b]));
+    double d = dL1 + dPar;
+    for (auto* c : corr)
+      d += c->mergeDelta(a, b);
+    return d;
+  };
+
+  int totalMerges = 0;
+  bool anyPass = true;
+  while (anyPass) {
+    anyPass = false;
+    for (int a = 0; a < K; ++a) {
+      if (!alive[a])
+        continue;
+      // Candidates: alive same-parent modules that are either connected in the
+      // L1 network or share an attribute (co-physical) with a.
+      int bestB = -1;
+      double bestD = -kMinImprovement;
+      auto consider = [&](int b) {
+        if (b == a || !alive[b] || parent[b] != parent[a])
+          return;
+        const double d = mergeCost(a, b);
+        if (d < bestD) {
+          bestD = d;
+          bestB = b;
+        }
+      };
+      for (const auto& kv : adjOut[a]) consider(kv.first);
+      for (const auto& kv : adjIn[a]) consider(kv.first);
+      if (bestB < 0)
+        continue;
+
+      const int b = bestB;
+      const double w = crossing(a, b);
+      // Commit aggregates.
+      flow[b] += flow[a];
+      const double newExit = exit[a] + exit[b] - w;
+      const double newEnter = enter[a] + enter[b] - w;
+      exit[b] = newExit;
+      enter[b] = newEnter;
+      totalUse[parent[b]] -= w;
+      for (auto* c : corr)
+        c->applyMerge(a, b);
+      // Rewire adjacency: fold a's edges into b.
+      for (const auto& kv : adjOut[a]) {
+        const int x = kv.first;
+        if (x == b) continue;
+        adjOut[b][x] += kv.second;
+        adjIn[x][b] += kv.second;
+        adjIn[x].erase(a);
+      }
+      for (const auto& kv : adjIn[a]) {
+        const int x = kv.first;
+        if (x == b) continue;
+        adjOut[x][b] += kv.second;
+        adjIn[b][x] += kv.second;
+        adjOut[x].erase(a);
+      }
+      adjOut[b].erase(a);
+      adjIn[b].erase(a);
+      adjOut[a].clear();
+      adjIn[a].clear();
+      alive[a] = 0;
+      mergedInto[a] = b;
+      ++totalMerges;
+      anyPass = true;
+    }
+  }
+
+  if (totalMerges == 0)
+    return false;
+
+  // Rebuild the leaf-module level from the surviving modules.
+  std::function<int(int)> root = [&](int x) {
+    while (mergedInto[x] != x)
+      x = mergedInto[x];
+    return x;
+  };
+  std::vector<int> newId(K, -1);
+  int Knew = 0;
+  for (int a = 0; a < K; ++a)
+    if (alive[a])
+      newId[a] = Knew++;
+  std::vector<int> newA0(m_nLeaves);
+  for (int i = 0; i < m_nLeaves; ++i)
+    newA0[i] = newId[root(m_hierAssign[0][i])];
+  std::vector<int> newA1(Knew);
+  for (int a = 0; a < K; ++a)
+    if (alive[a])
+      newA1[newId[a]] = parent[a];
+
+  m_hierAssign[0] = std::move(newA0);
+  m_hierAssign[1] = std::move(newA1);
+  m_hierLevels[1] = aggregateLevel(m_leaf0, m_hierAssign[0], Knew, m_undirected);
+  m_numTopModules = static_cast<unsigned int>(m_hierLevels.back().n);
+  return true;
+}
+
 double ColumnarTwoLevel::optimizeConverge(unsigned int bottomBlockLimit, unsigned int superAggLimit, unsigned int sweepLimit)
 {
   m_superAggLimit = superAggLimit;
@@ -1552,6 +1778,30 @@ double ColumnarTwoLevel::optimizeConverge(unsigned int bottomBlockLimit, unsigne
       (void)before;
 #endif
     }
+
+    // Mem-aware leaf-module coarsening: merge co-attribute leaf modules within
+    // their parent (gated on the true objective — the incremental deltas guide
+    // the merges, but the whole round is reverted if it doesn't actually help).
+    {
+      std::vector<Level> savedLevels = m_hierLevels;
+      std::vector<std::vector<int>> savedAssign = m_hierAssign;
+      if (mergeLeafModulesWithinParents()) {
+        const double after = hierarchicalCodelengthFromStack();
+        if (after < L - kMinImprovement) {
+#ifdef COLUMNAR_DEBUG
+          std::fprintf(stderr, "[converge] sweep=%d MERGE %.9f -> %.9f (leafmods %d)\n",
+                       sweep, L, after, m_hierLevels[1].n);
+#endif
+          L = after;
+          improved = true;
+        } else {
+          m_hierLevels = std::move(savedLevels);
+          m_hierAssign = std::move(savedAssign);
+          m_numTopModules = static_cast<unsigned int>(m_hierLevels.back().n);
+        }
+      }
+    }
+
     if (!improved)
       break;
   }

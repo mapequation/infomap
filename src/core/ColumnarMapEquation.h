@@ -67,6 +67,16 @@ public:
   // leaf's current module may be included; the caller skips it. Default none.
   virtual void proposeMoveTargets(int leaf, std::vector<int>& out) const {}
 
+  // --- Leaf-module merge hooks (mem-aware coarsening) -----------------------
+  // The leaf-module merge operator folds one leaf module into another to coarsen
+  // the partition where the correction rewards it (Mem: combine two modules'
+  // physical codebooks). It reuses the move-loop per-module state built by
+  // initMoveLoop (so modules here are leaf-module ids), and needs the change in
+  // this correction's contribution from merging module A into module B, plus a
+  // commit. Base objective / structural corrections leave these zero/no-op.
+  virtual double mergeDelta(int moduleA, int moduleB) const { return 0.0; }
+  virtual void applyMerge(int moduleA, int moduleB) {}
+
   // Restrict this correction to a subset of leaves for an in-context leaf refine
   // (the bottom-level re-partition within a first-order parent). `globalLeafIds`
   // lists the sub-problem's leaves by global id in the sub-problem's local order,
@@ -260,6 +270,17 @@ private:
   // is the k == 0 special case. Returns false if no grandparent layer exists.
   bool refineLayerWithinGrandparent(int k);
 
+  // Mem-aware leaf-module coarsening: merge leaf modules (level-0 -> 1) within
+  // their shared level-2 parent when it lowers the augmented objective. The base
+  // map equation opposes merging well-separated modules, but a leaf-shaping
+  // correction (Mem) rewards folding co-attribute flow together (a smaller
+  // physical codebook), and the balanced mem optimum lives at coarser leaf
+  // modules than the base optimum. Single-leaf moves can't cross that barrier
+  // (uphill before the codebook payoff); an atomic module merge can. Super
+  // levels stay first-order. No-op for the base objective (no correction => a
+  // merge only raises base => never accepted). Returns true if anything merged.
+  bool mergeLeafModulesWithinParents();
+
   // Add leaf-shaping corrections, sliced to the given subset of leaves, onto a
   // sub-optimizer so an in-context bottom refine optimizes the augmented
   // objective (base + Meta/Mem) rather than base alone. No-op for the base
@@ -356,6 +377,8 @@ public:
   double initMoveLoop(const std::vector<int>& leafModule, int numModules) override;
   double moveDelta(int leaf, int oldMod, int newMod) const override;
   void applyMove(int leaf, int oldMod, int newMod) override;
+  double mergeDelta(int moduleA, int moduleB) const override;
+  void applyMerge(int moduleA, int moduleB) override;
   std::unique_ptr<ColumnarCorrection> sliceForLeaves(const std::vector<int>& globalLeafIds) const override;
 
 private:
@@ -395,6 +418,8 @@ public:
   double moveDelta(int leaf, int oldMod, int newMod) const override;
   void applyMove(int leaf, int oldMod, int newMod) override;
   void proposeMoveTargets(int leaf, std::vector<int>& out) const override;
+  double mergeDelta(int moduleA, int moduleB) const override;
+  void applyMerge(int moduleA, int moduleB) override;
   std::unique_ptr<ColumnarCorrection> sliceForLeaves(const std::vector<int>& globalLeafIds) const override;
 
 private:
