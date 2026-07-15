@@ -1771,6 +1771,20 @@ void InfomapBase::columnarPartition()
   const unsigned long trialSeed = m_rand.randInt(0, std::numeric_limits<int>::max());
   ColumnarTwoLevel opt;
   opt.buildFromLeaves(m_leafNodes, isUndirectedClustering(), trialSeed);
+
+  // Biased objective add-ons (default off => base). Entropy bias correction uses
+  // the same total-degree divisor as BiasedMapEquation::setNetworkProperties.
+  if (entropyBiasCorrection) {
+    ColumnarTwoLevel::ObjectiveParams obj;
+    obj.useEntropyBiasCorrection = true;
+    obj.entropyBiasCorrectionMultiplier = entropyBiasCorrectionMultiplier;
+    double totalDegree = m_network.sumWeightedDegree();
+    if (totalDegree < m_network.sumDegree())
+      totalDegree = m_network.sumDegree();
+    obj.totalDegree = totalDegree;
+    opt.setObjective(obj);
+  }
+
   const double columnarL = opt.optimizeColumnar(1, tuneIterationLimit);
 
   // Materialize the result into the InfoNode tree (sets m_hierarchicalCodelength

@@ -96,6 +96,19 @@ public:
     std::vector<double> inFlow;
   };
 
+  // Objective add-ons on top of the base map equation (additive variants).
+  // Base (default Biased with both off) leaves every field at its default, so
+  // the correction is exactly zero and the base path is unchanged.
+  struct ObjectiveParams {
+    // Biased: entropy bias correction, a per-module mult*childDegree/(2*D) term
+    // that is part of the tree codelength (calcCodelengthOnTree).
+    bool useEntropyBiasCorrection = false;
+    double entropyBiasCorrectionMultiplier = 1.0;
+    double totalDegree = 1.0; // network sum of (weighted) degree, the 2*D divisor's D
+  };
+
+  void setObjective(const ObjectiveParams& params) { m_obj = params; }
+
   // Build the leaf level (flow, enter/exit, out+in CSR) from the leaf network.
   void buildFromLeaves(const std::vector<InfoNode*>& leafNodes, bool undirected, unsigned long seed);
 
@@ -188,6 +201,11 @@ private:
   unsigned long m_seed = 123;
   double m_exitNetworkFlow = 0.0; // flow leaving this (sub-)network; 0 if closed
   unsigned int m_superAggLimit = 0; // >0: conservative up-build (passes/super-level)
+  ObjectiveParams m_obj; // additive objective add-ons (base = all-default = no-op)
+
+  // Additive objective correction to the base hierarchical codelength, summed
+  // over the stacked levels (0 for the base/default-Biased objective).
+  double objectiveCorrection() const;
 
   Level m_leaf0; // immutable leaf network
   Level m_lvl;

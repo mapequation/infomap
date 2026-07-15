@@ -944,7 +944,22 @@ double ColumnarTwoLevel::hierarchicalCodelengthFromStack() const
     total += plogp(sumEnter) - sumPlogpEnter;
   }
 
-  return total;
+  return total + objectiveCorrection();
+}
+
+double ColumnarTwoLevel::objectiveCorrection() const
+{
+  // Entropy bias correction (Biased objective): calcCodelengthOnTree adds
+  // mult*childDegree/(2*D) to every internal node including the root. Summed
+  // over the tree that is exactly mult*(non-root node count)/(2*D), and the
+  // non-root nodes are every module at every level plus every leaf.
+  if (!m_obj.useEntropyBiasCorrection || m_hierLevels.empty())
+    return 0.0;
+  const double D = m_obj.totalDegree > 0.0 ? m_obj.totalDegree : 1.0;
+  long long nonRootNodes = 0;
+  for (std::size_t k = 0; k < m_hierLevels.size(); ++k)
+    nonRootNodes += m_hierLevels[k].n; // level 0 = leaves, 1..top = module levels
+  return m_obj.entropyBiasCorrectionMultiplier * static_cast<double>(nonRootNodes) / (2.0 * D);
 }
 
 bool ColumnarTwoLevel::refineBottomWithinParents()
