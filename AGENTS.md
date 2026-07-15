@@ -132,6 +132,17 @@ Targeted checks:
 - On some local macOS setups, Homebrew tools may need `PATH="/opt/homebrew/bin:$PATH"`
 - Never develop directly on `master`; create or use a task-specific branch
 
+## Commits and Pull Requests
+
+- The user is the author of every commit and pull request. Author and commit
+  all work in the user's name; never record yourself as the author.
+- Never add yourself as a co-author. Do not append `Co-Authored-By` trailers,
+  "Generated with" footers, agent signatures, or session links to any commit or
+  pull request.
+- Never mention yourself in commit messages, pull request titles, or pull
+  request descriptions. Describe only the change and its rationale, written in
+  the user's voice.
+
 ## Do Not Guess
 
 - Do not improvise around SWIG generation, Python packaging, or R packaging
