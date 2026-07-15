@@ -11,6 +11,7 @@
 #include "InfomapConfig.h"
 #include "InfoNode.h"
 #include "FlowData.h"
+#include "ColumnarMapEquation.h"
 #include "BiasedMapEquation.h"
 #include "MemMapEquation.h"
 #include "MetaMapEquation.h"
@@ -1013,6 +1014,56 @@ void InfomapBase::run(Network& network)
   Stopwatch totalTimer(true);
   RunSession runSession(*this, network, timing);
   auto runResult = runSession.run();
+
+  if (columnarCheck) {
+    // Phase-1a correctness gate: reproduce the final tree's hierarchical
+    // codelength from the columnar core. A match validates the new structure's
+    // ingestion + aggregation + base map-equation math before we build the
+    // move loop and interior tuning on it.
+    ColumnarMapEquation columnar;
+    columnar.buildFromTree(root(), m_leafNodes, isUndirectedClustering());
+    const double columnarL = columnar.hierarchicalCodelength();
+    const double treeL = getHierarchicalCodelength();
+    const double diff = columnarL - treeL;
+    const double rel = treeL > 1e-16 ? diff / treeL : 0.0;
+    Console().section("Columnar check");
+    Console::detail(0, "tree {} vs columnar {}, diff {:.3g} ({:.2g}%), {} modules, {} levels", io::toPrecision(treeL), io::toPrecision(columnarL), diff, rel * 100, columnar.numModules(), columnar.numLevels());
+  }
+
+  if (columnarTwoLevel) {
+    // Phase 1b/1c: run the columnar optimizer and compare to the OO result.
+    // Two-level parity is like-for-like under --two-level; hierarchical parity
+    // (two-level + enter-flow super-search) is compared to the full OO run
+    // (the residual gap is the recursion contribution, the M2 target).
+    Console().section("Columnar optimizer");
+
+    Stopwatch cw2(true);
+    ColumnarTwoLevel opt2;
+    opt2.buildFromLeaves(m_leafNodes, isUndirectedClustering(), seedToRandomNumberGenerator);
+    const double columnar2L = opt2.optimizeTwoLevel();
+    cw2.stop();
+
+    Stopwatch cwH(true);
+    ColumnarTwoLevel optH;
+    optH.buildFromLeaves(m_leafNodes, isUndirectedClustering(), seedToRandomNumberGenerator);
+    const double columnarHL = optH.optimizeHierarchical(levelAggregationLimit);
+    cwH.stop();
+
+    Stopwatch cwF(true);
+    ColumnarTwoLevel optF;
+    optF.buildFromLeaves(m_leafNodes, isUndirectedClustering(), seedToRandomNumberGenerator);
+    const double columnarFL = optF.optimizeFlexible();
+    cwF.stop();
+
+    const double ooL = getHierarchicalCodelength();
+    Console::detail(0, "OO {} ({} lvl) · columnar 2-level {} ({} mods, {:.3g}s) · columnar hier {} ({} lvl, {:.3g}s) · columnar flex {} ({} lvl, {:.3g}s), flex gap-to-OO {:.2g}%",
+                    io::toPrecision(ooL), numLevels(),
+                    io::toPrecision(columnar2L), opt2.numTopModules(), cw2.getElapsedTimeInSec(),
+                    io::toPrecision(columnarHL), optH.numHierLevels(), cwH.getElapsedTimeInSec(),
+                    io::toPrecision(columnarFL), optF.numHierLevels(), cwF.getElapsedTimeInSec(),
+                    ooL > 1e-16 ? (columnarFL - ooL) / ooL * 100 : 0.0);
+  }
+
   m_elapsedTime.stop();
   m_endDate = Date();
   runSession.printSummary(runResult);
@@ -1701,6 +1752,33 @@ std::vector<unsigned int> InfomapBase::noiseTopModules() const
 void InfomapBase::hierarchicalPartition()
 {
   Console::detail(1, "hierarchical partition");
+
+  if (hierFromBlocks) {
+    // Phase-1a (corrected) measurement: depart from the two-level-greedy path
+    // early. Instead of aggregating all the way to the coarse two-level optimum
+    // and then rebuilding downward, stop at fine building blocks and grow the
+    // hierarchy UPWARD with the enter-flow super-search — the correct
+    // hierarchical operator. No fine/coarse two-level tuning, no recursive
+    // rebuild. This isolates how far "depart early + correct up-operator" gets
+    // on its own, before any hierarchical tuning is added.
+    Console().section("Optimization (hierarchical-from-blocks experiment)");
+    m_tuneIterationIndex = 0;
+    // Building blocks: stop aggregation early (finest by default). Reuse
+    // --level-aggregation-limit as the block-granularity knob; 0 (its default,
+    // meaning "unlimited") would reproduce the coarse two-level optimum, so map
+    // it to 1 pass = the finest modules.
+    const unsigned int blockAggregationLimit = levelAggregationLimit == 0 ? 1 : levelAggregationLimit;
+    findTopModulesRepeatedly(blockAggregationLimit);
+    Console::detail(1, "blocks: {} building blocks, two-level codelength {}", numTopModules(), io::toPrecision(getCodelength()));
+
+    // Grow up with the enter-flow super-search (sets m_hierarchicalCodelength).
+    findHierarchicalSuperModules();
+
+    for (auto clusterIt = m_root.begin_tree(); !clusterIt.isEnd(); ++clusterIt)
+      clusterIt->index = clusterIt.moduleIndex();
+    Console::detail(1, "hier-from-blocks: {} levels, codelength {}", maxTreeDepth(), io::toPrecision(m_hierarchicalCodelength));
+    return;
+  }
 
   const auto depth = maxTreeDepth();
   if (depth > 2) {
