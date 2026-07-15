@@ -76,6 +76,12 @@ public:
   // commit. Base objective / structural corrections leave these zero/no-op.
   virtual double mergeDelta(int moduleA, int moduleB) const { return 0.0; }
   virtual void applyMerge(int moduleA, int moduleB) {}
+  // Append leaf modules sharing an attribute with `module` (Mem: a physical
+  // node) as extra merge candidates beyond the edge-connected set. Redundant on
+  // undirected clustering (co-attribute modules are edge-adjacent there) but
+  // relevant on directed; the merge operator consults it only when the
+  // co-physical tuning mode is on (COL_COMERGE). Default none.
+  virtual void proposeMergePartners(int module, std::vector<int>& out) const {}
 
   // Restrict this correction to a subset of leaves for an in-context leaf refine
   // (the bottom-level re-partition within a first-order parent). `globalLeafIds`
@@ -431,6 +437,7 @@ public:
   void proposeMoveTargets(int leaf, std::vector<int>& out) const override;
   double mergeDelta(int moduleA, int moduleB) const override;
   void applyMerge(int moduleA, int moduleB) override;
+  void proposeMergePartners(int module, std::vector<int>& out) const override;
   std::unique_ptr<ColumnarCorrection> sliceForLeaves(const std::vector<int>& globalLeafIds) const override;
 
 private:

@@ -29,6 +29,25 @@
 
 namespace infomap {
 
+// Co-physical (correction-proposed) candidate mode, from env COL_COMERGE:
+//   off (default) | all | seeded.
+// Proposing co-physical merge candidates is redundant with the edge-based
+// candidate set on UNDIRECTED clustering (co-physical state nodes are 2-hop
+// connected there) but may matter on DIRECTED clustering, where co-physical
+// modules need not be edge-adjacent. Kept as a tuning knob for that case:
+//   0 = off, 1 = all move-loop phases + merge, 2 = seeded phases only.
+static int coMergeMode()
+{
+  static const int mode = [] {
+    const char* e = std::getenv("COL_COMERGE");
+    if (!e) return 0;
+    if (std::string(e) == "all") return 1;
+    if (std::string(e) == "seeded") return 2;
+    return 0;
+  }();
+  return mode;
+}
+
 void ColumnarMapEquation::buildFromTree(const InfoNode& root, const std::vector<InfoNode*>& leafNodes, bool undirected)
 {
   m_undirected = undirected;
@@ -492,21 +511,11 @@ unsigned int ColumnarTwoLevel::moveLoop()
       correctionTotal += c->initMoveLoop(m_module, n);
   }
 
-  // EXPERIMENT: co-physical (correction-proposed) merge candidates. Mode from
-  // env COL_COMERGE = off | all | seeded (default all). "seeded" restricts the
-  // extra candidates to seeded phases (fine-tune / refine), where base structure
-  // already exists, avoiding premature over-merging from singletons.
-  static const int kCoMergeMode = [] {
-    const char* e = std::getenv("COL_COMERGE");
-    if (!e) return 0; // default off: proposing co-physical candidates greedily
-                      // from singletons doesn't reach the balanced mem basin
-                      // (the barrier is leaf-module coarsening, not candidates)
-    if (std::string(e) == "all") return 1;
-    if (std::string(e) == "seeded") return 2;
-    return 0;
-  }();
+  // Co-physical move-loop candidates (see coMergeMode): "seeded" restricts them
+  // to seeded phases (fine-tune / refine), where base structure already exists.
+  const int coMode = coMergeMode();
   const bool proposeExtra = !corr.empty()
-      && (kCoMergeMode == 1 || (kCoMergeMode == 2 && m_seededPhase));
+      && (coMode == 1 || (coMode == 2 && m_seededPhase));
 
   double oldCodelength = m_codelength + correctionTotal;
   unsigned int numEffectiveLoops = 0;
@@ -1302,9 +1311,31 @@ void MemCorrection::applyMerge(int a, int b)
 {
   auto& pa = m_modulePhysFlow[a];
   auto& pb = m_modulePhysFlow[b];
-  for (const auto& kv : pa)
+  for (const auto& kv : pa) {
     pb[kv.first] += kv.second;
+    if (!m_physModules.empty()) { // maintained only when co-physical mode is on
+      auto& mods = m_physModules[kv.first];
+      mods.erase(a);
+      mods.insert(b);
+    }
+  }
   pa.clear();
+}
+
+void MemCorrection::proposeMergePartners(int module, std::vector<int>& out) const
+{
+  // Leaf modules sharing a physical node with `module` (co-physical merge
+  // candidates the edge-based set can miss on directed clustering).
+  if (module >= static_cast<int>(m_modulePhysFlow.size()))
+    return;
+  for (const auto& kv : m_modulePhysFlow[module]) {
+    const auto it = m_physModules.find(kv.first);
+    if (it == m_physModules.end())
+      continue;
+    for (int m : it->second)
+      if (m != module)
+        out.push_back(m);
+  }
 }
 
 std::unique_ptr<ColumnarCorrection> MemCorrection::sliceForLeaves(const std::vector<int>& globalLeafIds) const
@@ -1709,6 +1740,13 @@ bool ColumnarTwoLevel::mergeLeafModulesWithinParents()
     return d;
   };
 
+  // Co-physical merge candidates beyond the edge-connected set. Redundant on
+  // undirected clustering (co-attribute modules are 2-hop connected, so already
+  // edge-adjacent) and only a small, inconsistent effect on directed, so kept as
+  // a tuning knob (COL_COMERGE) rather than a default. Off by default.
+  const bool coPhysicalMerge = (coMergeMode() != 0);
+  std::vector<int> mergeCand;
+
   int totalMerges = 0;
   bool anyPass = true;
   while (anyPass) {
@@ -1717,7 +1755,7 @@ bool ColumnarTwoLevel::mergeLeafModulesWithinParents()
       if (!alive[a])
         continue;
       // Candidates: alive same-parent modules that are either connected in the
-      // L1 network or share an attribute (co-physical) with a.
+      // L1 network or (with the tuning mode on) share an attribute with a.
       int bestB = -1;
       double bestD = -kMinImprovement;
       auto consider = [&](int b) {
@@ -1731,6 +1769,12 @@ bool ColumnarTwoLevel::mergeLeafModulesWithinParents()
       };
       for (const auto& kv : adjOut[a]) consider(kv.first);
       for (const auto& kv : adjIn[a]) consider(kv.first);
+      if (coPhysicalMerge) {
+        mergeCand.clear();
+        for (auto* c : corr)
+          c->proposeMergePartners(a, mergeCand);
+        for (int b : mergeCand) consider(b);
+      }
       if (bestB < 0)
         continue;
 
