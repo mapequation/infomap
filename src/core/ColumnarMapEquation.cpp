@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
+#include <ctime>
 #include <functional>
 #include <limits>
 #include <numeric>
@@ -1860,82 +1861,73 @@ double ColumnarTwoLevel::optimizeConverge(unsigned int bottomBlockLimit, unsigne
 #ifdef COLUMNAR_DEBUG
   std::fprintf(stderr, "[converge] start L=%.9f levels=%d superAgg=%u\n", L, (int)m_hierLevels.size(), superAggLimit);
 #endif
-  for (int sweep = 0; sweep < maxSweeps; ++sweep) {
+  // Helper: run one gated tuning step (rebuild -> accept if it lowers the true
+  // codelength, else revert). Returns whether it improved.
+  auto gatedStep = [&](auto&& step, const char* tag) -> bool {
+    std::vector<Level> savedLevels = m_hierLevels;
+    std::vector<std::vector<int>> savedAssign = m_hierAssign;
+    if (!step())
+      return false;
+    const double after = hierarchicalCodelengthFromStack();
+    if (after < L - kMinImprovement) {
+#ifdef COLUMNAR_DEBUG
+      std::fprintf(stderr, "[converge] %s %.9f -> %.9f (levels %d, top %d)\n",
+                   tag, L, after, (int)m_hierLevels.size(), m_hierLevels.back().n);
+#else
+      (void)tag;
+#endif
+      L = after;
+      return true;
+    }
+    m_hierLevels = std::move(savedLevels);
+    m_hierAssign = std::move(savedAssign);
+    m_numTopModules = static_cast<unsigned int>(m_hierLevels.back().n);
+    return false;
+  };
+
+#ifdef COLUMNAR_DEBUG
+  const std::clock_t t_p1 = std::clock();
+#endif
+  // Phase 1 — interior refine (up/down sweep): re-partition each interior layer
+  // within its grandparent, to convergence. This is the expensive pass (the
+  // k==0 refine re-partitions every leaf), so it runs ONCE here as a build
+  // refinement. The Phase-2 coarsening below only ever re-fragments a finished
+  // interior partition (measured: such a refine always reverts), so it is not
+  // worth re-running per coarsening step.
+  // With a single interior level the refine is idempotent (deterministic given
+  // fixed grandparents, which it does not change), so one pass is convergence —
+  // skip the second no-op pass. Multiple interior levels can interact, so loop.
+  const int numInterior = std::max(0, static_cast<int>(m_hierLevels.size()) - 2);
+  const int phase1Sweeps = (numInterior <= 1) ? std::min(1, maxSweeps) : maxSweeps;
+  for (int sweep = 0; sweep < phase1Sweeps; ++sweep) {
     bool improved = false;
     const int top = static_cast<int>(m_hierLevels.size()) - 1;
-    for (int k = 0; k + 2 <= top; ++k) {
-      std::vector<Level> savedLevels = m_hierLevels;
-      std::vector<std::vector<int>> savedAssign = m_hierAssign;
-      const double before = L;
-      if (!refineLayerWithinGrandparent(k))
-        continue;
-      const double after = hierarchicalCodelengthFromStack();
-      const bool accept = after < L - kMinImprovement;
-      if (accept) {
-        L = after;
-        improved = true;
-      } else {
-        m_hierLevels = std::move(savedLevels);
-        m_hierAssign = std::move(savedAssign);
-        m_numTopModules = static_cast<unsigned int>(m_hierLevels.back().n);
-      }
-#ifdef COLUMNAR_DEBUG
-      std::fprintf(stderr, "[converge] sweep=%d k=%d before=%.9f after=%.9f delta=%.3g %s\n",
-                   sweep, k, before, after, after - before, accept ? "ACCEPT" : "revert");
-#else
-      (void)before;
-#endif
-    }
-
-    // Mem-aware leaf-module coarsening: merge co-attribute leaf modules within
-    // their parent (gated on the true objective — the incremental deltas guide
-    // the merges, but the whole round is reverted if it doesn't actually help).
-    {
-      std::vector<Level> savedLevels = m_hierLevels;
-      std::vector<std::vector<int>> savedAssign = m_hierAssign;
-      if (mergeLeafModulesWithinParents()) {
-        const double after = hierarchicalCodelengthFromStack();
-        if (after < L - kMinImprovement) {
-#ifdef COLUMNAR_DEBUG
-          std::fprintf(stderr, "[converge] sweep=%d MERGE %.9f -> %.9f (leafmods %d)\n",
-                       sweep, L, after, m_hierLevels[1].n);
-#endif
-          L = after;
-          improved = true;
-        } else {
-          m_hierLevels = std::move(savedLevels);
-          m_hierAssign = std::move(savedAssign);
-          m_numTopModules = static_cast<unsigned int>(m_hierLevels.back().n);
-        }
-      }
-    }
-
-    // Top-level regroup: refine the topmost module grouping within the root (the
-    // one layer the grandparent-based refine can never reach). Lets the
-    // super-structure adapt after a leaf-module merge; gated on the objective.
-    {
-      std::vector<Level> savedLevels = m_hierLevels;
-      std::vector<std::vector<int>> savedAssign = m_hierAssign;
-      if (refineTopLayer()) {
-        const double after = hierarchicalCodelengthFromStack();
-        if (after < L - kMinImprovement) {
-#ifdef COLUMNAR_DEBUG
-          std::fprintf(stderr, "[converge] sweep=%d TOP-REFINE %.9f -> %.9f (top %d)\n",
-                       sweep, L, after, m_hierLevels.back().n);
-#endif
-          L = after;
-          improved = true;
-        } else {
-          m_hierLevels = std::move(savedLevels);
-          m_hierAssign = std::move(savedAssign);
-          m_numTopModules = static_cast<unsigned int>(m_hierLevels.back().n);
-        }
-      }
-    }
-
+    for (int k = 0; k + 2 <= top; ++k)
+      improved |= gatedStep([&] { return refineLayerWithinGrandparent(k); }, "REFINE");
     if (!improved)
       break;
   }
+
+  // Phase 2 — mem-aware coarsening: merge leaf modules (mergeLeafModulesWithinParents)
+  // and regroup the top level (refineTopLayer), interleaved to convergence. Both
+  // operate on the few modules (not the leaves), so this loop is cheap; iterating
+  // lets a merge cross parents that a prior top-refine has regrouped. No-op for
+  // the base objective (merge needs a correction; top-refine is gated).
+#ifdef COLUMNAR_DEBUG
+  const std::clock_t t_p2 = std::clock();
+#endif
+  for (int sweep = 0; sweep < maxSweeps; ++sweep) {
+    bool improved = false;
+    improved |= gatedStep([&] { return mergeLeafModulesWithinParents(); }, "MERGE");
+    improved |= gatedStep([&] { return refineTopLayer(); }, "TOP-REFINE");
+    if (!improved)
+      break;
+  }
+#ifdef COLUMNAR_DEBUG
+  const std::clock_t t_end = std::clock();
+  std::fprintf(stderr, "[converge] phase1=%.3fs phase2=%.3fs (superAgg=%u)\n",
+               double(t_p2 - t_p1) / CLOCKS_PER_SEC, double(t_end - t_p2) / CLOCKS_PER_SEC, superAggLimit);
+#endif
   return L;
 }
 
