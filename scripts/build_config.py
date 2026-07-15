@@ -9,6 +9,12 @@ import sys
 from pathlib import Path
 
 
+# Single source of truth for the C++ language standard across every build
+# surface: the native/Python flag lists below embed it, and the JS/Emscripten
+# build reads it back via the `field` / `make-export` interfaces. Bump here only.
+CXX_STANDARD = "c++17"
+
+
 FEATURE_REGISTRY = {
     "simd-log": {
         "define": "INFOMAP_USE_SIMD_LOG",
@@ -146,9 +152,9 @@ def _base_compile_flags(compiler_family):
         # otherwise), and it makes the Unicode pretty-output literals (•, →, ╰─)
         # encode correctly. mingw-gcc (R/Windows) and clang/Emscripten (JS)
         # already use a UTF-8 source charset, so this is MSVC-only.
-        return ["/std:c++17", "/utf-8"]
+        return [f"/std:{CXX_STANDARD}", "/utf-8"]
 
-    flags = ["-Wall", "-Wextra", "-pedantic", "-Wnon-virtual-dtor", "-std=c++17"]
+    flags = ["-Wall", "-Wextra", "-pedantic", "-Wnon-virtual-dtor", f"-std={CXX_STANDARD}"]
     if compiler_family == "clang":
         flags.append("-Wshadow")
     elif compiler_family == "gnu":
@@ -338,6 +344,7 @@ def resolve_build_config(
 
     return {
         "mode": mode,
+        "cxx_standard": CXX_STANDARD,
         "openmp": bool(openmp),
         # Report native_arch as effective only when flags were actually emitted —
         # i.e. release mode AND a compiler family that we know how to tune
@@ -372,6 +379,7 @@ def _field_value(config, field):
 # a single invocation instead of one process per field.
 MAKE_EXPORT_FIELDS = (
     ("BUILD_CONFIG_MODE", "mode"),
+    ("BUILD_CONFIG_CXX_STANDARD", "cxx_standard"),
     ("BUILD_CONFIG_OPENMP", "openmp"),
     ("BUILD_CONFIG_ENABLED_FEATURES", "enabled_features"),
     ("BUILD_CONFIG_PLATFORM", "platform"),
@@ -403,6 +411,7 @@ def main():
         "--field",
         choices=[
             "mode",
+            "cxx_standard",
             "openmp",
             "native_arch",
             "enabled_features",
