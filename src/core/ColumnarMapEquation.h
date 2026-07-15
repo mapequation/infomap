@@ -12,10 +12,34 @@
 
 #include <vector>
 #include <cstddef>
+#include <memory>
 
 namespace infomap {
 
 class InfoNode;
+class ColumnarTwoLevel;
+
+/**
+ * A composable correction on top of the base columnar map equation.
+ *
+ * The new objective structure (replacing the OO inheritance hierarchy) is a
+ * base map equation plus a set of independent corrections whose contributions
+ * sum. This lets objectives combine freely (bias + metadata + lossy at once),
+ * which the single-inheritance OO objectives cannot.
+ *
+ * For now a correction contributes an additive term to the hierarchical
+ * codelength (used for reporting-consistency and to make the up/down sweep
+ * objective-aware). Move-loop hooks (per-candidate delta + incremental update
+ * for fully objective-aware search) will be added as a second step.
+ */
+class ColumnarCorrection {
+public:
+  virtual ~ColumnarCorrection() = default;
+  // Additive contribution to the total hierarchical codelength of the core's
+  // current stacked hierarchy. Reads the partition through the core's public
+  // accessors. Base objective = no corrections = exactly zero.
+  virtual double hierarchicalCorrection(const ColumnarTwoLevel& core) const = 0;
+};
 
 /**
  * Columnar (structure-of-arrays) representation of a hierarchical partition
@@ -96,18 +120,22 @@ public:
     std::vector<double> inFlow;
   };
 
-  // Objective add-ons on top of the base map equation (additive variants).
-  // Base (default Biased with both off) leaves every field at its default, so
-  // the correction is exactly zero and the base path is unchanged.
-  struct ObjectiveParams {
-    // Biased: entropy bias correction, a per-module mult*childDegree/(2*D) term
-    // that is part of the tree codelength (calcCodelengthOnTree).
-    bool useEntropyBiasCorrection = false;
-    double entropyBiasCorrectionMultiplier = 1.0;
-    double totalDegree = 1.0; // network sum of (weighted) degree, the 2*D divisor's D
-  };
+  // Add a composable objective correction (ownership transferred). No
+  // corrections = base map equation. Corrections sum into the codelength.
+  void addCorrection(std::unique_ptr<ColumnarCorrection> correction)
+  {
+    m_corrections.push_back(std::move(correction));
+  }
 
-  void setObjective(const ObjectiveParams& params) { m_obj = params; }
+  // --- Public read accessors for corrections (partition shape + leaf data) ---
+  // Number of tree levels currently in the stacked hierarchy (0 = leaves).
+  unsigned int hierNumLevels() const { return static_cast<unsigned int>(m_hierLevels.size()); }
+  // Unit count at a stacked level (level 0 = leaves, 1.. = module levels).
+  int hierLevelSize(int level) const { return m_hierLevels[level].n; }
+  int numLeaves() const { return m_nLeaves; }
+  // The leaf's current bottom (level-1) module id.
+  int hierLeafModule(int leaf) const { return m_hierAssign[0][leaf]; }
+  double leafFlow(int leaf) const { return m_leafFlow[leaf]; }
 
   // Build the leaf level (flow, enter/exit, out+in CSR) from the leaf network.
   void buildFromLeaves(const std::vector<InfoNode*>& leafNodes, bool undirected, unsigned long seed);
@@ -201,10 +229,10 @@ private:
   unsigned long m_seed = 123;
   double m_exitNetworkFlow = 0.0; // flow leaving this (sub-)network; 0 if closed
   unsigned int m_superAggLimit = 0; // >0: conservative up-build (passes/super-level)
-  ObjectiveParams m_obj; // additive objective add-ons (base = all-default = no-op)
+  std::vector<std::unique_ptr<ColumnarCorrection>> m_corrections; // objective add-ons
 
-  // Additive objective correction to the base hierarchical codelength, summed
-  // over the stacked levels (0 for the base/default-Biased objective).
+  // Sum of the composable corrections' contributions to the hierarchical
+  // codelength (0 for the base objective, i.e. no corrections).
   double objectiveCorrection() const;
 
   Level m_leaf0; // immutable leaf network
@@ -235,6 +263,42 @@ private:
   // level-(k+1) parent.
   std::vector<Level> m_hierLevels;
   std::vector<std::vector<int>> m_hierAssign;
+};
+
+/**
+ * Biased objective: the entropy bias correction. calcCodelengthOnTree adds
+ * mult*childDegree/(2*D) to every internal node incl. the root, which sums over
+ * the tree to mult*(non-root node count)/(2*D) = mult*(sum of level sizes incl
+ * leaves)/(2*D). A structural correction (all levels), no per-node state.
+ */
+class BiasedEntropyCorrection final : public ColumnarCorrection {
+public:
+  BiasedEntropyCorrection(double multiplier, double totalDegree)
+      : m_multiplier(multiplier), m_totalDegree(totalDegree > 0.0 ? totalDegree : 1.0) {}
+  double hierarchicalCorrection(const ColumnarTwoLevel& core) const override;
+
+private:
+  double m_multiplier;
+  double m_totalDegree;
+};
+
+/**
+ * Metadata objective: per leaf-module, metaDataRate * F_m * H_m, where H_m is
+ * the flow-weighted entropy of the module's metadata categories (matching
+ * MetaCollection::calculateEntropy). Applies only at the leaf-module level
+ * (MetaMapEquation delegates module-of-modules to base). Owns per-leaf
+ * category + flow-weight state (single metadata dimension for now).
+ */
+class MetaCorrection final : public ColumnarCorrection {
+public:
+  MetaCorrection(std::vector<int> leafCategory, double metaDataRate, bool weightByFlow)
+      : m_leafCategory(std::move(leafCategory)), m_metaDataRate(metaDataRate), m_weightByFlow(weightByFlow) {}
+  double hierarchicalCorrection(const ColumnarTwoLevel& core) const override;
+
+private:
+  std::vector<int> m_leafCategory; // per leaf, its metadata category id
+  double m_metaDataRate;
+  bool m_weightByFlow;
 };
 
 } // namespace infomap

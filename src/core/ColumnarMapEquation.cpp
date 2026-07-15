@@ -949,17 +949,56 @@ double ColumnarTwoLevel::hierarchicalCodelengthFromStack() const
 
 double ColumnarTwoLevel::objectiveCorrection() const
 {
-  // Entropy bias correction (Biased objective): calcCodelengthOnTree adds
-  // mult*childDegree/(2*D) to every internal node including the root. Summed
-  // over the tree that is exactly mult*(non-root node count)/(2*D), and the
-  // non-root nodes are every module at every level plus every leaf.
-  if (!m_obj.useEntropyBiasCorrection || m_hierLevels.empty())
+  if (m_corrections.empty() || m_hierLevels.empty())
     return 0.0;
-  const double D = m_obj.totalDegree > 0.0 ? m_obj.totalDegree : 1.0;
+  double sum = 0.0;
+  for (const auto& correction : m_corrections)
+    sum += correction->hierarchicalCorrection(*this);
+  return sum;
+}
+
+double BiasedEntropyCorrection::hierarchicalCorrection(const ColumnarTwoLevel& core) const
+{
+  // Sum of childDegree over all internal nodes incl. root == count of non-root
+  // nodes == sum of every level's size (leaves + modules at all levels).
   long long nonRootNodes = 0;
-  for (std::size_t k = 0; k < m_hierLevels.size(); ++k)
-    nonRootNodes += m_hierLevels[k].n; // level 0 = leaves, 1..top = module levels
-  return m_obj.entropyBiasCorrectionMultiplier * static_cast<double>(nonRootNodes) / (2.0 * D);
+  const unsigned int levels = core.hierNumLevels();
+  for (unsigned int k = 0; k < levels; ++k)
+    nonRootNodes += core.hierLevelSize(static_cast<int>(k));
+  return m_multiplier * static_cast<double>(nonRootNodes) / (2.0 * m_totalDegree);
+}
+
+double MetaCorrection::hierarchicalCorrection(const ColumnarTwoLevel& core) const
+{
+  using infomath::plogp;
+  // Meta term applies at the leaf-module level (level 1): for each bottom
+  // module, metaDataRate * F_m * (-sum_c plogp(f_c / F_m)), matching
+  // MetaCollection::calculateEntropy summed over leaf modules.
+  if (core.hierNumLevels() < 2)
+    return 0.0;
+  const int nLeaves = core.numLeaves();
+  const int numModules = core.hierLevelSize(1);
+
+  // Accumulate per-module total flow and per-(module,category) flow. Key packs
+  // (module, category) into 64 bits: module < 2^31, category is an unsigned id.
+  std::vector<double> moduleFlow(numModules, 0.0);
+  std::unordered_map<long long, double> catFlow;
+  for (int i = 0; i < nLeaves; ++i) {
+    const int m = core.hierLeafModule(i);
+    const double w = m_weightByFlow ? core.leafFlow(i) : 1.0;
+    moduleFlow[m] += w;
+    const long long key = (static_cast<long long>(m) << 32) | static_cast<unsigned int>(m_leafCategory[i]);
+    catFlow[key] += w;
+  }
+
+  double total = 0.0;
+  for (const auto& kv : catFlow) {
+    const int m = static_cast<int>(kv.first >> 32);
+    const double F = moduleFlow[m];
+    if (F > 1e-16)
+      total -= plogp(kv.second / F) * F;
+  }
+  return m_metaDataRate * total;
 }
 
 bool ColumnarTwoLevel::refineBottomWithinParents()

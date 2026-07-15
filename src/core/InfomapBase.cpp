@@ -1772,17 +1772,22 @@ void InfomapBase::columnarPartition()
   ColumnarTwoLevel opt;
   opt.buildFromLeaves(m_leafNodes, isUndirectedClustering(), trialSeed);
 
-  // Biased objective add-ons (default off => base). Entropy bias correction uses
-  // the same total-degree divisor as BiasedMapEquation::setNetworkProperties.
+  // Composable objective corrections (default none => base map equation).
+  // Biased entropy-bias: same total-degree divisor as BiasedMapEquation.
   if (entropyBiasCorrection) {
-    ColumnarTwoLevel::ObjectiveParams obj;
-    obj.useEntropyBiasCorrection = true;
-    obj.entropyBiasCorrectionMultiplier = entropyBiasCorrectionMultiplier;
     double totalDegree = m_network.sumWeightedDegree();
     if (totalDegree < m_network.sumDegree())
       totalDegree = m_network.sumDegree();
-    obj.totalDegree = totalDegree;
-    opt.setObjective(obj);
+    opt.addCorrection(std::make_unique<BiasedEntropyCorrection>(entropyBiasCorrectionMultiplier, totalDegree));
+  }
+  // Metadata: one category per leaf (first dimension), flow-weighted by default.
+  if (haveMetaData()) {
+    std::vector<int> leafCategory(m_leafNodes.size(), 0);
+    for (std::size_t i = 0; i < m_leafNodes.size(); ++i) {
+      const auto& md = m_leafNodes[i]->metaData();
+      leafCategory[i] = md.empty() ? 0 : md[0];
+    }
+    opt.addCorrection(std::make_unique<MetaCorrection>(std::move(leafCategory), metaDataRate, !unweightedMetaData));
   }
 
   const double columnarL = opt.optimizeColumnar(1, tuneIterationLimit);
