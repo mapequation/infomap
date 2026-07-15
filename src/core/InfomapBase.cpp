@@ -1058,7 +1058,7 @@ void InfomapBase::run(Network& network)
     Stopwatch cwC(true);
     ColumnarTwoLevel optC;
     optC.buildFromLeaves(m_leafNodes, isUndirectedClustering(), seedToRandomNumberGenerator);
-    const double columnarCL = optC.optimizeConverge();
+    const double columnarCL = optC.optimizeColumnar();
     cwC.stop();
 
     const double ooL = getHierarchicalCodelength();

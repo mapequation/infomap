@@ -124,7 +124,16 @@ public:
   // *every* interior layer within its grandparent, iterating across layers
   // until the hierarchical codelength stops improving. Returns hierarchical
   // codelength. Generalizes optimizeFlexible (which tunes only the bottom).
-  double optimizeConverge(unsigned int bottomBlockLimit = 1);
+  // superAggLimit > 0 makes the up-build conservative (that many aggregation
+  // passes per super-level instead of a full two-level merge), yielding more,
+  // finer levels for the sweep to tune — the "don't over-merge on the way up"
+  // building-block idea. 0 = full super-merge (as optimizeFlexible).
+  double optimizeConverge(unsigned int bottomBlockLimit = 1, unsigned int superAggLimit = 0);
+
+  // Top-level columnar engine entry (the `-F` search): run the up/down sweep at
+  // a small set of up-merge settings and keep the best partition, leaving its
+  // stacked hierarchy in the members ready to materialize into an InfoNode tree.
+  double optimizeColumnar(unsigned int bottomBlockLimit = 1);
 
   unsigned int numTopModules() const { return m_numTopModules; }
   // Number of tree levels (leaves + module levels) after optimizeHierarchical.
@@ -167,6 +176,7 @@ private:
   bool m_undirected = false;
   unsigned long m_seed = 123;
   double m_exitNetworkFlow = 0.0; // flow leaving this (sub-)network; 0 if closed
+  unsigned int m_superAggLimit = 0; // >0: conservative up-build (passes/super-level)
 
   Level m_leaf0; // immutable leaf network
   Level m_lvl;

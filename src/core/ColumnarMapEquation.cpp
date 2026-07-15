@@ -866,7 +866,12 @@ double ColumnarTwoLevel::optimizeHierarchical(unsigned int bottomBlockLimit)
 
     ColumnarTwoLevel superOpt;
     superOpt.buildFromLevel(superNet, m_undirected, m_seed);
-    const double superCodelength = superOpt.optimizeTwoLevel();
+    // Conservative up-build (m_superAggLimit > 0): fewer aggregation passes per
+    // super-level so we don't collapse the whole level in one greedy jump —
+    // more, finer super-levels for the down-sweep to tune and (later) collapse.
+    const double superCodelength = m_superAggLimit > 0
+        ? superOpt.optimizeTwoLevel(m_superAggLimit, false)
+        : superOpt.optimizeTwoLevel();
     const unsigned int superK = superOpt.numTopModules();
 
     const bool trivial = superK <= 1 || static_cast<int>(superK) == cur.n;
@@ -1169,8 +1174,9 @@ bool ColumnarTwoLevel::refineLayerWithinGrandparent(int k)
   return true;
 }
 
-double ColumnarTwoLevel::optimizeConverge(unsigned int bottomBlockLimit)
+double ColumnarTwoLevel::optimizeConverge(unsigned int bottomBlockLimit, unsigned int superAggLimit)
 {
+  m_superAggLimit = superAggLimit;
   double L = optimizeHierarchical(bottomBlockLimit);
 
   // Up/down sweep: refine each interior layer within its grandparent, bottom-up,
@@ -1178,7 +1184,7 @@ double ColumnarTwoLevel::optimizeConverge(unsigned int bottomBlockLimit)
   // interior refine optimizes a units-as-leaves proxy, so we gate on the real
   // objective and revert otherwise). Iterate whole sweeps until none improves.
 #ifdef COLUMNAR_DEBUG
-  std::fprintf(stderr, "[converge] start L=%.9f levels=%d\n", L, (int)m_hierLevels.size());
+  std::fprintf(stderr, "[converge] start L=%.9f levels=%d superAgg=%u\n", L, (int)m_hierLevels.size(), superAggLimit);
 #endif
   for (int sweep = 0; sweep < 20; ++sweep) {
     bool improved = false;
@@ -1210,6 +1216,35 @@ double ColumnarTwoLevel::optimizeConverge(unsigned int bottomBlockLimit)
       break;
   }
   return L;
+}
+
+double ColumnarTwoLevel::optimizeColumnar(unsigned int bottomBlockLimit)
+{
+  // The up-merge aggressiveness selects which basin the build lands in, and the
+  // best setting varies by network (like Infomap's multi-trial search). Run the
+  // up/down sweep at a small set of super-merge settings and keep the best
+  // partition, leaving its stack in the members for materialization.
+  static const unsigned int kSuperAggSettings[] = { 0u, 1u };
+
+  double bestL = std::numeric_limits<double>::infinity();
+  std::vector<Level> bestLevels;
+  std::vector<std::vector<int>> bestAssign;
+  unsigned int bestTop = 0;
+
+  for (unsigned int superAgg : kSuperAggSettings) {
+    const double L = optimizeConverge(bottomBlockLimit, superAgg);
+    if (L < bestL - kMinImprovement) {
+      bestL = L;
+      bestLevels = m_hierLevels;
+      bestAssign = m_hierAssign;
+      bestTop = m_numTopModules;
+    }
+  }
+
+  m_hierLevels = std::move(bestLevels);
+  m_hierAssign = std::move(bestAssign);
+  m_numTopModules = bestTop;
+  return bestL;
 }
 
 } // namespace infomap
