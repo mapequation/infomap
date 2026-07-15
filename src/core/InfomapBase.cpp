@@ -1805,6 +1805,21 @@ void InfomapBase::columnarPartition()
     }
     opt.addCorrection(std::make_unique<MemCorrection>(std::move(leafPhysical), std::move(leafFlow)));
   }
+#if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
+  // Lossy (rate-distortion): additive noise-module correction. Being additive it
+  // composes with the others (unlike the OO single-inheritance objective). Reads
+  // the per-leaf Markov entropy share the OO Lossy init already computed from
+  // edge weights (native computation is part of the later input migration).
+  if (lossy) {
+    std::vector<double> lossyLeafFlow(m_leafNodes.size(), 0.0);
+    std::vector<double> lossyLeafEntropy(m_leafNodes.size(), 0.0);
+    for (std::size_t i = 0; i < m_leafNodes.size(); ++i) {
+      lossyLeafFlow[i] = m_leafNodes[i]->data.flow;
+      lossyLeafEntropy[i] = m_leafNodes[i]->lossyEntropy;
+    }
+    opt.addCorrection(std::make_unique<LossyCorrection>(std::move(lossyLeafFlow), std::move(lossyLeafEntropy), lossyLambda));
+  }
+#endif
 
   const double columnarL = opt.optimizeColumnar(1, tuneIterationLimit);
 

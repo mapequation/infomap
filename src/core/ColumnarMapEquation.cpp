@@ -1352,6 +1352,119 @@ std::unique_ptr<ColumnarCorrection> MemCorrection::sliceForLeaves(const std::vec
   return std::make_unique<MemCorrection>(std::move(physical), std::move(flow));
 }
 
+// ===================================================
+// LossyCorrection (rate-distortion map equation: noise modules)
+// ===================================================
+
+LossyCorrection::LossyCorrection(std::vector<double> leafFlow, std::vector<double> leafEntropy, double lambda)
+    : m_leafFlow(std::move(leafFlow)), m_leafEntropy(std::move(leafEntropy)), m_lambda(lambda)
+{
+  using infomath::plogp;
+  m_leafFlf.resize(m_leafFlow.size());
+  for (std::size_t i = 0; i < m_leafFlow.size(); ++i)
+    m_leafFlf[i] = plogp(m_leafFlow[i]);
+}
+
+double LossyCorrection::moduleCost(double flow, double flowLogFlow, double entropy) const
+{
+  using infomath::plogp;
+  // Naming-overhead loss beyond the tolerated distortion; 0 when the module is
+  // not noise (matches LossyMapEquation::calcCorrection).
+  return std::max(0.0, (plogp(flow) - flowLogFlow) - m_lambda * entropy);
+}
+
+double LossyCorrection::hierarchicalCorrection(const ColumnarTwoLevel& core) const
+{
+  if (core.hierNumLevels() < 2)
+    return 0.0;
+  const int nLeaves = core.numLeaves();
+  const int numModules = core.hierLevelSize(1);
+  std::vector<double> F(numModules, 0.0), flf(numModules, 0.0), H(numModules, 0.0);
+  for (int i = 0; i < nLeaves; ++i) {
+    const int m = core.hierLeafModule(i);
+    F[m] += m_leafFlow[i];
+    flf[m] += m_leafFlf[i];
+    H[m] += m_leafEntropy[i];
+  }
+  double sumC = 0.0;
+  for (int m = 0; m < numModules; ++m)
+    sumC += moduleCost(F[m], flf[m], H[m]);
+  return -sumC; // objective J = base - sum_m c_m
+}
+
+double LossyCorrection::initMoveLoop(const std::vector<int>& leafModule, int numModules)
+{
+  m_moduleFlow.assign(numModules, 0.0);
+  m_moduleFlf.assign(numModules, 0.0);
+  m_moduleEntropy.assign(numModules, 0.0);
+  const int nLeaves = static_cast<int>(leafModule.size());
+  for (int i = 0; i < nLeaves; ++i) {
+    const int m = leafModule[i];
+    m_moduleFlow[m] += m_leafFlow[i];
+    m_moduleFlf[m] += m_leafFlf[i];
+    m_moduleEntropy[m] += m_leafEntropy[i];
+  }
+  double sumC = 0.0;
+  for (int m = 0; m < numModules; ++m)
+    sumC += moduleCost(m_moduleFlow[m], m_moduleFlf[m], m_moduleEntropy[m]);
+  return -sumC;
+}
+
+double LossyCorrection::moveDelta(int leaf, int oldMod, int newMod) const
+{
+  if (oldMod == newMod)
+    return 0.0;
+  const double f = m_leafFlow[leaf], lf = m_leafFlf[leaf], h = m_leafEntropy[leaf];
+  const double dOld = moduleCost(m_moduleFlow[oldMod] - f, m_moduleFlf[oldMod] - lf, m_moduleEntropy[oldMod] - h)
+      - moduleCost(m_moduleFlow[oldMod], m_moduleFlf[oldMod], m_moduleEntropy[oldMod]);
+  const double dNew = moduleCost(m_moduleFlow[newMod] + f, m_moduleFlf[newMod] + lf, m_moduleEntropy[newMod] + h)
+      - moduleCost(m_moduleFlow[newMod], m_moduleFlf[newMod], m_moduleEntropy[newMod]);
+  return -(dOld + dNew); // correction = -sum_m c_m
+}
+
+void LossyCorrection::applyMove(int leaf, int oldMod, int newMod)
+{
+  if (oldMod == newMod)
+    return;
+  const double f = m_leafFlow[leaf], lf = m_leafFlf[leaf], h = m_leafEntropy[leaf];
+  m_moduleFlow[oldMod] -= f;
+  m_moduleFlf[oldMod] -= lf;
+  m_moduleEntropy[oldMod] -= h;
+  m_moduleFlow[newMod] += f;
+  m_moduleFlf[newMod] += lf;
+  m_moduleEntropy[newMod] += h;
+}
+
+double LossyCorrection::mergeDelta(int a, int b) const
+{
+  const double ca = moduleCost(m_moduleFlow[a], m_moduleFlf[a], m_moduleEntropy[a]);
+  const double cb = moduleCost(m_moduleFlow[b], m_moduleFlf[b], m_moduleEntropy[b]);
+  const double cab = moduleCost(m_moduleFlow[a] + m_moduleFlow[b],
+                                m_moduleFlf[a] + m_moduleFlf[b],
+                                m_moduleEntropy[a] + m_moduleEntropy[b]);
+  return -(cab - ca - cb); // change in -sum_m c_m
+}
+
+void LossyCorrection::applyMerge(int a, int b)
+{
+  m_moduleFlow[b] += m_moduleFlow[a];
+  m_moduleFlf[b] += m_moduleFlf[a];
+  m_moduleEntropy[b] += m_moduleEntropy[a];
+  m_moduleFlow[a] = m_moduleFlf[a] = m_moduleEntropy[a] = 0.0;
+}
+
+std::unique_ptr<ColumnarCorrection> LossyCorrection::sliceForLeaves(const std::vector<int>& globalLeafIds) const
+{
+  const int n = static_cast<int>(globalLeafIds.size());
+  std::vector<double> flow(n), entropy(n);
+  for (int j = 0; j < n; ++j) {
+    const int g = globalLeafIds[j];
+    flow[j] = m_leafFlow[g];
+    entropy[j] = m_leafEntropy[g];
+  }
+  return std::make_unique<LossyCorrection>(std::move(flow), std::move(entropy), m_lambda);
+}
+
 void ColumnarTwoLevel::addSlicedLeafCorrections(ColumnarTwoLevel& subOpt, const std::vector<int>& globalLeafIds) const
 {
   for (const auto& c : m_corrections) {
@@ -1664,11 +1777,11 @@ bool ColumnarTwoLevel::refineTopLayer()
 bool ColumnarTwoLevel::mergeLeafModulesWithinParents()
 {
   using infomath::plogp;
-  if (m_hierLevels.size() < 3)
-    return false; // need a level-2 parent term to price the merge against
+  if (m_hierLevels.size() < 2)
+    return false; // no module level to merge
 
-  // Corrections that reward coarsening (Mem/Meta). No participants => the base
-  // objective, where any merge only raises the codelength: nothing to do.
+  // Corrections that reward coarsening (Mem/Meta/Lossy). No participants => the
+  // base objective, where any merge only raises the codelength: nothing to do.
   std::vector<ColumnarCorrection*> corr;
   for (auto& c : m_corrections)
     if (c->participatesInMoveLoop())
@@ -1677,7 +1790,11 @@ bool ColumnarTwoLevel::mergeLeafModulesWithinParents()
     return false;
 
   const int K = m_hierLevels[1].n; // leaf modules (level-0 -> 1)
-  const int numParents = m_hierLevels[2].n;
+  // Leaf modules are merged within their parent. With a level-2 grandparent each
+  // leaf module has an explicit parent; in a two-level tree (e.g. lossy) the
+  // parent is the root, i.e. one group whose codebook uses the top enter flows.
+  const bool hasGrandparent = m_hierLevels.size() >= 3;
+  const int numParents = hasGrandparent ? m_hierLevels[2].n : 1;
 
   // Seed the corrections' per-module state at the current leaf-module partition.
   for (auto* c : corr)
@@ -1687,7 +1804,7 @@ bool ColumnarTwoLevel::mergeLeafModulesWithinParents()
   std::vector<double> flow = m_hierLevels[1].flow;
   std::vector<double> enter = m_hierLevels[1].enter;
   std::vector<double> exit = m_hierLevels[1].exit;
-  std::vector<int> parent = m_hierAssign[1];
+  std::vector<int> parent = hasGrandparent ? m_hierAssign[1] : std::vector<int>(K, 0);
   std::vector<std::unordered_map<int, double>> adjOut(K), adjIn(K);
   {
     const Level& L1 = m_hierLevels[1];
@@ -1700,9 +1817,11 @@ bool ColumnarTwoLevel::mergeLeafModulesWithinParents()
       }
   }
   // Parent module-of-modules "total use" = parent exit + sum of child enter.
+  // The root's exit is 0 (whole-network codebook).
   std::vector<double> totalUse(numParents, 0.0);
-  for (int p = 0; p < numParents; ++p)
-    totalUse[p] = m_hierLevels[2].exit[p];
+  if (hasGrandparent)
+    for (int p = 0; p < numParents; ++p)
+      totalUse[p] = m_hierLevels[2].exit[p];
   for (int a = 0; a < K; ++a)
     totalUse[parent[a]] += enter[a];
 
@@ -1833,14 +1952,18 @@ bool ColumnarTwoLevel::mergeLeafModulesWithinParents()
   std::vector<int> newA0(m_nLeaves);
   for (int i = 0; i < m_nLeaves; ++i)
     newA0[i] = newId[root(m_hierAssign[0][i])];
-  std::vector<int> newA1(Knew);
-  for (int a = 0; a < K; ++a)
-    if (alive[a])
-      newA1[newId[a]] = parent[a];
 
   m_hierAssign[0] = std::move(newA0);
-  m_hierAssign[1] = std::move(newA1);
   m_hierLevels[1] = aggregateLevel(m_leaf0, m_hierAssign[0], Knew, m_undirected);
+  // In a 3+-level tree the merged leaf modules keep their (unchanged) parent; in
+  // a two-level tree there is no parent-assignment level to rewrite.
+  if (hasGrandparent) {
+    std::vector<int> newA1(Knew);
+    for (int a = 0; a < K; ++a)
+      if (alive[a])
+        newA1[newId[a]] = parent[a];
+    m_hierAssign[1] = std::move(newA1);
+  }
   m_numTopModules = static_cast<unsigned int>(m_hierLevels.back().n);
   return true;
 }

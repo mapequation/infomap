@@ -455,6 +455,47 @@ private:
   std::unordered_map<int, std::unordered_set<int>> m_physModules;
 };
 
+/**
+ * Lossy objective (rate-distortion map equation): a leaf module whose naming
+ * overhead (loss l_m = plogp(F_m) - sum_leaf plogp(f)) exceeds lambda times its
+ * Markov entropy share H_m becomes a "noise" module coded by one shared visit
+ * codeword. The objective is J = L_full - sum_m max(0, l_m - lambda*H_m), so the
+ * additive correction to the base map equation is  -sum_m max(0, l_m - lambda*H_m),
+ * a leaf-module-level term with the same per-module-aggregate move-loop/merge
+ * pattern as Meta/Mem. Being additive, it composes (e.g. bias + lossy). The
+ * class itself is objective-agnostic (plain flow/entropy inputs); only the
+ * columnarPartition wiring is behind INFOMAP_FEATURE_LOSSY_MAP_EQUATION.
+ */
+class LossyCorrection final : public ColumnarCorrection {
+public:
+  // leafFlow[i] = leaf flow f_i; leafEntropy[i] = its Markov entropy share
+  // (f_i * h_i, matching InfoNode::lossyEntropy). lambda = distortion price.
+  LossyCorrection(std::vector<double> leafFlow, std::vector<double> leafEntropy, double lambda);
+  double hierarchicalCorrection(const ColumnarTwoLevel& core) const override;
+
+  bool participatesInMoveLoop() const override { return true; }
+  double initMoveLoop(const std::vector<int>& leafModule, int numModules) override;
+  double moveDelta(int leaf, int oldMod, int newMod) const override;
+  void applyMove(int leaf, int oldMod, int newMod) override;
+  double mergeDelta(int moduleA, int moduleB) const override;
+  void applyMerge(int moduleA, int moduleB) override;
+  std::unique_ptr<ColumnarCorrection> sliceForLeaves(const std::vector<int>& globalLeafIds) const override;
+
+private:
+  // Per-module noise cost c_m = max(0, plogp(F_m) - flf_m - lambda*H_m).
+  double moduleCost(double flow, double flowLogFlow, double entropy) const;
+
+  std::vector<double> m_leafFlow; // f_i
+  std::vector<double> m_leafFlf; // plogp(f_i)
+  std::vector<double> m_leafEntropy; // f_i * h_i
+  double m_lambda;
+
+  // Move-loop state (per module): F_m, flf_m = sum plogp(f), H_m.
+  std::vector<double> m_moduleFlow;
+  std::vector<double> m_moduleFlf;
+  std::vector<double> m_moduleEntropy;
+};
+
 } // namespace infomap
 
 #endif // COLUMNAR_MAP_EQUATION_H_
