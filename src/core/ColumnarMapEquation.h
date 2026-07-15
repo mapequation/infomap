@@ -120,6 +120,12 @@ public:
   // codelength. Uses a fine bottom by default so the interior tune has room.
   double optimizeFlexible(unsigned int bottomBlockLimit = 1);
 
+  // M3: build the hierarchy, then run the up/down convergence sweep — refine
+  // *every* interior layer within its grandparent, iterating across layers
+  // until the hierarchical codelength stops improving. Returns hierarchical
+  // codelength. Generalizes optimizeFlexible (which tunes only the bottom).
+  double optimizeConverge(unsigned int bottomBlockLimit = 1);
+
   unsigned int numTopModules() const { return m_numTopModules; }
   // Number of tree levels (leaves + module levels) after optimizeHierarchical.
   unsigned int numHierLevels() const { return static_cast<unsigned int>(m_hierLevels.size()); }
@@ -146,6 +152,14 @@ private:
   // Refine each level-2 module's leaves as their own in-context two-level
   // problem, replacing the bottom level. Returns true if any module changed.
   bool refineBottomWithinParents();
+
+  // Generalized within-grandparent refine (M3): re-partition layer-k units into
+  // new layer-(k+1) modules, each constrained to stay within its layer-(k+2)
+  // grandparent (the grandparent's exit is the sub-network exitNetworkFlow).
+  // Rebuilds m_hierAssign[k], m_hierAssign[k+1], m_hierLevels[k+1]; layers k+2
+  // and above are untouched. Requires k in [0, top-2]. refineBottomWithinParents
+  // is the k == 0 special case. Returns false if no grandparent layer exists.
+  bool refineLayerWithinGrandparent(int k);
 
   // Hierarchical codelength from the stacked levels/assignments in m_hier*.
   double hierarchicalCodelengthFromStack() const;

@@ -1055,13 +1055,23 @@ void InfomapBase::run(Network& network)
     const double columnarFL = optF.optimizeFlexible();
     cwF.stop();
 
+    Stopwatch cwC(true);
+    ColumnarTwoLevel optC;
+    optC.buildFromLeaves(m_leafNodes, isUndirectedClustering(), seedToRandomNumberGenerator);
+    const double columnarCL = optC.optimizeConverge();
+    cwC.stop();
+
     const double ooL = getHierarchicalCodelength();
-    Console::detail(0, "OO {} ({} lvl) · columnar 2-level {} ({} mods, {:.3g}s) · columnar hier {} ({} lvl, {:.3g}s) · columnar flex {} ({} lvl, {:.3g}s), flex gap-to-OO {:.2g}%",
-                    io::toPrecision(ooL), numLevels(),
+    // Report OO depth as shallowest..deepest branch (numLevels walks only the
+    // first-child chain, so on a ragged tree it is the shallow branch).
+    Console::detail(0, "OO {} (depth {}..{}) · columnar 2-level {} ({} mods, {:.3g}s) · columnar hier {} ({} lvl, {:.3g}s) · columnar flex {} ({} lvl, {:.3g}s), flex gap {:.2g}% · columnar converge {} ({} lvl, {:.3g}s), converge gap {:.2g}%",
+                    io::toPrecision(ooL), numLevels(), maxTreeDepth(),
                     io::toPrecision(columnar2L), opt2.numTopModules(), cw2.getElapsedTimeInSec(),
                     io::toPrecision(columnarHL), optH.numHierLevels(), cwH.getElapsedTimeInSec(),
                     io::toPrecision(columnarFL), optF.numHierLevels(), cwF.getElapsedTimeInSec(),
-                    ooL > 1e-16 ? (columnarFL - ooL) / ooL * 100 : 0.0);
+                    ooL > 1e-16 ? (columnarFL - ooL) / ooL * 100 : 0.0,
+                    io::toPrecision(columnarCL), optC.numHierLevels(), cwC.getElapsedTimeInSec(),
+                    ooL > 1e-16 ? (columnarCL - ooL) / ooL * 100 : 0.0);
   }
 
   m_elapsedTime.stop();

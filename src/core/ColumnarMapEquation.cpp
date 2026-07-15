@@ -20,6 +20,10 @@
 #include <unordered_map>
 #include <utility>
 
+#ifdef COLUMNAR_DEBUG
+#include <cstdio>
+#endif
+
 namespace infomap {
 
 void ColumnarMapEquation::buildFromTree(const InfoNode& root, const std::vector<InfoNode*>& leafNodes, bool undirected)
@@ -1050,6 +1054,160 @@ double ColumnarTwoLevel::optimizeFlexible(unsigned int bottomBlockLimit)
       break;
     }
     L = newL;
+  }
+  return L;
+}
+
+bool ColumnarTwoLevel::refineLayerWithinGrandparent(int k)
+{
+  const int top = static_cast<int>(m_hierLevels.size()) - 1;
+  if (k < 0 || k + 2 > top)
+    return false; // need a layer-(k+2) grandparent to refine within
+
+  const Level& base = m_hierLevels[k]; // layer-k units to re-partition
+  const std::vector<int>& aC = m_hierAssign[k]; // unit_k -> module_{k+1}
+  const std::vector<int>& aP = m_hierAssign[k + 1]; // module_{k+1} -> module_{k+2}
+  const Level& grand = m_hierLevels[k + 2];
+  const int numGP = grand.n;
+  const int nU = base.n;
+
+  // Group units by their grandparent (layer k+2), the boundary they may not cross.
+  std::vector<std::vector<int>> unitsPer(numGP);
+  for (int u = 0; u < nU; ++u)
+    unitsPer[aP[aC[u]]].push_back(u);
+
+  std::vector<int> newAC(nU, -1); // unit_k -> new module_{k+1}
+  std::vector<int> newAP; // new module_{k+1} -> grandparent (module_{k+2})
+  int nextMod = 0;
+  std::vector<int> loc(nU, -1); // global unit -> local id (reused per grandparent)
+
+  // Layer-0 units are leaves (two-level leaf objective: node flow = leaf flow).
+  // Interior units are modules coded by the module-of-modules term, whose
+  // codeword usage is the module's *enter* flow — mirror the up-build's
+  // enter-flow transform (superNet.flow = enter) so grouping optimizes the
+  // right cost instead of over-merging on total flow.
+  const bool interior = (k > 0);
+
+  for (int G = 0; G < numGP; ++G) {
+    const std::vector<int>& S = unitsPer[G];
+    const int nP = static_cast<int>(S.size());
+    if (nP == 0)
+      continue;
+    for (int j = 0; j < nP; ++j)
+      loc[S[j]] = j;
+
+    // Build G's internal sub-network over layer-k units (flow/enter/exit carried
+    // from the units; only edges internal to G are kept).
+    Level sub;
+    sub.n = nP;
+    sub.flow.resize(nP);
+    sub.enter.resize(nP);
+    sub.exit.resize(nP);
+    std::vector<int> outDeg(nP, 0), inDeg(nP, 0);
+    for (int j = 0; j < nP; ++j) {
+      const int g = S[j];
+      sub.flow[j] = interior ? base.enter[g] : base.flow[g];
+      sub.enter[j] = base.enter[g];
+      sub.exit[j] = base.exit[g];
+      for (int e = base.outStart[g]; e < base.outStart[g + 1]; ++e) {
+        const int lt = loc[base.outTarget[e]];
+        if (lt != -1) {
+          ++outDeg[j];
+          ++inDeg[lt];
+        }
+      }
+    }
+    sub.outStart.assign(nP + 1, 0);
+    sub.inStart.assign(nP + 1, 0);
+    for (int j = 0; j < nP; ++j) {
+      sub.outStart[j + 1] = sub.outStart[j] + outDeg[j];
+      sub.inStart[j + 1] = sub.inStart[j] + inDeg[j];
+    }
+    sub.outTarget.assign(sub.outStart[nP], 0);
+    sub.outFlow.assign(sub.outStart[nP], 0.0);
+    sub.inTarget.assign(sub.inStart[nP], 0);
+    sub.inFlow.assign(sub.inStart[nP], 0.0);
+    std::vector<int> op(sub.outStart.begin(), sub.outStart.end() - 1);
+    std::vector<int> ip(sub.inStart.begin(), sub.inStart.end() - 1);
+    for (int j = 0; j < nP; ++j) {
+      const int g = S[j];
+      for (int e = base.outStart[g]; e < base.outStart[g + 1]; ++e) {
+        const int lt = loc[base.outTarget[e]];
+        if (lt != -1) {
+          const double f = base.outFlow[e];
+          sub.outTarget[op[j]] = lt;
+          sub.outFlow[op[j]] = f;
+          ++op[j];
+          sub.inTarget[ip[lt]] = j;
+          sub.inFlow[ip[lt]] = f;
+          ++ip[lt];
+        }
+      }
+    }
+
+    // Optimal in-context two-level of G's units (G's exit = sub-network exit).
+    ColumnarTwoLevel subOpt;
+    subOpt.buildFromLevel(sub, m_undirected, m_seed, grand.exit[G]);
+    subOpt.optimizeTwoLevel();
+    const std::vector<int>& subAssign = subOpt.leafTopModule();
+    const int Ksub = static_cast<int>(subOpt.numTopModules());
+
+    for (int j = 0; j < nP; ++j)
+      newAC[S[j]] = nextMod + subAssign[j];
+    for (int s = 0; s < Ksub; ++s)
+      newAP.push_back(G);
+    nextMod += Ksub;
+
+    for (int j = 0; j < nP; ++j)
+      loc[S[j]] = -1; // reset scratch
+  }
+
+  m_hierAssign[k] = std::move(newAC);
+  m_hierAssign[k + 1] = std::move(newAP);
+  m_hierLevels[k + 1] = aggregateLevel(base, m_hierAssign[k], nextMod, m_undirected);
+  m_numTopModules = static_cast<unsigned int>(m_hierLevels.back().n);
+  return true;
+}
+
+double ColumnarTwoLevel::optimizeConverge(unsigned int bottomBlockLimit)
+{
+  double L = optimizeHierarchical(bottomBlockLimit);
+
+  // Up/down sweep: refine each interior layer within its grandparent, bottom-up,
+  // accepting a refine only if it lowers the true hierarchical codelength (the
+  // interior refine optimizes a units-as-leaves proxy, so we gate on the real
+  // objective and revert otherwise). Iterate whole sweeps until none improves.
+#ifdef COLUMNAR_DEBUG
+  std::fprintf(stderr, "[converge] start L=%.9f levels=%d\n", L, (int)m_hierLevels.size());
+#endif
+  for (int sweep = 0; sweep < 20; ++sweep) {
+    bool improved = false;
+    const int top = static_cast<int>(m_hierLevels.size()) - 1;
+    for (int k = 0; k + 2 <= top; ++k) {
+      std::vector<Level> savedLevels = m_hierLevels;
+      std::vector<std::vector<int>> savedAssign = m_hierAssign;
+      const double before = L;
+      if (!refineLayerWithinGrandparent(k))
+        continue;
+      const double after = hierarchicalCodelengthFromStack();
+      const bool accept = after < L - kMinImprovement;
+      if (accept) {
+        L = after;
+        improved = true;
+      } else {
+        m_hierLevels = std::move(savedLevels);
+        m_hierAssign = std::move(savedAssign);
+        m_numTopModules = static_cast<unsigned int>(m_hierLevels.back().n);
+      }
+#ifdef COLUMNAR_DEBUG
+      std::fprintf(stderr, "[converge] sweep=%d k=%d before=%.9f after=%.9f delta=%.3g %s\n",
+                   sweep, k, before, after, after - before, accept ? "ACCEPT" : "revert");
+#else
+      (void)before;
+#endif
+    }
+    if (!improved)
+      break;
   }
   return L;
 }
