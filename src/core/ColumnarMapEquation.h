@@ -135,6 +135,14 @@ public:
   // stacked hierarchy in the members ready to materialize into an InfoNode tree.
   double optimizeColumnar(unsigned int bottomBlockLimit = 1);
 
+  // Materialize the best hierarchy (m_hier*) as one module-path per leaf, in the
+  // shape InfomapBase::initTree expects: coarsest-first (path[0] = top module),
+  // 1-based module ids, plus a trailing leaf-rank slot (unused by initTree but
+  // keeps path length = module levels + 1). `leafNodes` supplies leaf stateIds
+  // and must be the same vector passed to buildFromLeaves.
+  std::vector<std::pair<unsigned int, std::vector<unsigned int>>>
+  toNodePaths(const std::vector<InfoNode*>& leafNodes) const;
+
   unsigned int numTopModules() const { return m_numTopModules; }
   // Number of tree levels (leaves + module levels) after optimizeHierarchical.
   unsigned int numHierLevels() const { return static_cast<unsigned int>(m_hierLevels.size()); }

@@ -1218,6 +1218,36 @@ double ColumnarTwoLevel::optimizeConverge(unsigned int bottomBlockLimit, unsigne
   return L;
 }
 
+std::vector<std::pair<unsigned int, std::vector<unsigned int>>>
+ColumnarTwoLevel::toNodePaths(const std::vector<InfoNode*>& leafNodes) const
+{
+  std::vector<std::pair<unsigned int, std::vector<unsigned int>>> paths;
+  const int nLeaves = m_hierLevels.empty() ? 0 : m_hierLevels[0].n;
+  const int top = static_cast<int>(m_hierLevels.size()) - 1; // number of module levels
+  paths.reserve(nLeaves);
+  if (top < 1)
+    return paths; // no module structure to materialize
+
+  for (int i = 0; i < nLeaves; ++i) {
+    // Walk the assignment stack upward: chain[k] = level-(k+1) module id of leaf i.
+    std::vector<int> chain;
+    chain.reserve(top);
+    int u = i;
+    for (int k = 0; k < top; ++k) {
+      u = m_hierAssign[k][u];
+      chain.push_back(u);
+    }
+    // Emit coarsest-first (top module .. finest module), 1-based, + leaf slot.
+    std::vector<unsigned int> path;
+    path.reserve(top + 1);
+    for (int k = top - 1; k >= 0; --k)
+      path.push_back(static_cast<unsigned int>(chain[k]) + 1);
+    path.push_back(1); // leaf-rank slot (unused by initTree)
+    paths.emplace_back(leafNodes[i]->stateId, std::move(path));
+  }
+  return paths;
+}
+
 double ColumnarTwoLevel::optimizeColumnar(unsigned int bottomBlockLimit)
 {
   // The up-merge aggressiveness selects which basin the build lands in, and the

@@ -1072,6 +1072,16 @@ void InfomapBase::run(Network& network)
                     ooL > 1e-16 ? (columnarFL - ooL) / ooL * 100 : 0.0,
                     io::toPrecision(columnarCL), optC.numHierLevels(), cwC.getElapsedTimeInSec(),
                     ooL > 1e-16 ? (columnarCL - ooL) / ooL * 100 : 0.0);
+
+    // Materialize the columnar best partition into the InfoNode tree and confirm
+    // the tree's hierarchical codelength reproduces the columnar value. NOTE:
+    // this rebuilds the tree (replacing the OO result), so it must stay last.
+    auto columnarPaths = optC.toNodePaths(m_leafNodes);
+    initTree(columnarPaths);
+    const double materializedL = getHierarchicalCodelength();
+    Console::detail(0, "materialized columnar -> tree {} vs columnar {}, diff {:.3g}, depth {}..{}, {} top modules",
+                    io::toPrecision(materializedL), io::toPrecision(columnarCL),
+                    materializedL - columnarCL, numLevels(), maxTreeDepth(), numTopModules());
   }
 
   m_elapsedTime.stop();
