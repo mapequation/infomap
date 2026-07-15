@@ -14,6 +14,7 @@
 #include <cstddef>
 #include <memory>
 #include <unordered_map>
+#include <unordered_set>
 
 namespace infomap {
 
@@ -56,6 +57,26 @@ public:
   virtual double moveDelta(int leaf, int oldMod, int newMod) const { return 0.0; }
   // Commit the move to the per-module state.
   virtual void applyMove(int leaf, int oldMod, int newMod) {}
+
+  // Append move-target modules the search should also consider for `leaf`,
+  // beyond its edge neighborhood. The base move loop only proposes modules of
+  // edge-connected neighbors; Mem uses this to propose modules that already hold
+  // a co-physical state node (same physical id), so the search can find the
+  // flow-disconnected merges that collapse the physical codebook — the merges
+  // the correction rewards but the edge-based loop would never generate. The
+  // leaf's current module may be included; the caller skips it. Default none.
+  virtual void proposeMoveTargets(int leaf, std::vector<int>& out) const {}
+
+  // Restrict this correction to a subset of leaves for an in-context leaf refine
+  // (the bottom-level re-partition within a first-order parent). `globalLeafIds`
+  // lists the sub-problem's leaves by global id in the sub-problem's local order,
+  // so the returned correction is indexed by local leaf id. Leaf-shaping
+  // corrections (Meta/Mem) return a sliced copy; structural ones return nullptr
+  // and stay out of the refine, which then optimizes the base objective there.
+  // Because a bottom module lives entirely within one parent, per-parent slicing
+  // is exact — a physical node's / category's per-module term never couples
+  // across parents.
+  virtual std::unique_ptr<ColumnarCorrection> sliceForLeaves(const std::vector<int>& globalLeafIds) const { return nullptr; }
 };
 
 /**
@@ -239,6 +260,20 @@ private:
   // is the k == 0 special case. Returns false if no grandparent layer exists.
   bool refineLayerWithinGrandparent(int k);
 
+  // Add leaf-shaping corrections, sliced to the given subset of leaves, onto a
+  // sub-optimizer so an in-context bottom refine optimizes the augmented
+  // objective (base + Meta/Mem) rather than base alone. No-op for the base
+  // objective and for structural corrections. Only valid where the refined
+  // units are leaves (k == 0) — interior levels stay first-order (base).
+  void addSlicedLeafCorrections(ColumnarTwoLevel& subOpt, const std::vector<int>& globalLeafIds) const;
+
+  // Total correction contribution for a leaf->module assignment (numModules
+  // groups), summed over the move-loop-participating corrections. Used so the
+  // two-level optimizer selects partitions by the augmented objective (base +
+  // correction) rather than base alone. Re-seeds each correction's move-loop
+  // state as a side effect (harmless: the next move loop re-inits it).
+  double augmentedCorrectionFor(const std::vector<int>& leafAssign, int numModules);
+
   // Hierarchical codelength from the stacked levels/assignments in m_hier*.
   double hierarchicalCodelengthFromStack() const;
 
@@ -247,6 +282,8 @@ private:
   double m_exitNetworkFlow = 0.0; // flow leaving this (sub-)network; 0 if closed
   unsigned int m_superAggLimit = 0; // >0: conservative up-build (passes/super-level)
   bool m_leafMoveLoop = false; // true while moveLoop units are leaves (corrections active)
+  bool m_seededPhase = false; // true when the move loop starts from an existing partition (fine-tune/refine)
+  double m_lastCorrection = 0.0; // correction total of the last leaf move loop (0 if none)
   std::vector<std::unique_ptr<ColumnarCorrection>> m_corrections; // objective add-ons
 
   // Sum of the composable corrections' contributions to the hierarchical
@@ -319,6 +356,7 @@ public:
   double initMoveLoop(const std::vector<int>& leafModule, int numModules) override;
   double moveDelta(int leaf, int oldMod, int newMod) const override;
   void applyMove(int leaf, int oldMod, int newMod) override;
+  std::unique_ptr<ColumnarCorrection> sliceForLeaves(const std::vector<int>& globalLeafIds) const override;
 
 private:
   // Per leaf-module contribution: F_m * H_m == plogp(F_m) - sum_c plogp(f_{m,c}).
@@ -356,6 +394,8 @@ public:
   double initMoveLoop(const std::vector<int>& leafModule, int numModules) override;
   double moveDelta(int leaf, int oldMod, int newMod) const override;
   void applyMove(int leaf, int oldMod, int newMod) override;
+  void proposeMoveTargets(int leaf, std::vector<int>& out) const override;
+  std::unique_ptr<ColumnarCorrection> sliceForLeaves(const std::vector<int>& globalLeafIds) const override;
 
 private:
   double physFlow(int module, int physical) const;
@@ -365,6 +405,11 @@ private:
   double m_cState; // constant sum_leaf plogp(stateFlow)
 
   std::vector<std::unordered_map<int, double>> m_modulePhysFlow; // physFlow_{m,p}
+  // Reverse index physical id -> modules currently holding a state node of that
+  // physical node, so proposeMoveTargets can offer co-physical merge targets in
+  // ~O(modules-per-physical) without scanning. Maintained alongside
+  // m_modulePhysFlow in initMoveLoop/applyMove.
+  std::unordered_map<int, std::unordered_set<int>> m_physModules;
 };
 
 } // namespace infomap

@@ -14,9 +14,11 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdlib>
 #include <limits>
 #include <numeric>
 #include <random>
+#include <string>
 #include <unordered_map>
 #include <utility>
 
@@ -472,6 +474,8 @@ unsigned int ColumnarTwoLevel::moveLoop()
   std::vector<double> dEnter(n, 0.0), dExit(n, 0.0);
   std::vector<int> touched;
   touched.reserve(64);
+  std::vector<int> corrCand; // correction-proposed move targets (e.g. co-physical)
+  corrCand.reserve(32);
 
   // Objective corrections that shape the leaf partition participate in the move
   // loop (units == leaves here, so unit id == leaf id). Their contribution is
@@ -486,6 +490,22 @@ unsigned int ColumnarTwoLevel::moveLoop()
     for (auto* c : corr)
       correctionTotal += c->initMoveLoop(m_module, n);
   }
+
+  // EXPERIMENT: co-physical (correction-proposed) merge candidates. Mode from
+  // env COL_COMERGE = off | all | seeded (default all). "seeded" restricts the
+  // extra candidates to seeded phases (fine-tune / refine), where base structure
+  // already exists, avoiding premature over-merging from singletons.
+  static const int kCoMergeMode = [] {
+    const char* e = std::getenv("COL_COMERGE");
+    if (!e) return 0; // default off: proposing co-physical candidates greedily
+                      // from singletons doesn't reach the balanced mem basin
+                      // (the barrier is leaf-module coarsening, not candidates)
+    if (std::string(e) == "all") return 1;
+    if (std::string(e) == "seeded") return 2;
+    return 0;
+  }();
+  const bool proposeExtra = !corr.empty()
+      && (kCoMergeMode == 1 || (kCoMergeMode == 2 && m_seededPhase));
 
   double oldCodelength = m_codelength + correctionTotal;
   unsigned int numEffectiveLoops = 0;
@@ -539,6 +559,21 @@ unsigned int ColumnarTwoLevel::moveLoop()
         const int em = m_emptyModules.back();
         if (dEnter[em] == 0.0 && dExit[em] == 0.0)
           touched.push_back(em);
+      }
+
+      // Objective-proposed candidates beyond the edge neighborhood (Mem: modules
+      // already holding a co-physical state node). These carry no direct flow to
+      // u (deltaNew = 0) unless they are also edge neighbours, in which case they
+      // are already in `touched`; the zero-flow guard both dedups and admits the
+      // flow-disconnected merges the base loop could never reach.
+      if (proposeExtra) {
+        for (auto* c : corr) {
+          corrCand.clear();
+          c->proposeMoveTargets(u, corrCand);
+          for (int m : corrCand)
+            if (m != cMod && dEnter[m] == 0.0 && dExit[m] == 0.0)
+              touched.push_back(m);
+        }
       }
 
       for (int m : touched) {
@@ -634,6 +669,7 @@ unsigned int ColumnarTwoLevel::moveLoop()
     oldCodelength = m_codelength + correctionTotal;
   } while (coreLoopCount != loopLimit);
 
+  m_lastCorrection = correctionTotal; // 0 when no leaf-level corrections active
   return numEffectiveLoops;
 }
 
@@ -721,6 +757,7 @@ double ColumnarTwoLevel::optimizeTwoLevel(unsigned int maxAggPasses, bool doFine
   // aggregation passes operate on modules, where they are not.
   m_lvl = m_leaf0;
   m_leafMoveLoop = true;
+  m_seededPhase = false; // aggregation starts from singletons
   m_leafTop.resize(m_nLeaves);
   for (int i = 0; i < m_nLeaves; ++i)
     m_leafTop[i] = i;
@@ -736,21 +773,28 @@ double ColumnarTwoLevel::optimizeTwoLevel(unsigned int maxAggPasses, bool doFine
     initPartition();
     moveLoop();
 
-    const double L = m_codelength; // leaves -> current modules two-level codelength
+    // Compose leaf -> module (compacted) for this pass.
+    std::vector<int> remap(m_lvl.n, -1);
+    int c = 0;
+    for (int i = 0; i < m_lvl.n; ++i)
+      if (remap[m_module[i]] == -1)
+        remap[m_module[i]] = c++;
+    std::vector<int> newTop(m_nLeaves);
+    for (int i = 0; i < m_nLeaves; ++i)
+      newTop[i] = remap[m_module[m_leafTop[i]]];
+
+    // Select by the augmented objective (base + correction of leaves -> current
+    // modules), not base alone: for Mem the correction is a large fraction of
+    // the codelength, so base-only selection optimizes the wrong quantity. The
+    // base two-level codelength is invariant under aggregation, so m_codelength
+    // is the base term for leaves -> current top modules; add that partition's
+    // correction (recomputed, since module passes don't track the leaf term).
+    const double L = m_codelength + augmentedCorrectionFor(newTop, c);
 
     const bool improved = L < bestCodelength - kMinImprovement;
     if (first || improved) {
       first = false;
-      // Compose leaf -> module (compacted) and record as best.
-      std::vector<int> remap(m_lvl.n, -1);
-      int c = 0;
-      for (int i = 0; i < m_lvl.n; ++i)
-        if (remap[m_module[i]] == -1)
-          remap[m_module[i]] = c++;
-      std::vector<int> newTop(m_nLeaves);
-      for (int i = 0; i < m_nLeaves; ++i)
-        newTop[i] = remap[m_module[m_leafTop[i]]];
-      bestTop = newTop;
+      bestTop = std::move(newTop);
       bestCodelength = L;
       bestK = static_cast<unsigned int>(c);
 
@@ -778,9 +822,13 @@ double ColumnarTwoLevel::optimizeTwoLevel(unsigned int maxAggPasses, bool doFine
   while (true) {
     m_lvl = m_leaf0;
     m_leafMoveLoop = true; // fine-tune re-optimizes leaves
+    m_seededPhase = true; // seeded at the current partition
     seedAssignment(m_leafTop);
     moveLoop();
-    if (m_codelength >= bestCodelength - kMinImprovement)
+    // Fine-tune re-optimizes leaves, so m_lastCorrection is exactly this
+    // partition's correction; select by the augmented objective.
+    const double augL = m_codelength + m_lastCorrection;
+    if (augL >= bestCodelength - kMinImprovement)
       break;
     std::vector<int> remap(m_lvl.n, -1);
     int c = 0;
@@ -790,7 +838,7 @@ double ColumnarTwoLevel::optimizeTwoLevel(unsigned int maxAggPasses, bool doFine
     for (int i = 0; i < m_nLeaves; ++i)
       m_leafTop[i] = remap[m_module[i]];
     m_numTopModules = static_cast<unsigned int>(c);
-    bestCodelength = m_codelength;
+    bestCodelength = augL;
   }
   return bestCodelength;
 }
@@ -974,6 +1022,15 @@ double ColumnarTwoLevel::hierarchicalCodelengthFromStack() const
   return total + objectiveCorrection();
 }
 
+double ColumnarTwoLevel::augmentedCorrectionFor(const std::vector<int>& leafAssign, int numModules)
+{
+  double c = 0.0;
+  for (auto& corr : m_corrections)
+    if (corr->participatesInMoveLoop())
+      c += corr->initMoveLoop(leafAssign, numModules);
+  return c;
+}
+
 double ColumnarTwoLevel::objectiveCorrection() const
 {
   if (m_corrections.empty() || m_hierLevels.empty())
@@ -1084,6 +1141,19 @@ void MetaCorrection::applyMove(int leaf, int oldMod, int newMod)
   m_moduleCatFlow[newMod][q] += w;
 }
 
+std::unique_ptr<ColumnarCorrection> MetaCorrection::sliceForLeaves(const std::vector<int>& globalLeafIds) const
+{
+  const int n = static_cast<int>(globalLeafIds.size());
+  std::vector<int> category(n);
+  std::vector<double> weight(n);
+  for (int j = 0; j < n; ++j) {
+    const int g = globalLeafIds[j];
+    category[j] = m_leafCategory[g];
+    weight[j] = m_leafWeight[g];
+  }
+  return std::make_unique<MetaCorrection>(std::move(category), std::move(weight), m_metaDataRate);
+}
+
 // ===================================================
 // MemCorrection (memory / state networks: physical-node codebook)
 // ===================================================
@@ -1125,9 +1195,13 @@ double MemCorrection::initMoveLoop(const std::vector<int>& leafModule, int numMo
 {
   using infomath::plogp;
   m_modulePhysFlow.assign(numModules, {});
+  m_physModules.clear();
   const int nLeaves = static_cast<int>(leafModule.size());
-  for (int i = 0; i < nLeaves; ++i)
-    m_modulePhysFlow[leafModule[i]][m_leafPhysical[i]] += m_leafFlow[i];
+  for (int i = 0; i < nLeaves; ++i) {
+    const int m = leafModule[i], p = m_leafPhysical[i];
+    m_modulePhysFlow[m][p] += m_leafFlow[i];
+    m_physModules[p].insert(m);
+  }
   double sum = 0.0;
   for (const auto& pf : m_modulePhysFlow)
     for (const auto& kv : pf)
@@ -1157,10 +1231,49 @@ void MemCorrection::applyMove(int leaf, int oldMod, int newMod)
   auto it = oldPhys.find(p);
   if (it != oldPhys.end()) {
     it->second -= f;
-    if (it->second <= 1e-16)
+    if (it->second <= 1e-16) {
       oldPhys.erase(it);
+      m_physModules[p].erase(oldMod); // oldMod no longer holds physical p
+    }
   }
   m_modulePhysFlow[newMod][p] += f;
+  m_physModules[p].insert(newMod);
+}
+
+void MemCorrection::proposeMoveTargets(int leaf, std::vector<int>& out) const
+{
+  // Modules already holding a state node of this leaf's physical node — the
+  // co-physical merges that shrink the physical codebook but are (usually) not
+  // reachable through the edge neighborhood.
+  const auto it = m_physModules.find(m_leafPhysical[leaf]);
+  if (it == m_physModules.end())
+    return;
+  for (int m : it->second)
+    out.push_back(m);
+}
+
+std::unique_ptr<ColumnarCorrection> MemCorrection::sliceForLeaves(const std::vector<int>& globalLeafIds) const
+{
+  const int n = static_cast<int>(globalLeafIds.size());
+  std::vector<int> physical(n);
+  std::vector<double> flow(n);
+  for (int j = 0; j < n; ++j) {
+    const int g = globalLeafIds[j];
+    physical[j] = m_leafPhysical[g];
+    flow[j] = m_leafFlow[g];
+  }
+  return std::make_unique<MemCorrection>(std::move(physical), std::move(flow));
+}
+
+void ColumnarTwoLevel::addSlicedLeafCorrections(ColumnarTwoLevel& subOpt, const std::vector<int>& globalLeafIds) const
+{
+  for (const auto& c : m_corrections) {
+    if (!c->participatesInMoveLoop())
+      continue; // structural (e.g. Bias): gating-only, not part of the refine
+    auto sliced = c->sliceForLeaves(globalLeafIds);
+    if (sliced)
+      subOpt.addCorrection(std::move(sliced));
+  }
 }
 
 bool ColumnarTwoLevel::refineBottomWithinParents()
@@ -1238,9 +1351,12 @@ bool ColumnarTwoLevel::refineBottomWithinParents()
       }
     }
 
-    // Optimal in-context two-level of P's leaves (P's exit is the sub-network exit).
+    // Optimal in-context two-level of P's leaves (P's exit is the sub-network
+    // exit), objective-aware: slice Meta/Mem to P's leaves so the re-partition
+    // optimizes base + correction, not just gates on it.
     ColumnarTwoLevel subOpt;
     subOpt.buildFromLevel(sub, m_undirected, m_seed, m_hierLevels[2].exit[P]);
+    addSlicedLeafCorrections(subOpt, S);
     subOpt.optimizeTwoLevel();
     const std::vector<int>& subAssign = subOpt.leafTopModule();
     const int Ksub = static_cast<int>(subOpt.numTopModules());
@@ -1367,8 +1483,12 @@ bool ColumnarTwoLevel::refineLayerWithinGrandparent(int k)
     }
 
     // Optimal in-context two-level of G's units (G's exit = sub-network exit).
+    // At k == 0 the units are leaves, so the leaf-shaping corrections apply and
+    // are sliced to G's leaves; interior levels (k > 0) stay first-order (base).
     ColumnarTwoLevel subOpt;
     subOpt.buildFromLevel(sub, m_undirected, m_seed, grand.exit[G]);
+    if (k == 0)
+      addSlicedLeafCorrections(subOpt, S);
     subOpt.optimizeTwoLevel();
     const std::vector<int>& subAssign = subOpt.leafTopModule();
     const int Ksub = static_cast<int>(subOpt.numTopModules());
@@ -1494,6 +1614,13 @@ double ColumnarTwoLevel::optimizeColumnar(unsigned int bottomBlockLimit, unsigne
   m_hierLevels = std::move(bestLevels);
   m_hierAssign = std::move(bestAssign);
   m_numTopModules = bestTop;
+#ifdef COLUMNAR_DEBUG
+  {
+    const double corr = objectiveCorrection();
+    std::fprintf(stderr, "[optColumnar] best total=%.6f base=%.6f corr=%.6f top=%u\n",
+                 bestL, bestL - corr, corr, bestTop);
+  }
+#endif
   return bestL;
 }
 
