@@ -826,6 +826,12 @@ const std::vector<ParameterSpec>& parameterCatalog()
         .advanced()
         .configTarget(&Config::columnarTwoLevel),
     param()
+        .longName("flex")
+        .description("Experimental engine: use the non-recursive columnar search (fine building blocks, enter-flow up-build, and the up/down convergence sweep) instead of the recursive two-level-then-refine algorithm. Base map equation only for now. Produces the normal output tree.")
+        .group("Accuracy")
+        .advanced()
+        .configTarget(&Config::columnarSearch),
+    param()
         .longName("inner-parallelization")
         .description("Experimental: use batched parallel node moves for coarse optimization. Performance gains are workload-dependent, often require a relaxed core-loop-codelength-threshold and low tune-iteration-limit, and may produce a different partition than serial optimization.")
         .group("Accuracy")

@@ -1072,16 +1072,6 @@ void InfomapBase::run(Network& network)
                     ooL > 1e-16 ? (columnarFL - ooL) / ooL * 100 : 0.0,
                     io::toPrecision(columnarCL), optC.numHierLevels(), cwC.getElapsedTimeInSec(),
                     ooL > 1e-16 ? (columnarCL - ooL) / ooL * 100 : 0.0);
-
-    // Materialize the columnar best partition into the InfoNode tree and confirm
-    // the tree's hierarchical codelength reproduces the columnar value. NOTE:
-    // this rebuilds the tree (replacing the OO result), so it must stay last.
-    auto columnarPaths = optC.toNodePaths(m_leafNodes);
-    initTree(columnarPaths);
-    const double materializedL = getHierarchicalCodelength();
-    Console::detail(0, "materialized columnar -> tree {} vs columnar {}, diff {:.3g}, depth {}..{}, {} top modules",
-                    io::toPrecision(materializedL), io::toPrecision(columnarCL),
-                    materializedL - columnarCL, numLevels(), maxTreeDepth(), numTopModules());
   }
 
   m_elapsedTime.stop();
@@ -1768,6 +1758,24 @@ std::vector<unsigned int> InfomapBase::noiseTopModules() const
 // ===================================================
 // Run: *
 // ===================================================
+
+void InfomapBase::columnarPartition()
+{
+  Console::detail(1, "columnar partition (--flex)");
+
+  // Optimize on the columnar SoA core: fine building blocks -> enter-flow
+  // up-build -> up/down convergence sweep, best of a few up-merge settings.
+  ColumnarTwoLevel opt;
+  opt.buildFromLeaves(m_leafNodes, isUndirectedClustering(), seedToRandomNumberGenerator);
+  const double columnarL = opt.optimizeColumnar();
+
+  // Materialize the result into the InfoNode tree (sets m_hierarchicalCodelength
+  // and prepares the tree exactly like the rest of the output pipeline expects).
+  auto paths = opt.toNodePaths(m_leafNodes);
+  initTree(paths);
+  Console::detail(1, "flex: columnar codelength {}, materialized {}, {} levels",
+                  io::toPrecision(columnarL), io::toPrecision(m_hierarchicalCodelength), maxTreeDepth());
+}
 
 void InfomapBase::hierarchicalPartition()
 {

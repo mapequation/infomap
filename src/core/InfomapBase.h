@@ -447,7 +447,9 @@ private:
 
   void runPartition()
   {
-    if (twoLevel)
+    if (columnarSearch)
+      columnarPartition();
+    else if (twoLevel)
       partition();
     else
       hierarchicalPartition();
@@ -464,6 +466,10 @@ private:
   void hierarchicalPartition();
 
   void partition();
+
+  // Non-recursive columnar search engine (--flex): optimize on the columnar SoA
+  // core and materialize the result into the InfoNode tree via initTree.
+  void columnarPartition();
 
   // ===================================================
   // runPartition: init: *
