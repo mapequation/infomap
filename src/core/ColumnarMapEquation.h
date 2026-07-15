@@ -13,6 +13,7 @@
 #include <vector>
 #include <cstddef>
 #include <memory>
+#include <unordered_map>
 
 namespace infomap {
 
@@ -39,6 +40,22 @@ public:
   // current stacked hierarchy. Reads the partition through the core's public
   // accessors. Base objective = no corrections = exactly zero.
   virtual double hierarchicalCorrection(const ColumnarTwoLevel& core) const = 0;
+
+  // --- Optional move-loop hooks (leaf-level two-level search) ---------------
+  // Corrections that shape the leaf partition (Meta/Lossy/Mem) participate in
+  // the leaf move loop so the search — not just the gating — is objective-aware.
+  // Structural corrections (Bias) leave this false and stay gating-only.
+  // The contract is O(1) per candidate: a move of leaf `unit` touches only the
+  // two modules, so the delta and update read/write per-module state keyed by
+  // the unit's own attribute (Mem: its physical node; Meta: its category).
+  virtual bool participatesInMoveLoop() const { return false; }
+  // (Re)build per-module correction state for the given leaf->module partition.
+  // Returns this correction's contribution to the current codelength.
+  virtual double initMoveLoop(const std::vector<int>& leafModule, int numModules) { return 0.0; }
+  // Change in this correction's contribution from moving `leaf` oldMod -> newMod.
+  virtual double moveDelta(int leaf, int oldMod, int newMod) const { return 0.0; }
+  // Commit the move to the per-module state.
+  virtual void applyMove(int leaf, int oldMod, int newMod) {}
 };
 
 /**
@@ -229,6 +246,7 @@ private:
   unsigned long m_seed = 123;
   double m_exitNetworkFlow = 0.0; // flow leaving this (sub-)network; 0 if closed
   unsigned int m_superAggLimit = 0; // >0: conservative up-build (passes/super-level)
+  bool m_leafMoveLoop = false; // true while moveLoop units are leaves (corrections active)
   std::vector<std::unique_ptr<ColumnarCorrection>> m_corrections; // objective add-ons
 
   // Sum of the composable corrections' contributions to the hierarchical
@@ -291,14 +309,30 @@ private:
  */
 class MetaCorrection final : public ColumnarCorrection {
 public:
-  MetaCorrection(std::vector<int> leafCategory, double metaDataRate, bool weightByFlow)
-      : m_leafCategory(std::move(leafCategory)), m_metaDataRate(metaDataRate), m_weightByFlow(weightByFlow) {}
+  // leafWeight[i] is the flow weight of leaf i (leaf flow when weighting by
+  // flow, else a uniform weight); leafCategory[i] its metadata category.
+  MetaCorrection(std::vector<int> leafCategory, std::vector<double> leafWeight, double metaDataRate)
+      : m_leafCategory(std::move(leafCategory)), m_leafWeight(std::move(leafWeight)), m_metaDataRate(metaDataRate) {}
   double hierarchicalCorrection(const ColumnarTwoLevel& core) const override;
 
+  bool participatesInMoveLoop() const override { return true; }
+  double initMoveLoop(const std::vector<int>& leafModule, int numModules) override;
+  double moveDelta(int leaf, int oldMod, int newMod) const override;
+  void applyMove(int leaf, int oldMod, int newMod) override;
+
 private:
-  std::vector<int> m_leafCategory; // per leaf, its metadata category id
+  // Per leaf-module contribution: F_m * H_m == plogp(F_m) - sum_c plogp(f_{m,c}).
+  // metaTerm() applies the metaDataRate scale and sums over modules.
+  double moduleCategoryFlow(int module, int category) const;
+
+  std::vector<int> m_leafCategory; // per leaf: metadata category id
+  std::vector<double> m_leafWeight; // per leaf: meta flow weight
+
   double m_metaDataRate;
-  bool m_weightByFlow;
+
+  // Move-loop state (per module): total weight F_m and category->weight map.
+  std::vector<double> m_moduleFlow; // F_m
+  std::vector<std::unordered_map<int, double>> m_moduleCatFlow; // f_{m,c}
 };
 
 } // namespace infomap

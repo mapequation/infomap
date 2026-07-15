@@ -473,7 +473,21 @@ unsigned int ColumnarTwoLevel::moveLoop()
   std::vector<int> touched;
   touched.reserve(64);
 
-  double oldCodelength = m_codelength;
+  // Objective corrections that shape the leaf partition participate in the move
+  // loop (units == leaves here, so unit id == leaf id). Their contribution is
+  // tracked alongside the base codelength so move selection and convergence use
+  // the true augmented objective. O(1) per candidate per correction.
+  std::vector<ColumnarCorrection*> corr;
+  double correctionTotal = 0.0;
+  if (m_leafMoveLoop) {
+    for (auto& c : m_corrections)
+      if (c->participatesInMoveLoop())
+        corr.push_back(c.get());
+    for (auto* c : corr)
+      correctionTotal += c->initMoveLoop(m_module, n);
+  }
+
+  double oldCodelength = m_codelength + correctionTotal;
   unsigned int numEffectiveLoops = 0;
   unsigned int coreLoopCount = 0;
   const unsigned int loopLimit = kCoreLoopLimit;
@@ -531,12 +545,14 @@ unsigned int ColumnarTwoLevel::moveLoop()
         if (m == cMod)
           continue;
         const double deltaNew = dEnter[m] + dExit[m];
-        const double dl = deltaCodelengthMovingNode(
+        double dl = deltaCodelengthMovingNode(
             m_enterFlow, m_enterFlow_log_enterFlow,
             curEnter, curExit, curFlow,
             m_mEnter[cMod], m_mExit[cMod], m_mFlow[cMod],
             m_mEnter[m], m_mExit[m], m_mFlow[m],
             deltaOld, deltaNew);
+        for (auto* c : corr)
+          dl += c->moveDelta(u, cMod, m);
         if (dl < bestDelta - kMinSingleImprovement) {
           bestDelta = dl;
           bestMod = m;
@@ -585,6 +601,12 @@ unsigned int ColumnarTwoLevel::moveLoop()
         m_codelength = (m_enterFlow_log_enterFlow - m_enter_log_enter)
             + (-m_exit_log_exit + m_flow_log_flow - m_nodeFlow_log_nodeFlow);
 
+        // Apply the move to each active correction and track its contribution.
+        for (auto* c : corr) {
+          correctionTotal += c->moveDelta(u, cMod, bestMod);
+          c->applyMove(u, cMod, bestMod);
+        }
+
         m_mMembers[cMod] -= 1;
         m_mMembers[bestMod] += 1;
         m_module[u] = bestMod;
@@ -606,10 +628,10 @@ unsigned int ColumnarTwoLevel::moveLoop()
       }
     }
 
-    if (numMoved == 0 || m_codelength >= oldCodelength - kMinImprovement)
+    if (numMoved == 0 || (m_codelength + correctionTotal) >= oldCodelength - kMinImprovement)
       break;
     ++numEffectiveLoops;
-    oldCodelength = m_codelength;
+    oldCodelength = m_codelength + correctionTotal;
   } while (coreLoopCount != loopLimit);
 
   return numEffectiveLoops;
@@ -694,8 +716,11 @@ int ColumnarTwoLevel::consolidateToNextLevel()
 
 double ColumnarTwoLevel::optimizeTwoLevel(unsigned int maxAggPasses, bool doFineTune)
 {
-  // Start each optimize from the immutable leaf network.
+  // Start each optimize from the immutable leaf network. The first move loop
+  // (and any fine-tune) operate on leaves, so objective corrections are active;
+  // aggregation passes operate on modules, where they are not.
   m_lvl = m_leaf0;
+  m_leafMoveLoop = true;
   m_leafTop.resize(m_nLeaves);
   for (int i = 0; i < m_nLeaves; ++i)
     m_leafTop[i] = i;
@@ -734,6 +759,7 @@ double ColumnarTwoLevel::optimizeTwoLevel(unsigned int maxAggPasses, bool doFine
       if (maxAggPasses != 0 && pass >= maxAggPasses)
         break; // stop early: keep this (finer) level as the building-block bottom
       consolidateToNextLevel();
+      m_leafMoveLoop = false; // subsequent passes aggregate modules, not leaves
     } else {
       break;
     }
@@ -751,6 +777,7 @@ double ColumnarTwoLevel::optimizeTwoLevel(unsigned int maxAggPasses, bool doFine
   // interior levels; here it closes the gap the OO fine/coarse tune closes.
   while (true) {
     m_lvl = m_leaf0;
+    m_leafMoveLoop = true; // fine-tune re-optimizes leaves
     seedAssignment(m_leafTop);
     moveLoop();
     if (m_codelength >= bestCodelength - kMinImprovement)
@@ -972,33 +999,89 @@ double MetaCorrection::hierarchicalCorrection(const ColumnarTwoLevel& core) cons
 {
   using infomath::plogp;
   // Meta term applies at the leaf-module level (level 1): for each bottom
-  // module, metaDataRate * F_m * (-sum_c plogp(f_c / F_m)), matching
-  // MetaCollection::calculateEntropy summed over leaf modules.
+  // module, metaDataRate * F_m * (-sum_c plogp(f_c / F_m)) == metaDataRate *
+  // (plogp(F_m) - sum_c plogp(f_c)), matching MetaCollection::calculateEntropy
+  // summed over leaf modules.
   if (core.hierNumLevels() < 2)
     return 0.0;
   const int nLeaves = core.numLeaves();
   const int numModules = core.hierLevelSize(1);
 
-  // Accumulate per-module total flow and per-(module,category) flow. Key packs
-  // (module, category) into 64 bits: module < 2^31, category is an unsigned id.
   std::vector<double> moduleFlow(numModules, 0.0);
-  std::unordered_map<long long, double> catFlow;
+  std::unordered_map<long long, double> catFlow; // key = (module<<32)|category
   for (int i = 0; i < nLeaves; ++i) {
     const int m = core.hierLeafModule(i);
-    const double w = m_weightByFlow ? core.leafFlow(i) : 1.0;
-    moduleFlow[m] += w;
+    moduleFlow[m] += m_leafWeight[i];
     const long long key = (static_cast<long long>(m) << 32) | static_cast<unsigned int>(m_leafCategory[i]);
-    catFlow[key] += w;
+    catFlow[key] += m_leafWeight[i];
   }
 
   double total = 0.0;
-  for (const auto& kv : catFlow) {
-    const int m = static_cast<int>(kv.first >> 32);
-    const double F = moduleFlow[m];
-    if (F > 1e-16)
-      total -= plogp(kv.second / F) * F;
-  }
+  for (int m = 0; m < numModules; ++m)
+    total += plogp(moduleFlow[m]);
+  for (const auto& kv : catFlow)
+    total -= plogp(kv.second);
   return m_metaDataRate * total;
+}
+
+double MetaCorrection::moduleCategoryFlow(int module, int category) const
+{
+  const auto& cats = m_moduleCatFlow[module];
+  const auto it = cats.find(category);
+  return it == cats.end() ? 0.0 : it->second;
+}
+
+double MetaCorrection::initMoveLoop(const std::vector<int>& leafModule, int numModules)
+{
+  using infomath::plogp;
+  m_moduleFlow.assign(numModules, 0.0);
+  m_moduleCatFlow.assign(numModules, {});
+  const int nLeaves = static_cast<int>(leafModule.size());
+  for (int i = 0; i < nLeaves; ++i) {
+    const int m = leafModule[i];
+    m_moduleFlow[m] += m_leafWeight[i];
+    m_moduleCatFlow[m][m_leafCategory[i]] += m_leafWeight[i];
+  }
+  double total = 0.0;
+  for (int m = 0; m < numModules; ++m)
+    total += plogp(m_moduleFlow[m]);
+  for (const auto& cats : m_moduleCatFlow)
+    for (const auto& kv : cats)
+      total -= plogp(kv.second);
+  return m_metaDataRate * total;
+}
+
+double MetaCorrection::moveDelta(int leaf, int oldMod, int newMod) const
+{
+  using infomath::plogp;
+  if (oldMod == newMod)
+    return 0.0;
+  const int q = m_leafCategory[leaf];
+  const double w = m_leafWeight[leaf];
+  const double Fo = m_moduleFlow[oldMod], Fn = m_moduleFlow[newMod];
+  const double fo = moduleCategoryFlow(oldMod, q), fn = moduleCategoryFlow(newMod, q);
+  // term(m) = plogp(F_m) - sum_c plogp(f_c). Only F and category q change.
+  const double dOld = (plogp(Fo - w) - plogp(Fo)) - (plogp(fo - w) - plogp(fo));
+  const double dNew = (plogp(Fn + w) - plogp(Fn)) - (plogp(fn + w) - plogp(fn));
+  return m_metaDataRate * (dOld + dNew);
+}
+
+void MetaCorrection::applyMove(int leaf, int oldMod, int newMod)
+{
+  if (oldMod == newMod)
+    return;
+  const int q = m_leafCategory[leaf];
+  const double w = m_leafWeight[leaf];
+  m_moduleFlow[oldMod] -= w;
+  m_moduleFlow[newMod] += w;
+  auto& oldCats = m_moduleCatFlow[oldMod];
+  auto oit = oldCats.find(q);
+  if (oit != oldCats.end()) {
+    oit->second -= w;
+    if (oit->second <= 1e-16)
+      oldCats.erase(oit);
+  }
+  m_moduleCatFlow[newMod][q] += w;
 }
 
 bool ColumnarTwoLevel::refineBottomWithinParents()

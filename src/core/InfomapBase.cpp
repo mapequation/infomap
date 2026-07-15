@@ -1780,14 +1780,19 @@ void InfomapBase::columnarPartition()
       totalDegree = m_network.sumDegree();
     opt.addCorrection(std::make_unique<BiasedEntropyCorrection>(entropyBiasCorrectionMultiplier, totalDegree));
   }
-  // Metadata: one category per leaf (first dimension), flow-weighted by default.
+  // Metadata: one category per leaf (first dimension), flow-weighted by default
+  // (unweighted uses a uniform 1/numNodes, matching MetaMapEquation).
   if (haveMetaData()) {
+    const bool weightByFlow = !unweightedMetaData;
+    const double unweightedFlow = m_leafNodes.empty() ? 1.0 : 1.0 / static_cast<double>(m_leafNodes.size());
     std::vector<int> leafCategory(m_leafNodes.size(), 0);
+    std::vector<double> leafWeight(m_leafNodes.size(), 0.0);
     for (std::size_t i = 0; i < m_leafNodes.size(); ++i) {
       const auto& md = m_leafNodes[i]->metaData();
       leafCategory[i] = md.empty() ? 0 : md[0];
+      leafWeight[i] = weightByFlow ? m_leafNodes[i]->data.flow : unweightedFlow;
     }
-    opt.addCorrection(std::make_unique<MetaCorrection>(std::move(leafCategory), metaDataRate, !unweightedMetaData));
+    opt.addCorrection(std::make_unique<MetaCorrection>(std::move(leafCategory), std::move(leafWeight), metaDataRate));
   }
 
   const double columnarL = opt.optimizeColumnar(1, tuneIterationLimit);
