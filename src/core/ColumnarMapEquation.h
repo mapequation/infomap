@@ -10,6 +10,7 @@
 #ifndef COLUMNAR_MAP_EQUATION_H_
 #define COLUMNAR_MAP_EQUATION_H_
 
+#include <functional>
 #include <vector>
 #include <cstddef>
 #include <memory>
@@ -185,6 +186,11 @@ public:
     m_corrections.push_back(std::move(correction));
   }
 
+  void setInterruptCallback(std::function<void()> callback)
+  {
+    m_interruptCallback = std::move(callback);
+  }
+
   // --- Public read accessors for corrections (partition shape + leaf data) ---
   // Number of tree levels currently in the stacked hierarchy (0 = leaves).
   unsigned int hierNumLevels() const { return static_cast<unsigned int>(m_hierLevels.size()); }
@@ -206,8 +212,7 @@ public:
   // sub-optimizers fold in the same all-to-all teleport term (the level already
   // carries per-unit teleFlow/teleWeight); globalTotalTeleFlow is the whole
   // network's teleport flow, NOT the sub-network's local sum.
-  void buildFromLevel(const Level& level, bool undirected, unsigned long seed, double exitNetworkFlow = 0.0,
-                      bool recordedTeleport = false, double globalTotalTeleFlow = 0.0);
+  void buildFromLevel(const Level& level, bool undirected, unsigned long seed, double exitNetworkFlow = 0.0, bool recordedTeleport = false, double globalTotalTeleFlow = 0.0);
 
   // Run repeated aggregation (Louvain-style) and return the two-level codelength
   // of the resulting leaves -> top-modules partition. maxAggPasses > 0 stops the
@@ -276,6 +281,12 @@ public:
   double hierarchicalCodelengthFromStack() const;
 
 private:
+  void pollInterrupt() const
+  {
+    if (m_interruptCallback)
+      m_interruptCallback();
+  }
+
   // Move-loop machinery operating on the current level `m_lvl`.
   void initPartition();
   // Seed the partition of `m_lvl` at a given unit->module assignment (the shared
@@ -297,9 +308,7 @@ private:
   // from moving unit u (link enter/exit/flow cur*, teleport tfu/twu) out of module
   // A into module B, with deltaOld/deltaNew the link flow between u and A/B. Used
   // instead of deltaCodelengthMovingNode when m_recordedTeleport is on.
-  double deltaCodelengthMovingNodeTele(double curEnter, double curExit, double curFlow,
-                                       double tfu, double twu, int A, int B,
-                                       double deltaOld, double deltaNew) const;
+  double deltaCodelengthMovingNodeTele(double curEnter, double curExit, double curFlow, double tfu, double twu, int A, int B, double deltaOld, double deltaNew) const;
 
   // Aggregate a base level under a unit->group assignment (K groups): group
   // flow = sum of member flow, group enter/exit = crossing flow, plus the
@@ -362,6 +371,7 @@ private:
   bool m_seededPhase = false; // true when the move loop starts from an existing partition (fine-tune/refine)
   double m_lastCorrection = 0.0; // correction total of the last leaf move loop (0 if none)
   std::vector<std::unique_ptr<ColumnarCorrection>> m_corrections; // objective add-ons
+  std::function<void()> m_interruptCallback;
 
   // Sum of the composable corrections' contributions to the hierarchical
   // codelength (0 for the base objective, i.e. no corrections).

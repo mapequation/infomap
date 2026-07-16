@@ -1073,14 +1073,7 @@ void InfomapBase::run(Network& network)
     const double ooL = getHierarchicalCodelength();
     // Report OO depth as shallowest..deepest branch (numLevels walks only the
     // first-child chain, so on a ragged tree it is the shallow branch).
-    Console::detail(0, "OO {} (depth {}..{}) · columnar 2-level {} ({} mods, {:.3g}s) · columnar hier {} ({} lvl, {:.3g}s) · columnar flex {} ({} lvl, {:.3g}s), flex gap {:.2g}% · columnar converge {} ({} lvl, {:.3g}s), converge gap {:.2g}%",
-                    io::toPrecision(ooL), numLevels(), maxTreeDepth(),
-                    io::toPrecision(columnar2L), opt2.numTopModules(), cw2.getElapsedTimeInSec(),
-                    io::toPrecision(columnarHL), optH.numHierLevels(), cwH.getElapsedTimeInSec(),
-                    io::toPrecision(columnarFL), optF.numHierLevels(), cwF.getElapsedTimeInSec(),
-                    ooL > 1e-16 ? (columnarFL - ooL) / ooL * 100 : 0.0,
-                    io::toPrecision(columnarCL), optC.numHierLevels(), cwC.getElapsedTimeInSec(),
-                    ooL > 1e-16 ? (columnarCL - ooL) / ooL * 100 : 0.0);
+    Console::detail(0, "OO {} (depth {}..{}) · columnar 2-level {} ({} mods, {:.3g}s) · columnar hier {} ({} lvl, {:.3g}s) · columnar flex {} ({} lvl, {:.3g}s), flex gap {:.2g}% · columnar converge {} ({} lvl, {:.3g}s), converge gap {:.2g}%", io::toPrecision(ooL), numLevels(), maxTreeDepth(), io::toPrecision(columnar2L), opt2.numTopModules(), cw2.getElapsedTimeInSec(), io::toPrecision(columnarHL), optH.numHierLevels(), cwH.getElapsedTimeInSec(), io::toPrecision(columnarFL), optF.numHierLevels(), cwF.getElapsedTimeInSec(), ooL > 1e-16 ? (columnarFL - ooL) / ooL * 100 : 0.0, io::toPrecision(columnarCL), optC.numHierLevels(), cwC.getElapsedTimeInSec(), ooL > 1e-16 ? (columnarCL - ooL) / ooL * 100 : 0.0);
   }
 
   m_elapsedTime.stop();
@@ -1741,7 +1734,8 @@ void InfomapBase::columnarPartition()
   // multiple trials (-N) explore different move orders instead of repeating.
   const unsigned long trialSeed = m_rand.randInt(0, std::numeric_limits<int>::max());
   ColumnarTwoLevel opt;
-  if (m_columnarNativeInput) {
+  opt.setInterruptCallback([this] { pollInterrupt(); });
+  if (m_columnarNativeInput && !haveHardPartition()) {
     // Native leaf SoA built from the network (see buildColumnarLeafInput),
     // bypassing the InfoNode leaf tree as the optimizer's input.
     ColumnarTwoLevel::Level leaf;
@@ -1776,8 +1770,8 @@ void InfomapBase::columnarPartition()
   // and prepares the tree exactly like the rest of the output pipeline expects).
   auto paths = opt.toNodePaths(m_leafNodes);
   initTree(paths);
-  Console::detail(1, "flex: columnar codelength {}, materialized {}, {} levels",
-                  io::toPrecision(columnarL), io::toPrecision(m_hierarchicalCodelength), maxTreeDepth());
+  m_numNonTrivialTopModules = calculateNumNonTrivialTopModules();
+  Console::detail(1, "flex: columnar codelength {}, materialized {}, {} levels", io::toPrecision(columnarL), io::toPrecision(m_hierarchicalCodelength), maxTreeDepth());
 }
 
 bool InfomapBase::columnarNativeInputEligible() const

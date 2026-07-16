@@ -272,11 +272,7 @@ namespace {
   // objective: change in codelength from moving a unit out of its old module
   // (aggregates old*) into a candidate module (aggregates new*). deltaOld/deltaNew
   // are the summed enter+exit flow between the unit and the old/new module.
-  inline double deltaCodelengthMovingNode(double enterFlow, double enterFlow_log_enterFlow,
-                                          double curEnter, double curExit, double curFlow,
-                                          double oldEnter, double oldExit, double oldFlow,
-                                          double newEnter, double newExit, double newFlow,
-                                          double deltaOld, double deltaNew)
+  inline double deltaCodelengthMovingNode(double enterFlow, double enterFlow_log_enterFlow, double curEnter, double curExit, double curFlow, double oldEnter, double oldExit, double oldFlow, double newEnter, double newExit, double newFlow, double deltaOld, double deltaNew)
   {
     using infomath::plogp;
     const double oldExitPlusFlow = oldExit + oldFlow;
@@ -375,8 +371,7 @@ void ColumnarTwoLevel::buildFromLeaves(const std::vector<InfoNode*>& leafNodes, 
   }
 }
 
-void ColumnarTwoLevel::buildFromLevel(const Level& level, bool undirected, unsigned long seed, double exitNetworkFlow,
-                                      bool recordedTeleport, double globalTotalTeleFlow)
+void ColumnarTwoLevel::buildFromLevel(const Level& level, bool undirected, unsigned long seed, double exitNetworkFlow, bool recordedTeleport, double globalTotalTeleFlow)
 {
   using infomath::plogp;
   m_undirected = undirected;
@@ -528,9 +523,7 @@ void ColumnarTwoLevel::moveUnit(int u, int newMod)
   m_module[u] = newMod;
 }
 
-double ColumnarTwoLevel::deltaCodelengthMovingNodeTele(double curEnter, double curExit, double curFlow,
-                                                       double tfu, double twu, int A, int B,
-                                                       double deltaOld, double deltaNew) const
+double ColumnarTwoLevel::deltaCodelengthMovingNodeTele(double curEnter, double curExit, double curFlow, double tfu, double twu, int A, int B, double deltaOld, double deltaNew) const
 {
   using infomath::plogp;
   // Effective (link + teleport) enter/exit of A and B before the move.
@@ -616,6 +609,7 @@ unsigned int ColumnarTwoLevel::moveLoop()
   const unsigned int loopLimit = kCoreLoopLimit;
 
   do {
+    pollInterrupt();
     ++coreLoopCount;
     std::shuffle(order.begin(), order.end(), rng);
     unsigned int numMoved = 0;
@@ -684,14 +678,9 @@ unsigned int ColumnarTwoLevel::moveLoop()
           continue;
         const double deltaNew = dEnter[m] + dExit[m];
         double dl = m_recordedTeleport
-            ? deltaCodelengthMovingNodeTele(curEnter, curExit, curFlow,
-                  m_lvl.teleFlow[u], m_lvl.teleWeight[u], cMod, m, deltaOld, deltaNew)
+            ? deltaCodelengthMovingNodeTele(curEnter, curExit, curFlow, m_lvl.teleFlow[u], m_lvl.teleWeight[u], cMod, m, deltaOld, deltaNew)
             : deltaCodelengthMovingNode(
-                  m_enterFlow, m_enterFlow_log_enterFlow,
-                  curEnter, curExit, curFlow,
-                  m_mEnter[cMod], m_mExit[cMod], m_mFlow[cMod],
-                  m_mEnter[m], m_mExit[m], m_mFlow[m],
-                  deltaOld, deltaNew);
+                  m_enterFlow, m_enterFlow_log_enterFlow, curEnter, curExit, curFlow, m_mEnter[cMod], m_mExit[cMod], m_mFlow[cMod], m_mEnter[m], m_mExit[m], m_mFlow[m], deltaOld, deltaNew);
         for (auto* c : corr)
           dl += c->moveDelta(u, cMod, m);
         if (dl < bestDelta - kMinSingleImprovement) {
@@ -891,6 +880,7 @@ double ColumnarTwoLevel::optimizeTwoLevel(unsigned int maxAggPasses, bool doFine
   bool first = true;
   unsigned int pass = 0;
   while (true) {
+    pollInterrupt();
     ++pass;
     initPartition();
     moveLoop();
@@ -942,6 +932,7 @@ double ColumnarTwoLevel::optimizeTwoLevel(unsigned int maxAggPasses, bool doFine
   // between modules and modules may merge/empty. Same primitive that will tune
   // interior levels; here it closes the gap the OO fine/coarse tune closes.
   while (true) {
+    pollInterrupt();
     m_lvl = m_leaf0;
     m_leafMoveLoop = true; // fine-tune re-optimizes leaves
     m_seededPhase = true; // seeded at the current partition
@@ -1114,6 +1105,7 @@ double ColumnarTwoLevel::optimizeHierarchical(unsigned int bottomBlockLimit)
 
   // Grow up with the enter-flow super-search while it shortens the index code.
   while (cur.n > 1) {
+    pollInterrupt();
     // Enter-flow transform: the super-network's node flow is the module's enter
     // flow; enter/exit and edges are the module's inter-module quantities.
     Level superNet = cur;
@@ -1128,6 +1120,7 @@ double ColumnarTwoLevel::optimizeHierarchical(unsigned int bottomBlockLimit)
     const double curIndexCodelength = plogp(sumEnter) - sumPlogpEnter;
 
     ColumnarTwoLevel superOpt;
+    superOpt.setInterruptCallback(m_interruptCallback);
     superOpt.buildFromLevel(superNet, m_undirected, m_seed, 0.0, m_recordedTeleport, m_totalTeleFlow);
     // Conservative up-build (m_superAggLimit > 0): fewer aggregation passes per
     // super-level so we don't collapse the whole level in one greedy jump —
@@ -1704,7 +1697,7 @@ bool ColumnarTwoLevel::refineBottomWithinParents()
     leavesPer[a1[a0[i]]].push_back(i);
 
   std::vector<int> newA0(m_nLeaves, -1); // leaf -> new L1'
-  std::vector<int> newA1;                // new L1' -> L2
+  std::vector<int> newA1; // new L1' -> L2
   int nextL1 = 0;
   std::vector<int> loc(m_nLeaves, -1); // global leaf -> local id (reused per P)
 
@@ -1772,6 +1765,7 @@ bool ColumnarTwoLevel::refineBottomWithinParents()
     // exit), objective-aware: slice Meta/Mem to P's leaves so the re-partition
     // optimizes base + correction, not just gates on it.
     ColumnarTwoLevel subOpt;
+    subOpt.setInterruptCallback(m_interruptCallback);
     subOpt.buildFromLevel(sub, m_undirected, m_seed, m_hierLevels[2].exit[P], m_recordedTeleport, m_totalTeleFlow);
     addSlicedLeafCorrections(subOpt, S);
     subOpt.optimizeTwoLevel();
@@ -1907,6 +1901,7 @@ bool ColumnarTwoLevel::refineLayerWithinGrandparent(int k)
     // At k == 0 the units are leaves, so the leaf-shaping corrections apply and
     // are sliced to G's leaves; interior levels (k > 0) stay first-order (base).
     ColumnarTwoLevel subOpt;
+    subOpt.setInterruptCallback(m_interruptCallback);
     subOpt.buildFromLevel(sub, m_undirected, m_seed, grand.exit[G], m_recordedTeleport, m_totalTeleFlow);
     if (k == 0)
       addSlicedLeafCorrections(subOpt, S);
@@ -1987,6 +1982,7 @@ bool ColumnarTwoLevel::refineTopLayer()
     }
 
   ColumnarTwoLevel subOpt;
+  subOpt.setInterruptCallback(m_interruptCallback);
   subOpt.buildFromLevel(sub, m_undirected, m_seed, 0.0, m_recordedTeleport, m_totalTeleFlow);
   subOpt.optimizeTwoLevel();
   const int Ksub = static_cast<int>(subOpt.numTopModules());
@@ -2073,12 +2069,12 @@ bool ColumnarTwoLevel::mergeLeafModulesWithinParents()
     // Level-1 leaf-module term: plogp(T) - plogp(exit) - sum_leaf plogp(flow);
     // the per-leaf sums cancel in the merge, leaving flows/exits only.
     const double dL1 = (plogp(Tb2) - plogp(Ta) - plogp(Tb))
-                     - (plogp(exitB2) - plogp(exit[a]) - plogp(exit[b]));
+        - (plogp(exitB2) - plogp(exit[a]) - plogp(exit[b]));
     // Parent module-of-modules term for the shared parent.
     const int p = parent[b];
     const double tu = totalUse[p];
     const double dPar = (plogp(tu - w) - plogp(tu))
-                      - (plogp(enterB2) - plogp(enter[a]) - plogp(enter[b]));
+        - (plogp(enterB2) - plogp(enter[a]) - plogp(enter[b]));
     double d = dL1 + dPar;
     for (auto* c : corr)
       d += c->mergeDelta(a, b);
@@ -2112,13 +2108,16 @@ bool ColumnarTwoLevel::mergeLeafModulesWithinParents()
           bestB = b;
         }
       };
-      for (const auto& kv : adjOut[a]) consider(kv.first);
-      for (const auto& kv : adjIn[a]) consider(kv.first);
+      for (const auto& kv : adjOut[a])
+        consider(kv.first);
+      for (const auto& kv : adjIn[a])
+        consider(kv.first);
       if (coPhysicalMerge) {
         mergeCand.clear();
         for (auto* c : corr)
           c->proposeMergePartners(a, mergeCand);
-        for (int b : mergeCand) consider(b);
+        for (int b : mergeCand)
+          consider(b);
       }
       if (bestB < 0)
         continue;
@@ -2219,8 +2218,7 @@ double ColumnarTwoLevel::optimizeConverge(unsigned int bottomBlockLimit, unsigne
     const double after = hierarchicalCodelengthFromStack();
     if (after < L - kMinImprovement) {
 #ifdef COLUMNAR_DEBUG
-      std::fprintf(stderr, "[converge] %s %.9f -> %.9f (levels %d, top %d)\n",
-                   tag, L, after, (int)m_hierLevels.size(), m_hierLevels.back().n);
+      std::fprintf(stderr, "[converge] %s %.9f -> %.9f (levels %d, top %d)\n", tag, L, after, (int)m_hierLevels.size(), m_hierLevels.back().n);
 #else
       (void)tag;
 #endif
@@ -2248,6 +2246,7 @@ double ColumnarTwoLevel::optimizeConverge(unsigned int bottomBlockLimit, unsigne
   const int numInterior = std::max(0, static_cast<int>(m_hierLevels.size()) - 2);
   const int phase1Sweeps = (numInterior <= 1) ? std::min(1, maxSweeps) : maxSweeps;
   for (int sweep = 0; sweep < phase1Sweeps; ++sweep) {
+    pollInterrupt();
     bool improved = false;
     const int top = static_cast<int>(m_hierLevels.size()) - 1;
     for (int k = 0; k + 2 <= top; ++k)
@@ -2265,6 +2264,7 @@ double ColumnarTwoLevel::optimizeConverge(unsigned int bottomBlockLimit, unsigne
   const std::clock_t t_p2 = std::clock();
 #endif
   for (int sweep = 0; sweep < maxSweeps; ++sweep) {
+    pollInterrupt();
     bool improved = false;
     improved |= gatedStep([&] { return mergeLeafModulesWithinParents(); }, "MERGE");
     improved |= gatedStep([&] { return refineTopLayer(); }, "TOP-REFINE");
@@ -2273,8 +2273,7 @@ double ColumnarTwoLevel::optimizeConverge(unsigned int bottomBlockLimit, unsigne
   }
 #ifdef COLUMNAR_DEBUG
   const std::clock_t t_end = std::clock();
-  std::fprintf(stderr, "[converge] phase1=%.3fs phase2=%.3fs (superAgg=%u)\n",
-               double(t_p2 - t_p1) / CLOCKS_PER_SEC, double(t_end - t_p2) / CLOCKS_PER_SEC, superAggLimit);
+  std::fprintf(stderr, "[converge] phase1=%.3fs phase2=%.3fs (superAgg=%u)\n", double(t_p2 - t_p1) / CLOCKS_PER_SEC, double(t_end - t_p2) / CLOCKS_PER_SEC, superAggLimit);
 #endif
   return L;
 }
@@ -2323,6 +2322,7 @@ double ColumnarTwoLevel::optimizeColumnar(unsigned int bottomBlockLimit, unsigne
   unsigned int bestTop = 0;
 
   for (unsigned int superAgg : kSuperAggSettings) {
+    pollInterrupt();
     const double L = optimizeConverge(bottomBlockLimit, superAgg, sweepLimit);
     if (L < bestL - kMinImprovement) {
       bestL = L;
@@ -2338,8 +2338,7 @@ double ColumnarTwoLevel::optimizeColumnar(unsigned int bottomBlockLimit, unsigne
 #ifdef COLUMNAR_DEBUG
   {
     const double corr = objectiveCorrection();
-    std::fprintf(stderr, "[optColumnar] best total=%.6f base=%.6f corr=%.6f top=%u\n",
-                 bestL, bestL - corr, corr, bestTop);
+    std::fprintf(stderr, "[optColumnar] best total=%.6f base=%.6f corr=%.6f top=%u\n", bestL, bestL - corr, corr, bestTop);
   }
 #endif
   return bestL;

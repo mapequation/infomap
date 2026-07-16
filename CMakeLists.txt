@@ -166,6 +166,19 @@ if(BUILD_TESTING)
         set_tests_properties(${target_name} PROPERTIES LABELS "${labels}")
     endfunction()
 
+    function(add_infomap_columnar_contract_test target_name)
+        add_test(
+            NAME ${target_name}_columnar
+            COMMAND ${target_name} "--test-case=*columnar-contract*"
+        )
+        set_tests_properties(
+            ${target_name}_columnar
+            PROPERTIES
+                ENVIRONMENT "INFOMAP_TEST_ENGINE=columnar"
+                LABELS "fast;core;columnar"
+        )
+    endfunction()
+
     add_infomap_cpp_test(infomap_cpp_network_tests test/cpp/test_network.cpp "fast;core;network;parser")
     add_infomap_cpp_test(infomap_cpp_lifecycle_tests test/cpp/test_infomap_wrapper.cpp "fast;core;lifecycle;crash")
     add_infomap_cpp_test(infomap_cpp_partition_tests test/cpp/test_partition.cpp "fast;core;partition;parser")
@@ -181,6 +194,11 @@ if(BUILD_TESTING)
     add_infomap_cpp_test(infomap_cpp_lossy_tests test/cpp/test_lossy.cpp "fast;core;lossy")
     add_infomap_cpp_test(infomap_cpp_preferred_levels_tests test/cpp/test_preferred_levels.cpp "fast;core;preferred-levels")
     add_infomap_cpp_test(infomap_cpp_random_tests test/cpp/test_random.cpp "fast;core;rng")
+
+    add_infomap_columnar_contract_test(infomap_cpp_lifecycle_tests)
+    add_infomap_columnar_contract_test(infomap_cpp_partition_tests)
+    add_infomap_columnar_contract_test(infomap_cpp_flow_tests)
+    add_infomap_columnar_contract_test(infomap_cpp_lossy_tests)
 
     add_test(
         NAME print_json_parameters

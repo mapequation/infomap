@@ -5,6 +5,7 @@
 #include "Infomap.h"
 
 #include <algorithm>
+#include <cstdlib>
 #include <cstdio>
 #include <cmath>
 #include <fstream>
@@ -63,9 +64,34 @@ inline std::vector<std::vector<unsigned int>> canonicalPartition(const std::map<
   return partition;
 }
 
+inline std::string testEngineFlags()
+{
+  const char* engine = std::getenv("INFOMAP_TEST_ENGINE");
+  if (engine == nullptr || *engine == '\0' || std::string(engine) == "oo") {
+    return "";
+  }
+  if (std::string(engine) == "columnar") {
+    return "--columnar";
+  }
+  throw std::invalid_argument("Unknown INFOMAP_TEST_ENGINE: " + std::string(engine));
+}
+
+inline std::string withTestEngine(std::string flags)
+{
+  const auto engineFlags = testEngineFlags();
+  if (!engineFlags.empty()) {
+    flags += " " + engineFlags;
+  }
+  return flags;
+}
+
 inline std::string defaultFlags(const std::string& extraFlags = "")
 {
-  return extraFlags.empty() ? "--seed 123 --num-trials 1 --silent" : "--seed 123 --num-trials 1 --silent " + extraFlags;
+  std::string flags = "--seed 123 --num-trials 1 --silent";
+  if (!extraFlags.empty()) {
+    flags += " " + extraFlags;
+  }
+  return withTestEngine(flags);
 }
 
 inline std::vector<EdgeFixtureLink> readEdgeFixture(const std::string& relativePath)

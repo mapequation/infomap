@@ -340,7 +340,7 @@ void checkInnerParallelPartitionCodelength(const std::string& extraFlags, const 
   infomap::test::checkApproxCodelength(check.getIndexCodelength(), result.indexCodelength, 1e-9);
 }
 
-TEST_CASE("Recorded teleportation stays stable across trial counts for the directed fixture [fast][core][flow]")
+TEST_CASE("Recorded teleportation stays stable across trial counts for the directed fixture [fast][core][flow][columnar-contract]")
 {
   const auto oneTrial = runDirectedFixture("--recorded-teleportation --num-trials 1");
   const auto twoTrials = runDirectedFixture("--recorded-teleportation --num-trials 2");
@@ -351,7 +351,7 @@ TEST_CASE("Recorded teleportation stays stable across trial counts for the direc
   CHECK(oneTrial.indexCodelength == doctest::Approx(twoTrials.indexCodelength));
 }
 
-TEST_CASE("Directed to-nodes teleportation keeps the expected coarse partition [fast][core][flow]")
+TEST_CASE("Directed to-nodes teleportation keeps the expected coarse partition [fast][core][flow][columnar-contract]")
 {
   const auto result = runDirectedFixture("--to-nodes");
 
@@ -382,7 +382,7 @@ TEST_CASE("Undirected regularization remains stable on the two-triangles fixture
   infomap::test::checkApproxCodelength(im.codelength(), 2.575767408, 1e-9);
 }
 
-TEST_CASE("Directed regularized codelength matches analytic multi-level tree [fast][core][flow]")
+TEST_CASE("Directed regularized codelength matches analytic multi-level tree [fast][core][flow][columnar-contract]")
 {
   InfomapWrapper im(infomap::test::defaultFlags(
       "--directed --regularized --no-infomap --cluster-data "
@@ -402,7 +402,7 @@ TEST_CASE("Directed regularized codelength matches analytic multi-level tree [fa
 }
 
 #if INFOMAP_FEATURE_REGULARIZED_MULTILAYER
-TEST_CASE("Regularized multilayer flow supports non-dense matchable state ids [fast][core][flow]")
+TEST_CASE("Regularized multilayer flow supports non-dense matchable state ids [fast][core][flow][columnar-contract]")
 {
   InfomapWrapper im(infomap::test::defaultFlags(
       "--directed --regularized --matchable-multilayer-ids 2 --no-infomap --two-level"));
@@ -415,7 +415,7 @@ TEST_CASE("Regularized multilayer flow supports non-dense matchable state ids [f
   infomap::test::checkRunSanity(im);
 }
 
-TEST_CASE("Regularized multilayer ego flow matches analytic prior-strength sample [fast][core][flow]")
+TEST_CASE("Regularized multilayer ego flow matches analytic prior-strength sample [fast][core][flow][columnar-contract]")
 {
   InfomapWrapper im(infomap::test::defaultFlags("--directed --regularized --no-infomap --two-level"));
 
@@ -450,7 +450,7 @@ TEST_CASE("Regularized multilayer ego flow matches analytic prior-strength sampl
   }
 }
 
-TEST_CASE("Regularized multilayer asymmetric flow matches analytic prior-strength sample [fast][core][flow]")
+TEST_CASE("Regularized multilayer asymmetric flow matches analytic prior-strength sample [fast][core][flow][columnar-contract]")
 {
   const std::vector<MultilayerIntraLink> intraLinks = {
       { 1, 1, 2, 2.0 },
@@ -470,7 +470,7 @@ TEST_CASE("Regularized multilayer asymmetric flow matches analytic prior-strengt
   checkRegularizedMultilayerFlow(im, analyticRegularizedMultilayerFlow(intraLinks));
 }
 
-TEST_CASE("Regularized multilayer matchable state-id flow matches analytic prior-strength sample [fast][core][flow]")
+TEST_CASE("Regularized multilayer matchable state-id flow matches analytic prior-strength sample [fast][core][flow][columnar-contract]")
 {
   const std::vector<MultilayerIntraLink> intraLinks = {
       { 1, 10, 20, 1.0 },
@@ -670,7 +670,7 @@ TEST_CASE("Precomputed flow rejects higher-order input without state flows [fast
       std::runtime_error);
 }
 
-TEST_CASE("Precomputed flow fixture remains runnable in C++ tests [fast][core][flow]")
+TEST_CASE("Precomputed flow fixture remains runnable in C++ tests [fast][core][flow][columnar-contract]")
 {
   InfomapWrapper im(infomap::test::defaultFlags("--flow-model precomputed"));
   infomap::test::readNetworkFixture(im, "twotriangles_flow.net");
@@ -684,7 +684,7 @@ TEST_CASE("Precomputed flow fixture remains runnable in C++ tests [fast][core][f
   infomap::test::checkCanonicalPartition(im, {{1, 2, 3}, {4, 5, 6}});
 }
 
-TEST_CASE("multilayer-relax-to-self reproduces spread's codelength bit-exactly [fast][core][flow][multilayer]")
+TEST_CASE("multilayer-relax-to-self reproduces spread's codelength bit-exactly [fast][core][flow][multilayer][columnar-contract]")
 {
   // Two communities (1,2,3) and (4,5,6) present in two layers, weakly bridged.
   std::vector<MultilayerIntraLink> intraLinks;
@@ -719,7 +719,7 @@ TEST_CASE("multilayer-relax-to-self reproduces spread's codelength bit-exactly [
   infomap::test::checkApproxCodelength(toself.second, spread.second, 1e-9);
 }
 
-TEST_CASE("multilayer-relax-to-self matches spread on a single-node overlap [fast][core][flow][multilayer]")
+TEST_CASE("multilayer-relax-to-self matches spread on a single-node overlap [fast][core][flow][multilayer][columnar-contract]")
 {
   // Two triangles sharing only the central ego node (1): layer 1 = {1,2,3},
   // layer 2 = {1,4,5}. The optimum splits the ego's two copies into the two
