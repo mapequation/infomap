@@ -1762,6 +1762,15 @@ void InfomapBase::columnarPartition()
     opt.buildFromLeaves(m_leafNodes, isUndirectedClustering(), trialSeed);
   }
   opt.setRecordedTeleportation(recordedTeleportation);
+  // The columnar interior refinement stops at a diminishing-returns knee; its
+  // default (1e-3, set in ColumnarTwoLevel) is a free speedup that skips the
+  // extra sweep whose only job is to detect full convergence, at no measured
+  // codelength cost. The shared OO --tune-iteration-relative-threshold default
+  // (1e-5) is too fine to trigger it, so honor that flag for the columnar engine
+  // only when the user changed it from the OO default (e.g. 0 to grind fully).
+  static const double kOoRelTuneDefault = Config().minimumRelativeTuneIterationImprovement;
+  if (minimumRelativeTuneIterationImprovement != kOoRelTuneDefault)
+    opt.setMinRelativeTuneImprovement(minimumRelativeTuneIterationImprovement);
   addColumnarCorrections(opt);
 
   const double columnarL = opt.optimizeColumnar(1, tuneIterationLimit);

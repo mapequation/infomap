@@ -286,6 +286,12 @@ public:
   // from buildFromLeaves. No effect on the base/mem/meta objectives.
   void setRecordedTeleportation(bool on) { m_recordedTeleport = on; }
 
+  // Stop the interior-layer refinement early once a whole sweep improves the
+  // hierarchical codelength by less than this fraction of the post-build
+  // codelength (the diminishing-returns knee). 0 = off (grind to full
+  // convergence). Wired from --tune-iteration-relative-threshold.
+  void setMinRelativeTuneImprovement(double frac) { m_minRelTuneImprovement = frac; }
+
   // Hierarchical codelength (base map equation + active corrections) from the
   // stacked levels/assignments in m_hier* — the seeded or optimized partition.
   double hierarchicalCodelengthFromStack() const;
@@ -424,6 +430,7 @@ private:
   // GLOBAL total (constant across sub-networks), so sub-optimizers inherit it via
   // buildFromLevel rather than recomputing from their local units.
   bool m_recordedTeleport = false;
+  double m_minRelTuneImprovement = 1e-3; // interior-refine early-stop knee (0 = off, grind to convergence)
   double m_totalTeleFlow = 0.0; // GLOBAL sum of leaf teleport flow (root teleport flow)
   // A module's recorded-teleport enter/exit from its aggregated teleport flow tf
   // and weight tw (see InfomapBase::aggregateFlowValuesFromLeafToRoot): a walker

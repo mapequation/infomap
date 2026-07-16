@@ -2252,13 +2252,20 @@ double ColumnarTwoLevel::refineHierarchy(double startL, unsigned int sweepLimit)
   // skip the second no-op pass. Multiple interior levels can interact, so loop.
   const int numInterior = std::max(0, static_cast<int>(m_hierLevels.size()) - 2);
   const int refineSweeps = (numInterior <= 1) ? std::min(1, maxSweeps) : maxSweeps;
+  const double relStop = m_minRelTuneImprovement * startL;
   for (int sweep = 0; sweep < refineSweeps; ++sweep) {
     pollInterrupt();
+    const double beforeSweep = L;
     bool improved = false;
     const int top = static_cast<int>(m_hierLevels.size()) - 1;
     for (int k = 0; k + 2 <= top; ++k)
       improved |= gatedStep([&] { return refineLayerWithinGrandparent(k); }, "REFINE");
     if (!improved)
+      break;
+    // Diminishing-returns knee: stop once a whole sweep's gain drops below the
+    // relative threshold (avoids grinding the last fraction of a percent, and the
+    // extra no-improvement sweep that only detects full convergence).
+    if (relStop > 0.0 && (beforeSweep - L) < relStop)
       break;
   }
 
