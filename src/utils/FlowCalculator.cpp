@@ -617,7 +617,6 @@ void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, co
   unsigned int N = network.numNodes();
 
   std::vector<double> s_out(N, 0);
-  double sum_s = sumWeightedDegree;
   unsigned int sum_k = network.sumDegree();
   if (sum_k == 0) {
     const auto uniformFlow = 1.0 / N;
@@ -626,7 +625,6 @@ void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, co
     nodeTeleportFlow.assign(numNodes, uniformFlow);
     return;
   }
-  double average_weight = sum_s / sum_k;
 
   // Per-state out-strength, needed below for the recorded-teleportation rate.
   for (const auto& link : flowLinks) {
@@ -679,15 +677,31 @@ void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, co
     unsigned int Np = network.numPhysicalNodes(); // Ignore noSelfLinks here, since the teleportation is physically unconstrained
     lambda = config.regularizationStrength * std::log(Np) / (Np * Np * Np);
   }
-  double u_t = average_weight;
-
-  double sum_u_in = 0.0;
+  // Physical-level normalization (manuscript Eq. 408): the mass (u_out/u_in), the
+  // continuous-configuration normalization, and the teleportation target sum are
+  // all physical-node quantities. Normalizing the physical mass by state-level
+  // totals (average_weight) and summing u_in over state nodes over-counts the
+  // prior by the memory multiplicity (contexts per physical node), heavily
+  // over-regularizing high-memory, weight-heterogeneous networks. Use the
+  // physical mean edge weight and a physical-node target sum, and spread each
+  // physical node's landing weight uniformly across its contexts so the walk's
+  // teleportation still normalizes over state nodes.
+  std::vector<unsigned int> nContexts(numPhysNodes, 0);
   for (unsigned int i = 0; i < N; ++i) {
-    sum_u_in += u_in(i);
+    ++nContexts[physIndex[i]];
   }
+  double sum_s_phys = 0.0;
+  double sum_k_phys = 0.0;
+  double sum_u_in = 0.0;
+  for (unsigned int p = 0; p < numPhysNodes; ++p) {
+    sum_s_phys += s_out_phys[p] + s_in_phys[p];
+    sum_k_phys += k_out_phys[p] + k_in_phys[p];
+    sum_u_in += (k_in_phys[p] == 0 ? min_u_in : s_in_phys[p] / k_in_phys[p]);
+  }
+  double u_t = sum_s_phys / sum_k_phys;
 
   for (unsigned int i = 0; i < N; ++i) {
-    nodeTeleportWeights[i] = u_in(i) / sum_u_in;
+    nodeTeleportWeights[i] = (u_in(i) / nContexts[physIndex[i]]) / sum_u_in;
   }
 
   std::function<double(unsigned int)> t_out_withoutSelfLinks = [lambda, u_t, u_out, u_in, sum_u_in](unsigned int i) { return lambda / u_t * u_out(i) * (sum_u_in - u_in(i)); };
@@ -1071,8 +1085,6 @@ void FlowCalculator::calcUndirectedRegularizedFlow(const StateNetwork& network, 
     nodeTeleportFlow.assign(numNodes, uniformFlow);
     return;
   }
-  double average_weight = sum_s / sum_k;
-
   // Per-state strength, needed below for node flow and the teleportation rate.
   for (const auto& link : flowLinks) {
     s[link.source] += link.flow;
@@ -1126,16 +1138,27 @@ void FlowCalculator::calcUndirectedRegularizedFlow(const StateNetwork& network, 
     unsigned int Np = network.numPhysicalNodes();
     lambda = config.regularizationStrength * std::log(Np) / (Np * Np * Np);
   }
-  double u_t = average_weight;
-
-  double sum_u = 0.0;
+  // Physical-level normalization (manuscript Eq. 408); see the matching comment
+  // in calcDirectedRegularizedFlow. Normalize by the physical mean edge weight
+  // and sum the mass over physical nodes (spread across their contexts), not over
+  // state nodes, so the prior is not inflated by the memory multiplicity.
+  std::vector<unsigned int> nContexts(numPhysNodes, 0);
   for (unsigned int i = 0; i < N; ++i) {
-    sum_u += u(i);
+    ++nContexts[physIndex[i]];
   }
+  double sum_s_phys = 0.0;
+  double sum_k_phys = 0.0;
+  double sum_u = 0.0;
+  for (unsigned int p = 0; p < numPhysNodes; ++p) {
+    sum_s_phys += s_phys[p];
+    sum_k_phys += k_phys[p];
+    sum_u += (k_phys[p] == 0 ? min_u : s_phys[p] / k_phys[p]);
+  }
+  double u_t = sum_s_phys / sum_k_phys;
 
-  // nodeTeleportWeights is the fraction of teleportation flow landing on each node. This is proportional to u_in
+  // nodeTeleportWeights is the fraction of teleportation flow landing on each node.
   for (unsigned int i = 0; i < N; ++i) {
-    nodeTeleportWeights[i] = u(i) / sum_u;
+    nodeTeleportWeights[i] = (u(i) / nContexts[physIndex[i]]) / sum_u;
   }
 
   std::function<double(unsigned int)> t_withoutSelfLinks = [lambda, u_t, u, sum_u](unsigned int i) { return lambda / u_t * u(i) * (sum_u - u(i)); };
