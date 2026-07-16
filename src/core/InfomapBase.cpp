@@ -1773,7 +1773,14 @@ void InfomapBase::columnarPartition()
     opt.setMinRelativeTuneImprovement(minimumRelativeTuneIterationImprovement);
   addColumnarCorrections(opt);
 
-  const double columnarL = opt.optimizeColumnar(1, tuneIterationLimit);
+  // With -F (--fast-hierarchical-solution, reused here as the columnar fast
+  // switch): the lighter "flexible" search (up-build + one bottom re-partition
+  // within grandparents), skipping the full interior-layer refinement. Without
+  // it, the default converge search (screen up-build strategies, then refine the
+  // winner to the diminishing-returns knee).
+  const double columnarL = fastHierarchicalSolution > 0
+      ? opt.optimizeFlexible(1)
+      : opt.optimizeColumnar(1, tuneIterationLimit);
 
   // Materialize the result into the InfoNode tree (sets m_hierarchicalCodelength
   // and prepares the tree exactly like the rest of the output pipeline expects).
