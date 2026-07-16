@@ -88,6 +88,10 @@ export type Arguments = Partial<{
   coreLoopCodelengthThreshold: number;
   tuneIterationRelativeThreshold: number;
   fastHierarchicalSolution: 1 | 2 | 3;
+  hierFromBlocks: boolean;
+  columnarCheck: boolean;
+  columnarTwoLevel: boolean;
+  columnar: boolean;
   converge: boolean;
   preferModularSolution: boolean;
   numRandomMoves: number;
@@ -262,6 +266,14 @@ export default function argumentsToString(args: Arguments) {
 
   if (args.fastHierarchicalSolution)
     result += " -" + "F".repeat(args.fastHierarchicalSolution);
+
+  if (args.hierFromBlocks) result += " --hier-from-blocks";
+
+  if (args.columnarCheck) result += " --columnar-check";
+
+  if (args.columnarTwoLevel) result += " --columnar-two-level";
+
+  if (args.columnar) result += " --columnar";
 
   if (args.converge) result += " --converge";
 

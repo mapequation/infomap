@@ -282,6 +282,10 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         core_loop_codelength_threshold: float = 1e-10,
         tune_iteration_relative_threshold: float = 1e-05,
         fast_hierarchical_solution: int | None = None,
+        hier_from_blocks: bool = False,
+        columnar_check: bool = False,
+        columnar_two_level: bool = False,
+        columnar: bool = False,
         inner_parallelization: bool = False,
         parallel_trials: bool = False,
         converge: bool = False,
@@ -760,6 +764,40 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
 
             .. versionchanged:: 2.15
                 Pass it via ``Options``; moves off this signature in 3.0.
+        hier_from_blocks : bool, optional
+            Experimental (phase-1a measurement): stop aggregation at fine building
+            blocks and grow the hierarchy upward with the enter-flow super-search only,
+            skipping two-level tuning and recursive refinement. Block granularity
+            follows --level-aggregation-limit. For comparing an early-departure
+            hierarchical build against the full production result.
+
+            .. versionchanged:: 2.15
+                Pass it via ``Options``; moves off this signature in 3.0.
+        columnar_check : bool, optional
+            Experimental (phase-1a measurement): after a normal run, rebuild the final
+            partition in the columnar core (base map equation) and log its hierarchical
+            codelength against the tree's, as a correctness gate for the new data
+            structure.
+
+            .. versionchanged:: 2.15
+                Pass it via ``Options``; moves off this signature in 3.0.
+        columnar_two_level : bool, optional
+            Experimental (phase-1b measurement): run the columnar two-level optimizer on
+            the leaf network and log its codelength against the OO result. Combine with
+            --two-level for an apples-to-apples comparison.
+
+            .. versionchanged:: 2.15
+                Pass it via ``Options``; moves off this signature in 3.0.
+        columnar : bool, optional
+            Experimental engine (columnar-hierarchical-core): use the non-recursive
+            columnar search (fine building blocks, enter-flow up-build, and the up/down
+            convergence sweep) instead of the recursive two-level-then-refine algorithm.
+            The number of tuning sweeps follows --tune-iteration-limit (0 = until
+            convergence). Base map equation only for now. Produces the normal output
+            tree.
+
+            .. versionchanged:: 2.15
+                Pass it via ``Options``; moves off this signature in 3.0.
         inner_parallelization : bool, optional
             Experimental: use batched parallel node moves for coarse optimization.
             Performance gains are workload-dependent, often require a relaxed
@@ -899,6 +937,10 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         core_loop_codelength_threshold: float = 1e-10,
         tune_iteration_relative_threshold: float = 1e-05,
         fast_hierarchical_solution: int | None = None,
+        hier_from_blocks: bool = False,
+        columnar_check: bool = False,
+        columnar_two_level: bool = False,
+        columnar: bool = False,
         inner_parallelization: bool = False,
         parallel_trials: bool = False,
         converge: bool = False,

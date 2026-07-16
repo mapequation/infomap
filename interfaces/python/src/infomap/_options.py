@@ -101,6 +101,10 @@ _ADVANCED_TIER_KWARGS = {
     "core_loop_codelength_threshold": (1e-10, 1e-10, "keep", None),
     "tune_iteration_relative_threshold": (1e-05, 1e-05, "keep", None),
     "fast_hierarchical_solution": (None, None, "keep", None),
+    "hier_from_blocks": (False, False, "keep", None),
+    "columnar_check": (False, False, "keep", None),
+    "columnar_two_level": (False, False, "keep", None),
+    "columnar": (False, False, "keep", None),
     "inner_parallelization": (False, False, "keep", None),
     "parallel_trials": (False, False, "keep", None),
     "converge": (False, False, "keep", None),
@@ -338,6 +342,10 @@ _ACCURACY_OPTION_SPECS = (
     ("value", "tune_iteration_limit", "--tune-iteration-limit", lambda value: value is not None),
     ("value", "core_loop_codelength_threshold", "--core-loop-codelength-threshold", lambda value: value != 1e-10),
     ("value", "tune_iteration_relative_threshold", "--tune-iteration-relative-threshold", lambda value: value != 1e-05),
+    ("flag", "hier_from_blocks", "--hier-from-blocks", None),
+    ("flag", "columnar_check", "--columnar-check", None),
+    ("flag", "columnar_two_level", "--columnar-two-level", None),
+    ("flag", "columnar", "--columnar", None),
     ("flag", "inner_parallelization", "--inner-parallelization", None),
     ("flag", "parallel_trials", "--parallel-trials", None),
     ("flag", "converge", "--converge", None),
@@ -647,6 +655,26 @@ class Options(metaclass=_OptionsMeta):
     fast_hierarchical_solution : int, optional
         Find top modules fast. Use 2 to keep all fast levels and 3 to skip the recursive
         part.
+    hier_from_blocks : bool, optional
+        Experimental (phase-1a measurement): stop aggregation at fine building blocks
+        and grow the hierarchy upward with the enter-flow super-search only, skipping
+        two-level tuning and recursive refinement. Block granularity follows
+        --level-aggregation-limit. For comparing an early-departure hierarchical build
+        against the full production result.
+    columnar_check : bool, optional
+        Experimental (phase-1a measurement): after a normal run, rebuild the final
+        partition in the columnar core (base map equation) and log its hierarchical
+        codelength against the tree's, as a correctness gate for the new data structure.
+    columnar_two_level : bool, optional
+        Experimental (phase-1b measurement): run the columnar two-level optimizer on the
+        leaf network and log its codelength against the OO result. Combine with
+        --two-level for an apples-to-apples comparison.
+    columnar : bool, optional
+        Experimental engine (columnar-hierarchical-core): use the non-recursive columnar
+        search (fine building blocks, enter-flow up-build, and the up/down convergence
+        sweep) instead of the recursive two-level-then-refine algorithm. The number of
+        tuning sweeps follows --tune-iteration-limit (0 = until convergence). Base map
+        equation only for now. Produces the normal output tree.
     inner_parallelization : bool, optional
         Experimental: use batched parallel node moves for coarse optimization.
         Performance gains are workload-dependent, often require a relaxed
@@ -758,6 +786,10 @@ class Options(metaclass=_OptionsMeta):
     core_loop_codelength_threshold: float = 1e-10
     tune_iteration_relative_threshold: float = 1e-05
     fast_hierarchical_solution: int | None = None
+    hier_from_blocks: bool = False
+    columnar_check: bool = False
+    columnar_two_level: bool = False
+    columnar: bool = False
     inner_parallelization: bool = False
     parallel_trials: bool = False
     converge: bool = False
@@ -1026,6 +1058,10 @@ def _construct_args(
     core_loop_codelength_threshold=1e-10,
     tune_iteration_relative_threshold=1e-05,
     fast_hierarchical_solution=None,
+    hier_from_blocks=False,
+    columnar_check=False,
+    columnar_two_level=False,
+    columnar=False,
     inner_parallelization=False,
     parallel_trials=False,
     converge=False,
