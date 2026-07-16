@@ -1357,7 +1357,12 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
     normalize(nodeFlow);
   }
 
-  // Write back flow to network
+  // Write back flow to network. Global Markov time scales the link (transition)
+  // flow here, in the flow calculator, so the stored link flow and the enter/exit
+  // derived from it below are already Markov-scaled -- the network is the single
+  // source of truth and consumers (the InfoNode tree, the columnar core) no longer
+  // rescale. (Variable Markov time is still applied downstream for now.)
+  const double markovTime = config.markovTime;
   double sumNodeFlow = 0.0;
   double sumLinkFlow = 0.0;
   unsigned int linkIndex = 0;
@@ -1365,9 +1370,9 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
 
   network.forEachLink([&](unsigned int srcIdx, unsigned int, double, double& flow) {
     if (network.isBipartite() && network.nodeId(srcIdx) >= network.bipartiteStartId()) {
-      flow = flowLinks[featureLinkIndex++].flow;
+      flow = flowLinks[featureLinkIndex++].flow * markovTime;
     } else {
-      flow = flowLinks[linkIndex++].flow;
+      flow = flowLinks[linkIndex++].flow * markovTime;
     }
     sumLinkFlow += flow;
   });

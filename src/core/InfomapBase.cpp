@@ -592,6 +592,12 @@ private:
 
     if (m_infomap.numLeafNodes() == 0)
       throw std::domain_error("No nodes to partition");
+
+    // Build the columnar leaf SoA straight from the network now, while the links
+    // are still present (the CLI releases them before the trials run). Reused
+    // across trials as the optimizer's input, bypassing the InfoNode leaf tree.
+    if (m_infomap.columnarNativeInputEligible())
+      m_infomap.buildColumnarLeafInput(m_network);
   }
 
   void releaseInputLinksIfCli()
@@ -1588,15 +1594,12 @@ void InfomapBase::generateSubNetwork(Network& network)
   if (std::abs(sumNodeFlow - 1.0) > 1e-10)
     Console::warn(1, "Total flow on nodes differs from 1.0 by {:g}.", sumNodeFlow - 1.0);
 
-  bool changeMarkovTime = std::abs(markovTime - 1) > 1e-3;
-  if (changeMarkovTime) {
-    Console::detail(1, "rescale link flow with global Markov time {:g}", markovTime);
-  }
-
+  // Global Markov time is now applied to the link flow in FlowCalculator, so the
+  // network flow read here is already scaled -- no rescale on the edge.
   network.forEachLink([&](unsigned int sourceIndex, unsigned int targetIndex, double weight, double& flow) {
     // Ignore self-links in optimization as it doesn't change enter/exit flow on modular level
     if (sourceIndex != targetIndex) {
-      m_leafNodes[sourceIndex]->addOutEdge(*m_leafNodes[targetIndex], weight, flow * markovTime);
+      m_leafNodes[sourceIndex]->addOutEdge(*m_leafNodes[targetIndex], weight, flow);
     }
   });
 
@@ -1773,7 +1776,32 @@ void InfomapBase::columnarPartition()
   // multiple trials (-N) explore different move orders instead of repeating.
   const unsigned long trialSeed = m_rand.randInt(0, std::numeric_limits<int>::max());
   ColumnarTwoLevel opt;
-  opt.buildFromLeaves(m_leafNodes, isUndirectedClustering(), trialSeed);
+  if (m_columnarNativeInput) {
+    // Native leaf SoA built from the network (see buildColumnarLeafInput),
+    // bypassing the InfoNode leaf tree as the optimizer's input.
+    ColumnarTwoLevel::Level leaf;
+    leaf.n = m_columnarN;
+    leaf.flow = m_colFlow;
+    leaf.enter = m_colEnter;
+    leaf.exit = m_colExit;
+    leaf.teleFlow = m_colTeleFlow;
+    leaf.teleWeight = m_colTeleWeight;
+    leaf.outStart = m_colOutStart;
+    leaf.outTarget = m_colOutTarget;
+    leaf.outFlow = m_colOutFlow;
+    leaf.inStart = m_colInStart;
+    leaf.inTarget = m_colInTarget;
+    leaf.inFlow = m_colInFlow;
+    // Global teleport total = sum of leaf teleport flow (buildFromLeaves derives
+    // this itself; buildFromLevel needs it passed so the module teleport terms
+    // use the whole-network total, not zero).
+    double totalTele = 0.0;
+    for (double tf : m_colTeleFlow)
+      totalTele += tf;
+    opt.buildFromLevel(leaf, isUndirectedClustering(), trialSeed, 0.0, recordedTeleportation, totalTele);
+  } else {
+    opt.buildFromLeaves(m_leafNodes, isUndirectedClustering(), trialSeed);
+  }
   opt.setRecordedTeleportation(recordedTeleportation);
   addColumnarCorrections(opt);
 
@@ -1785,6 +1813,74 @@ void InfomapBase::columnarPartition()
   initTree(paths);
   Console::detail(1, "flex: columnar codelength {}, materialized {}, {} levels",
                   io::toPrecision(columnarL), io::toPrecision(m_hierarchicalCodelength), maxTreeDepth());
+}
+
+bool InfomapBase::columnarNativeInputEligible() const
+{
+  // Native leaf input reads the network's stored node enter/exit + link flow.
+  // FlowCalculator now writes Markov-scaled link flow and the enter/exit derived
+  // from it, so all flow models read cleanly EXCEPT variable Markov time, whose
+  // per-edge rescaling is not yet in the flow calculator (still in
+  // generateSubNetwork) -- that one case keeps the InfoNode path for now.
+  return columnarSearch
+      && !variableMarkovTime;
+}
+
+void InfomapBase::buildColumnarLeafInput(Network& network)
+{
+  const unsigned int numNodes = network.numNodes();
+  m_columnarN = static_cast<int>(numNodes);
+  m_colFlow.assign(numNodes, 0.0);
+  m_colEnter.assign(numNodes, 0.0);
+  m_colExit.assign(numNodes, 0.0);
+  m_colTeleFlow.assign(numNodes, 0.0);
+  m_colTeleWeight.assign(numNodes, 0.0);
+
+  // Per-node fields in nodes() order, which equals the consumed-CSR index order
+  // that forEachLink reports (the same invariant generateSubNetwork relies on).
+  unsigned int i = 0;
+  for (const auto& nodeIt : network.nodes()) {
+    const auto& n = nodeIt.second;
+    m_colFlow[i] = n.flow;
+    m_colEnter[i] = n.enterFlow;
+    m_colExit[i] = n.exitFlow;
+    m_colTeleFlow[i] = n.teleFlow;
+    m_colTeleWeight[i] = n.weight; // teleport weight
+    ++i;
+  }
+
+  // Out + in CSR (in is the transpose), self-links excluded as in generateSubNetwork.
+  std::vector<int> outDeg(numNodes, 0), inDeg(numNodes, 0);
+  network.forEachLink([&](unsigned int s, unsigned int t, double, double&) {
+    if (s != t) {
+      ++outDeg[s];
+      ++inDeg[t];
+    }
+  });
+  m_colOutStart.assign(numNodes + 1, 0);
+  m_colInStart.assign(numNodes + 1, 0);
+  for (unsigned int k = 0; k < numNodes; ++k) {
+    m_colOutStart[k + 1] = m_colOutStart[k] + outDeg[k];
+    m_colInStart[k + 1] = m_colInStart[k] + inDeg[k];
+  }
+  m_colOutTarget.assign(m_colOutStart[numNodes], 0);
+  m_colOutFlow.assign(m_colOutStart[numNodes], 0.0);
+  m_colInTarget.assign(m_colInStart[numNodes], 0);
+  m_colInFlow.assign(m_colInStart[numNodes], 0.0);
+  std::vector<int> outPos(m_colOutStart.begin(), m_colOutStart.end() - 1);
+  std::vector<int> inPos(m_colInStart.begin(), m_colInStart.end() - 1);
+  network.forEachLink([&](unsigned int s, unsigned int t, double, double& f) {
+    if (s == t)
+      return;
+    m_colOutTarget[outPos[s]] = static_cast<int>(t);
+    m_colOutFlow[outPos[s]] = f;
+    ++outPos[s];
+    m_colInTarget[inPos[t]] = static_cast<int>(s);
+    m_colInFlow[inPos[t]] = f;
+    ++inPos[t];
+  });
+  m_columnarNativeInput = true;
+  Console::detail(1, "columnar native leaf input built from network ({} nodes)", numNodes);
 }
 
 void InfomapBase::addColumnarCorrections(ColumnarTwoLevel& opt) const

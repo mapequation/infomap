@@ -473,6 +473,16 @@ private:
   // SoA core and materialize the result into the InfoNode tree via initTree.
   void columnarPartition();
 
+  // --- Native columnar leaf input (I/O migration) ---
+  // Build the columnar leaf SoA (flow, enter/exit, teleport, out+in CSR) directly
+  // from the StateNetwork in the init phase (before the CLI releases the links),
+  // reused across trials. Bypasses the InfoNode leaf tree as the optimizer's
+  // input; the tree is still built for output during the transition.
+  void buildColumnarLeafInput(Network& network);
+  // Whether the native leaf input is used (undirected, unit Markov time, no
+  // recorded teleportation / VMT); other cases keep the InfoNode leaf path.
+  bool columnarNativeInputEligible() const;
+
   // Attach the active objective's composable correction (bias / meta / mem /
   // lossy) to a columnar optimizer, reading leaf attributes from m_leafNodes.
   // Shared by columnarPartition() and evaluateColumnarPartition().
@@ -670,6 +680,16 @@ protected:
   std::vector<InfoNode*>* m_activeNetwork = nullptr;
 
   std::vector<InfoNode*> m_originalLeafNodes;
+
+  // Native columnar leaf input (I/O migration): the leaf SoA built once from the
+  // StateNetwork, reused across trials. Held as raw arrays (no ColumnarMapEquation
+  // header dependency); columnarPartition assembles a Level from them. Empty when
+  // the InfoNode leaf path is used (ineligible cases).
+  bool m_columnarNativeInput = false;
+  int m_columnarN = 0;
+  std::vector<double> m_colFlow, m_colEnter, m_colExit, m_colTeleFlow, m_colTeleWeight;
+  std::vector<int> m_colOutStart, m_colOutTarget, m_colInStart, m_colInTarget;
+  std::vector<double> m_colOutFlow, m_colInFlow;
 
   Network m_network;
   InitialPartition m_initialPartition; // nodeId -> moduleId
