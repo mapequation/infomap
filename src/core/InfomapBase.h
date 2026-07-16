@@ -502,11 +502,6 @@ private:
   // runPartition: init: *
   // ===================================================
 
-  /**
-   * Done in network?
-   */
-  void initEnterExitFlow();
-
   void aggregateFlowValuesFromLeafToRoot();
 
   // Init terms that is constant for the whole network
@@ -701,8 +696,6 @@ protected:
   bool m_isMain = true;
   unsigned int m_subLevel = 0;
 
-  bool m_calculateEnterExitFlow = false;
-
   double m_oneLevelCodelength = 0.0;
   unsigned int m_numNonTrivialTopModules = 0;
   unsigned int m_tuneIterationIndex = 0;
@@ -715,8 +708,6 @@ protected:
   double m_entropyRate = 0.0;
   double m_maxEntropy = 0.0;
   double m_maxFlow = 0.0;
-
-  double m_sumDanglingFlow = 0.0;
 
   Date m_startDate;
   Date m_endDate;

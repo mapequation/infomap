@@ -1251,6 +1251,76 @@ void FlowCalculator::calcDirectedBipartiteFlow(const StateNetwork& network, cons
   }
 }
 
+// Variable Markov time: rescale each (non-self) link's flow by a local Markov-time
+// factor derived from the local out-transition entropy (damping >= 0 uses the local
+// effective degree instead). This was historically applied to the per-instance
+// InfoNode edge flows in InfomapBase::generateSubNetwork; centralizing it here makes
+// the network link flow -- and the enter/exit derived from it -- the single source of
+// truth. It runs once, before trials, so scaling the shared network CSR is idempotent,
+// unlike the per-trial InfoNode scaling it replaces. The computation mirrors the
+// original exactly: entropy from link WEIGHTS (undirected: both endpoints of each
+// incident link contribute), self-links excluded (they are never InfoNode edges), and
+// the undirected opposite-scale accumulates as a running max in CSR order.
+void FlowCalculator::applyVariableMarkovTime(StateNetwork& network, const Config& config) noexcept
+{
+  const bool undirected = config.isUndirectedFlow();
+  const double damping = config.variableMarkovTimeDamping;
+  const double minLocalScale = config.variableMarkovTimeMinLocalScale;
+  const double totDegree = static_cast<double>(network.sumDegree());
+
+  // Per-node local out-transition entropy from link weights.
+  std::vector<double> sumW(numNodes, 0.0);
+  std::vector<double> negPlogpW(numNodes, 0.0); // -sum plogp(weight)
+  for (unsigned int s = 0; s < numNodes; ++s) {
+    for (unsigned int e = network.m_linkOffsets[s]; e < network.m_linkOffsets[s + 1]; ++e) {
+      const unsigned int t = network.m_linkTargets[e];
+      if (t == s)
+        continue; // self-link excluded
+      const double w = network.m_linkWeights[e];
+      sumW[s] += w;
+      negPlogpW[s] -= infomath::plogp(w);
+      if (undirected) {
+        sumW[t] += w;
+        negPlogpW[t] -= infomath::plogp(w);
+      }
+    }
+  }
+
+  std::vector<double> entropy(numNodes, 0.0);
+  double maxEntropy = 0.0;
+  double maxFlow = 0.0;
+  for (unsigned int i = 0; i < numNodes; ++i) {
+    entropy[i] = sumW[i] > 1e-9 ? (negPlogpW[i] + infomath::plogp(sumW[i])) / sumW[i] : 0.0;
+    maxEntropy = std::max(maxEntropy, entropy[i]);
+    maxFlow = std::max(maxFlow, nodeFlow[i]);
+  }
+
+  const double maxScale = damping < 0
+      ? infomath::linlog(std::pow(2.0, maxEntropy), -damping)
+      : infomath::linlog(maxFlow * totDegree, damping);
+
+  for (unsigned int s = 0; s < numNodes; ++s) {
+    double localScale = damping < 0
+        ? infomath::linlog(std::pow(2.0, entropy[s]), -damping)
+        : infomath::linlog(std::max(minLocalScale, nodeFlow[s] * totDegree), damping);
+    for (unsigned int e = network.m_linkOffsets[s]; e < network.m_linkOffsets[s + 1]; ++e) {
+      const unsigned int t = network.m_linkTargets[e];
+      if (t == s)
+        continue; // self-link: not an InfoNode edge, left unscaled
+      if (undirected) {
+        const double oppositeLocalScale = damping < 0
+            ? infomath::linlog(std::pow(2.0, entropy[t]), -damping)
+            : infomath::linlog(std::max(minLocalScale, nodeFlow[t] * totDegree), damping);
+        localScale = std::max(localScale, oppositeLocalScale); // running max, CSR order
+      }
+      const double localMarkovTimeScale = maxScale / std::max(minLocalScale, localScale);
+      network.m_linkFlows[e] *= localMarkovTimeScale;
+    }
+  }
+
+  addFlowNote("Rescaled link flow with variable Markov time");
+}
+
 void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool normalizeNodeFlow) noexcept
 {
   // TODO: Skip bipartite flow adjustment for directed / rawdir / .. ?
@@ -1377,6 +1447,17 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
     sumLinkFlow += flow;
   });
 
+  // Variable Markov time scales the (already globally Markov-scaled) link flow in
+  // place, so the enter/exit derived below is variable-Markov-scaled too. Runs after
+  // node flow is normalized (it reads node flow) and before enter/exit.
+  if (config.variableMarkovTime) {
+    applyVariableMarkovTime(network, config);
+    sumLinkFlow = 0.0;
+    network.forEachLink([&](unsigned int, unsigned int, double, double& flow) {
+      sumLinkFlow += flow;
+    });
+  }
+
   double fractionIntraFlow = config.isMultilayerNetwork() && config.regularized ? 1 : 0;
 
   sumTeleFlow = 0.0;
@@ -1417,9 +1498,14 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
   // Enter/exit flow
   if (enterFlow.empty()) {
     if (!config.isUndirectedClustering() && !config.regularized) {
+      // Directed enter/exit flow. Mirrors initEnterExitFlow()'s directed branch so the
+      // network-stored enter/exit is authoritative: link flow adds to source-exit and
+      // target-enter, self-links excluded (they don't cross a module boundary, and are
+      // never InfoNode edges), plus the recorded-teleportation contribution.
       enterFlow.assign(numNodes, 0);
       exitFlow.assign(numNodes, 0);
-      double alpha = config.teleportationProbability;
+      const double alpha = config.teleportationProbability;
+      const double beta = 1.0 - alpha;
       double sumDanglingFlow = 0.0;
       for (unsigned int i = 0; i < numNodes; ++i) {
         if (nodeOutDegree[i] == 0) {
@@ -1430,14 +1516,17 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
         auto& node = nodeIt.second;
         const auto sourceIndex = nodeIndexMap[node.id];
         const auto srcIdx = network.indexOfId(node.id);
-        double danglingFlow = network.isDangling(srcIdx) ? node.flow : 0.0;
+        const double danglingFlow = network.isDangling(srcIdx) ? node.flow : 0.0;
         if (config.recordedTeleportation) {
-          // Don't let self-teleportation add to the enter/exit flow (i.e. multiply with (1.0 - node.data.teleportWeight))
-          exitFlow[sourceIndex] += alpha * node.flow * (1.0 - node.weight);
-          enterFlow[sourceIndex] += (alpha * (1.0 - node.flow) + (1 - alpha) * (sumDanglingFlow - danglingFlow)) * node.weight;
+          // Don't let self-teleportation add to the enter/exit flow (i.e. multiply with (1.0 - node.weight)).
+          exitFlow[sourceIndex] += (alpha * node.flow + beta * danglingFlow) * (1.0 - node.weight);
+          enterFlow[sourceIndex] += (alpha * (1.0 - node.flow) + beta * (sumDanglingFlow - danglingFlow)) * node.weight;
         }
         for (unsigned int e = network.m_linkOffsets[srcIdx]; e < network.m_linkOffsets[srcIdx + 1]; ++e) {
-          const auto targetIndex = nodeIndexMap[network.nodeId(network.m_linkTargets[e])];
+          const auto tgtCsr = network.m_linkTargets[e];
+          if (tgtCsr == srcIdx)
+            continue; // self-link: doesn't cross a module boundary, not an InfoNode edge
+          const auto targetIndex = nodeIndexMap[network.nodeId(tgtCsr)];
           exitFlow[sourceIndex] += network.m_linkFlows[e];
           enterFlow[targetIndex] += network.m_linkFlows[e];
         }

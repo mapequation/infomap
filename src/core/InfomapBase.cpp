@@ -1587,10 +1587,6 @@ void InfomapBase::generateSubNetwork(Network& network)
   }
   m_root.data.flow = sumNodeFlow;
   m_root.data.teleportFlow = sumTeleFlow;
-  // m_calculateEnterExitFlow = true; //TODO: Implement always in flow calculation
-  if (!this->regularized) {
-    m_calculateEnterExitFlow = true;
-  }
   if (std::abs(sumNodeFlow - 1.0) > 1e-10)
     Console::warn(1, "Total flow on nodes differs from 1.0 by {:g}.", sumNodeFlow - 1.0);
 
@@ -1603,21 +1599,16 @@ void InfomapBase::generateSubNetwork(Network& network)
     }
   });
 
-  if (variableMarkovTime) {
-    Console::detail(1, "rescale link flow with variable Markov time");
-    if (std::abs(variableMarkovTimeDamping - 1) > 1e-9) {
-      Console::detail(1, "use variable Markov time strength {:g}", variableMarkovTimeDamping);
-    }
-  }
-
+  // Reporting stats only (entropy rate, max entropy, max flow, exposed via
+  // getEntropyRate/getMaxEntropy/getMaxFlow). Variable Markov time scaling itself now
+  // lives in FlowCalculator, applied to the network link flow that the InfoNode edges
+  // above already read -- so no per-edge rescale happens here anymore.
   double maxEntropy = 0.0;
   double maxFlow = 0.0;
   double entropyRate = 0.0;
   unsigned int maxDegree = 0;
   unsigned int maxOutDegree = 0;
   unsigned int maxInDegree = 0;
-  double totDegree = network.sumDegree();
-  std::vector<double> entropies(numNodes, 0);
 
   for (unsigned i = 0; i < numNodes; ++i) {
     InfoNode& node = *m_leafNodes[i];
@@ -1640,40 +1631,11 @@ void InfomapBase::generateSubNetwork(Network& network)
     maxEntropy = std::max(maxEntropy, entropy);
     entropyRate += m_leafNodes[i]->data.flow * entropy;
     maxFlow = std::max(maxFlow, node.data.flow);
-    entropies[i] = entropy; // Store for undirected networks
   }
 
   m_entropyRate = entropyRate;
   m_maxEntropy = maxEntropy;
   m_maxFlow = maxFlow;
-
-  double minLocalScale = variableMarkovTimeMinLocalScale;
-  double damping = variableMarkovTimeDamping;
-
-  double maxScale = infomath::linlog(maxFlow * totDegree, damping);
-
-  if (variableMarkovTime) {
-    if (damping < 0) {
-      maxScale = infomath::linlog(pow(2.0, maxEntropy), -damping);
-    }
-    for (unsigned i = 0; i < numNodes; ++i) {
-      InfoNode& node = *m_leafNodes[i];
-      double localScale = damping < 0 ? infomath::linlog(pow(2.0, entropies[i]), -damping) : infomath::linlog(std::max(minLocalScale, node.data.flow * totDegree), damping);
-      for (InfoEdge* e : node.outEdges()) {
-        if (isUndirectedFlow()) {
-          double oppositeLocalScale = damping < 0 ? infomath::linlog(pow(2.0, entropies[nodeIndexMap[e->target->stateId]]), -damping) : infomath::linlog(std::max(minLocalScale, e->target->data.flow * totDegree), damping);
-          localScale = std::max(localScale, oppositeLocalScale);
-        }
-        double localMarkovTimeScale = maxScale / std::max(minLocalScale, localScale);
-        e->data.flow *= localMarkovTimeScale;
-        // Note: deliberately do NOT write the scaled flow back into the shared StateNetwork
-        // (network.nodeLinkMap()). The optimizer and output use only the per-instance InfoEdge
-        // flow (e->data.flow), so the write-back was a non-idempotent side effect that made
-        // --parallel-trials unsafe (workers share one Network). Library getLinks(flow=True) /
-        // getLinkResults() now return the input link flow rather than the VMT-scaled flow.
-      }
-    }
-  }
 }
 
 void InfomapBase::generateSubNetwork(InfoNode& parent)
@@ -1732,8 +1694,11 @@ void InfomapBase::init()
 {
   Log(3) << "InfomapBase::init()...\n";
 
-  if (m_calculateEnterExitFlow && isMainInfomap())
-    initEnterExitFlow();
+  // Enter/exit flow now comes entirely from FlowCalculator, stored on the network and
+  // copied onto the leaf nodes in generateSubNetwork -- so initEnterExitFlow() (which
+  // recomputed it here from the InfoNode edges) is retired. FlowCalculator is the
+  // single source of truth for all flow, including Markov-time / variable-Markov-time
+  // scaling and recorded-teleportation enter/exit.
 
   initNetwork();
 
@@ -1817,13 +1782,11 @@ void InfomapBase::columnarPartition()
 
 bool InfomapBase::columnarNativeInputEligible() const
 {
-  // Native leaf input reads the network's stored node enter/exit + link flow.
-  // FlowCalculator now writes Markov-scaled link flow and the enter/exit derived
-  // from it, so all flow models read cleanly EXCEPT variable Markov time, whose
-  // per-edge rescaling is not yet in the flow calculator (still in
-  // generateSubNetwork) -- that one case keeps the InfoNode path for now.
-  return columnarSearch
-      && !variableMarkovTime;
+  // Native leaf input reads the network's stored node enter/exit + link flow, both of
+  // which FlowCalculator now computes for every flow model -- including global and
+  // variable Markov time, which it scales into the link flow (and the enter/exit
+  // derived from it) before the network is handed off. No flow model is excluded.
+  return columnarSearch;
 }
 
 void InfomapBase::buildColumnarLeafInput(Network& network)
@@ -2252,64 +2215,6 @@ void InfomapBase::restoreHardPartition()
 // ===================================================
 // Run: Init: *
 // ===================================================
-
-void InfomapBase::initEnterExitFlow()
-{
-  // Not done in Bayesian
-  // TODO: Skip this, always add enter/exit/tele flow from flow calculator
-  // Calculate enter/exit
-  double alpha = teleportationProbability;
-  double beta = 1.0 - alpha;
-
-  for (auto* n : m_leafNodes) {
-    n->data.enterFlow = n->data.exitFlow = 0.0;
-  }
-  if (!isUndirectedClustering()) {
-    for (auto* n : m_leafNodes) {
-      auto& node = *n;
-      node.data.teleportFlow = alpha * node.data.flow;
-      node.data.teleportSourceFlow = node.data.flow;
-      if (node.isDangling()) {
-        node.data.teleportFlow = node.data.flow;
-        node.data.danglingFlow = node.data.flow;
-        m_sumDanglingFlow += node.data.flow;
-      }
-    }
-    for (auto* n : m_leafNodes) {
-      auto& node = *n;
-      for (InfoEdge* e : node.outEdges()) {
-        InfoEdge& edge = *e;
-        // Self-links not included here, should not add to enter and exit flow in its enclosing module
-        edge.source->data.exitFlow += edge.data.flow;
-        edge.target->data.enterFlow += edge.data.flow;
-      }
-      if (recordedTeleportation) {
-        // Don't let self-teleportation add to the enter/exit flow (i.e. multiply with (1.0 - node.data.teleportWeight))
-        node.data.exitFlow += (alpha * node.data.flow + beta * node.data.danglingFlow) * (1.0 - node.data.teleportWeight);
-        node.data.enterFlow += (alpha * (1.0 - node.data.flow) + beta * (m_sumDanglingFlow - node.data.danglingFlow)) * node.data.teleportWeight;
-      }
-    }
-  } else {
-    for (auto* n : m_leafNodes) {
-      auto& node = *n;
-      node.data.teleportFlow = alpha * node.data.flow;
-      node.data.teleportSourceFlow = node.data.flow;
-      if (node.isDangling()) {
-        node.data.teleportFlow = node.data.flow;
-        node.data.danglingFlow = node.data.flow;
-      }
-      for (InfoEdge* e : node.outEdges()) {
-        InfoEdge& edge = *e;
-        // Self-links not included here, should not add to enter and exit flow in its enclosing module
-        double halfFlow = edge.data.flow / 2;
-        edge.source->data.exitFlow += halfFlow;
-        edge.target->data.exitFlow += halfFlow;
-        edge.source->data.enterFlow += halfFlow;
-        edge.target->data.enterFlow += halfFlow;
-      }
-    }
-  }
-}
 
 // Aggregate node and enter/exit flow to all tree nodes
 void InfomapBase::aggregateFlowValuesFromLeafToRoot()
