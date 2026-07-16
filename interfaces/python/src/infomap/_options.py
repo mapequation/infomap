@@ -644,8 +644,10 @@ class Options(metaclass=_OptionsMeta):
         to find larger structures. 0 means no limit. Valid range: >= 0. Engine default:
         0.
     tune_iteration_limit : int, optional
-        Limit the main iterations in the two-level partition algorithm. 0 means no
-        limit. Valid range: >= 0. Engine default: 0.
+        Limit the main tuning iterations: fine/coarse-tune sweeps in the two-level
+        partition algorithm, or interior-layer refinement sweeps in the columnar engine
+        (--columnar). 0 means no limit (run until convergence). Valid range: >= 0.
+        Engine default: 0.
     core_loop_codelength_threshold : float, optional
         Require at least this codelength improvement to accept a new solution in a core
         loop. Valid range: >= 0.0.

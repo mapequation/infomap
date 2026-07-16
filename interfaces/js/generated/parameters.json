@@ -711,7 +711,7 @@
   {
     "long": "--tune-iteration-limit",
     "short": "-T",
-    "description": "Limit the main iterations in the two-level partition algorithm. 0 means no limit.",
+    "description": "Limit the main tuning iterations: fine/coarse-tune sweeps in the two-level partition algorithm, or interior-layer refinement sweeps in the columnar engine (--columnar). 0 means no limit (run until convergence).",
     "group": "Accuracy",
     "required": true,
     "advanced": true,

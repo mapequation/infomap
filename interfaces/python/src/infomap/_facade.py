@@ -741,8 +741,9 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             .. versionchanged:: 2.15
                 Pass it via ``Options``; moves off this signature in 3.0.
         tune_iteration_limit : int, optional
-            Limit the main iterations in the two-level partition algorithm. 0 means no
-            limit.
+            Limit the main tuning iterations: fine/coarse-tune sweeps in the two-level
+            partition algorithm, or interior-layer refinement sweeps in the columnar
+            engine (--columnar). 0 means no limit (run until convergence).
 
             .. versionchanged:: 2.15
                 Pass it via ``Options``; moves off this signature in 3.0.

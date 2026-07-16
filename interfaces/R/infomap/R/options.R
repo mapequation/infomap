@@ -289,7 +289,7 @@ OPTION_DEFAULTS <- list(
 #'   \item{`num_trials`}{Run this many independent trials and keep the best solution.}
 #'   \item{`core_loop_limit`}{Limit how many core loops try to move each node to the best module.}
 #'   \item{`core_level_limit`}{Limit how many times core loops are reapplied to the aggregated modular network to find larger structures. 0 means no limit.}
-#'   \item{`tune_iteration_limit`}{Limit the main iterations in the two-level partition algorithm. 0 means no limit.}
+#'   \item{`tune_iteration_limit`}{Limit the main tuning iterations: fine/coarse-tune sweeps in the two-level partition algorithm, or interior-layer refinement sweeps in the columnar engine (--columnar). 0 means no limit (run until convergence).}
 #'   \item{`core_loop_codelength_threshold`}{Require at least this codelength improvement to accept a new solution in a core loop.}
 #'   \item{`tune_iteration_relative_threshold`}{Require each tune iteration to improve codelength by this fraction of the initial two-level codelength.}
 #'   \item{`fast_hierarchical_solution`}{Find top modules quickly. Use -FF to keep all fast levels. Use -FFF to skip recursive refinement.}
