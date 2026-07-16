@@ -43,6 +43,8 @@ namespace detail {
   struct PerLevelStat;
 } // namespace detail
 
+class ColumnarTwoLevel;
+
 // Cooperative cancellation hook (issue #412). Return true to stop the run at the
 // next checkpoint. Invoked only on the owner thread, so it is safe to enter
 // host-language APIs (R_CheckUserInterrupt, PyErr_CheckSignals) from it.
@@ -470,6 +472,21 @@ private:
   // Non-recursive columnar search engine (--columnar): optimize on the columnar
   // SoA core and materialize the result into the InfoNode tree via initTree.
   void columnarPartition();
+
+  // Attach the active objective's composable correction (bias / meta / mem /
+  // lossy) to a columnar optimizer, reading leaf attributes from m_leafNodes.
+  // Shared by columnarPartition() and evaluateColumnarPartition().
+  void addColumnarCorrections(ColumnarTwoLevel& opt) const;
+
+  // Per-leaf module ids coarsest-first (top module .. finest module), read from
+  // the current InfoNode tree — the seed for a columnar codelength evaluation.
+  std::vector<std::vector<int>> leafModulePathsFromTree() const;
+
+  // Evaluate the current InfoNode partition's codelength on the columnar
+  // structure (base map equation + active correction). Falls back to the
+  // object-oriented calcCodelengthOnTree for a ragged tree. Used for the
+  // --no-infomap input-partition codelength under the columnar core.
+  double evaluateColumnarPartition();
 
   // ===================================================
   // runPartition: init: *

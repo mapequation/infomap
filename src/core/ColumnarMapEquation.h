@@ -165,9 +165,13 @@ private:
 class ColumnarTwoLevel {
 public:
   // One aggregation level's working state (units = leaves, then modules, ...).
+  // teleFlow/teleWeight are the per-unit recorded-teleportation aggregates (0
+  // for the base flow model); they sum under aggregation like flow, so a unit's
+  // module-level teleport enter/exit is a pure function of its members.
   struct Level {
     int n = 0;
     std::vector<double> flow, enter, exit;
+    std::vector<double> teleFlow, teleWeight;
     std::vector<int> outStart, outTarget;
     std::vector<double> outFlow;
     std::vector<int> inStart, inTarget;
@@ -198,7 +202,12 @@ public:
   // enter-flow super-network, or a sub-network within a module, into a nested
   // optimizer). exitNetworkFlow is the flow leaving the (sub-)network — 0 for
   // the whole closed network, the module's exit flow for an in-context refine.
-  void buildFromLevel(const Level& level, bool undirected, unsigned long seed, double exitNetworkFlow = 0.0);
+  // recordedTeleport/globalTotalTeleFlow propagate the GLOBAL teleport context so
+  // sub-optimizers fold in the same all-to-all teleport term (the level already
+  // carries per-unit teleFlow/teleWeight); globalTotalTeleFlow is the whole
+  // network's teleport flow, NOT the sub-network's local sum.
+  void buildFromLevel(const Level& level, bool undirected, unsigned long seed, double exitNetworkFlow = 0.0,
+                      bool recordedTeleport = false, double globalTotalTeleFlow = 0.0);
 
   // Run repeated aggregation (Louvain-style) and return the two-level codelength
   // of the resulting leaves -> top-modules partition. maxAggPasses > 0 stops the
@@ -247,6 +256,25 @@ public:
   // Final leaf -> top-module assignment (compacted ids), one entry per leaf.
   const std::vector<int>& leafTopModule() const { return m_leafTop; }
 
+  // Seed the stacked hierarchy (m_hierLevels / m_hierAssign) from a given
+  // partition, so hierarchicalCodelengthFromStack() evaluates it on the columnar
+  // structure and the optimizer can resume from it. Each leafPaths[i] is that
+  // leaf's module ids coarsest-first (path[0] = top module .. path.back() =
+  // finest/leaf module); ids need not be compacted (they are hashed per level).
+  // buildFromLeaves must have run first. Returns false (leaving the stack
+  // untouched) for a ragged tree (leaves at differing depths), which the caller
+  // should evaluate via the object-oriented path instead.
+  bool seedHierarchyFromLeafPaths(const std::vector<std::vector<int>>& leafPaths);
+
+  // Enable recorded-teleportation codebook terms (regularized flow). Must be set
+  // before hierarchicalCodelengthFromStack; per-leaf teleport flow/weight come
+  // from buildFromLeaves. No effect on the base/mem/meta objectives.
+  void setRecordedTeleportation(bool on) { m_recordedTeleport = on; }
+
+  // Hierarchical codelength (base map equation + active corrections) from the
+  // stacked levels/assignments in m_hier* — the seeded or optimized partition.
+  double hierarchicalCodelengthFromStack() const;
+
 private:
   // Move-loop machinery operating on the current level `m_lvl`.
   void initPartition();
@@ -258,6 +286,20 @@ private:
   unsigned int moveLoop();
   // Build the next level from the current module assignment; returns unit count.
   int consolidateToNextLevel();
+
+  // Remove / add module m's contribution to the running plogp terms + m_enterFlow,
+  // using its effective (teleport-inclusive) enter/exit. With recorded
+  // teleportation off these reduce to the link enter/exit (base behaviour).
+  void removeModuleTerms(int m);
+  void addModuleTerms(int m);
+
+  // Recorded-teleport-aware move delta: change in the augmented base codelength
+  // from moving unit u (link enter/exit/flow cur*, teleport tfu/twu) out of module
+  // A into module B, with deltaOld/deltaNew the link flow between u and A/B. Used
+  // instead of deltaCodelengthMovingNode when m_recordedTeleport is on.
+  double deltaCodelengthMovingNodeTele(double curEnter, double curExit, double curFlow,
+                                       double tfu, double twu, int A, int B,
+                                       double deltaOld, double deltaNew) const;
 
   // Aggregate a base level under a unit->group assignment (K groups): group
   // flow = sum of member flow, group enter/exit = crossing flow, plus the
@@ -312,9 +354,6 @@ private:
   // state as a side effect (harmless: the next move loop re-inits it).
   double augmentedCorrectionFor(const std::vector<int>& leafAssign, int numModules);
 
-  // Hierarchical codelength from the stacked levels/assignments in m_hier*.
-  double hierarchicalCodelengthFromStack() const;
-
   bool m_undirected = false;
   unsigned long m_seed = 123;
   double m_exitNetworkFlow = 0.0; // flow leaving this (sub-)network; 0 if closed
@@ -332,6 +371,10 @@ private:
   Level m_lvl;
   std::vector<int> m_module; // unit -> module id
   std::vector<double> m_mFlow, m_mEnter, m_mExit;
+  // Per-module recorded-teleport aggregates (link-independent), tracked only when
+  // m_recordedTeleport. The module's effective enter/exit fold in a teleport term
+  // (moduleTeleEnter/Exit) built from these; see effEnter/effExit in the .cpp.
+  std::vector<double> m_mTeleFlow, m_mTeleWeight;
   std::vector<int> m_mMembers;
   std::vector<int> m_emptyModules;
 
@@ -350,6 +393,26 @@ private:
   std::vector<int> m_leafTop; // leaf -> current top-unit id
   double m_leafNodeFlow_log_nodeFlow = 0.0; // over leaves, constant
   unsigned int m_numTopModules = 0;
+
+  // Recorded teleportation (regularized / --recorded-teleportation): the walker
+  // records teleport steps, so a module's enter/exit gains a dense all-to-all
+  // teleport term the link-crossing aggregation can't see. Per-unit teleport
+  // flow/weight are threaded through every Level (they sum under aggregation) and
+  // folded into the effective module enter/exit in initPartition, the move loop,
+  // the merge operator, and hierarchicalCodelengthFromStack, exactly as
+  // InfomapBase::aggregateFlowValuesFromLeafToRoot does. m_totalTeleFlow is the
+  // GLOBAL total (constant across sub-networks), so sub-optimizers inherit it via
+  // buildFromLevel rather than recomputing from their local units.
+  bool m_recordedTeleport = false;
+  double m_totalTeleFlow = 0.0; // GLOBAL sum of leaf teleport flow (root teleport flow)
+  // A module's recorded-teleport enter/exit from its aggregated teleport flow tf
+  // and weight tw (see InfomapBase::aggregateFlowValuesFromLeafToRoot): a walker
+  // teleports out with the fraction not landing back (exit), and teleports in from
+  // the rest of the network onto this module's teleport weight (enter).
+  double moduleTeleEnter(double tf, double tw) const { return (m_totalTeleFlow - tf) * tw; }
+  double moduleTeleExit(double tf, double tw) const { return tf * (1.0 - tw); }
+  std::vector<double> m_leafTeleFlow;
+  std::vector<double> m_leafTeleWeight;
 
   // Stacked hierarchy after optimizeHierarchical: m_hierLevels[0] = leaves,
   // [1] = first module level, ... ; m_hierAssign[k] maps a level-k unit to its

@@ -18,6 +18,7 @@
 #include <ctime>
 #include <functional>
 #include <limits>
+#include <map>
 #include <numeric>
 #include <random>
 #include <string>
@@ -311,13 +312,25 @@ void ColumnarTwoLevel::buildFromLeaves(const std::vector<InfoNode*>& leafNodes, 
   L.flow.resize(m_nLeaves);
   L.enter.resize(m_nLeaves);
   L.exit.resize(m_nLeaves);
+  L.teleFlow.resize(m_nLeaves);
+  L.teleWeight.resize(m_nLeaves);
   m_leafFlow.resize(m_nLeaves);
+  m_leafTeleFlow.resize(m_nLeaves);
+  m_leafTeleWeight.resize(m_nLeaves);
+  m_totalTeleFlow = 0.0;
   m_leafNodeFlow_log_nodeFlow = 0.0;
   for (int i = 0; i < m_nLeaves; ++i) {
     L.flow[i] = leafNodes[i]->data.flow;
     L.enter[i] = leafNodes[i]->data.enterFlow;
     L.exit[i] = leafNodes[i]->data.exitFlow;
     m_leafFlow[i] = L.flow[i];
+    // Recorded-teleportation bookkeeping (used only when setRecordedTeleportation
+    // is on); harmless to populate otherwise.
+    L.teleFlow[i] = leafNodes[i]->data.teleportFlow;
+    L.teleWeight[i] = leafNodes[i]->data.teleportWeight;
+    m_leafTeleFlow[i] = L.teleFlow[i];
+    m_leafTeleWeight[i] = L.teleWeight[i];
+    m_totalTeleFlow += m_leafTeleFlow[i];
     m_leafNodeFlow_log_nodeFlow += plogp(L.flow[i]);
   }
 
@@ -362,7 +375,8 @@ void ColumnarTwoLevel::buildFromLeaves(const std::vector<InfoNode*>& leafNodes, 
   }
 }
 
-void ColumnarTwoLevel::buildFromLevel(const Level& level, bool undirected, unsigned long seed, double exitNetworkFlow)
+void ColumnarTwoLevel::buildFromLevel(const Level& level, bool undirected, unsigned long seed, double exitNetworkFlow,
+                                      bool recordedTeleport, double globalTotalTeleFlow)
 {
   using infomath::plogp;
   m_undirected = undirected;
@@ -371,6 +385,12 @@ void ColumnarTwoLevel::buildFromLevel(const Level& level, bool undirected, unsig
   m_nLeaves = level.n;
   m_leaf0 = level;
   m_leafFlow = level.flow;
+  // Inherit the GLOBAL teleport context (the level already carries per-unit
+  // teleFlow/teleWeight; the total stays the whole network's, not this level's).
+  m_recordedTeleport = recordedTeleport;
+  m_totalTeleFlow = globalTotalTeleFlow;
+  m_leafTeleFlow = level.teleFlow;
+  m_leafTeleWeight = level.teleWeight;
   m_leafNodeFlow_log_nodeFlow = 0.0;
   for (double f : level.flow)
     m_leafNodeFlow_log_nodeFlow += plogp(f);
@@ -387,6 +407,13 @@ void ColumnarTwoLevel::initPartition()
   m_mMembers.assign(n, 1);
   m_emptyModules.clear();
 
+  // m_mEnter/m_mExit stay link-based; the codelength terms below use the
+  // effective (teleport-inclusive) enter/exit when recorded teleportation is on.
+  if (m_recordedTeleport) {
+    m_mTeleFlow.assign(n, 0.0);
+    m_mTeleWeight.assign(n, 0.0);
+  }
+
   m_enterFlow = 0.0;
   m_enter_log_enter = 0.0;
   m_exit_log_exit = 0.0;
@@ -396,10 +423,18 @@ void ColumnarTwoLevel::initPartition()
     m_mFlow[i] = m_lvl.flow[i];
     m_mEnter[i] = m_lvl.enter[i];
     m_mExit[i] = m_lvl.exit[i];
-    m_flow_log_flow += plogp(m_lvl.flow[i] + m_lvl.exit[i]);
-    m_enter_log_enter += plogp(m_lvl.enter[i]);
-    m_exit_log_exit += plogp(m_lvl.exit[i]);
-    m_enterFlow += m_lvl.enter[i];
+    double enter = m_lvl.enter[i];
+    double exit = m_lvl.exit[i];
+    if (m_recordedTeleport) {
+      m_mTeleFlow[i] = m_lvl.teleFlow[i];
+      m_mTeleWeight[i] = m_lvl.teleWeight[i];
+      enter += moduleTeleEnter(m_lvl.teleFlow[i], m_lvl.teleWeight[i]);
+      exit += moduleTeleExit(m_lvl.teleFlow[i], m_lvl.teleWeight[i]);
+    }
+    m_flow_log_flow += plogp(m_lvl.flow[i] + exit);
+    m_enter_log_enter += plogp(enter);
+    m_exit_log_exit += plogp(exit);
+    m_enterFlow += enter;
   }
   // Flow leaving the (sub-)network is coded in the index too (0 if closed).
   m_enterFlow += m_exitNetworkFlow;
@@ -407,6 +442,28 @@ void ColumnarTwoLevel::initPartition()
   m_nodeFlow_log_nodeFlow = m_leafNodeFlow_log_nodeFlow; // constant over leaves
   m_codelength = (m_enterFlow_log_enterFlow - m_enter_log_enter)
       + (-m_exit_log_exit + m_flow_log_flow - m_nodeFlow_log_nodeFlow);
+}
+
+void ColumnarTwoLevel::removeModuleTerms(int m)
+{
+  using infomath::plogp;
+  const double enter = m_mEnter[m] + (m_recordedTeleport ? moduleTeleEnter(m_mTeleFlow[m], m_mTeleWeight[m]) : 0.0);
+  const double exit = m_mExit[m] + (m_recordedTeleport ? moduleTeleExit(m_mTeleFlow[m], m_mTeleWeight[m]) : 0.0);
+  m_enterFlow -= enter;
+  m_enter_log_enter -= plogp(enter);
+  m_exit_log_exit -= plogp(exit);
+  m_flow_log_flow -= plogp(exit + m_mFlow[m]);
+}
+
+void ColumnarTwoLevel::addModuleTerms(int m)
+{
+  using infomath::plogp;
+  const double enter = m_mEnter[m] + (m_recordedTeleport ? moduleTeleEnter(m_mTeleFlow[m], m_mTeleWeight[m]) : 0.0);
+  const double exit = m_mExit[m] + (m_recordedTeleport ? moduleTeleExit(m_mTeleFlow[m], m_mTeleWeight[m]) : 0.0);
+  m_enterFlow += enter;
+  m_enter_log_enter += plogp(enter);
+  m_exit_log_exit += plogp(exit);
+  m_flow_log_flow += plogp(exit + m_mFlow[m]);
 }
 
 void ColumnarTwoLevel::moveUnit(int u, int newMod)
@@ -437,10 +494,8 @@ void ColumnarTwoLevel::moveUnit(int u, int newMod)
   const double curExit = m_lvl.exit[u];
   const double curFlow = m_lvl.flow[u];
 
-  m_enterFlow -= m_mEnter[cMod] + m_mEnter[newMod];
-  m_enter_log_enter -= plogp(m_mEnter[cMod]) + plogp(m_mEnter[newMod]);
-  m_exit_log_exit -= plogp(m_mExit[cMod]) + plogp(m_mExit[newMod]);
-  m_flow_log_flow -= plogp(m_mExit[cMod] + m_mFlow[cMod]) + plogp(m_mExit[newMod] + m_mFlow[newMod]);
+  removeModuleTerms(cMod);
+  removeModuleTerms(newMod);
 
   m_mFlow[cMod] -= curFlow;
   m_mEnter[cMod] -= curEnter;
@@ -454,10 +509,16 @@ void ColumnarTwoLevel::moveUnit(int u, int newMod)
   m_mEnter[newMod] -= deltaNew;
   m_mExit[newMod] -= deltaNew;
 
-  m_enterFlow += m_mEnter[cMod] + m_mEnter[newMod];
-  m_enter_log_enter += plogp(m_mEnter[cMod]) + plogp(m_mEnter[newMod]);
-  m_exit_log_exit += plogp(m_mExit[cMod]) + plogp(m_mExit[newMod]);
-  m_flow_log_flow += plogp(m_mExit[cMod] + m_mFlow[cMod]) + plogp(m_mExit[newMod] + m_mFlow[newMod]);
+  if (m_recordedTeleport) {
+    const double tfu = m_lvl.teleFlow[u], twu = m_lvl.teleWeight[u];
+    m_mTeleFlow[cMod] -= tfu;
+    m_mTeleWeight[cMod] -= twu;
+    m_mTeleFlow[newMod] += tfu;
+    m_mTeleWeight[newMod] += twu;
+  }
+
+  addModuleTerms(cMod);
+  addModuleTerms(newMod);
   m_enterFlow_log_enterFlow = plogp(m_enterFlow);
   m_codelength = (m_enterFlow_log_enterFlow - m_enter_log_enter)
       + (-m_exit_log_exit + m_flow_log_flow - m_nodeFlow_log_nodeFlow);
@@ -465,6 +526,37 @@ void ColumnarTwoLevel::moveUnit(int u, int newMod)
   m_mMembers[cMod] -= 1;
   m_mMembers[newMod] += 1;
   m_module[u] = newMod;
+}
+
+double ColumnarTwoLevel::deltaCodelengthMovingNodeTele(double curEnter, double curExit, double curFlow,
+                                                       double tfu, double twu, int A, int B,
+                                                       double deltaOld, double deltaNew) const
+{
+  using infomath::plogp;
+  // Effective (link + teleport) enter/exit of A and B before the move.
+  const double eA0 = m_mEnter[A] + moduleTeleEnter(m_mTeleFlow[A], m_mTeleWeight[A]);
+  const double xA0 = m_mExit[A] + moduleTeleExit(m_mTeleFlow[A], m_mTeleWeight[A]);
+  const double eB0 = m_mEnter[B] + moduleTeleEnter(m_mTeleFlow[B], m_mTeleWeight[B]);
+  const double xB0 = m_mExit[B] + moduleTeleExit(m_mTeleFlow[B], m_mTeleWeight[B]);
+  const double fA0 = xA0 + m_mFlow[A];
+  const double fB0 = xB0 + m_mFlow[B];
+
+  // After: u leaves A (link enter/exit lose curEnter/curExit, gain the crossing
+  // deltaOld now on the boundary) and joins B; teleport flow/weight move with it.
+  const double eA1 = (m_mEnter[A] - curEnter + deltaOld) + moduleTeleEnter(m_mTeleFlow[A] - tfu, m_mTeleWeight[A] - twu);
+  const double xA1 = (m_mExit[A] - curExit + deltaOld) + moduleTeleExit(m_mTeleFlow[A] - tfu, m_mTeleWeight[A] - twu);
+  const double eB1 = (m_mEnter[B] + curEnter - deltaNew) + moduleTeleEnter(m_mTeleFlow[B] + tfu, m_mTeleWeight[B] + twu);
+  const double xB1 = (m_mExit[B] + curExit - deltaNew) + moduleTeleExit(m_mTeleFlow[B] + tfu, m_mTeleWeight[B] + twu);
+  const double fA1 = xA1 + (m_mFlow[A] - curFlow);
+  const double fB1 = xB1 + (m_mFlow[B] + curFlow);
+
+  const double enterFlow1 = m_enterFlow + (eA1 - eA0) + (eB1 - eB0);
+
+  const double d_enter = plogp(enterFlow1) - m_enterFlow_log_enterFlow;
+  const double d_enter_log = (plogp(eA1) + plogp(eB1)) - (plogp(eA0) + plogp(eB0));
+  const double d_exit_log = (plogp(xA1) + plogp(xB1)) - (plogp(xA0) + plogp(xB0));
+  const double d_flow_log = (plogp(fA1) + plogp(fB1)) - (plogp(fA0) + plogp(fB0));
+  return d_enter - d_enter_log - d_exit_log + d_flow_log;
 }
 
 void ColumnarTwoLevel::seedAssignment(const std::vector<int>& assign)
@@ -591,12 +683,15 @@ unsigned int ColumnarTwoLevel::moveLoop()
         if (m == cMod)
           continue;
         const double deltaNew = dEnter[m] + dExit[m];
-        double dl = deltaCodelengthMovingNode(
-            m_enterFlow, m_enterFlow_log_enterFlow,
-            curEnter, curExit, curFlow,
-            m_mEnter[cMod], m_mExit[cMod], m_mFlow[cMod],
-            m_mEnter[m], m_mExit[m], m_mFlow[m],
-            deltaOld, deltaNew);
+        double dl = m_recordedTeleport
+            ? deltaCodelengthMovingNodeTele(curEnter, curExit, curFlow,
+                  m_lvl.teleFlow[u], m_lvl.teleWeight[u], cMod, m, deltaOld, deltaNew)
+            : deltaCodelengthMovingNode(
+                  m_enterFlow, m_enterFlow_log_enterFlow,
+                  curEnter, curExit, curFlow,
+                  m_mEnter[cMod], m_mExit[cMod], m_mFlow[cMod],
+                  m_mEnter[m], m_mExit[m], m_mFlow[m],
+                  deltaOld, deltaNew);
         for (auto* c : corr)
           dl += c->moveDelta(u, cMod, m);
         if (dl < bestDelta - kMinSingleImprovement) {
@@ -622,10 +717,11 @@ unsigned int ColumnarTwoLevel::moveLoop()
           m_emptyModules.push_back(cMod);
 
         // Update running terms + module aggregates (port of updateCodelength...).
-        m_enterFlow -= m_mEnter[cMod] + m_mEnter[bestMod];
-        m_enter_log_enter -= plogp(m_mEnter[cMod]) + plogp(m_mEnter[bestMod]);
-        m_exit_log_exit -= plogp(m_mExit[cMod]) + plogp(m_mExit[bestMod]);
-        m_flow_log_flow -= plogp(m_mExit[cMod] + m_mFlow[cMod]) + plogp(m_mExit[bestMod] + m_mFlow[bestMod]);
+        // removeModuleTerms/addModuleTerms use the effective (teleport-inclusive)
+        // enter/exit, so the running codelength stays exact under recorded
+        // teleportation; with it off they reduce to the link enter/exit.
+        removeModuleTerms(cMod);
+        removeModuleTerms(bestMod);
 
         m_mFlow[cMod] -= curFlow;
         m_mEnter[cMod] -= curEnter;
@@ -639,10 +735,16 @@ unsigned int ColumnarTwoLevel::moveLoop()
         m_mEnter[bestMod] -= deltaNew;
         m_mExit[bestMod] -= deltaNew;
 
-        m_enterFlow += m_mEnter[cMod] + m_mEnter[bestMod];
-        m_enter_log_enter += plogp(m_mEnter[cMod]) + plogp(m_mEnter[bestMod]);
-        m_exit_log_exit += plogp(m_mExit[cMod]) + plogp(m_mExit[bestMod]);
-        m_flow_log_flow += plogp(m_mExit[cMod] + m_mFlow[cMod]) + plogp(m_mExit[bestMod] + m_mFlow[bestMod]);
+        if (m_recordedTeleport) {
+          const double tfu = m_lvl.teleFlow[u], twu = m_lvl.teleWeight[u];
+          m_mTeleFlow[cMod] -= tfu;
+          m_mTeleWeight[cMod] -= twu;
+          m_mTeleFlow[bestMod] += tfu;
+          m_mTeleWeight[bestMod] += twu;
+        }
+
+        addModuleTerms(cMod);
+        addModuleTerms(bestMod);
         m_enterFlow_log_enterFlow = plogp(m_enterFlow);
         m_codelength = (m_enterFlow_log_enterFlow - m_enter_log_enter)
             + (-m_exit_log_exit + m_flow_log_flow - m_nodeFlow_log_nodeFlow);
@@ -700,7 +802,12 @@ int ColumnarTwoLevel::consolidateToNextLevel()
   next.flow.assign(K, 0.0);
   next.enter.assign(K, 0.0);
   next.exit.assign(K, 0.0);
-  // Module aggregates already hold the consolidated flow data.
+  next.teleFlow.assign(K, 0.0);
+  next.teleWeight.assign(K, 0.0);
+  // Module aggregates already hold the consolidated flow data. enter/exit stay
+  // link-based (the teleport term is rebuilt from teleFlow/teleWeight by the
+  // next level's initPartition), matching how m_leaf0 stores link enter/exit.
+  // m_mTeleFlow/m_mTeleWeight are only populated under recorded teleportation.
   for (int oldM = 0; oldM < n; ++oldM) {
     if (m_mMembers[oldM] == 0)
       continue;
@@ -708,6 +815,10 @@ int ColumnarTwoLevel::consolidateToNextLevel()
     next.flow[m] = m_mFlow[oldM];
     next.enter[m] = m_mEnter[oldM];
     next.exit[m] = m_mExit[oldM];
+    if (m_recordedTeleport) {
+      next.teleFlow[m] = m_mTeleFlow[oldM];
+      next.teleWeight[m] = m_mTeleWeight[oldM];
+    }
   }
 
   // Aggregate current-level out-edges into module-module edges.
@@ -854,6 +965,64 @@ double ColumnarTwoLevel::optimizeTwoLevel(unsigned int maxAggPasses, bool doFine
   return bestCodelength;
 }
 
+bool ColumnarTwoLevel::seedHierarchyFromLeafPaths(const std::vector<std::vector<int>>& leafPaths)
+{
+  if (static_cast<int>(leafPaths.size()) != m_nLeaves)
+    return false;
+
+  // Require a rectangular tree (every leaf the same number of module levels).
+  // Ragged trees don't map onto the strict-level stack; the caller falls back.
+  int depth = -1;
+  for (const auto& p : leafPaths) {
+    const int d = static_cast<int>(p.size());
+    if (d < 1)
+      return false;
+    if (depth == -1)
+      depth = d;
+    else if (d != depth)
+      return false;
+  }
+
+  // Compact a module id per leaf at each stack level. Stack level j (1 = finest
+  // .. depth = top) groups leaves that share the path prefix path[0 .. depth-j]:
+  // the finest module needs the whole path to match, the top module only path[0].
+  std::vector<std::vector<int>> levelId(depth + 1); // levelId[j][leaf], j = 1..depth
+  std::vector<int> levelK(depth + 1, 0);
+  for (int j = 1; j <= depth; ++j) {
+    const int prefixLen = depth - j + 1;
+    std::map<std::vector<int>, int> ids;
+    levelId[j].resize(m_nLeaves);
+    for (int i = 0; i < m_nLeaves; ++i) {
+      std::vector<int> key(leafPaths[i].begin(), leafPaths[i].begin() + prefixLen);
+      auto res = ids.emplace(std::move(key), static_cast<int>(ids.size()));
+      levelId[j][i] = res.first->second;
+    }
+    levelK[j] = static_cast<int>(ids.size());
+  }
+
+  // Build the stack bottom-up via aggregateLevel: level 0 = leaves, level 1 =
+  // finest modules (leaf assignment levelId[1]), each coarser level from the
+  // level-k -> level-(k+1) module map derived from the per-leaf level ids.
+  m_hierLevels.clear();
+  m_hierAssign.clear();
+  m_hierLevels.push_back(m_leaf0);
+  m_hierAssign.push_back(levelId[1]);
+  Level cur = aggregateLevel(m_leaf0, levelId[1], levelK[1], m_undirected);
+  m_hierLevels.push_back(cur);
+  for (int k = 1; k < depth; ++k) {
+    // level-k module (columnar level k, my j=k) -> level-(k+1) module (j=k+1).
+    std::vector<int> assign(levelK[k], -1);
+    for (int i = 0; i < m_nLeaves; ++i)
+      assign[levelId[k][i]] = levelId[k + 1][i];
+    m_hierAssign.push_back(assign);
+    cur = aggregateLevel(cur, assign, levelK[k + 1], m_undirected);
+    m_hierLevels.push_back(cur);
+  }
+  m_numTopModules = static_cast<unsigned int>(m_hierLevels.back().n);
+  m_leafTop = levelId[1]; // leaf -> finest module, for a subsequent optimize
+  return true;
+}
+
 ColumnarTwoLevel::Level ColumnarTwoLevel::aggregateLevel(const Level& base, const std::vector<int>& assign, int K, bool undirected)
 {
   Level out;
@@ -861,8 +1030,16 @@ ColumnarTwoLevel::Level ColumnarTwoLevel::aggregateLevel(const Level& base, cons
   out.flow.assign(K, 0.0);
   out.enter.assign(K, 0.0);
   out.exit.assign(K, 0.0);
-  for (int i = 0; i < base.n; ++i)
+  out.teleFlow.assign(K, 0.0);
+  out.teleWeight.assign(K, 0.0);
+  const bool haveTele = !base.teleFlow.empty();
+  for (int i = 0; i < base.n; ++i) {
     out.flow[assign[i]] += base.flow[i];
+    if (haveTele) {
+      out.teleFlow[assign[i]] += base.teleFlow[i];
+      out.teleWeight[assign[i]] += base.teleWeight[i];
+    }
+  }
 
   // Group-group edge flow + crossing enter/exit, from base out-edges.
   std::unordered_map<long long, double> edgeMap;
@@ -951,7 +1128,7 @@ double ColumnarTwoLevel::optimizeHierarchical(unsigned int bottomBlockLimit)
     const double curIndexCodelength = plogp(sumEnter) - sumPlogpEnter;
 
     ColumnarTwoLevel superOpt;
-    superOpt.buildFromLevel(superNet, m_undirected, m_seed);
+    superOpt.buildFromLevel(superNet, m_undirected, m_seed, 0.0, m_recordedTeleport, m_totalTeleFlow);
     // Conservative up-build (m_superAggLimit > 0): fewer aggregation passes per
     // super-level so we don't collapse the whole level in one greedy jump —
     // more, finer super-levels for the down-sweep to tune and (later) collapse.
@@ -979,13 +1156,46 @@ double ColumnarTwoLevel::hierarchicalCodelengthFromStack() const
   const int topLevel = static_cast<int>(m_hierLevels.size()) - 1; // >= 1
   double total = 0.0;
 
+  // Recorded-teleportation enter/exit additions per module level (1..topLevel).
+  // A module gains teleport exit = teleFlow_m * (1 - teleWeight_m) and teleport
+  // enter = (totalTele - teleFlow_m) * teleWeight_m, from its members' aggregated
+  // teleport flow/weight -- exactly InfomapBase::aggregateFlowValuesFromLeafToRoot's
+  // recorded-teleportation pass. Empty (and skipped) for the base flow model.
+  std::vector<std::vector<double>> teleEnter, teleExit;
+  if (m_recordedTeleport) {
+    teleEnter.resize(topLevel + 1);
+    teleExit.resize(topLevel + 1);
+    std::vector<int> leafToK = m_hierAssign[0]; // leaf -> level-1 module
+    for (int k = 1; k <= topLevel; ++k) {
+      const int n = m_hierLevels[k].n;
+      std::vector<double> tf(n, 0.0), tw(n, 0.0);
+      for (int i = 0; i < m_nLeaves; ++i) {
+        tf[leafToK[i]] += m_leafTeleFlow[i];
+        tw[leafToK[i]] += m_leafTeleWeight[i];
+      }
+      teleEnter[k].assign(n, 0.0);
+      teleExit[k].assign(n, 0.0);
+      for (int m = 0; m < n; ++m) {
+        teleEnter[k][m] = (m_totalTeleFlow - tf[m]) * tw[m];
+        teleExit[k][m] = tf[m] * (1.0 - tw[m]);
+      }
+      if (k < topLevel) {
+        const std::vector<int>& a = m_hierAssign[k]; // level-k -> level-(k+1)
+        for (int i = 0; i < m_nLeaves; ++i)
+          leafToK[i] = a[leafToK[i]];
+      }
+    }
+  }
+  auto exitAug = [&](int k, int m) { return m_hierLevels[k].exit[m] + (m_recordedTeleport ? teleExit[k][m] : 0.0); };
+  auto enterAug = [&](int k, int m) { return m_hierLevels[k].enter[m] + (m_recordedTeleport ? teleEnter[k][m] : 0.0); };
+
   // Level-1 modules code their leaf children (module-of-leaf-nodes term).
   {
     const Level& L1 = m_hierLevels[1];
     const std::vector<int>& leafToL1 = m_hierAssign[0];
     std::vector<double> T(L1.n);
     for (int m = 0; m < L1.n; ++m)
-      T[m] = L1.flow[m] + L1.exit[m];
+      T[m] = L1.flow[m] + exitAug(1, m);
     std::vector<double> acc(L1.n, 0.0);
     for (int i = 0; i < m_leaf0.n; ++i) {
       const int m = leafToL1[i];
@@ -995,7 +1205,7 @@ double ColumnarTwoLevel::hierarchicalCodelengthFromStack() const
     for (int m = 0; m < L1.n; ++m) {
       if (T[m] < 1e-16)
         continue;
-      acc[m] -= plogp(L1.exit[m] / T[m]);
+      acc[m] -= plogp(exitAug(1, m) / T[m]);
       total += acc[m] * T[m];
     }
   }
@@ -1008,14 +1218,16 @@ double ColumnarTwoLevel::hierarchicalCodelengthFromStack() const
     std::vector<double> sumEnter(Lk.n, 0.0), sumPlogpEnter(Lk.n, 0.0);
     for (int c = 0; c < Lkm1.n; ++c) {
       const int p = childToParent[c];
-      sumEnter[p] += Lkm1.enter[c];
-      sumPlogpEnter[p] += plogp(Lkm1.enter[c]);
+      const double ec = enterAug(lvl - 1, c);
+      sumEnter[p] += ec;
+      sumPlogpEnter[p] += plogp(ec);
     }
     for (int m = 0; m < Lk.n; ++m) {
       if (Lk.flow[m] < 1e-16)
         continue;
-      const double totalUse = Lk.exit[m] + sumEnter[m];
-      total += plogp(totalUse) - sumPlogpEnter[m] - plogp(Lk.exit[m]);
+      const double ex = exitAug(lvl, m);
+      const double totalUse = ex + sumEnter[m];
+      total += plogp(totalUse) - sumPlogpEnter[m] - plogp(ex);
     }
   }
 
@@ -1024,8 +1236,9 @@ double ColumnarTwoLevel::hierarchicalCodelengthFromStack() const
     const Level& Ltop = m_hierLevels[topLevel];
     double sumEnter = 0.0, sumPlogpEnter = 0.0;
     for (int m = 0; m < Ltop.n; ++m) {
-      sumEnter += Ltop.enter[m];
-      sumPlogpEnter += plogp(Ltop.enter[m]);
+      const double e = enterAug(topLevel, m);
+      sumEnter += e;
+      sumPlogpEnter += plogp(e);
     }
     total += plogp(sumEnter) - sumPlogpEnter;
   }
@@ -1509,12 +1722,16 @@ bool ColumnarTwoLevel::refineBottomWithinParents()
     sub.flow.resize(nP);
     sub.enter.resize(nP);
     sub.exit.resize(nP);
+    sub.teleFlow.resize(nP);
+    sub.teleWeight.resize(nP);
     std::vector<int> outDeg(nP, 0), inDeg(nP, 0);
     for (int j = 0; j < nP; ++j) {
       const int g = S[j];
       sub.flow[j] = m_leaf0.flow[g];
       sub.enter[j] = m_leaf0.enter[g];
       sub.exit[j] = m_leaf0.exit[g];
+      sub.teleFlow[j] = m_leaf0.teleFlow[g];
+      sub.teleWeight[j] = m_leaf0.teleWeight[g];
       for (int k = m_leaf0.outStart[g]; k < m_leaf0.outStart[g + 1]; ++k) {
         const int lt = loc[m_leaf0.outTarget[k]];
         if (lt != -1) {
@@ -1555,7 +1772,7 @@ bool ColumnarTwoLevel::refineBottomWithinParents()
     // exit), objective-aware: slice Meta/Mem to P's leaves so the re-partition
     // optimizes base + correction, not just gates on it.
     ColumnarTwoLevel subOpt;
-    subOpt.buildFromLevel(sub, m_undirected, m_seed, m_hierLevels[2].exit[P]);
+    subOpt.buildFromLevel(sub, m_undirected, m_seed, m_hierLevels[2].exit[P], m_recordedTeleport, m_totalTeleFlow);
     addSlicedLeafCorrections(subOpt, S);
     subOpt.optimizeTwoLevel();
     const std::vector<int>& subAssign = subOpt.leafTopModule();
@@ -1640,12 +1857,16 @@ bool ColumnarTwoLevel::refineLayerWithinGrandparent(int k)
     sub.flow.resize(nP);
     sub.enter.resize(nP);
     sub.exit.resize(nP);
+    sub.teleFlow.resize(nP);
+    sub.teleWeight.resize(nP);
     std::vector<int> outDeg(nP, 0), inDeg(nP, 0);
     for (int j = 0; j < nP; ++j) {
       const int g = S[j];
       sub.flow[j] = interior ? base.enter[g] : base.flow[g];
       sub.enter[j] = base.enter[g];
       sub.exit[j] = base.exit[g];
+      sub.teleFlow[j] = base.teleFlow.empty() ? 0.0 : base.teleFlow[g];
+      sub.teleWeight[j] = base.teleWeight.empty() ? 0.0 : base.teleWeight[g];
       for (int e = base.outStart[g]; e < base.outStart[g + 1]; ++e) {
         const int lt = loc[base.outTarget[e]];
         if (lt != -1) {
@@ -1686,7 +1907,7 @@ bool ColumnarTwoLevel::refineLayerWithinGrandparent(int k)
     // At k == 0 the units are leaves, so the leaf-shaping corrections apply and
     // are sliced to G's leaves; interior levels (k > 0) stay first-order (base).
     ColumnarTwoLevel subOpt;
-    subOpt.buildFromLevel(sub, m_undirected, m_seed, grand.exit[G]);
+    subOpt.buildFromLevel(sub, m_undirected, m_seed, grand.exit[G], m_recordedTeleport, m_totalTeleFlow);
     if (k == 0)
       addSlicedLeafCorrections(subOpt, S);
     subOpt.optimizeTwoLevel();
@@ -1727,11 +1948,15 @@ bool ColumnarTwoLevel::refineTopLayer()
   sub.flow.resize(nU);
   sub.enter.resize(nU);
   sub.exit.resize(nU);
+  sub.teleFlow.resize(nU);
+  sub.teleWeight.resize(nU);
   std::vector<int> outDeg(nU, 0), inDeg(nU, 0);
   for (int j = 0; j < nU; ++j) {
     sub.flow[j] = base.enter[j];
     sub.enter[j] = base.enter[j];
     sub.exit[j] = base.exit[j];
+    sub.teleFlow[j] = base.teleFlow.empty() ? 0.0 : base.teleFlow[j];
+    sub.teleWeight[j] = base.teleWeight.empty() ? 0.0 : base.teleWeight[j];
     for (int e = base.outStart[j]; e < base.outStart[j + 1]; ++e) {
       ++outDeg[j];
       ++inDeg[base.outTarget[e]];
@@ -1762,7 +1987,7 @@ bool ColumnarTwoLevel::refineTopLayer()
     }
 
   ColumnarTwoLevel subOpt;
-  subOpt.buildFromLevel(sub, m_undirected, m_seed, 0.0);
+  subOpt.buildFromLevel(sub, m_undirected, m_seed, 0.0, m_recordedTeleport, m_totalTeleFlow);
   subOpt.optimizeTwoLevel();
   const int Ksub = static_cast<int>(subOpt.numTopModules());
   if (Ksub <= 1 || Ksub == nU)

@@ -1437,6 +1437,33 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
           enterFlow[targetIndex] += network.m_linkFlows[e];
         }
       }
+    } else if (config.isUndirectedClustering() && !config.regularized) {
+      // Undirected enter/exit flow: each undirected link contributes half its
+      // flow to both endpoints, on both the enter and exit side (a walker is
+      // equally likely to traverse it either way). Self-links are excluded --
+      // they don't cross a module boundary. This mirrors initEnterExitFlow()'s
+      // undirected branch so the enter/exit stored on the network is
+      // authoritative for the map equation (see the "always add enter/exit from
+      // the flow calculator" TODO there); markov-time / variable-markov-time
+      // rescaling still happens after flow, so those paths recompute downstream.
+      enterFlow.assign(numNodes, 0);
+      exitFlow.assign(numNodes, 0);
+      for (auto& nodeIt : network.m_nodes) {
+        auto& node = nodeIt.second;
+        const auto sourceIndex = nodeIndexMap[node.id];
+        const auto srcIdx = network.indexOfId(node.id);
+        for (unsigned int e = network.m_linkOffsets[srcIdx]; e < network.m_linkOffsets[srcIdx + 1]; ++e) {
+          const auto tgtCsr = network.m_linkTargets[e];
+          if (tgtCsr == srcIdx)
+            continue; // self-link: doesn't add to enter/exit flow
+          const auto targetIndex = nodeIndexMap[network.nodeId(tgtCsr)];
+          const double halfFlow = network.m_linkFlows[e] / 2.0;
+          exitFlow[sourceIndex] += halfFlow;
+          exitFlow[targetIndex] += halfFlow;
+          enterFlow[sourceIndex] += halfFlow;
+          enterFlow[targetIndex] += halfFlow;
+        }
+      }
     }
   }
 

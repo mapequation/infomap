@@ -714,6 +714,9 @@ private:
   {
     if (!infomap.noInfomap)
       infomap.runPartition();
+    else if (infomap.columnarSearch)
+      // Input-partition codelength on the columnar structure (base + correction).
+      infomap.m_hierarchicalCodelength = infomap.evaluateColumnarPartition();
     else
       infomap.m_hierarchicalCodelength = infomap.calcCodelengthOnTree(infomap.root(), true);
 
@@ -1771,7 +1774,21 @@ void InfomapBase::columnarPartition()
   const unsigned long trialSeed = m_rand.randInt(0, std::numeric_limits<int>::max());
   ColumnarTwoLevel opt;
   opt.buildFromLeaves(m_leafNodes, isUndirectedClustering(), trialSeed);
+  opt.setRecordedTeleportation(recordedTeleportation);
+  addColumnarCorrections(opt);
 
+  const double columnarL = opt.optimizeColumnar(1, tuneIterationLimit);
+
+  // Materialize the result into the InfoNode tree (sets m_hierarchicalCodelength
+  // and prepares the tree exactly like the rest of the output pipeline expects).
+  auto paths = opt.toNodePaths(m_leafNodes);
+  initTree(paths);
+  Console::detail(1, "flex: columnar codelength {}, materialized {}, {} levels",
+                  io::toPrecision(columnarL), io::toPrecision(m_hierarchicalCodelength), maxTreeDepth());
+}
+
+void InfomapBase::addColumnarCorrections(ColumnarTwoLevel& opt) const
+{
   // Composable objective corrections (default none => base map equation).
   // Biased entropy-bias: same total-degree divisor as BiasedMapEquation.
   if (entropyBiasCorrection) {
@@ -1820,15 +1837,42 @@ void InfomapBase::columnarPartition()
     opt.addCorrection(std::make_unique<LossyCorrection>(std::move(lossyLeafFlow), std::move(lossyLeafEntropy), lossyLambda));
   }
 #endif
+}
 
-  const double columnarL = opt.optimizeColumnar(1, tuneIterationLimit);
+std::vector<std::vector<int>> InfomapBase::leafModulePathsFromTree() const
+{
+  // For each leaf, walk parents up to (not including) the root, collecting the
+  // enclosing modules finest-first, then reverse to coarsest-first. Distinct
+  // module nodes get distinct ids (by pointer identity) so seedHierarchyFromLeafPaths
+  // can hash path prefixes into per-level module ids.
+  std::vector<std::vector<int>> paths(m_leafNodes.size());
+  std::unordered_map<const InfoNode*, int> moduleId;
+  moduleId.reserve(m_leafNodes.size());
+  for (std::size_t i = 0; i < m_leafNodes.size(); ++i) {
+    std::vector<int> chain; // finest-first
+    for (const InfoNode* m = m_leafNodes[i]->parent; m != nullptr && m != &m_root; m = m->parent) {
+      auto res = moduleId.emplace(m, static_cast<int>(moduleId.size()));
+      chain.push_back(res.first->second);
+    }
+    std::reverse(chain.begin(), chain.end()); // coarsest-first (top .. finest)
+    paths[i] = std::move(chain);
+  }
+  return paths;
+}
 
-  // Materialize the result into the InfoNode tree (sets m_hierarchicalCodelength
-  // and prepares the tree exactly like the rest of the output pipeline expects).
-  auto paths = opt.toNodePaths(m_leafNodes);
-  initTree(paths);
-  Console::detail(1, "flex: columnar codelength {}, materialized {}, {} levels",
-                  io::toPrecision(columnarL), io::toPrecision(m_hierarchicalCodelength), maxTreeDepth());
+double InfomapBase::evaluateColumnarPartition()
+{
+  ColumnarTwoLevel opt;
+  opt.buildFromLeaves(m_leafNodes, isUndirectedClustering(), seedToRandomNumberGenerator);
+  opt.setRecordedTeleportation(recordedTeleportation);
+  addColumnarCorrections(opt);
+  const auto paths = leafModulePathsFromTree();
+  if (!opt.seedHierarchyFromLeafPaths(paths)) {
+    // Ragged tree: evaluate on the object-oriented tree instead.
+    Console::detail(1, "columnar eval: ragged tree, using object-oriented codelength");
+    return calcCodelengthOnTree(root(), true);
+  }
+  return opt.hierarchicalCodelengthFromStack();
 }
 
 void InfomapBase::hierarchicalPartition()
