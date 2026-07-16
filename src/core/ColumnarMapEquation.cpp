@@ -2195,7 +2195,13 @@ bool ColumnarTwoLevel::mergeLeafModulesWithinParents()
 double ColumnarTwoLevel::optimizeConverge(unsigned int bottomBlockLimit, unsigned int superAggLimit, unsigned int sweepLimit)
 {
   m_superAggLimit = superAggLimit;
-  double L = optimizeHierarchical(bottomBlockLimit);
+  const double L = optimizeHierarchical(bottomBlockLimit);
+  return refineHierarchy(L, sweepLimit);
+}
+
+double ColumnarTwoLevel::refineHierarchy(double startL, unsigned int sweepLimit)
+{
+  double L = startL;
 
   // sweepLimit caps the up/down tuning sweeps; 0 means run until convergence
   // (the loop breaks early on a no-improvement sweep regardless of the cap).
@@ -2206,7 +2212,7 @@ double ColumnarTwoLevel::optimizeConverge(unsigned int bottomBlockLimit, unsigne
   // interior refine optimizes a units-as-leaves proxy, so we gate on the real
   // objective and revert otherwise). Iterate whole sweeps until none improves.
 #ifdef COLUMNAR_DEBUG
-  std::fprintf(stderr, "[converge] start L=%.9f levels=%d superAgg=%u\n", L, (int)m_hierLevels.size(), superAggLimit);
+  std::fprintf(stderr, "[refine] start L=%.9f levels=%d superAgg=%u\n", L, (int)m_hierLevels.size(), m_superAggLimit);
 #endif
   // Helper: run one gated tuning step (rebuild -> accept if it lowers the true
   // codelength, else revert). Returns whether it improved.
@@ -2218,7 +2224,8 @@ double ColumnarTwoLevel::optimizeConverge(unsigned int bottomBlockLimit, unsigne
     const double after = hierarchicalCodelengthFromStack();
     if (after < L - kMinImprovement) {
 #ifdef COLUMNAR_DEBUG
-      std::fprintf(stderr, "[converge] %s %.9f -> %.9f (levels %d, top %d)\n", tag, L, after, (int)m_hierLevels.size(), m_hierLevels.back().n);
+      std::fprintf(stderr, "[refine] %s %.9f -> %.9f (levels %d, top %d)\n",
+                   tag, L, after, (int)m_hierLevels.size(), m_hierLevels.back().n);
 #else
       (void)tag;
 #endif
@@ -2234,18 +2241,18 @@ double ColumnarTwoLevel::optimizeConverge(unsigned int bottomBlockLimit, unsigne
 #ifdef COLUMNAR_DEBUG
   const std::clock_t t_p1 = std::clock();
 #endif
-  // Phase 1 — interior refine (up/down sweep): re-partition each interior layer
+  // Interior-layer refinement (up/down sweep): re-partition each interior layer
   // within its grandparent, to convergence. This is the expensive pass (the
   // k==0 refine re-partitions every leaf), so it runs ONCE here as a build
-  // refinement. The Phase-2 coarsening below only ever re-fragments a finished
+  // refinement. The module coarsening below only ever re-fragments a finished
   // interior partition (measured: such a refine always reverts), so it is not
   // worth re-running per coarsening step.
   // With a single interior level the refine is idempotent (deterministic given
   // fixed grandparents, which it does not change), so one pass is convergence —
   // skip the second no-op pass. Multiple interior levels can interact, so loop.
   const int numInterior = std::max(0, static_cast<int>(m_hierLevels.size()) - 2);
-  const int phase1Sweeps = (numInterior <= 1) ? std::min(1, maxSweeps) : maxSweeps;
-  for (int sweep = 0; sweep < phase1Sweeps; ++sweep) {
+  const int refineSweeps = (numInterior <= 1) ? std::min(1, maxSweeps) : maxSweeps;
+  for (int sweep = 0; sweep < refineSweeps; ++sweep) {
     pollInterrupt();
     bool improved = false;
     const int top = static_cast<int>(m_hierLevels.size()) - 1;
@@ -2255,8 +2262,8 @@ double ColumnarTwoLevel::optimizeConverge(unsigned int bottomBlockLimit, unsigne
       break;
   }
 
-  // Phase 2 — mem-aware coarsening: merge leaf modules (mergeLeafModulesWithinParents)
-  // and regroup the top level (refineTopLayer), interleaved to convergence. Both
+  // Module coarsening: merge leaf modules (mergeLeafModulesWithinParents) and
+  // regroup the top level (refineTopLayer), interleaved to convergence. Both
   // operate on the few modules (not the leaves), so this loop is cheap; iterating
   // lets a merge cross parents that a prior top-refine has regrouped. No-op for
   // the base objective (merge needs a correction; top-refine is gated).
@@ -2273,7 +2280,8 @@ double ColumnarTwoLevel::optimizeConverge(unsigned int bottomBlockLimit, unsigne
   }
 #ifdef COLUMNAR_DEBUG
   const std::clock_t t_end = std::clock();
-  std::fprintf(stderr, "[converge] phase1=%.3fs phase2=%.3fs (superAgg=%u)\n", double(t_p2 - t_p1) / CLOCKS_PER_SEC, double(t_end - t_p2) / CLOCKS_PER_SEC, superAggLimit);
+  std::fprintf(stderr, "[refine] interior=%.3fs coarsen=%.3fs (superAgg=%u)\n",
+               double(t_p2 - t_p1) / CLOCKS_PER_SEC, double(t_end - t_p2) / CLOCKS_PER_SEC, m_superAggLimit);
 #endif
   return L;
 }
@@ -2311,34 +2319,51 @@ ColumnarTwoLevel::toNodePaths(const std::vector<InfoNode*>& leafNodes) const
 double ColumnarTwoLevel::optimizeColumnar(unsigned int bottomBlockLimit, unsigned int sweepLimit)
 {
   // The up-merge aggressiveness selects which basin the build lands in, and the
-  // best setting varies by network (like Infomap's multi-trial search). Run the
-  // up/down sweep at a small set of super-merge settings and keep the best
-  // partition, leaving its stack in the members for materialization.
+  // best setting varies by network (like Infomap's multi-trial search). The old
+  // approach refined *every* setting to convergence and kept the best — but the
+  // expensive interior-layer refinement then ran once per setting, and the
+  // losing setting's refinement was always discarded (up to ~half the optimize
+  // time on large, deep networks).
+  //
+  // Instead, SCREEN cheaply: build each setting (no refinement) and compare the
+  // post-build codelength, which empirically predicts the converged winner (the
+  // up-merge choice fixes the basin; refinement only tunes within it). Then run
+  // the interior-layer refinement to convergence on the winning build ONLY.
   static const unsigned int kSuperAggSettings[] = { 0u, 1u };
 
-  double bestL = std::numeric_limits<double>::infinity();
+  double bestBuildL = std::numeric_limits<double>::infinity();
   std::vector<Level> bestLevels;
   std::vector<std::vector<int>> bestAssign;
   unsigned int bestTop = 0;
+  unsigned int bestSuperAgg = 0;
 
   for (unsigned int superAgg : kSuperAggSettings) {
     pollInterrupt();
-    const double L = optimizeConverge(bottomBlockLimit, superAgg, sweepLimit);
-    if (L < bestL - kMinImprovement) {
-      bestL = L;
+    m_superAggLimit = superAgg;
+    const double buildL = optimizeHierarchical(bottomBlockLimit);
+#ifdef COLUMNAR_DEBUG
+    std::fprintf(stderr, "[screen] superAgg=%u buildL=%.6f top=%u\n", superAgg, buildL, m_numTopModules);
+#endif
+    if (buildL < bestBuildL - kMinImprovement) {
+      bestBuildL = buildL;
       bestLevels = m_hierLevels;
       bestAssign = m_hierAssign;
       bestTop = m_numTopModules;
+      bestSuperAgg = superAgg;
     }
   }
 
+  // Restore the winning build and refine only it.
   m_hierLevels = std::move(bestLevels);
   m_hierAssign = std::move(bestAssign);
   m_numTopModules = bestTop;
+  m_superAggLimit = bestSuperAgg;
+  const double bestL = refineHierarchy(bestBuildL, sweepLimit);
 #ifdef COLUMNAR_DEBUG
   {
     const double corr = objectiveCorrection();
-    std::fprintf(stderr, "[optColumnar] best total=%.6f base=%.6f corr=%.6f top=%u\n", bestL, bestL - corr, corr, bestTop);
+    std::fprintf(stderr, "[optColumnar] winner superAgg=%u total=%.6f base=%.6f corr=%.6f top=%u\n",
+                 bestSuperAgg, bestL, bestL - corr, corr, m_numTopModules);
   }
 #endif
   return bestL;

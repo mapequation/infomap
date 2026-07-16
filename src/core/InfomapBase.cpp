@@ -1771,7 +1771,8 @@ void InfomapBase::columnarPartition()
   auto paths = opt.toNodePaths(m_leafNodes);
   initTree(paths);
   m_numNonTrivialTopModules = calculateNumNonTrivialTopModules();
-  Console::detail(1, "flex: columnar codelength {}, materialized {}, {} levels", io::toPrecision(columnarL), io::toPrecision(m_hierarchicalCodelength), maxTreeDepth());
+  Console::detail(1, "columnar: codelength {}, materialized {}, {} levels",
+                  io::toPrecision(columnarL), io::toPrecision(m_hierarchicalCodelength), maxTreeDepth());
 }
 
 bool InfomapBase::columnarNativeInputEligible() const

@@ -53,11 +53,11 @@ public:
   virtual bool participatesInMoveLoop() const { return false; }
   // (Re)build per-module correction state for the given leaf->module partition.
   // Returns this correction's contribution to the current codelength.
-  virtual double initMoveLoop(const std::vector<int>& leafModule, int numModules) { return 0.0; }
+  virtual double initMoveLoop(const std::vector<int>& /*leafModule*/, int /*numModules*/) { return 0.0; }
   // Change in this correction's contribution from moving `leaf` oldMod -> newMod.
-  virtual double moveDelta(int leaf, int oldMod, int newMod) const { return 0.0; }
+  virtual double moveDelta(int /*leaf*/, int /*oldMod*/, int /*newMod*/) const { return 0.0; }
   // Commit the move to the per-module state.
-  virtual void applyMove(int leaf, int oldMod, int newMod) {}
+  virtual void applyMove(int /*leaf*/, int /*oldMod*/, int /*newMod*/) {}
 
   // Append move-target modules the search should also consider for `leaf`,
   // beyond its edge neighborhood. The base move loop only proposes modules of
@@ -66,7 +66,7 @@ public:
   // flow-disconnected merges that collapse the physical codebook — the merges
   // the correction rewards but the edge-based loop would never generate. The
   // leaf's current module may be included; the caller skips it. Default none.
-  virtual void proposeMoveTargets(int leaf, std::vector<int>& out) const {}
+  virtual void proposeMoveTargets(int /*leaf*/, std::vector<int>& /*out*/) const {}
 
   // --- Leaf-module merge hooks (mem-aware coarsening) -----------------------
   // The leaf-module merge operator folds one leaf module into another to coarsen
@@ -75,14 +75,14 @@ public:
   // initMoveLoop (so modules here are leaf-module ids), and needs the change in
   // this correction's contribution from merging module A into module B, plus a
   // commit. Base objective / structural corrections leave these zero/no-op.
-  virtual double mergeDelta(int moduleA, int moduleB) const { return 0.0; }
-  virtual void applyMerge(int moduleA, int moduleB) {}
+  virtual double mergeDelta(int /*moduleA*/, int /*moduleB*/) const { return 0.0; }
+  virtual void applyMerge(int /*moduleA*/, int /*moduleB*/) {}
   // Append leaf modules sharing an attribute with `module` (Mem: a physical
   // node) as extra merge candidates beyond the edge-connected set. Redundant on
   // undirected clustering (co-attribute modules are edge-adjacent there) but
   // relevant on directed; the merge operator consults it only when the
   // co-physical tuning mode is on (COL_COMERGE). Default none.
-  virtual void proposeMergePartners(int module, std::vector<int>& out) const {}
+  virtual void proposeMergePartners(int /*module*/, std::vector<int>& /*out*/) const {}
 
   // Restrict this correction to a subset of leaves for an in-context leaf refine
   // (the bottom-level re-partition within a first-order parent). `globalLeafIds`
@@ -93,7 +93,7 @@ public:
   // Because a bottom module lives entirely within one parent, per-parent slicing
   // is exact — a physical node's / category's per-module term never couples
   // across parents.
-  virtual std::unique_ptr<ColumnarCorrection> sliceForLeaves(const std::vector<int>& globalLeafIds) const { return nullptr; }
+  virtual std::unique_ptr<ColumnarCorrection> sliceForLeaves(const std::vector<int>& /*globalLeafIds*/) const { return nullptr; }
 };
 
 /**
@@ -240,11 +240,21 @@ public:
   // sweepLimit caps the number of up/down tuning sweeps (0 = until convergence).
   double optimizeConverge(unsigned int bottomBlockLimit = 1, unsigned int superAggLimit = 0, unsigned int sweepLimit = 0);
 
-  // Top-level columnar engine entry (the `--columnar` search): run the up/down
-  // sweep at a small set of up-merge settings and keep the best partition,
-  // leaving its stacked hierarchy in the members ready to materialize into an
-  // InfoNode tree. sweepLimit caps the tuning sweeps per strategy (0 = until
-  // convergence; wired to --tune-iteration-limit).
+  // Refine the current built hierarchy (m_hier*) in place: interior-layer
+  // refinement (re-partition each interior layer within its grandparent, up/down
+  // to convergence) followed by module coarsening. `startL` is the hierarchical
+  // codelength of the incoming stack (used as the accept/revert baseline);
+  // sweepLimit caps the sweeps (0 = until convergence). Returns the refined
+  // codelength. Split out of optimizeConverge so optimizeColumnar can screen
+  // several up-build strategies cheaply and refine only the winner.
+  double refineHierarchy(double startL, unsigned int sweepLimit = 0);
+
+  // Top-level columnar engine entry (the `--columnar` search): build the
+  // hierarchy at a small set of up-merge strategies, screen them by post-build
+  // codelength, then run the interior-layer refinement to convergence on the
+  // best one only, leaving its stacked hierarchy in the members ready to
+  // materialize into an InfoNode tree. sweepLimit caps the refinement sweeps
+  // (0 = until convergence; wired to --tune-iteration-limit / -T).
   double optimizeColumnar(unsigned int bottomBlockLimit = 1, unsigned int sweepLimit = 0);
 
   // Materialize the best hierarchy (m_hier*) as one module-path per leaf, in the
