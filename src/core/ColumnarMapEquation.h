@@ -225,6 +225,12 @@ public:
   // level. Returns the hierarchical codelength of the multi-level partition.
   double optimizeHierarchical(unsigned int bottomBlockLimit = 0);
 
+  // Grow the hierarchy from an already-built bottom two-level (m_leaf0/m_leafTop
+  // with bottomK modules) via the enter-flow super-search, using m_superAggLimit.
+  // Does not touch the bottom, so optimizeColumnar builds the bottom once and
+  // reuses it across up-merge strategies. Returns hierarchical codelength.
+  double buildHierarchyFromBottom(int bottomK);
+
   // M2: build the hierarchy, then refine to convergence. Returns hierarchical
   // codelength. Uses a fine bottom by default so the interior tune has room.
   double optimizeFlexible(unsigned int bottomBlockLimit = 1);

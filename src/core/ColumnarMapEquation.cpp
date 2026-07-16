@@ -1089,18 +1089,29 @@ ColumnarTwoLevel::Level ColumnarTwoLevel::aggregateLevel(const Level& base, cons
 
 double ColumnarTwoLevel::optimizeHierarchical(unsigned int bottomBlockLimit)
 {
-  using infomath::plogp;
-
   // Bottom: leaves -> building blocks. With bottomBlockLimit > 0 we stop the
   // aggregation early (finer bottom) and skip fine-tune to preserve fineness;
   // with 0 we take the full two-level optimum with fine-tune.
   optimizeTwoLevel(bottomBlockLimit, bottomBlockLimit == 0);
+  return buildHierarchyFromBottom(static_cast<int>(m_numTopModules));
+}
+
+// Grow the multi-level hierarchy from the ALREADY-BUILT bottom two-level
+// (m_leaf0 / m_leafTop, with bottomK modules) using the enter-flow super-search.
+// Independent of the bottom, so optimizeColumnar builds the bottom once and calls
+// this per up-merge strategy (m_superAggLimit) — the bottom is identical across
+// strategies (superAgg only shapes the up-build), so recomputing it was waste.
+// Reads m_leaf0/m_leafTop without mutating them, so repeated calls from the same
+// bottom are deterministic and produce the same result as a full rebuild.
+double ColumnarTwoLevel::buildHierarchyFromBottom(int bottomK)
+{
+  using infomath::plogp;
 
   m_hierLevels.clear();
   m_hierAssign.clear();
   m_hierLevels.push_back(m_leaf0);
   m_hierAssign.push_back(m_leafTop);
-  Level cur = aggregateLevel(m_leaf0, m_leafTop, static_cast<int>(m_numTopModules), m_undirected);
+  Level cur = aggregateLevel(m_leaf0, m_leafTop, bottomK, m_undirected);
   m_hierLevels.push_back(cur);
 
   // Grow up with the enter-flow super-search while it shortens the index code.
@@ -2253,13 +2264,33 @@ double ColumnarTwoLevel::refineHierarchy(double startL, unsigned int sweepLimit)
   const int numInterior = std::max(0, static_cast<int>(m_hierLevels.size()) - 2);
   const int refineSweeps = (numInterior <= 1) ? std::min(1, maxSweeps) : maxSweeps;
   const double relStop = m_minRelTuneImprovement * startL;
+  // Incremental sweeps. refineLayerWithinGrandparent(k) reads only layers k, k+1,
+  // k+2 and is idempotent given fixed grandparents (units can't cross grandparent
+  // boundaries), so an accepted refine(k) can only change the inputs of its
+  // neighbours k-1 and k+1 — every other layer would deterministically re-derive
+  // the same partition and revert. Track a dirty set and re-refine only layers a
+  // neighbour touched last sweep: same fixpoint as re-sweeping all layers, but it
+  // skips the costly no-op passes (notably the k==0 all-leaves re-partition) once
+  // the hierarchy settles. (refine(k) never changes the level count, so the
+  // interior-layer index set is stable across sweeps.)
+  std::vector<char> dirty(static_cast<size_t>(numInterior), 1);
   for (int sweep = 0; sweep < refineSweeps; ++sweep) {
     pollInterrupt();
     const double beforeSweep = L;
     bool improved = false;
     const int top = static_cast<int>(m_hierLevels.size()) - 1;
-    for (int k = 0; k + 2 <= top; ++k)
-      improved |= gatedStep([&] { return refineLayerWithinGrandparent(k); }, "REFINE");
+    std::vector<char> nextDirty(dirty.size(), 0);
+    for (int k = 0; k + 2 <= top; ++k) {
+      if (!dirty[k])
+        continue;
+      if (gatedStep([&] { return refineLayerWithinGrandparent(k); }, "REFINE")) {
+        improved = true;
+        if (k - 1 >= 0)
+          nextDirty[k - 1] = 1;
+        if (k + 1 + 2 <= top) // k+1 is a valid interior layer
+          nextDirty[k + 1] = 1;
+      }
+    }
     if (!improved)
       break;
     // Diminishing-returns knee: stop once a whole sweep's gain drops below the
@@ -2267,6 +2298,7 @@ double ColumnarTwoLevel::refineHierarchy(double startL, unsigned int sweepLimit)
     // extra no-improvement sweep that only detects full convergence).
     if (relStop > 0.0 && (beforeSweep - L) < relStop)
       break;
+    dirty = std::move(nextDirty);
   }
 
   // Module coarsening: merge leaf modules (mergeLeafModulesWithinParents) and
@@ -2336,7 +2368,15 @@ double ColumnarTwoLevel::optimizeColumnar(unsigned int bottomBlockLimit, unsigne
   // post-build codelength, which empirically predicts the converged winner (the
   // up-merge choice fixes the basin; refinement only tunes within it). Then run
   // the interior-layer refinement to convergence on the winning build ONLY.
+  //
+  // The bottom two-level is IDENTICAL across strategies (m_superAggLimit only
+  // shapes the up-build), so build the bottom ONCE and grow each strategy from
+  // the shared bottom via buildHierarchyFromBottom — half the build work,
+  // bit-identical result.
   static const unsigned int kSuperAggSettings[] = { 0u, 1u };
+
+  optimizeTwoLevel(bottomBlockLimit, bottomBlockLimit == 0);
+  const int bottomK = static_cast<int>(m_numTopModules);
 
   double bestBuildL = std::numeric_limits<double>::infinity();
   std::vector<Level> bestLevels;
@@ -2347,7 +2387,7 @@ double ColumnarTwoLevel::optimizeColumnar(unsigned int bottomBlockLimit, unsigne
   for (unsigned int superAgg : kSuperAggSettings) {
     pollInterrupt();
     m_superAggLimit = superAgg;
-    const double buildL = optimizeHierarchical(bottomBlockLimit);
+    const double buildL = buildHierarchyFromBottom(bottomK);
 #ifdef COLUMNAR_DEBUG
     std::fprintf(stderr, "[screen] superAgg=%u buildL=%.6f top=%u\n", superAgg, buildL, m_numTopModules);
 #endif
