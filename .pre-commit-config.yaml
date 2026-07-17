@@ -37,7 +37,7 @@ repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.15.8
     hooks:
-      - id: ruff
+      - id: ruff-check
         name: ruff (lint)
         args: [--fix]
         # Notebooks are published-article companions with a couple of known
