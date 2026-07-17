@@ -10,9 +10,9 @@ Dispatch by input type:
   ``Network`` owns its ``Core``; we render the options, drive the engine, and
   stamp a ``Result`` bound to the ``Network``).
 - ``networkx.Graph`` / ``igraph.Graph`` / SciPy sparse matrix / a ``(2, E)``
-  edge index (ndarray or tensor) / a ``str``/``Path`` network file / an iterable
-  of ``(u, v[, w])`` links -> build an :class:`infomap.Infomap`, load via the
-  matching adapter, then ``im.run()``.
+  edge index (ndarray or tensor) / a ``str``/``os.PathLike`` network file / an
+  iterable of ``(u, v[, w])`` links -> build an :class:`infomap.Infomap`, load
+  via the matching adapter, then ``im.run()``.
 
 The options are passed as the keyword ``options`` (an :class:`Options`
 instance or mapping) and/or as keyword ``**overrides``; overrides win.
@@ -20,9 +20,9 @@ instance or mapping) and/or as keyword ``**overrides``; overrides win.
 
 from __future__ import annotations
 
+import os
 import warnings
 from collections.abc import Iterable, Mapping
-from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -441,7 +441,7 @@ def run(
     Parameters
     ----------
     input : Network, Infomap, networkx.Graph, igraph.Graph, scipy sparse matrix, \
-            (2, E) array/tensor, str or Path, or iterable of links
+            (2, E) array/tensor, str or os.PathLike, or iterable of links
         The network to partition. See the module docstring for the dispatch
         table.
     options : Options, mapping, or None, optional
@@ -574,10 +574,10 @@ def run(
         )
 
     # 2. A network file path.
-    if isinstance(input, (str, Path)):
+    if isinstance(input, (str, os.PathLike)):
         _reject_adapter_kwargs("file", user_keys)
         im = Infomap(args=args, **resolved)
-        im.read_file(str(input))
+        im.read_file(input)
         return im.run(initial_partition=initial_partition)
 
     # 3. A networkx graph.

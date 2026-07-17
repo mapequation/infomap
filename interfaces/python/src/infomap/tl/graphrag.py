@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import warnings
 from dataclasses import dataclass
 from pathlib import Path
@@ -70,7 +71,7 @@ def _import_parquet_stack():
 
 def _read_table(table_or_path):
     pd = _import_parquet_stack()
-    if isinstance(table_or_path, (str, Path)):
+    if isinstance(table_or_path, (str, os.PathLike)):
         return pd.read_parquet(table_or_path)
     return table_or_path
 
@@ -148,8 +149,8 @@ def _register_node(
 
 
 def read_graphrag(
-    entities: "str | Path | pandas.DataFrame",
-    relationships: "str | Path | pandas.DataFrame",
+    entities: "str | os.PathLike[str] | pandas.DataFrame",
+    relationships: "str | os.PathLike[str] | pandas.DataFrame",
     *,
     entity_id_col: str = "id",
     entity_title_col: str = "title",
@@ -168,9 +169,9 @@ def read_graphrag(
 
     Parameters
     ----------
-    entities : str, pathlib.Path, or pandas.DataFrame
+    entities : str, os.PathLike, or pandas.DataFrame
         Entity table, or a path to a Parquet file containing it.
-    relationships : str, pathlib.Path, or pandas.DataFrame
+    relationships : str, os.PathLike, or pandas.DataFrame
         Relationship table, or a path to a Parquet file containing it.
     entity_id_col : str, optional
         Entity table column with unique entity ids. Default ``"id"``.
@@ -603,7 +604,7 @@ def _build_tables(im, graph: GraphRAGGraph):
 
 
 def write_graphrag_communities(
-    im: Infomap | Result, *, graph: GraphRAGGraph, output: str | Path
+    im: Infomap | Result, *, graph: GraphRAGGraph, output: str | os.PathLike[str]
 ) -> "tuple[pandas.DataFrame, pandas.DataFrame]":
     """Write GraphRAG-compatible community tables from a finished run.
 
@@ -617,7 +618,7 @@ def write_graphrag_communities(
         and avoids reaching back into the stateful instance.
     graph : GraphRAGGraph
         The graph returned by :func:`read_graphrag` for the same network.
-    output : str or pathlib.Path
+    output : str or os.PathLike
         Output directory, or a ``.parquet`` path for the communities table
         (its parent directory is then used for the nodes table). Writes
         ``infomap_nodes.parquet`` and ``communities.parquet``.
@@ -647,8 +648,8 @@ def write_graphrag_communities(
 
 def run_graphrag_communities(
     *,
-    input_dir: str | Path,
-    output_dir: str | Path | None = None,
+    input_dir: str | os.PathLike[str],
+    output_dir: str | os.PathLike[str] | None = None,
     args: str | None = None,
     entities_name: str = "entities.parquet",
     relationships_name: str = "relationships.parquet",
@@ -671,9 +672,9 @@ def run_graphrag_communities(
 
     Parameters
     ----------
-    input_dir : str or pathlib.Path
+    input_dir : str or os.PathLike
         Directory containing the entity and relationship Parquet files.
-    output_dir : str or pathlib.Path, optional
+    output_dir : str or os.PathLike, optional
         Where to write ``infomap_nodes.parquet``, ``communities.parquet``,
         and the run summary ``infomap_run.json``. If ``None``, nothing is
         written and only the in-memory result is returned.

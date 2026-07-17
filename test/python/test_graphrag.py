@@ -87,6 +87,29 @@ def _add_graphrag_links(im, graph):
     im.add_links(np.column_stack(columns))
 
 
+class _FsPathOnly:
+    """A generic ``os.PathLike`` that is not a ``pathlib.Path``."""
+
+    def __init__(self, path):
+        self._path = path
+
+    def __fspath__(self):
+        return str(self._path)
+
+    def __str__(self):
+        return "<not-the-path>"
+
+
+def test_read_graphrag_accepts_generic_pathlike(tmp_path):
+    from infomap.graphrag import read_graphrag
+
+    entities_path, relationships_path = _write_graphrag_fixture(tmp_path)
+
+    graph = read_graphrag(_FsPathOnly(entities_path), _FsPathOnly(relationships_path))
+
+    assert graph.sources.tolist() == [1, 2, 3, 4, 5, 6, 3]
+
+
 def test_read_graphrag_factorizes_titles_from_entities_first(tmp_path):
     from infomap.graphrag import read_graphrag
 

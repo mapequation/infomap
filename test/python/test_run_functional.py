@@ -182,6 +182,59 @@ def test_run_file_matches_oo(example_network_path):
     assert result.codelength == pytest.approx(3.385830820341408, abs=1e-4)
 
 
+class _FsPathOnly:
+    """A generic ``os.PathLike`` that is not a ``pathlib.Path``.
+
+    ``__str__`` deliberately disagrees with ``__fspath__``: any consumer that
+    converts with ``str()`` instead of ``os.fspath()`` reads a bogus path.
+    """
+
+    def __init__(self, path):
+        self._path = path
+
+    def __fspath__(self):
+        return str(self._path)
+
+    def __str__(self):
+        return "<not-the-path>"
+
+
+def test_run_accepts_generic_pathlike(example_network_path):
+    path = example_network_path("ninetriangles.net")
+    settings = {"silent": True, "num_trials": 1, "seed": 123}
+
+    result = infomap.run(_FsPathOnly(path), **settings)
+    expected = infomap.run(path, **settings)
+    assert result.codelength == pytest.approx(expected.codelength)
+
+
+def test_infomap_read_file_accepts_pathlike(example_network_path):
+    path = example_network_path("ninetriangles.net")
+
+    im = Infomap(silent=True, num_trials=1, seed=123)
+    im.read_file(_FsPathOnly(path))
+    im.run()
+
+    expected = _oo_codelength(
+        lambda im: im.read_file(str(path)), silent=True, num_trials=1, seed=123
+    )
+    assert im.codelength == pytest.approx(expected)
+
+
+def test_network_read_file_accepts_pathlike(example_network_path):
+    path = example_network_path("ninetriangles.net")
+
+    net = Network().read_file(_FsPathOnly(path))
+    assert net.num_nodes == Network().read_file(str(path)).num_nodes
+
+
+def test_network_from_file_accepts_generic_pathlike(example_network_path):
+    path = example_network_path("ninetriangles.net")
+
+    net = Network.from_file(_FsPathOnly(path))
+    assert net.num_nodes == Network.from_file(str(path)).num_nodes
+
+
 def test_run_network_matches_oo():
     net = Network()
     net.add_links(_LINKS)

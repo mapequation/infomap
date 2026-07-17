@@ -1,3 +1,4 @@
+import os
 import sys
 import warnings
 from collections import namedtuple
@@ -1062,12 +1063,14 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
     # Input
     # ----------------------------------------
 
-    def read_file(self, filename: str, accumulate: bool = True) -> None:
+    def read_file(
+        self, filename: str | os.PathLike[str], accumulate: bool = True
+    ) -> None:
         """Read network data from file.
 
         Parameters
         ----------
-        filename : str
+        filename : str or os.PathLike
         accumulate : bool, optional
             If the network data should be accumulated to already added
             nodes and links. Default ``True``.
@@ -1078,7 +1081,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             If the file cannot be opened or its content cannot be parsed.
         """
         with _engine_log_routing(), _translate_engine_errors(NetworkParseError):
-            self._core.readInputData(filename, accumulate)
+            self._core.readInputData(os.fsdecode(filename), accumulate)
 
     def add_node(
         self,
