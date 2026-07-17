@@ -43,6 +43,8 @@ namespace detail {
   struct PerLevelStat;
 } // namespace detail
 
+class ColumnarTwoLevel;
+
 // Cooperative cancellation hook (issue #412). Return true to stop the run at the
 // next checkpoint. Invoked only on the owner thread, so it is safe to enter
 // host-language APIs (R_CheckUserInterrupt, PyErr_CheckSignals) from it.
@@ -447,7 +449,9 @@ private:
 
   void runPartition()
   {
-    if (twoLevel)
+    if (columnarSearch)
+      columnarPartition();
+    else if (twoLevel)
       partition();
     else
       hierarchicalPartition();
@@ -465,14 +469,38 @@ private:
 
   void partition();
 
+  // Non-recursive columnar search engine (--columnar): optimize on the columnar
+  // SoA core and materialize the result into the InfoNode tree via initTree.
+  void columnarPartition();
+
+  // --- Native columnar leaf input (I/O migration) ---
+  // Build the columnar leaf SoA (flow, enter/exit, teleport, out+in CSR) directly
+  // from the StateNetwork in the init phase (before the CLI releases the links),
+  // reused across trials. Bypasses the InfoNode leaf tree as the optimizer's
+  // input; the tree is still built for output during the transition.
+  void buildColumnarLeafInput(Network& network);
+  // Whether the native leaf input is used (undirected, unit Markov time, no
+  // recorded teleportation / VMT); other cases keep the InfoNode leaf path.
+  bool columnarNativeInputEligible() const;
+
+  // Attach the active objective's composable correction (bias / meta / mem /
+  // lossy) to a columnar optimizer, reading leaf attributes from m_leafNodes.
+  // Shared by columnarPartition() and evaluateColumnarPartition().
+  void addColumnarCorrections(ColumnarTwoLevel& opt) const;
+
+  // Per-leaf module ids coarsest-first (top module .. finest module), read from
+  // the current InfoNode tree — the seed for a columnar codelength evaluation.
+  std::vector<std::vector<int>> leafModulePathsFromTree() const;
+
+  // Evaluate the current InfoNode partition's codelength on the columnar
+  // structure (base map equation + active correction). Falls back to the
+  // object-oriented calcCodelengthOnTree for a ragged tree. Used for the
+  // --no-infomap input-partition codelength under the columnar core.
+  double evaluateColumnarPartition();
+
   // ===================================================
   // runPartition: init: *
   // ===================================================
-
-  /**
-   * Done in network?
-   */
-  void initEnterExitFlow();
 
   void aggregateFlowValuesFromLeafToRoot();
 
@@ -648,6 +676,16 @@ protected:
 
   std::vector<InfoNode*> m_originalLeafNodes;
 
+  // Native columnar leaf input (I/O migration): the leaf SoA built once from the
+  // StateNetwork, reused across trials. Held as raw arrays (no ColumnarMapEquation
+  // header dependency); columnarPartition assembles a Level from them. Empty when
+  // the InfoNode leaf path is used (ineligible cases).
+  bool m_columnarNativeInput = false;
+  int m_columnarN = 0;
+  std::vector<double> m_colFlow, m_colEnter, m_colExit, m_colTeleFlow, m_colTeleWeight;
+  std::vector<int> m_colOutStart, m_colOutTarget, m_colInStart, m_colInTarget;
+  std::vector<double> m_colOutFlow, m_colInFlow;
+
   Network m_network;
   InitialPartition m_initialPartition; // nodeId -> moduleId
   // Pending physical multilayer partition: {layer_id, node_id, module_id} rows,
@@ -657,8 +695,6 @@ protected:
   const unsigned int SUPER_LEVEL_ADDITION = 1 << 20;
   bool m_isMain = true;
   unsigned int m_subLevel = 0;
-
-  bool m_calculateEnterExitFlow = false;
 
   double m_oneLevelCodelength = 0.0;
   unsigned int m_numNonTrivialTopModules = 0;
@@ -672,8 +708,6 @@ protected:
   double m_entropyRate = 0.0;
   double m_maxEntropy = 0.0;
   double m_maxFlow = 0.0;
-
-  double m_sumDanglingFlow = 0.0;
 
   Date m_startDate;
   Date m_endDate;

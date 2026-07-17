@@ -11,6 +11,7 @@
 #include "InfomapConfig.h"
 #include "InfoNode.h"
 #include "FlowData.h"
+#include "ColumnarMapEquation.h"
 #include "BiasedMapEquation.h"
 #include "MemMapEquation.h"
 #include "MetaMapEquation.h"
@@ -591,6 +592,12 @@ private:
 
     if (m_infomap.numLeafNodes() == 0)
       throw std::domain_error("No nodes to partition");
+
+    // Build the columnar leaf SoA straight from the network now, while the links
+    // are still present (the CLI releases them before the trials run). Reused
+    // across trials as the optimizer's input, bypassing the InfoNode leaf tree.
+    if (m_infomap.columnarNativeInputEligible())
+      m_infomap.buildColumnarLeafInput(m_network);
   }
 
   void releaseInputLinksIfCli()
@@ -713,6 +720,9 @@ private:
   {
     if (!infomap.noInfomap)
       infomap.runPartition();
+    else if (infomap.columnarSearch)
+      // Input-partition codelength on the columnar structure (base + correction).
+      infomap.m_hierarchicalCodelength = infomap.evaluateColumnarPartition();
     else
       infomap.m_hierarchicalCodelength = infomap.calcCodelengthOnTree(infomap.root(), true);
 
@@ -1013,6 +1023,59 @@ void InfomapBase::run(Network& network)
   Stopwatch totalTimer(true);
   RunSession runSession(*this, network, timing);
   auto runResult = runSession.run();
+
+  if (columnarCheck) {
+    // Phase-1a correctness gate: reproduce the final tree's hierarchical
+    // codelength from the columnar core. A match validates the new structure's
+    // ingestion + aggregation + base map-equation math before we build the
+    // move loop and interior tuning on it.
+    ColumnarMapEquation columnar;
+    columnar.buildFromTree(root(), m_leafNodes, isUndirectedClustering());
+    const double columnarL = columnar.hierarchicalCodelength();
+    const double treeL = getHierarchicalCodelength();
+    const double diff = columnarL - treeL;
+    const double rel = treeL > 1e-16 ? diff / treeL : 0.0;
+    Console().section("Columnar check");
+    Console::detail(0, "tree {} vs columnar {}, diff {:.3g} ({:.2g}%), {} modules, {} levels", io::toPrecision(treeL), io::toPrecision(columnarL), diff, rel * 100, columnar.numModules(), columnar.numLevels());
+  }
+
+  if (columnarTwoLevel) {
+    // Phase 1b/1c: run the columnar optimizer and compare to the OO result.
+    // Two-level parity is like-for-like under --two-level; hierarchical parity
+    // (two-level + enter-flow super-search) is compared to the full OO run
+    // (the residual gap is the recursion contribution, the M2 target).
+    Console().section("Columnar optimizer");
+
+    Stopwatch cw2(true);
+    ColumnarTwoLevel opt2;
+    opt2.buildFromLeaves(m_leafNodes, isUndirectedClustering(), seedToRandomNumberGenerator);
+    const double columnar2L = opt2.optimizeTwoLevel();
+    cw2.stop();
+
+    Stopwatch cwH(true);
+    ColumnarTwoLevel optH;
+    optH.buildFromLeaves(m_leafNodes, isUndirectedClustering(), seedToRandomNumberGenerator);
+    const double columnarHL = optH.optimizeHierarchical(levelAggregationLimit);
+    cwH.stop();
+
+    Stopwatch cwF(true);
+    ColumnarTwoLevel optF;
+    optF.buildFromLeaves(m_leafNodes, isUndirectedClustering(), seedToRandomNumberGenerator);
+    const double columnarFL = optF.optimizeFlexible();
+    cwF.stop();
+
+    Stopwatch cwC(true);
+    ColumnarTwoLevel optC;
+    optC.buildFromLeaves(m_leafNodes, isUndirectedClustering(), seedToRandomNumberGenerator);
+    const double columnarCL = optC.optimizeColumnar();
+    cwC.stop();
+
+    const double ooL = getHierarchicalCodelength();
+    // Report OO depth as shallowest..deepest branch (numLevels walks only the
+    // first-child chain, so on a ragged tree it is the shallow branch).
+    Console::detail(0, "OO {} (depth {}..{}) · columnar 2-level {} ({} mods, {:.3g}s) · columnar hier {} ({} lvl, {:.3g}s) · columnar flex {} ({} lvl, {:.3g}s), flex gap {:.2g}% · columnar converge {} ({} lvl, {:.3g}s), converge gap {:.2g}%", io::toPrecision(ooL), numLevels(), maxTreeDepth(), io::toPrecision(columnar2L), opt2.numTopModules(), cw2.getElapsedTimeInSec(), io::toPrecision(columnarHL), optH.numHierLevels(), cwH.getElapsedTimeInSec(), io::toPrecision(columnarFL), optF.numHierLevels(), cwF.getElapsedTimeInSec(), ooL > 1e-16 ? (columnarFL - ooL) / ooL * 100 : 0.0, io::toPrecision(columnarCL), optC.numHierLevels(), cwC.getElapsedTimeInSec(), ooL > 1e-16 ? (columnarCL - ooL) / ooL * 100 : 0.0);
+  }
+
   m_elapsedTime.stop();
   m_endDate = Date();
   runSession.printSummary(runResult);
@@ -1517,40 +1580,28 @@ void InfomapBase::generateSubNetwork(Network& network)
   }
   m_root.data.flow = sumNodeFlow;
   m_root.data.teleportFlow = sumTeleFlow;
-  // m_calculateEnterExitFlow = true; //TODO: Implement always in flow calculation
-  if (!this->regularized) {
-    m_calculateEnterExitFlow = true;
-  }
   if (std::abs(sumNodeFlow - 1.0) > 1e-10)
     Console::warn(1, "Total flow on nodes differs from 1.0 by {:g}.", sumNodeFlow - 1.0);
 
-  bool changeMarkovTime = std::abs(markovTime - 1) > 1e-3;
-  if (changeMarkovTime) {
-    Console::detail(1, "rescale link flow with global Markov time {:g}", markovTime);
-  }
-
+  // Global Markov time is now applied to the link flow in FlowCalculator, so the
+  // network flow read here is already scaled -- no rescale on the edge.
   network.forEachLink([&](unsigned int sourceIndex, unsigned int targetIndex, double weight, double& flow) {
     // Ignore self-links in optimization as it doesn't change enter/exit flow on modular level
     if (sourceIndex != targetIndex) {
-      m_leafNodes[sourceIndex]->addOutEdge(*m_leafNodes[targetIndex], weight, flow * markovTime);
+      m_leafNodes[sourceIndex]->addOutEdge(*m_leafNodes[targetIndex], weight, flow);
     }
   });
 
-  if (variableMarkovTime) {
-    Console::detail(1, "rescale link flow with variable Markov time");
-    if (std::abs(variableMarkovTimeDamping - 1) > 1e-9) {
-      Console::detail(1, "use variable Markov time strength {:g}", variableMarkovTimeDamping);
-    }
-  }
-
+  // Reporting stats only (entropy rate, max entropy, max flow, exposed via
+  // getEntropyRate/getMaxEntropy/getMaxFlow). Variable Markov time scaling itself now
+  // lives in FlowCalculator, applied to the network link flow that the InfoNode edges
+  // above already read -- so no per-edge rescale happens here anymore.
   double maxEntropy = 0.0;
   double maxFlow = 0.0;
   double entropyRate = 0.0;
   unsigned int maxDegree = 0;
   unsigned int maxOutDegree = 0;
   unsigned int maxInDegree = 0;
-  double totDegree = network.sumDegree();
-  std::vector<double> entropies(numNodes, 0);
 
   for (unsigned i = 0; i < numNodes; ++i) {
     InfoNode& node = *m_leafNodes[i];
@@ -1573,40 +1624,11 @@ void InfomapBase::generateSubNetwork(Network& network)
     maxEntropy = std::max(maxEntropy, entropy);
     entropyRate += m_leafNodes[i]->data.flow * entropy;
     maxFlow = std::max(maxFlow, node.data.flow);
-    entropies[i] = entropy; // Store for undirected networks
   }
 
   m_entropyRate = entropyRate;
   m_maxEntropy = maxEntropy;
   m_maxFlow = maxFlow;
-
-  double minLocalScale = variableMarkovTimeMinLocalScale;
-  double damping = variableMarkovTimeDamping;
-
-  double maxScale = infomath::linlog(maxFlow * totDegree, damping);
-
-  if (variableMarkovTime) {
-    if (damping < 0) {
-      maxScale = infomath::linlog(pow(2.0, maxEntropy), -damping);
-    }
-    for (unsigned i = 0; i < numNodes; ++i) {
-      InfoNode& node = *m_leafNodes[i];
-      double localScale = damping < 0 ? infomath::linlog(pow(2.0, entropies[i]), -damping) : infomath::linlog(std::max(minLocalScale, node.data.flow * totDegree), damping);
-      for (InfoEdge* e : node.outEdges()) {
-        if (isUndirectedFlow()) {
-          double oppositeLocalScale = damping < 0 ? infomath::linlog(pow(2.0, entropies[nodeIndexMap[e->target->stateId]]), -damping) : infomath::linlog(std::max(minLocalScale, e->target->data.flow * totDegree), damping);
-          localScale = std::max(localScale, oppositeLocalScale);
-        }
-        double localMarkovTimeScale = maxScale / std::max(minLocalScale, localScale);
-        e->data.flow *= localMarkovTimeScale;
-        // Note: deliberately do NOT write the scaled flow back into the shared StateNetwork
-        // (network.nodeLinkMap()). The optimizer and output use only the per-instance InfoEdge
-        // flow (e->data.flow), so the write-back was a non-idempotent side effect that made
-        // --parallel-trials unsafe (workers share one Network). Library getLinks(flow=True) /
-        // getLinkResults() now return the input link flow rather than the VMT-scaled flow.
-      }
-    }
-  }
 }
 
 void InfomapBase::generateSubNetwork(InfoNode& parent)
@@ -1665,8 +1687,11 @@ void InfomapBase::init()
 {
   Log(3) << "InfomapBase::init()...\n";
 
-  if (m_calculateEnterExitFlow && isMainInfomap())
-    initEnterExitFlow();
+  // Enter/exit flow now comes entirely from FlowCalculator, stored on the network and
+  // copied onto the leaf nodes in generateSubNetwork -- so initEnterExitFlow() (which
+  // recomputed it here from the InfoNode edges) is retired. FlowCalculator is the
+  // single source of truth for all flow, including Markov-time / variable-Markov-time
+  // scaling and recorded-teleportation enter/exit.
 
   initNetwork();
 
@@ -1698,9 +1723,251 @@ std::vector<unsigned int> InfomapBase::noiseTopModules() const
 // Run: *
 // ===================================================
 
+void InfomapBase::columnarPartition()
+{
+  Console::detail(1, "columnar partition (--columnar)");
+
+  // Optimize on the columnar SoA core: fine building blocks -> enter-flow
+  // up-build -> up/down convergence sweep, best of a few up-merge settings.
+  // --tune-iteration-limit caps the tuning sweeps (0 = until convergence).
+  // Draw the engine seed from m_rand, which runTrial reseeds per trial, so
+  // multiple trials (-N) explore different move orders instead of repeating.
+  const unsigned long trialSeed = m_rand.randInt(0, std::numeric_limits<int>::max());
+  ColumnarTwoLevel opt;
+  opt.setInterruptCallback([this] { pollInterrupt(); });
+  if (m_columnarNativeInput && !haveHardPartition()) {
+    // Native leaf SoA built from the network (see buildColumnarLeafInput),
+    // bypassing the InfoNode leaf tree as the optimizer's input.
+    ColumnarTwoLevel::Level leaf;
+    leaf.n = m_columnarN;
+    leaf.flow = m_colFlow;
+    leaf.enter = m_colEnter;
+    leaf.exit = m_colExit;
+    leaf.teleFlow = m_colTeleFlow;
+    leaf.teleWeight = m_colTeleWeight;
+    leaf.outStart = m_colOutStart;
+    leaf.outTarget = m_colOutTarget;
+    leaf.outFlow = m_colOutFlow;
+    leaf.inStart = m_colInStart;
+    leaf.inTarget = m_colInTarget;
+    leaf.inFlow = m_colInFlow;
+    // Global teleport total = sum of leaf teleport flow (buildFromLeaves derives
+    // this itself; buildFromLevel needs it passed so the module teleport terms
+    // use the whole-network total, not zero).
+    double totalTele = 0.0;
+    for (double tf : m_colTeleFlow)
+      totalTele += tf;
+    opt.buildFromLevel(leaf, isUndirectedClustering(), trialSeed, 0.0, recordedTeleportation, totalTele);
+  } else {
+    opt.buildFromLeaves(m_leafNodes, isUndirectedClustering(), trialSeed);
+  }
+  opt.setRecordedTeleportation(recordedTeleportation);
+  // The columnar interior refinement stops at a diminishing-returns knee; its
+  // default (1e-3, set in ColumnarTwoLevel) is a free speedup that skips the
+  // extra sweep whose only job is to detect full convergence, at no measured
+  // codelength cost. The shared OO --tune-iteration-relative-threshold default
+  // (1e-5) is too fine to trigger it, so honor that flag for the columnar engine
+  // only when the user changed it from the OO default (e.g. 0 to grind fully).
+  static const double kOoRelTuneDefault = Config().minimumRelativeTuneIterationImprovement;
+  if (minimumRelativeTuneIterationImprovement != kOoRelTuneDefault)
+    opt.setMinRelativeTuneImprovement(minimumRelativeTuneIterationImprovement);
+  addColumnarCorrections(opt);
+
+  const double columnarL = opt.optimizeColumnar(1, tuneIterationLimit);
+
+  // Materialize the result into the InfoNode tree (sets m_hierarchicalCodelength
+  // and prepares the tree exactly like the rest of the output pipeline expects).
+  auto paths = opt.toNodePaths(m_leafNodes);
+  initTree(paths);
+  m_numNonTrivialTopModules = calculateNumNonTrivialTopModules();
+  Console::detail(1, "columnar: codelength {}, materialized {}, {} levels",
+                  io::toPrecision(columnarL), io::toPrecision(m_hierarchicalCodelength), maxTreeDepth());
+}
+
+bool InfomapBase::columnarNativeInputEligible() const
+{
+  // Native leaf input reads the network's stored node enter/exit + link flow, both of
+  // which FlowCalculator now computes for every flow model -- including global and
+  // variable Markov time, which it scales into the link flow (and the enter/exit
+  // derived from it) before the network is handed off. No flow model is excluded.
+  return columnarSearch;
+}
+
+void InfomapBase::buildColumnarLeafInput(Network& network)
+{
+  const unsigned int numNodes = network.numNodes();
+  m_columnarN = static_cast<int>(numNodes);
+  m_colFlow.assign(numNodes, 0.0);
+  m_colEnter.assign(numNodes, 0.0);
+  m_colExit.assign(numNodes, 0.0);
+  m_colTeleFlow.assign(numNodes, 0.0);
+  m_colTeleWeight.assign(numNodes, 0.0);
+
+  // Per-node fields in nodes() order, which equals the consumed-CSR index order
+  // that forEachLink reports (the same invariant generateSubNetwork relies on).
+  unsigned int i = 0;
+  for (const auto& nodeIt : network.nodes()) {
+    const auto& n = nodeIt.second;
+    m_colFlow[i] = n.flow;
+    m_colEnter[i] = n.enterFlow;
+    m_colExit[i] = n.exitFlow;
+    m_colTeleFlow[i] = n.teleFlow;
+    m_colTeleWeight[i] = n.weight; // teleport weight
+    ++i;
+  }
+
+  // Out + in CSR (in is the transpose), self-links excluded as in generateSubNetwork.
+  std::vector<int> outDeg(numNodes, 0), inDeg(numNodes, 0);
+  network.forEachLink([&](unsigned int s, unsigned int t, double, double&) {
+    if (s != t) {
+      ++outDeg[s];
+      ++inDeg[t];
+    }
+  });
+  m_colOutStart.assign(numNodes + 1, 0);
+  m_colInStart.assign(numNodes + 1, 0);
+  for (unsigned int k = 0; k < numNodes; ++k) {
+    m_colOutStart[k + 1] = m_colOutStart[k] + outDeg[k];
+    m_colInStart[k + 1] = m_colInStart[k] + inDeg[k];
+  }
+  m_colOutTarget.assign(m_colOutStart[numNodes], 0);
+  m_colOutFlow.assign(m_colOutStart[numNodes], 0.0);
+  m_colInTarget.assign(m_colInStart[numNodes], 0);
+  m_colInFlow.assign(m_colInStart[numNodes], 0.0);
+  std::vector<int> outPos(m_colOutStart.begin(), m_colOutStart.end() - 1);
+  std::vector<int> inPos(m_colInStart.begin(), m_colInStart.end() - 1);
+  network.forEachLink([&](unsigned int s, unsigned int t, double, double& f) {
+    if (s == t)
+      return;
+    m_colOutTarget[outPos[s]] = static_cast<int>(t);
+    m_colOutFlow[outPos[s]] = f;
+    ++outPos[s];
+    m_colInTarget[inPos[t]] = static_cast<int>(s);
+    m_colInFlow[inPos[t]] = f;
+    ++inPos[t];
+  });
+  m_columnarNativeInput = true;
+  Console::detail(1, "columnar native leaf input built from network ({} nodes)", numNodes);
+}
+
+void InfomapBase::addColumnarCorrections(ColumnarTwoLevel& opt) const
+{
+  // Composable objective corrections (default none => base map equation).
+  // Biased entropy-bias: same total-degree divisor as BiasedMapEquation.
+  if (entropyBiasCorrection) {
+    double totalDegree = m_network.sumWeightedDegree();
+    if (totalDegree < m_network.sumDegree())
+      totalDegree = m_network.sumDegree();
+    opt.addCorrection(std::make_unique<BiasedEntropyCorrection>(entropyBiasCorrectionMultiplier, totalDegree));
+  }
+  // Metadata: one category per leaf (first dimension), flow-weighted by default
+  // (unweighted uses a uniform 1/numNodes, matching MetaMapEquation).
+  if (haveMetaData()) {
+    const bool weightByFlow = !unweightedMetaData;
+    const double unweightedFlow = m_leafNodes.empty() ? 1.0 : 1.0 / static_cast<double>(m_leafNodes.size());
+    std::vector<int> leafCategory(m_leafNodes.size(), 0);
+    std::vector<double> leafWeight(m_leafNodes.size(), 0.0);
+    for (std::size_t i = 0; i < m_leafNodes.size(); ++i) {
+      const auto& md = m_leafNodes[i]->metaData();
+      leafCategory[i] = md.empty() ? 0 : md[0];
+      leafWeight[i] = weightByFlow ? m_leafNodes[i]->data.flow : unweightedFlow;
+    }
+    opt.addCorrection(std::make_unique<MetaCorrection>(std::move(leafCategory), std::move(leafWeight), metaDataRate));
+  }
+  // Memory (state / higher-order): physical-node leaf-module codebook. The
+  // regularized-multilayer teleport prior is a separate correction, deferred.
+  else if (haveMemory()) {
+    std::vector<int> leafPhysical(m_leafNodes.size(), 0);
+    std::vector<double> leafFlow(m_leafNodes.size(), 0.0);
+    for (std::size_t i = 0; i < m_leafNodes.size(); ++i) {
+      leafPhysical[i] = static_cast<int>(m_leafNodes[i]->physicalId);
+      leafFlow[i] = m_leafNodes[i]->data.flow;
+    }
+    opt.addCorrection(std::make_unique<MemCorrection>(std::move(leafPhysical), std::move(leafFlow)));
+  }
+#if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
+  // Lossy (rate-distortion): additive noise-module correction. Being additive it
+  // composes with the others (unlike the OO single-inheritance objective). Reads
+  // the per-leaf Markov entropy share the OO Lossy init already computed from
+  // edge weights (native computation is part of the later input migration).
+  if (lossy) {
+    std::vector<double> lossyLeafFlow(m_leafNodes.size(), 0.0);
+    std::vector<double> lossyLeafEntropy(m_leafNodes.size(), 0.0);
+    for (std::size_t i = 0; i < m_leafNodes.size(); ++i) {
+      lossyLeafFlow[i] = m_leafNodes[i]->data.flow;
+      lossyLeafEntropy[i] = m_leafNodes[i]->lossyEntropy;
+    }
+    opt.addCorrection(std::make_unique<LossyCorrection>(std::move(lossyLeafFlow), std::move(lossyLeafEntropy), lossyLambda));
+  }
+#endif
+}
+
+std::vector<std::vector<int>> InfomapBase::leafModulePathsFromTree() const
+{
+  // For each leaf, walk parents up to (not including) the root, collecting the
+  // enclosing modules finest-first, then reverse to coarsest-first. Distinct
+  // module nodes get distinct ids (by pointer identity) so seedHierarchyFromLeafPaths
+  // can hash path prefixes into per-level module ids.
+  std::vector<std::vector<int>> paths(m_leafNodes.size());
+  std::unordered_map<const InfoNode*, int> moduleId;
+  moduleId.reserve(m_leafNodes.size());
+  for (std::size_t i = 0; i < m_leafNodes.size(); ++i) {
+    std::vector<int> chain; // finest-first
+    for (const InfoNode* m = m_leafNodes[i]->parent; m != nullptr && m != &m_root; m = m->parent) {
+      auto res = moduleId.emplace(m, static_cast<int>(moduleId.size()));
+      chain.push_back(res.first->second);
+    }
+    std::reverse(chain.begin(), chain.end()); // coarsest-first (top .. finest)
+    paths[i] = std::move(chain);
+  }
+  return paths;
+}
+
+double InfomapBase::evaluateColumnarPartition()
+{
+  ColumnarTwoLevel opt;
+  opt.buildFromLeaves(m_leafNodes, isUndirectedClustering(), seedToRandomNumberGenerator);
+  opt.setRecordedTeleportation(recordedTeleportation);
+  addColumnarCorrections(opt);
+  const auto paths = leafModulePathsFromTree();
+  if (!opt.seedHierarchyFromLeafPaths(paths)) {
+    // Ragged tree: evaluate on the object-oriented tree instead.
+    Console::detail(1, "columnar eval: ragged tree, using object-oriented codelength");
+    return calcCodelengthOnTree(root(), true);
+  }
+  return opt.hierarchicalCodelengthFromStack();
+}
+
 void InfomapBase::hierarchicalPartition()
 {
   Console::detail(1, "hierarchical partition");
+
+  if (hierFromBlocks) {
+    // Phase-1a (corrected) measurement: depart from the two-level-greedy path
+    // early. Instead of aggregating all the way to the coarse two-level optimum
+    // and then rebuilding downward, stop at fine building blocks and grow the
+    // hierarchy UPWARD with the enter-flow super-search — the correct
+    // hierarchical operator. No fine/coarse two-level tuning, no recursive
+    // rebuild. This isolates how far "depart early + correct up-operator" gets
+    // on its own, before any hierarchical tuning is added.
+    Console().section("Optimization (hierarchical-from-blocks experiment)");
+    m_tuneIterationIndex = 0;
+    // Building blocks: stop aggregation early (finest by default). Reuse
+    // --level-aggregation-limit as the block-granularity knob; 0 (its default,
+    // meaning "unlimited") would reproduce the coarse two-level optimum, so map
+    // it to 1 pass = the finest modules.
+    const unsigned int blockAggregationLimit = levelAggregationLimit == 0 ? 1 : levelAggregationLimit;
+    findTopModulesRepeatedly(blockAggregationLimit);
+    Console::detail(1, "blocks: {} building blocks, two-level codelength {}", numTopModules(), io::toPrecision(getCodelength()));
+
+    // Grow up with the enter-flow super-search (sets m_hierarchicalCodelength).
+    findHierarchicalSuperModules();
+
+    for (auto clusterIt = m_root.begin_tree(); !clusterIt.isEnd(); ++clusterIt)
+      clusterIt->index = clusterIt.moduleIndex();
+    Console::detail(1, "hier-from-blocks: {} levels, codelength {}", maxTreeDepth(), io::toPrecision(m_hierarchicalCodelength));
+    return;
+  }
 
   const auto depth = maxTreeDepth();
   if (depth > 2) {
@@ -1952,64 +2219,6 @@ void InfomapBase::restoreHardPartition()
 // ===================================================
 // Run: Init: *
 // ===================================================
-
-void InfomapBase::initEnterExitFlow()
-{
-  // Not done in Bayesian
-  // TODO: Skip this, always add enter/exit/tele flow from flow calculator
-  // Calculate enter/exit
-  double alpha = teleportationProbability;
-  double beta = 1.0 - alpha;
-
-  for (auto* n : m_leafNodes) {
-    n->data.enterFlow = n->data.exitFlow = 0.0;
-  }
-  if (!isUndirectedClustering()) {
-    for (auto* n : m_leafNodes) {
-      auto& node = *n;
-      node.data.teleportFlow = alpha * node.data.flow;
-      node.data.teleportSourceFlow = node.data.flow;
-      if (node.isDangling()) {
-        node.data.teleportFlow = node.data.flow;
-        node.data.danglingFlow = node.data.flow;
-        m_sumDanglingFlow += node.data.flow;
-      }
-    }
-    for (auto* n : m_leafNodes) {
-      auto& node = *n;
-      for (InfoEdge* e : node.outEdges()) {
-        InfoEdge& edge = *e;
-        // Self-links not included here, should not add to enter and exit flow in its enclosing module
-        edge.source->data.exitFlow += edge.data.flow;
-        edge.target->data.enterFlow += edge.data.flow;
-      }
-      if (recordedTeleportation) {
-        // Don't let self-teleportation add to the enter/exit flow (i.e. multiply with (1.0 - node.data.teleportWeight))
-        node.data.exitFlow += (alpha * node.data.flow + beta * node.data.danglingFlow) * (1.0 - node.data.teleportWeight);
-        node.data.enterFlow += (alpha * (1.0 - node.data.flow) + beta * (m_sumDanglingFlow - node.data.danglingFlow)) * node.data.teleportWeight;
-      }
-    }
-  } else {
-    for (auto* n : m_leafNodes) {
-      auto& node = *n;
-      node.data.teleportFlow = alpha * node.data.flow;
-      node.data.teleportSourceFlow = node.data.flow;
-      if (node.isDangling()) {
-        node.data.teleportFlow = node.data.flow;
-        node.data.danglingFlow = node.data.flow;
-      }
-      for (InfoEdge* e : node.outEdges()) {
-        InfoEdge& edge = *e;
-        // Self-links not included here, should not add to enter and exit flow in its enclosing module
-        double halfFlow = edge.data.flow / 2;
-        edge.source->data.exitFlow += halfFlow;
-        edge.target->data.exitFlow += halfFlow;
-        edge.source->data.enterFlow += halfFlow;
-        edge.target->data.enterFlow += halfFlow;
-      }
-    }
-  }
-}
 
 // Aggregate node and enter/exit flow to all tree nodes
 void InfomapBase::aggregateFlowValuesFromLeafToRoot()

@@ -5,6 +5,7 @@
 #include "TestUtils.h"
 
 #include <algorithm>
+#include <cmath>
 #include <map>
 #include <set>
 #include <sstream>
@@ -69,7 +70,89 @@ std::map<EdgeKey, double> aggregatedModuleFlow(InfoNode& root, bool undirected)
   return flows;
 }
 
-TEST_CASE("Cluster-data clu fixture initializes a two-level partition [fast][core][partition]")
+struct FixedPartitionResult {
+  double codelength;
+  double indexCodelength;
+};
+
+FixedPartitionResult evaluateFixedPartition(const std::string& extraFlags, bool columnar, bool selfLink = false, bool metadata = false)
+{
+  std::string flags = "--seed 123 --num-trials 1 --silent --no-infomap";
+  if (!extraFlags.empty())
+    flags += " " + extraFlags;
+  if (columnar)
+    flags += " --columnar";
+
+  InfomapWrapper im(flags);
+  infomap::test::addEdgeFixtureLinks(im, "graphs/twotriangles_unweighted.edges");
+  if (selfLink)
+    im.addLink(1, 1, 10.0);
+  if (metadata)
+    im.initMetaData(infomap::test::fixturePath("meta/twotriangles.meta"));
+  im.setInitialPartition({ { 1, 1 }, { 2, 1 }, { 3, 1 }, { 4, 2 }, { 5, 2 }, { 6, 2 } });
+  im.run();
+
+  CHECK(std::isfinite(im.codelength()));
+  CHECK(std::isfinite(im.getIndexCodelength()));
+  CHECK(im.codelength() >= 0.0);
+  CHECK(im.getIndexCodelength() >= -1e-12);
+  infomap::test::checkCanonicalPartition(im, { { 1, 2, 3 }, { 4, 5, 6 } });
+  return { im.codelength(), im.getIndexCodelength() };
+}
+
+FixedPartitionResult evaluateFixedStatePartition(bool columnar)
+{
+  std::string flags = "--seed 123 --num-trials 1 --silent --no-infomap";
+  if (columnar)
+    flags += " --columnar";
+
+  InfomapWrapper im(flags);
+  infomap::test::readNetworkFixture(im, "states.net");
+  im.setInitialPartition({ { 1, 1 }, { 2, 1 }, { 3, 1 }, { 4, 2 }, { 5, 2 }, { 6, 2 } });
+  im.run();
+
+  CHECK(std::isfinite(im.codelength()));
+  CHECK(std::isfinite(im.getIndexCodelength()));
+  infomap::test::checkCanonicalPartition(im, { { 1, 2, 3 }, { 4, 5, 6 } }, true);
+  return { im.codelength(), im.getIndexCodelength() };
+}
+
+TEST_CASE("Fixed partitions have identical OO and columnar codelengths [fast][core][partition][columnar-differential]")
+{
+  struct TestCase {
+    const char* flags;
+    bool selfLink;
+    bool metadata;
+  };
+  const TestCase cases[] = {
+    { "", false, false },
+    { "--directed", false, false },
+    { "--directed --recorded-teleportation", false, false },
+    { "--markov-time 2", false, false },
+    { "--variable-markov-time", false, false },
+    { "--regularized", false, false },
+    { "--entropy-corrected", false, false },
+    { "--meta-data-rate 2", false, true },
+    { "--directed --recorded-teleportation", true, false },
+  };
+
+  for (const auto& testCase : cases) {
+    INFO("flags: " << testCase.flags);
+    CAPTURE(testCase.selfLink);
+    CAPTURE(testCase.metadata);
+    const auto oo = evaluateFixedPartition(testCase.flags, false, testCase.selfLink, testCase.metadata);
+    const auto columnar = evaluateFixedPartition(testCase.flags, true, testCase.selfLink, testCase.metadata);
+    infomap::test::checkApproxCodelength(columnar.codelength, oo.codelength);
+    infomap::test::checkApproxCodelength(columnar.indexCodelength, oo.indexCodelength);
+  }
+
+  const auto ooState = evaluateFixedStatePartition(false);
+  const auto columnarState = evaluateFixedStatePartition(true);
+  infomap::test::checkApproxCodelength(columnarState.codelength, ooState.codelength);
+  infomap::test::checkApproxCodelength(columnarState.indexCodelength, ooState.indexCodelength);
+}
+
+TEST_CASE("Cluster-data clu fixture initializes a two-level partition [fast][core][partition][columnar-contract]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());
   im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
@@ -88,7 +171,7 @@ TEST_CASE("Cluster-data clu fixture initializes a two-level partition [fast][cor
   infomap::test::checkCanonicalPartition(im, { { 1, 2, 3 }, { 4, 5, 6 } });
 }
 
-TEST_CASE("Tree cluster-data fixture initializes a multi-level tree [fast][core][partition]")
+TEST_CASE("Tree cluster-data fixture initializes a multi-level tree [fast][core][partition][columnar-contract]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());
   im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
@@ -122,7 +205,7 @@ TEST_CASE("Tree cluster-data fixture initializes a multi-level tree [fast][core]
   infomap::test::checkRunSanity(im);
 }
 
-TEST_CASE("Tree cluster-data reinit and rerun stay stable on the same instance [fast][core][partition][lifecycle]")
+TEST_CASE("Tree cluster-data reinit and rerun stay stable on the same instance [fast][core][partition][lifecycle][columnar-contract]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());
   im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
@@ -427,7 +510,7 @@ TEST_CASE("InfoNode owns outgoing edges while incoming edges are non-owning refe
   CHECK(target.inDegree() == 1);
 }
 
-TEST_CASE("Soft cluster-data can be optimized away when it is suboptimal [fast][core][partition]")
+TEST_CASE("Soft cluster-data can be optimized away when it is suboptimal [fast][core][partition][columnar-contract]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());
   im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
@@ -445,7 +528,7 @@ TEST_CASE("Soft cluster-data can be optimized away when it is suboptimal [fast][
   infomap::test::checkCanonicalPartition(im, { { 1, 2, 3 }, { 4, 5, 6 } });
 }
 
-TEST_CASE("Hard cluster-data preserves the imposed coarse partition [fast][core][partition]")
+TEST_CASE("Hard cluster-data preserves the imposed coarse partition [fast][core][partition][columnar-contract]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());
   im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
@@ -465,7 +548,21 @@ TEST_CASE("Hard cluster-data preserves the imposed coarse partition [fast][core]
   infomap::test::checkCanonicalPartition(im, { { 1, 2, 3 }, { 4, 5, 6 } });
 }
 
-TEST_CASE("Embedded JSON path seeds the initial partition [fast][core][partition][json]")
+TEST_CASE("Hard cluster-data loaded during run preserves the imposed partition [fast][core][partition][columnar-contract]")
+{
+  InfomapWrapper im(infomap::test::defaultFlags("--cluster-data " + infomap::test::clusterFixturePath("twotriangles_two_modules.clu")));
+  im.clusterDataIsHard = true;
+  im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+
+  im.run();
+
+  infomap::test::checkRunSanity(im);
+  CHECK(im.numLeafNodes() == 6);
+  CHECK(im.numTopModules() == 2);
+  infomap::test::checkCanonicalPartition(im, { { 1, 2, 3 }, { 4, 5, 6 } });
+}
+
+TEST_CASE("Embedded JSON path seeds the initial partition [fast][core][partition][json][columnar-contract]")
 {
   // The embedded nodes[].path assigns three modules {1,2}, {3,4}, {5,6}.
   // With --no-infomap the result is exactly that imposed initial partition,
@@ -479,7 +576,7 @@ TEST_CASE("Embedded JSON path seeds the initial partition [fast][core][partition
   infomap::test::checkCanonicalPartition(im, { { 1, 2 }, { 3, 4 }, { 5, 6 } });
 }
 
-TEST_CASE("Hard cluster-data reinit and rerun stay stable on the same instance [fast][core][partition][lifecycle]")
+TEST_CASE("Hard cluster-data reinit and rerun stay stable on the same instance [fast][core][partition][lifecycle][columnar-contract]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());
   im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
@@ -511,7 +608,7 @@ TEST_CASE("Hard cluster-data reinit and rerun stay stable on the same instance [
   CHECK(im.codelength() == doctest::Approx(firstCodelength));
   CHECK(im.getIndexCodelength() == doctest::Approx(firstIndexCodelength));
 }
-TEST_CASE("Hard cluster-data rerun preserves leaf metadata on the same instance [fast][core][partition][lifecycle][parser]")
+TEST_CASE("Hard cluster-data rerun preserves leaf metadata on the same instance [fast][core][partition][lifecycle][parser][columnar-contract]")
 {
   InfomapWrapper im(infomap::test::defaultFlags("--meta-data-rate 2"));
   im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
@@ -677,7 +774,7 @@ TEST_CASE("Tree with rows that mix physical and state id columns fails determini
       std::runtime_error);
 }
 
-TEST_CASE("Tree round-trip reproduces codelength on a regular network [fast][core][partition][parser][lifecycle]")
+TEST_CASE("Tree round-trip reproduces codelength on a regular network [fast][core][partition][parser][lifecycle][columnar-contract]")
 {
   auto baseline = infomap::test::makeRunningInfomap(
       [](InfomapWrapper& im) { im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net")); },
@@ -686,7 +783,7 @@ TEST_CASE("Tree round-trip reproduces codelength on a regular network [fast][cor
   writeAndCheckRoundTrip(*baseline, infomap::test::repoPath("examples/networks/ninetriangles.net"), false, "ninetriangles");
 }
 
-TEST_CASE("Tree round-trip reproduces codelength on a higher-order (states) network [fast][core][partition][parser][lifecycle]")
+TEST_CASE("Tree round-trip reproduces codelength on a higher-order (states) network [fast][core][partition][parser][lifecycle][columnar-contract]")
 {
   auto baseline = infomap::test::makeRunningInfomap(
       [](InfomapWrapper& im) { im.readInputData(infomap::test::repoPath("examples/networks/states.net")); });
@@ -697,7 +794,7 @@ TEST_CASE("Tree round-trip reproduces codelength on a higher-order (states) netw
   writeAndCheckRoundTrip(*baseline, infomap::test::repoPath("examples/networks/states.net"), true, "states_state");
 }
 
-TEST_CASE("Tree round-trip reproduces codelength on a multilayer network [fast][core][partition][parser][lifecycle]")
+TEST_CASE("Tree round-trip reproduces codelength on a multilayer network [fast][core][partition][parser][lifecycle][columnar-contract]")
 {
   auto baseline = infomap::test::makeRunningInfomap(
       [](InfomapWrapper& im) { im.readInputData(infomap::test::repoPath("examples/networks/multilayer.net")); });
@@ -708,7 +805,7 @@ TEST_CASE("Tree round-trip reproduces codelength on a multilayer network [fast][
   writeAndCheckRoundTrip(*baseline, infomap::test::repoPath("examples/networks/multilayer.net"), true, "multilayer_state");
 }
 
-TEST_CASE("Tree cluster-data tolerates repeated reinit on the same higher-order instance [fast][core][partition][lifecycle]")
+TEST_CASE("Tree cluster-data tolerates repeated reinit on the same higher-order instance [fast][core][partition][lifecycle][columnar-contract]")
 {
   auto baseline = infomap::test::makeRunningInfomap(
       [](InfomapWrapper& im) { im.readInputData(infomap::test::repoPath("examples/networks/states.net")); });
@@ -730,7 +827,7 @@ TEST_CASE("Tree cluster-data tolerates repeated reinit on the same higher-order 
   std::remove(treePath.c_str());
 }
 
-TEST_CASE("No-infomap tree cluster-data reruns preserve loaded codelength [fast][core][partition][lifecycle]")
+TEST_CASE("No-infomap tree cluster-data reruns preserve loaded codelength [fast][core][partition][lifecycle][columnar-contract]")
 {
   auto baseline = infomap::test::makeRunningInfomap(
       [](InfomapWrapper& im) { im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net")); },
@@ -761,7 +858,7 @@ TEST_CASE("No-infomap tree cluster-data reruns preserve loaded codelength [fast]
 // must be 0. Before the fix in partition(), the one-level fallback path (triggered when
 // the found codelength is worse than the one-level codelength) left m_numNonTrivialTopModules
 // at its pre-fallback value instead of recalculating it.
-TEST_CASE("numNonTrivialTopModules is zero when all nodes are in one module [fast][core][partition]")
+TEST_CASE("numNonTrivialTopModules is zero when all nodes are in one module [fast][core][partition][columnar-contract]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());
   // Complete graph K5 — no community structure, one-level codelength is optimal.

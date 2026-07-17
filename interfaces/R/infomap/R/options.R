@@ -78,6 +78,10 @@ ACCURACY_OPTIONS <- list(
   list(type = "value", name = "tune_iteration_limit", flag = "--tune-iteration-limit", default = NULL, include = .skip_when_null),
   list(type = "value", name = "core_loop_codelength_threshold", flag = "--core-loop-codelength-threshold", default = 1e-10, include = .skip_when_not_equal(1e-10)),
   list(type = "value", name = "tune_iteration_relative_threshold", flag = "--tune-iteration-relative-threshold", default = 1e-05, include = .skip_when_not_equal(1e-05)),
+  list(type = "flag", name = "hier_from_blocks", flag = "--hier-from-blocks", default = FALSE),
+  list(type = "flag", name = "columnar_check", flag = "--columnar-check", default = FALSE),
+  list(type = "flag", name = "columnar_two_level", flag = "--columnar-two-level", default = FALSE),
+  list(type = "flag", name = "columnar", flag = "--columnar", default = FALSE),
   list(type = "flag", name = "inner_parallelization", flag = "--inner-parallelization", default = FALSE),
   list(type = "flag", name = "parallel_trials", flag = "--parallel-trials", default = FALSE),
   list(type = "flag", name = "converge", flag = "--converge", default = FALSE),
@@ -106,6 +110,7 @@ OPTION_FIELD_NAMES <- c(
   "multilayer_relax_limit_up", "multilayer_relax_limit_down", "multilayer_relax_by_jsd", "multilayer_relax_to_self",
   "seed", "num_trials", "core_loop_limit", "core_level_limit",
   "tune_iteration_limit", "core_loop_codelength_threshold", "tune_iteration_relative_threshold", "fast_hierarchical_solution",
+  "hier_from_blocks", "columnar_check", "columnar_two_level", "columnar",
   "inner_parallelization", "parallel_trials", "converge", "num_threads",
   "threads", "prefer_modular_solution", "num_random_moves", "max_degree_for_random_moves"
 )
@@ -179,6 +184,10 @@ OPTION_DEFAULTS <- list(
   core_loop_codelength_threshold = 1e-10,
   tune_iteration_relative_threshold = 1e-05,
   fast_hierarchical_solution = NULL,
+  hier_from_blocks = FALSE,
+  columnar_check = FALSE,
+  columnar_two_level = FALSE,
+  columnar = FALSE,
   inner_parallelization = FALSE,
   parallel_trials = FALSE,
   converge = FALSE,
@@ -280,10 +289,14 @@ OPTION_DEFAULTS <- list(
 #'   \item{`num_trials`}{Run this many independent trials and keep the best solution.}
 #'   \item{`core_loop_limit`}{Limit how many core loops try to move each node to the best module.}
 #'   \item{`core_level_limit`}{Limit how many times core loops are reapplied to the aggregated modular network to find larger structures. 0 means no limit.}
-#'   \item{`tune_iteration_limit`}{Limit the main iterations in the two-level partition algorithm. 0 means no limit.}
+#'   \item{`tune_iteration_limit`}{Limit the main tuning iterations: fine/coarse-tune sweeps in the two-level partition algorithm, or interior-layer refinement sweeps in the columnar engine (--columnar). 0 means no limit (run until convergence).}
 #'   \item{`core_loop_codelength_threshold`}{Require at least this codelength improvement to accept a new solution in a core loop.}
 #'   \item{`tune_iteration_relative_threshold`}{Require each tune iteration to improve codelength by this fraction of the initial two-level codelength.}
 #'   \item{`fast_hierarchical_solution`}{Find top modules quickly. Use -FF to keep all fast levels. Use -FFF to skip recursive refinement.}
+#'   \item{`hier_from_blocks`}{Experimental (phase-1a measurement): stop aggregation at fine building blocks and grow the hierarchy upward with the enter-flow super-search only, skipping two-level tuning and recursive refinement. Block granularity follows --level-aggregation-limit. For comparing an early-departure hierarchical build against the full production result.}
+#'   \item{`columnar_check`}{Experimental (phase-1a measurement): after a normal run, rebuild the final partition in the columnar core (base map equation) and log its hierarchical codelength against the tree's, as a correctness gate for the new data structure.}
+#'   \item{`columnar_two_level`}{Experimental (phase-1b measurement): run the columnar two-level optimizer on the leaf network and log its codelength against the OO result. Combine with --two-level for an apples-to-apples comparison.}
+#'   \item{`columnar`}{Experimental engine (columnar-hierarchical-core): use the non-recursive columnar search (fine building blocks, enter-flow up-build, and the up/down convergence sweep) instead of the recursive two-level-then-refine algorithm. The number of tuning sweeps follows --tune-iteration-limit (0 = until convergence). Base map equation only for now. Produces the normal output tree.}
 #'   \item{`inner_parallelization`}{Experimental: use batched parallel node moves for coarse optimization. Performance gains are workload-dependent, often require a relaxed core-loop-codelength-threshold and low tune-iteration-limit, and may produce a different partition than serial optimization.}
 #'   \item{`parallel_trials`}{Run independent trials in parallel with OpenMP. --num-trials remains the total number of trials; the number of parallel workers follows the OpenMP thread count (e.g. OMP_NUM_THREADS), clamped to --num-trials. Peak memory scales with the worker count. Nested OpenMP and --inner-parallelization are disabled inside workers.}
 #'   \item{`converge`}{Treat the trial count as a cap and stop early once the best codelength has plateaued (no meaningful improvement over several consecutive trials). Runs trials serially; cannot be combined with parallel trials or distributed sharding. With no explicit trial count, a default cap is used.}

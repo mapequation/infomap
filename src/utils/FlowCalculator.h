@@ -47,6 +47,8 @@ private:
   void calcRawdirFlow() noexcept;
   void usePrecomputedFlow(const StateNetwork&, const Config&);
 
+  void applyVariableMarkovTime(StateNetwork&, const Config&) noexcept;
+
   void finalize(StateNetwork&, const Config&, bool) noexcept;
 
   void addFlowNote(const std::string& note);

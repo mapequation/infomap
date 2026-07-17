@@ -118,7 +118,7 @@ std::vector<OutputRowIdentity> outputViewIdentities(InfomapWrapper& im, bool sta
 
 std::vector<double> runParallelTrialsFixture(const std::string& extraFlags = "")
 {
-  InfomapWrapper im("--silent --seed 7 --num-trials 4 --parallel-trials --no-file-output " + extraFlags);
+  InfomapWrapper im(infomap::test::withTestEngine("--silent --seed 7 --num-trials 4 --parallel-trials --no-file-output " + extraFlags));
   im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
   im.run();
   infomap::test::checkRunSanity(im);
@@ -138,7 +138,7 @@ double runSingleTrialFixture(unsigned int seed)
 // so parallel trial i must equal the serial run with seed 7+i element-wise for the same mode.
 double runSingleTrialFixtureWith(unsigned int seed, const std::string& extraFlags)
 {
-  InfomapWrapper im("--silent --seed " + std::to_string(seed) + " --num-trials 1 --no-file-output " + extraFlags);
+  InfomapWrapper im(infomap::test::withTestEngine("--silent --seed " + std::to_string(seed) + " --num-trials 1 --no-file-output " + extraFlags));
   im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
   im.run();
   infomap::test::checkRunSanity(im);
@@ -185,18 +185,18 @@ void buildClusteredNetwork(InfomapWrapper& im, unsigned int clusters)
   }
 }
 
-TEST_CASE("Run throws InterruptionError when the handler requests cancellation [fast][core][lifecycle][crash]")
+TEST_CASE("Run throws InterruptionError when the handler requests cancellation [fast][core][lifecycle][crash][columnar-contract]")
 {
-  InfomapWrapper im("--silent --seed 1 --num-trials 1 --no-file-output");
+  InfomapWrapper im(infomap::test::withTestEngine("--silent --seed 1 --num-trials 1 --no-file-output"));
   im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
   im.setInterruptHandler(&alwaysInterrupt);
 
   CHECK_THROWS_AS(im.run(), infomap::InterruptionError);
 }
 
-TEST_CASE("The in-optimizer cancellation checkpoint is reached during a run [fast][core][lifecycle]")
+TEST_CASE("The in-optimizer cancellation checkpoint is reached during a run [fast][core][lifecycle][columnar-contract]")
 {
-  InfomapWrapper im("--silent --seed 1 --num-trials 1 --no-file-output");
+  InfomapWrapper im(infomap::test::withTestEngine("--silent --seed 1 --num-trials 1 --no-file-output"));
   im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
   int polls = 0;
   im.setInterruptHandler(&countPolls, &polls);
@@ -210,14 +210,14 @@ TEST_CASE("The in-optimizer cancellation checkpoint is reached during a run [fas
   CHECK(polls > 2);
 }
 
-TEST_CASE("A non-cancelling handler produces the same result as a no-handler run [fast][core][lifecycle]")
+TEST_CASE("A non-cancelling handler produces the same result as a no-handler run [fast][core][lifecycle][columnar-contract]")
 {
   // Reference: no handler installed at all.
-  InfomapWrapper ref("--silent --seed 1 --num-trials 1 --no-file-output");
+  InfomapWrapper ref(infomap::test::withTestEngine("--silent --seed 1 --num-trials 1 --no-file-output"));
   ref.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
   ref.run();
 
-  InfomapWrapper im("--silent --seed 1 --num-trials 1 --no-file-output");
+  InfomapWrapper im(infomap::test::withTestEngine("--silent --seed 1 --num-trials 1 --no-file-output"));
   im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
   im.setInterruptHandler(&neverInterrupt);
   im.run();
@@ -229,9 +229,9 @@ TEST_CASE("A non-cancelling handler produces the same result as a no-handler run
   CHECK(im.codelength() == doctest::Approx(ref.codelength()));
 }
 
-TEST_CASE("requestInterrupt() aborts the run even when the handler returns false [fast][core][lifecycle][crash]")
+TEST_CASE("requestInterrupt() aborts the run even when the handler returns false [fast][core][lifecycle][crash][columnar-contract]")
 {
-  InfomapWrapper im("--silent --seed 1 --num-trials 1 --no-file-output");
+  InfomapWrapper im(infomap::test::withTestEngine("--silent --seed 1 --num-trials 1 --no-file-output"));
   im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
   // The handler never returns true; it sets the cancel flag directly, proving
   // the thread-safe flag path is observed independently of the callback return.
@@ -251,7 +251,7 @@ TEST_CASE("requestInterrupt() aborts the run even when the handler returns false
 // fresh one here — that is RNG continuation, not corruption.
 std::pair<std::vector<std::vector<unsigned int>>, double> interruptThenRecover()
 {
-  InfomapWrapper im("--silent --seed 1 --num-trials 1 --no-file-output");
+  InfomapWrapper im(infomap::test::withTestEngine("--silent --seed 1 --num-trials 1 --no-file-output"));
   im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
   int polls = 3; // cancel inside the optimization phase
   im.setInterruptHandler(&interruptAfter, &polls);
@@ -263,7 +263,7 @@ std::pair<std::vector<std::vector<unsigned int>>, double> interruptThenRecover()
   return { infomap::test::canonicalPartition(im.getModules()), im.codelength() };
 }
 
-TEST_CASE("An interrupted instance recovers to a sane, deterministic result [fast][core][lifecycle][crash]")
+TEST_CASE("An interrupted instance recovers to a sane, deterministic result [fast][core][lifecycle][crash][columnar-contract]")
 {
   // Identical interrupt+clear+rerun on two instances must give identical results:
   // no corrupt/nondeterministic state left behind, flag reset (F4).
@@ -352,7 +352,7 @@ TEST_CASE("Cancelling a recursive run from another thread never terminates [fast
   CHECK(outcome.rfind("wrong-type:", 0) != 0);
 }
 
-TEST_CASE("Infomap partitions the unweighted two-triangle fixture into two modules [fast][core][lifecycle]")
+TEST_CASE("Infomap partitions the unweighted two-triangle fixture into two modules [fast][core][lifecycle][columnar-contract]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());
   infomap::test::addEdgeFixtureLinks(im, "graphs/twotriangles_unweighted.edges");
@@ -365,7 +365,7 @@ TEST_CASE("Infomap partitions the unweighted two-triangle fixture into two modul
   infomap::test::checkCanonicalPartition(im, { { 1, 2, 3 }, { 4, 5, 6 } });
 }
 
-TEST_CASE("Infomap can rerun the same multi-trial instance safely [fast][core][lifecycle][crash]")
+TEST_CASE("Infomap can rerun the same multi-trial instance safely [fast][core][lifecycle][crash][columnar-contract]")
 {
   InfomapWrapper im(infomap::test::defaultFlags("--num-trials 2"));
   infomap::test::addEdgeFixtureLinks(im, "graphs/recorded_teleportation_directed.edges");
@@ -569,9 +569,9 @@ TEST_CASE("A bounded-draw engine without a bit generator drives the run [fast][c
   CHECK(stats->drawCount.load() > drawsAfterFirstRun);
 }
 
-TEST_CASE("Multi-trial run reports the best trial codelength [fast][core][lifecycle]")
+TEST_CASE("Multi-trial run reports the best trial codelength [fast][core][lifecycle][columnar-contract]")
 {
-  InfomapWrapper im("--silent --seed 1 --num-trials 5");
+  InfomapWrapper im(infomap::test::withTestEngine("--silent --seed 1 --num-trials 5"));
   im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
 
   im.run();
@@ -586,10 +586,10 @@ TEST_CASE("Multi-trial run reports the best trial codelength [fast][core][lifecy
   CHECK(im.codelength() == doctest::Approx(*bestIt));
 }
 
-TEST_CASE("Converge stops trials on a codelength plateau within the cap [fast][core][lifecycle]")
+TEST_CASE("Converge stops trials on a codelength plateau within the cap [fast][core][lifecycle][columnar-contract]")
 {
   const unsigned int cap = 30;
-  InfomapWrapper im("--silent --seed 1 --converge --num-trials " + std::to_string(cap));
+  InfomapWrapper im(infomap::test::withTestEngine("--silent --seed 1 --converge --num-trials " + std::to_string(cap)));
   im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
 
   im.run();
@@ -607,10 +607,10 @@ TEST_CASE("Converge stops trials on a codelength plateau within the cap [fast][c
   CHECK(im.codelength() == doctest::Approx(*bestIt));
 }
 
-TEST_CASE("Converge is deterministic for a given input and seed [fast][core][lifecycle]")
+TEST_CASE("Converge is deterministic for a given input and seed [fast][core][lifecycle][columnar-contract]")
 {
   auto runOnce = [] {
-    InfomapWrapper im("--silent --seed 1 --converge --num-trials 30");
+    InfomapWrapper im(infomap::test::withTestEngine("--silent --seed 1 --converge --num-trials 30"));
     im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
     im.run();
     return std::make_pair(im.codelengths().size(), im.codelength());
@@ -622,7 +622,7 @@ TEST_CASE("Converge is deterministic for a given input and seed [fast][core][lif
   CHECK(first.second == doctest::Approx(second.second)); // same best codelength
 }
 
-TEST_CASE("Run reports write machine-readable JSON with no-file-output [fast][core][lifecycle][output]")
+TEST_CASE("Run reports write machine-readable JSON with no-file-output [fast][core][lifecycle][output][columnar-contract]")
 {
   const std::vector<std::string> paths = {
     "run_report_timing.json",
@@ -630,7 +630,7 @@ TEST_CASE("Run reports write machine-readable JSON with no-file-output [fast][co
   };
   removeFiles(paths);
 
-  InfomapWrapper im("--silent --seed 7 --num-trials 2 --no-file-output --memory-report --timing-json " + paths[0] + " --summary-json " + paths[1]);
+  InfomapWrapper im(infomap::test::withTestEngine("--silent --seed 7 --num-trials 2 --no-file-output --memory-report --timing-json " + paths[0] + " --summary-json " + paths[1]));
   infomap::test::addEdgeFixtureLinks(im, "graphs/twotriangles_unweighted.edges");
 
   im.run();
@@ -674,9 +674,9 @@ TEST_CASE("Run reports write machine-readable JSON with no-file-output [fast][co
   removeFiles(paths);
 }
 
-TEST_CASE("Parallel trials report the best trial codelength [fast][core][lifecycle][openmp]")
+TEST_CASE("Parallel trials report the best trial codelength [fast][core][lifecycle][openmp][columnar-contract]")
 {
-  InfomapWrapper im("--silent --seed 7 --num-trials 4 --parallel-trials --no-file-output");
+  InfomapWrapper im(infomap::test::withTestEngine("--silent --seed 7 --num-trials 4 --parallel-trials --no-file-output"));
   im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
 
   im.run();
@@ -691,7 +691,7 @@ TEST_CASE("Parallel trials report the best trial codelength [fast][core][lifecyc
   CHECK(im.codelength() == doctest::Approx(*bestIt));
 }
 
-TEST_CASE("Parallel trials are deterministic for the same seed [fast][core][lifecycle][openmp]")
+TEST_CASE("Parallel trials are deterministic for the same seed [fast][core][lifecycle][openmp][columnar-contract]")
 {
   const auto first = runParallelTrialsFixture();
   const auto second = runParallelTrialsFixture();
@@ -701,7 +701,7 @@ TEST_CASE("Parallel trials are deterministic for the same seed [fast][core][life
   CHECK(first == second);
 }
 
-TEST_CASE("Parallel trials are invariant to worker count [fast][core][lifecycle][openmp]")
+TEST_CASE("Parallel trials are invariant to worker count [fast][core][lifecycle][openmp][columnar-contract]")
 {
 #ifdef _OPENMP
   // Worker count is driven by OMP_NUM_THREADS; the per-trial codelength vector must be
@@ -739,10 +739,10 @@ TEST_CASE("Parallel trial workers reset between strided trials [fast][core][life
 #endif
 }
 
-TEST_CASE("Parallel trials with one trial warn and run serially [fast][core][lifecycle]")
+TEST_CASE("Parallel trials with one trial warn and run serially [fast][core][lifecycle][columnar-contract]")
 {
   LogCapture capture;
-  InfomapWrapper im("--seed 7 --num-trials 1 --parallel-trials --no-file-output");
+  InfomapWrapper im(infomap::test::withTestEngine("--seed 7 --num-trials 1 --parallel-trials --no-file-output"));
   infomap::test::addEdgeFixtureLinks(im, "graphs/twotriangles_unweighted.edges");
 
   im.run();
@@ -752,10 +752,10 @@ TEST_CASE("Parallel trials with one trial warn and run serially [fast][core][lif
   CHECK(capture.output.str().find("--parallel-trials requires --num-trials > 1") != std::string::npos);
 }
 
-TEST_CASE("Parallel trials run with variable Markov time without falling back [fast][core][lifecycle]")
+TEST_CASE("Parallel trials run with variable Markov time without falling back [fast][core][lifecycle][columnar-contract]")
 {
   LogCapture capture;
-  InfomapWrapper im("--seed 7 --num-trials 2 --parallel-trials --variable-markov-time --no-file-output");
+  InfomapWrapper im(infomap::test::withTestEngine("--seed 7 --num-trials 2 --parallel-trials --variable-markov-time --no-file-output"));
   infomap::test::addEdgeFixtureLinks(im, "graphs/twotriangles_unweighted.edges");
 
   im.run();
@@ -765,10 +765,10 @@ TEST_CASE("Parallel trials run with variable Markov time without falling back [f
   CHECK(capture.output.str().find("is not supported with --variable-markov-time") == std::string::npos);
 }
 
-TEST_CASE("Parallel trials run with entropy correction without falling back [fast][core][lifecycle]")
+TEST_CASE("Parallel trials run with entropy correction without falling back [fast][core][lifecycle][columnar-contract]")
 {
   LogCapture capture;
-  InfomapWrapper im("--seed 7 --num-trials 2 --parallel-trials --entropy-corrected --no-file-output");
+  InfomapWrapper im(infomap::test::withTestEngine("--seed 7 --num-trials 2 --parallel-trials --entropy-corrected --no-file-output"));
   infomap::test::addEdgeFixtureLinks(im, "graphs/twotriangles_unweighted.edges");
 
   im.run();
@@ -778,7 +778,7 @@ TEST_CASE("Parallel trials run with entropy correction without falling back [fas
   CHECK(capture.output.str().find("is not supported with --entropy-corrected") == std::string::npos);
 }
 
-TEST_CASE("Serial entropy correction is deterministic across fresh instances [fast][core][lifecycle]")
+TEST_CASE("Serial entropy correction is deterministic across fresh instances [fast][core][lifecycle][columnar-contract]")
 {
   // Hierarchical search spawns sub-Infomap instances; entropy bias correction must keep using
   // the full network's total degree / node count (formerly a shared static, now propagated to
@@ -787,7 +787,7 @@ TEST_CASE("Serial entropy correction is deterministic across fresh instances [fa
   // tie-breaking differs across libm/FP), so a golden number is not portable. Propagation
   // correctness (serial results unchanged vs the pre-fix build) is verified out of band.
   const auto run = [] {
-    InfomapWrapper im("--silent --seed 7 --num-trials 1 --entropy-corrected --no-file-output");
+    InfomapWrapper im(infomap::test::withTestEngine("--silent --seed 7 --num-trials 1 --entropy-corrected --no-file-output"));
     im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
     im.run();
     infomap::test::checkRunSanity(im);
@@ -797,7 +797,7 @@ TEST_CASE("Serial entropy correction is deterministic across fresh instances [fa
   CHECK(run() == doctest::Approx(run()));
 }
 
-TEST_CASE("Parallel trials with variable Markov time match serial trials [fast][core][lifecycle][openmp]")
+TEST_CASE("Parallel trials with variable Markov time match serial trials [fast][core][lifecycle][openmp][columnar-contract]")
 {
 #ifdef _OPENMP
   // Each parallel trial i must equal the serial single-trial run with seed 7+i for the same mode.
@@ -810,7 +810,7 @@ TEST_CASE("Parallel trials with variable Markov time match serial trials [fast][
 #endif
 }
 
-TEST_CASE("Parallel trials with entropy correction match serial trials [fast][core][lifecycle][openmp]")
+TEST_CASE("Parallel trials with entropy correction match serial trials [fast][core][lifecycle][openmp][columnar-contract]")
 {
 #ifdef _OPENMP
   const auto codelengths = runParallelTrialsFixture("--entropy-corrected");
@@ -821,7 +821,7 @@ TEST_CASE("Parallel trials with entropy correction match serial trials [fast][co
 #endif
 }
 
-TEST_CASE("Parallel trials with variable Markov time are invariant to worker count [fast][core][lifecycle][openmp]")
+TEST_CASE("Parallel trials with variable Markov time are invariant to worker count [fast][core][lifecycle][openmp][columnar-contract]")
 {
 #ifdef _OPENMP
   const int previousThreads = omp_get_max_threads();
@@ -840,7 +840,7 @@ TEST_CASE("Parallel trials with variable Markov time are invariant to worker cou
 #endif
 }
 
-TEST_CASE("Parallel trials with entropy correction are invariant to worker count [fast][core][lifecycle][openmp]")
+TEST_CASE("Parallel trials with entropy correction are invariant to worker count [fast][core][lifecycle][openmp][columnar-contract]")
 {
 #ifdef _OPENMP
   const int previousThreads = omp_get_max_threads();
@@ -874,7 +874,7 @@ TEST_CASE("Parallel trials warn when inner parallelization is requested [fast][c
 #endif
 }
 
-TEST_CASE("Infomap reruns ninetriangles deterministically on the same instance [fast][core][lifecycle][crash]")
+TEST_CASE("Infomap reruns ninetriangles deterministically on the same instance [fast][core][lifecycle][crash][columnar-contract]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());
   im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
@@ -888,9 +888,13 @@ TEST_CASE("Infomap reruns ninetriangles deterministically on the same instance [
 
   im.run();
   infomap::test::checkRunSanity(im);
+
+  CHECK(infomap::test::canonicalPartition(im.getModules()) == firstPartition);
+  CHECK(im.codelength() == doctest::Approx(firstCodelength));
+  CHECK(im.getIndexCodelength() == doctest::Approx(firstIndexCodelength));
 }
 
-TEST_CASE("readInputData accumulate=false replaces the previous network [fast][core][lifecycle][parser]")
+TEST_CASE("readInputData accumulate=false replaces the previous network [fast][core][lifecycle][parser][columnar-contract]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());
 
@@ -907,7 +911,7 @@ TEST_CASE("readInputData accumulate=false replaces the previous network [fast][c
   infomap::test::checkCanonicalPartition(im, { { 3, 4 } });
 }
 
-TEST_CASE("readInputData accumulate=true appends first-order fixtures [fast][core][lifecycle][parser]")
+TEST_CASE("readInputData accumulate=true appends first-order fixtures [fast][core][lifecycle][parser][columnar-contract]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());
 
@@ -924,7 +928,7 @@ TEST_CASE("readInputData accumulate=true appends first-order fixtures [fast][cor
   infomap::test::checkCanonicalPartition(im, { { 1, 2 }, { 3, 4 } });
 }
 
-TEST_CASE("readInputData accumulate mode stays stable across multiple runs on the same instance [fast][core][lifecycle][parser]")
+TEST_CASE("readInputData accumulate mode stays stable across multiple runs on the same instance [fast][core][lifecycle][parser][columnar-contract]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());
 
@@ -956,7 +960,7 @@ TEST_CASE("readInputData accumulate mode stays stable across multiple runs on th
   infomap::test::checkCanonicalPartition(im, { { 3, 4 } });
 }
 
-TEST_CASE("Higher-order module queries require state ids [fast][core][lifecycle]")
+TEST_CASE("Higher-order module queries require state ids [fast][core][lifecycle][columnar-contract]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());
   infomap::test::readNetworkFixture(im, "states.net");
@@ -970,7 +974,7 @@ TEST_CASE("Higher-order module queries require state ids [fast][core][lifecycle]
   CHECK_THROWS_WITH_AS(im.getModules(false), "Cannot get modules on higher-order network without states.", std::runtime_error);
 }
 
-TEST_CASE("Higher-order input reruns deterministically on the same instance [fast][core][lifecycle][crash]")
+TEST_CASE("Higher-order input reruns deterministically on the same instance [fast][core][lifecycle][crash][columnar-contract]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());
   infomap::test::readNetworkFixture(im, "states.net");
@@ -990,7 +994,7 @@ TEST_CASE("Higher-order input reruns deterministically on the same instance [fas
   CHECK(im.getIndexCodelength() == doctest::Approx(firstIndexCodelength));
 }
 
-TEST_CASE("File-backed multilayer input clusters as a higher-order network [fast][core][lifecycle][parser]")
+TEST_CASE("File-backed multilayer input clusters as a higher-order network [fast][core][lifecycle][parser][columnar-contract]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());
   infomap::test::readNetworkFixture(im, "multilayer.net");
@@ -1250,7 +1254,7 @@ TEST_CASE("Higher-order metadata-bearing subnetwork rebuild stays stable [fast][
   CHECK(std::get<2>(secondRun) == doctest::Approx(std::get<2>(firstRun)));
 }
 
-TEST_CASE("writeTree and writeClu render higher-order state output [fast][core][output]")
+TEST_CASE("writeTree and writeClu render higher-order state output [fast][core][output][columnar-contract]")
 {
   auto im = infomap::test::makeRunningInfomap(
       [&](InfomapWrapper& infomap) { infomap::test::readNetworkFixture(infomap, "states.net"); });
@@ -1273,7 +1277,7 @@ TEST_CASE("writeTree and writeClu render higher-order state output [fast][core][
   std::remove(cluPath.c_str());
 }
 
-TEST_CASE("OutputView projects first-order leaf rows [fast][core][output]")
+TEST_CASE("OutputView projects first-order leaf rows [fast][core][output][columnar-contract]")
 {
   auto im = infomap::test::makeRunningInfomap(
       [&](InfomapWrapper& infomap) { infomap::test::addEdgeFixtureLinks(infomap, "graphs/twotriangles_unweighted.edges"); });
@@ -1295,7 +1299,7 @@ TEST_CASE("OutputView projects first-order leaf rows [fast][core][output]")
   CHECK(nonEmptyPaths == physicalIds.size());
 }
 
-TEST_CASE("OutputView separates higher-order physical and state rows [fast][core][output]")
+TEST_CASE("OutputView separates higher-order physical and state rows [fast][core][output][columnar-contract]")
 {
   auto im = infomap::test::makeRunningInfomap(
       [&](InfomapWrapper& infomap) { infomap::test::readNetworkFixture(infomap, "states.net"); });
@@ -1318,7 +1322,7 @@ TEST_CASE("OutputView separates higher-order physical and state rows [fast][core
   CHECK(stateRows.size() == 6);
 }
 
-TEST_CASE("OutputView exposes multilayer state layer ids [fast][core][output]")
+TEST_CASE("OutputView exposes multilayer state layer ids [fast][core][output][columnar-contract]")
 {
   auto im = infomap::test::makeRunningInfomap(
       [&](InfomapWrapper& infomap) { infomap::test::readNetworkFixture(infomap, "multilayer.net"); });
@@ -1336,7 +1340,7 @@ TEST_CASE("OutputView exposes multilayer state layer ids [fast][core][output]")
   CHECK(foundLayer);
 }
 
-TEST_CASE("OutputView applies bipartite hide filter centrally [fast][core][output]")
+TEST_CASE("OutputView applies bipartite hide filter centrally [fast][core][output][columnar-contract]")
 {
   auto im = infomap::test::makeRunningInfomap(
       [&](InfomapWrapper& infomap) { infomap.readInputData(infomap::test::repoPath("examples/networks/bipartite.net")); });
@@ -1352,7 +1356,7 @@ TEST_CASE("OutputView applies bipartite hide filter centrally [fast][core][outpu
   CHECK(physicalIds == std::vector<unsigned int> { 1, 2, 3 });
 }
 
-TEST_CASE("writeFlowTree is stable across repeated calls on the same instance [fast][core][output][regression]")
+TEST_CASE("writeFlowTree is stable across repeated calls on the same instance [fast][core][output][regression][columnar-contract]")
 {
   auto im = infomap::test::makeRunningInfomap(
       [&](InfomapWrapper& infomap) { infomap::test::addEdgeFixtureLinks(infomap, "graphs/twotriangles_unweighted.edges"); });
@@ -1372,7 +1376,7 @@ TEST_CASE("writeFlowTree is stable across repeated calls on the same instance [f
   std::remove(secondPath.c_str());
 }
 
-TEST_CASE("writeResult renders selected first-order output artifacts [fast][core][output]")
+TEST_CASE("writeResult renders selected first-order output artifacts [fast][core][output][columnar-contract]")
 {
   auto im = infomap::test::makeRunningInfomap(
       [&](InfomapWrapper& infomap) { infomap::test::addEdgeFixtureLinks(infomap, "graphs/twotriangles_unweighted.edges"); });
@@ -1408,7 +1412,7 @@ TEST_CASE("writeResult renders selected first-order output artifacts [fast][core
   removeFiles(paths);
 }
 
-TEST_CASE("writeResult renders selected physical and state output artifacts [fast][core][output]")
+TEST_CASE("writeResult renders selected physical and state output artifacts [fast][core][output][columnar-contract]")
 {
   auto im = infomap::test::makeRunningInfomap(
       [&](InfomapWrapper& infomap) { infomap::test::readNetworkFixture(infomap, "states.net"); });

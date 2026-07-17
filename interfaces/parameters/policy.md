@@ -73,6 +73,10 @@ Actions: **keep** = First-class option on the surface in 3.0 (the default for ev
 | `--core-loop-codelength-threshold` | Accuracy | keep | keep | keep | keep |
 | `--tune-iteration-relative-threshold` | Accuracy | keep | keep | keep | keep |
 | `--fast-hierarchical-solution` | Accuracy | keep | keep | keep | keep |
+| `--hier-from-blocks` | Accuracy | keep | keep | keep | keep |
+| `--columnar-check` | Accuracy | keep | keep | keep | keep |
+| `--columnar-two-level` | Accuracy | keep | keep | keep | keep |
+| `--columnar` | Accuracy | keep | keep | keep | keep |
 | `--inner-parallelization` | Accuracy | keep | keep | keep | **hide** |
 | `--parallel-trials` | Accuracy | keep | keep | keep | **hide** |
 | `--converge` | Accuracy | keep | keep | keep | keep |
