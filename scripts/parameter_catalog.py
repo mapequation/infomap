@@ -252,6 +252,10 @@ class Parameter:
             base = "float" if self.long_type in {"probability", "number"} else "int"
         elif self.long_type == "list":
             base = "list[str] | tuple[str, ...]"
+        elif self.long_type == "path":
+            # Path options follow the package-wide file-path contract: accept
+            # str | os.PathLike, decoded to str at the Options boundary.
+            base = "str | os.PathLike[str]"
         else:
             base = "str"
         return base if self.python_default_value() != "None" else f"{base} | None"
@@ -277,6 +281,8 @@ class Parameter:
             return "int, optional"
         if self.long_type in {"number", "probability"}:
             return "float, optional"
+        if self.long_type == "path":
+            return "str or os.PathLike, optional"
         return "str, optional"
 
     def python_doc_description(self) -> str:

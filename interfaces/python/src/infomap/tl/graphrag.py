@@ -300,7 +300,7 @@ def _output_paths(output):
             "communities": None,
         }
 
-    output_path = Path(output)
+    output_path = Path(os.fsdecode(output))
     if output_path.suffix.lower() == ".parquet":
         output_dir = output_path.parent
         communities_path = output_path
@@ -734,7 +734,7 @@ def run_graphrag_communities(
             stacklevel=2,
         )
 
-    input_path = Path(input_dir)
+    input_path = Path(os.fsdecode(input_dir))
     graph = read_graphrag(
         input_path / entities_name,
         input_path / relationships_name,

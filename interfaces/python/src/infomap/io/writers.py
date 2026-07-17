@@ -14,6 +14,10 @@ Three hosts share these mixins:
 Each host provides ``_writer_core()`` returning the engine core to write
 from; the default resolves ``self._core`` (Infomap, Network), and ``Result``
 overrides it with its stale-guard.
+
+Filenames follow the package-wide file-path contract: ``str | os.PathLike``,
+decoded with ``os.fsdecode`` -- the same conversion the file readers use, so
+the same path value works on both sides of a run.
 """
 
 from __future__ import annotations
@@ -79,7 +83,7 @@ class _ResultWritersMixin(_WritersBase):
         filename : str or os.PathLike
             The filename.
         """
-        filename = os.fspath(filename)
+        filename = os.fsdecode(filename)
         _, ext = os.path.splitext(filename)
         ext = ext[1:]  # remove the dot
 
@@ -145,7 +149,7 @@ class _ResultWritersMixin(_WritersBase):
             depth = depth_level if depth_level is not None else 1
         core = self._writer_core()
         with _translate_engine_errors():
-            core.writeClu(os.fspath(filename), states, depth)
+            core.writeClu(os.fsdecode(filename), states, depth)
 
     def write_tree(
         self, filename: str | os.PathLike[str], states: bool = False
@@ -167,7 +171,7 @@ class _ResultWritersMixin(_WritersBase):
         """
         core = self._writer_core()
         with _translate_engine_errors():
-            core.writeTree(os.fspath(filename), states)
+            core.writeTree(os.fsdecode(filename), states)
 
     def write_flow_tree(
         self, filename: str | os.PathLike[str], states: bool = False
@@ -189,7 +193,7 @@ class _ResultWritersMixin(_WritersBase):
         """
         core = self._writer_core()
         with _translate_engine_errors():
-            core.writeFlowTree(os.fspath(filename), states)
+            core.writeFlowTree(os.fsdecode(filename), states)
 
     def write_newick(
         self, filename: str | os.PathLike[str], states: bool = False
@@ -211,7 +215,7 @@ class _ResultWritersMixin(_WritersBase):
         """
         core = self._writer_core()
         with _translate_engine_errors():
-            core.writeNewickTree(os.fspath(filename), states)
+            core.writeNewickTree(os.fsdecode(filename), states)
 
     def write_json(
         self, filename: str | os.PathLike[str], states: bool = False
@@ -233,7 +237,7 @@ class _ResultWritersMixin(_WritersBase):
         """
         core = self._writer_core()
         with _translate_engine_errors():
-            core.writeJsonTree(os.fspath(filename), states)
+            core.writeJsonTree(os.fsdecode(filename), states)
 
     def write_csv(
         self, filename: str | os.PathLike[str], states: bool = False
@@ -255,7 +259,7 @@ class _ResultWritersMixin(_WritersBase):
         """
         core = self._writer_core()
         with _translate_engine_errors():
-            core.writeCsvTree(os.fspath(filename), states)
+            core.writeCsvTree(os.fsdecode(filename), states)
 
 
 class _NetworkWritersMixin(_WritersBase):
@@ -302,7 +306,7 @@ class _NetworkWritersMixin(_WritersBase):
         """
         core = self._writer_core()
         with _translate_engine_errors():
-            core.network().writeStateNetwork(os.fspath(filename))
+            core.network().writeStateNetwork(os.fsdecode(filename))
 
     def write_pajek(
         self, filename: str | os.PathLike[str], flow: bool = False
@@ -323,7 +327,7 @@ class _NetworkWritersMixin(_WritersBase):
         """
         core = self._writer_core()
         with _translate_engine_errors():
-            core.network().writePajekNetwork(os.fspath(filename), flow)
+            core.network().writePajekNetwork(os.fsdecode(filename), flow)
 
 
 class _InfomapWritersMixin(_ResultWritersMixin, _NetworkWritersMixin):

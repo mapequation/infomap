@@ -9,6 +9,7 @@ result-artifact writers (tree/ftree/clu/Newick/JSON/CSV) live on
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import pytest
@@ -125,6 +126,46 @@ def test_result_writers_accept_path_objects(run_result, tmp_path):
     target: Path = tmp_path / "pathlib.tree"
 
     result.write_tree(target)
+
+    assert target.stat().st_size > 0
+
+
+def test_result_writers_accept_generic_pathlike(run_result, tmp_path, fspath_only):
+    _, result = run_result
+    target: Path = tmp_path / "generic.tree"
+
+    result.write_tree(fspath_only(target))
+
+    assert target.stat().st_size > 0
+
+
+def test_result_writers_accept_bytes_paths(run_result, tmp_path):
+    # The readers decode with os.fsdecode (#809), which also accepts a bytes
+    # path; the writers must mirror it so the same path value works on both
+    # sides of a run instead of leaking a raw SWIG TypeError.
+    _, result = run_result
+    target: Path = tmp_path / "bytes.tree"
+
+    result.write_tree(os.fsencode(target))
+
+    assert target.stat().st_size > 0
+
+
+def test_result_generic_write_accepts_bytes_paths(run_result, tmp_path):
+    _, result = run_result
+    target: Path = tmp_path / "generic-bytes.tree"
+
+    result.write(os.fsencode(target))
+
+    assert target.stat().st_size > 0
+
+
+def test_network_writers_accept_bytes_paths(tmp_path):
+    net = Network()
+    net.add_links(_LINKS)
+    target: Path = tmp_path / "bytes.net"
+
+    net.write_pajek(os.fsencode(target))
 
     assert target.stat().st_size > 0
 
