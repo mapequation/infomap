@@ -417,6 +417,95 @@ def _option_choices_lines(catalog: ParameterCatalog) -> list[str]:
     return lines
 
 
+# Static runtime helpers: the path-typed options follow the package-wide
+# file-path contract (str | os.PathLike, decoded with os.fsdecode like the
+# file readers and writers), and -- together with the free-string options --
+# must survive the rendered argument string, which the engine splits on
+# whitespace with no quoting support. Normalize and validate at the Options
+# boundary so every entry point (Options()/Infomap()/run()/Network.run())
+# gets the same contract and a clear error instead of a silent misparse.
+_NORMALIZE_OPTION_PATHS_HELPER = [
+    "def _normalize_option_paths(options):",
+    '    """Decode path-typed option values (os.PathLike -> str) in place.',
+    "",
+    "    The path-typed options follow the package-wide file-path contract",
+    "    (str | os.PathLike, decoded with os.fsdecode like the file readers",
+    "    and writers); the rendered argument string needs plain str. A value",
+    "    that is not path-like gets a TypeError naming the option here,",
+    "    instead of a confusing engine parse error downstream.",
+    '    """',
+    "    for name in _OPTION_PATHS:",
+    "        value = options.get(name)",
+    "        if value is None or isinstance(value, str):",
+    "            continue",
+    "        try:",
+    "            options[name] = os.fsdecode(value)",
+    "        except TypeError:",
+    "            raise TypeError(",
+    '                f"{name}={value!r} is not a valid path: pass a str or "',
+    '                "os.PathLike."',
+    "            ) from None",
+]
+
+
+_VALIDATE_OPTION_ARG_STRINGS_HELPER = [
+    "def _validate_option_arg_strings(options):",
+    '    """Reject string values the rendered argument string cannot carry.',
+    "",
+    "    Rendered options travel to the engine as a whitespace-separated",
+    "    argument string with no quoting support, so a value containing",
+    "    whitespace would be silently split into separate tokens (a",
+    "    cluster_data path 'my file.clu' reads as 'my'). Reject it here,",
+    "    naming the option and the reason.",
+    '    """',
+    "    for name in _OPTION_PATHS + _OPTION_FREE_STRINGS:",
+    "        value = options.get(name)",
+    "        if isinstance(value, str) and any(ch.isspace() for ch in value):",
+    "            raise ValueError(",
+    '                f"{name}={value!r} contains whitespace, which the engine "',
+    '                "argument string cannot carry (arguments are split on "',
+    '                "whitespace, with no quoting). Use a whitespace-free value."',
+    "            )",
+]
+
+
+def _option_path_lines(catalog: ParameterCatalog) -> list[str]:
+    """The path-typed and free-string option tables plus their helpers.
+
+    ``_OPTION_PATHS`` lists the ``ArgType::path`` parameters (normalized with
+    ``os.fsdecode`` at construction); ``_OPTION_FREE_STRINGS`` lists the
+    unconstrained string parameters. Both are rendered verbatim into the
+    whitespace-split argument string, so both get the whitespace guard.
+    """
+    paths: list[str] = []
+    free_strings: list[str] = []
+    for group in GROUPS:
+        for param in catalog.grouped()[group]:
+            if not param.uses_generic_spec() or param.spec_kind != "value":
+                continue
+            if param.choices:
+                continue
+            if param.long_type == "path":
+                paths.append(param.name("python"))
+            elif param.long_type == "string":
+                free_strings.append(param.name("python"))
+
+    lines: list[str] = ["_OPTION_PATHS = ("]
+    lines.extend(f'    "{name}",' for name in paths)
+    lines.append(")")
+    lines.extend(["", ""])
+    lines.append("# Free-string value options, rendered verbatim into the argument string.")
+    lines.append("_OPTION_FREE_STRINGS = (")
+    lines.extend(f'    "{name}",' for name in free_strings)
+    lines.append(")")
+    lines.extend(["", ""])
+    lines.extend(_NORMALIZE_OPTION_PATHS_HELPER)
+    lines.extend(["", ""])
+    lines.extend(_VALIDATE_OPTION_ARG_STRINGS_HELPER)
+    lines.extend(["", ""])
+    return lines
+
+
 def _option_domain_lines(catalog: ParameterCatalog) -> list[str]:
     """The runtime numeric-domain table plus its validator.
 
@@ -566,6 +655,7 @@ def generate_python(catalog: ParameterCatalog) -> str:
     lines.extend(_advanced_tier_kwarg_lines(catalog))
     lines.extend(_option_domain_lines(catalog))
     lines.extend(_option_choices_lines(catalog))
+    lines.extend(_option_path_lines(catalog))
     for group in GROUPS:
         spec_name = f"_{group.upper()}_OPTION_SPECS"
         lines.append(f"{spec_name} = (")
@@ -692,12 +782,20 @@ def generate_python(catalog: ParameterCatalog) -> str:
         [
             "",
             "    def __post_init__(self):",
-            "        # Validate at construction so a bad value fails where it is",
-            "        # written, not later at the to_args() render funnel. to_args()",
-            "        # revalidates the merged result, so overrides are covered too.",
+            "        # Normalize the path-typed options (os.PathLike -> str) before",
+            "        # validating, so validation, repr, equality and rendering all",
+            "        # see plain strings. Then validate at construction so a bad",
+            "        # value fails where it is written, not later at the to_args()",
+            "        # render funnel. to_args() revalidates the merged result, so",
+            "        # overrides are covered too.",
             "        options = self.to_kwargs()",
+            "        _normalize_option_paths(options)",
+            "        for name in _OPTION_PATHS:",
+            "            if options[name] is not getattr(self, name):",
+            "                object.__setattr__(self, name, options[name])",
             "        _validate_option_domains(options)",
             "        _validate_option_choices(options)",
+            "        _validate_option_arg_strings(options)",
             "",
             "    def __repr__(self) -> str:",
             "        # Show only the fields set away from their defaults; the full",
@@ -769,8 +867,10 @@ def generate_python(catalog: ParameterCatalog) -> str:
             "            given.",
             '        """',
             "        options = self.to_kwargs()",
+            "        _normalize_option_paths(options)",
             "        _validate_option_domains(options)",
             "        _validate_option_choices(options)",
+            "        _validate_option_arg_strings(options)",
             "        if self.directed is not None and self.flow_model is not None:",
             "            # Only warn on a genuine conflict. directed=True is shorthand for",
             '            # flow_model="directed" (False -> "undirected"), so pairing it with',

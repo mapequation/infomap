@@ -71,12 +71,21 @@ class MergeError(Exception):
     """Raised when shard files are missing, inconsistent, or unmergeable."""
 
 
-def _expand_patterns(patterns: Iterable[str]) -> List[str]:
-    """Expand glob patterns (each item may itself be a comma-separated list)."""
+def _expand_patterns(patterns: Iterable[str | os.PathLike[str]]) -> List[str]:
+    """Expand glob patterns.
+
+    A ``str`` item may be a comma-separated list of patterns (CLI parity);
+    an ``os.PathLike`` item names exactly one pattern -- a comma in it is
+    part of the path.
+    """
     paths: List[str] = []
     seen = set()
     for raw in patterns:
-        for pattern in str(raw).split(","):
+        if isinstance(raw, str):
+            items = raw.split(",")
+        else:
+            items = [os.fsdecode(raw)]
+        for pattern in items:
             pattern = pattern.strip()
             if not pattern:
                 continue
@@ -206,7 +215,7 @@ def _write_clu_from_tree(tree_path: str, clu_path: str) -> None:
 
 
 def merge_trial_results(
-    patterns: Sequence[str],
+    patterns: Sequence[str | os.PathLike[str]],
     out_name: str | os.PathLike[str],
     formats: Sequence[str] = SUPPORTED_FORMATS,
     require_complete: bool = False,
@@ -215,8 +224,10 @@ def merge_trial_results(
 
     Parameters
     ----------
-    patterns : sequence of str
-        Shard result file paths or glob patterns (each may be comma-separated).
+    patterns : sequence of str or os.PathLike
+        Shard result file paths or glob patterns. A ``str`` may be a
+        comma-separated list of patterns; an ``os.PathLike`` names exactly
+        one pattern.
     out_name : str or os.PathLike
         Output basename; ``<out_name>.tree`` / ``<out_name>.clu`` are written.
     formats : sequence of str, optional
@@ -233,7 +244,7 @@ def merge_trial_results(
         winner tree path, the number of shards/trials, any ``missing`` indices,
         and the list of ``outputs`` written.
     """
-    out_name = os.fspath(out_name)
+    out_name = os.fsdecode(out_name)
     bad = [f for f in formats if f not in SUPPORTED_FORMATS]
     if bad:
         raise MergeError(

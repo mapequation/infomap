@@ -266,6 +266,65 @@ def _validate_option_choices(options):
             )
 
 
+_OPTION_PATHS = (
+    "cluster_data",
+    "meta_data",
+    "timing_json",
+    "summary_json",
+    "manifest_json",
+    "trial_results",
+)
+
+
+# Free-string value options, rendered verbatim into the argument string.
+_OPTION_FREE_STRINGS = (
+    "out_name",
+    "num_threads",
+    "threads",
+)
+
+
+def _normalize_option_paths(options):
+    """Decode path-typed option values (os.PathLike -> str) in place.
+
+    The path-typed options follow the package-wide file-path contract
+    (str | os.PathLike, decoded with os.fsdecode like the file readers
+    and writers); the rendered argument string needs plain str. A value
+    that is not path-like gets a TypeError naming the option here,
+    instead of a confusing engine parse error downstream.
+    """
+    for name in _OPTION_PATHS:
+        value = options.get(name)
+        if value is None or isinstance(value, str):
+            continue
+        try:
+            options[name] = os.fsdecode(value)
+        except TypeError:
+            raise TypeError(
+                f"{name}={value!r} is not a valid path: pass a str or "
+                "os.PathLike."
+            ) from None
+
+
+def _validate_option_arg_strings(options):
+    """Reject string values the rendered argument string cannot carry.
+
+    Rendered options travel to the engine as a whitespace-separated
+    argument string with no quoting support, so a value containing
+    whitespace would be silently split into separate tokens (a
+    cluster_data path 'my file.clu' reads as 'my'). Reject it here,
+    naming the option and the reason.
+    """
+    for name in _OPTION_PATHS + _OPTION_FREE_STRINGS:
+        value = options.get(name)
+        if isinstance(value, str) and any(ch.isspace() for ch in value):
+            raise ValueError(
+                f"{name}={value!r} contains whitespace, which the engine "
+                "argument string cannot carry (arguments are split on "
+                "whitespace, with no quoting). Use a whitespace-free value."
+            )
+
+
 _INPUT_OPTION_SPECS = (
     ("flag", "skip_adjust_bipartite_flow", "--skip-adjust-bipartite-flow", None),
     ("flag", "bipartite_teleportation", "--bipartite-teleportation", None),
@@ -436,13 +495,13 @@ class Options(metaclass=_OptionsMeta):
         Construct state ids from node ids and layer ids that stay comparable across
         networks. Set at least to the largest layer id among networks to match. Valid
         range: >= 1.
-    cluster_data : str, optional
+    cluster_data : str or os.PathLike, optional
         Read an initial partition from a clu file or a hierarchy from a tree/ftree file.
         Tree input may use physical or state nodes for higher-order networks.
     assign_to_neighbouring_module : bool, optional
         With --cluster-data, assign nodes missing module ids to a neighboring node's
         module when possible.
-    meta_data : str, optional
+    meta_data : str or os.PathLike, optional
         Read metadata to encode from a clu-format file.
     meta_data_rate : float, optional
         With --meta-data, set the metadata encoding rate. The default encodes metadata
@@ -507,11 +566,11 @@ class Options(metaclass=_OptionsMeta):
 
         Not a Python library option; it leaves the surface in 3.0. A print-and-exit CLI
         diagnostic; run the infomap binary.
-    timing_json : str, optional
+    timing_json : str or os.PathLike, optional
         Write machine-readable run timing JSON to this path. Use - for stdout.
-    summary_json : str, optional
+    summary_json : str or os.PathLike, optional
         Write machine-readable final run summary JSON to this path. Use - for stdout.
-    manifest_json : str, optional
+    manifest_json : str or os.PathLike, optional
         Write a machine-readable run manifest JSON to this path. Use - for stdout.
     memory_report : bool, optional
         Include peak RSS and best-effort bytes per node/link estimates in timing JSON.
@@ -520,7 +579,7 @@ class Options(metaclass=_OptionsMeta):
         Global index of the first trial this process runs; trial i uses seed = base_seed
         + (trial_offset + i). Default 0 (single-process behavior). Valid range: >= 0.
         Engine default: 0.
-    trial_results : str, optional
+    trial_results : str or os.PathLike, optional
         Write this shard's per-trial results (codelengths, seeds, best-tree reference,
         fingerprints) as JSON to this path, for deterministic merging of distributed
         shard runs into a final solution.
@@ -694,9 +753,9 @@ class Options(metaclass=_OptionsMeta):
     no_self_links: bool = False
     node_limit: int | None = None
     matchable_multilayer_ids: int | None = None
-    cluster_data: str | None = None
+    cluster_data: str | os.PathLike[str] | None = None
     assign_to_neighbouring_module: bool = False
-    meta_data: str | None = None
+    meta_data: str | os.PathLike[str] | None = None
     meta_data_rate: float = 1.0
     meta_data_unweighted: bool = False
     no_infomap: bool = False
@@ -712,12 +771,12 @@ class Options(metaclass=_OptionsMeta):
     print_all_trials: bool = False
     no_overwrite: bool = False
     print_config_fingerprint: bool = False
-    timing_json: str | None = None
-    summary_json: str | None = None
-    manifest_json: str | None = None
+    timing_json: str | os.PathLike[str] | None = None
+    summary_json: str | os.PathLike[str] | None = None
+    manifest_json: str | os.PathLike[str] | None = None
     memory_report: bool = False
     trial_offset: int | None = None
-    trial_results: str | None = None
+    trial_results: str | os.PathLike[str] | None = None
     no_final_output: bool = False
     verbosity_level: int = 1
     silent: bool = True
@@ -768,12 +827,20 @@ class Options(metaclass=_OptionsMeta):
     max_degree_for_random_moves: int = 2
 
     def __post_init__(self):
-        # Validate at construction so a bad value fails where it is
-        # written, not later at the to_args() render funnel. to_args()
-        # revalidates the merged result, so overrides are covered too.
+        # Normalize the path-typed options (os.PathLike -> str) before
+        # validating, so validation, repr, equality and rendering all
+        # see plain strings. Then validate at construction so a bad
+        # value fails where it is written, not later at the to_args()
+        # render funnel. to_args() revalidates the merged result, so
+        # overrides are covered too.
         options = self.to_kwargs()
+        _normalize_option_paths(options)
+        for name in _OPTION_PATHS:
+            if options[name] is not getattr(self, name):
+                object.__setattr__(self, name, options[name])
         _validate_option_domains(options)
         _validate_option_choices(options)
+        _validate_option_arg_strings(options)
 
     def __repr__(self) -> str:
         # Show only the fields set away from their defaults; the full
@@ -845,8 +912,10 @@ class Options(metaclass=_OptionsMeta):
             given.
         """
         options = self.to_kwargs()
+        _normalize_option_paths(options)
         _validate_option_domains(options)
         _validate_option_choices(options)
+        _validate_option_arg_strings(options)
         if self.directed is not None and self.flow_model is not None:
             # Only warn on a genuine conflict. directed=True is shorthand for
             # flow_model="directed" (False -> "undirected"), so pairing it with

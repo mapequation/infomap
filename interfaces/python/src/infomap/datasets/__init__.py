@@ -44,7 +44,7 @@ def _load(filename: str, *, extra_args: str = "") -> _Network:
         args = f"{args} {extra_args}"
     net = _Network(core=_Core(args))
     with _as_file(_files(__name__) / "data" / filename) as path:
-        net.read_file(str(path))
+        net.read_file(path)
     return net
 
 

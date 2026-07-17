@@ -221,9 +221,9 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         no_self_links: bool = False,
         node_limit: int | None = None,
         matchable_multilayer_ids: int | None = None,
-        cluster_data: str | None = None,
+        cluster_data: str | os.PathLike[str] | None = None,
         assign_to_neighbouring_module: bool = False,
-        meta_data: str | None = None,
+        meta_data: str | os.PathLike[str] | None = None,
         meta_data_rate: float = 1.0,
         meta_data_unweighted: bool = False,
         no_infomap: bool = False,
@@ -238,12 +238,12 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         print_all_trials: bool = False,
         no_overwrite: bool = False,
         print_config_fingerprint: bool = False,
-        timing_json: str | None = None,
-        summary_json: str | None = None,
-        manifest_json: str | None = None,
+        timing_json: str | os.PathLike[str] | None = None,
+        summary_json: str | os.PathLike[str] | None = None,
+        manifest_json: str | os.PathLike[str] | None = None,
         memory_report: bool = False,
         trial_offset: int | None = None,
-        trial_results: str | None = None,
+        trial_results: str | os.PathLike[str] | None = None,
         no_final_output: bool = False,
         verbosity_level: int = 1,
         silent: bool = True,
@@ -344,7 +344,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
 
             .. versionchanged:: 2.15
                 Pass it via ``Options``; moves off this signature in 3.0.
-        cluster_data : str, optional
+        cluster_data : str or os.PathLike, optional
             Read an initial partition from a clu file or a hierarchy from a tree/ftree
             file. Tree input may use physical or state nodes for higher-order networks.
 
@@ -356,7 +356,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
 
             .. versionchanged:: 2.15
                 Pass it via ``Options``; moves off this signature in 3.0.
-        meta_data : str, optional
+        meta_data : str or os.PathLike, optional
             Read metadata to encode from a clu-format file.
 
             .. versionchanged:: 2.15
@@ -507,18 +507,18 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             .. deprecated:: 2.15
                 This keyword leaves the ``Infomap`` signature in 3.0. A print-and-exit
                 CLI diagnostic; run the infomap binary.
-        timing_json : str, optional
+        timing_json : str or os.PathLike, optional
             Write machine-readable run timing JSON to this path. Use - for stdout.
 
             .. versionchanged:: 2.15
                 Pass it via ``Options``; moves off this signature in 3.0.
-        summary_json : str, optional
+        summary_json : str or os.PathLike, optional
             Write machine-readable final run summary JSON to this path. Use - for
             stdout.
 
             .. versionchanged:: 2.15
                 Pass it via ``Options``; moves off this signature in 3.0.
-        manifest_json : str, optional
+        manifest_json : str or os.PathLike, optional
             Write a machine-readable run manifest JSON to this path. Use - for stdout.
 
             .. versionchanged:: 2.15
@@ -535,7 +535,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
 
             .. versionchanged:: 2.15
                 Pass it via ``Options``; moves off this signature in 3.0.
-        trial_results : str, optional
+        trial_results : str or os.PathLike, optional
             Write this shard's per-trial results (codelengths, seeds, best-tree
             reference, fingerprints) as JSON to this path, for deterministic merging of
             distributed shard runs into a final solution.
@@ -838,9 +838,9 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         no_self_links: bool = False,
         node_limit: int | None = None,
         matchable_multilayer_ids: int | None = None,
-        cluster_data: str | None = None,
+        cluster_data: str | os.PathLike[str] | None = None,
         assign_to_neighbouring_module: bool = False,
-        meta_data: str | None = None,
+        meta_data: str | os.PathLike[str] | None = None,
         meta_data_rate: float = 1.0,
         meta_data_unweighted: bool = False,
         no_infomap: bool = False,
@@ -855,12 +855,12 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         print_all_trials: bool = False,
         no_overwrite: bool = False,
         print_config_fingerprint: bool = False,
-        timing_json: str | None = None,
-        summary_json: str | None = None,
-        manifest_json: str | None = None,
+        timing_json: str | os.PathLike[str] | None = None,
+        summary_json: str | os.PathLike[str] | None = None,
+        manifest_json: str | os.PathLike[str] | None = None,
         memory_report: bool = False,
         trial_offset: int | None = None,
-        trial_results: str | None = None,
+        trial_results: str | os.PathLike[str] | None = None,
         no_final_output: bool = False,
         verbosity_level: int = 1,
         silent: bool = False,

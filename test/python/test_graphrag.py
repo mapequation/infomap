@@ -110,6 +110,26 @@ def test_read_graphrag_accepts_generic_pathlike(tmp_path):
     assert graph.sources.tolist() == [1, 2, 3, 4, 5, 6, 3]
 
 
+def test_write_graphrag_communities_accepts_generic_pathlike_output(tmp_path):
+    _require_parquet_stack()
+
+    from infomap import Infomap
+    from infomap.graphrag import read_graphrag, write_graphrag_communities
+
+    entities_path, relationships_path = _write_graphrag_fixture(tmp_path)
+    graph = read_graphrag(entities_path, relationships_path)
+
+    im = Infomap(silent=True, seed=123, num_trials=5)
+    _add_graphrag_links(im, graph)
+    im.run()
+
+    output_dir = tmp_path / "infomap"
+    write_graphrag_communities(im, graph=graph, output=_FsPathOnly(output_dir))
+
+    assert (output_dir / "communities.parquet").is_file()
+    assert (output_dir / "infomap_nodes.parquet").is_file()
+
+
 def test_read_graphrag_factorizes_titles_from_entities_first(tmp_path):
     from infomap.graphrag import read_graphrag
 

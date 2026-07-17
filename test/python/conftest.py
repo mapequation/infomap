@@ -149,6 +149,30 @@ def canonical_modules():
     return _canonical_modules
 
 
+class FsPathOnly:
+    """A generic ``os.PathLike`` that is not a ``pathlib.Path``.
+
+    ``__str__`` deliberately disagrees with ``__fspath__``: any consumer that
+    converts with ``str()`` instead of ``os.fspath()`` / ``os.fsdecode()``
+    reads a bogus path.
+    """
+
+    def __init__(self, path):
+        self._path = path
+
+    def __fspath__(self) -> str:
+        return str(self._path)
+
+    def __str__(self) -> str:
+        return "<not-the-path>"
+
+
+@pytest.fixture
+def fspath_only():
+    """Factory for a generic non-``Path`` ``os.PathLike`` with a lying ``__str__``."""
+    return FsPathOnly
+
+
 @pytest.fixture
 def output_dir(tmp_path: Path) -> Path:
     path = tmp_path / "output"

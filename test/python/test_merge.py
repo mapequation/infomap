@@ -6,6 +6,7 @@ extension or running Infomap.
 """
 
 import json
+from pathlib import Path
 
 import pytest
 
@@ -243,3 +244,33 @@ def test_merge_accepts_pathlike_out_name(tmp_path):
         str(tmp_path / "final.tree"),
         str(tmp_path / "final.clu"),
     ]
+
+
+def test_merge_accepts_generic_pathlike_patterns(tmp_path, fspath_only):
+    shard_json = _shard(
+        tmp_path, "a", offset=0, trials=[(0, 6.0)], best_tree_modules={1: 1}
+    )
+
+    summary = merge_trial_results(
+        [fspath_only(shard_json)], out_name=fspath_only(tmp_path / "final")
+    )
+
+    assert summary["num_shards"] == 1
+    assert (tmp_path / "final.tree").is_file()
+
+
+def test_merge_pathlike_pattern_is_a_literal_path_not_a_comma_list(tmp_path):
+    # A plain-string pattern keeps its CLI-parity comma splitting, but a
+    # PathLike names exactly one path -- a comma in it is part of the path.
+    shard_dir = tmp_path / "shards,batch-1"
+    shard_dir.mkdir()
+    shard_json = _shard(
+        shard_dir, "a", offset=0, trials=[(0, 6.0)], best_tree_modules={1: 1}
+    )
+
+    summary = merge_trial_results(
+        [Path(shard_json)], out_name=str(tmp_path / "final")
+    )
+
+    assert summary["num_shards"] == 1
+    assert (tmp_path / "final.tree").is_file()

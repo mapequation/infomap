@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import os
 import warnings
 from collections.abc import Mapping
-from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from .._optional import require_igraph, require_networkx
@@ -534,7 +534,7 @@ def to_igraph(
 def write_graphml(
     graph: networkx.Graph | igraph.Graph,
     im: Infomap | Result,
-    path: str | Path,
+    path: str | os.PathLike[str],
     **options: Any,
 ) -> None:
     """Write a GraphML file with Infomap result attributes on nodes.
@@ -550,7 +550,7 @@ def write_graphml(
     im : Infomap or Result
         A run :class:`~infomap.Infomap` instance, or the
         :class:`~infomap.Result` it returned (the result's engine is used).
-    path : str or pathlib.Path
+    path : str or os.PathLike
         Output file path.
     **options
         Passed through to :func:`annotate_networkx_graph` or
@@ -562,6 +562,7 @@ def write_graphml(
     -------
     None
     """
+    path = os.fsdecode(path)
     if _is_igraph_graph(graph):
         writer_options = {}
         writer_options.update(options.pop("writer_options", {}))
@@ -570,7 +571,7 @@ def write_graphml(
             im,
             **options,
         )
-        annotated_graph.write_graphml(str(path), **writer_options)
+        annotated_graph.write_graphml(path, **writer_options)
         return
 
     nx = _import_networkx()
@@ -587,7 +588,7 @@ def write_graphml(
 def write_gexf(
     graph: networkx.Graph,
     im: Infomap | Result,
-    path: str | Path,
+    path: str | os.PathLike[str],
     **options: Any,
 ) -> None:
     """Write a GEXF file with Infomap result attributes on NetworkX nodes.
@@ -602,7 +603,7 @@ def write_gexf(
     im : Infomap or Result
         A run :class:`~infomap.Infomap` instance, or the
         :class:`~infomap.Result` it returned (the result's engine is used).
-    path : str or pathlib.Path
+    path : str or os.PathLike
         Output file path.
     **options
         Passed through to :func:`annotate_networkx_graph` (e.g.
@@ -627,6 +628,7 @@ def write_gexf(
             "`write_graphml()` for igraph graphs or pass a NetworkX graph."
         )
 
+    path = os.fsdecode(path)
     nx = _import_networkx()
     writer_options = {}
     writer_options.update(options.pop("writer_options", {}))
