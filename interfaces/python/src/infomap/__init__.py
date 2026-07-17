@@ -55,25 +55,53 @@ See https://mapequation.org/infomap-python-docs/ for the full documentation.
 
 # The error taxonomy is pure Python and importable without the compiled
 # bindings, so it lives outside the guarded block below.
-from .errors import (
-    __all__ as _ERRORS_ALL,
-    InfomapError as InfomapError,
-    NetworkParseError as NetworkParseError,
-    NotRunError as NotRunError,
-    StaleResultError as StaleResultError,
-)
 from ._version import (
     __author__ as __author__,
+)
+from ._version import (
     __classifiers__ as __classifiers__,
+)
+from ._version import (
     __description__ as __description__,
+)
+from ._version import (
     __email__ as __email__,
+)
+from ._version import (
     __homepage__ as __homepage__,
+)
+from ._version import (
     __issues__ as __issues__,
+)
+from ._version import (
     __keywords__ as __keywords__,
+)
+from ._version import (
     __license__ as __license__,
+)
+from ._version import (
     __repo__ as __repo__,
+)
+from ._version import (
     __url__ as __url__,
+)
+from ._version import (
     __version__ as __version__,
+)
+from .errors import (
+    InfomapError as InfomapError,
+)
+from .errors import (
+    NetworkParseError as NetworkParseError,
+)
+from .errors import (
+    NotRunError as NotRunError,
+)
+from .errors import (
+    StaleResultError as StaleResultError,
+)
+from .errors import (
+    __all__ as _ERRORS_ALL,
 )
 
 _VERSION_ALL = [
@@ -100,13 +128,12 @@ __all__.extend(_ERRORS_ALL)
 # stays usable even before the compiled bindings are built.
 
 try:
-    from ._facade import __all__ as _FACADE_ALL
-    from ._facade import *  # noqa: F401,F403
-    from ._options import _construct_args as _construct_args
-
     from . import datasets as datasets
     from . import io as io
     from . import tl as tl
+    from ._facade import *  # noqa: F401,F403
+    from ._facade import __all__ as _FACADE_ALL
+    from ._options import _construct_args as _construct_args
 
     __all__.extend(_FACADE_ALL)
     __all__.append("datasets")

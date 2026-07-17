@@ -3,7 +3,6 @@ import importlib.util
 import re
 from pathlib import Path
 
-
 REPO_ROOT = Path(__file__).resolve().parents[2]
 BUILD_CONFIG_PATH = REPO_ROOT / "scripts" / "build_config.py"
 PYTHON_MK_PATH = REPO_ROOT / "mk" / "python.mk"

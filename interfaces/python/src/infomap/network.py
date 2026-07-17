@@ -32,18 +32,19 @@ from typing import TYPE_CHECKING, Any
 from ._core import Core, apply_initial_partition
 from ._logging import engine_log_routing as _engine_log_routing
 from ._logging import is_routed as _is_log_routed
-from .errors import NetworkParseError, _translate_engine_errors
-from .io.writers import _NetworkWritersMixin
 from ._network_input import add_bulk_links as _add_bulk_links
 from ._network_input import first_order_unpacker as _first_order_unpacker
 from ._network_input import flat_multilayer_unpacker as _flat_multilayer_unpacker
 from ._network_input import paired_multilayer_unpacker as _paired_multilayer_unpacker
 from ._run import _UNSET
+from .errors import NetworkParseError, _translate_engine_errors
+from .io.writers import _NetworkWritersMixin
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
     import igraph  # pyright: ignore[reportMissingImports]  # optional dep, no stubs
     import networkx
-    from collections.abc import Mapping
 
     from ._options import Options
     from .result import Result

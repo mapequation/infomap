@@ -2,7 +2,6 @@ from collections import defaultdict
 
 import pytest
 
-
 pytestmark = pytest.mark.fast
 
 

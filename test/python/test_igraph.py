@@ -5,13 +5,11 @@ import subprocess
 import sys
 from types import SimpleNamespace
 
-import pytest
-
 import infomap
 import infomap._facade as facade
+import pytest
 from infomap import _optional
 from infomap.io.igraph import _import_igraph, add_igraph_graph
-
 
 pytestmark = pytest.mark.fast
 

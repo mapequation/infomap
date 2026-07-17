@@ -12,13 +12,11 @@ from __future__ import annotations
 import sys
 import warnings
 
+import infomap
 import networkx as nx
 import pytest
-
-import infomap
 from infomap import Infomap, Network
 from infomap.result import Result, _StaleResultError
-
 
 pytestmark = pytest.mark.fast
 

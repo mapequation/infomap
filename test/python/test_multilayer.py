@@ -1,6 +1,5 @@
 import pytest
 
-
 # These tests build and run multilayer networks through the stateful Infomap
 # compat surface (no_infomap / matchable_multilayer_ids), so the pending
 # deprecation on advanced-tier kwargs is expected here; it is asserted in

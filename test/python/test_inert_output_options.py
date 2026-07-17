@@ -14,10 +14,8 @@ from __future__ import annotations
 import warnings
 
 import pytest
-
 from infomap import Infomap, Network, Options, find_communities, run
 from infomap._run import _warn_inert_output_options
-
 
 pytestmark = pytest.mark.fast
 

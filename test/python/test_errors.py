@@ -19,7 +19,6 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-
 from infomap import (
     Infomap,
     InfomapError,
@@ -27,11 +26,12 @@ from infomap import (
     NetworkParseError,
     NotRunError,
     StaleResultError,
-    errors as errors_module,
     run,
 )
+from infomap import (
+    errors as errors_module,
+)
 from infomap.result import _StaleResultError
-
 
 pytestmark = pytest.mark.fast
 

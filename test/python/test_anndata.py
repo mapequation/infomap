@@ -2,9 +2,8 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
-import pytest
-
 import infomap
+import pytest
 
 ad = pytest.importorskip("anndata")
 pd = pytest.importorskip("pandas")

@@ -27,7 +27,6 @@ from typing import TYPE_CHECKING
 
 from ..errors import _translate_engine_errors
 
-
 if TYPE_CHECKING:
     from .._core import Core
 

@@ -23,7 +23,6 @@ from __future__ import annotations
 import warnings
 
 import pytest
-
 from infomap import Infomap, Options, run
 
 

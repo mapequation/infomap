@@ -41,9 +41,6 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 from ._optional import require_pandas
-from .errors import InfomapError, StaleResultError, _translate_engine_errors
-from .io.writers import _ResultWritersMixin
-from ._summary import repr_html as _summary_repr_html
 from ._results import (
     _DATAFRAME_COLUMN_ALIASES,
     _DEFAULT_TO_DATAFRAME_COLUMNS,
@@ -52,6 +49,9 @@ from ._results import (
     _unknown_dataframe_column_error,
     perplexity,
 )
+from ._summary import repr_html as _summary_repr_html
+from .errors import InfomapError, StaleResultError, _translate_engine_errors
+from .io.writers import _ResultWritersMixin
 
 # Legacy Infomap instance-mirror accessor names, mapped to their Result form. A
 # caller that learned the pre-Result API -- or hits the method/property flip
@@ -95,12 +95,12 @@ if TYPE_CHECKING:
     import networkx
     import pandas
 
-    from ._facade import Infomap
     from ._core import (
         InfomapIterator,
         InfomapIteratorPhysical,
         InfomapLeafModuleIterator,
     )
+    from ._facade import Infomap
 
 # build_result is internal plumbing shared by Infomap.run and Network.run;
 # only the result types are public API.

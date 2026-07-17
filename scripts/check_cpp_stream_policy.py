@@ -13,7 +13,6 @@ import re
 import sys
 from pathlib import Path
 
-
 DEFAULT_SCAN_PATTERNS = (
     "src/**/*.h",
     "src/**/*.cpp",

@@ -7,10 +7,9 @@ Settings alias has been removed.
 import dataclasses
 import warnings
 
-import pytest
-
 import infomap
-from infomap import Options, InfomapOptions
+import pytest
+from infomap import InfomapOptions, Options
 
 
 @pytest.mark.fast

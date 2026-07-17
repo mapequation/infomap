@@ -2,12 +2,10 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
-import networkx as nx
-import pytest
-
 import infomap
 import infomap._facade as facade
-
+import networkx as nx
+import pytest
 
 pytestmark = pytest.mark.fast
 

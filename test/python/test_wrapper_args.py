@@ -3,11 +3,9 @@ import shlex
 import subprocess
 import sys
 
-import pytest
-
 import infomap as infomap_module
+import pytest
 from infomap._bindings import InfomapWrapper
-
 
 pytestmark = pytest.mark.fast
 

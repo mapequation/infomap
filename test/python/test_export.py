@@ -4,7 +4,6 @@ from pathlib import Path
 
 import networkx as nx
 import pytest
-
 from infomap import Infomap
 from infomap.export import (
     annotate_igraph_graph,
@@ -12,7 +11,6 @@ from infomap.export import (
     write_gexf,
     write_graphml,
 )
-
 
 pytestmark = pytest.mark.fast
 

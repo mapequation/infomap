@@ -169,8 +169,8 @@ extend-exclude = [
 # The main one here is B905 -- zip() without strict= -- fixed by asserting the
 # equal-length invariant (strict=True) on the paired-array call sites.
 # pyupgrade (UP): modernize syntax to the >=3.11 floor (PEP 585/604
-# annotations, etc.).
-extend-select = ["B", "UP"]
+# annotations, etc.). isort (I): keep imports sorted and grouped.
+extend-select = ["B", "UP", "I"]
 
 [tool.ruff.lint.per-file-ignores]
 "build/py/*.py" = [

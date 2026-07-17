@@ -9,7 +9,6 @@ import zipfile
 from pathlib import Path
 from shutil import which
 
-
 TORCH_LIBOMP_RPATH = "@loader_path/../torch/lib"
 VENDORED_LIBOMP_RPATH = "@loader_path/.dylibs"
 LIBOMP_LOAD_NAME = "@rpath/libomp.dylib"

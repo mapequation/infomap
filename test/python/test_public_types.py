@@ -7,9 +7,8 @@ back. A curated ``__all__`` once dropped them, silently breaking
 with no deprecation period. Pin them so the package surface can't regress again.
 """
 
-import pytest
-
 import infomap
+import pytest
 
 # Each is ``.. autoclass``-ed in source/api/iterators.rst.
 DOCUMENTED_TYPES = [
