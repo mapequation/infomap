@@ -429,7 +429,7 @@ def run(
     args: str | None = None,
     initial_partition: dict[Any, Any] | None = None,
     **overrides: Any,
-) -> "Result":
+) -> Result:
     """Run Infomap on ``input`` and return a :class:`Result`.
 
     This is the canonical entry point. It accepts any supported network

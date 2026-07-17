@@ -42,7 +42,7 @@ class _WritersBase:
     if TYPE_CHECKING:
         _core: Core
 
-    def _writer_core(self) -> "Core":
+    def _writer_core(self) -> Core:
         return self._core
 
 

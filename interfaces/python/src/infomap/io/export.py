@@ -204,7 +204,7 @@ def annotate_networkx_graph(
     flow_attribute: str | None = None,
     copy: bool = True,
     strict: bool = True,
-) -> "networkx.Graph":
+) -> networkx.Graph:
     """Return a NetworkX graph annotated with Infomap result attributes.
 
     Writes each node's module assignment (and optionally its tree path,
@@ -319,7 +319,7 @@ def annotate_igraph_graph(
     flow_attribute: str | None = None,
     copy: bool = True,
     strict: bool = True,
-) -> "igraph.Graph":
+) -> igraph.Graph:
     """Return a python-igraph graph annotated with Infomap result attributes.
 
     Writes each vertex's module assignment (and optionally its tree path,
@@ -385,13 +385,13 @@ def _result_links(result: Any):
 
 
 def to_networkx(
-    result: "Result",
+    result: Result,
     *,
     module_attribute: str | None = _DEFAULT_MODULE_ATTRIBUTE,
     path_attribute: str | None = _DEFAULT_PATH_ATTRIBUTE,
     include_hierarchy: bool = True,
     flow_attribute: str | None = "flow",
-) -> "networkx.Graph":
+) -> networkx.Graph:
     """Build a NetworkX graph from a :class:`~infomap.Result`.
 
     Nodes are the result's (state) nodes, keyed by ``state_id``, carrying the
@@ -456,13 +456,13 @@ def to_networkx(
 
 
 def to_igraph(
-    result: "Result",
+    result: Result,
     *,
     module_attribute: str | None = _DEFAULT_MODULE_ATTRIBUTE,
     path_attribute: str | None = _DEFAULT_PATH_ATTRIBUTE,
     include_hierarchy: bool = True,
     flow_attribute: str | None = "flow",
-) -> "igraph.Graph":
+) -> igraph.Graph:
     """Build a python-igraph graph from a :class:`~infomap.Result`.
 
     Vertices are the result's (state) nodes in the order the result yields

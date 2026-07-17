@@ -126,7 +126,7 @@ _SNAPSHOT_COLUMNS = (
 _StaleResultError = StaleResultError
 
 
-def build_result(engine: Any) -> "Result":
+def build_result(engine: Any) -> Result:
     """Bump the engine's run-generation token and return a fresh ``Result``.
 
     The single place that stamps a ``Result`` with the new generation, shared by
@@ -324,7 +324,7 @@ class Result(_ResultWritersMixin):
         "__weakref__",
     )
 
-    def __init__(self, engine: "Infomap", *, generation: int) -> None:
+    def __init__(self, engine: Infomap, *, generation: int) -> None:
         core = engine._core
         object.__setattr__(self, "_engine", engine)
         object.__setattr__(self, "_generation", generation)
@@ -945,7 +945,7 @@ class Result(_ResultWritersMixin):
             "elapsed_time": self._elapsed_time,
         }
 
-    def to_series(self) -> "pandas.Series":
+    def to_series(self) -> pandas.Series:
         """Return the result's scalar metrics as a :class:`pandas.Series`.
 
         The pandas-native form of :meth:`summary`: a one-row record indexed by
@@ -987,7 +987,7 @@ class Result(_ResultWritersMixin):
         sort: bool | str | Sequence[str] = False,
         level: int | None = None,
         depth_level: int | None = None,
-    ) -> "pandas.DataFrame":
+    ) -> pandas.DataFrame:
         """Return a pandas DataFrame of the leaf nodes.
 
         Byte-identical to the legacy ``Infomap.to_dataframe``.
@@ -1093,7 +1093,7 @@ class Result(_ResultWritersMixin):
         path_attribute: str | None = "infomap_path",
         include_hierarchy: bool = True,
         flow_attribute: str | None = "flow",
-    ) -> "networkx.Graph":
+    ) -> networkx.Graph:
         """Build a NetworkX graph of the partitioned network.
 
         Equivalent to :func:`infomap.to_networkx`; see it for the parameters
@@ -1122,7 +1122,7 @@ class Result(_ResultWritersMixin):
         path_attribute: str | None = "infomap_path",
         include_hierarchy: bool = True,
         flow_attribute: str | None = "flow",
-    ) -> "igraph.Graph":
+    ) -> igraph.Graph:
         """Build a python-igraph graph of the partitioned network.
 
         Equivalent to :func:`infomap.to_igraph`; see it for the parameters
