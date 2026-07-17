@@ -30,7 +30,8 @@ import json
 import os
 import shutil
 import sys
-from typing import Iterable, List, Sequence, Tuple, TypedDict
+from typing import TypedDict
+from collections.abc import Iterable, Sequence
 
 __all__ = ["merge_trial_results", "MergeError", "MergeSummary"]
 
@@ -52,9 +53,9 @@ class MergeSummary(TypedDict):
     #: Number of distinct global trial indices covered by the shards.
     num_trials: int
     #: Global trial indices missing from ``[0, max_index]``, if any.
-    missing: List[int]
+    missing: list[int]
     #: Paths of the output files written.
-    outputs: List[str]
+    outputs: list[str]
 
 # Top-level keys every shard results file must contain.
 _REQUIRED_FILE_KEYS = (
@@ -71,14 +72,14 @@ class MergeError(Exception):
     """Raised when shard files are missing, inconsistent, or unmergeable."""
 
 
-def _expand_patterns(patterns: Iterable[str | os.PathLike[str]]) -> List[str]:
+def _expand_patterns(patterns: Iterable[str | os.PathLike[str]]) -> list[str]:
     """Expand glob patterns.
 
     A ``str`` item may be a comma-separated list of patterns (CLI parity);
     an ``os.PathLike`` item names exactly one pattern -- a comma in it is
     part of the path.
     """
-    paths: List[str] = []
+    paths: list[str] = []
     seen = set()
     for raw in patterns:
         if isinstance(raw, str):
@@ -105,7 +106,7 @@ def _expand_patterns(patterns: Iterable[str | os.PathLike[str]]) -> List[str]:
 
 def _load_shard(path: str) -> dict:
     try:
-        with open(path, "r", encoding="utf-8") as fh:
+        with open(path, encoding="utf-8") as fh:
             data = json.load(fh)
     except (OSError, ValueError) as exc:
         raise MergeError(f"cannot read shard file '{path}': {exc}") from exc
@@ -130,7 +131,7 @@ def _load_shard(path: str) -> dict:
     return data
 
 
-def _validate_consistent(shards: Sequence[Tuple[str, dict]]) -> None:
+def _validate_consistent(shards: Sequence[tuple[str, dict]]) -> None:
     """All shards must share the same non-empty network + config fingerprint."""
     first_path, first = shards[0]
     for field in ("network_fingerprint", "config_fingerprint"):
@@ -148,7 +149,7 @@ def _validate_consistent(shards: Sequence[Tuple[str, dict]]) -> None:
                 )
 
 
-def _select_winner(shards: Sequence[Tuple[str, dict]]):
+def _select_winner(shards: Sequence[tuple[str, dict]]):
     """Return (shard_path, shard, winning_trial) with the global best codelength.
 
     Tie-break: lowest global trial index (so the result is independent of how
@@ -166,7 +167,7 @@ def _select_winner(shards: Sequence[Tuple[str, dict]]):
     return path, shard, trial
 
 
-def _covered_indices(shards: Sequence[Tuple[str, dict]]) -> set:
+def _covered_indices(shards: Sequence[tuple[str, dict]]) -> set:
     return {int(t["trial"]) for _, s in shards for t in s["trials"]}
 
 
@@ -190,8 +191,8 @@ def _write_clu_from_tree(tree_path: str, clu_path: str) -> None:
     token), flow (second token) and path (first token); the name is ignored.
     """
     # node_id may be a non-numeric label, so it stays str when not all-digits.
-    rows: List[Tuple[int | str, int, str]] = []
-    with open(tree_path, "r", encoding="utf-8") as fh:
+    rows: list[tuple[int | str, int, str]] = []
+    with open(tree_path, encoding="utf-8") as fh:
         for line in fh:
             line = line.strip()
             if not line or line.startswith("#"):
@@ -277,7 +278,7 @@ def merge_trial_results(
             raise MergeError(msg)
         print(f"Warning: {msg}", file=sys.stderr)
 
-    outputs: List[str] = []
+    outputs: list[str] = []
     if "tree" in formats:
         tree_out = out_name + ".tree"
         os.makedirs(os.path.dirname(tree_out) or ".", exist_ok=True)
@@ -304,7 +305,7 @@ def merge_trial_results(
     }
 
 
-def _parse_formats(value: str) -> List[str]:
+def _parse_formats(value: str) -> list[str]:
     return [f.strip() for f in value.split(",") if f.strip()]
 
 

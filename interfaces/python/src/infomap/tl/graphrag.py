@@ -149,8 +149,8 @@ def _register_node(
 
 
 def read_graphrag(
-    entities: "str | os.PathLike[str] | pandas.DataFrame",
-    relationships: "str | os.PathLike[str] | pandas.DataFrame",
+    entities: str | os.PathLike[str] | pandas.DataFrame,
+    relationships: str | os.PathLike[str] | pandas.DataFrame,
     *,
     entity_id_col: str = "id",
     entity_title_col: str = "title",
@@ -605,7 +605,7 @@ def _build_tables(im, graph: GraphRAGGraph):
 
 def write_graphrag_communities(
     im: Infomap | Result, *, graph: GraphRAGGraph, output: str | os.PathLike[str]
-) -> "tuple[pandas.DataFrame, pandas.DataFrame]":
+) -> tuple[pandas.DataFrame, pandas.DataFrame]:
     """Write GraphRAG-compatible community tables from a finished run.
 
     Parameters

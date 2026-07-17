@@ -4,7 +4,7 @@ import importlib.util
 import warnings
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, Union
+from collections.abc import Iterable
 
 import pytest
 from infomap import Infomap
@@ -135,7 +135,7 @@ def load_graph_fixture(graph_fixture_links):
 
 
 def _canonical_modules(
-    modules: Union[Iterable[tuple[int, int]], dict[int, int]],
+    modules: Iterable[tuple[int, int]] | dict[int, int],
 ) -> list[list[int]]:
     grouped: dict[int, list[int]] = {}
     items = modules.items() if isinstance(modules, dict) else modules
