@@ -256,39 +256,180 @@ _ADVANCED_TIER_WARNING_HELPER = [
 ]
 
 
-def _advanced_tier_kwarg_lines(catalog: ParameterCatalog) -> list[str]:
-    """The runtime advanced-tier warning table plus its helper.
+# Maps each special-render-policy parameter to the ``_OptionSpec.render`` kind
+# its to_args() branch dispatches on. ``repeated_short`` splits per parameter:
+# ``--verbose`` renders ``-vv...`` above its default, while
+# ``--fast-hierarchical-solution`` validates 1..3 before rendering ``-F...``.
+_SPECIAL_RENDER_KINDS = {
+    "--no-self-links": "no_self_links",
+    "--verbose": "verbosity",
+    "--output": "comma_list",
+    "--directed": "directed",
+    "--fast-hierarchical-solution": "fast_hierarchical",
+}
 
-    One entry per advanced-tier catalog parameter (self-deprecated aliases such
-    as ``pretty``/``include_self_links`` warn on their own): the ``init`` and
-    ``run`` "unset" defaults and the policy ``action``/``replacement`` that
-    shape the message. Built from the same policy the docstring note reads.
+# Rendered-argument order of the special-policy parameters within each catalog
+# group. The generic (flag/value) parameters render first, in catalog order;
+# these follow. Preserves the historical argument order (e.g.
+# ``--silent -vvv --output clu,tree``). A catalog parameter with a special
+# render policy that is missing here fails loud in _option_table_lines instead
+# of being silently dropped from the render loop.
+_SPECIAL_RENDER_ORDER = {
+    "Input": ["--no-self-links"],
+    "Output": ["--verbose", "--output"],
+    "Algorithm": ["--directed"],
+    "Accuracy": ["--fast-hierarchical-solution"],
+}
+
+
+def _option_table_row(param, kind: str) -> str:
+    """One generated ``_OPTION_TABLE`` entry, kwargs only where they differ
+    from the ``_OptionSpec`` defaults so each row shows the data that matters."""
+    parts = [json.dumps(param.flag), json.dumps(kind), param.python_default_expr()]
+    domain = param.python_domain()
+    if domain is not None:
+        low, high = domain
+        parts.append(f"domain=({low}, {high})")
+    if param.choices:
+        rendered = ", ".join(json.dumps(choice) for choice in param.choices)
+        parts.append(f"choices=({rendered},)")
+    if kind == "value" and not param.choices:
+        if param.long_type == "path":
+            parts.append("path=True")
+        elif param.long_type == "string":
+            parts.append("free_string=True")
+    if param.tier("python") == "common":
+        parts.append("common=True")
+    policy = param.policy("python")
+    action = policy.get("action", "keep")
+    if action != "keep":
+        parts.append(f"action={json.dumps(action)}")
+    if action not in {"keep", "alias"}:
+        parts.append(f"replacement={json.dumps(policy['replacement'])}")
+    return f'    "{param.name("python")}": _OptionSpec({", ".join(parts)}),'
+
+
+_OPTION_SPEC_CLASS = [
+    "class _OptionSpec(NamedTuple):",
+    '    """Per-option record: how one Options field renders and validates.',
+    "",
+    "    The single generated per-option source; the specialized lookups the",
+    "    validators and the deprecation machinery use are derived from it",
+    "    below. ``render`` selects the to_args() branch: the generic",
+    '    "flag"/"value" kinds cover most options, the remaining kinds are the',
+    "    catalog's one-off render policies. ``common`` marks the parameters",
+    "    that stay real keyword parameters in the 3.0 signatures;",
+    "    ``action``/``replacement`` carry the 3.0 cleanup-policy decision.",
+    '    """',
+    "",
+    "    flag: str",
+    "    render: str",
+    "    default: object = None",
+    "    # Inclusive numeric bounds from the catalog (min/max), or None.",
+    "    domain: tuple | None = None",
+    "    # Allowed values for choice-typed options.",
+    "    choices: tuple | None = None",
+    "    # Path-typed (os.fsdecode'd at the Options boundary) and free-string",
+    "    # values; both travel the whitespace-split argument string unquoted.",
+    "    path: bool = False",
+    "    free_string: bool = False",
+    "    common: bool = False",
+    '    action: str = "keep"',
+    "    replacement: str | None = None",
+]
+
+# Derived views of _OPTION_TABLE, keeping the consumer-facing names (and their
+# historical iteration orders) as cheap comprehensions over the single record.
+_OPTION_TABLE_VIEWS = [
+    "_OPTION_DOMAINS = {",
+    "    name: spec.domain",
+    "    for name, spec in _OPTION_TABLE.items()",
+    "    if spec.domain is not None",
+    "}",
+    "",
+    "_OPTION_CHOICES = {",
+    '    name: (spec.choices, spec.render == "comma_list")',
+    "    for name, spec in _OPTION_TABLE.items()",
+    "    if spec.choices is not None",
+    "}",
+    "",
+    "_OPTION_PATHS = tuple(name for name, spec in _OPTION_TABLE.items() if spec.path)",
+    "",
+    "# Free-string value options, rendered verbatim into the argument string.",
+    "_OPTION_FREE_STRINGS = tuple(",
+    "    name for name, spec in _OPTION_TABLE.items() if spec.free_string",
+    ")",
+    "",
+    "# Advanced-tier keywords on the Infomap()/run() signatures:",
+    "# the init/run 'unset' defaults plus the policy action/replacement that",
+    "# shape the PendingDeprecationWarning. Infomap.run() re-renders keywords on",
+    "# top of the constructed state and a rendered flag can only switch on, so a",
+    "# truthy-by-default flag (silent) keeps the no-op False default in run",
+    "# context.",
+    "_ADVANCED_TIER_KWARGS = {",
+    "    name: (",
+    "        spec.default,",
+    '        False if spec.render == "flag" else spec.default,',
+    "        spec.action,",
+    "        spec.replacement,",
+    "    )",
+    "    for name, spec in _OPTION_TABLE.items()",
+    "    if not spec.common",
+    "}",
+]
+
+
+def _option_table_lines(catalog: ParameterCatalog) -> list[str]:
+    """The consolidated per-option table, its derived views, and the runtime
+    helpers that read them.
+
+    Emits ``_OptionSpec`` + ``_OPTION_TABLE`` (one row per Options field, in
+    rendered-argument order; the deprecated ``include_self_links`` alias is
+    handled explicitly in ``to_args``) and derives ``_OPTION_DOMAINS``,
+    ``_OPTION_CHOICES``, ``_OPTION_PATHS``, ``_OPTION_FREE_STRINGS`` and
+    ``_ADVANCED_TIER_KWARGS`` from it, so per-option data appears exactly once
+    in the generated module.
     """
-    names, index = _facade_params(catalog)
-    lines: list[str] = ["_ADVANCED_TIER_KWARGS = {"]
-    for name in names:
-        info = index[name]
-        if info.get("tier") != "advanced" or "policy" not in info:
-            continue
-        if name in _SELF_DEPRECATED_PARAMS:
-            continue
-        policy = info["policy"]
-        action = policy.get("action", "keep")
-        replacement = (
-            "None"
-            if action in {"keep", "alias"}
-            else json.dumps(policy["replacement"])
-        )
-        lines.append(
-            f'    "{name}": ({info["init_default"]}, {info["run_default"]}, '
-            f'"{action}", {replacement}),'
-        )
+    grouped = catalog.grouped()
+    lines: list[str] = list(_OPTION_SPEC_CLASS)
+    lines.extend(["", ""])
+    lines.append("_OPTION_TABLE = {")
+    for group in GROUPS:
+        lines.append(f"    # {group.lower()}")
+        specials = {
+            param.flag: param
+            for param in grouped[group]
+            if not param.uses_generic_spec()
+        }
+        expected = _SPECIAL_RENDER_ORDER.get(group, [])
+        if set(specials) != set(expected):
+            raise RuntimeError(
+                f"special render policies in group {group!r} changed: catalog "
+                f"has {sorted(specials)}, _SPECIAL_RENDER_ORDER declares "
+                f"{sorted(expected)}. Wire the new policy into "
+                "_SPECIAL_RENDER_KINDS/_SPECIAL_RENDER_ORDER and to_args()."
+            )
+        for param in grouped[group]:
+            if param.uses_generic_spec():
+                lines.append(_option_table_row(param, param.spec_kind))
+        for flag in expected:
+            lines.append(
+                _option_table_row(specials[flag], _SPECIAL_RENDER_KINDS[flag])
+            )
     lines.append("}")
-    lines.append("")
-    lines.append("")
+    lines.extend(["", ""])
+    lines.extend(_OPTION_TABLE_VIEWS)
+    lines.extend(["", ""])
     lines.extend(_ADVANCED_TIER_WARNING_HELPER)
-    lines.append("")
-    lines.append("")
+    lines.extend(["", ""])
+    lines.extend(_VALIDATE_OPTION_DOMAINS_HELPER)
+    lines.extend(["", ""])
+    lines.extend(_VALIDATE_OPTION_CHOICES_HELPER)
+    lines.extend(["", ""])
+    lines.extend(_NORMALIZE_OPTION_PATHS_HELPER)
+    lines.extend(["", ""])
+    lines.extend(_VALIDATE_OPTION_ARG_STRINGS_HELPER)
+    lines.extend(["", ""])
     return lines
 
 
@@ -391,32 +532,6 @@ _VALIDATE_OPTION_CHOICES_HELPER = [
 ]
 
 
-def _option_choices_lines(catalog: ParameterCatalog) -> list[str]:
-    """The runtime choice-domain table plus its validator.
-
-    One entry per choice-typed parameter (``flow_model``, ``output``), keyed by
-    the Python name, mapping to ``(allowed_values, is_sequence)``. ``is_sequence``
-    marks the comma-list params (``output``) whose value is a sequence validated
-    per element. Built from the same ``param.choices`` the Literals are.
-    """
-    lines: list[str] = ["_OPTION_CHOICES = {"]
-    for group in GROUPS:
-        for param in catalog.grouped()[group]:
-            choices = param.choices
-            if not choices:
-                continue
-            is_sequence = "True" if param.render_policy == "comma_list" else "False"
-            rendered = ", ".join(json.dumps(choice) for choice in choices)
-            lines.append(
-                f'    "{param.name("python")}": (({rendered},), {is_sequence}),'
-            )
-    lines.append("}")
-    lines.extend(["", ""])
-    lines.extend(_VALIDATE_OPTION_CHOICES_HELPER)
-    lines.extend(["", ""])
-    return lines
-
-
 # Static runtime helpers: the path-typed options follow the package-wide
 # file-path contract (str | os.PathLike, decoded with os.fsdecode like the
 # file readers and writers), and -- together with the free-string options --
@@ -467,65 +582,6 @@ _VALIDATE_OPTION_ARG_STRINGS_HELPER = [
     '                "whitespace, with no quoting). Use a whitespace-free value."',
     "            )",
 ]
-
-
-def _option_path_lines(catalog: ParameterCatalog) -> list[str]:
-    """The path-typed and free-string option tables plus their helpers.
-
-    ``_OPTION_PATHS`` lists the ``ArgType::path`` parameters (normalized with
-    ``os.fsdecode`` at construction); ``_OPTION_FREE_STRINGS`` lists the
-    unconstrained string parameters. Both are rendered verbatim into the
-    whitespace-split argument string, so both get the whitespace guard.
-    """
-    paths: list[str] = []
-    free_strings: list[str] = []
-    for group in GROUPS:
-        for param in catalog.grouped()[group]:
-            if not param.uses_generic_spec() or param.spec_kind != "value":
-                continue
-            if param.choices:
-                continue
-            if param.long_type == "path":
-                paths.append(param.name("python"))
-            elif param.long_type == "string":
-                free_strings.append(param.name("python"))
-
-    lines: list[str] = ["_OPTION_PATHS = ("]
-    lines.extend(f'    "{name}",' for name in paths)
-    lines.append(")")
-    lines.extend(["", ""])
-    lines.append("# Free-string value options, rendered verbatim into the argument string.")
-    lines.append("_OPTION_FREE_STRINGS = (")
-    lines.extend(f'    "{name}",' for name in free_strings)
-    lines.append(")")
-    lines.extend(["", ""])
-    lines.extend(_NORMALIZE_OPTION_PATHS_HELPER)
-    lines.extend(["", ""])
-    lines.extend(_VALIDATE_OPTION_ARG_STRINGS_HELPER)
-    lines.extend(["", ""])
-    return lines
-
-
-def _option_domain_lines(catalog: ParameterCatalog) -> list[str]:
-    """The runtime numeric-domain table plus its validator.
-
-    One entry per numeric value-typed parameter that declares an inclusive
-    bound in the catalog (``min``/``max``); the validator (emitted right after)
-    reads it from the ``to_args`` render funnel.
-    """
-    lines: list[str] = ["_OPTION_DOMAINS = {"]
-    for group in GROUPS:
-        for param in catalog.grouped()[group]:
-            domain = param.python_domain()
-            if domain is None:
-                continue
-            low, high = domain
-            lines.append(f'    "{param.name("python")}": ({low}, {high}),')
-    lines.append("}")
-    lines.extend(["", ""])
-    lines.extend(_VALIDATE_OPTION_DOMAINS_HELPER)
-    lines.extend(["", ""])
-    return lines
 
 
 def _python_domain_doc(param) -> str:
@@ -625,7 +681,7 @@ def generate_python(catalog: ParameterCatalog) -> str:
         "import warnings",
         "from collections.abc import Mapping",
         "from dataclasses import dataclass, fields, replace",
-        "from typing import Literal",
+        "from typing import Literal, NamedTuple",
         "",
         "",
         "# Generated by scripts/generate_binding_options.py from ./Infomap --print-json-parameters.",
@@ -652,37 +708,9 @@ def generate_python(catalog: ParameterCatalog) -> str:
         "",
     ]
     lines.extend(_python_literal_alias_lines(catalog))
-    lines.extend(_advanced_tier_kwarg_lines(catalog))
-    lines.extend(_option_domain_lines(catalog))
-    lines.extend(_option_choices_lines(catalog))
-    lines.extend(_option_path_lines(catalog))
-    for group in GROUPS:
-        spec_name = f"_{group.upper()}_OPTION_SPECS"
-        lines.append(f"{spec_name} = (")
-        for param in grouped[group]:
-            if not param.uses_generic_spec():
-                continue
-            name = param.name("python")
-            kind = param.spec_kind
-            include = "None" if kind == "flag" else param.python_include_expr()
-            lines.append(f'    ("{kind}", "{name}", "{param.flag}", {include}),')
-        lines.append(")")
-        lines.append("")
-
+    lines.extend(_option_table_lines(catalog))
     lines.extend(
         [
-            "",
-            "def _append_option_specs(parts, options, specs):",
-            "    for option_type, option_name, flag, include in specs:",
-            "        value = options[option_name]",
-            '        if option_type == "flag":',
-            "            if value:",
-            "                parts.append(flag)",
-            "            continue",
-            "        if include(value):",
-            '            parts.append(f"{flag} {value}")',
-            "",
-            "",
             "def _join_args(base_args, parts):",
             "    if not parts:",
             '        return "" if base_args is None else base_args',
@@ -896,35 +924,38 @@ def generate_python(catalog: ParameterCatalog) -> str:
             "                stacklevel=_external_stacklevel(),",
             "            )",
             "",
-            "        _append_option_specs(rendered_args, options, _INPUT_OPTION_SPECS)",
-            "",
-            "        if (self.include_self_links is not None and not self.include_self_links) or self.no_self_links:",
-            '            rendered_args.append("--no-self-links")',
-            "",
-            "        _append_option_specs(rendered_args, options, _OUTPUT_OPTION_SPECS)",
-            "",
-            "        if self.verbosity_level > 1:",
-            "            rendered_args.append(f\"-{'v' * self.verbosity_level}\")",
-            "",
-            "        if self.output is not None:",
-            "            rendered_args.append(f\"--output {','.join(self.output)}\")",
-            "",
-            "        _append_option_specs(rendered_args, options, _ALGORITHM_OPTION_SPECS)",
-            "",
-            "        if self.directed is not None:",
-            '            rendered_args.append("--directed" if self.directed else "--flow-model undirected")',
-            "",
-            "        _append_option_specs(rendered_args, options, _ACCURACY_OPTION_SPECS)",
-            "",
-            "        if self.fast_hierarchical_solution is not None:",
-            "            if self.fast_hierarchical_solution not in (1, 2, 3):",
-            "                raise ValueError(",
-            '                    "fast_hierarchical_solution="',
-            "                    f\"{self.fast_hierarchical_solution!r} is not valid: use \"",
-            '                    "1 (find top modules fast), 2 (keep all fast levels), "',
-            '                    "or 3 (skip the recursive part), or None to disable."',
-            "                )",
-            "            rendered_args.append(f\"-{'F' * self.fast_hierarchical_solution}\")",
+            "        for name, spec in _OPTION_TABLE.items():",
+            "            value = options[name]",
+            '            if spec.render == "flag":',
+            "                if value:",
+            "                    rendered_args.append(spec.flag)",
+            '            elif spec.render == "value":',
+            "                if value != spec.default:",
+            '                    rendered_args.append(f"{spec.flag} {value}")',
+            '            elif spec.render == "no_self_links":',
+            "                # Both a first-class flag and the rendering of the",
+            "                # deprecated include_self_links=False alias; at most once.",
+            "                if (self.include_self_links is not None and not self.include_self_links) or value:",
+            "                    rendered_args.append(spec.flag)",
+            '            elif spec.render == "verbosity":',
+            "                if value > 1:",
+            "                    rendered_args.append(f\"-{'v' * value}\")",
+            '            elif spec.render == "comma_list":',
+            "                if value is not None:",
+            "                    rendered_args.append(f\"{spec.flag} {','.join(value)}\")",
+            '            elif spec.render == "directed":',
+            "                if value is not None:",
+            '                    rendered_args.append("--directed" if value else "--flow-model undirected")',
+            '            else:  # "fast_hierarchical"',
+            "                if value is not None:",
+            "                    if value not in (1, 2, 3):",
+            "                        raise ValueError(",
+            '                            "fast_hierarchical_solution="',
+            '                            f"{value!r} is not valid: use "',
+            '                            "1 (find top modules fast), 2 (keep all fast levels), "',
+            '                            "or 3 (skip the recursive part), or None to disable."',
+            "                        )",
+            "                    rendered_args.append(f\"-{'F' * value}\")",
             "",
             "        return _join_args(base_args, rendered_args)",
             "",
@@ -937,11 +968,17 @@ def generate_python(catalog: ParameterCatalog) -> str:
             "",
             "",
             "_OPTION_DEFAULTS = Options()",
-            "# The only facade keyword whose Infomap.run() default differs from",
-            "# Infomap.__init__(): run() defaults silent to False. A keyword left at its",
-            "# run-context default must defer to the options= carrier rather than",
+            "# Facade keywords whose Infomap.run() default differs from Infomap.__init__():",
+            "# the flags that default to on at construction (silent). run() re-renders its",
+            "# keywords on top of the constructed state and a rendered flag can only switch",
+            "# on, so the run signature keeps the no-op False default. A keyword left at",
+            "# its run-context default must defer to the options= carrier rather than",
             "# spuriously override it.",
-            '_RUN_DEFAULT_OVERRIDES = {"silent": False}',
+            "_RUN_DEFAULT_OVERRIDES = {",
+            "    name: False",
+            "    for name, spec in _OPTION_TABLE.items()",
+            '    if spec.render == "flag" and spec.default',
+            "}",
             "",
             "",
             "def _context_default(name, context):",
@@ -976,20 +1013,11 @@ def generate_python(catalog: ParameterCatalog) -> str:
             "    return replace(base, **overrides)",
             "",
             "",
-            "def _construct_args(",
-            "    args=None,",
-        ]
-    )
-    for group in GROUPS:
-        lines.append(f"    # {group.lower()}")
-        if group == "Input":
-            lines.append(f"    include_self_links={include_self_links.default},")
-        for param in grouped[group]:
-            lines.append(f"    {param.name('python')}={param.python_default_expr()},")
-    lines.extend(
-        [
-            "):",
-            "    return Options._from_locals(locals()).to_args(base_args=args)",
+            "def _construct_args(args=None, **options):",
+            "    # Internal rendered-args funnel behind Infomap()/run()/Network.run().",
+            "    # Unknown option names raise through the Options constructor, with",
+            "    # the same 'did you mean' guidance as direct construction.",
+            "    return Options(**options).to_args(base_args=args)",
             "",
         ]
     )

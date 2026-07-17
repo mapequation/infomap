@@ -179,12 +179,6 @@ class Parameter:
     def python_default_expr(self) -> str:
         return self.python_default_value()
 
-    def python_include_expr(self) -> str:
-        default = self.python_default_value()
-        if default == "None":
-            return "lambda value: value is not None"
-        return f"lambda value: value != {default}"
-
     def python_domain(self) -> tuple[str, str] | None:
         """The ``(low, high)`` numeric-domain literals for validation, or None.
 
