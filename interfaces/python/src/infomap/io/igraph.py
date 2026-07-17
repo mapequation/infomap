@@ -106,7 +106,7 @@ def _node_ids(values):
         # id. Detect that here and name the colliding labels instead of silently
         # merging two vertices into one physical node.
         labels_by_id: dict[int, Any] = {}
-        for label, _node_id in zip(values, ids):
+        for label, _node_id in zip(values, ids, strict=True):
             seen = labels_by_id.setdefault(_node_id, label)
             if repr(seen) != repr(label):
                 raise ValueError(
@@ -272,7 +272,7 @@ def add_igraph_graph(
             )
         # add_igraph_graph registers one node per vertex using the vertex index
         # as the (state) id, so meta is keyed by vertex index.
-        apply_node_meta_data(infomap, zip(vertices, meta_values))
+        apply_node_meta_data(infomap, zip(vertices, meta_values, strict=True))
 
     if names is None:
         return {vertex_id: vertex_id for vertex_id in vertices}

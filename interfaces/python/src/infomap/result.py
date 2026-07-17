@@ -709,7 +709,7 @@ class Result(_ResultWritersMixin):
             raise InfomapError(_HIGHER_ORDER_MODULES_MESSAGE)
         snapshot = self._snapshot(depth, states)
         ids = snapshot.state_id if states else snapshot.node_id
-        return dict(zip(ids, snapshot.module_id))
+        return dict(zip(ids, snapshot.module_id, strict=True))
 
     def nodes(self, depth: int = 1, *, states: bool = False) -> Iterator[TreeNode]:
         """Iterate leaf :class:`TreeNode` views, depth first from the root.
@@ -1067,7 +1067,7 @@ class Result(_ResultWritersMixin):
         names = self._names
 
         data = {}
-        for requested, resolved in zip(requested_columns, resolved_columns):
+        for requested, resolved in zip(requested_columns, resolved_columns, strict=True):
             data[requested] = self._column(resolved, requested, snapshot, names)
 
         dataframe = pandas.DataFrame(data, columns=requested_columns)
@@ -1153,7 +1153,7 @@ class Result(_ResultWritersMixin):
             state_names = self._state_names
             return [
                 state_names.get(sid) or names.get(nid, nid)
-                for sid, nid in zip(snapshot.state_id, snapshot.node_id)
+                for sid, nid in zip(snapshot.state_id, snapshot.node_id, strict=True)
             ]
         if resolved in _SNAPSHOT_COLUMNS:
             return list(getattr(snapshot, resolved))
