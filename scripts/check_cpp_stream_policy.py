@@ -90,7 +90,9 @@ def scan_file(path: Path, root: Path) -> tuple[list[str], list[str]]:
     findings: list[str] = []
     allowed_hits: list[str] = []
 
-    for line_number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+    for line_number, line in enumerate(
+        path.read_text(encoding="utf-8").splitlines(), 1
+    ):
         for label, pattern in FORBIDDEN_PATTERNS:
             if not pattern.search(line):
                 continue

@@ -96,12 +96,8 @@ DEPRECATED_ANY_RECEIVER = (
     "run_with_options",
 )
 
-_IM_RECEIVER = re.compile(
-    r"\bim\.(" + "|".join(DEPRECATED_INSTANCE_MEMBERS) + r")\b"
-)
-_ANY_RECEIVER = re.compile(
-    r"\.(" + "|".join(DEPRECATED_ANY_RECEIVER) + r")\("
-)
+_IM_RECEIVER = re.compile(r"\bim\.(" + "|".join(DEPRECATED_INSTANCE_MEMBERS) + r")\b")
+_ANY_RECEIVER = re.compile(r"\.(" + "|".join(DEPRECATED_ANY_RECEIVER) + r")\(")
 _DEPRECATED_CLASSMETHODS = re.compile(
     r"\bInfomap\.(from_options|from_scipy_sparse_matrix|from_edge_index)\("
 )
@@ -203,9 +199,7 @@ def _source_files() -> list[Path]:
         if support.is_file():
             files.append(support)
     files += sorted(
-        path
-        for path in DOCS.rglob("*.md")
-        if "api" not in path.relative_to(DOCS).parts
+        path for path in DOCS.rglob("*.md") if "api" not in path.relative_to(DOCS).parts
     )
     files += sorted(
         path

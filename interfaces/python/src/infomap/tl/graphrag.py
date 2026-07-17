@@ -266,7 +266,9 @@ def read_graphrag(
     )
     weights = None
     if weight_col is not None:
-        weights = pd.to_numeric(relationships_table[weight_col]).to_numpy(dtype="float64")  # pyright: ignore[reportAttributeAccessIssue, reportArgumentType]
+        weights = pd.to_numeric(relationships_table[weight_col]).to_numpy(
+            dtype="float64"
+        )  # pyright: ignore[reportAttributeAccessIssue, reportArgumentType]
 
     relationship_ids = list(range(len(relationships_table)))
     if (

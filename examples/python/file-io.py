@@ -50,9 +50,7 @@ result.write(f"output/{name}.tree")
 print("Read back .clu file and only calculate codelength...")
 net2 = Network.from_file(filename)
 result2 = net2.run(
-    options=Options(
-        two_level=True, no_infomap=True, cluster_data=f"output/{name}.clu"
-    )
+    options=Options(two_level=True, no_infomap=True, cluster_data=f"output/{name}.clu")
 )
 print(
     f"Found {result2.max_depth} levels with {result2.num_top_modules} top modules "

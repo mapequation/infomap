@@ -61,13 +61,19 @@ def render(catalog: ParameterCatalog) -> str:
 
     lines.append("# Infomap 3.0 parameter policy")
     lines.append("")
-    lines.append("Actions: " + "; ".join(
-        f"**{name}** = {text}" for name, text in policy.get("vocabulary", {}).items()
-    ))
+    lines.append(
+        "Actions: "
+        + "; ".join(
+            f"**{name}** = {text}"
+            for name, text in policy.get("vocabulary", {}).items()
+        )
+    )
     lines.append("")
-    header = "| Parameter | Group | " + " | ".join(
-        SURFACE_LABELS[s] for s in surfaces
-    ) + " |"
+    header = (
+        "| Parameter | Group | "
+        + " | ".join(SURFACE_LABELS[s] for s in surfaces)
+        + " |"
+    )
     lines.append(header)
     lines.append("|" + "---|" * (2 + len(surfaces)))
 
@@ -92,13 +98,9 @@ def render(catalog: ParameterCatalog) -> str:
                 # CLI flag (e.g. --verbose -> Python/R verbosity_level), so
                 # someone searching the policy by the name they type in code
                 # finds the entry instead of only the CLI spelling.
-                rename = (
-                    catalog.overrides.get("names", {}).get(flag, {}).get(surface)
-                )
+                rename = catalog.overrides.get("names", {}).get(flag, {}).get(surface)
                 suffix = (
-                    f" ({SURFACE_LABELS[surface]} name: `{rename}`)"
-                    if rename
-                    else ""
+                    f" ({SURFACE_LABELS[surface]} name: `{rename}`)" if rename else ""
                 )
                 notes.append(
                     f"- `{flag}` ({SURFACE_LABELS[surface]}, "

@@ -14,7 +14,12 @@ REQUIRED_SWIG_VERSION = "4.4.1"
 
 
 def github_actions_escape(value: str) -> str:
-    return value.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A").replace(":", "%3A")
+    return (
+        value.replace("%", "%25")
+        .replace("\r", "%0D")
+        .replace("\n", "%0A")
+        .replace(":", "%3A")
+    )
 
 
 def print_github_actions_error(message: str) -> None:
@@ -38,7 +43,9 @@ def get_swig_version(swig_command: str) -> str:
     )
     match = re.search(r"SWIG Version\s+(\S+)", result.stdout)
     if match is None:
-        raise RuntimeError(f"Could not parse SWIG version from output:\n{result.stdout}")
+        raise RuntimeError(
+            f"Could not parse SWIG version from output:\n{result.stdout}"
+        )
     return match.group(1)
 
 
@@ -107,7 +114,9 @@ def scrub_invocation_comment(text: str) -> str:
 # The replacements come straight from SWIG PR #3411.
 _CHARACTER_POINTER_INNER = r"(?:[^()]|\([^()]*\))*"
 _CHARACTER_POINTER_RE = re.compile(
-    r"CHARACTER_POINTER\((" + _CHARACTER_POINTER_INNER + r")\)\[([^\]]+)\]\s*=\s*(.+?);",
+    r"CHARACTER_POINTER\(("
+    + _CHARACTER_POINTER_INNER
+    + r")\)\[([^\]]+)\]\s*=\s*(.+?);",
     re.DOTALL,
 )
 
@@ -148,7 +157,9 @@ def _patch_r_init_symbol_visibility(text: str) -> str:
     return text.replace(needle, replacement, 1)
 
 
-def copy_file(src: Path, dest: Path, scrub: bool = False, patch_cpp: bool = False) -> None:
+def copy_file(
+    src: Path, dest: Path, scrub: bool = False, patch_cpp: bool = False
+) -> None:
     dest.parent.mkdir(parents=True, exist_ok=True)
     if scrub:
         text = scrub_invocation_comment(src.read_text(encoding="utf-8"))
@@ -160,7 +171,9 @@ def copy_file(src: Path, dest: Path, scrub: bool = False, patch_cpp: bool = Fals
     dest.write_text(text, encoding="utf-8")
 
 
-def files_match(expected: Path, actual: Path, scrub: bool = False, patch_cpp: bool = False) -> bool:
+def files_match(
+    expected: Path, actual: Path, scrub: bool = False, patch_cpp: bool = False
+) -> bool:
     if not expected.exists():
         return False
     actual_text = actual.read_text(encoding="utf-8")

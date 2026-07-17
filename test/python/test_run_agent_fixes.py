@@ -88,9 +88,7 @@ def test_run_link_iterable_weight_hint_points_at_tuples():
 def test_run_still_allows_directed_on_link_iterable():
     # `directed` is a legitimate common-tier engine flag, not an adapter kwarg,
     # so the iterable guard must not reject it.
-    assert isinstance(
-        run(_LINKS, directed=True, seed=1, num_trials=1), Result
-    )
+    assert isinstance(run(_LINKS, directed=True, seed=1, num_trials=1), Result)
 
 
 # -- initial_partition on a graph accepts the graph's own labels --------------
@@ -99,7 +97,15 @@ def test_run_still_allows_directed_on_link_iterable():
 def test_run_graph_initial_partition_accepts_string_labels():
     graph = nx.Graph()
     graph.add_edges_from(
-        [("a", "b"), ("b", "c"), ("c", "a"), ("d", "e"), ("e", "f"), ("f", "d"), ("c", "d")]
+        [
+            ("a", "b"),
+            ("b", "c"),
+            ("c", "a"),
+            ("d", "e"),
+            ("e", "f"),
+            ("f", "d"),
+            ("c", "d"),
+        ]
     )
     labelled = {"a": 0, "b": 0, "c": 0, "d": 1, "e": 1, "f": 1}
     # Used to raise "must map integer node/state ids": run() now translates
@@ -107,17 +113,13 @@ def test_run_graph_initial_partition_accepts_string_labels():
     result = run(graph, seed=1, num_trials=1, initial_partition=labelled)
     assert isinstance(result, Result)
     # find_communities accepts the same label-keyed partition.
-    communities = find_communities(
-        graph, seed=1, initial_partition=labelled
-    )
+    communities = find_communities(graph, seed=1, initial_partition=labelled)
     assert communities
 
 
 def test_run_integer_labelled_graph_initial_partition_unaffected():
     graph = nx.Graph([(0, 1), (1, 2), (2, 0), (3, 4), (4, 5), (5, 3), (2, 3)])
-    result = run(
-        graph, seed=1, num_trials=1, initial_partition={0: 0, 1: 0, 2: 0}
-    )
+    result = run(graph, seed=1, num_trials=1, initial_partition={0: 0, 1: 0, 2: 0})
     assert isinstance(result, Result)
 
 
@@ -198,9 +200,7 @@ def test_network_run_accepts_advanced_override_without_warning():
     assert isinstance(result, Result)
     # A bare advanced engine kwarg forwards to Options without a deprecation,
     # exactly like the functional infomap.run() front door.
-    assert not any(
-        issubclass(r.category, PendingDeprecationWarning) for r in records
-    )
+    assert not any(issubclass(r.category, PendingDeprecationWarning) for r in records)
 
 
 def test_network_run_advanced_override_matches_options_carrier():
@@ -310,6 +310,4 @@ def test_default_console_options_do_not_warn():
     with warnings.catch_warnings(record=True) as records:
         warnings.simplefilter("always")
         run(_LINKS, seed=1, options=Options(verbosity_level=1))
-    assert not any(
-        "no effect" in str(r.message) for r in _user_warnings(records)
-    )
+    assert not any("no effect" in str(r.message) for r in _user_warnings(records))

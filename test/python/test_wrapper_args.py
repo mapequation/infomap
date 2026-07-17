@@ -185,9 +185,7 @@ def test_include_self_links_warning_points_at_caller():
 
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always", DeprecationWarning)
-        infomap_module.Infomap(
-            silent=True, include_self_links=True
-        )
+        infomap_module.Infomap(silent=True, include_self_links=True)
 
     matching = [w for w in caught if "include_self_links" in str(w.message)]
     assert matching, "expected an include_self_links DeprecationWarning"

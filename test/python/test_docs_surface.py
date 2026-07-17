@@ -24,11 +24,7 @@ import pytest
 pytestmark = pytest.mark.fast
 
 DOCS_API = (
-    Path(__file__).resolve().parents[2]
-    / "interfaces"
-    / "python"
-    / "source"
-    / "api"
+    Path(__file__).resolve().parents[2] / "interfaces" / "python" / "source" / "api"
 )
 
 _MODULE = re.compile(r"^\.\.\s+(?:currentmodule|module)::\s+(\S+)\s*$")

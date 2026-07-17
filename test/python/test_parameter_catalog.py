@@ -179,8 +179,9 @@ def test_python_common_tier_matches_issue_738_decision(test_paths):
     import json
 
     overrides = json.loads(
-        (test_paths.repo_root / "interfaces" / "parameters" / "overrides.json")
-        .read_text(encoding="utf-8")
+        (
+            test_paths.repo_root / "interfaces" / "parameters" / "overrides.json"
+        ).read_text(encoding="utf-8")
     )
 
     common = sorted(
@@ -239,9 +240,7 @@ def test_parameter_catalog_rejects_unknown_binding_only_entry_key():
     overrides = {
         "policy": _tier_policy("--seed"),
         "bindingOnly": {
-            "python": [
-                {"name": "foo", "flag": "--foo", "reason": "x", "typ": "bool"}
-            ]
+            "python": [{"name": "foo", "flag": "--foo", "reason": "x", "typ": "bool"}]
         },
     }
 

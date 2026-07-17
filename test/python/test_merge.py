@@ -267,9 +267,7 @@ def test_merge_pathlike_pattern_is_a_literal_path_not_a_comma_list(tmp_path):
         shard_dir, "a", offset=0, trials=[(0, 6.0)], best_tree_modules={1: 1}
     )
 
-    summary = merge_trial_results(
-        [Path(shard_json)], out_name=str(tmp_path / "final")
-    )
+    summary = merge_trial_results([Path(shard_json)], out_name=str(tmp_path / "final"))
 
     assert summary["num_shards"] == 1
     assert (tmp_path / "final.tree").is_file()

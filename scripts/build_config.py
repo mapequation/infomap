@@ -153,7 +153,13 @@ def _base_compile_flags(compiler_family):
         # already use a UTF-8 source charset, so this is MSVC-only.
         return [f"/std:{CXX_STANDARD}", "/utf-8"]
 
-    flags = ["-Wall", "-Wextra", "-pedantic", "-Wnon-virtual-dtor", f"-std={CXX_STANDARD}"]
+    flags = [
+        "-Wall",
+        "-Wextra",
+        "-pedantic",
+        "-Wnon-virtual-dtor",
+        f"-std={CXX_STANDARD}",
+    ]
     if compiler_family == "clang":
         flags.append("-Wshadow")
     elif compiler_family == "gnu":
@@ -204,9 +210,7 @@ def _normalize_features(features):
             continue
         if feature not in FEATURE_REGISTRY:
             known = ", ".join(sorted(FEATURE_REGISTRY))
-            raise ValueError(
-                f"Unknown feature '{feature}'. Known features: {known}."
-            )
+            raise ValueError(f"Unknown feature '{feature}'. Known features: {known}.")
         requested.add(feature)
     return [feature for feature in FEATURE_REGISTRY if feature in requested]
 
@@ -219,9 +223,7 @@ def _validate_features(features):
             dependency for dependency in spec["requires"] if dependency not in enabled
         ]
         if missing:
-            raise ValueError(
-                f"Feature '{feature}' requires: {', '.join(missing)}."
-            )
+            raise ValueError(f"Feature '{feature}' requires: {', '.join(missing)}.")
         conflicts = [conflict for conflict in spec["conflicts"] if conflict in enabled]
         if conflicts:
             raise ValueError(

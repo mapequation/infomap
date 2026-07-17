@@ -43,14 +43,20 @@ def _graph():
 @pytest.mark.parametrize(
     "options, kwargs, expected",
     [
-        (infomap.Options(num_trials=7), {}, 7),          # carrier sets num_trials
-        ({"num_trials": 5}, {}, 5),              # mapping carrier
-        (infomap.Options(regularized=True), {}, 1),      # carrier without num_trials -> default 1
+        (infomap.Options(num_trials=7), {}, 7),  # carrier sets num_trials
+        ({"num_trials": 5}, {}, 5),  # mapping carrier
+        (
+            infomap.Options(regularized=True),
+            {},
+            1,
+        ),  # carrier without num_trials -> default 1
         (infomap.Options(num_trials=7), {"num_trials": 3}, 3),  # bare kwarg wins
-        (infomap.Options(num_trials=7), {"trials": 3}, 3),      # trials alias wins
+        (infomap.Options(num_trials=7), {"trials": 3}, 3),  # trials alias wins
     ],
 )
-def test_find_communities_options_carrier_num_trials(recorded, options, kwargs, expected):
+def test_find_communities_options_carrier_num_trials(
+    recorded, options, kwargs, expected
+):
     infomap.find_communities(_graph(), options=options, seed=1, **kwargs)
     assert recorded.get("num_trials", 1) == expected
 
@@ -62,7 +68,9 @@ def test_find_communities_carrier_carries_advanced_option(recorded):
 
 
 @pytest.mark.filterwarnings("ignore::PendingDeprecationWarning")
-def test_find_communities_carrier_keeps_engine_quiet_without_forcing_no_file_output(recorded):
+def test_find_communities_carrier_keeps_engine_quiet_without_forcing_no_file_output(
+    recorded,
+):
     # The finder no longer force-sets silent or no_file_output; the Options
     # carrier already defaults silent True and no_file_output False, so the
     # engine reaches run() quiet and file-free without the finder touching them.
