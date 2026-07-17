@@ -224,8 +224,8 @@ def _to_dataframe_column_getter(requested, resolved, names, state_names):
         return lambda node: names.get(node.node_id, node.node_id)
 
     if resolved == "state_name":
-        return lambda node: state_names.get(node.state_id) or names.get(
-            node.node_id, node.node_id
+        return lambda node: (
+            state_names.get(node.state_id) or names.get(node.node_id, node.node_id)
         )
 
     def get_column_value(node):
@@ -296,9 +296,7 @@ class _InfomapResultsMixin:
             raise ValueError('data must be one of "weight" or "flow"')
         return (
             (source, target, value)
-            for (source, target), value in self._core.getLinks(
-                data != "weight"
-            ).items()
+            for (source, target), value in self._core.getLinks(data != "weight").items()
         )
 
     def _get_name_impl(self, node_id, default=None):

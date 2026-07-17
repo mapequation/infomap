@@ -398,9 +398,7 @@ def test_run_scipy_sparse_matches_oo():
     result = infomap.run(A, **settings)
     assert isinstance(result, Result)
 
-    expected = _oo_codelength(
-        lambda im: im.add_scipy_sparse_matrix(A), **settings
-    )
+    expected = _oo_codelength(lambda im: im.add_scipy_sparse_matrix(A), **settings)
     assert result.codelength == pytest.approx(expected)
 
 

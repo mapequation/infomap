@@ -43,10 +43,7 @@ def _resolve_options(options: Any, overrides: dict) -> dict:
         # returns a kwargs dict by contract).
         to_kwargs = getattr(options, "to_kwargs", None)
         if not callable(to_kwargs):
-            raise TypeError(
-                "options must be an Options instance, a mapping, "
-                "or None"
-            )
+            raise TypeError("options must be an Options instance, a mapping, or None")
         kwargs: Any = to_kwargs()
         resolved = kwargs
     resolved.update(overrides)
@@ -177,8 +174,7 @@ def _warn_inert_output_options(
     if inert_removed:
         detail = " ".join(f"{name}: {repl}" for name, repl in inert_removed)
         warnings.warn(
-            "these options have no effect on the Python library surface -- "
-            + detail,
+            "these options have no effect on the Python library surface -- " + detail,
             UserWarning,
             stacklevel=3,
         )
@@ -360,9 +356,7 @@ def _reject_iterable_adapter_kwargs(user_keys: set) -> None:
     ``Infomap.__init__() got an unexpected keyword argument`` that leaks an
     internal the functional-API user never called.
     """
-    adapter_union = set().union(
-        *(kwargs for _, kwargs in _ADAPTER_KWARGS.values())
-    )
+    adapter_union = set().union(*(kwargs for _, kwargs in _ADAPTER_KWARGS.values()))
     misdirected = sorted((adapter_union - _COMMON_TIER_KEYS) & user_keys)
     if not misdirected:
         return

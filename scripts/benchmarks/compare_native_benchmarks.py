@@ -21,7 +21,9 @@ def load_report(path: Path) -> dict[str, object]:
 
 
 def index_benchmarks(report: dict[str, object]) -> dict[str, dict[str, object]]:
-    return {str(benchmark["name"]): benchmark for benchmark in report.get("benchmarks", [])}
+    return {
+        str(benchmark["name"]): benchmark for benchmark in report.get("benchmarks", [])
+    }
 
 
 def outputs_match(base_case: dict[str, object], head_case: dict[str, object]) -> bool:
@@ -37,7 +39,9 @@ def outputs_match(base_case: dict[str, object], head_case: dict[str, object]) ->
     )
 
 
-def classify_case(name: str, base_case: dict[str, object], head_case: dict[str, object]) -> dict[str, object]:
+def classify_case(
+    name: str, base_case: dict[str, object], head_case: dict[str, object]
+) -> dict[str, object]:
     base_runtime = float(base_case["median_run_sec"])
     head_runtime = float(head_case["median_run_sec"])
     delta_sec = head_runtime - base_runtime
@@ -57,14 +61,23 @@ def classify_case(name: str, base_case: dict[str, object], head_case: dict[str, 
     elif max(base_cv, head_cv) > CV_INCONCLUSIVE_THRESHOLD:
         status = "inconclusive"
         reason = "high_variance"
-    elif delta_sec >= SEVERE_ABSOLUTE_REGRESSION_THRESHOLD_SEC and delta_pct >= SEVERE_RELATIVE_REGRESSION_THRESHOLD:
+    elif (
+        delta_sec >= SEVERE_ABSOLUTE_REGRESSION_THRESHOLD_SEC
+        and delta_pct >= SEVERE_RELATIVE_REGRESSION_THRESHOLD
+    ):
         status = "regression"
         reason = "severe_regression"
         severe = True
-    elif delta_sec >= ABSOLUTE_REGRESSION_THRESHOLD_SEC and delta_pct >= RELATIVE_REGRESSION_THRESHOLD:
+    elif (
+        delta_sec >= ABSOLUTE_REGRESSION_THRESHOLD_SEC
+        and delta_pct >= RELATIVE_REGRESSION_THRESHOLD
+    ):
         status = "regression"
         reason = "regression"
-    elif delta_sec <= -ABSOLUTE_REGRESSION_THRESHOLD_SEC and delta_pct <= -RELATIVE_REGRESSION_THRESHOLD:
+    elif (
+        delta_sec <= -ABSOLUTE_REGRESSION_THRESHOLD_SEC
+        and delta_pct <= -RELATIVE_REGRESSION_THRESHOLD
+    ):
         status = "improvement"
         reason = "improvement"
 
@@ -88,7 +101,9 @@ def classify_case(name: str, base_case: dict[str, object], head_case: dict[str, 
     }
 
 
-def compare_reports(base_report: dict[str, object], head_report: dict[str, object]) -> dict[str, object]:
+def compare_reports(
+    base_report: dict[str, object], head_report: dict[str, object]
+) -> dict[str, object]:
     base_benchmarks = index_benchmarks(base_report)
     head_benchmarks = index_benchmarks(head_report)
     all_names = sorted(set(base_benchmarks) | set(head_benchmarks))
@@ -159,7 +174,12 @@ def render_markdown(result: dict[str, object]) -> str:
         delta_sec = case.get("delta_sec")
         delta_pct = case.get("delta_pct")
 
-        if base_runtime is None or head_runtime is None or delta_sec is None or delta_pct is None:
+        if (
+            base_runtime is None
+            or head_runtime is None
+            or delta_sec is None
+            or delta_pct is None
+        ):
             base_runtime_text = "n/a"
             head_runtime_text = "n/a"
             delta_sec_text = "n/a"
@@ -199,11 +219,33 @@ def render_markdown(result: dict[str, object]) -> str:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Compare native benchmark reports for PR perf regression detection.")
-    parser.add_argument("--base", type=Path, required=True, help="Path to the base benchmark JSON report.")
-    parser.add_argument("--head", type=Path, required=True, help="Path to the head benchmark JSON report.")
-    parser.add_argument("--markdown-out", type=Path, default=None, help="Optional Markdown summary output path.")
-    parser.add_argument("--json-out", type=Path, default=None, help="Optional JSON comparison output path.")
+    parser = argparse.ArgumentParser(
+        description="Compare native benchmark reports for PR perf regression detection."
+    )
+    parser.add_argument(
+        "--base",
+        type=Path,
+        required=True,
+        help="Path to the base benchmark JSON report.",
+    )
+    parser.add_argument(
+        "--head",
+        type=Path,
+        required=True,
+        help="Path to the head benchmark JSON report.",
+    )
+    parser.add_argument(
+        "--markdown-out",
+        type=Path,
+        default=None,
+        help="Optional Markdown summary output path.",
+    )
+    parser.add_argument(
+        "--json-out",
+        type=Path,
+        default=None,
+        help="Optional JSON comparison output path.",
+    )
     parser.add_argument(
         "--fail-on-regression",
         action="store_true",

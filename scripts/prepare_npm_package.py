@@ -58,8 +58,12 @@ def main():
     output_dir.mkdir(parents=True, exist_ok=True)
 
     source_package = json.loads(Path(args.source_package).read_text(encoding="utf-8"))
-    staged_package = {key: source_package[key] for key in KEEP_PACKAGE_FIELDS if key in source_package}
-    (output_dir / "package.json").write_text(json.dumps(staged_package, indent=2) + "\n", encoding="utf-8")
+    staged_package = {
+        key: source_package[key] for key in KEEP_PACKAGE_FIELDS if key in source_package
+    }
+    (output_dir / "package.json").write_text(
+        json.dumps(staged_package, indent=2) + "\n", encoding="utf-8"
+    )
 
     copy_file(args.readme, output_dir, "README.md")
     copy_file(args.readme_rst, output_dir, "README.rst")

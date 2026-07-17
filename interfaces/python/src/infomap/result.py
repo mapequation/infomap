@@ -82,8 +82,7 @@ _LEGACY_ACCESSOR_HINTS = {
 _LEGACY_ACCESSOR_HINTS.update(
     {
         "".join(
-            part.capitalize() if i else part
-            for i, part in enumerate(name.split("_"))
+            part.capitalize() if i else part for i, part in enumerate(name.split("_"))
         ): hint
         for name, hint in list(_LEGACY_ACCESSOR_HINTS.items())
         if name.startswith("get_")
@@ -355,9 +354,7 @@ class Result(_ResultWritersMixin):
         object.__setattr__(self, "_num_links", core.network().numLinks())
         object.__setattr__(self, "_index_codelength", core.getIndexCodelength())
         object.__setattr__(self, "_module_codelength", core.getModuleCodelength())
-        object.__setattr__(
-            self, "_one_level_codelength", core.getOneLevelCodelength()
-        )
+        object.__setattr__(self, "_one_level_codelength", core.getOneLevelCodelength())
         object.__setattr__(
             self,
             "_relative_codelength_savings",
@@ -413,8 +410,7 @@ class Result(_ResultWritersMixin):
             [
                 module.flow
                 for module in cls._tree_iterator(core, depth, False)
-                if (depth == -1 and module.is_leaf_module)
-                or module.depth == depth
+                if (depth == -1 and module.is_leaf_module) or module.depth == depth
             ]
         )
 
@@ -782,9 +778,7 @@ class Result(_ResultWritersMixin):
             self._tree_iterator(self._engine._core, depth, states)
         )
 
-    def multilevel_modules(
-        self, *, states: bool = False
-    ) -> dict[int, tuple[int, ...]]:
+    def multilevel_modules(self, *, states: bool = False) -> dict[int, tuple[int, ...]]:
         """Map ``node_id`` (or ``state_id`` when ``states``) to a tuple of
         ``module_id``, one per level from the top down.
 
@@ -1067,7 +1061,9 @@ class Result(_ResultWritersMixin):
         names = self._names
 
         data = {}
-        for requested, resolved in zip(requested_columns, resolved_columns, strict=True):
+        for requested, resolved in zip(
+            requested_columns, resolved_columns, strict=True
+        ):
             data[requested] = self._column(resolved, requested, snapshot, names)
 
         dataframe = pandas.DataFrame(data, columns=requested_columns)

@@ -193,9 +193,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         # writing to stdout for life, where verbosity_level is effective (so it
         # is not flagged inert). Read the raw option before the routed override
         # below strips silent.
-        _warn_inert_output_options(
-            options, args, engine_emits=options.silent is False
-        )
+        _warn_inert_output_options(options, args, engine_emits=options.silent is False)
         # In routed log mode (handlers on the "infomap" logger), logging is
         # the emission control: strip --silent from the constructor args (the
         # C++ engine composes constructor + run args additively, so a --silent
@@ -957,6 +955,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         _warn_advanced_tier_kwargs(locals(), "run")
         options = _merge_options(options, Options._from_locals(locals()), "run")
         return self._run_from_options(args, initial_partition, options)
+
     # === END generated ===
 
     def __repr__(self):
@@ -1023,8 +1022,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         """
         _warn_method_deprecated(
             "from_scipy_sparse_matrix",
-            "use Network.from_scipy_sparse_matrix() or infomap.run(matrix) "
-            "instead.",
+            "use Network.from_scipy_sparse_matrix() or infomap.run(matrix) instead.",
         )
         im = cls(args=args, **infomap_options)
         im._add_scipy_sparse_matrix_impl(
@@ -1215,7 +1213,9 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
                 else:
                     self.add_node(*node)
 
-    def add_state_node(self, state_id: int, node_id: int, name: str | None = None) -> None:
+    def add_state_node(
+        self, state_id: int, node_id: int, name: str | None = None
+    ) -> None:
         """Add a state node.
 
         Notes
@@ -1349,9 +1349,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             for name in names:
                 self.set_name(*name)
 
-    def add_link(
-        self, source_id: int, target_id: int, weight: float = 1.0
-    ) -> None:
+    def add_link(self, source_id: int, target_id: int, weight: float = 1.0) -> None:
         """Add a link.
 
         Notes

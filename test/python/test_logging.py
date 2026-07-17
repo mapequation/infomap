@@ -256,9 +256,7 @@ def test_stale_silent_advisory_warns_at_most_once(infomap_log_handler):
         im.run()
         im.run()
 
-    stale = [
-        r for r in records if "before logging was configured" in str(r.message)
-    ]
+    stale = [r for r in records if "before logging was configured" in str(r.message)]
     assert len(stale) == 1
 
 

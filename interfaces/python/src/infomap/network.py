@@ -549,7 +549,9 @@ class Network(_NetworkWritersMixin):
                     self.add_node(*node)
         return self
 
-    def add_state_node(self, state_id: int, node_id: int, name: str | None = None) -> Network:
+    def add_state_node(
+        self, state_id: int, node_id: int, name: str | None = None
+    ) -> Network:
         """Add a state node.
 
         Parameters
@@ -623,9 +625,7 @@ class Network(_NetworkWritersMixin):
     # Single-layer links
     # ----------------------------------------
 
-    def add_link(
-        self, source_id: int, target_id: int, weight: float = 1.0
-    ) -> Network:
+    def add_link(self, source_id: int, target_id: int, weight: float = 1.0) -> Network:
         """Add a link.
 
         Parameters
@@ -848,9 +848,7 @@ class Network(_NetworkWritersMixin):
     # Metadata
     # ----------------------------------------
 
-    def set_meta_data(
-        self, node_id: Any, meta_category: int | None = None
-    ) -> Network:
+    def set_meta_data(self, node_id: Any, meta_category: int | None = None) -> Network:
         """Set integer metadata for one node, or for many at once.
 
         Parameters

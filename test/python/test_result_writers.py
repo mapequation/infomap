@@ -100,9 +100,7 @@ def test_network_run_result_writes(tmp_path):
 def _data_lines(path: Path) -> list[str]:
     # The header comments embed the engine's construction flags, which differ
     # between a Network engine and an Infomap engine; the payload must not.
-    return [
-        line for line in path.read_text().splitlines() if not line.startswith("#")
-    ]
+    return [line for line in path.read_text().splitlines() if not line.startswith("#")]
 
 
 def test_network_writers_match_legacy_infomap_writers(make_infomap, tmp_path):

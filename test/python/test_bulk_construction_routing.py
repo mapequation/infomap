@@ -100,5 +100,7 @@ def test_multilayer_bulk_routing(
     assert calls[singular] == 0, "list input must NOT loop per-element in Python"
 
     getattr(Infomap(silent=True), method)(numpy_in)
-    assert calls[bulk_numpy] == 1, "numpy input must route to the FromNumpy2D constructor"
+    assert calls[bulk_numpy] == 1, (
+        "numpy input must route to the FromNumpy2D constructor"
+    )
     assert calls[singular] == 0

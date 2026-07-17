@@ -238,9 +238,7 @@ class _ResultWritersMixin(_WritersBase):
         with _translate_engine_errors():
             core.writeJsonTree(os.fsdecode(filename), states)
 
-    def write_csv(
-        self, filename: str | os.PathLike[str], states: bool = False
-    ) -> None:
+    def write_csv(self, filename: str | os.PathLike[str], states: bool = False) -> None:
         """Write result to a CSV file.
 
         An existing file at ``filename`` is overwritten.
@@ -307,9 +305,7 @@ class _NetworkWritersMixin(_WritersBase):
         with _translate_engine_errors():
             core.network().writeStateNetwork(os.fsdecode(filename))
 
-    def write_pajek(
-        self, filename: str | os.PathLike[str], flow: bool = False
-    ) -> None:
+    def write_pajek(self, filename: str | os.PathLike[str], flow: bool = False) -> None:
         """Write network to a Pajek file.
 
         An existing file at ``filename`` is overwritten.

@@ -43,9 +43,12 @@ repos:
         # Notebooks are published-article companions with a couple of known
         # findings; they are linted deliberately, not as a drive-by here.
         exclude: ^examples/notebooks/
-    # ruff-format is intentionally NOT enabled: the committed tree predates the
-    # current ruff formatter, so turning it on would reformat ~31 files. Adopt it
-    # as its own deliberate reformat commit if/when desired.
+      - id: ruff-format
+        name: ruff (format)
+        # Notebooks excluded to match the linter; the generated _swig.py and
+        # _options.py are skipped via [tool.ruff] extend-exclude (the generator
+        # owns their formatting).
+        exclude: ^examples/notebooks/
 
   # C++ formatting for the core sources. The equivalent CI job is currently
   # disabled (see #479), but `src/` is already clean under this clang-format

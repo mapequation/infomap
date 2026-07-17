@@ -372,7 +372,10 @@ def test_from_igraph_meta_attribute_engages():
     g.vs["ct"] = ["a", "b", "a", "a", "b", "b"]  # crossing the two triangles
     result = infomap.run(
         infomap.Network.from_igraph(g, meta_attribute="ct"),
-        silent=True, num_trials=5, seed=1, meta_data_rate=1.0,
+        silent=True,
+        num_trials=5,
+        seed=1,
+        meta_data_rate=1.0,
     )
     assert result.meta_codelength > 0
 

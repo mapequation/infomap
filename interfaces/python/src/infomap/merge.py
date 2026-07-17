@@ -57,6 +57,7 @@ class MergeSummary(TypedDict):
     #: Paths of the output files written.
     outputs: list[str]
 
+
 # Top-level keys every shard results file must contain.
 _REQUIRED_FILE_KEYS = (
     "network_fingerprint",
@@ -205,7 +206,9 @@ def _write_clu_from_tree(tree_path: str, clu_path: str) -> None:
                 top_module = int(path.split(":")[0])
             except ValueError:
                 continue
-            rows.append((int(node_id) if node_id.isdigit() else node_id, top_module, flow))
+            rows.append(
+                (int(node_id) if node_id.isdigit() else node_id, top_module, flow)
+            )
     tmp_path = clu_path + ".tmp"
     with open(tmp_path, "w", encoding="utf-8") as out:
         out.write("# produced by infomap.merge\n")
@@ -315,19 +318,24 @@ def _main(argv: Sequence[str] | None = None) -> int:
         description="Merge distributed Infomap trial-results shards into final output.",
     )
     parser.add_argument(
-        "patterns", nargs="+",
+        "patterns",
+        nargs="+",
         help="Shard result JSON files or glob patterns (comma lists allowed).",
     )
     parser.add_argument(
-        "--out-name", required=True,
+        "--out-name",
+        required=True,
         help="Output basename; writes <out-name>.tree / .clu.",
     )
     parser.add_argument(
-        "--output", default="tree,clu", type=_parse_formats,
+        "--output",
+        default="tree,clu",
+        type=_parse_formats,
         help="Comma-separated output formats (tree, clu). Default: tree,clu.",
     )
     parser.add_argument(
-        "--require-complete-trials", action="store_true",
+        "--require-complete-trials",
+        action="store_true",
         help="Fail if any global trial index in [0, max] is missing.",
     )
     args = parser.parse_args(argv)

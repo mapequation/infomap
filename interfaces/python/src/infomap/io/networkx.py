@@ -212,8 +212,7 @@ def find_communities(
         if hasattr(g, "vs") and hasattr(g, "vcount"):
             hint = " For an igraph.Graph, use infomap.find_igraph_communities(g)."
         raise TypeError(
-            "find_communities expects a networkx graph (with a `.nodes` view)."
-            + hint
+            "find_communities expects a networkx graph (with a `.nodes` view)." + hint
         )
 
     if len(g.nodes) == 0:

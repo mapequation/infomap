@@ -52,9 +52,7 @@ def undirected_edge_items(
         source_id = int(source)
         target_id = int(target)
         edge = (
-            (source_id, target_id)
-            if source_id <= target_id
-            else (target_id, source_id)
+            (source_id, target_id) if source_id <= target_id else (target_id, source_id)
         )
         if edge in edges:
             edges[edge] = max(edges[edge], weight)

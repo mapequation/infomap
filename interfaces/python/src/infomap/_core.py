@@ -118,9 +118,7 @@ def apply_initial_partition(core: Any, module_ids) -> bool:
     # instead of a raw SWIG TypeError from setInitialPartition.
     if isinstance(module_ids, dict):
         try:
-            module_ids = {
-                int(node): int(module) for node, module in module_ids.items()
-            }
+            module_ids = {int(node): int(module) for node, module in module_ids.items()}
         except (TypeError, ValueError) as exc:
             raise TypeError(
                 "initial_partition must map integer node/state ids to integer "

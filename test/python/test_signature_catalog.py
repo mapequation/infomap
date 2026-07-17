@@ -25,7 +25,12 @@ BACKWARD_COMPAT_EXTRA = {"pretty"}
 # `options` is the reusable Options/mapping carrier accepted alongside the bare
 # keyword arguments; it is not itself an option field in the catalog.
 NON_OPTION_INIT = {"self", "args", "options"} | BACKWARD_COMPAT_EXTRA
-NON_OPTION_RUN = {"self", "args", "initial_partition", "options"} | BACKWARD_COMPAT_EXTRA
+NON_OPTION_RUN = {
+    "self",
+    "args",
+    "initial_partition",
+    "options",
+} | BACKWARD_COMPAT_EXTRA
 
 
 @pytest.mark.fast

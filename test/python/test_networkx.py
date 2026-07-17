@@ -265,14 +265,20 @@ def test_from_networkx_meta_attribute_engages_and_encodes_strings():
             _nx_with_meta({0: "a", 1: "b", 2: "a", 3: "a", 4: "b", 5: "b"}),
             meta_attribute="ct",
         ),
-        silent=True, num_trials=5, seed=1, meta_data_rate=1.0,
+        silent=True,
+        num_trials=5,
+        seed=1,
+        meta_data_rate=1.0,
     )
     aligned = infomap.run(
         infomap.Network.from_networkx(
             _nx_with_meta({0: "x", 1: "x", 2: "x", 3: "y", 4: "y", 5: "y"}),
             meta_attribute="ct",
         ),
-        silent=True, num_trials=5, seed=1, meta_data_rate=1.0,
+        silent=True,
+        num_trials=5,
+        seed=1,
+        meta_data_rate=1.0,
     )
     assert crossing.meta_codelength > 0
     assert aligned.meta_codelength == 0.0
@@ -295,9 +301,7 @@ def test_find_communities_accepts_meta_attribute():
 
 def test_infomap_add_networkx_graph_accepts_meta_attribute():
     graph = _nx_with_meta({0: "a", 1: "b", 2: "a", 3: "a", 4: "b", 5: "b"})
-    im = infomap.Infomap(
-        silent=True, seed=1, num_trials=5, meta_data_rate=1.0
-    )
+    im = infomap.Infomap(silent=True, seed=1, num_trials=5, meta_data_rate=1.0)
     im.add_networkx_graph(graph, meta_attribute="ct")
     result = im.run()
     assert result.meta_codelength > 0
@@ -366,7 +370,9 @@ def test_find_communities_skips_unregistered_state_ids(monkeypatch):
 def test_find_communities_trials_default_matches_igraph():
     import inspect
 
-    nx_default = inspect.signature(infomap.find_communities).parameters["trials"].default
+    nx_default = (
+        inspect.signature(infomap.find_communities).parameters["trials"].default
+    )
     ig_default = (
         inspect.signature(infomap.find_igraph_communities).parameters["trials"].default
     )
@@ -382,9 +388,9 @@ def test_find_communities_rejects_trials_and_num_trials_conflict():
 @pytest.mark.parametrize(
     "kwargs, expected",
     [
-        ({}, 1),                     # neither -> engine default (like run())
-        ({"trials": 7}, 7),          # the convenience alias
-        ({"num_trials": 3}, 3),      # the engine option (back-compat)
+        ({}, 1),  # neither -> engine default (like run())
+        ({"trials": 7}, 7),  # the convenience alias
+        ({"num_trials": 3}, 3),  # the engine option (back-compat)
     ],
 )
 @pytest.mark.filterwarnings("ignore::PendingDeprecationWarning")
