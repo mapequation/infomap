@@ -70,7 +70,7 @@ def _node_attributes(
 def _flow_by_state_id(infomap: Any) -> dict[int, float]:
     # Read through the engine core, not the deprecated Infomap.nodes property.
     node_data = infomap._core.get_node_data(1, True)
-    return dict(zip(list(node_data.state_id), list(node_data.flow)))
+    return dict(zip(list(node_data.state_id), list(node_data.flow), strict=True))
 
 
 def _mapped_assignments(

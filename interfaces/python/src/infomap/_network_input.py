@@ -70,7 +70,7 @@ def split_optional_weight_rows(
             )
 
         values, weight = unpack(row, row_length)
-        for column, value in zip(columns, values):
+        for column, value in zip(columns, values, strict=True):
             column.append(value)
         weights.append(weight)
 
