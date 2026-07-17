@@ -200,6 +200,20 @@ minversion = "7"
 # marker (e.g. a typo of the custom ones below) is an error, not a silent skip.
 # --strict-config: a typo in this section is an error rather than ignored.
 addopts = ["-ra", "--strict-markers", "--strict-config"]
+# A test marked xfail that unexpectedly passes is a failure, not a silent pass:
+# it means the reason for the xfail is gone and the marker should be removed.
+xfail_strict = true
+# Turn unexpected warnings into failures. The package deliberately exercises its
+# own deprecated 2.x surface across the suite as part of the 3.0 migration, so
+# its own Deprecation/PendingDeprecationWarning churn is tolerated; every other
+# warning category (unhandled UserWarning, RuntimeWarning, FutureWarning, ...)
+# now fails the run instead of scrolling past. Tests that assert a specific
+# deprecation still do so via pytest.warns / pytest.deprecated_call.
+filterwarnings = [
+  "error",
+  "ignore::DeprecationWarning",
+  "ignore::PendingDeprecationWarning",
+]
 testpaths = ["test/python"]
 # NUMBER lets doctests state floats at the precision that matters
 # (`>>> result.codelength` -> `3.3858`) instead of an abs(...) < tol dance.
