@@ -2,7 +2,6 @@
 requires = [
   # >=77 for PEP 639 SPDX license support (the `license` expression below).
   "setuptools>=77",
-  "wheel",
 ]
 build-backend = "setuptools.build_meta"
 
@@ -196,6 +195,11 @@ reportMissingModuleSource = false
 reportUnsupportedDunderAll = false
 
 [tool.pytest.ini_options]
+minversion = "7"
+# -ra: summarize skips/xfails at the end. --strict-markers: an unregistered
+# marker (e.g. a typo of the custom ones below) is an error, not a silent skip.
+# --strict-config: a typo in this section is an error rather than ignored.
+addopts = ["-ra", "--strict-markers", "--strict-config"]
 testpaths = ["test/python"]
 # NUMBER lets doctests state floats at the precision that matters
 # (`>>> result.codelength` -> `3.3858`) instead of an abs(...) < tol dance.
