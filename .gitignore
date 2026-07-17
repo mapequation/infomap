@@ -13,6 +13,12 @@ __pycache__/
 .venv/
 venv/
 node_modules/
+
+# Coverage artifacts (pytest-cov / coverage.py)
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
 *.dSYM
 callgrind.*
 

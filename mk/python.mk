@@ -45,6 +45,7 @@ PYTHON_BUILD_ENV = \
 	dev-python-notebooks-install \
 	test-python \
 	test-python-unit \
+	test-python-coverage \
 	test-python-doctest \
 	test-python-typecheck \
 	test-python-typecheck-core \
@@ -89,6 +90,13 @@ test-python: test-python-unit test-python-doctest test-python-examples
 
 test-python-unit:
 	@$(PYTEST) $(PYTEST_ARGS) $(PYTHON_TEST_DIR)
+
+# Same suite as test-python-unit, with coverage of the hand-written package.
+# Emits term-missing for local reading and coverage.xml for CI upload. Config
+# (source, omit, paths) lives in [tool.coverage.*] in pyproject.toml.
+test-python-coverage:
+	@$(PYTEST) $(PYTEST_ARGS) $(PYTHON_TEST_DIR) \
+		--cov=infomap --cov-report=term-missing --cov-report=xml
 
 test-python-doctest:
 	@$(RUFF) check $(PYTHON_LINT_TARGETS)

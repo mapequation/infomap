@@ -79,6 +79,7 @@ test = [
   # releases routinely add diagnostics. Bump deliberately.
   "pyright==1.1.411",
   "pytest",
+  "pytest-cov",
   "networkx",
   "pyarrow",
   "referencing",
@@ -240,4 +241,25 @@ markers = [
   "slow: Broader or more expensive checks that should stay out of the default fast suite.",
   "crash: Regression checks focused on no-crash behavior for previously brittle code paths.",
   "perf: Performance-oriented checks or benchmarks that should not gate normal correctness runs.",
+]
+
+[tool.coverage.run]
+# Coverage of the hand-written Python package. The C++ core is covered
+# separately by the ctest suite; this measures the wrapper/adapter/IO surface.
+source_pkgs = ["infomap"]
+branch = true
+# _swig.py is generated SWIG binding boilerplate (same boundary ruff excludes):
+# most of it is never-called wrapper stubs, so measuring it is meaningless and
+# only drags the number down.
+omit = ["*/infomap/_swig.py"]
+
+[tool.coverage.paths]
+# Map the editable src tree (local) and the wheel-installed package (CI) to one
+# path so coverage reports them consistently regardless of install mode.
+infomap = ["interfaces/python/src/infomap", "*/site-packages/infomap"]
+
+[tool.coverage.report]
+exclude_also = [
+  "if TYPE_CHECKING:",
+  "raise NotImplementedError",
 ]

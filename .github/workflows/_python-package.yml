@@ -262,8 +262,25 @@ jobs:
           INFOMAP_EXPECTED_FEATURES: ${{ inputs.features }}
 
       - name: Run Python unit tests
-        if: ${{ !matrix.smoke-only }}
+        if: ${{ !matrix.smoke-only && !matrix.run-full-suite }}
         run: make test-python-unit
+
+      # The full-suite leg has the [test]+[examples] extras, so it exercises the
+      # io/ and tl/ adapters -- the best leg to measure coverage on. Runs the
+      # same suite as test-python-unit, plus coverage.xml for the upload below.
+      - name: Run Python unit tests with coverage
+        if: matrix.run-full-suite
+        run: make test-python-coverage
+
+      - name: Upload coverage to Codecov
+        if: matrix.run-full-suite
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+        with:
+          files: ./coverage.xml
+          # Best-effort: keep CI green even before the Codecov app is connected
+          # to the repo. Tokenless upload works for this public repo; add a
+          # CODECOV_TOKEN secret later if rate limits require it.
+          fail_ci_if_error: false
 
       - name: Run Python doctests
         if: matrix.run-full-suite
