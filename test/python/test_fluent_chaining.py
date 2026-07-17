@@ -7,9 +7,7 @@ call's result (an id / bool / None), routed through the shared ``Core``.
 """
 
 import pytest
-
 from infomap import Infomap, Network
-
 
 # --- Network is fluent: every mutator returns self -----------------------------
 

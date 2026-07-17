@@ -30,8 +30,8 @@ import json
 import os
 import shutil
 import sys
-from typing import TypedDict
 from collections.abc import Iterable, Sequence
+from typing import TypedDict
 
 __all__ = ["merge_trial_results", "MergeError", "MergeSummary"]
 

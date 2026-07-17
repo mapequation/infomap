@@ -1,7 +1,6 @@
 import pytest
 from infomap import MultilayerNode
 
-
 pytestmark = pytest.mark.fast
 
 

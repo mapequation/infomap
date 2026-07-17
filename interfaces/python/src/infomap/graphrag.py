@@ -9,9 +9,17 @@ from __future__ import annotations
 
 from .tl.graphrag import (
     GraphRAGGraph as GraphRAGGraph,
+)
+from .tl.graphrag import (
     GraphRAGRunResult as GraphRAGRunResult,
+)
+from .tl.graphrag import (
     read_graphrag as read_graphrag,
+)
+from .tl.graphrag import (
     run_graphrag_communities as run_graphrag_communities,
+)
+from .tl.graphrag import (
     write_graphrag_communities as write_graphrag_communities,
 )
 

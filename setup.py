@@ -1,12 +1,11 @@
+import importlib.util
 import os
 import sys
-import importlib.util
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from setuptools import Extension, setup
 from setuptools.command.build_ext import build_ext
-
 
 REPO_ROOT = Path(__file__).resolve().parent
 SWIG_CPP_SOURCE = REPO_ROOT / "interfaces" / "python" / "generated" / "infomap_wrap.cpp"

@@ -8,7 +8,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-
 # Single source of truth for the C++ language standard across every build
 # surface: the native/Python flag lists below embed it, and the JS/Emscripten
 # build reads it back via the `field` / `make-export` interfaces. Bump here only.

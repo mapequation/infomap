@@ -9,7 +9,6 @@ import json
 from pathlib import Path
 
 import pytest
-
 from infomap.merge import MergeError, MergeSummary, merge_trial_results
 
 

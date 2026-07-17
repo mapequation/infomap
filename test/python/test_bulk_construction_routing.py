@@ -5,7 +5,6 @@ performance invariant through the facade decomposition.
 
 import numpy as np
 import pytest
-
 from infomap import Infomap
 from infomap._bindings import InfomapWrapper
 

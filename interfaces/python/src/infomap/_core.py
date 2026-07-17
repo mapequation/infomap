@@ -16,20 +16,12 @@ from __future__ import annotations
 
 from typing import Any
 
-from .errors import _translate_engine_errors
-
+from ._bindings import InfomapIterator as InfomapIterator
+from ._bindings import InfomapIteratorPhysical as InfomapIteratorPhysical
+from ._bindings import InfomapLeafIterator as InfomapLeafIterator
+from ._bindings import InfomapLeafIteratorPhysical as InfomapLeafIteratorPhysical
+from ._bindings import InfomapLeafModuleIterator as InfomapLeafModuleIterator
 from ._bindings import InfomapWrapper  # noqa: F401  (the only engine import)
-from ._bindings import build_info as build_info  # module-level engine function
-from ._bindings import run as run  # module-level engine function (CLI driver)
-
-# Engine log-sink hooks, re-exported through this single boundary for
-# infomap._logging: install/remove the process-global line sink, and drain
-# lines queued by non-GIL-holding threads after an engine call returns. Kept
-# under their private (underscore) names so the re-export uses the redundant
-# ``_x as _x`` alias a type checker treats as an explicit re-export -- a renamed
-# alias reads as an unexported private symbol (pyright reportPrivateImportUsage).
-from ._bindings import _drain_log_queue as _drain_log_queue
-from ._bindings import _set_log_callback as _set_log_callback
 
 # Documented tree-walking iterator/node types returned by ``Infomap.tree`` /
 # ``leaf_modules`` and the physical variants (source/api/iterators.rst). They are
@@ -39,11 +31,18 @@ from ._bindings import _set_log_callback as _set_log_callback
 # (vector_*, Config, StateNetwork, FlowModel, FlowData, ...) are deliberately
 # NOT re-exported.
 from ._bindings import InfoNode as InfoNode
-from ._bindings import InfomapIterator as InfomapIterator
-from ._bindings import InfomapIteratorPhysical as InfomapIteratorPhysical
-from ._bindings import InfomapLeafIterator as InfomapLeafIterator
-from ._bindings import InfomapLeafIteratorPhysical as InfomapLeafIteratorPhysical
-from ._bindings import InfomapLeafModuleIterator as InfomapLeafModuleIterator
+
+# Engine log-sink hooks, re-exported through this single boundary for
+# infomap._logging: install/remove the process-global line sink, and drain
+# lines queued by non-GIL-holding threads after an engine call returns. Kept
+# under their private (underscore) names so the re-export uses the redundant
+# ``_x as _x`` alias a type checker treats as an explicit re-export -- a renamed
+# alias reads as an unexported private symbol (pyright reportPrivateImportUsage).
+from ._bindings import _drain_log_queue as _drain_log_queue
+from ._bindings import _set_log_callback as _set_log_callback
+from ._bindings import build_info as build_info  # module-level engine function
+from ._bindings import run as run  # module-level engine function (CLI driver)
+from .errors import _translate_engine_errors
 
 
 class Core:

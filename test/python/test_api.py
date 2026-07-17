@@ -1,14 +1,12 @@
 import importlib.resources
-from operator import itemgetter
 import tomllib
-
-import networkx as nx
-import pytest
+from operator import itemgetter
 
 import infomap as infomap_module
 import infomap._summary as summary_module
+import networkx as nx
+import pytest
 from infomap._bindings import InfomapWrapper
-
 
 pytestmark = pytest.mark.fast
 

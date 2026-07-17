@@ -13,7 +13,6 @@ set-equality invariant independently of the generator.
 import inspect
 
 import pytest
-
 from infomap import Infomap
 from infomap._options import _OPTION_FIELD_NAMES
 

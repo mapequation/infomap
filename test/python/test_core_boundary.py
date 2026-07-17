@@ -2,7 +2,6 @@
 and Infomap no longer inherits the SWIG wrapper."""
 
 import pytest
-
 from infomap import Infomap
 from infomap._bindings import InfomapWrapper
 from infomap._core import Core

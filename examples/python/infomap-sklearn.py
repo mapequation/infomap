@@ -1,8 +1,7 @@
 import networkx as nx
 import numpy as np
-from sklearn.model_selection import ParameterGrid
-
 from infomap import Network, Options
+from sklearn.model_selection import ParameterGrid
 
 # Build the network once, then re-run it with different options.
 net = Network.from_networkx(nx.karate_club_graph())

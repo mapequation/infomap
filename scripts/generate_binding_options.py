@@ -11,7 +11,6 @@ from pathlib import Path
 from parameter_catalog import GROUPS, ParameterCatalog
 from render_parameter_policy import render as render_parameter_policy_md
 
-
 REPO_ROOT = Path(__file__).resolve().parents[1]
 OVERRIDES = REPO_ROOT / "interfaces" / "parameters" / "overrides.json"
 

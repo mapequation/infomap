@@ -163,7 +163,8 @@ def _warn_inert_output_options(
     # that was fixed for hide_bipartite_nodes, so drop it from the check there.
     import logging
 
-    from ._logging import is_routed, logger as _engine_logger
+    from ._logging import is_routed
+    from ._logging import logger as _engine_logger
 
     removable = ["verbosity_level", "print_config_fingerprint"]
     if engine_emits or (is_routed() and _engine_logger.isEnabledFor(logging.DEBUG)):

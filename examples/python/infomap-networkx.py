@@ -3,7 +3,6 @@ import pathlib
 import matplotlib.colors as colors
 import matplotlib.pyplot as plt
 import networkx as nx
-
 from infomap import run
 
 """

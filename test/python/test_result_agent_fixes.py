@@ -11,7 +11,6 @@ Result cannot write.
 from __future__ import annotations
 
 import pytest
-
 from infomap import Infomap, InfomapError, StaleResultError, datasets, run
 
 pytestmark = pytest.mark.fast

@@ -19,9 +19,7 @@ import sys
 import warnings
 
 import pytest
-
 from infomap import Infomap, Options, disable_log, enable_log, run
-
 
 # These tests drive the engine log -> Python logging routing, deliberately
 # using silent=False to produce engine output; the pending deprecation on the

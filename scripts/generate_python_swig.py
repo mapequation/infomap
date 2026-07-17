@@ -8,7 +8,6 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-
 REPO_ROOT = Path(__file__).resolve().parents[1]
 INTERFACE_FILE = REPO_ROOT / "interfaces" / "swig" / "Infomap.i"
 REQUIRED_SWIG_VERSION = "4.4.1"

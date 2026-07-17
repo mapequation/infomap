@@ -17,11 +17,9 @@ import importlib
 import re
 from pathlib import Path
 
-import pytest
-
 import infomap
 import infomap.merge
-
+import pytest
 
 pytestmark = pytest.mark.fast
 

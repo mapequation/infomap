@@ -10,9 +10,17 @@ from ..errors import InfomapError
 # third-party imports, so this keeps ``import infomap`` dependency-free.
 from .graphrag import (
     GraphRAGGraph as GraphRAGGraph,
+)
+from .graphrag import (
     GraphRAGRunResult as GraphRAGRunResult,
+)
+from .graphrag import (
     read_graphrag as read_graphrag,
+)
+from .graphrag import (
     run_graphrag_communities as run_graphrag_communities,
+)
+from .graphrag import (
     write_graphrag_communities as write_graphrag_communities,
 )
 

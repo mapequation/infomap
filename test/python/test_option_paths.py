@@ -15,11 +15,9 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-import pytest
-
 import infomap
+import pytest
 from infomap import Infomap, Options
-
 
 pytestmark = pytest.mark.fast
 

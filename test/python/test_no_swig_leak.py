@@ -18,9 +18,8 @@ other module must talk to the engine through ``Core``.
 import ast
 from pathlib import Path
 
-import pytest
-
 import infomap
+import pytest
 from infomap import Infomap
 
 PACKAGE_DIR = Path(infomap.__file__).parent

@@ -18,7 +18,6 @@ import warnings
 
 import networkx as nx
 import pytest
-
 from infomap import Infomap, Network, Options, find_communities, run
 from infomap.result import Result
 

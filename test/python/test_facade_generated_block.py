@@ -9,7 +9,6 @@ import inspect
 from pathlib import Path
 
 import pytest
-
 from infomap import Infomap
 from infomap._options import _OPTION_FIELD_NAMES
 
@@ -47,7 +46,10 @@ def test_generated_signatures_are_annotated():
     import inspect
 
     from infomap import Infomap, Result
-    from infomap._options import FlowModel, OutputFormat  # noqa: F401  (generated aliases)
+    from infomap._options import (  # noqa: F401  (generated aliases)
+        FlowModel,
+        OutputFormat,
+    )
 
     init_signature = inspect.signature(Infomap.__init__)
     run_signature = inspect.signature(Infomap.run)

@@ -2,7 +2,6 @@ import re
 
 import pytest
 
-
 pytestmark = pytest.mark.fast
 
 

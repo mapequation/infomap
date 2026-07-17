@@ -5,7 +5,6 @@ import json
 import shutil
 from pathlib import Path
 
-
 KEEP_PACKAGE_FIELDS = [
     "name",
     "version",

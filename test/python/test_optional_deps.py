@@ -10,9 +10,7 @@ from __future__ import annotations
 import importlib
 
 import pytest
-
 from infomap import _optional
-
 
 pytestmark = pytest.mark.fast
 

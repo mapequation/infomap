@@ -13,9 +13,7 @@ import os
 from pathlib import Path
 
 import pytest
-
 from infomap import Network, Options, StaleResultError, run
-
 
 pytestmark = pytest.mark.fast
 

@@ -4,7 +4,6 @@ import json
 from dataclasses import dataclass
 from typing import Any
 
-
 GROUPS = ("Input", "Output", "Algorithm", "Accuracy")
 
 def resolve_policy_decision(

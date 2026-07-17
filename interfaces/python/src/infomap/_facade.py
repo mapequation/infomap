@@ -6,24 +6,27 @@ from collections.abc import Mapping
 from contextlib import contextmanager
 from typing import Any
 
-from ._core import Core
-from ._core import apply_initial_partition
-from ._core import build_info as _engine_build_info
-from ._core import run as _cli_run
-
 # Documented tree-walking iterator/node types returned by ``Infomap.tree`` /
 # ``leaf_modules`` / the physical variants (source/api/iterators.rst). Surfaced
 # at the package top level so ``from infomap import InfoNode`` and
 # ``isinstance(node, infomap.InfomapIterator)`` keep working. Reached through the
 # ``_core`` boundary, never ``_swig``/``_bindings`` directly.
 from ._core import (
-    InfoNode,
+    Core,
     InfomapIterator,
     InfomapIteratorPhysical,
     InfomapLeafIterator,
     InfomapLeafIteratorPhysical,
     InfomapLeafModuleIterator,
+    InfoNode,
+    apply_initial_partition,
 )
+from ._core import build_info as _engine_build_info
+from ._core import run as _cli_run
+from ._logging import apply_engine_log_overrides as _apply_engine_log_overrides
+from ._logging import disable_log, enable_log
+from ._logging import engine_log_routing as _engine_log_routing
+from ._logging import is_routed as _is_log_routed
 from ._network_input import add_bulk_links as _add_bulk_links
 from ._network_input import first_order_unpacker as _first_order_unpacker
 from ._network_input import flat_multilayer_unpacker as _flat_multilayer_unpacker
@@ -39,31 +42,35 @@ from ._options import (
     _merge_options,
     _warn_advanced_tier_kwargs,
 )
-from ._logging import apply_engine_log_overrides as _apply_engine_log_overrides
-from ._logging import disable_log, enable_log
-from ._logging import engine_log_routing as _engine_log_routing
-from ._logging import is_routed as _is_log_routed
-from ._results import _InfomapResultsMixin
-from ._results import _install_accessor_deprecations
-from ._results import _warn_method_deprecated
-from ._results import entropy, perplexity, plogp
-from .errors import NetworkParseError, _translate_engine_errors
-from .result import Result, TreeNode, build_result
+from ._results import (
+    _InfomapResultsMixin,
+    _install_accessor_deprecations,
+    _warn_method_deprecated,
+    entropy,
+    perplexity,
+    plogp,
+)
+from ._run import _warn_inert_output_options, run
 from ._summary import (
     repr_html as _repr_html,
+)
+from ._summary import (
     repr_text as _repr_text,
+)
+from ._summary import (
     summary_data as _summary_data,
 )
+from .errors import NetworkParseError, _translate_engine_errors
 from .io.edge_index import add_edge_index as _add_edge_index
+from .io.export import to_igraph, to_networkx
 from .io.igraph import add_igraph_graph as _add_igraph_graph
 from .io.igraph import find_igraph_communities
 from .io.networkx import add_networkx_graph as _add_networkx_graph
 from .io.networkx import find_communities
-from .io.export import to_igraph, to_networkx
 from .io.scipy import add_scipy_sparse_matrix as _add_scipy_sparse_matrix
 from .io.writers import _InfomapWritersMixin
 from .network import Network
-from ._run import _warn_inert_output_options, run
+from .result import Result, TreeNode, build_result
 
 
 def _package_construct_args():
