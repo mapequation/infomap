@@ -22,7 +22,7 @@ def test_get_node_data_single_traversal_matches_get_modules():
     im = _two_triangles()
     im.run()
     nd = im._core.get_node_data(1, False)
-    by_node = dict(zip(list(nd.node_id), list(nd.module_id)))
+    by_node = dict(zip(list(nd.node_id), list(nd.module_id), strict=True))
     assert by_node == im.get_modules(1, False)
 
 
@@ -31,7 +31,7 @@ def test_get_node_data_camelcase_swig_accessor_still_works():
     im = _two_triangles()
     im.run()
     nd = im._core.getNodeData(1, False)
-    assert dict(zip(list(nd.node_id), list(nd.module_id))) == im.get_modules(1, False)
+    assert dict(zip(list(nd.node_id), list(nd.module_id), strict=True)) == im.get_modules(1, False)
 
 
 @pytest.mark.fast
@@ -193,11 +193,11 @@ def test_to_dataframe_state_name_column_distinguishes_state_nodes(
     )
 
     # The "state_name" column carries the per-state-node name.
-    assert dict(zip(df["state_id"], df["state_name"])) == _STATES_NET_STATE_NAMES
+    assert dict(zip(df["state_id"], df["state_name"], strict=True)) == _STATES_NET_STATE_NAMES
     # The "name" column is unchanged: the physical name keyed by node_id.
     assert all(
         name == _STATES_NET_PHYSICAL_NAMES[node_id]
-        for node_id, name in zip(df["node_id"], df["name"])
+        for node_id, name in zip(df["node_id"], df["name"], strict=True)
     )
     # State nodes 1 and 4 are both physical node 1: the physical name collapses
     # them to "i", while state_name keeps them distinct.

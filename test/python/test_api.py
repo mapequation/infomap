@@ -302,7 +302,7 @@ def test_result_summaries_collect_into_one_row_per_run_dataframe():
 
     df = pd.DataFrame(
         {"markov_time": mt, **result.summary()}
-        for mt, result in zip(markov_times, results)
+        for mt, result in zip(markov_times, results, strict=True)
     )
 
     assert len(df) == len(markov_times)

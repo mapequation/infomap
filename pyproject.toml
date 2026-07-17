@@ -159,6 +159,12 @@ extend-exclude = [
   "interfaces/python/src/infomap/_swig.py",
 ]
 
+[tool.ruff.lint]
+# flake8-bugbear (B) on top of the default E/F rules: likely-bug patterns.
+# The main one here is B905 -- zip() without strict= -- fixed by asserting the
+# equal-length invariant (strict=True) on the paired-array call sites.
+extend-select = ["B"]
+
 [tool.ruff.lint.per-file-ignores]
 "build/py/*.py" = [
   "F401",
@@ -167,6 +173,10 @@ extend-exclude = [
   "F821",
   "F405",
 ]
+# Tests access a property/attribute purely to trigger its side effect (a
+# deprecation warning, a boundary check), which B018 flags as a useless
+# expression. That access is the point of the test, so ignore B018 there.
+"test/python/*" = ["B018"]
 
 [tool.pyright]
 # Type-check the hand-written package only. The SWIG-generated _swig.py is
