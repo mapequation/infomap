@@ -436,7 +436,7 @@ private:
   // GLOBAL total (constant across sub-networks), so sub-optimizers inherit it via
   // buildFromLevel rather than recomputing from their local units.
   bool m_recordedTeleport = false;
-  double m_minRelTuneImprovement = 1e-3; // interior-refine early-stop knee (0 = off, grind to convergence)
+  double m_minRelTuneImprovement = 5e-3; // interior-refine early-stop knee (0 = off, grind to convergence)
   double m_totalTeleFlow = 0.0; // GLOBAL sum of leaf teleport flow (root teleport flow)
   // A module's recorded-teleport enter/exit from its aggregated teleport flow tf
   // and weight tw (see InfomapBase::aggregateFlowValuesFromLeafToRoot): a walker
