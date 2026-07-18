@@ -1783,13 +1783,21 @@ void InfomapBase::columnarPartition()
       ? opt.optimizeFlexible(1)
       : opt.optimizeColumnar(1, tuneIterationLimit);
 
-  // Materialize the result into the InfoNode tree (sets m_hierarchicalCodelength
-  // and prepares the tree exactly like the rest of the output pipeline expects).
+  // Materialize the result into the InfoNode tree for output. initTree also sets
+  // m_hierarchicalCodelength by recomputing on the reconstructed tree — but the
+  // columnar core is the source of truth for the search (and is slated to replace
+  // the OO tree for I/O). The OO re-materialization of some partitions (notably a
+  // two-level result reconstructed after a prior trial in the same instance) can
+  // disagree with the true columnar codelength — even go negative — so trust the
+  // core's value for reporting and trial selection; keep the reconstruction only
+  // for the output tree structure.
   auto paths = opt.toNodePaths(m_leafNodes);
   initTree(paths);
+  const double materializedL = m_hierarchicalCodelength;
+  m_hierarchicalCodelength = columnarL;
   m_numNonTrivialTopModules = calculateNumNonTrivialTopModules();
   Console::detail(1, "columnar: codelength {}, materialized {}, {} levels",
-                  io::toPrecision(columnarL), io::toPrecision(m_hierarchicalCodelength), maxTreeDepth());
+                  io::toPrecision(columnarL), io::toPrecision(materializedL), maxTreeDepth());
 }
 
 bool InfomapBase::columnarNativeInputEligible() const
