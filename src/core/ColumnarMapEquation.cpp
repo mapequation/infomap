@@ -974,8 +974,63 @@ double ColumnarTwoLevel::optimizeTwoLevelStack()
   // interior level), but the memory/meta/lossy corrections reward merges the
   // leaf-level move loop cannot reach — the same reason the hierarchical
   // searches run it.
+  double beforeMerge = L;
   coarsenModules(L, 1000);
+
+  // Interleave the merge with a seeded leaf fine-tune: a correction-driven
+  // merge reshapes the modules far from where the leaf move loop last saw
+  // them (air30k: K 1344 -> 328), so re-tuning the leaves inside the merged
+  // structure recovers most of the remaining gap to the OO -2 optimum
+  // (air30k best-of-10: 5.605 -> 5.460 vs OO 5.394), and the tuned partition
+  // can enable further merges. Alternate until the pair stops improving. The
+  // base objective never enters (its merge is a no-op, so the loop condition
+  // fails immediately and the already-converged fine-tune is not repeated).
+  for (int round = 0; round < 100 && L < beforeMerge - kMinImprovement; ++round) {
+    const bool tuned = retuneLeavesWithinModules(L);
+    beforeMerge = L;
+    coarsenModules(L, 1000);
+    if (!tuned && L >= beforeMerge - kMinImprovement)
+      break;
+  }
   return L;
+}
+
+bool ColumnarTwoLevel::retuneLeavesWithinModules(double& L)
+{
+  // Seeded leaf fine-tune across the current module level: re-run the leaf
+  // move loop (corrections active, co-physical proposals enabled by the
+  // seeded phase) from the current assignment, rebuild the module level, and
+  // keep the result only if it lowers the true stack codelength.
+  std::vector<int> savedTop = m_hierAssign[0];
+  const int savedK = m_hierLevels[1].n;
+
+  m_lvl = m_leaf0;
+  m_leafMoveLoop = true;
+  m_seededPhase = true;
+  seedAssignment(m_hierAssign[0]);
+  moveLoop();
+
+  std::vector<int> remap(m_lvl.n, -1);
+  int k = 0;
+  for (int i = 0; i < m_lvl.n; ++i)
+    if (remap[m_module[i]] == -1)
+      remap[m_module[i]] = k++;
+  std::vector<int> newTop(m_nLeaves);
+  for (int i = 0; i < m_nLeaves; ++i)
+    newTop[i] = remap[m_module[i]];
+
+  m_hierAssign[0] = std::move(newTop);
+  m_hierLevels[1] = aggregateLevel(m_leaf0, m_hierAssign[0], k, m_undirected);
+  m_numTopModules = static_cast<unsigned int>(k);
+  const double tunedL = hierarchicalCodelengthFromStack();
+  if (tunedL < L - kMinImprovement) {
+    L = tunedL;
+    return true;
+  }
+  m_hierAssign[0] = std::move(savedTop);
+  m_hierLevels[1] = aggregateLevel(m_leaf0, m_hierAssign[0], savedK, m_undirected);
+  m_numTopModules = static_cast<unsigned int>(savedK);
+  return false;
 }
 
 bool ColumnarTwoLevel::seedHierarchyFromLeafPaths(const std::vector<std::vector<int>>& leafPaths)

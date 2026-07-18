@@ -227,6 +227,12 @@ public:
   // hierarchy. Returns the (correction-augmented) two-level codelength.
   double optimizeTwoLevelStack();
 
+  // Seeded leaf fine-tune across the current module level of a two-level
+  // stack, gated on the true stack codelength (revert if not improving).
+  // Used by optimizeTwoLevelStack to interleave leaf tuning with the
+  // correction-driven module merges. Returns whether it improved (updates L).
+  bool retuneLeavesWithinModules(double& L);
+
   // Run the two-level optimize, then grow the hierarchy upward with the
   // enter-flow super-search (M1c). bottomBlockLimit > 0 seeds a finer bottom
   // level. Returns the hierarchical codelength of the multi-level partition.
