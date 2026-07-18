@@ -356,6 +356,15 @@ void MemMapEquation::updateCodelengthOnMovingNode(InfoNode& current,
   nodeFlow_log_nodeFlow += delta_nodeFlow_log_nodeFlow;
   moduleCodelength -= delta_nodeFlow_log_nodeFlow;
   codelength -= delta_nodeFlow_log_nodeFlow;
+
+  // The flag marks that the memory contributions for THIS move were already
+  // accumulated onto the deltas by addMemoryContributions() (the optimize
+  // candidate-evaluation path). It is consumed by this one move; reset it so a
+  // following standalone moveNodeToPredefinedModule() — e.g. the single-node
+  // "drag along" in tryMoveEachNodeIntoBestModule(), which passes fresh
+  // zero-initialised deltas — recomputes its own contributions instead of
+  // updating the physical-node map while leaving nodeFlow_log_nodeFlow stale.
+  m_memoryContributionsAdded = false;
 }
 
 void MemMapEquation::updatePhysicalNodes(InfoNode& current, unsigned int oldModuleIndex, unsigned int bestModuleIndex)
