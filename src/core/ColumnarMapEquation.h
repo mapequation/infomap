@@ -220,6 +220,13 @@ public:
   // level-0 fine-tune-to-convergence.
   double optimizeTwoLevel(unsigned int maxAggPasses = 0, bool doFineTune = true);
 
+  // Two-level engine entry (the `--columnar --two-level` search): run the full
+  // two-level optimize and materialize it as a two-level stack (leaves + one
+  // module level) in m_hierLevels/m_hierAssign, so hierarchicalCodelengthFromStack,
+  // the module coarsening loop and toNodePaths all operate on it like any other
+  // hierarchy. Returns the (correction-augmented) two-level codelength.
+  double optimizeTwoLevelStack();
+
   // Run the two-level optimize, then grow the hierarchy upward with the
   // enter-flow super-search (M1c). bottomBlockLimit > 0 seeds a finer bottom
   // level. Returns the hierarchical codelength of the multi-level partition.

@@ -956,6 +956,28 @@ double ColumnarTwoLevel::optimizeTwoLevel(unsigned int maxAggPasses, bool doFine
   return bestCodelength;
 }
 
+double ColumnarTwoLevel::optimizeTwoLevelStack()
+{
+  optimizeTwoLevel();
+
+  // Materialize the partition as a two-level stack so the stack-based helpers
+  // (codelength, coarsening, toNodePaths) apply.
+  m_hierLevels.clear();
+  m_hierAssign.clear();
+  m_hierLevels.push_back(m_leaf0);
+  m_hierAssign.push_back(m_leafTop);
+  m_hierLevels.push_back(aggregateLevel(m_leaf0, m_leafTop, static_cast<int>(m_numTopModules), m_undirected));
+
+  double L = hierarchicalCodelengthFromStack();
+  // Module-merge coarsening within the root: a no-op for the base objective
+  // (merging only lengthens the base codelength; the top regroup needs an
+  // interior level), but the memory/meta/lossy corrections reward merges the
+  // leaf-level move loop cannot reach — the same reason the hierarchical
+  // searches run it.
+  coarsenModules(L, 1000);
+  return L;
+}
+
 bool ColumnarTwoLevel::seedHierarchyFromLeafPaths(const std::vector<std::vector<int>>& leafPaths)
 {
   if (static_cast<int>(leafPaths.size()) != m_nLeaves)

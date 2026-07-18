@@ -1774,12 +1774,15 @@ void InfomapBase::columnarPartition()
     opt.setMinRelativeTuneImprovement(minimumRelativeTuneIterationImprovement);
   addColumnarCorrections(opt);
 
+  // With -2 (--two-level): the two-level search only, no hierarchy build.
   // With -F (--fast-hierarchical-solution, reused here as the columnar fast
   // switch): the lighter "flexible" search (up-build + one bottom re-partition
   // within grandparents), skipping the full interior-layer refinement. Without
-  // it, the default converge search (screen up-build strategies, then refine the
-  // winner to the diminishing-returns knee).
-  const double columnarL = fastHierarchicalSolution > 0
+  // either, the default converge search (screen up-build strategies, then refine
+  // the winner to the diminishing-returns knee).
+  const double columnarL = twoLevel
+      ? opt.optimizeTwoLevelStack()
+      : fastHierarchicalSolution > 0
       ? opt.optimizeFlexible(1)
       : opt.optimizeColumnar(1, tuneIterationLimit);
 
