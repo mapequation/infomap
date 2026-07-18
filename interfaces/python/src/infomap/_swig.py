@@ -150,6 +150,8 @@ class Config(object):
     columnarCheck = property(_infomap.Config_columnarCheck_get, _infomap.Config_columnarCheck_set)
     columnarTwoLevel = property(_infomap.Config_columnarTwoLevel_get, _infomap.Config_columnarTwoLevel_set)
     columnarSearch = property(_infomap.Config_columnarSearch_get, _infomap.Config_columnarSearch_set)
+    nonRedundant = property(_infomap.Config_nonRedundant_get, _infomap.Config_nonRedundant_set)
+    nonRedundantExact = property(_infomap.Config_nonRedundantExact_get, _infomap.Config_nonRedundantExact_set)
     preferModularSolution = property(_infomap.Config_preferModularSolution_get, _infomap.Config_preferModularSolution_set)
     innerParallelization = property(_infomap.Config_innerParallelization_get, _infomap.Config_innerParallelization_set)
     parallelTrials = property(_infomap.Config_parallelTrials_get, _infomap.Config_parallelTrials_set)

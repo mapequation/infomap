@@ -79,6 +79,8 @@ export type Arguments = Partial<{
   multilayerRelaxLimitDown: number;
   multilayerRelaxByJsd: boolean;
   multilayerRelaxToSelf: boolean;
+  nonRedundant: boolean;
+  nonRedundantExact: boolean;
   // accuracy
   seed: number;
   numTrials: number;
@@ -274,6 +276,10 @@ export default function argumentsToString(args: Arguments) {
   if (args.multilayerRelaxByJsd) result += " --multilayer-relax-by-jsd";
 
   if (args.multilayerRelaxToSelf) result += " --multilayer-relax-to-self";
+
+  if (args.nonRedundant) result += " --non-redundant";
+
+  if (args.nonRedundantExact) result += " --non-redundant-exact";
 
   if (args.seed != null) result += " --seed " + args.seed;
 

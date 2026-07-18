@@ -8337,6 +8337,128 @@ R_swig_Config_columnarSearch_get ( SEXP self, SEXP s_swig_copy)
 
 
 SWIGEXPORT SEXP
+R_swig_Config_nonRedundant_set ( SEXP self, SEXP s_nonRedundant)
+{
+  {
+    infomap::Config *arg1 = 0 ;
+    bool arg2 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_infomap__Config, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Config_nonRedundant_set" "', argument " "1"" of type '" "infomap::Config *""'"); 
+    }
+    arg1 = reinterpret_cast< infomap::Config * >(argp1);
+    arg2 = LOGICAL(s_nonRedundant)[0] ? true : false;
+    if (arg1) (arg1)->nonRedundant = arg2;
+    r_ans = R_NilValue;
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
+R_swig_Config_nonRedundant_get ( SEXP self, SEXP s_swig_copy)
+{
+  {
+    bool result;
+    infomap::Config *arg1 = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_infomap__Config, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Config_nonRedundant_get" "', argument " "1"" of type '" "infomap::Config *""'"); 
+    }
+    arg1 = reinterpret_cast< infomap::Config * >(argp1);
+    result = (bool) ((arg1)->nonRedundant);
+    r_ans = Rf_ScalarLogical(result);
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
+R_swig_Config_nonRedundantExact_set ( SEXP self, SEXP s_nonRedundantExact)
+{
+  {
+    infomap::Config *arg1 = 0 ;
+    bool arg2 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_infomap__Config, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Config_nonRedundantExact_set" "', argument " "1"" of type '" "infomap::Config *""'"); 
+    }
+    arg1 = reinterpret_cast< infomap::Config * >(argp1);
+    arg2 = LOGICAL(s_nonRedundantExact)[0] ? true : false;
+    if (arg1) (arg1)->nonRedundantExact = arg2;
+    r_ans = R_NilValue;
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
+R_swig_Config_nonRedundantExact_get ( SEXP self, SEXP s_swig_copy)
+{
+  {
+    bool result;
+    infomap::Config *arg1 = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_infomap__Config, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Config_nonRedundantExact_get" "', argument " "1"" of type '" "infomap::Config *""'"); 
+    }
+    arg1 = reinterpret_cast< infomap::Config * >(argp1);
+    result = (bool) ((arg1)->nonRedundantExact);
+    r_ans = Rf_ScalarLogical(result);
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
 R_swig_Config_preferModularSolution_set ( SEXP self, SEXP s_preferModularSolution)
 {
   {
@@ -51007,6 +51129,7 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
    {"R_swig_InfomapIterator_infomapChildDegree", (DL_FUNC) &R_swig_InfomapIterator_infomapChildDegree, 2},
    {"R_swig_InfomapParentIterator_replaceChildrenWithGrandChildren", (DL_FUNC) &R_swig_InfomapParentIterator_replaceChildrenWithGrandChildren, 2},
    {"R_swig_InfomapParentIterator_replaceChildrenWithGrandChildrenDebug", (DL_FUNC) &R_swig_InfomapParentIterator_replaceChildrenWithGrandChildrenDebug, 1},
+   {"R_swig_Config_nonRedundantExact_set", (DL_FUNC) &R_swig_Config_nonRedundantExact_set, 2},
    {"R_swig_InfomapLeafModuleIterator_PlusPlusPrefix", (DL_FUNC) &R_swig_InfomapLeafModuleIterator_PlusPlusPrefix, 2},
    {"R_swig_InfomapParentIterator_replaceWithChildrenDebug", (DL_FUNC) &R_swig_InfomapParentIterator_replaceWithChildrenDebug, 1},
    {"R_swig_InfomapParentIterator_numLeafMembers", (DL_FUNC) &R_swig_InfomapParentIterator_numLeafMembers, 2},
@@ -51278,6 +51401,7 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
    {"R_swig_new_InfomapLeafIterator__SWIG_1", (DL_FUNC) &R_swig_new_InfomapLeafIterator__SWIG_1, 2},
    {"R_swig_new_InfomapLeafIterator__SWIG_2", (DL_FUNC) &R_swig_new_InfomapLeafIterator__SWIG_2, 1},
    {"R_swig_new_InfomapLeafIterator__SWIG_3", (DL_FUNC) &R_swig_new_InfomapLeafIterator__SWIG_3, 1},
+   {"R_swig_Config_nonRedundant_get", (DL_FUNC) &R_swig_Config_nonRedundant_get, 2},
    {"R_swig_InfomapIterator_isDangling", (DL_FUNC) &R_swig_InfomapIterator_isDangling, 2},
    {"R_swig_new_InfomapLeafIterator__SWIG_4", (DL_FUNC) &R_swig_new_InfomapLeafIterator__SWIG_4, 1},
    {"R_swig_Config_entropyBiasCorrectionMultiplier_get", (DL_FUNC) &R_swig_Config_entropyBiasCorrectionMultiplier_get, 2},
@@ -51675,6 +51799,7 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
    {"R_swig_InfomapIterator_dirty_get", (DL_FUNC) &R_swig_InfomapIterator_dirty_get, 2},
    {"R_swig_InfomapParentIterator_addOutEdge__SWIG_0", (DL_FUNC) &R_swig_InfomapParentIterator_addOutEdge__SWIG_0, 4},
    {"R_swig_InfomapBase_codelength", (DL_FUNC) &R_swig_InfomapBase_codelength, 2},
+   {"R_swig_Config_nonRedundantExact_get", (DL_FUNC) &R_swig_Config_nonRedundantExact_get, 2},
    {"R_swig_InfomapParentIterator_addOutEdge__SWIG_1", (DL_FUNC) &R_swig_InfomapParentIterator_addOutEdge__SWIG_1, 3},
    {"R_swig_Config_cluLevel_get", (DL_FUNC) &R_swig_Config_cluLevel_get, 2},
    {"R_swig_InfomapIterator_end_outEdge", (DL_FUNC) &R_swig_InfomapIterator_end_outEdge, 2},
@@ -51779,6 +51904,7 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
    {"R_swig_InfomapWrapper_run__SWIG_0", (DL_FUNC) &R_swig_InfomapWrapper_run__SWIG_0, 2},
    {"R_swig_InfomapParentIterator_outEdges", (DL_FUNC) &R_swig_InfomapParentIterator_outEdges, 2},
    {"R_swig_InfomapWrapper_run__SWIG_1", (DL_FUNC) &R_swig_InfomapWrapper_run__SWIG_1, 1},
+   {"R_swig_Config_nonRedundant_set", (DL_FUNC) &R_swig_Config_nonRedundant_set, 2},
    {"R_swig_InfomapWrapper_run__SWIG_2", (DL_FUNC) &R_swig_InfomapWrapper_run__SWIG_2, 2},
    {"R_swig_InfomapParentIterator_end_child__SWIG_0", (DL_FUNC) &R_swig_InfomapParentIterator_end_child__SWIG_0, 2},
    {"R_swig_Config_entropyBiasCorrectionMultiplier_set", (DL_FUNC) &R_swig_Config_entropyBiasCorrectionMultiplier_set, 2},

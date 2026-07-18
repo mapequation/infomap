@@ -196,6 +196,31 @@ namespace {
   }
 #endif
 
+  void applyAndValidateNonRedundantInteraction(Config& config)
+  {
+    if (!config.nonRedundant)
+      return;
+
+    // L* is implemented as a base-objective variant of the columnar engine (the
+    // non-recursive search that hosts it cleanly), so --non-redundant runs there.
+    config.columnarSearch = true;
+
+    // Scope for the first columnar L* cut: base flow (undirected/directed), no
+    // composable corrections or special flow models yet. Memory/multilayer are out
+    // (they need the state/layer codebook re-derived under the leave-one-out exit),
+    // and the additive corrections (meta/lossy/bias) are not yet composed with L*.
+    if (config.stateInput || config.multilayerInput || !config.additionalInput.empty())
+      throw std::runtime_error("--non-redundant does not support memory or multilayer networks");
+    if (config.haveMetaData())
+      throw std::runtime_error("--non-redundant does not yet support meta data");
+    if (config.entropyBiasCorrection)
+      throw std::runtime_error("--non-redundant does not yet support --entropy-bias-correction");
+#if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
+    if (config.lossy)
+      throw std::runtime_error("--non-redundant and --lossy are different objectives");
+#endif
+  }
+
   void applyFingerprintOnlyOutputInteraction(Config& config)
   {
     if (config.printConfigFingerprint) {
@@ -500,6 +525,7 @@ void Config::adaptDefaults()
 #if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
   applyAndValidateLossyInteraction(*this);
 #endif
+  applyAndValidateNonRedundantInteraction(*this);
   applyThreadBudgetInteraction(*this);
   validateRunReportOutput(*this);
   normalizeOutputDirectory(*this);

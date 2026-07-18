@@ -169,6 +169,15 @@ struct Config {
   // capped by tuneIterationLimit) — instead of the recursive two-level-then-
   // refine algorithm. Produces the normal output tree.
   bool columnarSearch = false;
+  // Non-redundant map equation L* on the columnar engine: the exit codebook of a
+  // module excludes the module just left (no impossible immediate re-entry) and the
+  // first visit after entering uses a separate enter codebook (no impossible
+  // immediate exit). Implemented as a base-objective variant of the columnar core,
+  // so it implies --columnar (the only L* implementation on this branch).
+  bool nonRedundant = false;
+  // With --non-redundant: drive the leaf move loop with the exact O(m) leave-one-out
+  // exit sweep instead of the default O(1) adaptive power-series delta (validation).
+  bool nonRedundantExact = false;
   bool preferModularSolution = false;
   bool innerParallelization = false;
   bool parallelTrials = false;
@@ -285,6 +294,8 @@ struct Config {
     columnarCheck = other.columnarCheck;
     columnarTwoLevel = other.columnarTwoLevel;
     columnarSearch = other.columnarSearch;
+    nonRedundant = other.nonRedundant;
+    nonRedundantExact = other.nonRedundantExact;
 #if INFOMAP_FEATURE_TEST_FEATURE
     testFeature = other.testFeature;
 #endif

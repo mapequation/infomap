@@ -833,6 +833,18 @@ const std::vector<ParameterSpec>& parameterCatalog()
         .advanced()
         .configTarget(&Config::columnarSearch),
     param()
+        .longName("non-redundant")
+        .description("Use the non-redundant map equation L*: a module's exit codebook excludes the module just left (no impossible immediate re-entry) and the first visit after entering uses a separate enter codebook (no impossible immediate exit). Runs on the non-recursive columnar engine (implies --columnar). Supports undirected and directed flow.")
+        .group("Algorithm")
+        .advanced()
+        .configTarget(&Config::nonRedundant),
+    param()
+        .longName("non-redundant-exact")
+        .description("With --non-redundant, drive the leaf move loop with the exact O(m) leave-one-out exit sweep instead of the default O(1) adaptive power-series delta (validation / small networks).")
+        .group("Algorithm")
+        .advanced()
+        .configTarget(&Config::nonRedundantExact),
+    param()
         .longName("inner-parallelization")
         .description("Experimental: use batched parallel node moves for coarse optimization. Performance gains are workload-dependent, often require a relaxed core-loop-codelength-threshold and low tune-iteration-limit, and may produce a different partition than serial optimization.")
         .group("Accuracy")

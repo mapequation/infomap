@@ -798,6 +798,26 @@
     "default": false
   },
   {
+    "long": "--non-redundant",
+    "short": "",
+    "description": "Use the non-redundant map equation L*: a module's exit codebook excludes the module just left (no impossible immediate re-entry) and the first visit after entering uses a separate enter codebook (no impossible immediate exit). Runs on the non-recursive columnar engine (implies --columnar). Supports undirected and directed flow.",
+    "group": "Algorithm",
+    "required": false,
+    "advanced": true,
+    "incremental": false,
+    "default": false
+  },
+  {
+    "long": "--non-redundant-exact",
+    "short": "",
+    "description": "With --non-redundant, drive the leaf move loop with the exact O(m) leave-one-out exit sweep instead of the default O(1) adaptive power-series delta (validation / small networks).",
+    "group": "Algorithm",
+    "required": false,
+    "advanced": true,
+    "incremental": false,
+    "default": false
+  },
+  {
     "long": "--converge",
     "short": "",
     "description": "Treat the trial count as a cap and stop early once the best codelength has plateaued (no meaningful improvement over several consecutive trials). Runs trials serially; cannot be combined with parallel trials or distributed sharding. With no explicit trial count, a default cap is used.",

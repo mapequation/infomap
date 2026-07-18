@@ -667,6 +667,12 @@ private:
       {
         auto timer = m_timing.scope("best_restore_s");
         m_infomap.initTree(result.bestTree);
+        // initTree recomputes m_hierarchicalCodelength via calcCodelengthOnTree, which
+        // is the BASE map equation on this branch. For L* the best trial already computed
+        // the exact non-redundant codelength (columnar hierarchicalCodelengthFromStack);
+        // restore it so codelength() reports L*, not the base-L of the materialized tree.
+        if (m_infomap.nonRedundant)
+          m_infomap.m_hierarchicalCodelength = result.bestHierarchicalCodelength;
       }
       if (!m_infomap.noFinalOutput) {
         auto outputTimer = m_timing.scope("output_s");
@@ -2306,6 +2312,8 @@ void InfomapBase::setupColumnarOptimizer(ColumnarTwoLevel& opt, unsigned long se
     opt.buildFromLeaves(m_leafNodes, isUndirectedClustering(), seed);
   }
   opt.setRecordedTeleportation(recordedTeleportation);
+  opt.setNonRedundant(nonRedundant);
+  opt.setNonRedundantExact(nonRedundantExact);
   // The columnar interior refinement stops at a diminishing-returns knee; its
   // default (5e-3, set in ColumnarTwoLevel) drops the low-value tail sweeps
   // (measured: on web-scale directed nets the last sweep cost ~18% of the trial
@@ -2436,6 +2444,11 @@ void InfomapBase::columnarPartition()
   // for the output tree structure.
   auto paths = opt.toNodePaths(m_leafNodes);
   initTree(paths);
+  // The columnar core is the source of truth for the search codelength; the OO tree
+  // re-materialization (calcCodelengthOnTree, via initTree) can disagree — and on this
+  // branch it is the BASE map equation, so for L* it reports the wrong objective
+  // entirely. columnarL is the exact codelength the core optimized (L* when
+  // --non-redundant), so use it for reporting and trial selection.
   const double materializedL = m_hierarchicalCodelength;
   m_hierarchicalCodelength = columnarL;
   m_numNonTrivialTopModules = calculateNumNonTrivialTopModules();
@@ -2631,6 +2644,8 @@ double InfomapBase::evaluateColumnarPartition()
   ColumnarTwoLevel opt;
   opt.buildFromLeaves(m_leafNodes, isUndirectedClustering(), seedToRandomNumberGenerator);
   opt.setRecordedTeleportation(recordedTeleportation);
+  opt.setNonRedundant(nonRedundant);
+  opt.setNonRedundantExact(nonRedundantExact);
   addColumnarCorrections(opt);
   const auto paths = leafModulePathsFromTree();
   if (!opt.seedHierarchyFromLeafPaths(paths)) {

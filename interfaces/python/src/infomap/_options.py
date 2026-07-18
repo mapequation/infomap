@@ -145,6 +145,8 @@ _OPTION_TABLE = {
     "multilayer_relax_limit_down": _OptionSpec("--multilayer-relax-limit-down", "value", -1),
     "multilayer_relax_by_jsd": _OptionSpec("--multilayer-relax-by-jsd", "flag", False),
     "multilayer_relax_to_self": _OptionSpec("--multilayer-relax-to-self", "flag", False),
+    "non_redundant": _OptionSpec("--non-redundant", "flag", False),
+    "non_redundant_exact": _OptionSpec("--non-redundant-exact", "flag", False),
     "directed": _OptionSpec("--directed", "directed", None, common=True),
     # accuracy
     "seed": _OptionSpec("--seed", "value", 123, domain=(1, None), common=True),
@@ -635,6 +637,16 @@ class Options(metaclass=_OptionsMeta):
         On relaxation, link a state node to its own physical node in the target layer
         instead of spreading to its out-neighbors. Builds a smaller state network with
         the same flow as the default.
+    non_redundant : bool, optional
+        Use the non-redundant map equation L*: a module's exit codebook excludes the
+        module just left (no impossible immediate re-entry) and the first visit after
+        entering uses a separate enter codebook (no impossible immediate exit). Runs on
+        the non-recursive columnar engine (implies --columnar). Supports undirected and
+        directed flow.
+    non_redundant_exact : bool, optional
+        With --non-redundant, drive the leaf move loop with the exact O(m) leave-one-out
+        exit sweep instead of the default O(1) adaptive power-series delta (validation /
+        small networks).
     seed : int, optional
         Set the random number generator seed for reproducible results. Valid range: >=
         1.
@@ -784,6 +796,8 @@ class Options(metaclass=_OptionsMeta):
     multilayer_relax_limit_down: int = -1
     multilayer_relax_by_jsd: bool = False
     multilayer_relax_to_self: bool = False
+    non_redundant: bool = False
+    non_redundant_exact: bool = False
     # accuracy
     seed: int = 123
     num_trials: int = 1
