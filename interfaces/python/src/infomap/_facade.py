@@ -794,8 +794,8 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             columnar search (fine building blocks, enter-flow up-build, and the up/down
             convergence sweep) instead of the recursive two-level-then-refine algorithm.
             The number of tuning sweeps follows --tune-iteration-limit (0 = until
-            convergence). Base map equation only for now. Produces the normal output
-            tree.
+            convergence). Supports the composable objectives (metadata, memory/state,
+            multilayer, lossy) and --two-level. Produces the normal output tree.
 
             .. versionchanged:: 2.15
                 Pass it via ``Options``; moves off this signature in 3.0.
