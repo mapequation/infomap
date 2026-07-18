@@ -1768,9 +1768,14 @@ void InfomapBase::columnarPartition()
   // for +0.06% codelength; shallow nets run a single sweep and are unaffected).
   // The shared OO --tune-iteration-relative-threshold default (1e-5) is too fine
   // to trigger it, so honor that flag for the columnar engine only when the user
-  // changed it from the OO default (e.g. 0 to grind fully to convergence).
+  // set it — explicitly on the command line (parsedOptions, so an explicit value
+  // equal to the OO default also counts), or to a non-default value through the
+  // library API (which bypasses the CLI parser).
   static const double kOoRelTuneDefault = Config().minimumRelativeTuneIterationImprovement;
-  if (minimumRelativeTuneIterationImprovement != kOoRelTuneDefault)
+  const bool relTuneSetExplicitly = std::any_of(parsedOptions.begin(), parsedOptions.end(), [](const ParsedOption& o) {
+    return o.longName == "tune-iteration-relative-threshold";
+  });
+  if (relTuneSetExplicitly || minimumRelativeTuneIterationImprovement != kOoRelTuneDefault)
     opt.setMinRelativeTuneImprovement(minimumRelativeTuneIterationImprovement);
   addColumnarCorrections(opt);
 
@@ -1783,7 +1788,7 @@ void InfomapBase::columnarPartition()
   const double columnarL = twoLevel
       ? opt.optimizeTwoLevelStack()
       : fastHierarchicalSolution > 0
-      ? opt.optimizeFlexible(1)
+      ? opt.optimizeFlexible(1, tuneIterationLimit)
       : opt.optimizeColumnar(1, tuneIterationLimit);
 
   // Materialize the result into the InfoNode tree for output. initTree also sets
