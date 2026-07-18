@@ -1907,7 +1907,7 @@ void ColumnarTwoLevel::coarsenModules(double& L, int maxSweeps)
   }
 }
 
-double ColumnarTwoLevel::optimizeFlexible(unsigned int bottomBlockLimit)
+double ColumnarTwoLevel::optimizeFlexible(unsigned int bottomBlockLimit, unsigned int sweepLimit)
 {
   double L = optimizeHierarchical(bottomBlockLimit);
   // A single bottom re-partition within grandparents. refineBottomWithinParents
@@ -1927,7 +1927,7 @@ double ColumnarTwoLevel::optimizeFlexible(unsigned int bottomBlockLimit)
   // fast search that skipped it landed far from the optimum on those (air30k
   // +14%). With it, -F matches converge on those objectives at a fraction of the
   // cost, and stays unchanged on base networks.
-  coarsenModules(L, 1000);
+  coarsenModules(L, sweepLimit > 0 ? static_cast<int>(sweepLimit) : 1000);
   return L;
 }
 

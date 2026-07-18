@@ -246,7 +246,9 @@ public:
 
   // M2: build the hierarchy, then refine to convergence. Returns hierarchical
   // codelength. Uses a fine bottom by default so the interior tune has room.
-  double optimizeFlexible(unsigned int bottomBlockLimit = 1);
+  // sweepLimit caps the module-coarsening sweeps (0 = until convergence),
+  // mirroring the sweep cap of the converge search (--tune-iteration-limit).
+  double optimizeFlexible(unsigned int bottomBlockLimit = 1, unsigned int sweepLimit = 0);
 
   // M3: build the hierarchy, then run the up/down convergence sweep — refine
   // *every* interior layer within its grandparent, iterating across layers
