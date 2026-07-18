@@ -136,11 +136,12 @@ jobs:
         with:
           key-prefix: python-${{ matrix.os }}-py${{ matrix.python-version }}
 
-      - name: Build Python wheel from repo root
-        run: make build-python
-        env:
-          FEATURES: ${{ inputs.features }}
-
+      # The editable install is the test legs' only compile: it builds the
+      # extension in-place, so the .so lands in the source tree where the
+      # doctests import it from. A separate `make build-python` wheel build used
+      # to run first and recompile the same extension -- redundant in the test
+      # legs (the wheel is unused here; wheel-build health is covered by the
+      # release-smoke and release wheel jobs).
       - name: Install editable package
         run: |
           make dev-python-install
@@ -233,11 +234,12 @@ jobs:
         with:
           key-prefix: python-${{ matrix.os }}-py${{ matrix.python-version }}
 
-      - name: Build Python wheel from repo root
-        run: make build-python
-        env:
-          FEATURES: ${{ inputs.features }}
-
+      # The editable install is the test legs' only compile: it builds the
+      # extension in-place, so the .so lands in the source tree where the
+      # doctests import it from. A separate `make build-python` wheel build used
+      # to run first and recompile the same extension -- redundant in the test
+      # legs (the wheel is unused here; wheel-build health is covered by the
+      # release-smoke and release wheel jobs).
       - name: Install editable package
         run: |
           make dev-python-install
