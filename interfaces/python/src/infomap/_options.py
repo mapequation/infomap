@@ -675,8 +675,9 @@ class Options(metaclass=_OptionsMeta):
         Experimental engine (columnar-hierarchical-core): use the non-recursive columnar
         search (fine building blocks, enter-flow up-build, and the up/down convergence
         sweep) instead of the recursive two-level-then-refine algorithm. The number of
-        tuning sweeps follows --tune-iteration-limit (0 = until convergence). Base map
-        equation only for now. Produces the normal output tree.
+        tuning sweeps follows --tune-iteration-limit (0 = until convergence). Supports
+        the composable objectives (metadata, memory/state, multilayer, lossy) and
+        --two-level. Produces the normal output tree.
     inner_parallelization : bool, optional
         Experimental: use batched parallel node moves for coarse optimization.
         Performance gains are workload-dependent, often require a relaxed
