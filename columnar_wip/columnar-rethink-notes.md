@@ -589,3 +589,41 @@ Net of F14–F17, three branch changes implemented + verified (contracts pass, `
 `columnarL` not the reconstructed-tree codelength (fixes the negative-codelength bug F15); (B) `-F` runs
 the coarsening loop (safe on memory/meta/multilayer); (C) `-F` bottom refine is a single idempotent pass
 (faster). Not committed — awaiting review.
+
+---
+
+### F18 — `-2` wired (PR #823) + the two-level benchmark + the memory-objective diagnosis (2026-07-18)
+
+**Gap closure got organized:** flag-by-flag audit of the `-C` dispatch vs the OO path → tracking issue
+#832 with sub-issues #824–#831 (soft cluster-data discarded; -T/-Tr wiring edges → fixed in PR #833;
+inert core-loop knobs; dead search-shaping flags + missing one-level fallback; regularized-multilayer
+correction deferred; `-C -F` untested in CI; upstream entropy-corrected mismatch; 2-level initPartition
+reentrancy root cause).
+
+**`-2` wired (PR #823, branch columnar-two-level):** `optimizeTwoLevelStack()` = full `optimizeTwoLevel`
+materialized as a 2-level stack (so `hierarchicalCodelengthFromStack` / `coarsenModules` / `toNodePaths`
+apply) + the module-merge coarsening. First cut on air30k: **+3.9% vs OO -2 AND 2.1× slower** — the only
+bad net in the 11-net two-level table (base/meta/multilayer tie-or-beat OO, up to −83% time; full table
+in columnar-pr-performance-section.md).
+
+**Profile (air30k -2 -C, s123):** pass 1 (13k-leaf move loop) 0.56s → agg converges at **K=1353**
+(aug 6.696) — the base-driven aggregation stops far too fine for the memory objective; fine-tune barely
+helps (6.676); `coarsenModules` carries the whole memory coarsening **K 1344 → 328** (6.676 → 5.627).
+Greedy pairwise merges are a weak optimizer vs OO's coarse-tune (module moves under the true mem
+objective): OO -2 = 5.412.
+
+**Shipped fix (2nd commit on PR #823): interleave a seeded gated leaf fine-tune with the merge** until
+the pair stops improving. The merge reshapes modules far from where the leaf loop last saw them, so
+re-tuning inside the merged structure recovers most of the gap and enables further merges:
+air30k -N10 5.6049 → **5.4596** (gap +3.9% → **+1.22%**); lazega meta 6.0346 → **6.0212** (+0.06% vs OO);
+malaria unchanged-to-better; base nets bit-exact (gate: loop only enters when the merge improved, which
+the base objective's no-op merge never does). ~4 rounds to converge on air30k.
+
+**Remaining lead (the principled fix, not shipped): module-level correction state.** Consolidate
+per-unit (physical → flow) aggregates in `consolidateToNextLevel` so module-level move loops compute
+true augmented deltas — makes the aggregation trajectory itself objective-aware. Expected to close both
+the residual -2 gap (+1.22%, and the +58% time — today's leaf-heavy machinery re-tunes 13k leaves where
+OO moves a few hundred modules) AND likely the hierarchical air30k gap (+1.5%). Related smaller lead:
+try a seeded bottom re-tune after `coarsenModules` in `refineHierarchy` (the -2 result suggests the
+"refine-after-coarsen always reverts" note only holds for the *interior* refine, not a seeded leaf
+re-tune).

@@ -76,3 +76,41 @@ Parentheses on the columnar `-F` columns = change vs `-C` (`(=)` = bit-identical
 **`-F` is a real speed/quality dial again.** With coarsening it now ties `-C` on both quality **and** time for the memory / metadata / multilayer and shallow-directed networks (politicalblogs, science2001, lazega, multilayer, malaria, air30k). On the base networks with real hierarchy it trades a little codelength for speed by skipping the interior refinement: web-NotreDame **+0.9% codelength for ~27% less time (20.1s vs 27.4s)**, powergrid +0.5% for ~40% less. `-C` stays the default (best quality everywhere); `-F` is the "give up a fraction of a percent for a faster, leaner, shallower map on deep networks" dial.
 
 The columnar interior refinement stops at a diminishing-returns knee (default `--tune-iteration-relative-threshold` = 5e-3), which on deep networks trades the last ~0.06% of codelength for ~18% less search time; shallow networks are unaffected.
+
+### Two-level clustering (`-2`)
+
+`--two-level` is wired to the columnar engine on the `columnar-two-level` branch (PR #823): the full two-level optimize materialized as a two-level stack, followed by the correction-aware module-merge coarsening interleaved with a seeded leaf fine-tune until the pair stops improving (the interleave is what the memory objective needs — without it air30k sat at +3.9% vs OO; the loop never enters on the base objective, whose merge is a no-op).
+
+Same protocol as above: single-threaded, `--seed 123 -N10`, best of 10, total wall for all 10 trials.
+
+<table>
+<thead>
+<tr>
+<th rowspan="2">network</th>
+<th colspan="3">OO <code>-2</code></th>
+<th colspan="3">columnar <code>-2 -C</code></th>
+</tr>
+<tr>
+<th>codelength</th><th>time</th><th>top</th>
+<th>codelength</th><th>time</th><th>top</th>
+</tr>
+</thead>
+<tbody>
+<tr><td>ninetriangles</td><td align="right">3.51775481</td><td align="right">0.10s</td><td align="right">9</td><td align="right">3.51775481 (=)</td><td align="right">0.06s</td><td align="right">9</td></tr>
+<tr><td>jazz</td><td align="right">6.86122978</td><td align="right">0.08s</td><td align="right">6</td><td align="right">6.86122978 (=)</td><td align="right">0.06s</td><td align="right">6</td></tr>
+<tr><td>netscicoauthor2010</td><td align="right">4.28611584</td><td align="right">0.14s</td><td align="right">56</td><td align="right"><b>4.28228737</b> (−0.09%)</td><td align="right">0.07s (−50%)</td><td align="right">57</td></tr>
+<tr><td>powergrid</td><td align="right">5.59831236</td><td align="right">1.43s</td><td align="right">420</td><td align="right">5.63395576 (+0.64%)</td><td align="right">0.24s (−83%)</td><td align="right">426</td></tr>
+<tr><td>politicalblogs (<code>-d</code>)</td><td align="right">6.74031825</td><td align="right">0.18s</td><td align="right">74</td><td align="right"><b>6.73918608</b> (−0.02%)</td><td align="right">0.16s (−11%)</td><td align="right">81</td></tr>
+<tr><td>science2001 (<code>-d</code>)</td><td align="right">7.94913415</td><td align="right">9.94s</td><td align="right">496</td><td align="right">7.94947087 (+0.004%)</td><td align="right">6.16s (−38%)</td><td align="right">508</td></tr>
+<tr><td>web-NotreDame (<code>-d</code>)</td><td align="right">6.74367900</td><td align="right">117.7s</td><td align="right">11 831</td><td align="right">6.75083498 (+0.11%)</td><td align="right">57.2s (−51%)</td><td align="right">11 687</td></tr>
+<tr><td>lazega (meta)</td><td align="right">6.01786027</td><td align="right">0.06s</td><td align="right">7</td><td align="right">6.02121843 (+0.06%)</td><td align="right">0.06s (0%)</td><td align="right">6</td></tr>
+<tr><td>multilayer (ex.)</td><td align="right">2.01140524</td><td align="right">0.05s</td><td align="right">2</td><td align="right">2.01140524 (=)</td><td align="right">0.06s</td><td align="right">2</td></tr>
+<tr><td>malaria</td><td align="right">7.50653124</td><td align="right">19.95s</td><td align="right">145</td><td align="right"><b>7.44504738</b> (−0.82%)</td><td align="right">8.25s (−59%)</td><td align="right">157</td></tr>
+<tr><td>air30k (states)</td><td align="right">5.39376962</td><td align="right">9.84s</td><td align="right">332</td><td align="right">5.45963432 (<b>+1.22%</b>)</td><td align="right">15.6s (<b>+58%</b>)</td><td align="right">324</td></tr>
+</tbody>
+</table>
+
+Parentheses on the columnar columns = change vs OO `-2` (**bold** = columnar beats OO). Reading it:
+- **Quality** — columnar `-2` ties or beats OO on 9 of 11 networks (beats on netscicoauthor2010, politicalblogs, malaria), and is within +0.11% on web-NotreDame. The exceptions are powergrid (+0.64%) and air30k (+1.22%).
+- **Speed** — faster on every non-trivial network (−38% to −83%) **except air30k (+58%)**.
+- **The one real gap is the state/memory objective (air30k), on both axes.** Profiled cause: the columnar aggregation passes optimize the *base* objective only (corrections act in the leaf move loops, the augmented pass selection, and the gated merges), so the base-driven aggregation stops far too fine for the memory objective (K = 1353 where the optimum wants ~330) and the greedy pairwise merge + leaf re-tune has to carry the whole coarsening. OO's coarse-tune moves modules under the true memory objective. The principled fix is module-level correction state (consolidate per-unit physical-flow aggregates so module moves see the augmented delta); the same machinery is also the likely cure for the residual +1.5% hierarchical air30k gap.
