@@ -152,6 +152,25 @@ TEST_CASE("Fixed partitions have identical OO and columnar codelengths [fast][co
   infomap::test::checkApproxCodelength(columnarState.indexCodelength, ooState.indexCodelength);
 }
 
+TEST_CASE("Two-level search finds the same optimum on OO and columnar engines [fast][core][partition][columnar-differential]")
+{
+  auto runTwoLevel = [](bool columnar) {
+    std::string flags = "--seed 123 --num-trials 5 --silent --two-level";
+    if (columnar)
+      flags += " --columnar";
+    InfomapWrapper im(flags);
+    infomap::test::addEdgeFixtureLinks(im, "graphs/twotriangles_unweighted.edges");
+    im.run();
+    CHECK(im.maxTreeDepth() == 2); // --two-level must not build a deeper hierarchy
+    infomap::test::checkCanonicalPartition(im, { { 1, 2, 3 }, { 4, 5, 6 } });
+    return im.codelength();
+  };
+
+  const double oo = runTwoLevel(false);
+  const double columnar = runTwoLevel(true);
+  infomap::test::checkApproxCodelength(columnar, oo);
+}
+
 TEST_CASE("Cluster-data clu fixture initializes a two-level partition [fast][core][partition][columnar-contract]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());
