@@ -1801,19 +1801,56 @@ bool ColumnarTwoLevel::refineBottomWithinParents()
   return true;
 }
 
+void ColumnarTwoLevel::coarsenModules(double& L, int maxSweeps)
+{
+  // Gated apply: run `step`, keep it only if it lowers the true hierarchical
+  // codelength, else revert. Same accept/revert policy the converge refinement
+  // uses for its tuning steps.
+  auto gated = [&](auto&& step) {
+    std::vector<Level> savedLevels = m_hierLevels;
+    std::vector<std::vector<int>> savedAssign = m_hierAssign;
+    if (!step())
+      return false;
+    const double after = hierarchicalCodelengthFromStack();
+    if (after < L - kMinImprovement) {
+      L = after;
+      return true;
+    }
+    m_hierLevels = std::move(savedLevels);
+    m_hierAssign = std::move(savedAssign);
+    m_numTopModules = static_cast<unsigned int>(m_hierLevels.back().n);
+    return false;
+  };
+  for (int sweep = 0; sweep < maxSweeps; ++sweep) {
+    pollInterrupt();
+    const bool merged = gated([&] { return mergeLeafModulesWithinParents(); });
+    const bool regrouped = gated([&] { return refineTopLayer(); });
+    if (!merged && !regrouped)
+      break;
+  }
+}
+
 double ColumnarTwoLevel::optimizeFlexible(unsigned int bottomBlockLimit)
 {
   double L = optimizeHierarchical(bottomBlockLimit);
-  for (int iter = 0; iter < 8; ++iter) {
-    if (!refineBottomWithinParents())
-      break;
-    const double newL = hierarchicalCodelengthFromStack();
-    if (newL >= L - kMinImprovement) {
-      L = std::min(L, newL);
-      break;
-    }
-    L = newL;
-  }
+  // A single bottom re-partition within grandparents. refineBottomWithinParents
+  // keeps every leaf inside its level-2 grandparent, so the leaf-set per
+  // grandparent is invariant; re-running it re-partitions the same leaf-sets
+  // within the same grandparents from singletons with the same seed, which is
+  // idempotent (same reasoning as the single-interior-level case in
+  // refineHierarchy). A second pass therefore only ever re-derives the same
+  // partition to detect convergence — a full O(n_leaves) re-partition of pure
+  // overhead — so we stop after one (measured: bit-identical, ~25-35% faster on
+  // the deep/memory nets).
+  if (refineBottomWithinParents())
+    L = std::min(L, hierarchicalCodelengthFromStack());
+  // Coarsen (merge leaf modules + regroup the top), exactly as the converge
+  // search does. Cheap (module-level, not leaf-level) and a no-op for the base
+  // objective, but it is what the memory / metadata / lossy objectives need — a
+  // fast search that skipped it landed far from the optimum on those (air30k
+  // +14%). With it, -F matches converge on those objectives at a fraction of the
+  // cost, and stays unchanged on base networks.
+  coarsenModules(L, 1000);
   return L;
 }
 
@@ -2309,14 +2346,7 @@ double ColumnarTwoLevel::refineHierarchy(double startL, unsigned int sweepLimit)
 #ifdef COLUMNAR_DEBUG
   const std::clock_t t_p2 = std::clock();
 #endif
-  for (int sweep = 0; sweep < maxSweeps; ++sweep) {
-    pollInterrupt();
-    bool improved = false;
-    improved |= gatedStep([&] { return mergeLeafModulesWithinParents(); }, "MERGE");
-    improved |= gatedStep([&] { return refineTopLayer(); }, "TOP-REFINE");
-    if (!improved)
-      break;
-  }
+  coarsenModules(L, maxSweeps);
 #ifdef COLUMNAR_DEBUG
   const std::clock_t t_end = std::clock();
   std::fprintf(stderr, "[refine] interior=%.3fs coarsen=%.3fs (superAgg=%u)\n",

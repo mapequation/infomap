@@ -360,6 +360,15 @@ private:
   // if there is no sub-top layer to regroup.
   bool refineTopLayer();
 
+  // Module-level coarsening to convergence: interleave the leaf-module merge
+  // (mergeLeafModulesWithinParents) and the gated top regroup (refineTopLayer),
+  // each accepted only if it lowers the true hierarchical codelength (else
+  // reverted). `L` is the accept/revert baseline, updated in place; maxSweeps
+  // caps the interleave. Shared by the converge refinement (refineHierarchy) and
+  // the fast (-F) search so both coarsen the memory/metadata/lossy objectives the
+  // same way (without it -F skips the coarsening those objectives require).
+  void coarsenModules(double& L, int maxSweeps);
+
   // Mem-aware leaf-module coarsening: merge leaf modules (level-0 -> 1) within
   // their shared level-2 parent when it lowers the augmented objective. The base
   // map equation opposes merging well-separated modules, but a leaf-shaping
