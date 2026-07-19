@@ -45,7 +45,7 @@ jobs:
 
       - name: Cache SWIG 4.4.1 install
         id: swig-cache
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ${{ runner.tool_cache }}/swig/4.4.1/${{ runner.arch }}
           key: swig-4.4.1-${{ runner.os }}-${{ runner.arch }}-v2
@@ -100,7 +100,7 @@ jobs:
           ref: ${{ inputs.ref || github.sha }}
 
       - name: Set up R
-        uses: r-lib/actions/setup-r@v2
+        uses: r-lib/actions/setup-r@d3c5be51b12e724e68f33216ca3c148b66d5f0b6 # v2.12.1
         with:
           r-version: ${{ matrix.r }}
           use-public-rspm: true
@@ -121,7 +121,7 @@ jobs:
           python-version: "3.14"
 
       - name: Install R package dependencies
-        uses: r-lib/actions/setup-r-dependencies@v2
+        uses: r-lib/actions/setup-r-dependencies@d3c5be51b12e724e68f33216ca3c148b66d5f0b6 # v2.12.1
         with:
           working-directory: interfaces/R/infomap
           extra-packages: |
@@ -188,7 +188,7 @@ jobs:
           ref: ${{ inputs.ref || github.sha }}
 
       - name: Set up R
-        uses: r-lib/actions/setup-r@v2
+        uses: r-lib/actions/setup-r@d3c5be51b12e724e68f33216ca3c148b66d5f0b6 # v2.12.1
         with:
           r-version: release
           use-public-rspm: true
@@ -199,7 +199,7 @@ jobs:
           python-version: "3.14"
 
       - name: Install R package dependencies
-        uses: r-lib/actions/setup-r-dependencies@v2
+        uses: r-lib/actions/setup-r-dependencies@d3c5be51b12e724e68f33216ca3c148b66d5f0b6 # v2.12.1
         with:
           working-directory: interfaces/R/infomap
           extra-packages: |
@@ -241,7 +241,7 @@ jobs:
           ref: ${{ inputs.ref || github.sha }}
 
       - name: Set up R
-        uses: r-lib/actions/setup-r@v2
+        uses: r-lib/actions/setup-r@d3c5be51b12e724e68f33216ca3c148b66d5f0b6 # v2.12.1
         with:
           r-version: ${{ matrix.r }}
           use-public-rspm: true
@@ -262,7 +262,7 @@ jobs:
           python-version: "3.14"
 
       - name: Install R package dependencies
-        uses: r-lib/actions/setup-r-dependencies@v2
+        uses: r-lib/actions/setup-r-dependencies@d3c5be51b12e724e68f33216ca3c148b66d5f0b6 # v2.12.1
         with:
           working-directory: interfaces/R/infomap
 
@@ -330,7 +330,7 @@ jobs:
           ref: ${{ inputs.ref || github.sha }}
 
       - name: Set up R
-        uses: r-lib/actions/setup-r@v2
+        uses: r-lib/actions/setup-r@d3c5be51b12e724e68f33216ca3c148b66d5f0b6 # v2.12.1
         with:
           r-version: release
           use-public-rspm: true
@@ -341,7 +341,7 @@ jobs:
           python-version: "3.14"
 
       - name: Install R package dependencies
-        uses: r-lib/actions/setup-r-dependencies@v2
+        uses: r-lib/actions/setup-r-dependencies@d3c5be51b12e724e68f33216ca3c148b66d5f0b6 # v2.12.1
         with:
           working-directory: interfaces/R/infomap
           extra-packages: |
