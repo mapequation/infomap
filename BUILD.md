@@ -356,6 +356,33 @@ make test-native MODE=debug
 make bench-native MODE=debug CMAKE_BUILD_TYPE=Debug
 ```
 
+### Fuzzing
+
+`make fuzz` builds and runs a libFuzzer harness over the network intake
+(`buildNetworkFromInput`, which routes JSON vs Pajek-style input), compiled with
+libFuzzer + ASan/UBSan. It is **Clang-only** and opt-in
+(`-DINFOMAP_BUILD_FUZZERS=ON`); the harness is excluded from the default build
+and from `ctest`. Fixtures under `test/fixtures/networks` and `examples/networks`
+seed the corpus.
+
+```bash
+make fuzz                 # ~60s smoke run (needs a Clang with libFuzzer)
+make fuzz FUZZ_SECONDS=300
+make fuzz FUZZ_CXX=/opt/homebrew/opt/llvm/bin/clang++ FUZZ_CC=/opt/homebrew/opt/llvm/bin/clang
+```
+
+A weekly non-blocking `.github/workflows/fuzz.yml` runs the same target on Linux.
+Findings are written under `build/fuzz/` as `crash-*` / `timeout-*` / `leak-*`;
+reproduce one with:
+
+```bash
+build/fuzz/fuzz_intake build/fuzz/crash-<hash>
+```
+
+macOS note: Apple Clang lacks libFuzzer (use Homebrew LLVM via `FUZZ_CXX`), and
+a Homebrew-LLVM fuzzer binary may fail to *run* on macOS due to a libc++ ABI
+mismatch even though it builds — run the fuzzer on Linux.
+
 Build source and wheel distributions locally when needed:
 
 ```bash
