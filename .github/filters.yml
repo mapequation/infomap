@@ -1,0 +1,161 @@
+# Path filters for the CI change-detection job (ci.yml `changes`).
+#
+# Consumed by dorny/paths-filter, which resolves YAML anchors and flattens the
+# resulting nested lists. The two anchors below are the path clusters that used
+# to be copy-pasted across filters; editing one here now updates every filter
+# that composes it. That duplication was not cosmetic -- it is why the
+# setup-swig / setup-ccache composites silently fell out of coverage: a build
+# step could change without triggering the lane that builds it, yet still get a
+# green "CI Summary" (the only required check). Every composite under
+# .github/actions/ must appear in at least one filter that triggers the
+# workflows using it.
+#
+# Anchors are kept flat (an anchor never references another anchor) so no filter
+# nests deeper than one level, which paths-filter flattens reliably.
+
+# Makefile + build system + C++ sources: the compile inputs shared by every lane
+# that builds the core.
+_build_core: &build_core
+  - "Makefile"
+  - "mk/**"
+  - "src/**"
+
+# The CMake/native-build inputs shared by the native, python-core, and
+# javascript lanes (each of which builds the C++ core through _native-build.yml).
+_cmake_core: &cmake_core
+  - "CMakeLists.txt"
+  - "test/cpp/**"
+  - "test/fixtures/**"
+  - ".github/workflows/_native-build.yml"
+
+policy:
+  - *build_core
+  - "interfaces/swig/**"
+  - "interfaces/R/generated/**"
+  - "scripts/check_cpp_stream_policy.py"
+  - ".github/workflows/ci.yml"
+  - ".github/filters.yml"
+
+native:
+  - *build_core
+  - *cmake_core
+  - ".clang-format"
+  - ".clang-tidy"
+  - "CMakePresets.json"
+  - "test/scripts/**"
+  - "test/schemas/**"
+  - ".github/workflows/ci.yml"
+  - ".github/filters.yml"
+  - ".github/actions/setup-ccache/action.yml"
+
+python-core:
+  - *build_core
+  - *cmake_core
+  - "pyproject.toml"
+  - "setup.py"
+  - "interfaces/swig/**"
+  - "interfaces/python/**"
+  - "examples/python/**"
+  - "examples/notebooks/**"
+  - "examples/networks/**"
+  - "test/python/**"
+  - "test/scripts/**"
+  - "test/schemas/**"
+  - "scripts/build_config.py"
+  - "scripts/generate_python_swig.py"
+  - "scripts/notebook_manifest.py"
+  - ".github/actions/setup-python-build/action.yml"
+  - ".github/actions/setup-ccache/action.yml"
+  - ".github/workflows/ci.yml"
+  - ".github/workflows/_python-package.yml"
+  - ".github/filters.yml"
+
+# Packaging config only -- deliberately NOT *build_core (no src/**): a core
+# source change is covered by python-core, and should not also fire the
+# release-smoke packaging lane.
+python-packaging:
+  - "Makefile"
+  - "mk/**"
+  - "pyproject.toml"
+  - "setup.py"
+  - "scripts/build_config.py"
+  - ".github/actions/setup-python-build/action.yml"
+  - ".github/actions/setup-ccache/action.yml"
+  - ".github/workflows/_python-package.yml"
+  - ".github/filters.yml"
+
+python-swig:
+  - "interfaces/swig/**"
+  - "interfaces/python/generated/**"
+  - "interfaces/python/src/infomap/_swig.py"
+  - "scripts/generate_python_swig.py"
+  - ".github/actions/setup-swig/action.yml"
+  - ".github/workflows/_python-package.yml"
+  - ".github/filters.yml"
+
+javascript:
+  - *build_core
+  - *cmake_core
+  - ".github/workflows/ci.yml"
+  - "package.json"
+  - "package-lock.json"
+  - "interfaces/js/**"
+  # The binding-options freshness gate runs in the JS workflow, so changes to
+  # the generator or its inputs must trigger it.
+  - "interfaces/parameters/**"
+  - "scripts/generate_binding_options.py"
+  - "scripts/parameter_catalog.py"
+  - "scripts/generate_js_metadata.py"
+  - "scripts/prepare_npm_package.py"
+  - ".github/actions/setup-js-build/action.yml"
+  - ".github/workflows/_js-package.yml"
+  - ".github/filters.yml"
+
+r:
+  - *build_core
+  - "interfaces/swig/**"
+  - "interfaces/R/**"
+  - "examples/R/**"
+  - "scripts/generate_r_swig.py"
+  - "scripts/stage_r_package.py"
+  - ".github/actions/setup-swig/action.yml"
+  - ".github/actions/setup-ccache/action.yml"
+  - ".github/workflows/ci.yml"
+  - ".github/workflows/_r-package.yml"
+  - ".github/filters.yml"
+
+docs:
+  - *build_core
+  - "README.rst"
+  - "BUILD.md"
+  - "pyproject.toml"
+  - "setup.py"
+  - "examples/notebooks/**"
+  - "scripts/build_config.py"
+  - "scripts/notebook_manifest.py"
+  - "interfaces/python/**"
+  - ".github/actions/setup-python-build/action.yml"
+  - ".github/filters.yml"
+
+docker:
+  - *build_core
+  - "docker/**"
+  - "docker-compose.yml"
+  - ".dockerignore"
+  - "pyproject.toml"
+  - "setup.py"
+  - "examples/notebooks/**"
+  - "interfaces/python/**"
+  - "scripts/build_config.py"
+  - "README.rst"
+  - ".github/filters.yml"
+
+notebooks:
+  - "interfaces/python/**"
+  - "test/python/**"
+  - "examples/notebooks/**"
+  - "scripts/notebook_manifest.py"
+  - ".github/actions/setup-python-build/action.yml"
+  - ".github/workflows/ci.yml"
+  - ".github/workflows/notebooks.yml"
+  - ".github/filters.yml"
