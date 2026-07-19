@@ -69,19 +69,31 @@ jobs:
       - name: Verify tracked SWIG outputs
         run: make test-python-swig-freshness
 
-  tests-quick:
-    if: ${{ always() && inputs.run-tests && inputs.mode == 'quick' && (needs.swig-freshness.result == 'success' || needs.swig-freshness.result == 'skipped') }}
+  tests:
+    if: ${{ always() && inputs.run-tests && (needs.swig-freshness.result == 'success' || needs.swig-freshness.result == 'skipped') }}
     name: Python ${{ matrix.os }} / ${{ matrix.python-version }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45
     needs: swig-freshness
     strategy:
-      fail-fast: true
+      # quick mode (PRs) fails fast across its two legs; full mode lets every
+      # version leg finish so one failure cannot hide another.
+      fail-fast: ${{ inputs.mode == 'quick' }}
       matrix:
+        os: [ubuntu-24.04]
+        # quick mode (PRs) runs only the newest CPython; the older legs stay
+        # covered on every push to master. Same conditional-matrix pattern as
+        # full-matrix in _r-package.yml. (exclude cannot do this: it filters
+        # matrix vectors, and include-only entries have none to match.)
+        python-version: ${{ inputs.mode == 'quick' && fromJSON('["3.14"]') || fromJSON('["3.11", "3.12", "3.13", "3.14"]') }}
         include:
+          # Extends the ubuntu 3.14 combination: that leg also runs the
+          # doctests, the type check, and the example smoke tests.
           - os: ubuntu-24.04
             python-version: "3.14"
-            smoke-only: false
+            run-full-suite: true
+          # No os/python match above, so this is added as its own leg:
+          # the Windows import smoke test.
           - os: windows-2025-vs2026
             python-version: "3.14"
             smoke-only: true
@@ -151,126 +163,27 @@ jobs:
         run: make test-python-unit
 
       # Cheap (~1 s) and the only guard keeping docstring examples in sync
-      # with the bundled example networks, so quick mode runs it too.
-      - name: Run Python doctests
-        if: ${{ !matrix.smoke-only }}
-        run: make test-python-doctest
-
-      # Deterministic core-scope gate (io/ and tl/ excluded); mirrors the
-      # pre-push hook. Full-scope pyright stays a manual check because its
-      # diagnostics vary with installed optional deps.
-      - name: Type check Python core surface
-        if: ${{ !matrix.smoke-only }}
-        run: make test-python-typecheck-core
-
-  tests-full:
-    if: ${{ always() && inputs.run-tests && inputs.mode == 'full' && (needs.swig-freshness.result == 'success' || needs.swig-freshness.result == 'skipped') }}
-    name: Python ${{ matrix.os }} / ${{ matrix.python-version }}
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 45
-    needs: swig-freshness
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: ubuntu-24.04
-            python-version: "3.11"
-            smoke-only: false
-            run-full-suite: false
-          - os: ubuntu-24.04
-            python-version: "3.12"
-            smoke-only: false
-            run-full-suite: false
-          - os: ubuntu-24.04
-            python-version: "3.13"
-            smoke-only: false
-            run-full-suite: false
-          - os: ubuntu-24.04
-            python-version: "3.14"
-            smoke-only: false
-            run-full-suite: true
-          - os: windows-2025-vs2026
-            python-version: "3.14"
-            smoke-only: true
-            run-full-suite: false
-
-    defaults:
-      run:
-        shell: bash
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-        with:
-          ref: ${{ inputs.ref || github.sha }}
-
-      - name: Set up Python
-        uses: ./.github/actions/setup-python-build
-        with:
-          python-version: ${{ matrix.python-version }}
-          install-build-tooling: "true"
-
-      - name: Set up ccache
-        uses: ./.github/actions/setup-ccache
-        with:
-          key-prefix: python-${{ matrix.os }}-py${{ matrix.python-version }}
-
-      - name: Set up uv
-        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
-        with:
-          enable-cache: true
-          cache-dependency-glob: pyproject.toml
-
-      # The editable install is the test legs' only compile: it builds the
-      # extension in-place, so the .so lands in the source tree where the
-      # doctests import it from. A separate `make build-python` wheel build used
-      # to run first and recompile the same extension -- redundant in the test
-      # legs (the wheel is unused here; wheel-build health is covered by the
-      # release-smoke and release wheel jobs).
-      # Route pip through uv (UV_SYSTEM_PYTHON installs into the setup-python
-      # environment): far faster resolution and a hardlinked cache for the heavy
-      # test/examples extras. The in-place compile of the extension is unchanged.
-      - name: Install editable package
-        run: |
-          make dev-python-install PIP="uv pip"
-          command -v ccache >/dev/null 2>&1 && ccache -s || true
-        env:
-          FEATURES: ${{ inputs.features }}
-          # docs (sphinx/furo) is only needed by build-docs, not the test jobs.
-          PYTHON_DEV_EXTRAS: test,examples
-          UV_SYSTEM_PYTHON: "1"
-
-      - name: Run Python smoke test
-        if: matrix.smoke-only
-        run: |
-          python - <<'PY'
-          import os
-          from infomap import Infomap, build_info
-          print(Infomap(silent=True).num_top_modules)
-          features = os.environ.get("INFOMAP_EXPECTED_FEATURES", "")
-          if "regularized-multilayer" in features.replace(",", " ").split():
-              assert "regularized-multilayer" in build_info()["enabled_features"]
-          PY
-        env:
-          INFOMAP_EXPECTED_FEATURES: ${{ inputs.features }}
-
-      - name: Run Python unit tests
-        if: ${{ !matrix.smoke-only }}
-        run: make test-python-unit
-
+      # with the bundled example networks, so both modes run it: quick mode's
+      # only non-smoke leg is the run-full-suite leg.
       - name: Run Python doctests
         if: matrix.run-full-suite
         run: make test-python-doctest
+
+      # Deterministic core-scope gate (io/ and tl/ excluded); mirrors the
+      # pre-push hook. Full mode runs the full-scope check below instead.
+      - name: Type check Python core surface
+        if: ${{ matrix.run-full-suite && inputs.mode == 'quick' }}
+        run: make test-python-typecheck-core
 
       # Full scope including the io/ and tl/ integration adapters. The
       # [test]+[examples] extras installed above pin the optional-dep set and
       # pyright is version-pinned, so the diagnostics are reproducible here.
       - name: Type check Python package
-        if: matrix.run-full-suite
+        if: ${{ matrix.run-full-suite && inputs.mode == 'full' }}
         run: make test-python-typecheck
 
       - name: Run Python example smoke tests
-        if: matrix.run-full-suite
+        if: ${{ matrix.run-full-suite && inputs.mode == 'full' }}
         run: make test-python-examples
 
   release-smoke:
