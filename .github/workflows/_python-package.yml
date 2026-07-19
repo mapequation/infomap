@@ -136,20 +136,30 @@ jobs:
         with:
           key-prefix: python-${{ matrix.os }}-py${{ matrix.python-version }}
 
+      - name: Set up uv
+        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
+        with:
+          enable-cache: true
+          cache-dependency-glob: pyproject.toml
+
       # The editable install is the test legs' only compile: it builds the
       # extension in-place, so the .so lands in the source tree where the
       # doctests import it from. A separate `make build-python` wheel build used
       # to run first and recompile the same extension -- redundant in the test
       # legs (the wheel is unused here; wheel-build health is covered by the
       # release-smoke and release wheel jobs).
+      # Route pip through uv (UV_SYSTEM_PYTHON installs into the setup-python
+      # environment): far faster resolution and a hardlinked cache for the heavy
+      # test/examples extras. The in-place compile of the extension is unchanged.
       - name: Install editable package
         run: |
-          make dev-python-install
+          make dev-python-install PIP="uv pip"
           command -v ccache >/dev/null 2>&1 && ccache -s || true
         env:
           FEATURES: ${{ inputs.features }}
           # docs (sphinx/furo) is only needed by build-docs, not the test jobs.
           PYTHON_DEV_EXTRAS: test,examples
+          UV_SYSTEM_PYTHON: "1"
 
       - name: Run Python smoke test
         if: matrix.smoke-only
@@ -234,20 +244,30 @@ jobs:
         with:
           key-prefix: python-${{ matrix.os }}-py${{ matrix.python-version }}
 
+      - name: Set up uv
+        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
+        with:
+          enable-cache: true
+          cache-dependency-glob: pyproject.toml
+
       # The editable install is the test legs' only compile: it builds the
       # extension in-place, so the .so lands in the source tree where the
       # doctests import it from. A separate `make build-python` wheel build used
       # to run first and recompile the same extension -- redundant in the test
       # legs (the wheel is unused here; wheel-build health is covered by the
       # release-smoke and release wheel jobs).
+      # Route pip through uv (UV_SYSTEM_PYTHON installs into the setup-python
+      # environment): far faster resolution and a hardlinked cache for the heavy
+      # test/examples extras. The in-place compile of the extension is unchanged.
       - name: Install editable package
         run: |
-          make dev-python-install
+          make dev-python-install PIP="uv pip"
           command -v ccache >/dev/null 2>&1 && ccache -s || true
         env:
           FEATURES: ${{ inputs.features }}
           # docs (sphinx/furo) is only needed by build-docs, not the test jobs.
           PYTHON_DEV_EXTRAS: test,examples
+          UV_SYSTEM_PYTHON: "1"
 
       - name: Run Python smoke test
         if: matrix.smoke-only
