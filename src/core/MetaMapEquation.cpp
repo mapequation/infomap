@@ -186,6 +186,31 @@ INFOMAP_HOT double MetaMapEquation::getDeltaCodelengthOnMovingNode(InfoNode& cur
   return deltaL + deltaMetaL * metaDataRate;
 }
 
+INFOMAP_HOT double MetaMapEquation::getDeltaCodelengthOnMovingNodeHoisted(InfoNode& current,
+                                                                          DeltaFlow& oldModuleDelta,
+                                                                          const OldSideTerms& oldSide,
+                                                                          DeltaFlow& newModuleDelta,
+                                                                          std::vector<FlowData>& moduleFlowData,
+                                                                          std::vector<unsigned int>& moduleMembers)
+{
+  double deltaL = Base::getDeltaCodelengthOnMovingNodeHoisted(current, oldModuleDelta, oldSide, newModuleDelta, moduleFlowData, moduleMembers);
+
+  double deltaMetaL = 0.0;
+
+  unsigned int oldModuleIndex = oldModuleDelta.module;
+  unsigned int newModuleIndex = newModuleDelta.module;
+
+  // Remove codelength of old and new module before changes
+  deltaMetaL -= getCurrentModuleMetaCodelength(oldModuleIndex, current, 0);
+  deltaMetaL -= getCurrentModuleMetaCodelength(newModuleIndex, current, 0);
+  // Add codelength of old module with current node removed
+  deltaMetaL += getCurrentModuleMetaCodelength(oldModuleIndex, current, -1);
+  // Add codelength of old module with current node added
+  deltaMetaL += getCurrentModuleMetaCodelength(newModuleIndex, current, 1);
+
+  return deltaL + deltaMetaL * metaDataRate;
+}
+
 double MetaMapEquation::getCurrentModuleMetaCodelength(unsigned int module, InfoNode& current, int addRemoveOrNothing)
 {
   auto& currentMetaCollection = m_moduleToMetaCollection[module];

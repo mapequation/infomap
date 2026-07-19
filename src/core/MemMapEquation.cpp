@@ -299,23 +299,28 @@ void MemMapEquation::addMemoryContributions(InfoNode& current,
   unsigned int numPhysicalNodes = physicalNodes.size();
   for (unsigned int i = 0; i < numPhysicalNodes; ++i) {
     PhysData& physData = physicalNodes[i];
+    // plogp(sumFlowFromM2Node) is constant across every module holding this
+    // physical node, so compute it once per physical node instead of per
+    // (physical node, module). Bit-exact; the per-module plogp of the changed
+    // flows (old/new) still varies and stays in the loop.
+    const double physFlow = physData.sumFlowFromM2Node;
+    const double plogpPhysFlow = infomath::plogp(physFlow);
     ModuleToMemNodes& moduleToMemNodes = m_physToModuleToMemNodes[physData.physNodeIndex];
     for (const auto& memNodes : moduleToMemNodes) {
       unsigned int moduleIndex = memNodes.module;
       if (moduleIndex == current.index) // From where the multiple assigned node is moved
       {
         double oldPhysFlow = memNodes.sumFlow;
-        double newPhysFlow = memNodes.sumFlow - physData.sumFlowFromM2Node;
+        double newPhysFlow = memNodes.sumFlow - physFlow;
         oldModuleDelta.sumDeltaPlogpPhysFlow += infomath::plogp(newPhysFlow) - infomath::plogp(oldPhysFlow);
-        oldModuleDelta.sumPlogpPhysFlow += infomath::plogp(physData.sumFlowFromM2Node);
+        oldModuleDelta.sumPlogpPhysFlow += plogpPhysFlow;
       } else // To where the multiple assigned node is moved
       {
         double oldPhysFlow = memNodes.sumFlow;
-        double newPhysFlow = memNodes.sumFlow + physData.sumFlowFromM2Node;
+        double newPhysFlow = memNodes.sumFlow + physFlow;
 
         double sumDeltaPlogpPhysFlow = infomath::plogp(newPhysFlow) - infomath::plogp(oldPhysFlow);
-        double sumPlogpPhysFlow = infomath::plogp(physData.sumFlowFromM2Node);
-        moduleDeltaFlow.add(moduleIndex, DeltaFlowDataType(moduleIndex, 0.0, 0.0, sumDeltaPlogpPhysFlow, sumPlogpPhysFlow));
+        moduleDeltaFlow.add(moduleIndex, DeltaFlowDataType(moduleIndex, 0.0, 0.0, sumDeltaPlogpPhysFlow, plogpPhysFlow));
       }
     }
   }
@@ -330,6 +335,22 @@ INFOMAP_HOT double MemMapEquation::getDeltaCodelengthOnMovingNode(InfoNode& curr
 {
   double deltaL = Base::getDeltaCodelengthOnMovingNode(current, oldModuleDelta, newModuleDelta, moduleFlowData, moduleMembers);
 
+  double delta_nodeFlow_log_nodeFlow = oldModuleDelta.sumDeltaPlogpPhysFlow + newModuleDelta.sumDeltaPlogpPhysFlow + oldModuleDelta.sumPlogpPhysFlow - newModuleDelta.sumPlogpPhysFlow;
+
+  return deltaL - delta_nodeFlow_log_nodeFlow;
+}
+
+INFOMAP_HOT double MemMapEquation::getDeltaCodelengthOnMovingNodeHoisted(InfoNode& current,
+                                                                         DeltaFlowDataType& oldModuleDelta,
+                                                                         const OldSideTerms& oldSide,
+                                                                         DeltaFlowDataType& newModuleDelta,
+                                                                         std::vector<FlowDataType>& moduleFlowData,
+                                                                         std::vector<unsigned int>& moduleMembers)
+{
+  double deltaL = Base::getDeltaCodelengthOnMovingNodeHoisted(current, oldModuleDelta, oldSide, newModuleDelta, moduleFlowData, moduleMembers);
+
+  // The physical-codebook old-side terms are already per-node constants:
+  // addMemoryContributions() computed them once into oldModuleDelta.
   double delta_nodeFlow_log_nodeFlow = oldModuleDelta.sumDeltaPlogpPhysFlow + newModuleDelta.sumDeltaPlogpPhysFlow + oldModuleDelta.sumPlogpPhysFlow - newModuleDelta.sumPlogpPhysFlow;
 
   return deltaL - delta_nodeFlow_log_nodeFlow;

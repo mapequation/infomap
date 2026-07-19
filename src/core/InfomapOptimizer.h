@@ -540,16 +540,21 @@ INFOMAP_HOT unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestMod
     DeltaFlowDataType strongestConnectedModule(oldModuleDelta);
     double deltaCodelengthOnStrongestConnectedModule = 0.0;
 
+    // Old-module plogp terms are constant across every candidate of this node:
+    // hoist them out of the per-candidate delta (see MapEquation::hoistOldSide).
+    const OldSideTerms oldSide = m_objective.hoistOldSide(current, oldModuleDelta, m_moduleFlowData);
+
     // Find the move that minimizes the description length
     for (unsigned int k = 0; k < numModuleLinks; ++k) {
       auto j = moduleEnumeration[k];
       unsigned int otherModule = moduleDeltaEnterExit[j].module;
       if (otherModule != current.index) {
-        double deltaCodelength = m_objective.getDeltaCodelengthOnMovingNode(current,
-                                                                            oldModuleDelta,
-                                                                            moduleDeltaEnterExit[j],
-                                                                            m_moduleFlowData,
-                                                                            m_moduleMembers);
+        double deltaCodelength = m_objective.getDeltaCodelengthOnMovingNodeHoisted(current,
+                                                                                   oldModuleDelta,
+                                                                                   oldSide,
+                                                                                   moduleDeltaEnterExit[j],
+                                                                                   m_moduleFlowData,
+                                                                                   m_moduleMembers);
 
         if (deltaCodelength < bestDeltaCodelength - m_infomap->minimumSingleNodeCodelengthImprovement) {
           bestDeltaModule = moduleDeltaEnterExit[j];
@@ -779,16 +784,22 @@ INFOMAP_HOT unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestMod
       DeltaFlowDataType strongestConnectedModule(oldModuleDelta);
       double deltaCodelengthOnStrongestConnectedModule = 0.0;
 
+      // Old-module plogp terms are constant across every candidate of this node
+      // (per-thread stack local; reads m_moduleFlowData read-only). See
+      // MapEquation::hoistOldSide.
+      const OldSideTerms oldSide = m_objective.hoistOldSide(current, oldModuleDelta, m_moduleFlowData);
+
       // Find the move that minimizes the description length
       for (unsigned int k = 0; k < numModuleLinks; ++k) {
         auto j = moduleEnumeration[k];
         unsigned int otherModule = moduleDeltaEnterExit[j].module;
         if (otherModule != current.index) {
-          double deltaCodelength = m_objective.getDeltaCodelengthOnMovingNode(current,
-                                                                              oldModuleDelta,
-                                                                              moduleDeltaEnterExit[j],
-                                                                              m_moduleFlowData,
-                                                                              m_moduleMembers);
+          double deltaCodelength = m_objective.getDeltaCodelengthOnMovingNodeHoisted(current,
+                                                                                     oldModuleDelta,
+                                                                                     oldSide,
+                                                                                     moduleDeltaEnterExit[j],
+                                                                                     m_moduleFlowData,
+                                                                                     m_moduleMembers);
 
           if (deltaCodelength < bestDeltaCodelength - m_infomap->minimumSingleNodeCodelengthImprovement) {
             bestDeltaModule = moduleDeltaEnterExit[j];

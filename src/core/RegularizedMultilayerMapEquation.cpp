@@ -416,6 +416,20 @@ double RegularizedMultilayerMapEquation::getDeltaCodelengthOnMovingNode(InfoNode
   return deltaL - delta_nodeFlow_log_nodeFlow;
 }
 
+double RegularizedMultilayerMapEquation::getDeltaCodelengthOnMovingNodeHoisted(InfoNode& current,
+                                                                               DeltaFlowDataType& oldModuleDelta,
+                                                                               const OldSideTerms& oldSide,
+                                                                               DeltaFlowDataType& newModuleDelta,
+                                                                               std::vector<FlowDataType>& moduleFlowData,
+                                                                               std::vector<unsigned int>& moduleMembers)
+{
+  double deltaL = Base::getDeltaCodelengthOnMovingNodeHoisted(current, oldModuleDelta, oldSide, newModuleDelta, moduleFlowData, moduleMembers);
+
+  double delta_nodeFlow_log_nodeFlow = oldModuleDelta.sumDeltaPlogpPhysFlow + newModuleDelta.sumDeltaPlogpPhysFlow + oldModuleDelta.sumPlogpPhysFlow - newModuleDelta.sumPlogpPhysFlow;
+
+  return deltaL - delta_nodeFlow_log_nodeFlow;
+}
+
 // ===================================================
 // Consolidation
 // ===================================================

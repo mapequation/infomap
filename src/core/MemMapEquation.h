@@ -78,6 +78,15 @@ public:
                                         std::vector<FlowDataType>& moduleFlowData,
                                         std::vector<unsigned int>& moduleMembers);
 
+  using Base::hoistOldSide;
+
+  double getDeltaCodelengthOnMovingNodeHoisted(InfoNode& current,
+                                               DeltaFlowDataType& oldModuleDelta,
+                                               const OldSideTerms& oldSide,
+                                               DeltaFlowDataType& newModuleDelta,
+                                               std::vector<FlowDataType>& moduleFlowData,
+                                               std::vector<unsigned int>& moduleMembers);
+
   // ===================================================
   // Consolidation
   // ===================================================
