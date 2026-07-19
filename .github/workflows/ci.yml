@@ -12,7 +12,10 @@ permissions:
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # Cancel superseded runs on PRs, but never on master: cancelling a master
+  # run marks its CI Summary as failed, leaving a permanent red X on that
+  # commit (ci-auto-rerun only retries setup-phase flakes, not cancellations).
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   changes:
