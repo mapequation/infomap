@@ -137,7 +137,7 @@ jobs:
       - name: Install editable package
         run: |
           make dev-python-install PIP="uv pip"
-          command -v ccache >/dev/null 2>&1 && ccache -s || true
+          if command -v ccache >/dev/null 2>&1; then ccache -s || true; fi
         env:
           FEATURES: ${{ inputs.features }}
           # docs (sphinx/furo) is only needed by build-docs, not the test jobs.
@@ -212,7 +212,7 @@ jobs:
       - name: Build release distributions
         run: |
           make release-python-dist
-          command -v ccache >/dev/null 2>&1 && ccache -s || true
+          if command -v ccache >/dev/null 2>&1; then ccache -s || true; fi
         env:
           FEATURES: ${{ inputs.features }}
 

@@ -111,6 +111,18 @@ repos:
         entry: make format-r-check
         pass_filenames: false
         files: \.R$
+      - id: actionlint
+        name: actionlint (workflow YAML)
+        language: system
+        # Lints .github/workflows/*.yml -- syntax, expression typing, and
+        # shellcheck on embedded run: scripts. language: system like biome/air
+        # above: install actionlint locally (`brew install actionlint`) when you
+        # touch workflows. Runs the whole workflow set (pass_filenames: false) so
+        # cross-references between reusable workflows are resolved. The CI
+        # pre-commit job installs the same pinned version -- see AGENTS.md.
+        entry: actionlint
+        pass_filenames: false
+        files: ^\.github/workflows/.*\.ya?ml$
       # pyright runs at PUSH time, not on every commit: it is slower and its
       # results depend on installed deps. Scoped to the core surface (io/, tl/
       # excluded) so it stays deterministic across dev machines -- see the
