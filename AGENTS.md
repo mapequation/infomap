@@ -177,6 +177,30 @@ every hook; never reformat them.
 
 ## Commits and Pull Requests
 
+Commit subjects follow Conventional Commits: `type(scope): summary`, written
+in imperative mood, lowercase after the colon, no trailing period.
+release-please derives releases from them: `feat` bumps the minor version,
+`fix` the patch version, and a `BREAKING CHANGE:` footer (or `!` after the
+type) the major version. Only `feat`, `fix`, `perf`, and `revert` commits
+surface in the generated `CHANGELOG.md`; never edit that file by hand.
+
+Types and scopes are a fixed allowlist, restricted to what is frequent in
+this repo's history:
+
+- Allowed types: `feat`, `fix`, `perf`, `docs`, `test`, `refactor`, `build`,
+  `ci`, `chore`.
+- Allowed scopes:
+  - no scope — `src/` (C++ core) and repo-wide changes: `feat: ...`,
+    `fix: ...`, `perf: ...`
+  - `(python)` — the Python interface (`py` is a retired alias; do not use it)
+  - `(R)` — the R interface; `(js)` — the JavaScript interface
+  - `(deps)` / `(deps-dev)` — dependency bumps, dependabot's style
+- Everything else requires explicit confirmation from the user before
+  committing: rare types (`style`, `revert`), scopes that appear only
+  occasionally in history (`notebooks`, `docker`, `skills`, ...), any
+  breaking-change marker, and any type or scope not listed above. Never
+  propose `(core)` — the C++ core is the unscoped default — and never write
+  `chore(master): release ...` commits; those belong to release-please.
 - The user is the author of every commit and pull request. Author and commit
   all work in the user's name; never record yourself as the author.
 - Never add yourself as a co-author. Do not append `Co-Authored-By` trailers,
