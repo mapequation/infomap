@@ -87,8 +87,16 @@ Configure these integrations before the first release:
 4. Merge the release PR.
 5. Release Please creates the `vX.Y.Z` tag and the GitHub Release.
 6. `.github/workflows/release.yml` runs for that tag and:
-   - builds the native release assets
-   - builds the Python sdist and wheels through the full Python workflow tier
+   - waits for the CI run on the release commit to have passed
+     (`verify-master-ci`) before publishing anything. That commit's push to
+     `master` already ran the full Python and R test matrices, so the release
+     workflow does not re-run them; it only builds the release artifacts. A
+     master run that is red purely from GitHub setup-phase infra flakes (the
+     same class `ci-auto-rerun.yml` retries) is tolerated; a real job failure
+     blocks the release.
+   - builds the native release assets (and runs the C++ test suite)
+   - builds the Python sdist and wheels (cibuildwheel imports and smoke-tests
+     each wheel as it builds)
    - builds the R source tarball once, then builds macOS and Windows R
      binaries from that exact tarball for both R `release` and `oldrel`
    - builds and verifies the npm package

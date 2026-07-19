@@ -37,6 +37,85 @@ jobs:
             exit 1
           fi
 
+  # The commit this tag points at was already validated end to end by the CI
+  # workflow when it was pushed to master (push events run the full Python
+  # matrix and the full R matrix -- see ci.yml). Rather than re-run those
+  # matrices here, gate publishing on that master run. This removes the
+  # duplicate test jobs (the python/r calls below run with run-tests: false)
+  # and closes the old race where the tag could be published before master CI
+  # finished. On a workflow_dispatch republish of an existing tag the run is
+  # already complete, so this returns almost immediately.
+  #
+  # "Pass" is deliberately not "CI Summary == success": a master run can go red
+  # purely from GitHub setup-phase infra flakes (action-resolution "Internal
+  # Server Error" in "Set up job"), which ci-auto-rerun.yml already treats as
+  # non-defects -- the v2.15.0 release commit was red for exactly this reason.
+  # So we apply the same test ci-auto-rerun uses: block only on a real
+  # (non-setup) job failure, tolerate setup-phase flakes.
+  verify-master-ci:
+    name: Verify master CI passed
+    needs: [validate-stable-tag]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - name: Require the master CI run to have no real failures
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+        run: |
+          set -euo pipefail
+
+          sha="$(gh api "repos/$GH_REPO/commits/$RELEASE_TAG" --jq '.sha')"
+          echo "Release tag $RELEASE_TAG resolves to commit $sha"
+
+          # Poll for the master CI (push) run on this commit to complete. A
+          # re-run (manual or by ci-auto-rerun) flips the run back to
+          # in_progress, so waiting for `completed` naturally waits reruns out.
+          deadline=$(( $(date +%s) + 30 * 60 ))
+          conclusion=""
+          run_id=""
+          while true; do
+            run="$(gh api "repos/$GH_REPO/actions/workflows/ci.yml/runs?head_sha=$sha&event=push" \
+              --jq '.workflow_runs | sort_by(.created_at) | last // {}')"
+            run_id="$(jq -r '.id // empty' <<<"$run")"
+            status="$(jq -r '.status // "missing"' <<<"$run")"
+            conclusion="$(jq -r '.conclusion // ""' <<<"$run")"
+            echo "master CI run ${run_id:-<none>}: status=$status conclusion=$conclusion"
+            [ -n "$run_id" ] && [ "$status" = "completed" ] && break
+            if [ "$(date +%s)" -ge "$deadline" ]; then
+              echo "::error::Timed out after 30 min waiting for the master CI run on $sha." >&2
+              exit 1
+            fi
+            sleep 30
+          done
+
+          if [ "$conclusion" = "success" ]; then
+            echo "master CI run $run_id is green; proceeding to publish."
+            exit 0
+          fi
+
+          # Red run: accept it only if every failure is a setup-phase infra
+          # flake -- same definition as ci-auto-rerun.yml's "real failure" test.
+          jobs_json="$(gh api --paginate "repos/$GH_REPO/actions/runs/$run_id/jobs" \
+            --jq '.jobs[]' | jq -s '.')"
+          real_failures="$(jq -c '
+            [ .[]
+              | select(.name != "CI Summary")
+              | select(.conclusion == "failure")
+              | select(any(.steps[]?; .conclusion == "failure" and .name != "Set up job"))
+              | .name ]' <<<"$jobs_json")"
+          if [ "$(jq 'length' <<<"$real_failures")" -eq 0 ]; then
+            echo "::warning::master CI run $run_id concluded '$conclusion', but every failure was a GitHub setup-phase infra flake. Treating master as acceptable and proceeding."
+            exit 0
+          fi
+          echo "::error::master CI run $run_id has real (non-setup) job failures; refusing to publish:" >&2
+          jq -r '.[] | "  - \(.)"' <<<"$real_failures" >&2
+          exit 1
+
   native:
     needs: [validate-stable-tag]
     uses: ./.github/workflows/_native-build.yml
@@ -49,8 +128,10 @@ jobs:
     uses: ./.github/workflows/_python-package.yml
     with:
       ref: ${{ github.event_name == 'workflow_dispatch' && format('refs/tags/{0}', inputs.tag) || github.ref }}
-      run-tests: true
-      mode: full
+      # Tests ran on the master push (gated by verify-master-ci above); here we
+      # only build the release artifacts. cibuildwheel still imports and
+      # smoke-tests every wheel it builds, so the shipped artifacts stay tested.
+      run-tests: false
       build-release-artifacts: true
 
   javascript:
@@ -66,12 +147,16 @@ jobs:
     uses: ./.github/workflows/_r-package.yml
     with:
       ref: ${{ github.event_name == 'workflow_dispatch' && format('refs/tags/{0}', inputs.tag) || github.ref }}
-      run-tests: true
+      # Tests ran on the master push (gated by verify-master-ci above); here we
+      # only build the source tarball and the macOS/Windows binaries. R CMD
+      # INSTALL --build compiles and loads each, so the shipped binaries stay
+      # exercised.
+      run-tests: false
       build-release-artifacts: true
 
   publish-github-release:
     name: Publish GitHub release assets
-    needs: [native, python, javascript, r]
+    needs: [verify-master-ci, native, python, javascript, r]
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     permissions:
@@ -177,9 +262,16 @@ jobs:
   # image x platform (4 parallel jobs) and pushes each by digest; docker-publish
   # stitches the digests into the multi-arch tags. Layer caching (type=gha) is
   # scoped per image+platform so the four builds don't clobber each other.
+  #
+  # meta + build start right after tag validation, in parallel with the test and
+  # artifact fan-in, rather than after it -- the digest pushes are untagged and
+  # unreferenced, so nothing user-visible exists until docker-publish. Only that
+  # final tag-and-attest step waits for publish-github-release (which itself
+  # waits for verify-master-ci), so a Docker tag never points at a release whose
+  # assets or master CI did not go green.
   docker-meta:
     name: Resolve Docker release metadata
-    needs: [publish-github-release]
+    needs: [validate-stable-tag]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     outputs:
@@ -275,7 +367,7 @@ jobs:
 
   docker-publish:
     name: Publish ${{ matrix.image }} multi-arch image
-    needs: [docker-meta, docker-build]
+    needs: [docker-meta, docker-build, publish-github-release]
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     permissions:
