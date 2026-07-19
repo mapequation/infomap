@@ -103,6 +103,7 @@ jobs:
         uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b # release/v1
         with:
           packages-dir: dist/python
+          attestations: true
 
   publish-feature-pypi:
     name: Publish feature prerelease wheels to PyPI
@@ -135,6 +136,7 @@ jobs:
         uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b # release/v1
         with:
           packages-dir: dist/python
+          attestations: true
 
   publish-npm:
     name: Publish prerelease to npm
@@ -164,4 +166,4 @@ jobs:
           path: dist/npm
 
       - name: Publish npm prerelease package
-        run: npm publish --tag next --access public dist/npm/*.tgz
+        run: npm publish --provenance --tag next --access public dist/npm/*.tgz
