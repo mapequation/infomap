@@ -329,6 +329,9 @@ private:
   // Seed the partition of `m_lvl` at a given unit->module assignment (the shared
   // primitive behind fine/coarse/interior tuning), maintaining exact aggregates.
   void seedAssignment(const std::vector<int>& assign);
+  // Recompute the running plogp terms + codelength from the module aggregates
+  // (one O(K) pass). Pairs with m_deferTerms for deterministic placements.
+  void rebuildRunningTerms();
   // Forced move of one unit to a target module, updating aggregates + terms.
   void moveUnit(int u, int newMod);
   unsigned int moveLoop();
@@ -413,6 +416,7 @@ private:
   unsigned long m_seed = 123;
   double m_exitNetworkFlow = 0.0; // flow leaving this (sub-)network; 0 if closed
   unsigned int m_superAggLimit = 0; // >0: conservative up-build (passes/super-level)
+  bool m_deferTerms = false; // deterministic placement: moveUnit skips running-term (plogp) maintenance; rebuildRunningTerms() restores them
   bool m_leafMoveLoop = false; // true while moveLoop units are leaves (corrections active)
   bool m_seededPhase = false; // true when the move loop starts from an existing partition (fine-tune/refine)
   double m_lastCorrection = 0.0; // correction total of the last leaf move loop (0 if none)
