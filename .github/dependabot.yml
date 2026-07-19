@@ -1,7 +1,12 @@
 version: 2
 updates:
   - package-ecosystem: github-actions
-    directory: /
+    # Glob so composite actions under .github/actions/*/action.yml are scanned
+    # too, not just workflows and the root. A bare "directory: /" misses them,
+    # which let the setup-python/setup-node pins in the composites drift.
+    directories:
+      - "/"
+      - "/.github/actions/*"
     schedule:
       interval: weekly
     labels:
