@@ -181,6 +181,7 @@ if(BUILD_TESTING)
     add_infomap_cpp_test(infomap_cpp_lossy_tests test/cpp/test_lossy.cpp "fast;core;lossy")
     add_infomap_cpp_test(infomap_cpp_preferred_levels_tests test/cpp/test_preferred_levels.cpp "fast;core;preferred-levels")
     add_infomap_cpp_test(infomap_cpp_random_tests test/cpp/test_random.cpp "fast;core;rng")
+    add_infomap_cpp_test(infomap_cpp_map_equation_invariants_tests test/cpp/test_map_equation_invariants.cpp "fast;core;mapeq")
 
     add_test(
         NAME print_json_parameters
@@ -269,6 +270,9 @@ if(BUILD_TESTING)
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
         target_compile_options(infomap_cpp_lifecycle_tests PRIVATE -fno-access-control)
         target_compile_options(infomap_cpp_partition_tests PRIVATE -fno-access-control)
+        # Reaches InfomapBase::calcCodelengthOnTree (private) to recompute a
+        # partition from scratch and compare against the tracked codelength.
+        target_compile_options(infomap_cpp_map_equation_invariants_tests PRIVATE -fno-access-control)
     endif()
 
     add_custom_target(
@@ -289,6 +293,7 @@ if(BUILD_TESTING)
             infomap_cpp_lossy_tests
             infomap_cpp_preferred_levels_tests
             infomap_cpp_random_tests
+            infomap_cpp_map_equation_invariants_tests
             infomap_cli
     )
 endif()
