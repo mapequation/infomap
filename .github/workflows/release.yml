@@ -166,6 +166,10 @@ jobs:
         uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b # release/v1
         with:
           packages-dir: dist/python
+          # PEP 740 attestations under trusted publishing. This is the
+          # action's default; set explicitly so the intent is visible and
+          # survives any future change to the default.
+          attestations: true
 
   # Multi-arch GHCR publish, split into three stages so each architecture builds
   # on a NATIVE runner (arm64 on ubuntu-24.04-arm) instead of under QEMU
@@ -366,7 +370,11 @@ jobs:
           path: dist/npm
 
       - name: Publish npm package
-        run: npm publish --access public dist/npm/*.tgz
+        # --provenance emits a signed npm provenance attestation via the
+        # id-token: write OIDC grant above, linking the package to this
+        # workflow run and commit. Requires the repository field in
+        # package.json (present).
+        run: npm publish --provenance --access public dist/npm/*.tgz
 
   notify-homebrew-infomap:
     name: Notify homebrew-infomap
