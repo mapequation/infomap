@@ -15,6 +15,11 @@ TEST_CMAKE_ARGS ?=
 CTEST_ARGS ?=
 SANITIZER_CXX ?= clang++
 SANITIZER_CMAKE_ARGS ?=
+FUZZ_BUILD_DIR ?= build/fuzz
+FUZZ_SECONDS ?= 60
+FUZZ_CXX ?= clang++
+FUZZ_CC ?= clang
+FUZZ_SEED_DIRS ?= test/fixtures/networks test/fixtures/networks/json examples/networks
 BENCHMARK_OUTPUT ?= build/benchmarks/python-benchmarks.json
 BENCHMARK_SUMMARY ?=
 NATIVE_BENCHMARK_TARGET ?= infomap_native_benchmark
@@ -36,7 +41,7 @@ define warn_cmake_build_type_mismatch
 	fi
 endef
 
-.PHONY: configure-cpp-dev tidy-native dev-cpp-check test-cpp-stream-policy test-native test-binding-options-freshness test-fast test-sanitizers bench-python bench-native
+.PHONY: configure-cpp-dev tidy-native dev-cpp-check test-cpp-stream-policy test-native test-binding-options-freshness test-fast test-sanitizers fuzz bench-python bench-native
 
 configure-cpp-dev:
 	@generator_args=""; \
@@ -112,6 +117,31 @@ test-sanitizers:
 		ASAN_OPTS="$$ASAN_OPTS:detect_leaks=1"; \
 	fi; \
 	ASAN_OPTIONS="$$ASAN_OPTS" UBSAN_OPTIONS=print_stacktrace=1 "$(CTEST)" --test-dir $(SANITIZER_BUILD_DIR) --output-on-failure $(CTEST_ARGS)
+
+# Build and briefly run the libFuzzer harness for the network intake (Clang
+# only; opt-in via INFOMAP_BUILD_FUZZERS, kept out of the default build/ctest).
+# Feeds bytes through buildNetworkFromInput, which routes JSON vs Pajek, so the
+# single target covers both parsers. Seeds from the tracked fixtures; new inputs
+# and any findings (crash-*/timeout-*/leak-*) land under FUZZ_BUILD_DIR. Tune the
+# run length with FUZZ_SECONDS (CI uses a larger budget than the default smoke).
+fuzz:
+	@generator_args=""; \
+	if [ -n "$(CMAKE_GENERATOR)" ]; then generator_args="-G $(CMAKE_GENERATOR)"; fi; \
+	"$(CMAKE)" -S . -B $(FUZZ_BUILD_DIR) $$generator_args \
+		-DINFOMAP_BUILD_FUZZERS=ON \
+		-DINFOMAP_USE_OPENMP=OFF \
+		-DBUILD_TESTING=OFF \
+		-DINFOMAP_MODE=debug \
+		-DCMAKE_CXX_COMPILER=$(FUZZ_CXX) \
+		-DCMAKE_C_COMPILER=$(FUZZ_CC)
+	@"$(CMAKE)" --build $(FUZZ_BUILD_DIR) --target fuzz_intake --parallel $(JOBS)
+	@mkdir -p $(FUZZ_BUILD_DIR)/corpus
+	@ASAN_OPTIONS=strict_string_checks=1 UBSAN_OPTIONS=print_stacktrace=1 \
+		$(FUZZ_BUILD_DIR)/fuzz_intake \
+			-max_total_time=$(FUZZ_SECONDS) -max_len=1048576 -timeout=10 \
+			-dict=test/fuzz/intake.dict \
+			-artifact_prefix=$(FUZZ_BUILD_DIR)/ -print_final_stats=1 \
+			$(FUZZ_BUILD_DIR)/corpus $(FUZZ_SEED_DIRS)
 
 bench-python:
 	@mkdir -p $(dir $(BENCHMARK_OUTPUT))

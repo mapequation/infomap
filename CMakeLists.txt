@@ -3,6 +3,7 @@ project(infomap LANGUAGES CXX)
 
 option(INFOMAP_USE_OPENMP "Enable OpenMP support when available." ON)
 option(INFOMAP_ENABLE_SANITIZERS "Enable address and undefined behavior sanitizers." OFF)
+option(INFOMAP_BUILD_FUZZERS "Build libFuzzer harnesses for the network intake (Clang only)." OFF)
 option(INFOMAP_NATIVE_ARCH "Enable -march=native, LTO, and loop unrolling for the host CPU. Produces non-portable binaries; opt-in for local builds only." OFF)
 set(INFOMAP_MODE "release" CACHE STRING "Build mode shared with the Make-based native build policy.")
 set_property(CACHE INFOMAP_MODE PROPERTY STRINGS release debug)
@@ -296,4 +297,23 @@ if(BUILD_TESTING)
             infomap_cpp_map_equation_invariants_tests
             infomap_cli
     )
+endif()
+
+# libFuzzer harnesses for the network intake. Opt-in and Clang-only; kept out of
+# BUILD_TESTING / infomap_cpp_tests / ctest (not pass/fail unit tests). Run via
+# `make fuzz`. Configure with -DINFOMAP_BUILD_FUZZERS=ON -DINFOMAP_USE_OPENMP=OFF.
+if(INFOMAP_BUILD_FUZZERS)
+    if(NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        message(FATAL_ERROR "INFOMAP_BUILD_FUZZERS requires Clang (libFuzzer).")
+    endif()
+    # Instrument the core for coverage-guided fuzzing plus the sanitizers the
+    # harness links, so findings surface from library code, not just the harness.
+    target_compile_options(infomap_core
+        PRIVATE -fsanitize=fuzzer-no-link,address,undefined -fno-omit-frame-pointer)
+
+    add_executable(fuzz_intake test/fuzz/fuzz_intake.cpp)
+    target_link_libraries(fuzz_intake PRIVATE infomap_core)
+    target_compile_options(fuzz_intake
+        PRIVATE -fsanitize=fuzzer,address,undefined -fno-omit-frame-pointer)
+    target_link_options(fuzz_intake PRIVATE -fsanitize=fuzzer,address,undefined)
 endif()
