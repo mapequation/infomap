@@ -567,9 +567,23 @@ public:
 private:
   double physFlow(int module, int physical) const;
 
-  std::vector<int> m_leafPhysical; // per leaf (state node): physical node id
+  std::vector<int> m_leafPhysical; // per leaf (state node): COMPACT physical id in [0, m_numPhys)
   std::vector<double> m_leafFlow; // per leaf: state flow
   double m_cState; // constant sum_leaf plogp(stateFlow)
+
+  // Dense per-module physical-flow lookup (enabled in initMoveLoop when
+  // numModules * numPhys is small): O(1) reads in the move loop's hot path.
+  // The sparse maps stay authoritative for iteration (merge scan).
+  bool m_dense = false;
+  int m_numPhys = 0;
+  std::vector<double> m_densePhysFlow;
+
+  // Per-(leaf, current-module) delta cache: the old-module term and plogp(f)
+  // are identical for every candidate the move loop probes for the same leaf.
+  mutable int m_cacheUnit = -1;
+  mutable int m_cacheOldMod = -1;
+  mutable double m_cacheOldTerm = 0.0;
+  mutable double m_cachePlogpF = 0.0;
 
   std::vector<std::unordered_map<int, double>> m_modulePhysFlow; // physFlow_{m,p}
   // Reverse index physical id -> modules currently holding a state node of that

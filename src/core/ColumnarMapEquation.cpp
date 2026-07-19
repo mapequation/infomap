@@ -1566,10 +1566,22 @@ MemCorrection::MemCorrection(std::vector<int> leafPhysical, std::vector<double> 
   using infomath::plogp;
   for (double f : m_leafFlow)
     m_cState += plogp(f);
+  // Compact the physical ids to [0, P): every downstream structure (module
+  // maps, reverse index) keys on the compact id, and the dense per-module
+  // lookup (see initMoveLoop) indexes with it directly.
+  std::unordered_map<int, int> compact;
+  compact.reserve(m_leafPhysical.size());
+  for (auto& p : m_leafPhysical) {
+    const auto r = compact.emplace(p, static_cast<int>(compact.size()));
+    p = r.first->second;
+  }
+  m_numPhys = static_cast<int>(compact.size());
 }
 
 double MemCorrection::physFlow(int module, int physical) const
 {
+  if (m_dense)
+    return m_densePhysFlow[static_cast<std::size_t>(module) * m_numPhys + physical];
   const auto& pf = m_modulePhysFlow[module];
   const auto it = pf.find(physical);
   return it == pf.end() ? 0.0 : it->second;
@@ -1598,11 +1610,25 @@ double MemCorrection::initMoveLoop(const std::vector<int>& leafModule, int numMo
   using infomath::plogp;
   m_modulePhysFlow.assign(numModules, {});
   m_physModules.clear();
+  m_cacheUnit = -1;
+  // Dense per-module physical-flow lookup when it fits comfortably in memory
+  // (state networks typically have far fewer physical nodes than state nodes):
+  // physFlow becomes an O(1) array read in the move loop's hot path instead of
+  // a hash find. The sparse maps are kept alongside for iteration (merge scan).
+  m_dense = static_cast<double>(numModules) * static_cast<double>(m_numPhys) <= 8e6;
+  if (m_dense)
+    m_densePhysFlow.assign(static_cast<std::size_t>(numModules) * m_numPhys, 0.0);
+  // The physical -> modules reverse index only feeds the co-physical proposals
+  // (coMergeMode); maintaining it is pure overhead when that tuning mode is off.
+  const bool maintainIndex = coMergeMode() != 0;
   const int nLeaves = static_cast<int>(leafModule.size());
   for (int i = 0; i < nLeaves; ++i) {
     const int m = leafModule[i], p = m_leafPhysical[i];
     m_modulePhysFlow[m][p] += m_leafFlow[i];
-    m_physModules[p].insert(m);
+    if (m_dense)
+      m_densePhysFlow[static_cast<std::size_t>(m) * m_numPhys + p] += m_leafFlow[i];
+    if (maintainIndex)
+      m_physModules[p].insert(m);
   }
   double sum = 0.0;
   for (const auto& pf : m_modulePhysFlow)
@@ -1616,17 +1642,31 @@ double MemCorrection::moveDelta(int leaf, int oldMod, int newMod) const
   using infomath::plogp;
   if (oldMod == newMod)
     return 0.0;
+  // term = C_state - sum plogp(physFlow); only phys p in the two modules
+  // changes. The old-module part is identical for every candidate of the same
+  // leaf, so it is computed once and cached (the move loop probes many
+  // candidates per leaf); a candidate without the leaf's physical (the common
+  // case) needs no logs at all: plogp(0) == 0 and plogp(0 + f) == plogp(f),
+  // which is cached alongside.
   const int p = m_leafPhysical[leaf];
   const double f = m_leafFlow[leaf];
-  const double oc = physFlow(oldMod, p), nc = physFlow(newMod, p);
-  // term = C_state - sum plogp(physFlow); only phys p in the two modules changes.
-  return (plogp(oc) - plogp(oc - f)) + (plogp(nc) - plogp(nc + f));
+  if (leaf != m_cacheUnit || oldMod != m_cacheOldMod) {
+    const double oc = physFlow(oldMod, p);
+    m_cacheUnit = leaf;
+    m_cacheOldMod = oldMod;
+    m_cacheOldTerm = plogp(oc) - plogp(oc - f);
+    m_cachePlogpF = plogp(f);
+  }
+  const double nc = physFlow(newMod, p);
+  return m_cacheOldTerm + (nc == 0.0 ? -m_cachePlogpF : (plogp(nc) - plogp(nc + f)));
 }
 
 void MemCorrection::applyMove(int leaf, int oldMod, int newMod)
 {
   if (oldMod == newMod)
     return;
+  m_cacheUnit = -1; // module contents change: drop the per-leaf delta cache
+  const bool maintainIndex = !m_physModules.empty() || coMergeMode() != 0;
   const int p = m_leafPhysical[leaf];
   const double f = m_leafFlow[leaf];
   auto& oldPhys = m_modulePhysFlow[oldMod];
@@ -1635,11 +1675,20 @@ void MemCorrection::applyMove(int leaf, int oldMod, int newMod)
     it->second -= f;
     if (it->second <= 1e-16) {
       oldPhys.erase(it);
-      m_physModules[p].erase(oldMod); // oldMod no longer holds physical p
+      if (maintainIndex)
+        m_physModules[p].erase(oldMod); // oldMod no longer holds physical p
     }
   }
   m_modulePhysFlow[newMod][p] += f;
-  m_physModules[p].insert(newMod);
+  if (m_dense) {
+    auto& ov = m_densePhysFlow[static_cast<std::size_t>(oldMod) * m_numPhys + p];
+    ov -= f;
+    if (ov <= 1e-16)
+      ov = 0.0; // keep the zero fast path exact
+    m_densePhysFlow[static_cast<std::size_t>(newMod) * m_numPhys + p] += f;
+  }
+  if (maintainIndex)
+    m_physModules[p].insert(newMod);
 }
 
 void MemCorrection::proposeMoveTargets(int leaf, std::vector<int>& out) const
@@ -1662,22 +1711,38 @@ double MemCorrection::mergeDelta(int a, int b) const
   // physical in only one keeps its single plogp term). Iterate the (smaller)
   // A side; b-only physicals are handled when B is the A of another pair.
   const auto& pa = m_modulePhysFlow[a];
-  const auto& pb = m_modulePhysFlow[b];
   double dSum = 0.0; // change in sum_p plogp(physFlow)
-  for (const auto& kv : pa) {
-    const auto it = pb.find(kv.first);
-    const double bv = (it == pb.end()) ? 0.0 : it->second;
-    dSum += plogp(kv.second + bv) - plogp(kv.second) - plogp(bv);
+  if (m_dense) {
+    const std::size_t bBase = static_cast<std::size_t>(b) * m_numPhys;
+    for (const auto& kv : pa) {
+      const double bv = m_densePhysFlow[bBase + kv.first];
+      if (bv == 0.0)
+        continue; // physical only in A: plogp(a+0) - plogp(a) - plogp(0) == 0
+      dSum += plogp(kv.second + bv) - plogp(kv.second) - plogp(bv);
+    }
+  } else {
+    const auto& pb = m_modulePhysFlow[b];
+    for (const auto& kv : pa) {
+      const auto it = pb.find(kv.first);
+      if (it == pb.end())
+        continue; // physical only in A: plogp(a+0) - plogp(a) - plogp(0) == 0
+      dSum += plogp(kv.second + it->second) - plogp(kv.second) - plogp(it->second);
+    }
   }
   return -dSum; // correction = C_state - sum_p plogp; delta correction = -dSum
 }
 
 void MemCorrection::applyMerge(int a, int b)
 {
+  m_cacheUnit = -1;
   auto& pa = m_modulePhysFlow[a];
   auto& pb = m_modulePhysFlow[b];
   for (const auto& kv : pa) {
     pb[kv.first] += kv.second;
+    if (m_dense) {
+      m_densePhysFlow[static_cast<std::size_t>(b) * m_numPhys + kv.first] += kv.second;
+      m_densePhysFlow[static_cast<std::size_t>(a) * m_numPhys + kv.first] = 0.0;
+    }
     if (!m_physModules.empty()) { // maintained only when co-physical mode is on
       auto& mods = m_physModules[kv.first];
       mods.erase(a);
