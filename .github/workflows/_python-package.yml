@@ -80,34 +80,23 @@ jobs:
       # version leg finish so one failure cannot hide another.
       fail-fast: ${{ inputs.mode == 'quick' }}
       matrix:
-        # The full-mode matrix. run-full-suite marks the one leg that also
-        # runs the doctests, the type check, and the example smoke tests.
+        os: [ubuntu-24.04]
+        # quick mode (PRs) runs only the newest CPython; the older legs stay
+        # covered on every push to master. Same conditional-matrix pattern as
+        # full-matrix in _r-package.yml. (exclude cannot do this: it filters
+        # matrix vectors, and include-only entries have none to match.)
+        python-version: ${{ inputs.mode == 'quick' && fromJSON('["3.14"]') || fromJSON('["3.11", "3.12", "3.13", "3.14"]') }}
         include:
-          - os: ubuntu-24.04
-            python-version: "3.11"
-            smoke-only: false
-            run-full-suite: false
-          - os: ubuntu-24.04
-            python-version: "3.12"
-            smoke-only: false
-            run-full-suite: false
-          - os: ubuntu-24.04
-            python-version: "3.13"
-            smoke-only: false
-            run-full-suite: false
+          # Extends the ubuntu 3.14 combination: that leg also runs the
+          # doctests, the type check, and the example smoke tests.
           - os: ubuntu-24.04
             python-version: "3.14"
-            smoke-only: false
             run-full-suite: true
+          # No os/python match above, so this is added as its own leg:
+          # the Windows import smoke test.
           - os: windows-2025-vs2026
             python-version: "3.14"
             smoke-only: true
-            run-full-suite: false
-        # quick mode (PRs) drops the older-CPython legs, keeping the
-        # run-full-suite leg and the Windows smoke leg; the dropped legs stay
-        # covered on every push to master. Same conditional-matrix pattern as
-        # full-matrix in _r-package.yml.
-        exclude: ${{ inputs.mode == 'quick' && fromJSON('[{"python-version":"3.11"},{"python-version":"3.12"},{"python-version":"3.13"}]') || fromJSON('[]') }}
 
     defaults:
       run:
