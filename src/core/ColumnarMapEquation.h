@@ -69,6 +69,23 @@ public:
   // leaf's current module may be included; the caller skips it. Default none.
   virtual void proposeMoveTargets(int /*leaf*/, std::vector<int>& /*out*/) const {}
 
+  // --- Module-level (aggregated-unit) participation --------------------------
+  // The aggregation passes of the two-level search move aggregated UNITS (a
+  // unit = the set of leaves consolidated into one previous-pass module). A
+  // correction that maintains per-unit attribute aggregates participates in
+  // those passes too, making the aggregation trajectory itself objective-aware.
+  // Without this the module passes optimize the base objective only, so (e.g.)
+  // the memory objective's aggregation stops far too fine and the whole
+  // coarsening burden falls on the later gated merges (issue #834).
+  // setUnits rebuilds the per-unit aggregates for the given leaf -> unit map;
+  // afterwards initMoveLoop / moveDelta / applyMove / proposeMoveTargets are
+  // indexed by UNIT id. resetUnitsToLeaves restores leaf indexing (the
+  // construction state). A unit move delta costs O(distinct attributes in the
+  // unit) rather than O(1).
+  virtual bool participatesInModuleMoves() const { return false; }
+  virtual void setUnits(const std::vector<int>& /*leafToUnit*/, int /*numUnits*/) {}
+  virtual void resetUnitsToLeaves() {}
+
   // --- Leaf-module merge hooks (mem-aware coarsening) -----------------------
   // The leaf-module merge operator folds one leaf module into another to coarsen
   // the partition where the correction rewards it (Mem: combine two modules'
@@ -408,21 +425,15 @@ private:
   // units are leaves (k == 0) — interior levels stay first-order (base).
   void addSlicedLeafCorrections(ColumnarTwoLevel& subOpt, const std::vector<int>& globalLeafIds) const;
 
-  // Total correction contribution for a leaf->module assignment (numModules
-  // groups), summed over the move-loop-participating corrections. Used so the
-  // two-level optimizer selects partitions by the augmented objective (base +
-  // correction) rather than base alone. Re-seeds each correction's move-loop
-  // state as a side effect (harmless: the next move loop re-inits it).
-  double augmentedCorrectionFor(const std::vector<int>& leafAssign, int numModules);
-
   bool m_undirected = false;
   unsigned long m_seed = 123;
   double m_exitNetworkFlow = 0.0; // flow leaving this (sub-)network; 0 if closed
   unsigned int m_superAggLimit = 0; // >0: conservative up-build (passes/super-level)
   bool m_deferTerms = false; // deterministic placement: moveUnit skips running-term (plogp) maintenance; rebuildRunningTerms() restores them
   bool m_leafMoveLoop = false; // true while moveLoop units are leaves (corrections active)
+  bool m_moduleCorrActive = false; // true while module-move-capable corrections participate in a module-level move loop
   bool m_seededPhase = false; // true when the move loop starts from an existing partition (fine-tune/refine)
-  double m_lastCorrection = 0.0; // correction total of the last leaf move loop (0 if none)
+  double m_lastCorrection = 0.0; // correction total of the last move loop's active corrections (0 if none)
   std::vector<std::unique_ptr<ColumnarCorrection>> m_corrections; // objective add-ons
   std::function<void()> m_interruptCallback;
 
@@ -563,6 +574,10 @@ public:
   void applyMerge(int moduleA, int moduleB) override;
   std::unique_ptr<ColumnarCorrection> sliceForLeaves(const std::vector<int>& globalLeafIds) const override;
 
+  bool participatesInModuleMoves() const override { return true; }
+  void setUnits(const std::vector<int>& leafToUnit, int numUnits) override;
+  void resetUnitsToLeaves() override;
+
 private:
   // Per leaf-module contribution: F_m * H_m == plogp(F_m) - sum_c plogp(f_{m,c}).
   // metaTerm() applies the metaDataRate scale and sums over modules.
@@ -584,6 +599,12 @@ private:
   mutable int m_cacheOldMod = -1;
   mutable double m_cacheDOld = 0.0;
   mutable double m_cachePlogpW = 0.0;
+
+  // Aggregated-unit mode (module-level passes): per-unit category -> weight
+  // aggregates + per-unit total weight. Empty = units are leaves (the leaf
+  // arrays are used directly).
+  std::vector<std::vector<std::pair<int, double>>> m_unitCats;
+  std::vector<double> m_unitWeight;
 };
 
 /**
@@ -613,6 +634,10 @@ public:
   void proposeMergePartners(int module, std::vector<int>& out) const override;
   std::unique_ptr<ColumnarCorrection> sliceForLeaves(const std::vector<int>& globalLeafIds) const override;
 
+  bool participatesInModuleMoves() const override { return true; }
+  void setUnits(const std::vector<int>& leafToUnit, int numUnits) override;
+  void resetUnitsToLeaves() override;
+
 private:
   double physFlow(int module, int physical) const;
 
@@ -627,12 +652,17 @@ private:
   int m_numPhys = 0;
   std::vector<double> m_densePhysFlow;
 
-  // Per-(leaf, current-module) delta cache: the old-module term and plogp(f)
-  // are identical for every candidate the move loop probes for the same leaf.
+  // Per-(unit, current-module) delta cache: the old-module term and plogp(f)
+  // are identical for every candidate the move loop probes for the same unit.
   mutable int m_cacheUnit = -1;
   mutable int m_cacheOldMod = -1;
   mutable double m_cacheOldTerm = 0.0;
   mutable double m_cachePlogpF = 0.0;
+
+  // Aggregated-unit mode (module-level passes): per-unit sparse
+  // (physical -> flow) aggregates of COMPACT physical ids, ascending. Empty =
+  // units are leaves (the leaf arrays are used directly).
+  std::vector<std::vector<std::pair<int, double>>> m_unitPhys;
 
   std::vector<std::unordered_map<int, double>> m_modulePhysFlow; // physFlow_{m,p}
   // Reverse index physical id -> modules currently holding a state node of that

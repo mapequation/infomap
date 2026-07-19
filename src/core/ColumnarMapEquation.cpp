@@ -698,18 +698,21 @@ unsigned int ColumnarTwoLevel::moveLoop()
   corrCand.reserve(32);
 
   // Objective corrections that shape the leaf partition participate in the move
-  // loop (units == leaves here, so unit id == leaf id). Their contribution is
-  // tracked alongside the base codelength so move selection and convergence use
-  // the true augmented objective. O(1) per candidate per correction.
+  // loop. On a leaf-level loop (m_leafMoveLoop, unit id == leaf id) all of them
+  // do; on a module-level aggregation pass only those that maintain per-unit
+  // aggregates (participatesInModuleMoves, unit indexing set via setUnits) —
+  // that participation is what makes the aggregation trajectory itself
+  // objective-aware (#834). Their contribution is tracked alongside the base
+  // codelength so move selection and convergence use the true augmented
+  // objective. O(1) per candidate per correction on leaves; O(unit attributes)
+  // for aggregated units.
   std::vector<ColumnarCorrection*> corr;
   double correctionTotal = 0.0;
-  if (m_leafMoveLoop) {
-    for (auto& c : m_corrections)
-      if (c->participatesInMoveLoop())
-        corr.push_back(c.get());
-    for (auto* c : corr)
-      correctionTotal += c->initMoveLoop(m_module, n);
-  }
+  for (auto& c : m_corrections)
+    if (c->participatesInMoveLoop() && (m_leafMoveLoop || (m_moduleCorrActive && c->participatesInModuleMoves())))
+      corr.push_back(c.get());
+  for (auto* c : corr)
+    correctionTotal += c->initMoveLoop(m_module, n);
 
   // Co-physical move-loop candidates (see coMergeMode): "seeded" restricts them
   // to seeded phases (fine-tune / refine), where base structure already exists.
@@ -990,11 +993,16 @@ int ColumnarTwoLevel::consolidateToNextLevel()
 double ColumnarTwoLevel::optimizeTwoLevel(unsigned int maxAggPasses, bool doFineTune)
 {
   // Start each optimize from the immutable leaf network. The first move loop
-  // (and any fine-tune) operate on leaves, so objective corrections are active;
-  // aggregation passes operate on modules, where they are not.
+  // (and any fine-tune) operate on leaves; aggregation passes operate on
+  // modules, where the module-move-capable corrections stay active through
+  // their per-unit aggregates (setUnits below) and the rest drop out.
   m_lvl = m_leaf0;
   m_leafMoveLoop = true;
   m_seededPhase = false; // aggregation starts from singletons
+  // Defensive: restore leaf indexing in case a prior optimize was interrupted
+  // mid-aggregation (corrections would otherwise misread leaf-indexed input).
+  for (auto& cp : m_corrections)
+    cp->resetUnitsToLeaves();
   m_leafTop.resize(m_nLeaves);
   for (int i = 0; i < m_nLeaves; ++i)
     m_leafTop[i] = i;
@@ -1003,48 +1011,95 @@ double ColumnarTwoLevel::optimizeTwoLevel(unsigned int maxAggPasses, bool doFine
   std::vector<int> bestTop = m_leafTop;
   unsigned int bestK = static_cast<unsigned int>(m_lvl.n);
 
-  bool first = true;
-  unsigned int pass = 0;
-  while (true) {
-    pollInterrupt();
-    ++pass;
+  // One optimizing pass over the current m_lvl units: move loop, compose the
+  // (compacted) leaf -> module map, and score by the augmented objective (base
+  // + correction of leaves -> current modules), not base alone: for Mem the
+  // correction is a large fraction of the codelength, so base-only selection
+  // optimizes the wrong quantity. Corrections that ran inside the move loop
+  // (all of them on the leaf pass; the module-move-capable ones on aggregation
+  // passes when m_moduleCorrActive) tracked their contribution incrementally
+  // (m_lastCorrection, exact for the composed leaf partition since the
+  // per-module aggregates are identical either way); the rest are recomputed
+  // from the composed leaf partition.
+  auto runPass = [&](std::vector<int>& newTop, int& c) -> double {
     initPartition();
     moveLoop();
-
-    // Compose leaf -> module (compacted) for this pass.
     std::vector<int> remap(m_lvl.n, -1);
-    int c = 0;
+    c = 0;
     for (int i = 0; i < m_lvl.n; ++i)
       if (remap[m_module[i]] == -1)
         remap[m_module[i]] = c++;
-    std::vector<int> newTop(m_nLeaves);
+    newTop.assign(m_nLeaves, 0);
     for (int i = 0; i < m_nLeaves; ++i)
       newTop[i] = remap[m_module[m_leafTop[i]]];
+    double corrSum = m_lastCorrection;
+    if (!m_leafMoveLoop)
+      for (auto& cp : m_corrections)
+        if (cp->participatesInMoveLoop() && !(m_moduleCorrActive && cp->participatesInModuleMoves()))
+          corrSum += cp->initMoveLoop(newTop, c);
+    return m_codelength + corrSum;
+  };
 
-    // Select by the augmented objective (base + correction of leaves -> current
-    // modules), not base alone: for Mem the correction is a large fraction of
-    // the codelength, so base-only selection optimizes the wrong quantity. The
-    // base two-level codelength is invariant under aggregation, so m_codelength
-    // is the base term for leaves -> current top modules; add that partition's
-    // correction (recomputed, since module passes don't track the leaf term).
-    const double L = m_codelength + augmentedCorrectionFor(newTop, c);
+  // Pass 1: leaves (objective corrections fully active in the move loop).
+  unsigned int pass = 1;
+  pollInterrupt();
+  {
+    std::vector<int> newTop;
+    int c = 0;
+    bestCodelength = runPass(newTop, c);
+    bestTop = std::move(newTop);
+    bestK = static_cast<unsigned int>(c);
+  }
+  const bool aggregate = bestK > 1 && static_cast<int>(bestK) != m_lvl.n
+      && !(maxAggPasses != 0 && pass >= maxAggPasses);
 
-    const bool improved = L < bestCodelength - kMinImprovement;
-    if (first || improved) {
-      first = false;
+  if (aggregate) {
+    consolidateToNextLevel();
+    m_leafMoveLoop = false; // subsequent passes aggregate modules, not leaves
+
+    // Module passes (Louvain-style aggregation to convergence). The
+    // module-move-capable corrections (Mem/Meta) stay active — setUnits gives
+    // them per-unit aggregates so their deltas apply to aggregated units — so
+    // the aggregation trajectory itself descends the augmented objective
+    // (#834). Known limitation until a split operator exists: the objective-
+    // aware module-level gains can overshoot to a coarseness the downstream
+    // fine-tune and gated merges cannot split apart again (malaria, +0.4%
+    // across seeds) — the price of optimizing the true objective where it
+    // matters most (base-only aggregation loses 1.2% on air30k and 7.8% on
+    // regularized air30k, and is slower: the coarsening it skips falls on the
+    // costlier merge scan + leaf re-tune).
+    std::vector<ColumnarCorrection*> unitCorr;
+    for (auto& cp : m_corrections)
+      if (cp->participatesInMoveLoop() && cp->participatesInModuleMoves())
+        unitCorr.push_back(cp.get());
+
+    m_moduleCorrActive = !unitCorr.empty();
+    for (auto* cp : unitCorr)
+      cp->setUnits(m_leafTop, m_lvl.n);
+    while (true) {
+      pollInterrupt();
+      ++pass;
+      std::vector<int> newTop;
+      int c = 0;
+      const double L = runPass(newTop, c);
+      if (L >= bestCodelength - kMinImprovement)
+        break;
       bestTop = std::move(newTop);
       bestCodelength = L;
       bestK = static_cast<unsigned int>(c);
-
       if (c <= 1 || c == m_lvl.n)
         break;
       if (maxAggPasses != 0 && pass >= maxAggPasses)
         break; // stop early: keep this (finer) level as the building-block bottom
       consolidateToNextLevel();
-      m_leafMoveLoop = false; // subsequent passes aggregate modules, not leaves
-    } else {
-      break;
+      // The next pass moves the new aggregated units (m_leafTop was just
+      // remapped by the consolidation to leaf -> new unit).
+      for (auto* cp : unitCorr)
+        cp->setUnits(m_leafTop, m_lvl.n);
     }
+    m_moduleCorrActive = false;
+    for (auto* cp : unitCorr)
+      cp->resetUnitsToLeaves();
   }
 
   m_leafTop = bestTop;
@@ -1453,15 +1508,6 @@ double ColumnarTwoLevel::hierarchicalCodelengthFromStack() const
   return total + objectiveCorrection();
 }
 
-double ColumnarTwoLevel::augmentedCorrectionFor(const std::vector<int>& leafAssign, int numModules)
-{
-  double c = 0.0;
-  for (auto& corr : m_corrections)
-    if (corr->participatesInMoveLoop())
-      c += corr->initMoveLoop(leafAssign, numModules);
-  return c;
-}
-
 double ColumnarTwoLevel::objectiveCorrection() const
 {
   if (m_corrections.empty() || m_hierLevels.empty())
@@ -1592,16 +1638,50 @@ double MetaCorrection::moduleCategoryFlow(int module, int category) const
   return it == cats.end() ? 0.0 : it->second;
 }
 
-double MetaCorrection::initMoveLoop(const std::vector<int>& leafModule, int numModules)
+void MetaCorrection::setUnits(const std::vector<int>& leafToUnit, int numUnits)
+{
+  // Per-unit sparse (category -> weight) aggregates + total weight, ascending
+  // category id for deterministic iteration.
+  std::vector<std::unordered_map<int, double>> agg(numUnits);
+  m_unitWeight.assign(numUnits, 0.0);
+  const int nLeaves = static_cast<int>(leafToUnit.size());
+  for (int i = 0; i < nLeaves; ++i) {
+    agg[leafToUnit[i]][m_leafCategory[i]] += m_leafWeight[i];
+    m_unitWeight[leafToUnit[i]] += m_leafWeight[i];
+  }
+  m_unitCats.assign(numUnits, {});
+  for (int u = 0; u < numUnits; ++u) {
+    m_unitCats[u].assign(agg[u].begin(), agg[u].end());
+    std::sort(m_unitCats[u].begin(), m_unitCats[u].end());
+  }
+}
+
+void MetaCorrection::resetUnitsToLeaves()
+{
+  m_unitCats.clear();
+  m_unitWeight.clear();
+}
+
+double MetaCorrection::initMoveLoop(const std::vector<int>& unitModule, int numModules)
 {
   using infomath::plogp;
   m_moduleFlow.assign(numModules, 0.0);
   m_moduleCatFlow.assign(numModules, {});
-  const int nLeaves = static_cast<int>(leafModule.size());
-  for (int i = 0; i < nLeaves; ++i) {
-    const int m = leafModule[i];
-    m_moduleFlow[m] += m_leafWeight[i];
-    m_moduleCatFlow[m][m_leafCategory[i]] += m_leafWeight[i];
+  const int nUnits = static_cast<int>(unitModule.size());
+  if (m_unitCats.empty()) {
+    // Units are leaves.
+    for (int i = 0; i < nUnits; ++i) {
+      const int m = unitModule[i];
+      m_moduleFlow[m] += m_leafWeight[i];
+      m_moduleCatFlow[m][m_leafCategory[i]] += m_leafWeight[i];
+    }
+  } else {
+    for (int u = 0; u < nUnits; ++u) {
+      const int m = unitModule[u];
+      m_moduleFlow[m] += m_unitWeight[u];
+      for (const auto& cw : m_unitCats[u])
+        m_moduleCatFlow[m][cw.first] += cw.second;
+    }
   }
   double total = 0.0;
   for (int m = 0; m < numModules; ++m)
@@ -1612,50 +1692,69 @@ double MetaCorrection::initMoveLoop(const std::vector<int>& leafModule, int numM
   return m_metaDataRate * total;
 }
 
-double MetaCorrection::moveDelta(int leaf, int oldMod, int newMod) const
+double MetaCorrection::moveDelta(int unit, int oldMod, int newMod) const
 {
   using infomath::plogp;
   if (oldMod == newMod)
     return 0.0;
-  const int q = m_leafCategory[leaf];
-  const double w = m_leafWeight[leaf];
-  // term(m) = plogp(F_m) - sum_c plogp(f_c); only F_m and category q change.
-  // The old-module delta is identical for every candidate the move loop probes
-  // for the same leaf, so it (and plogp(w)) is computed once and cached; a
-  // candidate module lacking category q (the common case) needs no category
-  // logs — plogp(0) == 0 and plogp(0 + w) == plogp(w), cached alongside.
-  if (leaf != m_cacheUnit || oldMod != m_cacheOldMod) {
-    const double Fo = m_moduleFlow[oldMod];
-    const double fo = moduleCategoryFlow(oldMod, q);
-    m_cacheUnit = leaf;
-    m_cacheOldMod = oldMod;
-    m_cacheDOld = (plogp(Fo - w) - plogp(Fo)) - (plogp(fo - w) - plogp(fo));
-    m_cachePlogpW = plogp(w);
+  // term(m) = plogp(F_m) - sum_c plogp(f_c). Only F and the unit's categories
+  // change in the two modules.
+  const double Fo = m_moduleFlow[oldMod], Fn = m_moduleFlow[newMod];
+  if (m_unitCats.empty()) {
+    const int q = m_leafCategory[unit];
+    const double w = m_leafWeight[unit];
+    // The old-module delta is identical for every candidate the move loop probes
+    // for the same leaf, so it (and plogp(w)) is computed once and cached; a
+    // candidate module lacking category q (the common case) needs no category
+    // logs — plogp(0) == 0 and plogp(0 + w) == plogp(w), cached alongside.
+    if (unit != m_cacheUnit || oldMod != m_cacheOldMod) {
+      const double fo = moduleCategoryFlow(oldMod, q);
+      m_cacheUnit = unit;
+      m_cacheOldMod = oldMod;
+      m_cacheDOld = (plogp(Fo - w) - plogp(Fo)) - (plogp(fo - w) - plogp(fo));
+      m_cachePlogpW = plogp(w);
+    }
+    const double fn = moduleCategoryFlow(newMod, q);
+    const double dNew = (plogp(Fn + w) - plogp(Fn))
+        - (fn == 0.0 ? m_cachePlogpW : (plogp(fn + w) - plogp(fn)));
+    return m_metaDataRate * (m_cacheDOld + dNew);
   }
-  const double Fn = m_moduleFlow[newMod];
-  const double fn = moduleCategoryFlow(newMod, q);
-  const double dNew = (plogp(Fn + w) - plogp(Fn))
-      - (fn == 0.0 ? m_cachePlogpW : (plogp(fn + w) - plogp(fn)));
-  return m_metaDataRate * (m_cacheDOld + dNew);
+  const double w = m_unitWeight[unit];
+  double d = (plogp(Fo - w) - plogp(Fo)) + (plogp(Fn + w) - plogp(Fn));
+  for (const auto& cw : m_unitCats[unit]) {
+    const double fo = moduleCategoryFlow(oldMod, cw.first), fn = moduleCategoryFlow(newMod, cw.first);
+    d -= (plogp(fo - cw.second) - plogp(fo)) + (plogp(fn + cw.second) - plogp(fn));
+  }
+  return m_metaDataRate * d;
 }
 
-void MetaCorrection::applyMove(int leaf, int oldMod, int newMod)
+void MetaCorrection::applyMove(int unit, int oldMod, int newMod)
 {
   if (oldMod == newMod)
     return;
   m_cacheUnit = -1; // module contents change: drop the per-leaf delta cache
-  const int q = m_leafCategory[leaf];
-  const double w = m_leafWeight[leaf];
+  auto moveWeight = [&](int q, double w) {
+    auto& oldCats = m_moduleCatFlow[oldMod];
+    auto oit = oldCats.find(q);
+    if (oit != oldCats.end()) {
+      oit->second -= w;
+      if (oit->second <= 1e-16)
+        oldCats.erase(oit);
+    }
+    m_moduleCatFlow[newMod][q] += w;
+  };
+  if (m_unitCats.empty()) {
+    const double w = m_leafWeight[unit];
+    m_moduleFlow[oldMod] -= w;
+    m_moduleFlow[newMod] += w;
+    moveWeight(m_leafCategory[unit], w);
+    return;
+  }
+  const double w = m_unitWeight[unit];
   m_moduleFlow[oldMod] -= w;
   m_moduleFlow[newMod] += w;
-  auto& oldCats = m_moduleCatFlow[oldMod];
-  auto oit = oldCats.find(q);
-  if (oit != oldCats.end()) {
-    oit->second -= w;
-    if (oit->second <= 1e-16)
-      oldCats.erase(oit);
-  }
-  m_moduleCatFlow[newMod][q] += w;
+  for (const auto& cw : m_unitCats[unit])
+    moveWeight(cw.first, cw.second);
 }
 
 double MetaCorrection::mergeDelta(int a, int b) const
@@ -1750,7 +1849,27 @@ double MemCorrection::hierarchicalCorrection(const ColumnarTwoLevel& core) const
   return m_cState - sum;
 }
 
-double MemCorrection::initMoveLoop(const std::vector<int>& leafModule, int numModules)
+void MemCorrection::setUnits(const std::vector<int>& leafToUnit, int numUnits)
+{
+  // Per-unit sparse (physical -> flow) aggregates, ascending physical id for
+  // deterministic iteration.
+  std::vector<std::unordered_map<int, double>> agg(numUnits);
+  const int nLeaves = static_cast<int>(leafToUnit.size());
+  for (int i = 0; i < nLeaves; ++i)
+    agg[leafToUnit[i]][m_leafPhysical[i]] += m_leafFlow[i];
+  m_unitPhys.assign(numUnits, {});
+  for (int u = 0; u < numUnits; ++u) {
+    m_unitPhys[u].assign(agg[u].begin(), agg[u].end());
+    std::sort(m_unitPhys[u].begin(), m_unitPhys[u].end());
+  }
+}
+
+void MemCorrection::resetUnitsToLeaves()
+{
+  m_unitPhys.clear();
+}
+
+double MemCorrection::initMoveLoop(const std::vector<int>& unitModule, int numModules)
 {
   using infomath::plogp;
   m_modulePhysFlow.assign(numModules, {});
@@ -1766,14 +1885,28 @@ double MemCorrection::initMoveLoop(const std::vector<int>& leafModule, int numMo
   // The physical -> modules reverse index only feeds the co-physical proposals
   // (coMergeMode); maintaining it is pure overhead when that tuning mode is off.
   const bool maintainIndex = coMergeMode() != 0;
-  const int nLeaves = static_cast<int>(leafModule.size());
-  for (int i = 0; i < nLeaves; ++i) {
-    const int m = leafModule[i], p = m_leafPhysical[i];
-    m_modulePhysFlow[m][p] += m_leafFlow[i];
-    if (m_dense)
-      m_densePhysFlow[static_cast<std::size_t>(m) * m_numPhys + p] += m_leafFlow[i];
-    if (maintainIndex)
-      m_physModules[p].insert(m);
+  const int nUnits = static_cast<int>(unitModule.size());
+  if (m_unitPhys.empty()) {
+    // Units are leaves.
+    for (int i = 0; i < nUnits; ++i) {
+      const int m = unitModule[i], p = m_leafPhysical[i];
+      m_modulePhysFlow[m][p] += m_leafFlow[i];
+      if (m_dense)
+        m_densePhysFlow[static_cast<std::size_t>(m) * m_numPhys + p] += m_leafFlow[i];
+      if (maintainIndex)
+        m_physModules[p].insert(m);
+    }
+  } else {
+    for (int u = 0; u < nUnits; ++u) {
+      const int m = unitModule[u];
+      for (const auto& pf : m_unitPhys[u]) {
+        m_modulePhysFlow[m][pf.first] += pf.second;
+        if (m_dense)
+          m_densePhysFlow[static_cast<std::size_t>(m) * m_numPhys + pf.first] += pf.second;
+        if (maintainIndex)
+          m_physModules[pf.first].insert(m);
+      }
+    }
   }
   double sum = 0.0;
   for (const auto& pf : m_modulePhysFlow)
@@ -1782,70 +1915,99 @@ double MemCorrection::initMoveLoop(const std::vector<int>& leafModule, int numMo
   return m_cState - sum;
 }
 
-double MemCorrection::moveDelta(int leaf, int oldMod, int newMod) const
+double MemCorrection::moveDelta(int unit, int oldMod, int newMod) const
 {
   using infomath::plogp;
   if (oldMod == newMod)
     return 0.0;
-  // term = C_state - sum plogp(physFlow); only phys p in the two modules
-  // changes. The old-module part is identical for every candidate of the same
-  // leaf, so it is computed once and cached (the move loop probes many
-  // candidates per leaf); a candidate without the leaf's physical (the common
+  // term = C_state - sum plogp(physFlow); only the unit's physicals in the two
+  // modules change. The old-module part is identical for every candidate of the
+  // same unit, so it is computed once and cached (the move loop probes many
+  // candidates per unit); a candidate without the unit's physical (the common
   // case) needs no logs at all: plogp(0) == 0 and plogp(0 + f) == plogp(f),
   // which is cached alongside.
-  const int p = m_leafPhysical[leaf];
-  const double f = m_leafFlow[leaf];
-  if (leaf != m_cacheUnit || oldMod != m_cacheOldMod) {
-    const double oc = physFlow(oldMod, p);
-    m_cacheUnit = leaf;
-    m_cacheOldMod = oldMod;
-    m_cacheOldTerm = plogp(oc) - plogp(oc - f);
-    m_cachePlogpF = plogp(f);
+  if (m_unitPhys.empty()) {
+    const int p = m_leafPhysical[unit];
+    const double f = m_leafFlow[unit];
+    if (unit != m_cacheUnit || oldMod != m_cacheOldMod) {
+      const double oc = physFlow(oldMod, p);
+      m_cacheUnit = unit;
+      m_cacheOldMod = oldMod;
+      m_cacheOldTerm = plogp(oc) - plogp(oc - f);
+      m_cachePlogpF = plogp(f);
+    }
+    const double nc = physFlow(newMod, p);
+    return m_cacheOldTerm + (nc == 0.0 ? -m_cachePlogpF : (plogp(nc) - plogp(nc + f)));
   }
-  const double nc = physFlow(newMod, p);
-  return m_cacheOldTerm + (nc == 0.0 ? -m_cachePlogpF : (plogp(nc) - plogp(nc + f)));
+  double d = 0.0;
+  for (const auto& pf : m_unitPhys[unit]) {
+    const double oc = physFlow(oldMod, pf.first), nc = physFlow(newMod, pf.first);
+    const double dOld = (oc == 0.0) ? 0.0 : (plogp(oc) - plogp(oc - pf.second));
+    const double dNew = (nc == 0.0) ? -plogp(pf.second) : (plogp(nc) - plogp(nc + pf.second));
+    d += dOld + dNew;
+  }
+  return d;
 }
 
-void MemCorrection::applyMove(int leaf, int oldMod, int newMod)
+void MemCorrection::applyMove(int unit, int oldMod, int newMod)
 {
   if (oldMod == newMod)
     return;
-  m_cacheUnit = -1; // module contents change: drop the per-leaf delta cache
+  m_cacheUnit = -1; // module contents change: drop the per-unit delta cache
   const bool maintainIndex = !m_physModules.empty() || coMergeMode() != 0;
-  const int p = m_leafPhysical[leaf];
-  const double f = m_leafFlow[leaf];
-  auto& oldPhys = m_modulePhysFlow[oldMod];
-  auto it = oldPhys.find(p);
-  if (it != oldPhys.end()) {
-    it->second -= f;
-    if (it->second <= 1e-16) {
-      oldPhys.erase(it);
-      if (maintainIndex)
-        m_physModules[p].erase(oldMod); // oldMod no longer holds physical p
+  auto moveFlow = [&](int p, double f) {
+    auto& oldPhys = m_modulePhysFlow[oldMod];
+    auto it = oldPhys.find(p);
+    if (it != oldPhys.end()) {
+      it->second -= f;
+      if (it->second <= 1e-16) {
+        oldPhys.erase(it);
+        if (maintainIndex)
+          m_physModules[p].erase(oldMod); // oldMod no longer holds physical p
+      }
     }
+    m_modulePhysFlow[newMod][p] += f;
+    if (m_dense) {
+      auto& ov = m_densePhysFlow[static_cast<std::size_t>(oldMod) * m_numPhys + p];
+      ov -= f;
+      if (ov <= 1e-16)
+        ov = 0.0; // keep the zero fast path exact
+      m_densePhysFlow[static_cast<std::size_t>(newMod) * m_numPhys + p] += f;
+    }
+    if (maintainIndex)
+      m_physModules[p].insert(newMod);
+  };
+  if (m_unitPhys.empty()) {
+    moveFlow(m_leafPhysical[unit], m_leafFlow[unit]);
+    return;
   }
-  m_modulePhysFlow[newMod][p] += f;
-  if (m_dense) {
-    auto& ov = m_densePhysFlow[static_cast<std::size_t>(oldMod) * m_numPhys + p];
-    ov -= f;
-    if (ov <= 1e-16)
-      ov = 0.0; // keep the zero fast path exact
-    m_densePhysFlow[static_cast<std::size_t>(newMod) * m_numPhys + p] += f;
-  }
-  if (maintainIndex)
-    m_physModules[p].insert(newMod);
+  for (const auto& pf : m_unitPhys[unit])
+    moveFlow(pf.first, pf.second);
 }
 
-void MemCorrection::proposeMoveTargets(int leaf, std::vector<int>& out) const
+void MemCorrection::proposeMoveTargets(int unit, std::vector<int>& out) const
 {
-  // Modules already holding a state node of this leaf's physical node — the
+  // Modules already holding a state node of this unit's physical node(s) — the
   // co-physical merges that shrink the physical codebook but are (usually) not
   // reachable through the edge neighborhood.
-  const auto it = m_physModules.find(m_leafPhysical[leaf]);
-  if (it == m_physModules.end())
+  if (m_unitPhys.empty()) {
+    const auto it = m_physModules.find(m_leafPhysical[unit]);
+    if (it == m_physModules.end())
+      return;
+    for (int m : it->second)
+      out.push_back(m);
     return;
-  for (int m : it->second)
-    out.push_back(m);
+  }
+  const auto base = static_cast<std::ptrdiff_t>(out.size());
+  for (const auto& pf : m_unitPhys[unit]) {
+    const auto it = m_physModules.find(pf.first);
+    if (it == m_physModules.end())
+      continue;
+    for (int m : it->second)
+      out.push_back(m);
+  }
+  std::sort(out.begin() + base, out.end());
+  out.erase(std::unique(out.begin() + base, out.end()), out.end());
 }
 
 double MemCorrection::mergeDelta(int a, int b) const
