@@ -49,12 +49,16 @@ jobs:
       - name: Verify tracked SWIG outputs
         run: make test-r-swig-freshness
 
+  # tests, build-source, and r-universe-simulation no longer gate on
+  # swig-freshness: it produces no artifact they consume (build-source and
+  # r-universe-simulation regenerate SWIG from scratch), and CI Summary already
+  # requires the freshness job to be green. Decoupling lets them all start at
+  # once instead of behind the freshness check.
   tests:
     if: inputs.run-tests
     name: R ${{ matrix.r }} on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
-    needs: swig-freshness
     strategy:
       fail-fast: false
       matrix:
@@ -154,7 +158,6 @@ jobs:
     name: R source tarball
     runs-on: ubuntu-24.04
     timeout-minutes: 30
-    needs: swig-freshness
 
     steps:
       - name: Checkout repository
@@ -325,7 +328,6 @@ jobs:
     name: R r-universe simulation
     runs-on: ubuntu-24.04
     timeout-minutes: 60
-    needs: swig-freshness
 
     defaults:
       run:

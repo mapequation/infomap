@@ -44,147 +44,7 @@ jobs:
         id: filter
         uses: dorny/paths-filter@7b450fff21473bca461d4b92ce414b9d0420d706 # v3.0.2
         with:
-          filters: |
-            policy:
-              - "Makefile"
-              - "mk/**"
-              - "src/**"
-              - "interfaces/swig/**"
-              - "interfaces/R/generated/**"
-              - "scripts/check_cpp_stream_policy.py"
-              - ".github/workflows/ci.yml"
-            native:
-              - ".clang-format"
-              - ".clang-tidy"
-              - "CMakePresets.json"
-              - "CMakeLists.txt"
-              - "Makefile"
-              - "mk/**"
-              - "src/**"
-              - "test/cpp/**"
-              - "test/scripts/**"
-              - "test/schemas/**"
-              - "test/fixtures/**"
-              - ".github/workflows/ci.yml"
-              - ".github/workflows/_native-build.yml"
-            python-core:
-              - "CMakeLists.txt"
-              - "Makefile"
-              - "mk/**"
-              - "src/**"
-              - "test/cpp/**"
-              - "test/fixtures/**"
-              - ".github/workflows/ci.yml"
-              - ".github/workflows/_native-build.yml"
-              - "pyproject.toml"
-              - "setup.py"
-              - "interfaces/swig/**"
-              - "interfaces/python/**"
-              - "examples/python/**"
-              - "examples/notebooks/**"
-              - "examples/networks/**"
-              - "test/python/**"
-              - "test/scripts/**"
-              - "test/schemas/**"
-              - "scripts/build_config.py"
-              - "scripts/generate_python_swig.py"
-              - "scripts/notebook_manifest.py"
-              - ".github/actions/setup-python-build/action.yml"
-              - ".github/workflows/_python-package.yml"
-            python-packaging:
-              - "Makefile"
-              - "mk/**"
-              - "pyproject.toml"
-              - "setup.py"
-              - "scripts/build_config.py"
-              - ".github/actions/setup-python-build/action.yml"
-              - ".github/workflows/_python-package.yml"
-            python-swig:
-              - "interfaces/swig/**"
-              - "interfaces/python/generated/**"
-              - "interfaces/python/src/infomap/_swig.py"
-              - "scripts/generate_python_swig.py"
-              - ".github/workflows/_python-package.yml"
-            javascript:
-              - "CMakeLists.txt"
-              - "Makefile"
-              - "mk/**"
-              - "src/**"
-              - "test/cpp/**"
-              - "test/fixtures/**"
-              - ".github/workflows/ci.yml"
-              - ".github/workflows/_native-build.yml"
-              - "package.json"
-              - "package-lock.json"
-              - "interfaces/js/**"
-              # The binding-options freshness gate runs in the JS workflow, so
-              # changes to the generator or its inputs must trigger it.
-              - "interfaces/parameters/**"
-              - "scripts/generate_binding_options.py"
-              - "scripts/parameter_catalog.py"
-              - "scripts/generate_js_metadata.py"
-              - "scripts/prepare_npm_package.py"
-              - ".github/actions/setup-js-build/action.yml"
-              - ".github/workflows/_js-package.yml"
-            r:
-              - "Makefile"
-              - "mk/**"
-              - "src/**"
-              - "interfaces/swig/**"
-              - "interfaces/R/**"
-              - "examples/R/**"
-              - "scripts/generate_r_swig.py"
-              - "scripts/stage_r_package.py"
-              - ".github/workflows/ci.yml"
-              - ".github/workflows/_r-package.yml"
-            docs:
-              - "README.rst"
-              - "BUILD.md"
-              - "Makefile"
-              - "mk/**"
-              - "pyproject.toml"
-              - "setup.py"
-              - "examples/notebooks/**"
-              - "scripts/build_config.py"
-              - "scripts/notebook_manifest.py"
-              - "interfaces/python/**"
-              - "src/**"
-              - ".github/actions/setup-python-build/action.yml"
-            docker:
-              - "docker/**"
-              - "docker-compose.yml"
-              - ".dockerignore"
-              - "Makefile"
-              - "mk/**"
-              - "pyproject.toml"
-              - "setup.py"
-              - "examples/notebooks/**"
-              - "src/**"
-              - "interfaces/python/**"
-              - "scripts/build_config.py"
-              - "README.rst"
-            notebooks:
-              - "interfaces/python/**"
-              - "test/python/**"
-              - "examples/notebooks/**"
-              - "scripts/notebook_manifest.py"
-              - ".github/actions/setup-python-build/action.yml"
-              - ".github/workflows/ci.yml"
-              - ".github/workflows/notebooks.yml"
-
-  policy:
-    needs: changes
-    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.policy == 'true'
-    name: C++ stream policy
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-
-      - name: Check runtime stream policy
-        run: make test-cpp-stream-policy PYTHON=python3
+          filters: .github/filters.yml
 
   pre-commit:
     needs: changes
@@ -386,7 +246,7 @@ jobs:
 
   ci-summary:
     name: CI Summary
-    needs: [changes, policy, pre-commit, sanitizers, clang-tidy, native, python, notebooks, javascript, r, docs, docker]
+    needs: [changes, pre-commit, sanitizers, clang-tidy, native, python, notebooks, javascript, r, docs, docker]
     if: always()
     runs-on: ubuntu-24.04
     timeout-minutes: 10
