@@ -148,8 +148,9 @@ Targeted checks:
 Pre-commit hooks mirror the CI lint gates and give the same feedback locally.
 Install them once with `make hooks` (also run by `make dev-bootstrap`); on
 commit they run `ruff` (Python lint), `clang-format` (C++ `src/`), `biome`
-(JavaScript lint and format), and `air` (R format), plus a C++ stream-policy
-check, and `pyright` on the core Python surface at push time.
+(JavaScript lint and format), `air` (R format), and `actionlint` (GitHub
+workflow YAML), plus a C++ stream-policy check, and `pyright` on the core
+Python surface at push time.
 
 Format on demand without the hooks:
 
@@ -164,7 +165,10 @@ sources — so format changes before committing. Air is pre-1.0 and the repo
 ships no `air.toml`, so its output is version-dependent; the canonical version
 is **0.9.0**, pinned in the `pre-commit` CI job via `posit-dev/setup-air`.
 Install that version locally so `make format-r-check` agrees with CI, and bump
-the CI pin and this note together. Generated and vendored files —
+the CI pin and this note together. The `actionlint` hook is `language: system`
+too: install it locally (`brew install actionlint`) when you touch workflows;
+the canonical version is **1.7.12**, downloaded in the `pre-commit` CI job, and
+the CI pin and this note bump together. Generated and vendored files —
 `interfaces/python/generated/`, `interfaces/R/generated/`,
 `interfaces/python/src/infomap/_swig.py`, and `vendor/` — are excluded from
 every hook; never reformat them.

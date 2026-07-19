@@ -83,7 +83,7 @@ jobs:
       - name: Build native binary
         run: |
           make -j build-native OPENMP=${{ matrix.target.openmp }}
-          command -v ccache >/dev/null 2>&1 && ccache -s || true
+          if command -v ccache >/dev/null 2>&1; then ccache -s || true; fi
         shell: bash
         env:
           CXX: ${{ matrix.config.compiler }}

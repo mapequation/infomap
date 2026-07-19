@@ -79,6 +79,18 @@ jobs:
         with:
           version: "0.9.0"
 
+      # actionlint for the `actionlint` pre-commit hook. Downloading the pinned
+      # release binary keeps the gate fast (no Go build). ubuntu runners already
+      # ship shellcheck, which actionlint uses to lint embedded run: scripts.
+      # Bump this pin and the AGENTS.md note together.
+      - name: Set up actionlint
+        env:
+          ACTIONLINT_VERSION: "1.7.12"
+        run: |
+          curl -fsSL "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz" \
+            | sudo tar -xz -C /usr/local/bin actionlint
+          actionlint -version
+
       # Run the repo's own pre-commit config so local hooks and CI agree. This
       # also restores C++ formatting enforcement (the old cxx-format job was
       # disabled per #479): the clang-format hook is scoped to the same src/

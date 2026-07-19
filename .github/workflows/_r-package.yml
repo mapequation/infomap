@@ -150,8 +150,8 @@ jobs:
           else
             make test-r
           fi
-          command -v ccache >/dev/null 2>&1 && ccache -s || true
-          command -v sccache >/dev/null 2>&1 && sccache --show-stats || true
+          if command -v ccache >/dev/null 2>&1; then ccache -s || true; fi
+          if command -v sccache >/dev/null 2>&1; then sccache --show-stats || true; fi
 
   build-source:
     if: inputs.build-release-artifacts
@@ -283,8 +283,8 @@ jobs:
           else
             make build-r-binary-from-tarball
           fi
-          command -v ccache >/dev/null 2>&1 && ccache -s || true
-          command -v sccache >/dev/null 2>&1 && sccache --show-stats || true
+          if command -v ccache >/dev/null 2>&1; then ccache -s || true; fi
+          if command -v sccache >/dev/null 2>&1; then sccache --show-stats || true; fi
 
       - name: Compute platform tag
         id: platform
@@ -405,4 +405,4 @@ jobs:
           fi
           R CMD INSTALL "$tarball"
           Rscript -e 'library(testthat); library(infomap); testthat::test_dir("interfaces/R/infomap/tests/testthat")'
-          command -v ccache >/dev/null 2>&1 && ccache -s || true
+          if command -v ccache >/dev/null 2>&1; then ccache -s || true; fi
