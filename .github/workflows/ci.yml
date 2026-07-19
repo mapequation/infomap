@@ -313,6 +313,10 @@ jobs:
     uses: ./.github/workflows/_r-package.yml
     with:
       run-tests: true
+      # Run oldrel on push/dispatch, but only the current release on PRs -- halves
+      # the R matrix (and drops a Windows R leg, the CI critical path) per PR;
+      # oldrel is still exercised on every push to master.
+      full-matrix: ${{ github.event_name != 'pull_request' }}
       build-release-artifacts: false
 
   docs:
