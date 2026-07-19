@@ -91,6 +91,7 @@ docs = [
   # scikit-learn, scanpy, ...). Use `pip install -e ".[docs,examples]"`, which is
   # what `make build-docs` installs.
   "sphinx",
+  "sphinx-autobuild",
   "furo",
   "myst-nb",
   "sphinx-copybutton",
