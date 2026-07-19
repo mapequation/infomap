@@ -193,6 +193,7 @@ jobs:
       || needs.changes.outputs.python-packaging == 'true'
       || needs.changes.outputs.python-swig == 'true'
       || needs.changes.outputs.javascript == 'true'
+      || needs.changes.outputs.r == 'true'
     name: pre-commit
     runs-on: ubuntu-24.04
     timeout-minutes: 15
@@ -206,20 +207,28 @@ jobs:
         with:
           python-version: "3.14"
 
+      # Air (R formatter) for the air-format hook. Pinned to the canonical
+      # version documented in AGENTS.md so local and CI formatting agree: Air is
+      # pre-1.0 and, with no air.toml in the repo, its output is version-
+      # dependent. Bump this pin and the AGENTS.md note together.
+      - name: Set up Air
+        uses: posit-dev/setup-air@cf390573ff4fe0f198f35df3a642b1409328d859 # v1.0.1
+        with:
+          version: "0.9.0"
+
       # Run the repo's own pre-commit config so local hooks and CI agree. This
       # also restores C++ formatting enforcement (the old cxx-format job was
       # disabled per #479): the clang-format hook is scoped to the same src/
-      # tree as `make format-native-check` and pins clang-format 20.1.7.
+      # tree as `make format-native-check` and pins clang-format 20.1.7. The
+      # air-format hook runs `make format-r-check` against the Air installed by
+      # the setup-air step above.
       # Skipped hooks:
       #   - biome-lint/biome-format: the javascript job already runs them via
       #     `make test-js`.
-      #   - air-format (R): not gated yet. The committed R tree is not clean
-      #     under a current Air release and Air (pre-1.0) has no repo-wide
-      #     version pin; gating it needs a deliberate reformat + pin decision.
       # The pre-push-staged pyright-core hook is not triggered by run --all-files.
       - name: Run pre-commit hooks
         env:
-          SKIP: biome-lint,biome-format,air-format
+          SKIP: biome-lint,biome-format
         run: |
           python -m pip install pre-commit
           pre-commit run --all-files --show-diff-on-failure

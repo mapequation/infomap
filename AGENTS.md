@@ -158,11 +158,16 @@ Format on demand without the hooks:
 - R: `make format-r` (check only: `make format-r-check`)
 - JavaScript: `make format-js`
 
-CI enforces C++ formatting through the required `cxx-format` job
-(`make format-native-check`), so format `src/` changes before committing.
-Generated and vendored files — `interfaces/python/generated/`,
-`interfaces/R/generated/`, `interfaces/python/src/infomap/_swig.py`, and
-`vendor/` — are excluded from every hook; never reformat them.
+CI enforces formatting through the `pre-commit` job, which runs the same
+hooks locally and in CI — `clang-format` for C++ `src/` and `air` for the R
+sources — so format changes before committing. Air is pre-1.0 and the repo
+ships no `air.toml`, so its output is version-dependent; the canonical version
+is **0.9.0**, pinned in the `pre-commit` CI job via `posit-dev/setup-air`.
+Install that version locally so `make format-r-check` agrees with CI, and bump
+the CI pin and this note together. Generated and vendored files —
+`interfaces/python/generated/`, `interfaces/R/generated/`,
+`interfaces/python/src/infomap/_swig.py`, and `vendor/` — are excluded from
+every hook; never reformat them.
 
 ## Environment
 
