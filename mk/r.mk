@@ -37,6 +37,17 @@ R_PARALLEL := MAKE="$(MAKE) -j$(JOBS)"
 # next assignment cleanly.
 R_CCACHE_ENV := $(if $(CCACHE_LAUNCHER),CCACHE_NOHASHDIR=1 ,)
 R_MAKEVARS_FILE := $(CURDIR)/$(R_BUILD_DIR)/.Makevars.infomap
+# The recipes write the file through the shell, which understands the msys
+# /d/a/... form of $(CURDIR); R reads it, and R is a native Windows program even
+# under the Rtools bash shell, so it needs the Windows-native D:/a/... spelling.
+# Handing R the msys path makes it silently ignore the user Makevars, dropping
+# the compiler-launcher override. cygpath bridges the two; elsewhere the path is
+# already native.
+ifneq ($(filter MINGW% MSYS% CYGWIN%,$(UNAME_S)),)
+R_MAKEVARS_USER_PATH := $(shell cygpath -m '$(R_MAKEVARS_FILE)' 2>/dev/null || echo '$(R_MAKEVARS_FILE)')
+else
+R_MAKEVARS_USER_PATH := $(R_MAKEVARS_FILE)
+endif
 
 # On macOS, Homebrew LLVM clang++ may be first in PATH but Homebrew R uses
 # Apple's libc++ at runtime.  Compilation with LLVM clang++ produces a .so
@@ -52,14 +63,14 @@ R_MAKEVARS_FILE := $(CURDIR)/$(R_BUILD_DIR)/.Makevars.infomap
 ifeq ($(UNAME_S),Darwin)
 _R_CC  := $(if $(CCACHE_LAUNCHER),$(CCACHE_LAUNCHER) ,)/usr/bin/clang
 _R_CXX := $(if $(CCACHE_LAUNCHER),$(CCACHE_LAUNCHER) ,)/usr/bin/clang++
-R_CMD_ENV := R_MAKEVARS_USER=$(R_MAKEVARS_FILE) $(R_PARALLEL) $(R_CCACHE_ENV)INFOMAP_R_CXX_LAUNCHER=$(CCACHE_LAUNCHER)
+R_CMD_ENV := R_MAKEVARS_USER=$(R_MAKEVARS_USER_PATH) $(R_PARALLEL) $(R_CCACHE_ENV)INFOMAP_R_CXX_LAUNCHER=$(CCACHE_LAUNCHER)
 _write_r_makevars = @mkdir -p $(R_BUILD_DIR) && \
 	printf 'CC = %s\nCXX = %s\nCXX17 = %s\n' '$(_R_CC)' '$(_R_CXX)' '$(_R_CXX)' \
 	> $(R_MAKEVARS_FILE)
 else ifneq ($(CCACHE_LAUNCHER),)
-# Other unix: no configure override, so route R's configured compiler through
-# ccache via a user Makevars.
-R_CMD_ENV := R_MAKEVARS_USER=$(R_MAKEVARS_FILE) $(R_PARALLEL) $(R_CCACHE_ENV)
+# Other unix and Windows/Rtools: no configure override, so route R's configured
+# compiler through the launcher via a user Makevars.
+R_CMD_ENV := R_MAKEVARS_USER=$(R_MAKEVARS_USER_PATH) $(R_PARALLEL) $(R_CCACHE_ENV)
 _write_r_makevars = @mkdir -p $(R_BUILD_DIR) && \
 	cc="$$($(R) CMD config CC)"; cxx="$$($(R) CMD config CXX)"; cxx17="$$($(R) CMD config CXX17)"; \
 	printf 'CC = %s %s\nCXX = %s %s\nCXX17 = %s %s\n' \

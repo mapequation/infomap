@@ -127,10 +127,42 @@ jobs:
         with:
           key-prefix: r-${{ matrix.os }}-${{ matrix.r }}
 
+      # Windows R builds with Rtools gcc, which setup-ccache deliberately skips
+      # (it only persists the Linux/macOS ccache dirs). That left the Windows
+      # R CMD check recompiling the ~25-TU C++ core from scratch every run
+      # (~9 min, vs ~2 min where ccache is warm) -- the CI critical path. sccache
+      # with the GitHub Actions cache backend caches those compiles across runs
+      # the same way; Rtools gcc honors a launcher prefix through the package
+      # Makevars (the same launcher branch mk/r.mk uses for ccache on non-macOS
+      # unix), so pointing CCACHE_BIN at sccache is all the build needs.
+      - name: Set up sccache (Windows)
+        if: startsWith(matrix.os, 'windows')
+        uses: mozilla-actions/sccache-action@9e7fa8a12102821edf02ca5dbea1acd0f89a2696 # v0.0.10
+
+      # Start the server explicitly, at the top level, in the GHA-cache env. R's
+      # compiles run deeply nested (R CMD check -> INSTALL -> make -> sccache);
+      # if the very first sccache call has to spawn the server from down there it
+      # silently falls back to running g++ directly (no caching). sccache-action
+      # exports the ACTIONS_* tokens but not the enable flag, so set it here (and
+      # again on the build, insurance against an idle-timeout restart) -- without
+      # it sccache uses local disk, which does not persist across runs.
+      - name: Start sccache server (Windows)
+        if: startsWith(matrix.os, 'windows')
+        env:
+          SCCACHE_GHA_ENABLED: "true"
+        run: sccache --start-server
+
       - name: Stage and check the package
+        env:
+          SCCACHE_GHA_ENABLED: ${{ startsWith(matrix.os, 'windows') && 'true' || '' }}
         run: |
-          make test-r
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            make test-r CCACHE_BIN=sccache USE_CCACHE=1
+          else
+            make test-r
+          fi
           command -v ccache >/dev/null 2>&1 && ccache -s || true
+          command -v sccache >/dev/null 2>&1 && sccache --show-stats || true
 
   build-source:
     if: inputs.build-release-artifacts
