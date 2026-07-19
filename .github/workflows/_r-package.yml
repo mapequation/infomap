@@ -101,6 +101,7 @@ jobs:
           working-directory: interfaces/R/infomap
           extra-packages: |
             any::testthat
+            any::jsonlite
             any::igraph
             any::knitr
             any::rmarkdown
@@ -354,6 +355,7 @@ jobs:
           working-directory: interfaces/R/infomap
           extra-packages: |
             any::testthat
+            any::jsonlite
             any::igraph
             any::knitr
             any::rmarkdown
