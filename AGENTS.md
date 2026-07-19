@@ -83,6 +83,12 @@ package with all extras (`.[test,docs,examples,release]`), runs `npm ci`, and
 installs the pre-commit git hooks (`make hooks`). Run it inside the active
 virtual environment.
 
+To speed up the dependency install (the scientific extras are heavy), override
+the installer with [uv](https://docs.astral.sh/uv/): `make dev-bootstrap
+PIP="uv pip"` (and likewise `make dev-python-install PIP="uv pip"`). `uv pip`
+installs into the active virtual environment just like `pip`; only dependency
+resolution is faster. CI already routes its Python installs through uv.
+
 Use an active virtual environment for Python development. Some system-managed
 Python installs, including Homebrew Python on macOS and distro Python on Linux,
 reject direct `pip install` into the system environment.

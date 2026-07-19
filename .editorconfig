@@ -1,0 +1,42 @@
+# EditorConfig — https://editorconfig.org
+# Baseline editor settings for drive-by contributors so indentation and
+# encoding match the per-language formatters (clang-format, ruff, biome, Air)
+# without having to install them first.
+#
+# Deliberately scoped to indentation, charset, and line endings. This repo
+# intentionally does NOT enforce trailing-whitespace trimming or final-newline
+# insertion (the corresponding pre-commit hooks were omitted because they
+# rewrite generated SWIG output, notebooks, and data fixtures). So those keys
+# are left unset here too — the language formatters already handle whitespace
+# for the sources they own, and we don't want format-on-save editors churning
+# generated or vendored files.
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+indent_style = space
+
+# C++ core — .clang-format is WebKit-based with IndentWidth 2
+[*.{cpp,cc,h,hpp}]
+indent_size = 2
+
+# Python — ruff format (PEP 8, 4-space)
+[*.py]
+indent_size = 4
+
+# JS/TS + JSON — biome (2-space)
+[*.{js,jsx,mjs,cjs,ts,tsx,json}]
+indent_size = 2
+
+# R — Air (2-space)
+[*.R]
+indent_size = 2
+
+# YAML (workflows, configs)
+[*.{yml,yaml}]
+indent_size = 2
+
+# Makefiles require real tabs
+[{Makefile,*.mk}]
+indent_style = tab

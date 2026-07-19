@@ -31,6 +31,8 @@ RSCRIPT ?= Rscript
 AIR ?= $(shell command -v air 2>/dev/null || command -v /opt/homebrew/bin/air 2>/dev/null || echo air)
 SPHINX_BUILD_BIN := $(shell command -v sphinx-build 2>/dev/null || true)
 SPHINX_BUILD ?= $(if $(SPHINX_BUILD_BIN),$(SPHINX_BUILD_BIN),$(PYTHON) -m sphinx)
+SPHINX_AUTOBUILD_BIN := $(shell command -v sphinx-autobuild 2>/dev/null || true)
+SPHINX_AUTOBUILD ?= $(if $(SPHINX_AUTOBUILD_BIN),$(SPHINX_AUTOBUILD_BIN),$(PYTHON) -m sphinx_autobuild)
 # Treat Sphinx warnings as errors so broken cross-references, missing labels, and
 # unresolved autodoc targets fail the build instead of shipping silently.
 # --keep-going reports every warning in one pass rather than stopping at the
@@ -197,6 +199,7 @@ help:
 		"" \
 		"Docs / Release" \
 		"  build-docs            Build the Python docs site into docs/ after installing the local package." \
+		"  docs-serve            Live-reloading local docs preview (sphinx-autobuild; builds leniently)." \
 		"  check-docs-links      Verify external documentation links resolve (linkcheck; hits the network)." \
 		"  release-python-dist   Build local sdist and wheel artifacts from the repo root." \
 		"  release-r-dist        Build the R source tarball and platform binary into dist/R/." \

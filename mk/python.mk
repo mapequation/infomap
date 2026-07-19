@@ -53,6 +53,7 @@ PYTHON_BUILD_ENV = \
 	test-python-notebooks-full \
 	build-docs \
 	_build-docs-site \
+	docs-serve \
 	check-docs-links \
 	clean-python \
 	format-python \
@@ -153,6 +154,17 @@ build-docs: build-native dev-python-install
 	@$(call BUILD_DOCS_SITE,$(DOCS_BUILD_DIR))
 	mkdir -p docs; \
 	rsync $(DOCS_SYNC_ARGS) "$(DOCS_BUILD_DIR)/" docs/
+
+# Live-reloading docs preview for local editing: rebuilds and refreshes the
+# browser on save. Builds leniently (SPHINXOPTS, i.e. build-docs's -W, is not
+# passed, so an in-progress warning does not abort the loop); myst-nb's
+# execution cache means unchanged notebooks are not re-run. Shares build-docs's
+# prereqs so the first build works, then autobuild handles reloads. Override
+# host/port etc. via DOCS_SERVE_ARGS (e.g. --port 8001).
+DOCS_SERVE_ARGS ?=
+docs-serve: build-native dev-python-install
+	@$(SPHINX_AUTOBUILD) -b html "$(SPHINX_SOURCE_DIR)" "$(DOCS_BUILD_DIR)/_serve" \
+		--open-browser $(DOCS_SERVE_ARGS)
 
 # Verify external links resolve. Hits the network, so run it on demand or on a
 # schedule rather than as a blocking per-PR gate; DOI hosts that 403 the bot are
