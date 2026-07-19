@@ -288,6 +288,39 @@ namespace {
 
     return delta_enter - delta_enter_log_enter - delta_exit_log_exit + delta_flow_log_flow;
   }
+
+  // Old-module plogp terms of deltaCodelengthMovingNode: constant for every
+  // candidate the move loop probes for the same unit, so the caller computes
+  // them once per unit (6 of the 13 plogp calls per candidate hoist out; the
+  // per-candidate math below keeps the exact expression structure, so results
+  // stay bit-identical to the unhoisted form).
+  struct OldSideTerms {
+    double plogpOldEnter, plogpOldExit, plogpOldEF;
+    double plogpOldEnterAfter, plogpOldExitAfter, plogpOldEFAfter;
+  };
+
+  inline OldSideTerms hoistOldSide(double curEnter, double curExit, double curFlow, double oldEnter, double oldExit, double oldFlow, double deltaOld)
+  {
+    using infomath::plogp;
+    const double oldExitPlusFlow = oldExit + oldFlow;
+    return { plogp(oldEnter), plogp(oldExit), plogp(oldExitPlusFlow), plogp(oldEnter - curEnter + deltaOld), plogp(oldExit - curExit + deltaOld), plogp(oldExitPlusFlow - curExit - curFlow + deltaOld) };
+  }
+
+  inline double deltaCodelengthMovingNodeHoisted(double enterFlow, double enterFlow_log_enterFlow, double curEnter, double curExit, double curFlow, const OldSideTerms& o, double newEnter, double newExit, double newFlow, double deltaOld, double deltaNew)
+  {
+    using infomath::plogp;
+    const double newExitPlusFlow = newExit + newFlow;
+
+    const double delta_enter = plogp(enterFlow + deltaOld - deltaNew) - enterFlow_log_enterFlow;
+    const double delta_enter_log_enter = -o.plogpOldEnter - plogp(newEnter)
+        + o.plogpOldEnterAfter + plogp(newEnter + curEnter - deltaNew);
+    const double delta_exit_log_exit = -o.plogpOldExit - plogp(newExit)
+        + o.plogpOldExitAfter + plogp(newExit + curExit - deltaNew);
+    const double delta_flow_log_flow = -o.plogpOldEF - plogp(newExitPlusFlow)
+        + o.plogpOldEFAfter + plogp(newExitPlusFlow + curExit + curFlow - deltaNew);
+
+    return delta_enter - delta_enter_log_enter - delta_exit_log_exit + delta_flow_log_flow;
+  }
 } // namespace
 
 void ColumnarTwoLevel::buildFromLeaves(const std::vector<InfoNode*>& leafNodes, bool undirected, unsigned long seed)
@@ -489,8 +522,10 @@ void ColumnarTwoLevel::moveUnit(int u, int newMod)
   const double curExit = m_lvl.exit[u];
   const double curFlow = m_lvl.flow[u];
 
-  removeModuleTerms(cMod);
-  removeModuleTerms(newMod);
+  if (!m_deferTerms) {
+    removeModuleTerms(cMod);
+    removeModuleTerms(newMod);
+  }
 
   m_mFlow[cMod] -= curFlow;
   m_mEnter[cMod] -= curEnter;
@@ -512,15 +547,41 @@ void ColumnarTwoLevel::moveUnit(int u, int newMod)
     m_mTeleWeight[newMod] += twu;
   }
 
-  addModuleTerms(cMod);
-  addModuleTerms(newMod);
-  m_enterFlow_log_enterFlow = plogp(m_enterFlow);
-  m_codelength = (m_enterFlow_log_enterFlow - m_enter_log_enter)
-      + (-m_exit_log_exit + m_flow_log_flow - m_nodeFlow_log_nodeFlow);
+  if (!m_deferTerms) {
+    addModuleTerms(cMod);
+    addModuleTerms(newMod);
+    m_enterFlow_log_enterFlow = plogp(m_enterFlow);
+    m_codelength = (m_enterFlow_log_enterFlow - m_enter_log_enter)
+        + (-m_exit_log_exit + m_flow_log_flow - m_nodeFlow_log_nodeFlow);
+  }
 
   m_mMembers[cMod] -= 1;
   m_mMembers[newMod] += 1;
   m_module[u] = newMod;
+}
+
+void ColumnarTwoLevel::rebuildRunningTerms()
+{
+  using infomath::plogp;
+  m_enterFlow = 0.0;
+  m_enter_log_enter = 0.0;
+  m_exit_log_exit = 0.0;
+  m_flow_log_flow = 0.0;
+  const int n = m_lvl.n;
+  for (int m = 0; m < n; ++m) {
+    if (m_mMembers[m] == 0)
+      continue;
+    const double enter = m_mEnter[m] + (m_recordedTeleport ? moduleTeleEnter(m_mTeleFlow[m], m_mTeleWeight[m]) : 0.0);
+    const double exit = m_mExit[m] + (m_recordedTeleport ? moduleTeleExit(m_mTeleFlow[m], m_mTeleWeight[m]) : 0.0);
+    m_enterFlow += enter;
+    m_enter_log_enter += plogp(enter);
+    m_exit_log_exit += plogp(exit);
+    m_flow_log_flow += plogp(exit + m_mFlow[m]);
+  }
+  m_enterFlow += m_exitNetworkFlow;
+  m_enterFlow_log_enterFlow = plogp(m_enterFlow);
+  m_codelength = (m_enterFlow_log_enterFlow - m_enter_log_enter)
+      + (-m_exit_log_exit + m_flow_log_flow - m_nodeFlow_log_nodeFlow);
 }
 
 double ColumnarTwoLevel::deltaCodelengthMovingNodeTele(double curEnter, double curExit, double curFlow, double tfu, double twu, int A, int B, double deltaOld, double deltaNew) const
@@ -554,11 +615,17 @@ double ColumnarTwoLevel::deltaCodelengthMovingNodeTele(double curEnter, double c
 
 void ColumnarTwoLevel::seedAssignment(const std::vector<int>& assign)
 {
-  // Start from singletons, then force each unit into its assigned module so the
-  // module aggregates + running terms end up exact (order-independent sums).
+  // Start from singletons, then force each unit into its assigned module. The
+  // placement is fully deterministic (no move decisions are made), so the
+  // running plogp terms are not maintained per move: only the module
+  // aggregates evolve (m_deferTerms), and the terms are rebuilt once at the
+  // end — one O(K) plogp pass instead of ~12 plogp per placed unit.
+  m_deferTerms = true;
   initPartition();
   for (int u = 0; u < m_lvl.n; ++u)
     moveUnit(u, assign[u]);
+  m_deferTerms = false;
+  rebuildRunningTerms();
   // Rebuild the empty-module list for the subsequent optimizing move loop.
   m_emptyModules.clear();
   for (int m = 0; m < m_lvl.n; ++m)
@@ -673,14 +740,17 @@ unsigned int ColumnarTwoLevel::moveLoop()
         }
       }
 
+      const OldSideTerms oldSide = m_recordedTeleport
+          ? OldSideTerms{}
+          : hoistOldSide(curEnter, curExit, curFlow, m_mEnter[cMod], m_mExit[cMod], m_mFlow[cMod], deltaOld);
       for (int m : touched) {
         if (m == cMod)
           continue;
         const double deltaNew = dEnter[m] + dExit[m];
         double dl = m_recordedTeleport
             ? deltaCodelengthMovingNodeTele(curEnter, curExit, curFlow, m_lvl.teleFlow[u], m_lvl.teleWeight[u], cMod, m, deltaOld, deltaNew)
-            : deltaCodelengthMovingNode(
-                  m_enterFlow, m_enterFlow_log_enterFlow, curEnter, curExit, curFlow, m_mEnter[cMod], m_mExit[cMod], m_mFlow[cMod], m_mEnter[m], m_mExit[m], m_mFlow[m], deltaOld, deltaNew);
+            : deltaCodelengthMovingNodeHoisted(
+                  m_enterFlow, m_enterFlow_log_enterFlow, curEnter, curExit, curFlow, oldSide, m_mEnter[m], m_mExit[m], m_mFlow[m], deltaOld, deltaNew);
         for (auto* c : corr)
           dl += c->moveDelta(u, cMod, m);
         if (dl < bestDelta - kMinSingleImprovement) {
