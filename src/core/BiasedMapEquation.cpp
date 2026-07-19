@@ -191,6 +191,27 @@ INFOMAP_HOT double BiasedMapEquation::getDeltaCodelengthOnMovingNode(InfoNode& c
   return deltaL + deltaBiasedCost + deltaEntropyBiasCorrection;
 }
 
+INFOMAP_HOT double BiasedMapEquation::getDeltaCodelengthOnMovingNodeHoisted(InfoNode& current,
+                                                                            DeltaFlow& oldModuleDelta,
+                                                                            const OldSideTerms& oldSide,
+                                                                            DeltaFlow& newModuleDelta,
+                                                                            std::vector<FlowData>& moduleFlowData,
+                                                                            std::vector<unsigned int>& moduleMembers)
+{
+  double deltaL = Base::getDeltaCodelengthOnMovingNodeHoisted(current, oldModuleDelta, oldSide, newModuleDelta, moduleFlowData, moduleMembers);
+
+  if (preferredNumModules == 0)
+    return deltaL;
+
+  int deltaNumModules = getDeltaNumModulesIfMoving(oldModuleDelta.module, newModuleDelta.module, moduleMembers);
+
+  double deltaBiasedCost = calcNumModuleCost(currentNumModules + deltaNumModules) - biasedCost;
+
+  double deltaEntropyBiasCorrection = calcEntropyBiasCorrection(currentNumModules + deltaNumModules) - getEntropyBiasCorrection();
+
+  return deltaL + deltaBiasedCost + deltaEntropyBiasCorrection;
+}
+
 // ===================================================
 // Consolidation
 // ===================================================
