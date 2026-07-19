@@ -63,6 +63,25 @@ class BuildExt(build_ext):
 
         compiler._compile = compile_with_source_overrides
 
+        # Optional MSVC compiler launcher (e.g. "sccache"). setuptools' MSVC
+        # compiler ignores CC/CXX, so the launcher-via-CXX trick that routes the
+        # unix builds through sccache never reaches cl.exe. Instead prepend the
+        # launcher to each cl invocation by wrapping the compiler's spawn(). The
+        # link step (link.exe) is left untouched. Opt-in via env so ordinary
+        # builds are byte-for-byte unchanged; a no-op unless an MSVC build asks
+        # for it, and if a future setuptools stops routing compiles through
+        # spawn() the build simply runs uncached rather than breaking.
+        msvc_launcher = os.environ.get("INFOMAP_MSVC_COMPILER_LAUNCHER", "").split()
+        original_spawn = compiler.spawn
+        if msvc_launcher and getattr(compiler, "compiler_type", None) == "msvc":
+
+            def spawn_with_launcher(cmd, **kwargs):
+                if cmd and os.path.basename(str(cmd[0])).lower() in {"cl", "cl.exe"}:
+                    cmd = [*msvc_launcher, *cmd]
+                return original_spawn(cmd, **kwargs)
+
+            compiler.spawn = spawn_with_launcher
+
         # Compile this extension's ~30 translation units concurrently.
         # setuptools' build_ext.parallel only parallelizes *across extensions*,
         # and the package ships a single extension, so we parallelize the
@@ -119,6 +138,7 @@ class BuildExt(build_ext):
             super().build_extensions()
         finally:
             compiler._compile = original_compile
+            compiler.spawn = original_spawn
             if parallelize:
                 compiler.compile = original_compile_method
 

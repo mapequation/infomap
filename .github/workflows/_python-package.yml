@@ -419,15 +419,27 @@ jobs:
         if: startsWith(matrix.os, 'macos')
         run: brew install libomp
 
-      # macOS only for now: cibuildwheel recompiles the whole C++ core once per
-      # Python version (cp311-cp314) with no cross-version or cross-run cache.
-      # sccache + the GitHub Actions cache backend fixes that. sccache runs the
-      # real compiler underneath, so a cache miss or an unavailable backend just
-      # means no speedup -- never a failed build. The action's post step prints
-      # cache stats. Linux (manylinux container) and Windows (MSVC) follow.
-      - name: Set up sccache (macOS + Linux)
-        if: startsWith(matrix.os, 'macos') || startsWith(matrix.os, 'ubuntu')
+      # cibuildwheel recompiles the whole C++ core once per Python version
+      # (cp311-cp314) with no cross-version or cross-run cache. sccache + the
+      # GitHub Actions cache backend fixes that on every platform: unix wraps the
+      # compiler through CXX, Windows through setup.py's MSVC launcher (cl.exe
+      # ignores CXX). sccache runs the real compiler underneath, so a cache miss
+      # or an unavailable backend just means no speedup -- never a failed build.
+      # The action's post step prints cache stats.
+      - name: Set up sccache
+        if: startsWith(matrix.os, 'macos') || startsWith(matrix.os, 'ubuntu') || startsWith(matrix.os, 'windows')
         uses: mozilla-actions/sccache-action@9e7fa8a12102821edf02ca5dbea1acd0f89a2696 # v0.0.10
+
+      # The nested cl.exe compiles (cibuildwheel -> pip -> setup.py) spawn the
+      # sccache server too late and silently fall back to plain cl if it is not
+      # already running in the GHA-cache env, so start it explicitly at the top
+      # level. sccache-action exports the ACTIONS_* tokens but not the enable
+      # flag, so set that here.
+      - name: Start sccache server (Windows)
+        if: startsWith(matrix.os, 'windows')
+        env:
+          SCCACHE_GHA_ENABLED: "true"
+        run: sccache --start-server
 
       - name: Build wheels
         run: python -m cibuildwheel . --output-dir wheelhouse
@@ -468,6 +480,16 @@ jobs:
             MACOSX_DEPLOYMENT_TARGET=${{ env.MACOS_DEPLOYMENT_TARGET }}
             CPPFLAGS="-I$(brew --prefix libomp)/include"
             LDFLAGS="-L$(brew --prefix libomp)/lib"
+          # cl.exe ignores CXX, so route it through sccache with setup.py's MSVC
+          # launcher instead. Tokens are expanded by cibuildwheel from the host
+          # env (exported by sccache-action); SCCACHE_GHA_ENABLED is set here.
+          CIBW_ENVIRONMENT_WINDOWS: >-
+            INFOMAP_MSVC_COMPILER_LAUNCHER=sccache
+            SCCACHE_GHA_ENABLED=true
+            ACTIONS_CACHE_SERVICE_V2="$ACTIONS_CACHE_SERVICE_V2"
+            ACTIONS_RESULTS_URL="$ACTIONS_RESULTS_URL"
+            ACTIONS_RUNTIME_TOKEN="$ACTIONS_RUNTIME_TOKEN"
+            FEATURES="${{ inputs.features }}"
 
       - name: Patch macOS OpenMP wheel loading
         if: startsWith(matrix.os, 'macos')
@@ -527,12 +549,18 @@ jobs:
         if: startsWith(matrix.os, 'macos')
         run: brew install libomp
 
-      # See the release build-wheels job: cache the C++ compiles on macOS via
-      # sccache. Mirrored here so the (non-publishing) Python prerelease check
-      # exercises the same sccache wiring before it reaches a real release.
-      - name: Set up sccache (macOS + Linux)
-        if: startsWith(matrix.os, 'macos') || startsWith(matrix.os, 'ubuntu')
+      # See the release build-wheels job: cache the C++ compiles via sccache on
+      # every platform. Mirrored here so the (non-publishing) Python prerelease
+      # check exercises the same sccache wiring before it reaches a real release.
+      - name: Set up sccache
+        if: startsWith(matrix.os, 'macos') || startsWith(matrix.os, 'ubuntu') || startsWith(matrix.os, 'windows')
         uses: mozilla-actions/sccache-action@9e7fa8a12102821edf02ca5dbea1acd0f89a2696 # v0.0.10
+
+      - name: Start sccache server (Windows)
+        if: startsWith(matrix.os, 'windows')
+        env:
+          SCCACHE_GHA_ENABLED: "true"
+        run: sccache --start-server
 
       - name: Build prerelease wheels
         run: python -m cibuildwheel . --output-dir wheelhouse
@@ -567,6 +595,14 @@ jobs:
             MACOSX_DEPLOYMENT_TARGET=${{ env.MACOS_DEPLOYMENT_TARGET }}
             CPPFLAGS="-I$(brew --prefix libomp)/include"
             LDFLAGS="-L$(brew --prefix libomp)/lib"
+          # See the release build-wheels job: cl.exe ignores CXX, so route it
+          # through sccache with setup.py's MSVC launcher instead.
+          CIBW_ENVIRONMENT_WINDOWS: >-
+            INFOMAP_MSVC_COMPILER_LAUNCHER=sccache
+            SCCACHE_GHA_ENABLED=true
+            ACTIONS_CACHE_SERVICE_V2="$ACTIONS_CACHE_SERVICE_V2"
+            ACTIONS_RESULTS_URL="$ACTIONS_RESULTS_URL"
+            ACTIONS_RUNTIME_TOKEN="$ACTIONS_RUNTIME_TOKEN"
 
       - name: Upload prerelease wheels
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
