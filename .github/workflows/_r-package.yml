@@ -272,8 +272,41 @@ jobs:
           name: r-source
           path: dist/R
 
+      # Cache the platform-binary compile the same way the tests job does: ccache
+      # on macOS, sccache (GitHub Actions backend) on Windows Rtools gcc, which
+      # setup-ccache skips. build-r-binary-from-tarball drives R CMD INSTALL
+      # --build through the same mk/r.mk launcher machinery as make test-r, so
+      # the wiring is identical. Windows sccache entries are content-addressed,
+      # so this leg reuses the tests job's compiles of the same core for free.
+      - name: Set up ccache
+        uses: ./.github/actions/setup-ccache
+        with:
+          key-prefix: r-binary-${{ matrix.os }}-${{ matrix.r }}
+
+      - name: Set up sccache (Windows)
+        if: startsWith(matrix.os, 'windows')
+        uses: mozilla-actions/sccache-action@9e7fa8a12102821edf02ca5dbea1acd0f89a2696 # v0.0.10
+
+      # Start the server explicitly, in the GHA-cache env, before the build: R's
+      # nested compiles otherwise spawn it too late and fall back to plain g++.
+      # sccache-action exports the ACTIONS_* tokens but not the enable flag.
+      - name: Start sccache server (Windows)
+        if: startsWith(matrix.os, 'windows')
+        env:
+          SCCACHE_GHA_ENABLED: "true"
+        run: sccache --start-server
+
       - name: Build platform binary
-        run: make build-r-binary-from-tarball
+        env:
+          SCCACHE_GHA_ENABLED: ${{ startsWith(matrix.os, 'windows') && 'true' || '' }}
+        run: |
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            make build-r-binary-from-tarball CCACHE_BIN=sccache USE_CCACHE=1
+          else
+            make build-r-binary-from-tarball
+          fi
+          command -v ccache >/dev/null 2>&1 && ccache -s || true
+          command -v sccache >/dev/null 2>&1 && sccache --show-stats || true
 
       - name: Compute platform tag
         id: platform
