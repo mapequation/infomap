@@ -266,6 +266,15 @@ if(BUILD_TESTING)
     )
     set_tests_properties(js_output_format_manifest PROPERTIES LABELS "fast;core;output;js")
 
+    add_test(
+        NAME golden_codelengths
+        COMMAND
+            "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/test/scripts/check_golden_codelengths.py"
+            "$<TARGET_FILE:infomap_cli>"
+    )
+    set_tests_properties(golden_codelengths PROPERTIES LABELS "fast;core;golden")
+
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
         target_compile_options(infomap_cpp_lifecycle_tests PRIVATE -fno-access-control)
         target_compile_options(infomap_cpp_partition_tests PRIVATE -fno-access-control)

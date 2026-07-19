@@ -1,0 +1,58 @@
+[
+  {
+    "id": "bipartite",
+    "network": "examples/networks/bipartite.net",
+    "flags": "--two-level --seed 123 --num-trials 1 --silent",
+    "codelength": 1.478406226836432,
+    "num_top_modules": 2,
+    "num_levels": 2
+  },
+  {
+    "id": "multilayer",
+    "network": "examples/networks/multilayer.net",
+    "flags": "--two-level --seed 123 --num-trials 1 --silent",
+    "codelength": 2.0114052384459717,
+    "num_top_modules": 2,
+    "num_levels": 2
+  },
+  {
+    "id": "multilayer-intra-inter",
+    "network": "examples/networks/multilayer_intra_inter.net",
+    "flags": "--two-level --seed 123 --num-trials 1 --silent",
+    "codelength": 1.973448786624643,
+    "num_top_modules": 2,
+    "num_levels": 2
+  },
+  {
+    "id": "ninetriangles-hierarchical",
+    "network": "examples/networks/ninetriangles.net",
+    "flags": "--seed 123 --num-trials 1 --silent",
+    "codelength": 3.3858308203414085,
+    "num_top_modules": 3,
+    "num_levels": 3
+  },
+  {
+    "id": "states-memory",
+    "network": "examples/networks/states.net",
+    "flags": "--two-level --seed 123 --num-trials 1 --silent",
+    "codelength": 2.0114052384459704,
+    "num_top_modules": 2,
+    "num_levels": 2
+  },
+  {
+    "id": "twotriangles-directed",
+    "network": "examples/networks/twotriangles.net",
+    "flags": "--two-level --directed --seed 123 --num-trials 1 --silent",
+    "codelength": 1.8082411992675058,
+    "num_top_modules": 2,
+    "num_levels": 2
+  },
+  {
+    "id": "twotriangles-two-level",
+    "network": "examples/networks/twotriangles.net",
+    "flags": "--two-level --seed 123 --num-trials 1 --silent",
+    "codelength": 2.32073035683379,
+    "num_top_modules": 2,
+    "num_levels": 2
+  }
+]

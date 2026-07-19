@@ -28,6 +28,7 @@ Imports:
     R6
 Suggests:
     igraph,
+    jsonlite,
     knitr,
     rmarkdown,
     testthat (>= 3.0.0),

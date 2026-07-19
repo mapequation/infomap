@@ -23,6 +23,7 @@ Two modes:
 from __future__ import annotations
 
 import argparse
+import json
 import shutil
 import sys
 from pathlib import Path
@@ -115,6 +116,22 @@ def write_text(path: Path, content: str) -> None:
     path.write_text(content, encoding="utf-8")
 
 
+def stage_golden_fixtures(out_dir: Path) -> None:
+    """Copy the golden-codelength manifest and the networks it references into
+    the staged test tree, so the testthat suite can replay them. The source
+    fixtures (test/fixtures/, examples/) are not shipped in the R package.
+    Skipped when the manifest has not been generated yet."""
+    manifest = REPO_ROOT / "test" / "fixtures" / "expected" / "golden-codelengths.json"
+    if not manifest.exists():
+        return
+    golden_dir = out_dir / "tests" / "testthat" / "golden"
+    golden_dir.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(manifest, golden_dir / manifest.name)
+    entries = json.loads(manifest.read_text(encoding="utf-8"))
+    for network in sorted({entry["network"] for entry in entries}):
+        shutil.copyfile(REPO_ROOT / network, golden_dir / Path(network).name)
+
+
 def stage(
     out_dir: Path,
     skeleton: Path,
@@ -182,6 +199,8 @@ def stage(
         write_text(pkg_src / out_name, rendered)
         if not in_place:
             template_path.unlink()
+
+    stage_golden_fixtures(out_dir)
 
     sync_description_version(out_dir / "DESCRIPTION", read_python_version())
 

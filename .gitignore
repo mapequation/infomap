@@ -40,6 +40,7 @@ interfaces/R/infomap/src/*.o
 interfaces/R/infomap/src/*.so
 interfaces/R/infomap/src/symbols.rds
 interfaces/R/infomap/R/swig_bindings.R
+interfaces/R/infomap/tests/testthat/golden/
 
 /README.md
 /npm-pack.json

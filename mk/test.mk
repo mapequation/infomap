@@ -36,7 +36,7 @@ define warn_cmake_build_type_mismatch
 	fi
 endef
 
-.PHONY: configure-cpp-dev tidy-native dev-cpp-check test-cpp-stream-policy test-native test-binding-options-freshness test-fast test-sanitizers bench-python bench-native
+.PHONY: configure-cpp-dev tidy-native dev-cpp-check test-cpp-stream-policy test-native test-binding-options-freshness test-fast test-sanitizers build-golden-codelengths test-golden-codelengths-freshness bench-python bench-native
 
 configure-cpp-dev:
 	@generator_args=""; \
@@ -112,6 +112,23 @@ test-sanitizers:
 		ASAN_OPTS="$$ASAN_OPTS:detect_leaks=1"; \
 	fi; \
 	ASAN_OPTIONS="$$ASAN_OPTS" UBSAN_OPTIONS=print_stacktrace=1 "$(CTEST)" --test-dir $(SANITIZER_BUILD_DIR) --output-on-failure $(CTEST_ARGS)
+
+# Regenerate the golden-codelength manifest from the CLI (the reference impl).
+# The Python and R suites and the `golden_codelengths` ctest gate replay the
+# manifest's flags and must reproduce its numbers. Regenerate after an
+# intentional algorithm/codelength change; the diff records the change.
+build-golden-codelengths: build-native
+	@$(PYTHON) scripts/generate_golden_codelengths.py --infomap ./Infomap
+
+# Freshness gate: regenerate into a temp file and diff against the tracked
+# manifest (mirrors test-js-metadata). This is the CLI's own parity assertion.
+test-golden-codelengths-freshness: build-native
+	@tmpdir="$$(mktemp -d)"; \
+	$(PYTHON) scripts/generate_golden_codelengths.py --infomap ./Infomap --output "$$tmpdir/golden-codelengths.json"; \
+	status=0; \
+	diff -u test/fixtures/expected/golden-codelengths.json "$$tmpdir/golden-codelengths.json" || status=$$?; \
+	rm -rf "$$tmpdir"; \
+	exit $$status
 
 bench-python:
 	@mkdir -p $(dir $(BENCHMARK_OUTPUT))
