@@ -890,7 +890,11 @@ InfomapClass <- R6::R6Class(
         layers <- as.integer(igraph::vertex_attr(g, layer_id))
         for (i in seq_len(igraph::vcount(g))) {
           if (is.character(raw_vertex_names)) {
-            self$add_state_node(vertex_ids[i], phys[i], name = raw_vertex_names[i])
+            self$add_state_node(
+              vertex_ids[i],
+              phys[i],
+              name = raw_vertex_names[i]
+            )
           } else {
             self$add_state_node(vertex_ids[i], phys[i])
           }
@@ -949,7 +953,11 @@ InfomapClass <- R6::R6Class(
         # State network without explicit layer info.
         for (i in seq_len(igraph::vcount(g))) {
           if (is.character(raw_vertex_names)) {
-            self$add_state_node(vertex_ids[i], phys[i], name = raw_vertex_names[i])
+            self$add_state_node(
+              vertex_ids[i],
+              phys[i],
+              name = raw_vertex_names[i]
+            )
           } else {
             self$add_state_node(vertex_ids[i], phys[i])
           }
