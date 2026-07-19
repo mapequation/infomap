@@ -341,9 +341,27 @@ jobs:
             any::rmarkdown
             any::tibble
 
+      - name: Set up ccache
+        uses: ./.github/actions/setup-ccache
+        with:
+          key-prefix: r-universe-ubuntu-24.04
+
       - name: Simulate r-universe package build
         run: |
           set -euo pipefail
+          # This job compiles the C++ core twice from clean (the R CMD build
+          # vignette install and R CMD INSTALL), uncached, which made it the R
+          # workflow's critical path. Route both through ccache via the personal
+          # Makevars, the same launcher trick mk/r.mk uses for `make test-r`.
+          # Both compiles happen in fresh temp dirs, so CCACHE_NOHASHDIR=1 is
+          # required for the entries to be reused across runs.
+          mkdir -p ~/.R
+          {
+            printf 'CC = ccache %s\n' "$(R CMD config CC)"
+            printf 'CXX = ccache %s\n' "$(R CMD config CXX)"
+            printf 'CXX17 = ccache %s\n' "$(R CMD config CXX17)"
+          } > ~/.R/Makevars
+          export CCACHE_NOHASHDIR=1
           rm -f interfaces/R/infomap/src/infomap_wrap.cpp
           (
             cd interfaces/R/infomap
@@ -367,3 +385,4 @@ jobs:
           fi
           R CMD INSTALL "$tarball"
           Rscript -e 'library(testthat); library(infomap); testthat::test_dir("interfaces/R/infomap/tests/testthat")'
+          command -v ccache >/dev/null 2>&1 && ccache -s || true
