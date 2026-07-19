@@ -50,9 +50,9 @@ repos:
         # owns their formatting).
         exclude: ^examples/notebooks/
 
-  # C++ formatting for the core sources. The equivalent CI job is currently
-  # disabled (see #479), but `src/` is already clean under this clang-format
-  # version, so the hook keeps it that way locally. Scope matches the Makefile's
+  # C++ formatting for the core sources. This hook also runs in CI via the
+  # pre-commit job (which replaced the old, disabled cxx-format job from #479),
+  # so local and CI enforcement agree. Scope matches the Makefile's
   # HEADERS/SOURCES (find src -name '*.h'/'*.cpp').
   - repo: https://github.com/pre-commit/mirrors-clang-format
     rev: v20.1.7

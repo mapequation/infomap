@@ -183,27 +183,46 @@ jobs:
       - name: Check runtime stream policy
         run: make test-cpp-stream-policy PYTHON=python3
 
-  cxx-format:
+  pre-commit:
     needs: changes
-    # Temporarily disabled while compilation warnings are being addressed (see #479).
-    # if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.native == 'true' || needs.changes.outputs.policy == 'true'
-    if: false
-    name: C++ formatting
+    if: >-
+      github.event_name == 'workflow_dispatch'
+      || needs.changes.outputs.policy == 'true'
+      || needs.changes.outputs.native == 'true'
+      || needs.changes.outputs.python-core == 'true'
+      || needs.changes.outputs.python-packaging == 'true'
+      || needs.changes.outputs.python-swig == 'true'
+      || needs.changes.outputs.javascript == 'true'
+    name: pre-commit
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 15
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
-      - name: Install clang-format
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y clang-format
-        shell: bash
+      - name: Set up Python
+        uses: ./.github/actions/setup-python-build
+        with:
+          python-version: "3.14"
 
-      - name: Check C++ formatting
-        run: make format-native-check
+      # Run the repo's own pre-commit config so local hooks and CI agree. This
+      # also restores C++ formatting enforcement (the old cxx-format job was
+      # disabled per #479): the clang-format hook is scoped to the same src/
+      # tree as `make format-native-check` and pins clang-format 20.1.7.
+      # Skipped hooks:
+      #   - biome-lint/biome-format: the javascript job already runs them via
+      #     `make test-js`.
+      #   - air-format (R): not gated yet. The committed R tree is not clean
+      #     under a current Air release and Air (pre-1.0) has no repo-wide
+      #     version pin; gating it needs a deliberate reformat + pin decision.
+      # The pre-push-staged pyright-core hook is not triggered by run --all-files.
+      - name: Run pre-commit hooks
+        env:
+          SKIP: biome-lint,biome-format,air-format
+        run: |
+          python -m pip install pre-commit
+          pre-commit run --all-files --show-diff-on-failure
 
   sanitizers:
     needs: changes
@@ -353,7 +372,7 @@ jobs:
 
   ci-summary:
     name: CI Summary
-    needs: [changes, policy, cxx-format, sanitizers, clang-tidy, native, python, notebooks, javascript, r, docs, docker]
+    needs: [changes, policy, pre-commit, sanitizers, clang-tidy, native, python, notebooks, javascript, r, docs, docker]
     if: always()
     runs-on: ubuntu-24.04
     timeout-minutes: 10
