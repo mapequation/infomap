@@ -20,3 +20,27 @@ jobs:
       run-tests: false
       build-release-artifacts: false
       prerelease-python-check: true
+
+  # Non-blocking workflow: surface a scheduled failure as a tracking issue so it
+  # is not lost in the Actions tab. Only fires for cron runs -- a manual
+  # dispatch failure is seen by whoever triggered it.
+  report-failure:
+    name: Report scheduled failure
+    needs: [prerelease-wheels]
+    if: failure() && github.event_name == 'schedule'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Open or update the tracking issue
+        uses: ./.github/actions/report-cron-failure
+        with:
+          workflow-name: ${{ github.workflow }}
+          run-url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          token: ${{ github.token }}
