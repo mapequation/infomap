@@ -281,6 +281,8 @@ jobs:
     permissions:
       contents: read
       packages: write
+      id-token: write
+      attestations: write
     strategy:
       fail-fast: false
       matrix:
@@ -309,6 +311,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Smoke-test, assemble, and verify the multi-arch image
+        id: assemble
         env:
           VERSION: ${{ needs.docker-meta.outputs.version }}
           IMAGE: ${{ matrix.image }}
@@ -342,6 +345,17 @@ jobs:
             grep -q "linux/amd64" manifest.txt
             grep -q "linux/arm64" manifest.txt
           done
+
+          # Manifest-list digest (both tags point at it) for the attestation below.
+          digest="$(docker buildx imagetools inspect "${tags[0]}" --format '{{.Manifest.Digest}}')"
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
+        with:
+          subject-name: ghcr.io/mapequation/infomap
+          subject-digest: ${{ steps.assemble.outputs.digest }}
+          push-to-registry: true
 
   publish-npm:
     name: Publish to npm
