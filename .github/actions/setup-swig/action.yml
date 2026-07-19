@@ -1,0 +1,40 @@
+name: Set up SWIG
+description: Install a pinned SWIG built from source (cached), and put it on PATH.
+inputs:
+  swig-version:
+    description: SWIG version to install.
+    required: false
+    default: "4.4.1"
+runs:
+  using: composite
+  steps:
+    - name: Cache SWIG ${{ inputs.swig-version }} install
+      id: swig-cache
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ runner.tool_cache }}/swig/${{ inputs.swig-version }}/${{ runner.arch }}
+        key: swig-${{ inputs.swig-version }}-${{ runner.os }}-${{ runner.arch }}-v2
+
+    - name: Install SWIG ${{ inputs.swig-version }}
+      if: steps.swig-cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        swig_prefix="$RUNNER_TOOL_CACHE/swig/${{ inputs.swig-version }}/$RUNNER_ARCH"
+        sudo apt-get update
+        sudo apt-get install -y ca-certificates curl build-essential libpcre2-dev
+        curl -L --retry 3 --output /tmp/swig.tar.gz \
+          https://downloads.sourceforge.net/project/swig/swig/swig-${{ inputs.swig-version }}/swig-${{ inputs.swig-version }}.tar.gz
+        mkdir -p /tmp/swig-src
+        tar -xzf /tmp/swig.tar.gz -C /tmp/swig-src --strip-components=1
+        cd /tmp/swig-src
+        ./configure --prefix="$swig_prefix"
+        make -j"$(nproc)"
+        make install
+
+    - name: Add SWIG to PATH
+      shell: bash
+      run: echo "$RUNNER_TOOL_CACHE/swig/${{ inputs.swig-version }}/$RUNNER_ARCH/bin" >> "$GITHUB_PATH"
+
+    - name: Verify SWIG version
+      shell: bash
+      run: swig -version
