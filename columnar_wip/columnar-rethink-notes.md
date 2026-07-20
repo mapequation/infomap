@@ -627,3 +627,44 @@ OO moves a few hundred modules) AND likely the hierarchical air30k gap (+1.5%). 
 try a seeded bottom re-tune after `coarsenModules` in `refineHierarchy` (the -2 result suggests the
 "refine-after-coarsen always reverts" note only holds for the *interior* refine, not a seeded leaf
 re-tune).
+
+### F19 — Module-level corrections (PR #835): single-strategy verdict, alternation rejected (2026-07-21)
+
+**The fix from F18's lead, shipped:** Mem/Meta maintain per-unit sparse attribute aggregates
+(`setUnits` after each `consolidateToNextLevel`, `resetUnitsToLeaves` after aggregation), so
+`moveDelta`/`applyMove`/`proposeMoveTargets` work on aggregated units and the module-level passes of
+`optimizeTwoLevel` descend the true augmented objective. Per-pass selection reuses the move loop's
+incrementally tracked correction total (`m_lastCorrection`); corrections without module-move support
+(Lossy, the #827 K-bias) drop out of module passes and are recomputed per pass, exactly as before.
+
+**Single-strategy matrix (the decisive experiment; seed 123, -N10, per-trial codelengths inspected;
+"off" = base-only aggregation ≡ the branch tip, verified bit-exact):**
+- air30k `-2`: off 5.4596 (+1.22% vs OO) → on **5.3953 (+0.03%)**, and on is *faster* (3.8 vs 5.4s).
+  The families form disjoint quality bands ~1% apart: **every** objective-aware trial (worst 5.4055)
+  beats **every** base-only trial (best 5.4596).
+- air30k `-d --regularized` `-2`: off **6.0118 (+7.8% vs OO)** → on **5.5793 (+0.05%)**. The prior
+  flattens the base link-flow signal, so steering aggregation by base-only deltas strays completely —
+  the strongest evidence that base-only aggregation optimizes the wrong objective on memory nets.
+- malaria: the mirror image — every objective-aware trial worse than the base family's best
+  (`-2` 7.4450 → 7.4743, `-C` 7.4445 → 7.4789; both still beat OO by ~0.4%). The known overshoot:
+  greedy module-level gains reach a coarseness the fine-tune + gated merges cannot split apart.
+- lazega (meta): best-of-10 unchanged; per-trial the module-aware trials only ever improve.
+- hierarchical air30k `-C`: 5.4725 → 5.4652 (−0.13pp only) — confirms the +1.3–1.6% hierarchical gap
+  is the *separate* structural flat-optimum problem (F-map (b)), not a correction-participation one.
+- Base networks (incl. web-NotreDame): no module-move-capable correction → bit-exact, full-set verified.
+
+**Alternation evaluated and REJECTED.** A per-trial strategy alternation (even trials objective-aware,
+odd base-only, best-of-N picks the family) was prototyped as a workaround for the malaria overshoot.
+The single-strategy data killed it: it halves the sampling of the winning family (alt best ≥ pure-on
+best on every net where pure-on wins), costs time (objective-aware trials are the *fast* mode — the
+coarsening happens in cheap module passes instead of the merge-scan + re-tune tail), carries a second
+search path, and hides the real defect. Decision (Daniel): ship pure objective-aware as the only
+strategy and accept malaria +0.4% as a known limitation until the **split operator** (the subdivision
+half of OO's coarse-tune) exists — that is the principled fix, and with it the overshoot argument for
+base-only aggregation disappears entirely.
+
+**Seeding dependency settled (#824):** pass acceptance scores the composed leaf partition with the
+exact augmented objective, so a seeded solution can never be *replaced* by an augmented-worse one even
+without module-level corrections — but improving *from* a seed at coarse scale needs them: base-only
+module passes only explore base-improving directions (the 7.8% regularized number measures how wrong
+that is). Soft cluster-data seeding on memory networks therefore depends on this PR.
