@@ -41,4 +41,4 @@ runs:
     - name: Reset ccache stats
       if: runner.os != 'Windows'
       shell: bash
-      run: command -v ccache >/dev/null 2>&1 && ccache -z || true
+      run: if command -v ccache >/dev/null 2>&1; then ccache -z || true; fi
