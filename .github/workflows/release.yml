@@ -161,6 +161,8 @@ jobs:
     timeout-minutes: 20
     permissions:
       contents: write
+      id-token: write
+      attestations: write
 
     steps:
       - name: Download native release assets
@@ -204,6 +206,23 @@ jobs:
 
       - name: List packaged assets
         run: find release-assets -maxdepth 3 -type f | sort
+
+      # Provenance for the release assets themselves. PyPI (PEP 740), npm
+      # (--provenance), and the GHCR images are attested downstream, but the
+      # zips/tarballs/wheels as attached to the GitHub release were not.
+      # Same globs as the attach step below so exactly what ships is attested;
+      # verify with `gh attestation verify <file> --repo mapequation/infomap`.
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
+        with:
+          subject-path: |
+            release-assets/native/*.zip
+            release-assets/python/**/*.tar.gz
+            release-assets/python/**/*.whl
+            release-assets/npm/*.tgz
+            release-assets/r/infomap_*.tar.gz
+            release-assets/r/infomap_*-r*-*.tgz
+            release-assets/r/infomap_*-r*-*.zip
 
       - name: Attach assets to GitHub release
         uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3.0.2
