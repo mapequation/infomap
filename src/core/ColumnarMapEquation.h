@@ -13,6 +13,7 @@
 #include <functional>
 #include <vector>
 #include <cstddef>
+#include <cstdlib>
 #include <memory>
 #include <unordered_map>
 #include <unordered_set>
@@ -497,6 +498,44 @@ public:
 private:
   double m_multiplier;
   double m_totalDegree;
+};
+
+/**
+ * Preferred-number-of-modules bias (--preferred-number-of-modules): the same
+ * |K - K_pref| penalty (1 bit per module away from the target) that
+ * BiasedMapEquation applies on the OO path, wired into the columnar two-level
+ * move loop and merge so the search — not only the reported codelength — is
+ * steered toward K_pref modules. K is the current non-empty leaf-module count,
+ * tracked from the partition the move loop maintains (initMoveLoop seeds it,
+ * applyMove/applyMerge keep it exact). Objective-agnostic: an additive
+ * structural term that composes with base/meta/mem/lossy, like the entropy
+ * bias. Applies at the top-level partition ONLY — OO does not propagate
+ * preferredNumberOfModules to sub-Infomaps (cloneAsNonMain omits it), so
+ * sliceForLeaves returns nullptr and the bias never recurses into sub-networks.
+ */
+class PreferredModulesCorrection final : public ColumnarCorrection {
+public:
+  explicit PreferredModulesCorrection(unsigned int preferredNumModules)
+      : m_preferredNumModules(static_cast<int>(preferredNumModules)) {}
+  double hierarchicalCorrection(const ColumnarTwoLevel& core) const override;
+
+  bool participatesInMoveLoop() const override { return true; }
+  double initMoveLoop(const std::vector<int>& leafModule, int numModules) override;
+  double moveDelta(int leaf, int oldMod, int newMod) const override;
+  void applyMove(int leaf, int oldMod, int newMod) override;
+  double mergeDelta(int moduleA, int moduleB) const override;
+  void applyMerge(int moduleA, int moduleB) override;
+  // Top-level only (see class note): never slice into sub-networks.
+  std::unique_ptr<ColumnarCorrection> sliceForLeaves(const std::vector<int>&) const override { return nullptr; }
+
+private:
+  // |K - K_pref| with unit weight (1 bit per module), matching
+  // BiasedMapEquation::calcNumModuleCost.
+  double cost(int numModules) const { return std::abs(numModules - m_preferredNumModules); }
+
+  int m_preferredNumModules;
+  std::vector<int> m_moduleMembers; // per module: member count
+  int m_numNonEmpty = 0; // K = number of non-empty modules
 };
 
 /**

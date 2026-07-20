@@ -902,6 +902,39 @@ TEST_CASE("numNonTrivialTopModules is zero when all nodes are in one module [fas
   infomap::test::checkCanonicalPartition(im, { { 1, 2, 3, 4, 5 } });
 }
 
+// #827: --preferred-number-of-modules is wired into the columnar engine as the
+// |K - K_pref| move-loop bias (PreferredModulesCorrection), the columnar
+// analogue of BiasedMapEquation. On the OO path this flag was dead under
+// --columnar. Here we verify the columnar two-level search is steered to the
+// requested module count, and that the flag-off run is unaffected.
+TEST_CASE("Columnar --preferred-number-of-modules steers the two-level module count [fast][core][partition][columnar]")
+{
+  // Four 5-cliques in a ring joined by single bridge edges: the unbiased
+  // two-level optimum is the four natural cliques.
+  auto build = [](InfomapWrapper& im) {
+    constexpr int C = 4, S = 5;
+    auto nid = [](int c, int i) { return c * S + i + 1; };
+    for (int c = 0; c < C; ++c)
+      for (int i = 0; i < S; ++i)
+        for (int j = i + 1; j < S; ++j)
+          im.addLink(nid(c, i), nid(c, j));
+    for (int c = 0; c < C; ++c)
+      im.addLink(nid(c, 0), nid((c + 1) % C, 0));
+  };
+  auto topModules = [&](const std::string& extra) {
+    InfomapWrapper im("--seed 123 --num-trials 1 --silent --two-level --columnar " + extra);
+    build(im);
+    im.run();
+    return im.numTopModules();
+  };
+
+  CHECK(topModules("") == 4); // unbiased: the four natural cliques
+  CHECK(topModules("--preferred-number-of-modules 1") == 1); // merge past structure
+  CHECK(topModules("--preferred-number-of-modules 2") == 2);
+  CHECK(topModules("--preferred-number-of-modules 3") == 3);
+  CHECK(topModules("--preferred-number-of-modules 6") == 6); // split the cliques
+}
+
 TEST_CASE("--num-threads bounds parallel-trials workers without changing the result [fast][core][threads]")
 {
   // Parallel trials reseed per trial (seed = base + trialIndex), so the result is
