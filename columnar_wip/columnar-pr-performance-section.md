@@ -4,6 +4,8 @@
 
 Single-threaded (`MODE=release OPENMP=0`), `--seed 123 -N10` — **best of 10 trials**, the way Infomap is normally run. Codelength in bits; `time` = total wall for all 10 trials (read + 10× optimize + write); `top`/`lvls` = top modules / levels of the best partition. The network set spans base (undirected + directed), metadata, multilayer and state/memory objectives; see [`columnar_wip/benchmark-networks.md`](columnar_wip/benchmark-networks.md) for paths and full details. Columnar column = the default columnar search (`-C`).
 
+> **Note:** the columnar columns in the tables below predate the #868 move-loop speedups and are stale; they are refreshed to the current engine in **#879**. This branch's tele/meta hoist is **bit-exact** (codelengths unchanged, and no time change on these configs — none use recorded teleportation or metadata beyond tiny lazega), so it does not move these tables. This branch's own measured impact is in the [follow-up subsection](#tele-path-and-metadata-move-loop-hoist-this-branch) at the end.
+
 <table>
 <thead>
 <tr>
@@ -114,3 +116,20 @@ Parentheses on the columnar columns = change vs OO `-2` (**bold** = columnar bea
 - **Quality** — columnar `-2` ties or beats OO on 9 of 11 networks (beats on netscicoauthor2010, politicalblogs, malaria), and is within +0.11% on web-NotreDame. The exceptions are powergrid (+0.64%) and air30k (+1.22%).
 - **Speed** — faster on every non-trivial network (−38% to −83%) **except air30k (+58%)**.
 - **The one real gap is the state/memory objective (air30k), on both axes.** Profiled cause: the columnar aggregation passes optimize the *base* objective only (corrections act in the leaf move loops, the augmented pass selection, and the gated merges), so the base-driven aggregation stops far too fine for the memory objective (K = 1353 where the optimum wants ~330) and the greedy pairwise merge + leaf re-tune has to carry the whole coarsening. OO's coarse-tune moves modules under the true memory objective. The principled fix is module-level correction state (consolidate per-unit physical-flow aggregates so module moves see the augmented delta); the same machinery is also the likely cure for the residual +1.5% hierarchical air30k gap.
+
+### Tele-path and metadata move-loop hoist (this branch)
+
+Two follow-ups to the #868 move-loop speedups: the recorded-teleportation delta now hoists its six old-module plogp terms once per unit (`hoistOldSideTele`), and the metadata correction caches its per-leaf move-loop terms with the same zero-path fast-track as the memory correction. Both are **bit-exact** — codelengths are unchanged on every benchmark network × {`-C`, `-F`, `-2 -C`}, so the tables above are untouched by this branch (those tables predate #868 and are refreshed to the current engine in #879). The measurable win is on the recorded-teleportation path; the metadata fast paths are correctness/consistency (the benchmark set has no large metadata network).
+
+Two new benchmark configurations exercise these paths (`old` = this branch's base, before the hoist; `new` = with it; best of 2, wall for `-N10`; codelengths bit-identical between old and new):
+
+| config | objective | mode | codelength | old columnar | new columnar |
+|---|---|---|---|--:|--:|
+| air30k `-d --regularized` | state/memory + **recorded teleportation** | `-C` | 5.66883586 | 5.34s | **4.63s (−13%)** |
+| air30k `-d --regularized` | | `-F` | 5.66883586 | 4.69s | **3.98s (−15%)** |
+| air30k `-d --regularized` | | `-2 -C` | 6.01175505 | 6.20s | **5.20s (−16%)** |
+| science2001 `-d --preferred-number-of-modules 25` | base + **`\|K−K_pref\|` bias** | `-C` | 8.46079677 | 3.41s | 3.43s (=) |
+| science2001 `-d --preferred-number-of-modules 25` | | `-F` | 8.65395434 | 3.34s | 3.33s (=) |
+| science2001 `-d --preferred-number-of-modules 25` | | `-2 -C` | 8.23577532 | 3.30s | 3.24s (=) |
+
+The tele hoist gives a consistent ~13–16% on air30k's recorded-teleportation runs; the preferred-modules config (no teleport, no metadata) is unchanged, confirming the hoist touches only the tele path. The `--preferred-number-of-modules 25` bias lands the columnar two-level partition on exactly 25 modules (`-2 -C`, top = 25) and drives the finest level of the hierarchical `-C` to 25 as well — see [#827](https://github.com/mapequation/infomap/issues/827).
