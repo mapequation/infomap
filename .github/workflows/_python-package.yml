@@ -300,6 +300,9 @@ jobs:
           python-version: "3.14"
 
       - name: Install Python release tooling
+        # bash explicitly: this job has no shell default and the assignment
+        # below is not valid pwsh, which Windows runners default to.
+        shell: bash
         run: |
           # cibuildwheel is single-sourced from the pyproject release extra
           # (bumped by dependabot); read it here instead of a duplicate pin.
@@ -434,6 +437,8 @@ jobs:
           python-version: "3.14"
 
       - name: Install cibuildwheel
+        # bash explicitly: see the release build-wheels tooling step.
+        shell: bash
         run: |
           # Single-sourced from the pyproject release extra (see build-wheels).
           cibw="$(python -c 'import tomllib; print(next(r for r in tomllib.load(open("pyproject.toml","rb"))["project"]["optional-dependencies"]["release"] if r.startswith("cibuildwheel==")))')"
