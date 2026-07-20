@@ -1427,6 +1427,79 @@ double BiasedEntropyCorrection::hierarchicalCorrection(const ColumnarTwoLevel& c
   return m_multiplier * static_cast<double>(nonRootNodes) / (2.0 * m_totalDegree);
 }
 
+// ===================================================
+// PreferredModulesCorrection (--preferred-number-of-modules: |K - K_pref| bias)
+// ===================================================
+
+double PreferredModulesCorrection::hierarchicalCorrection(const ColumnarTwoLevel& core) const
+{
+  // Leaf-module level, matching where the move-loop bias acts (and the other
+  // corrections apply). <2 levels means no modules; the base handles that and
+  // the one-level fallback would collapse it anyway.
+  if (core.hierNumLevels() < 2)
+    return 0.0;
+  return cost(core.hierLevelSize(1));
+}
+
+double PreferredModulesCorrection::initMoveLoop(const std::vector<int>& leafModule, int numModules)
+{
+  m_moduleMembers.assign(numModules, 0);
+  for (int m : leafModule)
+    ++m_moduleMembers[m];
+  m_numNonEmpty = 0;
+  for (int c : m_moduleMembers)
+    if (c > 0)
+      ++m_numNonEmpty;
+  return cost(m_numNonEmpty);
+}
+
+double PreferredModulesCorrection::moveDelta(int /*leaf*/, int oldMod, int newMod) const
+{
+  if (oldMod == newMod)
+    return 0.0;
+  // K changes only when the move empties the old module or fills an empty new
+  // one (exactly BiasedMapEquation::getDeltaNumModulesIfMoving).
+  const int deltaK = (m_moduleMembers[oldMod] == 1 ? -1 : 0) + (m_moduleMembers[newMod] == 0 ? 1 : 0);
+  if (deltaK == 0)
+    return 0.0;
+  return cost(m_numNonEmpty + deltaK) - cost(m_numNonEmpty);
+}
+
+void PreferredModulesCorrection::applyMove(int /*leaf*/, int oldMod, int newMod)
+{
+  if (oldMod == newMod)
+    return;
+  if (m_moduleMembers[newMod] == 0)
+    ++m_numNonEmpty;
+  ++m_moduleMembers[newMod];
+  --m_moduleMembers[oldMod];
+  if (m_moduleMembers[oldMod] == 0)
+    --m_numNonEmpty;
+}
+
+double PreferredModulesCorrection::mergeDelta(int a, int b) const
+{
+  // Folding module A into B drops K by one only when both are non-empty.
+  const int deltaK = (m_moduleMembers[a] > 0 && m_moduleMembers[b] > 0) ? -1 : 0;
+  if (deltaK == 0)
+    return 0.0;
+  return cost(m_numNonEmpty + deltaK) - cost(m_numNonEmpty);
+}
+
+void PreferredModulesCorrection::applyMerge(int a, int b)
+{
+  if (m_moduleMembers[a] == 0)
+    return;
+  if (m_moduleMembers[b] == 0) {
+    // Non-empty A into empty B: B gains A's members as A empties — K unchanged.
+    m_moduleMembers[b] = m_moduleMembers[a];
+  } else {
+    m_moduleMembers[b] += m_moduleMembers[a];
+    --m_numNonEmpty;
+  }
+  m_moduleMembers[a] = 0;
+}
+
 double MetaCorrection::hierarchicalCorrection(const ColumnarTwoLevel& core) const
 {
   using infomath::plogp;

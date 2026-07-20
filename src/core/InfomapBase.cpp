@@ -205,6 +205,7 @@ public:
       auto timer = m_timing.scope("configure_network_s");
       configureNetworkMode();
     }
+    warnColumnarUnsupportedOptions();
     calculateFlowAndInitNetwork();
     {
       auto timer = m_timing.scope("post_flow_output_s");
@@ -567,6 +568,19 @@ private:
       m_infomap.flowModel = FlowModel::directed;
     }
     m_network.setConfig(m_infomap);
+  }
+
+  // Search-shaping flags with no effect on the columnar engine (#827). Wired:
+  // --preferred-number-of-modules (PreferredModulesCorrection) and
+  // --prefer-modular-solution (honored by the one-level fallback). Dead:
+  // --preferred-number-of-levels(-strength), which biases the OO super-search
+  // depth — the columnar enter-flow up-build has no depth-preference dial.
+  void warnColumnarUnsupportedOptions()
+  {
+    if (!m_infomap.columnarSearch)
+      return;
+    if (m_infomap.preferredNumberOfLevels != 0)
+      Console::warn(0, "--preferred-number-of-levels has no effect with --columnar (the columnar up-build has no depth-preference bias); ignoring it.");
   }
 
   void calculateFlowAndInitNetwork()
@@ -1804,8 +1818,42 @@ void InfomapBase::columnarPartition()
   const double materializedL = m_hierarchicalCodelength;
   m_hierarchicalCodelength = columnarL;
   m_numNonTrivialTopModules = calculateNumNonTrivialTopModules();
+
+  // One-level fallback (#827): the columnar search can, like the OO optimizer,
+  // return a modular partition whose codelength is worse than the all-in-one-
+  // module (one-level) codelength — e.g. on near-random networks. The OO path
+  // guards against this (see hierarchicalPartition), collapsing to a single
+  // module; the columnar path had no such guard. Mirror it exactly: same
+  // predicate (skip when the user asked to prefer a modular or a specific-count
+  // solution, and — as OO — for the regularized links-only prior), same
+  // collapse. columnarL and getOneLevelCodelength() are on the same objective
+  // scale (both true map-equation codelengths; the benchmark tables compare
+  // them directly), so the comparison is valid across objectives.
+  const bool regularizedPriorOnly = regularized && network().numLinks() == 0;
+  if (!preferModularSolution && preferredNumberOfModules == 0
+      && (haveNonTrivialModules() || regularizedPriorOnly)
+      && columnarL > getOneLevelCodelength()) {
+    Console::detail(1, "columnar: worse codelength than one-level ({} > {}), putting all nodes in one module",
+                    io::toPrecision(columnarL), io::toPrecision(getOneLevelCodelength()));
+
+    auto& module = root().replaceChildrenWithOneNode();
+    module.data = m_root.data;
+    module.physicalNodes = m_root.physicalNodes;
+#if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
+    module.lossyEntropy = m_root.lossyEntropy;
+    module.lossyFlowLogFlow = m_root.lossyFlowLogFlow;
+#endif
+    module.index = 0;
+    for (auto& node : module)
+      node.index = 0;
+    module.codelength = getOneLevelCodelength();
+    m_hierarchicalCodelength = getOneLevelCodelength();
+    m_root.codelength = 0.0;
+    m_numNonTrivialTopModules = calculateNumNonTrivialTopModules();
+  }
+
   Console::detail(1, "columnar: codelength {}, materialized {}, {} levels",
-                  io::toPrecision(columnarL), io::toPrecision(materializedL), maxTreeDepth());
+                  io::toPrecision(m_hierarchicalCodelength), io::toPrecision(materializedL), maxTreeDepth());
 }
 
 bool InfomapBase::columnarNativeInputEligible() const
@@ -1884,6 +1932,13 @@ void InfomapBase::addColumnarCorrections(ColumnarTwoLevel& opt) const
       totalDegree = m_network.sumDegree();
     opt.addCorrection(std::make_unique<BiasedEntropyCorrection>(entropyBiasCorrectionMultiplier, totalDegree));
   }
+  // Preferred number of modules (#827): |K - K_pref| move-loop bias, the
+  // columnar analogue of BiasedMapEquation. Objective-agnostic (composes with
+  // any of the objectives below). Attached to the top-level optimizer only; its
+  // sliceForLeaves is a no-op, so sub-network refines optimize without it —
+  // matching OO, which does not propagate preferredNumberOfModules downward.
+  if (preferredNumberOfModules != 0)
+    opt.addCorrection(std::make_unique<PreferredModulesCorrection>(preferredNumberOfModules));
   // Metadata: one category per leaf (first dimension), flow-weighted by default
   // (unweighted uses a uniform 1/numNodes, matching MetaMapEquation).
   if (haveMetaData()) {
