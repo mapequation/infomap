@@ -256,10 +256,17 @@ jobs:
       # --build through the same mk/r.mk launcher machinery as make test-r, so
       # the wiring is identical. Windows sccache entries are content-addressed,
       # so this leg reuses the tests job's compiles of the same core for free.
+      # The key-prefix is deliberately the tests job's, not a r-binary-* one:
+      # this job runs on refs/tags/*, and GHA cache entries are only restorable
+      # from the same ref or the default branch -- a namespace only ever saved
+      # from tag runs can never hit. The tests job saves these keys on every
+      # master push (full-matrix covers release and oldrel), so restore-keys
+      # find a warm cache here; the save from this run is unreadable but
+      # harmless.
       - name: Set up ccache
         uses: ./.github/actions/setup-ccache
         with:
-          key-prefix: r-binary-${{ matrix.os }}-${{ matrix.r }}
+          key-prefix: r-${{ matrix.os }}-${{ matrix.r }}
 
       - name: Set up sccache (Windows)
         if: startsWith(matrix.os, 'windows')
