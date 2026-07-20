@@ -11,10 +11,14 @@ permissions:
   pull-requests: read
 
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.ref }}
   # Cancel superseded runs on PRs, but never on master: cancelling a master
   # run marks its CI Summary as failed, leaving a permanent red X on that
   # commit (ci-auto-rerun only retries setup-phase flakes, not cancellations).
+  # Pushes (master only, see `on:`) also get a per-sha group: a shared group
+  # holds at most one *queued* run, so a merge burst still cancelled the middle
+  # commits' runs while they waited (runs 1514-1516) -- the same red X, and a
+  # run verify-master-ci (release.yml) refuses to publish from.
+  group: ci-${{ github.workflow }}-${{ github.event_name == 'push' && github.sha || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
