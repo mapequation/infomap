@@ -6,9 +6,11 @@
 // exactly as the CLI does. The intake reads from a path, so each input is
 // written to a temporary file.
 //
-// Contract: malformed input is expected to throw (InfomapError /
-// std::runtime_error) and is swallowed. Crashes, sanitizer reports, hangs, and
-// exceptions of any other type are genuine findings.
+// Contract: malformed input is rejected by throwing, and the harness swallows
+// every std::exception -- deliberately matching production, where
+// Network::readInputData catches std::exception and converts it to an
+// InfomapError, so no exception type escapes the CLI either. Findings are
+// therefore crashes, sanitizer reports, and hangs only.
 
 #include <cstddef>
 #include <cstdint>
