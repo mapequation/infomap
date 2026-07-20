@@ -21,6 +21,8 @@ Single-thread convention: `MODE=release OPENMP=0`, `--seed 123`, best-of-N via `
 | multilayer (example) | `examples/networks/multilayer.net` | — | undirected | **multilayer** / higher-order (memory) toy | 5 physical nodes |
 | malaria | `networks/multilayer/real-world/malaria/malaria_PLOSCompBiology_2013.net` | — | undirected | **multilayer** / higher-order (memory) real-world | 307 physical nodes · 9 layers |
 | air30k (states) | `networks/states/air2011/air30k.net` | — | undirected | **state / memory** (higher-order) real-world | 183 physical · 13 213 state nodes |
+| air30k (regularized) | `networks/states/air2011/air30k.net` | `-d --regularized` | directed | **state / memory** + **recorded teleportation** | 183 physical · 13 213 state nodes |
+| science2001 (preferred modules) | `networks/db/science2001.net` | `-d --preferred-number-of-modules 25` | directed | first-order + **preferred-number-of-modules** bias | 7 170 nodes |
 
 **Coverage rationale**
 - **Base map equation, undirected**: ninetriangles (hierarchy), jazz, netscicoauthor2010, powergrid.
@@ -28,6 +30,11 @@ Single-thread convention: `MODE=release OPENMP=0`, `--seed 123`, best-of-N via `
   science2001, web-NotreDame (the large stress case).
 - **Composable objectives** (exercise the correction hooks): lazega + metadata; air30k, multilayer,
   malaria for the memory/higher-order objective (physical-node codebook).
+- **Recorded teleportation** (exercises the tele-path move loop): air30k `-d --regularized` — the
+  regularized directed flow model turns on recorded teleportation, so the leaf move loop runs the
+  teleport-inclusive delta (`deltaCodelengthMovingNodeTele*`) rather than the link-only one.
+- **Search-shaping bias**: science2001 `-d --preferred-number-of-modules 25` exercises the columnar
+  `|K − K_pref|` bias (`PreferredModulesCorrection`).
 - **Scale**: from 5-node toys (fast correctness) to 325k-node web-NotreDame (time/memory).
 
 > **Fixed (see `columnar-rethink-notes.md` F15/F16):** `-C` best-of-N on **politicalblogs**
