@@ -347,8 +347,10 @@ private:
 
   // Recorded-teleport-aware move delta: change in the augmented base codelength
   // from moving unit u (link enter/exit/flow cur*, teleport tfu/twu) out of module
-  // A into module B, with deltaOld/deltaNew the link flow between u and A/B. Used
-  // instead of deltaCodelengthMovingNode when m_recordedTeleport is on.
+  // A into module B, with deltaOld/deltaNew the link flow between u and A/B. This
+  // is the unhoisted reference form (the readable counterpart of the free
+  // hoistOldSideTele + deltaCodelengthMovingNodeTeleHoisted the move loop uses
+  // when m_recordedTeleport is on); kept for clarity like deltaCodelengthMovingNode.
   double deltaCodelengthMovingNodeTele(double curEnter, double curExit, double curFlow, double tfu, double twu, int A, int B, double deltaOld, double deltaNew) const;
 
   // Aggregate a base level under a unit->group assignment (K groups): group
@@ -574,6 +576,14 @@ private:
   // Move-loop state (per module): total weight F_m and category->weight map.
   std::vector<double> m_moduleFlow; // F_m
   std::vector<std::unordered_map<int, double>> m_moduleCatFlow; // f_{m,c}
+
+  // Per-(leaf, current-module) delta cache: the old-module delta and plogp(w)
+  // are identical for every candidate the move loop probes for the same leaf
+  // (mirrors MemCorrection).
+  mutable int m_cacheUnit = -1;
+  mutable int m_cacheOldMod = -1;
+  mutable double m_cacheDOld = 0.0;
+  mutable double m_cachePlogpW = 0.0;
 };
 
 /**
