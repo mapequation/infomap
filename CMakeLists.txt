@@ -310,6 +310,12 @@ if(INFOMAP_BUILD_FUZZERS)
     # harness links, so findings surface from library code, not just the harness.
     target_compile_options(infomap_core
         PRIVATE -fsanitize=fuzzer-no-link,address,undefined -fno-omit-frame-pointer)
+    # PUBLIC link options so every consumer of the instrumented core (the CLI,
+    # stray test targets) links the sanitizer runtimes too -- without this,
+    # building anything but fuzz_intake in a fuzz-configured tree fails at
+    # link with undefined ASAN symbols. Mirrors the INFOMAP_ENABLE_SANITIZERS
+    # block above.
+    target_link_options(infomap_core PUBLIC -fsanitize=address,undefined)
 
     add_executable(fuzz_intake test/fuzz/fuzz_intake.cpp)
     target_link_libraries(fuzz_intake PRIVATE infomap_core)
