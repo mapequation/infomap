@@ -321,6 +321,53 @@ namespace {
 
     return delta_enter - delta_enter_log_enter - delta_exit_log_exit + delta_flow_log_flow;
   }
+
+  // Recorded-teleportation (tele-path) analogue of OldSideTerms/hoistOldSide:
+  // the six old-module (A-side) plogp terms plus the A-side shift of enterFlow
+  // are constant across every candidate the move loop probes for the same unit,
+  // so the caller hoists them once per unit visit. moduleTeleEnter/moduleTeleExit
+  // are inlined here as free lambdas (these helpers live in the class); the
+  // per-candidate expression structure below matches deltaCodelengthMovingNodeTele
+  // exactly, so results stay bit-identical to the unhoisted form.
+  struct TeleOldSideTerms {
+    double plogpEA0, plogpXA0, plogpFA0; // before the move
+    double plogpEA1, plogpXA1, plogpFA1; // after
+    double deltaEnterA; // eA1 - eA0, the A-side contribution to enterFlow1
+  };
+
+  inline TeleOldSideTerms hoistOldSideTele(double curEnter, double curExit, double curFlow, double tfu, double twu, double oldEnter, double oldExit, double oldFlow, double oldTeleFlow, double oldTeleWeight, double totalTeleFlow, double deltaOld)
+  {
+    using infomath::plogp;
+    const auto teleEnter = [&](double tf, double tw) { return (totalTeleFlow - tf) * tw; };
+    const auto teleExit = [&](double tf, double tw) { return tf * (1.0 - tw); };
+    const double eA0 = oldEnter + teleEnter(oldTeleFlow, oldTeleWeight);
+    const double xA0 = oldExit + teleExit(oldTeleFlow, oldTeleWeight);
+    const double fA0 = xA0 + oldFlow;
+    const double eA1 = (oldEnter - curEnter + deltaOld) + teleEnter(oldTeleFlow - tfu, oldTeleWeight - twu);
+    const double xA1 = (oldExit - curExit + deltaOld) + teleExit(oldTeleFlow - tfu, oldTeleWeight - twu);
+    const double fA1 = xA1 + (oldFlow - curFlow);
+    return { plogp(eA0), plogp(xA0), plogp(fA0), plogp(eA1), plogp(xA1), plogp(fA1), eA1 - eA0 };
+  }
+
+  inline double deltaCodelengthMovingNodeTeleHoisted(double enterFlow, double enterFlow_log_enterFlow, double curEnter, double curExit, double curFlow, double tfu, double twu, const TeleOldSideTerms& o, double newEnter, double newExit, double newFlow, double newTeleFlow, double newTeleWeight, double totalTeleFlow, double deltaNew)
+  {
+    using infomath::plogp;
+    const auto teleEnter = [&](double tf, double tw) { return (totalTeleFlow - tf) * tw; };
+    const auto teleExit = [&](double tf, double tw) { return tf * (1.0 - tw); };
+    const double eB0 = newEnter + teleEnter(newTeleFlow, newTeleWeight);
+    const double xB0 = newExit + teleExit(newTeleFlow, newTeleWeight);
+    const double fB0 = xB0 + newFlow;
+    const double eB1 = (newEnter + curEnter - deltaNew) + teleEnter(newTeleFlow + tfu, newTeleWeight + twu);
+    const double xB1 = (newExit + curExit - deltaNew) + teleExit(newTeleFlow + tfu, newTeleWeight + twu);
+    const double fB1 = xB1 + (newFlow + curFlow);
+
+    const double enterFlow1 = enterFlow + o.deltaEnterA + (eB1 - eB0);
+    const double d_enter = plogp(enterFlow1) - enterFlow_log_enterFlow;
+    const double d_enter_log = (o.plogpEA1 + plogp(eB1)) - (o.plogpEA0 + plogp(eB0));
+    const double d_exit_log = (o.plogpXA1 + plogp(xB1)) - (o.plogpXA0 + plogp(xB0));
+    const double d_flow_log = (o.plogpFA1 + plogp(fB1)) - (o.plogpFA0 + plogp(fB0));
+    return d_enter - d_enter_log - d_exit_log + d_flow_log;
+  }
 } // namespace
 
 void ColumnarTwoLevel::buildFromLeaves(const std::vector<InfoNode*>& leafNodes, bool undirected, unsigned long seed)
@@ -740,15 +787,24 @@ unsigned int ColumnarTwoLevel::moveLoop()
         }
       }
 
-      const OldSideTerms oldSide = m_recordedTeleport
+      // Hoist the old-module (A-side) terms once per unit visit — 6 of the 13
+      // plogp per candidate on the base path, 6 of 12 on the recorded-teleport
+      // path. Per-candidate math below is unchanged, so results stay bit-exact.
+      const bool tele = m_recordedTeleport;
+      const double tfu = tele ? m_lvl.teleFlow[u] : 0.0;
+      const double twu = tele ? m_lvl.teleWeight[u] : 0.0;
+      const OldSideTerms oldSide = tele
           ? OldSideTerms{}
           : hoistOldSide(curEnter, curExit, curFlow, m_mEnter[cMod], m_mExit[cMod], m_mFlow[cMod], deltaOld);
+      const TeleOldSideTerms teleOldSide = tele
+          ? hoistOldSideTele(curEnter, curExit, curFlow, tfu, twu, m_mEnter[cMod], m_mExit[cMod], m_mFlow[cMod], m_mTeleFlow[cMod], m_mTeleWeight[cMod], m_totalTeleFlow, deltaOld)
+          : TeleOldSideTerms{};
       for (int m : touched) {
         if (m == cMod)
           continue;
         const double deltaNew = dEnter[m] + dExit[m];
-        double dl = m_recordedTeleport
-            ? deltaCodelengthMovingNodeTele(curEnter, curExit, curFlow, m_lvl.teleFlow[u], m_lvl.teleWeight[u], cMod, m, deltaOld, deltaNew)
+        double dl = tele
+            ? deltaCodelengthMovingNodeTeleHoisted(m_enterFlow, m_enterFlow_log_enterFlow, curEnter, curExit, curFlow, tfu, twu, teleOldSide, m_mEnter[m], m_mExit[m], m_mFlow[m], m_mTeleFlow[m], m_mTeleWeight[m], m_totalTeleFlow, deltaNew)
             : deltaCodelengthMovingNodeHoisted(
                   m_enterFlow, m_enterFlow_log_enterFlow, curEnter, curExit, curFlow, oldSide, m_mEnter[m], m_mExit[m], m_mFlow[m], deltaOld, deltaNew);
         for (auto* c : corr)
@@ -795,7 +851,7 @@ unsigned int ColumnarTwoLevel::moveLoop()
         m_mExit[bestMod] -= deltaNew;
 
         if (m_recordedTeleport) {
-          const double tfu = m_lvl.teleFlow[u], twu = m_lvl.teleWeight[u];
+          // tfu/twu were hoisted at the top of this unit visit.
           m_mTeleFlow[cMod] -= tfu;
           m_mTeleWeight[cMod] -= twu;
           m_mTeleFlow[bestMod] += tfu;
@@ -1563,18 +1619,31 @@ double MetaCorrection::moveDelta(int leaf, int oldMod, int newMod) const
     return 0.0;
   const int q = m_leafCategory[leaf];
   const double w = m_leafWeight[leaf];
-  const double Fo = m_moduleFlow[oldMod], Fn = m_moduleFlow[newMod];
-  const double fo = moduleCategoryFlow(oldMod, q), fn = moduleCategoryFlow(newMod, q);
-  // term(m) = plogp(F_m) - sum_c plogp(f_c). Only F and category q change.
-  const double dOld = (plogp(Fo - w) - plogp(Fo)) - (plogp(fo - w) - plogp(fo));
-  const double dNew = (plogp(Fn + w) - plogp(Fn)) - (plogp(fn + w) - plogp(fn));
-  return m_metaDataRate * (dOld + dNew);
+  // term(m) = plogp(F_m) - sum_c plogp(f_c); only F_m and category q change.
+  // The old-module delta is identical for every candidate the move loop probes
+  // for the same leaf, so it (and plogp(w)) is computed once and cached; a
+  // candidate module lacking category q (the common case) needs no category
+  // logs — plogp(0) == 0 and plogp(0 + w) == plogp(w), cached alongside.
+  if (leaf != m_cacheUnit || oldMod != m_cacheOldMod) {
+    const double Fo = m_moduleFlow[oldMod];
+    const double fo = moduleCategoryFlow(oldMod, q);
+    m_cacheUnit = leaf;
+    m_cacheOldMod = oldMod;
+    m_cacheDOld = (plogp(Fo - w) - plogp(Fo)) - (plogp(fo - w) - plogp(fo));
+    m_cachePlogpW = plogp(w);
+  }
+  const double Fn = m_moduleFlow[newMod];
+  const double fn = moduleCategoryFlow(newMod, q);
+  const double dNew = (plogp(Fn + w) - plogp(Fn))
+      - (fn == 0.0 ? m_cachePlogpW : (plogp(fn + w) - plogp(fn)));
+  return m_metaDataRate * (m_cacheDOld + dNew);
 }
 
 void MetaCorrection::applyMove(int leaf, int oldMod, int newMod)
 {
   if (oldMod == newMod)
     return;
+  m_cacheUnit = -1; // module contents change: drop the per-leaf delta cache
   const int q = m_leafCategory[leaf];
   const double w = m_leafWeight[leaf];
   m_moduleFlow[oldMod] -= w;
@@ -1599,7 +1668,9 @@ double MetaCorrection::mergeDelta(int a, int b) const
   const auto& cb = m_moduleCatFlow[b];
   for (const auto& kv : ca) {
     const auto it = cb.find(kv.first);
-    const double bv = (it == cb.end()) ? 0.0 : it->second;
+    if (it == cb.end())
+      continue; // category only in A: plogp(a+0) - plogp(a) - plogp(0) == 0
+    const double bv = it->second;
     d -= plogp(kv.second + bv) - plogp(kv.second) - plogp(bv); // -sum_c plogp(f_c)
   }
   return m_metaDataRate * d;
@@ -1607,6 +1678,7 @@ double MetaCorrection::mergeDelta(int a, int b) const
 
 void MetaCorrection::applyMerge(int a, int b)
 {
+  m_cacheUnit = -1;
   m_moduleFlow[b] += m_moduleFlow[a];
   m_moduleFlow[a] = 0.0;
   auto& ca = m_moduleCatFlow[a];
