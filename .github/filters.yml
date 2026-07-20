@@ -14,11 +14,14 @@
 # nests deeper than one level, which paths-filter flattens reliably.
 
 # Makefile + build system + C++ sources: the compile inputs shared by every lane
-# that builds the core.
+# that builds the core. vendor/ headers (fmt, nlohmann_json) are compiled into
+# every one of those builds (-Ivendor/... in mk/common.mk, CMakeLists.txt, and
+# setup.py), so a vendored bump must fire the same lanes as a src/ change.
 _build_core: &build_core
   - "Makefile"
   - "mk/**"
   - "src/**"
+  - "vendor/**"
 
 # The CMake/native-build inputs shared by the native, python-core, and
 # javascript lanes (each of which builds the C++ core through _native-build.yml).
@@ -76,6 +79,7 @@ python-core:
 python-packaging:
   - "Makefile"
   - "mk/**"
+  - "MANIFEST.in"
   - "pyproject.toml"
   - "setup.py"
   - "scripts/build_config.py"
@@ -97,6 +101,7 @@ javascript:
   - *build_core
   - *cmake_core
   - ".github/workflows/ci.yml"
+  - "biome.json"
   - "package.json"
   - "package-lock.json"
   - "interfaces/js/**"
@@ -118,14 +123,19 @@ r:
   - "examples/R/**"
   - "scripts/generate_r_swig.py"
   - "scripts/stage_r_package.py"
+  # The R CMD check driver mk/r.mk's test-r target executes: weakening it must
+  # run the R lane it gates.
+  - "scripts/r_check.R"
   - ".github/actions/setup-swig/action.yml"
   - ".github/actions/setup-ccache/action.yml"
+  - ".github/actions/setup-python-build/action.yml"
   - ".github/workflows/ci.yml"
   - ".github/workflows/_r-package.yml"
   - ".github/filters.yml"
 
 docs:
   - *build_core
+  - ".github/workflows/ci.yml"
   - "README.rst"
   - "BUILD.md"
   - "pyproject.toml"
@@ -139,6 +149,7 @@ docs:
 
 docker:
   - *build_core
+  - ".github/workflows/ci.yml"
   - "docker/**"
   - "docker-compose.yml"
   - ".dockerignore"
@@ -159,3 +170,13 @@ notebooks:
   - ".github/workflows/ci.yml"
   - ".github/workflows/notebooks.yml"
   - ".github/filters.yml"
+
+# The CI surface with no build lane of its own: workflow definitions, composite
+# actions, and the hook config. Gates the pre-commit job (and with it
+# actionlint plus the YAML/hygiene hooks), so none of these can change with
+# zero checks running -- release.yml, fuzz.yml, report-cron-failure, and
+# .pre-commit-config.yaml itself previously matched no filter at all, and
+# ci-summary treats an all-skipped run as green.
+meta:
+  - ".github/**"
+  - ".pre-commit-config.yaml"

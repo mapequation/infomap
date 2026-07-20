@@ -37,6 +37,7 @@ jobs:
       docs: ${{ steps.filter.outputs.docs }}
       docker: ${{ steps.filter.outputs.docker }}
       notebooks: ${{ steps.filter.outputs.notebooks }}
+      meta: ${{ steps.filter.outputs.meta }}
 
     steps:
       - name: Checkout repository
@@ -52,8 +53,14 @@ jobs:
 
   pre-commit:
     needs: changes
+    # Gated on every filter output: pre-commit is the base hygiene/lint gate
+    # (actionlint, YAML checks, formatting), so any recognized change runs it.
+    # `meta` covers the CI surface with no build lane of its own -- release.yml,
+    # fuzz.yml, the composite actions, .pre-commit-config.yaml itself -- which
+    # previously matched no filter and merged with zero checks.
     if: >-
       github.event_name == 'workflow_dispatch'
+      || needs.changes.outputs.meta == 'true'
       || needs.changes.outputs.policy == 'true'
       || needs.changes.outputs.native == 'true'
       || needs.changes.outputs.python-core == 'true'
@@ -61,6 +68,9 @@ jobs:
       || needs.changes.outputs.python-swig == 'true'
       || needs.changes.outputs.javascript == 'true'
       || needs.changes.outputs.r == 'true'
+      || needs.changes.outputs.docs == 'true'
+      || needs.changes.outputs.docker == 'true'
+      || needs.changes.outputs.notebooks == 'true'
     name: pre-commit
     runs-on: ubuntu-24.04
     timeout-minutes: 15
