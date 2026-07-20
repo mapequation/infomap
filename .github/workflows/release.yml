@@ -50,8 +50,12 @@ jobs:
   # purely from GitHub setup-phase infra flakes (action-resolution "Internal
   # Server Error" in "Set up job"), which ci-auto-rerun.yml already treats as
   # non-defects -- the v2.15.0 release commit was red for exactly this reason.
-  # So we apply the same test ci-auto-rerun uses: block only on a real
-  # (non-setup) job failure, tolerate setup-phase flakes.
+  # So a 'failure' run passes iff every failed job is positively such a flake
+  # ("Set up job" failed and no other step did). Every other non-success
+  # conclusion (cancelled, timed_out, startup_failure, ...) fails closed: those
+  # jobs never ran to completion, so nothing vouches for this commit. In
+  # particular a run cancelled while *queued* reports zero jobs -- treating
+  # that as "no real failures" would publish a commit no test ever saw.
   verify-master-ci:
     name: Verify master CI passed
     needs: [validate-stable-tag]
@@ -98,15 +102,34 @@ jobs:
             exit 0
           fi
 
-          # Red run: accept it only if every failure is a setup-phase infra
-          # flake -- same definition as ci-auto-rerun.yml's "real failure" test.
+          # Anything that is not a plain failure never ran its jobs to
+          # completion on this commit. The common case is a queued master run
+          # evicted by a newer push (concurrency groups hold one pending run),
+          # which completes as 'cancelled' with an empty job list. Fail closed.
+          if [ "$conclusion" != "failure" ]; then
+            echo "::error::master CI run $run_id concluded '$conclusion', so its jobs never ran to completion on $sha. Re-run it (gh run rerun $run_id) and re-run this workflow once it is green." >&2
+            exit 1
+          fi
+
+          # Red run: accept it only if every failed job is positively a
+          # setup-phase infra flake. Deliberately stricter than
+          # ci-auto-rerun.yml's re-run trigger: a failed job with no failed
+          # step at all (e.g. killed by timeout-minutes, which records the
+          # running step as 'cancelled') is a real failure here, not a flake.
           jobs_json="$(gh api --paginate "repos/$GH_REPO/actions/runs/$run_id/jobs" \
             --jq '.jobs[]' | jq -s '.')"
+          if [ "$(jq 'length' <<<"$jobs_json")" -eq 0 ]; then
+            echo "::error::master CI run $run_id concluded '$conclusion' but reports no jobs; refusing to publish." >&2
+            exit 1
+          fi
           real_failures="$(jq -c '
             [ .[]
               | select(.name != "CI Summary")
               | select(.conclusion == "failure")
-              | select(any(.steps[]?; .conclusion == "failure" and .name != "Set up job"))
+              | select(
+                  (any(.steps[]?; .name == "Set up job" and .conclusion == "failure")
+                    and all(.steps[]?; .name == "Set up job" or .conclusion != "failure"))
+                  | not)
               | .name ]' <<<"$jobs_json")"
           if [ "$(jq 'length' <<<"$real_failures")" -eq 0 ]; then
             echo "::warning::master CI run $run_id concluded '$conclusion', but every failure was a GitHub setup-phase infra flake. Treating master as acceptable and proceeding."
