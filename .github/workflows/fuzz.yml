@@ -28,12 +28,37 @@ jobs:
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: Install clang
+        # libclang-rt-dev ships the libFuzzer/ASAN runtime archives the fuzz
+        # target links. It is only a Recommends of clang: runners install
+        # Recommends today, but that is not a contract, so name it explicitly.
+        # The unversioned metapackage tracks the image's default clang.
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang
+          sudo apt-get install -y clang libclang-rt-dev
+
+      # The evolved corpus compounds across the weekly runs instead of
+      # restarting from the fixture seeds every time. Restore latest, save
+      # under a per-run key.
+      - name: Restore fuzz corpus
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: build/fuzz/corpus
+          key: fuzz-corpus-${{ github.run_id }}
+          restore-keys: |
+            fuzz-corpus-
 
       - name: Build and run the intake fuzzer
         run: make fuzz FUZZ_SECONDS=300
+
+      # always(): a red run means the fuzzer found something -- exactly the
+      # corpus worth keeping. The hashFiles guard skips the save when the job
+      # failed before the corpus existed (e.g. a build failure).
+      - name: Save fuzz corpus
+        if: always() && hashFiles('build/fuzz/corpus/**') != ''
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: build/fuzz/corpus
+          key: fuzz-corpus-${{ github.run_id }}
 
       - name: Upload findings
         if: failure()
