@@ -237,11 +237,20 @@ public:
   // split-discovery interleave runs once on the best-of-N partition instead
   // of inside every trial. Placed after the whole trial loop so the gate does
   // not depend on trial completion order — deterministic in both serial and
-  // parallel-trial modes.
+  // parallel-trial modes. Also applies to hierarchical runs whose winning
+  // tree is two-level-shaped (a flat-first trial won, see #889): the repair
+  // is defined on a flat partition, so a deeper winner is left untouched.
   void maybeDeepRepairBest(Result& result)
   {
-    if (!m_infomap.columnarSearch || !m_infomap.twoLevel || m_infomap.haveHardPartition() || result.bestTree.empty())
+    if (!m_infomap.columnarSearch || m_infomap.haveHardPartition() || result.bestTree.empty())
       return;
+    if (!m_infomap.twoLevel) {
+      // Tree paths carry one slot per module level plus the trailing
+      // leaf-rank slot: a two-level (flat) tree has paths of length 2.
+      for (const auto& p : result.bestTree)
+        if (p.second.size() != 2)
+          return;
+    }
     auto timer = m_timing.scope("deep_repair_s");
     const double before = result.bestHierarchicalCodelength;
     if (!m_infomap.deepRepairColumnarBest(result.bestTree, result.bestHierarchicalCodelength))
@@ -432,6 +441,7 @@ private:
           const auto trialSeed = m_infomap.seedToRandomNumberGenerator + globalIndex;
           worker.seedToRandomNumberGenerator = trialSeed;
           worker.reseed(trialSeed);
+          worker.m_columnarFlatFirstTrial = (globalIndex % 2) == 1;
           int threadNumber = 0;
 #ifdef _OPENMP
           threadNumber = omp_get_thread_num();
@@ -711,6 +721,7 @@ private:
       const unsigned int globalSeed = static_cast<unsigned int>(m_infomap.seedToRandomNumberGenerator + (m_infomap.trialOffset + trialIndex));
       m_infomap.reseed(globalSeed);
     }
+    m_infomap.m_columnarFlatFirstTrial = ((m_infomap.trialOffset + trialIndex) % 2) == 1;
     m_infomap.removeModules();
     auto startDate = Date();
     Stopwatch timer(true);
@@ -1883,6 +1894,17 @@ void InfomapBase::columnarPartition()
   const unsigned long trialSeed = m_rand.randInt(0, std::numeric_limits<int>::max());
   ColumnarTwoLevel opt;
   setupColumnarOptimizer(opt, trialSeed);
+
+  // Strategy alternation (#889): even-numbered trials of the hierarchical
+  // searches run flat-first — the two-level optimum as the bottom, hierarchy
+  // grown around it — so best-of-N picks per network between the fine-blocks
+  // up-build and the flat-seeded build. Meaningless for -2 (it IS the flat
+  // search); the first trial keeps hierarchical-first, so -N1 is unchanged.
+  const bool flatFirst = m_columnarFlatFirstTrial && !twoLevel;
+  if (flatFirst) {
+    Console::detail(2, "columnar: flat-first trial (two-level optimum as the bottom)");
+    opt.setFlatFirstBottom(true);
+  }
 
   // With -2 (--two-level): the two-level search only, no hierarchy build.
   // With -F (--fast-hierarchical-solution, reused here as the columnar fast
