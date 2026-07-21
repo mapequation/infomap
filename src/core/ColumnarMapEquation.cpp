@@ -268,6 +268,18 @@ namespace {
   constexpr double kMinSingleImprovement = 1e-16;
   constexpr unsigned int kCoreLoopLimit = 10;
 
+  // Flat-first trials (#889): the cheap flat probe (full aggregation, no leaf
+  // fine-tune) must land within this relative margin of the fine-blocks
+  // up-build's post-build codelength for the trial to complete the expensive
+  // leaf-level flat pipeline. Measured across the benchmark set, every network
+  // where the flat search truly wins probes at est/build <= 1.000 (air30k
+  // 0.84, malaria 0.88, jazz 0.996, lazega 0.995) and every true flat-loser
+  // probes at >= 1.008 (science2001 1.008, netsci 1.034, powergrid 1.10,
+  // web-NotreDame 1.18) — the post-build refinement gains more than the flat
+  // completion does, so a generous margin only buys false positives. 0.5%
+  // sits in the middle of the observed gap.
+  constexpr double kFlatProbeMargin = 0.005;
+
   // Exact port of MapEquation::getDeltaCodelengthOnMovingNode for the base
   // objective: change in codelength from moving a unit out of its old module
   // (aggregates old*) into a candidate module (aggregates new*). deltaOld/deltaNew
@@ -1234,6 +1246,38 @@ double ColumnarTwoLevel::optimizeTwoLevelStack()
   // fine-tune is not repeated). The subdivision operator is NOT part of the
   // per-trial pipeline — it is the expensive discovery step, spent once on
   // the winning trial (deepRepairTwoLevelStack).
+  for (int round = 0; round < 100 && L < beforeMerge - kMinImprovement; ++round) {
+    const bool tuned = retuneLeavesWithinModules(L);
+    beforeMerge = L;
+    coarsenModules(L, 1000);
+    if (!tuned && L >= beforeMerge - kMinImprovement)
+      break;
+  }
+  return L;
+}
+
+double ColumnarTwoLevel::completeFlatFromAggregation(std::vector<int> aggTop, int aggK)
+{
+  // Complete the flat two-level pipeline from the probe's converged
+  // aggregation partition (optimizeTwoLevel(0, false)): materialize the
+  // stack, run the deferred leaf fine-tune to convergence, then the same
+  // merge <-> retune interleave as optimizeTwoLevelStack. This is the
+  // expensive leaf-level half the probe skipped; a flat-first trial pays it
+  // only when the probe says the flat basin is competitive.
+  m_leafTop = std::move(aggTop);
+  m_numTopModules = static_cast<unsigned int>(aggK);
+  m_hierLevels.clear();
+  m_hierAssign.clear();
+  m_hierLevels.push_back(m_leaf0);
+  m_hierAssign.push_back(m_leafTop);
+  m_hierLevels.push_back(aggregateLevel(m_leaf0, m_leafTop, aggK, m_undirected));
+
+  double L = hierarchicalCodelengthFromStack();
+  while (retuneLeavesWithinModules(L)) {
+    pollInterrupt();
+  }
+  double beforeMerge = L;
+  coarsenModules(L, 1000);
   for (int round = 0; round < 100 && L < beforeMerge - kMinImprovement; ++round) {
     const bool tuned = retuneLeavesWithinModules(L);
     beforeMerge = L;
@@ -2624,7 +2668,50 @@ void ColumnarTwoLevel::coarsenModules(double& L, int maxSweeps)
 
 double ColumnarTwoLevel::optimizeFlexible(unsigned int bottomBlockLimit, unsigned int sweepLimit)
 {
-  double L = optimizeHierarchical(bottomBlockLimit);
+  double flatL = std::numeric_limits<double>::infinity();
+  std::vector<Level> flatLevels;
+  std::vector<std::vector<int>> flatAssign;
+  double L;
+  if (m_flatFirstBottom) {
+    // Flat-first trial (see setFlatFirstBottom): probe the flat basin with the
+    // full aggregation only, build from the fine-blocks bottom of the same
+    // pass-1 as usual, and complete the expensive leaf-level flat pipeline
+    // only when the probe is competitive — then keep the better build and the
+    // flat stack as a gated candidate (below).
+    const double flatEst = optimizeTwoLevel(0, false);
+    std::vector<int> flatAggTop = m_leafTop;
+    const int flatAggK = static_cast<int>(m_numTopModules);
+    m_leafTop = m_leafBlocks;
+    int fineK = 0;
+    for (int b : m_leafBlocks)
+      if (b >= fineK)
+        fineK = b + 1;
+    m_numTopModules = static_cast<unsigned int>(fineK);
+    L = buildHierarchyFromBottom(fineK);
+    const bool complete = flatEst < L * (1.0 + kFlatProbeMargin);
+#ifdef COLUMNAR_DEBUG
+    std::fprintf(stderr, "[flat-first -F] est=%.6f build=%.6f ratio=%.4f %s\n", flatEst, L, flatEst / L, complete ? "complete" : "skip");
+#endif
+    if (complete) {
+      std::vector<Level> fineLevels = m_hierLevels;
+      std::vector<std::vector<int>> fineAssign = m_hierAssign;
+      const unsigned int fineTop = m_numTopModules;
+      flatL = completeFlatFromAggregation(std::move(flatAggTop), flatAggK);
+      flatLevels = m_hierLevels;
+      flatAssign = m_hierAssign;
+      m_leafTop = m_hierAssign[0];
+      const double buildFlat = buildHierarchyFromBottom(flatLevels[1].n);
+      if (buildFlat < L - kMinImprovement) {
+        L = buildFlat;
+      } else {
+        m_hierLevels = std::move(fineLevels);
+        m_hierAssign = std::move(fineAssign);
+        m_numTopModules = fineTop;
+      }
+    }
+  } else {
+    L = optimizeHierarchical(bottomBlockLimit);
+  }
   // A single bottom re-partition within grandparents. refineBottomWithinParents
   // keeps every leaf inside its level-2 grandparent, so the leaf-set per
   // grandparent is invariant; re-running it re-partitions the same leaf-sets
@@ -2643,6 +2730,14 @@ double ColumnarTwoLevel::optimizeFlexible(unsigned int bottomBlockLimit, unsigne
   // +14%). With it, -F matches converge on those objectives at a fraction of the
   // cost, and stays unchanged on base networks.
   coarsenModules(L, sweepLimit > 0 ? static_cast<int>(sweepLimit) : 1000);
+  // Flat-first trial: the super-build may not pay for itself — keep the flat
+  // two-level stack when it beats the refined hierarchy.
+  if (flatL < L - kMinImprovement) {
+    m_hierLevels = std::move(flatLevels);
+    m_hierAssign = std::move(flatAssign);
+    m_numTopModules = static_cast<unsigned int>(m_hierLevels.back().n);
+    L = flatL;
+  }
   return L;
 }
 
@@ -3197,7 +3292,27 @@ double ColumnarTwoLevel::optimizeColumnar(unsigned int bottomBlockLimit, unsigne
   // bit-identical result.
   static const unsigned int kSuperAggSettings[] = { 0u, 1u };
 
-  optimizeTwoLevel(bottomBlockLimit, bottomBlockLimit == 0);
+  double flatEst = std::numeric_limits<double>::infinity();
+  std::vector<int> flatAggTop;
+  int flatAggK = 0;
+  if (m_flatFirstBottom) {
+    // Flat-first trial (see setFlatFirstBottom): probe the flat basin with the
+    // full aggregation only (module-level cost, no leaf fine-tune), and keep
+    // the fine-blocks bottom from the same pass-1 (m_leafBlocks) for the
+    // regular screen below — no second leaf sweep. The expensive leaf-level
+    // flat pipeline runs after the screen, only when the probe is competitive.
+    flatEst = optimizeTwoLevel(0, false);
+    flatAggTop = m_leafTop;
+    flatAggK = static_cast<int>(m_numTopModules);
+    m_leafTop = m_leafBlocks;
+    int fineK = 0;
+    for (int b : m_leafBlocks)
+      if (b >= fineK)
+        fineK = b + 1;
+    m_numTopModules = static_cast<unsigned int>(fineK);
+  } else {
+    optimizeTwoLevel(bottomBlockLimit, bottomBlockLimit == 0);
+  }
   const int bottomK = static_cast<int>(m_numTopModules);
 
   double bestBuildL = std::numeric_limits<double>::infinity();
@@ -3222,12 +3337,52 @@ double ColumnarTwoLevel::optimizeColumnar(unsigned int bottomBlockLimit, unsigne
     }
   }
 
+  // Flat-first trial: complete the flat pipeline when the probe lands within
+  // the margin, keep the flat stack as a candidate, and screen the up-builds
+  // grown from the flat bottom as additional strategies.
+  double flatL = std::numeric_limits<double>::infinity();
+  std::vector<Level> flatLevels;
+  std::vector<std::vector<int>> flatAssign;
+  if (m_flatFirstBottom) {
+    const bool complete = flatEst < bestBuildL * (1.0 + kFlatProbeMargin);
+#ifdef COLUMNAR_DEBUG
+    std::fprintf(stderr, "[flat-first] est=%.6f build=%.6f ratio=%.4f %s\n", flatEst, bestBuildL, flatEst / bestBuildL, complete ? "complete" : "skip");
+#endif
+    if (complete) {
+      flatL = completeFlatFromAggregation(std::move(flatAggTop), flatAggK);
+      flatLevels = m_hierLevels;
+      flatAssign = m_hierAssign;
+      m_leafTop = m_hierAssign[0];
+      const int flatK = m_hierLevels[1].n;
+      for (unsigned int superAgg : kSuperAggSettings) {
+        pollInterrupt();
+        m_superAggLimit = superAgg;
+        const double buildL = buildHierarchyFromBottom(flatK);
+        if (buildL < bestBuildL - kMinImprovement) {
+          bestBuildL = buildL;
+          bestLevels = m_hierLevels;
+          bestAssign = m_hierAssign;
+          bestTop = m_numTopModules;
+          bestSuperAgg = superAgg;
+        }
+      }
+    }
+  }
+
   // Restore the winning build and refine only it.
   m_hierLevels = std::move(bestLevels);
   m_hierAssign = std::move(bestAssign);
   m_numTopModules = bestTop;
   m_superAggLimit = bestSuperAgg;
-  const double bestL = refineHierarchy(bestBuildL, sweepLimit);
+  double bestL = refineHierarchy(bestBuildL, sweepLimit);
+  // Flat-first trial: the super-build may not pay for itself — keep the flat
+  // two-level stack when it beats the refined hierarchy.
+  if (flatL < bestL - kMinImprovement) {
+    m_hierLevels = std::move(flatLevels);
+    m_hierAssign = std::move(flatAssign);
+    m_numTopModules = static_cast<unsigned int>(m_hierLevels.back().n);
+    bestL = flatL;
+  }
 #ifdef COLUMNAR_DEBUG
   {
     const double corr = objectiveCorrection();

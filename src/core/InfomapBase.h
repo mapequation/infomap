@@ -707,6 +707,14 @@ protected:
   bool m_isMain = true;
   unsigned int m_subLevel = 0;
 
+  // Flat-first strategy alternation (#889): even-numbered trials of the
+  // hierarchical columnar searches build the hierarchy from the full two-level
+  // optimum instead of the fine building blocks (ColumnarTwoLevel::
+  // setFlatFirstBottom). Set per trial by RunSession from the global trial
+  // index (deterministic and identical across serial and parallel trial
+  // modes); the first trial keeps hierarchical-first, so -N1 is unchanged.
+  bool m_columnarFlatFirstTrial = false;
+
   double m_oneLevelCodelength = 0.0;
   unsigned int m_numNonTrivialTopModules = 0;
   unsigned int m_tuneIterationIndex = 0;

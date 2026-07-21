@@ -252,6 +252,13 @@ public:
   // correction-driven module merges. Returns whether it improved (updates L).
   bool retuneLeavesWithinModules(double& L);
 
+  // Complete the flat two-level pipeline from a converged aggregation
+  // partition (the flat-first probe's output, optimizeTwoLevel(0, false)):
+  // materialize the stack, run the deferred leaf fine-tune to convergence,
+  // then the merge <-> retune interleave of optimizeTwoLevelStack. Returns
+  // the flat codelength; leaves the flat stack in m_hierLevels/m_hierAssign.
+  double completeFlatFromAggregation(std::vector<int> aggTop, int aggK);
+
   // Deep repair of a two-level stack (#889): the split operator interleaved
   // with the seeded leaf fine-tune and the merge until the trio stops
   // improving. This is the expensive discovery phase — the engine wiring
@@ -315,6 +322,17 @@ public:
   // materialize into an InfoNode tree. sweepLimit caps the refinement sweeps
   // (0 = until convergence; wired to --tune-iteration-limit / -T).
   double optimizeColumnar(unsigned int bottomBlockLimit = 1, unsigned int sweepLimit = 0);
+
+  // Flat-first trial (#889, hierarchical half): the hierarchical searches build
+  // the bottom of the hierarchy with the full two-level pipeline
+  // (optimizeTwoLevelStack) instead of the fine building blocks, and keep the
+  // flat stack itself as a gated candidate against the built + refined
+  // hierarchy. The enter-flow up-build cannot reach flat-optimum partitions on
+  // networks whose optimum is (near-)flat with many modules; seeding the bottom
+  // with the flat optimum imports the two-level wins. The engine alternates
+  // this across trials (even-numbered trials flat-first, so -N1 is unchanged)
+  // and best-of-N picks per network between the two search directions.
+  void setFlatFirstBottom(bool on) { m_flatFirstBottom = on; }
 
   // Materialize the best hierarchy (m_hier*) as one module-path per leaf, in the
   // shape InfomapBase::initTree expects: coarsest-first (path[0] = top module),
@@ -474,6 +492,7 @@ private:
   unsigned long m_seed = 123;
   double m_exitNetworkFlow = 0.0; // flow leaving this (sub-)network; 0 if closed
   unsigned int m_superAggLimit = 0; // >0: conservative up-build (passes/super-level)
+  bool m_flatFirstBottom = false; // build the bottom with the full two-level pipeline (see setFlatFirstBottom)
   bool m_deferTerms = false; // deterministic placement: moveUnit skips running-term (plogp) maintenance; rebuildRunningTerms() restores them
   bool m_leafMoveLoop = false; // true while moveLoop units are leaves (corrections active)
   bool m_moduleCorrActive = false; // true while module-move-capable corrections participate in a module-level move loop
