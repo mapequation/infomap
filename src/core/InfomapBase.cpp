@@ -170,6 +170,11 @@ public:
     unsigned int bestTrialIndex = 0;
     unsigned int threadsUsed = 1;
     bool bestTreeNeedsRestore = false;
+    // The deep repair already materialized + wrote the best tree on the main
+    // instance (with the columnar core's authoritative codelength); the
+    // restore pass would re-initTree and overwrite that codelength with the
+    // reconstructed tree's value.
+    bool bestTreeMaterialized = false;
   };
 
   RunSession(InfomapBase& infomap, Network& network, TimingRegistry& timing) : m_infomap(infomap), m_network(network), m_timing(timing) {}
@@ -223,8 +228,45 @@ public:
       auto timer = m_timing.scope("trial_optimize_s");
       result = runTrials();
     }
+    maybeDeepRepairBest(result);
     result.threadsUsed = m_threadsUsed;
     return result;
+  }
+
+  // Deep repair of the winning -2 columnar trial (#889): the expensive
+  // split-discovery interleave runs once on the best-of-N partition instead
+  // of inside every trial. Placed after the whole trial loop so the gate does
+  // not depend on trial completion order — deterministic in both serial and
+  // parallel-trial modes.
+  void maybeDeepRepairBest(Result& result)
+  {
+    if (!m_infomap.columnarSearch || !m_infomap.twoLevel || m_infomap.haveHardPartition() || result.bestTree.empty())
+      return;
+    auto timer = m_timing.scope("deep_repair_s");
+    const double before = result.bestHierarchicalCodelength;
+    if (!m_infomap.deepRepairColumnarBest(result.bestTree, result.bestHierarchicalCodelength))
+      return;
+    Console::detail(0, "columnar: deep repair of the best trial improved {} -> {}",
+                    io::toPrecision(before), io::toPrecision(result.bestHierarchicalCodelength));
+    // Materialize the repaired tree and refresh the per-level statistics the
+    // summary prints. initTree recomputes a materialized codelength on the
+    // reconstructed tree; the columnar core's value is authoritative (see
+    // columnarPartition), so override it the same way.
+    {
+      Log::ScopedMute mute;
+      m_infomap.initTree(result.bestTree);
+    }
+    m_infomap.m_hierarchicalCodelength = result.bestHierarchicalCodelength;
+    result.bestSolutionStatistics.str("");
+    result.bestNumLevels = printPerLevelCodelength(m_infomap.root(), result.bestSolutionStatistics);
+    // The tree in m_infomap is current; no restore pass needed even when the
+    // best trial was not the last executed.
+    result.bestTreeNeedsRestore = false;
+    result.bestTreeMaterialized = true;
+    if (!m_infomap.noFinalOutput) {
+      auto outputTimer = m_timing.scope("output_s");
+      m_infomap.writeResult();
+    }
   }
 
   void printSummary(const Result& result)
@@ -484,6 +526,8 @@ private:
 
   void restoreBestResult(const Result& result)
   {
+    if (result.bestTreeMaterialized)
+      return; // deep repair already restored + wrote the (repaired) best tree
     // Compare against the actual executed trial count (m_trialsRun), not the cap
     // (m_numTrials), so --converge does not force a redundant restore + rewrite
     // when the best trial was the last one executed.
@@ -1737,17 +1781,8 @@ std::vector<unsigned int> InfomapBase::noiseTopModules() const
 // Run: *
 // ===================================================
 
-void InfomapBase::columnarPartition()
+void InfomapBase::setupColumnarOptimizer(ColumnarTwoLevel& opt, unsigned long seed)
 {
-  Console::detail(1, "columnar partition (--columnar)");
-
-  // Optimize on the columnar SoA core: fine building blocks -> enter-flow
-  // up-build -> up/down convergence sweep, best of a few up-merge settings.
-  // --tune-iteration-limit caps the tuning sweeps (0 = until convergence).
-  // Draw the engine seed from m_rand, which runTrial reseeds per trial, so
-  // multiple trials (-N) explore different move orders instead of repeating.
-  const unsigned long trialSeed = m_rand.randInt(0, std::numeric_limits<int>::max());
-  ColumnarTwoLevel opt;
   opt.setInterruptCallback([this] { pollInterrupt(); });
   if (m_columnarNativeInput && !haveHardPartition()) {
     // Native leaf SoA built from the network (see buildColumnarLeafInput),
@@ -1771,9 +1806,9 @@ void InfomapBase::columnarPartition()
     double totalTele = 0.0;
     for (double tf : m_colTeleFlow)
       totalTele += tf;
-    opt.buildFromLevel(leaf, isUndirectedClustering(), trialSeed, 0.0, recordedTeleportation, totalTele);
+    opt.buildFromLevel(leaf, isUndirectedClustering(), seed, 0.0, recordedTeleportation, totalTele);
   } else {
-    opt.buildFromLeaves(m_leafNodes, isUndirectedClustering(), trialSeed);
+    opt.buildFromLeaves(m_leafNodes, isUndirectedClustering(), seed);
   }
   opt.setRecordedTeleportation(recordedTeleportation);
   // The columnar interior refinement stops at a diminishing-returns knee; its
@@ -1792,6 +1827,62 @@ void InfomapBase::columnarPartition()
   if (relTuneSetExplicitly || minimumRelativeTuneIterationImprovement != kOoRelTuneDefault)
     opt.setMinRelativeTuneImprovement(minimumRelativeTuneIterationImprovement);
   addColumnarCorrections(opt);
+}
+
+bool InfomapBase::deepRepairColumnarBest(NodePaths& tree, double& codelength)
+{
+  // Deep repair of the winning -2 columnar trial (#889): seed a two-level
+  // stack from the best tree and run the expensive split-discovery
+  // interleave ONCE, keeping the result only when it lowers the codelength.
+  // Exploration stays cheap per trial; the discovery cost is paid once per
+  // run and amortizes with -N. Runs after the trial loop with a seed derived
+  // from the configured seed, so results are deterministic and identical in
+  // serial and parallel-trial modes.
+  ColumnarTwoLevel opt;
+  // Golden-ratio offset: a repair seed decoupled from every per-trial seed.
+  setupColumnarOptimizer(opt, seedToRandomNumberGenerator + 0x9e3779b9UL);
+  if (!opt.hasModuleMoveCorrections())
+    return false; // base objective: the split operator is a no-op
+
+  // Per-leaf top-module paths from the best tree (paths are coarsest-first
+  // with a trailing leaf-rank slot; a -2 tree has exactly one module level).
+  std::unordered_map<unsigned int, std::size_t> leafOfState;
+  leafOfState.reserve(m_leafNodes.size());
+  for (std::size_t i = 0; i < m_leafNodes.size(); ++i)
+    leafOfState.emplace(m_leafNodes[i]->stateId, i);
+  std::vector<std::vector<int>> paths(m_leafNodes.size());
+  for (const auto& nodePath : tree) {
+    auto it = leafOfState.find(nodePath.first);
+    if (it == leafOfState.end() || nodePath.second.empty())
+      return false; // tree does not match the leaf network: leave it alone
+    paths[it->second] = { static_cast<int>(nodePath.second.front()) };
+  }
+  for (const auto& p : paths)
+    if (p.empty())
+      return false; // leaf missing from the tree
+
+  if (!opt.seedHierarchyFromLeafPaths(paths))
+    return false;
+  const double repairedL = opt.deepRepairTwoLevelStack();
+  if (repairedL >= codelength - 1e-10)
+    return false;
+  tree = opt.toNodePaths(m_leafNodes);
+  codelength = repairedL;
+  return true;
+}
+
+void InfomapBase::columnarPartition()
+{
+  Console::detail(1, "columnar partition (--columnar)");
+
+  // Optimize on the columnar SoA core: fine building blocks -> enter-flow
+  // up-build -> up/down convergence sweep, best of a few up-merge settings.
+  // --tune-iteration-limit caps the tuning sweeps (0 = until convergence).
+  // Draw the engine seed from m_rand, which runTrial reseeds per trial, so
+  // multiple trials (-N) explore different move orders instead of repeating.
+  const unsigned long trialSeed = m_rand.randInt(0, std::numeric_limits<int>::max());
+  ColumnarTwoLevel opt;
+  setupColumnarOptimizer(opt, trialSeed);
 
   // With -2 (--two-level): the two-level search only, no hierarchy build.
   // With -F (--fast-hierarchical-solution, reused here as the columnar fast

@@ -473,6 +473,17 @@ private:
   // SoA core and materialize the result into the InfoNode tree via initTree.
   void columnarPartition();
 
+  // Build + configure a columnar optimizer (native SoA or leaf-tree input,
+  // recorded teleportation, tune knee, corrections). Shared by
+  // columnarPartition() and deepRepairColumnarBest().
+  void setupColumnarOptimizer(ColumnarTwoLevel& opt, unsigned long seed);
+
+  // Deep repair of the winning -2 columnar trial (#889): seed a two-level
+  // stack from `tree`, run the split-discovery interleave once, and rewrite
+  // tree/codelength when it improves. Returns whether it improved. A no-op
+  // for the base objective (no module-move-capable correction).
+  bool deepRepairColumnarBest(NodePaths& tree, double& codelength);
+
   // --- Native columnar leaf input (I/O migration) ---
   // Build the columnar leaf SoA (flow, enter/exit, teleport, out+in CSR) directly
   // from the StateNetwork in the init phase (before the CLI releases the links),

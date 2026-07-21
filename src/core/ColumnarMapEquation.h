@@ -14,6 +14,7 @@
 #include <vector>
 #include <cstddef>
 #include <cstdlib>
+#include <map>
 #include <memory>
 #include <unordered_map>
 #include <unordered_set>
@@ -251,6 +252,25 @@ public:
   // correction-driven module merges. Returns whether it improved (updates L).
   bool retuneLeavesWithinModules(double& L);
 
+  // Deep repair of a two-level stack (#889): the split operator interleaved
+  // with the seeded leaf fine-tune and the merge until the trio stops
+  // improving. This is the expensive discovery phase — the engine wiring
+  // runs it ONCE on the winning trial (seeded from its tree), not inside
+  // every trial. Every step is gated on the true stack codelength, so the
+  // result is never worse than the seed. Returns the repaired codelength.
+  double deepRepairTwoLevelStack();
+
+  // Whether any attached correction can participate in module-level moves
+  // (Mem/Meta) — the gate for the aggregation trajectory repair and the
+  // split operator; false on base networks.
+  bool hasModuleMoveCorrections() const
+  {
+    for (const auto& c : m_corrections)
+      if (c->participatesInMoveLoop() && c->participatesInModuleMoves())
+        return true;
+    return false;
+  }
+
   // Run the two-level optimize, then grow the hierarchy upward with the
   // enter-flow super-search (M1c). bottomBlockLimit > 0 seeds a finer bottom
   // level. Returns the hierarchical codelength of the multi-level partition.
@@ -379,6 +399,31 @@ private:
   // problem, replacing the bottom level. Returns true if any module changed.
   bool refineBottomWithinParents();
 
+  // In-context objective-aware two-level of one parent's leaves S (the
+  // parent's exit is the sub-network exit; corrections sliced to S): returns
+  // the number of sub-modules, per-leaf local assignment in localAssign.
+  // `loc` is an all -1 global-leaf scratch vector, restored before returning.
+  // Shared by refineBottomWithinParents (fineTune = true) and splitTopModules
+  // (fineTune = false: piece proposals need community granularity, not final
+  // polish — the gated recombination and interleaved leaf re-tune do that).
+  int subClusterLeaves(const std::vector<int>& S, double parentExit, std::vector<int>& loc, std::vector<int>& localAssign, bool fineTune = true);
+
+  // Split operator (#889), the subdivision half of a coarse-tune: subdivide
+  // the top modules of a two-level stack into pieces — the retained pass-1
+  // building blocks, the last fresh from-singletons derivation projected onto
+  // the current partition, or (when the cheap sources don't improve and
+  // allowSingletons is set) a fresh from-singletons sub-clustering within
+  // each module (community granularity, so extracting a whole community from
+  // an over-merged module is a single gated move) — and re-sort the pieces
+  // with a seeded module-level move loop (module corrections active), gated
+  // on the true stack codelength. A no-op without module-move-capable
+  // corrections. Fresh derivations are memoized by leaf set and stay enabled
+  // only while they keep improving; callers pass allowSingletons = false
+  // until another operator has changed the partition since the last
+  // rejection. Returns 0 = no improvement, 1 = improved via block pieces,
+  // 2 = improved via singles pieces (updates L on improvement).
+  int splitTopModules(double& L, bool allowSingletons);
+
   // Generalized within-grandparent refine (M3): re-partition layer-k units into
   // new layer-(k+1) modules, each constrained to stay within its layer-(k+2)
   // grandparent (the grandparent's exit is the sub-network exitNetworkFlow).
@@ -465,6 +510,13 @@ private:
   int m_nLeaves = 0;
   std::vector<double> m_leafFlow;
   std::vector<int> m_leafTop; // leaf -> current top-unit id
+  std::vector<int> m_leafBlocks; // leaf -> pass-1 building block (see splitTopModules)
+  std::vector<int> m_lastSinglesPieces; // leaf -> piece of the last fresh from-singletons derivation
+  bool m_freshSinglesProductive = true; // last fresh derivation's recombine improved (gates further fresh derives)
+  // Sub-cluster memo for splitTopModules' from-singletons pieces: sorted leaf
+  // set -> (K, per-leaf local assignment). A module's sub-clustering depends
+  // only on its own leaf set, so results survive across interleave rounds.
+  std::map<std::vector<int>, std::pair<int, std::vector<int>>> m_subClusterCache;
   double m_leafNodeFlow_log_nodeFlow = 0.0; // over leaves, constant
   unsigned int m_numTopModules = 0;
 

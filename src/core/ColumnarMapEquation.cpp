@@ -1050,6 +1050,12 @@ double ColumnarTwoLevel::optimizeTwoLevel(unsigned int maxAggPasses, bool doFine
     bestTop = std::move(newTop);
     bestK = static_cast<unsigned int>(c);
   }
+  // Retain the pass-1 partition: the finest building blocks the aggregation
+  // consumes. splitTopModules re-sorts them with hindsight of the final
+  // coarse structure (the subdivision half of a coarse-tune, #889). Pass 1
+  // is the plain leaf loop, so the blocks are identical for every
+  // aggregation strategy.
+  m_leafBlocks = bestTop;
   const bool aggregate = bestK > 1 && static_cast<int>(bestK) != m_lvl.n
       && !(maxAggPasses != 0 && pass >= maxAggPasses);
 
@@ -1076,9 +1082,20 @@ double ColumnarTwoLevel::optimizeTwoLevel(unsigned int maxAggPasses, bool doFine
     m_moduleCorrActive = !unitCorr.empty();
     for (auto* cp : unitCorr)
       cp->setUnits(m_leafTop, m_lvl.n);
+
+    // Retain the aggregation trajectory (unit level + leaf composition per
+    // pass) for the descending repair below. Only with module-move-capable
+    // corrections: the repair is theirs, and base networks pay nothing.
+    std::vector<Level> trajLevels;
+    std::vector<std::vector<int>> trajComp;
+
     while (true) {
       pollInterrupt();
       ++pass;
+      if (m_moduleCorrActive) {
+        trajLevels.push_back(m_lvl);
+        trajComp.push_back(m_leafTop);
+      }
       std::vector<int> newTop;
       int c = 0;
       const double L = runPass(newTop, c);
@@ -1097,6 +1114,55 @@ double ColumnarTwoLevel::optimizeTwoLevel(unsigned int maxAggPasses, bool doFine
       for (auto* cp : unitCorr)
         cp->setUnits(m_leafTop, m_lvl.n);
     }
+
+    // Descending in-trajectory repair (#889): each consolidation makes the
+    // previous pass's units atomic, so a merge the objective-aware
+    // aggregation overshot cannot be undone by later passes — but at this
+    // point the retained trajectory levels still nest EXACTLY inside the
+    // converged partition (no fine-tune has moved leaves yet). Re-sort each
+    // retained granularity (coarse to fine, skipping the last = the final
+    // pass's own fixpoint) within the current best partition with a seeded
+    // move loop: extracting a whole overshot sub-community is a single
+    // downhill move at its own granularity. Everything here — levels,
+    // compositions, per-unit correction aggregates — was already computed by
+    // the trajectory; the repair costs one seeded sweep per level over
+    // strictly shrinking unit counts. Keep-best on the exact augmented
+    // objective, same scoring as runPass. Accepted sweeps regroup whole
+    // units, so the nesting invariant survives down the ladder.
+    for (int k = static_cast<int>(trajLevels.size()) - 2; k >= 0; --k) {
+      pollInterrupt();
+      const std::vector<int>& comp = trajComp[k];
+      const int nU = trajLevels[k].n;
+      std::vector<int> unitParent(nU, -1);
+      for (int i = 0; i < m_nLeaves; ++i)
+        unitParent[comp[i]] = bestTop[i];
+      m_lvl = trajLevels[k];
+      for (auto* cp : unitCorr)
+        cp->setUnits(comp, nU);
+      m_seededPhase = true;
+      seedAssignment(unitParent);
+      moveLoop();
+      std::vector<int> remap(nU, -1);
+      int c = 0;
+      for (int u = 0; u < nU; ++u)
+        if (remap[m_module[u]] == -1)
+          remap[m_module[u]] = c++;
+      std::vector<int> newTop(m_nLeaves);
+      for (int i = 0; i < m_nLeaves; ++i)
+        newTop[i] = remap[m_module[comp[i]]];
+      double corrSum = m_lastCorrection;
+      for (auto& cp : m_corrections)
+        if (cp->participatesInMoveLoop() && !(m_moduleCorrActive && cp->participatesInModuleMoves()))
+          corrSum += cp->initMoveLoop(newTop, c);
+      const double L = m_codelength + corrSum;
+      if (L < bestCodelength - kMinImprovement) {
+        bestTop = std::move(newTop);
+        bestCodelength = L;
+        bestK = static_cast<unsigned int>(c);
+      }
+    }
+    m_seededPhase = false;
+
     m_moduleCorrActive = false;
     for (auto* cp : unitCorr)
       cp->resetUnitsToLeaves();
@@ -1161,11 +1227,13 @@ double ColumnarTwoLevel::optimizeTwoLevelStack()
   // Interleave the merge with a seeded leaf fine-tune: a correction-driven
   // merge reshapes the modules far from where the leaf move loop last saw
   // them (air30k: K 1344 -> 328), so re-tuning the leaves inside the merged
-  // structure recovers most of the remaining gap to the OO -2 optimum
-  // (air30k best-of-10: 5.605 -> 5.460 vs OO 5.394), and the tuned partition
-  // can enable further merges. Alternate until the pair stops improving. The
-  // base objective never enters (its merge is a no-op, so the loop condition
-  // fails immediately and the already-converged fine-tune is not repeated).
+  // structure recovers most of the remaining gap to the OO -2 optimum, and
+  // the tuned partition can enable further merges. Alternate until the pair
+  // stops improving. The base objective never enters (its merge is a no-op,
+  // so the loop condition fails immediately and the already-converged
+  // fine-tune is not repeated). The subdivision operator is NOT part of the
+  // per-trial pipeline — it is the expensive discovery step, spent once on
+  // the winning trial (deepRepairTwoLevelStack).
   for (int round = 0; round < 100 && L < beforeMerge - kMinImprovement; ++round) {
     const bool tuned = retuneLeavesWithinModules(L);
     beforeMerge = L;
@@ -1174,6 +1242,203 @@ double ColumnarTwoLevel::optimizeTwoLevelStack()
       break;
   }
   return L;
+}
+
+double ColumnarTwoLevel::deepRepairTwoLevelStack()
+{
+  // Exploitation phase (#889), run ONCE on the winning trial's partition
+  // (seeded via seedHierarchyFromLeafPaths) instead of inside every trial:
+  // the from-singletons split is the expensive discovery step, and spending
+  // it on partitions that lose the best-of-N anyway is wasted search. Its
+  // cost is one repair per run, amortizing with -N. Interleave the split
+  // with the seeded leaf fine-tune and the merge until the trio stops
+  // improving; every step is gated on the true stack codelength, so the
+  // result is never worse than the seed.
+  m_subClusterCache.clear();
+  m_lastSinglesPieces.clear();
+  m_freshSinglesProductive = true;
+  double L = hierarchicalCodelengthFromStack();
+  double before = L;
+  bool allowSingletons = true;
+  int split = splitTopModules(L, allowSingletons);
+  allowSingletons = split != 0;
+  for (int round = 0; round < 100; ++round) {
+    const bool tuned = retuneLeavesWithinModules(L);
+    before = L;
+    coarsenModules(L, 1000);
+    if (tuned || L < before - kMinImprovement)
+      allowSingletons = true;
+    split = splitTopModules(L, allowSingletons);
+    allowSingletons = split != 0;
+    if (!tuned && split == 0 && L >= before - kMinImprovement)
+      break;
+  }
+  return L;
+}
+
+int ColumnarTwoLevel::splitTopModules(double& L, bool allowSingletons)
+{
+  // Merge overshoot only exists where module-move-capable corrections drive
+  // the aggregation (the base merge is a no-op), and the recombination loop
+  // needs their module-level deltas — skip entirely otherwise, keeping base
+  // networks bit-exact at zero cost.
+  std::vector<ColumnarCorrection*> unitCorr;
+  for (auto& cp : m_corrections)
+    if (cp->participatesInMoveLoop() && cp->participatesInModuleMoves())
+      unitCorr.push_back(cp.get());
+  if (unitCorr.empty())
+    return 0;
+
+  const int K = m_hierLevels[1].n;
+
+  // Recombination: a seeded module-level move loop over the pieces — the
+  // module-scale analog of the leaf fine-tune. Corrections act on aggregated
+  // units through their per-unit aggregates, so a piece peels off its module
+  // only when the true augmented objective says so. Gated on the true stack
+  // codelength (revert if not improving).
+  auto recombine = [&](const std::vector<int>& leafToPiece, const std::vector<int>& pieceParent) -> bool {
+    const int nPieces = static_cast<int>(pieceParent.size());
+    if (nPieces == K)
+      return false; // every module is a single piece: nothing to split
+    m_lvl = aggregateLevel(m_leaf0, leafToPiece, nPieces, m_undirected);
+    m_leafMoveLoop = false;
+    m_moduleCorrActive = true;
+    m_seededPhase = true;
+    for (auto* cp : unitCorr)
+      cp->setUnits(leafToPiece, nPieces);
+    seedAssignment(pieceParent);
+    moveLoop();
+    m_moduleCorrActive = false;
+    for (auto* cp : unitCorr)
+      cp->resetUnitsToLeaves();
+
+    // Fast reject: no piece ended up outside its seeded module — the stack is
+    // untouched, so no rebuild or evaluation is needed. This is the common
+    // case in the convergence tail, where each round pays only the piece
+    // aggregation and one settled move-loop sweep.
+    bool anyMoved = false;
+    for (int p = 0; p < nPieces && !anyMoved; ++p)
+      anyMoved = m_module[p] != pieceParent[p];
+    if (!anyMoved)
+      return false;
+
+    std::vector<int> savedTop = m_hierAssign[0];
+    const int savedK = K;
+    std::vector<int> remap(m_lvl.n, -1);
+    int k = 0;
+    for (int p = 0; p < nPieces; ++p)
+      if (remap[m_module[p]] == -1)
+        remap[m_module[p]] = k++;
+    std::vector<int> newTop(m_nLeaves);
+    for (int i = 0; i < m_nLeaves; ++i)
+      newTop[i] = remap[m_module[leafToPiece[i]]];
+
+    m_hierAssign[0] = std::move(newTop);
+    m_hierLevels[1] = aggregateLevel(m_leaf0, m_hierAssign[0], k, m_undirected);
+    m_numTopModules = static_cast<unsigned int>(k);
+    const double splitL = hierarchicalCodelengthFromStack();
+    if (splitL < L - kMinImprovement) {
+      L = splitL;
+      return true;
+    }
+    m_hierAssign[0] = std::move(savedTop);
+    m_hierLevels[1] = aggregateLevel(m_leaf0, m_hierAssign[0], savedK, m_undirected);
+    m_numTopModules = static_cast<unsigned int>(savedK);
+    return false;
+  };
+
+  // Intersect a global fine labeling with the current modules: pieces =
+  // (label ∩ module), well-defined even after leaf tuning moved individual
+  // leaves across module boundaries.
+  auto intersectPieces = [&](const std::vector<int>& labels, std::vector<int>& leafToPiece, std::vector<int>& pieceParent) {
+    std::unordered_map<long long, int> pieceId;
+    pieceId.reserve(static_cast<std::size_t>(K) * 2);
+    leafToPiece.resize(m_nLeaves);
+    pieceParent.clear();
+    for (int i = 0; i < m_nLeaves; ++i) {
+      const int mod = m_hierAssign[0][i];
+      const long long key = static_cast<long long>(labels[i]) * (static_cast<long long>(K) + 1) + mod;
+      auto res = pieceId.emplace(key, static_cast<int>(pieceParent.size()));
+      if (res.second)
+        pieceParent.push_back(mod);
+      leafToPiece[i] = res.first->second;
+    }
+  };
+
+  // Piece source 1 (cheap): the pass-1 building blocks — the finest quanta
+  // the aggregation itself consumed. Re-sorting them undoes overshot merges
+  // move by move where each step is downhill.
+  std::vector<int> leafToPieceScratch;
+  std::vector<int> pieceParentScratch;
+  if (!m_leafBlocks.empty()) {
+    intersectPieces(m_leafBlocks, leafToPieceScratch, pieceParentScratch);
+    if (recombine(leafToPieceScratch, pieceParentScratch))
+      return 1;
+  }
+
+  // Piece source 2 (cheap): the last fresh from-singletons derivation,
+  // projected onto the current partition. Community structure shifts little
+  // between interleave rounds, so stale community pieces usually still
+  // propose the right extractions — the expensive fresh derivation below
+  // then only runs when the cheap sources are exhausted.
+  if (!m_lastSinglesPieces.empty()) {
+    intersectPieces(m_lastSinglesPieces, leafToPieceScratch, pieceParentScratch);
+    if (recombine(leafToPieceScratch, pieceParentScratch))
+      return 2;
+  }
+  // Fresh derivation is the expensive source: keep paying for it only while
+  // it pays (malaria-like nets keep revealing new community splits round
+  // after round; air30k-like nets get nothing beyond the first derivation).
+  if (!allowSingletons || (!m_lastSinglesPieces.empty() && !m_freshSinglesProductive))
+    return 0;
+
+  // Piece source 2 (decisive): from-singletons sub-clustering within each
+  // module — community-granularity pieces, so extracting a whole community
+  // from an over-merged module is a single gated move (block-granularity
+  // pieces face the same uphill barrier as single leaves when a split's
+  // intermediate states are worse).
+  std::vector<std::vector<int>> leavesPer(K);
+  for (int i = 0; i < m_nLeaves; ++i)
+    leavesPer[m_hierAssign[0][i]].push_back(i);
+  std::vector<int> leafToPiece(m_nLeaves, -1);
+  std::vector<int> pieceParent;
+  std::vector<int> loc(m_nLeaves, -1);
+  std::vector<int> localAssign;
+  for (int P = 0; P < K; ++P) {
+    const std::vector<int>& S = leavesPer[P];
+    if (S.empty())
+      continue;
+    if (S.size() == 1) {
+      leafToPiece[S[0]] = static_cast<int>(pieceParent.size());
+      pieceParent.push_back(P);
+      continue;
+    }
+    // A module's sub-clustering depends only on its own leaf set (its exit is
+    // the crossing flow of its members), so unchanged modules reuse the
+    // result from earlier rounds — typically only the modules a split/merge/
+    // re-tune touched are re-clustered.
+    int Ksub;
+    auto it = m_subClusterCache.find(S);
+    if (it != m_subClusterCache.end()) {
+      Ksub = it->second.first;
+      localAssign = it->second.second;
+    } else {
+      // Proposal granularity: skip the sub-optimize's fine-tune — the pieces
+      // only need to separate communities, and the gated recombination plus
+      // the interleaved leaf re-tune do the polishing.
+      Ksub = subClusterLeaves(S, m_hierLevels[1].exit[P], loc, localAssign, false);
+      m_subClusterCache.emplace(S, std::make_pair(Ksub, localAssign));
+    }
+    const int base = static_cast<int>(pieceParent.size());
+    for (std::size_t j = 0; j < S.size(); ++j)
+      leafToPiece[S[j]] = base + localAssign[j];
+    for (int s = 0; s < Ksub; ++s)
+      pieceParent.push_back(P);
+  }
+  m_lastSinglesPieces = leafToPiece;
+  const bool singlesImproved = recombine(leafToPiece, pieceParent);
+  m_freshSinglesProductive = singlesImproved;
+  return singlesImproved ? 2 : 0;
 }
 
 bool ColumnarTwoLevel::retuneLeavesWithinModules(double& L)
@@ -2212,6 +2477,80 @@ void ColumnarTwoLevel::addSlicedLeafCorrections(ColumnarTwoLevel& subOpt, const 
   }
 }
 
+int ColumnarTwoLevel::subClusterLeaves(const std::vector<int>& S, double parentExit, std::vector<int>& loc, std::vector<int>& localAssign, bool fineTune)
+{
+  const int nP = static_cast<int>(S.size());
+  for (int j = 0; j < nP; ++j)
+    loc[S[j]] = j;
+
+  // Build the parent's internal leaf sub-network (global flow, internal edges).
+  Level sub;
+  sub.n = nP;
+  sub.flow.resize(nP);
+  sub.enter.resize(nP);
+  sub.exit.resize(nP);
+  sub.teleFlow.resize(nP);
+  sub.teleWeight.resize(nP);
+  std::vector<int> outDeg(nP, 0), inDeg(nP, 0);
+  for (int j = 0; j < nP; ++j) {
+    const int g = S[j];
+    sub.flow[j] = m_leaf0.flow[g];
+    sub.enter[j] = m_leaf0.enter[g];
+    sub.exit[j] = m_leaf0.exit[g];
+    sub.teleFlow[j] = m_leaf0.teleFlow[g];
+    sub.teleWeight[j] = m_leaf0.teleWeight[g];
+    for (int k = m_leaf0.outStart[g]; k < m_leaf0.outStart[g + 1]; ++k) {
+      const int lt = loc[m_leaf0.outTarget[k]];
+      if (lt != -1) {
+        ++outDeg[j];
+        ++inDeg[lt];
+      }
+    }
+  }
+  sub.outStart.assign(nP + 1, 0);
+  sub.inStart.assign(nP + 1, 0);
+  for (int j = 0; j < nP; ++j) {
+    sub.outStart[j + 1] = sub.outStart[j] + outDeg[j];
+    sub.inStart[j + 1] = sub.inStart[j] + inDeg[j];
+  }
+  sub.outTarget.assign(sub.outStart[nP], 0);
+  sub.outFlow.assign(sub.outStart[nP], 0.0);
+  sub.inTarget.assign(sub.inStart[nP], 0);
+  sub.inFlow.assign(sub.inStart[nP], 0.0);
+  std::vector<int> op(sub.outStart.begin(), sub.outStart.end() - 1);
+  std::vector<int> ip(sub.inStart.begin(), sub.inStart.end() - 1);
+  for (int j = 0; j < nP; ++j) {
+    const int g = S[j];
+    for (int k = m_leaf0.outStart[g]; k < m_leaf0.outStart[g + 1]; ++k) {
+      const int lt = loc[m_leaf0.outTarget[k]];
+      if (lt != -1) {
+        const double f = m_leaf0.outFlow[k];
+        sub.outTarget[op[j]] = lt;
+        sub.outFlow[op[j]] = f;
+        ++op[j];
+        sub.inTarget[ip[lt]] = j;
+        sub.inFlow[ip[lt]] = f;
+        ++ip[lt];
+      }
+    }
+  }
+
+  // Optimal in-context two-level of the parent's leaves (its exit is the
+  // sub-network exit), objective-aware: slice Meta/Mem to the leaves so the
+  // re-partition optimizes base + correction, not just gates on it.
+  ColumnarTwoLevel subOpt;
+  subOpt.setInterruptCallback(m_interruptCallback);
+  subOpt.buildFromLevel(sub, m_undirected, m_seed, parentExit, m_recordedTeleport, m_totalTeleFlow);
+  addSlicedLeafCorrections(subOpt, S);
+  subOpt.optimizeTwoLevel(0, fineTune);
+  localAssign.assign(subOpt.leafTopModule().begin(), subOpt.leafTopModule().end());
+  const int Ksub = static_cast<int>(subOpt.numTopModules());
+
+  for (int j = 0; j < nP; ++j)
+    loc[S[j]] = -1; // reset scratch
+  return Ksub;
+}
+
 bool ColumnarTwoLevel::refineBottomWithinParents()
 {
   if (m_hierLevels.size() < 3)
@@ -2231,85 +2570,19 @@ bool ColumnarTwoLevel::refineBottomWithinParents()
   int nextL1 = 0;
   std::vector<int> loc(m_nLeaves, -1); // global leaf -> local id (reused per P)
 
+  std::vector<int> subAssign;
   for (int P = 0; P < numL2; ++P) {
     const std::vector<int>& S = leavesPer[P];
     const int nP = static_cast<int>(S.size());
     if (nP == 0)
       continue;
-    for (int j = 0; j < nP; ++j)
-      loc[S[j]] = j;
-
-    // Build P's internal leaf sub-network (global flow, internal edges).
-    Level sub;
-    sub.n = nP;
-    sub.flow.resize(nP);
-    sub.enter.resize(nP);
-    sub.exit.resize(nP);
-    sub.teleFlow.resize(nP);
-    sub.teleWeight.resize(nP);
-    std::vector<int> outDeg(nP, 0), inDeg(nP, 0);
-    for (int j = 0; j < nP; ++j) {
-      const int g = S[j];
-      sub.flow[j] = m_leaf0.flow[g];
-      sub.enter[j] = m_leaf0.enter[g];
-      sub.exit[j] = m_leaf0.exit[g];
-      sub.teleFlow[j] = m_leaf0.teleFlow[g];
-      sub.teleWeight[j] = m_leaf0.teleWeight[g];
-      for (int k = m_leaf0.outStart[g]; k < m_leaf0.outStart[g + 1]; ++k) {
-        const int lt = loc[m_leaf0.outTarget[k]];
-        if (lt != -1) {
-          ++outDeg[j];
-          ++inDeg[lt];
-        }
-      }
-    }
-    sub.outStart.assign(nP + 1, 0);
-    sub.inStart.assign(nP + 1, 0);
-    for (int j = 0; j < nP; ++j) {
-      sub.outStart[j + 1] = sub.outStart[j] + outDeg[j];
-      sub.inStart[j + 1] = sub.inStart[j] + inDeg[j];
-    }
-    sub.outTarget.assign(sub.outStart[nP], 0);
-    sub.outFlow.assign(sub.outStart[nP], 0.0);
-    sub.inTarget.assign(sub.inStart[nP], 0);
-    sub.inFlow.assign(sub.inStart[nP], 0.0);
-    std::vector<int> op(sub.outStart.begin(), sub.outStart.end() - 1);
-    std::vector<int> ip(sub.inStart.begin(), sub.inStart.end() - 1);
-    for (int j = 0; j < nP; ++j) {
-      const int g = S[j];
-      for (int k = m_leaf0.outStart[g]; k < m_leaf0.outStart[g + 1]; ++k) {
-        const int lt = loc[m_leaf0.outTarget[k]];
-        if (lt != -1) {
-          const double f = m_leaf0.outFlow[k];
-          sub.outTarget[op[j]] = lt;
-          sub.outFlow[op[j]] = f;
-          ++op[j];
-          sub.inTarget[ip[lt]] = j;
-          sub.inFlow[ip[lt]] = f;
-          ++ip[lt];
-        }
-      }
-    }
-
-    // Optimal in-context two-level of P's leaves (P's exit is the sub-network
-    // exit), objective-aware: slice Meta/Mem to P's leaves so the re-partition
-    // optimizes base + correction, not just gates on it.
-    ColumnarTwoLevel subOpt;
-    subOpt.setInterruptCallback(m_interruptCallback);
-    subOpt.buildFromLevel(sub, m_undirected, m_seed, m_hierLevels[2].exit[P], m_recordedTeleport, m_totalTeleFlow);
-    addSlicedLeafCorrections(subOpt, S);
-    subOpt.optimizeTwoLevel();
-    const std::vector<int>& subAssign = subOpt.leafTopModule();
-    const int Ksub = static_cast<int>(subOpt.numTopModules());
+    const int Ksub = subClusterLeaves(S, m_hierLevels[2].exit[P], loc, subAssign);
 
     for (int j = 0; j < nP; ++j)
       newA0[S[j]] = nextL1 + subAssign[j];
     for (int s = 0; s < Ksub; ++s)
       newA1.push_back(P);
     nextL1 += Ksub;
-
-    for (int j = 0; j < nP; ++j)
-      loc[S[j]] = -1; // reset scratch
   }
 
   // Replace the bottom level; levels 2+ are unchanged (same leaf sets per L2).
