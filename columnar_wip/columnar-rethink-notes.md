@@ -668,3 +668,50 @@ exact augmented objective, so a seeded solution can never be *replaced* by an au
 without module-level corrections — but improving *from* a seed at coarse scale needs them: base-only
 module passes only explore base-improving directions (the 7.8% regularized number measures how wrong
 that is). Soft cluster-data seeding on memory networks therefore depends on this PR.
+
+### F20 — Coarse-tune done right: trajectory repair + winner deep repair (PR #890, 2026-07-21)
+
+**The naive split operator failed the marginal-trade rule.** First cut (per-trial: pass-1-block
+pieces + from-singletons pieces, interleaved with merge+retune): malaria `-2` 7.4743 → **7.3898**
+(−1.55% vs OO) but 2.5 → 8.9s — rejected (Daniel: marginal score wins may only cost marginal time;
+a 3× slowdown means find a better algorithm). Trace (env-gated timers, cumulative over -N10):
+malaria split 4.05s of which **from-singletons re-derivation 3.17s** — 53 fresh attempts, 43
+accepted (the keep-while-improving gate never closes), 1 869 memo misses because every accepted
+leaf re-tune perturbs most modules' leaf sets; reg the mirror image (attempt cost: ~2 500-piece
+levels rebuilt 104×). Root cause: the post-hoc operator re-computes, repeatedly and after fine-tune
+has smeared the boundaries, granularity the aggregation itself already computed and threw away.
+
+**Fix 1 — in-trajectory descending repair (every trial, ~free):** retain each aggregation pass's
+unit Level + leaf composition (gated on module-move corrections; base nets pay nothing) and repair
+right after aggregation converges, BEFORE fine-tune: the retained levels still nest exactly inside
+the final modules, so re-sorting each granularity (coarse → fine, skipping the final pass's own
+fixpoint) is a seeded move loop per level with zero derivation, zero intersection, zero
+aggregateLevel (the Levels are kept, not rebuilt). Scoring == runPass (the node-flow term is pinned
+to the leaf constant, so codelengths compare across granularities). Ladder-only `-2`: air30k
+5.395254 → **5.393493/3.53s** and reg 5.579318 → **5.575735/3.42s** — both beat OO *and* run faster
+than the pre-split tip (strict win-win); malaria neutral (its winning cuts cross trajectory-unit
+boundaries — the trajectory cannot propose them).
+
+**Fix 2 — deep repair of the winner (once per run):** the from-singletons discovery is real,
+irreplaceable work on malaria — so spend it once, on the best-of-N partition, not inside every
+trial. RunSession hook after the trial loop: seed a two-level stack from the best tree
+(`seedHierarchyFromLeafPaths`), run the split interleave (`deepRepairTwoLevelStack`), keep if
+better. Deterministic in serial AND parallel-trial modes (no cross-trial gating — that would make
+results depend on completion order); repair seed derived from the config seed; cost amortizes with
+-N. Measured (`-2`, s123 N10): malaria **7.422255/3.6s** (−1.12% vs OO at −58% time), air30k
+**5.392623/3.9s** (beats OO), reg **5.575409/3.8s** (beats OO), lazega **6.017860269 == OO
+exactly**. Basin-count ladder for malaria: 1 repaired basin → 7.422, ~3 basins (threshold sim) →
+7.404, all 10 → 7.390 — a k-best-trials repair variant is the known lever if the last 0.4% ever
+matters.
+
+**Hierarchical finding:** the trajectory repair runs inside `optimizeTwoLevel`, so all
+within-parent sub-optimizers inherited it — and `-C` results barely moved (malaria `-C`
+bit-identical, air30k/reg ±0.01%). The hierarchical overshoot therefore forms in the **enter-flow
+up-build**, not the sub-optimizer aggregations: the flat candidate (+ pass-1 sharing) stays the
+hierarchical half of #889 and would import every `-2` number above into `-C` where flat wins
+(malaria 7.479 → ~7.42, air30k 5.466 → ~5.393).
+
+**Verified:** full 13-config × {`-2`, `-C`, `-C -F`} differential vs the branch tip — the only
+changes are the four `-2` improvements and the ±0.01% hierarchical corr-net shifts; every base
+network (web-NotreDame included), pref-25 and multilayer bit-exact; `-F` untouched by the
+`subClusterLeaves` factoring; C++ suites pass; repaired runs deterministic (re-run bit-identical).
