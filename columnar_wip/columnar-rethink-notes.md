@@ -715,3 +715,18 @@ hierarchical half of #889 and would import every `-2` number above into `-C` whe
 changes are the four `-2` improvements and the ±0.01% hierarchical corr-net shifts; every base
 network (web-NotreDame included), pref-25 and multilayer bit-exact; `-F` untouched by the
 `subClusterLeaves` factoring; C++ suites pass; repaired runs deterministic (re-run bit-identical).
+
+**F20 addendum — per-feature attribution + single-trial cost (per the tightened reporting protocol).**
+Codelength attribution (exact): the trajectory repair carries most of air30k (−0.033% of −0.049%)
+and reg (−0.064% of −0.070%) at neutral-or-negative time (its sweeps are offset by cheaper
+merge/retune tails); the winner deep repair carries ALL of malaria (−0.70%) and lazega (→ exact OO
+tie). Deep-repair cost from the timing registry (`--timing-json`, N10): malaria 0.71s, reg 0.22s,
+air30k 0.15s, lazega ~0 — total run vs tip, interleaved same-session: malaria +17%, air30k +4%,
+reg −9%. **Single-trial (`-N1`): `deep_repair_s` ≈ 0.00s on all four** — a barren basin rejects
+cheaply (piece aggregation + one settled sweep per source), so the post-trial pass does not
+penalize single-trial runs on this set. One honest wrinkle: malaria `-N1` lands +0.005% worse
+(7.525581 → 7.525940) — the trajectory repair changes the trial's downstream trajectory and
+per-trial results are not monotone (best-of-N is what improves); the repair itself is gated and
+never worsens its seed. Cross-session wall clocks proved misleading during this work (±20% between
+back-to-back runs; the earlier "ladder faster than tip on air30k" was session drift) — the timing
+registry's internal split is the reliable instrument for feature costs.
