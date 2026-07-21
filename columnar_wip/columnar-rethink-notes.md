@@ -730,3 +730,58 @@ per-trial results are not monotone (best-of-N is what improves); the repair itse
 never worsens its seed. Cross-session wall clocks proved misleading during this work (±20% between
 back-to-back runs; the earlier "ladder faster than tip on air30k" was session drift) — the timing
 registry's internal split is the reliable instrument for feature costs.
+
+### F21 — Flat-first trials: the flat candidate lands (#889 hierarchical half, closes #834) (2026-07-21)
+
+The `-C` overshoot forms in the enter-flow up-build (F20): on networks whose optimum is
+(near-)flat with many modules, no interior refinement reaches the flat basin from the fine-blocks
+build. Daniel's framing — alternate trials, "every second trial run the two-level algorithm as
+seed" — is what shipped, after two design iterations driven by the marginal-trade rule:
+
+1. **v1 (rejected): unconditional flat pipeline every even trial.** Quality landed immediately
+   (air30k `-C` 5.4657 → 5.3937, beating OO), but web-NotreDame paid +30% wall for *zero* gain —
+   five full `-2` solves on a network whose flat optimum is +21% worse than its hierarchy. Pure
+   loss on hierarchy-winning nets = the same failure mode as the per-trial split operator (F20).
+2. **v2 (shipped): probe-gated flat trials.** The even trial first runs the full aggregation
+   *without* the leaf fine-tune (`optimizeTwoLevel(0, false)`) — module-level cost — and reuses
+   its pass-1 blocks (`m_leafBlocks`) as the fine-blocks bottom for the regular strategy screen,
+   so no second leaf sweep. Only if the probe lands within **0.5%** of the fine-blocks post-build
+   codelength does the trial complete the leaf-level flat pipeline (deferred fine-tune to
+   convergence + the optimizeTwoLevelStack merge↔retune interleave, factored as
+   `completeFlatFromAggregation`), add the flat-bottom up-builds to the screen, and keep the flat
+   stack as a gated candidate against the refined winner.
+
+**The probe separates perfectly** (est/build, `COLUMNAR_DEBUG` print): every true flat-winner
+≤ 1.000 (pref-mods 0.63, reg 0.80, air30k 0.84, malaria 0.88, polblogs 0.96, jazz 0.996, lazega
+0.995, multilayer 1.000), every true flat-loser ≥ 1.008 (science2001 1.0079, netsci 1.034,
+powergrid 1.10, web-NotreDame 1.18, ninetriangles 1.04). Margin 0.5% sits in the gap; the
+initial 2% margin let science2001 through as the lone false positive (+36% wall for nothing).
+Key asymmetry behind the tight margin: post-build refinement gains far more than the flat
+completion does (air30k build 6.54 → refined 5.47; flat est 5.47 → completed 5.39), so a
+generous margin only buys false positives.
+
+**Winner deep repair extended to hierarchical runs**: the once-per-run repair now also fires when
+a `-C`/`-F` winner is two-level-shaped (all tree paths length 2 — a flat trial won outright);
+deeper winners untouched. This carries malaria `-C` 7.4743 → 7.4223 (repair = 0.50s of the 3.6s
+run by the timing registry) and lazega to the exact OO tie 6.01786. air30k/reg winners are
+3-level flat-bottom builds, so the repair correctly skips them.
+
+Results (`-N10 -C`, per-feature attribution in the perf section): air30k 5.4657 → **5.3937**
+(beats OO 5.3940 — #834's hierarchical residual closed), reg 5.6624 → **5.5751** (beats OO),
+malaria 7.4789 → **7.4223** (beats OO by 1.1%), jazz + lazega → exact OO ties, pref-mods −2.63%
+(8.4608 → 8.2384; OO 7.9280 keeps the lead — leaf-only bias, #827), polblogs −0.002%. `-F` gets
+identical wins (flat trials wired in both entries); `-F` now ties `-C` on 10/13 configs.
+**Nothing got worse**: `-2` bit-exact everywhere, `-N1` bit-identical on all 13 × {`-C`,`-C -F`}
+(first trial stays hierarchical-first per Daniel's ordering), OO untouched.
+
+Cost (interleaved same-session, the only wall numbers to trust — this session drifted +60% on
+OO NotreDame): air30k +39%, reg +61%, malaria +37%, pref-mods +22%; NotreDame / science2001 /
+powergrid / netsci unchanged within noise (probe skips). The costed nets are exactly the ones
+whose codelength improves 0.8–2.6%; `-C` stays 32–63% faster than OO on all of them.
+
+Determinism: strategy = global trial index parity (identical serial/parallel); repair
+post-trial-loop with config-derived seed; re-runs bit-identical. Design lesson recorded: the
+probe/gate pattern (cheap same-objective estimate → gate the expensive leaf-level work) is the
+reusable answer to "operator X only helps some networks"; compare probes only against references
+they can't trivially dominate (an up-build *on the probe's own bottom* is a superset of the flat
+stack and always wins — the fine-blocks build is the honest reference).
