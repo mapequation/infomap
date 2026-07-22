@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. Releases are automated with [release-please](https://github.com/googleapis/release-please), using [Conventional Commits](https://www.conventionalcommits.org) to determine version bumps and changelog entries.
 
+## [2.15.1](https://github.com/mapequation/infomap/compare/v2.15.0...v2.15.1) (2026-07-22)
+
+
+### Bug Fixes
+
+* keep the memory codelength scalar in sync with the module map ([48a1ef5](https://github.com/mapequation/infomap/commit/48a1ef565d287b0181a251d4f1a1f1fca930d0d7)), closes [#836](https://github.com/mapequation/infomap/issues/836)
+* **python:** accept os.PathLike consistently across file-reading entry points ([#809](https://github.com/mapequation/infomap/issues/809)) ([db5b960](https://github.com/mapequation/infomap/commit/db5b9605867f26c4cf6d4041c277cdedc2160c0e))
+* **python:** consolidate the file-path contract across all surfaces ([#811](https://github.com/mapequation/infomap/issues/811)) ([1a325b6](https://github.com/mapequation/infomap/commit/1a325b6a3545af503af8636ca1148031d364e59d))
+
+
+### Performance Improvements
+
+* hoist per-node-constant plogp out of the OO move-loop delta ([7da08cf](https://github.com/mapequation/infomap/commit/7da08cfbd37063993fcc2f6b8b2978b91ac3745c)), closes [#867](https://github.com/mapequation/infomap/issues/867)
+
 ## [2.15.0](https://github.com/mapequation/infomap/compare/v2.14.0...v2.15.0) (2026-07-13)
 
 
