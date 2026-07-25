@@ -58,6 +58,22 @@ namespace {
     return result;
   }
 
+  // The option that owns a report path, so the refusal can name it. The
+  // basename guidance does not apply to these: the caller pointed the option at
+  // a file directly, and --out-name does not move it.
+  std::string reportOptionFlag(const std::string& reportKey)
+  {
+    if (reportKey == "summary_json")
+      return "--summary-json";
+    if (reportKey == "timing_json")
+      return "--timing-json";
+    if (reportKey == "run_manifest")
+      return "--manifest-json";
+    if (reportKey == "trial_results")
+      return "--trial-results";
+    return {};
+  }
+
   // Every file the run reads. Writing a result over any of them destroys input.
   std::vector<std::string> inputPaths(const Config& config)
   {
@@ -270,6 +286,11 @@ std::vector<std::pair<std::string, std::string>> planReportArtifacts(const Confi
   add("summary_json", config.summaryJsonPath);
   add("timing_json", config.timingJsonPath);
   add("run_manifest", config.runManifestPath);
+  // The shard results file is an output the run writes, so it belongs here for
+  // both consumers: the preflight collision check, and the manifest's list of
+  // produced artifacts. Its writer already honours the overwrite policy, so
+  // listing it only moves that refusal ahead of the work.
+  add("trial_results", config.trialResultsPath);
   return reports;
 }
 
@@ -312,6 +333,20 @@ void preflightOutputTargets(const Config& config)
   // `Infomap net.json . -o json` replaced the network with the result tree, and
   // `Infomap ml.net . -o network` replaced a multilayer input with its
   // single-layer projection, both exiting 0.
+  // planAllOutputPaths mixes two kinds of target: artifacts named from
+  // outDirectory + outName, and report paths the caller gave directly. The
+  // mitigation differs, so the message has to know which one collided --
+  // suggesting --out-name for a --summary-json path would be useless advice.
+  //
+  const auto reports = planReportArtifacts(config);
+  const auto reportOwnerOf = [&reports](const std::string& path) {
+    for (const auto& report : reports) {
+      if (report.second == path)
+        return reportOptionFlag(report.first);
+    }
+    return std::string();
+  };
+
   const auto inputs = inputPaths(config);
   for (const auto& path : plannedPaths) {
     const auto normalizedOutput = normalizePathForComparison(path);
@@ -320,11 +355,17 @@ void preflightOutputTargets(const Config& config)
         continue;
       if (normalizePathForComparison(input) != normalizedOutput)
         continue;
+
+      const auto ownerFlag = reportOwnerOf(path);
+      const auto guidance = ownerFlag.empty()
+          ? std::string("Write to a different directory, or pass --out-name to give the result a different basename.")
+          : fmt::format(FMT_STRING("Point {} at a different file."), ownerFlag);
+
       throw InfomapError(ExitCode::OutputError,
-                         fmt::format(FMT_STRING("Refusing to write output over the input file '{}'. "
-                                                "Write to a different directory, or pass --out-name to "
-                                                "give the result a different basename."),
-                                     input));
+                         fmt::format(FMT_STRING("Refusing to write output '{}' over the input file '{}'. {}"),
+                                     path,
+                                     input,
+                                     guidance));
     }
   }
 

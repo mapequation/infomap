@@ -585,6 +585,42 @@ TEST_CASE("Output preflight protects every input the run reads [fast][core][conf
   CHECK_FALSE(collides([](Config& c) { c.clusterDataFile = "other.tree"; }));
 }
 
+TEST_CASE("Output preflight names the option that owns a colliding report path [fast][core][config][output]")
+{
+  // A report path is given directly, so --out-name cannot move it and suggesting
+  // it would be useless advice. The message has to name the owning option.
+  Config config;
+  config.networkFile = "run.json";
+  config.outDirectory = "";
+  config.outName = "run";
+  config.summaryJsonPath = "run.json";
+
+  try {
+    infomap::preflightOutputTargets(config);
+    FAIL("expected the report-path collision to be rejected");
+  } catch (const infomap::InfomapError& e) {
+    const std::string message = e.what();
+    CHECK(message.find("--summary-json") != std::string::npos);
+    CHECK(message.find("--out-name") == std::string::npos);
+  }
+
+  // A basename-derived artifact keeps the basename guidance.
+  Config artifactCollision;
+  artifactCollision.networkFile = "run.tree";
+  artifactCollision.outDirectory = "";
+  artifactCollision.outName = "run";
+  artifactCollision.printTree = true;
+
+  try {
+    infomap::preflightOutputTargets(artifactCollision);
+    FAIL("expected the artifact collision to be rejected");
+  } catch (const infomap::InfomapError& e) {
+    const std::string message = e.what();
+    CHECK(message.find("--out-name") != std::string::npos);
+    CHECK(message.find("--summary-json") == std::string::npos);
+  }
+}
+
 TEST_CASE("Output preflight compares paths through './' [fast][core][config][output]")
 {
   // The reachable form: the input is given bare and the output directory is ".",
