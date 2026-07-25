@@ -97,10 +97,11 @@ TEST_CASE("Entropy correction steers the search, not just the report [core][mape
     InfomapWrapper im(defaultFlags("--two-level -N 1 --seed 42 " + flags));
     im.readInputData(repoPath("examples/networks/ninetriangles.net"));
     im.run();
-    std::map<unsigned int, unsigned int> modules;
-    for (auto it = im.iterLeafNodes(); !it.isEnd(); ++it)
-      modules[it->physicalId] = it.moduleId();
-    return modules;
+    // Canonicalized, i.e. compared up to relabeling: module ids are not stable
+    // labels, so comparing the raw {node -> module} maps would let a pure
+    // renumbering read as a changed clustering and pass this test for the wrong
+    // reason.
+    return canonicalPartition(im.getModules(1, false));
   };
 
   const auto uncorrected = partitionOf("");
