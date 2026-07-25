@@ -19,6 +19,7 @@ from ._core import (
     InfomapLeafIteratorPhysical,
     InfomapLeafModuleIterator,
     InfoNode,
+    _with_inferred_flow_model,
     apply_initial_partition,
 )
 from ._core import build_info as _engine_build_info
@@ -2290,6 +2291,9 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             self.initial_partition = old_partition
 
     def _run_from_options(self, args, initial_partition, options):
+        # An input adapter may have resolved the flow model from the input
+        # itself; render it so it survives this run's argument string.
+        options = _with_inferred_flow_model(self._core, options)
         kwargs = options.to_kwargs()
         # engine_emits: whether this instance's engine emits at all. It was
         # baked --silent (or not) at construction and cannot be undone per run,

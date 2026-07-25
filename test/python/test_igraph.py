@@ -127,7 +127,7 @@ def test_find_igraph_communities_sets_directed_for_directed_graph(monkeypatch):
 
         def __init__(self, **options):
             self.options = options
-            self.directed = False
+            self.inferred_flow_model = None
             self.codelength = 1.0
             instances.append(self)
 
@@ -138,8 +138,8 @@ def test_find_igraph_communities_sets_directed_for_directed_graph(monkeypatch):
                 flow=[0.5, 0.5],
             )
 
-        def setDirected(self, value):
-            self.directed = value
+        def note_inferred_flow_model(self, flow_model):
+            self.inferred_flow_model = flow_model
 
         def add_node(self, node_id, name=None):
             pass
@@ -156,7 +156,7 @@ def test_find_igraph_communities_sets_directed_for_directed_graph(monkeypatch):
     clustering = infomap.find_igraph_communities(graph, trials=3)
 
     assert clustering.membership == [0, 0]
-    assert instances[0].directed is True
+    assert instances[0].inferred_flow_model == "directed"
     # silent and no_file_output are no longer forced: the API is quiet by
     # default and the library surface writes no files without an output
     # directory, so the finder leaves both at the engine default.

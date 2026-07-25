@@ -101,8 +101,8 @@ def add_scipy_sparse_matrix(
 
     internal_to_label = {index: label for index, label in enumerate(labels)}
 
-    if not infomap._core.flowModelIsSet and directed:
-        infomap._core.setDirected(True)
+    if directed:
+        infomap._core.note_inferred_flow_model("directed")
 
     for internal_id, label in internal_to_label.items():
         infomap.add_node(internal_id, name=label if isinstance(label, str) else None)
