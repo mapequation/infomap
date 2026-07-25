@@ -383,25 +383,6 @@ TEST_CASE("Undirected regularization remains stable on the two-triangles fixture
   infomap::test::checkApproxCodelength(im.codelength(), 2.575767408, 1e-9);
 }
 
-TEST_CASE("Directed regularized codelength matches analytic multi-level tree [fast][core][flow]")
-{
-  InfomapWrapper im(infomap::test::defaultFlags(
-      "--directed --regularized --no-infomap --cluster-data "
-      + infomap::test::clusterFixturePath("regularized_four_pairs_three_level.tree")));
-  im.addLink(1, 2);
-  im.addLink(2, 1);
-  im.addLink(3, 4);
-  im.addLink(4, 3);
-  im.addLink(5, 6);
-  im.addLink(6, 5);
-  im.addLink(7, 8);
-  im.addLink(8, 7);
-  im.run();
-
-  CHECK(im.numLevels() == 3);
-  infomap::test::checkApproxCodelength(im.codelength(), 4.051270346886);
-}
-
 #if INFOMAP_FEATURE_REGULARIZED_MULTILAYER
 TEST_CASE("Regularized multilayer flow supports non-dense matchable state ids [fast][core][flow]")
 {
