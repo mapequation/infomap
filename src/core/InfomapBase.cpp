@@ -21,6 +21,7 @@
 #include "LossyMapEquation.h"
 #endif
 #include "InfomapOptimizer.h"
+#include "../io/InfomapError.h"
 #include "../io/RunReport.h"
 #include "../io/RunMetadata.h"
 #include "../io/SafeFile.h"
@@ -591,6 +592,48 @@ private:
 
     if (m_infomap.numLeafNodes() == 0)
       throw std::domain_error("No nodes to partition");
+
+    checkFlowPostCondition();
+  }
+
+  // The map equation is defined on a visit-rate distribution, so a non-finite
+  // or empty flow distribution leaves every codelength downstream meaningless.
+  // Such a run used to complete successfully and report "codelength 0" -- a
+  // value lower than any true codelength, so a script comparing flow models
+  // would select the broken run as the best model. Reject it instead.
+  //
+  // Only the run path checks this: initNetwork() is public C++ API that callers
+  // legitimately invoke before any flow has been calculated, so the condition
+  // does not belong inside it.
+  //
+  // A total that merely differs from 1.0 stays a warning. That is what
+  // --skip-adjust-bipartite-flow asks for by design ("Keep flow on bipartite
+  // nodes instead of distributing it to primary nodes"), and other flow models
+  // may have their own reasons; the run is still interpretable. It is warned at
+  // the default verbosity so it is no longer invisible.
+  void checkFlowPostCondition() const
+  {
+    const double sumNodeFlow = m_infomap.root().data.flow;
+
+    // A link-free network has no flow to distribute and no structure to find;
+    // the trivial partition at zero bits is its correct answer, so an empty
+    // total is only degenerate when there were links to carry flow.
+    const bool zeroFlowIsExpected = m_network.numLinks() == 0;
+
+    if (!std::isfinite(sumNodeFlow) || (sumNodeFlow <= 0 && !zeroFlowIsExpected))
+      throw InfomapError(ExitCode::InputError,
+                         fmt::format(FMT_STRING("Degenerate flow: total flow on nodes is {:g} for a network with {} links, so no "
+                                                "codelength is defined. This happens when the flow model cannot distribute flow "
+                                                "over the network -- for example a directed flow model with recorded teleportation "
+                                                "on a bipartite network whose links all point from the primary side to the feature side."),
+                                     sumNodeFlow,
+                                     m_network.numLinks()));
+
+    if (zeroFlowIsExpected)
+      return;
+
+    if (std::abs(sumNodeFlow - 1.0) > 1e-10)
+      Console::warn(0, "Total flow on nodes is {:g}, not 1. The reported codelength is scaled accordingly.", sumNodeFlow);
   }
 
   void releaseInputLinksIfCli()

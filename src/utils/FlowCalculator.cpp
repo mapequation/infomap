@@ -38,6 +38,12 @@ namespace {
 template <typename T>
 inline void normalize(std::vector<T>& v, const T sum) noexcept
 {
+  // A zero or non-finite total has no meaningful normalization. Leaving the
+  // vector untouched keeps the degenerate state recognizable (an all-zero
+  // distribution) instead of turning every entry into NaN, and the flow
+  // post-condition in InfomapBase::initNetwork reports it with context.
+  if (sum == T {} || !std::isfinite(sum))
+    return;
   for (auto& numerator : v) {
     numerator /= sum;
   }
