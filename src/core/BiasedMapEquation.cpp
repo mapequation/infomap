@@ -149,6 +149,17 @@ double BiasedMapEquation::calcCodelengthOnModuleOfModules(const InfoNode& parent
   if (!useEntropyBiasCorrection)
     return L;
 
+  // NOTE (#830): for a two-level tree this over-counts the root by one codeword
+  // -- the root index codebook has no exit codeword, so its Miller-Madow term
+  // spans childDegree - 1, which is what the tracked value uses
+  // (calcIndexEntropyBiasCorrection). Charging childDegree here is exactly the
+  // 1 / (2 * totalDegree) drift measured on lossy_benchmark. It is left alone
+  // deliberately: on a three-level tree the drift has the opposite sign and is
+  // 5 / (2 * totalDegree) on ninetriangles, because the tracked side uses the
+  // two-level formula (numModules - 1 + numNodes) / (2D) while this recompute
+  // sums childDegree over every internal node. Fixing the root alone makes the
+  // hierarchical gap larger, so both sides need the multi-level Miller-Madow
+  // definition settled together. See #830 for the measurements.
   return L + entropyBiasCorrectionMultiplier * parent.childDegree() / (2 * m_totalDegree);
 }
 
@@ -179,12 +190,20 @@ INFOMAP_HOT double BiasedMapEquation::getDeltaCodelengthOnMovingNode(InfoNode& c
 {
   double deltaL = Base::getDeltaCodelengthOnMovingNode(current, oldModuleDelta, newModuleDelta, moduleFlowData, moduleMembers);
 
-  if (preferredNumModules == 0)
+  // Both extra terms below depend on the module count, so they only matter when
+  // the move changes it -- but each has its own switch. The guard used to test
+  // preferredNumModules alone, which silently excluded the entropy-bias
+  // correction from every move delta under the default
+  // --preferred-number-of-modules 0: the search then optimized the uncorrected
+  // map equation while reporting the corrected codelength (#830, #904).
+  if (preferredNumModules == 0 && !useEntropyBiasCorrection)
     return deltaL;
 
   int deltaNumModules = getDeltaNumModulesIfMoving(oldModuleDelta.module, newModuleDelta.module, moduleMembers);
 
-  double deltaBiasedCost = calcNumModuleCost(currentNumModules + deltaNumModules) - biasedCost;
+  double deltaBiasedCost = preferredNumModules == 0
+      ? 0.0
+      : calcNumModuleCost(currentNumModules + deltaNumModules) - biasedCost;
 
   double deltaEntropyBiasCorrection = calcEntropyBiasCorrection(currentNumModules + deltaNumModules) - getEntropyBiasCorrection();
 
@@ -200,12 +219,15 @@ INFOMAP_HOT double BiasedMapEquation::getDeltaCodelengthOnMovingNodeHoisted(Info
 {
   double deltaL = Base::getDeltaCodelengthOnMovingNodeHoisted(current, oldModuleDelta, oldSide, newModuleDelta, moduleFlowData, moduleMembers);
 
-  if (preferredNumModules == 0)
+  // See getDeltaCodelengthOnMovingNode: the two terms have independent switches.
+  if (preferredNumModules == 0 && !useEntropyBiasCorrection)
     return deltaL;
 
   int deltaNumModules = getDeltaNumModulesIfMoving(oldModuleDelta.module, newModuleDelta.module, moduleMembers);
 
-  double deltaBiasedCost = calcNumModuleCost(currentNumModules + deltaNumModules) - biasedCost;
+  double deltaBiasedCost = preferredNumModules == 0
+      ? 0.0
+      : calcNumModuleCost(currentNumModules + deltaNumModules) - biasedCost;
 
   double deltaEntropyBiasCorrection = calcEntropyBiasCorrection(currentNumModules + deltaNumModules) - getEntropyBiasCorrection();
 

@@ -86,6 +86,31 @@ TEST_CASE("MapEquation invariant: entropy-corrected tracked == recompute (repro 
   checkTrackedMatchesRecompute(im);
 }
 
+// The entropy-bias correction must reach the move loop, not only the reported
+// codelength: its delta was gated behind preferredNumModules, so under the
+// default --preferred-number-of-modules 0 the search optimized the uncorrected
+// map equation and only the printed number changed (#904). Asserted as an
+// effect on the returned partition, since that is what a user sees.
+TEST_CASE("Entropy correction steers the search, not just the report [core][mapeq][entropy-corrected]")
+{
+  const auto partitionOf = [](const std::string& flags) {
+    InfomapWrapper im(defaultFlags("--two-level -N 1 --seed 42 " + flags));
+    im.readInputData(repoPath("examples/networks/ninetriangles.net"));
+    im.run();
+    std::map<unsigned int, unsigned int> modules;
+    for (auto it = im.iterLeafNodes(); !it.isEnd(); ++it)
+      modules[it->physicalId] = it.moduleId();
+    return modules;
+  };
+
+  const auto uncorrected = partitionOf("");
+  // At the documented default strength the correction term is ~1e-4 bits here,
+  // far too small to move a node; strength 10 makes it decisive.
+  const auto corrected = partitionOf("--entropy-corrected --entropy-correction-strength 10");
+
+  CHECK(uncorrected != corrected);
+}
+
 // Follow-ups (not reproduced here): #831 (two-level initPartition/consolidate
 // reentrancy corrupting the recomputed codelength after a prior multi-level
 // trial) and #837 (hierarchical super-step degrading a two-level memory
