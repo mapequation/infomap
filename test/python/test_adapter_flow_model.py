@@ -24,12 +24,12 @@ pytestmark = pytest.mark.fast
 _EDGES = [(1, 2), (2, 3), (3, 1), (3, 4), (4, 5), (5, 6), (6, 4)]
 
 
-def _reference(flow_model: str) -> float:
+def _reference(flow_model: str, *, seed: int = 42, num_trials: int = 1) -> float:
     """Codelength of the same links with the flow model stated explicitly."""
     return infomap.run(
         list(_EDGES),
-        seed=42,
-        num_trials=1,
+        seed=seed,
+        num_trials=num_trials,
         options=infomap.Options(flow_model=flow_model),
     ).codelength
 
@@ -42,6 +42,19 @@ def directed_codelength() -> float:
 @pytest.fixture(scope="module")
 def undirected_codelength() -> float:
     return _reference("undirected")
+
+
+@pytest.fixture(scope="module")
+def directed_codelength_at_defaults() -> float:
+    """Reference for the runs that pass no keywords at all.
+
+    Those runs take the engine defaults, so the reference has to use the same
+    ones -- comparing them against the seed=42 reference above would pass only
+    while both seeds happen to find the same optimum. Read the defaults from
+    ``Options()`` so this follows a change to either default.
+    """
+    defaults = infomap.Options()
+    return _reference("directed", seed=defaults.seed, num_trials=defaults.num_trials)
 
 
 @pytest.fixture
@@ -68,18 +81,20 @@ def test_network_constructor_infers_directed(digraph, directed_codelength):
 
 
 def test_network_constructor_infers_directed_without_keywords(
-    digraph, directed_codelength
+    digraph, directed_codelength_at_defaults
 ):
     result = infomap.Network.from_networkx(digraph).run()
 
-    assert result.codelength == pytest.approx(directed_codelength)
+    assert result.codelength == pytest.approx(directed_codelength_at_defaults)
 
 
-def test_builder_infers_directed_without_keywords(digraph, directed_codelength):
-    im = infomap.Infomap(num_trials=1)
+def test_builder_infers_directed_without_keywords(
+    digraph, directed_codelength_at_defaults
+):
+    im = infomap.Infomap()
     im.add_networkx_graph(digraph)
 
-    assert im.run().codelength == pytest.approx(directed_codelength)
+    assert im.run().codelength == pytest.approx(directed_codelength_at_defaults)
 
 
 def test_builder_inference_survives_an_unrelated_keyword(digraph, directed_codelength):
