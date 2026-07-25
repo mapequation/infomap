@@ -22,11 +22,22 @@ from infomap._options import _merge_options
 
 pytestmark = pytest.mark.fast
 
-_LINKS = [(1, 2), (2, 3), (3, 1), (3, 4), (4, 5), (5, 6), (6, 4)]
-
 # The values a caller is most likely to pass explicitly *and* which equal their
 # own default, so the old value-comparison could not see them.
 _DEFAULTS = Options()
+
+# One carrier value per common-tier field that differs from that field's default,
+# so "the explicit default won" is distinguishable from "nothing happened". The
+# tier itself comes from the parameter catalog, so covering all five here means a
+# catalog or generator change that drops one from the common-tier handling fails
+# as a test rather than as a silently wrong merge.
+_COMMON_TIER_CASES = [
+    pytest.param("seed", 7, id="seed"),
+    pytest.param("num_trials", 5, id="num_trials"),
+    pytest.param("two_level", True, id="two_level"),
+    pytest.param("directed", True, id="directed"),
+    pytest.param("markov_time", 2.0, id="markov_time"),
+]
 
 
 def _rendered(options: Options) -> str:
@@ -34,14 +45,25 @@ def _rendered(options: Options) -> str:
 
 
 @pytest.mark.parametrize("context", ["init", "run"])
-def test_explicit_override_equal_to_the_default_wins(context):
-    merged = _merge_options(Options(seed=7), {"seed": _DEFAULTS.seed}, context)
+@pytest.mark.parametrize(("field", "carrier_value"), _COMMON_TIER_CASES)
+def test_explicit_override_equal_to_the_default_wins(context, field, carrier_value):
+    default = getattr(_DEFAULTS, field)
+    assert carrier_value != default, "the carrier value must differ from the default"
 
-    assert merged.seed == _DEFAULTS.seed
-    # The carrier's value must not reach the engine. The default-valued seed
-    # itself renders no flag, which is behaviour-preserving: the spec defaults
-    # are generated from the engine's own parameter catalog, so an elided
-    # default and an explicit one give the same run.
+    merged = _merge_options(
+        Options(**{field: carrier_value}), {field: default}, context
+    )
+
+    assert getattr(merged, field) == default
+
+
+def test_the_carrier_value_does_not_reach_the_engine():
+    merged = _merge_options(Options(seed=7), {"seed": _DEFAULTS.seed}, "init")
+
+    # The default-valued seed itself renders no flag, which is
+    # behaviour-preserving: the spec defaults are generated from the engine's own
+    # parameter catalog, so an elided default and an explicit one give the same
+    # run. What must not survive is the carrier's value.
     assert "--seed 7" not in _rendered(merged)
 
 
