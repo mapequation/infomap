@@ -1,6 +1,7 @@
 #include "vendor/doctest.h"
 
 #include "Infomap.h"
+#include "io/InfomapError.h"
 
 #include "TestUtils.h"
 
@@ -752,6 +753,91 @@ TEST_CASE("multilayer-relax-to-self matches spread on a single-node overlap [fas
   CHECK(spread.first == 2); // the two triangles
   CHECK(toself.first == spread.first);
   infomap::test::checkApproxCodelength(toself.second, spread.second, 1e-9);
+}
+
+// The canonical bipartite shape: every link runs primary -> feature, as in
+// examples/networks/bipartite.net. Several directed flow models degenerate on
+// it (all-zero or non-finite node flow); the map equation is undefined there, so
+// the run must fail rather than report a codelength.
+void addCanonicalBipartiteLinks(InfomapWrapper& im)
+{
+  im.network().setBipartiteStartId(4);
+  im.addLink(1, 4);
+  im.addLink(2, 4);
+  im.addLink(2, 5, 0.25);
+  im.addLink(3, 5);
+}
+
+TEST_CASE("Degenerate flow is rejected instead of reported as a zero codelength [fast][core][flow]")
+{
+  // Each of these left node flow all-zero or NaN and still reported
+  // "Best codelength 0" with a successful exit.
+  for (const std::string& flags : { std::string("--directed --recorded-teleportation"),
+                                    std::string("--directed --bipartite-teleportation"),
+                                    std::string("--directed --recorded-teleportation --bipartite-teleportation") }) {
+    InfomapWrapper im(infomap::test::defaultFlags("-N 1 --seed 7 " + flags));
+    addCanonicalBipartiteLinks(im);
+
+    CHECK_THROWS_AS(im.run(), infomap::InfomapError);
+  }
+}
+
+TEST_CASE("Degenerate flow reports an input error [fast][core][flow]")
+{
+  InfomapWrapper im(infomap::test::defaultFlags("-N 1 --seed 7 --directed --recorded-teleportation"));
+  addCanonicalBipartiteLinks(im);
+
+  try {
+    im.run();
+    FAIL("expected the degenerate flow to be rejected");
+  } catch (const infomap::InfomapError& e) {
+    CHECK(e.code() == infomap::ExitCode::InputError);
+    // The message must name the quantity, so a user can tell this from a
+    // parse failure or an empty network.
+    CHECK(std::string(e.what()).find("flow") != std::string::npos);
+  }
+}
+
+TEST_CASE("skip-adjust-bipartite-flow keeps its documented unnormalized flow [fast][core][flow]")
+{
+  // The flag is documented as "Keep flow on bipartite nodes instead of
+  // distributing it to primary nodes", so flow deliberately sums to less than
+  // one here. That is an opt-out, not a defect: the run must still complete.
+  InfomapWrapper im(infomap::test::defaultFlags("-N 1 --seed 7 --two-level --directed --skip-adjust-bipartite-flow"));
+  addCanonicalBipartiteLinks(im);
+
+  im.run();
+
+  infomap::test::checkApproxCodelength(im.codelength(), 0.04164969778);
+}
+
+TEST_CASE("A link-free network keeps its trivial zero-flow result [fast][core][flow]")
+{
+  // No links means no flow to distribute and no structure to find: the trivial
+  // partition is the correct answer, so the post-condition must not fire.
+  InfomapWrapper isolatedNodes(infomap::test::defaultFlags("-N 1 --seed 7"));
+  isolatedNodes.addNode(1);
+  isolatedNodes.addNode(2);
+  isolatedNodes.run();
+  CHECK(isolatedNodes.numLeafNodes() == 2);
+
+  InfomapWrapper singleNode(infomap::test::defaultFlags("-N 1 --seed 7"));
+  singleNode.addNode(1);
+  singleNode.run();
+  CHECK(singleNode.numLeafNodes() == 1);
+}
+
+TEST_CASE("Ordinary bipartite runs are unaffected by the flow post-condition [fast][core][flow]")
+{
+  InfomapWrapper undirected(infomap::test::defaultFlags("-N 1 --seed 7"));
+  addCanonicalBipartiteLinks(undirected);
+  undirected.run();
+  infomap::test::checkApproxCodelength(undirected.codelength(), 1.478406227);
+
+  InfomapWrapper directed(infomap::test::defaultFlags("-N 1 --seed 7 --directed"));
+  addCanonicalBipartiteLinks(directed);
+  directed.run();
+  infomap::test::checkApproxCodelength(directed.codelength(), 0.4729743142);
 }
 
 } // namespace

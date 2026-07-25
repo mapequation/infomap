@@ -1,8 +1,36 @@
 import re
 
+import infomap
 import pytest
 
 pytestmark = pytest.mark.fast
+
+
+def test_degenerate_flow_raises_instead_of_reporting_zero(example_network_path):
+    # The canonical bipartite shape (every link primary -> feature) leaves this
+    # flow model with no flow to distribute. It used to return codelength 0.0 --
+    # lower than any true codelength, so a script comparing flow models would
+    # pick the broken run as the best model.
+    net = infomap.Network.from_file(str(example_network_path("bipartite.net")))
+
+    with pytest.raises(infomap.InfomapError, match="Degenerate flow"):
+        net.run(directed=True, recorded_teleportation=True, seed=7, num_trials=1)
+
+
+def test_skip_adjust_bipartite_flow_still_runs(example_network_path):
+    # The documented opt-out from distributing flow to the primary nodes: flow
+    # deliberately sums to less than one, so the run must complete.
+    net = infomap.Network.from_file(str(example_network_path("bipartite.net")))
+
+    result = net.run(
+        directed=True,
+        skip_adjust_bipartite_flow=True,
+        two_level=True,
+        seed=7,
+        num_trials=1,
+    )
+
+    assert result.codelength == pytest.approx(0.04164969778)
 
 
 def test_precomputed_requirements(make_infomap, example_network_path):
