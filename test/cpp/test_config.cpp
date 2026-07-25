@@ -669,6 +669,17 @@ TEST_CASE("Output preflight anchors relative paths to the working directory [fas
   absoluteReport.summaryJsonPath = cwd + "/run.json";
   CHECK_THROWS_AS(infomap::preflightOutputTargets(absoluteReport), infomap::InfomapError);
 
+#ifndef _WIN32
+  // "a:/net.tree" is a relative path into a directory named "a:" here, however much
+  // it looks like a Windows drive. Treating it as absolute would skip the anchoring.
+  Config driveLetterLookalike;
+  driveLetterLookalike.networkFile = "a:/net.tree";
+  driveLetterLookalike.outDirectory = cwd + "/a:/";
+  driveLetterLookalike.outName = "net";
+  driveLetterLookalike.printTree = true;
+  CHECK_THROWS_AS(infomap::preflightOutputTargets(driveLetterLookalike), infomap::InfomapError);
+#endif
+
   // Anchoring must not turn a different directory into a collision.
   Config elsewhere;
   elsewhere.networkFile = "ml.net";

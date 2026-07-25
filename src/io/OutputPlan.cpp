@@ -44,7 +44,15 @@ namespace {
       return false;
     if (folded[0] == '/') // POSIX, and a Windows root-relative path
       return true;
-    return folded.size() >= 3 && folded[1] == ':' && folded[2] == '/'; // "C:/..."
+#ifdef _WIN32
+    // "C:/...". Only on Windows: on POSIX "a:/b" is a relative path into a
+    // directory named "a:", and calling it absolute would skip the anchoring.
+    const char drive = folded[0];
+    const bool isDriveLetter = (drive >= 'A' && drive <= 'Z') || (drive >= 'a' && drive <= 'z');
+    return folded.size() >= 3 && isDriveLetter && folded[1] == ':' && folded[2] == '/';
+#else
+    return false;
+#endif
   }
 
   // Relative paths on both sides of the comparison resolve against the working

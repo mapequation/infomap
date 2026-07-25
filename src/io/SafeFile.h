@@ -72,9 +72,12 @@ inline bool pathExists(const std::string& path)
 }
 
 // The process working directory, or an empty string if it cannot be read.
-// The buffer grows until the call stops complaining about its size, so a deep CI
-// path or a Windows long path is not a silent failure -- callers that anchor
-// relative paths to this would otherwise quietly lose the anchoring.
+// The buffer doubles on ERANGE up to 64 KiB, so a deep CI path is not a silent
+// failure -- callers that anchor relative paths to this would otherwise quietly
+// lose the anchoring. The cap is deliberate rather than a limit to raise: it sits
+// past every platform's own path limit, Windows long paths included at 32767, so
+// reaching it means the call is failing for a reason growing cannot fix, and
+// giving up beats doubling until the allocation does.
 inline std::string currentWorkingDirectory()
 {
   for (std::size_t size = 512; size <= 65536; size *= 2) {
