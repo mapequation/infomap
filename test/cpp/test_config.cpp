@@ -2,6 +2,7 @@
 
 #include "TestUtils.h"
 #include "io/Config.h"
+#include "io/InfomapError.h"
 #include "io/OutputFormats.h"
 #include "io/OutputPlan.h"
 #include "io/ParameterCatalog.h"
@@ -520,6 +521,81 @@ TEST_CASE("Output plan applies trial suffix before format suffix [fast][core][co
   REQUIRE(artifacts.size() == 1);
   CHECK(infomap::outputPlanBasename(config, 2) == "out/network_trial_2");
   CHECK(artifacts.front().filename == "out/network_trial_2.tree");
+}
+
+TEST_CASE("Output preflight refuses to write over the run's own input [fast][core][config][output]")
+{
+  // `Infomap ml.net . -o network` plans ./ml.net for the Pajek output, which is
+  // the input itself. It used to overwrite it and exit 0, replacing a multilayer
+  // network with its single-layer projection.
+  Config config;
+  config.networkFile = "ml.net";
+  config.outDirectory = "./";
+  config.outName = "ml";
+  config.printPajekNetwork = true;
+
+  CHECK_THROWS_AS(infomap::preflightOutputTargets(config), infomap::InfomapError);
+
+  try {
+    infomap::preflightOutputTargets(config);
+    FAIL("expected the input collision to be rejected");
+  } catch (const infomap::InfomapError& e) {
+    CHECK(e.code() == infomap::ExitCode::OutputError);
+    // The message has to name the file, or the user cannot tell which of several
+    // inputs collided.
+    CHECK(std::string(e.what()).find("ml.net") != std::string::npos);
+  }
+}
+
+TEST_CASE("Output preflight input check ignores the overwrite policy [fast][core][config][output]")
+{
+  // --no-overwrite is not the mitigation: it rejects every ordinary re-run, so
+  // the input check has to hold under the default permissive policy too.
+  Config config;
+  config.networkFile = "net.json";
+  config.outDirectory = "";
+  config.outName = "net";
+  config.printJson = true;
+
+  REQUIRE(config.overwriteOutput());
+  CHECK_THROWS_AS(infomap::preflightOutputTargets(config), infomap::InfomapError);
+}
+
+TEST_CASE("Output preflight protects every input the run reads [fast][core][config][output]")
+{
+  const auto collides = [](void (*attach)(Config&)) {
+    Config config;
+    config.networkFile = "input.net";
+    config.outDirectory = "";
+    config.outName = "seed";
+    config.printTree = true;
+    attach(config);
+    try {
+      infomap::preflightOutputTargets(config);
+    } catch (const infomap::InfomapError&) {
+      return true;
+    }
+    return false;
+  };
+
+  CHECK(collides([](Config& c) { c.clusterDataFile = "seed.tree"; }));
+  CHECK(collides([](Config& c) { c.metaDataFile = "seed.tree"; }));
+  CHECK(collides([](Config& c) { c.additionalInput.push_back("seed.tree"); }));
+  // A basename that shares nothing with any input is fine.
+  CHECK_FALSE(collides([](Config& c) { c.clusterDataFile = "other.tree"; }));
+}
+
+TEST_CASE("Output preflight compares paths through './' [fast][core][config][output]")
+{
+  // The reachable form: the input is given bare and the output directory is ".",
+  // so the planned path differs from the input as a string but names the same file.
+  Config config;
+  config.networkFile = "net.tree";
+  config.outDirectory = "./";
+  config.outName = "net";
+  config.printTree = true;
+
+  CHECK_THROWS_AS(infomap::preflightOutputTargets(config), infomap::InfomapError);
 }
 
 TEST_CASE("Parameter catalog owns option choices and render policy [fast][core][config][cli]")

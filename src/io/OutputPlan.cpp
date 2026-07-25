@@ -25,6 +25,50 @@ namespace infomap {
 
 namespace {
 
+  // Path comparison for "would this output overwrite an input?". std::filesystem
+  // is C++17 and this translation unit is C++14; realpath/stat are POSIX-only and
+  // the project also builds on Windows. So: fold separators, collapse repeated
+  // ones, and drop "./" segments, then compare. Both sides come from the same
+  // command line and resolve against the same working directory, which covers the
+  // reachable cases -- "net.json" versus the planned "./net.json". It does not
+  // resolve symlinks, "..", or Windows case-insensitivity, so it can miss an
+  // exotic aliasing; it never reports a collision that is not one.
+  std::string normalizePathForComparison(const std::string& path)
+  {
+    std::string folded;
+    folded.reserve(path.size());
+    for (char c : path) {
+      const char separator = c == '\\' ? '/' : c;
+      if (separator == '/' && !folded.empty() && folded.back() == '/')
+        continue;
+      folded.push_back(separator);
+    }
+
+    std::string result;
+    result.reserve(folded.size());
+    for (std::size_t i = 0; i < folded.size();) {
+      const bool atSegmentStart = i == 0 || folded[i - 1] == '/';
+      if (atSegmentStart && folded.compare(i, 2, "./") == 0) {
+        i += 2;
+        continue;
+      }
+      result.push_back(folded[i]);
+      ++i;
+    }
+    return result;
+  }
+
+  // Every file the run reads. Writing a result over any of them destroys input.
+  std::vector<std::string> inputPaths(const Config& config)
+  {
+    std::vector<std::string> inputs;
+    inputs.push_back(config.networkFile);
+    inputs.push_back(config.clusterDataFile);
+    inputs.push_back(config.metaDataFile);
+    inputs.insert(inputs.end(), config.additionalInput.begin(), config.additionalInput.end());
+    return inputs;
+  }
+
   OutputArtifact artifact(const Config& config,
                           const std::string& basename,
                           OutputPhase phase,
@@ -258,10 +302,36 @@ std::vector<std::string> planAllOutputPaths(const Config& config)
 
 void preflightOutputTargets(const Config& config)
 {
+  const auto plannedPaths = planAllOutputPaths(config);
+
+  // Checked before the overwrite policy, and deliberately not subject to it:
+  // writing a result over the run's own input destroys the input, and
+  // --no-overwrite cannot be the mitigation because it rejects every ordinary
+  // re-run as well. Reachable from a plain command whenever the output goes to
+  // the input's own directory and a requested format shares its extension --
+  // `Infomap net.json . -o json` replaced the network with the result tree, and
+  // `Infomap ml.net . -o network` replaced a multilayer input with its
+  // single-layer projection, both exiting 0.
+  const auto inputs = inputPaths(config);
+  for (const auto& path : plannedPaths) {
+    const auto normalizedOutput = normalizePathForComparison(path);
+    for (const auto& input : inputs) {
+      if (input.empty())
+        continue;
+      if (normalizePathForComparison(input) != normalizedOutput)
+        continue;
+      throw InfomapError(ExitCode::OutputError,
+                         fmt::format(FMT_STRING("Refusing to write output over the input file '{}'. "
+                                                "Write to a different directory, or pass --out-name to "
+                                                "give the result a different basename."),
+                                     input));
+    }
+  }
+
   if (config.overwriteOutput())
     return;
 
-  for (const auto& path : planAllOutputPaths(config)) {
+  for (const auto& path : plannedPaths) {
     if (pathExists(path))
       throw InfomapError(ExitCode::OutputError, fmt::format(FMT_STRING("Output file already exists: '{}'"), path));
   }
