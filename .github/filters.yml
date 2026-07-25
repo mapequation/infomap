@@ -110,6 +110,10 @@ javascript:
   - "interfaces/parameters/**"
   - "scripts/generate_binding_options.py"
   - "scripts/parameter_catalog.py"
+  # generate_binding_options.py imports render_parameter_policy and splices its
+  # output into the tracked interfaces/parameters/policy.md, so it is a generator
+  # input like the two above and must trigger the freshness gate.
+  - "scripts/render_parameter_policy.py"
   - "scripts/generate_js_metadata.py"
   - "scripts/prepare_npm_package.py"
   - ".github/actions/setup-js-build/action.yml"
@@ -180,3 +184,9 @@ notebooks:
 meta:
   - ".github/**"
   - ".pre-commit-config.yaml"
+  # The fuzz harness and the native benchmark sources are built only by
+  # schedule-triggered or opt-in targets (make fuzz, bench-native), so they match
+  # no lane filter. Without them here a PR that only edits them runs zero jobs --
+  # not even the pre-commit hygiene gate -- and ci-summary reports green.
+  - "test/fuzz/**"
+  - "test/bench/**"

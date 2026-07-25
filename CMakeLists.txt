@@ -119,7 +119,11 @@ target_link_options(infomap_core PUBLIC ${INFOMAP_LINK_FLAGS})
 
 if(INFOMAP_ENABLE_SANITIZERS)
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
-        target_compile_options(infomap_core PUBLIC -fsanitize=address,undefined -fno-omit-frame-pointer)
+        # -fno-sanitize-recover=undefined: without it UBSan prints "runtime
+        # error: ..." and carries on, so the doctest binary exits 0, ctest
+        # reports Passed, and --output-on-failure never shows the diagnostic --
+        # the blocking sanitizer job could not fail on any UB finding.
+        target_compile_options(infomap_core PUBLIC -fsanitize=address,undefined -fno-sanitize-recover=undefined -fno-omit-frame-pointer)
         target_link_options(infomap_core PUBLIC -fsanitize=address,undefined)
     else()
         message(FATAL_ERROR "INFOMAP_ENABLE_SANITIZERS requires Clang or GCC.")
@@ -309,7 +313,7 @@ if(INFOMAP_BUILD_FUZZERS)
     # Instrument the core for coverage-guided fuzzing plus the sanitizers the
     # harness links, so findings surface from library code, not just the harness.
     target_compile_options(infomap_core
-        PRIVATE -fsanitize=fuzzer-no-link,address,undefined -fno-omit-frame-pointer)
+        PRIVATE -fsanitize=fuzzer-no-link,address,undefined -fno-sanitize-recover=undefined -fno-omit-frame-pointer)
     # PUBLIC link options so every consumer of the instrumented core (the CLI,
     # stray test targets) links the sanitizer runtimes too -- without this,
     # building anything but fuzz_intake in a fuzz-configured tree fails at
@@ -320,6 +324,6 @@ if(INFOMAP_BUILD_FUZZERS)
     add_executable(fuzz_intake test/fuzz/fuzz_intake.cpp)
     target_link_libraries(fuzz_intake PRIVATE infomap_core)
     target_compile_options(fuzz_intake
-        PRIVATE -fsanitize=fuzzer,address,undefined -fno-omit-frame-pointer)
+        PRIVATE -fsanitize=fuzzer,address,undefined -fno-sanitize-recover=undefined -fno-omit-frame-pointer)
     target_link_options(fuzz_intake PRIVATE -fsanitize=fuzzer,address,undefined)
 endif()

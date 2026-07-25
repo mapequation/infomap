@@ -116,7 +116,7 @@ test-sanitizers:
 	else \
 		ASAN_OPTS="$$ASAN_OPTS:detect_leaks=1"; \
 	fi; \
-	ASAN_OPTIONS="$$ASAN_OPTS" UBSAN_OPTIONS=print_stacktrace=1 "$(CTEST)" --test-dir $(SANITIZER_BUILD_DIR) --output-on-failure $(CTEST_ARGS)
+	ASAN_OPTIONS="$$ASAN_OPTS" UBSAN_OPTIONS=print_stacktrace=1:halt_on_error=1 "$(CTEST)" --test-dir $(SANITIZER_BUILD_DIR) --output-on-failure $(CTEST_ARGS)
 
 # Build and briefly run the libFuzzer harness for the network intake (Clang
 # only; opt-in via INFOMAP_BUILD_FUZZERS, kept out of the default build/ctest).
@@ -136,7 +136,7 @@ fuzz:
 		-DCMAKE_C_COMPILER=$(FUZZ_CC)
 	@"$(CMAKE)" --build $(FUZZ_BUILD_DIR) --target fuzz_intake --parallel $(JOBS)
 	@mkdir -p $(FUZZ_BUILD_DIR)/corpus
-	@ASAN_OPTIONS=strict_string_checks=1 UBSAN_OPTIONS=print_stacktrace=1 \
+	@ASAN_OPTIONS=strict_string_checks=1 UBSAN_OPTIONS=print_stacktrace=1:halt_on_error=1 \
 		$(FUZZ_BUILD_DIR)/fuzz_intake \
 			-max_total_time=$(FUZZ_SECONDS) -max_len=1048576 -timeout=10 \
 			-dict=test/fuzz/intake.dict \
