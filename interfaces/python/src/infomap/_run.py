@@ -25,6 +25,8 @@ import warnings
 from collections.abc import Iterable, Mapping
 from typing import TYPE_CHECKING, Any
 
+from ._options import _UNSET as _OPTIONS_UNSET
+
 if TYPE_CHECKING:
     from ._options import Options
     from .result import Result
@@ -396,20 +398,11 @@ def _partition_to_internal_ids(initial_partition: Any, id_to_label: Any) -> Any:
     }
 
 
-# Sentinel for the common-tier keyword parameters below: it lets run() tell "the
-# caller passed this option" from "left at its default", so a supplied value
-# overrides the ``options`` carrier while an untouched one defers to it. Typed
-# ``Any`` so the honest per-parameter annotations (``seed: int`` ...) still
-# type-check against this shared default; the ``<unset>`` repr keeps
-# ``inspect.signature(infomap.run)`` readable for IDE and tooling introspection.
-class _Unset:
-    __slots__ = ()
-
-    def __repr__(self) -> str:
-        return "<unset>"
-
-
-_UNSET: Any = _Unset()
+# The sentinel for the common-tier keyword parameters below lives in the
+# generated options module, because the Infomap()/run() signatures declare the
+# same five with it: one object means ``value is not _UNSET`` holds on every
+# surface. Re-exported here because network.py has always imported it from _run.
+_UNSET = _OPTIONS_UNSET
 
 
 def run(
