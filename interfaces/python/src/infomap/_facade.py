@@ -578,7 +578,8 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             Deprecated. Accepted for backward compatibility; has no effect. Passing it
             explicitly emits a DeprecationWarning.
         two_level : bool, optional
-            Optimize a two-level partition instead of the default multi-level hierarchy.
+            Optimize a two-level partition instead of the default multi-level hierarchy
+            (default False).
         flow_model : str, optional
             Choose how Infomap derives flow from the input links. Options: undirected,
             directed, undirdir, outdirdir, rawdir, precomputed.
@@ -586,7 +587,8 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             .. versionchanged:: 2.15
                 Pass it via ``Options``; moves off this signature in 3.0.
         directed : bool, optional
-            Treat input links as directed. Shorthand for --flow-model directed.
+            Treat input links as directed. Shorthand for --flow-model directed (default
+            None).
         recorded_teleportation : bool, optional
             When teleportation is used to calculate flow, also record teleportation
             steps in the codelength.
@@ -654,7 +656,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
                 Pass it via ``Options``; moves off this signature in 3.0.
         markov_time : float, optional
             Scale link flow to change the cost of moving between modules. Higher values
-            result in fewer modules.
+            result in fewer modules (default 1.0).
         variable_markov_time : bool, optional
             Vary Markov time locally to reduce overpartitioning in sparse areas while
             keeping higher resolution in dense areas.
@@ -731,9 +733,9 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             .. versionchanged:: 2.15
                 Pass it via ``Options``; moves off this signature in 3.0.
         seed : int, optional
-            Set the random number generator seed for reproducible results.
+            Set the random number generator seed for reproducible results (default 123).
         num_trials : int, optional
-            Run this many independent trials and keep the best solution.
+            Run this many independent trials and keep the best solution (default 1).
         core_loop_limit : int, optional
             Limit how many core loops try to move each node to the best module.
 
