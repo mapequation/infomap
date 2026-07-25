@@ -134,6 +134,8 @@ private:
 
   double calcNumModuleCost(unsigned int numModules) const;
 
+  unsigned int numModulesAfterMove(int deltaNumModules) const;
+
   double calcIndexEntropyBiasCorrection(unsigned int numModules) const;
   double calcModuleEntropyBiasCorrection() const;
   double calcEntropyBiasCorrection(unsigned int numModules) const;
