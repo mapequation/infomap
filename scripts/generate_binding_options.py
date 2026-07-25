@@ -1476,8 +1476,11 @@ def _render_facade_docstring_params(names, index):
         if info.get("tier") == "common":
             # The signature declares these with the _UNSET sentinel so the merge
             # can see an explicitly passed default (see _render_facade_signature),
-            # which means it no longer shows the real default. State it here, the
-            # way the hand-written infomap.run() docstring already does.
+            # which means it no longer shows the real default. State it here
+            # instead. The hand-written infomap.run() docstring does the same for
+            # seed and num_trials ("...for reproducible results (default 123)");
+            # it leaves two_level, directed and markov_time to prose, and this
+            # covers all five uniformly.
             doc = f"{doc.rstrip('.')} (default {info['default']})."
         lines.extend(wrap_doc(doc, "            "))
         if info.get("inert_without_outdir"):
