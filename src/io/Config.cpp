@@ -99,6 +99,17 @@ namespace {
     }
   }
 
+  // Whether the caller actually passed --num-trials/-N, as opposed to landing on
+  // its default. parsedOptions records the long name whichever form was typed.
+  bool numTrialsGivenExplicitly(const Config& config)
+  {
+    for (const auto& option : config.parsedOptions) {
+      if (option.longName == "num-trials")
+        return true;
+    }
+    return false;
+  }
+
   void applyOptionInteractions(Config& config)
   {
     if (config.regularized) {
@@ -109,10 +120,25 @@ namespace {
       config.numTrials = 1;
     }
 
-    // --converge reinterprets numTrials as a cap. numTrials has min=1, so a value
-    // of 1 is the unspecified/default sentinel; treat it as "no explicit -N" and
-    // use the default cap (a single-trial cap would make --converge a no-op).
-    if (config.convergeTrials && config.numTrials == 1 && !config.noInfomap) {
+    // --converge reinterprets numTrials as a cap, and falls back to a default cap
+    // when the caller did not give one. "Did not give one" is read from
+    // parsedOptions rather than from the value: numTrials == 1 was previously used
+    // as the sentinel, which silently rewrote an explicit `-N 1 --converge` to 50
+    // trials and could change the reported result. A cap of one makes --converge a
+    // no-op, but that is the caller's call to make.
+    //
+    // Reaches the CLI only, for two reasons worth writing down:
+    //   * parsedOptions is empty when a Config is mutated programmatically and
+    //     adaptDefaults() is called by hand (the C++ library path);
+    //   * the Python/R bindings do parse an argument string, but their option
+    //     renderer omits any value equal to its default, so `num_trials=1` with
+    //     `converge=True` renders no --num-trials at all and still gets the
+    //     default cap (measured: 6 trials on unbalanced_hierarchy either way).
+    // That elision was assumed behaviour-preserving because the rendered defaults
+    // come from this catalog -- this option is the counter-example, since
+    // --converge makes "given as 1" mean something different from "not given".
+    // Fixing it belongs in the generator (the residue recorded in #914).
+    if (config.convergeTrials && !config.noInfomap && !numTrialsGivenExplicitly(config)) {
       config.numTrials = Config::convergeDefaultMaxTrials;
     }
   }

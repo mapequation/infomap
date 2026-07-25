@@ -209,6 +209,27 @@ TEST_CASE("Config uses a default cap for converge without explicit num-trials [f
   CHECK(config.numTrials == defaultCap);
 }
 
+TEST_CASE("Config honors an explicit single-trial cap for converge [fast][core][config][cli]")
+{
+  // -N 1 --converge used to be rewritten to the default cap, because numTrials
+  // == 1 doubled as the "no explicit -N" sentinel. A cap of one makes --converge
+  // a no-op, which is a legitimate thing to ask for, and silently running 50
+  // trials instead can change the reported result.
+  const unsigned int defaultCap = Config::convergeDefaultMaxTrials;
+
+  const Config explicitOne("input.net --silent --no-file-output --num-trials 1 --converge", true);
+  CHECK(explicitOne.convergeTrials);
+  CHECK(explicitOne.numTrials == 1);
+
+  // The short form is the same option, so it must behave identically.
+  const Config shortForm("input.net --silent --no-file-output -N 1 --converge", true);
+  CHECK(shortForm.numTrials == 1);
+
+  // And the default cap still applies when the count is left unsaid.
+  const Config implicit("input.net --silent --no-file-output --converge", true);
+  CHECK(implicit.numTrials == defaultCap);
+}
+
 TEST_CASE("Config rejects converge combined with parallel trials [fast][core][config][cli]")
 {
   CHECK_THROWS_AS(Config("input.net --silent --no-file-output --converge --parallel-trials --num-trials 10", true), std::runtime_error);
