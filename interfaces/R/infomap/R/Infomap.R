@@ -47,7 +47,7 @@ Infomap <- function(args = NULL, opts = NULL, ...) {
 # The engine itself accepts the full 32-bit unsigned range; reaching it from R
 # would need a change to the generated SWIG typemap, so the representable limit
 # is the R integer maximum for now.
-.ID_MAX <- 2147483647L
+.ID_MAX <- .Machine$integer.max
 
 .as_ids <- function(x, what) {
   if (length(x) == 0L) {
