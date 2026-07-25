@@ -82,7 +82,15 @@ test = [
   "networkx",
   "pyarrow",
   "referencing",
-  "ruff",
+  # Pinned for the same reason as pyright above: `ruff check` gates CI (it is
+  # the first step of test-python-doctest), and new ruff releases promote rules
+  # into the default set, so an unpinned ruff turns master red with no code
+  # change. 0.16.0 did exactly that, adding 38 findings across nine rule
+  # families (PLC0414, PLR0402, RUF012, RUF022, RUF023, RUF100, SIM114, SIM117,
+  # TRY004) that no `extend-select` in this project asks for. Keep this in sync
+  # with the ruff-pre-commit `rev` in .pre-commit-config.yaml, and bump both
+  # together, deliberately.
+  "ruff==0.15.8",
   "scipy",
 ]
 docs = [
