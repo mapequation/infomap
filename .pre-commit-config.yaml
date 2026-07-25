@@ -33,7 +33,9 @@ ci:
 repos:
   # Python lint. CI already runs `ruff check` on the package + examples/python
   # (via `make test-python-doctest`); this runs it repo-wide with autofix.
-  # Pinned to the ruff version in the project venv so local and hook agree.
+  # Pinned to the ruff version in the project venv so local and hook agree;
+  # the same version is pinned in pyproject.toml's `test` extra (which is what
+  # CI installs) and all three bump together.
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.15.8
     hooks:
