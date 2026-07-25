@@ -1472,7 +1472,14 @@ def _render_facade_docstring_params(names, index):
         if info["doc"] is None:
             continue
         lines.append(f"        {name} : {info['doc_type']}")
-        lines.extend(wrap_doc(info["doc"], "            "))
+        doc = info["doc"]
+        if info.get("tier") == "common":
+            # The signature declares these with the _UNSET sentinel so the merge
+            # can see an explicitly passed default (see _render_facade_signature),
+            # which means it no longer shows the real default. State it here, the
+            # way the hand-written infomap.run() docstring already does.
+            doc = f"{doc.rstrip('.')} (default {info['default']})."
+        lines.extend(wrap_doc(doc, "            "))
         if info.get("inert_without_outdir"):
             lines.append("")
             lines.extend(wrap_doc(_INERT_WITHOUT_OUTDIR_NOTE, "            "))
