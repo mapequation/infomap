@@ -149,17 +149,22 @@ double BiasedMapEquation::calcCodelengthOnModuleOfModules(const InfoNode& parent
   if (!useEntropyBiasCorrection)
     return L;
 
-  // NOTE (#830): for a two-level tree this over-counts the root by one codeword
-  // -- the root index codebook has no exit codeword, so its Miller-Madow term
-  // spans childDegree - 1, which is what the tracked value uses
-  // (calcIndexEntropyBiasCorrection). Charging childDegree here is exactly the
-  // 1 / (2 * totalDegree) drift measured on lossy_benchmark. It is left alone
-  // deliberately: on a three-level tree the drift has the opposite sign and is
-  // 5 / (2 * totalDegree) on ninetriangles, because the tracked side uses the
-  // two-level formula (numModules - 1 + numNodes) / (2D) while this recompute
-  // sums childDegree over every internal node. Fixing the root alone makes the
-  // hierarchical gap larger, so both sides need the multi-level Miller-Madow
-  // definition settled together. See #830 for the measurements.
+  // NOTE (#830): this recompute and the tracked value disagree, by a now fully
+  // measured amount. The tracked side uses (numModules - 1 + numNodes) / (2D),
+  // i.e. one term for the root index codebook and one for the leaf codewords.
+  // This recompute instead sums childDegree over every internal node, which
+  // differs in exactly two places:
+  //   * the root is charged childDegree here but childDegree - 1 there, and the
+  //     latter is right: the root index codebook has no exit codeword;
+  //   * every non-root module-of-modules contributes childDegree here and
+  //     nothing at all there.
+  // Measured with the root term corrected: the residual drift is exactly
+  // (number of non-root module-of-modules) / (2 * totalDegree) -- 0 on two-level
+  // trees (lossy_benchmark, ninetriangles: exact match) and 1/514 on
+  // unbalanced_hierarchy, which has one. Both sides are left alone here so the
+  // root term and the missing intermediate term land together; fixing only the
+  // root would make two-level runs exact while leaving hierarchical runs off by
+  // a tree-shape-dependent amount.
   return L + entropyBiasCorrectionMultiplier * parent.childDegree() / (2 * m_totalDegree);
 }
 
@@ -170,6 +175,15 @@ double BiasedMapEquation::calcCodelengthOnModuleOfLeafNodes(const InfoNode& pare
     return L;
 
   return L + entropyBiasCorrectionMultiplier * parent.childDegree() / (2 * m_totalDegree);
+}
+
+// The post-move module count. deltaNumModules is -1, 0 or +1, and a removal
+// requires the node's old module to be its last member -- which needs a second,
+// non-empty module to move into -- so the count cannot drop below one. Computed
+// through int to keep the unsigned-wrap question out of the reader's way.
+unsigned int BiasedMapEquation::numModulesAfterMove(int deltaNumModules) const
+{
+  return static_cast<unsigned int>(static_cast<int>(currentNumModules) + deltaNumModules);
 }
 
 int BiasedMapEquation::getDeltaNumModulesIfMoving(unsigned int oldModule,
@@ -201,11 +215,13 @@ INFOMAP_HOT double BiasedMapEquation::getDeltaCodelengthOnMovingNode(InfoNode& c
 
   int deltaNumModules = getDeltaNumModulesIfMoving(oldModuleDelta.module, newModuleDelta.module, moduleMembers);
 
+  const unsigned int numModules = numModulesAfterMove(deltaNumModules);
+
   double deltaBiasedCost = preferredNumModules == 0
       ? 0.0
-      : calcNumModuleCost(currentNumModules + deltaNumModules) - biasedCost;
+      : calcNumModuleCost(numModules) - biasedCost;
 
-  double deltaEntropyBiasCorrection = calcEntropyBiasCorrection(currentNumModules + deltaNumModules) - getEntropyBiasCorrection();
+  double deltaEntropyBiasCorrection = calcEntropyBiasCorrection(numModules) - getEntropyBiasCorrection();
 
   return deltaL + deltaBiasedCost + deltaEntropyBiasCorrection;
 }
@@ -225,11 +241,13 @@ INFOMAP_HOT double BiasedMapEquation::getDeltaCodelengthOnMovingNodeHoisted(Info
 
   int deltaNumModules = getDeltaNumModulesIfMoving(oldModuleDelta.module, newModuleDelta.module, moduleMembers);
 
+  const unsigned int numModules = numModulesAfterMove(deltaNumModules);
+
   double deltaBiasedCost = preferredNumModules == 0
       ? 0.0
-      : calcNumModuleCost(currentNumModules + deltaNumModules) - biasedCost;
+      : calcNumModuleCost(numModules) - biasedCost;
 
-  double deltaEntropyBiasCorrection = calcEntropyBiasCorrection(currentNumModules + deltaNumModules) - getEntropyBiasCorrection();
+  double deltaEntropyBiasCorrection = calcEntropyBiasCorrection(numModules) - getEntropyBiasCorrection();
 
   return deltaL + deltaBiasedCost + deltaEntropyBiasCorrection;
 }
@@ -246,13 +264,20 @@ void BiasedMapEquation::updateCodelengthOnMovingNode(InfoNode& current,
 {
   Base::updateCodelengthOnMovingNode(current, oldModuleDelta, newModuleDelta, moduleFlowData, moduleMembers);
 
-  if (preferredNumModules == 0)
+  // Must match getDeltaCodelengthOnMovingNode's guard exactly: if the delta
+  // accounts for a term, the accepted move has to update the state that term is
+  // computed from. Widening the delta guard while leaving this one on
+  // preferredNumModules would leave currentNumModules and
+  // indexEntropyBiasCorrection frozen at their initPartition values, so every
+  // later delta would be measured against a stale module count.
+  if (preferredNumModules == 0 && !useEntropyBiasCorrection)
     return;
 
   int deltaNumModules = getDeltaNumModulesIfMoving(oldModuleDelta.module, newModuleDelta.module, moduleMembers);
 
-  currentNumModules += deltaNumModules;
-  biasedCost = calcNumModuleCost(currentNumModules);
+  currentNumModules = numModulesAfterMove(deltaNumModules);
+  if (preferredNumModules != 0)
+    biasedCost = calcNumModuleCost(currentNumModules);
   indexEntropyBiasCorrection = calcIndexEntropyBiasCorrection(currentNumModules);
   moduleEntropyBiasCorrection = calcModuleEntropyBiasCorrection();
 }
