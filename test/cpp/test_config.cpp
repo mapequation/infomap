@@ -8,33 +8,16 @@
 #include "io/ParameterCatalog.h"
 #include "io/ProgramInterface.h"
 #include "io/RunMetadata.h"
+#include "io/SafeFile.h"
 
 #include <map>
 #include <set>
 #include <utility>
 #include <vector>
 
-#ifdef _WIN32
-#include <direct.h>
-#else
-#include <unistd.h>
-#endif
-
 namespace {
 
 using infomap::Config;
-
-std::string currentDirectory()
-{
-  char buffer[4096];
-#ifdef _WIN32
-  const char* result = _getcwd(buffer, sizeof(buffer));
-#else
-  const char* result = getcwd(buffer, sizeof(buffer));
-#endif
-  REQUIRE(result != nullptr);
-  return std::string(result);
-}
 
 std::vector<std::string> resultKeysFor(const Config& config, infomap::OutputPhase phase)
 {
@@ -657,7 +640,12 @@ TEST_CASE("Output preflight anchors relative paths to the working directory [fas
   // The two sides need not be given in the same form. `Infomap ml.net $PWD -o network`
   // plans $PWD/ml.net, which is the input; comparing the strings as given matched
   // neither way round, and the input was overwritten at exit 0.
-  const std::string cwd = currentDirectory();
+  //
+  // Reading the working directory through the same function the guard uses is the
+  // point: an empty result means the guard's anchoring is silently off, and this
+  // test should say so rather than skip.
+  const std::string cwd = infomap::currentWorkingDirectory();
+  REQUIRE_FALSE(cwd.empty());
 
   Config relativeInput;
   relativeInput.networkFile = "ml.net";

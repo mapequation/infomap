@@ -21,12 +21,6 @@
 #include <stdexcept>
 #include <utility>
 
-#ifdef _WIN32
-#include <direct.h>
-#else
-#include <unistd.h>
-#endif
-
 namespace infomap {
 
 namespace {
@@ -53,20 +47,12 @@ namespace {
     return folded.size() >= 3 && folded[1] == ':' && folded[2] == '/'; // "C:/..."
   }
 
-  // The working directory, or empty if it cannot be read. Relative paths on both
-  // sides of the comparison resolve against it, and the preflight runs before
-  // anything can chdir, so reading it once is enough.
+  // Relative paths on both sides of the comparison resolve against the working
+  // directory, and the preflight runs before anything can chdir, so reading it
+  // once is enough.
   const std::string& workingDirectory()
   {
-    static const std::string cwd = [] {
-      char buffer[4096];
-#ifdef _WIN32
-      const char* result = _getcwd(buffer, sizeof(buffer));
-#else
-      const char* result = getcwd(buffer, sizeof(buffer));
-#endif
-      return result == nullptr ? std::string() : std::string(result);
-    }();
+    static const std::string cwd = currentWorkingDirectory();
     return cwd;
   }
 
@@ -81,7 +67,9 @@ namespace {
   // It does not resolve symlinks, "..", or Windows case-insensitivity, so it can
   // miss an exotic aliasing; it never reports a collision that is not one --
   // note that anchoring only ever makes two paths that already named the same
-  // file compare equal, since the anchor is the same string for both sides.
+  // file compare equal, since the anchor is the same string for both sides. If
+  // the working directory cannot be read at all, the comparison degrades to the
+  // paths as given, which is a miss and never a false refusal.
   std::string normalizePathForComparison(const std::string& path)
   {
     std::string folded = foldSeparators(path);

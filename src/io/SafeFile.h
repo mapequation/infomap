@@ -13,6 +13,7 @@
 #include "InfomapError.h"
 #include "../utils/format.h"
 #include <atomic>
+#include <cerrno>
 #include <ctime>
 #include <fstream>
 #include <ios>
@@ -20,6 +21,7 @@
 #include <stdexcept>
 #include <string>
 #include <sys/stat.h>
+#include <vector>
 
 #ifdef _WIN32
 #include <direct.h>
@@ -67,6 +69,27 @@ inline bool pathExists(const std::string& path)
 {
   struct stat info;
   return stat(path.c_str(), &info) == 0;
+}
+
+// The process working directory, or an empty string if it cannot be read.
+// The buffer grows until the call stops complaining about its size, so a deep CI
+// path or a Windows long path is not a silent failure -- callers that anchor
+// relative paths to this would otherwise quietly lose the anchoring.
+inline std::string currentWorkingDirectory()
+{
+  for (std::size_t size = 512; size <= 65536; size *= 2) {
+    std::vector<char> buffer(size);
+#ifdef _WIN32
+    const char* result = _getcwd(buffer.data(), static_cast<int>(buffer.size()));
+#else
+    const char* result = getcwd(buffer.data(), buffer.size());
+#endif
+    if (result != nullptr)
+      return std::string(buffer.data());
+    if (errno != ERANGE)
+      break;
+  }
+  return std::string();
 }
 
 inline bool isDirectory(const std::string& path)
