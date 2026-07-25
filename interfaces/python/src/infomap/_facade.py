@@ -33,6 +33,7 @@ from ._network_input import first_order_unpacker as _first_order_unpacker
 from ._network_input import flat_multilayer_unpacker as _flat_multilayer_unpacker
 from ._network_input import paired_multilayer_unpacker as _paired_multilayer_unpacker
 from ._options import (
+    _UNSET,
     # The Literal aliases are referenced by the generated __init__/run
     # signatures below, which are evaluated at class-definition time.
     FlowModel,
@@ -40,6 +41,7 @@ from ._options import (
     Options,
     OutputFormat,
     _construct_args,
+    _explicit_options,
     _merge_options,
     _warn_advanced_tier_kwargs,
 )
@@ -254,9 +256,9 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         verbosity_level: int = 1,
         silent: bool = True,
         pretty: bool | None = None,
-        two_level: bool = False,
+        two_level: bool = _UNSET,
         flow_model: FlowModel | None = None,
-        directed: bool | None = None,
+        directed: bool | None = _UNSET,
         recorded_teleportation: bool = False,
         use_node_weights_as_flow: bool = False,
         to_nodes: bool = False,
@@ -268,7 +270,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         regularization_strength: float = 1.0,
         entropy_corrected: bool = False,
         entropy_correction_strength: float = 1.0,
-        markov_time: float = 1.0,
+        markov_time: float = _UNSET,
         variable_markov_time: bool = False,
         variable_markov_damping: float = 1.0,
         variable_markov_min_scale: float = 1.0,
@@ -281,8 +283,8 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         multilayer_relax_limit_down: int = -1,
         multilayer_relax_by_jsd: bool = False,
         multilayer_relax_to_self: bool = False,
-        seed: int = 123,
-        num_trials: int = 1,
+        seed: int = _UNSET,
+        num_trials: int = _UNSET,
         core_loop_limit: int = 10,
         core_level_limit: int | None = None,
         tune_iteration_limit: int | None = None,
@@ -830,7 +832,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
                 stacklevel=2,
             )
         _warn_advanced_tier_kwargs(locals(), "init")
-        options = _merge_options(options, Options._from_locals(locals()), "init")
+        options = _merge_options(options, _explicit_options(locals(), "init"), "init")
         self._init_from_options(args, options)
 
     def run(
@@ -871,9 +873,9 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         verbosity_level: int = 1,
         silent: bool = False,
         pretty: bool | None = None,
-        two_level: bool = False,
+        two_level: bool = _UNSET,
         flow_model: FlowModel | None = None,
-        directed: bool | None = None,
+        directed: bool | None = _UNSET,
         recorded_teleportation: bool = False,
         use_node_weights_as_flow: bool = False,
         to_nodes: bool = False,
@@ -885,7 +887,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         regularization_strength: float = 1.0,
         entropy_corrected: bool = False,
         entropy_correction_strength: float = 1.0,
-        markov_time: float = 1.0,
+        markov_time: float = _UNSET,
         variable_markov_time: bool = False,
         variable_markov_damping: float = 1.0,
         variable_markov_min_scale: float = 1.0,
@@ -898,8 +900,8 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         multilayer_relax_limit_down: int = -1,
         multilayer_relax_by_jsd: bool = False,
         multilayer_relax_to_self: bool = False,
-        seed: int = 123,
-        num_trials: int = 1,
+        seed: int = _UNSET,
+        num_trials: int = _UNSET,
         core_loop_limit: int = 10,
         core_level_limit: int | None = None,
         tune_iteration_limit: int | None = None,
@@ -954,7 +956,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
                 stacklevel=2,
             )
         _warn_advanced_tier_kwargs(locals(), "run")
-        options = _merge_options(options, Options._from_locals(locals()), "run")
+        options = _merge_options(options, _explicit_options(locals(), "run"), "run")
         return self._run_from_options(args, initial_partition, options)
 
     # === END generated ===
