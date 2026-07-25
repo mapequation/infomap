@@ -31,7 +31,18 @@ namespace {
     folded.reserve(path.size());
     for (char c : path) {
       const char separator = c == '\\' ? '/' : c;
-      if (separator == '/' && !folded.empty() && folded.back() == '/')
+#ifdef _WIN32
+      // Keep a leading "//". On Windows that prefix is the whole difference
+      // between a UNC path ("\\server\share\x") and a root-relative one
+      // ("\server\share\x"), which name different files; folding them together
+      // would refuse a run that overwrites nothing. POSIX has no such
+      // distinction -- Linux and macOS resolve "//x" to "/x" -- so there the
+      // collapse stays unconditional.
+      const bool atUncPrefix = folded.size() == 1 && folded[0] == '/';
+#else
+      const bool atUncPrefix = false;
+#endif
+      if (separator == '/' && !folded.empty() && folded.back() == '/' && !atUncPrefix)
         continue;
       folded.push_back(separator);
     }
@@ -72,8 +83,9 @@ namespace {
   // two sides be given in different forms -- a bare `ml.net` input against an
   // absolute output directory names the same file, and every combination of that
   // (absolute input with `.`, absolute --summary-json path) used to slip through.
-  // It does not resolve symlinks, "..", or Windows case-insensitivity, so it can
-  // miss an exotic aliasing; it never reports a collision that is not one --
+  // It does not resolve symlinks, "..", Windows case-insensitivity, or the
+  // extended-length "\\?\C:\" prefix, so it can miss an exotic aliasing; it never
+  // reports a collision that is not one --
   // note that anchoring only ever makes two paths that already named the same
   // file compare equal, since the anchor is the same string for both sides. If
   // the working directory cannot be read at all, the comparison degrades to the

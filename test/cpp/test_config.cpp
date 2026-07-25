@@ -669,6 +669,27 @@ TEST_CASE("Output preflight anchors relative paths to the working directory [fas
   absoluteReport.summaryJsonPath = cwd + "/run.json";
   CHECK_THROWS_AS(infomap::preflightOutputTargets(absoluteReport), infomap::InfomapError);
 
+#ifdef _WIN32
+  // A UNC path and a root-relative one with the same tail name different files, and
+  // the leading "\\" is the only thing that says so. Folding it away made this a
+  // refusal of a run that overwrites nothing.
+  Config uncVersusRootRelative;
+  uncVersusRootRelative.networkFile = "\\\\server\\share\\net.tree";
+  uncVersusRootRelative.outDirectory = "\\server\\share\\";
+  uncVersusRootRelative.outName = "net";
+  uncVersusRootRelative.printTree = true;
+  REQUIRE(uncVersusRootRelative.overwriteOutput());
+  CHECK_NOTHROW(infomap::preflightOutputTargets(uncVersusRootRelative));
+
+  // Two UNC paths that do name the same file must still be caught.
+  Config uncCollision;
+  uncCollision.networkFile = "\\\\server\\share\\net.tree";
+  uncCollision.outDirectory = "\\\\server\\share\\";
+  uncCollision.outName = "net";
+  uncCollision.printTree = true;
+  CHECK_THROWS_AS(infomap::preflightOutputTargets(uncCollision), infomap::InfomapError);
+#endif
+
 #ifndef _WIN32
   // "a:/net.tree" is a relative path into a directory named "a:" here, however much
   // it looks like a Windows drive. Treating it as absolute would skip the anchoring.
