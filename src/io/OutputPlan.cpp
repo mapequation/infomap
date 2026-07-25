@@ -21,19 +21,17 @@
 #include <stdexcept>
 #include <utility>
 
+#ifdef _WIN32
+#include <direct.h>
+#else
+#include <unistd.h>
+#endif
+
 namespace infomap {
 
 namespace {
 
-  // Path comparison for "would this output overwrite an input?". std::filesystem
-  // is C++17 and this translation unit is C++14; realpath/stat are POSIX-only and
-  // the project also builds on Windows. So: fold separators, collapse repeated
-  // ones, and drop "./" segments, then compare. Both sides come from the same
-  // command line and resolve against the same working directory, which covers the
-  // reachable cases -- "net.json" versus the planned "./net.json". It does not
-  // resolve symlinks, "..", or Windows case-insensitivity, so it can miss an
-  // exotic aliasing; it never reports a collision that is not one.
-  std::string normalizePathForComparison(const std::string& path)
+  std::string foldSeparators(const std::string& path)
   {
     std::string folded;
     folded.reserve(path.size());
@@ -42,6 +40,55 @@ namespace {
       if (separator == '/' && !folded.empty() && folded.back() == '/')
         continue;
       folded.push_back(separator);
+    }
+    return folded;
+  }
+
+  bool isAbsolutePath(const std::string& folded)
+  {
+    if (folded.empty())
+      return false;
+    if (folded[0] == '/') // POSIX, and a Windows root-relative path
+      return true;
+    return folded.size() >= 3 && folded[1] == ':' && folded[2] == '/'; // "C:/..."
+  }
+
+  // The working directory, or empty if it cannot be read. Relative paths on both
+  // sides of the comparison resolve against it, and the preflight runs before
+  // anything can chdir, so reading it once is enough.
+  const std::string& workingDirectory()
+  {
+    static const std::string cwd = [] {
+      char buffer[4096];
+#ifdef _WIN32
+      const char* result = _getcwd(buffer, sizeof(buffer));
+#else
+      const char* result = getcwd(buffer, sizeof(buffer));
+#endif
+      return result == nullptr ? std::string() : std::string(result);
+    }();
+    return cwd;
+  }
+
+  // Path comparison for "would this output overwrite an input?". std::filesystem
+  // is C++17 and this translation unit is C++14; realpath/stat are POSIX-only and
+  // the project also builds on Windows. So: fold separators, collapse repeated
+  // ones, resolve a relative path against the working directory, and drop "./"
+  // segments, then compare. Anchoring to the working directory is what lets the
+  // two sides be given in different forms -- a bare `ml.net` input against an
+  // absolute output directory names the same file, and every combination of that
+  // (absolute input with `.`, absolute --summary-json path) used to slip through.
+  // It does not resolve symlinks, "..", or Windows case-insensitivity, so it can
+  // miss an exotic aliasing; it never reports a collision that is not one --
+  // note that anchoring only ever makes two paths that already named the same
+  // file compare equal, since the anchor is the same string for both sides.
+  std::string normalizePathForComparison(const std::string& path)
+  {
+    std::string folded = foldSeparators(path);
+    if (!folded.empty() && !isAbsolutePath(folded)) {
+      const std::string& cwd = workingDirectory();
+      if (!cwd.empty())
+        folded = foldSeparators(cwd + "/" + folded);
     }
 
     std::string result;

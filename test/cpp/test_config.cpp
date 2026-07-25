@@ -14,9 +14,27 @@
 #include <utility>
 #include <vector>
 
+#ifdef _WIN32
+#include <direct.h>
+#else
+#include <unistd.h>
+#endif
+
 namespace {
 
 using infomap::Config;
+
+std::string currentDirectory()
+{
+  char buffer[4096];
+#ifdef _WIN32
+  const char* result = _getcwd(buffer, sizeof(buffer));
+#else
+  const char* result = getcwd(buffer, sizeof(buffer));
+#endif
+  REQUIRE(result != nullptr);
+  return std::string(result);
+}
 
 std::vector<std::string> resultKeysFor(const Config& config, infomap::OutputPhase phase)
 {
@@ -632,6 +650,45 @@ TEST_CASE("Output preflight compares paths through './' [fast][core][config][out
   config.printTree = true;
 
   CHECK_THROWS_AS(infomap::preflightOutputTargets(config), infomap::InfomapError);
+}
+
+TEST_CASE("Output preflight anchors relative paths to the working directory [fast][core][config][output]")
+{
+  // The two sides need not be given in the same form. `Infomap ml.net $PWD -o network`
+  // plans $PWD/ml.net, which is the input; comparing the strings as given matched
+  // neither way round, and the input was overwritten at exit 0.
+  const std::string cwd = currentDirectory();
+
+  Config relativeInput;
+  relativeInput.networkFile = "ml.net";
+  relativeInput.outDirectory = cwd + "/";
+  relativeInput.outName = "ml";
+  relativeInput.printPajekNetwork = true;
+  CHECK_THROWS_AS(infomap::preflightOutputTargets(relativeInput), infomap::InfomapError);
+
+  Config absoluteInput;
+  absoluteInput.networkFile = cwd + "/ml.net";
+  absoluteInput.outDirectory = "./";
+  absoluteInput.outName = "ml";
+  absoluteInput.printPajekNetwork = true;
+  CHECK_THROWS_AS(infomap::preflightOutputTargets(absoluteInput), infomap::InfomapError);
+
+  // Report paths are given directly, so they mix forms just as easily.
+  Config absoluteReport;
+  absoluteReport.networkFile = "run.json";
+  absoluteReport.outDirectory = "";
+  absoluteReport.outName = "run";
+  absoluteReport.summaryJsonPath = cwd + "/run.json";
+  CHECK_THROWS_AS(infomap::preflightOutputTargets(absoluteReport), infomap::InfomapError);
+
+  // Anchoring must not turn a different directory into a collision.
+  Config elsewhere;
+  elsewhere.networkFile = "ml.net";
+  elsewhere.outDirectory = cwd + "/out/";
+  elsewhere.outName = "ml";
+  elsewhere.printPajekNetwork = true;
+  REQUIRE(elsewhere.overwriteOutput());
+  CHECK_NOTHROW(infomap::preflightOutputTargets(elsewhere));
 }
 
 TEST_CASE("Parameter catalog owns option choices and render policy [fast][core][config][cli]")
