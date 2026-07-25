@@ -29,7 +29,7 @@ import os
 import warnings
 from typing import TYPE_CHECKING, Any
 
-from ._core import Core, apply_initial_partition
+from ._core import Core, _with_inferred_flow_model, apply_initial_partition
 from ._logging import engine_log_routing as _engine_log_routing
 from ._logging import is_routed as _is_log_routed
 from ._network_input import add_bulk_links as _add_bulk_links
@@ -444,6 +444,10 @@ class Network(_NetworkWritersMixin):
                     UserWarning,
                     stacklevel=2,
                 )
+
+        # An input adapter may have resolved the flow model from the input
+        # itself; render it so it survives this run's argument string.
+        resolved = _with_inferred_flow_model(self._core, resolved)
 
         # engine_emits stays False: a Network's engine is --silent for its
         # whole lifetime (see the advisory above), so verbosity_level can never

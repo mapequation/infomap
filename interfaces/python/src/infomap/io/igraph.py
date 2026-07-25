@@ -187,8 +187,8 @@ def add_igraph_graph(
             "`vertex_weights` is not supported by infomap's igraph adapter yet."
         )
 
-    if not infomap._core.flowModelIsSet and g.is_directed():
-        infomap._core.setDirected(True)
+    if g.is_directed():
+        infomap._core.note_inferred_flow_model("directed")
 
     names = _vertex_names(g)
     weights = _edge_weights(g, edge_weights)

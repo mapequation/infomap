@@ -51,6 +51,29 @@ class Core:
         # conflicts) are thrown while the wrapper parses ``args``.
         with _translate_engine_errors():
             self._im = InfomapWrapper(args)
+        # Flow model an input adapter resolved from the input itself (a
+        # directed graph object, an explicit ``directed=`` on the matrix and
+        # edge-index adapters). Recorded rather than set on the engine: see
+        # note_inferred_flow_model.
+        self.inferred_flow_model: str | None = None
+
+    def note_inferred_flow_model(self, flow_model: str) -> None:
+        """Record a flow model that an input adapter resolved from the input.
+
+        Setting it on the engine directly does not survive a run: options reach
+        the engine as a rendered argument string that it re-parses into a fresh
+        config, so anything configured outside that string is dropped as soon as
+        the string changes -- which any per-run keyword does. The recorded value
+        is instead folded into the options that get rendered
+        (``_with_inferred_flow_model``), so it is authoritative for every run.
+
+        Explicit configuration wins. Nothing is recorded when the engine was
+        constructed with a flow model, and the first inference wins over a later
+        one so a second adapter call cannot silently change the model.
+        """
+        if self.flowModelIsSet or self.inferred_flow_model is not None:
+            return
+        self.inferred_flow_model = flow_model
 
     def get_node_data(self, level=1, states=False):
         """Single-traversal bulk node data over the result tree.
@@ -72,6 +95,25 @@ class Core:
         if name == "_im":
             raise AttributeError(name)
         return getattr(self._im, name)
+
+
+def _with_inferred_flow_model(core: Any, options):
+    """Fold an adapter's inferred flow model into the options to be rendered.
+
+    Shared by ``Infomap.run`` and ``Network.run`` so both entry points agree on
+    the precedence: an inference (recorded by ``Core.note_inferred_flow_model``)
+    applies only when this run's options carry neither ``flow_model`` nor
+    ``directed``, so explicit configuration always wins -- whether it was given
+    at construction, on the options carrier, or as a per-run keyword.
+
+    Returns ``options`` unchanged when there is nothing to fold in.
+    """
+    inferred = getattr(core, "inferred_flow_model", None)
+    if inferred is None:
+        return options
+    if options.flow_model is not None or options.directed is not None:
+        return options
+    return options.replace(flow_model=inferred)
 
 
 def apply_initial_partition(core: Any, module_ids) -> bool:
