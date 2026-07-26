@@ -1012,10 +1012,18 @@ TEST_CASE("Node id tokens must be exactly a non-negative integer [fast][core][pa
   CHECK(parses("1"));
   CHECK(parses("0"));
   CHECK(parses("4294967295")); // the largest id that fits
+  CHECK(parses("0000000000000000000000000000000000000042")); // leading zeros are fine
   CHECK_FALSE(parses("-2"));
   CHECK_FALSE(parses("4294967296")); // one past the top, previously wrapped to 0
   CHECK_FALSE(parses("2x"));
   CHECK_FALSE(parses("1.5"));
+  // Long digit strings, including values that would wrap a 64-bit accumulator. The
+  // parser bounds the result after every digit rather than once at the end, so it
+  // gives up by the eleventh digit; moving that check out of the loop would make
+  // these accept a wrapped value instead.
+  CHECK_FALSE(parses("18446744073709551616")); // 2^64
+  CHECK_FALSE(parses("18446744073709551620")); // 2^64 + 4
+  CHECK_FALSE(parses("42949672960000000000000000000000000000"));
 }
 
 TEST_CASE("JSON node and state weights must be finite and non-negative [fast][core][parser][json]")

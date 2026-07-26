@@ -194,6 +194,12 @@ namespace io {
   //
   // Deliberately strict: no sign, no whitespace inside, no trailing characters,
   // no overflow. A caller that wants a signed value should read a signed type.
+  //
+  // The bound is checked after every digit, not once at the end, so `result` is at
+  // most 4294967295 entering an iteration and the next step reaches at most
+  // 42949672959 -- nowhere near the 64-bit ceiling. That is what keeps an arbitrarily
+  // long digit string safe: it is rejected by the eleventh digit at the latest. Move
+  // the check out of the loop and that stops being true.
   inline bool parseNonNegativeInteger(const std::string& token, unsigned int& value)
   {
     if (token.empty())

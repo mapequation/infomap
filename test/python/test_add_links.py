@@ -214,7 +214,12 @@ def test_add_links_result_is_independent_of_byte_order(make_infomap):
             round(result.codelength, 9),
         )
 
-    native = results["<f8"]
+    # Derived, not assumed: "<f8" is non-native on a big-endian host, and using it
+    # as the reference there would compare every dtype against a byte-swapped
+    # baseline -- the test would agree with itself while every result was wrong.
+    native_key = np.dtype("f8").str
+    assert native_key in results, f"native dtype {native_key} not among {list(results)}"
+    native = results[native_key]
     assert native[0] == 6, f"expected the 6-node network, got {native}"
     for dtype, value in results.items():
         assert value == native, f"{dtype} gave {value}, native gave {native}"
