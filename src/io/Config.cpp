@@ -21,6 +21,7 @@
 #include <cstddef>
 #include <iterator>
 #include <limits>
+#include <sstream>
 #include <vector>
 #include <stdexcept>
 #include <utility>
@@ -316,6 +317,55 @@ namespace {
     Log::init(config.verbosity, config.silent, config.verboseNumberPrecision);
   }
 
+  // Whether the flags ask for silence, read before anything is parsed.
+  //
+  // Log visibility comes from the parsed Config, which does not exist yet while
+  // the flags are being read -- so a rejected argument emitted the version banner
+  // and the usage line through Log() at default verbosity
+  // (ProgramInterface::exitWithError) even for a caller that asked for silence.
+  // The Python API passes --silent on every call, so any rejected keyword put two
+  // lines of English on the process's stdout, flushed at exit after everything the
+  // Python program had written, against its documented quiet-by-default contract.
+  //
+  // Tokenized the same way the parser tokenizes, so "--silent" inside a value does
+  // not count and "--silentish" does not match. There is no short form.
+  bool flagsRequestSilence(const std::string& flags)
+  {
+    std::istringstream stream(flags);
+    std::string token;
+    while (stream >> token) {
+      if (token == "--silent")
+        return true;
+    }
+    return false;
+  }
+
+  // Silences Log for the window between the first token and initializeLogging,
+  // and only when the flags asked for it. A non-silent CLI run still gets the
+  // banner and usage on a bad argument, which is what a person at a terminal
+  // wants. Restores on the way out so a library caller that catches the error is
+  // not left with a muted engine.
+  class ScopedParseSilence {
+  public:
+    explicit ScopedParseSilence(bool silent)
+        : m_previous(Log::isSilent()),
+          m_engaged(silent)
+    {
+      if (m_engaged)
+        Log::setSilent(true);
+    }
+
+    ~ScopedParseSilence()
+    {
+      if (m_engaged)
+        Log::setSilent(m_previous);
+    }
+
+  private:
+    bool m_previous;
+    bool m_engaged;
+  };
+
   void buildConfigFromFlags(Config& config, const std::string& flags, bool isCLI)
   {
     config.parsedString = flags;
@@ -330,16 +380,23 @@ namespace {
     ParsedParameterSet staging;
     registerCatalogWithProgramInterface(api, { config, staging }, isCLI);
 
-    api.parseArgs(flags);
-    config.parsedOptions = api.getUsedOptionArguments();
+    // Scoped to end before initializeLogging: the guard restores the previous
+    // silence on destruction, so leaving it open would undo the real setting.
+    {
+      const ScopedParseSilence parseSilence(flagsRequestSilence(flags));
 
-    rejectDeprecatedAliases(staging);
-    applyOutputDirectory(config, staging);
-    applyFlowModelSelection(config, staging);
+      api.parseArgs(flags);
+      config.parsedOptions = api.getUsedOptionArguments();
 
-    config.adaptDefaults();
+      rejectDeprecatedAliases(staging);
+      applyOutputDirectory(config, staging);
+      applyFlowModelSelection(config, staging);
 
-    validateOutputDirectory(config);
+      config.adaptDefaults();
+
+      validateOutputDirectory(config);
+    }
+
     initializeLogging(config);
   }
 
