@@ -476,13 +476,19 @@ class Result(_ResultWritersMixin):
     def _check_generation(self) -> None:
         """Guard live C++ tree access against a re-run of the bound engine."""
         if self._engine._generation != self._generation:
+            # Name the engine that actually went stale: a Result can be bound to a
+            # Network as well as to an Infomap, and naming the wrong one sends the
+            # reader looking for a re-run that never happened. The advice cannot be
+            # "use infomap.run()" either -- run(network) re-runs that same network
+            # in place and bumps this generation, so it reproduces this error.
+            engine = type(self._engine).__name__
             raise StaleResultError(
-                "stale Result: the Infomap instance was re-run, so the C++ "
-                "result tree this Result read is gone. Eager scalars "
-                "(codelength, module counts, summary()) stay valid; to keep "
-                "node-level data across re-runs, materialize it first -- "
-                "dict(result.modules()) / result.to_dataframe() -- or use "
-                "infomap.run(), which never goes stale."
+                f"stale Result: this {engine} was re-run, so the C++ result tree "
+                "this Result read is gone. Eager scalars (codelength, module "
+                "counts, summary()) stay valid; to keep node-level data across a "
+                "re-run, materialize it first -- dict(result.modules()) / "
+                "result.to_dataframe() -- or give each run its own engine, since a "
+                "Result only goes stale when the engine it came from is re-run."
             )
 
     def _guard_iteration(self, iterator):

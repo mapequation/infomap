@@ -59,7 +59,13 @@ def test_stale_result_message_carries_a_remedy():
         stale.modules()
     message = str(excinfo.value)
     assert "stale Result" in message  # original prefix preserved
-    assert "infomap.run" in message and "materialize" in message
+    assert "materialize" in message
+    # This used to also require the message to name infomap.run() as the
+    # staleness-free alternative. It is not one: run(network) re-runs that same
+    # network in place and bumps the generation, so following the advice
+    # reproduces this error. The remedy has to be one that actually works.
+    assert "infomap.run()" not in message
+    assert "its own engine" in message
 
 
 def test_write_clu_depth_alias_matches_depth_level(tmp_path):
