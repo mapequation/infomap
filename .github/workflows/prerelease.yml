@@ -131,6 +131,36 @@ jobs:
           find dist/python -maxdepth 1 -name '*.whl' -print | sort
           wheel_count="$(find dist/python -maxdepth 1 -name '*.whl' | wc -l | tr -d ' ')"
           [ "$wheel_count" -gt 0 ]
+          # These wheels are compiled with experimental features on, and this job
+          # uploads them to the production `infomap` project. A stable version here
+          # would take that version on PyPI as wheel-only feature builds -- the real
+          # release of the same version then fails on duplicate filenames, and a
+          # plain `pip install infomap` hands out a feature build. RELEASING.md
+          # requires a prerelease version; the only previous gate was that at least
+          # one wheel existed, so assert the rule instead of trusting the dispatcher.
+          python3 - dist/python <<'PY'
+          import pathlib
+          import re
+          import sys
+
+          # PEP 440 pre-releases and dev releases: 1.2.3rc1, 1.2.3a1, 1.2.3b2, 1.2.3.dev4.
+          PRERELEASE = re.compile(r"^\d+(?:\.\d+)*(?:(?:a|b|rc)\d+|\.dev\d+)")
+          # Wheel filenames are {name}-{version}-{python}-{abi}-{platform}.whl.
+          versions = sorted({p.name.split("-")[1] for p in pathlib.Path(sys.argv[1]).glob("*.whl")})
+          if not versions:
+              sys.exit("no wheel versions could be read from the filenames")
+          stable = [v for v in versions if not PRERELEASE.match(v)]
+          for version in versions:
+              print(f"{'stable' if version in stable else 'prerelease'}: {version}")
+          if stable:
+              print(
+                  f"::error::feature wheels carry non-prerelease version(s) {', '.join(stable)}. "
+                  "Feature builds must not occupy a stable version on PyPI; bump the version "
+                  "to a prerelease (e.g. X.Y.ZrcN) before dispatching with publish=true.",
+                  file=sys.stderr,
+              )
+              sys.exit(1)
+          PY
 
       - name: Publish feature prerelease wheels to PyPI
         uses: pypa/gh-action-pypi-publish@ba38be9e461d3875417946c167d0b5f3d385a247 # release/v1
