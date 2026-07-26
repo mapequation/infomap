@@ -183,8 +183,11 @@ TEST_CASE("OMP_NUM_THREADS accepts the spec's list form [fast][core][threads]")
   CHECK(readThreadSourcesFromEnv().ompEnv == 5);
 
   // A malformed list stays unset rather than being read up to the bad element:
-  // guessing half a value is worse than falling through to the next source.
-  for (const char* malformed : { "2,x", "2,", ",2", "2,0", "x,2", "", " ", "," }) {
+  // guessing half a value is worse than falling through to the next source. Both
+  // ends of the list matter, and so does each way an element can be invalid --
+  // "0,2" is the one that a parser checking only for non-numeric text would take
+  // as a budget of 2, and "0" is the scalar form of the same mistake.
+  for (const char* malformed : { "2,x", "2,", ",2", "2,0", "x,2", "0,2", "0", "-1,2", "2,-1", "", " ", "," }) {
     ompEnv.set(malformed);
     CHECK(readThreadSourcesFromEnv().ompEnv == 0);
   }
