@@ -2,6 +2,26 @@ def is_numpy_input(value):
     return value.__class__.__module__.startswith("numpy")
 
 
+def as_native_contiguous(np, array):
+    """Contiguous and in the host's byte order, which the C++ side assumes.
+
+    ``add_bulk_links`` hands the raw buffer across with only the dtype's kind and
+    itemsize, and ``readUnaligned`` memcpys into a native-endian value -- so a
+    big-endian array on a little-endian host was reinterpreted byte-swapped, with
+    no exception and no warning. A 6-node, 7-link network read as 1 node and 1
+    link with codelength 0. Converting rather than rejecting keeps the values, and
+    the array was going to be made contiguous anyway.
+
+    The dtype and the layout are converted in one call on purpose. Swapping first
+    with ``astype`` copies twice for an F-ordered input: ``astype`` keeps the
+    layout, so the result is still not C-contiguous and ``ascontiguousarray`` then
+    copies it again.
+    """
+    if not array.dtype.isnative:
+        return np.ascontiguousarray(array, dtype=array.dtype.newbyteorder("="))
+    return np.ascontiguousarray(array)
+
+
 def as_contiguous_numeric_array(np, array, name):
     if array.dtype.kind not in "uif":
         raise ValueError(f"Numpy {name} arrays must have a numeric dtype.")
@@ -11,7 +31,7 @@ def as_contiguous_numeric_array(np, array, name):
     elif array.dtype.kind in "ui" and array.dtype.itemsize not in (1, 2, 4, 8):
         array = array.astype(np.float64, copy=False)
 
-    return np.ascontiguousarray(array)
+    return as_native_contiguous(np, array)
 
 
 def normalize_numpy_links(
@@ -40,7 +60,7 @@ def normalize_numpy_links(
             raise ValueError(
                 f"Numpy {name} arrays must use 32-bit or 64-bit numeric values."
             )
-        return np.ascontiguousarray(links_array)
+        return as_native_contiguous(np, links_array)
 
     return as_contiguous_numeric_array(np, links_array, name)
 
