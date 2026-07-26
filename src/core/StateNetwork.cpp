@@ -432,7 +432,15 @@ std::pair<StateNetwork::NodeMap::iterator, bool> StateNetwork::addStateNodeWithD
   // at exit 0 with no warning. With --matchable-multilayer-ids 2 the safe range is
   // only [0, 2^30), which ordinary ids can exceed.
   const unsigned int shift = numLayersLog2 + 1;
-  const unsigned int maxPhysId = shift >= 32 ? 0 : (1u << (32 - shift));
+  // Its own error: with shift >= 32 the bound below is 0, so every id would be
+  // reported as "must be below 0", which describes neither the cause nor a fix.
+  // Config::adaptDefaults rejects a largest-layer-id this big, but a caller that
+  // builds a Network directly never goes through it.
+  if (shift >= 32) {
+    throw std::runtime_error(fmt::format(FMT_STRING("Matchable multilayer ids need to shift the physical id left by {} bits, which does not fit a 32-bit id. The largest layer id is too large: reduce it so ceil(log2(largest layer id)) + 1 is below 32."), shift));
+  }
+
+  const unsigned int maxPhysId = 1u << (32 - shift);
   if (physId >= maxPhysId) {
     throw std::runtime_error(fmt::format(FMT_STRING("Physical node id {} is too large for matchable multilayer ids: the id is shifted left by {} bits to make room for the layer, so ids must be below {}. Use smaller physical ids, or drop --matchable-multilayer-ids."), physId, shift, maxPhysId));
   }

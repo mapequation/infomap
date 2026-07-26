@@ -294,8 +294,12 @@ namespace input {
             node.hasWeight = true;
           } else if (currentKey == "meta") {
             unsigned int meta = 0;
-            if (!coerceUnsigned(number.value, meta) || !number.integral)
-              throw std::runtime_error(fmt::format(FMT_STRING("Invalid node meta '{:g}' (must be a non-negative integer)"), number.value));
+            // Bounded by int, not unsigned: the value is stored in a vector<int>, so
+            // anything above INT_MAX came back out negative -- the same wrap the text
+            // path had, and fixing one without the other would just move the
+            // disagreement between the two parsers.
+            if (!coerceUnsigned(number.value, meta) || !number.integral || meta > static_cast<unsigned int>(std::numeric_limits<int>::max()))
+              throw std::runtime_error(fmt::format(FMT_STRING("Invalid node meta '{:g}' (must be a non-negative integer no greater than {})"), number.value, std::numeric_limits<int>::max()));
             node.meta = static_cast<int>(meta);
             node.hasMeta = true;
           } else if (currentKey == "path" && inFieldArray()) {

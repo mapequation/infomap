@@ -1083,6 +1083,63 @@ TEST_CASE("Matchable multilayer ids reject a physical id that would wrap [fast][
   CHECK_THROWS_AS(safeNetwork.addMultilayerLink(1, 1u << 30, 1, 7, 1.0), std::runtime_error);
 }
 
+TEST_CASE("Meta categories must be non-negative and fit an int [fast][core][parser]")
+{
+  // The categories land in a vector<int>, and `>> unsigned` took "-1" as 4294967295
+  // which became -1 again on the way in -- so two different files produced the same
+  // category with no complaint. The bound is int, not unsigned, for the same reason.
+  const auto parses = [](const std::string& metaLine) {
+    const std::string net = "meta_category_test.net";
+    const std::string meta = "meta_category_test.meta";
+    {
+      std::ofstream out(net.c_str());
+      out << "*Vertices 2\n1 \"a\"\n2 \"b\"\n*Edges\n1 2 1\n";
+    }
+    {
+      std::ofstream out(meta.c_str());
+      out << metaLine << "\n2 1\n";
+    }
+    FakeInputSink sink;
+    bool ok = true;
+    try {
+      infomap::input::parseMetaDataInput(meta, sink);
+    } catch (const std::runtime_error&) {
+      ok = false;
+    }
+    std::remove(net.c_str());
+    std::remove(meta.c_str());
+    return ok;
+  };
+
+  CHECK(parses("1 0"));
+  CHECK(parses("1 2147483647")); // the largest category that fits an int
+  CHECK_FALSE(parses("1 -1"));
+  CHECK_FALSE(parses("1 2147483648")); // fits an unsigned, not an int
+  CHECK_FALSE(parses("1 4294967295")); // previously arrived as -1
+  CHECK_FALSE(parses("1 x"));
+}
+
+TEST_CASE("A shift past 32 bits reports the shift, not an id bound of zero [fast][core][crash]")
+{
+  // Config::adaptDefaults refuses a largest-layer-id this big, but a caller that
+  // builds a Network directly never goes through it -- and there the id bound
+  // computes to 0, so every id was reported as "must be below 0", which describes
+  // neither the cause nor a fix.
+  Config config;
+  config.silent = true;
+  config.matchableMultilayerIds = 1u << 31;
+  Network network(config);
+
+  try {
+    network.addMultilayerLink(1, 1, 1, 2, 1.0);
+    FAIL("expected the out-of-range shift to be rejected");
+  } catch (const std::runtime_error& e) {
+    const std::string message = e.what();
+    CHECK(message.find("32-bit") != std::string::npos);
+    CHECK(message.find("must be below 0") == std::string::npos);
+  }
+}
+
 TEST_CASE("A largest-layer-id that would shift past 32 bits is rejected [fast][core][config]")
 {
   // ceil(log2(N)) + 1 >= 32 is undefined behaviour, and in practice changed the

@@ -522,10 +522,17 @@ namespace input {
       if (!io::parseNonNegativeInteger(metaIdToken, nodeId))
         throw std::runtime_error(fmt::format(FMT_STRING("Can't parse node id '{}' from line '{}': expected a non-negative integer no greater than {}"), metaIdToken, line, std::numeric_limits<unsigned int>::max()));
 
+      // Same treatment as the id above, and for the same reason: `>> unsigned`
+      // takes "-1" as 4294967295, which then becomes -1 again in this vector<int>,
+      // so two different files produced the same category with no complaint. The
+      // upper bound is int, not unsigned, because that is what the vector holds.
       std::vector<int> metaData;
-      unsigned int metaId = 0;
-      while (extractor >> metaId) {
-        metaData.push_back(metaId);
+      std::string metaToken;
+      while (extractor >> metaToken) {
+        unsigned int metaId = 0;
+        if (!io::parseNonNegativeInteger(metaToken, metaId) || metaId > static_cast<unsigned int>(std::numeric_limits<int>::max()))
+          throw std::runtime_error(fmt::format(FMT_STRING("Can't parse meta category '{}' from line '{}': expected a non-negative integer no greater than {}"), metaToken, line, std::numeric_limits<int>::max()));
+        metaData.push_back(static_cast<int>(metaId));
       }
       if (metaData.empty())
         throw std::runtime_error(fmt::format(FMT_STRING("Can't parse any meta data from line '{}'"), line));

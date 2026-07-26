@@ -9,11 +9,16 @@ def as_native_contiguous(np, array):
     itemsize, and ``readUnaligned`` memcpys into a native-endian value -- so a
     big-endian array on a little-endian host was reinterpreted byte-swapped, with
     no exception and no warning. A 6-node, 7-link network read as 1 node and 1
-    link with codelength 0. Converting rather than rejecting keeps the values and
-    costs one copy of an array that was going to be copied anyway.
+    link with codelength 0. Converting rather than rejecting keeps the values, and
+    the array was going to be made contiguous anyway.
+
+    The dtype and the layout are converted in one call on purpose. Swapping first
+    with ``astype`` copies twice for an F-ordered input: ``astype`` keeps the
+    layout, so the result is still not C-contiguous and ``ascontiguousarray`` then
+    copies it again.
     """
     if not array.dtype.isnative:
-        array = array.astype(array.dtype.newbyteorder("="), copy=False)
+        return np.ascontiguousarray(array, dtype=array.dtype.newbyteorder("="))
     return np.ascontiguousarray(array)
 
 
