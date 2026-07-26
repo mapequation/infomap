@@ -93,6 +93,33 @@ python-swig:
   - "interfaces/python/generated/**"
   - "interfaces/python/src/infomap/_swig.py"
   - "scripts/generate_python_swig.py"
+  # The wrapper is generated from these headers, so a change to any of them can
+  # stale interfaces/python/generated/infomap_wrap.cpp and _swig.py. Without them
+  # here this filter never fires on a header edit, ci.yml passes
+  # run-swig-freshness: false, and the gate is skipped on every such PR. Listed
+  # explicitly rather than as src/** so an ordinary C++ change does not pay for
+  # a SWIG regeneration; derived from the %include lines in interfaces/swig/*.i
+  # and kept in sync by test/python/test_ci_filters.py.
+  - "src/Infomap.h"
+  - "src/core/FlowData.h"
+  - "src/core/InfoEdge.h"
+  - "src/core/InfoNode.h"
+  - "src/core/InfomapBase.h"
+  - "src/core/InfomapConfig.h"
+  - "src/core/InfomapOptimizer.h"
+  - "src/core/InfomapTypes.h"
+  - "src/core/MapEquation.h"
+  - "src/core/MemMapEquation.h"
+  - "src/core/MetaMapEquation.h"
+  - "src/core/StateNetwork.h"
+  - "src/core/iterators/InfomapIterator.h"
+  - "src/core/iterators/IterWrapper.h"
+  - "src/core/iterators/infomapIterators.h"
+  - "src/core/iterators/treeIterators.h"
+  - "src/io/Config.h"
+  - "src/io/Network.h"
+  - "src/utils/Date.h"
+  - "src/utils/MetaCollection.h"
   - ".github/actions/setup-swig/action.yml"
   - ".github/workflows/_python-package.yml"
   - ".github/filters.yml"
@@ -114,6 +141,13 @@ javascript:
   # output into the tracked interfaces/parameters/policy.md, so it is a generator
   # input like the two above and must trigger the freshness gate.
   - "scripts/render_parameter_policy.py"
+  # Three of the five artifacts that gate owns live outside interfaces/js, so a PR
+  # hand-editing one of them would skip this lane and merge without the check that
+  # exists to catch exactly that. Listed here rather than moving the gate, because
+  # this lane already builds the core binary the gate needs.
+  - "interfaces/python/src/infomap/_options.py"
+  - "interfaces/python/src/infomap/_facade.py"
+  - "interfaces/R/infomap/R/options.R"
   - "scripts/generate_js_metadata.py"
   - "scripts/prepare_npm_package.py"
   - ".github/actions/setup-js-build/action.yml"
