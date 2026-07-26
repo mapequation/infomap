@@ -21,6 +21,7 @@
 #include <cstddef>
 #include <iterator>
 #include <limits>
+#include <sstream>
 #include <vector>
 #include <stdexcept>
 #include <utility>
@@ -316,6 +317,74 @@ namespace {
     Log::init(config.verbosity, config.silent, config.verboseNumberPrecision);
   }
 
+  // What the flags say about silence, read before anything is parsed.
+  //
+  // Log visibility comes from the parsed Config, which does not exist yet while
+  // the flags are being read -- so a rejected argument emitted the version banner
+  // and the usage line through Log() at default verbosity
+  // (ProgramInterface::exitWithError) even for a caller that asked for silence.
+  // The Python API passes --silent on every call, so any rejected keyword put two
+  // lines of English on the process's stdout, flushed at exit after everything the
+  // Python program had written, against its documented quiet-by-default contract.
+  //
+  // Split on whitespace, the way tokenizeArgs does, and compared whole, so
+  // "--silentish" does not match; there is no short form. The parser accepts the
+  // --no-<option> negation and lets the last occurrence win (verified:
+  // "--silent --no-silent" parses to silent = false and the reverse to true), so
+  // this reads the last of either rather than the first --silent and agrees with
+  // the Config the parse is about to produce. Defaults to Config::silent's own
+  // default when neither appears.
+  //
+  // Not option-aware, and that is a deliberate limit rather than an oversight.
+  // The parser decides option-versus-value by position -- parseLongOption consumes
+  // the following token as an argument even when it starts with "--" -- so
+  // `--out-name --silent` sets out_name to the literal "--silent" with silent
+  // false, while this scan counts the token and silences the window. Telling the
+  // two apart needs the per-option requireArgument knowledge that lives in
+  // ProgramInterface, and mirroring it here would put the parser's rules in a
+  // second place that can drift. The whole cost of being wrong is that a rejected
+  // argument prints no banner in a run whose out-name is literally "--silent".
+  bool flagsRequestSilence(const std::string& flags)
+  {
+    bool silent = false;
+    std::istringstream stream(flags);
+    std::string token;
+    while (stream >> token) {
+      if (token == "--silent")
+        silent = true;
+      else if (token == "--no-silent")
+        silent = false;
+    }
+    return silent;
+  }
+
+  // Sets Log's silence for the window between the first token and
+  // initializeLogging, from the current flags alone, and restores the previous
+  // value on the way out.
+  //
+  // Unconditional on purpose. Engaging only for a silent request would leave a
+  // non-silent parse reading whatever the last run in this process happened to
+  // set -- a successful silent run leaves Log silent, so a later non-silent
+  // rejection printed nothing. Parse-time output has to follow the flags in front
+  // of it, not process history. Restoring also means a library caller that catches
+  // the error is not left with a muted engine.
+  class ScopedParseSilence {
+  public:
+    explicit ScopedParseSilence(bool silent)
+        : m_previous(Log::isSilent())
+    {
+      Log::setSilent(silent);
+    }
+
+    ~ScopedParseSilence()
+    {
+      Log::setSilent(m_previous);
+    }
+
+  private:
+    bool m_previous;
+  };
+
   void buildConfigFromFlags(Config& config, const std::string& flags, bool isCLI)
   {
     config.parsedString = flags;
@@ -330,16 +399,23 @@ namespace {
     ParsedParameterSet staging;
     registerCatalogWithProgramInterface(api, { config, staging }, isCLI);
 
-    api.parseArgs(flags);
-    config.parsedOptions = api.getUsedOptionArguments();
+    // Scoped to end before initializeLogging: the guard restores the previous
+    // silence on destruction, so leaving it open would undo the real setting.
+    {
+      const ScopedParseSilence parseSilence(flagsRequestSilence(flags));
 
-    rejectDeprecatedAliases(staging);
-    applyOutputDirectory(config, staging);
-    applyFlowModelSelection(config, staging);
+      api.parseArgs(flags);
+      config.parsedOptions = api.getUsedOptionArguments();
 
-    config.adaptDefaults();
+      rejectDeprecatedAliases(staging);
+      applyOutputDirectory(config, staging);
+      applyFlowModelSelection(config, staging);
 
-    validateOutputDirectory(config);
+      config.adaptDefaults();
+
+      validateOutputDirectory(config);
+    }
+
     initializeLogging(config);
   }
 
