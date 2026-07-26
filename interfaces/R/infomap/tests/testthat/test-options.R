@@ -177,3 +177,44 @@ test_that("integer values above INT_MAX render instead of erroring", {
     fixed = TRUE
   )
 })
+
+# Shape mistakes used to fail in two unhelpful ways: a length > 1 value hit R's
+# "the condition has length > 1" from inside the renderer, and an NA passed every
+# check silently -- grepl() returns FALSE for NA_character_, not NA -- so the
+# literal string "NA" was rendered into the argument string for the engine to
+# parse as a name or a number.
+test_that("a non-scalar option value is refused, naming the option", {
+  expect_error(
+    construct_args(NULL, infomap_options(out_name = c("a", "b"))),
+    "out_name must be a single value, got length 2"
+  )
+  expect_error(
+    construct_args(NULL, infomap_options(markov_time = c(1.5, 2.5))),
+    "markov_time must be a single value, got length 2"
+  )
+})
+
+test_that("an NA option value is refused rather than rendered as \"NA\"", {
+  expect_error(
+    construct_args(NULL, infomap_options(out_name = NA_character_)),
+    "out_name must not be NA"
+  )
+  expect_error(
+    construct_args(NULL, infomap_options(markov_time = NA_real_)),
+    "markov_time must not be NA"
+  )
+  expect_error(
+    construct_args(NULL, infomap_options(seed = NA_integer_)),
+    "seed must not be NA"
+  )
+})
+
+test_that("the comma-list output option still accepts a vector", {
+  # output is joined before it reaches format_value, so the scalar requirement
+  # must not reach it.
+  expect_match(
+    construct_args(NULL, infomap_options(output = c("clu", "tree"))),
+    "--output clu,tree",
+    fixed = TRUE
+  )
+})

@@ -332,6 +332,28 @@ infomap_options <- function(...) {
 }
 
 format_value <- function(value, name = NULL) {
+  label <- if (is.null(name)) "value" else name
+  # Shape first, so the checks below cannot land on a value they cannot
+  # answer for. A length > 1 value reached `if (cond)` and raised R's
+  # "the condition has length > 1"; an NA passed every test silently --
+  # grepl() returns FALSE for NA_character_, not NA -- and rendered the
+  # literal string "NA" into the argument string, which the engine then
+  # parsed as a node name or a number. Both are caller mistakes worth
+  # naming. NULL never arrives here: .append_specs only renders a value
+  # its include() predicate accepted, and that requires !is.null(value).
+  if (length(value) != 1L) {
+    stop(
+      sprintf(
+        "%s must be a single value, got length %d.",
+        label,
+        length(value)
+      ),
+      call. = FALSE
+    )
+  }
+  if (is.na(value)) {
+    stop(sprintf("%s must not be NA.", label), call. = FALSE)
+  }
   if (is.character(value)) {
     # Rendered options travel to the engine as one whitespace-separated
     # argument string with no quoting support, so a value containing
@@ -347,7 +369,7 @@ format_value <- function(value, name = NULL) {
           paste0("%s = \"%s\" contains whitespace, which the engine argument ",
                  "string cannot carry (arguments are split on whitespace, with ",
                  "no quoting). Use a whitespace-free value."),
-          if (is.null(name)) "value" else name,
+          label,
           value
         ),
         call. = FALSE
