@@ -92,6 +92,11 @@ test = [
   # together, deliberately.
   "ruff==0.15.8",
   "scipy",
+  # Reads the loaded OpenMP runtime's thread count, which is how
+  # test_thread_budget.py checks that a run gives the host's limit back. Without
+  # it those tests skip, and the C++ suite cannot cover this: its test targets
+  # compile without OpenMP flags, so `_OPENMP` is undefined there.
+  "threadpoolctl",
 ]
 docs = [
   # Building the docs executes the chapter code cells via myst-nb, so a full

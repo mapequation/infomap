@@ -156,6 +156,36 @@ namespace {
   private:
     int m_previous;
   };
+
+  // The run's thread budget goes into the OpenMP nthreads-var ICV so every
+  // parallel region inherits it, but that ICV belongs to the process, not to us.
+  // An embedding host that limits OpenMP programmatically -- threadpoolctl, a BLAS
+  // wrapper, torch -- had its limit replaced by one run and never given back, for
+  // the rest of the process. Restore it the same way the neighbouring guard above
+  // restores max-active-levels.
+  class ScopedOpenMpNumThreads {
+  public:
+    explicit ScopedOpenMpNumThreads(int value)
+        : m_previous(omp_get_max_threads())
+    {
+      omp_set_num_threads(value);
+    }
+
+    ~ScopedOpenMpNumThreads()
+    {
+      omp_set_num_threads(m_previous);
+    }
+
+  private:
+    int m_previous;
+  };
+
+  // Clamp before the signed cast: the budget is unsigned, and a value above
+  // INT_MAX would make omp_set_num_threads see a negative thread count.
+  int asOpenMpThreadCount(unsigned int threads)
+  {
+    return static_cast<int>(std::min(threads, static_cast<unsigned int>(std::numeric_limits<int>::max())));
+  }
 #endif
 
 } // namespace
@@ -179,22 +209,20 @@ public:
     {
       // Resolve the thread budget once for the whole run. RunSession is only
       // constructed for the main Infomap (run(Network&) requires isMainInfomap),
-      // so this fires exactly once, before any OpenMP region. Setting the
-      // process-global max thread count lets all parallel regions (recursive
-      // partition, parallel trials, inner parallelization) inherit the budget
-      // via their existing omp_get_max_threads() calls.
+      // so this fires exactly once, before any OpenMP region.
       ThreadSources threadSources = readThreadSourcesFromEnv();
       threadSources.explicitThreads = m_infomap.numThreads; // 0 = auto
       m_threadBudget = resolveThreadBudget(threadSources);
       m_cpusetCount = threadSources.cpusetCount;
-#ifdef _OPENMP
-      // Clamp to INT_MAX before the signed cast: the budget is unsigned, and a value
-      // above INT_MAX would make omp_set_num_threads see a negative thread count.
-      const unsigned int ompThreads = std::min(m_threadBudget.threads,
-                                               static_cast<unsigned int>(std::numeric_limits<int>::max()));
-      omp_set_num_threads(static_cast<int>(ompThreads));
-#endif
     }
+#ifdef _OPENMP
+    // Publishing the budget as the process-global max lets every parallel region
+    // (recursive partition, parallel trials, inner parallelization) inherit it
+    // through its existing omp_get_max_threads() call. Function scope on purpose:
+    // the budget has to hold for the whole run, and the guard has to give the ICV
+    // back on the way out -- including when a run throws.
+    const ScopedOpenMpNumThreads scopedThreadBudget(asOpenMpThreadCount(m_threadBudget.threads));
+#endif
     preflightOutputTargets(m_infomap);
     validateNetwork();
     {

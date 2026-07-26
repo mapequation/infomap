@@ -156,4 +156,46 @@ TEST_CASE("readThreadSourcesFromEnv reads env vars and rejects trailing garbage 
     CHECK(s.ompEnv == 0);
   }
 }
+
+TEST_CASE("OMP_NUM_THREADS accepts the spec's list form [fast][core][threads]")
+{
+  ScopedEnv infomapEnv("INFOMAP_NUM_THREADS");
+  ScopedEnv slurmEnv("SLURM_CPUS_PER_TASK");
+  ScopedEnv ompEnv("OMP_NUM_THREADS");
+  infomapEnv.clear();
+  slurmEnv.clear();
+
+  // A comma-separated list is one value per nesting level; the first governs the
+  // outermost parallel region. Rejecting the whole thing made the budget fall
+  // through to the core count, i.e. above what was asked for.
+  ompEnv.set("2,1");
+  CHECK(readThreadSourcesFromEnv().ompEnv == 2);
+
+  ompEnv.set("3,2,1");
+  CHECK(readThreadSourcesFromEnv().ompEnv == 3);
+
+  // Space around a value is not garbage -- a shell script assembling it easily
+  // leaves some -- and neither is space around the list elements.
+  ompEnv.set("4 ");
+  CHECK(readThreadSourcesFromEnv().ompEnv == 4);
+
+  ompEnv.set(" 5 , 1 ");
+  CHECK(readThreadSourcesFromEnv().ompEnv == 5);
+
+  // A malformed list stays unset rather than being read up to the bad element:
+  // guessing half a value is worse than falling through to the next source. Both
+  // ends of the list matter, and so does each way an element can be invalid --
+  // "0,2" is the one that a parser checking only for non-numeric text would take
+  // as a budget of 2, and "0" is the scalar form of the same mistake.
+  for (const char* malformed : { "2,x", "2,", ",2", "2,0", "x,2", "0,2", "0", "-1,2", "2,-1", "", " ", "," }) {
+    ompEnv.set(malformed);
+    CHECK(readThreadSourcesFromEnv().ompEnv == 0);
+  }
+
+  // The list form only widens OMP_NUM_THREADS. Our own variable keeps its scalar
+  // contract, so a list there is still garbage.
+  ompEnv.clear();
+  infomapEnv.set("2,1");
+  CHECK(readThreadSourcesFromEnv().infomapEnv == 0);
+}
 #endif
