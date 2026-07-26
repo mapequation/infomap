@@ -226,9 +226,11 @@ def metric_stats(values: list[float]) -> dict[str, float]:
     mean_value = statistics.mean(values)
     stdev_value = statistics.stdev(values) if len(values) > 1 else 0.0
     cv_value = stdev_value / mean_value if mean_value else 0.0
-    # The minimum is the least-perturbed sample: noise on a shared runner only ever
-    # adds time. Reported so the comparison can require a regression to show up in
-    # both the median and the minimum.
+    # The minimum is the least-perturbed sample, since noise on a shared runner only
+    # ever adds time. Reported for reading a borderline comparison by hand, not for
+    # deciding one: a disturbance lasting a whole measurement block slows every
+    # repeat, so the minimum moves with the median. See classify_case in
+    # compare_native_benchmarks.py, which deliberately keeps it out of the verdict.
     return {
         "mean": mean_value,
         "stdev": stdev_value,
