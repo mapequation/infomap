@@ -19,8 +19,10 @@ reuse, index, or count the result:
 
 Both shapes are guarded by a run-generation token: the C++ result tree is
 destroyed and rebuilt on every ``run()``, so reading node-level data from a
-``Result`` whose ``Infomap`` has re-run since raises :class:`StaleResultError`
-instead of touching freed memory.
+``Result`` whose bound engine has re-run since raises :class:`StaleResultError`
+instead of touching freed memory. That engine is whichever object the run went
+through -- an ``Infomap`` or a ``Network`` -- and only a re-run of *that* one
+invalidates the ``Result``.
 
 Surface conventions: read the run's intrinsic results as **properties** -- the
 scalar metrics (``result.codelength``) and the fixed label / per-trial tables
@@ -476,13 +478,19 @@ class Result(_ResultWritersMixin):
     def _check_generation(self) -> None:
         """Guard live C++ tree access against a re-run of the bound engine."""
         if self._engine._generation != self._generation:
+            # Name the engine that actually went stale: a Result can be bound to a
+            # Network as well as to an Infomap, and naming the wrong one sends the
+            # reader looking for a re-run that never happened. The advice cannot be
+            # "use infomap.run()" either -- run(network) re-runs that same network
+            # in place and bumps this generation, so it reproduces this error.
+            engine = type(self._engine).__name__
             raise StaleResultError(
-                "stale Result: the Infomap instance was re-run, so the C++ "
-                "result tree this Result read is gone. Eager scalars "
-                "(codelength, module counts, summary()) stay valid; to keep "
-                "node-level data across re-runs, materialize it first -- "
-                "dict(result.modules()) / result.to_dataframe() -- or use "
-                "infomap.run(), which never goes stale."
+                f"stale Result: this {engine} was re-run, so the C++ result tree "
+                "this Result read is gone. Eager scalars (codelength, module "
+                "counts, summary()) stay valid; to keep node-level data across a "
+                "re-run, materialize it first -- dict(result.modules()) / "
+                "result.to_dataframe() -- or give each run its own engine, since a "
+                "Result only goes stale when the engine it came from is re-run."
             )
 
     def _guard_iteration(self, iterator):
@@ -617,7 +625,7 @@ class Result(_ResultWritersMixin):
         Measured as the perplexity of the top-module flow distribution.
         Unlike the eager scalar properties, this is computed lazily on first
         access (see :meth:`effective_num_modules`), so it can raise
-        :class:`StaleResultError` if the ``Infomap`` has re-run since.
+        :class:`StaleResultError` if the bound engine has re-run since.
         """
         return self._effective_num_modules_cached(1)
 
@@ -628,7 +636,7 @@ class Result(_ResultWritersMixin):
         Measured as the perplexity of the leaf-module flow distribution.
         Unlike the eager scalar properties, this is computed lazily on first
         access (see :meth:`effective_num_modules`), so it can raise
-        :class:`StaleResultError` if the ``Infomap`` has re-run since.
+        :class:`StaleResultError` if the bound engine has re-run since.
         """
         return self._effective_num_modules_cached(-1)
 
