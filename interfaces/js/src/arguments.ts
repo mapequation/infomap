@@ -97,6 +97,24 @@ export type Arguments = Partial<{
   version: boolean;
 }>;
 
+// Rendered options travel to the engine as one whitespace-separated argument
+// string with no quoting support, so a value containing whitespace does not
+// stay one token. Here that is worse than a truncation: an outName of
+// "net --directed -o tree" injects options and silently changes the algorithm
+// (measured: codelength 1.52879 against the intended 1.57095). Quoting cannot
+// fix it -- the C++ side splits on whitespace and does not strip quotes. Reject
+// it, the same contract Python's _validate_option_arg_strings enforces.
+function requireNoWhitespace(name: string, value: string) {
+  if (/\s/.test(value)) {
+    throw new Error(
+      `${name}=${JSON.stringify(value)} contains whitespace, which the engine ` +
+        `argument string cannot carry (arguments are split on whitespace, with ` +
+        `no quoting). Use a whitespace-free value.`,
+    );
+  }
+  return value;
+}
+
 export default function argumentsToString(args: Arguments) {
   let result = "";
 
@@ -114,12 +132,15 @@ export default function argumentsToString(args: Arguments) {
   if (args.matchableMultilayerIds != null)
     result += " --matchable-multilayer-ids " + args.matchableMultilayerIds;
 
-  if (args.clusterData != null) result += " --cluster-data " + args.clusterData;
+  if (args.clusterData != null)
+    result +=
+      " --cluster-data " + requireNoWhitespace("clusterData", args.clusterData);
 
   if (args.assignToNeighbouringModule)
     result += " --assign-to-neighbouring-module";
 
-  if (args.metaData != null) result += " --meta-data " + args.metaData;
+  if (args.metaData != null)
+    result += " --meta-data " + requireNoWhitespace("metaData", args.metaData);
 
   if (args.metaDataRate != null)
     result += " --meta-data-rate " + args.metaDataRate;
@@ -128,7 +149,8 @@ export default function argumentsToString(args: Arguments) {
 
   if (args.noInfomap) result += " --no-infomap";
 
-  if (args.outName != null) result += " --out-name " + args.outName;
+  if (args.outName != null)
+    result += " --out-name " + requireNoWhitespace("outName", args.outName);
 
   if (args.noFileOutput) result += " --no-file-output";
 
@@ -141,8 +163,11 @@ export default function argumentsToString(args: Arguments) {
   if (args.cluLevel != null) result += " --clu-level " + args.cluLevel;
 
   if (args.output != null) {
-    if (typeof args.output === "string") result += " --output " + args.output;
-    else result += " --output " + args.output.join(",");
+    if (typeof args.output === "string")
+      result += " --output " + requireNoWhitespace("output", args.output);
+    else
+      result +=
+        " --output " + requireNoWhitespace("output", args.output.join(","));
   }
 
   if (args.hideBipartiteNodes) result += " --hide-bipartite-nodes";
@@ -153,12 +178,18 @@ export default function argumentsToString(args: Arguments) {
 
   if (args.printConfigFingerprint) result += " --print-config-fingerprint";
 
-  if (args.timingJson != null) result += " --timing-json " + args.timingJson;
+  if (args.timingJson != null)
+    result +=
+      " --timing-json " + requireNoWhitespace("timingJson", args.timingJson);
 
-  if (args.summaryJson != null) result += " --summary-json " + args.summaryJson;
+  if (args.summaryJson != null)
+    result +=
+      " --summary-json " + requireNoWhitespace("summaryJson", args.summaryJson);
 
   if (args.manifestJson != null)
-    result += " --manifest-json " + args.manifestJson;
+    result +=
+      " --manifest-json " +
+      requireNoWhitespace("manifestJson", args.manifestJson);
 
   if (args.memoryReport) result += " --memory-report";
 
@@ -168,7 +199,9 @@ export default function argumentsToString(args: Arguments) {
 
   if (args.twoLevel) result += " --two-level";
 
-  if (args.flowModel != null) result += " --flow-model " + args.flowModel;
+  if (args.flowModel != null)
+    result +=
+      " --flow-model " + requireNoWhitespace("flowModel", args.flowModel);
 
   if (args.directed) result += " --directed";
 

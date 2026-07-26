@@ -325,22 +325,91 @@ infomap_options <- function(...) {
     }
     include <- if (is.null(spec$include)) function(v) !is.null(v) && !identical(v, spec$default) else spec$include
     if (isTRUE(include(value))) {
-      parts <- c(parts, paste(spec$flag, format_value(value)))
+      parts <- c(parts, paste(spec$flag, format_value(value, spec$name)))
     }
   }
   parts
 }
 
-format_value <- function(value) {
-  if (is.character(value)) return(value)
+format_value <- function(value, name = NULL) {
+  label <- if (is.null(name)) "value" else name
+  # Shape first, so the checks below cannot land on a value they cannot
+  # answer for. A length > 1 value reached `if (cond)` and raised R's
+  # "the condition has length > 1"; an NA passed every test silently --
+  # grepl() returns FALSE for NA_character_, not NA -- and rendered the
+  # literal string "NA" into the argument string, which the engine then
+  # parsed as a node name or a number. Both are caller mistakes worth
+  # naming. NULL never arrives here: .append_specs only renders a value
+  # its include() predicate accepted, and that requires !is.null(value).
+  if (length(value) != 1L) {
+    stop(
+      sprintf(
+        "%s must be a single value, got length %d.",
+        label,
+        length(value)
+      ),
+      call. = FALSE
+    )
+  }
+  # is.na() is TRUE for NaN too, and the two are not the same mistake. NA is
+  # R's missing marker, with no counterpart in the Python or JS bindings, and
+  # for a string option it renders the token "NA" that the engine accepts as a
+  # perfectly good name -- a silent wrong run, which is this renderer's business.
+  # NaN is a number that Python also hands straight to the engine, which rejects
+  # it by name ("Cannot parse 'NaN' as argument to option ..."), so rejecting it
+  # here would make R stricter than the other bindings for no reason a caller
+  # could predict. Reject the first, pass the second on.
+  if (is.na(value) && !is.nan(value)) {
+    stop(sprintf("%s must not be NA.", label), call. = FALSE)
+  }
   if (is.logical(value)) return(if (isTRUE(value)) "true" else "false")
   if (is.numeric(value)) {
-    if (is.integer(value) || (is.finite(value) && value == as.integer(value))) {
-      return(format(as.integer(value), scientific = FALSE))
+    # trunc(), not as.integer(): as.integer() returns NA above INT_MAX, so
+    # `value == as.integer(value)` was NA and `if (NA)` raised "missing value
+    # where TRUE/FALSE needed" for legal unsigned values such as
+    # seed = 2^31, which the CLI accepts.
+    if (is.integer(value) || (is.finite(value) && value == trunc(value))) {
+      return(sprintf("%.0f", value))
     }
-    return(format(value, scientific = FALSE, trim = TRUE))
+    # Shortest representation that reads back as the same double. format()
+    # honours getOption("digits"), which is 7 by default, so markov_time =
+    # 1/7 reached the engine as 0.1428571 -- a different parameter than the
+    # one requested, and a different codelength than Python reports.
+    for (digits in 15:17) {
+      text <- sprintf(paste0("%.", digits, "g"), value)
+      if (!is.na(suppressWarnings(as.numeric(text))) &&
+          as.numeric(text) == value) {
+        return(text)
+      }
+    }
+    return(sprintf("%.17g", value))
   }
-  as.character(value)
+  # Everything else, checked on the way out rather than by input type.
+  # Rendered options travel to the engine as one whitespace-separated argument
+  # string with no quoting support, so a value containing whitespace is split
+  # into separate tokens: an out_name of "my run" became "--out-name my run",
+  # the name truncated to "my" and "run" silently taken as the output
+  # directory. Quoting cannot fix it -- the C++ side splits on whitespace and
+  # does not strip quotes, so '--out-name "my run"' yields the literal name
+  # '"my'. This is the single exit that can produce whitespace: a character
+  # value, but also a factor or a POSIXct, which arrive with their own
+  # as.character() rendering ("2026-07-26 08:30:00" splits exactly like a path
+  # with a space). Checking the rendered text covers those without having to
+  # enumerate them. Same contract as Python's _validate_option_arg_strings.
+  text <- as.character(value)
+  if (grepl("[[:space:]]", text)) {
+    stop(
+      sprintf(
+        paste0("%s = \"%s\" contains whitespace, which the engine argument ",
+               "string cannot carry (arguments are split on whitespace, with ",
+               "no quoting). Use a whitespace-free value."),
+        label,
+        text
+      ),
+      call. = FALSE
+    )
+  }
+  text
 }
 
 #' Render an Infomap options list to a CLI argument string
