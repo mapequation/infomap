@@ -194,6 +194,15 @@ test_that("a non-scalar option value is refused, naming the option", {
   )
 })
 
+# is.na() is TRUE for NaN as well, but they are not the same mistake: NA is R's
+# missing marker with no counterpart in the Python or JS bindings, while NaN is a
+# number those bindings also hand to the engine. Rejecting NaN here would make R
+# stricter than its siblings for no reason a caller could predict.
+test_that("NaN is left to the engine, which rejects it by name", {
+  rendered <- construct_args(NULL, infomap_options(markov_time = NaN))
+  expect_match(rendered, "--markov-time NaN", fixed = TRUE)
+})
+
 test_that("an NA option value is refused rather than rendered as \"NA\"", {
   expect_error(
     construct_args(NULL, infomap_options(out_name = NA_character_)),

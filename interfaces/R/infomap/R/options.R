@@ -351,7 +351,15 @@ format_value <- function(value, name = NULL) {
       call. = FALSE
     )
   }
-  if (is.na(value)) {
+  # is.na() is TRUE for NaN too, and the two are not the same mistake. NA is
+  # R's missing marker, with no counterpart in the Python or JS bindings, and
+  # for a string option it renders the token "NA" that the engine accepts as a
+  # perfectly good name -- a silent wrong run, which is this renderer's business.
+  # NaN is a number that Python also hands straight to the engine, which rejects
+  # it by name ("Cannot parse 'NaN' as argument to option ..."), so rejecting it
+  # here would make R stricter than the other bindings for no reason a caller
+  # could predict. Reject the first, pass the second on.
+  if (is.na(value) && !is.nan(value)) {
     stop(sprintf("%s must not be NA.", label), call. = FALSE)
   }
   if (is.character(value)) {
