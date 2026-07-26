@@ -25,6 +25,121 @@ namespace infomap {
 
 namespace {
 
+  std::string foldSeparators(const std::string& path)
+  {
+    std::string folded;
+    folded.reserve(path.size());
+    for (char c : path) {
+      const char separator = c == '\\' ? '/' : c;
+#ifdef _WIN32
+      // Keep a leading "//". On Windows that prefix is the whole difference
+      // between a UNC path ("\\server\share\x") and a root-relative one
+      // ("\server\share\x"), which name different files; folding them together
+      // would refuse a run that overwrites nothing. POSIX has no such
+      // distinction -- Linux and macOS resolve "//x" to "/x" -- so there the
+      // collapse stays unconditional.
+      const bool atUncPrefix = folded.size() == 1 && folded[0] == '/';
+#else
+      const bool atUncPrefix = false;
+#endif
+      if (separator == '/' && !folded.empty() && folded.back() == '/' && !atUncPrefix)
+        continue;
+      folded.push_back(separator);
+    }
+    return folded;
+  }
+
+  bool isAbsolutePath(const std::string& folded)
+  {
+    if (folded.empty())
+      return false;
+    if (folded[0] == '/') // POSIX, and a Windows root-relative path
+      return true;
+#ifdef _WIN32
+    // "C:/...". Only on Windows: on POSIX "a:/b" is a relative path into a
+    // directory named "a:", and calling it absolute would skip the anchoring.
+    const char drive = folded[0];
+    const bool isDriveLetter = (drive >= 'A' && drive <= 'Z') || (drive >= 'a' && drive <= 'z');
+    return folded.size() >= 3 && isDriveLetter && folded[1] == ':' && folded[2] == '/';
+#else
+    return false;
+#endif
+  }
+
+  // Relative paths on both sides of the comparison resolve against the working
+  // directory, and the preflight runs before anything can chdir, so reading it
+  // once is enough.
+  const std::string& workingDirectory()
+  {
+    static const std::string cwd = currentWorkingDirectory();
+    return cwd;
+  }
+
+  // Path comparison for "would this output overwrite an input?". std::filesystem
+  // is C++17 and this translation unit is C++14; realpath/stat are POSIX-only and
+  // the project also builds on Windows. So: fold separators, collapse repeated
+  // ones, resolve a relative path against the working directory, and drop "./"
+  // segments, then compare. Anchoring to the working directory is what lets the
+  // two sides be given in different forms -- a bare `ml.net` input against an
+  // absolute output directory names the same file, and every combination of that
+  // (absolute input with `.`, absolute --summary-json path) used to slip through.
+  // It does not resolve symlinks, "..", Windows case-insensitivity, or the
+  // extended-length "\\?\C:\" prefix, so it can miss an exotic aliasing; it never
+  // reports a collision that is not one --
+  // note that anchoring only ever makes two paths that already named the same
+  // file compare equal, since the anchor is the same string for both sides. If
+  // the working directory cannot be read at all, the comparison degrades to the
+  // paths as given, which is a miss and never a false refusal.
+  std::string normalizePathForComparison(const std::string& path)
+  {
+    std::string folded = foldSeparators(path);
+    if (!folded.empty() && !isAbsolutePath(folded)) {
+      const std::string& cwd = workingDirectory();
+      if (!cwd.empty())
+        folded = foldSeparators(cwd + "/" + folded);
+    }
+
+    std::string result;
+    result.reserve(folded.size());
+    for (std::size_t i = 0; i < folded.size();) {
+      const bool atSegmentStart = i == 0 || folded[i - 1] == '/';
+      if (atSegmentStart && folded.compare(i, 2, "./") == 0) {
+        i += 2;
+        continue;
+      }
+      result.push_back(folded[i]);
+      ++i;
+    }
+    return result;
+  }
+
+  // The option that owns a report path, so the refusal can name it. The
+  // basename guidance does not apply to these: the caller pointed the option at
+  // a file directly, and --out-name does not move it.
+  std::string reportOptionFlag(const std::string& reportKey)
+  {
+    if (reportKey == "summary_json")
+      return "--summary-json";
+    if (reportKey == "timing_json")
+      return "--timing-json";
+    if (reportKey == "run_manifest")
+      return "--manifest-json";
+    if (reportKey == "trial_results")
+      return "--trial-results";
+    return {};
+  }
+
+  // Every file the run reads. Writing a result over any of them destroys input.
+  std::vector<std::string> inputPaths(const Config& config)
+  {
+    std::vector<std::string> inputs;
+    inputs.push_back(config.networkFile);
+    inputs.push_back(config.clusterDataFile);
+    inputs.push_back(config.metaDataFile);
+    inputs.insert(inputs.end(), config.additionalInput.begin(), config.additionalInput.end());
+    return inputs;
+  }
+
   OutputArtifact artifact(const Config& config,
                           const std::string& basename,
                           OutputPhase phase,
@@ -226,6 +341,11 @@ std::vector<std::pair<std::string, std::string>> planReportArtifacts(const Confi
   add("summary_json", config.summaryJsonPath);
   add("timing_json", config.timingJsonPath);
   add("run_manifest", config.runManifestPath);
+  // The shard results file is an output the run writes, so it belongs here for
+  // both consumers: the preflight collision check, and the manifest's list of
+  // produced artifacts. Its writer already honours the overwrite policy, so
+  // listing it only moves that refusal ahead of the work.
+  add("trial_results", config.trialResultsPath);
   return reports;
 }
 
@@ -258,10 +378,56 @@ std::vector<std::string> planAllOutputPaths(const Config& config)
 
 void preflightOutputTargets(const Config& config)
 {
+  const auto plannedPaths = planAllOutputPaths(config);
+
+  // Checked before the overwrite policy, and deliberately not subject to it:
+  // writing a result over the run's own input destroys the input, and
+  // --no-overwrite cannot be the mitigation because it rejects every ordinary
+  // re-run as well. Reachable from a plain command whenever the output goes to
+  // the input's own directory and a requested format shares its extension --
+  // `Infomap net.json . -o json` replaced the network with the result tree, and
+  // `Infomap ml.net . -o network` replaced a multilayer input with its
+  // single-layer projection, both exiting 0.
+  // planAllOutputPaths mixes two kinds of target: artifacts named from
+  // outDirectory + outName, and report paths the caller gave directly. The
+  // mitigation differs, so the message has to know which one collided --
+  // suggesting --out-name for a --summary-json path would be useless advice.
+  //
+  const auto reports = planReportArtifacts(config);
+  const auto reportOwnerOf = [&reports](const std::string& path) {
+    for (const auto& report : reports) {
+      if (report.second == path)
+        return reportOptionFlag(report.first);
+    }
+    return std::string();
+  };
+
+  const auto inputs = inputPaths(config);
+  for (const auto& path : plannedPaths) {
+    const auto normalizedOutput = normalizePathForComparison(path);
+    for (const auto& input : inputs) {
+      if (input.empty())
+        continue;
+      if (normalizePathForComparison(input) != normalizedOutput)
+        continue;
+
+      const auto ownerFlag = reportOwnerOf(path);
+      const auto guidance = ownerFlag.empty()
+          ? std::string("Write to a different directory, or pass --out-name to give the result a different basename.")
+          : fmt::format(FMT_STRING("Point {} at a different file."), ownerFlag);
+
+      throw InfomapError(ExitCode::OutputError,
+                         fmt::format(FMT_STRING("Refusing to write output '{}' over the input file '{}'. {}"),
+                                     path,
+                                     input,
+                                     guidance));
+    }
+  }
+
   if (config.overwriteOutput())
     return;
 
-  for (const auto& path : planAllOutputPaths(config)) {
+  for (const auto& path : plannedPaths) {
     if (pathExists(path))
       throw InfomapError(ExitCode::OutputError, fmt::format(FMT_STRING("Output file already exists: '{}'"), path));
   }
