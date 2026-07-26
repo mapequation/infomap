@@ -152,8 +152,11 @@ def test_roxygen_sources_trigger_the_lane_that_checks_the_man_pages(filters):
     the generated man pages both match the filter -- otherwise a PR editing one
     skips the lane and the gate never runs.
     """
+    # as_posix(), not str(): the filter patterns and _pattern_to_regex are
+    # "/"-separated, and str() on Windows yields backslashes, so this would report
+    # every R file as uncovered on a platform where the filter is perfectly fine.
     r_files = sorted(
-        str(path.relative_to(REPO_ROOT))
+        path.relative_to(REPO_ROOT).as_posix()
         for path in (REPO_ROOT / "interfaces" / "R" / "infomap").rglob("*")
         if path.suffix in {".R", ".Rd"} and path.is_file()
     )
