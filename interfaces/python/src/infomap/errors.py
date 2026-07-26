@@ -63,6 +63,10 @@ class StaleResultError(InfomapError):
     on a ``Result`` created by an earlier run raises instead of reading the
     rebuilt tree. The eager scalars captured at ``run()`` time (codelength,
     module counts, ...) stay valid on the stale ``Result``.
+
+    The re-run that matters is one of the engine the ``Result`` came from --
+    an :class:`~infomap.Infomap` or a :class:`~infomap.Network` -- so running
+    a different engine leaves this ``Result`` alone.
     """
 
 

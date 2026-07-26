@@ -19,8 +19,10 @@ reuse, index, or count the result:
 
 Both shapes are guarded by a run-generation token: the C++ result tree is
 destroyed and rebuilt on every ``run()``, so reading node-level data from a
-``Result`` whose ``Infomap`` has re-run since raises :class:`StaleResultError`
-instead of touching freed memory.
+``Result`` whose bound engine has re-run since raises :class:`StaleResultError`
+instead of touching freed memory. That engine is whichever object the run went
+through -- an ``Infomap`` or a ``Network`` -- and only a re-run of *that* one
+invalidates the ``Result``.
 
 Surface conventions: read the run's intrinsic results as **properties** -- the
 scalar metrics (``result.codelength``) and the fixed label / per-trial tables
@@ -623,7 +625,7 @@ class Result(_ResultWritersMixin):
         Measured as the perplexity of the top-module flow distribution.
         Unlike the eager scalar properties, this is computed lazily on first
         access (see :meth:`effective_num_modules`), so it can raise
-        :class:`StaleResultError` if the ``Infomap`` has re-run since.
+        :class:`StaleResultError` if the bound engine has re-run since.
         """
         return self._effective_num_modules_cached(1)
 
@@ -634,7 +636,7 @@ class Result(_ResultWritersMixin):
         Measured as the perplexity of the leaf-module flow distribution.
         Unlike the eager scalar properties, this is computed lazily on first
         access (see :meth:`effective_num_modules`), so it can raise
-        :class:`StaleResultError` if the ``Infomap`` has re-run since.
+        :class:`StaleResultError` if the bound engine has re-run since.
         """
         return self._effective_num_modules_cached(-1)
 
