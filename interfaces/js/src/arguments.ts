@@ -163,8 +163,11 @@ export default function argumentsToString(args: Arguments) {
   if (args.cluLevel != null) result += " --clu-level " + args.cluLevel;
 
   if (args.output != null) {
-    if (typeof args.output === "string") result += " --output " + args.output;
-    else result += " --output " + args.output.join(",");
+    if (typeof args.output === "string")
+      result += " --output " + requireNoWhitespace("output", args.output);
+    else
+      result +=
+        " --output " + requireNoWhitespace("output", args.output.join(","));
   }
 
   if (args.hideBipartiteNodes) result += " --hide-bipartite-nodes";
@@ -196,7 +199,9 @@ export default function argumentsToString(args: Arguments) {
 
   if (args.twoLevel) result += " --two-level";
 
-  if (args.flowModel != null) result += " --flow-model " + args.flowModel;
+  if (args.flowModel != null)
+    result +=
+      " --flow-model " + requireNoWhitespace("flowModel", args.flowModel);
 
   if (args.directed) result += " --directed";
 

@@ -55,6 +55,26 @@ describe("argumentsToString", () => {
       ).toThrow(/contains whitespace/);
     });
 
+    // A choice-valued option's string-literal union is a compile-time constraint
+    // only; this renderer is reachable from plain JavaScript, so the guard has to
+    // hold at runtime too. Cast through the type to reach that path.
+    test("a choice-valued option is guarded at runtime, not just by its type", () => {
+      expect(() =>
+        argumentsToString({
+          flowModel: "undirected --two-level" as never,
+        }),
+      ).toThrow(/flowModel=.*contains whitespace/);
+    });
+
+    test("the comma-list output option is guarded in both its forms", () => {
+      expect(() =>
+        argumentsToString({ output: "tree -N 99" as never }),
+      ).toThrow(/output=.*contains whitespace/);
+      expect(() =>
+        argumentsToString({ output: ["tree", "clu -N 99"] as never }),
+      ).toThrow(/output=.*contains whitespace/);
+    });
+
     test("whitespace-free values of the same options still render", () => {
       expect(
         argumentsToString({ outName: "my-run", clusterData: "seed.clu" }),

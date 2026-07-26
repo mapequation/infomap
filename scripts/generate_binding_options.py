@@ -1449,16 +1449,22 @@ def generate_ts(catalog: ParameterCatalog) -> str:
                 lines.extend(
                     [
                         f"  if (args.{name} != null) {{",
-                        f'    if (typeof args.{name} === "string") result += " --output " + args.{name};',
-                        f'    else result += " --output " + args.{name}.join(",");',
+                        f'    if (typeof args.{name} === "string")',
+                        f'      result += " --output " + requireNoWhitespace("{name}", args.{name});',
+                        "    else",
+                        "      result +=",
+                        f'        " --output " + requireNoWhitespace("{name}", args.{name}.join(","));',
                         "  }",
                     ]
                 )
             elif not param.required:
                 append_result(f"args.{name}", f'" {flag}"')
-            elif not param.choices and param.long_type in {"path", "string"}:
-                # Path and free-string values are the ones a caller can put
-                # whitespace into; choice-valued options come from a fixed set.
+            elif param.long_type in {"path", "string"} or param.choices:
+                # Every option whose value is a string at runtime. The choice-valued
+                # ones look safe because their TypeScript type is a string-literal
+                # union, but that is a compile-time constraint: this renderer is
+                # reachable from plain JavaScript, where flowModel can carry
+                # whitespace and inject flags just like a path can.
                 append_result(
                     f"args.{name} != null",
                     f'" {flag} " + requireNoWhitespace("{name}", args.{name})',
