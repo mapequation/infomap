@@ -81,6 +81,12 @@ test = [
   "pytest",
   "networkx",
   "pyarrow",
+  # test_ci_filters.py parses .github/filters.yml, which uses YAML anchors, so it
+  # needs a real YAML parser. It was reaching this environment only transitively
+  # through pre-commit; declared here so a change to that dependency cannot take
+  # the test with it. Unpinned on purpose: unlike ruff and pyright below, a parser
+  # release does not add findings that turn master red on its own.
+  "pyyaml",
   "referencing",
   # Pinned for the same reason as pyright above: `ruff check` gates CI (it is
   # the first step of test-python-doctest), and new ruff releases promote rules
