@@ -110,7 +110,10 @@ jobs:
             any::rmarkdown
             any::tibble
             any::rcmdcheck
-            any::roxygen2
+            # Pinned: roxygen output is version-dependent (8.0.0 rewrites the whole
+            # R6 section), so the tracked man pages only match one version. Keep in
+            # step with R_ROXYGEN_VERSION in mk/r.mk and the note in AGENTS.md.
+            roxygen2@7.3.3
 
       - name: Set up ccache
         uses: ./.github/actions/setup-ccache
@@ -142,22 +145,24 @@ jobs:
           SCCACHE_GHA_ENABLED: "true"
         run: sccache --start-server
 
-      # One leg only: roxygen output does not vary by platform or R version, and
-      # this needs the package compiled, which the staging step below pays for
-      # anyway. Guards against the drift that had 18 options missing from
-      # infomap_options.Rd.
-      - name: Verify tracked man pages match the roxygen comments
-        if: matrix.os == 'ubuntu-24.04' && matrix.r == 'release'
-        run: make test-r-man-freshness
-
       - name: Stage and check the package
         env:
           SCCACHE_GHA_ENABLED: ${{ startsWith(matrix.os, 'windows') && 'true' || '' }}
         run: |
+          # The man-page freshness check shares build-r-stage (and the package
+          # compile roxygen triggers) with test-r, so both go in one make
+          # invocation -- make builds a shared .PHONY prerequisite once per run,
+          # and a separate step would stage and compile twice on the critical path.
+          # One leg only: roxygen output does not vary by platform or R version,
+          # only by roxygen version, which is pinned above.
+          targets=(test-r)
+          if [ "$RUNNER_OS" = "Linux" ] && [ "${{ matrix.r }}" = "release" ]; then
+            targets=(test-r-man-freshness test-r)
+          fi
           if [ "$RUNNER_OS" = "Windows" ]; then
-            make test-r CCACHE_BIN=sccache USE_CCACHE=1
+            make "${targets[@]}" CCACHE_BIN=sccache USE_CCACHE=1
           else
-            make test-r
+            make "${targets[@]}"
           fi
           if command -v ccache >/dev/null 2>&1; then ccache -s || true; fi
           if command -v sccache >/dev/null 2>&1; then sccache --show-stats || true; fi

@@ -113,13 +113,30 @@ test-r-swig-freshness:
 # because roxygen has to *load* the package to document its R6 class and the
 # skeleton has no wrapper sources -- src/ holds only Makevars.in. The staged copy
 # is a build directory, so generating there leaves the tracked tree alone.
+#
+# roxygen's output is version-dependent -- 8.0.0 rewrites the whole R6 section,
+# +731/-685 lines on Infomap.Rd against 7.3.3 -- so the version is pinned the way
+# air's is, and asserted here rather than left to produce a diff CI rejects for a
+# reason the local run does not explain. Keep R_ROXYGEN_VERSION, the pin in
+# .github/workflows/_r-package.yml, and the note in AGENTS.md in step.
+R_ROXYGEN_VERSION := 7.3.3
+
+define require_roxygen_version
+	@$(RSCRIPT) -e "v <- as.character(packageVersion('roxygen2')); \
+	if (v != '$(R_ROXYGEN_VERSION)') stop(sprintf( \
+	  'roxygen2 %s is installed, but the tracked man pages are generated with %s. Its output is version-dependent; install the pinned version or bump R_ROXYGEN_VERSION, the CI pin and the AGENTS.md note together.', \
+	  v, '$(R_ROXYGEN_VERSION)'), call. = FALSE)"
+endef
+
 build-r-man: build-r-stage
+	$(require_roxygen_version)
 	@$(RSCRIPT) -e "roxygen2::roxygenise('$(R_STAGED_DIR)', roclets = 'rd')" >/dev/null
 	@rm -f $(R_SKELETON_DIR)/man/*.Rd
 	@cp $(R_STAGED_DIR)/man/*.Rd $(R_SKELETON_DIR)/man/
 	@echo "Regenerated $(R_SKELETON_DIR)/man from the roxygen comments."
 
 test-r-man-freshness: build-r-stage
+	$(require_roxygen_version)
 	@$(RSCRIPT) -e "roxygen2::roxygenise('$(R_STAGED_DIR)', roclets = 'rd')" >/dev/null
 	@status=0; \
 	diff -ru $(R_SKELETON_DIR)/man $(R_STAGED_DIR)/man || status=$$?; \
