@@ -433,13 +433,25 @@ def benchmark_case_pair(
     samples: dict[str, list[dict[str, object]]] = {label: [] for label in labels}
     run_samples: dict[str, list[dict[str, object]]] = {label: [] for label in labels}
 
-    for _ in range(warmup_runs):
-        for label in labels:
+    def rotated(round_index: int) -> list[str]:
+        offset = round_index % len(labels)
+        return labels[offset:] + labels[:offset]
+
+    for warmup in range(warmup_runs):
+        # Rotated like the measured rounds. A no-op at the one warmup run the gate
+        # uses, since a single round has nothing to alternate with, but it keeps the
+        # warmup from preconditioning one binary's slot at higher warmup counts.
+        for label in rotated(warmup):
             subprocess.run(commands[label], check=True, capture_output=True, text=True)
 
     for repeat in range(repeats):
-        # Rotate the order so no binary is always measured first.
-        order = labels[repeat % len(labels) :] + labels[: repeat % len(labels)]
+        # Rotate the order so no binary is always measured first. Going first costs
+        # something small and real: measured on this machine by running one binary
+        # twice per round, position 1 was 0.13% slower than position 2 (2.4243 s vs
+        # 2.4211 s median over 12 rounds). With `repeats` a multiple of the number of
+        # binaries each one leads equally often and it cancels exactly; otherwise one
+        # binary keeps a single extra lead, worth about 0.13%/repeats.
+        order = rotated(repeat)
         for label in order:
             sample = collect_sample(commands[label])
             samples[label].append(sample)
@@ -817,6 +829,14 @@ def main() -> None:
 
     if (args.compare_binary is None) != (args.compare_output is None):
         parser.error("--compare-binary and --compare-output must be given together")
+    if (
+        args.compare_output is not None
+        and args.output.resolve() == args.compare_output.resolve()
+    ):
+        # Otherwise the second report overwrites the first and the comparison reads
+        # one binary against itself -- reporting no regression, which is a worse
+        # failure than a false one because nothing looks wrong.
+        parser.error("--compare-output must differ from --output")
 
     repo_root = Path(__file__).resolve().parents[2]
     if not args.binary.is_file():

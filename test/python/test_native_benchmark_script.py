@@ -288,15 +288,20 @@ def test_benchmark_case_pair_interleaves_and_rotates_the_lead(
         name="toy",
         network_path=tmp_path / "toy.net",
         repeats=3,
-        warmup_runs=1,
+        warmup_runs=2,
         iterations=1,
         flags="--silent",
     )
 
-    # One warmup per binary, then three repeats of both with the lead rotating.
+    # Two warmup rounds, rotating like the measured ones, then three repeats of both
+    # with the lead rotating. Going first is measurably slightly more expensive, so
+    # an odd repeat count leaves one binary a single extra lead -- visible here as
+    # base leading rounds 1 and 3 against head leading round 2.
     assert invoked == [
         "base_binary",
         "head_binary",
+        "head_binary",
+        "base_binary",
         "base_binary",
         "head_binary",
         "head_binary",
@@ -326,6 +331,38 @@ def test_metric_stats_reports_the_minimum_sample():
 
     assert stats["min"] == pytest.approx(1.0)
     assert stats["mean"] == pytest.approx(2.0)
+
+
+def test_main_rejects_writing_both_reports_to_one_path(monkeypatch, tmp_path: Path):
+    """Sharing the path would leave one report on disk and compare it against itself.
+
+    The comparison would then find no difference and report no regression, which is a
+    worse failure than a false alarm because nothing on screen looks wrong.
+    """
+    benchmark_module = _load_benchmark_module()
+    shared = tmp_path / "out.json"
+
+    import sys
+
+    old_argv = sys.argv
+    sys.argv = [
+        "run_native_benchmarks.py",
+        "--binary",
+        "missing-binary",
+        "--output",
+        str(shared),
+        "--compare-binary",
+        "other-binary",
+        "--compare-output",
+        str(tmp_path / "sub" / ".." / "out.json"),
+    ]
+    try:
+        with pytest.raises(SystemExit) as exc_info:
+            benchmark_module.main()
+    finally:
+        sys.argv = old_argv
+
+    assert exc_info.value.code == 2
 
 
 def test_main_requires_compare_binary_and_output_together(monkeypatch, tmp_path: Path):

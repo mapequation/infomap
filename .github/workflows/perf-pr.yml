@@ -80,12 +80,14 @@ jobs:
           # with the baseline itself moving 8.5% (#943). Reproduced deliberately --
           # load during the head block alone turns two *identical* binaries into a
           # 15.9% regression, while the interleaved runner reports 0.1% under the same
-          # load. Repeats are higher than the old 3 now that one run covers both.
+          # load. Repeats are higher than the old 3 now that one run covers both, and
+          # an even count so each binary leads half the rounds -- going first costs a
+          # measured 0.13%, which cancels exactly only when the leads are balanced.
           python "$GITHUB_WORKSPACE/head/scripts/benchmarks/run_native_benchmarks.py" \
             --binary "$GITHUB_WORKSPACE/base/build/cmake/infomap_native_benchmark" \
             --compare-binary "$GITHUB_WORKSPACE/head/build/cmake/infomap_native_benchmark" \
             --profile pr \
-            --repeats 5 \
+            --repeats 6 \
             --warmup-runs 1 \
             --iterations 1 \
             --output "$GITHUB_WORKSPACE/artifacts/base-native-benchmarks.json" \
