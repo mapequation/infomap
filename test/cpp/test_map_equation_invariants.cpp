@@ -55,9 +55,24 @@ TEST_CASE("MapEquation invariant: MemMapEquation (memory), tracked == recompute 
 
 TEST_CASE("MapEquation invariant: MetaMapEquation (meta-data), tracked == recompute [fast][core][mapeq][meta]")
 {
-  InfomapWrapper im(defaultFlags("--two-level --meta-data " + repoPath("test/fixtures/meta/states.meta")));
+  // states_crossing.meta on purpose, not states.meta: the latter's categories
+  // (1,1,1,2,2,2) coincide exactly with the optimal partition of states.net, so
+  // metaCodelength is 0 at every initPartition and every per-move deltaMetaL is
+  // 0. Both sides of the equality then equal the plain memory value and the case
+  // is numerically identical to the MemMapEquation one above -- any bug in the
+  // incremental tracking of the meta term, which is the only thing this case adds,
+  // would pass unnoticed.
+  InfomapWrapper im(defaultFlags("--two-level --meta-data " + repoPath("test/fixtures/meta/states_crossing.meta")));
   im.readInputData(networkFixturePath("states.net"));
   im.run();
+
+  // Guard against silently degenerating again: without a meta term there is
+  // nothing for the meta objective to track incrementally, so the invariant below
+  // would hold for the wrong reason.
+  const double metaCodelength = im.getMetaCodelength();
+  INFO("metaCodelength=" << metaCodelength);
+  CHECK(metaCodelength > 0.0);
+
   checkTrackedMatchesRecompute(im);
 }
 
