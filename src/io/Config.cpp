@@ -317,7 +317,7 @@ namespace {
     Log::init(config.verbosity, config.silent, config.verboseNumberPrecision);
   }
 
-  // Whether the flags ask for silence, read before anything is parsed.
+  // What the flags say about silence, read before anything is parsed.
   //
   // Log visibility comes from the parsed Config, which does not exist yet while
   // the flags are being read -- so a rejected argument emitted the version banner
@@ -328,42 +328,51 @@ namespace {
   // Python program had written, against its documented quiet-by-default contract.
   //
   // Tokenized the same way the parser tokenizes, so "--silent" inside a value does
-  // not count and "--silentish" does not match. There is no short form.
+  // not count and "--silentish" does not match; there is no short form. The parser
+  // also accepts the --no-<option> negation and lets the last occurrence win
+  // (verified: "--silent --no-silent" parses to silent = false and the reverse to
+  // true), so this reads the last of either rather than the first --silent, and
+  // agrees with the Config the parse is about to produce. Defaults to
+  // Config::silent's own default when neither appears.
   bool flagsRequestSilence(const std::string& flags)
   {
+    bool silent = false;
     std::istringstream stream(flags);
     std::string token;
     while (stream >> token) {
       if (token == "--silent")
-        return true;
+        silent = true;
+      else if (token == "--no-silent")
+        silent = false;
     }
-    return false;
+    return silent;
   }
 
-  // Silences Log for the window between the first token and initializeLogging,
-  // and only when the flags asked for it. A non-silent CLI run still gets the
-  // banner and usage on a bad argument, which is what a person at a terminal
-  // wants. Restores on the way out so a library caller that catches the error is
-  // not left with a muted engine.
+  // Sets Log's silence for the window between the first token and
+  // initializeLogging, from the current flags alone, and restores the previous
+  // value on the way out.
+  //
+  // Unconditional on purpose. Engaging only for a silent request would leave a
+  // non-silent parse reading whatever the last run in this process happened to
+  // set -- a successful silent run leaves Log silent, so a later non-silent
+  // rejection printed nothing. Parse-time output has to follow the flags in front
+  // of it, not process history. Restoring also means a library caller that catches
+  // the error is not left with a muted engine.
   class ScopedParseSilence {
   public:
     explicit ScopedParseSilence(bool silent)
-        : m_previous(Log::isSilent()),
-          m_engaged(silent)
+        : m_previous(Log::isSilent())
     {
-      if (m_engaged)
-        Log::setSilent(true);
+      Log::setSilent(silent);
     }
 
     ~ScopedParseSilence()
     {
-      if (m_engaged)
-        Log::setSilent(m_previous);
+      Log::setSilent(m_previous);
     }
 
   private:
     bool m_previous;
-    bool m_engaged;
   };
 
   void buildConfigFromFlags(Config& config, const std::string& flags, bool isCLI)

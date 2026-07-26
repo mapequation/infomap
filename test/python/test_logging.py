@@ -343,7 +343,10 @@ class TestRejectedArgumentStaysQuiet:
         """
         infomap_logger = logging.getLogger("infomap")
         saved = list(infomap_logger.handlers)
-        disable_log()
+        # Removed directly rather than through disable_log(): that clears
+        # _logging's _helper_handler reference, and re-attaching a saved helper
+        # handler afterwards would leave the two out of step -- a later
+        # disable_log() would not remove it and enable_log() could add a second.
         for handler in list(infomap_logger.handlers):
             infomap_logger.removeHandler(handler)
         assert not infomap_logger.handlers, "engine output would be routed, not printed"
@@ -383,6 +386,30 @@ class TestRejectedArgumentStaysQuiet:
         printed = _engine_stdout(capfd)
         assert "Infomap version" in printed
         assert "Usage:" in printed
+
+    def test_the_negation_form_agrees_with_the_parser(self, capfd):
+        # The parser accepts --no-silent and lets the last occurrence win, so the
+        # pre-parse read has to do the same or the two disagree.
+        with pytest.raises(Exception, match="Unrecognized option"):
+            Infomap(args="--silent --no-silent --bogus-flag", silent=False)
+        assert "Infomap version" in _engine_stdout(capfd)
+
+        with pytest.raises(Exception, match="Unrecognized option"):
+            Infomap(args="--no-silent --silent --bogus-flag", silent=False)
+        assert _engine_stdout(capfd) == ""
+
+    def test_a_previous_silent_run_does_not_mute_a_later_rejection(self, capfd):
+        # Log's silence is process-global and a successful silent run leaves it set,
+        # so the parse window has to take its value from the flags in front of it
+        # rather than from whatever ran last.
+        im = Infomap(silent=True, num_trials=1, seed=1)
+        im.add_links([(0, 1), (1, 2), (2, 0)])
+        im.run()
+        _engine_stdout(capfd)  # drain
+
+        with pytest.raises(Exception, match="Unrecognized option"):
+            Infomap(args="--bogus-flag", silent=False)
+        assert "Infomap version" in _engine_stdout(capfd)
 
     def test_silence_is_not_left_behind_after_a_caught_rejection(self, capfd):
         # The parse-time silence is scoped, so a caller that catches the error and
