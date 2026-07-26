@@ -107,6 +107,45 @@ def test_compare_reports_requires_manual_review_when_outputs_change():
     assert result["overall_status"] == "manual_review"
 
 
+def test_compare_reports_detects_an_interleaved_pair():
+    """Each report has to name the other's binary, so a half-filled pair is not enough."""
+    compare_module = _load_compare_module()
+    base = {
+        "binary": "/tmp/base_bin",
+        "interleaved_with": "/tmp/head_bin",
+        "benchmarks": [_case("ring", median_run_sec=1.00)],
+    }
+    head = {
+        "binary": "/tmp/head_bin",
+        "interleaved_with": "/tmp/base_bin",
+        "benchmarks": [_case("ring", median_run_sec=1.00)],
+    }
+
+    assert compare_module.compare_reports(base, head)["interleaved"] is True
+    assert "alternating the two binaries" in compare_module.render_markdown(
+        compare_module.compare_reports(base, head)
+    )
+
+    one_sided = dict(head, interleaved_with=None)
+    assert compare_module.compare_reports(base, one_sided)["interleaved"] is False
+
+
+def test_compare_reports_warns_when_the_runs_were_not_interleaved():
+    """Reports from two separate invocations -- and older reports with no such field.
+
+    A verdict from sequential blocks is not worth the same as one from an alternating
+    run, and #943 happened because nothing said which kind was on screen.
+    """
+    compare_module = _load_compare_module()
+    result = compare_module.compare_reports(
+        {"benchmarks": [_case("ring", median_run_sec=1.00)]},
+        {"benchmarks": [_case("ring", median_run_sec=1.30)]},
+    )
+
+    assert result["interleaved"] is False
+    assert "measured separately" in compare_module.render_markdown(result)
+
+
 def test_render_markdown_uses_na_for_missing_case_metrics():
     compare_module = _load_compare_module()
     result = compare_module.compare_reports(
