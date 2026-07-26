@@ -359,6 +359,12 @@ format_value <- function(value, name = NULL) {
   # it by name ("Cannot parse 'NaN' as argument to option ..."), so rejecting it
   # here would make R stricter than the other bindings for no reason a caller
   # could predict. Reject the first, pass the second on.
+  # is.na() is TRUE for NaN too, so the !is.nan() exception is what separates
+  # the two. It needs no type guard: is.nan() answers FALSE for a character,
+  # factor, logical or Date NA with no warning and no coercion (checked with
+  # warn = 2), and TRUE for a complex NaN -- which is a NaN and belongs on the
+  # NaN side of this rule, so gating on is.numeric() would silently start
+  # rejecting it.
   if (is.na(value) && !is.nan(value)) {
     stop(sprintf("%s must not be NA.", label), call. = FALSE)
   }
