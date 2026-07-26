@@ -177,9 +177,7 @@ def test_stale_result_message_names_the_engine_that_was_re_run():
     A Result can be bound to a Network as well as to an Infomap, and naming the
     wrong one sends the reader looking for a re-run that never happened.
     """
-    import infomap
-
-    network = infomap.Network()
+    network = Network()
     network.add_links([(0, 1), (1, 2), (2, 0)])
     stale = run(network, silent=True, seed=1)
     # This is also the call the message used to recommend as staleness-free: it
