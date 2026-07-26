@@ -68,17 +68,28 @@ const char* threadSourceName(ThreadSource source)
 }
 
 namespace {
-  unsigned int parseEnvCount(const char* name)
+  std::string withoutSurroundingSpace(const std::string& text)
   {
-    const char* raw = std::getenv(name);
-    if (raw == nullptr) {
+    const auto first = text.find_first_not_of(" \t\n\v\f\r");
+    if (first == std::string::npos) {
+      return std::string();
+    }
+    const auto last = text.find_last_not_of(" \t\n\v\f\r");
+    return text.substr(first, last - first + 1);
+  }
+
+  // A single positive count, or 0 when the text is not one. Trailing garbage
+  // ("4x") is rejected rather than parsed loosely; surrounding space is not
+  // garbage, since a value assembled by a shell script easily carries it.
+  unsigned int parseCount(const std::string& raw)
+  {
+    const std::string text = withoutSurroundingSpace(raw);
+    if (text.empty()) {
       return 0;
     }
     try {
-      const std::string text(raw);
       std::size_t consumed = 0;
       const long value = std::stol(text, &consumed);
-      // Reject trailing garbage (e.g. "4x") — treat a non-numeric env value as unset.
       if (consumed == text.size() && value > 0 && value <= static_cast<long>(std::numeric_limits<unsigned int>::max())) {
         return static_cast<unsigned int>(value);
       }
@@ -86,6 +97,48 @@ namespace {
     } catch (...) {
       return 0;
     }
+  }
+
+  unsigned int parseEnvCount(const char* name)
+  {
+    const char* raw = std::getenv(name);
+    return raw == nullptr ? 0 : parseCount(std::string(raw));
+  }
+
+  // OMP_NUM_THREADS is specified as a comma-separated list of positive integers,
+  // one per nesting level, so "2,1" is a valid way to ask for two threads in the
+  // outermost parallel region. Reading it as a single integer rejected the whole
+  // value and left the budget to fall through to the cpuset or the core count --
+  // which then got pushed into the runtime, raising the count above the request
+  // rather than merely ignoring it. Take the first element, which governs the
+  // region we care about. Every element still has to parse, so a malformed list
+  // is treated as unset instead of half-read.
+  unsigned int parseOmpEnvCount(const char* name)
+  {
+    const char* raw = std::getenv(name);
+    if (raw == nullptr) {
+      return 0;
+    }
+
+    const std::string text(raw);
+    unsigned int firstCount = 0;
+    std::size_t start = 0;
+    while (true) {
+      const auto separator = text.find(',', start);
+      const std::string element = text.substr(start, separator == std::string::npos ? std::string::npos : separator - start);
+      const unsigned int count = parseCount(element);
+      if (count == 0) {
+        return 0;
+      }
+      if (firstCount == 0) {
+        firstCount = count;
+      }
+      if (separator == std::string::npos) {
+        break;
+      }
+      start = separator + 1;
+    }
+    return firstCount;
   }
 
   unsigned int readCpusetCount()
@@ -133,7 +186,7 @@ ThreadSources readThreadSourcesFromEnv()
   ThreadSources s;
   s.infomapEnv = parseEnvCount("INFOMAP_NUM_THREADS");
   s.slurmCpusPerTask = parseEnvCount("SLURM_CPUS_PER_TASK");
-  s.ompEnv = parseEnvCount("OMP_NUM_THREADS");
+  s.ompEnv = parseOmpEnvCount("OMP_NUM_THREADS");
   s.cpusetCount = readCpusetCount();
   s.hardwareConcurrency = std::max(1u, std::thread::hardware_concurrency());
   return s;
