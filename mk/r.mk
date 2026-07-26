@@ -84,6 +84,8 @@ endif
 .PHONY: \
 	build-r-swig \
 	test-r-swig-freshness \
+	build-r-man \
+	test-r-man-freshness \
 	build-r-stage \
 	build-r \
 	build-r-binary \
@@ -101,6 +103,51 @@ build-r-swig:
 
 test-r-swig-freshness:
 	@SWIG="$(SWIG)" $(PYTHON) $(R_SWIG_SCRIPT) --check --r-out $(R_GENERATED_R) --cpp-out $(R_GENERATED_CPP)
+
+# The man pages are roxygen output, like the SWIG files above, but nothing checked
+# them: 18 options were missing from infomap_options.Rd and add_state_node()'s name
+# argument from Infomap.Rd, so `?infomap_options` documented a smaller API than the
+# package had.
+#
+# Both targets go through the staged package rather than the tracked skeleton,
+# because roxygen has to *load* the package to document its R6 class and the
+# skeleton has no wrapper sources -- src/ holds only Makevars.in. The staged copy
+# is a build directory, so generating there leaves the tracked tree alone.
+#
+# roxygen's output is version-dependent -- 8.0.0 rewrites the whole R6 section,
+# +731/-685 lines on Infomap.Rd against 7.3.3 -- so the version is pinned the way
+# air's is, and asserted here rather than left to produce a diff CI rejects for a
+# reason the local run does not explain. Keep R_ROXYGEN_VERSION, the pin in
+# .github/workflows/_r-package.yml, and the note in AGENTS.md in step.
+R_ROXYGEN_VERSION := 7.3.3
+
+define require_roxygen_version
+	@$(RSCRIPT) -e "v <- as.character(packageVersion('roxygen2')); \
+	if (v != '$(R_ROXYGEN_VERSION)') stop(sprintf( \
+	  'roxygen2 %s is installed, but the tracked man pages are generated with %s. Its output is version-dependent; install the pinned version or bump R_ROXYGEN_VERSION, the CI pin and the AGENTS.md note together.', \
+	  v, '$(R_ROXYGEN_VERSION)'), call. = FALSE)"
+endef
+
+build-r-man: build-r-stage
+	$(require_roxygen_version)
+	@$(RSCRIPT) -e "roxygen2::roxygenise('$(R_STAGED_DIR)', roclets = 'rd')" >/dev/null
+	@rm -f $(R_SKELETON_DIR)/man/*.Rd
+	@cp $(R_STAGED_DIR)/man/*.Rd $(R_SKELETON_DIR)/man/
+	@echo "Regenerated $(R_SKELETON_DIR)/man from the roxygen comments."
+
+test-r-man-freshness: build-r-stage
+	$(require_roxygen_version)
+	@$(RSCRIPT) -e "roxygen2::roxygenise('$(R_STAGED_DIR)', roclets = 'rd')" >/dev/null
+	@status=0; \
+	diff -ru $(R_SKELETON_DIR)/man $(R_STAGED_DIR)/man || status=$$?; \
+	if [ $$status -eq 0 ]; then \
+		echo "Tracked R man pages are fresh."; \
+	elif [ $$status -eq 1 ]; then \
+		echo "Tracked R man pages are stale; regenerate with: make build-r-man" >&2; \
+	else \
+		echo "Could not compare the man pages: diff exited $$status (not 0 or 1, so it failed to run rather than finding differences). The check did not conclude anything about freshness." >&2; \
+	fi; \
+	exit $$status
 
 build-r-stage:
 	@$(PYTHON) $(R_STAGE_SCRIPT) --out-dir $(R_STAGED_DIR)

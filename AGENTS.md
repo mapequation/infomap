@@ -168,7 +168,11 @@ Install that version locally so `make format-r-check` agrees with CI, and bump
 the CI pin and this note together. The `actionlint` hook is `language: system`
 too: install it locally (`brew install actionlint`) when you touch workflows;
 the canonical version is **1.7.12**, downloaded in the `pre-commit` CI job, and
-the CI pin and this note bump together. Generated and vendored files —
+the CI pin and this note bump together. The R man pages are roxygen output and
+its formatting is version-dependent too — 8.0.0 rewrites the whole R6 section —
+so the canonical version is **7.3.3**, pinned as `R_ROXYGEN_VERSION` in `mk/r.mk`
+and as `roxygen2@7.3.3` in the R CI job; `make build-r-man` refuses to run with
+any other version, and the two pins and this note bump together. Generated and vendored files —
 `interfaces/python/generated/`, `interfaces/R/generated/`,
 `interfaces/python/src/infomap/_swig.py`, and `vendor/` — are excluded from
 every hook; never reformat them.

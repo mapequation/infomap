@@ -164,6 +164,8 @@ help:
 		"  test-r                Run R CMD check --as-cran on the staged infomap R package." \
 		"  test-r-examples       Run the R example smoke tests." \
 		"  test-r-swig-freshness Verify tracked R SWIG outputs are up to date." \
+		"  build-r-man           Regenerate the R man pages from the roxygen comments." \
+		"  test-r-man-freshness  Verify tracked R man pages are up to date." \
 		"  test-binding-options-freshness Verify tracked binding option APIs are current." \
 		"  test-js-metadata      Regenerate JS metadata in a temp dir and verify tracked files are current." \
 		"  test-js               Run JS lint/typecheck/unit/browser/package verification for the built npm package." \

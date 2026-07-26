@@ -99,6 +99,12 @@ jobs:
         with:
           python-version: "3.14"
 
+      # roxygen2 is version-pinned rather than `any::`: its output is
+      # version-dependent (8.0.0 rewrites the whole R6 section), so the tracked man
+      # pages only match one version and make test-r-man-freshness asserts it. Keep
+      # in step with R_ROXYGEN_VERSION in mk/r.mk and the note in AGENTS.md.
+      # Note extra-packages is a list of package refs, not a script: a '#' line
+      # inside the block is parsed as a package name, not a comment.
       - name: Install R package dependencies
         uses: r-lib/actions/setup-r-dependencies@d3c5be51b12e724e68f33216ca3c148b66d5f0b6 # v2.12.1
         with:
@@ -110,6 +116,7 @@ jobs:
             any::rmarkdown
             any::tibble
             any::rcmdcheck
+            roxygen2@7.3.3
 
       - name: Set up ccache
         uses: ./.github/actions/setup-ccache
@@ -145,10 +152,20 @@ jobs:
         env:
           SCCACHE_GHA_ENABLED: ${{ startsWith(matrix.os, 'windows') && 'true' || '' }}
         run: |
+          # The man-page freshness check shares build-r-stage (and the package
+          # compile roxygen triggers) with test-r, so both go in one make
+          # invocation -- make builds a shared .PHONY prerequisite once per run,
+          # and a separate step would stage and compile twice on the critical path.
+          # One leg only: roxygen output does not vary by platform or R version,
+          # only by roxygen version, which is pinned above.
+          targets=(test-r)
+          if [ "$RUNNER_OS" = "Linux" ] && [ "${{ matrix.r }}" = "release" ]; then
+            targets=(test-r-man-freshness test-r)
+          fi
           if [ "$RUNNER_OS" = "Windows" ]; then
-            make test-r CCACHE_BIN=sccache USE_CCACHE=1
+            make "${targets[@]}" CCACHE_BIN=sccache USE_CCACHE=1
           else
-            make test-r
+            make "${targets[@]}"
           fi
           if command -v ccache >/dev/null 2>&1; then ccache -s || true; fi
           if command -v sccache >/dev/null 2>&1; then sccache --show-stats || true; fi
