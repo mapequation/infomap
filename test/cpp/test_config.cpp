@@ -213,8 +213,8 @@ TEST_CASE("Config honors an explicit single-trial cap for converge [fast][core][
 {
   // -N 1 --converge used to be rewritten to the default cap, because numTrials
   // == 1 doubled as the "no explicit -N" sentinel. A cap of one makes --converge
-  // a no-op, which is a legitimate thing to ask for, and silently running 50
-  // trials instead can change the reported result.
+  // a no-op, which is a legitimate thing to ask for, and silently running the
+  // default cap's worth of trials instead can change the reported result.
   const unsigned int defaultCap = Config::convergeDefaultMaxTrials;
 
   const Config explicitOne("input.net --silent --no-file-output --num-trials 1 --converge", true);
@@ -228,6 +228,29 @@ TEST_CASE("Config honors an explicit single-trial cap for converge [fast][core][
   // And the default cap still applies when the count is left unsaid.
   const Config implicit("input.net --silent --no-file-output --converge", true);
   CHECK(implicit.numTrials == defaultCap);
+}
+
+TEST_CASE("Converge keeps a library-set trial cap that no option recorded [fast][core][config][library]")
+{
+  // A library caller mutates the struct and calls adaptDefaults(), so parsedOptions
+  // is empty and cannot say whether the count was chosen. Provenance alone would
+  // read that as "not given" and overwrite it; the value has to be consulted too.
+  Config chosenCap;
+  chosenCap.networkFile = "graph.net";
+  chosenCap.numTrials = 4;
+  chosenCap.convergeTrials = true;
+  chosenCap.adaptDefaults();
+  CHECK(chosenCap.parsedOptions.empty());
+  CHECK(chosenCap.numTrials == 4);
+
+  // Left at the default, the library path still gets the default cap -- there is no
+  // provenance to distinguish "untouched" from "deliberately 1" without an option.
+  const unsigned int defaultCap = Config::convergeDefaultMaxTrials;
+  Config untouched;
+  untouched.networkFile = "graph.net";
+  untouched.convergeTrials = true;
+  untouched.adaptDefaults();
+  CHECK(untouched.numTrials == defaultCap);
 }
 
 TEST_CASE("Config rejects converge combined with parallel trials [fast][core][config][cli]")

@@ -120,25 +120,29 @@ namespace {
       config.numTrials = 1;
     }
 
-    // --converge reinterprets numTrials as a cap, and falls back to a default cap
-    // when the caller did not give one. "Did not give one" is read from
-    // parsedOptions rather than from the value: numTrials == 1 was previously used
-    // as the sentinel, which silently rewrote an explicit `-N 1 --converge` to 50
-    // trials and could change the reported result. A cap of one makes --converge a
-    // no-op, but that is the caller's call to make.
+    // --converge reinterprets numTrials as a cap, and falls back to the default cap
+    // when the caller did not give one. Both signals are needed to decide that:
+    //   * the value, because a library caller mutates the struct and calls
+    //     adaptDefaults(), leaving parsedOptions empty -- provenance alone would
+    //     read a deliberate numTrials = 4 as "not given" and overwrite it;
+    //   * the provenance, because numTrials == 1 was the sole sentinel before, and
+    //     as the option's minimum it is also what an explicit `-N 1 --converge`
+    //     produces, which was silently rewritten to the default cap. A cap of one
+    //     makes --converge a no-op, but that is the caller's call to make.
     //
-    // Reaches the CLI only, for two reasons worth writing down:
-    //   * parsedOptions is empty when a Config is mutated programmatically and
-    //     adaptDefaults() is called by hand (the C++ library path);
+    // So the fix reaches the CLI only, and two paths keep the old behaviour:
+    //   * a library caller who sets numTrials = 1 deliberately still gets the
+    //     default cap, since nothing distinguishes that from leaving it untouched;
     //   * the Python/R bindings do parse an argument string, but their option
     //     renderer omits any value equal to its default, so `num_trials=1` with
-    //     `converge=True` renders no --num-trials at all and still gets the
-    //     default cap (measured: 6 trials on unbalanced_hierarchy either way).
+    //     `converge=True` renders no --num-trials at all (measured: 6 trials on
+    //     unbalanced_hierarchy either way).
     // That elision was assumed behaviour-preserving because the rendered defaults
     // come from this catalog -- this option is the counter-example, since
     // --converge makes "given as 1" mean something different from "not given".
     // Fixing it belongs in the generator (the residue recorded in #914).
-    if (config.convergeTrials && !config.noInfomap && !numTrialsGivenExplicitly(config)) {
+    const bool trialCapWasChosen = numTrialsGivenExplicitly(config) || config.numTrials != 1;
+    if (config.convergeTrials && !config.noInfomap && !trialCapWasChosen) {
       config.numTrials = Config::convergeDefaultMaxTrials;
     }
   }
