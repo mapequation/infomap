@@ -192,8 +192,12 @@ namespace io {
   // its name. The link and *States rows never had that problem because they parse
   // ids by hand; this is the same rule, in a place every id reader can reach.
   //
-  // Deliberately strict: no sign, no whitespace inside, no trailing characters,
-  // no overflow. A caller that wants a signed value should read a signed type.
+  // An optional leading '+' is accepted because detail::parseUnsigned, which the link
+  // rows use, accepts it -- the point of this function is to give every id reader the
+  // same rule, so it has to match the reader that was already right. A '-' is refused,
+  // and so is anything after the digits: the link rows refuse "1x" and "1.5" too, so
+  // the *Vertices and .clu readers refusing them is the same convention rather than a
+  // new one.
   //
   // The bound is checked after every digit, not once at the end, so `result` is at
   // most 4294967295 entering an iteration and the next step reaches at most
@@ -202,11 +206,15 @@ namespace io {
   // the check out of the loop and that stops being true.
   inline bool parseNonNegativeInteger(const std::string& token, unsigned int& value)
   {
-    if (token.empty())
+    std::size_t index = 0;
+    if (index < token.size() && token[index] == '+')
+      ++index;
+    if (index >= token.size())
       return false;
 
     unsigned long long result = 0;
-    for (const char c : token) {
+    for (; index < token.size(); ++index) {
+      const char c = token[index];
       if (c < '0' || c > '9')
         return false;
       result = result * 10 + static_cast<unsigned long long>(c - '0');

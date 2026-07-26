@@ -1009,11 +1009,19 @@ TEST_CASE("Node id tokens must be exactly a non-negative integer [fast][core][pa
     return ok;
   };
 
+  // The reference is what the link rows accept: detail::parseUnsigned is the reader
+  // that was already right, so the *Vertices reader has to agree with it token for
+  // token. Verified against the link rows for every case here -- "+1" is accepted
+  // because they accept it, and "1x"/"1.5" are refused because they refuse those.
   CHECK(parses("1"));
   CHECK(parses("0"));
+  CHECK(parses("+1")); // a leading plus, which the link rows allow
+  CHECK(parses("+4294967295"));
   CHECK(parses("4294967295")); // the largest id that fits
   CHECK(parses("0000000000000000000000000000000000000042")); // leading zeros are fine
   CHECK_FALSE(parses("-2"));
+  CHECK_FALSE(parses("+")); // a sign with no digits
+  CHECK_FALSE(parses("++1"));
   CHECK_FALSE(parses("4294967296")); // one past the top, previously wrapped to 0
   CHECK_FALSE(parses("2x"));
   CHECK_FALSE(parses("1.5"));
