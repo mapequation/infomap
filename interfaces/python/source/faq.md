@@ -50,9 +50,12 @@ quoting). Use a whitespace-free value.
 The check runs when the {class}`~infomap.Options` is built, so it fires before a
 run starts rather than partway through one.
 
-The same holds in R (`out_name = "my run"` raises), in JavaScript
-(`argumentsToString({ outName: "my run" })` throws), and on the command line:
-`Infomap net.edges "out dir"` does not write into `out dir`. It applies to every
+The same holds in the other bindings, though they check at different moments: R
+raises when the options are *rendered*, so `infomap_options(out_name = "my run")`
+returns a list and `construct_args()` (or `Infomap()`/`$run()`, which render
+internally) is what fails; JavaScript throws from
+`argumentsToString({ outName: "my run" })`. On the command line nothing raises at
+all — `Infomap net.edges "out dir"` exits 0 and writes into `out/`. It applies to every
 path and free-string option — `out_name`, `cluster_data`, `meta_data`,
 `summary_json`, `timing_json`, `manifest_json`, `trial_results` — and to the
 `args=` escape hatch, which is passed through unvalidated by design.

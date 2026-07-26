@@ -24,8 +24,12 @@ Options reach the engine as one whitespace-separated argument string,
 which has no quoting and no escaping, so a value containing a space
 cannot survive the trip -- quotes are not stripped, and
 \verb{--out-name "my run"} would set the name to the literal \verb{"my}. Such a
-value is refused, naming the option, rather than truncated silently:
-\code{infomap_options(out_name = "my run")} renders with an error. This
+value is refused, naming the option, rather than truncated silently.
+The check runs when options are rendered, not when they are built, so
+\code{infomap_options(out_name = "my run")} returns a list and the error
+comes from \code{construct_args()} -- or from \code{Infomap()} / \verb{$run()}, which
+render internally. The Python binding differs here: it validates when
+its \code{Options} object is constructed. This
 applies to every path and free-string option, and is a limitation of the
 engine boundary shared with the Python and JavaScript bindings and the
 command line. Rename the file, or use a directory whose path has no
