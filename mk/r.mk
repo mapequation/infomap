@@ -84,6 +84,8 @@ endif
 .PHONY: \
 	build-r-swig \
 	test-r-swig-freshness \
+	build-r-man \
+	test-r-man-freshness \
 	build-r-stage \
 	build-r \
 	build-r-binary \
@@ -101,6 +103,32 @@ build-r-swig:
 
 test-r-swig-freshness:
 	@SWIG="$(SWIG)" $(PYTHON) $(R_SWIG_SCRIPT) --check --r-out $(R_GENERATED_R) --cpp-out $(R_GENERATED_CPP)
+
+# The man pages are roxygen output, like the SWIG files above, but nothing checked
+# them: 18 options were missing from infomap_options.Rd and add_state_node()'s name
+# argument from Infomap.Rd, so `?infomap_options` documented a smaller API than the
+# package had.
+#
+# Both targets go through the staged package rather than the tracked skeleton,
+# because roxygen has to *load* the package to document its R6 class and the
+# skeleton has no wrapper sources -- src/ holds only Makevars.in. The staged copy
+# is a build directory, so generating there leaves the tracked tree alone.
+build-r-man: build-r-stage
+	@$(RSCRIPT) -e "roxygen2::roxygenise('$(R_STAGED_DIR)', roclets = 'rd')" >/dev/null
+	@rm -f $(R_SKELETON_DIR)/man/*.Rd
+	@cp $(R_STAGED_DIR)/man/*.Rd $(R_SKELETON_DIR)/man/
+	@echo "Regenerated $(R_SKELETON_DIR)/man from the roxygen comments."
+
+test-r-man-freshness: build-r-stage
+	@$(RSCRIPT) -e "roxygen2::roxygenise('$(R_STAGED_DIR)', roclets = 'rd')" >/dev/null
+	@status=0; \
+	diff -ru $(R_SKELETON_DIR)/man $(R_STAGED_DIR)/man || status=$$?; \
+	if [ $$status -ne 0 ]; then \
+		echo "Tracked R man pages are stale; regenerate with: make build-r-man" >&2; \
+	else \
+		echo "Tracked R man pages are fresh."; \
+	fi; \
+	exit $$status
 
 build-r-stage:
 	@$(PYTHON) $(R_STAGE_SCRIPT) --out-dir $(R_STAGED_DIR)

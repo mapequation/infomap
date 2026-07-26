@@ -110,6 +110,7 @@ jobs:
             any::rmarkdown
             any::tibble
             any::rcmdcheck
+            any::roxygen2
 
       - name: Set up ccache
         uses: ./.github/actions/setup-ccache
@@ -140,6 +141,14 @@ jobs:
         env:
           SCCACHE_GHA_ENABLED: "true"
         run: sccache --start-server
+
+      # One leg only: roxygen output does not vary by platform or R version, and
+      # this needs the package compiled, which the staging step below pays for
+      # anyway. Guards against the drift that had 18 options missing from
+      # infomap_options.Rd.
+      - name: Verify tracked man pages match the roxygen comments
+        if: matrix.os == 'ubuntu-24.04' && matrix.r == 'release'
+        run: make test-r-man-freshness
 
       - name: Stage and check the package
         env:

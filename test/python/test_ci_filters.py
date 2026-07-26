@@ -143,6 +143,29 @@ def test_binding_option_artifacts_trigger_the_lane_that_checks_them(filters):
     )
 
 
+def test_roxygen_sources_trigger_the_lane_that_checks_the_man_pages(filters):
+    """A roxygen comment change must fire the `r` filter.
+
+    `make test-r-man-freshness` runs only in that lane, and the man pages had
+    drifted from their sources with nothing to catch it. A roxygen comment lives in
+    an ordinary R source file, so the coverage that matters is that those files and
+    the generated man pages both match the filter -- otherwise a PR editing one
+    skips the lane and the gate never runs.
+    """
+    r_files = sorted(
+        str(path.relative_to(REPO_ROOT))
+        for path in (REPO_ROOT / "interfaces" / "R" / "infomap").rglob("*")
+        if path.suffix in {".R", ".Rd"} and path.is_file()
+    )
+    if not r_files:
+        pytest.skip("R package not available in this layout")
+    uncovered = _uncovered(r_files, filters["r"])
+    assert not uncovered, (
+        "these R sources or man pages match no `r` pattern, so a change to them "
+        f"would skip the lane that runs make test-r-man-freshness: {uncovered}"
+    )
+
+
 def test_the_generator_is_itself_covered(filters):
     """The generator and its inputs must fire the lane that runs its gate."""
     inputs = [

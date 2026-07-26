@@ -254,7 +254,7 @@ named list/vector mapping \code{node_id} to \code{name} or to
 \subsection{Method \code{add_state_node()}}{
 Add a state node.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InfomapClass$add_state_node(state_id, node_id)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InfomapClass$add_state_node(state_id, node_id, name = NULL)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -263,6 +263,9 @@ Add a state node.
 \item{\code{state_id}}{Integer state node id.}
 
 \item{\code{node_id}}{Integer physical node id.}
+
+\item{\code{name}}{Optional name of the state node itself, as opposed to the
+physical node.}
 }
 \if{html}{\out{</div>}}
 }
@@ -279,8 +282,9 @@ Add many state nodes at once.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{state_nodes}}{A list of \code{c(state_id, node_id)} vectors, or a
-named list/vector mapping \code{state_id} to \code{node_id}.}
+\item{\code{state_nodes}}{A list of \code{c(state_id, node_id)} or
+\code{c(state_id, node_id, name)} vectors, or a named list/vector mapping
+\code{state_id} to \code{node_id}.}
 }
 \if{html}{\out{</div>}}
 }
@@ -865,7 +869,7 @@ Get all assigned state node names.
 }
 
 \subsection{Details}{
-Populated for higher-order (state/memory) networks whose \code{*States}
+Populated for higher-order (state/memory) networks whose \verb{*States}
 section names the state nodes; empty otherwise. Physical node names
 are available separately via \code{get_names()}.
 }
