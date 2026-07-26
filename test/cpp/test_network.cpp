@@ -1089,12 +1089,8 @@ TEST_CASE("Meta categories must be non-negative and fit an int [fast][core][pars
   // which became -1 again on the way in -- so two different files produced the same
   // category with no complaint. The bound is int, not unsigned, for the same reason.
   const auto parses = [](const std::string& metaLine) {
-    const std::string net = "meta_category_test.net";
+    // Only the .meta file: parseMetaDataInput never reads the network.
     const std::string meta = "meta_category_test.meta";
-    {
-      std::ofstream out(net.c_str());
-      out << "*Vertices 2\n1 \"a\"\n2 \"b\"\n*Edges\n1 2 1\n";
-    }
     {
       std::ofstream out(meta.c_str());
       out << metaLine << "\n2 1\n";
@@ -1106,7 +1102,6 @@ TEST_CASE("Meta categories must be non-negative and fit an int [fast][core][pars
     } catch (const std::runtime_error&) {
       ok = false;
     }
-    std::remove(net.c_str());
     std::remove(meta.c_str());
     return ok;
   };

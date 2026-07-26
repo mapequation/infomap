@@ -516,11 +516,11 @@ namespace input {
 
       std::istringstream extractor(line);
       unsigned int nodeId = 0;
-      std::string metaIdToken;
-      if (!(extractor >> metaIdToken))
+      std::string nodeIdToken;
+      if (!(extractor >> nodeIdToken))
         throw std::runtime_error(fmt::format(FMT_STRING("Can't parse node id from line '{}'"), line));
-      if (!io::parseNonNegativeInteger(metaIdToken, nodeId))
-        throw std::runtime_error(fmt::format(FMT_STRING("Can't parse node id '{}' from line '{}': expected a non-negative integer no greater than {}"), metaIdToken, line, std::numeric_limits<unsigned int>::max()));
+      if (!io::parseNonNegativeInteger(nodeIdToken, nodeId))
+        throw std::runtime_error(fmt::format(FMT_STRING("Can't parse node id '{}' from line '{}': expected a non-negative integer no greater than {}"), nodeIdToken, line, std::numeric_limits<unsigned int>::max()));
 
       // Same treatment as the id above, and for the same reason: `>> unsigned`
       // takes "-1" as 4294967295, which then becomes -1 again in this vector<int>,
