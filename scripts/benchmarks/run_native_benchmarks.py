@@ -222,11 +222,19 @@ def generate_if_missing(path: Path, generator, *args: object) -> None:
 
 def metric_stats(values: list[float]) -> dict[str, float]:
     if not values:
-        return {"mean": 0.0, "stdev": 0.0, "cv": 0.0}
+        return {"mean": 0.0, "stdev": 0.0, "cv": 0.0, "min": 0.0}
     mean_value = statistics.mean(values)
     stdev_value = statistics.stdev(values) if len(values) > 1 else 0.0
     cv_value = stdev_value / mean_value if mean_value else 0.0
-    return {"mean": mean_value, "stdev": stdev_value, "cv": cv_value}
+    # The minimum is the least-perturbed sample: noise on a shared runner only ever
+    # adds time. Reported so the comparison can require a regression to show up in
+    # both the median and the minimum.
+    return {
+        "mean": mean_value,
+        "stdev": stdev_value,
+        "cv": cv_value,
+        "min": min(values),
+    }
 
 
 def collect_module_size_bucket_labels(
@@ -372,19 +380,10 @@ def build_benchmark_cases(
     return cases
 
 
-def benchmark_case(
-    binary: Path,
-    name: str,
-    network_path: Path,
-    repeats: int,
-    warmup_runs: int,
-    iterations: int,
-    flags: str,
-) -> dict[str, object]:
-    samples: list[dict[str, object]] = []
-    run_samples: list[dict[str, object]] = []
-
-    command = [
+def benchmark_command(
+    binary: Path, name: str, network_path: Path, iterations: int, flags: str
+) -> list[str]:
+    return [
         str(binary),
         "--input",
         str(network_path),
@@ -395,27 +394,95 @@ def benchmark_case(
         "--iterations",
         str(iterations),
     ]
+
+
+def collect_sample(command: list[str]) -> dict[str, object]:
+    completed = subprocess.run(command, check=True, capture_output=True, text=True)
+    return json.loads(completed.stdout)
+
+
+def benchmark_case_pair(
+    binaries: dict[str, Path],
+    name: str,
+    network_path: Path,
+    repeats: int,
+    warmup_runs: int,
+    iterations: int,
+    flags: str,
+) -> dict[str, dict[str, object]]:
+    """Measure several binaries on one case, alternating between them.
+
+    Measuring one binary's repeats and then the other's makes the comparison read
+    whatever the machine was doing during each block. On a shared runner that is
+    enough to invent or hide a verdict: the same commit was reported as a 17.3%
+    regression and then, on re-run, as 1.9% within threshold, with the *baseline*
+    itself moving 8.5% between runs (#943). Per-binary variance cannot see it -- each
+    block is internally consistent, so the shift looks like a real difference.
+
+    Alternating instead puts both binaries in the same few seconds of machine state,
+    and swapping which one leads each round keeps the lead position from favouring
+    either.
+    """
+    labels = list(binaries)
+    commands = {
+        label: benchmark_command(binaries[label], name, network_path, iterations, flags)
+        for label in labels
+    }
+    samples: dict[str, list[dict[str, object]]] = {label: [] for label in labels}
+    run_samples: dict[str, list[dict[str, object]]] = {label: [] for label in labels}
+
     for _ in range(warmup_runs):
-        subprocess.run(
-            command,
-            check=True,
-            capture_output=True,
-            text=True,
-        )
+        for label in labels:
+            subprocess.run(commands[label], check=True, capture_output=True, text=True)
 
     for repeat in range(repeats):
-        completed = subprocess.run(
-            command,
-            check=True,
-            capture_output=True,
-            text=True,
+        # Rotate the order so no binary is always measured first.
+        order = labels[repeat % len(labels) :] + labels[: repeat % len(labels)]
+        for label in order:
+            sample = collect_sample(commands[label])
+            samples[label].append(sample)
+            for run in sample.get("runs", [sample]):
+                run_sample = dict(run)
+                run_sample["repeat"] = repeat + 1
+                run_samples[label].append(run_sample)
+
+    return {
+        label: summarize_case(
+            samples[label],
+            run_samples[label],
+            name,
+            network_path,
+            repeats,
+            warmup_runs,
+            iterations,
         )
-        sample = json.loads(completed.stdout)
-        samples.append(sample)
-        for run in sample.get("runs", [sample]):
-            run_sample = dict(run)
-            run_sample["repeat"] = repeat + 1
-            run_samples.append(run_sample)
+        for label in labels
+    }
+
+
+def benchmark_case(
+    binary: Path,
+    name: str,
+    network_path: Path,
+    repeats: int,
+    warmup_runs: int,
+    iterations: int,
+    flags: str,
+) -> dict[str, object]:
+    return benchmark_case_pair(
+        {"only": binary}, name, network_path, repeats, warmup_runs, iterations, flags
+    )["only"]
+
+
+def summarize_case(
+    samples: list[dict[str, object]],
+    run_samples: list[dict[str, object]],
+    name: str,
+    network_path: Path,
+    repeats: int,
+    warmup_runs: int,
+    iterations: int,
+) -> dict[str, object]:
 
     total_stats = metric_stats([float(sample["total_sec"]) for sample in samples])
     run_stats = metric_stats([float(run["run_sec"]) for run in run_samples])
@@ -583,6 +650,8 @@ def benchmark_case(
         "mean_run_sec": run_stats["mean"],
         "stdev_run_sec": run_stats["stdev"],
         "cv_run_sec": run_stats["cv"],
+        "min_run_sec": run_stats["min"],
+        "min_total_sec": total_stats["min"],
         "mean_peak_rss_bytes": peak_rss_stats["mean"],
         "stdev_peak_rss_bytes": peak_rss_stats["stdev"],
         "cv_peak_rss_bytes": peak_rss_stats["cv"],
@@ -679,6 +748,22 @@ def main() -> None:
         help="Path to the native benchmark executable.",
     )
     parser.add_argument(
+        "--compare-binary",
+        type=Path,
+        default=None,
+        help=(
+            "Optional second executable to measure alongside --binary, alternating "
+            "between them so both see the same machine state. Requires "
+            "--compare-output."
+        ),
+    )
+    parser.add_argument(
+        "--compare-output",
+        type=Path,
+        default=None,
+        help="Path to write the --compare-binary JSON report.",
+    )
+    parser.add_argument(
         "--output",
         type=Path,
         required=True,
@@ -728,15 +813,31 @@ def main() -> None:
     if args.warmup_runs < 0:
         parser.error("--warmup-runs must be at least 0")
 
+    if (args.compare_binary is None) != (args.compare_output is None):
+        parser.error("--compare-binary and --compare-output must be given together")
+
     repo_root = Path(__file__).resolve().parents[2]
     if not args.binary.is_file():
         raise FileNotFoundError(f"Benchmark binary not found: {args.binary}")
+    if args.compare_binary is not None and not args.compare_binary.is_file():
+        raise FileNotFoundError(
+            f"Comparison benchmark binary not found: {args.compare_binary}"
+        )
 
-    def run_with_generated_dir(generated_dir: Path) -> list[dict[str, object]]:
+    binaries = {"binary": args.binary}
+    if args.compare_binary is not None:
+        binaries["compare"] = args.compare_binary
+
+    def run_with_generated_dir(
+        generated_dir: Path,
+    ) -> dict[str, list[dict[str, object]]]:
         cases = build_benchmark_cases(args.profile, repo_root, generated_dir)
-        return [
-            benchmark_case(
-                args.binary,
+        collected: dict[str, list[dict[str, object]]] = {
+            label: [] for label in binaries
+        }
+        for case in cases:
+            per_label = benchmark_case_pair(
+                binaries,
                 str(case["name"]),
                 Path(case["path"]),
                 args.repeats,
@@ -746,8 +847,9 @@ def main() -> None:
                     part for part in (args.flags, str(case["flags"])) if part
                 ).strip(),
             )
-            for case in cases
-        ]
+            for label, result in per_label.items():
+                collected[label].append(result)
+        return collected
 
     if args.generated_dir is None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -760,20 +862,33 @@ def main() -> None:
         results = run_with_generated_dir(generated_dir)
         generated_dir_text = str(generated_dir)
 
-    report = {
-        "profile": args.profile,
-        "repeats": args.repeats,
-        "warmup_runs": args.warmup_runs,
-        "iterations": args.iterations,
-        "binary": str(args.binary),
-        "generated_dir": generated_dir_text,
-        "benchmarks": results,
-    }
+    def write_report(label: str, binary: Path, output: Path) -> None:
+        report = {
+            "profile": args.profile,
+            "repeats": args.repeats,
+            "warmup_runs": args.warmup_runs,
+            "iterations": args.iterations,
+            "binary": str(binary),
+            "generated_dir": generated_dir_text,
+            # Recorded so a comparison can tell an interleaved measurement from two
+            # sequential ones; #943 was caused by the latter being indistinguishable.
+            "interleaved_with": (
+                str(binaries["compare"])
+                if label == "binary" and "compare" in binaries
+                else str(args.binary)
+                if label == "compare"
+                else None
+            ),
+            "benchmarks": results[label],
+        }
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
 
-    args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+    write_report("binary", args.binary, args.output)
+    if args.compare_binary is not None:
+        write_report("compare", args.compare_binary, args.compare_output)
 
-    markdown = render_markdown(results)
+    markdown = render_markdown(results["binary"])
     if args.summary is not None:
         args.summary.parent.mkdir(parents=True, exist_ok=True)
         args.summary.write_text(markdown, encoding="utf-8")

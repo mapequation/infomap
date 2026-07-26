@@ -48,6 +48,16 @@ def classify_case(
     delta_pct = (delta_sec / base_runtime) if base_runtime else 0.0
     base_cv = float(base_case.get("cv_run_sec", 0.0))
     head_cv = float(head_case.get("cv_run_sec", 0.0))
+    # The fastest of the repeats, reported so a borderline verdict can be read by a
+    # human, but deliberately not part of the verdict. It does not separate noise
+    # from a regression: a disturbance lasting a whole measurement block slows every
+    # repeat, so the minimum moves with the median (measured on this runner: a
+    # sequential A/A comparison under load moved the median 2.339 -> 2.709 s and the
+    # minimum 2.332 -> 2.707 s). Interleaving is what handles that; see
+    # run_native_benchmarks.benchmark_case_pair.
+    base_min = float(base_case.get("min_run_sec", base_runtime))
+    head_min = float(head_case.get("min_run_sec", head_runtime))
+    min_delta_sec = head_min - base_min
     status = "ok"
     reason = "within_threshold"
     severe = False
@@ -88,6 +98,9 @@ def classify_case(
         "severe": severe,
         "base_median_run_sec": base_runtime,
         "head_median_run_sec": head_runtime,
+        "base_min_run_sec": base_min,
+        "head_min_run_sec": head_min,
+        "min_delta_sec": min_delta_sec,
         "delta_sec": delta_sec,
         "delta_pct": delta_pct,
         "base_cv_run_sec": base_cv,
@@ -99,6 +112,25 @@ def classify_case(
         "base_codelength": float(base_case["codelength"]),
         "head_codelength": float(head_case["codelength"]),
     }
+
+
+def reports_are_interleaved(
+    base_report: dict[str, object], head_report: dict[str, object]
+) -> bool:
+    """True when each report names the other's binary as the one it alternated with.
+
+    ``run_native_benchmarks --compare-binary`` records this; two independent
+    invocations leave it unset, and older reports predate the field entirely.
+    """
+    base_binary = base_report.get("binary")
+    head_binary = head_report.get("binary")
+    base_partner = base_report.get("interleaved_with")
+    head_partner = head_report.get("interleaved_with")
+    # All four have to be present: a report that predates the field has None on both
+    # sides, and comparing None to None would otherwise read as a match.
+    if None in (base_binary, head_binary, base_partner, head_partner):
+        return False
+    return base_partner == head_binary and head_partner == base_binary
 
 
 def compare_reports(
@@ -140,6 +172,11 @@ def compare_reports(
     return {
         "overall_status": overall_status,
         "summary": summary,
+        # Whether the two runs were measured against each other, alternating, rather
+        # than as two separate blocks. Surfaced because it decides how much a verdict
+        # is worth: two sequential blocks on a shared runner reported the same commit
+        # as both a 17.3% regression and a 1.9% pass (#943).
+        "interleaved": reports_are_interleaved(base_report, head_report),
         "thresholds": {
             "relative_regression_threshold": RELATIVE_REGRESSION_THRESHOLD,
             "absolute_regression_threshold_sec": ABSOLUTE_REGRESSION_THRESHOLD_SEC,
@@ -163,6 +200,13 @@ def render_markdown(result: dict[str, object]) -> str:
         "## PR Native Benchmark Comparison",
         "",
         f"Overall result: **{result['summary']}**",
+        "",
+        (
+            "Measured by alternating the two binaries on each case."
+            if result.get("interleaved")
+            else "Note: the two runs were measured separately rather than alternating, "
+            "so a difference here can be machine noise as easily as a code change."
+        ),
         "",
         "| Case | Status | Base median run (s) | Head median run (s) | Delta (s) | Delta (%) | Reason |",
         "| --- | --- | ---: | ---: | ---: | ---: | --- |",
