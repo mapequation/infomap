@@ -327,13 +327,23 @@ namespace {
   // lines of English on the process's stdout, flushed at exit after everything the
   // Python program had written, against its documented quiet-by-default contract.
   //
-  // Tokenized the same way the parser tokenizes, so "--silent" inside a value does
-  // not count and "--silentish" does not match; there is no short form. The parser
-  // also accepts the --no-<option> negation and lets the last occurrence win
-  // (verified: "--silent --no-silent" parses to silent = false and the reverse to
-  // true), so this reads the last of either rather than the first --silent, and
-  // agrees with the Config the parse is about to produce. Defaults to
-  // Config::silent's own default when neither appears.
+  // Split on whitespace, the way tokenizeArgs does, and compared whole, so
+  // "--silentish" does not match; there is no short form. The parser accepts the
+  // --no-<option> negation and lets the last occurrence win (verified:
+  // "--silent --no-silent" parses to silent = false and the reverse to true), so
+  // this reads the last of either rather than the first --silent and agrees with
+  // the Config the parse is about to produce. Defaults to Config::silent's own
+  // default when neither appears.
+  //
+  // Not option-aware, and that is a deliberate limit rather than an oversight.
+  // The parser decides option-versus-value by position -- parseLongOption consumes
+  // the following token as an argument even when it starts with "--" -- so
+  // `--out-name --silent` sets out_name to the literal "--silent" with silent
+  // false, while this scan counts the token and silences the window. Telling the
+  // two apart needs the per-option requireArgument knowledge that lives in
+  // ProgramInterface, and mirroring it here would put the parser's rules in a
+  // second place that can drift. The whole cost of being wrong is that a rejected
+  // argument prints no banner in a run whose out-name is literally "--silent".
   bool flagsRequestSilence(const std::string& flags)
   {
     bool silent = false;

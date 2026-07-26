@@ -398,6 +398,16 @@ class TestRejectedArgumentStaysQuiet:
             Infomap(args="--no-silent --silent --bogus-flag", silent=False)
         assert _engine_stdout(capfd) == ""
 
+    def test_a_value_that_looks_like_the_flag_is_a_known_limitation(self, capfd):
+        # The scan is not option-aware: the parser decides option-versus-value by
+        # position, so `--out-name --silent` sets out_name to the literal "--silent"
+        # with silent false, while the scan counts the token and silences. Pinned as
+        # the documented behaviour rather than left to be discovered -- the whole
+        # cost is a missing banner in a run whose out-name is literally "--silent".
+        with pytest.raises(Exception, match="Unrecognized option"):
+            Infomap(args="--out-name --silent --bogus-flag", silent=False)
+        assert _engine_stdout(capfd) == ""
+
     def test_a_previous_silent_run_does_not_mute_a_later_rejection(self, capfd):
         # Log's silence is process-global and a successful silent run leaves it set,
         # so the parse window has to take its value from the flags in front of it
