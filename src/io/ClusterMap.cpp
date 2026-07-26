@@ -14,6 +14,7 @@
 #include "../utils/FileURI.h"
 #include "../utils/format.h"
 #include <sstream>
+#include "../utils/convert.h"
 
 namespace infomap {
 
@@ -182,8 +183,14 @@ void ClusterMap::readClu(const std::string& filename, bool includeFlow, const st
     unsigned int moduleId;
     unsigned int layerId;
 
-    if (!(lineStream >> stateId >> moduleId))
+    // Validated rather than read straight into the unsigneds: `>> unsigned`
+    // accepts a leading '-' and stores the value modulo 2^32.
+    std::string stateIdToken;
+    std::string moduleIdToken;
+    if (!(lineStream >> stateIdToken >> moduleIdToken))
       throw std::runtime_error(fmt::format(FMT_STRING("Couldn't parse node key and cluster id from line '{}'"), line));
+    if (!io::parseNonNegativeInteger(stateIdToken, stateId) || !io::parseNonNegativeInteger(moduleIdToken, moduleId))
+      throw std::runtime_error(fmt::format(FMT_STRING("Couldn't parse node key and cluster id from line '{}': expected two non-negative integers, got '{}' and '{}'"), line, stateIdToken, moduleIdToken));
 
     auto flow = 0.0;
     if (lineStream >> flow) {

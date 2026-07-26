@@ -424,7 +424,20 @@ std::pair<StateNetwork::NodeMap::iterator, bool> StateNetwork::addStateNodeWithA
 
 std::pair<StateNetwork::NodeMap::iterator, bool> StateNetwork::addStateNodeWithDeterministicId(unsigned int physId, unsigned int layerId, unsigned int numLayersLog2)
 {
-  unsigned int stateId = physId << (numLayersLog2 + 1) | layerId;
+  // The shift has to fit in 32 bits. Only layerId was checked (Network.cpp), so a
+  // physical id at or above this bound wrapped and produced a state id already
+  // taken by a smaller id in the same layer -- 2147483748 << 2 is 400, and so is
+  // 100 << 2. Network::addMultilayerNode then aliased the second physical node
+  // onto the first, so a node disappeared from the partition and every flow moved,
+  // at exit 0 with no warning. With --matchable-multilayer-ids 2 the safe range is
+  // only [0, 2^30), which ordinary ids can exceed.
+  const unsigned int shift = numLayersLog2 + 1;
+  const unsigned int maxPhysId = shift >= 32 ? 0 : (1u << (32 - shift));
+  if (physId >= maxPhysId) {
+    throw std::runtime_error(fmt::format(FMT_STRING("Physical node id {} is too large for matchable multilayer ids: the id is shifted left by {} bits to make room for the layer, so ids must be below {}. Use smaller physical ids, or drop --matchable-multilayer-ids."), physId, shift, maxPhysId));
+  }
+
+  unsigned int stateId = physId << shift | layerId;
   return addStateNode(stateId, physId);
 }
 

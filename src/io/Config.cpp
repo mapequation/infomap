@@ -148,6 +148,19 @@ namespace {
     }
   }
 
+  // The matchable state id is `physId << (ceil(log2(N)) + 1) | layerId`, so an N
+  // this large makes the shift count 32 or more: undefined behaviour, which in
+  // practice changed the flows even for single-digit node ids at exit 0. Bounding N
+  // keeps the shift inside 32 bits; the companion check on the physical id lives in
+  // StateNetwork::addStateNodeWithDeterministicId.
+  void validateMatchableMultilayerIds(const Config& config)
+  {
+    const unsigned int maxLargestLayerId = 1u << 30;
+    if (config.matchableMultilayerIds > maxLargestLayerId) {
+      throw std::runtime_error(fmt::format(FMT_STRING("--matchable-multilayer-ids {} is too large: the largest layer id must be at most {}, so the state id shift stays within 32 bits"), config.matchableMultilayerIds, maxLargestLayerId));
+    }
+  }
+
   void validateConvergeTrials(const Config& config)
   {
     if (!config.convergeTrials) {
@@ -482,6 +495,7 @@ void Config::adaptDefaults()
   validateRequiredCliOutput(*this);
   applyOptionInteractions(*this);
   validateConvergeTrials(*this);
+  validateMatchableMultilayerIds(*this);
 #if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
   applyAndValidateLossyInteraction(*this);
 #endif

@@ -242,8 +242,13 @@ namespace input {
 
         std::istringstream extractor(line);
         ParsedVertex vertex;
-        if (!(extractor >> vertex.id))
+        std::string idToken;
+        if (!(extractor >> idToken))
           throw std::runtime_error(fmt::format(FMT_STRING("Can't parse node id from line '{}'"), line));
+        // Validated rather than read straight into the unsigned: `>> unsigned`
+        // accepts "-2" and stores 4294967294.
+        if (!io::parseNonNegativeInteger(idToken, vertex.id))
+          throw std::runtime_error(fmt::format(FMT_STRING("Can't parse node id '{}' from line '{}': expected a non-negative integer no greater than {}"), idToken, line, std::numeric_limits<unsigned int>::max()));
 
         auto nameStart = line.find_first_of('\"');
         auto nameEnd = line.find_last_of('\"');
@@ -511,8 +516,11 @@ namespace input {
 
       std::istringstream extractor(line);
       unsigned int nodeId = 0;
-      if (!(extractor >> nodeId))
+      std::string metaIdToken;
+      if (!(extractor >> metaIdToken))
         throw std::runtime_error(fmt::format(FMT_STRING("Can't parse node id from line '{}'"), line));
+      if (!io::parseNonNegativeInteger(metaIdToken, nodeId))
+        throw std::runtime_error(fmt::format(FMT_STRING("Can't parse node id '{}' from line '{}': expected a non-negative integer no greater than {}"), metaIdToken, line, std::numeric_limits<unsigned int>::max()));
 
       std::vector<int> metaData;
       unsigned int metaId = 0;

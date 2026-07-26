@@ -183,6 +183,35 @@ namespace io {
     return std::string(size - valStr.size(), paddingChar).append(valStr);
   }
 
+  // Whether `token` is exactly a non-negative decimal integer that fits an
+  // unsigned int, storing it in `value` when it is.
+  //
+  // `std::istream >> unsigned` accepts a leading '-' and stores the value modulo
+  // 2^32, so reading an id that way turned "-2" into 4294967294 instead of
+  // failing: a phantom node in its own module, and the real node silently losing
+  // its name. The link and *States rows never had that problem because they parse
+  // ids by hand; this is the same rule, in a place every id reader can reach.
+  //
+  // Deliberately strict: no sign, no whitespace inside, no trailing characters,
+  // no overflow. A caller that wants a signed value should read a signed type.
+  inline bool parseNonNegativeInteger(const std::string& token, unsigned int& value)
+  {
+    if (token.empty())
+      return false;
+
+    unsigned long long result = 0;
+    for (const char c : token) {
+      if (c < '0' || c > '9')
+        return false;
+      result = result * 10 + static_cast<unsigned long long>(c - '0');
+      if (result > std::numeric_limits<unsigned int>::max())
+        return false;
+    }
+
+    value = static_cast<unsigned int>(result);
+    return true;
+  }
+
   // Defined in convert.cpp with fmt, to keep the heavy fmt header out of this
   // widely-included file. {:.{}g} reproduces std::setprecision(precision) with
   // the default floatfield, {:.{}f} reproduces std::fixed << setprecision(...);

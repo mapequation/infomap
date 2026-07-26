@@ -958,3 +958,136 @@ TEST_CASE("External --meta-data composes with a JSON network [fast][core][parser
 }
 
 } // namespace
+
+// Four intake paths accepted values they should reject, and each accepted value was
+// then reinterpreted as a *different* network -- a phantom node, two physical nodes
+// merged into one, a NaN codelength (#909). In every case a sibling path in the same
+// codebase already validated correctly.
+
+TEST_CASE("Negative node ids are rejected rather than wrapped [fast][core][parser]")
+{
+  // `istream >> unsigned` accepts a leading '-' and stores the value modulo 2^32, so
+  // "-2" became 4294967294: a phantom zero-flow node in its own module, while the
+  // real node 2 silently lost its name. The link rows never had this problem, since
+  // they parse ids by hand.
+  const std::string path = "vertices_negative_id_test.net";
+  {
+    std::ofstream out(path.c_str());
+    out << "*Vertices 3\n1 \"a\"\n-2 \"b\"\n3 \"c\"\n*Edges\n1 2 1\n2 3 1\n";
+  }
+
+  FakeInputSink sink;
+  CHECK_THROWS_AS(infomap::input::parseNetworkInput(path, sink, defaultInputOptions), std::runtime_error);
+  try {
+    FakeInputSink retry;
+    infomap::input::parseNetworkInput(path, retry, defaultInputOptions);
+  } catch (const std::runtime_error& e) {
+    const std::string message = e.what();
+    // The message has to name the token, or the reader cannot find the bad line.
+    CHECK(message.find("-2") != std::string::npos);
+  }
+
+  std::remove(path.c_str());
+}
+
+TEST_CASE("Node id tokens must be exactly a non-negative integer [fast][core][parser]")
+{
+  const auto parses = [](const std::string& idToken) {
+    const std::string path = "vertices_id_token_test.net";
+    {
+      std::ofstream out(path.c_str());
+      out << "*Vertices 2\n" << idToken << " \"a\"\n2 \"b\"\n*Edges\n1 2 1\n";
+    }
+    FakeInputSink sink;
+    bool ok = true;
+    try {
+      infomap::input::parseNetworkInput(path, sink, defaultInputOptions);
+    } catch (const std::runtime_error&) {
+      ok = false;
+    }
+    std::remove(path.c_str());
+    return ok;
+  };
+
+  CHECK(parses("1"));
+  CHECK(parses("0"));
+  CHECK(parses("4294967295")); // the largest id that fits
+  CHECK_FALSE(parses("-2"));
+  CHECK_FALSE(parses("4294967296")); // one past the top, previously wrapped to 0
+  CHECK_FALSE(parses("2x"));
+  CHECK_FALSE(parses("1.5"));
+}
+
+TEST_CASE("JSON node and state weights must be finite and non-negative [fast][core][parser][json]")
+{
+  // The text parser rejects a negative *Vertices weight and the repo's own schema
+  // sets weight.minimum 0, but the SAX parser stored it verbatim. addPhysicalNode
+  // assigns it as-is -- unlike addLink, the documented funnel that rejects these --
+  // so the run failed later in the flow guard, with a message about bipartite
+  // teleportation that has nothing to do with the cause.
+  const auto parses = [](const std::string& body) {
+    const std::string path = "json_weight_sign_test.json";
+    {
+      std::ofstream out(path.c_str());
+      out << body;
+    }
+    FakeInputSink sink;
+    bool ok = true;
+    try {
+      infomap::input::parseJsonNetworkInput(path, sink, defaultInputOptions);
+    } catch (const std::runtime_error&) {
+      ok = false;
+    }
+    std::remove(path.c_str());
+    return ok;
+  };
+
+  const std::string header = R"({"format":"infomap-network","version":"1.0",)";
+
+  CHECK(parses(header + R"("nodes":[{"id":1,"weight":2.0}],"edges":[{"source":1,"target":2}]})"));
+  CHECK(parses(header + R"("nodes":[{"id":1,"weight":0.0}],"edges":[{"source":1,"target":2}]})"));
+  CHECK_FALSE(parses(header + R"("nodes":[{"id":1,"weight":-1.0}],"edges":[{"source":1,"target":2}]})"));
+  CHECK_FALSE(parses(header + R"("states":[{"id":1,"node":1,"weight":-2.5}],"links":[{"source":1,"target":2}]})"));
+}
+
+TEST_CASE("Matchable multilayer ids reject a physical id that would wrap [fast][core][crash]")
+{
+  // The state id is `physId << (ceil(log2(N)) + 1) | layerId`, and only layerId was
+  // checked. With N = 2 the shift is 2, so 2147483748 << 2 is 400 -- exactly
+  // 100 << 2. addMultilayerNode then aliased the second physical node onto the
+  // first: a node vanished from the partition and every flow moved, at exit 0.
+  Config config;
+  config.silent = true;
+  config.matchableMultilayerIds = 2;
+  Network network(config);
+
+  network.addMultilayerLink(1, 100, 1, 7, 1.0);
+  CHECK_THROWS_AS(network.addMultilayerLink(1, 2147483748u, 1, 7, 1.0), std::runtime_error);
+
+  // The bound is the shift, not an arbitrary ceiling: the largest id that still
+  // fits is accepted.
+  Config safeConfig;
+  safeConfig.silent = true;
+  safeConfig.matchableMultilayerIds = 2;
+  Network safeNetwork(safeConfig);
+  const unsigned int largestFitting = (1u << 30) - 1;
+  CHECK_NOTHROW(safeNetwork.addMultilayerLink(1, largestFitting, 1, 7, 1.0));
+  CHECK_THROWS_AS(safeNetwork.addMultilayerLink(1, 1u << 30, 1, 7, 1.0), std::runtime_error);
+}
+
+TEST_CASE("A largest-layer-id that would shift past 32 bits is rejected [fast][core][config]")
+{
+  // ceil(log2(N)) + 1 >= 32 is undefined behaviour, and in practice changed the
+  // flows even for single-digit node ids at exit 0.
+  Config config;
+  config.silent = true;
+  config.noFileOutput = true;
+  config.matchableMultilayerIds = 1u << 31;
+  CHECK_THROWS_AS(config.adaptDefaults(), std::runtime_error);
+
+  Config atTheBound;
+  atTheBound.silent = true;
+  atTheBound.noFileOutput = true;
+  atTheBound.matchableMultilayerIds = 1u << 30;
+  CHECK_NOTHROW(atTheBound.adaptDefaults());
+}
