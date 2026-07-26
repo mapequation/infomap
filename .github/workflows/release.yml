@@ -135,12 +135,20 @@ jobs:
             # No real failures is the absence of a negative, not a positive signal.
             # Every lane declares `needs: changes`, so a setup-phase flake on that
             # single job marks all of them 'skipped' -- which the filter above drops,
-            # leaving nothing to report and nothing verified. Require that the run
-            # actually ran something, and that the job every lane keys off finished:
-            # without it, no lane's result means anything.
-            successes="$(jq -c '[ .[] | select(.name != "CI Summary") | select(.conclusion == "success") | .name ]' <<<"$jobs_json")"
+            # leaving nothing to report and nothing verified. Require that a
+            # verification lane actually succeeded, and that the job every lane keys
+            # off finished: without it, no lane's result means anything.
+            #
+            # 'Detect changed paths' is excluded from the success count on purpose. It
+            # is not a verification lane, and it succeeds whenever the filters ran at
+            # all -- so counting it would let a run through in which every real lane
+            # was skipped and only CI Summary flaked. It is required separately below.
+            successes="$(jq -c '[ .[]
+              | select(.name != "CI Summary" and .name != "Detect changed paths")
+              | select(.conclusion == "success")
+              | .name ]' <<<"$jobs_json")"
             if [ "$(jq 'length' <<<"$successes")" -eq 0 ]; then
-              echo "::error::master CI run $run_id concluded '$conclusion' and no job succeeded, so nothing verified this commit; refusing to publish." >&2
+              echo "::error::master CI run $run_id concluded '$conclusion' and no verification lane succeeded, so nothing verified this commit; refusing to publish." >&2
               exit 1
             fi
             changes_conclusion="$(jq -r '[ .[] | select(.name == "Detect changed paths") | .conclusion ] | first // "absent"' <<<"$jobs_json")"
@@ -148,7 +156,7 @@ jobs:
               echo "::error::master CI run $run_id did not complete 'Detect changed paths' (conclusion: $changes_conclusion); every lane keys off it, so no lane result is meaningful; refusing to publish." >&2
               exit 1
             fi
-            echo "::warning::master CI run $run_id concluded '$conclusion', but every failure was a GitHub setup-phase infra flake and $(jq 'length' <<<"$successes") job(s) succeeded. Treating master as acceptable and proceeding."
+            echo "::warning::master CI run $run_id concluded '$conclusion', but every failure was a GitHub setup-phase infra flake and $(jq 'length' <<<"$successes") verification lane(s) succeeded. Treating master as acceptable and proceeding."
             exit 0
           fi
           echo "::error::master CI run $run_id has real (non-setup) job failures; refusing to publish:" >&2
