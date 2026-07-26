@@ -168,6 +168,19 @@ FlowCalculator::FlowCalculator(StateNetwork& network, const Config& config)
     }
   });
 
+  // The directed model normally finds the dangling nodes as a prefix of nodeFlow,
+  // having ordered them first above. Bipartite input keeps the network's node order,
+  // since the feature side is identified by an index range, so nonDanglingStartIndex
+  // stays 0 and their positions have to be collected here instead -- out-degree is
+  // only known now that the links have been counted.
+  if (network.isBipartite() && config.flowModel == FlowModel::directed) {
+    for (unsigned int i = 0; i < numNodes; ++i) {
+      if (nodeOutDegree[i] == 0) {
+        danglingIndices.push_back(i);
+      }
+    }
+  }
+
   bool normalizeNodeFlow = false;
 
   switch (config.flowModel) {
@@ -369,6 +382,24 @@ IterationResult powerIterate(const Config& config, double alpha, Iteration&& ite
   return { alpha, beta, iterations, err, converged };
 }
 
+double FlowCalculator::accumulateDanglingRank() const noexcept
+{
+  // Two ways of locating the dangling nodes, one fast and one general. The directed
+  // model orders them first, making their flow a prefix; bipartite input cannot use
+  // that ordering, so their positions were collected explicitly. An empty list means
+  // the prefix form applies -- including the case of no dangling nodes at all, where
+  // both forms sum to zero.
+  if (danglingIndices.empty()) {
+    return std::accumulate(cbegin(nodeFlow), cbegin(nodeFlow) + nonDanglingStartIndex, 0.0);
+  }
+
+  double sum = 0.0;
+  for (const auto i : danglingIndices) {
+    sum += nodeFlow[i];
+  }
+  return sum;
+}
+
 void FlowCalculator::calcDirectedFlow(const StateNetwork& network, const Config& config) noexcept
 {
   m_flowMethod = "directed links";
@@ -407,7 +438,7 @@ void FlowCalculator::calcDirectedFlow(const StateNetwork& network, const Config&
 
   // Calculate PageRank
   const auto iteration = [&](const auto iter, const double alpha, const double beta) {
-    danglingRank = std::accumulate(cbegin(nodeFlow), cbegin(nodeFlow) + nonDanglingStartIndex, 0.0);
+    danglingRank = accumulateDanglingRank();
 
     // Flow from teleportation
     const auto teleportationFlow = alpha + beta * danglingRank;
@@ -551,7 +582,7 @@ void FlowCalculator::calcDirectedRelaxToSelfFlow(const StateNetwork& network, co
   };
 
   const auto iteration = [&](const auto iter, const double alpha, const double beta) {
-    danglingRank = std::accumulate(cbegin(nodeFlow), cbegin(nodeFlow) + nonDanglingStartIndex, 0.0);
+    danglingRank = accumulateDanglingRank();
     const auto teleportationFlow = alpha + beta * danglingRank;
     for (unsigned int i = 0; i < numNodes; ++i) {
       nodeFlowTmp[i] = teleportationFlow * nodeTeleportWeights[i];
@@ -1172,22 +1203,12 @@ void FlowCalculator::calcDirectedBipartiteFlow(const StateNetwork& network, cons
     }
   }
 
-  std::vector<unsigned int> danglingIndices;
-  for (size_t i = 0; i < numNodes; ++i) {
-    if (nodeOutDegree[i] == 0) {
-      danglingIndices.push_back(i);
-    }
-  }
-
   std::vector<double> nodeFlowTmp(numNodes, 0.0);
   double danglingRank;
 
   // Calculate two-step PageRank
   const auto iteration = [&](const auto iter, const double alpha, const double beta) {
-    danglingRank = 0.0;
-    for (const auto& i : danglingIndices) {
-      danglingRank += nodeFlow[i];
-    }
+    danglingRank = accumulateDanglingRank();
 
     // Flow from teleportation
     const auto teleportationFlow = alpha + beta * danglingRank;

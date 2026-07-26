@@ -30,7 +30,11 @@ def test_skip_adjust_bipartite_flow_still_runs(example_network_path):
         num_trials=1,
     )
 
-    assert result.codelength == pytest.approx(0.04164969778)
+    # Raised from 0.04164969778 when #899's dangling redistribution was restored:
+    # the link flows now carry the 1/(1 - danglingRank) scaling the node flows
+    # already had, so the exit flows are no longer deflated. The flow still sums to
+    # less than one, which is what this test is about.
+    assert result.codelength == pytest.approx(0.2776646519)
 
 
 def test_precomputed_requirements(make_infomap, example_network_path):
