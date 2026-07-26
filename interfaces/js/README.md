@@ -148,6 +148,15 @@ result contains only the formats Infomap produced. The network is processed in
 memory and Infomap's console output is suppressed. The same entrypoint works
 with CommonJS:
 
+> **No whitespace in option values.** Options reach the engine as one
+> whitespace-separated argument string with no quoting, so a value containing a
+> space cannot survive the trip — quotes are not stripped, so
+> `--out-name "my run"` sets the name to the literal `"my`. Passing an object
+> throws instead of truncating: `argumentsToString({ outName: "my run" })` names
+> the offending option. A raw `args` string is passed through unvalidated, so a
+> space there still splits. This is a limitation of the engine boundary, shared
+> with the Python and R bindings and the command line.
+
 ```js
 const { run } = require("@mapequation/infomap/node");
 ```

@@ -373,6 +373,13 @@ for name, graph in [("ring of cliques", G_ring), ("karate club", G_karate)]:
 
 ## Pitfalls
 
+- **No whitespace in paths or names.** Options reach the engine as one
+  whitespace-separated argument string, which has no quoting, so a value
+  containing a space cannot survive the trip. Infomap rejects such a value
+  rather than truncating it: `cluster_data="my file.clu"` raises
+  `ValueError`. Rename the file, or point at it from a directory whose path has
+  no spaces. This is a limitation of the engine boundary, not of the Python API
+  — the same holds for the R and JavaScript bindings and for the command line.
 - **`seed=0` raises.** Infomap requires `seed >= 1`; use any positive integer.
 - **Codelengths are not comparable across `meta_data_rate` values.**
   `result.codelength` reports the combined objective, the topological term plus

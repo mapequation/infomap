@@ -28,6 +28,43 @@ edge list, `infomap.run(g, directed=True)` works directly. See
 
 ## Using the Python API
 
+### Why is a path with a space in it rejected?
+
+Because the engine cannot receive it. Everything a binding configures reaches the
+engine as one **whitespace-separated argument string**, which has no quoting and
+no escaping: the C++ side splits it with `istringstream >> arg`. A value with a
+space in it therefore becomes two tokens, and neither quotes nor backslashes help
+— they are not stripped, so `--out-name "my run"` sets the name to the literal
+`"my`.
+
+Rather than truncate the value silently, every binding refuses it and names the
+option:
+
+```python
+>>> Options(cluster_data="my file.clu")
+ValueError: cluster_data='my file.clu' contains whitespace, which the engine
+argument string cannot carry (arguments are split on whitespace, with no
+quoting). Use a whitespace-free value.
+```
+
+The check runs when the {class}`~infomap.Options` is built, so it fires before a
+run starts rather than partway through one.
+
+The same holds in the other bindings, though they check at different moments: R
+raises when the options are *rendered*, so `infomap_options(out_name = "my run")`
+returns a list and `construct_args()` (or `Infomap()`/`$run()`, which render
+internally) is what fails; JavaScript throws from
+`argumentsToString({ outName: "my run" })`. On the command line nothing raises at
+all — `Infomap net.edges "out dir"` exits 0 and writes into `out/`. It applies to every
+path and free-string option — `out_name`, `cluster_data`, `meta_data`,
+`summary_json`, `timing_json`, `manifest_json`, `trial_results` — and to the
+`args=` escape hatch, which is passed through unvalidated by design.
+
+Work around it by renaming the file, or by running from a directory whose path
+contains no spaces. Lifting the limitation means replacing the argument string
+with an argument vector across the whole binding boundary; it is a known
+constraint rather than a bug awaiting a fix.
+
 ### Why does `result.codelength()` raise `TypeError: 'float' object is not callable`?
 
 On a `Result`, the run's intrinsic results are **properties** and anything that
