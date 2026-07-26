@@ -52,7 +52,11 @@ private:
   void addFlowNote(const std::string& note);
   void recordPageRank(unsigned int iterations, double error, bool converged) noexcept;
 
+  double accumulateDanglingRank() const noexcept;
+
   unsigned int numNodes;
+  //! One past the last dangling node, for the directed model's dangling-first
+  //! ordering. Zero when that ordering was not applied -- see danglingIndices.
   unsigned int nonDanglingStartIndex = 0;
   unsigned int bipartiteStartIndex = 0;
   unsigned int bipartiteLinkStartIndex = 0;
@@ -69,6 +73,10 @@ private:
   std::vector<double> exitFlow;
   std::vector<double> sumLinkOutWeight;
   std::vector<unsigned int> nodeOutDegree;
+  //! Positions of the dangling nodes when they are not a prefix of nodeFlow.
+  //! Bipartite input keeps the network's node order, because the feature side is
+  //! identified by an index range, so the dangling-first ordering is unavailable.
+  std::vector<unsigned int> danglingIndices;
   using FlowLink = detail::FlowLink;
   std::vector<FlowLink> flowLinks;
 

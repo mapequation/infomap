@@ -749,6 +749,20 @@ void addCanonicalBipartiteLinks(InfomapWrapper& im)
   im.addLink(3, 5);
 }
 
+// The same links as addCanonicalBipartiteLinks plus one from the feature side back to
+// the primary side, and without the bipartite declaration. A file whose links all run
+// one way leaves the omitted dangling redistribution as a uniform scale factor, which
+// the projection's renormalisation cancels; the back-link makes the dangling mass
+// matter, which is what #899 is about.
+void addBipartiteLinksWithFeedback(InfomapWrapper& im)
+{
+  im.addLink(1, 4);
+  im.addLink(2, 4);
+  im.addLink(2, 5, 0.25);
+  im.addLink(3, 5);
+  im.addLink(4, 1);
+}
+
 TEST_CASE("Degenerate flow is rejected instead of reported as a zero codelength [fast][core][flow]")
 {
   // Each of these left node flow all-zero or NaN and still reported
@@ -789,7 +803,10 @@ TEST_CASE("skip-adjust-bipartite-flow keeps its documented unnormalized flow [fa
 
   im.run();
 
-  infomap::test::checkApproxCodelength(im.codelength(), 0.04164969778);
+  // Raised from 0.04164969778 when #899's dangling redistribution was restored: the
+  // link flows now carry the 1/(1 - danglingRank) scaling the node flows already had,
+  // so the exit flows -- and with them the module codelength -- are no longer deflated.
+  infomap::test::checkApproxCodelength(im.codelength(), 0.2776646519);
 }
 
 TEST_CASE("A link-free network keeps its trivial zero-flow result [fast][core][flow]")
@@ -808,6 +825,46 @@ TEST_CASE("A link-free network keeps its trivial zero-flow result [fast][core][f
   CHECK(singleNode.numLeafNodes() == 1);
 }
 
+TEST_CASE("Directed bipartite flow matches the same links without the bipartite declaration [fast][core][flow]")
+{
+  // The bipartite declaration decides how flow is *reported* -- which nodes are the
+  // feature side, and whether their flow is folded onto the primary side -- not how
+  // the power iteration distributes it. With the fold opted out, the two runs must
+  // therefore agree exactly. They did not (#899): the directed model finds its
+  // dangling nodes as a prefix of the flow vector, an ordering bipartite input cannot
+  // use because its feature side is identified by an index range, so the dangling
+  // mass was never redistributed and the iteration converged somewhere else -- or
+  // rather did not converge, exhausting --max-flow-iterations on a five-node network.
+  //
+  // Asserted as an equivalence rather than against pinned numbers, so the test states
+  // the property instead of recording today's output.
+  InfomapWrapper bipartite(infomap::test::defaultFlags("-N 1 --seed 7 --two-level --directed --skip-adjust-bipartite-flow"));
+  bipartite.network().setBipartiteStartId(4);
+  addBipartiteLinksWithFeedback(bipartite);
+  bipartite.run();
+
+  InfomapWrapper plain(infomap::test::defaultFlags("-N 1 --seed 7 --two-level --directed"));
+  addBipartiteLinksWithFeedback(plain);
+  plain.run();
+
+  CHECK(bipartite.codelength() == doctest::Approx(plain.codelength()).epsilon(1e-10));
+
+  std::map<unsigned int, double> plainFlow;
+  for (auto it = plain.iterLeafNodes(); !it.isEnd(); ++it) {
+    const auto& node = *it;
+    plainFlow[node.physicalId] = node.data.flow;
+  }
+
+  unsigned int comparedNodes = 0;
+  for (auto it = bipartite.iterLeafNodes(); !it.isEnd(); ++it) {
+    const auto& node = *it;
+    REQUIRE(plainFlow.count(node.physicalId) == 1);
+    CHECK(node.data.flow == doctest::Approx(plainFlow[node.physicalId]).epsilon(1e-10));
+    ++comparedNodes;
+  }
+  CHECK(comparedNodes == 5);
+}
+
 TEST_CASE("Ordinary bipartite runs are unaffected by the flow post-condition [fast][core][flow]")
 {
   InfomapWrapper undirected(infomap::test::defaultFlags("-N 1 --seed 7"));
@@ -818,7 +875,11 @@ TEST_CASE("Ordinary bipartite runs are unaffected by the flow post-condition [fa
   InfomapWrapper directed(infomap::test::defaultFlags("-N 1 --seed 7 --directed"));
   addCanonicalBipartiteLinks(directed);
   directed.run();
-  infomap::test::checkApproxCodelength(directed.codelength(), 0.4729743142);
+  // Raised from 0.4729743142 with #899's fix, for the same reason as above. The node
+  // flows are unchanged here -- every link in this network runs one way, so the
+  // omitted redistribution was a uniform scale the projection cancelled -- but the
+  // link flows were uniformly too small, which is what the codelength reads.
+  infomap::test::checkApproxCodelength(directed.codelength(), 1.2649313331);
 }
 
 } // namespace
