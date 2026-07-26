@@ -1130,8 +1130,16 @@ TEST_CASE("A shift past 32 bits reports the shift, not an id bound of zero [fast
     FAIL("expected the out-of-range shift to be rejected");
   } catch (const std::runtime_error& e) {
     const std::string message = e.what();
+    MESSAGE(message);
     CHECK(message.find("32-bit") != std::string::npos);
     CHECK(message.find("must be below 0") == std::string::npos);
+    // The bound is spelled out, not left as an expression for the reader to
+    // evaluate: "reduce it so ceil(log2(largest layer id)) + 1 is below 32" is a
+    // constant dressed as homework, and the sibling message in Config already
+    // prints the number.
+    const std::string bound = std::to_string(Config::maxMatchableMultilayerIds);
+    CHECK(message.find(bound) != std::string::npos);
+    CHECK(message.find("log2") == std::string::npos);
   }
 }
 

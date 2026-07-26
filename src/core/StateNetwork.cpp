@@ -437,7 +437,8 @@ std::pair<StateNetwork::NodeMap::iterator, bool> StateNetwork::addStateNodeWithD
   // Config::adaptDefaults rejects a largest-layer-id this big, but a caller that
   // builds a Network directly never goes through it.
   if (shift >= 32) {
-    throw std::runtime_error(fmt::format(FMT_STRING("Matchable multilayer ids need to shift the physical id left by {} bits, which does not fit a 32-bit id. The largest layer id is too large: reduce it so ceil(log2(largest layer id)) + 1 is below 32."), shift));
+    const unsigned int maxLargestLayerId = Config::maxMatchableMultilayerIds;
+    throw std::runtime_error(fmt::format(FMT_STRING("Matchable multilayer ids need to shift the physical id left by {} bits, which does not fit a 32-bit id. Reduce the largest layer id to at most {}."), shift, maxLargestLayerId));
   }
 
   const unsigned int maxPhysId = 1u << (32 - shift);

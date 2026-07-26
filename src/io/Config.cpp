@@ -155,7 +155,8 @@ namespace {
   // StateNetwork::addStateNodeWithDeterministicId.
   void validateMatchableMultilayerIds(const Config& config)
   {
-    const unsigned int maxLargestLayerId = 1u << 30;
+    // Local copy avoids odr-use of the constexpr member (no out-of-line definition).
+    const unsigned int maxLargestLayerId = Config::maxMatchableMultilayerIds;
     if (config.matchableMultilayerIds > maxLargestLayerId) {
       throw std::runtime_error(fmt::format(FMT_STRING("--matchable-multilayer-ids {} is too large: the largest layer id must be at most {}, so the state id shift stays within 32 bits"), config.matchableMultilayerIds, maxLargestLayerId));
     }
