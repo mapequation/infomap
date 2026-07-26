@@ -1108,6 +1108,11 @@ TEST_CASE("Meta categories must be non-negative and fit an int [fast][core][pars
 
   CHECK(parses("1 0"));
   CHECK(parses("1 2147483647")); // the largest category that fits an int
+  // An inline '#' ends the line, as it does for the link rows. Reading the
+  // categories as unsigned used to give this for free (the stream failed on '#'
+  // and quietly ended the loop), so validating the tokens has to keep it.
+  CHECK(parses("1 0 # a trailing comment"));
+  CHECK(parses("1 0#tight"));
   CHECK_FALSE(parses("1 -1"));
   CHECK_FALSE(parses("1 2147483648")); // fits an unsigned, not an int
   CHECK_FALSE(parses("1 4294967295")); // previously arrived as -1

@@ -529,10 +529,25 @@ namespace input {
       std::vector<int> metaData;
       std::string metaToken;
       while (extractor >> metaToken) {
-        unsigned int metaId = 0;
-        if (!io::parseNonNegativeInteger(metaToken, metaId) || metaId > static_cast<unsigned int>(std::numeric_limits<int>::max()))
-          throw std::runtime_error(fmt::format(FMT_STRING("Can't parse meta category '{}' from line '{}': expected a non-negative integer no greater than {}"), metaToken, line, std::numeric_limits<int>::max()));
-        metaData.push_back(static_cast<int>(metaId));
+        // An inline '#' ends the line, the same convention the link rows use
+        // (parseLink stops at '#'). Reading the categories as unsigned used to give
+        // this for free -- the stream failed on '#' and quietly ended the loop -- so
+        // validating the tokens has to keep it explicitly or "1 2 # note" stops
+        // parsing, which it did.
+        const auto commentStart = metaToken.find('#');
+        const bool commentFollows = commentStart != std::string::npos;
+        if (commentFollows)
+          metaToken.erase(commentStart);
+
+        if (!metaToken.empty()) {
+          unsigned int metaId = 0;
+          if (!io::parseNonNegativeInteger(metaToken, metaId) || metaId > static_cast<unsigned int>(std::numeric_limits<int>::max()))
+            throw std::runtime_error(fmt::format(FMT_STRING("Can't parse meta category '{}' from line '{}': expected a non-negative integer no greater than {}"), metaToken, line, std::numeric_limits<int>::max()));
+          metaData.push_back(static_cast<int>(metaId));
+        }
+
+        if (commentFollows)
+          break;
       }
       if (metaData.empty())
         throw std::runtime_error(fmt::format(FMT_STRING("Can't parse any meta data from line '{}'"), line));
