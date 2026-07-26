@@ -359,7 +359,11 @@ format_value <- function(value, name = NULL) {
   # it by name ("Cannot parse 'NaN' as argument to option ..."), so rejecting it
   # here would make R stricter than the other bindings for no reason a caller
   # could predict. Reject the first, pass the second on.
-  if (is.na(value) && !is.nan(value)) {
+  # The is.numeric() guard is intent, not defence: is.nan() answers FALSE for
+  # a character, factor, Date or complex NA without warning or coercion
+  # (checked with warn = 2). Written this way so the clause reads as what it
+  # means -- "an NA, unless it is a numeric NaN".
+  if (is.na(value) && !(is.numeric(value) && is.nan(value))) {
     stop(sprintf("%s must not be NA.", label), call. = FALSE)
   }
   if (is.logical(value)) return(if (isTRUE(value)) "true" else "false")
