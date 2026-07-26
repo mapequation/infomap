@@ -362,29 +362,6 @@ format_value <- function(value, name = NULL) {
   if (is.na(value) && !is.nan(value)) {
     stop(sprintf("%s must not be NA.", label), call. = FALSE)
   }
-  if (is.character(value)) {
-    # Rendered options travel to the engine as one whitespace-separated
-    # argument string with no quoting support, so a value containing
-    # whitespace is split into separate tokens: an out_name of "my run"
-    # became "--out-name my run", the name truncated to "my" and "run"
-    # silently taken as the output directory. Quoting cannot fix it -- the
-    # C++ side splits on whitespace and does not strip quotes, so
-    # '--out-name "my run"' yields the literal name '"my'. Reject it here,
-    # the same contract Python's _validate_option_arg_strings enforces.
-    if (grepl("[[:space:]]", value)) {
-      stop(
-        sprintf(
-          paste0("%s = \"%s\" contains whitespace, which the engine argument ",
-                 "string cannot carry (arguments are split on whitespace, with ",
-                 "no quoting). Use a whitespace-free value."),
-          label,
-          value
-        ),
-        call. = FALSE
-      )
-    }
-    return(value)
-  }
   if (is.logical(value)) return(if (isTRUE(value)) "true" else "false")
   if (is.numeric(value)) {
     # trunc(), not as.integer(): as.integer() returns NA above INT_MAX, so
@@ -407,7 +384,32 @@ format_value <- function(value, name = NULL) {
     }
     return(sprintf("%.17g", value))
   }
-  as.character(value)
+  # Everything else, checked on the way out rather than by input type.
+  # Rendered options travel to the engine as one whitespace-separated argument
+  # string with no quoting support, so a value containing whitespace is split
+  # into separate tokens: an out_name of "my run" became "--out-name my run",
+  # the name truncated to "my" and "run" silently taken as the output
+  # directory. Quoting cannot fix it -- the C++ side splits on whitespace and
+  # does not strip quotes, so '--out-name "my run"' yields the literal name
+  # '"my'. This is the single exit that can produce whitespace: a character
+  # value, but also a factor or a POSIXct, which arrive with their own
+  # as.character() rendering ("2026-07-26 08:30:00" splits exactly like a path
+  # with a space). Checking the rendered text covers those without having to
+  # enumerate them. Same contract as Python's _validate_option_arg_strings.
+  text <- as.character(value)
+  if (grepl("[[:space:]]", text)) {
+    stop(
+      sprintf(
+        paste0("%s = \"%s\" contains whitespace, which the engine argument ",
+               "string cannot carry (arguments are split on whitespace, with ",
+               "no quoting). Use a whitespace-free value."),
+        label,
+        text
+      ),
+      call. = FALSE
+    )
+  }
+  text
 }
 
 #' Render an Infomap options list to a CLI argument string

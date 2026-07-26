@@ -116,6 +116,32 @@ test_that("whitespace in a string value is refused, naming the option", {
   )
 })
 
+# The check runs on the rendered text, not on is.character(value), so a value that
+# is not a character vector but renders with whitespace is caught too. A factor is
+# the likely one (values arriving from a data.frame column); a POSIXct is the one
+# nobody would think to enumerate -- as.character() gives it a space of its own.
+test_that("whitespace is caught whatever type produced it", {
+  expect_error(
+    construct_args(NULL, infomap_options(out_name = factor("my run"))),
+    "out_name = \"my run\" contains whitespace"
+  )
+  expect_error(
+    construct_args(
+      NULL,
+      infomap_options(
+        out_name = as.POSIXct("2026-07-26 08:30:00", tz = "UTC")
+      )
+    ),
+    "contains whitespace"
+  )
+  # A type whose rendering has no whitespace is still rendered, as before.
+  expect_match(
+    construct_args(NULL, infomap_options(out_name = as.Date("2026-07-26"))),
+    "--out-name 2026-07-26",
+    fixed = TRUE
+  )
+})
+
 test_that("whitespace-free values of the same options still render", {
   rendered <- construct_args(
     NULL,
