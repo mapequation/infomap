@@ -140,10 +140,12 @@ test-r-man-freshness: build-r-stage
 	@$(RSCRIPT) -e "roxygen2::roxygenise('$(R_STAGED_DIR)', roclets = 'rd')" >/dev/null
 	@status=0; \
 	diff -ru $(R_SKELETON_DIR)/man $(R_STAGED_DIR)/man || status=$$?; \
-	if [ $$status -ne 0 ]; then \
+	if [ $$status -eq 0 ]; then \
+		echo "Tracked R man pages are fresh."; \
+	elif [ $$status -eq 1 ]; then \
 		echo "Tracked R man pages are stale; regenerate with: make build-r-man" >&2; \
 	else \
-		echo "Tracked R man pages are fresh."; \
+		echo "Could not compare the man pages: diff exited $$status (not 0 or 1, so it failed to run rather than finding differences). The check did not conclude anything about freshness." >&2; \
 	fi; \
 	exit $$status
 

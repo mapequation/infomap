@@ -92,8 +92,21 @@ def test_the_roxygen_pin_matches_the_makefile():
         if "roxygen2" in item
     ]
     assert refs, "no roxygen2 ref found in any workflow"
+    # Compare the version, not the whole ref: setup-r-dependencies also accepts a
+    # source qualifier ("any::roxygen2@7.3.3"), and adding one should not fail a
+    # check about the pinned version.
+    ref_pattern = re.compile(
+        r"^(?:[A-Za-z0-9._-]+::)?roxygen2(?:@(?P<version>[A-Za-z0-9._-]+))?$"
+    )
     for ref in refs:
-        assert ref == f"roxygen2@{pinned}", (
-            f"workflow installs {ref!r} but mk/r.mk pins {pinned}; the tracked man "
-            "pages only match one version"
+        match = ref_pattern.match(ref)
+        assert match, f"cannot read a version from the roxygen2 ref {ref!r}"
+        version = match.group("version")
+        assert version is not None, (
+            f"workflow installs {ref!r} with no version, but the tracked man pages "
+            f"only match roxygen2 {pinned}"
+        )
+        assert version == pinned, (
+            f"workflow installs roxygen2 {version} but mk/r.mk pins {pinned}; the "
+            "tracked man pages only match one version"
         )
