@@ -30,4 +30,35 @@ describe("argumentsToString", () => {
       }),
     ).toBe(" -vvv -FF --version");
   });
+
+  // The rendered string is split on whitespace by the engine, with no quoting, so
+  // a whitespace-bearing value does not stay one token. Through this worker that
+  // is worse than a truncation: it injects options and silently changes the
+  // algorithm rather than failing.
+  describe("rejects values the argument string cannot carry", () => {
+    test.each([
+      ["outName", { outName: "my run" }],
+      ["clusterData", { clusterData: "a b.clu" }],
+      ["metaData", { metaData: "meta data.txt" }],
+      ["summaryJson", { summaryJson: "out dir/summary.json" }],
+      ["timingJson", { timingJson: "out dir/timing.json" }],
+      ["manifestJson", { manifestJson: "out dir/manifest.json" }],
+    ])("%s containing whitespace", (name, args) => {
+      expect(() => argumentsToString(args)).toThrow(
+        new RegExp(`${name}=.*contains whitespace`),
+      );
+    });
+
+    test("an option-injecting value is refused, not rendered", () => {
+      expect(() =>
+        argumentsToString({ outName: "net --directed -o tree" }),
+      ).toThrow(/contains whitespace/);
+    });
+
+    test("whitespace-free values of the same options still render", () => {
+      expect(
+        argumentsToString({ outName: "my-run", clusterData: "seed.clu" }),
+      ).toBe(" --cluster-data seed.clu --out-name my-run");
+    });
+  });
 });
