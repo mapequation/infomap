@@ -1248,7 +1248,14 @@ InfomapBase& InfomapBase::initTree(const NodePaths& tree)
       maxDepth = std::max(maxDepth, static_cast<int>(nodePath.second.size()));
     }
   }
-  if (maxDepth == 2) {
+  // A deeper tree under --two-level takes the same route, keeping each leaf's top-level
+  // module and dropping the sub-module structure below it. That is the collapse the
+  // hierarchical path performs with removeSubModules, and doing it here means the
+  // objective is initialised by the branch that works: building the full tree and then
+  // running a two-level search over it left the search with the deeper tree's
+  // index/module codelengths, which it reported as 0 -- or, with the tuning loop
+  // enabled, aborted on "fineTune() called but numLevels != 2" (#898).
+  if (maxDepth == 2 || twoLevel) {
     std::map<unsigned int, unsigned int> clusterIds;
     for (const auto& nodePath : tree) {
       const auto nodeId = nodePath.first;
@@ -1256,6 +1263,50 @@ InfomapBase& InfomapBase::initTree(const NodePaths& tree)
       clusterIds[nodeId] = clusterId;
     }
     return initPartition(clusterIds, false);
+  }
+
+  // Refuse a module that would get both a leaf and a sub-module as children. The
+  // search never produces that shape -- checked across 205k leaves at depths 2 to 8 --
+  // and the code downstream assumes it cannot happen: the per-level aggregation used to
+  // dereference the leaf's null firstChild, the Newick writer emits an empty taxon for
+  // the leaf, and the objective gives the same partition two different codelengths
+  // depending on the order the rows appear in the file. Supporting the shape means
+  // deciding what the map equation is for a module that codes a leaf and a sub-module
+  // side by side, which is a modelling question rather than a fix, so the input is
+  // named and rejected instead of silently reinterpreted (#898). Note this runs after
+  // the two-level branch above, where the sub-module structure is dropped anyway.
+  std::map<Path, bool> prefixHasLeafChild;
+  std::map<Path, bool> prefixHasModuleChild;
+  for (const auto& nodePath : tree) {
+    const auto& path = nodePath.second;
+    if (path.size() < 2)
+      continue;
+    Path prefix;
+    for (size_t i = 0; i + 1 < path.size(); ++i) {
+      prefix.push_back(path[i]);
+      if (i + 2 == path.size())
+        prefixHasLeafChild[prefix] = true;
+      else
+        prefixHasModuleChild[prefix] = true;
+    }
+  }
+  for (const auto& it : prefixHasLeafChild) {
+    if (prefixHasModuleChild.count(it.first) == 0)
+      continue;
+    std::string modulePath;
+    for (const auto level : it.first) {
+      if (!modulePath.empty())
+        modulePath += ':';
+      modulePath += io::stringify(level);
+    }
+    throw InfomapError(ExitCode::InputError,
+                       fmt::format(FMT_STRING("Cluster data mixes depths under module {}: it has both a leaf node and a "
+                                              "sub-module as children. Infomap's own output never has that shape, and the "
+                                              "codelength of such a module is not defined, so the tree cannot be used as an "
+                                              "initial partition. Give every node under module {} the same depth, or pass "
+                                              "--two-level to keep only the top-level assignment."),
+                                   modulePath,
+                                   modulePath));
   }
 
   // Tear down the existing partition. Detach the leaves first so that the
@@ -1407,14 +1458,32 @@ InfomapBase& InfomapBase::initPartition(const std::map<unsigned int, unsigned in
   std::vector<unsigned int> modules(numNodes);
   std::vector<unsigned int> selectedNodes(numNodes, 0);
   unsigned int moduleIndex = 0;
+  unsigned int numClusterNodeIdsNotInNetwork = 0;
   for (const auto& it : clusterIdToNodeIds) {
     auto& nodes = it.second;
+    bool moduleHasMember = false;
     for (auto& nodeId : nodes) {
-      auto nodeIndex = nodeIdToIndex[nodeId];
-      modules[nodeIndex] = moduleIndex;
-      ++selectedNodes[nodeIndex];
+      // find, not operator[]: a node id the network does not have would otherwise be
+      // inserted with a default index of 0, quietly reassigning the *first* leaf node
+      // to this module and marking it as covered -- which also suppressed the note
+      // below about the nodes that really are missing an assignment (#898).
+      const auto nodeIndexIt = nodeIdToIndex.find(nodeId);
+      if (nodeIndexIt == nodeIdToIndex.end()) {
+        ++numClusterNodeIdsNotInNetwork;
+        continue;
+      }
+      modules[nodeIndexIt->second] = moduleIndex;
+      ++selectedNodes[nodeIndexIt->second];
+      moduleHasMember = true;
     }
-    ++moduleIndex;
+    // Only claim an index for a module that got a member, so a cluster whose ids are
+    // all unknown does not leave an empty module behind.
+    if (moduleHasMember)
+      ++moduleIndex;
+  }
+
+  if (numClusterNodeIdsNotInNetwork > 0) {
+    Console::note(1, "{} node ids in cluster file not found in network.", numClusterNodeIdsNotInNetwork);
   }
 
   unsigned int numNodesWithoutClusterInfo = static_cast<unsigned int>(
@@ -2635,8 +2704,22 @@ unsigned int InfomapBase::removeModules()
 
 unsigned int InfomapBase::removeSubModules(bool recalculateCodelengthOnTree)
 {
+  // Loop on "any top module still has a module child" for the reason removeModules
+  // gives above: numLevels() follows the firstChild chain only, so on a ragged tree it
+  // reports the leftmost branch's depth and this loop stopped while deeper branches
+  // were still nested. What came out was neither the two-level tree the caller asked
+  // for nor a codelength of it -- calcCodelengthOnTree below then scored a tree that
+  // still had sub-modules in it (#898).
+  auto anyModuleHasModuleChild = [this]() {
+    for (auto& module : m_root)
+      for (auto& child : module)
+        if (!child.isLeaf())
+          return true;
+    return false;
+  };
+
   unsigned int numLevelsDeleted = 0;
-  while (numLevels() > 2) {
+  while (anyModuleHasModuleChild()) {
     for (InfoNode& module : m_root)
       module.replaceChildrenWithGrandChildren();
     ++numLevelsDeleted;
@@ -3116,16 +3199,37 @@ void aggregatePerLevelCodelength(const InfoNode& parent, std::vector<detail::Per
   if (perLevelStat.size() < level + 1)
     perLevelStat.resize(level + 1);
 
-  if (parent.firstChild->isLeaf()) {
-    perLevelStat[level].numLeafNodes += parent.childDegree();
-    perLevelStat[level].leafLength += parent.codelength;
-    return;
+  // Classify each child on its own rather than reading the first one and assuming the
+  // rest match. A module with both kinds of child made this crash or lie depending on
+  // which came first (#898): a leaf after a sub-module was recursed into, dereferencing
+  // its null firstChild, while a leaf *before* one returned early and dropped every
+  // remaining sub-module subtree from the report.
+  unsigned int numLeafChildren = 0;
+  unsigned int numModuleChildren = 0;
+  for (const auto& child : parent) {
+    if (child.isLeaf())
+      ++numLeafChildren;
+    else
+      ++numModuleChildren;
   }
 
-  perLevelStat[level].numModules += parent.childDegree();
-  perLevelStat[level].indexLength += parent.codelength;
+  if (numLeafChildren > 0) {
+    perLevelStat[level].numLeafNodes += numLeafChildren;
+    // The codelength of coding these leaves belongs to this level. Charged once even
+    // when sub-modules sit alongside them, since it is the parent's own codelength.
+    perLevelStat[level].leafLength += parent.codelength;
+  }
+
+  if (numModuleChildren == 0)
+    return;
+
+  perLevelStat[level].numModules += numModuleChildren;
+  if (numLeafChildren == 0)
+    perLevelStat[level].indexLength += parent.codelength;
 
   for (auto& module : parent) {
+    if (module.isLeaf())
+      continue;
     if (module.getInfomapRoot() != nullptr)
       aggregatePerLevelCodelength(*module.getInfomapRoot(), perLevelStat, level + 1);
     else
