@@ -48,6 +48,12 @@ Two strategies cover most HPC use cases:
 Both strategies produce the same result as a sequential run with the same
 seed, total trial count, and algorithm settings.
 
+That equivalence rests on one rule, which holds in every mode: the trial at
+global index *j* runs with seed `base_seed + j`. So a trial is identified by
+its seed alone — it does not matter whether it was produced sequentially, by
+`parallel_trials`, or by a shard at an offset — and the seed a run reports for
+a trial (in `trial_results` and `timing_json`) re-runs exactly that trial.
+
 ## Trials as independent work units
 
 Each task runs `num_trials` trials of its own (the *per-shard* count), and

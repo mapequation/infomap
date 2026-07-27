@@ -116,6 +116,20 @@ std::string canonicalConfigJson(const Config& config)
   // settings, so it stays stable when the same input is referenced via a
   // different path. The cluster/meta-data paths below have no separate content
   // fingerprint, so they remain the only available signal and are kept.
+  //
+  // How the trial budget is *divided* is deliberately excluded -- numTrials and
+  // trialOffset name which slice of one budget a run executed, not what it
+  // executed. infomap.merge requires all shards of a run to share this
+  // fingerprint, and shards differ in exactly those two fields, so including
+  // them would reject every legitimate distributed run. The base seed is
+  // included, and seeding is per-trial and offset-derived (see
+  // RunSession::trialSeed), so shards that agree here really are slices of the
+  // same sequence of trials.
+  //
+  // Output-only settings are excluded because they cannot change the result.
+  // That held for trialResultsPath only after #905: it used to switch the
+  // per-trial reseeding on, which made two runs with the same fingerprint
+  // publish different partitions.
   addCanonicalNumber(json, "additional_input_count", config.additionalInput.size());
   json["flow_model"] = flowModelToString(config.flowModel);
   json["directed"] = config.directed;

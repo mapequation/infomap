@@ -188,6 +188,29 @@ namespace {
   }
 #endif
 
+  // The serial trial loop moves the config seed to the current trial's seed (see
+  // RunSession::seedTrial), but everything downstream of the loop -- the run
+  // manifest, the config fingerprint, the shard file's base_seed -- must report
+  // the seed the user asked for. Give it back on the way out, including when a
+  // trial throws or the run is interrupted.
+  class ScopedConfigSeed {
+  public:
+    explicit ScopedConfigSeed(Config& config)
+        : m_config(config), m_previous(config.seedToRandomNumberGenerator) {}
+
+    ~ScopedConfigSeed()
+    {
+      m_config.seedToRandomNumberGenerator = m_previous;
+    }
+
+    ScopedConfigSeed(const ScopedConfigSeed&) = delete;
+    ScopedConfigSeed& operator=(const ScopedConfigSeed&) = delete;
+
+  private:
+    Config& m_config;
+    unsigned long m_previous;
+  };
+
 } // namespace
 
 class InfomapBase::RunSession {
@@ -339,6 +362,11 @@ private:
       return runTrialsInParallel();
     }
 
+    // The serial paths below reseed the config per trial; give the run's base
+    // seed back once the loop is done. Constructed before the first seedTrial,
+    // so what it captures is the base seed.
+    const ScopedConfigSeed scopedSeed(m_infomap);
+
     if (m_convergeTrials) {
       runTrialsUntilConverged(result);
     } else {
@@ -402,7 +430,7 @@ private:
       workerConfig.numTrials = 1;
       workerConfig.parallelTrials = false;
       workerConfig.innerParallelization = false;
-      workerConfig.seedToRandomNumberGenerator = m_infomap.seedToRandomNumberGenerator + static_cast<unsigned int>(workerIndex);
+      workerConfig.seedToRandomNumberGenerator = m_baseSeed + static_cast<unsigned int>(workerIndex);
 
       InfomapBase worker(workerConfig);
       worker.m_initialPartition = m_infomap.m_initialPartition;
@@ -413,10 +441,9 @@ private:
       for (unsigned int trialIndex = static_cast<unsigned int>(workerIndex); trialIndex < m_numTrials; trialIndex += numWorkers) {
         try {
           Log::ScopedMute muteWorkerLogs;
-          const auto globalIndex = m_infomap.trialOffset + trialIndex;
-          const auto trialSeed = m_infomap.seedToRandomNumberGenerator + globalIndex;
-          worker.seedToRandomNumberGenerator = trialSeed;
-          worker.reseed(trialSeed);
+          const auto seed = trialSeed(trialIndex);
+          worker.seedToRandomNumberGenerator = seed;
+          worker.reseed(static_cast<unsigned int>(seed));
           int threadNumber = 0;
 #ifdef _OPENMP
           threadNumber = omp_get_thread_num();
@@ -442,12 +469,12 @@ private:
           const auto trialTime = trialTimer.getElapsedTimeInSec();
           codelengths[trialIndex] = trialCodelength;
           numTopModules[trialIndex] = trialTopModules;
-          m_timing.recordTrial(trialIndex, threadNumber, trialSeed, trialTime, trialCodelength, trialTopModules, trialNumLevels);
+          m_timing.recordTrial(trialIndex, threadNumber, seed, trialTime, trialCodelength, trialTopModules, trialNumLevels);
 
           if (worker.printAllTrials && m_numTrials > 1) {
             std::lock_guard<std::mutex> lock(outputMutex);
             auto outputTimer = m_timing.scope("output_s");
-            worker.writeResult(static_cast<int>(globalIndex + 1));
+            worker.writeResult(static_cast<int>(m_infomap.trialOffset + trialIndex + 1));
           }
 
           std::lock_guard<std::mutex> lock(bestResultMutex);
@@ -709,14 +736,54 @@ private:
 #endif
   }
 
-  bool isShardingMode() const { return m_infomap.trialOffset > 0 || !m_infomap.trialResultsPath.empty(); }
+  // The seed of the trial at global index `trialOffset + trialIndex`. Every mode
+  // derives it the same way, so "the trial with seed s" names one run whether it
+  // was produced serially, by --parallel-trials, or by a shard at an offset.
+  //
+  // Kept at the config field's own width. Every route into the engine takes
+  // unsigned int (`BasicRandom(unsigned int)` on construction,
+  // `Random::seed(unsigned int)` from reseed and from setNonMainConfig), so the
+  // RNG only ever sees the low 32 bits of the seed.
+  //
+  // Whether that discards anything depends on the platform:
+  // Config::seedToRandomNumberGenerator is `unsigned long`, which is 64-bit on
+  // LP64 (Linux, macOS) and 32-bit on LLP64 (Windows). On Windows the field is
+  // exactly the engine's width and no seed can outrun it. On LP64 the narrowing
+  // is real but uniform, which is what keeps the reported seed usable: a
+  // standalone run given the value recorded here narrows to the same engine seed
+  // and reproduces the trial, and the recursion reading the config field cannot
+  // land on a different stream than the engine. The one visible consequence
+  // there is aliasing -- seeds congruent mod 2^32 name the same run -- which
+  // follows from the width mismatch, not from anything about per-trial seeding.
+  unsigned long trialSeed(unsigned int trialIndex) const
+  {
+    return m_baseSeed + m_infomap.trialOffset + trialIndex;
+  }
+
+  // Reseed for every trial, in every mode.
+  //
+  // This used to happen only in "sharding mode" (trialOffset > 0 or a
+  // --trial-results path given), which made the presence of an output flag
+  // decide whether the trials were independently seeded or one continuous RNG
+  // stream. Adding --trial-results therefore changed the published partition,
+  // and the per-trial seeds reported in --timing-json named seeds that never
+  // ran their trial. Both are fixed by seeding unconditionally.
+  //
+  // Set the config field as well as the engine: the recursive partition builds
+  // its sub-Infomaps with setNonMainConfig, which seeds each one from
+  // Config::seedToRandomNumberGenerator, so an engine-only reseed would leave
+  // the whole recursion on the base seed and make shard trial i differ from the
+  // same trial run any other way. runTrials restores the base seed afterwards.
+  void seedTrial(unsigned int trialIndex)
+  {
+    const auto seed = trialSeed(trialIndex);
+    m_infomap.seedToRandomNumberGenerator = seed;
+    m_infomap.reseed(static_cast<unsigned int>(seed));
+  }
 
   void runTrial(unsigned int trialIndex, Result& result)
   {
-    if (isShardingMode()) {
-      const unsigned int globalSeed = static_cast<unsigned int>(m_infomap.seedToRandomNumberGenerator + (m_infomap.trialOffset + trialIndex));
-      m_infomap.reseed(globalSeed);
-    }
+    seedTrial(trialIndex);
     m_infomap.removeModules();
     auto startDate = Date();
     Stopwatch timer(true);
@@ -805,8 +872,10 @@ private:
           << " | codelength " << io::toPrecision(m_infomap.m_hierarchicalCodelength) << "\n";
     m_infomap.m_codelengths.push_back(m_infomap.m_hierarchicalCodelength);
     m_infomap.m_numTopModules.push_back(m_infomap.numTopModules());
-    const unsigned long globalSeed = m_infomap.seedToRandomNumberGenerator + (m_infomap.trialOffset + trialIndex);
-    m_timing.recordTrial(trialIndex, 0, globalSeed, timer.getElapsedTimeInSec(), m_infomap.m_hierarchicalCodelength, m_infomap.numTopModules(), m_infomap.numLevels());
+    // From trialSeed, not from the live config field: seedTrial has already moved
+    // that field to this trial's seed, so recomputing from it would double-count
+    // the global index.
+    m_timing.recordTrial(trialIndex, 0, trialSeed(trialIndex), timer.getElapsedTimeInSec(), m_infomap.m_hierarchicalCodelength, m_infomap.numTopModules(), m_infomap.numLevels());
 
     if (m_infomap.printAllTrials && m_numTrials > 1) {
       auto outputTimer = m_timing.scope("output_s");
@@ -887,7 +956,7 @@ public:
       trialResultsFile.networkFingerprint = networkFingerprint(m_infomap.networkFile);
       trialResultsFile.configFingerprint = configFingerprint(m_infomap.getConfig());
       trialResultsFile.infomapVersion = INFOMAP_VERSION;
-      trialResultsFile.baseSeed = m_infomap.seedToRandomNumberGenerator;
+      trialResultsFile.baseSeed = m_baseSeed;
       trialResultsFile.trialOffset = m_infomap.trialOffset;
       trialResultsFile.numTrials = m_numTrials;
 
@@ -955,6 +1024,9 @@ private:
   TimingRegistry& m_timing;
   RunReportNetwork m_reportNetwork;
   const unsigned int m_numTrials = m_infomap.numTrials;
+  // Captured before the first trial reseeds the config field, so the run keeps a
+  // stable notion of "the seed the user asked for".
+  const unsigned long m_baseSeed = m_infomap.seedToRandomNumberGenerator;
   const bool m_convergeTrials = m_infomap.convergeTrials;
   unsigned int m_trialsRun = m_infomap.numTrials; // actual count; equals m_numTrials unless --converge stops early
   bool m_autoStopped = false;

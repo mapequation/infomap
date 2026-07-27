@@ -6,6 +6,7 @@
 #include "TestUtils.h"
 
 #include <algorithm>
+#include <limits>
 #include <map>
 #include <set>
 #include <sstream>
@@ -1014,6 +1015,138 @@ TEST_CASE("Sharding-mode serial reseed makes trial i reproducible by global inde
   CHECK(runTrialAt(2) == doctest::Approx(runTrialAt(2)));
   // ...and the path runs without error at a nonzero offset.
   CHECK(runTrialAt(5) > 0.0);
+}
+
+// The per-trial seed contract (#905): trial i of a run is the trial with seed
+// base + trialOffset + i, whichever mode produced it, and nothing that only
+// affects output may change which trials run.
+//
+// These need a network whose trials actually differ. A plain cycle has many
+// near-degenerate partitions -- where the module boundaries fall depends on the
+// random visit order -- so its per-trial codelengths spread out. The shipped
+// fixtures all converge to the same optimum on every trial and would satisfy
+// every check below vacuously.
+namespace seedcontract {
+
+constexpr unsigned int numCycleNodes = 60;
+constexpr unsigned int numTrials = 8;
+constexpr unsigned int baseSeed = 3;
+
+std::vector<double> runCycle(const std::string& flags)
+{
+  InfomapWrapper im("--silent --no-file-output " + flags);
+  for (unsigned int i = 0; i < numCycleNodes; ++i) {
+    im.addLink(i, (i + 1) % numCycleNodes);
+  }
+  im.run();
+  return im.codelengths();
+}
+
+std::string seedAndTrials(unsigned long seed, unsigned int trials)
+{
+  return "--seed " + std::to_string(seed) + " --num-trials " + std::to_string(trials);
+}
+
+} // namespace seedcontract
+
+TEST_CASE("Every trial is reproducible from the seed reported for it [fast][core][partition][sharding][merge]")
+{
+  using namespace seedcontract;
+
+  const auto sequential = runCycle(seedAndTrials(baseSeed, numTrials));
+  REQUIRE(sequential.size() == numTrials);
+  // Precondition: the trials differ, so a broken seeding regime can be detected
+  // at all. Without it every comparison below would pass on any implementation.
+  REQUIRE(std::set<double>(sequential.begin(), sequential.end()).size() > 1);
+
+  SUBCASE("a standalone run at seed base+i reproduces trial i")
+  {
+    // Before the fix the default serial path ran one continuous RNG stream
+    // through all trials, so the seed reported for trial i named a seed that
+    // trial never used.
+    for (unsigned int i = 0; i < numTrials; ++i) {
+      const auto standalone = runCycle(seedAndTrials(baseSeed + i, 1));
+      REQUIRE(standalone.size() == 1);
+      CHECK(standalone[0] == doctest::Approx(sequential[i]));
+    }
+  }
+
+  SUBCASE("a shard at global index i reproduces trial i")
+  {
+    // Sharded serial trials used to reseed only the engine and leave
+    // Config::seedToRandomNumberGenerator at the base seed, so every
+    // sub-Infomap of the recursive partition kept seeding from the base.
+    for (unsigned int i = 0; i < numTrials; ++i) {
+      const auto shard = runCycle(seedAndTrials(baseSeed, 1) + " --trial-offset " + std::to_string(i));
+      REQUIRE(shard.size() == 1);
+      CHECK(shard[0] == doctest::Approx(sequential[i]));
+    }
+  }
+
+  SUBCASE("--parallel-trials runs the same trials as the sequential path")
+  {
+    const auto parallel = runCycle(seedAndTrials(baseSeed, numTrials) + " --parallel-trials");
+    REQUIRE(parallel.size() == numTrials);
+    for (unsigned int i = 0; i < numTrials; ++i) {
+      CHECK(parallel[i] == doctest::Approx(sequential[i]));
+    }
+  }
+
+  SUBCASE("shards partition the sequential run's trials")
+  {
+    // The equivalence interfaces/python/source/workflows/hpc.md promises: any
+    // partition of [0, N) reproduces the trials of a single --num-trials N run.
+    std::vector<double> merged;
+    for (unsigned int offset = 0; offset < numTrials; offset += 2) {
+      const auto shard = runCycle(seedAndTrials(baseSeed, 2) + " --trial-offset " + std::to_string(offset));
+      REQUIRE(shard.size() == 2);
+      merged.insert(merged.end(), shard.begin(), shard.end());
+    }
+    REQUIRE(merged.size() == numTrials);
+    for (unsigned int i = 0; i < numTrials; ++i) {
+      CHECK(merged[i] == doctest::Approx(sequential[i]));
+    }
+  }
+
+  SUBCASE("the contract survives a base seed wider than the engine")
+  {
+    // Every route into the RNG takes unsigned int (BasicRandom's constructor,
+    // Random::seed from reseed and from setNonMainConfig), so the engine only
+    // ever sees the low 32 bits of Config::seedToRandomNumberGenerator. Where
+    // that field is wider, the narrowing has to stay uniform, or the seed a run
+    // reports would name a trial it cannot reproduce.
+    //
+    // Guarded because the field is `unsigned long`, whose width is not fixed:
+    // 64-bit on LP64 (Linux, macOS), 32-bit on LLP64 (Windows). On Windows it is
+    // exactly the engine's width, no seed above UINT_MAX is representable, and
+    // there is nothing here to test -- running it anyway wraps the base and asks
+    // for `--seed 0`, which the parser rejects (min is 1).
+    if (sizeof(unsigned long) > sizeof(unsigned int)) {
+      // Derived rather than written as a literal or a shift: `1ul << 32` is
+      // undefined where unsigned long is 32 bits, even on the branch not taken.
+      const unsigned long twoPow32 = static_cast<unsigned long>(std::numeric_limits<unsigned int>::max()) + 1ul;
+      // Straddles the wrap: trial 2 lands on 2^32 and narrows to engine seed 0.
+      const unsigned long wideBase = twoPow32 - 2ul;
+
+      const auto wide = runCycle(seedAndTrials(wideBase, numTrials));
+      REQUIRE(wide.size() == numTrials);
+      REQUIRE(std::set<double>(wide.begin(), wide.end()).size() > 1);
+
+      for (unsigned int i = 0; i < numTrials; ++i) {
+        const auto standalone = runCycle(seedAndTrials(wideBase + i, 1));
+        REQUIRE(standalone.size() == 1);
+        CHECK(standalone[0] == doctest::Approx(wide[i]));
+      }
+
+      // The aliasing the width mismatch implies, pinned so it stays deliberate:
+      // seeds congruent mod 2^32 are the same run.
+      const auto low = runCycle(seedAndTrials(1ul, 1));
+      const auto aliased = runCycle(seedAndTrials(1ul + twoPow32, 1));
+      REQUIRE(low.size() == 1);
+      REQUIRE(aliased.size() == 1);
+      CHECK(aliased[0] == doctest::Approx(low[0]));
+    }
+  }
 }
 
 TEST_CASE("Hierarchical partition is invariant to the OpenMP thread count [fast][core][partition][threads]")
