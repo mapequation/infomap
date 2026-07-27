@@ -46,7 +46,7 @@ def _trials_in_header(tree_path: Path) -> tuple[int, int] | None:
     return None
 
 
-def _run_and_signal(binary: str, sig: int, work: Path) -> tuple[int, Path]:
+def _run_and_signal(binary: str, sig: int, work: Path) -> tuple[int, Path, bool]:
     out_dir = work / f"out_{sig}"
     out_dir.mkdir()
     process = subprocess.Popen(
@@ -71,19 +71,22 @@ def _run_and_signal(binary: str, sig: int, work: Path) -> tuple[int, Path]:
         if process.poll() is not None:
             break
         time.sleep(0.05)
-    # The run can finish in the race between the poll above and the signal below; a
-    # ProcessLookupError there would make this test flaky rather than informative.
+    delivered = False
     if process.poll() is None:
         try:
             process.send_signal(sig)
+            delivered = True
         except ProcessLookupError:
+            # The run finished between the poll above and this call. Reported back as
+            # "not delivered" so the caller skips its checks instead of reading the
+            # clean exit as a signal that was ignored.
             pass
     try:
         process.wait(timeout=60)
     except subprocess.TimeoutExpired:
         process.kill()
         raise SystemExit(f"signal {sig} did not stop the run within 60 s") from None
-    return process.returncode, tree
+    return process.returncode, tree, delivered
 
 
 def main(argv: list[str]) -> int:
@@ -97,7 +100,15 @@ def main(argv: list[str]) -> int:
         _write_network(work / "net.net")
 
         for sig in (signal.SIGINT, signal.SIGTERM):
-            code, tree = _run_and_signal(binary, sig, work)
+            code, tree, delivered = _run_and_signal(binary, sig, work)
+
+            if not delivered:
+                # The whole budget finished before the signal could be sent. Nothing was
+                # interrupted, so there is no artifact here that could be mistaken for a
+                # complete run -- and reading the clean exit as "the signal was ignored"
+                # would be a false failure on a fast machine.
+                print(f"signal {sig}: the run finished before it could be interrupted")
+                continue
 
             if code == -int(sig):
                 print(
