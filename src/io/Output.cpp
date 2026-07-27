@@ -123,6 +123,7 @@ std::string getOutputFileHeader(const InfomapBase& im, const StateNetwork& netwo
                                 "# ./Infomap {}\n"
                                 "# started at {}\n"
                                 "# completed in {:g} s\n"
+                                "# trials {} of {}\n"
                                 "# partitioned into {} levels with {} top modules\n"
                                 "# codelength {:g} bits\n"
                                 "# relative codelength savings {:g}%\n"
@@ -131,6 +132,15 @@ std::string getOutputFileHeader(const InfomapBase& im, const StateNetwork& netwo
                      im.parsedString,
                      io::stringify(im.getStartDate()),
                      im.getElapsedTime().getElapsedTimeInSec(),
+                     // Trials that actually produced this tree, against the budget that
+                     // was asked for. An interrupted run leaves a complete, well-formed
+                     // best-of-k artifact whose command line claims the full budget, and
+                     // nothing else in the file said otherwise -- a pipeline collecting
+                     // *.tree could not tell a 500-trial search from an aborted one
+                     // (#906). Written on every artifact, so it needs no rewriting at
+                     // interrupt time, when doing work is least reliable.
+                     im.codelengths().size(),
+                     im.numTrials,
                      im.maxTreeDepth(),
                      im.numTopModules(),
                      im.codelength(),

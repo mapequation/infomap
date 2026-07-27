@@ -35,6 +35,8 @@ std::string serializeTrialResults(const TrialResultsFile& r)
   json["trial_offset"] = r.trialOffset;
   json["num_trials"] = r.numTrials;
   json["best_tree_file"] = r.bestTreeFile;
+  if (!r.bestStatesTreeFile.empty())
+    json["best_states_tree_file"] = r.bestStatesTreeFile;
 
   Json trials = Json::array();
   for (const auto& t : r.trials) {

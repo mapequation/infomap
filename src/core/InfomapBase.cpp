@@ -1000,6 +1000,20 @@ public:
           m_infomap.writeTree(treeAbsPath, false);
         }
 
+        // For higher-order input the physical tree is a projection: the same node id
+        // appears under several modules, so it cannot express the partition that was
+        // found. Write the state-level companion too, since this file is the only
+        // artifact infomap.merge reads and --no-final-output (which the HPC recipe
+        // prescribes) means nothing else writes it (#906).
+        std::string statesTreeAbsPath;
+        if (m_infomap.haveMemory()) {
+          statesTreeAbsPath = outputFilenameForResultKey(treeBasename + "_states", "tree");
+          if (!pathExists(statesTreeAbsPath) || m_infomap.overwriteOutput()) {
+            auto outputTimer = m_timing.scope("output_s");
+            m_infomap.writeTree(statesTreeAbsPath, true);
+          }
+        }
+
         // Store the tree path relative to the results file's directory, so the
         // merge tool can resolve it from wherever the results file lives.
         std::string resultsDir;
@@ -1007,15 +1021,19 @@ public:
         if (lastSlash != std::string::npos) {
           resultsDir = m_infomap.trialResultsPath.substr(0, lastSlash + 1);
         }
-        if (!resultsDir.empty() && treeAbsPath.substr(0, resultsDir.size()) == resultsDir) {
-          // Tree lives under the results directory — store the relative remainder.
-          trialResultsFile.bestTreeFile = treeAbsPath.substr(resultsDir.size());
-        } else {
-          // Results file is in the CWD (resultsDir empty) or an unrelated
-          // directory: the tree path as written (relative to the CWD) is correct.
-          // Stripping to a basename here would drop the output-directory prefix.
-          trialResultsFile.bestTreeFile = treeAbsPath;
-        }
+        const auto relativeToResults = [&resultsDir](const std::string& path) {
+          if (!resultsDir.empty() && path.substr(0, resultsDir.size()) == resultsDir) {
+            // File lives under the results directory — store the relative remainder.
+            return path.substr(resultsDir.size());
+          }
+          // Results file is in the CWD (resultsDir empty) or an unrelated directory: the
+          // path as written (relative to the CWD) is correct. Stripping to a basename
+          // here would drop the output-directory prefix.
+          return path;
+        };
+        trialResultsFile.bestTreeFile = relativeToResults(treeAbsPath);
+        if (!statesTreeAbsPath.empty())
+          trialResultsFile.bestStatesTreeFile = relativeToResults(statesTreeAbsPath);
       }
 
       writeJsonReport(m_infomap.trialResultsPath, serializeTrialResults(trialResultsFile), m_infomap.overwriteOutput());

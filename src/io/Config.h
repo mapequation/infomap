@@ -72,7 +72,7 @@ struct Config {
   double metaDataRate = 1.0;
   bool unweightedMetaData = false;
   unsigned int numMetaDataDimensions = 0;
-  bool clusterDataIsHard = false; // FIXME Not used
+  bool clusterDataIsHard = false; // Keep the initial partition instead of optimizing it away
   bool assignToNeighbouringModule = false;
   bool noInfomap = false;
 

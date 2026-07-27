@@ -133,9 +133,15 @@ def _load_shard(path: str) -> dict:
 
 
 def _validate_consistent(shards: Sequence[tuple[str, dict]]) -> None:
-    """All shards must share the same non-empty network + config fingerprint."""
+    """All shards must share the same network, configuration and Infomap build.
+
+    ``infomap_version`` is checked alongside the fingerprints because a different
+    build can partition the same network differently -- a fixed bug changes results
+    exactly as much as a changed option does -- and the field was handed to us and
+    then ignored.
+    """
     first_path, first = shards[0]
-    for field in ("network_fingerprint", "config_fingerprint"):
+    for field in ("network_fingerprint", "config_fingerprint", "infomap_version"):
         value = first.get(field, "")
         if not value:
             raise MergeError(
@@ -172,6 +178,21 @@ def _covered_indices(shards: Sequence[tuple[str, dict]]) -> set:
     return {int(t["trial"]) for _, s in shards for t in s["trials"]}
 
 
+def _duplicate_indices(shards: Sequence[tuple[str, dict]]) -> dict[int, list[str]]:
+    """Global trial indices claimed more than once, mapped to the shards claiming them.
+
+    Shards that overlap -- or that were all launched with the same --trial-offset --
+    contribute fewer independent trials than the executions suggest, while the gap
+    check below sees a contiguous range and reports the budget as complete. Four
+    shards of two trials each at offset 0 merged as "2 trials from 4 shard(s)".
+    """
+    claims: dict[int, list[str]] = {}
+    for path, shard in shards:
+        for trial in shard["trials"]:
+            claims.setdefault(int(trial["trial"]), []).append(path)
+    return {index: paths for index, paths in claims.items() if len(paths) > 1}
+
+
 def _resolve_best_tree(shard_path: str, best_tree_file: str) -> str:
     """Resolve best_tree_file relative to the shard JSON's directory."""
     if not best_tree_file:
@@ -184,37 +205,63 @@ def _resolve_best_tree(shard_path: str, best_tree_file: str) -> str:
     return os.path.join(os.path.dirname(shard_path), best_tree_file)
 
 
-def _write_clu_from_tree(tree_path: str, clu_path: str) -> None:
-    """Derive a .clu (node -> top-level module + flow) from a .tree file.
+def _parse_tree_row(line: str) -> tuple[str, str, list[str]] | None:
+    """Split a .tree leaf row into (path, flow, trailing ids), or None if it is not one.
 
-    .tree node lines are ``path flow "name" node_id``; the top-level module is
-    the first component of the colon-separated path. We read node_id (last
-    token), flow (second token) and path (first token); the name is ignored.
+    Rows are ``path flow "name" id...``, and the name is taken from the first quote to
+    the last, the same rule Infomap's own tree parser uses. Splitting on whitespace and
+    indexing from the left breaks on a name containing a space; taking the last token
+    breaks on a state row, where the trailing ids are ``state_id node_id [layer_id]``.
     """
-    # node_id may be a non-numeric label, so it stays str when not all-digits.
-    rows: list[tuple[int | str, int, str]] = []
+    head, quote, rest = line.partition('"')
+    if not quote:
+        return None
+    name_end = rest.rfind('"')
+    if name_end < 0:
+        return None
+    head_tokens = head.split()
+    if len(head_tokens) < 2:
+        return None
+    trailing = rest[name_end + 1 :].split()
+    if not trailing:
+        return None
+    return head_tokens[0], head_tokens[1], trailing
+
+
+def _write_clu_from_tree(tree_path: str, clu_path: str, states: bool = False) -> None:
+    """Derive a .clu from a .tree, mirroring the columns Infomap writes itself.
+
+    Physical: ``# node_id module flow``. State-level: ``# state_id module flow node_id
+    [layer_id]``, keyed on the state id -- a higher-order network's physical rows repeat
+    the same node id under several modules, so a .clu keyed on it cannot express the
+    partition at all (#906).
+    """
+    rows: list[tuple[str, int, str, list[str]]] = []
     with open(tree_path, encoding="utf-8") as fh:
         for line in fh:
             line = line.strip()
             if not line or line.startswith("#"):
                 continue
-            tokens = line.split()
-            if len(tokens) < 4:
-                continue  # not a leaf node line
-            path, flow, node_id = tokens[0], tokens[1], tokens[-1]
+            parsed = _parse_tree_row(line)
+            if parsed is None:
+                continue
+            path, flow, trailing = parsed
             try:
                 top_module = int(path.split(":")[0])
             except ValueError:
                 continue
-            rows.append(
-                (int(node_id) if node_id.isdigit() else node_id, top_module, flow)
-            )
+            rows.append((trailing[0], top_module, flow, trailing[1:]))
+
+    header = (
+        "# state_id module flow node_id layer_id" if states else "# node_id module flow"
+    )
     tmp_path = clu_path + ".tmp"
     with open(tmp_path, "w", encoding="utf-8") as out:
         out.write("# produced by infomap.merge\n")
-        out.write("# node_id module flow\n")
-        for node_id, module, flow in rows:
-            out.write(f"{node_id} {module} {flow}\n")
+        out.write(header + "\n")
+        for key, module, flow, extra in rows:
+            trailing = (" " + " ".join(extra)) if states and extra else ""
+            out.write(f"{key} {module} {flow}{trailing}\n")
     os.replace(tmp_path, clu_path)  # atomic on POSIX/Windows
 
 
@@ -268,6 +315,23 @@ def merge_trial_results(
             f"'{winner_tree}'"
         )
 
+    # Independence check: the same global trial index in two shards is the same trial
+    # run twice, not two trials, so the effective budget is smaller than it looks.
+    duplicates = _duplicate_indices(shards)
+    if duplicates:
+        shown = sorted(duplicates)[:10]
+        detail = ", ".join(
+            f"{index} in {len(duplicates[index])} shards" for index in shown
+        )
+        msg = (
+            f"{len(duplicates)} global trial index(es) claimed by more than one shard "
+            f"({detail}{', …' if len(duplicates) > len(shown) else ''}); the shards "
+            "overlap, so they contribute fewer independent trials than they ran"
+        )
+        if require_complete:
+            raise MergeError(msg)
+        print(f"Warning: {msg}", file=sys.stderr)
+
     # Completeness check over the global trial range.
     covered = _covered_indices(shards)
     max_index = max(covered)
@@ -296,6 +360,29 @@ def merge_trial_results(
         os.makedirs(os.path.dirname(clu_out) or ".", exist_ok=True)
         _write_clu_from_tree(winner_tree, clu_out)
         outputs.append(clu_out)
+
+    # Higher-order shards also record the state-level tree, which is the partition the
+    # run actually found: the physical one is a projection that repeats a node id across
+    # modules. Published alongside so a distributed higher-order analysis is recoverable
+    # at all (#906).
+    winner_states_tree = winner_shard.get("best_states_tree_file", "")
+    if winner_states_tree:
+        states_tree = _resolve_best_tree(shard_path, winner_states_tree)
+        if not os.path.isfile(states_tree):
+            raise MergeError(
+                f"winning trial's state-level tree does not exist or is not a file: "
+                f"'{states_tree}'"
+            )
+        if "tree" in formats:
+            states_tree_out = out_name + "_states.tree"
+            states_tmp = states_tree_out + ".tmp"
+            shutil.copyfile(states_tree, states_tmp)
+            os.replace(states_tmp, states_tree_out)
+            outputs.append(states_tree_out)
+        if "clu" in formats:
+            states_clu_out = out_name + "_states.clu"
+            _write_clu_from_tree(states_tree, states_clu_out, states=True)
+            outputs.append(states_clu_out)
 
     return {
         "trial": int(winner["trial"]),
