@@ -176,7 +176,7 @@ std::string writeClu(InfomapBase& im, const StateNetwork& network, const std::st
   return outputFilename;
 }
 
-void writeTree(InfomapBase& im, const StateNetwork& network, std::ostream& outStream, bool states)
+void writeTree(InfomapBase& im, const StateNetwork& network, std::ostream& outStream, bool states, OutputLeafPolicy leafPolicy)
 {
   auto oldPrecision = outStream.precision();
   OutputView view(im, network, states);
@@ -193,7 +193,7 @@ void writeTree(InfomapBase& im, const StateNetwork& network, std::ostream& outSt
     outStream << "# path flow name " << view.nodeIdHeaderName() << "\n";
   }
 
-  view.forEachLeaf(1, OutputLeafPolicy::HideBipartiteUnlessFlowTree, [&](const OutputLeafRow& row) {
+  view.forEachLeaf(1, leafPolicy, [&](const OutputLeafRow& row) {
     outStream << io::stringify(row.path, ":") << " " << row.flow << " \"" << row.name << "\" ";
 
     if (states) {
@@ -438,7 +438,10 @@ void writeCsvTree(InfomapBase& im, const StateNetwork& network, std::ostream& ou
 
   view.forEachLeaf(1, OutputLeafPolicy::HideBipartite, [&](const OutputLeafRow& row) {
     const auto path = io::stringify(row.path, ":");
-    outStream << path << ',' << row.flow << ",\"" << row.name << "\",";
+    // RFC 4180: a quote inside a quoted field is written twice. Without it a name
+    // containing one closed the field early and the row came out with more columns than
+    // the header, so every CSV reader mis-parsed it (#908).
+    outStream << path << ',' << row.flow << ',' << io::csvQuoted(row.name) << ',';
 
     if (states) {
       outStream << row.stateId << ',';
@@ -456,7 +459,10 @@ std::string writeTree(InfomapBase& im, const StateNetwork& network, const std::s
 {
   auto outputFilename = getOutputFilename(im, filename, ".tree", states);
   SafeOutFile outFile { outputFilename, std::ios_base::out, im.overwriteOutput() };
-  writeTree(im, network, outFile, states);
+  // The .tree honours --hide-bipartite-nodes; only the flow tree below needs the
+  // feature nodes kept, and deciding it here rather than from the global printFlowTree
+  // flag is what stops --ftree from un-hiding them in this file too (#908).
+  writeTree(im, network, outFile, states, OutputLeafPolicy::HideBipartite);
   outFile.commit();
   return outputFilename;
 }
@@ -465,7 +471,8 @@ std::string writeFlowTree(InfomapBase& im, const StateNetwork& network, const st
 {
   auto outputFilename = getOutputFilename(im, filename, ".ftree", states);
   SafeOutFile outFile { outputFilename, std::ios_base::out, im.overwriteOutput() };
-  writeTree(im, network, outFile, states);
+  // The link section refers to the feature nodes, so they stay in this file.
+  writeTree(im, network, outFile, states, OutputLeafPolicy::KeepBipartite);
   writeTreeLinks(im, outFile, states);
   outFile.commit();
   return outputFilename;

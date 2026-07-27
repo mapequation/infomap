@@ -24,8 +24,13 @@ class InfoNode;
 class StateNetwork;
 
 enum class OutputLeafPolicy : std::uint8_t {
+  //! Honour --hide-bipartite-nodes.
   HideBipartite,
-  HideBipartiteUnlessFlowTree
+  //! Keep the feature nodes whatever the option says, because the flow tree's link
+  //! section refers to them. Decided per output rather than from the global
+  //! printFlowTree flag: one writer serves both .tree and .ftree, so asking the flag
+  //! meant requesting --ftree also un-hid the nodes in the plain .tree (#908).
+  KeepBipartite
 };
 
 struct OutputLeafRow {

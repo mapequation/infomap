@@ -232,6 +232,23 @@ namespace io {
   // both verified byte-for-byte against the previous iostream implementation.
   std::string toPrecision(double value, unsigned int precision = 10, bool fixed = false);
 
+  //! Render a value as an RFC 4180 quoted CSV field: wrapped in quotes, with any quote in
+  //! it written twice. Without the doubling a name containing a quote closes the field
+  //! early and the row gains a column, which every CSV reader then mis-parses (#908).
+  inline std::string csvQuoted(const std::string& value)
+  {
+    std::string quoted;
+    quoted.reserve(value.size() + 2);
+    quoted += '"';
+    for (const char c : value) {
+      if (c == '"')
+        quoted += '"';
+      quoted += c;
+    }
+    quoted += '"';
+    return quoted;
+  }
+
 } // namespace io
 
 } // namespace infomap

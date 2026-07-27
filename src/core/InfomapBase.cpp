@@ -1275,6 +1275,11 @@ NodePaths InfomapBase::normalizeTreePaths(const TreePaths& tree, unsigned int& n
 
   std::map<unsigned int, unsigned int> physicalRowsConsumed;
   std::map<unsigned int, unsigned int> physicalStatesConsumed;
+  // Physical nodes whose states are spread over more than one module. A physical .tree
+  // has one row per (module, physical node) and no state ids, so which state went to
+  // which module simply is not in the file -- the pairing below is ascending state id
+  // against file order, which is a guess (#908).
+  unsigned int numSplitPhysicalNodes = 0;
 
   for (const auto& tp : tree) {
     if (tp.idType == TreeLeafIdType::state) {
@@ -1300,6 +1305,9 @@ NodePaths InfomapBase::normalizeTreePaths(const TreePaths& tree, unsigned int& n
       continue;
     }
 
+    if (rowsConsumed == 0 && totalRows > 1 && it->second.size() > 1)
+      ++numSplitPhysicalNodes;
+
     // If this is the last row for this physical id, claim every remaining state.
     // Otherwise consume one state per row, preserving 1:1 alignment when the
     // original output wrote one row per state.
@@ -1309,6 +1317,16 @@ NodePaths InfomapBase::normalizeTreePaths(const TreePaths& tree, unsigned int& n
     }
     statesConsumed += statesToAssign;
     ++rowsConsumed;
+  }
+
+  if (numSplitPhysicalNodes > 0) {
+    Console::warn(0,
+                  "{} {} states split across modules in this tree. A physical "
+                  "tree cannot express which state belongs to which module, so the states were paired "
+                  "with the rows in ascending state-id order and the partition read back is likely not "
+                  "the one that was written. Use the states tree (_states.tree) for an exact round trip.",
+                  numSplitPhysicalNodes,
+                  numSplitPhysicalNodes == 1 ? "physical node has its" : "physical nodes have their");
   }
 
   return normalized;
