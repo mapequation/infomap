@@ -139,6 +139,15 @@ protected:
   // while numPhysicalNodes() stays correct.
   unsigned int m_numPhysicalNodesFound = 0;
 
+  // Flow calculation outcome. Written by FlowCalculator, which is a friend, so the
+  // power iteration's result outlives the calculator and can reach the run reports --
+  // it used to exist only as a console line, invisible to every automated consumer
+  // (#899).
+  bool m_haveFlowConvergence = false;
+  bool m_flowConverged = true;
+  unsigned int m_flowIterations = 0;
+  double m_flowError = 0.0;
+
   // Bipartite
   unsigned int m_bipartiteStartId = 0;
 
@@ -271,6 +280,13 @@ public:
   }
   std::map<unsigned int, std::string>& names() { return m_names; }
   const std::map<unsigned int, std::string>& names() const { return m_names; }
+  //! Whether a power iteration ran and recorded its outcome.
+  bool haveFlowConvergence() const { return m_haveFlowConvergence; }
+  //! Whether that power iteration reached the flow tolerance before the iteration limit.
+  bool flowConverged() const { return m_flowConverged; }
+  unsigned int flowIterations() const { return m_flowIterations; }
+  double flowError() const { return m_flowError; }
+
   bool haveNodeWeights() const { return m_haveNodeWeights; }
   bool haveStateNodeWeights() const { return m_haveStateNodeWeights; }
   bool haveFileInput() const { return m_haveFileInput; }

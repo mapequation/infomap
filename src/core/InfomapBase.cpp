@@ -919,6 +919,10 @@ public:
       report.trials = m_trialsRun;
       report.bestTrial = result.bestTrialIndex + 1;
       report.autoStopped = m_autoStopped;
+      report.haveFlowConvergence = m_infomap.m_network.haveFlowConvergence();
+      report.flowConverged = m_infomap.m_network.flowConverged();
+      report.flowIterations = m_infomap.m_network.flowIterations();
+      report.flowError = m_infomap.m_network.flowError();
       report.trialCodelengths = m_infomap.m_codelengths;
       report.trialTopModules = m_infomap.m_numTopModules;
       writeJsonReport(m_infomap.summaryJsonPath, runSummaryReportJson(report), m_infomap.overwriteOutput());

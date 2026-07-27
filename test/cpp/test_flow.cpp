@@ -777,6 +777,71 @@ TEST_CASE("Degenerate flow is rejected instead of reported as a zero codelength 
   }
 }
 
+TEST_CASE("Bipartite teleportation names the links it needs [fast][core][flow]")
+{
+  // The option's second step sends flow from the feature side back to the primary side
+  // along explicit links. A canonical bipartite file has none, so that half was a no-op:
+  // depending on the teleportation flags the result was zero flow, NaN, or -- with
+  // --to-nodes -- the uniform teleport distribution with a plausible codelength and no
+  // warning at all, i.e. flow that ignores the network (#899).
+  for (const auto* flags : { "-N 1 --seed 7 --directed --bipartite-teleportation",
+                             "-N 1 --seed 7 --directed --recorded-teleportation --bipartite-teleportation",
+                             "-N 1 --seed 7 --directed --recorded-teleportation --to-nodes --bipartite-teleportation" }) {
+    InfomapWrapper im(infomap::test::defaultFlags(flags));
+    addCanonicalBipartiteLinks(im);
+
+    try {
+      im.run();
+      FAIL("expected bipartite teleportation without feature -> primary links to be rejected");
+    } catch (const infomap::InfomapError& e) {
+      CHECK(e.code() == infomap::ExitCode::InputError);
+      const std::string message(e.what());
+      // Naming the missing precondition is the point: "degenerate flow" pointed at the
+      // flow model when the cause is the input lacking return links.
+      CHECK(message.find("--bipartite-teleportation needs links") != std::string::npos);
+    }
+  }
+}
+
+TEST_CASE("Bipartite teleportation runs when the feature side links back [fast][core][flow]")
+{
+  // One return link per feature node, so the two-step walk can reach both primary
+  // nodes. With only one the walk can return to a single node, all flow concentrates
+  // there and the codelength collapses to zero -- reported today by the non-convergence
+  // and flow-sum warnings, which this PR also puts in the run report.
+  InfomapWrapper im(infomap::test::defaultFlags("-N 1 --seed 7 --two-level --directed --bipartite-teleportation"));
+  addCanonicalBipartiteLinks(im);
+  im.addLink(4, 1);
+  im.addLink(5, 3);
+
+  CHECK_NOTHROW(im.run());
+  infomap::test::checkRunSanity(im);
+  CHECK(im.codelength() > 0.0);
+  CHECK(im.network().flowConverged());
+}
+
+TEST_CASE("Reaching tolerance on the last allowed iteration counts as converged [fast][core][flow]")
+{
+  // converged used to mean "the loop stopped before the iteration limit", so a run whose
+  // final allowed iteration brought the error to zero was reported as a failure -- with
+  // the warning to match. Since the outcome now reaches the run report and the Python
+  // Result, a signal that cries wolf is worse than no signal (#899).
+  InfomapWrapper im(infomap::test::defaultFlags("-N 1 --seed 7 --directed --max-flow-iterations 2"));
+  im.addLink(1, 2);
+  im.addLink(2, 3);
+  im.addLink(3, 1);
+  im.addLink(3, 4);
+  im.addLink(4, 5);
+  im.addLink(5, 3);
+
+  im.run();
+
+  REQUIRE(im.network().haveFlowConvergence());
+  CHECK(im.network().flowIterations() == 2);
+  CHECK(im.network().flowError() <= 1e-15);
+  CHECK(im.network().flowConverged());
+}
+
 TEST_CASE("Degenerate flow reports an input error [fast][core][flow]")
 {
   InfomapWrapper im(infomap::test::defaultFlags("-N 1 --seed 7 --directed --recorded-teleportation"));
