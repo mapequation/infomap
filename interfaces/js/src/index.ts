@@ -180,7 +180,13 @@ class Infomap {
     this.workers[id] = worker;
 
     worker.postMessage({
-      arguments: args.split(" "),
+      // Split on runs of whitespace and drop the empties, the way the Node entry point
+      // does. Splitting on a single space passed argv entries a shell never would: the
+      // rendered form of an Arguments object starts with a space, so every object-args
+      // run sent an empty first argument, which only went unnoticed because the
+      // optional out_directory vector swallows stray positionals -- the same mechanism
+      // behind this issue's option-injection box.
+      arguments: args.split(/\s+/).filter(Boolean),
       filename,
       network,
       outName,

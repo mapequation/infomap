@@ -64,6 +64,31 @@ describe("Infomap", () => {
     );
   });
 
+  test("passes argv without empty entries", () => {
+    // A shell never hands a program an empty argument. The rendered form of an
+    // Arguments object starts with a space and the out name may be followed by a run
+    // of whitespace, so splitting on a single space produced them (#903).
+    const infomap = new Infomap();
+    const fromObject = infomap.run({
+      network: "1 2\n",
+      args: { twoLevel: true, silent: true },
+    });
+    const fromString = infomap.run({
+      network: "1 2\n",
+      args: "--out-name  mynet  -o tree",
+    });
+
+    for (const id of [fromObject, fromString]) {
+      const [[message]] = (
+        getWorker(infomap, id).postMessage as unknown as {
+          mock: { calls: [{ arguments: string[] }][] };
+        }
+      ).mock.calls.slice(-1);
+      expect(message.arguments).not.toContain("");
+      expect(message.arguments.every((arg) => arg.length > 0)).toBe(true);
+    }
+  });
+
   test("tells the worker whether to expect output files", () => {
     const infomap = new Infomap();
     const withFiles = infomap.run({ network: "1 2\n", args: "-o tree" });
