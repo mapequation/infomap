@@ -363,6 +363,16 @@ void FlowCalculator::usePrecomputedFlow(const StateNetwork& network, const Confi
   }
 }
 
+// Converged means the error is within tolerance, not merely that the loop stopped before
+// the iteration limit. The two differ whenever the last allowed iteration is the one that
+// reaches tolerance: that was reported as a failure, with a warning to match, while the
+// error sat at 0. Shared by every power iteration here, because the predicate existed in
+// three copies and fixing one left the regularized model exporting the old answer (#899).
+inline bool errorWithinFlowTolerance(const Config& config, double err) noexcept
+{
+  return err <= config.flowTolerance;
+}
+
 struct IterationResult {
   double alpha;
   double beta;
@@ -391,12 +401,7 @@ IterationResult powerIterate(const Config& config, double alpha, Iteration&& ite
     ++iterations;
   } while (iterations < config.maxFlowIterations && (err > config.flowTolerance || iterations < config.minFlowIterations));
 
-  // Converged means the error is within tolerance, not merely that the loop stopped
-  // before the iteration limit. The two differ whenever the last allowed iteration is
-  // the one that reaches tolerance: that was reported as a failure, with the warning to
-  // match, while the error sat at 0. Since #899 exports this to the run report and the
-  // Python Result, a signal that cries wolf is worse than none.
-  const bool converged = err <= config.flowTolerance;
+  const bool converged = errorWithinFlowTolerance(config, err);
   if (!converged) {
     Log() << "\n";
     Console::warn(0, "PageRank calculation did not converge after {} iterations with error {:g}.", iterations, err);
@@ -782,8 +787,9 @@ void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, co
     ++iterations;
   } while (iterations < config.maxFlowIterations && (err > config.flowTolerance || iterations < config.minFlowIterations));
 
-  recordPageRank(iterations, err, iterations < config.maxFlowIterations);
-  if (iterations >= config.maxFlowIterations) {
+  const bool converged = errorWithinFlowTolerance(config, err);
+  recordPageRank(iterations, err, converged);
+  if (!converged) {
     Log() << "\n";
     Console::warn(0, "PageRank calculation did not converge after {} iterations with error {:g}.", iterations, err);
   }
@@ -1042,7 +1048,11 @@ void FlowCalculator::calcDirectedRegularizedMultilayerFlow(const StateNetwork& n
     ++iterations;
   } while (iterations < config.maxFlowIterations && (err > config.flowTolerance || iterations < config.minFlowIterations));
 
-  if (iterations == config.maxFlowIterations && err > config.flowTolerance) {
+  // Recorded here too, so the exported outcome means the same thing for every flow
+  // model: this loop warned but reported nothing, leaving the run report without a flow
+  // object at all for regularized multilayer input.
+  recordPageRank(iterations, err, errorWithinFlowTolerance(config, err));
+  if (!errorWithinFlowTolerance(config, err)) {
     Console::warn(0, "PageRank calculation stopped after the maximum of {} iterations with diff {:g}.", iterations, err);
   }
 

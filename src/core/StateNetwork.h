@@ -282,7 +282,8 @@ public:
   const std::map<unsigned int, std::string>& names() const { return m_names; }
   //! Whether a power iteration ran and recorded its outcome.
   bool haveFlowConvergence() const { return m_haveFlowConvergence; }
-  //! Whether that power iteration reached the flow tolerance before the iteration limit.
+  //! Whether the power iteration's final error is within the flow tolerance. True also
+  //! when tolerance is reached on the last allowed iteration, and when no iteration ran.
   bool flowConverged() const { return m_flowConverged; }
   unsigned int flowIterations() const { return m_flowIterations; }
   double flowError() const { return m_flowError; }

@@ -581,9 +581,11 @@ class Result(_ResultWritersMixin):
     def flow_converged(self) -> bool:
         """Whether the flow calculation's power iteration reached its tolerance.
 
-        ``False`` means the iteration hit ``max_flow_iterations`` with the error
-        still above ``flow_tolerance``, so the flow is not the network's stationary
-        distribution and every codelength derived from it describes something else.
+        ``False`` means the iteration's final error stayed above ``flow_tolerance``,
+        so the flow is not the network's stationary distribution and every codelength
+        derived from it describes something else. Reaching tolerance on the last
+        allowed iteration counts as converged; running out of iterations with the
+        error still too large does not.
         The run still completes and writes output, so this is the only way an
         automated consumer can tell (:attr:`flow_error` says by how much).
 
