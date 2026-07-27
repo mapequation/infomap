@@ -150,21 +150,20 @@ TEST_CASE("A physical tree that cannot express the partition says so [fast][core
 
   auto warningsWhenReading = [](const std::string& clusterFile) {
     std::ostringstream captured;
-    infomap::Log::setOutputStream(captured);
     {
+      infomap::test::ScopedLogCapture capture(captured);
       // Not defaultFlags: it carries --silent, which mutes the very warning under test.
       InfomapWrapper reader("--seed 123 --num-trials 1 --no-file-output --no-infomap --cluster-data " + clusterFile);
       reader.readInputData(infomap::test::repoPath("examples/networks/multilayer.net"));
       reader.run();
     }
-    infomap::Log::setOutputStream(std::cout);
     return captured.str();
   };
 
   const auto physicalOutput = warningsWhenReading(physicalTree);
   CHECK(physicalOutput.find("split across modules") != std::string::npos);
   // Singular, since exactly one physical node is split here.
-  CHECK(physicalOutput.find("1 physical node has") != std::string::npos);
+  CHECK(physicalOutput.find("1 physical node has its") != std::string::npos);
 
   // The states tree carries the state ids, so it round-trips and must stay quiet.
   const auto statesOutput = warningsWhenReading(statesTree);

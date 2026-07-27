@@ -3,6 +3,7 @@
 
 #include "vendor/doctest.h"
 #include "Infomap.h"
+#include "utils/Log.h"
 
 #include <algorithm>
 #include <cstdio>
@@ -116,6 +117,32 @@ inline std::unique_ptr<InfomapWrapper> makeRunningInfomap(SetupFn&& setup, const
   im->run();
   return im;
 }
+
+//! Capture Log output for the duration of a scope, restoring whatever was there before.
+//! The Log stream and the silent flag are process-global, so a test that sets them back
+//! to a fixed value instead of the previous one leaks state into whatever runs next.
+class ScopedLogCapture {
+public:
+  explicit ScopedLogCapture(std::ostream& sink)
+      : m_previous(Log::getOutputStream()), m_wasSilent(Log::isSilent())
+  {
+    Log::setSilent(false);
+    Log::setOutputStream(sink);
+  }
+
+  ~ScopedLogCapture()
+  {
+    Log::setOutputStream(m_previous);
+    Log::setSilent(m_wasSilent);
+  }
+
+  ScopedLogCapture(const ScopedLogCapture&) = delete;
+  ScopedLogCapture& operator=(const ScopedLogCapture&) = delete;
+
+private:
+  std::ostream& m_previous;
+  bool m_wasSilent;
+};
 
 inline std::string readTextFile(const std::string& path)
 {

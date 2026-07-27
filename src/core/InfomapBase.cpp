@@ -1321,12 +1321,12 @@ NodePaths InfomapBase::normalizeTreePaths(const TreePaths& tree, unsigned int& n
 
   if (numSplitPhysicalNodes > 0) {
     Console::warn(0,
-                  "{} physical {} their states split across modules in this tree. A physical "
+                  "{} {} states split across modules in this tree. A physical "
                   "tree cannot express which state belongs to which module, so the states were paired "
                   "with the rows in ascending state-id order and the partition read back is likely not "
                   "the one that was written. Use the states tree (_states.tree) for an exact round trip.",
                   numSplitPhysicalNodes,
-                  numSplitPhysicalNodes == 1 ? "node has" : "nodes have");
+                  numSplitPhysicalNodes == 1 ? "physical node has its" : "physical nodes have their");
   }
 
   return normalized;
