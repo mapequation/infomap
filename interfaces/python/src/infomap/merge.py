@@ -231,8 +231,8 @@ def _parse_tree_row(line: str) -> tuple[str, str, list[str]] | None:
 def _write_clu_from_tree(tree_path: str, clu_path: str, states: bool = False) -> None:
     """Derive a .clu from a .tree, mirroring the columns Infomap writes itself.
 
-    Physical: ``# node_id module flow``. State-level: ``# state_id module flow node_id
-    [layer_id]``, keyed on the state id -- a higher-order network's physical rows repeat
+    Physical: ``# node_id module flow``. State-level: ``# state_id module flow node_id``
+    plus ``layer_id`` when the rows carry one, keyed on the state id -- a higher-order network's physical rows repeat
     the same node id under several modules, so a .clu keyed on it cannot express the
     partition at all (#906).
     """
@@ -252,9 +252,15 @@ def _write_clu_from_tree(tree_path: str, clu_path: str, states: bool = False) ->
                 continue
             rows.append((trailing[0], top_module, flow, trailing[1:]))
 
-    header = (
-        "# state_id module flow node_id layer_id" if states else "# node_id module flow"
-    )
+    if states:
+        # Infomap's own _states.clu adapts its columns: a memory network's state rows are
+        # "state_id node_id" while multilayer adds the layer. Advertising layer_id
+        # unconditionally would name a column the rows do not have.
+        trailing_columns = max((len(extra) for _, _, _, extra in rows), default=0)
+        names = ["node_id", "layer_id"][:trailing_columns]
+        header = " ".join(["# state_id", "module", "flow", *names])
+    else:
+        header = "# node_id module flow"
     tmp_path = clu_path + ".tmp"
     with open(tmp_path, "w", encoding="utf-8") as out:
         out.write("# produced by infomap.merge\n")

@@ -173,6 +173,35 @@ def test_merge_publishes_the_state_level_artifacts(tmp_path):
     assert rows[2] == ["2", "2", "0.25", "1", "2"]
 
 
+def test_states_clu_header_matches_the_row_width(tmp_path):
+    """A memory network's state rows have no layer, and the header must not claim one.
+
+    Infomap's own _states.clu writes "# state_id module flow node_id" for memory input
+    and appends layer_id only for multilayer, so a fixed header described a column the
+    rows did not have.
+    """
+    shard = _shard(
+        tmp_path, "s", offset=0, trials=[(0, 2.5)], best_tree_modules={1: 1, 2: 2}
+    )
+    data = json.loads(Path(shard).read_text())
+    states_name = "s_trial_0_states.tree"
+    # state_id node_id, no layer: what a memory network's tree looks like.
+    (tmp_path / states_name).write_text(
+        '# path flow name state_id node_id\n1:1 0.5 "i" 1 1\n2:1 0.5 "j" 2 2\n'
+    )
+    data["best_states_tree_file"] = states_name
+    Path(shard).write_text(json.dumps(data))
+
+    merge_trial_results([shard], out_name=str(tmp_path / "out"))
+
+    lines = (tmp_path / "out_states.clu").read_text().splitlines()
+    header = next(line for line in lines if line.startswith("# state_id"))
+    rows = [line.split() for line in lines if line and not line.startswith("#")]
+
+    assert header == "# state_id module flow node_id"
+    assert all(len(row) == len(header.split()) - 1 for row in rows)
+
+
 def test_clu_derivation_survives_a_space_in_a_node_name(tmp_path):
     """Rows are ``path flow "name" id``, and the name may contain spaces."""
     shard = _shard(

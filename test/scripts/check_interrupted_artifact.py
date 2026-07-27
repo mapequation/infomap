@@ -71,7 +71,13 @@ def _run_and_signal(binary: str, sig: int, work: Path) -> tuple[int, Path]:
         if process.poll() is not None:
             break
         time.sleep(0.05)
-    process.send_signal(sig)
+    # The run can finish in the race between the poll above and the signal below; a
+    # ProcessLookupError there would make this test flaky rather than informative.
+    if process.poll() is None:
+        try:
+            process.send_signal(sig)
+        except ProcessLookupError:
+            pass
     try:
         process.wait(timeout=60)
     except subprocess.TimeoutExpired:
