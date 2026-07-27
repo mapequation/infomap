@@ -49,6 +49,78 @@ describe("Infomap", () => {
     expect(progress).toHaveBeenCalledWith(40, id);
   });
 
+  test("reads the out name through a run of whitespace", () => {
+    // The C++ tokenizer accepts "--out-name  mynet"; a regex matching a single space
+    // missed it, fell back to the network basename, and then every read of the engine's
+    // output landed on a file that was never written (#903).
+    const infomap = new Infomap();
+    const id = infomap.run({
+      network: "1 2\n",
+      args: "--out-name  mynet -o tree",
+    });
+
+    expect(getWorker(infomap, id).postMessage).toHaveBeenCalledWith(
+      expect.objectContaining({ outName: "mynet" }),
+    );
+  });
+
+  test("takes the last out name, the way the engine does", () => {
+    // Infomap uses the last occurrence of an option, so reading the first would have
+    // the engine write under one basename while the results are read under another --
+    // now a loud "no output files found" instead of a silent empty result, on a
+    // perfectly valid command line (#903).
+    const infomap = new Infomap();
+    const id = infomap.run({
+      network: "1 2\n",
+      args: "--out-name first -o tree --out-name second",
+    });
+
+    expect(getWorker(infomap, id).postMessage).toHaveBeenCalledWith(
+      expect.objectContaining({ outName: "second" }),
+    );
+  });
+
+  test("passes argv without empty entries", () => {
+    // A shell never hands a program an empty argument. The rendered form of an
+    // Arguments object starts with a space and the out name may be followed by a run
+    // of whitespace, so splitting on a single space produced them (#903).
+    const infomap = new Infomap();
+    const fromObject = infomap.run({
+      network: "1 2\n",
+      args: { twoLevel: true, silent: true },
+    });
+    const fromString = infomap.run({
+      network: "1 2\n",
+      args: "--out-name  mynet  -o tree",
+    });
+
+    for (const id of [fromObject, fromString]) {
+      const [[message]] = (
+        getWorker(infomap, id).postMessage as unknown as {
+          mock: { calls: [{ arguments: string[] }][] };
+        }
+      ).mock.calls.slice(-1);
+      expect(message.arguments).not.toContain("");
+      expect(message.arguments.every((arg) => arg.length > 0)).toBe(true);
+    }
+  });
+
+  test("tells the worker whether to expect output files", () => {
+    const infomap = new Infomap();
+    const withFiles = infomap.run({ network: "1 2\n", args: "-o tree" });
+    expect(getWorker(infomap, withFiles).postMessage).toHaveBeenCalledWith(
+      expect.objectContaining({ expectsOutputFiles: true }),
+    );
+
+    const withoutFiles = infomap.run({
+      network: "1 2\n",
+      args: "--no-file-output",
+    });
+    expect(getWorker(infomap, withoutFiles).postMessage).toHaveBeenCalledWith(
+      expect.objectContaining({ expectsOutputFiles: false }),
+    );
+  });
+
   test("converts pretty summary output to complete progress", () => {
     const progress = vi.fn();
     const infomap = new Infomap().on("progress", progress);
