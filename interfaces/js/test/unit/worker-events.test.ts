@@ -64,6 +64,22 @@ describe("Infomap", () => {
     );
   });
 
+  test("takes the last out name, the way the engine does", () => {
+    // Infomap uses the last occurrence of an option, so reading the first would have
+    // the engine write under one basename while the results are read under another --
+    // now a loud "no output files found" instead of a silent empty result, on a
+    // perfectly valid command line (#903).
+    const infomap = new Infomap();
+    const id = infomap.run({
+      network: "1 2\n",
+      args: "--out-name first -o tree --out-name second",
+    });
+
+    expect(getWorker(infomap, id).postMessage).toHaveBeenCalledWith(
+      expect.objectContaining({ outName: "second" }),
+    );
+  });
+
   test("passes argv without empty entries", () => {
     // A shell never hands a program an empty argument. The rendered form of an
     // Arguments object starts with a space and the out name may be followed by a run

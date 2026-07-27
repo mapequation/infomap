@@ -72,7 +72,8 @@ export async function run(
   // --out-name inside args is honoured too, the way the worker entry point reads it, so
   // the two surfaces agree. Passing it there used to be silently ignored here: the
   // engine wrote one basename while the results were read back under another.
-  const outNameFlagIndex = extraArgs.indexOf("--out-name");
+  // lastIndexOf, mirroring the engine: it takes the last occurrence of an option.
+  const outNameFlagIndex = extraArgs.lastIndexOf("--out-name");
   const outNameFromArgs =
     outNameFlagIndex >= 0 ? extraArgs[outNameFlagIndex + 1] : undefined;
   const base = outName ?? outNameFromArgs ?? basenameWithoutExtension(filename);

@@ -85,6 +85,24 @@ for (const { label, run } of [
     "string",
     `${label}: --out-name in args was not honoured`,
   );
+
+  // And the last occurrence wins, because that is the option the engine acts on.
+  const renamedTwice = await run(network, {
+    args: [
+      "--out-name",
+      "first",
+      "-o",
+      "tree",
+      "--out-name",
+      "second",
+      "--silent",
+    ],
+  });
+  assert.equal(
+    typeof renamedTwice.tree,
+    "string",
+    `${label}: a repeated --out-name was read from the wrong occurrence`,
+  );
 }
 
 // Exercise the `infomap` bin on real files, like the native binary.
