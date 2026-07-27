@@ -33,6 +33,13 @@ struct RunSummaryReport {
   unsigned int trials = 0;
   unsigned int bestTrial = 0;
   bool autoStopped = false; // --converge: trials stopped early on a codelength plateau
+  // Power-iteration outcome, emitted only when one ran. A failed iteration means the
+  // flow -- and therefore every codelength below -- is not the network's stationary
+  // distribution, which no automated consumer could see before (#899).
+  bool haveFlowConvergence = false;
+  bool flowConverged = true;
+  unsigned int flowIterations = 0;
+  double flowError = 0.0;
   std::vector<double> trialCodelengths;
   std::vector<unsigned int> trialTopModules;
 };

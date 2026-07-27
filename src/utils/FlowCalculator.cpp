@@ -14,6 +14,7 @@
 #include "../utils/format.h"
 #include "../utils/infomath.h"
 #include "../core/StateNetwork.h"
+#include "../io/InfomapError.h"
 #include <cmath>
 #include <numeric>
 #include <limits>
@@ -32,6 +33,17 @@ namespace {
     return "Regularized multilayer flow requires building with FEATURES=regularized-multilayer.";
   }
 #endif
+
+  // Converged means the error is within tolerance, not merely that the loop stopped
+  // before the iteration limit. The two differ whenever the last allowed iteration is
+  // the one that reaches tolerance: that was reported as a failure, with a warning to
+  // match, while the error sat at 0. Shared by every power iteration in this file,
+  // because the predicate existed in three copies and fixing one left the regularized
+  // model exporting the old answer (#899).
+  bool errorWithinFlowTolerance(const Config& config, double err) noexcept
+  {
+    return err <= config.flowTolerance;
+  }
 
 } // namespace
 
@@ -201,6 +213,23 @@ FlowCalculator::FlowCalculator(StateNetwork& network, const Config& config)
     break;
   case FlowModel::directed:
     if (network.isBipartite() && config.bipartiteTeleportation) {
+      // The two-step walk needs a step back: the option's second half sends flow from
+      // the feature side to the primary side along explicit feature -> primary links.
+      // A canonical bipartite file has none -- every link runs primary -> feature -- so
+      // that half is a no-op and what comes out is not this flow model. Depending on the
+      // teleportation flags it was zero flow, NaN, or, with --to-nodes, the uniform
+      // teleport distribution with a plausible codelength and no warning: flow that
+      // ignores the network entirely (#899). Refused with the precondition named.
+      if (bipartiteLinkStartIndex == flowLinks.size()) {
+        throw InfomapError(ExitCode::InputError,
+                           fmt::format(FMT_STRING("--bipartite-teleportation needs links from the feature side back to the "
+                                                  "primary side, and all {} links in this network run from the primary side "
+                                                  "to the feature side. Without them the second step of the two-step walk "
+                                                  "has nothing to follow and the resulting flow does not describe the "
+                                                  "network. Drop --bipartite-teleportation to use the two-step projection "
+                                                  "instead, which handles this input."),
+                                       flowLinks.size()));
+      }
       calcDirectedBipartiteFlow(network, config);
     } else {
       if (config.regularized) {
@@ -373,7 +402,7 @@ IterationResult powerIterate(const Config& config, double alpha, Iteration&& ite
     ++iterations;
   } while (iterations < config.maxFlowIterations && (err > config.flowTolerance || iterations < config.minFlowIterations));
 
-  const bool converged = iterations < config.maxFlowIterations;
+  const bool converged = errorWithinFlowTolerance(config, err);
   if (!converged) {
     Log() << "\n";
     Console::warn(0, "PageRank calculation did not converge after {} iterations with error {:g}.", iterations, err);
@@ -759,8 +788,9 @@ void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, co
     ++iterations;
   } while (iterations < config.maxFlowIterations && (err > config.flowTolerance || iterations < config.minFlowIterations));
 
-  recordPageRank(iterations, err, iterations < config.maxFlowIterations);
-  if (iterations >= config.maxFlowIterations) {
+  const bool converged = errorWithinFlowTolerance(config, err);
+  recordPageRank(iterations, err, converged);
+  if (!converged) {
     Log() << "\n";
     Console::warn(0, "PageRank calculation did not converge after {} iterations with error {:g}.", iterations, err);
   }
@@ -1019,7 +1049,11 @@ void FlowCalculator::calcDirectedRegularizedMultilayerFlow(const StateNetwork& n
     ++iterations;
   } while (iterations < config.maxFlowIterations && (err > config.flowTolerance || iterations < config.minFlowIterations));
 
-  if (iterations == config.maxFlowIterations && err > config.flowTolerance) {
+  // Recorded here too, so the exported outcome means the same thing for every flow
+  // model: this loop warned but reported nothing, leaving the run report without a flow
+  // object at all for regularized multilayer input.
+  recordPageRank(iterations, err, errorWithinFlowTolerance(config, err));
+  if (!errorWithinFlowTolerance(config, err)) {
     Console::warn(0, "PageRank calculation stopped after the maximum of {} iterations with diff {:g}.", iterations, err);
   }
 
@@ -1281,6 +1315,12 @@ void FlowCalculator::calcDirectedBipartiteFlow(const StateNetwork& network, cons
 
 void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool normalizeNodeFlow) noexcept
 {
+  // Hand the power iteration's outcome to the network so it outlives this calculator.
+  network.m_haveFlowConvergence = m_havePageRank;
+  network.m_flowConverged = m_pageRankConverged;
+  network.m_flowIterations = m_pageRankIterations;
+  network.m_flowError = m_pageRankError;
+
   // TODO: Skip bipartite flow adjustment for directed / rawdir / .. ?
   if (network.isBipartite()) {
     addFlowNote("Using bipartite links");

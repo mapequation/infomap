@@ -41309,6 +41309,126 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_StateNetwork_haveFlowConvergence(PyObject *self, PyObject *args) {
+  PyObject *resultobj = 0;
+  infomap::StateNetwork *arg1 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  bool result;
+  
+  (void)self;
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__StateNetwork, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "StateNetwork_haveFlowConvergence" "', argument " "1"" of type '" "infomap::StateNetwork const *""'"); 
+  }
+  arg1 = reinterpret_cast< infomap::StateNetwork * >(argp1);
+  {
+    try {
+      result = (bool)((infomap::StateNetwork const *)arg1)->haveFlowConvergence();
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_From_bool(static_cast< bool >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_StateNetwork_flowConverged(PyObject *self, PyObject *args) {
+  PyObject *resultobj = 0;
+  infomap::StateNetwork *arg1 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  bool result;
+  
+  (void)self;
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__StateNetwork, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "StateNetwork_flowConverged" "', argument " "1"" of type '" "infomap::StateNetwork const *""'"); 
+  }
+  arg1 = reinterpret_cast< infomap::StateNetwork * >(argp1);
+  {
+    try {
+      result = (bool)((infomap::StateNetwork const *)arg1)->flowConverged();
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_From_bool(static_cast< bool >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_StateNetwork_flowIterations(PyObject *self, PyObject *args) {
+  PyObject *resultobj = 0;
+  infomap::StateNetwork *arg1 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  unsigned int result;
+  
+  (void)self;
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__StateNetwork, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "StateNetwork_flowIterations" "', argument " "1"" of type '" "infomap::StateNetwork const *""'"); 
+  }
+  arg1 = reinterpret_cast< infomap::StateNetwork * >(argp1);
+  {
+    try {
+      result = (unsigned int)((infomap::StateNetwork const *)arg1)->flowIterations();
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_From_unsigned_SS_int(static_cast< unsigned int >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_StateNetwork_flowError(PyObject *self, PyObject *args) {
+  PyObject *resultobj = 0;
+  infomap::StateNetwork *arg1 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  double result;
+  
+  (void)self;
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__StateNetwork, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "StateNetwork_flowError" "', argument " "1"" of type '" "infomap::StateNetwork const *""'"); 
+  }
+  arg1 = reinterpret_cast< infomap::StateNetwork * >(argp1);
+  {
+    try {
+      result = (double)((infomap::StateNetwork const *)arg1)->flowError();
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_From_double(static_cast< double >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_StateNetwork_haveNodeWeights(PyObject *self, PyObject *args) {
   PyObject *resultobj = 0;
   infomap::StateNetwork *arg1 = 0 ;
@@ -60579,6 +60699,10 @@ static PyMethodDef SwigMethods[] = {
 	 { "StateNetwork_sumDegree", _wrap_StateNetwork_sumDegree, METH_O, NULL},
 	 { "StateNetwork_outWeights", _wrap_StateNetwork_outWeights, METH_O, NULL},
 	 { "StateNetwork_names", _wrap_StateNetwork_names, METH_VARARGS, NULL},
+	 { "StateNetwork_haveFlowConvergence", _wrap_StateNetwork_haveFlowConvergence, METH_O, NULL},
+	 { "StateNetwork_flowConverged", _wrap_StateNetwork_flowConverged, METH_O, NULL},
+	 { "StateNetwork_flowIterations", _wrap_StateNetwork_flowIterations, METH_O, NULL},
+	 { "StateNetwork_flowError", _wrap_StateNetwork_flowError, METH_O, NULL},
 	 { "StateNetwork_haveNodeWeights", _wrap_StateNetwork_haveNodeWeights, METH_O, NULL},
 	 { "StateNetwork_haveStateNodeWeights", _wrap_StateNetwork_haveStateNodeWeights, METH_O, NULL},
 	 { "StateNetwork_haveFileInput", _wrap_StateNetwork_haveFileInput, METH_O, NULL},

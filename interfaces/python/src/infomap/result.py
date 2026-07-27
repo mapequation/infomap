@@ -310,6 +310,9 @@ class Result(_ResultWritersMixin):
         "_num_nodes",
         "_num_physical_nodes",
         "_num_links",
+        "_flow_converged",
+        "_flow_iterations",
+        "_flow_error",
         "_index_codelength",
         "_module_codelength",
         "_one_level_codelength",
@@ -354,6 +357,12 @@ class Result(_ResultWritersMixin):
             self, "_num_physical_nodes", core.network().numPhysicalNodes()
         )
         object.__setattr__(self, "_num_links", core.network().numLinks())
+        # Power-iteration outcome. Flow models that need no power iteration leave
+        # these at "converged, zero iterations", so `not result.flow_converged` means
+        # a failure in every case rather than "no iteration ran".
+        object.__setattr__(self, "_flow_converged", core.network().flowConverged())
+        object.__setattr__(self, "_flow_iterations", core.network().flowIterations())
+        object.__setattr__(self, "_flow_error", core.network().flowError())
         object.__setattr__(self, "_index_codelength", core.getIndexCodelength())
         object.__setattr__(self, "_module_codelength", core.getModuleCodelength())
         object.__setattr__(self, "_one_level_codelength", core.getOneLevelCodelength())
@@ -567,6 +576,49 @@ class Result(_ResultWritersMixin):
     def num_links(self) -> int:
         """The number of links."""
         return self._num_links
+
+    @property
+    def flow_converged(self) -> bool:
+        """Whether the flow calculation's power iteration reached its tolerance.
+
+        ``False`` means the iteration's final error stayed above ``flow_tolerance``,
+        so the flow is not the network's stationary distribution and every codelength
+        derived from it describes something else. Reaching tolerance on the last
+        allowed iteration counts as converged; running out of iterations with the
+        error still too large does not.
+        The run still completes and writes output, so this is the only way an
+        automated consumer can tell (:attr:`flow_error` says by how much).
+
+        ``True`` for flow models that run no power iteration at all -- undirected
+        flow, for instance -- so ``not result.flow_converged`` always means a real
+        failure. :attr:`flow_iterations` is 0 in that case.
+
+        Examples
+        --------
+        >>> from infomap import Infomap, Options
+        >>> im = Infomap(silent=True)
+        >>> im.read_file("ninetriangles.net")
+        >>> result = im.run(options=Options(directed=True, max_flow_iterations=2))
+        >>> result.flow_converged
+        False
+        >>> result.flow_iterations
+        2
+        """
+        return self._flow_converged
+
+    @property
+    def flow_iterations(self) -> int:
+        """Power iterations the flow calculation used, or 0 if it ran none."""
+        return self._flow_iterations
+
+    @property
+    def flow_error(self) -> float:
+        """The power iteration's final error, 0.0 if it ran none.
+
+        Compare against the ``flow_tolerance`` option: an error above it with
+        :attr:`flow_converged` false says how far the flow is from stationary.
+        """
+        return self._flow_error
 
     @property
     def index_codelength(self) -> float:
