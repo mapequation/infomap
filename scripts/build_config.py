@@ -318,8 +318,9 @@ def resolve_build_config(
     # Everything a translation unit needs in order to see OpenMP, including the
     # header search path: consumers of the library branch on _OPENMP too, so these
     # have to travel with the interface rather than staying with the core's own
-    # compile line. Kept separate from platform_compile_flags, which carries the
-    # same include for reasons unrelated to OpenMP.
+    # compile line. The libomp include path is therefore recorded twice on purpose --
+    # here for the propagated OpenMP surface, and in platform_compile_flags for the
+    # core's own compile line, which is assembled from those instead.
     openmp_interface_compile_flags = []
     if openmp:
         if compiler_family == "clang":

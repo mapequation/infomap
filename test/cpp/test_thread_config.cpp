@@ -38,7 +38,9 @@ TEST_CASE("The OpenMP flags reach the test translation units [fast][core][thread
       "absent");
 #endif
 #else
-  WARN_MESSAGE(true, "build has no OpenMP; the _OPENMP-guarded cases are skipped by design");
+  // Informational only: MESSAGE rather than WARN_MESSAGE, so a build without OpenMP
+  // does not spend a warning on something that is working as intended.
+  MESSAGE("build has no OpenMP; the _OPENMP-guarded cases are skipped by design");
 #endif
 }
 
