@@ -30,6 +30,12 @@ KEY_OVERRIDES = {
     "--to-nodes": "teleport_to_nodes",
     "--converge": "converge_trials",
     "--markov-time": "markov_time",
+    # The manifest namespaces this one, matching the Config member and saying lambda of
+    # what: a bare "lambda" in a configuration record names nothing. Only present in the
+    # catalog when INFOMAP_FEATURE_LOSSY_MAP_EQUATION is compiled in, so a default build
+    # never reaches this entry -- it is here so a lossy build does not trip over the
+    # flag-to-key convention.
+    "--lambda": "lossy_lambda",
 }
 
 # Deliberately outside the fingerprint, with the reason. Anything else must be covered.
