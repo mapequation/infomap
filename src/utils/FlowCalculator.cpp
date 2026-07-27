@@ -34,6 +34,17 @@ namespace {
   }
 #endif
 
+  // Converged means the error is within tolerance, not merely that the loop stopped
+  // before the iteration limit. The two differ whenever the last allowed iteration is
+  // the one that reaches tolerance: that was reported as a failure, with a warning to
+  // match, while the error sat at 0. Shared by every power iteration in this file,
+  // because the predicate existed in three copies and fixing one left the regularized
+  // model exporting the old answer (#899).
+  bool errorWithinFlowTolerance(const Config& config, double err) noexcept
+  {
+    return err <= config.flowTolerance;
+  }
+
 } // namespace
 
 template <typename T>
@@ -361,16 +372,6 @@ void FlowCalculator::usePrecomputedFlow(const StateNetwork& network, const Confi
       nodeFlow[i] /= sumFlow;
     }
   }
-}
-
-// Converged means the error is within tolerance, not merely that the loop stopped before
-// the iteration limit. The two differ whenever the last allowed iteration is the one that
-// reaches tolerance: that was reported as a failure, with a warning to match, while the
-// error sat at 0. Shared by every power iteration here, because the predicate existed in
-// three copies and fixing one left the regularized model exporting the old answer (#899).
-inline bool errorWithinFlowTolerance(const Config& config, double err) noexcept
-{
-  return err <= config.flowTolerance;
 }
 
 struct IterationResult {
