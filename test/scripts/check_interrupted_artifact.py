@@ -89,11 +89,22 @@ def _run_and_signal(binary: str, sig: int, work: Path) -> tuple[int, Path, bool]
     return process.returncode, tree, delivered
 
 
+# ctest reports this return code as a skip rather than a pass.
+SKIP_RETURN_CODE = 77
+
+
 def main(argv: list[str]) -> int:
     if len(argv) != 2:
         print("usage: check_interrupted_artifact.py <infomap-binary>", file=sys.stderr)
         return 2
     binary = argv[1]
+
+    if sys.platform == "win32":
+        # Windows has no POSIX signal delivery: send_signal(SIGTERM) maps to
+        # TerminateProcess, which the process cannot handle, so there is no clean
+        # shutdown to test. Skipped rather than quietly passing.
+        print("skipped: POSIX signal delivery only")
+        return SKIP_RETURN_CODE
 
     with tempfile.TemporaryDirectory() as tmp:
         work = Path(tmp)

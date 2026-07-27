@@ -474,6 +474,12 @@ private:
           if (worker.printAllTrials && m_numTrials > 1) {
             std::lock_guard<std::mutex> lock(outputMutex);
             auto outputTimer = m_timing.scope("output_s");
+            // Record this worker's one trial before it writes, so the header's
+            // "trials N of M" describes the file. The worker never pushes into
+            // m_codelengths itself -- that happens on the serial path -- and an
+            // artifact that reported 0 trials would be worse than none (#906).
+            if (worker.m_codelengths.empty())
+              worker.m_codelengths.push_back(trialCodelength);
             worker.writeResult(static_cast<int>(m_infomap.trialOffset + trialIndex + 1));
           }
 
