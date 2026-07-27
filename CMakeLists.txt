@@ -72,6 +72,7 @@ function(infomap_json_array output_name field_name)
 endfunction()
 
 infomap_json_array(INFOMAP_COMPILE_FLAGS cmake_compile_flags)
+infomap_json_array(INFOMAP_OPENMP_COMPILE_FLAGS cmake_openmp_compile_flags)
 infomap_json_array(INFOMAP_LINK_FLAGS link_flags)
 infomap_json_array(INFOMAP_ENABLED_FEATURE_DEFINES enabled_feature_defines)
 
@@ -114,6 +115,12 @@ target_include_directories(infomap_core PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/vend
 target_compile_features(infomap_core PUBLIC cxx_std_17)
 set_target_properties(infomap_core PROPERTIES CXX_EXTENSIONS OFF)
 target_compile_options(infomap_core PRIVATE ${INFOMAP_COMPILE_FLAGS})
+# OpenMP is PUBLIC while the rest of the policy stays PRIVATE, because it changes what
+# the sources *mean* rather than how well they are compiled: src/ and test/ both branch
+# on _OPENMP, so a consumer compiled without the flag silently drops those branches
+# while still linking libomp -- which is how every #ifdef _OPENMP test case in the
+# suite came to compile to nothing (#930).
+target_compile_options(infomap_core PUBLIC ${INFOMAP_OPENMP_COMPILE_FLAGS})
 target_compile_definitions(infomap_core PUBLIC ${INFOMAP_ENABLED_FEATURE_DEFINES})
 target_link_options(infomap_core PUBLIC ${INFOMAP_LINK_FLAGS})
 
@@ -166,6 +173,12 @@ if(BUILD_TESTING)
             PRIVATE
                 INFOMAP_TEST_ROOT="${CMAKE_CURRENT_SOURCE_DIR}"
         )
+        # Lets a test assert that the OpenMP flags actually reached this translation
+        # unit. Derived from the emitted flags rather than INFOMAP_USE_OPENMP, so a
+        # toolchain for which the policy emits nothing does not expect _OPENMP.
+        if(INFOMAP_OPENMP_COMPILE_FLAGS)
+            target_compile_definitions(${target_name} PRIVATE INFOMAP_TEST_EXPECT_OPENMP=1)
+        endif()
         target_link_libraries(${target_name} PRIVATE infomap_core)
         add_test(NAME ${target_name} COMMAND ${target_name})
         set_tests_properties(${target_name} PROPERTIES LABELS "${labels}")
