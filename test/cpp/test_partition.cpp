@@ -6,6 +6,7 @@
 #include "TestUtils.h"
 
 #include <algorithm>
+#include <limits>
 #include <map>
 #include <set>
 #include <sstream>
@@ -1109,29 +1110,42 @@ TEST_CASE("Every trial is reproducible from the seed reported for it [fast][core
 
   SUBCASE("the contract survives a base seed wider than the engine")
   {
-    // Config::seedToRandomNumberGenerator is unsigned long but every route into
-    // the RNG takes unsigned int, so the engine only sees the low 32 bits. The
-    // narrowing has to stay uniform, or the seed this run reports would name a
-    // trial it cannot reproduce. The base is picked so the run straddles 2^32:
-    // trial 2 lands exactly on the wrap and narrows to engine seed 0.
-    constexpr unsigned long wideBase = 4294967294ul; // 2^32 - 2
-    const auto wide = runCycle(seedAndTrials(wideBase, numTrials));
-    REQUIRE(wide.size() == numTrials);
-    REQUIRE(std::set<double>(wide.begin(), wide.end()).size() > 1);
+    // Every route into the RNG takes unsigned int (BasicRandom's constructor,
+    // Random::seed from reseed and from setNonMainConfig), so the engine only
+    // ever sees the low 32 bits of Config::seedToRandomNumberGenerator. Where
+    // that field is wider, the narrowing has to stay uniform, or the seed a run
+    // reports would name a trial it cannot reproduce.
+    //
+    // Guarded because the field is `unsigned long`, whose width is not fixed:
+    // 64-bit on LP64 (Linux, macOS), 32-bit on LLP64 (Windows). On Windows it is
+    // exactly the engine's width, no seed above UINT_MAX is representable, and
+    // there is nothing here to test -- running it anyway wraps the base and asks
+    // for `--seed 0`, which the parser rejects (min is 1).
+    if (sizeof(unsigned long) > sizeof(unsigned int)) {
+      // Derived rather than written as a literal or a shift: `1ul << 32` is
+      // undefined where unsigned long is 32 bits, even on the branch not taken.
+      const unsigned long twoPow32 = static_cast<unsigned long>(std::numeric_limits<unsigned int>::max()) + 1ul;
+      // Straddles the wrap: trial 2 lands on 2^32 and narrows to engine seed 0.
+      const unsigned long wideBase = twoPow32 - 2ul;
 
-    for (unsigned int i = 0; i < numTrials; ++i) {
-      const auto standalone = runCycle(seedAndTrials(wideBase + i, 1));
-      REQUIRE(standalone.size() == 1);
-      CHECK(standalone[0] == doctest::Approx(wide[i]));
+      const auto wide = runCycle(seedAndTrials(wideBase, numTrials));
+      REQUIRE(wide.size() == numTrials);
+      REQUIRE(std::set<double>(wide.begin(), wide.end()).size() > 1);
+
+      for (unsigned int i = 0; i < numTrials; ++i) {
+        const auto standalone = runCycle(seedAndTrials(wideBase + i, 1));
+        REQUIRE(standalone.size() == 1);
+        CHECK(standalone[0] == doctest::Approx(wide[i]));
+      }
+
+      // The aliasing the width mismatch implies, pinned so it stays deliberate:
+      // seeds congruent mod 2^32 are the same run.
+      const auto low = runCycle(seedAndTrials(1ul, 1));
+      const auto aliased = runCycle(seedAndTrials(1ul + twoPow32, 1));
+      REQUIRE(low.size() == 1);
+      REQUIRE(aliased.size() == 1);
+      CHECK(aliased[0] == doctest::Approx(low[0]));
     }
-
-    // The aliasing this width mismatch implies, pinned so it stays deliberate:
-    // seeds congruent mod 2^32 are the same run.
-    const auto low = runCycle(seedAndTrials(1, 1));
-    const auto aliased = runCycle(seedAndTrials(1ul + (1ul << 32), 1));
-    REQUIRE(low.size() == 1);
-    REQUIRE(aliased.size() == 1);
-    CHECK(aliased[0] == doctest::Approx(low[0]));
   }
 }
 

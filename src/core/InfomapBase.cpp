@@ -740,16 +740,21 @@ private:
   // derives it the same way, so "the trial with seed s" names one run whether it
   // was produced serially, by --parallel-trials, or by a shard at an offset.
   //
-  // Kept at the config field's own width. The engine is narrower -- every route
-  // into it takes unsigned int (`BasicRandom(unsigned int)` on construction,
-  // `Random::seed(unsigned int)` from reseed and from setNonMainConfig) -- so the
-  // RNG only ever sees the low 32 bits. That narrowing is uniform, which is what
-  // makes the reported seed usable: a standalone run with the value recorded here
-  // narrows to the same engine seed and reproduces the trial, and the recursion
-  // reading the config field cannot end up on a different stream than the engine.
-  // The one visible consequence is aliasing -- seeds congruent mod 2^32 name the
-  // same run -- which follows from Config::seedToRandomNumberGenerator being
-  // wider than the engine, not from anything about per-trial seeding.
+  // Kept at the config field's own width. Every route into the engine takes
+  // unsigned int (`BasicRandom(unsigned int)` on construction,
+  // `Random::seed(unsigned int)` from reseed and from setNonMainConfig), so the
+  // RNG only ever sees the low 32 bits of the seed.
+  //
+  // Whether that discards anything depends on the platform:
+  // Config::seedToRandomNumberGenerator is `unsigned long`, which is 64-bit on
+  // LP64 (Linux, macOS) and 32-bit on LLP64 (Windows). On Windows the field is
+  // exactly the engine's width and no seed can outrun it. On LP64 the narrowing
+  // is real but uniform, which is what keeps the reported seed usable: a
+  // standalone run given the value recorded here narrows to the same engine seed
+  // and reproduces the trial, and the recursion reading the config field cannot
+  // land on a different stream than the engine. The one visible consequence
+  // there is aliasing -- seeds congruent mod 2^32 name the same run -- which
+  // follows from the width mismatch, not from anything about per-trial seeding.
   unsigned long trialSeed(unsigned int trialIndex) const
   {
     return m_baseSeed + m_infomap.trialOffset + trialIndex;
