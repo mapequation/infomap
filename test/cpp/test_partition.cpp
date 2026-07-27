@@ -1,6 +1,7 @@
 #include "vendor/doctest.h"
 
 #include "Infomap.h"
+#include "io/InfomapError.h"
 
 #include "TestUtils.h"
 
@@ -122,6 +123,119 @@ TEST_CASE("Tree cluster-data fixture initializes a multi-level tree [fast][core]
   infomap::test::checkRunSanity(im);
 }
 
+TEST_CASE("Mixed-depth cluster data is rejected instead of crashing [fast][core][partition][parser]")
+{
+  // A module with both a leaf and a sub-module as children used to segfault: the
+  // per-level aggregation read the first child, concluded "these are modules", and then
+  // recursed into the leaf, dereferencing its null firstChild. Reordering the same
+  // partition's rows gave the same tree two different codelengths instead (#898).
+  InfomapWrapper im(infomap::test::defaultFlags());
+  im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+  im.initNetwork(im.network());
+
+  try {
+    im.initPartition(infomap::test::clusterFixturePath("twotriangles_mixed_depth.tree"), false, &im.network());
+    FAIL("expected mixed-depth cluster data to be rejected");
+  } catch (const infomap::InfomapError& e) {
+    CHECK(e.code() == infomap::ExitCode::InputError);
+    const std::string message(e.what());
+    CHECK(message.find("mixes depths") != std::string::npos);
+    // The offending module has to be named, or the user cannot find it in the file.
+    CHECK(message.find("module 1") != std::string::npos);
+  }
+}
+
+TEST_CASE("A two-level search from a deeper tree keeps its top level [fast][core][partition]")
+{
+  // --two-level with a deeper cluster tree reported codelength 0 on a tree that still
+  // had sub-modules in it, or aborted with "fineTune() called but numLevels != 2" once
+  // the tuning loop was allowed to run (#898). Both are gone: the supplied tree's top
+  // level becomes the starting partition, which is what --two-level means.
+  InfomapWrapper im(infomap::test::defaultFlags("--two-level"));
+  im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+  im.initNetwork(im.network());
+
+  im.initPartition(infomap::test::clusterFixturePath("twotriangles_three_level.tree"), false, &im.network());
+
+  CHECK(im.numLevels() == 2);
+  CHECK(im.maxTreeDepth() == 2);
+  CHECK(im.numTopModules() == 2);
+
+  im.run();
+
+  infomap::test::checkRunSanity(im);
+  CHECK(im.codelength() > 0.0);
+  CHECK(im.maxTreeDepth() == 2);
+}
+
+TEST_CASE("removeSubModules flattens a ragged tree whose shallow branch comes first [fast][core][partition][tree]")
+{
+  // numLevels() follows the firstChild chain only, so with the shallow branch first it
+  // reports 2 for a three-level tree and the old `while (numLevels() > 2)` loop did
+  // nothing at all -- leaving sub-modules in place for calcCodelengthOnTree to score as
+  // if they were not there (#898).
+  InfomapWrapper im(infomap::test::defaultFlags());
+  im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+  im.initNetwork(im.network());
+  im.initPartition(infomap::test::clusterFixturePath("twotriangles_ragged_branches.tree"), false, &im.network());
+
+  REQUIRE(im.maxTreeDepth() == 3);
+  // The shortcut this test exists for, pinned so the fixture keeps exercising it.
+  REQUIRE(im.numLevels() == 2);
+
+  im.removeSubModules(true);
+
+  CHECK(im.maxTreeDepth() == 2);
+  unsigned int numModules = 0;
+  for (auto& module : im.root()) {
+    ++numModules;
+    for (auto& child : module) {
+      CHECK(child.isLeaf());
+    }
+  }
+  CHECK(numModules == 2);
+}
+
+TEST_CASE("An unknown node id in cluster data leaves the partition alone [fast][core][partition][parser]")
+{
+  // std::map::operator[] inserted the unknown id with a default index of 0, so it
+  // reassigned the *first* leaf node to the stray module and marked it as covered,
+  // which also silenced the note about nodes genuinely missing an assignment (#898).
+  // Compared as a grouping rather than as raw module indices, which get renumbered:
+  // nodes are visited in state-id order and each new parent gets the next group number,
+  // so two runs agree exactly when they put the same nodes together.
+  auto groupingFrom = [](const std::string& clusterFile) {
+    InfomapWrapper im(infomap::test::defaultFlags("--no-infomap"));
+    im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+    im.initNetwork(im.network());
+    im.initPartition(infomap::test::clusterFixturePath(clusterFile), false, &im.network());
+
+    std::map<unsigned int, const infomap::InfoNode*> parentByStateId;
+    for (auto it = im.iterLeafNodes(); !it.isEnd(); ++it) {
+      const auto& node = *it;
+      parentByStateId[node.stateId] = node.parent;
+    }
+
+    std::map<const infomap::InfoNode*, unsigned int> groupOfParent;
+    std::map<unsigned int, unsigned int> grouping;
+    for (const auto& it : parentByStateId) {
+      const auto inserted = groupOfParent.emplace(it.second, static_cast<unsigned int>(groupOfParent.size()));
+      grouping[it.first] = inserted.first->second;
+    }
+    return grouping;
+  };
+
+  const auto clean = groupingFrom("twotriangles_two_modules.clu");
+  const auto withUnknownId = groupingFrom("twotriangles_two_modules_unknown_id.clu");
+
+  REQUIRE(clean.size() == 6);
+  // Two groups of three, and the first leaf is not pulled out into the stray module.
+  CHECK(clean.at(1) == clean.at(2));
+  CHECK(clean.at(1) == clean.at(3));
+  CHECK(clean.at(1) != clean.at(4));
+  CHECK(withUnknownId == clean);
+}
+
 TEST_CASE("Tree cluster-data reinit and rerun stay stable on the same instance [fast][core][partition][lifecycle]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());
@@ -178,6 +292,52 @@ TEST_CASE("Pretty per-level codelength renders a structured levels table [fast][
   CHECK(text.find("Total") != std::string::npos);
   CHECK(text.find("Per level number of modules") == std::string::npos);
   CHECK(text.find("2.700302") != std::string::npos);
+}
+
+TEST_CASE("Per-level aggregation survives a module with both kinds of child [fast][core][partition][output]")
+{
+  // Cluster data can no longer deliver this shape -- it is rejected at intake -- but the
+  // aggregation is a shared reporting path and used to read only the first child to
+  // decide whether a module holds leaves. A leaf sibling *after* a sub-module was then
+  // recursed into and its null firstChild dereferenced (SIGSEGV), while a leaf *before*
+  // one returned early and dropped every remaining sub-module from the table. Built by
+  // hand so the guarantee is pinned even though no input can reach it (#898).
+  InfoNode root;
+  auto* module = new InfoNode({}, 100);
+  auto* leafBeside = new InfoNode({}, 1);
+  auto* subModule = new InfoNode({}, 200);
+  auto* nestedLeafA = new InfoNode({}, 2);
+  auto* nestedLeafB = new InfoNode({}, 3);
+
+  root.addChild(module);
+  // Sub-module first, then the leaf: the order that used to crash.
+  module->addChild(subModule);
+  module->addChild(leafBeside);
+  subModule->addChild(nestedLeafA);
+  subModule->addChild(nestedLeafB);
+
+  std::ostringstream output;
+  unsigned int numLevels = 0;
+  CHECK_NOTHROW(numLevels = infomap::printPerLevelCodelength(root, output));
+
+  // Three levels of nodes, and every leaf accounted for: one beside the sub-module and
+  // two inside it.
+  CHECK(numLevels == 3);
+  std::vector<infomap::detail::PerLevelStat> stats;
+  infomap::aggregatePerLevelCodelength(root, stats);
+  unsigned int totalLeaves = 0;
+  for (const auto& stat : stats)
+    totalLeaves += stat.numLeafNodes;
+  CHECK(totalLeaves == 3);
+
+  root.releaseChildren();
+  module->releaseChildren();
+  subModule->releaseChildren();
+  delete nestedLeafA;
+  delete nestedLeafB;
+  delete subModule;
+  delete leafBeside;
+  delete module;
 }
 
 TEST_CASE("InfoNode hierarchy mutations preserve parentage and child order [fast][core][partition][tree]")
