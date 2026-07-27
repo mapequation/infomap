@@ -2,13 +2,16 @@
 
 #include "Infomap.h"
 #include "io/InfomapError.h"
+#include "io/Output.h"
 
 #include "TestUtils.h"
 
 #include <algorithm>
+#include <cstdio>
 #include <limits>
 #include <map>
 #include <set>
+#include <iostream>
 #include <sstream>
 #include <tuple>
 #include <vector>
@@ -122,6 +125,53 @@ TEST_CASE("Tree cluster-data fixture initializes a multi-level tree [fast][core]
   im.run();
 
   infomap::test::checkRunSanity(im);
+}
+
+TEST_CASE("A physical tree that cannot express the partition says so [fast][core][partition][parser]")
+{
+  // A physical .tree has one row per (module, physical node) and no state ids, so when a
+  // physical node's states sit in different modules the file cannot say which state went
+  // where. The reader pairs ascending state ids against file order, which is a guess: on
+  // examples/networks/multilayer.net the partition comes back at 3.71206 bits against the
+  // 2.01141 that was written. The guess stays -- the information is not in the file -- but
+  // it is no longer silent (#908).
+  const std::string physicalTree = "physical_roundtrip.tree";
+  const std::string statesTree = "physical_roundtrip_states.tree";
+  std::remove(physicalTree.c_str());
+  std::remove(statesTree.c_str());
+
+  {
+    InfomapWrapper writer(infomap::test::defaultFlags("--seed 1"));
+    writer.readInputData(infomap::test::repoPath("examples/networks/multilayer.net"));
+    writer.run();
+    infomap::writeTree(writer, writer.network(), physicalTree, false);
+    infomap::writeTree(writer, writer.network(), statesTree, true);
+  }
+
+  auto warningsWhenReading = [](const std::string& clusterFile) {
+    std::ostringstream captured;
+    infomap::Log::setOutputStream(captured);
+    {
+      // Not defaultFlags: it carries --silent, which mutes the very warning under test.
+      InfomapWrapper reader("--seed 123 --num-trials 1 --no-file-output --no-infomap --cluster-data " + clusterFile);
+      reader.readInputData(infomap::test::repoPath("examples/networks/multilayer.net"));
+      reader.run();
+    }
+    infomap::Log::setOutputStream(std::cout);
+    return captured.str();
+  };
+
+  const auto physicalOutput = warningsWhenReading(physicalTree);
+  CHECK(physicalOutput.find("split across modules") != std::string::npos);
+  // Singular, since exactly one physical node is split here.
+  CHECK(physicalOutput.find("1 physical node has") != std::string::npos);
+
+  // The states tree carries the state ids, so it round-trips and must stay quiet.
+  const auto statesOutput = warningsWhenReading(statesTree);
+  CHECK(statesOutput.find("split across modules") == std::string::npos);
+
+  std::remove(physicalTree.c_str());
+  std::remove(statesTree.c_str());
 }
 
 TEST_CASE("Mixed-depth cluster data is rejected instead of crashing [fast][core][partition][parser]")

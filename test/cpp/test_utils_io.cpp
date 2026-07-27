@@ -394,3 +394,14 @@ TEST_CASE("toPrecision reproduces the legacy iostream output byte-for-byte [fast
 }
 
 } // namespace
+
+TEST_CASE("csvQuoted doubles a quote inside the field [fast][core][utils][io]")
+{
+  // RFC 4180. Without the doubling a node name containing a quote closed the field
+  // early, so the row came out with one more column than the header and every CSV
+  // reader mis-parsed it (#908).
+  CHECK(infomap::io::csvQuoted("plain") == "\"plain\"");
+  CHECK(infomap::io::csvQuoted("gene \"X\", alias") == "\"gene \"\"X\"\", alias\"");
+  CHECK(infomap::io::csvQuoted("") == "\"\"");
+  CHECK(infomap::io::csvQuoted("\"") == "\"\"\"\"");
+}

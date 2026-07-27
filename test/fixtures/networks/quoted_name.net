@@ -1,0 +1,10 @@
+# A node name containing a double quote, which the .tree writer emits verbatim and the
+# tree parser has to read back: the name field runs from the first quote to the last.
+*Vertices
+1 "gene "X", alias"
+2 "b"
+3 "c"
+*Edges
+1 2
+2 3
+3 1
