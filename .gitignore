@@ -67,3 +67,7 @@ examples/cpp/Infomap-igraph-interface-library/lib/
 !examples/notebooks/data/benchmark-results.csv
 /*.net
 test/tmp/
+
+# Playwright output from the JS browser tests
+test-results/
+playwright-report/

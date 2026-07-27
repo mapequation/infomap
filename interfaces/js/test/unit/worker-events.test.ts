@@ -49,6 +49,37 @@ describe("Infomap", () => {
     expect(progress).toHaveBeenCalledWith(40, id);
   });
 
+  test("reads the out name through a run of whitespace", () => {
+    // The C++ tokenizer accepts "--out-name  mynet"; a regex matching a single space
+    // missed it, fell back to the network basename, and then every read of the engine's
+    // output landed on a file that was never written (#903).
+    const infomap = new Infomap();
+    const id = infomap.run({
+      network: "1 2\n",
+      args: "--out-name  mynet -o tree",
+    });
+
+    expect(getWorker(infomap, id).postMessage).toHaveBeenCalledWith(
+      expect.objectContaining({ outName: "mynet" }),
+    );
+  });
+
+  test("tells the worker whether to expect output files", () => {
+    const infomap = new Infomap();
+    const withFiles = infomap.run({ network: "1 2\n", args: "-o tree" });
+    expect(getWorker(infomap, withFiles).postMessage).toHaveBeenCalledWith(
+      expect.objectContaining({ expectsOutputFiles: true }),
+    );
+
+    const withoutFiles = infomap.run({
+      network: "1 2\n",
+      args: "--no-file-output",
+    });
+    expect(getWorker(infomap, withoutFiles).postMessage).toHaveBeenCalledWith(
+      expect.objectContaining({ expectsOutputFiles: false }),
+    );
+  });
+
   test("converts pretty summary output to complete progress", () => {
     const progress = vi.fn();
     const infomap = new Infomap().on("progress", progress);

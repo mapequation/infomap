@@ -63,12 +63,17 @@ export interface Header {
   bipartiteStartId?: number;
 }
 
-export type Tree<NodeType = Required<Node>> = Header & {
+// Node fields stay optional, because the JSON output omits them: a higher-order
+// network's physical JSON carries no `modules` at all, and `stateId`/`layerId` are not
+// in it either. Wrapping these in `Required` typed them as always present, so consumer
+// code dereferenced undefined with no compile error (#903). Measured on 2.15.0: nodes
+// of a first-order network have modules, of states.net and multilayer.net they do not.
+export type Tree<NodeType = Node> = Header & {
   nodes: NodeType[];
   modules: Module[];
 };
 
-export type StateTree = Tree<Required<StateNode>>;
+export type StateTree = Tree<StateNode>;
 
 export interface Result {
   clu?: string;
@@ -160,8 +165,15 @@ class Infomap {
 
     const index = filename.lastIndexOf(".");
     const networkName = index > 0 ? filename.slice(0, index) : filename;
-    const outNameMatch = args.match(/--out-name\s(\S+)/);
+    // \s+ rather than \s: the C++ tokenizer accepts a run of whitespace, so
+    // "--out-name  mynet" is a valid command line. Matching a single space made the
+    // regex miss, the basename fall back to the network name, and every read of the
+    // engine's output land on a file that was never written (#903).
+    const outNameMatch = args.match(/--out-name\s+(\S+)/);
     const outName = outNameMatch?.[1] ? outNameMatch[1] : networkName;
+    // Whether output files are expected at all, so the worker can tell "the engine
+    // wrote nothing" from "we looked in the wrong place".
+    const expectsOutputFiles = !/(?:^|\s)--no-file-output(?:\s|$)/.test(args);
 
     const worker = createInfomapWorker();
     const id = this.workerId++;
@@ -173,6 +185,7 @@ class Infomap {
       network,
       outName,
       files,
+      expectsOutputFiles,
     });
 
     return id;

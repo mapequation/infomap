@@ -26,6 +26,25 @@
             throw new Error("Missing expected output");
           }
 
+          // #903: the "net" key is Infomap's Pajek output, so it must be absent
+          // unless it was asked for. The input network used to be written exactly
+          // where the out name pointed, so it came back under this key every run.
+          if (output.net !== undefined) {
+            throw new Error("net present without -o network");
+          }
+
+          // #903: the out name is read through a run of whitespace, which the C++
+          // tokenizer accepts. Matching a single space made every read of the
+          // engine's output miss, and the run resolved with nothing.
+          const spaced = await infomap.runAsync({
+            network: "#source target\n1 2\n2 1\n2 3\n3 2\n",
+            args: "--out-name  renamed --tree --silent"
+          });
+
+          if (!spaced.tree) {
+            throw new Error("--out-name with extra whitespace lost the output");
+          }
+
           result.textContent = `${output.tree}\n${output.clu}`;
           status.textContent = "ok";
         } catch (error) {
