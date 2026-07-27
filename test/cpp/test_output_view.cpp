@@ -125,6 +125,25 @@ TEST_CASE("OutputView applies bipartite leaf filtering [fast][core][output]")
   CHECK(physicalIds == std::vector<unsigned int> { 1, 2, 3 });
 }
 
+TEST_CASE("The tree header records how many trials produced it [fast][core][output]")
+{
+  // The header recorded the requested --num-trials and an elapsed time but never the
+  // trials that actually ran, so the artifact an interrupted run leaves behind was
+  // indistinguishable from a complete search (#906).
+  auto im = infomap::test::makeRunningInfomap(
+      [&](InfomapWrapper& infomap) { infomap.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net")); },
+      "--num-trials 3");
+
+  const std::string treePath = "trial_count_header.tree";
+  std::remove(treePath.c_str());
+  infomap::writeTree(*im, im->network(), treePath, false);
+
+  const auto tree = infomap::test::readTextFile(treePath);
+  CHECK(tree.find("# trials 3 of 3") != std::string::npos);
+
+  std::remove(treePath.c_str());
+}
+
 TEST_CASE("A node name with a quote survives the tree and csv writers [fast][core][output][parser]")
 {
   // The writers emit the name between quotes with no escaping. The csv row then had one

@@ -229,6 +229,16 @@ if(BUILD_TESTING)
     set_tests_properties(shell_completion PROPERTIES LABELS "fast;core;parser;cli")
 
     add_test(
+        NAME interrupted_artifact
+        COMMAND
+            "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/test/scripts/check_interrupted_artifact.py"
+            "$<TARGET_FILE:infomap_cli>"
+    )
+    # 77 = skipped: the script needs POSIX signal delivery, which Windows does not have.
+    set_tests_properties(interrupted_artifact PROPERTIES LABELS "core;cli;crash" SKIP_RETURN_CODE 77)
+
+    add_test(
         NAME help_contract
         COMMAND
             "${Python3_EXECUTABLE}"
