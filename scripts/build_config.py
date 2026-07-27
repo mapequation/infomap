@@ -315,11 +315,18 @@ def resolve_build_config(
 
     openmp_compile_flags = []
     openmp_link_flags = []
+    # Everything a translation unit needs in order to see OpenMP, including the
+    # header search path: consumers of the library branch on _OPENMP too, so these
+    # have to travel with the interface rather than staying with the core's own
+    # compile line. Kept separate from platform_compile_flags, which carries the
+    # same include for reasons unrelated to OpenMP.
+    openmp_interface_compile_flags = []
     if openmp:
         if compiler_family == "clang":
             openmp_compile_flags.extend(["-Xpreprocessor", "-fopenmp"])
             openmp_link_flags.append("-lomp")
             if libomp_prefix:
+                openmp_interface_compile_flags.append(f"-I{libomp_prefix}/include")
                 platform_compile_flags.append(f"-I{libomp_prefix}/include")
                 platform_link_flags.append(f"-L{libomp_prefix}/lib")
         elif compiler_family in {"gnu", "unknown"}:
@@ -361,6 +368,9 @@ def resolve_build_config(
         "libomp_prefix": libomp_prefix,
         "deployment_target": deployment_target,
         "cmake_compile_flags": cmake_compile_flags,
+        "cmake_openmp_compile_flags": _dedupe(
+            openmp_compile_flags + openmp_interface_compile_flags
+        ),
         "compile_flags": compile_flags,
         "link_flags": link_flags,
     }
@@ -424,6 +434,7 @@ def main():
             "libomp_prefix",
             "deployment_target",
             "cmake_compile_flags",
+            "cmake_openmp_compile_flags",
             "compile_flags",
             "link_flags",
         ],

@@ -5,12 +5,42 @@
 #include <cstdlib>
 #include <string>
 
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
 using infomap::readThreadSourcesFromEnv;
 using infomap::resolveThreadBudget;
 using infomap::ThreadBudget;
 using infomap::ThreadSource;
 using infomap::ThreadSources;
 using infomap::threadSourceName;
+
+TEST_CASE("The OpenMP flags reach the test translation units [fast][core][threads]")
+{
+  // Not a test of OpenMP itself but of the build: the suite has 21 `#ifdef _OPENMP`
+  // blocks, and until #930 none of them existed in any test binary. Only infomap_core
+  // was compiled with the flags, while libomp still linked in transitively -- so
+  // `otool -L` looked right, ctest reported success, and the thread-count invariance
+  // cases it claimed to run were absent from the binary.
+  //
+  // Deliberately outside `#ifdef _OPENMP`: a guard that only runs when the thing it
+  // guards is present is the exact failure being fixed. INFOMAP_TEST_EXPECT_OPENMP
+  // comes from the build policy's emitted flags, so builds that genuinely have no
+  // OpenMP skip the requirement instead of failing.
+#ifdef INFOMAP_TEST_EXPECT_OPENMP
+#ifdef _OPENMP
+  CHECK(omp_get_max_threads() >= 1);
+#else
+  FAIL(
+      "the build policy emitted OpenMP compile flags, but this translation unit was "
+      "compiled without them, so every #ifdef _OPENMP case in the suite is silently "
+      "absent");
+#endif
+#else
+  WARN_MESSAGE(true, "build has no OpenMP; the _OPENMP-guarded cases are skipped by design");
+#endif
+}
 
 TEST_CASE("Explicit --num-threads wins over every other source [fast][core][threads]")
 {
