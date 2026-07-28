@@ -655,6 +655,33 @@ private:
       throw std::domain_error("No nodes to partition");
 
     checkFlowPostCondition();
+    warnOnObjectiveOptionsNotApplied();
+  }
+
+  // Options that are accepted, echoed in the run banner and recorded in the run metadata as
+  // active, but that the objective this input selects does not act on. Silence made them read as
+  // applied: the reported codelength and partition were simply those of a run without them (#904).
+  //
+  // Warnings rather than errors, and the objective dispatch is left as it is -- combining these
+  // objectives is a separate design question. The run path is the right home for this, for the
+  // same reason checkFlowPostCondition lives here: initNetwork is public C++ API that embedders
+  // call directly, and it runs again per parallel-trial worker.
+  void warnOnObjectiveOptionsNotApplied()
+  {
+    if (!m_infomap.m_optimizer->implementsObjectiveParameters()) {
+      // Only BiasedMapEquation carries these terms, and it is chosen only for ordinary networks.
+      if (m_infomap.entropyBiasCorrection)
+        Console::warn(0, "--entropy-corrected has no effect on this input: the entropy bias correction is implemented for ordinary networks only, not for state, multilayer or meta-data input. The run optimizes and reports the uncorrected codelength.");
+      if (m_infomap.preferredNumberOfModules != 0)
+        Console::warn(0, "--preferred-number-of-modules has no effect on this input: the module-count preference is implemented for ordinary networks only, not for state, multilayer or meta-data input.");
+    }
+
+    if (m_infomap.haveMetaData() && (m_infomap.haveMemory() || m_infomap.isMultilayerNetwork())) {
+      // initOptimizer tests haveMetaData() before haveMemory(), so meta-data wins and the run is
+      // scored by a first-order objective with no physical-node codebook -- the aggregation that
+      // makes this a memory network does not enter the objective at all.
+      Console::warn(0, "--meta-data takes precedence over higher-order input: the run optimizes the meta-data objective over state nodes, without the physical-node codebook of the higher-order map equation. The higher-order structure affects the network, not the objective.");
+    }
   }
 
   // The map equation is defined on a visit-rate distribution, so a non-finite
