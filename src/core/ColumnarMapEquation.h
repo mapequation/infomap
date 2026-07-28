@@ -493,6 +493,21 @@ private:
   double m_exitNetworkFlow = 0.0; // flow leaving this (sub-)network; 0 if closed
   unsigned int m_superAggLimit = 0; // >0: conservative up-build (passes/super-level)
   bool m_flatFirstBottom = false; // build the bottom with the full two-level pipeline (see setFlatFirstBottom)
+  // True while m_hierLevels' bottom (leaf -> level-1) is the converged two-level
+  // optimum produced by completeFlatFromAggregation, rather than a fine-blocks
+  // or up-built bottom. The leaf partition is then already at the two-level
+  // fixpoint (fine-tune to convergence + the merge <-> retune interleave), so
+  // the leaf-layer re-derivation the hierarchical refinements do
+  // (refineLayerWithinGrandparent(0) / refineBottomWithinParents, both
+  // from-singletons within a grandparent's leaf set) is re-solving a problem
+  // whose answer it already holds. Measured: exactly zero gain in 9 of 10
+  // flat-bottom trials across air30k / regularized / malaria / pref-25, while
+  // being the single most expensive pass in the trial (0.5-0.7s of a 1.0s
+  // air30k trial); the tenth gained 0.24% once, which does not survive a seed
+  // change. Skipped while set — but an accepted refine of an interior layer
+  // above marks layer 0 dirty again, so the leaf re-derivation stays reachable
+  // once the structure it nests in actually moves.
+  bool m_bottomConverged = false;
   bool m_deferTerms = false; // deterministic placement: moveUnit skips running-term (plogp) maintenance; rebuildRunningTerms() restores them
   bool m_leafMoveLoop = false; // true while moveLoop units are leaves (corrections active)
   bool m_moduleCorrActive = false; // true while module-move-capable corrections participate in a module-level move loop
