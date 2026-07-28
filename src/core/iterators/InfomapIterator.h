@@ -12,6 +12,7 @@
 
 #include <vector>
 #include <map>
+#include <memory>
 #include <cmath>
 
 namespace infomap {
