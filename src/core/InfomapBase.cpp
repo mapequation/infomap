@@ -857,8 +857,16 @@ private:
   {
     if (!infomap.noInfomap)
       infomap.runPartition();
-    else
+    else if (!infomap.haveModules()) {
+      // No partition was supplied, so nothing else has set the member: score the trivial tree.
       infomap.m_hierarchicalCodelength = infomap.calcCodelengthOnTree(infomap.root(), true);
+    }
+    // With a partition, the input path has already established it -- initTree with the same
+    // whole-tree recompute, initPartition(std::vector<unsigned int>&, bool) with the optimizer's
+    // tracked value after consolidateModules. Recomputing here overwrote the latter with a sum over
+    // module enter/exit flow that the cluster-id path never establishes: on bipartite input those
+    // values are negative, so a run reported 0.4973591381 for a tree it had just printed
+    // 0.7976667011 for, two of its three modules contributing negative codelengths (#957).
 
     if (infomap.haveHardPartition())
       infomap.restoreHardPartition();
