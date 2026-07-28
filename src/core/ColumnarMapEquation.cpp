@@ -1272,6 +1272,7 @@ double ColumnarTwoLevel::completeFlatFromAggregation(std::vector<int> aggTop, in
   m_hierAssign.push_back(m_leafTop);
   m_hierLevels.push_back(aggregateLevel(m_leaf0, m_leafTop, aggK, m_undirected));
 
+  m_bottomConverged = true;
   double L = hierarchicalCodelengthFromStack();
   while (retuneLeavesWithinModules(L)) {
     pollInterrupt();
@@ -2668,6 +2669,7 @@ void ColumnarTwoLevel::coarsenModules(double& L, int maxSweeps)
 
 double ColumnarTwoLevel::optimizeFlexible(unsigned int bottomBlockLimit, unsigned int sweepLimit)
 {
+  m_bottomConverged = false;
   double flatL = std::numeric_limits<double>::infinity();
   std::vector<Level> flatLevels;
   std::vector<std::vector<int>> flatAssign;
@@ -2707,6 +2709,7 @@ double ColumnarTwoLevel::optimizeFlexible(unsigned int bottomBlockLimit, unsigne
         m_hierLevels = std::move(fineLevels);
         m_hierAssign = std::move(fineAssign);
         m_numTopModules = fineTop;
+        m_bottomConverged = false; // back on the fine-blocks bottom
       }
     }
   } else {
@@ -2721,7 +2724,10 @@ double ColumnarTwoLevel::optimizeFlexible(unsigned int bottomBlockLimit, unsigne
   // partition to detect convergence — a full O(n_leaves) re-partition of pure
   // overhead — so we stop after one (measured: bit-identical, ~25-35% faster on
   // the deep/memory nets).
-  if (refineBottomWithinParents())
+  // Skipped on a converged flat bottom: refineBottomWithinParents IS the
+  // leaf-layer re-derivation the flat pipeline already converged (see
+  // m_bottomConverged).
+  if (!m_bottomConverged && refineBottomWithinParents())
     L = std::min(L, hierarchicalCodelengthFromStack());
   // Coarsen (merge leaf modules + regroup the top), exactly as the converge
   // search does. Cheap (module-level, not leaf-level) and a no-op for the base
@@ -3198,6 +3204,12 @@ double ColumnarTwoLevel::refineHierarchy(double startL, unsigned int sweepLimit)
   // the hierarchy settles. (refine(k) never changes the level count, so the
   // interior-layer index set is stable across sweeps.)
   std::vector<char> dirty(static_cast<size_t>(numInterior), 1);
+  // The leaf layer of a converged flat bottom is already at the two-level
+  // fixpoint — re-deriving it from singletons within each grandparent only
+  // re-finds it (see m_bottomConverged). Start it clean; an accepted refine of
+  // the layer above marks it dirty again.
+  if (m_bottomConverged && numInterior > 0)
+    dirty[0] = 0;
   for (int sweep = 0; sweep < refineSweeps; ++sweep) {
     pollInterrupt();
     const double beforeSweep = L;
@@ -3274,6 +3286,7 @@ ColumnarTwoLevel::toNodePaths(const std::vector<InfoNode*>& leafNodes) const
 
 double ColumnarTwoLevel::optimizeColumnar(unsigned int bottomBlockLimit, unsigned int sweepLimit)
 {
+  m_bottomConverged = false;
   // The up-merge aggressiveness selects which basin the build lands in, and the
   // best setting varies by network (like Infomap's multi-trial search). The old
   // approach refined *every* setting to convergence and kept the best — but the
@@ -3320,6 +3333,7 @@ double ColumnarTwoLevel::optimizeColumnar(unsigned int bottomBlockLimit, unsigne
   std::vector<std::vector<int>> bestAssign;
   unsigned int bestTop = 0;
   unsigned int bestSuperAgg = 0;
+  bool bestBottomConverged = false;
 
   for (unsigned int superAgg : kSuperAggSettings) {
     pollInterrupt();
@@ -3334,6 +3348,7 @@ double ColumnarTwoLevel::optimizeColumnar(unsigned int bottomBlockLimit, unsigne
       bestAssign = m_hierAssign;
       bestTop = m_numTopModules;
       bestSuperAgg = superAgg;
+      bestBottomConverged = false;
     }
   }
 
@@ -3364,6 +3379,7 @@ double ColumnarTwoLevel::optimizeColumnar(unsigned int bottomBlockLimit, unsigne
           bestAssign = m_hierAssign;
           bestTop = m_numTopModules;
           bestSuperAgg = superAgg;
+          bestBottomConverged = true;
         }
       }
     }
@@ -3374,6 +3390,7 @@ double ColumnarTwoLevel::optimizeColumnar(unsigned int bottomBlockLimit, unsigne
   m_hierAssign = std::move(bestAssign);
   m_numTopModules = bestTop;
   m_superAggLimit = bestSuperAgg;
+  m_bottomConverged = bestBottomConverged;
   double bestL = refineHierarchy(bestBuildL, sweepLimit);
   // Flat-first trial: the super-build may not pay for itself — keep the flat
   // two-level stack when it beats the refined hierarchy.
