@@ -39,8 +39,8 @@ def test_bipartite_regularized_partition_rescores_to_the_same_codelength(
     result = im.run()
     modules = result.modules()
 
-    # Not a trivial partition, or the equality below could hold for a partition with no
-    # module boundaries to get the enter/exit flow of wrong.
+    # Not a trivial partition: with no module boundaries there is no enter/exit flow to get
+    # wrong, and the equality below would hold whatever the recompute did.
     assert len(set(modules.values())) > 1
     assert result.codelength > 0.0
 
