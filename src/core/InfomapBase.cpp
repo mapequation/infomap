@@ -858,15 +858,23 @@ private:
     if (!infomap.noInfomap)
       infomap.runPartition();
     else if (!infomap.haveModules()) {
-      // No partition was supplied, so nothing else has set the member: score the trivial tree.
+      // A tree with no module level, which without a supplied partition is every --no-infomap run:
+      // nothing has set the member, so score the trivial tree here.
       infomap.m_hierarchicalCodelength = infomap.calcCodelengthOnTree(infomap.root(), true);
     }
-    // With a partition, the input path has already established it -- initTree with the same
-    // whole-tree recompute, initPartition(std::vector<unsigned int>&, bool) with the optimizer's
-    // tracked value after consolidateModules. Recomputing here overwrote the latter with a sum over
-    // module enter/exit flow that the cluster-id path never establishes: on bipartite input those
-    // values are negative, so a run reported 0.4973591381 for a tree it had just printed
+    // Once the tree has modules the input path has established the member already -- initTree with
+    // this same whole-tree recompute, initPartition(std::vector<unsigned int>&, bool) with the
+    // optimizer's tracked value after consolidateModules. Recomputing here overwrote the latter with
+    // a sum over module enter/exit flow that the cluster-id path never establishes: on bipartite
+    // input those values are negative, so a run reported 0.4973591381 for a tree it had just printed
     // 0.7976667011 for, two of its three modules contributing negative codelengths (#957).
+    //
+    // The condition is the tree's shape, not "no partition was supplied", and the two part ways for
+    // a hard partition: initPartition collapses the modules into the leaf vector, so haveModules()
+    // is false again and this recompute still runs over the collapsed tree even though the member
+    // was set. That path keeps the behaviour it had before this branch existed. Nothing on the CLI
+    // or Python surface sets clusterDataIsHard -- only a C++ embedder can -- and there is no
+    // evidence its value is wrong, so narrowing it too would be an unverified change.
 
     if (infomap.haveHardPartition())
       infomap.restoreHardPartition();
