@@ -193,6 +193,23 @@ public:
     m_totalDegree = other.m_totalDegree;
     m_numNodes = other.m_numNodes;
   }
+
+  // Copy what the objective minimises from a parent objective. The super-level Infomap is built
+  // without memory, which today means from a default Config, so its objective would otherwise run
+  // with the entropy correction off and no module-count preference however the run was configured.
+  // findHierarchicalSuperModules then weighed that uncorrected super codelength against this
+  // objective's corrected index codelength and could accept a super level that makes the tree
+  // worse than the two-level partition the same trial had just found (#904).
+  //
+  // Only the objective's own parameters travel. The flow model deliberately does not: the super
+  // network's node flows are aggregated module enter flows that already carry teleportation, so
+  // handing the super objective a recordedTeleportation of true would count it twice.
+  void setObjectiveParametersFrom(const BiasedMapEquation& other)
+  {
+    preferredNumModules = other.preferredNumModules;
+    useEntropyBiasCorrection = other.useEntropyBiasCorrection;
+    entropyBiasCorrectionMultiplier = other.entropyBiasCorrectionMultiplier;
+  }
 };
 
 } // namespace infomap

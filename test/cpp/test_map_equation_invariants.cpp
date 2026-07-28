@@ -127,6 +127,40 @@ TEST_CASE("Entropy correction steers the search, not just the report [core][mape
   CHECK(uncorrected != corrected);
 }
 
+// The super-level Infomap is built without memory, which means from a default Config, so its
+// objective ran with the entropy correction off and no module-count preference however the run was
+// configured (#904). findHierarchicalSuperModules compares that codelength straight against the
+// main objective's index codelength, so an uncorrected super solution could read as an improvement,
+// be consolidated, and leave the trial describing the network in more bits than the two-level
+// partition it had already found and thrown away (measured on this input: 3.7885 against 3.7421).
+//
+// Asserted as the user-visible invariant rather than on the internal comparison: the hierarchical
+// search starts from the two-level solution and only ever adds levels that shorten the description,
+// so it must not come back with a worse codelength than a two-level run of the same trial. Note
+// that --preferred-number-of-levels deliberately breaks this invariant (#308 lets a depth
+// preference accept a longer description), which is why no depth preference is set here.
+TEST_CASE("Super level never leaves the trial worse than its own two-level solution [core][mapeq][entropy-corrected]")
+{
+  const auto codelengthOf = [](const std::string& flags) {
+    InfomapWrapper im(defaultFlags("--seed 3 " + flags));
+    im.readInputData(repoPath("examples/networks/ninetriangles.net"));
+    im.run();
+    return im.codelength();
+  };
+
+  const double twoLevel = codelengthOf("--two-level --entropy-corrected");
+  const double hierarchical = codelengthOf("--entropy-corrected");
+
+  INFO("two-level=" << twoLevel << " hierarchical=" << hierarchical);
+  CHECK(hierarchical <= twoLevel + 1e-12);
+
+  // Guard against the invariant holding for the wrong reason: it is trivially true if the
+  // correction is so weak here that both runs return the plain-map-equation solution.
+  const double uncorrected = codelengthOf("--two-level");
+  INFO("uncorrected two-level=" << uncorrected);
+  CHECK(twoLevel > uncorrected);
+}
+
 // Follow-ups (not reproduced here): #831 (two-level initPartition/consolidate
 // reentrancy corrupting the recomputed codelength after a prior multi-level
 // trial) and #837 (hierarchical super-step degrading a two-level memory
