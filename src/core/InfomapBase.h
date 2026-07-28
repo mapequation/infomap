@@ -313,6 +313,11 @@ private:
                              .setNonMainConfig(*this)
                              .inheritRuntimeContext(*this);
     superInfomap.m_optimizer->inheritNetworkPropertiesFrom(*m_optimizer);
+    // getNewInfomapInstanceWithoutMemory builds the objective from a default Config, so unlike a
+    // sub-Infomap this one has to be told what to minimise. findHierarchicalSuperModules compares
+    // its codelength directly against this instance's index codelength, and the two are only
+    // comparable when both objectives are configured alike (#904).
+    superInfomap.m_optimizer->inheritObjectiveParametersFrom(*m_optimizer);
     return superInfomap;
   }
 
