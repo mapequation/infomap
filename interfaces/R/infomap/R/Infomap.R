@@ -1407,7 +1407,17 @@ InfomapClass <- R6::R6Class(
     #' @field swig The underlying SWIG-generated InfomapWrapper handle.
     swig = function() private$.swig,
     #' @field network The underlying Network reference.
-    network = function() private$.swig$network(),
+    #'
+    #' The handle carries a reference to its owner, so it stays valid for as long as it
+    #' is reachable. Without it the handle was a non-owning pointer into the C++ Network
+    #' held by the SWIG wrapper: once this object became unreachable the wrapper was
+    #' finalised and reads through the handle touched freed memory, returning plausible
+    #' wrong values (numNodes 11 for a three-node network) or aborting R (#900).
+    network = function() {
+      handle <- private$.swig$network()
+      attr(handle, "infomap_owner") <- private$.swig
+      handle
+    },
     #' @field codelength Total (hierarchical) codelength.
     codelength = function() private$.swig$codelength(),
     #' @field codelengths Codelength of each trial.

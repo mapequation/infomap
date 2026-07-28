@@ -20,6 +20,7 @@ from ._core import (
     InfomapLeafModuleIterator,
     InfoNode,
     _with_inferred_flow_model,
+    _with_owner,
     apply_initial_partition,
 )
 from ._core import build_info as _engine_build_info
@@ -2362,7 +2363,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
     @property
     def network(self):
         """Get the internal network."""
-        return self._core.network()
+        return _with_owner(self._core.network(), self._core)
 
     @property
     def codelength(self):

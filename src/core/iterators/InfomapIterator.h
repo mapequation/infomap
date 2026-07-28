@@ -12,6 +12,7 @@
 
 #include <vector>
 #include <map>
+#include <memory>
 #include <cmath>
 
 namespace infomap {
@@ -31,6 +32,12 @@ protected:
   unsigned int m_moduleIndex = 0;
   std::vector<unsigned int> m_path; // The tree path to current node (indexing starting from one!)
   unsigned int m_depth = 0;
+  // Keeps storage that m_current may point into alive for as long as this position
+  // exists. copy() and operator++(int) return the *base* class by value, so a derived
+  // iterator holding its own nodes is sliced -- and the surviving m_current pointed into
+  // storage that died with the temporary. Anchoring it here means the slice keeps it
+  // (#900). Empty for iterators that only point into the engine's own tree.
+  std::shared_ptr<void> m_positionStorage;
 
 public:
   InfomapIterator() = default;
@@ -213,9 +220,25 @@ public:
  */
 struct InfomapIteratorPhysical : public InfomapIterator {
 protected:
-  std::map<unsigned int, InfoNode> m_physNodes;
-  std::map<unsigned int, InfoNode>::iterator m_physIter;
+  using PhysNodes = std::map<unsigned int, InfoNode>;
+  // Shared, so a copied or sliced position keeps the very nodes it points at rather than
+  // a deep copy its iterators do not belong to: the defaulted copy left m_current and
+  // m_physIter bound to the source's map, which is why comparing a copied iterator's
+  // position against its own end() compared iterators from two different maps (#900).
+  std::shared_ptr<PhysNodes> m_physNodes;
+  PhysNodes::iterator m_physIter;
   InfomapIterator m_oldIter;
+
+  //! Fresh storage for the next leaf module, leaving any handed-out position untouched.
+  void resetPhysNodes()
+  {
+    m_physNodes = std::make_shared<PhysNodes>();
+    anchorPhysNodes();
+  }
+
+  //! Point the base's anchor at this iterator's nodes. Called again after every
+  //! assignment from a base iterator, which copies the base's empty anchor over ours.
+  void anchorPhysNodes() { m_positionStorage = m_physNodes; }
 
 public:
   InfomapIteratorPhysical() {}
@@ -272,8 +295,10 @@ public:
   InfomapLeafIteratorPhysical(InfoNode* nodePointer, int moduleIndexLevel = -1)
       : InfomapIteratorPhysical(nodePointer, moduleIndexLevel) { init(); }
 
-  InfomapLeafIteratorPhysical(const InfomapLeafIteratorPhysical& other)
-      : InfomapIteratorPhysical(other) { init(); }
+  // No init() here: a copy has to stand where the source stands. init() advances past
+  // non-leaves, so on a leaf position it is a no-op and on any other position it moves
+  // the copy somewhere the source never was (#900).
+  InfomapLeafIteratorPhysical(const InfomapLeafIteratorPhysical& other) = default;
 
   ~InfomapLeafIteratorPhysical() override = default;
   InfomapLeafIteratorPhysical(InfomapLeafIteratorPhysical&&) = default;
