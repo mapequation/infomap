@@ -59,7 +59,13 @@ im$modules
 \describe{
 \item{\code{swig}}{The underlying SWIG-generated InfomapWrapper handle.}
 
-\item{\code{network}}{The underlying Network reference.}
+\item{\code{network}}{The underlying Network reference.
+
+The handle carries a reference to its owner, so it stays valid for as long as it
+is reachable. Without it the handle was a non-owning pointer into the C++ Network
+held by the SWIG wrapper: once this object became unreachable the wrapper was
+finalised and reads through the handle touched freed memory, returning plausible
+wrong values (numNodes 11 for a three-node network) or aborting R (#900).}
 
 \item{\code{codelength}}{Total (hierarchical) codelength.}
 

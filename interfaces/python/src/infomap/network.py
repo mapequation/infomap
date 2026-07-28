@@ -29,7 +29,7 @@ import os
 import warnings
 from typing import TYPE_CHECKING, Any
 
-from ._core import Core, _with_inferred_flow_model, apply_initial_partition
+from ._core import Core, _with_inferred_flow_model, _with_owner, apply_initial_partition
 from ._logging import engine_log_routing as _engine_log_routing
 from ._logging import is_routed as _is_log_routed
 from ._network_input import add_bulk_links as _add_bulk_links
@@ -884,7 +884,7 @@ class Network(_NetworkWritersMixin):
         work identically when building onto a :class:`Network` or an
         :class:`Infomap`.
         """
-        return self._core.network()
+        return _with_owner(self._core.network(), self._core)
 
     @property
     def bipartite_start_id(self) -> int:

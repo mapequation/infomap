@@ -127,6 +127,59 @@ TEST_CASE("Tree cluster-data fixture initializes a multi-level tree [fast][core]
   infomap::test::checkRunSanity(im);
 }
 
+TEST_CASE("A physical traversal leaves the engine's tree untouched [fast][core][partition][tree]")
+{
+  // InfomapIteratorPhysical stores InfoNode *copies* of live leaves, and InfoNode's copy
+  // constructor takes the sibling pointers verbatim while ~InfoNode unlinks through them.
+  // Destroying those copies therefore wrote into the engine's own nodes on a traversal
+  // documented as read-only -- and into freed memory if a position outlived the engine
+  // (#900).
+  auto im = infomap::test::makeRunningInfomap([&](InfomapWrapper& infomap) {
+    infomap.readInputData(infomap::test::repoPath("test/fixtures/networks/states.net"));
+  });
+
+  struct Links {
+    const infomap::InfoNode* previous;
+    const infomap::InfoNode* next;
+    const infomap::InfoNode* parent;
+    const infomap::InfoNode* firstChild;
+  };
+  std::map<unsigned int, Links> before;
+  for (auto it = im->iterLeafNodes(); !it.isEnd(); ++it) {
+    const auto& node = *it;
+    before[node.stateId] = { node.previous, node.next, node.parent, node.firstChild };
+  }
+  REQUIRE(before.size() == 6);
+
+  {
+    // A full physical walk, and positions kept past the end of it.
+    std::vector<infomap::InfomapIterator> kept;
+    for (auto it = im->iterTreePhysical(); !it.isEnd(); ++it)
+      kept.push_back(it.copy());
+    CHECK(kept.size() > 0);
+    // Every kept position still resolves, and resolves to what it did when it was taken,
+    // rather than pointing into storage the source iterator dropped when it left the leaf
+    // module. Reading the values matters: a dangling pointer is still non-null, so only
+    // the sanitizer or the value catches it.
+    std::vector<unsigned int> keptPhysicalIds;
+    for (const auto& position : kept) {
+      REQUIRE(position.current() != nullptr);
+      if (position.current()->isLeaf())
+        keptPhysicalIds.push_back(position.current()->physicalId);
+    }
+    CHECK(keptPhysicalIds == std::vector<unsigned int> { 1, 2, 3, 1, 4, 5 });
+  }
+
+  for (auto it = im->iterLeafNodes(); !it.isEnd(); ++it) {
+    const auto& node = *it;
+    const auto& links = before.at(node.stateId);
+    CHECK(node.previous == links.previous);
+    CHECK(node.next == links.next);
+    CHECK(node.parent == links.parent);
+    CHECK(node.firstChild == links.firstChild);
+  }
+}
+
 TEST_CASE("A physical tree that cannot express the partition says so [fast][core][partition][parser]")
 {
   // A physical .tree has one row per (module, physical node) and no state ids, so when a

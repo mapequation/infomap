@@ -45,6 +45,19 @@ from ._bindings import run as run  # module-level engine function (CLI driver)
 from .errors import _translate_engine_errors
 
 
+def _with_owner(proxy, owner):
+    """Keep `owner` alive for as long as `proxy` is reachable.
+
+    The network accessors hand out a SWIG proxy over a C++ member of the wrapper, with
+    thisown false and no lifetime tie declared anywhere in interfaces/swig. Once the
+    owning object became unreachable the wrapper was deleted and every read through the
+    proxy was a use-after-free -- silent when the freed page still held the old values,
+    a segfault otherwise (#900).
+    """
+    proxy._infomap_owner = owner
+    return proxy
+
+
 class Core:
     def __init__(self, args):
         # Argument/config errors ("Unrecognized option: ...", option

@@ -249,7 +249,11 @@ class _LeafIterWrapper:
         while not self.it.isEnd() and not self.it.isLeaf():
             self.it.stepForward()
         if not self.it.isEnd():
-            return self.it
+            # A position, not the live cursor: returning self.it made every element of
+            # list(...) the same iterator, exhausted by the time the list was read, so
+            # collecting yielded a row of None. Copies were not self-contained until the
+            # physical iterator's nodes got shared ownership (#900).
+            return self.it.copy()
         raise StopIteration
 
 
