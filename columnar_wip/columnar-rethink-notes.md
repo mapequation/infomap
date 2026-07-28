@@ -785,3 +785,154 @@ probe/gate pattern (cheap same-objective estimate → gate the expensive leaf-le
 reusable answer to "operator X only helps some networks"; compare probes only against references
 they can't trivially dominate (an up-build *on the probe's own bottom* is a superset of the flat
 stack and always wins — the fine-blocks build is the honest reference).
+
+### F22 — Flat-first, rethought: the redundant leaf re-derivation (#891 revision, 2026-07-27)
+
+**The complaint (Daniel):** F21's flat trials bought their codelength at +22–61% wall — too much.
+The rethink started by asking *where that time actually goes*, instead of rationing the flat
+search harder.
+
+**Measurement first.** Env-gated CPU timers around each phase of `optimizeColumnar`, accumulated
+separately for hierarchical-first and flat-first trials (seed 123, `-N10 -C`, seconds per trial):
+
+| net | hier: bottom / screen / refine | flat: bottom / screen / refine / complete / flat-build |
+|---|---|---|
+| air30k | 0.37 / 0.10 / 0.16 | 0.46 / 0.09 / **0.59** / 0.14 / 0.01 |
+| air30k reg. | 0.14 / 0.13 / 0.13 | 0.29 / 0.14 / **0.60** / 0.15 / 0.01 |
+| malaria | 0.22 / 0.02 / 0.22 | 0.21 / 0.01 / 0.00 / 0.06 / 0.01 |
+| pref-25 | 0.15 / 0.03 / 0.20 | 0.18 / 0.03 / 0.04 / 0.19 / 0.01 |
+
+`completeFlatFromAggregation` — "the expensive leaf-level pipeline" the whole probe/gate exists to
+ration — is **0.14 s/trial** on air30k. The *refinement of the resulting build* is **0.59 s/trial**,
+four times as much, and the per-trial trace says it earns nothing: all five air30k flat trials
+print `build=5.393664 -> refined=5.393664` (gain 0.0000%), and four of five on reg. F21 had
+rationed the cheap half and left the expensive half unrationed.
+
+**Root cause.** `refineHierarchy`'s interior sweep starts at layer 0, and
+`refineLayerWithinGrandparent(0)` re-partitions every leaf from singletons inside its grandparent.
+On the fine-blocks bottom that pass *is* the hierarchy search — air30k `build=6.5515 -> 5.4732`,
+16.5% for 0.10 s. On a flat bottom the leaf partition is already the two-level fixpoint:
+`completeFlatFromAggregation` has just run the deferred fine-tune to convergence plus the
+merge↔retune interleave. The refine re-solves a problem whose answer it is holding, at full leaf
+cost, and reverts. `-F` has the same shape one level up via `refineBottomWithinParents`.
+
+So F21's defect was never "the flat search is expensive". It was **a flat bottom being fed to a
+refinement written for an unrefined bottom.**
+
+**Fix (30 lines, `m_bottomConverged`).** Set by `completeFlatFromAggregation`; carried by whichever
+build wins the strategy screen (`bestBottomConverged`); cleared at both entry points and when `-F`
+falls back to the fine-blocks stack. While set, `refineHierarchy` starts layer 0 clean in its dirty
+set, and `-F` skips `refineBottomWithinParents`. Interior layers *above* the bottom still refine,
+and the existing neighbour-dirty logic re-marks layer 0 whenever a refine above it is accepted — so
+the leaf re-derivation stays reachable exactly when the structure it nests in actually moved.
+
+**Cost of the feature, before and after** (vs the pre-#891 tip; interleaved same-session A/B, each
+config repeated 4–5× per binary and reported as the **minimum** observed time pooled over every
+repetition — the session carried load average 24–65 and single runs scattered by up to 10 pp, so
+the minimum is the only stable estimator. Wall and CPU agree within ~1 pp on every row; the phase
+timers above agree with these ratios too):
+
+| config | codelength Δ | base CPU → new CPU | F21 (wall) | F22 (`-C`) | F22 (`-F`) |
+|---|--:|--:|--:|--:|--:|
+| air30k | −1.32% | 3.68s → 3.92s | +39% | **+6.5%** | +11.7% |
+| air30k reg. | −1.53% | 3.52s → 4.13s | +61% | **+17.3%** | +18…21% |
+| malaria | −0.76% | 3.37s → 3.34s | +37% | **−0.9%** | +4.1% |
+| science2001 pref-25 | −2.63% | 3.26s → 3.42s | +22% | **+4.9%** | +5.7% |
+| jazz / lazega / polblogs | −0.20 / −0.28 / −0.002% | ≤0.07s (floor) | — | 0% | 0% |
+| science2001 | 0 | 3.17s → 3.22s | ±noise | +1.6% | ~0% |
+| web-NotreDame | 0 | 21.19s → 21.07s | ±noise | −0.6% | ~0% |
+| powergrid / netsci | 0 | 0.25s → 0.26s / floor | ±noise | +4% (0.01s) / 0% | ~0% |
+
+**Re-checked explicitly for "high cost, no gain" rows and there are none left**: every config the
+flat search cannot improve lands between −0.6% and +4%, and the +4% (powergrid) is one hundredth
+of a second at the measurement floor. Regularized air30k is the one config with a bill worth
+naming, and it is now genuine flat-search work — the probe's aggregation passes (+0.15 s/trial,
+expensive there because the tele/regularized corrections ride the module-level passes) plus the
+completion (+0.15 s/trial), partly offset by the refine that no longer runs. Individual
+repetitions of that row spanned +14% to +25% under load; +17% is the pooled minimum.
+
+**Per-feature attribution** (exact, `-C -N10`): flat-first trials alone carry jazz (→ exact OO
+tie), polblogs, air30k (−1.32%), reg (−1.53%), pref-25 (−2.63%) and lazega down to 6.02122; the
+winner deep repair carries **all** of malaria (7.47430 → 7.42225, −0.70%) and the last step of
+lazega (6.02122 → 6.01786, the exact OO tie). Malaria's flat trials on their own are worth only
+−0.06% — and they *reduce* its trial cost, because malaria's flat-bottom builds are two-level
+(`lvls=2`), so they skip the interior refine entirely.
+
+**The one codelength change, and what it says about F21's claim.** Regularized air30k at seed 123
+goes 5.575137 → 5.576024 (+0.016%): the single flat trial whose leaf re-derivation *did* gain
+(0.24%). Seed sweep, `-C -N10`:
+
+| seed | F21 | F22 | OO |
+|---|--:|--:|--:|
+| 123 | 5.575137 | 5.576024 | 5.575653 |
+| 234 | 5.575581 | 5.575581 | 5.573527 |
+| 345 | 5.574277 | 5.574277 | 5.573256 |
+| 456 | 5.579702 | 5.579702 | 5.574199 |
+
+It fires on **one seed in four**; on the other three the variants are bit-identical and `-C`
+already sits 0.02–0.10% *above* OO. F21's "regularized air30k beats OO" was therefore a seed-123
+artefact of that lottery ticket, and the honest claim is a tie within seed noise. ~3 s per `-N10`
+run for a 1-in-4 chance fails the marginal-trade rule; a winner-only variant would not recover it
+either (at seed 123 the *winning* trial is one where the refine gains nothing).
+
+**Verified:** `-N1` bit-identical to the pre-#891 tip on all 13 configs × {`-C`, `-C -F`} (26/26)
+*and* identical in cost (the post-trial repair correctly declines: an `-N1` winner is
+hierarchical-shaped); `-2 -C` bit-identical on all 13; `-N10` re-runs bit-identical; every `-C` /
+`-C -F` codelength identical to F21 except the reg row above.
+
+**Design lesson.** F21's probe/gate rationed the right operator for the wrong reason — it was sized
+against the flat completion, which measurement then showed to be cheap. Generalizing:
+**every refinement in this engine encodes an assumption about how converged its input is, and
+handing it a *more*-converged input than it expects is a silent, full-price no-op.** Worth checking
+the same way wherever a new bottom is introduced under an existing refinement.
+
+**F22 addendum — why the hierarchical refinements are not seeded (Daniel's question, measured).**
+The seeded-init primitive Daniel has raised repeatedly — OO's fine-tune initialisation: singletons,
+then deterministically place every unit back into its old module, then start the greedy loop — *is*
+implemented here as `seedAssignment()` (`ColumnarMapEquation.cpp:663`), and it already carries the
+`m_deferTerms` optimisation (running plogp terms rebuilt once at the end, one O(K) pass instead of
+~12 plogp per placed unit). It has four call sites: the in-trajectory descending repair (`:1143`),
+the two-level leaf fine-tune (`:1186`), `splitTopModules` (`:1309`) and `retuneLeavesWithinModules`
+(`:1456`) — **all inside the two-level search**. Neither hierarchical refinement uses it:
+`refineLayerWithinGrandparent` and `subClusterLeaves` each construct a fresh `ColumnarTwoLevel` and
+call `subOpt.optimizeTwoLevel()` with default arguments, i.e. a full from-singletons re-derivation
+that discards the partition it was handed. So the gap was real and worth measuring.
+
+Prototyped (env-gated so all variants share one binary): an optional `pass1Seed` on
+`optimizeTwoLevel` that replaces pass 1's `initPartition()` with `seedAssignment(seed)`, wired into
+both hierarchical refinements — `splitTopModules` deliberately left from-singletons, since
+from-singletons discovery is its entire purpose. Full set, `-C -N10`, CPU seconds:
+
+| net | from-singletons (skip variant) | seeded everywhere | Δ codelength | Δ CPU |
+|---|--:|--:|--:|--:|
+| web-NotreDame | 5.57279424 / 20.64s | 5.62354266 / 17.79s | **+0.91%** | −14% |
+| powergrid | 4.74907624 / 0.27s | 4.75626628 / 0.21s | **+0.15%** | −22% |
+| netsci | 4.05186752 / 0.02s | 4.05395419 / 0.02s | +0.052% | 0% |
+| science2001 | 7.83343660 / 3.19s | 7.83373138 / 2.63s | +0.004% | −18% |
+| politicalblogs | 6.74058207 / 0.07s | 6.73939588 / 0.07s | −0.018% | 0% |
+| malaria | 7.42225457 / 3.37s | 7.42225457 / 3.00s | 0 | −11% |
+| pref-25 | 8.23835056 / 3.43s | 8.23835056 / 3.23s | 0 | −6% |
+| air30k | 5.39366442 / 3.85s | 5.39365252 / 3.96s | −0.0002% | +3% |
+| air30k reg. | 5.57602419 / 4.11s | 5.57601959 / 4.42s | −0.0001% | +8% |
+
+**Verdict: seeding the hierarchical refinements is a speed/quality dial, not a free speedup.** On an
+*unrefined* fine-blocks bottom the from-singletons re-derivation is doing genuine discovery — it is
+what turns air30k's `build=6.5515` into `5.4732` (16.5%) — and seeding confines the greedy loop to
+the neighbourhood of the fine blocks it was handed. It buys 11–22% on the deep networks and pays
++0.91% on web-NotreDame for it, which is `-F` territory, not `-C` territory. (Under `-F` the same
+switch is genuinely mixed: netsci −0.108%, powergrid −0.070%, polblogs −0.018% *better* and faster,
+web-NotreDame +0.539% worse. Logged as a lead for the `-F` dial, not shipped.)
+
+**The sharp version of the question — seed the converged flat bottom instead of skipping it**
+(seeded only when `m_bottomConverged`; verified to change nothing on the other 11 configs):
+
+| config | from-singletons (#891) | **skip (shipped)** | seeded instead |
+|---|--:|--:|--:|
+| air30k | 5.393664418 / 5.28s | **5.393664418 / 3.75s** | 5.393652521 / 3.95s |
+| air30k reg. | 5.575137160 / 5.20s | **5.576024192 / 4.02s** | 5.576019591 / 4.28s |
+
+A seeded pass is the cheapest possible way to *ask* whether that layer holds anything, and the
+answer is 0.0002% / 0.0001% for +5.3% / +6.5% CPU — which is independent confirmation that the
+layer really is at its fixpoint, and by the marginal-trade rule not worth buying. The skip stays.
+Worth remembering that the seeded variant is the "insurance" option: it proves the claim per run
+instead of assuming it, for ~5–6% on the two air30k configs and nothing anywhere else.
