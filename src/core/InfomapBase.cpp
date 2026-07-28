@@ -669,11 +669,15 @@ private:
   void warnOnObjectiveOptionsNotApplied()
   {
     if (!m_infomap.m_optimizer->implementsObjectiveParameters()) {
-      // Only BiasedMapEquation carries these terms, and it is chosen only for ordinary networks.
+      // Worded from the objective, not from the input: the condition is which objective
+      // initOptimizer selected, and state, multilayer and meta-data input are the common way to
+      // select another one but not the only way -- --lossy does it on an ordinary network too, and
+      // its own validation does not reject these options. The banner above the warning names the
+      // objective in use, so the message does not have to.
       if (m_infomap.entropyBiasCorrection)
-        Console::warn(0, "--entropy-corrected has no effect on this input: the entropy bias correction is implemented for ordinary networks only, not for state, multilayer or meta-data input. The run optimizes and reports the uncorrected codelength.");
+        Console::warn(0, "--entropy-corrected has no effect on this run: the entropy bias correction is implemented by the ordinary map equation only, and this run uses a different objective. The run optimizes and reports the uncorrected codelength.");
       if (m_infomap.preferredNumberOfModules != 0)
-        Console::warn(0, "--preferred-number-of-modules has no effect on this input: the module-count preference is implemented for ordinary networks only, not for state, multilayer or meta-data input.");
+        Console::warn(0, "--preferred-number-of-modules has no effect on this run: the module-count preference is implemented by the ordinary map equation only, and this run uses a different objective.");
     }
 
     if (m_infomap.haveMetaData() && (m_infomap.haveMemory() || m_infomap.isMultilayerNetwork())) {

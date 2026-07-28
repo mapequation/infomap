@@ -1,8 +1,9 @@
 """Objective options the input's objective does not act on are warned about, not ignored.
 
 ``--entropy-corrected`` and ``--preferred-number-of-modules`` are implemented by
-``BiasedMapEquation`` only, which the engine selects for ordinary networks. State,
-multilayer and meta-data input get another objective, so those options were accepted,
+``BiasedMapEquation`` only, which the engine selects for ordinary networks. Any input that
+selects another objective -- state, multilayer and meta-data here, but also ``--lossy`` on
+an ordinary network -- leaves them inert, so those options were accepted,
 echoed in the run banner, recorded in the run metadata as active -- and never applied.
 ``--meta-data`` combined with higher-order input is the mirror case: meta-data wins the
 objective dispatch, so the run is scored without the physical-node codebook that makes it
@@ -22,8 +23,8 @@ from infomap import Infomap
 
 pytestmark = pytest.mark.fast
 
-ENTROPY_WARNING = "--entropy-corrected has no effect on this input"
-PREFERRED_WARNING = "--preferred-number-of-modules has no effect on this input"
+ENTROPY_WARNING = "--entropy-corrected has no effect on this run"
+PREFERRED_WARNING = "--preferred-number-of-modules has no effect on this run"
 META_PRECEDENCE_WARNING = "--meta-data takes precedence over higher-order input"
 
 
