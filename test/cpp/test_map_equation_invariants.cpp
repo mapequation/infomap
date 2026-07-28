@@ -1,5 +1,7 @@
 #include "TestUtils.h"
 
+#include <cmath>
+
 // Invariant tests for the map-equation objective family.
 //
 // After a search, the optimizer's *tracked* codelength (getCodelength(), updated
@@ -155,10 +157,14 @@ TEST_CASE("Super level never leaves the trial worse than its own two-level solut
   CHECK(hierarchical <= twoLevel + 1e-12);
 
   // Guard against the invariant holding for the wrong reason: it is trivially true if the
-  // correction is so weak here that both runs return the plain-map-equation solution.
+  // correction is so weak here that both runs return the same solution anyway. Stated as a
+  // magnitude rather than an ordering on purpose -- the two values come from different objectives
+  // and possibly different partitions, so neither direction is guaranteed a priori, while a gap
+  // this size can only come from an active correction (it is 35/156 = 0.2244 bits here, the
+  // correction term for the nine-module partition both runs find).
   const double uncorrected = codelengthOf("--two-level");
   INFO("uncorrected two-level=" << uncorrected);
-  CHECK(twoLevel > uncorrected);
+  CHECK(std::abs(twoLevel - uncorrected) > 0.1);
 }
 
 // Follow-ups (not reproduced here): #831 (two-level initPartition/consolidate

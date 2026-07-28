@@ -255,8 +255,11 @@ template <>
 inline void InfomapOptimizer<BiasedMapEquation>::inheritObjectiveParametersFrom(const InfomapOptimizerBase& parent)
 {
   // The super-level instance is the only one whose objective is not built from the run's own
-  // Config, so it is the only one that needs this. The parent is a BiasedMapEquation optimizer
-  // here for the same reason as above: the super objective is always this one.
+  // Config, so it is the only one that needs this. The super objective is always this one, but the
+  // parent's is not: a memory, meta-data or regularized-multilayer run has a different objective
+  // at the level above, the cast then fails, and nothing is inherited. That is the status quo for
+  // those runs -- only BiasedMapEquation implements the correction and the module-count preference
+  // at all, which is the separate open box in #904.
   if (const auto* p = dynamic_cast<const InfomapOptimizer<BiasedMapEquation>*>(&parent))
     m_objective.setObjectiveParametersFrom(p->m_objective);
 }
