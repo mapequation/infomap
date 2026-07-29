@@ -35,6 +35,7 @@
  *         (or `make`, which probes for OpenMP support)
  * Run:    ./parallel_bench [--blocks 200] [--block-size 1000] [--kin 8] [--kout 2]
  *                          [--threads 1,2,4] [--seed 1] [--verbose]
+ *         [--sweep-scaling [--warmup-sweeps 2] [--reps 15]]
  *
  * A given seed reproduces bit-for-bit within one toolchain, but not across
  * standard libraries: geometric_distribution and uniform_real_distribution are
@@ -902,6 +903,112 @@ Objective objectiveOf(Mode m)
   return (m == Mode::SeqAtlas || m == Mode::ParAtlas) ? Objective::Atlas : Objective::MapEq;
 }
 
+// ---------------------------------------------------------------------------
+// Controlled strong-scaling measurement
+// ---------------------------------------------------------------------------
+//
+// End-to-end phase times conflate two things: how fast a sweep runs, and how
+// many sweeps the search needs (concurrency changes the trajectory, so thread
+// count alters both). This measures only the first: advance to a fixed state,
+// snapshot it, then run ONE sweep from that identical state at each thread
+// count, repeated, keeping the minimum. The minimum is the right estimator
+// here because timing noise on a shared machine is one-sided -- interruptions
+// only ever add time.
+
+struct LevelSnapshot {
+  std::vector<unsigned int> module;
+  std::vector<char> dirty;
+  std::vector<double> P, Q;
+  std::vector<unsigned int> members;
+  std::vector<unsigned int> touchedStamp;
+  double qTotal = 0.0;
+};
+
+LevelSnapshot saveLevel(const Level& level)
+{
+  const unsigned int n = level.graph->n;
+  LevelSnapshot s;
+  s.module.resize(n);
+  s.dirty.resize(n);
+  s.P.resize(n);
+  s.Q.resize(n);
+  s.members.resize(n);
+  for (unsigned int i = 0; i < n; ++i) {
+    s.module[i] = level.module[i].load(std::memory_order_relaxed);
+    s.dirty[i] = level.dirty[i].load(std::memory_order_relaxed);
+    s.P[i] = level.state.P[i].load(std::memory_order_relaxed);
+    s.Q[i] = level.state.Q[i].load(std::memory_order_relaxed);
+    s.members[i] = level.state.members[i].load(std::memory_order_relaxed);
+  }
+  s.touchedStamp = level.touchedStamp;
+  s.qTotal = level.state.qTotal.load(std::memory_order_relaxed);
+  return s;
+}
+
+void restoreLevel(Level& level, const LevelSnapshot& s)
+{
+  const unsigned int n = level.graph->n;
+  for (unsigned int i = 0; i < n; ++i) {
+    level.module[i].store(s.module[i], std::memory_order_relaxed);
+    level.dirty[i].store(s.dirty[i], std::memory_order_relaxed);
+    level.state.P[i].store(s.P[i], std::memory_order_relaxed);
+    level.state.Q[i].store(s.Q[i], std::memory_order_relaxed);
+    level.state.members[i].store(s.members[i], std::memory_order_relaxed);
+  }
+  level.touchedStamp = s.touchedStamp;
+  level.state.qTotal.store(s.qTotal, std::memory_order_relaxed);
+}
+
+void sweepScaling(const Graph& g, const std::vector<int>& threads, unsigned int warmupSweeps, unsigned int reps, unsigned int seed)
+{
+  std::printf("\nControlled strong scaling: one sweep from an identical state, best of %u\n", reps);
+  std::printf("(state = %u sequential sweeps from singletons; work is identical across rows)\n\n", warmupSweeps);
+  std::printf("%-27s %8s | %10s %10s | %9s %6s | %8s\n",
+              "mode", "threads", "sweep", "vs 1 thread", "serial", "share", "moves");
+
+  for (Mode mode : { Mode::ParAtlas, Mode::ParMapSerialCommit }) {
+    const Objective obj = objectiveOf(mode);
+    Level level(g);
+    std::vector<unsigned int> order(g.n);
+    for (unsigned int u = 0; u < g.n; ++u)
+      order[u] = u;
+    std::mt19937 rng(seed);
+    std::shuffle(order.begin(), order.end(), rng);
+    {
+      LinkSums warmSums(g.n);
+      for (unsigned int k = 0; k < warmupSweeps; ++k)
+        sweepSequential(level, obj, order, warmSums);
+    }
+    const LevelSnapshot snap = saveLevel(level);
+
+    double baseline = 0.0;
+    for (int t : threads) {
+#ifdef _OPENMP
+      omp_set_num_threads(t);
+#endif
+      double best = 1e300;
+      double bestCommit = 0.0;
+      unsigned int moves = 0;
+      for (unsigned int r = 0; r < reps; ++r) {
+        restoreLevel(level, snap);
+        double commit = 0.0;
+        const SweepStats st = mode == Mode::ParAtlas
+            ? sweepParallelAtlas(level, order)
+            : sweepParallelMapSerialCommit(level, order, &commit);
+        if (st.seconds < best) {
+          best = st.seconds;
+          bestCommit = commit;
+          moves = st.moved;
+        }
+      }
+      if (baseline == 0.0)
+        baseline = best;
+      std::printf("%-27s %8d | %9.4fs %10.2fx | %8.4fs %6.1f%% | %8u\n",
+                  modeName(mode), t, best, baseline / best, bestCommit, 100.0 * bestCommit / best, moves);
+    }
+  }
+}
+
 struct RunResult {
   double level0Seconds = 0.0;
   double level0CommitSeconds = 0.0;
@@ -1049,6 +1156,9 @@ int main(int argc, char** argv)
   double kOut = 2.0;
   unsigned int seed = 1;
   unsigned int maxSweeps = 200;
+  unsigned int warmupSweeps = 2;
+  unsigned int reps = 5;
+  bool sweepScalingOnly = false;
   std::string threadList = "1,2,4";
 
   for (int i = 1; i < argc; ++i) {
@@ -1068,6 +1178,12 @@ int main(int argc, char** argv)
       threadList = next();
     else if (arg == "--verbose")
       verboseLevels = true;
+    else if (arg == "--sweep-scaling")
+      sweepScalingOnly = true;
+    else if (arg == "--warmup-sweeps")
+      warmupSweeps = static_cast<unsigned int>(std::stoul(next()));
+    else if (arg == "--reps")
+      reps = static_cast<unsigned int>(std::stoul(next()));
     else {
       std::fprintf(stderr, "unknown argument: %s\n", arg.c_str());
       return 1;
@@ -1092,6 +1208,11 @@ int main(int argc, char** argv)
   std::printf("one-level codelength: %.6f bits\n\n", g.nodeEntropy());
   std::printf("%-27s %8s | %10s %10s %8s %9s | %12s %12s %8s | %10s\n",
               "mode", "threads", "L0 time", "L0 commit", "L0 fast", "L0 sweeps", "final L_map", "final L_atlas", "modules", "|L-sumdelta|");
+
+  if (sweepScalingOnly) {
+    sweepScaling(g, threads, warmupSweeps, reps, seed + 100);
+    return 0;
+  }
 
   for (Mode mode : { Mode::SeqMap, Mode::SeqAtlas }) {
 #ifdef _OPENMP

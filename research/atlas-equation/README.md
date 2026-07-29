@@ -37,20 +37,21 @@ mass, $\ell_i = -\log_2 P_i$. The consequences:
 
 In the prototype benchmark (undirected planted partition, 200k nodes, 4
 physical cores, every mode driven to a verified single-move local optimum),
-the fused parallel sweep under the atlas equation cuts the top-level phase
-from 6.6 s to 1.0 s going from 1 to 4 threads **with sequential-grade
-bookkeeping consistency at every thread count**
-($|L - \sum\delta| \lesssim 10^{-12}$) — and with no serial section, so
-nothing in the design bounds it as cores grow. The map equation's
-propose-parallel/commit-serial scheme (implemented with Infomap's
-fast-accept path, and here exactly rather than on a stale snapshot) reaches
-2.1× over its sequential baseline while its commit pass stays flat at
-~0.35 s regardless of thread count. Under the atlas equation's own two-lock
-scheme the map equation scales but loses consistency (drift $\sim 10^{-8}$,
-i.e. it stops optimizing its own objective) — which isolates the objective,
-not the machinery, as the obstacle. Thread ratios here are end-to-end phase
-times, not parallel speedup: concurrency also changes the search trajectory
-(§7.3). Partition quality tracks the map equation
+the fused two-lock sweep keeps $|L - \sum\delta|$ at the sequential
+floating-point level ($\lesssim 10^{-12}$) **at every thread count**, and
+converges in 32 sweeps against 53 for propose-parallel/commit-serial, which
+has a sweep-start snapshot to go stale. Running the *same* two-lock scheme
+under the map equation scales just as well but drifts by $\sim 10^{-8}$ —
+it stops optimizing its own objective — which isolates the objective rather
+than the machinery as the obstacle.
+
+Be careful about the throughput half of the argument, though: measured
+properly (identical state, one sweep, best of 15), per-sweep scaling on 4
+cores is **indistinguishable between the two designs**, 3.7–4.4× for both.
+The map equation's serial commit is only ~1.4% of a sweep, which caps its
+speedup near $70\times$ asymptotically — real, but far beyond 4 cores. The
+claim this note can support on this hardware is exactness and sweep count,
+not wall-clock throughput (§7.4). Partition quality tracks the map equation
 closely on every test used here — karate club: identical partition; ring of
 cliques: identical resolution behavior up to 256 cliques; planted partitions:
 recovery differences within seed-to-seed spread — though these are small
@@ -482,16 +483,16 @@ rather than on a stale snapshot — strictly stronger than Infomap's. It also
 takes no per-sweep snapshot copies: the proposal pass precedes all commits, so
 it reads live state directly, as Infomap does.
 
-Timings are from one run with nothing else on the machine; run-to-run spread
-is roughly ±10%, so treat smaller differences as noise. **Read the thread
-ratios as end-to-end phase times, not as parallel speedup.** Concurrency
-changes the search trajectory: at higher thread counts proposals see fresher
-state, more moves land per sweep, the dirty set drains faster, and the level
-converges in fewer sweeps (par-atlas: 32 sweeps at 1 thread, 27 at 4). The
-resulting ratio can exceed the core count — par-atlas is 7.0× from 1 to 4
-threads on 4 physical cores, so at least 40% of that is trajectory, not
-parallelism. The defensible claim here is about the *shape* of the two designs
-(no serial floor vs. a serial floor), not a speedup number.
+**Read the thread columns as end-to-end phase times, not as parallel
+speedup.** Two things make them unsuitable as speedup measurements. First,
+concurrency changes the search trajectory: at higher thread counts proposals
+see fresher state and the level converges in a different number of sweeps
+(par-atlas: 32 sweeps at 1 thread, 27 at 4). Second, this machine is noisy —
+repeating a *bit-identical deterministic* run (par-atlas at 1 thread, same
+seed, same 32 sweeps, same final codelength) gave 6.63 s and 5.37 s on two
+consecutive runs, a 24% spread. Ratios computed from these columns can and do
+exceed the core count, which is by itself proof that they are not speedups.
+§7.4 measures scaling properly instead.
 
 | mode | threads | L0 time | L0 commit | fast | sweeps | final $L_M$ | modules | consistency |
 |:--|--:|--:|--:|--:|--:|--:|--:|--:|
@@ -509,25 +510,63 @@ parallelism. The defensible claim here is about the *shape* of the two designs
 
 Readings:
 
-- **par-atlas**: 6.63 s → 0.95 s from 1 to 4 threads, with consistency at
-  the sequential level for *every* thread count and final quality matching
-  seq-atlas. The 1-thread run reproduces seq-atlas exactly — the locking
-  discipline is free when uncontended. The whole sweep — proposal, commit,
-  and the verification sweeps — parallelizes; there is no serial section to
-  bound it. (See the caveat above on reading the ratio as speedup.)
+- **par-atlas**: consistency stays at the sequential floating-point level at
+  *every* thread count, and final quality matches seq-atlas. The 1-thread run
+  reproduces seq-atlas exactly — the locking discipline is free when
+  uncontended. It converges in 32 sweeps versus par-map's 53: the fused sweep
+  has no snapshot to go stale, so a proposal accepted late in a sweep already
+  accounts for everything committed earlier in it.
 - **par-map (serial commit)**: the commit pass does not shrink with threads —
-  0.36 / 0.34 / 0.35 s at 1 / 2 / 4 — so it is a floor that grows as a share
-  of the sweep (15% at 4 threads here, and it would dominate at 16+ cores).
-  Snapshot staleness costs sweeps as well: 53 to converge versus 32 for
-  par-atlas. At 4 threads it comes to 2.1× over seq-map. (The final-quality
-  gap of this mode is an artifact of this benchmark's plain Louvain pipeline
-  lacking Infomap's tuning iterations, not a claim about Infomap.)
-- **par-map-twolock**: scales like par-atlas but is unsound — the committed
-  deltas drift from the true codelength change by $10^{-8}$, four orders of
-  magnitude above everyone else's floating-point floor, and growing with
-  contention. This isolates the cause: the same commit machinery is exact
-  for the atlas equation and inexact for the map equation, so the obstacle
-  is the objective's global term, nothing else.
+  0.36 / 0.34 / 0.35 s at 1 / 2 / 4 — and snapshot staleness costs it 53
+  sweeps to par-atlas's 32. (The final-quality gap of this mode is an
+  artifact of this benchmark's plain Louvain pipeline lacking Infomap's tuning
+  iterations, not a claim about Infomap.)
+- **par-map-twolock**: the negative control. It runs at par-atlas speed but is
+  unsound — the committed deltas drift from the true codelength change by
+  $10^{-8}$, four orders of magnitude above everyone else's floating-point
+  floor, and growing with contention. This isolates the cause: the same commit
+  machinery is exact for the atlas equation and inexact for the map equation,
+  so the obstacle is the objective's global term, nothing else. (RelaxMap's
+  authors report the same outcome from the same experiment — see §9.)
+
+### 7.4 Controlled strong scaling, and what it does *not* show
+
+To separate sweep throughput from trajectory, `--sweep-scaling` advances to a
+fixed state (2 sequential sweeps from singletons), snapshots it, then runs one
+sweep from that identical state at each thread count, keeping the best of 15
+repetitions. Work is then identical across rows. Two invocations:
+
+| mode | threads | sweep | vs 1 thread | serial part | share |
+|:--|--:|--:|--:|--:|--:|
+| par-atlas   | 1 | 0.187 / 0.184 s | 1.00× | — | — |
+| par-atlas   | 2 | 0.112 / 0.092 s | 1.67× / 2.00× | — | — |
+| par-atlas   | 4 | 0.051 / 0.042 s | 3.70× / 4.42× | — | — |
+| par-map     | 1 | 0.164 / 0.198 s | 1.00× | 0.0027 / 0.0024 s | 1.6% / 1.2% |
+| par-map     | 2 | 0.082 / 0.095 s | 1.99× / 2.09× | 0.0025 / 0.0027 s | 3.0% / 2.8% |
+| par-map     | 4 | 0.039 / 0.047 s | 4.16× / 4.23× | 0.0023 / 0.0025 s | 5.8% / 5.4% |
+
+**This is the honest result, and it is narrower than a throughput claim.** On
+4 cores the two designs' per-sweep scaling is indistinguishable — both land
+between 3.7× and 4.4×, inside the measurement spread. The serial commit is
+only about 1.4% of a 1-thread sweep here, so by Amdahl it caps speedup at
+roughly $70\times$ asymptotically: ~13× of a possible 16 at 16 threads, ~34×
+of 64 at 64 threads. Real but distant. **A 4-core machine cannot demonstrate
+the throughput half of this note's motivation**, and the earlier framing of
+the serial commit as a near-term bottleneck overstated it.
+
+What the benchmark does establish, and what does not depend on core count:
+
+1. **Exactness under concurrent commits.** par-atlas keeps
+   $|L - \sum \delta|$ at the sequential floating-point level at every thread
+   count; the identical scheme under the map equation drifts by $10^{-8}$.
+   Every accepted move provably improves the objective (Theorem 3) — the
+   search cannot silently optimize something other than what it reports.
+2. **Fewer sweeps to converge**: 32 versus 53, because there is no
+   sweep-start snapshot to go stale.
+3. **No barrier and no shared scalar**, so the design's scaling ceiling is
+   set by lock contention on individual module pairs rather than by a fixed
+   serial section — which is the property that would matter at high core
+   counts, on hardware not available here.
 
 ## 8. Integration path into Infomap
 
@@ -694,9 +733,14 @@ python3 research/atlas-equation/prototype/atlas_prototype.py
 # Vectorized batch search (needs numpy + scipy; add --quick for ~45 s)
 python3 research/atlas-equation/prototype/atlas_numpy.py
 
-# Parallel benchmark (standalone, needs OpenMP)
+# Parallel benchmark, end-to-end phase times (standalone, needs OpenMP)
 make -C research/atlas-equation/bench run
+
+# Controlled strong scaling from an identical state (§7.4)
+research/atlas-equation/bench/parallel_bench --blocks 200 --block-size 1000 \
+    --threads 1,2,4 --sweep-scaling --reps 15
 ```
 
 The prototype validates its map-equation baseline against the built
-`./Infomap` binary when present (skips that section otherwise).
+`./Infomap` binary when present; pass `--require-binary` to make a missing
+binary an error rather than a skip.
