@@ -677,25 +677,23 @@ with static addresses. For the broader landscape see the map-equation survey
 by Smiljanić, Blöcker, Holmgren, Edler, Neuman & Rosvall (*ACM Computing
 Surveys*, online-first; arXiv:2311.04036).
 
-**Cross-entropy readings of map-equation codes.** The "score a walk with a
-codebook it was not built for" move is already published: *flow divergence*
-(Blöcker & Scholtes, arXiv:2401.09052) measures the excess bits from
-describing a network's flow with **another partition's** codebooks, framed
-as relative entropy; *MapSim* (Blöcker, Smiljanić, Scholtes, Rosvall,
-*Proc. First Learning on Graphs Conference*, PMLR 198:52, 2022) uses
-map-equation coding rates as node similarities; *map equation centrality*
-(Blöcker, Nieves, Rosvall, *Appl. Netw. Sci.* 7:56, 2022) reads compression
-changes as a centrality.
+**Mismatched map-equation codebooks.** One precedent is directly on point:
+*flow divergence* (Blöcker & Scholtes, arXiv:2401.09052) scores a network's
+flow with **another partition's** codebooks and frames the excess bits as a
+relative entropy. That is the same move the atlas equation makes — price
+events with a code built for a different distribution and read the penalty as
+a KL term — applied there to comparing partitions rather than to defining an
+objective.
 
 **Novelty caveat.** What appears not to have been proposed is the specific
 combination: pricing module *entries* by the module-mass distribution
 $-\log_2 P_i$, chosen so that the objective becomes additively separable,
-together with the identity $L_A = L_M + q\,D_{KL}(\hat Q \| \hat P)$. The
-ingredients are all in the literature, though — mismatched-codebook
-cross-entropy in the three papers just cited, and partition-cost terms in
-the 2007 two-part MDL and in the SBM/MDL line (below). Any publication claim
-needs a careful check against those; the citations here were assembled from
-search metadata rather than from reading every paper end to end.
+together with the identity $L_A = L_M + q\,D_{KL}(\hat Q \| \hat P)$. Both
+ingredients have precedent, though — the mismatched-codebook relative entropy
+in flow divergence, and explicit partition-cost terms in the 2007 two-part
+MDL and in the SBM/MDL line (§10). Any publication claim needs a careful
+check against those; the citations here were assembled from search metadata
+rather than from reading every paper end to end.
 
 ## 10. Open questions
 
