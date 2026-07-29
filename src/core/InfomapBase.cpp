@@ -724,8 +724,46 @@ private:
     if (zeroFlowIsExpected)
       return;
 
+    checkNoNegativeFlow();
+
     if (std::abs(sumNodeFlow - 1.0) > 1e-10)
       Console::warn(0, "Total flow on nodes is {:g}, not 1. The reported codelength is scaled accordingly.", sumNodeFlow);
+  }
+
+  // A visit rate and a boundary-crossing rate are probabilities, so a negative one leaves every
+  // codelength downstream meaningless -- and it does not announce itself: plogp of a negative
+  // flow is not a number, but where the negative terms cancel the map equation quietly charges
+  // too little for a boundary that exists. The bipartite flow adjustment used to leave uncoded
+  // feature nodes at flow 0 with negative enter/exit flow, and the two-level index codelength
+  // came out at 1.1e-16 -- no cost at all for entering either of two modules (#957). An error
+  // rather than a warning: there is no reading of the map equation under which this is a result.
+  void checkNoNegativeFlow() const
+  {
+    // Not an exact zero bound: the flow models accumulate, so a value a few epsilons below zero
+    // is rounding, not a broken distribution.
+    constexpr double tolerance = -1e-10;
+
+    for (const auto* leafNode : m_infomap.leafNodes()) {
+      const auto& data = leafNode->data;
+      const char* quantity = data.flow < tolerance
+          ? "flow"
+          : data.enterFlow < tolerance ? "enter flow"
+          : data.exitFlow < tolerance  ? "exit flow"
+                                       : nullptr;
+      if (quantity == nullptr)
+        continue;
+
+      throw InfomapError(ExitCode::InternalError,
+                         fmt::format(FMT_STRING("Negative {} on node {}: flow {:g}, enter flow {:g}, exit flow {:g}. "
+                                                "These are probabilities, so no codelength is defined. This is a bug in the "
+                                                "flow calculation for this combination of input and flow model, not something "
+                                                "the input can be wrong about."),
+                                     quantity,
+                                     leafNode->stateId,
+                                     data.flow,
+                                     data.enterFlow,
+                                     data.exitFlow));
+    }
   }
 
   void releaseInputLinksIfCli()
