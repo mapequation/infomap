@@ -10,6 +10,8 @@
 #ifndef COLUMNAR_MAP_EQUATION_H_
 #define COLUMNAR_MAP_EQUATION_H_
 
+#include "ColumnarLevel.h"
+
 #include <functional>
 #include <vector>
 #include <cstddef>
@@ -185,18 +187,10 @@ private:
 class ColumnarTwoLevel {
 public:
   // One aggregation level's working state (units = leaves, then modules, ...).
-  // teleFlow/teleWeight are the per-unit recorded-teleportation aggregates (0
-  // for the base flow model); they sum under aggregation like flow, so a unit's
-  // module-level teleport enter/exit is a pure function of its members.
-  struct Level {
-    int n = 0;
-    std::vector<double> flow, enter, exit;
-    std::vector<double> teleFlow, teleWeight;
-    std::vector<int> outStart, outTarget;
-    std::vector<double> outFlow;
-    std::vector<int> inStart, inTarget;
-    std::vector<double> inFlow;
-  };
+  // Defined at namespace scope in ColumnarLevel.h so a header that only holds a
+  // leaf level — InfomapBase, which owns the native columnar leaf input — does
+  // not have to include this one.
+  using Level = ColumnarLevel;
 
   // Add a composable objective correction (ownership transferred). No
   // corrections = base map equation. Corrections sum into the codelength.
@@ -214,7 +208,7 @@ public:
   // Number of tree levels currently in the stacked hierarchy (0 = leaves).
   unsigned int hierNumLevels() const { return static_cast<unsigned int>(m_hierLevels.size()); }
   // Unit count at a stacked level (level 0 = leaves, 1.. = module levels).
-  int hierLevelSize(int level) const { return m_hierLevels[level].n; }
+  int hierLevelSize(int level) const { return hierLevel(level).n; }
   int numLeaves() const { return m_nLeaves; }
   // The leaf's current bottom (level-1) module id.
   int hierLeafModule(int leaf) const { return m_hierAssign[0][leaf]; }
@@ -231,7 +225,17 @@ public:
   // sub-optimizers fold in the same all-to-all teleport term (the level already
   // carries per-unit teleFlow/teleWeight); globalTotalTeleFlow is the whole
   // network's teleport flow, NOT the sub-network's local sum.
-  void buildFromLevel(const Level& level, bool undirected, unsigned long seed, double exitNetworkFlow = 0.0, bool recordedTeleport = false, double globalTotalTeleFlow = 0.0);
+  // Takes the level by value so a caller with a dead local can hand over its
+  // storage (std::move) instead of paying a copy of the whole CSR.
+  void buildFromLevel(Level level, bool undirected, unsigned long seed, double exitNetworkFlow = 0.0, bool recordedTeleport = false, double globalTotalTeleFlow = 0.0);
+
+  // Same, but the leaf level stays owned by the caller and is only read through
+  // (no copy). Used for the native columnar leaf input, which InfomapBase builds
+  // once from the network and reuses across trials: the leaf CSR is the single
+  // largest allocation in a run, so each trial borrows it instead of duplicating
+  // it. The caller MUST keep `level` alive, and unchanged, for this optimizer's
+  // whole lifetime — the leaf level is immutable during a search.
+  void buildFromBorrowedLevel(const Level& level, bool undirected, unsigned long seed, double exitNetworkFlow = 0.0, bool recordedTeleport = false, double globalTotalTeleFlow = 0.0);
 
   // Run repeated aggregation (Louvain-style) and return the two-level codelength
   // of the resulting leaves -> top-modules partition. maxAggPasses > 0 stops the
@@ -520,8 +524,53 @@ private:
   // codelength (0 for the base objective, i.e. no corrections).
   double objectiveCorrection() const;
 
-  Level m_leaf0; // immutable leaf network
-  Level m_lvl;
+  // --- The leaf network and the active level ---
+  // Both are read-only for the whole search: nothing writes into a level's
+  // columns after it is built (aggregation produces a *new* level). The leaf
+  // level costs 24 B per link, so it exists exactly once per run and everything
+  // that needs it points at it rather than copying it:
+  //
+  //   leaf0()  the immutable leaf network — m_leaf0Owned when this optimizer
+  //            built it (buildFromLeaves / buildFromLevel), or the caller's
+  //            level when it was borrowed (buildFromBorrowedLevel).
+  //   lvl()    the level the move loop is currently working on — aliases the
+  //            leaf network while the units are leaves, and m_lvlOwned once
+  //            aggregation has produced module levels.
+  //
+  // Before this indirection each of these was a full copy of the leaf CSR, and a
+  // trial held up to four of them at once (the caller's input, m_leaf0, m_lvl and
+  // m_hierLevels[0], plus the saved-stack copies).
+  Level m_leaf0Owned;
+  const Level* m_leaf0Ptr = nullptr;
+  Level m_lvlOwned;
+  const Level* m_lvlPtr = nullptr;
+
+  // Shared tail of the three build entries: point the leaf network at `leaf`
+  // (owned or borrowed) and derive the per-leaf context from it.
+  void initLeafContext(const Level* leaf, bool undirected, unsigned long seed, double exitNetworkFlow, bool recordedTeleport, double globalTotalTeleFlow);
+
+  const Level& leaf0() const { return *m_leaf0Ptr; }
+  const Level& lvl() const { return *m_lvlPtr; }
+  // Make the leaf network the active level (no copy).
+  void activateLeafLevel() { m_lvlPtr = m_leaf0Ptr; }
+  // Take ownership of a derived (aggregated / sub-) level as the active one.
+  void activateOwnedLevel(Level&& level)
+  {
+    m_lvlOwned = std::move(level);
+    m_lvlPtr = &m_lvlOwned;
+  }
+  // Copy a caller-owned level in as the active one; free when it is the leaf
+  // network, which is aliased instead.
+  void activateLevelCopy(const Level& level)
+  {
+    if (&level == m_leaf0Ptr) {
+      activateLeafLevel();
+      return;
+    }
+    m_lvlOwned = level;
+    m_lvlPtr = &m_lvlOwned;
+  }
+
   std::vector<int> m_module; // unit -> module id
   std::vector<double> m_mFlow, m_mEnter, m_mExit;
   // Per-module recorded-teleport aggregates (link-independent), tracked only when
@@ -575,10 +624,17 @@ private:
   std::vector<double> m_leafTeleFlow;
   std::vector<double> m_leafTeleWeight;
 
-  // Stacked hierarchy after optimizeHierarchical: m_hierLevels[0] = leaves,
-  // [1] = first module level, ... ; m_hierAssign[k] maps a level-k unit to its
-  // level-(k+1) parent.
+  // Stacked hierarchy after optimizeHierarchical: level 0 = leaves, [1] = first
+  // module level, ... ; m_hierAssign[k] maps a level-k unit to its level-(k+1)
+  // parent.
+  //
+  // Level 0 is always the leaf network, and nothing ever writes to it (every
+  // rebuild targets index >= 1), so slot 0 stays an empty placeholder and reads
+  // go through hierLevel(), which routes level 0 to leaf0(). That keeps indices
+  // and size() unchanged while making the stack — and every save/restore copy of
+  // it — free of the leaf CSR.
   std::vector<Level> m_hierLevels;
+  const Level& hierLevel(int k) const { return k == 0 ? leaf0() : m_hierLevels[k]; }
   std::vector<std::vector<int>> m_hierAssign;
 };
 

@@ -395,7 +395,9 @@ void ColumnarTwoLevel::buildFromLeaves(const std::vector<InfoNode*>& leafNodes, 
   for (int i = 0; i < m_nLeaves; ++i)
     leafId[leafNodes[i]] = i;
 
-  Level& L = m_leaf0;
+  Level& L = m_leaf0Owned;
+  m_leaf0Ptr = &m_leaf0Owned;
+  m_lvlPtr = &m_leaf0Owned;
   L.n = m_nLeaves;
   L.flow.resize(m_nLeaves);
   L.enter.resize(m_nLeaves);
@@ -463,30 +465,46 @@ void ColumnarTwoLevel::buildFromLeaves(const std::vector<InfoNode*>& leafNodes, 
   }
 }
 
-void ColumnarTwoLevel::buildFromLevel(const Level& level, bool undirected, unsigned long seed, double exitNetworkFlow, bool recordedTeleport, double globalTotalTeleFlow)
+void ColumnarTwoLevel::buildFromLevel(Level level, bool undirected, unsigned long seed, double exitNetworkFlow, bool recordedTeleport, double globalTotalTeleFlow)
+{
+  m_leaf0Owned = std::move(level);
+  initLeafContext(&m_leaf0Owned, undirected, seed, exitNetworkFlow, recordedTeleport, globalTotalTeleFlow);
+}
+
+void ColumnarTwoLevel::buildFromBorrowedLevel(const Level& level, bool undirected, unsigned long seed, double exitNetworkFlow, bool recordedTeleport, double globalTotalTeleFlow)
+{
+  // No copy: the caller owns `level` and keeps it alive and unchanged (see the
+  // header contract). Everything below reads the leaf network through leaf0().
+  initLeafContext(&level, undirected, seed, exitNetworkFlow, recordedTeleport, globalTotalTeleFlow);
+}
+
+void ColumnarTwoLevel::initLeafContext(const Level* leaf, bool undirected, unsigned long seed, double exitNetworkFlow, bool recordedTeleport, double globalTotalTeleFlow)
 {
   using infomath::plogp;
   m_undirected = undirected;
   m_seed = seed;
   m_exitNetworkFlow = exitNetworkFlow;
-  m_nLeaves = level.n;
-  m_leaf0 = level;
-  m_leafFlow = level.flow;
+  m_leaf0Ptr = leaf;
+  // Until a search activates a level explicitly, the active level is the leaf
+  // network — never a null pointer.
+  m_lvlPtr = leaf;
+  m_nLeaves = leaf->n;
+  m_leafFlow = leaf->flow;
   // Inherit the GLOBAL teleport context (the level already carries per-unit
   // teleFlow/teleWeight; the total stays the whole network's, not this level's).
   m_recordedTeleport = recordedTeleport;
   m_totalTeleFlow = globalTotalTeleFlow;
-  m_leafTeleFlow = level.teleFlow;
-  m_leafTeleWeight = level.teleWeight;
+  m_leafTeleFlow = leaf->teleFlow;
+  m_leafTeleWeight = leaf->teleWeight;
   m_leafNodeFlow_log_nodeFlow = 0.0;
-  for (double f : level.flow)
+  for (double f : leaf->flow)
     m_leafNodeFlow_log_nodeFlow += plogp(f);
 }
 
 void ColumnarTwoLevel::initPartition()
 {
   using infomath::plogp;
-  const int n = m_lvl.n;
+  const int n = lvl().n;
   m_module.resize(n);
   m_mFlow.resize(n);
   m_mEnter.resize(n);
@@ -507,18 +525,18 @@ void ColumnarTwoLevel::initPartition()
   m_flow_log_flow = 0.0;
   for (int i = 0; i < n; ++i) {
     m_module[i] = i;
-    m_mFlow[i] = m_lvl.flow[i];
-    m_mEnter[i] = m_lvl.enter[i];
-    m_mExit[i] = m_lvl.exit[i];
-    double enter = m_lvl.enter[i];
-    double exit = m_lvl.exit[i];
+    m_mFlow[i] = lvl().flow[i];
+    m_mEnter[i] = lvl().enter[i];
+    m_mExit[i] = lvl().exit[i];
+    double enter = lvl().enter[i];
+    double exit = lvl().exit[i];
     if (m_recordedTeleport) {
-      m_mTeleFlow[i] = m_lvl.teleFlow[i];
-      m_mTeleWeight[i] = m_lvl.teleWeight[i];
-      enter += moduleTeleEnter(m_lvl.teleFlow[i], m_lvl.teleWeight[i]);
-      exit += moduleTeleExit(m_lvl.teleFlow[i], m_lvl.teleWeight[i]);
+      m_mTeleFlow[i] = lvl().teleFlow[i];
+      m_mTeleWeight[i] = lvl().teleWeight[i];
+      enter += moduleTeleEnter(lvl().teleFlow[i], lvl().teleWeight[i]);
+      exit += moduleTeleExit(lvl().teleFlow[i], lvl().teleWeight[i]);
     }
-    m_flow_log_flow += plogp(m_lvl.flow[i] + exit);
+    m_flow_log_flow += plogp(lvl().flow[i] + exit);
     m_enter_log_enter += plogp(enter);
     m_exit_log_exit += plogp(exit);
     m_enterFlow += enter;
@@ -561,25 +579,25 @@ void ColumnarTwoLevel::moveUnit(int u, int newMod)
     return;
 
   double dEnterOld = 0.0, dExitOld = 0.0, dEnterNew = 0.0, dExitNew = 0.0;
-  for (int k = m_lvl.outStart[u]; k < m_lvl.outStart[u + 1]; ++k) {
-    const int m = m_module[m_lvl.outTarget[k]];
+  for (int k = lvl().outStart[u]; k < lvl().outStart[u + 1]; ++k) {
+    const int m = m_module[lvl().outTarget[k]];
     if (m == cMod)
-      dExitOld += m_lvl.outFlow[k];
+      dExitOld += lvl().outFlow[k];
     else if (m == newMod)
-      dExitNew += m_lvl.outFlow[k];
+      dExitNew += lvl().outFlow[k];
   }
-  for (int k = m_lvl.inStart[u]; k < m_lvl.inStart[u + 1]; ++k) {
-    const int m = m_module[m_lvl.inTarget[k]];
+  for (int k = lvl().inStart[u]; k < lvl().inStart[u + 1]; ++k) {
+    const int m = m_module[lvl().inTarget[k]];
     if (m == cMod)
-      dEnterOld += m_lvl.inFlow[k];
+      dEnterOld += lvl().inFlow[k];
     else if (m == newMod)
-      dEnterNew += m_lvl.inFlow[k];
+      dEnterNew += lvl().inFlow[k];
   }
   const double deltaOld = dEnterOld + dExitOld;
   const double deltaNew = dEnterNew + dExitNew;
-  const double curEnter = m_lvl.enter[u];
-  const double curExit = m_lvl.exit[u];
-  const double curFlow = m_lvl.flow[u];
+  const double curEnter = lvl().enter[u];
+  const double curExit = lvl().exit[u];
+  const double curFlow = lvl().flow[u];
 
   if (!m_deferTerms) {
     removeModuleTerms(cMod);
@@ -599,7 +617,7 @@ void ColumnarTwoLevel::moveUnit(int u, int newMod)
   m_mExit[newMod] -= deltaNew;
 
   if (m_recordedTeleport) {
-    const double tfu = m_lvl.teleFlow[u], twu = m_lvl.teleWeight[u];
+    const double tfu = lvl().teleFlow[u], twu = lvl().teleWeight[u];
     m_mTeleFlow[cMod] -= tfu;
     m_mTeleWeight[cMod] -= twu;
     m_mTeleFlow[newMod] += tfu;
@@ -626,7 +644,7 @@ void ColumnarTwoLevel::rebuildRunningTerms()
   m_enter_log_enter = 0.0;
   m_exit_log_exit = 0.0;
   m_flow_log_flow = 0.0;
-  const int n = m_lvl.n;
+  const int n = lvl().n;
   for (int m = 0; m < n; ++m) {
     if (m_mMembers[m] == 0)
       continue;
@@ -681,13 +699,13 @@ void ColumnarTwoLevel::seedAssignment(const std::vector<int>& assign)
   // end — one O(K) plogp pass instead of ~12 plogp per placed unit.
   m_deferTerms = true;
   initPartition();
-  for (int u = 0; u < m_lvl.n; ++u)
+  for (int u = 0; u < lvl().n; ++u)
     moveUnit(u, assign[u]);
   m_deferTerms = false;
   rebuildRunningTerms();
   // Rebuild the empty-module list for the subsequent optimizing move loop.
   m_emptyModules.clear();
-  for (int m = 0; m < m_lvl.n; ++m)
+  for (int m = 0; m < lvl().n; ++m)
     if (m_mMembers[m] == 0)
       m_emptyModules.push_back(m);
 }
@@ -695,7 +713,7 @@ void ColumnarTwoLevel::seedAssignment(const std::vector<int>& assign)
 unsigned int ColumnarTwoLevel::moveLoop()
 {
   using infomath::plogp;
-  const int n = m_lvl.n;
+  const int n = lvl().n;
 
   std::mt19937_64 rng(m_seed + 0x9e3779b97f4a7c15ULL * static_cast<unsigned long long>(n));
   std::vector<int> order(n);
@@ -755,24 +773,24 @@ unsigned int ColumnarTwoLevel::moveLoop()
         if (dEnter[m] == 0.0 && dExit[m] == 0.0)
           touched.push_back(m);
       };
-      for (int k = m_lvl.outStart[u]; k < m_lvl.outStart[u + 1]; ++k) {
-        const int m = m_module[m_lvl.outTarget[k]];
+      for (int k = lvl().outStart[u]; k < lvl().outStart[u + 1]; ++k) {
+        const int m = m_module[lvl().outTarget[k]];
         touch(m);
-        dExit[m] += m_lvl.outFlow[k];
+        dExit[m] += lvl().outFlow[k];
       }
-      for (int k = m_lvl.inStart[u]; k < m_lvl.inStart[u + 1]; ++k) {
-        const int m = m_module[m_lvl.inTarget[k]];
+      for (int k = lvl().inStart[u]; k < lvl().inStart[u + 1]; ++k) {
+        const int m = m_module[lvl().inTarget[k]];
         touch(m);
-        dEnter[m] += m_lvl.inFlow[k];
+        dEnter[m] += lvl().inFlow[k];
       }
       // Ensure own module is a candidate (the "don't move" option).
       if (dEnter[cMod] == 0.0 && dExit[cMod] == 0.0)
         touched.push_back(cMod);
 
       const double deltaOld = dEnter[cMod] + dExit[cMod];
-      const double curEnter = m_lvl.enter[u];
-      const double curExit = m_lvl.exit[u];
-      const double curFlow = m_lvl.flow[u];
+      const double curEnter = lvl().enter[u];
+      const double curExit = lvl().exit[u];
+      const double curFlow = lvl().flow[u];
 
       int bestMod = cMod;
       double bestDelta = 0.0;
@@ -806,14 +824,14 @@ unsigned int ColumnarTwoLevel::moveLoop()
       // plogp per candidate on the base path, 6 of 12 on the recorded-teleport
       // path. Per-candidate math below is unchanged, so results stay bit-exact.
       const bool tele = m_recordedTeleport;
-      const double tfu = tele ? m_lvl.teleFlow[u] : 0.0;
-      const double twu = tele ? m_lvl.teleWeight[u] : 0.0;
+      const double tfu = tele ? lvl().teleFlow[u] : 0.0;
+      const double twu = tele ? lvl().teleWeight[u] : 0.0;
       const OldSideTerms oldSide = tele
-          ? OldSideTerms{}
+          ? OldSideTerms {}
           : hoistOldSide(curEnter, curExit, curFlow, m_mEnter[cMod], m_mExit[cMod], m_mFlow[cMod], deltaOld);
       const TeleOldSideTerms teleOldSide = tele
           ? hoistOldSideTele(curEnter, curExit, curFlow, tfu, twu, m_mEnter[cMod], m_mExit[cMod], m_mFlow[cMod], m_mTeleFlow[cMod], m_mTeleWeight[cMod], m_totalTeleFlow, deltaOld)
-          : TeleOldSideTerms{};
+          : TeleOldSideTerms {};
       for (int m : touched) {
         if (m == cMod)
           continue;
@@ -891,10 +909,10 @@ unsigned int ColumnarTwoLevel::moveLoop()
         ++numMoved;
 
         // Mark neighbours dirty.
-        for (int k = m_lvl.outStart[u]; k < m_lvl.outStart[u + 1]; ++k)
-          dirty[m_lvl.outTarget[k]] = 1;
-        for (int k = m_lvl.inStart[u]; k < m_lvl.inStart[u + 1]; ++k)
-          dirty[m_lvl.inTarget[k]] = 1;
+        for (int k = lvl().outStart[u]; k < lvl().outStart[u + 1]; ++k)
+          dirty[lvl().outTarget[k]] = 1;
+        for (int k = lvl().inStart[u]; k < lvl().inStart[u + 1]; ++k)
+          dirty[lvl().inTarget[k]] = 1;
       } else {
         dirty[u] = 0;
       }
@@ -919,7 +937,7 @@ unsigned int ColumnarTwoLevel::moveLoop()
 int ColumnarTwoLevel::consolidateToNextLevel()
 {
   // Compact module ids present in m_module -> [0, K).
-  const int n = m_lvl.n;
+  const int n = lvl().n;
   std::vector<int> remap(n, -1);
   int K = 0;
   for (int i = 0; i < n; ++i) {
@@ -953,14 +971,14 @@ int ColumnarTwoLevel::consolidateToNextLevel()
 
   // Aggregate current-level out-edges into module-module edges.
   std::unordered_map<long long, double> edgeMap;
-  edgeMap.reserve(m_lvl.outTarget.size());
+  edgeMap.reserve(lvl().outTarget.size());
   for (int a = 0; a < n; ++a) {
     const int ma = remap[m_module[a]];
-    for (int k = m_lvl.outStart[a]; k < m_lvl.outStart[a + 1]; ++k) {
-      const int mb = remap[m_module[m_lvl.outTarget[k]]];
+    for (int k = lvl().outStart[a]; k < lvl().outStart[a + 1]; ++k) {
+      const int mb = remap[m_module[lvl().outTarget[k]]];
       if (ma == mb)
         continue;
-      edgeMap[static_cast<long long>(ma) * K + mb] += m_lvl.outFlow[k];
+      edgeMap[static_cast<long long>(ma) * K + mb] += lvl().outFlow[k];
     }
   }
   std::vector<int> outDeg(K, 0), inDeg(K, 0);
@@ -998,7 +1016,7 @@ int ColumnarTwoLevel::consolidateToNextLevel()
   for (int i = 0; i < m_nLeaves; ++i)
     m_leafTop[i] = remap[m_module[m_leafTop[i]]];
 
-  m_lvl = std::move(next);
+  activateOwnedLevel(std::move(next));
   return K;
 }
 
@@ -1008,7 +1026,7 @@ double ColumnarTwoLevel::optimizeTwoLevel(unsigned int maxAggPasses, bool doFine
   // (and any fine-tune) operate on leaves; aggregation passes operate on
   // modules, where the module-move-capable corrections stay active through
   // their per-unit aggregates (setUnits below) and the rest drop out.
-  m_lvl = m_leaf0;
+  activateLeafLevel();
   m_leafMoveLoop = true;
   m_seededPhase = false; // aggregation starts from singletons
   // Defensive: restore leaf indexing in case a prior optimize was interrupted
@@ -1021,7 +1039,7 @@ double ColumnarTwoLevel::optimizeTwoLevel(unsigned int maxAggPasses, bool doFine
 
   double bestCodelength = std::numeric_limits<double>::infinity();
   std::vector<int> bestTop = m_leafTop;
-  unsigned int bestK = static_cast<unsigned int>(m_lvl.n);
+  unsigned int bestK = static_cast<unsigned int>(lvl().n);
 
   // One optimizing pass over the current m_lvl units: move loop, compose the
   // (compacted) leaf -> module map, and score by the augmented objective (base
@@ -1036,9 +1054,9 @@ double ColumnarTwoLevel::optimizeTwoLevel(unsigned int maxAggPasses, bool doFine
   auto runPass = [&](std::vector<int>& newTop, int& c) -> double {
     initPartition();
     moveLoop();
-    std::vector<int> remap(m_lvl.n, -1);
+    std::vector<int> remap(lvl().n, -1);
     c = 0;
-    for (int i = 0; i < m_lvl.n; ++i)
+    for (int i = 0; i < lvl().n; ++i)
       if (remap[m_module[i]] == -1)
         remap[m_module[i]] = c++;
     newTop.assign(m_nLeaves, 0);
@@ -1068,7 +1086,7 @@ double ColumnarTwoLevel::optimizeTwoLevel(unsigned int maxAggPasses, bool doFine
   // is the plain leaf loop, so the blocks are identical for every
   // aggregation strategy.
   m_leafBlocks = bestTop;
-  const bool aggregate = bestK > 1 && static_cast<int>(bestK) != m_lvl.n
+  const bool aggregate = bestK > 1 && static_cast<int>(bestK) != lvl().n
       && !(maxAggPasses != 0 && pass >= maxAggPasses);
 
   if (aggregate) {
@@ -1093,19 +1111,32 @@ double ColumnarTwoLevel::optimizeTwoLevel(unsigned int maxAggPasses, bool doFine
 
     m_moduleCorrActive = !unitCorr.empty();
     for (auto* cp : unitCorr)
-      cp->setUnits(m_leafTop, m_lvl.n);
+      cp->setUnits(m_leafTop, lvl().n);
 
     // Retain the aggregation trajectory (unit level + leaf composition per
     // pass) for the descending repair below. Only with module-move-capable
     // corrections: the repair is theirs, and base networks pay nothing.
+    // Whichever pass runs on the leaf network goes in as an empty placeholder,
+    // read back through trajLevel(), so the trajectory never holds a copy of the
+    // leaf CSR. Which slot that is depends on when the module corrections became
+    // active, so record it rather than assuming slot 0.
     std::vector<Level> trajLevels;
     std::vector<std::vector<int>> trajComp;
+    int trajLeafSlot = -1;
+    auto trajLevel = [&](int k) -> const Level& { return k == trajLeafSlot ? leaf0() : trajLevels[k]; };
 
     while (true) {
       pollInterrupt();
       ++pass;
       if (m_moduleCorrActive) {
-        trajLevels.push_back(m_lvl);
+        // The leaf network goes in as a placeholder (trajLevel reads it from
+        // leaf0()); aggregated levels are copied as before.
+        if (&lvl() == &leaf0()) {
+          trajLeafSlot = static_cast<int>(trajLevels.size());
+          trajLevels.emplace_back();
+        } else {
+          trajLevels.push_back(lvl());
+        }
         trajComp.push_back(m_leafTop);
       }
       std::vector<int> newTop;
@@ -1116,7 +1147,7 @@ double ColumnarTwoLevel::optimizeTwoLevel(unsigned int maxAggPasses, bool doFine
       bestTop = std::move(newTop);
       bestCodelength = L;
       bestK = static_cast<unsigned int>(c);
-      if (c <= 1 || c == m_lvl.n)
+      if (c <= 1 || c == lvl().n)
         break;
       if (maxAggPasses != 0 && pass >= maxAggPasses)
         break; // stop early: keep this (finer) level as the building-block bottom
@@ -1124,7 +1155,7 @@ double ColumnarTwoLevel::optimizeTwoLevel(unsigned int maxAggPasses, bool doFine
       // The next pass moves the new aggregated units (m_leafTop was just
       // remapped by the consolidation to leaf -> new unit).
       for (auto* cp : unitCorr)
-        cp->setUnits(m_leafTop, m_lvl.n);
+        cp->setUnits(m_leafTop, lvl().n);
     }
 
     // Descending in-trajectory repair (#889): each consolidation makes the
@@ -1144,11 +1175,11 @@ double ColumnarTwoLevel::optimizeTwoLevel(unsigned int maxAggPasses, bool doFine
     for (int k = static_cast<int>(trajLevels.size()) - 2; k >= 0; --k) {
       pollInterrupt();
       const std::vector<int>& comp = trajComp[k];
-      const int nU = trajLevels[k].n;
+      const int nU = trajLevel(k).n;
       std::vector<int> unitParent(nU, -1);
       for (int i = 0; i < m_nLeaves; ++i)
         unitParent[comp[i]] = bestTop[i];
-      m_lvl = trajLevels[k];
+      activateLevelCopy(trajLevel(k));
       for (auto* cp : unitCorr)
         cp->setUnits(comp, nU);
       m_seededPhase = true;
@@ -1192,7 +1223,7 @@ double ColumnarTwoLevel::optimizeTwoLevel(unsigned int maxAggPasses, bool doFine
   // interior levels; here it closes the gap the OO fine/coarse tune closes.
   while (true) {
     pollInterrupt();
-    m_lvl = m_leaf0;
+    activateLeafLevel();
     m_leafMoveLoop = true; // fine-tune re-optimizes leaves
     m_seededPhase = true; // seeded at the current partition
     seedAssignment(m_leafTop);
@@ -1202,9 +1233,9 @@ double ColumnarTwoLevel::optimizeTwoLevel(unsigned int maxAggPasses, bool doFine
     const double augL = m_codelength + m_lastCorrection;
     if (augL >= bestCodelength - kMinImprovement)
       break;
-    std::vector<int> remap(m_lvl.n, -1);
+    std::vector<int> remap(lvl().n, -1);
     int c = 0;
-    for (int i = 0; i < m_lvl.n; ++i)
+    for (int i = 0; i < lvl().n; ++i)
       if (remap[m_module[i]] == -1)
         remap[m_module[i]] = c++;
     for (int i = 0; i < m_nLeaves; ++i)
@@ -1223,9 +1254,9 @@ double ColumnarTwoLevel::optimizeTwoLevelStack()
   // (codelength, coarsening, toNodePaths) apply.
   m_hierLevels.clear();
   m_hierAssign.clear();
-  m_hierLevels.push_back(m_leaf0);
+  m_hierLevels.emplace_back(); // level 0 is the leaf network; see hierLevel()
   m_hierAssign.push_back(m_leafTop);
-  m_hierLevels.push_back(aggregateLevel(m_leaf0, m_leafTop, static_cast<int>(m_numTopModules), m_undirected));
+  m_hierLevels.push_back(aggregateLevel(leaf0(), m_leafTop, static_cast<int>(m_numTopModules), m_undirected));
 
   double L = hierarchicalCodelengthFromStack();
   // Module-merge coarsening within the root: a no-op for the base objective
@@ -1268,9 +1299,9 @@ double ColumnarTwoLevel::completeFlatFromAggregation(std::vector<int> aggTop, in
   m_numTopModules = static_cast<unsigned int>(aggK);
   m_hierLevels.clear();
   m_hierAssign.clear();
-  m_hierLevels.push_back(m_leaf0);
+  m_hierLevels.emplace_back(); // level 0 is the leaf network; see hierLevel()
   m_hierAssign.push_back(m_leafTop);
-  m_hierLevels.push_back(aggregateLevel(m_leaf0, m_leafTop, aggK, m_undirected));
+  m_hierLevels.push_back(aggregateLevel(leaf0(), m_leafTop, aggK, m_undirected));
 
   m_bottomConverged = true;
   double L = hierarchicalCodelengthFromStack();
@@ -1334,7 +1365,7 @@ int ColumnarTwoLevel::splitTopModules(double& L, bool allowSingletons)
   if (unitCorr.empty())
     return 0;
 
-  const int K = m_hierLevels[1].n;
+  const int K = hierLevel(1).n;
 
   // Recombination: a seeded module-level move loop over the pieces — the
   // module-scale analog of the leaf fine-tune. Corrections act on aggregated
@@ -1345,7 +1376,7 @@ int ColumnarTwoLevel::splitTopModules(double& L, bool allowSingletons)
     const int nPieces = static_cast<int>(pieceParent.size());
     if (nPieces == K)
       return false; // every module is a single piece: nothing to split
-    m_lvl = aggregateLevel(m_leaf0, leafToPiece, nPieces, m_undirected);
+    activateOwnedLevel(aggregateLevel(leaf0(), leafToPiece, nPieces, m_undirected));
     m_leafMoveLoop = false;
     m_moduleCorrActive = true;
     m_seededPhase = true;
@@ -1369,7 +1400,7 @@ int ColumnarTwoLevel::splitTopModules(double& L, bool allowSingletons)
 
     std::vector<int> savedTop = m_hierAssign[0];
     const int savedK = K;
-    std::vector<int> remap(m_lvl.n, -1);
+    std::vector<int> remap(lvl().n, -1);
     int k = 0;
     for (int p = 0; p < nPieces; ++p)
       if (remap[m_module[p]] == -1)
@@ -1379,7 +1410,7 @@ int ColumnarTwoLevel::splitTopModules(double& L, bool allowSingletons)
       newTop[i] = remap[m_module[leafToPiece[i]]];
 
     m_hierAssign[0] = std::move(newTop);
-    m_hierLevels[1] = aggregateLevel(m_leaf0, m_hierAssign[0], k, m_undirected);
+    m_hierLevels[1] = aggregateLevel(leaf0(), m_hierAssign[0], k, m_undirected);
     m_numTopModules = static_cast<unsigned int>(k);
     const double splitL = hierarchicalCodelengthFromStack();
     if (splitL < L - kMinImprovement) {
@@ -1387,7 +1418,7 @@ int ColumnarTwoLevel::splitTopModules(double& L, bool allowSingletons)
       return true;
     }
     m_hierAssign[0] = std::move(savedTop);
-    m_hierLevels[1] = aggregateLevel(m_leaf0, m_hierAssign[0], savedK, m_undirected);
+    m_hierLevels[1] = aggregateLevel(leaf0(), m_hierAssign[0], savedK, m_undirected);
     m_numTopModules = static_cast<unsigned int>(savedK);
     return false;
   };
@@ -1471,7 +1502,7 @@ int ColumnarTwoLevel::splitTopModules(double& L, bool allowSingletons)
       // Proposal granularity: skip the sub-optimize's fine-tune — the pieces
       // only need to separate communities, and the gated recombination plus
       // the interleaved leaf re-tune do the polishing.
-      Ksub = subClusterLeaves(S, m_hierLevels[1].exit[P], loc, localAssign, false);
+      Ksub = subClusterLeaves(S, hierLevel(1).exit[P], loc, localAssign, false);
       m_subClusterCache.emplace(S, std::make_pair(Ksub, localAssign));
     }
     const int base = static_cast<int>(pieceParent.size());
@@ -1493,17 +1524,17 @@ bool ColumnarTwoLevel::retuneLeavesWithinModules(double& L)
   // seeded phase) from the current assignment, rebuild the module level, and
   // keep the result only if it lowers the true stack codelength.
   std::vector<int> savedTop = m_hierAssign[0];
-  const int savedK = m_hierLevels[1].n;
+  const int savedK = hierLevel(1).n;
 
-  m_lvl = m_leaf0;
+  activateLeafLevel();
   m_leafMoveLoop = true;
   m_seededPhase = true;
   seedAssignment(m_hierAssign[0]);
   moveLoop();
 
-  std::vector<int> remap(m_lvl.n, -1);
+  std::vector<int> remap(lvl().n, -1);
   int k = 0;
-  for (int i = 0; i < m_lvl.n; ++i)
+  for (int i = 0; i < lvl().n; ++i)
     if (remap[m_module[i]] == -1)
       remap[m_module[i]] = k++;
   std::vector<int> newTop(m_nLeaves);
@@ -1511,7 +1542,7 @@ bool ColumnarTwoLevel::retuneLeavesWithinModules(double& L)
     newTop[i] = remap[m_module[i]];
 
   m_hierAssign[0] = std::move(newTop);
-  m_hierLevels[1] = aggregateLevel(m_leaf0, m_hierAssign[0], k, m_undirected);
+  m_hierLevels[1] = aggregateLevel(leaf0(), m_hierAssign[0], k, m_undirected);
   m_numTopModules = static_cast<unsigned int>(k);
   const double tunedL = hierarchicalCodelengthFromStack();
   if (tunedL < L - kMinImprovement) {
@@ -1519,7 +1550,7 @@ bool ColumnarTwoLevel::retuneLeavesWithinModules(double& L)
     return true;
   }
   m_hierAssign[0] = std::move(savedTop);
-  m_hierLevels[1] = aggregateLevel(m_leaf0, m_hierAssign[0], savedK, m_undirected);
+  m_hierLevels[1] = aggregateLevel(leaf0(), m_hierAssign[0], savedK, m_undirected);
   m_numTopModules = static_cast<unsigned int>(savedK);
   return false;
 }
@@ -1564,9 +1595,9 @@ bool ColumnarTwoLevel::seedHierarchyFromLeafPaths(const std::vector<std::vector<
   // level-k -> level-(k+1) module map derived from the per-leaf level ids.
   m_hierLevels.clear();
   m_hierAssign.clear();
-  m_hierLevels.push_back(m_leaf0);
+  m_hierLevels.emplace_back(); // level 0 is the leaf network; see hierLevel()
   m_hierAssign.push_back(levelId[1]);
-  Level cur = aggregateLevel(m_leaf0, levelId[1], levelK[1], m_undirected);
+  Level cur = aggregateLevel(leaf0(), levelId[1], levelK[1], m_undirected);
   m_hierLevels.push_back(cur);
   for (int k = 1; k < depth; ++k) {
     // level-k module (columnar level k, my j=k) -> level-(k+1) module (j=k+1).
@@ -1677,9 +1708,9 @@ double ColumnarTwoLevel::buildHierarchyFromBottom(int bottomK)
 
   m_hierLevels.clear();
   m_hierAssign.clear();
-  m_hierLevels.push_back(m_leaf0);
+  m_hierLevels.emplace_back(); // level 0 is the leaf network; see hierLevel()
   m_hierAssign.push_back(m_leafTop);
-  Level cur = aggregateLevel(m_leaf0, m_leafTop, bottomK, m_undirected);
+  Level cur = aggregateLevel(leaf0(), m_leafTop, bottomK, m_undirected);
   m_hierLevels.push_back(cur);
 
   // Grow up with the enter-flow super-search while it shortens the index code.
@@ -1700,7 +1731,7 @@ double ColumnarTwoLevel::buildHierarchyFromBottom(int bottomK)
 
     ColumnarTwoLevel superOpt;
     superOpt.setInterruptCallback(m_interruptCallback);
-    superOpt.buildFromLevel(superNet, m_undirected, m_seed, 0.0, m_recordedTeleport, m_totalTeleFlow);
+    superOpt.buildFromLevel(std::move(superNet), m_undirected, m_seed, 0.0, m_recordedTeleport, m_totalTeleFlow);
     // Conservative up-build (m_superAggLimit > 0): fewer aggregation passes per
     // super-level so we don't collapse the whole level in one greedy jump —
     // more, finer super-levels for the down-sweep to tune and (later) collapse.
@@ -1739,7 +1770,7 @@ double ColumnarTwoLevel::hierarchicalCodelengthFromStack() const
     teleExit.resize(topLevel + 1);
     std::vector<int> leafToK = m_hierAssign[0]; // leaf -> level-1 module
     for (int k = 1; k <= topLevel; ++k) {
-      const int n = m_hierLevels[k].n;
+      const int n = hierLevel(k).n;
       std::vector<double> tf(n, 0.0), tw(n, 0.0);
       for (int i = 0; i < m_nLeaves; ++i) {
         tf[leafToK[i]] += m_leafTeleFlow[i];
@@ -1758,21 +1789,21 @@ double ColumnarTwoLevel::hierarchicalCodelengthFromStack() const
       }
     }
   }
-  auto exitAug = [&](int k, int m) { return m_hierLevels[k].exit[m] + (m_recordedTeleport ? teleExit[k][m] : 0.0); };
-  auto enterAug = [&](int k, int m) { return m_hierLevels[k].enter[m] + (m_recordedTeleport ? teleEnter[k][m] : 0.0); };
+  auto exitAug = [&](int k, int m) { return hierLevel(k).exit[m] + (m_recordedTeleport ? teleExit[k][m] : 0.0); };
+  auto enterAug = [&](int k, int m) { return hierLevel(k).enter[m] + (m_recordedTeleport ? teleEnter[k][m] : 0.0); };
 
   // Level-1 modules code their leaf children (module-of-leaf-nodes term).
   {
-    const Level& L1 = m_hierLevels[1];
+    const Level& L1 = hierLevel(1);
     const std::vector<int>& leafToL1 = m_hierAssign[0];
     std::vector<double> T(L1.n);
     for (int m = 0; m < L1.n; ++m)
       T[m] = L1.flow[m] + exitAug(1, m);
     std::vector<double> acc(L1.n, 0.0);
-    for (int i = 0; i < m_leaf0.n; ++i) {
+    for (int i = 0; i < leaf0().n; ++i) {
       const int m = leafToL1[i];
       if (T[m] >= 1e-16)
-        acc[m] -= plogp(m_leaf0.flow[i] / T[m]);
+        acc[m] -= plogp(leaf0().flow[i] / T[m]);
     }
     for (int m = 0; m < L1.n; ++m) {
       if (T[m] < 1e-16)
@@ -1784,8 +1815,8 @@ double ColumnarTwoLevel::hierarchicalCodelengthFromStack() const
 
   // Higher module levels code their module children (module-of-modules term).
   for (int lvl = 2; lvl <= topLevel; ++lvl) {
-    const Level& Lk = m_hierLevels[lvl];
-    const Level& Lkm1 = m_hierLevels[lvl - 1];
+    const Level& Lk = hierLevel(lvl);
+    const Level& Lkm1 = hierLevel(lvl - 1);
     const std::vector<int>& childToParent = m_hierAssign[lvl - 1];
     std::vector<double> sumEnter(Lk.n, 0.0), sumPlogpEnter(Lk.n, 0.0);
     for (int c = 0; c < Lkm1.n; ++c) {
@@ -1805,7 +1836,7 @@ double ColumnarTwoLevel::hierarchicalCodelengthFromStack() const
 
   // Root codes the topmost modules (exit of the whole network is 0).
   {
-    const Level& Ltop = m_hierLevels[topLevel];
+    const Level& Ltop = hierLevel(topLevel);
     double sumEnter = 0.0, sumPlogpEnter = 0.0;
     for (int m = 0; m < Ltop.n; ++m) {
       const double e = enterAug(topLevel, m);
@@ -2539,13 +2570,13 @@ int ColumnarTwoLevel::subClusterLeaves(const std::vector<int>& S, double parentE
   std::vector<int> outDeg(nP, 0), inDeg(nP, 0);
   for (int j = 0; j < nP; ++j) {
     const int g = S[j];
-    sub.flow[j] = m_leaf0.flow[g];
-    sub.enter[j] = m_leaf0.enter[g];
-    sub.exit[j] = m_leaf0.exit[g];
-    sub.teleFlow[j] = m_leaf0.teleFlow[g];
-    sub.teleWeight[j] = m_leaf0.teleWeight[g];
-    for (int k = m_leaf0.outStart[g]; k < m_leaf0.outStart[g + 1]; ++k) {
-      const int lt = loc[m_leaf0.outTarget[k]];
+    sub.flow[j] = leaf0().flow[g];
+    sub.enter[j] = leaf0().enter[g];
+    sub.exit[j] = leaf0().exit[g];
+    sub.teleFlow[j] = leaf0().teleFlow[g];
+    sub.teleWeight[j] = leaf0().teleWeight[g];
+    for (int k = leaf0().outStart[g]; k < leaf0().outStart[g + 1]; ++k) {
+      const int lt = loc[leaf0().outTarget[k]];
       if (lt != -1) {
         ++outDeg[j];
         ++inDeg[lt];
@@ -2566,10 +2597,10 @@ int ColumnarTwoLevel::subClusterLeaves(const std::vector<int>& S, double parentE
   std::vector<int> ip(sub.inStart.begin(), sub.inStart.end() - 1);
   for (int j = 0; j < nP; ++j) {
     const int g = S[j];
-    for (int k = m_leaf0.outStart[g]; k < m_leaf0.outStart[g + 1]; ++k) {
-      const int lt = loc[m_leaf0.outTarget[k]];
+    for (int k = leaf0().outStart[g]; k < leaf0().outStart[g + 1]; ++k) {
+      const int lt = loc[leaf0().outTarget[k]];
       if (lt != -1) {
-        const double f = m_leaf0.outFlow[k];
+        const double f = leaf0().outFlow[k];
         sub.outTarget[op[j]] = lt;
         sub.outFlow[op[j]] = f;
         ++op[j];
@@ -2585,7 +2616,7 @@ int ColumnarTwoLevel::subClusterLeaves(const std::vector<int>& S, double parentE
   // re-partition optimizes base + correction, not just gates on it.
   ColumnarTwoLevel subOpt;
   subOpt.setInterruptCallback(m_interruptCallback);
-  subOpt.buildFromLevel(sub, m_undirected, m_seed, parentExit, m_recordedTeleport, m_totalTeleFlow);
+  subOpt.buildFromLevel(std::move(sub), m_undirected, m_seed, parentExit, m_recordedTeleport, m_totalTeleFlow);
   addSlicedLeafCorrections(subOpt, S);
   subOpt.optimizeTwoLevel(0, fineTune);
   localAssign.assign(subOpt.leafTopModule().begin(), subOpt.leafTopModule().end());
@@ -2603,7 +2634,7 @@ bool ColumnarTwoLevel::refineBottomWithinParents()
 
   const std::vector<int>& a0 = m_hierAssign[0]; // leaf -> L1
   const std::vector<int>& a1 = m_hierAssign[1]; // L1 -> L2
-  const int numL2 = m_hierLevels[2].n;
+  const int numL2 = hierLevel(2).n;
 
   // Group leaves by their level-2 module (the parent to refine within).
   std::vector<std::vector<int>> leavesPer(numL2);
@@ -2621,7 +2652,7 @@ bool ColumnarTwoLevel::refineBottomWithinParents()
     const int nP = static_cast<int>(S.size());
     if (nP == 0)
       continue;
-    const int Ksub = subClusterLeaves(S, m_hierLevels[2].exit[P], loc, subAssign);
+    const int Ksub = subClusterLeaves(S, hierLevel(2).exit[P], loc, subAssign);
 
     for (int j = 0; j < nP; ++j)
       newA0[S[j]] = nextL1 + subAssign[j];
@@ -2633,7 +2664,7 @@ bool ColumnarTwoLevel::refineBottomWithinParents()
   // Replace the bottom level; levels 2+ are unchanged (same leaf sets per L2).
   m_hierAssign[0] = std::move(newA0);
   m_hierAssign[1] = std::move(newA1);
-  m_hierLevels[1] = aggregateLevel(m_leaf0, m_hierAssign[0], nextL1, m_undirected);
+  m_hierLevels[1] = aggregateLevel(leaf0(), m_hierAssign[0], nextL1, m_undirected);
   m_numTopModules = static_cast<unsigned int>(m_hierLevels.back().n);
   return true;
 }
@@ -2753,10 +2784,10 @@ bool ColumnarTwoLevel::refineLayerWithinGrandparent(int k)
   if (k < 0 || k + 2 > top)
     return false; // need a layer-(k+2) grandparent to refine within
 
-  const Level& base = m_hierLevels[k]; // layer-k units to re-partition
+  const Level& base = hierLevel(k); // layer-k units to re-partition
   const std::vector<int>& aC = m_hierAssign[k]; // unit_k -> module_{k+1}
   const std::vector<int>& aP = m_hierAssign[k + 1]; // module_{k+1} -> module_{k+2}
-  const Level& grand = m_hierLevels[k + 2];
+  const Level& grand = hierLevel(k + 2);
   const int numGP = grand.n;
   const int nU = base.n;
 
@@ -2843,7 +2874,7 @@ bool ColumnarTwoLevel::refineLayerWithinGrandparent(int k)
     // are sliced to G's leaves; interior levels (k > 0) stay first-order (base).
     ColumnarTwoLevel subOpt;
     subOpt.setInterruptCallback(m_interruptCallback);
-    subOpt.buildFromLevel(sub, m_undirected, m_seed, grand.exit[G], m_recordedTeleport, m_totalTeleFlow);
+    subOpt.buildFromLevel(std::move(sub), m_undirected, m_seed, grand.exit[G], m_recordedTeleport, m_totalTeleFlow);
     if (k == 0)
       addSlicedLeafCorrections(subOpt, S);
     subOpt.optimizeTwoLevel();
@@ -2874,7 +2905,7 @@ bool ColumnarTwoLevel::refineTopLayer()
     return false; // need a layer below the top (layer top-1) to regroup
   const int k = top - 1; // re-partition layer-k units into new top modules
 
-  const Level& base = m_hierLevels[k];
+  const Level& base = hierLevel(k);
   const int nU = base.n;
 
   // One root group over all layer-k units; enter-flow transform (grouping
@@ -2924,7 +2955,7 @@ bool ColumnarTwoLevel::refineTopLayer()
 
   ColumnarTwoLevel subOpt;
   subOpt.setInterruptCallback(m_interruptCallback);
-  subOpt.buildFromLevel(sub, m_undirected, m_seed, 0.0, m_recordedTeleport, m_totalTeleFlow);
+  subOpt.buildFromLevel(std::move(sub), m_undirected, m_seed, 0.0, m_recordedTeleport, m_totalTeleFlow);
   subOpt.optimizeTwoLevel();
   const int Ksub = static_cast<int>(subOpt.numTopModules());
   if (Ksub <= 1 || Ksub == nU)
@@ -2951,25 +2982,25 @@ bool ColumnarTwoLevel::mergeLeafModulesWithinParents()
   if (corr.empty())
     return false;
 
-  const int K = m_hierLevels[1].n; // leaf modules (level-0 -> 1)
+  const int K = hierLevel(1).n; // leaf modules (level-0 -> 1)
   // Leaf modules are merged within their parent. With a level-2 grandparent each
   // leaf module has an explicit parent; in a two-level tree (e.g. lossy) the
   // parent is the root, i.e. one group whose codebook uses the top enter flows.
   const bool hasGrandparent = m_hierLevels.size() >= 3;
-  const int numParents = hasGrandparent ? m_hierLevels[2].n : 1;
+  const int numParents = hasGrandparent ? hierLevel(2).n : 1;
 
   // Seed the corrections' per-module state at the current leaf-module partition.
   for (auto* c : corr)
     c->initMoveLoop(m_hierAssign[0], K);
 
   // Mutable leaf-module aggregates + parent map + adjacency (crossing flow).
-  std::vector<double> flow = m_hierLevels[1].flow;
-  std::vector<double> enter = m_hierLevels[1].enter;
-  std::vector<double> exit = m_hierLevels[1].exit;
+  std::vector<double> flow = hierLevel(1).flow;
+  std::vector<double> enter = hierLevel(1).enter;
+  std::vector<double> exit = hierLevel(1).exit;
   std::vector<int> parent = hasGrandparent ? m_hierAssign[1] : std::vector<int>(K, 0);
   std::vector<std::unordered_map<int, double>> adjOut(K), adjIn(K);
   {
-    const Level& L1 = m_hierLevels[1];
+    const Level& L1 = hierLevel(1);
     for (int a = 0; a < K; ++a)
       for (int e = L1.outStart[a]; e < L1.outStart[a + 1]; ++e) {
         const int t = L1.outTarget[e];
@@ -2983,7 +3014,7 @@ bool ColumnarTwoLevel::mergeLeafModulesWithinParents()
   std::vector<double> totalUse(numParents, 0.0);
   if (hasGrandparent)
     for (int p = 0; p < numParents; ++p)
-      totalUse[p] = m_hierLevels[2].exit[p];
+      totalUse[p] = hierLevel(2).exit[p];
   for (int a = 0; a < K; ++a)
     totalUse[parent[a]] += enter[a];
 
@@ -3119,7 +3150,7 @@ bool ColumnarTwoLevel::mergeLeafModulesWithinParents()
     newA0[i] = newId[root(m_hierAssign[0][i])];
 
   m_hierAssign[0] = std::move(newA0);
-  m_hierLevels[1] = aggregateLevel(m_leaf0, m_hierAssign[0], Knew, m_undirected);
+  m_hierLevels[1] = aggregateLevel(leaf0(), m_hierAssign[0], Knew, m_undirected);
   // In a 3+-level tree the merged leaf modules keep their (unchanged) parent; in
   // a two-level tree there is no parent-assignment level to rewrite.
   if (hasGrandparent) {
@@ -3165,8 +3196,7 @@ double ColumnarTwoLevel::refineHierarchy(double startL, unsigned int sweepLimit)
     const double after = hierarchicalCodelengthFromStack();
     if (after < L - kMinImprovement) {
 #ifdef COLUMNAR_DEBUG
-      std::fprintf(stderr, "[refine] %s %.9f -> %.9f (levels %d, top %d)\n",
-                   tag, L, after, (int)m_hierLevels.size(), m_hierLevels.back().n);
+      std::fprintf(stderr, "[refine] %s %.9f -> %.9f (levels %d, top %d)\n", tag, L, after, (int)m_hierLevels.size(), m_hierLevels.back().n);
 #else
       (void)tag;
 #endif
@@ -3248,8 +3278,7 @@ double ColumnarTwoLevel::refineHierarchy(double startL, unsigned int sweepLimit)
   coarsenModules(L, maxSweeps);
 #ifdef COLUMNAR_DEBUG
   const std::clock_t t_end = std::clock();
-  std::fprintf(stderr, "[refine] interior=%.3fs coarsen=%.3fs (superAgg=%u)\n",
-               double(t_p2 - t_p1) / CLOCKS_PER_SEC, double(t_end - t_p2) / CLOCKS_PER_SEC, m_superAggLimit);
+  std::fprintf(stderr, "[refine] interior=%.3fs coarsen=%.3fs (superAgg=%u)\n", double(t_p2 - t_p1) / CLOCKS_PER_SEC, double(t_end - t_p2) / CLOCKS_PER_SEC, m_superAggLimit);
 #endif
   return L;
 }
@@ -3258,7 +3287,7 @@ std::vector<std::pair<unsigned int, std::vector<unsigned int>>>
 ColumnarTwoLevel::toNodePaths(const std::vector<InfoNode*>& leafNodes) const
 {
   std::vector<std::pair<unsigned int, std::vector<unsigned int>>> paths;
-  const int nLeaves = m_hierLevels.empty() ? 0 : m_hierLevels[0].n;
+  const int nLeaves = m_hierLevels.empty() ? 0 : hierLevel(0).n;
   const int top = static_cast<int>(m_hierLevels.size()) - 1; // number of module levels
   paths.reserve(nLeaves);
   if (top < 1)
@@ -3368,7 +3397,7 @@ double ColumnarTwoLevel::optimizeColumnar(unsigned int bottomBlockLimit, unsigne
       flatLevels = m_hierLevels;
       flatAssign = m_hierAssign;
       m_leafTop = m_hierAssign[0];
-      const int flatK = m_hierLevels[1].n;
+      const int flatK = hierLevel(1).n;
       for (unsigned int superAgg : kSuperAggSettings) {
         pollInterrupt();
         m_superAggLimit = superAgg;
@@ -3403,8 +3432,7 @@ double ColumnarTwoLevel::optimizeColumnar(unsigned int bottomBlockLimit, unsigne
 #ifdef COLUMNAR_DEBUG
   {
     const double corr = objectiveCorrection();
-    std::fprintf(stderr, "[optColumnar] winner superAgg=%u total=%.6f base=%.6f corr=%.6f top=%u\n",
-                 bestSuperAgg, bestL, bestL - corr, corr, m_numTopModules);
+    std::fprintf(stderr, "[optColumnar] winner superAgg=%u total=%.6f base=%.6f corr=%.6f top=%u\n", bestSuperAgg, bestL, bestL - corr, corr, m_numTopModules);
   }
 #endif
   return bestL;

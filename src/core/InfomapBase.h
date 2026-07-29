@@ -13,6 +13,7 @@
 #include "InfomapConfig.h"
 #include "InfoEdge.h"
 #include "InfoNode.h"
+#include "ColumnarLevel.h"
 #include "ObjectPool.h"
 #include "InfomapOptimizerBase.h"
 #include "iterators/InfomapIterator.h"
@@ -688,14 +689,13 @@ protected:
   std::vector<InfoNode*> m_originalLeafNodes;
 
   // Native columnar leaf input (I/O migration): the leaf SoA built once from the
-  // StateNetwork, reused across trials. Held as raw arrays (no ColumnarMapEquation
-  // header dependency); columnarPartition assembles a Level from them. Empty when
+  // StateNetwork and reused across trials. This is the single owner of the leaf
+  // CSR — the largest allocation in a run — and every trial's optimizer borrows
+  // it (ColumnarTwoLevel::buildFromBorrowedLevel) rather than copying it. Held
+  // behind a pointer so this header only needs the forward declaration. Null when
   // the InfoNode leaf path is used (ineligible cases).
   bool m_columnarNativeInput = false;
-  int m_columnarN = 0;
-  std::vector<double> m_colFlow, m_colEnter, m_colExit, m_colTeleFlow, m_colTeleWeight;
-  std::vector<int> m_colOutStart, m_colOutTarget, m_colInStart, m_colInTarget;
-  std::vector<double> m_colOutFlow, m_colInFlow;
+  ColumnarLevel m_columnarLeafInput;
 
   Network m_network;
   InitialPartition m_initialPartition; // nodeId -> moduleId
