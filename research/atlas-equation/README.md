@@ -259,6 +259,17 @@ available, in increasing order of throughput:
    for proposals, but with the guarantee that every commit improves the true
    objective.
 
+Design 2 has a second life as **vectorization**: a batch of accepted moves
+with pairwise-disjoint module pairs is exactly a "color", and applying it is
+a handful of numpy scatter-assignments — the after-aggregates of the touched
+modules are already known from the proposal step, so commit is `P[old] =
+old_p; P[new] = new_p; ...`. `prototype/atlas_numpy.py` implements the full
+search this way (sparse-matmul proposals over dirty nodes, greedy-maximal
+disjoint batches): the accepted deltas of every batch sum to the true
+codelength change to machine precision, while the identical batch scheme
+under the map equation drifts by $\sim 10^{-3}$ bits per sweep — the
+vectorized twin of the two-lock-vs-global-term result in the C++ benchmark.
+
 Two further structural benefits, independent of threading:
 
 - **No shared read-modify-write per move.** Even the sequential sweep stops
@@ -345,7 +356,8 @@ throughout; `plogp` uses log2 as in `src/utils/infomath.h`.
 ### 7.3 Parallel top-level search (`bench/parallel_bench.cpp`)
 
 Planted partition, 200 blocks × 1000 nodes ($n = 2 \times 10^5$, ~1.2M
-half-edges, $k_{in} = 8$, $k_{out} = 2$), Louvain from singletons, 4 cores.
+edges, $k_{in} = 8$, nominal $k_{out} = 2$; the generator's two cross-block
+draws per node land closer to 4), Louvain from singletons, 4 cores.
 "L0 time" is the wall time of the top-level (leaf) local-moving phase — the
 phase that dominates large runs; consistency is
 $|L_{after} - (L_{before} + \sum \delta_{committed})|$ at the top level.
@@ -475,6 +487,9 @@ should precede any publication claim.
 ```bash
 # Math validation + quality experiments (pure stdlib, ~4 min; add --quick for ~40 s)
 python3 research/atlas-equation/prototype/atlas_prototype.py
+
+# Vectorized batch search (needs numpy + scipy; add --quick for ~10 s)
+python3 research/atlas-equation/prototype/atlas_numpy.py
 
 # Parallel benchmark (standalone, needs OpenMP)
 make -C research/atlas-equation/bench run

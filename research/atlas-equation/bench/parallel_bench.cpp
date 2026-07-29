@@ -975,7 +975,7 @@ int main(int argc, char** argv)
   }
 
   Graph g = plantedPartition(numBlocks, blockSize, kIn, kOut, seed);
-  std::printf("planted partition: %u nodes, %zu half-edges, %u blocks of %u (k_in=%.1f, k_out=%.1f)\n",
+  std::printf("planted partition: %u nodes, %zu edges, %u blocks of %u (k_in=%.1f, k_out=%.1f)\n",
               g.n, g.target.size() / 2, numBlocks, blockSize, kIn, kOut);
   std::printf("one-level codelength: %.6f bits\n\n", g.nodeEntropy());
   std::printf("%-27s %8s | %10s %10s %9s | %12s %12s %8s | %10s\n",
