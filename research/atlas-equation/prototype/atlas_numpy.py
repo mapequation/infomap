@@ -454,6 +454,9 @@ def demo_map_batch_drift(quick: bool):
         prop = propose(
             f, ft, np.arange(n), p, w_out, w_in, module, big_p, q_in, q_out, objective
         )
+        if prop is None:
+            print(f"  {objective:<5}: no improving moves from singletons")
+            continue
         sel = disjoint_batch(prop, n, rng)
         module[prop["node"][sel]] = prop["new"][sel]
         big_p, q_in, q_out = module_aggregates(f, p, module, n)

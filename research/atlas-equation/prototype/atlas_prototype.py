@@ -545,6 +545,11 @@ def parse_net_file(path):
             low = line.lower()
             if low.startswith("*vertices"):
                 mode = "vertices"
+                # honor a declared count so isolated vertices are kept even
+                # when the explicit vertex list is omitted
+                parts = line.split()
+                if len(parts) > 1 and parts[1].isdigit():
+                    max_id = max(max_id, int(parts[1]))
                 continue
             if low.startswith("*edges") or low.startswith("*links"):
                 mode = "edges"
