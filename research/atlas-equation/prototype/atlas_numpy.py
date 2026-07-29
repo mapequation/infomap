@@ -284,17 +284,27 @@ def batch_local_moving(f, ft, p, module, objective: str, rng, max_sweeps=1000):
     l_fn = l_atlas if objective == "atlas" else l_map
     l_tracked = l_fn(big_p, q_in, q_out, 0.0)
     dirty_idx = np.arange(n)
+    verified = False
     for _ in range(max_sweeps):
-        if len(dirty_idx) == 0:
-            break
-        prop = propose(
-            f, ft, dirty_idx, p, w_out, w_in, module, big_p, q_in, q_out, objective
+        prop = (
+            propose(
+                f, ft, dirty_idx, p, w_out, w_in, module, big_p, q_in, q_out, objective
+            )
+            if len(dirty_idx) > 0
+            else None
         )
         if prop is None:
-            break
+            # Neighbour-of-mover dirty marking alone is not sufficient for
+            # convergence: a move changes the aggregates of both modules, so
+            # non-adjacent nodes bordering them get stale deltas too. Confirm
+            # the local optimum with a full sweep before stopping.
+            if verified:
+                break
+            dirty_idx = np.arange(n)
+            verified = True
+            continue
+        verified = False
         sel = disjoint_batch(prop, m, rng)
-        if len(sel) == 0:
-            break
         nodes = prop["node"][sel]
         module[nodes] = prop["new"][sel]
         # Disjointness makes the update a plain assignment of after-values.

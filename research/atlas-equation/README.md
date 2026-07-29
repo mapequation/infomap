@@ -12,16 +12,18 @@ replaced by **static module addresses** whose lengths are set by module flow
 mass, $\ell_i = -\log_2 P_i$. The consequences:
 
 1. **Same philosophy.** The objective is still an achievable per-step
-   description length of the random walk under a two-level codebook
-   structure: minimizing it finds modules in which flow persists.
+   description rate of the random walk under a two-level codebook structure
+   (in the same idealized coding sense as the map equation's entropy terms,
+   see §2): minimizing it finds modules in which flow persists.
 2. **Exactly characterized bias.** For every partition $\mathsf{M}$,
    $$L_A(\mathsf{M}) = L_M(\mathsf{M}) + q\, D_{KL}(\hat Q \,\|\, \hat P),$$
    where $L_M$ is the two-level map equation, $q$ is the total boundary
    flow, $\hat Q$ the distribution of module entries and $\hat P$ the
    distribution of module flow masses. The two objectives coincide exactly
-   when module usage is proportional to module size, and the maximal
-   possible gap shrinks with $q$ — i.e. the objectives agree increasingly
-   well on exactly the partitions both of them like.
+   when module usage is proportional to module mass, and the gap is at most
+   $q \log_2(1/\min_i P_i)$ — vanishing with the boundary flow on any
+   family of partitions whose module masses stay bounded below (not
+   uniformly over all partitions; see §3).
 3. **Additive separability.** $L_A = \sum_i g(P_i, Q_i^{in}, Q_i^{out})$ with
    no global term. A node move touches exactly two module terms. This is the
    property the map equation lacks (its single coupling term
@@ -108,10 +110,16 @@ length
 
 $$\ell_i = -\log_2 P_i .$$
 
-Since $\sum_i P_i = 1$, these lengths satisfy Kraft's inequality with
-equality, so a prefix code with (idealized real-valued) lengths $\ell_i$
-exists; the address book is complete and decodable. After each exit word the
-decoder reads the entered module's static address.
+These are idealized per-event information lengths, not literal binary
+codeword lengths: an individual prefix codeword cannot have length
+$-\log_2 0.3$. Since $\sum_i P_i = 1$ (Kraft equality for the address
+distribution), the *rate* $\sum_i Q_i^{in} \ell_i$ is achievable in the
+usual asymptotic sense — block or arithmetic coding over the event stream
+with per-event overhead vanishing in the block length. This is the same
+idealization the map equation already makes for all of its entropy terms;
+the atlas equation neither gains nor loses anything by it. Operationally:
+after each exit word the decoder reads the entered module's address,
+decodable from the module-mass table alone.
 
 **Objective** (the atlas equation):
 
@@ -147,7 +155,8 @@ forgoes is the information in *where* the walk crosses borders — and Theorem
 ## 3. Properties
 
 **Theorem 1 (validity and exact relation to the map equation).**
-$L_A$ is an achievable description length (Kraft equality above), and
+$L_A$ is an achievable description rate in the block-coding sense of §2 —
+the same sense in which $L_M$ is one — and
 
 $$
 L_A(\mathsf{M}) - L_M(\mathsf{M})
@@ -166,10 +175,13 @@ Corollaries:
   to module flow mass ($\hat Q = \hat P$). On the symmetric two-triangle
   example the gap is exactly $0$; on `ninetriangles.net` it is $0.0025$
   bits.
-- The gap is bounded by $q \cdot \max_i |\log_2(\hat Q_i / \hat P_i)|$: the
-  smaller the boundary flow — the better the partition, by both objectives'
-  standards — the smaller the maximal possible disagreement. The objectives
-  diverge only on partitions both of them dislike.
+- Since $\hat Q_i \le 1$, the gap obeys $q\,D_{KL}(\hat Q \| \hat P) \le
+  q \log_2(1/\min_i P_i)$. On any family of partitions whose smallest module
+  flow mass is bounded below, the disagreement therefore vanishes linearly
+  in the boundary flow $q$. This is a *conditional* guarantee: it is not
+  uniform over arbitrary partitions, because the mass of some module can
+  shrink as $q$ does — with $P_{min} \sim 2^{-1/q}$ the product stays
+  $\Theta(1)$ — so small boundary flow alone does not bound the gap.
 - The bias is interpretable and arguably useful: partitions in which a
   module's entry rate is disproportionate to its size (small, heavily
   trafficked pass-through modules) pay a surcharge of
@@ -269,6 +281,16 @@ disjoint batches): the accepted deltas of every batch sum to the true
 codelength change to machine precision, while the identical batch scheme
 under the map equation drifts by $\sim 10^{-3}$ bits per sweep — the
 vectorized twin of the two-lock-vs-global-term result in the C++ benchmark.
+
+A convergence caveat that applies to every design (and to dirty-node
+tracking in general, including the neighbour marking used by Infomap's move
+loops): marking only the mover's neighbours dirty is not sufficient for
+local optimality, because a move changes the aggregates of both endpoint
+modules and thereby stales the deltas of *non-adjacent* nodes that border
+them. Both prototype implementations therefore treat dirty tracking purely
+as an accelerator and confirm convergence with full verification sweeps: a
+level terminates only when a sweep over all nodes accepts nothing, so every
+reported partition is a genuine single-move local optimum.
 
 Two further structural benefits, independent of threading:
 

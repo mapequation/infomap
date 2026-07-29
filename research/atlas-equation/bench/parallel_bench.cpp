@@ -851,6 +851,7 @@ RunResult run(const Graph& leafGraph, Mode mode, unsigned int seed, unsigned int
     double levelSeconds = 0.0;
     double commitSeconds = 0.0;
     LinkSums seqSums(current->n);
+    bool verified = false;
     for (; sweeps < maxSweeps; ++sweeps) {
       std::shuffle(order.begin(), order.end(), rng);
       SweepStats stats;
@@ -871,8 +872,20 @@ RunResult run(const Graph& leafGraph, Mode mode, unsigned int seed, unsigned int
       }
       levelSeconds += stats.seconds;
       committed += stats.committedDelta;
-      if (stats.moved == 0)
-        break;
+      if (stats.moved == 0) {
+        // Neighbour-of-mover dirty marking alone is not sufficient for
+        // convergence: a move changes the aggregates of both endpoint
+        // modules, which stales the deltas of non-adjacent nodes bordering
+        // them. Re-dirty everything and confirm with a full sweep; only a
+        // clean full sweep is a single-move local optimum.
+        if (verified)
+          break;
+        for (unsigned int u = 0; u < current->n; ++u)
+          level.dirty[u].store(1, std::memory_order_relaxed);
+        verified = true;
+      } else {
+        verified = false;
+      }
     }
     const double afterL = level.currentCodelength(obj, 0.0);
 
