@@ -76,6 +76,34 @@ def test_bipartite_regularized_partition_scores_the_same_when_read_back(
     assert rescored.codelength == pytest.approx(result.codelength)
 
 
+def test_negative_module_flow_is_an_error(network_fixture_path):
+    # One level up from the leaf check: a module's enter/exit flow is not the sum of its
+    # leaves', because the optimizer maintains it incrementally and removes the teleportation
+    # internal to the module. That removal can over-subtract even when every leaf is sound,
+    # and on this network under --regularized it leaves a module at enter/exit -0.00121 with
+    # a negative codelength. Before the check that surfaced only as a 0.0007 disagreement
+    # between two evaluations of the same partition (#958).
+    net = infomap.Network.from_file(str(network_fixture_path("bipartite_uneven.net")))
+
+    with pytest.raises(infomap.InfomapError, match=r"Negative enter flow on a module"):
+        net.run(regularized=True, two_level=True, seed=7, num_trials=1)
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason="#958: module enter/exit flow still goes negative on bipartite input under "
+    "--regularized, so the run is refused rather than reporting a codelength built on it. "
+    "Drop this marker when the accumulation is fixed -- an unexpected pass means it is.",
+)
+def test_bipartite_uneven_regularized_yields_a_codelength(network_fixture_path):
+    # Stated as what should happen rather than as the current error, so this turns red the
+    # moment #958 is fixed instead of having to be rewritten.
+    net = infomap.Network.from_file(str(network_fixture_path("bipartite_uneven.net")))
+    result = net.run(regularized=True, two_level=True, seed=7, num_trials=1)
+
+    assert result.codelength > 0.0
+
+
 def test_flow_convergence_is_visible_on_the_result():
     # A failed power iteration means the flow is not the network's stationary
     # distribution, so the codelength describes something else. It used to be reported

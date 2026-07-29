@@ -1,0 +1,19 @@
+# A bipartite network whose two sides differ in size: three primary nodes and four
+# feature nodes, each primary node sharing one feature with each of its neighbours.
+# Small enough to reason about the flow by hand, and under --regularized the module
+# enter/exit flow accumulated over it goes negative (#958).
+*Vertices 7
+1 "f1"
+2 "f2"
+3 "f3"
+4 "p1"
+5 "p2"
+6 "p3"
+7 "p4"
+*Bipartite 4
+1 4
+1 5
+2 5
+2 6
+3 6
+3 7
