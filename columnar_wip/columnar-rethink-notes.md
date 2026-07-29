@@ -936,3 +936,71 @@ answer is 0.0002% / 0.0001% for +5.3% / +6.5% CPU — which is independent confi
 layer really is at its fixpoint, and by the marginal-trade rule not worth buying. The skip stays.
 Worth remembering that the seeded variant is the "insurance" option: it proves the claim per run
 instead of assuming it, for ~5–6% on the two air30k configs and nothing anywhere else.
+
+### F23 — The leaf CSR existed four times over; now once (2026-07-29)
+
+Prompted by a memory question, not a profile: *how much does a 1.5B-link network cost in the
+columnar core vs OO?* Counting bytes off `sizeof` rather than guessing turned up an embarrassment.
+Per stored link the columnar representation is exactly **24 B** (out target+flow, in target+flow,
+`assign()`-sized, no slack) against OO's **48 B** (`InfoEdge` 32 + an out-vector slot + an in-vector
+slot) — a clean 2×. Except a trial did not hold *one* leaf level. It held four:
+
+1. `InfomapBase`'s native columnar leaf input (the staging arrays, kept across trials),
+2. a local `Level leaf` that `setupColumnarOptimizer` copied them into,
+3. `m_leaf0`, which `buildFromLevel` copied *that* into,
+4. `m_hierLevels[0]`, a third copy pushed by every stack build — plus `m_lvl = m_leaf0` whenever the
+   active level was the leaves (so `retuneLeavesWithinModules` made it four live at once), plus a
+   further copy inside each `savedLevels` / `fineLevels` / `flatLevels` save-restore of the stack,
+   and one more in `trajLevels[0]` on the trajectory-repair path.
+
+So the representation was 2× leaner per link than OO and the implementation spent the win 4× over.
+Nothing ever wrote into a level after it was built — verified: no `m_lvl.<field> =` or
+`m_leaf0.<field> =` anywhere, aggregation always produces a *new* level — so every one of those
+copies was of an immutable object.
+
+**Fix: one owner, everyone else points at it.**
+- `ColumnarLevel` moved to namespace scope (`ColumnarLevel.h`, aliased as `ColumnarTwoLevel::Level`,
+  so no call site changed) so `InfomapBase` can hold one by value without including the core header.
+- `buildFromBorrowedLevel` lets a trial read the caller-owned leaf level in place; the staging arrays
+  became that single owner. Copies 1–3 collapse to one.
+- `leaf0()` / `lvl()` are pointer accessors: the active level *aliases* the leaf network while the
+  units are leaves and only owns storage for aggregated levels.
+- `hierLevel(k)` routes level 0 of the stack to `leaf0()`, and slot 0 became an empty placeholder —
+  which also makes every stack save/restore copy free of the leaf CSR. Same for `trajLevels`.
+- `buildFromLevel` now takes its `Level` by value, so the four internal callers with dead locals
+  (`superNet`, three `sub`) hand over storage by `std::move` instead of copying.
+
+**Result — codelength bit-identical, memory down, and faster.** All **65** configs (13 networks ×
+{`-C`, `-C -F`, `-2 -C`, OO, OO `-2`}) reproduce their codelength *and* their top-module/level counts
+exactly. Peak RSS, same-session alternating runs, excluding the 8.5 MB process floor:
+
+| variant | networks | median Δ peak RSS | range |
+|---|--:|--:|--:|
+| `-C` | 8 | **−33.7%** | −54.4% .. −18.4% |
+| `-C -F` | 8 | **−28.6%** | −44.8% .. −22.0% |
+| `-2 -C` | 8 | **−23.9%** | −43.0% .. −9.6% |
+| OO | 7 | +2.3% | −1.9% .. +7.2% |
+| OO `-2` | 7 | +2.2% | −1.4% .. +5.1% |
+
+The OO rows are the control: that path is untouched, so its ±2% is the noise floor of the
+instrument. Speed, interleaved min-of-4 CPU seconds (`-C -N10`): web-NotreDame **−9.9%**, malaria
+−5.6%, powergrid −3.7%, science2001 −2.1%, air30k −0.5% — three leaf-CSR `memcpy`s per trial were
+real work. Beware single wall-clock runs here: the same web-NotreDame `-C` config that measures
+−12.9% wall interleaved showed **+49%** in one unpaired run.
+
+**Where this does *not* help: dense inputs, where the peak is ingest-bound, not search-bound.** On a
+500k-node / 19.5M-link synthetic, `--no-infomap` alone reaches 1399 MB of the full run's 1473 MB —
+the peak is set while the input CSR, the `InfoNode` leaf tree and the columnar input all coexist, and
+the trial's copies fit inside pages already resident. There the before/after difference is
+indistinguishable from noise (±170 MB run-to-run at that scale; the *untouched* OO path "moved" +11%
+between two runs). Two ingest-side items own that number instead, both filed rather than fixed here:
+`m_linkBuffer` is `push_back`-grown with no `reserve` (`StateNetwork.cpp`), so at 1.5e9 links its
+capacity doubles to 2^31 slots = 34.4 GB and the final reallocation holds old+new = **51.5 GB**; and
+`initNetwork` still builds the full `InfoNode` leaf tree (296 B/node + 48 B/link) even when the
+native columnar input is what the search will actually read.
+
+**Remaining, for when the OO leaf layer retires:** `m_leafFlow` / `m_leafTeleFlow` /
+`m_leafTeleWeight` still duplicate three per-node columns of the leaf level (24 B/node — per *node*,
+not per link, so ~1% of the leaf level at web scale). And note the hard ceiling this representation
+carries: the CSR offsets are `std::vector<int>`, so **2,147,483,647 links** is the wall. 1.5e9 fits
+with 30% headroom; a directed network stored in both directions would not.

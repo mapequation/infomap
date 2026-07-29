@@ -255,8 +255,7 @@ public:
     const double before = result.bestHierarchicalCodelength;
     if (!m_infomap.deepRepairColumnarBest(result.bestTree, result.bestHierarchicalCodelength))
       return;
-    Console::detail(0, "columnar: deep repair of the best trial improved {} -> {}",
-                    io::toPrecision(before), io::toPrecision(result.bestHierarchicalCodelength));
+    Console::detail(0, "columnar: deep repair of the best trial improved {} -> {}", io::toPrecision(before), io::toPrecision(result.bestHierarchicalCodelength));
     // Materialize the repaired tree and refresh the per-level statistics the
     // summary prints. initTree recomputes a materialized codelength on the
     // reconstructed tree; the columnar core's value is authoritative (see
@@ -1796,28 +1795,19 @@ void InfomapBase::setupColumnarOptimizer(ColumnarTwoLevel& opt, unsigned long se
 {
   opt.setInterruptCallback([this] { pollInterrupt(); });
   if (m_columnarNativeInput && !haveHardPartition()) {
-    // Native leaf SoA built from the network (see buildColumnarLeafInput),
-    // bypassing the InfoNode leaf tree as the optimizer's input.
-    ColumnarTwoLevel::Level leaf;
-    leaf.n = m_columnarN;
-    leaf.flow = m_colFlow;
-    leaf.enter = m_colEnter;
-    leaf.exit = m_colExit;
-    leaf.teleFlow = m_colTeleFlow;
-    leaf.teleWeight = m_colTeleWeight;
-    leaf.outStart = m_colOutStart;
-    leaf.outTarget = m_colOutTarget;
-    leaf.outFlow = m_colOutFlow;
-    leaf.inStart = m_colInStart;
-    leaf.inTarget = m_colInTarget;
-    leaf.inFlow = m_colInFlow;
+    // Native leaf SoA built once from the network (see buildColumnarLeafInput),
+    // bypassing the InfoNode leaf tree as the optimizer's input. Lent to the
+    // optimizer, not copied: this is the leaf CSR, 24 B per link, and it is
+    // immutable for the whole run. It outlives every trial's optimizer (owned by
+    // this InfomapBase), which is what buildFromBorrowedLevel requires.
+    const ColumnarLevel& leaf = m_columnarLeafInput;
     // Global teleport total = sum of leaf teleport flow (buildFromLeaves derives
-    // this itself; buildFromLevel needs it passed so the module teleport terms
+    // this itself; the level builders need it passed so the module teleport terms
     // use the whole-network total, not zero).
     double totalTele = 0.0;
-    for (double tf : m_colTeleFlow)
+    for (double tf : leaf.teleFlow)
       totalTele += tf;
-    opt.buildFromLevel(leaf, isUndirectedClustering(), seed, 0.0, recordedTeleportation, totalTele);
+    opt.buildFromBorrowedLevel(leaf, isUndirectedClustering(), seed, 0.0, recordedTeleportation, totalTele);
   } else {
     opt.buildFromLeaves(m_leafNodes, isUndirectedClustering(), seed);
   }
@@ -1946,8 +1936,7 @@ void InfomapBase::columnarPartition()
   if (!preferModularSolution && preferredNumberOfModules == 0
       && (haveNonTrivialModules() || regularizedPriorOnly)
       && columnarL > getOneLevelCodelength()) {
-    Console::detail(1, "columnar: worse codelength than one-level ({} > {}), putting all nodes in one module",
-                    io::toPrecision(columnarL), io::toPrecision(getOneLevelCodelength()));
+    Console::detail(1, "columnar: worse codelength than one-level ({} > {}), putting all nodes in one module", io::toPrecision(columnarL), io::toPrecision(getOneLevelCodelength()));
 
     auto& module = root().replaceChildrenWithOneNode();
     module.data = m_root.data;
@@ -1965,8 +1954,7 @@ void InfomapBase::columnarPartition()
     m_numNonTrivialTopModules = calculateNumNonTrivialTopModules();
   }
 
-  Console::detail(1, "columnar: codelength {}, materialized {}, {} levels",
-                  io::toPrecision(m_hierarchicalCodelength), io::toPrecision(materializedL), maxTreeDepth());
+  Console::detail(1, "columnar: codelength {}, materialized {}, {} levels", io::toPrecision(m_hierarchicalCodelength), io::toPrecision(materializedL), maxTreeDepth());
 }
 
 bool InfomapBase::columnarNativeInputEligible() const
@@ -1981,23 +1969,24 @@ bool InfomapBase::columnarNativeInputEligible() const
 void InfomapBase::buildColumnarLeafInput(Network& network)
 {
   const unsigned int numNodes = network.numNodes();
-  m_columnarN = static_cast<int>(numNodes);
-  m_colFlow.assign(numNodes, 0.0);
-  m_colEnter.assign(numNodes, 0.0);
-  m_colExit.assign(numNodes, 0.0);
-  m_colTeleFlow.assign(numNodes, 0.0);
-  m_colTeleWeight.assign(numNodes, 0.0);
+  ColumnarLevel& leaf = m_columnarLeafInput;
+  leaf.n = static_cast<int>(numNodes);
+  leaf.flow.assign(numNodes, 0.0);
+  leaf.enter.assign(numNodes, 0.0);
+  leaf.exit.assign(numNodes, 0.0);
+  leaf.teleFlow.assign(numNodes, 0.0);
+  leaf.teleWeight.assign(numNodes, 0.0);
 
   // Per-node fields in nodes() order, which equals the consumed-CSR index order
   // that forEachLink reports (the same invariant generateSubNetwork relies on).
   unsigned int i = 0;
   for (const auto& nodeIt : network.nodes()) {
     const auto& n = nodeIt.second;
-    m_colFlow[i] = n.flow;
-    m_colEnter[i] = n.enterFlow;
-    m_colExit[i] = n.exitFlow;
-    m_colTeleFlow[i] = n.teleFlow;
-    m_colTeleWeight[i] = n.weight; // teleport weight
+    leaf.flow[i] = n.flow;
+    leaf.enter[i] = n.enterFlow;
+    leaf.exit[i] = n.exitFlow;
+    leaf.teleFlow[i] = n.teleFlow;
+    leaf.teleWeight[i] = n.weight; // teleport weight
     ++i;
   }
 
@@ -2009,26 +1998,26 @@ void InfomapBase::buildColumnarLeafInput(Network& network)
       ++inDeg[t];
     }
   });
-  m_colOutStart.assign(numNodes + 1, 0);
-  m_colInStart.assign(numNodes + 1, 0);
+  leaf.outStart.assign(numNodes + 1, 0);
+  leaf.inStart.assign(numNodes + 1, 0);
   for (unsigned int k = 0; k < numNodes; ++k) {
-    m_colOutStart[k + 1] = m_colOutStart[k] + outDeg[k];
-    m_colInStart[k + 1] = m_colInStart[k] + inDeg[k];
+    leaf.outStart[k + 1] = leaf.outStart[k] + outDeg[k];
+    leaf.inStart[k + 1] = leaf.inStart[k] + inDeg[k];
   }
-  m_colOutTarget.assign(m_colOutStart[numNodes], 0);
-  m_colOutFlow.assign(m_colOutStart[numNodes], 0.0);
-  m_colInTarget.assign(m_colInStart[numNodes], 0);
-  m_colInFlow.assign(m_colInStart[numNodes], 0.0);
-  std::vector<int> outPos(m_colOutStart.begin(), m_colOutStart.end() - 1);
-  std::vector<int> inPos(m_colInStart.begin(), m_colInStart.end() - 1);
+  leaf.outTarget.assign(leaf.outStart[numNodes], 0);
+  leaf.outFlow.assign(leaf.outStart[numNodes], 0.0);
+  leaf.inTarget.assign(leaf.inStart[numNodes], 0);
+  leaf.inFlow.assign(leaf.inStart[numNodes], 0.0);
+  std::vector<int> outPos(leaf.outStart.begin(), leaf.outStart.end() - 1);
+  std::vector<int> inPos(leaf.inStart.begin(), leaf.inStart.end() - 1);
   network.forEachLink([&](unsigned int s, unsigned int t, double, double& f) {
     if (s == t)
       return;
-    m_colOutTarget[outPos[s]] = static_cast<int>(t);
-    m_colOutFlow[outPos[s]] = f;
+    leaf.outTarget[outPos[s]] = static_cast<int>(t);
+    leaf.outFlow[outPos[s]] = f;
     ++outPos[s];
-    m_colInTarget[inPos[t]] = static_cast<int>(s);
-    m_colInFlow[inPos[t]] = f;
+    leaf.inTarget[inPos[t]] = static_cast<int>(s);
+    leaf.inFlow[inPos[t]] = f;
     ++inPos[t];
   });
   m_columnarNativeInput = true;

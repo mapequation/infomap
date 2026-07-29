@@ -156,6 +156,45 @@ Malaria is the one config the flat trials barely move on their own (−0.06%): i
 
 **One codelength moved relative to the first cut of this PR**, and it is worth stating plainly: regularized air30k at seed 123 goes 5.575137 → 5.576024 (+0.016%). That 0.24% was won by a single flat trial's leaf re-derivation, and it does not survive a seed change — seeds 234/345/456 are bit-identical with and without the pass, and on all three `-C` already sits 0.02–0.10% above OO. The earlier "regularized air30k beats OO" was a seed-123 artefact; ~3 s per `-N10` run for a 1-in-4-seed lottery ticket is not a trade worth keeping, and a winner-only variant does not recover it either (at seed 123 the winning trial is one where the pass gains nothing).
 
+### Peak memory: the leaf CSR is stored once, not four times (leaf-CSR single-owner PR)
+
+The columnar leaf level is the largest object in a run — **24 B per stored link** (out target+flow, in
+target+flow), against **48 B** for the object-oriented equivalent (`InfoEdge` 32 + one slot in the
+source's out-vector + one in the target's in-vector). That 2× advantage was being spent four times
+over: the native columnar input, a local copy in `setupColumnarOptimizer`, `m_leaf0`, and
+`m_hierLevels[0]` were four separate copies of the same immutable arrays (plus one more per stack
+save/restore, and one on the trajectory-repair path). Nothing writes into a level once it is built, so
+the core now keeps **one** owner and everything else points at it: a trial borrows the caller-owned
+leaf level, the active level aliases it while the units are leaves, and level 0 of the stack is a
+placeholder that reads through to it.
+
+**Codelength is bit-identical on all 65 configs** (13 networks × {`-C`, `-C -F`, `-2 -C`, OO, OO
+`-2`}), top-module and level counts included. Peak RSS, same-session alternating runs, excluding the
+8.5 MB process floor:
+
+| variant | networks | median Δ peak RSS | range |
+|---|--:|--:|--:|
+| `-C` | 8 | **−33.7%** | −54.4% .. −18.4% |
+| `-C -F` | 8 | **−28.6%** | −44.8% .. −22.0% |
+| `-2 -C` | 8 | **−23.9%** | −43.0% .. −9.6% |
+| OO (control, untouched) | 7 | +2.3% | −1.9% .. +7.2% |
+| OO `-2` (control, untouched) | 7 | +2.2% | −1.4% .. +5.1% |
+
+The OO rows are the instrument's noise floor: that path is not touched by this PR. Speed improves
+too, since three leaf-CSR `memcpy`s per trial are gone — interleaved min-of-4 CPU seconds, `-C -N10`:
+web-NotreDame **−9.9%**, malaria −5.6%, powergrid −3.7%, science2001 −2.1%, air30k −0.5%. The time
+table above is therefore **not** re-baselined for this PR: it is memory-only, its timing effect is a
+uniform small improvement, and re-measuring the whole set in a differently-loaded session would move
+every cell by more than the effect. (Peak RSS needs the same care: on this machine a single unpaired
+wall-clock run of web-NotreDame `-C` showed +49% where the interleaved measurement shows −12.9%.)
+
+One case this does not improve: **dense inputs, where the peak is set by ingest rather than by the
+search.** On a 500k-node / 19.5M-link synthetic, `--no-infomap` alone reaches 1399 MB of the full
+run's 1473 MB — the input CSR, the `InfoNode` leaf tree and the columnar input all coexist at the
+handoff, and the trial's copies fit inside pages that are already resident. Those two ingest-side
+costs (the unreserved link build buffer, and the `InfoNode` leaf tree still being built even when the
+native columnar input is what gets read) own that number, and are tracked separately.
+
 ### Coarse-tune: trajectory repair + winner deep repair (#889 two-level half, previous PR)
 
 The objective-aware aggregation (#834) can overshoot: consolidation makes each pass's units atomic, so a merge that shouldn't have happened cannot be undone by later passes, the leaf fine-tune or the gated merges (single-leaf moves can't cross the barrier). The coarse-tune PR added the subdivision half, split by cost:
