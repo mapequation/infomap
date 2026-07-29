@@ -32,16 +32,17 @@ mass, $\ell_i = -\log_2 P_i$. The consequences:
    serial commit pass: commits become **linearizable** — every committed move
    improves the true objective, at any thread count.
 
-In the prototype benchmark (undirected planted partition, 100k–200k nodes,
-4 cores), the fused parallel sweep under the atlas equation reaches
-**3.5–3.8× speedup on 4 threads with sequential-grade bookkeeping
-consistency** ($|L - \sum\delta| \lesssim 10^{-12}$), while the map
-equation with the faithful propose-parallel/commit-serial scheme reaches
-1.2–1.5× against the sequential baseline (its commit pass stays serial:
-28% of the sweep at 4 threads and growing with core count), and the map
-equation under the same two-lock scheme as the atlas equation loses
-consistency (drift $\sim 10^{-8}$, i.e. it no longer optimizes its own
-objective). Partition quality between the two objectives is statistically
+In the prototype benchmark (undirected planted partition, 200k nodes, 4
+cores, every mode driven to a verified single-move local optimum), the
+fused parallel sweep under the atlas equation cuts the top-level phase from
+7.4 s to 1.4 s on 4 threads **with sequential-grade bookkeeping
+consistency at every thread count** ($|L - \sum\delta| \lesssim 10^{-12}$),
+while the map equation with the faithful propose-parallel/commit-serial
+scheme reaches 2.3× against the sequential baseline (its commit pass stays
+a serial floor as cores grow, and snapshot staleness doubles its sweep
+count), and the map equation under the same two-lock scheme as the atlas
+equation loses consistency (drift $\sim 10^{-8}$, i.e. it no longer
+optimizes its own objective). Partition quality between the two objectives is statistically
 indistinguishable on the test suites (karate club: identical partition;
 ring of cliques: identical resolution behavior up to 256 cliques; planted
 partitions: equal recovery within noise).
@@ -379,46 +380,48 @@ throughout; `plogp` uses log2 as in `src/utils/infomath.h`.
 
 Planted partition, 200 blocks × 1000 nodes ($n = 2 \times 10^5$, ~1.2M
 edges, $k_{in} = 8$, nominal $k_{out} = 2$; the generator's two cross-block
-draws per node land closer to 4), Louvain from singletons, 4 cores.
-"L0 time" is the wall time of the top-level (leaf) local-moving phase — the
-phase that dominates large runs; consistency is
+draws per node land closer to 4), Louvain from singletons, 4 cores. Every
+level converges only when a full verification sweep over all nodes accepts
+nothing (§4), so all modes end at single-move local optima. "L0 time" is
+the wall time of the top-level (leaf) local-moving phase — the phase that
+dominates large runs — including the verification sweeps; consistency is
 $|L_{after} - (L_{before} + \sum \delta_{committed})|$ at the top level.
 
 | mode | threads | L0 time | L0 commit | final $L_M$ | modules | consistency |
 |:--|--:|--:|--:|--:|--:|--:|
-| seq-map                  | 1 | 1.114 s | — | 14.761 | 265 | $2 \times 10^{-12}$ |
-| seq-atlas                | 1 | 0.971 s | — | 14.758 | 242 | $3 \times 10^{-13}$ |
-| par-map (serial commit)  | 1 | 2.339 s | 0.240 s | 15.324 | 270 | $1 \times 10^{-12}$ |
-| par-map (serial commit)  | 2 | 1.458 s | 0.238 s | 15.324 | 270 | $1 \times 10^{-12}$ |
-| par-map (serial commit)  | 4 | 0.730 s | 0.207 s | 15.324 | 270 | $1 \times 10^{-12}$ |
-| par-atlas (two-lock)     | 1 | 0.973 s | — | 14.758 | 242 | $3 \times 10^{-13}$ |
-| par-atlas (two-lock)     | 2 | 0.580 s | — | 14.757 | 248 | $8 \times 10^{-13}$ |
-| par-atlas (two-lock)     | 4 | 0.276 s | — | 14.752 | 243 | $8 \times 10^{-13}$ |
-| par-map-twolock (unsound)| 2 | 0.536 s | — | 14.752 | 254 | $7 \times 10^{-9}$ |
-| par-map-twolock (unsound)| 4 | 0.250 s | — | 14.764 | 257 | $2 \times 10^{-8}$ |
+| seq-map                  | 1 | 6.43 s | — | 14.745 | 278 | $2 \times 10^{-12}$ |
+| seq-atlas                | 1 | 7.42 s | — | 14.743 | 250 | $3 \times 10^{-13}$ |
+| par-map (serial commit)  | 1 | 14.31 s | 0.34 s | 15.337 | 289 | $1 \times 10^{-12}$ |
+| par-map (serial commit)  | 2 | 6.55 s | 0.37 s | 15.337 | 289 | $1 \times 10^{-12}$ |
+| par-map (serial commit)  | 4 | 2.80 s | 0.32 s | 15.337 | 289 | $1 \times 10^{-12}$ |
+| par-atlas (two-lock)     | 1 | 7.43 s | — | 14.743 | 250 | $3 \times 10^{-13}$ |
+| par-atlas (two-lock)     | 2 | 2.42 s | — | 14.748 | 251 | $8 \times 10^{-13}$ |
+| par-atlas (two-lock)     | 4 | 1.36 s | — | 14.752 | 252 | $8 \times 10^{-13}$ |
+| par-map-twolock (unsound)| 2 | 2.88 s | — | 14.749 | 285 | $5 \times 10^{-9}$ |
+| par-map-twolock (unsound)| 4 | 1.42 s | — | 14.743 | 291 | $2 \times 10^{-8}$ |
 
 Readings:
 
-- **par-atlas**: 3.5× over its own 1-thread run (which matches seq-atlas
-  exactly — the locking discipline is free when uncontended), consistency at
-  the sequential level for every thread count, equal-or-better final
-  quality. The whole sweep — proposal and commit — parallelizes; there is no
-  serial floor.
+- **par-atlas**: 7.43 s → 1.36 s from 1 to 4 threads (the 1-thread run
+  matches seq-atlas — the locking discipline is free when uncontended),
+  with consistency at the sequential level for every thread count and
+  equal final quality. The whole sweep — proposal, commit, and the
+  verification sweeps — parallelizes; there is no serial floor. Wall-clock
+  ratios above ~4× fold in trajectory effects: the asynchronous schedule
+  changes which moves are proposed, so thread count alters the search path,
+  not just its speed.
 - **par-map (serial commit)**: the faithful scheme scales its proposal pass
-  but keeps a ~0.21 s serial commit pass — 28% of the sweep at 4 threads and
-  a hard Amdahl floor as cores grow — plus snapshot staleness (15 sweeps to
-  converge vs 9). Net speedup over seq-map: 1.5× at 4 threads. (The final-
-  quality gap of this mode is an artifact of this benchmark's plain Louvain
-  pipeline lacking Infomap's tuning iterations, not a claim about Infomap.)
+  but keeps a ~0.33 s serial commit pass as a hard Amdahl floor, and
+  snapshot staleness roughly doubles the sweeps to convergence (68 vs 32).
+  Net effect at 4 threads: 2.3× over seq-map. (The final-quality gap of
+  this mode is an artifact of this benchmark's plain Louvain pipeline
+  lacking Infomap's tuning iterations, not a claim about Infomap.)
 - **par-map-twolock**: scales like par-atlas but is unsound — the committed
   deltas drift from the true codelength change by $10^{-8}$, four orders of
   magnitude above everyone else's floating-point floor, and growing with
   contention. This isolates the cause: the same commit machinery is exact
   for the atlas equation and inexact for the map equation, so the obstacle
   is the objective's global term, nothing else.
-
-A 100-block ($10^5$ nodes) run shows the same pattern with 3.8× for
-par-atlas at 4 threads.
 
 ## 8. Integration path into Infomap
 
@@ -510,7 +513,7 @@ should precede any publication claim.
 # Math validation + quality experiments (pure stdlib, ~4 min; add --quick for ~40 s)
 python3 research/atlas-equation/prototype/atlas_prototype.py
 
-# Vectorized batch search (needs numpy + scipy; add --quick for ~10 s)
+# Vectorized batch search (needs numpy + scipy; add --quick for ~45 s)
 python3 research/atlas-equation/prototype/atlas_numpy.py
 
 # Parallel benchmark (standalone, needs OpenMP)
