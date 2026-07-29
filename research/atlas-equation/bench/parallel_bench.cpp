@@ -32,8 +32,14 @@
  * committed deltas)| for the level-0 sweeps.
  *
  * Build:  g++ -O3 -march=native -fopenmp -std=c++17 -o parallel_bench parallel_bench.cpp
+ *         (or `make`, which probes for OpenMP support)
  * Run:    ./parallel_bench [--blocks 200] [--block-size 1000] [--kin 8] [--kout 2]
- *                          [--threads 1,2,4] [--seed 1]
+ *                          [--threads 1,2,4] [--seed 1] [--verbose]
+ *
+ * A given seed reproduces bit-for-bit within one toolchain, but not across
+ * standard libraries: geometric_distribution and uniform_real_distribution are
+ * implementation-defined, so libstdc++ and libc++ generate different graphs
+ * from the same seed. Compare numbers only within a single build.
  */
 
 #include <algorithm>
@@ -81,22 +87,30 @@ struct Graph {
 Graph plantedPartition(unsigned int numBlocks, unsigned int blockSize, double kIn, double kOut, unsigned int seed)
 {
   const unsigned int n = numBlocks * blockSize;
+  // Guard the degenerate shapes: a single block leaves no cross-block pairs
+  // (n == blockSize) and a block of one leaves no within-block pairs, so the
+  // probabilities would divide by zero and the NaN edge counts below would be
+  // cast to unsigned (undefined behavior).
+  const double pIn = blockSize > 1 ? kIn / static_cast<double>(blockSize - 1) : 0.0;
+  const double pOut = n > blockSize ? kOut / static_cast<double>(n - blockSize) : 0.0;
   std::mt19937 rng(seed);
   std::uniform_real_distribution<double> unif(0.0, 1.0);
-  const double pIn = kIn / static_cast<double>(blockSize - 1);
-  const double pOut = kOut / static_cast<double>(n - blockSize);
 
   std::vector<std::pair<unsigned int, unsigned int>> edges;
   edges.reserve(static_cast<size_t>(n) * static_cast<size_t>(kIn + kOut) / 2);
-  std::geometric_distribution<unsigned int> gapIn(pIn);
+  // geometric_distribution requires p in (0, 1); pIn == 0 means there are no
+  // within-block pairs to draw at all.
+  std::geometric_distribution<unsigned int> gapIn(pIn > 0.0 ? std::min(pIn, 1.0) : 0.5);
   for (unsigned int u = 0; u < n; ++u) {
     const unsigned int block = u / blockSize;
     const unsigned int blockEnd = (block + 1) * blockSize;
     // within-block partners v > u via geometric gap skipping
-    unsigned int v = u + 1 + gapIn(rng);
-    while (v < blockEnd) {
-      edges.emplace_back(u, v);
-      v += 1 + gapIn(rng);
+    if (pIn > 0.0) {
+      unsigned int v = u + 1 + gapIn(rng);
+      while (v < blockEnd) {
+        edges.emplace_back(u, v);
+        v += 1 + gapIn(rng);
+      }
     }
     // cross-block partners: expected count, uniform targets outside the block
     const double expected = pOut * static_cast<double>(n - blockSize);
@@ -208,6 +222,7 @@ double codelength(Objective obj, const std::vector<double>& P, const std::vector
 
 struct SweepStats {
   unsigned int moved = 0;
+  unsigned int fastAccepts = 0; // serial-commit mode: proposals taken in O(1)
   double seconds = 0.0;
   double committedDelta = 0.0; // sum of the deltas believed at commit time
 };
@@ -261,12 +276,33 @@ double deltaAtlas(double POld, double QOld, double PNew, double QNew, double pNo
   return gAtlas(a.pOld, a.qOld) + gAtlas(a.pNew, a.qNew) - gAtlas(POld, QOld) - gAtlas(PNew, QNew);
 }
 
-double deltaMap(double POld, double QOld, double PNew, double QNew, double pNode, double wNode, double kOld, double kNew, double qTotal)
+// The map equation delta splits cleanly into a part that depends only on the
+// two endpoint modules and a single global repricing of plogp(q). Keeping the
+// two apart is what lets the serial commit pass below fast-accept a proposal
+// in O(1) and still be exact: if neither endpoint module has been touched,
+// `perModule` is unchanged from the proposal snapshot and only the global part
+// needs the live q.
+struct MapDeltaParts {
+  double perModule;
+  double dq;
+};
+
+MapDeltaParts deltaMapParts(double POld, double QOld, double PNew, double QNew, double pNode, double wNode, double kOld, double kNew)
 {
   const auto a = after(POld, QOld, PNew, QNew, pNode, wNode, kOld, kNew);
   auto g = [](double P, double Q) { return -plogp(Q) + plogp(P + Q) - plogp(Q); };
-  const double qAfter = qTotal - QOld - QNew + a.qOld + a.qNew;
-  return plogp(qAfter) - plogp(qTotal) + g(a.pOld, a.qOld) + g(a.pNew, a.qNew) - g(POld, QOld) - g(PNew, QNew);
+  return { g(a.pOld, a.qOld) + g(a.pNew, a.qNew) - g(POld, QOld) - g(PNew, QNew),
+           -QOld - QNew + a.qOld + a.qNew };
+}
+
+double deltaMapFromParts(const MapDeltaParts& parts, double qTotal)
+{
+  return parts.perModule + plogp(qTotal + parts.dq) - plogp(qTotal);
+}
+
+double deltaMap(double POld, double QOld, double PNew, double QNew, double pNode, double wNode, double kOld, double kNew, double qTotal)
+{
+  return deltaMapFromParts(deltaMapParts(POld, QOld, PNew, QNew, pNode, wNode, kOld, kNew), qTotal);
 }
 
 struct Level {
@@ -274,8 +310,11 @@ struct Level {
   std::vector<std::atomic<unsigned int>> module;
   std::vector<std::atomic<char>> dirty;
   ModuleState state;
+  // Serial-commit fast-accept stamps (see sweepParallelMapSerialCommit).
+  std::vector<unsigned int> touchedStamp;
+  unsigned int commitStamp = 0;
 
-  explicit Level(const Graph& g) : graph(&g), module(g.n), dirty(g.n), state(g.n)
+  explicit Level(const Graph& g) : graph(&g), module(g.n), dirty(g.n), state(g.n), touchedStamp(g.n, 0)
   {
     for (unsigned int u = 0; u < g.n; ++u)
       dirty[u].store(1, std::memory_order_relaxed);
@@ -505,6 +544,10 @@ struct Proposal {
   unsigned int oldModule = 0;
   unsigned int newModule = 0;
   bool valid = false;
+  double wNode = 0.0;
+  double kOld = 0.0;
+  double kNew = 0.0;
+  MapDeltaParts parts {};
 };
 
 SweepStats sweepParallelMapSerialCommit(Level& level, const std::vector<unsigned int>& order, double* commitSeconds)
@@ -513,13 +556,15 @@ SweepStats sweepParallelMapSerialCommit(Level& level, const std::vector<unsigned
   SweepStats stats;
   auto t0 = Clock::now();
 
-  // Sweep-start snapshot (like Infomap, proposals are read-only)
-  std::vector<double> P, Q;
-  level.snapshot(P, Q);
+  // No snapshot copies: the proposal pass runs entirely before the commit
+  // pass, so reading the live state here yields the sweep-start values anyway
+  // (this is also what Infomap does -- it proposes against live
+  // m_moduleFlowData). Copying 3 arrays per sweep would be pure overhead
+  // charged to this mode.
   const double qTotal = level.state.qTotal.load(std::memory_order_relaxed);
-  std::vector<unsigned int> moduleOf(g.n);
-  for (unsigned int u = 0; u < g.n; ++u)
-    moduleOf[u] = level.module[u].load(std::memory_order_relaxed);
+  auto moduleOf = [&level](unsigned int x) { return level.module[x].load(std::memory_order_relaxed); };
+  auto Pof = [&level](unsigned int m) { return level.state.P[m].load(std::memory_order_relaxed); };
+  auto Qof = [&level](unsigned int m) { return level.state.Q[m].load(std::memory_order_relaxed); };
 
   std::vector<Proposal> proposals(order.size());
 
@@ -537,8 +582,8 @@ SweepStats sweepParallelMapSerialCommit(Level& level, const std::vector<unsigned
         continue;
       sums.clear();
       for (unsigned int k = g.offset[u]; k < g.offset[u + 1]; ++k)
-        sums.add(moduleOf[g.target[k]], g.flow[k]);
-      const unsigned int oldModule = moduleOf[u];
+        sums.add(moduleOf(g.target[k]), g.flow[k]);
+      const unsigned int oldModule = moduleOf(u);
       const double pNode = g.p[u];
       const double kOld = sums.sum[oldModule];
       unsigned int best = oldModule;
@@ -546,14 +591,17 @@ SweepStats sweepParallelMapSerialCommit(Level& level, const std::vector<unsigned
       for (unsigned int cand : sums.touched) {
         if (cand == oldModule)
           continue;
-        const double d = deltaMap(P[oldModule], Q[oldModule], P[cand], Q[cand], pNode, sums.total, kOld, sums.sum[cand], qTotal);
+        const double d = deltaMap(Pof(oldModule), Qof(oldModule), Pof(cand), Qof(cand), pNode, sums.total, kOld, sums.sum[cand], qTotal);
         if (d < bestDelta) {
           bestDelta = d;
           best = cand;
         }
       }
       if (best != oldModule) {
-        proposals[static_cast<size_t>(idx)] = Proposal { u, oldModule, best, true };
+        // Carry the link sums and the module-local part of the delta so the
+        // commit pass can fast-accept without re-walking the node's edges.
+        const auto parts = deltaMapParts(Pof(oldModule), Qof(oldModule), Pof(best), Qof(best), pNode, sums.total, kOld, sums.sum[best]);
+        proposals[static_cast<size_t>(idx)] = Proposal { u, oldModule, best, true, sums.total, kOld, sums.sum[best], parts };
       } else {
         // Proposal phase is a barrier-separated snapshot: no concurrent
         // commits can re-dirty u here, so clearing is race-free.
@@ -563,7 +611,14 @@ SweepStats sweepParallelMapSerialCommit(Level& level, const std::vector<unsigned
   }
 
   auto tCommit = Clock::now();
-  // Serial commit pass with exact recheck against live state.
+  // Serial commit pass. Mirrors Infomap's structure
+  // (src/core/InfomapOptimizer.h:887-909): proposals whose two endpoint
+  // modules are both still untouched in this pass are fast-accepted from the
+  // snapshot; the rest re-walk the node's edges and recompute the delta.
+  ++level.commitStamp;
+  const unsigned int commitStamp = level.commitStamp;
+  if (level.touchedStamp.size() < g.n)
+    level.touchedStamp.assign(g.n, 0);
   for (const Proposal& prop : proposals) {
     if (!prop.valid)
       continue;
@@ -572,6 +627,40 @@ SweepStats sweepParallelMapSerialCommit(Level& level, const std::vector<unsigned
     if (oldModule != prop.oldModule)
       continue;
     const unsigned int best = prop.newModule;
+
+    if (level.touchedStamp[oldModule] != commitStamp && level.touchedStamp[best] != commitStamp) {
+      // Neither module has changed, so the module-local part of the delta is
+      // still exact and only the global term needs the live q -- O(1), and no
+      // edge walk. (Infomap fast-accepts on the snapshot delta outright; the
+      // O(1) exact repricing here keeps this benchmark's consistency metric
+      // meaningful and only makes the map equation look better, never worse.)
+      const double qLive = level.state.qTotal.load(std::memory_order_relaxed);
+      const double d = deltaMapFromParts(prop.parts, qLive);
+      if (d >= -kMinImprovement)
+        continue;
+      const double POldF = level.state.P[oldModule].load(std::memory_order_relaxed);
+      const double QOldF = level.state.Q[oldModule].load(std::memory_order_relaxed);
+      const double PNewF = level.state.P[best].load(std::memory_order_relaxed);
+      const double QNewF = level.state.Q[best].load(std::memory_order_relaxed);
+      const auto a = after(POldF, QOldF, PNewF, QNewF, g.p[u], prop.wNode, prop.kOld, prop.kNew);
+      level.state.P[oldModule].store(a.pOld, std::memory_order_relaxed);
+      level.state.Q[oldModule].store(a.qOld, std::memory_order_relaxed);
+      level.state.P[best].store(a.pNew, std::memory_order_relaxed);
+      level.state.Q[best].store(a.qNew, std::memory_order_relaxed);
+      level.state.members[oldModule].fetch_sub(1, std::memory_order_relaxed);
+      level.state.members[best].fetch_add(1, std::memory_order_relaxed);
+      level.state.qTotal.store(qLive - QOldF - QNewF + a.qOld + a.qNew, std::memory_order_relaxed);
+      level.module[u].store(best, std::memory_order_relaxed);
+      level.touchedStamp[oldModule] = commitStamp;
+      level.touchedStamp[best] = commitStamp;
+      for (unsigned int k = g.offset[u]; k < g.offset[u + 1]; ++k)
+        level.dirty[g.target[k]].store(1, std::memory_order_relaxed);
+      stats.committedDelta += d;
+      ++stats.moved;
+      ++stats.fastAccepts;
+      continue;
+    }
+
     double kOld = 0.0;
     double kNew = 0.0;
     double wNode = 0.0;
@@ -601,6 +690,8 @@ SweepStats sweepParallelMapSerialCommit(Level& level, const std::vector<unsigned
     level.state.members[best].fetch_add(1, std::memory_order_relaxed);
     level.state.qTotal.store(qLive - QOld - QNew + a.qOld + a.qNew, std::memory_order_relaxed);
     level.module[u].store(best, std::memory_order_relaxed);
+    level.touchedStamp[oldModule] = commitStamp;
+    level.touchedStamp[best] = commitStamp;
     for (unsigned int k = g.offset[u]; k < g.offset[u + 1]; ++k)
       level.dirty[g.target[k]].store(1, std::memory_order_relaxed);
     stats.committedDelta += d;
@@ -820,6 +911,8 @@ struct RunResult {
   double consistency = 0.0; // |L_after - (L_before + sum committed deltas)| at level 0
   unsigned int level0Sweeps = 0;
   unsigned int modules = 0;
+  unsigned int level0Moves = 0;
+  unsigned int level0FastAccepts = 0;
 };
 
 RunResult run(const Graph& leafGraph, Mode mode, unsigned int seed, unsigned int maxSweeps)
@@ -850,6 +943,8 @@ RunResult run(const Graph& leafGraph, Mode mode, unsigned int seed, unsigned int
     unsigned int sweeps = 0;
     double levelSeconds = 0.0;
     double commitSeconds = 0.0;
+    unsigned int levelMoves = 0;
+    unsigned int levelFastAccepts = 0;
     LinkSums seqSums(current->n);
     bool verified = false;
     for (; sweeps < maxSweeps; ++sweeps) {
@@ -872,6 +967,8 @@ RunResult run(const Graph& leafGraph, Mode mode, unsigned int seed, unsigned int
       }
       levelSeconds += stats.seconds;
       committed += stats.committedDelta;
+      levelMoves += stats.moved;
+      levelFastAccepts += stats.fastAccepts;
       if (stats.moved == 0) {
         // Neighbour-of-mover dirty marking alone is not sufficient for
         // convergence: a move changes the aggregates of both endpoint
@@ -892,6 +989,8 @@ RunResult run(const Graph& leafGraph, Mode mode, unsigned int seed, unsigned int
     if (topLevel) {
       result.level0Seconds = levelSeconds;
       result.level0CommitSeconds = commitSeconds;
+      result.level0Moves = levelMoves;
+      result.level0FastAccepts = levelFastAccepts;
       result.level0Sweeps = sweeps + 1;
       result.consistency = std::abs(afterL - (before + committed));
       topLevel = false;
@@ -991,16 +1090,16 @@ int main(int argc, char** argv)
   std::printf("planted partition: %u nodes, %zu edges, %u blocks of %u (k_in=%.1f, k_out=%.1f)\n",
               g.n, g.target.size() / 2, numBlocks, blockSize, kIn, kOut);
   std::printf("one-level codelength: %.6f bits\n\n", g.nodeEntropy());
-  std::printf("%-27s %8s | %10s %10s %9s | %12s %12s %8s | %10s\n",
-              "mode", "threads", "L0 time", "L0 commit", "L0 sweeps", "final L_map", "final L_atlas", "modules", "|L-sumdelta|");
+  std::printf("%-27s %8s | %10s %10s %8s %9s | %12s %12s %8s | %10s\n",
+              "mode", "threads", "L0 time", "L0 commit", "L0 fast", "L0 sweeps", "final L_map", "final L_atlas", "modules", "|L-sumdelta|");
 
   for (Mode mode : { Mode::SeqMap, Mode::SeqAtlas }) {
 #ifdef _OPENMP
     omp_set_num_threads(1);
 #endif
     RunResult r = run(g, mode, seed + 100, maxSweeps);
-    std::printf("%-27s %8d | %9.3fs %9.3fs %9u | %12.6f %12.6f %8u | %10.2e\n",
-                modeName(mode), 1, r.level0Seconds, r.level0CommitSeconds, r.level0Sweeps,
+    std::printf("%-27s %8d | %9.3fs %9.3fs %8s %9u | %12.6f %12.6f %8u | %10.2e\n",
+                modeName(mode), 1, r.level0Seconds, r.level0CommitSeconds, "-", r.level0Sweeps,
                 r.finalMap, r.finalAtlas, r.modules, r.consistency);
   }
   for (Mode mode : { Mode::ParMapSerialCommit, Mode::ParAtlas, Mode::ParMapTwoLock }) {
@@ -1009,8 +1108,13 @@ int main(int argc, char** argv)
       omp_set_num_threads(t);
 #endif
       RunResult r = run(g, mode, seed + 100, maxSweeps);
-      std::printf("%-27s %8d | %9.3fs %9.3fs %9u | %12.6f %12.6f %8u | %10.2e\n",
-                  modeName(mode), t, r.level0Seconds, r.level0CommitSeconds, r.level0Sweeps,
+      char fastCol[16];
+      if (r.level0Moves > 0 && r.level0FastAccepts > 0)
+        std::snprintf(fastCol, sizeof fastCol, "%.0f%%", 100.0 * r.level0FastAccepts / r.level0Moves);
+      else
+        std::snprintf(fastCol, sizeof fastCol, "%s", "-");
+      std::printf("%-27s %8d | %9.3fs %9.3fs %8s %9u | %12.6f %12.6f %8u | %10.2e\n",
+                  modeName(mode), t, r.level0Seconds, r.level0CommitSeconds, fastCol, r.level0Sweeps,
                   r.finalMap, r.finalAtlas, r.modules, r.consistency);
     }
   }

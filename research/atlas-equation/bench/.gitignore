@@ -1,0 +1,2 @@
+# Build output of the standalone benchmark (see Makefile).
+parallel_bench

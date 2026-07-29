@@ -53,11 +53,22 @@ class FlowNetwork:
 
     For undirected input each edge (u, v, w) carries flow w / (2W) in each
     direction, and p is proportional to node strength, matching Infomap's
-    undirected flow model. For directed input, p is the PageRank vector with
-    unrecorded uniform teleportation and link flows are the smoothed walk
-    flows p_u * w_uv / s_u (teleportation steps are not encoded), matching
-    Infomap's default directed flow model up to the teleportation target
-    distribution.
+    undirected flow model (this is the model the §7.1 binary-agreement check
+    exercises).
+
+    The directed model here is a deliberately simplified one: p is the raw
+    PageRank vector under uniform teleportation and link flows are the
+    link-following share (1 - tau) * p_u * w_uv / s_u, with teleportation
+    steps left unencoded. It matches NEITHER of Infomap's two teleportation
+    models exactly. Infomap's default (unrecorded) model re-derives the node
+    flow after convergence as the in-aggregate of one teleportation-free link
+    step, divided by the link-following mass 1 - danglingRank, so its node
+    flow is not the raw PageRank vector (src/utils/FlowCalculator.cpp:508-525);
+    its recorded model keeps raw PageRank as node flow but books the
+    teleportation mass separately into module enter/exit flow. The directed
+    experiments below are therefore internally consistent -- both objectives
+    see identical flows, which is what the comparison needs -- but are not
+    validated against the binary.
     """
 
     def __init__(self, n, p, links):
@@ -612,25 +623,47 @@ def experiment_deltas_and_identity(quick):
             f"residual {gap:.2e}",
         )
 
+        # Reference codelengths are recomputed from the network by the
+        # Partition constructor, which aggregates over net.links. That is an
+        # independent path from the incremental _module_terms_after that both
+        # the deltas and move() use: comparing a delta against before/after
+        # readings of the *same* incrementally-updated object would cancel any
+        # error common to both and pass even for a badly wrong formula.
         max_err = 0.0
+        max_commit_err = 0.0
         for _ in range(40):
             node = rng.randrange(n)
             new = rng.randrange(len(part.P))
+            saved = part.module[node]
+            before_scratch = Partition(net, part.module)
+            moved_assignment = list(part.module)
+            moved_assignment[node] = new
+            after_scratch = Partition(net, moved_assignment)
             for _name, delta_fn, L_fn in (
                 ("atlas", part.delta_atlas, Partition.L_atlas),
                 ("map", part.delta_map, Partition.L_map),
             ):
                 d = delta_fn(node, new)
-                before = L_fn(part)
-                saved = part.module[node]
-                part.move(node, new)
-                after = L_fn(part)
-                part.move(node, saved)
-                max_err = max(max_err, abs((after - before) - d))
+                truth = L_fn(after_scratch) - L_fn(before_scratch)
+                max_err = max(max_err, abs(truth - d))
+            # The commit path deserves the same independent check: after
+            # move(), the incrementally maintained aggregates must still agree
+            # with a from-scratch rebuild.
+            part.move(node, new)
+            for L_fn in (Partition.L_atlas, Partition.L_map):
+                max_commit_err = max(
+                    max_commit_err, abs(L_fn(part) - L_fn(after_scratch))
+                )
+            part.move(node, saved)
         all_ok &= check(
-            f"move deltas exact, trial {trial}",
+            f"move deltas exact vs from-scratch, trial {trial}",
             max_err < 1e-10,
             f"max err {max_err:.2e}",
+        )
+        all_ok &= check(
+            f"commit matches from-scratch, trial {trial}",
+            max_commit_err < 1e-10,
+            f"max err {max_commit_err:.2e}",
         )
     return all_ok
 
@@ -709,10 +742,15 @@ def experiment_directed(quick):
 
 
 def experiment_examples(binary, repo_root):
+    """Returns (ok, ran): `ok` is False only on a real mismatch, `ran` says
+    whether any comparison happened, so a silent skip cannot masquerade as a
+    passing validation."""
     print("\n== 6. Repository examples: agreement with the Infomap binary ==")
     if not binary or not os.path.exists(binary):
-        print("  (Infomap binary not found; skipping)")
-        return
+        print("  (Infomap binary not found; build it with `make build-native`)")
+        return True, False
+    all_ok = True
+    ran = False
     for name in ("twotriangles.net", "ninetriangles.net"):
         path = os.path.join(repo_root, "examples", "networks", name)
         if not os.path.exists(path):
@@ -756,22 +794,31 @@ def experiment_examples(binary, repo_root):
             )
             if codelength_reported is not None:
                 # The .tree header rounds to 6 significant digits.
-                ok = abs(ours - codelength_reported) < 1e-4
-                check(
+                ran = True
+                all_ok &= check(
                     f"{name} codelength match",
-                    ok,
+                    abs(ours - codelength_reported) < 1e-4,
                     f"|diff| = {abs(ours - codelength_reported):.2e}",
                 )
+            else:
+                all_ok = False
+                print(f"  [FAIL] {name}: no codelength found in the .tree header")
             print(
                 f"  {name:<18} atlas on same partition: L_atlas = {part.L_atlas():.9f} "
                 f"(gap = {part.kl_gap():.9f} bits)"
             )
+    return all_ok, ran
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--quick", action="store_true")
     ap.add_argument("--infomap-binary", default=None)
+    ap.add_argument(
+        "--require-binary",
+        action="store_true",
+        help="fail instead of skipping when the Infomap binary is unavailable",
+    )
     args = ap.parse_args()
 
     here = os.path.dirname(os.path.abspath(__file__))
@@ -783,7 +830,11 @@ def main():
     experiment_ring(args.quick)
     experiment_planted(args.quick)
     experiment_directed(args.quick)
-    experiment_examples(binary, repo_root)
+    examples_ok, examples_ran = experiment_examples(binary, repo_root)
+    ok &= examples_ok
+    if args.require_binary and not examples_ran:
+        print("  [FAIL] --require-binary given but no comparison ran")
+        ok = False
     print()
     if not ok:
         sys.exit(1)

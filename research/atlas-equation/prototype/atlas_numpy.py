@@ -42,10 +42,19 @@ def plogp(x: np.ndarray) -> np.ndarray:
 
 
 def undirected_flow(n: int, u, v, w) -> tuple[sparse.csr_array, np.ndarray]:
-    """Edge lists -> symmetric flow matrix with entries w/(2W), p = strength/2W."""
+    """Edge lists -> symmetric flow matrix with entries w/(2W), p = strength/2W.
+
+    Self-links are dropped, matching the pure-python prototype. They must not
+    survive: `propose()` classifies each incident link as going to the old
+    module, the new module, or elsewhere, and a self-link would be counted on
+    both sides of a move without the compensating -F[x, x] term, silently
+    corrupting the boundary-after values.
+    """
     u = np.asarray(u)
     v = np.asarray(v)
     w = np.asarray(w, dtype=float)
+    keep = u != v
+    u, v, w = u[keep], v[keep], w[keep]
     total = w.sum()
     rows = np.concatenate([u, v])
     cols = np.concatenate([v, u])

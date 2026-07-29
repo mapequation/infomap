@@ -20,32 +20,41 @@ mass, $\ell_i = -\log_2 P_i$. The consequences:
    where $L_M$ is the two-level map equation, $q$ is the total boundary
    flow, $\hat Q$ the distribution of module entries and $\hat P$ the
    distribution of module flow masses. The two objectives coincide exactly
-   when module usage is proportional to module mass, and the gap is at most
-   $q \log_2(1/\min_i P_i)$ — vanishing with the boundary flow on any
-   family of partitions whose module masses stay bounded below (not
-   uniformly over all partitions; see §3).
-3. **Additive separability.** $L_A = \sum_i g(P_i, Q_i^{in}, Q_i^{out})$ with
-   no global term. A node move touches exactly two module terms. This is the
-   property the map equation lacks (its single coupling term
-   $\operatorname{plogp}(q)$ is repriced by *every* move), and it is what
-   makes the top-level search parallelize with per-module locks instead of a
-   serial commit pass: commits become **linearizable** — every committed move
-   improves the true objective, at any thread count.
+   when module usage is proportional to module mass, and because
+   stationarity forces $Q_i^{in} \le P_i$, the gap is at most
+   $q \log_2(1/q)$ — vanishing with the boundary flow uniformly over all
+   partitions (§3).
+3. **Additive separability.** Up to a move-invariant constant,
+   $L_A = \sum_i g(P_i, Q_i^{in}, Q_i^{out})$ — a sum of per-module terms
+   with no term coupling different modules. A node move touches exactly two
+   of them. The map equation instead carries the coupling term
+   $\operatorname{plogp}(q)$, which *every* move reprices, so an individual
+   move's exact delta is never a function of local state alone. That is what
+   lets the atlas equation commit under per-module locks instead of a serial
+   pass: commits become **linearizable** — every committed move improves the
+   true objective, at any thread count (§4 draws the precise line, which is
+   about per-move exactness, not about batching).
 
 In the prototype benchmark (undirected planted partition, 200k nodes, 4
-cores, every mode driven to a verified single-move local optimum), the
-fused parallel sweep under the atlas equation cuts the top-level phase from
-7.4 s to 1.4 s on 4 threads **with sequential-grade bookkeeping
-consistency at every thread count** ($|L - \sum\delta| \lesssim 10^{-12}$),
-while the map equation with the faithful propose-parallel/commit-serial
-scheme reaches 2.3× against the sequential baseline (its commit pass stays
-a serial floor as cores grow, and snapshot staleness doubles its sweep
-count), and the map equation under the same two-lock scheme as the atlas
-equation loses consistency (drift $\sim 10^{-8}$, i.e. it no longer
-optimizes its own objective). Partition quality between the two objectives is statistically
-indistinguishable on the test suites (karate club: identical partition;
-ring of cliques: identical resolution behavior up to 256 cliques; planted
-partitions: equal recovery within noise).
+physical cores, every mode driven to a verified single-move local optimum),
+the fused parallel sweep under the atlas equation cuts the top-level phase
+from 6.6 s to 1.0 s going from 1 to 4 threads **with sequential-grade
+bookkeeping consistency at every thread count**
+($|L - \sum\delta| \lesssim 10^{-12}$) — and with no serial section, so
+nothing in the design bounds it as cores grow. The map equation's
+propose-parallel/commit-serial scheme (implemented with Infomap's
+fast-accept path, and here exactly rather than on a stale snapshot) reaches
+2.1× over its sequential baseline while its commit pass stays flat at
+~0.35 s regardless of thread count. Under the atlas equation's own two-lock
+scheme the map equation scales but loses consistency (drift $\sim 10^{-8}$,
+i.e. it stops optimizing its own objective) — which isolates the objective,
+not the machinery, as the obstacle. Thread ratios here are end-to-end phase
+times, not parallel speedup: concurrency also changes the search trajectory
+(§7.3). Partition quality tracks the map equation
+closely on every test used here — karate club: identical partition; ring of
+cliques: identical resolution behavior up to 256 cliques; planted partitions:
+recovery differences within seed-to-seed spread — though these are small
+suites, not a systematic quality study.
 
 The name: a *map* has one global legend that must be kept in sync with how
 often every region is visited; an *atlas* is a book of self-contained charts,
@@ -72,7 +81,11 @@ $\operatorname{plogp}(q)$. In the implementation this is explicit:
 assembles the codelength from per-module sums plus the single global
 `enterFlow_log_enterFlow = plogp(enterFlow)`, and
 `updateCodelengthOnMovingNode()` ends by recomputing exactly that scalar
-after *every* accepted move.
+after *every* accepted move. (The default objective is actually
+`BiasedMapEquation`, which keeps a second global — `currentNumModules` — but
+it is inert unless `--preferred-number-of-modules` or `--entropy-corrected`
+is set, and with default options its codelength and deltas reduce exactly to
+the base map equation. The argument below concerns the unbiased objective.)
 
 That one nonlinear global term is the entire reason the move loop resists
 parallelization:
@@ -83,11 +96,18 @@ parallelization:
 - Infomap's inner parallelization
   (`InfomapOptimizer::tryMoveEachNodeIntoBestModuleInParallel`) therefore
   splits each sweep into a **parallel, read-only proposal pass** against a
-  sweep-start snapshot and a **strictly serial commit pass** that rechecks
-  each proposal against the live state. The serial pass is Amdahl's-law
-  overhead that grows precisely when the sweep is productive (early sweeps
-  from singletons, i.e. the expensive top-level phase), and proposals go
-  stale across the barrier, costing extra sweeps.
+  sweep-start snapshot and a **strictly serial commit pass**. That pass
+  re-gathers edge sums and recomputes the delta for any proposal whose old or
+  new module was already touched earlier in the same pass, and *fast-accepts*
+  the rest on their snapshot deltas
+  (`src/core/InfomapOptimizer.h:887-909`). Codelength bookkeeping stays exact
+  either way, because `updateCodelengthOnMovingNode` reprices the global term
+  from the live `enterFlow` at commit; what the fast path gives up is the
+  guarantee that the accepted move is still an improvement, since $q$ may
+  have moved under it. The serial pass is Amdahl's-law overhead that grows
+  precisely when the sweep is productive (early sweeps from singletons, i.e.
+  the expensive top-level phase), and proposals go stale across the barrier,
+  costing extra sweeps.
 
 Conceptually the coupling is no accident: the index codebook is the
 *adaptive* (Shannon-optimal) code for module entries, and optimal adaptive
@@ -144,14 +164,18 @@ from the map equation — they were already module-local, both statistically
 and algorithmically. Only cross-module navigation is made static.
 
 **Interpretation.** $-\log_2 P_i$ is the Shannon codeword length for the
-event "the walker is in module $i$" under the stationary distribution.
-Equivalently: the static code is the optimal entry code for a walker that,
-whenever it crosses a border, relocates according to the stationary
-distribution ("border teleportation"). The atlas equation is the codelength
-paid by a reader who models within-module dynamics exactly but treats
-cross-module transitions as memoryless relocation. What it deliberately
-forgoes is the information in *where* the walk crosses borders — and Theorem
-1 shows that is exactly the KL gap.
+event "the walker is in module $i$" under the stationary distribution. The
+static address book is thus the code that would be *optimal* for a walker
+which, on crossing any border, relocates according to the stationary
+distribution ("border teleportation"); applied to the real walk it is a
+mismatched code, and the index cost is the cross-entropy
+$q\,H(\hat Q, \hat P)$ rather than that reference process's own entropy
+$q\,H(\hat P)$. Theorem 1 identifies the excess as exactly the KL
+divergence: what the atlas equation forgoes is the information in *which*
+module the walk enters, over and above how large that module is. As in the
+map equation, "models the module interior" means an i.i.d. code over the
+module's own usage distribution, not a model of its internal dynamics; the
+change here is confined to cross-module navigation.
 
 ## 3. Properties
 
@@ -176,13 +200,26 @@ Corollaries:
   to module flow mass ($\hat Q = \hat P$). On the symmetric two-triangle
   example the gap is exactly $0$; on `ninetriangles.net` it is $0.0025$
   bits.
-- Since $\hat Q_i \le 1$, the gap obeys $q\,D_{KL}(\hat Q \| \hat P) \le
-  q \log_2(1/\min_i P_i)$. On any family of partitions whose smallest module
-  flow mass is bounded below, the disagreement therefore vanishes linearly
-  in the boundary flow $q$. This is a *conditional* guarantee: it is not
-  uniform over arbitrary partitions, because the mass of some module can
-  shrink as $q$ does — with $P_{min} \sim 2^{-1/q}$ the product stays
-  $\Theta(1)$ — so small boundary flow alone does not bound the gap.
+- **The gap vanishes with the boundary flow, uniformly over all
+  partitions.** Stationarity forces $Q_i^{in} \le P_i$ for every module:
+  $Q_i^{in} = \Pr[X_t \notin i,\, X_{t+1} \in i] \le \Pr[X_{t+1} \in i] =
+  P_i$ (for the unrecorded-teleportation directed model the link flows omit
+  teleportation steps, so the inequality only gains slack). Hence
+  $\hat Q_i / P_i \le 1/q$ for every $i$, and since $\sum_i \hat Q_i = 1$,
+  $$0 \;\le\; L_A - L_M \;=\; q\,D_{KL}(\hat Q \| \hat P) \;\le\; q \log_2(1/q)
+  \;\xrightarrow[q \to 0]{}\; 0 .$$
+  No assumption on module masses is needed. The complementary bound
+  $q \log_2(1/\min_i P_i)$ also holds, so the gap is at most
+  $q \min\{\log_2(1/q),\, \log_2(1/\min_i P_i)\}$. Both are tight enough to
+  matter: over 720 random partitions the largest observed
+  $\max_i Q_i^{in}/P_i$ is exactly $1$, and the largest observed
+  $\text{gap} / (q \log_2(1/q))$ is $0.96$.
+
+  So the objectives agree increasingly well as the partition improves by
+  either one's standards, and they can only disagree materially when the
+  boundary flow is substantial. (Note what this does *not* say: a large
+  gap requires large $q$, but large $q$ does not by itself make a partition
+  bad — the full codelength has other terms.)
 - The bias is interpretable and arguably useful: partitions in which a
   module's entry rate is disproportionate to its size (small, heavily
   trafficked pass-through modules) pay a surcharge of
@@ -202,20 +239,30 @@ where the map equation instead has the shared $\operatorname{plogp}(q)$).
 $\blacksquare$
 
 **Theorem 3 (lock-local, linearizable parallel search).** Run the local
-moving sweep concurrently; to commit a move $v: a \to b$, acquire the two
-module locks in id order, recheck the delta, apply, release. Then every
-committed move improves $L_A$ by more than the threshold $\varepsilon$, at
-any thread count, so the parallel search is monotone and terminates.
+moving sweep concurrently, with each node assigned to exactly one thread per
+sweep. To commit a move $v: a \to b$, acquire the two module locks in id
+order, re-read $v$'s current module and its link sums to $a$ and $b$,
+recheck the delta, apply, release — abandoning the move if $v$ is no longer
+in $a$. Then every committed move improves $L_A$ by more than the threshold
+$\varepsilon$, at any thread count, so the parallel search is monotone and
+terminates.
 
 *Proof sketch.* While holding both locks, membership of $a$ and $b$ cannot
-change (any move with an endpoint in $\{a,b\}$ needs one of the held locks).
-A concurrent move $u: c \to d$ with $c, d \notin \{a, b\}$ changes neither
-the aggregates of $a, b$ nor the classification of any of $v$'s neighbours
-as "in $a$", "in $b$", or "elsewhere" — a neighbour flipping between two
-"elsewhere" modules leaves the delta unchanged. Hence the recheck under the
-two locks is exact, the committed schedule is equivalent to some sequential
-order of strictly improving moves, and $L_A$ is bounded below.
-$\blacksquare$
+change (any move with an endpoint in $\{a,b\}$ needs one of the held locks),
+so the re-read of $v$'s module and of $v$'s link sums to $a$ and $b$ is
+stable for the duration. A concurrent move $u: c \to d$ with
+$c, d \notin \{a, b\}$ changes neither the aggregates of $a, b$ nor the
+classification of any of $v$'s neighbours as "in $a$", "in $b$", or
+"elsewhere" — a neighbour flipping between two "elsewhere" modules leaves
+the delta unchanged. Hence the recheck under the two locks is exact, the
+committed schedule is equivalent to some sequential order of strictly
+improving moves, and $L_A$ is bounded below. $\blacksquare$
+
+The membership re-read is not redundant bookkeeping: without the
+one-thread-per-node assignment (or an equivalent claim on $v$), a thread
+could hold the $\{a,b\}$ locks while $v$ has already been moved to some
+third module, and "recheck the delta" would be evaluating a move that no
+longer starts where it thinks. The benchmark implements both guards.
 
 For the map equation the same argument fails at one point: the delta
 contains $\operatorname{plogp}(q_{after}) - \operatorname{plogp}(q)$, and
@@ -255,14 +302,15 @@ available, in increasing order of throughput:
    propose-parallel/commit-serial pass works unchanged, but every recheck
    loses its global dependency (per candidate: two evaluations of $g$ after
    hoisting the old-module side, versus a 7-wide plogp batch *plus* the live
-   `enterFlow` read) and the "fast accept" condition (neither module touched
-   this sweep) can be tracked per module pair instead of per sweep. Fully
-   deterministic given the seed, independent of thread count.
+   `enterFlow` read), and the existing fast-accept condition — neither
+   endpoint module touched yet in this commit pass — becomes sufficient for
+   *exactness*, not just for cheapness: with no global term there is nothing
+   left that a third module's commit could have staled. Fully deterministic
+   given the seed, independent of thread count.
 2. **Colored parallel commit.** Since a commit touches two modules only,
    accepted proposals form a conflict graph over module pairs; color it and
    apply colors in parallel batches. Deterministic *and* parallel commits,
-   at the cost of a coloring pass. Impossible for the map equation (every
-   pair of commits conflicts through $q$).
+   at the cost of a coloring pass.
 3. **Fused two-lock sweep (maximum throughput).** Each thread proposes and
    commits immediately under ordered per-module spinlocks with an exact
    recheck (Theorem 3). No barriers, no proposal staleness across a commit
@@ -270,18 +318,37 @@ available, in increasing order of throughput:
    thread interleaving, so runs are not bit-reproducible across thread
    counts — the same trade the current inner parallelization already makes
    for proposals, but with the guarantee that every commit improves the true
-   objective.
+   objective. Note what this does *not* fix: contention is per module pair,
+   so a network with a few very heavy modules (early sweeps from singletons
+   are the opposite — many tiny modules) will serialize on those locks. The
+   design trades a guaranteed serial fraction for a data-dependent one.
 
-Design 2 has a second life as **vectorization**: a batch of accepted moves
-with pairwise-disjoint module pairs is exactly a "color", and applying it is
-a handful of numpy scatter-assignments — the after-aggregates of the touched
-modules are already known from the proposal step, so commit is `P[old] =
-old_p; P[new] = new_p; ...`. `prototype/atlas_numpy.py` implements the full
-search this way (sparse-matmul proposals over dirty nodes, greedy-maximal
-disjoint batches): the accepted deltas of every batch sum to the true
-codelength change to machine precision, while the identical batch scheme
-under the map equation drifts by $\sim 10^{-3}$ bits per sweep — the
-vectorized twin of the two-lock-vs-global-term result in the C++ benchmark.
+**Where the objectives actually part company.** Design 2 is *not* the
+dividing line: the map equation can be batched exactly too. Over a set of
+moves with pairwise-disjoint module pairs, its exact change is the
+per-module part plus a single global correction,
+$$\Delta L_M = \sum_{j} \Delta g_M(\text{pair } j) \; + \;
+\operatorname{plogp}\Big(q + \sum_j \delta q_j\Big) - \operatorname{plogp}(q),$$
+i.e. one reduction and one $\operatorname{plogp}$ per batch, no
+approximation (verified numerically to $2.5 \times 10^{-15}$ over 60 random
+batches). Closed-form bulk operations of this kind are what InfoFlow already
+does for the map equation. What the map equation cannot have is **design 3's
+property**: an individual move's delta that is exact *at commit time* from
+locally held state, with no global read-modify-write and no batch barrier.
+There, $q$ is a genuine serialization point.
+
+Design 2 also has a second life as **vectorization**: a batch of accepted
+moves with pairwise-disjoint module pairs is exactly a "color", and applying
+it is a handful of numpy scatter-assignments — the after-aggregates of the
+touched modules are already known from the proposal step, so commit is
+`P[old] = old_p; P[new] = new_p; ...`. `prototype/atlas_numpy.py` implements
+the full search this way (sparse-matmul proposals over dirty nodes,
+greedy-maximal disjoint batches). Its `demo_map_batch_drift` measures what
+happens when *per-move* deltas priced against the pre-batch $q$ are summed
+over a batch: exact for the atlas equation, off by $\sim 10^{-3}$ bits for
+the map equation. Read that as the cost of per-move attribution under a
+global term — not as a claim that exact batch bookkeeping is unavailable to
+the map equation, which the formula above provides.
 
 A convergence caveat that applies to every design (and to dirty-node
 tracking in general, including the neighbour marking used by Infomap's move
@@ -330,10 +397,19 @@ Nothing in §2 assumed undirectedness: enter and exit flows are tracked
 separately ($Q^{in}$ prices addresses, $Q^{out}$ prices exit words), and
 $p_\alpha$ comes from the usual teleportation-smoothed stationary flows. The
 `DeltaFlow` bookkeeping and `addTeleportationFlow` hooks in the optimizer
-apply verbatim — the delta corrections that Infomap applies symmetrically to
-module enter and exit flows carry over unchanged (validated numerically for
-directed flows in the prototype). Kraft-validity of the static addresses
-only needs $\sum_i P_i = 1$.
+apply verbatim, since the atlas equation consumes exactly the same
+per-module enter/exit aggregates the map equation does. The prototype's
+directed experiments confirm the algebra (deltas exact, KL identity exact)
+on a *simplified* directed flow model — raw PageRank node flow with
+link-following link flows — which matches neither of Infomap's teleportation
+models exactly: the default unrecorded model re-derives node flow as the
+in-aggregate of one teleportation-free link step
+(`src/utils/FlowCalculator.cpp:508-525`), and the recorded model books
+teleportation mass separately into enter/exit flow. That difference is
+orthogonal to the objective (both objectives read whatever flows the flow
+calculator produces), but it does mean the directed results here are not
+binary-validated — only the undirected examples in §7.1 are. Validity of the
+static addresses only needs $\sum_i P_i = 1$.
 
 ## 7. Empirical validation
 
@@ -342,6 +418,14 @@ All numbers below are reproducible with the two programs in this directory
 throughout; `plogp` uses log2 as in `src/utils/infomath.h`.
 
 ### 7.1 Correctness of the math (`prototype/atlas_prototype.py`)
+
+The residuals quoted below are *measured* values; the assertions that gate the
+script's exit code use a looser $10^{-10}$ so it stays stable across platforms
+and BLAS-free stdlib arithmetic. Reference codelengths in the delta checks are
+rebuilt from the network by the `Partition` constructor rather than read off the
+incrementally-updated object, so a wrong incremental formula cannot cancel out
+of both sides of the comparison (verified: a 37% error injected into
+`_module_terms_after` fails 6 checks).
 
 - **Move deltas exact** for both objectives, undirected and directed random
   networks, random partitions, 8 trials × 40 moves: max error $1.4 \times
@@ -380,41 +464,63 @@ throughout; `plogp` uses log2 as in `src/utils/infomath.h`.
 
 Planted partition, 200 blocks × 1000 nodes ($n = 2 \times 10^5$, ~1.2M
 edges, $k_{in} = 8$, nominal $k_{out} = 2$; the generator's two cross-block
-draws per node land closer to 4), Louvain from singletons, 4 cores. Every
-level converges only when a full verification sweep over all nodes accepts
-nothing (§4), so all modes end at single-move local optima. "L0 time" is
-the wall time of the top-level (leaf) local-moving phase — the phase that
-dominates large runs — including the verification sweeps; consistency is
-$|L_{after} - (L_{before} + \sum \delta_{committed})|$ at the top level.
+draws per node land closer to 4), Louvain from singletons, 4 physical cores
+(no SMT). Every level converges only when a full verification sweep over all
+nodes accepts nothing (§4), so all modes end at single-move local optima.
+"L0 time" is the wall time of the top-level (leaf) local-moving phase — the
+phase that dominates large runs — including the verification sweeps;
+consistency is $|L_{after} - (L_{before} + \sum \delta_{committed})|$ at the
+top level.
 
-| mode | threads | L0 time | L0 commit | final $L_M$ | modules | consistency |
-|:--|--:|--:|--:|--:|--:|--:|
-| seq-map                  | 1 | 6.43 s | — | 14.745 | 278 | $2 \times 10^{-12}$ |
-| seq-atlas                | 1 | 7.42 s | — | 14.743 | 250 | $3 \times 10^{-13}$ |
-| par-map (serial commit)  | 1 | 14.31 s | 0.34 s | 15.337 | 289 | $1 \times 10^{-12}$ |
-| par-map (serial commit)  | 2 | 6.55 s | 0.37 s | 15.337 | 289 | $1 \times 10^{-12}$ |
-| par-map (serial commit)  | 4 | 2.80 s | 0.32 s | 15.337 | 289 | $1 \times 10^{-12}$ |
-| par-atlas (two-lock)     | 1 | 7.43 s | — | 14.743 | 250 | $3 \times 10^{-13}$ |
-| par-atlas (two-lock)     | 2 | 2.42 s | — | 14.748 | 251 | $8 \times 10^{-13}$ |
-| par-atlas (two-lock)     | 4 | 1.36 s | — | 14.752 | 252 | $8 \times 10^{-13}$ |
-| par-map-twolock (unsound)| 2 | 2.88 s | — | 14.749 | 285 | $5 \times 10^{-9}$ |
-| par-map-twolock (unsound)| 4 | 1.42 s | — | 14.743 | 291 | $2 \times 10^{-8}$ |
+Two fairness notes on the `par-map` baseline, so its serial floor is not an
+artifact of a weak implementation. It carries Infomap's fast-accept path:
+proposals whose two endpoint modules are both still untouched in the commit
+pass are taken in $O(1)$ without re-walking the node's edges (43% of commits
+here), and because the map equation's delta splits into a per-module part and
+one $\operatorname{plogp}(q)$ term, that fast path is implemented *exactly*
+rather than on a stale snapshot — strictly stronger than Infomap's. It also
+takes no per-sweep snapshot copies: the proposal pass precedes all commits, so
+it reads live state directly, as Infomap does.
+
+Timings are from one run with nothing else on the machine; run-to-run spread
+is roughly ±10%, so treat smaller differences as noise. **Read the thread
+ratios as end-to-end phase times, not as parallel speedup.** Concurrency
+changes the search trajectory: at higher thread counts proposals see fresher
+state, more moves land per sweep, the dirty set drains faster, and the level
+converges in fewer sweeps (par-atlas: 32 sweeps at 1 thread, 27 at 4). The
+resulting ratio can exceed the core count — par-atlas is 7.0× from 1 to 4
+threads on 4 physical cores, so at least 40% of that is trajectory, not
+parallelism. The defensible claim here is about the *shape* of the two designs
+(no serial floor vs. a serial floor), not a speedup number.
+
+| mode | threads | L0 time | L0 commit | fast | sweeps | final $L_M$ | modules | consistency |
+|:--|--:|--:|--:|--:|--:|--:|--:|--:|
+| seq-map                  | 1 | 4.98 s | — | — | 28 | 14.746 | 279 | $4 \times 10^{-12}$ |
+| seq-atlas                | 1 | 6.19 s | — | — | 32 | 14.743 | 250 | $3 \times 10^{-13}$ |
+| par-map (serial commit)  | 1 | 10.54 s | 0.36 s | 43% | 53 | 15.317 | 268 | $6 \times 10^{-12}$ |
+| par-map (serial commit)  | 2 | 4.60 s | 0.34 s | 43% | 53 | 15.317 | 268 | $6 \times 10^{-12}$ |
+| par-map (serial commit)  | 4 | 2.37 s | 0.35 s | 43% | 53 | 15.317 | 268 | $6 \times 10^{-12}$ |
+| par-atlas (two-lock)     | 1 | 6.63 s | — | — | 32 | 14.743 | 250 | $3 \times 10^{-13}$ |
+| par-atlas (two-lock)     | 2 | 2.36 s | — | — | 26 | 14.746 | 258 | $8 \times 10^{-13}$ |
+| par-atlas (two-lock)     | 4 | 0.95 s | — | — | 27 | 14.742 | 251 | $8 \times 10^{-13}$ |
+| par-map-twolock (unsound)| 1 | 5.36 s | — | — | 28 | 14.748 | 275 | $4 \times 10^{-12}$ |
+| par-map-twolock (unsound)| 2 | 2.99 s | — | — | 32 | 14.746 | 273 | $5 \times 10^{-9}$ |
+| par-map-twolock (unsound)| 4 | 0.99 s | — | — | 27 | 14.750 | 277 | $1 \times 10^{-8}$ |
 
 Readings:
 
-- **par-atlas**: 7.43 s → 1.36 s from 1 to 4 threads (the 1-thread run
-  matches seq-atlas — the locking discipline is free when uncontended),
-  with consistency at the sequential level for every thread count and
-  equal final quality. The whole sweep — proposal, commit, and the
-  verification sweeps — parallelizes; there is no serial floor. Wall-clock
-  ratios above ~4× fold in trajectory effects: the asynchronous schedule
-  changes which moves are proposed, so thread count alters the search path,
-  not just its speed.
-- **par-map (serial commit)**: the faithful scheme scales its proposal pass
-  but keeps a ~0.33 s serial commit pass as a hard Amdahl floor, and
-  snapshot staleness roughly doubles the sweeps to convergence (68 vs 32).
-  Net effect at 4 threads: 2.3× over seq-map. (The final-quality gap of
-  this mode is an artifact of this benchmark's plain Louvain pipeline
+- **par-atlas**: 6.63 s → 0.95 s from 1 to 4 threads, with consistency at
+  the sequential level for *every* thread count and final quality matching
+  seq-atlas. The 1-thread run reproduces seq-atlas exactly — the locking
+  discipline is free when uncontended. The whole sweep — proposal, commit,
+  and the verification sweeps — parallelizes; there is no serial section to
+  bound it. (See the caveat above on reading the ratio as speedup.)
+- **par-map (serial commit)**: the commit pass does not shrink with threads —
+  0.36 / 0.34 / 0.35 s at 1 / 2 / 4 — so it is a floor that grows as a share
+  of the sweep (15% at 4 threads here, and it would dominate at 16+ cores).
+  Snapshot staleness costs sweeps as well: 53 to converge versus 32 for
+  par-atlas. At 4 threads it comes to 2.1× over seq-map. (The final-quality
+  gap of this mode is an artifact of this benchmark's plain Louvain pipeline
   lacking Infomap's tuning iterations, not a claim about Infomap.)
 - **par-map-twolock**: scales like par-atlas but is unsound — the committed
   deltas drift from the true codelength change by $10^{-8}$, four orders of
@@ -460,33 +566,97 @@ this note.
 
 ## 9. Relation to prior work
 
-- **Map equation** (Rosvall & Bergstrom 2008): the parent framework; the
-  atlas equation changes only the index codebook, from adaptive to static.
-- **RelaxMap** (Bae, Halperin, West, Rosvall, Howe 2017) and **GossipMap**
-  (Bae & Howe 2015): parallel/distributed map-equation search that *relaxes
-  consistency* of the shared state. The atlas equation is the complementary
-  move: change the objective so no shared state exists, keeping exactness.
-- **Markov stability** (Delvenne, Yaliraki, Barahona 2010) and **CPM/Leiden**
-  (Traag, Waltman, van Eck 2019): additively separable objectives — which is
-  why parallel Louvain-family algorithms thrive on them — but not
-  description-length-based. The atlas equation is an MDL-semantics member of
-  the separable family.
-- **Smart teleportation** (Lambiotte & Rosvall 2012): changes the *process*
-  to tame directed flows; the atlas equation changes the *code*, and its
-  static addresses are the coding twin of stationary relocation at borders
-  (§2).
-- **Regularized/Bayesian map equation** (Smiljanić, Edler, Rosvall 2020) and
-  the in-repo **lossy map equation** (rate-distortion): orthogonal
-  variations (priors; lossy node identity) that keep the adaptive index
-  codebook; in principle composable with static addresses.
-- **MapSim** (Blöcker, Smiljanić, Scholtes, Rosvall 2024): uses
-  map-equation coding rates as inter-node similarities — kindred
-  address-based reading of the coding hierarchy.
+**The map equation itself.** Rosvall & Bergstrom, *PNAS* 105(4):1118–1123
+(2008). The atlas equation changes only the index codebook, from adaptive to
+static. Its predecessor is worth noting too: the two-part MDL formulation in
+Rosvall & Bergstrom, *PNAS* 104(18):7327–7331 (2007) *does* pay for the
+module assignment explicitly, so charging for the partition has precedent
+inside this lineage.
 
-To our knowledge the specific construction — cross-entropy index coding
-against the module-mass distribution, chosen to make the objective
-additively separable — has not been proposed; a proper literature check
-should precede any publication claim.
+**Parallel and distributed map-equation search.** This is the literature the
+note's payoff claim lands in, and it is substantial:
+
+- **RelaxMap** — Bae, Halperin, West, Rosvall, Howe, "Scalable and Efficient
+  Flow-Based Community Detection for Large-Scale Graph Analysis," *ACM TKDD*
+  11(3):32 (2017); originally "Scalable Flow-Based Community Detection for
+  Large-Scale Network Analysis," *ICDMW* 2013, pp. 303–310. Its abstract's
+  "relaxes concurrency assumptions to avoid lock overhead" is easy to
+  misread: RelaxMap keeps the codelength and the per-module statistics
+  **exactly consistent** under a *global* lock around the update step. What
+  it relaxes is the strict sequential order — proposals are evaluated
+  concurrently against possibly stale module state, justified by a rarity
+  argument (collision probability $\approx p/N$ per pass). Most relevant
+  here: the authors report **testing the lock-free variant and finding it
+  unworkable** — convergence slower than the sequential algorithm in some
+  cases, plus incorrect active-module counts causing race conditions and
+  memory faults. That is the same experiment as this note's
+  `par-map-twolock` negative control, and it points the same way. The atlas
+  equation's contribution is complementary: rather than relax consistency or
+  pay for a lock that serializes, remove the shared quantity from the
+  objective so per-module locks suffice.
+- **GossipMap** — Bae & Howe, *SC '15*, Article 27: distributed-memory
+  extension of RelaxMap on PowerGraph, billion-edge graphs.
+- **Distributed Infomap** — Zeng & Yu, *ICPP '18*, Article 4: synchronized
+  exchange of community state, explicitly targeting RelaxMap's shared-memory
+  limits.
+- **InfoFlow** — Fung, *Big Data Cogn. Comput.* 3(3):42 (2019): Spark
+  implementation whose closed-form multi-module merge formulas let it commit
+  a *bulk* merge per iteration, giving logarithmic rather than linear
+  iteration count. This is direct evidence that batching is available to the
+  map equation (§4) — with the nuance that InfoFlow's closed form is exact
+  for the batch it commits while the *selection* is greedy pairwise.
+- **HyPC-Map** — Faysal, Arifuzzaman, Chan, Bremer, Popovici, Shalf, *IEEE
+  HPEC* 2021: hybrid MPI+OpenMP with cache-optimized structures, reporting
+  ~25× over prior map-equation implementations at 41M-node scale. Also
+  Faysal & Arifuzzaman, *IEEE BigData* 2019, pp. 4773–4782, and Faysal,
+  Bremer, Arifuzzaman, Popovici, Shalf, Chan, *IPDPSW* 2023, pp. 601–610
+  (sparse-accumulation acceleration).
+- **Distributed map equation and modularity** — Hamann, Strasser, Wagner,
+  Zeitz, *Euro-Par 2018*, LNCS 11014.
+
+Read together, this body of work attacks the same bottleneck from the
+algorithm side: locking, relaxation, synchronization schedules, and bulk
+operations. None of it changes the objective, which is what this note
+proposes.
+
+**Separable objectives.** Markov stability (Delvenne, Yaliraki, Barahona
+2010) and the Constant Potts Model (Traag, Van Dooren, Nesterov, *Phys. Rev.
+E* 84:016114, 2011 — the CPM *objective*; the 2019 *Sci. Rep.* Leiden paper
+is the *algorithm*) are additively separable, which is exactly why
+Louvain-family parallelizations thrive on them — but they are not
+description-length-based. The atlas equation is an MDL-semantics member of
+that family.
+
+**Map-equation variants.** Smart teleportation (Lambiotte & Rosvall 2012)
+changes the *process* to tame directed flows; the atlas equation changes the
+*code*, and its static addresses are the coding counterpart of stationary
+relocation at borders (§2). The regularized/Bayesian map equation
+(Smiljanić, Blöcker, Edler, Rosvall, *J. Complex Netw.* 9(6):cnab044, 2021)
+and the in-repo lossy map equation (rate–distortion) are orthogonal
+variations that keep the adaptive index codebook; in principle both compose
+with static addresses. For the broader landscape see the map-equation survey
+by Smiljanić, Blöcker, Holmgren, Edler, Neuman & Rosvall (*ACM Computing
+Surveys*, online-first; arXiv:2311.04036).
+
+**Cross-entropy readings of map-equation codes.** The "score a walk with a
+codebook it was not built for" move is already published: *flow divergence*
+(Blöcker & Scholtes, arXiv:2401.09052) measures the excess bits from
+describing a network's flow with **another partition's** codebooks, framed
+as relative entropy; *MapSim* (Blöcker, Smiljanić, Scholtes, Rosvall,
+*Proc. First Learning on Graphs Conference*, PMLR 198:52, 2022) uses
+map-equation coding rates as node similarities; *map equation centrality*
+(Blöcker, Nieves, Rosvall, *Appl. Netw. Sci.* 7:56, 2022) reads compression
+changes as a centrality.
+
+**Novelty caveat.** What appears not to have been proposed is the specific
+combination: pricing module *entries* by the module-mass distribution
+$-\log_2 P_i$, chosen so that the objective becomes additively separable,
+together with the identity $L_A = L_M + q\,D_{KL}(\hat Q \| \hat P)$. The
+ingredients are all in the literature, though — mismatched-codebook
+cross-entropy in the three papers just cited, and partition-cost terms in
+the 2007 two-part MDL and in the SBM/MDL line (below). Any publication claim
+needs a careful check against those; the citations here were assembled from
+search metadata rather than from reading every paper end to end.
 
 ## 10. Open questions
 
@@ -497,10 +667,18 @@ should precede any publication claim.
 2. **Hierarchical formalization** (§5): exit-word treatment for nested
    charts; whether the telescoping property yields a cheaper multilevel
    search than recursive two-level.
-3. **Alternative static references.** Addresses from node counts
-   ($-\log_2(n_i/n)$) give a structure-only variant; addresses from
-   teleportation weights connect to smart teleportation. Same separability,
-   different biases.
+3. **Alternative static references.** Addresses from teleportation weights
+   would connect to smart teleportation; same separability, different bias.
+   Note that the obvious other candidate — addresses from node counts,
+   $-\log_2(n_i/n)$ — is *not* unexplored: summed over nodes it is
+   $\sum_i n_i \log_2(n/n_i)$, which is (via Stirling) exactly the
+   group-label term $-\log P(b \mid n) = \log(N! / \prod_r n_r!)$ of the
+   nonparametric SBM description length (Peixoto, *Phys. Rev. X* 4:011047,
+   2014; *Phys. Rev. E* 95:012317, 2017). A node-count variant of the atlas
+   equation would therefore be closer to inferential SBM/MDL community
+   detection than to the map equation — interesting, but it should be
+   developed against that literature, and it omits the SBM's further terms
+   for $\{n_r\}$ and the number of groups.
 4. **Deterministic parallel commits** via module-pair coloring (§4, design
    2): is the coloring overhead worth bit-reproducibility?
 5. **Combination with Bayesian regularization**: the static address book has
