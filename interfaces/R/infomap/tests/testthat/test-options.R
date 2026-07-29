@@ -156,8 +156,14 @@ test_that("whitespace-free values of the same options still render", {
 # different parameter than the one requested and a different codelength than
 # Python reports for the same input.
 test_that("fractional values render with full round-trip precision", {
+  # 1/7 needs all 17 significant digits, and C runtimes disagree on the last
+  # one: glibc, macOS and mingw-gcc render the 1/7 double as
+  # 0.14285714285714285, the clang-aarch64 toolchain behind R on Windows
+  # arm64 as ...284. Both read back as the identical double, so assert the
+  # 16-digit prefix and the round-trip rather than one runtime's digits.
   rendered <- construct_args(NULL, infomap_options(markov_time = 1 / 7))
-  expect_match(rendered, "--markov-time 0.14285714285714285", fixed = TRUE)
+  expect_match(rendered, "--markov-time 0.1428571428571428", fixed = TRUE)
+  expect_identical(as.numeric(sub("^.*--markov-time ", "", rendered)), 1 / 7)
 
   rendered <- construct_args(
     NULL,
