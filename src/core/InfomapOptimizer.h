@@ -79,6 +79,8 @@ public:
 
   void inheritObjectiveParametersFrom(const InfomapOptimizerBase& parent) override;
 
+  bool implementsObjectiveParameters() const override;
+
 protected:
   unsigned int numActiveModules() const override { return m_infomap->activeNetwork().size() - m_emptyModules.size(); }
 
@@ -262,6 +264,18 @@ inline void InfomapOptimizer<BiasedMapEquation>::inheritObjectiveParametersFrom(
   // at all, which is the separate open box in #904.
   if (const auto* p = dynamic_cast<const InfomapOptimizer<BiasedMapEquation>*>(&parent))
     m_objective.setObjectiveParametersFrom(p->m_objective);
+}
+
+template <typename Objective>
+inline bool InfomapOptimizer<Objective>::implementsObjectiveParameters() const
+{
+  return false;
+}
+
+template <>
+inline bool InfomapOptimizer<BiasedMapEquation>::implementsObjectiveParameters() const
+{
+  return true;
 }
 
 template <>
