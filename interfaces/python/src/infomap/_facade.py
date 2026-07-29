@@ -1374,6 +1374,38 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         """
         self._core.addLink(source_id, target_id, weight)
 
+    def reserve_links(self, num_links: int) -> None:
+        """Pre-size the link build buffer for ``num_links`` further links.
+
+        Optional. Links are stored in a buffer that grows by doubling, so
+        building a large network reserves up to twice the memory it needs and
+        copies the buffer on each growth. Giving the count up front avoids both.
+        Counts from the links already added, so it composes across calls.
+
+        :meth:`add_links` does this for you from the length of its input; call it
+        directly when you add links one at a time and know the total in advance.
+
+        Examples
+        --------
+
+        >>> from infomap import Infomap
+        >>> im = Infomap()
+        >>> im.reserve_links(2)
+        >>> im.add_link(1, 2)
+        >>> im.add_link(1, 3)
+
+        See Also
+        --------
+        add_link
+        add_links
+
+        Parameters
+        ----------
+        num_links : int
+            Number of links about to be added.
+        """
+        self._core.reserveLinks(num_links)
+
     def add_links(self, links: Any) -> None:
         """Add several links.
 
