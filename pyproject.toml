@@ -96,7 +96,7 @@ test = [
   # TRY004) that no `extend-select` in this project asks for. Keep this in sync
   # with the ruff-pre-commit `rev` in .pre-commit-config.yaml, and bump both
   # together, deliberately.
-  "ruff==0.15.8",
+  "ruff==0.16.0",
   "scipy",
   # Reads the loaded OpenMP runtime's thread count, which is how
   # test_thread_budget.py checks that a run gives the host's limit back. Without
