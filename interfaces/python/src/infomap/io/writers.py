@@ -23,7 +23,7 @@ the same path value works on both sides of a run.
 from __future__ import annotations
 
 import os
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 
 from ..errors import _translate_engine_errors
 
@@ -55,7 +55,7 @@ class _ResultWritersMixin(_WritersBase):
     # (Pajek) serializes the *input network* and lives on ``Network`` /
     # ``Infomap``. The messages below are built from what THIS host can write
     # (filtered by ``hasattr``), so a ``Result`` never advertises ``.net``.
-    _EXT_WRITERS = {
+    _EXT_WRITERS: ClassVar[dict[str, str]] = {
         "clu": "write_clu",
         "tree": "write_tree",
         "ftree": "write_flow_tree",

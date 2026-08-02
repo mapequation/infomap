@@ -174,8 +174,7 @@ def _facade_params(catalog: ParameterCatalog):
                 "init_default": param.python_default_expr(),
             }
             names.append(name)
-            for facade_name in after.get(name, ()):
-                names.append(facade_name)
+            names.extend(after.get(name, ()))
     # A facade-only param is spliced in after its anchor catalog param; if the
     # anchor were renamed/removed the param would be silently dropped. Fail loud.
     missing_anchors = set(after) - catalog_names

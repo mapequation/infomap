@@ -21,7 +21,7 @@ from ._bindings import InfomapIteratorPhysical as InfomapIteratorPhysical
 from ._bindings import InfomapLeafIterator as InfomapLeafIterator
 from ._bindings import InfomapLeafIteratorPhysical as InfomapLeafIteratorPhysical
 from ._bindings import InfomapLeafModuleIterator as InfomapLeafModuleIterator
-from ._bindings import InfomapWrapper  # noqa: F401  (the only engine import)
+from ._bindings import InfomapWrapper  # the only engine import
 
 # Documented tree-walking iterator/node types returned by ``Infomap.tree`` /
 # ``leaf_modules`` and the physical variants (source/api/iterators.rst). They are

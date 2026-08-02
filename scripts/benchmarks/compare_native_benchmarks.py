@@ -250,10 +250,12 @@ def render_markdown(result: dict[str, object]) -> str:
     lines.extend(
         [
             "",
-            "Thresholds: "
-            f"regression >= {RELATIVE_REGRESSION_THRESHOLD:.0%} and >= {ABSOLUTE_REGRESSION_THRESHOLD_SEC:.2f}s, "
-            f"severe >= {SEVERE_RELATIVE_REGRESSION_THRESHOLD:.0%} and >= {SEVERE_ABSOLUTE_REGRESSION_THRESHOLD_SEC:.2f}s, "
-            f"inconclusive when baseline < {MIN_BASELINE_RUNTIME_SEC:.2f}s or CV > {CV_INCONCLUSIVE_THRESHOLD:.2f}.",
+            (
+                "Thresholds: "
+                f"regression >= {RELATIVE_REGRESSION_THRESHOLD:.0%} and >= {ABSOLUTE_REGRESSION_THRESHOLD_SEC:.2f}s, "
+                f"severe >= {SEVERE_RELATIVE_REGRESSION_THRESHOLD:.0%} and >= {SEVERE_ABSOLUTE_REGRESSION_THRESHOLD_SEC:.2f}s, "
+                f"inconclusive when baseline < {MIN_BASELINE_RUNTIME_SEC:.2f}s or CV > {CV_INCONCLUSIVE_THRESHOLD:.2f}."
+            ),
             "",
             f"Counts: {counts['regression']} regression, {counts['manual_review']} manual review, {counts['inconclusive']} inconclusive, {counts['improvement']} improvement.",
             "",

@@ -2328,9 +2328,12 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         # meta_data) at run time, so input failures surfacing here become
         # NetworkParseError; everything else is InfomapError.
         if initial_partition is not None:
-            with self._initial_partition(initial_partition):
-                with _engine_log_routing(), _translate_engine_errors(classify=True):
-                    self._core.run(args)
+            with (
+                self._initial_partition(initial_partition),
+                _engine_log_routing(),
+                _translate_engine_errors(classify=True),
+            ):
+                self._core.run(args)
         else:
             with _engine_log_routing(), _translate_engine_errors(classify=True):
                 self._core.run(args)

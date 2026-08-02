@@ -59,7 +59,7 @@ def test_tl_namespace_exposes_curated_names_only():
     # infomap.tl is the Scanpy-style tools namespace; its internal typing
     # imports (Any/Mapping/...) must not be part of its public surface, and
     # the GraphRAG tools are re-exported here as first-class members.
-    import infomap.tl as tl
+    from infomap import tl
 
     assert tl.__all__ == [
         "GraphRAGGraph",
@@ -85,7 +85,7 @@ def test_io_namespace_reexports_export_helpers():
     # The result-export helpers are re-exported at the io namespace level
     # (e.g. infomap.io.to_networkx), mirroring infomap.tl, so io has a curated
     # public surface rather than only submodules.
-    import infomap.io as io
+    from infomap import io
 
     assert io.__all__ == list(infomap.io.export.__all__)
     for name in io.__all__:

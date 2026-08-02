@@ -189,7 +189,7 @@ def test_tl_infomap_writes_metadata():
 def test_tl_infomap_rejects_non_int_castable_module_labels(monkeypatch):
     data = _adata()
 
-    import infomap.tl as tl
+    from infomap import tl
 
     # Defensive guard: Infomap module labels are always ints, but if a label is
     # not int-castable, surface a clear message instead of a raw cast error.

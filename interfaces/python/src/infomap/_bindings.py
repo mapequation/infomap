@@ -1,4 +1,4 @@
-from ._swig import *  # noqa: F401,F403
+from ._swig import *  # noqa: F403
 
 # Star-import skips underscore-prefixed names; the private engine hooks the
 # package layers need are re-exported explicitly.
