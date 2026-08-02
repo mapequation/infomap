@@ -37,7 +37,7 @@ repos:
   # the same version is pinned in pyproject.toml's `test` extra (which is what
   # CI installs) and all three bump together.
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.8
+    rev: v0.16.0
     hooks:
       - id: ruff-check
         name: ruff (lint)

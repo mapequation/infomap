@@ -202,7 +202,7 @@ def _is_igraph_graph(obj: Any) -> bool:
 
 def _is_scipy_sparse(obj: Any) -> bool:
     try:
-        import scipy.sparse as sparse
+        from scipy import sparse
     except ImportError:
         return False
     return bool(sparse.issparse(obj))

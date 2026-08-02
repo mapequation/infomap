@@ -26,9 +26,9 @@ def as_contiguous_numeric_array(np, array, name):
     if array.dtype.kind not in "uif":
         raise ValueError(f"Numpy {name} arrays must have a numeric dtype.")
 
-    if array.dtype.kind == "f" and array.dtype.itemsize not in (4, 8):
-        array = array.astype(np.float64, copy=False)
-    elif array.dtype.kind in "ui" and array.dtype.itemsize not in (1, 2, 4, 8):
+    if (array.dtype.kind == "f" and array.dtype.itemsize not in (4, 8)) or (
+        array.dtype.kind in "ui" and array.dtype.itemsize not in (1, 2, 4, 8)
+    ):
         array = array.astype(np.float64, copy=False)
 
     return as_native_contiguous(np, array)

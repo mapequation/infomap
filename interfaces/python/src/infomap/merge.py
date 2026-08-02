@@ -33,7 +33,7 @@ import sys
 from collections.abc import Iterable, Sequence
 from typing import TypedDict
 
-__all__ = ["merge_trial_results", "MergeError", "MergeSummary"]
+__all__ = ["MergeError", "MergeSummary", "merge_trial_results"]
 
 SUPPORTED_FORMATS = ("tree", "clu")
 

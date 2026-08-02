@@ -3,7 +3,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
 
-from parameter_catalog import ParameterCatalog  # noqa: E402
+from parameter_catalog import ParameterCatalog
 
 
 def test_parameter_catalog_classifies_binding_render_policies():

@@ -8,7 +8,7 @@ pytestmark = pytest.mark.fast
 def multilevel_modules(im, states):
     modules = defaultdict(list)
 
-    for level in range(0, im.num_levels - 1):
+    for level in range(im.num_levels - 1):
         module_id = 1
         prev_path = None
         for node in im.get_nodes(states=states):

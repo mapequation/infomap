@@ -581,7 +581,7 @@ def test_run_graphrag_communities_silent_is_deprecated(tmp_path):
 def test_run_graphrag_communities_reads_runs_and_writes_outputs(tmp_path):
     from infomap.graphrag import run_graphrag_communities
 
-    entities_path, relationships_path = _write_graphrag_fixture(tmp_path)
+    entities_path, _relationships_path = _write_graphrag_fixture(tmp_path)
     input_dir = entities_path.parent
     output_dir = tmp_path / "result"
 

@@ -91,11 +91,11 @@ test = [
   # Pinned for the same reason as pyright above: `ruff check` gates CI (it is
   # the first step of test-python-doctest), and new ruff releases promote rules
   # into the default set, so an unpinned ruff turns master red with no code
-  # change. 0.16.0 did exactly that, adding 38 findings across nine rule
-  # families (PLC0414, PLR0402, RUF012, RUF022, RUF023, RUF100, SIM114, SIM117,
-  # TRY004) that no `extend-select` in this project asks for. Keep this in sync
-  # with the ruff-pre-commit `rev` in .pre-commit-config.yaml, and bump both
-  # together, deliberately.
+  # change. 0.16.0 did exactly that (77 findings repo-wide); its default set
+  # was adopted deliberately with this bump -- findings fixed or ignored with
+  # reasons in [tool.ruff.lint], and the E4/E7/E9/F rules 0.16.0 dropped from
+  # the defaults re-selected there. Keep this in sync with the ruff-pre-commit
+  # `rev` in .pre-commit-config.yaml, and bump both together, deliberately.
   "ruff==0.16.0",
   "scipy",
   # Reads the loaded OpenMP runtime's thread count, which is how
@@ -185,12 +185,24 @@ extend-exclude = [
 ]
 
 [tool.ruff.lint]
-# flake8-bugbear (B) on top of the default E/F rules: likely-bug patterns.
+# flake8-bugbear (B) on top of the default rules: likely-bug patterns.
 # The main one here is B905 -- zip() without strict= -- fixed by asserting the
 # equal-length invariant (strict=True) on the paired-array call sites.
 # pyupgrade (UP): modernize syntax to the >=3.11 floor (PEP 585/604
 # annotations, etc.). isort (I): keep imports sorted and grouped.
-extend-select = ["B", "UP", "I"]
+# E4/E7/E9/F re-select the pycodestyle/pyflakes rules that ruff 0.16.0 dropped
+# from its default set (E402, E731, E741, F403, F405, ...); this project uses
+# them (the F403/E402 suppressions below and in-file noqa directives are
+# load-bearing), so keep them enforced rather than losing them to a shifting
+# default.
+extend-select = ["B", "UP", "I", "E4", "E7", "E9", "F"]
+ignore = [
+  # TRY004 wants TypeError where this API deliberately raises ValueError (and
+  # a generator script RuntimeError) today. Changing a raised exception type
+  # is a user-visible behavior change that belongs to the error-taxonomy work
+  # tracked in #791, not to a linter version bump.
+  "TRY004",
+]
 
 [tool.ruff.lint.per-file-ignores]
 "build/py/*.py" = [
@@ -204,6 +216,17 @@ extend-select = ["B", "UP", "I"]
 # deprecation warning, a boundary check), which B018 flags as a useless
 # expression. That access is the point of the test, so ignore B018 there.
 "test/python/*" = ["B018"]
+# The re-export boundary modules use the redundant-alias idiom
+# (`from x import y as y`) on purpose: it is the convention pyright and mypy
+# (--no-implicit-reexport) recognize as an explicit re-export, and _core.py
+# documents why the SWIG surface is forwarded through a single boundary.
+# PLC0414 (new in ruff 0.16.0's default set) would strip exactly those aliases.
+"interfaces/python/src/infomap/{_bindings,_core,export,graphrag}.py" = [
+  "PLC0414",
+]
+# The check_* runners catch Exception around each sub-test to count failures
+# and keep going; the broad catch is the harness working as designed.
+"test/scripts/*" = ["BLE001"]
 
 [tool.pyright]
 # Type-check the hand-written package only. The SWIG-generated _swig.py is
