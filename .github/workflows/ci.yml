@@ -135,7 +135,10 @@ jobs:
 
       - name: Install sanitizer toolchain
         run: |
-          sudo apt-get update
+          # A third-party repo in the runner image (azure-cli, chrome, ...) can
+          # 403, which fails `apt-get update` even when the Ubuntu archive we
+          # install from downloaded fine. The install is the real gate.
+          sudo apt-get update || echo "::warning::apt-get update reported errors; continuing to the install"
           sudo apt-get install -y clang lld ninja-build
         shell: bash
 
@@ -163,7 +166,10 @@ jobs:
 
       - name: Install clang-tidy toolchain
         run: |
-          sudo apt-get update
+          # A third-party repo in the runner image (azure-cli, chrome, ...) can
+          # 403, which fails `apt-get update` even when the Ubuntu archive we
+          # install from downloaded fine. The install is the real gate.
+          sudo apt-get update || echo "::warning::apt-get update reported errors; continuing to the install"
           sudo apt-get install -y clang-tidy ninja-build
         shell: bash
 
