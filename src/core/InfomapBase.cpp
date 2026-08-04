@@ -785,6 +785,14 @@ private:
   //
   // Takes the tree to walk rather than reading m_infomap: under --parallel-trials the trial runs on
   // a worker instance, and checking the main instance's tree would check an unpartitioned one.
+  //
+  // Running after restoreHardPartition() rather than before is deliberate, and does not check a
+  // different tree than the codelength was computed from. A collapsed hard-partition super-node has
+  // its child chain swapped out, so firstChild is null and it is a leaf while collapsed -- skipped
+  // here either way -- and the restore only splices the original leaves into its place. Measured on
+  // a hard partition of ninetriangles.net: same four modules at the same depths with bit-identical
+  // flow, enter and exit flow before and after; only childDegree() changes (1 super-node child to 9
+  // real ones), and reporting the real count in the message is the more useful of the two.
   void checkNoNegativeModuleFlow(InfoNode& root) const
   {
     for (auto it = root.begin_post_depth_first(); !it.isEnd(); ++it) {
