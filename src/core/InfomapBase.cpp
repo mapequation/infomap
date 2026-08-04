@@ -737,19 +737,26 @@ private:
   // feature nodes at flow 0 with negative enter/exit flow, and the two-level index codelength
   // came out at 1.1e-16 -- no cost at all for entering either of two modules (#957). An error
   // rather than a warning: there is no reading of the map equation under which this is a result.
+  // Not an exact zero bound: the flow models accumulate, so a value a few epsilons below zero is
+  // rounding, not a broken distribution.
+  static constexpr double negativeFlowTolerance = -1e-10;
+
+  static const char* negativeFlowQuantity(const FlowData& data) noexcept
+  {
+    if (data.flow < negativeFlowTolerance)
+      return "flow";
+    if (data.enterFlow < negativeFlowTolerance)
+      return "enter flow";
+    if (data.exitFlow < negativeFlowTolerance)
+      return "exit flow";
+    return nullptr;
+  }
+
   void checkNoNegativeFlow() const
   {
-    // Not an exact zero bound: the flow models accumulate, so a value a few epsilons below zero
-    // is rounding, not a broken distribution.
-    constexpr double tolerance = -1e-10;
-
     for (const auto* leafNode : m_infomap.leafNodes()) {
       const auto& data = leafNode->data;
-      const char* quantity = data.flow < tolerance
-          ? "flow"
-          : data.enterFlow < tolerance ? "enter flow"
-          : data.exitFlow < tolerance  ? "exit flow"
-                                       : nullptr;
+      const char* quantity = negativeFlowQuantity(data);
       if (quantity == nullptr)
         continue;
 
@@ -763,6 +770,51 @@ private:
                                      data.flow,
                                      data.enterFlow,
                                      data.exitFlow));
+    }
+  }
+
+  // The same invariant one level up. A module's enter/exit flow is not the sum of its leaves': the
+  // optimizer maintains it incrementally and removes the teleportation internal to the module, and
+  // that removal can over-subtract even when every leaf is sound. On a bipartite network under
+  // --regularized this left modules at enter/exit -0.00121 and the resulting per-module codelength
+  // negative, which showed up only as a small disagreement between two evaluations of the same
+  // partition rather than as a failure (#958).
+  //
+  // Checked once per trial on the finished tree rather than after every consolidation: a walk over
+  // the modules costs nothing next to the search, and a codelength is only reported from here on.
+  //
+  // Takes the tree to walk rather than reading m_infomap: under --parallel-trials the trial runs on
+  // a worker instance, and checking the main instance's tree would check an unpartitioned one.
+  //
+  // Running after restoreHardPartition() rather than before is deliberate, and does not check a
+  // different tree than the codelength was computed from. A collapsed hard-partition super-node has
+  // its child chain swapped out, so firstChild is null and it is a leaf while collapsed -- skipped
+  // here either way -- and the restore only splices the original leaves into its place. Measured on
+  // a hard partition of ninetriangles.net: same four modules at the same depths with bit-identical
+  // flow, enter and exit flow before and after; only childDegree() changes (1 super-node child to 9
+  // real ones), and reporting the real count in the message is the more useful of the two.
+  void checkNoNegativeModuleFlow(InfoNode& root) const
+  {
+    for (auto it = root.begin_post_depth_first(); !it.isEnd(); ++it) {
+      const auto& node = *it;
+      if (node.isLeaf())
+        continue;
+
+      const char* quantity = negativeFlowQuantity(node.data);
+      if (quantity == nullptr)
+        continue;
+
+      throw InfomapError(ExitCode::InternalError,
+                         fmt::format(FMT_STRING("Negative {} on a module at depth {} with {} children: flow {:g}, "
+                                                "enter flow {:g}, exit flow {:g}. These are probabilities, so no codelength "
+                                                "is defined. Every leaf node's flow is sound here, so this is a bug in how "
+                                                "module flow is accumulated for this combination of input and flow model."),
+                                     quantity,
+                                     it.depth(),
+                                     node.childDegree(),
+                                     node.data.flow,
+                                     node.data.enterFlow,
+                                     node.data.exitFlow));
     }
   }
 
@@ -931,6 +983,8 @@ private:
 
     if (infomap.haveHardPartition())
       infomap.restoreHardPartition();
+
+    checkNoNegativeModuleFlow(infomap.root());
   }
 
   void finishTrial(unsigned int trialIndex, Stopwatch& timer, Result& result)
