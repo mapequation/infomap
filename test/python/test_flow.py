@@ -89,6 +89,23 @@ def test_negative_module_flow_is_an_error(network_fixture_path):
         net.run(regularized=True, two_level=True, seed=7, num_trials=1)
 
 
+def test_negative_module_flow_is_an_error_under_parallel_trials(network_fixture_path):
+    # The trial runs on a worker instance under --parallel-trials, so a check reading the main
+    # instance would walk an unpartitioned tree and pass every time. That is the path where a
+    # silent wrong codelength is worst -- it reported 0.9210660968 here -- so cover it
+    # separately from the serial one above.
+    net = infomap.Network.from_file(str(network_fixture_path("bipartite_uneven.net")))
+
+    with pytest.raises(infomap.InfomapError, match=r"Negative enter flow on a module"):
+        net.run(
+            regularized=True,
+            two_level=True,
+            seed=7,
+            num_trials=4,
+            parallel_trials=True,
+        )
+
+
 @pytest.mark.xfail(
     strict=True,
     reason="#958: module enter/exit flow still goes negative on bipartite input under "

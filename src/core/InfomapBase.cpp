@@ -782,9 +782,12 @@ private:
   //
   // Checked once per trial on the finished tree rather than after every consolidation: a walk over
   // the modules costs nothing next to the search, and a codelength is only reported from here on.
-  void checkNoNegativeModuleFlow() const
+  //
+  // Takes the tree to walk rather than reading m_infomap: under --parallel-trials the trial runs on
+  // a worker instance, and checking the main instance's tree would check an unpartitioned one.
+  void checkNoNegativeModuleFlow(InfoNode& root) const
   {
-    for (auto it = m_infomap.root().begin_post_depth_first(); !it.isEnd(); ++it) {
+    for (auto it = root.begin_post_depth_first(); !it.isEnd(); ++it) {
       const auto& node = *it;
       if (node.isLeaf())
         continue;
@@ -973,7 +976,7 @@ private:
     if (infomap.haveHardPartition())
       infomap.restoreHardPartition();
 
-    checkNoNegativeModuleFlow();
+    checkNoNegativeModuleFlow(infomap.root());
   }
 
   void finishTrial(unsigned int trialIndex, Stopwatch& timer, Result& result)
