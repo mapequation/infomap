@@ -1326,6 +1326,23 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
     addFlowNote("Using bipartite links");
 
     if (!config.skipAdjustBipartiteFlow && !config.bipartiteTeleportation) {
+      // A node that is not coded has no visit rate, and therefore no teleportation into it
+      // either. Clearing the node's flow while leaving its teleport flow and weight behind
+      // broke the invariant the enter/exit flow below rests on -- that a node's
+      // self-teleportation teleFlow * weight is part of its flow -- so the subtraction ran
+      // past zero: with --regularized on examples/networks/bipartite.net the two feature
+      // nodes came out at flow 0 and enter/exit -0.02901104907 = -(0.1232969585 *
+      // 0.2352941176), and every module containing one inherited a negative enter flow.
+      // The two-level index codelength then evaluated to 1.1e-16, charging nothing at all
+      // for entering either module (#957).
+      const auto uncode = [this](unsigned int nodeIndex) {
+        nodeFlow[nodeIndex] = 0.0;
+        if (!nodeTeleportFlow.empty())
+          nodeTeleportFlow[nodeIndex] = 0.0;
+        if (!nodeTeleportWeights.empty())
+          nodeTeleportWeights[nodeIndex] = 0.0;
+      };
+
       // Only links between ordinary nodes and feature nodes in bipartite network
       // Don't code feature nodes -> distribute all flow from those to ordinary nodes
       for (auto& link : flowLinks) {
@@ -1333,10 +1350,10 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
 
         if (sourceIsFeature) {
           nodeFlow[link.target] += link.flow;
-          nodeFlow[link.source] = 0.0; // Doesn't matter if done multiple times on each node.
+          uncode(link.source); // Doesn't matter if done multiple times on each node.
         } else {
           nodeFlow[link.source] += link.flow;
-          nodeFlow[link.target] = 0.0; // Doesn't matter if done multiple times on each node.
+          uncode(link.target); // Doesn't matter if done multiple times on each node.
         }
         // TODO: Should flow double before moving to nodes, does it cancel out in normalization?
 

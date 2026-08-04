@@ -37,6 +37,45 @@ def test_skip_adjust_bipartite_flow_still_runs(example_network_path):
     assert result.codelength == pytest.approx(0.2776646519)
 
 
+def test_bipartite_flow_adjustment_leaves_no_negative_enter_flow(example_network_path):
+    # The adjustment that moves flow off the feature nodes left their teleport flow and
+    # weight behind, and the self-teleportation removed from enter/exit flow then ran past
+    # the zero it had left: both feature nodes came out at flow 0 and enter/exit
+    # -(0.1232969585 * 0.2352941176) = -0.02901104907. Every module containing one inherited
+    # a negative enter flow, and the two-level index codelength evaluated to 1.1e-16 --
+    # charging nothing at all for entering either of two modules (#957).
+    #
+    # Asserted on the index term rather than on the total, because that is where the
+    # cancellation showed: the total stayed plausible while the index term vanished.
+    net = infomap.Network.from_file(str(example_network_path("bipartite.net")))
+    result = net.run(regularized=True, two_level=True, seed=7, num_trials=1)
+
+    assert len(set(result.modules().values())) == 2
+    assert result.index_codelength == pytest.approx(0.01551663112)
+    assert result.codelength == pytest.approx(0.7991539547)
+
+
+def test_bipartite_regularized_partition_scores_the_same_when_read_back(
+    example_network_path,
+):
+    # Two independent evaluations of one partition: the optimizer's tracked value, and a
+    # fresh recompute over the tree from the module enter/exit flow. Negative flow drove
+    # them apart -- 0.5939114118 against 0.4252773622 -- while they agree on every input
+    # whose flow is sound.
+    path = str(example_network_path("bipartite.net"))
+    options = {"regularized": True, "two_level": True, "seed": 7, "num_trials": 1}
+
+    im = infomap.Infomap(silent=True, **options)
+    im.read_file(path)
+    result = im.run()
+
+    rescored = infomap.Infomap(silent=True, no_infomap=True, **options)
+    rescored.read_file(path)
+    rescored.run(initial_partition=result.modules())
+
+    assert rescored.codelength == pytest.approx(result.codelength)
+
+
 def test_flow_convergence_is_visible_on_the_result():
     # A failed power iteration means the flow is not the network's stationary
     # distribution, so the codelength describes something else. It used to be reported
