@@ -24,7 +24,11 @@ runs:
           if [ "$RUNNER_OS" = "macOS" ]; then
             brew install ccache
           else
-            sudo apt-get update && sudo apt-get install -y ccache
+            # A third-party repo in the runner image (azure-cli, chrome, ...) can
+            # 403, which fails `apt-get update` even when the Ubuntu archive we
+            # install from downloaded fine. The install is the real gate.
+            sudo apt-get update || echo "::warning::apt-get update reported errors; continuing to the install"
+            sudo apt-get install -y ccache
           fi
         fi
         ccache --version
