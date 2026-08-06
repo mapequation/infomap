@@ -6,7 +6,7 @@ behavior is regression-sensitive, and changes can be difficult to validate
 without deep project context.
 
 Issues, discussions, bug reports, reproducible examples, documentation fixes,
-and small maintenance suggestions are welcome. For code changes, please open an
+and small maintenance suggestions are welcome. For code changes, open an
 issue or discussion first so maintainers can confirm the scope and validation
 path before review work starts.
 
@@ -30,7 +30,7 @@ Before opening an agreed pull request, read:
 - `RELEASING.md` before touching release or publishing behavior, and for the
   Python API deprecation policy before deprecating or removing public names
 
-Branch from `master`; do not push directly to `master`. Use
+Branch from `master`. Do not push directly to `master`. Use
 [Conventional Commits](https://www.conventionalcommits.org/) for commit
 messages. Run the smallest sufficient verification from `AGENTS.md` before
 requesting review.

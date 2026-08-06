@@ -17,7 +17,7 @@ Record:
 ## Recommended defaults
 
 - Set `seed` for repeatability.
-- Use more than one trial for serious analyses; around `num_trials=10` suits most analyses and `num_trials=20` or more (or `Options(converge=True)`) for results you publish, though large or time-sensitive runs may need adjustment.
+- Use more than one trial for serious analyses. Around `num_trials=10` suits most analyses; use `num_trials=20` or more (or `Options(converge=True)`) for results you publish. Large or time-sensitive runs may need adjustment.
 - Separate smoke checks from research runs: use small inputs or one trial to validate setup, then ask before launching long runs, sweeps, repeated seeds, or notebook executions.
 - Save both machine-readable results and human-readable notes.
 - Preserve mappings from internal ids to original node labels.
@@ -25,7 +25,7 @@ Record:
 
 ## Runtime planning
 
-Use these local benchmark results only as order-of-magnitude guidance. They were measured on macOS arm64 with Infomap 2.10.1, `seed=123`, no file output, and wall-clock time around `read_file + run`; the 2.11–2.13 releases added several performance improvements, so treat these numbers as upper bounds and prefer the regenerated figures in `examples/notebooks/benchmark-performance.ipynb`. Python used the package API from a virtual environment; R includes one-shot `Rscript` startup overhead.
+Use these local benchmark results only as order-of-magnitude guidance. They were measured on macOS arm64 with Infomap 2.10.1, `seed=123`, no file output, and wall-clock time around `read_file + run`. The 2.11–2.13 releases added several performance improvements, so treat these numbers as upper bounds and prefer the regenerated figures in `examples/notebooks/benchmark-performance.ipynb`. Python used the package API from a virtual environment; R includes one-shot `Rscript` startup overhead.
 
 | Network | Size | States | Links | Trials | CLI | Python | R |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -81,7 +81,7 @@ When Infomap returns one top module, the reported `codelength` is normally equal
 - For modular results, `codelength = index_codelength + module_codelength`.
 - `module_codelength` alone is not the value to compare against `one_level_codelength`; the index codebook also costs bits.
 
-Infomap may collapse to one module when candidate modular partitions do not improve the total codelength over the one-level solution. This usually means that, under the current network representation and flow model, modules do not compress the flow better than a one-level description. It is not automatically an error.
+Infomap can collapse to one module when candidate modular partitions do not improve the total codelength over the one-level solution. This usually means that, under the current network representation and flow model, modules do not compress the flow better than a one-level description. It is not automatically an error.
 
 If the user expected multiple modules, check:
 
@@ -90,7 +90,7 @@ If the user expected multiple modules, check:
 - **Network construction**: check that ids, delimiters, isolated nodes, duplicate links, self-links, and component structure match the intended graph.
 - **Search stability**: rerun with a fixed `seed`, then increase `num_trials` or compare several seeds to rule out a poor local optimum.
 - **Supplied partition diagnostic**: if the installed interface supports cluster-data input and no-optimization codelength calculation, use it to test whether an expected partition compresses flow better than the one-level baseline.
-- **Resolution scale**: for exploratory sensitivity analysis, try lower Markov-time settings to look for smaller-scale modules; this is a modeling choice and needs extra thought before being used in a reported result.
+- **Resolution scale**: for exploratory sensitivity analysis, try lower Markov-time settings to look for smaller-scale modules. This is a modeling choice and needs extra thought before you use it in a reported result.
 - **Preferred module count**: if the installed interface supports a preferred module count, it can explore what partitions near a target count look like; this is also a modeling choice, not neutral evidence that the data contain that many modules.
 - **Representation**: if the data have layers, sequence memory, metadata, or bipartite structure, model those explicitly instead of flattening away the signal.
 - **Expectation check**: if no tested representation improves on the one-level codelength, report the one-module result rather than forcing a partition.

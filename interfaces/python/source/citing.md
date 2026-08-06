@@ -33,14 +33,14 @@ results that originate in the survey itself.
 
 For the version-stamped software entry (recommended for reproducibility), visit
 <https://www.mapequation.org> and copy the BibTeX from the "How to cite" section
-there; it includes the current release version.
+there. It includes the current release version.
 
 ## Citing extensions
 
 If your analysis uses a specific flow model or network type, you may also need to
 cite the paper that introduced that extension. Each chapter under
 {doc}`/flow-models/index` and {doc}`/robustness/index` names its source paper in
-its "Going deeper" section, and they are collected on the
+its "Going deeper" section. These papers are collected on the
 {doc}`References page </references>`.
 
 ## Going deeper

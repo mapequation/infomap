@@ -27,7 +27,7 @@ all those interactions collapses the dynamics into a single picture and hides
 the change.
 
 In a temporal network you instead get a sequence of snapshots, one per time
-window, and the question shifts from "which nodes form communities?" to "how do
+window. The question shifts from "which nodes form communities?" to "how do
 those communities evolve?" A cluster of colleagues who meet every morning and
 disperse at noon differs from a cluster that meets every day.
 
@@ -39,7 +39,7 @@ into background noise {cite:p}`aslak2018temporal`. Recovering that
 intermittent structure takes a model that couples information across time while
 respecting the boundaries between distinct interaction contexts.
 
-Infomap handles temporal networks through the **multilayer representation**: you
+Infomap handles temporal networks through the **multilayer representation**. You
 give each time window its own layer, connect a node's copies across layers with
 inter-layer transitions, and run the standard map equation optimisation. The
 multilayer coding scheme tracks physical identity across layers, so a node that
@@ -69,14 +69,14 @@ The strength of that coupling is set by the **inter-layer relax rate** $r$;
 ## Coupling snapshots across time
 
 A temporal network is a {doc}`multilayer network </flow-models/multilayer>` whose
-layers are time windows: each node gets one
-{doc}`state node </concepts/state-nodes-and-higher-order-flow>` per window,
-intra-layer links connect state nodes within a snapshot, and an inter-layer
+layers are time windows. Each node gets one
+{doc}`state node </concepts/state-nodes-and-higher-order-flow>` per window.
+Intra-layer links connect state nodes within a snapshot, and an inter-layer
 **relax rate** $r$ carries the walker (and with it community identity) across
 windows.
 The multilayer chapter covers that machinery, including the relax-rate transition
 probabilities and how state nodes of one physical node share a codeword within a
-module. What is specific to *time* is how the windows should be coupled.
+module. What is specific to *time* is how to couple the windows.
 
 **Uniform relaxation** (the default) lets the walker relax to any window,
 weighted only by the node's link strength there, and no window is privileged
@@ -85,14 +85,14 @@ gradually.
 
 **Neighbourhood flow coupling** (`multilayer_relax_by_jsd`) makes the coupling
 proportional to the Jensen-Shannon *similarity* (one minus the divergence)
-between a node's link patterns in two windows, so windows where its context looks
-similar couple strongly. This matters for *intermittent communities* (groups
-that appear, vanish, and reappear), where coupling every window together would
-merge distinct occurrences that happen to share nodes
+between a node's link patterns in two windows. Windows where its context looks
+similar therefore couple strongly. This matters for *intermittent communities*
+(groups that appear, vanish, and reappear), where coupling every window together
+would merge distinct occurrences that happen to share nodes
 {cite:p}`aslak2018temporal`.
 
 `multilayer_relax_limit` enforces **temporal ordering**: it caps how far the
-walker may relax in layer index, so the walk crosses only into nearby time
+walker can relax in layer index. The walk crosses only into nearby time
 windows rather than jumping across the whole sequence.
 
 ## Six colleagues over three windows
@@ -102,8 +102,8 @@ The example below shows how Infomap tracks communities as they drift.
 **Setup.** The six nodes represent people. In window T = 1 and again in T = 3
 they interact in two stable triangles: {1, 2, 3} and {4, 5, 6}. In window T = 2
 the groups reshuffle: {1, 2, 4} form one cluster while {3, 5, 6} form another.
-Add each layer as intra-layer links and let Infomap generate the inter-layer
-transitions automatically using a relax rate of 0.25.
+Add each layer as intra-layer links. Let Infomap generate the inter-layer
+transitions automatically, using a relax rate of 0.25.
 
 ```{code-cell} python
 import infomap
@@ -150,7 +150,7 @@ for t in sorted(layer_modules):
 ```
 
 The output shows the community drift: node 3 leaves its morning group at
-midday (T = 2), while node 4 temporarily joins that group, then both return to
+midday (T = 2), while node 4 temporarily joins that group. Both then return to
 their original affiliations by afternoon (T = 3).
 
 Finally, draw all three time windows side by side, with nodes coloured by module:
@@ -196,30 +196,30 @@ tracks.
 ```
 
 Because the relax rate couples the layers, Infomap does not treat the T = 2
-partition as independent: the same two underlying communities keep their module
+partition as independent. The same two underlying communities keep their module
 ids across all three windows instead of being assigned arbitrary new ones.
 
 ### What the relax rate controls
 
-Lowering `multilayer_relax_rate` toward zero makes each layer more autonomous,
-which helps when snapshots are far apart in time and you should not assume
+Lowering `multilayer_relax_rate` toward zero makes each layer more autonomous.
+This helps when snapshots are far apart in time and you should not assume
 community identity persists. Raising it toward 1 pushes Infomap toward the
 aggregate static solution. The default is `0.15`; values in the 0.15–0.25 range
-are usually a good choice for networks where communities evolve smoothly, and
-neighbourhood flow coupling stays robust across a broad range of relax rates
-(about 0.15 to 0.7) on their synthetic benchmarks {cite:p}`aslak2018temporal`.
+are usually a good choice for networks where communities evolve smoothly.
+Neighbourhood flow coupling stays robust across a broad range of relax rates
+(about 0.15 to 0.7) on synthetic benchmarks {cite:p}`aslak2018temporal`.
 
 For long time series, `multilayer_relax_limit` caps how far the random walker
-may jump between layers, so coupling stays between temporally nearby windows
-rather than all pairs. Setting `multilayer_relax_limit=1` confines coupling to
-the immediately neighbouring windows (layer index distance 1, in both
-directions), which suits ordered data such as geologic time series.
+can jump between layers. This keeps coupling between temporally nearby
+windows rather than all pairs. Setting `multilayer_relax_limit=1` confines
+coupling to the immediately neighbouring windows (layer index distance 1, in
+both directions), which suits ordered data such as geologic time series.
 
 ### Visualising change over time
 
 The side-by-side panels above suit small networks. For larger datasets with many
 modules and time steps, the standard MapEquation visualisation is an **alluvial
-diagram**, which tracks how modules merge and split across steps; the generator
+diagram**, which tracks how modules merge and split across steps. The generator
 at <https://www.mapequation.org/alluvial> accepts Infomap output directly and
 generalises to higher-order and temporal networks {cite:p}`holmgren2023change`.
 

@@ -143,19 +143,22 @@ For the maintained CMake-based native test target, pass feature names through
 make test-native TEST_CMAKE_ARGS='-DINFOMAP_FEATURES=feature-x'
 ```
 
-To add a new feature flag, register it in `scripts/build_config.py`,
-gate the related `Config` fields, `parameterCatalog()` entries, and
-implementation with the macro named by the feature registry's `define` field,
-then cover both the default-off and enabled builds in tests. Feature flags are
-compile-time build inputs, not runtime API options. `--version` and Python
-`infomap.build_info()` report enabled features from build-config metadata.
-`scripts/build_config.py` is the source of truth for feature names, compile
-definitions, dependencies, and conflicts.
+To add a new feature flag:
+
+1. Register it in `scripts/build_config.py`.
+2. Gate the related `Config` fields, `parameterCatalog()` entries, and
+   implementation with the macro named by the feature registry's `define` field.
+3. Cover both the default-off and enabled builds in tests.
+
+Feature flags are compile-time build inputs, not runtime API options.
+`--version` and Python `infomap.build_info()` report enabled features from
+build-config metadata. `scripts/build_config.py` is the source of truth for
+feature names, compile definitions, dependencies, and conflicts.
 
 ## Python package
 
 `make build-python` uses the same shared `MODE`/`OPENMP` policy as
-`make build-native`, so native and Python builds stay aligned unless you pass
+`make build-native`. Native and Python builds stay aligned unless you pass
 extra flags explicitly with `CPPFLAGS`, `CXXFLAGS`, or `LDFLAGS`.
 
 Building the Python package requires Python packaging tooling. The normal
@@ -379,9 +382,9 @@ reproduce one with:
 build/fuzz/fuzz_intake build/fuzz/crash-<hash>
 ```
 
-macOS note: Apple Clang lacks libFuzzer (use Homebrew LLVM via `FUZZ_CXX`), and
-a Homebrew-LLVM fuzzer binary may fail to *run* on macOS due to a libc++ ABI
-mismatch even though it builds — run the fuzzer on Linux.
+macOS note: Apple Clang lacks libFuzzer (use Homebrew LLVM via `FUZZ_CXX`).
+A Homebrew-LLVM fuzzer binary may fail to *run* on macOS due to a libc++ ABI
+mismatch even though it builds. Run the fuzzer on Linux.
 
 Build source and wheel distributions locally when needed:
 

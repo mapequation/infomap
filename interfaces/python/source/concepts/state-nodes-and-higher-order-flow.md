@@ -71,12 +71,12 @@ The classic illustration is the network that documents the
 [states input format](https://www.mapequation.org/infomap/#InputStates) on
 mapequation.org (it ships with Infomap as `examples/networks/states.net`).
 It has five physical nodes *i*, *j*, *k*, *l*, *m*, where *i* carries two state
-nodes: from state $\alpha_i$ the walker mostly continues to *j* and *k*, from
+nodes. From state $\alpha_i$ the walker mostly continues to *j* and *k*, from
 state $\delta_i$ mostly to *l* and *m*. The weak 0.2-links let it occasionally
 switch sides, so the two contexts are coupled but distinct.
 
 Build state nodes directly with `add_state_node(state_id, node_id)`, where
-`node_id` is the physical node, link them with `add_link`, then read the
+`node_id` is the physical node. Link them with `add_link`, then read the
 partition back with `result.nodes(states=True)`:
 
 ```{code-cell} python
@@ -146,7 +146,7 @@ follows the weighted, directed links.
 ### The same network ships with the package
 
 The construction above is the states-format reference example, so it comes
-bundled: {func}`infomap.datasets.states` returns it as a ready-to-run
+bundled. {func}`infomap.datasets.states` returns it as a ready-to-run
 {class}`~infomap.Network`, loaded from the same `.net` file that documents
 the `*States` format (each state declared as `state_id physical_id [name]`,
 with `*Links` connecting state ids). Running it reproduces the partition

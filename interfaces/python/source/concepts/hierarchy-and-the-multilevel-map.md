@@ -75,7 +75,7 @@ $$
 The hierarchical extension {cite:p}`rosvall2011multilevel` replaces the single
 index codebook with a *tree* of nested index codebooks. Each module $i$ at
 the top level has its own sub-index codebook $\mathcal{Q}^i$ for directing
-the random walker among its sub-modules, and those sub-modules may have
+the random walker among its sub-modules. Those sub-modules can have
 their own sub-sub-index codebooks, and so on. The total description length
 becomes a recursive sum:
 
@@ -106,9 +106,9 @@ global cut size that grows with the whole network. This is why the resolution
 limit relaxes; see {cite:p}`kawamoto2015resolution`, §IV.
 
 Infomap searches for the hierarchical partition that minimises the total $L$
-using a fast stochastic recursive algorithm: it first generates top-level
+using a fast stochastic recursive algorithm. It first generates top-level
 modules, then recursively applies the same procedure inside each module to
-find sub-modules, adding or removing levels wherever the description
+find sub-modules. It adds or removes levels wherever the description
 shortens. The search converges to a locally optimal hierarchical tree.
 
 :::{toggle}
@@ -261,7 +261,7 @@ network has dense intra-triangle flow, moderately dense intra-super-group flow
 (the unit-weight links joining a super-group's triangles), and weak
 inter-super-group flow (the three 0.8 links). Three nested levels of codebooks
 capture exactly those three scales (two levels of index codebooks over the
-module codebooks), and the hierarchical map equation confirms that the
+module codebooks). The hierarchical map equation confirms that the
 three-level description is more compressed than either a flat two-level
 partition or a one-level description.
 

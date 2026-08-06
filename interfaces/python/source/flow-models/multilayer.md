@@ -14,8 +14,8 @@ kernelspec:
 
 ```{admonition} At a glance
 :class: tip
-A multilayer network lets the same physical node live in several layers at once,
-so Infomap can discover that a person belongs to one community at work and a
+A multilayer network lets the same physical node live in several layers at once.
+Infomap can then discover that a person belongs to one community at work and a
 different one at home, without collapsing those contexts into one network.
 ```
 
@@ -51,8 +51,9 @@ rate**. When it rarely crosses ($r$ small), each layer behaves on its own and
 Alice lands in a different module in each of her layers. When it crosses freely
 ($r = 1$), the layers fuse and Alice gets one module. The default $r = 0.15$
 relaxes the layer constraint about once in seven steps (the relaxed step can
-land back in the current layer, so actual switches are rarer), enough coupling
-to respect the multiplex structure without washing out the per-layer signal.
+land back in the current layer, so actual switches are rarer). This is enough
+coupling to respect the multiplex structure without washing out the per-layer
+signal.
 
 The key step is that here a state node is a physical node's presence in one
 layer; the rest of the physical-node/state-node mechanism is generic
@@ -69,8 +70,8 @@ links across layers (inter-layer) connect state nodes in different layers.
 
 Without empirical inter-layer link weights, Infomap models inter-layer movement
 with a relax rate $r \in [0, 1]$. At each step, the random walker follows
-intra-layer links with probability $1 - r$ and relaxes the layer constraint
-with probability $r$, freely following any link of the physical node across all
+intra-layer links with probability $1 - r$. With probability $r$ it relaxes the
+layer constraint, freely following any link of the physical node across all
 layers:
 
 $$
@@ -130,11 +131,10 @@ the sole change from the first-order map equation
 
 ## Two triangles bridged by one node
 
-The network is the example the
+The network is the example that mapequation.org uses to document the
 [multilayer input format](https://www.mapequation.org/infomap/#InputMultilayer)
-is documented with on mapequation.org (it ships with Infomap as
-`examples/networks/multilayer.net`): **five physical nodes** *i*, *j*, *k*,
-*l*, *m* in two layers.
+(it ships with Infomap as `examples/networks/multilayer.net`):
+**five physical nodes** *i*, *j*, *k*, *l*, *m* in two layers.
 
 - **Layer 1** contains a tight triangle: *i*, *l*, *m*.
 - **Layer 2** contains a tight triangle: *i*, *j*, *k*.
@@ -304,8 +304,8 @@ At low relax rates the two triangle clusters remain distinct (2 modules). As
 $r \to 1$ the layers fuse and the partition collapses to 1 module, the same as
 running Infomap on the aggregated network. The default $r = 0.15$ is the working
 value from {cite:t}`domenico2015multilayer`, who found the partition only
-weakly dependent on the relax rate; later work confirmed that the partition stays
-robust across empirical multilayer networks for relax rates up to about
+weakly dependent on the relax rate. Later work confirmed that the partition
+stays robust across empirical multilayer networks for relax rates up to about
 $r \approx 0.25$ {cite:p}`edler2017higher`.
 
 ### Node-aligned inter-layer links
@@ -429,8 +429,8 @@ assert n_links_self < n_links_default
 
 The relax-rate model is controlled by these engine options, carried via `Options`
 to {func}`infomap.run` (`options=Options(...)`).
-They apply when Infomap simulates the coupling; with explicit inter-layer links
-only `multilayer_relax_to_self` still has an effect, deciding whether a
+They apply when Infomap simulates the coupling. With explicit inter-layer links,
+only `multilayer_relax_to_self` still has an effect. It decides whether a
 node-aligned inter link attaches to the node's own copy or spreads over its
 out-neighbours in the target layer:
 

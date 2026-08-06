@@ -15,7 +15,7 @@ command -v "$INFOMAP_BIN" || command -v Infomap
 "$INFOMAP_BIN" --print-json-parameters
 ```
 
-If `infomap` is not found, try `Infomap`. Installed Python packages often provide `infomap`; native builds may expose `Infomap`.
+If `infomap` is not found, try `Infomap`. Installed Python packages often provide `infomap`. Native builds may expose `Infomap`.
 
 Use the published user guide at `https://www.mapequation.org/infomap/` for file formats and examples. Use source checkout files only when the user is actually working inside an Infomap repository.
 

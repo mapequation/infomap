@@ -117,10 +117,10 @@ topological channel, then $L_\eta$ is the total expected cost.
 
 In practice the useful range of $\eta$ is problem-dependent. {cite:t}`emmons2019metadata`
 show that raising $\eta$ (up to $\eta = 1$ in their experiments) lets metadata
-push past the topological detectability limit when the attribute signal is strong
-but the topological signal is weak. Beyond $\eta = 1$ the encoding increasingly
-enforces attribute-homogeneous modules, approaching the $\eta \to \infty$
-constrained limit where every module is attribute-pure.
+push past the topological detectability limit. This works when the attribute
+signal is strong but the topological signal is weak. Beyond $\eta = 1$ the
+encoding increasingly enforces attribute-homogeneous modules, approaching the
+$\eta \to \infty$ constrained limit where every module is attribute-pure.
 
 The attribute codebook term encodes the metadata value at each step *within the
 module*. This is strictly more expensive than the topological encoding when
@@ -131,7 +131,7 @@ homogeneity as $\eta$ increases, even splitting topologically tight groups if
 their attribute mixture is expensive to encode.
 
 A complementary approach, metadata-dependent encoding of random walks
-{cite:p}`bassolas2022metadata`, leaves the walk dynamics unchanged and instead
+{cite:p}`bassolas2022metadata`, leaves the walk dynamics unchanged. Instead it
 makes the *encoding* of the walk depend on the metadata of the nodes the
 walker visits. That captures nonlocal relationships between metadata and
 network structure, rather than the local per-module codebook penalty used
@@ -146,7 +146,7 @@ bridge edge. Nodes 3 and 4, one in each triangle, share attribute category 1,
 while nodes 1, 2, 5, 6 share category 0.
 
 Topologically, the bridge between node 3 and node 4 makes 3 and 4 the natural
-"boundary" between the two halves of the network, so pure topology puts
+"boundary" between the two halves of the network. Pure topology therefore puts
 {1, 2, 3} in one module and {4, 5, 6} in another. Each of those modules
 contains exactly one node with the minority attribute, so neither is
 attribute-homogeneous. With a non-zero `meta_data_rate`, the algorithm resolves
@@ -226,8 +226,8 @@ encoding cost is zero: each module is attribute-pure.
 :class: note
 `result.codelength` reports the *combined* objective $L_\eta$: the topological
 map-equation value plus $\eta$ times the attribute term. It therefore rises
-with `meta_data_rate` even when the partition does not change at all, simply
-because the weighted attribute term grows, so the numbers are not comparable
+with `meta_data_rate` even when the partition does not change at all, because
+the weighted attribute term grows. As a result, the numbers are not comparable
 across rates. `result.meta_entropy` isolates the attribute term; the
 topological part is `result.codelength - meta_data_rate * result.meta_entropy`.
 ```

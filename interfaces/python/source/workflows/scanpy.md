@@ -35,7 +35,7 @@ pandas categorical column to `adata.obs`, and records run metadata in
 `adata.uns`.
 
 Beyond the high-level helper, the sparse matrix underlying any `adata.obsp`
-slot is a standard SciPy CSR matrix; you can hand it directly to
+slot is a standard SciPy CSR matrix. You can hand it directly to
 `infomap.run()` and use the full Result API (hierarchical modules, codelength,
 multiple trials) without any AnnData involvement.
 
@@ -137,7 +137,7 @@ for k, v in adata.uns["infomap"].items():
 ```
 
 The `codelength` in `adata.uns["infomap"]` is the map equation value for the
-best partition Infomap found; a lower codelength means the partition compresses
+best partition Infomap found. A lower codelength means the partition compresses
 the random walk more efficiently (see {doc}`/concepts/the-map-equation`).
 
 ### Compare the two labelings

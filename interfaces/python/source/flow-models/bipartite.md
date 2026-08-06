@@ -35,10 +35,10 @@ communities keep both types together.
 ## How Infomap handles the two types
 
 You assign integer node ids so that all type-A nodes come first and all
-type-B nodes start at a threshold id, and declare that threshold by setting
+type-B nodes start at a threshold id. You declare that threshold by setting
 `bipartite_start_id`. Infomap then models the alternating walk with a
-two-step encoding: each move A → B → A counts as one step between type-A
-nodes, and by default the type-B nodes' visit rates are folded onto the
+two-step encoding. Each move A → B → A counts as one step between type-A
+nodes. By default, Infomap folds the type-B nodes' visit rates onto the
 type-A side. The codelength therefore describes the flow among the type-A
 nodes, with the type-B nodes acting as the contexts that route it. Both
 types still receive module assignments.
@@ -55,7 +55,7 @@ other type from those files (it does not filter the in-memory
 Two engine options change this treatment, passed via
 {class}`~infomap.Options` (e.g. `run(net, options=Options(skip_adjust_bipartite_flow=True))`):
 `skip_adjust_bipartite_flow=True` keeps flow on the type-B nodes so both types
-are coded, and `bipartite_teleportation=True` makes a directed run teleport with
+are coded. `bipartite_teleportation=True` makes a directed run teleport with
 bipartite-aware jumps instead of the default two-step unipartite scheme.
 
 ## Users and items in shared clusters
@@ -144,8 +144,8 @@ print(f"bipartite run:  {result.num_top_modules} modules, L={result.codelength:.
 ```
 
 The two codelengths are not directly comparable, because the runs describe
-different walks: the bipartite run codes only the two-step flow between
-users, the unipartite run codes every node. On this small network both find
+different walks. The bipartite run codes only the two-step flow between
+users; the unipartite run codes every node. On this small network both find
 the same two clusters; on larger networks the declaration changes the flow
 each node carries and can move module boundaries.
 

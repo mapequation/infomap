@@ -18,10 +18,10 @@ See {doc}`Building a network <working-with-infomap/inputs>`.
 ### Why does `infomap.run(A, directed=True)` raise `TypeError` for a matrix or edge index?
 
 For a SciPy sparse matrix or a `(2, E)` edge index, `directed` names the *input
-adapter's* edge orientation, not the engine's flow model, so `run()` rejects it
-rather than silently build a different graph. Build the network explicitly with
-`Network.from_scipy_sparse_matrix(A, directed=True)` or
-`Network.from_edge_index(ei, directed=True)`, or ask for the directed flow model
+adapter's* edge orientation, not the engine's flow model. For that reason,
+`run()` rejects it rather than silently build a different graph. Build the
+network explicitly with `Network.from_scipy_sparse_matrix(A, directed=True)`
+or `Network.from_edge_index(ei, directed=True)`, or ask for the directed flow model
 with `options=infomap.Options(flow_model="directed")`. For a graph, file, or
 edge list, `infomap.run(g, directed=True)` works directly. See
 {doc}`Building a network <working-with-infomap/inputs>`.
@@ -62,7 +62,7 @@ path and free-string option — `out_name`, `cluster_data`, `meta_data`,
 
 Work around it by renaming the file, or by running from a directory whose path
 contains no spaces. Lifting the limitation means replacing the argument string
-with an argument vector across the whole binding boundary; it is a known
+with an argument vector across the whole binding boundary. It is a known
 constraint rather than a bug awaiting a fix.
 
 ### Why does `result.codelength()` raise `TypeError: 'float' object is not callable`?
@@ -96,11 +96,11 @@ engine log through the standard `logging` module
 (`infomap.enable_log(logging.DEBUG)` for more detail), and `infomap.disable_log()`
 to stop. Prefer this over the legacy `silent` keyword, which is pending-deprecated
 and leaves the API in 3.0. One caveat: `enable_log()` covers the `Infomap` class
-and `infomap.run(...)` on an edge list, graph, or file path, but a pre-built
+and `infomap.run(...)` on an edge list, graph, or file path. But a pre-built
 `Network` (including the bundled {mod}`infomap.datasets`) runs silently for its
 whole lifetime, so `enable_log()` does not capture its run (a `UserWarning` says
-as much) -- run through `Infomap(...)` or pass the raw input to `infomap.run` for
-those. See
+as much). For those, run through `Infomap(...)` or pass the raw input to
+`infomap.run`. See
 {doc}`Running Infomap and tuning options <working-with-infomap/running-and-options>`.
 
 ### What does `infomap.find_communities` return, and how does it differ from `infomap.run`?
@@ -118,8 +118,8 @@ the `trials=` alias on the finders) -- for research runs. See
 ### Why do different seeds give slightly different partitions?
 
 Infomap's search is stochastic: each trial starts from a different random node
-order and can settle in a different local optimum, so changing `seed=` can
-change the partition. Repeated runs with the same seed are identical (the
+order and can settle in a different local optimum. Changing `seed=` can
+therefore change the partition. Repeated runs with the same seed are identical (the
 default is `seed=123`). Run several trials with `num_trials=` and Infomap
 keeps the lowest-codelength result. See {doc}`The map equation <concepts/the-map-equation>`.
 
@@ -150,7 +150,7 @@ Infomap found. See {doc}`The map equation <concepts/the-map-equation>`.
 
 Infomap minimises a flow-based description length, not a target count or a
 sociological ground truth. Boundary nodes where the random walker mixes can form
-their own module when doing so shortens the overall description, so an unexpected
+their own module when doing so shortens the overall description. An unexpected
 module count is not necessarily an error. See
 {doc}`The map equation <concepts/the-map-equation>`.
 
@@ -173,13 +173,13 @@ See {doc}`Hierarchy and the multilevel map equation <concepts/hierarchy-and-the-
 ### What is "flow" in Infomap's output?
 
 Flow is each node's stationary visit frequency for the random walk Infomap uses
-to model how information moves; it sums to 1 across nodes. Communities are
+to model how information moves. It sums to 1 across nodes. Communities are
 regions where flow lingers. See {doc}`Flow and random walks <concepts/flow-and-random-walks>`.
 
 ### Why does Infomap teleport on directed networks?
 
 A directed walk can get trapped in sinks, leaving the stationary distribution
-ill-defined. Teleportation restores ergodicity; Infomap uses an unrecorded
+ill-defined. Teleportation restores ergodicity. Infomap uses an unrecorded
 scheme so the artificial jumps don't inflate apparent cross-module traffic.
 See {doc}`Flow and random walks <concepts/flow-and-random-walks>`.
 

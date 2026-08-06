@@ -54,4 +54,4 @@ When helping adapt a notebook:
 
 ## Running notebooks
 
-Do not start Docker, Jupyter, or full notebook execution unless the user asks. Before giving launch commands, verify the current notebook image, installation extras, or source-checkout path from the published docs, package metadata, or the user's local repository. For validation, prefer extracting one small cell into a temporary script or reduced notebook and record the package version, inputs, seed, options, and outputs.
+Do not start Docker, Jupyter, or full notebook execution unless the user asks. Before giving launch commands, verify the current notebook image, installation extras, or source-checkout path from the published docs, package metadata, or the user's local repository. For validation, prefer extracting one small cell into a temporary script or reduced notebook. Record the package version, inputs, seed, options, and outputs.

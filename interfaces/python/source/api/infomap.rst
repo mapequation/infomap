@@ -21,21 +21,21 @@ docstrings, follows underneath.
 
 .. note::
 
-   ``run()`` returns a :class:`Result`; read metrics and modules from it. The
+   ``run()`` returns a :class:`Result`. Read metrics and modules from it. The
    on-instance result accessors below (``get_modules``, ``modules``,
-   ``codelength``, …) are **deprecated and leave in 3.0** -- read the
+   ``codelength``, …) are **deprecated and leave in 3.0**. Read the
    equivalently named members off the returned :class:`Result` instead. Mind the
    shape shift: ``im.modules`` is a property, while ``result.modules()`` is a
    method. These accessors emit a silent-by-default ``PendingDeprecationWarning``
-   (surface it with ``-W``); see :doc:`/the-infomap-class` for the full
-   migration table. For
-   one-shot use, prefer :func:`infomap.run`; the stateful class remains the way
-   to build incrementally and to write the native output files.
+   (surface it with ``-W``). See :doc:`/the-infomap-class` for the full
+   migration table. For one-shot use, prefer :func:`infomap.run`. The stateful
+   class remains the way to build incrementally and to write the native output
+   files.
 
 Building a network
 ------------------
 
-The graph-library and matrix adapters below are deprecated; load graphs with
+The graph-library and matrix adapters below are deprecated. Load graphs with
 :func:`infomap.run` or the :class:`Network` ``from_*`` classmethods instead (see
 the note above). Only :meth:`~Infomap.read_file`, which reads a native network
 file, is current.
@@ -130,7 +130,7 @@ Solution metrics
 ----------------
 
 Most of these metrics are also available (and preferred) on the
-:class:`Result` that ``run()`` returns; those on-instance copies are deprecated
+:class:`Result` that ``run()`` returns. Those on-instance copies are deprecated
 and leave in 3.0.
 
 .. autosummary::
@@ -180,11 +180,11 @@ Full reference
 .. attention::
 
    Many members below are the **deprecated** on-instance result accessors
-   (``get_modules``, ``modules``, ``codelength``, ``to_dataframe``, …), and
-   their example bodies show the legacy ``im.<accessor>`` form for reference
-   only. In new code, read these off the :class:`Result` that ``run()`` returns
-   instead (see the note at the top of this page for the shape shift and the
-   migration table).
+   (``get_modules``, ``modules``, ``codelength``, ``to_dataframe``, …). Their
+   example bodies show the legacy ``im.<accessor>`` form for reference only. In
+   new code, read these off the :class:`Result` that ``run()`` returns instead
+   (see the note at the top of this page for the shape shift and the migration
+   table).
 
 .. autoclass:: Infomap
    :members:

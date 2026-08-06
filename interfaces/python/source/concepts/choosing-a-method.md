@@ -14,15 +14,15 @@ kernelspec:
 
 ```{admonition} At a glance
 :class: tip
-If you already use Louvain or Leiden, you can read Infomap through the same lens:
-all three partition a network, but Infomap optimises the compression of flow
+If you already use Louvain or Leiden, you can read Infomap through the same lens.
+All three partition a network, but Infomap optimises the compression of flow
 where Louvain and Leiden optimise modularity.
 ```
 
 ## Same job, a different objective
 
 Louvain and Leiden are the community-detection methods most researchers meet
-first, and both return a partition of your nodes just as Infomap does. This page
+first. Both return a partition of your nodes just as Infomap does. This page
 maps Infomap onto the concepts you already know from them.
 
 The main difference is the objective. Louvain and Leiden
@@ -47,7 +47,7 @@ than Louvain's greedy moves {cite:p}`traag2019leiden`. This page uses the
 modularity objective for both, the most common default.
 
 **The map equation (Infomap).** Infomap compresses a description of a random walk
-({doc}`/concepts/the-map-equation`); because the walk follows edge direction and
+({doc}`/concepts/the-map-equation`). Because the walk follows edge direction and
 weight, Infomap reads structure that an undirected modularity null model does
 not.
 
@@ -150,7 +150,7 @@ Colours identify groups within a panel, not across panels.
 ```
 
 On well-separated, undirected structure like this the two objectives agree,
-which is the common case: compressing the flow and maximising within-group
+which is the common case. Compressing the flow and maximising within-group
 density pick out the same groups.
 
 ## Where the objectives differ
@@ -158,12 +158,12 @@ density pick out the same groups.
 Infomap's answer differs from a modularity partition in two situations:
 
 - **Directed flow.** Infomap follows edge direction; the standard modularity null
-  model does not. On a network with real flow asymmetry, a citation cascade or a
-  web subgraph that mostly *sends* links one way, the random walk concentrates
-  where undirected edge density alone does not, so a directed Infomap run reads
-  the structure differently {cite:p}`rosvall2008maps`.
+  model does not. On a network with real flow asymmetry — a citation cascade or a
+  web subgraph that mostly *sends* links one way — the random walk concentrates
+  where undirected edge density alone does not. A directed Infomap run therefore
+  reads the structure differently {cite:p}`rosvall2008maps`.
 - **Scale.** The two objectives have different resolution limits (see the toggle
-  above), so on a network with many small groups they need not agree on how finely
+  above). On a network with many small groups, they need not agree on how finely
   to divide it. Neither is more correct; they optimise different things.
 
 These are the two places where "community by flow" and "community by density"
@@ -174,7 +174,7 @@ genuinely mean different things; knowing your network tells you which to trust.
 {func}`infomap.run` returns an immutable {class}`~infomap.Result` (pass
 `directed=True` for directed flow, `two_level=True` for a flat partition).
 {func}`infomap.find_communities` and {func}`infomap.find_igraph_communities`
-return NetworkX- and igraph-native cluster objects, so an Infomap result drops
+return NetworkX- and igraph-native cluster objects. An Infomap result then drops
 into those libraries' own tooling alongside Louvain and Leiden.
 
 ## Going deeper

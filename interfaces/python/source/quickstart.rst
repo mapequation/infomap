@@ -50,9 +50,9 @@ The same call accepts a NetworkX or igraph graph, a SciPy sparse matrix, a
 ``(2, E)`` edge index, a network file path, or an iterable of ``(u, v[, w])``
 links. Five common options are direct keyword arguments — ``seed``,
 ``num_trials``, ``two_level``, ``directed`` (a directed flow model), and
-``markov_time``. Any other engine option (``regularized``, ``flow_model``,
-``teleportation_probability``, …) can be passed as a keyword too, but for a
-reusable or validated configuration prefer :class:`~infomap.Options`, as shown
+``markov_time``. You can pass any other engine option (``regularized``,
+``flow_model``, ``teleportation_probability``, …) as a keyword too. For a
+reusable or validated configuration, prefer :class:`~infomap.Options`, as shown
 under `Reusable configuration`_ below.
 
 Without any graph library installed, the bundled example networks in

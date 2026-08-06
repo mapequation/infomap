@@ -39,7 +39,7 @@ come from **flow**.
 
 Picture a walker that starts at some node and, at each step, follows one of the
 outgoing edges at random. It spends more time in densely connected regions and
-now and then crosses into another. Track where it sits over a long run, and the
+now and then crosses into another. Track where it sits over a long run. The
 fraction of time spent at each node is that node's **flow**, its stationary
 visit frequency.
 
@@ -51,7 +51,7 @@ minimises.
 
 **Directed** networks need one more ingredient. A directed graph can have
 dangling nodes (no out-edges) or sink components the walker can never leave, so
-the walk fails to reach every node; it is not *ergodic*. The fix is
+the walk fails to reach every node. It is not *ergodic*. The fix is
 **teleportation**: with small probability $\tau$ (default 0.15, the conventional
 PageRank value) the walker teleports to another node instead of following an edge.
 That guarantees a unique stationary distribution, but the jumps add long-range
@@ -89,10 +89,10 @@ probability one rather than at rate $\tau$.)
 Where the walker lands after a teleport is a modelling choice. The $1/n$ term
 above is the simplest: uniform teleportation to any node. By default Infomap
 instead teleports to a random *link* (proportionally to its weight) and lands at
-the link's source, so a node receives teleporting walkers in proportion to its
-out-strength, and the next recorded step is always a real link traversal. With
-recorded teleportation (`recorded_teleportation=True`) the walker lands at the
-link's target instead, proportionally to in-strength.
+the link's source. A node therefore receives teleporting walkers in proportion
+to its out-strength, and the next recorded step is always a real link traversal.
+With recorded teleportation (`recorded_teleportation=True`) the walker lands at
+the link's target instead, proportionally to in-strength.
 
 These per-node flows $\pi_i$, together with how often the walker crosses between
 candidate modules, are the inputs the map equation needs. The next chapter,
@@ -109,9 +109,9 @@ which the power method computes iteratively.
 
 For directed networks with teleportation, Infomap first computes $\pi$ for the
 recorded walk (including teleportation steps), then re-weights it to count only
-link-traversal steps (the unrecorded scheme), so teleportation does not inflate
-the flow across module boundaries. See {cite:p}`lambiotte2012smart` for the
-formal derivation.
+link-traversal steps (the unrecorded scheme). This keeps teleportation from
+inflating the flow across module boundaries. See {cite:p}`lambiotte2012smart`
+for the formal derivation.
 :::
 
 ## Two cycles joined by a one-way bridge
@@ -177,7 +177,7 @@ persistent visits are the flow the map equation compresses.
 
 ```{admonition} Teleportation and directed ergodicity
 :class: note
-This example needs teleportation: without it a directed walk can get stuck in
+This example needs teleportation. Without it, a directed walk can get stuck in
 cycle B and never return to A, since no edge leaves B. Teleportation at rate
 $\tau = 0.15$ restores ergodicity so every node stays reachable.
 ```

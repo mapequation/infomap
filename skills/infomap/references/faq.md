@@ -1,6 +1,6 @@
 # FAQ and Troubleshooting
 
-Use this reference when the user asks why a result looks surprising, why a run is slow, how to get an output field, or how to translate advice from old Infomap discussions to current versions. The entries below are distilled from high-signal GitHub Discussions, but option names and API calls must still be verified against the user's installed CLI/Python/R package before giving runnable code.
+Use this reference when the user asks why a result looks surprising, why a run is slow, how to get an output field, or how to translate advice from old Infomap discussions to current versions. The entries below are distilled from high-signal GitHub Discussions, but always verify option names and API calls against the user's installed CLI/Python/R package before giving runnable code.
 
 ## One module or fewer modules than expected
 

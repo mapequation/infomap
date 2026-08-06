@@ -65,6 +65,6 @@ For now, the companion notebooks below are the best Python starting point.
 
 ## Citing this work
 
-If you use Infomap, cite the 2008 PNAS paper and the MapEquation software package;
-see {doc}`How to cite Infomap </citing>`. To cite the survey itself,
+If you use Infomap, cite the 2008 PNAS paper and the MapEquation software package.
+See {doc}`How to cite Infomap </citing>`. To cite the survey itself,
 use [doi:10.1145/3779648](https://doi.org/10.1145/3779648).

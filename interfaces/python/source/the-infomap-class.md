@@ -18,7 +18,7 @@ kernelspec:
 The {class}`infomap.Infomap` class is the stateful entry point: build a network
 with the `add_*` verbs, then call `run()` for an immutable
 {class}`~infomap.Result`. New code should prefer {func}`infomap.run` for one-shot
-use and {class}`~infomap.Network` for incremental construction; existing
+use and {class}`~infomap.Network` for incremental construction. Existing
 `Infomap` code keeps working essentially unchanged (see
 [Removed accessors](#removed-accessors) for the few exceptions).
 ```
@@ -29,13 +29,13 @@ The functional {func}`infomap.run` and the {class}`~infomap.Network` builder
 cover most needs. Reach for the stateful {class}`~infomap.Infomap` class when you
 want to keep one configured object around and run it repeatedly, or when you are
 maintaining code written against the original API. Internally it composes a
-`Network` and an `Options` over the same engine boundary, so its building verbs
-and its results are identical to the functional path.
+`Network` and an `Options` over the same engine boundary. Its building verbs
+and its results are thus identical to the functional path.
 
 {func}`infomap.run` is the canonical entry point. It accepts any input --
 including a prebuilt {class}`~infomap.Network` or a stateful
-{class}`~infomap.Infomap` instance -- so `net.run(**kw)` and `im.run(**kw)` are
-thin conveniences equivalent to `infomap.run(net, **kw)` /
+{class}`~infomap.Infomap` instance. This makes `net.run(**kw)` and
+`im.run(**kw)` thin conveniences equivalent to `infomap.run(net, **kw)` /
 `infomap.run(im, **kw)`. All three take the same keywords (the five common-tier
 options directly, everything else via `options=`) and return the same
 {class}`~infomap.Result`.
@@ -56,10 +56,10 @@ print(result.modules())
 `im.run()` returns the same {class}`~infomap.Result` the functional API returns.
 The on-instance result accessors (`im.get_modules()`, `im.codelength`,
 `im.nodes`) still work and are backed by that result, but they are **deprecated
-and leave in 3.0** -- read the equivalently named members off the returned
+and leave in 3.0**. Read the equivalently named members off the returned
 {class}`~infomap.Result` instead. Mind the shape shift: `im.modules` is a
 property, while `result.modules()` is a method. These accessors emit a
-silent-by-default `PendingDeprecationWarning` (surface it with `-W`); the
+silent-by-default `PendingDeprecationWarning` (surface it with `-W`). The
 migration table below maps each one across.
 
 ## Migrating to the functional API
@@ -88,7 +88,7 @@ reading results goes through the immutable {class}`~infomap.Result`
 ## Migrating deprecated keyword arguments
 
 Advanced engine keywords still work on `Infomap()` and `infomap.run()` in 2.x,
-but they are pending-deprecated and leave those signatures in 3.0: passing one
+but they are pending-deprecated and leave those signatures in 3.0. Passing one
 directly emits a (default-silent) `PendingDeprecationWarning`. Each
 falls into one of three groups, with a recommended replacement:
 
@@ -99,10 +99,10 @@ falls into one of three groups, with a recommended replacement:
 | Console flags -- `silent`, `verbosity_level` | use logging: `infomap.enable_log()` for the engine log, and `infomap.enable_log(logging.DEBUG)` to raise its verbosity |
 
 The `options` carrier accepts an {class}`~infomap.Options` instance or a plain
-mapping and works the same on `Infomap()`, {meth}`Infomap.run`,
+mapping. It works the same on `Infomap()`, {meth}`Infomap.run`,
 {meth}`Network.run`, and {func}`infomap.run` — for example
 `im.run(options=Options(regularized=True))` gives the stateful builder the same
-carrier — and a bare keyword set to a non-default value overrides it. The common
+carrier. A bare keyword set to a non-default value overrides it. The common
 options (`seed`, `num_trials`, `two_level`, `directed`, `markov_time`) stay on
 every signature and are never deprecated.
 

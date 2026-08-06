@@ -128,7 +128,7 @@ for num_trials in [1, 5, 20]:
 ```
 
 Here the single trial with `seed=123` lands at a higher codelength (worse
-minimum) than `num_trials=20` with the same seed: a single trial can settle in a
+minimum) than `num_trials=20` with the same seed. A single trial can settle in a
 local trap, and the extra trials find a partition that compresses the random
 walk more efficiently. Which single trial gets stuck depends on the seed, so
 the gap is not guaranteed for any particular seed. The codelength converges:
@@ -154,7 +154,7 @@ requires. It is not one of the five common keywords, so carry it via `Options`:
 
 By default Infomap finds a hierarchical partition with as many levels as the
 flow supports. Each level is a coarser view of the same structure.
-`two_level=True` forces a single flat partition, which helps when you know your
+`two_level=True` forces a single flat partition. This helps when you know your
 network is not hierarchical, or when you need a simple cluster assignment for
 downstream analysis.
 
@@ -200,8 +200,9 @@ for two_level in [False, True]:
 ```
 
 With `two_level=False`, the multilevel solution recovers the built-in nesting:
-the two main branches at the top and the eight cliques at the finest level,
-reached with `result.modules(depth=-1)` (the cell above prints the exact counts).
+the two main branches at the top and the eight cliques at the finest level. You
+reach that level with `result.modules(depth=-1)`; the cell above prints the
+exact counts.
 The codelength is lower because the deeper code captures the real hierarchy. With
 `two_level=True`, the eight cliques become the top-level modules and the nested
 structure is invisible.
@@ -245,7 +246,7 @@ for directed in [False, True]:
 
 Both settings recover three modules here because the graph is strongly
 clustered. On noisier real-world directed networks the difference is more
-pronounced: the directed walk respects asymmetric flow and tends to find tighter
+pronounced. The directed walk respects asymmetric flow and tends to find tighter
 modules corresponding to true circulation patterns.
 
 **Teleportation probability.** `teleportation_probability` ($\tau$) sets the
@@ -287,11 +288,11 @@ specifically want to study structure at a given scale, or when reviewers ask
 ### `regularized` for sparse data
 
 Setting `regularized=True` (carried via `Options`, as in the loop below) enables
-the Bayesian regularized map equation for sparse or
-incompletely sampled networks, and `regularization_strength` scales the prior
-(higher merges more modules); see {doc}`/robustness/incomplete-data` for why
-sparse data over-split and how the prior fixes it. On a graph as small as the
-karate club the prior quickly overwhelms the data:
+the Bayesian regularized map equation for sparse or incompletely sampled
+networks. `regularization_strength` scales the prior (higher merges more
+modules). See {doc}`/robustness/incomplete-data` for why sparse data over-split
+and how the prior fixes it. On a graph as small as the karate club the prior
+quickly overwhelms the data:
 
 ```{code-cell} python
 # On the small karate club the regularization prior competes with the data:
@@ -438,7 +439,7 @@ print(f"Found {result.num_top_modules} modules")
 {func}`~infomap.enable_log` attaches a plain handler to the standard
 `"infomap"` logger; that is all the opt-in is. For full control — formats,
 files, your logging pipeline — skip the helper and configure the logger with
-standard {mod}`logging`; any handler attached directly to it engages the same
+standard {mod}`logging`. Any handler attached directly to it engages the same
 routing:
 
 ```python
@@ -452,8 +453,8 @@ logging.getLogger("infomap").setLevel(logging.INFO)
 the `silent=` and `verbosity_level=` keywords are pending-deprecated and leave
 the API in 3.0. One timing nuance if you route through logging: a stateful
 {class}`~infomap.Infomap` bakes its silence in at construction, so configure
-logging *before* you build one (its runs warn otherwise), whereas the one-shot
-{func}`infomap.run` always respects the current configuration.
+logging *before* you build one (its runs warn otherwise). By contrast, the
+one-shot {func}`infomap.run` always respects the current configuration.
 {class}`~infomap.Network` engines stay silent for their whole lifetime (see
 {meth}`Network.run <infomap.Network.run>`).
 

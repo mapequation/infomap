@@ -37,13 +37,13 @@ Use the r-universe package page and published repository docs when internet acce
 ## Generating code
 
 - Generate code after checking installed help, `args(...)`, or exported objects.
-- Keep examples small. Use one trial for smoke tests; use a meaningful trial count for research runs only after runtime is acceptable.
+- Keep examples small. Use one trial for smoke tests. Use a meaningful trial count for research runs only after runtime is acceptable.
 - Record R package version, package path, graph source, directed/weighted choice, seed, trials, non-default options, and output artifacts.
 - Preserve mappings when igraph names, physical ids, layer ids, or other labels are converted.
 - For state or multilayer output, state whether results are state-level or physical-node-level.
 
 ## Minimal patterns
 
-For a quick partition, use the installed high-level helper and inspect its returned object fields. For richer results, create an `Infomap` R6 object, add/read the network with installed methods, run it, then extract codelength, modules, and node/state tables using installed help.
+For a quick partition, use the installed high-level helper and inspect its returned object fields. For richer results, create an `Infomap` R6 object, add/read the network with installed methods, and run it. Then extract codelength, modules, and node/state tables using installed help.
 
 Avoid copying long R examples from this skill. The exact method names, argument aliases, and result fields should come from the installed package and published docs.

@@ -72,7 +72,7 @@ They are not hand-maintained source files.
 For the Python docs site:
 
 - `make build-docs` builds the Sphinx site into `docs/`. The output is not
-  tracked in the repo; PRs verify the build via the `docs` job in
+  tracked in the repo. PRs verify the build via the `docs` job in
   `.github/workflows/ci.yml`, and the release workflow deploys the site to
   GitHub Pages.
 

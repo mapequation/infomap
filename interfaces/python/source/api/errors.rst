@@ -3,10 +3,10 @@ Errors
 
 .. currentmodule:: infomap
 
-Everything the engine reports as a failure — an unreadable input file, an
-invalid ``args`` string, an option conflict, an unwritable output path — is
-raised as :class:`InfomapError` or one of its subclasses, with the engine's
-message preserved. Catch the base class to handle any Infomap failure, or a
+Every failure the engine reports — an unreadable input file, an invalid
+``args`` string, an option conflict, an unwritable output path — is raised as
+:class:`InfomapError` or one of its subclasses. The exception preserves the
+engine's message. Catch the base class to handle any Infomap failure, or a
 subclass for targeted handling::
 
     import infomap

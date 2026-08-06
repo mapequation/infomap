@@ -72,12 +72,12 @@ Quick start with Python:
     print(result.modules())  # {node_id: module_id}
 
 ``infomap.run`` accepts a NetworkX or igraph graph, a SciPy sparse matrix, a
-``(2, E)`` edge index, a network file path, or an iterable of links, and returns
+``(2, E)`` edge index, a network file path, or an iterable of links. It returns
 an immutable ``Result``. If you only need the communities in the graph's own
 node labels, use ``infomap.find_communities(graph, seed=123, num_trials=20)``,
-which returns a NetworkX-style ``list`` of ``set``\ s of node labels (its igraph
+which returns a NetworkX-style ``list`` of ``set``\ s of node labels. Its igraph
 counterpart ``infomap.find_igraph_communities`` returns an
-``igraph.VertexClustering``).
+``igraph.VertexClustering``.
 
 For incremental construction -- adding nodes and links one at a time -- build a
 ``Network`` and run it, reading results off the returned ``Result``:
@@ -336,6 +336,6 @@ Infomap is released under a dual license.
 
 The code is available under the GNU General Public License version 3 or any
 later version; see `LICENSE_GPLv3.txt`_.
-For a non-copyleft license, please contact us.
+For a non-copyleft license, contact us.
 
 .. _`LICENSE_GPLv3.txt`: https://github.com/mapequation/infomap/blob/master/LICENSE_GPLv3.txt

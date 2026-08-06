@@ -90,7 +90,7 @@ For undirected networks, a node's visit frequency equals its normalised strength
 (its total incident link weight divided by twice the total link weight, the sum
 of all node strengths), so Infomap needs no teleportation. For directed networks
 Infomap uses a random-surfer model with teleportation to guarantee an ergodic
-stationary distribution; see {doc}`/concepts/flow-and-random-walks` for how
+stationary distribution. See {doc}`/concepts/flow-and-random-walks` for how
 teleportation is defined and why the partition barely depends on its rate.
 
 :::{toggle}
@@ -122,7 +122,7 @@ By Shannon's source-coding theorem {cite:p}`shannon1948mathematical`, entropy is
 hard lower bound on average codeword length, so $L(\mathsf{M})$ is the shortest
 possible two-level description per step. Combining and simplifying gives a form
 that updates cheaply when one node moves between modules, by tracking only
-$q_{i\curvearrowright}$ and $\sum_{\alpha\in i} p_\alpha$ per module; see
+$q_{i\curvearrowright}$ and $\sum_{\alpha\in i} p_\alpha$ per module. See
 {cite:p}`rosvall2009map` for the fast stochastic search that exploits it.
 :::
 
@@ -167,7 +167,7 @@ karate club has community structure.
 The club famously split into two factions, but Infomap minimises the description
 length of the flow, not a sociological label. Nodes on the boundary between the
 factions can form their own transitional cluster where the walker's affiliation
-is split, and naming it shortens the code, so Infomap often reports more than two
+is split. Naming it shortens the code, so Infomap often reports more than two
 modules here. To steer the search toward two modules, carry
 `preferred_number_of_modules=2` via `Options` —
 `infomap.run(g, options=infomap.Options(preferred_number_of_modules=2))` — a soft

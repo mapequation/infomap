@@ -5,7 +5,7 @@ Deprecation policy
 
 Infomap's Python API follows a predictable deprecation contract so you can rely
 on it across releases. Nothing listed here is removed before 3.0; until then
-the old spelling keeps working, and the reference docs mark each deprecated name
+the old spelling keeps working. The reference docs mark each deprecated name
 with the release it was deprecated in.
 
 Signature tiers
@@ -20,7 +20,7 @@ two tiers:
 - **Advanced tier** — the long tail of tuning and I/O options. From 2.15 they
   carry a versioned note on the :class:`Infomap` signatures and leave those
   signatures in 3.0. Most are *tuning* options that stay available — only their
-  entry point moves, marked ``.. versionchanged:: 2.15`` — so pass them through
+  entry point moves, marked ``.. versionchanged:: 2.15``. Pass them through
   :class:`Options` instead::
 
       import infomap
@@ -30,13 +30,16 @@ two tiers:
 
   The same :class:`Options` object works with :meth:`Network.run`. A few
   advanced options migrate elsewhere rather than to :class:`Options`, and each
-  keyword's ``.. deprecated::`` note states its own path: the file-output
-  options (``no_file_output``, ``tree``, ``clu``, ``out_name``, …) move to the
-  ``Result.write_*`` / ``Network.write_*`` methods; ``silent`` and
-  ``verbosity_level`` give way to logging (see
-  :doc:`/working-with-infomap/running-and-options`); ``threads`` is superseded
-  by ``num_threads``; and ``print_config_fingerprint`` is a CLI-only diagnostic
-  with no library replacement.
+  keyword's ``.. deprecated::`` note states its own path:
+
+  - The file-output options (``no_file_output``, ``tree``, ``clu``,
+    ``out_name``, …) move to the ``Result.write_*`` / ``Network.write_*``
+    methods.
+  - ``silent`` and ``verbosity_level`` give way to logging (see
+    :doc:`/working-with-infomap/running-and-options`).
+  - ``threads`` is superseded by ``num_threads``.
+  - ``print_config_fingerprint`` is a CLI-only diagnostic with no library
+    replacement.
 
 Passing an advanced-tier keyword to :class:`Infomap` or :meth:`Infomap.run`
 emits a :class:`PendingDeprecationWarning` (silent by default; surface it with
@@ -48,10 +51,10 @@ Redesigned result access
 
 The stateful accessors on :class:`Infomap` (``get_modules``, ``codelength``,
 ``num_top_modules``, and friends) are ``.. deprecated:: 2.15`` in favour of the
-immutable :class:`Result` that :func:`run` and :meth:`Infomap.run` return, and
-reading one from user code emits the same silent-by-default
-:class:`PendingDeprecationWarning` as the advanced-tier keywords. Read
-scalars as properties (``result.codelength``) and collections as methods
+immutable :class:`Result` that :func:`run` and :meth:`Infomap.run` return.
+Reading one from user code emits the same silent-by-default
+:class:`PendingDeprecationWarning` as the advanced-tier keywords. Read scalars
+as properties (``result.codelength``) and collections as methods
 (``result.modules()``, ``result.nodes()``, ``result.tree()``). See
 :doc:`/working-with-infomap/results-and-iteration`.
 
@@ -59,7 +62,7 @@ Compatibility aliases
 ---------------------
 
 - ``include_self_links`` is a deprecated alias kept for backward compatibility.
-  Self-links are included by default; pass ``no_self_links=True`` to exclude
+  Self-links are included by default. Pass ``no_self_links=True`` to exclude
   them. Passing ``include_self_links`` explicitly emits a
   :class:`DeprecationWarning`.
 - ``pretty`` is a deprecated no-op — it is accepted for backward compatibility
@@ -68,8 +71,8 @@ Compatibility aliases
 Error base classes
 ------------------
 
-Through 2.x, :class:`InfomapError` inherits :class:`RuntimeError` and
-:class:`NotRunError` also keeps :class:`ValueError` in its MRO, so pre-taxonomy
-``except RuntimeError`` / ``except ValueError`` code keeps working. These legacy
-bases detach in 3.0 — catch :class:`InfomapError` (or a subclass) instead. See
-:doc:`errors`.
+Through 2.x, :class:`InfomapError` inherits :class:`RuntimeError`, and
+:class:`NotRunError` also keeps :class:`ValueError` in its MRO. Pre-taxonomy
+``except RuntimeError`` / ``except ValueError`` code therefore keeps working.
+These legacy bases detach in 3.0 — catch :class:`InfomapError` (or a subclass)
+instead. See :doc:`errors`.

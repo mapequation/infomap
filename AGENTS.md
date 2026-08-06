@@ -32,15 +32,15 @@ Do not bundle unrelated cleanup into the same change.
 - `interfaces/js/README.md` is the source README for the public npm package
 - `interfaces/python/source/` owns the published Python docs source
 - `interfaces/python/generated/` and `interfaces/python/src/infomap/_swig.py` are tracked Python wrapper outputs
-- The option surface is generated from the C++ parameter catalog: the whole of
-  `interfaces/python/src/infomap/_options.py`, the marked signature block in
-  `interfaces/python/src/infomap/_facade.py`, `interfaces/parameters/policy.md`,
-  and the R/TS option files are produced by
-  `scripts/generate_binding_options.py` (`make build-binding-options`) from
-  `src/io/ParameterCatalog.cpp` + `interfaces/parameters/overrides.json`. Edit
-  those sources (and the generator for cross-cutting changes), then regenerate
-  with `make build-binding-options` and confirm with
-  `make test-binding-options-freshness`; do not hand-edit the generated option
+- `scripts/generate_binding_options.py` (`make build-binding-options`) generates
+  the option surface from the C++ parameter catalog
+  (`src/io/ParameterCatalog.cpp` + `interfaces/parameters/overrides.json`). The
+  option surface is the whole of `interfaces/python/src/infomap/_options.py`,
+  the marked signature block in `interfaces/python/src/infomap/_facade.py`,
+  `interfaces/parameters/policy.md`, and the R/TS option files. Edit the
+  catalog sources (and the generator for cross-cutting changes). Then
+  regenerate with `make build-binding-options` and confirm with
+  `make test-binding-options-freshness`. Do not hand-edit the generated option
   code or docstrings
 - `interfaces/R/infomap/` owns the R package skeleton (`R/`, `DESCRIPTION`, `tests/`, `man/`)
 - `interfaces/R/generated/` are tracked SWIG-generated R outputs; refresh with `make build-r-swig`
@@ -146,7 +146,7 @@ Targeted checks:
 ## Formatting And Linting
 
 Pre-commit hooks mirror the CI lint gates and give the same feedback locally.
-Install them once with `make hooks` (also run by `make dev-bootstrap`); on
+Install them once with `make hooks` (also run by `make dev-bootstrap`). On
 commit they run `ruff` (Python lint), `clang-format` (C++ `src/`), `biome`
 (JavaScript lint and format), `air` (R format), and `actionlint` (GitHub
 workflow YAML), plus a C++ stream-policy check, and `pyright` on the core
@@ -161,21 +161,21 @@ Format on demand without the hooks:
 
 CI enforces formatting through the `pre-commit` job, which runs the same
 hooks locally and in CI — `clang-format` for C++ `src/` and `air` for the R
-sources — so format changes before committing. Air is pre-1.0 and the repo
-ships no `air.toml`, so its output is version-dependent; the canonical version
+sources. Format changes before committing. Air is pre-1.0 and the repo
+ships no `air.toml`, so its output is version-dependent. The canonical version
 is **0.9.0**, pinned in the `pre-commit` CI job via `posit-dev/setup-air`.
 Install that version locally so `make format-r-check` agrees with CI, and bump
 the CI pin and this note together. The `actionlint` hook is `language: system`
-too: install it locally (`brew install actionlint`) when you touch workflows;
-the canonical version is **1.7.12**, downloaded in the `pre-commit` CI job, and
+too: install it locally (`brew install actionlint`) when you touch workflows.
+The canonical version is **1.7.12**, downloaded in the `pre-commit` CI job, and
 the CI pin and this note bump together. The R man pages are roxygen output and
 its formatting is version-dependent too — 8.0.0 rewrites the whole R6 section —
 so the canonical version is **7.3.3**, pinned as `R_ROXYGEN_VERSION` in `mk/r.mk`
-and as `roxygen2@7.3.3` in the R CI job; `make build-r-man` refuses to run with
-any other version, and the two pins and this note bump together. Generated and vendored files —
-`interfaces/python/generated/`, `interfaces/R/generated/`,
+and as `roxygen2@7.3.3` in the R CI job. `make build-r-man` refuses to run with
+any other version, and the two pins and this note bump together. Generated and
+vendored files — `interfaces/python/generated/`, `interfaces/R/generated/`,
 `interfaces/python/src/infomap/_swig.py`, and `vendor/` — are excluded from
-every hook; never reformat them.
+every hook. Never reformat them.
 
 ## Environment
 
@@ -190,7 +190,7 @@ in imperative mood, lowercase after the colon, no trailing period.
 release-please derives releases from them: `feat` bumps the minor version,
 `fix` the patch version, and a `BREAKING CHANGE:` footer (or `!` after the
 type) the major version. Only `feat`, `fix`, `perf`, and `revert` commits
-surface in the generated `CHANGELOG.md`; never edit that file by hand.
+surface in the generated `CHANGELOG.md`. Never edit that file by hand.
 
 Types and scopes are a fixed allowlist, restricted to what is frequent in
 this repo's history:
@@ -259,7 +259,7 @@ this repo's history:
 
 Private vulnerability reporting, branch protection, required checks, stale
 approval dismissal, and linear-history requirements are GitHub repository
-settings. They cannot be verified from tracked files alone; note any manual
+settings. You cannot verify them from tracked files alone. Note any manual
 settings checks in the pull request when they affect the change.
 
 ## Escalation

@@ -15,19 +15,19 @@ kernelspec:
 ```{admonition} At a glance
 :class: tip
 When where flow goes next depends on where it came from, you need a *memory
-network*: state nodes encode the context, and the map equation on state nodes
+network*. State nodes encode the context, and the map equation on state nodes
 reveals overlapping communities that a first-order model cannot see.
 ```
 
 ## Flow with memory
 
-The standard map equation models a memoryless random walk: at every node the
+The standard map equation models a memoryless random walk. At every node the
 walker continues proportional to link weights, regardless of how it got there
 (see {doc}`/concepts/the-map-equation`). In many real systems the dynamics
 carry memory: where flow goes next depends on where it has been.
 
 Consider air passengers. A traveller arriving at Chicago from Seattle behaves
-differently from one arriving from New York: the Seattle traveller tends to
+differently from one arriving from New York. The Seattle traveller tends to
 return to Seattle, the New York traveller to New York. A standard network model,
 which sees only "a traveller at Chicago," cannot capture that distinction.
 The same memory effect, where the path already taken constrains the next step,
@@ -38,14 +38,14 @@ it makes modules look larger and less specific, because flow that is actually
 channelled by history appears to leak freely across boundaries. Second, it
 hides *overlapping* communities. In a second-order model, a
 multidisciplinary journal such as *PNAS* belongs simultaneously to several
-research communities depending on where a citation arrives from; a
+research communities depending on where a citation arrives from. A
 first-order model assigns it to a single module.
 
 ## Splitting a node by its history
 
 The core idea is to split each physical location into multiple *state nodes*,
 one for each relevant piece of context. In a second-order model the context is
-the previously visited node, so each directed edge $i \to j$ in the original
+the previously visited node. Each directed edge $i \to j$ in the original
 network becomes a state node at $j$ that represents the history "arrived from
 $i$."
 
@@ -56,7 +56,7 @@ detour. Model the intersection at first order and it appears in one community.
 Model the actual pathways and the two streams belong to different communities,
 with the intersection *overlapping* between them.
 
-Infomap handles this with the **physical node / state node** distinction: in a
+Infomap handles this with the **physical node / state node** distinction. In a
 memory network a state node encodes the walker's recent history, such as "arrived
 from $j$". The generic machinery — the walk runs on state nodes, the codebook
 names physical nodes, and a physical node whose state nodes split across modules
@@ -86,14 +86,14 @@ $$
 $$
 
 Aggregating a physical node's state-node visit rates this way is what yields
-overlapping membership when those state nodes fall in different modules; the
+overlapping membership when those state nodes fall in different modules. The
 general argument is in {doc}`/concepts/state-nodes-and-higher-order-flow`
 {cite:p}`edler2017higher`.
 
 You do not have to commit to a full second-order model. The *sparse memory
 network* framework {cite:p}`persson2016sparse` lets you lump state nodes with
-similar outlink distributions, by minimising the entropy-rate loss, producing a
-variable-order model that fits the data efficiently without the exponential
+similar outlink distributions by minimising the entropy-rate loss. This produces
+a variable-order model that fits the data efficiently, without the exponential
 blowup of a fixed higher-order model.
 
 :::{toggle}
@@ -121,8 +121,8 @@ $$
 
 where $\pi_{i \cap m} = \sum_{\alpha_i \in \mathsf{M}_m} \pi_{\alpha_i}$
 aggregates all state nodes of physical node $i$ that are assigned to module
-$m$. This aggregation is what enables overlapping physical-node membership:
-state nodes of the same physical node in different modules each contribute to
+$m$. This aggregation is what enables overlapping physical-node membership.
+State nodes of the same physical node in different modules each contribute to
 separate codebook entries; see {cite:p}`edler2017higher`, §3.2.
 
 The exit rate from module $m$ is
@@ -148,7 +148,7 @@ different contexts:
 
 A memoryless walker cannot tell the two apart: at *i* it mixes both streams and
 the distinction is lost. A memory model splits *i* into two **state nodes**, one
-per context, so each keeps its own onward flow, and *i* ends up in *both*
+per context. Each keeps its own onward flow, and *i* ends up in *both*
 communities at once. This is the same bridging role node *i* plays in the
 {doc}`multilayer example </flow-models/multilayer>`, reached through memory
 rather than layers.
@@ -231,7 +231,7 @@ membership falls straight out of the state-node formalism.
 ### Visualise
 
 Draw the state network directly. The two state nodes of *i* sit side by side in
-the centre, ringed together as the one physical node they share; each takes the
+the centre, ringed together as the one physical node they share. Each takes the
 colour of its own module, so the overlap is visible at a glance.
 
 ```{code-cell} python
@@ -290,7 +290,7 @@ The second-order model keeps them apart and lets *i* belong to both.
 ## Options
 
 Unlike the relax-rate multilayer model, the second-order model adds no dedicated
-engine flag on {func}`infomap.run`: it is defined *structurally* by the state
+engine flag on {func}`infomap.run`. It is defined *structurally* by the state
 nodes you declare on the {class}`~infomap.Network`. The knobs that shape and read
 a state network are:
 

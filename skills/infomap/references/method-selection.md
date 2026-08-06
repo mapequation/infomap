@@ -26,7 +26,7 @@ Balance simplicity and accuracy. The map equation selects models by description 
 
 - **Incorporate weights and direction when they are available and meaningful** — they usually improve accuracy at little cost.
 - **Reach for richer representations** (memory/state, multilayer, metadata, bipartite) **when the data actually encode that structure or the question requires it** — not by reflex. Let the research question drive the choice.
-- Two practical cautions: richer representations create many more state nodes and links and are **harder to optimize**, so they may need more trials to reach a good solution; and use codelength to compare **module counts or regularization strength within one representation**, not as a way to pick between representations (that is a modeling decision driven by the question and the data).
+- Two practical cautions. First, richer representations create many more state nodes and links and are **harder to optimize**, so they may need more trials to reach a good solution. Second, use codelength to compare **module counts or regularization strength within one representation**, not as a way to pick between representations (that is a modeling decision driven by the question and the data).
 
 Representation options:
 
@@ -44,7 +44,7 @@ Representation options:
 How fine or coarse the modules come out is a modeling choice, not just an output. The main levers:
 
 - **Markov time** is the scale knob. Longer Markov time favors **fewer, larger** modules (coarser, shallower hierarchies); shorter Markov time (< 1) favors **more, smaller** modules (finer, deeper). It changes the model, so report it whenever it is non-default (Kheirkhahzadeh et al. 2016).
-- **Field-of-view limit**: on large, *sparse* structures a random walker stays local and can shatter one big sparse community into many small look-alike ones (overfitting). If a large sparse network — street grids, sparse occurrence or bipartite data, brain pathways — fragments into many tiny modules that shift across seeds, suspect the field-of-view limit and look for a *variable Markov time* option rather than just adding trials (Edler et al. 2022).
+- **Field-of-view limit**: on large, *sparse* structures a random walker stays local and can shatter one big sparse community into many small look-alike ones (overfitting). If a large sparse network — street grids, sparse occurrence or bipartite data, brain pathways — fragments into many tiny modules that shift across seeds, suspect the field-of-view limit. Look for a *variable Markov time* option rather than only adding trials (Edler et al. 2022).
 - **Resolution limit**: the map equation's resolution limit depends on the **cut size** (the number of links *between* modules), not on the total number of links as in modularity — so it is comparatively mild. If you suspect genuinely small modules are being merged, prefer the **multilevel (hierarchical)** solution and/or sweep Markov time before forcing a target module count; the hierarchical remedy works when real nested structure exists (Kawamoto et al. 2015).
 - A unipartite **projection of a bipartite network behaves roughly like doubling the Markov time**, i.e. it coarsens — prefer modeling the bipartite structure directly when scale matters (Kheirkhahzadeh et al. 2016).
 
@@ -53,10 +53,10 @@ Treat forced module counts (e.g. a preferred-number-of-modules knob) as sensitiv
 ## Higher-order, multilayer, and temporal configuration
 
 - **Memory / state networks** need actual pathway or sequence data (trajectories of steps); a second-order model **cannot be recovered from an aggregated first-order network**. Expect smaller, often **overlapping** modules and shifted node rankings. A second-order model usually captures most of the gain, with diminishing returns at higher orders — so prefer second order unless the data clearly justify more (Rosvall et al. 2014).
-- **Multilayer coupling** is governed by the inter-layer **relax rate** `r`: `r = 0` keeps layers fully separate, `r = 1` fully aggregates them. The right value is **system-dependent** — common working values are `r = 0.15` (a frequent default) and a note that results are often robust around `0.25`, but tune to the data and use explicit inter-layer links when you actually have them (De Domenico et al. 2015; Edler et al. 2017).
+- **Multilayer coupling** is governed by the inter-layer **relax rate** `r`: `r = 0` keeps layers fully separate, `r = 1` fully aggregates them. The right value is **system-dependent** — common working values are `r = 0.15` (a frequent default), with results often robust around `0.25`. Tune to the data and use explicit inter-layer links when you actually have them (De Domenico et al. 2015; Edler et al. 2017).
 - **Intermittent or asynchronous communities**: uniform (whole-layer) or adjacent-layer coupling can dilute boundaries and merge communities that recur at different times. For communities that appear intermittently, prefer **node-level similarity-based coupling** (neighborhood / Jensen-Shannon) over uniform coupling (Aslak et al. 2017).
 
-Verify the exact option names for Markov time, variable Markov time, relax rate, and coupling from the installed CLI help or API before generating code, since names and availability differ across versions and interfaces.
+Verify the exact option names for Markov time, variable Markov time, relax rate, and coupling from the installed CLI help or API before generating code. Names and availability differ across versions and interfaces.
 
 ## Metadata and bipartite prompts
 

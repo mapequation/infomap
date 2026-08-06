@@ -34,10 +34,10 @@ The default community detector in most GraphRAG implementations is Leiden, run
 with a modularity objective; Infomap optimises the map equation instead (see
 {doc}`/concepts/choosing-a-method`). Whether that flow view groups your entities
 more usefully than modularity depends on the graph; running both and comparing is
-reasonable. The `infomap.tl.graphrag` adapter maps
-the columns, translates node ids, extracts the hierarchy, and writes Parquet, so
-an Infomap partition drops into GraphRAG's table schema and the downstream
-summarisation and retrieval steps run unchanged.
+reasonable. The `infomap.tl.graphrag` adapter maps the columns, translates node
+ids, extracts the hierarchy, and writes Parquet. An Infomap partition then drops
+into GraphRAG's table schema, and the downstream summarisation and retrieval
+steps run unchanged.
 
 ## What Infomap optimises here
 
@@ -141,8 +141,8 @@ print(f"Top-level communities:   {partition.num_top_modules}")
 
 The `nodes` table maps every entity to its module. The `module_path` column
 encodes the full position in the hierarchy (a list of module ids from the root
-to the leaf), and `flow` is the stationary probability of the random walk
-visiting that entity, a natural measure of entity centrality within its
+to the leaf). The `flow` column is the stationary probability of the random
+walk visiting that entity, a natural measure of entity centrality within its
 community.
 
 ```{code-cell} python
@@ -222,7 +222,7 @@ list(output_dir.iterdir())
 ```
 
 You can also write the tables separately using `write_graphrag_communities` if
-you have already run Infomap and just want to export:
+you have already run Infomap and want to export:
 
 ```{code-cell} python
 from infomap.tl.graphrag import write_graphrag_communities

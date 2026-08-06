@@ -116,9 +116,9 @@ For production figures, copy
 For a single file bundling the network topology and the Infomap result,
 {func}`infomap.to_networkx` (also available as
 {meth}`result.to_networkx() <infomap.Result.to_networkx>`) builds a *new*
-NetworkX graph from the result: nodes are the result's (state) nodes, keyed by
-`state_id` and carrying the Infomap node `name` plus the partition attributes,
-and edges come from the partitioned network. NetworkX then writes it:
+NetworkX graph from the result. Nodes are the result's (state) nodes, keyed by
+`state_id` and carrying the Infomap node `name` plus the partition attributes.
+Edges come from the partitioned network. NetworkX then writes it:
 
 ```{code-cell} python
 import os
@@ -147,7 +147,7 @@ The exported graph carries these Infomap node attributes:
 | `flow` | Stationary visit frequency (`float`) |
 
 GraphML and GEXF store the types alongside the values, so module ids and flows
-come back as numbers when the file is read — Gephi's numeric colour scales and
+come back as numbers when the file is read. Gephi's numeric colour scales and
 sorting work directly.
 
 Because the graph is rebuilt from the result, your original graph's node

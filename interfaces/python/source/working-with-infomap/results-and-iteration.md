@@ -22,7 +22,7 @@ tabular output through `to_dataframe()`.
 ## What the Result holds
 
 A {class}`~infomap.Result` holds more than labels. Each node carries a flow
-value, the share of the random walk that visits it, and the hierarchical tree
+value, the share of the random walk that visits it. The hierarchical tree
 records nested modules that a flat assignment vector cannot.
 
 ## Three layers of detail
@@ -50,7 +50,7 @@ can filter, group, merge, and export.
 The {class}`~infomap.Result` reports the best (lowest-codelength) partition
 across the `num_trials` independent searches. One run is fine for exploration,
 but a single trial can settle in a local minimum, so results you publish or act
-on warrant more — see
+on warrant more. See
 {doc}`Running Infomap </working-with-infomap/running-and-options>` for why and
 the full `num_trials` rule of thumb. The rest of this chapter is about *reading
 and comparing* the partition you get back.
@@ -294,7 +294,7 @@ codelength; large noisy networks spread wider.
 Sweeps over parameters or networks are the common case: vary a knob, keep the
 per-run metrics. {meth}`~infomap.Result.summary` returns those scalars as a
 plain dict whose keys match the `Result` property names, so each run drops
-straight into a one-row-per-run `pandas.DataFrame` — add your own
+straight into a one-row-per-run `pandas.DataFrame`. Add your own
 swept-parameter columns alongside:
 
 ```{code-cell} python
