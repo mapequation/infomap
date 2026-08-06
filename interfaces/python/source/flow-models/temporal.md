@@ -58,12 +58,13 @@ reconvene.
 
 If you aggregate all interactions across the day into one static graph, every
 node connects to every other and the modular structure dissolves. If you treat
-each time window as a separate layer and let a random walker jump between layers
-with some probability, Infomap can follow the communities as they shift. Nodes
-that are consistently co-grouped across time share more flow, and the map
-equation finds the partition that best compresses that multi-window journey.
+each time window as a separate layer, you can let a random walker jump between
+layers with some probability. Infomap can then follow the communities as they
+shift. Nodes that are consistently co-grouped across time share more flow, and
+the map equation finds the partition that best compresses that multi-window
+journey.
 
-The strength of that coupling is set by the **inter-layer relax rate** $r$;
+The **inter-layer relax rate** $r$ sets the strength of that coupling;
 {doc}`/flow-models/multilayer` describes the mechanism.
 
 ## Coupling snapshots across time
@@ -79,7 +80,7 @@ probabilities and how state nodes of one physical node share a codeword within a
 module. What is specific to *time* is how to couple the windows.
 
 **Uniform relaxation** (the default) lets the walker relax to any window,
-weighted only by the node's link strength there, and no window is privileged
+weighted only by the node's link strength there, and no window has priority
 over another. It is the simplest choice and works well when communities change
 gradually.
 
@@ -197,12 +198,13 @@ tracks.
 
 Because the relax rate couples the layers, Infomap does not treat the T = 2
 partition as independent. The same two underlying communities keep their module
-ids across all three windows instead of being assigned arbitrary new ones.
+ids across all three windows; Infomap does not assign arbitrary new ids in each
+window.
 
 ### What the relax rate controls
 
 Lowering `multilayer_relax_rate` toward zero makes each layer more autonomous.
-This helps when snapshots are far apart in time and you should not assume
+This helps when snapshots are far apart in time and you cannot assume that
 community identity persists. Raising it toward 1 pushes Infomap toward the
 aggregate static solution. The default is `0.15`; values in the 0.15–0.25 range
 are usually a good choice for networks where communities evolve smoothly.
@@ -238,14 +240,14 @@ generalises to higher-order and temporal networks {cite:p}`holmgren2023change`.
 
 ## Options
 
-Temporal coupling is set by the multilayer engine options, carried via `Options`
-to {func}`infomap.run`. They apply when you use `add_multilayer_intra_link`
-without explicit inter-layer links:
+The multilayer engine options set the temporal coupling; pass them via
+`Options` to {func}`infomap.run`. They apply when you use
+`add_multilayer_intra_link` without explicit inter-layer links:
 
 | Option | Default | Effect |
 |---|---|---|
 | `multilayer_relax_rate` | `0.15` | Inter-layer coupling $r \in [0, 1]$; higher couples windows more, toward the aggregate (0.15–0.25 typical) |
-| `multilayer_relax_limit` | `-1` | Caps how far in layer index the walker may relax; enforces temporal ordering |
+| `multilayer_relax_limit` | `-1` | Caps how far in layer index the walker can relax; enforces temporal ordering |
 | `multilayer_relax_by_jsd` | `False` | Couple windows by neighbourhood-flow similarity instead of uniformly |
 
 ## Going deeper

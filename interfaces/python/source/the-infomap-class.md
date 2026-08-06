@@ -17,7 +17,7 @@ kernelspec:
 
 The {class}`infomap.Infomap` class is the stateful entry point: build a network
 with the `add_*` verbs, then call `run()` for an immutable
-{class}`~infomap.Result`. New code should prefer {func}`infomap.run` for one-shot
+{class}`~infomap.Result`. In new code, prefer {func}`infomap.run` for one-shot
 use and {class}`~infomap.Network` for incremental construction. Existing
 `Infomap` code keeps working essentially unchanged (see
 [Removed accessors](#removed-accessors) for the few exceptions).
@@ -27,10 +27,10 @@ use and {class}`~infomap.Network` for incremental construction. Existing
 
 The functional {func}`infomap.run` and the {class}`~infomap.Network` builder
 cover most needs. Reach for the stateful {class}`~infomap.Infomap` class when you
-want to keep one configured object around and run it repeatedly, or when you are
-maintaining code written against the original API. Internally it composes a
-`Network` and an `Options` over the same engine boundary. Its building verbs
-and its results are thus identical to the functional path.
+want to keep one configured object around and run it repeatedly. Also reach for
+it when you maintain code written against the original API. Internally it
+composes a `Network` and an `Options` over the same engine boundary. Its
+building verbs and its results are thus identical to the functional path.
 
 {func}`infomap.run` is the canonical entry point. It accepts any input --
 including a prebuilt {class}`~infomap.Network` or a stateful
@@ -55,7 +55,7 @@ print(result.modules())
 
 `im.run()` returns the same {class}`~infomap.Result` the functional API returns.
 The on-instance result accessors (`im.get_modules()`, `im.codelength`,
-`im.nodes`) still work and are backed by that result, but they are **deprecated
+`im.nodes`) still work and read from that result, but they are **deprecated
 and leave in 3.0**. Read the equivalently named members off the returned
 {class}`~infomap.Result` instead. Mind the shape shift: `im.modules` is a
 property, while `result.modules()` is a method. These accessors emit a
@@ -80,9 +80,10 @@ Each stateful pattern has a direct functional or `Network` equivalent:
 | Scalar metrics | `im.codelength`, `im.num_top_modules` | `result.codelength`, `result.num_top_modules` |
 | Graph-file export | `infomap.io.export.write_graphml(graph, im, path)` | `nx.write_graphml(result.to_networkx(), path)` |
 
-The two consistent shifts: building a network is a {class}`~infomap.Network`
-(or a direct {func}`infomap.run` call) rather than the stateful instance, and
-reading results goes through the immutable {class}`~infomap.Result`
+The migration has two consistent shifts. You build a network with a
+{class}`~infomap.Network` (or a direct {func}`infomap.run` call) rather than on
+the stateful instance. You read results through the immutable
+{class}`~infomap.Result`
 (see {doc}`/working-with-infomap/results-and-iteration`).
 
 ## Migrating deprecated keyword arguments
@@ -94,9 +95,9 @@ falls into one of three groups, with a recommended replacement:
 
 | Deprecated keyword | Where it moves |
 |---|---|
-| Advanced tuning flags -- `regularized`, `core_loop_limit`, `flow_model`, and the like | carry them on the {class}`~infomap.Options` object: `run(g, options=Options(regularized=True))` |
-| Output-artifact flags -- `no_file_output`, `tree`, `clu`, `out_name` | write from the {class}`~infomap.Result` instead: `result.write_tree(path)`, `result.write_clu(path)`, or `network.write_pajek(path)` |
-| Console flags -- `silent`, `verbosity_level` | use logging: `infomap.enable_log()` for the engine log, and `infomap.enable_log(logging.DEBUG)` to raise its verbosity |
+| Advanced tuning options -- `regularized`, `core_loop_limit`, `flow_model`, and the like | carry them on the {class}`~infomap.Options` object: `run(g, options=Options(regularized=True))` |
+| Output-artifact options -- `no_file_output`, `tree`, `clu`, `out_name` | write from the {class}`~infomap.Result` instead: `result.write_tree(path)`, `result.write_clu(path)`, or `network.write_pajek(path)` |
+| Console options -- `silent`, `verbosity_level` | use logging: `infomap.enable_log()` for the engine log, and `infomap.enable_log(logging.DEBUG)` to raise its verbosity |
 
 The `options` carrier accepts an {class}`~infomap.Options` instance or a plain
 mapping. It works the same on `Infomap()`, {meth}`Infomap.run`,
@@ -115,7 +116,7 @@ The redesign dropped a few camelCase passthroughs. Their replacements:
 | `im.isBipartite()` | set {attr}`~infomap.Infomap.bipartite_start_id`; there is no separate status accessor |
 | `im.setBipartiteStartId(n)` | `im.bipartite_start_id = n` (a property) |
 | `im.haveMetaData()` | declare with {meth}`~infomap.Infomap.set_meta_data`; read {attr}`~infomap.Result.meta_entropy` |
-| `im.numMetaDataDimensions` | one metadata dimension is supported; there is no count accessor |
+| `im.numMetaDataDimensions` | Infomap supports one metadata dimension; there is no count accessor |
 
 ## See also
 

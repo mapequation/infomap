@@ -48,7 +48,7 @@ connected cell groups become modules (see {doc}`/concepts/the-map-equation`).
 
 This flow-centric view often agrees with Leiden, but the two can diverge:
 Leiden's partition depends on its resolution parameter, and the connectivity
-graph may be asymmetric. Running both and comparing is a useful sanity check,
+graph can be asymmetric. Running both and comparing is a useful sanity check,
 especially for datasets where cluster sizes vary widely.
 
 ## Cluster three cell populations
@@ -57,7 +57,7 @@ especially for datasets where cluster sizes vary widely.
 
 The example is fully synthetic and small so the build completes in a few
 seconds. Three tight Gaussian blobs in 10-dimensional space give Scanpy's
-neighbour graph a clear community structure that both algorithms should recover.
+neighbour graph a clear community structure that both algorithms can recover.
 
 ```{code-cell} python
 import warnings

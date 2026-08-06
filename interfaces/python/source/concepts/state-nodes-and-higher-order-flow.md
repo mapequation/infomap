@@ -41,8 +41,8 @@ Separate two ideas that an ordinary network conflates:
 
 Infomap runs its random walk over the state nodes, and the map equation
 partitions *those*. The only change from the first-order map equation is that
-state nodes belonging to the **same physical node within the same module share a
-codeword**, because they are the same object.
+state nodes of the **same physical node within the same module share a
+codeword**. They share it because they are the same object.
 
 If a physical node's state nodes land in different modules, that physical node
 belongs to several communities at once, with no separate overlapping-community
@@ -52,7 +52,7 @@ hub airport can belong to several regional systems.
 ## The map equation on state nodes
 
 A higher-order network is a set of state nodes, each attached to a physical
-node, with transitions between them. The map equation is unchanged in form
+node, with transitions between them. The map equation keeps its form
 (the sum still runs over the $m$ modules),
 
 $$
@@ -61,9 +61,9 @@ L(\mathsf{M}) =
   + \sum_{i=1}^{m} p_{\circlearrowright}^i H(\mathcal{P}^i),
 $$
 
-but it runs over state nodes: the map equation sums the visit rates of state
-nodes of the same physical node in the same module before computing the module
-codebook entropy.
+but it runs over state nodes. The map equation sums the visit rates of state
+nodes of the same physical node in the same module before it computes the
+module codebook entropy.
 
 ## One physical node in two modules
 

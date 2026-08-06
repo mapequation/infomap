@@ -25,20 +25,21 @@ follow citations to the papers that shape a field. To see the large-scale
 structure of that movement you need a currency that respects direction, weight,
 and how paths chain together.
 
-Counting edges inside and outside groups misses something dynamic: the way a
-random walker entering a dense cluster tends to stay there for many steps before
-it escapes. That persistence is what defines a community in flow-based clustering: a module
-is a part of the network where flow **lingers** {cite:p}`rosvall2008maps`.
+Counting edges inside and outside groups misses something dynamic. A random
+walker that enters a dense cluster tends to stay there for many steps before it
+escapes. That persistence is what defines a community in flow-based clustering:
+a module is a part of the network where flow **lingers**
+{cite:p}`rosvall2008maps`.
 
-The map equation, Infomap's objective function, measures how compactly the
-walker's trajectory can be described. To do that it needs to know how often the
+The map equation, Infomap's objective function, measures how compactly you can
+describe the walker's trajectory. To do that it needs to know how often the
 walker visits each node and how often it crosses module boundaries. Both
 come from **flow**.
 
 ## The random walk
 
 Picture a walker that starts at some node and, at each step, follows one of the
-outgoing edges at random. It spends more time in densely connected regions and
+outgoing links at random. It spends more time in densely connected regions and
 now and then crosses into another. Track where it sits over a long run. The
 fraction of time spent at each node is that node's **flow**, its stationary
 visit frequency.
@@ -49,21 +50,22 @@ predictable, broken only by rare crossings. The next chapter turns those long
 stretches into a two-level code and defines the description length that Infomap
 minimises.
 
-**Directed** networks need one more ingredient. A directed graph can have
-dangling nodes (no out-edges) or sink components the walker can never leave, so
+**Directed** networks need one more ingredient. A directed network can have
+dangling nodes (no out-links) or sink components the walker can never leave, so
 the walk fails to reach every node. It is not *ergodic*. The fix is
 **teleportation**: with small probability $\tau$ (default 0.15, the conventional
-PageRank value) the walker teleports to another node instead of following an edge.
-That guarantees a unique stationary distribution, but the jumps add long-range
-links that blur module boundaries. **Unrecorded** teleportation, which leaves
-the jump steps out of the recorded trajectory, removes most of the blurring and
-makes the partition robust to the value of $\tau$ {cite:p}`lambiotte2012smart`.
-Infomap uses unrecorded teleportation by default for directed networks.
+PageRank value) the walker does not follow a link but teleports to another
+node. That guarantees a unique stationary distribution, but the jumps add
+long-range links that blur module boundaries. **Unrecorded** teleportation
+leaves the jump steps out of the recorded trajectory. This removes most of the
+blurring and makes the partition robust to the value of $\tau$
+{cite:p}`lambiotte2012smart`. Infomap uses unrecorded teleportation by default
+for directed networks.
 
 ## Flow as a stationary distribution
 
 A directed, weighted network on $n$ nodes defines a transition matrix
-$T_{ij} = w_{ij} / w_j^{\text{out}}$, where $w_{ij}$ is the edge weight from
+$T_{ij} = w_{ij} / w_j^{\text{out}}$, where $w_{ij}$ is the link weight from
 $j$ to $i$ and $w_j^{\text{out}}$ is node $j$'s total out-weight. The
 **stationary distribution** $\pi$ satisfies
 
@@ -194,8 +196,8 @@ covered in {doc}`/working-with-infomap/results-and-iteration`.
 
 ## Going deeper
 
-- Source paper for flow-based community detection {cite:p}`rosvall2008maps`;
-  teleportation in directed networks is developed in {cite:p}`lambiotte2012smart`.
+- Source paper for flow-based community detection {cite:p}`rosvall2008maps`; see
+  {cite:p}`lambiotte2012smart` for teleportation in directed networks.
 - The survey (§2–3) gives the broader treatment {cite:p}`smiljanic2026survey`,
   and the {doc}`survey companion notebooks </article-companion/index>`
   demonstrate flow on larger real-world networks.

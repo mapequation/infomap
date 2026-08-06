@@ -21,7 +21,7 @@ non-default loading, build it explicitly with a {class}`~infomap.Network`.
 
 ## Run from the format you already have
 
-Your network might be a NetworkX graph from a scraping step, a SciPy sparse
+Your network can be a NetworkX graph from a scraping step, a SciPy sparse
 adjacency matrix from a machine-learning pipeline, or a DataFrame from a SQL
 query. {func}`infomap.run` dispatches on the type of its argument, builds the
 same internal flow network whatever the source, and returns an immutable
@@ -50,7 +50,7 @@ Keyword arguments to {func}`infomap.run` configure the *engine* (``seed``,
 the input is read* — ``weight``, ``edge_weights``, ``weighted`` — belong to the
 ``Network.from_*`` constructors. Passing one to {func}`infomap.run` raises with
 a pointer to the right constructor rather than silently building a different
-graph.
+network.
 
 ``directed`` is the exception that carries two meanings. On {func}`infomap.run`
 and {class}`~infomap.Options` it selects the engine's *directed flow model* and
@@ -217,9 +217,9 @@ result = run(net, two_level=True, seed=123, num_trials=5)
 print(f"via Network: {result.num_top_modules} modules")
 ```
 
-Pass ``node_ids=`` to give the matrix rows external ids; the mapping is stored
-on {attr}`~infomap.Network.node_id_to_label`, the same pattern as
-``from_networkx``.
+Pass ``node_ids=`` to give the matrix rows external ids; the constructor
+stores the mapping on {attr}`~infomap.Network.node_id_to_label`, the same
+pattern as ``from_networkx``.
 
 ## Edge lists: pandas, NumPy, tuples
 
@@ -299,7 +299,7 @@ for node in result.nodes():
 ```
 
 `Network.from_file(path)` is the two-step form when you want to inspect or
-extend the network before running. The
+extend the network before you run it. The
 [input-format reference](https://www.mapequation.org/infomap/#Input) on
 mapequation.org documents every section a `.net` file can carry, including
 `*States`, `*Bipartite`, and `*Multilayer`. The reference example for each
@@ -351,10 +351,11 @@ result = infomap.run(str(path), two_level=True, seed=123, num_trials=5)
 print(f"json route: {result.num_top_modules} modules, {result.codelength:.4f} bits/step")
 ```
 
-`type` defaults to `standard`. The other values are `bipartite` (requires
-`bipartiteStartId`), `multilayer` (with `multilayer` set to `full`, `intra`, or
-`intra-inter` and `layers` on each edge), and `state` (edges are state ids, with
-an optional `states` array). Parsing is order- and emitter-independent, so key
+`type` defaults to `standard`. The other values are `bipartite`, `multilayer`,
+and `state`. `bipartite` requires `bipartiteStartId`. For `multilayer`, the
+`multilayer` key selects `full`, `intra`, or `intra-inter`, and each edge
+carries `layers`. For `state`, edges are state ids, with an optional `states`
+array. Parsing is order- and emitter-independent, so key
 order (for example alphabetically sorted output) does not matter.
 
 Two optional conveniences replace separate input files:
@@ -368,11 +369,11 @@ Two optional conveniences replace separate input files:
   partition: `[3]` is equivalent to a `.clu` module and `[1, 2]` to a `.tree`
   path. `--cluster-data` overrides it, with a warning.
 
-All ids are non-negative integers; integral-valued doubles such as `10.0` are
-accepted but `1.5` is rejected. Edge weights are passed to the same core network
-builder as the text formats, so weights `<= 0` are ignored (not an error). Node
-and state weights must be non-negative. The JSON Schema in
-`test/schemas/json/infomap-network.schema.json` is the normative
+All ids are non-negative integers; the parser accepts integral-valued doubles
+such as `10.0` but rejects `1.5`. The JSON reader passes edge weights to the
+same core network builder as the text formats, so the builder ignores weights
+`<= 0` (not an error). Node and state weights must be non-negative. The JSON
+Schema in `test/schemas/json/infomap-network.schema.json` is the normative
 specification of what the parser accepts.
 
 ## Building incrementally with Network
@@ -438,15 +439,15 @@ To draw the partition or write it to disk, see
   or edge index it is the adapter's *edge orientation* and lives on
   `Network.from_scipy_sparse_matrix` / `Network.from_edge_index`. With those
   two inputs, `run` raises if you pass `directed=`.
-- **SciPy and edge-index routes default to different directedness.** A SciPy
-  sparse matrix is read as *undirected* unless you pass `directed=True`. A
-  `(2, E)` integer edge index follows the PyG convention and is read as
-  *directed*. NetworkX and igraph instead take directedness from the graph
-  object. Spell the flag out when it matters.
+- **SciPy and edge-index routes default to different directedness.** Infomap
+  reads a SciPy sparse matrix as *undirected* unless you pass `directed=True`.
+  A `(2, E)` integer edge index follows the PyG convention, so Infomap reads
+  it as *directed*. NetworkX and igraph instead take directedness from the
+  graph object. Spell the option out when it matters.
 - **A two-row integer array is an edge index, not two links.** Rows of
-  `(source, target, weight)` need a float weight column to be read as links. A
-  bare 2×E integer array is interpreted as a `(2, E)` edge index (and so as
-  directed). If that is not what you meant, use
+  `(source, target, weight)` need a float weight column to be read as links.
+  Infomap interprets a bare 2×E integer array as a `(2, E)` edge index (and
+  so as directed). If that is not what you meant, use
   `Network.from_edge_index(..., directed=False)`.
 - **The raw edge-list route registers no node names.** Running a NumPy array or
   tuples directly stores no labels, so the result's `"name"` column cannot

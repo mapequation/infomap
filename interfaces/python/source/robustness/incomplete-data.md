@@ -32,9 +32,9 @@ The standard map equation is prone to this. It minimises a Shannon
 entropy-based description length that systematically *underestimates* the true
 entropy when data are sparse {cite:p}`basharin1959entropy`. The bias grows as
 communities lose links, and the map equation's two cost terms fall out of
-balance. The module codebooks look cheap to shrink, so the optimiser splits
-nodes into smaller and smaller groups, down to groups of two or three nodes
-with no principled support. Those modules are an artefact of noise.
+balance. The module codebooks look cheap to shrink. The optimiser therefore
+splits nodes into smaller and smaller groups, down to groups of two or three
+nodes with no principled support. Those modules are an artefact of noise.
 
 The search algorithm and the number of trials are not the cause. The bias is in
 the objective itself: on sparse data it rewards splitting communities that the
@@ -47,14 +47,14 @@ In the map equation, a community is a group of nodes where a random walker
 lingers (see {doc}`/concepts/the-map-equation`). When the network is nearly
 complete, the observed degree of each node is a reliable estimate of how strongly
 it attracts the walker. When many links are missing, the observed degree is just
-a noisy sample of the true degree. Relying on that sample blindly inflates
-apparent differences between nodes, encourages the algorithm to draw boundaries
-around statistical accidents, and produces many tiny "communities" that would
-dissolve if you observed a few more links.
+a noisy sample of the true degree. A blind reliance on that sample inflates
+the apparent differences between nodes. It encourages the algorithm to draw
+boundaries around statistical accidents, and it produces many tiny
+"communities" that would dissolve if you observed a few more links.
 
-Regularization addresses this by blending what you observed with an uninformative
-prior: a featureless, fully-connected network with no community structure of its
-own.
+Regularization addresses this problem. It blends what you observed with an
+uninformative prior: a featureless, fully-connected network with no community
+structure of its own.
 
 The picture is similar to Bayesian smoothing for language models: a bigram
 count of zero does not mean two words never co-occur. You add a small
@@ -79,24 +79,24 @@ evens out the apparent cost differences that drive spurious splitting.
 The strength of the prior is $\lambda = C\,\ln N / N$, where $N$ is the number of
 nodes and $C$ is the `regularization_strength` (default $1$). The value
 $\ln N / N$ is the edge probability at which an Erdős–Rényi random graph becomes
-almost surely connected, which is what makes it a principled default (see the
+almost surely connected. That property makes it a principled default (see the
 toggle).
 
 :::{toggle}
 **Why $\lambda = \ln N / N$**
 
 An Erdős–Rényi random graph on $N$ nodes with edge probability $\lambda$
-undergoes a connectivity phase transition at $\lambda = \ln N / N$: below it the
-graph almost surely breaks into isolated components, so a weaker prior cannot
-stop the map equation from giving poorly-sampled nodes their own spurious
-modules; above it the prior network is connected but still structureless, so it
-adds no bias toward any grouping. The default $C = 1$
-(`regularization_strength=1.0`) places the prior exactly at this critical point,
-balancing resistance to overfitting against washing out real communities. Lower
-values (e.g. $C = 0.5$) allow more communities; higher values push toward fewer.
-For severely undersampled networks the regularized objective prefers the
-one-module solution, reporting that the evidence does not support any community
-structure.
+undergoes a connectivity phase transition at $\lambda = \ln N / N$. Below it,
+the graph almost surely breaks into isolated components, so a weaker prior
+cannot stop the map equation from giving poorly-sampled nodes their own
+spurious modules. Above it, the prior network is connected but still
+structureless, so it adds no bias toward any grouping. The default $C = 1$
+(`regularization_strength=1.0`) places the prior exactly at this critical
+point. It balances resistance to overfitting against washing out real
+communities. Lower values (for example $C = 0.5$) allow more communities;
+higher values push toward fewer. For severely undersampled networks the
+regularized objective prefers the one-module solution and reports that the
+evidence does not support any community structure.
 
 A separate option, `entropy_corrected`, corrects the small-sample bias in the
 entropy estimate itself; it is independent of the prior-network regularization
@@ -220,10 +220,10 @@ close to the planted five.
   above, default `1.0`) tunes the prior. It applies to undirected, weighted, and
   directed networks ({cite:p}`smiljanic2020missing`;
   {cite:p}`smiljanic2021incomplete`).
-- Run metrics — {attr}`~infomap.Result.codelength` (Bayesian-corrected under
-  regularization), {attr}`~infomap.Result.num_top_modules`,
-  {meth}`~infomap.Result.modules` — are covered in
-  {doc}`/working-with-infomap/results-and-iteration`.
+- {doc}`/working-with-infomap/results-and-iteration` covers the run metrics:
+  {attr}`~infomap.Result.codelength` (Bayesian-corrected under
+  regularization), {attr}`~infomap.Result.num_top_modules`, and
+  {meth}`~infomap.Result.modules`.
 
 ## Going deeper
 

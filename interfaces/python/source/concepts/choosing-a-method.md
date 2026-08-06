@@ -37,13 +37,13 @@ what you mean by "community".
 
 ## What each objective optimises
 
-**Modularity (Louvain, Leiden).** Both are usually run to maximise modularity, a
+**Modularity (Louvain, Leiden).** Most users run both to maximise modularity, a
 static-density score against a degree-preserving null model. Standard
-modularity's null model is undirected, so edge direction is ignored unless you
-switch to a directed-modularity variant. Leiden is a general
-optimiser: it maximises whichever quality function you give it, adds a refinement
-step that guarantees internally connected communities, and reaches better optima
-than Louvain's greedy moves {cite:p}`traag2019leiden`. This page uses the
+modularity's null model is undirected, so it ignores edge direction unless you
+switch to a directed-modularity variant. Leiden is a general optimiser: it
+maximises whichever quality function you give it. It also adds a refinement
+step that guarantees internally connected communities, and it reaches better
+optima than Louvain's greedy moves {cite:p}`traag2019leiden`. This page uses the
 modularity objective for both, the most common default.
 
 **The map equation (Infomap).** Infomap compresses a description of a random walk
@@ -78,11 +78,12 @@ derived term by term in {doc}`/concepts/the-map-equation`.
 Modularity has a resolution limit: it tends not to separate communities with
 fewer than roughly $\sqrt{m/2}$ internal links, however cohesive they are
 {cite:p}`fortunato2007resolution`. Leiden can sidestep it with a
-resolution-limit-free objective such as the Constant Potts Model, or by tuning its
-`resolution_parameter`. The map equation has a resolution limit too, weaker but
-not absent ({doc}`/concepts/hierarchy-and-the-multilevel-map` derives the bound);
-tune its scale with `markov_time` or `preferred_number_of_modules`. These are
-properties of the objectives, not verdicts on them.
+resolution-limit-free objective such as the Constant Potts Model, or you can
+tune its `resolution_parameter`. The map equation has a resolution limit too,
+weaker but not absent ({doc}`/concepts/hierarchy-and-the-multilevel-map`
+derives the bound); tune its scale with `markov_time` or
+`preferred_number_of_modules`. These are properties of the objectives, not
+verdicts on them.
 :::
 
 ## One network under each objective
@@ -158,10 +159,10 @@ density pick out the same groups.
 Infomap's answer differs from a modularity partition in two situations:
 
 - **Directed flow.** Infomap follows edge direction; the standard modularity null
-  model does not. On a network with real flow asymmetry — a citation cascade or a
-  web subgraph that mostly *sends* links one way — the random walk concentrates
-  where undirected edge density alone does not. A directed Infomap run therefore
-  reads the structure differently {cite:p}`rosvall2008maps`.
+  model does not. Take a network with real flow asymmetry: a citation cascade,
+  or a web subgraph that mostly *sends* links one way. There the random walk
+  concentrates where undirected edge density alone does not. A directed Infomap
+  run therefore reads the structure differently {cite:p}`rosvall2008maps`.
 - **Scale.** The two objectives have different resolution limits (see the toggle
   above). On a network with many small groups, they need not agree on how finely
   to divide it. Neither is more correct; they optimise different things.

@@ -9,7 +9,7 @@ Emscripten. It ships a browser web worker, a Node.js module
 
 Infomap is a network clustering algorithm based on the
 [Map equation](https://www.mapequation.org/publications.html#Rosvall-Axelsson-Bergstrom-2009-Map-equation).
-The package is used in [Infomap Online](https://www.mapequation.org/infomap/).
+[Infomap Online](https://www.mapequation.org/infomap/) uses the package.
 
 ## Install
 
@@ -150,11 +150,12 @@ works with CommonJS:
 
 > **No whitespace in option values.** Options reach the engine as one
 > whitespace-separated argument string with no quoting, so a value containing a
-> space cannot survive the trip. Quotes are not stripped, so
-> `--out-name "my run"` sets the name to the literal `"my`. Passing an object
-> throws instead of truncating: `argumentsToString({ outName: "my run" })` names
-> the offending option. A raw `args` string is passed through unvalidated, so a
-> space there still splits. This is a limitation of the engine boundary, shared
+> space cannot survive the trip. The engine does not strip quotes, so
+> `--out-name "my run"` sets the name to the literal `"my`. If you pass an
+> object, the call throws an error and does not truncate the value:
+> `argumentsToString({ outName: "my run" })` names the offending option. The
+> binding passes a raw `args` string through without validation, so a space
+> there still splits. This is a limitation of the engine boundary, shared
 > with the Python and R bindings and the command line.
 
 ```js
@@ -192,7 +193,7 @@ Contact details are available at
 
 ## Terms of use
 
-Infomap is released under a dual licence.
+We release Infomap under a dual licence.
 
 The code is available under the GNU General Public License version 3 or any
 later version; see `LICENSE_GPLv3.txt`.

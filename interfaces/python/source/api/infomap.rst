@@ -98,8 +98,8 @@ Reading the partition
 
 Except for :attr:`~Infomap.network`, these accessors mirror the
 :class:`Result` API and are deprecated (they leave in 3.0). Read them off the
-:class:`Result` that ``run()`` returns -- e.g. ``result.modules()`` rather than
-``im.get_modules()``.
+:class:`Result` that ``run()`` returns -- for example, ``result.modules()``
+rather than ``im.get_modules()``.
 
 .. autosummary::
 
@@ -182,9 +182,9 @@ Full reference
    Many members below are the **deprecated** on-instance result accessors
    (``get_modules``, ``modules``, ``codelength``, ``to_dataframe``, …). Their
    example bodies show the legacy ``im.<accessor>`` form for reference only. In
-   new code, read these off the :class:`Result` that ``run()`` returns instead
-   (see the note at the top of this page for the shape shift and the migration
-   table).
+   new code, read these off the :class:`Result` that ``run()`` returns instead.
+   See the note at the top of this page for the shape shift and the migration
+   table.
 
 .. autoclass:: Infomap
    :members:

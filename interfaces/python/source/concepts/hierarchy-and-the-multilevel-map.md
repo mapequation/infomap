@@ -34,10 +34,10 @@ boundary-crossing traffic; the toggle below gives the exact bound. In a nested
 network the two-level method must choose between resolving the fine-grained
 modules and capturing the coarse super-groups.
 
-The multilevel map equation lifts the limit by allowing nested index codebooks
+The multilevel map equation lifts the limit: it allows nested index codebooks
 to any depth. It adds a level only when that level shortens the total
-description, so the depth of the output tree is read off the data. Multilevel is
-the default; pass `two_level=True` to disable it.
+description, so you read the depth of the output tree off the data. Multilevel
+is the default; pass `two_level=True` to disable it.
 
 ## Nested addresses
 
@@ -101,9 +101,9 @@ L(\mathsf{M}^{ij\ldots k}) =
 $$
 
 The rate $q_{\circlearrowright}^i$ at which the walker uses module $i$'s
-sub-index codebook depends on the *local* traffic within module $i$, not on a
-global cut size that grows with the whole network. This is why the resolution
-limit relaxes; see {cite:p}`kawamoto2015resolution`, §IV.
+sub-index codebook depends on the *local* traffic within module $i$. It does
+not depend on a global cut size that grows with the whole network. This is why
+the resolution limit relaxes; see {cite:p}`kawamoto2015resolution`, §IV.
 
 Infomap searches for the hierarchical partition that minimises the total $L$
 using a fast stochastic recursive algorithm. It first generates top-level
@@ -114,7 +114,7 @@ shortens. The search converges to a locally optimal hierarchical tree.
 :::{toggle}
 **Resolution limit: why two-level fails and hierarchy helps**
 
-The two-level map equation's resolution limit can be derived analytically
+You can derive the two-level map equation's resolution limit analytically
 {cite:p}`kawamoto2015resolution`. For an undirected network with cut size $C$ (total
 number of links crossing module boundaries), the two-level method can fail
 to detect a module with $l_c$ internal links when
@@ -132,11 +132,11 @@ does not vanish.
 
 The *hierarchical* map equation evaluates the analogous update with the effective
 network size equal to the super-module plus its boundary links, not the full
-graph. Because a super-module is much smaller than the full network, the cut size
-that gates a fine-level split is tiny, so the search resolves fine-level modules
-that the two-level stage would swallow. For networks with a pronounced nested
-structure the hierarchical method all but eliminates the resolution limit; see
-{cite:p}`kawamoto2015resolution`, §IV.
+network. Because a super-module is much smaller than the full network, the cut
+size that gates a fine-level split is tiny. The search therefore resolves
+fine-level modules that the two-level stage would swallow. For networks with a
+pronounced nested structure the hierarchical method all but eliminates the
+resolution limit; see {cite:p}`kawamoto2015resolution`, §IV.
 :::
 
 ## Nine triangles, three super-groups
@@ -256,7 +256,7 @@ inside them. Both panels share one layout, so the levels read against each
 other.
 ```
 
-This matches the theoretical picture {cite:p}`rosvall2011multilevel`: the
+This matches the theoretical picture {cite:p}`rosvall2011multilevel`. The
 network has dense intra-triangle flow, moderately dense intra-super-group flow
 (the unit-weight links joining a super-group's triangles), and weak
 inter-super-group flow (the three 0.8 links). Three nested levels of codebooks
@@ -278,6 +278,7 @@ hierarchy.
 ## Going deeper
 
 - Source paper for the multilevel map equation {cite:p}`rosvall2011multilevel`;
-  the resolution limit it relaxes is derived in {cite:p}`kawamoto2015resolution`.
+  for the derivation of the resolution limit it relaxes, see
+  {cite:p}`kawamoto2015resolution`.
 - The survey (§3) adds the multilevel derivation and worked examples
   {cite:p}`smiljanic2026survey`.

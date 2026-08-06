@@ -3,11 +3,11 @@ Errors
 
 .. currentmodule:: infomap
 
-Every failure the engine reports — an unreadable input file, an invalid
-``args`` string, an option conflict, an unwritable output path — is raised as
-:class:`InfomapError` or one of its subclasses. The exception preserves the
-engine's message. Catch the base class to handle any Infomap failure, or a
-subclass for targeted handling::
+The Python API raises every failure the engine reports — an unreadable input
+file, an invalid ``args`` string, an option conflict, an unwritable output
+path — as :class:`InfomapError` or one of its subclasses. The exception
+preserves the engine's message. Catch the base class to handle any
+Infomap failure, or a subclass for targeted handling::
 
     import infomap
 
@@ -22,11 +22,12 @@ Compatibility
 -------------
 
 Through 2.x, :class:`InfomapError` inherits :class:`RuntimeError` — the type
-engine errors were raised as before the taxonomy existed — so existing
-``except RuntimeError`` code keeps working. :class:`NotRunError` additionally
-keeps :class:`ValueError` in its MRO, the type the results-before-run guard
-raised previously. Plan for these legacy bases to detach in 3.0: catch
-:class:`InfomapError` (or a subclass), not the legacy bases.
+the Python API raised for engine errors before the taxonomy existed — so
+existing ``except RuntimeError`` code keeps working. :class:`NotRunError`
+additionally keeps :class:`ValueError` in its MRO, the type the
+results-before-run guard raised previously. Plan for these legacy bases to
+detach in 3.0: catch :class:`InfomapError` (or a subclass), not the legacy
+bases.
 
 Errors that are not Infomap failures keep their standard Python types:
 invalid argument *values* passed to the Python API raise :class:`ValueError`

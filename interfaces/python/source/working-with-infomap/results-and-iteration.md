@@ -30,8 +30,8 @@ records nested modules that a flat assignment vector cannot.
 Think of the {class}`~infomap.Result` as three concentric layers of detail.
 
 The **outermost layer** is a handful of scalars: codelength, number of top
-modules, number of levels. They answer "did it find something?" without touching
-individual nodes, and are cheap to inspect, log, and compare across runs.
+modules, number of levels. They answer "did it find something?" without access
+to individual nodes, and are cheap to inspect, log, and compare across runs.
 
 The **middle layer** is the partition itself, a mapping from node id to module
 id. `result.modules()` returns it as a plain dict, `{node_id: module_id}`.
@@ -89,8 +89,9 @@ result = infomap.run(g, two_level=True, seed=123, num_trials=10)
 ### The Result object
 
 A {class}`~infomap.Result` is an immutable snapshot of one run. `run()` captures
-the scalar metrics when it returns. Node-level collections are materialised
-lazily on first access and then cached. The surface follows one convention:
+the scalar metrics when it returns. The `Result` materialises node-level
+collections lazily on first access and then caches them. The surface follows
+one convention:
 
 - **Read intrinsic results as properties** — the scalar metrics
   (`result.codelength`, `result.num_top_modules`) and the fixed label and
@@ -110,9 +111,9 @@ raises a plain `TypeError` (`'dict' object is not callable`); drop them.
 
 A `Result` from an earlier run of a reused stateful {class}`~infomap.Infomap`
 raises if you read its node data after a later `run()`. The eagerly captured
-scalar properties stay readable (the lazily computed `effective_num_top_modules`
+scalar properties stay readable. The lazily computed `effective_num_top_modules`
 and `effective_num_leaf_modules` properties, and the `effective_num_modules(depth)`
-method, must have been read at least once before the re-run).
+method, stay readable only if you read them at least once before the re-run.
 
 ### Summary statistics
 
@@ -198,7 +199,7 @@ for node in result.nodes():
 ```
 
 `flow` is the stationary visit probability described above; see
-{doc}`/concepts/flow-and-random-walks` for how it is computed.
+{doc}`/concepts/flow-and-random-walks` for how Infomap computes it.
 
 ### Converting to a pandas DataFrame
 
@@ -267,8 +268,8 @@ between modules.
 ### Comparing trials and inspecting degeneracy
 
 Infomap runs `num_trials` independent searches and keeps only the best partition.
-You can inspect how consistent the result is by running several single-trial
-searches from different seeds and comparing their codelengths:
+To inspect how consistent the result is, run several single-trial searches from
+different seeds and compare their codelengths:
 
 ```{code-cell} python
 codelengths = [
@@ -285,7 +286,7 @@ print(f"Best (10-trial run): {result.codelength:.6f}")
 
 A tight spread means most trials recover the same strong community structure. A
 wide spread, or a best-of-10 value below the single-trial minimum, signals a
-degenerate solution landscape where more trials are warranted. The karate club's
+degenerate solution landscape that warrants more trials. The karate club's
 community structure is pronounced enough that every trial finds the same
 codelength; large noisy networks spread wider.
 
@@ -307,12 +308,13 @@ sweep = pd.DataFrame(records)
 sweep[["markov_time", "codelength", "num_top_modules", "num_levels"]]
 ```
 
-The same shape covers a sweep over several networks (add a `network` column) or
-repeated seeds (add a `seed` column, then `sweep.groupby("markov_time").agg(...)`
-to reduce trials to a mean and spread). {meth}`~infomap.Result.to_series` is the
-pandas-native single row, so `pandas.DataFrame([r.to_series() for r in results])`
-builds the same table. Both read only the eagerly captured scalars, so — unlike
-`to_dataframe()` — they never go stale after a re-run.
+The same shape covers a sweep over several networks (add a `network` column). It
+also covers repeated seeds: add a `seed` column, then
+`sweep.groupby("markov_time").agg(...)` reduces trials to a mean and spread.
+{meth}`~infomap.Result.to_series` is the pandas-native single row, so
+`pandas.DataFrame([r.to_series() for r in results])` builds the same table. Both
+read only the eagerly captured scalars, so — unlike `to_dataframe()` — they
+never go stale after a re-run.
 
 ## Pitfalls
 

@@ -4,9 +4,9 @@ Deprecation policy
 .. currentmodule:: infomap
 
 Infomap's Python API follows a predictable deprecation contract so you can rely
-on it across releases. Nothing listed here is removed before 3.0; until then
+on it across releases. Nothing listed here leaves before 3.0; until then
 the old spelling keeps working. The reference docs mark each deprecated name
-with the release it was deprecated in.
+with the release that deprecated it.
 
 Signature tiers
 ---------------
@@ -37,7 +37,7 @@ two tiers:
     methods.
   - ``silent`` and ``verbosity_level`` give way to logging (see
     :doc:`/working-with-infomap/running-and-options`).
-  - ``threads`` is superseded by ``num_threads``.
+  - ``num_threads`` replaces ``threads``.
   - ``print_config_fingerprint`` is a CLI-only diagnostic with no library
     replacement.
 
@@ -62,11 +62,12 @@ Compatibility aliases
 ---------------------
 
 - ``include_self_links`` is a deprecated alias kept for backward compatibility.
-  Self-links are included by default. Pass ``no_self_links=True`` to exclude
-  them. Passing ``include_self_links`` explicitly emits a
+  Infomap includes self-links by default. Pass ``no_self_links=True`` to
+  exclude them. Passing ``include_self_links`` explicitly emits a
   :class:`DeprecationWarning`.
-- ``pretty`` is a deprecated no-op — it is accepted for backward compatibility
-  but has no effect. Passing it explicitly emits a :class:`DeprecationWarning`.
+- ``pretty`` is a deprecated no-op — the API accepts it for backward
+  compatibility but it has no effect. Passing it explicitly emits a
+  :class:`DeprecationWarning`.
 
 Error base classes
 ------------------

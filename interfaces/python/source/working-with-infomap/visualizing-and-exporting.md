@@ -142,7 +142,7 @@ The exported graph carries these Infomap node attributes:
 | Attribute | Value |
 |---|---|
 | `infomap_module` | Top-level module id (`int`) |
-| `infomap_path` | Colon-separated tree path ending in the node's position within its module, e.g. `"1:1"` or `"2:3:4"` (`str`) |
+| `infomap_path` | Colon-separated tree path ending in the node's position within its module, for example `"1:1"` or `"2:3:4"` (`str`) |
 | `infomap_level_1`, `infomap_level_2`, … | One attribute per path component (the last is the node's position within its final module) (`int`) |
 | `flow` | Stationary visit frequency (`float`) |
 

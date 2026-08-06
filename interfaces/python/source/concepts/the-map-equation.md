@@ -45,11 +45,11 @@ into a new one. Stay inside a city and you spend the day saying short street
 names; you rarely pay to name the city.
 
 A network with communities works the same way. Give each module its own small
-**module codebook** of short codewords for the nodes inside it, and add one
+**module codebook** of short codewords for the nodes inside it. Then add one
 **index codebook** whose only job is to announce "switch to module 2." If the
 walker wanders inside a module for long stretches and crosses between modules
-only rarely, you almost always speak in short module codewords, seldom pay for
-the index, and the description shrinks. A partition that ignores the real
+only rarely, you almost always speak in short module codewords and seldom pay
+for the index. The description shrinks. A partition that ignores the real
 structure keeps the walker crossing boundaries, so you pay the index cost
 constantly and the description grows.
 
@@ -88,10 +88,11 @@ better and captures more of its community structure.
 
 For undirected networks, a node's visit frequency equals its normalised strength
 (its total incident link weight divided by twice the total link weight, the sum
-of all node strengths), so Infomap needs no teleportation. For directed networks
-Infomap uses a random-surfer model with teleportation to guarantee an ergodic
-stationary distribution. See {doc}`/concepts/flow-and-random-walks` for how
-teleportation is defined and why the partition barely depends on its rate.
+of all node strengths). Infomap therefore needs no teleportation. For directed
+networks Infomap uses a random-surfer model with teleportation to guarantee an
+ergodic stationary distribution. See {doc}`/concepts/flow-and-random-walks` for
+the definition of teleportation and why the partition barely depends on its
+rate.
 
 :::{toggle}
 **Full term-by-term form**
@@ -121,8 +122,8 @@ $$
 By Shannon's source-coding theorem {cite:p}`shannon1948mathematical`, entropy is a
 hard lower bound on average codeword length, so $L(\mathsf{M})$ is the shortest
 possible two-level description per step. Combining and simplifying gives a form
-that updates cheaply when one node moves between modules, by tracking only
-$q_{i\curvearrowright}$ and $\sum_{\alpha\in i} p_\alpha$ per module. See
+that updates cheaply when one node moves between modules, because it tracks
+only $q_{i\curvearrowright}$ and $\sum_{\alpha\in i} p_\alpha$ per module. See
 {cite:p}`rosvall2009map` for the fast stochastic search that exploits it.
 :::
 

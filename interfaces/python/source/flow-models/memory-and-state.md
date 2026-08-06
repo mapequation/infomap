@@ -45,7 +45,7 @@ first-order model assigns it to a single module.
 
 The core idea is to split each physical location into multiple *state nodes*,
 one for each relevant piece of context. In a second-order model the context is
-the previously visited node. Each directed edge $i \to j$ in the original
+the previously visited node. Each directed link $i \to j$ in the original
 network becomes a state node at $j$ that represents the history "arrived from
 $i$."
 
@@ -58,10 +58,10 @@ with the intersection *overlapping* between them.
 
 Infomap handles this with the **physical node / state node** distinction. In a
 memory network a state node encodes the walker's recent history, such as "arrived
-from $j$". The generic machinery — the walk runs on state nodes, the codebook
-names physical nodes, and a physical node whose state nodes split across modules
-is *overlapping* — is developed in
-{doc}`/concepts/state-nodes-and-higher-order-flow` {cite:p}`edler2017higher`.
+from $j$". {doc}`/concepts/state-nodes-and-higher-order-flow` develops the
+generic machinery: the walk runs on state nodes, the codebook names physical
+nodes, and a physical node whose state nodes split across modules is
+*overlapping* {cite:p}`edler2017higher`.
 
 ## Memory as a state-node network
 
@@ -92,9 +92,9 @@ general argument is in {doc}`/concepts/state-nodes-and-higher-order-flow`
 
 You do not have to commit to a full second-order model. The *sparse memory
 network* framework {cite:p}`persson2016sparse` lets you lump state nodes with
-similar outlink distributions by minimising the entropy-rate loss. This produces
-a variable-order model that fits the data efficiently, without the exponential
-blowup of a fixed higher-order model.
+similar outlink distributions: the lumping minimises the entropy-rate loss.
+This produces a variable-order model that fits the data efficiently, without
+the exponential blowup of a fixed higher-order model.
 
 :::{toggle}
 **State-node map equation**
@@ -120,8 +120,8 @@ H(\mathcal{P}_m) =
 $$
 
 where $\pi_{i \cap m} = \sum_{\alpha_i \in \mathsf{M}_m} \pi_{\alpha_i}$
-aggregates all state nodes of physical node $i$ that are assigned to module
-$m$. This aggregation is what enables overlapping physical-node membership.
+aggregates all state nodes of physical node $i$ in module $m$. This
+aggregation is what enables overlapping physical-node membership.
 State nodes of the same physical node in different modules each contribute to
 separate codebook entries; see {cite:p}`edler2017higher`, §3.2.
 
@@ -140,8 +140,8 @@ physical node has exactly one state node {cite:p}`rosvall2008maps`.
 ## Node i, visited in two contexts
 
 The bundled `states()` network makes the memory effect concrete. Five physical
-nodes *i*, *j*, *k*, *l*, *m* carry the flow, and node *i* is visited in two
-different contexts:
+nodes *i*, *j*, *k*, *l*, *m* carry the flow, and the walker visits node *i*
+in two different contexts:
 
 - arriving from the *j*–*k* side, flow tends to continue back into *j* and *k*;
 - arriving from the *l*–*m* side, it tends to continue back into *l* and *m*.
@@ -290,8 +290,8 @@ The second-order model keeps them apart and lets *i* belong to both.
 ## Options
 
 Unlike the relax-rate multilayer model, the second-order model adds no dedicated
-engine flag on {func}`infomap.run`. It is defined *structurally* by the state
-nodes you declare on the {class}`~infomap.Network`. The knobs that shape and read
+engine option on {func}`infomap.run`. The state nodes you declare on the
+{class}`~infomap.Network` define it *structurally*. The knobs that shape and read
 a state network are:
 
 | Option | Where | Effect |

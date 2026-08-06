@@ -8,7 +8,7 @@ see :doc:`working-with-infomap/index`.
 Cheat sheet
 -----------
 
-The whole surface at a glance (each line is expanded below):
+The whole surface at a glance (the sections below expand each line):
 
 .. code-block:: python
 
@@ -46,10 +46,10 @@ Run on a graph
     print(result.codelength)        # e.g. ~4.09 bits per step
     print(result.modules())         # {node_id: module_id}
 
-The same call accepts a NetworkX or igraph graph, a SciPy sparse matrix, a
-``(2, E)`` edge index, a network file path, or an iterable of ``(u, v[, w])``
-links. Five common options are direct keyword arguments — ``seed``,
-``num_trials``, ``two_level``, ``directed`` (a directed flow model), and
+The same call accepts a NetworkX or igraph graph, a SciPy sparse matrix, or a
+``(2, E)`` edge index. It also accepts a network file path or an iterable of
+``(u, v[, w])`` links. Five common options are direct keyword arguments —
+``seed``, ``num_trials``, ``two_level``, ``directed`` (a directed flow model), and
 ``markov_time``. You can pass any other engine option (``regularized``,
 ``flow_model``, ``teleportation_probability``, …) as a keyword too. For a
 reusable or validated configuration, prefer :class:`~infomap.Options`, as shown
@@ -147,18 +147,18 @@ migration guide, see :doc:`the-infomap-class`.
 Good to know
 ------------
 
-A few conventions that trip people up, each expanded in the :doc:`FAQ <faq>`:
+A few conventions that trip people up; the :doc:`FAQ <faq>` expands on each:
 
 - **Metrics are properties; slicing or converting are methods.**
   ``result.codelength`` (no ``()``) but ``result.modules()`` (with ``()``). The
   label and per-trial tables (``result.names`` / ``state_names`` /
   ``codelengths``) are intrinsic results, so they read as properties too.
 - **Five common options are direct keywords; the rest ride ``Options``.** The
-  five are listed above; any other engine option also works as a bare keyword
+  five appear above; any other engine option also works as a bare keyword
   (it forwards to :class:`~infomap.Options`). ``options`` and
   ``initial_partition`` are *structural* arguments to ``run``, not engine
   options and not part of "the five".
-- **Output flags are inert on the library surface.** ``Options(tree=True)``
+- **Output options are inert on the library surface.** ``Options(tree=True)``
   writes nothing; write from the ``Result`` (``write_tree`` / ``write_clu``) or
   the ``Network`` (``write_pajek``).
 - **A matrix or edge index is not a graph.** ``infomap.run(A, directed=True)``

@@ -27,7 +27,7 @@ Install the GraphRAG support with `pip install "infomap[graphrag]"`.
 GraphRAG pipelines turn a document corpus into a knowledge graph: an *entities*
 table of named concepts and a *relationships* table of weighted co-occurrences.
 The communities detected over this graph become the unit of retrieval: an LLM
-summarises each community, and those summaries are indexed for
+summarises each community, and the pipeline indexes those summaries for
 question-answering.
 
 The default community detector in most GraphRAG implementations is Leiden, run
@@ -44,8 +44,8 @@ steps run unchanged.
 Two things about the objective are specific to GraphRAG input.
 Infomap uses the relationship weights directly as flow volumes, so a heavy
 co-occurrence link between two entities makes them harder to separate. And the
-typical GraphRAG graph is undirected and symmetric, so no directed-flow or
-teleportation assumptions are needed; Infomap runs in undirected mode by
+typical GraphRAG graph is undirected and symmetric, so Infomap needs no
+directed-flow or teleportation assumptions; it runs in undirected mode by
 default.
 
 ## From entity tables to communities
@@ -102,8 +102,8 @@ relationships.to_parquet(input_dir / "relationships.parquet")
 ### Inspect the node-id mapping
 
 `read_graphrag` translates entity titles to the integer node ids that Infomap
-expects. You can call it directly to preview the mapping before running the full
-pipeline, which helps when debugging column-name mismatches.
+expects. You can call it directly to preview the mapping before you run the full
+pipeline, which helps you debug column-name mismatches.
 
 ```{code-cell} python
 from infomap.tl.graphrag import read_graphrag
@@ -119,9 +119,9 @@ relationships.assign(
 ### Run Infomap
 
 `run_graphrag_communities` reads the Parquet files from `input_dir`, builds the
-weighted graph, runs Infomap, and returns a `GraphRAGRunResult` with two tables:
-`nodes` (one row per entity) and `communities` (one row per detected community at
-each hierarchy level).
+weighted graph, runs Infomap, and returns a `GraphRAGRunResult`. The result has
+two tables: `nodes` (one row per entity) and `communities` (one row per detected
+community at each hierarchy level).
 
 ```{code-cell} python
 from infomap.tl.graphrag import run_graphrag_communities
@@ -254,7 +254,7 @@ The `infomap.tl.graphrag` helpers:
 Parquet paths; {func}`~infomap.tl.graphrag.run_graphrag_communities` is the
 one-call pipeline, returning a {class}`~infomap.tl.graphrag.GraphRAGRunResult`
 (read run metrics off its `.result` — the immutable {class}`~infomap.Result`,
-e.g. `run_result.result.codelength` — not the deprecated accessors on
+for example `run_result.result.codelength` — not the deprecated accessors on
 `.infomap`); and {func}`~infomap.tl.graphrag.write_graphrag_communities` writes a
 finished result back to GraphRAG-compatible Parquet. The `Result` metrics are
 covered in {doc}`/working-with-infomap/results-and-iteration`.

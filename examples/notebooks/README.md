@@ -18,7 +18,7 @@ catches API changes, dependency drift, and broken examples.
 
 ## Maintenance tiers
 
-The tier for each notebook is listed in `notebooks.toml`.
+`notebooks.toml` lists the tier for each notebook.
 
 - `smoke`: deterministic notebooks that run in pull-request CI for notebook
   and Python API changes, and in full notebook CI.
@@ -36,5 +36,5 @@ make test-python-notebooks-smoke
 make test-python-notebooks-full
 ```
 
-The tests use `nbmake`, so they check that notebooks execute successfully
-without comparing plot output byte-for-byte.
+The tests use `nbmake`, so they check that notebooks execute successfully.
+They do not compare plot output byte-for-byte.

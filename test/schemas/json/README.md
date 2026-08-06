@@ -13,7 +13,7 @@ artifacts, not C++ output contracts.
 schemas, it constrains data the parser reads. This makes it authoritative for
 the SAX parser's accept/reject set. The fixtures in
 `test/fixtures/networks/json/` (valid) and
-`test/fixtures/networks/json/invalid/` (rejected) prove parity. The same valid
-fixtures are reused as parser inputs in later phases. Edge weights
-are deliberately unbounded (`<= 0` is ignored by the core, not an error); only
-node/state weights must be non-negative.
+`test/fixtures/networks/json/invalid/` (rejected) prove parity. Later phases
+reuse the same valid fixtures as parser inputs. Edge weights are deliberately
+unbounded (the core ignores `<= 0`; it is not an error); only node/state
+weights must be non-negative.

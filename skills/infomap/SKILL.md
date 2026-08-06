@@ -9,15 +9,15 @@ Use this skill to help researchers run, explain, adapt, or troubleshoot Infomap 
 
 ## When NOT to use this skill
 
-This skill is for *using* Infomap to analyze networks. It is **not** for developing Infomap itself. If the task is editing, building, profiling, debugging, or testing the Infomap source — the C++ in `src/`, the SWIG Python/R bindings, CMake/CI, vendored libraries, the CLI parameter catalog, or the repo's own test suite — that is ordinary software development. Do not use this skill, even when working inside the Infomap repository. The presence of Infomap source files or CLI/option names in the task is not a trigger; the trigger is a user analyzing a network with Infomap.
+This skill is for *using* Infomap to analyze networks. It is **not** for developing Infomap itself. If the task is editing, building, profiling, debugging, or testing the Infomap source, that is ordinary software development. The source includes the C++ in `src/`, the SWIG Python/R bindings, CMake/CI, vendored libraries, the CLI parameter catalog, and the repo's own test suite. Do not use this skill, even when you work inside the Infomap repository. The presence of Infomap source files or CLI/option names in the task is not a trigger; the trigger is a user analyzing a network with Infomap.
 
 ## First classify the task
 
-Identify the user's mode before answering:
+Identify the user's mode before you answer:
 
 - **Analysis planning**: choose a network representation, flow model, interface, outputs, and reproducibility checklist. Read `references/method-selection.md` and usually `references/reproducibility.md`.
 - **Code or command generation**: choose the smallest practical interface, then read `references/cli.md`, `references/python.md`, or `references/r.md`.
-- **Notebook workflow**: read `references/notebooks.md`; also read `references/python.md` when converting notebook ideas into scripts.
+- **Notebook workflow**: read `references/notebooks.md`; also read `references/python.md` when you convert notebook ideas into scripts.
 - **Result interpretation or method text**: read `references/reproducibility.md`; read `references/faq.md` for common interpretation traps.
 - **Usage troubleshooting**: inspect the installed package help, CLI help, or online user docs first, then read `references/faq.md` and the relevant interface reference.
 
@@ -36,13 +36,13 @@ When the user already chose an interface, stay there unless a different interfac
 - For CLI details, inspect the available binary with `infomap --help`, `Infomap --help`, advanced help, or `--print-json-parameters` when available.
 - For Python details, prefer installed package help and the published Python docs. Read `inspect.getdoc(infomap.Options)` for the parameter reference (one clean entry per option) rather than `inspect.signature(infomap.Infomap)`, whose ~70 keyword arguments are mostly per-parameter deprecation notes. Prefer the functional `infomap.run(...)` returning a `Result`, and carry non-default engine options via `infomap.Options`. See `references/python.md` for the option surface and the 3.0 transition.
 - For R details, prefer installed help (`utils::help(..., package = "infomap")`), `args(...)`, `packageVersion("infomap")`, and package exports.
-- Do not copy version-sensitive examples from this skill as if they were authoritative. Generate runnable code only after checking the installed interface or published docs for the user's version.
+- Do not copy version-sensitive examples from this skill as if they were authoritative. Generate runnable code only after you check the installed interface or published docs for the user's version.
 - Use the survey article as a decision guide for representation, flow modeling, higher-order networks, metadata, bipartite networks, incomplete data, and applications: `https://doi.org/10.1145/3779648`. Do not quote long passages from it.
 
 ## Default research standards
 
 - Make examples reproducible by default: include `seed`, use meaningful `num_trials`, record Infomap version, input provenance, non-default options, and output artifacts.
-- Avoid starting expensive runs without consent. Use tiny smoke examples or `num_trials=1` for validation. Read `references/reproducibility.md` for rough runtime hints before running large networks, notebook images, parameter sweeps, or many trials.
+- Do not start expensive runs without consent. Use tiny smoke examples or `num_trials=1` for validation. Read `references/reproducibility.md` for rough runtime hints before you run large networks, notebook images, parameter sweeps, or many trials.
 - Distinguish top-level module assignments from hierarchical paths, and distinguish physical nodes from state nodes for higher-order or multilayer inputs.
 - Explain `two_level` versus multilevel only as much as the task needs.
 - Do not block users with broad method-validity warnings unless they ask for method comparison.
