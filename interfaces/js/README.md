@@ -9,7 +9,7 @@ Emscripten. It ships a browser web worker, a Node.js module
 
 Infomap is a network clustering algorithm based on the
 [Map equation](https://www.mapequation.org/publications.html#Rosvall-Axelsson-Bergstrom-2009-Map-equation).
-The package is used in [Infomap Online](https://www.mapequation.org/infomap/).
+[Infomap Online](https://www.mapequation.org/infomap/) uses the package.
 
 ## Install
 
@@ -122,8 +122,8 @@ With JSDelivr, the package is available as `window.infomap.default`.
 
 The `@mapequation/infomap/node` entrypoint runs Infomap in Node.js. It exposes
 an async `run(network, options)` that resolves to the output files, keyed by
-format (the default `@mapequation/infomap` entrypoint targets the browser and
-relies on worker APIs that are unavailable in Node).
+format. (The default `@mapequation/infomap` entrypoint targets the browser and
+relies on worker APIs that are unavailable in Node.)
 
 ```js
 import { run } from "@mapequation/infomap/node";
@@ -144,17 +144,18 @@ console.log(result.tree); // .tree file contents as a string
 ```
 
 `options.args` accepts a string or an array of Infomap CLI options, and the
-result contains only the formats Infomap produced. The network is processed in
-memory and Infomap's console output is suppressed. The same entrypoint works
-with CommonJS:
+result contains only the formats Infomap produced. The entrypoint processes the
+network in memory and suppresses Infomap's console output. The same entrypoint
+works with CommonJS:
 
 > **No whitespace in option values.** Options reach the engine as one
 > whitespace-separated argument string with no quoting, so a value containing a
-> space cannot survive the trip — quotes are not stripped, so
-> `--out-name "my run"` sets the name to the literal `"my`. Passing an object
-> throws instead of truncating: `argumentsToString({ outName: "my run" })` names
-> the offending option. A raw `args` string is passed through unvalidated, so a
-> space there still splits. This is a limitation of the engine boundary, shared
+> space cannot survive the trip. The engine does not strip quotes, so
+> `--out-name "my run"` sets the name to the literal `"my`. If you pass an
+> object, the call throws an error and does not truncate the value:
+> `argumentsToString({ outName: "my run" })` names the offending option. The
+> binding passes a raw `args` string through without validation, so a space
+> there still splits. This is a limitation of the engine boundary, shared
 > with the Python and R bindings and the command line.
 
 ```js
@@ -192,7 +193,7 @@ Contact details are available at
 
 ## Terms of use
 
-Infomap is released under a dual licence.
+We release Infomap under a dual licence.
 
 The code is available under the GNU General Public License version 3 or any
 later version; see `LICENSE_GPLv3.txt`.

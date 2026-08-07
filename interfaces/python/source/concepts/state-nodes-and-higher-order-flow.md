@@ -41,8 +41,8 @@ Separate two ideas that an ordinary network conflates:
 
 Infomap runs its random walk over the state nodes, and the map equation
 partitions *those*. The only change from the first-order map equation is that
-state nodes belonging to the **same physical node within the same module share a
-codeword**, because they are the same object.
+state nodes of the **same physical node within the same module share a
+codeword**. They share it because they are the same object.
 
 If a physical node's state nodes land in different modules, that physical node
 belongs to several communities at once, with no separate overlapping-community
@@ -52,7 +52,7 @@ hub airport can belong to several regional systems.
 ## The map equation on state nodes
 
 A higher-order network is a set of state nodes, each attached to a physical
-node, with transitions between them. The map equation is unchanged in form
+node, with transitions between them. The map equation keeps its form
 (the sum still runs over the $m$ modules),
 
 $$
@@ -61,9 +61,9 @@ L(\mathsf{M}) =
   + \sum_{i=1}^{m} p_{\circlearrowright}^i H(\mathcal{P}^i),
 $$
 
-but it runs over state nodes: the map equation sums the visit rates of state
-nodes of the same physical node in the same module before computing the module
-codebook entropy.
+but it runs over state nodes. The map equation sums the visit rates of state
+nodes of the same physical node in the same module before it computes the
+module codebook entropy.
 
 ## One physical node in two modules
 
@@ -71,12 +71,12 @@ The classic illustration is the network that documents the
 [states input format](https://www.mapequation.org/infomap/#InputStates) on
 mapequation.org (it ships with Infomap as `examples/networks/states.net`).
 It has five physical nodes *i*, *j*, *k*, *l*, *m*, where *i* carries two state
-nodes: from state $\alpha_i$ the walker mostly continues to *j* and *k*, from
+nodes. From state $\alpha_i$ the walker mostly continues to *j* and *k*, from
 state $\delta_i$ mostly to *l* and *m*. The weak 0.2-links let it occasionally
 switch sides, so the two contexts are coupled but distinct.
 
 Build state nodes directly with `add_state_node(state_id, node_id)`, where
-`node_id` is the physical node, link them with `add_link`, then read the
+`node_id` is the physical node. Link them with `add_link`, then read the
 partition back with `result.nodes(states=True)`:
 
 ```{code-cell} python
@@ -146,7 +146,7 @@ follows the weighted, directed links.
 ### The same network ships with the package
 
 The construction above is the states-format reference example, so it comes
-bundled: {func}`infomap.datasets.states` returns it as a ready-to-run
+bundled. {func}`infomap.datasets.states` returns it as a ready-to-run
 {class}`~infomap.Network`, loaded from the same `.net` file that documents
 the `*States` format (each state declared as `state_id physical_id [name]`,
 with `*Links` connecting state ids). Running it reproduces the partition

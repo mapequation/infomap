@@ -17,7 +17,7 @@ surfaces. Use it to answer three questions quickly:
 - metadata exposed to wrappers and tests
 
 The CLI, Python package, R package, JavaScript worker, tests, and Docker
-images are all projections of this core. They should not redefine
+images are all projections of this core. They must not redefine
 runtime behavior independently.
 
 ## Supported surfaces
@@ -35,8 +35,8 @@ Internal-supported:
 
 - secondary Docker images used for compatibility or maintainer workflows
 
-Internal-supported means the surface still matters and should keep building, but
-it is not a primary public contract for release planning.
+Internal-supported means the surface still matters and maintainers keep it
+building, but it is not a primary public contract for release planning.
 
 ## Source-of-truth rules
 
@@ -66,13 +66,13 @@ it is not a primary public contract for release planning.
 - `test/fixtures/`
   - shared regression inputs and expected outputs for tests
 
-Generated outputs should always have a clear generator and verification path.
+Generated outputs must always have a clear generator and verification path.
 They are not hand-maintained source files.
 
 For the Python docs site:
 
 - `make build-docs` builds the Sphinx site into `docs/`. The output is not
-  tracked in the repo; PRs verify the build via the `docs` job in
+  tracked in the repo. PRs verify the build via the `docs` job in
   `.github/workflows/ci.yml`, and the release workflow deploys the site to
   GitHub Pages.
 
@@ -122,5 +122,5 @@ Internal-supported images:
 - Python build/test image (`docker/python.Dockerfile`)
 - Ubuntu compatibility image (`docker/ubuntu.Dockerfile`)
 
-Supported images should stay aligned with the current Make-based workflows and
+Supported images must stay aligned with the current Make-based workflows and
 retain smoke coverage in CI.

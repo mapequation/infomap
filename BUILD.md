@@ -1,7 +1,7 @@
 # Building
 
-This file covers the local build and verification paths that maintainers should
-use most often. Release policy lives in [RELEASING.md](RELEASING.md). Ownership
+This file covers the local build and verification paths that maintainers use
+most often. Release policy lives in [RELEASING.md](RELEASING.md). Ownership
 and source-of-truth rules live in [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## General notes
@@ -48,7 +48,7 @@ LDFLAGS="-L/opt/homebrew/opt/libomp/lib" \
 make build-native
 ```
 
-The compiled binary is written to `./Infomap`.
+The build writes the compiled binary to `./Infomap`.
 
 ## C++ development
 
@@ -69,7 +69,8 @@ Run the fast C++ feedback path with:
 make dev-cpp-check
 ```
 
-Format C++ sources or verify formatting without rewriting files:
+Format C++ sources, or verify formatting; the check target does not rewrite
+files:
 
 ```bash
 make format-native
@@ -101,11 +102,11 @@ Use `dev-openmp` instead of `dev` for an OpenMP-enabled preset.
 
 ### Feature flags
 
-Experimental compile-time feature flags are supported for native C++ builds
-and Python wheel builds. They are off by default. R and JavaScript builds do
-not expose a feature-flag surface.
+Native C++ builds and Python wheel builds support experimental compile-time
+feature flags. They are off by default. R and JavaScript builds do not expose
+a feature-flag surface.
 
-Configure a feature-enabled CMake build by passing feature names through
+To configure a feature-enabled CMake build, pass feature names through
 `INFOMAP_FEATURES`:
 
 ```bash
@@ -113,7 +114,7 @@ cmake -S . -B build/cmake-feature-x -DINFOMAP_FEATURES=feature-x
 cmake --build build/cmake-feature-x --target infomap_cli
 ```
 
-Configure a feature-enabled Make native build by passing feature names through
+To configure a feature-enabled Make native build, pass feature names through
 `FEATURES`:
 
 ```bash
@@ -128,8 +129,8 @@ FEATURES=regularized-multilayer make build-python
 FEATURES=regularized-multilayer make dev-python-install
 ```
 
-Feature names are defined in `scripts/build_config.py`. The existing SIMD log
-optimization is enabled as the feature `simd-log`:
+`scripts/build_config.py` defines the feature names. Enable the existing SIMD
+log optimization with the feature `simd-log`:
 
 ```bash
 make build-native NATIVE_ARCH=1 FEATURES=simd-log
@@ -143,25 +144,28 @@ For the maintained CMake-based native test target, pass feature names through
 make test-native TEST_CMAKE_ARGS='-DINFOMAP_FEATURES=feature-x'
 ```
 
-To add a new feature flag, register it in `scripts/build_config.py`,
-gate the related `Config` fields, `parameterCatalog()` entries, and
-implementation with the macro named by the feature registry's `define` field,
-then cover both the default-off and enabled builds in tests. Feature flags are
-compile-time build inputs, not runtime API options. `--version` and Python
-`infomap.build_info()` report enabled features from build-config metadata.
-`scripts/build_config.py` is the source of truth for feature names, compile
-definitions, dependencies, and conflicts.
+To add a new feature flag:
+
+1. Register it in `scripts/build_config.py`.
+2. Gate the related `Config` fields, `parameterCatalog()` entries, and
+   implementation with the macro named by the feature registry's `define` field.
+3. Cover both the default-off and enabled builds in tests.
+
+Feature flags are compile-time build inputs, not runtime API options.
+`--version` and Python `infomap.build_info()` report enabled features from
+build-config metadata. `scripts/build_config.py` is the source of truth for
+feature names, compile definitions, dependencies, and conflicts.
 
 ## Python package
 
 `make build-python` uses the same shared `MODE`/`OPENMP` policy as
-`make build-native`, so native and Python builds stay aligned unless you pass
+`make build-native`. Native and Python builds stay aligned unless you pass
 extra flags explicitly with `CPPFLAGS`, `CXXFLAGS`, or `LDFLAGS`.
 
 Building the Python package requires Python packaging tooling. The normal
 build uses the tracked SWIG artifacts committed under `interfaces/python/`;
-SWIG 4.4.1 is only needed when refreshing those tracked wrapper outputs.
-Sphinx is needed for docs builds and doctest verification.
+you need SWIG 4.4.1 only when you refresh those tracked wrapper outputs.
+Docs builds and doctest verification need Sphinx.
 
 On macOS with Homebrew:
 
@@ -186,9 +190,9 @@ make dev-python-install
 make test-python
 ```
 
-Run `make dev-python-install` again after changing C++ extension sources,
+Run `make dev-python-install` again after you change C++ extension sources,
 SWIG interfaces, or tracked SWIG outputs. Local tests import the installed
-editable package; without reinstalling, they can load an older `_infomap`
+editable package; if you do not reinstall, they can load an older `_infomap`
 extension that does not match the current Python wrapper.
 
 More targeted checks are available when you only need one slice:
@@ -222,7 +226,7 @@ under `interfaces/R/infomap/`. The package wraps the same C++ core via
 SWIG-generated R bindings tracked in `interfaces/R/generated/`.
 
 Building the R package requires R, Python 3 (for the staging script),
-and a C++ toolchain. SWIG 4.4.1 is only needed when refreshing the
+and a C++ toolchain. You need SWIG 4.4.1 only when you refresh the
 tracked SWIG outputs.
 
 On macOS with Homebrew:
@@ -266,13 +270,13 @@ Rscript -e 'roxygen2::roxygenise("interfaces/R/infomap")'
 
 The R skeleton declares C++17 (`SystemRequirements: C++17`,
 `CXX_STD = CXX17`). This lets R's build system provide the standard flag
-portably on r-universe without putting non-portable `-std=...` flags in
+portably on r-universe, and it keeps non-portable `-std=...` flags out of
 `PKG_CXXFLAGS`.
 
 On macOS, `mk/r.mk` writes a temporary Makevars that pins
 `CC=/usr/bin/clang` and `CXX=/usr/bin/clang++` so the compiled `.so` is
-ABI-compatible with Homebrew R's libc++. This workaround is documented
-in `mk/r.mk` and tagged for removal once Homebrew R links against LLVM
+ABI-compatible with Homebrew R's libc++. `mk/r.mk` documents this
+workaround and tags it for removal once Homebrew R links against LLVM
 libc++.
 
 ## JavaScript worker package
@@ -309,7 +313,7 @@ What each target does:
 - `make test-js` packs the npm package and smoke-tests the packaged example
 
 `interfaces/js/README.md` is the source README for the public npm package.
-`@mapequation/infomap/react` is exported from the main package.
+The main package exports `@mapequation/infomap/react`.
 
 ## Documentation
 
@@ -328,8 +332,8 @@ brew install sphinx-doc libomp
 
 `make build-python` builds a wheel from the repo root using the tracked SWIG
 artifacts under `interfaces/python/generated/` and
-`interfaces/python/src/infomap/_swig.py`. If those tracked files need to be
-refreshed, use SWIG 4.4.1 and run:
+`interfaces/python/src/infomap/_swig.py`. If you need to refresh those
+tracked files, use SWIG 4.4.1 and run:
 
 ```bash
 make build-python-swig
@@ -338,7 +342,7 @@ make test-python-swig-freshness
 
 The current automated macOS wheel build in CI/release uses
 `MACOSX_DEPLOYMENT_TARGET=15.0`. If you need broader compatibility than the
-published wheel currently provides, verify that policy before changing the
+published wheel currently provides, verify that policy before you change the
 release pipeline.
 
 ## Native tests and benchmarks
@@ -361,8 +365,8 @@ make bench-native MODE=debug CMAKE_BUILD_TYPE=Debug
 `make fuzz` builds and runs a libFuzzer harness over the network intake
 (`buildNetworkFromInput`, which routes JSON vs Pajek-style input), compiled with
 libFuzzer + ASan/UBSan. It is **Clang-only** and opt-in
-(`-DINFOMAP_BUILD_FUZZERS=ON`); the harness is excluded from the default build
-and from `ctest`. Fixtures under `test/fixtures/networks` and `examples/networks`
+(`-DINFOMAP_BUILD_FUZZERS=ON`); the default build and `ctest` exclude the
+harness. Fixtures under `test/fixtures/networks` and `examples/networks`
 seed the corpus.
 
 ```bash
@@ -372,16 +376,16 @@ make fuzz FUZZ_CXX=/opt/homebrew/opt/llvm/bin/clang++ FUZZ_CC=/opt/homebrew/opt/
 ```
 
 A weekly non-blocking `.github/workflows/fuzz.yml` runs the same target on Linux.
-Findings are written under `build/fuzz/` as `crash-*` / `timeout-*` / `leak-*`;
-reproduce one with:
+The fuzzer writes findings under `build/fuzz/` as `crash-*` / `timeout-*` /
+`leak-*`; reproduce one with:
 
 ```bash
 build/fuzz/fuzz_intake build/fuzz/crash-<hash>
 ```
 
-macOS note: Apple Clang lacks libFuzzer (use Homebrew LLVM via `FUZZ_CXX`), and
-a Homebrew-LLVM fuzzer binary may fail to *run* on macOS due to a libc++ ABI
-mismatch even though it builds — run the fuzzer on Linux.
+macOS note: Apple Clang lacks libFuzzer (use Homebrew LLVM via `FUZZ_CXX`).
+A Homebrew-LLVM fuzzer binary can fail to *run* on macOS due to a libc++ ABI
+mismatch even though it builds. Run the fuzzer on Linux.
 
 Build source and wheel distributions locally when needed:
 
@@ -396,7 +400,7 @@ site with:
 make build-docs
 ```
 
-The output is written to `docs/` as untracked build artefacts; do not
+The build writes the output to `docs/` as untracked build artefacts; do not
 commit them. CI runs `make build-docs` on PRs that touch docs-relevant
 files (see the `docs` job in `.github/workflows/ci.yml`), and the release
 workflow builds and deploys the site to GitHub Pages.

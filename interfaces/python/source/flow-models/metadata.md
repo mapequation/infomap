@@ -23,19 +23,18 @@ to the topology.
 ## When attributes should guide clustering
 
 Network topology alone does not always capture the communities you care about.
-Nodes carry attributes (the profession of a person in a social network, or the
-functional category of a protein), and those attributes may align with
-topological structure or cut across it. When they align, ignoring them throws
-away information you already have. When they cut across topology, you have to
-decide whether a community should be defined by where flow is trapped or by who
-shares a role.
+Nodes carry attributes: the profession of a person in a social network, or the
+functional category of a protein. Those attributes can align with topological
+structure or cut across it. When they align, ignoring them throws away
+information you already have. When they cut across topology, you have to decide
+what defines a community: where flow is trapped, or who shares a role.
 
 Standard Infomap treats all nodes as identical; only the link weights influence
 the partition. You can annotate nodes with attributes in a post-processing step,
 but the partition itself never sees them. For attributes to influence the
 partition, they have to enter during community detection.
 
-The metadata map equation {cite:p}`emmons2019metadata` solves this by adding an
+The metadata map equation {cite:p}`emmons2019metadata` solves this: it adds an
 *attribute codebook term* to the map equation. Encoding the random walk now
 requires encoding the attribute value at each step, and the extra cost is
 lower when modules are attribute-homogeneous. A tuning parameter $\eta$, called
@@ -96,9 +95,9 @@ H(\mathcal{R}^i) = -\sum_{u \in U}
 $$
 
 When every node in module $i$ shares the same attribute value,
-$H(\mathcal{R}^i) = 0$ and no extra bits are needed. When attributes are fully
-mixed, $H(\mathcal{R}^i)$ is large. The parameter $\eta$ weights how much this
-metadata entropy matters relative to the topological terms.
+$H(\mathcal{R}^i) = 0$ and the encoder needs no extra bits. When attributes are
+fully mixed, $H(\mathcal{R}^i)$ is large. The parameter $\eta$ weights how much
+this metadata entropy matters relative to the topological terms.
 
 At $\eta = 0$ the metadata term vanishes and $L_0$ is the ordinary map equation.
 At $\eta = 1$ the encoding assigns equal cost to the topological and attribute
@@ -117,21 +116,21 @@ topological channel, then $L_\eta$ is the total expected cost.
 
 In practice the useful range of $\eta$ is problem-dependent. {cite:t}`emmons2019metadata`
 show that raising $\eta$ (up to $\eta = 1$ in their experiments) lets metadata
-push past the topological detectability limit when the attribute signal is strong
-but the topological signal is weak. Beyond $\eta = 1$ the encoding increasingly
-enforces attribute-homogeneous modules, approaching the $\eta \to \infty$
-constrained limit where every module is attribute-pure.
+push past the topological detectability limit. This works when the attribute
+signal is strong but the topological signal is weak. Beyond $\eta = 1$ the
+encoding increasingly enforces attribute-homogeneous modules, approaching the
+$\eta \to \infty$ constrained limit where every module is attribute-pure.
 
 The attribute codebook term encodes the metadata value at each step *within the
 module*. This is strictly more expensive than the topological encoding when
-modules are heterogeneous: a purely attribute-homogeneous partition where every
+modules are heterogeneous. A purely attribute-homogeneous partition where every
 module has exactly one attribute value incurs zero metadata cost in the third
 term, regardless of $\eta$. The optimisation therefore pushes modules toward
 homogeneity as $\eta$ increases, even splitting topologically tight groups if
 their attribute mixture is expensive to encode.
 
 A complementary approach, metadata-dependent encoding of random walks
-{cite:p}`bassolas2022metadata`, leaves the walk dynamics unchanged and instead
+{cite:p}`bassolas2022metadata`, leaves the walk dynamics unchanged. Instead it
 makes the *encoding* of the walk depend on the metadata of the nodes the
 walker visits. That captures nonlocal relationships between metadata and
 network structure, rather than the local per-module codebook penalty used
@@ -146,11 +145,11 @@ bridge edge. Nodes 3 and 4, one in each triangle, share attribute category 1,
 while nodes 1, 2, 5, 6 share category 0.
 
 Topologically, the bridge between node 3 and node 4 makes 3 and 4 the natural
-"boundary" between the two halves of the network, so pure topology puts
+"boundary" between the two halves of the network. Pure topology therefore puts
 {1, 2, 3} in one module and {4, 5, 6} in another. Each of those modules
 contains exactly one node with the minority attribute, so neither is
 attribute-homogeneous. With a non-zero `meta_data_rate`, the algorithm resolves
-the tension by splitting further, trading a longer topological description for
+the tension: it splits further and trades a longer topological description for
 attribute-pure modules.
 
 ### Build the network and declare attributes
@@ -226,8 +225,8 @@ encoding cost is zero: each module is attribute-pure.
 :class: note
 `result.codelength` reports the *combined* objective $L_\eta$: the topological
 map-equation value plus $\eta$ times the attribute term. It therefore rises
-with `meta_data_rate` even when the partition does not change at all, simply
-because the weighted attribute term grows, so the numbers are not comparable
+with `meta_data_rate` even when the partition does not change at all, because
+the weighted attribute term grows. As a result, the numbers are not comparable
 across rates. `result.meta_entropy` isolates the attribute term; the
 topological part is `result.codelength - meta_data_rate * result.meta_entropy`.
 ```
@@ -276,21 +275,21 @@ topological compression for modules more homogeneous in the attribute.
 ```
 
 The three attribute-homogeneous groups are visible: the two outer node pairs
-(one on each triangle) share the same attribute and land in separate modules,
-while the bridge pair {3, 4} forms its own cluster in the centre.
+(one on each triangle) share the same attribute and land in separate modules.
+The bridge pair {3, 4} forms its own cluster in the centre.
 
 ## API pointers
 
 Declare a node's attribute with {meth}`~infomap.Network.set_meta_data`
 (`set_meta_data(node_id, meta_category)` — one integer category per node, before
-the run). The metadata engine options (`meta_data_rate`, `meta_data`,
-`meta_data_unweighted`) are carried via {class}`~infomap.Options` and listed in
-the Options table below. The result's metadata term is
+the run). Set the metadata engine options (`meta_data_rate`, `meta_data`,
+`meta_data_unweighted`) via {class}`~infomap.Options`; the Options table below
+lists them. The result's metadata term is
 {attr}`~infomap.Result.meta_entropy`.
 
 ## Options
 
-Metadata influence is set by these engine options, carried via `Options` to
+These engine options set the metadata influence; pass them via `Options` to
 {func}`infomap.run`:
 
 | Option | Default | Effect |
@@ -301,9 +300,8 @@ Metadata influence is set by these engine options, carried via `Options` to
 
 ## Going deeper
 
-- {cite:t}`emmons2019metadata` is the source paper Infomap implements; a
-  related metadata-dependent random walk is developed in
-  {cite:p}`bassolas2022metadata`.
+- {cite:t}`emmons2019metadata` is the source paper Infomap implements; for a
+  related metadata-dependent random walk, see {cite:p}`bassolas2022metadata`.
 - The survey (§6.1) covers metadata-aware community detection
   {cite:p}`smiljanic2026survey`, with companion notebook
   `examples/notebooks/6.1 Networks with Metadata.ipynb`.

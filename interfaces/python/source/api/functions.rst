@@ -21,7 +21,7 @@ Engine log
 ----------
 
 The engine log becomes Python log records on the ``"infomap"`` logger when
-that logger has handlers; see the routing rules in
+that logger has handlers. See the routing rules in
 :doc:`/working-with-infomap/running-and-options`.
 
 .. autofunction:: enable_log

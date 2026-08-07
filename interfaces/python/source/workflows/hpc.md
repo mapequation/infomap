@@ -14,7 +14,7 @@ kernelspec:
 
 ```{admonition} At a glance
 :class: tip
-Infomap trials are independent work units: run many in parallel on a
+Infomap trials are independent work units. Run many in parallel on a
 single node with `options=Options(parallel_trials=True)`, or split them across a
 scheduler job array with `trial_offset` and merge the best result afterwards with
 `python -m infomap.merge`.
@@ -24,34 +24,34 @@ scheduler job array with `trial_offset` and merge the best result afterwards wit
 
 Infomap is a stochastic optimiser, so more independent trials give a more
 reliable partition (see {doc}`/working-with-infomap/running-and-options` for
-why). That is cheap on small networks — tens of trials on a laptop — but on
-real-world networks with millions of nodes and links each trial can take minutes,
-and the hundreds of trials you may want are more than one node can finish in
-reasonable wall-clock time.
+why). That is cheap on small networks — tens of trials on a laptop. But on
+real-world networks with millions of nodes and links, each trial can take
+minutes. You sometimes need hundreds of trials, which is more than one node can
+finish in reasonable wall-clock time.
 
 Two strategies cover most HPC use cases:
 
 1. **Single-node parallelism.** Your scheduler gives you a node with many
    cores. Run all trials on that node with
    `options=Options(parallel_trials=True)`. `num_threads` (also carried on
-   `Options`) controls the thread budget; left unset (its default, the same
-   as `"auto"`) it reads scheduler-set variables (`SLURM_CPUS_PER_TASK`,
+   `Options`) controls the thread budget. Left unset (its default, the same
+   as `"auto"`), it reads scheduler-set variables (`SLURM_CPUS_PER_TASK`,
    `OMP_NUM_THREADS`, cpuset) automatically.
 
 2. **Job-array sharding.** Your network is large, or you want more trials
    than one node can finish in time. Divide the total trial budget across
    array tasks with `trial_offset`. Each task runs its slice of trials and
    writes a shard result file (`trial_results`). A lightweight
-   post-processing step merges the shards and picks the global best
-   without rerunning Infomap.
+   post-processing step merges the shards and picks the global best. It
+   does not rerun Infomap.
 
 Both strategies produce the same result as a sequential run with the same
 seed, total trial count, and algorithm settings.
 
 That equivalence rests on one rule, which holds in every mode: the trial at
-global index *j* runs with seed `base_seed + j`. So a trial is identified by
-its seed alone — it does not matter whether it was produced sequentially, by
-`parallel_trials`, or by a shard at an offset — and the seed a run reports for
+global index *j* runs with seed `base_seed + j`. So the seed alone identifies a
+trial: it does not matter whether Infomap produced it sequentially, by
+`parallel_trials`, or by a shard at an offset. The seed a run reports for
 a trial (in `trial_results` and `timing_json`) re-runs exactly that trial.
 
 ## Trials as independent work units
@@ -68,8 +68,8 @@ Each task runs `num_trials` trials of its own (the *per-shard* count), and
 
 Each task uses seed `base_seed + (offset + i)` for its *i*-th local
 trial. The ranges never overlap, so no two tasks duplicate work. After all
-tasks finish, `infomap.merge` reads the four result JSON files, checks
-that they came from the same network and algorithm configuration, and
+tasks finish, `infomap.merge` reads the four result JSON files and checks
+that they came from the same network and algorithm configuration. It then
 writes the tree from the lowest-codelength trial.
 
 The merge is an offline post-processing step. It reads JSON, copies one tree
@@ -91,13 +91,13 @@ thread budget from the first source that provides a value in this priority order
 6. Hardware thread count
 
 Because `"auto"` is the default, your job script does not need to set
-`num_threads` or forward scheduler environment variables manually: if the
-scheduler sets `SLURM_CPUS_PER_TASK=8`, Infomap will use 8 threads. This prevents
+`num_threads` or forward scheduler environment variables manually. If the
+scheduler sets `SLURM_CPUS_PER_TASK=8`, Infomap uses 8 threads. This prevents
 the common mistake of allocating 8 cores but Infomap running with 64 threads
 and fighting every other job on the node.
 
 `parallel_trials=True` runs independent trials concurrently using OpenMP.
-The number of concurrent workers is clamped to `min(num_trials, OpenMP
+Infomap clamps the number of concurrent workers to `min(num_trials, OpenMP
 thread count)`, which `num_threads` sets. Peak memory scales with the worker
 count, so check your memory allocation if you raise thread counts significantly. (The
 {doc}`benchmark-performance <../examples/benchmark-performance>`
@@ -105,15 +105,15 @@ notebook has run-time and memory scaling curves to help plan allocations.)
 
 `inner_parallelization=True` is an experimental alternative that
 parallelises the node-move loop inside a single trial. It can improve
-wall-clock time on very large graphs but may produce a slightly different
-partition. If you set both, `parallel_trials` takes precedence and inner
-parallelisation is disabled inside the trial workers.
+wall-clock time on very large networks but can produce a slightly different
+partition. If you set both, `parallel_trials` takes precedence and Infomap
+disables inner parallelisation inside the trial workers.
 
 ## Sharding trials across jobs
 
 The following cells demonstrate the sharding pattern locally in Python.
 On a cluster, each shard would be a separate job-array task running the
-native `Infomap` binary; here, we run all shards in the same process to
+native `Infomap` binary. Here, we run all shards in the same process to
 make the pattern self-contained and executable.
 
 ### Build the graph
@@ -186,8 +186,8 @@ shards is the result you keep.
 ### What the merge step does at scale
 
 The code cell above mimics the selection logic in memory. At cluster scale you do
-not hold all `Infomap` objects at once — each job writes its shard JSON and exits
-— so the real workflow uses the CLI or the Python helper shown next.
+not hold all `Infomap` objects at once — each job writes its shard JSON and
+exits. The real workflow therefore uses the CLI or the Python helper shown next.
 
 ## Using `infomap.merge`
 
@@ -218,10 +218,10 @@ print("outputs:     ", summary["outputs"])
 ```
 
 `merge_trial_results` verifies that all shard files share the same
-network and configuration fingerprint (so you cannot accidentally mix
-results from different runs), selects the trial with the lowest
-codelength, and writes the corresponding tree. Ties are broken by the
-lowest global trial index to make the result independent of how you
+network and configuration fingerprint, so you cannot accidentally mix
+results from different runs. It then selects the trial with the lowest
+codelength and writes the corresponding tree. It breaks ties by the
+lowest global trial index, which makes the result independent of how you
 partitioned the trials across shards.
 
 `--require-complete-trials` / `require_complete=True` causes the merge to
@@ -273,7 +273,7 @@ Key points about this script:
 - `--parallel-trials` runs the 25 per-shard trials concurrently across
   those cores.
 - `--trial-results` writes the shard JSON along with a per-shard best-result
-  tree; `--no-final-output` skips the aggregate default output (the merge
+  tree. `--no-final-output` skips the aggregate default output (the merge
   produces the final result).
 - All shards use the same `--seed 123`. Trial `i` in shard `k` uses seed
   `123 + offset_k + i`, which guarantees globally unique seeds.
@@ -299,18 +299,18 @@ sacct -j <job-id> --format=JobID,State,ExitCode,Elapsed,MaxRSS
 
 - Use `--num-threads auto` so the process respects scheduler core
   allocation without manual forwarding of environment variables.
-- Use the same `--seed`, network file, and algorithm flags for all shards.
-  Shard files with different network or config fingerprints will be
-  rejected by the merge.
+- Use the same `--seed`, network file, and algorithm options for all shards.
+  The merge rejects shard files with different network or config
+  fingerprints.
 - Make `--num-trials` the *per-shard* count. Choose non-overlapping
   `--trial-offset` ranges.
 - Run a short reference job (a single shard without `--no-final-output`)
-  to confirm your build, options, and file paths work before submitting a
+  to confirm your build, options, and file paths work before you submit a
   large array.
 - Check exit codes in your batch script (`set -euo pipefail`). A failed
   Infomap run that exits 0 would produce a missing shard file and silently
   pollute the merge result.
-- `infomap.merge` can write only `tree` and `clu` output; link-bearing formats
+- `infomap.merge` can write only `tree` and `clu` output. Link-bearing formats
   (`ftree`) require a full Infomap run with the original network.
 - Use `--require-complete-trials` when reproducibility matters; the merge
   warns about gaps without it.
@@ -335,6 +335,6 @@ options are in {doc}`/working-with-infomap/running-and-options` and the
   trial verification and SLURM monitoring commands.
 - **Performance planning**: `examples/notebooks/benchmark-performance.ipynb` has
   empirical run-time and memory scaling curves to help you choose trial counts,
-  thread budgets, and memory allocations before submitting large jobs.
+  thread budgets, and memory allocations before you submit large jobs.
 - {doc}`/working-with-infomap/running-and-options` is the options guide for the
   search and flow-model settings that shape each trial before you scale it out.
