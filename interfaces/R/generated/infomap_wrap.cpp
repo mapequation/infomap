@@ -1824,6 +1824,9 @@ void addLinksFromNumpy2D(InfomapWrapper& infomap, PyObject* links, std::size_t n
 
   const auto* data = linksBuffer.data<char>();
   const auto rowStride = static_cast<std::size_t>(numColumns) * itemSize;
+  // The array's shape is the exact link count, so size the build buffer once
+  // instead of letting it double into place (see StateNetwork::reserveLinks).
+  infomap.network().reserveLinks(numRows);
   for (std::size_t i = 0; i < numRows; ++i) {
     const auto* row = data + i * rowStride;
     const auto source = readUnsignedId(row, dtypeKind, itemSize, "source id");
@@ -34688,6 +34691,49 @@ R_swig_StateNetwork_addLinks ( SEXP self, SEXP sourceIds, SEXP targetIds, SEXP w
 
 
 SWIGEXPORT SEXP
+R_swig_StateNetwork_reserveLinks ( SEXP self, SEXP numAdditionalLinks)
+{
+  {
+    infomap::StateNetwork *arg1 = 0 ;
+    std::size_t arg2 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int val2 ;
+    int ecode2 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_infomap__StateNetwork, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "StateNetwork_reserveLinks" "', argument " "1"" of type '" "infomap::StateNetwork *""'"); 
+    }
+    arg1 = reinterpret_cast< infomap::StateNetwork * >(argp1);
+    ecode2 = SWIG_AsVal_int(numAdditionalLinks, &val2);
+    if (!SWIG_IsOK(ecode2)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "StateNetwork_reserveLinks" "', argument " "2"" of type '" "std::size_t""'");
+    } 
+    arg2 = static_cast< std::size_t >(val2);
+    {
+      try {
+        (arg1)->reserveLinks(SWIG_STD_MOVE(arg2));
+      } catch (const std::exception& e) {
+        SWIG_exception(SWIG_RuntimeError, e.what());
+      }
+    }
+    r_ans = R_NilValue;
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
 R_swig_StateNetwork_removeLink ( SEXP self, SEXP sourceId, SEXP targetId, SEXP s_swig_copy)
 {
   {
@@ -50633,6 +50679,7 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
    {"R_swig_InfomapIterator_previous_set", (DL_FUNC) &R_swig_InfomapIterator_previous_set, 2},
    {"R_swig_EdgeData_weight_set", (DL_FUNC) &R_swig_EdgeData_weight_set, 2},
    {"R_swig_InfomapIterator_infomapTree__SWIG_3", (DL_FUNC) &R_swig_InfomapIterator_infomapTree__SWIG_3, 2},
+   {"R_swig_StateNetwork_reserveLinks", (DL_FUNC) &R_swig_StateNetwork_reserveLinks, 2},
    {"R_swig_InfomapWrapper_iterLeafNodes__SWIG_1", (DL_FUNC) &R_swig_InfomapWrapper_iterLeafNodes__SWIG_1, 2},
    {"R_swig_InfoNode_begin_tree__SWIG_0", (DL_FUNC) &R_swig_InfoNode_begin_tree__SWIG_0, 3},
    {"R_swig_InfoNode_begin_tree__SWIG_1", (DL_FUNC) &R_swig_InfoNode_begin_tree__SWIG_1, 2},
