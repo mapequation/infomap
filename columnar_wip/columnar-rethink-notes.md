@@ -1301,3 +1301,70 @@ while its trial mean drops 0.25%.
 round-1 binary `COL_HSPLIT=auto COL_HSPLIT_WINNER=1` reproduces **7.40046599** exactly, and
 `COL_HSPLIT=auto` *without* the winner hook gives 7.445260297 — which is precisely the +0.31%
 regression F24 already documents as the load-bearing winner-hook interaction. Re-verified directly.
+
+### F26 — The knee revert: a measurement error, and what survives it (2026-08-11)
+
+**F23's cost figure was wrong and the default has been reverted to 5e-3.** Daniel caught it by
+arithmetic: web-NotreDame was 5.5728/21.4s at the #891 tip with OO at 171.6s; a later session had OO
+at 158.3s, so the same code should land near 19.7s, against 24.8s measured — about +25%, far more
+than the +8.7% F23 claimed for the knee.
+
+Decomposed directly, interleaved, idle machine (load 3.3), web-NotreDame `-C -N10`, min-of-3:
+
+| step | codelength | CPU | Δ cl | Δ CPU |
+|---|--:|--:|--:|--:|
+| knee 5e-3 (#891 tip) | 5.572794236 | 20.53s | — | — |
+| knee 1e-3 (F23/#983) | 5.567411908 | 24.69s | −0.0966% | **+20.3%** |
+| + partial seeding (F25) | 5.560674868 | 25.19s | −0.121% | **+2.0%** |
+
+powergrid, min-of-4: 0.26s → 0.32s (knee, +23.1%, −0.054%) → 0.36s (partseed, +12.5%, −0.151%).
+
+**Where F23's error came from.** Its A/B ran at load average ~20–25 with min-of-3. That inflated the
+5e-3 arm's baseline (23.38s reported vs 20.53s idle) more than the 1e-3 arm (25.42s vs 24.69s),
+compressing the delta from +20.3% to +8.7%. Min-of-3 under load was not enough separation, and the
+two arms were not hit equally. **The lesson is not "measure more reps" — it is that an A/B under load
+can be biased, not merely noisy, and the bias favoured the change.** The bit-identical-config control
+used in F25 (ten configs the change cannot affect, whose walls must reproduce) would have caught it;
+F23 had no such control because the knee touches everything it measures. Use a control arm that the
+change provably cannot affect, or measure idle.
+
+**What survives: the Pareto claim.** Re-tested at matched CPU on the idle machine — the old knee
+genuinely cannot buy the deeper knee's quality with trials:
+
+| config | codelength | CPU |
+|---|--:|--:|
+| 5e-3, `-N10` | 5.572794236 | 20.43s |
+| 5e-3, `-N12` | 5.572723204 | 24.31s |
+| 5e-3, `-N14` | 5.572723204 | 27.93s |
+| **1e-3, `-N10`** | **5.567411908** | 24.35s |
+
+At ~24.3s the old knee reaches 5.5727 where the new one reaches 5.5674, and `-N14` (+37% CPU) does
+not move it at all — the trial distribution has saturated. So the deeper refinement is real, reachable
+only by refining, and worth *offering*. It is not worth a fifth more CPU by default for a tenth of a
+percent (Daniel's call), so it is a dial: `--tune-iteration-relative-threshold 1e-3` reproduces the
+reverted default exactly (5.567411908) and `0` gives full convergence (5.566609295). The columnar path
+honors an explicit value even when it equals the OO default, via the `parsedOptions` check from #825.
+
+**Consequence for the OO comparison, stated plainly:** the "web-NotreDame beats OO" milestone was
+mostly the knee's doing and is given back. At the shipped default webND is **+0.035%** vs OO (was
++0.121% before partial seeding, −0.096% with the deeper knee), and `-C` ties-or-beats OO on **8 of
+13** rather than 9. Users who want the win ask for it with one flag.
+
+**And partial seeding is BETTER at the restored knee** — the F25 cost question evaporates:
+
+| network | at knee 1e-3 | at knee 5e-3 (shipped) |
+|---|--:|--:|
+| powergrid | −0.151% for **+7.4% CPU** | **−0.199% for +0.0%** |
+| web-NotreDame | −0.121% for +1.2% (unresolvable) | −0.086% for +1.7% |
+| netscicoauthor2010 | −0.056% for +0.0% | −0.056% for +0.0% |
+
+powergrid gets a *larger* win at *no* cost, because a shallower refinement leaves more for a
+well-targeted re-refine to find — the same mechanism as F22/F24 seen once more: **an operator's value
+is a function of how converged its input is.** The full 13×5 refresh at the shipping configuration is
+62/65 bit-identical to the pre-knee (#891) refresh, with only the three partial-seeding cells moving,
+all improvements.
+
+**Filed, not fixed:** `-hh` documents `--tune-iteration-relative-threshold` as "(Default: 1e-05)",
+which is the OO default — the columnar default is 5e-3, so the help misleads `-C` users about what
+they are changing from. Correcting it touches generated binding metadata (`make build-r-swig
+build-python-swig build-binding-options build-js-metadata`), so it wants its own change.
