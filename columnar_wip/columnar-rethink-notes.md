@@ -936,3 +936,278 @@ answer is 0.0002% / 0.0001% for +5.3% / +6.5% CPU — which is independent confi
 layer really is at its fixpoint, and by the marginal-trade rule not worth buying. The skip stays.
 Worth remembering that the seeded variant is the "insurance" option: it proves the claim per run
 instead of assuming it, for ~5–6% on the two air30k configs and nothing anywhere else.
+
+### F23 — The refine knee went stale: 5e-3 → 1e-3 (2026-07-28)
+
+**Daniel: "don't assume current convergence thresholds are optimal."** He was right, and the reason is
+mechanical rather than a tuning error. F5 raised `m_minRelTuneImprovement` 1e-3 → 5e-3 on the
+measurement that web-NotreDame converged in **3** interior sweeps with the 3rd worth +0.06%. It now
+takes **5.5 sweeps (max 7)** and the truncated tail is worth **0.111%**. The constant never changed;
+what it truncates did, as #835/#890/#891 reshaped the search around it. F13 is the companion evidence
+for how load-bearing this one number is: gpcache was −15% at knee 1e-3 and net-negative at 5e-3, i.e.
+an idea was rejected because of where the knee happened to sit.
+
+**Equal-CPU-budget is the decisive framing, and it had never been run.** F5 and F13 both tuned at a
+fixed trial count. For a best-of-N search that is the wrong axis — a looser knee makes each trial
+cheaper, so at fixed CPU you can buy more trials. Measured on web-NotreDame (seed 123), the shipped
+knee is off the Pareto frontier at **every** budget:
+
+| CPU | frontier config | codelength | 5e-3 at the same CPU |
+|---|---|--:|--:|
+| 3.4s | R=1e-3, N=1 | 5.569547986 | N=1 → 5.572794236 |
+| 20.0s | R=0, N=6 | 5.567696152 | N=10 (22.7s) → 5.572794236 |
+| 25.2s | R=1e-3, N=10 | 5.567411908 | N=13 (26.9s) → 5.572723204 |
+| 32.0s | R=0, N=10 | 5.566609295 | N=16 (32.1s) → 5.572723204 |
+
+**R=1e-3 at N=1 (3.38s) beats R=5e-3 at N=20 (39.9s)** — a twelfth of the CPU, 0.06% better. Going
+N=10→20 at the shipped knee costs +75% CPU for 0.0013%. Mechanism: per-trial spread is ~0.13%, but
+refinement shifts the whole trial *distribution* down, so R=0's median trial beats R=5e-3's
+best-of-10. Extra trials cannot reach where a deeper refine goes. (Follow-up deferred per Daniel:
+master's `--converge` adaptive-trial feature is the right lever for reclaiming that budget, and it
+composes — trials plateau long before refinement does.)
+
+**Shipped: 1e-3** (Daniel's pick, "being at the pareto frontier seems best"). R=0 was the other live
+option (full −0.106% for +47% CPU) and stays documented as the higher-budget frontier point.
+
+**Verified serially at the merge tip, interleaved, min-of-3, full 13 configs × {`-C`, `-C -F`}:**
+
+| config | 5e-3 | 1e-3 | Δ cl | CPU | wall | lvls |
+|---|--:|--:|--:|--:|--:|--:|
+| web-NotreDame `-C` | 5.57279424 | **5.56741191** | −0.0966% | 23.38→25.42s (+8.7%) | 25.74→26.10s | 6→6 |
+| powergrid `-C` | 4.74907624 | **4.74650715** | −0.0541% | 0.26→0.32s (+23.1%) | 0.31→0.36s | 5→5 |
+| 11 other `-C` | — | bit-identical | 0 | −3.4…+2.1% | — | — |
+| all 13 `-C -F` | — | bit-identical | 0 | −6.3…+2.1% | — | — |
+
+The 22 bit-identical configs put this batch's noise floor at ~±3.5%, so webND's +8.7% is real and
+powergrid's +23.1% is real but +0.06s absolute. **Blast radius is structural, not lucky:**
+`refineSweeps = (numInterior <= 1) ? 1 : maxSweeps` means a stack with at most one interior layer runs
+exactly one sweep, so science2001/air30k/malaria cannot react; and `-F` never calls `refineHierarchy`
+at all. Against OO the change is worth more than it looks: web-NotreDame's gap closes 5× (+0.121% →
+**+0.025%**) and powergrid's win widens (−0.156% → **−0.210%**).
+
+**Caps audited (instrumented counters) — three are dead code, one binds but must not be touched:**
+
+| cap | value | max observed | binds? |
+|---|--:|--:|---|
+| `kCoreLoopLimit` | 10 | 10 (truncates) | **YES** — webND 923/430844 calls, `-F` 774/79003, air30k 11-17 |
+| `kMinImprovement` | 1e-10 | — | **NO** — zero positive-gain rejections on any net |
+| `coarsenModules(L, 1000)` | 1000 | **3** | no (333× headroom) |
+| `round < 100` (×3) | 100 | **5** | no |
+| `refineHierarchy` maxSweeps | 1000 | **7** | no |
+
+`kCoreLoopLimit` fires often, so **#826 is wrong that it never does** — but raising it to 20 makes
+webND **+0.048% worse** and the seed-123 malaria −0.314% "win" evaporated on seeds 234/345. It is a
+trajectory perturbation, not a harmful truncation. Keep at 10. `kMinImprovement` is provably inert:
+every rejected gated step had gain ≤ 0, never in (0, 1e-10]. `kFlatProbeMargin` 0.005 still separates
+perfectly (winners ≤ 1.0000, losers ≥ 1.0079, essentially unmoved since F21) — keep.
+
+**Combining absolute + relative (Daniel's suggestion) is algebraically degenerate.** Both conjuncts
+test the same scalar, so OO's AND form ≡ threshold `max(A, R·startL)` and OR ≡ `min(A, R·startL)` — a
+1-D dial, not a 2-D grid. Confirmed empirically: `A=1e-4, R=5e-3` is bit-identical to the default and
+`A=3e-2, R=0` reproduces it too (3e-2 ≈ 5e-3 × startL). The same degeneracy holds in the OO form at
+`InfomapBase.cpp:2332`. **A is only non-redundant when R=0** — which is its real job: an absolute floor
+is what makes full convergence safe rather than a second dimension.
+
+**And the shape question has a sharper answer than "no".** Geometric-decay stopping collapses: every
+ratio from 0.1 to 0.9 gives the same 2-sweep answer, because sweep 2's gain is already <10% of sweep
+1's — yet **41 sweeps still buys 0.093%**. The gain tail is made of individually tiny sweeps, so *no
+gain-magnitude criterion can capture it*. The shape is fine; the framing "stop when gains get small"
+is what cannot work. Only the threshold's position is a real lever. Per-layer knees were dominated
+(one config reached full-convergence quality ~7% cheaper — inside noise, not worth the complexity).
+
+**Run-results log added: `columnar_wip/columnar-search-runs.tsv`** (Daniel's request, for plotting the
+codelength/time Pareto front). One row per measured run, 26 flat columns:
+`batch, datetime_utc, load1m, reps, agg, binary_md5, commit, pr_issue, network, nodes, objective,
+flags, engine, variant, knee_R, trials_N, seed, operator, operator_cfg, codelength, wall_s, cpu_s,
+top, levels, derived, notes`. **Read `batch` before comparing times**: this session's noise floors
+ranged ±3% to **13%** (the threshold batch measured 24.45/22.41/21.59s for a *bit-identical*
+web-NotreDame partition), so the time axis is only comparable within a batch — hence the `load1m`,
+`reps` and `agg` columns. `derived=1` marks rows reconstructed from reported percentages rather than
+measured absolutes; exclude them for a clean front. `top`/`lvls` are populated only for the serial
+batches. Batches so far: `perf-refresh-891` (13×5 at the merge tip), `knee-ab` (this change, serial),
+`knee-budget` (the equal-CPU sweep above), `hsplit`, `freemove-verify`, `partseed-curve`,
+`partseed-best` (see F24).
+
+### F24 — Hierarchical search exploration round: seven candidates, two wins (2026-07-28)
+
+Daniel: "go through the whole hierarchical algorithm and see if you can improve it and don't limit
+yourself with current features or ideas." Seven candidates were implemented in isolated worktrees, all
+env-gated with default-OFF verified bit-identical, and the promising ones adversarially verified.
+**Everything below was measured at knee 5e-3 and must be re-baselined at the F23 default of 1e-3
+before any of it ships** — webND now runs 5.5 refine sweeps instead of 2, which changes the ground
+under at least two of these results.
+
+**A correction to the record first.** The premise for revisiting the organic/bubble idea was that the
+F8-F11 arc lacked seeded refinement. It did not: F7 implemented exactly the OO fine-tune init
+(`LAB_SEED=2`, "seed pass-1 of optimizeTwoLevel = fine-tune, then aggregation = coarse-tune") and F10
+added `LAB_ORGSEED` to A/B seeded vs from-singletons *inside* the bubble (seeded 5.651398/4.51s and
+inert, from-singletons 5.589027/6.72s and climbing). The legitimate reason to revisit was different
+and remains valid: the **engine underneath changed** — F11's air30k +14% was measured when aggregation
+was base-only, the same defect whose fix (#835) moved regularized air30k 6.0118 → 5.5793.
+
+#### THE UNIFYING MECHANISM (the most reusable output of the round)
+
+**The pipeline's stages are not independent: pre-improving a stage's input disarms it.** F22 found this
+from one side (refining an already-converged bottom is a full-price no-op). Four candidates rediscovered
+it independently from other sides:
+
+- **A (trajectory bottoms)**: a coarser bottom wins the post-build screen (powergrid by 4.7%) and then
+  refines **0.24-0.54% worse** in 5/5 trials — the coarseness it gained is exactly the headroom
+  refinement needed. Force-refining webND's coarse bottom: 1.05-1.66% worse in 5/5 at +45% CPU.
+  **Corollary worth remembering: the post-build codelength is NOT a valid cross-granularity comparator**,
+  so any future bottom candidate cannot be screened against another granularity this way.
+- **D (mid-build seeded polish)**: the F10 fixpoint artefact does *not* reproduce — polish of a freshly
+  nested layer is accepted 69/69 (webND), 71/76 (powergrid), so F7's freshness prediction was right.
+  It still loses, because a gated improvement to an *intermediate* state is not monotone in the final
+  one: placed before `refineHierarchy` it lowers the reference the from-singletons refine must beat,
+  steals its accepts, trips the knee sooner, and corrupts the strategy screen (powergrid 5→7 levels,
+  +0.61%). Placed after, it is monotone and never regressed but only mops up residue (+10-36% CPU for
+  −0.004..−0.093%).
+- **E (cross-parent relocation)**: accepts 19/26 passes at webND's leaf-module layer under `-F` but
+  **0/24 at the same layer under `-C`** — `refineLayerWithinGrandparent` already reaches those
+  configurations indirectly.
+- **hsplit**: on base networks splits are accepted only *above* the leaf layer (science2001 13/13 at
+  k=1, NotreDame 10/10 at k=2..4) while k=0 accepts **nothing** and is the most expensive level
+  (NotreDame k=0 = 2.11s of a 3.12s operator budget, 0/19) — because refine(0) just re-derived it.
+
+**Corollary: anything that helps `-C` marginally helps `-F` a lot**, because `-F` has no interior refine
+to disarm. Three candidates independently landed there (E, D, B-insert), which makes narrowing `-F`'s
+quality gap the most promising unshipped direction out of this round.
+
+#### REJECTED, with the evidence
+
+- **A — trajectory bottoms as extra screen candidates.** Zero codelength change on all 5 nets (and both
+  `-C -F`) for +1.1..7.1% CPU. Winning granularity per net: webND fine blocks K~31.6k (trajectory 6.7%
+  worse); powergrid trajectory K~615-637 wins the screen but refines worse; air30k/malaria the completed
+  flat bottom dominates by construction (it *is* the coarsest trajectory level plus fine-tune plus
+  merges: air30k flat build 5.394 vs best trajectory build 5.471). The ladder is squeezed out from both
+  ends. **Do not retry "which granularity starts the build" — the lever is refinement headroom.**
+- **B — interior level collapse / insert.** Neither changes best-of-10 codelength or level count on any
+  net; collapse accepted 1× in 10 trials (a losing one), insert 4×, all losing. The real finding is the
+  **rejection ladder**: removing the top level costs +0.35% (powergrid), then +1.9%, +7.2%, +23.8% going
+  down, because a level's index-code saving scales with the units it groups. **The up-build's stopping
+  rule is essentially exact, and refinement makes levels MORE worth keeping, never less.** Inserting a
+  level below the leaf modules (the OO recursion direction) is catastrophic: +6.8% air30k, +9.7%
+  science2001 — the columnar-6 vs OO-13 depth gap is not something the bottom of the stack wants.
+  Pre-refine placement makes powergrid's insert fire repeatedly on the raw build yet land 4.749076 →
+  4.749796 (+0.015%) worse: the inserted level steers refinement into a worse basin.
+- **C — composition-change-gated seeded refinement (F7's unbuilt middle). This closes F7.** The
+  composition-change distribution is **bimodal, not spread**: webND k=0 sweep 2 (mean frac 0.4573,
+  reproducing F7's "~46% churn" exactly) has 2044/6050 grandparents *exactly* unchanged (33.5% of
+  leaves), only 375 (6.2%) anywhere in (0, 0.4), and 3019 (49.9%) at ≥0.4. **There is no middle to
+  tune — a finer dial cannot exist**, which is why the threshold curve is flat from X=0.02 to 0.4.
+  Second finding: the gate can only fire on a *re*-refine, and `refineSweeps=1` for ≤1 interior layer
+  means science2001/air30k/malaria never have one (history/total refine calls per `-N10`: webND 38/77,
+  powergrid 30/60, the other three 0). Third and most useful: **seeding's quality damage is localised to
+  the FIRST refine of each grandparent, not to staleness** — seeding every re-refine and sparing only
+  the first costs +0.06..0.10% on webND against +0.91% for unconditional seeding. Speed was −1.6% inside
+  a ±3% floor, i.e. nothing. NOTE: measured at knee 5e-3 where webND reaches 2 sweeps; at 1e-3 the
+  re-refine domain roughly triples, so the *speed* half deserves one re-look.
+- **D — mid-build seeded polish.** See mechanism above. Under `-C`: +10..41% CPU for zero change on 3/5
+  nets, +0.033% on powergrid, only webND gains (−0.093%). Under `-F` the same knob is worth −0.11%
+  (webND) and −0.23..−0.30% (powergrid) because it is then the only interior tuning there is.
+- **E — cross-parent relocation.** Quality confirmed and seed-robust, cost claim refuted. Under `-C`
+  the only win is powergrid 4.749076238 → 4.745919949 (−0.0665%, 0.28→0.28s CPU, 2 wins/2 ties over 4
+  seeds); webND `-C` is bit-identical at N10 *and* costs a real +3.0% paired mean / +6.3% min-of-13 from
+  24 full seeded move loops over a 38,941-unit layer that are all rejected. Under `-F` it is a genuine
+  win: powergrid −0.0756/−0.1433/−0.1399/−0.1763% on **4/4 seeds** (0.16→0.19s), webND
+  −0.035/−0.002/−0.052% on **3/3** (17.16→17.92s). Structurally unreachable on 3 of 5 benchmark nets
+  (needs a ≥4-level stack; science2001/air30k/malaria make zero calls). Indicated fix: gate to layers
+  above the leaf-module layer — the trace says k=1 accepts 0/24 under `-C` while k=2 accepts 6/22 and
+  k=3 4/12, so that should delete the cost and keep the wins.
+
+#### WIN 1 — the #890 split operator extended to the hierarchical path (Daniel's directive)
+
+`splitLevelModules(k, L, allowSingletons)`: partition a level-(k+1) module's level-k children into
+pieces, aggregate a piece-level network, run a **seeded move loop** over pieces (so a piece can land in
+any module including an empty one → group-split *and* cross-parent relocation), gate on
+`hierarchicalCodelengthFromStack()`. Called from the `coarsenModules` interleave for stacks with ≥3
+levels, plus a once-per-run winner variant. `subClusterLeaves` generalised to `subClusterUnits` with the
+enter-flow transform for interior levels.
+
+`-C -N10` seed 123, CPU min-of-3 (load 24-57, indicative):
+
+| network | off | auto+winner | Δ cl | Δ CPU | acc/att | lvls |
+|---|---|---|--:|--:|---|---|
+| **malaria** | 7.422254572 / 3.70s | **7.400465990 / 3.76s** | **−0.294%** | **+1.6%** | 9/21 | **2→3** |
+| air30k | 5.393664418 / 4.52s | 5.391903126 / 5.72s | −0.0327% | **+27%** | 42/79 | 3→3 |
+| air30k reg. | 5.576024192 / 4.09s | 5.575002740 / 5.13s | −0.0183% | **+25%** | 27/57 | 3→3 |
+| web-NotreDame | 5.572794236 / 23.19s | 5.572610218 / 24.16s | −0.0033% | +4.2% | 10/70 | 6→6 |
+| science2001 | 7.833436601 / 3.41s | 7.833339072 / 3.74s | −0.00125% | +9.7% | 13/38 | 3→3 |
+| powergrid + 6 others | unchanged | unchanged | 0 | floor | 0 acc | — |
+
+Malaria −0.294% for +1.6% is seed-consistent (−0.294/−0.274/−0.280% on 123/234/345) and is **the first
+time a hierarchical `-C` solution beats malaria's repaired flat one**. No codelength regression
+anywhere; determinism verified.
+
+**The correction gate should NOT be inherited, but it is right per LEVEL.** `splitTopModules` returns 0
+unless a module-move-capable correction is attached ("the base merge is a no-op"); that reasoning does
+not transfer, because hierarchical over-merging comes from `buildHierarchyFromBottom`'s greedy
+enter-flow super-search, which runs on base networks too — and indeed base nets do accept splits. But
+only above the leaf layer. Hence the shipped policy `auto` = interior always + leaf only when a
+module-move correction is attached, which recovers all of `all`'s codelength at 3-5× less operator cost.
+
+**A load-bearing interaction:** with the per-trial split but *without* extending the winner deep-repair
+hook to deep winners, malaria **regresses** 7.4223 → 7.4453 (+0.31%) — the improved hierarchical trial
+outscores the unrepaired flat trials, the winner is no longer two-level-shaped, and the existing flat
+repair never fires. The hook extension is not optional.
+
+**Open cost problem:** air30k/reg buy −0.02..−0.03% for +25-27%, which fails the marginal-trade rule.
+That cost is k=0 (~1.0s) plus the extra coarsening sweeps each accepted split re-triggers. Next step is
+to ration k=0 the way F21/F22 ration the flat pipeline (cheap probe, or "only after the merge accepted
+something"); malaria's win is also at k=0 but costs 0.06s against air30k's 1.0s, so the discriminator
+is attempt volume, not level. Also flagged: `coarsenModules`' gated lambda copies all of
+`m_hierLevels` **including the leaf network** on every step — pre-existing, but the split operator makes
+it fire far more often, which revives the "B1 incremental gate" idea the TL;DR dismissed as "negligible
+when gated" (it was measured when gated steps were rare).
+
+#### WIN 2 — partial seeding: release the boundary, lock the cores (Daniel's idea)
+
+Daniel: "maybe the seeding can be partial even to not lock too much." Built without touching
+`seedAssignment`: compact the *locked* units' modules to 0..K-1 and hand each *released* unit a fresh id
+K, K+1, … (compacting over locked units only is essential — compacting all modules first overflows the
+sub-network id space at high release fractions). Endpoints verified: P=1 reproduces from-singletons
+exactly, P=0 reproduces full seeding exactly.
+
+Best setting = boundary release of the loosest half, leaf layer only (`bnd P=0.5 k0`):
+
+| network | seeds | mean Δ cl | per-seed | Δ CPU |
+|---|--:|--:|---|--:|
+| malaria | 5 | **−0.211%** | +0.215, −0.243, 0, −0.613, −0.413 | **−11%** |
+| powergrid | 3 | **−0.075%** | −0.126, −0.057, −0.043 (3/3) | 0% |
+| web-NotreDame | 5 | **−0.063%** | −0.078, −0.011, −0.059, −0.082, −0.084 (5/5) | −2% |
+| air30k | 3 | 0.000% | bit-identical every seed | 0% |
+| science2001 | 3 | +0.016% | +0.009, +0.024, +0.015 (3/3 worse) | −4% |
+
+**It costs no time** — a quality win at zero or negative CPU, which is rare in this arc, and it passes
+the marginal-trade rule outright. Not a best-of-N lottery: the per-trial *mean* moves down at every seed
+(webND −0.027..−0.072%, powergrid −0.083..−0.106%, malaria −0.164..−0.321%), i.e. the whole distribution
+shifts.
+
+**The inverse control is what makes this a mechanism rather than a coincidence.** Releasing the same
+number of units by the *inverse* looseness ranking (lock the boundary, free the cores) gives a perfect
+ordering 6/6 across networks and seeds, on both best-of-10 and trial mean:
+
+**bnd0.50 < baseline < inv0.50 < rand0.50**
+
+Inverse release is *worse than baseline*; boundary release is better. So which units you release matters
+more than how many — it is a better-targeted search, not a differently-sized one. (`inv` beating `rand`
+is a secondary hint that releasing a coherent stratum beats scattering holes through every module.)
+`small` (release modules under a size threshold) is inert — T=2/3/5/10 all land at the fully-seeded
+codelength. And **partial seeding is a quality lever, not a speed lever**: full seeding's −11..−22% CPU
+lives at release ≤0.10 where webND is +0.47..+0.62% *worse*; wherever the codelength wins, CPU is inside
+the noise band.
+
+Caveats: air30k is inert *because* of the F22 skip (its `-C` winner is a flat-first trial whose leaf
+layer is already skipped) — so F22 and partial seeding interact. science2001's +0.016% is below the
+0.1% reporting bar but perfectly consistent 3/3. The optimum release fraction is not located (q=0.5 and
+0.75 are near-tied, nothing finer tested), and the boundary metric (crossing link flow / total link
+flow, computed inside the grandparent) was never compared against the `exit/(flow+exit)` alternative.
+
+#### OPEN LEADS OUT OF THIS ROUND
+1. Re-baseline everything at knee 1e-3 (F23) before combining anything.
+2. Ration `splitLevelModules` at k=0 (probe or merge-triggered) to fix air30k's +25-27%.
+3. Make `coarsenModules`' gate incremental (bit-exact) — cheapens every gated operator here.
+4. Gate `refineLayerFreely` to layers above the leaf-module layer.
+5. An `-F` quality package: E relocation + D mid-build polish + B interior insert all win there.
+6. Partial seeding: finer q sweep, wider seed sweep, and compare the two boundary metrics.
