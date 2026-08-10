@@ -592,16 +592,24 @@ private:
   bool m_recordedTeleport = false;
   // Interior-refine early-stop knee (0 = off, grind to convergence): stop once a
   // whole up/down sweep's gain drops below this fraction of the post-build
-  // codelength. Raised 1e-3 -> 5e-3 in F5 on the measurement that web-NotreDame
-  // converged in 3 sweeps with the 3rd worth +0.06%; it now takes 5.5 sweeps
-  // (max 7) and the truncated tail is worth 0.111%, so F5's constant went stale
-  // as the rest of the engine changed. Restored to 1e-3, which is on the
-  // codelength/CPU Pareto frontier where 5e-3 is not: at every matched CPU
-  // budget measured on web-NotreDame the looser knee is dominated (R=1e-3 at
-  // -N1 beats R=5e-3 at -N20 for a twelfth of the CPU). Only bites on stacks
-  // with more than one interior layer — refineSweeps is 1 otherwise, so
-  // science2001/air30k/malaria and all of -F are unaffected. See F23.
-  double m_minRelTuneImprovement = 1e-3;
+  // codelength.
+  //
+  // 5e-3 is the DEFAULT; users who want the deeper refinement can ask for it
+  // with --tune-iteration-relative-threshold (1e-3 and 0 both work, and the
+  // columnar path honors an explicit value even when it equals the OO default).
+  //
+  // F23 lowered this to 1e-3 by default and F26 restored it, on a corrected
+  // measurement: the deeper knee buys web-NotreDame -0.097% and powergrid
+  // -0.054% but costs +20% and +23% CPU respectively, not the +8.7% F23
+  // reported (that A/B ran under load, which inflated the 5e-3 arm's baseline
+  // and compressed the delta -- on an idle machine it is 20.53s -> 24.69s).
+  // The deeper knee IS on the codelength/CPU Pareto frontier -- at a matched
+  // ~24.3s budget the old knee reaches only 5.5727 against 5.5674, and -N14
+  // does not move it at all -- but a fifth more CPU for a tenth of a percent is
+  // not the right DEFAULT, so it is a dial instead. Only bites on stacks with
+  // more than one interior layer (refineSweeps is 1 otherwise), so
+  // science2001/air30k/malaria and all of -F are unaffected either way.
+  double m_minRelTuneImprovement = 5e-3;
   double m_totalTeleFlow = 0.0; // GLOBAL sum of leaf teleport flow (root teleport flow)
   // A module's recorded-teleport enter/exit from its aggregated teleport flow tf
   // and weight tw (see InfomapBase::aggregateFlowValuesFromLeafToRoot): a walker
