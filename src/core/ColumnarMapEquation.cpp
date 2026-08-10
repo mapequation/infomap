@@ -50,6 +50,114 @@ static int coMergeMode()
   return mode;
 }
 
+// PARTIAL SEEDING of the within-grandparent layer refinements (the mechanism is
+// documented on buildPartialSeed).
+//
+// The shipped policy is (q = 0.40, bnd, re-refine only, every interior layer).
+// The env knobs are the A/B handles it was chosen with; COL_PARTSEED_Q=1
+// restores the from-singletons search bit-exactly.
+//
+//   COL_PARTSEED_Q=<0..1>  release fraction: the share of a grandparent's units
+//     the refine gets back as fresh singletons. q = 1 releases everything, i.e.
+//     the from-singletons default; q = 0 seeds everything, which is a fixpoint
+//     (the greedy loop reproduces its input and the gate reverts). The optimum
+//     sits on a broad plateau — web-NotreDame varies by < 0.03% over q in
+//     0.33-0.50 and powergrid by < 0.06% over 0.25-0.40 — and both degrade
+//     above 0.6, where too little is locked to be worth seeding at all.
+//   COL_PARTSEED_M=bnd|ex|inv|iex|rand   which units count as "loosest":
+//     bnd  share of the unit's link flow, inside the grandparent, that crosses
+//          its current module's boundary. The default: it is module-aware and
+//          well-defined on every flow model.
+//     ex   the unit's own leakiness, exit / (flow + exit). DEGENERATE on
+//          undirected first-order networks, where a leaf's exit flow equals its
+//          flow, so the ratio is 0.5 for every node and the "ranking" collapses
+//          to node order (measured: ex and iex are bit-identical on powergrid).
+//     inv / iex  controls for bnd / ex: same ranking, released from the tight
+//          end instead. Both must LOSE to the from-singletons default, or the
+//          effect is release volume rather than release targeting.
+//     rand release a uniformly random q (deterministic in m_seed): the other
+//          control, for "any perturbation would do".
+//   COL_PARTSEED_LEAF=1   restrict to the leaf layer (default: every interior
+//                         layer — the interior layers are where the sweeps that
+//                         re-refine actually live, and they are nearly free)
+//   COL_PARTSEED_ALWAYS=1 also partial-seed a layer's FIRST refine (default:
+//                         only re-refines, see partSeedResweepOnly)
+//   COL_PARTSEED_FLAT=1   apply it to a converged flat bottom instead of
+//                         skipping that layer (see m_bottomConverged)
+static constexpr double kPartSeedRelease = 0.40;
+enum class PartSeedMetric { Boundary,
+                            Exit,
+                            InvBoundary,
+                            InvExit,
+                            Random };
+static double partSeedRelease()
+{
+  static const double q = [] {
+    const char* e = std::getenv("COL_PARTSEED_Q");
+    return e != nullptr ? std::atof(e) : kPartSeedRelease;
+  }();
+  return q;
+}
+static PartSeedMetric partSeedMetric()
+{
+  static const PartSeedMetric m = [] {
+    const char* e = std::getenv("COL_PARTSEED_M");
+    if (e == nullptr)
+      return PartSeedMetric::Boundary;
+    const std::string v(e);
+    if (v == "ex")
+      return PartSeedMetric::Exit;
+    if (v == "inv")
+      return PartSeedMetric::InvBoundary;
+    if (v == "iex")
+      return PartSeedMetric::InvExit;
+    if (v == "rand")
+      return PartSeedMetric::Random;
+    return PartSeedMetric::Boundary;
+  }();
+  return m;
+}
+static bool partSeedLeafOnly()
+{
+  static const bool on = std::getenv("COL_PARTSEED_LEAF") != nullptr;
+  return on;
+}
+static bool partSeedFlatBottom()
+{
+  static const bool on = std::getenv("COL_PARTSEED_FLAT") != nullptr;
+  return on;
+}
+// Partial-seed only a RE-refine of a layer, never its first from-singletons
+// derivation (COL_PARTSEED_ALWAYS=1 lifts this). Seeding damage is localised to
+// the first refine of a grandparent (F24 C), and before that first refine the
+// layer holds no partition worth locking — the build's greedy enter-flow
+// super-search made it, not a two-level optimize. Refine sweep 0 refines every
+// dirty layer, so m_refineSweep > 0 is exactly "this layer has been re-derived".
+// This is also what keeps the whole feature inert on the single-sweep searches
+// (`-F`, and any stack with one interior layer): they only ever refine once, so
+// there is nothing to re-refine and nothing changes.
+static bool partSeedResweepOnly()
+{
+  static const bool on = std::getenv("COL_PARTSEED_ALWAYS") == nullptr;
+  return on;
+}
+// Partial seeding applies to layer k? Off (q >= 1) is the from-singletons
+// default, which must stay bit-identical, so this is the single gate.
+static bool partSeedActive(int layer)
+{
+  const double q = partSeedRelease();
+  return q >= 0.0 && q < 1.0 && (layer == 0 || !partSeedLeafOnly());
+}
+// Deterministic 64-bit mix (splitmix64 finalizer): the PRNG for the `rand`
+// control, keyed so a run is reproducible from (m_seed, layer, unit).
+static inline unsigned long long partSeedMix(unsigned long long x)
+{
+  x += 0x9e3779b97f4a7c15ULL;
+  x = (x ^ (x >> 30)) * 0xbf58476d1ce4e5b9ULL;
+  x = (x ^ (x >> 27)) * 0x94d049bb133111ebULL;
+  return x ^ (x >> 31);
+}
+
 void ColumnarMapEquation::buildFromTree(const InfoNode& root, const std::vector<InfoNode*>& leafNodes, bool undirected)
 {
   m_undirected = undirected;
@@ -1002,7 +1110,7 @@ int ColumnarTwoLevel::consolidateToNextLevel()
   return K;
 }
 
-double ColumnarTwoLevel::optimizeTwoLevel(unsigned int maxAggPasses, bool doFineTune)
+double ColumnarTwoLevel::optimizeTwoLevel(unsigned int maxAggPasses, bool doFineTune, const std::vector<int>* pass1Seed)
 {
   // Start each optimize from the immutable leaf network. The first move loop
   // (and any fine-tune) operate on leaves; aggregation passes operate on
@@ -1033,8 +1141,15 @@ double ColumnarTwoLevel::optimizeTwoLevel(unsigned int maxAggPasses, bool doFine
   // (m_lastCorrection, exact for the composed leaf partition since the
   // per-module aggregates are identical either way); the rest are recomputed
   // from the composed leaf partition.
-  auto runPass = [&](std::vector<int>& newTop, int& c) -> double {
-    initPartition();
+  auto runPass = [&](std::vector<int>& newTop, int& c, const std::vector<int>* seed = nullptr) -> double {
+    if (seed != nullptr) {
+      // Singletons, then deterministically place every unit into its seeded
+      // module, then improve greedily from there (OO's fine-tune init).
+      m_seededPhase = true;
+      seedAssignment(*seed);
+    } else {
+      initPartition();
+    }
     moveLoop();
     std::vector<int> remap(m_lvl.n, -1);
     c = 0;
@@ -1058,7 +1173,8 @@ double ColumnarTwoLevel::optimizeTwoLevel(unsigned int maxAggPasses, bool doFine
   {
     std::vector<int> newTop;
     int c = 0;
-    bestCodelength = runPass(newTop, c);
+    bestCodelength = runPass(newTop, c, pass1Seed);
+    m_seededPhase = false;
     bestTop = std::move(newTop);
     bestK = static_cast<unsigned int>(c);
   }
@@ -2522,7 +2638,95 @@ void ColumnarTwoLevel::addSlicedLeafCorrections(ColumnarTwoLevel& subOpt, const 
   }
 }
 
-int ColumnarTwoLevel::subClusterLeaves(const std::vector<int>& S, double parentExit, std::vector<int>& loc, std::vector<int>& localAssign, bool fineTune)
+bool ColumnarTwoLevel::buildPartialSeed(const Level& sub, const std::vector<int>& S, const std::vector<int>& assign, int layer, std::vector<int>& seed) const
+{
+  const int nP = sub.n;
+  if (!partSeedActive(layer) || (partSeedResweepOnly() && m_refineSweep == 0))
+    return false; // from singletons, the default
+  if (nP <= 1)
+    return false; // a single unit has nothing to re-place
+  const double q = partSeedRelease();
+  const PartSeedMetric metric = partSeedMetric();
+
+  std::vector<char> released(nP, 0);
+  if (metric == PartSeedMetric::Random) {
+    for (int j = 0; j < nP; ++j) {
+      const unsigned long long h = partSeedMix(static_cast<unsigned long long>(m_seed)
+                                               ^ (0x9e3779b97f4a7c15ULL * static_cast<unsigned long long>(layer + 1))
+                                               ^ (0xff51afd7ed558ccdULL * static_cast<unsigned long long>(S[j] + 1)));
+      const double u = static_cast<double>(h >> 11) * (1.0 / 9007199254740992.0);
+      released[j] = u < q ? 1 : 0;
+    }
+  } else {
+    // loose[j]: how weakly j's current module holds it. Units with no signal at
+    // all (no internal link / no flow) count as fully loose, so they are the
+    // first to be released rather than silently locked.
+    const bool byExit = metric == PartSeedMetric::Exit || metric == PartSeedMetric::InvExit;
+    std::vector<double> loose(nP, 1.0);
+    for (int j = 0; j < nP; ++j) {
+      if (byExit) {
+        const double tot = sub.flow[j] + sub.exit[j];
+        if (tot > 0.0)
+          loose[j] = sub.exit[j] / tot;
+      } else {
+        const int mj = assign[S[j]];
+        double tot = 0.0, out = 0.0;
+        for (int e = sub.outStart[j]; e < sub.outStart[j + 1]; ++e) {
+          tot += sub.outFlow[e];
+          if (assign[S[sub.outTarget[e]]] != mj)
+            out += sub.outFlow[e];
+        }
+        for (int e = sub.inStart[j]; e < sub.inStart[j + 1]; ++e) {
+          tot += sub.inFlow[e];
+          if (assign[S[sub.inTarget[e]]] != mj)
+            out += sub.inFlow[e];
+        }
+        if (tot > 0.0)
+          loose[j] = out / tot;
+      }
+    }
+    int R = static_cast<int>(std::llround(q * nP));
+    R = std::max(0, std::min(nP, R));
+    std::vector<int> order(nP);
+    std::iota(order.begin(), order.end(), 0);
+    // Loosest first (tightest first for the inv/iex controls); the local index
+    // breaks ties, so the selection is deterministic.
+    const bool inverse = metric == PartSeedMetric::InvBoundary || metric == PartSeedMetric::InvExit;
+    if (inverse)
+      std::stable_sort(order.begin(), order.end(), [&](int a, int b) { return loose[a] < loose[b]; });
+    else
+      std::stable_sort(order.begin(), order.end(), [&](int a, int b) { return loose[a] > loose[b]; });
+    for (int r = 0; r < R; ++r)
+      released[order[r]] = 1;
+  }
+
+  // Compact the LOCKED units' modules to 0..K-1, then hand each released unit a
+  // fresh id K, K+1, ... . locked + released <= nP, so every id stays inside the
+  // sub-network's module id space and seedAssignment can rebuild m_emptyModules
+  // from the resulting membership counts.
+  seed.assign(nP, -1);
+  std::unordered_map<int, int> toLocal;
+  for (int j = 0; j < nP; ++j) {
+    if (released[j])
+      continue;
+    const int mod = assign[S[j]];
+    auto it = toLocal.find(mod);
+    if (it == toLocal.end()) {
+      const int id = static_cast<int>(toLocal.size());
+      toLocal.emplace(mod, id);
+      seed[j] = id;
+    } else {
+      seed[j] = it->second;
+    }
+  }
+  int next = static_cast<int>(toLocal.size());
+  for (int j = 0; j < nP; ++j)
+    if (released[j])
+      seed[j] = next++;
+  return true;
+}
+
+int ColumnarTwoLevel::subClusterLeaves(const std::vector<int>& S, double parentExit, std::vector<int>& loc, std::vector<int>& localAssign, bool fineTune, const std::vector<int>* leafModule)
 {
   const int nP = static_cast<int>(S.size());
   for (int j = 0; j < nP; ++j)
@@ -2587,7 +2791,13 @@ int ColumnarTwoLevel::subClusterLeaves(const std::vector<int>& S, double parentE
   subOpt.setInterruptCallback(m_interruptCallback);
   subOpt.buildFromLevel(sub, m_undirected, m_seed, parentExit, m_recordedTeleport, m_totalTeleFlow);
   addSlicedLeafCorrections(subOpt, S);
-  subOpt.optimizeTwoLevel(0, fineTune);
+  // Partial seeding: keep the cores of the partition we were handed, release its
+  // loose boundary as singletons (leaf layer, so layer == 0).
+  std::vector<int> seed;
+  const std::vector<int>* seedPtr = nullptr;
+  if (leafModule != nullptr && buildPartialSeed(sub, S, *leafModule, 0, seed))
+    seedPtr = &seed;
+  subOpt.optimizeTwoLevel(0, fineTune, seedPtr);
   localAssign.assign(subOpt.leafTopModule().begin(), subOpt.leafTopModule().end());
   const int Ksub = static_cast<int>(subOpt.numTopModules());
 
@@ -2621,7 +2831,14 @@ bool ColumnarTwoLevel::refineBottomWithinParents()
     const int nP = static_cast<int>(S.size());
     if (nP == 0)
       continue;
-    const int Ksub = subClusterLeaves(S, m_hierLevels[2].exit[P], loc, subAssign);
+    // The leaf layer's within-parent re-derivation: the `-F` counterpart of
+    // refineLayerWithinGrandparent(0), so it is offered the same partial seed.
+    // Inert under the shipped policy — `-F` runs this pass exactly once, and a
+    // first refine is never partial-seeded (see partSeedResweepOnly). It is
+    // reachable via COL_PARTSEED_ALWAYS, which is how the `-F` half was
+    // measured: partial-seeding this single pass costs web-NotreDame +0.08% on
+    // 3/3 seeds, because here it replaces the only discovery the search has.
+    const int Ksub = subClusterLeaves(S, m_hierLevels[2].exit[P], loc, subAssign, true, &a0);
 
     for (int j = 0; j < nP; ++j)
       newA0[S[j]] = nextL1 + subAssign[j];
@@ -2726,8 +2943,9 @@ double ColumnarTwoLevel::optimizeFlexible(unsigned int bottomBlockLimit, unsigne
   // the deep/memory nets).
   // Skipped on a converged flat bottom: refineBottomWithinParents IS the
   // leaf-layer re-derivation the flat pipeline already converged (see
-  // m_bottomConverged).
-  if (!m_bottomConverged && refineBottomWithinParents())
+  // m_bottomConverged) — unless partial seeding is asked to run there anyway
+  // (COL_PARTSEED_FLAT), which is a different pass than the one that converged.
+  if ((!m_bottomConverged || (partSeedFlatBottom() && partSeedActive(0))) && refineBottomWithinParents())
     L = std::min(L, hierarchicalCodelengthFromStack());
   // Coarsen (merge leaf modules + regroup the top), exactly as the converge
   // search does. Cheap (module-level, not leaf-level) and a no-op for the base
@@ -2846,7 +3064,13 @@ bool ColumnarTwoLevel::refineLayerWithinGrandparent(int k)
     subOpt.buildFromLevel(sub, m_undirected, m_seed, grand.exit[G], m_recordedTeleport, m_totalTeleFlow);
     if (k == 0)
       addSlicedLeafCorrections(subOpt, S);
-    subOpt.optimizeTwoLevel();
+    // Partial seeding: lock the cores of the layer-k partition inside G, release
+    // its loose boundary as singletons for the sub-optimize to re-place.
+    std::vector<int> seed;
+    const std::vector<int>* seedPtr = nullptr;
+    if (buildPartialSeed(sub, S, aC, k, seed))
+      seedPtr = &seed;
+    subOpt.optimizeTwoLevel(0, true, seedPtr);
     const std::vector<int>& subAssign = subOpt.leafTopModule();
     const int Ksub = static_cast<int>(subOpt.numTopModules());
 
@@ -3207,11 +3431,13 @@ double ColumnarTwoLevel::refineHierarchy(double startL, unsigned int sweepLimit)
   // The leaf layer of a converged flat bottom is already at the two-level
   // fixpoint — re-deriving it from singletons within each grandparent only
   // re-finds it (see m_bottomConverged). Start it clean; an accepted refine of
-  // the layer above marks it dirty again.
-  if (m_bottomConverged && numInterior > 0)
+  // the layer above marks it dirty again. A partially seeded refine is NOT that
+  // same pass, so COL_PARTSEED_FLAT keeps the layer dirty and lets it run.
+  if (m_bottomConverged && numInterior > 0 && !(partSeedFlatBottom() && partSeedActive(0)))
     dirty[0] = 0;
   for (int sweep = 0; sweep < refineSweeps; ++sweep) {
     pollInterrupt();
+    m_refineSweep = sweep;
     const double beforeSweep = L;
     bool improved = false;
     const int top = static_cast<int>(m_hierLevels.size()) - 1;
@@ -3236,6 +3462,7 @@ double ColumnarTwoLevel::refineHierarchy(double startL, unsigned int sweepLimit)
       break;
     dirty = std::move(nextDirty);
   }
+  m_refineSweep = 0; // out of the sweep loop: no layer is a re-refine
 
   // Module coarsening: merge leaf modules (mergeLeafModulesWithinParents) and
   // regroup the top level (refineTopLayer), interleaved to convergence. Both

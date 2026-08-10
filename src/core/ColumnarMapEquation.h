@@ -237,7 +237,12 @@ public:
   // of the resulting leaves -> top-modules partition. maxAggPasses > 0 stops the
   // aggregation early (finer "building block" bottom); doFineTune toggles the
   // level-0 fine-tune-to-convergence.
-  double optimizeTwoLevel(unsigned int maxAggPasses = 0, bool doFineTune = true);
+  // pass1Seed (optional): start pass 1 from this unit->module assignment via
+  // seedAssignment (singletons, then deterministic placement into the given
+  // module) instead of from singletons, so the greedy move loop improves an
+  // existing partition rather than re-deriving one. Used by the hierarchical
+  // refinements' partial seeding (see buildPartialSeed).
+  double optimizeTwoLevel(unsigned int maxAggPasses = 0, bool doFineTune = true, const std::vector<int>* pass1Seed = nullptr);
 
   // Two-level engine entry (the `--columnar --two-level` search): run the full
   // two-level optimize and materialize it as a two-level stack (leaves + one
@@ -424,7 +429,24 @@ private:
   // Shared by refineBottomWithinParents (fineTune = true) and splitTopModules
   // (fineTune = false: piece proposals need community granularity, not final
   // polish — the gated recombination and interleaved leaf re-tune do that).
-  int subClusterLeaves(const std::vector<int>& S, double parentExit, std::vector<int>& loc, std::vector<int>& localAssign, bool fineTune = true);
+  // leafModule (optional): the leaf -> current module map. When given and
+  // partial seeding is on, the sub-optimize's pass 1 starts from a partial seed
+  // of that partition instead of from singletons (see buildPartialSeed).
+  int subClusterLeaves(const std::vector<int>& S, double parentExit, std::vector<int>& loc, std::vector<int>& localAssign, bool fineTune = true, const std::vector<int>* leafModule = nullptr);
+
+  // Partial seed for one sub-optimize over the units S of a single parent /
+  // grandparent (partial seeding). The sub-optimize's default is to
+  // re-derive S from singletons: full discovery, but it also discards the parts
+  // of the partition that were never in doubt. Seeding it fully is the opposite
+  // failure — the greedy loop reproduces the input and the gate reverts. This
+  // builds the middle: LOCK the units their current module (assign[S[j]]) holds
+  // most tightly, RELEASE the loosest fraction as fresh singletons the move
+  // loop must re-place. Locked modules are compacted to 0..K-1 and each
+  // released unit gets a fresh id K, K+1, ... (compacting over the locked units
+  // only is required — compacting all modules first overflows the sub-network's
+  // module id space at high release fractions). `layer` only keys the random
+  // control. Returns false when partial seeding does not apply.
+  bool buildPartialSeed(const Level& sub, const std::vector<int>& S, const std::vector<int>& assign, int layer, std::vector<int>& seed) const;
 
   // Split operator (#889), the subdivision half of a coarse-tune: subdivide
   // the top modules of a two-level stack into pieces — the retained pass-1
@@ -512,6 +534,10 @@ private:
   bool m_leafMoveLoop = false; // true while moveLoop units are leaves (corrections active)
   bool m_moduleCorrActive = false; // true while module-move-capable corrections participate in a module-level move loop
   bool m_seededPhase = false; // true when the move loop starts from an existing partition (fine-tune/refine)
+  // Which interior-refine sweep is running (refineHierarchy). Sweep 0 re-derives
+  // every layer from singletons; partial seeding can be restricted to the later
+  // sweeps, where the layer already holds a re-derived partition worth locking.
+  int m_refineSweep = 0;
   double m_lastCorrection = 0.0; // correction total of the last move loop's active corrections (0 if none)
   std::vector<std::unique_ptr<ColumnarCorrection>> m_corrections; // objective add-ons
   std::function<void()> m_interruptCallback;
