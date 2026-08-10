@@ -564,7 +564,18 @@ private:
   // GLOBAL total (constant across sub-networks), so sub-optimizers inherit it via
   // buildFromLevel rather than recomputing from their local units.
   bool m_recordedTeleport = false;
-  double m_minRelTuneImprovement = 5e-3; // interior-refine early-stop knee (0 = off, grind to convergence)
+  // Interior-refine early-stop knee (0 = off, grind to convergence): stop once a
+  // whole up/down sweep's gain drops below this fraction of the post-build
+  // codelength. Raised 1e-3 -> 5e-3 in F5 on the measurement that web-NotreDame
+  // converged in 3 sweeps with the 3rd worth +0.06%; it now takes 5.5 sweeps
+  // (max 7) and the truncated tail is worth 0.111%, so F5's constant went stale
+  // as the rest of the engine changed. Restored to 1e-3, which is on the
+  // codelength/CPU Pareto frontier where 5e-3 is not: at every matched CPU
+  // budget measured on web-NotreDame the looser knee is dominated (R=1e-3 at
+  // -N1 beats R=5e-3 at -N20 for a twelfth of the CPU). Only bites on stacks
+  // with more than one interior layer — refineSweeps is 1 otherwise, so
+  // science2001/air30k/malaria and all of -F are unaffected. See F23.
+  double m_minRelTuneImprovement = 1e-3;
   double m_totalTeleFlow = 0.0; // GLOBAL sum of leaf teleport flow (root teleport flow)
   // A module's recorded-teleport enter/exit from its aggregated teleport flow tf
   // and weight tw (see InfomapBase::aggregateFlowValuesFromLeafToRoot): a walker
