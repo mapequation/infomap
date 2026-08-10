@@ -1211,3 +1211,93 @@ flow, computed inside the grandparent) was never compared against the `exit/(flo
 4. Gate `refineLayerFreely` to layers above the leaf-module layer.
 5. An `-F` quality package: E relocation + D mid-build polish + B interior insert all win there.
 6. Partial seeding: finer q sweep, wider seed sweep, and compare the two boundary metrics.
+
+### F25 — Partial seeding: release the boundary, lock the cores (PR #985, 2026-08-10)
+
+**Daniel's idea, restated:** "there is not only a single way to implement seeded bubble ... maybe the
+seeding can be partial even to not lock too much." That last clause is the whole result.
+
+A grandparent re-refine had exactly two settings and both waste something. **From singletons**
+(`refineLayerWithinGrandparent`'s default) rediscovers the entire sub-partition including the module
+cores that were never in doubt, and it is the most expensive pass in the search. **Fully seeded**
+(`seedAssignment`) reproduces the current partition, the gate reverts, and the pass is a full-price
+no-op — F10's "fixpoint artefact", re-confirmed at F22 (seeding a converged bottom gains 0.0002%).
+Partial seeding is the middle: rank a grandparent's units by how much of their flow leaves their
+current module, LOCK the confident cores, RELEASE the loosest fraction q as fresh singletons.
+Implementation compacts the LOCKED units' modules to 0..K-1 and gives released units fresh ids
+K, K+1, … — compacting over all modules first can overflow the sub-network's id space at high q.
+
+**The ranking is the mechanism, not the release count.** Inverse control (webND, q=0.5, s123):
+`bnd −0.015% < base < inv +0.069% < rand +0.153%`; malaria trial mean `bnd −0.261 < iex −0.127 <
+base < rand +0.050 < inv +0.081`. Releasing the same NUMBER of units by the inverse ranking is worse
+than baseline. That is what distinguishes this from "a cheaper refine".
+
+**Round 1 (at knee 5e-3) did NOT survive the deeper knee — and the fix came from a REJECTED idea.**
+At 1e-3, round 1's setting (bnd q=0.5, leaf-only, always-on) gave webND only −0.024% (was −0.063%),
+malaria's headline −0.211% turned out to have been carried by seeds outside 123/234/345 (seed 123
+reproduces round 1 exactly at +0.215%, which validated the port), science2001 kept +0.016% on 3/3,
+and extending to `-F` cost webND +0.080% on 3/3. What rescued it was F24-C's finding — the
+composition-gated experiment that was itself rejected: **seeding's quality damage is localised to the
+FIRST refine of a grandparent, not to staleness.** Turned into policy (partial-seed only when
+`refineHierarchy` sweep > 0), every regression disappears. Worth recording as a pattern: a rejected
+experiment's *diagnosis* outlived its *implementation*.
+
+**Shipped policy:** bnd, q=0.40, re-refine only, all interior layers.
+
+| config (`-C`) | before | after | s234 | s345 | s456 |
+|---|--:|--:|--:|--:|--:|
+| web-NotreDame | 5.567411908 | **5.560674868** (−0.121%) | −0.114% | −0.099% | −0.140% |
+| powergrid | 4.746507150 | **4.739334923** (−0.151%) | −0.169% | −0.253% | −0.076% |
+| netscicoauthor2010 | 4.051867517 | **4.049603407** (−0.056%) | −0.000% | −0.005% | — |
+| other 10 configs | — | bit-identical | ✓ | ✓ | — |
+
+**Milestone: web-NotreDame `-C` now BEATS OO** — 5.560674868 vs 5.566041380 (−0.096%). Its arc across
+three PRs: +0.121% behind → +0.025% (F23 knee) → **−0.096% ahead**. It was the last large base network
+where the columnar engine trailed. powergrid's win widened −0.16% → −0.21% → **−0.36%**. `-C` now
+ties-or-beats OO on **9 of 13** configs.
+
+**q sweep** (per-trial mean, always-on, s123; and RE+ALL best-of-10):
+
+| q | 0.20 | 0.25 | 0.33 | 0.40 | 0.50 | 0.60 | 0.667 | 0.75 | 0.85 |
+|---|--:|--:|--:|--:|--:|--:|--:|--:|--:|
+| always webND | +0.170 | — | — | +0.005 | −0.028 | −0.036 | +0.013 | −0.011 | −0.012 |
+| always powergrid | — | — | — | −0.164 | −0.159 | −0.070 | −0.085 | −0.070 | −0.004 |
+| RE+ALL webND (best) | — | −0.094 | −0.113 | **−0.117** | −0.096 | −0.072 | — | −0.059 | — |
+| RE+ALL powergrid (best) | — | −0.234 | −0.183 | **−0.191** | −0.128 | −0.142 | — | −0.073 | — |
+
+Broad plateau, collapse below q≈0.33 when always-on, degradation above 0.6. Round 1's q=0.5 was
+near-optimal but not optimal.
+
+**Metric finding worth keeping: `exit/(flow+exit)` is DEGENERATE on undirected first-order networks.**
+`FlowCalculator.cpp:1475` sets `node.exitFlow = node.flow`, so the ratio is 0.5 for every leaf and the
+ranking collapses to node order. Proof: on powergrid that metric and its exact inverse (`iex`) give
+**bit-identical** 4.736119954. It is a genuine metric only on directed/higher-order networks, so the
+module-aware crossing-flow ratio ships. Head-to-head where `ex` is meaningful: webND bnd −0.024 / ex
+−0.037 (tie under the RE policy); malaria bnd −0.009 / **ex +0.195**.
+
+**Cost — one measurable bill.** powergrid −0.15…−0.25% for **+7.4% CPU** (2.97 → 3.19s at `-N100`,
+resolving against a −0.3% floor; +9.7% on 0.31s at `-N10`). webND +1.2% against a ±2.1–2.4% floor =
+not resolvable; netsci +0.0%. Pareto check: buying powergrid's quality with TRIALS instead costs the
+baseline 2.97s (+860% CPU) to reach 4.737757 where this reaches 4.739335 at 0.34s — ~80× cheaper, so
+the trade sits on the right side of the frontier. Per-trial overhead ≤1% (Infomap's own per-trial
+timers summed over `-N10`, 6 reps: 22.635s base vs 22.820s against a 22.708s floor).
+
+**Verified:** off switch (`COL_PARTSEED_Q=1`) → `.tree` byte-identical to baseline; determinism
+byte-identical on re-run; `-2 -C` bit-identical on all 13; `-C -F` bit-identical on all 5 nets by
+construction; full 13×5 refresh **62/65 codelengths bit-identical**, every OO and `-2` number
+unchanged. Noise floors measured on known-bit-identical configs: ±2.1–2.4% webND `-N10`, −1.6%
+science2001, −0.3% powergrid `-N100`, +16.7% politicalblogs (0.06s, timer-resolution bound, unusable).
+
+**F22 interaction re-confirmed (item 5 of the brief):** air30k is bit-identical on every variant and
+seed because its `-C` winner is a flat-first trial whose leaf layer is already skipped
+(`m_bottomConverged`). Partial-seeding that converged flat bottom instead of skipping it was measured
+and rejected: s234 −0.0329%, s345 −0.0113% for **+16%/+34%/+41% CPU** — worse than the fully-seeded
+pass it would replace. On malaria the knob is inert for a different reason: its unchanged trials are
+2-level stacks with no grandparent at all, which also explains why malaria's best-of-10 barely moves
+while its trial mean drops 0.25%.
+
+**Correction to F24.** The round-2 agent reported that F24's malaria −0.294% needed
+`COL_HSPLIT_WINNER=all` rather than `auto`. That is wrong and F24 is correct as written: on the
+round-1 binary `COL_HSPLIT=auto COL_HSPLIT_WINNER=1` reproduces **7.40046599** exactly, and
+`COL_HSPLIT=auto` *without* the winner hook gives 7.445260297 — which is precisely the +0.31%
+regression F24 already documents as the load-bearing winner-hook interaction. Re-verified directly.
