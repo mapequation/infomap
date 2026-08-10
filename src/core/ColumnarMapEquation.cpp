@@ -26,6 +26,7 @@
 #include <utility>
 
 #ifdef COLUMNAR_DEBUG
+#include <cstdint>
 #include <cstdio>
 #endif
 
@@ -85,11 +86,11 @@ static int coMergeMode()
 //   COL_PARTSEED_FLAT=1   apply it to a converged flat bottom instead of
 //                         skipping that layer (see m_bottomConverged)
 static constexpr double kPartSeedRelease = 0.40;
-enum class PartSeedMetric { Boundary,
-                            Exit,
-                            InvBoundary,
-                            InvExit,
-                            Random };
+enum class PartSeedMetric : std::uint8_t { Boundary,
+                                          Exit,
+                                          InvBoundary,
+                                          InvExit,
+                                          Random };
 static double partSeedRelease()
 {
   static const double q = [] {
