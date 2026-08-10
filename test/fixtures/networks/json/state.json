@@ -1,0 +1,16 @@
+{
+  "format": "infomap-network",
+  "version": "1.0",
+  "type": "state",
+  "nodes": [
+    { "id": 1, "name": "Species A" },
+    { "id": 2, "name": "Species B" }
+  ],
+  "states": [
+    { "id": 1, "node": 1, "name": "State 1", "weight": 0.4, "path": [1] },
+    { "id": 2, "node": 2, "name": "State 2", "path": [1, 2] }
+  ],
+  "edges": [
+    { "source": 1, "target": 2, "weight": 1.0 }
+  ]
+}

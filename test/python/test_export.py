@@ -4,7 +4,6 @@ from pathlib import Path
 
 import networkx as nx
 import pytest
-
 from infomap import Infomap
 from infomap.export import (
     annotate_igraph_graph,
@@ -12,7 +11,6 @@ from infomap.export import (
     write_gexf,
     write_graphml,
 )
-
 
 pytestmark = pytest.mark.fast
 
@@ -57,12 +55,18 @@ def test_networkx_export_supports_custom_module_attribute():
         im,
         node_mapping=mapping,
         module_attribute="community",
+        flow_attribute="flow",
     )
 
+    # The annotate family keeps its documented all-strings contract.
     assert set(nx.get_node_attributes(annotated, "community")) == set(graph.nodes)
     assert all(
         isinstance(value, str)
         for value in nx.get_node_attributes(annotated, "community").values()
+    )
+    assert all(
+        isinstance(value, str)
+        for value in nx.get_node_attributes(annotated, "flow").values()
     )
 
 
@@ -183,6 +187,37 @@ def test_igraph_graphml_export_writes_vertex_attributes(tmp_path):
     assert all(value is not None for value in exported.vs["infomap_module"])
 
 
+def test_igraph_graphml_export_accepts_generic_pathlike(tmp_path, fspath_only):
+    ig = pytest.importorskip("igraph")
+    graph = ig.Graph(edges=[(0, 1), (2, 3)], directed=False)
+    im = _igraph_result(graph)
+    path = tmp_path / "generic.graphml"
+
+    write_graphml(graph, im, fspath_only(path))
+
+    assert path.stat().st_size > 0
+
+
+def test_networkx_graphml_export_accepts_generic_pathlike(tmp_path, fspath_only):
+    graph = nx.Graph([(1, 2), (2, 3), (10, 11), (11, 12)])
+    im, mapping = _networkx_result(graph)
+    path = tmp_path / "generic.graphml"
+
+    write_graphml(graph, im, fspath_only(path), node_mapping=mapping)
+
+    assert path.stat().st_size > 0
+
+
+def test_networkx_gexf_export_accepts_generic_pathlike(tmp_path, fspath_only):
+    graph = nx.Graph([(1, 2), (2, 3), (10, 11), (11, 12)])
+    im, mapping = _networkx_result(graph)
+    path = tmp_path / "generic.gexf"
+
+    write_gexf(graph, im, fspath_only(path), node_mapping=mapping)
+
+    assert path.stat().st_size > 0
+
+
 def test_igraph_export_copy_true_leaves_original_graph_unchanged():
     ig = pytest.importorskip("igraph")
     graph = ig.Graph(edges=[(0, 1)], directed=False)
@@ -230,3 +265,26 @@ def test_write_gexf_rejects_igraph_graph(tmp_path):
 
     with pytest.raises(NotImplementedError, match="python-igraph does not provide"):
         write_gexf(graph, im, tmp_path / "communities.gexf")
+
+
+def test_annotate_accepts_result_and_matches_infomap_input():
+    graph = nx.Graph([(0, 1), (1, 2), (2, 0)])
+    im = Infomap(silent=True, num_trials=1, seed=123)
+    im.add_networkx_graph(graph)
+    result = im.run()
+
+    via_im = annotate_networkx_graph(graph, im)
+    via_result = annotate_networkx_graph(graph, result)
+
+    assert dict(via_result.nodes(data=True)) == dict(via_im.nodes(data=True))
+
+
+def test_annotate_rejects_stale_result():
+    graph = nx.Graph([(0, 1), (1, 2), (2, 0)])
+    im = Infomap(silent=True, num_trials=1, seed=123)
+    im.add_networkx_graph(graph)
+    stale = im.run()
+    im.run()  # rebuilds the C++ result tree; `stale` is now generation-stale
+
+    with pytest.raises(RuntimeError, match="re-run"):
+        annotate_networkx_graph(graph, stale)

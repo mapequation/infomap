@@ -1,22 +1,29 @@
 from __future__ import annotations
 
 import math
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 from numbers import Integral, Real
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
+from .._optional import require_igraph
+from ..errors import InfomapError
 from ._arrays import apply_node_meta_data, community_node_data
+
+if TYPE_CHECKING:
+    import igraph  # pyright: ignore[reportMissingImports]  # optional dep, no stubs
+
+    from .._options import Options
+
+# The only user-facing name here; the adapter (add_igraph_graph) and helpers are
+# reached through Network.from_igraph / infomap.run(). Curated so the submodule
+# stops surfacing its plumbing (require_igraph, community_node_data, ...).
+__all__ = ["find_igraph_communities"]
 
 
 def _import_igraph() -> Any:
-    try:
-        import igraph as ig
-    except ImportError as exc:
-        raise ImportError(
-            "The 'igraph' package is required for igraph graph support. "
-            'Install it with `python -m pip install "infomap[igraph]"`.'
-        ) from exc
-    return ig
+    # Thin delegate kept for backwards compatibility (tests import it); the
+    # shared guard lives in infomap._optional.
+    return require_igraph("igraph graph support")
 
 
 def _validate_igraph_graph(g: Any) -> Any:
@@ -42,11 +49,20 @@ def _validate_weight_values(values: Iterable[Any], *, name: str) -> list[float]:
 
 def _edge_weights(g: Any, edge_weights: str | Iterable[Any] | None) -> list[float]:
     if edge_weights is None:
+        # Mirror the networkx adapter's ``weight="weight"`` default: read a
+        # "weight" edge attribute when the graph carries one, otherwise treat
+        # every edge as weight 1. Previously this always returned unit weights,
+        # silently partitioning a weighted igraph graph as if it were unweighted
+        # (a wrong result with no warning, unlike networkx which reads weights).
+        if "weight" in g.es.attributes():
+            return _validate_weight_values(g.es["weight"], name="weight")
         return [1.0] * g.ecount()
 
     if isinstance(edge_weights, str):
         if edge_weights not in g.es.attributes():
-            raise ValueError(f"`edge_weights` edge attribute {edge_weights!r} does not exist.")
+            raise ValueError(
+                f"`edge_weights` edge attribute {edge_weights!r} does not exist."
+            )
         return _validate_weight_values(g.es[edge_weights], name="edge_weights")
 
     try:
@@ -67,7 +83,9 @@ def _vertex_attribute(g, attribute):
         return None
     values = list(g.vs[attribute])
     if any(_is_missing(value) for value in values):
-        raise ValueError(f"`{attribute}` vertex attribute cannot contain missing or NaN values.")
+        raise ValueError(
+            f"`{attribute}` vertex attribute cannot contain missing or NaN values."
+        )
     return values
 
 
@@ -92,7 +110,7 @@ def _node_ids(values):
         # id. Detect that here and name the colliding labels instead of silently
         # merging two vertices into one physical node.
         labels_by_id: dict[int, Any] = {}
-        for label, _node_id in zip(values, ids):
+        for label, _node_id in zip(values, ids, strict=True):
             seen = labels_by_id.setdefault(_node_id, label)
             if repr(seen) != repr(label):
                 raise ValueError(
@@ -165,10 +183,12 @@ def add_igraph_graph(
     """
     _validate_igraph_graph(g)
     if vertex_weights is not None:
-        raise ValueError("`vertex_weights` is not supported by infomap's igraph adapter yet.")
+        raise ValueError(
+            "`vertex_weights` is not supported by infomap's igraph adapter yet."
+        )
 
-    if not infomap._core.flowModelIsSet and g.is_directed():
-        infomap._core.setDirected(True)
+    if g.is_directed():
+        infomap._core.note_inferred_flow_model("directed")
 
     names = _vertex_names(g)
     weights = _edge_weights(g, edge_weights)
@@ -199,7 +219,8 @@ def add_igraph_graph(
             )
     elif is_state_network:
         for vertex_id in vertices:
-            infomap.add_state_node(vertex_id, phys[vertex_id])
+            name = names[vertex_id] if names is not None else None
+            infomap.add_state_node(vertex_id, phys[vertex_id], name=name)
     else:
         for vertex_id in vertices:
             name = names[vertex_id] if names is not None else None
@@ -225,7 +246,7 @@ def add_igraph_graph(
                     )
                 else:
                     if source_node_id != target_node_id:
-                        raise RuntimeError(
+                        raise ValueError(
                             "Multilayer intra/inter format does not support 'diagonal' links. "
                             "Use `multilayer_inter_intra_format=False`"
                         )
@@ -257,7 +278,7 @@ def add_igraph_graph(
             )
         # add_igraph_graph registers one node per vertex using the vertex index
         # as the (state) id, so meta is keyed by vertex index.
-        apply_node_meta_data(infomap, zip(vertices, meta_values))
+        apply_node_meta_data(infomap, zip(vertices, meta_values, strict=True))
 
     if names is None:
         return {vertex_id: vertex_id for vertex_id in vertices}
@@ -291,17 +312,18 @@ def _membership_and_flows(infomap, g, node_mapping):
         flows[vertex_id] = node.flow
 
     if any(value is None for value in membership):
-        raise RuntimeError("Could not align Infomap membership with igraph vertices.")
+        raise InfomapError("Could not align Infomap membership with igraph vertices.")
 
     return membership, flows
 
 
 def find_igraph_communities(
-    g: Any,
+    g: igraph.Graph,
     *,
     edge_weights: str | Iterable[Any] | None = None,
     vertex_weights: Any = None,
-    trials: int = 10,
+    options: Options | Mapping[str, Any] | None = None,
+    trials: int | None = None,
     node_id: str = "node_id",
     layer_id: str = "layer_id",
     multilayer_inter_intra_format: bool = True,
@@ -309,10 +331,79 @@ def find_igraph_communities(
     flow_attribute: str | None = None,
     meta_attribute: str | None = None,
     **infomap_options: Any,
-) -> Any:
-    """Find communities in a python-igraph graph."""
+) -> igraph.VertexClustering:
+    """Find communities in a python-igraph graph.
+
+    This helper builds an :class:`~infomap.Infomap` instance from ``g`` (via
+    :meth:`Infomap.add_igraph_graph`), runs Infomap, and returns the top-level
+    partition as an igraph clustering.
+
+    Parameters
+    ----------
+    g : igraph.Graph
+        A python-igraph graph.
+    edge_weights : str, sequence, or None, optional
+        Edge weight attribute name or an explicit sequence with one value per
+        edge. Default ``None`` auto-detects a ``"weight"`` edge attribute
+        (mirroring the networkx adapter) and uses it when present, treating the
+        graph as unweighted otherwise. The ``edge_weights`` / ``vertex_weights``
+        names match python-igraph's own ``community_infomap`` signature; the
+        networkx counterpart :func:`~infomap.find_communities` uses ``weight``.
+    vertex_weights : None, optional
+        Accepted for igraph API familiarity but not supported yet.
+    options : Options, mapping, or None, optional
+        Base engine configuration carried the 3.0-safe way -- an
+        :class:`~infomap.Options` instance or a mapping. Any bare keyword below
+        (and an explicit ``trials`` / ``num_trials``) takes precedence.
+    trials : int, optional
+        Number of independent trials; the best solution is kept. Convenience
+        alias for the ``num_trials`` Infomap option. Pass ``trials`` or
+        ``num_trials``, not both; if neither is given the engine default
+        ``num_trials=1`` applies -- raise it for research runs.
+    node_id : str, optional
+        Vertex attribute for physical node ids, implying a state network.
+    layer_id : str, optional
+        Vertex attribute for layer ids, implying a multilayer network when
+        ``node_id`` is also present.
+    multilayer_inter_intra_format : bool, optional
+        Use intra/inter format to simulate inter-layer links. Default
+        ``True``.
+    module_attribute : str, optional
+        If set, write each vertex's module id back to this vertex attribute
+        on ``g``.
+    flow_attribute : str, optional
+        If set, write each vertex's flow back to this vertex attribute on
+        ``g``.
+    meta_attribute : str, optional
+        Vertex attribute to read categorical metadata from. Values are
+        encoded to integers in first-seen order and set as Infomap
+        metadata; vertices with missing values are skipped. Raises
+        :class:`ValueError` if the attribute does not exist.
+    **infomap_options
+        Engine options passed to :class:`infomap.Infomap`. The engine is quiet
+        by default; call ``infomap.enable_log()`` for the log. Prefer carrying
+        non-common options via the ``options=`` argument above (the 3.0-safe
+        path).
+
+    Returns
+    -------
+    igraph.VertexClustering
+        The top-level partition, with the codelength of the solution attached
+        as a ``codelength`` attribute. For an empty graph, an empty
+        clustering with ``codelength`` 0.0 is returned without running
+        Infomap. This is the same type python-igraph's own community methods
+        return (e.g. ``Graph.community_infomap``); the networkx counterpart
+        :func:`~infomap.find_communities` instead returns a ``list`` of
+        ``set`` -- each finder returns its ecosystem's idiomatic partition
+        type, so the shape differs by design.
+
+    Raises
+    ------
+    ValueError
+        If both ``trials`` and ``num_trials`` are passed.
+    """
     ig = _validate_igraph_graph(g)
-    if "num_trials" in infomap_options:
+    if trials is not None and "num_trials" in infomap_options:
         raise ValueError("Pass only one of `trials` and `num_trials`.")
     if g.vcount() == 0:
         if module_attribute is not None:
@@ -324,11 +415,18 @@ def find_igraph_communities(
         return clustering
 
     from .._facade import Infomap
+    from .._run import _resolve_options
 
-    options = {"silent": True, "no_file_output": True, "num_trials": trials}
-    options.update(infomap_options)
+    # Merge the options= carrier under the caller's bare keyword arguments (bare
+    # kwargs win) and apply the `trials` alias. num_trials is left to the engine
+    # default (1), matching infomap.run(). The engine is quiet by default, so
+    # silent is not forced (a deprecated bare kwarg leaving in 3.0); no_file_output
+    # is not forced either (redundant without an output directory).
+    engine_options = _resolve_options(options, infomap_options)
+    if trials is not None:
+        engine_options["num_trials"] = trials
 
-    infomap = Infomap(**options)
+    infomap = Infomap(**engine_options)
     node_mapping = add_igraph_graph(
         infomap,
         g,

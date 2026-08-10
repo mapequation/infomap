@@ -2,9 +2,8 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
-import pytest
-
 import infomap
+import pytest
 
 ad = pytest.importorskip("anndata")
 pd = pytest.importorskip("pandas")
@@ -180,8 +179,6 @@ def test_tl_infomap_writes_metadata():
         "neighbors_key": None,
         "obsp": "connectivities",
         "args": "--silent",
-        "silent": True,
-        "no_file_output": True,
         "seed": 123,
         "num_trials": 1,
     }
@@ -192,7 +189,7 @@ def test_tl_infomap_writes_metadata():
 def test_tl_infomap_rejects_non_int_castable_module_labels(monkeypatch):
     data = _adata()
 
-    import infomap.tl as tl
+    from infomap import tl
 
     # Defensive guard: Infomap module labels are always ints, but if a label is
     # not int-castable, surface a clear message instead of a raw cast error.
@@ -210,7 +207,9 @@ def test_tl_infomap_preserves_obs_name_order_for_string_node_ids(monkeypatch):
     data = _adata()
     seen_node_ids = []
 
-    original_add_scipy_sparse_matrix = infomap.Infomap.add_scipy_sparse_matrix
+    # tl.infomap loads the matrix via the internal impl (not the deprecated
+    # public add_scipy_sparse_matrix accessor), so patch what it actually calls.
+    original_add_scipy_sparse_matrix = infomap.Infomap._add_scipy_sparse_matrix_impl
 
     def recording_add_scipy_sparse_matrix(self, matrix, **kwargs):
         seen_node_ids.extend(kwargs["node_ids"])
@@ -218,7 +217,7 @@ def test_tl_infomap_preserves_obs_name_order_for_string_node_ids(monkeypatch):
 
     monkeypatch.setattr(
         infomap.Infomap,
-        "add_scipy_sparse_matrix",
+        "_add_scipy_sparse_matrix_impl",
         recording_add_scipy_sparse_matrix,
     )
 

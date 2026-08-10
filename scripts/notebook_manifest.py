@@ -7,7 +7,6 @@ import sys
 import tomllib
 from pathlib import Path
 
-
 SUITE_TIERS = {
     "smoke": {"smoke"},
     "full": {"smoke", "full"},

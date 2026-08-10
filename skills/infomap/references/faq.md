@@ -1,6 +1,6 @@
 # FAQ and Troubleshooting
 
-Use this reference when the user asks why a result looks surprising, why a run is slow, how to get an output field, or how to translate advice from old Infomap discussions to current versions. The entries below are distilled from high-signal GitHub Discussions, but option names and API calls must still be verified against the user's installed CLI/Python/R package before giving runnable code.
+Use this reference when the user asks why a result looks surprising, why a run is slow, how to get an output field, or how to translate advice from old Infomap discussions to current versions. We distilled the entries below from high-signal GitHub Discussions, but always verify option names and API calls against the user's installed CLI/Python/R package before you give runnable code.
 
 ## One module or fewer modules than expected
 
@@ -14,8 +14,8 @@ Practical checks:
 - For dense or aggregated networks, test whether filtering weak links changes the signal, using the installed option name.
 - For scale sensitivity, explore lower Markov-time settings to look for smaller modules, but treat this as a modeling choice.
 - To bias the search toward a target granularity, consider the installed preferred-module-count option if available, but treat it as a modeling choice and report it.
-- If the data can be stratified by context, model layers/state nodes instead of flattening.
-- To evaluate an expected partition, look for the installed cluster-data / no-optimization options or initial-partition API. Use them to calculate codelength without optimizing when supported.
+- If you can stratify the data by context, model layers/state nodes; do not flatten.
+- To evaluate an expected partition, look for the installed cluster-data / no-optimization options or initial-partition API. Use them to calculate codelength without optimization when the installed interface supports it.
 
 Source discussions: [#241](https://github.com/mapequation/infomap/discussions/241), [#340](https://github.com/mapequation/infomap/discussions/340).
 
@@ -29,9 +29,9 @@ Source discussion: [#524](https://github.com/mapequation/infomap/discussions/524
 
 ## Slow runs or low CPU usage
 
-Check `infomap --version` / `Infomap --version` for OpenMP support. Some phases can be single-threaded even when the binary supports OpenMP. For Python, reading a network file through the installed file-reading API is usually much faster than adding many links in Python loops; verify the method name from package help. Also check memory pressure: swapping can make runs look CPU-light and extremely slow.
+Check `infomap --version` / `Infomap --version` for OpenMP support. Some phases can be single-threaded even when the binary supports OpenMP. For Python, reading a network file through the installed file-reading API is usually much faster than adding many links in Python loops. Verify the method name from package help. Also check memory pressure: swapping can make runs look CPU-light and extremely slow.
 
-For very large graphs, use runtime planning in `references/reproducibility.md`, start with one trial, and ask before launching many trials or parameter sweeps.
+For very large networks, use runtime planning in `references/reproducibility.md`, start with one trial, and ask before you launch many trials or parameter sweeps.
 
 Source discussion: [#333](https://github.com/mapequation/infomap/discussions/333).
 
@@ -43,9 +43,9 @@ Source discussions: [#61](https://github.com/mapequation/infomap/discussions/61)
 
 ## Multilayer output looks duplicated or confusing
 
-In multilayer/state networks, one physical node may appear as multiple state nodes. A physical node can therefore appear in multiple modules across layers or contexts. For Python, iterate `im.nodes` and inspect `node.node_id`, `node.layer_id`, `node.state_id`, and `node.module_id`. For R, use `as.data.frame(im, states = TRUE)` or result node tables when available.
+In multilayer/state networks, one physical node can appear as multiple state nodes. A physical node can therefore appear in multiple modules across layers or contexts. For Python, run Infomap and iterate `result.nodes(states=True)`, inspecting `node.node_id`, `node.layer_id`, `node.state_id`, and `node.module_id` on each node (or use `result.to_dataframe(states=True)` for a table). For R, use `as.data.frame(im, states = TRUE)` or result node tables when available.
 
-If output should distinguish layers, request state-level output. If output should merge physical nodes, say so explicitly and explain how merging affects interpretation.
+If the output must distinguish layers, request state-level output. If the output must merge physical nodes, say so explicitly and explain how merging affects interpretation.
 
 Source discussions: [#267](https://github.com/mapequation/infomap/discussions/267), [#272](https://github.com/mapequation/infomap/discussions/272).
 
@@ -53,25 +53,25 @@ Source discussions: [#267](https://github.com/mapequation/infomap/discussions/26
 
 For multilayer/state networks, initial partitions usually need state-level identifiers, not only physical node ids. When possible, write a state-level partition from a known run and use that as the shape/template. Verify the installed CLI or API support for cluster-data input and no-optimization codelength calculation.
 
-For Python/R/CLI, inspect installed help before naming exact parameters. Older discussion examples may use names that have since changed.
+For Python/R/CLI, inspect installed help before you name exact parameters. Older discussion examples sometimes use names that have since changed.
 
 Source discussions: [#329](https://github.com/mapequation/infomap/discussions/329), [#340](https://github.com/mapequation/infomap/discussions/340).
 
 ## CLI flags changed from old versions
 
-When reproducing old commands, check advanced CLI help and installed parameter metadata. Old discussions may mention flags that were removed, renamed, or made defaults. In recent/current versions, self-links are included by default and the old include-self-links flag is deprecated; verify the installed exclusion flag before using it. Current versions do not require zero-based indexing flags for ordinary non-consecutive ids.
+When you reproduce old commands, check advanced CLI help and installed parameter metadata. Old discussions sometimes mention options that newer versions removed, renamed, or made defaults. Recent/current versions include self-links by default, and the old include-self-links option is deprecated; verify the installed exclusion option before you use it. Current versions do not require zero-based indexing options for ordinary non-consecutive ids.
 
 Source discussions: [#138](https://github.com/mapequation/infomap/discussions/138), [#350](https://github.com/mapequation/infomap/discussions/350).
 
 ## What does flow mean, and where are Huffman codes?
 
-Flow means random-walk visit rates used by the map equation to describe system-wide interdependencies. Infomap does not need to materialize actual Huffman codewords for each node in normal use; it uses flows to calculate the lower bound on expected codelength. In tree output, the flow is included as a column; use it for interpretation rather than trying to recover literal codewords.
+Flow means random-walk visit rates used by the map equation to describe system-wide interdependencies. Infomap does not need to materialize actual Huffman codewords for each node in normal use; it uses flows to calculate the lower bound on expected codelength. Tree output includes the flow as a column; use it for interpretation — do not try to recover literal codewords.
 
 Source discussions: [#177](https://github.com/mapequation/infomap/discussions/177), [#337](https://github.com/mapequation/infomap/discussions/337).
 
 ## Output formats and Network Navigator
 
-When Network Navigator or aggregated links between modules are needed, inspect current CLI help for the flow-tree or equivalent output format. In Python/R APIs, prefer the current writer/helper names from installed help. Do not assume a Pajek writer is a general export of the original user-facing multilayer input; check whether the desired output should be hierarchy, flow-tree, cluster assignment, table, JSON, state-level output, or graph-package export.
+When the user needs Network Navigator or aggregated links between modules, inspect current CLI help for the flow-tree or equivalent output format. In Python/R APIs, prefer the current writer/helper names from installed help. Do not assume a Pajek writer is a general export of the original user-facing multilayer input. Check whether the desired output must be hierarchy, flow-tree, cluster assignment, table, JSON, state-level output, or graph-package export.
 
 Source discussions: [#330](https://github.com/mapequation/infomap/discussions/330), [#283](https://github.com/mapequation/infomap/discussions/283).
 
@@ -83,6 +83,6 @@ Source discussions: [#105](https://github.com/mapequation/infomap/discussions/10
 
 ## Metadata beyond simple categories
 
-For categorical metadata in current Infomap, use the installed metadata options or programmatic metadata APIs. For non-discrete or more elaborate metadata-dependent encoding, treat it as an advanced modeling problem rather than a simple option toggle; look for current research code and paper context before giving implementation advice.
+For categorical metadata in current Infomap, use the installed metadata options or programmatic metadata APIs. For non-discrete or more elaborate metadata-dependent encoding, treat it as an advanced modeling problem rather than a simple option toggle. Look for current research code and paper context before you give implementation advice.
 
 Source discussion: [#343](https://github.com/mapequation/infomap/discussions/343).

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Iterator
+
 import pytest
 
 nx = pytest.importorskip("networkx")
@@ -12,6 +14,20 @@ if not hasattr(nx.community, "infomap_communities"):
     )
 
 pytestmark = pytest.mark.fast
+
+
+@pytest.fixture(autouse=True)
+def _ignore_conversion_cache_warning():
+    """The backend consumes NetworkX graphs directly, so its ``convert_from_nx``
+    is the identity -- but NetworkX still caches the "converted" graph on the
+    input and warns the second time a graph is dispatched. Silence that one
+    informational warning (the tests below reuse graphs on purpose) through
+    NetworkX's own knob, and restore it afterwards."""
+    already_ignored = "cache" in nx.config.warnings_to_ignore
+    nx.config.warnings_to_ignore.add("cache")
+    yield
+    if not already_ignored:
+        nx.config.warnings_to_ignore.discard("cache")
 
 
 def _normalized(partition):
@@ -76,32 +92,42 @@ def test_weight_none_treats_edges_as_unweighted():
     assert nx.community.is_partition(G, partition)
 
 
-def test_seed_and_num_trials_forwarded_to_infomap(monkeypatch):
+def test_networkx_arguments_are_forwarded_to_the_run(monkeypatch):
+    """seed, num_trials and teleportation_probability -- NetworkX names them
+    after this package's options -- reach the run verbatim, plus two_level for
+    the two-level entry point."""
     import infomap.io.nx_backend as backend
 
     captured: dict = {}
 
-    class FakeInfomap:
-        def __init__(self, **kwargs):
-            captured.update(kwargs)
+    class FakeResult:
+        def __init__(self, labels):
+            self._labels = labels
 
-        def add_networkx_graph(self, G, **kwargs):
-            self._labels = list(G)
-            return dict(enumerate(self._labels))
-
-        def run(self):
-            pass
-
-        def get_modules(self):
+        def modules(self):
             return {i: i for i in range(len(self._labels))}
 
-    monkeypatch.setattr(backend, "Infomap", FakeInfomap)
+    class FakeNetwork:
+        @classmethod
+        def from_networkx(cls, G, **kwargs):
+            net = cls()
+            net.node_id_to_label = dict(enumerate(G))
+            return net
+
+        def run(self, **kwargs):
+            captured.update(kwargs)
+            return FakeResult(self.node_id_to_label)
+
+    monkeypatch.setattr(backend, "Network", FakeNetwork)
 
     G = nx.karate_club_graph()
-    backend.BackendInterface.infomap_communities(G, seed=99, num_trials=5)
+    backend.BackendInterface.infomap_communities(
+        G, seed=99, num_trials=5, teleportation_probability=0.2
+    )
 
     assert captured["seed"] == 99
     assert captured["num_trials"] == 5
+    assert captured["teleportation_probability"] == 0.2
     assert captured["two_level"] is True
 
 
@@ -110,7 +136,7 @@ def test_seed_and_num_trials_forwarded_to_infomap(monkeypatch):
     [(nx.MultiGraph, nx.Graph), (nx.MultiDiGraph, nx.DiGraph)],
 )
 def test_multigraph_parallel_edges_are_summed(multi, simple):
-    """The backend accepts (di)multigraphs: add_networkx_graph sums parallel
+    """The backend accepts (di)multigraphs: the networkx adapter sums parallel
     edges, so the result matches the equivalent weighted simple graph. Two
     triangles with heavy (3x parallel) intra-group edges and a single light
     bridge -- the two groups are distinct only if the parallel edges are summed,
@@ -155,7 +181,9 @@ def test_backend_infomap_partitions_yields_nested_levels():
     """The backend implements infomap_partitions, yielding a valid partition per
     hierarchy level (coarsest first) -- the same contract as native."""
     G = nx.ring_of_cliques(12, 6)
-    levels = list(nx.community.infomap_partitions(G, backend="infomap", seed=42))
+    partitions = nx.community.infomap_partitions(G, backend="infomap", seed=42)
+    assert isinstance(partitions, Iterator)  # a generator, as native is
+    levels = list(partitions)
     assert len(levels) >= 2  # ring of cliques is genuinely multilevel
     for partition in levels:
         assert nx.community.is_partition(G, partition)
@@ -185,6 +213,31 @@ def test_backend_map_equation_directed_matches_native():
     native = map_equation(G, communities)
     backend = nx.community.map_equation(G, communities, backend="infomap")
     assert backend == pytest.approx(native, abs=1e-6)
+
+
+def test_backend_map_equation_non_default_teleportation_matches_native():
+    """A non-default teleportation probability changes the directed codelength
+    and still matches native -- the argument reaches the engine's directed
+    random walk, it is not silently dropped."""
+    from networkx.algorithms.community.quality import map_equation
+
+    G = nx.DiGraph([(0, 1), (1, 2), (2, 0), (3, 4), (4, 5), (5, 3), (2, 3), (0, 4)])
+    communities = [{0, 1, 2}, {3, 4, 5}]
+    default = nx.community.map_equation(G, communities, backend="infomap")
+    backend = nx.community.map_equation(
+        G, communities, backend="infomap", teleportation_probability=0.4
+    )
+    native = map_equation(G, communities, teleportation_probability=0.4)
+    assert backend == pytest.approx(native, abs=1e-6)
+    assert backend != pytest.approx(default, abs=1e-6)
+
+
+def test_backend_map_equation_rejects_non_partition():
+    """Communities that do not partition G raise NetworkXError, the native
+    contract, rather than yielding a meaningless codelength."""
+    G = nx.karate_club_graph()
+    with pytest.raises(nx.NetworkXError, match="not a partition"):
+        nx.community.map_equation(G, [{0, 1}, {1, 2}], backend="infomap")
 
 
 def test_backend_invalid_num_trials():

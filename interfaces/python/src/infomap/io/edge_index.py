@@ -4,16 +4,17 @@ from collections.abc import Iterable, Sequence
 from numbers import Integral
 from typing import Any
 
+from .._optional import require_numpy
 from ._arrays import undirected_edge_items
+
+# No user-facing API: the adapter (add_edge_index) is reached through
+# Network.from_edge_index / infomap.run(edge_index). Empty __all__ so the
+# submodule stops surfacing its plumbing.
+__all__: list[str] = []
 
 
 def _as_numpy_array(value: Any, *, name: str):
-    try:
-        import numpy as np
-    except ImportError as exc:
-        raise ImportError(
-            "The 'numpy' package is required for edge_index support."
-        ) from exc
+    np = require_numpy("edge_index support")
 
     if hasattr(value, "detach") and callable(value.detach):
         # Duck-typed torch.Tensor: detach().cpu().numpy(). The hasattr narrowing
@@ -156,8 +157,8 @@ def add_edge_index(
 
     internal_to_label = {index: label for index, label in enumerate(labels)}
 
-    if not infomap._core.flowModelIsSet and directed:
-        infomap._core.setDirected(True)
+    if directed:
+        infomap._core.note_inferred_flow_model("directed")
 
     for internal_id, label in internal_to_label.items():
         infomap.add_node(internal_id, name=label if isinstance(label, str) else None)

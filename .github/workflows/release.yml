@@ -37,6 +37,132 @@ jobs:
             exit 1
           fi
 
+  # The commit this tag points at was already validated end to end by the CI
+  # workflow when it was pushed to master (push events run the full Python
+  # matrix and the full R matrix -- see ci.yml). Rather than re-run those
+  # matrices here, gate publishing on that master run. This removes the
+  # duplicate test jobs (the python/r calls below run with run-tests: false)
+  # and closes the old race where the tag could be published before master CI
+  # finished. On a workflow_dispatch republish of an existing tag the run is
+  # already complete, so this returns almost immediately.
+  #
+  # "Pass" is deliberately not "CI Summary == success": a master run can go red
+  # purely from GitHub setup-phase infra flakes (action-resolution "Internal
+  # Server Error" in "Set up job"), which ci-auto-rerun.yml already treats as
+  # non-defects -- the v2.15.0 release commit was red for exactly this reason.
+  # So a 'failure' run passes iff every failed job is positively such a flake
+  # ("Set up job" failed and no other step did). Every other non-success
+  # conclusion (cancelled, timed_out, startup_failure, ...) fails closed: those
+  # jobs never ran to completion, so nothing vouches for this commit. In
+  # particular a run cancelled while *queued* reports zero jobs -- treating
+  # that as "no real failures" would publish a commit no test ever saw.
+  verify-master-ci:
+    name: Verify master CI passed
+    needs: [validate-stable-tag]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - name: Require the master CI run to have no real failures
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+        run: |
+          set -euo pipefail
+
+          sha="$(gh api "repos/$GH_REPO/commits/$RELEASE_TAG" --jq '.sha')"
+          echo "Release tag $RELEASE_TAG resolves to commit $sha"
+
+          # Poll for the master CI (push) run on this commit to complete. A
+          # re-run (manual or by ci-auto-rerun) flips the run back to
+          # in_progress, so waiting for `completed` naturally waits reruns out.
+          deadline=$(( $(date +%s) + 30 * 60 ))
+          conclusion=""
+          run_id=""
+          while true; do
+            run="$(gh api "repos/$GH_REPO/actions/workflows/ci.yml/runs?head_sha=$sha&event=push" \
+              --jq '.workflow_runs | sort_by(.created_at) | last // {}')"
+            run_id="$(jq -r '.id // empty' <<<"$run")"
+            status="$(jq -r '.status // "missing"' <<<"$run")"
+            conclusion="$(jq -r '.conclusion // ""' <<<"$run")"
+            echo "master CI run ${run_id:-<none>}: status=$status conclusion=$conclusion"
+            [ -n "$run_id" ] && [ "$status" = "completed" ] && break
+            if [ "$(date +%s)" -ge "$deadline" ]; then
+              echo "::error::Timed out after 30 min waiting for the master CI run on $sha." >&2
+              exit 1
+            fi
+            sleep 30
+          done
+
+          if [ "$conclusion" = "success" ]; then
+            echo "master CI run $run_id is green; proceeding to publish."
+            exit 0
+          fi
+
+          # Anything that is not a plain failure never ran its jobs to
+          # completion on this commit. The common case is a queued master run
+          # evicted by a newer push (concurrency groups hold one pending run),
+          # which completes as 'cancelled' with an empty job list. Fail closed.
+          if [ "$conclusion" != "failure" ]; then
+            echo "::error::master CI run $run_id concluded '$conclusion', so its jobs never ran to completion on $sha. Re-run it (gh run rerun $run_id) and re-run this workflow once it is green." >&2
+            exit 1
+          fi
+
+          # Red run: accept it only if every failed job is positively a
+          # setup-phase infra flake. Deliberately stricter than
+          # ci-auto-rerun.yml's re-run trigger: a failed job with no failed
+          # step at all (e.g. killed by timeout-minutes, which records the
+          # running step as 'cancelled') is a real failure here, not a flake.
+          jobs_json="$(gh api --paginate "repos/$GH_REPO/actions/runs/$run_id/jobs" \
+            --jq '.jobs[]' | jq -s '.')"
+          if [ "$(jq 'length' <<<"$jobs_json")" -eq 0 ]; then
+            echo "::error::master CI run $run_id concluded '$conclusion' but reports no jobs; refusing to publish." >&2
+            exit 1
+          fi
+          real_failures="$(jq -c '
+            [ .[]
+              | select(.name != "CI Summary")
+              | select(.conclusion == "failure")
+              | select(
+                  (any(.steps[]?; .name == "Set up job" and .conclusion == "failure")
+                    and all(.steps[]?; .name == "Set up job" or .conclusion != "failure"))
+                  | not)
+              | .name ]' <<<"$jobs_json")"
+          if [ "$(jq 'length' <<<"$real_failures")" -eq 0 ]; then
+            # No real failures is the absence of a negative, not a positive signal.
+            # Every lane declares `needs: changes`, so a setup-phase flake on that
+            # single job marks all of them 'skipped' -- which the filter above drops,
+            # leaving nothing to report and nothing verified. Require that a
+            # verification lane actually succeeded, and that the job every lane keys
+            # off finished: without it, no lane's result means anything.
+            #
+            # 'Detect changed paths' is excluded from the success count on purpose. It
+            # is not a verification lane, and it succeeds whenever the filters ran at
+            # all -- so counting it would let a run through in which every real lane
+            # was skipped and only CI Summary flaked. It is required separately below.
+            successes="$(jq -c '[ .[]
+              | select(.name != "CI Summary" and .name != "Detect changed paths")
+              | select(.conclusion == "success")
+              | .name ]' <<<"$jobs_json")"
+            if [ "$(jq 'length' <<<"$successes")" -eq 0 ]; then
+              echo "::error::master CI run $run_id concluded '$conclusion' and no verification lane succeeded, so nothing verified this commit; refusing to publish." >&2
+              exit 1
+            fi
+            changes_conclusion="$(jq -r '[ .[] | select(.name == "Detect changed paths") | .conclusion ] | first // "absent"' <<<"$jobs_json")"
+            if [ "$changes_conclusion" != "success" ]; then
+              echo "::error::master CI run $run_id did not complete 'Detect changed paths' (conclusion: $changes_conclusion); every lane keys off it, so no lane result is meaningful; refusing to publish." >&2
+              exit 1
+            fi
+            echo "::warning::master CI run $run_id concluded '$conclusion', but every failure was a GitHub setup-phase infra flake and $(jq 'length' <<<"$successes") verification lane(s) succeeded. Treating master as acceptable and proceeding."
+            exit 0
+          fi
+          echo "::error::master CI run $run_id has real (non-setup) job failures; refusing to publish:" >&2
+          jq -r '.[] | "  - \(.)"' <<<"$real_failures" >&2
+          exit 1
+
   native:
     needs: [validate-stable-tag]
     uses: ./.github/workflows/_native-build.yml
@@ -49,8 +175,10 @@ jobs:
     uses: ./.github/workflows/_python-package.yml
     with:
       ref: ${{ github.event_name == 'workflow_dispatch' && format('refs/tags/{0}', inputs.tag) || github.ref }}
-      run-tests: true
-      mode: full
+      # Tests ran on the master push (gated by verify-master-ci above); here we
+      # only build the release artifacts. cibuildwheel still imports and
+      # smoke-tests every wheel it builds, so the shipped artifacts stay tested.
+      run-tests: false
       build-release-artifacts: true
 
   javascript:
@@ -66,16 +194,22 @@ jobs:
     uses: ./.github/workflows/_r-package.yml
     with:
       ref: ${{ github.event_name == 'workflow_dispatch' && format('refs/tags/{0}', inputs.tag) || github.ref }}
-      run-tests: true
+      # Tests ran on the master push (gated by verify-master-ci above); here we
+      # only build the source tarball and the macOS/Windows binaries. R CMD
+      # INSTALL --build compiles and loads each, so the shipped binaries stay
+      # exercised.
+      run-tests: false
       build-release-artifacts: true
 
   publish-github-release:
     name: Publish GitHub release assets
-    needs: [native, python, javascript, r]
+    needs: [verify-master-ci, native, python, javascript, r]
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     permissions:
       contents: write
+      id-token: write
+      attestations: write
 
     steps:
       - name: Download native release assets
@@ -120,8 +254,25 @@ jobs:
       - name: List packaged assets
         run: find release-assets -maxdepth 3 -type f | sort
 
+      # Provenance for the release assets themselves. PyPI (PEP 740), npm
+      # (--provenance), and the GHCR images are attested downstream, but the
+      # zips/tarballs/wheels as attached to the GitHub release were not.
+      # Same globs as the attach step below so exactly what ships is attested;
+      # verify with `gh attestation verify <file> --repo mapequation/infomap`.
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
+        with:
+          subject-path: |
+            release-assets/native/*.zip
+            release-assets/python/**/*.tar.gz
+            release-assets/python/**/*.whl
+            release-assets/npm/*.tgz
+            release-assets/r/infomap_*.tar.gz
+            release-assets/r/infomap_*-r*-*.tgz
+            release-assets/r/infomap_*-r*-*.zip
+
       - name: Attach assets to GitHub release
-        uses: softprops/action-gh-release@718ea10b132b3b2eba29c1007bb80653f286566b # v3.0.1
+        uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3.0.2
         with:
           tag_name: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
           files: |
@@ -163,22 +314,38 @@ jobs:
         run: ls -la dist/python
 
       - name: Publish package distributions to PyPI
-        uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b # release/v1
+        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # release/v1
         with:
           packages-dir: dist/python
+          # PEP 740 attestations under trusted publishing. This is the
+          # action's default; set explicitly so the intent is visible and
+          # survives any future change to the default.
+          attestations: true
 
-  publish-ghcr:
-    name: Publish GHCR Docker images
-    needs: [publish-github-release]
+  # Multi-arch GHCR publish, split into three stages so each architecture builds
+  # on a NATIVE runner (arm64 on ubuntu-24.04-arm) instead of under QEMU
+  # emulation, which made the old single job ~34 min. docker-build fans out over
+  # image x platform (4 parallel jobs) and pushes each by digest; docker-publish
+  # stitches the digests into the multi-arch tags. Layer caching (type=gha) is
+  # scoped per image+platform so the four builds don't clobber each other.
+  #
+  # meta + build start right after tag validation, in parallel with the test and
+  # artifact fan-in, rather than after it -- the digest pushes are untagged and
+  # unreferenced, so nothing user-visible exists until docker-publish. Only that
+  # final tag-and-attest step waits for publish-github-release (which itself
+  # waits for verify-master-ci), so a Docker tag never points at a release whose
+  # assets or master CI did not go green.
+  docker-meta:
+    name: Resolve Docker release metadata
+    needs: [validate-stable-tag]
     runs-on: ubuntu-24.04
-    timeout-minutes: 90
-    permissions:
-      contents: read
-      packages: write
-
+    timeout-minutes: 5
+    outputs:
+      version: ${{ steps.release.outputs.version }}
+      revision: ${{ steps.release.outputs.revision }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event_name == 'workflow_dispatch' && format('refs/tags/{0}', inputs.tag) || github.ref }}
 
@@ -194,82 +361,178 @@ jobs:
             exit 1
           fi
 
-          version="${RELEASE_TAG#v}"
-          revision="$(git rev-parse HEAD)"
-
           {
-            echo "tag=$RELEASE_TAG"
-            echo "version=$version"
-            echo "revision=$revision"
+            echo "version=${RELEASE_TAG#v}"
+            echo "revision=$(git rev-parse HEAD)"
           } >> "$GITHUB_OUTPUT"
 
-      - name: Build and smoke-test supported Docker images
-        run: make test-docker-supported
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@06116385d9baf250c9f4dcb4858b16962ea869c3 # v4.1.0
+  docker-build:
+    name: Build ${{ matrix.image }} image (${{ matrix.platform }})
+    needs: [docker-meta]
+    runs-on: ${{ matrix.platform == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [infomap, notebook]
+        platform: [amd64, arm64]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          platforms: amd64,arm64
+          ref: ${{ github.event_name == 'workflow_dispatch' && format('refs/tags/{0}', inputs.tag) || github.ref }}
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
 
       - name: Log in to GHCR
-        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and publish CLI image
-        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
+      - name: Build and push by digest
+        id: build
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
         with:
           context: .
-          file: docker/infomap.Dockerfile
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: |
-            ghcr.io/mapequation/infomap:${{ steps.release.outputs.version }}
-            ghcr.io/mapequation/infomap:latest
+          file: docker/${{ matrix.image }}.Dockerfile
+          platforms: linux/${{ matrix.platform }}
+          # push-by-digest: no tag yet; docker-publish assembles the tagged
+          # multi-arch manifest once every arch has pushed. provenance:false keeps
+          # the pushed digest a plain image manifest so imagetools can merge it.
+          outputs: type=image,name=ghcr.io/mapequation/infomap,push-by-digest=true,name-canonical=true,push=true
+          provenance: false
+          cache-from: type=gha,scope=docker-${{ matrix.image }}-${{ matrix.platform }}
+          cache-to: type=gha,mode=max,scope=docker-${{ matrix.image }}-${{ matrix.platform }}
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
-            org.opencontainers.image.version=${{ steps.release.outputs.version }}
-            org.opencontainers.image.revision=${{ steps.release.outputs.revision }}
+            org.opencontainers.image.version=${{ needs.docker-meta.outputs.version }}
+            org.opencontainers.image.revision=${{ needs.docker-meta.outputs.revision }}
             org.opencontainers.image.licenses=GPL-3.0-or-later
 
-      - name: Build and publish notebook image
-        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
-        with:
-          context: .
-          file: docker/notebook.Dockerfile
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: |
-            ghcr.io/mapequation/infomap:notebook-${{ steps.release.outputs.version }}
-            ghcr.io/mapequation/infomap:notebook
-          labels: |
-            org.opencontainers.image.source=https://github.com/${{ github.repository }}
-            org.opencontainers.image.version=${{ steps.release.outputs.version }}
-            org.opencontainers.image.revision=${{ steps.release.outputs.revision }}
-            org.opencontainers.image.licenses=GPL-3.0-or-later
-
-      - name: Verify published multi-arch manifests
+      # Functional smoke test of the pushed artifact on THIS architecture's
+      # native runner, so both arches are executed before any digest can reach
+      # a tag (the old single-arch limitation was a QEMU cost, gone with the
+      # native arm64 runners). docker-publish re-checks amd64 as a final
+      # pre-tag gate.
+      - name: Smoke-test the pushed image
         env:
-          VERSION: ${{ steps.release.outputs.version }}
+          DIGEST: ${{ steps.build.outputs.digest }}
+          IMAGE: ${{ matrix.image }}
         run: |
           set -euo pipefail
+          repo=ghcr.io/mapequation/infomap
+          if [ "$IMAGE" = notebook ]; then
+            docker run --rm "$repo@$DIGEST" \
+              python -c "from infomap import Infomap; print(Infomap(silent=True).num_top_modules)" > /dev/null
+          else
+            docker run --rm "$repo@$DIGEST" --help > /dev/null
+          fi
 
-          for image in \
-            "ghcr.io/mapequation/infomap:$VERSION" \
-            "ghcr.io/mapequation/infomap:latest" \
-            "ghcr.io/mapequation/infomap:notebook-$VERSION" \
-            "ghcr.io/mapequation/infomap:notebook"
-          do
-            echo "Inspecting $image"
-            docker buildx imagetools inspect "$image" | tee manifest.txt
+      - name: Export digest
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/digests
+          touch "/tmp/digests/${DIGEST#sha256:}"
+
+      - name: Upload digest
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: digests-${{ matrix.image }}-${{ matrix.platform }}
+          path: /tmp/digests/*
+          retention-days: 1
+          if-no-files-found: error
+
+  docker-publish:
+    name: Publish ${{ matrix.image }} multi-arch image
+    needs: [docker-meta, docker-build, publish-github-release]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [infomap, notebook]
+    steps:
+      - name: Download amd64 digest
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: digests-${{ matrix.image }}-amd64
+          path: /tmp/digests/amd64
+
+      - name: Download arm64 digest
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: digests-${{ matrix.image }}-arm64
+          path: /tmp/digests/arm64
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
+
+      - name: Log in to GHCR
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Smoke-test, assemble, and verify the multi-arch image
+        id: assemble
+        env:
+          VERSION: ${{ needs.docker-meta.outputs.version }}
+          IMAGE: ${{ matrix.image }}
+        run: |
+          set -euo pipefail
+          repo=ghcr.io/mapequation/infomap
+          amd64_digest="$(basename "$(ls /tmp/digests/amd64/)")"
+          arm64_digest="$(basename "$(ls /tmp/digests/arm64/)")"
+
+          # Functional smoke test of the real pushed artifact (amd64) BEFORE any
+          # tag points at it -- if it fails, no tag is created and the release
+          # does not ship a broken image.
+          if [ "$IMAGE" = notebook ]; then
+            docker run --rm "$repo@sha256:$amd64_digest" \
+              python -c "from infomap import Infomap; print(Infomap(silent=True).num_top_modules)" > /dev/null
+            tags=("$repo:notebook-$VERSION" "$repo:notebook")
+          else
+            docker run --rm "$repo@sha256:$amd64_digest" --help > /dev/null
+            tags=("$repo:$VERSION" "$repo:latest")
+          fi
+
+          tag_args=()
+          for t in "${tags[@]}"; do tag_args+=(-t "$t"); done
+          docker buildx imagetools create "${tag_args[@]}" \
+            "$repo@sha256:$amd64_digest" \
+            "$repo@sha256:$arm64_digest"
+
+          for t in "${tags[@]}"; do
+            echo "Inspecting $t"
+            docker buildx imagetools inspect "$t" | tee manifest.txt
             grep -q "linux/amd64" manifest.txt
             grep -q "linux/arm64" manifest.txt
           done
+
+          # Manifest-list digest (both tags point at it) for the attestation below.
+          digest="$(docker buildx imagetools inspect "${tags[0]}" --format '{{.Manifest.Digest}}')"
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
+        with:
+          subject-name: ghcr.io/mapequation/infomap
+          subject-digest: ${{ steps.assemble.outputs.digest }}
+          push-to-registry: true
 
   publish-npm:
     name: Publish to npm
@@ -285,7 +548,7 @@ jobs:
 
     steps:
       - name: Set up Node.js
-        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
           registry-url: https://registry.npmjs.org
@@ -298,7 +561,11 @@ jobs:
           path: dist/npm
 
       - name: Publish npm package
-        run: npm publish --access public dist/npm/*.tgz
+        # --provenance emits a signed npm provenance attestation via the
+        # id-token: write OIDC grant above, linking the package to this
+        # workflow run and commit. Requires the repository field in
+        # package.json (present).
+        run: npm publish --provenance --access public dist/npm/*.tgz
 
   notify-homebrew-infomap:
     name: Notify homebrew-infomap

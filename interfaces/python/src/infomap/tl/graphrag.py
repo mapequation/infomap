@@ -1,10 +1,18 @@
 from __future__ import annotations
 
+import os
+import warnings
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from ..io._arrays import require_modules as _require_modules
+
+if TYPE_CHECKING:
+    import pandas
+
+    from .._facade import Infomap
+    from ..result import Result
 
 __all__ = [
     "GraphRAGGraph",
@@ -28,7 +36,7 @@ class GraphRAGGraph:
     relationships: Any
     sources: Any
     targets: Any
-    weights: Any | None
+    weights: Any
     entity_id_to_node_id: dict[Any, int]
     node_id_to_entity_id: dict[int, Any]
     node_id_to_entity_title: dict[int, Any]
@@ -42,28 +50,28 @@ class GraphRAGGraph:
 class GraphRAGRunResult:
     """Result object returned by :func:`run_graphrag_communities`."""
 
-    infomap: Any
+    infomap: Infomap
+    #: The immutable :class:`~infomap.Result` from the run. Read run metrics
+    #: from here (``result.result.codelength``, ``.num_top_modules``) rather
+    #: than the deprecated accessors on the stateful ``infomap`` instance.
+    result: Result
     graph: GraphRAGGraph
     output_dir: Path | None
-    nodes: Any
-    communities: Any
+    nodes: pandas.DataFrame
+    communities: pandas.DataFrame
 
 
 def _import_parquet_stack():
-    try:
-        import pandas as pd
-        import pyarrow  # noqa: F401  # pyright: ignore[reportMissingImports]  # optional dep, no stubs
-    except ImportError as err:
-        raise ImportError(
-            "GraphRAG Parquet support requires pandas and pyarrow. "
-            'Install them with `python -m pip install "infomap[graphrag]"`.'
-        ) from err
+    from .._optional import require_pandas, require_pyarrow
+
+    pd = require_pandas("GraphRAG Parquet support", extra="graphrag")
+    require_pyarrow("GraphRAG Parquet support")
     return pd
 
 
 def _read_table(table_or_path):
     pd = _import_parquet_stack()
-    if isinstance(table_or_path, (str, Path)):
+    if isinstance(table_or_path, (str, os.PathLike)):
         return pd.read_parquet(table_or_path)
     return table_or_path
 
@@ -141,18 +149,54 @@ def _register_node(
 
 
 def read_graphrag(
-    entities,
-    relationships,
+    entities: str | os.PathLike[str] | pandas.DataFrame,
+    relationships: str | os.PathLike[str] | pandas.DataFrame,
     *,
-    entity_id_col="id",
-    entity_title_col="title",
-    source_col="source",
-    target_col="target",
-    weight_col="weight",
-    relationship_id_col="id",
-    endpoint_col="title",
+    entity_id_col: str = "id",
+    entity_title_col: str = "title",
+    source_col: str = "source",
+    target_col: str = "target",
+    weight_col: str = "weight",
+    relationship_id_col: str = "id",
+    endpoint_col: str = "title",
 ) -> GraphRAGGraph:
-    """Read GraphRAG-style entity and relationship Parquet tables."""
+    """Read GraphRAG-style entity and relationship Parquet tables.
+
+    Assigns a 1-based Infomap node id to every entity (and to any relationship
+    endpoint that does not appear in the entity table) and converts the
+    relationships to source/target/weight arrays ready for
+    :meth:`infomap.Infomap.add_links`.
+
+    Parameters
+    ----------
+    entities : str, os.PathLike, or pandas.DataFrame
+        Entity table, or a path to a Parquet file containing it.
+    relationships : str, os.PathLike, or pandas.DataFrame
+        Relationship table, or a path to a Parquet file containing it.
+    entity_id_col : str, optional
+        Entity table column with unique entity ids. Default ``"id"``.
+    entity_title_col : str, optional
+        Entity table column with entity titles. Default ``"title"``.
+    source_col : str, optional
+        Relationship table column with source endpoints. Default ``"source"``.
+    target_col : str, optional
+        Relationship table column with target endpoints. Default ``"target"``.
+    weight_col : str or None, optional
+        Relationship table column with link weights, or ``None`` for
+        unweighted links. Default ``"weight"``.
+    relationship_id_col : str or None, optional
+        Relationship table column with relationship ids. If missing or
+        ``None``, positional indices are used. Default ``"id"``.
+    endpoint_col : str, optional
+        Which entity column the relationship endpoints reference: ``"title"``
+        (default, requires unique titles) or ``"id"``.
+
+    Returns
+    -------
+    GraphRAGGraph
+        The tables together with the link arrays and the mappings between
+        Infomap node ids and entity ids/titles.
+    """
     pd = _import_parquet_stack()
     entities_table = _read_table(entities)
     relationships_table = _read_table(relationships)
@@ -222,7 +266,9 @@ def read_graphrag(
     )
     weights = None
     if weight_col is not None:
-        weights = pd.to_numeric(relationships_table[weight_col]).to_numpy(dtype="float64")  # pyright: ignore[reportAttributeAccessIssue, reportArgumentType]
+        weights = pd.to_numeric(relationships_table[weight_col]).to_numpy(
+            dtype="float64"
+        )  # pyright: ignore[reportAttributeAccessIssue, reportArgumentType]
 
     relationship_ids = list(range(len(relationships_table)))
     if (
@@ -256,7 +302,7 @@ def _output_paths(output):
             "communities": None,
         }
 
-    output_path = Path(output)
+    output_path = Path(os.fsdecode(output))
     if output_path.suffix.lower() == ".parquet":
         output_dir = output_path.parent
         communities_path = output_path
@@ -547,14 +593,48 @@ def _links_array(graph: GraphRAGGraph):
 
 
 def _build_tables(im, graph: GraphRAGGraph):
+    # Accept a run Infomap instance or the Result it produced (the modern
+    # to_networkx/to_igraph input contract): _resolve_run_source unwraps a
+    # Result to its engine, generation-checked, and passes an Infomap through.
+    from ..io.export import _resolve_run_source
+
+    im = _resolve_run_source(im)
     _require_modules(im)
     nodes = _nodes_table(im, graph)
     communities = _communities_table(nodes, graph)
     return nodes, communities
 
 
-def write_graphrag_communities(im, *, graph: GraphRAGGraph, output):
-    """Write experimental GraphRAG-compatible community tables."""
+def write_graphrag_communities(
+    im: Infomap | Result, *, graph: GraphRAGGraph, output: str | os.PathLike[str]
+) -> tuple[pandas.DataFrame, pandas.DataFrame]:
+    """Write GraphRAG-compatible community tables from a finished run.
+
+    Parameters
+    ----------
+    im : Infomap or Result
+        A run :class:`~infomap.Infomap` instance, or the
+        :class:`~infomap.Result` it produced (e.g.
+        ``GraphRAGRunResult.result``), for the links of ``graph``. Passing the
+        ``Result`` matches the modern ``to_networkx`` / ``to_igraph`` contract
+        and avoids reaching back into the stateful instance.
+    graph : GraphRAGGraph
+        The graph returned by :func:`read_graphrag` for the same network.
+    output : str or os.PathLike
+        Output directory, or a ``.parquet`` path for the communities table
+        (its parent directory is then used for the nodes table). Writes
+        ``infomap_nodes.parquet`` and ``communities.parquet``.
+
+    Returns
+    -------
+    tuple of (pandas.DataFrame, pandas.DataFrame)
+        The ``(nodes, communities)`` tables that were written.
+
+    Raises
+    ------
+    ValueError
+        If ``output`` is ``None``.
+    """
     _import_parquet_stack()
     paths = _output_paths(output)
     if paths["dir"] is None:
@@ -570,24 +650,73 @@ def write_graphrag_communities(im, *, graph: GraphRAGGraph, output):
 
 def run_graphrag_communities(
     *,
-    input_dir,
-    output_dir=None,
-    args=None,
-    entities_name="entities.parquet",
-    relationships_name="relationships.parquet",
-    entity_id_col="id",
-    entity_title_col="title",
-    source_col="source",
-    target_col="target",
-    weight_col="weight",
-    relationship_id_col="id",
-    endpoint_col="title",
-    silent=True,
-    seed=123,
-    num_trials=5,
-    **infomap_options,
+    input_dir: str | os.PathLike[str],
+    output_dir: str | os.PathLike[str] | None = None,
+    args: str | None = None,
+    entities_name: str = "entities.parquet",
+    relationships_name: str = "relationships.parquet",
+    entity_id_col: str = "id",
+    entity_title_col: str = "title",
+    source_col: str = "source",
+    target_col: str = "target",
+    weight_col: str = "weight",
+    relationship_id_col: str = "id",
+    endpoint_col: str = "title",
+    silent: bool | None = None,
+    seed: int = 123,
+    num_trials: int = 5,
+    **infomap_options: Any,
 ) -> GraphRAGRunResult:
-    """Read GraphRAG tables, run Infomap, and write MVP community outputs."""
+    """Read GraphRAG tables, run Infomap, and write community outputs.
+
+    End-to-end convenience wrapper around :func:`read_graphrag`, an Infomap
+    run, and :func:`write_graphrag_communities`.
+
+    Parameters
+    ----------
+    input_dir : str or os.PathLike
+        Directory containing the entity and relationship Parquet files.
+    output_dir : str or os.PathLike, optional
+        Where to write ``infomap_nodes.parquet``, ``communities.parquet``,
+        and the run summary ``infomap_run.json``. If ``None``, nothing is
+        written and only the in-memory result is returned.
+    args : str, optional
+        Raw Infomap CLI arguments passed to :class:`~infomap.Infomap`.
+    entities_name : str, optional
+        Entity file name inside ``input_dir``. Default ``"entities.parquet"``.
+    relationships_name : str, optional
+        Relationship file name inside ``input_dir``. Default
+        ``"relationships.parquet"``.
+    entity_id_col, entity_title_col, source_col, target_col : str, optional
+        Column names passed to :func:`read_graphrag`.
+    weight_col, relationship_id_col, endpoint_col : str, optional
+        Column names passed to :func:`read_graphrag`; see there for details.
+    silent : bool, optional
+        Deprecated and leaves in 3.0. The Infomap API is quiet by default, so
+        this is unnecessary; for the engine log call :func:`infomap.enable_log`
+        before running. Passing it explicitly emits a ``DeprecationWarning``
+        and is still honoured for backward compatibility.
+    seed : int, optional
+        Random number generator seed. Default ``123``.
+    num_trials : int, optional
+        Number of independent trials; the best solution is kept. Default
+        ``5``.
+    **infomap_options
+        Additional keyword arguments passed to :class:`~infomap.Infomap`.
+
+    Returns
+    -------
+    GraphRAGRunResult
+        The Infomap instance, the parsed graph, the output directory, and
+        the nodes/communities tables.
+
+    Raises
+    ------
+    TypeError
+        If ``options=`` is passed; use ``args=`` for raw CLI arguments.
+    ValueError
+        If ``summary_json`` is passed; it is managed through ``output_dir``.
+    """
     from infomap import Infomap
 
     if "options" in infomap_options:
@@ -598,8 +727,16 @@ def run_graphrag_communities(
         raise ValueError(
             "run_graphrag_communities manages summary_json through output_dir."
         )
+    if silent is not None:
+        warnings.warn(
+            "silent= is deprecated on run_graphrag_communities and leaves in "
+            "3.0; the Infomap API is quiet by default. For the engine log, call "
+            "infomap.enable_log() before running.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
 
-    input_path = Path(input_dir)
+    input_path = Path(os.fsdecode(input_dir))
     graph = read_graphrag(
         input_path / entities_name,
         input_path / relationships_name,
@@ -616,21 +753,23 @@ def run_graphrag_communities(
         paths["dir"].mkdir(parents=True, exist_ok=True)
         infomap_options["summary_json"] = str(paths["run"])
 
+    if silent is not None:
+        infomap_options["silent"] = silent
     im = Infomap(
         args=args,
-        silent=silent,
         seed=seed,
         num_trials=num_trials,
         **infomap_options,
     )
     im.add_links(_links_array(graph))
-    im.run()
+    result = im.run()
     nodes, communities = _build_tables(im, graph)
     if paths["dir"] is not None:
         nodes.to_parquet(paths["nodes"], index=False)
         communities.to_parquet(paths["communities"], index=False)
     return GraphRAGRunResult(
         infomap=im,
+        result=result,
         graph=graph,
         output_dir=paths["dir"],
         nodes=nodes,

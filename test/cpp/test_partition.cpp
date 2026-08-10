@@ -1,12 +1,17 @@
 #include "vendor/doctest.h"
 
 #include "Infomap.h"
+#include "io/InfomapError.h"
+#include "io/Output.h"
 
 #include "TestUtils.h"
 
 #include <algorithm>
+#include <cstdio>
+#include <limits>
 #include <map>
 #include <set>
+#include <iostream>
 #include <sstream>
 #include <tuple>
 #include <vector>
@@ -122,6 +127,218 @@ TEST_CASE("Tree cluster-data fixture initializes a multi-level tree [fast][core]
   infomap::test::checkRunSanity(im);
 }
 
+TEST_CASE("A physical traversal leaves the engine's tree untouched [fast][core][partition][tree]")
+{
+  // InfomapIteratorPhysical stores InfoNode *copies* of live leaves, and InfoNode's copy
+  // constructor takes the sibling pointers verbatim while ~InfoNode unlinks through them.
+  // Destroying those copies therefore wrote into the engine's own nodes on a traversal
+  // documented as read-only -- and into freed memory if a position outlived the engine
+  // (#900).
+  auto im = infomap::test::makeRunningInfomap([&](InfomapWrapper& infomap) {
+    infomap.readInputData(infomap::test::repoPath("test/fixtures/networks/states.net"));
+  });
+
+  struct Links {
+    const infomap::InfoNode* previous;
+    const infomap::InfoNode* next;
+    const infomap::InfoNode* parent;
+    const infomap::InfoNode* firstChild;
+  };
+  std::map<unsigned int, Links> before;
+  for (auto it = im->iterLeafNodes(); !it.isEnd(); ++it) {
+    const auto& node = *it;
+    before[node.stateId] = { node.previous, node.next, node.parent, node.firstChild };
+  }
+  REQUIRE(before.size() == 6);
+
+  {
+    // A full physical walk, and positions kept past the end of it.
+    std::vector<infomap::InfomapIterator> kept;
+    for (auto it = im->iterTreePhysical(); !it.isEnd(); ++it)
+      kept.push_back(it.copy());
+    CHECK(kept.size() > 0);
+    // Every kept position still resolves, and resolves to what it did when it was taken,
+    // rather than pointing into storage the source iterator dropped when it left the leaf
+    // module. Reading the values matters: a dangling pointer is still non-null, so only
+    // the sanitizer or the value catches it.
+    std::vector<unsigned int> keptPhysicalIds;
+    for (const auto& position : kept) {
+      REQUIRE(position.current() != nullptr);
+      if (position.current()->isLeaf())
+        keptPhysicalIds.push_back(position.current()->physicalId);
+    }
+    CHECK(keptPhysicalIds == std::vector<unsigned int> { 1, 2, 3, 1, 4, 5 });
+  }
+
+  for (auto it = im->iterLeafNodes(); !it.isEnd(); ++it) {
+    const auto& node = *it;
+    const auto& links = before.at(node.stateId);
+    CHECK(node.previous == links.previous);
+    CHECK(node.next == links.next);
+    CHECK(node.parent == links.parent);
+    CHECK(node.firstChild == links.firstChild);
+  }
+}
+
+TEST_CASE("A physical tree that cannot express the partition says so [fast][core][partition][parser]")
+{
+  // A physical .tree has one row per (module, physical node) and no state ids, so when a
+  // physical node's states sit in different modules the file cannot say which state went
+  // where. The reader pairs ascending state ids against file order, which is a guess: on
+  // examples/networks/multilayer.net the partition comes back at 3.71206 bits against the
+  // 2.01141 that was written. The guess stays -- the information is not in the file -- but
+  // it is no longer silent (#908).
+  const std::string physicalTree = "physical_roundtrip.tree";
+  const std::string statesTree = "physical_roundtrip_states.tree";
+  std::remove(physicalTree.c_str());
+  std::remove(statesTree.c_str());
+
+  {
+    InfomapWrapper writer(infomap::test::defaultFlags("--seed 1"));
+    writer.readInputData(infomap::test::repoPath("examples/networks/multilayer.net"));
+    writer.run();
+    infomap::writeTree(writer, writer.network(), physicalTree, false);
+    infomap::writeTree(writer, writer.network(), statesTree, true);
+  }
+
+  auto warningsWhenReading = [](const std::string& clusterFile) {
+    std::ostringstream captured;
+    {
+      infomap::test::ScopedLogCapture capture(captured);
+      // Not defaultFlags: it carries --silent, which mutes the very warning under test.
+      InfomapWrapper reader("--seed 123 --num-trials 1 --no-file-output --no-infomap --cluster-data " + clusterFile);
+      reader.readInputData(infomap::test::repoPath("examples/networks/multilayer.net"));
+      reader.run();
+    }
+    return captured.str();
+  };
+
+  const auto physicalOutput = warningsWhenReading(physicalTree);
+  CHECK(physicalOutput.find("split across modules") != std::string::npos);
+  // Singular, since exactly one physical node is split here.
+  CHECK(physicalOutput.find("1 physical node has its") != std::string::npos);
+
+  // The states tree carries the state ids, so it round-trips and must stay quiet.
+  const auto statesOutput = warningsWhenReading(statesTree);
+  CHECK(statesOutput.find("split across modules") == std::string::npos);
+
+  std::remove(physicalTree.c_str());
+  std::remove(statesTree.c_str());
+}
+
+TEST_CASE("Mixed-depth cluster data is rejected instead of crashing [fast][core][partition][parser]")
+{
+  // A module with both a leaf and a sub-module as children used to segfault: the
+  // per-level aggregation read the first child, concluded "these are modules", and then
+  // recursed into the leaf, dereferencing its null firstChild. Reordering the same
+  // partition's rows gave the same tree two different codelengths instead (#898).
+  InfomapWrapper im(infomap::test::defaultFlags());
+  im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+  im.initNetwork(im.network());
+
+  try {
+    im.initPartition(infomap::test::clusterFixturePath("twotriangles_mixed_depth.tree"), false, &im.network());
+    FAIL("expected mixed-depth cluster data to be rejected");
+  } catch (const infomap::InfomapError& e) {
+    CHECK(e.code() == infomap::ExitCode::InputError);
+    const std::string message(e.what());
+    CHECK(message.find("mixes depths") != std::string::npos);
+    // The offending module has to be named, or the user cannot find it in the file.
+    CHECK(message.find("module 1") != std::string::npos);
+  }
+}
+
+TEST_CASE("A two-level search from a deeper tree keeps its top level [fast][core][partition]")
+{
+  // --two-level with a deeper cluster tree reported codelength 0 on a tree that still
+  // had sub-modules in it, or aborted with "fineTune() called but numLevels != 2" once
+  // the tuning loop was allowed to run (#898). Both are gone: the supplied tree's top
+  // level becomes the starting partition, which is what --two-level means.
+  InfomapWrapper im(infomap::test::defaultFlags("--two-level"));
+  im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+  im.initNetwork(im.network());
+
+  im.initPartition(infomap::test::clusterFixturePath("twotriangles_three_level.tree"), false, &im.network());
+
+  CHECK(im.numLevels() == 2);
+  CHECK(im.maxTreeDepth() == 2);
+  CHECK(im.numTopModules() == 2);
+
+  im.run();
+
+  infomap::test::checkRunSanity(im);
+  CHECK(im.codelength() > 0.0);
+  CHECK(im.maxTreeDepth() == 2);
+}
+
+TEST_CASE("removeSubModules flattens a ragged tree whose shallow branch comes first [fast][core][partition][tree]")
+{
+  // numLevels() follows the firstChild chain only, so with the shallow branch first it
+  // reports 2 for a three-level tree and the old `while (numLevels() > 2)` loop did
+  // nothing at all -- leaving sub-modules in place for calcCodelengthOnTree to score as
+  // if they were not there (#898).
+  InfomapWrapper im(infomap::test::defaultFlags());
+  im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+  im.initNetwork(im.network());
+  im.initPartition(infomap::test::clusterFixturePath("twotriangles_ragged_branches.tree"), false, &im.network());
+
+  REQUIRE(im.maxTreeDepth() == 3);
+  // The shortcut this test exists for, pinned so the fixture keeps exercising it.
+  REQUIRE(im.numLevels() == 2);
+
+  im.removeSubModules(true);
+
+  CHECK(im.maxTreeDepth() == 2);
+  unsigned int numModules = 0;
+  for (auto& module : im.root()) {
+    ++numModules;
+    for (auto& child : module) {
+      CHECK(child.isLeaf());
+    }
+  }
+  CHECK(numModules == 2);
+}
+
+TEST_CASE("An unknown node id in cluster data leaves the partition alone [fast][core][partition][parser]")
+{
+  // std::map::operator[] inserted the unknown id with a default index of 0, so it
+  // reassigned the *first* leaf node to the stray module and marked it as covered,
+  // which also silenced the note about nodes genuinely missing an assignment (#898).
+  // Compared as a grouping rather than as raw module indices, which get renumbered:
+  // nodes are visited in state-id order and each new parent gets the next group number,
+  // so two runs agree exactly when they put the same nodes together.
+  auto groupingFrom = [](const std::string& clusterFile) {
+    InfomapWrapper im(infomap::test::defaultFlags("--no-infomap"));
+    im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+    im.initNetwork(im.network());
+    im.initPartition(infomap::test::clusterFixturePath(clusterFile), false, &im.network());
+
+    std::map<unsigned int, const infomap::InfoNode*> parentByStateId;
+    for (auto it = im.iterLeafNodes(); !it.isEnd(); ++it) {
+      const auto& node = *it;
+      parentByStateId[node.stateId] = node.parent;
+    }
+
+    std::map<const infomap::InfoNode*, unsigned int> groupOfParent;
+    std::map<unsigned int, unsigned int> grouping;
+    for (const auto& it : parentByStateId) {
+      const auto inserted = groupOfParent.emplace(it.second, static_cast<unsigned int>(groupOfParent.size()));
+      grouping[it.first] = inserted.first->second;
+    }
+    return grouping;
+  };
+
+  const auto clean = groupingFrom("twotriangles_two_modules.clu");
+  const auto withUnknownId = groupingFrom("twotriangles_two_modules_unknown_id.clu");
+
+  REQUIRE(clean.size() == 6);
+  // Two groups of three, and the first leaf is not pulled out into the stray module.
+  CHECK(clean.at(1) == clean.at(2));
+  CHECK(clean.at(1) == clean.at(3));
+  CHECK(clean.at(1) != clean.at(4));
+  CHECK(withUnknownId == clean);
+}
+
 TEST_CASE("Tree cluster-data reinit and rerun stay stable on the same instance [fast][core][partition][lifecycle]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());
@@ -178,6 +395,52 @@ TEST_CASE("Pretty per-level codelength renders a structured levels table [fast][
   CHECK(text.find("Total") != std::string::npos);
   CHECK(text.find("Per level number of modules") == std::string::npos);
   CHECK(text.find("2.700302") != std::string::npos);
+}
+
+TEST_CASE("Per-level aggregation survives a module with both kinds of child [fast][core][partition][output]")
+{
+  // Cluster data can no longer deliver this shape -- it is rejected at intake -- but the
+  // aggregation is a shared reporting path and used to read only the first child to
+  // decide whether a module holds leaves. A leaf sibling *after* a sub-module was then
+  // recursed into and its null firstChild dereferenced (SIGSEGV), while a leaf *before*
+  // one returned early and dropped every remaining sub-module from the table. Built by
+  // hand so the guarantee is pinned even though no input can reach it (#898).
+  InfoNode root;
+  auto* module = new InfoNode({}, 100);
+  auto* leafBeside = new InfoNode({}, 1);
+  auto* subModule = new InfoNode({}, 200);
+  auto* nestedLeafA = new InfoNode({}, 2);
+  auto* nestedLeafB = new InfoNode({}, 3);
+
+  root.addChild(module);
+  // Sub-module first, then the leaf: the order that used to crash.
+  module->addChild(subModule);
+  module->addChild(leafBeside);
+  subModule->addChild(nestedLeafA);
+  subModule->addChild(nestedLeafB);
+
+  std::ostringstream output;
+  unsigned int numLevels = 0;
+  CHECK_NOTHROW(numLevels = infomap::printPerLevelCodelength(root, output));
+
+  // Three levels of nodes, and every leaf accounted for: one beside the sub-module and
+  // two inside it.
+  CHECK(numLevels == 3);
+  std::vector<infomap::detail::PerLevelStat> stats;
+  infomap::aggregatePerLevelCodelength(root, stats);
+  unsigned int totalLeaves = 0;
+  for (const auto& stat : stats)
+    totalLeaves += stat.numLeafNodes;
+  CHECK(totalLeaves == 3);
+
+  root.releaseChildren();
+  module->releaseChildren();
+  subModule->releaseChildren();
+  delete nestedLeafA;
+  delete nestedLeafB;
+  delete subModule;
+  delete leafBeside;
+  delete module;
 }
 
 TEST_CASE("InfoNode hierarchy mutations preserve parentage and child order [fast][core][partition][tree]")
@@ -463,6 +726,20 @@ TEST_CASE("Hard cluster-data preserves the imposed coarse partition [fast][core]
   CHECK(im.numLeafNodes() == 6);
   CHECK(im.numTopModules() == 2);
   infomap::test::checkCanonicalPartition(im, { { 1, 2, 3 }, { 4, 5, 6 } });
+}
+
+TEST_CASE("Embedded JSON path seeds the initial partition [fast][core][partition][json]")
+{
+  // The embedded nodes[].path assigns three modules {1,2}, {3,4}, {5,6}.
+  // With --no-infomap the result is exactly that imposed initial partition,
+  // proving the embedded path fed initPartition during the trial.
+  InfomapWrapper im(infomap::test::defaultFlags("--no-infomap"));
+  im.readInputData(infomap::test::repoPath("test/fixtures/networks/json/twotriangles_paths.json"));
+
+  im.run();
+
+  CHECK(im.numTopModules() == 3);
+  infomap::test::checkCanonicalPartition(im, { { 1, 2 }, { 3, 4 }, { 5, 6 } });
 }
 
 TEST_CASE("Hard cluster-data reinit and rerun stay stable on the same instance [fast][core][partition][lifecycle]")
@@ -842,6 +1119,138 @@ TEST_CASE("Sharding-mode serial reseed makes trial i reproducible by global inde
   CHECK(runTrialAt(5) > 0.0);
 }
 
+// The per-trial seed contract (#905): trial i of a run is the trial with seed
+// base + trialOffset + i, whichever mode produced it, and nothing that only
+// affects output may change which trials run.
+//
+// These need a network whose trials actually differ. A plain cycle has many
+// near-degenerate partitions -- where the module boundaries fall depends on the
+// random visit order -- so its per-trial codelengths spread out. The shipped
+// fixtures all converge to the same optimum on every trial and would satisfy
+// every check below vacuously.
+namespace seedcontract {
+
+constexpr unsigned int numCycleNodes = 60;
+constexpr unsigned int numTrials = 8;
+constexpr unsigned int baseSeed = 3;
+
+std::vector<double> runCycle(const std::string& flags)
+{
+  InfomapWrapper im("--silent --no-file-output " + flags);
+  for (unsigned int i = 0; i < numCycleNodes; ++i) {
+    im.addLink(i, (i + 1) % numCycleNodes);
+  }
+  im.run();
+  return im.codelengths();
+}
+
+std::string seedAndTrials(unsigned long seed, unsigned int trials)
+{
+  return "--seed " + std::to_string(seed) + " --num-trials " + std::to_string(trials);
+}
+
+} // namespace seedcontract
+
+TEST_CASE("Every trial is reproducible from the seed reported for it [fast][core][partition][sharding][merge]")
+{
+  using namespace seedcontract;
+
+  const auto sequential = runCycle(seedAndTrials(baseSeed, numTrials));
+  REQUIRE(sequential.size() == numTrials);
+  // Precondition: the trials differ, so a broken seeding regime can be detected
+  // at all. Without it every comparison below would pass on any implementation.
+  REQUIRE(std::set<double>(sequential.begin(), sequential.end()).size() > 1);
+
+  SUBCASE("a standalone run at seed base+i reproduces trial i")
+  {
+    // Before the fix the default serial path ran one continuous RNG stream
+    // through all trials, so the seed reported for trial i named a seed that
+    // trial never used.
+    for (unsigned int i = 0; i < numTrials; ++i) {
+      const auto standalone = runCycle(seedAndTrials(baseSeed + i, 1));
+      REQUIRE(standalone.size() == 1);
+      CHECK(standalone[0] == doctest::Approx(sequential[i]));
+    }
+  }
+
+  SUBCASE("a shard at global index i reproduces trial i")
+  {
+    // Sharded serial trials used to reseed only the engine and leave
+    // Config::seedToRandomNumberGenerator at the base seed, so every
+    // sub-Infomap of the recursive partition kept seeding from the base.
+    for (unsigned int i = 0; i < numTrials; ++i) {
+      const auto shard = runCycle(seedAndTrials(baseSeed, 1) + " --trial-offset " + std::to_string(i));
+      REQUIRE(shard.size() == 1);
+      CHECK(shard[0] == doctest::Approx(sequential[i]));
+    }
+  }
+
+  SUBCASE("--parallel-trials runs the same trials as the sequential path")
+  {
+    const auto parallel = runCycle(seedAndTrials(baseSeed, numTrials) + " --parallel-trials");
+    REQUIRE(parallel.size() == numTrials);
+    for (unsigned int i = 0; i < numTrials; ++i) {
+      CHECK(parallel[i] == doctest::Approx(sequential[i]));
+    }
+  }
+
+  SUBCASE("shards partition the sequential run's trials")
+  {
+    // The equivalence interfaces/python/source/workflows/hpc.md promises: any
+    // partition of [0, N) reproduces the trials of a single --num-trials N run.
+    std::vector<double> merged;
+    for (unsigned int offset = 0; offset < numTrials; offset += 2) {
+      const auto shard = runCycle(seedAndTrials(baseSeed, 2) + " --trial-offset " + std::to_string(offset));
+      REQUIRE(shard.size() == 2);
+      merged.insert(merged.end(), shard.begin(), shard.end());
+    }
+    REQUIRE(merged.size() == numTrials);
+    for (unsigned int i = 0; i < numTrials; ++i) {
+      CHECK(merged[i] == doctest::Approx(sequential[i]));
+    }
+  }
+
+  SUBCASE("the contract survives a base seed wider than the engine")
+  {
+    // Every route into the RNG takes unsigned int (BasicRandom's constructor,
+    // Random::seed from reseed and from setNonMainConfig), so the engine only
+    // ever sees the low 32 bits of Config::seedToRandomNumberGenerator. Where
+    // that field is wider, the narrowing has to stay uniform, or the seed a run
+    // reports would name a trial it cannot reproduce.
+    //
+    // Guarded because the field is `unsigned long`, whose width is not fixed:
+    // 64-bit on LP64 (Linux, macOS), 32-bit on LLP64 (Windows). On Windows it is
+    // exactly the engine's width, no seed above UINT_MAX is representable, and
+    // there is nothing here to test -- running it anyway wraps the base and asks
+    // for `--seed 0`, which the parser rejects (min is 1).
+    if (sizeof(unsigned long) > sizeof(unsigned int)) {
+      // Derived rather than written as a literal or a shift: `1ul << 32` is
+      // undefined where unsigned long is 32 bits, even on the branch not taken.
+      const unsigned long twoPow32 = static_cast<unsigned long>(std::numeric_limits<unsigned int>::max()) + 1ul;
+      // Straddles the wrap: trial 2 lands on 2^32 and narrows to engine seed 0.
+      const unsigned long wideBase = twoPow32 - 2ul;
+
+      const auto wide = runCycle(seedAndTrials(wideBase, numTrials));
+      REQUIRE(wide.size() == numTrials);
+      REQUIRE(std::set<double>(wide.begin(), wide.end()).size() > 1);
+
+      for (unsigned int i = 0; i < numTrials; ++i) {
+        const auto standalone = runCycle(seedAndTrials(wideBase + i, 1));
+        REQUIRE(standalone.size() == 1);
+        CHECK(standalone[0] == doctest::Approx(wide[i]));
+      }
+
+      // The aliasing the width mismatch implies, pinned so it stays deliberate:
+      // seeds congruent mod 2^32 are the same run.
+      const auto low = runCycle(seedAndTrials(1ul, 1));
+      const auto aliased = runCycle(seedAndTrials(1ul + twoPow32, 1));
+      REQUIRE(low.size() == 1);
+      REQUIRE(aliased.size() == 1);
+      CHECK(aliased[0] == doctest::Approx(low[0]));
+    }
+  }
+}
+
 TEST_CASE("Hierarchical partition is invariant to the OpenMP thread count [fast][core][partition][threads]")
 {
   // The recursive partition runs sub-modules as parallel tasks. Results must
@@ -850,8 +1259,8 @@ TEST_CASE("Hierarchical partition is invariant to the OpenMP thread count [fast]
   // statistics are aggregated in a fixed order. Lock that guarantee in by
   // comparing a multi-level run at 1 thread against one at several threads.
   auto runHierarchical = [&]() {
-    // Seed 1 yields a three-level solution on ninetriangles (the default
-    // test seed 123 happens to stop at two levels, leaving nothing to check).
+    // ninetriangles yields a three-level solution, giving the recursive
+    // phase real hierarchy to check.
     InfomapWrapper im("--seed 1 --num-trials 1 --silent");
     im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
     im.run();

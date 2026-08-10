@@ -416,6 +416,20 @@ double RegularizedMultilayerMapEquation::getDeltaCodelengthOnMovingNode(InfoNode
   return deltaL - delta_nodeFlow_log_nodeFlow;
 }
 
+double RegularizedMultilayerMapEquation::getDeltaCodelengthOnMovingNodeHoisted(InfoNode& current,
+                                                                               DeltaFlowDataType& oldModuleDelta,
+                                                                               const OldSideTerms& oldSide,
+                                                                               DeltaFlowDataType& newModuleDelta,
+                                                                               std::vector<FlowDataType>& moduleFlowData,
+                                                                               std::vector<unsigned int>& moduleMembers)
+{
+  double deltaL = Base::getDeltaCodelengthOnMovingNodeHoisted(current, oldModuleDelta, oldSide, newModuleDelta, moduleFlowData, moduleMembers);
+
+  double delta_nodeFlow_log_nodeFlow = oldModuleDelta.sumDeltaPlogpPhysFlow + newModuleDelta.sumDeltaPlogpPhysFlow + oldModuleDelta.sumPlogpPhysFlow - newModuleDelta.sumPlogpPhysFlow;
+
+  return deltaL - delta_nodeFlow_log_nodeFlow;
+}
+
 // ===================================================
 // Consolidation
 // ===================================================
@@ -440,6 +454,13 @@ void RegularizedMultilayerMapEquation::updateCodelengthOnMovingNode(InfoNode& cu
   nodeFlow_log_nodeFlow += delta_nodeFlow_log_nodeFlow;
   moduleCodelength -= delta_nodeFlow_log_nodeFlow;
   codelength -= delta_nodeFlow_log_nodeFlow;
+
+  // The flag marks that this move's memory contributions were already added to
+  // the deltas by addMemoryContributions(). Consumed by this one move; reset so
+  // a following standalone moveNodeToPredefinedModule() (fresh zero deltas)
+  // recomputes them instead of leaving nodeFlow_log_nodeFlow stale. See the
+  // matching note in MemMapEquation::updateCodelengthOnMovingNode.
+  m_memoryContributionsAdded = false;
 }
 
 void RegularizedMultilayerMapEquation::addLayerTeleFlow(unsigned int moduleIndex, const std::vector<LayerTeleFlowData>& layerTeleFlowData)

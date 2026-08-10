@@ -95,3 +95,167 @@ test_that("construct_args returns no leading whitespace", {
   rendered <- construct_args(NULL, infomap_options(silent = TRUE))
   expect_false(grepl("^\\s", rendered))
 })
+
+# The rendered string is split on whitespace by the engine, with no quoting, so a
+# whitespace-bearing value does not stay one token: an out_name of "my run" used
+# to render "--out-name my run", truncating the name to "my" and letting "run"
+# become the output directory, at exit 0. Quoting cannot fix it -- the C++ side
+# does not strip quotes -- so the value is refused instead.
+test_that("whitespace in a string value is refused, naming the option", {
+  expect_error(
+    construct_args(NULL, infomap_options(out_name = "my run")),
+    "out_name.*contains whitespace"
+  )
+  expect_error(
+    construct_args(NULL, infomap_options(cluster_data = "a b.clu")),
+    "cluster_data.*contains whitespace"
+  )
+  expect_error(
+    construct_args(NULL, infomap_options(meta_data = "meta data.txt")),
+    "meta_data.*contains whitespace"
+  )
+})
+
+# The check runs on the rendered text, not on is.character(value), so a value that
+# is not a character vector but renders with whitespace is caught too. A factor is
+# the likely one (values arriving from a data.frame column); a POSIXct is the one
+# nobody would think to enumerate -- as.character() gives it a space of its own.
+test_that("whitespace is caught whatever type produced it", {
+  expect_error(
+    construct_args(NULL, infomap_options(out_name = factor("my run"))),
+    "out_name = \"my run\" contains whitespace"
+  )
+  expect_error(
+    construct_args(
+      NULL,
+      infomap_options(
+        out_name = as.POSIXct("2026-07-26 08:30:00", tz = "UTC")
+      )
+    ),
+    "contains whitespace"
+  )
+  # A type whose rendering has no whitespace is still rendered, as before.
+  expect_match(
+    construct_args(NULL, infomap_options(out_name = as.Date("2026-07-26"))),
+    "--out-name 2026-07-26",
+    fixed = TRUE
+  )
+})
+
+test_that("whitespace-free values of the same options still render", {
+  rendered <- construct_args(
+    NULL,
+    infomap_options(out_name = "my-run", cluster_data = "seed.clu")
+  )
+  expect_match(rendered, "--out-name my-run")
+  expect_match(rendered, "--cluster-data seed.clu")
+})
+
+# format() honours getOption("digits"), which is 7 by default, so a fractional
+# option reached the engine rounded: markov_time = 1/7 rendered as 0.1428571, a
+# different parameter than the one requested and a different codelength than
+# Python reports for the same input.
+test_that("fractional values render with full round-trip precision", {
+  # 1/7 needs all 17 significant digits, and C runtimes disagree on the last
+  # one: glibc, macOS and mingw-gcc render the 1/7 double as
+  # 0.14285714285714285, the clang-aarch64 toolchain behind R on Windows
+  # arm64 as ...284. Both read back as the identical double, so assert the
+  # 16-digit prefix and the round-trip rather than one runtime's digits.
+  rendered <- construct_args(NULL, infomap_options(markov_time = 1 / 7))
+  expect_match(rendered, "--markov-time 0.1428571428571428", fixed = TRUE)
+  expect_identical(as.numeric(sub("^.*--markov-time ", "", rendered)), 1 / 7)
+
+  rendered <- construct_args(
+    NULL,
+    infomap_options(markov_time = 1.2345678901234)
+  )
+  expect_match(rendered, "--markov-time 1.2345678901234", fixed = TRUE)
+
+  # Round-tripping is the contract, not maximal digits: a value that is exactly
+  # representable must not grow a tail of noise.
+  rendered <- construct_args(
+    NULL,
+    infomap_options(teleportation_probability = 0.2)
+  )
+  expect_match(rendered, "--teleportation-probability 0.2", fixed = TRUE)
+})
+
+test_that("rendered numerics read back as the value that was requested", {
+  for (value in c(1 / 7, 1 / 3, 0.15, 1e-9, 1.2345678901234)) {
+    rendered <- construct_args(NULL, infomap_options(markov_time = value))
+    text <- sub("^.*--markov-time ", "", rendered)
+    expect_identical(as.numeric(text), value)
+  }
+})
+
+# as.integer() returns NA above INT_MAX, so `value == as.integer(value)` was NA
+# and `if (NA)` raised "missing value where TRUE/FALSE needed" for values the CLI
+# accepts: the affected options are unsigned int in C++.
+test_that("integer values above INT_MAX render instead of erroring", {
+  expect_match(
+    construct_args(NULL, infomap_options(seed = 2^31)),
+    "--seed 2147483648",
+    fixed = TRUE
+  )
+  expect_match(
+    construct_args(NULL, infomap_options(seed = 2^32 - 1)),
+    "--seed 4294967295",
+    fixed = TRUE
+  )
+  # No scientific notation and no decimal point for whole values.
+  expect_match(
+    construct_args(NULL, infomap_options(seed = 3e9)),
+    "--seed 3000000000",
+    fixed = TRUE
+  )
+})
+
+# Shape mistakes used to fail in two unhelpful ways: a length > 1 value hit R's
+# "the condition has length > 1" from inside the renderer, and an NA passed every
+# check silently -- grepl() returns FALSE for NA_character_, not NA -- so the
+# literal string "NA" was rendered into the argument string for the engine to
+# parse as a name or a number.
+test_that("a non-scalar option value is refused, naming the option", {
+  expect_error(
+    construct_args(NULL, infomap_options(out_name = c("a", "b"))),
+    "out_name must be a single value, got length 2"
+  )
+  expect_error(
+    construct_args(NULL, infomap_options(markov_time = c(1.5, 2.5))),
+    "markov_time must be a single value, got length 2"
+  )
+})
+
+# is.na() is TRUE for NaN as well, but they are not the same mistake: NA is R's
+# missing marker with no counterpart in the Python or JS bindings, while NaN is a
+# number those bindings also hand to the engine. Rejecting NaN here would make R
+# stricter than its siblings for no reason a caller could predict.
+test_that("NaN is left to the engine, which rejects it by name", {
+  rendered <- construct_args(NULL, infomap_options(markov_time = NaN))
+  expect_match(rendered, "--markov-time NaN", fixed = TRUE)
+})
+
+test_that("an NA option value is refused rather than rendered as \"NA\"", {
+  expect_error(
+    construct_args(NULL, infomap_options(out_name = NA_character_)),
+    "out_name must not be NA"
+  )
+  expect_error(
+    construct_args(NULL, infomap_options(markov_time = NA_real_)),
+    "markov_time must not be NA"
+  )
+  expect_error(
+    construct_args(NULL, infomap_options(seed = NA_integer_)),
+    "seed must not be NA"
+  )
+})
+
+test_that("the comma-list output option still accepts a vector", {
+  # output is joined before it reaches format_value, so the scalar requirement
+  # must not reach it.
+  expect_match(
+    construct_args(NULL, infomap_options(output = c("clu", "tree"))),
+    "--output clu,tree",
+    fixed = TRUE
+  )
+})

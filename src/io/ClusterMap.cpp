@@ -14,6 +14,7 @@
 #include "../utils/FileURI.h"
 #include "../utils/format.h"
 #include <sstream>
+#include "../utils/convert.h"
 
 namespace infomap {
 
@@ -87,10 +88,19 @@ void ClusterMap::readTree(const std::string& filename, bool includeFlow, const s
       throw std::runtime_error(fmt::format(FMT_STRING("Couldn't parse tree path from line '{}'"), line));
     if (!(lineStream >> flow))
       throw std::runtime_error(fmt::format(FMT_STRING("Couldn't parse node flow from line '{}'"), line));
-    if (!getline(lineStream, name, '"'))
+    // Everything between the first and the last quote, the same rule the network parser
+    // uses for Pajek vertex names. Reading up to the first quote with getline truncated
+    // a name that contains one and shifted the rest of the line, so Infomap could not
+    // read back its own .tree: "gene "X", alias" failed as "Couldn't parse node id"
+    // (#908). The written format is unchanged.
+    const auto flowEnd = lineStream.tellg();
+    const auto searchFrom = flowEnd < 0 ? std::size_t { 0 } : static_cast<std::size_t>(flowEnd);
+    const auto nameStart = line.find_first_of('"', searchFrom);
+    const auto nameEnd = line.find_last_of('"');
+    if (nameStart == std::string::npos || nameEnd <= nameStart)
       throw std::runtime_error(fmt::format(FMT_STRING("Can't parse node name from line {} ('{}')."), lineNr, line));
-    if (!getline(lineStream, name, '"'))
-      throw std::runtime_error(fmt::format(FMT_STRING("Can't parse node name from line {} ('{}')."), lineNr, line));
+    name = line.substr(nameStart + 1, nameEnd - nameStart - 1);
+    lineStream.seekg(static_cast<std::streamoff>(nameEnd + 1));
     if (!(lineStream >> parsedId))
       throw std::runtime_error(fmt::format(FMT_STRING("Couldn't parse node id from line '{}'"), line));
 
@@ -182,8 +192,14 @@ void ClusterMap::readClu(const std::string& filename, bool includeFlow, const st
     unsigned int moduleId;
     unsigned int layerId;
 
-    if (!(lineStream >> stateId >> moduleId))
+    // Validated rather than read straight into the unsigneds: `>> unsigned`
+    // accepts a leading '-' and stores the value modulo 2^32.
+    std::string stateIdToken;
+    std::string moduleIdToken;
+    if (!(lineStream >> stateIdToken >> moduleIdToken))
       throw std::runtime_error(fmt::format(FMT_STRING("Couldn't parse node key and cluster id from line '{}'"), line));
+    if (!io::parseNonNegativeInteger(stateIdToken, stateId) || !io::parseNonNegativeInteger(moduleIdToken, moduleId))
+      throw std::runtime_error(fmt::format(FMT_STRING("Couldn't parse node key and cluster id from line '{}': expected two non-negative integers, got '{}' and '{}'"), line, stateIdToken, moduleIdToken));
 
     auto flow = 0.0;
     if (lineStream >> flow) {

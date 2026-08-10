@@ -21,6 +21,7 @@
 #include <cstddef>
 #include <iterator>
 #include <limits>
+#include <sstream>
 #include <vector>
 #include <stdexcept>
 #include <utility>
@@ -99,6 +100,17 @@ namespace {
     }
   }
 
+  // Whether the caller actually passed --num-trials/-N, as opposed to landing on
+  // its default. parsedOptions records the long name whichever form was typed.
+  bool numTrialsGivenExplicitly(const Config& config)
+  {
+    for (const auto& option : config.parsedOptions) {
+      if (option.longName == "num-trials")
+        return true;
+    }
+    return false;
+  }
+
   void applyOptionInteractions(Config& config)
   {
     if (config.regularized) {
@@ -109,11 +121,44 @@ namespace {
       config.numTrials = 1;
     }
 
-    // --converge reinterprets numTrials as a cap. numTrials has min=1, so a value
-    // of 1 is the unspecified/default sentinel; treat it as "no explicit -N" and
-    // use the default cap (a single-trial cap would make --converge a no-op).
-    if (config.convergeTrials && config.numTrials == 1 && !config.noInfomap) {
+    // --converge reinterprets numTrials as a cap, and falls back to the default cap
+    // when the caller did not give one. Both signals are needed to decide that:
+    //   * the value, because a library caller mutates the struct and calls
+    //     adaptDefaults(), leaving parsedOptions empty -- provenance alone would
+    //     read a deliberate numTrials = 4 as "not given" and overwrite it;
+    //   * the provenance, because numTrials == 1 was the sole sentinel before, and
+    //     as the option's minimum it is also what an explicit `-N 1 --converge`
+    //     produces, which was silently rewritten to the default cap. A cap of one
+    //     makes --converge a no-op, but that is the caller's call to make.
+    //
+    // So the fix reaches the CLI only, and two paths keep the old behaviour:
+    //   * a library caller who sets numTrials = 1 deliberately still gets the
+    //     default cap, since nothing distinguishes that from leaving it untouched;
+    //   * the Python/R bindings do parse an argument string, but their option
+    //     renderer omits any value equal to its default, so `num_trials=1` with
+    //     `converge=True` renders no --num-trials at all (measured: 6 trials on
+    //     unbalanced_hierarchy either way).
+    // That elision was assumed behaviour-preserving because the rendered defaults
+    // come from this catalog -- this option is the counter-example, since
+    // --converge makes "given as 1" mean something different from "not given".
+    // Fixing it belongs in the generator (the residue recorded in #914).
+    const bool trialCapWasChosen = numTrialsGivenExplicitly(config) || config.numTrials != 1;
+    if (config.convergeTrials && !config.noInfomap && !trialCapWasChosen) {
       config.numTrials = Config::convergeDefaultMaxTrials;
+    }
+  }
+
+  // The matchable state id is `physId << (ceil(log2(N)) + 1) | layerId`, so an N
+  // this large makes the shift count 32 or more: undefined behaviour, which in
+  // practice changed the flows even for single-digit node ids at exit 0. Bounding N
+  // keeps the shift inside 32 bits; the companion check on the physical id lives in
+  // StateNetwork::addStateNodeWithDeterministicId.
+  void validateMatchableMultilayerIds(const Config& config)
+  {
+    // Local copy avoids odr-use of the constexpr member (no out-of-line definition).
+    const unsigned int maxLargestLayerId = Config::maxMatchableMultilayerIds;
+    if (config.matchableMultilayerIds > maxLargestLayerId) {
+      throw std::runtime_error(fmt::format(FMT_STRING("--matchable-multilayer-ids {} is too large: the largest layer id must be at most {}, so the state id shift stays within 32 bits"), config.matchableMultilayerIds, maxLargestLayerId));
     }
   }
 
@@ -286,6 +331,74 @@ namespace {
     Log::init(config.verbosity, config.silent, config.verboseNumberPrecision);
   }
 
+  // What the flags say about silence, read before anything is parsed.
+  //
+  // Log visibility comes from the parsed Config, which does not exist yet while
+  // the flags are being read -- so a rejected argument emitted the version banner
+  // and the usage line through Log() at default verbosity
+  // (ProgramInterface::exitWithError) even for a caller that asked for silence.
+  // The Python API passes --silent on every call, so any rejected keyword put two
+  // lines of English on the process's stdout, flushed at exit after everything the
+  // Python program had written, against its documented quiet-by-default contract.
+  //
+  // Split on whitespace, the way tokenizeArgs does, and compared whole, so
+  // "--silentish" does not match; there is no short form. The parser accepts the
+  // --no-<option> negation and lets the last occurrence win (verified:
+  // "--silent --no-silent" parses to silent = false and the reverse to true), so
+  // this reads the last of either rather than the first --silent and agrees with
+  // the Config the parse is about to produce. Defaults to Config::silent's own
+  // default when neither appears.
+  //
+  // Not option-aware, and that is a deliberate limit rather than an oversight.
+  // The parser decides option-versus-value by position -- parseLongOption consumes
+  // the following token as an argument even when it starts with "--" -- so
+  // `--out-name --silent` sets out_name to the literal "--silent" with silent
+  // false, while this scan counts the token and silences the window. Telling the
+  // two apart needs the per-option requireArgument knowledge that lives in
+  // ProgramInterface, and mirroring it here would put the parser's rules in a
+  // second place that can drift. The whole cost of being wrong is that a rejected
+  // argument prints no banner in a run whose out-name is literally "--silent".
+  bool flagsRequestSilence(const std::string& flags)
+  {
+    bool silent = false;
+    std::istringstream stream(flags);
+    std::string token;
+    while (stream >> token) {
+      if (token == "--silent")
+        silent = true;
+      else if (token == "--no-silent")
+        silent = false;
+    }
+    return silent;
+  }
+
+  // Sets Log's silence for the window between the first token and
+  // initializeLogging, from the current flags alone, and restores the previous
+  // value on the way out.
+  //
+  // Unconditional on purpose. Engaging only for a silent request would leave a
+  // non-silent parse reading whatever the last run in this process happened to
+  // set -- a successful silent run leaves Log silent, so a later non-silent
+  // rejection printed nothing. Parse-time output has to follow the flags in front
+  // of it, not process history. Restoring also means a library caller that catches
+  // the error is not left with a muted engine.
+  class ScopedParseSilence {
+  public:
+    explicit ScopedParseSilence(bool silent)
+        : m_previous(Log::isSilent())
+    {
+      Log::setSilent(silent);
+    }
+
+    ~ScopedParseSilence()
+    {
+      Log::setSilent(m_previous);
+    }
+
+  private:
+    bool m_previous;
+  };
+
   void buildConfigFromFlags(Config& config, const std::string& flags, bool isCLI)
   {
     config.parsedString = flags;
@@ -300,16 +413,23 @@ namespace {
     ParsedParameterSet staging;
     registerCatalogWithProgramInterface(api, { config, staging }, isCLI);
 
-    api.parseArgs(flags);
-    config.parsedOptions = api.getUsedOptionArguments();
+    // Scoped to end before initializeLogging: the guard restores the previous
+    // silence on destruction, so leaving it open would undo the real setting.
+    {
+      const ScopedParseSilence parseSilence(flagsRequestSilence(flags));
 
-    rejectDeprecatedAliases(staging);
-    applyOutputDirectory(config, staging);
-    applyFlowModelSelection(config, staging);
+      api.parseArgs(flags);
+      config.parsedOptions = api.getUsedOptionArguments();
 
-    config.adaptDefaults();
+      rejectDeprecatedAliases(staging);
+      applyOutputDirectory(config, staging);
+      applyFlowModelSelection(config, staging);
 
-    validateOutputDirectory(config);
+      config.adaptDefaults();
+
+      validateOutputDirectory(config);
+    }
+
     initializeLogging(config);
   }
 
@@ -376,6 +496,7 @@ void Config::adaptDefaults()
   validateRequiredCliOutput(*this);
   applyOptionInteractions(*this);
   validateConvergeTrials(*this);
+  validateMatchableMultilayerIds(*this);
 #if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
   applyAndValidateLossyInteraction(*this);
 #endif

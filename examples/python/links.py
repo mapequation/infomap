@@ -1,6 +1,6 @@
 from infomap import Infomap
 
-im = Infomap(silent=True)
+im = Infomap()
 im.read_file("../networks/states.net")
 result = im.run()
 

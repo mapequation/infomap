@@ -10,7 +10,7 @@ R_TARBALL := $(R_DIST_DIR)/infomap_$(R_VERSION).tar.gz
 
 R_STAGE_SCRIPT := scripts/stage_r_package.py
 R_SWIG_SCRIPT := scripts/generate_r_swig.py
-R_SOURCE_FILES := $(filter-out $(R_SKELETON_DIR)/R/options.R $(R_SKELETON_DIR)/R/swig_bindings.R,$(wildcard $(R_SKELETON_DIR)/R/*.R))
+R_SOURCE_FILES := $(filter-out $(R_SKELETON_DIR)/R/options.R,$(wildcard $(R_SKELETON_DIR)/R/*.R))
 R_TEST_FILES := $(wildcard $(R_SKELETON_DIR)/tests/*.R) $(wildcard $(R_SKELETON_DIR)/tests/testthat/*.R)
 R_EXAMPLE_FILES := $(wildcard examples/R/*.R)
 R_FORMAT_TARGETS := \
@@ -37,6 +37,17 @@ R_PARALLEL := MAKE="$(MAKE) -j$(JOBS)"
 # next assignment cleanly.
 R_CCACHE_ENV := $(if $(CCACHE_LAUNCHER),CCACHE_NOHASHDIR=1 ,)
 R_MAKEVARS_FILE := $(CURDIR)/$(R_BUILD_DIR)/.Makevars.infomap
+# The recipes write the file through the shell, which understands the msys
+# /d/a/... form of $(CURDIR); R reads it, and R is a native Windows program even
+# under the Rtools bash shell, so it needs the Windows-native D:/a/... spelling.
+# Handing R the msys path makes it silently ignore the user Makevars, dropping
+# the compiler-launcher override. cygpath bridges the two; elsewhere the path is
+# already native.
+ifneq ($(filter MINGW% MSYS% CYGWIN%,$(UNAME_S)),)
+R_MAKEVARS_USER_PATH := $(shell cygpath -m '$(R_MAKEVARS_FILE)' 2>/dev/null || echo '$(R_MAKEVARS_FILE)')
+else
+R_MAKEVARS_USER_PATH := $(R_MAKEVARS_FILE)
+endif
 
 # On macOS, Homebrew LLVM clang++ may be first in PATH but Homebrew R uses
 # Apple's libc++ at runtime.  Compilation with LLVM clang++ produces a .so
@@ -52,14 +63,14 @@ R_MAKEVARS_FILE := $(CURDIR)/$(R_BUILD_DIR)/.Makevars.infomap
 ifeq ($(UNAME_S),Darwin)
 _R_CC  := $(if $(CCACHE_LAUNCHER),$(CCACHE_LAUNCHER) ,)/usr/bin/clang
 _R_CXX := $(if $(CCACHE_LAUNCHER),$(CCACHE_LAUNCHER) ,)/usr/bin/clang++
-R_CMD_ENV := R_MAKEVARS_USER=$(R_MAKEVARS_FILE) $(R_PARALLEL) $(R_CCACHE_ENV)INFOMAP_R_CXX_LAUNCHER=$(CCACHE_LAUNCHER)
+R_CMD_ENV := R_MAKEVARS_USER=$(R_MAKEVARS_USER_PATH) $(R_PARALLEL) $(R_CCACHE_ENV)INFOMAP_R_CXX_LAUNCHER=$(CCACHE_LAUNCHER)
 _write_r_makevars = @mkdir -p $(R_BUILD_DIR) && \
 	printf 'CC = %s\nCXX = %s\nCXX17 = %s\n' '$(_R_CC)' '$(_R_CXX)' '$(_R_CXX)' \
 	> $(R_MAKEVARS_FILE)
 else ifneq ($(CCACHE_LAUNCHER),)
-# Other unix: no configure override, so route R's configured compiler through
-# ccache via a user Makevars.
-R_CMD_ENV := R_MAKEVARS_USER=$(R_MAKEVARS_FILE) $(R_PARALLEL) $(R_CCACHE_ENV)
+# Other unix and Windows/Rtools: no configure override, so route R's configured
+# compiler through the launcher via a user Makevars.
+R_CMD_ENV := R_MAKEVARS_USER=$(R_MAKEVARS_USER_PATH) $(R_PARALLEL) $(R_CCACHE_ENV)
 _write_r_makevars = @mkdir -p $(R_BUILD_DIR) && \
 	cc="$$($(R) CMD config CC)"; cxx="$$($(R) CMD config CXX)"; cxx17="$$($(R) CMD config CXX17)"; \
 	printf 'CC = %s %s\nCXX = %s %s\nCXX17 = %s %s\n' \
@@ -73,6 +84,8 @@ endif
 .PHONY: \
 	build-r-swig \
 	test-r-swig-freshness \
+	build-r-man \
+	test-r-man-freshness \
 	build-r-stage \
 	build-r \
 	build-r-binary \
@@ -90,6 +103,51 @@ build-r-swig:
 
 test-r-swig-freshness:
 	@SWIG="$(SWIG)" $(PYTHON) $(R_SWIG_SCRIPT) --check --r-out $(R_GENERATED_R) --cpp-out $(R_GENERATED_CPP)
+
+# The man pages are roxygen output, like the SWIG files above, but nothing checked
+# them: 18 options were missing from infomap_options.Rd and add_state_node()'s name
+# argument from Infomap.Rd, so `?infomap_options` documented a smaller API than the
+# package had.
+#
+# Both targets go through the staged package rather than the tracked skeleton,
+# because roxygen has to *load* the package to document its R6 class and the
+# skeleton has no wrapper sources -- src/ holds only Makevars.in. The staged copy
+# is a build directory, so generating there leaves the tracked tree alone.
+#
+# roxygen's output is version-dependent -- 8.0.0 rewrites the whole R6 section,
+# +731/-685 lines on Infomap.Rd against 7.3.3 -- so the version is pinned the way
+# air's is, and asserted here rather than left to produce a diff CI rejects for a
+# reason the local run does not explain. Keep R_ROXYGEN_VERSION, the pin in
+# .github/workflows/_r-package.yml, and the note in AGENTS.md in step.
+R_ROXYGEN_VERSION := 7.3.3
+
+define require_roxygen_version
+	@$(RSCRIPT) -e "v <- as.character(packageVersion('roxygen2')); \
+	if (v != '$(R_ROXYGEN_VERSION)') stop(sprintf( \
+	  'roxygen2 %s is installed, but the tracked man pages are generated with %s. Its output is version-dependent; install the pinned version or bump R_ROXYGEN_VERSION, the CI pin and the AGENTS.md note together.', \
+	  v, '$(R_ROXYGEN_VERSION)'), call. = FALSE)"
+endef
+
+build-r-man: build-r-stage
+	$(require_roxygen_version)
+	@$(RSCRIPT) -e "roxygen2::roxygenise('$(R_STAGED_DIR)', roclets = 'rd')" >/dev/null
+	@rm -f $(R_SKELETON_DIR)/man/*.Rd
+	@cp $(R_STAGED_DIR)/man/*.Rd $(R_SKELETON_DIR)/man/
+	@echo "Regenerated $(R_SKELETON_DIR)/man from the roxygen comments."
+
+test-r-man-freshness: build-r-stage
+	$(require_roxygen_version)
+	@$(RSCRIPT) -e "roxygen2::roxygenise('$(R_STAGED_DIR)', roclets = 'rd')" >/dev/null
+	@status=0; \
+	diff -ru $(R_SKELETON_DIR)/man $(R_STAGED_DIR)/man || status=$$?; \
+	if [ $$status -eq 0 ]; then \
+		echo "Tracked R man pages are fresh."; \
+	elif [ $$status -eq 1 ]; then \
+		echo "Tracked R man pages are stale; regenerate with: make build-r-man" >&2; \
+	else \
+		echo "Could not compare the man pages: diff exited $$status (not 0 or 1, so it failed to run rather than finding differences). The check did not conclude anything about freshness." >&2; \
+	fi; \
+	exit $$status
 
 build-r-stage:
 	@$(PYTHON) $(R_STAGE_SCRIPT) --out-dir $(R_STAGED_DIR)

@@ -3,11 +3,9 @@ import shlex
 import subprocess
 import sys
 
-import pytest
-
 import infomap as infomap_module
+import pytest
 from infomap._bindings import InfomapWrapper
-
 
 pytestmark = pytest.mark.fast
 
@@ -28,6 +26,7 @@ def test_construct_args_renders_expected_cli_flags():
         "--existing",
         "--no-infomap",
         "--no-file-output",
+        "--silent",
         "-vvv",
         "--output",
         "json,tree",
@@ -51,9 +50,12 @@ def test_construct_args_deduplicates_no_self_links():
     assert tokens.count("--no-self-links") == 1
 
 
+@pytest.mark.filterwarnings("ignore::PendingDeprecationWarning")
 def test_run_forwards_variable_markov_options(monkeypatch):
+    # Deliberately forwards advanced-tier engine kwargs through the stateful
+    # run() to assert they reach the engine; the pending-deprecation is expected.
     captured = {}
-    im = infomap_module.Infomap(silent=True, no_file_output=True)
+    im = infomap_module.Infomap(silent=True)
 
     def fake_construct_args(args=None, **kwargs):
         captured["args"] = args
@@ -80,7 +82,7 @@ def test_run_forwards_variable_markov_options(monkeypatch):
 def test_construct_args_renders_variable_markov_min_scale():
     args = infomap_module._construct_args(variable_markov_min_scale=0.5)
 
-    assert shlex.split(args) == ["--variable-markov-min-scale", "0.5"]
+    assert shlex.split(args) == ["--silent", "--variable-markov-min-scale", "0.5"]
 
 
 def test_infomap_facade_signatures_match_options():
@@ -94,7 +96,10 @@ def test_infomap_facade_signatures_match_options():
 
 
 def test_no_file_output_runs_without_output_directory(make_infomap, load_graph_fixture):
-    im = make_infomap(no_file_output=True)
+    # no_file_output is inert on the library surface (files come from the
+    # Result / Network writers), so it warns -- but the run still succeeds.
+    with pytest.warns(UserWarning, match="no_file_output"):
+        im = make_infomap(no_file_output=True)
     load_graph_fixture(im, "twotriangles_unweighted.edges")
 
     im.run()
@@ -163,3 +168,25 @@ def test_cli_completion_invalid_shell_exits_without_traceback():
     assert result.returncode == 1
     assert "Unsupported completion shell 'fish'" in result.stderr
     assert "Traceback" not in result.stderr
+
+
+def test_pretty_warns_when_passed_explicitly():
+    with pytest.deprecated_call(match="pretty is deprecated and has no effect"):
+        infomap_module.Infomap(silent=True, pretty=True)
+
+    im = infomap_module.Infomap(silent=True)
+    im.add_link(0, 1)
+    with pytest.deprecated_call(match="pretty is deprecated and has no effect"):
+        im.run(pretty=False)
+
+
+def test_include_self_links_warning_points_at_caller():
+    import warnings
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always", DeprecationWarning)
+        infomap_module.Infomap(silent=True, include_self_links=True)
+
+    matching = [w for w in caught if "include_self_links" in str(w.message)]
+    assert matching, "expected an include_self_links DeprecationWarning"
+    assert matching[0].filename == __file__

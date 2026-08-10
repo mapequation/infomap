@@ -13,8 +13,10 @@
 #include "Infomap.h"
 #include "TestUtils.h"
 
-#include <string>
 #include <cstdio>
+#include <set>
+#include <string>
+#include <utility>
 
 using namespace infomap;
 using infomap::test::readTextFile;
@@ -54,6 +56,45 @@ TEST_CASE("serializeTrialResults emits the documented JSON fields [fast][core][m
   empty.networkFingerprint = "h";
   const std::string emptyJson = serializeTrialResults(empty);
   CHECK(emptyJson.find("\"trials\":[]") != std::string::npos);
+}
+
+TEST_CASE("--trial-results records the run without changing it [fast][core][merge]")
+{
+  // --trial-results is documented as an output artifact, but it used to gate the
+  // per-trial reseeding: with it the run reseeded per trial, without it a single
+  // RNG stream ran through all trials, and the two published different
+  // partitions (#905). A cycle is used because its trials genuinely differ --
+  // see the seed-contract cases in test_partition.cpp.
+  const std::string resultsPath = "tr_output_flag_inert.json";
+  std::remove(resultsPath.c_str());
+
+  auto runCycle = [](const std::string& extraFlags) {
+    InfomapWrapper im("--silent --no-file-output --seed 3 --num-trials 8 " + extraFlags);
+    for (unsigned int i = 0; i < 60; ++i) {
+      im.addLink(i, (i + 1) % 60);
+    }
+    im.run();
+    return std::make_pair(im.codelengths(), im.getMultilevelModules(false));
+  };
+
+  const auto without = runCycle("");
+  const auto with = runCycle("--trial-results " + resultsPath);
+
+  // Preconditions, both of which this test would otherwise pass vacuously on:
+  // the trials have to differ for a seeding regression to be observable at all,
+  // and the shard file has to have been written -- if --trial-results were ever
+  // suppressed (by --no-file-output or anything else) the flag would be a no-op
+  // and the partitions would match trivially.
+  REQUIRE(infomap::pathExists(resultsPath));
+  REQUIRE(without.first.size() == 8);
+  REQUIRE(std::set<double>(without.first.begin(), without.first.end()).size() > 1);
+
+  for (std::size_t i = 0; i < without.first.size(); ++i) {
+    CHECK(with.first[i] == doctest::Approx(without.first[i]));
+  }
+  CHECK(with.second == without.second);
+
+  std::remove(resultsPath.c_str());
 }
 
 TEST_CASE("Shard run emits trial-results JSON and best-tree file; --no-final-output suppresses aggregate [fast][core][merge]")

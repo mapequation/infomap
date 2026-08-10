@@ -6,7 +6,8 @@
     "declarationMap": false,
     "rootDir": "./src",
     "outDir": "../../dist/npm/package",
-    "noEmit": false
+    "noEmit": false,
+    "types": ["node"]
   },
   "include": ["src/**/*.ts", "src/**/*.d.ts"]
 }

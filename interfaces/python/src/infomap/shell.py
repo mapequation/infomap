@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 
 import infomap
+
 from . import Infomap, MultilayerNode, Options
 from ._summary import summary_data as _summary_data
 
@@ -64,7 +65,8 @@ def create_namespace(network_file=None):
 def launch_shell(namespace, banner, *, use_ipython=True):
     if use_ipython:
         try:
-            from IPython import start_ipython  # pyright: ignore[reportMissingImports]  # optional dep, no stubs
+            # optional dep, no stubs
+            from IPython import start_ipython  # pyright: ignore[reportMissingImports]
         except ImportError:
             pass
         else:
@@ -103,7 +105,14 @@ def main(argv=None, *, launcher=launch_shell):
             print(f"Error: No such file: {network_file}", file=sys.stderr)
             return 1
 
-    namespace = create_namespace(network_file)
+    # Scoped to the preload only, so errors inside the REPL itself are not
+    # swallowed. A file that exists but cannot be parsed raises RuntimeError
+    # from the engine; report it like the missing-file case above.
+    try:
+        namespace = create_namespace(network_file)
+    except RuntimeError as exc:
+        print(f"Error: Could not read {network_file}: {exc}", file=sys.stderr)
+        return 1
     banner = _make_banner(network_file)
     launcher(namespace, banner, use_ipython=not args.no_ipython)
     return 0

@@ -72,7 +72,7 @@ struct Config {
   double metaDataRate = 1.0;
   bool unweightedMetaData = false;
   unsigned int numMetaDataDimensions = 0;
-  bool clusterDataIsHard = false; // FIXME Not used
+  bool clusterDataIsHard = false; // Keep the initial partition instead of optimizing it away
   bool assignToNeighbouringModule = false;
   bool noInfomap = false;
 
@@ -95,6 +95,8 @@ struct Config {
   int multilayerJSRelaxLimit = -1;
   bool multilayerRelaxToSelf = false; // Couple only physical nodes across layers instead of spreading to neighbours
   unsigned int maxFlowIterations = 400;
+  unsigned int minFlowIterations = 50;
+  double flowTolerance = 1.0e-15; // Convergence tolerance for flow calculation (PageRank)
 
   // Clustering
   bool twoLevel = false;
@@ -132,6 +134,11 @@ struct Config {
   static constexpr unsigned int convergePatience = 5; // consecutive non-improving trials before stopping
   static constexpr unsigned int convergeMinTrials = 5; // floor before the plateau rule can fire
   static constexpr unsigned int convergeDefaultMaxTrials = 50; // cap used when --converge is set without an explicit -N (~3.5x headroom over worst observed)
+  // Largest --matchable-multilayer-ids value whose state id still fits 32 bits: the
+  // id is `physId << (ceil(log2(N)) + 1) | layerId`, so N above 2^30 makes the shift
+  // count 32 or more, which is undefined behaviour. Shared with StateNetwork, which
+  // reports the same bound when it rejects the shift.
+  static constexpr unsigned int maxMatchableMultilayerIds = 1u << 30;
 #endif
   double minimumCodelengthImprovement = 1e-10;
   double minimumSingleNodeCodelengthImprovement = 1e-16;
@@ -237,6 +244,8 @@ struct Config {
     multilayerJSRelaxLimit = other.multilayerJSRelaxLimit;
     multilayerRelaxToSelf = other.multilayerRelaxToSelf;
     maxFlowIterations = other.maxFlowIterations;
+    minFlowIterations = other.minFlowIterations;
+    flowTolerance = other.flowTolerance;
     twoLevel = other.twoLevel;
     noCoarseTune = other.noCoarseTune;
     recordedTeleportation = other.recordedTeleportation;

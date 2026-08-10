@@ -216,6 +216,8 @@ setClass("infomap::Config",
         multilayerJSRelaxLimit = "integer",
         multilayerRelaxToSelf = "logical",
         maxFlowIterations = "integer",
+        minFlowIterations = "integer",
+        flowTolerance = "numeric",
         twoLevel = "logical",
         noCoarseTune = "logical",
         recordedTeleportation = "logical",
@@ -1800,6 +1802,65 @@ class(`Config_maxFlowIterations_set`) = c("SWIGFunction", class('Config_maxFlowI
 attr(`Config_maxFlowIterations_get`, 'returnType') = 'integer'
 attr(`Config_maxFlowIterations_get`, "inputTypes") = c('_p_infomap__Config')
 class(`Config_maxFlowIterations_get`) = c("SWIGFunction", class('Config_maxFlowIterations_get'))
+
+# Start of Config_minFlowIterations_set
+
+`Config_minFlowIterations_set` = function(self, s_minFlowIterations)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  s_minFlowIterations = as.integer(s_minFlowIterations);
+  
+  if(length(s_minFlowIterations) > 1) {
+    warning("using only the first element of s_minFlowIterations");
+  };
+  
+  ;.Call('R_swig_Config_minFlowIterations_set', self, s_minFlowIterations, PACKAGE='infomap');
+  
+}
+
+attr(`Config_minFlowIterations_set`, 'returnType') = 'void'
+attr(`Config_minFlowIterations_set`, "inputTypes") = c('_p_infomap__Config', 'integer')
+class(`Config_minFlowIterations_set`) = c("SWIGFunction", class('Config_minFlowIterations_set'))
+
+# Start of Config_minFlowIterations_get
+
+`Config_minFlowIterations_get` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;.Call('R_swig_Config_minFlowIterations_get', self, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`Config_minFlowIterations_get`, 'returnType') = 'integer'
+attr(`Config_minFlowIterations_get`, "inputTypes") = c('_p_infomap__Config')
+class(`Config_minFlowIterations_get`) = c("SWIGFunction", class('Config_minFlowIterations_get'))
+
+# Start of Config_flowTolerance_set
+
+`Config_flowTolerance_set` = function(self, s_flowTolerance)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  
+  ;.Call('R_swig_Config_flowTolerance_set', self, s_flowTolerance, PACKAGE='infomap');
+  
+}
+
+attr(`Config_flowTolerance_set`, 'returnType') = 'void'
+attr(`Config_flowTolerance_set`, "inputTypes") = c('_p_infomap__Config', 'numeric')
+class(`Config_flowTolerance_set`) = c("SWIGFunction", class('Config_flowTolerance_set'))
+
+# Start of Config_flowTolerance_get
+
+`Config_flowTolerance_get` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;.Call('R_swig_Config_flowTolerance_get', self, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`Config_flowTolerance_get`, 'returnType') = 'numeric'
+attr(`Config_flowTolerance_get`, "inputTypes") = c('_p_infomap__Config')
+class(`Config_flowTolerance_get`) = c("SWIGFunction", class('Config_flowTolerance_get'))
 
 # Start of Config_twoLevel_set
 
@@ -3586,8 +3647,8 @@ class(`delete_Config`) = c("SWIGFunction", class('delete_Config'))
 setMethod('$', '_p_infomap__Config', function(x, name)
 
 {
-  accessorFuns = list('isCLI' = Config_isCLI_get, 'networkFile' = Config_networkFile_get, 'additionalInput' = Config_additionalInput_get, 'stateInput' = Config_stateInput_get, 'stateOutput' = Config_stateOutput_get, 'multilayerInput' = Config_multilayerInput_get, 'weightThreshold' = Config_weightThreshold_get, 'bipartite' = Config_bipartite_get, 'skipAdjustBipartiteFlow' = Config_skipAdjustBipartiteFlow_get, 'bipartiteTeleportation' = Config_bipartiteTeleportation_get, 'noSelfLinks' = Config_noSelfLinks_get, 'nodeLimit' = Config_nodeLimit_get, 'matchableMultilayerIds' = Config_matchableMultilayerIds_get, 'clusterDataFile' = Config_clusterDataFile_get, 'metaDataFile' = Config_metaDataFile_get, 'metaDataRate' = Config_metaDataRate_get, 'unweightedMetaData' = Config_unweightedMetaData_get, 'numMetaDataDimensions' = Config_numMetaDataDimensions_get, 'clusterDataIsHard' = Config_clusterDataIsHard_get, 'assignToNeighbouringModule' = Config_assignToNeighbouringModule_get, 'noInfomap' = Config_noInfomap_get, 'flowModel' = Config_flowModel_get, 'flowModelIsSet' = Config_flowModelIsSet_get, 'directed' = Config_directed_get, 'useNodeWeightsAsFlow' = Config_useNodeWeightsAsFlow_get, 'teleportToNodes' = Config_teleportToNodes_get, 'markovTime' = Config_markovTime_get, 'variableMarkovTime' = Config_variableMarkovTime_get, 'variableMarkovTimeDamping' = Config_variableMarkovTimeDamping_get, 'variableMarkovTimeMinLocalScale' = Config_variableMarkovTimeMinLocalScale_get, 'markovTimeNoSelfLinks' = Config_markovTimeNoSelfLinks_get, 'multilayerRelaxRate' = Config_multilayerRelaxRate_get, 'multilayerRelaxLimit' = Config_multilayerRelaxLimit_get, 'multilayerRelaxLimitUp' = Config_multilayerRelaxLimitUp_get, 'multilayerRelaxLimitDown' = Config_multilayerRelaxLimitDown_get, 'multilayerJSRelaxRate' = Config_multilayerJSRelaxRate_get, 'multilayerRelaxByJensenShannonDivergence' = Config_multilayerRelaxByJensenShannonDivergence_get, 'multilayerJSRelaxLimit' = Config_multilayerJSRelaxLimit_get, 'multilayerRelaxToSelf' = Config_multilayerRelaxToSelf_get, 'maxFlowIterations' = Config_maxFlowIterations_get, 'twoLevel' = Config_twoLevel_get, 'noCoarseTune' = Config_noCoarseTune_get, 'recordedTeleportation' = Config_recordedTeleportation_get, 'regularized' = Config_regularized_get, 'regularizationStrength' = Config_regularizationStrength_get, 'teleportationProbability' = Config_teleportationProbability_get, 'preferredNumberOfModules' = Config_preferredNumberOfModules_get, 'preferredNumberOfLevels' = Config_preferredNumberOfLevels_get, 'preferredNumberOfLevelsStrength' = Config_preferredNumberOfLevelsStrength_get, 'entropyBiasCorrection' = Config_entropyBiasCorrection_get, 'entropyBiasCorrectionMultiplier' = Config_entropyBiasCorrectionMultiplier_get, 'seedToRandomNumberGenerator' = Config_seedToRandomNumberGenerator_get, 'numTrials' = Config_numTrials_get, 'convergeTrials' = Config_convergeTrials_get, 'minimumCodelengthImprovement' = Config_minimumCodelengthImprovement_get, 'minimumSingleNodeCodelengthImprovement' = Config_minimumSingleNodeCodelengthImprovement_get, 'randomizeCoreLoopLimit' = Config_randomizeCoreLoopLimit_get, 'coreLoopLimit' = Config_coreLoopLimit_get, 'levelAggregationLimit' = Config_levelAggregationLimit_get, 'tuneIterationLimit' = Config_tuneIterationLimit_get, 'minimumRelativeTuneIterationImprovement' = Config_minimumRelativeTuneIterationImprovement_get, 'onlySuperModules' = Config_onlySuperModules_get, 'fastHierarchicalSolution' = Config_fastHierarchicalSolution_get, 'preferModularSolution' = Config_preferModularSolution_get, 'innerParallelization' = Config_innerParallelization_get, 'parallelTrials' = Config_parallelTrials_get, 'numRandomMoves' = Config_numRandomMoves_get, 'maxDegreeForRandomMoves' = Config_maxDegreeForRandomMoves_get, 'outDirectory' = Config_outDirectory_get, 'outName' = Config_outName_get, 'outputFormats' = Config_outputFormats_get, 'printTree' = Config_printTree_get, 'printFlowTree' = Config_printFlowTree_get, 'printNewick' = Config_printNewick_get, 'printJson' = Config_printJson_get, 'printCsv' = Config_printCsv_get, 'printClu' = Config_printClu_get, 'printAllTrials' = Config_printAllTrials_get, 'cluLevel' = Config_cluLevel_get, 'printFlowNetwork' = Config_printFlowNetwork_get, 'printPajekNetwork' = Config_printPajekNetwork_get, 'printStateNetwork' = Config_printStateNetwork_get, 'noFileOutput' = Config_noFileOutput_get, 'verbosity' = Config_verbosity_get, 'verboseNumberPrecision' = Config_verboseNumberPrecision_get, 'silent' = Config_silent_get, 'prettyOutput' = Config_prettyOutput_get, 'hideBipartiteNodes' = Config_hideBipartiteNodes_get, 'startDate' = Config_startDate_get, 'version' = Config_version_get, 'parsedString' = Config_parsedString_get, 'parsedOptions' = Config_parsedOptions_get, 'cloneAsNonMain' = Config_cloneAsNonMain, 'adaptDefaults' = Config_adaptDefaults, 'setStateInput' = Config_setStateInput, 'setStateOutput' = Config_setStateOutput, 'setMultilayerInput' = Config_setMultilayerInput, 'setFlowModel' = Config_setFlowModel, 'isUndirectedClustering' = Config_isUndirectedClustering, 'isUndirectedFlow' = Config_isUndirectedFlow, 'printAsUndirected' = Config_printAsUndirected, 'isMultilayerNetwork' = Config_isMultilayerNetwork, 'isBipartite' = Config_isBipartite, 'haveMemory' = Config_haveMemory, 'printStates' = Config_printStates, 'haveMetaData' = Config_haveMetaData, 'haveOutput' = Config_haveOutput, 'haveModularResultOutput' = Config_haveModularResultOutput);
-  vaccessors = c('isCLI', 'networkFile', 'additionalInput', 'stateInput', 'stateOutput', 'multilayerInput', 'weightThreshold', 'bipartite', 'skipAdjustBipartiteFlow', 'bipartiteTeleportation', 'noSelfLinks', 'nodeLimit', 'matchableMultilayerIds', 'clusterDataFile', 'metaDataFile', 'metaDataRate', 'unweightedMetaData', 'numMetaDataDimensions', 'clusterDataIsHard', 'assignToNeighbouringModule', 'noInfomap', 'flowModel', 'flowModelIsSet', 'directed', 'useNodeWeightsAsFlow', 'teleportToNodes', 'markovTime', 'variableMarkovTime', 'variableMarkovTimeDamping', 'variableMarkovTimeMinLocalScale', 'markovTimeNoSelfLinks', 'multilayerRelaxRate', 'multilayerRelaxLimit', 'multilayerRelaxLimitUp', 'multilayerRelaxLimitDown', 'multilayerJSRelaxRate', 'multilayerRelaxByJensenShannonDivergence', 'multilayerJSRelaxLimit', 'multilayerRelaxToSelf', 'maxFlowIterations', 'twoLevel', 'noCoarseTune', 'recordedTeleportation', 'regularized', 'regularizationStrength', 'teleportationProbability', 'preferredNumberOfModules', 'preferredNumberOfLevels', 'preferredNumberOfLevelsStrength', 'entropyBiasCorrection', 'entropyBiasCorrectionMultiplier', 'seedToRandomNumberGenerator', 'numTrials', 'convergeTrials', 'minimumCodelengthImprovement', 'minimumSingleNodeCodelengthImprovement', 'randomizeCoreLoopLimit', 'coreLoopLimit', 'levelAggregationLimit', 'tuneIterationLimit', 'minimumRelativeTuneIterationImprovement', 'onlySuperModules', 'fastHierarchicalSolution', 'preferModularSolution', 'innerParallelization', 'parallelTrials', 'numRandomMoves', 'maxDegreeForRandomMoves', 'outDirectory', 'outName', 'outputFormats', 'printTree', 'printFlowTree', 'printNewick', 'printJson', 'printCsv', 'printClu', 'printAllTrials', 'cluLevel', 'printFlowNetwork', 'printPajekNetwork', 'printStateNetwork', 'noFileOutput', 'verbosity', 'verboseNumberPrecision', 'silent', 'prettyOutput', 'hideBipartiteNodes', 'startDate', 'version', 'parsedString', 'parsedOptions');
+  accessorFuns = list('isCLI' = Config_isCLI_get, 'networkFile' = Config_networkFile_get, 'additionalInput' = Config_additionalInput_get, 'stateInput' = Config_stateInput_get, 'stateOutput' = Config_stateOutput_get, 'multilayerInput' = Config_multilayerInput_get, 'weightThreshold' = Config_weightThreshold_get, 'bipartite' = Config_bipartite_get, 'skipAdjustBipartiteFlow' = Config_skipAdjustBipartiteFlow_get, 'bipartiteTeleportation' = Config_bipartiteTeleportation_get, 'noSelfLinks' = Config_noSelfLinks_get, 'nodeLimit' = Config_nodeLimit_get, 'matchableMultilayerIds' = Config_matchableMultilayerIds_get, 'clusterDataFile' = Config_clusterDataFile_get, 'metaDataFile' = Config_metaDataFile_get, 'metaDataRate' = Config_metaDataRate_get, 'unweightedMetaData' = Config_unweightedMetaData_get, 'numMetaDataDimensions' = Config_numMetaDataDimensions_get, 'clusterDataIsHard' = Config_clusterDataIsHard_get, 'assignToNeighbouringModule' = Config_assignToNeighbouringModule_get, 'noInfomap' = Config_noInfomap_get, 'flowModel' = Config_flowModel_get, 'flowModelIsSet' = Config_flowModelIsSet_get, 'directed' = Config_directed_get, 'useNodeWeightsAsFlow' = Config_useNodeWeightsAsFlow_get, 'teleportToNodes' = Config_teleportToNodes_get, 'markovTime' = Config_markovTime_get, 'variableMarkovTime' = Config_variableMarkovTime_get, 'variableMarkovTimeDamping' = Config_variableMarkovTimeDamping_get, 'variableMarkovTimeMinLocalScale' = Config_variableMarkovTimeMinLocalScale_get, 'markovTimeNoSelfLinks' = Config_markovTimeNoSelfLinks_get, 'multilayerRelaxRate' = Config_multilayerRelaxRate_get, 'multilayerRelaxLimit' = Config_multilayerRelaxLimit_get, 'multilayerRelaxLimitUp' = Config_multilayerRelaxLimitUp_get, 'multilayerRelaxLimitDown' = Config_multilayerRelaxLimitDown_get, 'multilayerJSRelaxRate' = Config_multilayerJSRelaxRate_get, 'multilayerRelaxByJensenShannonDivergence' = Config_multilayerRelaxByJensenShannonDivergence_get, 'multilayerJSRelaxLimit' = Config_multilayerJSRelaxLimit_get, 'multilayerRelaxToSelf' = Config_multilayerRelaxToSelf_get, 'maxFlowIterations' = Config_maxFlowIterations_get, 'minFlowIterations' = Config_minFlowIterations_get, 'flowTolerance' = Config_flowTolerance_get, 'twoLevel' = Config_twoLevel_get, 'noCoarseTune' = Config_noCoarseTune_get, 'recordedTeleportation' = Config_recordedTeleportation_get, 'regularized' = Config_regularized_get, 'regularizationStrength' = Config_regularizationStrength_get, 'teleportationProbability' = Config_teleportationProbability_get, 'preferredNumberOfModules' = Config_preferredNumberOfModules_get, 'preferredNumberOfLevels' = Config_preferredNumberOfLevels_get, 'preferredNumberOfLevelsStrength' = Config_preferredNumberOfLevelsStrength_get, 'entropyBiasCorrection' = Config_entropyBiasCorrection_get, 'entropyBiasCorrectionMultiplier' = Config_entropyBiasCorrectionMultiplier_get, 'seedToRandomNumberGenerator' = Config_seedToRandomNumberGenerator_get, 'numTrials' = Config_numTrials_get, 'convergeTrials' = Config_convergeTrials_get, 'minimumCodelengthImprovement' = Config_minimumCodelengthImprovement_get, 'minimumSingleNodeCodelengthImprovement' = Config_minimumSingleNodeCodelengthImprovement_get, 'randomizeCoreLoopLimit' = Config_randomizeCoreLoopLimit_get, 'coreLoopLimit' = Config_coreLoopLimit_get, 'levelAggregationLimit' = Config_levelAggregationLimit_get, 'tuneIterationLimit' = Config_tuneIterationLimit_get, 'minimumRelativeTuneIterationImprovement' = Config_minimumRelativeTuneIterationImprovement_get, 'onlySuperModules' = Config_onlySuperModules_get, 'fastHierarchicalSolution' = Config_fastHierarchicalSolution_get, 'preferModularSolution' = Config_preferModularSolution_get, 'innerParallelization' = Config_innerParallelization_get, 'parallelTrials' = Config_parallelTrials_get, 'numRandomMoves' = Config_numRandomMoves_get, 'maxDegreeForRandomMoves' = Config_maxDegreeForRandomMoves_get, 'outDirectory' = Config_outDirectory_get, 'outName' = Config_outName_get, 'outputFormats' = Config_outputFormats_get, 'printTree' = Config_printTree_get, 'printFlowTree' = Config_printFlowTree_get, 'printNewick' = Config_printNewick_get, 'printJson' = Config_printJson_get, 'printCsv' = Config_printCsv_get, 'printClu' = Config_printClu_get, 'printAllTrials' = Config_printAllTrials_get, 'cluLevel' = Config_cluLevel_get, 'printFlowNetwork' = Config_printFlowNetwork_get, 'printPajekNetwork' = Config_printPajekNetwork_get, 'printStateNetwork' = Config_printStateNetwork_get, 'noFileOutput' = Config_noFileOutput_get, 'verbosity' = Config_verbosity_get, 'verboseNumberPrecision' = Config_verboseNumberPrecision_get, 'silent' = Config_silent_get, 'prettyOutput' = Config_prettyOutput_get, 'hideBipartiteNodes' = Config_hideBipartiteNodes_get, 'startDate' = Config_startDate_get, 'version' = Config_version_get, 'parsedString' = Config_parsedString_get, 'parsedOptions' = Config_parsedOptions_get, 'cloneAsNonMain' = Config_cloneAsNonMain, 'adaptDefaults' = Config_adaptDefaults, 'setStateInput' = Config_setStateInput, 'setStateOutput' = Config_setStateOutput, 'setMultilayerInput' = Config_setMultilayerInput, 'setFlowModel' = Config_setFlowModel, 'isUndirectedClustering' = Config_isUndirectedClustering, 'isUndirectedFlow' = Config_isUndirectedFlow, 'printAsUndirected' = Config_printAsUndirected, 'isMultilayerNetwork' = Config_isMultilayerNetwork, 'isBipartite' = Config_isBipartite, 'haveMemory' = Config_haveMemory, 'printStates' = Config_printStates, 'haveMetaData' = Config_haveMetaData, 'haveOutput' = Config_haveOutput, 'haveModularResultOutput' = Config_haveModularResultOutput);
+  vaccessors = c('isCLI', 'networkFile', 'additionalInput', 'stateInput', 'stateOutput', 'multilayerInput', 'weightThreshold', 'bipartite', 'skipAdjustBipartiteFlow', 'bipartiteTeleportation', 'noSelfLinks', 'nodeLimit', 'matchableMultilayerIds', 'clusterDataFile', 'metaDataFile', 'metaDataRate', 'unweightedMetaData', 'numMetaDataDimensions', 'clusterDataIsHard', 'assignToNeighbouringModule', 'noInfomap', 'flowModel', 'flowModelIsSet', 'directed', 'useNodeWeightsAsFlow', 'teleportToNodes', 'markovTime', 'variableMarkovTime', 'variableMarkovTimeDamping', 'variableMarkovTimeMinLocalScale', 'markovTimeNoSelfLinks', 'multilayerRelaxRate', 'multilayerRelaxLimit', 'multilayerRelaxLimitUp', 'multilayerRelaxLimitDown', 'multilayerJSRelaxRate', 'multilayerRelaxByJensenShannonDivergence', 'multilayerJSRelaxLimit', 'multilayerRelaxToSelf', 'maxFlowIterations', 'minFlowIterations', 'flowTolerance', 'twoLevel', 'noCoarseTune', 'recordedTeleportation', 'regularized', 'regularizationStrength', 'teleportationProbability', 'preferredNumberOfModules', 'preferredNumberOfLevels', 'preferredNumberOfLevelsStrength', 'entropyBiasCorrection', 'entropyBiasCorrectionMultiplier', 'seedToRandomNumberGenerator', 'numTrials', 'convergeTrials', 'minimumCodelengthImprovement', 'minimumSingleNodeCodelengthImprovement', 'randomizeCoreLoopLimit', 'coreLoopLimit', 'levelAggregationLimit', 'tuneIterationLimit', 'minimumRelativeTuneIterationImprovement', 'onlySuperModules', 'fastHierarchicalSolution', 'preferModularSolution', 'innerParallelization', 'parallelTrials', 'numRandomMoves', 'maxDegreeForRandomMoves', 'outDirectory', 'outName', 'outputFormats', 'printTree', 'printFlowTree', 'printNewick', 'printJson', 'printCsv', 'printClu', 'printAllTrials', 'cluLevel', 'printFlowNetwork', 'printPajekNetwork', 'printStateNetwork', 'noFileOutput', 'verbosity', 'verboseNumberPrecision', 'silent', 'prettyOutput', 'hideBipartiteNodes', 'startDate', 'version', 'parsedString', 'parsedOptions');
   ;        idx = pmatch(name, names(accessorFuns));
   if(is.na(idx)) 
   return(callNextMethod(x, name));
@@ -3604,7 +3665,7 @@ setMethod('$', '_p_infomap__Config', function(x, name)
 setMethod('$<-', '_p_infomap__Config', function(x, name, value)
 
 {
-  accessorFuns = list('isCLI' = Config_isCLI_set, 'networkFile' = Config_networkFile_set, 'additionalInput' = Config_additionalInput_set, 'stateInput' = Config_stateInput_set, 'stateOutput' = Config_stateOutput_set, 'multilayerInput' = Config_multilayerInput_set, 'weightThreshold' = Config_weightThreshold_set, 'bipartite' = Config_bipartite_set, 'skipAdjustBipartiteFlow' = Config_skipAdjustBipartiteFlow_set, 'bipartiteTeleportation' = Config_bipartiteTeleportation_set, 'noSelfLinks' = Config_noSelfLinks_set, 'nodeLimit' = Config_nodeLimit_set, 'matchableMultilayerIds' = Config_matchableMultilayerIds_set, 'clusterDataFile' = Config_clusterDataFile_set, 'metaDataFile' = Config_metaDataFile_set, 'metaDataRate' = Config_metaDataRate_set, 'unweightedMetaData' = Config_unweightedMetaData_set, 'numMetaDataDimensions' = Config_numMetaDataDimensions_set, 'clusterDataIsHard' = Config_clusterDataIsHard_set, 'assignToNeighbouringModule' = Config_assignToNeighbouringModule_set, 'noInfomap' = Config_noInfomap_set, 'flowModel' = Config_flowModel_set, 'flowModelIsSet' = Config_flowModelIsSet_set, 'directed' = Config_directed_set, 'useNodeWeightsAsFlow' = Config_useNodeWeightsAsFlow_set, 'teleportToNodes' = Config_teleportToNodes_set, 'markovTime' = Config_markovTime_set, 'variableMarkovTime' = Config_variableMarkovTime_set, 'variableMarkovTimeDamping' = Config_variableMarkovTimeDamping_set, 'variableMarkovTimeMinLocalScale' = Config_variableMarkovTimeMinLocalScale_set, 'markovTimeNoSelfLinks' = Config_markovTimeNoSelfLinks_set, 'multilayerRelaxRate' = Config_multilayerRelaxRate_set, 'multilayerRelaxLimit' = Config_multilayerRelaxLimit_set, 'multilayerRelaxLimitUp' = Config_multilayerRelaxLimitUp_set, 'multilayerRelaxLimitDown' = Config_multilayerRelaxLimitDown_set, 'multilayerJSRelaxRate' = Config_multilayerJSRelaxRate_set, 'multilayerRelaxByJensenShannonDivergence' = Config_multilayerRelaxByJensenShannonDivergence_set, 'multilayerJSRelaxLimit' = Config_multilayerJSRelaxLimit_set, 'multilayerRelaxToSelf' = Config_multilayerRelaxToSelf_set, 'maxFlowIterations' = Config_maxFlowIterations_set, 'twoLevel' = Config_twoLevel_set, 'noCoarseTune' = Config_noCoarseTune_set, 'recordedTeleportation' = Config_recordedTeleportation_set, 'regularized' = Config_regularized_set, 'regularizationStrength' = Config_regularizationStrength_set, 'teleportationProbability' = Config_teleportationProbability_set, 'preferredNumberOfModules' = Config_preferredNumberOfModules_set, 'preferredNumberOfLevels' = Config_preferredNumberOfLevels_set, 'preferredNumberOfLevelsStrength' = Config_preferredNumberOfLevelsStrength_set, 'entropyBiasCorrection' = Config_entropyBiasCorrection_set, 'entropyBiasCorrectionMultiplier' = Config_entropyBiasCorrectionMultiplier_set, 'seedToRandomNumberGenerator' = Config_seedToRandomNumberGenerator_set, 'numTrials' = Config_numTrials_set, 'convergeTrials' = Config_convergeTrials_set, 'minimumCodelengthImprovement' = Config_minimumCodelengthImprovement_set, 'minimumSingleNodeCodelengthImprovement' = Config_minimumSingleNodeCodelengthImprovement_set, 'randomizeCoreLoopLimit' = Config_randomizeCoreLoopLimit_set, 'coreLoopLimit' = Config_coreLoopLimit_set, 'levelAggregationLimit' = Config_levelAggregationLimit_set, 'tuneIterationLimit' = Config_tuneIterationLimit_set, 'minimumRelativeTuneIterationImprovement' = Config_minimumRelativeTuneIterationImprovement_set, 'onlySuperModules' = Config_onlySuperModules_set, 'fastHierarchicalSolution' = Config_fastHierarchicalSolution_set, 'preferModularSolution' = Config_preferModularSolution_set, 'innerParallelization' = Config_innerParallelization_set, 'parallelTrials' = Config_parallelTrials_set, 'numRandomMoves' = Config_numRandomMoves_set, 'maxDegreeForRandomMoves' = Config_maxDegreeForRandomMoves_set, 'outDirectory' = Config_outDirectory_set, 'outName' = Config_outName_set, 'outputFormats' = Config_outputFormats_set, 'printTree' = Config_printTree_set, 'printFlowTree' = Config_printFlowTree_set, 'printNewick' = Config_printNewick_set, 'printJson' = Config_printJson_set, 'printCsv' = Config_printCsv_set, 'printClu' = Config_printClu_set, 'printAllTrials' = Config_printAllTrials_set, 'cluLevel' = Config_cluLevel_set, 'printFlowNetwork' = Config_printFlowNetwork_set, 'printPajekNetwork' = Config_printPajekNetwork_set, 'printStateNetwork' = Config_printStateNetwork_set, 'noFileOutput' = Config_noFileOutput_set, 'verbosity' = Config_verbosity_set, 'verboseNumberPrecision' = Config_verboseNumberPrecision_set, 'silent' = Config_silent_set, 'prettyOutput' = Config_prettyOutput_set, 'hideBipartiteNodes' = Config_hideBipartiteNodes_set, 'startDate' = Config_startDate_set, 'version' = Config_version_set, 'parsedString' = Config_parsedString_set, 'parsedOptions' = Config_parsedOptions_set);
+  accessorFuns = list('isCLI' = Config_isCLI_set, 'networkFile' = Config_networkFile_set, 'additionalInput' = Config_additionalInput_set, 'stateInput' = Config_stateInput_set, 'stateOutput' = Config_stateOutput_set, 'multilayerInput' = Config_multilayerInput_set, 'weightThreshold' = Config_weightThreshold_set, 'bipartite' = Config_bipartite_set, 'skipAdjustBipartiteFlow' = Config_skipAdjustBipartiteFlow_set, 'bipartiteTeleportation' = Config_bipartiteTeleportation_set, 'noSelfLinks' = Config_noSelfLinks_set, 'nodeLimit' = Config_nodeLimit_set, 'matchableMultilayerIds' = Config_matchableMultilayerIds_set, 'clusterDataFile' = Config_clusterDataFile_set, 'metaDataFile' = Config_metaDataFile_set, 'metaDataRate' = Config_metaDataRate_set, 'unweightedMetaData' = Config_unweightedMetaData_set, 'numMetaDataDimensions' = Config_numMetaDataDimensions_set, 'clusterDataIsHard' = Config_clusterDataIsHard_set, 'assignToNeighbouringModule' = Config_assignToNeighbouringModule_set, 'noInfomap' = Config_noInfomap_set, 'flowModel' = Config_flowModel_set, 'flowModelIsSet' = Config_flowModelIsSet_set, 'directed' = Config_directed_set, 'useNodeWeightsAsFlow' = Config_useNodeWeightsAsFlow_set, 'teleportToNodes' = Config_teleportToNodes_set, 'markovTime' = Config_markovTime_set, 'variableMarkovTime' = Config_variableMarkovTime_set, 'variableMarkovTimeDamping' = Config_variableMarkovTimeDamping_set, 'variableMarkovTimeMinLocalScale' = Config_variableMarkovTimeMinLocalScale_set, 'markovTimeNoSelfLinks' = Config_markovTimeNoSelfLinks_set, 'multilayerRelaxRate' = Config_multilayerRelaxRate_set, 'multilayerRelaxLimit' = Config_multilayerRelaxLimit_set, 'multilayerRelaxLimitUp' = Config_multilayerRelaxLimitUp_set, 'multilayerRelaxLimitDown' = Config_multilayerRelaxLimitDown_set, 'multilayerJSRelaxRate' = Config_multilayerJSRelaxRate_set, 'multilayerRelaxByJensenShannonDivergence' = Config_multilayerRelaxByJensenShannonDivergence_set, 'multilayerJSRelaxLimit' = Config_multilayerJSRelaxLimit_set, 'multilayerRelaxToSelf' = Config_multilayerRelaxToSelf_set, 'maxFlowIterations' = Config_maxFlowIterations_set, 'minFlowIterations' = Config_minFlowIterations_set, 'flowTolerance' = Config_flowTolerance_set, 'twoLevel' = Config_twoLevel_set, 'noCoarseTune' = Config_noCoarseTune_set, 'recordedTeleportation' = Config_recordedTeleportation_set, 'regularized' = Config_regularized_set, 'regularizationStrength' = Config_regularizationStrength_set, 'teleportationProbability' = Config_teleportationProbability_set, 'preferredNumberOfModules' = Config_preferredNumberOfModules_set, 'preferredNumberOfLevels' = Config_preferredNumberOfLevels_set, 'preferredNumberOfLevelsStrength' = Config_preferredNumberOfLevelsStrength_set, 'entropyBiasCorrection' = Config_entropyBiasCorrection_set, 'entropyBiasCorrectionMultiplier' = Config_entropyBiasCorrectionMultiplier_set, 'seedToRandomNumberGenerator' = Config_seedToRandomNumberGenerator_set, 'numTrials' = Config_numTrials_set, 'convergeTrials' = Config_convergeTrials_set, 'minimumCodelengthImprovement' = Config_minimumCodelengthImprovement_set, 'minimumSingleNodeCodelengthImprovement' = Config_minimumSingleNodeCodelengthImprovement_set, 'randomizeCoreLoopLimit' = Config_randomizeCoreLoopLimit_set, 'coreLoopLimit' = Config_coreLoopLimit_set, 'levelAggregationLimit' = Config_levelAggregationLimit_set, 'tuneIterationLimit' = Config_tuneIterationLimit_set, 'minimumRelativeTuneIterationImprovement' = Config_minimumRelativeTuneIterationImprovement_set, 'onlySuperModules' = Config_onlySuperModules_set, 'fastHierarchicalSolution' = Config_fastHierarchicalSolution_set, 'preferModularSolution' = Config_preferModularSolution_set, 'innerParallelization' = Config_innerParallelization_set, 'parallelTrials' = Config_parallelTrials_set, 'numRandomMoves' = Config_numRandomMoves_set, 'maxDegreeForRandomMoves' = Config_maxDegreeForRandomMoves_set, 'outDirectory' = Config_outDirectory_set, 'outName' = Config_outName_set, 'outputFormats' = Config_outputFormats_set, 'printTree' = Config_printTree_set, 'printFlowTree' = Config_printFlowTree_set, 'printNewick' = Config_printNewick_set, 'printJson' = Config_printJson_set, 'printCsv' = Config_printCsv_set, 'printClu' = Config_printClu_set, 'printAllTrials' = Config_printAllTrials_set, 'cluLevel' = Config_cluLevel_set, 'printFlowNetwork' = Config_printFlowNetwork_set, 'printPajekNetwork' = Config_printPajekNetwork_set, 'printStateNetwork' = Config_printStateNetwork_set, 'noFileOutput' = Config_noFileOutput_set, 'verbosity' = Config_verbosity_set, 'verboseNumberPrecision' = Config_verboseNumberPrecision_set, 'silent' = Config_silent_set, 'prettyOutput' = Config_prettyOutput_set, 'hideBipartiteNodes' = Config_hideBipartiteNodes_set, 'startDate' = Config_startDate_set, 'version' = Config_version_set, 'parsedString' = Config_parsedString_set, 'parsedOptions' = Config_parsedOptions_set);
   ;        idx = pmatch(name, names(accessorFuns));
   if(is.na(idx)) 
   return(callNextMethod(x, name, value));
@@ -3619,7 +3680,7 @@ setMethod('[[<-', c('_p_infomap__Config', 'character'),function(x, i, j, ..., va
 
 {
   name = i;
-  accessorFuns = list('isCLI' = Config_isCLI_set, 'networkFile' = Config_networkFile_set, 'additionalInput' = Config_additionalInput_set, 'stateInput' = Config_stateInput_set, 'stateOutput' = Config_stateOutput_set, 'multilayerInput' = Config_multilayerInput_set, 'weightThreshold' = Config_weightThreshold_set, 'bipartite' = Config_bipartite_set, 'skipAdjustBipartiteFlow' = Config_skipAdjustBipartiteFlow_set, 'bipartiteTeleportation' = Config_bipartiteTeleportation_set, 'noSelfLinks' = Config_noSelfLinks_set, 'nodeLimit' = Config_nodeLimit_set, 'matchableMultilayerIds' = Config_matchableMultilayerIds_set, 'clusterDataFile' = Config_clusterDataFile_set, 'metaDataFile' = Config_metaDataFile_set, 'metaDataRate' = Config_metaDataRate_set, 'unweightedMetaData' = Config_unweightedMetaData_set, 'numMetaDataDimensions' = Config_numMetaDataDimensions_set, 'clusterDataIsHard' = Config_clusterDataIsHard_set, 'assignToNeighbouringModule' = Config_assignToNeighbouringModule_set, 'noInfomap' = Config_noInfomap_set, 'flowModel' = Config_flowModel_set, 'flowModelIsSet' = Config_flowModelIsSet_set, 'directed' = Config_directed_set, 'useNodeWeightsAsFlow' = Config_useNodeWeightsAsFlow_set, 'teleportToNodes' = Config_teleportToNodes_set, 'markovTime' = Config_markovTime_set, 'variableMarkovTime' = Config_variableMarkovTime_set, 'variableMarkovTimeDamping' = Config_variableMarkovTimeDamping_set, 'variableMarkovTimeMinLocalScale' = Config_variableMarkovTimeMinLocalScale_set, 'markovTimeNoSelfLinks' = Config_markovTimeNoSelfLinks_set, 'multilayerRelaxRate' = Config_multilayerRelaxRate_set, 'multilayerRelaxLimit' = Config_multilayerRelaxLimit_set, 'multilayerRelaxLimitUp' = Config_multilayerRelaxLimitUp_set, 'multilayerRelaxLimitDown' = Config_multilayerRelaxLimitDown_set, 'multilayerJSRelaxRate' = Config_multilayerJSRelaxRate_set, 'multilayerRelaxByJensenShannonDivergence' = Config_multilayerRelaxByJensenShannonDivergence_set, 'multilayerJSRelaxLimit' = Config_multilayerJSRelaxLimit_set, 'multilayerRelaxToSelf' = Config_multilayerRelaxToSelf_set, 'maxFlowIterations' = Config_maxFlowIterations_set, 'twoLevel' = Config_twoLevel_set, 'noCoarseTune' = Config_noCoarseTune_set, 'recordedTeleportation' = Config_recordedTeleportation_set, 'regularized' = Config_regularized_set, 'regularizationStrength' = Config_regularizationStrength_set, 'teleportationProbability' = Config_teleportationProbability_set, 'preferredNumberOfModules' = Config_preferredNumberOfModules_set, 'preferredNumberOfLevels' = Config_preferredNumberOfLevels_set, 'preferredNumberOfLevelsStrength' = Config_preferredNumberOfLevelsStrength_set, 'entropyBiasCorrection' = Config_entropyBiasCorrection_set, 'entropyBiasCorrectionMultiplier' = Config_entropyBiasCorrectionMultiplier_set, 'seedToRandomNumberGenerator' = Config_seedToRandomNumberGenerator_set, 'numTrials' = Config_numTrials_set, 'convergeTrials' = Config_convergeTrials_set, 'minimumCodelengthImprovement' = Config_minimumCodelengthImprovement_set, 'minimumSingleNodeCodelengthImprovement' = Config_minimumSingleNodeCodelengthImprovement_set, 'randomizeCoreLoopLimit' = Config_randomizeCoreLoopLimit_set, 'coreLoopLimit' = Config_coreLoopLimit_set, 'levelAggregationLimit' = Config_levelAggregationLimit_set, 'tuneIterationLimit' = Config_tuneIterationLimit_set, 'minimumRelativeTuneIterationImprovement' = Config_minimumRelativeTuneIterationImprovement_set, 'onlySuperModules' = Config_onlySuperModules_set, 'fastHierarchicalSolution' = Config_fastHierarchicalSolution_set, 'preferModularSolution' = Config_preferModularSolution_set, 'innerParallelization' = Config_innerParallelization_set, 'parallelTrials' = Config_parallelTrials_set, 'numRandomMoves' = Config_numRandomMoves_set, 'maxDegreeForRandomMoves' = Config_maxDegreeForRandomMoves_set, 'outDirectory' = Config_outDirectory_set, 'outName' = Config_outName_set, 'outputFormats' = Config_outputFormats_set, 'printTree' = Config_printTree_set, 'printFlowTree' = Config_printFlowTree_set, 'printNewick' = Config_printNewick_set, 'printJson' = Config_printJson_set, 'printCsv' = Config_printCsv_set, 'printClu' = Config_printClu_set, 'printAllTrials' = Config_printAllTrials_set, 'cluLevel' = Config_cluLevel_set, 'printFlowNetwork' = Config_printFlowNetwork_set, 'printPajekNetwork' = Config_printPajekNetwork_set, 'printStateNetwork' = Config_printStateNetwork_set, 'noFileOutput' = Config_noFileOutput_set, 'verbosity' = Config_verbosity_set, 'verboseNumberPrecision' = Config_verboseNumberPrecision_set, 'silent' = Config_silent_set, 'prettyOutput' = Config_prettyOutput_set, 'hideBipartiteNodes' = Config_hideBipartiteNodes_set, 'startDate' = Config_startDate_set, 'version' = Config_version_set, 'parsedString' = Config_parsedString_set, 'parsedOptions' = Config_parsedOptions_set);
+  accessorFuns = list('isCLI' = Config_isCLI_set, 'networkFile' = Config_networkFile_set, 'additionalInput' = Config_additionalInput_set, 'stateInput' = Config_stateInput_set, 'stateOutput' = Config_stateOutput_set, 'multilayerInput' = Config_multilayerInput_set, 'weightThreshold' = Config_weightThreshold_set, 'bipartite' = Config_bipartite_set, 'skipAdjustBipartiteFlow' = Config_skipAdjustBipartiteFlow_set, 'bipartiteTeleportation' = Config_bipartiteTeleportation_set, 'noSelfLinks' = Config_noSelfLinks_set, 'nodeLimit' = Config_nodeLimit_set, 'matchableMultilayerIds' = Config_matchableMultilayerIds_set, 'clusterDataFile' = Config_clusterDataFile_set, 'metaDataFile' = Config_metaDataFile_set, 'metaDataRate' = Config_metaDataRate_set, 'unweightedMetaData' = Config_unweightedMetaData_set, 'numMetaDataDimensions' = Config_numMetaDataDimensions_set, 'clusterDataIsHard' = Config_clusterDataIsHard_set, 'assignToNeighbouringModule' = Config_assignToNeighbouringModule_set, 'noInfomap' = Config_noInfomap_set, 'flowModel' = Config_flowModel_set, 'flowModelIsSet' = Config_flowModelIsSet_set, 'directed' = Config_directed_set, 'useNodeWeightsAsFlow' = Config_useNodeWeightsAsFlow_set, 'teleportToNodes' = Config_teleportToNodes_set, 'markovTime' = Config_markovTime_set, 'variableMarkovTime' = Config_variableMarkovTime_set, 'variableMarkovTimeDamping' = Config_variableMarkovTimeDamping_set, 'variableMarkovTimeMinLocalScale' = Config_variableMarkovTimeMinLocalScale_set, 'markovTimeNoSelfLinks' = Config_markovTimeNoSelfLinks_set, 'multilayerRelaxRate' = Config_multilayerRelaxRate_set, 'multilayerRelaxLimit' = Config_multilayerRelaxLimit_set, 'multilayerRelaxLimitUp' = Config_multilayerRelaxLimitUp_set, 'multilayerRelaxLimitDown' = Config_multilayerRelaxLimitDown_set, 'multilayerJSRelaxRate' = Config_multilayerJSRelaxRate_set, 'multilayerRelaxByJensenShannonDivergence' = Config_multilayerRelaxByJensenShannonDivergence_set, 'multilayerJSRelaxLimit' = Config_multilayerJSRelaxLimit_set, 'multilayerRelaxToSelf' = Config_multilayerRelaxToSelf_set, 'maxFlowIterations' = Config_maxFlowIterations_set, 'minFlowIterations' = Config_minFlowIterations_set, 'flowTolerance' = Config_flowTolerance_set, 'twoLevel' = Config_twoLevel_set, 'noCoarseTune' = Config_noCoarseTune_set, 'recordedTeleportation' = Config_recordedTeleportation_set, 'regularized' = Config_regularized_set, 'regularizationStrength' = Config_regularizationStrength_set, 'teleportationProbability' = Config_teleportationProbability_set, 'preferredNumberOfModules' = Config_preferredNumberOfModules_set, 'preferredNumberOfLevels' = Config_preferredNumberOfLevels_set, 'preferredNumberOfLevelsStrength' = Config_preferredNumberOfLevelsStrength_set, 'entropyBiasCorrection' = Config_entropyBiasCorrection_set, 'entropyBiasCorrectionMultiplier' = Config_entropyBiasCorrectionMultiplier_set, 'seedToRandomNumberGenerator' = Config_seedToRandomNumberGenerator_set, 'numTrials' = Config_numTrials_set, 'convergeTrials' = Config_convergeTrials_set, 'minimumCodelengthImprovement' = Config_minimumCodelengthImprovement_set, 'minimumSingleNodeCodelengthImprovement' = Config_minimumSingleNodeCodelengthImprovement_set, 'randomizeCoreLoopLimit' = Config_randomizeCoreLoopLimit_set, 'coreLoopLimit' = Config_coreLoopLimit_set, 'levelAggregationLimit' = Config_levelAggregationLimit_set, 'tuneIterationLimit' = Config_tuneIterationLimit_set, 'minimumRelativeTuneIterationImprovement' = Config_minimumRelativeTuneIterationImprovement_set, 'onlySuperModules' = Config_onlySuperModules_set, 'fastHierarchicalSolution' = Config_fastHierarchicalSolution_set, 'preferModularSolution' = Config_preferModularSolution_set, 'innerParallelization' = Config_innerParallelization_set, 'parallelTrials' = Config_parallelTrials_set, 'numRandomMoves' = Config_numRandomMoves_set, 'maxDegreeForRandomMoves' = Config_maxDegreeForRandomMoves_set, 'outDirectory' = Config_outDirectory_set, 'outName' = Config_outName_set, 'outputFormats' = Config_outputFormats_set, 'printTree' = Config_printTree_set, 'printFlowTree' = Config_printFlowTree_set, 'printNewick' = Config_printNewick_set, 'printJson' = Config_printJson_set, 'printCsv' = Config_printCsv_set, 'printClu' = Config_printClu_set, 'printAllTrials' = Config_printAllTrials_set, 'cluLevel' = Config_cluLevel_set, 'printFlowNetwork' = Config_printFlowNetwork_set, 'printPajekNetwork' = Config_printPajekNetwork_set, 'printStateNetwork' = Config_printStateNetwork_set, 'noFileOutput' = Config_noFileOutput_set, 'verbosity' = Config_verbosity_set, 'verboseNumberPrecision' = Config_verboseNumberPrecision_set, 'silent' = Config_silent_set, 'prettyOutput' = Config_prettyOutput_set, 'hideBipartiteNodes' = Config_hideBipartiteNodes_set, 'startDate' = Config_startDate_set, 'version' = Config_version_set, 'parsedString' = Config_parsedString_set, 'parsedOptions' = Config_parsedOptions_set);
   ;        idx = pmatch(name, names(accessorFuns));
   if(is.na(idx)) 
   return(callNextMethod(x, name, value));
@@ -3673,6 +3734,8 @@ CopyToR_infomap__Config = function(value, obj = new("infomap::Config"))
   obj@multilayerJSRelaxLimit = value$multilayerJSRelaxLimit;
   obj@multilayerRelaxToSelf = value$multilayerRelaxToSelf;
   obj@maxFlowIterations = value$maxFlowIterations;
+  obj@minFlowIterations = value$minFlowIterations;
+  obj@flowTolerance = value$flowTolerance;
   obj@twoLevel = value$twoLevel;
   obj@noCoarseTune = value$noCoarseTune;
   obj@recordedTeleportation = value$recordedTeleportation;
@@ -3768,6 +3831,8 @@ CopyToC_infomap__Config = function(value, obj)
   obj$multilayerJSRelaxLimit = value@multilayerJSRelaxLimit;
   obj$multilayerRelaxToSelf = value@multilayerRelaxToSelf;
   obj$maxFlowIterations = value@maxFlowIterations;
+  obj$minFlowIterations = value@minFlowIterations;
+  obj$flowTolerance = value@flowTolerance;
   obj$twoLevel = value@twoLevel;
   obj$noCoarseTune = value@noCoarseTune;
   obj$recordedTeleportation = value@recordedTeleportation;
@@ -16494,12 +16559,42 @@ attr(`StateNetwork_addStateNode__SWIG_1`, 'returnType') = '_p_std__pairT_std__ma
 attr(`StateNetwork_addStateNode__SWIG_1`, "inputTypes") = c('_p_infomap__StateNetwork', 'integer', 'integer')
 class(`StateNetwork_addStateNode__SWIG_1`) = c("SWIGFunction", class('StateNetwork_addStateNode__SWIG_1'))
 
+# Start of StateNetwork_addStateNode
+
+`StateNetwork_addStateNode__SWIG_2` = function(self, id, physId, name, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  id = as.integer(id);
+  
+  if(length(id) > 1) {
+    warning("using only the first element of id");
+  };
+  
+  physId = as.integer(physId);
+  
+  if(length(physId) > 1) {
+    warning("using only the first element of physId");
+  };
+  
+  name = as(name, "character"); 
+  ;ans = .Call('R_swig_StateNetwork_addStateNode__SWIG_2', self, id, physId, name, as.logical(.copy), PACKAGE='infomap');
+  ans <- if (is.null(ans)) ans
+  else new("_p_std__pairT_std__mapT_unsigned_int_infomap__StateNetwork__StateNode_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__StateNode_t_t_t__iterator_bool_t", ref=ans);
+  
+  ans
+  
+}
+
+attr(`StateNetwork_addStateNode__SWIG_2`, 'returnType') = '_p_std__pairT_std__mapT_unsigned_int_infomap__StateNetwork__StateNode_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__StateNode_t_t_t__iterator_bool_t'
+attr(`StateNetwork_addStateNode__SWIG_2`, "inputTypes") = c('_p_infomap__StateNetwork', 'integer', 'integer', 'character')
+class(`StateNetwork_addStateNode__SWIG_2`) = c("SWIGFunction", class('StateNetwork_addStateNode__SWIG_2'))
+
 `StateNetwork_addStateNode` <- function(...) {
   argtypes <- mapply(class, list(...));
   argv <- list(...);
   argc <- length(argtypes);
   f <- NULL;
-# dispatch functions 2
+# dispatch functions 3
   if (argc == 2) {
     if (( extends(argtypes[1], '_p_infomap__StateNetwork') || is.null(argv[[1]]) ) && ( extends(argtypes[2], '_p_infomap__StateNetwork__StateNode') && length(argv[[2]]) == 1 )) {
       f <- StateNetwork_addStateNode__SWIG_0; 
@@ -16507,6 +16602,10 @@ class(`StateNetwork_addStateNode__SWIG_1`) = c("SWIGFunction", class('StateNetwo
   } else if (argc == 3) {
     if (( extends(argtypes[1], '_p_infomap__StateNetwork') || is.null(argv[[1]]) ) && ( (is.integer(argv[[2]]) || is.numeric(argv[[2]])) && length(argv[[2]]) == 1 ) && ( (is.integer(argv[[3]]) || is.numeric(argv[[3]])) && length(argv[[3]]) == 1 )) {
       f <- StateNetwork_addStateNode__SWIG_1; 
+    }
+  } else if (argc == 4) {
+    if (( extends(argtypes[1], '_p_infomap__StateNetwork') || is.null(argv[[1]]) ) && ( (is.integer(argv[[2]]) || is.numeric(argv[[2]])) && length(argv[[2]]) == 1 ) && ( (is.integer(argv[[3]]) || is.numeric(argv[[3]])) && length(argv[[3]]) == 1 ) && ( is.character(argv[[4]]) && length(argv[[4]]) == 1 )) {
+      f <- StateNetwork_addStateNode__SWIG_2; 
     }
   };
   if (is.null(f)) {
@@ -17196,6 +17295,58 @@ class(`StateNetwork_names__SWIG_1`) = c("SWIGFunction", class('StateNetwork_name
 }
 
 # Dispatch function
+# Start of StateNetwork_haveFlowConvergence
+
+`StateNetwork_haveFlowConvergence` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;.Call('R_swig_StateNetwork_haveFlowConvergence', self, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`StateNetwork_haveFlowConvergence`, 'returnType') = 'logical'
+attr(`StateNetwork_haveFlowConvergence`, "inputTypes") = c('_p_infomap__StateNetwork')
+class(`StateNetwork_haveFlowConvergence`) = c("SWIGFunction", class('StateNetwork_haveFlowConvergence'))
+
+# Start of StateNetwork_flowConverged
+
+`StateNetwork_flowConverged` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;.Call('R_swig_StateNetwork_flowConverged', self, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`StateNetwork_flowConverged`, 'returnType') = 'logical'
+attr(`StateNetwork_flowConverged`, "inputTypes") = c('_p_infomap__StateNetwork')
+class(`StateNetwork_flowConverged`) = c("SWIGFunction", class('StateNetwork_flowConverged'))
+
+# Start of StateNetwork_flowIterations
+
+`StateNetwork_flowIterations` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;.Call('R_swig_StateNetwork_flowIterations', self, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`StateNetwork_flowIterations`, 'returnType') = 'integer'
+attr(`StateNetwork_flowIterations`, "inputTypes") = c('_p_infomap__StateNetwork')
+class(`StateNetwork_flowIterations`) = c("SWIGFunction", class('StateNetwork_flowIterations'))
+
+# Start of StateNetwork_flowError
+
+`StateNetwork_flowError` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;.Call('R_swig_StateNetwork_flowError', self, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`StateNetwork_flowError`, 'returnType') = 'numeric'
+attr(`StateNetwork_flowError`, "inputTypes") = c('_p_infomap__StateNetwork')
+class(`StateNetwork_flowError`) = c("SWIGFunction", class('StateNetwork_flowError'))
+
 # Start of StateNetwork_haveNodeWeights
 
 `StateNetwork_haveNodeWeights` = function(self, .copy = FALSE)
@@ -17405,7 +17556,7 @@ class(`StateNetwork_writePajekNetwork__SWIG_1`) = c("SWIGFunction", class('State
 setMethod('$', '_p_infomap__StateNetwork', function(x, name)
 
 {
-  accessorFuns = list('setConfig' = StateNetwork_setConfig, 'addStateNode' = StateNetwork_addStateNode, 'addNode' = StateNetwork_addNode, 'addPhysicalNode' = StateNetwork_addPhysicalNode, 'addName' = StateNetwork_addName, 'addLink' = StateNetwork_addLink, 'addLinks' = StateNetwork_addLinks, 'removeLink' = StateNetwork_removeLink, 'undirectedToDirected' = StateNetwork_undirectedToDirected, 'clear' = StateNetwork_clear, 'clearLinks' = StateNetwork_clearLinks, 'nodes' = StateNetwork_nodes, 'numNodes' = StateNetwork_numNodes, 'numPhysicalNodes' = StateNetwork_numPhysicalNodes, 'sumNodeWeight' = StateNetwork_sumNodeWeight, 'numAggregatedLinks' = StateNetwork_numAggregatedLinks, 'numLinks' = StateNetwork_numLinks, 'sumLinkWeight' = StateNetwork_sumLinkWeight, 'numSelfLinks' = StateNetwork_numSelfLinks, 'sumSelfLinkWeight' = StateNetwork_sumSelfLinkWeight, 'sumWeightedDegree' = StateNetwork_sumWeightedDegree, 'sumDegree' = StateNetwork_sumDegree, 'outWeights' = StateNetwork_outWeights, 'names' = StateNetwork_names, 'haveNodeWeights' = StateNetwork_haveNodeWeights, 'haveStateNodeWeights' = StateNetwork_haveStateNodeWeights, 'haveFileInput' = StateNetwork_haveFileInput, 'metaData' = StateNetwork_metaData, 'haveDirectedInput' = StateNetwork_haveDirectedInput, 'haveMemoryInput' = StateNetwork_haveMemoryInput, 'higherOrderInputMethodCalled' = StateNetwork_higherOrderInputMethodCalled, 'isBipartite' = StateNetwork_isBipartite, 'bipartiteStartId' = StateNetwork_bipartiteStartId, 'setBipartiteStartId' = StateNetwork_setBipartiteStartId, 'writeStateNetwork' = StateNetwork_writeStateNetwork, 'writePajekNetwork' = StateNetwork_writePajekNetwork);
+  accessorFuns = list('setConfig' = StateNetwork_setConfig, 'addStateNode' = StateNetwork_addStateNode, 'addNode' = StateNetwork_addNode, 'addPhysicalNode' = StateNetwork_addPhysicalNode, 'addName' = StateNetwork_addName, 'addLink' = StateNetwork_addLink, 'addLinks' = StateNetwork_addLinks, 'removeLink' = StateNetwork_removeLink, 'undirectedToDirected' = StateNetwork_undirectedToDirected, 'clear' = StateNetwork_clear, 'clearLinks' = StateNetwork_clearLinks, 'nodes' = StateNetwork_nodes, 'numNodes' = StateNetwork_numNodes, 'numPhysicalNodes' = StateNetwork_numPhysicalNodes, 'sumNodeWeight' = StateNetwork_sumNodeWeight, 'numAggregatedLinks' = StateNetwork_numAggregatedLinks, 'numLinks' = StateNetwork_numLinks, 'sumLinkWeight' = StateNetwork_sumLinkWeight, 'numSelfLinks' = StateNetwork_numSelfLinks, 'sumSelfLinkWeight' = StateNetwork_sumSelfLinkWeight, 'sumWeightedDegree' = StateNetwork_sumWeightedDegree, 'sumDegree' = StateNetwork_sumDegree, 'outWeights' = StateNetwork_outWeights, 'names' = StateNetwork_names, 'haveFlowConvergence' = StateNetwork_haveFlowConvergence, 'flowConverged' = StateNetwork_flowConverged, 'flowIterations' = StateNetwork_flowIterations, 'flowError' = StateNetwork_flowError, 'haveNodeWeights' = StateNetwork_haveNodeWeights, 'haveStateNodeWeights' = StateNetwork_haveStateNodeWeights, 'haveFileInput' = StateNetwork_haveFileInput, 'metaData' = StateNetwork_metaData, 'haveDirectedInput' = StateNetwork_haveDirectedInput, 'haveMemoryInput' = StateNetwork_haveMemoryInput, 'higherOrderInputMethodCalled' = StateNetwork_higherOrderInputMethodCalled, 'isBipartite' = StateNetwork_isBipartite, 'bipartiteStartId' = StateNetwork_bipartiteStartId, 'setBipartiteStartId' = StateNetwork_setBipartiteStartId, 'writeStateNetwork' = StateNetwork_writeStateNetwork, 'writePajekNetwork' = StateNetwork_writePajekNetwork);
   ;        idx = pmatch(name, names(accessorFuns));
   if(is.na(idx)) 
   return(callNextMethod(x, name));
@@ -23633,6 +23784,42 @@ attr(`InfomapWrapper_getNames`, 'returnType') = '_p_std__mapT_unsigned_int_std__
 attr(`InfomapWrapper_getNames`, "inputTypes") = c('_p_infomap__InfomapWrapper')
 class(`InfomapWrapper_getNames`) = c("SWIGFunction", class('InfomapWrapper_getNames'))
 
+# Start of InfomapWrapper_getStateNames
+
+`InfomapWrapper_getStateNames` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;ans = .Call('R_swig_InfomapWrapper_getStateNames', self, as.logical(.copy), PACKAGE='infomap');
+  ans <- if (is.null(ans)) ans
+  else new("_p_std__mapT_unsigned_int_std__string_t", ref=ans);
+  
+  ans
+  
+}
+
+attr(`InfomapWrapper_getStateNames`, 'returnType') = '_p_std__mapT_unsigned_int_std__string_t'
+attr(`InfomapWrapper_getStateNames`, "inputTypes") = c('_p_infomap__InfomapWrapper')
+class(`InfomapWrapper_getStateNames`) = c("SWIGFunction", class('InfomapWrapper_getStateNames'))
+
+# Start of InfomapWrapper_getStateName
+
+`InfomapWrapper_getStateName` = function(self, stateId, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  stateId = as.integer(stateId);
+  
+  if(length(stateId) > 1) {
+    warning("using only the first element of stateId");
+  };
+  
+  ;.Call('R_swig_InfomapWrapper_getStateName', self, stateId, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`InfomapWrapper_getStateName`, 'returnType') = 'character'
+attr(`InfomapWrapper_getStateName`, "inputTypes") = c('_p_infomap__InfomapWrapper', 'integer')
+class(`InfomapWrapper_getStateName`) = c("SWIGFunction", class('InfomapWrapper_getStateName'))
+
 # Start of InfomapWrapper_addPhysicalNode
 
 `InfomapWrapper_addPhysicalNode__SWIG_0` = function(self, id, name)
@@ -23696,7 +23883,7 @@ class(`InfomapWrapper_addPhysicalNode__SWIG_1`) = c("SWIGFunction", class('Infom
 # Dispatch function
 # Start of InfomapWrapper_addStateNode
 
-`InfomapWrapper_addStateNode` = function(self, id, physId)
+`InfomapWrapper_addStateNode__SWIG_0` = function(self, id, physId)
 {
   if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
   id = as.integer(id);
@@ -23711,14 +23898,62 @@ class(`InfomapWrapper_addPhysicalNode__SWIG_1`) = c("SWIGFunction", class('Infom
     warning("using only the first element of physId");
   };
   
-  ;.Call('R_swig_InfomapWrapper_addStateNode', self, id, physId, PACKAGE='infomap');
+  ;.Call('R_swig_InfomapWrapper_addStateNode__SWIG_0', self, id, physId, PACKAGE='infomap');
   
 }
 
-attr(`InfomapWrapper_addStateNode`, 'returnType') = 'void'
-attr(`InfomapWrapper_addStateNode`, "inputTypes") = c('_p_infomap__InfomapWrapper', 'integer', 'integer')
-class(`InfomapWrapper_addStateNode`) = c("SWIGFunction", class('InfomapWrapper_addStateNode'))
+attr(`InfomapWrapper_addStateNode__SWIG_0`, 'returnType') = 'void'
+attr(`InfomapWrapper_addStateNode__SWIG_0`, "inputTypes") = c('_p_infomap__InfomapWrapper', 'integer', 'integer')
+class(`InfomapWrapper_addStateNode__SWIG_0`) = c("SWIGFunction", class('InfomapWrapper_addStateNode__SWIG_0'))
 
+# Start of InfomapWrapper_addStateNode
+
+`InfomapWrapper_addStateNode__SWIG_1` = function(self, id, physId, name)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  id = as.integer(id);
+  
+  if(length(id) > 1) {
+    warning("using only the first element of id");
+  };
+  
+  physId = as.integer(physId);
+  
+  if(length(physId) > 1) {
+    warning("using only the first element of physId");
+  };
+  
+  name = as(name, "character"); 
+  ;.Call('R_swig_InfomapWrapper_addStateNode__SWIG_1', self, id, physId, name, PACKAGE='infomap');
+  
+}
+
+attr(`InfomapWrapper_addStateNode__SWIG_1`, 'returnType') = 'void'
+attr(`InfomapWrapper_addStateNode__SWIG_1`, "inputTypes") = c('_p_infomap__InfomapWrapper', 'integer', 'integer', 'character')
+class(`InfomapWrapper_addStateNode__SWIG_1`) = c("SWIGFunction", class('InfomapWrapper_addStateNode__SWIG_1'))
+
+`InfomapWrapper_addStateNode` <- function(...) {
+  argtypes <- mapply(class, list(...));
+  argv <- list(...);
+  argc <- length(argtypes);
+  f <- NULL;
+# dispatch functions 2
+  if (argc == 3) {
+    if (( extends(argtypes[1], '_p_infomap__InfomapWrapper') || is.null(argv[[1]]) ) && ( (is.integer(argv[[2]]) || is.numeric(argv[[2]])) && length(argv[[2]]) == 1 ) && ( (is.integer(argv[[3]]) || is.numeric(argv[[3]])) && length(argv[[3]]) == 1 )) {
+      f <- InfomapWrapper_addStateNode__SWIG_0; 
+    }
+  } else if (argc == 4) {
+    if (( extends(argtypes[1], '_p_infomap__InfomapWrapper') || is.null(argv[[1]]) ) && ( (is.integer(argv[[2]]) || is.numeric(argv[[2]])) && length(argv[[2]]) == 1 ) && ( (is.integer(argv[[3]]) || is.numeric(argv[[3]])) && length(argv[[3]]) == 1 ) && ( is.character(argv[[4]]) && length(argv[[4]]) == 1 )) {
+      f <- InfomapWrapper_addStateNode__SWIG_1; 
+    }
+  };
+  if (is.null(f)) {
+    stop("cannot find overloaded function for InfomapWrapper_addStateNode with argtypes (",toString(argtypes),")");
+  };
+  f(...);
+}
+
+# Dispatch function
 # Start of InfomapWrapper_addLink
 
 `InfomapWrapper_addLink__SWIG_0` = function(self, sourceId, targetId, weight)
@@ -24501,7 +24736,7 @@ class(`InfomapWrapper_run__SWIG_2`) = c("SWIGFunction", class('InfomapWrapper_ru
 setMethod('$', '_p_infomap__InfomapWrapper', function(x, name)
 
 {
-  accessorFuns = list('readInputData' = InfomapWrapper_readInputData, 'addNode' = InfomapWrapper_addNode, 'addName' = InfomapWrapper_addName, 'getName' = InfomapWrapper_getName, 'getNames' = InfomapWrapper_getNames, 'addPhysicalNode' = InfomapWrapper_addPhysicalNode, 'addStateNode' = InfomapWrapper_addStateNode, 'addLink' = InfomapWrapper_addLink, 'addLinks' = InfomapWrapper_addLinks, 'addMultilayerLink' = InfomapWrapper_addMultilayerLink, 'addMultilayerLinks' = InfomapWrapper_addMultilayerLinks, 'addMultilayerIntraLink' = InfomapWrapper_addMultilayerIntraLink, 'addMultilayerIntraLinks' = InfomapWrapper_addMultilayerIntraLinks, 'addMultilayerInterLink' = InfomapWrapper_addMultilayerInterLink, 'addMultilayerInterLinks' = InfomapWrapper_addMultilayerInterLinks, 'getMultilayerStateId' = InfomapWrapper_getMultilayerStateId, 'setBipartiteStartId' = InfomapWrapper_setBipartiteStartId, 'getLinks' = InfomapWrapper_getLinks, 'getLinkResults' = InfomapWrapper_getLinkResults, 'getModules' = InfomapWrapper_getModules, 'codelength' = InfomapWrapper_codelength, 'getEntropyRate' = InfomapWrapper_getEntropyRate, 'getMultilevelModules' = InfomapWrapper_getMultilevelModules, 'iterLeafNodes' = InfomapWrapper_iterLeafNodes, 'iterTree' = InfomapWrapper_iterTree, 'run' = InfomapWrapper_run);
+  accessorFuns = list('readInputData' = InfomapWrapper_readInputData, 'addNode' = InfomapWrapper_addNode, 'addName' = InfomapWrapper_addName, 'getName' = InfomapWrapper_getName, 'getNames' = InfomapWrapper_getNames, 'getStateNames' = InfomapWrapper_getStateNames, 'getStateName' = InfomapWrapper_getStateName, 'addPhysicalNode' = InfomapWrapper_addPhysicalNode, 'addStateNode' = InfomapWrapper_addStateNode, 'addLink' = InfomapWrapper_addLink, 'addLinks' = InfomapWrapper_addLinks, 'addMultilayerLink' = InfomapWrapper_addMultilayerLink, 'addMultilayerLinks' = InfomapWrapper_addMultilayerLinks, 'addMultilayerIntraLink' = InfomapWrapper_addMultilayerIntraLink, 'addMultilayerIntraLinks' = InfomapWrapper_addMultilayerIntraLinks, 'addMultilayerInterLink' = InfomapWrapper_addMultilayerInterLink, 'addMultilayerInterLinks' = InfomapWrapper_addMultilayerInterLinks, 'getMultilayerStateId' = InfomapWrapper_getMultilayerStateId, 'setBipartiteStartId' = InfomapWrapper_setBipartiteStartId, 'getLinks' = InfomapWrapper_getLinks, 'getLinkResults' = InfomapWrapper_getLinkResults, 'getModules' = InfomapWrapper_getModules, 'codelength' = InfomapWrapper_codelength, 'getEntropyRate' = InfomapWrapper_getEntropyRate, 'getMultilevelModules' = InfomapWrapper_getMultilevelModules, 'iterLeafNodes' = InfomapWrapper_iterLeafNodes, 'iterTree' = InfomapWrapper_iterTree, 'run' = InfomapWrapper_run);
   ;        idx = pmatch(name, names(accessorFuns));
   if(is.na(idx)) 
   return(callNextMethod(x, name));

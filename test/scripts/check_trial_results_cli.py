@@ -52,8 +52,7 @@ def main(argv: list[str]) -> int:
             cwd=work,
             check=False,
             text=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            capture_output=True,
         )
         assert result.returncode == 0, result.stderr
 

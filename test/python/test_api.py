@@ -1,19 +1,17 @@
 import importlib.resources
-from operator import itemgetter
 import tomllib
-
-import networkx as nx
-import pytest
+from operator import itemgetter
 
 import infomap as infomap_module
 import infomap._summary as summary_module
-import infomap._results as results_module
+import networkx as nx
+import pytest
 from infomap._bindings import InfomapWrapper
-
 
 pytestmark = pytest.mark.fast
 
 
+@pytest.mark.filterwarnings("ignore::PendingDeprecationWarning")
 def test_run_with_empty_initial_partition_overrides_persisted_partition(make_infomap):
     baseline = make_infomap()
     baseline.add_links([(1, 2), (1, 3), (2, 3), (2, 4)])
@@ -233,9 +231,98 @@ def test_to_dataframe_rejects_unknown_columns(make_infomap, example_network_path
         im.to_dataframe(columns=["node_id", "modul_id"])
 
 
+def test_result_summary_returns_scalar_metrics_matching_properties():
+    result = infomap_module.run(infomap_module.datasets.two_triangles(), seed=123)
+
+    summary = result.summary()
+
+    assert isinstance(summary, dict)
+    assert set(summary) == {
+        "codelength",
+        "num_top_modules",
+        "num_non_trivial_top_modules",
+        "num_leaf_modules",
+        "num_levels",
+        "relative_codelength_savings",
+        "index_codelength",
+        "module_codelength",
+        "one_level_codelength",
+        "entropy_rate",
+        "num_nodes",
+        "num_links",
+        "elapsed_time",
+    }
+    # Every value mirrors the eponymous Result property, and is a plain scalar
+    # (no tuples/dicts) so a DataFrame column stays a real numeric column.
+    for name, value in summary.items():
+        assert value == getattr(result, name)
+        assert isinstance(value, (int, float))
+
+
+def test_result_summary_stays_valid_after_rerun(make_infomap):
+    im = make_infomap()
+    im.add_links(((1, 2), (1, 3), (2, 3), (4, 5), (4, 6), (5, 6), (3, 4)))
+    result = im.run()
+
+    before = result.summary()
+    im.run()  # re-run: the Result is now stale for node-level access
+
+    # summary reads only the eager snapshot scalars, so it stays valid and
+    # never raises, unlike node-level access on a stale Result.
+    assert result.summary() == before
+    with pytest.raises(infomap_module.StaleResultError):
+        result.to_dataframe()
+
+
+def test_result_to_series_matches_summary():
+    pytest.importorskip("pandas")
+    import pandas as pd
+
+    result = infomap_module.run(infomap_module.datasets.two_triangles(), seed=123)
+
+    series = result.to_series()
+
+    assert isinstance(series, pd.Series)
+    assert dict(series) == result.summary()
+
+
+def test_result_summaries_collect_into_one_row_per_run_dataframe():
+    pytest.importorskip("pandas")
+    import pandas as pd
+
+    markov_times = (0.5, 1.0, 2.0)
+    results = [
+        infomap_module.run(
+            infomap_module.datasets.two_triangles(), markov_time=mt, seed=123
+        )
+        for mt in markov_times
+    ]
+
+    df = pd.DataFrame(
+        {"markov_time": mt, **result.summary()}
+        for mt, result in zip(markov_times, results, strict=True)
+    )
+
+    assert len(df) == len(markov_times)
+    assert list(df.columns) == ["markov_time", *results[0].summary().keys()]
+    assert list(df["codelength"]) == [result.codelength for result in results]
+
+
 def test_get_dataframe_missing_pandas_message(monkeypatch, make_infomap):
     im = make_infomap(no_infomap=True)
-    monkeypatch.setattr(results_module, "pandas", None)
+    # pandas resolves lazily via require_pandas (infomap._optional); simulate
+    # its absence by blocking both the cached lookup and the direct import.
+    from infomap import _optional
+
+    original_import_module = importlib.import_module
+
+    def missing_pandas_import(name, *args, **kwargs):
+        if name == "pandas":
+            raise ImportError("missing pandas")
+        return original_import_module(name, *args, **kwargs)
+
+    monkeypatch.setattr(_optional, "get_pandas", lambda: None)
+    monkeypatch.setattr(_optional.importlib, "import_module", missing_pandas_import)
 
     with pytest.raises(ImportError, match=r"infomap\[pandas\]"):
         im.get_dataframe()
@@ -323,7 +410,7 @@ def test_from_options_uses_package_construct_args(monkeypatch):
 
 def test_run_with_options_forwards_to_run(monkeypatch):
     captured = {}
-    im = infomap_module.Infomap(silent=True, no_file_output=True)
+    im = infomap_module.Infomap(silent=True)
 
     def fake_run(self, **kwargs):
         captured["kwargs"] = kwargs

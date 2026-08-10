@@ -3,18 +3,19 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Any
 
+from .._optional import require_scipy_sparse
 from ._arrays import undirected_edge_items
+
+# No user-facing API: the adapter (add_scipy_sparse_matrix) is reached through
+# Network.from_scipy_sparse_matrix / infomap.run(A). Empty __all__ so the
+# submodule stops surfacing its plumbing.
+__all__: list[str] = []
 
 
 def _import_sparse() -> Any:
-    try:
-        import scipy.sparse as sparse
-    except ImportError as exc:
-        raise ImportError(
-            "The 'scipy' package is required for SciPy sparse matrix support. "
-            'Install it with `python -m pip install "infomap[scipy]"`.'
-        ) from exc
-    return sparse
+    # Thin delegate kept for backwards compatibility (tests import it); the
+    # shared guard lives in infomap._optional.
+    return require_scipy_sparse()
 
 
 def _validate_sparse_matrix(sparse: Any, A: Any) -> Any:
@@ -100,8 +101,8 @@ def add_scipy_sparse_matrix(
 
     internal_to_label = {index: label for index, label in enumerate(labels)}
 
-    if not infomap._core.flowModelIsSet and directed:
-        infomap._core.setDirected(True)
+    if directed:
+        infomap._core.note_inferred_flow_model("directed")
 
     for internal_id, label in internal_to_label.items():
         infomap.add_node(internal_id, name=label if isinstance(label, str) else None)

@@ -37,6 +37,24 @@ struct ModuleMemNodes {
   double sumFlow;
 };
 
+// Old-module plogp terms of getDeltaCodelengthOnMovingNode. For a fixed node
+// visit the old module and the node's own flow are constant, so 6 of the 13
+// plogp values the delta needs are identical for every candidate module the
+// move loop probes for that node. hoistOldSide() computes them once per node;
+// getDeltaCodelengthOnMovingNodeHoisted() consumes them per candidate, keeping
+// the exact same expression structure as the unhoisted form. Plain doubles and
+// namespace scope so the (privately-inheriting) objectives can pass it around
+// by `auto` without accessibility juggling. Not bit-identical to the unhoisted
+// path at the last ulp: splitting the single 13-wide plogp_batch into a 6-wide
+// (once/node) and 7-wide (per candidate) batch regroups the SIMD lanes.
+struct OldSideTerms {
+  double deltaEnterExitOld; // oldModuleDelta.deltaEnter + deltaExit (with teleportation folded in)
+  double curEnter, curExit, curFlow; // current.data, cached to keep the hoisted delta self-contained
+  double plogpOldEnter, plogpOldEnterAfter;
+  double plogpOldExit, plogpOldExitAfter;
+  double plogpOldExitFlow, plogpOldExitFlowAfter;
+};
+
 /**
  * Base implementation of the map equation, shared by the concrete objectives
  * (BiasedMapEquation, MemMapEquation, MetaMapEquation, RegularizedMultilayerMapEquation).
@@ -152,6 +170,20 @@ public:
                                         DeltaFlowDataType& newModuleDelta,
                                         std::vector<FlowDataType>& moduleFlowData,
                                         std::vector<unsigned int>& /*moduleMembers*/);
+
+  // Precompute the old-module (per-node-constant) plogp terms of the move delta.
+  // Called once per node visit by the optimize move loop; the result feeds every
+  // candidate through getDeltaCodelengthOnMovingNodeHoisted().
+  OldSideTerms hoistOldSide(InfoNode& current,
+                            DeltaFlowDataType& oldModuleDelta,
+                            std::vector<FlowDataType>& moduleFlowData);
+
+  double getDeltaCodelengthOnMovingNodeHoisted(InfoNode& current,
+                                               DeltaFlowDataType& oldModuleDelta,
+                                               const OldSideTerms& oldSide,
+                                               DeltaFlowDataType& newModuleDelta,
+                                               std::vector<FlowDataType>& moduleFlowData,
+                                               std::vector<unsigned int>& /*moduleMembers*/);
 
   // ===================================================
   // Consolidation
@@ -319,6 +351,76 @@ INFOMAP_HOT double MapEquation<FlowDataType, DeltaFlowDataType>::getDeltaCodelen
   double delta_enter_log_enter = -pl[1] - pl[2] + pl[3] + pl[4];
   double delta_exit_log_exit = -pl[5] - pl[6] + pl[7] + pl[8];
   double delta_flow_log_flow = -pl[9] - pl[10] + pl[11] + pl[12];
+
+  double deltaL = delta_enter - delta_enter_log_enter - delta_exit_log_exit + delta_flow_log_flow;
+  return deltaL;
+}
+
+template <typename FlowDataType, typename DeltaFlowDataType>
+INFOMAP_HOT OldSideTerms MapEquation<FlowDataType, DeltaFlowDataType>::hoistOldSide(InfoNode& current, DeltaFlowDataType& oldModuleDelta, std::vector<FlowDataType>& moduleFlowData)
+{
+  using infomath::plogp_batch;
+  unsigned int oldModule = oldModuleDelta.module;
+  double deltaEnterExitOldModule = oldModuleDelta.deltaEnter + oldModuleDelta.deltaExit;
+
+  FlowDataType& oldMfd = moduleFlowData[oldModule];
+  double oldEnter = oldMfd.enterFlow;
+  double oldExit = oldMfd.exitFlow;
+  double oldExitPlusFlow = oldMfd.exitFlow + oldMfd.flow;
+  double curEnter = current.data.enterFlow;
+  double curExit = current.data.exitFlow;
+  double curFlow = current.data.flow;
+
+  // The 6 args are exactly the 6 old-module entries of the 13-wide batch in
+  // getDeltaCodelengthOnMovingNode (indices 1,3,5,7,9,11 there).
+  double args[6] = {
+    oldEnter,
+    oldEnter - curEnter + deltaEnterExitOldModule,
+    oldExit,
+    oldExit - curExit + deltaEnterExitOldModule,
+    oldExitPlusFlow,
+    oldExitPlusFlow - curExit - curFlow + deltaEnterExitOldModule,
+  };
+  double pl[6];
+  plogp_batch(args, pl, 6);
+
+  return OldSideTerms { deltaEnterExitOldModule, curEnter, curExit, curFlow, pl[0], pl[1], pl[2], pl[3], pl[4], pl[5] };
+}
+
+template <typename FlowDataType, typename DeltaFlowDataType>
+INFOMAP_HOT double MapEquation<FlowDataType, DeltaFlowDataType>::getDeltaCodelengthOnMovingNodeHoisted(InfoNode& /*current*/, DeltaFlowDataType& /*oldModuleDelta*/, const OldSideTerms& oldSide, DeltaFlowDataType& newModuleDelta, std::vector<FlowDataType>& moduleFlowData, std::vector<unsigned int>&)
+{
+  using infomath::plogp_batch;
+  unsigned int newModule = newModuleDelta.module;
+  double deltaEnterExitNewModule = newModuleDelta.deltaEnter + newModuleDelta.deltaExit;
+  double deltaEnterExitOldModule = oldSide.deltaEnterExitOld;
+
+  FlowDataType& newMfd = moduleFlowData[newModule];
+  double newEnter = newMfd.enterFlow;
+  double newExit = newMfd.exitFlow;
+  double newExitPlusFlow = newMfd.exitFlow + newMfd.flow;
+  double curEnter = oldSide.curEnter;
+  double curExit = oldSide.curExit;
+  double curFlow = oldSide.curFlow;
+
+  // The 7 candidate-dependent entries of the 13-wide batch (indices 0,2,4,6,8,10,12).
+  constexpr int kPlogpBatchN = 7;
+  double args[kPlogpBatchN] = {
+    enterFlow + deltaEnterExitOldModule - deltaEnterExitNewModule,
+    newEnter,
+    newEnter + curEnter - deltaEnterExitNewModule,
+    newExit,
+    newExit + curExit - deltaEnterExitNewModule,
+    newExitPlusFlow,
+    newExitPlusFlow + curExit + curFlow - deltaEnterExitNewModule,
+  };
+  double pl[kPlogpBatchN];
+  plogp_batch(args, pl, kPlogpBatchN);
+
+  double delta_enter = pl[0] - enterFlow_log_enterFlow;
+  double delta_enter_log_enter = -oldSide.plogpOldEnter - pl[1] + oldSide.plogpOldEnterAfter + pl[2];
+  double delta_exit_log_exit = -oldSide.plogpOldExit - pl[3] + oldSide.plogpOldExitAfter + pl[4];
+  double delta_flow_log_flow = -oldSide.plogpOldExitFlow - pl[5] + oldSide.plogpOldExitFlowAfter + pl[6];
 
   double deltaL = delta_enter - delta_enter_log_enter - delta_exit_log_exit + delta_flow_log_flow;
   return deltaL;

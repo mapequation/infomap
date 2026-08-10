@@ -87,3 +87,30 @@ test_that("as_communities rejects graphs that do not match imported igraph verti
     "same igraph graph"
   )
 })
+
+test_that("add_igraph preserves per-state names for state networks", {
+  skip_if_not_installed("igraph")
+
+  g <- igraph::make_graph(c(1, 2, 2, 1), directed = TRUE)
+  igraph::V(g)$name <- c("state-a", "state-b")
+  igraph::V(g)$phys_id <- c("alpha", "beta")
+
+  im <- Infomap(silent = TRUE)
+  im$add_igraph(g)
+
+  expect_equal(im$get_state_name(1L), "state-a")
+  expect_equal(im$get_state_name(2L), "state-b")
+})
+
+test_that("add_igraph does not synthesize state names when vertices are unnamed", {
+  skip_if_not_installed("igraph")
+
+  g <- igraph::make_graph(c(1, 2, 2, 1), directed = TRUE)
+  igraph::V(g)$phys_id <- c("alpha", "beta")
+
+  im <- Infomap(silent = TRUE)
+  im$add_igraph(g)
+
+  expect_null(im$get_state_name(1L))
+  expect_null(im$get_state_name(2L))
+})

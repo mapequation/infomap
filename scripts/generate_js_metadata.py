@@ -5,6 +5,7 @@ import json
 import subprocess
 from pathlib import Path
 
+from parameter_catalog import ParameterCatalog
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 OVERRIDES = REPO_ROOT / "interfaces" / "parameters" / "overrides.json"
@@ -39,7 +40,7 @@ def load_parameters(infomap_bin):
 
 
 def public_parameter_metadata(parameters):
-    hidden = hidden_js_parameter_flags()
+    hidden = hidden_js_parameter_flags(parameters)
     return [
         {key: value for key, value in parameter.items() if key in PUBLIC_PARAMETER_KEYS}
         for parameter in parameters
@@ -47,12 +48,15 @@ def public_parameter_metadata(parameters):
     ]
 
 
-def hidden_js_parameter_flags():
+def hidden_js_parameter_flags(parameters):
+    # Resolve `ts` `hide` decisions through the shared ParameterCatalog so the
+    # JS surface matches the TypeScript binding generator and the policy matrix
+    # exactly. This honours per-parameter precedence over group rules (a
+    # per-parameter `keep` un-hides a flag its group hides), which an
+    # independent reimplementation here would miss (issue #755).
     overrides = json.loads(OVERRIDES.read_text(encoding="utf-8"))
-    return {
-        entry["flag"]
-        for entry in overrides.get("hiddenBindings", {}).get("ts", [])
-    }
+    catalog = ParameterCatalog(parameters, overrides)
+    return catalog.hidden_bindings.get("ts", set())
 
 
 def write_json(path, payload):

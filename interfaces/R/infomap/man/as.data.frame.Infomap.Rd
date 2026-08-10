@@ -36,8 +36,11 @@ return type is independent of installed packages.}
 }
 \value{
 A \code{data.frame} (or a \code{tibble} when \code{tibble = TRUE}) with
-columns \code{state_id}, \code{node_id}, \code{module_id}, \code{flow}, \code{name} and
-(for multilayer networks) \code{layer_id}.
+columns \code{state_id}, \code{node_id}, \code{module_id}, \code{flow}, \code{name},
+(for multilayer networks) \code{layer_id} and (for higher-order
+networks) \code{state_name}. The \code{name} column always carries the
+physical node name; \code{state_name} carries the per-state-node name,
+falling back to the physical name when a state node is unnamed.
 }
 \description{
 Returns one row per leaf node in the partitioned tree. Mirrors

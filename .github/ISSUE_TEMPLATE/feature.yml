@@ -1,7 +1,10 @@
 name: Feature request
 description: Propose a new or changed Infomap capability.
 title: "[Feature]: "
-labels: ["enhancement"]
+# No labels: here on purpose. This repository labels by component (python, R,
+# build, docs, test, performance, ...), not by issue type, so the type label a
+# template could declare does not exist -- declaring one silently drops it and
+# the issue arrives unlabelled. The component is not knowable from the template.
 body:
   - type: textarea
     id: problem

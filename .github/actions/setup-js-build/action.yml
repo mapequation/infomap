@@ -4,13 +4,13 @@ runs:
   using: composite
   steps:
     - name: Set up Node.js
-      uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+      uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
       with:
-        node-version: 20
+        node-version: 24
         cache: npm
 
     - name: Set up Emscripten
-      uses: mymindstorm/setup-emsdk@667eb33f24e84e7f362c16d8d7fff0629a73e15e # v15
+      uses: mymindstorm/setup-emsdk@4528d102f7230f0e7b276855c01ea1159be0e984 # v16
       with:
         version: 5.0.5
 

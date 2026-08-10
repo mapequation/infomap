@@ -1,8 +1,8 @@
 import pathlib
 
-from infomap import Infomap
+from infomap import Infomap, Network, Options
 
-im = Infomap(silent=True)
+im = Infomap()
 
 name = "ninetriangles"
 filename = f"../networks/{name}.net"
@@ -36,23 +36,22 @@ for node_id, modules in result.multilevel_modules().items():
 
 pathlib.Path("output").mkdir(exist_ok=True)
 print(f"Writing top level modules to output/{name}.clu...")
-im.write(f"output/{name}.clu")
+result.write(f"output/{name}.clu")
 
 print(f"Writing second level modules to output/{name}_level2.clu...")
-im.write(f"output/{name}_level2.clu", depth_level=2)
+result.write(f"output/{name}_level2.clu", depth=2)
 
 print(f"Writing bottom level modules to output/{name}_level-1.clu...")
-im.write(f"output/{name}_level-1.clu", depth_level=-1)
+result.write(f"output/{name}_level-1.clu", depth=-1)
 
 print(f"Writing tree to output/{name}.tree...")
-im.write(f"output/{name}.tree")
+result.write(f"output/{name}.tree")
 
 print("Read back .clu file and only calculate codelength...")
-im2 = Infomap(
-    silent=True, two_level=True, no_infomap=True, cluster_data=f"output/{name}.clu"
+net2 = Network.from_file(filename)
+result2 = net2.run(
+    options=Options(two_level=True, no_infomap=True, cluster_data=f"output/{name}.clu")
 )
-im2.read_file(filename)
-result2 = im2.run()
 print(
     f"Found {result2.max_depth} levels with {result2.num_top_modules} top modules "
     f"and codelength: {result2.codelength:.8f} bits"

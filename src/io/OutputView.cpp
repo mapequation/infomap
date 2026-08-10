@@ -184,9 +184,8 @@ OutputModuleLinks OutputView::moduleLinks()
 
 bool OutputView::shouldIncludeLeaf(const InfoNode& node, OutputLeafPolicy filter) const
 {
-  const auto shouldHideBipartiteNodes = filter == OutputLeafPolicy::HideBipartiteUnlessFlowTree
-      ? !m_infomap.printFlowTree && m_infomap.isBipartite() && m_infomap.hideBipartiteNodes
-      : m_infomap.isBipartite() && m_infomap.hideBipartiteNodes;
+  const auto shouldHideBipartiteNodes = filter == OutputLeafPolicy::HideBipartite
+      && m_infomap.isBipartite() && m_infomap.hideBipartiteNodes;
 
   return !shouldHideBipartiteNodes || node.physicalId < m_network.bipartiteStartId();
 }

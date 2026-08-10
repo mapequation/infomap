@@ -44,13 +44,7 @@ struct ParameterSpec {
   std::string minValue;
   std::string maxValue;
   std::vector<std::string> choices;
-  std::string pythonName;
-  std::string rName;
-  std::string tsName;
   std::string renderPolicy;
-  std::string pythonDefault;
-  std::string rDefault;
-  std::string pythonDocDescription;
   bool cliOnly = false;
   bool libraryOnly = false;
   bool includeInJson = true;

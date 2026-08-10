@@ -1,0 +1,10 @@
+{
+  "extends": "../../pyproject.toml",
+  "include": ["src/infomap"],
+  "exclude": [
+    "src/infomap/_swig.py",
+    "src/infomap/io",
+    "src/infomap/tl",
+    "**/__pycache__"
+  ]
+}

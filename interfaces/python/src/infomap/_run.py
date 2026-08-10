@@ -10,9 +10,9 @@ Dispatch by input type:
   ``Network`` owns its ``Core``; we render the options, drive the engine, and
   stamp a ``Result`` bound to the ``Network``).
 - ``networkx.Graph`` / ``igraph.Graph`` / SciPy sparse matrix / a ``(2, E)``
-  edge index (ndarray or tensor) / a ``str``/``Path`` network file / an iterable
-  of ``(u, v[, w])`` links -> build an :class:`infomap.Infomap`, load via the
-  matching adapter, then ``im.run()``.
+  edge index (ndarray or tensor) / a ``str``/``os.PathLike`` network file / an
+  iterable of ``(u, v[, w])`` links -> build an :class:`infomap.Infomap`, load
+  via the matching adapter, then ``im.run()``.
 
 The options are passed as the keyword ``options`` (an :class:`Options`
 instance or mapping) and/or as keyword ``**overrides``; overrides win.
@@ -20,9 +20,16 @@ instance or mapping) and/or as keyword ``**overrides``; overrides win.
 
 from __future__ import annotations
 
+import os
+import warnings
 from collections.abc import Iterable, Mapping
-from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+from ._options import _UNSET as _OPTIONS_UNSET
+
+if TYPE_CHECKING:
+    from ._options import Options
+    from .result import Result
 
 
 def _resolve_options(options: Any, overrides: dict) -> dict:
@@ -38,14 +45,141 @@ def _resolve_options(options: Any, overrides: dict) -> dict:
         # returns a kwargs dict by contract).
         to_kwargs = getattr(options, "to_kwargs", None)
         if not callable(to_kwargs):
-            raise TypeError(
-                "options must be an Options instance, a mapping, "
-                "or None"
-            )
+            raise TypeError("options must be an Options instance, a mapping, or None")
         kwargs: Any = to_kwargs()
         resolved = kwargs
     resolved.update(overrides)
     return resolved
+
+
+def _reject_unknown_options(resolved: dict) -> None:
+    """Reject unknown option keys with an actionable error.
+
+    Without this, an unknown keyword (a typo, or a CLI spelling such as
+    ``verbose`` for ``verbosity_level``) reaches the ``Options`` / ``Infomap``
+    constructors deep in dispatch and surfaces as a confusing
+    ``Options.__init__() got an unexpected keyword argument`` that leaks an
+    internal and offers no correction. Catch it up front, name the offending
+    key, suggest the nearest valid option, and point at the parameter reference.
+    """
+    from ._options import _OPTION_FIELD_NAMES
+
+    # Adapter kwargs (weight, meta_attribute, edge_weight, ...) are not engine
+    # options, but they are legitimate keywords that the per-input
+    # _reject_adapter_kwargs() rejects downstream with an input-specific
+    # message ("... use Network.from_networkx(..., weight=...)"). Let them pass
+    # here so that better-targeted error wins; only genuinely-unknown keys
+    # (typos, CLI spellings like ``verbose``) are caught below.
+    adapter_kwargs = set().union(*(kwargs for _, kwargs in _ADAPTER_KWARGS.values()))
+    allowed = set(_OPTION_FIELD_NAMES) | {"pretty"} | adapter_kwargs
+    unknown = [key for key in resolved if key not in allowed]
+    if not unknown:
+        return
+
+    import difflib
+
+    rendered = []
+    for key in unknown:
+        near = difflib.get_close_matches(key, allowed, n=1)
+        rendered.append(f"{key!r}" + (f" (did you mean {near[0]!r}?)" if near else ""))
+    raise TypeError(
+        "infomap.run() got unknown option(s): "
+        + ", ".join(rendered)
+        + ". Any engine option can be passed as a keyword (or carried via "
+        "options=Options(...)); see inspect.getdoc(infomap.Options) for the "
+        "option names."
+    )
+
+
+# Args-only output options that nonetheless shape what the Result/Network
+# writers emit on the library surface, so they must NOT trigger the inert
+# warning below. ``hide_bipartite_nodes`` projects the secondary node type out
+# of write_tree/write_clu output (verified: it filters the written files while
+# leaving result.modules()/nodes() covering both types).
+_WRITER_EFFECTIVE_ARGS_ONLY = frozenset({"hide_bipartite_nodes"})
+
+
+def _warn_inert_output_options(
+    options: Any, args: Any, *, engine_emits: bool = False
+) -> None:
+    """Warn when output-artifact options are set but cannot take effect.
+
+    The args-only options (``tree``, ``ftree``, ``clu``, ``clu_level``,
+    ``out_name``, ``output``, ``print_all_trials``, ``no_overwrite``,
+    ``no_file_output``) drive the engine's own file writer, which only runs
+    when an output directory is supplied through the raw ``args`` escape hatch.
+    On the normal library surface file output is instead controlled by the
+    ``Result`` / ``Network`` writers, so these flags -- set via
+    :class:`Options` -- construct and run without error but do nothing. Point
+    the caller at the writers. When the raw ``args`` escape is in use
+    (``args`` truthy) the flags may act, so stay quiet.
+
+    ``hide_bipartite_nodes`` is classified args-only too, but unlike the flags
+    above it is *not* inert on the library surface: it projects the type-B
+    (bipartite secondary) nodes out of what the ``Result`` writers emit
+    (``result.write_tree`` / ``write_clu`` drop them), while leaving the
+    in-memory result unchanged. Warning that it "has no effect" and to write
+    from the ``Result`` instead would be wrong -- the writers are exactly where
+    it takes effect -- so it is excluded here.
+    """
+    if args:
+        return
+    from ._options import _ADVANCED_TIER_KWARGS, _OPTION_DEFAULTS
+
+    inert = sorted(
+        name
+        for name, spec in _ADVANCED_TIER_KWARGS.items()
+        if spec[2] == "args-only"
+        and name not in _WRITER_EFFECTIVE_ARGS_ONLY
+        and getattr(options, name) != getattr(_OPTION_DEFAULTS, name)
+    )
+    if inert:
+        warnings.warn(
+            f"{', '.join(inert)}: these output options have no effect here -- "
+            "on the Python library surface file output comes from the Result / "
+            "Network writers (result.write_tree(path) / write_clu, "
+            "network.write_pajek), not these flags (which act only with an "
+            "output directory via the raw args escape hatch).",
+            UserWarning,
+            stacklevel=3,
+        )
+
+    # Console/diagnostic options classified 'remove' are also inert on the
+    # library surface (the API is quiet by default; logging is the control),
+    # but -- unlike the args-only flags above -- they used to warn about
+    # nothing, so setting them via Options gave no feedback and no
+    # effect. Point at the real control using each option's catalog
+    # replacement text. ``silent`` is handled by the dedicated, context-aware
+    # advisories on the Infomap/Network paths, so it is intentionally omitted.
+    #
+    # verbosity_level is inert only while the engine stays silent. It becomes
+    # effective whenever the engine actually emits: classic silent=False (stdout
+    # output, where -v/-vv/-vvv sets the detail level) or a DEBUG-enabled routed
+    # logger (where apply_engine_log_overrides un-silences and keeps a
+    # user-chosen level). The caller passes engine_emits for the silent=False
+    # case; is_routed()+DEBUG is checked here. Warning "no effect" in a mode
+    # where it works -- and advising its removal -- would be the same mistake
+    # that was fixed for hide_bipartite_nodes, so drop it from the check there.
+    import logging
+
+    from ._logging import is_routed
+    from ._logging import logger as _engine_logger
+
+    removable = ["verbosity_level", "print_config_fingerprint"]
+    if engine_emits or (is_routed() and _engine_logger.isEnabledFor(logging.DEBUG)):
+        removable.remove("verbosity_level")
+    inert_removed = [
+        (name, _ADVANCED_TIER_KWARGS[name][3])
+        for name in removable
+        if getattr(options, name) != getattr(_OPTION_DEFAULTS, name)
+    ]
+    if inert_removed:
+        detail = " ".join(f"{name}: {repl}" for name, repl in inert_removed)
+        warnings.warn(
+            "these options have no effect on the Python library surface -- " + detail,
+            UserWarning,
+            stacklevel=3,
+        )
 
 
 def _is_networkx_graph(obj: Any) -> bool:
@@ -68,7 +202,7 @@ def _is_igraph_graph(obj: Any) -> bool:
 
 def _is_scipy_sparse(obj: Any) -> bool:
     try:
-        import scipy.sparse as sparse
+        from scipy import sparse
     except ImportError:
         return False
     return bool(sparse.issparse(obj))
@@ -93,6 +227,48 @@ def _is_edge_index(obj: Any) -> bool:
         return kind in "iu"
     # torch dtypes have no ``.kind``; exclude floating/complex by name.
     return "int" in str(dtype).lower()
+
+
+def _is_pandas_dataframe(obj: Any) -> bool:
+    """A pandas ``DataFrame``, duck-typed to avoid importing pandas.
+
+    Iterating a ``DataFrame`` yields its *column labels*, not its rows, so it
+    must not fall through to the ``(u, v[, w])`` link-iterable branch (where it
+    would fail deep in ``add_links`` with a message about the column labels).
+    ``run()`` rejects it up front with a pointer to the tabular conversions.
+    """
+    return (
+        hasattr(obj, "itertuples")
+        and hasattr(obj, "columns")
+        and hasattr(obj, "to_numpy")
+    )
+
+
+def _is_dense_adjacency_matrix(obj: Any) -> bool:
+    """A 2-D array-like that looks like a dense adjacency matrix, not link rows.
+
+    A dense ``N x N`` adjacency matrix (e.g. ``networkx.to_numpy_array(g)`` or a
+    similarity matrix) is a natural but *unsupported* input: handed to
+    ``add_links`` it reads each row as a ``(source, target[, weight])`` link,
+    silently partitioning a different graph. A ``(2, E)`` integer edge index is
+    matched earlier, and a *non-square* float link matrix (the usual ``(E, 2|3)``
+    shape) falls through to the link-iterable path, so the 2-D arrays reaching
+    this check are the square ones (``N x N``, ``N >= 3``). A square array is
+    genuinely ambiguous -- an adjacency matrix, or exactly ``N`` ``(source,
+    target[, weight])`` link rows -- so it is rejected in favour of the
+    unambiguous forms rather than silently misread. Detected duck-typed (NumPy,
+    dense SciPy, array-api, torch) so we never import NumPy.
+
+    A 2-row array is deliberately *not* flagged: ``(2, E)`` is the documented
+    edge-index orientation, so a ``2 x 2`` is too degenerate to disambiguate
+    from an edge index / two link rows and is left to those paths (the integer
+    case is already an edge index; the float case reads as two link rows).
+    """
+    shape = getattr(obj, "shape", None)
+    if shape is None or len(shape) != 2:
+        return False
+    rows, cols = shape[0], shape[1]
+    return rows == cols and rows >= 3
 
 
 # Adapter-only keyword arguments per input type. run() forwards keywords to the
@@ -145,38 +321,149 @@ def _reject_adapter_kwargs(kind: str, user_keys: set) -> None:
     if not misdirected:
         return
     names = ", ".join(repr(name) for name in misdirected)
+    verb = "configures" if len(misdirected) == 1 else "configure"
+    message = (
+        f"infomap.run() forwards keyword arguments to the engine, but {names} "
+        f"{verb} how the {kind} input is read, not the engine. Build the "
+        f"network explicitly and run it, e.g. "
+        f"infomap.run({constructor}(..., {misdirected[0]}=...), num_trials=10)."
+    )
+    if "directed" in misdirected:
+        # `directed` names the adapter's edge orientation, not the engine's
+        # flow model -- steer users away from that collision explicitly.
+        message += (
+            " (Here 'directed' sets the adapter's edge orientation; for the "
+            "engine's directed flow model pass flow_model='directed' via "
+            "Options.)"
+        )
+    raise TypeError(message)
+
+
+# Common-tier engine keywords that are first-class on run(); excluded from the
+# link-iterable adapter guard below because `directed` is both a common-tier
+# engine flag (valid on a link iterable) and a scipy/edge_index adapter kwarg.
+_COMMON_TIER_KEYS = frozenset(
+    {"seed", "num_trials", "two_level", "directed", "markov_time"}
+)
+
+
+def _reject_iterable_adapter_kwargs(user_keys: set) -> None:
+    """Reject input-adapter kwargs on a link-iterable / file input.
+
+    A link iterable (and a network file) takes no adapter configuration -- the
+    ``weight``/``node_ids``/``edge_weight``/... arguments belong on the
+    ``Network.from_*`` constructors. Without this guard they pass
+    ``_reject_unknown_options`` (which lets adapter kwargs through so a
+    better-targeted message can win) and surface as a bare
+    ``Infomap.__init__() got an unexpected keyword argument`` that leaks an
+    internal the functional-API user never called.
+    """
+    adapter_union = set().union(*(kwargs for _, kwargs in _ADAPTER_KWARGS.values()))
+    misdirected = sorted((adapter_union - _COMMON_TIER_KEYS) & user_keys)
+    if not misdirected:
+        return
+    names = ", ".join(repr(name) for name in misdirected)
+    verb = "configures" if len(misdirected) == 1 else "configure"
+    hint = ""
+    if "weight" in misdirected or "edge_weight" in misdirected:
+        hint = (
+            " Weights for a link iterable go inside the tuples "
+            "((source, target, weight)), not a keyword argument."
+        )
     raise TypeError(
         f"infomap.run() forwards keyword arguments to the engine, but {names} "
-        f"configure how the {kind} input is read, not the engine. Build the "
-        f"network explicitly and run it, e.g. "
-        f"infomap.run({constructor}(..., {misdirected[0]}=...), num_trials=10). "
-        f"run() builds input with default settings; Network.from_* is the path "
-        f"for non-default input."
+        f"{verb} how an input is read, not the engine, and do not apply to a "
+        "link-iterable or file input. They belong on a Network.from_* "
+        "constructor for a graph, matrix, or edge-index input." + hint
     )
+
+
+def _partition_to_internal_ids(initial_partition: Any, id_to_label: Any) -> Any:
+    """Translate a graph-label-keyed ``initial_partition`` to internal node ids.
+
+    ``run()`` on a graph adapter keys its ``Result`` by internal node id, but the
+    natural mental model -- and :func:`infomap.find_communities` -- keys the
+    initial partition by the graph's own node labels. Map labels back to ids so
+    ``run(g, initial_partition={label: module})`` behaves like
+    ``find_communities``. Keys not found in the label map pass through
+    unchanged, so an already-id-keyed partition and an integer-labeled graph
+    (where id == label) are both no-ops.
+    """
+    if not isinstance(initial_partition, Mapping) or not id_to_label:
+        return initial_partition
+    label_to_id = {label: node_id for node_id, label in id_to_label.items()}
+    return {
+        label_to_id.get(key, key): module_id
+        for key, module_id in initial_partition.items()
+    }
+
+
+# The sentinel for the common-tier keyword parameters below lives in the
+# generated options module, because the Infomap()/run() signatures declare the
+# same five with it: one object means ``value is not _UNSET`` holds on every
+# surface. Re-exported here because network.py has always imported it from _run.
+_UNSET = _OPTIONS_UNSET
 
 
 def run(
     input: Any,
     *,
-    options: Any = None,
-    initial_partition: Any = None,
+    options: Options | Mapping[str, Any] | None = None,
+    seed: int = _UNSET,
+    num_trials: int = _UNSET,
+    two_level: bool = _UNSET,
+    directed: bool | None = _UNSET,
+    markov_time: float = _UNSET,
+    args: str | None = None,
+    initial_partition: dict[Any, Any] | None = None,
     **overrides: Any,
-):
+) -> Result:
     """Run Infomap on ``input`` and return a :class:`Result`.
+
+    This is the canonical entry point. It accepts any supported network
+    representation -- including a prebuilt :class:`Network` or
+    :class:`Infomap` instance -- so ``net.run(**kw)`` and ``im.run(**kw)`` are
+    thin conveniences equivalent to ``infomap.run(net, **kw)`` /
+    ``infomap.run(im, **kw)``.
 
     Parameters
     ----------
-    input : Network, networkx.Graph, igraph.Graph, scipy sparse matrix, \
-            (2, E) array/tensor, str or Path, or iterable of links
+    input : Network, Infomap, networkx.Graph, igraph.Graph, scipy sparse matrix, \
+            (2, E) array/tensor, str or os.PathLike, or iterable of links
         The network to partition. See the module docstring for the dispatch
         table.
     options : Options, mapping, or None, optional
-        Base configuration. Keyword ``overrides`` take precedence.
+        Base configuration. Any keyword argument below takes precedence.
+    seed : int, optional
+        Random-number-generator seed for reproducible results (default 123).
+    num_trials : int, optional
+        Number of independent trials to run; the best solution is kept
+        (default 1).
+    two_level : bool, optional
+        Optimize a two-level partition instead of the default multilevel
+        hierarchy.
+    directed : bool, optional
+        Treat links as directed (shorthand for ``flow_model="directed"``).
+        For a graph, file, or link-iterable input this is an engine flag; for a
+        SciPy sparse matrix or a ``(2, E)`` edge index it names the input
+        adapter's orientation instead and is rejected here -- build the network
+        with ``Network.from_scipy_sparse_matrix(..., directed=True)`` /
+        ``Network.from_edge_index(..., directed=True)``, or pass
+        ``options=Options(flow_model="directed")``.
+    markov_time : float, optional
+        Scale link flow to change the cost of moving between modules; higher
+        values yield fewer modules.
+    args : str, optional
+        Raw Infomap arguments prepended before the rendered options -- the
+        escape hatch for full CLI parity.
     initial_partition : mapping, optional
         Initial module assignment for this run only.
     **overrides
-        Individual Infomap options (CLI-flag keyword arguments) that override
-        ``options``. These configure the *engine*, not how the input is read.
+        Any other Infomap engine option, as a keyword argument, forwarded to
+        :class:`Options`. Convenient for a one-off; for a reusable or validated
+        configuration prefer ``options=Options(...)`` (the canonical carrier and
+        the full parameter reference). They configure the *engine*, not how the
+        input is read.
 
     Returns
     -------
@@ -185,6 +472,11 @@ def run(
 
     Notes
     -----
+    The Python API is quiet by default. To see the engine log, attach a handler
+    to the ``infomap`` logger with :func:`infomap.enable_log`
+    (``infomap.enable_log(logging.DEBUG)`` for more detail). The ``infomap``
+    command-line interface keeps its verbose default.
+
     Keyword arguments go to the engine; the input adapters always build with
     their defaults (e.g. networkx reads the ``"weight"`` edge attribute, a
     SciPy matrix is treated as undirected). For non-default input building -- a
@@ -209,10 +501,7 @@ def run(
     One call from an iterable of ``(u, v[, w])`` links to a :class:`Result`:
 
     >>> from infomap import run
-    >>> result = run(
-    ...     [(1, 2), (1, 3), (2, 3), (4, 5), (4, 6), (5, 6), (3, 4)],
-    ...     silent=True,
-    ... )
+    >>> result = run([(1, 2), (1, 3), (2, 3), (4, 5), (4, 6), (5, 6), (3, 4)])
     >>> result.num_top_modules
     2
     >>> for node_id, module_id in sorted(result.modules().items()):
@@ -229,57 +518,145 @@ def run(
     from ._facade import Infomap
     from .network import Network
 
-    resolved = _resolve_options(options, overrides)
-    # Keys the user actually supplied (kwargs + a mapping `options`), used to
-    # reject adapter-only arguments below. An Options *instance* is excluded on
-    # purpose: its to_kwargs() carries every field (e.g. directed=None) the user
-    # never set, which would false-positive the guard.
-    user_keys = set(overrides)
+    # The five common-tier options are first-class keyword parameters so they
+    # show up in inspect.signature(infomap.run) for IDE and tooling introspection;
+    # every other engine option rides **overrides. Collect the common ones the
+    # caller actually supplied (still at _UNSET means "defer to options").
+    common = {
+        name: value
+        for name, value in (
+            ("seed", seed),
+            ("num_trials", num_trials),
+            ("two_level", two_level),
+            ("directed", directed),
+            ("markov_time", markov_time),
+        )
+        if value is not _UNSET
+    }
+
+    resolved = _resolve_options(options, {**overrides, **common})
+    _reject_unknown_options(resolved)
+    # Advanced engine options passed as bare keywords forward to Options (the
+    # canonical carrier) without a deprecation on this functional front door;
+    # only the giant explicit Infomap()/Infomap.run() signatures are slimmed in
+    # 3.0. Unknown keys are still rejected above with a suggestion.
+    # Keys the user actually supplied (kwargs + common-tier params + a mapping
+    # `options`), used to reject adapter-only arguments below. An Options
+    # *instance* is excluded on purpose: its to_kwargs() carries every field
+    # (e.g. directed=None) the user never set, which would false-positive the
+    # guard.
+    user_keys = set(overrides) | set(common)
     if isinstance(options, Mapping):
         user_keys |= set(options)
 
-    # 1. An already-built Network: run it in place.
+    # 1. An already-built engine (Network or stateful Infomap): run it in
+    # place. These are the surfaces whose own run() methods are thin
+    # conveniences that route back through here.
     if isinstance(input, Network):
-        return input.run(options=resolved, initial_partition=initial_partition)
+        return input.run(
+            options=resolved, args=args, initial_partition=initial_partition
+        )
+    if isinstance(input, Infomap):
+        return input.run(
+            options=resolved, args=args, initial_partition=initial_partition
+        )
 
     # 2. A network file path.
-    if isinstance(input, (str, Path)):
+    if isinstance(input, (str, os.PathLike)):
         _reject_adapter_kwargs("file", user_keys)
-        im = Infomap(**resolved)
-        im.read_file(str(input))
+        im = Infomap(args=args, **resolved)
+        im.read_file(input)
         return im.run(initial_partition=initial_partition)
 
     # 3. A networkx graph.
     if _is_networkx_graph(input):
         _reject_adapter_kwargs("networkx", user_keys)
-        im = Infomap(**resolved)
+        im = Infomap(args=args, **resolved)
         im._add_networkx_graph_impl(input)
-        return im.run(initial_partition=initial_partition)
+        return im.run(
+            initial_partition=_partition_to_internal_ids(
+                initial_partition, im.node_id_to_label
+            )
+        )
 
     # 4. An igraph graph.
     if _is_igraph_graph(input):
         _reject_adapter_kwargs("igraph", user_keys)
-        im = Infomap(**resolved)
+        im = Infomap(args=args, **resolved)
         im._add_igraph_graph_impl(input)
-        return im.run(initial_partition=initial_partition)
+        return im.run(
+            initial_partition=_partition_to_internal_ids(
+                initial_partition, im.node_id_to_label
+            )
+        )
 
     # 5. A SciPy sparse adjacency matrix.
     if _is_scipy_sparse(input):
         _reject_adapter_kwargs("scipy", user_keys)
-        im = Infomap(**resolved)
+        im = Infomap(args=args, **resolved)
         im._add_scipy_sparse_matrix_impl(input)
-        return im.run(initial_partition=initial_partition)
+        return im.run(
+            initial_partition=_partition_to_internal_ids(
+                initial_partition, im.node_id_to_label
+            )
+        )
 
     # 6. A (2, E) edge index (ndarray or tensor).
     if _is_edge_index(input):
         _reject_adapter_kwargs("edge_index", user_keys)
-        im = Infomap(**resolved)
+        im = Infomap(args=args, **resolved)
         im._add_edge_index_impl(input)
-        return im.run(initial_partition=initial_partition)
+        return im.run(
+            initial_partition=_partition_to_internal_ids(
+                initial_partition, im.node_id_to_label
+            )
+        )
+
+    # A dict is iterable, but iterating it yields only its keys and silently
+    # drops the values -- a ``{(u, v): weight}`` edge dict would lose its
+    # weights (partitioning a different, unweighted graph with no error), a
+    # ``{node: neighbors}`` adjacency dict would yield bare ids. Reject it here,
+    # before the link-iterable branch, with the explicit conversion.
+    if isinstance(input, Mapping):
+        raise TypeError(
+            "infomap.run() does not accept a dict (iterating one yields only "
+            "its keys, dropping the values). Convert first: a {(source, "
+            "target): weight} edge dict -> [(u, v, w) for (u, v), w in "
+            "d.items()]; a {node: [neighbors]} adjacency dict -> its link "
+            "tuples."
+        )
+
+    # A pandas DataFrame is iterable too, but iterating one yields its column
+    # labels, not its edge rows. Point at the documented tabular paths.
+    if _is_pandas_dataframe(input):
+        raise TypeError(
+            "infomap.run() does not accept a pandas DataFrame directly "
+            "(iterating one yields its column labels, not edge rows). Pass the "
+            "edge columns as an array, e.g. "
+            "infomap.run(df[['source', 'target']].to_numpy()) (add a weight "
+            "column for weighted links)."
+        )
+
+    # A dense adjacency matrix is 2-D and iterable, but handing its rows to
+    # add_links reads them as (source, target[, weight]) links -- silently
+    # partitioning a different graph (a 3x3 triangle matrix becomes 2 nodes /
+    # 2 links, no error). Edge indexes and float link matrices are matched
+    # above, so a square 2-D array reaching here is an adjacency matrix; reject
+    # it with the conversion, before the link-iterable branch.
+    if _is_dense_adjacency_matrix(input):
+        rows, cols = input.shape[0], input.shape[1]
+        raise TypeError(
+            f"infomap.run() received a {rows}x{cols} 2-D array that looks like "
+            "a dense adjacency matrix, which would be misread as link rows and "
+            "silently partition a different graph. Pass it as a SciPy sparse "
+            "matrix: infomap.run(scipy.sparse.csr_matrix(A)). For literal "
+            "(source, target[, weight]) rows, pass a list of tuples."
+        )
 
     # 7. An iterable of (u, v[, w]) links.
     if isinstance(input, Iterable):
-        im = Infomap(**resolved)
+        _reject_iterable_adapter_kwargs(user_keys)
+        im = Infomap(args=args, **resolved)
         im.add_links(input)
         return im.run(initial_partition=initial_partition)
 

@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import importlib.util
+import warnings
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, Union
 
 import pytest
 from infomap import Infomap
@@ -134,7 +135,7 @@ def load_graph_fixture(graph_fixture_links):
 
 
 def _canonical_modules(
-    modules: Union[Iterable[tuple[int, int]], dict[int, int]],
+    modules: Iterable[tuple[int, int]] | dict[int, int],
 ) -> list[list[int]]:
     grouped: dict[int, list[int]] = {}
     items = modules.items() if isinstance(modules, dict) else modules
@@ -146,6 +147,30 @@ def _canonical_modules(
 @pytest.fixture
 def canonical_modules():
     return _canonical_modules
+
+
+class FsPathOnly:
+    """A generic ``os.PathLike`` that is not a ``pathlib.Path``.
+
+    ``__str__`` deliberately disagrees with ``__fspath__``: any consumer that
+    converts with ``str()`` instead of ``os.fspath()`` / ``os.fsdecode()``
+    reads a bogus path.
+    """
+
+    def __init__(self, path):
+        self._path = path
+
+    def __fspath__(self) -> str:
+        return str(self._path)
+
+    def __str__(self) -> str:
+        return "<not-the-path>"
+
+
+@pytest.fixture
+def fspath_only():
+    """Factory for a generic non-``Path`` ``os.PathLike`` with a lying ``__str__``."""
+    return FsPathOnly
 
 
 @pytest.fixture
@@ -160,7 +185,13 @@ def make_infomap():
     def _make_infomap(
         *, seed: int = 123, num_trials: int = 1, silent: bool = True, **kwargs
     ) -> Infomap:
-        return Infomap(seed=seed, num_trials=num_trials, silent=silent, **kwargs)
+        # This helper deliberately builds the supported stateful Infomap compat
+        # surface for feature tests, so advanced-tier kwargs are exercised on
+        # purpose. The pending-deprecation those emit is asserted in
+        # test_deprecations.py; here it is only noise, so silence it.
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", PendingDeprecationWarning)
+            return Infomap(seed=seed, num_trials=num_trials, silent=silent, **kwargs)
 
     return _make_infomap
 

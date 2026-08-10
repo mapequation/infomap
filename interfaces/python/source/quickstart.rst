@@ -1,15 +1,38 @@
 Quick start
 ===========
 
-This page shows the smallest useful Python API calls. For a worked notebook
-with plotting, dataframe inspection, and export, see
-:doc:`examples/quickstart`.
+This page shows the smallest useful calls: run Infomap on a graph and read the
+result. For worked examples with plotting, dataframe inspection, and export,
+see :doc:`working-with-infomap/index`.
+
+Cheat sheet
+-----------
+
+The whole surface at a glance (the sections below expand each line):
+
+.. code-block:: python
+
+    import infomap
+    from infomap import Options
+
+    # input: a networkx/igraph graph, SciPy sparse matrix, (2, E) edge index,
+    # file path, iterable of (u, v[, w]) links, or a prebuilt Network
+    result = infomap.run(graph, seed=123, num_trials=20)
+
+    result.codelength              # metrics are properties (read without parentheses)
+    result.num_top_modules
+    result.modules()               # call a method to slice -> {node_id: module_id}
+    result.to_dataframe()          # per-node table: node_id, module_id, flow, path, name
+    result.write_clu("out.clu")    # write .clu/.tree/.ftree from the Result
+
+    # advanced engine options: Options is the reusable, validated carrier
+    infomap.run(graph, options=Options(regularized=True, flow_model="directed"))
 
 Run on a graph
 --------------
 
-Use :func:`infomap.find_communities` when you already have a NetworkX-style
-graph and only need top-level assignments:
+:func:`infomap.run` accepts a network and returns an immutable
+:class:`~infomap.Result`:
 
 .. code-block:: python
 
@@ -17,65 +40,142 @@ graph and only need top-level assignments:
     import infomap
 
     graph = nx.karate_club_graph()
-    communities = infomap.find_communities(
-        graph,
-        seed=123,
-        num_trials=20,
-    )
+    result = infomap.run(graph, seed=123, num_trials=20)
 
-    print(communities)
+    print(result.num_top_modules)   # e.g. 3
+    print(result.codelength)        # e.g. ~4.09 bits per step
+    print(result.modules())         # {node_id: module_id}
 
-Pass ``weight=None`` for unweighted edges. Pass ``module_attribute`` when you
-want the assignments written back to graph nodes.
+The same call accepts a NetworkX or igraph graph, a SciPy sparse matrix, or a
+``(2, E)`` edge index. It also accepts a network file path or an iterable of
+``(u, v[, w])`` links. Five common options are direct keyword arguments —
+``seed``, ``num_trials``, ``two_level``, ``directed`` (a directed flow model), and
+``markov_time``. You can pass any other engine option (``regularized``,
+``flow_model``, ``teleportation_probability``, …) as a keyword too. For a
+reusable or validated configuration, prefer :class:`~infomap.Options`, as shown
+under `Reusable configuration`_ below.
 
-Use the Infomap class
----------------------
-
-Use :class:`infomap.Infomap` when you need Infomap-specific options, result
-inspection, hierarchy access, or repeated runs:
-
-.. code-block:: python
-
-    from infomap import Infomap
-
-    im = Infomap(silent=True, seed=123, num_trials=20)
-    im.add_link(0, 1)
-    im.add_link(1, 2)
-    im.add_link(2, 0)
-    im.run()
-
-    print(im.codelength)
-    print(im.get_modules())
-
-For tabular output:
+Without any graph library installed, the bundled example networks in
+:mod:`infomap.datasets` work directly:
 
 .. code-block:: python
 
-    results = im.to_dataframe(
-        columns=["node_id", "module_id", "flow"],
-        index="node_id",
-    )
+    result = infomap.run(infomap.datasets.two_triangles())
 
-Record ``seed``, ``num_trials``, input provenance, and non-default options for
-reproducible reports.
+Build a network step by step
+-----------------------------
+
+When you assemble a network incrementally rather than from an existing graph,
+use :class:`~infomap.Network`. Its ``add_*`` verbs mirror the link and node
+input of the algorithm, and :func:`infomap.run` takes the built network
+directly:
+
+.. code-block:: python
+
+    from infomap import Network, run
+
+    net = Network()
+    net.add_link(0, 1)
+    net.add_link(1, 2)
+    net.add_link(2, 0)
+    result = run(net)
+
+    print(result.codelength)
+
+The ``from_*`` constructors take the adapter options that :func:`infomap.run`
+does not, such as a different edge-weight attribute or explicit directedness:
+
+.. code-block:: python
+
+    from infomap import Network, run
+
+    net = Network.from_networkx(graph, weight="capacity")
+    result = run(net, num_trials=20)
+
+Reusable configuration
+----------------------
+
+Capture a configuration once as an :class:`~infomap.Options` and reuse it across
+runs. Keyword arguments on :func:`infomap.run` take precedence over the bound
+options:
+
+.. code-block:: python
+
+    from infomap import Options, run
+
+    options = Options(num_trials=20, seed=123)
+    result = run(graph, options=options)
+
+Read the result
+---------------
+
+A :class:`~infomap.Result` reports scalar metrics as properties and collections
+as methods with defaults:
+
+.. code-block:: python
+
+    result.codelength            # float, bits per step
+    result.num_top_modules       # int
+    result.num_levels            # depth of the hierarchy
+
+    result.modules()             # {node_id: module_id} at the top level
+    result.modules(depth=2)      # one level deeper
+    for node in result.nodes():  # per-node views
+        node.node_id, node.module_id, node.flow
+
+    result.to_dataframe(["node_id", "module_id", "flow"])
+
+``to_dataframe`` and ``to_series`` need pandas, an optional dependency: install
+it with ``pip install "infomap[pandas]"`` (a missing install raises an
+``ImportError`` that says exactly this). ``result.modules()`` and
+``result.nodes()`` need no extra dependency.
 
 Explore interactively
 ---------------------
 
-Start a Python shell with Infomap preloaded:
+The ``infomap-shell`` command opens a Python shell with Infomap imported and
+ready; see :doc:`installation` for details.
 
-.. code-block:: bash
+The stateful Infomap class
+--------------------------
 
-    infomap-shell
+Existing code that builds an :class:`infomap.Infomap` instance, calls ``add_*``,
+and then ``run()`` keeps working unchanged: ``run()`` now returns the same
+:class:`~infomap.Result`. For when to choose each entry point and the full
+migration guide, see :doc:`the-infomap-class`.
 
-This opens a shell with ``im = Infomap()`` ready to use. Run
-``options()`` to inspect options and ``summary()`` to inspect the current
-network or result.
+Good to know
+------------
+
+A few conventions that trip people up; the :doc:`FAQ <faq>` expands on each:
+
+- **Metrics are properties; slicing or converting are methods.**
+  ``result.codelength`` (no ``()``) but ``result.modules()`` (with ``()``). The
+  label and per-trial tables (``result.names`` / ``state_names`` /
+  ``codelengths``) are intrinsic results, so they read as properties too.
+- **Five common options are direct keywords; the rest ride ``Options``.** The
+  five appear above; any other engine option also works as a bare keyword
+  (it forwards to :class:`~infomap.Options`). ``options`` and
+  ``initial_partition`` are *structural* arguments to ``run``, not engine
+  options and not part of "the five".
+- **Output options are inert on the library surface.** ``Options(tree=True)``
+  writes nothing; write from the ``Result`` (``write_tree`` / ``write_clu``) or
+  the ``Network`` (``write_pajek``).
+- **A matrix or edge index is not a graph.** ``infomap.run(A, directed=True)``
+  raises; build it with ``Network.from_scipy_sparse_matrix(A, directed=True)``.
+  (A *dense* adjacency matrix is not a supported input either -- convert it with
+  ``scipy.sparse.csr_matrix(A)``.)
+- **Result keys are internal ids, not graph labels.** For a graph with
+  non-integer labels, ``result.modules()`` keys are Infomap's internal ids;
+  recover labels with ``result.names.get(nid, nid)``, the ``name`` column of
+  ``to_dataframe()``, or ``infomap.find_communities`` (keyed by labels).
 
 Next steps
 ----------
 
-- :doc:`usage` covers NetworkX, igraph, SciPy sparse matrices, edge-index,
-  state networks, and multilayer networks.
-- :doc:`examples/index` contains executed workflow notebooks.
-- :doc:`api/index` is the full API reference.
+- :doc:`concepts/index` explains *why* Infomap finds the communities it does:
+  flow, the map equation, and hierarchy.
+- :doc:`working-with-infomap/index` covers every input format, the options worth
+  tuning, and how to read, visualise, and export results.
+- :doc:`flow-models/index` covers richer networks: memory, multilayer, temporal,
+  metadata, and bipartite.

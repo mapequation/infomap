@@ -116,10 +116,28 @@ std::string canonicalConfigJson(const Config& config)
   // settings, so it stays stable when the same input is referenced via a
   // different path. The cluster/meta-data paths below have no separate content
   // fingerprint, so they remain the only available signal and are kept.
+  //
+  // How the trial budget is *divided* is deliberately excluded -- numTrials and
+  // trialOffset name which slice of one budget a run executed, not what it
+  // executed. infomap.merge requires all shards of a run to share this
+  // fingerprint, and shards differ in exactly those two fields, so including
+  // them would reject every legitimate distributed run. The base seed is
+  // included, and seeding is per-trial and offset-derived (see
+  // RunSession::trialSeed), so shards that agree here really are slices of the
+  // same sequence of trials.
+  //
+  // Output-only settings are excluded because they cannot change the result.
+  // That held for trialResultsPath only after #905: it used to switch the
+  // per-trial reseeding on, which made two runs with the same fingerprint
+  // publish different partitions.
   addCanonicalNumber(json, "additional_input_count", config.additionalInput.size());
   json["flow_model"] = flowModelToString(config.flowModel);
   json["directed"] = config.directed;
   addCanonicalNumber(json, "seed", config.seedToRandomNumberGenerator);
+#if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
+  json["lossy"] = config.lossy;
+  addCanonicalNumber(json, "lossy_lambda", config.lossyLambda);
+#endif
   json["two_level"] = config.twoLevel;
   json["no_infomap"] = config.noInfomap;
   json["regularized"] = config.regularized;
@@ -141,6 +159,11 @@ std::string canonicalConfigJson(const Config& config)
   json["bipartite"] = config.bipartite;
   json["bipartite_teleportation"] = config.bipartiteTeleportation;
   json["cluster_data"] = config.clusterDataFile;
+  // Whether that initial partition is kept or optimized away, and where nodes the file
+  // does not mention end up: both change the partition, and both were missing, so two
+  // shards that disagreed on them fingerprinted identically and merged (#906).
+  json["cluster_data_is_hard"] = config.clusterDataIsHard;
+  json["assign_to_neighbouring_module"] = config.assignToNeighbouringModule;
   json["meta_data"] = config.metaDataFile;
   addCanonicalNumber(json, "meta_data_rate", config.metaDataRate);
   json["meta_data_unweighted"] = config.unweightedMetaData;
@@ -156,6 +179,8 @@ std::string canonicalConfigJson(const Config& config)
   addCanonicalNumber(json, "core_loop_codelength_threshold", config.minimumCodelengthImprovement);
   addCanonicalNumber(json, "tune_iteration_relative_threshold", config.minimumRelativeTuneIterationImprovement);
   addCanonicalNumber(json, "max_flow_iterations", config.maxFlowIterations);
+  addCanonicalNumber(json, "min_flow_iterations", config.minFlowIterations);
+  addCanonicalNumber(json, "flow_tolerance", config.flowTolerance);
   json["prefer_modular_solution"] = config.preferModularSolution;
   addCanonicalNumber(json, "num_random_moves", config.numRandomMoves);
   addCanonicalNumber(json, "max_degree_for_random_moves", config.maxDegreeForRandomMoves);
@@ -166,6 +191,7 @@ std::string canonicalConfigJson(const Config& config)
   addCanonicalNumber(json, "multilayer_relax_limit_up", config.multilayerRelaxLimitUp);
   addCanonicalNumber(json, "multilayer_relax_limit_down", config.multilayerRelaxLimitDown);
   addCanonicalNumber(json, "multilayer_js_relax_rate", config.multilayerJSRelaxRate);
+  json["multilayer_relax_to_self"] = config.multilayerRelaxToSelf;
   json["multilayer_relax_by_jsd"] = config.multilayerRelaxByJensenShannonDivergence;
   addCanonicalNumber(json, "multilayer_js_relax_limit", config.multilayerJSRelaxLimit);
   json["no_coarse_tune"] = config.noCoarseTune;

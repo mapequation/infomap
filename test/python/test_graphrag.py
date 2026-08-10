@@ -2,7 +2,6 @@ import json
 
 import pytest
 
-
 pytestmark = pytest.mark.fast
 
 
@@ -85,6 +84,49 @@ def _add_graphrag_links(im, graph):
     if graph.weights is not None:
         columns.append(graph.weights)
     im.add_links(np.column_stack(columns))
+
+
+class _FsPathOnly:
+    """A generic ``os.PathLike`` that is not a ``pathlib.Path``."""
+
+    def __init__(self, path):
+        self._path = path
+
+    def __fspath__(self):
+        return str(self._path)
+
+    def __str__(self):
+        return "<not-the-path>"
+
+
+def test_read_graphrag_accepts_generic_pathlike(tmp_path):
+    from infomap.graphrag import read_graphrag
+
+    entities_path, relationships_path = _write_graphrag_fixture(tmp_path)
+
+    graph = read_graphrag(_FsPathOnly(entities_path), _FsPathOnly(relationships_path))
+
+    assert graph.sources.tolist() == [1, 2, 3, 4, 5, 6, 3]
+
+
+def test_write_graphrag_communities_accepts_generic_pathlike_output(tmp_path):
+    _require_parquet_stack()
+
+    from infomap import Infomap
+    from infomap.graphrag import read_graphrag, write_graphrag_communities
+
+    entities_path, relationships_path = _write_graphrag_fixture(tmp_path)
+    graph = read_graphrag(entities_path, relationships_path)
+
+    im = Infomap(silent=True, seed=123, num_trials=5)
+    _add_graphrag_links(im, graph)
+    im.run()
+
+    output_dir = tmp_path / "infomap"
+    write_graphrag_communities(im, graph=graph, output=_FsPathOnly(output_dir))
+
+    assert (output_dir / "communities.parquet").is_file()
+    assert (output_dir / "infomap_nodes.parquet").is_file()
 
 
 def test_read_graphrag_factorizes_titles_from_entities_first(tmp_path):
@@ -276,7 +318,7 @@ def test_read_graphrag_rejects_duplicate_entity_ids(tmp_path):
 
 
 def test_output_paths_treats_dotted_output_as_directory(tmp_path):
-    from infomap.graphrag import _output_paths
+    from infomap.tl.graphrag import _output_paths
 
     output_dir = tmp_path / "output.v1"
     paths = _output_paths(output_dir)
@@ -356,8 +398,9 @@ def test_write_graphrag_communities_exports_hierarchy(tmp_path, example_network_
     from infomap.graphrag import read_graphrag, write_graphrag_communities
 
     edges = [
-        tuple(line.split())
+        tuple(line.split()[:2])
         for line in example_network_path("ninetriangles.net").read_text().splitlines()
+        if line.strip() and not line.startswith("#")
     ]
     entities = pd.DataFrame(
         {
@@ -427,7 +470,7 @@ def test_write_graphrag_communities_exports_hierarchy(tmp_path, example_network_
             communities["level"] == communities["level"].max()
         ].iterrows()
     }
-    assert deepest_relationships[("1", "2", "3")] == ["r0", "r1", "r3"]
+    assert deepest_relationships[("1", "2", "3")] == ["r0", "r1", "r2"]
 
 
 def test_write_graphrag_communities_exports_text_unit_ids(tmp_path):
@@ -484,10 +527,61 @@ def test_write_graphrag_communities_requires_run_results(tmp_path):
         write_graphrag_communities(im, graph=graph, output=tmp_path / "infomap")
 
 
+def test_write_graphrag_communities_accepts_a_result(tmp_path):
+    from infomap import Infomap
+    from infomap.graphrag import read_graphrag, write_graphrag_communities
+
+    entities_path, relationships_path = _write_graphrag_fixture(tmp_path)
+    graph = read_graphrag(entities_path, relationships_path)
+    im = Infomap(seed=123, num_trials=1)
+    _add_graphrag_links(im, graph)
+    result = im.run()
+
+    # The modern Result is accepted, matching the to_networkx/to_igraph
+    # contract, and produces the same tables as passing the instance.
+    from_result, _ = write_graphrag_communities(
+        result, graph=graph, output=tmp_path / "from_result"
+    )
+    from_instance, _ = write_graphrag_communities(
+        im, graph=graph, output=tmp_path / "from_instance"
+    )
+    assert list(from_result.columns) == list(from_instance.columns)
+    assert len(from_result) == len(from_instance) == im.num_nodes
+
+
+def test_write_graphrag_communities_rejects_a_stale_result(tmp_path):
+    from infomap import Infomap, StaleResultError
+    from infomap.graphrag import read_graphrag, write_graphrag_communities
+
+    entities_path, relationships_path = _write_graphrag_fixture(tmp_path)
+    graph = read_graphrag(entities_path, relationships_path)
+    im = Infomap(seed=123, num_trials=1)
+    _add_graphrag_links(im, graph)
+    stale = im.run()
+    im.run()  # rebuilds the tree; `stale` is now stale
+
+    with pytest.raises(StaleResultError):
+        write_graphrag_communities(stale, graph=graph, output=tmp_path / "stale")
+
+
+def test_run_graphrag_communities_silent_is_deprecated(tmp_path):
+    from infomap.graphrag import run_graphrag_communities
+
+    entities_path, _ = _write_graphrag_fixture(tmp_path)
+    with pytest.warns(DeprecationWarning, match="enable_log"):
+        run_graphrag_communities(
+            input_dir=entities_path.parent,
+            output_dir=None,
+            seed=123,
+            num_trials=1,
+            silent=True,
+        )
+
+
 def test_run_graphrag_communities_reads_runs_and_writes_outputs(tmp_path):
     from infomap.graphrag import run_graphrag_communities
 
-    entities_path, relationships_path = _write_graphrag_fixture(tmp_path)
+    entities_path, _relationships_path = _write_graphrag_fixture(tmp_path)
     input_dir = entities_path.parent
     output_dir = tmp_path / "result"
 
@@ -510,7 +604,8 @@ def test_run_graphrag_communities_reads_runs_and_writes_outputs(tmp_path):
 
     run = json.loads((output_dir / "infomap_run.json").read_text())
     assert run["trials"] == 1
-    assert run["codelength"] == pytest.approx(result.infomap.codelength)
+    # Read metrics off the immutable Result, not the deprecated Infomap accessor.
+    assert run["codelength"] == pytest.approx(result.result.codelength)
     assert "options" not in run
     assert "seed" not in run
 
@@ -527,7 +622,7 @@ def test_run_graphrag_communities_defaults_to_reproducible_trials(tmp_path):
 
     run = json.loads((tmp_path / "result" / "infomap_run.json").read_text())
     assert run["trials"] == 5
-    assert result.infomap.codelength == pytest.approx(run["codelength"])
+    assert result.result.codelength == pytest.approx(run["codelength"])
 
 
 def test_run_graphrag_communities_accepts_args_passthrough(tmp_path):

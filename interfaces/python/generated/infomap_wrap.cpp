@@ -3717,6 +3717,7 @@ namespace swig {
 /* Includes the header in the wrapper code */
 #include "src/Infomap.h"
 #include "src/io/Features.h"
+#include "src/utils/Log.h"
 #ifdef SWIGPYTHON
 namespace infomap {
 int run(const std::string& flags);
@@ -3726,7 +3727,11 @@ int run(const std::string& flags);
 #include <cstdint>
 #include <cstring>
 #include <limits>
+#include <mutex>
 #include <stdexcept>
+#include <string>
+#include <utility>
+#include <vector>
 #endif
 // SWIG strips namespaces, so include infomap in global namespace in wrapper code
 using namespace infomap;
@@ -7095,6 +7100,111 @@ SWIGINTERN PyObject *std_map_Sl_std_pair_Sl_unsigned_SS_int_Sc_unsigned_SS_int_S
 SWIGINTERN void std_map_Sl_std_pair_Sl_unsigned_SS_int_Sc_unsigned_SS_int_Sg__Sc_double_Sg__erase__SWIG_1(std::map< std::pair< unsigned int,unsigned int >,double > *self,std::map< std::pair< unsigned int,unsigned int >,double >::iterator position){ self->erase(position); }
 SWIGINTERN void std_map_Sl_std_pair_Sl_unsigned_SS_int_Sc_unsigned_SS_int_Sg__Sc_double_Sg__erase__SWIG_2(std::map< std::pair< unsigned int,unsigned int >,double > *self,std::map< std::pair< unsigned int,unsigned int >,double >::iterator first,std::map< std::pair< unsigned int,unsigned int >,double >::iterator last){ self->erase(first, last); }
 
+namespace {
+
+// Bridges infomap::Log lines to a Python callable `callback(level, line)`.
+//
+// Threading contract (see issue #745): the SWIG module never releases the
+// GIL, so during run() the *calling* thread holds it for the whole call and
+// may enter Python directly. Lines written by other threads (OpenMP task
+// threads emit -vv detail lines) must NEVER acquire the GIL — the calling
+// thread waits for them at OpenMP barriers while holding it, so a worker
+// blocking in PyGILState_Ensure() would deadlock. Such lines are queued
+// under a mutex and drained by the next GIL-holding write, or by
+// _drain_log_queue() after run() returns.
+class PythonLogSink : public infomap::LogSink {
+public:
+  explicit PythonLogSink(PyObject* callable) : m_callable(callable)
+  {
+    Py_INCREF(m_callable);
+  }
+
+  // Only constructed/destroyed from Python calls (GIL held).
+  ~PythonLogSink() override { Py_DECREF(m_callable); }
+
+  PythonLogSink(const PythonLogSink&) = delete;
+  PythonLogSink& operator=(const PythonLogSink&) = delete;
+
+  void writeLine(unsigned int level, const std::string& line) override
+  {
+    if (!PyGILState_Check()) {
+      std::lock_guard<std::mutex> lock(m_mutex);
+      m_queued.emplace_back(level, line);
+      return;
+    }
+    drainQueued();
+    deliver(level, line);
+  }
+
+  void drainQueued()
+  {
+    // Caller must hold the GIL.
+    std::vector<std::pair<unsigned int, std::string>> pending;
+    {
+      std::lock_guard<std::mutex> lock(m_mutex);
+      pending.swap(m_queued);
+    }
+    for (const auto& entry : pending)
+      deliver(entry.first, entry.second);
+  }
+
+private:
+  void deliver(unsigned int level, const std::string& line)
+  {
+    PyObject* result = PyObject_CallFunction(m_callable, "(Is)", level, line.c_str());
+    if (result == nullptr) {
+      // A raising log callback must not kill the engine run — same policy
+      // as the logging module's own handler-error swallowing.
+      PyErr_WriteUnraisable(m_callable);
+      return;
+    }
+    Py_DECREF(result);
+  }
+
+  PyObject* m_callable;
+  std::mutex m_mutex;
+  std::vector<std::pair<unsigned int, std::string>> m_queued;
+};
+
+PythonLogSink* g_pythonLogSink = nullptr;
+
+} // namespace
+
+
+namespace infomap {
+// Install `callback(level, line)` as the process-global engine log sink,
+// replacing stream output; pass None to uninstall and restore stream output.
+// Called with the GIL held (any Python call). Must not race with a running
+// engine — Log state is process-global.
+void _set_log_callback(PyObject* callback)
+{
+  // Fail fast on a non-callable: installing it would turn every log write
+  // into a swallowed PyErr_WriteUnraisable, silently disabling the log.
+  if (callback != Py_None && PyCallable_Check(callback) == 0) {
+    throw std::runtime_error("log callback must be callable (or None to uninstall)");
+  }
+  if (g_pythonLogSink != nullptr) {
+    Log::setSink(nullptr);
+    delete g_pythonLogSink;
+    g_pythonLogSink = nullptr;
+  }
+  if (callback != Py_None) {
+    g_pythonLogSink = new PythonLogSink(callback);
+    Log::setSink(g_pythonLogSink);
+  }
+}
+
+// Deliver lines queued by non-GIL-holding threads and flush the calling
+// thread's trailing partial line. Call after an engine run returns.
+void _drain_log_queue()
+{
+  Log::flushSinkLines();
+  if (g_pythonLogSink != nullptr)
+    g_pythonLogSink->drainQueued();
+}
+}
+
+
 namespace infomap {
 std::string pythonEnabledFeaturesString()
 {
@@ -9508,6 +9618,114 @@ SWIGINTERN PyObject *_wrap_Config_maxFlowIterations_get(PyObject *self, PyObject
   arg1 = reinterpret_cast< infomap::Config * >(argp1);
   result = (unsigned int) ((arg1)->maxFlowIterations);
   resultobj = SWIG_From_unsigned_SS_int(static_cast< unsigned int >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_Config_minFlowIterations_set(PyObject *self, PyObject *args) {
+  PyObject *resultobj = 0;
+  infomap::Config *arg1 = 0 ;
+  unsigned int arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  unsigned int val2 ;
+  int ecode2 = 0 ;
+  PyObject *swig_obj[2] ;
+  
+  (void)self;
+  if (!SWIG_Python_UnpackTuple(args, "Config_minFlowIterations_set", 2, 2, swig_obj)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__Config, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Config_minFlowIterations_set" "', argument " "1"" of type '" "infomap::Config *""'"); 
+  }
+  arg1 = reinterpret_cast< infomap::Config * >(argp1);
+  ecode2 = SWIG_AsVal_unsigned_SS_int(swig_obj[1], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "Config_minFlowIterations_set" "', argument " "2"" of type '" "unsigned int""'");
+  } 
+  arg2 = static_cast< unsigned int >(val2);
+  if (arg1) (arg1)->minFlowIterations = arg2;
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_Config_minFlowIterations_get(PyObject *self, PyObject *args) {
+  PyObject *resultobj = 0;
+  infomap::Config *arg1 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  unsigned int result;
+  
+  (void)self;
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__Config, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Config_minFlowIterations_get" "', argument " "1"" of type '" "infomap::Config *""'"); 
+  }
+  arg1 = reinterpret_cast< infomap::Config * >(argp1);
+  result = (unsigned int) ((arg1)->minFlowIterations);
+  resultobj = SWIG_From_unsigned_SS_int(static_cast< unsigned int >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_Config_flowTolerance_set(PyObject *self, PyObject *args) {
+  PyObject *resultobj = 0;
+  infomap::Config *arg1 = 0 ;
+  double arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  double val2 ;
+  int ecode2 = 0 ;
+  PyObject *swig_obj[2] ;
+  
+  (void)self;
+  if (!SWIG_Python_UnpackTuple(args, "Config_flowTolerance_set", 2, 2, swig_obj)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__Config, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Config_flowTolerance_set" "', argument " "1"" of type '" "infomap::Config *""'"); 
+  }
+  arg1 = reinterpret_cast< infomap::Config * >(argp1);
+  ecode2 = SWIG_AsVal_double(swig_obj[1], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "Config_flowTolerance_set" "', argument " "2"" of type '" "double""'");
+  } 
+  arg2 = static_cast< double >(val2);
+  if (arg1) (arg1)->flowTolerance = arg2;
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_Config_flowTolerance_get(PyObject *self, PyObject *args) {
+  PyObject *resultobj = 0;
+  infomap::Config *arg1 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  double result;
+  
+  (void)self;
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__Config, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Config_flowTolerance_get" "', argument " "1"" of type '" "infomap::Config *""'"); 
+  }
+  arg1 = reinterpret_cast< infomap::Config * >(argp1);
+  result = (double) ((arg1)->flowTolerance);
+  resultobj = SWIG_From_double(static_cast< double >(result));
   return resultobj;
 fail:
   return NULL;
@@ -39437,13 +39655,67 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_StateNetwork_addStateNode__SWIG_2(PyObject *self, Py_ssize_t nobjs, PyObject **swig_obj) {
+  PyObject *resultobj = 0;
+  infomap::StateNetwork *arg1 = 0 ;
+  unsigned int arg2 ;
+  unsigned int arg3 ;
+  std::string arg4 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  unsigned int val2 ;
+  int ecode2 = 0 ;
+  unsigned int val3 ;
+  int ecode3 = 0 ;
+  SwigValueWrapper< std::pair< std::map< unsigned int,infomap::StateNetwork::StateNode,std::less< unsigned int >,std::allocator< std::pair< unsigned int const,infomap::StateNetwork::StateNode > > >::iterator,bool > > result;
+  
+  (void)self;
+  if ((nobjs < 4) || (nobjs > 4)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__StateNetwork, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "StateNetwork_addStateNode" "', argument " "1"" of type '" "infomap::StateNetwork *""'"); 
+  }
+  arg1 = reinterpret_cast< infomap::StateNetwork * >(argp1);
+  ecode2 = SWIG_AsVal_unsigned_SS_int(swig_obj[1], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "StateNetwork_addStateNode" "', argument " "2"" of type '" "unsigned int""'");
+  } 
+  arg2 = static_cast< unsigned int >(val2);
+  ecode3 = SWIG_AsVal_unsigned_SS_int(swig_obj[2], &val3);
+  if (!SWIG_IsOK(ecode3)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "StateNetwork_addStateNode" "', argument " "3"" of type '" "unsigned int""'");
+  } 
+  arg3 = static_cast< unsigned int >(val3);
+  {
+    std::string *ptr = (std::string *)0;
+    int res = SWIG_AsPtr_std_string(swig_obj[3], &ptr);
+    if (!SWIG_IsOK(res) || !ptr) {
+      SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "StateNetwork_addStateNode" "', argument " "4"" of type '" "std::string""'"); 
+    }
+    arg4 = *ptr;
+    if (SWIG_IsNewObj(res)) delete ptr;
+  }
+  {
+    try {
+      result = (arg1)->addStateNode(arg2,arg3,SWIG_STD_MOVE(arg4));
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_NewPointerObj((new std::pair< infomap::StateNetwork::NodeMap::iterator,bool >(result)), SWIGTYPE_p_std__pairT_std__mapT_unsigned_int_infomap__StateNetwork__StateNode_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__StateNode_t_t_t__iterator_bool_t, SWIG_POINTER_OWN |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_StateNetwork_addStateNode(PyObject *self, PyObject *args) {
   Py_ssize_t argc;
-  PyObject *argv[4] = {
+  PyObject *argv[5] = {
     0
   };
   
-  if (!(argc = SWIG_Python_UnpackTuple(args, "StateNetwork_addStateNode", 0, 3, argv))) SWIG_fail;
+  if (!(argc = SWIG_Python_UnpackTuple(args, "StateNetwork_addStateNode", 0, 4, argv))) SWIG_fail;
   --argc;
   if (argc == 2) {
     int _v = 0;
@@ -39479,12 +39751,38 @@ SWIGINTERN PyObject *_wrap_StateNetwork_addStateNode(PyObject *self, PyObject *a
       }
     }
   }
+  if (argc == 4) {
+    int _v = 0;
+    void *vptr = 0;
+    int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_infomap__StateNetwork, 0);
+    _v = SWIG_CheckState(res);
+    if (_v) {
+      {
+        int res = SWIG_AsVal_unsigned_SS_int(argv[1], NULL);
+        _v = SWIG_CheckState(res);
+      }
+      if (_v) {
+        {
+          int res = SWIG_AsVal_unsigned_SS_int(argv[2], NULL);
+          _v = SWIG_CheckState(res);
+        }
+        if (_v) {
+          int res = SWIG_AsPtr_std_string(argv[3], (std::string**)(0));
+          _v = SWIG_CheckState(res);
+          if (_v) {
+            return _wrap_StateNetwork_addStateNode__SWIG_2(self, argc, argv);
+          }
+        }
+      }
+    }
+  }
   
 fail:
   SWIG_Python_RaiseOrModifyTypeError("Wrong number or type of arguments for overloaded function 'StateNetwork_addStateNode'.\n"
     "  Possible C/C++ prototypes are:\n"
     "    infomap::StateNetwork::addStateNode(infomap::StateNetwork::StateNode const &)\n"
-    "    infomap::StateNetwork::addStateNode(unsigned int,unsigned int)\n");
+    "    infomap::StateNetwork::addStateNode(unsigned int,unsigned int)\n"
+    "    infomap::StateNetwork::addStateNode(unsigned int,unsigned int,std::string)\n");
   return 0;
 }
 
@@ -41008,6 +41306,126 @@ fail:
     "    infomap::StateNetwork::names()\n"
     "    infomap::StateNetwork::names() const\n");
   return 0;
+}
+
+
+SWIGINTERN PyObject *_wrap_StateNetwork_haveFlowConvergence(PyObject *self, PyObject *args) {
+  PyObject *resultobj = 0;
+  infomap::StateNetwork *arg1 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  bool result;
+  
+  (void)self;
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__StateNetwork, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "StateNetwork_haveFlowConvergence" "', argument " "1"" of type '" "infomap::StateNetwork const *""'"); 
+  }
+  arg1 = reinterpret_cast< infomap::StateNetwork * >(argp1);
+  {
+    try {
+      result = (bool)((infomap::StateNetwork const *)arg1)->haveFlowConvergence();
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_From_bool(static_cast< bool >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_StateNetwork_flowConverged(PyObject *self, PyObject *args) {
+  PyObject *resultobj = 0;
+  infomap::StateNetwork *arg1 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  bool result;
+  
+  (void)self;
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__StateNetwork, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "StateNetwork_flowConverged" "', argument " "1"" of type '" "infomap::StateNetwork const *""'"); 
+  }
+  arg1 = reinterpret_cast< infomap::StateNetwork * >(argp1);
+  {
+    try {
+      result = (bool)((infomap::StateNetwork const *)arg1)->flowConverged();
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_From_bool(static_cast< bool >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_StateNetwork_flowIterations(PyObject *self, PyObject *args) {
+  PyObject *resultobj = 0;
+  infomap::StateNetwork *arg1 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  unsigned int result;
+  
+  (void)self;
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__StateNetwork, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "StateNetwork_flowIterations" "', argument " "1"" of type '" "infomap::StateNetwork const *""'"); 
+  }
+  arg1 = reinterpret_cast< infomap::StateNetwork * >(argp1);
+  {
+    try {
+      result = (unsigned int)((infomap::StateNetwork const *)arg1)->flowIterations();
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_From_unsigned_SS_int(static_cast< unsigned int >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_StateNetwork_flowError(PyObject *self, PyObject *args) {
+  PyObject *resultobj = 0;
+  infomap::StateNetwork *arg1 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  double result;
+  
+  (void)self;
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__StateNetwork, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "StateNetwork_flowError" "', argument " "1"" of type '" "infomap::StateNetwork const *""'"); 
+  }
+  arg1 = reinterpret_cast< infomap::StateNetwork * >(argp1);
+  {
+    try {
+      result = (double)((infomap::StateNetwork const *)arg1)->flowError();
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_From_double(static_cast< double >(result));
+  return resultobj;
+fail:
+  return NULL;
 }
 
 
@@ -55457,6 +55875,48 @@ SWIGINTERN PyObject *map_pair_uint_uint_double_swiginit(PyObject *SWIGUNUSEDPARM
   return SWIG_Python_InitShadowInstance(args);
 }
 
+SWIGINTERN PyObject *_wrap__set_log_callback(PyObject *self, PyObject *args) {
+  PyObject *resultobj = 0;
+  PyObject *arg1 = 0 ;
+  PyObject *swig_obj[1] ;
+  
+  (void)self;
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  arg1 = swig_obj[0];
+  {
+    try {
+      infomap::_set_log_callback(arg1);
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap__drain_log_queue(PyObject *self, PyObject *args) {
+  PyObject *resultobj = 0;
+  
+  (void)self;
+  if (!SWIG_Python_UnpackTuple(args, "_drain_log_queue", 0, 0, 0)) SWIG_fail;
+  {
+    try {
+      infomap::_drain_log_queue();
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap__enabled_features_string(PyObject *self, PyObject *args) {
   PyObject *resultobj = 0;
   std::string result;
@@ -56833,6 +57293,73 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_InfomapWrapper_getStateNames(PyObject *self, PyObject *args) {
+  PyObject *resultobj = 0;
+  infomap::InfomapWrapper *arg1 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  std::map< unsigned int,std::string,std::less< unsigned int >,std::allocator< std::pair< unsigned int const,std::string > > > result;
+  
+  (void)self;
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__InfomapWrapper, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "InfomapWrapper_getStateNames" "', argument " "1"" of type '" "infomap::InfomapWrapper const *""'"); 
+  }
+  arg1 = reinterpret_cast< infomap::InfomapWrapper * >(argp1);
+  {
+    try {
+      result = ((infomap::InfomapWrapper const *)arg1)->getStateNames();
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = swig::from(static_cast< std::map< unsigned int,std::string,std::less< unsigned int >,std::allocator< std::pair< unsigned int const,std::string > > > >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_InfomapWrapper_getStateName(PyObject *self, PyObject *args) {
+  PyObject *resultobj = 0;
+  infomap::InfomapWrapper *arg1 = 0 ;
+  unsigned int arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  unsigned int val2 ;
+  int ecode2 = 0 ;
+  PyObject *swig_obj[2] ;
+  std::string result;
+  
+  (void)self;
+  if (!SWIG_Python_UnpackTuple(args, "InfomapWrapper_getStateName", 2, 2, swig_obj)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__InfomapWrapper, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "InfomapWrapper_getStateName" "', argument " "1"" of type '" "infomap::InfomapWrapper const *""'"); 
+  }
+  arg1 = reinterpret_cast< infomap::InfomapWrapper * >(argp1);
+  ecode2 = SWIG_AsVal_unsigned_SS_int(swig_obj[1], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "InfomapWrapper_getStateName" "', argument " "2"" of type '" "unsigned int""'");
+  } 
+  arg2 = static_cast< unsigned int >(val2);
+  {
+    try {
+      result = ((infomap::InfomapWrapper const *)arg1)->getStateName(arg2);
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_From_std_string(static_cast< std::string >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_InfomapWrapper_addPhysicalNode__SWIG_0(PyObject *self, Py_ssize_t nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
   infomap::InfomapWrapper *arg1 = 0 ;
@@ -56970,7 +57497,7 @@ fail:
 }
 
 
-SWIGINTERN PyObject *_wrap_InfomapWrapper_addStateNode(PyObject *self, PyObject *args) {
+SWIGINTERN PyObject *_wrap_InfomapWrapper_addStateNode__SWIG_0(PyObject *self, Py_ssize_t nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
   infomap::InfomapWrapper *arg1 = 0 ;
   unsigned int arg2 ;
@@ -56981,10 +57508,9 @@ SWIGINTERN PyObject *_wrap_InfomapWrapper_addStateNode(PyObject *self, PyObject 
   int ecode2 = 0 ;
   unsigned int val3 ;
   int ecode3 = 0 ;
-  PyObject *swig_obj[3] ;
   
   (void)self;
-  if (!SWIG_Python_UnpackTuple(args, "InfomapWrapper_addStateNode", 3, 3, swig_obj)) SWIG_fail;
+  if ((nobjs < 3) || (nobjs > 3)) SWIG_fail;
   res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__InfomapWrapper, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
     SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "InfomapWrapper_addStateNode" "', argument " "1"" of type '" "infomap::InfomapWrapper *""'"); 
@@ -57011,6 +57537,123 @@ SWIGINTERN PyObject *_wrap_InfomapWrapper_addStateNode(PyObject *self, PyObject 
   return resultobj;
 fail:
   return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_InfomapWrapper_addStateNode__SWIG_1(PyObject *self, Py_ssize_t nobjs, PyObject **swig_obj) {
+  PyObject *resultobj = 0;
+  infomap::InfomapWrapper *arg1 = 0 ;
+  unsigned int arg2 ;
+  unsigned int arg3 ;
+  std::string arg4 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  unsigned int val2 ;
+  int ecode2 = 0 ;
+  unsigned int val3 ;
+  int ecode3 = 0 ;
+  
+  (void)self;
+  if ((nobjs < 4) || (nobjs > 4)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__InfomapWrapper, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "InfomapWrapper_addStateNode" "', argument " "1"" of type '" "infomap::InfomapWrapper *""'"); 
+  }
+  arg1 = reinterpret_cast< infomap::InfomapWrapper * >(argp1);
+  ecode2 = SWIG_AsVal_unsigned_SS_int(swig_obj[1], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "InfomapWrapper_addStateNode" "', argument " "2"" of type '" "unsigned int""'");
+  } 
+  arg2 = static_cast< unsigned int >(val2);
+  ecode3 = SWIG_AsVal_unsigned_SS_int(swig_obj[2], &val3);
+  if (!SWIG_IsOK(ecode3)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "InfomapWrapper_addStateNode" "', argument " "3"" of type '" "unsigned int""'");
+  } 
+  arg3 = static_cast< unsigned int >(val3);
+  {
+    std::string *ptr = (std::string *)0;
+    int res = SWIG_AsPtr_std_string(swig_obj[3], &ptr);
+    if (!SWIG_IsOK(res) || !ptr) {
+      SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "InfomapWrapper_addStateNode" "', argument " "4"" of type '" "std::string""'"); 
+    }
+    arg4 = *ptr;
+    if (SWIG_IsNewObj(res)) delete ptr;
+  }
+  {
+    try {
+      (arg1)->addStateNode(arg2,arg3,SWIG_STD_MOVE(arg4));
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_InfomapWrapper_addStateNode(PyObject *self, PyObject *args) {
+  Py_ssize_t argc;
+  PyObject *argv[5] = {
+    0
+  };
+  
+  if (!(argc = SWIG_Python_UnpackTuple(args, "InfomapWrapper_addStateNode", 0, 4, argv))) SWIG_fail;
+  --argc;
+  if (argc == 3) {
+    int _v = 0;
+    void *vptr = 0;
+    int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_infomap__InfomapWrapper, 0);
+    _v = SWIG_CheckState(res);
+    if (_v) {
+      {
+        int res = SWIG_AsVal_unsigned_SS_int(argv[1], NULL);
+        _v = SWIG_CheckState(res);
+      }
+      if (_v) {
+        {
+          int res = SWIG_AsVal_unsigned_SS_int(argv[2], NULL);
+          _v = SWIG_CheckState(res);
+        }
+        if (_v) {
+          return _wrap_InfomapWrapper_addStateNode__SWIG_0(self, argc, argv);
+        }
+      }
+    }
+  }
+  if (argc == 4) {
+    int _v = 0;
+    void *vptr = 0;
+    int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_infomap__InfomapWrapper, 0);
+    _v = SWIG_CheckState(res);
+    if (_v) {
+      {
+        int res = SWIG_AsVal_unsigned_SS_int(argv[1], NULL);
+        _v = SWIG_CheckState(res);
+      }
+      if (_v) {
+        {
+          int res = SWIG_AsVal_unsigned_SS_int(argv[2], NULL);
+          _v = SWIG_CheckState(res);
+        }
+        if (_v) {
+          int res = SWIG_AsPtr_std_string(argv[3], (std::string**)(0));
+          _v = SWIG_CheckState(res);
+          if (_v) {
+            return _wrap_InfomapWrapper_addStateNode__SWIG_1(self, argc, argv);
+          }
+        }
+      }
+    }
+  }
+  
+fail:
+  SWIG_Python_RaiseOrModifyTypeError("Wrong number or type of arguments for overloaded function 'InfomapWrapper_addStateNode'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    infomap::InfomapWrapper::addStateNode(unsigned int,unsigned int)\n"
+    "    infomap::InfomapWrapper::addStateNode(unsigned int,unsigned int,std::string)\n");
+  return 0;
 }
 
 
@@ -59348,6 +59991,10 @@ static PyMethodDef SwigMethods[] = {
 	 { "Config_multilayerRelaxToSelf_get", _wrap_Config_multilayerRelaxToSelf_get, METH_O, NULL},
 	 { "Config_maxFlowIterations_set", _wrap_Config_maxFlowIterations_set, METH_VARARGS, NULL},
 	 { "Config_maxFlowIterations_get", _wrap_Config_maxFlowIterations_get, METH_O, NULL},
+	 { "Config_minFlowIterations_set", _wrap_Config_minFlowIterations_set, METH_VARARGS, NULL},
+	 { "Config_minFlowIterations_get", _wrap_Config_minFlowIterations_get, METH_O, NULL},
+	 { "Config_flowTolerance_set", _wrap_Config_flowTolerance_set, METH_VARARGS, NULL},
+	 { "Config_flowTolerance_get", _wrap_Config_flowTolerance_get, METH_O, NULL},
 	 { "Config_twoLevel_set", _wrap_Config_twoLevel_set, METH_VARARGS, NULL},
 	 { "Config_twoLevel_get", _wrap_Config_twoLevel_get, METH_O, NULL},
 	 { "Config_noCoarseTune_set", _wrap_Config_noCoarseTune_set, METH_VARARGS, NULL},
@@ -60052,6 +60699,10 @@ static PyMethodDef SwigMethods[] = {
 	 { "StateNetwork_sumDegree", _wrap_StateNetwork_sumDegree, METH_O, NULL},
 	 { "StateNetwork_outWeights", _wrap_StateNetwork_outWeights, METH_O, NULL},
 	 { "StateNetwork_names", _wrap_StateNetwork_names, METH_VARARGS, NULL},
+	 { "StateNetwork_haveFlowConvergence", _wrap_StateNetwork_haveFlowConvergence, METH_O, NULL},
+	 { "StateNetwork_flowConverged", _wrap_StateNetwork_flowConverged, METH_O, NULL},
+	 { "StateNetwork_flowIterations", _wrap_StateNetwork_flowIterations, METH_O, NULL},
+	 { "StateNetwork_flowError", _wrap_StateNetwork_flowError, METH_O, NULL},
 	 { "StateNetwork_haveNodeWeights", _wrap_StateNetwork_haveNodeWeights, METH_O, NULL},
 	 { "StateNetwork_haveStateNodeWeights", _wrap_StateNetwork_haveStateNodeWeights, METH_O, NULL},
 	 { "StateNetwork_haveFileInput", _wrap_StateNetwork_haveFileInput, METH_O, NULL},
@@ -60347,6 +60998,8 @@ static PyMethodDef SwigMethods[] = {
 	 { "delete_map_pair_uint_uint_double", _wrap_delete_map_pair_uint_uint_double, METH_O, NULL},
 	 { "map_pair_uint_uint_double_swigregister", map_pair_uint_uint_double_swigregister, METH_O, NULL},
 	 { "map_pair_uint_uint_double_swiginit", map_pair_uint_uint_double_swiginit, METH_VARARGS, NULL},
+	 { "_set_log_callback", _wrap__set_log_callback, METH_O, NULL},
+	 { "_drain_log_queue", _wrap__drain_log_queue, METH_NOARGS, NULL},
 	 { "_enabled_features_string", _wrap__enabled_features_string, METH_NOARGS, NULL},
 	 { "run", _wrap_run, METH_O, NULL},
 	 { "NodeData_node_id_set", _wrap_NodeData_node_id_set, METH_VARARGS, NULL},
@@ -60380,6 +61033,8 @@ static PyMethodDef SwigMethods[] = {
 	 { "InfomapWrapper_addName", _wrap_InfomapWrapper_addName, METH_VARARGS, NULL},
 	 { "InfomapWrapper_getName", _wrap_InfomapWrapper_getName, METH_VARARGS, NULL},
 	 { "InfomapWrapper_getNames", _wrap_InfomapWrapper_getNames, METH_O, NULL},
+	 { "InfomapWrapper_getStateNames", _wrap_InfomapWrapper_getStateNames, METH_O, NULL},
+	 { "InfomapWrapper_getStateName", _wrap_InfomapWrapper_getStateName, METH_VARARGS, NULL},
 	 { "InfomapWrapper_addPhysicalNode", _wrap_InfomapWrapper_addPhysicalNode, METH_VARARGS, NULL},
 	 { "InfomapWrapper_addStateNode", _wrap_InfomapWrapper_addStateNode, METH_VARARGS, NULL},
 	 { "InfomapWrapper_addLink", _wrap_InfomapWrapper_addLink, METH_VARARGS, NULL},

@@ -1,31 +1,196 @@
 from __future__ import annotations
 
+import functools
+import os
+import sys
+import warnings
 from collections.abc import Sequence
 from math import log2
 from typing import TYPE_CHECKING, Any
 
-from ._optional import get_pandas
+from ._optional import require_pandas
+from .errors import InfomapError, _translate_engine_errors
+
+_PACKAGE_PREFIX = os.path.dirname(os.path.abspath(__file__)) + os.sep
+
+# Shared higher-order guard message: asking for physical-node modules on a
+# higher-order (multilayer/memory) network without states is ambiguous. Both the
+# legacy ``Infomap.get_modules`` path and ``Result.modules()`` raise this exact
+# text (and the same ``InfomapError`` type), so migrating between them stays
+# byte-identical -- parity is a gate -- while pointing at the ``states=True`` fix.
+_HIGHER_ORDER_MODULES_MESSAGE = (
+    "Cannot get modules on higher-order network without states. "
+    "Call result.modules(states=True) for the state-node partition, "
+    "then map state nodes back to physical nodes (and layers) with "
+    "result.nodes(states=True)."
+)
+
+
+def _emit_accessor_deprecation(member: str, replacement: str) -> None:
+    """Emit the pending-deprecation warning for a legacy on-instance accessor.
+
+    The legacy result mirror on ``Infomap`` stays usable through 2.x and leaves
+    in 3.0. Like the advanced-tier keyword warning, this is a
+    ``PendingDeprecationWarning`` -- silent under the default filter, so it nags
+    no one until 3.0 nears, but it surfaces under ``-W`` and for tools that
+    escalate warnings. The caller-frame check keeps internal readers (the
+    summary card, ``_repr_html_``, any in-package reuse) quiet, so only user
+    code is flagged.
+    """
+    # frame 0 = this function, frame 1 = the accessor wrapper, frame 2 = the
+    # code that read the accessor (property __get__ is C-level, so it adds no
+    # Python frame for either methods or properties).
+    caller = sys._getframe(2)
+    if caller.f_code.co_filename.startswith(_PACKAGE_PREFIX):
+        return
+    warnings.warn(
+        f"Infomap.{member} is deprecated and leaves in 3.0; read {replacement} "
+        "off the Result returned by im.run() instead.",
+        PendingDeprecationWarning,
+        stacklevel=3,
+    )
+
+
+def _warn_method_deprecated(member: str, replacement: str) -> None:
+    """Emit the pending-deprecation warning for a legacy ``Infomap`` method.
+
+    Companion to :func:`_emit_accessor_deprecation` for the deprecated
+    constructor / run helpers (``from_options``, ``run_with_options``,
+    ``from_scipy_sparse_matrix``, ``from_edge_index``) whose replacement is a
+    different call, not a ``Result`` attribute -- so the message names the
+    replacement directly instead of "read ... off the Result". Same
+    ``PendingDeprecationWarning`` category, caller-frame guard, and stacklevel
+    as the accessor warning, so the whole deprecated surface signals uniformly.
+    Call it as the first statement of the deprecated method's body.
+    """
+    caller = sys._getframe(2)
+    if caller.f_code.co_filename.startswith(_PACKAGE_PREFIX):
+        return
+    warnings.warn(
+        f"Infomap.{member} is deprecated and leaves in 3.0; {replacement}",
+        PendingDeprecationWarning,
+        stacklevel=3,
+    )
+
+
+def _wrap_accessor(func, member: str, replacement: str):
+    @functools.wraps(func)
+    def wrapper(self, *args, **kwargs):
+        _emit_accessor_deprecation(member, replacement)
+        return func(self, *args, **kwargs)
+
+    return wrapper
+
+
+def _install_accessor_deprecations(cls, replacements) -> None:
+    """Wrap each deprecated accessor named in ``replacements`` so it emits the
+    pending-deprecation warning before delegating to the original.
+
+    Data-driven (mirroring ``_ADVANCED_TIER_KWARGS`` for the keyword surface) so
+    the deprecated members and their replacements live in one table. Members not
+    defined directly on ``cls`` are skipped. ``functools.wraps`` preserves each
+    member's ``__doc__`` (with its ``.. deprecated::`` note) and signature for
+    ``help()``/autodoc and IDE introspection.
+    """
+    for member, replacement in replacements.items():
+        attr = cls.__dict__.get(member)
+        if attr is None:
+            continue
+        if isinstance(attr, property):
+            setattr(
+                cls,
+                member,
+                property(
+                    _wrap_accessor(attr.fget, member, replacement),
+                    attr.fset,
+                    attr.fdel,
+                    attr.__doc__,
+                ),
+            )
+        elif callable(attr):
+            setattr(cls, member, _wrap_accessor(attr, member, replacement))
 
 
 if TYPE_CHECKING:
     from ._core import Core
 
 
-pandas = get_pandas()
 _DEFAULT_DATAFRAME_COLUMNS = ("path", "flow", "name", "node_id")
 _DEFAULT_TO_DATAFRAME_COLUMNS = ("node_id", "module_id", "flow", "path", "name")
 _DATAFRAME_COLUMN_ALIASES = {"community": "module_id"}
 
 
+def _unknown_dataframe_column_error(requested) -> ValueError:
+    # Shared by the legacy accessors and Result._column so both surfaces
+    # report the same message and column inventory.
+    available = ", ".join(
+        sorted(
+            {
+                *_DEFAULT_TO_DATAFRAME_COLUMNS,
+                "child_index",
+                "community",
+                "depth",
+                "layer_id",
+                "modular_centrality",
+                "state_id",
+                "state_name",
+            }
+        )
+    )
+    return ValueError(
+        f"Unknown DataFrame column {requested!r}. "
+        f"Available columns include: {available}."
+    )
+
+
 def plogp(p):
+    """Compute ``x * log2(x)`` for each value in ``p``.
+
+    Parameters
+    ----------
+    p : iterable of float
+        Probabilities.
+
+    Returns
+    -------
+    generator of float
+        ``x * log2(x)`` for each ``x`` in ``p``, or ``0`` where ``x <= 0``.
+    """
     return (x * log2(x) if x > 0 else 0 for x in p)
 
 
 def entropy(p):
+    """Compute the Shannon entropy of a probability distribution in bits.
+
+    Parameters
+    ----------
+    p : iterable of float
+        Probabilities.
+
+    Returns
+    -------
+    float
+        The entropy ``-sum(x * log2(x) for x in p)``.
+    """
     return -sum(plogp(p))
 
 
 def perplexity(p):
+    """Compute the perplexity of a probability distribution.
+
+    The perplexity is ``2 ** entropy(p)``, interpretable as the effective
+    number of outcomes in the distribution.
+
+    Parameters
+    ----------
+    p : iterable of float
+        Probabilities.
+
+    Returns
+    -------
+    float
+        The perplexity.
+    """
     return 2 ** entropy(p)
 
 
@@ -54,31 +219,20 @@ def _to_dataframe_sort_columns(sort, dataframe_columns):
     return sort_columns
 
 
-def _to_dataframe_column_getter(requested, resolved, names):
+def _to_dataframe_column_getter(requested, resolved, names, state_names):
     if resolved == "name":
         return lambda node: names.get(node.node_id, node.node_id)
+
+    if resolved == "state_name":
+        return lambda node: (
+            state_names.get(node.state_id) or names.get(node.node_id, node.node_id)
+        )
 
     def get_column_value(node):
         try:
             return getattr(node, resolved)
         except AttributeError as exc:
-            available = ", ".join(
-                sorted(
-                    {
-                        *_DEFAULT_TO_DATAFRAME_COLUMNS,
-                        "child_index",
-                        "community",
-                        "depth",
-                        "layer_id",
-                        "modular_centrality",
-                        "state_id",
-                    }
-                )
-            )
-            raise ValueError(
-                f"Unknown DataFrame column {requested!r}. "
-                f"Available columns include: {available}."
-            ) from exc
+            raise _unknown_dataframe_column_error(requested) from exc
 
     return get_column_value
 
@@ -95,7 +249,11 @@ class _LeafIterWrapper:
         while not self.it.isEnd() and not self.it.isLeaf():
             self.it.stepForward()
         if not self.it.isEnd():
-            return self.it
+            # A position, not the live cursor: returning self.it made every element of
+            # list(...) the same iterator, exhausted by the time the list was read, so
+            # collecting yielded a row of None. Copies were not self-contained until the
+            # physical iterator's nodes got shared ownership (#900).
+            return self.it.copy()
         raise StopIteration
 
 
@@ -113,10 +271,18 @@ class _InfomapResultsMixin:
     # deprecated public accessor.
 
     def _get_modules_impl(self, depth_level=1, states=False):
-        return self._core.getModules(depth_level, states)
+        # Guard higher-order access in Python so the legacy path raises the same
+        # message and taxonomy type as Result.modules() (parity is a gate). The
+        # C++ getModules would otherwise throw a terser, differently-worded
+        # message here; raising the shared text keeps the two surfaces identical.
+        if self._core.haveMemory() and not states:
+            raise InfomapError(_HIGHER_ORDER_MODULES_MESSAGE)
+        with _translate_engine_errors():
+            return self._core.getModules(depth_level, states)
 
     def _get_multilevel_modules_impl(self, states=False):
-        return self._core.getMultilevelModules(states)
+        with _translate_engine_errors():
+            return self._core.getMultilevelModules(states)
 
     def _get_tree_impl(self, depth_level=1, states=False):
         if self._core.haveMemory() and not states:
@@ -131,12 +297,10 @@ class _InfomapResultsMixin:
 
     def _get_links_impl(self, data="weight"):
         if data not in ("weight", "flow"):
-            raise RuntimeError('data must one of "weight" or "flow"')
+            raise ValueError('data must be one of "weight" or "flow"')
         return (
             (source, target, value)
-            for (source, target), value in self._core.getLinks(
-                data != "weight"
-            ).items()
+            for (source, target), value in self._core.getLinks(data != "weight").items()
         )
 
     def _get_name_impl(self, node_id, default=None):
@@ -147,6 +311,9 @@ class _InfomapResultsMixin:
 
     def _get_names_impl(self):
         return self._core.getNames()
+
+    def _get_state_names_impl(self):
+        return self._core.getStateNames()
 
     def _leaf_modules_impl(self):
         return self._core.iterLeafModules()
@@ -224,14 +391,14 @@ class _InfomapResultsMixin:
         --------
 
         >>> from infomap import Infomap
-        >>> im = Infomap(silent=True)
+        >>> im = Infomap()
         >>> im.read_file("twotriangles.net")
         >>> _ = im.run()
         >>> im.get_modules()
         {1: 1, 2: 1, 3: 1, 4: 2, 5: 2, 6: 2}
 
         >>> from infomap import Infomap
-        >>> im = Infomap(silent=True)
+        >>> im = Infomap()
         >>> im.read_file("states.net")
         >>> _ = im.run()
         >>> im.get_modules(states=True)
@@ -266,7 +433,7 @@ class _InfomapResultsMixin:
         dict of int
             Dict with node ids as keys and module ids as values.
 
-        .. deprecated::
+        .. deprecated:: 2.15
             Use ``result = im.run(); result.modules(depth, states=states)``.
         """
         return self._get_modules_impl(depth_level, states)
@@ -285,7 +452,7 @@ class _InfomapResultsMixin:
         --------
 
         >>> from infomap import Infomap
-        >>> im = Infomap(silent=True, num_trials=10)
+        >>> im = Infomap(num_trials=10)
         >>> im.read_file("ninetriangles.net")
         >>> _ = im.run()
         >>> for modules in sorted(im.get_multilevel_modules().values()):
@@ -311,15 +478,15 @@ class _InfomapResultsMixin:
         (3, 7)
         (3, 7)
         (3, 7)
-        (4, 8)
-        (4, 8)
-        (4, 8)
-        (5, 9)
-        (5, 9)
-        (5, 9)
+        (3, 8)
+        (3, 8)
+        (3, 8)
+        (3, 9)
+        (3, 9)
+        (3, 9)
 
         >>> from infomap import Infomap
-        >>> im = Infomap(silent=True)
+        >>> im = Infomap()
         >>> im.read_file("states.net")
         >>> _ = im.run()
         >>> for node, modules in im.get_multilevel_modules(states=True).items():
@@ -355,7 +522,7 @@ class _InfomapResultsMixin:
         dict of list of int
             Dict with node ids as keys and tuple of module ids as values.
 
-        .. deprecated::
+        .. deprecated:: 2.15
             Use ``result = im.run(); result.multilevel_modules(states=states)``.
         """
         return self._get_multilevel_modules_impl(states)
@@ -376,7 +543,7 @@ class _InfomapResultsMixin:
         Examples
         --------
         >>> from infomap import Infomap
-        >>> im = Infomap(silent=True, num_trials=5)
+        >>> im = Infomap(num_trials=5)
         >>> im.read_file("twotriangles.net")
         >>> _ = im.run()
         >>> for node_id, module_id in im.modules:
@@ -398,7 +565,7 @@ class _InfomapResultsMixin:
         tuple of int, int
             An iterator of ``(node_id, module_id)`` pairs.
 
-        .. deprecated::
+        .. deprecated:: 2.15
             Use ``result = im.run(); result.modules()``.
         """
         return self._get_modules_impl(depth_level=1, states=False).items()
@@ -425,7 +592,7 @@ class _InfomapResultsMixin:
         tuple of (int, tuple of int)
             An iterator of ``(node_id, (module_ids...)`` pairs.
 
-        .. deprecated::
+        .. deprecated:: 2.15
             Use ``result = im.run(); result.multilevel_modules()``.
         """
         return self._get_multilevel_modules_impl().items()
@@ -464,7 +631,7 @@ class _InfomapResultsMixin:
         InfomapIterator or InfomapIteratorPhysical
             An iterator over each node in the tree, depth first from the root
 
-        .. deprecated::
+        .. deprecated:: 2.15
             Use ``result = im.run(); result.tree(depth, states=states)``.
         """
         return self._get_tree_impl(depth_level, states)
@@ -500,10 +667,10 @@ class _InfomapResultsMixin:
 
         Returns
         -------
-        InfomapIterator or InfomapIteratorPhysical
-            An iterator over each node in the tree, depth first from the root
+        InfomapLeafIterator or InfomapIteratorPhysical
+            An iterator over each leaf node, depth first from the root
 
-        .. deprecated::
+        .. deprecated:: 2.15
             Use ``result = im.run(); result.nodes(depth, states=states)``.
         """
         return self._get_nodes_impl(depth_level, states)
@@ -525,7 +692,7 @@ class _InfomapResultsMixin:
         InfomapIterator
             An iterator over each node in the tree, depth first from the root
 
-        .. deprecated::
+        .. deprecated:: 2.15
             Use ``result = im.run(); result.tree(states=True)``.
         """
         return self._get_tree_impl(depth_level=1, states=True)
@@ -545,11 +712,12 @@ class _InfomapResultsMixin:
 
         Returns
         -------
-        InfomapIteratorPhysical
+        iterator
             An iterator over each physical node in the tree, depth first from
-            the root
+            the root (:class:`InfomapIteratorPhysical` for memory networks,
+            :class:`InfomapIterator` for first-order networks)
 
-        .. deprecated::
+        .. deprecated:: 2.15
             Use ``result = im.run(); result.tree(states=False)``.
         """
         return self._get_tree_impl(depth_level=1, states=False)
@@ -569,7 +737,7 @@ class _InfomapResultsMixin:
             An iterator over each leaf module in the tree, depth first from the
             root
 
-        .. deprecated::
+        .. deprecated:: 2.15
             Use ``result = im.run(); result.leaf_modules()``.
         """
         return self._leaf_modules_impl()
@@ -592,7 +760,7 @@ class _InfomapResultsMixin:
             An iterator over each leaf node in the tree, depth first from the
             root
 
-        .. deprecated::
+        .. deprecated:: 2.15
             Use ``result = im.run(); result.nodes(states=True)``.
         """
         return self._get_nodes_impl(depth_level=1, states=True)
@@ -608,15 +776,15 @@ class _InfomapResultsMixin:
         See Also
         --------
         get_nodes
-        InfomapLeafIteratorPhysical
 
         Returns
         -------
-        InfomapLeafIteratorPhysical
+        iterator
             An iterator over each physical leaf node in the tree, depth first
-            from the root
+            from the root (the concrete iterator type depends on whether the
+            network has memory)
 
-        .. deprecated::
+        .. deprecated:: 2.15
             Use ``result = im.run(); result.nodes(states=False)``.
         """
         return self._get_nodes_impl(depth_level=1, states=False)
@@ -630,17 +798,17 @@ class _InfomapResultsMixin:
     ) -> Any:
         """Get a Pandas DataFrame with the selected columns.
 
-        .. deprecated::
+        .. deprecated:: 2.15
             Use ``result = im.run(); result.to_dataframe(...)``.
 
         Examples
         --------
 
         >>> from infomap import Infomap
-        >>> im = Infomap(silent=True)
+        >>> im = Infomap()
         >>> im.read_file("twotriangles.net")
         >>> _ = im.run()
-        >>> im.to_dataframe(columns=["path", "flow", "name", "node_id"], states=True)
+        >>> im.get_dataframe(columns=["path", "flow", "name", "node_id"], states=True)
              path      flow name  node_id
         0  (1, 1)  0.214286    C        3
         1  (1, 2)  0.142857    A        1
@@ -648,7 +816,7 @@ class _InfomapResultsMixin:
         3  (2, 1)  0.214286    D        4
         4  (2, 2)  0.142857    E        5
         5  (2, 3)  0.142857    F        6
-        >>> im.to_dataframe(columns=["node_id", "module_id"], states=True)
+        >>> im.get_dataframe(columns=["node_id", "module_id"], states=True)
            node_id  module_id
         0        3          1
         1        1          1
@@ -693,11 +861,7 @@ class _InfomapResultsMixin:
             A DataFrame containing the selected columns.
         """
 
-        if pandas is None:
-            raise ImportError(
-                "Cannot import package `pandas`. Install it with "
-                '`python -m pip install "infomap[pandas]"`.'
-            )
+        pandas = require_pandas("the DataFrame accessors")
 
         if columns is None:
             columns = _DEFAULT_DATAFRAME_COLUMNS
@@ -736,7 +900,10 @@ class _InfomapResultsMixin:
         ----------
         columns : sequence of str, optional
             Columns to include. ``"community"`` is accepted as an alias for
-            ``"module_id"``. Default
+            ``"module_id"``. ``"name"`` resolves the physical node name; the
+            opt-in ``"state_name"`` resolves the per-state-node name for a
+            higher-order network (falling back to the physical name, then
+            ``node_id``). Default
             ``["node_id", "module_id", "flow", "path", "name"]``.
         states : bool, optional
             Use state-node iterators when ``True`` and physical-node iterators
@@ -752,15 +919,11 @@ class _InfomapResultsMixin:
         depth_level : int, optional
             Backward-compatible alias for ``level``.
 
-        .. deprecated::
+        .. deprecated:: 2.15
             Use ``result = im.run(); result.to_dataframe(...)``.
         """
 
-        if pandas is None:
-            raise ImportError(
-                "Cannot import package `pandas`. Install it with "
-                '`python -m pip install "infomap[pandas]"`.'
-            )
+        pandas = require_pandas("the DataFrame accessors")
 
         if depth_level is not None:
             level = depth_level
@@ -772,9 +935,14 @@ class _InfomapResultsMixin:
             _DATAFRAME_COLUMN_ALIASES.get(column, column)
             for column in requested_columns
         ]
-        names = self._get_names_impl() if "name" in resolved_columns else None
+        # "state_name" falls back to the physical name, so it needs both maps.
+        need_names = bool({"name", "state_name"} & set(resolved_columns))
+        names = self._get_names_impl() if need_names else None
+        state_names = (
+            self._get_state_names_impl() if "state_name" in resolved_columns else None
+        )
         column_getters = [
-            _to_dataframe_column_getter(requested, resolved, names)
+            _to_dataframe_column_getter(requested, resolved, names, state_names)
             for requested, resolved in zip(
                 requested_columns, resolved_columns, strict=True
             )
@@ -820,7 +988,7 @@ class _InfomapResultsMixin:
         str
             The node name if it exists, else the ``default``.
 
-        .. deprecated::
+        .. deprecated:: 2.15
             Use ``result = im.run(); result.names.get(node_id)``.
         """
         return self._get_name_impl(node_id, default)
@@ -838,7 +1006,7 @@ class _InfomapResultsMixin:
         dict of string
             A dict with node ids as keys and node names as values.
 
-        .. deprecated::
+        .. deprecated:: 2.15
             Use ``result = im.run(); result.names``.
         """
         return self._get_names_impl()
@@ -859,10 +1027,53 @@ class _InfomapResultsMixin:
         dict of string
             A dict with node ids as keys and node names as values.
 
-        .. deprecated::
+        .. deprecated:: 2.15
             Use ``result = im.run(); result.names``.
         """
         return self._get_names_impl()
+
+    def get_state_names(self):
+        """Get all state-node names.
+
+        Populated for higher-order (state/memory) networks whose ``*States``
+        section names the state nodes; empty otherwise. Physical node names are
+        available separately via :meth:`get_names`.
+
+        See Also
+        --------
+        get_names
+        state_names
+
+        Returns
+        -------
+        dict of string
+            A dict with state ids as keys and state-node names as values.
+
+        .. deprecated:: 2.15
+            Use ``result = im.run(); result.state_names``.
+        """
+        return self._get_state_names_impl()
+
+    @property
+    def state_names(self):
+        """Get all state-node names.
+
+        Short-hand for ``get_state_names``.
+
+        See Also
+        --------
+        get_state_names
+        names
+
+        Returns
+        -------
+        dict of string
+            A dict with state ids as keys and state-node names as values.
+
+        .. deprecated:: 2.15
+            Use ``result = im.run(); result.state_names``.
+        """
+        return self._get_state_names_impl()
 
     def get_links(self, data="weight"):
         """A view of the currently assigned links and their weights or flow.
@@ -874,7 +1085,7 @@ class _InfomapResultsMixin:
         --------
 
         >>> from infomap import Infomap
-        >>> im = Infomap(silent=True)
+        >>> im = Infomap()
         >>> im.read_file("twotriangles.net")
         >>> _ = im.run()
         >>> for link in im.get_links():
@@ -913,7 +1124,7 @@ class _InfomapResultsMixin:
         tuple of int, int, float
             An iterator of source, target, weight/flow tuples.
 
-        .. deprecated::
+        .. deprecated:: 2.15
             Use ``result = im.run(); result.links(data=data)``.
         """
         return self._get_links_impl(data)
@@ -929,7 +1140,7 @@ class _InfomapResultsMixin:
         --------
 
         >>> from infomap import Infomap
-        >>> im = Infomap(silent=True)
+        >>> im = Infomap()
         >>> im.read_file("twotriangles.net")
         >>> _ = im.run()
         >>> for link in im.links:
@@ -952,7 +1163,7 @@ class _InfomapResultsMixin:
         tuple of int, int, float
             An iterator of source, target, weight tuples.
 
-        .. deprecated::
+        .. deprecated:: 2.15
             Use ``result = im.run(); result.links()``.
         """
         return self._get_links_impl()
@@ -968,7 +1179,7 @@ class _InfomapResultsMixin:
         --------
 
         >>> from infomap import Infomap
-        >>> im = Infomap(silent=True)
+        >>> im = Infomap()
         >>> im.read_file("twotriangles.net")
         >>> _ = im.run()
         >>> for link in im.flow_links:
@@ -991,7 +1202,7 @@ class _InfomapResultsMixin:
         tuple of int, int, float
             An iterator of source, target, flow tuples.
 
-        .. deprecated::
+        .. deprecated:: 2.15
             Use ``result = im.run(); result.links(data="flow")``.
         """
         return self._get_links_impl(data="flow")
@@ -1047,7 +1258,7 @@ class _InfomapResultsMixin:
         int
             The number of top modules
 
-        .. deprecated::
+        .. deprecated:: 2.15
             Use ``result = im.run(); result.num_top_modules``.
         """
         return self._core.numTopModules()
@@ -1063,7 +1274,7 @@ class _InfomapResultsMixin:
         int
             The number of non-trivial top modules
 
-        .. deprecated::
+        .. deprecated:: 2.15
             Use ``result = im.run(); result.num_non_trivial_top_modules``.
         """
         return self._core.numNonTrivialTopModules()
@@ -1077,7 +1288,7 @@ class _InfomapResultsMixin:
         int
             The number of leaf modules
 
-        .. deprecated::
+        .. deprecated:: 2.15
             Use ``result = im.run(); result.num_leaf_modules``.
         """
         return self._num_leaf_modules_impl()
@@ -1100,7 +1311,7 @@ class _InfomapResultsMixin:
         float
             The effective number of modules
 
-        .. deprecated::
+        .. deprecated:: 2.15
             Use ``result = im.run(); result.effective_num_modules(depth)``.
         """
         return self._get_effective_num_modules_impl(depth_level)
@@ -1116,7 +1327,7 @@ class _InfomapResultsMixin:
         float
             The effective number of top modules
 
-        .. deprecated::
+        .. deprecated:: 2.15
             Use ``result = im.run(); result.effective_num_top_modules``.
         """
         return self._get_effective_num_modules_impl(depth_level=1)
@@ -1132,7 +1343,7 @@ class _InfomapResultsMixin:
         float
             The effective number of top modules
 
-        .. deprecated::
+        .. deprecated:: 2.15
             Use ``result = im.run(); result.effective_num_leaf_modules``.
         """
         return self._get_effective_num_modules_impl(depth_level=-1)
@@ -1146,7 +1357,7 @@ class _InfomapResultsMixin:
         int
             The max depth
 
-        .. deprecated::
+        .. deprecated:: 2.15
             Use ``result = im.run(); result.max_depth``.
         """
         return self._max_depth_impl()
@@ -1165,7 +1376,7 @@ class _InfomapResultsMixin:
         int
             The max depth
 
-        .. deprecated::
+        .. deprecated:: 2.15
             Use ``result = im.run(); result.num_levels``.
         """
         return self._max_depth_impl()
@@ -1179,7 +1390,7 @@ class _InfomapResultsMixin:
         bool
             True if the network is a multilayer or memory network.
 
-        .. deprecated::
+        .. deprecated:: 2.15
             Use ``result = im.run(); result.have_memory``.
         """
         return self._core.haveMemory()
@@ -1198,7 +1409,7 @@ class _InfomapResultsMixin:
         float
             The two-level index codelength
 
-        .. deprecated::
+        .. deprecated:: 2.15
             Use ``result = im.run(); result.index_codelength``.
         """
         return self._core.getIndexCodelength()
@@ -1223,7 +1434,7 @@ class _InfomapResultsMixin:
         float
             The module codelength
 
-        .. deprecated::
+        .. deprecated:: 2.15
             Use ``result = im.run(); result.module_codelength``.
         """
         return self._core.getModuleCodelength()
@@ -1241,7 +1452,7 @@ class _InfomapResultsMixin:
         float
             The one-level codelength
 
-        .. deprecated::
+        .. deprecated:: 2.15
             Use ``result = im.run(); result.one_level_codelength``.
         """
         return self._core.getOneLevelCodelength()
@@ -1268,7 +1479,7 @@ class _InfomapResultsMixin:
         float
             The relative codelength savings
 
-        .. deprecated::
+        .. deprecated:: 2.15
             Use ``result = im.run(); result.relative_codelength_savings``.
         """
         return self._core.getRelativeCodelengthSavings()
@@ -1288,7 +1499,7 @@ class _InfomapResultsMixin:
         --------
 
         >>> from infomap import Infomap
-        >>> im = Infomap(silent=True, no_infomap=True)
+        >>> im = Infomap()
         >>> im.read_file("twotriangles.net")
         >>> _ = im.run()
         >>> f"{im.entropy_rate:.5f}"
@@ -1300,7 +1511,7 @@ class _InfomapResultsMixin:
         float
             The entropy rate
 
-        .. deprecated::
+        .. deprecated:: 2.15
             Use ``result = im.run(); result.entropy_rate``.
         """
         return self._core.getEntropyRate()
@@ -1309,7 +1520,7 @@ class _InfomapResultsMixin:
     def meta_codelength(self):
         """Get the meta codelength.
 
-        This is the meta entropy times the meta data rate.
+        This is the meta entropy times the metadata rate.
 
         See Also
         --------
@@ -1320,14 +1531,14 @@ class _InfomapResultsMixin:
         float
             The meta codelength
 
-        .. deprecated::
+        .. deprecated:: 2.15
             Use ``result = im.run(); result.meta_codelength``.
         """
         return self._core.getMetaCodelength()
 
     @property
     def meta_entropy(self):
-        """Get the meta entropy (unweighted by meta data rate).
+        """Get the meta entropy (unweighted by metadata rate).
 
         See Also
         --------
@@ -1338,7 +1549,56 @@ class _InfomapResultsMixin:
         float
             The meta entropy
 
-        .. deprecated::
+        .. deprecated:: 2.15
             Use ``result = im.run(); result.meta_entropy``.
         """
         return self._core.getMetaCodelength(True)
+
+
+# The legacy result-mirror accessors on the stateful Infomap, mapped to the
+# Result member that replaces each. Kept in step with the docstring
+# ``.. deprecated::`` notes above and with result.py's _LEGACY_ACCESSOR_HINTS
+# (which redirects the same names typed on a Result). The non-deprecated
+# network-info properties (num_nodes, num_links, num_physical_nodes) are
+# intentionally absent -- they stay on the surface.
+_LEGACY_RESULT_ACCESSORS = {
+    "get_modules": "result.modules()",
+    "get_multilevel_modules": "result.multilevel_modules()",
+    "modules": "result.modules()",
+    "multilevel_modules": "result.multilevel_modules()",
+    "get_tree": "result.tree()",
+    "get_nodes": "result.nodes()",
+    "tree": "result.tree(states=True)",
+    "physical_tree": "result.tree(states=False)",
+    "leaf_modules": "result.leaf_modules()",
+    "nodes": "result.nodes(states=True)",
+    "physical_nodes": "result.nodes(states=False)",
+    "get_dataframe": "result.to_dataframe()",
+    "to_dataframe": "result.to_dataframe()",
+    "get_name": "result.names[node_id]",
+    "get_names": "result.names",
+    "names": "result.names",
+    "get_state_names": "result.state_names",
+    "state_names": "result.state_names",
+    "get_links": "result.links()",
+    "links": "result.links()",
+    "flow_links": 'result.links(data="flow")',
+    "num_top_modules": "result.num_top_modules",
+    "num_non_trivial_top_modules": "result.num_non_trivial_top_modules",
+    "num_leaf_modules": "result.num_leaf_modules",
+    "get_effective_num_modules": "result.effective_num_modules()",
+    "effective_num_top_modules": "result.effective_num_top_modules",
+    "effective_num_leaf_modules": "result.effective_num_leaf_modules",
+    "max_depth": "result.max_depth",
+    "num_levels": "result.num_levels",
+    "have_memory": "result.have_memory",
+    "index_codelength": "result.index_codelength",
+    "module_codelength": "result.module_codelength",
+    "one_level_codelength": "result.one_level_codelength",
+    "relative_codelength_savings": "result.relative_codelength_savings",
+    "entropy_rate": "result.entropy_rate",
+    "meta_codelength": "result.meta_codelength",
+    "meta_entropy": "result.meta_entropy",
+}
+
+_install_accessor_deprecations(_InfomapResultsMixin, _LEGACY_RESULT_ACCESSORS)

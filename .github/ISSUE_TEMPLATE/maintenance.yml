@@ -1,7 +1,10 @@
 name: Maintenance chore
 description: Track repository, CI, docs, or packaging maintenance.
 title: "[Maintenance]: "
-labels: ["maintenance"]
+# No labels: here on purpose. This repository labels by component (python, R,
+# build, docs, test, performance, ...), not by issue type, so the type label a
+# template could declare does not exist -- declaring one silently drops it and
+# the issue arrives unlabelled. The component is not knowable from the template.
 body:
   - type: textarea
     id: task

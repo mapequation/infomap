@@ -10,44 +10,43 @@ drift.
 from __future__ import annotations
 
 import pytest
-
 from infomap import Infomap
 
 pytest.importorskip("pandas")
 
 
 def _simple(example_network_path) -> Infomap:
-    im = Infomap(silent=True, no_file_output=True, num_trials=5)
+    im = Infomap(silent=True, num_trials=5)
     im.read_file(str(example_network_path("twotriangles.net")))
     return im
 
 
 def _nine(example_network_path) -> Infomap:
-    im = Infomap(silent=True, no_file_output=True, num_trials=10)
+    im = Infomap(silent=True, num_trials=10)
     im.read_file(str(example_network_path("ninetriangles.net")))
     return im
 
 
 def _states(example_network_path) -> Infomap:
-    im = Infomap(silent=True, no_file_output=True)
+    im = Infomap(silent=True)
     im.read_file(str(example_network_path("states.net")))
     return im
 
 
 def _multilayer(example_network_path) -> Infomap:
-    im = Infomap(silent=True, no_file_output=True)
+    im = Infomap(silent=True)
     im.read_file(str(example_network_path("multilayer.net")))
     return im
 
 
 def _bipartite(example_network_path) -> Infomap:
-    im = Infomap(silent=True, no_file_output=True)
+    im = Infomap(silent=True)
     im.read_file(str(example_network_path("bipartite.net")))
     return im
 
 
 def _meta(example_network_path) -> Infomap:
-    im = Infomap(silent=True, no_file_output=True)
+    im = Infomap(silent=True)
     for source, target in [(0, 1), (1, 2), (2, 0), (2, 3), (3, 4), (4, 5), (5, 3)]:
         im.add_link(source, target)
     for node_id in range(6):
@@ -82,6 +81,8 @@ _DATAFRAME_VARIANTS = [
     {"columns": ["node_id", "module_id"], "depth_level": 2, "sort": True},
     {"columns": ["node_id", "module_id"], "level": -1},
     {"columns": ["node_id", "name"]},
+    {"columns": ["state_id", "node_id", "name", "state_name"], "states": True},
+    {"columns": ["node_id", "state_name"]},
 ]
 
 
@@ -172,6 +173,7 @@ def test_scalar_parity(network, example_network_path):
     assert result.meta_codelength == im.meta_codelength
     assert result.have_memory == im.have_memory
     assert result.names == im.names
+    assert result.state_names == im.state_names
 
 
 @pytest.mark.parametrize("network", sorted(_BUILDERS))
@@ -246,7 +248,7 @@ def test_links_parity(network, example_network_path):
     assert list(result.links()) == list(im.links)
     assert list(result.links(data="weight")) == list(im.get_links())
     assert list(result.links(data="flow")) == list(im.flow_links)
-    with pytest.raises(RuntimeError, match="weight"):
+    with pytest.raises(ValueError, match="weight"):
         list(result.links(data="bogus"))
 
 

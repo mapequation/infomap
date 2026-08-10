@@ -39,6 +39,12 @@ std::pair<StateNetwork::NodeMap::iterator, bool> StateNetwork::addStateNode(unsi
   return addStateNode(StateNode(id, physId));
 }
 
+std::pair<StateNetwork::NodeMap::iterator, bool> StateNetwork::addStateNode(unsigned int id, unsigned int physId, std::string name)
+{
+  m_higherOrderInputMethodCalled = true;
+  return addStateNode(StateNode(id, physId, std::move(name)));
+}
+
 std::pair<StateNetwork::NodeMap::iterator, bool> StateNetwork::addNode(unsigned int id)
 {
   return addStateNode(StateNode(id));
@@ -418,7 +424,29 @@ std::pair<StateNetwork::NodeMap::iterator, bool> StateNetwork::addStateNodeWithA
 
 std::pair<StateNetwork::NodeMap::iterator, bool> StateNetwork::addStateNodeWithDeterministicId(unsigned int physId, unsigned int layerId, unsigned int numLayersLog2)
 {
-  unsigned int stateId = physId << (numLayersLog2 + 1) | layerId;
+  // The shift has to fit in 32 bits. Only layerId was checked (Network.cpp), so a
+  // physical id at or above this bound wrapped and produced a state id already
+  // taken by a smaller id in the same layer -- 2147483748 << 2 is 400, and so is
+  // 100 << 2. Network::addMultilayerNode then aliased the second physical node
+  // onto the first, so a node disappeared from the partition and every flow moved,
+  // at exit 0 with no warning. With --matchable-multilayer-ids 2 the safe range is
+  // only [0, 2^30), which ordinary ids can exceed.
+  const unsigned int shift = numLayersLog2 + 1;
+  // Its own error: with shift >= 32 the bound below is 0, so every id would be
+  // reported as "must be below 0", which describes neither the cause nor a fix.
+  // Config::adaptDefaults rejects a largest-layer-id this big, but a caller that
+  // builds a Network directly never goes through it.
+  if (shift >= 32) {
+    const unsigned int maxLargestLayerId = Config::maxMatchableMultilayerIds;
+    throw std::runtime_error(fmt::format(FMT_STRING("Matchable multilayer ids need to shift the physical id left by {} bits, which does not fit a 32-bit id. Reduce the largest layer id to at most {}."), shift, maxLargestLayerId));
+  }
+
+  const unsigned int maxPhysId = 1u << (32 - shift);
+  if (physId >= maxPhysId) {
+    throw std::runtime_error(fmt::format(FMT_STRING("Physical node id {} is too large for matchable multilayer ids: the id is shifted left by {} bits to make room for the layer, so ids must be below {}. Use smaller physical ids, or drop --matchable-multilayer-ids."), physId, shift, maxPhysId));
+  }
+
+  unsigned int stateId = physId << shift | layerId;
   return addStateNode(stateId, physId);
 }
 

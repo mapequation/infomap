@@ -35,12 +35,12 @@ class Recorder:
         return self
 
     def __init__(self):
-        self.directed = False
+        self.inferred_flow_model = None
         self.nodes = []
         self.links = []
 
-    def setDirected(self, value):
-        self.directed = value
+    def note_inferred_flow_model(self, flow_model):
+        self.inferred_flow_model = flow_model
 
     def add_node(self, node_id, name=None):
         self.nodes.append((node_id, name))
@@ -122,7 +122,7 @@ def test_add_edge_index_sets_directed_by_default():
 
     add_edge_index(recorder, np.array([[0], [1]], dtype=np.int64))
 
-    assert recorder.directed is True
+    assert recorder.inferred_flow_model == "directed"
 
 
 def test_add_edge_index_undirected_deduplicates_reverse_edges():
@@ -135,7 +135,7 @@ def test_add_edge_index_undirected_deduplicates_reverse_edges():
         directed=False,
     )
 
-    assert recorder.directed is False
+    assert recorder.inferred_flow_model is None
     assert recorder.links == [(0, 1, 2.0), (1, 2, 4.0)]
 
 

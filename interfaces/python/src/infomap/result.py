@@ -1,42 +1,111 @@
 """Immutable :class:`Result` returned by :meth:`Infomap.run`.
 
 Cheap scalar metrics (codelength, module counts, codelength components) are
-captured eagerly when ``run()`` returns, so they stay valid forever. The two
-kinds of node-level access differ:
+captured eagerly when ``run()`` returns, so they stay valid forever.
 
-- ``modules()`` / ``nodes()`` / ``to_dataframe()`` are true **snapshots** --
-  materialized lazily on first access by a single C++ traversal
-  (``_core.get_node_data``) and cached as plain Python data.
-- ``tree()`` / ``leaf_modules()`` return **live engine iterators**, not
-  snapshots, but each is wrapped so the generation is re-checked before every
-  step.
+Node-level access comes in two shapes -- mind the difference when you need to
+reuse, index, or count the result:
 
-Both kinds are guarded by a run-generation token: the C++ result tree is
-destroyed and rebuilt on every ``run()`` (design §7), so reading node-level data
-from a ``Result`` whose ``Infomap`` has re-run since raises a clear error
-instead of touching freed memory.
+- **Reusable containers**: ``modules()`` / ``multilevel_modules()`` return a
+  plain ``dict``, and ``to_dataframe()`` returns a ``pandas.DataFrame``. These
+  are materialized lazily on first access by a single C++ traversal
+  (``_core.get_node_data``) and cached, so they support ``len()``, indexing, and
+  repeated iteration.
+- **Fresh iterators**: ``nodes()`` / ``links()`` / ``tree()`` /
+  ``leaf_modules()`` each return a one-shot generator. ``for node in
+  result.nodes(): ...`` works every call, but the returned object has no
+  ``len()`` and cannot be iterated twice or indexed -- wrap it in ``list(...)``
+  first if you need a reusable sequence.
 
-The §9 conventions apply to the new surface: scalars are properties,
-collections are methods with defaults (``modules(depth=1, states=False)``).
-Output is byte-identical to the legacy ``Infomap`` accessors (parity is a gate).
+Both shapes are guarded by a run-generation token: the C++ result tree is
+destroyed and rebuilt on every ``run()``, so reading node-level data from a
+``Result`` whose bound engine has re-run since raises :class:`StaleResultError`
+instead of touching freed memory. That engine is whichever object the run went
+through -- an ``Infomap`` or a ``Network`` -- and only a re-run of *that* one
+invalidates the ``Result``.
+
+Surface conventions: read the run's intrinsic results as **properties** -- the
+scalar metrics (``result.codelength``) and the fixed label / per-trial tables
+(``result.names``, ``result.state_names``, ``result.codelengths``). Call a
+**method** to slice, walk, or convert the partition: either you pass a view
+(``result.modules(depth=1)``, ``result.nodes(states=True)``,
+``result.effective_num_modules(depth)``) or you ask for a built structure
+(``result.summary()``, ``result.to_dataframe()``). The two canonical depths of
+``effective_num_modules`` are also exposed as the ``effective_num_top_modules``
+/ ``effective_num_leaf_modules`` properties. Output is byte-identical to the
+legacy ``Infomap`` accessors (parity is a gate).
 """
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Iterator, Sequence
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
-from ._optional import get_pandas
-from ._results import _to_dataframe_sort_columns, perplexity
+from ._optional import require_pandas
+from ._results import (
+    _DATAFRAME_COLUMN_ALIASES,
+    _DEFAULT_TO_DATAFRAME_COLUMNS,
+    _HIGHER_ORDER_MODULES_MESSAGE,
+    _to_dataframe_sort_columns,
+    _unknown_dataframe_column_error,
+    perplexity,
+)
+from ._summary import repr_html as _summary_repr_html
+from .errors import InfomapError, StaleResultError, _translate_engine_errors
+from .io.writers import _ResultWritersMixin
+
+# Legacy Infomap instance-mirror accessor names, mapped to their Result form. A
+# caller that learned the pre-Result API -- or hits the method/property flip
+# (``im.modules`` is a property, ``result.modules()`` is a method) -- reaches
+# for these on a Result; ``__getattr__`` turns the miss into a pointer instead
+# of a bare AttributeError. Kept in step with the deprecated members in
+# ``_results.py``.
+_LEGACY_ACCESSOR_HINTS = {
+    "get_modules": "result.modules()",
+    "get_multilevel_modules": "result.multilevel_modules()",
+    "get_nodes": "result.nodes()",
+    "get_tree": "result.tree()",
+    "get_links": "result.links()",
+    "get_name": "result.names[node_id]",
+    "get_names": "result.names",
+    "get_state_names": "result.state_names",
+    "get_dataframe": "result.to_dataframe()",
+    "get_effective_num_modules": "result.effective_num_modules()",
+    "flow_links": 'result.links(data="flow")',
+    "physical_tree": "result.tree(states=False)",
+    "physical_nodes": "result.nodes(states=False)",
+}
+
+
+# Also accept the camelCase SWIG-style spellings (``result.getModules()``) a caller
+# may carry over from the low-level C++ core API, mapping each to the same Result
+# pointer as its snake_case twin.
+_LEGACY_ACCESSOR_HINTS.update(
+    {
+        "".join(
+            part.capitalize() if i else part for i, part in enumerate(name.split("_"))
+        ): hint
+        for name, hint in list(_LEGACY_ACCESSOR_HINTS.items())
+        if name.startswith("get_")
+    }
+)
 
 if TYPE_CHECKING:
+    import igraph  # pyright: ignore[reportMissingImports]  # optional dep, no stubs
+    import networkx
+    import pandas
+
+    from ._core import (
+        InfomapIterator,
+        InfomapIteratorPhysical,
+        InfomapLeafModuleIterator,
+    )
     from ._facade import Infomap
 
-
-pandas = get_pandas()
-
-_DEFAULT_TO_DATAFRAME_COLUMNS = ("node_id", "module_id", "flow", "path", "name")
-_DATAFRAME_COLUMN_ALIASES = {"community": "module_id"}
+# build_result is internal plumbing shared by Infomap.run and Network.run;
+# only the result types are public API.
+__all__ = ["Result", "TreeNode"]
 
 # Columns served directly from the NodeData snapshot. "name" and "module_id"
 # (the "community" alias) are resolved separately.
@@ -53,11 +122,12 @@ _SNAPSHOT_COLUMNS = (
 )
 
 
-class _StaleResultError(RuntimeError):
-    """Raised when node-level data is read from a Result after a re-run."""
+# Backwards-compatible alias: the stale-result error predates the public
+# taxonomy (infomap.errors) under this private name.
+_StaleResultError = StaleResultError
 
 
-def build_result(engine: Any) -> "Result":
+def build_result(engine: Any) -> Result:
     """Bump the engine's run-generation token and return a fresh ``Result``.
 
     The single place that stamps a ``Result`` with the new generation, shared by
@@ -72,56 +142,54 @@ def build_result(engine: Any) -> "Result":
     return Result(engine, generation=engine._generation)
 
 
+@dataclass(frozen=True, slots=True, kw_only=True, repr=False)
 class TreeNode:
-    """A lightweight, immutable view over a single leaf row of a ``Result``.
+    """A lightweight, immutable view over a single leaf node of a ``Result``.
 
-    This is *our* type, not a SWIG object: attribute access reads from the
-    snapshot arrays the ``Result`` already materialized.
+    Yielded by :meth:`Result.nodes`. A plain Python object: attribute access
+    reads from the snapshot data the ``Result`` already materialized, without
+    touching the underlying C++ engine, so it stays valid after a re-run.
+
+    Attributes
+    ----------
+    node_id : int
+        The physical node id.
+    state_id : int
+        The state node id. Equals ``node_id`` for first-order networks.
+    module_id : int
+        The module id at the depth level the nodes were requested for.
+    flow : float
+        The node flow (the fraction of flow the node receives).
+    depth : int
+        The depth of the node in the tree (number of levels below the root;
+        equals ``len(path)``).
+    layer_id : int
+        The layer id for multilayer networks, otherwise ``0``.
+    child_index : int
+        The zero-based index of the node among its parent module's children.
+    modular_centrality : float
+        A flow-based centrality score of the node within its parent module.
+    path : tuple of int
+        The tree path from the root as a tuple of one-based child indices
+        (the colon-separated path in tree output files).
+    name : str or int
+        The physical node name, or ``node_id`` if the node is unnamed.
+    state_name : str or int
+        The state-node name for higher-order networks, falling back to
+        ``name`` when no state name is set.
     """
 
-    __slots__ = (
-        "node_id",
-        "state_id",
-        "module_id",
-        "flow",
-        "depth",
-        "layer_id",
-        "child_index",
-        "modular_centrality",
-        "path",
-        "name",
-    )
-
-    def __init__(
-        self,
-        *,
-        node_id: int,
-        state_id: int,
-        module_id: int,
-        flow: float,
-        depth: int,
-        layer_id: int,
-        child_index: int,
-        modular_centrality: float,
-        path: tuple,
-        name: Any,
-    ) -> None:
-        object.__setattr__(self, "node_id", node_id)
-        object.__setattr__(self, "state_id", state_id)
-        object.__setattr__(self, "module_id", module_id)
-        object.__setattr__(self, "flow", flow)
-        object.__setattr__(self, "depth", depth)
-        object.__setattr__(self, "layer_id", layer_id)
-        object.__setattr__(self, "child_index", child_index)
-        object.__setattr__(self, "modular_centrality", modular_centrality)
-        object.__setattr__(self, "path", path)
-        object.__setattr__(self, "name", name)
-
-    def __setattr__(self, name: str, value: Any) -> None:
-        raise AttributeError("TreeNode is immutable")
-
-    def __delattr__(self, name: str) -> None:
-        raise AttributeError("TreeNode is immutable")
+    node_id: int
+    state_id: int
+    module_id: int
+    flow: float
+    depth: int
+    layer_id: int
+    child_index: int
+    modular_centrality: float
+    path: tuple[int, ...]
+    name: str | int
+    state_name: str | int
 
     def __repr__(self) -> str:
         return (
@@ -134,15 +202,15 @@ class _Snapshot:
     """Per-(level, states) materialized columns from a single C++ traversal."""
 
     __slots__ = (
-        "node_id",
-        "state_id",
-        "module_id",
-        "flow",
-        "depth",
-        "layer_id",
         "child_index",
+        "depth",
+        "flow",
+        "layer_id",
         "modular_centrality",
+        "module_id",
+        "node_id",
         "path",
+        "state_id",
     )
 
     def __init__(self, node_data) -> None:
@@ -168,13 +236,20 @@ class _Snapshot:
         return len(self.node_id)
 
 
-class Result:
+class Result(_ResultWritersMixin):
     """Immutable snapshot of an Infomap run.
 
     Returned by :meth:`Infomap.run` (and the functional :func:`infomap.run`) and
-    used to back the legacy on-instance accessors. Holds eager scalars;
-    node/tree/dataframe data is materialized lazily and guarded against the
+    used to back the legacy on-instance accessors. Holds eager O(1) scalars;
+    tree-derived metrics (the ``effective_num_*`` modules) and
+    node/tree/dataframe data are materialized lazily and guarded against the
     engine being re-run.
+
+    Carries the result-artifact file writers (``write_tree``, ``write_clu``,
+    ``write_flow_tree``, ...): write the mapequation.org tool files straight
+    off the result, whatever built it. Like all node-level access, writing is
+    generation-guarded — a stale ``Result`` raises instead of writing the
+    rebuilt tree.
 
     Read scalars as **properties** and collections as **methods** (with
     defaults):
@@ -184,7 +259,7 @@ class Result:
     Run Infomap and read the partition off the ``Result``:
 
     >>> from infomap import Infomap
-    >>> im = Infomap(silent=True)
+    >>> im = Infomap()
     >>> im.add_links(((1, 2), (1, 3), (2, 3), (4, 5), (4, 6), (5, 6), (3, 4)))
     >>> result = im.run()
     >>> result.num_top_modules
@@ -214,46 +289,62 @@ class Result:
     ``Infomap`` rebuilds the C++ result tree, so node-level access on the old
     ``Result`` raises. Eager scalars (``codelength``, ``num_top_modules``, ...)
     stay valid.
+
+    For a sweep, :meth:`summary` returns the scalar metrics as a dict (one row
+    per run, so ``pandas.DataFrame(r.summary() for r in results)`` builds a
+    table) and :meth:`to_series` gives the pandas-native row; both read only the
+    eager scalars and stay valid after a re-run.
     """
 
     __slots__ = (
-        "_engine",
-        "_generation",
-        "_names",
-        "_have_memory",
-        "_directed",
+        "__weakref__",
         "_codelength",
-        "_num_top_modules",
-        "_num_non_trivial_top_modules",
-        "_num_levels",
-        "_num_nodes",
-        "_num_links",
+        "_codelengths",
+        "_directed",
+        "_effective_cache",
+        "_elapsed_time",
+        "_engine",
+        "_entropy_rate",
+        "_flow_converged",
+        "_flow_error",
+        "_flow_iterations",
+        "_generation",
+        "_have_memory",
         "_index_codelength",
+        "_meta_codelength",
+        "_meta_entropy",
         "_module_codelength",
+        "_names",
+        "_num_leaf_modules",
+        "_num_levels",
+        "_num_links",
+        "_num_nodes",
+        "_num_non_trivial_top_modules",
+        "_num_physical_nodes",
+        "_num_top_modules",
         "_one_level_codelength",
         "_relative_codelength_savings",
-        "_entropy_rate",
-        "_meta_codelength",
-        "_codelengths",
-        "_meta_entropy",
-        "_elapsed_time",
-        "_num_leaf_modules",
-        "_effective_num_top_modules",
-        "_effective_num_leaf_modules",
         "_snapshots",
-        "__weakref__",
+        "_state_names",
     )
 
-    def __init__(self, engine: "Infomap", *, generation: int) -> None:
+    def __init__(self, engine: Infomap, *, generation: int) -> None:
         core = engine._core
         object.__setattr__(self, "_engine", engine)
         object.__setattr__(self, "_generation", generation)
         # Names are needed for the "name" column; capture eagerly (cheap dict).
         object.__setattr__(self, "_names", dict(core.getNames()))
+        # State-node names ({state_id: name}) for the optional "state_name"
+        # column; empty for first-order networks. Captured eagerly alongside the
+        # physical names so a Result stays a self-contained snapshot.
+        object.__setattr__(self, "_state_names", dict(core.getStateNames()))
         object.__setattr__(self, "_have_memory", core.haveMemory())
         # Captured eagerly so a Result is a stable artifact: exporters read the
-        # directedness off the snapshot, not the live engine.
-        object.__setattr__(self, "_directed", bool(core.directed))
+        # directedness off the snapshot, not the live engine. Derived from the
+        # effective flow model, not the --directed CLI bool, so
+        # ``flow_model="directed"`` (and the datasets loaders that bake it)
+        # export directed graphs just like ``directed=True`` does.
+        object.__setattr__(self, "_directed", not core.isUndirectedFlow())
         # Eager scalar metrics (O(1), no tree traversal).
         object.__setattr__(self, "_codelength", core.codelength())
         object.__setattr__(self, "_num_top_modules", core.numTopModules())
@@ -262,12 +353,19 @@ class Result:
         )
         object.__setattr__(self, "_num_levels", core.maxTreeDepth())
         object.__setattr__(self, "_num_nodes", core.network().numNodes())
+        object.__setattr__(
+            self, "_num_physical_nodes", core.network().numPhysicalNodes()
+        )
         object.__setattr__(self, "_num_links", core.network().numLinks())
+        # Power-iteration outcome. Flow models that need no power iteration leave
+        # these at "converged, zero iterations", so `not result.flow_converged` means
+        # a failure in every case rather than "no iteration ran".
+        object.__setattr__(self, "_flow_converged", core.network().flowConverged())
+        object.__setattr__(self, "_flow_iterations", core.network().flowIterations())
+        object.__setattr__(self, "_flow_error", core.network().flowError())
         object.__setattr__(self, "_index_codelength", core.getIndexCodelength())
         object.__setattr__(self, "_module_codelength", core.getModuleCodelength())
-        object.__setattr__(
-            self, "_one_level_codelength", core.getOneLevelCodelength()
-        )
+        object.__setattr__(self, "_one_level_codelength", core.getOneLevelCodelength())
         object.__setattr__(
             self,
             "_relative_codelength_savings",
@@ -283,16 +381,12 @@ class Result:
         object.__setattr__(
             self, "_num_leaf_modules", sum(1 for _ in core.iterLeafModules())
         )
-        object.__setattr__(
-            self,
-            "_effective_num_top_modules",
-            self._compute_effective_num_modules(core, 1),
-        )
-        object.__setattr__(
-            self,
-            "_effective_num_leaf_modules",
-            self._compute_effective_num_modules(core, -1),
-        )
+        # The effective-number-of-modules metrics each require a full Python-side
+        # tree traversal, so they are computed lazily on first access and cached,
+        # keyed by depth (see ``_effective_num_modules_cached``). Computing them
+        # eagerly here roughly doubled run() wall-clock for callers that never
+        # read them.
+        object.__setattr__(self, "_effective_cache", {})
         # Lazy node-data cache, keyed by (level, states).
         object.__setattr__(self, "_snapshots", {})
 
@@ -304,6 +398,22 @@ class Result:
             return core.iterTreePhysical(depth)
         return core.iterTree(depth)
 
+    def _effective_num_modules_cached(self, depth: int) -> float:
+        """Lazily compute and cache the effective number of modules at ``depth``.
+
+        Each computation walks the result tree, so it is deferred until first
+        access and memoized. The generation guard fires only if the bound engine
+        was re-run *before* the first read at this depth; a value read while the
+        Result was fresh stays valid afterwards (snapshot semantics).
+        """
+        cache = self._effective_cache
+        if depth not in cache:
+            self._check_generation()
+            cache[depth] = self._compute_effective_num_modules(
+                self._engine._core, depth
+            )
+        return cache[depth]
+
     @classmethod
     def _compute_effective_num_modules(cls, core, depth: int) -> float:
         """Mirror legacy ``Infomap.get_effective_num_modules`` over ``core``."""
@@ -311,8 +421,7 @@ class Result:
             [
                 module.flow
                 for module in cls._tree_iterator(core, depth, False)
-                if (depth == -1 and module.is_leaf_module)
-                or module.depth == depth
+                if (depth == -1 and module.is_leaf_module) or module.depth == depth
             ]
         )
 
@@ -322,6 +431,23 @@ class Result:
     def __delattr__(self, name: str) -> None:
         raise AttributeError("Result is immutable")
 
+    def __getattr__(self, name: str):
+        # Only reached when normal lookup misses, so it never shadows a real
+        # property or method. A legacy Infomap accessor typed on a Result (e.g.
+        # ``result.get_modules()``, or ``result.modules`` by muscle memory from
+        # the instance where it was a property) becomes a pointer to the Result
+        # form; every other miss keeps the standard AttributeError so dunder and
+        # duck-typing probes degrade normally.
+        hint = _LEGACY_ACCESSOR_HINTS.get(name)
+        if hint is not None:
+            raise AttributeError(
+                f"{name!r} is a legacy Infomap accessor, not a Result member; "
+                f"use {hint} instead."
+            )
+        raise AttributeError(
+            f"{type(self).__name__!r} object has no attribute {name!r}"
+        )
+
     def __repr__(self) -> str:
         return (
             f"Result(codelength={self._codelength!r}, "
@@ -329,15 +455,51 @@ class Result:
             f"num_levels={self._num_levels!r})"
         )
 
+    def _repr_html_(self) -> str | None:
+        """Rich HTML summary for notebooks -- the same card as :class:`Infomap`.
+
+        Rendered from the bound engine while this Result is still the engine's
+        current one (``im._result is self``), so the card shows exactly this
+        snapshot. Once the engine has been re-run this Result is stale: the live
+        result tree the top-module flow strip reads has been rebuilt, so we
+        decline HTML (return ``None``) and let the notebook fall back to the
+        concise text ``__repr__``. The eager scalars stay available there.
+        """
+        if self._engine._generation != self._generation:
+            return None
+        # The rich card is rendered from the engine's state-card summary, which
+        # only the stateful Infomap engine provides. A Network-backed Result
+        # (e.g. from infomap.run(datasets.x()) or a prebuilt Network) declines
+        # HTML and falls back to the text __repr__ -- which works from the eager
+        # scalars -- rather than raising in a notebook.
+        if not hasattr(self._engine, "summary"):
+            return None
+        return _summary_repr_html(self._engine)
+
     # -- lazy node-data extraction ------------------------------------------
+
+    def _writer_core(self):
+        # The writer mixin's core hook: file writers read the live C++ result
+        # tree, so they are generation-guarded like every node-level access.
+        self._check_generation()
+        return self._engine._core
 
     def _check_generation(self) -> None:
         """Guard live C++ tree access against a re-run of the bound engine."""
         if self._engine._generation != self._generation:
-            raise _StaleResultError(
-                "stale Result: the Infomap instance was re-run since this "
-                "Result was created; node-level data is no longer available "
-                "(the C++ result tree is rebuilt on every run())."
+            # Name the engine that actually went stale: a Result can be bound to a
+            # Network as well as to an Infomap, and naming the wrong one sends the
+            # reader looking for a re-run that never happened. The advice cannot be
+            # "use infomap.run()" either -- run(network) re-runs that same network
+            # in place and bumps this generation, so it reproduces this error.
+            engine = type(self._engine).__name__
+            raise StaleResultError(
+                f"stale Result: this {engine} was re-run, so the C++ result tree "
+                "this Result read is gone. Eager scalars (codelength, module "
+                "counts, summary()) stay valid; to keep node-level data across a "
+                "re-run, materialize it first -- dict(result.modules()) / "
+                "result.to_dataframe() -- or give each run its own engine, since a "
+                "Result only goes stale when the engine it came from is re-run."
             )
 
     def _guard_iteration(self, iterator):
@@ -347,7 +509,7 @@ class Result:
         ``tree()`` / ``leaf_modules()`` hand back live engine iterators rather
         than materialized snapshots. Without this guard, acquiring one and then
         re-running the engine before consuming it would walk a rebuilt C++ tree;
-        instead the first step raises :class:`_StaleResultError`.
+        instead the first step raises :class:`~infomap.StaleResultError`.
         """
         iterator = iter(iterator)
         while True:
@@ -401,9 +563,62 @@ class Result:
         return self._num_nodes
 
     @property
+    def num_physical_nodes(self) -> int:
+        """The number of physical nodes.
+
+        Equals :attr:`num_nodes` for a first-order network; for a higher-order
+        (multilayer/memory) network it counts the distinct physical nodes behind
+        the state nodes. Captured eagerly, so it stays valid after a re-run.
+        """
+        return self._num_physical_nodes
+
+    @property
     def num_links(self) -> int:
         """The number of links."""
         return self._num_links
+
+    @property
+    def flow_converged(self) -> bool:
+        """Whether the flow calculation's power iteration reached its tolerance.
+
+        ``False`` means the iteration's final error stayed above ``flow_tolerance``,
+        so the flow is not the network's stationary distribution and every codelength
+        derived from it describes something else. Reaching tolerance on the last
+        allowed iteration counts as converged; running out of iterations with the
+        error still too large does not.
+        The run still completes and writes output, so this is the only way an
+        automated consumer can tell (:attr:`flow_error` says by how much).
+
+        ``True`` for flow models that run no power iteration at all -- undirected
+        flow, for instance -- so ``not result.flow_converged`` always means a real
+        failure. :attr:`flow_iterations` is 0 in that case.
+
+        Examples
+        --------
+        >>> from infomap import Infomap, Options
+        >>> im = Infomap(silent=True)
+        >>> im.read_file("ninetriangles.net")
+        >>> result = im.run(options=Options(directed=True, max_flow_iterations=2))
+        >>> result.flow_converged
+        False
+        >>> result.flow_iterations
+        2
+        """
+        return self._flow_converged
+
+    @property
+    def flow_iterations(self) -> int:
+        """Power iterations the flow calculation used, or 0 if it ran none."""
+        return self._flow_iterations
+
+    @property
+    def flow_error(self) -> float:
+        """The power iteration's final error, 0.0 if it ran none.
+
+        Compare against the ``flow_tolerance`` option: an error above it with
+        :attr:`flow_converged` false says how far the flow is from stationary.
+        """
+        return self._flow_error
 
     @property
     def index_codelength(self) -> float:
@@ -432,12 +647,12 @@ class Result:
 
     @property
     def meta_codelength(self) -> float:
-        """The meta codelength (meta entropy times meta data rate)."""
+        """The meta codelength (meta entropy times metadata rate)."""
         return self._meta_codelength
 
     @property
     def meta_entropy(self) -> float:
-        """The meta entropy (unweighted by the meta data rate)."""
+        """The meta entropy (unweighted by the metadata rate)."""
         return self._meta_entropy
 
     @property
@@ -460,16 +675,22 @@ class Result:
         """The flow-weighted effective number of top modules.
 
         Measured as the perplexity of the top-module flow distribution.
+        Unlike the eager scalar properties, this is computed lazily on first
+        access (see :meth:`effective_num_modules`), so it can raise
+        :class:`StaleResultError` if the bound engine has re-run since.
         """
-        return self._effective_num_top_modules
+        return self._effective_num_modules_cached(1)
 
     @property
     def effective_num_leaf_modules(self) -> float:
         """The flow-weighted effective number of leaf modules.
 
         Measured as the perplexity of the leaf-module flow distribution.
+        Unlike the eager scalar properties, this is computed lazily on first
+        access (see :meth:`effective_num_modules`), so it can raise
+        :class:`StaleResultError` if the bound engine has re-run since.
         """
-        return self._effective_num_leaf_modules
+        return self._effective_num_modules_cached(-1)
 
     @property
     def have_memory(self) -> bool:
@@ -477,34 +698,100 @@ class Result:
         return self._have_memory
 
     @property
-    def names(self) -> dict:
-        """All node names, as ``{node_id: name}``."""
+    def names(self) -> dict[int, str]:
+        """All node names, as ``{node_id: name}``.
+
+        Maps each internal ``node_id`` to the label of the input node. It is
+        populated only when the input labels are not already the integer ids --
+        for a graph whose nodes are integers (contiguous or not) the ids *are*
+        the labels, so this is **empty** and ``modules()`` is keyed by those
+        integers directly. The ``result.names.get(nid, nid)`` idiom therefore
+        recovers labels for both cases. Returns a copy; mutating it does not
+        affect the :class:`Result`.
+        """
         return dict(self._names)
+
+    @property
+    def state_names(self) -> dict[int, str]:
+        """All state-node names, as ``{state_id: name}``.
+
+        Returns a copy; mutating it does not affect the :class:`Result`.
+
+        Populated for higher-order (state/memory) networks whose ``*States``
+        section names the state nodes; empty otherwise. Physical node names are
+        available separately via :attr:`names`.
+        """
+        return dict(self._state_names)
 
     # -- collection accessors (§9: methods with defaults) -------------------
 
-    def modules(self, depth: int = 1, *, states: bool = False) -> dict:
+    def modules(self, depth: int = 1, *, states: bool = False) -> dict[int, int]:
         """Map ``node_id`` (or ``state_id`` when ``states``) to ``module_id``.
 
         Equivalent to the legacy ``Infomap.get_modules(depth, states)``: for a
         higher-order (multilayer/memory) network, requesting physical-node
         modules without ``states`` is ambiguous and raises, mirroring the C++
         ``getModules`` guard.
+
+        Parameters
+        ----------
+        depth : int, optional
+            The depth in the hierarchical tree of the reported module ids.
+            ``1`` (default) is the top (coarsest) level; ``-1`` the bottom
+            (finest) level.
+        states : bool, optional
+            Key the mapping by ``state_id`` when ``True``, by ``node_id``
+            when ``False`` (the default).
+
+        Returns
+        -------
+        dict of int to int
+            ``{node_or_state_id: module_id}`` for every leaf node.
+
+        Raises
+        ------
+        InfomapError
+            For a higher-order network when ``states`` is ``False``.
+
+        See Also
+        --------
+        multilevel_modules : Module ids for every level at once.
+        tree : Walk the full hierarchical tree.
         """
         if self._have_memory and not states:
-            raise RuntimeError(
-                "Cannot get modules on higher-order network without states."
-            )
+            # InfomapError (not ValueError) on purpose, and the exact message is
+            # shared with the legacy Infomap.get_modules path (_results.py) so
+            # both surfaces are byte-identical -- parity tests pin type and text.
+            raise InfomapError(_HIGHER_ORDER_MODULES_MESSAGE)
         snapshot = self._snapshot(depth, states)
         ids = snapshot.state_id if states else snapshot.node_id
-        return dict(zip(ids, snapshot.module_id))
+        return dict(zip(ids, snapshot.module_id, strict=True))
 
-    def nodes(self, depth: int = 1, *, states: bool = False):
-        """Iterate leaf :class:`TreeNode` views, depth first from the root."""
+    def nodes(self, depth: int = 1, *, states: bool = False) -> Iterator[TreeNode]:
+        """Iterate leaf :class:`TreeNode` views, depth first from the root.
+
+        Parameters
+        ----------
+        depth : int, optional
+            The module level reported by ``node.module_id``. ``1`` (default)
+            is the top (coarsest) level; ``-1`` the bottom (finest).
+        states : bool, optional
+            Iterate state nodes when ``True``. When ``False`` (the default),
+            iterate physical nodes, merging state nodes with the same
+            ``node_id`` if they are in the same module; the same physical
+            node may then appear on different paths in the tree.
+
+        Yields
+        ------
+        TreeNode
+            An immutable snapshot view per leaf node.
+        """
         snapshot = self._snapshot(depth, states)
         names = self._names
+        state_names = self._state_names
         for i in range(len(snapshot)):
             node_id = snapshot.node_id[i]
+            name = names.get(node_id, node_id)
             yield TreeNode(
                 node_id=node_id,
                 state_id=snapshot.state_id[i],
@@ -515,12 +802,15 @@ class Result:
                 child_index=snapshot.child_index[i],
                 modular_centrality=snapshot.modular_centrality[i],
                 path=snapshot.path[i],
-                name=names.get(node_id, node_id),
+                name=name,
+                state_name=state_names.get(snapshot.state_id[i]) or name,
             )
 
-    def tree(self, depth: int = 1, *, states: bool = False):
-        """A view of the hierarchical tree, iterating over the modules as well
-        as the leaf nodes, depth first from the root.
+    def tree(
+        self, depth: int = 1, *, states: bool = False
+    ) -> Iterator[InfomapIterator | InfomapIteratorPhysical]:
+        """Iterate the hierarchical tree, modules and leaf nodes alike, depth
+        first from the root.
 
         Equivalent to the legacy ``Infomap.get_tree(depth, states)``. For a
         higher-order (multilayer/memory) network the physical tree is used
@@ -548,17 +838,33 @@ class Result:
             self._tree_iterator(self._engine._core, depth, states)
         )
 
-    def multilevel_modules(self, *, states: bool = False) -> dict:
+    def multilevel_modules(self, *, states: bool = False) -> dict[int, tuple[int, ...]]:
         """Map ``node_id`` (or ``state_id`` when ``states``) to a tuple of
         ``module_id``, one per level from the top down.
 
         Equivalent to the legacy ``Infomap.get_multilevel_modules(states)``.
+
+        Parameters
+        ----------
+        states : bool, optional
+            Key the mapping by ``state_id`` when ``True``, by ``node_id``
+            when ``False`` (the default).
+
+        Returns
+        -------
+        dict of int to tuple of int
+            ``{node_or_state_id: (top_module_id, ..., leaf_module_id)}``.
+
+        See Also
+        --------
+        modules : Module ids for a single level.
         """
         self._check_generation()
-        return self._engine._core.getMultilevelModules(states)
+        with _translate_engine_errors():
+            return self._engine._core.getMultilevelModules(states)
 
-    def leaf_modules(self):
-        """A view of the leaf modules (bottom modules containing leaf nodes),
+    def leaf_modules(self) -> Iterator[InfomapLeafModuleIterator]:
+        """Iterate the leaf modules (bottom modules containing leaf nodes),
         depth first from the root.
 
         Equivalent to the legacy ``Infomap.leaf_modules`` iterator.
@@ -573,8 +879,8 @@ class Result:
         self._check_generation()
         return self._guard_iteration(self._engine._core.iterLeafModules())
 
-    def links(self, data: str = "weight"):
-        """A view of the partitioned links and their weights or flow.
+    def links(self, data: str = "weight") -> Iterator[tuple[int, int, float]]:
+        """Iterate the partitioned links with their weight or flow.
 
         Equivalent to the legacy ``Infomap.get_links(data)``. The sources and
         targets are state ids for a state or multilayer network.
@@ -593,7 +899,7 @@ class Result:
             engine re-runs raises instead of reading the rebuilt engine.
         """
         if data not in ("weight", "flow"):
-            raise RuntimeError('data must one of "weight" or "flow"')
+            raise ValueError('data must be one of "weight" or "flow"')
         self._check_generation()
         flow = data != "weight"
 
@@ -604,7 +910,7 @@ class Result:
         return self._guard_iteration(_link_items())
 
     def effective_num_modules(self, depth: int = 1) -> float:
-        """The flow-weighted effective number of modules at ``depth``.
+        """Return the flow-weighted effective number of modules at ``depth``.
 
         Measured as the perplexity of the module flow distribution. Equivalent
         to the legacy ``Infomap.get_effective_num_modules(depth)``.
@@ -615,34 +921,193 @@ class Result:
             The module level. ``1`` (default) is the top (coarsest) level;
             ``-1`` the bottom (leaf-module) level.
         """
-        self._check_generation()
-        return self._compute_effective_num_modules(self._engine._core, depth)
+        return self._effective_num_modules_cached(depth)
+
+    def summary(self) -> dict[str, Any]:
+        """Return the result's scalar metrics as a plain ``dict``.
+
+        A one-row-per-run record for collecting a sweep into a table: write
+        the loop as you normally would and drop each summary into pandas,
+        adding your own swept-parameter columns alongside::
+
+            records = []
+            for markov_time in (0.5, 1.0, 2.0):
+                result = infomap.run(graph, markov_time=markov_time, seed=123)
+                records.append({"markov_time": markov_time, **result.summary()})
+            df = pandas.DataFrame(records)
+
+        The keys match the scalar :class:`Result` property names, so each
+        column reads the same as the attribute you would read off a single
+        result (``df["codelength"]`` mirrors ``result.codelength``).
+
+        This is distinct from :meth:`Infomap.summary`. That method describes the
+        stateful *instance* -- network counts and run ``status``, available even
+        before a run -- and keys its module counts with the shorter card names
+        (``top_modules``, ``levels``). ``Result.summary`` reports only a finished
+        run's result metrics, keyed by the ``Result`` property names
+        (``num_top_modules``, ``num_levels``); it is the shape to collect into a
+        sweep table.
+
+        A curated set of the eagerly captured O(1) scalars is included, so
+        ``summary`` is cheap and stays valid for the life of the ``Result``: it
+        never walks the tree and never raises
+        :class:`~infomap.StaleResultError`, even after the bound engine has
+        re-run. The tree-derived ``effective_num_*`` metrics and the per-trial
+        :attr:`codelengths` are intentionally left out (read them off their
+        properties when needed). A few eager scalars are also omitted to keep
+        the row focused on the common case -- add them yourself when a sweep
+        needs them: ``meta_codelength`` / ``meta_entropy`` (metadata runs),
+        ``num_physical_nodes`` and ``have_memory`` (higher-order networks), and
+        ``max_depth``.
+
+        Returns
+        -------
+        dict
+            ``{metric_name: value}`` for the scalar result metrics.
+
+        See Also
+        --------
+        to_series : the same record as a :class:`pandas.Series`.
+        to_dataframe : the per-node table for a single result.
+        Infomap.summary : the stateful instance's state card (different keys).
+
+        Examples
+        --------
+        >>> import infomap
+        >>> result = infomap.run(infomap.datasets.two_triangles(), seed=123)
+        >>> summary = result.summary()
+        >>> summary["num_top_modules"]
+        2
+        >>> summary["codelength"] == result.codelength
+        True
+        >>> "num_levels" in summary
+        True
+        """
+        return {
+            "codelength": self._codelength,
+            "num_top_modules": self._num_top_modules,
+            "num_non_trivial_top_modules": self._num_non_trivial_top_modules,
+            "num_leaf_modules": self._num_leaf_modules,
+            "num_levels": self._num_levels,
+            "relative_codelength_savings": self._relative_codelength_savings,
+            "index_codelength": self._index_codelength,
+            "module_codelength": self._module_codelength,
+            "one_level_codelength": self._one_level_codelength,
+            "entropy_rate": self._entropy_rate,
+            "num_nodes": self._num_nodes,
+            "num_links": self._num_links,
+            "elapsed_time": self._elapsed_time,
+        }
+
+    def to_series(self) -> pandas.Series:
+        """Return the result's scalar metrics as a :class:`pandas.Series`.
+
+        The pandas-native form of :meth:`summary`: a one-row record indexed by
+        metric name, so a sweep collects into one row per run with
+
+        ::
+
+            pandas.DataFrame([result.to_series() for result in results])
+
+        Like :meth:`summary`, this reads only the eager scalars, so it stays
+        valid after the bound engine re-runs.
+
+        Returns
+        -------
+        pandas.Series
+            The :meth:`summary` mapping as a Series indexed by metric name.
+
+        Raises
+        ------
+        ImportError
+            If pandas is not installed. Install it with
+            ``python -m pip install "infomap[pandas]"``.
+
+        See Also
+        --------
+        summary : the same record as a plain ``dict``.
+        to_dataframe : the per-node table for a single result.
+        """
+        pandas = require_pandas("the Series accessor")
+        return pandas.Series(self.summary())
 
     def to_dataframe(
         self,
         columns: Sequence[str] | None = None,
         *,
         states: bool = False,
-        level: int = 1,
+        depth: int | None = None,
         index: str | bool | None = None,
         sort: bool | str | Sequence[str] = False,
+        level: int | None = None,
         depth_level: int | None = None,
-    ) -> Any:
-        """A pandas DataFrame of the leaf nodes.
+    ) -> pandas.DataFrame:
+        """Return a pandas DataFrame of the leaf nodes.
 
-        Byte-identical to the legacy ``Infomap.to_dataframe``. Default columns
-        ``("node_id", "module_id", "flow", "path", "name")``; ``"community"``
-        is an alias for ``"module_id"``; ``"name"`` is resolved via the node
-        name map (falling back to the integer ``node_id``).
+        Byte-identical to the legacy ``Infomap.to_dataframe``.
+
+        Parameters
+        ----------
+        columns : sequence of str, optional
+            Columns to include. ``"community"`` is accepted as an alias for
+            ``"module_id"``. ``"name"`` resolves the physical node name
+            (falling back to the integer ``node_id``); the opt-in
+            ``"state_name"`` resolves the per-state-node name for a
+            higher-order network (falling back to the physical name, then
+            ``node_id``); see :attr:`state_names`. Default
+            ``["node_id", "module_id", "flow", "path", "name"]``.
+        states : bool, optional
+            Use state nodes when ``True`` and physical nodes when ``False``
+            (the default).
+        depth : int, optional
+            The module level reported by ``module_id``, as in
+            :meth:`modules`. ``1`` (default) is the top (coarsest) level;
+            ``-1`` the bottom (finest).
+        index : str, bool, or None, optional
+            Column to set as the DataFrame index. Use ``False`` or ``None``
+            (the default) to keep the default RangeIndex.
+        sort : bool, str, or sequence of str, optional
+            Sort by one or more columns. Use ``True`` to sort by
+            ``["module_id", "node_id"]`` when available. Default ``False``.
+        level : int, optional
+            .. deprecated:: 2.15
+                Alias for ``depth``.
+        depth_level : int, optional
+            .. deprecated:: 2.15
+                Alias for ``depth``.
+
+        Returns
+        -------
+        pandas.DataFrame
+            One row per leaf node, with the requested columns.
+
+        Raises
+        ------
+        ImportError
+            If pandas is not installed.
+        ValueError
+            If an unknown column is requested, or if ``depth`` and one of its
+            aliases are given conflicting values.
         """
-        if pandas is None:
-            raise ImportError(
-                "Cannot import package `pandas`. Install it with "
-                '`python -m pip install "infomap[pandas]"`.'
-            )
+        pandas = require_pandas("the DataFrame accessors")
 
-        if depth_level is not None:
-            level = depth_level
+        supplied = {
+            name: value
+            for name, value in (
+                ("depth", depth),
+                ("level", level),
+                ("depth_level", depth_level),
+            )
+            if value is not None
+        }
+        if len(set(supplied.values())) > 1:
+            raise ValueError(
+                f"Conflicting values for the tree depth: {supplied!r}. "
+                "Pass only `depth` (`level` and `depth_level` are deprecated "
+                "aliases)."
+            )
+        resolved_depth = next(iter(supplied.values()), 1)
+
         if columns is None:
             columns = _DEFAULT_TO_DATAFRAME_COLUMNS
 
@@ -652,11 +1117,13 @@ class Result:
             for column in requested_columns
         ]
 
-        snapshot = self._snapshot(level, states)
+        snapshot = self._snapshot(resolved_depth, states)
         names = self._names
 
         data = {}
-        for requested, resolved in zip(requested_columns, resolved_columns):
+        for requested, resolved in zip(
+            requested_columns, resolved_columns, strict=True
+        ):
             data[requested] = self._column(resolved, requested, snapshot, names)
 
         dataframe = pandas.DataFrame(data, columns=requested_columns)
@@ -665,32 +1132,85 @@ class Result:
             sort_columns = _to_dataframe_sort_columns(sort, dataframe.columns)
             dataframe = dataframe.sort_values(sort_columns).reset_index(drop=True)
 
-        if index not in (None, False):
+        if index is not None and index is not False:
+            if index is True:
+                raise TypeError(
+                    "index=True is not a column. Pass a column name (str), or "
+                    "False/None (the default) to keep the RangeIndex."
+                )
             dataframe = dataframe.set_index(index)
 
         return dataframe
+
+    def to_networkx(
+        self,
+        *,
+        module_attribute: str | None = "infomap_module",
+        path_attribute: str | None = "infomap_path",
+        include_hierarchy: bool = True,
+        flow_attribute: str | None = "flow",
+    ) -> networkx.Graph:
+        """Build a NetworkX graph of the partitioned network.
+
+        Equivalent to :func:`infomap.to_networkx`; see it for the parameters
+        and the attribute scheme.
+
+        Returns
+        -------
+        networkx.Graph or networkx.DiGraph
+            ``DiGraph`` when the partitioned network is directed, else
+            ``Graph``.
+        """
+        from .io.export import to_networkx
+
+        return to_networkx(
+            self,
+            module_attribute=module_attribute,
+            path_attribute=path_attribute,
+            include_hierarchy=include_hierarchy,
+            flow_attribute=flow_attribute,
+        )
+
+    def to_igraph(
+        self,
+        *,
+        module_attribute: str | None = "infomap_module",
+        path_attribute: str | None = "infomap_path",
+        include_hierarchy: bool = True,
+        flow_attribute: str | None = "flow",
+    ) -> igraph.Graph:
+        """Build a python-igraph graph of the partitioned network.
+
+        Equivalent to :func:`infomap.to_igraph`; see it for the parameters
+        and the attribute scheme.
+
+        Returns
+        -------
+        igraph.Graph
+            Directed when the partitioned network is directed, else
+            undirected.
+        """
+        from .io.export import to_igraph
+
+        return to_igraph(
+            self,
+            module_attribute=module_attribute,
+            path_attribute=path_attribute,
+            include_hierarchy=include_hierarchy,
+            flow_attribute=flow_attribute,
+        )
 
     def _column(
         self, resolved: str, requested: str, snapshot: _Snapshot, names: dict
     ) -> list:
         if resolved == "name":
             return [names.get(nid, nid) for nid in snapshot.node_id]
+        if resolved == "state_name":
+            state_names = self._state_names
+            return [
+                state_names.get(sid) or names.get(nid, nid)
+                for sid, nid in zip(snapshot.state_id, snapshot.node_id, strict=True)
+            ]
         if resolved in _SNAPSHOT_COLUMNS:
             return list(getattr(snapshot, resolved))
-        available = ", ".join(
-            sorted(
-                {
-                    *_DEFAULT_TO_DATAFRAME_COLUMNS,
-                    "child_index",
-                    "community",
-                    "depth",
-                    "layer_id",
-                    "modular_centrality",
-                    "state_id",
-                }
-            )
-        )
-        raise ValueError(
-            f"Unknown DataFrame column {requested!r}. "
-            f"Available columns include: {available}."
-        )
+        raise _unknown_dataframe_column_error(requested)

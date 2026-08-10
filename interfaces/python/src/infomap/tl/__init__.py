@@ -3,21 +3,47 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
-# The only public name here is the Scanpy-style ``infomap.tl.infomap`` entry
-# point; without this, the module-level imports (Any/Mapping/...) would leak
-# into the ``infomap.tl`` namespace.
-__all__ = ["infomap"]
+from ..errors import InfomapError
+
+# The GraphRAG tools are conceptually part of the ``tl`` namespace, so their
+# public names are re-exported here. tl.graphrag has no module-scope
+# third-party imports, so this keeps ``import infomap`` dependency-free.
+from .graphrag import (
+    GraphRAGGraph as GraphRAGGraph,
+)
+from .graphrag import (
+    GraphRAGRunResult as GraphRAGRunResult,
+)
+from .graphrag import (
+    read_graphrag as read_graphrag,
+)
+from .graphrag import (
+    run_graphrag_communities as run_graphrag_communities,
+)
+from .graphrag import (
+    write_graphrag_communities as write_graphrag_communities,
+)
+
+# A curated __all__: without it, the module-level imports (Any/Mapping/...)
+# would leak into the ``infomap.tl`` namespace. ``infomap`` is the
+# Scanpy-style entry point defined below.
+__all__ = [
+    "GraphRAGGraph",
+    "GraphRAGRunResult",
+    "infomap",
+    "read_graphrag",
+    "run_graphrag_communities",
+    "write_graphrag_communities",
+]
 
 
 def _import_pandas() -> Any:
-    try:
-        import pandas as pd
-    except ImportError as exc:
-        raise ImportError(
-            "The 'pandas' package is required for AnnData support. "
-            'Install it with `python -m pip install "infomap[anndata]"`.'
-        ) from exc
-    return pd
+    # Thin delegate; the shared guard lives in infomap._optional. Only pandas
+    # is imported here -- the entry point works with any AnnData-like object
+    # without the anndata package -- so the hint names the pandas extra.
+    from .._optional import require_pandas
+
+    return require_pandas("AnnData support")
 
 
 def _validate_anndata_like(adata: Any) -> int:
@@ -107,7 +133,7 @@ def _module_labels(im: Any, mapping: dict[int, Any], obs_names: list[Any]) -> li
     try:
         return [str(modules_by_obs_name[obs_name]) for obs_name in obs_names]
     except KeyError as exc:
-        raise RuntimeError(
+        raise InfomapError(
             "Could not align Infomap modules with `adata.obs_names`."
         ) from exc
 
@@ -131,6 +157,51 @@ def infomap(
     ``adata.obsp["connectivities"]``, writes categorical module labels to
     ``adata.obs[key_added]``, and stores run metadata in ``adata.uns[key_added]``.
     Scanpy itself is not imported.
+
+    Parameters
+    ----------
+    adata : AnnData
+        An AnnData-like object with ``.obs``, ``.obsp``, ``.uns``, and
+        ``.obs_names``.
+    adjacency : sparse matrix, optional
+        Square observation-by-observation adjacency matrix to use instead of
+        reading one from ``adata.obsp``. Mutually exclusive with
+        ``neighbors_key`` and ``obsp``.
+    directed : bool, optional
+        Treat the adjacency as directed. Default ``False``.
+    use_weights : bool, optional
+        Use the adjacency values as link weights. If ``False``, every nonzero
+        entry is treated as weight 1. Default ``True``. The name follows
+        Scanpy's ``tl.leiden`` / ``tl.louvain`` (``use_weights``).
+    key_added : str, optional
+        Key under which module labels are written to ``adata.obs`` and run
+        metadata to ``adata.uns``. Default ``"infomap"``.
+    neighbors_key : str, optional
+        Read the adjacency from the ``obsp`` key named by
+        ``adata.uns[neighbors_key]["connectivities_key"]``. Mutually
+        exclusive with ``adjacency`` and ``obsp``.
+    obsp : str, optional
+        Read the adjacency from ``adata.obsp[obsp]``. Default
+        ``"connectivities"``. Mutually exclusive with ``adjacency`` and
+        ``neighbors_key``.
+    copy : bool, optional
+        Operate on (and return) a copy of ``adata`` instead of modifying it
+        in place. Default ``False``.
+    args : str, optional
+        Raw Infomap CLI arguments passed to :class:`~infomap.Infomap`.
+    **infomap_options
+        Keyword arguments passed to :class:`~infomap.Infomap`. The engine is
+        quiet by default; call ``infomap.enable_log()`` for the log.
+
+    Returns
+    -------
+    AnnData or None
+        The annotated copy when ``copy=True``, otherwise ``None`` and
+        ``adata`` is modified in place. In both cases,
+        ``adata.obs[key_added]`` holds the module labels as a categorical
+        (string categories sorted by integer value) and
+        ``adata.uns[key_added]`` holds a dict with the run ``params``, the
+        number of top modules ``n_modules``, and the ``codelength``.
     """
     from .._facade import Infomap
 
@@ -147,11 +218,15 @@ def infomap(
     )
     _validate_adjacency_shape(matrix, n_obs=n_obs)
 
-    options = {"silent": True, "no_file_output": True}
-    options.update(infomap_options)
-    im = Infomap(args=args, **options)
+    # The Python API is quiet by default (Infomap defaults silent=True), so the
+    # helper does not force silent (a deprecated bare kwarg leaving in 3.0) or
+    # no_file_output (redundant on the library surface: no output directory ->
+    # no files). Both stay overridable through infomap_options.
+    im = Infomap(args=args, **infomap_options)
     obs_names = list(adata.obs_names)
-    mapping = im.add_scipy_sparse_matrix(
+    # Use the internal impl rather than the deprecated public
+    # add_scipy_sparse_matrix accessor the rest of the API steers away from.
+    mapping = im._add_scipy_sparse_matrix_impl(
         matrix,
         directed=directed,
         weighted=use_weights,
@@ -180,7 +255,7 @@ def infomap(
             "neighbors_key": neighbors_key,
             "obsp": resolved_obsp,
             "args": args,
-            **options,
+            **infomap_options,
         },
         "n_modules": result.num_top_modules,
         "codelength": result.codelength,

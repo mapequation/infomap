@@ -3,11 +3,14 @@
 Registers ``infomap`` as a NetworkX backend so that
 ``nx.community.infomap_communities(G, backend="infomap")`` -- or via
 ``nx.config.backend_priority = ["infomap"]`` -- dispatches to the Infomap C++
-engine. Implements ``infomap_communities`` (two-level) and ``infomap_partitions``
-(multilevel) through the low-level :class:`infomap.Infomap` API.
+engine. Implements the three NetworkX map equation functions:
+``infomap_communities`` (two-level), ``infomap_partitions`` (multilevel) and
+``map_equation`` (codelength of a given partition).
 
-Any extra Infomap option may be passed as a backend-only keyword argument and
-is forwarded to :class:`infomap.Infomap`, e.g.::
+Each function takes NetworkX's own arguments verbatim -- ``weight``, ``seed``,
+``num_trials``, ``teleportation_probability`` -- because NetworkX names them
+after this package's options. Any further Infomap option may be passed as a
+backend-only keyword argument, forwarded to the run, e.g.::
 
     nx.community.infomap_communities(
         G, backend="infomap", markov_time=1.5, flow_model="directed",
@@ -19,56 +22,65 @@ from __future__ import annotations
 # Safe at module top: unlike the io/ graph adapters (imported by the facade,
 # hence lazy to avoid a cycle), this backend module is only imported via the
 # networkx entry point, after the facade is fully loaded.
-from .._facade import Infomap
+from ..network import Network
+
+# node_id/layer_id name the node attributes the networkx adapter reads to detect
+# state/multilayer networks; sentinel names keep a plain graph from being treated
+# as one (advanced users override via backend kwargs).
+_NO_STATE = "__infomap_nx_no_state__"
+_NO_LAYER = "__infomap_nx_no_layer__"
 
 
-def _build_infomap(G, weight, options):
-    """Construct a low-level :class:`Infomap` for `G`, without running it.
+def _network(G, weight, options):
+    """Build a :class:`Network` from `G`, without running it.
 
-    Returns ``(im, mapping)`` where ``mapping`` is ``{infomap_node_id: label}``
-    for recovering the original node labels. Graph-ingestion options are routed
-    to :meth:`Infomap.add_networkx_graph`; everything else configures Infomap.
+    Returns ``(net, engine_options)``: graph-ingestion options are consumed
+    here, the rest configure the run.
     """
-    # Multigraphs are accepted: add_networkx_graph sums parallel edges, matching
-    # the native infomap_communities (and Louvain).
+    # Multigraphs are accepted: the adapter sums parallel edges, matching the
+    # native infomap_communities (and Louvain).
     options = dict(options)
-    options.setdefault("silent", True)
-    options.setdefault("no_file_output", True)
-    # Without this a DiGraph would be read with the undirected flow model.
-    options.setdefault("directed", G.is_directed())
-    # node_id/layer_id name the node attributes add_networkx_graph reads to
-    # detect state/multilayer networks; sentinel names keep a plain graph from
-    # being treated as one (advanced users override via backend kwargs).
-    add_graph_kwargs = {"weight": weight}
-    for key, default in (
-        ("node_id", "__infomap_nx_no_state__"),
-        ("layer_id", "__infomap_nx_no_layer__"),
-    ):
-        add_graph_kwargs[key] = options.pop(key, default)
+    build_kwargs = {"weight": weight}
+    for key, default in (("node_id", _NO_STATE), ("layer_id", _NO_LAYER)):
+        build_kwargs[key] = options.pop(key, default)
     if "multilayer_inter_intra_format" in options:
-        add_graph_kwargs["multilayer_inter_intra_format"] = options.pop(
+        build_kwargs["multilayer_inter_intra_format"] = options.pop(
             "multilayer_inter_intra_format"
         )
-    im = Infomap(**options)
     try:
-        mapping = im.add_networkx_graph(G, **add_graph_kwargs)
+        net = Network.from_networkx(G, **build_kwargs)
     except RuntimeError as exc:
-        # The C++ engine validates link weights (cheaper than a per-edge Python
-        # pass) but raises RuntimeError. Translate that one case to ValueError
-        # so the backend matches native infomap_communities' contract.
+        # The engine validates link weights at ingestion (cheaper than a
+        # per-edge Python pass) but reports them as InfomapError, a
+        # RuntimeError. Translate that one case to ValueError so the backend
+        # matches the native functions' contract.
         if "weight" in str(exc).lower():
             raise ValueError(str(exc)) from exc
         raise
-    return im, mapping
+    # Without this a DiGraph would be read with the undirected flow model. A
+    # caller who names a flow model has said which one they want, so leave it
+    # alone -- `directed` is shorthand for one of them and would override it.
+    if G.is_directed() and "flow_model" not in options:
+        options.setdefault("directed", True)
+    return net, options
 
 
-def _run_infomap(G, weight, seed, num_trials, infomap_kwargs, *, two_level):
-    """Build, run, and return ``(im, mapping)`` for the optimizing functions."""
-    # Match the native infomap_communities contract (ValueError, not the C++
-    # RuntimeError) so the two code paths agree.
+def _run(
+    G,
+    weight,
+    seed,
+    num_trials,
+    teleportation_probability,
+    infomap_kwargs,
+    *,
+    two_level,
+):
+    """Build, run, and return ``(result, id_to_label)`` for the optimizers."""
+    # Match the native contract (ValueError, not the engine's RuntimeError) so
+    # the two code paths agree.
     if not isinstance(num_trials, int) or num_trials < 1:
         raise ValueError("num_trials must be a positive integer")
-    options = dict(infomap_kwargs)
+    net, options = _network(G, weight, infomap_kwargs)
     if seed is not None:
         # NetworkX passes a random-state object (py_random_state); Infomap's C++
         # RNG needs an integer seed, so draw one from it.
@@ -76,66 +88,111 @@ def _run_infomap(G, weight, seed, num_trials, infomap_kwargs, *, two_level):
             seed = seed.randint(0, 2**31 - 1)
         options.setdefault("seed", int(seed))
     options.setdefault("num_trials", num_trials)
+    options.setdefault("teleportation_probability", teleportation_probability)
     if two_level:
         options.setdefault("two_level", True)
-    im, mapping = _build_infomap(G, weight, options)
-    im.run()
-    return im, mapping
+    # Read the modules off the Result the run returns, not off the engine: the
+    # instance result accessors are deprecated and leave in 3.0.
+    return net.run(**options), net.node_id_to_label
 
 
-def _grouped(node_modules, mapping):
-    """Group infomap node ids by their module key into a list of label sets,
-    restoring the original NetworkX node labels via ``mapping``."""
+def _grouped(node_modules, id_to_label):
+    """Group node ids by their module key into a list of label sets, restoring
+    the original NetworkX node labels."""
     groups: dict = {}
     for node_id, module in node_modules.items():
-        groups.setdefault(module, set()).add(mapping[node_id])
+        groups.setdefault(module, set()).add(id_to_label[node_id])
     return list(groups.values())
 
 
 class BackendInterface:
     @staticmethod
     def infomap_communities(
-        G, *, weight="weight", seed=None, num_trials=1, **infomap_kwargs
+        G,
+        *,
+        weight="weight",
+        seed=None,
+        num_trials=1,
+        teleportation_probability=0.15,
+        **infomap_kwargs,
     ):
-        im, mapping = _run_infomap(
-            G, weight, seed, num_trials, infomap_kwargs, two_level=True
+        result, id_to_label = _run(
+            G,
+            weight,
+            seed,
+            num_trials,
+            teleportation_probability,
+            infomap_kwargs,
+            two_level=True,
         )
-        return _grouped(im.get_modules(), mapping)
+        return _grouped(result.modules(), id_to_label)
 
     @staticmethod
     def infomap_partitions(
-        G, *, weight="weight", seed=None, num_trials=1, **infomap_kwargs
+        G,
+        *,
+        weight="weight",
+        seed=None,
+        num_trials=1,
+        teleportation_probability=0.15,
+        **infomap_kwargs,
     ):
-        im, mapping = _run_infomap(
-            G, weight, seed, num_trials, infomap_kwargs, two_level=False
+        result, id_to_label = _run(
+            G,
+            weight,
+            seed,
+            num_trials,
+            teleportation_probability,
+            infomap_kwargs,
+            two_level=False,
         )
-        # get_multilevel_modules() maps each node to its tuple of module ids, top
-        # level first. Emit one flat partition per level, coarsest first.
-        multilevel = im.get_multilevel_modules()
+        # multilevel_modules() maps each node to its tuple of module ids, top
+        # level first. Yield one flat partition per level, coarsest first -- a
+        # generator, like the native infomap_partitions; a node that bottoms out
+        # above the deepest level keeps its own leaf module, which slicing its
+        # shorter path preserves.
+        multilevel = result.multilevel_modules()
         depth = max((len(path) for path in multilevel.values()), default=0)
-        return [
-            _grouped({node: path[:level] for node, path in multilevel.items()}, mapping)
-            for level in range(1, depth + 1)
-        ]
+        for level in range(1, depth + 1):
+            yield _grouped(
+                {node: path[:level] for node, path in multilevel.items()}, id_to_label
+            )
 
     @staticmethod
     def map_equation(
-        G, communities, weight="weight", teleportation_prob=0.15, **infomap_kwargs
+        G,
+        communities,
+        *,
+        weight="weight",
+        teleportation_probability=0.15,
+        **infomap_kwargs,
     ):
+        import networkx as nx
+
+        communities = [set(c) for c in communities]
+        # Same guard, same error type as the native map_equation: a codelength
+        # of something that is not a partition of G is meaningless.
+        if not nx.community.is_partition(G, communities):
+            raise nx.NetworkXError(
+                "`communities` is not a partition of the nodes of `G`"
+            )
         options = dict(infomap_kwargs)
         options.setdefault("two_level", True)
-        options.setdefault("teleportation_probability", teleportation_prob)
-        im, mapping = _build_infomap(G, weight, options)
-        label_to_id = {label: node_id for node_id, label in mapping.items()}
+        options.setdefault("teleportation_probability", teleportation_probability)
+        # no_infomap evaluates the given partition's codelength without
+        # optimizing; with two_level it is the two-level map equation.
+        options.setdefault("no_infomap", True)
+        net, options = _network(G, weight, options)
+        label_to_id = {
+            label: node_id for node_id, label in net.node_id_to_label.items()
+        }
         partition = {
             label_to_id[label]: module
             for module, community in enumerate(communities)
             for label in community
         }
-        # no_infomap evaluates the given partition's codelength without
-        # optimizing; with two_level it is the two-level map equation.
-        im.run(initial_partition=partition, no_infomap=True)
-        return im.codelength
+        result = net.run(initial_partition=partition, **options)
+        return result.codelength
 
     # Infomap consumes NetworkX graphs directly (it has no native graph type),
     # so conversion in both directions is the identity.
@@ -146,6 +203,13 @@ class BackendInterface:
     @staticmethod
     def convert_to_nx(obj, **kwargs):
         return obj
+
+
+_EXTRA_OPTIONS = (
+    "Options forwarded to the Infomap run, e.g. flow_model, markov_time, "
+    "regularized, variable_markov_time. ``inspect.getdoc(infomap.Options)`` is "
+    "the full reference."
+)
 
 
 def get_info():
@@ -163,10 +227,7 @@ def get_info():
                     "passed as backend-only keyword arguments."
                 ),
                 "additional_parameters": {
-                    "**infomap_kwargs : Any": (
-                        "Options forwarded to infomap.Infomap, e.g. two_level, "
-                        "flow_model, markov_time, regularized, variable_markov_time."
-                    ),
+                    "**infomap_kwargs : Any": _EXTRA_OPTIONS,
                 },
             },
             "infomap_partitions": {
@@ -177,10 +238,7 @@ def get_info():
                     "be passed as backend-only keyword arguments."
                 ),
                 "additional_parameters": {
-                    "**infomap_kwargs : Any": (
-                        "Options forwarded to infomap.Infomap, e.g. flow_model, "
-                        "markov_time, regularized, variable_markov_time."
-                    ),
+                    "**infomap_kwargs : Any": _EXTRA_OPTIONS,
                 },
             },
             "map_equation": {
@@ -190,10 +248,7 @@ def get_info():
                     "evaluated by the Infomap engine without optimizing."
                 ),
                 "additional_parameters": {
-                    "**infomap_kwargs : Any": (
-                        "Options forwarded to infomap.Infomap, e.g. flow_model, "
-                        "markov_time, regularized, variable_markov_time."
-                    ),
+                    "**infomap_kwargs : Any": _EXTRA_OPTIONS,
                 },
             },
         },

@@ -1,0 +1,12 @@
+# Meta categories that deliberately cut across the optimal partition of
+# states.net ({1,2,3},{4,5,6}), so the meta term is non-zero throughout the
+# search. states.meta assigns 1,1,1,2,2,2, which coincides with that partition
+# exactly and drives metaCodelength to 0 -- making a MetaMapEquation test
+# indistinguishable from the plain memory case.
+# stateId metaData
+1 1
+2 2
+3 1
+4 2
+5 1
+6 2

@@ -48,6 +48,9 @@ ALGORITHM_OPTIONS <- list(
   list(type = "flag", name = "use_node_weights_as_flow", flag = "--use-node-weights-as-flow", default = FALSE),
   list(type = "flag", name = "to_nodes", flag = "--to-nodes", default = FALSE),
   list(type = "value", name = "teleportation_probability", flag = "--teleportation-probability", default = 0.15, include = .skip_when_not_equal(0.15)),
+  list(type = "value", name = "max_flow_iterations", flag = "--max-flow-iterations", default = 400L, include = .skip_when_not_equal(400L)),
+  list(type = "value", name = "min_flow_iterations", flag = "--min-flow-iterations", default = 50L, include = .skip_when_not_equal(50L)),
+  list(type = "value", name = "flow_tolerance", flag = "--flow-tolerance", default = 1e-15, include = .skip_when_not_equal(1e-15)),
   list(type = "flag", name = "regularized", flag = "--regularized", default = FALSE),
   list(type = "value", name = "regularization_strength", flag = "--regularization-strength", default = 1.0, include = .skip_when_not_equal(1.0)),
   list(type = "flag", name = "entropy_corrected", flag = "--entropy-corrected", default = FALSE),
@@ -81,8 +84,8 @@ ACCURACY_OPTIONS <- list(
   list(type = "value", name = "num_threads", flag = "--num-threads", default = NULL, include = .skip_when_null),
   list(type = "value", name = "threads", flag = "--threads", default = NULL, include = .skip_when_null),
   list(type = "flag", name = "prefer_modular_solution", flag = "--prefer-modular-solution", default = FALSE),
-  list(type = "value", name = "num_random_moves", flag = "--num-random-moves", default = NULL, include = .skip_when_null),
-  list(type = "value", name = "max_degree_for_random_moves", flag = "--max-degree-for-random-moves", default = NULL, include = .skip_when_null)
+  list(type = "value", name = "num_random_moves", flag = "--num-random-moves", default = 5L, include = .skip_when_not_equal(5L)),
+  list(type = "value", name = "max_degree_for_random_moves", flag = "--max-degree-for-random-moves", default = 2L, include = .skip_when_not_equal(2L))
 )
 
 OPTION_FIELD_NAMES <- c(
@@ -96,15 +99,15 @@ OPTION_FIELD_NAMES <- c(
   "trial_offset", "trial_results", "no_final_output", "verbosity_level",
   "silent", "two_level", "flow_model", "directed",
   "recorded_teleportation", "use_node_weights_as_flow", "to_nodes", "teleportation_probability",
-  "regularized", "regularization_strength", "entropy_corrected", "entropy_correction_strength",
-  "markov_time", "variable_markov_time", "variable_markov_damping", "variable_markov_min_scale",
-  "preferred_number_of_modules", "preferred_number_of_levels", "preferred_number_of_levels_strength", "multilayer_relax_rate",
-  "multilayer_relax_limit", "multilayer_relax_limit_up", "multilayer_relax_limit_down", "multilayer_relax_by_jsd",
-  "multilayer_relax_to_self", "seed", "num_trials", "core_loop_limit",
-  "core_level_limit", "tune_iteration_limit", "core_loop_codelength_threshold", "tune_iteration_relative_threshold",
-  "fast_hierarchical_solution", "inner_parallelization", "parallel_trials", "converge",
-  "num_threads", "threads", "prefer_modular_solution", "num_random_moves",
-  "max_degree_for_random_moves"
+  "max_flow_iterations", "min_flow_iterations", "flow_tolerance", "regularized",
+  "regularization_strength", "entropy_corrected", "entropy_correction_strength", "markov_time",
+  "variable_markov_time", "variable_markov_damping", "variable_markov_min_scale", "preferred_number_of_modules",
+  "preferred_number_of_levels", "preferred_number_of_levels_strength", "multilayer_relax_rate", "multilayer_relax_limit",
+  "multilayer_relax_limit_up", "multilayer_relax_limit_down", "multilayer_relax_by_jsd", "multilayer_relax_to_self",
+  "seed", "num_trials", "core_loop_limit", "core_level_limit",
+  "tune_iteration_limit", "core_loop_codelength_threshold", "tune_iteration_relative_threshold", "fast_hierarchical_solution",
+  "inner_parallelization", "parallel_trials", "converge", "num_threads",
+  "threads", "prefer_modular_solution", "num_random_moves", "max_degree_for_random_moves"
 )
 
 OPTION_DEFAULTS <- list(
@@ -148,6 +151,9 @@ OPTION_DEFAULTS <- list(
   use_node_weights_as_flow = FALSE,
   to_nodes = FALSE,
   teleportation_probability = 0.15,
+  max_flow_iterations = 400L,
+  min_flow_iterations = 50L,
+  flow_tolerance = 1e-15,
   regularized = FALSE,
   regularization_strength = 1.0,
   entropy_corrected = FALSE,
@@ -179,8 +185,8 @@ OPTION_DEFAULTS <- list(
   num_threads = NULL,
   threads = NULL,
   prefer_modular_solution = FALSE,
-  num_random_moves = NULL,
-  max_degree_for_random_moves = NULL
+  num_random_moves = 5L,
+  max_degree_for_random_moves = 2L
 )
 
 #' Build a reusable Infomap options list
@@ -246,6 +252,9 @@ OPTION_DEFAULTS <- list(
 #'   \item{`use_node_weights_as_flow`}{Use node weights from the API or Pajek node records as normalized node flow.}
 #'   \item{`to_nodes`}{Teleport to nodes instead of links. Uses uniform node weights unless node weights are provided.}
 #'   \item{`teleportation_probability`}{Set the probability of teleporting to a random node or link when calculating flow.}
+#'   \item{`max_flow_iterations`}{Limit the power iteration used to calculate flow (directed and regularized flow models) to this many iterations.}
+#'   \item{`min_flow_iterations`}{Require at least this many power iterations before the flow calculation can converge, even if --flow-tolerance is already met.}
+#'   \item{`flow_tolerance`}{Convergence tolerance for the power iteration used to calculate flow. Iteration stops once the per-iteration change in flow drops to or below this value, after --min-flow-iterations have run.}
 #'   \item{`regularized`}{Add a fully connected Bayesian prior network to reduce overfitting to missing links. Activates --recorded-teleportation.}
 #'   \item{`regularization_strength`}{Scale the relative strength of the Bayesian prior network used by --regularized.}
 #'   \item{`entropy_corrected`}{Correct for negative entropy bias in small samples, especially solutions with many modules.}
@@ -316,28 +325,119 @@ infomap_options <- function(...) {
     }
     include <- if (is.null(spec$include)) function(v) !is.null(v) && !identical(v, spec$default) else spec$include
     if (isTRUE(include(value))) {
-      parts <- c(parts, paste(spec$flag, format_value(value)))
+      parts <- c(parts, paste(spec$flag, format_value(value, spec$name)))
     }
   }
   parts
 }
 
-format_value <- function(value) {
-  if (is.character(value)) return(value)
+format_value <- function(value, name = NULL) {
+  label <- if (is.null(name)) "value" else name
+  # Shape first, so the checks below cannot land on a value they cannot
+  # answer for. A length > 1 value reached `if (cond)` and raised R's
+  # "the condition has length > 1"; an NA passed every test silently --
+  # grepl() returns FALSE for NA_character_, not NA -- and rendered the
+  # literal string "NA" into the argument string, which the engine then
+  # parsed as a node name or a number. Both are caller mistakes worth
+  # naming. NULL never arrives here: .append_specs only renders a value
+  # its include() predicate accepted, and that requires !is.null(value).
+  if (length(value) != 1L) {
+    stop(
+      sprintf(
+        "%s must be a single value, got length %d.",
+        label,
+        length(value)
+      ),
+      call. = FALSE
+    )
+  }
+  # is.na() is TRUE for NaN too, and the two are not the same mistake. NA is
+  # R's missing marker, with no counterpart in the Python or JS bindings, and
+  # for a string option it renders the token "NA" that the engine accepts as a
+  # perfectly good name -- a silent wrong run, which is this renderer's business.
+  # NaN is a number that Python also hands straight to the engine, which rejects
+  # it by name ("Cannot parse 'NaN' as argument to option ..."), so rejecting it
+  # here would make R stricter than the other bindings for no reason a caller
+  # could predict. Reject the first, pass the second on.
+  # is.na() is TRUE for NaN too, so the !is.nan() exception is what separates
+  # the two. It needs no type guard: is.nan() answers FALSE for a character,
+  # factor, logical or Date NA with no warning and no coercion (checked with
+  # warn = 2), and TRUE for a complex NaN -- which is a NaN and belongs on the
+  # NaN side of this rule, so gating on is.numeric() would silently start
+  # rejecting it.
+  if (is.na(value) && !is.nan(value)) {
+    stop(sprintf("%s must not be NA.", label), call. = FALSE)
+  }
   if (is.logical(value)) return(if (isTRUE(value)) "true" else "false")
   if (is.numeric(value)) {
-    if (is.integer(value) || (is.finite(value) && value == as.integer(value))) {
-      return(format(as.integer(value), scientific = FALSE))
+    # trunc(), not as.integer(): as.integer() returns NA above INT_MAX, so
+    # `value == as.integer(value)` was NA and `if (NA)` raised "missing value
+    # where TRUE/FALSE needed" for legal unsigned values such as
+    # seed = 2^31, which the CLI accepts.
+    if (is.integer(value) || (is.finite(value) && value == trunc(value))) {
+      return(sprintf("%.0f", value))
     }
-    return(format(value, scientific = FALSE, trim = TRUE))
+    # Shortest representation that reads back as the same double. format()
+    # honours getOption("digits"), which is 7 by default, so markov_time =
+    # 1/7 reached the engine as 0.1428571 -- a different parameter than the
+    # one requested, and a different codelength than Python reports.
+    for (digits in 15:17) {
+      text <- sprintf(paste0("%.", digits, "g"), value)
+      if (!is.na(suppressWarnings(as.numeric(text))) &&
+          as.numeric(text) == value) {
+        return(text)
+      }
+    }
+    return(sprintf("%.17g", value))
   }
-  as.character(value)
+  # Everything else, checked on the way out rather than by input type.
+  # Rendered options travel to the engine as one whitespace-separated argument
+  # string with no quoting support, so a value containing whitespace is split
+  # into separate tokens: an out_name of "my run" became "--out-name my run",
+  # the name truncated to "my" and "run" silently taken as the output
+  # directory. Quoting cannot fix it -- the C++ side splits on whitespace and
+  # does not strip quotes, so '--out-name "my run"' yields the literal name
+  # '"my'. This is the single exit that can produce whitespace: a character
+  # value, but also a factor or a POSIXct, which arrive with their own
+  # as.character() rendering ("2026-07-26 08:30:00" splits exactly like a path
+  # with a space). Checking the rendered text covers those without having to
+  # enumerate them. Same contract as Python's _validate_option_arg_strings.
+  text <- as.character(value)
+  if (grepl("[[:space:]]", text)) {
+    stop(
+      sprintf(
+        paste0("%s = \"%s\" contains whitespace, which the engine argument ",
+               "string cannot carry (arguments are split on whitespace, with ",
+               "no quoting). Use a whitespace-free value."),
+        label,
+        text
+      ),
+      call. = FALSE
+    )
+  }
+  text
 }
 
 #' Render an Infomap options list to a CLI argument string
 #'
 #' This is exported for advanced use; most callers should pass options
 #' directly to [Infomap()] or `Infomap$run()`.
+#'
+#' @section Values containing whitespace:
+#' Options reach the engine as one whitespace-separated argument string,
+#' which has no quoting and no escaping, so a value containing a space
+#' cannot survive the trip -- quotes are not stripped, and
+#' `--out-name "my run"` would set the name to the literal `"my`. Such a
+#' value is refused, naming the option, rather than truncated silently.
+#' The check runs when options are rendered, not when they are built, so
+#' `infomap_options(out_name = "my run")` returns a list and the error
+#' comes from `construct_args()` -- or from `Infomap()` / `$run()`, which
+#' render internally. The Python binding differs here: it validates when
+#' its `Options` object is constructed. This
+#' applies to every path and free-string option, and is a limitation of the
+#' engine boundary shared with the Python and JavaScript bindings and the
+#' command line. Rename the file, or use a directory whose path has no
+#' spaces. A raw `args` string is passed through unvalidated.
 #'
 #' @param args Optional raw argument string to prepend.
 #' @param opts Options list from [infomap_options()] (or `NULL`).

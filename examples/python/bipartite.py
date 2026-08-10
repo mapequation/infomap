@@ -1,6 +1,6 @@
 from infomap import Infomap
 
-im = Infomap(two_level=True, silent=True)
+im = Infomap(two_level=True)
 
 # Set the start id for bipartite nodes
 im.bipartite_start_id = 5

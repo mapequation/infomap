@@ -4,7 +4,6 @@ import json
 
 import pytest
 
-
 pytestmark = pytest.mark.fast
 
 
@@ -75,6 +74,7 @@ def test_state_output_writers_include_state_columns(
     assert parsed["higherOrder"] is True
 
 
+@pytest.mark.filterwarnings("ignore::PendingDeprecationWarning")
 def test_json_metadata_values_remain_strings(
     make_infomap, output_dir, validate_json_schema
 ):
@@ -141,3 +141,49 @@ def test_tree_cluster_data_roundtrip(
     continued.read_file(network_path)
     continued.run()
     assert continued.codelength <= expected_codelength + 1e-9
+
+
+def test_writers_accept_pathlike_filenames(
+    make_infomap, load_graph_fixture, output_dir
+):
+    im = _run_small_network(make_infomap, load_graph_fixture)
+
+    tree_path = output_dir / "pathlike.tree"
+    clu_path = output_dir / "pathlike.clu"
+
+    im.write_tree(tree_path)
+    im.write_clu(clu_path)
+    im.write(output_dir / "pathlike2.tree")
+
+    assert tree_path.is_file()
+    assert clu_path.is_file()
+    assert (output_dir / "pathlike2.tree").is_file()
+
+
+def test_write_without_extension_raises_value_error(
+    make_infomap, load_graph_fixture, output_dir
+):
+    im = _run_small_network(make_infomap, load_graph_fixture)
+
+    with pytest.raises(ValueError, match="no extension"):
+        im.write(str(output_dir / "noext"))
+
+
+def test_write_with_unknown_extension_raises_not_implemented(
+    make_infomap, load_graph_fixture, output_dir
+):
+    im = _run_small_network(make_infomap, load_graph_fixture)
+
+    with pytest.raises(NotImplementedError, match="bogus"):
+        im.write(str(output_dir / "file.bogus"))
+
+
+def test_infomap_set_meta_data_accepts_bulk_mapping(make_infomap):
+    links = [(0, 1), (1, 2), (2, 0), (3, 4), (4, 5), (5, 3), (2, 3)]
+    im = make_infomap(num_trials=5, seed=1)
+    im.add_links(links)
+    # Mirrors Network.set_meta_data: the {node: category} bulk form sets
+    # per-node metadata in one call (and returns None, not self).
+    assert im.set_meta_data({0: 0, 1: 1, 2: 0, 3: 0, 4: 1, 5: 1}) is None
+    result = im.run(meta_data_rate=1.0)
+    assert result.meta_codelength > 0

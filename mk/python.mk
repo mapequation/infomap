@@ -47,11 +47,14 @@ PYTHON_BUILD_ENV = \
 	test-python-unit \
 	test-python-doctest \
 	test-python-typecheck \
+	test-python-typecheck-core \
 	test-python-examples \
 	test-python-notebooks-smoke \
 	test-python-notebooks-full \
 	build-docs \
 	_build-docs-site \
+	docs-serve \
+	check-docs-links \
 	clean-python \
 	format-python \
 	release-python-dist \
@@ -99,17 +102,30 @@ test-python-doctest:
 		"$(CURDIR)/interfaces/python/src/infomap/result.py" \
 		"$(CURDIR)/interfaces/python/src/infomap/network.py" \
 		"$(CURDIR)/interfaces/python/src/infomap/_run.py" \
-		"$(CURDIR)/interfaces/python/src/infomap/io/writers.py"
+		"$(CURDIR)/interfaces/python/src/infomap/io/writers.py" \
+		"$(CURDIR)/interfaces/python/src/infomap/datasets/__init__.py"
 
 test-python-examples:
 	@cd examples/python && for f in *.py; do $(PYTHON) "$$f" > /dev/null || exit 1; done
 
 # Static type check of the hand-written package. Config + scope (include the
 # package, exclude the SWIG-generated _swig.py) live in [tool.pyright] in
-# pyproject.toml. Not part of the default `test-python` aggregate -- run it
-# explicitly or in a dedicated CI job.
+# pyproject.toml. Not part of the default `test-python` aggregate -- gated in
+# CI's full-suite Python leg, where the [test]+[examples] extras pin the
+# optional-dep set and pyright itself is version-pinned, so the diagnostics
+# are reproducible there. Optional-dep upgrades that surface new diagnostics
+# show up in the corresponding dependabot PR, which is where they belong.
 test-python-typecheck:
 	@$(PYRIGHT)
+
+# Type check only the core API/algorithm surface, excluding the optional
+# third-party integration adapters (io/, tl/) whose pyright diagnostics vary
+# with which optional deps + stub packages are installed. Used by the pre-push
+# hook (and CI quick mode) so the gate is deterministic across dev machines;
+# the full-scope check above covers everything in CI's full-suite leg. Scope
+# lives in interfaces/python/pyrightconfig-core.json.
+test-python-typecheck-core:
+	@$(PYRIGHT) -p interfaces/python/pyrightconfig-core.json
 
 test-python-notebooks-smoke:
 	@cd $(NOTEBOOK_DIR) && $(PYTHON) ../../scripts/notebook_manifest.py --manifest notebooks.toml --suite smoke --print0 | \
@@ -122,7 +138,7 @@ test-python-notebooks-full:
 define BUILD_DOCS_SITE
 set -e; \
 mkdir -p "$(1)"; \
-$(SPHINX_BUILD) -b html "$(SPHINX_SOURCE_DIR)" "$(1)"; \
+$(SPHINX_BUILD) $(SPHINXOPTS) -b html "$(SPHINX_SOURCE_DIR)" "$(1)"; \
 searchindex="$(1)/searchindex.js"; \
 if [ -f "$$searchindex" ] && [ -n "$$(tail -c 1 "$$searchindex" 2>/dev/null)" ]; then \
 	printf '\n' >> "$$searchindex"; \
@@ -138,6 +154,23 @@ build-docs: build-native dev-python-install
 	@$(call BUILD_DOCS_SITE,$(DOCS_BUILD_DIR))
 	mkdir -p docs; \
 	rsync $(DOCS_SYNC_ARGS) "$(DOCS_BUILD_DIR)/" docs/
+
+# Live-reloading docs preview for local editing: rebuilds and refreshes the
+# browser on save. Builds leniently (SPHINXOPTS, i.e. build-docs's -W, is not
+# passed, so an in-progress warning does not abort the loop); myst-nb's
+# execution cache means unchanged notebooks are not re-run. Shares build-docs's
+# prereqs so the first build works, then autobuild handles reloads. Override
+# host/port etc. via DOCS_SERVE_ARGS (e.g. --port 8001).
+DOCS_SERVE_ARGS ?=
+docs-serve: build-native dev-python-install
+	@$(SPHINX_AUTOBUILD) -b html "$(SPHINX_SOURCE_DIR)" "$(DOCS_BUILD_DIR)/_serve" \
+		--open-browser $(DOCS_SERVE_ARGS)
+
+# Verify external links resolve. Hits the network, so run it on demand or on a
+# schedule rather than as a blocking per-PR gate; DOI hosts that 403 the bot are
+# skipped via linkcheck_ignore in conf.py.
+check-docs-links: build-native dev-python-install
+	@$(SPHINX_BUILD) -b linkcheck "$(SPHINX_SOURCE_DIR)" "$(DOCS_BUILD_DIR)/_linkcheck"
 
 clean-python:
 	$(RM) -r dist/python *.egg-info interfaces/python/src/infomap/_infomap*.so interfaces/python/src/infomap/*.pyd

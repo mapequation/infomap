@@ -1,6 +1,6 @@
 from infomap import Infomap
 
-im = Infomap(two_level=True, silent=True)
+im = Infomap(two_level=True)
 
 # Optionally add nodes with names
 im.add_node(0, "Node 0")
@@ -48,7 +48,7 @@ for node in result.nodes():
         node.name,
     )
 
-print("\n#path flow enter_flow exit_flow is_leaf")
+print("\n#path flow enter_flow exit_flow kind")
 for node in result.tree(states=True):
     print(
         node.path,

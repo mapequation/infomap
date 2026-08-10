@@ -1,0 +1,46 @@
+name: Python prerelease check
+
+# Weekly (and on-demand) test-build of the Python wheels against prerelease
+# CPython (3.15) so C-API or build breakage surfaces well before the final
+# release. Non-blocking: this workflow builds nothing that ships and never
+# gates PRs or merges. Schedules only run on the default branch.
+
+on:
+  schedule:
+    - cron: "0 6 * * 1" # Mondays 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  prerelease-wheels:
+    uses: ./.github/workflows/_python-package.yml
+    with:
+      run-tests: false
+      build-release-artifacts: false
+      prerelease-python-check: true
+
+  # Non-blocking workflow: surface a scheduled failure as a tracking issue so it
+  # is not lost in the Actions tab. Only fires for cron runs -- a manual
+  # dispatch failure is seen by whoever triggered it.
+  report-failure:
+    name: Report scheduled failure
+    needs: [prerelease-wheels]
+    if: failure() && github.event_name == 'schedule'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Open or update the tracking issue
+        uses: ./.github/actions/report-cron-failure
+        with:
+          workflow-name: ${{ github.workflow }}
+          run-url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          token: ${{ github.token }}

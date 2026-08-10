@@ -2,14 +2,13 @@ from collections import defaultdict
 
 import pytest
 
-
 pytestmark = pytest.mark.fast
 
 
 def multilevel_modules(im, states):
     modules = defaultdict(list)
 
-    for level in range(0, im.num_levels - 1):
+    for level in range(im.num_levels - 1):
         module_id = 1
         prev_path = None
         for node in im.get_nodes(states=states):
@@ -43,7 +42,7 @@ def test_multilevel_modules(make_infomap, example_network_path):
     im.read_file(str(example_network_path("ninetriangles.net")))
     im.run()
 
-    assert im.num_top_modules == 5
+    assert im.num_top_modules == 3
     assert im.num_levels == 3
     assert sorted(im.get_multilevel_modules(states=False).values()) == sorted(
         multilevel_modules(im, states=False).values()

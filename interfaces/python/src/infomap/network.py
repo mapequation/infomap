@@ -4,7 +4,7 @@
 (``_NetworkBuilder`` + ``_MultilayerBuilder``) into one public class. It owns a
 :class:`infomap._core.Core` handle and exposes the core building verbs:
 single-layer nodes/links, state nodes, names, the three multilayer link
-families, meta data, the bipartite start id, file reading, and node/link counts.
+families, metadata, the bipartite start id, file reading, and node/link counts.
 
 :class:`infomap.Infomap` composes a :class:`Network` over its own
 options-configured ``Core`` (shared instance) and delegates its building verbs
@@ -25,22 +25,32 @@ an :class:`Infomap`.
 
 from __future__ import annotations
 
-from typing import Any
+import os
+import warnings
+from typing import TYPE_CHECKING, Any
 
-from ._core import Core, apply_initial_partition
+from ._core import Core, _with_inferred_flow_model, _with_owner, apply_initial_partition
+from ._logging import engine_log_routing as _engine_log_routing
+from ._logging import is_routed as _is_log_routed
 from ._network_input import add_bulk_links as _add_bulk_links
 from ._network_input import first_order_unpacker as _first_order_unpacker
 from ._network_input import flat_multilayer_unpacker as _flat_multilayer_unpacker
 from ._network_input import paired_multilayer_unpacker as _paired_multilayer_unpacker
+from ._run import _UNSET
+from .errors import NetworkParseError, _translate_engine_errors
+from .io.writers import _NetworkWritersMixin
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
+
+    import igraph  # pyright: ignore[reportMissingImports]  # optional dep, no stubs
+    import networkx
+
+    from ._options import Options
+    from .result import Result
 
 
-class Network:
-    # ``{internal_id: label}`` mapping set by the library constructors
-    # (``from_networkx``/``from_igraph``/``from_scipy_sparse``/``from_edge_index``).
-    # Bare annotation: declares the instance attribute for type-checkers without
-    # creating it at runtime (no behaviour change).
-    node_id_to_label: dict[int, Any]
-
+class Network(_NetworkWritersMixin):
     """A first-class Infomap network input builder.
 
     Build a network with the fluent ``add_*``/``set_*`` verbs (each returns
@@ -68,7 +78,7 @@ class Network:
     ...     .add_link(4, 6)
     ...     .add_link(5, 6)
     ... )
-    >>> result = net.run(options={"silent": True})
+    >>> result = net.run()
     >>> result.num_top_modules
     2
     >>> for node_id, module_id in sorted(result.modules().items()):
@@ -83,35 +93,55 @@ class Network:
     A :class:`Network` can also be handed to :func:`infomap.run`:
 
     >>> from infomap import run
-    >>> result = run(net, silent=True)
+    >>> result = run(net)
     >>> result.num_top_modules
     2
 
     Parameters
     ----------
-    core : infomap._core.Core, optional
-        The engine boundary to build onto. If ``None``, a default silent,
+    core : optional
+        Internal engine handle to build onto. If ``None``, a default silent,
         no-file-output ``Core`` is created and owned by this ``Network``. When
         composed by :class:`infomap.Infomap`, the shared, options-configured
         ``Core`` is passed in.
     """
 
-    def __init__(self, core=None):
+    #: ``{internal_id: label}`` mapping populated by the graph-library
+    #: constructors (``from_networkx``/``from_igraph``/``from_scipy_sparse_matrix``/
+    #: ``from_edge_index``). Empty on a manually built or file-loaded ``Network``,
+    #: mirroring :class:`~infomap.Infomap`, so the attribute is always present.
+    node_id_to_label: dict[int, Any]
+
+    def __init__(self, core: Core | None = None) -> None:
         if core is None:
             core = Core("--silent --no-file-output")
         self._core = core
+        # Always present so attribute access never raises; the graph-library
+        # constructors replace it with the id->label mapping they build.
+        self.node_id_to_label = {}
         # Run-generation token: incremented on every run(). A Result stamps the
         # generation it was created in; node-level access on a stale Result
         # (engine re-ran since) raises instead of reading freed memory. This is
         # the minimal engine contract Result needs, mirroring Infomap.
         self._generation = 0
+        # Warn at most once per Network that its engine is silent for its whole
+        # lifetime (routed logging / silent=False cannot re-enable it). A run
+        # loop -- e.g. a markov_time sweep over a bundled dataset under
+        # enable_log() -- would otherwise repeat the advisory on every call and
+        # train the user to ignore it, matching the Infomap path's guard.
+        self._warned_silent_advisory = False
+
+    def __repr__(self) -> str:
+        return f"Network(num_nodes={self.num_nodes}, num_links={self.num_links})"
 
     # ----------------------------------------
     # Constructors from graph libraries
     # ----------------------------------------
 
     @classmethod
-    def from_file(cls, path, *, accumulate=True):
+    def from_file(
+        cls, path: str | os.PathLike[str], *, accumulate: bool = True
+    ) -> Network:
         """Build a :class:`Network` by reading a network file.
 
         Parameters
@@ -122,27 +152,35 @@ class Network:
             Accumulate onto already added nodes and links. Default ``True``.
         """
         net = cls()
-        net.read_file(str(path), accumulate=accumulate)
+        net.read_file(path, accumulate=accumulate)
         return net
 
     @classmethod
     def from_networkx(
         cls,
-        g,
+        g: networkx.Graph,
         *,
-        weight="weight",
-        node_id="node_id",
-        layer_id="layer_id",
-        multilayer_inter_intra_format=True,
-        meta_attribute=None,
-    ):
+        weight: str | None = "weight",
+        node_id: str = "node_id",
+        layer_id: str = "layer_id",
+        multilayer_inter_intra_format: bool = True,
+        meta_attribute: str | None = None,
+    ) -> Network:
         """Build a :class:`Network` from a NetworkX graph.
 
         Loads ``g`` via the same adapter :meth:`Infomap.add_networkx_graph`
         uses. The ``{internal_id: label}`` mapping is stored on
         :attr:`node_id_to_label`. Pass ``meta_attribute`` to use a node
-        attribute as Infomap meta data (values are encoded to integers, so
+        attribute as Infomap metadata (values are encoded to integers, so
         string categories work).
+
+        The ``weight`` parameter -- the edge-data key to read, or ``None`` to
+        treat every edge as unit weight -- matches networkx's own ``weight``
+        argument. Each sibling constructor names its weight parameter after its
+        own source library, so the spelling differs by design:
+        :meth:`from_igraph` ``edge_weights`` / ``vertex_weights``,
+        :meth:`from_scipy_sparse_matrix` ``weighted``, :meth:`from_edge_index`
+        ``edge_weight``.
         """
         from .io.networkx import add_networkx_graph as _add_networkx_graph
 
@@ -161,22 +199,30 @@ class Network:
     @classmethod
     def from_igraph(
         cls,
-        g,
+        g: igraph.Graph,
         *,
-        edge_weights=None,
-        vertex_weights=None,
-        node_id="node_id",
-        layer_id="layer_id",
-        multilayer_inter_intra_format=True,
-        meta_attribute=None,
-    ):
+        edge_weights: Any = None,
+        vertex_weights: Any = None,
+        node_id: str = "node_id",
+        layer_id: str = "layer_id",
+        multilayer_inter_intra_format: bool = True,
+        meta_attribute: str | None = None,
+    ) -> Network:
         """Build a :class:`Network` from a python-igraph graph.
 
         Loads ``g`` via the same adapter :meth:`Infomap.add_igraph_graph` uses.
         The ``{internal_id: label}`` mapping is stored on
         :attr:`node_id_to_label`. Pass ``meta_attribute`` to use a vertex
-        attribute as Infomap meta data (values are encoded to integers, so
+        attribute as Infomap metadata (values are encoded to integers, so
         string categories work).
+
+        The ``edge_weights`` / ``vertex_weights`` parameters match
+        python-igraph's own ``Graph.community_infomap(edge_weights,
+        vertex_weights)`` names. Each sibling constructor names its weight
+        parameter after its own source library, so the spelling differs by
+        design: :meth:`from_networkx` ``weight``,
+        :meth:`from_scipy_sparse_matrix` ``weighted``, :meth:`from_edge_index`
+        ``edge_weight``.
         """
         from .io.igraph import add_igraph_graph as _add_igraph_graph
 
@@ -196,18 +242,31 @@ class Network:
     @classmethod
     def from_scipy_sparse_matrix(
         cls,
-        A,
+        A: Any,
         *,
-        directed=False,
-        weighted=True,
-        node_ids=None,
-    ):
+        directed: bool = False,
+        weighted: bool = True,
+        node_ids: Any = None,
+    ) -> Network:
         """Build a :class:`Network` from a SciPy sparse adjacency matrix.
 
         Loads ``A`` via the same adapter
         :meth:`Infomap.add_scipy_sparse_matrix` uses. The
         ``{internal_id: label}`` mapping is stored on
         :attr:`node_id_to_label`.
+
+        ``directed`` defaults to ``False``: a symmetric adjacency is the common
+        undirected case, so ``A[i, j]`` and ``A[j, i]`` are folded together.
+        This per-format default differs across the constructors --
+        :meth:`from_networkx` and :meth:`from_igraph` infer directedness from
+        the graph, while :meth:`from_edge_index` defaults to ``directed=True``.
+
+        ``weighted`` -- use the matrix values as weights, else treat every
+        stored entry as weight 1 -- is a local name: ``scipy.sparse.csgraph``
+        has no such flag. Each sibling constructor names its weight parameter
+        after its own source library, so the spelling differs by design:
+        :meth:`from_networkx` ``weight``, :meth:`from_igraph` ``edge_weights`` /
+        ``vertex_weights``, :meth:`from_edge_index` ``edge_weight``.
         """
         from .io.scipy import add_scipy_sparse_matrix as _add_scipy_sparse_matrix
 
@@ -224,18 +283,32 @@ class Network:
     @classmethod
     def from_edge_index(
         cls,
-        edge_index,
+        edge_index: Any,
         *,
-        edge_weight=None,
-        num_nodes=None,
-        directed=True,
-        node_ids=None,
-    ):
+        edge_weight: Any = None,
+        num_nodes: int | None = None,
+        directed: bool = True,
+        node_ids: Any = None,
+    ) -> Network:
         """Build a :class:`Network` from a PyG-style edge index.
 
         Loads ``edge_index`` via the same adapter
         :meth:`Infomap.add_edge_index` uses. The ``{internal_id: label}``
         mapping is stored on :attr:`node_id_to_label`.
+
+        ``directed`` defaults to ``True``: a PyG ``edge_index`` is directed by
+        convention -- each column is a ``source -> target`` edge, and undirected
+        graphs store both directions explicitly. This per-format default differs
+        across the constructors -- :meth:`from_networkx` and :meth:`from_igraph`
+        infer directedness from the graph, while
+        :meth:`from_scipy_sparse_matrix` defaults to ``directed=False``.
+
+        The ``edge_weight`` parameter -- a 1-D array with one value per edge, or
+        ``None`` for unit weights -- matches PyTorch Geometric's ``edge_weight``
+        name. Each sibling constructor names its weight parameter after its own
+        source library, so the spelling differs by design: :meth:`from_networkx`
+        ``weight``, :meth:`from_igraph` ``edge_weights`` / ``vertex_weights``,
+        :meth:`from_scipy_sparse_matrix` ``weighted``.
         """
         from .io.edge_index import add_edge_index as _add_edge_index
 
@@ -254,13 +327,33 @@ class Network:
     # Run
     # ----------------------------------------
 
-    def run(self, *, options=None, args=None, initial_partition=None):
+    def run(
+        self,
+        *,
+        options: Options | Mapping[str, Any] | None = None,
+        seed: int = _UNSET,
+        num_trials: int = _UNSET,
+        two_level: bool = _UNSET,
+        directed: bool | None = _UNSET,
+        markov_time: float = _UNSET,
+        args: str | None = None,
+        initial_partition: Mapping[Any, Any] | None = None,
+        **overrides: Any,
+    ) -> Result:
         """Run Infomap on this network and return a :class:`Result`.
+
+        This is a thin convenience wrapper: ``net.run(**kw)`` is equivalent to
+        ``infomap.run(net, **kw)``, the canonical entry point. It accepts the
+        same keywords.
 
         Parameters
         ----------
         options : Options, mapping, or None, optional
             Configuration rendered to Infomap CLI flags for this run.
+        seed, num_trials, two_level, directed, markov_time : optional
+            The five common-tier engine options, accepted directly here to match
+            :func:`infomap.run` and :meth:`infomap.Infomap.run`. A supplied value
+            overrides the ``options`` carrier.
         args : str, optional
             Raw Infomap arguments prepended before the rendered options.
         initial_partition : mapping, optional
@@ -268,13 +361,26 @@ class Network:
             id (``{node_or_state_id: module_id}``) or, for a multilayer network,
             ``{(layer_id, node_id): module_id}``. The internal ids are the ones
             you built the network with (the values of :attr:`node_id_to_label`).
+        **overrides
+            Any other Infomap engine option, as a keyword argument, forwarded
+            to :class:`Options` and matching :func:`infomap.run`. Convenient for
+            a one-off; for a reusable or validated configuration prefer
+            ``options=Options(...)``, the canonical carrier and full reference.
 
         Returns
         -------
         Result
             An immutable snapshot of the run, bound to this ``Network``.
+
+        Notes
+        -----
+        A ``Network`` engine is silent for its whole lifetime; ``silent=False``
+        cannot re-enable the engine log here and warns instead. For the log,
+        run through the stateful :class:`~infomap.Infomap` (constructed with
+        ``silent=False``) or pass the input directly to :func:`infomap.run`.
         """
         from ._options import Options, _construct_args
+        from ._run import _warn_inert_output_options
         from .result import build_result
 
         if options is None:
@@ -284,13 +390,81 @@ class Network:
         else:
             resolved = Options(**dict(options))
 
+        # Advanced engine options passed as bare keywords forward to Options
+        # (the canonical carrier), matching infomap.run(); this convenience
+        # front door does not deprecate them.
+        # The five common-tier keywords mirror infomap.run()/Infomap.run(): a
+        # supplied value overrides the options carrier; an unset one defers to
+        # it. Advanced-tier overrides win over the carrier too. replace()
+        # re-validates through Options.__post_init__ (unknown key -> TypeError
+        # with a suggestion, out-of-range -> ValueError).
+        common = {
+            name: value
+            for name, value in (
+                ("seed", seed),
+                ("num_trials", num_trials),
+                ("two_level", two_level),
+                ("directed", directed),
+                ("markov_time", markov_time),
+            )
+            if value is not _UNSET
+        }
+        if common or overrides:
+            resolved = resolved.replace(**{**common, **overrides})
+
+        # Warn once per Network (see _warned_silent_advisory): the engine is
+        # silent for its whole lifetime, so both routed logging and an explicit
+        # silent=False are inert here. Repeating it every run would nag a sweep.
+        if not self._warned_silent_advisory:
+            if _is_log_routed():
+                # enable_log()/handlers on the "infomap" logger route the engine
+                # log, but a Network's Core is constructed --silent for its whole
+                # lifetime and that cannot be undone per run (the engine composes
+                # constructor + run args additively), so a routed run of a
+                # Network emits no records. Point the caller at a surface that
+                # can emit, mirroring the stale-silent advisory on the Infomap
+                # path.
+                self._warned_silent_advisory = True
+                warnings.warn(
+                    "the 'infomap' logger has handlers, but a Network engine is "
+                    "silent for its whole lifetime, so this run emits no log "
+                    "records. For the engine log, run through Infomap(...) or "
+                    "pass the input directly to infomap.run() (an edge list, "
+                    "graph, or file path) instead.",
+                    UserWarning,
+                    stacklevel=2,
+                )
+            elif resolved.silent is False:
+                self._warned_silent_advisory = True
+                warnings.warn(
+                    "A Network engine is silent for its whole lifetime; "
+                    "silent=False has no effect here. For the engine log, run "
+                    "through Infomap(silent=False) or pass the input directly "
+                    "to infomap.run().",
+                    UserWarning,
+                    stacklevel=2,
+                )
+
+        # An input adapter may have resolved the flow model from the input
+        # itself; render it so it survives this run's argument string.
+        resolved = _with_inferred_flow_model(self._core, resolved)
+
+        # engine_emits stays False: a Network's engine is --silent for its
+        # whole lifetime (see the advisory above), so verbosity_level can never
+        # take effect here and is correctly flagged inert.
+        _warn_inert_output_options(resolved, args, engine_emits=False)
+
         rendered_args = _construct_args(args, **resolved.to_kwargs())
+        # classify=True mirrors Infomap.run(): input failures surfacing at
+        # run time (cluster_data, meta_data) become NetworkParseError.
         if initial_partition is None:
-            self._core.run(rendered_args)
+            with _engine_log_routing(), _translate_engine_errors(classify=True):
+                self._core.run(rendered_args)
         else:
             apply_initial_partition(self._core, initial_partition)
             try:
-                self._core.run(rendered_args)
+                with _engine_log_routing(), _translate_engine_errors(classify=True):
+                    self._core.run(rendered_args)
             finally:
                 # Applies to this run only, mirroring Infomap.run().
                 apply_initial_partition(self._core, {})
@@ -300,24 +474,37 @@ class Network:
     # Input
     # ----------------------------------------
 
-    def read_file(self, filename, accumulate=True):
+    def read_file(
+        self, filename: str | os.PathLike[str], accumulate: bool = True
+    ) -> Network:
         """Read network data from file.
 
         Parameters
         ----------
-        filename : str
+        filename : str or os.PathLike
         accumulate : bool, optional
             If the network data should be accumulated to already added
             nodes and links. Default ``True``.
+
+        Raises
+        ------
+        NetworkParseError
+            If the file cannot be opened or its content cannot be parsed.
         """
-        self._core.readInputData(filename, accumulate)
+        with _engine_log_routing(), _translate_engine_errors(NetworkParseError):
+            self._core.readInputData(os.fsdecode(filename), accumulate)
         return self
 
     # ----------------------------------------
     # Single-layer nodes
     # ----------------------------------------
 
-    def add_node(self, node_id, name=None, teleportation_weight=None):
+    def add_node(
+        self,
+        node_id: int,
+        name: str | None = None,
+        teleportation_weight: float | None = None,
+    ) -> Network:
         """Add a node.
 
         Parameters
@@ -340,7 +527,7 @@ class Network:
             self._core.addNode(node_id)
         return self
 
-    def add_nodes(self, nodes):
+    def add_nodes(self, nodes: Any) -> Network:
         """Add nodes.
 
         Parameters
@@ -349,13 +536,16 @@ class Network:
             Iterable of tuples on the form
             ``(node_id, [name], [teleportation_weight])``.
         """
-        try:
+        # Gate on the mapping protocol instead of catching AttributeError
+        # around the loop: an AttributeError raised mid-iteration inside the
+        # body would otherwise fall through and re-process earlier items.
+        if hasattr(nodes, "items"):
             for node, attr in nodes.items():
                 if isinstance(attr, str):
                     self.add_node(node, attr)
                 else:
                     self.add_node(node, *attr)
-        except AttributeError:
+        else:
             for node in nodes:
                 if isinstance(node, int):
                     self.add_node(node)
@@ -363,7 +553,9 @@ class Network:
                     self.add_node(*node)
         return self
 
-    def add_state_node(self, state_id, node_id):
+    def add_state_node(
+        self, state_id: int, node_id: int, name: str | None = None
+    ) -> Network:
         """Add a state node.
 
         Parameters
@@ -371,28 +563,36 @@ class Network:
         state_id : int
         node_id : int
             Id of the physical node the state node should be added to.
+        name : str, optional
         """
-        self._core.addStateNode(state_id, node_id)
+        if name:
+            self._core.addStateNode(state_id, node_id, name)
+        else:
+            self._core.addStateNode(state_id, node_id)
         return self
 
-    def add_state_nodes(self, state_nodes):
+    def add_state_nodes(self, state_nodes: Any) -> Network:
         """Add state nodes.
 
         Parameters
         ----------
         state_nodes : iterable of tuples or dict of int: int
-            Iterable of tuples of the form ``(state_id, node_id)``
-            or dict of the form ``{state_id: node_id}``.
+            Iterable of tuples of the form ``(state_id, node_id)`` or
+            ``(state_id, node_id, name)``, or dict of the form
+            ``{state_id: node_id}``.
         """
-        try:
+        # Gate on the mapping protocol instead of catching AttributeError
+        # around the loop: an AttributeError raised mid-iteration inside the
+        # body would otherwise fall through and re-process earlier items.
+        if hasattr(state_nodes, "items"):
             for node in state_nodes.items():
                 self.add_state_node(*node)
-        except AttributeError:
+        else:
             for node in state_nodes:
                 self.add_state_node(*node)
         return self
 
-    def set_name(self, node_id, name):
+    def set_name(self, node_id: int, name: str | None) -> Network:
         """Set the name of a node.
 
         Parameters
@@ -405,7 +605,7 @@ class Network:
         self._core.addName(node_id, name)
         return self
 
-    def set_names(self, names):
+    def set_names(self, names: Any) -> Network:
         """Set names to several nodes at once.
 
         Parameters
@@ -414,10 +614,13 @@ class Network:
             Iterable of tuples on the form ``(node_id, name)``
             or dict of the form ``{node_id: name}``.
         """
-        try:
+        # Gate on the mapping protocol instead of catching AttributeError
+        # around the loop: an AttributeError raised mid-iteration inside the
+        # body would otherwise fall through and re-process earlier items.
+        if hasattr(names, "items"):
             for name in names.items():
                 self.set_name(*name)
-        except AttributeError:
+        else:
             for name in names:
                 self.set_name(*name)
         return self
@@ -426,7 +629,7 @@ class Network:
     # Single-layer links
     # ----------------------------------------
 
-    def add_link(self, source_id, target_id, weight=1.0):
+    def add_link(self, source_id: int, target_id: int, weight: float = 1.0) -> Network:
         """Add a link.
 
         Parameters
@@ -438,7 +641,7 @@ class Network:
         self._core.addLink(source_id, target_id, weight)
         return self
 
-    def add_links(self, links):
+    def add_links(self, links: Any) -> Network:
         """Add several links.
 
         Parameters
@@ -462,7 +665,7 @@ class Network:
         )
         return self
 
-    def remove_link(self, source_id, target_id):
+    def remove_link(self, source_id: int, target_id: int) -> Network:
         """Remove a link.
 
         Parameters
@@ -473,7 +676,7 @@ class Network:
         self._core.network().removeLink(source_id, target_id)
         return self
 
-    def remove_links(self, links):
+    def remove_links(self, links: Any) -> Network:
         """Remove several links.
 
         Parameters
@@ -490,8 +693,11 @@ class Network:
     # ----------------------------------------
 
     def add_multilayer_link(
-        self, source_multilayer_node, target_multilayer_node, weight=1.0
-    ):
+        self,
+        source_multilayer_node: Any,
+        target_multilayer_node: Any,
+        weight: float = 1.0,
+    ) -> Network:
         """Add a multilayer link.
 
         Parameters
@@ -509,7 +715,7 @@ class Network:
         )
         return self
 
-    def add_multilayer_links(self, links):
+    def add_multilayer_links(self, links: Any) -> Network:
         """Add several multilayer links.
 
         Parameters
@@ -538,8 +744,12 @@ class Network:
         return self
 
     def add_multilayer_intra_link(
-        self, layer_id, source_node_id, target_node_id, weight=1.0
-    ):
+        self,
+        layer_id: int,
+        source_node_id: int,
+        target_node_id: int,
+        weight: float = 1.0,
+    ) -> Network:
         """Add an intra-layer link.
 
         Parameters
@@ -554,7 +764,7 @@ class Network:
         )
         return self
 
-    def add_multilayer_intra_links(self, links):
+    def add_multilayer_intra_links(self, links: Any) -> Network:
         """Add several intra-layer links.
 
         Parameters
@@ -580,8 +790,12 @@ class Network:
         return self
 
     def add_multilayer_inter_link(
-        self, source_layer_id, node_id, target_layer_id, weight=1.0
-    ):
+        self,
+        source_layer_id: int,
+        node_id: int,
+        target_layer_id: int,
+        weight: float = 1.0,
+    ) -> Network:
         """Add an inter-layer link.
 
         Parameters
@@ -596,7 +810,7 @@ class Network:
         )
         return self
 
-    def add_multilayer_inter_links(self, links):
+    def add_multilayer_inter_links(self, links: Any) -> Network:
         """Add several inter-layer links.
 
         Parameters
@@ -622,22 +836,30 @@ class Network:
         return self
 
     def remove_multilayer_link(self):
+        """Unsupported operation kept for interface parity.
+
+        Raises
+        ------
+        NotImplementedError
+            Always; removing multilayer links is not supported by the
+            Python API. Rebuild the network without the link instead.
+        """
         raise NotImplementedError(
             "Removing multilayer links is not supported by the Python API."
         )
 
     # ----------------------------------------
-    # Meta data
+    # Metadata
     # ----------------------------------------
 
-    def set_meta_data(self, node_id, meta_category=None):
-        """Set integer meta data for one node, or for many at once.
+    def set_meta_data(self, node_id: Any, meta_category: int | None = None) -> Network:
+        """Set integer metadata for one node, or for many at once.
 
         Parameters
         ----------
         node_id : int or mapping
-            A node id, or a ``{node_id: meta_category}`` mapping to assign meta
-            data to several nodes in one call.
+            A node id, or a ``{node_id: meta_category}`` mapping to assign
+            metadata to several nodes in one call.
         meta_category : int, optional
             The meta category, when ``node_id`` is a single node id (ignored
             when ``node_id`` is a mapping).
@@ -654,7 +876,7 @@ class Network:
     # ----------------------------------------
 
     @property
-    def network(self):
+    def network(self) -> Any:
         """The underlying SWIG state network.
 
         Exposed so the graph adapters (which reach for
@@ -662,10 +884,10 @@ class Network:
         work identically when building onto a :class:`Network` or an
         :class:`Infomap`.
         """
-        return self._core.network()
+        return _with_owner(self._core.network(), self._core)
 
     @property
-    def bipartite_start_id(self):
+    def bipartite_start_id(self) -> int:
         """Get or set the bipartite start id.
 
         Returns
@@ -676,11 +898,21 @@ class Network:
         return self._core.network().bipartiteStartId()
 
     @bipartite_start_id.setter
-    def bipartite_start_id(self, start_id):
+    def bipartite_start_id(self, start_id: int) -> None:
         self._core.setBipartiteStartId(start_id)
 
+    def set_bipartite_start_id(self, start_id: int) -> Network:
+        """Set the bipartite start id, returning ``self`` for fluent chaining.
+
+        The chainable form of the :attr:`bipartite_start_id` setter, so a
+        bipartite network can be built in a single expression alongside the
+        ``add_*`` verbs.
+        """
+        self._core.setBipartiteStartId(start_id)
+        return self
+
     @property
-    def num_nodes(self):
+    def num_nodes(self) -> int:
         """The number of state nodes if a higher-order network, else physical.
 
         Returns
@@ -691,7 +923,7 @@ class Network:
         return self._core.network().numNodes()
 
     @property
-    def num_links(self):
+    def num_links(self) -> int:
         """The number of links.
 
         Returns

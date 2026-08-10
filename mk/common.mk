@@ -21,6 +21,7 @@ PIP ?= $(PYTHON) -m pip
 PYTEST ?= $(PYTHON) -m pytest
 RUFF ?= $(PYTHON) -m ruff
 PYRIGHT ?= $(PYTHON) -m pyright
+PRECOMMIT ?= $(PYTHON) -m pre_commit
 NPM ?= npm
 NODE ?= node
 SWIG ?= swig
@@ -30,6 +31,14 @@ RSCRIPT ?= Rscript
 AIR ?= $(shell command -v air 2>/dev/null || command -v /opt/homebrew/bin/air 2>/dev/null || echo air)
 SPHINX_BUILD_BIN := $(shell command -v sphinx-build 2>/dev/null || true)
 SPHINX_BUILD ?= $(if $(SPHINX_BUILD_BIN),$(SPHINX_BUILD_BIN),$(PYTHON) -m sphinx)
+SPHINX_AUTOBUILD_BIN := $(shell command -v sphinx-autobuild 2>/dev/null || true)
+SPHINX_AUTOBUILD ?= $(if $(SPHINX_AUTOBUILD_BIN),$(SPHINX_AUTOBUILD_BIN),$(PYTHON) -m sphinx_autobuild)
+# Treat Sphinx warnings as errors so broken cross-references, missing labels, and
+# unresolved autodoc targets fail the build instead of shipping silently.
+# --keep-going reports every warning in one pass rather than stopping at the
+# first. Override with `make build-docs SPHINXOPTS=` to build leniently offline
+# (e.g. when intersphinx inventories are unreachable).
+SPHINXOPTS ?= -W --keep-going
 CMAKE ?= $(shell command -v cmake 2>/dev/null || command -v /opt/homebrew/bin/cmake 2>/dev/null || echo cmake)
 CTEST ?= $(shell command -v ctest 2>/dev/null || command -v /opt/homebrew/bin/ctest 2>/dev/null || echo ctest)
 CLANG_FORMAT ?= $(shell command -v clang-format 2>/dev/null || command -v /opt/homebrew/bin/clang-format 2>/dev/null || command -v /opt/homebrew/opt/llvm/bin/clang-format 2>/dev/null || echo clang-format)
@@ -69,7 +78,6 @@ endif
 
 HEADERS := $(shell find src -name "*.h")
 SOURCES := $(shell find src -name "*.cpp")
-SWIG_FILES := $(shell find interfaces/swig -name "*.i")
 MK_FILES := $(wildcard mk/*.mk)
 BINDING_OPTIONS_SCRIPT := scripts/generate_binding_options.py
 BUILD_CONFIG_SCRIPT := scripts/build_config.py
@@ -120,7 +128,7 @@ endif
 endif
 endif
 
-.PHONY: help doctor dev-bootstrap clean build-binding-options
+.PHONY: help doctor dev-bootstrap hooks clean build-binding-options
 
 help:
 	@printf "%s\n" \
@@ -148,12 +156,16 @@ help:
 		"  test-python-unit      Run pytest for test/python." \
 		"  test-python-doctest   Run Python doctests and ruff checks for the installed package." \
 		"  test-python-examples  Run the Python example smoke tests." \
+		"  test-python-typecheck  Type-check the whole Python package with pyright." \
+		"  test-python-typecheck-core  Type-check the core Python surface (pre-push / quick-mode scope)." \
 		"  test-python-notebooks-smoke  Run PR-safe tutorial notebook smoke tests with nbmake." \
 		"  test-python-notebooks-full   Run all CI-maintained tutorial notebooks with nbmake." \
 		"  test-python-swig-freshness  Verify tracked SWIG outputs are up to date." \
 		"  test-r                Run R CMD check --as-cran on the staged infomap R package." \
 		"  test-r-examples       Run the R example smoke tests." \
 		"  test-r-swig-freshness Verify tracked R SWIG outputs are up to date." \
+		"  build-r-man           Regenerate the R man pages from the roxygen comments." \
+		"  test-r-man-freshness  Verify tracked R man pages are up to date." \
 		"  test-binding-options-freshness Verify tracked binding option APIs are current." \
 		"  test-js-metadata      Regenerate JS metadata in a temp dir and verify tracked files are current." \
 		"  test-js               Run JS lint/typecheck/unit/browser/package verification for the built npm package." \
@@ -171,10 +183,15 @@ help:
 		"  format-native-check   Verify C++ sources are clang-format clean." \
 		"  format-r              Rewrite R sources with Air." \
 		"  format-r-check        Verify R sources are Air-format clean." \
+		"  format-python         Rewrite Python sources with Ruff." \
+		"  format-js             Rewrite JS/TS sources with Biome." \
 		"  tidy-native           Run clang-tidy over C++ source files." \
+		"  print-parameter-policy  Render the parameter-policy surface matrix as Markdown." \
 		"  dev-cpp-check         Run the fast C++ developer feedback suite." \
-		"  dev-bootstrap         Install Python dev dependencies and run npm ci." \
+		"  dev-bootstrap         Install Python dev dependencies, run npm ci, and install git hooks." \
+		"  hooks                 Install the pre-commit git hook (lint/format on commit)." \
 		"  dev-python-install    Install the built Python package in editable mode." \
+		"  dev-r-install         Install the staged R package into the user library." \
 		"  dev-python-notebooks-install Install notebook execution dependencies." \
 		"  clean                 Remove native, Python, and JS build outputs." \
 		"  clean-native          Remove native build artifacts, libraries, and CMake build dirs." \
@@ -184,7 +201,10 @@ help:
 		"" \
 		"Docs / Release" \
 		"  build-docs            Build the Python docs site into docs/ after installing the local package." \
+		"  docs-serve            Live-reloading local docs preview (sphinx-autobuild; builds leniently)." \
+		"  check-docs-links      Verify external documentation links resolve (linkcheck; hits the network)." \
 		"  release-python-dist   Build local sdist and wheel artifacts from the repo root." \
+		"  release-r-dist        Build the R source tarball and platform binary into dist/R/." \
 		"  release-python-testpypi  Publish the built distributions to TestPyPI." \
 		"  release-python-pypi      Publish the built distributions to PyPI." \
 		"" \
@@ -207,6 +227,10 @@ help:
 
 build-binding-options: build-native
 	@$(PYTHON_FOR_BUILD_CONFIG) $(BINDING_OPTIONS_SCRIPT) --infomap-bin ./Infomap --output-root .
+
+# Render the 3.0 parameter-policy surface matrix (issue #755) as Markdown.
+print-parameter-policy: build-native
+	@$(PYTHON_FOR_BUILD_CONFIG) scripts/render_parameter_policy.py --binary ./Infomap
 
 doctor:
 	@printf "%s\n" "Infomap doctor" ""
@@ -265,12 +289,29 @@ doctor:
 dev-bootstrap:
 	@$(PIP) install -e '.[test,docs,examples,release]'
 	@$(NPM) ci
+	@$(MAKE) --no-print-directory hooks
 	@printf "%s\n" \
 		"Bootstrap complete." \
 		"Next steps:" \
 		"  make build-native" \
 		"  make build-python dev-python-install" \
 		"  make test-fast"
+
+# Install the pre-commit git hook. Idempotent; safe to re-run. Never fails the
+# build: a native-only checkout may not have pre-commit yet, and a repo with
+# core.hooksPath set (pre-commit refuses to auto-install there) can still lint
+# via `pre-commit run --all-files` or CI.
+hooks:
+	@if ! $(PRECOMMIT) --version >/dev/null 2>&1; then \
+		printf "pre-commit not installed; run 'make dev-bootstrap' or 'pip install pre-commit'.\n"; \
+	elif $(PRECOMMIT) install --hook-type pre-commit --hook-type pre-push >/dev/null 2>&1; then \
+		printf "pre-commit and pre-push git hooks installed.\n"; \
+	else \
+		printf "pre-commit is installed but the git hook was not auto-installed:\n"; \
+		printf "  core.hooksPath is set (%s), so pre-commit refuses to manage it.\n" "$$(git config core.hooksPath)"; \
+		printf "  Run 'git config --unset core.hooksPath && make hooks', or just use\n"; \
+		printf "  'pre-commit run --all-files' / rely on CI.\n"; \
+	fi
 
 clean: clean-native clean-python clean-r clean-js
 	@true

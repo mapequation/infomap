@@ -1631,6 +1631,7 @@ template <typename T> T SwigValueInit() {
 /* Includes the header in the wrapper code */
 #include "src/Infomap.h"
 #include "src/io/Features.h"
+#include "src/utils/Log.h"
 #ifdef SWIGPYTHON
 namespace infomap {
 int run(const std::string& flags);
@@ -1640,7 +1641,11 @@ int run(const std::string& flags);
 #include <cstdint>
 #include <cstring>
 #include <limits>
+#include <mutex>
 #include <stdexcept>
+#include <string>
+#include <utility>
+#include <vector>
 #endif
 // SWIG strips namespaces, so include infomap in global namespace in wrapper code
 using namespace infomap;
@@ -6497,6 +6502,134 @@ R_swig_Config_maxFlowIterations_get ( SEXP self, SEXP s_swig_copy)
     arg1 = reinterpret_cast< infomap::Config * >(argp1);
     result = (unsigned int) ((arg1)->maxFlowIterations);
     r_ans = SWIG_From_int(static_cast< int >(result));
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
+R_swig_Config_minFlowIterations_set ( SEXP self, SEXP s_minFlowIterations)
+{
+  {
+    infomap::Config *arg1 = 0 ;
+    unsigned int arg2 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int val2 ;
+    int ecode2 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_infomap__Config, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Config_minFlowIterations_set" "', argument " "1"" of type '" "infomap::Config *""'"); 
+    }
+    arg1 = reinterpret_cast< infomap::Config * >(argp1);
+    ecode2 = SWIG_AsVal_int(s_minFlowIterations, &val2);
+    if (!SWIG_IsOK(ecode2)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "Config_minFlowIterations_set" "', argument " "2"" of type '" "unsigned int""'");
+    } 
+    arg2 = static_cast< unsigned int >(val2);
+    if (arg1) (arg1)->minFlowIterations = arg2;
+    r_ans = R_NilValue;
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
+R_swig_Config_minFlowIterations_get ( SEXP self, SEXP s_swig_copy)
+{
+  {
+    unsigned int result;
+    infomap::Config *arg1 = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_infomap__Config, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Config_minFlowIterations_get" "', argument " "1"" of type '" "infomap::Config *""'"); 
+    }
+    arg1 = reinterpret_cast< infomap::Config * >(argp1);
+    result = (unsigned int) ((arg1)->minFlowIterations);
+    r_ans = SWIG_From_int(static_cast< int >(result));
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
+R_swig_Config_flowTolerance_set ( SEXP self, SEXP s_flowTolerance)
+{
+  {
+    infomap::Config *arg1 = 0 ;
+    double arg2 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_infomap__Config, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Config_flowTolerance_set" "', argument " "1"" of type '" "infomap::Config *""'"); 
+    }
+    arg1 = reinterpret_cast< infomap::Config * >(argp1);
+    arg2 = static_cast< double >(REAL(s_flowTolerance)[0]);
+    if (arg1) (arg1)->flowTolerance = arg2;
+    r_ans = R_NilValue;
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
+R_swig_Config_flowTolerance_get ( SEXP self, SEXP s_swig_copy)
+{
+  {
+    double result;
+    infomap::Config *arg1 = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_infomap__Config, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Config_flowTolerance_get" "', argument " "1"" of type '" "infomap::Config *""'"); 
+    }
+    arg1 = reinterpret_cast< infomap::Config * >(argp1);
+    result = (double) ((arg1)->flowTolerance);
+    r_ans = SWIG_From_double(static_cast< double >(result));
     vmaxset(r_vmax);
     if(r_nprotect)  Rf_unprotect(r_nprotect);
     
@@ -33778,6 +33911,68 @@ R_swig_StateNetwork_addStateNode__SWIG_1 ( SEXP self, SEXP id, SEXP physId, SEXP
 
 
 SWIGEXPORT SEXP
+R_swig_StateNetwork_addStateNode__SWIG_2 ( SEXP self, SEXP id, SEXP physId, SEXP name, SEXP s_swig_copy)
+{
+  {
+    SwigValueWrapper< std::pair< std::map< unsigned int,infomap::StateNetwork::StateNode,std::less< unsigned int >,std::allocator< std::pair< unsigned int const,infomap::StateNetwork::StateNode > > >::iterator,bool > > result;
+    infomap::StateNetwork *arg1 = 0 ;
+    unsigned int arg2 ;
+    unsigned int arg3 ;
+    std::string arg4 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int val2 ;
+    int ecode2 = 0 ;
+    int val3 ;
+    int ecode3 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_infomap__StateNetwork, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "StateNetwork_addStateNode" "', argument " "1"" of type '" "infomap::StateNetwork *""'"); 
+    }
+    arg1 = reinterpret_cast< infomap::StateNetwork * >(argp1);
+    ecode2 = SWIG_AsVal_int(id, &val2);
+    if (!SWIG_IsOK(ecode2)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "StateNetwork_addStateNode" "', argument " "2"" of type '" "unsigned int""'");
+    } 
+    arg2 = static_cast< unsigned int >(val2);
+    ecode3 = SWIG_AsVal_int(physId, &val3);
+    if (!SWIG_IsOK(ecode3)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "StateNetwork_addStateNode" "', argument " "3"" of type '" "unsigned int""'");
+    } 
+    arg3 = static_cast< unsigned int >(val3);
+    {
+      std::string *ptr = (std::string *)0;
+      int res = SWIG_AsPtr_std_string(name, &ptr);
+      if (!SWIG_IsOK(res) || !ptr) {
+        SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "StateNetwork_addStateNode" "', argument " "4"" of type '" "std::string""'"); 
+      }
+      arg4 = *ptr;
+      if (SWIG_IsNewObj(res)) delete ptr;
+    }
+    {
+      try {
+        result = (arg1)->addStateNode(arg2,arg3,SWIG_STD_MOVE(arg4));
+      } catch (const std::exception& e) {
+        SWIG_exception(SWIG_RuntimeError, e.what());
+      }
+    }
+    r_ans = SWIG_R_NewPointerObj((new std::pair< infomap::StateNetwork::NodeMap::iterator,bool >(result)), SWIGTYPE_p_std__pairT_std__mapT_unsigned_int_infomap__StateNetwork__StateNode_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__StateNode_t_t_t__iterator_bool_t, SWIG_POINTER_OWN |  0 );
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
 R_swig_StateNetwork_addNode__SWIG_0 ( SEXP self, SEXP id, SEXP s_swig_copy)
 {
   {
@@ -35143,6 +35338,150 @@ R_swig_StateNetwork_names__SWIG_1 ( SEXP self, SEXP s_swig_copy)
       }
     }
     r_ans = SWIG_R_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_std__mapT_unsigned_int_std__string_t, 0 |  0 );
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
+R_swig_StateNetwork_haveFlowConvergence ( SEXP self, SEXP s_swig_copy)
+{
+  {
+    bool result;
+    infomap::StateNetwork *arg1 = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_infomap__StateNetwork, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "StateNetwork_haveFlowConvergence" "', argument " "1"" of type '" "infomap::StateNetwork const *""'"); 
+    }
+    arg1 = reinterpret_cast< infomap::StateNetwork * >(argp1);
+    {
+      try {
+        result = (bool)((infomap::StateNetwork const *)arg1)->haveFlowConvergence();
+      } catch (const std::exception& e) {
+        SWIG_exception(SWIG_RuntimeError, e.what());
+      }
+    }
+    r_ans = Rf_ScalarLogical(result);
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
+R_swig_StateNetwork_flowConverged ( SEXP self, SEXP s_swig_copy)
+{
+  {
+    bool result;
+    infomap::StateNetwork *arg1 = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_infomap__StateNetwork, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "StateNetwork_flowConverged" "', argument " "1"" of type '" "infomap::StateNetwork const *""'"); 
+    }
+    arg1 = reinterpret_cast< infomap::StateNetwork * >(argp1);
+    {
+      try {
+        result = (bool)((infomap::StateNetwork const *)arg1)->flowConverged();
+      } catch (const std::exception& e) {
+        SWIG_exception(SWIG_RuntimeError, e.what());
+      }
+    }
+    r_ans = Rf_ScalarLogical(result);
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
+R_swig_StateNetwork_flowIterations ( SEXP self, SEXP s_swig_copy)
+{
+  {
+    unsigned int result;
+    infomap::StateNetwork *arg1 = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_infomap__StateNetwork, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "StateNetwork_flowIterations" "', argument " "1"" of type '" "infomap::StateNetwork const *""'"); 
+    }
+    arg1 = reinterpret_cast< infomap::StateNetwork * >(argp1);
+    {
+      try {
+        result = (unsigned int)((infomap::StateNetwork const *)arg1)->flowIterations();
+      } catch (const std::exception& e) {
+        SWIG_exception(SWIG_RuntimeError, e.what());
+      }
+    }
+    r_ans = SWIG_From_int(static_cast< int >(result));
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
+R_swig_StateNetwork_flowError ( SEXP self, SEXP s_swig_copy)
+{
+  {
+    double result;
+    infomap::StateNetwork *arg1 = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_infomap__StateNetwork, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "StateNetwork_flowError" "', argument " "1"" of type '" "infomap::StateNetwork const *""'"); 
+    }
+    arg1 = reinterpret_cast< infomap::StateNetwork * >(argp1);
+    {
+      try {
+        result = (double)((infomap::StateNetwork const *)arg1)->flowError();
+      } catch (const std::exception& e) {
+        SWIG_exception(SWIG_RuntimeError, e.what());
+      }
+    }
+    r_ans = SWIG_From_double(static_cast< double >(result));
     vmaxset(r_vmax);
     if(r_nprotect)  Rf_unprotect(r_nprotect);
     
@@ -47328,6 +47667,86 @@ R_swig_InfomapWrapper_getNames ( SEXP self, SEXP s_swig_copy)
 
 
 SWIGEXPORT SEXP
+R_swig_InfomapWrapper_getStateNames ( SEXP self, SEXP s_swig_copy)
+{
+  {
+    std::map< unsigned int,std::string,std::less< unsigned int >,std::allocator< std::pair< unsigned int const,std::string > > > result;
+    infomap::InfomapWrapper *arg1 = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_infomap__InfomapWrapper, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "InfomapWrapper_getStateNames" "', argument " "1"" of type '" "infomap::InfomapWrapper const *""'"); 
+    }
+    arg1 = reinterpret_cast< infomap::InfomapWrapper * >(argp1);
+    {
+      try {
+        result = ((infomap::InfomapWrapper const *)arg1)->getStateNames();
+      } catch (const std::exception& e) {
+        SWIG_exception(SWIG_RuntimeError, e.what());
+      }
+    }
+    r_ans = swig::from(static_cast< std::map< unsigned int,std::string,std::less< unsigned int >,std::allocator< std::pair< unsigned int const,std::string > > > >(result));
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
+R_swig_InfomapWrapper_getStateName ( SEXP self, SEXP stateId, SEXP s_swig_copy)
+{
+  {
+    std::string result;
+    infomap::InfomapWrapper *arg1 = 0 ;
+    unsigned int arg2 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int val2 ;
+    int ecode2 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_infomap__InfomapWrapper, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "InfomapWrapper_getStateName" "', argument " "1"" of type '" "infomap::InfomapWrapper const *""'"); 
+    }
+    arg1 = reinterpret_cast< infomap::InfomapWrapper * >(argp1);
+    ecode2 = SWIG_AsVal_int(stateId, &val2);
+    if (!SWIG_IsOK(ecode2)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "InfomapWrapper_getStateName" "', argument " "2"" of type '" "unsigned int""'");
+    } 
+    arg2 = static_cast< unsigned int >(val2);
+    {
+      try {
+        result = ((infomap::InfomapWrapper const *)arg1)->getStateName(arg2);
+      } catch (const std::exception& e) {
+        SWIG_exception(SWIG_RuntimeError, e.what());
+      }
+    }
+    r_ans = SWIG_From_std_string(static_cast< std::string >(result));
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
 R_swig_InfomapWrapper_addPhysicalNode__SWIG_0 ( SEXP self, SEXP id, SEXP name)
 {
   {
@@ -47429,7 +47848,7 @@ R_swig_InfomapWrapper_addPhysicalNode__SWIG_1 ( SEXP self, SEXP id)
 
 
 SWIGEXPORT SEXP
-R_swig_InfomapWrapper_addStateNode ( SEXP self, SEXP id, SEXP physId)
+R_swig_InfomapWrapper_addStateNode__SWIG_0 ( SEXP self, SEXP id, SEXP physId)
 {
   {
     infomap::InfomapWrapper *arg1 = 0 ;
@@ -47463,6 +47882,67 @@ R_swig_InfomapWrapper_addStateNode ( SEXP self, SEXP id, SEXP physId)
     {
       try {
         (arg1)->addStateNode(arg2,arg3);
+      } catch (const std::exception& e) {
+        SWIG_exception(SWIG_RuntimeError, e.what());
+      }
+    }
+    r_ans = R_NilValue;
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
+R_swig_InfomapWrapper_addStateNode__SWIG_1 ( SEXP self, SEXP id, SEXP physId, SEXP name)
+{
+  {
+    infomap::InfomapWrapper *arg1 = 0 ;
+    unsigned int arg2 ;
+    unsigned int arg3 ;
+    std::string arg4 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int val2 ;
+    int ecode2 = 0 ;
+    int val3 ;
+    int ecode3 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_infomap__InfomapWrapper, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "InfomapWrapper_addStateNode" "', argument " "1"" of type '" "infomap::InfomapWrapper *""'"); 
+    }
+    arg1 = reinterpret_cast< infomap::InfomapWrapper * >(argp1);
+    ecode2 = SWIG_AsVal_int(id, &val2);
+    if (!SWIG_IsOK(ecode2)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "InfomapWrapper_addStateNode" "', argument " "2"" of type '" "unsigned int""'");
+    } 
+    arg2 = static_cast< unsigned int >(val2);
+    ecode3 = SWIG_AsVal_int(physId, &val3);
+    if (!SWIG_IsOK(ecode3)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "InfomapWrapper_addStateNode" "', argument " "3"" of type '" "unsigned int""'");
+    } 
+    arg3 = static_cast< unsigned int >(val3);
+    {
+      std::string *ptr = (std::string *)0;
+      int res = SWIG_AsPtr_std_string(name, &ptr);
+      if (!SWIG_IsOK(res) || !ptr) {
+        SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "InfomapWrapper_addStateNode" "', argument " "4"" of type '" "std::string""'"); 
+      }
+      arg4 = *ptr;
+      if (SWIG_IsNewObj(res)) delete ptr;
+    }
+    {
+      try {
+        (arg1)->addStateNode(arg2,arg3,SWIG_STD_MOVE(arg4));
       } catch (const std::exception& e) {
         SWIG_exception(SWIG_RuntimeError, e.what());
       }
@@ -49991,6 +50471,7 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
    {"R_swig_new_InfomapIterator__SWIG_4", (DL_FUNC) &R_swig_new_InfomapIterator__SWIG_4, 1},
    {"R_swig_MemDeltaFlow_sumDeltaPlogpPhysFlow_get", (DL_FUNC) &R_swig_MemDeltaFlow_sumDeltaPlogpPhysFlow_get, 2},
    {"R_swig_InfomapParentIterator_inEdges", (DL_FUNC) &R_swig_InfomapParentIterator_inEdges, 2},
+   {"R_swig_StateNetwork_flowError", (DL_FUNC) &R_swig_StateNetwork_flowError, 2},
    {"R_swig_Config_bipartiteTeleportation_set", (DL_FUNC) &R_swig_Config_bipartiteTeleportation_set, 2},
    {"R_swig_LayerNode_node_get", (DL_FUNC) &R_swig_LayerNode_node_get, 2},
    {"R_swig_InfoNode_end_inEdge", (DL_FUNC) &R_swig_InfoNode_end_inEdge, 2},
@@ -50014,13 +50495,16 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
    {"R_swig_Config_nodeLimit_set", (DL_FUNC) &R_swig_Config_nodeLimit_set, 2},
    {"R_swig_InfoNode_owner_set", (DL_FUNC) &R_swig_InfoNode_owner_set, 2},
    {"R_swig_Config_haveMetaData", (DL_FUNC) &R_swig_Config_haveMetaData, 2},
+   {"R_swig_Config_flowTolerance_get", (DL_FUNC) &R_swig_Config_flowTolerance_get, 2},
    {"R_swig_InfomapBase_getElapsedTime", (DL_FUNC) &R_swig_InfomapBase_getElapsedTime, 2},
    {"R_swig_vector_double_pop", (DL_FUNC) &R_swig_vector_double_pop, 2},
+   {"R_swig_InfomapWrapper_getStateName", (DL_FUNC) &R_swig_InfomapWrapper_getStateName, 3},
    {"R_swig_Config_multilayerRelaxLimitUp_get", (DL_FUNC) &R_swig_Config_multilayerRelaxLimitUp_get, 2},
    {"R_swig_InfomapWrapper_getName", (DL_FUNC) &R_swig_InfomapWrapper_getName, 3},
    {"R_swig_InfomapIterator_getMetaData__SWIG_0", (DL_FUNC) &R_swig_InfomapIterator_getMetaData__SWIG_0, 3},
    {"R_swig_vector_double_get_allocator", (DL_FUNC) &R_swig_vector_double_get_allocator, 2},
    {"R_swig_map_uint_uint_size", (DL_FUNC) &R_swig_map_uint_uint_size, 2},
+   {"R_swig_Config_minFlowIterations_get", (DL_FUNC) &R_swig_Config_minFlowIterations_get, 2},
    {"R_swig_InfomapIterator_getMetaData__SWIG_1", (DL_FUNC) &R_swig_InfomapIterator_getMetaData__SWIG_1, 2},
    {"R_swig_StateNetwork_addNode__SWIG_0", (DL_FUNC) &R_swig_StateNetwork_addNode__SWIG_0, 3},
    {"R_swig_StateNetwork_addNode__SWIG_1", (DL_FUNC) &R_swig_StateNetwork_addNode__SWIG_1, 4},
@@ -50088,12 +50572,13 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
    {"R_swig_InfoNode_getInfomapRoot__SWIG_0", (DL_FUNC) &R_swig_InfoNode_getInfomapRoot__SWIG_0, 1},
    {"R_swig_InfoNode_begin__SWIG_0", (DL_FUNC) &R_swig_InfoNode_begin__SWIG_0, 2},
    {"R_swig_new_InfomapModuleIterator__SWIG_1", (DL_FUNC) &R_swig_new_InfomapModuleIterator__SWIG_1, 2},
+   {"R_swig_StateNetwork_addStateNode__SWIG_2", (DL_FUNC) &R_swig_StateNetwork_addStateNode__SWIG_2, 5},
    {"R_swig_delete_map_uint_vector_uint", (DL_FUNC) &R_swig_delete_map_uint_vector_uint, 1},
-   {"R_swig_InfomapLeafIteratorPhysical_init", (DL_FUNC) &R_swig_InfomapLeafIteratorPhysical_init, 1},
    {"R_swig_InfoNode_getInfomapRoot__SWIG_1", (DL_FUNC) &R_swig_InfoNode_getInfomapRoot__SWIG_1, 1},
    {"R_swig_InfoNode_begin__SWIG_1", (DL_FUNC) &R_swig_InfoNode_begin__SWIG_1, 2},
    {"R_swig_new_InfomapModuleIterator__SWIG_2", (DL_FUNC) &R_swig_new_InfomapModuleIterator__SWIG_2, 1},
    {"R_swig_Config_setStateInput", (DL_FUNC) &R_swig_Config_setStateInput, 1},
+   {"R_swig_InfomapLeafIteratorPhysical_init", (DL_FUNC) &R_swig_InfomapLeafIteratorPhysical_init, 1},
    {"R_swig_InfomapParentIterator_physicalNodes_set", (DL_FUNC) &R_swig_InfomapParentIterator_physicalNodes_set, 2},
    {"R_swig_InfomapParentIterator_expandChildren", (DL_FUNC) &R_swig_InfomapParentIterator_expandChildren, 2},
    {"R_swig_InfoNode_isFirst", (DL_FUNC) &R_swig_InfoNode_isFirst, 2},
@@ -50395,6 +50880,7 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
    {"R_swig_vector_uint___len__", (DL_FUNC) &R_swig_vector_uint___len__, 2},
    {"R_swig_Config_flowModelIsSet_get", (DL_FUNC) &R_swig_Config_flowModelIsSet_get, 2},
    {"R_swig_Config_clusterDataIsHard_set", (DL_FUNC) &R_swig_Config_clusterDataIsHard_set, 2},
+   {"R_swig_StateNetwork_flowIterations", (DL_FUNC) &R_swig_StateNetwork_flowIterations, 2},
    {"R_swig_Config_multilayerRelaxRate_set", (DL_FUNC) &R_swig_Config_multilayerRelaxRate_set, 2},
    {"R_swig_aggregatePerLevelCodelength__SWIG_0", (DL_FUNC) &R_swig_aggregatePerLevelCodelength__SWIG_0, 3},
    {"R_swig_vector_double_capacity", (DL_FUNC) &R_swig_vector_double_capacity, 2},
@@ -50426,6 +50912,7 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
    {"R_swig_InfomapIterator_initClean", (DL_FUNC) &R_swig_InfomapIterator_initClean, 1},
    {"R_swig_InfomapParentIterator_disposeInfomap", (DL_FUNC) &R_swig_InfomapParentIterator_disposeInfomap, 2},
    {"R_swig_InfomapIterator_expandChildren", (DL_FUNC) &R_swig_InfomapIterator_expandChildren, 2},
+   {"R_swig_InfomapWrapper_getStateNames", (DL_FUNC) &R_swig_InfomapWrapper_getStateNames, 2},
    {"R_swig_Config_noSelfLinks_set", (DL_FUNC) &R_swig_Config_noSelfLinks_set, 2},
    {"R_swig_Config_numRandomMoves_set", (DL_FUNC) &R_swig_Config_numRandomMoves_set, 2},
    {"R_swig_InfoNode_children__SWIG_0", (DL_FUNC) &R_swig_InfoNode_children__SWIG_0, 2},
@@ -50498,11 +50985,13 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
    {"R_swig_InfomapBase_network__SWIG_1", (DL_FUNC) &R_swig_InfomapBase_network__SWIG_1, 2},
    {"R_swig_Config_recordedTeleportation_get", (DL_FUNC) &R_swig_Config_recordedTeleportation_get, 2},
    {"R_swig_InfoNode_layerId_set", (DL_FUNC) &R_swig_InfoNode_layerId_set, 2},
+   {"R_swig_Config_flowTolerance_set", (DL_FUNC) &R_swig_Config_flowTolerance_set, 2},
    {"R_swig_Network_metaData", (DL_FUNC) &R_swig_Network_metaData, 2},
    {"R_swig_InfomapParentIterator_NotEqual", (DL_FUNC) &R_swig_InfomapParentIterator_NotEqual, 3},
    {"R_swig_Config_multilayerRelaxLimitUp_set", (DL_FUNC) &R_swig_Config_multilayerRelaxLimitUp_set, 2},
    {"R_swig_Config_setStateOutput", (DL_FUNC) &R_swig_Config_setStateOutput, 1},
    {"R_swig_InfoNode_isDangling", (DL_FUNC) &R_swig_InfoNode_isDangling, 2},
+   {"R_swig_Config_minFlowIterations_set", (DL_FUNC) &R_swig_Config_minFlowIterations_set, 2},
    {"R_swig_Network_addMetaData__SWIG_0", (DL_FUNC) &R_swig_Network_addMetaData__SWIG_0, 3},
    {"R_swig_Network_addMetaData__SWIG_1", (DL_FUNC) &R_swig_Network_addMetaData__SWIG_1, 3},
    {"R_swig_swap__SWIG_0", (DL_FUNC) &R_swig_swap__SWIG_0, 2},
@@ -50621,6 +51110,7 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
    {"R_swig_new_vector_link_result__SWIG_3", (DL_FUNC) &R_swig_new_vector_link_result__SWIG_3, 2},
    {"R_swig_Config_stateInput_get", (DL_FUNC) &R_swig_Config_stateInput_get, 2},
    {"R_swig_InfomapIterator_outEdges", (DL_FUNC) &R_swig_InfomapIterator_outEdges, 2},
+   {"R_swig_StateNetwork_flowConverged", (DL_FUNC) &R_swig_StateNetwork_flowConverged, 2},
    {"R_swig_InfomapIterator___ref____SWIG_0", (DL_FUNC) &R_swig_InfomapIterator___ref____SWIG_0, 2},
    {"R_swig_vector_double___setslice__", (DL_FUNC) &R_swig_vector_double___setslice__, 4},
    {"R_swig_InfomapIterator___ref____SWIG_1", (DL_FUNC) &R_swig_InfomapIterator___ref____SWIG_1, 2},
@@ -50727,7 +51217,9 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
    {"R_swig_FlowData_enterFlow_set", (DL_FUNC) &R_swig_FlowData_enterFlow_set, 2},
    {"R_swig_Config_printStateNetwork_get", (DL_FUNC) &R_swig_Config_printStateNetwork_get, 2},
    {"R_swig_InfomapLeafIteratorPhysical_modularCentrality", (DL_FUNC) &R_swig_InfomapLeafIteratorPhysical_modularCentrality, 2},
+   {"R_swig_InfomapWrapper_addStateNode__SWIG_0", (DL_FUNC) &R_swig_InfomapWrapper_addStateNode__SWIG_0, 3},
    {"R_swig_deque_uint_pop_front", (DL_FUNC) &R_swig_deque_uint_pop_front, 1},
+   {"R_swig_InfomapWrapper_addStateNode__SWIG_1", (DL_FUNC) &R_swig_InfomapWrapper_addStateNode__SWIG_1, 4},
    {"R_swig_delete_DeltaFlow", (DL_FUNC) &R_swig_delete_DeltaFlow, 1},
    {"R_swig_new_DeltaFlow__SWIG_0", (DL_FUNC) &R_swig_new_DeltaFlow__SWIG_0, 3},
    {"R_swig_InfoNode_calculatePath", (DL_FUNC) &R_swig_InfoNode_calculatePath, 2},
@@ -50907,6 +51399,7 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
    {"R_swig_InfomapWrapper_getLinks", (DL_FUNC) &R_swig_InfomapWrapper_getLinks, 3},
    {"R_swig_InfomapParentIterator_end__SWIG_0", (DL_FUNC) &R_swig_InfomapParentIterator_end__SWIG_0, 2},
    {"R_swig_InfomapParentIterator_childIndex", (DL_FUNC) &R_swig_InfomapParentIterator_childIndex, 2},
+   {"R_swig_StateNetwork_haveFlowConvergence", (DL_FUNC) &R_swig_StateNetwork_haveFlowConvergence, 2},
    {"R_swig_InfomapBase_writeFlowTree__SWIG_2", (DL_FUNC) &R_swig_InfomapBase_writeFlowTree__SWIG_2, 2},
    {"R_swig_delete_InfomapIterator", (DL_FUNC) &R_swig_delete_InfomapIterator, 1},
    {"R_swig_Config_additionalInput_set", (DL_FUNC) &R_swig_Config_additionalInput_set, 2},
@@ -51073,7 +51566,6 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
    {"R_swig_new_InfomapConfigInfomapBase__SWIG_2", (DL_FUNC) &R_swig_new_InfomapConfigInfomapBase__SWIG_2, 1},
    {"R_swig_InfomapBase_writeCsvTree__SWIG_1", (DL_FUNC) &R_swig_InfomapBase_writeCsvTree__SWIG_1, 3},
    {"R_swig_InfomapBase_elapsedTime", (DL_FUNC) &R_swig_InfomapBase_elapsedTime, 2},
-   {"R_swig_InfomapWrapper_addStateNode", (DL_FUNC) &R_swig_InfomapWrapper_addStateNode, 3},
    {"R_swig_Config_clusterDataIsHard_get", (DL_FUNC) &R_swig_Config_clusterDataIsHard_get, 2},
    {"R_swig_new_InfomapConfigInfomapBase__SWIG_3", (DL_FUNC) &R_swig_new_InfomapConfigInfomapBase__SWIG_3, 1},
    {"R_swig_InfomapBase_writeCsvTree__SWIG_2", (DL_FUNC) &R_swig_InfomapBase_writeCsvTree__SWIG_2, 2},
@@ -51124,9 +51616,9 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
    {"R_swig_InfomapIterator_addOutEdge__SWIG_1", (DL_FUNC) &R_swig_InfomapIterator_addOutEdge__SWIG_1, 3},
    {"R_swig_InfomapParentIterator_begin_tree__SWIG_3", (DL_FUNC) &R_swig_InfomapParentIterator_begin_tree__SWIG_3, 2},
    {"R_swig_Config_assignToNeighbouringModule_get", (DL_FUNC) &R_swig_Config_assignToNeighbouringModule_get, 2},
-   {"R_swig_new_InfomapLeafIteratorPhysical__SWIG_4", (DL_FUNC) &R_swig_new_InfomapLeafIteratorPhysical__SWIG_4, 1},
    {"R_swig_Config_convergeTrials_set", (DL_FUNC) &R_swig_Config_convergeTrials_set, 2},
    {"R_swig_InfomapLeafModuleIterator_current__SWIG_0", (DL_FUNC) &R_swig_InfomapLeafModuleIterator_current__SWIG_0, 1},
+   {"R_swig_new_InfomapLeafIteratorPhysical__SWIG_4", (DL_FUNC) &R_swig_new_InfomapLeafIteratorPhysical__SWIG_4, 1},
    {"R_swig_InfomapBase_getRelativeCodelengthSavings", (DL_FUNC) &R_swig_InfomapBase_getRelativeCodelengthSavings, 2},
    {"R_swig_InfomapLeafModuleIterator_current__SWIG_1", (DL_FUNC) &R_swig_InfomapLeafModuleIterator_current__SWIG_1, 1},
    {"R_swig_InfoNode_infomapTree__SWIG_0", (DL_FUNC) &R_swig_InfoNode_infomapTree__SWIG_0, 3},

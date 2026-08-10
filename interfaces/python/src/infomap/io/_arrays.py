@@ -17,12 +17,17 @@ import math
 from collections.abc import Iterator
 from typing import Any, NamedTuple
 
+from ..errors import NotRunError
+
 
 def require_modules(infomap: Any) -> None:
     """Raise if ``infomap`` has no module assignments yet (i.e. has not run)."""
     if not infomap._core.haveModules():
-        raise ValueError(
-            "Infomap results are not available. Run Infomap before exporting."
+        raise NotRunError(
+            "Infomap results are not available. Run Infomap before exporting -- "
+            "read the export off the Result that run() returns (e.g. "
+            "result = infomap.run(graph); result.to_networkx()), or call "
+            "im.run() on the instance first."
         )
 
 
@@ -47,9 +52,7 @@ def undirected_edge_items(
         source_id = int(source)
         target_id = int(target)
         edge = (
-            (source_id, target_id)
-            if source_id <= target_id
-            else (target_id, source_id)
+            (source_id, target_id) if source_id <= target_id else (target_id, source_id)
         )
         if edge in edges:
             edges[edge] = max(edges[edge], weight)
@@ -68,7 +71,7 @@ class CommunityNode(NamedTuple):
 
 
 def apply_node_meta_data(infomap: Any, id_meta_pairs: Any) -> dict:
-    """Set per-node Infomap meta data, encoding arbitrary category values to
+    """Set per-node Infomap metadata, encoding arbitrary category values to
     integers (stable first-seen order) so non-integer labels -- cell types,
     string classes -- work directly.
 

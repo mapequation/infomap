@@ -9,6 +9,9 @@
 #include <atomic>
 #include <cstdio>
 #include <iostream>
+#include <limits>
+#include <memory>
+#include <mutex>
 #include <set>
 #include <sstream>
 #include <string>
@@ -382,6 +385,190 @@ TEST_CASE("Infomap can rerun the same multi-trial instance safely [fast][core][l
   CHECK(im.getIndexCodelength() == doctest::Approx(firstIndexCodelength));
 }
 
+// A copy-constructible, seedable UniformRandomBitGenerator (a small LCG) that
+// records every seed value it receives and counts every draw — stands in for a
+// host RNG (igraph etc.) to exercise the pluggable-engine seam (issue #411).
+struct TrackingEngine {
+  using result_type = infomap::RandGen::result_type;
+
+  struct Stats {
+    mutable std::mutex mutex;
+    std::vector<unsigned int> seedValues;
+    std::atomic<unsigned long> drawCount { 0 };
+
+    void recordSeed(unsigned int seedValue)
+    {
+      std::lock_guard<std::mutex> lock(mutex);
+      seedValues.push_back(seedValue);
+    }
+
+    std::vector<unsigned int> snapshot() const
+    {
+      std::lock_guard<std::mutex> lock(mutex);
+      return seedValues;
+    }
+  };
+
+  std::shared_ptr<Stats> stats;
+  result_type state = 0;
+
+  explicit TrackingEngine(std::shared_ptr<Stats> sharedStats) : stats(std::move(sharedStats)) {}
+
+  void seed(unsigned int seedValue)
+  {
+    state = seedValue;
+    stats->recordSeed(seedValue);
+  }
+
+  static constexpr result_type min() { return 0; }
+  static constexpr result_type max() { return std::numeric_limits<result_type>::max(); }
+
+  result_type operator()()
+  {
+    ++stats->drawCount;
+    state = state * 1664525u + 1013904223u;
+    return state;
+  }
+};
+
+TEST_CASE("A custom RNG engine drives the run and reseeding stays deterministic [fast][core][lifecycle][rng]")
+{
+  auto stats = std::make_shared<TrackingEngine::Stats>();
+  InfomapWrapper im(infomap::test::defaultFlags());
+  im.setRandomEngine(TrackingEngine(stats));
+  im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+
+  im.run();
+  infomap::test::checkRunSanity(im);
+
+  // A positive draw count proves the injected engine supplies the draws
+  // themselves — a regression where only seed() is forwarded (draws falling
+  // back to the default mt19937) would still pass the determinism checks below.
+  const auto drawsAfterFirstRun = stats->drawCount.load();
+  CHECK(drawsAfterFirstRun > 0);
+
+  const auto firstPartition = infomap::test::canonicalPartition(im.getModules());
+  const auto firstCodelength = im.codelength();
+
+  const auto seedsBeforeReseed = stats->snapshot().size();
+  im.reseed(123);
+  // reseed() forwards exactly one seed() call to the injected engine.
+  REQUIRE(stats->snapshot().size() == seedsBeforeReseed + 1);
+  im.run();
+  infomap::test::checkRunSanity(im);
+
+  // Same injected engine + same seed -> identical result; the seam reseeds the
+  // injected engine (not the default mt19937).
+  const auto seedValues = stats->snapshot();
+  CHECK(infomap::test::canonicalPartition(im.getModules()) == firstPartition);
+  CHECK(im.codelength() == doctest::Approx(firstCodelength));
+  REQUIRE(seedValues.size() >= 2);
+  CHECK(seedValues[0] == 123u);
+  CHECK(seedValues[1] == 123u);
+  CHECK(stats->drawCount.load() > drawsAfterFirstRun);
+}
+
+TEST_CASE("setConfig preserves the injected RNG engine and applies the new seed [fast][core][lifecycle][rng]")
+{
+  auto stats = std::make_shared<TrackingEngine::Stats>();
+  InfomapWrapper im(infomap::test::defaultFlags());
+  im.setRandomEngine(TrackingEngine(stats));
+
+  infomap::Config conf(im.getConfig());
+  conf.seedToRandomNumberGenerator = 321;
+  im.setConfig(conf);
+
+  // The engine survives setConfig (would be dropped by a plain `*this = conf`)
+  // and is reseeded with the new seed.
+  const auto seedValues = stats->snapshot();
+  REQUIRE(seedValues.size() == 2);
+  CHECK(seedValues[0] == 123u);
+  CHECK(seedValues[1] == 321u);
+
+  infomap::test::addEdgeFixtureLinks(im, "graphs/twotriangles_unweighted.edges");
+  im.run();
+  infomap::test::checkRunSanity(im);
+}
+
+TEST_CASE("Sub-Infomap creation inherits the injected RNG engine [fast][core][lifecycle][subnetwork][rng]")
+{
+  auto stats = std::make_shared<TrackingEngine::Stats>();
+  InfomapWrapper im(infomap::test::defaultFlags());
+  im.setRandomEngine(TrackingEngine(stats));
+  im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+  im.run();
+
+  infomap::test::checkRunSanity(im);
+  REQUIRE(im.numTopModules() == 2);
+
+  const auto seedsBeforeSub = stats->snapshot().size();
+
+  auto& module = *im.root().firstChild;
+  auto& subInfomap = im.getSubInfomap(module).initNetwork(module);
+
+  // Inheritance is proven by the extra recorded seed: a fresh default-engine
+  // sub-Infomap would record none. Sub-Infomaps seed from the config seed.
+  const auto seedValues = stats->snapshot();
+  REQUIRE(seedValues.size() == seedsBeforeSub + 1);
+  CHECK(seedValues.back() == im.getConfig().seedToRandomNumberGenerator);
+
+  subInfomap.run();
+  CHECK(std::isfinite(subInfomap.codelength()));
+  CHECK(subInfomap.codelength() >= -1e-12);
+}
+
+// An igraph-shaped engine: only seed() + randInt(min, max), no
+// UniformRandomBitGenerator surface at all. That this type compiles at the
+// setRandomEngine() call site proves bounded-draw engines never have to supply
+// raw bits — the host's own bounded mapping (igraph_rng_get_integer et al.) is
+// used as-is, so results stay platform-stable for the host. (#411)
+struct BoundedTrackingEngine {
+  std::shared_ptr<TrackingEngine::Stats> stats;
+  unsigned int state = 0;
+
+  explicit BoundedTrackingEngine(std::shared_ptr<TrackingEngine::Stats> sharedStats) : stats(std::move(sharedStats)) {}
+
+  void seed(unsigned int seedValue)
+  {
+    state = seedValue;
+    stats->recordSeed(seedValue);
+  }
+
+  unsigned int randInt(unsigned int min, unsigned int max)
+  {
+    ++stats->drawCount;
+    state = state * 1664525u + 1013904223u;
+    return min + state % (max - min + 1u);
+  }
+};
+
+TEST_CASE("A bounded-draw engine without a bit generator drives the run [fast][core][lifecycle][rng]")
+{
+  auto stats = std::make_shared<TrackingEngine::Stats>();
+  InfomapWrapper im(infomap::test::defaultFlags());
+  im.setRandomEngine(BoundedTrackingEngine(stats));
+  im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+
+  im.run();
+  infomap::test::checkRunSanity(im);
+
+  const auto drawsAfterFirstRun = stats->drawCount.load();
+  CHECK(drawsAfterFirstRun > 0);
+
+  const auto firstPartition = infomap::test::canonicalPartition(im.getModules());
+  const auto firstCodelength = im.codelength();
+
+  im.reseed(123);
+  im.run();
+  infomap::test::checkRunSanity(im);
+
+  // Same bounded engine + same seed -> identical result; every draw went
+  // through the engine's own bounded mapping.
+  CHECK(infomap::test::canonicalPartition(im.getModules()) == firstPartition);
+  CHECK(im.codelength() == doctest::Approx(firstCodelength));
+  CHECK(stats->drawCount.load() > drawsAfterFirstRun);
+}
+
 TEST_CASE("Multi-trial run reports the best trial codelength [fast][core][lifecycle]")
 {
   InfomapWrapper im("--silent --seed 1 --num-trials 5");
@@ -433,6 +620,43 @@ TEST_CASE("Converge is deterministic for a given input and seed [fast][core][lif
   const auto second = runOnce();
   CHECK(first.first == second.first); // same trial count
   CHECK(first.second == doctest::Approx(second.second)); // same best codelength
+}
+
+TEST_CASE("The summary report carries the power iteration's outcome [fast][core][lifecycle][output][flow]")
+{
+  // A failed power iteration means the flow is not the network's stationary
+  // distribution, so no codelength below it describes the network. It was reported
+  // through exactly one channel -- a console line -- and --summary-json requires
+  // --silent, so the documented pipeline shape provably could not see it (#899).
+  const std::vector<std::string> paths = {
+    "run_report_flow_converged.json",
+    "run_report_flow_not_converged.json",
+  };
+  removeFiles(paths);
+
+  {
+    InfomapWrapper converged("--silent --seed 7 --directed --no-file-output --summary-json " + paths[0]);
+    infomap::test::addEdgeFixtureLinks(converged, "graphs/twotriangles_unweighted.edges");
+    converged.run();
+    const auto json = infomap::test::readTextFile(paths[0]);
+    CHECK(json.find("\"flow\":{\"converged\":true") != std::string::npos);
+    CHECK(json.find("\"iterations\":") != std::string::npos);
+    CHECK(json.find("\"error\":") != std::string::npos);
+  }
+
+  {
+    // Two iterations is not enough for this network to reach tolerance, so the run
+    // completes with a flow that is not stationary -- exactly the case that used to
+    // leave no trace in any file.
+    InfomapWrapper notConverged("--silent --seed 7 --directed --max-flow-iterations 2 --no-file-output --summary-json " + paths[1]);
+    notConverged.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+    notConverged.run();
+    const auto json = infomap::test::readTextFile(paths[1]);
+    CHECK(json.find("\"flow\":{\"converged\":false") != std::string::npos);
+    CHECK(json.find("\"iterations\":2,") != std::string::npos);
+  }
+
+  removeFiles(paths);
 }
 
 TEST_CASE("Run reports write machine-readable JSON with no-file-output [fast][core][lifecycle][output]")

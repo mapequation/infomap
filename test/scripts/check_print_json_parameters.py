@@ -51,27 +51,17 @@ def main() -> int:
         "states",
         "flow",
     ]
-    assert by_long["--verbose"]["bindingNames"]["python"] == "verbosity_level"
-    assert by_long["--verbose"]["bindingNames"]["r"] == "verbosity_level"
-    assert by_long["--verbose"]["bindingNames"]["ts"] == "verbose"
     assert by_long["--verbose"]["renderPolicy"] == "repeated_short"
-    assert by_long["--verbose"]["bindingDocs"]["python"]["description"].startswith(
-        "Verbosity level on the console."
-    )
-    assert by_long["--verbose"]["bindingDefaults"]["python"] == {"value": "1"}
-    assert by_long["--verbose"]["bindingDefaults"]["r"] == {"value": "1L"}
     assert by_long["--output"]["renderPolicy"] == "comma_list"
-    assert by_long["--fast-hierarchical-solution"]["bindingDocs"]["python"][
-        "description"
-    ].startswith("Find top modules fast.")
-    assert by_long["--teleportation-probability"]["bindingDefaults"]["python"] == {
-        "value": "0.15"
-    }
     assert by_long["--teleportation-probability"]["min"] == "0"
     assert by_long["--teleportation-probability"]["max"] == "1"
-    assert by_long["--directed"]["bindingDefaults"]["python"]["value"] == "None"
     assert by_long["--num-trials"]["min"] == "1"
-    assert by_long["--num-trials"]["bindingDefaults"]["r"]["value"] == "1L"
+    # Binding names/defaults/docs are surface knowledge and live in
+    # interfaces/parameters/overrides.json, not the engine's JSON catalog.
+    for parameter in by_long.values():
+        assert "bindingNames" not in parameter
+        assert "bindingDefaults" not in parameter
+        assert "bindingDocs" not in parameter
     assert by_long["--parallel-trials"]["group"] == "Accuracy"
     assert by_long["--parallel-trials"]["advanced"]
     assert not by_long["--parallel-trials"]["required"]

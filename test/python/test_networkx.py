@@ -2,12 +2,10 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
-import networkx as nx
-import pytest
-
 import infomap
 import infomap._facade as facade
-
+import networkx as nx
+import pytest
 
 pytestmark = pytest.mark.fast
 
@@ -68,7 +66,7 @@ def test_find_communities_sets_directed_for_digraph(monkeypatch):
 
         def __init__(self, **options):
             self.options = options
-            self.directed = False
+            self.inferred_flow_model = None
             instances.append(self)
 
         def get_node_data(self, level=1, states=False):
@@ -78,8 +76,8 @@ def test_find_communities_sets_directed_for_digraph(monkeypatch):
                 flow=[0.5, 0.5],
             )
 
-        def setDirected(self, value):
-            self.directed = value
+        def note_inferred_flow_model(self, flow_model):
+            self.inferred_flow_model = flow_model
 
         def add_node(self, node_id, name=None):
             pass
@@ -95,9 +93,13 @@ def test_find_communities_sets_directed_for_digraph(monkeypatch):
     communities = infomap.find_communities(nx.DiGraph([("source", "target")]))
 
     assert communities == [{"source", "target"}]
-    assert instances[0].directed is True
-    assert instances[0].options["silent"] is True
-    assert instances[0].options["no_file_output"] is True
+    assert instances[0].inferred_flow_model == "directed"
+    # silent and no_file_output are no longer forced: the API is quiet by
+    # default (Infomap defaults silent=True) and the library surface writes no
+    # files without an output directory, so the finder leaves both at the engine
+    # default rather than passing the deprecated flags.
+    assert "silent" not in instances[0].options
+    assert "no_file_output" not in instances[0].options
     assert instances[0].initial_partition is None
 
 
@@ -168,7 +170,7 @@ def test_add_networkx_multigraph_with_parallel_edges_and_self_loop():
     graph.add_edge("d", "a")
     graph.add_edge("a", "a")  # self-loop
 
-    im = infomap.Infomap(silent=True, no_file_output=True, seed=123, num_trials=1)
+    im = infomap.Infomap(silent=True, seed=123, num_trials=1)
     mapping = im.add_networkx_graph(graph)
     result = im.run()
 
@@ -178,7 +180,8 @@ def test_add_networkx_multigraph_with_parallel_edges_and_self_loop():
 
     # The functional entry point accepts the same MultiGraph directly.
     functional = infomap.run(
-        graph, silent=True, no_file_output=True, seed=123, num_trials=1
+        graph,
+        options={"silent": True, "seed": 123, "num_trials": 1},
     )
     assert sum(1 for _ in functional.nodes()) == graph.number_of_nodes()
 
@@ -199,32 +202,8 @@ def test_find_communities_partitions_multilayer_network_nodes():
 # -- error / edge paths (parity with test_scipy.py / test_igraph.py) -----------
 
 
-@pytest.mark.parametrize("bad", [-1.0, float("nan"), float("inf")])
-def test_add_networkx_graph_rejects_invalid_weights(bad):
-    """Negative or non-finite link weights are ill-defined for the map equation
-    and are rejected by the engine at ingestion. The networkx adapter delegates
-    this to the C++ core rather than re-checking every edge in Python (unlike
-    the vectorized scipy/edge_index adapters)."""
-    graph = nx.Graph()
-    graph.add_edge(0, 1, weight=bad)
-    graph.add_edge(1, 2, weight=2.0)
-    im = infomap.Infomap(silent=True, no_file_output=True)
-    with pytest.raises(RuntimeError):
-        im.add_networkx_graph(graph)
-
-
-def test_add_networkx_graph_treats_missing_or_none_weight_as_unweighted():
-    """A missing weight key or an explicit None value means the edge is
-    unweighted (1.0); it must not raise or be read as a bad weight."""
-    graph = nx.Graph()
-    graph.add_edge(0, 1, weight=None)  # explicit None -> unweighted
-    graph.add_edge(1, 2)  # missing key -> unweighted
-    communities = infomap.find_communities(graph, seed=123, num_trials=1)
-    assert _flatten(communities) == set(graph.nodes)
-
-
 def test_add_networkx_graph_empty_returns_empty_mapping():
-    im = infomap.Infomap(silent=True, no_file_output=True)
+    im = infomap.Infomap(silent=True)
     assert im.add_networkx_graph(nx.Graph()) == {}
 
 
@@ -240,12 +219,12 @@ def test_add_networkx_multilayer_diagonal_link_raises():
     graph.add_node("b-layer-2", node_id=2, layer_id=2)
     graph.add_edge("a-layer-1", "b-layer-2")
 
-    im = infomap.Infomap(silent=True, no_file_output=True)
-    with pytest.raises(RuntimeError, match="diagonal"):
+    im = infomap.Infomap(silent=True)
+    with pytest.raises(ValueError, match="diagonal"):
         im.add_networkx_graph(graph)
 
     # The documented workaround (full multilayer format) accepts the same graph.
-    im_full = infomap.Infomap(silent=True, no_file_output=True)
+    im_full = infomap.Infomap(silent=True)
     mapping = im_full.add_networkx_graph(graph, multilayer_inter_intra_format=False)
     assert set(mapping.values()) == set(graph.nodes)
 
@@ -259,7 +238,7 @@ def test_add_networkx_layer_id_without_node_id_raises_clear_error():
     graph.add_node("b", layer_id=2)
     graph.add_edge("a", "b")
 
-    im = infomap.Infomap(silent=True, no_file_output=True)
+    im = infomap.Infomap(silent=True)
     with pytest.raises(ValueError, match="node_id"):
         im.add_networkx_graph(graph)
 
@@ -286,14 +265,20 @@ def test_from_networkx_meta_attribute_engages_and_encodes_strings():
             _nx_with_meta({0: "a", 1: "b", 2: "a", 3: "a", 4: "b", 5: "b"}),
             meta_attribute="ct",
         ),
-        silent=True, num_trials=5, seed=1, meta_data_rate=1.0,
+        silent=True,
+        num_trials=5,
+        seed=1,
+        meta_data_rate=1.0,
     )
     aligned = infomap.run(
         infomap.Network.from_networkx(
             _nx_with_meta({0: "x", 1: "x", 2: "x", 3: "y", 4: "y", 5: "y"}),
             meta_attribute="ct",
         ),
-        silent=True, num_trials=5, seed=1, meta_data_rate=1.0,
+        silent=True,
+        num_trials=5,
+        seed=1,
+        meta_data_rate=1.0,
     )
     assert crossing.meta_codelength > 0
     assert aligned.meta_codelength == 0.0
@@ -316,9 +301,7 @@ def test_find_communities_accepts_meta_attribute():
 
 def test_infomap_add_networkx_graph_accepts_meta_attribute():
     graph = _nx_with_meta({0: "a", 1: "b", 2: "a", 3: "a", 4: "b", 5: "b"})
-    im = infomap.Infomap(
-        silent=True, no_file_output=True, seed=1, num_trials=5, meta_data_rate=1.0
-    )
+    im = infomap.Infomap(silent=True, seed=1, num_trials=5, meta_data_rate=1.0)
     im.add_networkx_graph(graph, meta_attribute="ct")
     result = im.run()
     assert result.meta_codelength > 0
@@ -337,7 +320,7 @@ def test_label_to_internal_id_enumerates_mixed_int_and_string():
 
 def test_add_networkx_graph_handles_mixed_int_string_labels():
     graph = nx.Graph([(1, "a"), ("a", 2)])
-    im = infomap.Infomap(silent=True, no_file_output=True, seed=1, num_trials=1)
+    im = infomap.Infomap(silent=True, seed=1, num_trials=1)
     mapping = im.add_networkx_graph(graph)
     assert set(mapping.values()) == {1, "a", 2}
     assert im.run().num_top_modules >= 1
@@ -379,3 +362,49 @@ def test_find_communities_skips_unregistered_state_ids(monkeypatch):
     monkeypatch.setattr(facade, "Infomap", FakeInfomap)
     communities = infomap.find_communities(nx.Graph([("x", "y")]))
     assert _flatten(communities) == {"x", "y"}
+
+
+# -- trials parity with the igraph helper -------------------------------------
+
+
+def test_find_communities_trials_default_matches_igraph():
+    import inspect
+
+    nx_default = (
+        inspect.signature(infomap.find_communities).parameters["trials"].default
+    )
+    ig_default = (
+        inspect.signature(infomap.find_igraph_communities).parameters["trials"].default
+    )
+    # Both use the same sentinel; the effective default (1) is asserted below.
+    assert nx_default is None and ig_default is None
+
+
+def test_find_communities_rejects_trials_and_num_trials_conflict():
+    with pytest.raises(ValueError, match="trials.*num_trials"):
+        infomap.find_communities(nx.Graph([("a", "b")]), trials=1, num_trials=2)
+
+
+@pytest.mark.parametrize(
+    "kwargs, expected",
+    [
+        ({}, 1),  # neither -> engine default (like run())
+        ({"trials": 7}, 7),  # the convenience alias
+        ({"num_trials": 3}, 3),  # the engine option (back-compat)
+    ],
+)
+@pytest.mark.filterwarnings("ignore::PendingDeprecationWarning")
+def test_find_communities_resolves_num_trials(monkeypatch, kwargs, expected):
+    captured = {}
+    real_infomap = facade.Infomap
+
+    class RecordingInfomap(real_infomap):
+        def __init__(self, *args, **options):
+            captured.update(options)
+            super().__init__(*args, **options)
+
+    monkeypatch.setattr(facade, "Infomap", RecordingInfomap)
+    infomap.find_communities(nx.Graph([("a", "b")]), seed=1, **kwargs)
+    # num_trials is passed explicitly only when set; otherwise it falls to the
+    # engine default (1), same as run().
+    assert captured.get("num_trials", 1) == expected

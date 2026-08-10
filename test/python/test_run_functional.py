@@ -9,13 +9,14 @@ honours the same run-generation guard as the ``Infomap``-backed one.
 
 from __future__ import annotations
 
-import networkx as nx
-import pytest
+import sys
+import warnings
 
 import infomap
+import networkx as nx
+import pytest
 from infomap import Infomap, Network
 from infomap.result import Result, _StaleResultError
-
 
 pytestmark = pytest.mark.fast
 
@@ -39,6 +40,125 @@ def test_run_edgelist_matches_oo():
     assert result.codelength == pytest.approx(expected)
 
 
+def _engine_log(capfd) -> str:
+    """Read the engine log from the fd-level capture.
+
+    The engine writes via ``std::cout``; under pytest's fd-level capture
+    stdout is a pipe, so the C runtime fully buffers the log and it must be
+    flushed before reading (silence assertions would otherwise pass vacuously).
+    """
+    import ctypes
+
+    if sys.platform == "win32":
+        ctypes.cdll.msvcrt.fflush(None)
+    else:
+        ctypes.CDLL(None).fflush(None)
+    return capfd.readouterr().out
+
+
+def test_run_is_silent_by_default(capfd):
+    _engine_log(capfd)  # drain log buffered by earlier (unflushed) tests
+    infomap.run(_LINKS, num_trials=1, seed=1)
+    assert _engine_log(capfd) == ""
+
+
+def test_run_network_input_is_silent_by_default(capfd):
+    _engine_log(capfd)  # drain log buffered by earlier (unflushed) tests
+    net = Network().add_links(_LINKS)
+    infomap.run(net, num_trials=1, seed=1)
+    assert _engine_log(capfd) == ""
+
+
+def test_run_silent_false_override_prints_engine_log(capfd):
+    _engine_log(capfd)
+    # silent=False as a bare keyword forwards to Options without a deprecation
+    # and overrides the default, printing the engine log. logging (enable_log)
+    # is the forward-looking control; the carrier equivalents are below.
+    infomap.run(_LINKS, silent=False, num_trials=1, seed=1)
+    assert _engine_log(capfd) != ""
+
+
+def test_run_options_mapping_silent_false_prints_engine_log(capfd):
+    _engine_log(capfd)
+    infomap.run(_LINKS, options={"silent": False, "num_trials": 1, "seed": 1})
+    assert _engine_log(capfd) != ""
+
+
+def test_run_options_instance_silent_is_respected(capfd):
+    from infomap import Options
+
+    _engine_log(capfd)
+    infomap.run(_LINKS, options=Options(num_trials=1, seed=1))
+    assert _engine_log(capfd) == ""
+
+    infomap.run(_LINKS, options=Options(num_trials=1, seed=1, silent=False))
+    assert _engine_log(capfd) != ""
+
+
+def test_options_default_is_silent():
+    from infomap import Options
+
+    assert Options().silent is True
+    assert Options(silent=False).silent is False
+
+
+def test_stateful_infomap_is_silent_by_default(capfd):
+    _engine_log(capfd)  # drain log buffered by earlier (unflushed) tests
+    im = Infomap(num_trials=1, seed=1)
+    im.add_links(_LINKS)
+    im.run()
+    assert _engine_log(capfd) == ""
+
+
+def test_stateful_infomap_silent_false_prints_engine_log(capfd):
+    _engine_log(capfd)
+    # silent as a bare keyword is pending-deprecated (it moves to logging in
+    # 3.0) but still overrides the default in 2.x; the carrier/logging paths are
+    # the warning-free replacements.
+    with pytest.warns(PendingDeprecationWarning, match="silent"):
+        im = Infomap(silent=False, num_trials=1, seed=1)
+    im.add_links(_LINKS)
+    im.run()
+    assert _engine_log(capfd) != ""
+
+
+def test_network_run_is_silent_by_default(capfd):
+    _engine_log(capfd)
+    net = Network().add_links(_LINKS)
+    net.run(options={"num_trials": 1, "seed": 1})
+    assert _engine_log(capfd) == ""
+
+
+def test_network_run_silent_false_warns():
+    # A Network engine is constructed silent for its whole lifetime (a flag
+    # cannot be switched off per run), so an explicit silent=False warns
+    # instead of being silently ignored. Each fresh Network warns once (the
+    # advisory is once-per-instance, see the guard below), whether run via
+    # net.run() or the functional infomap.run().
+    with pytest.warns(UserWarning, match="silent for its whole lifetime"):
+        Network().add_links(_LINKS).run(
+            options={"silent": False, "num_trials": 1, "seed": 1}
+        )
+
+    with pytest.warns(UserWarning, match="silent for its whole lifetime"):
+        infomap.run(
+            Network().add_links(_LINKS),
+            options={"silent": False, "num_trials": 1, "seed": 1},
+        )
+
+
+def test_network_silent_advisory_warns_once_per_instance():
+    # The silent-for-life advisory is guarded once per Network so a run loop
+    # (e.g. a sweep) does not repeat it every call and train the user to ignore
+    # warnings -- matching the Infomap path's once-per-instance guard.
+    net = Network().add_links(_LINKS)
+    with pytest.warns(UserWarning, match="silent for its whole lifetime"):
+        net.run(options={"silent": False, "num_trials": 1, "seed": 1})
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")  # any further warning fails the test
+        net.run(options={"silent": False, "num_trials": 1, "seed": 1})
+
+
 def test_run_networkx_matches_oo():
     graph = nx.karate_club_graph()
     result = infomap.run(graph, **_SETTINGS)
@@ -57,7 +177,60 @@ def test_run_file_matches_oo(example_network_path):
 
     expected = _oo_codelength(lambda im: im.read_file(str(path)), **settings)
     assert result.codelength == pytest.approx(expected)
-    assert result.codelength == pytest.approx(3.4622731375264144, abs=1e-4)
+    assert result.codelength == pytest.approx(3.385830820341408, abs=1e-4)
+
+
+class _FsPathOnly:
+    """A generic ``os.PathLike`` that is not a ``pathlib.Path``.
+
+    ``__str__`` deliberately disagrees with ``__fspath__``: any consumer that
+    converts with ``str()`` instead of ``os.fspath()`` reads a bogus path.
+    """
+
+    def __init__(self, path):
+        self._path = path
+
+    def __fspath__(self):
+        return str(self._path)
+
+    def __str__(self):
+        return "<not-the-path>"
+
+
+def test_run_accepts_generic_pathlike(example_network_path):
+    path = example_network_path("ninetriangles.net")
+    settings = {"silent": True, "num_trials": 1, "seed": 123}
+
+    result = infomap.run(_FsPathOnly(path), **settings)
+    expected = infomap.run(path, **settings)
+    assert result.codelength == pytest.approx(expected.codelength)
+
+
+def test_infomap_read_file_accepts_pathlike(example_network_path):
+    path = example_network_path("ninetriangles.net")
+
+    im = Infomap(silent=True, num_trials=1, seed=123)
+    im.read_file(_FsPathOnly(path))
+    im.run()
+
+    expected = _oo_codelength(
+        lambda im: im.read_file(str(path)), silent=True, num_trials=1, seed=123
+    )
+    assert im.codelength == pytest.approx(expected)
+
+
+def test_network_read_file_accepts_pathlike(example_network_path):
+    path = example_network_path("ninetriangles.net")
+
+    net = Network().read_file(_FsPathOnly(path))
+    assert net.num_nodes == Network().read_file(str(path)).num_nodes
+
+
+def test_network_from_file_accepts_generic_pathlike(example_network_path):
+    path = example_network_path("ninetriangles.net")
+
+    net = Network.from_file(_FsPathOnly(path))
+    assert net.num_nodes == Network.from_file(str(path)).num_nodes
 
 
 def test_run_network_matches_oo():
@@ -121,12 +294,61 @@ def test_to_networkx_round_trip():
     assert all("flow" in data for _, data in exported.nodes(data=True))
 
     # The exported partition matches the result's module assignment.
-    result_modules = result.modules()
     exported_modules = {
-        node: int(data["infomap_module"])
-        for node, data in exported.nodes(data=True)
+        node: data["infomap_module"] for node, data in exported.nodes(data=True)
     }
-    assert exported_modules == result_modules
+    assert exported_modules == result.modules()
+
+
+def test_to_networkx_attributes_have_native_types():
+    graph = nx.karate_club_graph()
+    result = infomap.run(graph, **_SETTINGS)
+
+    exported = infomap.to_networkx(result)
+    for _, data in exported.nodes(data=True):
+        assert isinstance(data["infomap_module"], int)
+        assert isinstance(data["infomap_path"], str)
+        assert isinstance(data["infomap_level_1"], int)
+        assert isinstance(data["flow"], float)
+    for _, _, data in exported.edges(data=True):
+        assert isinstance(data["weight"], float)
+
+
+def test_to_networkx_graph_survives_graphml_and_gexf(tmp_path):
+    graph = nx.karate_club_graph()
+    result = infomap.run(graph, **_SETTINGS)
+    exported = infomap.to_networkx(result)
+
+    graphml_path = tmp_path / "karate.graphml"
+    nx.write_graphml(exported, graphml_path)
+    read_back = nx.read_graphml(graphml_path)
+    node = next(iter(read_back.nodes))
+    assert isinstance(read_back.nodes[node]["infomap_module"], int)
+    assert isinstance(read_back.nodes[node]["flow"], float)
+
+    nx.write_gexf(exported, tmp_path / "karate.gexf")
+
+
+def test_result_to_networkx_method_matches_function():
+    graph = nx.karate_club_graph()
+    result = infomap.run(graph, **_SETTINGS)
+
+    from_method = result.to_networkx(flow_attribute="f")
+    from_function = infomap.to_networkx(result, flow_attribute="f")
+    assert nx.utils.graphs_equal(from_method, from_function)
+
+
+def test_to_networkx_directed_flow_model_exports_digraph():
+    # Result directedness derives from the effective flow model, so an
+    # explicit flow_model="directed" exports a DiGraph exactly like
+    # directed=True does.
+    net = Network().add_links(_LINKS)
+    for flow_option in ({"flow_model": "directed"}, {"directed": True}):
+        result = infomap.run(net, options={**flow_option, **_SETTINGS})
+        assert isinstance(infomap.to_networkx(result), nx.DiGraph)
+
+    undirected = infomap.run(net, options=_SETTINGS)
+    assert not isinstance(infomap.to_networkx(undirected), nx.DiGraph)
 
 
 def test_network_result_generation_guard_after_rerun():
@@ -176,9 +398,7 @@ def test_run_scipy_sparse_matches_oo():
     result = infomap.run(A, **settings)
     assert isinstance(result, Result)
 
-    expected = _oo_codelength(
-        lambda im: im.add_scipy_sparse_matrix(A), **settings
-    )
+    expected = _oo_codelength(lambda im: im.add_scipy_sparse_matrix(A), **settings)
     assert result.codelength == pytest.approx(expected)
 
 
@@ -214,6 +434,34 @@ def test_to_igraph_round_trip():
     assert exported.ecount() == graph.ecount()
     assert "infomap_module" in exported.vs.attributes()
     assert "flow" in exported.vs.attributes()
+    assert all(isinstance(value, int) for value in exported.vs["infomap_module"])
+    assert all(isinstance(value, str) for value in exported.vs["infomap_path"])
+    assert all(isinstance(value, float) for value in exported.vs["flow"])
+
+
+def test_to_igraph_graph_survives_graphml(tmp_path):
+    ig = pytest.importorskip("igraph")
+    graph = ig.Graph.Famous("Zachary")
+    result = infomap.run(graph, **_SETTINGS)
+    exported = infomap.to_igraph(result)
+
+    path = tmp_path / "karate.graphml"
+    exported.write_graphml(str(path))
+    read_back = ig.Graph.Read_GraphML(str(path))
+    assert all(value is not None for value in read_back.vs["infomap_module"])
+
+
+def test_result_to_igraph_method_matches_function():
+    ig = pytest.importorskip("igraph")
+    graph = ig.Graph.Famous("Zachary")
+    result = infomap.run(graph, **_SETTINGS)
+
+    from_method = result.to_igraph(flow_attribute="f")
+    from_function = infomap.to_igraph(result, flow_attribute="f")
+    assert from_method.vcount() == from_function.vcount()
+    assert from_method.get_edgelist() == from_function.get_edgelist()
+    for attribute in from_function.vs.attributes():
+        assert from_method.vs[attribute] == from_function.vs[attribute]
 
 
 def test_run_rejects_unsupported_input():
@@ -307,3 +555,41 @@ def test_run_rejects_networkx_meta_attribute_kwarg():
     graph.nodes["b"]["ct"] = 1
     with pytest.raises(TypeError, match="Network.from_networkx"):
         infomap.run(graph, meta_attribute="ct", silent=True)
+
+
+# -- input-dispatch guards for mapping / tabular inputs -----------------------
+
+
+def test_run_rejects_dict_input():
+    # A dict is iterable, but iterating it yields only its keys and drops the
+    # values -- a {(u, v): weight} edge dict would silently partition the
+    # unweighted graph. run() rejects it with the explicit conversion instead of
+    # quietly building a different network.
+    with pytest.raises(TypeError, match="does not accept a dict"):
+        infomap.run({(1, 2): 1.0, (2, 3): 1.0, (3, 1): 1.0})
+    with pytest.raises(TypeError, match="does not accept a dict"):
+        infomap.run({1: [2, 3], 2: [3]})
+
+
+def test_run_rejects_dataframe_input_and_conversions_work():
+    pd = pytest.importorskip("pandas")
+    # Iterating a DataFrame yields its column labels, not its edge rows, so
+    # run() rejects it up front with a pointer to the tabular conversions.
+    df = pd.DataFrame({"source": [1, 2, 3, 1], "target": [2, 3, 1, 3]})
+    with pytest.raises(TypeError, match="pandas DataFrame"):
+        infomap.run(df)
+    # The conversions the message points at still work.
+    assert isinstance(infomap.run(df.to_numpy(), num_trials=1, seed=1), Result)
+    assert isinstance(
+        infomap.run(df.itertuples(index=False), num_trials=1, seed=1), Result
+    )
+
+
+def test_run_initial_partition_rejects_non_mapping():
+    with pytest.raises(TypeError, match="must be a mapping"):
+        infomap.run(_LINKS, initial_partition=[0, 0, 0], num_trials=1, seed=1)
+
+
+def test_run_initial_partition_rejects_non_integer_values():
+    with pytest.raises(TypeError, match="integer node/state ids"):
+        infomap.run(_LINKS, initial_partition={1: (0, 0)}, num_trials=1, seed=1)

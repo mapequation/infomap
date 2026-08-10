@@ -1,16 +1,15 @@
 from __future__ import annotations
 
-import builtins
+import importlib
 import subprocess
 import sys
 from types import SimpleNamespace
 
-import pytest
-
 import infomap
 import infomap._facade as facade
+import pytest
+from infomap import _optional
 from infomap.io.igraph import _import_igraph, add_igraph_graph
-
 
 pytestmark = pytest.mark.fast
 
@@ -31,14 +30,16 @@ def test_import_infomap_does_not_import_igraph():
 
 
 def test_missing_igraph_error_mentions_extra(monkeypatch):
-    original_import = builtins.__import__
+    # The guard imports via importlib.import_module (infomap._optional), so
+    # block it there rather than through builtins.__import__.
+    original_import_module = importlib.import_module
 
     def fake_import(name, *args, **kwargs):
         if name == "igraph":
             raise ImportError("missing igraph")
-        return original_import(name, *args, **kwargs)
+        return original_import_module(name, *args, **kwargs)
 
-    monkeypatch.setattr(builtins, "__import__", fake_import)
+    monkeypatch.setattr(_optional.importlib, "import_module", fake_import)
 
     with pytest.raises(ImportError, match=r"infomap\[igraph\]"):
         _import_igraph()
@@ -126,7 +127,7 @@ def test_find_igraph_communities_sets_directed_for_directed_graph(monkeypatch):
 
         def __init__(self, **options):
             self.options = options
-            self.directed = False
+            self.inferred_flow_model = None
             self.codelength = 1.0
             instances.append(self)
 
@@ -137,8 +138,8 @@ def test_find_igraph_communities_sets_directed_for_directed_graph(monkeypatch):
                 flow=[0.5, 0.5],
             )
 
-        def setDirected(self, value):
-            self.directed = value
+        def note_inferred_flow_model(self, flow_model):
+            self.inferred_flow_model = flow_model
 
         def add_node(self, node_id, name=None):
             pass
@@ -155,9 +156,12 @@ def test_find_igraph_communities_sets_directed_for_directed_graph(monkeypatch):
     clustering = infomap.find_igraph_communities(graph, trials=3)
 
     assert clustering.membership == [0, 0]
-    assert instances[0].directed is True
-    assert instances[0].options["silent"] is True
-    assert instances[0].options["no_file_output"] is True
+    assert instances[0].inferred_flow_model == "directed"
+    # silent and no_file_output are no longer forced: the API is quiet by
+    # default and the library surface writes no files without an output
+    # directory, so the finder leaves both at the engine default.
+    assert "silent" not in instances[0].options
+    assert "no_file_output" not in instances[0].options
     assert instances[0].options["num_trials"] == 3
 
 
@@ -368,7 +372,10 @@ def test_from_igraph_meta_attribute_engages():
     g.vs["ct"] = ["a", "b", "a", "a", "b", "b"]  # crossing the two triangles
     result = infomap.run(
         infomap.Network.from_igraph(g, meta_attribute="ct"),
-        silent=True, num_trials=5, seed=1, meta_data_rate=1.0,
+        silent=True,
+        num_trials=5,
+        seed=1,
+        meta_data_rate=1.0,
     )
     assert result.meta_codelength > 0
 
@@ -389,6 +396,24 @@ def test_find_igraph_communities_rejects_trial_and_vertex_weight_conflicts():
 
     with pytest.raises(ValueError, match="vertex_weights"):
         infomap.find_igraph_communities(graph, vertex_weights=[1, 1])
+
+
+@pytest.mark.filterwarnings("ignore::PendingDeprecationWarning")
+def test_find_igraph_communities_accepts_num_trials_alone(monkeypatch):
+    # `num_trials` (the engine option name) is accepted on its own, matching
+    # the networkx helper; only passing it *together* with `trials` conflicts.
+    ig = pytest.importorskip("igraph")
+    captured = {}
+    real_infomap = facade.Infomap
+
+    class RecordingInfomap(real_infomap):
+        def __init__(self, *args, **options):
+            captured.update(options)
+            super().__init__(*args, **options)
+
+    monkeypatch.setattr(facade, "Infomap", RecordingInfomap)
+    infomap.find_igraph_communities(ig.Graph(edges=[(0, 1)]), num_trials=4, seed=1)
+    assert captured["num_trials"] == 4
 
 
 class _Recorder:

@@ -10,7 +10,7 @@ G.add_edge(11, 21, weight=2)
 G.add_edge(22, 32)
 
 # One call from a NetworkX graph to an immutable Result.
-result = run(G, silent=True)
+result = run(G)
 
 for node in sorted(result.nodes(states=True), key=lambda n: n.state_id):
     print(

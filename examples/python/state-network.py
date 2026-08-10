@@ -1,6 +1,6 @@
 from infomap import Infomap
 
-im = Infomap(two_level=True, silent=True)
+im = Infomap(two_level=True)
 
 im.set_name(1, "PRE")
 im.set_name(2, "SCIENCE")
@@ -26,7 +26,7 @@ print(
     f"{result.codelength:.8f} bits"
 )
 
-print("\n#node_id module")
+print("\n#state_id module_id")
 for node, module in result.modules(states=True).items():
     print(node, module)
 

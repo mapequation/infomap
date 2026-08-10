@@ -1,9 +1,18 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from ._arrays import apply_node_meta_data, community_node_data
+
+if TYPE_CHECKING:
+    import networkx
+
+    from .._options import Options
+
+# _run_networkx and add_networkx_graph are internal plumbing shared with the
+# facade and the docs notebooks; only find_communities is public API.
+__all__ = ["find_communities"]
 
 
 def _label_to_internal_id(labels):
@@ -25,21 +34,6 @@ def _stable_unique_labels(labels):
         seen.add(label)
         unique.append(label)
     return unique
-
-
-def _edge_weight(data, weight):
-    """Effective link weight for an edge's data dict: a missing key or a
-    ``None`` value means the edge is unweighted (1.0).
-
-    Weight validity (finite, non-negative) is enforced once by the C++ engine
-    at ingestion, not re-checked per edge here. networkx graphs are read
-    edge-by-edge in Python, so a per-edge Python check is the costly place to
-    validate -- unlike the vectorized scipy/edge_index adapters, which validate
-    a whole array cheaply."""
-    if weight is None:
-        return 1.0
-    w = data.get(weight)
-    return 1.0 if w is None else w
 
 
 def _communities_from_infomap(infomap, node_mapping):
@@ -83,7 +77,7 @@ def _to_internal_partition(initial_partition, node_mapping):
     }
 
 
-def run_networkx(
+def _run_networkx(
     g: Any,
     *,
     weight: str | None = "weight",
@@ -93,13 +87,14 @@ def run_networkx(
     initial_partition: Any = None,
     meta_attribute: str | None = None,
     **infomap_options: Any,
-) -> tuple[Any, dict[int, Any]]:
+) -> tuple[Any, Any, dict[int, Any]]:
     from .._facade import Infomap
 
-    options = {"silent": True, "no_file_output": True}
-    options.update(infomap_options)
-
-    infomap = Infomap(**options)
+    # The Python API is quiet by default (Infomap defaults silent=True), so the
+    # finder does not force silent (a deprecated bare kwarg leaving in 3.0) or
+    # no_file_output (redundant: the library surface writes no files without an
+    # output directory). Both stay overridable through infomap_options.
+    infomap = Infomap(**infomap_options)
     node_mapping = add_networkx_graph(
         infomap,
         g,
@@ -109,26 +104,34 @@ def run_networkx(
         multilayer_inter_intra_format=multilayer_inter_intra_format,
         meta_attribute=meta_attribute,
     )
-    infomap.run(
+    result = infomap.run(
         initial_partition=_to_internal_partition(initial_partition, node_mapping)
     )
-    return infomap, node_mapping
+    # Return the Result alongside the engine so callers can read off the
+    # supported Result surface instead of the deprecated instance mirror.
+    return infomap, result, node_mapping
 
 
 def find_communities(
-    g: Any,
+    g: networkx.Graph,
     *,
     weight: str | None = "weight",
     node_id: str = "node_id",
     layer_id: str = "layer_id",
     multilayer_inter_intra_format: bool = True,
-    initial_partition: Any = None,
+    options: Options | Mapping[str, Any] | None = None,
+    trials: int | None = None,
+    initial_partition: Mapping[Any, Any] | None = None,
     module_attribute: str | None = None,
     flow_attribute: str | None = None,
     meta_attribute: str | None = None,
     **infomap_options: Any,
 ) -> list[set[Any]]:
     """Find communities in a NetworkX-style graph.
+
+    This is the NetworkX variant; its igraph counterpart is
+    :func:`~infomap.find_igraph_communities`. The unqualified name is kept
+    for backward compatibility.
 
     This helper is duck-typed and does not import NetworkX. It accepts the same
     graph objects as :meth:`Infomap.add_networkx_graph`, runs Infomap, and
@@ -140,7 +143,10 @@ def find_communities(
         A NetworkX-compatible graph.
     weight : str or None, optional
         Key to look up link weight in edge data if present. Default
-        ``"weight"``. Use ``None`` to treat every edge as weight 1.
+        ``"weight"``. Use ``None`` to treat every edge as weight 1. The name
+        matches networkx; the igraph counterpart
+        :func:`~infomap.find_igraph_communities` uses ``edge_weights`` /
+        ``vertex_weights`` (python-igraph's own ``community_infomap`` names).
     node_id : str, optional
         Node attribute for physical node ids, implying a state network.
     layer_id : str, optional
@@ -148,28 +154,80 @@ def find_communities(
     multilayer_inter_intra_format : bool, optional
         Use intra/inter format to simulate inter-layer links. Default
         ``True``.
+    options : Options, mapping, or None, optional
+        Base engine configuration carried the 3.0-safe way -- an
+        :class:`~infomap.Options` instance or a mapping. Any bare keyword below
+        (and an explicit ``trials`` / ``num_trials``) takes precedence.
+    trials : int, optional
+        Number of independent trials; the best solution is kept. Convenience
+        alias for the ``num_trials`` Infomap option (matching
+        :func:`~infomap.find_igraph_communities`). Pass ``trials`` or
+        ``num_trials``, not both; if neither is given the engine default
+        ``num_trials=1`` applies -- raise it for research runs.
     module_attribute : str, optional
         If set, write each node's module id back to this node attribute on
         ``g``.
     flow_attribute : str, optional
         If set, write each node's flow back to this node attribute on ``g``.
+    meta_attribute : str, optional
+        Node attribute to read categorical metadata from, for use with the
+        meta-data map equation. Values are encoded to integers in first-seen
+        order and set as Infomap metadata; nodes with missing values are
+        skipped. Raises :class:`ValueError` if the attribute is not set on
+        any node.
     initial_partition : mapping, optional
         Initial module assignment passed to :meth:`infomap.Infomap.run`.
         Keys may use the original NetworkX node labels.
     **infomap_options
-        Keyword arguments passed to :class:`infomap.Infomap`. By default,
-        ``silent=True`` and ``no_file_output=True`` are used unless explicitly
-        overridden.
+        Engine options passed to :class:`infomap.Infomap`. The engine is quiet
+        by default; call ``infomap.enable_log()`` for the log. Prefer carrying
+        non-common options via the ``options=`` argument above (the 3.0-safe
+        path).
 
     Returns
     -------
     list of set
-        A partition of ``g.nodes`` grouped by top-level Infomap module.
+        A partition of ``g.nodes`` grouped by top-level Infomap module. This is
+        the list-of-sets shape NetworkX's own community functions return (e.g.
+        ``networkx.community.louvain_communities``), which also keeps it drop-in
+        for a NetworkX ``community`` backend. The igraph counterpart
+        :func:`~infomap.find_igraph_communities` instead returns an
+        ``igraph.VertexClustering`` -- each finder returns its ecosystem's
+        idiomatic partition type, so the shape differs by design.
+
+    Raises
+    ------
+    ValueError
+        If both ``trials`` and ``num_trials`` are passed.
     """
+    if trials is not None and "num_trials" in infomap_options:
+        raise ValueError("Pass only one of `trials` and `num_trials`.")
+
+    if not hasattr(g, "nodes"):
+        # An igraph.Graph (has .vs/.vcount() but no .nodes view) is the common
+        # mix-up. It has a dedicated entry point because its partition shape
+        # differs: find_igraph_communities returns an igraph.VertexClustering,
+        # not a list[set]. Steer there instead of failing on ``len(g.nodes)``.
+        hint = ""
+        if hasattr(g, "vs") and hasattr(g, "vcount"):
+            hint = " For an igraph.Graph, use infomap.find_igraph_communities(g)."
+        raise TypeError(
+            "find_communities expects a networkx graph (with a `.nodes` view)." + hint
+        )
+
     if len(g.nodes) == 0:
         return []
 
-    infomap, node_mapping = run_networkx(
+    from .._run import _resolve_options
+
+    # Merge the options= carrier under the caller's bare keyword arguments (bare
+    # kwargs win) and apply the `trials` alias. num_trials is left to the engine
+    # default (1), matching infomap.run().
+    engine_options = _resolve_options(options, infomap_options)
+    if trials is not None:
+        engine_options["num_trials"] = trials
+
+    infomap, _, node_mapping = _run_networkx(
         g,
         weight=weight,
         node_id=node_id,
@@ -177,7 +235,7 @@ def find_communities(
         multilayer_inter_intra_format=multilayer_inter_intra_format,
         initial_partition=initial_partition,
         meta_attribute=meta_attribute,
-        **infomap_options,
+        **engine_options,
     )
 
     _set_networkx_node_attributes(
@@ -229,8 +287,8 @@ def add_networkx_graph(
     except IndexError:
         return {}
 
-    if not infomap._core.flowModelIsSet and g.is_directed():
-        infomap._core.setDirected(True)
+    if g.is_directed():
+        infomap._core.note_inferred_flow_model("directed")
 
     node_map = _label_to_internal_id(nodes)
     is_string_id = isinstance(first, str)
@@ -267,9 +325,12 @@ def add_networkx_graph(
                     1.0,
                 )
         else:
-            for state_label in nodes:
+            for state_label, state_name in g.nodes.data("name"):
+                node_name = state_label if is_string_id else state_name
                 infomap.add_state_node(
-                    node_map[state_label], phys_map[node_ids[state_label]]
+                    node_map[state_label],
+                    phys_map[node_ids[state_label]],
+                    name=node_name,
                 )
     else:
         for node, name in g.nodes.data("name"):
@@ -285,7 +346,7 @@ def add_networkx_graph(
             target_layer_id = layer_ids[target]
             source_node_id = phys_map[node_ids[source]]
             target_node_id = phys_map[node_ids[target]]
-            edge_weight = _edge_weight(data, weight)
+            edge_weight = data[weight] if weight is not None and weight in data else 1.0
 
             if multilayer_inter_intra_format:
                 if source_layer_id == target_layer_id:
@@ -297,7 +358,7 @@ def add_networkx_graph(
                     )
                 else:
                     if source_node_id != target_node_id:
-                        raise RuntimeError(
+                        raise ValueError(
                             "Multilayer intra/inter format does not support 'diagonal' links. Use `multilayer_inter_intra_format=False`"
                         )
                     infomap.add_multilayer_inter_link(
@@ -318,7 +379,7 @@ def add_networkx_graph(
                 )
     else:
         for source, target, data in g.edges.data():
-            edge_weight = _edge_weight(data, weight)
+            edge_weight = data[weight] if weight is not None and weight in data else 1.0
             infomap.add_link(node_map[source], node_map[target], edge_weight)
 
     if meta_attribute is not None:

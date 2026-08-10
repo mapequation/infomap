@@ -17,8 +17,11 @@
 #' @param ... Unused.
 #'
 #' @return A `data.frame` (or a `tibble` when `tibble = TRUE`) with
-#'   columns `state_id`, `node_id`, `module_id`, `flow`, `name` and
-#'   (for multilayer networks) `layer_id`.
+#'   columns `state_id`, `node_id`, `module_id`, `flow`, `name`,
+#'   (for multilayer networks) `layer_id` and (for higher-order
+#'   networks) `state_name`. The `name` column always carries the
+#'   physical node name; `state_name` carries the per-state-node name,
+#'   falling back to the physical name when a state node is unnamed.
 #'
 #' @examples
 #' im <- Infomap(silent = TRUE)
@@ -57,6 +60,24 @@ as.data.frame.Infomap <- function(
     },
     character(1L)
   )
+
+  # For higher-order networks, expose the per-state-node name alongside the
+  # physical `name`. Mirrors the conditional `layer_id` column above; omitted
+  # for first-order networks where it would just duplicate `name`.
+  if (isTRUE(x$have_memory)) {
+    state_name <- vapply(
+      raw$state_id,
+      function(id) {
+        nm <- x$get_state_name(id, default = NA_character_)
+        if (is.null(nm) || is.na(nm)) NA_character_ else as.character(nm)
+      },
+      character(1L)
+    )
+    # Fall back to the physical name where a state node has no name.
+    missing <- is.na(state_name)
+    state_name[missing] <- df$name[missing]
+    df$state_name <- state_name
+  }
 
   if (isTRUE(tibble)) {
     if (!requireNamespace("tibble", quietly = TRUE)) {

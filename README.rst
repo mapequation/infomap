@@ -20,7 +20,7 @@ For contributing, security reporting, and maintainer workflows, see
    :target: https://github.com/mapequation/infomap/actions/workflows/ci.yml
    :alt: CI
 
-.. _Map equation: https://www.mapequation.org/publications.html#Rosvall-Axelsson-Bergstrom-2009-Map-equation?utm_source=infomap&utm_medium=readme&utm_campaign=infomap
+.. _Map equation: https://www.mapequation.org/publications.html?utm_source=infomap&utm_medium=readme&utm_campaign=infomap#Rosvall-Axelsson-Bergstrom-2009-Map-equation
 .. _`mapequation.org/infomap/`: https://www.mapequation.org/infomap/?utm_source=infomap&utm_medium=readme&utm_campaign=infomap
 .. _`CHANGELOG.md`: https://github.com/mapequation/infomap/blob/master/CHANGELOG.md
 .. _`CONTRIBUTING.md`: https://github.com/mapequation/infomap/blob/master/CONTRIBUTING.md
@@ -49,7 +49,7 @@ Install optional integrations for common Python graph and analysis workflows:
     pip install "infomap[igraph]"
     pip install "infomap[pandas]"
 
-Upgrades use the usual `pip` flow:
+Upgrades use the usual ``pip`` flow:
 
 .. code-block:: bash
 
@@ -66,34 +66,43 @@ Quick start with Python:
     import infomap
 
     graph = nx.karate_club_graph()
-    communities = infomap.find_communities(
-        graph,
-        seed=123,
-        num_trials=20,
-    )
+    result = infomap.run(graph, seed=123, num_trials=20)
 
-    print(communities)
+    print(result.num_top_modules, result.codelength)
+    print(result.modules())  # {node_id: module_id}
 
-For Jupyter, start with the
-`quickstart notebook <https://github.com/mapequation/infomap/blob/master/examples/notebooks/quickstart.ipynb>`_.
-It shows the notebook-native Infomap result summary, dataframe inspection, a
-copyable static network partition helper, and export paths for further
-analysis.
+``infomap.run`` accepts a NetworkX or igraph graph, a SciPy sparse matrix, a
+``(2, E)`` edge index, a network file path, or an iterable of links. It returns
+an immutable ``Result``. If you only need the communities in the graph's own
+node labels, use ``infomap.find_communities(graph, seed=123, num_trials=20)``,
+which returns a NetworkX-style ``list`` of ``set``\ s of node labels. Its igraph
+counterpart ``infomap.find_igraph_communities`` returns an
+``igraph.VertexClustering``.
 
-For direct control over Infomap-specific options and result access:
+For incremental construction -- adding nodes and links one at a time -- build a
+``Network`` and run it, reading results off the returned ``Result``:
 
 .. code-block:: python
 
-    from infomap import Infomap, InfomapOptions
+    from infomap import Network, run
 
-    options = InfomapOptions(two_level=True, silent=True, num_trials=20, seed=123)
-    im = Infomap.from_options(options)
-    im.add_link(0, 1)
-    im.add_link(1, 2)
-    im.run()
+    net = Network()
+    net.add_link(0, 1)
+    net.add_link(1, 2)
+    result = run(net, two_level=True, num_trials=20, seed=123)
 
-    print(im.num_top_modules, im.codelength)
-    print(im.to_dataframe(columns=["node_id", "module_id", "flow"], index="node_id"))
+    print(result.num_top_modules, result.codelength)
+    print(result.to_dataframe(columns=["node_id", "module_id", "flow"], index="node_id"))
+
+The stateful ``Infomap`` class works the same way
+(``im = Infomap(...); im.add_link(...); result = im.run()``). Use it to keep
+one configured engine and run it repeatedly, or to maintain code written
+against the original API.
+
+For Jupyter, start with the
+`quickstart notebook <https://github.com/mapequation/infomap/blob/master/examples/notebooks/quickstart.ipynb>`_.
+It shows the Infomap result summary, dataframe inspection, a copyable static
+network partition helper, and export paths for further analysis.
 
 .. _PyPI: https://pypi.org/project/infomap/
 .. _`Infomap Python API`: https://mapequation.org/infomap-python-docs/
@@ -186,7 +195,7 @@ the native binary:
 
     npx @mapequation/infomap network.net . --tree
 
-Browser worker and React usage are documented on the `NPM`_ package page.
+The `NPM`_ package page documents browser worker and React usage.
 
 .. _NPM: https://www.npmjs.com/package/@mapequation/infomap
 
@@ -231,8 +240,8 @@ copies or outputs, mount a host directory as a separate workspace path:
         ghcr.io/mapequation/infomap:notebook \
         start.sh jupyter lab
 
-The Dockerfiles in this repository are also smoke-tested in CI and can be
-built locally:
+CI also smoke-tests the Dockerfiles in this repository, and you can build
+them locally:
 
 .. code-block:: bash
 
@@ -258,7 +267,7 @@ Building locally requires a working ``gcc`` or ``clang`` toolchain.
     cd infomap
     make build-native
 
-On macOS, the default OpenMP-enabled build may require Homebrew ``libomp``.
+On macOS, the default OpenMP-enabled build can require Homebrew ``libomp``.
 If OpenMP is unavailable, use:
 
 .. code-block:: bash
@@ -282,13 +291,12 @@ Install shell completion scripts manually with:
     mkdir -p ~/.local/share/bash-completion/completions
     ./Infomap --completion bash > ~/.local/share/bash-completion/completions/infomap
 
-For Zsh, make sure ``~/.zfunc`` is in ``fpath`` and ``compinit`` is loaded from
-``~/.zshrc``. For Bash, make sure ``bash-completion`` is sourced from
-``~/.bashrc``.
+For Zsh, make sure ``fpath`` contains ``~/.zfunc`` and ``~/.zshrc`` loads
+``compinit``. For Bash, make sure ``~/.bashrc`` sources ``bash-completion``.
 
 See ``BUILD.md`` for platform-specific maintainer build details.
 
-Maintainers should use:
+For maintainer tasks, use:
 
 - ``BUILD.md`` for local build and verification commands
 - ``RELEASING.md`` for the release flow
@@ -324,10 +332,10 @@ For contact information, see `mapequation.org/about.html`_.
 Terms of use
 ------------
 
-Infomap is released under a dual licence.
+Infomap is released under a dual license.
 
 The code is available under the GNU General Public License version 3 or any
 later version; see `LICENSE_GPLv3.txt`_.
-For a non-copyleft license, please contact us.
+For a non-copyleft license, contact us.
 
 .. _`LICENSE_GPLv3.txt`: https://github.com/mapequation/infomap/blob/master/LICENSE_GPLv3.txt

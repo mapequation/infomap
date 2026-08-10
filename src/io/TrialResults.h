@@ -33,6 +33,11 @@ struct TrialResultsFile {
   unsigned int trialOffset = 0;
   unsigned int numTrials = 0;
   std::string bestTreeFile; // path relative to this results file's directory
+  // The state-level companion for higher-order input, same relative form. Empty for
+  // first-order networks. Without it a distributed higher-order run published only the
+  // physical projection, where one node id appears in several modules, and the merged
+  // .clu inherited that (#906).
+  std::string bestStatesTreeFile;
   std::vector<TrialResultEntry> trials;
 };
 

@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-import builtins
+import importlib
 import math
 
 import pytest
-from infomap import Infomap
+from infomap import Infomap, _optional
 from infomap.io.scipy import _import_sparse
 
 scipy = pytest.importorskip("scipy")
@@ -12,13 +12,16 @@ sp = scipy.sparse
 
 
 def test_missing_scipy_error_mentions_extra(monkeypatch):
+    # The guard imports via importlib.import_module (infomap._optional), so
+    # block it there rather than through builtins.__import__.
+    original_import_module = importlib.import_module
+
     def missing_scipy_import(name, *args, **kwargs):
         if name == "scipy.sparse":
             raise ImportError("missing scipy")
-        return original_import(name, *args, **kwargs)
+        return original_import_module(name, *args, **kwargs)
 
-    original_import = builtins.__import__
-    monkeypatch.setattr(builtins, "__import__", missing_scipy_import)
+    monkeypatch.setattr(_optional.importlib, "import_module", missing_scipy_import)
 
     with pytest.raises(ImportError, match=r"infomap\[scipy\]"):
         _import_sparse()

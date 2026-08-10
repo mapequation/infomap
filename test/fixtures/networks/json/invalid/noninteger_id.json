@@ -1,0 +1,5 @@
+{
+  "format": "infomap-network",
+  "version": "1.0",
+  "edges": [{ "source": 1.5, "target": 2 }]
+}

@@ -7,9 +7,8 @@ back. A curated ``__all__`` once dropped them, silently breaking
 with no deprecation period. Pin them so the package surface can't regress again.
 """
 
-import pytest
-
 import infomap
+import pytest
 
 # Each is ``.. autoclass``-ed in source/api/iterators.rst.
 DOCUMENTED_TYPES = [
@@ -36,7 +35,7 @@ def test_documented_iterator_types_in_dunder_all():
 
 @pytest.mark.fast
 def test_tree_returns_a_documented_iterator_type():
-    im = infomap.Infomap(silent=True, no_file_output=True)
+    im = infomap.Infomap(silent=True)
     im.add_link(0, 1)
     im.add_link(1, 2)
     im.run()
@@ -50,15 +49,44 @@ def test_treenode_is_importable_from_the_package():
     # the top level (for isinstance / type hints), like Result itself.
     assert hasattr(infomap, "TreeNode")
     assert "TreeNode" in infomap.__all__
-    im = infomap.Infomap(silent=True, no_file_output=True)
+    im = infomap.Infomap(silent=True)
     im.add_link(0, 1)
     assert isinstance(next(im.run().nodes()), infomap.TreeNode)
 
 
 @pytest.mark.fast
-def test_tl_namespace_exposes_only_the_entry_point():
-    # infomap.tl is the Scanpy-style entry point; its internal typing imports
-    # (Any/Mapping/...) must not be part of its public surface.
-    import infomap.tl as tl
+def test_tl_namespace_exposes_curated_names_only():
+    # infomap.tl is the Scanpy-style tools namespace; its internal typing
+    # imports (Any/Mapping/...) must not be part of its public surface, and
+    # the GraphRAG tools are re-exported here as first-class members.
+    from infomap import tl
 
-    assert tl.__all__ == ["infomap"]
+    assert tl.__all__ == [
+        "GraphRAGGraph",
+        "GraphRAGRunResult",
+        "infomap",
+        "read_graphrag",
+        "run_graphrag_communities",
+        "write_graphrag_communities",
+    ]
+    for name in tl.__all__:
+        assert hasattr(tl, name)
+
+
+@pytest.mark.fast
+def test_io_namespace_is_public():
+    assert "io" in infomap.__all__
+    assert infomap.io.export.__all__ == sorted(infomap.io.export.__all__)
+    from infomap.io.export import to_networkx  # noqa: F401
+
+
+@pytest.mark.fast
+def test_io_namespace_reexports_export_helpers():
+    # The result-export helpers are re-exported at the io namespace level
+    # (e.g. infomap.io.to_networkx), mirroring infomap.tl, so io has a curated
+    # public surface rather than only submodules.
+    from infomap import io
+
+    assert io.__all__ == list(infomap.io.export.__all__)
+    for name in io.__all__:
+        assert getattr(io, name) is getattr(infomap.io.export, name)

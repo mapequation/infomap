@@ -1,26 +1,21 @@
-from infomap import Infomap
+from infomap import Network, Options
 
 # Changing eta to 2 results in three modules that maps to metadata categories
 eta = 1
-im = Infomap(two_level=True, silent=True, meta_data_rate=eta)
+net = Network()
 
 # Two triangles connected by {2, 3}
-im.add_link(0, 1)
-im.add_link(0, 2)
-im.add_link(2, 1)
-im.add_link(2, 3)
-im.add_link(3, 4)
-im.add_link(3, 5)
-im.add_link(4, 5)
+net.add_link(0, 1)
+net.add_link(0, 2)
+net.add_link(2, 1)
+net.add_link(2, 3)
+net.add_link(3, 4)
+net.add_link(3, 5)
+net.add_link(4, 5)
 
-im.set_meta_data(0, 2)
-im.set_meta_data(1, 2)
-im.set_meta_data(2, 1)
-im.set_meta_data(3, 1)
-im.set_meta_data(4, 3)
-im.set_meta_data(5, 3)
+net.set_meta_data({0: 2, 1: 2, 2: 1, 3: 1, 4: 3, 5: 3})
 
-result = im.run()
+result = net.run(options=Options(two_level=True, meta_data_rate=eta))
 
 print(
     f"\nFound {result.num_top_modules} modules with codelength "
