@@ -175,7 +175,26 @@ public:
     // restore pass would re-initTree and overwrite that codelength with the
     // reconstructed tree's value.
     bool bestTreeMaterialized = false;
+    // Best trial whose tree is NOT two-level-shaped, tracked separately from the
+    // overall winner. The once-per-run split repair comes in two shapes — the
+    // two-level interleave (flat winner) and the hierarchical one — and on some
+    // networks the overall winner is flat while the repairable headroom sits in
+    // the best DEEP trial, which the winner-only hook could never see. Selected
+    // by codelength with an earliest-index tie-break, so it does not depend on
+    // trial completion order (identical serial and parallel).
+    NodePaths bestDeepTree;
+    double bestDeepCodelength = std::numeric_limits<double>::max();
+    unsigned int bestDeepTrialIndex = std::numeric_limits<unsigned int>::max();
   };
+
+  // A columnar tree is two-level-shaped when every leaf path is {module, rank}.
+  static bool isFlatTree(const NodePaths& tree)
+  {
+    for (const auto& p : tree)
+      if (p.second.size() != 2)
+        return false;
+    return !tree.empty();
+  }
 
   RunSession(InfomapBase& infomap, Network& network, TimingRegistry& timing) : m_infomap(infomap), m_network(network), m_timing(timing) {}
 
@@ -244,16 +263,33 @@ public:
   {
     if (!m_infomap.columnarSearch || m_infomap.haveHardPartition() || result.bestTree.empty())
       return;
-    if (!m_infomap.twoLevel) {
-      // Tree paths carry one slot per module level plus the trailing
-      // leaf-rank slot: a two-level (flat) tree has paths of length 2.
-      for (const auto& p : result.bestTree)
-        if (p.second.size() != 2)
-          return;
-    }
+    // Tree paths carry one slot per module level plus the trailing leaf-rank
+    // slot: a two-level (flat) tree has paths of length 2.
+    const bool deepWinner = !m_infomap.twoLevel && !isFlatTree(result.bestTree);
+    // A deeper winner is only repairable with the hierarchical split operator
+    // (COL_HSPLIT_WINNER); without it the hook stays two-level-only as shipped.
+    if (deepWinner && !ColumnarTwoLevel::hierarchicalWinnerRepairEnabled())
+      return;
     auto timer = m_timing.scope("deep_repair_s");
     const double before = result.bestHierarchicalCodelength;
-    if (!m_infomap.deepRepairColumnarBest(result.bestTree, result.bestHierarchicalCodelength))
+    bool improved = m_infomap.deepRepairColumnarBest(result.bestTree, result.bestHierarchicalCodelength);
+    // Best-of-each-shape: when the winner was FLAT, its repair used the
+    // two-level interleave, so the hierarchical operator has still not been
+    // spent. Offer it the best deep trial — on the memory/state networks that is
+    // where the hierarchical headroom is, and the winner-only hook could never
+    // reach it. Gated on the run's current best, so it can only improve.
+    if (!deepWinner && !result.bestDeepTree.empty()) {
+      NodePaths deepTree = result.bestDeepTree;
+      double deepL = result.bestDeepCodelength;
+      if (m_infomap.deepRepairColumnarBest(deepTree, deepL)
+          && deepL < result.bestHierarchicalCodelength - 1e-10) {
+        result.bestTree = std::move(deepTree);
+        result.bestHierarchicalCodelength = deepL;
+        result.bestTrialIndex = result.bestDeepTrialIndex;
+        improved = true;
+      }
+    }
+    if (!improved)
       return;
     Console::detail(0, "columnar: deep repair of the best trial improved {} -> {}",
                     io::toPrecision(before), io::toPrecision(result.bestHierarchicalCodelength));
@@ -476,6 +512,17 @@ private:
           }
 
           std::lock_guard<std::mutex> lock(bestResultMutex);
+          // Best DEEP trial, same criterion as the serial path: codelength with
+          // an earliest-index tie-break, so it is independent of which worker
+          // finishes first (see maybeTrackBestDeepTrial).
+          if (m_infomap.columnarSearch && !m_infomap.twoLevel && trialNumLevels >= 3
+              && ColumnarTwoLevel::hierarchicalWinnerRepairEnabled()
+              && (trialCodelength < result.bestDeepCodelength - 1e-10
+                  || (std::abs(trialCodelength - result.bestDeepCodelength) < 1e-10 && trialIndex < result.bestDeepTrialIndex))) {
+            result.bestDeepCodelength = trialCodelength;
+            result.bestDeepTrialIndex = trialIndex;
+            result.bestDeepTree = trialTree;
+          }
           const auto bestIndexMissing = result.bestTrialIndex >= m_numTrials;
           const auto isBetter = trialCodelength < result.bestHierarchicalCodelength - 1e-10;
           const auto isEarlierTie = std::abs(trialCodelength - result.bestHierarchicalCodelength) < 1e-10 && trialIndex < result.bestTrialIndex;
@@ -821,9 +868,31 @@ private:
       m_infomap.writeResult(static_cast<int>(m_infomap.trialOffset + trialIndex + 1));
     }
 
+    maybeTrackBestDeepTrial(trialIndex, result);
+
     if (m_infomap.m_hierarchicalCodelength < result.bestHierarchicalCodelength - 1e-10) {
       updateBestResult(trialIndex, result);
     }
+  }
+
+  // Keep the best DEEP (non-two-level) trial for the once-per-run hierarchical
+  // repair. Only materializes a tree when this trial actually takes the slot, so
+  // the common case costs one numLevels() check per trial.
+  void maybeTrackBestDeepTrial(unsigned int trialIndex, Result& result)
+  {
+    if (!m_infomap.columnarSearch || m_infomap.twoLevel || m_numTrials <= 1)
+      return;
+    if (!ColumnarTwoLevel::hierarchicalWinnerRepairEnabled())
+      return;
+    if (m_infomap.numLevels() < 3)
+      return; // two-level-shaped: the flat repair path already covers it
+    if (m_infomap.m_hierarchicalCodelength >= result.bestDeepCodelength - 1e-10)
+      return;
+    result.bestDeepCodelength = m_infomap.m_hierarchicalCodelength;
+    result.bestDeepTrialIndex = trialIndex;
+    result.bestDeepTree.clear();
+    for (auto it(m_infomap.iterLeafNodes()); !it.isEnd(); ++it)
+      result.bestDeepTree.emplace_back(it->stateId, it.path());
   }
 
   void updateBestResult(unsigned int trialIndex, Result& result)
@@ -1849,14 +1918,29 @@ bool InfomapBase::deepRepairColumnarBest(NodePaths& tree, double& codelength)
   // run and amortizes with -N. Runs after the trial loop with a seed derived
   // from the configured seed, so results are deterministic and identical in
   // serial and parallel-trial modes.
+  // A deep (multi-level) winner is repaired by the hierarchical split operator
+  // (COL_HSPLIT_WINNER); a flat winner by the two-level interleave as before.
+  bool deepWinner = false;
+  for (const auto& nodePath : tree)
+    if (nodePath.second.size() != 2) {
+      deepWinner = true;
+      break;
+    }
+
   ColumnarTwoLevel opt;
   // Golden-ratio offset: a repair seed decoupled from every per-trial seed.
   setupColumnarOptimizer(opt, seedToRandomNumberGenerator + 0x9e3779b9UL);
+  // Base objective: the two-level split operator is a no-op, and the
+  // hierarchical one is measurably not worth its scaffolding — on the base
+  // networks the whole once-per-run pass buys −0.0005% (web-NotreDame) and
+  // −0.0008% (science2001) while re-building a 325k-node optimizer, seeding a
+  // 6-level stack and re-materializing the tree (+7.0% and +0.3% CPU). The
+  // repairable hierarchical headroom lives on the memory/state objectives.
   if (!opt.hasModuleMoveCorrections())
-    return false; // base objective: the split operator is a no-op
+    return false;
 
-  // Per-leaf top-module paths from the best tree (paths are coarsest-first
-  // with a trailing leaf-rank slot; a -2 tree has exactly one module level).
+  // Per-leaf module paths from the best tree (paths are coarsest-first with a
+  // trailing leaf-rank slot; a -2 tree has exactly one module level).
   std::unordered_map<unsigned int, std::size_t> leafOfState;
   leafOfState.reserve(m_leafNodes.size());
   for (std::size_t i = 0; i < m_leafNodes.size(); ++i)
@@ -1864,9 +1948,18 @@ bool InfomapBase::deepRepairColumnarBest(NodePaths& tree, double& codelength)
   std::vector<std::vector<int>> paths(m_leafNodes.size());
   for (const auto& nodePath : tree) {
     auto it = leafOfState.find(nodePath.first);
-    if (it == leafOfState.end() || nodePath.second.empty())
+    if (it == leafOfState.end() || nodePath.second.size() < 2)
       return false; // tree does not match the leaf network: leave it alone
-    paths[it->second] = { static_cast<int>(nodePath.second.front()) };
+    if (deepWinner) {
+      // Every module level, coarsest-first, dropping the leaf-rank slot.
+      std::vector<int> p;
+      p.reserve(nodePath.second.size() - 1);
+      for (std::size_t j = 0; j + 1 < nodePath.second.size(); ++j)
+        p.push_back(static_cast<int>(nodePath.second[j]));
+      paths[it->second] = std::move(p);
+    } else {
+      paths[it->second] = { static_cast<int>(nodePath.second.front()) };
+    }
   }
   for (const auto& p : paths)
     if (p.empty())
@@ -1874,7 +1967,7 @@ bool InfomapBase::deepRepairColumnarBest(NodePaths& tree, double& codelength)
 
   if (!opt.seedHierarchyFromLeafPaths(paths))
     return false;
-  const double repairedL = opt.deepRepairTwoLevelStack();
+  const double repairedL = deepWinner ? opt.deepRepairHierarchicalStack() : opt.deepRepairTwoLevelStack();
   if (repairedL >= codelength - 1e-10)
     return false;
   tree = opt.toNodePaths(m_leafNodes);
