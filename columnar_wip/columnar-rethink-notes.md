@@ -1368,3 +1368,81 @@ all improvements.
 which is the OO default — the columnar default is 5e-3, so the help misleads `-C` users about what
 they are changing from. Correcting it touches generated binding metadata (`make build-r-swig
 build-python-swig build-binding-options build-js-metadata`), so it wants its own change.
+
+### F27 — The split operator reaches the hierarchical path (PR, 2026-08-11)
+
+Daniel: "the #890 split operator should be extended to the hierarchical path so you can use that in your
+experiments." Shipped, but not in the shape the first round expected.
+
+**The structural gap.** `moveLoop` always offers one empty module as a candidate
+(`ColumnarMapEquation.cpp`, the `m_mMembers[cMod] > 1 && !m_emptyModules.empty()` branch), and
+`seedAssignment` rebuilds that pool, so a *single* unit can always split off — including in seeded
+loops. But a *group* never could: `mergeLeafModulesWithinParents` only coarsens, and
+`refineLayerWithinGrandparent` re-derives a grandparent all-or-nothing, so one good split bundled with
+several bad ones is rejected wholesale. `splitLevelModules(k, L, allowSingletons)` closes it — the
+piece-level seeded move loop gives group-split AND cross-parent relocation in one operator.
+
+**The finding that changed the design: the discriminator is TRIAL COMPETITIVENESS, not attempt volume.**
+Round 1 (F24) reported the per-trial operator at malaria −0.294%/+1.6% but air30k +27% and reg +25% for
+−0.02..−0.03%, and my diagnosis — "the discriminator is attempt volume, not level; malaria's win is at
+k=0 too but costs 0.06s against air30k's 1.0s" — was **wrong**, refuted by per-trial codelengths:
+
+| air30k trials | shape | off | on | Δ |
+|---|---|--:|--:|--:|
+| 1,3,5,7,9 | hierarchical | 5.4657–5.4732 | 5.4523–5.4563 | −0.20…−0.31% |
+| 2,4,6,8,10 | flat-first | 5.3937–5.4033 | 5.3920–5.4025 | −0.006…−0.032% |
+
+The operator accumulates **4.05%** of in-trial gain on air30k and delivers −0.033%, because ~85% lands
+on hierarchical trials sitting 1.1–1.5% behind the flat-first trials, which can never win the
+best-of-N. On malaria the same trials *do* win. Trial competitiveness is inherently cross-trial, so
+**no within-trial rationing can separate the two networks** — level gating, piece-source gating,
+per-level gain ratchets (malaria 0.114%/attempt vs air30k 0.068%, a 1.7× gap far too thin), attempt
+caps (2.0 vs 3.7 per trial) and `m_bottomConverged` shape gating (separates air30k correctly and
+malaria backwards) were each built, measured and dropped. Generalizable: **a repair operator that
+raises mean trial quality can be worth nothing at best-of-N, and the cost/benefit split may live on an
+axis no per-trial signal can see.**
+
+**Shipped shape: drop the per-trial half, fix the once-per-run half.** Three components, each measured:
+1. **Best-per-shape repair** — track the best *deep* trial separately and repair it when the overall
+   winner is flat. Without it `COL_HSPLIT_WINNER` makes **0 attempts** on malaria (its winner is flat),
+   which is precisely why round 1 believed the per-trial half was load-bearing.
+2. **`winner` level policy** — leaf level only with a module-move correction, keeping the
+   from-singletons piece source. webND operator 1.92s → 1.02s at identical codelength.
+3. **Correction gate on the whole repair** — base networks otherwise buy −0.0005% (webND) / −0.0008%
+   (science2001) for +7.0% / +0.3%, since the scaffolding (325k-node optimizer rebuild + 6-level seed +
+   tree re-materialization) dwarfs the splits.
+
+Plus one bit-exact fix: the gated lambdas in `coarsenModules` and `refineHierarchy` no longer snapshot
+`m_hierLevels[0]` (~50 MB of leaf CSR per gated step on webND, twice per sweep). Two mechanisms were
+built and removed rather than shipped: repair iteration (identical codelengths, 10–40% more attempts)
+and a per-level productivity ratchet (inert — the existing dirty flag already prevents any level
+reaching 3 attempts in one coarsening call).
+
+**Results at the post-#985 baseline** (`-C -N10`, seeds 123/234/345, idle): malaria mean **−0.371%**
+(−0.0688/−0.6134/−0.4305) at +5.1…11.1%; air30k −0.0085/−0.0007/−0.0021% at +1.9…2.9%; reg
+−0.0020/−0.0223/−0.0305% at +1.5…3.1%; every base network bit-identical. Full 13×5: **59/65
+bit-identical**, the six movers being those three networks under `-C` and `-C -F`.
+
+**Why the win survived two intervening changes exactly** (the knee revert and partial seeding): malaria's
+stack has a single interior layer, so `refineSweeps` is 1. The knee only bites with more than one
+interior layer, and partial seeding only fires on a *re*-refine, which a single-sweep search never
+reaches. Both commits are structurally inert on malaria, so neither the baseline nor the repaired value
+could move — the numbers are digit-for-digit identical to the pre-rebase measurement, not merely close.
+
+**Disjointness verified in both directions**, not assumed: with `COL_PARTSEED_Q=1` the split's three
+networks are bit-identical (partial seeding is inert exactly where the split works), while partial
+seeding stays live elsewhere (powergrid 4.749076 → 4.739600); and the split records **0 attempts** on
+webND and science2001 against 11/5 on malaria.
+
+**Merge conflict, resolved by composing rather than choosing.** Only `subClusterLeaves` genuinely
+conflicted (`refineHierarchy` merged on offset): partial seeding had appended a seed pointer, the split
+work had rewritten it as a wrapper over a new `subClusterUnits`. `subClusterUnits` took the seed
+pointer as an extra parameter and `subClusterLeaves` became a one-line wrapper; all four call sites keep
+their prior behaviour, confirmed by default-off being bit-identical on all seven networks.
+
+**One structural note, documented rather than changed:** on a deep winner the hook constructs the repair
+optimizer *before* the `hasModuleMoveCorrections()` bail, so base networks pay one
+`setupColumnarOptimizer` they previously skipped (measured −0.4…0.0% on webND — net negative, because
+the gated-lambda fix more than pays for it). Bailing earlier would mean duplicating the
+correction-attachment predicate outside `addColumnarCorrections`, which would drift as corrections are
+added; asking the constructed object is the robust form, and the cost is inside the noise floor.
