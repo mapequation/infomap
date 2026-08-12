@@ -81,10 +81,12 @@ enum HSplitMode : std::uint8_t {
   kHSplitAuto = 5,
   kHSplitWinner = 6
 };
-static int hSplitParseMode(const char* envName)
+static int hSplitParseMode(const char* envName, int whenUnset)
 {
   const char* e = std::getenv(envName);
   if (e == nullptr)
+    return whenUnset;
+  if (std::string(e) == "off")
     return static_cast<int>(kHSplitOff);
   const std::string v(e);
   if (v == "1" || v == "all")
@@ -104,16 +106,23 @@ static int hSplitParseMode(const char* envName)
 // Per-trial variant: run the split interleave inside every trial's coarsening.
 static int hSplitMode()
 {
-  static const int mode = hSplitParseMode("COL_HSPLIT");
+  static const int mode = hSplitParseMode("COL_HSPLIT", static_cast<int>(kHSplitOff));
   return mode;
 }
-// Once-per-run variant (env COL_HSPLIT_WINNER, same vocabulary): run the split
-// interleave ONCE on the winning trial's hierarchy instead of inside every
-// trial — the #889 maybeDeepRepairBest pattern, which today only fires for
-// two-level-shaped winners. Independent of COL_HSPLIT.
+// Once-per-run variant: run the split interleave ONCE on the winning trial's
+// hierarchy instead of inside every trial — the #889 maybeDeepRepairBest
+// pattern, which previously only fired for two-level-shaped winners.
+// Independent of COL_HSPLIT.
+//
+// ON BY DEFAULT: this is the shipped behaviour (malaria -0.371% mean over
+// seeds 123/234/345 for +5..11% CPU on a ~3s run; air30k and regularized
+// microscopic gains at +1.5..3%; every base network bit-identical at zero
+// cost, because the repair is gated on module-move corrections). Set
+// COL_HSPLIT_WINNER=off to disable it, or to any other mode name to override
+// the level policy.
 static int hSplitWinnerMode()
 {
-  static const int mode = hSplitParseMode("COL_HSPLIT_WINNER");
+  static const int mode = hSplitParseMode("COL_HSPLIT_WINNER", static_cast<int>(kHSplitWinner));
   return mode;
 }
 
