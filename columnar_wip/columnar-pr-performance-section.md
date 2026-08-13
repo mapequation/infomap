@@ -4,7 +4,7 @@
 
 Single-threaded (`MODE=release OPENMP=0`), `--seed 123 -N10` — **best of 10 trials**, the way Infomap is normally run. Codelength in bits; `time` = total wall for all 10 trials, minimum of 3 interleaved repetitions; `top`/`lvls` = top modules / levels of the best partition. The network set spans base (undirected + directed), metadata, multilayer and state/memory objectives; see [`columnar_wip/benchmark-networks.md`](columnar_wip/benchmark-networks.md) for paths and full details. Columnar column = the default columnar search (`-C`).
 
-> **Measured on this PR's binary** (every table below), after merging master in (all 65 configs × 3 interleaved repetitions, one idle-machine session). **Every codelength in this section moved, on both engines**, and none of it is a search change: master's [#949](https://github.com/mapequation/infomap/pull/949) now seeds every trial the same way in every mode, so trials 1..9 of an `-N10` run draw a different sequence than before. Two controls pin that down — **`-N1` is bit-identical across the sync** on all 8 networks checked (the columnar search itself is untouched), and **master's OO output equals this branch's OO output** on all 7 OO configs checked (the branch is exactly neutral on the OO path, so every OO shift arrived with master). The per-seed spread swamps the per-cell shift in both directions: over seeds 123/234/345/456 the old→new `-C` delta averages +0.04% on netsci, −0.04% on malaria and +0.06% on powergrid. Master's `7da08cfb` also hoists per-node-constant plogp out of the **OO** move loop, so every columnar-vs-OO *speed ratio* below is against a faster baseline than the previous refresh. One real cost arrives too — master's #948 validates cluster-data tree shape inside `initTree`, which the columnar engine calls **per trial** — costing web-NotreDame ~6.9pp of its +8.0% on `-C` and nothing measurable below ~10k nodes; the master-sync section below measures it and names the fix.
+> **Every number in this section is fresh for this PR**, measured on this PR's binary in one idle-machine session: all 65 configs (13 networks × {OO, `-C`, `-C -F`, OO `-2`, `-2 -C`}), interleaved, minimum of 3 repetitions, with the base branch's columnar arms run in the same session for the comparison below. Nothing here is carried over from an earlier refresh. **All 65 codelengths reproduce the base branch's exactly** — this PR is a memory-layout change and is bit-identical by design, so the tables double as its correctness evidence. For why the absolute values differ from refreshes before the base branch merged master, see the performance section on `columnar-hierarchical-core`.
 
 <table>
 <thead>
@@ -40,9 +40,9 @@ Single-threaded (`MODE=release OPENMP=0`), `--seed 123 -N10` — **best of 10 tr
 `nodes`: state nodes for air30k (13 213 states over 183 physical); physical·layers for malaria. **Bold** = columnar beats or exactly ties OO. Parentheses on the columnar `-C` columns = change vs OO (`(=)` = bit-identical; negative time = faster).
 
 **Reading the table**
-- **Codelength** — columnar `-C` **ties or beats OO on 9 of 13 configs**: it beats OO on malaria (−1.40%), powergrid (−0.37%), science2001 (−0.04%), regularized air30k (−0.04%), air30k (−0.008%) and jazz (−0.004%), and ties lazega and the toys. Remaining gaps: pref-mods +3.72% (the `|K − K_pref|` bias is leaf-loop-only, #827), netsci +0.27%, web-NotreDame +0.05%, politicalblogs +0.03%. Regularized air30k crossed from +0.007% behind to ahead, and jazz from an exact tie to a win — both within the per-seed spread, so read them as ties that landed on the good side of this seed rather than as new wins.
+- **Codelength** — columnar `-C` **ties or beats OO on 9 of 13 configs**: it beats OO on malaria (−1.40%), powergrid (−0.37%), science2001 (−0.04%), regularized air30k (−0.04%), air30k (−0.008%) and jazz (−0.004%), and ties lazega and the toys. Remaining gaps: pref-mods +3.72% (the `|K − K_pref|` bias is leaf-loop-only, #827), netsci +0.27%, web-NotreDame +0.05%, politicalblogs +0.03%. Regularized air30k, air30k and jazz are inside the per-seed spread either way, so read those three as ties that fell on the good side of this seed rather than as wins.
 - **The web-NotreDame gap is a user choice.** At the default knee it is +0.05%. Adding `--tune-iteration-relative-threshold 1e-3` takes it to 5.56067487 — **−0.094%, ahead of OO** — for +30% wall; `0` (full convergence) reaches 5.55881205, −0.128% ahead, for +91%. F26 explains why the deeper refinement is a dial rather than the default.
-- **Speed** — columnar is faster on every non-trivial network: ~1.8× on regularized air30k, ~2.4× on science2001 and pref-mods, ~2.8–3.0× on malaria and air30k, ~7× on powergrid and web-NotreDame (20.6s vs 144.2s). The multipliers are lower than the previous refresh on the OO-heavy rows because master's `7da08cfb` made the **OO** baseline 5–13% faster, not because columnar slowed.
+- **Speed** — columnar is faster on every non-trivial network: ~1.8× on regularized air30k, ~2.4× on science2001 and pref-mods, ~2.8–3.0× on malaria and air30k, ~7× on powergrid and web-NotreDame (19.8s vs 140.8s).
 - **Shape** — columnar produces leaner, shallower maps (web-NotreDame: 5 top modules / 6 levels vs OO's 17 / 13)
 
 ### The fast dial `-F`
@@ -80,98 +80,9 @@ Single-threaded (`MODE=release OPENMP=0`), `--seed 123 -N10` — **best of 10 tr
 
 Parentheses on the columnar `-F` columns = change vs `-C` (`(=)` = bit-identical; negative time = faster); both columns are from the current same-session re-measurement. Sub-0.1s toy times are shown without a percentage (measurement floor).
 
-**`-F` still ties `-C` on 10 of 13 configs** — including pref-mods, where it previously lost another +2.3% — because the flat-first trials carry the same winning partitions into both searches. The dial only bites on the base networks with real deep hierarchy, where skipping the interior refinement trades codelength for speed — and the F23 knee widens that trade, because it deepens exactly the refinement `-F` skips: web-NotreDame **+1.02% for −25% time**, powergrid +0.69% for −35%, netsci +0.21%. Partial seeding widens the dial further, because it improves `-C` on exactly the three networks `-F` cannot follow it on (the re-refine gate makes `-F` bit-identical by construction). On the flat-winning networks `-F` is 0–12% faster than `-C`, because `-C`'s expensive pass — the interior refinement — is exactly the one the flat bottom no longer needs (below). The tie set is unchanged by the sync; only the three dial rows move, and they move because both arms drew a new trial sequence (see the note at the top).
+**`-F` still ties `-C` on 10 of 13 configs** — including pref-mods, where it previously lost another +2.3% — because the flat-first trials carry the same winning partitions into both searches. The dial only bites on the base networks with real deep hierarchy, where skipping the interior refinement trades codelength for speed — and the F23 knee widens that trade, because it deepens exactly the refinement `-F` skips: web-NotreDame **+1.02% for −25% time**, powergrid +0.69% for −35%, netsci +0.21%. Partial seeding widens the dial further, because it improves `-C` on exactly the three networks `-F` cannot follow it on (the re-refine gate makes `-F` bit-identical by construction). On the flat-winning networks `-F` is 0–12% faster than `-C`, because `-C`'s expensive pass — the interior refinement — is exactly the one the flat bottom no longer needs (below).
 
 The columnar interior refinement stops at a diminishing-returns knee (default `--tune-iteration-relative-threshold` = 5e-3). On the two deep base networks, lowering it to 1e-3 buys 0.05–0.14% of codelength for 23–30% more time; shallow networks are structurally unaffected. See the knee section below.
-
-### Merging master in: what moved, and why none of it is the engine (F28)
-
-**Merged, not rebased, and that is a deliberate choice.** Thirteen sub-PRs have been merged into this
-branch (#823, #833, #835, #868, #874, #879, #880, #890, #891, #983, #985, #987, #988), each by
-rebase-merge — so each one's recorded merge commit *is* a commit on this branch. A rebase rewrites all
-of them: checked, **13 of 13** would end up detached, leaving those PRs marked merged into a history
-that no longer contains them. The merge commit also gives the numbers a boundary to hang on: every
-per-feature table below it was measured against the pre-sync baseline, and the tables at the top
-against the new one.
-
-Master was merged in after 122 upstream commits. Three of them touch every number in
-this section, and none of them is a columnar change:
-
-- **[#949](https://github.com/mapequation/infomap/pull/949) — seed every trial the same way, in every mode.**
-  The serial path used to reseed only in "sharding mode"; it now reseeds unconditionally from
-  `baseSeed + trialOffset + trialIndex`, which is exactly the formula the columnar branch already used
-  in the parallel path. Trials 1..9 of an `-N10` run therefore draw a different sequence than before,
-  on **both** engines. This is the whole story behind the codelength movement.
-- **`7da08cfb` — plogp hoisted out of the OO move-loop delta.** The OO baseline is 5–13% faster, so
-  every columnar-vs-OO speed multiplier is quoted against a faster reference.
-- **[#948](https://github.com/mapequation/infomap/pull/948) (`d55c2365`) — cluster-data tree-shape validation.**
-  Does not touch the columnar core, but adds work to a shared function the columnar engine calls per
-  trial. Accounts for about three quarters of the one network-scale slowdown. See below.
-
-Two controls separate "the seeds moved" from "the search changed", and both come out clean:
-
-| control | result |
-|---|---|
-| `-C -N1`, pre-sync core vs post-sync core | **bit-identical codelength on 8/8 networks** — trial 0 is unaffected by #949, so the search is provably untouched |
-| OO `-N10`, plain master vs post-sync core | **identical on 7/7 networks** — the branch is exactly neutral on the OO path, so every OO shift arrived with master |
-
-That leaves the per-cell `-N10` differences as re-draws from an unchanged distribution, which the seed
-sweep confirms — old→new `-C` deltas over seeds 123/234/345/456:
-
-| network | 123 | 234 | 345 | 456 | mean |
-|---|--:|--:|--:|--:|--:|
-| netscicoauthor2010 | +0.122% | +0.009% | −0.034% | +0.058% | **+0.039%** |
-| malaria | −0.265% | +0.143% | +0.110% | −0.145% | **−0.039%** |
-| powergrid | +0.031% | +0.056% | +0.015% | +0.135% | **+0.059%** |
-
-Every mean is inside ±0.06% and the per-seed spread is larger than the shift, so no network changed
-quality. The two cells that clear 0.1% at seed 123 — netsci `-C` +0.122% and malaria `-C` −0.265% —
-are the tails of exactly that spread, in opposite directions.
-
-**Speed, measured where the partition is bit-identical** (`-C -N1`, so the only variable is code;
-min-of-5 to min-of-7, interleaved): malaria −2.0%, air30k −2.6%, regularized air30k ±0, powergrid one
-timer tick, science2001 +2.0%, **web-NotreDame +4.7%** (`-N10`: +6.7%). Only web-NotreDame is worth
-explaining, and the timing registry localises it exactly — `flow_calculation_s` 0.315 → 0.313 and
-`init_network_s` 0.153 → 0.142 are flat, while `trial_optimize_s` goes **1.943 → 2.073 (+6.7%)**.
-
-The cause is **#948's cluster-data tree-shape validation**. To be precise about what that means,
-because "a cluster-data fix slowed the columnar engine" sounds wrong: **#948 does not touch the
-columnar core at all** — it changed five files, none of them `Columnar*`. What it changed is the
-*shared* `InfomapBase::initTree`, and the columnar engine is the one caller that invokes `initTree`
-**per trial**:
-
-| `initTree` caller | when |
-|---|---|
-| `columnarPartition` | **every trial** — materializes `opt.toNodePaths(...)` into the InfoNode tree |
-| `initTrialPartition` | per trial, but only when the input carries embedded JSON initial-partition paths |
-| `initPartition(cluster file)`, `restoreBestResult`, `maybeDeepRepairBest` | once per run |
-
-That per-trial call is how the columnar result becomes an output tree; it is **pre-existing on this
-branch, not something the sync introduced** (it is at `InfomapBase.cpp:2023` on the pre-sync tip). The
-sync only made the function it calls more expensive. On ordinary input OO reaches none of the
-per-trial rows, which is why OO gets *faster* across the sync while `-C` gets slower.
-
-| binary (web-NotreDame `-C -N1`, `trial_optimize_s`, min-of-5) | | |
-|---|--:|--:|
-| pre-sync core | 1.953s | — |
-| post-sync core | 2.100s | +7.5% |
-| post-sync core, #948 check disabled | 1.992s | **+2.0%** |
-
-`initTree` now builds two `std::map<Path, bool>` keyed by `std::vector<unsigned int>`, one entry per
-path prefix per leaf, to reject cluster data that gives a module both a leaf and a sub-module as
-children. That is the right check for user-supplied `--cluster-data`. But what `columnarPartition`
-hands it is Infomap's *own* output, which cannot mix depths by construction — so on 325 729 leaves it
-is ~1.6M map insertions per trial for a condition that can never hold. It accounts for **5.5pp of
-`-C`'s 7.5pp** and 7pp of `-C -F`'s 11.2pp — about three quarters, not all: the residual +2.0% is
-unattributed and inside code-layout noise. science2001 (7 170 nodes) and air30k are inside noise
-entirely, so the cost scales with leaf count × depth as the shape predicts.
-
-Two things this is *not*, both checked rather than assumed: it is **not** the #958/#961/#963 flow
-post-conditions (gated off in a measurement build, they cost **0.003s — +0.1%** of the trial), and it
-is **not** #954's iterator change (reverting it leaves the regression intact). Nothing is disabled on
-this branch — those gates existed only in throwaway measurement builds. **A cheap fix exists** (skip the shape validation when `initTree` is handed
-engine-generated paths rather than parsed cluster data); it is left for a follow-up rather than folded
-into a master sync, and the residual +2.0% is inside code-layout noise.
 
 ### The refine knee stays at 5e-3, and 1e-3 is a dial (F23 → F26)
 
@@ -203,7 +114,7 @@ Every measured run behind this section is logged row-per-run in [`columnar_wip/c
 
 ### Two-level clustering (`-2`)
 
-`--two-level` is wired to the columnar engine on the `columnar-two-level` branch (PR #823): the full two-level optimize materialized as a two-level stack, followed by the correction-aware module-merge coarsening interleaved with a seeded leaf fine-tune until the pair stops improving, plus the #889 coarse-tune (in-trajectory repair every trial + deep repair of the winning trial). **No change to the `-2` code path since PR #890** — the codelengths below moved only with the sync's new trial sequence (see the note at the top), and every row is re-measured in the same session as the tables above.
+`--two-level` is wired to the columnar engine on the `columnar-two-level` branch (PR #823): the full two-level optimize materialized as a two-level stack, followed by the correction-aware module-merge coarsening interleaved with a seeded leaf fine-tune until the pair stops improving, plus the #889 coarse-tune (in-trajectory repair every trial + deep repair of the winning trial). **No change to the `-2` code path since PR #890**, and none from this PR — every codelength below is bit-identical to the base branch, and every row is re-measured in the same session as the tables above.
 
 <table>
 <thead>
