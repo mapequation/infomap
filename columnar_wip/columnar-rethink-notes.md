@@ -1769,3 +1769,85 @@ lives only in a commit message.
 Worth keeping as the rule: **a master sync is a change to this branch like any other, so it gets a
 branch, a PR, and a perf snapshot.** The cost is one extra PR; the thing it buys is not landing a red
 branch.
+
+### F31 — A parallel-trial worker is not a copy of the main instance (#989, 2026-08-13)
+
+`--columnar --parallel-trials --entropy-corrected` returned the **one-level codelength on every
+trial** — 4.918622 ×4 on ninetriangles seed 7, against 3.635831 from the same run done serially, with
+all 27 nodes in a single module. The second symptom was a `checkRunSanity` trip on
+`getIndexCodelength() >= 0` at −5.9952e-15: one module means an index codelength of zero up to
+round-off.
+
+**Cause.** `runTrialsInParallel` builds each worker as a fresh `InfomapBase` and hands it the run's
+network as an *argument*: `worker.initNetwork(m_network)`. `InfomapBase::m_network` is a value member,
+so the worker keeps its own default-constructed, **empty** one — the run's network is never stored
+there. Anything the search reads back off `m_network` is therefore zero inside a worker.
+`addColumnarCorrections` did exactly that for the entropy-bias divisor:
+
+```cpp
+double totalDegree = m_network.sumWeightedDegree();      // 0 in a worker
+if (totalDegree < m_network.sumDegree()) …               // 0
+opt.addCorrection(std::make_unique<BiasedEntropyCorrection>(mult, totalDegree));
+```
+
+and `BiasedEntropyCorrection`'s constructor guards `totalDegree > 0.0 ? totalDegree : 1.0`. So the
+divisor was **1** instead of ninetriangles' 108 — the correction came out two orders of magnitude too
+strong, every extra node in the tree was priced at ~0.5 bits, and the cheapest tree won: one module.
+The guard is what turned a division by zero into a plausible-looking wrong answer; without it the run
+would have produced `inf` and been noticed years earlier.
+
+The object-oriented engine never had this because `initNetwork(Network& network)` pushes the same
+figure into the objective from the **argument** — `m_optimizer->setNetworkProperties(network)`. The
+columnar correction is built later and from the wrong source. Fix: derive the divisor in
+`initNetwork(Network&)` alongside that call, from the network passed in, and have
+`addColumnarCorrections` read the stored value. The rule for computing it now has one definition
+(`BiasedMapEquation::entropyBiasTotalDegree`) instead of two copies that could drift.
+
+**Why it had never been seen.** Not a regression: pre- and post-merge binaries agree. Master's #947
+added the OpenMP compile flags to the C++ test targets; before it, `_OPENMP` was undefined in the test
+translation unit and every `#ifdef _OPENMP` body — which is where the parallel-trials contracts live —
+compiled to nothing. The cases were in the ctest list and reported as passing.
+
+**Two things this says about the test suite, both worth more than the bug.**
+
+*Worker-count invariance cannot catch a worker bug.* `Parallel trials with entropy correction are
+invariant to worker count` is tagged `[columnar-contract]` and passed throughout, because both arms —
+1 worker and 4 — run through `runTrialsInParallel`. A fact missing from every worker is missing from
+both. Only a **parallel vs serial** comparison crosses the boundary where the fact goes missing.
+
+*The parallel-vs-serial cases were asserting something false by construction.* They compared parallel
+trial *i* against a serial `-N1` run with seed 7+*i*. A trial's result is a function of its seed **and
+its global trial index** — `m_columnarFlatFirstTrial = (trialOffset + trialIndex) % 2 == 1` alternates
+the hierarchy-build strategy — and a `-N1` run is always trial 0. Where the strategy changes the
+answer the equality simply does not hold: on ninetriangles `--markov-time 1.5` the parallel vector is
+[4.068, 3.771, 4.068, 3.771] while every `-N1` run returns 4.068. The existing cases passed on `-N1`
+only because their own fixtures score the same either way — a green that was luck, and a red waiting
+for the next change to the flat-first strategy. They now compare against a serial `--num-trials 4` run
+element-wise, which is the invariant that is actually true: *`--parallel-trials` is a scheduling
+choice and nothing else*.
+
+**Coverage swept while here** (parallel `-N4` vs serial `-N4`, element-wise, `--columnar`): default,
+`-2`, `-F`, `--entropy-corrected`, `--markov-time 1.5`, `--variable-markov-time`, `-d`,
+`-d --recorded-teleportation`, `--preferred-number-of-modules`, states, multilayer, multilayer `-d`,
+bipartite, weighted directed, `--meta-data` (first-order and states), `--cluster-data`,
+`--no-infomap --cluster-data`. All agree. So the entropy divisor was the only run-scope fact the
+columnar search was reading off `m_network`.
+
+**Still open, deferred (#994).** The other half of the same asymmetry: workers never get the native
+columnar leaf input either, because `buildColumnarLeafInput` runs in `RunSession` and the worker
+bypasses it, so `m_columnarNativeInput` is false and every trial rebuilds from the InfoNode leaf tree
+via `buildFromLeaves`. Measured at one worker (`OMP_NUM_THREADS=1`, min of 3, so parallelism is not a
+factor), the worker path costs **+13.3%** (science2001 `-d`), **+20.2%** (web-NotreDame `-d`) and
+**+7.5%** (air30k) CPU for the same four trials. Not attributed to one cause: workers also call the
+full `initNetwork` per trial, regenerating the whole InfoNode leaf tree, where the serial path only
+calls `removeModules()`. Isolating the two needs a build, which is why it is a separate issue and not
+an extra paragraph here.
+
+**The general lesson, which outlives this bug.** *A parallel-trial worker is not a copy of the main
+instance.* It gets the config, the cancel flag, and one `initNetwork` call. Any run-scope fact the
+search needs must arrive through one of those three, and the compiler will not tell you when one
+doesn't — `m_network` is a perfectly valid empty object. Before adding a read of `m_network` (or of
+anything else built in `RunSession`) to code the trial loop reaches, check what it returns in a
+worker. Two more such reads exist today at `InfomapBase.cpp`'s `regularizedPriorOnly` lines
+(`network().numLinks() == 0`, true in any worker); they are on the shared OO path and are permissive
+rather than wrong, but they are the same shape.

@@ -134,15 +134,24 @@ double runSingleTrialFixture(unsigned int seed)
   return im.codelength();
 }
 
-// Serial single-trial run whose flags (other than seed/num-trials) match runParallelTrialsFixture,
-// so parallel trial i must equal the serial run with seed 7+i element-wise for the same mode.
-double runSingleTrialFixtureWith(unsigned int seed, const std::string& extraFlags)
+// Serial four-trial run whose flags (other than --parallel-trials) match
+// runParallelTrialsFixture, so parallel trial i must equal serial trial i element-wise.
+//
+// One serial --num-trials 4 run rather than four --num-trials 1 runs with seeds 7..10: a
+// trial's result is a function of its seed AND its global trial index, so a -N1 run is not
+// the same trial as parallel trial i for any i > 0. The columnar engine alternates its
+// hierarchy-build strategy on that index (m_columnarFlatFirstTrial), and a -N1 run is always
+// trial 0 -- against -N1 this asserts an equality that is false by construction wherever the
+// strategy changes the result. On this fixture with --markov-time 1.5 the parallel vector is
+// [4.068, 3.771, 4.068, 3.771] while every -N1 run returns 4.068. The cases below happened to
+// pass on -N1 only because their own fixtures score the same either way.
+std::vector<double> runSerialTrialsFixture(const std::string& extraFlags = "")
 {
-  InfomapWrapper im(infomap::test::withTestEngine("--silent --seed " + std::to_string(seed) + " --num-trials 1 --no-file-output " + extraFlags));
+  InfomapWrapper im(infomap::test::withTestEngine("--silent --seed 7 --num-trials 4 --no-file-output " + extraFlags));
   im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
   im.run();
   infomap::test::checkRunSanity(im);
-  return im.codelength();
+  return im.codelengths();
 }
 
 // Interrupt-handler callbacks (signature `bool(*)(void*)`): return true to
@@ -802,11 +811,7 @@ TEST_CASE("Parallel trials run with variable Markov time without falling back [f
   CHECK(capture.output.str().find("is not supported with --variable-markov-time") == std::string::npos);
 }
 
-// Not tagged [columnar-contract]: the columnar engine's --parallel-trials path disagrees with
-// its own serial path under --entropy-corrected (parallel 4.918622 vs serial 3.635831 on the
-// ninetriangles fixture, seed 7). Pre-existing and deferred -- see #989. These still run
-// against OO, which is self-consistent here; re-tag them as part of that fix.
-TEST_CASE("Parallel trials run with entropy correction without falling back [fast][core][lifecycle]")
+TEST_CASE("Parallel trials run with entropy correction without falling back [fast][core][lifecycle][columnar-contract]")
 {
   LogCapture capture;
   InfomapWrapper im(infomap::test::withTestEngine("--seed 7 --num-trials 2 --parallel-trials --entropy-corrected --no-file-output"));
@@ -841,27 +846,33 @@ TEST_CASE("Serial entropy correction is deterministic across fresh instances [fa
 TEST_CASE("Parallel trials with variable Markov time match serial trials [fast][core][lifecycle][openmp][columnar-contract]")
 {
 #ifdef _OPENMP
-  // Each parallel trial i must equal the serial single-trial run with seed 7+i for the same mode.
-  // This pins both correctness (parallel == serial) and that serial VMT results are unchanged.
-  const auto codelengths = runParallelTrialsFixture("--variable-markov-time");
-  REQUIRE(codelengths.size() == 4);
-  for (unsigned int i = 0; i < codelengths.size(); ++i) {
-    CHECK(codelengths[i] == doctest::Approx(runSingleTrialFixtureWith(7 + i, "--variable-markov-time")));
+  // Each parallel trial must equal the same trial run serially, so --parallel-trials is a
+  // scheduling choice and nothing else. VMT is the mode that used to fall back to serial.
+  const auto parallel = runParallelTrialsFixture("--variable-markov-time");
+  const auto serial = runSerialTrialsFixture("--variable-markov-time");
+  REQUIRE(parallel.size() == 4);
+  REQUIRE(serial.size() == 4);
+  for (unsigned int i = 0; i < parallel.size(); ++i) {
+    CHECK(parallel[i] == doctest::Approx(serial[i]));
   }
 #endif
 }
 
-// Not tagged [columnar-contract]: the columnar engine's --parallel-trials path disagrees with
-// its own serial path under --entropy-corrected (parallel 4.918622 vs serial 3.635831 on the
-// ninetriangles fixture, seed 7). Pre-existing and deferred -- see #989. These still run
-// against OO, which is self-consistent here; re-tag them as part of that fix.
-TEST_CASE("Parallel trials with entropy correction match serial trials [fast][core][lifecycle][openmp]")
+// A worker is not a copy of the main instance: it owns an empty Network and is handed the run's
+// network only as an initNetwork argument. Anything the search reads back off m_network is
+// therefore zero inside a worker, and this is the case that catches it -- the entropy-bias
+// divisor fell through to its 1.0 fallback and every parallel trial collapsed to one module
+// (#989). Note what does NOT catch it: the worker-count-invariance cases below run both arms
+// through the same worker path, so a fact missing from every worker is missing from both.
+TEST_CASE("Parallel trials with entropy correction match serial trials [fast][core][lifecycle][openmp][columnar-contract]")
 {
 #ifdef _OPENMP
-  const auto codelengths = runParallelTrialsFixture("--entropy-corrected");
-  REQUIRE(codelengths.size() == 4);
-  for (unsigned int i = 0; i < codelengths.size(); ++i) {
-    CHECK(codelengths[i] == doctest::Approx(runSingleTrialFixtureWith(7 + i, "--entropy-corrected")));
+  const auto parallel = runParallelTrialsFixture("--entropy-corrected");
+  const auto serial = runSerialTrialsFixture("--entropy-corrected");
+  REQUIRE(parallel.size() == 4);
+  REQUIRE(serial.size() == 4);
+  for (unsigned int i = 0; i < parallel.size(); ++i) {
+    CHECK(parallel[i] == doctest::Approx(serial[i]));
   }
 #endif
 }
