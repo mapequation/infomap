@@ -69,7 +69,14 @@ export async function run(
   const { filename = "network.net", args = [], outName } = options;
   const extraArgs =
     typeof args === "string" ? args.split(/\s+/).filter(Boolean) : [...args];
-  const base = outName ?? basenameWithoutExtension(filename);
+  // --out-name inside args is honoured too, the way the worker entry point reads it, so
+  // the two surfaces agree. Passing it there used to be silently ignored here: the
+  // engine wrote one basename while the results were read back under another.
+  // lastIndexOf, mirroring the engine: it takes the last occurrence of an option.
+  const outNameFlagIndex = extraArgs.lastIndexOf("--out-name");
+  const outNameFromArgs =
+    outNameFlagIndex >= 0 ? extraArgs[outNameFlagIndex + 1] : undefined;
+  const base = outName ?? outNameFromArgs ?? basenameWithoutExtension(filename);
   if (outName) {
     extraArgs.push("--out-name", outName);
   }
@@ -90,7 +97,12 @@ export async function run(
 
   const workDir = "/work";
   Module.FS.mkdir(workDir);
-  const inputPath = `${workDir}/${filename}`;
+  // The input goes in its own directory so it cannot be read back as output: the out
+  // name is the input filename minus its extension, so ${workDir}/${base}.net was the
+  // input file and the "net" result key handed the caller its own network back (#903).
+  const inputDir = `${workDir}/input`;
+  Module.FS.mkdir(inputDir);
+  const inputPath = `${inputDir}/${filename}`;
   Module.FS.writeFile(inputPath, network);
 
   let status = 0;
@@ -112,6 +124,7 @@ export async function run(
   }
 
   const result: Result = {};
+  let found = 0;
   for (const file of resultFiles) {
     const outputPath = `${workDir}/${base}${file.suffix}.${file.extension}`;
     let content: string;
@@ -120,9 +133,20 @@ export async function run(
     } catch {
       continue;
     }
+    found++;
     (result as Record<string, unknown>)[file.key] =
       file.extension === "json" ? JSON.parse(content) : content;
   }
+
+  const expectsOutputFiles = !extraArgs.includes("--no-file-output");
+  if (found === 0 && expectsOutputFiles) {
+    throw new Error(
+      `Infomap exited 0 but none of its output files were found under "${base}". ` +
+        "This usually means --out-name and the name the results are read back under " +
+        "disagree. Pass --no-file-output if no output files are wanted.",
+    );
+  }
+
   return result;
 }
 

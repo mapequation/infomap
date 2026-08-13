@@ -21,7 +21,9 @@ def load_report(path: Path) -> dict[str, object]:
 
 
 def index_benchmarks(report: dict[str, object]) -> dict[str, dict[str, object]]:
-    return {str(benchmark["name"]): benchmark for benchmark in report.get("benchmarks", [])}
+    return {
+        str(benchmark["name"]): benchmark for benchmark in report.get("benchmarks", [])
+    }
 
 
 def outputs_match(base_case: dict[str, object], head_case: dict[str, object]) -> bool:
@@ -37,13 +39,25 @@ def outputs_match(base_case: dict[str, object], head_case: dict[str, object]) ->
     )
 
 
-def classify_case(name: str, base_case: dict[str, object], head_case: dict[str, object]) -> dict[str, object]:
+def classify_case(
+    name: str, base_case: dict[str, object], head_case: dict[str, object]
+) -> dict[str, object]:
     base_runtime = float(base_case["median_run_sec"])
     head_runtime = float(head_case["median_run_sec"])
     delta_sec = head_runtime - base_runtime
     delta_pct = (delta_sec / base_runtime) if base_runtime else 0.0
     base_cv = float(base_case.get("cv_run_sec", 0.0))
     head_cv = float(head_case.get("cv_run_sec", 0.0))
+    # The fastest of the repeats, reported so a borderline verdict can be read by a
+    # human, but deliberately not part of the verdict. It does not separate noise
+    # from a regression: a disturbance lasting a whole measurement block slows every
+    # repeat, so the minimum moves with the median (measured on this runner: a
+    # sequential A/A comparison under load moved the median 2.339 -> 2.709 s and the
+    # minimum 2.332 -> 2.707 s). Interleaving is what handles that; see
+    # run_native_benchmarks.benchmark_case_pair.
+    base_min = float(base_case.get("min_run_sec", base_runtime))
+    head_min = float(head_case.get("min_run_sec", head_runtime))
+    min_delta_sec = head_min - base_min
     status = "ok"
     reason = "within_threshold"
     severe = False
@@ -57,14 +71,23 @@ def classify_case(name: str, base_case: dict[str, object], head_case: dict[str, 
     elif max(base_cv, head_cv) > CV_INCONCLUSIVE_THRESHOLD:
         status = "inconclusive"
         reason = "high_variance"
-    elif delta_sec >= SEVERE_ABSOLUTE_REGRESSION_THRESHOLD_SEC and delta_pct >= SEVERE_RELATIVE_REGRESSION_THRESHOLD:
+    elif (
+        delta_sec >= SEVERE_ABSOLUTE_REGRESSION_THRESHOLD_SEC
+        and delta_pct >= SEVERE_RELATIVE_REGRESSION_THRESHOLD
+    ):
         status = "regression"
         reason = "severe_regression"
         severe = True
-    elif delta_sec >= ABSOLUTE_REGRESSION_THRESHOLD_SEC and delta_pct >= RELATIVE_REGRESSION_THRESHOLD:
+    elif (
+        delta_sec >= ABSOLUTE_REGRESSION_THRESHOLD_SEC
+        and delta_pct >= RELATIVE_REGRESSION_THRESHOLD
+    ):
         status = "regression"
         reason = "regression"
-    elif delta_sec <= -ABSOLUTE_REGRESSION_THRESHOLD_SEC and delta_pct <= -RELATIVE_REGRESSION_THRESHOLD:
+    elif (
+        delta_sec <= -ABSOLUTE_REGRESSION_THRESHOLD_SEC
+        and delta_pct <= -RELATIVE_REGRESSION_THRESHOLD
+    ):
         status = "improvement"
         reason = "improvement"
 
@@ -75,6 +98,9 @@ def classify_case(name: str, base_case: dict[str, object], head_case: dict[str, 
         "severe": severe,
         "base_median_run_sec": base_runtime,
         "head_median_run_sec": head_runtime,
+        "base_min_run_sec": base_min,
+        "head_min_run_sec": head_min,
+        "min_delta_sec": min_delta_sec,
         "delta_sec": delta_sec,
         "delta_pct": delta_pct,
         "base_cv_run_sec": base_cv,
@@ -88,7 +114,28 @@ def classify_case(name: str, base_case: dict[str, object], head_case: dict[str, 
     }
 
 
-def compare_reports(base_report: dict[str, object], head_report: dict[str, object]) -> dict[str, object]:
+def reports_are_interleaved(
+    base_report: dict[str, object], head_report: dict[str, object]
+) -> bool:
+    """True when each report names the other's binary as the one it alternated with.
+
+    ``run_native_benchmarks --compare-binary`` records this; two independent
+    invocations leave it unset, and older reports predate the field entirely.
+    """
+    base_binary = base_report.get("binary")
+    head_binary = head_report.get("binary")
+    base_partner = base_report.get("interleaved_with")
+    head_partner = head_report.get("interleaved_with")
+    # All four have to be present: a report that predates the field has None on both
+    # sides, and comparing None to None would otherwise read as a match.
+    if None in (base_binary, head_binary, base_partner, head_partner):
+        return False
+    return base_partner == head_binary and head_partner == base_binary
+
+
+def compare_reports(
+    base_report: dict[str, object], head_report: dict[str, object]
+) -> dict[str, object]:
     base_benchmarks = index_benchmarks(base_report)
     head_benchmarks = index_benchmarks(head_report)
     all_names = sorted(set(base_benchmarks) | set(head_benchmarks))
@@ -125,6 +172,11 @@ def compare_reports(base_report: dict[str, object], head_report: dict[str, objec
     return {
         "overall_status": overall_status,
         "summary": summary,
+        # Whether the two runs were measured against each other, alternating, rather
+        # than as two separate blocks. Surfaced because it decides how much a verdict
+        # is worth: two sequential blocks on a shared runner reported the same commit
+        # as both a 17.3% regression and a 1.9% pass (#943).
+        "interleaved": reports_are_interleaved(base_report, head_report),
         "thresholds": {
             "relative_regression_threshold": RELATIVE_REGRESSION_THRESHOLD,
             "absolute_regression_threshold_sec": ABSOLUTE_REGRESSION_THRESHOLD_SEC,
@@ -149,6 +201,13 @@ def render_markdown(result: dict[str, object]) -> str:
         "",
         f"Overall result: **{result['summary']}**",
         "",
+        (
+            "Measured by alternating the two binaries on each case."
+            if result.get("interleaved")
+            else "Note: the two runs were measured separately rather than alternating, "
+            "so a difference here can be machine noise as easily as a code change."
+        ),
+        "",
         "| Case | Status | Base median run (s) | Head median run (s) | Delta (s) | Delta (%) | Reason |",
         "| --- | --- | ---: | ---: | ---: | ---: | --- |",
     ]
@@ -159,7 +218,12 @@ def render_markdown(result: dict[str, object]) -> str:
         delta_sec = case.get("delta_sec")
         delta_pct = case.get("delta_pct")
 
-        if base_runtime is None or head_runtime is None or delta_sec is None or delta_pct is None:
+        if (
+            base_runtime is None
+            or head_runtime is None
+            or delta_sec is None
+            or delta_pct is None
+        ):
             base_runtime_text = "n/a"
             head_runtime_text = "n/a"
             delta_sec_text = "n/a"
@@ -186,10 +250,12 @@ def render_markdown(result: dict[str, object]) -> str:
     lines.extend(
         [
             "",
-            "Thresholds: "
-            f"regression >= {RELATIVE_REGRESSION_THRESHOLD:.0%} and >= {ABSOLUTE_REGRESSION_THRESHOLD_SEC:.2f}s, "
-            f"severe >= {SEVERE_RELATIVE_REGRESSION_THRESHOLD:.0%} and >= {SEVERE_ABSOLUTE_REGRESSION_THRESHOLD_SEC:.2f}s, "
-            f"inconclusive when baseline < {MIN_BASELINE_RUNTIME_SEC:.2f}s or CV > {CV_INCONCLUSIVE_THRESHOLD:.2f}.",
+            (
+                "Thresholds: "
+                f"regression >= {RELATIVE_REGRESSION_THRESHOLD:.0%} and >= {ABSOLUTE_REGRESSION_THRESHOLD_SEC:.2f}s, "
+                f"severe >= {SEVERE_RELATIVE_REGRESSION_THRESHOLD:.0%} and >= {SEVERE_ABSOLUTE_REGRESSION_THRESHOLD_SEC:.2f}s, "
+                f"inconclusive when baseline < {MIN_BASELINE_RUNTIME_SEC:.2f}s or CV > {CV_INCONCLUSIVE_THRESHOLD:.2f}."
+            ),
             "",
             f"Counts: {counts['regression']} regression, {counts['manual_review']} manual review, {counts['inconclusive']} inconclusive, {counts['improvement']} improvement.",
             "",
@@ -199,11 +265,33 @@ def render_markdown(result: dict[str, object]) -> str:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Compare native benchmark reports for PR perf regression detection.")
-    parser.add_argument("--base", type=Path, required=True, help="Path to the base benchmark JSON report.")
-    parser.add_argument("--head", type=Path, required=True, help="Path to the head benchmark JSON report.")
-    parser.add_argument("--markdown-out", type=Path, default=None, help="Optional Markdown summary output path.")
-    parser.add_argument("--json-out", type=Path, default=None, help="Optional JSON comparison output path.")
+    parser = argparse.ArgumentParser(
+        description="Compare native benchmark reports for PR perf regression detection."
+    )
+    parser.add_argument(
+        "--base",
+        type=Path,
+        required=True,
+        help="Path to the base benchmark JSON report.",
+    )
+    parser.add_argument(
+        "--head",
+        type=Path,
+        required=True,
+        help="Path to the head benchmark JSON report.",
+    )
+    parser.add_argument(
+        "--markdown-out",
+        type=Path,
+        default=None,
+        help="Optional Markdown summary output path.",
+    )
+    parser.add_argument(
+        "--json-out",
+        type=Path,
+        default=None,
+        help="Optional JSON comparison output path.",
+    )
     parser.add_argument(
         "--fail-on-regression",
         action="store_true",

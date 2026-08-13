@@ -35,7 +35,7 @@ pandas categorical column to `adata.obs`, and records run metadata in
 `adata.uns`.
 
 Beyond the high-level helper, the sparse matrix underlying any `adata.obsp`
-slot is a standard SciPy CSR matrix; you can hand it directly to
+slot is a standard SciPy CSR matrix. You can hand it directly to
 `infomap.run()` and use the full Result API (hierarchical modules, codelength,
 multiple trials) without any AnnData involvement.
 
@@ -48,7 +48,7 @@ connected cell groups become modules (see {doc}`/concepts/the-map-equation`).
 
 This flow-centric view often agrees with Leiden, but the two can diverge:
 Leiden's partition depends on its resolution parameter, and the connectivity
-graph may be asymmetric. Running both and comparing is a useful sanity check,
+graph can be asymmetric. Running both and comparing is a useful sanity check,
 especially for datasets where cluster sizes vary widely.
 
 ## Cluster three cell populations
@@ -57,7 +57,7 @@ especially for datasets where cluster sizes vary widely.
 
 The example is fully synthetic and small so the build completes in a few
 seconds. Three tight Gaussian blobs in 10-dimensional space give Scanpy's
-neighbour graph a clear community structure that both algorithms should recover.
+neighbour graph a clear community structure that both algorithms can recover.
 
 ```{code-cell} python
 import warnings
@@ -137,7 +137,7 @@ for k, v in adata.uns["infomap"].items():
 ```
 
 The `codelength` in `adata.uns["infomap"]` is the map equation value for the
-best partition Infomap found; a lower codelength means the partition compresses
+best partition Infomap found. A lower codelength means the partition compresses
 the random walk more efficiently (see {doc}`/concepts/the-map-equation`).
 
 ### Compare the two labelings

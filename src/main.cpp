@@ -68,6 +68,10 @@ int run(const std::string& flags)
     // not abort the next one at its first checkpoint.
     g_cliInterruptRequested = 0;
     std::signal(SIGINT, cliHandleInterrupt);
+    // SIGTERM too: SLURM time limits, `timeout`, preemption and the OOM killer all send
+    // it, and it was unhandled, so the process died at whatever point it had reached and
+    // left an artifact nothing had a chance to describe (#906).
+    std::signal(SIGTERM, cliHandleInterrupt);
     im.setInterruptHandler(&cliInterruptPoll);
 #else
     if (g_runInterruptCallback != nullptr)

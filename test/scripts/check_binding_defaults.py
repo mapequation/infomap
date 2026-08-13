@@ -85,8 +85,7 @@ DOCS_OVERRIDE_CPP_BASELINES = {
         "skip recursive refinement."
     ),
     "--verbose": (
-        "Increase console verbosity. Add more v flags to increase verbosity up "
-        "to -vvv."
+        "Increase console verbosity. Add more v flags to increase verbosity up to -vvv."
     ),
     "--silent": "Suppress console output.",
 }

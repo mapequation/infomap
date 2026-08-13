@@ -4,8 +4,8 @@ import json
 from dataclasses import dataclass
 from typing import Any
 
-
 GROUPS = ("Input", "Output", "Algorithm", "Accuracy")
+
 
 def resolve_policy_decision(
     overrides: dict[str, Any], flag: str, surface: str
@@ -116,7 +116,9 @@ class Parameter:
 
     @property
     def choices(self) -> list[str] | None:
-        return self.raw.get("choices") or self.overrides.get("choices", {}).get(self.flag)
+        return self.raw.get("choices") or self.overrides.get("choices", {}).get(
+            self.flag
+        )
 
     def name(self, language: str) -> str:
         names = self.overrides.get("names", {}).get(self.flag, {})
@@ -179,12 +181,6 @@ class Parameter:
     def python_default_expr(self) -> str:
         return self.python_default_value()
 
-    def python_include_expr(self) -> str:
-        default = self.python_default_value()
-        if default == "None":
-            return "lambda value: value is not None"
-        return f"lambda value: value != {default}"
-
     def python_domain(self) -> tuple[str, str] | None:
         """The ``(low, high)`` numeric-domain literals for validation, or None.
 
@@ -207,7 +203,9 @@ class Parameter:
         def literal(bound: str | None) -> str:
             if bound is None:
                 return "None"
-            return str(int(bound)) if self.long_type == "integer" else repr(float(bound))
+            return (
+                str(int(bound)) if self.long_type == "integer" else repr(float(bound))
+            )
 
         return literal(low), literal(high)
 
@@ -252,6 +250,10 @@ class Parameter:
             base = "float" if self.long_type in {"probability", "number"} else "int"
         elif self.long_type == "list":
             base = "list[str] | tuple[str, ...]"
+        elif self.long_type == "path":
+            # Path options follow the package-wide file-path contract: accept
+            # str | os.PathLike, decoded to str at the Options boundary.
+            base = "str | os.PathLike[str]"
         else:
             base = "str"
         return base if self.python_default_value() != "None" else f"{base} | None"
@@ -277,6 +279,8 @@ class Parameter:
             return "int, optional"
         if self.long_type in {"number", "probability"}:
             return "float, optional"
+        if self.long_type == "path":
+            return "str or os.PathLike, optional"
         return "str, optional"
 
     def python_doc_description(self) -> str:
@@ -464,8 +468,7 @@ class ParameterCatalog:
                 )
             if action == "alias" and not decision.get("aliasOf"):
                 raise RuntimeError(
-                    f"policy for {flag}/{surface} is an alias but is "
-                    "missing aliasOf"
+                    f"policy for {flag}/{surface} is an alias but is missing aliasOf"
                 )
             if action == "alias" and decision.get("aliasOf") not in known_flags:
                 raise RuntimeError(

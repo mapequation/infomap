@@ -65,6 +65,19 @@ public:
   // uses them (BiasedMapEquation).
   virtual void inheritNetworkPropertiesFrom(const InfomapOptimizerBase& /*parent*/) {}
 
+  // Propagate the objective's own parameters -- what it minimises, as opposed to the network
+  // it minimises over -- from a parent optimizer. Needed by the super-level instance, which is
+  // built without memory and therefore from a default Config. No-op unless the objective has
+  // such parameters (BiasedMapEquation). See getSuperInfomap.
+  virtual void inheritObjectiveParametersFrom(const InfomapOptimizerBase& /*parent*/) {}
+
+  // Whether this objective implements the parameters above: the entropy bias correction and the
+  // preferred-module-count cost. Only BiasedMapEquation does, so --entropy-corrected and
+  // --preferred-number-of-modules are inert on every other objective. Declared by the objective
+  // rather than derived from the input flags so the run path cannot disagree with
+  // InfomapBase::initOptimizer about which objective is in use (#904).
+  virtual bool implementsObjectiveParameters() const { return false; }
+
 protected:
   virtual unsigned int numActiveModules() const = 0;
 

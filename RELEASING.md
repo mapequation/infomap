@@ -26,26 +26,28 @@ public release flow unless a maintainer explicitly widens the release scope.
 
 Configure these integrations before the first release:
 
-1. Create the GitHub environments `pypi-release` and `npm-release`.
-2. Add the required reviewers to both environments.
+1. Create the GitHub environments `pypi-release` and `npm-release` (and, for
+   the prerelease workflow, `pypi-prerelease` and `npm-prerelease`).
+2. Add the required reviewers to these environments.
 3. Configure PyPI trusted publishing for project `infomap` with owner
    `mapequation`, repository `infomap`, workflow `release.yml`, and
    environment `pypi-release`.
 4. Configure npm trusted publishing for package `@mapequation/infomap` with
    owner `mapequation`, repository `infomap`, workflow `release.yml`, and
    environment `npm-release`.
-5. Remove legacy registry secrets after trusted publishing is confirmed:
+5. Remove the legacy registry secrets after you confirm that trusted
+   publishing works:
    - `PYPI_USERNAME`
    - `PYPI_PASSWORD`
    - `NPM_TOKEN`
 6. Keep `release-please-config.json` aligned with the historic tag format:
    `include-v-in-tag: true` and `include-component-in-tag: false`.
    Infomap's existing releases use tags like `v2.9.2`, not
-   `infomap-v2.9.2`. If Release Please is allowed to add the component
-   prefix, the first release PR after the migration can re-include already
+   `infomap-v2.9.2`. If you let Release Please add the component prefix,
+   the first release PR after the migration can re-include already
    released commits and generate an overlapping `CHANGELOG.md`.
-7. Confirm the Release Please GitHub App is configured through these
-   repository secrets:
+7. Confirm that the repository has these secrets for the Release Please
+   GitHub App:
    - `RELEASE_PLEASE_APP_ID`
    - `RELEASE_PLEASE_PRIVATE_KEY`
 
@@ -56,9 +58,11 @@ Configure these integrations before the first release:
 8. Confirm that GitHub Actions can publish this repository's package to GHCR.
    The release workflow uses `GITHUB_TOKEN` with `packages: write` permission
    and publishes `ghcr.io/mapequation/infomap`.
-9. Add repository dispatch tokens for downstream update workflows:
-   - `HOMEBREW_INFOMAP_REPO_DISPATCH_TOKEN`
-   - `INFOMAP_ONLINE_REPO_DISPATCH_TOKEN`
+9. Add repository dispatch tokens for the downstream update workflows fired at
+   the end of `release.yml` (all send `event_type=infomap_release_published`):
+   - `HOMEBREW_INFOMAP_REPO_DISPATCH_TOKEN` → `mapequation/homebrew-infomap`
+   - `PYTHON_DOCS_DISPATCH_TOKEN` → `mapequation/infomap-python-docs`
+   - `MAPEQUATION_REPO_DISPATCH_TOKEN` → `mapequation/mapequation.github.io`
 
 ## Normal release flow
 
@@ -76,16 +80,25 @@ Configure these integrations before the first release:
    `vX.Y.Z` tag. If a version field did not move, the issue is in
    `release-please-config.json` `extra-files`, not in the PR.
 
-   The R package is not a separate Release Please component. Its committed
-   `DESCRIPTION` version is bumped as a generic `extra-files` entry so release
-   artifacts and repository metadata stay aligned. The staged `DESCRIPTION` is
-   also resynced from `_version.py` by `scripts/stage_r_package.py` whenever
-   `make build-r` or the r-universe `configure` script runs.
+   The R package is not a separate Release Please component. Release Please
+   bumps its committed `DESCRIPTION` version as a generic `extra-files` entry so
+   release artifacts and repository metadata stay aligned.
+   `scripts/stage_r_package.py` also resyncs the staged `DESCRIPTION` from
+   `_version.py` whenever `make build-r` or the r-universe `configure` script
+   runs.
 4. Merge the release PR.
 5. Release Please creates the `vX.Y.Z` tag and the GitHub Release.
 6. `.github/workflows/release.yml` runs for that tag and:
-   - builds the native release assets
-   - builds the Python sdist and wheels through the full Python workflow tier
+   - waits for the CI run on the release commit to have passed
+     (`verify-master-ci`) before it publishes anything. That commit's push to
+     `master` already ran the full Python and R test matrices. The release
+     workflow does not re-run them; it only builds the release artifacts. The
+     workflow tolerates a master run that is red purely from GitHub
+     setup-phase infra flakes (the same class `ci-auto-rerun.yml` retries); a
+     real job failure blocks the release.
+   - builds the native release assets (and runs the C++ test suite)
+   - builds the Python sdist and wheels (cibuildwheel imports and smoke-tests
+     each wheel as it builds)
    - builds the R source tarball once, then builds macOS and Windows R
      binaries from that exact tarball for both R `release` and `oldrel`
    - builds and verifies the npm package
@@ -95,17 +108,20 @@ Configure these integrations before the first release:
      - `ghcr.io/mapequation/infomap:latest`
      - `ghcr.io/mapequation/infomap:notebook-X.Y.Z`
      - `ghcr.io/mapequation/infomap:notebook`
-   - dispatches the Homebrew tap update workflow
-   - publishes to PyPI behind `pypi-release`
-   - publishes to npm behind `npm-release`
-   - dispatches the `infomap-online` package update workflow
+   - publishes to PyPI behind `pypi-release` (with PEP 740 attestations)
+   - publishes to npm behind `npm-release` (with `--provenance`)
+   - dispatches the downstream update workflows: the Homebrew tap
+     (`homebrew-infomap`), the Python documentation site
+     (`infomap-python-docs`), and the mapequation.org website
+     (`mapequation.github.io`)
 
    The R package is also continuously published by r-universe from
    `master`; the release workflow does not push to r-universe directly.
 
    `workflow_dispatch` for `.github/workflows/release.yml` rebuilds and
-   republishes an existing tag. Use it only after confirming the target version
-   has not already been published to a registry that rejects duplicate uploads.
+   republishes an existing tag. Use it only after you confirm that the target
+   version does not already exist on a registry that rejects duplicate
+   uploads.
 
 ## Feature prerelease wheels
 
@@ -120,8 +136,8 @@ by installers and cannot reliably preserve compile-time feature flags.
 - Manual `workflow_dispatch` runs build feature-enabled Python wheels only.
   Use `publish=false` first to build artifacts for inspection.
 
-When publishing feature wheels, use a prerelease version that has not already
-been uploaded to PyPI:
+When you publish feature wheels, use a prerelease version that is not already
+on PyPI:
 
 ```bash
 python -m pip install --pre infomap
@@ -135,9 +151,9 @@ compile-time gate.
 
 GitHub Releases ship the R source tarball plus macOS and Windows binaries.
 Linux users install the source tarball or use r-universe. The release workflow
-does not attach Linux R binaries because `R CMD INSTALL --build` produces
-Linux artifacts tied to the runner's specific R and glibc environment, unlike
-the conventional macOS and Windows binary channels.
+does not attach Linux R binaries. Unlike the conventional macOS and Windows
+binary channels, `R CMD INSTALL --build` produces Linux artifacts tied to the
+runner's specific R and glibc environment.
 
 The R release filenames are intentionally unique across R versions:
 
@@ -162,9 +178,9 @@ a merged commit. It is separate from the tag-driven GitHub Release flow:
   `https://github.com/r-universe-org/workflows`
 
 The registry repository's `packages.json` declares `subdir` for this package.
-If the R package directory is moved or renamed, update `subdir` there. Do not
-edit `https://github.com/r-universe/mapequation` directly; it is generated by
-r-universe from the registry.
+If you move or rename the R package directory, update `subdir` there. Do not
+edit `https://github.com/r-universe/mapequation` directly; r-universe generates
+it from the registry.
 
 ### Conventional Commit to version bump
 
@@ -179,7 +195,7 @@ last `vX.Y.Z` tag:
 | `chore:`, `docs:`, `test:`, `ci:`   | none  |
 
 If the proposed bump does not match the commit log
-(`git log vLAST..master --oneline`), investigate before merging.
+(`git log vLAST..master --oneline`), investigate before you merge.
 
 ### Python API deprecation policy
 
@@ -226,20 +242,24 @@ first shipped; the 2.x → 3.0 wave deprecating the pre-redesign API is `2.15`
   not move. Fix `release-please-config.json` and rerun release-please;
   do not patch the PR by hand.
 - **Bump does not match commits.** E.g. only `fix:` commits but a minor
-  bump appears. Inspect the log; a stray `feat:` may be hiding, or the
+  bump appears. Inspect the log; a stray `feat:` can be hiding, or the
   config has changelog-section overrides that need attention.
 
 ## Documentation publishing
 
-The published Python docs are built and deployed to GitHub Pages by the
-`deploy-docs` job in `.github/workflows/release.yml` after each tagged
-release. The job runs `make build-docs`, creates `.nojekyll`, and uploads
-the result via `actions/upload-pages-artifact` and `actions/deploy-pages`.
+`release.yml` does not deploy documentation itself. After a tagged release it
+dispatches the `mapequation/infomap-python-docs` repository (via the
+`notify-python-docs` job, `event_type=infomap_release_published`). That
+downstream repository builds and deploys the published Python docs site. The
+parallel `notify-mapequation` dispatch refreshes the
+`mapequation/mapequation.github.io` website.
 
 On pull requests, the `docs` job in `.github/workflows/ci.yml` runs
-`make build-docs` to verify the site still builds. Nothing is deployed
-from CI. The `docs/` directory is build output and is not tracked in the
-repo.
+`make build-docs` to verify the site still builds. CI deploys nothing.
+The `docs/` directory is build output and is not tracked in the repo.
+(`.github/workflows/deploy-redirect.yml` is a separate,
+manually-dispatched workflow that publishes only a GitHub Pages redirect stub;
+it is not part of the release flow.)
 
 ## Recovery
 
@@ -258,11 +278,26 @@ If a recovery action would conflict with what is already published, stop
 and resume from the failed job instead. Never delete or rewrite a tag
 whose version exists on PyPI or npm.
 
+After the first release carrying them, confirm the signed attestations were
+emitted (generated by the `attestations: true` PyPI publish and the
+`npm publish --provenance` step):
+
+```bash
+# PyPI (PEP 740, sigstore-backed): the release files carry a provenance URL.
+# Check the "Provenance" panel on https://pypi.org/project/infomap/#files,
+# or via the JSON API:
+curl -s https://pypi.org/pypi/infomap/json | \
+  python3 -c 'import sys,json; [print(u["filename"], bool(u.get("provenance"))) for u in json.load(sys.stdin)["urls"]]'
+
+# npm provenance: shown on the npmjs.org version page, or:
+npm view @mapequation/infomap --json | python3 -c 'import sys,json; print("provenance" in json.load(sys.stdin).get("dist",{}))'
+```
+
 If a release only partially succeeds:
 
 - If GitHub Release assets fail, rerun `.github/workflows/release.yml` with
   `workflow_dispatch` for the same tag to rebuild and re-attach the GitHub
-  Release assets before approving registry publishing.
+  Release assets before you approve registry publishing.
 - If PyPI fails before any successful publish, fix the configuration problem and
   rerun `.github/workflows/release.yml` with `workflow_dispatch` for the same
   tag, or rerun `publish-pypi` in the original workflow if its artifacts are
@@ -273,13 +308,13 @@ If a release only partially succeeds:
   still available.
 - If GHCR publishing fails before any successful publish, fix the configuration
   problem and rerun `.github/workflows/release.yml` with `workflow_dispatch`
-  for the same tag. If any GHCR tags already published, inspect the registry
-  state before rerunning because the workflow also updates the mutable `latest`
-  and `notebook` tags.
+  for the same tag. If the workflow already published any GHCR tags, inspect
+  the registry state before you rerun it, because the workflow also updates
+  the mutable `latest` and `notebook` tags.
 - If a registry publish already succeeded, do not delete or rewrite the tag.
   Resume from the remaining failed job and keep the published version.
 
-Manual publish from a local shell should be reserved for incident recovery only.
+Reserve manual publish from a local shell for incident recovery only.
 The fallback commands remain in the `Makefile`, but they now build directly from
 the repository root rather than from a staged `build/py` package tree. Treat
 any local publish as an exception and document it in the release notes or issue

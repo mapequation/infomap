@@ -137,9 +137,7 @@ def draw_partition(
         edgecolors="white",
     )
     if with_labels:
-        nx.draw_networkx_labels(
-            graph, pos, ax=ax, font_size=8, font_color="white"
-        )
+        nx.draw_networkx_labels(graph, pos, ax=ax, font_size=8, font_color="white")
     ax.set_axis_off()
     if owns_layout:
         fig.tight_layout()

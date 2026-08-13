@@ -16,7 +16,6 @@ is covered.
 from __future__ import annotations
 
 import pytest
-
 from infomap import Infomap, Network, Options, datasets, run
 from infomap._options import _OPTION_DOMAINS, _validate_option_domains
 

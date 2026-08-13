@@ -2,7 +2,6 @@
 
 import networkx as nx
 import pytest
-
 from infomap import Infomap, Network
 
 

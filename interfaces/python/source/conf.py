@@ -76,9 +76,9 @@ redirects = {
 linkcheck_ignore = [r"https://doi\.org/.*"]
 
 myst_enable_extensions = [
-    "colon_fence",   # ::: fenced directives (cards, admonitions)
-    "dollarmath",    # $...$ and $$...$$ inline/block math
-    "deflist",       # definition lists for option glossaries
+    "colon_fence",  # ::: fenced directives (cards, admonitions)
+    "dollarmath",  # $...$ and $$...$$ inline/block math
+    "deflist",  # definition lists for option glossaries
     "attrs_inline",  # inline attributes on links/spans
 ]
 myst_heading_anchors = 3  # auto slugs for h1-h3 so "going deeper" deep-links resolve
@@ -97,7 +97,9 @@ html_static_path = ["_static"]
 html_css_files = ["custom.css"]
 html_js_files = ["analytics.js"]
 html_logo = "https://mapequation.github.io/assets/img/twocolormapicon_whiteboarder.svg"
-html_favicon = "https://mapequation.github.io/assets/img/twocolormapicon_whiteboarder.svg"
+html_favicon = (
+    "https://mapequation.github.io/assets/img/twocolormapicon_whiteboarder.svg"
+)
 
 # Hide Furo's "view page source" header icon (the eye); with the source in a
 # different repo there is nothing useful to link to.

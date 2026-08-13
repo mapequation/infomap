@@ -59,15 +59,24 @@ def render_markdown(results: list[dict[str, object]]) -> str:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Run a small fixed Python benchmark suite for Infomap.")
-    parser.add_argument("--output", type=Path, required=True, help="Path to write the JSON benchmark report.")
+    parser = argparse.ArgumentParser(
+        description="Run a small fixed Python benchmark suite for Infomap."
+    )
+    parser.add_argument(
+        "--output",
+        type=Path,
+        required=True,
+        help="Path to write the JSON benchmark report.",
+    )
     parser.add_argument(
         "--summary",
         type=Path,
         default=None,
         help="Optional path to write a Markdown summary suitable for a GitHub job summary.",
     )
-    parser.add_argument("--repeats", type=int, default=5, help="Number of runs per benchmark case.")
+    parser.add_argument(
+        "--repeats", type=int, default=5, help="Number of runs per benchmark case."
+    )
     args = parser.parse_args()
 
     repo_root = Path(__file__).resolve().parents[2]

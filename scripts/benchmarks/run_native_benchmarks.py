@@ -19,7 +19,9 @@ def write_pajek_edges(path: Path, num_nodes: int, edges: set[tuple[int, int]]) -
             handle.write(f"{source} {target}\n")
 
 
-def generate_sparse_graph(path: Path, num_nodes: int, avg_degree: int, seed: int) -> None:
+def generate_sparse_graph(
+    path: Path, num_nodes: int, avg_degree: int, seed: int
+) -> None:
     rng = random.Random(seed)
     edges: set[tuple[int, int]] = set()
     ring_span = max(1, avg_degree // 4)
@@ -57,7 +59,9 @@ def generate_ring_of_cliques(path: Path, clique_count: int, clique_size: int) ->
     write_pajek_edges(path, num_nodes, edges)
 
 
-def generate_large_ring_of_cliques(path: Path, clique_count: int, clique_size: int) -> None:
+def generate_large_ring_of_cliques(
+    path: Path, clique_count: int, clique_size: int
+) -> None:
     num_nodes = clique_count * clique_size
     with path.open("w", encoding="utf-8") as handle:
         handle.write("*Vertices\n")
@@ -91,7 +95,9 @@ def generate_large_sparse_graph(path: Path, num_nodes: int, avg_degree: int) -> 
                 handle.write(f"{node} {(node + offset) % num_nodes}\n")
 
 
-def generate_block_sparse_graph(path: Path, num_nodes: int, block_size: int, intra_degree: int, inter_degree: int) -> None:
+def generate_block_sparse_graph(
+    path: Path, num_nodes: int, block_size: int, intra_degree: int, inter_degree: int
+) -> None:
     if num_nodes % block_size != 0:
         raise ValueError("num_nodes must be divisible by block_size")
     if intra_degree < 2:
@@ -136,7 +142,9 @@ def generate_state_ring(path: Path, physical_nodes: int) -> None:
             handle.write(f"{current_b} {next_b} 1\n")
 
 
-def generate_state_block_network(path: Path, physical_nodes: int, states_per_physical: int, block_size: int) -> None:
+def generate_state_block_network(
+    path: Path, physical_nodes: int, states_per_physical: int, block_size: int
+) -> None:
     if physical_nodes % block_size != 0:
         raise ValueError("physical_nodes must be divisible by block_size")
     if states_per_physical < 2:
@@ -158,20 +166,28 @@ def generate_state_block_network(path: Path, physical_nodes: int, states_per_phy
         handle.write("*Links\n")
         for physical_index in range(physical_nodes):
             block_start = physical_index - (physical_index % block_size)
-            next_physical = block_start + ((physical_index - block_start + 1) % block_size)
-            skip_physical = block_start + ((physical_index - block_start + 7) % block_size)
+            next_physical = block_start + (
+                (physical_index - block_start + 1) % block_size
+            )
+            skip_physical = block_start + (
+                (physical_index - block_start + 7) % block_size
+            )
             next_block_physical = (physical_index + block_size) % physical_nodes
             for state_index in range(states_per_physical):
                 sid = state_id(physical_index, state_index)
                 same_state_next = state_id(next_physical, state_index)
-                next_state_skip = state_id(skip_physical, (state_index + 1) % states_per_physical)
+                next_state_skip = state_id(
+                    skip_physical, (state_index + 1) % states_per_physical
+                )
                 inter_block_state = state_id(next_block_physical, state_index)
                 handle.write(f"{sid} {same_state_next} 1\n")
                 handle.write(f"{sid} {next_state_skip} 0.7\n")
                 handle.write(f"{sid} {inter_block_state} 0.05\n")
 
 
-def generate_multilayer_block_network(path: Path, physical_nodes: int, layers: int, block_size: int) -> None:
+def generate_multilayer_block_network(
+    path: Path, physical_nodes: int, layers: int, block_size: int
+) -> None:
     if physical_nodes % block_size != 0:
         raise ValueError("physical_nodes must be divisible by block_size")
     if layers < 2:
@@ -187,8 +203,12 @@ def generate_multilayer_block_network(path: Path, physical_nodes: int, layers: i
             for physical_index in range(physical_nodes):
                 node_id = physical_index + 1
                 block_start = physical_index - (physical_index % block_size)
-                next_node = block_start + ((physical_index - block_start + 1) % block_size) + 1
-                skip_node = block_start + ((physical_index - block_start + 5) % block_size) + 1
+                next_node = (
+                    block_start + ((physical_index - block_start + 1) % block_size) + 1
+                )
+                skip_node = (
+                    block_start + ((physical_index - block_start + 5) % block_size) + 1
+                )
                 handle.write(f"{layer} {node_id} {layer} {next_node} 1\n")
                 handle.write(f"{layer} {node_id} {layer} {skip_node} 0.7\n")
                 handle.write(f"{layer} {node_id} {next_layer} {node_id} 0.15\n")
@@ -202,34 +222,76 @@ def generate_if_missing(path: Path, generator, *args: object) -> None:
 
 def metric_stats(values: list[float]) -> dict[str, float]:
     if not values:
-        return {"mean": 0.0, "stdev": 0.0, "cv": 0.0}
+        return {"mean": 0.0, "stdev": 0.0, "cv": 0.0, "min": 0.0}
     mean_value = statistics.mean(values)
     stdev_value = statistics.stdev(values) if len(values) > 1 else 0.0
     cv_value = stdev_value / mean_value if mean_value else 0.0
-    return {"mean": mean_value, "stdev": stdev_value, "cv": cv_value}
+    # The minimum is the least-perturbed sample, since noise on a shared runner only
+    # ever adds time. Reported for reading a borderline comparison by hand, not for
+    # deciding one: a disturbance lasting a whole measurement block slows every
+    # repeat, so the minimum moves with the median. See classify_case in
+    # compare_native_benchmarks.py, which deliberately keeps it out of the verdict.
+    return {
+        "mean": mean_value,
+        "stdev": stdev_value,
+        "cv": cv_value,
+        "min": min(values),
+    }
 
 
-def collect_module_size_bucket_labels(run_samples: list[dict[str, object]]) -> list[str]:
+def collect_module_size_bucket_labels(
+    run_samples: list[dict[str, object]],
+) -> list[str]:
     labels: set[str] = set()
     for run in run_samples:
         labels.update(run.get("rebuild", {}).get("module_size_buckets", {}).keys())
     return sorted(labels)
 
 
-def build_benchmark_cases(profile: str, repo_root: Path, generated_dir: Path) -> list[dict[str, str | Path]]:
+def build_benchmark_cases(
+    profile: str, repo_root: Path, generated_dir: Path
+) -> list[dict[str, str | Path]]:
     cases: list[dict[str, str | Path]] = [
-        {"name": "twotriangles", "path": repo_root / "examples" / "networks" / "twotriangles.net", "flags": ""},
-        {"name": "ninetriangles", "path": repo_root / "examples" / "networks" / "ninetriangles.net", "flags": ""},
-        {"name": "modular_w", "path": repo_root / "examples" / "networks" / "modular_w.net", "flags": ""},
-        {"name": "modular_wd", "path": repo_root / "examples" / "networks" / "modular_wd.net", "flags": ""},
-        {"name": "states", "path": repo_root / "examples" / "networks" / "states.net", "flags": ""},
+        {
+            "name": "twotriangles",
+            "path": repo_root / "examples" / "networks" / "twotriangles.net",
+            "flags": "",
+        },
+        {
+            "name": "ninetriangles",
+            "path": repo_root / "examples" / "networks" / "ninetriangles.net",
+            "flags": "",
+        },
+        {
+            "name": "modular_w",
+            "path": repo_root / "examples" / "networks" / "modular_w.net",
+            "flags": "",
+        },
+        {
+            "name": "modular_wd",
+            "path": repo_root / "examples" / "networks" / "modular_wd.net",
+            "flags": "",
+        },
+        {
+            "name": "states",
+            "path": repo_root / "examples" / "networks" / "states.net",
+            "flags": "",
+        },
         {
             "name": "states_meta",
             "path": repo_root / "examples" / "networks" / "states.net",
             "flags": f"--meta-data {repo_root / 'test' / 'fixtures' / 'meta' / 'states.meta'} --meta-data-rate 2",
         },
-        {"name": "multilayer", "path": repo_root / "examples" / "networks" / "multilayer.net", "flags": ""},
-        {"name": "bipartite", "path": repo_root / "examples" / "networks" / "bipartite.net", "flags": ""},
+        {
+            "name": "multilayer",
+            "path": repo_root / "examples" / "networks" / "multilayer.net",
+            "flags": "",
+        },
+        {
+            "name": "bipartite",
+            "path": repo_root / "examples" / "networks" / "bipartite.net",
+            "flags": "",
+        },
         {
             "name": "twotriangles_meta",
             "path": repo_root / "examples" / "networks" / "twotriangles.net",
@@ -249,17 +311,29 @@ def build_benchmark_cases(profile: str, repo_root: Path, generated_dir: Path) ->
 
         generate_if_missing(sparse_1m, generate_large_sparse_graph, 1_000_000, 10)
         generate_if_missing(ring_1m, generate_large_ring_of_cliques, 100_000, 10)
-        generate_if_missing(block_sparse_1m, generate_block_sparse_graph, 1_000_000, 100, 8, 2)
+        generate_if_missing(
+            block_sparse_1m, generate_block_sparse_graph, 1_000_000, 100, 8, 2
+        )
         generate_if_missing(state_ring_500k, generate_state_ring, 500_000)
-        generate_if_missing(state_block_1m_states, generate_state_block_network, 250_000, 4, 50)
-        generate_if_missing(multilayer_100k_x10, generate_multilayer_block_network, 100_000, 10, 50)
-        generate_if_missing(multilayer_250k_x8, generate_multilayer_block_network, 250_000, 8, 50)
+        generate_if_missing(
+            state_block_1m_states, generate_state_block_network, 250_000, 4, 50
+        )
+        generate_if_missing(
+            multilayer_100k_x10, generate_multilayer_block_network, 100_000, 10, 50
+        )
+        generate_if_missing(
+            multilayer_250k_x8, generate_multilayer_block_network, 250_000, 8, 50
+        )
         return [
             {"name": "sparse_1m", "path": sparse_1m, "flags": ""},
             {"name": "ring_of_cliques_1m", "path": ring_1m, "flags": ""},
             {"name": "block_sparse_1m", "path": block_sparse_1m, "flags": ""},
             {"name": "state_ring_500k", "path": state_ring_500k, "flags": ""},
-            {"name": "state_block_1m_states", "path": state_block_1m_states, "flags": ""},
+            {
+                "name": "state_block_1m_states",
+                "path": state_block_1m_states,
+                "flags": "",
+            },
             {"name": "multilayer_100k_x10", "path": multilayer_100k_x10, "flags": ""},
             {"name": "multilayer_250k_x8", "path": multilayer_250k_x8, "flags": ""},
         ]
@@ -308,19 +382,10 @@ def build_benchmark_cases(profile: str, repo_root: Path, generated_dir: Path) ->
     return cases
 
 
-def benchmark_case(
-    binary: Path,
-    name: str,
-    network_path: Path,
-    repeats: int,
-    warmup_runs: int,
-    iterations: int,
-    flags: str,
-) -> dict[str, object]:
-    samples: list[dict[str, object]] = []
-    run_samples: list[dict[str, object]] = []
-
-    command = [
+def benchmark_command(
+    binary: Path, name: str, network_path: Path, iterations: int, flags: str
+) -> list[str]:
+    return [
         str(binary),
         "--input",
         str(network_path),
@@ -331,43 +396,149 @@ def benchmark_case(
         "--iterations",
         str(iterations),
     ]
-    for _ in range(warmup_runs):
-        subprocess.run(
-            command,
-            check=True,
-            capture_output=True,
-            text=True,
-        )
+
+
+def collect_sample(command: list[str]) -> dict[str, object]:
+    completed = subprocess.run(command, check=True, capture_output=True, text=True)
+    return json.loads(completed.stdout)
+
+
+def benchmark_case_pair(
+    binaries: dict[str, Path],
+    name: str,
+    network_path: Path,
+    repeats: int,
+    warmup_runs: int,
+    iterations: int,
+    flags: str,
+) -> dict[str, dict[str, object]]:
+    """Measure several binaries on one case, alternating between them.
+
+    Measuring one binary's repeats and then the other's makes the comparison read
+    whatever the machine was doing during each block. On a shared runner that is
+    enough to invent or hide a verdict: the same commit was reported as a 17.3%
+    regression and then, on re-run, as 1.9% within threshold, with the *baseline*
+    itself moving 8.5% between runs (#943). Per-binary variance cannot see it -- each
+    block is internally consistent, so the shift looks like a real difference.
+
+    Alternating instead puts both binaries in the same few seconds of machine state,
+    and swapping which one leads each round keeps the lead position from favouring
+    either.
+    """
+    labels = list(binaries)
+    commands = {
+        label: benchmark_command(binaries[label], name, network_path, iterations, flags)
+        for label in labels
+    }
+    samples: dict[str, list[dict[str, object]]] = {label: [] for label in labels}
+    run_samples: dict[str, list[dict[str, object]]] = {label: [] for label in labels}
+
+    def rotated(round_index: int) -> list[str]:
+        offset = round_index % len(labels)
+        return labels[offset:] + labels[:offset]
+
+    for warmup in range(warmup_runs):
+        # Rotated like the measured rounds. A no-op at the one warmup run the gate
+        # uses, since a single round has nothing to alternate with, but it keeps the
+        # warmup from preconditioning one binary's slot at higher warmup counts.
+        for label in rotated(warmup):
+            subprocess.run(commands[label], check=True, capture_output=True, text=True)
 
     for repeat in range(repeats):
-        completed = subprocess.run(
-            command,
-            check=True,
-            capture_output=True,
-            text=True,
+        # Rotate the order so no binary is always measured first. Going first costs
+        # something small and real: measured on this machine by running one binary
+        # twice per round, position 1 was 0.13% slower than position 2 (2.4243 s vs
+        # 2.4211 s median over 12 rounds). With `repeats` a multiple of the number of
+        # binaries each one leads equally often and it cancels exactly; otherwise one
+        # binary keeps a single extra lead, worth about 0.13%/repeats.
+        order = rotated(repeat)
+        for label in order:
+            sample = collect_sample(commands[label])
+            samples[label].append(sample)
+            for run in sample.get("runs", [sample]):
+                run_sample = dict(run)
+                run_sample["repeat"] = repeat + 1
+                run_samples[label].append(run_sample)
+
+    return {
+        label: summarize_case(
+            samples[label],
+            run_samples[label],
+            name,
+            network_path,
+            repeats,
+            warmup_runs,
+            iterations,
         )
-        sample = json.loads(completed.stdout)
-        samples.append(sample)
-        for run in sample.get("runs", [sample]):
-            run_sample = dict(run)
-            run_sample["repeat"] = repeat + 1
-            run_samples.append(run_sample)
+        for label in labels
+    }
+
+
+def benchmark_case(
+    binary: Path,
+    name: str,
+    network_path: Path,
+    repeats: int,
+    warmup_runs: int,
+    iterations: int,
+    flags: str,
+) -> dict[str, object]:
+    return benchmark_case_pair(
+        {"only": binary}, name, network_path, repeats, warmup_runs, iterations, flags
+    )["only"]
+
+
+def summarize_case(
+    samples: list[dict[str, object]],
+    run_samples: list[dict[str, object]],
+    name: str,
+    network_path: Path,
+    repeats: int,
+    warmup_runs: int,
+    iterations: int,
+) -> dict[str, object]:
 
     total_stats = metric_stats([float(sample["total_sec"]) for sample in samples])
     run_stats = metric_stats([float(run["run_sec"]) for run in run_samples])
-    read_input_stats = metric_stats([float(sample["read_input_sec"]) for sample in samples])
+    read_input_stats = metric_stats(
+        [float(sample["read_input_sec"]) for sample in samples]
+    )
     peak_rss_stats = metric_stats([float(run["peak_rss_bytes"]) for run in run_samples])
-    node_budget_bytes = int(samples[0]["num_nodes"]) * int(samples[0]["node_size_bytes"])
-    edge_budget_bytes = int(samples[0]["num_links"]) * int(samples[0]["edge_size_bytes"])
+    node_budget_bytes = int(samples[0]["num_nodes"]) * int(
+        samples[0]["node_size_bytes"]
+    )
+    edge_budget_bytes = int(samples[0]["num_links"]) * int(
+        samples[0]["edge_size_bytes"]
+    )
     peak_rss_bytes_max = max(int(run["peak_rss_bytes"]) for run in run_samples)
-    rebuild_total = [float(run.get("rebuild", {}).get("total_sec", 0.0)) for run in run_samples]
-    rebuild_network = [float(run.get("rebuild", {}).get("network_sec", 0.0)) for run in run_samples]
-    rebuild_module = [float(run.get("rebuild", {}).get("module_sec", 0.0)) for run in run_samples]
-    rebuild_module_prep = [float(run.get("rebuild", {}).get("module_prep_sec", 0.0)) for run in run_samples]
-    rebuild_module_index = [float(run.get("rebuild", {}).get("module_index_sec", 0.0)) for run in run_samples]
-    rebuild_module_reserve = [float(run.get("rebuild", {}).get("module_reserve_sec", 0.0)) for run in run_samples]
-    rebuild_module_clone = [float(run.get("rebuild", {}).get("module_clone_sec", 0.0)) for run in run_samples]
-    rebuild_module_edge_clone = [float(run.get("rebuild", {}).get("module_edge_clone_sec", 0.0)) for run in run_samples]
+    rebuild_total = [
+        float(run.get("rebuild", {}).get("total_sec", 0.0)) for run in run_samples
+    ]
+    rebuild_network = [
+        float(run.get("rebuild", {}).get("network_sec", 0.0)) for run in run_samples
+    ]
+    rebuild_module = [
+        float(run.get("rebuild", {}).get("module_sec", 0.0)) for run in run_samples
+    ]
+    rebuild_module_prep = [
+        float(run.get("rebuild", {}).get("module_prep_sec", 0.0)) for run in run_samples
+    ]
+    rebuild_module_index = [
+        float(run.get("rebuild", {}).get("module_index_sec", 0.0))
+        for run in run_samples
+    ]
+    rebuild_module_reserve = [
+        float(run.get("rebuild", {}).get("module_reserve_sec", 0.0))
+        for run in run_samples
+    ]
+    rebuild_module_clone = [
+        float(run.get("rebuild", {}).get("module_clone_sec", 0.0))
+        for run in run_samples
+    ]
+    rebuild_module_edge_clone = [
+        float(run.get("rebuild", {}).get("module_edge_clone_sec", 0.0))
+        for run in run_samples
+    ]
     rebuild_total_stats = metric_stats(rebuild_total)
     rebuild_network_stats = metric_stats(rebuild_network)
     rebuild_module_stats = metric_stats(rebuild_module)
@@ -378,13 +549,69 @@ def benchmark_case(
     rebuild_module_edge_clone_stats = metric_stats(rebuild_module_edge_clone)
     rebuild_bucket_stats: dict[str, dict[str, float | int]] = {}
     for label in collect_module_size_bucket_labels(run_samples):
-        bucket_calls = [int(run.get("rebuild", {}).get("module_size_buckets", {}).get(label, {}).get("calls", 0)) for run in run_samples]
-        bucket_sec = [float(run.get("rebuild", {}).get("module_size_buckets", {}).get(label, {}).get("sec", 0.0)) for run in run_samples]
-        bucket_prep_sec = [float(run.get("rebuild", {}).get("module_size_buckets", {}).get(label, {}).get("prep_sec", 0.0)) for run in run_samples]
-        bucket_index_sec = [float(run.get("rebuild", {}).get("module_size_buckets", {}).get(label, {}).get("index_sec", 0.0)) for run in run_samples]
-        bucket_reserve_sec = [float(run.get("rebuild", {}).get("module_size_buckets", {}).get(label, {}).get("reserve_sec", 0.0)) for run in run_samples]
-        bucket_clone_sec = [float(run.get("rebuild", {}).get("module_size_buckets", {}).get(label, {}).get("clone_sec", 0.0)) for run in run_samples]
-        bucket_edge_clone_sec = [float(run.get("rebuild", {}).get("module_size_buckets", {}).get(label, {}).get("edge_clone_sec", 0.0)) for run in run_samples]
+        bucket_calls = [
+            int(
+                run.get("rebuild", {})
+                .get("module_size_buckets", {})
+                .get(label, {})
+                .get("calls", 0)
+            )
+            for run in run_samples
+        ]
+        bucket_sec = [
+            float(
+                run.get("rebuild", {})
+                .get("module_size_buckets", {})
+                .get(label, {})
+                .get("sec", 0.0)
+            )
+            for run in run_samples
+        ]
+        bucket_prep_sec = [
+            float(
+                run.get("rebuild", {})
+                .get("module_size_buckets", {})
+                .get(label, {})
+                .get("prep_sec", 0.0)
+            )
+            for run in run_samples
+        ]
+        bucket_index_sec = [
+            float(
+                run.get("rebuild", {})
+                .get("module_size_buckets", {})
+                .get(label, {})
+                .get("index_sec", 0.0)
+            )
+            for run in run_samples
+        ]
+        bucket_reserve_sec = [
+            float(
+                run.get("rebuild", {})
+                .get("module_size_buckets", {})
+                .get(label, {})
+                .get("reserve_sec", 0.0)
+            )
+            for run in run_samples
+        ]
+        bucket_clone_sec = [
+            float(
+                run.get("rebuild", {})
+                .get("module_size_buckets", {})
+                .get(label, {})
+                .get("clone_sec", 0.0)
+            )
+            for run in run_samples
+        ]
+        bucket_edge_clone_sec = [
+            float(
+                run.get("rebuild", {})
+                .get("module_size_buckets", {})
+                .get(label, {})
+                .get("edge_clone_sec", 0.0)
+            )
+            for run in run_samples
+        ]
         bucket_sec_stats = metric_stats(bucket_sec)
         bucket_prep_sec_stats = metric_stats(bucket_prep_sec)
         bucket_index_sec_stats = metric_stats(bucket_index_sec)
@@ -419,9 +646,15 @@ def benchmark_case(
         "flags": samples[0]["flags"],
         "samples": samples,
         "run_samples": run_samples,
-        "median_total_sec": statistics.median(float(sample["total_sec"]) for sample in samples),
-        "median_read_input_sec": statistics.median(float(sample["read_input_sec"]) for sample in samples),
-        "median_run_sec": statistics.median(float(run["run_sec"]) for run in run_samples),
+        "median_total_sec": statistics.median(
+            float(sample["total_sec"]) for sample in samples
+        ),
+        "median_read_input_sec": statistics.median(
+            float(sample["read_input_sec"]) for sample in samples
+        ),
+        "median_run_sec": statistics.median(
+            float(run["run_sec"]) for run in run_samples
+        ),
         "mean_total_sec": total_stats["mean"],
         "stdev_total_sec": total_stats["stdev"],
         "cv_total_sec": total_stats["cv"],
@@ -431,6 +664,8 @@ def benchmark_case(
         "mean_run_sec": run_stats["mean"],
         "stdev_run_sec": run_stats["stdev"],
         "cv_run_sec": run_stats["cv"],
+        "min_run_sec": run_stats["min"],
+        "min_total_sec": total_stats["min"],
         "mean_peak_rss_bytes": peak_rss_stats["mean"],
         "stdev_peak_rss_bytes": peak_rss_stats["stdev"],
         "cv_peak_rss_bytes": peak_rss_stats["cv"],
@@ -447,8 +682,12 @@ def benchmark_case(
         "edge_size_bytes": samples[0]["edge_size_bytes"],
         "node_budget_bytes": node_budget_bytes,
         "edge_budget_bytes": edge_budget_bytes,
-        "node_budget_peak_rss_ratio": (node_budget_bytes / peak_rss_bytes_max) if peak_rss_bytes_max else 0.0,
-        "edge_budget_peak_rss_ratio": (edge_budget_bytes / peak_rss_bytes_max) if peak_rss_bytes_max else 0.0,
+        "node_budget_peak_rss_ratio": (node_budget_bytes / peak_rss_bytes_max)
+        if peak_rss_bytes_max
+        else 0.0,
+        "edge_budget_peak_rss_ratio": (edge_budget_bytes / peak_rss_bytes_max)
+        if peak_rss_bytes_max
+        else 0.0,
         "rebuild": {
             "median_total_sec": statistics.median(rebuild_total),
             "mean_total_sec": rebuild_total_stats["mean"],
@@ -466,13 +705,29 @@ def benchmark_case(
             "mean_module_reserve_sec": rebuild_module_reserve_stats["mean"],
             "median_module_clone_sec": statistics.median(rebuild_module_clone),
             "mean_module_clone_sec": rebuild_module_clone_stats["mean"],
-            "median_module_edge_clone_sec": statistics.median(rebuild_module_edge_clone),
+            "median_module_edge_clone_sec": statistics.median(
+                rebuild_module_edge_clone
+            ),
             "mean_module_edge_clone_sec": rebuild_module_edge_clone_stats["mean"],
-            "median_total_calls": statistics.median(int(run.get("rebuild", {}).get("total_calls", 0)) for run in run_samples),
-            "median_network_calls": statistics.median(int(run.get("rebuild", {}).get("network_calls", 0)) for run in run_samples),
-            "median_module_calls": statistics.median(int(run.get("rebuild", {}).get("module_calls", 0)) for run in run_samples),
-            "peak_rss_bytes_max": max(int(run.get("rebuild", {}).get("peak_rss_bytes_max", 0)) for run in run_samples),
-            "peak_rss_delta_bytes_max": max(int(run.get("rebuild", {}).get("peak_rss_delta_bytes_max", 0)) for run in run_samples),
+            "median_total_calls": statistics.median(
+                int(run.get("rebuild", {}).get("total_calls", 0)) for run in run_samples
+            ),
+            "median_network_calls": statistics.median(
+                int(run.get("rebuild", {}).get("network_calls", 0))
+                for run in run_samples
+            ),
+            "median_module_calls": statistics.median(
+                int(run.get("rebuild", {}).get("module_calls", 0))
+                for run in run_samples
+            ),
+            "peak_rss_bytes_max": max(
+                int(run.get("rebuild", {}).get("peak_rss_bytes_max", 0))
+                for run in run_samples
+            ),
+            "peak_rss_delta_bytes_max": max(
+                int(run.get("rebuild", {}).get("peak_rss_delta_bytes_max", 0))
+                for run in run_samples
+            ),
             "module_size_buckets": rebuild_bucket_stats,
         },
     }
@@ -497,13 +752,55 @@ def render_markdown(results: list[dict[str, object]]) -> str:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Run native Infomap benchmarks and write a JSON report.")
-    parser.add_argument("--binary", type=Path, required=True, help="Path to the native benchmark executable.")
-    parser.add_argument("--output", type=Path, required=True, help="Path to write the JSON benchmark report.")
-    parser.add_argument("--summary", type=Path, default=None, help="Optional Markdown summary output.")
-    parser.add_argument("--repeats", type=int, default=3, help="Number of runs per case.")
-    parser.add_argument("--warmup-runs", type=int, default=0, help="Number of unmeasured warmup runs per case.")
-    parser.add_argument("--iterations", type=int, default=1, help="Number of in-process iterations per benchmark run.")
+    parser = argparse.ArgumentParser(
+        description="Run native Infomap benchmarks and write a JSON report."
+    )
+    parser.add_argument(
+        "--binary",
+        type=Path,
+        required=True,
+        help="Path to the native benchmark executable.",
+    )
+    parser.add_argument(
+        "--compare-binary",
+        type=Path,
+        default=None,
+        help=(
+            "Optional second executable to measure alongside --binary, alternating "
+            "between them so both see the same machine state. Requires "
+            "--compare-output."
+        ),
+    )
+    parser.add_argument(
+        "--compare-output",
+        type=Path,
+        default=None,
+        help="Path to write the --compare-binary JSON report.",
+    )
+    parser.add_argument(
+        "--output",
+        type=Path,
+        required=True,
+        help="Path to write the JSON benchmark report.",
+    )
+    parser.add_argument(
+        "--summary", type=Path, default=None, help="Optional Markdown summary output."
+    )
+    parser.add_argument(
+        "--repeats", type=int, default=3, help="Number of runs per case."
+    )
+    parser.add_argument(
+        "--warmup-runs",
+        type=int,
+        default=0,
+        help="Number of unmeasured warmup runs per case.",
+    )
+    parser.add_argument(
+        "--iterations",
+        type=int,
+        default=1,
+        help="Number of in-process iterations per benchmark run.",
+    )
     parser.add_argument(
         "--profile",
         choices=("smoke", "baseline", "full", "pr", "large"),
@@ -530,24 +827,51 @@ def main() -> None:
     if args.warmup_runs < 0:
         parser.error("--warmup-runs must be at least 0")
 
+    if (args.compare_binary is None) != (args.compare_output is None):
+        parser.error("--compare-binary and --compare-output must be given together")
+    if (
+        args.compare_output is not None
+        and args.output.resolve() == args.compare_output.resolve()
+    ):
+        # Otherwise the second report overwrites the first and the comparison reads
+        # one binary against itself -- reporting no regression, which is a worse
+        # failure than a false one because nothing looks wrong.
+        parser.error("--compare-output must differ from --output")
+
     repo_root = Path(__file__).resolve().parents[2]
     if not args.binary.is_file():
         raise FileNotFoundError(f"Benchmark binary not found: {args.binary}")
+    if args.compare_binary is not None and not args.compare_binary.is_file():
+        raise FileNotFoundError(
+            f"Comparison benchmark binary not found: {args.compare_binary}"
+        )
 
-    def run_with_generated_dir(generated_dir: Path) -> list[dict[str, object]]:
+    binaries = {"binary": args.binary}
+    if args.compare_binary is not None:
+        binaries["compare"] = args.compare_binary
+
+    def run_with_generated_dir(
+        generated_dir: Path,
+    ) -> dict[str, list[dict[str, object]]]:
         cases = build_benchmark_cases(args.profile, repo_root, generated_dir)
-        return [
-            benchmark_case(
-                args.binary,
+        collected: dict[str, list[dict[str, object]]] = {
+            label: [] for label in binaries
+        }
+        for case in cases:
+            per_label = benchmark_case_pair(
+                binaries,
                 str(case["name"]),
                 Path(case["path"]),
                 args.repeats,
                 args.warmup_runs,
                 args.iterations,
-                " ".join(part for part in (args.flags, str(case["flags"])) if part).strip(),
+                " ".join(
+                    part for part in (args.flags, str(case["flags"])) if part
+                ).strip(),
             )
-            for case in cases
-        ]
+            for label, result in per_label.items():
+                collected[label].append(result)
+        return collected
 
     if args.generated_dir is None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -560,20 +884,33 @@ def main() -> None:
         results = run_with_generated_dir(generated_dir)
         generated_dir_text = str(generated_dir)
 
-    report = {
-        "profile": args.profile,
-        "repeats": args.repeats,
-        "warmup_runs": args.warmup_runs,
-        "iterations": args.iterations,
-        "binary": str(args.binary),
-        "generated_dir": generated_dir_text,
-        "benchmarks": results,
-    }
+    def write_report(label: str, binary: Path, output: Path) -> None:
+        report = {
+            "profile": args.profile,
+            "repeats": args.repeats,
+            "warmup_runs": args.warmup_runs,
+            "iterations": args.iterations,
+            "binary": str(binary),
+            "generated_dir": generated_dir_text,
+            # Recorded so a comparison can tell an interleaved measurement from two
+            # sequential ones; #943 was caused by the latter being indistinguishable.
+            "interleaved_with": (
+                str(binaries["compare"])
+                if label == "binary" and "compare" in binaries
+                else str(args.binary)
+                if label == "compare"
+                else None
+            ),
+            "benchmarks": results[label],
+        }
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
 
-    args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+    write_report("binary", args.binary, args.output)
+    if args.compare_binary is not None:
+        write_report("compare", args.compare_binary, args.compare_output)
 
-    markdown = render_markdown(results)
+    markdown = render_markdown(results["binary"])
     if args.summary is not None:
         args.summary.parent.mkdir(parents=True, exist_ok=True)
         args.summary.write_text(markdown, encoding="utf-8")

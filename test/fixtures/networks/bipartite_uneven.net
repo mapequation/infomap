@@ -1,0 +1,20 @@
+# A bipartite network whose two sides differ in size: three primary nodes (1-3) and four
+# feature nodes (4-7), each primary node sharing one feature with each of its neighbours.
+# Naming follows examples/networks/bipartite.net -- ids from the *Bipartite index up are
+# the feature side. Small enough to reason about the flow by hand, and under --regularized
+# the module enter/exit flow accumulated over it goes negative (#958).
+*Vertices 7
+1 "Node 1"
+2 "Node 2"
+3 "Node 3"
+4 "Feature 1"
+5 "Feature 2"
+6 "Feature 3"
+7 "Feature 4"
+*Bipartite 4
+1 4
+1 5
+2 5
+2 6
+3 6
+3 7

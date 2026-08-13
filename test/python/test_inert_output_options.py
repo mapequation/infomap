@@ -14,10 +14,8 @@ from __future__ import annotations
 import warnings
 
 import pytest
-
 from infomap import Infomap, Network, Options, find_communities, run
 from infomap._run import _warn_inert_output_options
-
 
 pytestmark = pytest.mark.fast
 
@@ -90,9 +88,7 @@ def test_hide_bipartite_nodes_excluded_but_genuine_inert_flag_still_warns():
         _warn_inert_output_options(
             Options(hide_bipartite_nodes=True, no_file_output=True), None
         )
-    assert not any(
-        "hide_bipartite_nodes" in str(record.message) for record in records
-    )
+    assert not any("hide_bipartite_nodes" in str(record.message) for record in records)
 
 
 def test_writer_effective_set_matches_catalog_inertness():

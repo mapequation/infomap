@@ -622,6 +622,43 @@ TEST_CASE("Converge is deterministic for a given input and seed [fast][core][lif
   CHECK(first.second == doctest::Approx(second.second)); // same best codelength
 }
 
+TEST_CASE("The summary report carries the power iteration's outcome [fast][core][lifecycle][output][flow]")
+{
+  // A failed power iteration means the flow is not the network's stationary
+  // distribution, so no codelength below it describes the network. It was reported
+  // through exactly one channel -- a console line -- and --summary-json requires
+  // --silent, so the documented pipeline shape provably could not see it (#899).
+  const std::vector<std::string> paths = {
+    "run_report_flow_converged.json",
+    "run_report_flow_not_converged.json",
+  };
+  removeFiles(paths);
+
+  {
+    InfomapWrapper converged("--silent --seed 7 --directed --no-file-output --summary-json " + paths[0]);
+    infomap::test::addEdgeFixtureLinks(converged, "graphs/twotriangles_unweighted.edges");
+    converged.run();
+    const auto json = infomap::test::readTextFile(paths[0]);
+    CHECK(json.find("\"flow\":{\"converged\":true") != std::string::npos);
+    CHECK(json.find("\"iterations\":") != std::string::npos);
+    CHECK(json.find("\"error\":") != std::string::npos);
+  }
+
+  {
+    // Two iterations is not enough for this network to reach tolerance, so the run
+    // completes with a flow that is not stationary -- exactly the case that used to
+    // leave no trace in any file.
+    InfomapWrapper notConverged("--silent --seed 7 --directed --max-flow-iterations 2 --no-file-output --summary-json " + paths[1]);
+    notConverged.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+    notConverged.run();
+    const auto json = infomap::test::readTextFile(paths[1]);
+    CHECK(json.find("\"flow\":{\"converged\":false") != std::string::npos);
+    CHECK(json.find("\"iterations\":2,") != std::string::npos);
+  }
+
+  removeFiles(paths);
+}
+
 TEST_CASE("Run reports write machine-readable JSON with no-file-output [fast][core][lifecycle][output][columnar-contract]")
 {
   const std::vector<std::string> paths = {

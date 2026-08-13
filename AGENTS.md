@@ -9,7 +9,7 @@ Default priorities:
 1. identify the smallest affected surface
 2. edit the real source-of-truth file
 3. run the smallest useful verification
-4. state clearly what was verified and what was not
+4. state clearly what you verified and what you did not
 
 Do not bundle unrelated cleanup into the same change.
 
@@ -32,19 +32,21 @@ Do not bundle unrelated cleanup into the same change.
 - `interfaces/js/README.md` is the source README for the public npm package
 - `interfaces/python/source/` owns the published Python docs source
 - `interfaces/python/generated/` and `interfaces/python/src/infomap/_swig.py` are tracked Python wrapper outputs
-- The option surface is generated from the C++ parameter catalog: the whole of
-  `interfaces/python/src/infomap/_options.py`, the marked signature block in
-  `interfaces/python/src/infomap/_facade.py`, `interfaces/parameters/policy.md`,
-  and the R/TS option files are produced by
-  `scripts/generate_binding_options.py` (`make build-binding-options`) from
-  `src/io/ParameterCatalog.cpp` + `interfaces/parameters/overrides.json`. Edit
-  those sources (and the generator for cross-cutting changes), then regenerate;
-  do not hand-edit the generated option code or docstrings
+- `scripts/generate_binding_options.py` (`make build-binding-options`) generates
+  the option surface from the C++ parameter catalog
+  (`src/io/ParameterCatalog.cpp` + `interfaces/parameters/overrides.json`). The
+  option surface is the whole of `interfaces/python/src/infomap/_options.py`,
+  the marked signature block in `interfaces/python/src/infomap/_facade.py`,
+  `interfaces/parameters/policy.md`, and the R/TS option files. Edit the
+  catalog sources (and the generator for cross-cutting changes). Then
+  regenerate with `make build-binding-options` and confirm with
+  `make test-binding-options-freshness`. Do not hand-edit the generated option
+  code or docstrings
 - `interfaces/R/infomap/` owns the R package skeleton (`R/`, `DESCRIPTION`, `tests/`, `man/`)
 - `interfaces/R/generated/` are tracked SWIG-generated R outputs; refresh with `make build-r-swig`
 
-When two documents disagree, fix the source document and regenerate derived
-output instead of patching the generated copy by hand.
+When two documents disagree, fix the source document and regenerate the
+derived output; do not patch the generated copy by hand.
 
 ## Bootstrap From Clean Clone
 
@@ -60,7 +62,7 @@ Baseline tools:
 
 - Python 3.11 or newer; use `python3` on macOS when `python` is unavailable
 - R 4.0 or newer for the R package; CI exercises both `release` and `oldrel`
-- Node.js 20 for the JavaScript worker package
+- Node.js 24 for the JavaScript worker package
 - `gcc` or `clang` with a working C++ toolchain
 - `swig` 4.4.1 only for refreshing tracked Python or R wrapper outputs
 - `em++` from Emscripten 5.0.5 for JavaScript worker builds
@@ -71,11 +73,21 @@ Common local setup:
 python3 -m venv .venv
 . .venv/bin/activate
 python -m pip install --upgrade pip
-python -m pip install -e '.[test,docs,examples,release]'
-npm ci
+make dev-bootstrap
 make doctor
 make build-native
 ```
+
+`make dev-bootstrap` is the canonical setup step: it installs the Python
+package with all extras (`.[test,docs,examples,release]`), runs `npm ci`, and
+installs the pre-commit git hooks (`make hooks`). Run it inside the active
+virtual environment.
+
+To speed up the dependency install (the scientific extras are heavy), override
+the installer with [uv](https://docs.astral.sh/uv/): `make dev-bootstrap
+PIP="uv pip"` (and likewise `make dev-python-install PIP="uv pip"`). `uv pip`
+installs into the active virtual environment just like `pip`; only dependency
+resolution is faster. CI already routes its Python installs through uv.
 
 Use an active virtual environment for Python development. Some system-managed
 Python installs, including Homebrew Python on macOS and distro Python on Linux,
@@ -89,14 +101,15 @@ PATH="/opt/homebrew/bin:$PATH" make doctor
 ```
 
 For Python wrapper refreshes, use SWIG 4.4.1 to match CI. For JavaScript
-worker work, activate Emscripten 5.0.5 before running `make build-js` or
+worker work, activate Emscripten 5.0.5 before you run `make build-js` or
 `make test-js`.
 
 ## Verification
 
 Run the smallest sufficient verification for the changed surface:
 
-- `src/` changes: at least `make build-native`
+- `src/` changes: `make build-native`, then run the C++ tests with
+  `make test-native`
 - Python wrapper or packaging changes: `make build-python`,
   `make dev-python-install`, and `make test-python`
 - R wrapper or packaging changes: `make test-r` (R CMD check) plus
@@ -104,10 +117,14 @@ Run the smallest sufficient verification for the changed surface:
   `make build-r-swig` and verify with `make test-r-swig-freshness`.
   Regenerate Rd/NAMESPACE with
   `Rscript -e 'roxygen2::roxygenise("interfaces/R/infomap")'`
-  after installing with `R CMD INSTALL --with-keep.source`.
+  after you install the package with `R CMD INSTALL --with-keep.source`.
 - JavaScript worker or package changes: `npm ci` plus `make build-js` or `make test-js`
 - docs-only text changes: no code build needed; run `make build-docs` to verify the site still builds
 - workflow or release changes: run the smallest relevant local smoke check and say what remains unverified
+
+Before you commit, `make test-fast` runs a quick cross-cutting subset: the C++
+stream-policy check, the C++ tests (`make test-native`), and the Python unit
+tests (`make test-python-unit`).
 
 Approximate local runtimes vary by machine and cache state:
 
@@ -126,11 +143,80 @@ Targeted checks:
 - Single JavaScript unit test: `npm run test:unit -- -t "name pattern"`
 - JavaScript typecheck only: `npm run typecheck`
 
+## Formatting And Linting
+
+Pre-commit hooks mirror the CI lint gates and give the same feedback locally.
+Install them once with `make hooks` (also run by `make dev-bootstrap`). On
+commit they run `ruff` (Python lint), `clang-format` (C++ `src/`), `biome`
+(JavaScript lint and format), `air` (R format), `actionlint` (GitHub
+workflow YAML), and a C++ stream-policy check. At push time they also run
+`pyright` on the core Python surface.
+
+Format on demand without the hooks:
+
+- C++: `make format-native` (check only: `make format-native-check`)
+- Python: `make format-python`
+- R: `make format-r` (check only: `make format-r-check`)
+- JavaScript: `make format-js`
+
+CI enforces formatting through the `pre-commit` job, which runs the same
+hooks locally and in CI — `clang-format` for C++ `src/` and `air` for the R
+sources. Format changes before you commit. Air is pre-1.0 and the repo
+ships no `air.toml`, so its output is version-dependent. The canonical version
+is **0.9.0**, pinned in the `pre-commit` CI job via `posit-dev/setup-air`.
+Install that version locally so `make format-r-check` agrees with CI, and bump
+the CI pin and this note together. The `actionlint` hook is `language: system`
+too: install it locally (`brew install actionlint`) when you touch workflows.
+The canonical version is **1.7.12**, downloaded in the `pre-commit` CI job, and
+the CI pin and this note bump together. The R man pages are roxygen output and
+its formatting is version-dependent too — 8.0.0 rewrites the whole R6 section —
+so the canonical version is **7.3.3**, pinned as `R_ROXYGEN_VERSION` in `mk/r.mk`
+and as `roxygen2@7.3.3` in the R CI job. `make build-r-man` refuses to run with
+any other version, and the two pins and this note bump together. Every hook
+excludes the generated and vendored files — `interfaces/python/generated/`,
+`interfaces/R/generated/`, `interfaces/python/src/infomap/_swig.py`, and
+`vendor/`. Never reformat them.
+
 ## Environment
 
 - Verify tool availability before use: `python`, `node`, `swig`, `em++`, and the compiler toolchain
-- On some local macOS setups, Homebrew tools may need `PATH="/opt/homebrew/bin:$PATH"`
+- On some local macOS setups, Homebrew tools need `PATH="/opt/homebrew/bin:$PATH"`
 - Never develop directly on `master`; create or use a task-specific branch
+
+## Commits and Pull Requests
+
+Commit subjects follow Conventional Commits: `type(scope): summary`, written
+in imperative mood, lowercase after the colon, no trailing period.
+release-please derives releases from them: `feat` bumps the minor version,
+`fix` the patch version, and a `BREAKING CHANGE:` footer (or `!` after the
+type) the major version. Only `feat`, `fix`, `perf`, and `revert` commits
+surface in the generated `CHANGELOG.md`. Never edit that file by hand.
+
+Types and scopes are a fixed allowlist, restricted to what is frequent in
+this repo's history:
+
+- Allowed types: `feat`, `fix`, `perf`, `docs`, `test`, `refactor`, `build`,
+  `ci`, `chore`.
+- Allowed scopes:
+  - no scope — `src/` (C++ core) and repo-wide changes: `feat: ...`,
+    `fix: ...`, `perf: ...`
+  - `(python)` — the Python interface (`py` is a retired alias; do not use it)
+  - `(R)` — the R interface; `(js)` — the JavaScript interface
+  - `(deps)` / `(deps-dev)` — dependency bumps, dependabot's style
+- Everything else requires explicit confirmation from the user before
+  committing: rare types (`style`, `revert`), scopes that appear only
+  occasionally in history (`notebooks`, `docker`, `skills`, ...), any
+  breaking-change marker, and any type or scope not listed above. Never
+  propose `(core)` — the C++ core is the unscoped default — and never write
+  `chore(master): release ...` commits; those belong to release-please.
+- The user is the author of every commit and pull request. Author and commit
+  all work in the user's name; never record yourself as the author.
+- Never add yourself as a co-author. Do not append `Co-Authored-By` trailers,
+  "Generated with" footers, agent signatures, or session links to any commit or
+  pull request.
+- Never mention yourself in commit messages, pull request titles, or pull
+  request descriptions. Describe only the change and its rationale, written in
+  the user's voice.
 
 ## Do Not Guess
 
@@ -144,11 +230,11 @@ Targeted checks:
 
 ## Common Pitfalls
 
-- macOS OpenMP: Homebrew `libomp` may be installed but not found by the
-  compiler. Use `PATH="/opt/homebrew/bin:$PATH"` and the `CXXFLAGS`/`LDFLAGS`
+- macOS OpenMP: sometimes the compiler does not find an installed Homebrew
+  `libomp`. Use `PATH="/opt/homebrew/bin:$PATH"` and the `CXXFLAGS`/`LDFLAGS`
   recipe in `BUILD.md`, or disable OpenMP with `OPENMP=0` for local smoke
   builds.
-- Stale Python extension: after changing C++ extension sources, SWIG
+- Stale Python extension: after you change C++ extension sources, SWIG
   interfaces, or tracked wrapper outputs, rerun `make build-python` and
   `make dev-python-install` before Python tests.
 - SWIG drift: only refresh tracked Python or R wrapper outputs with SWIG
@@ -165,7 +251,7 @@ Targeted checks:
   appear in `?InfomapClass`. Define methods inline.
 - macOS R workaround: `mk/r.mk` writes a temporary Makevars pinning
   `/usr/bin/clang++` so the compiled R `.so` is libc++-compatible with
-  Homebrew R. `make doctor` flags missing `/usr/bin/clang++`.
+  Homebrew R. `make doctor` reports a missing `/usr/bin/clang++`.
 - Emscripten environment: `make build-js` and `make test-js` require `em++` from
   Emscripten 5.0.5 on `PATH`; `npm ci` alone is not enough.
 
@@ -173,7 +259,7 @@ Targeted checks:
 
 Private vulnerability reporting, branch protection, required checks, stale
 approval dismissal, and linear-history requirements are GitHub repository
-settings. They cannot be verified from tracked files alone; note any manual
+settings. You cannot verify them from tracked files alone. Note any manual
 settings checks in the pull request when they affect the change.
 
 ## Escalation
@@ -183,5 +269,5 @@ Stop and hand off when:
 - the work spans multiple major surfaces
 - the verification path is unavailable in the current environment
 - the fix appears to require architectural redesign instead of a bounded patch
-- the behavior change cannot be validated with a small scoped check
+- you cannot validate the behavior change with a small scoped check
 - the issue points to algorithm correctness, cross-platform divergence, or memory behavior

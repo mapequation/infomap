@@ -44,14 +44,14 @@ Comparison notebooks cover NetworkX, python-igraph, and Scanpy-style workflows.
 
 ## Adaptation workflow
 
-When helping adapt a notebook:
+When you help the user adapt a notebook:
 
 1. Identify the notebook section that matches the research data or question.
 2. Preserve the conceptual structure, but replace toy data with the user's data loading cell.
 3. Add a reproducibility cell with package versions, input path or data checksum, seed, `num_trials`, and non-default options.
-4. Store outputs outside the notebook when they are needed later: CSV tables, GraphML/GEXF, `.tree`, `.clu`, or figures.
+4. Store outputs outside the notebook when the user needs them later: CSV tables, GraphML/GEXF, `.tree`, `.clu`, or figures.
 5. Convert repeated analysis into functions or scripts once the exploratory workflow stabilizes.
 
 ## Running notebooks
 
-Do not start Docker, Jupyter, or full notebook execution unless the user asks. Before giving launch commands, verify the current notebook image, installation extras, or source-checkout path from the published docs, package metadata, or the user's local repository. For validation, prefer extracting one small cell into a temporary script or reduced notebook and record the package version, inputs, seed, options, and outputs.
+Do not start Docker, Jupyter, or full notebook execution unless the user asks. Before you give launch commands, verify the current notebook image, installation extras, or source-checkout path from the published docs, package metadata, or the user's local repository. For validation, prefer to extract one small cell into a temporary script or reduced notebook. Record the package version, inputs, seed, options, and outputs.

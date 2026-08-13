@@ -1,0 +1,58 @@
+name: Report cron failure
+description: >-
+  Open, or comment on, a deduplicated tracking issue when a scheduled workflow
+  fails. Scheduled workflows (notebooks, prerelease checks, fuzzing) are
+  deliberately non-blocking, so a red weekly run is otherwise only visible to
+  whoever happens to look at the Actions tab. Intended to be called from a
+  failure()-gated job on a schedule event; a no-op otherwise.
+inputs:
+  workflow-name:
+    description: Human-readable name of the failing scheduled workflow (github.workflow).
+    required: true
+  run-url:
+    description: URL of the failing workflow run.
+    required: true
+  token:
+    description: Token with issues:write on this repository (e.g. github.token).
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Open or update the tracking issue
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        GH_REPO: ${{ github.repository }}
+        WORKFLOW_NAME: ${{ inputs.workflow-name }}
+        RUN_URL: ${{ inputs.run-url }}
+      run: |
+        set -euo pipefail
+
+        label="ci-cron"
+        title="CI: scheduled \"$WORKFLOW_NAME\" is failing"
+
+        # Create the label on first use; ignore "already exists".
+        gh label create "$label" \
+          --color b60205 \
+          --description "A scheduled (cron) workflow is failing" 2>/dev/null || true
+
+        # One open issue per workflow: dedup on an exact title match among the
+        # open ci-cron issues. The title is passed to jq via --arg (not
+        # interpolated into the program) because it contains double quotes.
+        number="$(gh issue list --state open --label "$label" --json number,title \
+          | jq -r --arg t "$title" '[.[] | select(.title == $t)] | first | .number // empty')"
+
+        if [ -n "$number" ]; then
+          echo "Existing tracking issue #$number; adding a comment."
+          gh issue comment "$number" --body "Still failing: $RUN_URL"
+        else
+          echo "No open tracking issue; creating one."
+          body="$(printf '%s\n' \
+            "The scheduled workflow **$WORKFLOW_NAME** failed." \
+            "" \
+            "Latest failing run: $RUN_URL" \
+            "" \
+            "This issue was opened automatically and is deduplicated by title." \
+            "Close it once the failure is resolved; a new one opens if it recurs.")"
+          gh issue create --title "$title" --label "$label" --body "$body"
+        fi

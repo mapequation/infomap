@@ -6,7 +6,6 @@ from pathlib import Path
 
 import pytest
 
-
 pytestmark = pytest.mark.fast
 
 
@@ -226,6 +225,169 @@ def test_benchmark_case_discards_warmup_samples(monkeypatch, tmp_path: Path):
     assert [sample["run_sec"] for sample in result["samples"]] == [1.0, 3.0]
     assert result["median_run_sec"] == pytest.approx(2.0)
     assert [sample["repeat"] for sample in result["run_samples"]] == [1, 2]
+
+
+def _minimal_payload(run_sec: float) -> dict[str, object]:
+    return {
+        "name": "toy",
+        "path": "toy.net",
+        "flags": "--silent",
+        "iterations": 1,
+        "total_sec": run_sec + 0.1,
+        "read_input_sec": 0.1,
+        "run_sec": run_sec,
+        "peak_rss_bytes": 4096,
+        "node_size_bytes": 32,
+        "edge_size_bytes": 16,
+        "num_nodes": 5,
+        "num_links": 4,
+        "num_top_modules": 2,
+        "num_levels": 1,
+        "codelength": 1.5,
+        "higher_order_input": False,
+        "directed_input": False,
+        "runs": [
+            {
+                "iteration": 1,
+                "read_input_sec": 0.0,
+                "run_sec": run_sec,
+                "total_sec": run_sec,
+                "peak_rss_bytes": 4096,
+                "num_top_modules": 2,
+                "num_levels": 1,
+                "codelength": 1.5,
+            }
+        ],
+    }
+
+
+def test_benchmark_case_pair_interleaves_and_rotates_the_lead(
+    monkeypatch, tmp_path: Path
+):
+    """Both binaries are measured inside each repeat, taking turns to go first.
+
+    This is the whole point of the pair driver: two sequential blocks read whatever
+    the machine was doing during each block, which is enough to invent a verdict on a
+    shared runner. Alternating puts both binaries in the same machine state, and
+    rotating the lead keeps the first position -- which pays the cold-cache cost --
+    from favouring either binary.
+    """
+    benchmark_module = _load_benchmark_module()
+    invoked: list[str] = []
+
+    def fake_run(command, *args, **kwargs):
+        invoked.append(Path(command[0]).name)
+        return benchmark_module.subprocess.CompletedProcess(
+            command, 0, stdout=json.dumps(_minimal_payload(1.0)), stderr=""
+        )
+
+    monkeypatch.setattr(benchmark_module.subprocess, "run", fake_run)
+
+    results = benchmark_module.benchmark_case_pair(
+        {"base": tmp_path / "base_binary", "head": tmp_path / "head_binary"},
+        name="toy",
+        network_path=tmp_path / "toy.net",
+        repeats=3,
+        warmup_runs=2,
+        iterations=1,
+        flags="--silent",
+    )
+
+    # Two warmup rounds, rotating like the measured ones, then three repeats of both
+    # with the lead rotating. Going first is measurably slightly more expensive, so
+    # an odd repeat count leaves one binary a single extra lead -- visible here as
+    # base leading rounds 1 and 3 against head leading round 2.
+    assert invoked == [
+        "base_binary",
+        "head_binary",
+        "head_binary",
+        "base_binary",
+        "base_binary",
+        "head_binary",
+        "head_binary",
+        "base_binary",
+        "base_binary",
+        "head_binary",
+    ]
+    assert sorted(results) == ["base", "head"]
+    for label in ("base", "head"):
+        assert len(results[label]["samples"]) == 3
+        assert [sample["repeat"] for sample in results[label]["run_samples"]] == [
+            1,
+            2,
+            3,
+        ]
+
+
+def test_metric_stats_reports_the_minimum_sample():
+    """The minimum is reported for reading a borderline verdict, not for deciding it.
+
+    ``compare_native_benchmarks`` deliberately keeps it out of the verdict -- a
+    disturbance spanning a whole measurement block moves the minimum with the median.
+    """
+    benchmark_module = _load_benchmark_module()
+
+    stats = benchmark_module.metric_stats([3.0, 1.0, 2.0])
+
+    assert stats["min"] == pytest.approx(1.0)
+    assert stats["mean"] == pytest.approx(2.0)
+
+
+def test_main_rejects_writing_both_reports_to_one_path(monkeypatch, tmp_path: Path):
+    """Sharing the path would leave one report on disk and compare it against itself.
+
+    The comparison would then find no difference and report no regression, which is a
+    worse failure than a false alarm because nothing on screen looks wrong.
+    """
+    benchmark_module = _load_benchmark_module()
+    shared = tmp_path / "out.json"
+
+    import sys
+
+    old_argv = sys.argv
+    sys.argv = [
+        "run_native_benchmarks.py",
+        "--binary",
+        "missing-binary",
+        "--output",
+        str(shared),
+        "--compare-binary",
+        "other-binary",
+        "--compare-output",
+        str(tmp_path / "sub" / ".." / "out.json"),
+    ]
+    try:
+        with pytest.raises(SystemExit) as exc_info:
+            benchmark_module.main()
+    finally:
+        sys.argv = old_argv
+
+    assert exc_info.value.code == 2
+
+
+def test_main_requires_compare_binary_and_output_together(monkeypatch, tmp_path: Path):
+    """Half a comparison is a silent no-op, so the pair is validated up front."""
+    benchmark_module = _load_benchmark_module()
+
+    import sys
+
+    old_argv = sys.argv
+    sys.argv = [
+        "run_native_benchmarks.py",
+        "--binary",
+        "missing-binary",
+        "--output",
+        str(tmp_path / "out.json"),
+        "--compare-binary",
+        "other-binary",
+    ]
+    try:
+        with pytest.raises(SystemExit) as exc_info:
+            benchmark_module.main()
+    finally:
+        sys.argv = old_argv
+
+    assert exc_info.value.code == 2
 
 
 def test_build_benchmark_cases_pr_profile_focuses_on_stable_cases(

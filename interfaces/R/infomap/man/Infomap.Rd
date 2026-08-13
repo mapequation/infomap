@@ -59,7 +59,13 @@ im$modules
 \describe{
 \item{\code{swig}}{The underlying SWIG-generated InfomapWrapper handle.}
 
-\item{\code{network}}{The underlying Network reference.}
+\item{\code{network}}{The underlying Network reference.
+
+The handle carries a reference to its owner, so it stays valid for as long as it
+is reachable. Without it the handle was a non-owning pointer into the C++ Network
+held by the SWIG wrapper: once this object became unreachable the wrapper was
+finalised and reads through the handle touched freed memory, returning plausible
+wrong values (numNodes 11 for a three-node network) or aborting R (#900).}
 
 \item{\code{codelength}}{Total (hierarchical) codelength.}
 
@@ -254,7 +260,7 @@ named list/vector mapping \code{node_id} to \code{name} or to
 \subsection{Method \code{add_state_node()}}{
 Add a state node.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InfomapClass$add_state_node(state_id, node_id)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InfomapClass$add_state_node(state_id, node_id, name = NULL)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -263,6 +269,9 @@ Add a state node.
 \item{\code{state_id}}{Integer state node id.}
 
 \item{\code{node_id}}{Integer physical node id.}
+
+\item{\code{name}}{Optional name of the state node itself, as opposed to the
+physical node.}
 }
 \if{html}{\out{</div>}}
 }
@@ -279,8 +288,9 @@ Add many state nodes at once.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{state_nodes}}{A list of \code{c(state_id, node_id)} vectors, or a
-named list/vector mapping \code{state_id} to \code{node_id}.}
+\item{\code{state_nodes}}{A list of \code{c(state_id, node_id)} or
+\code{c(state_id, node_id, name)} vectors, or a named list/vector mapping
+\code{state_id} to \code{node_id}.}
 }
 \if{html}{\out{</div>}}
 }
@@ -865,7 +875,7 @@ Get all assigned state node names.
 }
 
 \subsection{Details}{
-Populated for higher-order (state/memory) networks whose \code{*States}
+Populated for higher-order (state/memory) networks whose \verb{*States}
 section names the state nodes; empty otherwise. Physical node names
 are available separately via \code{get_names()}.
 }

@@ -60,7 +60,9 @@ def _edge_weights(g: Any, edge_weights: str | Iterable[Any] | None) -> list[floa
 
     if isinstance(edge_weights, str):
         if edge_weights not in g.es.attributes():
-            raise ValueError(f"`edge_weights` edge attribute {edge_weights!r} does not exist.")
+            raise ValueError(
+                f"`edge_weights` edge attribute {edge_weights!r} does not exist."
+            )
         return _validate_weight_values(g.es[edge_weights], name="edge_weights")
 
     try:
@@ -81,7 +83,9 @@ def _vertex_attribute(g, attribute):
         return None
     values = list(g.vs[attribute])
     if any(_is_missing(value) for value in values):
-        raise ValueError(f"`{attribute}` vertex attribute cannot contain missing or NaN values.")
+        raise ValueError(
+            f"`{attribute}` vertex attribute cannot contain missing or NaN values."
+        )
     return values
 
 
@@ -106,7 +110,7 @@ def _node_ids(values):
         # id. Detect that here and name the colliding labels instead of silently
         # merging two vertices into one physical node.
         labels_by_id: dict[int, Any] = {}
-        for label, _node_id in zip(values, ids):
+        for label, _node_id in zip(values, ids, strict=True):
             seen = labels_by_id.setdefault(_node_id, label)
             if repr(seen) != repr(label):
                 raise ValueError(
@@ -179,10 +183,12 @@ def add_igraph_graph(
     """
     _validate_igraph_graph(g)
     if vertex_weights is not None:
-        raise ValueError("`vertex_weights` is not supported by infomap's igraph adapter yet.")
+        raise ValueError(
+            "`vertex_weights` is not supported by infomap's igraph adapter yet."
+        )
 
-    if not infomap._core.flowModelIsSet and g.is_directed():
-        infomap._core.setDirected(True)
+    if g.is_directed():
+        infomap._core.note_inferred_flow_model("directed")
 
     names = _vertex_names(g)
     weights = _edge_weights(g, edge_weights)
@@ -272,7 +278,7 @@ def add_igraph_graph(
             )
         # add_igraph_graph registers one node per vertex using the vertex index
         # as the (state) id, so meta is keyed by vertex index.
-        apply_node_meta_data(infomap, zip(vertices, meta_values))
+        apply_node_meta_data(infomap, zip(vertices, meta_values, strict=True))
 
     if names is None:
         return {vertex_id: vertex_id for vertex_id in vertices}

@@ -2,11 +2,13 @@
 
 #include "TestUtils.h"
 #include "io/Config.h"
+#include "io/InfomapError.h"
 #include "io/OutputFormats.h"
 #include "io/OutputPlan.h"
 #include "io/ParameterCatalog.h"
 #include "io/ProgramInterface.h"
 #include "io/RunMetadata.h"
+#include "io/SafeFile.h"
 
 #include <map>
 #include <set>
@@ -207,6 +209,50 @@ TEST_CASE("Config uses a default cap for converge without explicit num-trials [f
   // Local copy avoids odr-use of the constexpr member (C++14: no out-of-line def).
   const unsigned int defaultCap = Config::convergeDefaultMaxTrials;
   CHECK(config.numTrials == defaultCap);
+}
+
+TEST_CASE("Config honors an explicit single-trial cap for converge [fast][core][config][cli]")
+{
+  // -N 1 --converge used to be rewritten to the default cap, because numTrials
+  // == 1 doubled as the "no explicit -N" sentinel. A cap of one makes --converge
+  // a no-op, which is a legitimate thing to ask for, and silently running the
+  // default cap's worth of trials instead can change the reported result.
+  const unsigned int defaultCap = Config::convergeDefaultMaxTrials;
+
+  const Config explicitOne("input.net --silent --no-file-output --num-trials 1 --converge", true);
+  CHECK(explicitOne.convergeTrials);
+  CHECK(explicitOne.numTrials == 1);
+
+  // The short form is the same option, so it must behave identically.
+  const Config shortForm("input.net --silent --no-file-output -N 1 --converge", true);
+  CHECK(shortForm.numTrials == 1);
+
+  // And the default cap still applies when the count is left unsaid.
+  const Config implicit("input.net --silent --no-file-output --converge", true);
+  CHECK(implicit.numTrials == defaultCap);
+}
+
+TEST_CASE("Converge keeps a library-set trial cap that no option recorded [fast][core][config][library]")
+{
+  // A library caller mutates the struct and calls adaptDefaults(), so parsedOptions
+  // is empty and cannot say whether the count was chosen. Provenance alone would
+  // read that as "not given" and overwrite it; the value has to be consulted too.
+  Config chosenCap;
+  chosenCap.networkFile = "graph.net";
+  chosenCap.numTrials = 4;
+  chosenCap.convergeTrials = true;
+  chosenCap.adaptDefaults();
+  CHECK(chosenCap.parsedOptions.empty());
+  CHECK(chosenCap.numTrials == 4);
+
+  // Left at the default, the library path still gets the default cap -- there is no
+  // provenance to distinguish "untouched" from "deliberately 1" without an option.
+  const unsigned int defaultCap = Config::convergeDefaultMaxTrials;
+  Config untouched;
+  untouched.networkFile = "graph.net";
+  untouched.convergeTrials = true;
+  untouched.adaptDefaults();
+  CHECK(untouched.numTrials == defaultCap);
 }
 
 TEST_CASE("Config rejects converge combined with parallel trials [fast][core][config][cli]")
@@ -520,6 +566,193 @@ TEST_CASE("Output plan applies trial suffix before format suffix [fast][core][co
   REQUIRE(artifacts.size() == 1);
   CHECK(infomap::outputPlanBasename(config, 2) == "out/network_trial_2");
   CHECK(artifacts.front().filename == "out/network_trial_2.tree");
+}
+
+TEST_CASE("Output preflight refuses to write over the run's own input [fast][core][config][output]")
+{
+  // `Infomap ml.net . -o network` plans ./ml.net for the Pajek output, which is
+  // the input itself. It used to overwrite it and exit 0, replacing a multilayer
+  // network with its single-layer projection.
+  Config config;
+  config.networkFile = "ml.net";
+  config.outDirectory = "./";
+  config.outName = "ml";
+  config.printPajekNetwork = true;
+
+  CHECK_THROWS_AS(infomap::preflightOutputTargets(config), infomap::InfomapError);
+
+  try {
+    infomap::preflightOutputTargets(config);
+    FAIL("expected the input collision to be rejected");
+  } catch (const infomap::InfomapError& e) {
+    CHECK(e.code() == infomap::ExitCode::OutputError);
+    // The message has to name the file, or the user cannot tell which of several
+    // inputs collided.
+    CHECK(std::string(e.what()).find("ml.net") != std::string::npos);
+  }
+}
+
+TEST_CASE("Output preflight input check ignores the overwrite policy [fast][core][config][output]")
+{
+  // --no-overwrite is not the mitigation: it rejects every ordinary re-run, so
+  // the input check has to hold under the default permissive policy too.
+  Config config;
+  config.networkFile = "net.json";
+  config.outDirectory = "";
+  config.outName = "net";
+  config.printJson = true;
+
+  REQUIRE(config.overwriteOutput());
+  CHECK_THROWS_AS(infomap::preflightOutputTargets(config), infomap::InfomapError);
+}
+
+TEST_CASE("Output preflight protects every input the run reads [fast][core][config][output]")
+{
+  const auto collides = [](void (*attach)(Config&)) {
+    Config config;
+    config.networkFile = "input.net";
+    config.outDirectory = "";
+    config.outName = "seed";
+    config.printTree = true;
+    attach(config);
+    try {
+      infomap::preflightOutputTargets(config);
+    } catch (const infomap::InfomapError&) {
+      return true;
+    }
+    return false;
+  };
+
+  CHECK(collides([](Config& c) { c.clusterDataFile = "seed.tree"; }));
+  CHECK(collides([](Config& c) { c.metaDataFile = "seed.tree"; }));
+  CHECK(collides([](Config& c) { c.additionalInput.push_back("seed.tree"); }));
+  // A basename that shares nothing with any input is fine.
+  CHECK_FALSE(collides([](Config& c) { c.clusterDataFile = "other.tree"; }));
+}
+
+TEST_CASE("Output preflight names the option that owns a colliding report path [fast][core][config][output]")
+{
+  // A report path is given directly, so --out-name cannot move it and suggesting
+  // it would be useless advice. The message has to name the owning option.
+  Config config;
+  config.networkFile = "run.json";
+  config.outDirectory = "";
+  config.outName = "run";
+  config.summaryJsonPath = "run.json";
+
+  try {
+    infomap::preflightOutputTargets(config);
+    FAIL("expected the report-path collision to be rejected");
+  } catch (const infomap::InfomapError& e) {
+    const std::string message = e.what();
+    CHECK(message.find("--summary-json") != std::string::npos);
+    CHECK(message.find("--out-name") == std::string::npos);
+  }
+
+  // A basename-derived artifact keeps the basename guidance.
+  Config artifactCollision;
+  artifactCollision.networkFile = "run.tree";
+  artifactCollision.outDirectory = "";
+  artifactCollision.outName = "run";
+  artifactCollision.printTree = true;
+
+  try {
+    infomap::preflightOutputTargets(artifactCollision);
+    FAIL("expected the artifact collision to be rejected");
+  } catch (const infomap::InfomapError& e) {
+    const std::string message = e.what();
+    CHECK(message.find("--out-name") != std::string::npos);
+    CHECK(message.find("--summary-json") == std::string::npos);
+  }
+}
+
+TEST_CASE("Output preflight compares paths through './' [fast][core][config][output]")
+{
+  // The reachable form: the input is given bare and the output directory is ".",
+  // so the planned path differs from the input as a string but names the same file.
+  Config config;
+  config.networkFile = "net.tree";
+  config.outDirectory = "./";
+  config.outName = "net";
+  config.printTree = true;
+
+  CHECK_THROWS_AS(infomap::preflightOutputTargets(config), infomap::InfomapError);
+}
+
+TEST_CASE("Output preflight anchors relative paths to the working directory [fast][core][config][output]")
+{
+  // The two sides need not be given in the same form. `Infomap ml.net $PWD -o network`
+  // plans $PWD/ml.net, which is the input; comparing the strings as given matched
+  // neither way round, and the input was overwritten at exit 0.
+  //
+  // Reading the working directory through the same function the guard uses is the
+  // point: an empty result means the guard's anchoring is silently off, and this
+  // test should say so rather than skip.
+  const std::string cwd = infomap::currentWorkingDirectory();
+  REQUIRE_FALSE(cwd.empty());
+
+  Config relativeInput;
+  relativeInput.networkFile = "ml.net";
+  relativeInput.outDirectory = cwd + "/";
+  relativeInput.outName = "ml";
+  relativeInput.printPajekNetwork = true;
+  CHECK_THROWS_AS(infomap::preflightOutputTargets(relativeInput), infomap::InfomapError);
+
+  Config absoluteInput;
+  absoluteInput.networkFile = cwd + "/ml.net";
+  absoluteInput.outDirectory = "./";
+  absoluteInput.outName = "ml";
+  absoluteInput.printPajekNetwork = true;
+  CHECK_THROWS_AS(infomap::preflightOutputTargets(absoluteInput), infomap::InfomapError);
+
+  // Report paths are given directly, so they mix forms just as easily.
+  Config absoluteReport;
+  absoluteReport.networkFile = "run.json";
+  absoluteReport.outDirectory = "";
+  absoluteReport.outName = "run";
+  absoluteReport.summaryJsonPath = cwd + "/run.json";
+  CHECK_THROWS_AS(infomap::preflightOutputTargets(absoluteReport), infomap::InfomapError);
+
+#ifdef _WIN32
+  // A UNC path and a root-relative one with the same tail name different files, and
+  // the leading "\\" is the only thing that says so. Folding it away made this a
+  // refusal of a run that overwrites nothing.
+  Config uncVersusRootRelative;
+  uncVersusRootRelative.networkFile = "\\\\server\\share\\net.tree";
+  uncVersusRootRelative.outDirectory = "\\server\\share\\";
+  uncVersusRootRelative.outName = "net";
+  uncVersusRootRelative.printTree = true;
+  REQUIRE(uncVersusRootRelative.overwriteOutput());
+  CHECK_NOTHROW(infomap::preflightOutputTargets(uncVersusRootRelative));
+
+  // Two UNC paths that do name the same file must still be caught.
+  Config uncCollision;
+  uncCollision.networkFile = "\\\\server\\share\\net.tree";
+  uncCollision.outDirectory = "\\\\server\\share\\";
+  uncCollision.outName = "net";
+  uncCollision.printTree = true;
+  CHECK_THROWS_AS(infomap::preflightOutputTargets(uncCollision), infomap::InfomapError);
+#endif
+
+#ifndef _WIN32
+  // "a:/net.tree" is a relative path into a directory named "a:" here, however much
+  // it looks like a Windows drive. Treating it as absolute would skip the anchoring.
+  Config driveLetterLookalike;
+  driveLetterLookalike.networkFile = "a:/net.tree";
+  driveLetterLookalike.outDirectory = cwd + "/a:/";
+  driveLetterLookalike.outName = "net";
+  driveLetterLookalike.printTree = true;
+  CHECK_THROWS_AS(infomap::preflightOutputTargets(driveLetterLookalike), infomap::InfomapError);
+#endif
+
+  // Anchoring must not turn a different directory into a collision.
+  Config elsewhere;
+  elsewhere.networkFile = "ml.net";
+  elsewhere.outDirectory = cwd + "/out/";
+  elsewhere.outName = "ml";
+  elsewhere.printPajekNetwork = true;
+  REQUIRE(elsewhere.overwriteOutput());
+  CHECK_NOTHROW(infomap::preflightOutputTargets(elsewhere));
 }
 
 TEST_CASE("Parameter catalog owns option choices and render policy [fast][core][config][cli]")

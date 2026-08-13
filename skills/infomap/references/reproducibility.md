@@ -17,45 +17,45 @@ Record:
 ## Recommended defaults
 
 - Set `seed` for repeatability.
-- Use more than one trial for serious analyses; around `num_trials=10` suits most analyses and `num_trials=20` or more (or `Options(converge=True)`) for results you publish, though large or time-sensitive runs may need adjustment.
-- Separate smoke checks from research runs: use small inputs or one trial to validate setup, then ask before launching long runs, sweeps, repeated seeds, or notebook executions.
+- Use more than one trial for serious analyses. Around `num_trials=10` suits most analyses; use `num_trials=20` or more (or `Options(converge=True)`) for results you publish. Adjust these numbers for large or time-sensitive runs.
+- Separate smoke checks from research runs: use small inputs or one trial to validate setup, then ask before you launch long runs, sweeps, repeated seeds, or notebook executions.
 - Save both machine-readable results and human-readable notes.
 - Preserve mappings from internal ids to original node labels.
-- Keep state-level and physical-node-level outputs separate when higher-order or multilayer data are involved.
+- Keep state-level and physical-node-level outputs separate for higher-order or multilayer data.
 
 ## Runtime planning
 
-Use these local benchmark results only as order-of-magnitude guidance. They were measured on macOS arm64 with Infomap 2.10.1, `seed=123`, no file output, and wall-clock time around `read_file + run`; the 2.11–2.13 releases added several performance improvements, so treat these numbers as upper bounds and prefer the regenerated figures in `examples/notebooks/benchmark-performance.ipynb`. Python used the package API from a virtual environment; R includes one-shot `Rscript` startup overhead.
+Use these local benchmark results only as order-of-magnitude guidance. We measured them on macOS arm64 with Infomap 2.10.1, `seed=123`, no file output, and wall-clock time around `read_file + run`. The 2.11–2.13 releases added several performance improvements, so treat these numbers as upper bounds and prefer the regenerated figures in `examples/notebooks/benchmark-performance.ipynb`. Python used the package API from a virtual environment; R includes one-shot `Rscript` startup overhead.
 
 | Network | Size | States | Links | Trials | CLI | Python | R |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | state ring | 0.47 MB | 10k | 20k | 1 | 0.25s | 1.06s | 0.60s |
 | state ring | 0.47 MB | 10k | 20k | 20 | 2.07s | 2.32s | 5.87s |
-| sparse graph | 0.61 MB | 0 | 50k | 1 | 0.24s | 0.60s | 0.44s |
-| sparse graph | 0.61 MB | 0 | 50k | 20 | 3.17s | 3.64s | 4.15s |
-| first-order edge list | 16.9 MB | 0 | 1M | 1 | 3.80s | 4.11s | 8.22s |
-| first-order edge list | 16.9 MB | 0 | 1M | 5 | 16.68s | 17.55s | 41.40s |
+| sparse network | 0.61 MB | 0 | 50k | 1 | 0.24s | 0.60s | 0.44s |
+| sparse network | 0.61 MB | 0 | 50k | 20 | 3.17s | 3.64s | 4.15s |
+| first-order link list | 16.9 MB | 0 | 1M | 1 | 3.80s | 4.11s | 8.22s |
+| first-order link list | 16.9 MB | 0 | 1M | 5 | 16.68s | 17.55s | 41.40s |
 | state network | 19.2 MB | 400k | 800k | 1 | 10.62s | 11.51s | 26.49s |
 
-For large or repeated runs, prefer convergence-aware and parallel options over a fixed high trial count: `--converge` stops trials on a codelength plateau, `--parallel-trials` runs independent trials concurrently, and `--num-threads` auto-detects cpuset/SLURM/OpenMP limits. On HPC, shard trials across jobs with `--trial-offset`/`--trial-results` and merge the shards with `merge_trial_results` from `infomap.merge` (`from infomap.merge import merge_trial_results`) or the CLI `python -m infomap.merge` — `merge` is deliberately not imported into the top-level namespace (see `run-infomap-on-hpc.ipynb`). In the Python API these HPC scaling options (`converge`, `parallel_trials`, `num_threads`, `trial_offset`, `trial_results`) are advanced-tier: carry them via `options=infomap.Options(...)`, not as bare `run()` keywords. `converge` and `parallel_trials` are **mutually exclusive** (auto-convergence needs each trial's result before deciding whether to continue, so it runs serially; the engine rejects combining them — confirm the exact exception against your installed version) — pick one: `options=Options(parallel_trials=True, num_threads="auto")` to run trials concurrently, or `options=Options(converge=True)` to stop on a codelength plateau. `converge` also cannot combine with the sharding options `trial_offset`/`trial_results`.
+For large or repeated runs, prefer convergence-aware and parallel options over a fixed high trial count. `--converge` stops trials on a codelength plateau, `--parallel-trials` runs independent trials concurrently, and `--num-threads` auto-detects cpuset/SLURM/OpenMP limits. On HPC, shard trials across jobs with `--trial-offset`/`--trial-results` and merge the shards with `merge_trial_results` from `infomap.merge` (`from infomap.merge import merge_trial_results`) or the CLI `python -m infomap.merge`. The package deliberately does not import `merge` into the top-level namespace (see `run-infomap-on-hpc.ipynb`). In the Python API these HPC scaling options (`converge`, `parallel_trials`, `num_threads`, `trial_offset`, `trial_results`) are advanced-tier: carry them via `options=infomap.Options(...)`, not as bare `run()` keywords. `converge` and `parallel_trials` are **mutually exclusive**: auto-convergence needs each trial's result before it decides whether to continue, so it runs serially. The engine rejects the combination (confirm the exact exception against your installed version). Pick one: `options=Options(parallel_trials=True, num_threads="auto")` to run trials concurrently, or `options=Options(converge=True)` to stop on a codelength plateau. `converge` also cannot combine with the sharding options `trial_offset`/`trial_results`.
 
 Practical gating:
 
-- Run without asking only for tiny examples, known-small smoke checks, and single-trial runs where the user requested execution and the resource context is clear.
+- Run without a question only for tiny examples, known-small smoke checks, and single-trial runs where the user requested execution and the resource context is clear.
 - Ask before million-link runs, `num_trials=20` on large or state-heavy networks, or any run that could be intrusive in a notebook, shared server, CI job, or memory-limited environment.
 - Ask before parameter sweeps, repeated seeds, full notebooks, Docker/Jupyter startup, multilayer/state networks beyond these sizes, or inputs where size is unknown.
 
 ## Method-section checklist
 
-An English method paragraph should usually state:
+An English method paragraph usually states:
 
 - what the network represents;
 - whether links are directed and/or weighted;
-- which Infomap interface and version were used;
+- which Infomap interface and version you used;
 - the key options, including flow model when relevant;
 - `seed` and `num_trials`;
-- whether a two-level or multilevel solution was used;
-- which output was analyzed: top-level modules, hierarchy paths, state nodes, physical nodes, or exported graph attributes.
+- whether you used a two-level or multilevel solution;
+- which output you analyzed: top-level modules, hierarchy paths, state nodes, physical nodes, or exported graph attributes.
 
 ## Template method text
 
@@ -81,18 +81,18 @@ When Infomap returns one top module, the reported `codelength` is normally equal
 - For modular results, `codelength = index_codelength + module_codelength`.
 - `module_codelength` alone is not the value to compare against `one_level_codelength`; the index codebook also costs bits.
 
-Infomap may collapse to one module when candidate modular partitions do not improve the total codelength over the one-level solution. This usually means that, under the current network representation and flow model, modules do not compress the flow better than a one-level description. It is not automatically an error.
+Infomap can collapse to one module when candidate modular partitions do not improve the total codelength over the one-level solution. This usually means that, under the current network representation and flow model, modules do not compress the flow better than a one-level description. It is not automatically an error.
 
 If the user expected multiple modules, check:
 
-- **Input semantics**: weights should mean stronger flow or interaction, not distances or dissimilarities unless transformed.
+- **Input semantics**: weights must mean stronger flow or interaction, not distances or dissimilarities unless you transform them.
 - **Direction and flow model**: verify directedness, observed-flow assumptions, and the installed flow-model or directedness options.
 - **Network construction**: check that ids, delimiters, isolated nodes, duplicate links, self-links, and component structure match the intended graph.
 - **Search stability**: rerun with a fixed `seed`, then increase `num_trials` or compare several seeds to rule out a poor local optimum.
 - **Supplied partition diagnostic**: if the installed interface supports cluster-data input and no-optimization codelength calculation, use it to test whether an expected partition compresses flow better than the one-level baseline.
-- **Resolution scale**: for exploratory sensitivity analysis, try lower Markov-time settings to look for smaller-scale modules; this is a modeling choice and needs extra thought before being used in a reported result.
+- **Resolution scale**: for exploratory sensitivity analysis, try lower Markov-time settings to look for smaller-scale modules. This is a modeling choice and needs extra thought before you use it in a reported result.
 - **Preferred module count**: if the installed interface supports a preferred module count, it can explore what partitions near a target count look like; this is also a modeling choice, not neutral evidence that the data contain that many modules.
-- **Representation**: if the data have layers, sequence memory, metadata, or bipartite structure, model those explicitly instead of flattening away the signal.
+- **Representation**: if the data have layers, sequence memory, metadata, or bipartite structure, model those explicitly; do not flatten away the signal.
 - **Expectation check**: if no tested representation improves on the one-level codelength, report the one-module result rather than forcing a partition.
 
-Avoid presenting forced module counts as evidence of community structure. Non-default Markov time and preferred module counts can be useful for sensitivity analysis, but they change the model and must be reported.
+Avoid presenting forced module counts as evidence of community structure. Non-default Markov time and preferred module counts can be useful for sensitivity analysis, but they change the model, and you must report them.

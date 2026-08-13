@@ -32,8 +32,8 @@ incremental, repeated-run workflows.
      - :class:`InfoNode` and the tree-walking iterators returned by
        :meth:`Result.tree`, :meth:`Result.leaf_modules`, and friends.
    * - :doc:`errors`
-     - :class:`InfomapError` and its subclasses -- the exception types every
-       engine failure is raised as.
+     - :class:`InfomapError` and its subclasses -- the exception types Infomap
+       raises for every engine failure.
    * - :doc:`integrations`
      - Scanpy (:func:`infomap.tl.infomap`), GraphRAG, and the distributed-trial
        merge tool.

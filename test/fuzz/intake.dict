@@ -1,0 +1,37 @@
+# libFuzzer dictionary for the network intake (Pajek-style + JSON).
+# Pajek-style section headings dispatched by parseNetwork -- keep in sync with
+# generalValidHeadings() in src/io/NetworkInputParser.h (matched
+# case-insensitively; spelled here as they appear in the docs/fixtures).
+"*Vertices"
+"*States"
+"*Edges"
+"*Arcs"
+"*Links"
+"*Multilayer"
+"*Multiplex"
+"*Intra"
+"*Inter"
+"*Bipartite"
+"*Paths"
+"*Contexts"
+# JSON network keys -- keep in sync with the key dispatch in
+# src/io/JsonNetworkInputParser.h (which is what the schema in
+# test/schemas/json/infomap-network.schema.json describes).
+"format"
+"version"
+"type"
+"directed"
+"bipartiteStartId"
+"multilayer"
+"nodes"
+"states"
+"edges"
+"node"
+"source"
+"target"
+"id"
+"weight"
+"name"
+"meta"
+"path"
+"layers"

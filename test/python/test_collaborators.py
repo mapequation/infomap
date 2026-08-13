@@ -1,7 +1,6 @@
 """Focused unit tests for the facade's collaborator decomposition (SP1)."""
 
 import pytest
-
 from infomap import Infomap, Network
 
 

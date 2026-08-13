@@ -33,23 +33,28 @@ ci:
 repos:
   # Python lint. CI already runs `ruff check` on the package + examples/python
   # (via `make test-python-doctest`); this runs it repo-wide with autofix.
-  # Pinned to the ruff version in the project venv so local and hook agree.
+  # Pinned to the ruff version in the project venv so local and hook agree;
+  # the same version is pinned in pyproject.toml's `test` extra (which is what
+  # CI installs) and all three bump together.
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.8
+    rev: v0.16.0
     hooks:
-      - id: ruff
+      - id: ruff-check
         name: ruff (lint)
         args: [--fix]
         # Notebooks are published-article companions with a couple of known
         # findings; they are linted deliberately, not as a drive-by here.
         exclude: ^examples/notebooks/
-    # ruff-format is intentionally NOT enabled: the committed tree predates the
-    # current ruff formatter, so turning it on would reformat ~31 files. Adopt it
-    # as its own deliberate reformat commit if/when desired.
+      - id: ruff-format
+        name: ruff (format)
+        # Notebooks excluded to match the linter; the generated _swig.py and
+        # _options.py are skipped via [tool.ruff] extend-exclude (the generator
+        # owns their formatting).
+        exclude: ^examples/notebooks/
 
-  # C++ formatting for the core sources. The equivalent CI job is currently
-  # disabled (see #479), but `src/` is already clean under this clang-format
-  # version, so the hook keeps it that way locally. Scope matches the Makefile's
+  # C++ formatting for the core sources. This hook also runs in CI via the
+  # pre-commit job (which replaced the old, disabled cxx-format job from #479),
+  # so local and CI enforcement agree. Scope matches the Makefile's
   # HEADERS/SOURCES (find src -name '*.h'/'*.cpp').
   - repo: https://github.com/pre-commit/mirrors-clang-format
     rev: v20.1.7
@@ -108,6 +113,18 @@ repos:
         entry: make format-r-check
         pass_filenames: false
         files: \.R$
+      - id: actionlint
+        name: actionlint (workflow YAML)
+        language: system
+        # Lints .github/workflows/*.yml -- syntax, expression typing, and
+        # shellcheck on embedded run: scripts. language: system like biome/air
+        # above: install actionlint locally (`brew install actionlint`) when you
+        # touch workflows. Runs the whole workflow set (pass_filenames: false) so
+        # cross-references between reusable workflows are resolved. The CI
+        # pre-commit job installs the same pinned version -- see AGENTS.md.
+        entry: actionlint
+        pass_filenames: false
+        files: ^\.github/workflows/.*\.ya?ml$
       # pyright runs at PUSH time, not on every commit: it is slower and its
       # results depend on installed deps. Scoped to the core surface (io/, tl/
       # excluded) so it stays deterministic across dev machines -- see the

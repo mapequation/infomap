@@ -8,6 +8,11 @@ import subprocess
 import sys
 from pathlib import Path
 
+# Single source of truth for the C++ language standard across every build
+# surface: the native/Python flag lists below embed it, and the JS/Emscripten
+# build reads it back via the `field` / `make-export` interfaces. Bump here only.
+CXX_STANDARD = "c++17"
+
 
 FEATURE_REGISTRY = {
     "simd-log": {
@@ -146,9 +151,15 @@ def _base_compile_flags(compiler_family):
         # otherwise), and it makes the Unicode pretty-output literals (•, →, ╰─)
         # encode correctly. mingw-gcc (R/Windows) and clang/Emscripten (JS)
         # already use a UTF-8 source charset, so this is MSVC-only.
-        return ["/std:c++17", "/utf-8"]
+        return [f"/std:{CXX_STANDARD}", "/utf-8"]
 
-    flags = ["-Wall", "-Wextra", "-pedantic", "-Wnon-virtual-dtor", "-std=c++17"]
+    flags = [
+        "-Wall",
+        "-Wextra",
+        "-pedantic",
+        "-Wnon-virtual-dtor",
+        f"-std={CXX_STANDARD}",
+    ]
     if compiler_family == "clang":
         flags.append("-Wshadow")
     elif compiler_family == "gnu":
@@ -199,9 +210,7 @@ def _normalize_features(features):
             continue
         if feature not in FEATURE_REGISTRY:
             known = ", ".join(sorted(FEATURE_REGISTRY))
-            raise ValueError(
-                f"Unknown feature '{feature}'. Known features: {known}."
-            )
+            raise ValueError(f"Unknown feature '{feature}'. Known features: {known}.")
         requested.add(feature)
     return [feature for feature in FEATURE_REGISTRY if feature in requested]
 
@@ -214,9 +223,7 @@ def _validate_features(features):
             dependency for dependency in spec["requires"] if dependency not in enabled
         ]
         if missing:
-            raise ValueError(
-                f"Feature '{feature}' requires: {', '.join(missing)}."
-            )
+            raise ValueError(f"Feature '{feature}' requires: {', '.join(missing)}.")
         conflicts = [conflict for conflict in spec["conflicts"] if conflict in enabled]
         if conflicts:
             raise ValueError(
@@ -308,11 +315,19 @@ def resolve_build_config(
 
     openmp_compile_flags = []
     openmp_link_flags = []
+    # Everything a translation unit needs in order to see OpenMP, including the
+    # header search path: consumers of the library branch on _OPENMP too, so these
+    # have to travel with the interface rather than staying with the core's own
+    # compile line. The libomp include path is therefore recorded twice on purpose --
+    # here for the propagated OpenMP surface, and in platform_compile_flags for the
+    # core's own compile line, which is assembled from those instead.
+    openmp_interface_compile_flags = []
     if openmp:
         if compiler_family == "clang":
             openmp_compile_flags.extend(["-Xpreprocessor", "-fopenmp"])
             openmp_link_flags.append("-lomp")
             if libomp_prefix:
+                openmp_interface_compile_flags.append(f"-I{libomp_prefix}/include")
                 platform_compile_flags.append(f"-I{libomp_prefix}/include")
                 platform_link_flags.append(f"-L{libomp_prefix}/lib")
         elif compiler_family in {"gnu", "unknown"}:
@@ -338,6 +353,7 @@ def resolve_build_config(
 
     return {
         "mode": mode,
+        "cxx_standard": CXX_STANDARD,
         "openmp": bool(openmp),
         # Report native_arch as effective only when flags were actually emitted —
         # i.e. release mode AND a compiler family that we know how to tune
@@ -353,6 +369,9 @@ def resolve_build_config(
         "libomp_prefix": libomp_prefix,
         "deployment_target": deployment_target,
         "cmake_compile_flags": cmake_compile_flags,
+        "cmake_openmp_compile_flags": _dedupe(
+            openmp_compile_flags + openmp_interface_compile_flags
+        ),
         "compile_flags": compile_flags,
         "link_flags": link_flags,
     }
@@ -372,6 +391,7 @@ def _field_value(config, field):
 # a single invocation instead of one process per field.
 MAKE_EXPORT_FIELDS = (
     ("BUILD_CONFIG_MODE", "mode"),
+    ("BUILD_CONFIG_CXX_STANDARD", "cxx_standard"),
     ("BUILD_CONFIG_OPENMP", "openmp"),
     ("BUILD_CONFIG_ENABLED_FEATURES", "enabled_features"),
     ("BUILD_CONFIG_PLATFORM", "platform"),
@@ -403,6 +423,7 @@ def main():
         "--field",
         choices=[
             "mode",
+            "cxx_standard",
             "openmp",
             "native_arch",
             "enabled_features",
@@ -414,6 +435,7 @@ def main():
             "libomp_prefix",
             "deployment_target",
             "cmake_compile_flags",
+            "cmake_openmp_compile_flags",
             "compile_flags",
             "link_flags",
         ],

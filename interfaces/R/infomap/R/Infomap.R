@@ -37,6 +37,75 @@ Infomap <- function(args = NULL, opts = NULL, ...) {
   InfomapClass$new(args = args, opts = opts, ...)
 }
 
+# Node, state, layer and category ids cross into C++ as R integers, and the SWIG
+# wrapper coerces to integer range: a value above .Machine$integer.max becomes
+# NA, and every such id then lands on the same node. That silently partitions a
+# different network than the caller described -- a 6-node graph with ids around
+# 3e9 came back as one node with codelength 0. Validate at the boundary and name
+# the offending value instead.
+#
+# The engine itself accepts the full 32-bit unsigned range; reaching it from R
+# would need a change to the generated SWIG typemap, so the representable limit
+# is the R integer maximum for now.
+.ID_MAX <- .Machine$integer.max
+
+.as_ids <- function(x, what) {
+  if (length(x) == 0L) {
+    return(integer(0L))
+  }
+  if (is.factor(x)) {
+    x <- as.character(x)
+  }
+  values <- suppressWarnings(as.numeric(x))
+
+  if (anyNA(values)) {
+    stop(
+      sprintf("%s cannot be missing or non-numeric.", what),
+      call. = FALSE
+    )
+  }
+  if (!all(is.finite(values))) {
+    stop(sprintf("%s must be finite.", what), call. = FALSE)
+  }
+  if (any(values != trunc(values))) {
+    stop(
+      sprintf(
+        "%s must be a whole number, got %s.",
+        what,
+        format(values[values != trunc(values)][1L], scientific = FALSE)
+      ),
+      call. = FALSE
+    )
+  }
+  if (any(values < 0)) {
+    stop(
+      sprintf(
+        "%s cannot be negative, got %s.",
+        what,
+        format(values[values < 0][1L], scientific = FALSE)
+      ),
+      call. = FALSE
+    )
+  }
+  if (any(values > .ID_MAX)) {
+    stop(
+      sprintf(
+        paste0(
+          "%s %s is larger than %d, the largest id the R interface can ",
+          "represent. Renumber the nodes to a compact range (for example ",
+          "with match(ids, unique(ids))) and keep the original ids as names."
+        ),
+        what,
+        format(values[values > .ID_MAX][1L], scientific = FALSE),
+        .ID_MAX
+      ),
+      call. = FALSE
+    )
+  }
+
+  as.integer(values)
+}
+
 .network_input_columns <- function(input, columns) {
   if (is.matrix(input)) {
     lapply(columns, function(index) input[, index])
@@ -252,7 +321,7 @@ InfomapClass <- R6::R6Class(
     #' @param name Optional node name.
     #' @param teleportation_weight Optional teleportation weight.
     add_node = function(node_id, name = NULL, teleportation_weight = NULL) {
-      id <- as.integer(node_id)
+      id <- .as_ids(node_id, "node id")
       if (!is.null(name) && !is.null(teleportation_weight)) {
         private$.swig$addNode(
           id,
@@ -287,7 +356,7 @@ InfomapClass <- R6::R6Class(
       } else {
         for (id_str in names(nodes)) {
           attr <- nodes[[id_str]]
-          id <- as.integer(id_str)
+          id <- .as_ids(id_str, "node id")
           if (is.character(attr) && length(attr) == 1L) {
             self$add_node(id, name = attr)
           } else if (is.list(attr) || length(attr) > 1L) {
@@ -310,8 +379,8 @@ InfomapClass <- R6::R6Class(
     #' @param name Optional name of the state node itself, as opposed to the
     #'   physical node.
     add_state_node = function(state_id, node_id, name = NULL) {
-      id <- as.integer(state_id)
-      phys_id <- as.integer(node_id)
+      id <- .as_ids(state_id, "state id")
+      phys_id <- .as_ids(node_id, "node id")
       if (!is.null(name)) {
         private$.swig$addStateNode(id, phys_id, as.character(name))
       } else {
@@ -331,7 +400,10 @@ InfomapClass <- R6::R6Class(
         }
       } else {
         for (state_str in names(state_nodes)) {
-          self$add_state_node(as.integer(state_str), state_nodes[[state_str]])
+          self$add_state_node(
+            .as_ids(state_str, "state id"),
+            state_nodes[[state_str]]
+          )
         }
       }
       invisible(self)
@@ -344,7 +416,7 @@ InfomapClass <- R6::R6Class(
       if (is.null(name)) {
         name <- ""
       }
-      private$.swig$addName(as.integer(node_id), as.character(name))
+      private$.swig$addName(.as_ids(node_id, "node id"), as.character(name))
       invisible(self)
     },
 
@@ -358,7 +430,7 @@ InfomapClass <- R6::R6Class(
         }
       } else {
         for (id_str in names(mapping)) {
-          self$set_name(as.integer(id_str), mapping[[id_str]])
+          self$set_name(.as_ids(id_str, "node id"), mapping[[id_str]])
         }
       }
       invisible(self)
@@ -370,8 +442,8 @@ InfomapClass <- R6::R6Class(
     #' @param weight Link weight.
     add_link = function(source_id, target_id, weight = 1.0) {
       private$.swig$addLink(
-        as.integer(source_id),
-        as.integer(target_id),
+        .as_ids(source_id, "node id"),
+        .as_ids(target_id, "node id"),
         as.numeric(weight)
       )
       invisible(self)
@@ -451,8 +523,8 @@ InfomapClass <- R6::R6Class(
       }
 
       private$.swig$addLinks(
-        as.integer(sources),
-        as.integer(targets),
+        .as_ids(sources, "node id"),
+        .as_ids(targets, "node id"),
         as.numeric(weights)
       )
       invisible(self)
@@ -463,8 +535,8 @@ InfomapClass <- R6::R6Class(
     #' @param target_id Target node id.
     remove_link = function(source_id, target_id) {
       private$.swig$network()$removeLink(
-        as.integer(source_id),
-        as.integer(target_id)
+        .as_ids(source_id, "node id"),
+        .as_ids(target_id, "node id")
       )
       invisible(self)
     },
@@ -489,8 +561,8 @@ InfomapClass <- R6::R6Class(
       target_multilayer_node,
       weight = 1.0
     ) {
-      src <- as.integer(source_multilayer_node)
-      tgt <- as.integer(target_multilayer_node)
+      src <- .as_ids(source_multilayer_node, "multilayer node")
+      tgt <- .as_ids(target_multilayer_node, "multilayer node")
       private$.swig$addMultilayerLink(
         src[[1L]],
         src[[2L]],
@@ -513,9 +585,9 @@ InfomapClass <- R6::R6Class(
       weight = 1.0
     ) {
       private$.swig$addMultilayerIntraLink(
-        as.integer(layer_id),
-        as.integer(source_node_id),
-        as.integer(target_node_id),
+        .as_ids(layer_id, "layer id"),
+        .as_ids(source_node_id, "node id"),
+        .as_ids(target_node_id, "node id"),
         as.numeric(weight)
       )
       invisible(self)
@@ -558,9 +630,9 @@ InfomapClass <- R6::R6Class(
       }
 
       private$.swig$addMultilayerIntraLinks(
-        as.integer(layers),
-        as.integer(sources),
-        as.integer(targets),
+        .as_ids(layers, "layer id"),
+        .as_ids(sources, "node id"),
+        .as_ids(targets, "node id"),
         as.numeric(weights)
       )
       invisible(self)
@@ -578,9 +650,9 @@ InfomapClass <- R6::R6Class(
       weight = 1.0
     ) {
       private$.swig$addMultilayerInterLink(
-        as.integer(source_layer_id),
-        as.integer(node_id),
-        as.integer(target_layer_id),
+        .as_ids(source_layer_id, "layer id"),
+        .as_ids(node_id, "node id"),
+        .as_ids(target_layer_id, "layer id"),
         as.numeric(weight)
       )
       invisible(self)
@@ -623,9 +695,9 @@ InfomapClass <- R6::R6Class(
       }
 
       private$.swig$addMultilayerInterLinks(
-        as.integer(source_layers),
-        as.integer(nodes),
-        as.integer(target_layers),
+        .as_ids(source_layers, "layer id"),
+        .as_ids(nodes, "node id"),
+        .as_ids(target_layers, "layer id"),
         as.numeric(weights)
       )
       invisible(self)
@@ -712,10 +784,10 @@ InfomapClass <- R6::R6Class(
       }
 
       private$.swig$addMultilayerLinks(
-        as.integer(source_layers),
-        as.integer(source_nodes),
-        as.integer(target_layers),
-        as.integer(target_nodes),
+        .as_ids(source_layers, "layer id"),
+        .as_ids(source_nodes, "node id"),
+        .as_ids(target_layers, "layer id"),
+        .as_ids(target_nodes, "node id"),
         as.numeric(weights)
       )
       invisible(self)
@@ -726,8 +798,8 @@ InfomapClass <- R6::R6Class(
     #' @param meta_category Integer meta category.
     set_meta_data = function(node_id, meta_category) {
       private$.swig$network()$addMetaData(
-        as.integer(node_id),
-        as.integer(meta_category)
+        .as_ids(node_id, "node id"),
+        .as_ids(meta_category, "meta category")
       )
       invisible(self)
     },
@@ -774,7 +846,7 @@ InfomapClass <- R6::R6Class(
     #' @description Set the bipartite start id.
     #' @param start_id Integer node id where the second node type starts.
     set_bipartite_start_id = function(start_id) {
-      private$.swig$setBipartiteStartId(as.integer(start_id))
+      private$.swig$setBipartiteStartId(.as_ids(start_id, "bipartite start id"))
       invisible(self)
     },
 
@@ -887,10 +959,14 @@ InfomapClass <- R6::R6Class(
 
       if (has_phys && has_layer) {
         # Multilayer state network.
-        layers <- as.integer(igraph::vertex_attr(g, layer_id))
+        layers <- .as_ids(igraph::vertex_attr(g, layer_id), "layer id")
         for (i in seq_len(igraph::vcount(g))) {
           if (is.character(raw_vertex_names)) {
-            self$add_state_node(vertex_ids[i], phys[i], name = raw_vertex_names[i])
+            self$add_state_node(
+              vertex_ids[i],
+              phys[i],
+              name = raw_vertex_names[i]
+            )
           } else {
             self$add_state_node(vertex_ids[i], phys[i])
           }
@@ -949,7 +1025,11 @@ InfomapClass <- R6::R6Class(
         # State network without explicit layer info.
         for (i in seq_len(igraph::vcount(g))) {
           if (is.character(raw_vertex_names)) {
-            self$add_state_node(vertex_ids[i], phys[i], name = raw_vertex_names[i])
+            self$add_state_node(
+              vertex_ids[i],
+              phys[i],
+              name = raw_vertex_names[i]
+            )
           } else {
             self$add_state_node(vertex_ids[i], phys[i])
           }
@@ -1327,7 +1407,17 @@ InfomapClass <- R6::R6Class(
     #' @field swig The underlying SWIG-generated InfomapWrapper handle.
     swig = function() private$.swig,
     #' @field network The underlying Network reference.
-    network = function() private$.swig$network(),
+    #'
+    #' The handle carries a reference to its owner, so it stays valid for as long as it
+    #' is reachable. Without it the handle was a non-owning pointer into the C++ Network
+    #' held by the SWIG wrapper: once this object became unreachable the wrapper was
+    #' finalised and reads through the handle touched freed memory, returning plausible
+    #' wrong values (numNodes 11 for a three-node network) or aborting R (#900).
+    network = function() {
+      handle <- private$.swig$network()
+      attr(handle, "infomap_owner") <- private$.swig
+      handle
+    },
     #' @field codelength Total (hierarchical) codelength.
     codelength = function() private$.swig$codelength(),
     #' @field codelengths Codelength of each trial.
@@ -1487,14 +1577,13 @@ InfomapClass <- R6::R6Class(
   }
 
   if (is.numeric(values)) {
-    ids <- as.integer(values)
-    if (any(!is.finite(values)) || any(values != ids)) {
-      stop(
-        "`phys_id` vertex attribute must contain integer-like numeric values or non-missing labels.",
-        call. = FALSE
-      )
-    }
-    return(list(ids = ids, mapping = NULL))
+    # Shares the id validator, so an out-of-range or fractional attribute is
+    # named instead of failing as "missing value where TRUE/FALSE needed" (the
+    # NA that `values != ids` produced once as.integer() overflowed).
+    return(list(
+      ids = .as_ids(values, "`phys_id` vertex attribute"),
+      mapping = NULL
+    ))
   }
 
   labels <- as.character(values)

@@ -100,9 +100,10 @@ jobs:
         run: ls -la dist/python
 
       - name: Publish prerelease package distributions to PyPI
-        uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b # release/v1
+        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # release/v1
         with:
           packages-dir: dist/python
+          attestations: true
 
   publish-feature-pypi:
     name: Publish feature prerelease wheels to PyPI
@@ -130,11 +131,42 @@ jobs:
           find dist/python -maxdepth 1 -name '*.whl' -print | sort
           wheel_count="$(find dist/python -maxdepth 1 -name '*.whl' | wc -l | tr -d ' ')"
           [ "$wheel_count" -gt 0 ]
+          # These wheels are compiled with experimental features on, and this job
+          # uploads them to the production `infomap` project. A stable version here
+          # would take that version on PyPI as wheel-only feature builds -- the real
+          # release of the same version then fails on duplicate filenames, and a
+          # plain `pip install infomap` hands out a feature build. RELEASING.md
+          # requires a prerelease version; the only previous gate was that at least
+          # one wheel existed, so assert the rule instead of trusting the dispatcher.
+          python3 - dist/python <<'PY'
+          import pathlib
+          import re
+          import sys
+
+          # PEP 440 pre-releases and dev releases: 1.2.3rc1, 1.2.3a1, 1.2.3b2, 1.2.3.dev4.
+          PRERELEASE = re.compile(r"^\d+(?:\.\d+)*(?:(?:a|b|rc)\d+|\.dev\d+)")
+          # Wheel filenames are {name}-{version}-{python}-{abi}-{platform}.whl.
+          versions = sorted({p.name.split("-")[1] for p in pathlib.Path(sys.argv[1]).glob("*.whl")})
+          if not versions:
+              sys.exit("no wheel versions could be read from the filenames")
+          stable = [v for v in versions if not PRERELEASE.match(v)]
+          for version in versions:
+              print(f"{'stable' if version in stable else 'prerelease'}: {version}")
+          if stable:
+              print(
+                  f"::error::feature wheels carry non-prerelease version(s) {', '.join(stable)}. "
+                  "Feature builds must not occupy a stable version on PyPI; bump the version "
+                  "to a prerelease (e.g. X.Y.ZrcN) before dispatching with publish=true.",
+                  file=sys.stderr,
+              )
+              sys.exit(1)
+          PY
 
       - name: Publish feature prerelease wheels to PyPI
-        uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b # release/v1
+        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # release/v1
         with:
           packages-dir: dist/python
+          attestations: true
 
   publish-npm:
     name: Publish prerelease to npm
@@ -151,7 +183,7 @@ jobs:
 
     steps:
       - name: Set up Node.js
-        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
           registry-url: https://registry.npmjs.org
@@ -164,4 +196,4 @@ jobs:
           path: dist/npm
 
       - name: Publish npm prerelease package
-        run: npm publish --tag next --access public dist/npm/*.tgz
+        run: npm publish --provenance --tag next --access public dist/npm/*.tgz

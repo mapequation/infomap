@@ -36,15 +36,15 @@ result = infomap.run(
 print(result.num_top_modules, result.codelength)
 ```
 
-Everything below is when and why to reach for the other options. For the *why*
-behind the flow model itself, see {doc}`/concepts/index`.
+The rest of this page explains when and why to reach for the other options.
+For the *why* behind the flow model itself, see {doc}`/concepts/index`.
 
 ## Two kinds of options
 
 Infomap has dozens of options, but they fall into two groups:
 
 - **Flow-model options** (`directed`, `markov_time`, `teleportation_probability`)
-  change *how the random walk is defined*. They encode your beliefs about the
+  change *how Infomap defines the random walk*. They encode your beliefs about the
   system; the wrong choice gives a partition that scores well but means little.
 - **Search options** (`seed`, `num_trials`, `converge`) change *how hard the
   search works*, not which partition Infomap looks for. They only affect how
@@ -128,7 +128,7 @@ for num_trials in [1, 5, 20]:
 ```
 
 Here the single trial with `seed=123` lands at a higher codelength (worse
-minimum) than `num_trials=20` with the same seed: a single trial can settle in a
+minimum) than `num_trials=20` with the same seed. A single trial can settle in a
 local trap, and the extra trials find a partition that compresses the random
 walk more efficiently. Which single trial gets stuck depends on the seed, so
 the gap is not guaranteed for any particular seed. The codelength converges:
@@ -138,8 +138,8 @@ the answer {cite:p}`calatayud2019solution`.
 **Rule of thumb.** Use `num_trials=1` for quick exploration. Use
 `num_trials=10` for most analyses. Use `num_trials=20` or more (up to around
 `50`, or `converge=True` with a higher cap) when you need high confidence in
-the global minimum, when you are comparing partitions across networks, or on
-networks with weak or diffuse community structure.
+the global minimum. Do the same when you compare partitions across networks,
+or when the network has weak or diffuse community structure.
 
 ```{admonition} converge
 :class: note
@@ -154,7 +154,7 @@ requires. It is not one of the five common keywords, so carry it via `Options`:
 
 By default Infomap finds a hierarchical partition with as many levels as the
 flow supports. Each level is a coarser view of the same structure.
-`two_level=True` forces a single flat partition, which helps when you know your
+`two_level=True` forces a single flat partition. This helps when you know your
 network is not hierarchical, or when you need a simple cluster assignment for
 downstream analysis.
 
@@ -200,8 +200,9 @@ for two_level in [False, True]:
 ```
 
 With `two_level=False`, the multilevel solution recovers the built-in nesting:
-the two main branches at the top and the eight cliques at the finest level,
-reached with `result.modules(depth=-1)` (the cell above prints the exact counts).
+the two main branches at the top and the eight cliques at the finest level. You
+reach that level with `result.modules(depth=-1)`; the cell above prints the
+exact counts.
 The codelength is lower because the deeper code captures the real hierarchy. With
 `two_level=True`, the eight cliques become the top-level modules and the nested
 structure is invisible.
@@ -245,7 +246,7 @@ for directed in [False, True]:
 
 Both settings recover three modules here because the graph is strongly
 clustered. On noisier real-world directed networks the difference is more
-pronounced: the directed walk respects asymmetric flow and tends to find tighter
+pronounced. The directed walk respects asymmetric flow and tends to find tighter
 modules corresponding to true circulation patterns.
 
 **Teleportation probability.** `teleportation_probability` ($\tau$) sets the
@@ -256,9 +257,9 @@ the partition robust to $\tau$.
 ### `markov_time` as a resolution dial
 
 The map equation operates at the natural timescale of one random-walk step.
-`markov_time` shifts this timescale: values below 1 encode the walk more
-frequently (favouring more, smaller modules) and values above 1 encode it less
-frequently (favouring fewer, larger modules). This is the principled way to
+`markov_time` shifts this timescale. Values below 1 encode the walk more
+frequently and favour more, smaller modules. Values above 1 encode it less
+frequently and favour fewer, larger modules. This is the principled way to
 examine structure at a specific resolution when the data does not have a natural
 scale {cite:p}`kheirkhahzadeh2016markov`.
 
@@ -277,7 +278,8 @@ for mt in [0.5, 1.0, 2.0, 4.0, 8.0]:
 
 At `markov_time=1.0` (the default) Infomap recovers all 8 cliques. As the
 Markov time grows, smaller modules become too expensive to maintain and adjacent
-cliques merge. This gives you a natural scale sweep without changing the network.
+cliques merge. This gives you a natural scale sweep. The network itself does
+not change.
 
 The multilevel map equation is usually the better first choice {cite:p}`kawamoto2015resolution`: it finds scale automatically and has a less restrictive
 resolution limit than the two-level version. Use `markov_time` when you
@@ -287,11 +289,11 @@ specifically want to study structure at a given scale, or when reviewers ask
 ### `regularized` for sparse data
 
 Setting `regularized=True` (carried via `Options`, as in the loop below) enables
-the Bayesian regularized map equation for sparse or
-incompletely sampled networks, and `regularization_strength` scales the prior
-(higher merges more modules); see {doc}`/robustness/incomplete-data` for why
-sparse data over-split and how the prior fixes it. On a graph as small as the
-karate club the prior quickly overwhelms the data:
+the Bayesian regularized map equation for sparse or incompletely sampled
+networks. `regularization_strength` scales the prior (higher merges more
+modules). See {doc}`/robustness/incomplete-data` for why sparse data over-split
+and how the prior fixes it. On a graph as small as the karate club the prior
+quickly overwhelms the data:
 
 ```{code-cell} python
 # On the small karate club the regularization prior competes with the data:
@@ -373,14 +375,22 @@ for name, graph in [("ring of cliques", G_ring), ("karate club", G_karate)]:
 
 ## Pitfalls
 
+- **No whitespace in paths or names.** Options reach the engine as one
+  whitespace-separated argument string, which has no quoting, so a value that
+  contains a space cannot survive the trip. Infomap rejects such a value
+  rather than truncate it: `cluster_data="my file.clu"` raises
+  `ValueError`. Rename the file, or point at it from a directory whose path has
+  no spaces. This is a limitation of the engine boundary, not of the Python
+  API. The same holds for the R and JavaScript bindings and for the command
+  line.
 - **`seed=0` raises.** Infomap requires `seed >= 1`; use any positive integer.
 - **Codelengths are not comparable across `meta_data_rate` values.**
-  `result.codelength` reports the combined objective, the topological term plus
-  the weighted attribute term, so it rises with the rate even when the
+  `result.codelength` reports the combined objective: the topological term plus
+  the weighted attribute term. It therefore rises with the rate even when the
   partition does not change (see {doc}`/flow-models/metadata`).
 - **More trials never hurt correctness, only runtime.** If repeated runs disagree,
   raise `num_trials` (or cap trials with `options=Options(converge=True)`) rather
-  than trusting one fit.
+  than trust one fit.
 - **Sparse or under-sampled data over-splits.** Reach for
   `options=Options(regularized=True)` (see {doc}`/robustness/incomplete-data`).
 
@@ -431,7 +441,7 @@ print(f"Found {result.num_top_modules} modules")
 {func}`~infomap.enable_log` attaches a plain handler to the standard
 `"infomap"` logger; that is all the opt-in is. For full control — formats,
 files, your logging pipeline — skip the helper and configure the logger with
-standard {mod}`logging`; any handler attached directly to it engages the same
+standard {mod}`logging`. Any handler attached directly to it engages the same
 routing:
 
 ```python
@@ -445,8 +455,8 @@ logging.getLogger("infomap").setLevel(logging.INFO)
 the `silent=` and `verbosity_level=` keywords are pending-deprecated and leave
 the API in 3.0. One timing nuance if you route through logging: a stateful
 {class}`~infomap.Infomap` bakes its silence in at construction, so configure
-logging *before* you build one (its runs warn otherwise), whereas the one-shot
-{func}`infomap.run` always respects the current configuration.
+logging *before* you build one (its runs warn otherwise). By contrast, the
+one-shot {func}`infomap.run` always respects the current configuration.
 {class}`~infomap.Network` engines stay silent for their whole lifetime (see
 {meth}`Network.run <infomap.Network.run>`).
 

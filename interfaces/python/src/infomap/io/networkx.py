@@ -212,8 +212,7 @@ def find_communities(
         if hasattr(g, "vs") and hasattr(g, "vcount"):
             hint = " For an igraph.Graph, use infomap.find_igraph_communities(g)."
         raise TypeError(
-            "find_communities expects a networkx graph (with a `.nodes` view)."
-            + hint
+            "find_communities expects a networkx graph (with a `.nodes` view)." + hint
         )
 
     if len(g.nodes) == 0:
@@ -288,8 +287,8 @@ def add_networkx_graph(
     except IndexError:
         return {}
 
-    if not infomap._core.flowModelIsSet and g.is_directed():
-        infomap._core.setDirected(True)
+    if g.is_directed():
+        infomap._core.note_inferred_flow_model("directed")
 
     node_map = _label_to_internal_id(nodes)
     is_string_id = isinstance(first, str)

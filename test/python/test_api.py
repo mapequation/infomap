@@ -1,14 +1,12 @@
 import importlib.resources
-from operator import itemgetter
 import tomllib
-
-import networkx as nx
-import pytest
+from operator import itemgetter
 
 import infomap as infomap_module
 import infomap._summary as summary_module
+import networkx as nx
+import pytest
 from infomap._bindings import InfomapWrapper
-
 
 pytestmark = pytest.mark.fast
 
@@ -302,7 +300,7 @@ def test_result_summaries_collect_into_one_row_per_run_dataframe():
 
     df = pd.DataFrame(
         {"markov_time": mt, **result.summary()}
-        for mt, result in zip(markov_times, results)
+        for mt, result in zip(markov_times, results, strict=True)
     )
 
     assert len(df) == len(markov_times)

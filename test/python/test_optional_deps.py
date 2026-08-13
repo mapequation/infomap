@@ -10,9 +10,7 @@ from __future__ import annotations
 import importlib
 
 import pytest
-
 from infomap import _optional
-
 
 pytestmark = pytest.mark.fast
 
@@ -34,33 +32,43 @@ def _block_import(monkeypatch, blocked: str):
         (
             _optional.require_networkx,
             "networkx",
-            r"'networkx' package is required for NetworkX support\. "
-            r'Install it with `python -m pip install "infomap\[networkx\]"`\.',
+            (
+                r"'networkx' package is required for NetworkX support\. "
+                r'Install it with `python -m pip install "infomap\[networkx\]"`\.'
+            ),
         ),
         (
             _optional.require_igraph,
             "igraph",
-            r"'igraph' package is required for igraph support\. "
-            r'Install it with `python -m pip install "infomap\[igraph\]"`\.',
+            (
+                r"'igraph' package is required for igraph support\. "
+                r'Install it with `python -m pip install "infomap\[igraph\]"`\.'
+            ),
         ),
         (
             _optional.require_scipy_sparse,
             "scipy.sparse",
-            r"'scipy' package is required for SciPy sparse matrix support\. "
-            r'Install it with `python -m pip install "infomap\[scipy\]"`\.',
+            (
+                r"'scipy' package is required for SciPy sparse matrix support\. "
+                r'Install it with `python -m pip install "infomap\[scipy\]"`\.'
+            ),
         ),
         (
             _optional.require_pyarrow,
             "pyarrow",
-            r"'pyarrow' package is required for Parquet support\. "
-            r'Install it with `python -m pip install "infomap\[graphrag\]"`\.',
+            (
+                r"'pyarrow' package is required for Parquet support\. "
+                r'Install it with `python -m pip install "infomap\[graphrag\]"`\.'
+            ),
         ),
         (
             _optional.require_numpy,
             "numpy",
             # No numpy extra exists, so the hint is a bare pip install.
-            r"'numpy' package is required for array support\. "
-            r"Install it with `python -m pip install numpy`\.",
+            (
+                r"'numpy' package is required for array support\. "
+                r"Install it with `python -m pip install numpy`\."
+            ),
         ),
     ],
 )

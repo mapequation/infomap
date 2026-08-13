@@ -4,7 +4,6 @@ from pathlib import Path
 
 import networkx as nx
 import pytest
-
 from infomap import Infomap
 from infomap.export import (
     annotate_igraph_graph,
@@ -12,7 +11,6 @@ from infomap.export import (
     write_gexf,
     write_graphml,
 )
-
 
 pytestmark = pytest.mark.fast
 
@@ -187,6 +185,37 @@ def test_igraph_graphml_export_writes_vertex_attributes(tmp_path):
     exported = ig.Graph.Read_GraphML(str(path))
     assert "infomap_module" in exported.vs.attributes()
     assert all(value is not None for value in exported.vs["infomap_module"])
+
+
+def test_igraph_graphml_export_accepts_generic_pathlike(tmp_path, fspath_only):
+    ig = pytest.importorskip("igraph")
+    graph = ig.Graph(edges=[(0, 1), (2, 3)], directed=False)
+    im = _igraph_result(graph)
+    path = tmp_path / "generic.graphml"
+
+    write_graphml(graph, im, fspath_only(path))
+
+    assert path.stat().st_size > 0
+
+
+def test_networkx_graphml_export_accepts_generic_pathlike(tmp_path, fspath_only):
+    graph = nx.Graph([(1, 2), (2, 3), (10, 11), (11, 12)])
+    im, mapping = _networkx_result(graph)
+    path = tmp_path / "generic.graphml"
+
+    write_graphml(graph, im, fspath_only(path), node_mapping=mapping)
+
+    assert path.stat().st_size > 0
+
+
+def test_networkx_gexf_export_accepts_generic_pathlike(tmp_path, fspath_only):
+    graph = nx.Graph([(1, 2), (2, 3), (10, 11), (11, 12)])
+    im, mapping = _networkx_result(graph)
+    path = tmp_path / "generic.gexf"
+
+    write_gexf(graph, im, fspath_only(path), node_mapping=mapping)
+
+    assert path.stat().st_size > 0
 
 
 def test_igraph_export_copy_true_leaves_original_graph_unchanged():

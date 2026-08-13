@@ -23,7 +23,6 @@ from __future__ import annotations
 import warnings
 
 import pytest
-
 from infomap import Infomap, Options, run
 
 
@@ -338,9 +337,7 @@ def test_deprecated_infomap_graph_constructors_emit_pending():
     with warnings.catch_warnings(record=True) as records:
         warnings.simplefilter("always")
         Infomap.from_scipy_sparse_matrix(sp.csr_matrix((3, 3)))
-    assert any(
-        "from_scipy_sparse_matrix" in message for message in _pending(records)
-    )
+    assert any("from_scipy_sparse_matrix" in message for message in _pending(records))
 
     with warnings.catch_warnings(record=True) as records:
         warnings.simplefilter("always")

@@ -5,9 +5,9 @@ from functools import cache
 from pathlib import Path
 from typing import Any
 
+from jsonschema import Draft202012Validator
 from referencing import Registry, Resource
 from referencing.jsonschema import DRAFT202012
-from jsonschema import Draft202012Validator
 
 
 def _repo_root() -> Path:

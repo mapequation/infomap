@@ -1,6 +1,7 @@
 #include "vendor/doctest.h"
 
 #include "Infomap.h"
+#include "io/InfomapError.h"
 
 #include "TestUtils.h"
 
@@ -382,25 +383,6 @@ TEST_CASE("Undirected regularization remains stable on the two-triangles fixture
   infomap::test::checkApproxCodelength(im.codelength(), 2.575767408, 1e-9);
 }
 
-TEST_CASE("Directed regularized codelength matches analytic multi-level tree [fast][core][flow][columnar-contract]")
-{
-  InfomapWrapper im(infomap::test::defaultFlags(
-      "--directed --regularized --no-infomap --cluster-data "
-      + infomap::test::clusterFixturePath("regularized_four_pairs_three_level.tree")));
-  im.addLink(1, 2);
-  im.addLink(2, 1);
-  im.addLink(3, 4);
-  im.addLink(4, 3);
-  im.addLink(5, 6);
-  im.addLink(6, 5);
-  im.addLink(7, 8);
-  im.addLink(8, 7);
-  im.run();
-
-  CHECK(im.numLevels() == 3);
-  infomap::test::checkApproxCodelength(im.codelength(), 4.051270346886);
-}
-
 #if INFOMAP_FEATURE_REGULARIZED_MULTILAYER
 TEST_CASE("Regularized multilayer flow supports non-dense matchable state ids [fast][core][flow][columnar-contract]")
 {
@@ -544,7 +526,7 @@ TEST_CASE("Regularized multilayer flow requires compile-time feature [fast][core
 }
 #endif
 
-TEST_CASE("Directed regularized codelength matches analytic multi-level tree [fast][core][flow]")
+TEST_CASE("Directed regularized codelength matches analytic multi-level tree [fast][core][flow][columnar-contract]")
 {
   InfomapWrapper im(infomap::test::defaultFlags(
       "--directed --regularized --no-infomap --cluster-data "
@@ -752,6 +734,217 @@ TEST_CASE("multilayer-relax-to-self matches spread on a single-node overlap [fas
   CHECK(spread.first == 2); // the two triangles
   CHECK(toself.first == spread.first);
   infomap::test::checkApproxCodelength(toself.second, spread.second, 1e-9);
+}
+
+// The canonical bipartite shape: every link runs primary -> feature, as in
+// examples/networks/bipartite.net. Several directed flow models degenerate on
+// it (all-zero or non-finite node flow); the map equation is undefined there, so
+// the run must fail rather than report a codelength.
+void addCanonicalBipartiteLinks(InfomapWrapper& im)
+{
+  im.network().setBipartiteStartId(4);
+  im.addLink(1, 4);
+  im.addLink(2, 4);
+  im.addLink(2, 5, 0.25);
+  im.addLink(3, 5);
+}
+
+// The same links as addCanonicalBipartiteLinks plus one from the feature side back to
+// the primary side, and without the bipartite declaration. A file whose links all run
+// one way leaves the omitted dangling redistribution as a uniform scale factor, which
+// the projection's renormalisation cancels; the back-link makes the dangling mass
+// matter, which is what #899 is about.
+void addBipartiteLinksWithFeedback(InfomapWrapper& im)
+{
+  im.addLink(1, 4);
+  im.addLink(2, 4);
+  im.addLink(2, 5, 0.25);
+  im.addLink(3, 5);
+  im.addLink(4, 1);
+}
+
+TEST_CASE("Degenerate flow is rejected instead of reported as a zero codelength [fast][core][flow]")
+{
+  // Each of these left node flow all-zero or NaN and still reported
+  // "Best codelength 0" with a successful exit.
+  for (const std::string& flags : { std::string("--directed --recorded-teleportation"),
+                                    std::string("--directed --bipartite-teleportation"),
+                                    std::string("--directed --recorded-teleportation --bipartite-teleportation") }) {
+    InfomapWrapper im(infomap::test::defaultFlags("-N 1 --seed 7 " + flags));
+    addCanonicalBipartiteLinks(im);
+
+    CHECK_THROWS_AS(im.run(), infomap::InfomapError);
+  }
+}
+
+TEST_CASE("Bipartite teleportation names the links it needs [fast][core][flow]")
+{
+  // The option's second step sends flow from the feature side back to the primary side
+  // along explicit links. A canonical bipartite file has none, so that half was a no-op:
+  // depending on the teleportation flags the result was zero flow, NaN, or -- with
+  // --to-nodes -- the uniform teleport distribution with a plausible codelength and no
+  // warning at all, i.e. flow that ignores the network (#899).
+  for (const auto* flags : { "-N 1 --seed 7 --directed --bipartite-teleportation",
+                             "-N 1 --seed 7 --directed --recorded-teleportation --bipartite-teleportation",
+                             "-N 1 --seed 7 --directed --recorded-teleportation --to-nodes --bipartite-teleportation" }) {
+    InfomapWrapper im(infomap::test::defaultFlags(flags));
+    addCanonicalBipartiteLinks(im);
+
+    try {
+      im.run();
+      FAIL("expected bipartite teleportation without feature -> primary links to be rejected");
+    } catch (const infomap::InfomapError& e) {
+      CHECK(e.code() == infomap::ExitCode::InputError);
+      const std::string message(e.what());
+      // Naming the missing precondition is the point: "degenerate flow" pointed at the
+      // flow model when the cause is the input lacking return links.
+      CHECK(message.find("--bipartite-teleportation needs links") != std::string::npos);
+    }
+  }
+}
+
+TEST_CASE("Bipartite teleportation runs when the feature side links back [fast][core][flow]")
+{
+  // One return link per feature node, so the two-step walk can reach both primary
+  // nodes. With only one the walk can return to a single node, all flow concentrates
+  // there and the codelength collapses to zero -- reported today by the non-convergence
+  // and flow-sum warnings, which this PR also puts in the run report.
+  InfomapWrapper im(infomap::test::defaultFlags("-N 1 --seed 7 --two-level --directed --bipartite-teleportation"));
+  addCanonicalBipartiteLinks(im);
+  im.addLink(4, 1);
+  im.addLink(5, 3);
+
+  CHECK_NOTHROW(im.run());
+  infomap::test::checkRunSanity(im);
+  CHECK(im.codelength() > 0.0);
+  CHECK(im.network().flowConverged());
+}
+
+TEST_CASE("Reaching tolerance on the last allowed iteration counts as converged [fast][core][flow]")
+{
+  // converged used to mean "the loop stopped before the iteration limit", so a run whose
+  // final allowed iteration brought the error to zero was reported as a failure -- with
+  // the warning to match. Since the outcome now reaches the run report and the Python
+  // Result, a signal that cries wolf is worse than no signal (#899).
+  InfomapWrapper im(infomap::test::defaultFlags("-N 1 --seed 7 --directed --max-flow-iterations 2"));
+  im.addLink(1, 2);
+  im.addLink(2, 3);
+  im.addLink(3, 1);
+  im.addLink(3, 4);
+  im.addLink(4, 5);
+  im.addLink(5, 3);
+
+  im.run();
+
+  REQUIRE(im.network().haveFlowConvergence());
+  CHECK(im.network().flowIterations() == 2);
+  CHECK(im.network().flowError() <= 1e-15);
+  CHECK(im.network().flowConverged());
+}
+
+TEST_CASE("Degenerate flow reports an input error [fast][core][flow]")
+{
+  InfomapWrapper im(infomap::test::defaultFlags("-N 1 --seed 7 --directed --recorded-teleportation"));
+  addCanonicalBipartiteLinks(im);
+
+  try {
+    im.run();
+    FAIL("expected the degenerate flow to be rejected");
+  } catch (const infomap::InfomapError& e) {
+    CHECK(e.code() == infomap::ExitCode::InputError);
+    // The message must name the quantity, so a user can tell this from a
+    // parse failure or an empty network.
+    CHECK(std::string(e.what()).find("flow") != std::string::npos);
+  }
+}
+
+TEST_CASE("skip-adjust-bipartite-flow keeps its documented unnormalized flow [fast][core][flow]")
+{
+  // The flag is documented as "Keep flow on bipartite nodes instead of
+  // distributing it to primary nodes", so flow deliberately sums to less than
+  // one here. That is an opt-out, not a defect: the run must still complete.
+  InfomapWrapper im(infomap::test::defaultFlags("-N 1 --seed 7 --two-level --directed --skip-adjust-bipartite-flow"));
+  addCanonicalBipartiteLinks(im);
+
+  im.run();
+
+  // Raised from 0.04164969778 when #899's dangling redistribution was restored: the
+  // link flows now carry the 1/(1 - danglingRank) scaling the node flows already had,
+  // so the exit flows -- and with them the module codelength -- are no longer deflated.
+  infomap::test::checkApproxCodelength(im.codelength(), 0.2776646519);
+}
+
+TEST_CASE("A link-free network keeps its trivial zero-flow result [fast][core][flow]")
+{
+  // No links means no flow to distribute and no structure to find: the trivial
+  // partition is the correct answer, so the post-condition must not fire.
+  InfomapWrapper isolatedNodes(infomap::test::defaultFlags("-N 1 --seed 7"));
+  isolatedNodes.addNode(1);
+  isolatedNodes.addNode(2);
+  isolatedNodes.run();
+  CHECK(isolatedNodes.numLeafNodes() == 2);
+
+  InfomapWrapper singleNode(infomap::test::defaultFlags("-N 1 --seed 7"));
+  singleNode.addNode(1);
+  singleNode.run();
+  CHECK(singleNode.numLeafNodes() == 1);
+}
+
+TEST_CASE("Directed bipartite flow matches the same links without the bipartite declaration [fast][core][flow]")
+{
+  // The bipartite declaration decides how flow is *reported* -- which nodes are the
+  // feature side, and whether their flow is folded onto the primary side -- not how
+  // the power iteration distributes it. With the fold opted out, the two runs must
+  // therefore agree exactly. They did not (#899): the directed model finds its
+  // dangling nodes as a prefix of the flow vector, an ordering bipartite input cannot
+  // use because its feature side is identified by an index range, so the dangling
+  // mass was never redistributed and the iteration converged somewhere else -- or
+  // rather did not converge, exhausting --max-flow-iterations on a five-node network.
+  //
+  // Asserted as an equivalence rather than against pinned numbers, so the test states
+  // the property instead of recording today's output.
+  InfomapWrapper bipartite(infomap::test::defaultFlags("-N 1 --seed 7 --two-level --directed --skip-adjust-bipartite-flow"));
+  bipartite.network().setBipartiteStartId(4);
+  addBipartiteLinksWithFeedback(bipartite);
+  bipartite.run();
+
+  InfomapWrapper plain(infomap::test::defaultFlags("-N 1 --seed 7 --two-level --directed"));
+  addBipartiteLinksWithFeedback(plain);
+  plain.run();
+
+  CHECK(bipartite.codelength() == doctest::Approx(plain.codelength()).epsilon(1e-10));
+
+  std::map<unsigned int, double> plainFlow;
+  for (auto it = plain.iterLeafNodes(); !it.isEnd(); ++it) {
+    const auto& node = *it;
+    plainFlow[node.physicalId] = node.data.flow;
+  }
+
+  unsigned int comparedNodes = 0;
+  for (auto it = bipartite.iterLeafNodes(); !it.isEnd(); ++it) {
+    const auto& node = *it;
+    REQUIRE(plainFlow.count(node.physicalId) == 1);
+    CHECK(node.data.flow == doctest::Approx(plainFlow[node.physicalId]).epsilon(1e-10));
+    ++comparedNodes;
+  }
+  CHECK(comparedNodes == 5);
+}
+
+TEST_CASE("Ordinary bipartite runs are unaffected by the flow post-condition [fast][core][flow]")
+{
+  InfomapWrapper undirected(infomap::test::defaultFlags("-N 1 --seed 7"));
+  addCanonicalBipartiteLinks(undirected);
+  undirected.run();
+  infomap::test::checkApproxCodelength(undirected.codelength(), 1.478406227);
+
+  InfomapWrapper directed(infomap::test::defaultFlags("-N 1 --seed 7 --directed"));
+  addCanonicalBipartiteLinks(directed);
+  directed.run();
+  // Raised from 0.4729743142 with #899's fix, for the same reason as above. The node
+  // flows are unchanged here -- every link in this network runs one way, so the
+  // omitted redistribution was a uniform scale the projection cancelled -- but the
+  // link flows were uniformly too small, which is what the codelength reads.
+  infomap::test::checkApproxCodelength(directed.codelength(), 1.2649313331);
 }
 
 } // namespace

@@ -1,3 +1,4 @@
+import os
 import sys
 import warnings
 from collections import namedtuple
@@ -5,29 +6,35 @@ from collections.abc import Mapping
 from contextlib import contextmanager
 from typing import Any
 
-from ._core import Core
-from ._core import apply_initial_partition
-from ._core import build_info as _engine_build_info
-from ._core import run as _cli_run
-
 # Documented tree-walking iterator/node types returned by ``Infomap.tree`` /
 # ``leaf_modules`` / the physical variants (source/api/iterators.rst). Surfaced
 # at the package top level so ``from infomap import InfoNode`` and
 # ``isinstance(node, infomap.InfomapIterator)`` keep working. Reached through the
 # ``_core`` boundary, never ``_swig``/``_bindings`` directly.
 from ._core import (
-    InfoNode,
+    Core,
     InfomapIterator,
     InfomapIteratorPhysical,
     InfomapLeafIterator,
     InfomapLeafIteratorPhysical,
     InfomapLeafModuleIterator,
+    InfoNode,
+    _with_inferred_flow_model,
+    _with_owner,
+    apply_initial_partition,
 )
+from ._core import build_info as _engine_build_info
+from ._core import run as _cli_run
+from ._logging import apply_engine_log_overrides as _apply_engine_log_overrides
+from ._logging import disable_log, enable_log
+from ._logging import engine_log_routing as _engine_log_routing
+from ._logging import is_routed as _is_log_routed
 from ._network_input import add_bulk_links as _add_bulk_links
 from ._network_input import first_order_unpacker as _first_order_unpacker
 from ._network_input import flat_multilayer_unpacker as _flat_multilayer_unpacker
 from ._network_input import paired_multilayer_unpacker as _paired_multilayer_unpacker
 from ._options import (
+    _UNSET,
     # The Literal aliases are referenced by the generated __init__/run
     # signatures below, which are evaluated at class-definition time.
     FlowModel,
@@ -35,34 +42,39 @@ from ._options import (
     Options,
     OutputFormat,
     _construct_args,
+    _explicit_options,
     _merge_options,
     _warn_advanced_tier_kwargs,
 )
-from ._logging import apply_engine_log_overrides as _apply_engine_log_overrides
-from ._logging import disable_log, enable_log
-from ._logging import engine_log_routing as _engine_log_routing
-from ._logging import is_routed as _is_log_routed
-from ._results import _InfomapResultsMixin
-from ._results import _install_accessor_deprecations
-from ._results import _warn_method_deprecated
-from ._results import entropy, perplexity, plogp
-from .errors import NetworkParseError, _translate_engine_errors
-from .result import Result, TreeNode, build_result
+from ._results import (
+    _InfomapResultsMixin,
+    _install_accessor_deprecations,
+    _warn_method_deprecated,
+    entropy,
+    perplexity,
+    plogp,
+)
+from ._run import _warn_inert_output_options, run
 from ._summary import (
     repr_html as _repr_html,
+)
+from ._summary import (
     repr_text as _repr_text,
+)
+from ._summary import (
     summary_data as _summary_data,
 )
+from .errors import NetworkParseError, _translate_engine_errors
 from .io.edge_index import add_edge_index as _add_edge_index
+from .io.export import to_igraph, to_networkx
 from .io.igraph import add_igraph_graph as _add_igraph_graph
 from .io.igraph import find_igraph_communities
 from .io.networkx import add_networkx_graph as _add_networkx_graph
 from .io.networkx import find_communities
-from .io.export import to_igraph, to_networkx
 from .io.scipy import add_scipy_sparse_matrix as _add_scipy_sparse_matrix
 from .io.writers import _InfomapWritersMixin
 from .network import Network
-from ._run import _warn_inert_output_options, run
+from .result import Result, TreeNode, build_result
 
 
 def _package_construct_args():
@@ -185,9 +197,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         # writing to stdout for life, where verbosity_level is effective (so it
         # is not flagged inert). Read the raw option before the routed override
         # below strips silent.
-        _warn_inert_output_options(
-            options, args, engine_emits=options.silent is False
-        )
+        _warn_inert_output_options(options, args, engine_emits=options.silent is False)
         # In routed log mode (handlers on the "infomap" logger), logging is
         # the emission control: strip --silent from the constructor args (the
         # C++ engine composes constructor + run args additively, so a --silent
@@ -220,9 +230,9 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         no_self_links: bool = False,
         node_limit: int | None = None,
         matchable_multilayer_ids: int | None = None,
-        cluster_data: str | None = None,
+        cluster_data: str | os.PathLike[str] | None = None,
         assign_to_neighbouring_module: bool = False,
-        meta_data: str | None = None,
+        meta_data: str | os.PathLike[str] | None = None,
         meta_data_rate: float = 1.0,
         meta_data_unweighted: bool = False,
         no_infomap: bool = False,
@@ -237,19 +247,19 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         print_all_trials: bool = False,
         no_overwrite: bool = False,
         print_config_fingerprint: bool = False,
-        timing_json: str | None = None,
-        summary_json: str | None = None,
-        manifest_json: str | None = None,
+        timing_json: str | os.PathLike[str] | None = None,
+        summary_json: str | os.PathLike[str] | None = None,
+        manifest_json: str | os.PathLike[str] | None = None,
         memory_report: bool = False,
         trial_offset: int | None = None,
-        trial_results: str | None = None,
+        trial_results: str | os.PathLike[str] | None = None,
         no_final_output: bool = False,
         verbosity_level: int = 1,
         silent: bool = True,
         pretty: bool | None = None,
-        two_level: bool = False,
+        two_level: bool = _UNSET,
         flow_model: FlowModel | None = None,
-        directed: bool | None = None,
+        directed: bool | None = _UNSET,
         recorded_teleportation: bool = False,
         use_node_weights_as_flow: bool = False,
         to_nodes: bool = False,
@@ -261,7 +271,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         regularization_strength: float = 1.0,
         entropy_corrected: bool = False,
         entropy_correction_strength: float = 1.0,
-        markov_time: float = 1.0,
+        markov_time: float = _UNSET,
         variable_markov_time: bool = False,
         variable_markov_damping: float = 1.0,
         variable_markov_min_scale: float = 1.0,
@@ -274,8 +284,8 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         multilayer_relax_limit_down: int = -1,
         multilayer_relax_by_jsd: bool = False,
         multilayer_relax_to_self: bool = False,
-        seed: int = 123,
-        num_trials: int = 1,
+        seed: int = _UNSET,
+        num_trials: int = _UNSET,
         core_loop_limit: int = 10,
         core_level_limit: int | None = None,
         tune_iteration_limit: int | None = None,
@@ -347,7 +357,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
 
             .. versionchanged:: 2.15
                 Pass it via ``Options``; moves off this signature in 3.0.
-        cluster_data : str, optional
+        cluster_data : str or os.PathLike, optional
             Read an initial partition from a clu file or a hierarchy from a tree/ftree
             file. Tree input may use physical or state nodes for higher-order networks.
 
@@ -359,7 +369,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
 
             .. versionchanged:: 2.15
                 Pass it via ``Options``; moves off this signature in 3.0.
-        meta_data : str, optional
+        meta_data : str or os.PathLike, optional
             Read metadata to encode from a clu-format file.
 
             .. versionchanged:: 2.15
@@ -510,18 +520,18 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             .. deprecated:: 2.15
                 This keyword leaves the ``Infomap`` signature in 3.0. A print-and-exit
                 CLI diagnostic; run the infomap binary.
-        timing_json : str, optional
+        timing_json : str or os.PathLike, optional
             Write machine-readable run timing JSON to this path. Use - for stdout.
 
             .. versionchanged:: 2.15
                 Pass it via ``Options``; moves off this signature in 3.0.
-        summary_json : str, optional
+        summary_json : str or os.PathLike, optional
             Write machine-readable final run summary JSON to this path. Use - for
             stdout.
 
             .. versionchanged:: 2.15
                 Pass it via ``Options``; moves off this signature in 3.0.
-        manifest_json : str, optional
+        manifest_json : str or os.PathLike, optional
             Write a machine-readable run manifest JSON to this path. Use - for stdout.
 
             .. versionchanged:: 2.15
@@ -538,7 +548,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
 
             .. versionchanged:: 2.15
                 Pass it via ``Options``; moves off this signature in 3.0.
-        trial_results : str, optional
+        trial_results : str or os.PathLike, optional
             Write this shard's per-trial results (codelengths, seeds, best-tree
             reference, fingerprints) as JSON to this path, for deterministic merging of
             distributed shard runs into a final solution.
@@ -573,7 +583,8 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             Deprecated. Accepted for backward compatibility; has no effect. Passing it
             explicitly emits a DeprecationWarning.
         two_level : bool, optional
-            Optimize a two-level partition instead of the default multi-level hierarchy.
+            Optimize a two-level partition instead of the default multi-level hierarchy
+            (default False).
         flow_model : str, optional
             Choose how Infomap derives flow from the input links. Options: undirected,
             directed, undirdir, outdirdir, rawdir, precomputed.
@@ -581,7 +592,8 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             .. versionchanged:: 2.15
                 Pass it via ``Options``; moves off this signature in 3.0.
         directed : bool, optional
-            Treat input links as directed. Shorthand for --flow-model directed.
+            Treat input links as directed. Shorthand for --flow-model directed (default
+            None).
         recorded_teleportation : bool, optional
             When teleportation is used to calculate flow, also record teleportation
             steps in the codelength.
@@ -649,7 +661,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
                 Pass it via ``Options``; moves off this signature in 3.0.
         markov_time : float, optional
             Scale link flow to change the cost of moving between modules. Higher values
-            result in fewer modules.
+            result in fewer modules (default 1.0).
         variable_markov_time : bool, optional
             Vary Markov time locally to reduce overpartitioning in sparse areas while
             keeping higher resolution in dense areas.
@@ -726,9 +738,9 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             .. versionchanged:: 2.15
                 Pass it via ``Options``; moves off this signature in 3.0.
         seed : int, optional
-            Set the random number generator seed for reproducible results.
+            Set the random number generator seed for reproducible results (default 123).
         num_trials : int, optional
-            Run this many independent trials and keep the best solution.
+            Run this many independent trials and keep the best solution (default 1).
         core_loop_limit : int, optional
             Limit how many core loops try to move each node to the best module.
 
@@ -862,7 +874,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
                 stacklevel=2,
             )
         _warn_advanced_tier_kwargs(locals(), "init")
-        options = _merge_options(options, Options._from_locals(locals()), "init")
+        options = _merge_options(options, _explicit_options(locals(), "init"), "init")
         self._init_from_options(args, options)
 
     def run(
@@ -876,9 +888,9 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         no_self_links: bool = False,
         node_limit: int | None = None,
         matchable_multilayer_ids: int | None = None,
-        cluster_data: str | None = None,
+        cluster_data: str | os.PathLike[str] | None = None,
         assign_to_neighbouring_module: bool = False,
-        meta_data: str | None = None,
+        meta_data: str | os.PathLike[str] | None = None,
         meta_data_rate: float = 1.0,
         meta_data_unweighted: bool = False,
         no_infomap: bool = False,
@@ -893,19 +905,19 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         print_all_trials: bool = False,
         no_overwrite: bool = False,
         print_config_fingerprint: bool = False,
-        timing_json: str | None = None,
-        summary_json: str | None = None,
-        manifest_json: str | None = None,
+        timing_json: str | os.PathLike[str] | None = None,
+        summary_json: str | os.PathLike[str] | None = None,
+        manifest_json: str | os.PathLike[str] | None = None,
         memory_report: bool = False,
         trial_offset: int | None = None,
-        trial_results: str | None = None,
+        trial_results: str | os.PathLike[str] | None = None,
         no_final_output: bool = False,
         verbosity_level: int = 1,
         silent: bool = False,
         pretty: bool | None = None,
-        two_level: bool = False,
+        two_level: bool = _UNSET,
         flow_model: FlowModel | None = None,
-        directed: bool | None = None,
+        directed: bool | None = _UNSET,
         recorded_teleportation: bool = False,
         use_node_weights_as_flow: bool = False,
         to_nodes: bool = False,
@@ -917,7 +929,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         regularization_strength: float = 1.0,
         entropy_corrected: bool = False,
         entropy_correction_strength: float = 1.0,
-        markov_time: float = 1.0,
+        markov_time: float = _UNSET,
         variable_markov_time: bool = False,
         variable_markov_damping: float = 1.0,
         variable_markov_min_scale: float = 1.0,
@@ -930,8 +942,8 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         multilayer_relax_limit_down: int = -1,
         multilayer_relax_by_jsd: bool = False,
         multilayer_relax_to_self: bool = False,
-        seed: int = 123,
-        num_trials: int = 1,
+        seed: int = _UNSET,
+        num_trials: int = _UNSET,
         core_loop_limit: int = 10,
         core_level_limit: int | None = None,
         tune_iteration_limit: int | None = None,
@@ -990,8 +1002,9 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
                 stacklevel=2,
             )
         _warn_advanced_tier_kwargs(locals(), "run")
-        options = _merge_options(options, Options._from_locals(locals()), "run")
+        options = _merge_options(options, _explicit_options(locals(), "run"), "run")
         return self._run_from_options(args, initial_partition, options)
+
     # === END generated ===
 
     def __repr__(self):
@@ -1058,8 +1071,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         """
         _warn_method_deprecated(
             "from_scipy_sparse_matrix",
-            "use Network.from_scipy_sparse_matrix() or infomap.run(matrix) "
-            "instead.",
+            "use Network.from_scipy_sparse_matrix() or infomap.run(matrix) instead.",
         )
         im = cls(args=args, **infomap_options)
         im._add_scipy_sparse_matrix_impl(
@@ -1105,12 +1117,14 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
     # Input
     # ----------------------------------------
 
-    def read_file(self, filename: str, accumulate: bool = True) -> None:
+    def read_file(
+        self, filename: str | os.PathLike[str], accumulate: bool = True
+    ) -> None:
         """Read network data from file.
 
         Parameters
         ----------
-        filename : str
+        filename : str or os.PathLike
         accumulate : bool, optional
             If the network data should be accumulated to already added
             nodes and links. Default ``True``.
@@ -1121,7 +1135,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             If the file cannot be opened or its content cannot be parsed.
         """
         with _engine_log_routing(), _translate_engine_errors(NetworkParseError):
-            self._core.readInputData(filename, accumulate)
+            self._core.readInputData(os.fsdecode(filename), accumulate)
 
     def add_node(
         self,
@@ -1248,7 +1262,9 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
                 else:
                     self.add_node(*node)
 
-    def add_state_node(self, state_id: int, node_id: int, name: str | None = None) -> None:
+    def add_state_node(
+        self, state_id: int, node_id: int, name: str | None = None
+    ) -> None:
         """Add a state node.
 
         Notes
@@ -1382,9 +1398,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             for name in names:
                 self.set_name(*name)
 
-    def add_link(
-        self, source_id: int, target_id: int, weight: float = 1.0
-    ) -> None:
+    def add_link(self, source_id: int, target_id: int, weight: float = 1.0) -> None:
         """Add a link.
 
         Notes
@@ -2325,6 +2339,9 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             self.initial_partition = old_partition
 
     def _run_from_options(self, args, initial_partition, options):
+        # An input adapter may have resolved the flow model from the input
+        # itself; render it so it survives this run's argument string.
+        options = _with_inferred_flow_model(self._core, options)
         kwargs = options.to_kwargs()
         # engine_emits: whether this instance's engine emits at all. It was
         # baked --silent (or not) at construction and cannot be undone per run,
@@ -2354,9 +2371,12 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         # meta_data) at run time, so input failures surfacing here become
         # NetworkParseError; everything else is InfomapError.
         if initial_partition is not None:
-            with self._initial_partition(initial_partition):
-                with _engine_log_routing(), _translate_engine_errors(classify=True):
-                    self._core.run(args)
+            with (
+                self._initial_partition(initial_partition),
+                _engine_log_routing(),
+                _translate_engine_errors(classify=True),
+            ):
+                self._core.run(args)
         else:
             with _engine_log_routing(), _translate_engine_errors(classify=True):
                 self._core.run(args)
@@ -2389,7 +2409,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
     @property
     def network(self):
         """Get the internal network."""
-        return self._core.network()
+        return _with_owner(self._core.network(), self._core)
 
     @property
     def codelength(self):

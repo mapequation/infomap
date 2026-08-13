@@ -242,8 +242,13 @@ namespace input {
 
         std::istringstream extractor(line);
         ParsedVertex vertex;
-        if (!(extractor >> vertex.id))
+        std::string idToken;
+        if (!(extractor >> idToken))
           throw std::runtime_error(fmt::format(FMT_STRING("Can't parse node id from line '{}'"), line));
+        // Validated rather than read straight into the unsigned: `>> unsigned`
+        // accepts "-2" and stores 4294967294.
+        if (!io::parseNonNegativeInteger(idToken, vertex.id))
+          throw std::runtime_error(fmt::format(FMT_STRING("Can't parse node id '{}' from line '{}': expected a non-negative integer no greater than {}"), idToken, line, std::numeric_limits<unsigned int>::max()));
 
         auto nameStart = line.find_first_of('\"');
         auto nameEnd = line.find_last_of('\"');
@@ -511,13 +516,38 @@ namespace input {
 
       std::istringstream extractor(line);
       unsigned int nodeId = 0;
-      if (!(extractor >> nodeId))
+      std::string nodeIdToken;
+      if (!(extractor >> nodeIdToken))
         throw std::runtime_error(fmt::format(FMT_STRING("Can't parse node id from line '{}'"), line));
+      if (!io::parseNonNegativeInteger(nodeIdToken, nodeId))
+        throw std::runtime_error(fmt::format(FMT_STRING("Can't parse node id '{}' from line '{}': expected a non-negative integer no greater than {}"), nodeIdToken, line, std::numeric_limits<unsigned int>::max()));
 
+      // Same treatment as the id above, and for the same reason: `>> unsigned`
+      // takes "-1" as 4294967295, which then becomes -1 again in this vector<int>,
+      // so two different files produced the same category with no complaint. The
+      // upper bound is int, not unsigned, because that is what the vector holds.
       std::vector<int> metaData;
-      unsigned int metaId = 0;
-      while (extractor >> metaId) {
-        metaData.push_back(metaId);
+      std::string metaToken;
+      while (extractor >> metaToken) {
+        // An inline '#' ends the line, the same convention the link rows use
+        // (parseLink stops at '#'). Reading the categories as unsigned used to give
+        // this for free -- the stream failed on '#' and quietly ended the loop -- so
+        // validating the tokens has to keep it explicitly or "1 2 # note" stops
+        // parsing, which it did.
+        const auto commentStart = metaToken.find('#');
+        const bool commentFollows = commentStart != std::string::npos;
+        if (commentFollows)
+          metaToken.erase(commentStart);
+
+        if (!metaToken.empty()) {
+          unsigned int metaId = 0;
+          if (!io::parseNonNegativeInteger(metaToken, metaId) || metaId > static_cast<unsigned int>(std::numeric_limits<int>::max()))
+            throw std::runtime_error(fmt::format(FMT_STRING("Can't parse meta category '{}' from line '{}': expected a non-negative integer no greater than {}"), metaToken, line, std::numeric_limits<int>::max()));
+          metaData.push_back(static_cast<int>(metaId));
+        }
+
+        if (commentFollows)
+          break;
       }
       if (metaData.empty())
         throw std::runtime_error(fmt::format(FMT_STRING("Can't parse any meta data from line '{}'"), line));
