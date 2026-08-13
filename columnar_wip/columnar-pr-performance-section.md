@@ -4,7 +4,7 @@
 
 Single-threaded (`MODE=release OPENMP=0`), `--seed 123 -N10` — **best of 10 trials**, the way Infomap is normally run. Codelength in bits; `time` = total wall for all 10 trials, minimum of 3 interleaved repetitions; `top`/`lvls` = top modules / levels of the best partition. The network set spans base (undirected + directed), metadata, multilayer and state/memory objectives; see [`columnar_wip/benchmark-networks.md`](columnar_wip/benchmark-networks.md) for paths and full details. Columnar column = the default columnar search (`-C`).
 
-> **Fully re-measured after merging master in** (all 65 configs × 3 interleaved repetitions, one idle-machine session). **Every codelength in this section moved, on both engines**, and none of it is a search change: master's [#949](https://github.com/mapequation/infomap/pull/949) now seeds every trial the same way in every mode, so trials 1..9 of an `-N10` run draw a different sequence than before. Two controls pin that down — **`-N1` is bit-identical across the sync** on all 8 networks checked (the columnar search itself is untouched), and **master's OO output equals this branch's OO output** on all 7 OO configs checked (the branch is exactly neutral on the OO path, so every OO shift arrived with master). The per-seed spread swamps the per-cell shift in both directions: over seeds 123/234/345/456 the old→new `-C` delta averages +0.04% on netsci, −0.04% on malaria and +0.06% on powergrid. Master's `7da08cfb` also hoists per-node-constant plogp out of the **OO** move loop, so every columnar-vs-OO *speed ratio* below is against a faster baseline than the previous refresh. One real cost arrives too — master's #948 validates cluster-data tree shape inside `initTree`, which the columnar engine calls **per trial** — costing web-NotreDame ~5.5pp of its +7.5% and nothing measurable below ~10k nodes; the master-sync section below measures it and names the fix.
+> **Measured on this PR's binary** (every table below), after merging master in (all 65 configs × 3 interleaved repetitions, one idle-machine session). **Every codelength in this section moved, on both engines**, and none of it is a search change: master's [#949](https://github.com/mapequation/infomap/pull/949) now seeds every trial the same way in every mode, so trials 1..9 of an `-N10` run draw a different sequence than before. Two controls pin that down — **`-N1` is bit-identical across the sync** on all 8 networks checked (the columnar search itself is untouched), and **master's OO output equals this branch's OO output** on all 7 OO configs checked (the branch is exactly neutral on the OO path, so every OO shift arrived with master). The per-seed spread swamps the per-cell shift in both directions: over seeds 123/234/345/456 the old→new `-C` delta averages +0.04% on netsci, −0.04% on malaria and +0.06% on powergrid. Master's `7da08cfb` also hoists per-node-constant plogp out of the **OO** move loop, so every columnar-vs-OO *speed ratio* below is against a faster baseline than the previous refresh. One real cost arrives too — master's #948 validates cluster-data tree shape inside `initTree`, which the columnar engine calls **per trial** — costing web-NotreDame ~6.9pp of its +8.0% on `-C` and nothing measurable below ~10k nodes; the master-sync section below measures it and names the fix.
 
 <table>
 <thead>
@@ -24,16 +24,16 @@ Single-threaded (`MODE=release OPENMP=0`), `--seed 123 -N10` — **best of 10 tr
 <tr><td>ninetriangles</td><td align="right">27</td><td>base</td><td>—</td><td align="right">3.38583082</td><td align="right">0.02s</td><td align="right">3</td><td align="right">3</td><td align="right"><b>3.38583082</b> (=)</td><td align="right">0.01s</td><td align="right">3</td><td align="right">3</td></tr>
 <tr><td>jazz</td><td align="right">198</td><td>base</td><td>—</td><td align="right">6.86304747</td><td align="right">0.03s</td><td align="right">5</td><td align="right">2</td><td align="right"><b>6.86275593</b> (−0.004%)</td><td align="right">0.02s</td><td align="right">6</td><td align="right">2</td></tr>
 <tr><td>netscicoauthor2010</td><td align="right">552</td><td>base</td><td>—</td><td align="right">4.04354934</td><td align="right">0.13s</td><td align="right">2</td><td align="right">5</td><td align="right">4.05454025 (+0.27%)</td><td align="right">0.03s (−74%)</td><td align="right">2</td><td align="right">4</td></tr>
-<tr><td>powergrid</td><td align="right">4 941</td><td>base</td><td>—</td><td align="right">4.75872920</td><td align="right">1.88s</td><td align="right">5</td><td align="right">7</td><td align="right"><b>4.74107206</b> (−0.37%)</td><td align="right">0.26s (−86%)</td><td align="right">5</td><td align="right">5</td></tr>
-<tr><td>politicalblogs</td><td align="right">1 046</td><td>base</td><td><code>-d</code></td><td align="right">6.73892798</td><td align="right">0.15s</td><td align="right">80</td><td align="right">3</td><td align="right">6.74094314 (+0.03%)</td><td align="right">0.07s (−51%)</td><td align="right">81</td><td align="right">2</td></tr>
-<tr><td>science2001</td><td align="right">7 170</td><td>base</td><td><code>-d</code></td><td align="right">7.83638921</td><td align="right">7.66s</td><td align="right">11</td><td align="right">4</td><td align="right"><b>7.83343660</b> (−0.04%)</td><td align="right">3.15s (−59%)</td><td align="right">15</td><td align="right">3</td></tr>
-<tr><td>web-NotreDame</td><td align="right">325 729</td><td>base</td><td><code>-d</code></td><td align="right">5.56592477</td><td align="right">144.2s</td><td align="right">17</td><td align="right">13</td><td align="right">5.56852929 (+0.05%)</td><td align="right">20.6s (−86%)</td><td align="right">5</td><td align="right">6</td></tr>
+<tr><td>powergrid</td><td align="right">4 941</td><td>base</td><td>—</td><td align="right">4.75872920</td><td align="right">1.87s</td><td align="right">5</td><td align="right">7</td><td align="right"><b>4.74107206</b> (−0.37%)</td><td align="right">0.26s (−86%)</td><td align="right">5</td><td align="right">5</td></tr>
+<tr><td>politicalblogs</td><td align="right">1 046</td><td>base</td><td><code>-d</code></td><td align="right">6.73892798</td><td align="right">0.15s</td><td align="right">80</td><td align="right">3</td><td align="right">6.74094314 (+0.03%)</td><td align="right">0.07s (−52%)</td><td align="right">81</td><td align="right">2</td></tr>
+<tr><td>science2001</td><td align="right">7 170</td><td>base</td><td><code>-d</code></td><td align="right">7.83638921</td><td align="right">7.59s</td><td align="right">11</td><td align="right">4</td><td align="right"><b>7.83343660</b> (−0.04%)</td><td align="right">3.05s (−60%)</td><td align="right">15</td><td align="right">3</td></tr>
+<tr><td>web-NotreDame</td><td align="right">325 729</td><td>base</td><td><code>-d</code></td><td align="right">5.56592477</td><td align="right">140.8s</td><td align="right">17</td><td align="right">13</td><td align="right">5.56852929 (+0.05%)</td><td align="right">19.8s (−86%)</td><td align="right">5</td><td align="right">6</td></tr>
 <tr><td>lazega</td><td align="right">69</td><td>metadata</td><td>—</td><td align="right">6.01786027</td><td align="right">0.03s</td><td align="right">7</td><td align="right">2</td><td align="right"><b>6.01786027</b> (=)</td><td align="right">0.01s</td><td align="right">7</td><td align="right">2</td></tr>
 <tr><td>multilayer (ex.)</td><td align="right">5</td><td>multilayer</td><td>—</td><td align="right">2.01140524</td><td align="right">0.01s</td><td align="right">2</td><td align="right">2</td><td align="right"><b>2.01140524</b> (=)</td><td align="right">0.01s</td><td align="right">2</td><td align="right">2</td></tr>
-<tr><td>malaria</td><td align="right">307·9L</td><td>multilayer</td><td>—</td><td align="right">7.50242050</td><td align="right">8.89s</td><td align="right">142</td><td align="right">3</td><td align="right"><b>7.39750171</b> (−1.40%)</td><td align="right">3.17s (−64%)</td><td align="right">2</td><td align="right">3</td></tr>
-<tr><td>air30k</td><td align="right">13 213</td><td>state/memory</td><td>—</td><td align="right">5.39287115</td><td align="right">11.3s</td><td align="right">16</td><td align="right">4</td><td align="right"><b>5.39242541</b> (−0.008%)</td><td align="right">3.80s (−66%)</td><td align="right">22</td><td align="right">3</td></tr>
-<tr><td>air30k (reg.)</td><td align="right">13 213</td><td>state/memory</td><td><code>-d --regularized</code></td><td align="right">5.57843563</td><td align="right">7.42s</td><td align="right">301</td><td align="right">3</td><td align="right"><b>5.57624241</b> (−0.04%)</td><td align="right">4.06s (−45%)</td><td align="right">11</td><td align="right">3</td></tr>
-<tr><td>science2001 (pref-mods)</td><td align="right">7 170</td><td>base</td><td><code>-d --preferred-number-of-modules 25</code></td><td align="right">7.94035360</td><td align="right">7.88s</td><td align="right">25</td><td align="right">4</td><td align="right">8.23558553 (+3.72%)</td><td align="right">3.35s (−58%)</td><td align="right">25</td><td align="right">2</td></tr>
+<tr><td>malaria</td><td align="right">307·9L</td><td>multilayer</td><td>—</td><td align="right">7.50242050</td><td align="right">8.78s</td><td align="right">142</td><td align="right">3</td><td align="right"><b>7.39750171</b> (−1.40%)</td><td align="right">3.10s (−65%)</td><td align="right">2</td><td align="right">3</td></tr>
+<tr><td>air30k</td><td align="right">13 213</td><td>state/memory</td><td>—</td><td align="right">5.39287115</td><td align="right">11.1s</td><td align="right">16</td><td align="right">4</td><td align="right"><b>5.39242541</b> (−0.008%)</td><td align="right">3.75s (−66%)</td><td align="right">22</td><td align="right">3</td></tr>
+<tr><td>air30k (reg.)</td><td align="right">13 213</td><td>state/memory</td><td><code>-d --regularized</code></td><td align="right">5.57843563</td><td align="right">7.37s</td><td align="right">301</td><td align="right">3</td><td align="right"><b>5.57624241</b> (−0.04%)</td><td align="right">4.02s (−46%)</td><td align="right">11</td><td align="right">3</td></tr>
+<tr><td>science2001 (pref-mods)</td><td align="right">7 170</td><td>base</td><td><code>-d --preferred-number-of-modules 25</code></td><td align="right">7.94035360</td><td align="right">7.84s</td><td align="right">25</td><td align="right">4</td><td align="right">8.23558553 (+3.72%)</td><td align="right">3.28s (−58%)</td><td align="right">25</td><td align="right">2</td></tr>
 </tbody>
 </table>
 
@@ -65,16 +65,16 @@ Single-threaded (`MODE=release OPENMP=0`), `--seed 123 -N10` — **best of 10 tr
 <tr><td>ninetriangles</td><td align="right">3.38583082</td><td align="right">0.01s</td><td align="right">3</td><td align="right">3</td><td align="right">3.38583082 (=)</td><td align="right">0.01s</td><td align="right">3</td><td align="right">3</td></tr>
 <tr><td>jazz</td><td align="right">6.86275593</td><td align="right">0.02s</td><td align="right">6</td><td align="right">2</td><td align="right">6.86275593 (=)</td><td align="right">0.02s</td><td align="right">6</td><td align="right">2</td></tr>
 <tr><td>netscicoauthor2010</td><td align="right">4.05454025</td><td align="right">0.03s</td><td align="right">2</td><td align="right">4</td><td align="right">4.06300588 (+0.21%)</td><td align="right">0.03s</td><td align="right">4</td><td align="right">4</td></tr>
-<tr><td>powergrid</td><td align="right">4.74107206</td><td align="right">0.26s</td><td align="right">5</td><td align="right">5</td><td align="right">4.77402224 (+0.69%)</td><td align="right">0.17s (−35%)</td><td align="right">4</td><td align="right">5</td></tr>
+<tr><td>powergrid</td><td align="right">4.74107206</td><td align="right">0.26s</td><td align="right">5</td><td align="right">5</td><td align="right">4.77402224 (+0.69%)</td><td align="right">0.17s (−36%)</td><td align="right">4</td><td align="right">5</td></tr>
 <tr><td>politicalblogs (<code>-d</code>)</td><td align="right">6.74094314</td><td align="right">0.07s</td><td align="right">81</td><td align="right">2</td><td align="right">6.74094314 (=)</td><td align="right">0.07s</td><td align="right">81</td><td align="right">2</td></tr>
-<tr><td>science2001 (<code>-d</code>)</td><td align="right">7.83343660</td><td align="right">3.15s</td><td align="right">15</td><td align="right">3</td><td align="right">7.83343660 (=)</td><td align="right">3.01s (−4%)</td><td align="right">15</td><td align="right">3</td></tr>
-<tr><td>web-NotreDame (<code>-d</code>)</td><td align="right">5.56852929</td><td align="right">20.6s</td><td align="right">5</td><td align="right">6</td><td align="right">5.62506198 (+1.02%)</td><td align="right">15.5s (−25%)</td><td align="right">2</td><td align="right">5</td></tr>
+<tr><td>science2001 (<code>-d</code>)</td><td align="right">7.83343660</td><td align="right">3.05s</td><td align="right">15</td><td align="right">3</td><td align="right">7.83343660 (=)</td><td align="right">2.95s (−3%)</td><td align="right">15</td><td align="right">3</td></tr>
+<tr><td>web-NotreDame (<code>-d</code>)</td><td align="right">5.56852929</td><td align="right">19.8s</td><td align="right">5</td><td align="right">6</td><td align="right">5.62506198 (+1.02%)</td><td align="right">14.9s (−25%)</td><td align="right">2</td><td align="right">5</td></tr>
 <tr><td>lazega (meta)</td><td align="right">6.01786027</td><td align="right">0.01s</td><td align="right">7</td><td align="right">2</td><td align="right">6.01786027 (=)</td><td align="right">0.01s</td><td align="right">7</td><td align="right">2</td></tr>
 <tr><td>multilayer (ex.)</td><td align="right">2.01140524</td><td align="right">0.01s</td><td align="right">2</td><td align="right">2</td><td align="right">2.01140524 (=)</td><td align="right">0.01s</td><td align="right">2</td><td align="right">2</td></tr>
-<tr><td>malaria</td><td align="right">7.39750171</td><td align="right">3.17s</td><td align="right">2</td><td align="right">3</td><td align="right">7.39750171 (=)</td><td align="right">3.17s</td><td align="right">2</td><td align="right">3</td></tr>
-<tr><td>air30k (states)</td><td align="right">5.39242541</td><td align="right">3.80s</td><td align="right">22</td><td align="right">3</td><td align="right">5.39242541 (=)</td><td align="right">3.57s (−6%)</td><td align="right">22</td><td align="right">3</td></tr>
-<tr><td>air30k (reg.)</td><td align="right">5.57624241</td><td align="right">4.06s</td><td align="right">11</td><td align="right">3</td><td align="right">5.57624241 (=)</td><td align="right">3.58s (−12%)</td><td align="right">11</td><td align="right">3</td></tr>
-<tr><td>science2001 (pref-mods)</td><td align="right">8.23558553</td><td align="right">3.35s</td><td align="right">25</td><td align="right">2</td><td align="right">8.23558553 (=)</td><td align="right">3.23s (−4%)</td><td align="right">25</td><td align="right">2</td></tr>
+<tr><td>malaria</td><td align="right">7.39750171</td><td align="right">3.10s</td><td align="right">2</td><td align="right">3</td><td align="right">7.39750171 (=)</td><td align="right">3.09s</td><td align="right">2</td><td align="right">3</td></tr>
+<tr><td>air30k (states)</td><td align="right">5.39242541</td><td align="right">3.75s</td><td align="right">22</td><td align="right">3</td><td align="right">5.39242541 (=)</td><td align="right">3.48s (−7%)</td><td align="right">22</td><td align="right">3</td></tr>
+<tr><td>air30k (reg.)</td><td align="right">5.57624241</td><td align="right">4.02s</td><td align="right">11</td><td align="right">3</td><td align="right">5.57624241 (=)</td><td align="right">3.56s (−11%)</td><td align="right">11</td><td align="right">3</td></tr>
+<tr><td>science2001 (pref-mods)</td><td align="right">8.23558553</td><td align="right">3.28s</td><td align="right">25</td><td align="right">2</td><td align="right">8.23558553 (=)</td><td align="right">3.20s (−2%)</td><td align="right">25</td><td align="right">2</td></tr>
 </tbody>
 </table>
 
@@ -221,16 +221,16 @@ Every measured run behind this section is logged row-per-run in [`columnar_wip/c
 <tr><td>ninetriangles</td><td align="right">3.51775481</td><td align="right">0.01s</td><td align="right">9</td><td align="right"><b>3.51775481</b> (=)</td><td align="right">0.01s</td><td align="right">9</td></tr>
 <tr><td>jazz</td><td align="right">6.86304747</td><td align="right">0.02s</td><td align="right">5</td><td align="right"><b>6.86122977</b> (−0.03%)</td><td align="right">0.02s</td><td align="right">6</td></tr>
 <tr><td>netscicoauthor2010</td><td align="right">4.28501267</td><td align="right">0.04s</td><td align="right">56</td><td align="right"><b>4.28307258</b> (−0.05%)</td><td align="right">0.02s</td><td align="right">59</td></tr>
-<tr><td>powergrid</td><td align="right">5.60044386</td><td align="right">0.57s</td><td align="right">419</td><td align="right">5.63729688 (+0.66%)</td><td align="right">0.11s (−81%)</td><td align="right">419</td></tr>
+<tr><td>powergrid</td><td align="right">5.60044386</td><td align="right">0.56s</td><td align="right">419</td><td align="right">5.63729688 (+0.66%)</td><td align="right">0.11s (−81%)</td><td align="right">419</td></tr>
 <tr><td>politicalblogs (<code>-d</code>)</td><td align="right">6.73972141</td><td align="right">0.09s</td><td align="right">80</td><td align="right"><b>6.73957529</b> (−0.002%)</td><td align="right">0.06s</td><td align="right">81</td></tr>
-<tr><td>science2001 (<code>-d</code>)</td><td align="right">7.95003960</td><td align="right">3.94s</td><td align="right">496</td><td align="right"><b>7.94997883</b> (−0.001%)</td><td align="right">2.44s (−38%)</td><td align="right">506</td></tr>
-<tr><td>web-NotreDame (<code>-d</code>)</td><td align="right">6.74298853</td><td align="right">42.8s</td><td align="right">11809</td><td align="right">6.75421666 (+0.17%)</td><td align="right">18.5s (−57%)</td><td align="right">11991</td></tr>
+<tr><td>science2001 (<code>-d</code>)</td><td align="right">7.95003960</td><td align="right">3.83s</td><td align="right">496</td><td align="right"><b>7.94997883</b> (−0.001%)</td><td align="right">2.35s (−39%)</td><td align="right">506</td></tr>
+<tr><td>web-NotreDame (<code>-d</code>)</td><td align="right">6.74298853</td><td align="right">41.6s</td><td align="right">11809</td><td align="right">6.75421666 (+0.17%)</td><td align="right">17.3s (−58%)</td><td align="right">11991</td></tr>
 <tr><td>lazega (meta)</td><td align="right">6.01786027</td><td align="right">0.02s</td><td align="right">7</td><td align="right"><b>6.01786027</b> (=)</td><td align="right">0.01s</td><td align="right">7</td></tr>
 <tr><td>multilayer (ex.)</td><td align="right">2.01140524</td><td align="right">0.01s</td><td align="right">2</td><td align="right"><b>2.01140524</b> (=)</td><td align="right">0.01s</td><td align="right">2</td></tr>
-<tr><td>malaria</td><td align="right">7.50595639</td><td align="right">6.47s</td><td align="right">142</td><td align="right"><b>7.40044538</b> (−1.41%)</td><td align="right">2.78s (−57%)</td><td align="right">168</td></tr>
-<tr><td>air30k (states)</td><td align="right">5.39331278</td><td align="right">4.37s</td><td align="right">332</td><td align="right"><b>5.39305505</b> (−0.005%)</td><td align="right">3.45s (−21%)</td><td align="right">334</td></tr>
-<tr><td>air30k (reg.)</td><td align="right">5.57921689</td><td align="right">5.53s</td><td align="right">301</td><td align="right"><b>5.57557704</b> (−0.07%)</td><td align="right">3.63s (−34%)</td><td align="right">304</td></tr>
-<tr><td>science2001 (pref-mods)</td><td align="right">8.13096953</td><td align="right">5.84s</td><td align="right">25</td><td align="right">8.23558553 (+1.29%)</td><td align="right">3.06s (−48%)</td><td align="right">25</td></tr>
+<tr><td>malaria</td><td align="right">7.50595639</td><td align="right">6.29s</td><td align="right">142</td><td align="right"><b>7.40044538</b> (−1.41%)</td><td align="right">2.71s (−57%)</td><td align="right">168</td></tr>
+<tr><td>air30k (states)</td><td align="right">5.39331278</td><td align="right">4.35s</td><td align="right">332</td><td align="right"><b>5.39305505</b> (−0.005%)</td><td align="right">3.40s (−22%)</td><td align="right">334</td></tr>
+<tr><td>air30k (reg.)</td><td align="right">5.57921689</td><td align="right">5.50s</td><td align="right">301</td><td align="right"><b>5.57557704</b> (−0.07%)</td><td align="right">3.63s (−34%)</td><td align="right">304</td></tr>
+<tr><td>science2001 (pref-mods)</td><td align="right">8.13096953</td><td align="right">5.74s</td><td align="right">25</td><td align="right">8.23558553 (+1.29%)</td><td align="right">3.04s (−47%)</td><td align="right">25</td></tr>
 </tbody>
 </table>
 
@@ -253,33 +253,27 @@ placeholder that reads through to it.
 core in**, where this PR's single-owner refactor now has to coexist with partial seeding
 (F25) and the hierarchical split operator (F27), neither of which existed when it was written.
 
-**Which binary each column comes from.** The headline tables above are measured on the **base branch's**
-binary. That is not a shortcut for the OO columns and a re-run for the columnar ones — it is the whole
-table, and it is legitimate because this PR is columnar-only. The OO control below is the evidence:
-across five OO configs the two binaries agree to **+0.0% median CPU (−0.8…+0.4%)** and **+0.5% median
-peak RSS (−0.4…+1.7%)**, i.e. the measurement floor. The columnar columns would shift by the ~1% below
-if re-measured on this PR's binary, which is smaller than the session-to-session spread of the table
-itself, so re-baselining them would add noise rather than information.
-
-Peak RSS and CPU, dedicated interleaved A/B against the base branch, min-of-3, idle machine,
-`-N10`, excluding the 8.5 MB process floor. Only the six networks whose search allocates meaningfully
-above that floor carry signal; the toys and politicalblogs sit on it and are omitted rather than
-reported as large percentages of nothing:
+Peak RSS and CPU against the base branch, interleaved in that same session, min-of-3, excluding the
+8.5 MB process floor. Only the six networks whose search allocates meaningfully above that floor carry
+signal; the toys and politicalblogs sit on it and are omitted rather than reported as large
+percentages of nothing:
 
 | variant | networks | median Δ peak RSS | range | median Δ CPU | range |
 |---|--:|--:|--:|--:|--:|
-| `-C` | 6 | **−37.0%** | −44.5% .. −27.1% | −1.1% | −2.1% .. −0.5% |
-| `-C -F` | 6 | **−37.8%** | −44.6% .. −22.5% | −0.9% | −1.7% .. −0.6% |
-| `-2 -C` | 6 | **−26.8%** | −39.2% .. −14.4% | −1.1% | −1.7% .. +0.3% |
+| `-C` | 6 | **−36.6%** | −44.9% .. −27.6% | −1.6% | −2.5% .. −0.7% |
+| `-C -F` | 6 | **−37.6%** | −46.1% .. −22.7% | −1.4% | −2.2% .. +0.9% |
+| `-2 -C` | 6 | **−25.5%** | −38.8% .. −16.3% | −1.1% | −1.8% .. +0.3% |
 | OO (control, untouched by this PR) | 5 | +0.5% | −0.4% .. +1.7% | +0.0% | −0.8% .. +0.4% |
 
-Per network, `-C` peak RSS above floor: science2001 −43.9%, pref-mods −44.5%, malaria −42.8%,
-air30k −31.1%, regularized −30.5%, web-NotreDame −27.1% (639 MB → 468 MB).
+Per network, `-C` peak RSS above floor: science2001 −43.1%, pref-mods −44.9%, malaria −41.3%,
+air30k −31.9%, regularized −27.6%, web-NotreDame −28.0% (639 MB → 460 MB). The OO row is the control
+that licenses reading the tables above as this PR's: it does not touch that path, and the two binaries
+agree there to the measurement floor.
 
 **On the CPU number, a correction worth recording.** The first cut of this PR reported **−9.9% CPU on
 web-NotreDame `-C`**, and the master sync did not change it. Rebuilt and measured in one session, this
 PR against **its own original base `9aa7fea9`** gives **−3.6%**, and against the synced core **−3.6%**
-as well; a later multi-network batch put web-NotreDame at −2.1%. So the effect is a consistent but
+as well; later multi-network batches put web-NotreDame at −2.1% and −2.4%. So the effect is a consistent but
 small **1–3.6% depending on session**, identical on both bases, and the original figure was simply
 over-stated. Two explanations were drafted for the apparent shrinkage — that the memcpys became "a
 smaller share of a run that does more work", and that F27's snapshot avoidance had pre-claimed part of
