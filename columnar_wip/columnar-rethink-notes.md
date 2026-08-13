@@ -1618,3 +1618,36 @@ The discipline that would have caught all three, in order:
   `sample` found `initTree` in one run, after three hypotheses had already died.
 - **Kill hypotheses with builds, not arguments.** Gate the suspect off, rebuild, measure — cheap, and
   it produces a number instead of a story.
+
+**F28 addendum 2 — the master sync turned on tests that had never run (2026-08-13).**
+
+CI went red on `infomap_cpp_lifecycle_tests_columnar` after the merge, while a local
+`make test-native OPENMP=0` was green. The cause is master's
+[#947](https://github.com/mapequation/infomap/pull/947), *"compile the C++ test targets with the
+OpenMP flags they branch on"*: before it, `_OPENMP` was undefined in the test translation unit, so
+**every `#ifdef _OPENMP` test body compiled away to nothing.** The parallel-trials contracts live
+inside those guards, and they are tagged `[columnar-contract]`, so they had been silently no-ops for
+the columnar engine since the tag was added.
+
+The bug they immediately found is **real, pre-existing, and not caused by the sync** — verified by
+running the pre-merge and post-merge binaries side by side, which give identical numbers:
+
+| `--columnar --entropy-corrected`, ninetriangles, seed 7 | pre-merge | post-merge |
+|---|--:|--:|
+| `-N4 --parallel-trials`, per-trial | 4.918622 ×4 | 4.918622 ×4 |
+| `-N1` serial, seeds 7/8/9/10 | 3.635831 | 3.635831 |
+
+OO is self-consistent on the same fixture (3.742114 for both paths), so this is the columnar engine's
+parallel-trials path, not the harness. Note the serial columnar result *beats* OO — the search is
+fine; it is the parallel worker path that loses something. A second, smaller failure in the same
+suite is a sanity check tripping on round-off: `getIndexCodelength() >= 0.0` at `-5.9952e-15`.
+
+Two lessons, and the first is the expensive one:
+
+1. **A green test run proves nothing about code paths the build compiled out.** `OPENMP=0` is the
+   *benchmark* configuration; using it as the *test* configuration silently skipped every parallel
+   contract. Run both, and treat "this suite has `#ifdef` guards" as a reason to check what the build
+   actually enabled.
+2. **A test that has never failed is not evidence it has ever run.** These tests were tagged for the
+   columnar engine, appeared in the ctest list, and reported as passing — three signals that all
+   looked like coverage and were not.
