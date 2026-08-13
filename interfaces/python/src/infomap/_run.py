@@ -10,9 +10,9 @@ Dispatch by input type:
   ``Network`` owns its ``Core``; we render the options, drive the engine, and
   stamp a ``Result`` bound to the ``Network``).
 - ``networkx.Graph`` / ``igraph.Graph`` / SciPy sparse matrix / a ``(2, E)``
-  edge index (ndarray or tensor) / a ``str``/``Path`` network file / an iterable
-  of ``(u, v[, w])`` links -> build an :class:`infomap.Infomap`, load via the
-  matching adapter, then ``im.run()``.
+  edge index (ndarray or tensor) / a ``str``/``os.PathLike`` network file / an
+  iterable of ``(u, v[, w])`` links -> build an :class:`infomap.Infomap`, load
+  via the matching adapter, then ``im.run()``.
 
 The options are passed as the keyword ``options`` (an :class:`Options`
 instance or mapping) and/or as keyword ``**overrides``; overrides win.
@@ -20,10 +20,12 @@ instance or mapping) and/or as keyword ``**overrides``; overrides win.
 
 from __future__ import annotations
 
+import os
 import warnings
 from collections.abc import Iterable, Mapping
-from pathlib import Path
 from typing import TYPE_CHECKING, Any
+
+from ._options import _UNSET as _OPTIONS_UNSET
 
 if TYPE_CHECKING:
     from ._options import Options
@@ -43,10 +45,7 @@ def _resolve_options(options: Any, overrides: dict) -> dict:
         # returns a kwargs dict by contract).
         to_kwargs = getattr(options, "to_kwargs", None)
         if not callable(to_kwargs):
-            raise TypeError(
-                "options must be an Options instance, a mapping, "
-                "or None"
-            )
+            raise TypeError("options must be an Options instance, a mapping, or None")
         kwargs: Any = to_kwargs()
         resolved = kwargs
     resolved.update(overrides)
@@ -163,7 +162,8 @@ def _warn_inert_output_options(
     # that was fixed for hide_bipartite_nodes, so drop it from the check there.
     import logging
 
-    from ._logging import is_routed, logger as _engine_logger
+    from ._logging import is_routed
+    from ._logging import logger as _engine_logger
 
     removable = ["verbosity_level", "print_config_fingerprint"]
     if engine_emits or (is_routed() and _engine_logger.isEnabledFor(logging.DEBUG)):
@@ -176,8 +176,7 @@ def _warn_inert_output_options(
     if inert_removed:
         detail = " ".join(f"{name}: {repl}" for name, repl in inert_removed)
         warnings.warn(
-            "these options have no effect on the Python library surface -- "
-            + detail,
+            "these options have no effect on the Python library surface -- " + detail,
             UserWarning,
             stacklevel=3,
         )
@@ -203,7 +202,7 @@ def _is_igraph_graph(obj: Any) -> bool:
 
 def _is_scipy_sparse(obj: Any) -> bool:
     try:
-        import scipy.sparse as sparse
+        from scipy import sparse
     except ImportError:
         return False
     return bool(sparse.issparse(obj))
@@ -359,9 +358,7 @@ def _reject_iterable_adapter_kwargs(user_keys: set) -> None:
     ``Infomap.__init__() got an unexpected keyword argument`` that leaks an
     internal the functional-API user never called.
     """
-    adapter_union = set().union(
-        *(kwargs for _, kwargs in _ADAPTER_KWARGS.values())
-    )
+    adapter_union = set().union(*(kwargs for _, kwargs in _ADAPTER_KWARGS.values()))
     misdirected = sorted((adapter_union - _COMMON_TIER_KEYS) & user_keys)
     if not misdirected:
         return
@@ -401,20 +398,11 @@ def _partition_to_internal_ids(initial_partition: Any, id_to_label: Any) -> Any:
     }
 
 
-# Sentinel for the common-tier keyword parameters below: it lets run() tell "the
-# caller passed this option" from "left at its default", so a supplied value
-# overrides the ``options`` carrier while an untouched one defers to it. Typed
-# ``Any`` so the honest per-parameter annotations (``seed: int`` ...) still
-# type-check against this shared default; the ``<unset>`` repr keeps
-# ``inspect.signature(infomap.run)`` readable for IDE and tooling introspection.
-class _Unset:
-    __slots__ = ()
-
-    def __repr__(self) -> str:
-        return "<unset>"
-
-
-_UNSET: Any = _Unset()
+# The sentinel for the common-tier keyword parameters below lives in the
+# generated options module, because the Infomap()/run() signatures declare the
+# same five with it: one object means ``value is not _UNSET`` holds on every
+# surface. Re-exported here because network.py has always imported it from _run.
+_UNSET = _OPTIONS_UNSET
 
 
 def run(
@@ -429,7 +417,7 @@ def run(
     args: str | None = None,
     initial_partition: dict[Any, Any] | None = None,
     **overrides: Any,
-) -> "Result":
+) -> Result:
     """Run Infomap on ``input`` and return a :class:`Result`.
 
     This is the canonical entry point. It accepts any supported network
@@ -441,7 +429,7 @@ def run(
     Parameters
     ----------
     input : Network, Infomap, networkx.Graph, igraph.Graph, scipy sparse matrix, \
-            (2, E) array/tensor, str or Path, or iterable of links
+            (2, E) array/tensor, str or os.PathLike, or iterable of links
         The network to partition. See the module docstring for the dispatch
         table.
     options : Options, mapping, or None, optional
@@ -574,10 +562,10 @@ def run(
         )
 
     # 2. A network file path.
-    if isinstance(input, (str, Path)):
+    if isinstance(input, (str, os.PathLike)):
         _reject_adapter_kwargs("file", user_keys)
         im = Infomap(args=args, **resolved)
-        im.read_file(str(input))
+        im.read_file(input)
         return im.run(initial_partition=initial_partition)
 
     # 3. A networkx graph.

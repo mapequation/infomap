@@ -20,7 +20,8 @@ per-run options are applied after the construction options.
 
 from __future__ import annotations
 
-from importlib.resources import as_file as _as_file, files as _files
+from importlib.resources import as_file as _as_file
+from importlib.resources import files as _files
 
 from .._core import Core as _Core
 from ..network import Network as _Network  # public return type of every loader below
@@ -44,7 +45,7 @@ def _load(filename: str, *, extra_args: str = "") -> _Network:
         args = f"{args} {extra_args}"
     net = _Network(core=_Core(args))
     with _as_file(_files(__name__) / "data" / filename) as path:
-        net.read_file(str(path))
+        net.read_file(path)
     return net
 
 

@@ -6,8 +6,8 @@ Tree nodes and iterators
 Walking a partition yields nodes via these iterator types. :meth:`Result.tree`
 and :meth:`Result.leaf_modules` return them (the legacy :meth:`Infomap.tree` and
 friends return the same objects). Each step yields an iterator positioned at the
-current node, proxying the attributes of the underlying :class:`InfoNode`
-(available via ``current()``).
+current node. The iterator proxies the attributes of the underlying
+:class:`InfoNode` (available via ``current()``).
 
 .. autoclass:: InfoNode
    :members:

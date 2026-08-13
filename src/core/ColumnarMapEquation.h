@@ -241,7 +241,12 @@ public:
   // of the resulting leaves -> top-modules partition. maxAggPasses > 0 stops the
   // aggregation early (finer "building block" bottom); doFineTune toggles the
   // level-0 fine-tune-to-convergence.
-  double optimizeTwoLevel(unsigned int maxAggPasses = 0, bool doFineTune = true);
+  // pass1Seed (optional): start pass 1 from this unit->module assignment via
+  // seedAssignment (singletons, then deterministic placement into the given
+  // module) instead of from singletons, so the greedy move loop improves an
+  // existing partition rather than re-deriving one. Used by the hierarchical
+  // refinements' partial seeding (see buildPartialSeed).
+  double optimizeTwoLevel(unsigned int maxAggPasses = 0, bool doFineTune = true, const std::vector<int>* pass1Seed = nullptr);
 
   // Two-level engine entry (the `--columnar --two-level` search): run the full
   // two-level optimize and materialize it as a two-level stack (leaves + one
@@ -270,6 +275,16 @@ public:
   // every trial. Every step is gated on the true stack codelength, so the
   // result is never worse than the seed. Returns the repaired codelength.
   double deepRepairTwoLevelStack();
+
+  // Once-per-run repair of a DEEP (multi-level) winner, the hierarchical
+  // analog of deepRepairTwoLevelStack: the hierarchical split operator
+  // (splitLevelModules) interleaved with the module coarsening, forced on
+  // regardless of COL_HSPLIT and shaped by COL_HSPLIT_WINNER. Returns the
+  // repaired hierarchical codelength (never worse than the seed).
+  double deepRepairHierarchicalStack();
+
+  // Whether the once-per-run hierarchical repair is enabled (COL_HSPLIT_WINNER).
+  static bool hierarchicalWinnerRepairEnabled();
 
   // Whether any attached correction can participate in module-level moves
   // (Mem/Meta) — the gate for the aggregation trajectory repair and the
@@ -428,7 +443,36 @@ private:
   // Shared by refineBottomWithinParents (fineTune = true) and splitTopModules
   // (fineTune = false: piece proposals need community granularity, not final
   // polish — the gated recombination and interleaved leaf re-tune do that).
-  int subClusterLeaves(const std::vector<int>& S, double parentExit, std::vector<int>& loc, std::vector<int>& localAssign, bool fineTune = true);
+  // leafModule (optional): the leaf -> current module map. When given and
+  // partial seeding is on, the sub-optimize's pass 1 starts from a partial seed
+  // of that partition instead of from singletons (see buildPartialSeed).
+  int subClusterLeaves(const std::vector<int>& S, double parentExit, std::vector<int>& loc, std::vector<int>& localAssign, bool fineTune = true, const std::vector<int>* leafModule = nullptr);
+
+  // Generalized in-context two-level of one parent's children S at an arbitrary
+  // stack level (subClusterLeaves is the level-0 case). `base` is the level the
+  // children live on; `interior` applies the enter-flow transform (an interior
+  // unit's codeword usage is its enter flow, exactly as the up-build's
+  // superNet.flow = cur.enter and refineLayerWithinGrandparent's k > 0 branch);
+  // `sliceCorrections` slices the leaf-shaping corrections onto S (only
+  // meaningful when the children ARE leaves). `loc` is an all -1 scratch vector
+  // over base units, restored before returning. `unitModule` is the partial-seed
+  // source (see subClusterLeaves' leafModule); interior callers pass nullptr,
+  // which is the from-singletons default.
+  int subClusterUnits(const Level& base, bool interior, bool sliceCorrections, const std::vector<int>& S, double parentExit, std::vector<int>& loc, std::vector<int>& localAssign, bool fineTune, const std::vector<int>* unitModule);
+
+  // Partial seed for one sub-optimize over the units S of a single parent /
+  // grandparent (partial seeding). The sub-optimize's default is to
+  // re-derive S from singletons: full discovery, but it also discards the parts
+  // of the partition that were never in doubt. Seeding it fully is the opposite
+  // failure — the greedy loop reproduces the input and the gate reverts. This
+  // builds the middle: LOCK the units their current module (assign[S[j]]) holds
+  // most tightly, RELEASE the loosest fraction as fresh singletons the move
+  // loop must re-place. Locked modules are compacted to 0..K-1 and each
+  // released unit gets a fresh id K, K+1, ... (compacting over the locked units
+  // only is required — compacting all modules first overflows the sub-network's
+  // module id space at high release fractions). `layer` only keys the random
+  // control. Returns false when partial seeding does not apply.
+  bool buildPartialSeed(const Level& sub, const std::vector<int>& S, const std::vector<int>& assign, int layer, std::vector<int>& seed) const;
 
   // Split operator (#889), the subdivision half of a coarse-tune: subdivide
   // the top modules of a two-level stack into pieces — the retained pass-1
@@ -445,6 +489,21 @@ private:
   // rejection. Returns 0 = no improvement, 1 = improved via block pieces,
   // 2 = improved via singles pieces (updates L on improvement).
   int splitTopModules(double& L, bool allowSingletons);
+
+  // Hierarchical split operator (experimental, env COL_HSPLIT): the analog of
+  // splitTopModules for a stacked hierarchy. Splits the level-(k+1) modules by
+  // partitioning their level-k children into pieces and re-sorting the pieces
+  // with a seeded move loop over the piece-aggregated level-k network (the
+  // enter-flow transform for interior levels), gated on the true stack
+  // codelength. Because the move loop may place a piece in any module —
+  // including an empty one — this is group-split AND cross-parent relocation;
+  // when a grandparent layer exists the new modules inherit the grandparent of
+  // the (flow-)dominant module their pieces came from, and every level above
+  // k+1 is re-aggregated before the gate. Piece sources, cheapest first: the
+  // pass-1 leaf blocks and the last derivation intersected with the current
+  // modules, then a fresh from-singletons sub-clustering of each module's
+  // children. Returns 0 = no improvement, else the source index (updates L).
+  int splitLevelModules(int k, double& L, bool allowSingletons);
 
   // Generalized within-grandparent refine (M3): re-partition layer-k units into
   // new layer-(k+1) modules, each constrained to stay within its layer-(k+2)
@@ -512,10 +571,17 @@ private:
   // above marks layer 0 dirty again, so the leaf re-derivation stays reachable
   // once the structure it nests in actually moves.
   bool m_bottomConverged = false;
+  // True inside the once-per-run hierarchical repair: coarsenModules then reads
+  // COL_HSPLIT_WINNER instead of COL_HSPLIT for the split interleave.
+  bool m_forceHSplit = false;
   bool m_deferTerms = false; // deterministic placement: moveUnit skips running-term (plogp) maintenance; rebuildRunningTerms() restores them
   bool m_leafMoveLoop = false; // true while moveLoop units are leaves (corrections active)
   bool m_moduleCorrActive = false; // true while module-move-capable corrections participate in a module-level move loop
   bool m_seededPhase = false; // true when the move loop starts from an existing partition (fine-tune/refine)
+  // Which interior-refine sweep is running (refineHierarchy). Sweep 0 re-derives
+  // every layer from singletons; partial seeding can be restricted to the later
+  // sweeps, where the layer already holds a re-derived partition worth locking.
+  int m_refineSweep = 0;
   double m_lastCorrection = 0.0; // correction total of the last move loop's active corrections (0 if none)
   std::vector<std::unique_ptr<ColumnarCorrection>> m_corrections; // objective add-ons
   std::function<void()> m_interruptCallback;
@@ -600,6 +666,12 @@ private:
   // set -> (K, per-leaf local assignment). A module's sub-clustering depends
   // only on its own leaf set, so results survive across interleave rounds.
   std::map<std::vector<int>, std::pair<int, std::vector<int>>> m_subClusterCache;
+  // splitLevelModules (COL_HSPLIT) per-stack-level state: the last piece
+  // derivation at level k (unit -> piece, reusable as a cheap source while the
+  // level's unit count is unchanged) and whether it improved (gates the fresh
+  // derivation, as m_freshSinglesProductive does at leaf level).
+  std::vector<std::vector<int>> m_lastLevelPieces;
+  std::vector<char> m_levelFreshProductive;
   double m_leafNodeFlow_log_nodeFlow = 0.0; // over leaves, constant
   unsigned int m_numTopModules = 0;
 
@@ -613,7 +685,26 @@ private:
   // GLOBAL total (constant across sub-networks), so sub-optimizers inherit it via
   // buildFromLevel rather than recomputing from their local units.
   bool m_recordedTeleport = false;
-  double m_minRelTuneImprovement = 5e-3; // interior-refine early-stop knee (0 = off, grind to convergence)
+  // Interior-refine early-stop knee (0 = off, grind to convergence): stop once a
+  // whole up/down sweep's gain drops below this fraction of the post-build
+  // codelength.
+  //
+  // 5e-3 is the DEFAULT; users who want the deeper refinement can ask for it
+  // with --tune-iteration-relative-threshold (1e-3 and 0 both work, and the
+  // columnar path honors an explicit value even when it equals the OO default).
+  //
+  // F23 lowered this to 1e-3 by default and F26 restored it, on a corrected
+  // measurement: the deeper knee buys web-NotreDame -0.097% and powergrid
+  // -0.054% but costs +20% and +23% CPU respectively, not the +8.7% F23
+  // reported (that A/B ran under load, which inflated the 5e-3 arm's baseline
+  // and compressed the delta -- on an idle machine it is 20.53s -> 24.69s).
+  // The deeper knee IS on the codelength/CPU Pareto frontier -- at a matched
+  // ~24.3s budget the old knee reaches only 5.5727 against 5.5674, and -N14
+  // does not move it at all -- but a fifth more CPU for a tenth of a percent is
+  // not the right DEFAULT, so it is a dial instead. Only bites on stacks with
+  // more than one interior layer (refineSweeps is 1 otherwise), so
+  // science2001/air30k/malaria and all of -F are unaffected either way.
+  double m_minRelTuneImprovement = 5e-3;
   double m_totalTeleFlow = 0.0; // GLOBAL sum of leaf teleport flow (root teleport flow)
   // A module's recorded-teleport enter/exit from its aggregated teleport flow tf
   // and weight tw (see InfomapBase::aggregateFlowValuesFromLeafToRoot): a walker

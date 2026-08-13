@@ -302,7 +302,5 @@ def repr_text(im):
         "top_modules",
         "codelength",
     )
-    details = [
-        f"{field}={summary[field]!r}" for field in fields if field in summary
-    ]
+    details = [f"{field}={summary[field]!r}" for field in fields if field in summary]
     return f"Infomap({', '.join(details)})"

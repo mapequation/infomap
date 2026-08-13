@@ -19,7 +19,6 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-
 from infomap import (
     Infomap,
     InfomapError,
@@ -27,11 +26,12 @@ from infomap import (
     NetworkParseError,
     NotRunError,
     StaleResultError,
-    errors as errors_module,
     run,
 )
+from infomap import (
+    errors as errors_module,
+)
 from infomap.result import _StaleResultError
-
 
 pytestmark = pytest.mark.fast
 
@@ -169,6 +169,33 @@ def test_stale_result_raises_stale_result_error(make_infomap):
 
     with pytest.raises(StaleResultError, match="stale Result"):
         stale.modules()
+
+
+def test_stale_result_message_names_the_engine_that_was_re_run():
+    """The message has to name the surface the reader actually re-ran.
+
+    A Result can be bound to a Network as well as to an Infomap, and naming the
+    wrong one sends the reader looking for a re-run that never happened.
+    """
+    network = Network()
+    network.add_links([(0, 1), (1, 2), (2, 0)])
+    stale = run(network, silent=True, seed=1)
+    # This is also the call the message used to recommend as staleness-free: it
+    # re-runs the same network in place, so it reproduces the error it prescribes.
+    run(network, silent=True, seed=2)
+
+    with pytest.raises(StaleResultError, match="this Network was re-run"):
+        stale.modules()
+    with pytest.raises(StaleResultError) as excinfo:
+        stale.modules()
+    assert "infomap.run()" not in str(excinfo.value)
+
+    im = Infomap(silent=True, seed=1)
+    im.add_links([(0, 1), (1, 2), (2, 0)])
+    stale_engine_result = im.run()
+    im.run()
+    with pytest.raises(StaleResultError, match="this Infomap was re-run"):
+        stale_engine_result.modules()
 
 
 def test_export_before_run_raises_not_run_error(make_infomap):

@@ -152,9 +152,21 @@ namespace input {
         return true;
       }
       bool binary(Json::binary_t&) { return true; }
-      bool start_object(std::size_t) { ++objectDepth; return true; }
-      bool key(std::string& val) { currentKey = val; return true; }
-      bool end_object() { --objectDepth; return true; }
+      bool start_object(std::size_t)
+      {
+        ++objectDepth;
+        return true;
+      }
+      bool key(std::string& val)
+      {
+        currentKey = val;
+        return true;
+      }
+      bool end_object()
+      {
+        --objectDepth;
+        return true;
+      }
       bool start_array(std::size_t)
       {
         if (objectDepth == 1 && arrayDepth == 0) {
@@ -166,7 +178,11 @@ namespace input {
         ++arrayDepth;
         return true;
       }
-      bool end_array() { --arrayDepth; return true; }
+      bool end_array()
+      {
+        --arrayDepth;
+        return true;
+      }
       bool parse_error(std::size_t position, const std::string& last_token, const Json::exception& ex)
       {
         throw std::runtime_error(fmt::format(FMT_STRING("JSON parse error at byte {} (near '{}'): {}"), position, last_token, ex.what()));
@@ -266,12 +282,24 @@ namespace input {
               throw std::runtime_error(fmt::format(FMT_STRING("Invalid node id '{:g}' (must be a non-negative integer <= {})"), number.value, std::numeric_limits<unsigned int>::max()));
             node.hasId = true;
           } else if (currentKey == "weight") {
+            // Same rule the text parser applies to a *Vertices weight, and the
+            // one the normative schema states (weight.minimum: 0). Without it a
+            // negative weight reached addPhysicalNode verbatim -- unlike addLink,
+            // which is the documented funnel that rejects these -- and the run
+            // only failed later, in the flow guard, with a message about
+            // bipartite teleportation that has nothing to do with the cause.
+            if (!(number.value >= 0) || !std::isfinite(number.value))
+              throw std::runtime_error(fmt::format(FMT_STRING("Invalid node weight '{:g}' (must be a finite non-negative number)"), number.value));
             node.weight = number.value;
             node.hasWeight = true;
           } else if (currentKey == "meta") {
             unsigned int meta = 0;
-            if (!coerceUnsigned(number.value, meta) || !number.integral)
-              throw std::runtime_error(fmt::format(FMT_STRING("Invalid node meta '{:g}' (must be a non-negative integer)"), number.value));
+            // Bounded by int, not unsigned: the value is stored in a vector<int>, so
+            // anything above INT_MAX came back out negative -- the same wrap the text
+            // path had, and fixing one without the other would just move the
+            // disagreement between the two parsers.
+            if (!coerceUnsigned(number.value, meta) || !number.integral || meta > static_cast<unsigned int>(std::numeric_limits<int>::max()))
+              throw std::runtime_error(fmt::format(FMT_STRING("Invalid node meta '{:g}' (must be a non-negative integer no greater than {})"), number.value, std::numeric_limits<int>::max()));
             node.meta = static_cast<int>(meta);
             node.hasMeta = true;
           } else if (currentKey == "path" && inFieldArray()) {
@@ -290,6 +318,8 @@ namespace input {
               throw std::runtime_error(fmt::format(FMT_STRING("Invalid state physical node '{:g}' (must be a non-negative integer)"), number.value));
             state.hasNode = true;
           } else if (currentKey == "weight") {
+            if (!(number.value >= 0) || !std::isfinite(number.value))
+              throw std::runtime_error(fmt::format(FMT_STRING("Invalid state weight '{:g}' (must be a finite non-negative number)"), number.value));
             state.weight = number.value;
             state.hasWeight = true;
           } else if (currentKey == "path" && inFieldArray()) {

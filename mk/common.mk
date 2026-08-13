@@ -31,6 +31,8 @@ RSCRIPT ?= Rscript
 AIR ?= $(shell command -v air 2>/dev/null || command -v /opt/homebrew/bin/air 2>/dev/null || echo air)
 SPHINX_BUILD_BIN := $(shell command -v sphinx-build 2>/dev/null || true)
 SPHINX_BUILD ?= $(if $(SPHINX_BUILD_BIN),$(SPHINX_BUILD_BIN),$(PYTHON) -m sphinx)
+SPHINX_AUTOBUILD_BIN := $(shell command -v sphinx-autobuild 2>/dev/null || true)
+SPHINX_AUTOBUILD ?= $(if $(SPHINX_AUTOBUILD_BIN),$(SPHINX_AUTOBUILD_BIN),$(PYTHON) -m sphinx_autobuild)
 # Treat Sphinx warnings as errors so broken cross-references, missing labels, and
 # unresolved autodoc targets fail the build instead of shipping silently.
 # --keep-going reports every warning in one pass rather than stopping at the
@@ -76,7 +78,6 @@ endif
 
 HEADERS := $(shell find src -name "*.h")
 SOURCES := $(shell find src -name "*.cpp")
-SWIG_FILES := $(shell find interfaces/swig -name "*.i")
 MK_FILES := $(wildcard mk/*.mk)
 BINDING_OPTIONS_SCRIPT := scripts/generate_binding_options.py
 BUILD_CONFIG_SCRIPT := scripts/build_config.py
@@ -155,12 +156,16 @@ help:
 		"  test-python-unit      Run pytest for test/python." \
 		"  test-python-doctest   Run Python doctests and ruff checks for the installed package." \
 		"  test-python-examples  Run the Python example smoke tests." \
+		"  test-python-typecheck  Type-check the whole Python package with pyright." \
+		"  test-python-typecheck-core  Type-check the core Python surface (pre-push / quick-mode scope)." \
 		"  test-python-notebooks-smoke  Run PR-safe tutorial notebook smoke tests with nbmake." \
 		"  test-python-notebooks-full   Run all CI-maintained tutorial notebooks with nbmake." \
 		"  test-python-swig-freshness  Verify tracked SWIG outputs are up to date." \
 		"  test-r                Run R CMD check --as-cran on the staged infomap R package." \
 		"  test-r-examples       Run the R example smoke tests." \
 		"  test-r-swig-freshness Verify tracked R SWIG outputs are up to date." \
+		"  build-r-man           Regenerate the R man pages from the roxygen comments." \
+		"  test-r-man-freshness  Verify tracked R man pages are up to date." \
 		"  test-binding-options-freshness Verify tracked binding option APIs are current." \
 		"  test-js-metadata      Regenerate JS metadata in a temp dir and verify tracked files are current." \
 		"  test-js               Run JS lint/typecheck/unit/browser/package verification for the built npm package." \
@@ -178,11 +183,15 @@ help:
 		"  format-native-check   Verify C++ sources are clang-format clean." \
 		"  format-r              Rewrite R sources with Air." \
 		"  format-r-check        Verify R sources are Air-format clean." \
+		"  format-python         Rewrite Python sources with Ruff." \
+		"  format-js             Rewrite JS/TS sources with Biome." \
 		"  tidy-native           Run clang-tidy over C++ source files." \
+		"  print-parameter-policy  Render the parameter-policy surface matrix as Markdown." \
 		"  dev-cpp-check         Run the fast C++ developer feedback suite." \
 		"  dev-bootstrap         Install Python dev dependencies, run npm ci, and install git hooks." \
 		"  hooks                 Install the pre-commit git hook (lint/format on commit)." \
 		"  dev-python-install    Install the built Python package in editable mode." \
+		"  dev-r-install         Install the staged R package into the user library." \
 		"  dev-python-notebooks-install Install notebook execution dependencies." \
 		"  clean                 Remove native, Python, and JS build outputs." \
 		"  clean-native          Remove native build artifacts, libraries, and CMake build dirs." \
@@ -192,7 +201,10 @@ help:
 		"" \
 		"Docs / Release" \
 		"  build-docs            Build the Python docs site into docs/ after installing the local package." \
+		"  docs-serve            Live-reloading local docs preview (sphinx-autobuild; builds leniently)." \
+		"  check-docs-links      Verify external documentation links resolve (linkcheck; hits the network)." \
 		"  release-python-dist   Build local sdist and wheel artifacts from the repo root." \
+		"  release-r-dist        Build the R source tarball and platform binary into dist/R/." \
 		"  release-python-testpypi  Publish the built distributions to TestPyPI." \
 		"  release-python-pypi      Publish the built distributions to PyPI." \
 		"" \

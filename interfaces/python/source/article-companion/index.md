@@ -14,9 +14,9 @@ reading.
 
 The notebooks live in the Infomap repository under
 [`examples/notebooks/`](https://github.com/mapequation/infomap/tree/master/examples/notebooks)
-and are numbered to match the survey's sections. Some require additional
-research code or data-processing packages and are not executed as part of this
-documentation.
+and their numbers match the survey's sections. Some require additional
+research code or data-processing packages, so the documentation build does not
+execute them.
 
 ## Foundations
 
@@ -65,6 +65,6 @@ For now, the companion notebooks below are the best Python starting point.
 
 ## Citing this work
 
-If you use Infomap, cite the 2008 PNAS paper and the MapEquation software package;
-see {doc}`How to cite Infomap </citing>`. To cite the survey itself,
+If you use Infomap, cite the 2008 PNAS paper and the MapEquation software package.
+See {doc}`How to cite Infomap </citing>`. To cite the survey itself,
 use [doi:10.1145/3779648](https://doi.org/10.1145/3779648).

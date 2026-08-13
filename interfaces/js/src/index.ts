@@ -63,12 +63,17 @@ export interface Header {
   bipartiteStartId?: number;
 }
 
-export type Tree<NodeType = Required<Node>> = Header & {
+// Node fields stay optional, because the JSON output omits them: a higher-order
+// network's physical JSON carries no `modules` at all, and `stateId`/`layerId` are not
+// in it either. Wrapping these in `Required` typed them as always present, so consumer
+// code dereferenced undefined with no compile error (#903). Measured on 2.15.0: nodes
+// of a first-order network have modules, of states.net and multilayer.net they do not.
+export type Tree<NodeType = Node> = Header & {
   nodes: NodeType[];
   modules: Module[];
 };
 
-export type StateTree = Tree<Required<StateNode>>;
+export type StateTree = Tree<StateNode>;
 
 export interface Result {
   clu?: string;
@@ -160,19 +165,38 @@ class Infomap {
 
     const index = filename.lastIndexOf(".");
     const networkName = index > 0 ? filename.slice(0, index) : filename;
-    const outNameMatch = args.match(/--out-name\s(\S+)/);
-    const outName = outNameMatch?.[1] ? outNameMatch[1] : networkName;
+    // \s+ rather than \s: the C++ tokenizer accepts a run of whitespace, so
+    // "--out-name  mynet" is a valid command line. Matching a single space made the
+    // regex miss, the basename fall back to the network name, and every read of the
+    // engine's output land on a file that was never written (#903).
+    //
+    // The *last* occurrence wins, because that is what the engine does: "-N 1 -N 5"
+    // runs five trials. Reading the first one would have the engine write under one
+    // basename while the results are read back under another.
+    const outNameMatches = [...args.matchAll(/--out-name\s+(\S+)/g)];
+    const outNameFromArgs = outNameMatches[outNameMatches.length - 1]?.[1];
+    const outName = outNameFromArgs ? outNameFromArgs : networkName;
+    // Whether output files are expected at all, so the worker can tell "the engine
+    // wrote nothing" from "we looked in the wrong place".
+    const expectsOutputFiles = !/(?:^|\s)--no-file-output(?:\s|$)/.test(args);
 
     const worker = createInfomapWorker();
     const id = this.workerId++;
     this.workers[id] = worker;
 
     worker.postMessage({
-      arguments: args.split(" "),
+      // Split on runs of whitespace and drop the empties, the way the Node entry point
+      // does. Splitting on a single space passed argv entries a shell never would: the
+      // rendered form of an Arguments object starts with a space, so every object-args
+      // run sent an empty first argument, which only went unnoticed because the
+      // optional out_directory vector swallows stray positionals -- the same mechanism
+      // behind this issue's option-injection box.
+      arguments: args.split(/\s+/).filter(Boolean),
       filename,
       network,
       outName,
       files,
+      expectsOutputFiles,
     });
 
     return id;

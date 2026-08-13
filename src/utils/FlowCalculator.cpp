@@ -14,6 +14,7 @@
 #include "../utils/format.h"
 #include "../utils/infomath.h"
 #include "../core/StateNetwork.h"
+#include "../io/InfomapError.h"
 #include <cmath>
 #include <numeric>
 #include <limits>
@@ -33,11 +34,29 @@ namespace {
   }
 #endif
 
+  // Converged means the error is within tolerance, not merely that the loop stopped
+  // before the iteration limit. The two differ whenever the last allowed iteration is
+  // the one that reaches tolerance: that was reported as a failure, with a warning to
+  // match, while the error sat at 0. Shared by every power iteration in this file,
+  // because the predicate existed in three copies and fixing one left the regularized
+  // model exporting the old answer (#899).
+  bool errorWithinFlowTolerance(const Config& config, double err) noexcept
+  {
+    return err <= config.flowTolerance;
+  }
+
 } // namespace
 
 template <typename T>
 inline void normalize(std::vector<T>& v, const T sum) noexcept
 {
+  // A zero or non-finite total has no meaningful normalization. Leaving the
+  // vector untouched keeps the degenerate state recognizable (an all-zero
+  // distribution) instead of turning every entry into NaN, and
+  // InfomapBase::RunSession::checkFlowPostCondition -- run after initNetwork on
+  // the run path -- reports it with context.
+  if (sum == T {} || !std::isfinite(sum))
+    return;
   for (auto& numerator : v) {
     numerator /= sum;
   }
@@ -161,6 +180,19 @@ FlowCalculator::FlowCalculator(StateNetwork& network, const Config& config)
     }
   });
 
+  // The directed model normally finds the dangling nodes as a prefix of nodeFlow,
+  // having ordered them first above. Bipartite input keeps the network's node order,
+  // since the feature side is identified by an index range, so nonDanglingStartIndex
+  // stays 0 and their positions have to be collected here instead -- out-degree is
+  // only known now that the links have been counted.
+  if (network.isBipartite() && config.flowModel == FlowModel::directed) {
+    for (unsigned int i = 0; i < numNodes; ++i) {
+      if (nodeOutDegree[i] == 0) {
+        danglingIndices.push_back(i);
+      }
+    }
+  }
+
   bool normalizeNodeFlow = false;
 
   switch (config.flowModel) {
@@ -181,6 +213,23 @@ FlowCalculator::FlowCalculator(StateNetwork& network, const Config& config)
     break;
   case FlowModel::directed:
     if (network.isBipartite() && config.bipartiteTeleportation) {
+      // The two-step walk needs a step back: the option's second half sends flow from
+      // the feature side to the primary side along explicit feature -> primary links.
+      // A canonical bipartite file has none -- every link runs primary -> feature -- so
+      // that half is a no-op and what comes out is not this flow model. Depending on the
+      // teleportation flags it was zero flow, NaN, or, with --to-nodes, the uniform
+      // teleport distribution with a plausible codelength and no warning: flow that
+      // ignores the network entirely (#899). Refused with the precondition named.
+      if (bipartiteLinkStartIndex == flowLinks.size()) {
+        throw InfomapError(ExitCode::InputError,
+                           fmt::format(FMT_STRING("--bipartite-teleportation needs links from the feature side back to the "
+                                                  "primary side, and all {} links in this network run from the primary side "
+                                                  "to the feature side. Without them the second step of the two-step walk "
+                                                  "has nothing to follow and the resulting flow does not describe the "
+                                                  "network. Drop --bipartite-teleportation to use the two-step projection "
+                                                  "instead, which handles this input."),
+                                       flowLinks.size()));
+      }
       calcDirectedBipartiteFlow(network, config);
     } else {
       if (config.regularized) {
@@ -353,13 +402,31 @@ IterationResult powerIterate(const Config& config, double alpha, Iteration&& ite
     ++iterations;
   } while (iterations < config.maxFlowIterations && (err > config.flowTolerance || iterations < config.minFlowIterations));
 
-  const bool converged = iterations < config.maxFlowIterations;
+  const bool converged = errorWithinFlowTolerance(config, err);
   if (!converged) {
     Log() << "\n";
     Console::warn(0, "PageRank calculation did not converge after {} iterations with error {:g}.", iterations, err);
   }
 
   return { alpha, beta, iterations, err, converged };
+}
+
+double FlowCalculator::accumulateDanglingRank() const noexcept
+{
+  // Two ways of locating the dangling nodes, one fast and one general. The directed
+  // model orders them first, making their flow a prefix; bipartite input cannot use
+  // that ordering, so their positions were collected explicitly. An empty list means
+  // the prefix form applies -- including the case of no dangling nodes at all, where
+  // both forms sum to zero.
+  if (danglingIndices.empty()) {
+    return std::accumulate(cbegin(nodeFlow), cbegin(nodeFlow) + nonDanglingStartIndex, 0.0);
+  }
+
+  double sum = 0.0;
+  for (const auto i : danglingIndices) {
+    sum += nodeFlow[i];
+  }
+  return sum;
 }
 
 void FlowCalculator::calcDirectedFlow(const StateNetwork& network, const Config& config) noexcept
@@ -400,7 +467,7 @@ void FlowCalculator::calcDirectedFlow(const StateNetwork& network, const Config&
 
   // Calculate PageRank
   const auto iteration = [&](const auto iter, const double alpha, const double beta) {
-    danglingRank = std::accumulate(cbegin(nodeFlow), cbegin(nodeFlow) + nonDanglingStartIndex, 0.0);
+    danglingRank = accumulateDanglingRank();
 
     // Flow from teleportation
     const auto teleportationFlow = alpha + beta * danglingRank;
@@ -544,7 +611,7 @@ void FlowCalculator::calcDirectedRelaxToSelfFlow(const StateNetwork& network, co
   };
 
   const auto iteration = [&](const auto iter, const double alpha, const double beta) {
-    danglingRank = std::accumulate(cbegin(nodeFlow), cbegin(nodeFlow) + nonDanglingStartIndex, 0.0);
+    danglingRank = accumulateDanglingRank();
     const auto teleportationFlow = alpha + beta * danglingRank;
     for (unsigned int i = 0; i < numNodes; ++i) {
       nodeFlowTmp[i] = teleportationFlow * nodeTeleportWeights[i];
@@ -721,8 +788,9 @@ void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, co
     ++iterations;
   } while (iterations < config.maxFlowIterations && (err > config.flowTolerance || iterations < config.minFlowIterations));
 
-  recordPageRank(iterations, err, iterations < config.maxFlowIterations);
-  if (iterations >= config.maxFlowIterations) {
+  const bool converged = errorWithinFlowTolerance(config, err);
+  recordPageRank(iterations, err, converged);
+  if (!converged) {
     Log() << "\n";
     Console::warn(0, "PageRank calculation did not converge after {} iterations with error {:g}.", iterations, err);
   }
@@ -981,7 +1049,11 @@ void FlowCalculator::calcDirectedRegularizedMultilayerFlow(const StateNetwork& n
     ++iterations;
   } while (iterations < config.maxFlowIterations && (err > config.flowTolerance || iterations < config.minFlowIterations));
 
-  if (iterations == config.maxFlowIterations && err > config.flowTolerance) {
+  // Recorded here too, so the exported outcome means the same thing for every flow
+  // model: this loop warned but reported nothing, leaving the run report without a flow
+  // object at all for regularized multilayer input.
+  recordPageRank(iterations, err, errorWithinFlowTolerance(config, err));
+  if (!errorWithinFlowTolerance(config, err)) {
     Console::warn(0, "PageRank calculation stopped after the maximum of {} iterations with diff {:g}.", iterations, err);
   }
 
@@ -1165,22 +1237,12 @@ void FlowCalculator::calcDirectedBipartiteFlow(const StateNetwork& network, cons
     }
   }
 
-  std::vector<unsigned int> danglingIndices;
-  for (size_t i = 0; i < numNodes; ++i) {
-    if (nodeOutDegree[i] == 0) {
-      danglingIndices.push_back(i);
-    }
-  }
-
   std::vector<double> nodeFlowTmp(numNodes, 0.0);
   double danglingRank;
 
   // Calculate two-step PageRank
   const auto iteration = [&](const auto iter, const double alpha, const double beta) {
-    danglingRank = 0.0;
-    for (const auto& i : danglingIndices) {
-      danglingRank += nodeFlow[i];
-    }
+    danglingRank = accumulateDanglingRank();
 
     // Flow from teleportation
     const auto teleportationFlow = alpha + beta * danglingRank;
@@ -1323,11 +1385,34 @@ void FlowCalculator::applyVariableMarkovTime(StateNetwork& network, const Config
 
 void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool normalizeNodeFlow) noexcept
 {
+  // Hand the power iteration's outcome to the network so it outlives this calculator.
+  network.m_haveFlowConvergence = m_havePageRank;
+  network.m_flowConverged = m_pageRankConverged;
+  network.m_flowIterations = m_pageRankIterations;
+  network.m_flowError = m_pageRankError;
+
   // TODO: Skip bipartite flow adjustment for directed / rawdir / .. ?
   if (network.isBipartite()) {
     addFlowNote("Using bipartite links");
 
     if (!config.skipAdjustBipartiteFlow && !config.bipartiteTeleportation) {
+      // A node that is not coded has no visit rate, and therefore no teleportation into it
+      // either. Clearing the node's flow while leaving its teleport flow and weight behind
+      // broke the invariant the enter/exit flow below rests on -- that a node's
+      // self-teleportation teleFlow * weight is part of its flow -- so the subtraction ran
+      // past zero: with --regularized on examples/networks/bipartite.net the two feature
+      // nodes came out at flow 0 and enter/exit -0.02901104907 = -(0.1232969585 *
+      // 0.2352941176), and every module containing one inherited a negative enter flow.
+      // The two-level index codelength then evaluated to 1.1e-16, charging nothing at all
+      // for entering either module (#957).
+      const auto uncode = [this](unsigned int nodeIndex) {
+        nodeFlow[nodeIndex] = 0.0;
+        if (!nodeTeleportFlow.empty())
+          nodeTeleportFlow[nodeIndex] = 0.0;
+        if (!nodeTeleportWeights.empty())
+          nodeTeleportWeights[nodeIndex] = 0.0;
+      };
+
       // Only links between ordinary nodes and feature nodes in bipartite network
       // Don't code feature nodes -> distribute all flow from those to ordinary nodes
       for (auto& link : flowLinks) {
@@ -1335,10 +1420,10 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
 
         if (sourceIsFeature) {
           nodeFlow[link.target] += link.flow;
-          nodeFlow[link.source] = 0.0; // Doesn't matter if done multiple times on each node.
+          uncode(link.source); // Doesn't matter if done multiple times on each node.
         } else {
           nodeFlow[link.source] += link.flow;
-          nodeFlow[link.target] = 0.0; // Doesn't matter if done multiple times on each node.
+          uncode(link.target); // Doesn't matter if done multiple times on each node.
         }
         // TODO: Should flow double before moving to nodes, does it cancel out in normalization?
 

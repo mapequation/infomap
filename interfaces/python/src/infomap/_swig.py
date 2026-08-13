@@ -2171,6 +2171,18 @@ class StateNetwork(object):
     def names(self, *args):
         return _infomap.StateNetwork_names(self, *args)
 
+    def haveFlowConvergence(self):
+        return _infomap.StateNetwork_haveFlowConvergence(self)
+
+    def flowConverged(self):
+        return _infomap.StateNetwork_flowConverged(self)
+
+    def flowIterations(self):
+        return _infomap.StateNetwork_flowIterations(self)
+
+    def flowError(self):
+        return _infomap.StateNetwork_flowError(self)
+
     def haveNodeWeights(self):
         return _infomap.StateNetwork_haveNodeWeights(self)
 

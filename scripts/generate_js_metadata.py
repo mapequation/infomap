@@ -7,7 +7,6 @@ from pathlib import Path
 
 from parameter_catalog import ParameterCatalog
 
-
 REPO_ROOT = Path(__file__).resolve().parents[1]
 OVERRIDES = REPO_ROOT / "interfaces" / "parameters" / "overrides.json"
 

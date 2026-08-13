@@ -224,8 +224,8 @@ def _to_dataframe_column_getter(requested, resolved, names, state_names):
         return lambda node: names.get(node.node_id, node.node_id)
 
     if resolved == "state_name":
-        return lambda node: state_names.get(node.state_id) or names.get(
-            node.node_id, node.node_id
+        return lambda node: (
+            state_names.get(node.state_id) or names.get(node.node_id, node.node_id)
         )
 
     def get_column_value(node):
@@ -249,7 +249,11 @@ class _LeafIterWrapper:
         while not self.it.isEnd() and not self.it.isLeaf():
             self.it.stepForward()
         if not self.it.isEnd():
-            return self.it
+            # A position, not the live cursor: returning self.it made every element of
+            # list(...) the same iterator, exhausted by the time the list was read, so
+            # collecting yielded a row of None. Copies were not self-contained until the
+            # physical iterator's nodes got shared ownership (#900).
+            return self.it.copy()
         raise StopIteration
 
 
@@ -296,9 +300,7 @@ class _InfomapResultsMixin:
             raise ValueError('data must be one of "weight" or "flow"')
         return (
             (source, target, value)
-            for (source, target), value in self._core.getLinks(
-                data != "weight"
-            ).items()
+            for (source, target), value in self._core.getLinks(data != "weight").items()
         )
 
     def _get_name_impl(self, node_id, default=None):

@@ -11,7 +11,6 @@ from pathlib import Path
 from parameter_catalog import GROUPS, ParameterCatalog
 from render_parameter_policy import render as render_parameter_policy_md
 
-
 REPO_ROOT = Path(__file__).resolve().parents[1]
 OVERRIDES = REPO_ROOT / "interfaces" / "parameters" / "overrides.json"
 
@@ -175,8 +174,7 @@ def _facade_params(catalog: ParameterCatalog):
                 "init_default": param.python_default_expr(),
             }
             names.append(name)
-            for facade_name in after.get(name, ()):
-                names.append(facade_name)
+            names.extend(after.get(name, ()))
     # A facade-only param is spliced in after its anchor catalog param; if the
     # anchor were renamed/removed the param would be silently dropped. Fail loud.
     missing_anchors = set(after) - catalog_names
@@ -256,39 +254,189 @@ _ADVANCED_TIER_WARNING_HELPER = [
 ]
 
 
-def _advanced_tier_kwarg_lines(catalog: ParameterCatalog) -> list[str]:
-    """The runtime advanced-tier warning table plus its helper.
+# Maps each special-render-policy parameter to the ``_OptionSpec.render`` kind
+# its to_args() branch dispatches on. ``repeated_short`` splits per parameter:
+# ``--verbose`` renders ``-vv...`` above its default, while
+# ``--fast-hierarchical-solution`` validates 1..3 before rendering ``-F...``.
+_SPECIAL_RENDER_KINDS = {
+    "--no-self-links": "no_self_links",
+    "--verbose": "verbosity",
+    "--output": "comma_list",
+    "--directed": "directed",
+    "--fast-hierarchical-solution": "fast_hierarchical",
+}
 
-    One entry per advanced-tier catalog parameter (self-deprecated aliases such
-    as ``pretty``/``include_self_links`` warn on their own): the ``init`` and
-    ``run`` "unset" defaults and the policy ``action``/``replacement`` that
-    shape the message. Built from the same policy the docstring note reads.
+# Rendered-argument order of the special-policy parameters within each catalog
+# group. The generic (flag/value) parameters render first, in catalog order;
+# these follow. Preserves the historical argument order (e.g.
+# ``--silent -vvv --output clu,tree``). A catalog parameter with a special
+# render policy that is missing here fails loud in _option_table_lines instead
+# of being silently dropped from the render loop.
+_SPECIAL_RENDER_ORDER = {
+    "Input": ["--no-self-links"],
+    "Output": ["--verbose", "--output"],
+    "Algorithm": ["--directed"],
+    "Accuracy": ["--fast-hierarchical-solution"],
+}
+
+
+def _option_table_row(param, kind: str) -> str:
+    """One generated ``_OPTION_TABLE`` entry, kwargs only where they differ
+    from the ``_OptionSpec`` defaults so each row shows the data that matters."""
+    parts = [json.dumps(param.flag), json.dumps(kind), param.python_default_expr()]
+    domain = param.python_domain()
+    if domain is not None:
+        low, high = domain
+        parts.append(f"domain=({low}, {high})")
+    if param.choices:
+        # Reuse the generated Literal alias (FlowModel/OutputFormat) as the one
+        # source of the allowed value set, instead of repeating it here.
+        literal_alias = param.python_literal_alias()
+        assert literal_alias is not None
+        alias, _ = literal_alias
+        parts.append(f"choices=get_args({alias})")
+    if kind == "value" and not param.choices:
+        if param.long_type == "path":
+            parts.append("path=True")
+        elif param.long_type == "string":
+            parts.append("free_string=True")
+    if param.tier("python") == "common":
+        parts.append("common=True")
+    policy = param.policy("python")
+    action = policy.get("action", "keep")
+    if action != "keep":
+        parts.append(f"action={json.dumps(action)}")
+    if action not in {"keep", "alias"}:
+        parts.append(f"replacement={json.dumps(policy['replacement'])}")
+    return f'    "{param.name("python")}": _OptionSpec({", ".join(parts)}),'
+
+
+_OPTION_SPEC_CLASS = [
+    "class _OptionSpec(NamedTuple):",
+    '    """Per-option record: how one Options field renders and validates.',
+    "",
+    "    The single generated per-option source; the specialized lookups the",
+    "    validators and the deprecation machinery use are derived from it",
+    "    below. ``render`` selects the to_args() branch: the generic",
+    '    "flag"/"value" kinds cover most options, the remaining kinds are the',
+    "    catalog's one-off render policies. ``common`` marks the parameters",
+    "    that stay real keyword parameters in the 3.0 signatures;",
+    "    ``action``/``replacement`` carry the 3.0 cleanup-policy decision.",
+    '    """',
+    "",
+    "    flag: str",
+    "    render: str",
+    "    default: object = None",
+    "    # Inclusive numeric bounds from the catalog (min/max), or None.",
+    "    domain: tuple | None = None",
+    "    # Allowed values for choice-typed options.",
+    "    choices: tuple | None = None",
+    "    # Path-typed (os.fsdecode'd at the Options boundary) and free-string",
+    "    # values; both travel the whitespace-split argument string unquoted.",
+    "    path: bool = False",
+    "    free_string: bool = False",
+    "    common: bool = False",
+    '    action: str = "keep"',
+    "    replacement: str | None = None",
+]
+
+# Derived views of _OPTION_TABLE, keeping the consumer-facing names (and their
+# historical iteration orders) as cheap comprehensions over the single record.
+_OPTION_TABLE_VIEWS = [
+    "_OPTION_DOMAINS = {",
+    "    name: spec.domain",
+    "    for name, spec in _OPTION_TABLE.items()",
+    "    if spec.domain is not None",
+    "}",
+    "",
+    "_OPTION_CHOICES = {",
+    '    name: (spec.choices, spec.render == "comma_list")',
+    "    for name, spec in _OPTION_TABLE.items()",
+    "    if spec.choices is not None",
+    "}",
+    "",
+    "_OPTION_PATHS = tuple(name for name, spec in _OPTION_TABLE.items() if spec.path)",
+    "",
+    "# Free-string value options, rendered verbatim into the argument string.",
+    "_OPTION_FREE_STRINGS = tuple(",
+    "    name for name, spec in _OPTION_TABLE.items() if spec.free_string",
+    ")",
+    "",
+    "# Common-tier keywords: the five the Infomap()/run() signatures declare with",
+    "# the _UNSET sentinel, so a passed value is distinguishable from silence even",
+    "# when it equals the default (see _explicit_options).",
+    "_COMMON_TIER_FIELDS = frozenset(",
+    "    name for name, spec in _OPTION_TABLE.items() if spec.common",
+    ")",
+    "",
+    "# Advanced-tier keywords on the Infomap()/run() signatures:",
+    "# the init/run 'unset' defaults plus the policy action/replacement that",
+    "# shape the PendingDeprecationWarning. Infomap.run() re-renders keywords on",
+    "# top of the constructed state and a rendered flag can only switch on, so a",
+    "# truthy-by-default flag (silent) keeps the no-op False default in run",
+    "# context.",
+    "_ADVANCED_TIER_KWARGS = {",
+    "    name: (",
+    "        spec.default,",
+    '        False if spec.render == "flag" else spec.default,',
+    "        spec.action,",
+    "        spec.replacement,",
+    "    )",
+    "    for name, spec in _OPTION_TABLE.items()",
+    "    if not spec.common",
+    "}",
+]
+
+
+def _option_table_lines(catalog: ParameterCatalog) -> list[str]:
+    """The consolidated per-option table, its derived views, and the runtime
+    helpers that read them.
+
+    Emits ``_OptionSpec`` + ``_OPTION_TABLE`` (one row per Options field, in
+    rendered-argument order; the deprecated ``include_self_links`` alias is
+    handled explicitly in ``to_args``) and derives ``_OPTION_DOMAINS``,
+    ``_OPTION_CHOICES``, ``_OPTION_PATHS``, ``_OPTION_FREE_STRINGS`` and
+    ``_ADVANCED_TIER_KWARGS`` from it, so per-option data appears exactly once
+    in the generated module.
     """
-    names, index = _facade_params(catalog)
-    lines: list[str] = ["_ADVANCED_TIER_KWARGS = {"]
-    for name in names:
-        info = index[name]
-        if info.get("tier") != "advanced" or "policy" not in info:
-            continue
-        if name in _SELF_DEPRECATED_PARAMS:
-            continue
-        policy = info["policy"]
-        action = policy.get("action", "keep")
-        replacement = (
-            "None"
-            if action in {"keep", "alias"}
-            else json.dumps(policy["replacement"])
-        )
-        lines.append(
-            f'    "{name}": ({info["init_default"]}, {info["run_default"]}, '
-            f'"{action}", {replacement}),'
-        )
+    grouped = catalog.grouped()
+    lines: list[str] = list(_OPTION_SPEC_CLASS)
+    lines.extend(["", ""])
+    lines.append("_OPTION_TABLE = {")
+    for group in GROUPS:
+        lines.append(f"    # {group.lower()}")
+        specials = {
+            param.flag: param
+            for param in grouped[group]
+            if not param.uses_generic_spec()
+        }
+        expected = _SPECIAL_RENDER_ORDER.get(group, [])
+        if set(specials) != set(expected):
+            raise RuntimeError(
+                f"special render policies in group {group!r} changed: catalog "
+                f"has {sorted(specials)}, _SPECIAL_RENDER_ORDER declares "
+                f"{sorted(expected)}. Wire the new policy into "
+                "_SPECIAL_RENDER_KINDS/_SPECIAL_RENDER_ORDER and to_args()."
+            )
+        for param in grouped[group]:
+            if param.uses_generic_spec():
+                lines.append(_option_table_row(param, param.spec_kind))
+        for flag in expected:
+            lines.append(_option_table_row(specials[flag], _SPECIAL_RENDER_KINDS[flag]))
     lines.append("}")
-    lines.append("")
-    lines.append("")
+    lines.extend(["", ""])
+    lines.extend(_OPTION_TABLE_VIEWS)
+    lines.extend(["", ""])
     lines.extend(_ADVANCED_TIER_WARNING_HELPER)
-    lines.append("")
-    lines.append("")
+    lines.extend(["", ""])
+    lines.extend(_VALIDATE_OPTION_DOMAINS_HELPER)
+    lines.extend(["", ""])
+    lines.extend(_VALIDATE_OPTION_CHOICES_HELPER)
+    lines.extend(["", ""])
+    lines.extend(_NORMALIZE_OPTION_PATHS_HELPER)
+    lines.extend(["", ""])
+    lines.extend(_VALIDATE_OPTION_ARG_STRINGS_HELPER)
+    lines.extend(["", ""])
     return lines
 
 
@@ -358,8 +506,8 @@ _VALIDATE_OPTION_CHOICES_HELPER = [
     "            # yielding a baffling \"'t' is not valid\". Steer to a list.",
     "            hint = f\"[{value!r}]\" if value in choices else \"['tree', 'clu']\"",
     "            raise ValueError(",
-    "                f\"{name}={value!r} must be a list or tuple of formats \"",
-    "                f\"(e.g. {name}={hint}), not a single string.\"",
+    '                f"{name}={value!r} must be a list or tuple of formats "',
+    '                f"(e.g. {name}={hint}), not a single string."',
     "            )",
     "        values = value if is_sequence else (value,)",
     "        for item in values:",
@@ -391,52 +539,56 @@ _VALIDATE_OPTION_CHOICES_HELPER = [
 ]
 
 
-def _option_choices_lines(catalog: ParameterCatalog) -> list[str]:
-    """The runtime choice-domain table plus its validator.
+# Static runtime helpers: the path-typed options follow the package-wide
+# file-path contract (str | os.PathLike, decoded with os.fsdecode like the
+# file readers and writers), and -- together with the free-string options --
+# must survive the rendered argument string, which the engine splits on
+# whitespace with no quoting support. Normalize and validate at the Options
+# boundary so every entry point (Options()/Infomap()/run()/Network.run())
+# gets the same contract and a clear error instead of a silent misparse.
+_NORMALIZE_OPTION_PATHS_HELPER = [
+    "def _normalize_option_paths(options):",
+    '    """Decode path-typed option values (os.PathLike -> str) in place.',
+    "",
+    "    The path-typed options follow the package-wide file-path contract",
+    "    (str | os.PathLike, decoded with os.fsdecode like the file readers",
+    "    and writers); the rendered argument string needs plain str. A value",
+    "    that is not path-like gets a TypeError naming the option here,",
+    "    instead of a confusing engine parse error downstream.",
+    '    """',
+    "    for name in _OPTION_PATHS:",
+    "        value = options.get(name)",
+    "        if value is None or isinstance(value, str):",
+    "            continue",
+    "        try:",
+    "            options[name] = os.fsdecode(value)",
+    "        except TypeError:",
+    "            raise TypeError(",
+    '                f"{name}={value!r} is not a valid path: pass a str or "',
+    '                "os.PathLike."',
+    "            ) from None",
+]
 
-    One entry per choice-typed parameter (``flow_model``, ``output``), keyed by
-    the Python name, mapping to ``(allowed_values, is_sequence)``. ``is_sequence``
-    marks the comma-list params (``output``) whose value is a sequence validated
-    per element. Built from the same ``param.choices`` the Literals are.
-    """
-    lines: list[str] = ["_OPTION_CHOICES = {"]
-    for group in GROUPS:
-        for param in catalog.grouped()[group]:
-            choices = param.choices
-            if not choices:
-                continue
-            is_sequence = "True" if param.render_policy == "comma_list" else "False"
-            rendered = ", ".join(json.dumps(choice) for choice in choices)
-            lines.append(
-                f'    "{param.name("python")}": (({rendered},), {is_sequence}),'
-            )
-    lines.append("}")
-    lines.extend(["", ""])
-    lines.extend(_VALIDATE_OPTION_CHOICES_HELPER)
-    lines.extend(["", ""])
-    return lines
 
-
-def _option_domain_lines(catalog: ParameterCatalog) -> list[str]:
-    """The runtime numeric-domain table plus its validator.
-
-    One entry per numeric value-typed parameter that declares an inclusive
-    bound in the catalog (``min``/``max``); the validator (emitted right after)
-    reads it from the ``to_args`` render funnel.
-    """
-    lines: list[str] = ["_OPTION_DOMAINS = {"]
-    for group in GROUPS:
-        for param in catalog.grouped()[group]:
-            domain = param.python_domain()
-            if domain is None:
-                continue
-            low, high = domain
-            lines.append(f'    "{param.name("python")}": ({low}, {high}),')
-    lines.append("}")
-    lines.extend(["", ""])
-    lines.extend(_VALIDATE_OPTION_DOMAINS_HELPER)
-    lines.extend(["", ""])
-    return lines
+_VALIDATE_OPTION_ARG_STRINGS_HELPER = [
+    "def _validate_option_arg_strings(options):",
+    '    """Reject string values the rendered argument string cannot carry.',
+    "",
+    "    Rendered options travel to the engine as a whitespace-separated",
+    "    argument string with no quoting support, so a value containing",
+    "    whitespace would be silently split into separate tokens (a",
+    "    cluster_data path 'my file.clu' reads as 'my'). Reject it here,",
+    "    naming the option and the reason.",
+    '    """',
+    "    for name in _OPTION_PATHS + _OPTION_FREE_STRINGS:",
+    "        value = options.get(name)",
+    "        if isinstance(value, str) and any(ch.isspace() for ch in value):",
+    "            raise ValueError(",
+    '                f"{name}={value!r} contains whitespace, which the engine "',
+    '                "argument string cannot carry (arguments are split on "',
+    '                "whitespace, with no quoting). Use a whitespace-free value."',
+    "            )",
+]
 
 
 def _python_domain_doc(param) -> str:
@@ -536,7 +688,7 @@ def generate_python(catalog: ParameterCatalog) -> str:
         "import warnings",
         "from collections.abc import Mapping",
         "from dataclasses import dataclass, fields, replace",
-        "from typing import Literal",
+        "from typing import Any, Literal, NamedTuple, get_args",
         "",
         "",
         "# Generated by scripts/generate_binding_options.py from ./Infomap --print-json-parameters.",
@@ -544,6 +696,23 @@ def generate_python(catalog: ParameterCatalog) -> str:
         "# make build-binding-options.",
         "",
         "_PACKAGE_PREFIX = os.path.dirname(os.path.abspath(__file__)) + os.sep",
+        "",
+        "",
+        "# Sentinel default for the common-tier keywords on the Infomap()/run()",
+        '# signatures, so the merge can tell "the caller passed this" from "left at',
+        '# its default" -- a value equal to the default (seed=123, two_level=False)',
+        "# is otherwise indistinguishable from silence. Typed Any where it is used as",
+        "# a default so the honest per-parameter annotations still type-check, and the",
+        "# <unset> repr keeps inspect.signature() readable for tooling. infomap.run()",
+        "# and Network.run() take the same sentinel from here.",
+        "class _Unset:",
+        "    __slots__ = ()",
+        "",
+        "    def __repr__(self) -> str:",
+        '        return "<unset>"',
+        "",
+        "",
+        "_UNSET: Any = _Unset()",
         "",
         "",
         "def _external_stacklevel() -> int:",
@@ -563,36 +732,9 @@ def generate_python(catalog: ParameterCatalog) -> str:
         "",
     ]
     lines.extend(_python_literal_alias_lines(catalog))
-    lines.extend(_advanced_tier_kwarg_lines(catalog))
-    lines.extend(_option_domain_lines(catalog))
-    lines.extend(_option_choices_lines(catalog))
-    for group in GROUPS:
-        spec_name = f"_{group.upper()}_OPTION_SPECS"
-        lines.append(f"{spec_name} = (")
-        for param in grouped[group]:
-            if not param.uses_generic_spec():
-                continue
-            name = param.name("python")
-            kind = param.spec_kind
-            include = "None" if kind == "flag" else param.python_include_expr()
-            lines.append(f'    ("{kind}", "{name}", "{param.flag}", {include}),')
-        lines.append(")")
-        lines.append("")
-
+    lines.extend(_option_table_lines(catalog))
     lines.extend(
         [
-            "",
-            "def _append_option_specs(parts, options, specs):",
-            "    for option_type, option_name, flag, include in specs:",
-            "        value = options[option_name]",
-            '        if option_type == "flag":',
-            "            if value:",
-            "                parts.append(flag)",
-            "            continue",
-            "        if include(value):",
-            '            parts.append(f"{flag} {value}")',
-            "",
-            "",
             "def _join_args(base_args, parts):",
             "    if not parts:",
             '        return "" if base_args is None else base_args',
@@ -614,8 +756,8 @@ def generate_python(catalog: ParameterCatalog) -> str:
             "            for key in unknown:",
             "                near = difflib.get_close_matches(key, _OPTION_FIELD_NAMES, n=1)",
             "                rendered.append(",
-            "                    f\"{key!r}\"",
-            "                    + (f\" (did you mean {near[0]!r}?)\" if near else \"\")",
+            '                    f"{key!r}"',
+            '                    + (f" (did you mean {near[0]!r}?)" if near else "")',
             "                )",
             "            raise TypeError(",
             '                "Options() got unknown option(s): "',
@@ -692,12 +834,20 @@ def generate_python(catalog: ParameterCatalog) -> str:
         [
             "",
             "    def __post_init__(self):",
-            "        # Validate at construction so a bad value fails where it is",
-            "        # written, not later at the to_args() render funnel. to_args()",
-            "        # revalidates the merged result, so overrides are covered too.",
+            "        # Normalize the path-typed options (os.PathLike -> str) before",
+            "        # validating, so validation, repr, equality and rendering all",
+            "        # see plain strings. Then validate at construction so a bad",
+            "        # value fails where it is written, not later at the to_args()",
+            "        # render funnel. to_args() revalidates the merged result, so",
+            "        # overrides are covered too.",
             "        options = self.to_kwargs()",
+            "        _normalize_option_paths(options)",
+            "        for name in _OPTION_PATHS:",
+            "            if options[name] is not getattr(self, name):",
+            "                object.__setattr__(self, name, options[name])",
             "        _validate_option_domains(options)",
             "        _validate_option_choices(options)",
+            "        _validate_option_arg_strings(options)",
             "",
             "    def __repr__(self) -> str:",
             "        # Show only the fields set away from their defaults; the full",
@@ -769,8 +919,10 @@ def generate_python(catalog: ParameterCatalog) -> str:
             "            given.",
             '        """',
             "        options = self.to_kwargs()",
+            "        _normalize_option_paths(options)",
             "        _validate_option_domains(options)",
             "        _validate_option_choices(options)",
+            "        _validate_option_arg_strings(options)",
             "        if self.directed is not None and self.flow_model is not None:",
             "            # Only warn on a genuine conflict. directed=True is shorthand for",
             '            # flow_model="directed" (False -> "undirected"), so pairing it with',
@@ -782,8 +934,8 @@ def generate_python(catalog: ParameterCatalog) -> str:
             "                warnings.warn(",
             "                    f\"both 'directed' and 'flow_model' are set and disagree; \"",
             "                    f\"'directed' takes precedence and flow_model=\"",
-            "                    f\"{self.flow_model!r} is ignored by the engine. Set only \"",
-            '                    "one (directed=True is shorthand for flow_model=\'directed\').",',
+            '                    f"{self.flow_model!r} is ignored by the engine. Set only "',
+            "                    \"one (directed=True is shorthand for flow_model='directed').\",",
             "                    UserWarning,",
             "                    stacklevel=_external_stacklevel(),",
             "                )",
@@ -796,35 +948,38 @@ def generate_python(catalog: ParameterCatalog) -> str:
             "                stacklevel=_external_stacklevel(),",
             "            )",
             "",
-            "        _append_option_specs(rendered_args, options, _INPUT_OPTION_SPECS)",
-            "",
-            "        if (self.include_self_links is not None and not self.include_self_links) or self.no_self_links:",
-            '            rendered_args.append("--no-self-links")',
-            "",
-            "        _append_option_specs(rendered_args, options, _OUTPUT_OPTION_SPECS)",
-            "",
-            "        if self.verbosity_level > 1:",
-            "            rendered_args.append(f\"-{'v' * self.verbosity_level}\")",
-            "",
-            "        if self.output is not None:",
-            "            rendered_args.append(f\"--output {','.join(self.output)}\")",
-            "",
-            "        _append_option_specs(rendered_args, options, _ALGORITHM_OPTION_SPECS)",
-            "",
-            "        if self.directed is not None:",
-            '            rendered_args.append("--directed" if self.directed else "--flow-model undirected")',
-            "",
-            "        _append_option_specs(rendered_args, options, _ACCURACY_OPTION_SPECS)",
-            "",
-            "        if self.fast_hierarchical_solution is not None:",
-            "            if self.fast_hierarchical_solution not in (1, 2, 3):",
-            "                raise ValueError(",
-            '                    "fast_hierarchical_solution="',
-            "                    f\"{self.fast_hierarchical_solution!r} is not valid: use \"",
-            '                    "1 (find top modules fast), 2 (keep all fast levels), "',
-            '                    "or 3 (skip the recursive part), or None to disable."',
-            "                )",
-            "            rendered_args.append(f\"-{'F' * self.fast_hierarchical_solution}\")",
+            "        for name, spec in _OPTION_TABLE.items():",
+            "            value = options[name]",
+            '            if spec.render == "flag":',
+            "                if value:",
+            "                    rendered_args.append(spec.flag)",
+            '            elif spec.render == "value":',
+            "                if value != spec.default:",
+            '                    rendered_args.append(f"{spec.flag} {value}")',
+            '            elif spec.render == "no_self_links":',
+            "                # Both a first-class flag and the rendering of the",
+            "                # deprecated include_self_links=False alias; at most once.",
+            "                if (self.include_self_links is not None and not self.include_self_links) or value:",
+            "                    rendered_args.append(spec.flag)",
+            '            elif spec.render == "verbosity":',
+            "                if value > 1:",
+            "                    rendered_args.append(f\"-{'v' * value}\")",
+            '            elif spec.render == "comma_list":',
+            "                if value is not None:",
+            "                    rendered_args.append(f\"{spec.flag} {','.join(value)}\")",
+            '            elif spec.render == "directed":',
+            "                if value is not None:",
+            '                    rendered_args.append("--directed" if value else "--flow-model undirected")',
+            '            else:  # "fast_hierarchical"',
+            "                if value is not None:",
+            "                    if value not in (1, 2, 3):",
+            "                        raise ValueError(",
+            '                            "fast_hierarchical_solution="',
+            '                            f"{value!r} is not valid: use "',
+            '                            "1 (find top modules fast), 2 (keep all fast levels), "',
+            '                            "or 3 (skip the recursive part), or None to disable."',
+            "                        )",
+            "                    rendered_args.append(f\"-{'F' * value}\")",
             "",
             "        return _join_args(base_args, rendered_args)",
             "",
@@ -837,11 +992,17 @@ def generate_python(catalog: ParameterCatalog) -> str:
             "",
             "",
             "_OPTION_DEFAULTS = Options()",
-            "# The only facade keyword whose Infomap.run() default differs from",
-            "# Infomap.__init__(): run() defaults silent to False. A keyword left at its",
-            "# run-context default must defer to the options= carrier rather than",
+            "# Facade keywords whose Infomap.run() default differs from Infomap.__init__():",
+            "# the flags that default to on at construction (silent). run() re-renders its",
+            "# keywords on top of the constructed state and a rendered flag can only switch",
+            "# on, so the run signature keeps the no-op False default. A keyword left at",
+            "# its run-context default must defer to the options= carrier rather than",
             "# spuriously override it.",
-            '_RUN_DEFAULT_OVERRIDES = {"silent": False}',
+            "_RUN_DEFAULT_OVERRIDES = {",
+            "    name: False",
+            "    for name, spec in _OPTION_TABLE.items()",
+            '    if spec.render == "flag" and spec.default',
+            "}",
             "",
             "",
             "def _context_default(name, context):",
@@ -850,46 +1011,71 @@ def generate_python(catalog: ParameterCatalog) -> str:
             "    return getattr(_OPTION_DEFAULTS, name)",
             "",
             "",
-            "def _merge_options(base, keyword_options, context):",
+            "# The starting point when no options= carrier is supplied: the dataclass",
+            "# defaults, with the run context's no-op flag defaults applied on top (see",
+            "# _RUN_DEFAULT_OVERRIDES).",
+            "# Annotated Any-valued so the ** unpack below is not inferred as bool-only.",
+            "_CONTEXT_BASE_OVERRIDES: dict[str, dict[str, Any]] = {",
+            '    "run": dict(_RUN_DEFAULT_OVERRIDES),',
+            "}",
+            "",
+            "",
+            "def _explicit_options(passed, context):",
+            '    """Return the facade keywords the caller actually supplied.',
+            "",
+            "    ``passed`` is the facade method's ``locals()``. Provenance differs by",
+            "    tier, and both halves are honest about what they can know:",
+            "",
+            "    * common tier -- the signature default is :data:`_UNSET`, so the",
+            "      keyword's presence is authoritative. This is what lets an explicit",
+            "      value that happens to equal the default (``seed=123``, the default",
+            "      seed, or ``two_level=False``) still count as an override.",
+            "    * advanced tier -- the signature still declares the real default (it",
+            "      documents the option, and these keywords move off the signature",
+            "      entirely in 3.0), so the only signal available is a value that",
+            "      differs from the context default. An advanced keyword passed at",
+            "      exactly its default therefore still defers to the carrier.",
+            '    """',
+            "    explicit = {}",
+            "    for name in _OPTION_FIELD_NAMES:",
+            "        if name not in passed:",
+            "            continue",
+            "        value = passed[name]",
+            "        if name in _COMMON_TIER_FIELDS:",
+            "            if value is not _UNSET:",
+            "                explicit[name] = value",
+            "        elif value != _context_default(name, context):",
+            "            explicit[name] = value",
+            "    return explicit",
+            "",
+            "",
+            "def _merge_options(base, keyword_overrides, context):",
             '    """Merge the ``options=`` carrier with the facade keyword options.',
             "",
             "    ``base`` is the ``options=`` argument to ``Infomap()`` / ``Infomap.run()``",
-            "    (an :class:`Options`, a mapping, or ``None``); ``keyword_options`` is the",
-            "    :class:`Options` built from the facade's per-keyword parameters. A keyword",
-            "    left at its (context-appropriate) default defers to ``base``; a keyword",
-            "    set to a non-default value is an explicit override and wins -- mirroring",
-            '    the "overrides win over options" rule of :func:`infomap.run`.',
+            "    (an :class:`Options`, a mapping, or ``None``); ``keyword_overrides`` is the",
+            "    mapping of keywords the caller supplied, from :func:`_explicit_options`.",
+            "    A keyword the caller did not pass defers to ``base``; one they did pass",
+            '    wins -- mirroring the "overrides win over options" rule of',
+            "    :func:`infomap.run`, whose own common-tier parameters use the same",
+            "    sentinel.",
             '    """',
             "    if base is None:",
-            "        return keyword_options",
-            "    if isinstance(base, Mapping):",
+            "        base = Options(**_CONTEXT_BASE_OVERRIDES.get(context, {}))",
+            "    elif isinstance(base, Mapping):",
             "        base = Options(**base)",
             "    elif not isinstance(base, Options):",
             "        raise TypeError(",
             '            "options must be an Options instance, a mapping, or None"',
             "        )",
-            "    overrides = {",
-            "        name: getattr(keyword_options, name)",
-            "        for name in _OPTION_FIELD_NAMES",
-            "        if getattr(keyword_options, name) != _context_default(name, context)",
-            "    }",
-            "    return replace(base, **overrides)",
+            "    return replace(base, **keyword_overrides)",
             "",
             "",
-            "def _construct_args(",
-            "    args=None,",
-        ]
-    )
-    for group in GROUPS:
-        lines.append(f"    # {group.lower()}")
-        if group == "Input":
-            lines.append(f"    include_self_links={include_self_links.default},")
-        for param in grouped[group]:
-            lines.append(f"    {param.name('python')}={param.python_default_expr()},")
-    lines.extend(
-        [
-            "):",
-            "    return Options._from_locals(locals()).to_args(base_args=args)",
+            "def _construct_args(args=None, **options):",
+            "    # Internal rendered-args funnel behind Infomap()/run()/Network.run().",
+            "    # Unknown option names raise through the Options constructor, with",
+            "    # the same 'did you mean' guidance as direct construction.",
+            "    return Options(**options).to_args(base_args=args)",
             "",
         ]
     )
@@ -1022,28 +1208,119 @@ def generate_r(catalog: ParameterCatalog) -> str:
             "    }",
             "    include <- if (is.null(spec$include)) function(v) !is.null(v) && !identical(v, spec$default) else spec$include",
             "    if (isTRUE(include(value))) {",
-            "      parts <- c(parts, paste(spec$flag, format_value(value)))",
+            "      parts <- c(parts, paste(spec$flag, format_value(value, spec$name)))",
             "    }",
             "  }",
             "  parts",
             "}",
             "",
-            "format_value <- function(value) {",
-            "  if (is.character(value)) return(value)",
+            "format_value <- function(value, name = NULL) {",
+            '  label <- if (is.null(name)) "value" else name',
+            "  # Shape first, so the checks below cannot land on a value they cannot",
+            "  # answer for. A length > 1 value reached `if (cond)` and raised R's",
+            '  # "the condition has length > 1"; an NA passed every test silently --',
+            "  # grepl() returns FALSE for NA_character_, not NA -- and rendered the",
+            '  # literal string "NA" into the argument string, which the engine then',
+            "  # parsed as a node name or a number. Both are caller mistakes worth",
+            "  # naming. NULL never arrives here: .append_specs only renders a value",
+            "  # its include() predicate accepted, and that requires !is.null(value).",
+            "  if (length(value) != 1L) {",
+            "    stop(",
+            "      sprintf(",
+            '        "%s must be a single value, got length %d.",',
+            "        label,",
+            "        length(value)",
+            "      ),",
+            "      call. = FALSE",
+            "    )",
+            "  }",
+            "  # is.na() is TRUE for NaN too, and the two are not the same mistake. NA is",
+            "  # R's missing marker, with no counterpart in the Python or JS bindings, and",
+            '  # for a string option it renders the token "NA" that the engine accepts as a',
+            "  # perfectly good name -- a silent wrong run, which is this renderer's business.",
+            "  # NaN is a number that Python also hands straight to the engine, which rejects",
+            "  # it by name (\"Cannot parse 'NaN' as argument to option ...\"), so rejecting it",
+            "  # here would make R stricter than the other bindings for no reason a caller",
+            "  # could predict. Reject the first, pass the second on.",
+            "  # is.na() is TRUE for NaN too, so the !is.nan() exception is what separates",
+            "  # the two. It needs no type guard: is.nan() answers FALSE for a character,",
+            "  # factor, logical or Date NA with no warning and no coercion (checked with",
+            "  # warn = 2), and TRUE for a complex NaN -- which is a NaN and belongs on the",
+            "  # NaN side of this rule, so gating on is.numeric() would silently start",
+            "  # rejecting it.",
+            "  if (is.na(value) && !is.nan(value)) {",
+            '    stop(sprintf("%s must not be NA.", label), call. = FALSE)',
+            "  }",
             '  if (is.logical(value)) return(if (isTRUE(value)) "true" else "false")',
             "  if (is.numeric(value)) {",
-            "    if (is.integer(value) || (is.finite(value) && value == as.integer(value))) {",
-            "      return(format(as.integer(value), scientific = FALSE))",
+            "    # trunc(), not as.integer(): as.integer() returns NA above INT_MAX, so",
+            '    # `value == as.integer(value)` was NA and `if (NA)` raised "missing value',
+            '    # where TRUE/FALSE needed" for legal unsigned values such as',
+            "    # seed = 2^31, which the CLI accepts.",
+            "    if (is.integer(value) || (is.finite(value) && value == trunc(value))) {",
+            '      return(sprintf("%.0f", value))',
             "    }",
-            "    return(format(value, scientific = FALSE, trim = TRUE))",
+            "    # Shortest representation that reads back as the same double. format()",
+            '    # honours getOption("digits"), which is 7 by default, so markov_time =',
+            "    # 1/7 reached the engine as 0.1428571 -- a different parameter than the",
+            "    # one requested, and a different codelength than Python reports.",
+            "    for (digits in 15:17) {",
+            '      text <- sprintf(paste0("%.", digits, "g"), value)',
+            "      if (!is.na(suppressWarnings(as.numeric(text))) &&",
+            "          as.numeric(text) == value) {",
+            "        return(text)",
+            "      }",
+            "    }",
+            '    return(sprintf("%.17g", value))',
             "  }",
-            "  as.character(value)",
+            "  # Everything else, checked on the way out rather than by input type.",
+            "  # Rendered options travel to the engine as one whitespace-separated argument",
+            "  # string with no quoting support, so a value containing whitespace is split",
+            '  # into separate tokens: an out_name of "my run" became "--out-name my run",',
+            '  # the name truncated to "my" and "run" silently taken as the output',
+            "  # directory. Quoting cannot fix it -- the C++ side splits on whitespace and",
+            "  # does not strip quotes, so '--out-name \"my run\"' yields the literal name",
+            "  # '\"my'. This is the single exit that can produce whitespace: a character",
+            "  # value, but also a factor or a POSIXct, which arrive with their own",
+            '  # as.character() rendering ("2026-07-26 08:30:00" splits exactly like a path',
+            "  # with a space). Checking the rendered text covers those without having to",
+            "  # enumerate them. Same contract as Python's _validate_option_arg_strings.",
+            "  text <- as.character(value)",
+            '  if (grepl("[[:space:]]", text)) {',
+            "    stop(",
+            "      sprintf(",
+            '        paste0("%s = \\"%s\\" contains whitespace, which the engine argument ",',
+            '               "string cannot carry (arguments are split on whitespace, with ",',
+            '               "no quoting). Use a whitespace-free value."),',
+            "        label,",
+            "        text",
+            "      ),",
+            "      call. = FALSE",
+            "    )",
+            "  }",
+            "  text",
             "}",
             "",
             "#' Render an Infomap options list to a CLI argument string",
             "#'",
             "#' This is exported for advanced use; most callers should pass options",
             "#' directly to [Infomap()] or `Infomap$run()`.",
+            "#'",
+            "#' @section Values containing whitespace:",
+            "#' Options reach the engine as one whitespace-separated argument string,",
+            "#' which has no quoting and no escaping, so a value containing a space",
+            "#' cannot survive the trip -- quotes are not stripped, and",
+            '#\' `--out-name "my run"` would set the name to the literal `"my`. Such a',
+            "#' value is refused, naming the option, rather than truncated silently.",
+            "#' The check runs when options are rendered, not when they are built, so",
+            '#\' `infomap_options(out_name = "my run")` returns a list and the error',
+            "#' comes from `construct_args()` -- or from `Infomap()` / `$run()`, which",
+            "#' render internally. The Python binding differs here: it validates when",
+            "#' its `Options` object is constructed. This",
+            "#' applies to every path and free-string option, and is a limitation of the",
+            "#' engine boundary shared with the Python and JavaScript bindings and the",
+            "#' command line. Rename the file, or use a directory whose path has no",
+            "#' spaces. A raw `args` string is passed through unvalidated.",
             "#'",
             "#' @param args Optional raw argument string to prepend.",
             "#' @param opts Options list from [infomap_options()] (or `NULL`).",
@@ -1112,7 +1389,9 @@ def generate_ts(catalog: ParameterCatalog) -> str:
         for group in GROUPS
     }
     about_options = catalog.binding_only("ts")
-    output_param = next(param for param in visible_parameters if param.flag == "--output")
+    output_param = next(
+        param for param in visible_parameters if param.flag == "--output"
+    )
     output_choices = output_param.choices or []
     lines = [
         "// Generated by scripts/generate_binding_options.py from ./Infomap --print-json-parameters.",
@@ -1140,6 +1419,24 @@ def generate_ts(catalog: ParameterCatalog) -> str:
     lines.extend(
         [
             "}>;",
+            "",
+            "// Rendered options travel to the engine as one whitespace-separated argument",
+            "// string with no quoting support, so a value containing whitespace does not",
+            "// stay one token. Here that is worse than a truncation: an outName of",
+            '// "net --directed -o tree" injects options and silently changes the algorithm',
+            "// (measured: codelength 1.52879 against the intended 1.57095). Quoting cannot",
+            "// fix it -- the C++ side splits on whitespace and does not strip quotes. Reject",
+            "// it, the same contract Python's _validate_option_arg_strings enforces.",
+            "function requireNoWhitespace(name: string, value: string) {",
+            "  if (/\\s/.test(value)) {",
+            "    throw new Error(",
+            "      `${name}=${JSON.stringify(value)} contains whitespace, which the engine ` +",
+            "        `argument string cannot carry (arguments are split on whitespace, with ` +",
+            "        `no quoting). Use a whitespace-free value.`,",
+            "    );",
+            "  }",
+            "  return value;",
+            "}",
             "",
             "export default function argumentsToString(args: Arguments) {",
             '  let result = "";',
@@ -1176,28 +1473,35 @@ def generate_ts(catalog: ParameterCatalog) -> str:
             flag = param.flag
             name = param.name("ts")
             if param.render_policy == "repeated_short" and flag == "--verbose":
-                append_result(
-                    f"args.{name}", f'" -" + "v".repeat(args.{name})'
-                )
+                append_result(f"args.{name}", f'" -" + "v".repeat(args.{name})')
             elif param.render_policy == "repeated_short":
-                append_result(
-                    f"args.{name}", f'" -" + "F".repeat(args.{name})'
-                )
+                append_result(f"args.{name}", f'" -" + "F".repeat(args.{name})')
             elif param.render_policy == "comma_list":
                 lines.extend(
                     [
                         f"  if (args.{name} != null) {{",
-                        f'    if (typeof args.{name} === "string") result += " --output " + args.{name};',
-                        f'    else result += " --output " + args.{name}.join(",");',
+                        f'    if (typeof args.{name} === "string")',
+                        f'      result += " --output " + requireNoWhitespace("{name}", args.{name});',
+                        "    else",
+                        "      result +=",
+                        f'        " --output " + requireNoWhitespace("{name}", args.{name}.join(","));',
                         "  }",
                     ]
                 )
             elif not param.required:
                 append_result(f"args.{name}", f'" {flag}"')
-            else:
+            elif param.long_type in {"path", "string"} or param.choices:
+                # Every option whose value is a string at runtime. The choice-valued
+                # ones look safe because their TypeScript type is a string-literal
+                # union, but that is a compile-time constraint: this renderer is
+                # reachable from plain JavaScript, where flowModel can carry
+                # whitespace and inject flags just like a path can.
                 append_result(
-                    f"args.{name} != null", f'" {flag} " + args.{name}'
+                    f"args.{name} != null",
+                    f'" {flag} " + requireNoWhitespace("{name}", args.{name})',
                 )
+            else:
+                append_result(f"args.{name} != null", f'" {flag} " + args.{name}')
             lines.append("")
     for entry in about_options:
         if entry.name == "help":
@@ -1224,6 +1528,12 @@ def _render_facade_signature(names, index, indent="        ", context="init"):
         else:
             info = index[name]
             default = info["run_default"] if context == "run" else info["default"]
+            if info.get("tier") == "common":
+                # Provenance over documentation: these five are the ones a caller
+                # realistically passes at exactly the default (seed=123,
+                # two_level=False), and the merge has to see that as an override.
+                # The real default stays in the docstring and in Options.
+                default = "_UNSET"
         lines.append(f"{indent}{name}: {info['type']} = {default},")
     return lines
 
@@ -1272,8 +1582,7 @@ def _advanced_tier_directive(policy):
     if action == "keep":
         return "versionchanged", _ADVANCED_TIER_KEEP_NOTE
     return "deprecated", (
-        "This keyword leaves the `Infomap` signature in 3.0. "
-        + policy["replacement"]
+        "This keyword leaves the `Infomap` signature in 3.0. " + policy["replacement"]
     )
 
 
@@ -1284,16 +1593,24 @@ def _render_facade_docstring_params(names, index):
         if info["doc"] is None:
             continue
         lines.append(f"        {name} : {info['doc_type']}")
-        lines.extend(wrap_doc(info["doc"], "            "))
+        doc = info["doc"]
+        if info.get("tier") == "common":
+            # The signature declares these with the _UNSET sentinel so the merge
+            # can see an explicitly passed default (see _render_facade_signature),
+            # which means it no longer shows the real default. State it here
+            # instead. The hand-written infomap.run() docstring does the same for
+            # seed and num_trials ("...for reproducible results (default 123)");
+            # it leaves two_level, directed and markov_time to prose, and this
+            # covers all five uniformly.
+            doc = f"{doc.rstrip('.')} (default {info['default']})."
+        lines.extend(wrap_doc(doc, "            "))
         if info.get("inert_without_outdir"):
             lines.append("")
             lines.extend(wrap_doc(_INERT_WITHOUT_OUTDIR_NOTE, "            "))
         if info.get("tier") == "advanced" and name not in _SELF_DEPRECATED_PARAMS:
             directive, note = _advanced_tier_directive(info.get("policy"))
             lines.append("")
-            lines.append(
-                f"            .. {directive}:: {_ADVANCED_TIER_CHANGED_IN}"
-            )
+            lines.append(f"            .. {directive}:: {_ADVANCED_TIER_CHANGED_IN}")
             lines.extend(wrap_doc(note, "                "))
     return lines
 
@@ -1331,7 +1648,7 @@ def generate_facade(catalog: ParameterCatalog) -> str:
     lines.extend(_PRETTY_WARNING_LINES)
     lines.append('        _warn_advanced_tier_kwargs(locals(), "init")')
     lines.append(
-        '        options = _merge_options(options, Options._from_locals(locals()), "init")'
+        '        options = _merge_options(options, _explicit_options(locals(), "init"), "init")'
     )
     lines.append("        self._init_from_options(args, options)")
     lines.append("")
@@ -1348,20 +1665,14 @@ def generate_facade(catalog: ParameterCatalog) -> str:
     lines.append(
         "        The per-option keyword arguments match :class:`Infomap` and are"
     )
-    lines.append(
-        "        documented there; :class:`Options` is the full parameter"
-    )
-    lines.append(
-        "        reference. Reuse a saved configuration by passing"
-    )
+    lines.append("        documented there; :class:`Options` is the full parameter")
+    lines.append("        reference. Reuse a saved configuration by passing")
     lines.append("        :func:`infomap.run` an ``options=`` carrier.")
     lines.append("")
     lines.append(
         "        Boolean flags default to off here and render only when set; a"
     )
-    lines.append(
-        "        flag chosen at construction stays in effect for every run."
-    )
+    lines.append("        flag chosen at construction stays in effect for every run.")
     lines.append("")
     lines.append("        Parameters")
     lines.append("        ----------")
@@ -1394,11 +1705,15 @@ def generate_facade(catalog: ParameterCatalog) -> str:
     lines.extend(_PRETTY_WARNING_LINES)
     lines.append('        _warn_advanced_tier_kwargs(locals(), "run")')
     lines.append(
-        '        options = _merge_options(options, Options._from_locals(locals()), "run")'
+        '        options = _merge_options(options, _explicit_options(locals(), "run"), "run")'
     )
     lines.append(
         "        return self._run_from_options(args, initial_partition, options)"
     )
+    # Blank line before the end marker: ruff format wants one between the last
+    # method and the class-body comment, so emitting it keeps the spliced block
+    # format-clean and the freshness gate green.
+    lines.append("")
     lines.append(FACADE_END)
     return "\n".join(lines)
 

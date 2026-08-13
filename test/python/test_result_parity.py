@@ -10,7 +10,6 @@ drift.
 from __future__ import annotations
 
 import pytest
-
 from infomap import Infomap
 
 pytest.importorskip("pandas")

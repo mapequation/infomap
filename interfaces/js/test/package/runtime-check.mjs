@@ -47,6 +47,64 @@ for (const { label, run } of [
   );
 }
 
+// The "net" key must be Infomap's own Pajek output, never the caller's input. The input
+// network used to be written exactly where the out name pointed, so every default run
+// handed the caller its own data back under a key documented as engine output (#903).
+for (const { label, run } of [
+  { label: "esm", run: nodeModule.run },
+  { label: "cjs", run: nodeCjsModule.run },
+]) {
+  const treeOnly = await run(network, { args: ["-o", "tree", "--silent"] });
+  assert.equal(
+    treeOnly.net,
+    undefined,
+    `${label}: net present without -o network`,
+  );
+
+  const withNetwork = await run(network, {
+    args: ["-o", "network", "--silent"],
+  });
+  assert.equal(
+    typeof withNetwork.net,
+    "string",
+    `${label}: -o network produced no net`,
+  );
+  assert.notEqual(
+    withNetwork.net,
+    network,
+    `${label}: net is the caller's input`,
+  );
+
+  // --out-name in args is read the same way the worker entry point reads it, rather
+  // than leaving the engine and the reader looking at different basenames.
+  const named = await run(network, {
+    args: ["--out-name", "renamed", "-o", "tree", "--silent"],
+  });
+  assert.equal(
+    typeof named.tree,
+    "string",
+    `${label}: --out-name in args was not honoured`,
+  );
+
+  // And the last occurrence wins, because that is the option the engine acts on.
+  const renamedTwice = await run(network, {
+    args: [
+      "--out-name",
+      "first",
+      "-o",
+      "tree",
+      "--out-name",
+      "second",
+      "--silent",
+    ],
+  });
+  assert.equal(
+    typeof renamedTwice.tree,
+    "string",
+    `${label}: a repeated --out-name was read from the wrong occurrence`,
+  );
+}
+
 // Exercise the `infomap` bin on real files, like the native binary.
 const binPath = path.join(packageDir, "cli.js");
 const binDir = fs.mkdtempSync(path.join(os.tmpdir(), "infomap-bin-check-"));

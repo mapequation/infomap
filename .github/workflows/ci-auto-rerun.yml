@@ -1,0 +1,100 @@
+name: CI auto-rerun
+
+# Surgically re-run CI jobs that failed *before any real step ran* — i.e. in the
+# built-in "Set up job" phase. Those failures are GitHub infrastructure flakes
+# (most commonly "Internal Server Error occurred while resolving <action>" while
+# GitHub resolves `uses:` actions), not defects in our code. Because ci.yml's
+# `ci-summary` gate requires every one of ~20+ matrix jobs to be green, a single
+# such flake on any leg turns all of `master` red.
+#
+# This workflow re-runs the failed jobs (up to 2 extra attempts) ONLY when every
+# failed job failed in "Set up job". If any job failed in a real step (a test,
+# type check, build, ...), the run is left red and no rerun happens — so a genuine
+# regression still surfaces immediately and is never masked.
+#
+# Scope: pushes to `master` only. PR runs are left untouched (contributors can use
+# the "Re-run failed jobs" button); the intent here is to keep the master badge
+# honest against transient GitHub outages.
+#
+# Note: `workflow_run` workflows always run from the default branch's copy of this
+# file, so this only takes effect once merged to `master`.
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+
+permissions:
+  actions: write # required to call rerun-failed-jobs
+  contents: read
+
+jobs:
+  rerun-setup-flakes:
+    name: Re-run setup-phase infra flakes
+    # Only failed master-push runs, and cap total attempts at 3 (this fires with
+    # run_attempt = 1, then 2; at 3 it stops), so at most 2 automatic reruns.
+    if: >
+      github.event.workflow_run.conclusion == 'failure' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'master' &&
+      github.event.workflow_run.run_attempt < 3
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      RUN_ID: ${{ github.event.workflow_run.id }}
+      RUN_ATTEMPT: ${{ github.event.workflow_run.run_attempt }}
+    steps:
+      - name: Re-run only if all failures are in "Set up job"
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Evaluating CI run $RUN_ID (attempt $RUN_ATTEMPT)"
+
+          # All jobs for the failed run (paginated -> single JSON array).
+          jobs_json="$(gh api --paginate "repos/$GH_REPO/actions/runs/$RUN_ID/jobs" --jq '.jobs' \
+            | jq -s 'add')"
+
+          # The aggregator job ("CI Summary" in ci.yml) always fails in a real step
+          # ("Check CI results") when any dependency is red, so it must be excluded
+          # from the cause analysis. Keep this name in sync with ci.yml.
+          summary_name="CI Summary"
+
+          failed_count="$(jq --arg s "$summary_name" '
+            [ .[] | select(.name != $s) | select(.conclusion == "failure") ] | length
+          ' <<<"$jobs_json")"
+
+          # A "real" failure = a failed (non-summary) job with at least one failed
+          # step that is NOT the built-in "Set up job" step.
+          real_count="$(jq --arg s "$summary_name" '
+            [ .[]
+              | select(.name != $s)
+              | select(.conclusion == "failure")
+              | select(any(.steps[]?; .conclusion == "failure" and .name != "Set up job"))
+            ] | length
+          ' <<<"$jobs_json")"
+
+          echo "Failed (non-summary) jobs: $failed_count"
+          echo "…of which have a real (non-setup) step failure: $real_count"
+
+          echo "Jobs that failed only in \"Set up job\" (infra flakes):"
+          jq -r --arg s "$summary_name" '
+            .[]
+            | select(.name != $s)
+            | select(.conclusion == "failure")
+            | select(all(.steps[]?; .conclusion != "failure" or .name == "Set up job"))
+            | "  - \(.name)"
+          ' <<<"$jobs_json"
+
+          if [[ "$failed_count" -eq 0 ]]; then
+            echo "No failed non-summary jobs to act on. Leaving run as-is."
+            exit 0
+          fi
+          if [[ "$real_count" -gt 0 ]]; then
+            echo "At least one job failed in a real step -> genuine failure. Leaving run red."
+            exit 0
+          fi
+
+          echo "All failures are setup-phase infra flakes -> re-running failed jobs."
+          gh api -X POST "repos/$GH_REPO/actions/runs/$RUN_ID/rerun-failed-jobs"

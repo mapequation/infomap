@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 
 import infomap
+
 from . import Infomap, MultilayerNode, Options
 from ._summary import summary_data as _summary_data
 
@@ -64,7 +65,8 @@ def create_namespace(network_file=None):
 def launch_shell(namespace, banner, *, use_ipython=True):
     if use_ipython:
         try:
-            from IPython import start_ipython  # pyright: ignore[reportMissingImports]  # optional dep, no stubs
+            # optional dep, no stubs
+            from IPython import start_ipython  # pyright: ignore[reportMissingImports]
         except ImportError:
             pass
         else:

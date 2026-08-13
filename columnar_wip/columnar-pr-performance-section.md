@@ -2,9 +2,9 @@
 
 > Manual benchmark comparing the two engines on the same binary. This is **not** the CI `perf-pr.yml` check (which only sees the default OO path, since the new core is flag-gated) — it's included here so reviewers can see how the opt-in `--columnar` engine compares to the default.
 
-Single-threaded (`MODE=release OPENMP=0`), `--seed 123 -N10` — **best of 10 trials**, the way Infomap is normally run. Codelength in bits; `time` = total wall for all 10 trials; `top`/`lvls` = top modules / levels of the best partition. The network set spans base (undirected + directed), metadata, multilayer and state/memory objectives; see [`columnar_wip/benchmark-networks.md`](columnar_wip/benchmark-networks.md) for paths and full details. Columnar column = the default columnar search (`-C`).
+Single-threaded (`MODE=release OPENMP=0`), `--seed 123 -N10` — **best of 10 trials**, the way Infomap is normally run. Codelength in bits; `time` = total wall for all 10 trials, minimum of 3 interleaved repetitions; `top`/`lvls` = top modules / levels of the best partition. The network set spans base (undirected + directed), metadata, multilayer and state/memory objectives; see [`columnar_wip/benchmark-networks.md`](columnar_wip/benchmark-networks.md) for paths and full details. Columnar column = the default columnar search (`-C`).
 
-> **Re-measured at this PR** (`columnar-hierarchical-core` + the #889 flat-first trials). All five variants — OO, `-C`, `-C -F`, OO `-2`, `-2 -C` — were measured fresh in one session at this tip, on a heavily loaded machine (load average 26–65 throughout; OO wall times are up as much as +40% vs the previous refresh — within-session ratios are what matter, and the flat-first cost figures quoted in prose below are interleaved **CPU** time, min of 4, which is the only instrument that held still under that load). Codelength changes vs the previous refresh are confined to the `-C` / `-F` rows on the networks whose optimum the flat search reaches (**all improvements** — see the flat-first section below); **every OO and `-2` codelength in every variant is bit-identical** to the previous refresh, web-NotreDame included. Two `top`/`lvls` cells correct transcription slips in the previous refresh rather than reflecting any change: malaria reports 163 top modules (not 160 — verified identical on both binaries) and OO web-NotreDame 13 levels (not 12). Sub-0.1s "toy" times are at the process-startup floor — shown without a percentage.
+> **Fully re-measured after merging master in** (all 65 configs × 3 interleaved repetitions, one idle-machine session). **Every codelength in this section moved, on both engines**, and none of it is a search change: master's [#949](https://github.com/mapequation/infomap/pull/949) now seeds every trial the same way in every mode, so trials 1..9 of an `-N10` run draw a different sequence than before. Two controls pin that down — **`-N1` is bit-identical across the sync** on all 8 networks checked (the columnar search itself is untouched), and **master's OO output equals this branch's OO output** on all 7 OO configs checked (the branch is exactly neutral on the OO path, so every OO shift arrived with master). The per-seed spread swamps the per-cell shift in both directions: over seeds 123/234/345/456 the old→new `-C` delta averages +0.04% on netsci, −0.04% on malaria and +0.06% on powergrid. Master's `7da08cfb` also hoists per-node-constant plogp out of the **OO** move loop, so every columnar-vs-OO *speed ratio* below is against a faster baseline than the previous refresh. One real cost arrives too — master's #948 validates cluster-data tree shape inside `initTree`, which the columnar engine calls **per trial** — costing web-NotreDame ~5.5pp of its +7.5% and nothing measurable below ~10k nodes; the master-sync section below measures it and names the fix.
 
 <table>
 <thead>
@@ -21,28 +21,29 @@ Single-threaded (`MODE=release OPENMP=0`), `--seed 123 -N10` — **best of 10 tr
 </tr>
 </thead>
 <tbody>
-<tr><td>ninetriangles</td><td align="right">27</td><td>base</td><td>—</td><td align="right">3.38583082</td><td align="right">0.04s</td><td align="right">3</td><td align="right">3</td><td align="right">3.38583082 (=)</td><td align="right">0.04s</td><td align="right">3</td><td align="right">3</td></tr>
-<tr><td>jazz</td><td align="right">198</td><td>base</td><td>—</td><td align="right">6.86122977</td><td align="right">0.06s</td><td align="right">6</td><td align="right">2</td><td align="right"><b>6.86122977</b> (=)</td><td align="right">0.05s</td><td align="right">6</td><td align="right">2</td></tr>
-<tr><td>netscicoauthor2010</td><td align="right">552</td><td>base</td><td>—</td><td align="right">4.04321510</td><td align="right">0.17s</td><td align="right">2</td><td align="right">5</td><td align="right">4.05186752 (+0.21%)</td><td align="right">0.07s (−59%)</td><td align="right">3</td><td align="right">4</td></tr>
-<tr><td>powergrid</td><td align="right">4 941</td><td>base</td><td>—</td><td align="right">4.75648389</td><td align="right">1.96s</td><td align="right">5</td><td align="right">6</td><td align="right"><b>4.74907624</b> (−0.16%)</td><td align="right">0.33s (−83%)</td><td align="right">5</td><td align="right">5</td></tr>
-<tr><td>politicalblogs</td><td align="right">1 046</td><td>base</td><td><code>-d</code></td><td align="right">6.73952481</td><td align="right">0.22s</td><td align="right">74</td><td align="right">3</td><td align="right">6.74058207 (+0.02%)</td><td align="right">0.11s (−50%)</td><td align="right">78</td><td align="right">2</td></tr>
-<tr><td>science2001</td><td align="right">7 170</td><td>base</td><td><code>-d</code></td><td align="right">7.83428058</td><td align="right">9.19s</td><td align="right">12</td><td align="right">4</td><td align="right"><b>7.83343660</b> (−0.01%)</td><td align="right">3.33s (−64%)</td><td align="right">15</td><td align="right">3</td></tr>
-<tr><td>web-NotreDame</td><td align="right">325 729</td><td>base</td><td><code>-d</code></td><td align="right">5.56604138</td><td align="right">171.6s</td><td align="right">19</td><td align="right">13</td><td align="right">5.57279424 (+0.12%)</td><td align="right">21.4s (−88%)</td><td align="right">4</td><td align="right">6</td></tr>
-<tr><td>lazega</td><td align="right">69</td><td>metadata</td><td>—</td><td align="right">6.01786027</td><td align="right">0.05s</td><td align="right">7</td><td align="right">2</td><td align="right"><b>6.01786027</b> (=)</td><td align="right">0.05s</td><td align="right">7</td><td align="right">2</td></tr>
-<tr><td>multilayer (ex.)</td><td align="right">5</td><td>multilayer</td><td>—</td><td align="right">2.01140524</td><td align="right">0.04s</td><td align="right">2</td><td align="right">2</td><td align="right">2.01140524 (=)</td><td align="right">0.04s</td><td align="right">2</td><td align="right">2</td></tr>
-<tr><td>malaria</td><td align="right">307·9L</td><td>multilayer</td><td>—</td><td align="right">7.50337896</td><td align="right">10.8s</td><td align="right">145</td><td align="right">3</td><td align="right"><b>7.42225457</b> (−1.08%)</td><td align="right">3.40s (−69%)</td><td align="right">163</td><td align="right">2</td></tr>
-<tr><td>air30k</td><td align="right">13 213</td><td>state/memory</td><td>—</td><td align="right">5.39395534</td><td align="right">12.7s</td><td align="right">18</td><td align="right">4</td><td align="right"><b>5.39366442</b> (−0.005%)</td><td align="right">4.01s (−68%)</td><td align="right">20</td><td align="right">3</td></tr>
-<tr><td>air30k (reg.)</td><td align="right">13 213</td><td>state/memory</td><td><code>-d --regularized</code></td><td align="right">5.57565280</td><td align="right">8.88s</td><td align="right">301</td><td align="right">3</td><td align="right">5.57602419 (+0.007%)</td><td align="right">4.22s (−52%)</td><td align="right">11</td><td align="right">3</td></tr>
-<tr><td>science2001 (pref-mods)</td><td align="right">7 170</td><td>base</td><td><code>-d --preferred-number-of-modules 25</code></td><td align="right">7.92800030</td><td align="right">8.63s</td><td align="right">25</td><td align="right">4</td><td align="right">8.23835056 (+3.91%)</td><td align="right">3.52s (−59%)</td><td align="right">25</td><td align="right">2</td></tr>
+<tr><td>ninetriangles</td><td align="right">27</td><td>base</td><td>—</td><td align="right">3.38583082</td><td align="right">0.02s</td><td align="right">3</td><td align="right">3</td><td align="right"><b>3.38583082</b> (=)</td><td align="right">0.01s</td><td align="right">3</td><td align="right">3</td></tr>
+<tr><td>jazz</td><td align="right">198</td><td>base</td><td>—</td><td align="right">6.86304747</td><td align="right">0.03s</td><td align="right">5</td><td align="right">2</td><td align="right"><b>6.86275593</b> (−0.004%)</td><td align="right">0.02s</td><td align="right">6</td><td align="right">2</td></tr>
+<tr><td>netscicoauthor2010</td><td align="right">552</td><td>base</td><td>—</td><td align="right">4.04354934</td><td align="right">0.13s</td><td align="right">2</td><td align="right">5</td><td align="right">4.05454025 (+0.27%)</td><td align="right">0.03s (−74%)</td><td align="right">2</td><td align="right">4</td></tr>
+<tr><td>powergrid</td><td align="right">4 941</td><td>base</td><td>—</td><td align="right">4.75872920</td><td align="right">1.88s</td><td align="right">5</td><td align="right">7</td><td align="right"><b>4.74107206</b> (−0.37%)</td><td align="right">0.26s (−86%)</td><td align="right">5</td><td align="right">5</td></tr>
+<tr><td>politicalblogs</td><td align="right">1 046</td><td>base</td><td><code>-d</code></td><td align="right">6.73892798</td><td align="right">0.15s</td><td align="right">80</td><td align="right">3</td><td align="right">6.74094314 (+0.03%)</td><td align="right">0.07s (−51%)</td><td align="right">81</td><td align="right">2</td></tr>
+<tr><td>science2001</td><td align="right">7 170</td><td>base</td><td><code>-d</code></td><td align="right">7.83638921</td><td align="right">7.66s</td><td align="right">11</td><td align="right">4</td><td align="right"><b>7.83343660</b> (−0.04%)</td><td align="right">3.15s (−59%)</td><td align="right">15</td><td align="right">3</td></tr>
+<tr><td>web-NotreDame</td><td align="right">325 729</td><td>base</td><td><code>-d</code></td><td align="right">5.56592477</td><td align="right">144.2s</td><td align="right">17</td><td align="right">13</td><td align="right">5.56852929 (+0.05%)</td><td align="right">20.6s (−86%)</td><td align="right">5</td><td align="right">6</td></tr>
+<tr><td>lazega</td><td align="right">69</td><td>metadata</td><td>—</td><td align="right">6.01786027</td><td align="right">0.03s</td><td align="right">7</td><td align="right">2</td><td align="right"><b>6.01786027</b> (=)</td><td align="right">0.01s</td><td align="right">7</td><td align="right">2</td></tr>
+<tr><td>multilayer (ex.)</td><td align="right">5</td><td>multilayer</td><td>—</td><td align="right">2.01140524</td><td align="right">0.01s</td><td align="right">2</td><td align="right">2</td><td align="right"><b>2.01140524</b> (=)</td><td align="right">0.01s</td><td align="right">2</td><td align="right">2</td></tr>
+<tr><td>malaria</td><td align="right">307·9L</td><td>multilayer</td><td>—</td><td align="right">7.50242050</td><td align="right">8.89s</td><td align="right">142</td><td align="right">3</td><td align="right"><b>7.39750171</b> (−1.40%)</td><td align="right">3.17s (−64%)</td><td align="right">2</td><td align="right">3</td></tr>
+<tr><td>air30k</td><td align="right">13 213</td><td>state/memory</td><td>—</td><td align="right">5.39287115</td><td align="right">11.3s</td><td align="right">16</td><td align="right">4</td><td align="right"><b>5.39242541</b> (−0.008%)</td><td align="right">3.80s (−66%)</td><td align="right">22</td><td align="right">3</td></tr>
+<tr><td>air30k (reg.)</td><td align="right">13 213</td><td>state/memory</td><td><code>-d --regularized</code></td><td align="right">5.57843563</td><td align="right">7.42s</td><td align="right">301</td><td align="right">3</td><td align="right"><b>5.57624241</b> (−0.04%)</td><td align="right">4.06s (−45%)</td><td align="right">11</td><td align="right">3</td></tr>
+<tr><td>science2001 (pref-mods)</td><td align="right">7 170</td><td>base</td><td><code>-d --preferred-number-of-modules 25</code></td><td align="right">7.94035360</td><td align="right">7.88s</td><td align="right">25</td><td align="right">4</td><td align="right">8.23558553 (+3.72%)</td><td align="right">3.35s (−58%)</td><td align="right">25</td><td align="right">2</td></tr>
 </tbody>
 </table>
 
 `nodes`: state nodes for air30k (13 213 states over 183 physical); physical·layers for malaria. **Bold** = columnar beats or exactly ties OO. Parentheses on the columnar `-C` columns = change vs OO (`(=)` = bit-identical; negative time = faster).
 
 **Reading the table**
-- **Codelength** — columnar `-C` now **ties or beats OO on 8 of 13 configs**: it beats OO on powergrid (−0.16%), science2001 (−0.01%), malaria (−1.08%) and air30k (−0.005%), and exactly ties jazz, lazega and the toys. The air30k flat-optimum gap that #834 tracked (+1.33% / +1.56%) is **closed** — the flat-first trials reach the near-flat optima the enter-flow up-build cannot. Regularized air30k lands at +0.007%, i.e. a tie with OO to the fifth decimal: across seeds 123/234/345/456 `-C` sits between −0.00% and +0.10% of OO, so "ties within seed noise" is the honest reading, not a win in either direction (see the flat-first section). Remaining gaps: netsci +0.21%, web-NotreDame +0.12%, politicalblogs +0.02%, and pref-mods +3.91% (was +6.72%; the `|K − K_pref|` bias is leaf-loop-only, #827).
-- **Speed** — columnar is faster on every non-trivial network: ~2.6–3.2× on science2001 / malaria / air30k / regularized, ~5.9× on powergrid, ~8× on web-NotreDame (21.4s vs 171.6s).
-- **Shape** — columnar produces leaner, shallower maps (web-NotreDame: 4 top modules / 6 levels vs OO's 19 / 12) that the map equation scores as essentially equal; where the optimum is genuinely (near-)flat (malaria), the search now reports the flat partition instead of forcing a hierarchy.
+- **Codelength** — columnar `-C` **ties or beats OO on 9 of 13 configs**: it beats OO on malaria (−1.40%), powergrid (−0.37%), science2001 (−0.04%), regularized air30k (−0.04%), air30k (−0.008%) and jazz (−0.004%), and ties lazega and the toys. Remaining gaps: pref-mods +3.72% (the `|K − K_pref|` bias is leaf-loop-only, #827), netsci +0.27%, web-NotreDame +0.05%, politicalblogs +0.03%. Regularized air30k crossed from +0.007% behind to ahead, and jazz from an exact tie to a win — both within the per-seed spread, so read them as ties that landed on the good side of this seed rather than as new wins.
+- **The web-NotreDame gap is a user choice.** At the default knee it is +0.05%. Adding `--tune-iteration-relative-threshold 1e-3` takes it to 5.56067487 — **−0.094%, ahead of OO** — for +30% wall; `0` (full convergence) reaches 5.55881205, −0.128% ahead, for +91%. F26 explains why the deeper refinement is a dial rather than the default.
+- **Speed** — columnar is faster on every non-trivial network: ~1.8× on regularized air30k, ~2.4× on science2001 and pref-mods, ~2.8–3.0× on malaria and air30k, ~7× on powergrid and web-NotreDame (20.6s vs 144.2s). The multipliers are lower than the previous refresh on the OO-heavy rows because master's `7da08cfb` made the **OO** baseline 5–13% faster, not because columnar slowed.
+- **Shape** — columnar produces leaner, shallower maps (web-NotreDame: 5 top modules / 6 levels vs OO's 17 / 13)
 
 ### The fast dial `-F`
 
@@ -61,31 +62,150 @@ Single-threaded (`MODE=release OPENMP=0`), `--seed 123 -N10` — **best of 10 tr
 </tr>
 </thead>
 <tbody>
-<tr><td>ninetriangles</td><td align="right">3.38583082</td><td align="right">0.04s</td><td align="right">3</td><td align="right">3</td><td align="right">3.38583082 (=)</td><td align="right">0.04s</td><td align="right">3</td><td align="right">3</td></tr>
-<tr><td>jazz</td><td align="right">6.86122977</td><td align="right">0.05s</td><td align="right">6</td><td align="right">2</td><td align="right">6.86122977 (=)</td><td align="right">0.05s</td><td align="right">6</td><td align="right">2</td></tr>
-<tr><td>netscicoauthor2010</td><td align="right">4.05186752</td><td align="right">0.07s</td><td align="right">3</td><td align="right">4</td><td align="right">4.06428378 (+0.31%)</td><td align="right">0.05s</td><td align="right">3</td><td align="right">4</td></tr>
-<tr><td>powergrid</td><td align="right">4.74907624</td><td align="right">0.33s</td><td align="right">5</td><td align="right">5</td><td align="right">4.77217700 (+0.49%)</td><td align="right">0.21s (−36%)</td><td align="right">5</td><td align="right">5</td></tr>
-<tr><td>politicalblogs (<code>-d</code>)</td><td align="right">6.74058207</td><td align="right">0.11s</td><td align="right">78</td><td align="right">2</td><td align="right">6.74058207 (=)</td><td align="right">0.10s (−9%)</td><td align="right">78</td><td align="right">2</td></tr>
-<tr><td>science2001 (<code>-d</code>)</td><td align="right">7.83343660</td><td align="right">3.33s</td><td align="right">15</td><td align="right">3</td><td align="right">7.83343660 (=)</td><td align="right">3.13s (−6%)</td><td align="right">15</td><td align="right">3</td></tr>
-<tr><td>web-NotreDame (<code>-d</code>)</td><td align="right">5.57279424</td><td align="right">21.4s</td><td align="right">4</td><td align="right">6</td><td align="right">5.62448318 (+0.93%)</td><td align="right">15.8s (−26%)</td><td align="right">2</td><td align="right">5</td></tr>
-<tr><td>lazega (meta)</td><td align="right">6.01786027</td><td align="right">0.05s</td><td align="right">7</td><td align="right">2</td><td align="right">6.01786027 (=)</td><td align="right">0.04s</td><td align="right">7</td><td align="right">2</td></tr>
-<tr><td>multilayer (ex.)</td><td align="right">2.01140524</td><td align="right">0.04s</td><td align="right">2</td><td align="right">2</td><td align="right">2.01140524 (=)</td><td align="right">0.04s</td><td align="right">2</td><td align="right">2</td></tr>
-<tr><td>malaria</td><td align="right">7.42225457</td><td align="right">3.40s</td><td align="right">163</td><td align="right">2</td><td align="right">7.42225457 (=)</td><td align="right">3.33s (−2%)</td><td align="right">163</td><td align="right">2</td></tr>
-<tr><td>air30k (states)</td><td align="right">5.39366442</td><td align="right">4.01s</td><td align="right">20</td><td align="right">3</td><td align="right">5.39366442 (=)</td><td align="right">3.77s (−6%)</td><td align="right">20</td><td align="right">3</td></tr>
-<tr><td>air30k (reg.)</td><td align="right">5.57602419</td><td align="right">4.22s</td><td align="right">11</td><td align="right">3</td><td align="right">5.57602419 (=)</td><td align="right">3.82s (−9%)</td><td align="right">11</td><td align="right">3</td></tr>
-<tr><td>science2001 (pref-mods)</td><td align="right">8.23835056</td><td align="right">3.52s</td><td align="right">25</td><td align="right">2</td><td align="right">8.23835056 (=)</td><td align="right">3.38s (−4%)</td><td align="right">25</td><td align="right">2</td></tr>
+<tr><td>ninetriangles</td><td align="right">3.38583082</td><td align="right">0.01s</td><td align="right">3</td><td align="right">3</td><td align="right">3.38583082 (=)</td><td align="right">0.01s</td><td align="right">3</td><td align="right">3</td></tr>
+<tr><td>jazz</td><td align="right">6.86275593</td><td align="right">0.02s</td><td align="right">6</td><td align="right">2</td><td align="right">6.86275593 (=)</td><td align="right">0.02s</td><td align="right">6</td><td align="right">2</td></tr>
+<tr><td>netscicoauthor2010</td><td align="right">4.05454025</td><td align="right">0.03s</td><td align="right">2</td><td align="right">4</td><td align="right">4.06300588 (+0.21%)</td><td align="right">0.03s</td><td align="right">4</td><td align="right">4</td></tr>
+<tr><td>powergrid</td><td align="right">4.74107206</td><td align="right">0.26s</td><td align="right">5</td><td align="right">5</td><td align="right">4.77402224 (+0.69%)</td><td align="right">0.17s (−35%)</td><td align="right">4</td><td align="right">5</td></tr>
+<tr><td>politicalblogs (<code>-d</code>)</td><td align="right">6.74094314</td><td align="right">0.07s</td><td align="right">81</td><td align="right">2</td><td align="right">6.74094314 (=)</td><td align="right">0.07s</td><td align="right">81</td><td align="right">2</td></tr>
+<tr><td>science2001 (<code>-d</code>)</td><td align="right">7.83343660</td><td align="right">3.15s</td><td align="right">15</td><td align="right">3</td><td align="right">7.83343660 (=)</td><td align="right">3.01s (−4%)</td><td align="right">15</td><td align="right">3</td></tr>
+<tr><td>web-NotreDame (<code>-d</code>)</td><td align="right">5.56852929</td><td align="right">20.6s</td><td align="right">5</td><td align="right">6</td><td align="right">5.62506198 (+1.02%)</td><td align="right">15.5s (−25%)</td><td align="right">2</td><td align="right">5</td></tr>
+<tr><td>lazega (meta)</td><td align="right">6.01786027</td><td align="right">0.01s</td><td align="right">7</td><td align="right">2</td><td align="right">6.01786027 (=)</td><td align="right">0.01s</td><td align="right">7</td><td align="right">2</td></tr>
+<tr><td>multilayer (ex.)</td><td align="right">2.01140524</td><td align="right">0.01s</td><td align="right">2</td><td align="right">2</td><td align="right">2.01140524 (=)</td><td align="right">0.01s</td><td align="right">2</td><td align="right">2</td></tr>
+<tr><td>malaria</td><td align="right">7.39750171</td><td align="right">3.17s</td><td align="right">2</td><td align="right">3</td><td align="right">7.39750171 (=)</td><td align="right">3.17s</td><td align="right">2</td><td align="right">3</td></tr>
+<tr><td>air30k (states)</td><td align="right">5.39242541</td><td align="right">3.80s</td><td align="right">22</td><td align="right">3</td><td align="right">5.39242541 (=)</td><td align="right">3.57s (−6%)</td><td align="right">22</td><td align="right">3</td></tr>
+<tr><td>air30k (reg.)</td><td align="right">5.57624241</td><td align="right">4.06s</td><td align="right">11</td><td align="right">3</td><td align="right">5.57624241 (=)</td><td align="right">3.58s (−12%)</td><td align="right">11</td><td align="right">3</td></tr>
+<tr><td>science2001 (pref-mods)</td><td align="right">8.23558553</td><td align="right">3.35s</td><td align="right">25</td><td align="right">2</td><td align="right">8.23558553 (=)</td><td align="right">3.23s (−4%)</td><td align="right">25</td><td align="right">2</td></tr>
 </tbody>
 </table>
 
 Parentheses on the columnar `-F` columns = change vs `-C` (`(=)` = bit-identical; negative time = faster); both columns are from the current same-session re-measurement. Sub-0.1s toy times are shown without a percentage (measurement floor).
 
-**`-F` now ties `-C` on 10 of 13 configs** — including pref-mods, where it previously lost another +2.3% — because the flat-first trials carry the same winning partitions into both searches. The dial only bites on the base networks with real deep hierarchy, where skipping the interior refinement trades codelength for speed: web-NotreDame **+0.9% for −26% time**, powergrid +0.5% for −36%, netsci +0.31%. On the flat-winning networks `-F` is now only 2–9% faster than `-C`, because `-C`'s expensive pass — the interior refinement — is exactly the one the flat bottom no longer needs (below).
+**`-F` still ties `-C` on 10 of 13 configs** — including pref-mods, where it previously lost another +2.3% — because the flat-first trials carry the same winning partitions into both searches. The dial only bites on the base networks with real deep hierarchy, where skipping the interior refinement trades codelength for speed — and the F23 knee widens that trade, because it deepens exactly the refinement `-F` skips: web-NotreDame **+1.02% for −25% time**, powergrid +0.69% for −35%, netsci +0.21%. Partial seeding widens the dial further, because it improves `-C` on exactly the three networks `-F` cannot follow it on (the re-refine gate makes `-F` bit-identical by construction). On the flat-winning networks `-F` is 0–12% faster than `-C`, because `-C`'s expensive pass — the interior refinement — is exactly the one the flat bottom no longer needs (below). The tie set is unchanged by the sync; only the three dial rows move, and they move because both arms drew a new trial sequence (see the note at the top).
 
-The columnar interior refinement stops at a diminishing-returns knee (default `--tune-iteration-relative-threshold` = 5e-3), which on deep networks trades the last ~0.06% of codelength for ~18% less search time; shallow networks are unaffected.
+The columnar interior refinement stops at a diminishing-returns knee (default `--tune-iteration-relative-threshold` = 5e-3). On the two deep base networks, lowering it to 1e-3 buys 0.05–0.14% of codelength for 23–30% more time; shallow networks are structurally unaffected. See the knee section below.
+
+### Merging master in: what moved, and why none of it is the engine (F28)
+
+**Merged, not rebased, and that is a deliberate choice.** Thirteen sub-PRs have been merged into this
+branch (#823, #833, #835, #868, #874, #879, #880, #890, #891, #983, #985, #987, #988), each by
+rebase-merge — so each one's recorded merge commit *is* a commit on this branch. A rebase rewrites all
+of them: checked, **13 of 13** would end up detached, leaving those PRs marked merged into a history
+that no longer contains them. The merge commit also gives the numbers a boundary to hang on: every
+per-feature table below it was measured against the pre-sync baseline, and the tables at the top
+against the new one.
+
+Master was merged in after 122 upstream commits. Three of them touch every number in
+this section, and none of them is a columnar change:
+
+- **[#949](https://github.com/mapequation/infomap/pull/949) — seed every trial the same way, in every mode.**
+  The serial path used to reseed only in "sharding mode"; it now reseeds unconditionally from
+  `baseSeed + trialOffset + trialIndex`, which is exactly the formula the columnar branch already used
+  in the parallel path. Trials 1..9 of an `-N10` run therefore draw a different sequence than before,
+  on **both** engines. This is the whole story behind the codelength movement.
+- **`7da08cfb` — plogp hoisted out of the OO move-loop delta.** The OO baseline is 5–13% faster, so
+  every columnar-vs-OO speed multiplier is quoted against a faster reference.
+- **[#948](https://github.com/mapequation/infomap/pull/948) (`d55c2365`) — cluster-data tree-shape validation.**
+  This one is **columnar-only and per trial**, and it is the whole measurable cost. See below.
+
+Two controls separate "the seeds moved" from "the search changed", and both come out clean:
+
+| control | result |
+|---|---|
+| `-C -N1`, pre-sync core vs post-sync core | **bit-identical codelength on 8/8 networks** — trial 0 is unaffected by #949, so the search is provably untouched |
+| OO `-N10`, plain master vs post-sync core | **identical on 7/7 networks** — the branch is exactly neutral on the OO path, so every OO shift arrived with master |
+
+That leaves the per-cell `-N10` differences as re-draws from an unchanged distribution, which the seed
+sweep confirms — old→new `-C` deltas over seeds 123/234/345/456:
+
+| network | 123 | 234 | 345 | 456 | mean |
+|---|--:|--:|--:|--:|--:|
+| netscicoauthor2010 | +0.122% | +0.009% | −0.034% | +0.058% | **+0.039%** |
+| malaria | −0.265% | +0.143% | +0.110% | −0.145% | **−0.039%** |
+| powergrid | +0.031% | +0.056% | +0.015% | +0.135% | **+0.059%** |
+
+Every mean is inside ±0.06% and the per-seed spread is larger than the shift, so no network changed
+quality. The two cells that clear 0.1% at seed 123 — netsci `-C` +0.122% and malaria `-C` −0.265% —
+are the tails of exactly that spread, in opposite directions.
+
+**Speed, measured where the partition is bit-identical** (`-C -N1`, so the only variable is code;
+min-of-5 to min-of-7, interleaved): malaria −2.0%, air30k −2.6%, regularized air30k ±0, powergrid one
+timer tick, science2001 +2.0%, **web-NotreDame +4.7%** (`-N10`: +6.7%). Only web-NotreDame is worth
+explaining, and the timing registry localises it exactly — `flow_calculation_s` 0.315 → 0.313 and
+`init_network_s` 0.153 → 0.142 are flat, while `trial_optimize_s` goes **1.943 → 2.073 (+6.7%)**.
+
+The cause is **#948's cluster-data tree-shape validation**, which the columnar engine pays *per trial*:
+
+| binary (web-NotreDame `-C -N1`, `trial_optimize_s`, min-of-5) | | |
+|---|--:|--:|
+| pre-sync core | 1.953s | — |
+| post-sync core | 2.100s | +7.5% |
+| post-sync core, #948 check disabled | 1.992s | **+2.0%** |
+
+`initTree` builds two `std::map<Path, bool>` keyed by `std::vector<unsigned int>`, one entry per path
+prefix per leaf, to reject cluster data that gives a module both a leaf and a sub-module as children.
+That is the right check for user-supplied `--cluster-data`. But `columnarPartition` calls `initTree`
+**every trial** to materialize `opt.toNodePaths(...)` — Infomap's own output, which cannot mix depths
+by construction — so on 325 729 leaves it is ~1.6M map insertions per trial, buying nothing. It costs
+`-C` 5.5pp of its 7.5pp and `-C -F` 7pp of its 11.2pp; science2001 (7 170 nodes) and air30k are inside
+noise, so the cost scales with leaf count × depth as the shape predicts.
+
+Two things this is *not*, both checked rather than assumed: it is **not** the #958/#961/#963 flow
+post-conditions (gated off in a measurement build, they cost **0.003s — +0.1%** of the trial), and it
+is **not** #954's iterator change (reverting it leaves the regression intact). It is also **not** paid
+by the OO engine, which does not call `initTree` per trial — OO on web-NotreDame is 5% *faster* after
+the sync. **A cheap fix exists** (skip the shape validation when `initTree` is handed
+engine-generated paths rather than parsed cluster data); it is left for a follow-up rather than folded
+into a master sync, and the residual +2.0% is inside code-layout noise.
+
+### The refine knee stays at 5e-3, and 1e-3 is a dial (F23 → F26)
+
+`ColumnarTwoLevel::m_minRelTuneImprovement` stops the interior-layer refinement once a whole up/down
+sweep gains less than this fraction of the post-build codelength. It is **5e-3 on this branch** — the same
+value as before it. A change to 1e-3 was measured, shipped and then **reverted**: the A/B behind it ran
+at load average ~20–25 and inflated the 5e-3 arm more than the 1e-3 arm, reporting the cost as +8.7%
+when idle re-measurement puts it at **+20.3%** (F26 in the findings log; Daniel caught it by
+cross-session arithmetic on OO times).
+
+What survived the revert is that the deeper refinement is real and cannot be bought with more trials —
+at matched CPU on web-NotreDame, 5e-3 saturates at 5.5727 by `-N12` while 1e-3 reaches 5.5674 for the
+same budget. So it is offered rather than defaulted: `--tune-iteration-relative-threshold 1e-3` on
+web-NotreDame gives **5.56067487 (−0.14%) for +30% wall**, and `0` (full convergence) **5.55881205
+(−0.17%) for +91%** (re-measured at this branch's tip). Only the two deep base networks react at all —
+`refineSweeps` is 1 for a stack with at most one interior layer, so science2001/air30k/malaria cannot,
+and `-F` never enters `refineHierarchy`.
+
+> The per-feature attribution tables in the sections below (F25 partial seeding, F27 split operator, flat-first trials, coarse-tune, and the #875 tele/meta hoist) are **as measured at the PR that landed each feature on this branch**, on the pre-#949 trial sequence. They are kept as the record of what each feature contributed when it landed; the headline tables above are the current numbers. The before/after *deltas* in those tables remain the right reading — both arms of each were measured in one session against one seeding scheme.
+
+Every measured run behind this section is logged row-per-run in [`columnar_wip/columnar-search-runs.tsv`](columnar_wip/columnar-search-runs.tsv) for plotting the codelength/time frontier. Read the `batch` column before comparing times: session noise floors ranged ±3% to 13%, so the time axis is only comparable within a batch (`load1m`, `reps`, `agg` are recorded for that reason), and `derived=1` marks rows reconstructed from reported percentages rather than measured absolutes.
+
+### Partial seeding: release the boundary, lock the module cores (F25, PR #985)
+
+A grandparent re-refine in `refineLayerWithinGrandparent` had two settings and both waste something. **From singletons** (the default) rediscovers the entire sub-partition, including the module cores that were never in doubt, and it is the most expensive pass in the search. **Fully seeded** (`seedAssignment`: singletons, then deterministic placement back into the old module, then greedy) reproduces the current partition, so the gate reverts and the pass is a full-price no-op.
+
+Partial seeding is the middle, and it is a differently-*targeted* search rather than a cheaper one: rank a grandparent's units by how much of their flow leaves their current module, **lock** the confident cores and **release** the loosest fraction *q* as fresh singletons, so the greedy loop must re-place exactly the units whose membership was marginal.
+
+**The ranking is the mechanism, not the release count** — the inverse control settles it (web-NotreDame, q=0.5, seed 123): boundary-release −0.015% < baseline < inverse-release +0.069% < random +0.153%. Releasing the same *number* of units by the inverse ranking is worse than baseline.
+
+Two policy decisions came from measurement rather than design:
+- **Re-refine only.** A layer is partial-seeded only on a re-refine (`refineHierarchy` sweep > 0), never on its first from-singletons derivation, because seeding's quality damage is localised to *first contact* with a grandparent rather than to stale seeds. This is what removes every regression the always-on variant had (science2001 +0.016% on 3/3 seeds, `-F` web-NotreDame +0.080% on 3/3). Consequence: `-F` refines once, so nothing there is ever a re-refine and **`-F` is bit-identical by construction**.
+- **q = 0.40, metric = crossing link flow / total link flow.** Broad plateau; web-NotreDame collapses below q≈0.33 when always-on and everything degrades above 0.6. The alternative `exit/(flow + exit)` is **degenerate on undirected first-order networks** — `FlowCalculator.cpp:1475` sets `node.exitFlow = node.flow`, so the ratio is 0.5 for every leaf and the ranking collapses to node order; proof: on powergrid that metric and its exact inverse give bit-identical output.
+
+| config (`-C`) | before | at landing | Δ CPU | vs OO |
+|---|--:|--:|--:|--:|
+| powergrid | 4.74907624 | **4.73960028** (−0.199%) | **+0.0%** (0.26s) | **beats by 0.36%** |
+| web-NotreDame | 5.57279424 | **5.56799417** (−0.086%) | **+1.7%** (20.53 → 20.88s) | +0.035% (was +0.121%) |
+| netscicoauthor2010 | 4.05186752 | **4.04960341** (−0.056%) | +0.0% (at floor) | +0.16% (was +0.21%) |
+| the other 10 configs | — | bit-identical | — | — |
+
+Seed-robust: at the 1e-3 knee the same policy held on 4 seeds per network (web-NotreDame −0.121/−0.114/−0.099/−0.140%, powergrid −0.151/−0.169/−0.253/−0.076%). Nothing regresses on any network or seed at either knee.
+
+**Cost: none that resolves.** Interleaved min-of-3 on an idle machine: powergrid +0.0% (0.26s both), web-NotreDame +1.7% (20.53 → 20.88s), netsci and science2001 at the timer floor. At the 1e-3 knee the same feature cost powergrid +7.4%; at the shipped 5e-3 default that bill disappears **and powergrid's win is larger** (−0.199% vs −0.151%), because the shallower refinement leaves more for a well-targeted re-refine to find. Per-trial overhead is ≤1%.
+
+air30k is **bit-identical on every variant and seed**: its `-C` winner is a flat-first trial whose leaf layer is already skipped by `m_bottomConverged` (F22), so there is no re-refine to partial-seed. Applying partial seeding to the converged flat bottom *instead* of skipping it was measured and rejected (−0.033%/−0.011% on two seeds for +16%/+34%/+41% CPU).
 
 ### Two-level clustering (`-2`)
 
-`--two-level` is wired to the columnar engine on the `columnar-two-level` branch (PR #823): the full two-level optimize materialized as a two-level stack, followed by the correction-aware module-merge coarsening interleaved with a seeded leaf fine-tune until the pair stops improving, plus the #889 coarse-tune (in-trajectory repair every trial + deep repair of the winning trial). **This PR does not change `-2` — every codelength below is bit-identical to the previous refresh** (times re-measured in the same session as the tables above).
+`--two-level` is wired to the columnar engine on the `columnar-two-level` branch (PR #823): the full two-level optimize materialized as a two-level stack, followed by the correction-aware module-merge coarsening interleaved with a seeded leaf fine-tune until the pair stops improving, plus the #889 coarse-tune (in-trajectory repair every trial + deep repair of the winning trial). **No change to the `-2` code path since PR #890** — the codelengths below moved only with the sync's new trial sequence (see the note at the top), and every row is re-measured in the same session as the tables above.
 
 <table>
 <thead>
@@ -100,25 +220,25 @@ The columnar interior refinement stops at a diminishing-returns knee (default `-
 </tr>
 </thead>
 <tbody>
-<tr><td>ninetriangles</td><td align="right">3.51775481</td><td align="right">0.04s</td><td align="right">9</td><td align="right">3.51775481 (=)</td><td align="right">0.04s</td><td align="right">9</td></tr>
-<tr><td>jazz</td><td align="right">6.86122977</td><td align="right">0.05s</td><td align="right">6</td><td align="right"><b>6.86122977</b> (=)</td><td align="right">0.04s</td><td align="right">6</td></tr>
-<tr><td>netscicoauthor2010</td><td align="right">4.28611584</td><td align="right">0.06s</td><td align="right">56</td><td align="right"><b>4.28228737</b> (−0.09%)</td><td align="right">0.05s</td><td align="right">57</td></tr>
-<tr><td>powergrid</td><td align="right">5.59831236</td><td align="right">0.60s</td><td align="right">420</td><td align="right">5.63395576 (+0.64%)</td><td align="right">0.15s (−75%)</td><td align="right">426</td></tr>
-<tr><td>politicalblogs (<code>-d</code>)</td><td align="right">6.74031825</td><td align="right">0.13s</td><td align="right">74</td><td align="right"><b>6.73918608</b> (−0.02%)</td><td align="right">0.09s (−31%)</td><td align="right">81</td></tr>
-<tr><td>science2001 (<code>-d</code>)</td><td align="right">7.94913415</td><td align="right">4.45s</td><td align="right">496</td><td align="right">7.94947087 (+0.004%)</td><td align="right">2.47s (−44%)</td><td align="right">508</td></tr>
-<tr><td>web-NotreDame (<code>-d</code>)</td><td align="right">6.74367900</td><td align="right">49.0s</td><td align="right">11831</td><td align="right">6.75083498 (+0.11%)</td><td align="right">20.7s (−58%)</td><td align="right">11687</td></tr>
-<tr><td>lazega (meta)</td><td align="right">6.01786027</td><td align="right">0.05s</td><td align="right">7</td><td align="right"><b>6.01786027</b> (=)</td><td align="right">0.04s</td><td align="right">7</td></tr>
-<tr><td>multilayer (ex.)</td><td align="right">2.01140524</td><td align="right">0.04s</td><td align="right">2</td><td align="right">2.01140524 (=)</td><td align="right">0.04s</td><td align="right">2</td></tr>
-<tr><td>malaria</td><td align="right">7.50653124</td><td align="right">8.07s</td><td align="right">145</td><td align="right"><b>7.42225457</b> (−1.12%)</td><td align="right">2.78s (−66%)</td><td align="right">163</td></tr>
-<tr><td>air30k (states)</td><td align="right">5.39376962</td><td align="right">4.41s</td><td align="right">332</td><td align="right"><b>5.39262338</b> (−0.02%)</td><td align="right">3.91s (−11%)</td><td align="right">336</td></tr>
-<tr><td>air30k (reg.)</td><td align="right">5.57643406</td><td align="right">6.65s</td><td align="right">301</td><td align="right"><b>5.57540857</b> (−0.02%)</td><td align="right">3.86s (−42%)</td><td align="right">303</td></tr>
-<tr><td>science2001 (pref-mods)</td><td align="right">8.13124130</td><td align="right">6.10s</td><td align="right">25</td><td align="right">8.23577532 (+1.29%)</td><td align="right">3.14s (−49%)</td><td align="right">25</td></tr>
+<tr><td>ninetriangles</td><td align="right">3.51775481</td><td align="right">0.01s</td><td align="right">9</td><td align="right"><b>3.51775481</b> (=)</td><td align="right">0.01s</td><td align="right">9</td></tr>
+<tr><td>jazz</td><td align="right">6.86304747</td><td align="right">0.02s</td><td align="right">5</td><td align="right"><b>6.86122977</b> (−0.03%)</td><td align="right">0.02s</td><td align="right">6</td></tr>
+<tr><td>netscicoauthor2010</td><td align="right">4.28501267</td><td align="right">0.04s</td><td align="right">56</td><td align="right"><b>4.28307258</b> (−0.05%)</td><td align="right">0.02s</td><td align="right">59</td></tr>
+<tr><td>powergrid</td><td align="right">5.60044386</td><td align="right">0.57s</td><td align="right">419</td><td align="right">5.63729688 (+0.66%)</td><td align="right">0.11s (−81%)</td><td align="right">419</td></tr>
+<tr><td>politicalblogs (<code>-d</code>)</td><td align="right">6.73972141</td><td align="right">0.09s</td><td align="right">80</td><td align="right"><b>6.73957529</b> (−0.002%)</td><td align="right">0.06s</td><td align="right">81</td></tr>
+<tr><td>science2001 (<code>-d</code>)</td><td align="right">7.95003960</td><td align="right">3.94s</td><td align="right">496</td><td align="right"><b>7.94997883</b> (−0.001%)</td><td align="right">2.44s (−38%)</td><td align="right">506</td></tr>
+<tr><td>web-NotreDame (<code>-d</code>)</td><td align="right">6.74298853</td><td align="right">42.8s</td><td align="right">11809</td><td align="right">6.75421666 (+0.17%)</td><td align="right">18.5s (−57%)</td><td align="right">11991</td></tr>
+<tr><td>lazega (meta)</td><td align="right">6.01786027</td><td align="right">0.02s</td><td align="right">7</td><td align="right"><b>6.01786027</b> (=)</td><td align="right">0.01s</td><td align="right">7</td></tr>
+<tr><td>multilayer (ex.)</td><td align="right">2.01140524</td><td align="right">0.01s</td><td align="right">2</td><td align="right"><b>2.01140524</b> (=)</td><td align="right">0.01s</td><td align="right">2</td></tr>
+<tr><td>malaria</td><td align="right">7.50595639</td><td align="right">6.47s</td><td align="right">142</td><td align="right"><b>7.40044538</b> (−1.41%)</td><td align="right">2.78s (−57%)</td><td align="right">168</td></tr>
+<tr><td>air30k (states)</td><td align="right">5.39331278</td><td align="right">4.37s</td><td align="right">332</td><td align="right"><b>5.39305505</b> (−0.005%)</td><td align="right">3.45s (−21%)</td><td align="right">334</td></tr>
+<tr><td>air30k (reg.)</td><td align="right">5.57921689</td><td align="right">5.53s</td><td align="right">301</td><td align="right"><b>5.57557704</b> (−0.07%)</td><td align="right">3.63s (−34%)</td><td align="right">304</td></tr>
+<tr><td>science2001 (pref-mods)</td><td align="right">8.13096953</td><td align="right">5.84s</td><td align="right">25</td><td align="right">8.23558553 (+1.29%)</td><td align="right">3.06s (−48%)</td><td align="right">25</td></tr>
 </tbody>
 </table>
 
-Parentheses on the columnar columns = change vs OO `-2` (**bold** = columnar beats or exactly ties OO). Columnar `-2` ties or beats OO on 11 of 13 configs, including *every* correction network; the exceptions are base-objective configs (powergrid +0.64%, pref-mods +1.29%), and it is faster on every non-trivial network (−10% to −83%).
+Parentheses on the columnar columns = change vs OO `-2` (**bold** = columnar beats or exactly ties OO). Columnar `-2` ties or beats OO on 10 of 13 configs, including *every* correction network; the three exceptions are base-objective configs (powergrid +0.66%, web-NotreDame +0.17%, pref-mods +1.29%), and it is faster on every non-trivial network (−21% to −81%).
 
-### Flat-first trials: the flat candidate for the hierarchical searches (#889 hierarchical half, closes #834 — this PR)
+### Flat-first trials: the flat candidate for the hierarchical searches (F21/F22, PR #891 — #889 hierarchical half, closes #834)
 
 Measured at the coarse-tune PR: the `-C` overshoot forms in the **enter-flow up-build**, not in the within-parent sub-optimizers — on networks whose optimum is (near-)flat with many modules (air30k: OO wants 301–332 top modules), no amount of interior refinement can reach the flat basin from the fine-blocks build. OO's own hierarchical search is flat-first (partition, then super/sub structure), so the columnar engine now gets **both search directions** and lets best-of-N pick per network:
 
@@ -154,7 +274,7 @@ Malaria is the one config the flat trials barely move on their own (−0.06%): i
 
 **No network now pays a non-trivial cost for a non-existent gain.** The five configs whose codelength the flat search cannot improve (netsci, powergrid, science2001, web-NotreDame, and politicalblogs at −0.002%) come in between −0.6% and +4%, and the +4% on powergrid is a single hundredth of a second at the measurement floor — the probe is module-level work on a network whose aggregation has already collapsed. Regularized air30k is the only config left with a bill worth naming, and it is now genuine flat-search work: the probe's aggregation passes (+0.15 s/trial — the tele/regularized corrections ride the module-level passes there) plus the flat completion (+0.15 s/trial), partly offset by the refinement that no longer runs. Individual repetitions of that row ranged +14% to +25% under load; +17% is the pooled minimum. `-C` stays 52–69% faster than OO on all four gaining networks.
 
-**One codelength moved relative to the first cut of this PR**, and it is worth stating plainly: regularized air30k at seed 123 goes 5.575137 → 5.576024 (+0.016%). That 0.24% was won by a single flat trial's leaf re-derivation, and it does not survive a seed change — seeds 234/345/456 are bit-identical with and without the pass, and on all three `-C` already sits 0.02–0.10% above OO. The earlier "regularized air30k beats OO" was a seed-123 artefact; ~3 s per `-N10` run for a 1-in-4-seed lottery ticket is not a trade worth keeping, and a winner-only variant does not recover it either (at seed 123 the winning trial is one where the pass gains nothing).
+**One codelength moved relative to the first cut of PR #891**, and it is worth stating plainly: regularized air30k at seed 123 goes 5.575137 → 5.576024 (+0.016%). That 0.24% was won by a single flat trial's leaf re-derivation, and it does not survive a seed change — seeds 234/345/456 are bit-identical with and without the pass, and on all three `-C` already sits 0.02–0.10% above OO. The earlier "regularized air30k beats OO" was a seed-123 artefact; ~3 s per `-N10` run for a 1-in-4-seed lottery ticket is not a trade worth keeping, and a winner-only variant does not recover it either (at seed 123 the winning trial is one where the pass gains nothing).
 
 ### Peak memory: the leaf CSR is stored once, not four times (leaf-CSR single-owner PR)
 
@@ -168,25 +288,46 @@ the core now keeps **one** owner and everything else points at it: a trial borro
 leaf level, the active level aliases it while the units are leaves, and level 0 of the stack is a
 placeholder that reads through to it.
 
-**Codelength is bit-identical on all 65 configs** (13 networks × {`-C`, `-C -F`, `-2 -C`, OO, OO
-`-2`}), top-module and level counts included. Peak RSS, same-session alternating runs, excluding the
-8.5 MB process floor:
+**Codelength is bit-identical to the base branch on all 39 columnar configs** (13 networks ×
+{`-C`, `-C -F`, `-2 -C`}), top-module and level counts included — **re-verified after merging the current
+core in**, where this PR's single-owner refactor now has to coexist with partial seeding
+(F25) and the hierarchical split operator (F27), neither of which existed when it was written.
 
-| variant | networks | median Δ peak RSS | range |
-|---|--:|--:|--:|
-| `-C` | 8 | **−33.7%** | −54.4% .. −18.4% |
-| `-C -F` | 8 | **−28.6%** | −44.8% .. −22.0% |
-| `-2 -C` | 8 | **−23.9%** | −43.0% .. −9.6% |
-| OO (control, untouched) | 7 | +2.3% | −1.9% .. +7.2% |
-| OO `-2` (control, untouched) | 7 | +2.2% | −1.4% .. +5.1% |
+**Which binary each column comes from.** The headline tables above are measured on the **base branch's**
+binary. That is not a shortcut for the OO columns and a re-run for the columnar ones — it is the whole
+table, and it is legitimate because this PR is columnar-only. The OO control below is the evidence:
+across five OO configs the two binaries agree to **+0.0% median CPU (−0.8…+0.4%)** and **+0.5% median
+peak RSS (−0.4…+1.7%)**, i.e. the measurement floor. The columnar columns would shift by the ~1% below
+if re-measured on this PR's binary, which is smaller than the session-to-session spread of the table
+itself, so re-baselining them would add noise rather than information.
 
-The OO rows are the instrument's noise floor: that path is not touched by this PR. Speed improves
-too, since three leaf-CSR `memcpy`s per trial are gone — interleaved min-of-4 CPU seconds, `-C -N10`:
-web-NotreDame **−9.9%**, malaria −5.6%, powergrid −3.7%, science2001 −2.1%, air30k −0.5%. The time
-table above is therefore **not** re-baselined for this PR: it is memory-only, its timing effect is a
-uniform small improvement, and re-measuring the whole set in a differently-loaded session would move
-every cell by more than the effect. (Peak RSS needs the same care: on this machine a single unpaired
-wall-clock run of web-NotreDame `-C` showed +49% where the interleaved measurement shows −12.9%.)
+Peak RSS and CPU, dedicated interleaved A/B against the base branch, min-of-3, idle machine,
+`-N10`, excluding the 8.5 MB process floor. Only the six networks whose search allocates meaningfully
+above that floor carry signal; the toys and politicalblogs sit on it and are omitted rather than
+reported as large percentages of nothing:
+
+| variant | networks | median Δ peak RSS | range | median Δ CPU | range |
+|---|--:|--:|--:|--:|--:|
+| `-C` | 6 | **−37.0%** | −44.5% .. −27.1% | −1.1% | −2.1% .. −0.5% |
+| `-C -F` | 6 | **−37.8%** | −44.6% .. −22.5% | −0.9% | −1.7% .. −0.6% |
+| `-2 -C` | 6 | **−26.8%** | −39.2% .. −14.4% | −1.1% | −1.7% .. +0.3% |
+| OO (control, untouched by this PR) | 5 | +0.5% | −0.4% .. +1.7% | +0.0% | −0.8% .. +0.4% |
+
+Per network, `-C` peak RSS above floor: science2001 −43.9%, pref-mods −44.5%, malaria −42.8%,
+air30k −31.1%, regularized −30.5%, web-NotreDame −27.1% (639 MB → 468 MB).
+
+**On the CPU number, a correction worth recording.** The first cut of this PR reported **−9.9% CPU on
+web-NotreDame `-C`**, and the master sync did not change it. Rebuilt and measured in one session, this
+PR against **its own original base `9aa7fea9`** gives **−3.6%**, and against the synced core **−3.6%**
+as well; a later multi-network batch put web-NotreDame at −2.1%. So the effect is a consistent but
+small **1–3.6% depending on session**, identical on both bases, and the original figure was simply
+over-stated. Two explanations were drafted for the apparent shrinkage — that the memcpys became "a
+smaller share of a run that does more work", and that F27's snapshot avoidance had pre-claimed part of
+the win — and **both were wrong, because there was no shrinkage to explain.** F27's snapshot fix is
+worth −2.8% RSS and +0.3% CPU when isolated, and web-NotreDame's RSS delta here reads −24.7% / −27.1%
+/ −30.5% across three sessions, i.e. inside session spread. (Peak RSS needs that care as an
+instrument: a single unpaired run of web-NotreDame `-C` once showed +49% where the interleaved
+measurement showed −12.9%, which is why every number here is a min-of-3 interleaved pair.)
 
 One case this does not improve: **dense inputs, where the peak is set by ingest rather than by the
 search.** On a 500k-node / 19.5M-link synthetic, `--no-infomap` alone reaches 1399 MB of the full
@@ -195,15 +336,50 @@ handoff, and the trial's copies fit inside pages that are already resident. Thos
 costs (the unreserved link build buffer, and the `InfoNode` leaf tree still being built even when the
 native columnar input is what gets read) own that number, and are tracked separately.
 
-### Coarse-tune: trajectory repair + winner deep repair (#889 two-level half, previous PR)
+### Coarse-tune: trajectory repair + winner deep repair (#889 two-level half, PR #890)
 
 The objective-aware aggregation (#834) can overshoot: consolidation makes each pass's units atomic, so a merge that shouldn't have happened cannot be undone by later passes, the leaf fine-tune or the gated merges (single-leaf moves can't cross the barrier). The coarse-tune PR added the subdivision half, split by cost:
 
 1. **In-trajectory descending repair** (every trial, marginal cost): each aggregation pass's unit level and leaf composition are retained — only when module-move-capable corrections are attached, so base networks pay nothing — and after the aggregation converges, *before* fine-tune smears the boundaries, each retained granularity is re-sorted within the best partition with a seeded module-level move loop, coarse to fine. This alone puts air30k and regularized air30k `-2` **below OO, at less time than before the operator existed**.
-2. **Deep repair of the winning trial** (once per run): the expensive discovery step — from-singletons sub-clustering within each module (community granularity, so extracting a whole overshot community is a single gated move), interleaved with the seeded leaf fine-tune and the merge. A per-trial version was measured and rejected (malaria 2.5 → 8.9s: 78% of the time re-derived sub-clusterings the retunes kept invalidating); the engine runs it **once on the best-of-N partition** after the trial loop — deterministic in serial and parallel-trial modes, never worse than the seed, cost amortizing with `-N`. This is what finds malaria's 7.4223 and lazega's exact OO tie — and, with this PR's flat-first trials, carries those same values into `-C` and `-F`.
+2. **Deep repair of the winning trial** (once per run): the expensive discovery step — from-singletons sub-clustering within each module (community granularity, so extracting a whole overshot community is a single gated move), interleaved with the seeded leaf fine-tune and the merge. A per-trial version was measured and rejected (malaria 2.5 → 8.9s: 78% of the time re-derived sub-clusterings the retunes kept invalidating); the engine runs it **once on the best-of-N partition** after the trial loop — deterministic in serial and parallel-trial modes, never worse than the seed, cost amortizing with `-N`. This is what finds malaria's 7.4223 and lazega's exact OO tie — and, with the flat-first trials above, carries those same values into `-C` and `-F`.
 
 ### Tele-path and metadata move-loop hoist (#875)
 
 Two follow-ups to the #868 move-loop speedups: the recorded-teleportation delta hoists its six old-module plogp terms once per unit (`hoistOldSideTele`), and the metadata correction caches its per-leaf move-loop terms with the same zero-path fast-track as the memory correction. Both are **bit-exact** — codelengths are unchanged on every network × {`-C`, `-F`, `-2 -C`}.
 
 The measurable win is the tele path: on **air30k `-d --regularized`** the hoist alone accounts for −13% / −15% / −16% on `-C` / `-F` / `-2 -C` (measured at #875). The Meta fast paths are correctness/consistency (the set has no large metadata network). The biased **science2001 `-d --preferred-number-of-modules 25`** config uses no teleport or metadata; its columnar partition lands the finest level on exactly 25 modules (`-2 -C`, top = 25) — the `|K − K_pref|` bias wired in [#827](https://github.com/mapequation/infomap/issues/827).
+
+### The split operator on the hierarchical path (F27, PR #987/#988)
+
+The hierarchical search could split a *single* unit off into a new empty module (`moveLoop`'s empty-module option) but never a *group* out of an over-merged one: `mergeLeafModulesWithinParents` only coarsens, and `refineLayerWithinGrandparent` re-derives a whole grandparent all-or-nothing, so a re-derivation containing one good split plus several bad ones is rejected wholesale. `splitLevelModules` is the hierarchical analogue of the two-level operator from #890: partition a level-(k+1) module's level-k children into pieces, aggregate a piece-level network, run a seeded move loop over the pieces (a piece may land in any module, including an empty one — group-split *and* cross-parent relocation), gated on the true stack codelength.
+
+It runs **once per run on the winning trial**, not per trial. The per-trial version was measured and dropped: on air30k it accumulates 4.05% of in-trial gain and delivers −0.033%, because ~85% of that lands on hierarchical trials sitting 1.1–1.5% behind the flat-first trials, which can never win the best-of-N. **The discriminator is trial competitiveness, which is inherently cross-trial**, so no within-trial rationing separates the networks — level gating, piece-source gating, gain ratchets, attempt caps and shape gating were each measured and each failed. The per-trial half cost air30k +24% and regularized +16%.
+
+| config (`-C`) | before | at landing | seed 234 | seed 345 | mean | Δ CPU |
+|---|--:|--:|--:|--:|--:|--:|
+| malaria | 7.42225457 | **7.41714932** (−0.069%) | −0.613% | −0.431% | **−0.371%** | +5.1…11.1% |
+| air30k | 5.39366442 | **5.39320406** (−0.009%) | −0.001% | −0.002% | −0.004% | +1.9…2.9% |
+| air30k (reg.) | 5.57602419 | **5.57591489** (−0.002%) | −0.022% | −0.031% | −0.018% | +1.5…3.1% |
+| the other 10 configs | — | bit-identical | — | — | 0 | at floor |
+
+Malaria's is the win that justifies the operator, and note that **seed 123 is its weakest seed** — the headline single-seed figure understates the mean. It is the first hierarchical `-C` result to beat malaria's repaired flat one.
+
+Three things make the once-per-run path work, each measured separately: **best-per-shape repair** (track the best *deep* trial and repair it when the overall winner is flat — without it the hook makes zero attempts on malaria, whose winner *is* flat); a **`winner` level policy** (leaf level only when a module-move correction is attached, keeping the from-singletons piece source — web-NotreDame operator 1.92s → 1.02s at identical codelength); and a **correction gate on the whole repair** (base networks otherwise pay +7.0% on web-NotreDame for −0.0005%, because the scaffolding dwarfs the splits).
+
+Bundled, bit-exact: the gated lambdas in `coarsenModules` and `refineHierarchy` no longer snapshot
+`m_hierLevels[0]` — ~50 MB of leaf CSR per gated step on web-NotreDame, twice per sweep.
+
+> **Attribution correction (measured at the master sync).** Bundling that fix into this PR meant the Δ
+> CPU column above is a *net* of two opposing effects, which is exactly what the project protocol says
+> not to do. Isolated by reverting only the snapshot avoidance on the current tip (web-NotreDame `-C
+> -N10`, min-of-3 interleaved, codelength bit-identical throughout): the snapshot fix is worth
+> **−2.8% peak RSS and +0.3% CPU — i.e. no measurable CPU effect at all.** So the Δ CPU figures above
+> are, within noise, the split operator's own cost, and the bundling did not flatter it. What the
+> original wording overstated is the *size*: "~50 MB per gated step" is real per step, but those
+> snapshots are transient and freed inside the step, so they barely touch the run's *peak*. For the
+> same reason the fix does not meaningfully pre-claim the leaf-CSR single-owner work (#960), which is
+> worth a further −30.5% RSS on top of it.
+
+**`-N1` is completely untouched** (0 attempts, 0 CPU delta, identical codelength): `updateBestResult` only materializes `bestTree` when `numTrials > 1`, so the hook is inert at single-trial — the single-trial cost rule is satisfied with no caveat.
+
+**This and partial seeding partition the benchmark set with no overlap**, verified in both directions: with partial seeding disabled the split's three networks are bit-identical, and the split repair records **0 attempts** on web-NotreDame and science2001 against 11 attempts / 5 accepted on malaria.

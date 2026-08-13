@@ -1,10 +1,10 @@
 Reference notebooks
 ===================
 
-Two notebooks are published as rendered reference pages. They are data-backed
-reference material rather than narrative tutorials, so they sit apart from the
-main learning path. The tutorials themselves live in the five sections:
-:doc:`/concepts/index`, :doc:`/working-with-infomap/index`,
+This section presents two notebooks as rendered reference pages. They are
+data-backed reference material rather than narrative tutorials, so they sit
+apart from the main learning path. The tutorials themselves live in the five
+sections: :doc:`/concepts/index`, :doc:`/working-with-infomap/index`,
 :doc:`/flow-models/index`, :doc:`/workflows/index`, and
 :doc:`/robustness/index`.
 

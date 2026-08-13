@@ -14,24 +14,25 @@ kernelspec:
 
 ```{admonition} At a glance
 :class: tip
-A multilayer network lets the same physical node live in several layers at once,
-so Infomap can discover that a person belongs to one community at work and a
+A multilayer network lets the same physical node live in several layers at once.
+Infomap can then discover that a person belongs to one community at work and a
 different one at home, without collapsing those contexts into one network.
 ```
 
 ## Why aggregating layers loses structure
 
 Many real systems involve the same actors interacting through several kinds of
-relationship at once: scientists collaborate on papers and correspond by email,
+relationship at once. Scientists collaborate on papers and correspond by email;
 passengers fly between airports on different airlines. Collapse the interaction
 types into one network and you lose the contextual information that defines who
 belongs to which community in each setting.
 
-A **multilayer network** preserves those contexts by keeping each interaction
-type in its own layer. The same physical entity exists in each layer where it
-participates, but its neighbourhood and community membership can differ from
-layer to layer. Aggregating the layers into one network can distort both the
-topology and the community structure {cite:p}`domenico2015multilayer`.
+A **multilayer network** preserves those contexts because it keeps each
+interaction type in its own layer. The same physical entity exists in each
+layer where it participates, but its neighbourhood and community membership
+can differ from layer to layer. Aggregating the layers into one network can
+distort both the topology and the community structure
+{cite:p}`domenico2015multilayer`.
 
 Multilayer networks also express **overlapping communities**: because the same
 physical entity lives in several layers, Infomap can place it in a different
@@ -51,8 +52,9 @@ rate**. When it rarely crosses ($r$ small), each layer behaves on its own and
 Alice lands in a different module in each of her layers. When it crosses freely
 ($r = 1$), the layers fuse and Alice gets one module. The default $r = 0.15$
 relaxes the layer constraint about once in seven steps (the relaxed step can
-land back in the current layer, so actual switches are rarer), enough coupling
-to respect the multiplex structure without washing out the per-layer signal.
+land back in the current layer, so actual switches are rarer). This is enough
+coupling to respect the multiplex structure, but not enough to wash out the
+per-layer signal.
 
 The key step is that here a state node is a physical node's presence in one
 layer; the rest of the physical-node/state-node mechanism is generic
@@ -69,8 +71,8 @@ links across layers (inter-layer) connect state nodes in different layers.
 
 Without empirical inter-layer link weights, Infomap models inter-layer movement
 with a relax rate $r \in [0, 1]$. At each step, the random walker follows
-intra-layer links with probability $1 - r$ and relaxes the layer constraint
-with probability $r$, freely following any link of the physical node across all
+intra-layer links with probability $1 - r$. With probability $r$ it relaxes the
+layer constraint, freely following any link of the physical node across all
 layers:
 
 $$
@@ -85,17 +87,18 @@ layers. Setting $r = 0$ decouples layers completely; $r = 1$ is equivalent to
 running Infomap on the aggregated single-layer network (but still allowing
 overlap).
 
-The relax-rate walk above runs over these state nodes; when $(i, \alpha)$ and
+The relax-rate walk above runs over these state nodes. When $(i, \alpha)$ and
 $(i, \beta)$ split across modules, physical node $i$ is bi-modular — the generic
 overlap mechanism of {doc}`/concepts/state-nodes-and-higher-order-flow`.
 
 :::{toggle}
 **State node transition probabilities (full derivation)**
 
-A multilayer network is a set of state nodes $\{(i, \alpha)\}$ with intra-layer
-link weights $w_{ij}^\alpha$ (both $i$ and $j$ in layer $\alpha$) and
-inter-layer link weights $D_i^{\alpha\beta}$ (physical node $i$ from layer
-$\alpha$ to layer $\beta$). The general transition probability is
+A multilayer network is a set of state nodes $\{(i, \alpha)\}$ with two kinds
+of link weight. Intra-layer link weights $w_{ij}^\alpha$ connect $i$ and $j$
+within layer $\alpha$. Inter-layer link weights $D_i^{\alpha\beta}$ connect
+physical node $i$ from layer $\alpha$ to layer $\beta$. The general transition
+probability is
 
 $$
 \mathcal{P}_{ij}^{\alpha\beta}
@@ -120,8 +123,8 @@ L(\mathsf{M}) =
       H(\mathcal{P}^{\boldsymbol{\imath}})
 $$
 
-over partitions of state nodes into modules, where the map equation sums the
-visit rates of the same physical node in the same module before computing the
+over partitions of state nodes into modules. The map equation sums the visit
+rates of the same physical node in the same module before it computes the
 module codebook entropy $H(\mathcal{P}^{\boldsymbol{\imath}})$. As in
 {doc}`/concepts/state-nodes-and-higher-order-flow`, this state-node aggregation is
 the sole change from the first-order map equation
@@ -130,11 +133,10 @@ the sole change from the first-order map equation
 
 ## Two triangles bridged by one node
 
-The network is the example the
+The network is the example that mapequation.org uses to document the
 [multilayer input format](https://www.mapequation.org/infomap/#InputMultilayer)
-is documented with on mapequation.org (it ships with Infomap as
-`examples/networks/multilayer.net`): **five physical nodes** *i*, *j*, *k*,
-*l*, *m* in two layers.
+(it ships with Infomap as `examples/networks/multilayer.net`):
+**five physical nodes** *i*, *j*, *k*, *l*, *m* in two layers.
 
 - **Layer 1** contains a tight triangle: *i*, *l*, *m*.
 - **Layer 2** contains a tight triangle: *i*, *j*, *k*.
@@ -187,7 +189,7 @@ for node in sorted(result.nodes(states=True), key=lambda n: (n.layer_id, n.node_
 
 Physical node *i* appears twice, once in each layer, in a different module each
 time. Nodes *l* and *m* sit only in the Layer 1 triangle's module, nodes *j*
-and *k* only in the Layer 2 triangle's module; the table above shows the
+and *k* only in the Layer 2 triangle's module. The table above shows the
 module ids.
 
 On multilayer networks you must call `result.modules(states=True)`, because each
@@ -216,10 +218,10 @@ for pid, assignments in sorted(phys_memberships.items()):
 
 Physical node *i* has two assignments; all others have one.
 
-Now draw both layers side by side, colouring each node by the module it lands
+Now draw both layers side by side and colour each node by the module it lands
 in. A shared palette and a shared layout fix each module's colour and node *i*'s
-position across panels, so *i* sits in the same spot in a different colour in
-each layer.
+position across panels. As a result, *i* sits in the same spot in a different
+colour in each layer.
 
 ```{code-cell} python
 from myst_nb import glue
@@ -304,17 +306,17 @@ At low relax rates the two triangle clusters remain distinct (2 modules). As
 $r \to 1$ the layers fuse and the partition collapses to 1 module, the same as
 running Infomap on the aggregated network. The default $r = 0.15$ is the working
 value from {cite:t}`domenico2015multilayer`, who found the partition only
-weakly dependent on the relax rate; later work confirmed that the partition stays
-robust across empirical multilayer networks for relax rates up to about
+weakly dependent on the relax rate. Later work confirmed that the partition
+stays robust across empirical multilayer networks for relax rates up to about
 $r \approx 0.25$ {cite:p}`edler2017higher`.
 
 ### Node-aligned inter-layer links
 
-When the observed coupling is a node switching layer "in place" (a person
-moving between the work and family contexts, a passenger changing airline at
-the same airport), supply node-aligned inter-layer links with
-`add_multilayer_inter_link` instead of relying on the relax-rate model. This
-is the `*Intra`/`*Inter` file form, and the bundled
+Sometimes the observed coupling is a node that switches layer "in place". For
+example, a person moves between the work and family contexts, or a passenger
+changes airline at the same airport. In that case, supply node-aligned
+inter-layer links with `add_multilayer_inter_link`; do not rely on the
+relax-rate model. This is the `*Intra`/`*Inter` file form, and the bundled
 {func}`infomap.datasets.multilayer_intra_inter` network is its reference
 example: the same two triangles, with an inter-layer link through *i* in each
 direction. The transition happens at *i*; the flow it carries continues to
@@ -385,11 +387,11 @@ pick one form per network.
 ### Relaxing to the same node only
 
 Back in the relax-rate model, `multilayer_relax_to_self=True` links a relaxing
-state node to its *own physical node* in the target layer instead of spreading
-directly to its out-neighbours there. It shrinks the state network, which
-matters on large networks. For a coherent partition the flow is unchanged; it
-can differ slightly only when a node's target-layer neighbours split across
-modules:
+state node to its *own physical node* in the target layer. Without the option,
+relaxation spreads directly to the node's out-neighbours there. The option
+shrinks the state network, which matters on large networks. For a coherent
+partition the flow stays the same; it can differ slightly only when a node's
+target-layer neighbours split across modules:
 
 ```{code-cell} python
 net_self = Network()
@@ -427,10 +429,10 @@ assert n_links_self < n_links_default
 
 ## Options
 
-The relax-rate model is controlled by these engine options, carried via `Options`
+These engine options control the relax-rate model. Pass them via `Options`
 to {func}`infomap.run` (`options=Options(...)`).
-They apply when Infomap simulates the coupling; with explicit inter-layer links
-only `multilayer_relax_to_self` still has an effect, deciding whether a
+They apply when Infomap simulates the coupling. With explicit inter-layer links,
+only `multilayer_relax_to_self` still has an effect. It decides whether a
 node-aligned inter link attaches to the node's own copy or spreads over its
 out-neighbours in the target layer:
 
@@ -441,7 +443,7 @@ out-neighbours in the target layer:
 | `multilayer_relax_limit_up` | `-1` | The same cap, counting only towards higher layer ids |
 | `multilayer_relax_limit_down` | `-1` | The same cap, counting only towards lower layer ids |
 | `multilayer_relax_by_jsd` | `False` | Weight relaxation by neighbourhood similarity; see {doc}`/flow-models/temporal` |
-| `multilayer_relax_to_self` | `False` | Relax to the node's own copy in the target layer instead of spreading to its out-neighbours; smaller state network, identical flow for coherent partitions |
+| `multilayer_relax_to_self` | `False` | Relax to the node's own copy in the target layer, not to its out-neighbours; smaller state network, identical flow for coherent partitions |
 
 ## Going deeper
 

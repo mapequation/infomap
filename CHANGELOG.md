@@ -2,6 +2,44 @@
 
 All notable changes to this project will be documented in this file. Releases are automated with [release-please](https://github.com/googleapis/release-please), using [Conventional Commits](https://www.conventionalcommits.org) to determine version bumps and changelog entries.
 
+## [2.15.1](https://github.com/mapequation/infomap/compare/v2.15.0...v2.15.1) (2026-08-04)
+
+
+### Bug Fixes
+
+* configure the super-level objective from the run, not from defaults ([#955](https://github.com/mapequation/infomap/issues/955)) ([497d86b](https://github.com/mapequation/infomap/commit/497d86b642b61285aaf786a1701817640199d3fc))
+* honor an explicit single-trial cap for --converge ([#928](https://github.com/mapequation/infomap/issues/928)) ([7ff63d1](https://github.com/mapequation/infomap/commit/7ff63d168868cad63acc3cce9bbcf72539795541))
+* **js:** stop dropping per-run args and returning the input as Infomap's output ([#951](https://github.com/mapequation/infomap/issues/951)) ([1811d5c](https://github.com/mapequation/infomap/commit/1811d5c675040d95aa7521cb6d6c0647006ce22f))
+* keep a rejected argument off stdout when the caller asked for silence ([#940](https://github.com/mapequation/infomap/issues/940)) ([0d949eb](https://github.com/mapequation/infomap/commit/0d949eb0544cc0143c9550af5e0cca69ca9d9c9b))
+* keep output artifacts readable and say when a tree cannot be read back ([#952](https://github.com/mapequation/infomap/issues/952)) ([8cbf0f8](https://github.com/mapequation/infomap/commit/8cbf0f8eee8e22a8993cc54a9374ee3a857828db))
+* keep the memory codelength scalar in sync with the module map ([48a1ef5](https://github.com/mapequation/infomap/commit/48a1ef565d287b0181a251d4f1a1f1fca930d0d7)), closes [#836](https://github.com/mapequation/infomap/issues/836)
+* let the entropy-bias correction reach the move loop ([#922](https://github.com/mapequation/infomap/issues/922)) ([eb0c444](https://github.com/mapequation/infomap/commit/eb0c4445aa696f2135c8fd1f5af6c8467b7dde7e))
+* make distributed runs publishable, verifiable and interruptible ([#953](https://github.com/mapequation/infomap/issues/953)) ([24cf348](https://github.com/mapequation/infomap/commit/24cf348c6192aae69f99380b33f6b9ba94670360))
+* **python:** accept os.PathLike consistently across file-reading entry points ([#809](https://github.com/mapequation/infomap/issues/809)) ([db5b960](https://github.com/mapequation/infomap/commit/db5b9605867f26c4cf6d4041c277cdedc2160c0e))
+* **python:** consolidate the file-path contract across all surfaces ([#811](https://github.com/mapequation/infomap/issues/811)) ([1a325b6](https://github.com/mapequation/infomap/commit/1a325b6a3545af503af8636ca1148031d364e59d))
+* **python:** keep an adapter's inferred flow model across option rendering ([#916](https://github.com/mapequation/infomap/issues/916)) ([ad315fd](https://github.com/mapequation/infomap/commit/ad315fde9ed9b50d9eb8818ae17e27e243ea01e6))
+* **python:** let an explicit keyword override the options carrier at its default ([#921](https://github.com/mapequation/infomap/issues/921)) ([01b73d3](https://github.com/mapequation/infomap/commit/01b73d32c9698639b07134f038f368890becee03))
+* **python:** name the engine that went stale, and drop a remedy that reproduces the error ([#931](https://github.com/mapequation/infomap/issues/931)) ([fbefec2](https://github.com/mapequation/infomap/commit/fbefec24d31b8a606a94c0f878e3be74e8e8532b))
+* read the list form of OMP_NUM_THREADS and give the thread ICV back ([#929](https://github.com/mapequation/infomap/issues/929)) ([823b93f](https://github.com/mapequation/infomap/commit/823b93f2fce182eac63b6b098d03a40eeb5de48b))
+* redistribute dangling flow on bipartite input in the directed model ([#945](https://github.com/mapequation/infomap/issues/945)) ([cf5d59c](https://github.com/mapequation/infomap/commit/cf5d59cfd8d7291fcd9b0f195f55d800081cd990))
+* refuse a run whose module flow went negative ([#963](https://github.com/mapequation/infomap/issues/963)) ([ff32bd8](https://github.com/mapequation/infomap/commit/ff32bd8c25c0d46cc19a74e3d317da7c03249f35))
+* refuse bipartite teleportation without return links and report flow convergence ([#950](https://github.com/mapequation/infomap/issues/950)) ([89a98e2](https://github.com/mapequation/infomap/commit/89a98e20c7a5c26e0db3a9309d8af04fb588fff9))
+* refuse to write output over the run's own input ([#927](https://github.com/mapequation/infomap/issues/927)) ([230c263](https://github.com/mapequation/infomap/commit/230c263049f3f93fc226aefd9b1cce1d3d986c41))
+* reject a degenerate flow distribution instead of reporting codelength 0 ([#917](https://github.com/mapequation/infomap/issues/917)) ([940a320](https://github.com/mapequation/infomap/commit/940a320d653d5ce29694695a20ba168f371af899))
+* reject intake values that were silently reinterpreted as another network ([#942](https://github.com/mapequation/infomap/issues/942)) ([899ffcf](https://github.com/mapequation/infomap/commit/899ffcfad07a5594fc00989e1caf88f51aabe9c9))
+* **R:** validate node, state and layer ids instead of coercing them ([#918](https://github.com/mapequation/infomap/issues/918)) ([399a069](https://github.com/mapequation/infomap/commit/399a0695904a06ced20b99aa98f65c9010f5526b))
+* seed every trial the same way, in every mode ([#949](https://github.com/mapequation/infomap/issues/949)) ([86116d7](https://github.com/mapequation/infomap/commit/86116d74f825e87d65380660457dfb2fc9af596a))
+* stop handing Python and R objects that outlive the memory they point at ([#954](https://github.com/mapequation/infomap/issues/954)) ([6748dd6](https://github.com/mapequation/infomap/commit/6748dd66297fd6b390afa09a98bd897d96fb0bb1))
+* stop R and JS rendering option values the argument string cannot carry ([#936](https://github.com/mapequation/infomap/issues/936)) ([c1b126b](https://github.com/mapequation/infomap/commit/c1b126b382913024ed32ba76d790bf04d025bc51))
+* stop the bipartite flow adjustment leaving negative enter/exit flow ([#961](https://github.com/mapequation/infomap/issues/961)) ([fd2ddcd](https://github.com/mapequation/infomap/commit/fd2ddcde6614c39629347a7cc8ee7d76d9d6c0ae))
+* validate cluster-data tree shape and node membership before using it ([#948](https://github.com/mapequation/infomap/issues/948)) ([d55c236](https://github.com/mapequation/infomap/commit/d55c2365051a282f309043ee69425b5c19fb562b))
+* warn when the objective cannot apply a configured option ([#956](https://github.com/mapequation/infomap/issues/956)) ([5aa854f](https://github.com/mapequation/infomap/commit/5aa854f3cadbe6509f9727fc48413a2836e8ba31))
+
+
+### Performance Improvements
+
+* hoist per-node-constant plogp out of the OO move-loop delta ([7da08cf](https://github.com/mapequation/infomap/commit/7da08cfbd37063993fcc2f6b8b2978b91ac3745c)), closes [#867](https://github.com/mapequation/infomap/issues/867)
+
 ## [2.15.0](https://github.com/mapequation/infomap/compare/v2.14.0...v2.15.0) (2026-07-13)
 
 

@@ -1,5 +1,8 @@
 .PHONY: ci-export-github-env
 
+# The MACOSX_DEPLOYMENT_TARGET below is the make-based macOS build's copy of the
+# value also set in .github/workflows/_python-package.yml (env.MACOS_DEPLOYMENT_TARGET,
+# consumed by the cibuildwheel jobs). Keep the two in sync when bumping.
 ci-export-github-env:
 	@if [ "$(UNAME_S)" = "Darwin" ]; then \
 		if [ -n "$(BUILD_CONFIG_LIBOMP_PREFIX)" ]; then \

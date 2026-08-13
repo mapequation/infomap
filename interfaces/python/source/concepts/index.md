@@ -2,7 +2,7 @@
 
 These chapters teach the ideas behind Infomap from the ground up, in reading
 order. Start here if you want to understand *why* Infomap finds the communities
-it does before running it on your own data.
+it does before you run it on your own data.
 
 - {doc}`Flow and random walks <flow-and-random-walks>`: what "flow" means and why
   Infomap models a random walker.

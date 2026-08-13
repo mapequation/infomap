@@ -39,6 +39,13 @@ std::string runSummaryReportJson(const RunSummaryReport& report)
   json["trials"] = report.trials;
   json["best_trial"] = report.bestTrial;
   json["auto_stopped"] = report.autoStopped;
+  if (report.haveFlowConvergence) {
+    Json flow;
+    flow["converged"] = report.flowConverged;
+    flow["iterations"] = report.flowIterations;
+    flow["error"] = report.flowError;
+    json["flow"] = std::move(flow);
+  }
   json["trial_codelengths"] = report.trialCodelengths;
   json["trial_top_modules"] = report.trialTopModules;
   return dumpJsonLine(json);

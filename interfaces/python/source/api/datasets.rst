@@ -14,7 +14,7 @@ same parser the Infomap CLI uses and returns a fresh
     result = infomap.run(net)
 
 :func:`modular_wd` and :func:`states` encode directed flow, so those loaders
-return a ``Network`` pre-configured with ``--flow-model directed``; a
+return a ``Network`` pre-configured with ``--flow-model directed``. A
 ``flow_model`` passed at :func:`infomap.run` still wins.
 
 Basic examples

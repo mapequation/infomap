@@ -3,7 +3,6 @@ from operator import itemgetter
 import networkx as nx
 import pytest
 
-
 pytestmark = pytest.mark.fast
 
 

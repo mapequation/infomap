@@ -1,7 +1,10 @@
 name: Bug report
 description: Report a reproducible Infomap bug.
 title: "[Bug]: "
-labels: ["bug"]
+# No labels: here on purpose. This repository labels by component (python, R,
+# build, docs, test, performance, ...), not by issue type, so the type label a
+# template could declare does not exist -- declaring one silently drops it and
+# the issue arrives unlabelled. The component is not knowable from the template.
 body:
   - type: input
     id: version

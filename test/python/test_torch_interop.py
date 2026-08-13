@@ -4,7 +4,6 @@ import textwrap
 
 import pytest
 
-
 pytestmark = [pytest.mark.crash]
 
 

@@ -19,8 +19,10 @@ reuse, index, or count the result:
 
 Both shapes are guarded by a run-generation token: the C++ result tree is
 destroyed and rebuilt on every ``run()``, so reading node-level data from a
-``Result`` whose ``Infomap`` has re-run since raises :class:`StaleResultError`
-instead of touching freed memory.
+``Result`` whose bound engine has re-run since raises :class:`StaleResultError`
+instead of touching freed memory. That engine is whichever object the run went
+through -- an ``Infomap`` or a ``Network`` -- and only a re-run of *that* one
+invalidates the ``Result``.
 
 Surface conventions: read the run's intrinsic results as **properties** -- the
 scalar metrics (``result.codelength``) and the fixed label / per-trial tables
@@ -41,9 +43,6 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 from ._optional import require_pandas
-from .errors import InfomapError, StaleResultError, _translate_engine_errors
-from .io.writers import _ResultWritersMixin
-from ._summary import repr_html as _summary_repr_html
 from ._results import (
     _DATAFRAME_COLUMN_ALIASES,
     _DEFAULT_TO_DATAFRAME_COLUMNS,
@@ -52,6 +51,9 @@ from ._results import (
     _unknown_dataframe_column_error,
     perplexity,
 )
+from ._summary import repr_html as _summary_repr_html
+from .errors import InfomapError, StaleResultError, _translate_engine_errors
+from .io.writers import _ResultWritersMixin
 
 # Legacy Infomap instance-mirror accessor names, mapped to their Result form. A
 # caller that learned the pre-Result API -- or hits the method/property flip
@@ -82,8 +84,7 @@ _LEGACY_ACCESSOR_HINTS = {
 _LEGACY_ACCESSOR_HINTS.update(
     {
         "".join(
-            part.capitalize() if i else part
-            for i, part in enumerate(name.split("_"))
+            part.capitalize() if i else part for i, part in enumerate(name.split("_"))
         ): hint
         for name, hint in list(_LEGACY_ACCESSOR_HINTS.items())
         if name.startswith("get_")
@@ -95,12 +96,12 @@ if TYPE_CHECKING:
     import networkx
     import pandas
 
-    from ._facade import Infomap
     from ._core import (
         InfomapIterator,
         InfomapIteratorPhysical,
         InfomapLeafModuleIterator,
     )
+    from ._facade import Infomap
 
 # build_result is internal plumbing shared by Infomap.run and Network.run;
 # only the result types are public API.
@@ -126,7 +127,7 @@ _SNAPSHOT_COLUMNS = (
 _StaleResultError = StaleResultError
 
 
-def build_result(engine: Any) -> "Result":
+def build_result(engine: Any) -> Result:
     """Bump the engine's run-generation token and return a fresh ``Result``.
 
     The single place that stamps a ``Result`` with the new generation, shared by
@@ -201,15 +202,15 @@ class _Snapshot:
     """Per-(level, states) materialized columns from a single C++ traversal."""
 
     __slots__ = (
-        "node_id",
-        "state_id",
-        "module_id",
-        "flow",
-        "depth",
-        "layer_id",
         "child_index",
+        "depth",
+        "flow",
+        "layer_id",
         "modular_centrality",
+        "module_id",
+        "node_id",
         "path",
+        "state_id",
     )
 
     def __init__(self, node_data) -> None:
@@ -296,35 +297,38 @@ class Result(_ResultWritersMixin):
     """
 
     __slots__ = (
-        "_engine",
-        "_generation",
-        "_names",
-        "_state_names",
-        "_have_memory",
-        "_directed",
+        "__weakref__",
         "_codelength",
-        "_num_top_modules",
-        "_num_non_trivial_top_modules",
-        "_num_levels",
-        "_num_nodes",
-        "_num_physical_nodes",
-        "_num_links",
+        "_codelengths",
+        "_directed",
+        "_effective_cache",
+        "_elapsed_time",
+        "_engine",
+        "_entropy_rate",
+        "_flow_converged",
+        "_flow_error",
+        "_flow_iterations",
+        "_generation",
+        "_have_memory",
         "_index_codelength",
+        "_meta_codelength",
+        "_meta_entropy",
         "_module_codelength",
+        "_names",
+        "_num_leaf_modules",
+        "_num_levels",
+        "_num_links",
+        "_num_nodes",
+        "_num_non_trivial_top_modules",
+        "_num_physical_nodes",
+        "_num_top_modules",
         "_one_level_codelength",
         "_relative_codelength_savings",
-        "_entropy_rate",
-        "_meta_codelength",
-        "_codelengths",
-        "_meta_entropy",
-        "_elapsed_time",
-        "_num_leaf_modules",
-        "_effective_cache",
         "_snapshots",
-        "__weakref__",
+        "_state_names",
     )
 
-    def __init__(self, engine: "Infomap", *, generation: int) -> None:
+    def __init__(self, engine: Infomap, *, generation: int) -> None:
         core = engine._core
         object.__setattr__(self, "_engine", engine)
         object.__setattr__(self, "_generation", generation)
@@ -353,11 +357,15 @@ class Result(_ResultWritersMixin):
             self, "_num_physical_nodes", core.network().numPhysicalNodes()
         )
         object.__setattr__(self, "_num_links", core.network().numLinks())
+        # Power-iteration outcome. Flow models that need no power iteration leave
+        # these at "converged, zero iterations", so `not result.flow_converged` means
+        # a failure in every case rather than "no iteration ran".
+        object.__setattr__(self, "_flow_converged", core.network().flowConverged())
+        object.__setattr__(self, "_flow_iterations", core.network().flowIterations())
+        object.__setattr__(self, "_flow_error", core.network().flowError())
         object.__setattr__(self, "_index_codelength", core.getIndexCodelength())
         object.__setattr__(self, "_module_codelength", core.getModuleCodelength())
-        object.__setattr__(
-            self, "_one_level_codelength", core.getOneLevelCodelength()
-        )
+        object.__setattr__(self, "_one_level_codelength", core.getOneLevelCodelength())
         object.__setattr__(
             self,
             "_relative_codelength_savings",
@@ -413,8 +421,7 @@ class Result(_ResultWritersMixin):
             [
                 module.flow
                 for module in cls._tree_iterator(core, depth, False)
-                if (depth == -1 and module.is_leaf_module)
-                or module.depth == depth
+                if (depth == -1 and module.is_leaf_module) or module.depth == depth
             ]
         )
 
@@ -480,13 +487,19 @@ class Result(_ResultWritersMixin):
     def _check_generation(self) -> None:
         """Guard live C++ tree access against a re-run of the bound engine."""
         if self._engine._generation != self._generation:
+            # Name the engine that actually went stale: a Result can be bound to a
+            # Network as well as to an Infomap, and naming the wrong one sends the
+            # reader looking for a re-run that never happened. The advice cannot be
+            # "use infomap.run()" either -- run(network) re-runs that same network
+            # in place and bumps this generation, so it reproduces this error.
+            engine = type(self._engine).__name__
             raise StaleResultError(
-                "stale Result: the Infomap instance was re-run, so the C++ "
-                "result tree this Result read is gone. Eager scalars "
-                "(codelength, module counts, summary()) stay valid; to keep "
-                "node-level data across re-runs, materialize it first -- "
-                "dict(result.modules()) / result.to_dataframe() -- or use "
-                "infomap.run(), which never goes stale."
+                f"stale Result: this {engine} was re-run, so the C++ result tree "
+                "this Result read is gone. Eager scalars (codelength, module "
+                "counts, summary()) stay valid; to keep node-level data across a "
+                "re-run, materialize it first -- dict(result.modules()) / "
+                "result.to_dataframe() -- or give each run its own engine, since a "
+                "Result only goes stale when the engine it came from is re-run."
             )
 
     def _guard_iteration(self, iterator):
@@ -565,6 +578,49 @@ class Result(_ResultWritersMixin):
         return self._num_links
 
     @property
+    def flow_converged(self) -> bool:
+        """Whether the flow calculation's power iteration reached its tolerance.
+
+        ``False`` means the iteration's final error stayed above ``flow_tolerance``,
+        so the flow is not the network's stationary distribution and every codelength
+        derived from it describes something else. Reaching tolerance on the last
+        allowed iteration counts as converged; running out of iterations with the
+        error still too large does not.
+        The run still completes and writes output, so this is the only way an
+        automated consumer can tell (:attr:`flow_error` says by how much).
+
+        ``True`` for flow models that run no power iteration at all -- undirected
+        flow, for instance -- so ``not result.flow_converged`` always means a real
+        failure. :attr:`flow_iterations` is 0 in that case.
+
+        Examples
+        --------
+        >>> from infomap import Infomap, Options
+        >>> im = Infomap(silent=True)
+        >>> im.read_file("ninetriangles.net")
+        >>> result = im.run(options=Options(directed=True, max_flow_iterations=2))
+        >>> result.flow_converged
+        False
+        >>> result.flow_iterations
+        2
+        """
+        return self._flow_converged
+
+    @property
+    def flow_iterations(self) -> int:
+        """Power iterations the flow calculation used, or 0 if it ran none."""
+        return self._flow_iterations
+
+    @property
+    def flow_error(self) -> float:
+        """The power iteration's final error, 0.0 if it ran none.
+
+        Compare against the ``flow_tolerance`` option: an error above it with
+        :attr:`flow_converged` false says how far the flow is from stationary.
+        """
+        return self._flow_error
+
+    @property
     def index_codelength(self) -> float:
         """The two-level index codelength."""
         return self._index_codelength
@@ -621,7 +677,7 @@ class Result(_ResultWritersMixin):
         Measured as the perplexity of the top-module flow distribution.
         Unlike the eager scalar properties, this is computed lazily on first
         access (see :meth:`effective_num_modules`), so it can raise
-        :class:`StaleResultError` if the ``Infomap`` has re-run since.
+        :class:`StaleResultError` if the bound engine has re-run since.
         """
         return self._effective_num_modules_cached(1)
 
@@ -632,7 +688,7 @@ class Result(_ResultWritersMixin):
         Measured as the perplexity of the leaf-module flow distribution.
         Unlike the eager scalar properties, this is computed lazily on first
         access (see :meth:`effective_num_modules`), so it can raise
-        :class:`StaleResultError` if the ``Infomap`` has re-run since.
+        :class:`StaleResultError` if the bound engine has re-run since.
         """
         return self._effective_num_modules_cached(-1)
 
@@ -709,7 +765,7 @@ class Result(_ResultWritersMixin):
             raise InfomapError(_HIGHER_ORDER_MODULES_MESSAGE)
         snapshot = self._snapshot(depth, states)
         ids = snapshot.state_id if states else snapshot.node_id
-        return dict(zip(ids, snapshot.module_id))
+        return dict(zip(ids, snapshot.module_id, strict=True))
 
     def nodes(self, depth: int = 1, *, states: bool = False) -> Iterator[TreeNode]:
         """Iterate leaf :class:`TreeNode` views, depth first from the root.
@@ -782,9 +838,7 @@ class Result(_ResultWritersMixin):
             self._tree_iterator(self._engine._core, depth, states)
         )
 
-    def multilevel_modules(
-        self, *, states: bool = False
-    ) -> dict[int, tuple[int, ...]]:
+    def multilevel_modules(self, *, states: bool = False) -> dict[int, tuple[int, ...]]:
         """Map ``node_id`` (or ``state_id`` when ``states``) to a tuple of
         ``module_id``, one per level from the top down.
 
@@ -945,7 +999,7 @@ class Result(_ResultWritersMixin):
             "elapsed_time": self._elapsed_time,
         }
 
-    def to_series(self) -> "pandas.Series":
+    def to_series(self) -> pandas.Series:
         """Return the result's scalar metrics as a :class:`pandas.Series`.
 
         The pandas-native form of :meth:`summary`: a one-row record indexed by
@@ -987,7 +1041,7 @@ class Result(_ResultWritersMixin):
         sort: bool | str | Sequence[str] = False,
         level: int | None = None,
         depth_level: int | None = None,
-    ) -> "pandas.DataFrame":
+    ) -> pandas.DataFrame:
         """Return a pandas DataFrame of the leaf nodes.
 
         Byte-identical to the legacy ``Infomap.to_dataframe``.
@@ -1067,7 +1121,9 @@ class Result(_ResultWritersMixin):
         names = self._names
 
         data = {}
-        for requested, resolved in zip(requested_columns, resolved_columns):
+        for requested, resolved in zip(
+            requested_columns, resolved_columns, strict=True
+        ):
             data[requested] = self._column(resolved, requested, snapshot, names)
 
         dataframe = pandas.DataFrame(data, columns=requested_columns)
@@ -1093,7 +1149,7 @@ class Result(_ResultWritersMixin):
         path_attribute: str | None = "infomap_path",
         include_hierarchy: bool = True,
         flow_attribute: str | None = "flow",
-    ) -> "networkx.Graph":
+    ) -> networkx.Graph:
         """Build a NetworkX graph of the partitioned network.
 
         Equivalent to :func:`infomap.to_networkx`; see it for the parameters
@@ -1122,7 +1178,7 @@ class Result(_ResultWritersMixin):
         path_attribute: str | None = "infomap_path",
         include_hierarchy: bool = True,
         flow_attribute: str | None = "flow",
-    ) -> "igraph.Graph":
+    ) -> igraph.Graph:
         """Build a python-igraph graph of the partitioned network.
 
         Equivalent to :func:`infomap.to_igraph`; see it for the parameters
@@ -1153,7 +1209,7 @@ class Result(_ResultWritersMixin):
             state_names = self._state_names
             return [
                 state_names.get(sid) or names.get(nid, nid)
-                for sid, nid in zip(snapshot.state_id, snapshot.node_id)
+                for sid, nid in zip(snapshot.state_id, snapshot.node_id, strict=True)
             ]
         if resolved in _SNAPSHOT_COLUMNS:
             return list(getattr(snapshot, resolved))

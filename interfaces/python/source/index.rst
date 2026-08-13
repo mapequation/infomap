@@ -8,8 +8,8 @@ objective function called the `map equation`_:
 - **It models system-wide dynamics based on the system's wiring.** Link direction
   and weight steer the walk, so citation, transport, and information networks
   cluster by their real dynamics.
-- **It finds hierarchical solutions with no tuning parameters.** The number of
-  nested levels is inferred directly from the data.
+- **It finds hierarchical solutions with no tuning parameters.** Infomap infers
+  the number of nested levels directly from the data.
 - **It spans a broad range of flow models:** multilayer, memory, temporal,
   metadata, and bipartite networks, all through the same objective function.
 

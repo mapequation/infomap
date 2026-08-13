@@ -29,21 +29,22 @@ import os
 import warnings
 from typing import TYPE_CHECKING, Any
 
-from ._core import Core, apply_initial_partition
+from ._core import Core, _with_inferred_flow_model, _with_owner, apply_initial_partition
 from ._logging import engine_log_routing as _engine_log_routing
 from ._logging import is_routed as _is_log_routed
-from .errors import NetworkParseError, _translate_engine_errors
-from .io.writers import _NetworkWritersMixin
 from ._network_input import add_bulk_links as _add_bulk_links
 from ._network_input import first_order_unpacker as _first_order_unpacker
 from ._network_input import flat_multilayer_unpacker as _flat_multilayer_unpacker
 from ._network_input import paired_multilayer_unpacker as _paired_multilayer_unpacker
 from ._run import _UNSET
+from .errors import NetworkParseError, _translate_engine_errors
+from .io.writers import _NetworkWritersMixin
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
     import igraph  # pyright: ignore[reportMissingImports]  # optional dep, no stubs
     import networkx
-    from collections.abc import Mapping
 
     from ._options import Options
     from .result import Result
@@ -151,7 +152,7 @@ class Network(_NetworkWritersMixin):
             Accumulate onto already added nodes and links. Default ``True``.
         """
         net = cls()
-        net.read_file(str(path), accumulate=accumulate)
+        net.read_file(path, accumulate=accumulate)
         return net
 
     @classmethod
@@ -444,6 +445,10 @@ class Network(_NetworkWritersMixin):
                     stacklevel=2,
                 )
 
+        # An input adapter may have resolved the flow model from the input
+        # itself; render it so it survives this run's argument string.
+        resolved = _with_inferred_flow_model(self._core, resolved)
+
         # engine_emits stays False: a Network's engine is --silent for its
         # whole lifetime (see the advisory above), so verbosity_level can never
         # take effect here and is correctly flagged inert.
@@ -469,12 +474,14 @@ class Network(_NetworkWritersMixin):
     # Input
     # ----------------------------------------
 
-    def read_file(self, filename: str, accumulate: bool = True) -> Network:
+    def read_file(
+        self, filename: str | os.PathLike[str], accumulate: bool = True
+    ) -> Network:
         """Read network data from file.
 
         Parameters
         ----------
-        filename : str
+        filename : str or os.PathLike
         accumulate : bool, optional
             If the network data should be accumulated to already added
             nodes and links. Default ``True``.
@@ -485,7 +492,7 @@ class Network(_NetworkWritersMixin):
             If the file cannot be opened or its content cannot be parsed.
         """
         with _engine_log_routing(), _translate_engine_errors(NetworkParseError):
-            self._core.readInputData(filename, accumulate)
+            self._core.readInputData(os.fsdecode(filename), accumulate)
         return self
 
     # ----------------------------------------
@@ -546,7 +553,9 @@ class Network(_NetworkWritersMixin):
                     self.add_node(*node)
         return self
 
-    def add_state_node(self, state_id: int, node_id: int, name: str | None = None) -> Network:
+    def add_state_node(
+        self, state_id: int, node_id: int, name: str | None = None
+    ) -> Network:
         """Add a state node.
 
         Parameters
@@ -620,9 +629,7 @@ class Network(_NetworkWritersMixin):
     # Single-layer links
     # ----------------------------------------
 
-    def add_link(
-        self, source_id: int, target_id: int, weight: float = 1.0
-    ) -> Network:
+    def add_link(self, source_id: int, target_id: int, weight: float = 1.0) -> Network:
         """Add a link.
 
         Parameters
@@ -845,9 +852,7 @@ class Network(_NetworkWritersMixin):
     # Metadata
     # ----------------------------------------
 
-    def set_meta_data(
-        self, node_id: Any, meta_category: int | None = None
-    ) -> Network:
+    def set_meta_data(self, node_id: Any, meta_category: int | None = None) -> Network:
         """Set integer metadata for one node, or for many at once.
 
         Parameters
@@ -879,7 +884,7 @@ class Network(_NetworkWritersMixin):
         work identically when building onto a :class:`Network` or an
         :class:`Infomap`.
         """
-        return self._core.network()
+        return _with_owner(self._core.network(), self._core)
 
     @property
     def bipartite_start_id(self) -> int:

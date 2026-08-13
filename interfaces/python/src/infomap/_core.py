@@ -16,20 +16,12 @@ from __future__ import annotations
 
 from typing import Any
 
-from .errors import _translate_engine_errors
-
-from ._bindings import InfomapWrapper  # noqa: F401  (the only engine import)
-from ._bindings import build_info as build_info  # module-level engine function
-from ._bindings import run as run  # module-level engine function (CLI driver)
-
-# Engine log-sink hooks, re-exported through this single boundary for
-# infomap._logging: install/remove the process-global line sink, and drain
-# lines queued by non-GIL-holding threads after an engine call returns. Kept
-# under their private (underscore) names so the re-export uses the redundant
-# ``_x as _x`` alias a type checker treats as an explicit re-export -- a renamed
-# alias reads as an unexported private symbol (pyright reportPrivateImportUsage).
-from ._bindings import _drain_log_queue as _drain_log_queue
-from ._bindings import _set_log_callback as _set_log_callback
+from ._bindings import InfomapIterator as InfomapIterator
+from ._bindings import InfomapIteratorPhysical as InfomapIteratorPhysical
+from ._bindings import InfomapLeafIterator as InfomapLeafIterator
+from ._bindings import InfomapLeafIteratorPhysical as InfomapLeafIteratorPhysical
+from ._bindings import InfomapLeafModuleIterator as InfomapLeafModuleIterator
+from ._bindings import InfomapWrapper  # the only engine import
 
 # Documented tree-walking iterator/node types returned by ``Infomap.tree`` /
 # ``leaf_modules`` and the physical variants (source/api/iterators.rst). They are
@@ -39,11 +31,31 @@ from ._bindings import _set_log_callback as _set_log_callback
 # (vector_*, Config, StateNetwork, FlowModel, FlowData, ...) are deliberately
 # NOT re-exported.
 from ._bindings import InfoNode as InfoNode
-from ._bindings import InfomapIterator as InfomapIterator
-from ._bindings import InfomapIteratorPhysical as InfomapIteratorPhysical
-from ._bindings import InfomapLeafIterator as InfomapLeafIterator
-from ._bindings import InfomapLeafIteratorPhysical as InfomapLeafIteratorPhysical
-from ._bindings import InfomapLeafModuleIterator as InfomapLeafModuleIterator
+
+# Engine log-sink hooks, re-exported through this single boundary for
+# infomap._logging: install/remove the process-global line sink, and drain
+# lines queued by non-GIL-holding threads after an engine call returns. Kept
+# under their private (underscore) names so the re-export uses the redundant
+# ``_x as _x`` alias a type checker treats as an explicit re-export -- a renamed
+# alias reads as an unexported private symbol (pyright reportPrivateImportUsage).
+from ._bindings import _drain_log_queue as _drain_log_queue
+from ._bindings import _set_log_callback as _set_log_callback
+from ._bindings import build_info as build_info  # module-level engine function
+from ._bindings import run as run  # module-level engine function (CLI driver)
+from .errors import _translate_engine_errors
+
+
+def _with_owner(proxy, owner):
+    """Keep `owner` alive for as long as `proxy` is reachable.
+
+    The network accessors hand out a SWIG proxy over a C++ member of the wrapper, with
+    thisown false and no lifetime tie declared anywhere in interfaces/swig. Once the
+    owning object became unreachable the wrapper was deleted and every read through the
+    proxy was a use-after-free -- silent when the freed page still held the old values,
+    a segfault otherwise (#900).
+    """
+    proxy._infomap_owner = owner
+    return proxy
 
 
 class Core:
@@ -52,6 +64,29 @@ class Core:
         # conflicts) are thrown while the wrapper parses ``args``.
         with _translate_engine_errors():
             self._im = InfomapWrapper(args)
+        # Flow model an input adapter resolved from the input itself (a
+        # directed graph object, an explicit ``directed=`` on the matrix and
+        # edge-index adapters). Recorded rather than set on the engine: see
+        # note_inferred_flow_model.
+        self.inferred_flow_model: str | None = None
+
+    def note_inferred_flow_model(self, flow_model: str) -> None:
+        """Record a flow model that an input adapter resolved from the input.
+
+        Setting it on the engine directly does not survive a run: options reach
+        the engine as a rendered argument string that it re-parses into a fresh
+        config, so anything configured outside that string is dropped as soon as
+        the string changes -- which any per-run keyword does. The recorded value
+        is instead folded into the options that get rendered
+        (``_with_inferred_flow_model``), so it is authoritative for every run.
+
+        Explicit configuration wins. Nothing is recorded when the engine was
+        constructed with a flow model, and the first inference wins over a later
+        one so a second adapter call cannot silently change the model.
+        """
+        if self.flowModelIsSet or self.inferred_flow_model is not None:
+            return
+        self.inferred_flow_model = flow_model
 
     def get_node_data(self, level=1, states=False):
         """Single-traversal bulk node data over the result tree.
@@ -73,6 +108,25 @@ class Core:
         if name == "_im":
             raise AttributeError(name)
         return getattr(self._im, name)
+
+
+def _with_inferred_flow_model(core: Any, options):
+    """Fold an adapter's inferred flow model into the options to be rendered.
+
+    Shared by ``Infomap.run`` and ``Network.run`` so both entry points agree on
+    the precedence: an inference (recorded by ``Core.note_inferred_flow_model``)
+    applies only when this run's options carry neither ``flow_model`` nor
+    ``directed``, so explicit configuration always wins -- whether it was given
+    at construction, on the options carrier, or as a per-run keyword.
+
+    Returns ``options`` unchanged when there is nothing to fold in.
+    """
+    inferred = getattr(core, "inferred_flow_model", None)
+    if inferred is None:
+        return options
+    if options.flow_model is not None or options.directed is not None:
+        return options
+    return options.replace(flow_model=inferred)
 
 
 def apply_initial_partition(core: Any, module_ids) -> bool:
@@ -119,9 +173,7 @@ def apply_initial_partition(core: Any, module_ids) -> bool:
     # instead of a raw SWIG TypeError from setInitialPartition.
     if isinstance(module_ids, dict):
         try:
-            module_ids = {
-                int(node): int(module) for node, module in module_ids.items()
-            }
+            module_ids = {int(node): int(module) for node, module in module_ids.items()}
         except (TypeError, ValueError) as exc:
             raise TypeError(
                 "initial_partition must map integer node/state ids to integer "

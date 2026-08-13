@@ -11,6 +11,13 @@ on:
         required: false
         type: boolean
         default: true
+      full-matrix:
+        # When false, the tests job runs only the current R release, not oldrel.
+        # ci.yml sets this false on pull_request to halve the R matrix (oldrel is
+        # still covered on every push to master); everything else gets both.
+        required: false
+        type: boolean
+        default: true
       build-release-artifacts:
         required: false
         type: boolean
@@ -27,7 +34,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ inputs.ref || github.sha }}
 
@@ -36,48 +43,30 @@ jobs:
         with:
           python-version: "3.14"
 
-      - name: Cache SWIG 4.4.1 install
-        id: swig-cache
-        uses: actions/cache@v6
-        with:
-          path: ${{ runner.tool_cache }}/swig/4.4.1/${{ runner.arch }}
-          key: swig-4.4.1-${{ runner.os }}-${{ runner.arch }}-v2
-
-      - name: Install SWIG 4.4.1
-        if: steps.swig-cache.outputs.cache-hit != 'true'
-        run: |
-          swig_prefix="$RUNNER_TOOL_CACHE/swig/4.4.1/$RUNNER_ARCH"
-          sudo apt-get update
-          sudo apt-get install -y ca-certificates curl build-essential libpcre2-dev
-          curl -L --retry 3 --output /tmp/swig.tar.gz \
-            https://downloads.sourceforge.net/project/swig/swig/swig-4.4.1/swig-4.4.1.tar.gz
-          mkdir -p /tmp/swig-src
-          tar -xzf /tmp/swig.tar.gz -C /tmp/swig-src --strip-components=1
-          cd /tmp/swig-src
-          ./configure --prefix="$swig_prefix"
-          make -j"$(nproc)"
-          make install
-
-      - name: Add SWIG to PATH
-        run: echo "$RUNNER_TOOL_CACHE/swig/4.4.1/$RUNNER_ARCH/bin" >> "$GITHUB_PATH"
-
-      - name: Verify SWIG version
-        run: swig -version
+      - name: Set up SWIG
+        uses: ./.github/actions/setup-swig
 
       - name: Verify tracked SWIG outputs
         run: make test-r-swig-freshness
 
+  # tests, build-source, and r-universe-simulation no longer gate on
+  # swig-freshness: it produces no artifact they consume (build-source and
+  # r-universe-simulation regenerate SWIG from scratch), and CI Summary already
+  # requires the freshness job to be green. Decoupling lets them all start at
+  # once instead of behind the freshness check.
   tests:
     if: inputs.run-tests
     name: R ${{ matrix.r }} on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
-    needs: swig-freshness
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-24.04, macos-15, windows-2025-vs2026]
-        r: [release, oldrel]
+        # oldrel only when full-matrix is set (push/dispatch/release); PRs run
+        # release alone to keep this at 3 jobs -- the Windows leg is the CI
+        # critical path. oldrel regressions surface on the next push to master.
+        r: ${{ inputs.full-matrix && fromJSON('["release", "oldrel"]') || fromJSON('["release"]') }}
 
     defaults:
       run:
@@ -85,12 +74,12 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ inputs.ref || github.sha }}
 
       - name: Set up R
-        uses: r-lib/actions/setup-r@v2
+        uses: r-lib/actions/setup-r@d3c5be51b12e724e68f33216ca3c148b66d5f0b6 # v2.12.1
         with:
           r-version: ${{ matrix.r }}
           use-public-rspm: true
@@ -106,12 +95,18 @@ jobs:
           } >> ~/.R/Makevars
 
       - name: Set up Python (for staging script)
-        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.14"
 
+      # roxygen2 is version-pinned rather than `any::`: its output is
+      # version-dependent (8.0.0 rewrites the whole R6 section), so the tracked man
+      # pages only match one version and make test-r-man-freshness asserts it. Keep
+      # in step with R_ROXYGEN_VERSION in mk/r.mk and the note in AGENTS.md.
+      # Note extra-packages is a list of package refs, not a script: a '#' line
+      # inside the block is parsed as a package name, not a comment.
       - name: Install R package dependencies
-        uses: r-lib/actions/setup-r-dependencies@v2
+        uses: r-lib/actions/setup-r-dependencies@d3c5be51b12e724e68f33216ca3c148b66d5f0b6 # v2.12.1
         with:
           working-directory: interfaces/R/infomap
           extra-packages: |
@@ -121,43 +116,85 @@ jobs:
             any::rmarkdown
             any::tibble
             any::rcmdcheck
+            roxygen2@7.3.3
 
       - name: Set up ccache
         uses: ./.github/actions/setup-ccache
         with:
           key-prefix: r-${{ matrix.os }}-${{ matrix.r }}
 
+      # Windows R builds with Rtools gcc, which setup-ccache deliberately skips
+      # (it only persists the Linux/macOS ccache dirs). That left the Windows
+      # R CMD check recompiling the ~25-TU C++ core from scratch every run
+      # (~9 min, vs ~2 min where ccache is warm) -- the CI critical path. sccache
+      # with the GitHub Actions cache backend caches those compiles across runs
+      # the same way; Rtools gcc honors a launcher prefix through the package
+      # Makevars (the same launcher branch mk/r.mk uses for ccache on non-macOS
+      # unix), so pointing CCACHE_BIN at sccache is all the build needs.
+      - name: Set up sccache (Windows)
+        if: startsWith(matrix.os, 'windows')
+        uses: mozilla-actions/sccache-action@fc920bf0ec8de6ee65d409111f7ec508035751ba # v0.0.11
+
+      # Start the server explicitly, at the top level, in the GHA-cache env. R's
+      # compiles run deeply nested (R CMD check -> INSTALL -> make -> sccache);
+      # if the very first sccache call has to spawn the server from down there it
+      # silently falls back to running g++ directly (no caching). sccache-action
+      # exports the ACTIONS_* tokens but not the enable flag, so set it here (and
+      # again on the build, insurance against an idle-timeout restart) -- without
+      # it sccache uses local disk, which does not persist across runs.
+      - name: Start sccache server (Windows)
+        if: startsWith(matrix.os, 'windows')
+        env:
+          SCCACHE_GHA_ENABLED: "true"
+        run: sccache --start-server
+
       - name: Stage and check the package
+        env:
+          SCCACHE_GHA_ENABLED: ${{ startsWith(matrix.os, 'windows') && 'true' || '' }}
         run: |
-          make test-r
-          command -v ccache >/dev/null 2>&1 && ccache -s || true
+          # The man-page freshness check shares build-r-stage (and the package
+          # compile roxygen triggers) with test-r, so both go in one make
+          # invocation -- make builds a shared .PHONY prerequisite once per run,
+          # and a separate step would stage and compile twice on the critical path.
+          # One leg only: roxygen output does not vary by platform or R version,
+          # only by roxygen version, which is pinned above.
+          targets=(test-r)
+          if [ "$RUNNER_OS" = "Linux" ] && [ "${{ matrix.r }}" = "release" ]; then
+            targets=(test-r-man-freshness test-r)
+          fi
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            make "${targets[@]}" CCACHE_BIN=sccache USE_CCACHE=1
+          else
+            make "${targets[@]}"
+          fi
+          if command -v ccache >/dev/null 2>&1; then ccache -s || true; fi
+          if command -v sccache >/dev/null 2>&1; then sccache --show-stats || true; fi
 
   build-source:
     if: inputs.build-release-artifacts
     name: R source tarball
     runs-on: ubuntu-24.04
     timeout-minutes: 30
-    needs: swig-freshness
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ inputs.ref || github.sha }}
 
       - name: Set up R
-        uses: r-lib/actions/setup-r@v2
+        uses: r-lib/actions/setup-r@d3c5be51b12e724e68f33216ca3c148b66d5f0b6 # v2.12.1
         with:
           r-version: release
           use-public-rspm: true
 
       - name: Set up Python
-        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.14"
 
       - name: Install R package dependencies
-        uses: r-lib/actions/setup-r-dependencies@v2
+        uses: r-lib/actions/setup-r-dependencies@d3c5be51b12e724e68f33216ca3c148b66d5f0b6 # v2.12.1
         with:
           working-directory: interfaces/R/infomap
           extra-packages: |
@@ -194,12 +231,12 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ inputs.ref || github.sha }}
 
       - name: Set up R
-        uses: r-lib/actions/setup-r@v2
+        uses: r-lib/actions/setup-r@d3c5be51b12e724e68f33216ca3c148b66d5f0b6 # v2.12.1
         with:
           r-version: ${{ matrix.r }}
           use-public-rspm: true
@@ -215,12 +252,12 @@ jobs:
           } >> ~/.R/Makevars
 
       - name: Set up Python
-        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.14"
 
       - name: Install R package dependencies
-        uses: r-lib/actions/setup-r-dependencies@v2
+        uses: r-lib/actions/setup-r-dependencies@d3c5be51b12e724e68f33216ca3c148b66d5f0b6 # v2.12.1
         with:
           working-directory: interfaces/R/infomap
 
@@ -230,8 +267,48 @@ jobs:
           name: r-source
           path: dist/R
 
+      # Cache the platform-binary compile the same way the tests job does: ccache
+      # on macOS, sccache (GitHub Actions backend) on Windows Rtools gcc, which
+      # setup-ccache skips. build-r-binary-from-tarball drives R CMD INSTALL
+      # --build through the same mk/r.mk launcher machinery as make test-r, so
+      # the wiring is identical. Windows sccache entries are content-addressed,
+      # so this leg reuses the tests job's compiles of the same core for free.
+      # The key-prefix is deliberately the tests job's, not a r-binary-* one:
+      # this job runs on refs/tags/*, and GHA cache entries are only restorable
+      # from the same ref or the default branch -- a namespace only ever saved
+      # from tag runs can never hit. The tests job saves these keys on every
+      # master push (full-matrix covers release and oldrel), so restore-keys
+      # find a warm cache here; the save from this run is unreadable but
+      # harmless.
+      - name: Set up ccache
+        uses: ./.github/actions/setup-ccache
+        with:
+          key-prefix: r-${{ matrix.os }}-${{ matrix.r }}
+
+      - name: Set up sccache (Windows)
+        if: startsWith(matrix.os, 'windows')
+        uses: mozilla-actions/sccache-action@fc920bf0ec8de6ee65d409111f7ec508035751ba # v0.0.11
+
+      # Start the server explicitly, in the GHA-cache env, before the build: R's
+      # nested compiles otherwise spawn it too late and fall back to plain g++.
+      # sccache-action exports the ACTIONS_* tokens but not the enable flag.
+      - name: Start sccache server (Windows)
+        if: startsWith(matrix.os, 'windows')
+        env:
+          SCCACHE_GHA_ENABLED: "true"
+        run: sccache --start-server
+
       - name: Build platform binary
-        run: make build-r-binary-from-tarball
+        env:
+          SCCACHE_GHA_ENABLED: ${{ startsWith(matrix.os, 'windows') && 'true' || '' }}
+        run: |
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            make build-r-binary-from-tarball CCACHE_BIN=sccache USE_CCACHE=1
+          else
+            make build-r-binary-from-tarball
+          fi
+          if command -v ccache >/dev/null 2>&1; then ccache -s || true; fi
+          if command -v sccache >/dev/null 2>&1; then sccache --show-stats || true; fi
 
       - name: Compute platform tag
         id: platform
@@ -275,7 +352,6 @@ jobs:
     name: R r-universe simulation
     runs-on: ubuntu-24.04
     timeout-minutes: 60
-    needs: swig-freshness
 
     defaults:
       run:
@@ -283,23 +359,23 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ inputs.ref || github.sha }}
 
       - name: Set up R
-        uses: r-lib/actions/setup-r@v2
+        uses: r-lib/actions/setup-r@d3c5be51b12e724e68f33216ca3c148b66d5f0b6 # v2.12.1
         with:
           r-version: release
           use-public-rspm: true
 
       - name: Set up Python
-        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.14"
 
       - name: Install R package dependencies
-        uses: r-lib/actions/setup-r-dependencies@v2
+        uses: r-lib/actions/setup-r-dependencies@d3c5be51b12e724e68f33216ca3c148b66d5f0b6 # v2.12.1
         with:
           working-directory: interfaces/R/infomap
           extra-packages: |
@@ -309,9 +385,27 @@ jobs:
             any::rmarkdown
             any::tibble
 
+      - name: Set up ccache
+        uses: ./.github/actions/setup-ccache
+        with:
+          key-prefix: r-universe-ubuntu-24.04
+
       - name: Simulate r-universe package build
         run: |
           set -euo pipefail
+          # This job compiles the C++ core twice from clean (the R CMD build
+          # vignette install and R CMD INSTALL), uncached, which made it the R
+          # workflow's critical path. Route both through ccache via the personal
+          # Makevars, the same launcher trick mk/r.mk uses for `make test-r`.
+          # Both compiles happen in fresh temp dirs, so CCACHE_NOHASHDIR=1 is
+          # required for the entries to be reused across runs.
+          mkdir -p ~/.R
+          {
+            printf 'CC = ccache %s\n' "$(R CMD config CC)"
+            printf 'CXX = ccache %s\n' "$(R CMD config CXX)"
+            printf 'CXX17 = ccache %s\n' "$(R CMD config CXX17)"
+          } > ~/.R/Makevars
+          export CCACHE_NOHASHDIR=1
           rm -f interfaces/R/infomap/src/infomap_wrap.cpp
           (
             cd interfaces/R/infomap
@@ -335,3 +429,4 @@ jobs:
           fi
           R CMD INSTALL "$tarball"
           Rscript -e 'library(testthat); library(infomap); testthat::test_dir("interfaces/R/infomap/tests/testthat")'
+          if command -v ccache >/dev/null 2>&1; then ccache -s || true; fi

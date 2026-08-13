@@ -19,9 +19,8 @@ import sys
 import warnings
 
 import pytest
-
 from infomap import Infomap, Options, disable_log, enable_log, run
-
+from infomap._logging import _sync_engine_routing
 
 # These tests drive the engine log -> Python logging routing, deliberately
 # using silent=False to produce engine output; the pending deprecation on the
@@ -258,9 +257,7 @@ def test_stale_silent_advisory_warns_at_most_once(infomap_log_handler):
         im.run()
         im.run()
 
-    stale = [
-        r for r in records if "before logging was configured" in str(r.message)
-    ]
+    stale = [r for r in records if "before logging was configured" in str(r.message)]
     assert len(stale) == 1
 
 
@@ -324,3 +321,114 @@ def test_raising_log_handler_does_not_kill_the_run(infomap_log_handler):
         assert result.num_top_modules >= 1
     finally:
         logger.removeHandler(raising)
+
+
+# A rejected argument used to put the version banner and the usage line on the
+# process's stdout before the error was raised: Log visibility is configured from
+# the parsed Config, which does not exist yet while the flags are being read, so
+# ProgramInterface::exitWithError wrote at default verbosity. The Python API passes
+# --silent on every call, so this contradicted its quiet-by-default contract, and
+# the two lines arrived at exit after everything the program had written.
+class TestRejectedArgumentStaysQuiet:
+    @pytest.fixture(autouse=True)
+    def _engine_writes_to_stdout(self):
+        """Guarantee stdout is the engine's sink, whatever ran before.
+
+        Routing keys on handlers attached directly to the ``infomap`` logger
+        (``_logging.should_route``), and a leftover handler from another test sends
+        the banner to the logger instead of fd 1. That would make the silence
+        assertions below pass *vacuously* -- stdout is empty either way -- so the
+        precondition is asserted rather than assumed. `disable_log()` alone is not
+        enough: it removes only the handler `enable_log()` installed.
+        """
+        infomap_logger = logging.getLogger("infomap")
+        saved = list(infomap_logger.handlers)
+        # Removed directly rather than through disable_log(): that clears
+        # _logging's _helper_handler reference, and re-attaching a saved helper
+        # handler afterwards would leave the two out of step -- a later
+        # disable_log() would not remove it and enable_log() could add a second.
+        for handler in list(infomap_logger.handlers):
+            infomap_logger.removeHandler(handler)
+        assert not infomap_logger.handlers, "engine output would be routed, not printed"
+        # Removing the handlers is not enough: the C++ callback stays installed
+        # until _sync_engine_routing runs, and only engine_log_routing() calls it --
+        # which construction does not go through. Sync explicitly so the sink
+        # matches the handler configuration this test just established.
+        _sync_engine_routing()
+        try:
+            yield
+        finally:
+            for handler in list(infomap_logger.handlers):
+                infomap_logger.removeHandler(handler)
+            for handler in saved:
+                infomap_logger.addHandler(handler)
+            _sync_engine_routing()
+
+    def test_the_args_escape_hatch_does_not_print(self, capfd):
+        with pytest.raises(Exception, match="Unrecognized option"):
+            Infomap(args="--bogus-flag", silent=True)
+        assert _engine_stdout(capfd) == ""
+
+    def test_a_documented_keyword_does_not_print(self, capfd):
+        # Reachable without the raw escape hatch: markov_time reaches the engine's
+        # own parser, which rejects a non-finite value by name.
+        with pytest.raises(Exception, match="Cannot parse"):
+            run(
+                [(0, 1), (1, 2)], options=Options(markov_time=float("inf")), silent=True
+            )
+        assert _engine_stdout(capfd) == ""
+
+    def test_a_non_silent_caller_still_gets_the_banner_and_usage(self, capfd):
+        # The fix is silence-aware, not a blanket mute: someone who did not ask for
+        # silence still wants to know how to invoke the thing.
+        with pytest.raises(Exception, match="Unrecognized option"):
+            Infomap(args="--bogus-flag", silent=False)
+        printed = _engine_stdout(capfd)
+        assert "Infomap version" in printed
+        assert "Usage:" in printed
+
+    def test_the_negation_form_agrees_with_the_parser(self, capfd):
+        # The parser accepts --no-silent and lets the last occurrence win, so the
+        # pre-parse read has to do the same or the two disagree.
+        with pytest.raises(Exception, match="Unrecognized option"):
+            Infomap(args="--silent --no-silent --bogus-flag", silent=False)
+        assert "Infomap version" in _engine_stdout(capfd)
+
+        with pytest.raises(Exception, match="Unrecognized option"):
+            Infomap(args="--no-silent --silent --bogus-flag", silent=False)
+        assert _engine_stdout(capfd) == ""
+
+    def test_a_value_that_looks_like_the_flag_is_a_known_limitation(self, capfd):
+        # The scan is not option-aware: the parser decides option-versus-value by
+        # position, so `--out-name --silent` sets out_name to the literal "--silent"
+        # with silent false, while the scan counts the token and silences. Pinned as
+        # the documented behaviour rather than left to be discovered -- the whole
+        # cost is a missing banner in a run whose out-name is literally "--silent".
+        with pytest.raises(Exception, match="Unrecognized option"):
+            Infomap(args="--out-name --silent --bogus-flag", silent=False)
+        assert _engine_stdout(capfd) == ""
+
+    def test_a_previous_silent_run_does_not_mute_a_later_rejection(self, capfd):
+        # Log's silence is process-global and a successful silent run leaves it set,
+        # so the parse window has to take its value from the flags in front of it
+        # rather than from whatever ran last.
+        im = Infomap(silent=True, num_trials=1, seed=1)
+        im.add_links([(0, 1), (1, 2), (2, 0)])
+        im.run()
+        _engine_stdout(capfd)  # drain
+
+        with pytest.raises(Exception, match="Unrecognized option"):
+            Infomap(args="--bogus-flag", silent=False)
+        assert "Infomap version" in _engine_stdout(capfd)
+
+    def test_silence_is_not_left_behind_after_a_caught_rejection(self, capfd):
+        # The parse-time silence is scoped, so a caller that catches the error and
+        # carries on gets a working log again rather than a permanently muted engine.
+        with pytest.raises(Exception, match="Unrecognized option"):
+            Infomap(args="--bogus-flag", silent=True)
+        _engine_stdout(capfd)  # drain
+
+        im = Infomap(silent=False, num_trials=1, seed=1)
+        im.add_links([(0, 1), (1, 2), (2, 0)])
+        im.run()
+        assert _engine_stdout(capfd) != ""

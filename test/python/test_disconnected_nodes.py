@@ -3,7 +3,6 @@ from __future__ import annotations
 import networkx as nx
 import pytest
 
-
 pytestmark = pytest.mark.fast
 
 

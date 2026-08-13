@@ -12,7 +12,6 @@ against the identical graph built and run through ``Infomap``.
 """
 
 import pytest
-
 from infomap import Infomap, MultilayerNode, Network
 
 pytestmark = pytest.mark.fast

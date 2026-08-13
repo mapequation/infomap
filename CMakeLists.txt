@@ -3,6 +3,7 @@ project(infomap LANGUAGES CXX)
 
 option(INFOMAP_USE_OPENMP "Enable OpenMP support when available." ON)
 option(INFOMAP_ENABLE_SANITIZERS "Enable address and undefined behavior sanitizers." OFF)
+option(INFOMAP_BUILD_FUZZERS "Build libFuzzer harnesses for the network intake (Clang only)." OFF)
 option(INFOMAP_NATIVE_ARCH "Enable -march=native, LTO, and loop unrolling for the host CPU. Produces non-portable binaries; opt-in for local builds only." OFF)
 set(INFOMAP_MODE "release" CACHE STRING "Build mode shared with the Make-based native build policy.")
 set_property(CACHE INFOMAP_MODE PROPERTY STRINGS release debug)
@@ -71,6 +72,7 @@ function(infomap_json_array output_name field_name)
 endfunction()
 
 infomap_json_array(INFOMAP_COMPILE_FLAGS cmake_compile_flags)
+infomap_json_array(INFOMAP_OPENMP_COMPILE_FLAGS cmake_openmp_compile_flags)
 infomap_json_array(INFOMAP_LINK_FLAGS link_flags)
 infomap_json_array(INFOMAP_ENABLED_FEATURE_DEFINES enabled_feature_defines)
 
@@ -113,12 +115,22 @@ target_include_directories(infomap_core PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/vend
 target_compile_features(infomap_core PUBLIC cxx_std_17)
 set_target_properties(infomap_core PROPERTIES CXX_EXTENSIONS OFF)
 target_compile_options(infomap_core PRIVATE ${INFOMAP_COMPILE_FLAGS})
+# OpenMP is PUBLIC while the rest of the policy stays PRIVATE, because it changes what
+# the sources *mean* rather than how well they are compiled: src/ and test/ both branch
+# on _OPENMP, so a consumer compiled without the flag silently drops those branches
+# while still linking libomp -- which is how every #ifdef _OPENMP test case in the
+# suite came to compile to nothing (#930).
+target_compile_options(infomap_core PUBLIC ${INFOMAP_OPENMP_COMPILE_FLAGS})
 target_compile_definitions(infomap_core PUBLIC ${INFOMAP_ENABLED_FEATURE_DEFINES})
 target_link_options(infomap_core PUBLIC ${INFOMAP_LINK_FLAGS})
 
 if(INFOMAP_ENABLE_SANITIZERS)
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
-        target_compile_options(infomap_core PUBLIC -fsanitize=address,undefined -fno-omit-frame-pointer)
+        # -fno-sanitize-recover=undefined: without it UBSan prints "runtime
+        # error: ..." and carries on, so the doctest binary exits 0, ctest
+        # reports Passed, and --output-on-failure never shows the diagnostic --
+        # the blocking sanitizer job could not fail on any UB finding.
+        target_compile_options(infomap_core PUBLIC -fsanitize=address,undefined -fno-sanitize-recover=undefined -fno-omit-frame-pointer)
         target_link_options(infomap_core PUBLIC -fsanitize=address,undefined)
     else()
         message(FATAL_ERROR "INFOMAP_ENABLE_SANITIZERS requires Clang or GCC.")
@@ -161,6 +173,12 @@ if(BUILD_TESTING)
             PRIVATE
                 INFOMAP_TEST_ROOT="${CMAKE_CURRENT_SOURCE_DIR}"
         )
+        # Lets a test assert that the OpenMP flags actually reached this translation
+        # unit. Derived from the emitted flags rather than INFOMAP_USE_OPENMP, so a
+        # toolchain for which the policy emits nothing does not expect _OPENMP.
+        if(INFOMAP_OPENMP_COMPILE_FLAGS)
+            target_compile_definitions(${target_name} PRIVATE INFOMAP_TEST_EXPECT_OPENMP=1)
+        endif()
         target_link_libraries(${target_name} PRIVATE infomap_core)
         add_test(NAME ${target_name} COMMAND ${target_name})
         set_tests_properties(${target_name} PROPERTIES LABELS "${labels}")
@@ -194,6 +212,7 @@ if(BUILD_TESTING)
     add_infomap_cpp_test(infomap_cpp_lossy_tests test/cpp/test_lossy.cpp "fast;core;lossy")
     add_infomap_cpp_test(infomap_cpp_preferred_levels_tests test/cpp/test_preferred_levels.cpp "fast;core;preferred-levels")
     add_infomap_cpp_test(infomap_cpp_random_tests test/cpp/test_random.cpp "fast;core;rng")
+    add_infomap_cpp_test(infomap_cpp_map_equation_invariants_tests test/cpp/test_map_equation_invariants.cpp "fast;core;mapeq")
 
     add_infomap_columnar_contract_test(infomap_cpp_lifecycle_tests)
     add_infomap_columnar_contract_test(infomap_cpp_partition_tests)
@@ -226,6 +245,16 @@ if(BUILD_TESTING)
             "$<TARGET_FILE:infomap_cli>"
     )
     set_tests_properties(shell_completion PROPERTIES LABELS "fast;core;parser;cli")
+
+    add_test(
+        NAME interrupted_artifact
+        COMMAND
+            "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/test/scripts/check_interrupted_artifact.py"
+            "$<TARGET_FILE:infomap_cli>"
+    )
+    # 77 = skipped: the script needs POSIX signal delivery, which Windows does not have.
+    set_tests_properties(interrupted_artifact PROPERTIES LABELS "core;cli;crash" SKIP_RETURN_CODE 77)
 
     add_test(
         NAME help_contract
@@ -287,6 +316,9 @@ if(BUILD_TESTING)
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
         target_compile_options(infomap_cpp_lifecycle_tests PRIVATE -fno-access-control)
         target_compile_options(infomap_cpp_partition_tests PRIVATE -fno-access-control)
+        # Reaches InfomapBase::calcCodelengthOnTree (private) to recompute a
+        # partition from scratch and compare against the tracked codelength.
+        target_compile_options(infomap_cpp_map_equation_invariants_tests PRIVATE -fno-access-control)
     endif()
 
     add_custom_target(
@@ -307,6 +339,32 @@ if(BUILD_TESTING)
             infomap_cpp_lossy_tests
             infomap_cpp_preferred_levels_tests
             infomap_cpp_random_tests
+            infomap_cpp_map_equation_invariants_tests
             infomap_cli
     )
+endif()
+
+# libFuzzer harnesses for the network intake. Opt-in and Clang-only; kept out of
+# BUILD_TESTING / infomap_cpp_tests / ctest (not pass/fail unit tests). Run via
+# `make fuzz`. Configure with -DINFOMAP_BUILD_FUZZERS=ON -DINFOMAP_USE_OPENMP=OFF.
+if(INFOMAP_BUILD_FUZZERS)
+    if(NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        message(FATAL_ERROR "INFOMAP_BUILD_FUZZERS requires Clang (libFuzzer).")
+    endif()
+    # Instrument the core for coverage-guided fuzzing plus the sanitizers the
+    # harness links, so findings surface from library code, not just the harness.
+    target_compile_options(infomap_core
+        PRIVATE -fsanitize=fuzzer-no-link,address,undefined -fno-sanitize-recover=undefined -fno-omit-frame-pointer)
+    # PUBLIC link options so every consumer of the instrumented core (the CLI,
+    # stray test targets) links the sanitizer runtimes too -- without this,
+    # building anything but fuzz_intake in a fuzz-configured tree fails at
+    # link with undefined ASAN symbols. Mirrors the INFOMAP_ENABLE_SANITIZERS
+    # block above.
+    target_link_options(infomap_core PUBLIC -fsanitize=address,undefined)
+
+    add_executable(fuzz_intake test/fuzz/fuzz_intake.cpp)
+    target_link_libraries(fuzz_intake PRIVATE infomap_core)
+    target_compile_options(fuzz_intake
+        PRIVATE -fsanitize=fuzzer,address,undefined -fno-sanitize-recover=undefined -fno-omit-frame-pointer)
+    target_link_options(fuzz_intake PRIVATE -fsanitize=fuzzer,address,undefined)
 endif()

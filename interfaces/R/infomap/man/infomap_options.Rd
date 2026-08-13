@@ -52,6 +52,15 @@ Output
 \item{\code{output}}{Write selected output formats as a comma-separated list without spaces, e.g. -o clu,tree,ftree. Options: clu, tree, ftree, newick, json, csv, network, states, flow.}
 \item{\code{hide_bipartite_nodes}}{Hide bipartite nodes in output by projecting the solution to primary nodes.}
 \item{\code{print_all_trials}}{Write each trial to separate output files. Has effect only when --num-trials is greater than 1.}
+\item{\code{no_overwrite}}{Fail with an output error if any target output file already exists. By default existing files are replaced.}
+\item{\code{print_config_fingerprint}}{Print the canonical configuration fingerprint and exit.}
+\item{\code{timing_json}}{Write machine-readable run timing JSON to this path. Use - for stdout.}
+\item{\code{summary_json}}{Write machine-readable final run summary JSON to this path. Use - for stdout.}
+\item{\code{manifest_json}}{Write a machine-readable run manifest JSON to this path. Use - for stdout.}
+\item{\code{memory_report}}{Include peak RSS and best-effort bytes per node/link estimates in timing JSON. Requires --timing-json.}
+\item{\code{trial_offset}}{Global index of the first trial this process runs; trial i uses seed = base_seed + (trial_offset + i). Default 0 (single-process behavior).}
+\item{\code{trial_results}}{Write this shard's per-trial results (codelengths, seeds, best-tree reference, fingerprints) as JSON to this path, for deterministic merging of distributed shard runs into a final solution.}
+\item{\code{no_final_output}}{Skip writing this process's aggregate best result. Per-trial outputs and --trial-results are still written.}
 \item{\code{verbosity_level}}{Increase console verbosity. Add more v flags to increase verbosity up to -vvv.}
 \item{\code{silent}}{Suppress console output.}
 }
@@ -65,6 +74,9 @@ Algorithm
 \item{\code{use_node_weights_as_flow}}{Use node weights from the API or Pajek node records as normalized node flow.}
 \item{\code{to_nodes}}{Teleport to nodes instead of links. Uses uniform node weights unless node weights are provided.}
 \item{\code{teleportation_probability}}{Set the probability of teleporting to a random node or link when calculating flow.}
+\item{\code{max_flow_iterations}}{Limit the power iteration used to calculate flow (directed and regularized flow models) to this many iterations.}
+\item{\code{min_flow_iterations}}{Require at least this many power iterations before the flow calculation can converge, even if --flow-tolerance is already met.}
+\item{\code{flow_tolerance}}{Convergence tolerance for the power iteration used to calculate flow. Iteration stops once the per-iteration change in flow drops to or below this value, after --min-flow-iterations have run.}
 \item{\code{regularized}}{Add a fully connected Bayesian prior network to reduce overfitting to missing links. Activates --recorded-teleportation.}
 \item{\code{regularization_strength}}{Scale the relative strength of the Bayesian prior network used by --regularized.}
 \item{\code{entropy_corrected}}{Correct for negative entropy bias in small samples, especially solutions with many modules.}
@@ -74,11 +86,14 @@ Algorithm
 \item{\code{variable_markov_damping}}{With --variable-markov-time, set damping between local effective degree (0) and local entropy (1).}
 \item{\code{variable_markov_min_scale}}{With --variable-markov-time, set the minimum local scale for zero-entropy nodes. Local Markov time is max scale divided by local scale.}
 \item{\code{preferred_number_of_modules}}{Penalize solutions by how far their number of modules differs from this value.}
+\item{\code{preferred_number_of_levels}}{Soft preference for the depth of the hierarchy. Steering to a shallower depth is reliable at a small codelength cost; deeper is best-effort, bounded by what the optimizer proposes. No-op with --two-level or strength 0.}
+\item{\code{preferred_number_of_levels_strength}}{Scale the strength of --preferred-number-of-levels. 0 disables the preference; larger values increase the cost of deviating from the preferred depth.}
 \item{\code{multilayer_relax_rate}}{Set the probability of relaxing from a state node to neighboring layers instead of staying in the current layer.}
 \item{\code{multilayer_relax_limit}}{Limit relaxation to this many neighboring layer ids in each direction. Use a negative value to allow relaxation to any layer.}
 \item{\code{multilayer_relax_limit_up}}{Limit relaxation upward to this many higher neighboring layer ids. Use a negative value to allow relaxation to any higher layer.}
 \item{\code{multilayer_relax_limit_down}}{Limit relaxation downward to this many lower neighboring layer ids. Use a negative value to allow relaxation to any lower layer.}
 \item{\code{multilayer_relax_by_jsd}}{Weight multilayer relaxation by out-link similarity measured with Jensen-Shannon divergence.}
+\item{\code{multilayer_relax_to_self}}{On relaxation, link a state node to its own physical node in the target layer instead of spreading to its out-neighbors. Builds a smaller state network with the same flow as the default.}
 }
 
 Accuracy
@@ -93,6 +108,9 @@ Accuracy
 \item{\code{fast_hierarchical_solution}}{Find top modules quickly. Use -FF to keep all fast levels. Use -FFF to skip recursive refinement.}
 \item{\code{inner_parallelization}}{Experimental: use batched parallel node moves for coarse optimization. Performance gains are workload-dependent, often require a relaxed core-loop-codelength-threshold and low tune-iteration-limit, and may produce a different partition than serial optimization.}
 \item{\code{parallel_trials}}{Run independent trials in parallel with OpenMP. --num-trials remains the total number of trials; the number of parallel workers follows the OpenMP thread count (e.g. OMP_NUM_THREADS), clamped to --num-trials. Peak memory scales with the worker count. Nested OpenMP and --inner-parallelization are disabled inside workers.}
+\item{\code{converge}}{Treat the trial count as a cap and stop early once the best codelength has plateaued (no meaningful improvement over several consecutive trials). Runs trials serially; cannot be combined with parallel trials or distributed sharding. With no explicit trial count, a default cap is used.}
+\item{\code{num_threads}}{Effective thread budget: 'auto' (resolve from --num-threads > INFOMAP_NUM_THREADS > SLURM_CPUS_PER_TASK > OMP_NUM_THREADS > cpuset > hardware), or a positive integer. 1 forces fully serial. Governs the recursive partition, parallel trials, and inner parallelization.}
+\item{\code{threads}}{Alias for --num-threads.}
 \item{\code{prefer_modular_solution}}{Prefer a modular solution even when one module gives a lower codelength.}
 \item{\code{num_random_moves}}{Try this many random moves in each core loop to merge weakly connected nodes.}
 \item{\code{max_degree_for_random_moves}}{Try random moves only for nodes with degree at most this value.}
