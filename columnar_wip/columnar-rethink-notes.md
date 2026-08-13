@@ -1447,6 +1447,22 @@ the gated-lambda fix more than pays for it). Bailing earlier would mean duplicat
 correction-attachment predicate outside `addColumnarCorrections`, which would drift as corrections are
 added; asking the constructed object is the robust form, and the cost is inside the noise floor.
 
+**F27 addendum — the bundled snapshot fix, isolated (2026-08-13).** Daniel's point at the master
+sync: F27 bundled the split operator with dropping `m_hierLevels[0]` from the gated lambdas'
+snapshot, so its reported Δ CPU is a *net* of one change that adds cost and one that removes it —
+exactly what the project protocol says not to report. Isolated by reverting only the snapshot
+avoidance on the current tip (web-NotreDame `-C -N10`, min-of-3 interleaved, codelength bit-identical
+throughout): the snapshot fix is worth **−2.8% peak RSS and +0.3% CPU**, i.e. no measurable CPU
+effect at all.
+
+So the F27 numbers stand as the split operator's own cost — the bundling did not flatter it. What the
+original wording overstated is the *magnitude*: "~50 MB of leaf CSR per gated step, twice per sweep"
+is true per step, but those snapshots are allocated and freed inside the step, so they barely touch
+the run's **peak**. Peak is what `maximum resident set size` reports, and a transient allocation only
+raises it if it coincides with the high-water mark. Corollary: the fix does **not** meaningfully
+pre-claim the leaf-CSR single-owner work (#960), which is worth a further −30.5% RSS on top of it —
+the two are near-independent, and an earlier claim that F27 had eaten part of #960's win was wrong.
+
 ### F28 — Merging master in: separating "the seeds moved" from "the search changed" (2026-08-13)
 
 122 commits of master landed under the branch. The sync itself was mechanical — the same handful of
@@ -1517,12 +1533,25 @@ check that can never fire. Gating it off: web-NotreDame `-C` +7.5% → **+2.0%**
 +4.2%; science2001 and air30k are inside noise, so the cost scales with leaf count × depth exactly as
 the shape predicts.
 
-**It is columnar-only.** The OO engine never calls `initTree` per trial — it builds its tree during
-the search — and OO on web-NotreDame is 5% *faster* after the rebase. So the earlier framing ("a cost
-the rebase imports and the OO path pays too") was doubly wrong: wrong mechanism, and wrong about who
-pays. The honest statement is that a validation written for user input is being applied to
-engine-generated input on the hot path, and the fix is to let `initTree` know which it was handed.
-Left as a follow-up rather than folded into a rebase.
+**Say precisely what this is, because "a cluster-data fix slowed the columnar engine" sounds wrong.**
+#948 changed five files and **none of them is `Columnar*`** — it did not touch the columnar core. It
+made the *shared* `InfomapBase::initTree` more expensive, and `columnarPartition` is the one caller
+that invokes `initTree` **per trial** (to materialize `toNodePaths` into the output tree). That call
+is pre-existing on this branch — `InfomapBase.cpp:2023` on the pre-sync tip — so the sync did not add
+a call, it made an existing one cost more. On ordinary input OO reaches `initTree` only once per run
+(cluster data, best-result restore, deep repair; `initTrialPartition` is per trial but gated on
+embedded JSON initial-partition paths), which is why OO gets *faster* across the sync while `-C` gets
+slower. So the earlier framing — "a cost the sync imports and the OO path pays too" — was wrong on
+both the mechanism and on who pays.
+
+Also worth stating plainly: **#948 explains about three quarters of it, not all.** +7.5% → +2.0% with
+the check gated off leaves +2.0% unattributed, inside code-layout noise. "The whole measurable cost"
+was an overstatement.
+
+The design point behind it: a validation written for *user-supplied* input is being applied to
+*engine-generated* input on the hot path. The fix is to let `initTree` know which it was handed. Left
+as a follow-up rather than folded into a master sync, and **nothing is disabled on the branch** — the
+gate existed only in a throwaway measurement build.
 
 **Method note.** Three hypotheses died before the right one, and each was killed by a build rather
 than an argument — gate the suspect off, rebuild, measure. That is cheap (≈40s a round) and it is
