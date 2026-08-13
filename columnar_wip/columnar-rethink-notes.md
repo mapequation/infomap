@@ -1544,9 +1544,23 @@ embedded JSON initial-partition paths), which is why OO gets *faster* across the
 slower. So the earlier framing — "a cost the sync imports and the OO path pays too" — was wrong on
 both the mechanism and on who pays.
 
-Also worth stating plainly: **#948 explains about three quarters of it, not all.** +7.5% → +2.0% with
-the check gated off leaves +2.0% unattributed, inside code-layout noise. "The whole measurable cost"
-was an overstatement.
+**And it is not the only thing #948 added.** Asked directly whether `initTree` was the whole story, I
+went back and gated all three of its reachable additions independently rather than answering from the
+one I had already measured. It is not:
+
+| addition | `-C` | `-C -F` | `-2 -C` |
+|---|--:|--:|--:|
+| `initTree` mixed-depth shape check | +6.9% | +8.2% | +0.6% |
+| `removeSubModules` loop condition (`numLevels()` → full child scan) | −0.7% | +0.4% | +1.2% |
+| `aggregatePerLevelCodelength` per-child classification | +0.3% | +2.1% | +1.8% |
+| all three | +8.0% | +8.8% | +2.5% |
+
+The shape check owns the hierarchical searches. **`-2 -C` never reaches it** — `initTree` routes the
+two-level case out to `initPartition` before the check — so its +2.5% is entirely the other two, and
+a fix aimed only at the shape check would leave `-2 -C` exactly where it is. Worth remembering as a
+shape: *a validation PR spreads across several call paths, and the one you measure first is not
+necessarily the one a given search hits.* Earlier phrasings ("it is the whole measurable cost", then
+"about three quarters") were both guesses at an aggregate I had not decomposed.
 
 The design point behind it: a validation written for *user-supplied* input is being applied to
 *engine-generated* input on the hot path. The fix is to let `initTree` know which it was handed. Left

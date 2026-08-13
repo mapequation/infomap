@@ -161,10 +161,23 @@ per-trial rows, which is why OO gets *faster* across the sync while `-C` gets sl
 path prefix per leaf, to reject cluster data that gives a module both a leaf and a sub-module as
 children. That is the right check for user-supplied `--cluster-data`. But what `columnarPartition`
 hands it is Infomap's *own* output, which cannot mix depths by construction — so on 325 729 leaves it
-is ~1.6M map insertions per trial for a condition that can never hold. It accounts for **5.5pp of
-`-C`'s 7.5pp** and 7pp of `-C -F`'s 11.2pp — about three quarters, not all: the residual +2.0% is
-unattributed and inside code-layout noise. science2001 (7 170 nodes) and air30k are inside noise
-entirely, so the cost scales with leaf count × depth as the shape predicts.
+is ~1.6M map insertions per trial for a condition that can never hold.
+
+#948 made three additions that a columnar trial can reach, and they do not fall the same way on every
+search. Each gated off independently (web-NotreDame `-N1`, `trial_optimize_s`, min-of-5, codelength
+identical on every arm; the parts do not sum exactly to the total at these magnitudes):
+
+| addition | `-C` | `-C -F` | `-2 -C` |
+|---|--:|--:|--:|
+| `initTree` mixed-depth shape check | **+6.9%** | **+8.2%** | +0.6% |
+| `removeSubModules` loop condition (`numLevels()` → full child scan) | −0.7% | +0.4% | +1.2% |
+| `aggregatePerLevelCodelength` per-child classification | +0.3% | +2.1% | +1.8% |
+| **all three** | **+8.0%** | **+8.8%** | **+2.5%** |
+
+So the shape check owns the hierarchical searches and is **not** what `-2 -C` pays: the two-level path
+leaves `initTree` early for `initPartition` and never reaches the check, and its +2.5% is the other
+two additions. science2001 (7 170 nodes) and air30k are inside noise on all of them, so the cost
+scales with leaf count × depth as the shape predicts.
 
 Two things this is *not*, both checked rather than assumed: it is **not** the #958/#961/#963 flow
 post-conditions (gated off in a measurement build, they cost **0.003s — +0.1%** of the trial), and it
