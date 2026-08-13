@@ -1651,3 +1651,99 @@ Two lessons, and the first is the expensive one:
 2. **A test that has never failed is not evidence it has ever run.** These tests were tagged for the
    columnar engine, appeared in the ctest list, and reported as passing — three signals that all
    looked like coverage and were not.
+
+### F29 — The leaf CSR existed four times over; now once (2026-07-29)
+
+Prompted by a memory question, not a profile: *how much does a 1.5B-link network cost in the
+columnar core vs OO?* Counting bytes off `sizeof` rather than guessing turned up an embarrassment.
+Per stored link the columnar representation is exactly **24 B** (out target+flow, in target+flow,
+`assign()`-sized, no slack) against OO's **48 B** (`InfoEdge` 32 + an out-vector slot + an in-vector
+slot) — a clean 2×. Except a trial did not hold *one* leaf level. It held four:
+
+1. `InfomapBase`'s native columnar leaf input (the staging arrays, kept across trials),
+2. a local `Level leaf` that `setupColumnarOptimizer` copied them into,
+3. `m_leaf0`, which `buildFromLevel` copied *that* into,
+4. `m_hierLevels[0]`, a third copy pushed by every stack build — plus `m_lvl = m_leaf0` whenever the
+   active level was the leaves (so `retuneLeavesWithinModules` made it four live at once), plus a
+   further copy inside each `savedLevels` / `fineLevels` / `flatLevels` save-restore of the stack,
+   and one more in `trajLevels[0]` on the trajectory-repair path.
+
+So the representation was 2× leaner per link than OO and the implementation spent the win 4× over.
+Nothing ever wrote into a level after it was built — verified: no `m_lvl.<field> =` or
+`m_leaf0.<field> =` anywhere, aggregation always produces a *new* level — so every one of those
+copies was of an immutable object.
+
+**Fix: one owner, everyone else points at it.**
+- `ColumnarLevel` moved to namespace scope (`ColumnarLevel.h`, aliased as `ColumnarTwoLevel::Level`,
+  so no call site changed) so `InfomapBase` can hold one by value without including the core header.
+- `buildFromBorrowedLevel` lets a trial read the caller-owned leaf level in place; the staging arrays
+  became that single owner. Copies 1–3 collapse to one.
+- `leaf0()` / `lvl()` are pointer accessors: the active level *aliases* the leaf network while the
+  units are leaves and only owns storage for aggregated levels.
+- `hierLevel(k)` routes level 0 of the stack to `leaf0()`, and slot 0 became an empty placeholder —
+  which also makes every stack save/restore copy free of the leaf CSR. Same for `trajLevels`.
+- `buildFromLevel` now takes its `Level` by value, so the four internal callers with dead locals
+  (`superNet`, three `sub`) hand over storage by `std::move` instead of copying.
+
+**Result — codelength bit-identical, memory down, and faster.** All **65** configs (13 networks ×
+{`-C`, `-C -F`, `-2 -C`, OO, OO `-2`}) reproduce their codelength *and* their top-module/level counts
+exactly. Peak RSS, same-session alternating runs, excluding the 8.5 MB process floor:
+
+| variant | networks | median Δ peak RSS | range |
+|---|--:|--:|--:|
+| `-C` | 8 | **−33.7%** | −54.4% .. −18.4% |
+| `-C -F` | 8 | **−28.6%** | −44.8% .. −22.0% |
+| `-2 -C` | 8 | **−23.9%** | −43.0% .. −9.6% |
+| OO | 7 | +2.3% | −1.9% .. +7.2% |
+| OO `-2` | 7 | +2.2% | −1.4% .. +5.1% |
+
+The OO rows are the control: that path is untouched, so its ±2% is the noise floor of the
+instrument. Speed, interleaved min-of-4 CPU seconds (`-C -N10`): web-NotreDame **−9.9%**, malaria
+−5.6%, powergrid −3.7%, science2001 −2.1%, air30k −0.5% — three leaf-CSR `memcpy`s per trial were
+real work. Beware single wall-clock runs here: the same web-NotreDame `-C` config that measures
+−12.9% wall interleaved showed **+49%** in one unpaired run.
+
+> **Correction (2026-08-13, at the master sync).** The −9.9% above does not reproduce, and the fault is in
+> that measurement rather than in anything the master sync changed. Re-run in one session, this PR against
+> **its own original base `9aa7fea9`** gives **−3.6%** on web-NotreDame `-C -N10`; against the synced
+> core it gives **−3.6%** as well, and a later multi-network batch put it at −2.1%. So the CPU effect
+> is ~1–3.6% depending on session, identical on both bases. My first explanation for the discrepancy —
+> that the memcpys are "a smaller share of a run that does more work per trial" — was wrong twice over:
+> the run does not do more work (codelength and time are essentially unchanged), and the win did not
+> shrink, so there was nothing to explain. **When a headline number fails to reproduce, re-measure the
+> original pair before theorising about why the effect changed** — the cheap experiment (build the old
+> base and the old tip, interleave) distinguishes "the effect moved" from "the number was wrong", and
+> here it was the number.
+>
+> A second explanation was drafted for the peak-RSS side — that F27 had pre-claimed part of the win by
+> dropping the `m_hierLevels[0]` snapshot from the gated lambdas — and it is wrong too. Isolated by
+> reverting only that change: **−2.8% RSS, +0.3% CPU**; those snapshots are transient, so they barely
+> touch peak. web-NotreDame's RSS delta for this PR reads −24.7% / −27.1% / −30.5% across three
+> sessions, so the apparent movement was session spread. **Two mechanisms invented for one
+> non-difference** — see the F28 addendum.
+
+**F29 addendum — the merge onto the current core (2026-08-13).** Bringing this PR onto the synced
+core surfaced a bug that no conflict marker pointed at, and it is the useful part of the story.
+`subClusterUnits` and `refineLayerWithinGrandparent` both build a local `sub` level and hand it to
+`buildFromLevel`. This PR changed that signature to take `Level` **by value** so the four callers
+with dead locals could hand over storage by move. Independently, F25 added a
+`buildPartialSeed(sub, ...)` call *after* that handover. Git merged the two cleanly — the lines do
+not overlap — and produced a use-after-move that segfaulted reproducibly on exactly the two networks
+where partial seeding is live (netsci and powergrid `-C`), and on no others.
+
+Worth remembering as a shape, not just an incident: **a by-value signature change and a new read of
+the same object are individually innocent and jointly fatal, and they are exactly the kind of pair a
+three-way merge cannot see.** The fix is ordering — compute the partial seed before the handover, in
+both call sites — and it is bit-identical, so the only cost of getting it wrong was the crash.
+
+Two other things the newer core needed that this PR could not have known about: `splitLevelModules`
+(F27) reads its level through `m_hierLevels[k]` at `k == 0`, which is now the empty placeholder slot,
+so those reads had to move to `hierLevel()`/`leaf0()`/`lvl()` — 13 sites, and silent corruption
+rather than a compile error if missed, since slot 0 is a valid empty `Level`. The lesson for anyone
+syncing this branch again: after any conflict resolution, grep for direct `m_hierLevels[` **reads**
+with a non-constant index and for `m_leaf0`/`m_lvl`, because the accessor indirection is exactly what
+a merge will not reintroduce into code written after it.
+
+And a process note on how it nearly went missing: this text was dropped once while re-splicing the
+document, by a replace that ran from an anchor "to end of file" and swallowed the section after it.
+Anchor edits to *both* ends of the range when the tail is not what you are replacing.
