@@ -10,7 +10,10 @@ When working on the new columnar core (wip branch `columnar-hierarchical-core`),
 ### The two `columnar_wip` documents have different jobs
 - **`columnar-pr-performance-section.md` is a SNAPSHOT, not a changelog.** It is the body of whichever
   PR is currently under review, and it holds exactly two things: the current numbers, and the evidence
-  for the change being reviewed. When a sub-PR merges, the next one **replaces** its section — it does
+  for the change being reviewed. **Its opening note must name the PR — what the change is, not just
+  that the numbers are fresh.** "Every number here is fresh" is unfalsifiable on its own; "measured on
+  the binary for *<this change>*" is the claim a reviewer can check, and it is what makes the numbers
+  evidence *for this PR* rather than numbers that merely happen to sit next to it. When a sub-PR merges, the next one **replaces** its section — it does
   not accumulate. Per-feature attribution for an already-merged feature stays reachable by opening that
   sub-PR on GitHub, where that PR's own copy of this file is the measurement that justified it. So:
   **delete sections belonging to already-merged sub-PRs rather than relabelling them.** Stale numbers
@@ -29,6 +32,14 @@ those PRs marked merged into a history that no longer contains them, and it sile
 old measurement so it reads as current. `git merge master` keeps the provenance and gives the numbers
 an explicit baseline boundary. Redo the perf snapshot after any sync — a master change can move both
 engines' codelengths (e.g. a change to per-trial seeding) without touching the search.
+
+### Verification discipline
+- **Run the C++ tests with OpenMP ON as well as OFF.** `make test-native OPENMP=0` is the benchmark
+  configuration, not the test configuration: every `#ifdef _OPENMP` test body — which is where the
+  parallel-trials contracts live — compiles away without it, so a green run says nothing about them.
+  CI runs `make test-native` with OpenMP on and will catch what a local `OPENMP=0` run cannot.
+- Run the feature build too (`FEATURES="lossy-map-equation regularized-multilayer"`), which CI does as
+  a second job.
 
 ### Measurement discipline
 - **Establish that a difference is real before explaining it.** If a number fails to reproduce,
