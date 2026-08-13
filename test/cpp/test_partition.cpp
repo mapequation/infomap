@@ -379,6 +379,42 @@ TEST_CASE("Tree cluster-data reinit and rerun stay stable on the same instance [
   CHECK(im.numLevels() == firstNumLevels);
 }
 
+TEST_CASE("A two-level partition re-initialised after a multi-level one scores the leaves [fast][core][partition][lifecycle]")
+{
+  // #831: the objective's network-level terms (the base map equation's
+  // nodeFlow_log_nodeFlow) describe whichever network was active when they were last
+  // initialised. The multi-level branch of initTree leaves them initialised for the
+  // *module* network, and the two-level route did not restore them, so re-initialising a
+  // two-level partition on the same instance scored the leaves against the module
+  // network's terms -- off by one whole one-level codelength. On politicalblogs that came
+  // out negative and was written to the .tree file while the console reported the correct
+  // value. Pinned as: the same partition must score the same on a reused instance as on a
+  // fresh one.
+  auto twoLevelCodelength = [](InfomapWrapper& im) {
+    im.initPartition(infomap::test::clusterFixturePath("twotriangles_two_modules.clu"), false, &im.network());
+    return im.codelength();
+  };
+  // --no-infomap so the flow is calculated (the codelength is 0 without it) while no
+  // search runs, keeping each instance's only module state the one this test gives it.
+  auto makeInstance = [] {
+    return infomap::test::makeRunningInfomap(
+        [](InfomapWrapper& im) { im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net")); },
+        "--no-infomap");
+  };
+
+  auto fresh = makeInstance();
+  const auto expected = twoLevelCodelength(*fresh);
+  REQUIRE(expected > 0.0);
+
+  auto reused = makeInstance();
+  // A multi-level partition first -- this is what left the terms behind.
+  reused->initPartition(infomap::test::clusterFixturePath("twotriangles_three_level.tree"), false, &reused->network());
+  REQUIRE(reused->numLevels() == 3);
+
+  CHECK(twoLevelCodelength(*reused) == doctest::Approx(expected));
+  CHECK(reused->getIndexCodelength() == doctest::Approx(fresh->getIndexCodelength()));
+}
+
 TEST_CASE("Pretty per-level codelength renders a structured levels table [fast][core][partition][output]")
 {
   InfomapWrapper im(infomap::test::defaultFlags("--directed -0 --no-file-output --pretty"));
