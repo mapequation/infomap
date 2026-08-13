@@ -1541,9 +1541,13 @@ InfomapBase& InfomapBase::initNetwork(Network& network)
   initOptimizer();
 
   // Per-instance network properties for entropy bias correction must be set after the
-  // optimizer/objective exists and before init() reads them via calcCodelength().
-  if (entropyBiasCorrection)
+  // optimizer/objective exists and before init() reads them via calcCodelength(). Taken
+  // from the network passed in, not from m_network: this instance may be a parallel-trial
+  // worker, which is handed the run's network here and never owns one (#989).
+  if (entropyBiasCorrection) {
     m_optimizer->setNetworkProperties(network);
+    m_entropyBiasTotalDegree = BiasedMapEquation::entropyBiasTotalDegree(network);
+  }
 
   init();
   return *this;
@@ -2517,12 +2521,8 @@ void InfomapBase::addColumnarCorrections(ColumnarTwoLevel& opt) const
 {
   // Composable objective corrections (default none => base map equation).
   // Biased entropy-bias: same total-degree divisor as BiasedMapEquation.
-  if (entropyBiasCorrection) {
-    double totalDegree = m_network.sumWeightedDegree();
-    if (totalDegree < m_network.sumDegree())
-      totalDegree = m_network.sumDegree();
-    opt.addCorrection(std::make_unique<BiasedEntropyCorrection>(entropyBiasCorrectionMultiplier, totalDegree));
-  }
+  if (entropyBiasCorrection)
+    opt.addCorrection(std::make_unique<BiasedEntropyCorrection>(entropyBiasCorrectionMultiplier, m_entropyBiasTotalDegree));
   // Preferred number of modules (#827): |K - K_pref| move-loop bias, the
   // columnar analogue of BiasedMapEquation. Objective-agnostic (composes with
   // any of the objectives below). Attached to the top-level optimizer only; its

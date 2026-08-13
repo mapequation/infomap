@@ -303,8 +303,11 @@ private:
                            .setNonMainConfig(*this)
                            .inheritRuntimeContext(*this);
     // Carry the full-network properties down so entropy bias correction stays consistent
-    // across the hierarchy (this used to be a shared static).
+    // across the hierarchy (this used to be a shared static). A sub instance partitions
+    // InfoNodes and never sees a StateNetwork, so both the objective's copy and the
+    // columnar correction's divisor have to be handed down rather than derived.
     subInfomap.m_optimizer->inheritNetworkPropertiesFrom(*m_optimizer);
+    subInfomap.m_entropyBiasTotalDegree = m_entropyBiasTotalDegree;
     return subInfomap;
   }
 
@@ -316,6 +319,7 @@ private:
                              .setNonMainConfig(*this)
                              .inheritRuntimeContext(*this);
     superInfomap.m_optimizer->inheritNetworkPropertiesFrom(*m_optimizer);
+    superInfomap.m_entropyBiasTotalDegree = m_entropyBiasTotalDegree;
     // getNewInfomapInstanceWithoutMemory builds the objective from a default Config, so unlike a
     // sub-Infomap this one has to be told what to minimise. findHierarchicalSuperModules compares
     // its codelength directly against this instance's index codelength, and the two are only
@@ -706,6 +710,16 @@ protected:
   // the InfoNode leaf path is used (ineligible cases).
   bool m_columnarNativeInput = false;
   ColumnarLevel m_columnarLeafInput;
+
+  // Entropy-bias divisor (--entropy-corrected), derived from the network in
+  // initNetwork(Network&) rather than read back off m_network when the correction is
+  // built. A parallel-trial worker is handed the run's network by reference and never
+  // stores one, so m_network is empty inside a worker and every quantity read off it is
+  // zero -- which put the columnar correction on its totalDegree<=0 fallback of 1.0,
+  // orders of magnitude too strong, and collapsed every parallel trial to one module
+  // (#989). The object-oriented objective never had the bug because initNetwork already
+  // pushes the same figure into it via setNetworkProperties(network).
+  double m_entropyBiasTotalDegree = 0.0;
 
   Network m_network;
   InitialPartition m_initialPartition; // nodeId -> moduleId
