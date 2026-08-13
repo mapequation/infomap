@@ -1674,3 +1674,29 @@ real work. Beware single wall-clock runs here: the same web-NotreDame `-C` confi
 > touch peak. web-NotreDame's RSS delta for this PR reads −24.7% / −27.1% / −30.5% across three
 > sessions, so the apparent movement was session spread. **Two mechanisms invented for one
 > non-difference** — see the F28 addendum.
+
+**F29 addendum — the merge onto the current core (2026-08-13).** Bringing this PR onto the synced
+core surfaced a bug that no conflict marker pointed at, and it is the useful part of the story.
+`subClusterUnits` and `refineLayerWithinGrandparent` both build a local `sub` level and hand it to
+`buildFromLevel`. This PR changed that signature to take `Level` **by value** so the four callers
+with dead locals could hand over storage by move. Independently, F25 added a
+`buildPartialSeed(sub, ...)` call *after* that handover. Git merged the two cleanly — the lines do
+not overlap — and produced a use-after-move that segfaulted reproducibly on exactly the two networks
+where partial seeding is live (netsci and powergrid `-C`), and on no others.
+
+Worth remembering as a shape, not just an incident: **a by-value signature change and a new read of
+the same object are individually innocent and jointly fatal, and they are exactly the kind of pair a
+three-way merge cannot see.** The fix is ordering — compute the partial seed before the handover, in
+both call sites — and it is bit-identical, so the only cost of getting it wrong was the crash.
+
+Two other things the newer core needed that this PR could not have known about: `splitLevelModules`
+(F27) reads its level through `m_hierLevels[k]` at `k == 0`, which is now the empty placeholder slot,
+so those reads had to move to `hierLevel()`/`leaf0()`/`lvl()` — 13 sites, and silent corruption
+rather than a compile error if missed, since slot 0 is a valid empty `Level`. The lesson for anyone
+syncing this branch again: after any conflict resolution, grep for direct `m_hierLevels[` **reads**
+with a non-constant index and for `m_leaf0`/`m_lvl`, because the accessor indirection is exactly what
+a merge will not reintroduce into code written after it.
+
+And a process note on how it nearly went missing: this text was dropped once while re-splicing the
+document, by a replace that ran from an anchor "to end of file" and swallowed the section after it.
+Anchor edits to *both* ends of the range when the tail is not what you are replacing.
