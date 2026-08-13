@@ -438,6 +438,11 @@ private:
    */
   InfomapBase& initTree(const NodePaths& tree);
 
+  //! Reject cluster data that gives a module both a leaf and a sub-module as children.
+  //! Call this where a tree is parsed from input; initTree does not, because it also
+  //! materializes engine-generated trees, which cannot have that shape (#990).
+  static void validateClusterDataTreeShape(const NodePaths& tree);
+
   /**
    * Normalize tree leaf ids so the leaf id always identifies a state node in
    * m_leafNodes. For higher-order networks, physical-id rows are expanded by

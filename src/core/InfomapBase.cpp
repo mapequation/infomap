@@ -970,6 +970,7 @@ private:
       const auto normalizedTree = infomap.normalizeTreePaths(m_network.initialPartitionPaths(), numNodesNotInNetwork);
       if (numNodesNotInNetwork > 0)
         Console::note(1, "{} nodes in embedded initial-partition paths not found in network.", numNodesNotInNetwork);
+      InfomapBase::validateClusterDataTreeShape(normalizedTree);
       infomap.initTree(normalizedTree);
     }
   }
@@ -1381,6 +1382,7 @@ InfomapBase& InfomapBase::initPartition(const std::string& clusterDataFile, bool
     if (numTreeNodesNotInNetwork > 0) {
       Console::note(1, "{} physical nodes in tree not found in network.", numTreeNodesNotInNetwork);
     }
+    validateClusterDataTreeShape(normalizedTree);
     initTree(normalizedTree);
   } else if (ext == "clu") {
     initPartition(clusterMap.clusterIds(), hard);
@@ -1479,33 +1481,18 @@ NodePaths InfomapBase::normalizeTreePaths(const TreePaths& tree, unsigned int& n
   return normalized;
 }
 
-InfomapBase& InfomapBase::initTree(const NodePaths& tree)
+// Refuse cluster data that gives a module both a leaf and a sub-module as children.
+//
+// Called where a tree is *parsed from input*, not from initTree itself. initTree also
+// materializes trees the engine generated -- the best-result restore, the deep-repair
+// reseed, and on the columnar engine every trial's own partition -- which cannot mix
+// depths by construction. Running the check there cost O(leaves x depth) std::map
+// insertions per call to reject a condition that can never hold: ~1.6M insertions per
+// trial on a 325k-node network. Validating where input enters keeps initTree a pure
+// materialization step, and keeps ExitCode::InputError on a path that is actually
+// handling input (#990).
+void InfomapBase::validateClusterDataTreeShape(const NodePaths& tree)
 {
-  Log(4) << "Init tree... ";
-  int maxDepth = 2;
-  // If only two-level partition, we can directly use initPartition
-  for (const auto& nodePath : tree) {
-    if (nodePath.second.size() > 2) {
-      maxDepth = std::max(maxDepth, static_cast<int>(nodePath.second.size()));
-    }
-  }
-  // A deeper tree under --two-level takes the same route, keeping each leaf's top-level
-  // module and dropping the sub-module structure below it. That is the collapse the
-  // hierarchical path performs with removeSubModules, and doing it here means the
-  // objective is initialised by the branch that works: building the full tree and then
-  // running a two-level search over it left the search with the deeper tree's
-  // index/module codelengths, which it reported as 0 -- or, with the tuning loop
-  // enabled, aborted on "fineTune() called but numLevels != 2" (#898).
-  if (maxDepth == 2 || twoLevel) {
-    std::map<unsigned int, unsigned int> clusterIds;
-    for (const auto& nodePath : tree) {
-      const auto nodeId = nodePath.first;
-      const auto clusterId = nodePath.second[0]; // First level module
-      clusterIds[nodeId] = clusterId;
-    }
-    return initPartition(clusterIds, false);
-  }
-
   // Refuse a module that would get both a leaf and a sub-module as children. The
   // search never produces that shape -- checked across 205k leaves at depths 2 to 8 --
   // and the code downstream assumes it cannot happen: the per-level aggregation used to
@@ -1548,6 +1535,34 @@ InfomapBase& InfomapBase::initTree(const NodePaths& tree)
                                               "--two-level to keep only the top-level assignment."),
                                    modulePath,
                                    modulePath));
+  }
+}
+
+InfomapBase& InfomapBase::initTree(const NodePaths& tree)
+{
+  Log(4) << "Init tree... ";
+  int maxDepth = 2;
+  // If only two-level partition, we can directly use initPartition
+  for (const auto& nodePath : tree) {
+    if (nodePath.second.size() > 2) {
+      maxDepth = std::max(maxDepth, static_cast<int>(nodePath.second.size()));
+    }
+  }
+  // A deeper tree under --two-level takes the same route, keeping each leaf's top-level
+  // module and dropping the sub-module structure below it. That is the collapse the
+  // hierarchical path performs with removeSubModules, and doing it here means the
+  // objective is initialised by the branch that works: building the full tree and then
+  // running a two-level search over it left the search with the deeper tree's
+  // index/module codelengths, which it reported as 0 -- or, with the tuning loop
+  // enabled, aborted on "fineTune() called but numLevels != 2" (#898).
+  if (maxDepth == 2 || twoLevel) {
+    std::map<unsigned int, unsigned int> clusterIds;
+    for (const auto& nodePath : tree) {
+      const auto nodeId = nodePath.first;
+      const auto clusterId = nodePath.second[0]; // First level module
+      clusterIds[nodeId] = clusterId;
+    }
+    return initPartition(clusterIds, false);
   }
 
   // Tear down the existing partition. Detach the leaves first so that the
