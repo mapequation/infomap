@@ -1747,3 +1747,25 @@ a merge will not reintroduce into code written after it.
 And a process note on how it nearly went missing: this text was dropped once while re-splicing the
 document, by a replace that ran from an anchor "to end of file" and swallowed the section after it.
 Anchor edits to *both* ends of the range when the tail is not what you are replacing.
+
+### F30 — Second master sync, done as a PR this time (2026-08-13)
+
+One upstream commit, #991, which moves #948's cluster-data shape validation out of `initTree` to the
+input boundary. Measured on the merged binary against the pre-sync branch, same session, min-of-3,
+`-N10`, **codelength bit-identical on all 39 columnar configs**: web-NotreDame `-C` **−5.6%** and
+`-C -F` **−7.2%** whole-run CPU, everything else at or inside noise. That matches the shape predicted
+when the cost was first isolated — it scales with leaf count × depth — and it is smaller than the
+`trial_optimize_s` figure (−6.3%/−6.5%) because the whole run includes ingest and flow, which the
+change does not touch.
+
+**Process change, and the reason for it.** The first sync (F28) was merged straight onto the branch
+and pushed, and it pushed the branch **red**: three master gates this branch had never satisfied
+(#947 OpenMP test flags, #927 config fingerprint, #941 R man pages) only surfaced afterwards. This one
+went through a `sync-master-into-columnar` branch and a PR, so CI ran on the merged result *before* it
+landed, and all three configurations were verified locally first. It also gives the sync a discoverable
+snapshot of its own, which is what the perf-section convention is for — the previous sync's evidence
+lives only in a commit message.
+
+Worth keeping as the rule: **a master sync is a change to this branch like any other, so it gets a
+branch, a PR, and a perf snapshot.** The cost is one extra PR; the thing it buys is not landing a red
+branch.
