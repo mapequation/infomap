@@ -1849,5 +1849,8 @@ search needs must arrive through one of those three, and the compiler will not t
 doesn't — `m_network` is a perfectly valid empty object. Before adding a read of `m_network` (or of
 anything else built in `RunSession`) to code the trial loop reaches, check what it returns in a
 worker. Two more such reads exist today at `InfomapBase.cpp`'s `regularizedPriorOnly` lines
-(`network().numLinks() == 0`, true in any worker); they are on the shared OO path and are permissive
-rather than wrong, but they are the same shape.
+(`network().numLinks() == 0`, which is true in *any* worker, so `regularizedPriorOnly` degenerates to
+`regularized` there). They only widen the gate on the one-level collapse rather than change what is
+computed, and `-d --regularized` on the states fixture gives the same four trials in parallel as in
+serial on both engines — but they are the same shape, and they sit on the shared OO path, not the
+columnar one.
