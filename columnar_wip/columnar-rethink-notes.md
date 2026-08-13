@@ -1854,3 +1854,83 @@ worker. Two more such reads exist today at `InfomapBase.cpp`'s `regularizedPrior
 computed, and `-d --regularized` on the states fixture gives the same four trials in parallel as in
 serial on both engines — but they are the same shape, and they sit on the shared OO path, not the
 columnar one.
+
+### F32 — Workers borrow the leaf SoA; the rest of the worker gap is not columnar's (#994, 2026-08-13)
+
+The other half of F31's asymmetry. `buildColumnarLeafInput` runs in `RunSession`, on the main
+instance only; `runTrialsInParallel` builds each worker and calls `worker.initNetwork(m_network)`
+directly, bypassing that wrapper. So `m_columnarNativeInput` stayed false in every worker and
+`setupColumnarOptimizer` took the `buildFromLeaves(m_leafNodes, …)` branch — rebuilding the columnar
+structure from the InfoNode leaf tree on **every trial**, while the serial path borrows a leaf SoA
+built once.
+
+A worker cannot build its own: the CLI releases the links before the trials run
+(`releaseInputLinksIfCli`), which is exactly why the main instance builds it early. So it borrows the
+main instance's — sound for the same reason each trial's optimizer already borrows it (immutable for
+the whole run, owner outlives every borrower), and it puts workers on the *same input construction*
+as the serial path instead of a parallel one.
+
+**The two constructions were numerically identical**, checked before and after on science2001,
+powergrid, air30k and malaria: all four trials bit-identical, same top modules and levels. So this is
+a pure cost removal plus the removal of a divergence class that was only ever a measured fact, never
+a structural one.
+
+**Effect.** One worker (`OMP_NUM_THREADS=1`, `-N4`, min-of-3, so parallelism is not a factor), every
+(build, engine, mode) cell measured once per rep and cycled so drift hits all cells alike. Columnar
+parallel-arm CPU, before the borrow → after:
+
+| network | before | after | change | gap vs serial, before → after |
+|---|--:|--:|--:|--:|
+| web-NotreDame `-d` (325 729 leaves) | 10.23s | 9.68s | **−5.4%** | +17.6% → +15.2% |
+| science2001 `-d` (7 170) | 1.61s | 1.55s | **−3.7%** | +12.9% → +6.8% |
+| air30k (13 213 states) | 1.78s | 1.79s | +0.6% (not resolvable) | +3.6% → +7.4% |
+
+The instrument's noise floor is set by the OO arms, whose code path this change does not touch at all:
+byte-identical OO code measured 0.1–2.1% apart between the two builds, and its *gap* percentages —
+differences of two noisy numbers — moved by up to 2 points (air30k OO +4.5% → +6.4%). So the two large
+networks are real and **air30k is not resolvable**, which is the expected shape: the removed work is a
+per-trial rebuild of the columnar structure from the leaf tree, so it scales with the network, and
+air30k has 13k leaves against web-NotreDame's 326k. Do not read air30k's "+0.6%" or its gap moving the
+wrong way as a regression; read it as below the floor.
+
+**The residual gap is not columnar's, and the percentages say otherwise only because of arithmetic.**
+Taken at face value the residual looks damning — on web-NotreDame the columnar worker path is +15.2%
+against serial while OO's is +6.4%. But the worker overhead is an **absolute** per-trial cost, not a
+proportional one, and in absolute terms **OO pays more**:
+
+| network | OO extra, per trial | columnar extra, per trial |
+|---|--:|--:|
+| web-NotreDame `-d` | 0.58–0.91 s | 0.32–0.38 s |
+| science2001 `-d` | 0.032–0.045 s | 0.024–0.046 s |
+| air30k | 0.054–0.076 s | 0.016–0.031 s |
+
+A columnar trial on web-NotreDame takes ~2.2s against OO's ~14s, so the same fixed overhead is ~6× the
+fraction. That is the whole of the percentage difference, and the arithmetic closes. **This was very
+nearly recorded backwards**: measured first with all three reps of one cell before moving to the next,
+the OO arms came out 5–7% apart on byte-identical code, and on that data the residual read as
+columnar-specific on web-NotreDame (+15.6% vs OO's +1.8%) and as engine-independent on the other two.
+Ranked percentages of a fast operation are the wrong instrument; seconds per trial is the right one.
+
+**What the residual actually is — not attributed to a number.** A profile diff of the parallel and
+serial arms shows no single dominant cost: the parallel arm spends more in `sortChildrenOnFlow`,
+`aggregatePerLevelCodelength`, the full `NodePaths` walk, malloc, and `generateSubNetwork`/`InfoNode`
+construction, because the worker loop does per **every** trial what the serial path either does once
+(`initNetwork`, against `removeModules()` between trials) or defers to the winning trial (sort,
+per-level statistics, full tree collection). Each is under 1.5% of the run and the percentages come
+from two different sample denominators, so no attribution is claimed. It is shared-path work — it
+belongs on master by the rule that a fix outside `Columnar*` does — and it is filed as #996.
+
+**A guard became load-bearing that was not before.** `setupColumnarOptimizer` gates the native path on
+`m_columnarNativeInput && !haveHardPartition()` — hard cluster-data needs the InfoNode leaf tree for
+`restoreHardPartition`. That second condition never mattered on the worker path, because a worker's
+`m_columnarNativeInput` was unconditionally false; borrowing makes it true for the first time. Removing
+the guard now **segfaults** rather than returning a wrong number, and the new `Parallel trials with
+hard cluster-data match serial trials` case was verified to catch it. Worth generalising: *making a
+disabled path reachable makes every guard on that path newly load-bearing* — enumerate them and test
+each, rather than only testing the path you meant to enable.
+
+**Not directly test-pinned, and why.** There is no assertion that a worker actually took the borrowed
+path: `runTrialsInParallel` wraps each trial in `Log::ScopedMute`, so the detail line naming the input
+path never reaches a `LogCapture`, and the only alternative would be an accessor that exists for the
+test alone. The observable contract (parallel == serial) is tested and the cost is measured; a silent
+regression here would cost speed, not correctness.

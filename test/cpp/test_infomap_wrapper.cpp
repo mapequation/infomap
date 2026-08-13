@@ -877,6 +877,40 @@ TEST_CASE("Parallel trials with entropy correction match serial trials [fast][co
 #endif
 }
 
+// Hard cluster-data is the one input the columnar search cannot take through the native leaf
+// SoA -- restoreHardPartition needs the InfoNode leaf tree, so setupColumnarOptimizer gates the
+// native path on !haveHardPartition(). That gate never mattered on the worker path before #994,
+// because a worker's m_columnarNativeInput was unconditionally false; borrowing the main
+// instance's leaf input makes it true for the first time, so the gate now has to hold there too.
+TEST_CASE("Parallel trials with hard cluster-data match serial trials [fast][core][lifecycle][openmp][columnar-contract]")
+{
+#ifdef _OPENMP
+  const auto run = [](bool parallel) {
+    InfomapWrapper im(infomap::test::withTestEngine(
+        "--silent --seed 7 --num-trials 4 --no-file-output --cluster-data "
+        + infomap::test::clusterFixturePath("twotriangles_two_modules.clu")
+        + (parallel ? " --parallel-trials" : "")));
+    im.clusterDataIsHard = true;
+    im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+    im.run();
+    infomap::test::checkRunSanity(im);
+    // The imposed partition survives the worker path, not merely the same number as serial.
+    CHECK(im.numLeafNodes() == 6);
+    CHECK(im.numTopModules() == 2);
+    infomap::test::checkCanonicalPartition(im, { { 1, 2, 3 }, { 4, 5, 6 } });
+    return im.codelengths();
+  };
+
+  const auto parallel = run(true);
+  const auto serial = run(false);
+  REQUIRE(parallel.size() == 4);
+  REQUIRE(serial.size() == 4);
+  for (unsigned int i = 0; i < parallel.size(); ++i) {
+    CHECK(parallel[i] == doctest::Approx(serial[i]));
+  }
+#endif
+}
+
 TEST_CASE("Parallel trials with variable Markov time are invariant to worker count [fast][core][lifecycle][openmp][columnar-contract]")
 {
 #ifdef _OPENMP

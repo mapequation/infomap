@@ -525,6 +525,13 @@ private:
       // Share the cancel flag so workers observe a cancel; they only read it and
       // unwind, caught by the per-trial handler below (issue #412).
       worker.inheritRuntimeContext(m_infomap);
+      // Borrow the run's columnar leaf SoA. A worker cannot build one -- that happens in
+      // the init phase, from a network it does not own and whose links the CLI may already
+      // have released -- so without this it silently fell back to rebuilding the columnar
+      // structure from the InfoNode leaf tree on every trial, which is both slower and a
+      // different input construction from the one the serial path uses (#994). Read-only
+      // and outlived by this scope, so it is safe to share across the worker threads.
+      worker.borrowColumnarLeafInputFrom(m_infomap);
 
       for (unsigned int trialIndex = static_cast<unsigned int>(workerIndex); trialIndex < m_numTrials; trialIndex += numWorkers) {
         try {
@@ -2268,8 +2275,9 @@ void InfomapBase::setupColumnarOptimizer(ColumnarTwoLevel& opt, unsigned long se
     // bypassing the InfoNode leaf tree as the optimizer's input. Lent to the
     // optimizer, not copied: this is the leaf CSR, 24 B per link, and it is
     // immutable for the whole run. It outlives every trial's optimizer (owned by
-    // this InfomapBase), which is what buildFromBorrowedLevel requires.
-    const ColumnarLevel& leaf = m_columnarLeafInput;
+    // this InfomapBase, or by the main instance for a parallel-trial worker), which
+    // is what buildFromBorrowedLevel requires.
+    const ColumnarLevel& leaf = columnarLeafInput();
     // Global teleport total = sum of leaf teleport flow (buildFromLeaves derives
     // this itself; the level builders need it passed so the module teleport terms
     // use the whole-network total, not zero).
@@ -2515,6 +2523,14 @@ void InfomapBase::buildColumnarLeafInput(Network& network)
   });
   m_columnarNativeInput = true;
   Console::detail(1, "columnar native leaf input built from network ({} nodes)", numNodes);
+}
+
+void InfomapBase::borrowColumnarLeafInputFrom(const InfomapBase& owner)
+{
+  if (!owner.m_columnarNativeInput)
+    return; // owner has none (ineligible input): leave this instance on the leaf-tree path
+  m_columnarLeafInputBorrowed = &owner.m_columnarLeafInput;
+  m_columnarNativeInput = true;
 }
 
 void InfomapBase::addColumnarCorrections(ColumnarTwoLevel& opt) const

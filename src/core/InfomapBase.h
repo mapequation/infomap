@@ -508,6 +508,20 @@ private:
   // Whether the native leaf input is used (undirected, unit Markov time, no
   // recorded teleportation / VMT); other cases keep the InfoNode leaf path.
   bool columnarNativeInputEligible() const;
+  // Point this instance's trials at another instance's leaf SoA instead of building
+  // one. A parallel-trial worker cannot build its own: buildColumnarLeafInput runs in
+  // RunSession while the links are still present, and the worker only ever sees the
+  // network through initNetwork. Borrowing the main instance's is sound for the same
+  // reason each trial's optimizer already borrows it -- it is immutable for the whole
+  // run and the owner outlives every borrower -- and it also puts workers on the same
+  // input construction as the serial path rather than a parallel one (#994).
+  void borrowColumnarLeafInputFrom(const InfomapBase& owner);
+  // The leaf SoA this instance's trials optimize from: the borrowed one when set,
+  // otherwise its own.
+  const ColumnarLevel& columnarLeafInput() const
+  {
+    return m_columnarLeafInputBorrowed != nullptr ? *m_columnarLeafInputBorrowed : m_columnarLeafInput;
+  }
 
   // Attach the active objective's composable correction (bias / meta / mem /
   // lossy) to a columnar optimizer, reading leaf attributes from m_leafNodes.
@@ -710,6 +724,10 @@ protected:
   // the InfoNode leaf path is used (ineligible cases).
   bool m_columnarNativeInput = false;
   ColumnarLevel m_columnarLeafInput;
+  // Set on a parallel-trial worker to the main instance's leaf SoA (see
+  // borrowColumnarLeafInputFrom). Non-owning, and read-only from every worker thread:
+  // buildFromBorrowedLevel only takes the level's address and reads it.
+  const ColumnarLevel* m_columnarLeafInputBorrowed = nullptr;
 
   // Entropy-bias divisor (--entropy-corrected), derived from the network in
   // initNetwork(Network&) rather than read back off m_network when the correction is
