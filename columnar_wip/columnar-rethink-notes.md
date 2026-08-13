@@ -1446,3 +1446,132 @@ optimizer *before* the `hasModuleMoveCorrections()` bail, so base networks pay o
 the gated-lambda fix more than pays for it). Bailing earlier would mean duplicating the
 correction-attachment predicate outside `addColumnarCorrections`, which would drift as corrections are
 added; asking the constructed object is the robust form, and the cost is inside the noise floor.
+
+### F28 — Merging master in: separating "the seeds moved" from "the search changed" (2026-08-13)
+
+122 commits of master landed under the branch. The sync itself was mechanical — the same handful of
+conflicts either way, all of them places where master had generalized something the branch had done
+locally — but it invalidated every number in the performance section, and the interesting part is how
+to show that none of the movement is the engine.
+
+**Why a merge rather than a rebase, decided after trying the rebase.** Thirteen sub-PRs have been
+rebase-merged into this branch, so each one's recorded merge commit *is* a branch commit. The rebase
+detached **13 of 13** — the PRs would still render on GitHub (`refs/pull/N/head` is retained) but they
+would be marked merged into a history that no longer contains them. Daniel's second point was the
+better one: the perf section is a *latest snapshot* attached to whichever sub-PR is being reviewed,
+not a cumulative log, so a linear history that silently re-parents every old measurement makes those
+numbers read as current. A merge commit is an explicit baseline boundary instead. Cost: one
+non-linear commit on a branch that will be squashed or rebase-merged into master anyway. Worth
+knowing: the merged tree is **byte-identical** to the rebased tree (verified by diff, and the built
+binaries share an md5), so nothing measured had to be redone.
+
+**The one that matters is [#949](https://github.com/mapequation/infomap/pull/949), "seed every trial
+the same way, in every mode."** The branch's serial path reseeded only in sharding mode
+(`trialOffset > 0` or a `--trial-results` path given); master now reseeds unconditionally from
+`m_baseSeed + trialOffset + trialIndex`. That is *the same formula the columnar branch already used
+in its parallel path* — master generalized it rather than contradicting it, which is why the conflict
+resolution was a deletion (drop the `isShardingMode()` guard) plus one surviving columnar line
+(`m_columnarFlatFirstTrial`). Consequence: trials 1..9 of an `-N10` run draw a different sequence
+than before, so every best-of-10 codelength is a new draw. On both engines.
+
+The temptation is to eyeball the table and argue. The two controls settle it without argument:
+
+1. **`-C -N1` is bit-identical pre-sync vs post-sync on 8/8 networks.** Trial 0 has
+   `trialIndex == 0` and `trialOffset == 0`, so `trialSeed` reduces to the base seed either way —
+   #949 cannot touch it. If the search had changed, this is where it would show, and it doesn't.
+2. **Plain master's OO `-N10` equals the synced branch's OO `-N10` on 7/7 networks.** The branch is
+   exactly neutral on the OO path, so every OO shift in the table came with master and not with us.
+   This is worth keeping as a standing regression check, not just a one-off: it is cheap and it
+   catches any accidental leak from the columnar work into the default engine.
+
+With those two, the remaining per-cell differences are re-draws. The seed sweep confirms the
+distribution didn't move: old→new `-C` over seeds 123/234/345/456 averages +0.039% (netsci),
+−0.039% (malaria), +0.059% (powergrid) — all inside ±0.06%, with per-seed spread larger than the
+mean shift, and signs going both ways within every network. Seed 123's two >0.1% cells (netsci
+`-C` +0.122%, malaria `-C` −0.265%) are opposite tails of the same spread.
+
+**On speed, `-N1` is the honest instrument** — it is the only place the two binaries compute the
+same partition, so a time difference is code and nothing else. Min-of-5 to min-of-7, interleaved:
+malaria −2.0%, air30k −2.6%, regularized ±0, powergrid one timer tick, science2001 +2.0%,
+web-NotreDame **+4.7%** (+6.7% at `-N10`). Only web-NotreDame needed explaining, and my first
+explanation was wrong: I attributed it to master's new flow post-conditions (#958/#961/#963) on the
+strength of a `--no-infomap` delta of 0.99s → 1.03s. That reasoning was sloppy — 0.04s cannot account
+for 0.13s, and I should have noticed the arithmetic didn't close.
+
+**What it actually is: #948's cluster-data tree-shape validation, run once per trial by the columnar
+engine.** Found by elimination and then confirmed, in this order:
+
+1. Timing registry: `flow_calculation_s` 0.315 → 0.313 and `init_network_s` 0.153 → 0.142 are flat;
+   the entire delta lives in `trial_optimize_s` (1.943 → 2.073). So it is not ingest or flow.
+2. Post-conditions gated off in a measurement build: **0.003s, +0.1%** of the trial. Not them.
+3. #954's iterator change reverted: regression unchanged. Not that either.
+4. `sample` on both binaries: `InfomapBase::initTree` is **192 samples in the new binary and absent
+   from the old one's top 25**. That is the answer, and it is where I should have started.
+
+`initTree` builds two `std::map<Path, bool>` keyed by `std::vector<unsigned int>` — one entry per
+path prefix per leaf — to reject cluster data giving a module both a leaf and a sub-module as
+children (#898, shipped as #948). Correct for user `--cluster-data`. But `columnarPartition` calls
+`initTree` every trial to materialize `opt.toNodePaths(...)`, which is Infomap's *own* output and
+cannot mix depths by construction, so on 325 729 leaves it is ~1.6M map insertions per trial for a
+check that can never fire. Gating it off: web-NotreDame `-C` +7.5% → **+2.0%**, `-C -F` +11.2% →
++4.2%; science2001 and air30k are inside noise, so the cost scales with leaf count × depth exactly as
+the shape predicts.
+
+**It is columnar-only.** The OO engine never calls `initTree` per trial — it builds its tree during
+the search — and OO on web-NotreDame is 5% *faster* after the rebase. So the earlier framing ("a cost
+the rebase imports and the OO path pays too") was doubly wrong: wrong mechanism, and wrong about who
+pays. The honest statement is that a validation written for user input is being applied to
+engine-generated input on the hot path, and the fix is to let `initTree` know which it was handed.
+Left as a follow-up rather than folded into a rebase.
+
+**Method note.** Three hypotheses died before the right one, and each was killed by a build rather
+than an argument — gate the suspect off, rebuild, measure. That is cheap (≈40s a round) and it is
+strictly better than reasoning about which upstream commit "looks like" it should cost something. The
+profiler should have been step 1, not step 4: a 6% regression with bit-identical output is a
+*localised* cost, and `sample` localises it in one run.
+
+The other upstream change with teeth is `7da08cfb`, which hoists per-node-constant plogp out of the
+**OO** move-loop delta. OO got 5–13% faster, so every columnar-vs-OO multiplier in the tables is
+quoted against a better baseline than the previous refresh. The multipliers dropped; the columnar
+times did not rise to meet them.
+
+**Method note for the next refresh.** Absolute times are not comparable across sessions, and after
+#949 neither are absolute codelengths across a seeding change. What survives both is: same-session
+ratios, `-N1` for code speed, and the master-OO-equality check for neutrality. Recording the old
+binary alongside the new one (build the pre-rebase tip into a worktree, keep both, interleave) is
+what made all of the above cheap — worth doing by default before any master sync that crosses a
+seeding or RNG change.
+
+**F28 addendum — three wrong explanations, and what they have in common (2026-08-13).**
+
+Daniel pushed back on three claims in the first draft of this entry. All three were wrong, and they
+failed the same way, so the pattern is worth more than the individual corrections.
+
+1. *"The web-NotreDame slowdown is master's new flow post-conditions."* It is not. Gated off in a
+   measurement build they cost **0.003s, +0.1%**. The real cause is #948's cluster-data shape
+   validation running per trial inside `initTree` (see above).
+2. *"#960's CPU win shrank from −9.9% to −1.7% because the memcpys are a smaller share of a run that
+   does more work per trial."* Nothing shrank. Rebuilt #960's **original** base (`9aa7fea9`) and
+   original tip and measured them in the same session: **−3.6%**, and −3.6% against the current core
+   too. The −9.9% was simply over-stated at the time. There was no change to explain.
+3. *"The RSS difference is F27 pre-claiming part of #960's target."* Isolated by reverting only the
+   snapshot avoidance: it is worth **−2.8% peak RSS and +0.3% CPU**. It cannot account for a ~5pp
+   difference, and web-NotreDame's #960 RSS delta reads −24.7% / −27.1% / −30.5% across three
+   sessions, so the "difference" was inside session spread all along.
+
+**The common failure: I explained a difference before establishing that the difference was real.**
+Each time, two numbers from two sessions disagreed, and each time I reached for a mechanism instead
+of first re-measuring both arms in one session. The mechanisms were all plausible — that is what made
+them dangerous, because a plausible story makes the number look explained and stops the enquiry.
+
+The discipline that would have caught all three, in order:
+
+- **Re-measure the original pair before theorising about why an effect changed.** Building an old
+  base and an old tip costs ~40s each. It distinguishes "the effect moved" from "the number was
+  wrong", and here it was the number every time.
+- **Check the arithmetic closes.** 0.04s of `--no-infomap` delta cannot explain 0.13s. I had that
+  number in front of me and did not subtract.
+- **Profile before attributing.** A regression with bit-identical output is a *localised* cost;
+  `sample` found `initTree` in one run, after three hypotheses had already died.
+- **Kill hypotheses with builds, not arguments.** Gate the suspect off, rebuild, measure — cheap, and
+  it produces a number instead of a story.
