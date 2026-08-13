@@ -25,13 +25,70 @@ When working on the new columnar core (wip branch `columnar-hierarchical-core`),
 - `columnar-search-runs.tsv` is the row-per-run log; tag each batch and read the `batch` column before
   comparing times across sessions.
 
-### Syncing with master: merge, do not rebase
+### Syncing with master: merge, do not rebase — and do it through a PR
 Sub-PRs are rebase-merged into `columnar-hierarchical-core`, so each one's recorded merge commit **is**
 a commit on this branch. A rebase rewrites all of them (measured once: 13 of 13 detached), leaving
 those PRs marked merged into a history that no longer contains them, and it silently re-parents every
 old measurement so it reads as current. `git merge master` keeps the provenance and gives the numbers
 an explicit baseline boundary. Redo the perf snapshot after any sync — a master change can move both
 engines' codelengths (e.g. a change to per-trial seeding) without touching the search.
+
+**A sync is a change to this branch like any other: give it a branch, a PR and a perf snapshot.**
+The first sync was merged straight onto the branch and pushed it **red** — three master gates this
+branch had never satisfied surfaced only afterwards. A PR runs CI on the merged result *before* it
+lands, and gives the sync a discoverable snapshot instead of burying the evidence in a commit message.
+The recipe:
+
+```
+git worktree add -b sync-master-into-columnar .claude/worktrees/sync origin/columnar-hierarchical-core
+cd .claude/worktrees/sync && git merge --no-ff origin/master        # resolve, do NOT commit yet
+make test-native MODE=release OPENMP=1        # all three configs BEFORE committing the merge
+make test-native MODE=release OPENMP=0
+make test-native MODE=release OPENMP=1 FEATURES="lossy-map-equation regularized-multilayer"
+git commit                                     # then refresh the perf snapshot, then open the PR
+gh pr create --base columnar-hierarchical-core --head sync-master-into-columnar
+```
+
+Land it with a **fast-forward push**, not `gh pr merge` — see the API constraints below. GitHub marks
+the PR merged once its head is reachable from the base:
+`git push origin origin/sync-master-into-columnar:columnar-hierarchical-core`
+
+### What the GitHub API allows here (checked, not assumed)
+`gh api repos/mapequation/infomap` reports **`allow_merge_commit: false`**, `allow_squash_merge: true`,
+`allow_rebase_merge: true`, `allow_auto_merge: false`, `delete_branch_on_merge: true`. Consequences:
+
+- **`gh pr merge --merge` always fails** with "Merge commits are not allowed on this repository". That
+  is the repo setting, not a branch rule. For an ordinary sub-PR use `--squash` or `--rebase`; for a
+  **sync PR use neither** — both would flatten master out of the branch and break the "master is an
+  ancestor" property the next sync depends on. Fast-forward push instead.
+- **Stacked PRs cannot be merged through the API at all.** When a PR's base is a branch that itself has
+  an open PR (any sub-PR of `columnar-hierarchical-core`, since #808 is open), both `gh pr merge` and
+  `PUT /pulls/{n}/merge` refuse with "must be merged using the asynchronous merge REST API", and
+  `POST /pulls/{n}/merge-async` 404s via `gh api`. Land those the same way: merge locally onto the base
+  (`--no-ff` for a real merge commit) and push.
+- `master` is **protected**; `columnar-hierarchical-core` is **not**, so direct pushes to the wip branch
+  work and are how syncs and sub-PR merges actually land. Changes to master still go through a PR.
+- `delete_branch_on_merge` is on, so a merged sub-PR's remote branch disappears by itself — clean up the
+  local worktree and branch, but do not expect to have to delete the remote.
+
+### Orientation for a fresh session
+- The wip branch is `columnar-hierarchical-core`, PR **#808** into master, additive behind
+  `--columnar`/`-C`. Sub-PRs target the wip branch, not master. A fix to *shared* code (anything
+  outside `Columnar*`) belongs on **master** even when only the columnar engine feels it — e.g. #991,
+  where `initTree` was master's function but the per-trial caller was columnar's.
+- Do columnar work in `.claude/worktrees/*`, not the main worktree.
+- Build: `make build-native MODE=release OPENMP=0` for benchmarks (single-thread is the measurement
+  convention), `OPENMP=1` for tests. `make test-native` needs python `jsonschema` + `referencing` in
+  the interpreter **CMake picks** (check `build/cmake/CMakeCache.txt` for `_Python3_EXECUTABLE`; it is
+  not necessarily the one on PATH).
+- Regenerated artifacts are CI-gated. After any option/SWIG/description change run
+  `make build-r-swig build-python-swig build-binding-options build-js-metadata` and commit the results.
+  `make build-r-man` needs roxygen2 **7.3.3** exactly and refuses to run with another version; install
+  the pin into a temp lib and pass `R_LIBS_USER=<tmpdir>` rather than downgrading the user's library.
+- A new result-affecting CLI option must also be added to the config fingerprint in
+  `src/io/RunMetadata.cpp`, or the python coverage test fails.
+- `make format-native` before pushing; the pre-commit CI gate runs clang-format and will fail on
+  hand-written blocks.
 
 ### Verification discipline
 - **Run the C++ tests with OpenMP ON as well as OFF.** `make test-native OPENMP=0` is the benchmark
