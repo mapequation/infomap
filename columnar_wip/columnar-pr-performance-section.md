@@ -174,9 +174,8 @@ against base L in either direction (see the cross-scored table below, where L\* 
 L for the same partition on four of eight configs). What is comparable is cost and shape, and — through
 cross-scoring — whether the L\*-aware search earns its place.
 
-The 8 configs below are the whole L\*-eligible set: `--non-redundant` rejects metadata, and the
-`-C`-only networks that remain are the first-order ones. Both arms interleaved in one session, minimum
-of 3 repetitions, same binary, `--seed 123 -N10`.
+First the 8 first-order configs; the higher-order ones follow in their own table below. Both arms
+interleaved in one session, minimum of 3 repetitions, same binary, `--seed 123 -N10`.
 
 <table>
 <thead>
@@ -240,6 +239,51 @@ Three readings, and the middle one is the answer to the design question:
 - **L\* prefers different structure.** powergrid goes 5 top / 5 levels → 3 / 7 and pays +7.7% in base L;
   politicalblogs collapses 81 top modules to 2. On the two largest-K configs (web-NotreDame, pref-mods)
   L\*-gating changes nothing at all — the search lands on the identical partition.
+
+### L\* on higher-order networks: the physical codebook composes, and the guard should go
+
+L\* constrains **impossible walks** — no immediate re-entry into the module just left, no immediate exit
+from the one just entered. That is orthogonal to *which codebook* a walk step is coded in, so it does not
+limit support for higher-order dynamics: the physical/state codebook correction should apply on top, and
+the two together are well defined. The `Config.cpp` rejection of state/multilayer input is therefore the
+wrong constraint, and it is also **inconsistent**: it tests `config.stateInput || config.multilayerInput`,
+which only reflect explicit input-format flags, so validation (which runs before the network is read) lets
+the identical network through whenever the type is sniffed from the file. `air30k.net` and the malaria
+multilayer run today; the same networks named with an explicit input format are refused.
+
+Measured, same convention as above, both arms interleaved, min-of-3:
+
+| network | L | L\* | Δ time | top | lvls |
+|---|--:|--:|--:|--:|--:|
+| multilayer (ex.) | 2.011405238 | 1.928856578 | 0.011s vs 0.012s | 2 = 2 | 2 = 2 |
+| malaria | 7.397501710 | 7.432494779 | −0.4% | 2 = 2 | 3 = 3 |
+| air30k (states) | 5.392425413 | 5.486124697 | −2.0% | 22 = 22 | 3 = 3 |
+| air30k (reg.) | 5.576242406 | 5.691341197 | −3.3% | 11 = 11 | 3 = 3 |
+
+Cross-scored the same way (**through `_states.tree`**, see below):
+
+| network | L*(P<sub>L</sub>) | L*(P<sub>L\*</sub>) | reading |
+|---|--:|--:|---|
+| multilayer (ex.) | 1.928856578 | 1.928856578 | identical partition |
+| air30k (states) | 5.486124697 | 5.486124697 | identical partition |
+| air30k (reg.) | 5.691439090 | 5.691341197 | tie (−0.0017%) |
+| malaria | 7.432487054 | 7.432494779 | tie (+0.0001%, sign against L\*) |
+
+**L\* runs correctly on higher-order input and costs nothing there, but changes nothing either** — the
+partitions are identical on two of four and tie to within 2×10⁻⁵ on the other two, with the sign going
+both ways (on malaria and regularized air30k the L\* arm's partition is also marginally *better* under
+base L than the base arm's own best, which is best read as best-of-10 stochasticity between two
+near-identical partitions, not as either search beating the other). So relaxing the guard is about
+correctness of scope, not about a quality gain. Note that the same "L\* only forbids impossible walks"
+argument applies to **metadata**, which is still rejected; L\* × `MetaCorrection` is unvalidated, so that
+one is a separate decision rather than an oversight.
+
+> **Cross-scoring a higher-order partition must go through `_states.tree`.** Scoring these through the
+> physical `.tree` first gave air30k L = 9.766 against a search-reported 5.392 — not an objective
+> difference but a mangled partition, and Infomap says so: *"182 physical nodes have their states split
+> across modules in this tree … the partition read back is likely not the one that was written."* The
+> physical tree cannot express which state sits in which module. With `_states.tree` every re-scored
+> L(P<sub>L</sub>) and L\*(P<sub>L\*</sub>) reproduces the search value to all printed digits.
 
 ### `--non-redundant-exact` is inert in Phase 1 — nothing to measure yet
 

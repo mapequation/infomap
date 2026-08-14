@@ -2045,3 +2045,38 @@ is currently inert on the largest one in the set.
 under `-C` (ninetriangles: table total 3.385831 against a reported L\* of 3.078067) — that much is the
 PR's stated known follow-up. But on jazz the same table is **all zeros under plain `-C` too**, with no
 L\* involved, so that one is a pre-existing columnar reporting gap and needs its own issue.
+
+#### F34 addendum — the higher-order rejection was the wrong fix, and the tree round trip lied
+
+Two corrections to F34, both worth keeping as they were made.
+
+**1. "Fix the guard" had the sign backwards.** F34 filed the state/multilayer escape as a leak to be
+plugged. That is wrong: **L\* only constrains impossible walks** — no immediate re-entry into the module
+just left, no immediate exit from the one just entered — which is orthogonal to *which codebook* a step
+is coded in. It therefore does not limit support for higher-order dynamics, and the physical/state
+codebook correction should compose with it. The defect is that the rejection exists at all; and the
+inconsistency F34 did spot (explicitly-flagged input refused, sniffed input accepted, same network) is
+evidence *for* removing it rather than for tightening it. Measured on the four higher-order configs
+(perf snapshot): L\* runs, costs nothing (−0.4% to −7%), and changes nothing — identical partitions on
+multilayer-ex and air30k, ties within 2e-5 on malaria and regularized air30k with the sign going both
+ways. So the relaxation is about correctness of scope, not quality. Metadata is still rejected and stays
+a separate decision: the same walk argument applies, but L\* × `MetaCorrection` is unvalidated.
+
+**Generalisable:** "the guard doesn't fire" is a report about mechanism. Whether the guard *should* fire
+is a modelling question, and the objective's definition answers it — not the code. F34 jumped from the
+first to the second.
+
+**2. The physical `.tree` round trip is lossy for state networks, and cross-scoring through it produced a
+number that looked like a finding.** Scoring air30k's partition with `-C --no-infomap -c <tree>` returned
+L = 9.765607443 against a search-reported 5.392425413. The tempting reading — "the memory correction is
+not applied on the `--no-infomap` path" — was wrong. Infomap had already said what happened: *"182
+physical nodes have their states split across modules in this tree. A physical tree cannot express which
+state belongs to which module … the partition read back is likely not the one that was written."* It
+scored a **different partition**, faithfully. Through `_states.tree` every re-scored value reproduces the
+search value to all printed digits.
+
+This is the same trap as F33's, one layer out: a plausible mechanism (correction missing on the eval
+path) was available for a number whose real cause was that the *input* was not what it claimed. The check
+that settles it costs one run — re-score the partition the search itself reported and require the value to
+come back **identical** before trusting any other cell of the table. Any cross-scoring 2×2 should have
+that identity as its first assertion, on every network, not just the ones where it is convenient.
