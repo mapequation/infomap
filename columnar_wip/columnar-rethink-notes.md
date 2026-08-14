@@ -1934,3 +1934,67 @@ path: `runTrialsInParallel` wraps each trial in `Log::ScopedMute`, so the detail
 path never reaches a `LogCapture`, and the only alternative would be an accessor that exists for the
 test alone. The observable contract (parallel == serial) is tested and the cost is measured; a silent
 regression here would cost speed, not correctness.
+
+### F33 — #831 was never `restoreBestResult`'s fault, and its cost was never real (#998/#1000, 2026-08-14)
+
+Two separate lessons, one from each half of the fix.
+
+**The root cause was one level up from where the issue said it was.** #831 recorded the negative
+`# codelength` as `restoreBestResult` re-`initTree`-ing without the `columnarL` override the other two
+materialization sites apply, and the remedy as "fix the reentrancy, not by adding a third override".
+That located the *carrier* and not the fault. The objective's network-level terms —
+`MapEquation::nodeFlow_log_nodeFlow`, and each derived objective's equivalent — describe **whichever
+network was active when they were last initialised**, which is root's children and only sometimes the
+leaves. `initTree`'s multi-level branch calls `initNetwork()` *after* building the module tree
+(`InfomapBase.cpp:1879`), so it leaves them describing the **modules**; `initSuperNetwork` does the
+same by design. Nothing restored them, so `initPartition(vector<unsigned int>&)` scored the leaf
+partition against a module network's terms.
+
+The arithmetic is what identified it, and it closes exactly: the error is **one whole one-level
+codelength**. politicalblogs' leaf term is −7.598 and two top modules give
+`2·plogp(0.5) = −1.0`, so 6.739 − 7.598 = −0.859, which is the number in the file. On the twotriangles
+fixture the same subtraction is 2.320730 − 1.556657 = 0.764074 against a one-level codelength of
+2.556657. **A difference that equals a known quantity of the model is a much stronger signal than a
+plausible mechanism** — it named the cause before any build was made.
+
+Three consequences worth keeping:
+
+1. **The bug was not columnar's.** The repro needs only the public API — `initPartition(<3-level
+   tree>)` then `initPartition(<2-level clu>)` on one instance — and fails on plain master. The
+   columnar engine merely *reached* it, by materializing through `initTree` every trial. So it landed
+   on master (#998) and came back by sync (#1000), the rule now written at the top of CLAUDE.md.
+2. **The seed-123 repro had gone stale, and that made it look fixed.** #987/#988's winner repair sets
+   `bestTreeMaterialized`, which makes `restoreBestResult` early-return, so the corrupt path now runs
+   only when the repair does *not* improve. At the default seed politicalblogs was clean; it was
+   corrupt on 4 of 7 other seeds. A checklist repro that stops firing is not evidence of a fix.
+3. **It was corrupting the benchmark set in plain sight.** science2001
+   `--preferred-number-of-modules 25` wrote `-1.39324` (`-C`) and `-1.40803` (`-C -F`) at seed 123
+   while the console read 8.23558553. Nobody had diffed the console against the file.
+
+**The false positive: disjoint distributions that meant nothing.** The naive fix — re-init
+unconditionally — measured a real +2.5% on web-NotreDame `-2 -C`, so it was guarded on a flag
+recording which network the terms describe. In the sync sweep that same config then read **+3.4%**,
+and a 5-rep confirmation gave ranges that did **not overlap** (18.67–19.07 pre-merge vs 19.51–20.00
+merged). Every instinct said the guard was leaking, in exactly the config and roughly the size the
+mechanism predicted.
+
+It was noise. An instrumented build counted the guarded call site: **`reinit=0 skip=11` across
+`-N10`** — the re-init never executes on that path at all, because a `-2 -C` trial always leaves the
+terms describing the leaf network. A third arm with the member kept and the call deleted came in at
+18.41s against the merged binary's 18.43s, and a re-run in a quieter window put pre-merge at 18.57s
+against merged 18.43s, overlapping.
+
+**Why it fooled the usual defences:** min-of-N and interleaved arms both assume the disturbance is
+*symmetric* across the interleave. A neighbouring agent's build running for a few minutes is not — it
+lands on whichever arm occupies that window, and min-of-5 preserves the damage instead of averaging it
+out. **On a shared machine, non-overlap across arms measured minutes apart is still session structure.**
+The instrument that settled it was not more timing but a counter: when a suspected cost has a specific
+code path, count its executions first. Zero executions ends the question in one run; timing never does.
+
+**Also learned, and now in CLAUDE.md:** `make build-native` does not track header dependencies (#999).
+Since this fix adds a member to `InfomapBase.h`, the incremental build recompiled only
+`InfomapBase.cpp` and left every other TU on the old object layout — a binary that printed correct
+codelengths while writing `# codelength 2.62515e-313` to every tree file. It was caught only because
+the binaries were md5'd against a clean rebuild. `make test-native` (CMake) tracks headers correctly,
+so the C++ suites stayed green while the native binary was incoherent — the two disagreeing is the
+worst version of this.
