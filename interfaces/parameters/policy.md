@@ -65,6 +65,8 @@ Actions: **keep** = First-class option on the surface in 3.0 (the default for ev
 | `--multilayer-relax-limit-down` | Algorithm | keep | keep | keep | keep |
 | `--multilayer-relax-by-jsd` | Algorithm | keep | keep | keep | keep |
 | `--multilayer-relax-to-self` | Algorithm | keep | keep | keep | keep |
+| `--non-redundant` | Algorithm | keep | keep | keep | keep |
+| `--non-redundant-exact` | Algorithm | keep | keep | keep | keep |
 | `--seed` | Accuracy | keep | keep (common tier) | keep | keep |
 | `--num-trials` | Accuracy | keep | keep (common tier) | keep | keep |
 | `--core-loop-limit` | Accuracy | keep | keep | keep | keep |

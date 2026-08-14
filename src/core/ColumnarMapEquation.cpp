@@ -647,6 +647,38 @@ namespace {
     const double d_flow_log = (o.plogpFA1 + plogp(fB1)) - (o.plogpFA0 + plogp(fB0));
     return d_enter - d_enter_log - d_exit_log + d_flow_log;
   }
+
+  // --- Non-redundant map equation (L*) per-module codebook terms ---------------
+  // Direct ports of MapEquation::nrEnterWithin / nrExitTerm. F is the module's
+  // sum_{leaf in module} plogp(leafFlow). Enter/exit are the module's boundary
+  // rates (separate for directed flow). See "Non-redundant map equation - expanded
+  // form.ipynb" for the derivation.
+  inline double nrEnterWithin(double moduleFlow, double qEnter, double qExit, double F)
+  {
+    using infomath::plogp;
+    if (moduleFlow < 1e-16)
+      return 0.0;
+    const double tEnter = qEnter * (plogp(moduleFlow) - F) / moduleFlow;
+    double tWithin = 0.0;
+    const double T = moduleFlow + qExit;
+    if (T > 1e-16) {
+      const double usage = moduleFlow + qExit - qEnter; // = moduleFlow when undirected
+      tWithin = (usage / T) * (plogp(T) - F - plogp(qExit));
+    }
+    return tEnter + tWithin;
+  }
+
+  // One module's leave-one-out exit codebook contribution, given the sibling
+  // enter-rate total-plus-exit-network sumEnterPlusE = (sum_b qEnter_b) + e and
+  // sumEnterLogEnter = sum_b plogp(qEnter_b); e is the exit-to-parent codeword.
+  inline double nrExitTerm(double qEnter, double qExit, double sumEnterPlusE, double sumEnterLogEnter, double e)
+  {
+    using infomath::plogp;
+    const double Z = sumEnterPlusE - qEnter;
+    if (Z < 1e-16)
+      return 0.0;
+    return qExit * (plogp(Z) - (sumEnterLogEnter - plogp(qEnter)) - plogp(e)) / Z;
+  }
 } // namespace
 
 void ColumnarTwoLevel::buildFromLeaves(const std::vector<InfoNode*>& leafNodes, bool undirected, unsigned long seed)
@@ -2359,6 +2391,71 @@ double ColumnarTwoLevel::hierarchicalCodelengthFromStack() const
   }
   auto exitAug = [&](int k, int m) { return hierLevel(k).exit[m] + (m_recordedTeleport ? teleExit[k][m] : 0.0); };
   auto enterAug = [&](int k, int m) { return hierLevel(k).enter[m] + (m_recordedTeleport ? teleEnter[k][m] : 0.0); };
+
+  if (m_nonRedundant) {
+    // Non-redundant map equation L*. Each internal node contributes its
+    // calcCodelength, mirroring InfomapBase::calcCodelengthOnTree:
+    //  (1) a leaf module (level 1) charges its enter + within codebooks over its
+    //      leaf-flow distribution (F = sum plogp(leaf flow));
+    //  (2) every super parent (a level 2..top module) charges its own enter
+    //      codebook over its children's enter rates, plus each child's leave-one-out
+    //      exit codebook (normalized over the parent's children + the parent's exit);
+    //  (3) the root (parent of the top modules) has no enter codebook — its enter is
+    //      the network's exitNetworkFlow (0 for the closed whole network) — and
+    //      charges the top modules' exit codebooks (leave-one-out over the top
+    //      siblings, e = exitNetworkFlow). This replaces the base index term: L*
+    //      codes the module transition once, in the exit codebook of the module left.
+    double total = 0.0;
+
+    // (1) Level-1 leaf modules: enter + within over their leaves.
+    {
+      const Level& L1 = hierLevel(1);
+      const std::vector<int>& leafToL1 = m_hierAssign[0];
+      std::vector<double> F(L1.n, 0.0);
+      for (int i = 0; i < leaf0().n; ++i)
+        F[leafToL1[i]] += plogp(leaf0().flow[i]);
+      for (int m = 0; m < L1.n; ++m)
+        total += nrEnterWithin(L1.flow[m], enterAug(1, m), exitAug(1, m), F[m]);
+    }
+
+    // (2) Super parents (level 2..top): parent enter codebook + children exit codebooks.
+    for (int k = 2; k <= topLevel; ++k) {
+      const Level& Lk = hierLevel(k);
+      const Level& Lkm1 = hierLevel(k - 1);
+      const std::vector<int>& childToParent = m_hierAssign[k - 1];
+      std::vector<double> sumEnter(Lk.n, 0.0), sumEnterLog(Lk.n, 0.0);
+      for (int c = 0; c < Lkm1.n; ++c) {
+        const double ec = enterAug(k - 1, c);
+        sumEnter[childToParent[c]] += ec;
+        sumEnterLog[childToParent[c]] += plogp(ec);
+      }
+      for (int p = 0; p < Lk.n; ++p) {
+        if (sumEnter[p] > 1e-16) // parent's enter codebook: pick a child by enter rate
+          total += enterAug(k, p) * (plogp(sumEnter[p]) - sumEnterLog[p]) / sumEnter[p];
+      }
+      for (int c = 0; c < Lkm1.n; ++c) { // each child's leave-one-out exit codebook
+        const int p = childToParent[c];
+        const double e = exitAug(k, p);
+        total += nrExitTerm(enterAug(k - 1, c), exitAug(k - 1, c), sumEnter[p] + e, sumEnterLog[p], e);
+      }
+    }
+
+    // (3) Root: the top modules' exit codebooks (leave-one-out over top siblings).
+    {
+      const Level& Ltop = hierLevel(topLevel);
+      double sumEnter = 0.0, sumEnterLog = 0.0;
+      for (int m = 0; m < Ltop.n; ++m) {
+        const double e = enterAug(topLevel, m);
+        sumEnter += e;
+        sumEnterLog += plogp(e);
+      }
+      const double e = m_exitNetworkFlow; // 0 for the whole closed network
+      for (int m = 0; m < Ltop.n; ++m)
+        total += nrExitTerm(enterAug(topLevel, m), exitAug(topLevel, m), sumEnter + e, sumEnterLog, e);
+    }
+
+    return total + objectiveCorrection();
+  }
 
   // Level-1 modules code their leaf children (module-of-leaf-nodes term).
   {

@@ -94,6 +94,8 @@ Algorithm
 \item{\code{multilayer_relax_limit_down}}{Limit relaxation downward to this many lower neighboring layer ids. Use a negative value to allow relaxation to any lower layer.}
 \item{\code{multilayer_relax_by_jsd}}{Weight multilayer relaxation by out-link similarity measured with Jensen-Shannon divergence.}
 \item{\code{multilayer_relax_to_self}}{On relaxation, link a state node to its own physical node in the target layer instead of spreading to its out-neighbors. Builds a smaller state network with the same flow as the default.}
+\item{\code{non_redundant}}{Use the non-redundant map equation L*: a module's exit codebook excludes the module just left (no impossible immediate re-entry) and the first visit after entering uses a separate enter codebook (no impossible immediate exit). Runs on the non-recursive columnar engine (implies --columnar). Supports undirected and directed flow, recorded teleportation, and the composable objectives (metadata, memory/state, multilayer, lossy, entropy bias, preferred number of modules), since L* restricts which walk steps are possible, independently of which codebook a step is coded in.}
+\item{\code{non_redundant_exact}}{Reserved, currently inert: with --non-redundant, drive the leaf move loop with the exact O(m) leave-one-out exit sweep instead of the O(1) adaptive power-series delta. The leaf move loop is not yet L*-aware (it optimizes the base map equation and L* drives the structural search), so neither variant exists and this option does not change the result.}
 }
 
 Accuracy

@@ -284,6 +284,8 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         multilayer_relax_limit_down: int = -1,
         multilayer_relax_by_jsd: bool = False,
         multilayer_relax_to_self: bool = False,
+        non_redundant: bool = False,
+        non_redundant_exact: bool = False,
         seed: int = _UNSET,
         num_trials: int = _UNSET,
         core_loop_limit: int = 10,
@@ -737,6 +739,27 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
 
             .. versionchanged:: 2.15
                 Pass it via ``Options``; moves off this signature in 3.0.
+        non_redundant : bool, optional
+            Use the non-redundant map equation L*: a module's exit codebook excludes the
+            module just left (no impossible immediate re-entry) and the first visit
+            after entering uses a separate enter codebook (no impossible immediate
+            exit). Runs on the non-recursive columnar engine (implies --columnar).
+            Supports undirected and directed flow, recorded teleportation, and the
+            composable objectives (metadata, memory/state, multilayer, lossy, entropy
+            bias, preferred number of modules), since L* restricts which walk steps are
+            possible, independently of which codebook a step is coded in.
+
+            .. versionchanged:: 2.15
+                Pass it via ``Options``; moves off this signature in 3.0.
+        non_redundant_exact : bool, optional
+            Reserved, currently inert: with --non-redundant, drive the leaf move loop
+            with the exact O(m) leave-one-out exit sweep instead of the O(1) adaptive
+            power-series delta. The leaf move loop is not yet L*-aware (it optimizes the
+            base map equation and L* drives the structural search), so neither variant
+            exists and this option does not change the result.
+
+            .. versionchanged:: 2.15
+                Pass it via ``Options``; moves off this signature in 3.0.
         seed : int, optional
             Set the random number generator seed for reproducible results (default 123).
         num_trials : int, optional
@@ -942,6 +965,8 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         multilayer_relax_limit_down: int = -1,
         multilayer_relax_by_jsd: bool = False,
         multilayer_relax_to_self: bool = False,
+        non_redundant: bool = False,
+        non_redundant_exact: bool = False,
         seed: int = _UNSET,
         num_trials: int = _UNSET,
         core_loop_limit: int = 10,

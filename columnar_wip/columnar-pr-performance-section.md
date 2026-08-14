@@ -4,31 +4,29 @@
 
 Single-threaded (`MODE=release OPENMP=0`), `--seed 123 -N10` — **best of 10 trials**, the way Infomap is normally run. Codelength in bits; `time` = total wall for all 10 trials, minimum of 3 interleaved repetitions; `top`/`lvls` = top modules / levels of the best partition. The network set spans base (undirected + directed), metadata, multilayer and state/memory objectives; see [`columnar_wip/benchmark-networks.md`](columnar_wip/benchmark-networks.md) for paths and full details. Columnar column = the default columnar search (`-C`).
 
-> **This PR is the master sync**, bringing in [#998](https://github.com/mapequation/infomap/pull/998)
-> (fixes [#831](https://github.com/mapequation/infomap/issues/831)): the objective's network-level terms
-> — the base map equation's `nodeFlow_log_nodeFlow` and each derived objective's equivalent — are now
-> restored for the leaf network before a re-initialised leaf partition is scored against them. Shared
-> code, so it landed on master and arrives here by merging, not by cherry-pick.
+> **This PR adds the non-redundant map equation L\*** ([#1001](https://github.com/mapequation/infomap/pull/1001))
+> as a base-objective variant of the columnar engine, behind `--non-redundant`, **composing with every
+> objective correction and with higher-order input**. Three claims these numbers have to support: that
+> the flag-gated change leaves the **default** columnar path untouched; that the L\*-aware structural
+> search is worth having (that it finds better L\* than scoring a base-L partition with L\*); and that a
+> correction contributes the same term under L\* as under L. All three are measured below, on the binary
+> built from this PR's tip (`md5 d113e2783049325e87cc7cd0447a3ae5`).
 >
-> Every number below is measured on the **merged** binary, with the pre-merge branch tip (`b585a6d4`)
-> run arm-for-arm in the same session: all 65 configs (13 networks × {OO, `-C`, `-C -F`, OO `-2`,
-> `-2 -C`}), interleaved, minimum of 3 repetitions. **All 65 codelengths — and every top-module and
-> level count — are bit-identical across the merge.** The columnar search never consumed the corrupt
-> value, so the fix cannot show up in this table.
+> **The default path is unchanged, measured not assumed.** All 13 configs of the table below were
+> re-run OO-vs-`-C` on this binary, interleaved, minimum of 3 repetitions: **all 26 codelengths, top-module
+> counts and level counts are bit-identical to the published snapshot**, and every non-toy time lands
+> within ±5% with the OO/`-C` ratios intact (powergrid 7.45× vs 7.46×, web-NotreDame 7.56× vs 7.39×,
+> science2001 2.56× vs 2.51×). The deltas above ±8% are all on sub-0.05s toys, i.e. the measurement
+> floor. The table itself is therefore carried over unchanged. Re-verified after the validation removal:
+> all **38** recorded configs (13 networks × {OO, `-C`, `-C --non-redundant`}) still reproduce their
+> codelength, top-module count and level count exactly.
 >
-> **What the merge changes is what `-C` writes.** In this same sweep, science2001
-> `--preferred-number-of-modules 25` wrote `# codelength -1.39324` under `-C` and `-1.40803` under
-> `-C -F` into the `.tree` file, against a console-reported **8.23558553**; after the merge both files
-> carry **8.23559**. Those are the only two of the 65 whose written codelength moved. Detail in the
-> evidence section at the bottom.
+> **Not re-measured:** the `-F` and `-2` tables further down. `--non-redundant` cannot reach either code
+> path, and the `-C` arm they are compared against reproduced bit-identically, so re-running them would
+> only re-time unchanged code. Stated here rather than left implicit.
 >
-> **Time is neutral, and the one row that looked otherwise did not reproduce.** Between the two
-> binaries the OO arms — which this merge cannot touch on any benchmarked path — moved −1.7% to +1.4%
-> (median −0.1%) and the columnar arms −1.4% to +3.4% (median 0.0%). The +3.4% outlier, web-NotreDame
-> `-2 -C`, was re-measured min-of-5 in a quieter window: **pre-merge 18.57s vs merged 18.43s**, fully
-> overlapping. The mechanism settles it independently of the statistics — an instrumented build counts
-> the new leaf-network re-init firing **zero** times on that path (`reinit=0 skip=11` across `-N10`),
-> because the guard finds terms that already describe the leaf network.
+> **New evidence sections:** "The non-redundant map equation L\*" and "Every correction composes with
+> L\*" below.
 
 <table>
 <thead>
@@ -130,10 +128,11 @@ log.)
 > **This section is a snapshot, not a changelog.** It carries the current numbers plus the evidence for
 > the change under review. Per-feature attribution for features that already landed (partial seeding
 > #985, flat-first #891, coarse-tune #890, the #875 hoist, the split operator #987/#988,
-> the worker leaf-input fix #997) lives in each
+> the worker leaf-input fix #997, the master sync bringing in #998) lives in each
 > of those PRs, whose own copy of this file is the measurement that justified it; the running narrative
-> is in [`columnar_wip/columnar-rethink-notes.md`](columnar_wip/columnar-rethink-notes.md). The one
-> section below — "What this sync brings in: #998" — is the evidence for **this** PR.
+> is in [`columnar_wip/columnar-rethink-notes.md`](columnar_wip/columnar-rethink-notes.md). The last two
+> sections below — the two L\* sections and "`--non-redundant-exact` is inert" — are the
+> evidence for **this** PR.
 
 Every measured run behind this section is logged row-per-run in [`columnar_wip/columnar-search-runs.tsv`](columnar_wip/columnar-search-runs.tsv) for plotting the codelength/time frontier. Read the `batch` column before comparing times: session noise floors ranged ±3% to 13%, so the time axis is only comparable within a batch (`load1m`, `reps`, `agg` are recorded for that reason), and `derived=1` marks rows reconstructed from reported percentages rather than measured absolutes.
 
@@ -172,32 +171,153 @@ Every measured run behind this section is logged row-per-run in [`columnar_wip/c
 
 Parentheses on the columnar columns = change vs OO `-2` (**bold** = columnar beats or exactly ties OO). Columnar `-2` ties or beats OO on 10 of 13 configs, including *every* correction network; the three exceptions are base-objective configs (powergrid +0.66%, web-NotreDame +0.17%, pref-mods +1.29%), and it is faster on every non-trivial network (−21% to −82%).
 
-### What this sync brings in: #998 (#831), measured here
+### The non-redundant map equation L\* (`--non-redundant`)
 
-Before this merge, a two-level materialization that followed a multi-level trial on the same instance
-was scored against **the module network's** objective terms rather than the leaf network's, and the
-result was written to the `.tree` file while the console reported the correct value. The error is
-exactly one one-level codelength, which is why it went negative.
+L\* is a **different objective**, not a better score for the same one, so its codelength cannot be read
+against base L in either direction (see the cross-scored table below, where L\* comes out *higher* than
+L for the same partition on 7 of 13 configs). What is comparable is cost and shape, and — through
+cross-scoring — whether the L\*-aware search earns its place.
 
-Measured across the 65-config sweep above, pre-merge binary vs merged, same session:
+**All 13 benchmark configs run under L\***, which is the other half of this PR: no input and no
+objective is excluded (see "Every correction composes with L\*" below). Both arms interleaved in one
+session, minimum of 3 repetitions, same binary, `--seed 123 -N10`. Times are comparable within a row,
+not across the three batches (`pr1001-lstar`, `pr1001-lstar-ho`, `pr1001-lstar-meta` in the run log).
 
-| config | console (both) | `# codelength` written, pre-merge | after |
-|---|--:|--:|--:|
-| science2001 pref-mods `-C` | 8.23558553 | **−1.39324** | 8.23559 |
-| science2001 pref-mods `-C -F` | 8.23558553 | **−1.40803** | 8.23559 |
-| the other 63 configs | — | already correct | unchanged |
+<table>
+<thead>
+<tr>
+<th rowspan="2">network</th>
+<th rowspan="2">objective</th>
+<th colspan="3">columnar <code>-C</code> (base L)</th>
+<th colspan="3">columnar <code>-C --non-redundant</code> (L*)</th>
+<th rowspan="2">Δ time</th>
+</tr>
+<tr>
+<th>L</th><th>top</th><th>lvls</th>
+<th>L*</th><th>top</th><th>lvls</th>
+</tr>
+</thead>
+<tbody>
+<tr><td>ninetriangles</td><td>base</td><td align="right">3.38583082</td><td align="right">3</td><td align="right">3</td><td align="right">3.078067323</td><td align="right">3</td><td align="right">3</td><td align="right">0.011s vs 0.012s</td></tr>
+<tr><td>jazz</td><td>base</td><td align="right">6.862755928</td><td align="right">6</td><td align="right">2</td><td align="right">6.868228367</td><td align="right">7</td><td align="right">2</td><td align="right">0.018s vs 0.018s</td></tr>
+<tr><td>netscicoauthor2010</td><td>base</td><td align="right">4.054540245</td><td align="right">2</td><td align="right">4</td><td align="right">3.892209764</td><td align="right">2</td><td align="right"><b>5</b></td><td align="right">−3.6%</td></tr>
+<tr><td>powergrid</td><td>base</td><td align="right">4.741072056</td><td align="right">5</td><td align="right">5</td><td align="right">4.509265423</td><td align="right"><b>3</b></td><td align="right"><b>7</b></td><td align="right">−1.6%</td></tr>
+<tr><td>politicalblogs (<code>-d</code>)</td><td>base</td><td align="right">6.740943136</td><td align="right">81</td><td align="right">2</td><td align="right">6.789241502</td><td align="right"><b>2</b></td><td align="right">3</td><td align="right">−0.3%</td></tr>
+<tr><td>science2001 (<code>-d</code>)</td><td>base</td><td align="right">7.833436601</td><td align="right">15</td><td align="right">3</td><td align="right">8.009172258</td><td align="right">22</td><td align="right">3</td><td align="right">−9.1%</td></tr>
+<tr><td>web-NotreDame (<code>-d</code>)</td><td>base</td><td align="right">5.568529293</td><td align="right">5</td><td align="right">6</td><td align="right">5.517073626</td><td align="right">5</td><td align="right">6</td><td align="right">+0.6%</td></tr>
+<tr><td>lazega</td><td>metadata</td><td align="right">6.017860269</td><td align="right">7</td><td align="right">2</td><td align="right">5.968624653</td><td align="right">7</td><td align="right">2</td><td align="right">0.015s vs 0.015s</td></tr>
+<tr><td>multilayer (ex.)</td><td>multilayer</td><td align="right">2.011405238</td><td align="right">2</td><td align="right">2</td><td align="right">1.928856578</td><td align="right">2</td><td align="right">2</td><td align="right">0.011s vs 0.012s</td></tr>
+<tr><td>malaria</td><td>multilayer</td><td align="right">7.397501710</td><td align="right">2</td><td align="right">3</td><td align="right">7.432494779</td><td align="right">2</td><td align="right">3</td><td align="right">−0.4%</td></tr>
+<tr><td>air30k</td><td>state/memory</td><td align="right">5.392425413</td><td align="right">22</td><td align="right">3</td><td align="right">5.486124697</td><td align="right">22</td><td align="right">3</td><td align="right">−2.0%</td></tr>
+<tr><td>air30k (reg.)</td><td>state/memory</td><td align="right">5.576242406</td><td align="right">11</td><td align="right">3</td><td align="right">5.691341197</td><td align="right">11</td><td align="right">3</td><td align="right">−3.3%</td></tr>
+<tr><td>science2001 (pref-mods)</td><td>base + bias</td><td align="right">8.235585529</td><td align="right">25</td><td align="right">2</td><td align="right">8.447745451</td><td align="right">25</td><td align="right">2</td><td align="right">−1.1%</td></tr>
+</tbody>
+</table>
 
-Off the benchmark set, politicalblogs `-C -d -N10` wrote a negative codelength on 4 of 7 tested seeds
-(345, 42, 99, 2024) and none after; seeds 123, 234 and 7 were already correct, which is why the
-default-seed spot check read as healthy while the bug was live.
+**L\* is free.** No config is more than 1% slower. The −9.1% on science2001 reproduces across all three
+repetitions (2.90/2.92/2.92s vs 3.19/3.24/3.28s), but it is a *trajectory* difference, not a code
+speed-up: L\*-gating accepts different operators, so the search does a different amount of work. The
+clean same-partition check is web-NotreDame `-N1`, where both arms compute the same partition: 1.806s
+(L) vs 1.763s (L\*) — equal. Nothing in the L\* scoring path costs measurable time.
 
-**Why no reported codelength moves.** The columnar engine reports its own `columnarL` and never reads
-the recomputed value, so the corruption was confined to the written file and to the "Relative savings"
-line derived from it. That is also why this is a correctness fix with no search effect: 65 of 65
-codelengths, top-module counts and level counts are bit-identical across the merge.
+**Cross-scored: does the L\*-aware search earn its place?** Each arm's partition scored under both
+objectives (`-C --no-infomap -c <tree>`, adding `--non-redundant` for the L\* column; **through
+`_states.tree` for the higher-order rows**, see the box below):
 
-**Verified before the merge commit**, on the merged tree: `make test-native` passes at `OPENMP=1`,
-`OPENMP=0` and `FEATURES="lossy-map-equation regularized-multilayer"` — 30 of 30 tests in each. The
-regression test that ships with #998 (`A two-level partition re-initialised after a multi-level one
-scores the leaves`) needs no columnar engine and fails on the pre-fix master with
-`CHECK( 0.764074 == Approx( 2.32073 ) )`.
+| network | L*(P<sub>L</sub>) | L*(P<sub>L\*</sub>) | L\* gained by the L\*-aware search | L(P<sub>L\*</sub>) vs L(P<sub>L</sub>) |
+|---|--:|--:|--:|--:|
+| netscicoauthor2010 | 3.960538494 | **3.892209764** | **−1.73%** | +1.21% |
+| powergrid | 4.560035073 | **4.509265423** | **−1.11%** | +7.73% |
+| politicalblogs (`-d`) | 6.792005387 | **6.789241502** | −0.041% | +0.012% |
+| science2001 (`-d`) | 8.011990676 | **8.009172258** | −0.035% | +0.008% |
+| jazz | 6.868270839 | **6.868228367** | −0.0006% | +0.058% |
+| air30k (reg.) | 5.691439090 | **5.691341197** | −0.0017% (tie) | −0.0014% |
+| malaria | 7.432487054 | 7.432494779 | +0.0001% (tie) | −0.0003% |
+| the other 6 | — | — | identical partition | — |
+
+Four readings, and the second is the answer to the design question:
+
+- **L\* is not pointwise below L.** For the *same* partition it is lower on ninetriangles (−9.1%),
+  netsci (−2.3%), powergrid (−3.8%), web-NotreDame (−0.9%), lazega (−0.8%), multilayer (−4.1%), and
+  **higher** on jazz (+0.08%), politicalblogs (+0.76%), science2001 (+2.3%), pref-mods (+2.6%), air30k
+  (+1.7%), regularized air30k (+2.1%) and malaria (+0.5%). The separate enter codebook can cost more
+  than leave-one-out saves. So the two arms' headline codelengths are not a quality ranking in either
+  direction — which is why the columns above are labelled by objective.
+- **The L\*-aware structural search never meaningfully loses on its own objective** — it wins on the 5
+  configs where the partitions genuinely differ, by up to 1.73%, ties on 2 within 2×10⁻⁵, and finds the
+  identical partition on the remaining 6. That is the measured case for hosting L\* as a search-driving
+  objective rather than a post-hoc rescore. (On the two ties the L\* arm's partition is also marginally
+  *better* under base L than the base arm's own best, which is best read as best-of-10 stochasticity
+  between two near-identical partitions, not as either search beating the other.)
+- **L\* prefers different structure, on mid-size networks.** powergrid goes 5 top / 5 levels → 3 / 7 and
+  pays +7.7% in base L; politicalblogs collapses 81 top modules to 2. But on the largest-K configs
+  (web-NotreDame, pref-mods) and on every higher-order config, L\*-gating changes nothing at all.
+- **Composing an objective does not change this.** Of the five correction configs, lazega, air30k,
+  multilayer and pref-mods land on the *identical* partition in both arms and malaria ties within
+  1×10⁻⁶, so the L\* base and the corrections are not fighting each other over structure; every
+  structural difference L\* makes shows up on the plain base configs.
+
+> **Cross-scoring a higher-order partition must go through `_states.tree`.** Scoring these through the
+> physical `.tree` first gave air30k L = 9.766 against a search-reported 5.392 — not an objective
+> difference but a mangled partition, and Infomap says so: *"182 physical nodes have their states split
+> across modules in this tree … the partition read back is likely not the one that was written."* The
+> physical tree cannot express which state sits in which module. With `_states.tree` every re-scored
+> L(P<sub>L</sub>) and L\*(P<sub>L\*</sub>) reproduces the search value to all printed digits — which is
+> the assertion any cross-scoring table should make first.
+
+### Every correction composes with L\*, and the old rejections are gone
+
+L\* constrains which walk **steps** are possible — no immediate re-entry into the module just left, no
+immediate exit from the one just entered. That is orthogonal to *which codebook* a step is coded in, so
+it cannot limit support for higher-order dynamics or for any composable objective. This PR therefore
+removes the four rejections an earlier cut carried (memory/multilayer input, meta data,
+`--entropy-corrected`, `--lossy`) instead of tightening them.
+
+One of those rejections could **never fire from the CLI at all**: `config.stateInput` and
+`config.multilayerInput` are set by `configureNetworkMode()` when the network is *read*, which happens
+after config validation, and no option sets them. Higher-order input has been running under L\* the
+whole time — the four higher-order rows in the table above are not new capability, they are capability
+that was never actually blocked. Metadata, `--entropy-corrected` and `--lossy` were genuinely blocked.
+
+**Why this holds mechanically:** a correction contributes an additive term through
+`ColumnarTwoLevel::objectiveCorrection()`, which the L\* branch sums exactly as the base branch does.
+On a fixed partition, then, the term a correction adds must be *identical* under both bases. The lossy
+objective shows it directly — `--lambda` moves the lossy term by 0.16 bits while `L − L*` stays constant
+to the printed digit (`test/fixtures/networks/lossy_benchmark.net`, features build, `-N3`, 3 top modules
+in every cell):
+
+| `--lambda` | `--lossy -C` (L) | `--lossy --non-redundant` (L\*) | L − L\* |
+|--:|--:|--:|--:|
+| 1.5 | 2.653992887 | 2.596148184 | 0.057844703 |
+| 2 | 2.730915964 | 2.673071260 | 0.057844704 |
+| 5 | 2.818018368 | 2.760173665 | 0.057844703 |
+
+`test/cpp/test_non_redundant_columnar.cpp` asserts that property as a unit test on the metadata
+correction (`LstarMeta − Lstar == Lmeta − L` to 1e-9, both arms on the columnar engine), plus that no
+input or objective is refused and that state and multilayer fixtures run under L\*. The suite is 9 cases
+/ 32 assertions.
+
+Two things worth stating rather than hiding:
+
+- **At the lossy default (`--lambda 1`) the combination is not a discriminator.** Everything collapses
+  into one noise module, and for a single module L\* equals L exactly (an existing golden test) — jazz
+  and the lossy fixture both give bit-identical values in all three arms. That is correct behaviour, not
+  evidence of composition; the λ table above is the evidence.
+- **`--entropy-corrected` composes mechanically, but its derivation deserves a look.** The entropy-bias
+  term is counted over module codebooks, and L\* restructures those (a separate enter codebook per
+  module; no index codebook). Spot check on jazz, `-N10`, identical partitions in both arms: L
+  6.881355491 vs L\* 6.886870402. The term is added consistently, but whether the bias *formula*
+  transfers unchanged to L\*'s codebook structure is a modelling question this PR does not settle.
+### `--non-redundant-exact` is inert in Phase 1 — nothing to measure yet
+
+`m_nrExact` is set by `setNonRedundantExact` and stored, but never read in `ColumnarMapEquation.cpp`:
+the exact O(m) leave-one-out exit sweep it selects belongs to the leaf move loop, which Phase 1 does not
+make L\*-aware (see the PR's "Why the leaf move loop is not L\*-aware"). Verified rather than assumed —
+science2001 `-d -N1` with and without the flag produces a **byte-identical tree body** and the same
+`# codelength 8.01141`; only the recorded command line and timestamps differ.
+
+So the O(m)-exact vs O(K)-power-series comparison cannot be run on this PR: neither path exists here.
+It belongs to whichever PR revives the L\*-aware leaf loop, where the networks would need subsetting to
+keep an O(m)-per-candidate sweep inside a sane wall-clock. Recorded here so a later session does not
+re-run an empty A/B and conclude the two are equivalent in cost.
+

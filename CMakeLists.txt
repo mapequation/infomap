@@ -213,6 +213,7 @@ if(BUILD_TESTING)
     add_infomap_cpp_test(infomap_cpp_preferred_levels_tests test/cpp/test_preferred_levels.cpp "fast;core;preferred-levels")
     add_infomap_cpp_test(infomap_cpp_random_tests test/cpp/test_random.cpp "fast;core;rng")
     add_infomap_cpp_test(infomap_cpp_map_equation_invariants_tests test/cpp/test_map_equation_invariants.cpp "fast;core;mapeq")
+    add_infomap_cpp_test(infomap_cpp_non_redundant_tests test/cpp/test_non_redundant_columnar.cpp "fast;core;non-redundant")
 
     add_infomap_columnar_contract_test(infomap_cpp_lifecycle_tests)
     add_infomap_columnar_contract_test(infomap_cpp_partition_tests)
@@ -340,6 +341,7 @@ if(BUILD_TESTING)
             infomap_cpp_preferred_levels_tests
             infomap_cpp_random_tests
             infomap_cpp_map_equation_invariants_tests
+            infomap_cpp_non_redundant_tests
             infomap_cli
     )
 endif()

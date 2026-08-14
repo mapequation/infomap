@@ -207,6 +207,11 @@ std::string canonicalConfigJson(const Config& config)
   json["columnar_check"] = config.columnarCheck;
   json["hier_from_blocks"] = config.hierFromBlocks;
 
+  // L* is a different objective, and its exact variant a different leaf move loop,
+  // so neither run shares a fingerprint with the base map equation.
+  json["non_redundant"] = config.nonRedundant;
+  json["non_redundant_exact"] = config.nonRedundantExact;
+
   return json.dump();
 }
 

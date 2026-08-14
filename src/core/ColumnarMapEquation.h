@@ -382,6 +382,15 @@ public:
   // from buildFromLeaves. No effect on the base/mem/meta objectives.
   void setRecordedTeleportation(bool on) { m_recordedTeleport = on; }
 
+  // Use the non-redundant map equation L* as the base objective: the exit codebook
+  // of a module excludes the module just left (leave-one-out over siblings) and the
+  // first visit after entering uses a separate enter codebook. Changes the two-level
+  // move-loop objective (leaf level) and hierarchicalCodelengthFromStack (all levels).
+  void setNonRedundant(bool on) { m_nonRedundant = on; }
+  // With L*, drive the leaf move loop with the exact O(m) leave-one-out exit sweep
+  // instead of the default O(1) adaptive power-series delta (validation).
+  void setNonRedundantExact(bool on) { m_nrExact = on; }
+
   // Stop the interior-layer refinement early once a whole sweep improves the
   // hierarchical codelength by less than this fraction of the post-build
   // codelength (the diminishing-returns knee). 0 = off (grind to full
@@ -685,6 +694,10 @@ private:
   // GLOBAL total (constant across sub-networks), so sub-optimizers inherit it via
   // buildFromLevel rather than recomputing from their local units.
   bool m_recordedTeleport = false;
+  // Non-redundant map equation L* (see setNonRedundant). m_nrExact selects the exact
+  // O(m) exit sweep over the O(K) power-series delta in the leaf move loop.
+  bool m_nonRedundant = false;
+  bool m_nrExact = false;
   // Interior-refine early-stop knee (0 = off, grind to convergence): stop once a
   // whole up/down sweep's gain drops below this fraction of the post-build
   // codelength.

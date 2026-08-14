@@ -1998,3 +1998,125 @@ codelengths while writing `# codelength 2.62515e-313` to every tree file. It was
 the binaries were md5'd against a clean rebuild. `make test-native` (CMake) tracks headers correctly,
 so the C++ suites stayed green while the native binary was incoherent — the two disagreeing is the
 worst version of this.
+
+### F34 — L\* is not a cheaper L, and its search wins on its own objective (#1001, 2026-08-14)
+
+Benchmarked `--non-redundant` (columnar L\*) against `-C` (base L) on the 8 L\*-eligible configs, both
+arms interleaved in one session, min-of-3, and cross-scored each arm's partition under **both**
+objectives with `-C --no-infomap -c <tree>`. Numbers in the PR's perf snapshot; three findings here.
+
+**1. L\* ≤ L pointwise is false.** The intuition that removing redundancy can only lower the codelength
+does not survive the enter codebook: for the *same* partition L\* is lower on ninetriangles (−9.1%),
+netsci (−2.3%), powergrid (−3.8%) and web-NotreDame (−0.9%), and **higher** on jazz (+0.08%),
+politicalblogs (+0.76%), science2001 (+2.3%) and pref-mods (+2.6%). The separate enter codebook is extra
+module-codebook structure, and on partitions with many small modules it costs more than leave-one-out
+saves. Consequence for the record: **no table may compare an L arm's codelength to an L\* arm's.** The
+first draft of this comparison read "L\* is worse on science2001 (8.009 vs 7.833)", which is meaningless
+— they are different objectives, and cross-scoring is the only way to ask a well-posed question.
+
+**2. The L\*-aware structural search earns its place.** L\*(P<sub>L\*</sub>) < L\*(P<sub>L</sub>) on all 5
+configs where the two arms find different partitions (netsci −1.73%, powergrid −1.11%, politicalblogs
+−0.041%, science2001 −0.035%, jazz −0.0006%), and ties on the 3 where they coincide. It never loses. So
+Phase 1's design — base-L leaf move loop, L\*-aware gating for every structural operator — beats
+"search with L, rescore with L\*" without ever costing more than 1% wall. This is the measurement the
+"why the leaf move loop is not L\*-aware" argument needed to stand on: the L\*-aware *structure* search
+is the part that pays, and it is the part that is cheap.
+
+**3. On the two largest-K configs L\*-gating changes nothing.** web-NotreDame `-d` and science2001
+pref-mods produce the *identical* partition in both arms (same codelengths to all digits, same 5/6 and
+25/2 shapes). Not a bug — the accept/revert decisions land the same way — but it bounds the claim: L\*
+reshapes the map on mid-size networks (powergrid 5 top/5 levels → 3/7, politicalblogs 81 top → 2) and
+is currently inert on the largest one in the set.
+
+**Also found, both worth fixing in #1001:**
+
+- **The memory/multilayer rejection does not fire on auto-detected input.** `Config.cpp:212` tests
+  `config.stateInput || config.multilayerInput`, which only reflect explicit input-format flags —
+  validation runs *before* the network is read, so a file whose content declares `*States` /
+  `*Multilayer` sails through: `air30k.net --non-redundant` runs as `Type: higher-order state` and
+  reports 5.547319829, malaria as `higher-order multilayer` and reports 7.522734393. Both are L\* plus
+  the physical-codebook correction — the combination the PR says is rejected and never validated. The
+  guard has to run after the network type is known (or read the sniffed type).
+- **`--non-redundant-exact` is inert**, and verified so (byte-identical tree bodies). It is user-visible
+  CLI surface, and it is in the config fingerprint, so today it produces two fingerprints for runs that
+  are bit-identical.
+
+**Not a #1001 finding, but surfaced by it:** the console `Levels` table prints **base-L** per-level bits
+under `-C` (ninetriangles: table total 3.385831 against a reported L\* of 3.078067) — that much is the
+PR's stated known follow-up. But on jazz the same table is **all zeros under plain `-C` too**, with no
+L\* involved, so that one is a pre-existing columnar reporting gap and needs its own issue.
+
+#### F34 addendum — the higher-order rejection was the wrong fix, and the tree round trip lied
+
+Two corrections to F34, both worth keeping as they were made.
+
+**1. "Fix the guard" had the sign backwards.** F34 filed the state/multilayer escape as a leak to be
+plugged. That is wrong: **L\* only constrains impossible walks** — no immediate re-entry into the module
+just left, no immediate exit from the one just entered — which is orthogonal to *which codebook* a step
+is coded in. It therefore does not limit support for higher-order dynamics, and the physical/state
+codebook correction should compose with it. The defect is that the rejection exists at all; and the
+inconsistency F34 did spot (explicitly-flagged input refused, sniffed input accepted, same network) is
+evidence *for* removing it rather than for tightening it. Measured on the four higher-order configs
+(perf snapshot): L\* runs, costs nothing (−0.4% to −7%), and changes nothing — identical partitions on
+multilayer-ex and air30k, ties within 2e-5 on malaria and regularized air30k with the sign going both
+ways. So the relaxation is about correctness of scope, not quality. Metadata is still rejected and stays
+a separate decision: the same walk argument applies, but L\* × `MetaCorrection` is unvalidated.
+
+**Generalisable:** "the guard doesn't fire" is a report about mechanism. Whether the guard *should* fire
+is a modelling question, and the objective's definition answers it — not the code. F34 jumped from the
+first to the second.
+
+**2. The physical `.tree` round trip is lossy for state networks, and cross-scoring through it produced a
+number that looked like a finding.** Scoring air30k's partition with `-C --no-infomap -c <tree>` returned
+L = 9.765607443 against a search-reported 5.392425413. The tempting reading — "the memory correction is
+not applied on the `--no-infomap` path" — was wrong. Infomap had already said what happened: *"182
+physical nodes have their states split across modules in this tree. A physical tree cannot express which
+state belongs to which module … the partition read back is likely not the one that was written."* It
+scored a **different partition**, faithfully. Through `_states.tree` every re-scored value reproduces the
+search value to all printed digits.
+
+This is the same trap as F33's, one layer out: a plausible mechanism (correction missing on the eval
+path) was available for a number whose real cause was that the *input* was not what it claimed. The check
+that settles it costs one run — re-score the partition the search itself reported and require the value to
+come back **identical** before trusting any other cell of the table. Any cross-scoring 2×2 should have
+that identity as its first assertion, on every network, not just the ones where it is convenient.
+
+### F35 — L\* composes with every correction, and the guard that "protected" it was dead code (#1001, 2026-08-14)
+
+Daniel's ruling (F34 addendum) generalises: L\* constrains which walk **steps** are possible, which is
+orthogonal to *which codebook* a step is coded in, so **no objective and no input is out of scope**. The
+four rejections `--non-redundant` carried — memory/multilayer input, meta data, `--entropy-corrected`,
+`--lossy` — are removed rather than tightened, and all 13 benchmark configs now run under L\*.
+
+**The memory/multilayer rejection could never fire from the CLI at all**, which the F34 addendum
+under-stated (it said validation "only sees an explicit `--input-format`" — there is no such option).
+`config.stateInput` / `config.multilayerInput` are set by `configureNetworkMode()` when the network is
+*read*, which happens after config validation, and **no option sets them**. So air30k and malaria were
+never actually blocked; the four higher-order rows in the perf snapshot are not new capability, they are
+capability the guard only appeared to withhold. Meta data, `--entropy-corrected` and `--lossy` were
+genuinely blocked. **Generalisable:** a guard on a field that is populated later in the pipeline is not
+a weak guard, it is no guard — check *when* a field is set before trusting a validation that reads it.
+
+**Why composition is exact, and how to test it.** A correction contributes an additive term through
+`ColumnarTwoLevel::objectiveCorrection()`, which the L\* branch sums exactly as the base branch does. On
+a **fixed partition** the term must therefore be identical under both bases — nothing in it may depend on
+the codebook structure the base objective chose. That is a testable identity, not a hope:
+`LstarMeta − Lstar == Lmeta − L` to 1e-9, both arms on the columnar engine, now a unit test. The lossy
+objective shows the same thing across a parameter sweep: `--lambda` 1.5 → 5 moves the lossy term by 0.16
+bits on `lossy_benchmark.net` while `L − L*` stays 0.057844703 to the printed digit.
+
+**Two honest edges.**
+
+- At the lossy default (`--lambda 1`) everything collapses into one noise module, where L\* equals L
+  exactly (the single-module golden). Both jazz and the fixture give bit-identical values in all three
+  arms — correct, but not evidence of anything. The λ sweep is the evidence; the collapsed case would
+  have been a false positive for "lossy composes".
+- `--entropy-corrected` composes *mechanically*, but its term is counted over module codebooks and L\*
+  restructures those (a separate enter codebook per module, no index codebook). Spot check on jazz,
+  identical partitions: L 6.881355491 vs L\* 6.886870402. Whether the bias *formula* transfers unchanged
+  to L\*'s codebook structure is a modelling question left open, and worth flagging to whoever uses that
+  combination first.
+
+**No result moved.** All 38 recorded configs reproduce codelength, top-module count and level count
+exactly after the removal, which is the expected outcome for deleting validation but is the kind of
+"obviously safe" change that deserves the check anyway.
