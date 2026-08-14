@@ -2120,3 +2120,44 @@ bits on `lossy_benchmark.net` while `L − L*` stays 0.057844703 to the printed 
 **No result moved.** All 38 recorded configs reproduce codelength, top-module count and level count
 exactly after the removal, which is the expected outcome for deleting validation but is the kind of
 "obviously safe" change that deserves the check anyway.
+
+### F36 — Splitting a 4284-line file is a measurement problem, not a text problem (#1003, 2026-08-14)
+
+`ColumnarMapEquation.cpp` held four unrelated concerns; the split is mechanical. What made it a *change*
+rather than a move is that this build has **no LTO** (`-O3` only), so the translation-unit boundaries are
+optimizer boundaries. Two consequences that decided the layout:
+
+- The per-candidate arithmetic (the move deltas, and the hoisted forms that exist specifically to shave
+  6 of 13 `plogp` calls off the inner loop) went into a **header**, `ColumnarObjective.h`, so it still
+  inlines into `moveLoop`. `removeModuleTerms`/`addModuleTerms` stayed in `moveLoop`'s own TU for the
+  same reason. Had they gone into a sibling `.cpp` the code would look better organised and run slower,
+  with nothing in the diff to say so.
+- `MapEquation.h` already declares an `OldSideTerms` at **namespace scope** (deliberately, so the
+  privately-inheriting OO objectives can pass it by `auto`). The columnar kernels have the same names, and
+  they only coexisted because they sat in an anonymous namespace inside one `.cpp`. Promoting them to a
+  header at `namespace infomap` scope would have broken any TU that sees both. They live in
+  `namespace infomap::columnar`, opened with one `using namespace columnar;` per consumer, so no call
+  site changed.
+
+**The seam is where the objective becomes nameable.** `hierarchicalCodelengthFromStack` had grown to 53
+lines of base-L plus 63 of L\* behind an `if`, sharing only a teleport preamble and two accessor lambdas.
+It is now `StackTerms` (what a stack scoring reads, resolved once) plus `scoreStackBase` and
+`scoreStackNonRedundant`, bodies verbatim. The struct is the content: it states what a base objective's
+scoring depends on, so a scorer is a function of the partition rather than of the whole optimizer. This is
+also the shape a third objective would plug into — but deliberately **not** an abstraction (no template
+policy, no virtual objective, no subclass). L\* differs from base L only in the cold path, so any of those
+would be machinery for a hot-path variant that does not exist, and the one attempt at that variant was
+measured and reverted in #1001. Daniel's instruction was explicit that an experimental modularity
+objective must not drive this design.
+
+**Two things the `if` was hiding.** It shadowed the function-scope `double total` with its own, which
+`-Wshadow` (on in this build) had been reporting at `ColumnarMapEquation.cpp:1767` all along. And both
+branches allocate three `std::vector`s per level per call — pre-existing, shared, and now visible as
+shared rather than looking like something L\* introduced. Left alone on purpose: it is the kind of fix
+that does not belong inside a move.
+
+**Verification that a move deserves.** 38 of 38 recorded configs reproduce codelength, top-module count
+and level count exactly; min-of-3 interleaved A/B on the two binaries (identical partitions, so time is
+code) gives −0.64% to +0.85%; 31/31 tests in all three build configurations. An earlier A/B put powergrid
+at +1.92% at min-of-3, which at min-of-9 was +0.52% against a baseline spread of 0.257–0.348s — the same
+lesson as F28: **a threshold crossing on a 0.25s config is a statement about the session, not the code.**
