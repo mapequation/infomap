@@ -2047,6 +2047,23 @@ InfomapBase& InfomapBase::initPartition(std::vector<unsigned int>& modules, bool
 {
   removeModules();
   setActiveNetworkFromLeafs();
+  // Re-init the objective for the leaf network before scoring a leaf partition on it.
+  // The objective's network-level terms (the base map equation's nodeFlow_log_nodeFlow,
+  // and each derived objective's equivalent) describe whichever network was active when
+  // they were last initialised -- root's children, not necessarily the leaves. Both the
+  // multi-level branch of initTree and the fast super-level search leave them initialised
+  // for a *module* network, and nothing restored them here, so re-initialising a two-level
+  // partition on a reused instance scored the leaves against the module network's terms.
+  // That is #831: on politicalblogs a preceding multi-level trial left the term at the
+  // two top modules' -1.0 instead of the leaves' -7.6, and the recomputed codelength came
+  // out one whole one-level codelength too low -- negative, and written to the .tree file
+  // while the console reported the correct value.
+  // removeModules() above has just made the leaves root's children again, which is what
+  // initNetwork() reads. Skip it when the terms already describe the leaf network: the
+  // walk is over every leaf through the sibling chain, and paying it per trial costs
+  // web-NotreDame --two-level --columnar ~2.5% for nothing.
+  if (!m_objectiveTermsAreForLeafNetwork)
+    initNetwork();
   initPartition(); // TODO: confusing same name, should be able to init default without arguments here too
   moveActiveNodesToPredefinedModules(modules);
   consolidateModules(false);
