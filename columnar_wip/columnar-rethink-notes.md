@@ -2080,3 +2080,43 @@ path) was available for a number whose real cause was that the *input* was not w
 that settles it costs one run — re-score the partition the search itself reported and require the value to
 come back **identical** before trusting any other cell of the table. Any cross-scoring 2×2 should have
 that identity as its first assertion, on every network, not just the ones where it is convenient.
+
+### F35 — L\* composes with every correction, and the guard that "protected" it was dead code (#1001, 2026-08-14)
+
+Daniel's ruling (F34 addendum) generalises: L\* constrains which walk **steps** are possible, which is
+orthogonal to *which codebook* a step is coded in, so **no objective and no input is out of scope**. The
+four rejections `--non-redundant` carried — memory/multilayer input, meta data, `--entropy-corrected`,
+`--lossy` — are removed rather than tightened, and all 13 benchmark configs now run under L\*.
+
+**The memory/multilayer rejection could never fire from the CLI at all**, which the F34 addendum
+under-stated (it said validation "only sees an explicit `--input-format`" — there is no such option).
+`config.stateInput` / `config.multilayerInput` are set by `configureNetworkMode()` when the network is
+*read*, which happens after config validation, and **no option sets them**. So air30k and malaria were
+never actually blocked; the four higher-order rows in the perf snapshot are not new capability, they are
+capability the guard only appeared to withhold. Meta data, `--entropy-corrected` and `--lossy` were
+genuinely blocked. **Generalisable:** a guard on a field that is populated later in the pipeline is not
+a weak guard, it is no guard — check *when* a field is set before trusting a validation that reads it.
+
+**Why composition is exact, and how to test it.** A correction contributes an additive term through
+`ColumnarTwoLevel::objectiveCorrection()`, which the L\* branch sums exactly as the base branch does. On
+a **fixed partition** the term must therefore be identical under both bases — nothing in it may depend on
+the codebook structure the base objective chose. That is a testable identity, not a hope:
+`LstarMeta − Lstar == Lmeta − L` to 1e-9, both arms on the columnar engine, now a unit test. The lossy
+objective shows the same thing across a parameter sweep: `--lambda` 1.5 → 5 moves the lossy term by 0.16
+bits on `lossy_benchmark.net` while `L − L*` stays 0.057844703 to the printed digit.
+
+**Two honest edges.**
+
+- At the lossy default (`--lambda 1`) everything collapses into one noise module, where L\* equals L
+  exactly (the single-module golden). Both jazz and the fixture give bit-identical values in all three
+  arms — correct, but not evidence of anything. The λ sweep is the evidence; the collapsed case would
+  have been a false positive for "lossy composes".
+- `--entropy-corrected` composes *mechanically*, but its term is counted over module codebooks and L\*
+  restructures those (a separate enter codebook per module, no index codebook). Spot check on jazz,
+  identical partitions: L 6.881355491 vs L\* 6.886870402. Whether the bias *formula* transfers unchanged
+  to L\*'s codebook structure is a modelling question left open, and worth flagging to whoever uses that
+  combination first.
+
+**No result moved.** All 38 recorded configs reproduce codelength, top-module count and level count
+exactly after the removal, which is the expected outcome for deleting validation but is the kind of
+"obviously safe" change that deserves the check anyway.

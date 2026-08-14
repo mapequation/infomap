@@ -196,7 +196,7 @@ namespace {
   }
 #endif
 
-  void applyAndValidateNonRedundantInteraction(Config& config)
+  void applyNonRedundantInteraction(Config& config)
   {
     if (!config.nonRedundant)
       return;
@@ -205,20 +205,22 @@ namespace {
     // non-recursive search that hosts it cleanly), so --non-redundant runs there.
     config.columnarSearch = true;
 
-    // Scope for the first columnar L* cut: base flow (undirected/directed), no
-    // composable corrections or special flow models yet. Memory/multilayer are out
-    // (they need the state/layer codebook re-derived under the leave-one-out exit),
-    // and the additive corrections (meta/lossy/bias) are not yet composed with L*.
-    if (config.stateInput || config.multilayerInput || !config.additionalInput.empty())
-      throw std::runtime_error("--non-redundant does not support memory or multilayer networks");
-    if (config.haveMetaData())
-      throw std::runtime_error("--non-redundant does not yet support meta data");
-    if (config.entropyBiasCorrection)
-      throw std::runtime_error("--non-redundant does not yet support --entropy-bias-correction");
-#if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
-    if (config.lossy)
-      throw std::runtime_error("--non-redundant and --lossy are different objectives");
-#endif
+    // No input or objective is excluded. L* constrains which walk *steps* are
+    // possible — no immediate re-entry into the module just left, no immediate exit
+    // from the one just entered — which is orthogonal to which codebook a step is
+    // coded in. Higher-order dynamics (the state/physical codebook) and every
+    // composable correction (metadata, entropy bias, preferred module count, lossy)
+    // therefore compose with it: they are additive terms that
+    // ColumnarTwoLevel::objectiveCorrection() sums on top of whichever base
+    // objective is selected, and the L* base is selected the same way as any other.
+    //
+    // Earlier cuts of this option rejected memory/multilayer input, meta data,
+    // --entropy-corrected and --lossy. Those rejections were wrong in kind, not merely
+    // premature — and the memory/multilayer one could never fire from the CLI at all:
+    // `stateInput`/`multilayerInput` are set by configureNetworkMode() when the network
+    // is READ, which is after config validation, and no option sets them. Higher-order
+    // input ran under L* the whole time. See F34 (addendum) and F35 in
+    // columnar_wip/columnar-rethink-notes.md.
   }
 
   void applyFingerprintOnlyOutputInteraction(Config& config)
@@ -525,7 +527,7 @@ void Config::adaptDefaults()
 #if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
   applyAndValidateLossyInteraction(*this);
 #endif
-  applyAndValidateNonRedundantInteraction(*this);
+  applyNonRedundantInteraction(*this);
   applyThreadBudgetInteraction(*this);
   validateRunReportOutput(*this);
   normalizeOutputDirectory(*this);

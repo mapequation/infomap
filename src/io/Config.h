@@ -174,9 +174,14 @@ struct Config {
   // first visit after entering uses a separate enter codebook (no impossible
   // immediate exit). Implemented as a base-objective variant of the columnar core,
   // so it implies --columnar (the only L* implementation on this branch).
+  // Composes with every objective correction and with higher-order input: L* restricts
+  // which walk steps are possible, not which codebook a step is coded in.
   bool nonRedundant = false;
-  // With --non-redundant: drive the leaf move loop with the exact O(m) leave-one-out
-  // exit sweep instead of the default O(1) adaptive power-series delta (validation).
+  // Reserved, currently inert: with --non-redundant, drive the leaf move loop with the
+  // exact O(m) leave-one-out exit sweep instead of the O(1) adaptive power-series delta.
+  // The leaf move loop is not yet L*-aware, so neither variant exists and this changes
+  // nothing; it stays in the config fingerprint so a later phase cannot merge runs
+  // across the two.
   bool nonRedundantExact = false;
   bool preferModularSolution = false;
   bool innerParallelization = false;

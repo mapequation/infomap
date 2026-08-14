@@ -834,13 +834,13 @@ const std::vector<ParameterSpec>& parameterCatalog()
         .configTarget(&Config::columnarSearch),
     param()
         .longName("non-redundant")
-        .description("Use the non-redundant map equation L*: a module's exit codebook excludes the module just left (no impossible immediate re-entry) and the first visit after entering uses a separate enter codebook (no impossible immediate exit). Runs on the non-recursive columnar engine (implies --columnar). Supports undirected and directed flow.")
+        .description("Use the non-redundant map equation L*: a module's exit codebook excludes the module just left (no impossible immediate re-entry) and the first visit after entering uses a separate enter codebook (no impossible immediate exit). Runs on the non-recursive columnar engine (implies --columnar). Supports undirected and directed flow, recorded teleportation, and the composable objectives (metadata, memory/state, multilayer, lossy, entropy bias, preferred number of modules), since L* restricts which walk steps are possible, independently of which codebook a step is coded in.")
         .group("Algorithm")
         .advanced()
         .configTarget(&Config::nonRedundant),
     param()
         .longName("non-redundant-exact")
-        .description("With --non-redundant, drive the leaf move loop with the exact O(m) leave-one-out exit sweep instead of the default O(1) adaptive power-series delta (validation / small networks).")
+        .description("Reserved, currently inert: with --non-redundant, drive the leaf move loop with the exact O(m) leave-one-out exit sweep instead of the O(1) adaptive power-series delta. The leaf move loop is not yet L*-aware (it optimizes the base map equation and L* drives the structural search), so neither variant exists and this option does not change the result.")
         .group("Algorithm")
         .advanced()
         .configTarget(&Config::nonRedundantExact),

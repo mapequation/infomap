@@ -50,13 +50,64 @@ TEST_CASE("NonRedundant/columnar: --non-redundant parses and implies --columnar 
   CHECK(directedConf.nonRedundant);
 }
 
-TEST_CASE("NonRedundant/columnar: rejects the not-yet-supported combinations [fast][core][non-redundant]")
+TEST_CASE("NonRedundant/columnar: no input or objective is excluded [fast][core][non-redundant]")
 {
-  auto throws = [](const std::string& flags) {
-    CHECK_THROWS_AS(nonRedundantConfig(flags), std::runtime_error);
+  // L* constrains which walk *steps* are possible — no immediate re-entry into the
+  // module just left, no immediate exit from the one just entered — which says nothing
+  // about which codebook a step is coded in. Higher-order dynamics and every
+  // composable correction therefore stay available.
+  auto accepts = [](const std::string& flags) {
+    const auto conf = nonRedundantConfig(flags);
+    CHECK(conf.nonRedundant);
+    CHECK(conf.columnarSearch);
   };
-  throws("--non-redundant --meta-data foo.txt");
-  throws("--non-redundant --entropy-bias-correction");
+  accepts("--non-redundant --meta-data foo.txt");
+  accepts("--non-redundant --entropy-corrected");
+  accepts("--non-redundant --preferred-number-of-modules 5");
+  accepts("--non-redundant --directed --regularized");
+  accepts("--non-redundant --multilayer-relax-rate 0.15");
+#if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
+  accepts("--non-redundant --lossy");
+#endif
+}
+
+TEST_CASE("NonRedundant/columnar: higher-order input runs under L* [fast][core][non-redundant]")
+{
+  // Config-level checks cannot cover this one: stateInput/multilayerInput are set by
+  // configureNetworkMode() when the network is READ, never by an option, so the only way
+  // to know higher-order input is accepted is to run it. Both of these carry the physical
+  // codebook (MemCorrection) on top of the L* base.
+  for (const char* net : { "states_flow.net", "multilayer.net" }) {
+    InfomapWrapper im(defaultFlags("--non-redundant --num-trials 1"));
+    im.readInputData(networkFixturePath(net));
+    im.run();
+    CHECK(std::isfinite(im.codelength()));
+    CHECK(im.codelength() > 0.0);
+  }
+}
+
+TEST_CASE("NonRedundant/columnar: a correction adds the same term under L* as under L [fast][core][non-redundant]")
+{
+  // This is what "L* supports every correction" actually asserts, and it is a claim
+  // about where corrections enter rather than about L*: they are additive terms that
+  // ColumnarTwoLevel::objectiveCorrection() sums on top of whichever base objective is
+  // selected. On a FIXED partition, therefore, the term a correction contributes must be
+  // identical under both bases — nothing in it can depend on the codebook structure the
+  // base objective chose. Both arms run on the columnar engine so the comparison isolates
+  // the base objective and nothing else.
+  const std::string net = "twotriangles_flow.net";
+  const std::string clu = "twotriangles_two_modules.clu";
+  const std::string meta = " --meta-data " + fixturePath("meta/twotriangles.meta");
+
+  const double L = scoreFixedPartition(net, clu, "--columnar --two-level");
+  const double Lmeta = scoreFixedPartition(net, clu, "--columnar --two-level" + meta);
+  const double Lstar = scoreFixedPartition(net, clu, "--non-redundant --two-level");
+  const double LstarMeta = scoreFixedPartition(net, clu, "--non-redundant --two-level" + meta);
+
+  CHECK(Lmeta != doctest::Approx(L)); // the correction has to bite for this to mean anything
+  CHECK(LstarMeta - Lstar == doctest::Approx(Lmeta - L).epsilon(1e-9));
+  // ... and adding a correction must not perturb the L* base itself.
+  CHECK(Lstar == doctest::Approx(1.983611049901).epsilon(1e-9));
 }
 
 TEST_CASE("NonRedundant/columnar: two-level L* on a fixed partition, undirected, differs from standard L [fast][core][non-redundant]")
