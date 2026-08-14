@@ -1998,3 +1998,50 @@ codelengths while writing `# codelength 2.62515e-313` to every tree file. It was
 the binaries were md5'd against a clean rebuild. `make test-native` (CMake) tracks headers correctly,
 so the C++ suites stayed green while the native binary was incoherent — the two disagreeing is the
 worst version of this.
+
+### F34 — L\* is not a cheaper L, and its search wins on its own objective (#1001, 2026-08-14)
+
+Benchmarked `--non-redundant` (columnar L\*) against `-C` (base L) on the 8 L\*-eligible configs, both
+arms interleaved in one session, min-of-3, and cross-scored each arm's partition under **both**
+objectives with `-C --no-infomap -c <tree>`. Numbers in the PR's perf snapshot; three findings here.
+
+**1. L\* ≤ L pointwise is false.** The intuition that removing redundancy can only lower the codelength
+does not survive the enter codebook: for the *same* partition L\* is lower on ninetriangles (−9.1%),
+netsci (−2.3%), powergrid (−3.8%) and web-NotreDame (−0.9%), and **higher** on jazz (+0.08%),
+politicalblogs (+0.76%), science2001 (+2.3%) and pref-mods (+2.6%). The separate enter codebook is extra
+module-codebook structure, and on partitions with many small modules it costs more than leave-one-out
+saves. Consequence for the record: **no table may compare an L arm's codelength to an L\* arm's.** The
+first draft of this comparison read "L\* is worse on science2001 (8.009 vs 7.833)", which is meaningless
+— they are different objectives, and cross-scoring is the only way to ask a well-posed question.
+
+**2. The L\*-aware structural search earns its place.** L\*(P<sub>L\*</sub>) < L\*(P<sub>L</sub>) on all 5
+configs where the two arms find different partitions (netsci −1.73%, powergrid −1.11%, politicalblogs
+−0.041%, science2001 −0.035%, jazz −0.0006%), and ties on the 3 where they coincide. It never loses. So
+Phase 1's design — base-L leaf move loop, L\*-aware gating for every structural operator — beats
+"search with L, rescore with L\*" without ever costing more than 1% wall. This is the measurement the
+"why the leaf move loop is not L\*-aware" argument needed to stand on: the L\*-aware *structure* search
+is the part that pays, and it is the part that is cheap.
+
+**3. On the two largest-K configs L\*-gating changes nothing.** web-NotreDame `-d` and science2001
+pref-mods produce the *identical* partition in both arms (same codelengths to all digits, same 5/6 and
+25/2 shapes). Not a bug — the accept/revert decisions land the same way — but it bounds the claim: L\*
+reshapes the map on mid-size networks (powergrid 5 top/5 levels → 3/7, politicalblogs 81 top → 2) and
+is currently inert on the largest one in the set.
+
+**Also found, both worth fixing in #1001:**
+
+- **The memory/multilayer rejection does not fire on auto-detected input.** `Config.cpp:212` tests
+  `config.stateInput || config.multilayerInput`, which only reflect explicit input-format flags —
+  validation runs *before* the network is read, so a file whose content declares `*States` /
+  `*Multilayer` sails through: `air30k.net --non-redundant` runs as `Type: higher-order state` and
+  reports 5.547319829, malaria as `higher-order multilayer` and reports 7.522734393. Both are L\* plus
+  the physical-codebook correction — the combination the PR says is rejected and never validated. The
+  guard has to run after the network type is known (or read the sniffed type).
+- **`--non-redundant-exact` is inert**, and verified so (byte-identical tree bodies). It is user-visible
+  CLI surface, and it is in the config fingerprint, so today it produces two fingerprints for runs that
+  are bit-identical.
+
+**Not a #1001 finding, but surfaced by it:** the console `Levels` table prints **base-L** per-level bits
+under `-C` (ninetriangles: table total 3.385831 against a reported L\* of 3.078067) — that much is the
+PR's stated known follow-up. But on jazz the same table is **all zeros under plain `-C` too**, with no
+L\* involved, so that one is a pre-existing columnar reporting gap and needs its own issue.
