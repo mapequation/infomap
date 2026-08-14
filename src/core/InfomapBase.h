@@ -489,9 +489,21 @@ private:
   // Init terms that is constant for the whole network
   void initTree() { return m_optimizer->initTree(); }
 
-  void initNetwork() { return m_optimizer->initNetwork(); }
+  // The objective's network-level terms describe whichever network was active when they
+  // were last initialised -- root's children, which are the leaves only sometimes. Record
+  // which, so a later leaf-level partition can restore them instead of scoring the leaves
+  // against a module network's terms (#831; see initPartition(std::vector<unsigned int>&)).
+  void initNetwork()
+  {
+    m_optimizer->initNetwork();
+    m_objectiveTermsAreForLeafNetwork = m_root.firstChild != nullptr && m_root.firstChild->isLeaf();
+  }
 
-  void initSuperNetwork() { return m_optimizer->initSuperNetwork(); }
+  void initSuperNetwork()
+  {
+    m_optimizer->initSuperNetwork();
+    m_objectiveTermsAreForLeafNetwork = false;
+  }
 
   double calcCodelength(const InfoNode& parent) const { return m_optimizer->calcCodelength(parent); }
 
@@ -675,6 +687,8 @@ protected:
   unsigned int m_tuneIterationIndex = 0;
   bool m_isCoarseTune = false;
   unsigned int m_aggregationLevel = 0;
+  //! Whether the objective's network-level terms currently describe the leaf network (#831).
+  bool m_objectiveTermsAreForLeafNetwork = false;
 
   double m_hierarchicalCodelength = 0.0;
   std::vector<double> m_codelengths;
