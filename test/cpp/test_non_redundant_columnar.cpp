@@ -104,7 +104,9 @@ TEST_CASE("NonRedundant/columnar: hierarchical search produces a sound, self-con
 
   // Round-trip: re-scoring the searched tree under L* reproduces the search codelength
   // (the reported value is the columnar L* of the found partition).
-  const std::string treePath = "/tmp/infomap_nr_columnar_roundtrip.tree";
+  // Relative, like the other round-trip tests: Windows has no /tmp, and an absolute
+  // POSIX path made this the only test that could not run there.
+  const std::string treePath = "infomap_nr_columnar_roundtrip.tree";
   std::remove(treePath.c_str());
   hier.writeTree(treePath);
 
