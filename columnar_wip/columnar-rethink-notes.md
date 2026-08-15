@@ -2161,3 +2161,65 @@ and level count exactly; min-of-3 interleaved A/B on the two binaries (identical
 code) gives −0.64% to +0.85%; 31/31 tests in all three build configurations. An earlier A/B put powergrid
 at +1.92% at min-of-3, which at min-of-9 was +0.52% against a baseline spread of 0.257–0.348s — the same
 lesson as F28: **a threshold crossing on a 0.25s config is a statement about the session, not the code.**
+
+### F37 — A correction that *substitutes* inherits the objective's coefficient; only an *additive* one composes freely (#1009, 2026-08-15)
+
+`-C --non-redundant` on state / memory / multilayer input reported L\* too high. The size of the error
+was a clean function of the partition: two triangles with all six nodes duplicated into two
+indistinguishable states, partition unchanged, gave exactly **+1/56 bits**; duplicating only node 3 gave
+exactly **+3/784**; ninetriangles all-×2 gave **+0.073076923077**; the jazz provenance lifts gave
+**+0.0045** (30 split nodes) and **+0.0189** (78). Always positive, always growing with the number of
+physical nodes holding several states in one module. `L` was invariant to `1e-15` throughout, so the
+duplication was correct and the defect was in the objective.
+
+**The mechanism.** Both stack scorers read a level-1 module's leaf flows only through
+`F_m = sum_{leaf in m} plogp(flow)`, linearly. `MemCorrection` is not a term added beside them — it is
+the same objective with `F_m^state` replaced by `F_m^phys`, i.e. a **substitution**, and a substitution
+is charged at whatever rate the surrounding term consumes `F_m`. The two objectives do not agree:
+
+- `scoreStackBase`'s level-1 block collapses algebraically to `plogp(T) - plogp(qExit) - F_m` with
+  `T = moduleFlow + qExit`. Coefficient of `F_m`: exactly **1**.
+- `nrEnterWithin` charges `-qEnter*F/moduleFlow` from its enter half and `-(usage/T)*F` from its within
+  half. Coefficient: `qEnter/flow + (flow + qExit - qEnter)/(flow + qExit)`, which is
+  `1 + qEnter*qExit/(flow*(flow+qExit))` — **>= 1**, equal to 1 only when `qEnter == 0` or `qExit == 0`.
+
+`F^state - F^phys <= 0` (plogp is superadditive under splitting), so charging it at 1 instead of at
+`rate >= 1` under-subtracts, and L\* came out high by `(rate - 1) * (F^phys - F^state)`. The sign of the
+observed error was the confirmation before a line was written.
+
+**The rule this generalizes to** — and the reason it shipped. `src/io/Config.cpp` justified composing
+every correction with L\* on the grounds that "they are additive terms that `objectiveCorrection()` sums
+on top of whichever base objective is selected". True, and true of the *value* for Meta / Bias /
+Preferred, whose terms carry their own objective-independent rate: metadata is charged per unit of
+node-visit flow, and L\* changes which codebook names a node, not how often a node is visited. False for
+Mem, which re-encodes a codebook the base objective already priced. **Additive terms compose; substitutions
+inherit.** `MemCorrection` is the only one of the five that substitutes — `LossyCorrection` is the near
+miss, see below.
+
+**The fix, and why the teleport preamble had to move.** `ColumnarTwoLevel::leafCodebookRates()` returns
+the active objective's per-module rate (empty under the base objective, so its arithmetic is untouched
+down to the summation order), and `MemCorrection` returns `sum_m rate_m * (F_m^state - F_m^phys)`. The
+rates must be the *same* enter/exit the scorer used, teleport augmentation included — re-deriving them
+from the link-only crossing flows would be wrong on exactly the flow models (`--regularized`,
+`--recorded-teleportation`) where nothing else would flag it. So the preamble is now
+`buildStackTerms()`, consumed by both `hierarchicalCodelengthFromStack()` and `leafCodebookRates()`,
+rather than duplicated. `StackTerms` moved out of the anonymous namespace into `infomap::columnar` for
+that (the header only forward-declares it).
+
+**Verification.** Every duplicated case now equals its physical L\* to `<= 9e-14`; 12 `-C` configs are
+bit-identical (`delta == 0.0`) against the pre-fix binary; jazz `-C --two-level -N20` 6.861229774903977
+and `-C --non-redundant --two-level -N20` 6.817184613565288 both unmoved; 31/31 tests in all three build
+configurations. The regression test builds the physical and duplicated networks from the same edge list
+in-process, undirected / `--directed` / `--flow-model rawdir`, two-module and multi-module — it fails on
+all six L\* assertions without the fix.
+
+**Deliberately not fixed, recorded here.** (1) The leaf **move loop** stays base-flavoured under L\*
+(`--non-redundant-exact` documents this: L\* drives the structural search, the base objective drives the
+move arithmetic), so `MemCorrection::initMoveLoop`/`moveDelta`/`applyMove`/`mergeDelta` keep coefficient
+1 by design. (2) `LossyCorrection` has the same defect **in kind** — it re-adds `sum plogp(f_i)` at +1 to
+cancel what the base charged at −1, and L\* charges it at `-rate` — but it is not a mechanical
+re-weighting (`l_m` is normalized by `F_m`, not by `T`), it is feature-gated behind
+`INFOMAP_FEATURE_LOSSY_MAP_EQUATION`, and combining a rate-distortion penalty with L\* is a modelling
+question that needs its own derivation. (3) `MetaCorrection` was checked and is **correct** at
+coefficient 1 — see the rule above; the test that asserts it stays green and its comment now says which
+class of correction it speaks for.

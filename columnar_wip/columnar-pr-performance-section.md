@@ -4,23 +4,39 @@
 
 Single-threaded (`MODE=release OPENMP=0`), `--seed 123 -N10` — **best of 10 trials**, the way Infomap is normally run. Codelength in bits; `time` = total wall for all 10 trials, minimum of 3 interleaved repetitions; `top`/`lvls` = top modules / levels of the best partition. The network set spans base (undirected + directed), metadata, multilayer and state/memory objectives; see [`columnar_wip/benchmark-networks.md`](columnar_wip/benchmark-networks.md) for paths and full details. Columnar column = the default columnar search (`-C`).
 
-> **This PR is a refactor** ([#1003](https://github.com/mapequation/infomap/pull/1003)): it splits
-> `ColumnarMapEquation.cpp` into focused translation units and replaces the mid-function
-> `if (m_nonRedundant)` in the stack scoring with two named objective scorers. **No behaviour change is
-> intended, which makes the numbers the claim rather than context** — see "What this PR changes" at the
-> bottom, measured on this branch's binary (`md5 ab7d77eda448b917d41ad48a8ca832fe`) against the base
-> branch's (`d113e278`).
+> **This PR is a correctness fix** to the memory objective under L\*: `MemCorrection` substituted the
+> physical-node `sum plogp(flow)` for the state-node one at coefficient 1, which is the base map
+> equation's coefficient, while L\*'s leaf-module term consumes that quantity at a per-module rate
+> `1 + qEnter*qExit/(flow*(flow+qExit)) >= 1`. `-C --non-redundant` on state / memory / multilayer input
+> therefore reported L\* **too high**, and the error grew with the number of physical nodes holding
+> several states in one module. **`--non-redundant` on higher-order input changes value and search
+> trajectory. Everything else is bit-identical**, which is the claim the numbers below have to carry.
 >
-> **Nothing in the tables below moved.** All 38 recorded configs (13 networks × {OO, `-C`,
-> `-C --non-redundant`}) reproduce their codelength, top-module count and level count **exactly**, so
-> every table here is carried over rather than restated. The `-C` and OO columns were last re-measured on
-> the #1001 tip, interleaved, minimum of 3 repetitions, and matched the published snapshot on all 26
-> codelengths with the OO/`-C` ratios intact (powergrid 7.45× vs 7.46×, web-NotreDame 7.56× vs 7.39×,
-> science2001 2.56× vs 2.51×).
+> **The base objective did not move — measured, not argued.** 12 `-C` configs run on the pre-fix binary
+> and this one (jazz `-N20` two-level and hierarchical, ninetriangles two-level and hierarchical, the
+> `states.net` / `states_flow.net` / `multilayer.net` fixtures two-level and hierarchical, a
+> `--directed --recorded-teleportation` config, and a 54-state exactly-lumpable duplication of
+> ninetriangles) reproduce their codelength to the **last bit** (`delta == 0.0`, not "within 1e-12").
+> The correction's base branch is untouched down to its summation order, precisely so this holds.
 >
-> **Not re-measured:** the `-F` and `-2` tables. This PR moves code without changing it and the `-C` arm
-> they are compared against reproduced bit-identically, so re-running them would only re-time unchanged
-> code. Stated here rather than left implicit.
+> **STALE — must be re-measured before this PR is reviewed:** the four higher-order rows of the L\*
+> table below (`multilayer (ex.)`, `malaria`, `air30k`, `air30k (reg.)`). Those are pre-fix L\* numbers
+> and this PR changes them by construction. They could not be redone in the session that made the fix:
+> `networks/` (malaria, air30k, and every other real-world benchmark) is not present in that checkout.
+> Every other row of every table is a base-objective or first-order-L\* config that the bit-identity
+> sweep above covers, and is carried over unchanged.
+>
+> Direction of the change, from the configs that *were* available: a 54-state lumpable duplication of
+> ninetriangles under `-C --non-redundant` goes 3.226345721211 → 3.153268798134 (hierarchical, top 3 /
+> 3 levels both ways) and 3.465711933541 → 3.392635010464 (`--two-level`, 9 modules both ways) — the
+> second is now exactly the physical network's L\* for the same partition, which is the invariance the
+> fix restores. The small state fixtures do not move at all: their optima put no physical node's two
+> states in one module, so the correction is zero under either coefficient.
+>
+> **Not re-measured:** the `-F` and `-2` tables, and all timings. Nothing on the base-objective path
+> changed, and the L\* scoring path gained one O(K) pass over level-1 modules on the cold
+> (per-structural-operator) path, only when a `MemCorrection` is attached — so re-running them from the
+> same networks is the check to make, not a different set of numbers.
 
 <table>
 <thead>
@@ -173,10 +189,11 @@ against base L in either direction (see the cross-scored table below, where L\* 
 L for the same partition on 7 of 13 configs). What is comparable is cost and shape, and — through
 cross-scoring — whether the L\*-aware search earns its place.
 
-**All 13 benchmark configs run under L\***, which is the other half of this PR: no input and no
-objective is excluded (see "Every correction composes with L\*" below). Both arms interleaved in one
-session, minimum of 3 repetitions, same binary, `--seed 123 -N10`. Times are comparable within a row,
-not across the three batches (`pr1001-lstar`, `pr1001-lstar-ho`, `pr1001-lstar-meta` in the run log).
+**All 13 benchmark configs run under L\***: no input and no objective is excluded. Both arms
+interleaved in one session, minimum of 3 repetitions, same binary, `--seed 123 -N10`. Times are
+comparable within a row, not across the three batches (`pr1001-lstar`, `pr1001-lstar-ho`,
+`pr1001-lstar-meta` in the run log). The four higher-order L\* codelengths are **stale** — this PR
+changes them and the networks were not available to re-measure; see the note at the top.
 
 <table>
 <thead>
@@ -201,10 +218,10 @@ not across the three batches (`pr1001-lstar`, `pr1001-lstar-ho`, `pr1001-lstar-m
 <tr><td>science2001 (<code>-d</code>)</td><td>base</td><td align="right">7.833436601</td><td align="right">15</td><td align="right">3</td><td align="right">8.009172258</td><td align="right">22</td><td align="right">3</td><td align="right">−9.1%</td></tr>
 <tr><td>web-NotreDame (<code>-d</code>)</td><td>base</td><td align="right">5.568529293</td><td align="right">5</td><td align="right">6</td><td align="right">5.517073626</td><td align="right">5</td><td align="right">6</td><td align="right">+0.6%</td></tr>
 <tr><td>lazega</td><td>metadata</td><td align="right">6.017860269</td><td align="right">7</td><td align="right">2</td><td align="right">5.968624653</td><td align="right">7</td><td align="right">2</td><td align="right">0.015s vs 0.015s</td></tr>
-<tr><td>multilayer (ex.)</td><td>multilayer</td><td align="right">2.011405238</td><td align="right">2</td><td align="right">2</td><td align="right">1.928856578</td><td align="right">2</td><td align="right">2</td><td align="right">0.011s vs 0.012s</td></tr>
-<tr><td>malaria</td><td>multilayer</td><td align="right">7.397501710</td><td align="right">2</td><td align="right">3</td><td align="right">7.432494779</td><td align="right">2</td><td align="right">3</td><td align="right">−0.4%</td></tr>
-<tr><td>air30k</td><td>state/memory</td><td align="right">5.392425413</td><td align="right">22</td><td align="right">3</td><td align="right">5.486124697</td><td align="right">22</td><td align="right">3</td><td align="right">−2.0%</td></tr>
-<tr><td>air30k (reg.)</td><td>state/memory</td><td align="right">5.576242406</td><td align="right">11</td><td align="right">3</td><td align="right">5.691341197</td><td align="right">11</td><td align="right">3</td><td align="right">−3.3%</td></tr>
+<tr><td>multilayer (ex.)</td><td>multilayer</td><td align="right">2.011405238</td><td align="right">2</td><td align="right">2</td><td align="right">1.928856578 (unchanged)</td><td align="right">2</td><td align="right">2</td><td align="right">0.011s vs 0.012s</td></tr>
+<tr><td>malaria</td><td>multilayer</td><td align="right">7.397501710</td><td align="right">2</td><td align="right">3</td><td align="right"><i>7.432494779 — STALE</i></td><td align="right">2</td><td align="right">3</td><td align="right">−0.4%</td></tr>
+<tr><td>air30k</td><td>state/memory</td><td align="right">5.392425413</td><td align="right">22</td><td align="right">3</td><td align="right"><i>5.486124697 — STALE</i></td><td align="right">22</td><td align="right">3</td><td align="right">−2.0%</td></tr>
+<tr><td>air30k (reg.)</td><td>state/memory</td><td align="right">5.576242406</td><td align="right">11</td><td align="right">3</td><td align="right"><i>5.691341197 — STALE</i></td><td align="right">11</td><td align="right">3</td><td align="right">−3.3%</td></tr>
 <tr><td>science2001 (pref-mods)</td><td>base + bias</td><td align="right">8.235585529</td><td align="right">25</td><td align="right">2</td><td align="right">8.447745451</td><td align="right">25</td><td align="right">2</td><td align="right">−1.1%</td></tr>
 </tbody>
 </table>
@@ -221,36 +238,58 @@ under both bases, and the `_states.tree` round-trip trap — lives in
 [#1001](https://github.com/mapequation/infomap/pull/1001), whose own copy of this file is the
 measurement that justified it.
 
-### What this PR changes: the file split, and nothing else
+### What this PR changes: L\* on higher-order input, and nothing else
 
-[#1003](https://github.com/mapequation/infomap/pull/1003) splits `ColumnarMapEquation.cpp` (4284 lines,
-four unrelated concerns) into focused translation units and gives the stack scoring a named seam
-(`StackTerms` + `scoreStackBase` + `scoreStackNonRedundant` in place of an `if (m_nonRedundant)`
-mid-function). No search behaviour is intended to change, so the numbers are the claim:
+The memory objective's physical-node codebook is a **substitution**, not an additive term: both base
+objectives read a level-1 module's leaf flows only through `F_m = sum_{leaf in m} plogp(flow)`, and
+`MemCorrection` is the same objective with the state-node `F_m` replaced by the physical-node one. A
+substitution inherits the coefficient of the term it sits inside — and the two objectives disagree
+about it. The base map equation's `T`-normalized module term collapses to
+`plogp(T) - plogp(qExit) - F_m`, so the coefficient is exactly 1. L\* splits that codebook into an
+enter codebook normalized by `moduleFlow` and a within codebook normalized by `T = moduleFlow + qExit`,
+charging `F_m` against both, so the coefficient is
+`nrLeafCodebookRate = 1 + qEnter*qExit/(flow*(flow+qExit)) >= 1`.
 
-- **38 of 38 recorded configs** (13 networks × {OO, `-C`, `-C --non-redundant`}) reproduce their
-  codelength, top-module count **and** level count exactly. That includes `air30k -d --regularized`,
-  which is the config that exercises the teleport preamble both scorers now share, and the five
-  correction configs, which reach `objectiveCorrection()` through the new seam.
-- **Speed is neutral**, min-of-3 interleaved, base binary `d113e278` against this branch's `ab7d77ed`
-  (they compute identical partitions on all 38 configs, so a wall-time difference is code and nothing
-  else):
+The correction was applied at coefficient 1 under both. Since `plogp` is superadditive under splitting,
+`F^state - F^phys <= 0`, so multiplying it by 1 instead of by `rate >= 1` **under-subtracts**: L\* came
+out too high, always, by `(rate - 1) * (F^phys - F^state)`.
 
-| config | base | split | Δ |
-|---|--:|--:|--:|
-| web-NotreDame `-C` | 19.401s | 19.501s | +0.51% |
-| science2001 `-C` | 3.126s | 3.107s | −0.64% |
-| air30k `-C` | 3.941s | 3.953s | +0.31% |
-| malaria `-C` | 3.251s | 3.278s | +0.85% |
-| powergrid `-C` | 0.247s | 0.248s | +0.22% |
-| science2001 `-C --non-redundant` | 2.879s | 2.872s | −0.25% |
+The observable symptom is a broken invariance. Split every physical node into states the walker cannot
+distinguish and lift the partition so no physical node is split across modules: the process, the
+modules and every describable event are unchanged, so the codelength must be too. `L` always was. `L*`
+was not:
 
-Nothing crosses the 1% reporting threshold and there is no systematic direction. The risk being measured
-is specific: the native build has **no LTO**, so moving the per-candidate arithmetic across a
-translation-unit boundary would cost real time. It is in a header (`ColumnarObjective.h`) for that
-reason, and `moveLoop` keeps `removeModuleTerms`/`addModuleTerms` in its own TU.
+| case | L (before = after) | L\* before | L\* after | error removed |
+|---|--:|--:|--:|--:|
+| two triangles, all 6 nodes ×2 | 2.320730356834 | 2.145875734724 | 2.128018591867 | +0.017857142857 |
+| two triangles, node 3 only ×2 | 2.320730356834 | 2.131845122479 | 2.128018591867 | +0.003826530612 |
+| ninetriangles, all 27 nodes ×2 | 3.572285805615 | 3.465711933541 | 3.392635010464 | +0.073076923077 |
+| two triangles, directed (rawdir), all ×2 | 1.899533374666 | 1.844312916393 | 1.841584741790 | +0.002728174603 |
+| jazz provenance lift, 30 split nodes | 6.861229774904 | 6.841080565212 | 6.836565239276 | +0.004515325936 |
+| jazz provenance lift, 78 split nodes | 6.861229774904 | 6.855445280017 | 6.836565239276 | +0.018880040741 |
 
-An earlier A/B against the pre-#1001 binary put powergrid `-C` at **+1.92%** at min-of-3. At min-of-9 it
-was +0.52%, with the baseline arm's own spread on that config running 0.257–0.348s — the threshold
-crossing was session noise, not the split. Recorded because it crossed 1%.
+Every "after" equals the *physical* network's own L\* for the same partition to `<= 9e-14` (two
+triangles 2.128018591867112, ninetriangles 3.392635010464057, jazz 6.836565239275705), which is the
+invariance stated as an equation rather than as a delta.
+
+**The base objective is bit-identical.** 12 `-C` configs — jazz (`-N20`, two-level and hierarchical),
+ninetriangles (both), the `states.net` / `states_flow.net` / `multilayer.net` fixtures (both), a
+`--directed --recorded-teleportation` config, and a 54-state lumpable duplication of ninetriangles
+(both) — reproduce `delta == 0.0` exactly against the pre-fix binary. `MemCorrection`'s base branch
+keeps its two global sums rather than regrouping per module, so even the floating-point summation
+order is preserved.
+
+**One source of truth for the teleport augmentation.** The correction has to charge its substitution
+against the same enter/exit rates the scorer used, *including* the recorded-teleportation additions —
+re-deriving them from the link-only rates would be silently wrong on exactly the flow models
+(`--regularized`, `--recorded-teleportation`) where it is hardest to notice. So the teleport preamble is
+extracted into `ColumnarTwoLevel::buildStackTerms()`, which both `hierarchicalCodelengthFromStack()` and
+the new `leafCodebookRates()` consume, rather than written twice.
+
+**Cost.** One O(K) pass over level-1 modules per stack scoring — plus, under recorded teleportation
+only, a second run of the teleport preamble's pass over the leaves — on the cold
+(per-candidate-structural-operator) path, and only when a `MemCorrection` is attached under L\*. The
+per-candidate move arithmetic is untouched — the leaf move loop is deliberately base-flavoured under
+L\* (see `--non-redundant-exact`), so `initMoveLoop`/`moveDelta`/`applyMove`/`mergeDelta` keep the
+coefficient-1 form by design.
 

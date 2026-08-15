@@ -348,16 +348,38 @@ double MemCorrection::hierarchicalCorrection(const ColumnarTwoLevel& core) const
   if (core.hierNumLevels() < 2)
     return 0.0;
   const int nLeaves = core.numLeaves();
+  // Per level-1 module, the rate the active objective charges F_m at. Empty ==
+  // uniformly 1 == the base map equation; see the class comment for why the two
+  // objectives differ here and the header for why empty rather than a vector of ones.
+  const std::vector<double> rates = core.leafCodebookRates();
+  const bool weighted = !rates.empty();
+  std::vector<double> fState;
+  if (weighted)
+    fState.assign(rates.size(), 0.0);
   std::unordered_map<long long, double> physFlowMap; // key = (module<<32)|physical
   for (int i = 0; i < nLeaves; ++i) {
     const int m = core.hierLeafModule(i);
     const long long key = (static_cast<long long>(m) << 32) | static_cast<unsigned int>(m_leafPhysical[i]);
     physFlowMap[key] += m_leafFlow[i];
+    if (weighted)
+      fState[static_cast<std::size_t>(m)] += plogp(m_leafFlow[i]);
   }
-  double sum = 0.0;
+  if (!weighted) {
+    // rate == 1 everywhere, so sum_m (F_m^state - F_m^phys) telescopes and the
+    // per-module split is pure noise — kept as the two global sums it has always
+    // been, since the summation order is part of the reported number.
+    double sum = 0.0;
+    for (const auto& kv : physFlowMap)
+      sum += plogp(kv.second);
+    return m_cState - sum;
+  }
+  std::vector<double> fPhys(rates.size(), 0.0);
   for (const auto& kv : physFlowMap)
-    sum += plogp(kv.second);
-  return m_cState - sum;
+    fPhys[static_cast<std::size_t>(kv.first >> 32)] += plogp(kv.second);
+  double total = 0.0;
+  for (std::size_t m = 0; m < rates.size(); ++m)
+    total += rates[m] * (fState[m] - fPhys[m]);
+  return total;
 }
 
 void MemCorrection::setUnits(const std::vector<int>& leafToUnit, int numUnits)
