@@ -1562,7 +1562,22 @@ InfomapBase& InfomapBase::initTree(const NodePaths& tree)
       const auto clusterId = nodePath.second[0]; // First level module
       clusterIds[nodeId] = clusterId;
     }
-    return initPartition(clusterIds, false);
+    initPartition(clusterIds, false);
+    // Score the tree for the side effect only. initPartition updates the objective's
+    // aggregate bookkeeping but writes no InfoNode::codelength, so without this the
+    // shortcut leaves every module holding whatever it held before -- 0 on a fresh
+    // instance, or a stale value from an earlier, deeper trial on a reused one. The
+    // deep branch below already ends in this same call, and the fields it writes are
+    // read by the per-level table and by "codelength" per module in the JSON output.
+    // restoreBestResult re-materializes a best-of-N winner through here and rewrites
+    // the output file, so a flat winner used to land zeros in the rewritten JSON.
+    // The return value is deliberately dropped: initPartition has just set
+    // m_hierarchicalCodelength from getCodelength(), which is what restoreBestResult
+    // reports, and for the biased objective the sum over nodes need not agree with the
+    // search bookkeeping to the last digit. Side effect only means no reported number
+    // moves -- verified bit-identical over the benchmark set.
+    calcCodelengthOnTree(root(), true);
+    return *this;
   }
 
   // Tear down the existing partition. Detach the leaves first so that the
