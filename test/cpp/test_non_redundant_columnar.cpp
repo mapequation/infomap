@@ -2,6 +2,7 @@
 #include "core/ColumnarObjective.h"
 #include "io/Config.h"
 
+#include <cmath>
 #include <cstdio>
 #include <map>
 #include <string>
@@ -300,6 +301,93 @@ TEST_CASE("NonRedundant/columnar: hierarchical search produces a sound, self-con
   rescored.run();
   CHECK(rescored.codelength() == doctest::Approx(searched).epsilon(1e-9));
   std::remove(treePath.c_str());
+}
+
+TEST_CASE("NonRedundant/columnar: a ragged tree is scored under L*, not the base map equation [fast][core][non-redundant]")
+{
+  // A tree whose branches end at different depths does not fit the strict-level stack,
+  // and the object-oriented fallback it used to take has no L* implementation at all --
+  // so --non-redundant silently reported the BASE codelength, identical to the run
+  // without the flag. Padding the short paths with a pass-through level makes the tree
+  // rectangular at zero cost under L*, so the two now agree with the hand-padded
+  // fixture instead.
+  const double raggedLstar = scoreFixedPartition("twotriangles_flow.net", "twotriangles_ragged_branches.tree", "--non-redundant");
+  const double paddedLstar = scoreFixedPartition("twotriangles_flow.net", "twotriangles_ragged_branches_padded.tree", "--non-redundant");
+  const double raggedL = scoreFixedPartition("twotriangles_flow.net", "twotriangles_ragged_branches.tree", "");
+
+  CHECK(raggedLstar == doctest::Approx(paddedLstar).epsilon(1e-12));
+  CHECK(raggedLstar == doctest::Approx(2.142186380).epsilon(1e-9));
+  CHECK(raggedLstar < raggedL); // it was bit-equal to raggedL (2.614170945) before
+  CHECK(raggedL == doctest::Approx(2.614170945).epsilon(1e-9)); // the base value must not move
+}
+
+TEST_CASE("NonRedundant/columnar: a ragged STATE tree is scored under L* [fast][core][non-redundant]")
+{
+  // Same, with MemCorrection in play: the physical-node codebook substitution is
+  // charged at the leaf-module rate, which differs between L and L*, so this is the
+  // case where "just reuse the object-oriented value" is furthest from right.
+  const double raggedLstar = scoreFixedPartition("states.net", "states_ragged_branches.tree", "--non-redundant");
+  const double paddedLstar = scoreFixedPartition("states.net", "states_ragged_branches_padded.tree", "--non-redundant");
+  const double raggedL = scoreFixedPartition("states.net", "states_ragged_branches.tree", "");
+
+  CHECK(raggedLstar == doctest::Approx(paddedLstar).epsilon(1e-12));
+  CHECK(raggedLstar == doctest::Approx(2.612197223).epsilon(1e-9));
+  CHECK(raggedL == doctest::Approx(4.251629167).epsilon(1e-9));
+}
+
+TEST_CASE("NonRedundant/columnar: only L* is invariant under a pass-through level [fast][core][non-redundant]")
+{
+  // The theorem the padding rests on, pinned from both sides so that "simplifying" the
+  // gate away would fail: inserting a single-child level costs exactly 0 under L* (its
+  // enter codebook is e*(plogp(e)-plogp(e))/e and its child's exit term has numerator
+  // plogp(x)-0-plogp(x)) and costs real bits under the base map equation.
+  const double raggedL = scoreFixedPartition("twotriangles_flow.net", "twotriangles_ragged_branches.tree", "");
+  const double paddedL = scoreFixedPartition("twotriangles_flow.net", "twotriangles_ragged_branches_padded.tree", "");
+  CHECK(paddedL > raggedL + 1e-6);
+
+  const double raggedLstar = scoreFixedPartition("twotriangles_flow.net", "twotriangles_ragged_branches.tree", "--non-redundant");
+  const double paddedLstar = scoreFixedPartition("twotriangles_flow.net", "twotriangles_ragged_branches_padded.tree", "--non-redundant");
+  CHECK(raggedLstar == doctest::Approx(paddedLstar).epsilon(1e-12));
+}
+
+TEST_CASE("NonRedundant/columnar: the ragged padding does not leak into the entropy bias [fast][core][non-redundant]")
+{
+  // --entropy-corrected is the one correction that counts NODES, so the phantom levels
+  // the padding inserts would inflate it. The evaluation takes their charge back off
+  // the total; this pins that it takes off exactly one node's worth (the ragged tree
+  // needs one pass-through, above module 1).
+  //
+  // The per-node bias is derived from the fixture rather than hard-coded: the
+  // single-module partition has 6 leaves + 1 module = 7 non-root nodes, so the gap the
+  // flag opens there is 7 times the per-node term.
+  const double oneModule = scoreFixedPartition("twotriangles_flow.net", "twotriangles_single_module.clu", "--non-redundant --two-level");
+  const double oneModuleBiased = scoreFixedPartition("twotriangles_flow.net", "twotriangles_single_module.clu", "--non-redundant --two-level --entropy-corrected");
+  const double biasPerNode = (oneModuleBiased - oneModule) / 7.0;
+  CHECK(biasPerNode > 0.0);
+
+  const double raggedBiased = scoreFixedPartition("twotriangles_flow.net", "twotriangles_ragged_branches.tree", "--non-redundant --entropy-corrected");
+  const double paddedBiased = scoreFixedPartition("twotriangles_flow.net", "twotriangles_ragged_branches_padded.tree", "--non-redundant --entropy-corrected");
+  CHECK(raggedBiased == doctest::Approx(paddedBiased - biasPerNode).epsilon(1e-9));
+}
+
+TEST_CASE("Columnar: the preferred-modules penalty survives the object-oriented fallback [fast][core][non-redundant]")
+{
+  // --preferred-number-of-modules is the only correction with no object-oriented
+  // counterpart, so a tree that falls back to calcCodelengthOnTree used to lose the
+  // whole |K - K_pref| penalty without a word. The base objective does not pad (padding
+  // is not free for it), so the ragged tree still takes the fallback -- the penalty has
+  // to be added there by hand.
+  // --columnar explicitly: this is a columnar-engine contract, and the object-oriented
+  // engine has no such penalty to check for.
+  const double ragged = scoreFixedPartition("twotriangles_flow.net", "twotriangles_ragged_branches.tree", "--columnar");
+  // The ragged fixture has three leaf modules: 1, 2:1 and 2:2.
+  for (unsigned int preferred = 1; preferred <= 6; ++preferred) {
+    const double biased = scoreFixedPartition("twotriangles_flow.net",
+                                              "twotriangles_ragged_branches.tree",
+                                              "--columnar --preferred-number-of-modules " + std::to_string(preferred));
+    const double expectedPenalty = std::abs(3.0 - static_cast<double>(preferred));
+    CHECK(biased == doctest::Approx(ragged + expectedPenalty).epsilon(1e-9));
+  }
 }
 
 } // namespace test
