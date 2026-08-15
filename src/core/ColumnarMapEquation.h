@@ -31,7 +31,36 @@ class ColumnarTwoLevel;
 // so the incomplete declaration is enough and this header stays free of it.
 namespace columnar {
   struct StackTerms;
-}
+
+  /**
+   * Per-node decomposition of the stack codelength, in stack coordinates.
+   *
+   * moduleTerm[k][m] is what module m at stack level k is charged (level 1 =
+   * the leaf modules .. topLevel = the top modules); rootTerm is the root's own
+   * charge. Slot moduleTerm[0] is the leaf level and stays empty: a leaf owns no
+   * codebook. The entries sum to hierarchicalCodelengthFromStack().
+   *
+   * This exists so the reported decomposition comes from the SAME objective as
+   * the reported total. The console "Levels" table and -o json modules[].codelength
+   * used to read InfoNode::codelength, which only calcCodelengthOnTree ever wrote —
+   * i.e. the object-oriented base map equation — so under --non-redundant the table
+   * summed L while the headline number was L* (netsci -C --non-redundant -N10:
+   * table Total 4.103756 against Best codelength 3.892209764).
+   */
+  struct StackBreakdown {
+    double rootTerm = 0.0;
+    std::vector<std::vector<double>> moduleTerm;
+
+    double total() const
+    {
+      double sum = rootTerm;
+      for (const auto& level : moduleTerm)
+        for (double term : level)
+          sum += term;
+      return sum;
+    }
+  };
+} // namespace columnar
 
 /**
  * A composable correction on top of the base columnar map equation.
@@ -52,7 +81,15 @@ public:
   // Additive contribution to the total hierarchical codelength of the core's
   // current stacked hierarchy. Reads the partition through the core's public
   // accessors. Base objective = no corrections = exactly zero.
-  virtual double hierarchicalCorrection(const ColumnarTwoLevel& core) const = 0;
+  //
+  // `breakdown`, when non-null, must also receive this contribution split over
+  // the nodes it is charged to, so the reported per-module decomposition adds up
+  // to the reported total (see columnar::StackBreakdown). Accumulate into the
+  // SAME expressions the return value sums, so the split is exact rather than a
+  // second, independently-rounded computation. A correction with no natural
+  // per-node split leaves the default: the whole scalar on the root. The
+  // parameter is null on every search-path call, so nothing is allocated there.
+  virtual double hierarchicalCorrection(const ColumnarTwoLevel& core, columnar::StackBreakdown* breakdown = nullptr) const = 0;
 
   // --- Optional move-loop hooks (leaf-level two-level search) ---------------
   // Corrections that shape the leaf partition (Meta/Lossy/Mem) participate in
@@ -219,6 +256,10 @@ public:
   int numLeaves() const { return m_nLeaves; }
   // The leaf's current bottom (level-1) module id.
   int hierLeafModule(int leaf) const { return m_hierAssign[0][leaf]; }
+  // The level-(k+1) parent of unit `unit` at stacked level k (0 = leaves). Walking
+  // hierLeafModule + hierUnitParent gives a leaf's whole ancestor chain, which is
+  // how InfomapBase maps stack modules onto the materialized InfoNode tree.
+  int hierUnitParent(int level, int unit) const { return m_hierAssign[level][unit]; }
   double leafFlow(int leaf) const { return m_leafFlow[leaf]; }
 
   // Per level-1 module: the rate at which the ACTIVE base objective's leaf-module
@@ -395,8 +436,17 @@ public:
   // leaf's module ids coarsest-first (path[0] = top module .. path.back() =
   // finest/leaf module); ids need not be compacted (they are hashed per level).
   // buildFromLeaves must have run first. Returns false (leaving the stack
-  // untouched) for a ragged tree (leaves at differing depths), which the caller
-  // should evaluate via the object-oriented path instead.
+  // untouched) for a ragged tree (leaves at differing depths).
+  //
+  // The rectangular contract stays strict on purpose: it is what keeps the base
+  // scorer honest, since the base map equation is NOT invariant under inserting a
+  // pass-through level (ninetriangles rect 3.38583082 -> 3.97958082 with one such
+  // level above every leaf module). L* IS invariant — a single-child parent's enter
+  // codebook is e*(plogp(e)-plogp(e))/e == 0 and its child's exit term has numerator
+  // plogp(x)-0-plogp(x) == 0 — so under --non-redundant the caller rectangularizes a
+  // ragged tree by padding the short paths (InfomapBase::padLeafPathsToUniformDepth)
+  // instead of relaxing this guard. Everything else falls back to the
+  // object-oriented tree.
   bool seedHierarchyFromLeafPaths(const std::vector<std::vector<int>>& leafPaths);
 
   // Enable recorded-teleportation codebook terms (regularized flow). Must be set
@@ -422,6 +472,21 @@ public:
   // Hierarchical codelength (base map equation + active corrections) from the
   // stacked levels/assignments in m_hier* — the seeded or optimized partition.
   double hierarchicalCodelengthFromStack() const;
+
+  // The same codelength, plus its per-node decomposition under the SAME
+  // objective. Reporting only (the search never asks for the breakdown, so it
+  // pays no allocation): the console per-level table and -o json
+  // modules[].codelength are stamped from this.
+  double codelengthBreakdownFromStack(columnar::StackBreakdown& breakdown) const;
+
+  // Codelength of the all-in-one-module partition under the ACTIVE objective,
+  // corrections included. Not the same thing as InfomapBase::getOneLevelCodelength(),
+  // which is calcCodelength on a tree with ZERO modules: under --entropy-corrected
+  // the two differ by exactly multiplier/(2*totalDegree) (ninetriangles 4.918622452
+  // vs 4.925032709), and the collapse the one-level fallback performs installs one
+  // module, so this is the value that partition actually costs. Restores the
+  // current stack before returning, so it can be asked at any point in the search.
+  double oneLevelCodelength();
 
 private:
   void pollInterrupt() const
@@ -618,8 +683,9 @@ private:
   std::function<void()> m_interruptCallback;
 
   // Sum of the composable corrections' contributions to the hierarchical
-  // codelength (0 for the base objective, i.e. no corrections).
-  double objectiveCorrection() const;
+  // codelength (0 for the base objective, i.e. no corrections). `breakdown`, when
+  // non-null, also collects each correction's per-node split.
+  double objectiveCorrection(columnar::StackBreakdown* breakdown = nullptr) const;
 
   // The levels, assignments and teleport-augmented boundary rates a stack scoring
   // reads, resolved once. The single source of truth for the recorded-teleportation
@@ -780,7 +846,7 @@ class BiasedEntropyCorrection final : public ColumnarCorrection {
 public:
   BiasedEntropyCorrection(double multiplier, double totalDegree)
       : m_multiplier(multiplier), m_totalDegree(totalDegree > 0.0 ? totalDegree : 1.0) {}
-  double hierarchicalCorrection(const ColumnarTwoLevel& core) const override;
+  double hierarchicalCorrection(const ColumnarTwoLevel& core, columnar::StackBreakdown* breakdown = nullptr) const override;
 
 private:
   double m_multiplier;
@@ -804,7 +870,16 @@ class PreferredModulesCorrection final : public ColumnarCorrection {
 public:
   explicit PreferredModulesCorrection(unsigned int preferredNumModules)
       : m_preferredNumModules(static_cast<int>(preferredNumModules)) {}
-  double hierarchicalCorrection(const ColumnarTwoLevel& core) const override;
+  double hierarchicalCorrection(const ColumnarTwoLevel& core, columnar::StackBreakdown* breakdown = nullptr) const override;
+
+  // The same penalty for a caller that has a leaf-module count but no stack to
+  // attach a correction to: InfomapBase::evaluateColumnarPartition's fallback to
+  // the object-oriented tree, where this is the one correction with no OO
+  // counterpart to reproduce it.
+  static double costOf(int numModules, unsigned int preferredNumModules)
+  {
+    return std::abs(numModules - static_cast<int>(preferredNumModules));
+  }
 
   bool participatesInMoveLoop() const override { return true; }
   double initMoveLoop(const std::vector<int>& leafModule, int numModules) override;
@@ -818,7 +893,7 @@ public:
 private:
   // |K - K_pref| with unit weight (1 bit per module), matching
   // BiasedMapEquation::calcNumModuleCost.
-  double cost(int numModules) const { return std::abs(numModules - m_preferredNumModules); }
+  double cost(int numModules) const { return costOf(numModules, static_cast<unsigned int>(m_preferredNumModules)); }
 
   int m_preferredNumModules;
   std::vector<int> m_moduleMembers; // per module: member count
@@ -838,7 +913,7 @@ public:
   // flow, else a uniform weight); leafCategory[i] its metadata category.
   MetaCorrection(std::vector<int> leafCategory, std::vector<double> leafWeight, double metaDataRate)
       : m_leafCategory(std::move(leafCategory)), m_leafWeight(std::move(leafWeight)), m_metaDataRate(metaDataRate) {}
-  double hierarchicalCorrection(const ColumnarTwoLevel& core) const override;
+  double hierarchicalCorrection(const ColumnarTwoLevel& core, columnar::StackBreakdown* breakdown = nullptr) const override;
 
   bool participatesInMoveLoop() const override { return true; }
   double initMoveLoop(const std::vector<int>& leafModule, int numModules) override;
@@ -919,7 +994,7 @@ private:
 class MemCorrection final : public ColumnarCorrection {
 public:
   MemCorrection(std::vector<int> leafPhysical, std::vector<double> leafFlow);
-  double hierarchicalCorrection(const ColumnarTwoLevel& core) const override;
+  double hierarchicalCorrection(const ColumnarTwoLevel& core, columnar::StackBreakdown* breakdown = nullptr) const override;
 
   bool participatesInMoveLoop() const override { return true; }
   double initMoveLoop(const std::vector<int>& leafModule, int numModules) override;
@@ -985,7 +1060,7 @@ public:
   // leafFlow[i] = leaf flow f_i; leafEntropy[i] = its Markov entropy share
   // (f_i * h_i, matching InfoNode::lossyEntropy). lambda = distortion price.
   LossyCorrection(std::vector<double> leafFlow, std::vector<double> leafEntropy, double lambda);
-  double hierarchicalCorrection(const ColumnarTwoLevel& core) const override;
+  double hierarchicalCorrection(const ColumnarTwoLevel& core, columnar::StackBreakdown* breakdown = nullptr) const override;
 
   bool participatesInMoveLoop() const override { return true; }
   double initMoveLoop(const std::vector<int>& leafModule, int numModules) override;

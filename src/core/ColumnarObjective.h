@@ -153,10 +153,15 @@ namespace columnar {
   }
 
   // --- Non-redundant map equation (L*) per-module codebook terms ---------------
-  // Direct ports of MapEquation::nrEnterWithin / nrExitTerm. F is the module's
-  // sum_{leaf in module} plogp(leafFlow). Enter/exit are the module's boundary
-  // rates (separate for directed flow). See "Non-redundant map equation - expanded
-  // form.ipynb" for the derivation.
+  // These are the ONLY implementation of L* in the codebase: the object-oriented
+  // objectives have no non-redundant counterpart, which is why every fallback from
+  // the columnar core to calcCodelengthOnTree silently reports the base map equation
+  // instead (see InfomapBase::evaluateColumnarPartition). Said here because an
+  // earlier version of this comment claimed these were "direct ports of
+  // MapEquation::nrEnterWithin / nrExitTerm" -- symbols that exist nowhere in src/.
+  // F is the module's sum_{leaf in module} plogp(leafFlow). Enter/exit are the
+  // module's boundary rates (separate for directed flow). See "Non-redundant map
+  // equation - expanded form.ipynb" for the derivation.
   inline double nrEnterWithin(double moduleFlow, double qEnter, double qExit, double F)
   {
     using infomath::plogp;
