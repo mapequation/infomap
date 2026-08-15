@@ -674,10 +674,23 @@ private:
         auto timer = m_timing.scope("best_restore_s");
         m_infomap.initTree(result.bestTree);
         // initTree recomputes m_hierarchicalCodelength via calcCodelengthOnTree, which
-        // is the BASE map equation on this branch. For L* the best trial already computed
-        // the exact non-redundant codelength (columnar hierarchicalCodelengthFromStack);
-        // restore it so codelength() reports L*, not the base-L of the materialized tree.
-        if (m_infomap.nonRedundant)
+        // is the OO objective's codelength on the materialized tree. The columnar core is
+        // the source of truth for the search codelength (the same rule the columnar
+        // materialization site applies), so restore the value the winning trial actually
+        // optimized -- otherwise codelength(), and with it the .tree/.json header, reports
+        // a different number than the console did.
+        //
+        // Guarded on columnarSearch rather than on nonRedundant (#1012). The narrow guard
+        // was written when L* was the only objective on which the two engines could
+        // disagree; composing the metadata and physical-node codebooks (see
+        // addColumnarCorrections) added a second one, and the split showed up as console
+        // 2.247219447 against 2.577797959367 in the output files for the same run -- only
+        // at -N>=2, since this whole block is guarded by m_trialsRun > 1. Guarding on the
+        // engine instead of on one objective removes the class of bug rather than this
+        // instance of it. A/B across the benchmark set (base and L*, -C and OO, -N1 and
+        // -N10) showed no other reported number moves: where the objectives agree,
+        // restoring the columnar value is a no-op.
+        if (m_infomap.columnarSearch)
           m_infomap.m_hierarchicalCodelength = result.bestHierarchicalCodelength;
         // …and the same for the DECOMPOSITION, which initTree leaves either unwritten
         // (flat shortcut: the previous trial's charges survive, so jazz -C -N10 -o json

@@ -169,6 +169,31 @@ TEST_CASE("Columnar composes the metadata and physical-node codebooks [fast][cor
   infomap::test::checkApproxCodelength(distinctMeta - distinctPlain, 0.915516344471709);
 }
 
+TEST_CASE("Columnar reports its own composed codelength across trials [fast][core][partition][columnar][meta]")
+{
+  // restoreBestResult re-materializes the winning trial's tree through the OO
+  // objective, which under --meta-data is metadata-only and therefore disagrees
+  // with the composed value the columnar core actually optimized. The block is
+  // guarded by m_trialsRun > 1, so the disagreement is invisible at one trial:
+  // before #1012 broadened that guard from nonRedundant to columnarSearch, a
+  // 2-trial run printed 2.247219447 to the console and wrote 2.577797959367095 to
+  // the .tree/.json files. codelength() reads the same value the files do.
+  auto search = [](unsigned int numTrials) {
+    InfomapWrapper im("--seed 123 --num-trials " + std::to_string(numTrials) + " --silent --two-level --columnar --meta-data " + infomap::test::fixturePath("meta/states_crossing.meta"));
+    infomap::test::readNetworkFixture(im, "states_shared_physical.net");
+    im.run();
+    infomap::test::checkCanonicalPartition(im, { { 1, 2, 3 }, { 4, 5, 6 } }, true);
+    return im.codelength();
+  };
+
+  const double oneTrial = search(1);
+  infomap::test::checkApproxCodelength(oneTrial, 2.247219446970401);
+  // Same partition, same objective: more trials must not change the number that
+  // is reported and written out.
+  infomap::test::checkApproxCodelength(search(2), oneTrial);
+  infomap::test::checkApproxCodelength(search(10), oneTrial);
+}
+
 TEST_CASE("Meta-data on higher-order input diverges between OO and columnar by design [fast][core][partition][columnar-differential][meta]")
 {
   // The documented exception to the rule the rest of this family enforces.
