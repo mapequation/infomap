@@ -2270,8 +2270,11 @@ void InfomapBase::init()
   m_oneLevelCodelength = calcCodelength(m_root);
   // Its columnar counterpart depends on the same thing this one does -- the leaf
   // network and the active objective -- so it is invalidated here and computed at
-  // most once per run, not once per trial (see columnarPartition).
+  // most once per run, not once per trial (see columnarPartition). The columnar
+  // index term goes with it: an instance re-run with a different objective must not
+  // answer getIndexCodelength() from the previous run's stack.
   m_columnarOneLevelCodelength = -1.0;
+  m_columnarIndexCodelength = -1.0;
   Console::detail(1, "one-level codelength: {}", io::toPrecision(m_oneLevelCodelength));
 }
 
