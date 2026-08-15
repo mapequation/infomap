@@ -815,7 +815,14 @@ protected:
   // --non-redundant (where m_optimizer's own index term is the right one -- checked
   // to agree with the columnar root charge on a fixed partition for base, -d,
   // -d --recorded-teleportation, --markov-time, --variable-markov-time, --meta-data
-  // and --regularized). Set wherever the columnar per-node charges are stamped.
+  // and --regularized). Set wherever the columnar per-node charges are stamped, and
+  // cleared by initTree, so its lifetime is exactly the tree it describes: a single
+  // trial, a serial multi-trial run (restoreBestResult re-stamps, so it is the BEST
+  // trial's root term, not the last executed trial's) and --parallel-trials (same
+  // restore, on the main instance, whose value would otherwise never be written since
+  // the trials run on workers). NOT covered: a caller that mutates the tree by some
+  // other route, concretely the API-only hard-partition path where
+  // restoreHardPartition re-expands the tree after the stamping -- unverified.
   //
   // Only L* needs it, and needs it badly: m_optimizer is always a BASE map equation
   // on this branch, so getModuleCodelength() = L* - L_index was a hybrid of two
