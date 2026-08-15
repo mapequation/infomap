@@ -91,7 +91,7 @@ def test_preferred_number_of_modules_warns_on_state_input(engine_messages):
     assert _matching(engine_messages, PREFERRED_WARNING)
 
 
-def test_meta_data_precedence_warns_on_state_input(engine_messages, tmp_path):
+def test_meta_data_codebooks_warn_on_state_input(engine_messages, tmp_path):
     meta = tmp_path / "const.meta"
     # Every physical node in one meta category, so the meta term is exactly 0 and the run
     # cannot be defended as "the metadata was worth the swap" -- the objective changed for
@@ -112,7 +112,7 @@ def test_ordinary_input_applies_both_options_silently(engine_messages):
     assert not _matching(engine_messages, PREFERRED_WARNING)
 
 
-def test_meta_data_on_ordinary_input_is_not_a_precedence_warning(
+def test_meta_data_on_ordinary_input_is_not_a_codebooks_warning(
     engine_messages, tmp_path
 ):
     # Meta-data on a first-order network is what MetaMapEquation is for; only the

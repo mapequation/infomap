@@ -687,9 +687,23 @@ private:
         // 2.247219447 against 2.577797959367 in the output files for the same run -- only
         // at -N>=2, since this whole block is guarded by m_trialsRun > 1. Guarding on the
         // engine instead of on one objective removes the class of bug rather than this
-        // instance of it. A/B across the benchmark set (base and L*, -C and OO, -N1 and
-        // -N10) showed no other reported number moves: where the objectives agree,
-        // restoring the columnar value is a no-op.
+        // instance of it. Broadening it is not a no-op, and that is deliberate: the columnar
+        // search value and the OO recomputation of the *same* partition agree only to the
+        // last few ULPs, since the two engines sum the same terms in different orders. A/B
+        // across the benchmark set (base and L*, -C and OO, -N1 and -N10) is identical to all
+        // 12 printed digits, but read the -o json codelength at full double precision and
+        // nine of the 13 -C -N10 rows move in the last bits. The largest is web-NotreDame
+        // 5.5685292930834125 -> 5.568529293083488 (+7.6e-14), then science2001
+        // --preferred-number-of-modules 25 (-5.0e-14) and powergrid
+        // 4.7410720563526025 -> 4.741072056352614 (+1.2e-14); plain science2001, lazega, jazz,
+        // netsci, ninetriangles and the multilayer example move by <= 4.4e-15. The four rows
+        // that do not move at all are politicalblogs, malaria and air30k (plain and
+        // -d --regularized). All nine round to the same 12 significant digits, so nothing
+        // printed changes. The value reported after the restore is now the one the winning
+        // trial actually optimized and the one the console printed, which is the property
+        // this guard exists to hold. The OO arm is byte-exact on all 13 rows (no
+        // columnarSearch), and the -C --non-redundant arms were exact before this change --
+        // they already restored the columnar value.
         if (m_infomap.columnarSearch)
           m_infomap.m_hierarchicalCodelength = result.bestHierarchicalCodelength;
         // …and the same for the DECOMPOSITION, which initTree leaves either unwritten
@@ -855,10 +869,22 @@ private:
       // master sync into a conflict. Wording it from the objective instead is true on both engines
       // and on master, and it follows the rule the sibling warnings above already state: word it
       // from the objective, and let the banner name which one is in use. It stays worth printing
-      // under -C, where the composed total is the columnar one but the per-level breakdown,
-      // getIndexCodelength() and getMetaCodelength() are still materialized through the
-      // meta-data objective.
-      Console::warn(0, "--meta-data on higher-order input asks for two independent codebooks: the metadata categories, and the physical-node codebook of the higher-order map equation. The meta-data objective scores state nodes only, without the physical-node codebook -- under it the higher-order structure shapes the network, not the objective -- and the per-level codelength breakdown reported for this run comes from that objective.");
+      // under -C, where the composed total is the columnar one but getIndexCodelength() and
+      // getMetaCodelength() are still materialized through the meta-data objective.
+      //
+      // It does NOT point at the per-level Levels table, because the columnar per-level
+      // breakdown is unreliable in this build (a pre-existing reporting gap, F38 in the
+      // notes). On a two-level result it prints all zeros -- jazz -C, and states.net -C with
+      // and without metadata. On a hierarchical meta + higher-order result it prints a total
+      // that is the meta-data objective's score of the partition rather than the composed
+      // codelength the run reports: air30k -C --meta-data -N1 prints a Levels total of
+      // 10.626985 against Best codelength 7.580768, and 10.626985 is exactly what the
+      // pre-#1012 binary scores that same partition at (10.626984626737512). The sibling
+      // branch columnar-report-paths fixes precisely this -- there the table totals the
+      // codelength the run reports on both shapes (jazz -C 6.899368; the same air30k run
+      // 8.207547, that branch's own value since it predates the composition) -- and will be
+      // stacked underneath before either lands.
+      Console::warn(0, "--meta-data on higher-order input asks for two independent codebooks: the metadata categories, and the physical-node codebook of the higher-order map equation. The meta-data objective scores state nodes only, without the physical-node codebook -- under it the higher-order structure shapes the network, not the objective.");
     }
   }
 

@@ -2549,12 +2549,55 @@ binary that writes the wrong one at the default `-N10`. Measured on an edit-1-on
 
 The guard is now `if (m_infomap.columnarSearch)` — the engine, not one objective — which is what the
 columnar materialization site already documents ("the columnar core is the source of truth for the
-search codelength"). Broadening it is a no-op wherever the two objectives agree, and that was
-measured rather than assumed: 78 benchmark configurations (all 13 benchmark networks × {OO, `-C`,
+search codelength"). 78 benchmark configurations (all 13 benchmark networks × {OO, `-C`,
 `-C --non-redundant`} × {`-N1`, `-N10`}, comparing the console `Best codelength` *and* the codelength
 written to the output file) are identical to all 12 printed digits between the pre-fix binary
 (`md5 b601cf2f6e263c2be5ea1f1d496a77ec`) and this one (`md5 f02736dae6a0e3998c1e35a1565c50b0`). No
 benchmark config is meta + higher-order — `lazega`, the only metadata benchmark, is first-order.
+
+**It is not, however, bit-identical, and calling it a "no-op" was wrong.** Read the `-o json`
+`codelength` at full double precision and **nine of the 13** `-C -N10` rows *do* move, in the last
+ULPs. Full sweep of the benchmark set, `-C --seed 123 -N10 --silent -o json`, pre-fix
+`b601cf2f6e263c2be5ea1f1d496a77ec` against the current tip
+(`md5 b8af88017f344d105236e09bec0958b3` — `f02736da…` above is the same code with the older warning
+string, and a clean rebuild after the comment corrections reproduces `b8af8801…` byte for byte),
+sorted by |Δ|:
+
+| config | pre-fix | post-fix | Δ |
+|---|---|---|--:|
+| web-NotreDame `-d -C` | 5.5685292930834125 | 5.568529293083488 | **+7.55e-14** |
+| science2001 `-d -C --preferred-number-of-modules 25` | 8.235585529219229 | 8.235585529219179 | −4.97e-14 |
+| powergrid `-C` | 4.7410720563526025 | 4.741072056352614 | +1.16e-14 |
+| lazega `-C` | 6.0178602693857055 | 6.017860269385701 | −4.44e-15 |
+| science2001 `-d -C` | 7.83343660140164 | 7.833436601401644 | +3.55e-15 |
+| jazz `-C` | 6.862755928271481 | 6.862755928271479 | −1.78e-15 |
+| netsci `-C` | 4.0545402451477415 | 4.054540245147743 | +1.78e-15 |
+| multilayer (example) `-C` | 2.0114052384459713 | 2.0114052384459717 | +4.44e-16 |
+| ninetriangles `-C` | 3.385830820341408 | 3.3858308203414076 | −4.44e-16 |
+
+The four rows that are bit-identical: politicalblogs (6.740943136123672), malaria
+(7.397501710124526), air30k (5.3924254128857285) and air30k `-d --regularized`
+(5.576242406397039). All nine moving rows round to the same 12 significant digits, so nothing
+printed anywhere changes — the movement is only visible in the JSON's full precision.
+
+**An earlier version of this entry listed only six rows and called powergrid the largest.** That was
+a partial sweep read as a complete one: the three rows it missed (web-NotreDame, science2001, and
+science2001 with the preferred-modules bias) include the two *largest* moves, so the "largest" claim
+was wrong by 6.5×. The correction is the table above — a full 13-row sweep, whose three added rows
+reproduce digit-for-digit across two independent sessions. Lesson worth keeping: an enumeration is a
+claim about the rows it *omits* as much as about the ones it lists, and it is only as good as the
+sweep behind it.
+
+Both control arms are byte-exact on **all 13** rows, swept the same way: OO (jazz 6.863047469426564,
+powergrid 4.758729201129937, web-NotreDame 5.565924767871836) and `-C --non-redundant` (jazz
+6.868228367042876, powergrid 4.509265422814488, web-NotreDame 5.517073626480589) — the
+`--non-redundant` arms already restored the columnar value before this change. So the movement is
+exactly the set the guard newly covers, and it is **the point of the change, not an accident**: the
+restored value is now the columnar core's own, which differs from the OO recomputation of the *same* partition in the last
+bits because the two engines sum the same terms in different orders. What the run reports is now what
+the winning trial optimized and what the console printed. The verifiable claim is "identical to all
+12 printed digits"; "bit-identical" is a claim that does not reproduce, and it was the headline
+verification claim of this change.
 
 **The warning had to be reworded, not gated.** `--meta-data takes precedence over higher-order
 input: the run optimizes the meta-data objective ... without the physical-node codebook` became false
@@ -2563,8 +2606,28 @@ bug: that string is **master-resident** and `columnarSearch` is not, so the line
 unmergeable upstream and would conflict at every `sync-master-into-columnar`. It is now worded from
 the *objective* rather than from the run — the rule the sibling warnings in the same function already
 state — which is true on both engines and on master. It still earns its place under `-C`: the
-composed total is the columnar one, but the per-level breakdown, `getIndexCodelength()` and
-`getMetaCodelength()` are still materialized through the meta-data objective.
+composed total is the columnar one, but `getIndexCodelength()` and `getMetaCodelength()` are still
+materialized through the meta-data objective. The first version of the reworded message also sent the
+reader to "the per-level codelength breakdown reported for this run"; that clause is **removed**,
+because the columnar per-level breakdown is unreliable in this build — a pre-existing reporting gap,
+and not the "always zero" one it was first written up as. Two distinct failures, both measured on the
+post-fix binary:
+
+- **Two-level results print all zeros.** `jazz -C` and `states.net -C` (with *and* without metadata)
+  print `0.000000` in every cell, `Total 0.000000`.
+- **Hierarchical results print a populated but wrong total.** `air30k -C --meta-data <usstate> -N1`
+  prints `0.776939 / 3.657179 / 6.192867`, `Total 10.626985`, against `Best codelength 7.580768` —
+  and 10.626985 is exactly the **meta-data objective's** score of that same partition
+  (10.626984626737512, measured by cross-scoring it with the pre-fix binary). So the table shows a
+  real number computed on the wrong objective, not an empty table. Same shape on malaria + pmod8
+  (`Total 11.649203` against 9.321316, and 11.649202759236191 is the meta-only score).
+  A hierarchical *base* `-C` run is fine — `ninetriangles -C` totals 3.385831, its codelength, which
+  is what F34 recorded, and is why "all zeros regardless" contradicted F34 rather than following it.
+
+The sibling branch **`columnar-report-paths`** fixes exactly this class ("the reporting paths the
+first pass left on the wrong objective"): on its binary `jazz -C` totals 6.899368 and the air30k
+meta run totals 8.207547, each equal to the codelength that binary reports. It will be stacked
+underneath this change before either lands, so the clause is removed here rather than repaired here.
 
 **Recorded, not fixed.** (1) Composing the two objectives on the OO engine — see above. (2)
 `--regularized` multilayer under `-C --meta-data` still loses the teleport prior: the columnar core
@@ -2573,3 +2636,4 @@ deferred. (3) Found in passing, **pre-existing and on the default engine**: `air
 -N10` prints `Best codelength 5.578435633` and writes `5.578461103783` (Δ 2.5e-5). Identical on both
 binaries, absent at `-N1`/`-N2`, so it is the same restore-path shape as the bug above but on the OO
 side, where the new guard does not apply.
+
