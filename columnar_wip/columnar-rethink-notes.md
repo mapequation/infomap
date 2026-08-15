@@ -2167,8 +2167,9 @@ lesson as F28: **a threshold crossing on a 0.25s config is a statement about the
 `-C --non-redundant` on state / memory / multilayer input reported L\* too high. The size of the error
 was a clean function of the partition: two triangles with all six nodes duplicated into two
 indistinguishable states, partition unchanged, gave exactly **+1/56 bits**; duplicating only node 3 gave
-exactly **+3/784**; ninetriangles all-×2 gave **+0.073076923077**; the jazz provenance lifts gave
-**+0.0045** (30 split nodes) and **+0.0189** (78). Always positive, always growing with the number of
+exactly **+3/784**; ninetriangles all-×2 gave **+0.073076923077**; `examples/notebooks/data/jazz.net`
+with a subset of its nodes lifted to two states each gave **+0.0045** (30 split nodes) and **+0.0189**
+(78). Always positive, always growing with the number of
 physical nodes holding several states in one module. `L` was invariant to `1e-15` throughout, so the
 duplication was correct and the defect was in the objective.
 
@@ -2220,6 +2221,6 @@ move arithmetic), so `MemCorrection::initMoveLoop`/`moveDelta`/`applyMove`/`merg
 cancel what the base charged at −1, and L\* charges it at `-rate` — but it is not a mechanical
 re-weighting (`l_m` is normalized by `F_m`, not by `T`), it is feature-gated behind
 `INFOMAP_FEATURE_LOSSY_MAP_EQUATION`, and combining a rate-distortion penalty with L\* is a modelling
-question that needs its own derivation. (3) `MetaCorrection` was checked and is **correct** at
+question that needs its own derivation — filed as #1011. (3) `MetaCorrection` was checked and is **correct** at
 coefficient 1 — see the rule above; the test that asserts it stays green and its comment now says which
 class of correction it speaks for.
