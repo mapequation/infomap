@@ -2121,6 +2121,54 @@ bits on `lossy_benchmark.net` while `L − L*` stays 0.057844703 to the printed 
 exactly after the removal, which is the expected outcome for deleting validation but is the kind of
 "obviously safe" change that deserves the check anyway.
 
+#### F35 addendum — the `--lossy` half is withdrawn, and the evidence offered for it was the defect (#1011, 2026-08-15)
+
+**Withdrawn: that `--lossy` composes with L\*, and with it the heading's "every correction".** The
+generalisation from F34 — L\* constrains which walk *steps* are possible, which is orthogonal to which
+codebook a step is coded in — still holds for a correction that **adds** a term. `LossyCorrection` does
+not add one: its noise credit hands the module's naming cost back at coefficient exactly **+1**, which is
+what `scoreStackBase` charges and *not* what `scoreStackNonRedundant` charges (`nrLeafCodebookRate >= 1`).
+So `--non-redundant --lossy` reported a J that was too high on every credited module and gated on the
+wrong comparison. The derivation, the magnitudes and the reason the fix is not a one-liner are in **F40**;
+the rejection F35 removed is reinstated in `applyAndValidateLossyInteraction` by the PR that files #1011,
+this time for the reason that was missing the first time. F35's other conclusions stand: the
+memory/multilayer guard really was dead code, the four higher-order rows really were capability the guard
+only appeared to withhold, and `LstarMeta − Lstar == Lmeta − L` really is the right identity for
+`MetaCorrection`. Only the lossy claim is retracted; `--entropy-corrected` remains the open edge F35
+already flagged.
+
+**The λ sweep was the tell, not the evidence.** F35 offered "`--lambda` 1.5 → 5 moves the lossy term by
+0.16 bits while `L − L*` stays 0.057844703 to the printed digit" as proof of composition. Re-measured on
+the pre-fix binary (`md5 32d7f08ccd5dbfeab91439f3bb568f2c`), fixed partition on `lossy_benchmark.net` with
+`lossy_benchmark.clu` and `--no-infomap`:
+
+| λ | `-C --lossy` | `--non-redundant --lossy` | `L − L*` |
+| --- | --- | --- | --- |
+| 1 | 2.4099867595799425 | 2.3521420558461954 | 0.05784470373374706 |
+| 1.5 | 2.653992887305974 | 2.596148183572227 | 0.05784470373374706 |
+| 2 | 2.7309159642290513 | 2.673071260495304 | 0.05784470373374706 |
+| 2.5 | 2.807839041152128 | 2.749994337418381 | 0.05784470373374706 |
+| 3, 4, 5 (gate shut) | 2.818018368324836 | 2.760173664591089 | 0.05784470373374706 |
+| no `--lossy` at all | 2.818018368324836 | 2.760173664591089 | 0.05784470373374706 |
+
+The constancy is not "to the printed digit" — it is **bit-identical at every λ, and identical to the
+difference with no lossy term at all**, while the three modules' rates are 1.0021645 / 1.0075758 /
+1.0111111. A credit that was actually derived against L\* would have to move when the codebook rates it is
+charged against are not 1. Sameness was read as "the correction is objective-independent, therefore it
+composes"; it is the signature of a hardcoded coefficient 1, i.e. of a correction that was never derived
+against the second objective at all.
+
+**Generalisable, and it is F37's distinction one step earlier.** The additive-composition test — fix the
+partition, require the correction term to be identical under both bases — is the correct test for a
+correction that *adds*. For one that *substitutes* part of the base objective's own accounting, the same
+observation flips sign: an identical correction term under both bases is not the pass condition, it is the
+failure signature — a substituting term is supposed to track the rate the base objective charged the
+quantity it replaces, and under L\* that rate is not 1. F35 ran one test against two kinds of correction
+without noticing there were two
+kinds; F37 named the distinction, and F40 supplies the missing derivation for the lossy case. When a check
+returns *exactly* the same number under a change that should have perturbed it, ask what would have had to
+be true for it to move before recording it as agreement.
+
 ### F36 — Splitting a 4284-line file is a measurement problem, not a text problem (#1003, 2026-08-14)
 
 `ColumnarMapEquation.cpp` held four unrelated concerns; the split is mechanical. What made it a *change*
@@ -2777,7 +2825,7 @@ The tell is that the credit is **objective-independent**. On
 | `--non-redundant -2` | 2.760173664591089 |
 | `-C --lossy` | 2.4099867595799425 |
 | `--non-redundant --lossy` | 2.3521420558461954 (reported today) |
-| `--non-redundant --lossy`, derived | 2.338317478543585 |
+| `--non-redundant --lossy`, derived | 2.3383174785435856 |
 
 `L - J = 0.4080316087448934` **bit for bit under both objectives**, while the three modules' rates are
 1.0021645021645023 / 1.0075757575757576 / 1.011111111111111. A correctly derived credit cannot be the
@@ -2818,17 +2866,33 @@ neither condition is universal — two verified silent cases:
   2.760173664591089 despite rates 1.0022 / 1.0076 / 1.0111.
 
 The error is `sum_m [max(0, r*l - lambda*H) - max(0, l - lambda*H)] >= 0`, so the reported J is **never
-below** the correct one. Measured magnitudes, all with the current binary except the "derived" column,
-which comes from a patched build (fix step 1 only) and is reproduced independently by a from-scratch
-model of the objective:
+below** the correct one. Measured magnitudes. The "reported" column is the shipped feature build at
+`d88f1c77` (`md5 32d7f08ccd5dbfeab91439f3bb568f2c`); the "derived" column is a throwaway build of that
+same commit with fix step 1 only — `hierarchicalCorrection` summing
+`max(0, rates[m]*(plogp(F_m) - flf_m) - lambda*H_m)` when `leafCodebookRates()` is non-empty —
+(`md5 c0ddbff71d83d6bc73fa63f4f58ee69f`), cross-checked against a from-scratch model of the objective.
+Both binaries were built and run in the session that revised this note; where the model and the build
+disagree it is in the last ulp (`2.338317478543585` vs `2.3383174785435856`) and the build's value is the
+one quoted:
 
 | case | reported | derived | error (as a fraction of the reported value) |
 | --- | --- | --- | --- |
-| lossy_benchmark, fixed partition, lambda 1 | 2.3521420558461954 | 2.338317478543585 | 0.59% |
-| lossy_benchmark, `-N5 --seed 123`, lambda 2.58 | 2.760173664591089, `# noise modules 0 of 3: (none)` | 2.7579154218173167, module 3 is noise | 0.08%, and a **decision inversion** |
+| lossy_benchmark, fixed partition, lambda 1 | 2.3521420558461954 | 2.3383174785435856 | 0.59% |
+| lossy_benchmark, `-N5 --seed 123`, lambda 2.58 | 2.760173664591089, `# noise modules 0 of 3: (none)` | 2.7579154218173167, module 3 is noise under the derived gate | 0.08%, and a **decision inversion** |
 | ring of 10 two-node modules (`rate == 7/6` exactly), lambda 0.9 | 3.569925001442311 | 3.403258334775644 | 4.7% |
 | same ring, lambda 1.05 | 3.6699250014423113, 0 noise modules | 3.553258334775644, all 10 noise | 3.2%, full inversion |
-| jazz 6-module partition rescored at lambda 1 | 6.31061782556533, `noise modules 3 of 6: 1 2 3` | 6.082232142189095, 5 of 6 noise | 3.6%, wrong noise set |
+| jazz, 6-module partition rescored at lambda 1 | 6.189292031495019 | 5.983830576189069 | 3.3% |
+
+The two rows that need a recipe: the **ring** is a 20-cycle with unit weights (`i -- i+1 mod 20`) clustered
+into the ten adjacent pairs `{1,2}, {3,4}, …`, scored with `--non-redundant --lossy --lambda <λ> -c <clu>
+--no-infomap`. The **jazz** row is `networks/arenas-jazz.txt`, partitioned by `-C --lossy --lambda 1.5 -N5
+--seed 123` (6 top modules, `--clu`) and that `.clu` then rescored with `--non-redundant --lossy --lambda
+1 --no-infomap`; plain L\* on the same partition is 6.836565239275705. An earlier draft of this row quoted
+6.31061782556533 / 6.082232142189095 against a plain L\* of 6.858483286533167, from a jazz partition no
+recorded command reproduces — the numbers here are the ones the two named commands print. Note what the
+jazz row does *not* show: both builds still print `# noise modules 3 of 6: 1 2 3`, because the printed set
+comes from the base-flavoured `noiseTopModules()`, which fix step 1 does not touch. That is the reporting
+gap, and it is the next paragraph's point rather than a property of the derivation.
 
 **The search trajectory does not change.** `m_nonRedundant` is read in exactly two places in all of
 `src/` (`ColumnarObjectiveScore.cpp:253` and `:270`), so L\* never enters the leaf move loop — it scores
@@ -2844,7 +2908,15 @@ pre/post the patched build was bit-identical. So the honest claim is **"the repo
 --non-redundant --lossy  # lossy lambda 1.5 J 2.59615 rate 2.42322 distortion 0.153846   -> 2.653989 != J
 ```
 
-off by exactly `L - L*`. The test passes only because it has never run an L\* arm.
+off by exactly `L - L*`. The test passes only because it has never run an L\* arm — and it cannot be made
+to. `INFOMAP_TEST_ENGINE` (`test/cpp/TestUtils.h:68`, wired up by `add_infomap_columnar_contract_test` in
+`CMakeLists.txt:187`) takes exactly two values, `oo` and `columnar`; there is no L\* analogue, so a
+`[columnar-contract]` re-run adds `--columnar` and never `--non-redundant`. **The rejection this PR adds
+makes that permanent until #1011 lands**: with `--lossy --non-redundant` throwing, no test can score a
+lossy assertion under L\* at all. That is the right trade — a wrong number withdrawn beats a wrong number
+asserted — but it means the ready-made failing test (a `--non-redundant --lossy --lambda 1.5` arm on the
+`J == rate + lambda*distortion` case, which fails today at 2.59615 against 2.653989) can only be added by
+the PR that lifts the rejection. It belongs in #1011's definition of done, not before it.
 
 **Why this PR rejects the combination instead of shipping the derivation.** The objective is derived and
 verified; the **reporting layer is not built**. `InfomapBase::noiseTopModules()` gates on
