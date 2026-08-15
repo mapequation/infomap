@@ -2306,3 +2306,181 @@ engine's own two answers**, since its per-level table charges the root `calcCode
 `getIndexCodelength()` returns the objective's bookkeeping (twotriangles `--entropy-corrected`: 0.214286
 vs 0.178571). Picking one here would only make the engines disagree, so it is a master decision, and
 the differential test that caught it stays as it was.
+
+#### F38 addendum — what the review round measured (2026-08-15)
+
+Four corrections to F38, one of them to a number in F38 itself. Each was reproduced before it was
+fixed and re-measured after; the binaries are `07e63a8afc5d7d1191d1e8d911e300d9` (pre-change tip,
+rebuilt from `0ef580e3` and reproducing that digest exactly) and `73d33a045d0cb930dca7c1174d98e583`.
+
+**1. The assertion count above is wrong: 7 of 12, not eleven of twelve.** F38 says the new per-level
+assertion "fails on **eleven** of the twelve engine × objective × depth combinations". Re-measured by
+copying this PR's `test/cpp/test_map_equation_invariants.cpp` onto a clean `d88f1c77` worktree and
+running that case alone: `assertions: 24 | 11 passed | 13 failed`, and the 13 failures fall on **7**
+of the 12 combinations —
+
+| combination | failing assertions | before |
+|---|--:|---|
+| ninetriangles `-C --two-level` | 2 | table 0, reported 3.51775 |
+| ninetriangles `--non-redundant` | 1 | table 3.38583 (base L), reported 3.07807 |
+| ninetriangles `--non-redundant --two-level` | 2 | table 0, reported 3.34451 |
+| states.net `-C` | 2 | table 0, reported 2.01141 |
+| states.net `-C --two-level` | 2 | table 0, reported 2.01141 |
+| states.net `--non-redundant` | 2 | table 0, reported 1.92886 |
+| states.net `--non-redundant --two-level` | 2 | table 0, reported 1.92886 |
+
+Eleven is the count of *passing* assertions, transposed. The reviewer who caught it wrote "6 of 12"
+and then listed seven, so both figures in circulation were wrong; the measurement above is the one to
+keep. `--non-redundant` on ninetriangles is the only combination that fails just one of its two
+checks — its table is non-zero and on the wrong objective, so it fails the equality and passes
+`sum > 0`. That distinction is the whole point of having both checks.
+
+**2. The empty-path bail was live code, and its comment was false.** F38's fix rectangularizes a
+ragged tree by repeating each short path's finest module id, and bails when a path is *empty* — with
+a comment claiming `initTree` "normalizes a bare top-level leaf into a module of its own". It does —
+but only inside its `maxDepth == 2 || twoLevel` shortcut, and that is not the branch a ragged file
+takes. `leafModulePathsFromTree` walks parents up to but **not** including the root, so once the file
+carries a path deeper than 2 the shortcut is skipped, the bare leaf is attached straight to the root,
+and its path is empty. Infomap's own `.tree` format both writes and reads a module of one node as a
+bare top-level leaf (`2 0.15 "A" 1`), so a file mixing one of those with a deeper branch is the most
+common ragged shape there is — and it went
+straight down the object-oriented fallback: `twotriangles_flow.net` with `1:1:1 … 1:2:3` plus that
+bare leaf reported **2.714170945 with and without `--non-redundant`** — bit-identical, the flag doing
+nothing — against a true L\* of **2.187131226**. That is exactly the defect F38 claims to have
+eliminated, on the shape it is most likely to meet.
+
+The fix is the normalization the comment assumed: a top-level leaf gets a synthetic module id (past
+every real id and every other synthetic one) and then the ordinary padding. What the first attempt got
+wrong is worth recording, because it produced a *plausible* number: treating the synthetic bottom
+module as phantom too — discounting it with the pad levels — gave 2.037131226, exactly 0.15 below the
+true value, and every self-consistency check still passed (the per-level table totalled it). A
+top-level leaf's own module is **not** phantom: it is the module the leaf constitutes, and the three
+spellings of one partition must agree.
+
+| tree | base L | L\* | L\* `--entropy-corrected` |
+|---|--:|--:|--:|
+| `2 "A"` (bare) | 2.714170945 | **2.187131226** | 2.544274083 |
+| `2:1 "A"` (explicit module) | 3.014170945 | **2.187131226** | 2.544274083 |
+| `2:1:1 "A"` (rectangular) | 3.314170945 | **2.187131226** | 2.579988369 |
+
+L\* cannot tell them apart and the base map equation charges every level, which is the theorem the
+padding rests on, now pinned from the empty-path side too. `--entropy-corrected` counts nodes, so the
+bare and explicit spellings (four internal nodes) agree and the hand-written pass-through costs one
+more, `2.579988369 − 2.544274083 = 1/28 = multiplier/(2·totalDegree)`. The synthetic module has no
+`InfoNode`, so its charge goes on the **root** — which is the node `aggregatePerLevelCodelength`
+already charges for the root's direct leaf children, so the table still totals the codelength
+(twotriangles bare, L\*: level-1 leaf bits 0.150000 + level-2 module bits 0.319806 + level-3 leaf bits
+1.717325 = 2.187131).
+
+**What an empty path actually needs — a claim this addendum first got wrong.** The first draft of this
+entry said the degenerate case "falls out for free: an all-top-level tree (every path empty) now scores
+3.220279696 under L\*, where before it took the fallback and reported base L". Measured on the
+pre-change binary `07e63a8afc5d7d1191d1e8d911e300d9`, rebuilt for the purpose: it scores **3.220279696
+there too**, with no `ragged tree` line and no fallback, and the same 3.220279696 for the `.clu`
+spelling; base L is 4.470950594 for both. Nothing changed for that shape. `initTree` takes its
+`maxDepth == 2 || twoLevel` shortcut whenever no path is deeper than 2, and that shortcut routes
+through `initPartition`, which gives **every top-level id a real module** — so a depth-1 file arrives
+at the stack rectangular and no path is empty. An empty path therefore requires the file to mix a
+depth-1 path with one deeper than 2, with no `--two-level`, which is exactly
+`twotriangles_top_level_leaf.tree` and exactly the case measured above. "Every path empty" cannot even
+arise through `initTree`: `maxDepth` is derived from those same paths, so all-depth-1 always takes the
+shortcut. The all-top-level fixture stays, relabelled in the test as a **regression guard** — it passes
+unchanged on the pre-change binary, which is what makes it a guard and not evidence.
+
+The lesson is the previous round's, repeated one level down: the false comment that round fixed said
+`initTree` normalizes a bare top-level leaf *always*, and the fix's own text said it normalizes
+*nothing*. Both are absolutes; the truth is a condition — **only in the flat/two-level shortcut** — and
+neither absolute was checked against a binary before it was written.
+
+**3. The restore path made the failure mode worse, not better.** F38 records this as "a sixth, out of
+scope". It is worth stating plainly why it could not stay out of scope: before #1002, jazz
+`-C -N10 -o json` wrote `sum(modules[].codelength) = 0.0` — obviously broken. After, it wrote
+**0.530794** against `"codelength": 6.862755928`: the *last* trial's stale charges, a number a reader
+can believe. A hierarchical L\* winner got base-L values instead (powergrid `-C --non-redundant -N5`,
+seed 1: 5.129307 against 4.518248787). The console table was right in both cases, being captured from
+the live tree of the winning trial — so the file and the console disagreed, which is harder to notice
+than both being zero.
+
+`restampColumnarCodelengths` re-scores the restored tree on the columnar stack, on both restore paths
+(`restoreBestResult`, and `maybeDeepRepairBest` whose per-level table is *rebuilt* from the tree
+rather than captured). After: jazz 6.862760 against 6.862755928 (the 6-significant-figure
+`jsonOutputNumber` rounding, followUp (e)), powergrid 4.518248 / 4.508245 / 4.508310 against
+4.518248787 / 4.508245903 / 4.508310266 for seeds 1 / 7 / 42. No reported codelength moves. It also
+closes the `--parallel-trials` gap in one stroke — those trials run on worker instances, so the main
+instance's index term stayed −1 and `getIndexCodelength()`/`getModuleCodelength()` stayed the hybrid;
+`runTrialsInParallel` always sets `bestTreeNeedsRestore`, so the re-stamp always runs (powergrid
+`-C --non-redundant --parallel-trials -N5`: 5.129307 → 4.518248).
+
+**4. Two smaller mixings.** (a) The columnar index term was cleared *after* `initTree`, but the stale
+value is printed by `initPartition`'s `generated {} levels, codelength {:g} + {:g} = {}` line — one
+call *earlier* than the reset, not later as the review had it. With
+`-vv --non-redundant -c <file> --num-trials 3` on twotriangles, trial 1 printed `0.1 + 2.21417` and
+trials 2 and 3 printed `0 + 2.31417`, pairing the previous trial's columnar root charge with this
+trial's total. Clearing it inside `initTree` ties its lifetime to the tree it describes and covers
+every re-materialization, which is what the reset was for. (b) When `stampColumnarCodelengths` fails
+it re-scores the tree with `calcCodelengthOnTree`, but `evaluateColumnarPartition` returned the
+columnar L — two objectives in the one branch that exists to keep them together. It now returns the
+object-oriented total, sharing the ragged fallback's code (`objectOrientedTreeCodelength`, penalty
+included). Unreachable today, both of them.
+
+**What this cost — measured on the phase, because a whole-run A/B could not see it.** The re-stamp is
+once per run and only when a restore happens, but it re-scores the whole tree, so it is a real cost on
+the large case. The first version of this paragraph quoted **+0.9 % to +1.0 %** over 11 interleaved
+reps of web-NotreDame `-d -C -N10`, and the code comment next to the borrow said **+0.4 %** against
+**+1.7 %** without it. Neither survives re-measurement, and the two were never consistent with each
+other anyway (a claimed halving of +1.7 % is +0.85 %, not +0.4 %) — a check the arithmetic would have
+caught before the numbers were written.
+
+The whole-run A/B is the wrong instrument on this machine. Three arms (pre-change tip, tip+re-stamp
+with the borrow, tip+re-stamp with a bare `buildFromLeaves`) interleaved in one session, 7 reps each,
+`user+sys`, load1m 10–40 throughout: minima **19.69 / 19.93 / 19.78 s**, medians **20.73 / 20.68 /
+21.10 s** — the arms' order is different in the two statistics, and the arm that must be slowest has
+the second-lowest minimum. A 1 % effect is simply below the floor here.
+
+`--timing-json` reports the restore phase on its own (`best_restore_s`), and that *is* resolvable: 5
+interleaved reps per arm, same session and same command (`-d -C -N10 --seed 123`), min/median —
+
+| arm | `best_restore_s` min / median | vs tip | share of an 18.25 s run |
+|---|--:|--:|--:|
+| pre-change tip (restore, no re-score) | 0.2988 / 0.3041 | — | — |
+| + re-score, borrowing the leaf CSR | 0.4984 / 0.5108 | +0.199 / +0.207 s | **+1.09 % / +1.13 %** |
+| + re-score, bare `buildFromLeaves` | 0.5825 / 0.5921 | +0.284 / +0.288 s | **+1.55 % / +1.58 %** |
+
+So: the re-score costs about **0.20 s** on this network, **+1.0 % to +1.3 %** of the run once an
+independent whole-run A/B on a quieter machine (+1.16 % min, +1.27 % median, 5 reps) is folded in as
+the top of the band. The borrow takes **0.084 s** off it — about **30 %** of the re-score's cost, not
+a halving. That band is **over the project's 1 % line**, so it is a trade to accept explicitly, not to
+wave through: it buys an objective-correct `modules[].codelength`, per-level table and index term in
+every file a multi-trial or parallel-trial columnar run writes, and it fires once per run, only when a
+restore fires.
+
+**Single-trial runs are almost, but not quite, free of it.** `restoreBestResult` is guarded by
+`m_trialsRun > 1`, so `-N1` never reaches it — but `maybeDeepRepairBest` has no such guard and
+re-stamps too, so a `-N1` run pays the re-score whenever the deep repair *improves* the winner.
+"`-N1` carries none of the new work by construction" is therefore too strong; the guarantee is "unless
+deep repair fires". That is read off the two guards, not exhibited: a short scan (jazz, powergrid,
+netsci at `-C -N1`, with and without `-2`, six seeds) produced no `-N1` run where the repair improved,
+so the case is reachable but not common. Measured anyway: malaria `-C -N1` is inside the noise band
+above.
+
+Everything else is inside the noise of this machine: malaria `-C -N10`, air30k `-C -N10`, science2001
+`-d -C -N10` and malaria `-C -N1` land between −2.0 % and +2.3 % over 9 reps with **min and median
+disagreeing in sign**, which is the signature of load, not of code. Quote those as bands; the point
+estimates in the previous round's report (malaria +0.68 %/+1.35 %) sat at the top of a spread an
+independent measurement put at +0.45 %/+0.69 % and +2.01 %/+0.35 %.
+
+**The lesson, which is F28's one level down.** Both wrong figures were whole-run percentages of a ~1 %
+effect on a machine whose whole-run noise is ±5 %. The fix was not more reps — it was to find an
+instrument whose signal-to-noise matches the effect. `best_restore_s` measures the changed phase and
+nothing else, and it separates three arms cleanly in 5 reps on a machine where 7 reps of the whole run
+separate nothing.
+
+**Still not covered.** `getIndexCodelength()` is objective-correct under `--non-redundant` wherever a
+tree is stamped: single-trial, serial multi-trial (the restore re-stamps, so the *best* trial's root
+term is paired with the best trial's total — it was the *last* trial's before), and
+`--parallel-trials` (through the same restore). It is **not** covered when a caller reads it after
+mutating the tree by some other route, since only stamping sets it and `initTree` clears it — the
+hard-partition path (`haveHardPartition()`, API-only), where `restoreHardPartition` re-expands the
+tree after the stamping, is the concrete case, and it is unverified here. Under `--entropy-corrected`
+the term stays the object-oriented one on purpose, for the reason F38 gives.
+
