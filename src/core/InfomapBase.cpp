@@ -843,10 +843,22 @@ private:
     }
 
     if (m_infomap.haveMetaData() && (m_infomap.haveMemory() || m_infomap.isMultilayerNetwork())) {
-      // initOptimizer tests haveMetaData() before haveMemory(), so meta-data wins and the run is
-      // scored by a first-order objective with no physical-node codebook -- the aggregation that
-      // makes this a memory network does not enter the objective at all.
-      Console::warn(0, "--meta-data takes precedence over higher-order input: the run optimizes the meta-data objective over state nodes, without the physical-node codebook of the higher-order map equation. The higher-order structure affects the network, not the objective.");
+      // initOptimizer tests haveMetaData() before haveMemory(), so meta-data wins the OO objective
+      // dispatch and that objective has no physical-node codebook -- the aggregation that makes
+      // this a memory network does not enter it at all.
+      //
+      // The message no longer asserts that the RUN is scored that way, because since #1012 it
+      // depends on the engine: the columnar core sums corrections instead of selecting one
+      // objective, so it scores both codebooks. Gating the warning on columnarSearch was the
+      // obvious alternative and was rejected -- this line is master-resident, columnarSearch is
+      // not, and a branch-only symbol here would make the line unmergeable upstream and turn every
+      // master sync into a conflict. Wording it from the objective instead is true on both engines
+      // and on master, and it follows the rule the sibling warnings above already state: word it
+      // from the objective, and let the banner name which one is in use. It stays worth printing
+      // under -C, where the composed total is the columnar one but the per-level breakdown,
+      // getIndexCodelength() and getMetaCodelength() are still materialized through the
+      // meta-data objective.
+      Console::warn(0, "--meta-data on higher-order input asks for two independent codebooks: the metadata categories, and the physical-node codebook of the higher-order map equation. The meta-data objective scores state nodes only, without the physical-node codebook -- under it the higher-order structure shapes the network, not the objective -- and the per-level codelength breakdown reported for this run comes from that objective.");
     }
   }
 
