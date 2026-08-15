@@ -47,6 +47,7 @@
 #include <map>
 #include <set>
 #include <unordered_map>
+#include <unordered_set>
 #include <cstdlib>
 #include <algorithm>
 #include <numeric>
@@ -1116,6 +1117,10 @@ private:
       infomap.runPartition();
     else if (infomap.columnarSearch)
       // Input-partition codelength on the columnar structure (base + correction).
+      // It also stamps the per-node charges onto the tree, which is what the
+      // object-oriented branch below gets as a side effect of calcCodelengthOnTree:
+      // without it, -C --no-infomap -c <flat .clu> left every InfoNode::codelength at
+      // zero and printed a per-level table of 0.000000 next to a real codelength.
       infomap.m_hierarchicalCodelength = infomap.evaluateColumnarPartition();
     else
       infomap.m_hierarchicalCodelength = infomap.calcCodelengthOnTree(infomap.root(), true);
@@ -2453,6 +2458,22 @@ void InfomapBase::columnarPartition()
   m_hierarchicalCodelength = columnarL;
   m_numNonTrivialTopModules = calculateNumNonTrivialTopModules();
 
+  // …and the same for the DECOMPOSITION. The per-level table and -o json
+  // modules[].codelength read InfoNode::codelength, which only calcCodelengthOnTree
+  // writes, so they showed the base map equation of the materialized tree next to an
+  // L* headline (netsci -C --non-redundant -N10: table Total 4.103756 against Best
+  // 3.892209764) — and nothing at all, 0.000000 throughout, whenever initTree took
+  // its flat shortcut, which never scores the tree (jazz -C). Stamp the core's own
+  // per-node charges instead, so one objective produces both numbers.
+  columnar::StackBreakdown breakdown;
+  opt.codelengthBreakdownFromStack(breakdown);
+  double padCharge = 0.0;
+  m_columnarIndexCodelength = -1.0;
+  if (stampColumnarCodelengths(opt, breakdown, {}, padCharge))
+    m_columnarIndexCodelength = nonRedundant ? breakdown.rootTerm : -1.0;
+  else
+    Console::detail(2, "columnar: stack and materialized tree disagree on depth; per-level table left as initTree scored it");
+
   // One-level fallback (#827): the columnar search can, like the OO optimizer,
   // return a modular partition whose codelength is worse than the all-in-one-
   // module (one-level) codelength — e.g. on near-random networks. The OO path
@@ -2460,29 +2481,49 @@ void InfomapBase::columnarPartition()
   // module; the columnar path had no such guard. Mirror it exactly: same
   // predicate (skip when the user asked to prefer a modular or a specific-count
   // solution, and — as OO — for the regularized links-only prior), same
-  // collapse. columnarL and getOneLevelCodelength() are on the same objective
-  // scale (both true map-equation codelengths; the benchmark tables compare
-  // them directly), so the comparison is valid across objectives.
+  // collapse.
+  //
+  // The comparison value is the CORE's one-module codelength, not
+  // getOneLevelCodelength(). The latter is calcCodelength on a tree with ZERO
+  // modules, while the collapse below installs ONE, and under --entropy-corrected
+  // those differ by exactly multiplier/(2*totalDegree) (ninetriangles 4.918622452 vs
+  // 4.925032709) — so the run reported, and the module carried, a price for a
+  // partition it did not produce. It is also the only way to price the collapse
+  // under an objective the object-oriented side does not implement at all (L*).
+  // For the base map equation with no corrections the two are identical, which is
+  // why this had gone unnoticed. The object-oriented path at the analogous site
+  // still uses the zero-module value; that is a master-side question, not one to
+  // settle here.
   const bool regularizedPriorOnly = regularized && network().numLinks() == 0;
   if (!preferModularSolution && preferredNumberOfModules == 0
-      && (haveNonTrivialModules() || regularizedPriorOnly)
-      && columnarL > getOneLevelCodelength()) {
-    Console::detail(1, "columnar: worse codelength than one-level ({} > {}), putting all nodes in one module", io::toPrecision(columnarL), io::toPrecision(getOneLevelCodelength()));
+      && (haveNonTrivialModules() || regularizedPriorOnly)) {
+    // Asked for only after the cheap predicates pass, and it costs one
+    // aggregateLevel over the leaf network — the same order as the initTree above,
+    // and orders below one search pass.
+    const double oneModuleL = opt.oneLevelCodelength();
+    if (columnarL > oneModuleL) {
+      Console::detail(1, "columnar: worse codelength than one-level ({} > {}), putting all nodes in one module", io::toPrecision(columnarL), io::toPrecision(oneModuleL));
 
-    auto& module = root().replaceChildrenWithOneNode();
-    module.data = m_root.data;
-    module.physicalNodes = m_root.physicalNodes;
+      auto& module = root().replaceChildrenWithOneNode();
+      module.data = m_root.data;
+      module.physicalNodes = m_root.physicalNodes;
 #if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
-    module.lossyEntropy = m_root.lossyEntropy;
-    module.lossyFlowLogFlow = m_root.lossyFlowLogFlow;
+      module.lossyEntropy = m_root.lossyEntropy;
+      module.lossyFlowLogFlow = m_root.lossyFlowLogFlow;
 #endif
-    module.index = 0;
-    for (auto& node : module)
-      node.index = 0;
-    module.codelength = getOneLevelCodelength();
-    m_hierarchicalCodelength = getOneLevelCodelength();
-    m_root.codelength = 0.0;
-    m_numNonTrivialTopModules = calculateNumNonTrivialTopModules();
+      module.index = 0;
+      for (auto& node : module)
+        node.index = 0;
+      // The single module carries the whole codelength and the root carries none:
+      // with one module there is no index codebook to pay for (the root's own charge
+      // is plogp(enter) - plogp(enter) == 0 under the base objective, and the top
+      // module's leave-one-out exit codebook has Z == 0 under L*).
+      module.codelength = oneModuleL;
+      m_hierarchicalCodelength = oneModuleL;
+      m_root.codelength = 0.0;
+      m_columnarIndexCodelength = nonRedundant ? 0.0 : -1.0;
+      m_numNonTrivialTopModules = calculateNumNonTrivialTopModules();
+    }
   }
 
   Console::detail(1, "columnar: codelength {}, materialized {}, {} levels", io::toPrecision(m_hierarchicalCodelength), io::toPrecision(materializedL), maxTreeDepth());
@@ -2639,21 +2680,159 @@ std::vector<std::vector<int>> InfomapBase::leafModulePathsFromTree() const
   return paths;
 }
 
+std::vector<int> InfomapBase::padLeafPathsToUniformDepth(std::vector<std::vector<int>>& paths)
+{
+  std::vector<int> padDepth(paths.size(), 0);
+  std::size_t maxDepth = 0;
+  for (const auto& path : paths)
+    maxDepth = std::max(maxDepth, path.size());
+  if (maxDepth == 0)
+    return padDepth; // no module level at all; the caller falls back
+
+  // Defensive: an empty path beside a non-empty one has no finest id to repeat.
+  // It cannot occur through initTree, which normalizes a bare top-level leaf into
+  // a module of its own (and validateClusterDataTreeShape rejects a leaf sharing a
+  // module with a sub-module outright) -- paths are either all empty or all
+  // non-empty. Kept because the helper is reachable from the C++/Python API.
+  for (const auto& path : paths)
+    if (path.empty())
+      return padDepth;
+
+  // Repeat each short path's own FINEST id: paths are coarsest-first and
+  // seedHierarchyFromLeafPaths maps stack level j to prefix length depth-j+1, so
+  // an appended duplicate becomes a single-child module ABOVE the leaf module,
+  // between it and its real parent. That level costs exactly 0 under L* (the
+  // parent's enter codebook is e*(plogp(e)-plogp(e))/e == 0 and the child's exit
+  // term has numerator plogp(x)-0-plogp(x) == 0), which is why this is gated on
+  // --non-redundant: the base map equation charges plogp(x+e)-plogp(e)-plogp(x)
+  // for the same node (ninetriangles rect 3.38583082 -> 3.97958082 with one such
+  // level above every leaf module, against L* bit-identical at 3.078067323).
+  for (std::size_t i = 0; i < paths.size(); ++i) {
+    padDepth[i] = static_cast<int>(maxDepth - paths[i].size());
+    paths[i].resize(maxDepth, paths[i].back());
+  }
+  return padDepth;
+}
+
 double InfomapBase::evaluateColumnarPartition()
 {
+  m_columnarIndexCodelength = -1.0;
   ColumnarTwoLevel opt;
   opt.buildFromLeaves(m_leafNodes, isUndirectedClustering(), seedToRandomNumberGenerator);
   opt.setRecordedTeleportation(recordedTeleportation);
   opt.setNonRedundant(nonRedundant);
   opt.setNonRedundantExact(nonRedundantExact);
   addColumnarCorrections(opt);
-  const auto paths = leafModulePathsFromTree();
+  auto paths = leafModulePathsFromTree();
+  // A ragged tree does not fit the strict-level stack, and the object-oriented
+  // fallback below cannot price L* at all (no OO non-redundant objective exists;
+  // grep for nrEnterWithin outside Columnar* finds nothing), so it silently
+  // reported base L for L* runs -- ninetriangles ragged 3.458078031 for both
+  // objectives, against a true L* of 3.237864808. Under L* the tree can be made
+  // rectangular for free instead; see padLeafPathsToUniformDepth.
+  const std::vector<int> padDepth = nonRedundant ? padLeafPathsToUniformDepth(paths) : std::vector<int>(paths.size(), 0);
   if (!opt.seedHierarchyFromLeafPaths(paths)) {
-    // Ragged tree: evaluate on the object-oriented tree instead.
+    // Ragged tree: evaluate on the object-oriented tree instead. calcCodelengthOnTree
+    // dispatches through m_optimizer, so it reproduces every correction that HAS an
+    // object-oriented counterpart (checked to agree with the columnar engine on a
+    // rectangular tree for base, -d, -d --recorded-teleportation, --markov-time,
+    // --variable-markov-time, --entropy-corrected, --meta-data and --regularized).
     Console::detail(1, "columnar eval: ragged tree, using object-oriented codelength");
-    return calcCodelengthOnTree(root(), true);
+    const double L = calcCodelengthOnTree(root(), true);
+    if (preferredNumberOfModules == 0)
+      return L;
+    // --preferred-number-of-modules is the one correction with no OO counterpart,
+    // and dropping it is not a rounding error: ninetriangles ragged reported
+    // 3.458078031 with the whole 4-bit |K - K_pref| penalty gone, against
+    // 7.38583082 on the rectangular tree. Add it here from the tree's own leaf-module
+    // count (the distinct parents of the leaves, which is what hierLevelSize(1) is).
+    // It has no per-module home, so it goes on the root -- the same convention
+    // PreferredModulesCorrection uses when it does have a stack to charge.
+    std::unordered_set<const InfoNode*> leafModules;
+    for (const auto* leafNode : m_leafNodes)
+      leafModules.insert(leafNode->parent);
+    const double penalty = PreferredModulesCorrection::costOf(static_cast<int>(leafModules.size()), preferredNumberOfModules);
+    m_root.codelength += penalty;
+    return L + penalty;
   }
-  return opt.hierarchicalCodelengthFromStack();
+  columnar::StackBreakdown breakdown;
+  const double L = opt.codelengthBreakdownFromStack(breakdown);
+  double padCharge = 0.0;
+  if (!stampColumnarCodelengths(opt, breakdown, padDepth, padCharge))
+    return L;
+  if (nonRedundant)
+    m_columnarIndexCodelength = breakdown.rootTerm;
+  return L - padCharge;
+}
+
+bool InfomapBase::stampColumnarCodelengths(const ColumnarTwoLevel& opt,
+                                           const columnar::StackBreakdown& breakdown,
+                                           const std::vector<int>& padDepth,
+                                           double& padCharge)
+{
+  padCharge = 0.0;
+  const int topLevel = static_cast<int>(opt.hierNumLevels()) - 1;
+  if (topLevel < 1 || m_leafNodes.empty())
+    return false;
+
+  // Walk each leaf's ancestor chain in the tree next to its module chain in the
+  // stack. Pointer identity, not the module ids in toNodePaths: initTree is free
+  // to renumber, and the same walk then serves a tree materialized from a cluster
+  // file, where no columnar id ever existed.
+  //
+  // The two chains have the same length unless the paths were padded, in which
+  // case the leaf's finest module owns the padDepth phantom levels below its real
+  // one. Those have no InfoNode: under L* the scorer charges them exactly 0 (that
+  // is the theorem the padding rests on), so the only thing that can land on them
+  // is a correction that counts nodes -- --entropy-corrected charges each one
+  // multiplier/(2*totalDegree). Collect that as padCharge for the caller to take
+  // off the reported total, which is the analytic discount
+  // padNodes*multiplier/(2*totalDegree) without this code naming a correction.
+  const bool anyPad = std::any_of(padDepth.begin(), padDepth.end(), [](int d) { return d > 0; });
+  std::vector<int> chain;
+  std::vector<InfoNode*> ancestors;
+  std::vector<std::vector<char>> isPad(anyPad ? static_cast<std::size_t>(topLevel) + 1 : 0);
+  for (int k = 1; anyPad && k <= topLevel; ++k)
+    isPad[static_cast<std::size_t>(k)].assign(breakdown.moduleTerm[static_cast<std::size_t>(k)].size(), 0);
+
+  for (std::size_t i = 0; i < m_leafNodes.size(); ++i) {
+    chain.clear();
+    for (int m = opt.hierLeafModule(static_cast<int>(i)), k = 1;; ++k) {
+      chain.push_back(m);
+      if (k == topLevel)
+        break;
+      m = opt.hierUnitParent(k, m);
+    }
+    ancestors.clear();
+    for (InfoNode* p = m_leafNodes[i]->parent; p != nullptr && p != &m_root; p = p->parent)
+      ancestors.push_back(p);
+    const int pad = padDepth.empty() ? 0 : padDepth[i];
+    if (static_cast<int>(ancestors.size()) + pad != topLevel) {
+      // Defensive only -- initTree materializes exactly the stack it was handed, and
+      // a seeded stack has exactly the tree's depth. Earlier leaves may already carry
+      // stack charges, so put the whole tree back on one objective (the base one, the
+      // only one calcCodelengthOnTree can express) rather than leaving it half and half.
+      calcCodelengthOnTree(root(), true);
+      return false;
+    }
+    // The padded copies sit ABOVE the real leaf module: stack level 1 is the one
+    // whose children are the leaves, and levels 2..pad+1 are the single-child
+    // pass-throughs between it and its real parent.
+    for (int k = 1; anyPad && k <= pad; ++k)
+      isPad[static_cast<std::size_t>(k + 1)][static_cast<std::size_t>(chain[static_cast<std::size_t>(k)])] = 1;
+    for (std::size_t a = 0; a < ancestors.size(); ++a) {
+      const std::size_t level = a == 0 ? 1 : a + static_cast<std::size_t>(pad) + 1;
+      ancestors[a]->codelength = breakdown.moduleTerm[level][static_cast<std::size_t>(chain[level - 1])];
+    }
+  }
+
+  for (int k = 1; anyPad && k <= topLevel; ++k)
+    for (std::size_t m = 0; m < isPad[static_cast<std::size_t>(k)].size(); ++m)
+      if (isPad[static_cast<std::size_t>(k)][m] != 0)
+        padCharge += breakdown.moduleTerm[static_cast<std::size_t>(k)][m];
+
+  m_root.codelength = breakdown.rootTerm;
+  return true;
 }
 
 void InfomapBase::hierarchicalPartition()
