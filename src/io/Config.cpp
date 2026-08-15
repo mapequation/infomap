@@ -211,9 +211,11 @@ namespace {
     //
     // Both fields read here are plain parsed flag targets (ParameterCatalog:
     // configTarget(&Config::lossy) / (&Config::nonRedundant)), so both are populated
-    // before adaptDefaults() calls this — unlike the stateInput/multilayerInput check
-    // above, which configureNetworkMode() only fills in when the network is READ and
-    // which therefore cannot fire from the CLI at all (the dead-check trap recorded as
+    // before adaptDefaults() calls this — unlike the memory/multilayer check above,
+    // which cannot fire from the CLI at all: configureNetworkMode() fills stateInput
+    // and multilayerInput in only when the network is READ, and additionalInput has no
+    // option bound to it and no writer in src/ at all, so only a library caller
+    // assigning the field can make it non-empty (the dead-check trap recorded as
     // #1004 / F35). A parse-time rejection is the right shape for this one.
     if (config.nonRedundant)
       throw std::runtime_error("--lossy cannot be combined with --non-redundant: the rate-distortion trade-off has not been derived for the non-redundant map equation (see #1011)");
