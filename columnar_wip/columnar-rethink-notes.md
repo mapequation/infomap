@@ -2637,3 +2637,119 @@ deferred. (3) Found in passing, **pre-existing and on the default engine**: `air
 binaries, absent at `-N1`/`-N2`, so it is the same restore-path shape as the bug above but on the OO
 side, where the new guard does not apply.
 
+#### F39 addendum — the fix *does* redirect the search on real input, and the trade is not one-signed
+
+The claim above that "in every case the PARTITION is unchanged; only the number moves" is **false**,
+and it was false because every fixture it was checked on was a toy. On real higher-order input with a
+metadata file the composed objective moves most of the partition. Measured on the same two binaries
+(`b601cf2f6e263c2be5ea1f1d496a77ec` pre-fix, `f02736dae6a0e3998c1e35a1565c50b0` post-fix), `--seed
+123`, `-C --meta-data`:
+
+| config | states | modules | states whose module changed (after greedy label alignment) |
+|---|--:|--:|--:|
+| air30k + usstate `-N1` | 13 213 | 57 → 43 | 7 335 (55.5%) |
+| air30k + usstate `-N10` | 13 213 | 67 → 23 | 11 478 (86.9%) |
+| malaria + pmod8 `-N1` | 2 647 | 85 → 20 | 2 169 (81.9%) |
+| malaria + pmod8 `-N10` | 2 647 | 83 → 17 | 2 203 (83.2%) |
+
+**How the metadata files are generated** (no metadata file for these networks exists in the repo or
+in `networks/`). `columnar_wip/make-state-meta.py <net-with-*States> <mode> <out.meta>` writes clu
+format `"<stateId> <category>"` for every state in the `*States` section. Modes used here:
+`usstate` — the two-letter US state code parsed out of the airport's `*Vertices` name
+(`"City,ST:Airport"`), 52 categories, real geographic metadata; `phys` — the state's physical node
+id; `mod<K>`/`pmod<K>` — `stateId % K` / `physicalId % K`, structure-independent controls. For
+multilayer input (`malaria`, `examples/networks/multilayer.net`) the state ids are the ones the
+expansion assigns, so the file is generated from `Infomap <net> <dir> -o states` output and then fed
+back to the run on the original network.
+
+**Timing: interleaved base/fix, 5 repetitions, min-of-5, wall and CPU.** The machine carried other
+builds throughout (load average 20–38), so the control matters: `air30k -C` with **no** metadata —
+the configuration the fix cannot reach — comes out at +0.7% wall / +0.3% CPU at `-N1` and +0.1% at
+`-N10` with identical codelengths, which is the harness's noise floor.
+
+| config | `-N1` wall (base → fix) | `-N10` wall (base → fix) |
+|---|---|---|
+| air30k + usstate | 1.089 → 1.080 s (−0.9%) ; 2nd pass 1.064 → 1.083 s (+1.8%) | 10.122 → 11.549 s (+14.1%) ; 2nd pass 9.973 → 11.169 s (+12.0%) |
+| air30k + phys | 1.218 → 0.989 s (−18.8%) | 10.308 → 9.727 s (−5.6%) |
+| air30k + mod4 | 1.511 → 1.056 s (−30.1%) | 12.287 → 8.553 s (−30.4%) |
+| air30k + mod2 | 1.229 → 0.808 s (−34.3%) | 11.126 → 6.878 s (−38.2%) |
+| air30k + const (one category) | 1.279 → 0.886 s (−30.7%) | 9.576 → 5.910 s (−38.3%) |
+| malaria + pmod8 | 1.067 → 0.981 s (−8.0%) | 6.458 → 5.498 s (−14.9%) |
+| air30k, **no metadata** (control) | 0.691 → 0.696 s (+0.7%) | 4.820 → 4.825 s (+0.1%) |
+
+CPU time tracks wall within 0.5 pp everywhere except the two contended reps that min-of-5 discards.
+So **the cost is metadata-dependent and not one-signed**: −38% to +14%. The only slowdown that
+reproduces is `air30k + usstate` at `-N10`, **+12% to +14%** across two passes — over the 1% bar, so
+it needs the maintainer's approval, which has not been given. The review's +48% at `-N1` did not
+reproduce with any of the five metadata assignments above (its metadata file was not specified, so it
+could not be used); the closest `-N1` numbers here are −34% to +2%.
+
+**Quality, scored like for like.** The two binaries optimize *different objectives*, so comparing
+their reported codelengths is not a quality comparison. Scoring both partitions under the **composed**
+objective (`fix --no-infomap -c <partition>_states.tree`, an exact round trip — each partition
+re-scores to its own search value):
+
+| config | composed L(pre-fix partition) | composed L(post-fix partition) | Δ |
+|---|--:|--:|--:|
+| air30k + usstate `-N1` | 8.163175 | 7.580768 | **−0.582 (−7.1%)** |
+| air30k + usstate `-N10` | 8.150495 | 7.422153 | **−0.728 (−8.9%)** |
+| malaria + pmod8 `-N1` | 9.241098 | 9.321316 | **+0.080 (+0.87%)** |
+| malaria + pmod8 `-N10` | 9.237589 | 9.291151 | **+0.054 (+0.58%)** |
+| malaria + mod4 `-N10` | 8.949729 | 9.828636 | **+0.879 (+9.8%)** |
+| malaria + pmod2 `-N10` | 8.427893 | 8.444542 | **+0.017 (+0.20%)** |
+
+On air30k the composed objective is both a better objective and better optimized. On **malaria it is
+not optimized as well**: the composed search lands above the value the *pre-fix* partition already
+achieves under the same composed objective, on all three metadata assignments tried. The arithmetic
+says why, and it closes exactly: the pre-fix malaria partition has **zero** co-located states (no
+physical node has two of its states in one leaf module), so the physical-node codebook saves nothing
+on it and its composed score equals its meta-only score to 1e-15. The composed search leaves that
+layer-pure basin for cross-layer merges worth 2.324167 bits of codebook saving and pays more than
+that back elsewhere.
+
+**Each plogp figure belongs to one partition, not to the network.** `Σ plogp(aggregated) − Σ plogp(state)`
+is a property of the tree it is computed on, so every figure below is tagged with the partition it
+was computed from; it is also exactly the gap between the two scorers on that same partition
+(meta-only minus composed), which is how each row is checked:
+
+| partition | `-N1` | `-N10` |
+|---|--:|--:|
+| air30k + usstate, **pre-fix** | 0.044372 (8.207547 − 8.163175) | 0.048964 (8.199459 − 8.150495) |
+| air30k + usstate, **post-fix** | 3.046216 (10.626985 − 7.580768) | 3.643979 (11.066132 − 7.422153) |
+| malaria + pmod8, **post-fix** | 2.327887 (11.649203 − 9.321316) | 2.324167 (11.615318 − 9.291151) |
+
+The three figures quoted in the paragraph above (0.048964 / 3.643979 / 2.324167) are the **`-N10`**
+partitions'; the `-N1` partitions give 0.044372 / 3.046216 / 2.327887. The arithmetic closes on all
+six, which is the point — but quoting one of them without naming its partition reads as a property of
+the network, and it is not one. So this is a **search** problem on the richer objective, not an
+objective error — but it means the change is not "quality up, time up"; on malaria it is quality
+*down* under its own objective.
+
+`examples/networks/multilayer.net` is structurally blind to the whole thing: with `phys`, `pmod2` and
+`mod2` metadata its optimum still puts state 0 and state 3 (both physical node 1) in different
+modules, so the physical-node codebook saves nothing and both binaries return 3.596368 / 2.929701.
+That is the same reason `states.net` is blind (co-location is necessary), and it is worth stating
+because it is the committed multilayer fixture.
+
+**The benchmark set cannot see any of this**, and that is the coverage gap to close: no row in
+`columnar_wip/benchmark-networks.md` is meta + higher-order (`lazega`, the only metadata row, is
+first-order; `air30k`, `malaria` and `multilayer` are higher-order without metadata). Proposed row —
+not added here, because the row obliges the performance snapshot to carry its numbers and that file is
+being rewritten from a central benchmark run:
+
+| network | path | run flags | directedness | type | size |
+|---|---|---|---|---|--:|
+| air30k (meta + states) | `networks/states/air2011/air30k.net` (+ `networks/states/air2011/air30k_usstate.meta`) | `--meta-data networks/states/air2011/air30k_usstate.meta` | undirected | **state / memory + metadata** (both codebooks) | 183 physical · 13 213 state nodes |
+
+The metadata file itself is **not committed**: at 13 213 lines it is larger than any fixture in the
+repo, and the network it keys is not in the repo either (`networks/` is a symlink to a data directory
+outside it), so the row's fixture belongs next to the network, generated by the committed
+`columnar_wip/make-state-meta.py`:
+
+```
+python3 columnar_wip/make-state-meta.py networks/states/air2011/air30k.net usstate \
+        networks/states/air2011/air30k_usstate.meta
+```
+
+**Still not measured:** peak memory on any of these configurations, and `-N10` timings on the
+`--regularized` multilayer arm (which is scored without the teleport prior under `-C` anyway).
