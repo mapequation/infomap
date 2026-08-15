@@ -172,6 +172,35 @@ namespace columnar {
     return tEnter + tWithin;
   }
 
+  // The rate at which nrEnterWithin consumes F -- i.e. -d(nrEnterWithin)/dF.
+  //
+  // nrEnterWithin is affine in F, so this is exact:
+  //   nrEnterWithin(f, e, x, F2) - nrEnterWithin(f, e, x, F1)
+  //     == -nrLeafCodebookRate(f, e, x) * (F2 - F1).
+  // Closed form: 1 + qEnter*qExit / (moduleFlow * (moduleFlow + qExit)) >= 1, with
+  // equality iff qEnter == 0 or qExit == 0 (both hold for a one-module partition).
+  //
+  // Why this exists: a correction that SUBSTITUTES one F for another inside the
+  // leaf-module codebook -- MemCorrection swaps the state-node F for the
+  // physical-node F -- has to charge the substitution at whatever rate the active
+  // objective consumes F. The base map equation's leaf-module term consumes it at
+  // exactly 1 (see scoreStackBase, where the T-normalized module term collapses to
+  // plogp(T) - plogp(qExit) - F); L* does not, because it splits that codebook into
+  // an enter codebook normalized by moduleFlow and a within codebook normalized by
+  // T = moduleFlow + qExit. Keep this next to nrEnterWithin: the two must move
+  // together, and the 1e-16 guards below mirror it exactly (a module the scorer
+  // skips consumes no F at all, so its rate is 0, not 1).
+  inline double nrLeafCodebookRate(double moduleFlow, double qEnter, double qExit)
+  {
+    if (moduleFlow < 1e-16)
+      return 0.0; // nrEnterWithin returns 0.0 here: F never enters the total
+    double rate = qEnter / moduleFlow; // from tEnter
+    const double T = moduleFlow + qExit;
+    if (T > 1e-16)
+      rate += (moduleFlow + qExit - qEnter) / T; // from tWithin
+    return rate;
+  }
+
   // One module's leave-one-out exit codebook contribution, given the sibling
   // enter-rate total-plus-exit-network sumEnterPlusE = (sum_b qEnter_b) + e and
   // sumEnterLogEnter = sum_b plogp(qEnter_b); e is the exit-to-parent codeword.

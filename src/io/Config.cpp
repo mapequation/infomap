@@ -210,9 +210,21 @@ namespace {
     // from the one just entered — which is orthogonal to which codebook a step is
     // coded in. Higher-order dynamics (the state/physical codebook) and every
     // composable correction (metadata, entropy bias, preferred module count, lossy)
-    // therefore compose with it: they are additive terms that
-    // ColumnarTwoLevel::objectiveCorrection() sums on top of whichever base
-    // objective is selected, and the L* base is selected the same way as any other.
+    // therefore compose with it, through
+    // ColumnarTwoLevel::objectiveCorrection(), which sums them on top of whichever
+    // base objective is selected.
+    //
+    // "Composes" is not the same as "is objective-independent", and conflating the
+    // two is what let #1009 through. A correction that ADDS a term carrying its own
+    // rate — metadata (charged per unit of node-visit flow), entropy bias (a node
+    // count), preferred module count — contributes the identical number under L and
+    // under L*. A correction that SUBSTITUTES one quantity for another inside a base
+    // codebook term — MemCorrection, which swaps the state-node
+    // sum plogp(leafFlow) for the physical-node one — inherits that term's
+    // coefficient, and L* charges it at a per-module rate >= 1 rather than at 1. Such
+    // a correction must ask the core which objective is active (see
+    // ColumnarTwoLevel::leafCodebookRates); adding it blind is a bug, not a
+    // composition.
     //
     // Earlier cuts of this option rejected memory/multilayer input, meta data,
     // --entropy-corrected and --lossy. Those rejections were wrong in kind, not merely

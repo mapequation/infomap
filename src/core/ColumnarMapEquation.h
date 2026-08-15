@@ -26,6 +26,13 @@ namespace infomap {
 class InfoNode;
 class ColumnarTwoLevel;
 
+// Defined in ColumnarObjectiveScore.cpp, where both the stack scorers and
+// ColumnarTwoLevel::buildStackTerms live. Only ever named as a return type here,
+// so the incomplete declaration is enough and this header stays free of it.
+namespace columnar {
+  struct StackTerms;
+}
+
 /**
  * A composable correction on top of the base columnar map equation.
  *
@@ -213,6 +220,21 @@ public:
   // The leaf's current bottom (level-1) module id.
   int hierLeafModule(int leaf) const { return m_hierAssign[0][leaf]; }
   double leafFlow(int leaf) const { return m_leafFlow[leaf]; }
+
+  // Per level-1 module: the rate at which the ACTIVE base objective's leaf-module
+  // term consumes that module's F_m = sum_{leaf in m} plogp(leafFlow).
+  //
+  // Only corrections that SUBSTITUTE one F for another need this — today just
+  // MemCorrection, which replaces the state-node F by the physical-node F. An
+  // additive correction carrying its own rate (Meta, Bias, Preferred) composes
+  // with either objective unweighted and must not call this.
+  //
+  // Returns EMPTY when the rate is uniformly 1, which is the base map equation's
+  // whole leaf-module level — so the caller keeps its unweighted arithmetic
+  // verbatim rather than multiplying by a vector of ones (the summation order is
+  // part of the reported number). Non-empty only under L*, where the rate is
+  // nrLeafCodebookRate(flow, enter, exit) >= 1 and differs per module.
+  std::vector<double> leafCodebookRates() const;
 
   // Build the leaf level (flow, enter/exit, out+in CSR) from the leaf network.
   void buildFromLeaves(const std::vector<InfoNode*>& leafNodes, bool undirected, unsigned long seed);
@@ -599,6 +621,12 @@ private:
   // codelength (0 for the base objective, i.e. no corrections).
   double objectiveCorrection() const;
 
+  // The levels, assignments and teleport-augmented boundary rates a stack scoring
+  // reads, resolved once. The single source of truth for the recorded-teleportation
+  // augmentation: hierarchicalCodelengthFromStack and leafCodebookRates both go
+  // through it, so no consumer can re-derive a module's enter/exit differently.
+  columnar::StackTerms buildStackTerms() const;
+
   // --- The leaf network and the active level ---
   // Both are read-only for the whole search: nothing writes into a level's
   // columns after it is built (aggregation produces a *new* level). The leaf
@@ -856,14 +884,37 @@ private:
 /**
  * Memory objective (state / higher-order networks): the leaf-module codebook is
  * over PHYSICAL nodes, not state nodes — state nodes of the same physical node
- * in the same module share a codeword (their flows sum). Working the
- * T-normalized module term out, the module-flow*log(T) parts cancel between the
- * state and physical versions, leaving a correction to the base (state-node)
- * codelength of  C_state - sum_{module,phys} plogp(physFlow),  where
- * C_state = sum_leaf plogp(stateFlow) is a constant and physFlow is the summed
- * state flow of a physical node within a module. Leaf-module level only
- * (module-of-modules delegates to base). Same O(1) move-loop hook as Meta with
- * attribute = physical node id — the case the hook is designed for.
+ * in the same module share a codeword (their flows sum).
+ *
+ * This is a SUBSTITUTION, not an additive term, and that distinction is the whole
+ * subtlety. Both base objectives read the leaf flows of a level-1 module only
+ * through F_m = sum_{leaf in m} plogp(leafFlow), linearly; the physical codebook
+ * is the same objective with F_m^state replaced by F_m^phys = sum_phys
+ * plogp(physFlow). So the correction is  sum_m rate_m * (F_m^state - F_m^phys),
+ * where rate_m is the rate at which the ACTIVE objective consumes F_m — and the
+ * two objectives do not agree on it:
+ *
+ *  - Base map equation: the T-normalized module term collapses to
+ *    plogp(T) - plogp(qExit) - F_m (the module-flow*log(T) parts cancel between
+ *    the state and physical versions), so rate_m == 1 for every module and the
+ *    whole correction telescopes into two global sums,
+ *    C_state - sum_{module,phys} plogp(physFlow), with C_state = sum_leaf
+ *    plogp(stateFlow) a constant.
+ *  - L* (--non-redundant): the module codebook is SPLIT into an enter codebook
+ *    normalized by moduleFlow and a within codebook normalized by
+ *    T = moduleFlow + qExit, and F_m is charged against both. rate_m is then
+ *    nrLeafCodebookRate() = 1 + qEnter*qExit/(flow*(flow+qExit)) >= 1, varying per
+ *    module, and the flat coefficient-1 correction under-subtracts a non-positive
+ *    quantity (plogp is superadditive under splitting, so F^state <= F^phys) —
+ *    i.e. it reports L* too HIGH, which broke invariance under exactly lumpable
+ *    state duplication (#1009).
+ *
+ * hierarchicalCorrection therefore asks the core for leafCodebookRates(): empty
+ * under the base objective, where it keeps the two-global-sums form verbatim, and
+ * per-module under L*. Leaf-module level only (module-of-modules delegates to
+ * base; neither objective reads leaf flows above level 1). Same O(1) move-loop
+ * hook as Meta with attribute = physical node id — the case the hook is designed
+ * for; those deltas stay base-flavoured on purpose (see --non-redundant-exact).
  */
 class MemCorrection final : public ColumnarCorrection {
 public:

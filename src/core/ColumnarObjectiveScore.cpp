@@ -28,7 +28,7 @@ namespace infomap {
 
 using namespace columnar;
 
-namespace {
+namespace columnar {
 
   /**
    * Everything a stack scoring reads, resolved once per call.
@@ -38,6 +38,11 @@ namespace {
    * rather than a branch inside one long function. `enter`/`exit` return the
    * boundary rates with recorded teleportation already folded in, so neither
    * scorer has to know whether the flow model records teleportation.
+   *
+   * Namespace scope rather than this file's anonymous namespace only so that
+   * ColumnarTwoLevel::buildStackTerms can name it as a return type: the struct
+   * and every consumer still live in this translation unit alone, and the header
+   * only forward-declares it.
    */
   struct StackTerms {
     const ColumnarLevel& leaves; // level 0
@@ -56,6 +61,10 @@ namespace {
     double enter(int k, int m) const { return level(k).enter[m] + (tele ? teleEnter[k][m] : 0.0); }
     double exit(int k, int m) const { return level(k).exit[m] + (tele ? teleExit[k][m] : 0.0); }
   };
+
+} // namespace columnar
+
+namespace {
 
   /**
    * The base map equation over the stack: every internal node codes its children.
@@ -199,7 +208,7 @@ namespace {
 
 } // namespace
 
-double ColumnarTwoLevel::hierarchicalCodelengthFromStack() const
+StackTerms ColumnarTwoLevel::buildStackTerms() const
 {
   const int topLevel = static_cast<int>(m_hierLevels.size()) - 1; // >= 1
 
@@ -235,8 +244,37 @@ double ColumnarTwoLevel::hierarchicalCodelengthFromStack() const
     }
   }
 
+  return terms;
+}
+
+double ColumnarTwoLevel::hierarchicalCodelengthFromStack() const
+{
+  const StackTerms terms = buildStackTerms();
   const double base = m_nonRedundant ? scoreStackNonRedundant(terms) : scoreStackBase(terms);
   return base + objectiveCorrection();
+}
+
+std::vector<double> ColumnarTwoLevel::leafCodebookRates() const
+{
+  // Empty = the uniform rate 1 of the base objective (see the header). Reusing
+  // buildStackTerms is the point: the recorded-teleportation augmentation folded
+  // into enter/exit is computed in exactly one place, so a correction cannot charge
+  // its substitution against boundary rates the scorer never used. Re-deriving them
+  // here from the link-only enter/exit would be silently wrong on every flow model
+  // that records teleportation, and right everywhere it is easy to test.
+  //
+  // Cost: O(1) on top of the scoring, except under recorded teleportation, where the
+  // second buildStackTerms repeats the teleport preamble's pass over the leaves. That
+  // is the cold (per-candidate-structural-operator) path; if it ever matters, thread
+  // the already-built terms through objectiveCorrection() instead.
+  if (!m_nonRedundant || m_hierLevels.size() < 2)
+    return {};
+  const StackTerms terms = buildStackTerms();
+  const ColumnarLevel& L1 = terms.level(1);
+  std::vector<double> rates(static_cast<std::size_t>(L1.n));
+  for (int m = 0; m < L1.n; ++m)
+    rates[static_cast<std::size_t>(m)] = nrLeafCodebookRate(L1.flow[m], terms.enter(1, m), terms.exit(1, m));
+  return rates;
 }
 
 double ColumnarTwoLevel::objectiveCorrection() const
