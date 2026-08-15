@@ -204,7 +204,7 @@ TEST_CASE("Reporting: the per-level table totals the reported codelength [fast][
   // arm that used to print a table of zeros under --columnar: the search value comes
   // off the columnar stack and initTree's flat shortcut scores no InfoNode.
   //
-  // Single-trial on purpose. With --num-trials > 1 and a best trial that is not the
+  // Single-trial (defaultFlags() already is) on purpose. With --num-trials > 1 and a best trial that is not the
   // last, restoreBestResult re-materializes the winner through initTree and the flat
   // shortcut leaves the tree unscored again -- for BOTH engines (object-oriented
   // --two-level --num-trials 3 on ninetriangles gives 0.936 against a codelength of
@@ -212,12 +212,12 @@ TEST_CASE("Reporting: the per-level table totals the reported codelength [fast][
   // console table is unaffected either way because it is captured from the live tree
   // of the winning trial.
   for (const char* network : { "examples/networks/ninetriangles.net", "examples/networks/states.net" }) {
-    for (const char* flags : { "--num-trials 1",
-                               "--two-level --num-trials 1",
-                               "--columnar --num-trials 1",
-                               "--columnar --two-level --num-trials 1",
-                               "--non-redundant --num-trials 1",
-                               "--non-redundant --two-level --num-trials 1" }) {
+    for (const char* flags : { "",
+                               "--two-level",
+                               "--columnar",
+                               "--columnar --two-level",
+                               "--non-redundant",
+                               "--non-redundant --two-level" }) {
       runAndCheckPerLevelTable(flags, network);
     }
   }
@@ -254,7 +254,7 @@ TEST_CASE("Columnar: the one-level fallback prices the partition it installs [fa
   //
   // 610 links, unit weight and undirected, so totalDegree = 1220 and the gap is
   // 1/2440 = 0.000409836.
-  InfomapWrapper im(defaultFlags("--columnar --entropy-corrected --num-trials 1"));
+  InfomapWrapper im(defaultFlags("--columnar --entropy-corrected"));
   addErdosRenyiLinks(im, 80, 0.2);
   im.run();
 
@@ -264,7 +264,7 @@ TEST_CASE("Columnar: the one-level fallback prices the partition it installs [fa
 
   // The base map equation charges nothing per node, so there the two coincide and
   // nothing about the fallback moves.
-  InfomapWrapper plain(defaultFlags("--columnar --num-trials 1"));
+  InfomapWrapper plain(defaultFlags("--columnar"));
   addErdosRenyiLinks(plain, 80, 0.2);
   plain.run();
   REQUIRE(plain.numTopModules() == 1);

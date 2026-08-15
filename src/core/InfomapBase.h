@@ -800,6 +800,11 @@ protected:
   // answering it here would only make the two engines differ.
   double m_columnarIndexCodelength = -1.0;
 
+  // The all-in-one-module codelength under the ACTIVE objective, for the columnar
+  // one-level fallback; -1 = not computed yet for this network. Invalidated in
+  // init() next to m_oneLevelCodelength, which has the same dependencies.
+  double m_columnarOneLevelCodelength = -1.0;
+
   Network m_network;
   InitialPartition m_initialPartition; // nodeId -> moduleId
   // Pending physical multilayer partition: {layer_id, node_id, module_id} rows,

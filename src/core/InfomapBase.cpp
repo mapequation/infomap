@@ -2268,6 +2268,10 @@ void InfomapBase::init()
   initNetwork();
 
   m_oneLevelCodelength = calcCodelength(m_root);
+  // Its columnar counterpart depends on the same thing this one does -- the leaf
+  // network and the active objective -- so it is invalidated here and computed at
+  // most once per run, not once per trial (see columnarPartition).
+  m_columnarOneLevelCodelength = -1.0;
   Console::detail(1, "one-level codelength: {}", io::toPrecision(m_oneLevelCodelength));
 }
 
@@ -2497,10 +2501,13 @@ void InfomapBase::columnarPartition()
   const bool regularizedPriorOnly = regularized && network().numLinks() == 0;
   if (!preferModularSolution && preferredNumberOfModules == 0
       && (haveNonTrivialModules() || regularizedPriorOnly)) {
-    // Asked for only after the cheap predicates pass, and it costs one
-    // aggregateLevel over the leaf network — the same order as the initTree above,
-    // and orders below one search pass.
-    const double oneModuleL = opt.oneLevelCodelength();
+    // Asked for only after the cheap predicates pass, and cached for the run: it
+    // reads the leaf network and the corrections, neither of which changes between
+    // trials. Per trial it cost malaria -N10 a measurable +1.3%; once per run it is
+    // not measurable anywhere.
+    if (m_columnarOneLevelCodelength < 0.0)
+      m_columnarOneLevelCodelength = opt.oneLevelCodelength();
+    const double oneModuleL = m_columnarOneLevelCodelength;
     if (columnarL > oneModuleL) {
       Console::detail(1, "columnar: worse codelength than one-level ({} > {}), putting all nodes in one module", io::toPrecision(columnarL), io::toPrecision(oneModuleL));
 
@@ -2730,7 +2737,7 @@ double InfomapBase::evaluateColumnarPartition()
   // reported base L for L* runs -- ninetriangles ragged 3.458078031 for both
   // objectives, against a true L* of 3.237864808. Under L* the tree can be made
   // rectangular for free instead; see padLeafPathsToUniformDepth.
-  const std::vector<int> padDepth = nonRedundant ? padLeafPathsToUniformDepth(paths) : std::vector<int>(paths.size(), 0);
+  const std::vector<int> padDepth = nonRedundant ? padLeafPathsToUniformDepth(paths) : std::vector<int>();
   if (!opt.seedHierarchyFromLeafPaths(paths)) {
     // Ragged tree: evaluate on the object-oriented tree instead. calcCodelengthOnTree
     // dispatches through m_optimizer, so it reproduces every correction that HAS an
