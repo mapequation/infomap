@@ -122,8 +122,95 @@ FixedPartitionResult evaluateFixedStatePartition(bool columnar)
   return { im.codelength(), im.getIndexCodelength() };
 }
 
+// Fixed-partition codelength on the co-located state fixtures. `network` is
+// states_shared_physical.net (two states of one physical node in one module) or
+// states_distinct_physical.net (the same links, no shared physical node).
+double evaluateColocatedStatePartition(const char* network, bool columnar, bool metadata)
+{
+  std::string flags = "--seed 123 --num-trials 1 --silent --no-infomap";
+  if (columnar)
+    flags += " --columnar";
+  if (metadata)
+    flags += " --meta-data " + infomap::test::fixturePath("meta/states_crossing.meta");
+
+  InfomapWrapper im(flags);
+  infomap::test::readNetworkFixture(im, network);
+  im.setInitialPartition({ { 1, 1 }, { 2, 1 }, { 3, 1 }, { 4, 2 }, { 5, 2 }, { 6, 2 } });
+  im.run();
+
+  CHECK(std::isfinite(im.codelength()));
+  infomap::test::checkCanonicalPartition(im, { { 1, 2, 3 }, { 4, 5, 6 } }, true);
+  return im.codelength();
+}
+
+TEST_CASE("Columnar composes the metadata and physical-node codebooks [fast][core][partition][columnar][meta]")
+{
+  // The two codebooks are independent, so each one's contribution must be the
+  // same whether or not the other is present. Asserted as two differences rather
+  // than as pinned totals: a difference stays valid if the metadata term is ever
+  // rescaled, and it states the property the fix is about instead of a number
+  // that happens to fall out of it.
+  //
+  // Before #1012 addColumnarCorrections attached MemCorrection in an `else`
+  // branch of the metadata one, so --meta-data on higher-order input dropped the
+  // physical-node codebook: the first difference below was 0 instead of
+  // -0.330578512396694.
+  const double sharedMeta = evaluateColocatedStatePartition("states_shared_physical.net", true, true);
+  const double distinctMeta = evaluateColocatedStatePartition("states_distinct_physical.net", true, true);
+  const double sharedPlain = evaluateColocatedStatePartition("states_shared_physical.net", true, false);
+  const double distinctPlain = evaluateColocatedStatePartition("states_distinct_physical.net", true, false);
+
+  // The physical-node codebook saves the same amount with and without metadata.
+  infomap::test::checkApproxCodelength(sharedMeta - distinctMeta, sharedPlain - distinctPlain);
+  infomap::test::checkApproxCodelength(sharedPlain - distinctPlain, -0.330578512396694);
+
+  // The metadata term costs the same amount with and without the aggregation.
+  infomap::test::checkApproxCodelength(sharedMeta - sharedPlain, distinctMeta - distinctPlain);
+  infomap::test::checkApproxCodelength(distinctMeta - distinctPlain, 0.915516344471709);
+}
+
+TEST_CASE("Meta-data on higher-order input diverges between OO and columnar by design [fast][core][partition][columnar-differential][meta]")
+{
+  // The documented exception to the rule the rest of this family enforces.
+  //
+  // Metadata and the physical-node codebook are independent codebooks over the
+  // same leaves, and the columnar core scores both because corrections are
+  // summed. The OO engine cannot: MetaMapEquation and MemMapEquation are sibling
+  // `final` classes with different DeltaFlowDataTypes, so
+  // InfomapOptimizer<Objective> holds exactly one, and initOptimizer picks
+  // metadata. Composing them there means a new objective class, which is a
+  // separate feature (#1012).
+  //
+  // So this is a deliberate divergence, not a tolerance to be loosened: -C
+  // returns a lower codelength here because it is scoring a strictly richer
+  // objective on the same partition. Both values are pinned so that a change to
+  // either engine has to come here and say which one moved.
+  const double oo = evaluateColocatedStatePartition("states_shared_physical.net", false, true);
+  const double columnar = evaluateColocatedStatePartition("states_shared_physical.net", true, true);
+
+  infomap::test::checkApproxCodelength(oo, 2.577797959367095);
+  infomap::test::checkApproxCodelength(columnar, 2.247219446970401);
+  CHECK(columnar < oo);
+
+  // The divergence needs BOTH conditions. Without metadata the two engines score
+  // the same objective, and with metadata but no co-located states (states.net
+  // splits its shared physical node across the modules) the physical-node
+  // codebook saves nothing, so they agree there too -- which is why the existing
+  // meta+state coverage never saw this.
+  infomap::test::checkApproxCodelength(evaluateColocatedStatePartition("states_shared_physical.net", true, false),
+                                       evaluateColocatedStatePartition("states_shared_physical.net", false, false));
+  const auto ooSplit = evaluateFixedStatePartition(false);
+  const auto columnarSplit = evaluateFixedStatePartition(true);
+  infomap::test::checkApproxCodelength(columnarSplit.codelength, ooSplit.codelength);
+}
+
 TEST_CASE("Fixed partitions have identical OO and columnar codelengths [fast][core][partition][columnar-differential]")
 {
+  // Exception: --meta-data on higher-order input. See the divergence test above
+  // -- the columnar core composes the metadata and physical-node codebooks and
+  // the OO objective dispatch selects one of them. The `--meta-data-rate 2` case
+  // below is on a first-order network, where there is no second codebook, so it
+  // still belongs to this family.
   struct TestCase {
     const char* flags;
     bool selfLink;

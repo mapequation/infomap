@@ -2667,7 +2667,31 @@ void InfomapBase::addColumnarCorrections(ColumnarTwoLevel& opt) const
   }
   // Memory (state / higher-order): physical-node leaf-module codebook. The
   // regularized-multilayer teleport prior is a separate correction, deferred.
-  else if (haveMemory()) {
+  //
+  // Attached independently of the metadata correction above, not as its `else`
+  // branch (#1012). They are independent codebooks over the same leaves, and the
+  // distinction that makes them safe to sum is the one Config.cpp's
+  // --non-redundant comment already spells out: MetaCorrection ADDS a term
+  // carrying its own rate (metaDataRate, charged per unit of node-visit flow),
+  // while MemCorrection SUBSTITUTES the physical-node sum plogp for the
+  // state-node one INSIDE the module codebook term. Neither reads the other's
+  // quantity, so composing them cannot double-count: on the co-located state
+  // reproducer in #1012 the composed 2.247219446970401 is the memory-only
+  // 1.331703102498692 plus the meta term 0.915516344471709 with a residual of
+  // exactly zero in double, and the aggregation saving comes back in full
+  // (-0.330578512396694 with metadata, bit-identical to the same delta without
+  // it, which was 0 before this change).
+  //
+  // The `else` was copied from the OO dispatch in initOptimizer, where the
+  // exclusivity is a type-level constraint and not a policy: MetaMapEquation and
+  // MemMapEquation are sibling `final` classes with different DeltaFlowDataTypes,
+  // so InfomapOptimizer<Objective> can hold exactly one. Corrections are summed
+  // rather than inherited, so the columnar core has no such constraint and the
+  // copy simply dropped the physical-node codebook -- --meta-data on
+  // state/multilayer input scored the plain state-level map equation plus the
+  // meta term. This is the one input class where -C deliberately disagrees with
+  // the default engine; a composed OO objective is a separate feature.
+  if (haveMemory()) {
     std::vector<int> leafPhysical(m_leafNodes.size(), 0);
     std::vector<double> leafFlow(m_leafNodes.size(), 0.0);
     for (std::size_t i = 0; i < m_leafNodes.size(); ++i) {
