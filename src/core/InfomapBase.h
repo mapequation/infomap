@@ -544,18 +544,43 @@ private:
 
   // Rectangularize ragged leaf paths by repeating each short path's own finest
   // module id until every path has the maximum depth, so the strict-level stack
-  // can hold the partition. Valid ONLY under L*, which is invariant under such a
-  // pass-through level; see the definition for the theorem and the guard.
+  // can hold the partition. A top-level leaf (empty path -- its parent is the root)
+  // first gets a synthetic module id of its own, since it is its own module. Valid
+  // ONLY under L*, which is invariant under such a pass-through level; see the
+  // definition for the theorem and the guard.
   // Returns, per leaf, how many levels were inserted below its finest module
-  // (all zeros when nothing was padded).
+  // (all zeros when nothing was padded). A top-level leaf's synthetic module is that
+  // leaf's finest module, so it is NOT counted -- only the copies stacked above it.
   static std::vector<int> padLeafPathsToUniformDepth(std::vector<std::vector<int>>& paths);
+
+  // Score the current InfoNode tree with the object-oriented objective (total AND
+  // per-node), plus the one correction calcCodelengthOnTree does not implement
+  // (--preferred-number-of-modules). The columnar fallback when the stack cannot
+  // hold the partition; keeps the reported total and the stamped tree on one
+  // objective.
+  double objectOrientedTreeCodelength();
 
   // Evaluate the current InfoNode partition's codelength on the columnar
   // structure (base map equation + active correction), and stamp the objective's
   // own per-node decomposition onto the tree. Falls back to the object-oriented
-  // calcCodelengthOnTree for a ragged tree the padding cannot rescue. Used for the
-  // --no-infomap input-partition codelength under the columnar core.
+  // objectOrientedTreeCodelength for a ragged tree the padding cannot rescue. Used
+  // for the --no-infomap input-partition codelength under the columnar core, and to
+  // re-stamp a tree re-materialized outside a trial (see restampColumnarCodelengths).
   double evaluateColumnarPartition();
+
+  // Put the columnar engine's per-node charges back on the tree currently in memory.
+  // Inside initTree, InfoNode::codelength is written by calcCodelengthOnTree alone --
+  // the BASE map equation -- and not at all when it takes its flat shortcut (the
+  // columnar charges come from stampColumnarCodelengths, which a trial calls and a
+  // restore did not). So a tree
+  // re-materialized OUTSIDE a trial (restoreBestResult, maybeDeepRepairBest) carries
+  // either the previous trial's stale charges or base-L ones next to the winning
+  // trial's reported total. Re-scoring the restored tree on the columnar stack puts
+  // the rewritten file's modules[].codelength, the per-level table and
+  // m_columnarIndexCodelength back on the objective that produced the headline.
+  // No-op unless --columnar. Does not touch m_hierarchicalCodelength: the winning
+  // trial's value stays the reported one.
+  void restampColumnarCodelengths();
 
   // Write a columnar stack breakdown onto the materialized InfoNode tree, so the
   // per-level table and -o json modules[].codelength report the objective that
@@ -563,9 +588,11 @@ private:
   // the tree and the stack do not line up (nothing in-tree should hit that; the
   // caller then keeps whatever calcCodelengthOnTree left). `padDepth` is
   // padLeafPathsToUniformDepth's return value: a leaf whose path was padded has
-  // its phantom stack levels folded into its real finest module.
+  // its phantom stack levels folded into its finest module.
   // `padCharge` receives what the phantom levels were charged; the caller subtracts
-  // it from the reported codelength, and it is not written to any node.
+  // it from the reported codelength, and it is not written to any node. The one
+  // stack module with no InfoNode that is NOT phantom -- the module a top-level leaf
+  // constitutes -- is charged to the root instead.
   bool stampColumnarCodelengths(const ColumnarTwoLevel& opt,
                                 const columnar::StackBreakdown& breakdown,
                                 const std::vector<int>& padDepth,

@@ -370,6 +370,67 @@ TEST_CASE("NonRedundant/columnar: the ragged padding does not leak into the entr
   CHECK(raggedBiased == doctest::Approx(paddedBiased - biasPerNode).epsilon(1e-9));
 }
 
+TEST_CASE("NonRedundant/columnar: a BARE top-level leaf is scored under L* too [fast][core][non-redundant]")
+{
+  // The most common ragged shape there is: Infomap's .tree format writes a module of
+  // one node as a bare top-level leaf (`2 0.15 "A" 1`) and reads it back the same way,
+  // so leafModulePathsFromTree hands the padding an EMPTY path -- no finest id to
+  // repeat. Bailing there left --non-redundant reporting the base L, bit-identical to
+  // the run without the flag (2.714170945 against a true L* of 2.187131226).
+  //
+  // A top-level leaf IS its own module, so it gets a synthetic module id and the same
+  // padding as any short path. The three fixtures are three spellings of ONE partition
+  // -- bare, explicit module, explicit module plus a pass-through -- so L* must give
+  // all three the same value.
+  const double bareLstar = scoreFixedPartition("twotriangles_flow.net", "twotriangles_top_level_leaf.tree", "--non-redundant");
+  const double moduleLstar = scoreFixedPartition("twotriangles_flow.net", "twotriangles_top_level_leaf_module.tree", "--non-redundant");
+  const double rectLstar = scoreFixedPartition("twotriangles_flow.net", "twotriangles_top_level_leaf_rect.tree", "--non-redundant");
+
+  CHECK(bareLstar == doctest::Approx(moduleLstar).epsilon(1e-12));
+  CHECK(bareLstar == doctest::Approx(rectLstar).epsilon(1e-12));
+  CHECK(bareLstar == doctest::Approx(2.187131226).epsilon(1e-9));
+
+  // The base map equation is NOT invariant under those spellings and must not move:
+  // it charges each extra level, and it addresses a bare top-level leaf in the root's
+  // own codebook rather than giving it a module codebook.
+  const double bareL = scoreFixedPartition("twotriangles_flow.net", "twotriangles_top_level_leaf.tree", "");
+  const double moduleL = scoreFixedPartition("twotriangles_flow.net", "twotriangles_top_level_leaf_module.tree", "");
+  CHECK(bareL == doctest::Approx(2.714170945).epsilon(1e-9));
+  CHECK(moduleL == doctest::Approx(3.014170945).epsilon(1e-9));
+  CHECK(bareLstar < bareL - 1e-6); // it was bit-equal to bareL before
+
+  // --entropy-corrected counts nodes, so the pass-through the padding stacks above A's
+  // module is discounted -- but A's own module is not phantom and is counted.
+  const double bareBiased = scoreFixedPartition("twotriangles_flow.net", "twotriangles_top_level_leaf.tree", "--non-redundant --entropy-corrected");
+  const double moduleBiased = scoreFixedPartition("twotriangles_flow.net", "twotriangles_top_level_leaf_module.tree", "--non-redundant --entropy-corrected");
+  const double rectBiased = scoreFixedPartition("twotriangles_flow.net", "twotriangles_top_level_leaf_rect.tree", "--non-redundant --entropy-corrected");
+  CHECK(bareBiased == doctest::Approx(moduleBiased).epsilon(1e-9));
+  CHECK(rectBiased > bareBiased + 1e-9); // the hand-written pass-through is a real node
+}
+
+TEST_CASE("NonRedundant/columnar: an all-top-level tree never becomes ragged in the first place [fast][core][non-redundant]")
+{
+  // REGRESSION GUARD, not evidence for the padding: this case passes unchanged on the
+  // pre-change binary (both values 3.220279696 there too, no fallback line). It is here
+  // to pin that the padding did not disturb the shape it does NOT handle.
+  //
+  // Every path in this fixture is one level deep, so initTree's `maxDepth == 2 ||
+  // twoLevel` shortcut fires, initPartition turns every top-level id into a real
+  // module, and padLeafPathsToUniformDepth is handed a rectangular two-level tree --
+  // no empty path, nothing to pad, no ragged bail. The empty path the synthetic module
+  // id exists for needs a file that ALSO carries a path deeper than 2; that is the BARE
+  // top-level leaf case above, which is the one that fails on the pre-change binary.
+  //
+  // What this still checks: one partition (one module per node) written two ways, as a
+  // depth-1 .tree and as a .clu, must score the same, and L* must undercut base L.
+  const double flatTreeLstar = scoreFixedPartition("twotriangles_flow.net", "twotriangles_all_top_level.tree", "--non-redundant");
+  const double cluLstar = scoreFixedPartition("twotriangles_flow.net", "twotriangles_singletons.clu", "--non-redundant");
+  CHECK(flatTreeLstar == doctest::Approx(cluLstar).epsilon(1e-12));
+
+  const double flatTreeL = scoreFixedPartition("twotriangles_flow.net", "twotriangles_all_top_level.tree", "");
+  CHECK(flatTreeLstar < flatTreeL - 1e-6);
+}
+
 TEST_CASE("Columnar: the preferred-modules penalty survives the object-oriented fallback [fast][core][non-redundant]")
 {
   // --preferred-number-of-modules is the only correction with no object-oriented

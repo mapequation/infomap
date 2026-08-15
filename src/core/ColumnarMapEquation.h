@@ -444,9 +444,9 @@ public:
   // level above every leaf module). L* IS invariant — a single-child parent's enter
   // codebook is e*(plogp(e)-plogp(e))/e == 0 and its child's exit term has numerator
   // plogp(x)-0-plogp(x) == 0 — so under --non-redundant the caller rectangularizes a
-  // ragged tree by padding the short paths (InfomapBase::padLeafPathsToUniformDepth)
-  // instead of relaxing this guard. Everything else falls back to the
-  // object-oriented tree.
+  // ragged tree by padding the short paths, and the empty path of a top-level leaf
+  // (InfomapBase::padLeafPathsToUniformDepth), instead of relaxing this guard.
+  // Everything else falls back to the object-oriented tree.
   bool seedHierarchyFromLeafPaths(const std::vector<std::vector<int>>& leafPaths);
 
   // Enable recorded-teleportation codebook terms (regularized flow). Must be set

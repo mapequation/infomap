@@ -206,11 +206,12 @@ TEST_CASE("Reporting: the per-level table totals the reported codelength [fast][
   //
   // Single-trial (defaultFlags() already is) on purpose. With --num-trials > 1 and a best trial that is not the
   // last, restoreBestResult re-materializes the winner through initTree and the flat
-  // shortcut leaves the tree unscored again -- for BOTH engines (object-oriented
-  // --two-level --num-trials 3 on ninetriangles gives 0.936 against a codelength of
-  // 3.518). That is the shared half of #1002, fixed in initTree on master; the
-  // console table is unaffected either way because it is captured from the live tree
-  // of the winning trial.
+  // shortcut leaves the tree unscored again -- for the OBJECT-ORIENTED engine
+  // (--two-level --num-trials 3 on ninetriangles gives 0.936 against a codelength of
+  // 3.518). That is the shared half of #1002, fixed in initTree on master; the columnar
+  // half is re-stamped on the restore path and has its own multi-trial case below. The
+  // console table is unaffected either way because it is captured from the live tree of
+  // the winning trial.
   for (const char* network : { "examples/networks/ninetriangles.net", "examples/networks/states.net" }) {
     for (const char* flags : { "",
                                "--two-level",
@@ -218,6 +219,32 @@ TEST_CASE("Reporting: the per-level table totals the reported codelength [fast][
                                "--columnar --two-level",
                                "--non-redundant",
                                "--non-redundant --two-level" }) {
+      runAndCheckPerLevelTable(flags, network);
+    }
+  }
+}
+
+TEST_CASE("Reporting: the per-level table survives the multi-trial restore [fast][core][mapeq][columnar-contract]")
+{
+  // The restore path, which the single-trial case above cannot reach. When the best
+  // trial is not the last executed, restoreBestResult re-materializes the winner
+  // through initTree and rewrites the output file -- and initTree writes
+  // InfoNode::codelength only through calcCodelengthOnTree (the base map equation),
+  // or not at all when it takes its flat shortcut. Measured on these exact
+  // configurations before the re-stamp: ninetriangles --non-redundant --num-trials 5
+  // reported 3.078067323 with a table summing 3.385833 (the base L of the same tree),
+  // and states.net --columnar --num-trials 5 reported 2.011405238 with a table summing
+  // 0.066667 -- a leftover from the LAST trial's tree, which is worse than the 0.0 it
+  // used to be: a plausible number instead of an obviously broken one.
+  //
+  // Columnar only: the object-oriented half of the same defect is a master-side
+  // initTree fix, and asserting it here would fail for a reason this branch does not
+  // own.
+  for (const char* network : { "examples/networks/ninetriangles.net", "examples/networks/states.net" }) {
+    for (const char* flags : { "--columnar --num-trials 5",
+                               "--columnar --two-level --num-trials 5",
+                               "--non-redundant --num-trials 5",
+                               "--non-redundant --two-level --num-trials 5" }) {
       runAndCheckPerLevelTable(flags, network);
     }
   }
