@@ -307,6 +307,14 @@ vs 4.925032709), and the fallback demonstrably fires there. Identical for the ba
 corrections, which is why it had survived. The object-oriented path keeps the zero-module convention at
 the analogous site — that is a master question, not one to settle on this branch.
 
+A visible consequence, stated so it is not read as a bug: on such a run the summary now prints
+`One-level codelength 6.315339939` above `Best codelength 6.315739939`, i.e. **best > one-level**, and
+`Relative savings -0.01%`. The printed reference is the ZERO-module tree, which is not a partition at
+all; the collapsed one-module partition genuinely costs `multiplier/(2*totalDegree)` more under a
+per-node correction. The alternative — making the printed reference the one-module value — would move
+`getRelativeCodelengthSavings()` and the OO/columnar comparison line for both engines, so it belongs to
+the same master decision.
+
 **What is deliberately *not* changed.** `getIndexCodelength()` becomes objective-correct only under
 `--non-redundant`, where `getModuleCodelength()` was returning `L* - L_index`, a hybrid of two
 objectives. Under `--entropy-corrected` the columnar root charge and the objective's own index term
