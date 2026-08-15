@@ -4,7 +4,7 @@
 
 Single-threaded (`MODE=release OPENMP=0`), `--seed 123 -N10` — **best of 10 trials**, the way Infomap is normally run. Codelength in bits; `time` = total wall for all 10 trials, minimum of 3 interleaved repetitions; `top`/`lvls` = top modules / levels of the best partition. The network set spans base (undirected + directed), metadata, multilayer and state/memory objectives; see [`columnar_wip/benchmark-networks.md`](columnar_wip/benchmark-networks.md) for paths and full details. Columnar column = the default columnar search (`-C`).
 
-> **This PR is a correctness fix** to the memory objective under L\*: `MemCorrection` substituted the
+> **This PR** ([#1010](https://github.com/mapequation/infomap/pull/1010), fixes [#1009](https://github.com/mapequation/infomap/issues/1009)) **is a correctness fix** to the memory objective under L\*: `MemCorrection` substituted the
 > physical-node `sum plogp(flow)` for the state-node one at coefficient 1, which is the base map
 > equation's coefficient, while L\*'s leaf-module term consumes that quantity at a per-module rate
 > `1 + qEnter*qExit/(flow*(flow+qExit)) >= 1`. `-C --non-redundant` on state / memory / multilayer input
@@ -238,7 +238,7 @@ under both bases, and the `_states.tree` round-trip trap — lives in
 [#1001](https://github.com/mapequation/infomap/pull/1001), whose own copy of this file is the
 measurement that justified it.
 
-### What this PR changes: L\* on higher-order input, and nothing else
+### What this PR changes: L\* on higher-order input, and nothing else ([#1010](https://github.com/mapequation/infomap/pull/1010))
 
 The memory objective's physical-node codebook is a **substitution**, not an additive term: both base
 objectives read a level-1 module's leaf flows only through `F_m = sum_{leaf in m} plogp(flow)`, and
