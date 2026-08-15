@@ -2484,3 +2484,92 @@ hard-partition path (`haveHardPartition()`, API-only), where `restoreHardPartiti
 tree after the stamping, is the concrete case, and it is unverified here. Under `--entropy-corrected`
 the term stays the object-oriented one on purpose, for the reason F38 gives.
 
+
+### F39 — Two codebooks over the same leaves: the `else` that made `--meta-data` delete the memory objective (#1012, 2026-08-15)
+
+`InfomapBase::addColumnarCorrections` attached `MetaCorrection` under `if (haveMetaData())` and
+`MemCorrection` under `else if (haveMemory())`. The two predicates are orthogonal —
+`haveMetaData()` is `!metaDataFile.empty() || numMetaDataDimensions != 0`, `haveMemory()` is
+`stateInput` — so `-C --meta-data` on state or multilayer input scored the **plain state-level map
+equation plus the meta term**, with the physical-node codebook absent entirely. Not approximated:
+absent. `--meta-data-rate 0` on the reproducer returns the state-level value exactly, and so does a
+metadata file whose categories coincide with the found partition (meta term zero); both land on the
+value of the *unaggregated* network, never on the aggregated one.
+
+**The measurement that names the defect** is a difference of differences, not a codelength. Build two
+networks over identical `*Links`: AGG maps states 1 and 2 to one physical node (and the optimum puts
+them in the same module), IND gives every state its own. The physical-node codebook is worth
+`L(AGG) - L(IND) = -0.330578512396694`. With `--meta-data` that difference was **exactly 0.0** —
+which is what "the codebook is not there" looks like when you cannot see the objective.
+
+**Composition is exact, not approximately exact.** After removing the `else`:
+
+    AGG -C --meta-data  =  2.247219446970401
+    AGG -C              =  1.331703102498692   (memory only)
+    meta term           =  0.915516344471709   (IND with meta − IND without)
+    1.331703102498692 + 0.915516344471709 − 2.247219446970401  =  0.0   (exactly, in double)
+
+and the aggregation saving comes back at full value: `L(AGG) − L(IND)` is `-0.330578512396694` with
+and without metadata, residual exactly 0. This is F37's rule read forwards rather than backwards:
+`MetaCorrection` **adds** a term carrying its own rate, `MemCorrection` **substitutes** one sum for
+another inside the module codebook term. Neither reads the other's quantity, so there is nothing to
+double-count. Additive terms compose; substitutions inherit — and two corrections that touch
+different terms compose with each other regardless.
+
+**Where the `else` came from, and why it is not policy here.** `initOptimizer` really is exclusive:
+`MetaMapEquation` and `MemMapEquation` are sibling `final` classes with different
+`DeltaFlowDataType`s (`DeltaFlow` vs `MemDeltaFlow`), so `InfomapOptimizer<Objective>` can hold
+exactly one. That is a **type-level constraint**, not a decision anyone made. The columnar core sums
+corrections instead of inheriting an objective, so it never had the constraint — the `else` was
+transcribed along with the shape of the dispatch. Composing them on the OO side means writing a new
+objective class (both sources are `final`, so sharing rather than copying means extracting the meta
+term first); that is a separate feature, and until it exists **`-C` and the default engine
+deliberately disagree on meta + higher-order input**. That divergence is now pinned by an explicit
+test in the `[columnar-differential]` family rather than left as a tolerance someone might loosen.
+
+**Why every existing meta+state test stayed green — the part worth remembering.** Co-location is a
+*necessary* condition: the physical-node codebook saves nothing unless two states of one physical
+node share a module. `test/fixtures/networks/states.net` shares physical node 1 between states 1 and
+4, and the optimum puts them in **different** modules. So the two tests that already ran meta+state
+(`test_map_equation_invariants.cpp`, `test_flow.cpp`) were blind by construction, not absent —
+2.929701072500 and 2.011405238446 are unmoved by this fix. The gap was never "no coverage"; it was
+"coverage on the one shape that cannot see it". Hence the new fixtures
+`states_shared_physical.net` / `states_distinct_physical.net`, whose entire purpose is the
+co-location, and which are only useful as a *pair*.
+
+**A second bug fell out, invisible at `-N1`.** `restoreBestResult` re-materializes the winning
+trial's tree with `initTree`, which recomputes the codelength through the **OO** objective, and only
+`if (m_infomap.nonRedundant)` was the columnar value put back. That guard was sound while L\* was the
+only objective the two engines could disagree on. With the composition it no longer was: a 2-trial
+run printed `2.247219447` to the console and wrote `2.577797959367095` to the `.tree`/`.json` files —
+the same run reporting two numbers. It is invisible at `-N1` because the whole block is guarded by
+`m_trialsRun > 1`, so anyone validating the fix with a single trial sees the right number and ships a
+binary that writes the wrong one at the default `-N10`. Measured on an edit-1-only build: N=1 file
+2.247219446970, N=2 and N=10 file 2.577797959367, console 2.247219447 throughout.
+
+The guard is now `if (m_infomap.columnarSearch)` — the engine, not one objective — which is what the
+columnar materialization site already documents ("the columnar core is the source of truth for the
+search codelength"). Broadening it is a no-op wherever the two objectives agree, and that was
+measured rather than assumed: 78 benchmark configurations (all 13 benchmark networks × {OO, `-C`,
+`-C --non-redundant`} × {`-N1`, `-N10`}, comparing the console `Best codelength` *and* the codelength
+written to the output file) are identical to all 12 printed digits between the pre-fix binary
+(`md5 b601cf2f6e263c2be5ea1f1d496a77ec`) and this one (`md5 f02736dae6a0e3998c1e35a1565c50b0`). No
+benchmark config is meta + higher-order — `lazega`, the only metadata benchmark, is first-order.
+
+**The warning had to be reworded, not gated.** `--meta-data takes precedence over higher-order
+input: the run optimizes the meta-data objective ... without the physical-node codebook` became false
+for `-C`. Gating it on `columnarSearch` was rejected for a reason that has nothing to do with this
+bug: that string is **master-resident** and `columnarSearch` is not, so the line would be
+unmergeable upstream and would conflict at every `sync-master-into-columnar`. It is now worded from
+the *objective* rather than from the run — the rule the sibling warnings in the same function already
+state — which is true on both engines and on master. It still earns its place under `-C`: the
+composed total is the columnar one, but the per-level breakdown, `getIndexCodelength()` and
+`getMetaCodelength()` are still materialized through the meta-data objective.
+
+**Recorded, not fixed.** (1) Composing the two objectives on the OO engine — see above. (2)
+`--regularized` multilayer under `-C --meta-data` still loses the teleport prior: the columnar core
+has no `RegularizedMultilayerMapEquation` equivalent, which the correction site has always said is
+deferred. (3) Found in passing, **pre-existing and on the default engine**: `air30k -d --regularized
+-N10` prints `Best codelength 5.578435633` and writes `5.578461103783` (Δ 2.5e-5). Identical on both
+binaries, absent at `-N1`/`-N2`, so it is the same restore-path shape as the bug above but on the OO
+side, where the new guard does not apply.
