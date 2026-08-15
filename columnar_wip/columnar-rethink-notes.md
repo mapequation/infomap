@@ -2224,3 +2224,85 @@ re-weighting (`l_m` is normalized by `F_m`, not by `T`), it is feature-gated beh
 question that needs its own derivation — filed as #1011. (3) `MetaCorrection` was checked and is **correct** at
 coefficient 1 — see the rule above; the test that asserts it stays green and its comment now says which
 class of correction it speaks for.
+
+### F38 — The engine that computes the total must also compute the decomposition (#1002/#1013, 2026-08-15)
+
+Four separate user-visible defects, one cause. The columnar core computes its codelength **on the
+stack**; every consumer that reads the materialized `InfoNode` tree was therefore reading a different
+objective, or nothing at all.
+
+- **Nothing at all.** `InfoNode::codelength` is written by exactly one function,
+  `calcCodelengthOnTree`. `initTree`'s `maxDepth == 2 || twoLevel` shortcut never calls it, and a flat
+  `.clu` reaches `initPartition` without going through `initTree` at all. So jazz `-C` printed a
+  per-level table of `0.000000` next to `Best codelength 6.862755928`, and politicalblogs `-C -d -N2`
+  printed `0.000156` — verbatim the *previous* trial's root value for a 2-module top level, on a
+  79-module one. A leaked stale number is the proof that the field was never written rather than
+  computed as zero.
+- **A different objective.** netsci `-C --non-redundant -N10`: table Total `4.103756` against
+  `Best codelength 3.892209764`. The table was summing L on a run whose headline is L\*.
+- **A different objective, in the codelength itself.** `evaluateColumnarPartition` falls back to
+  `calcCodelengthOnTree` for a ragged tree, and there is **no object-oriented L\*** —
+  `grep -rn "nrEnterWithin\|nrExitTerm" src/ | grep -v Columnar` is empty. So
+  `-C --no-infomap -c <ragged.tree> --non-redundant` returned *exactly* the value without the flag:
+  ninetriangles 3.458078031 both ways, against a true L\* of 3.237864808 (+6.8%).
+- **A missing objective.** The same fallback silently dropped `--preferred-number-of-modules`, the one
+  correction with no object-oriented counterpart. Not a rounding error: the whole 4-bit penalty, gone.
+
+**What made the ragged case fixable at all.** L\* is *exactly* invariant under inserting a pass-through
+(single-child) level and the base map equation is not. The parent's enter codebook is
+`e*(plogp(e) - plogp(e))/e == 0` and the child's leave-one-out exit term has numerator
+`plogp(x) - 0 - plogp(x) == 0`; under the base objective the same node costs
+`plogp(x+e) - plogp(e) - plogp(x) > 0`. Measured on ninetriangles with one such level above every leaf
+module: base 3.38583082 → 3.97958082, L\* 3.078067323 → bit-identical. So a ragged tree can be made
+rectangular *for free* under L\*, and only under L\* — which is what gates the padding on
+`nonRedundant`, and why the guard inside `seedHierarchyFromLeafPaths` stays strict: it is what keeps
+the base scorer honest.
+
+**The one exception, and the shape of its fix.** `--entropy-corrected` counts NODES
+(`m_multiplier * sum_k hierLevelSize(k) / (2*totalDegree)`), so the phantom levels inflate it. The
+implementation does **not** subtract an analytic `padNodes*multiplier/(2*totalDegree)` term: it marks
+the phantom stack nodes while walking the leaf chains and takes *their breakdown entries* off the total.
+Same number (ninetriangles ragged: 3.468634039 = 3.237864808 + 36/156, one pad node short of the padded
+tree's 3.475044295 = +37/156), but derived rather than asserted — and it stays right if a future
+correction also charges per node. This is only possible **because** the breakdown exists: an analytic
+discount would have to name `BiasedEntropyCorrection` in `InfomapBase`.
+
+**A fifth defect the same instrument exposed.** The one-level fallback priced its collapse with
+`getOneLevelCodelength()` — `calcCodelength` on a tree with **zero** modules — while the collapse
+installs **one**. Under `--entropy-corrected` those differ by exactly `multiplier/(2*totalDegree)`
+(ninetriangles 4.918622452 vs 4.925032709; er(80, 0.2) 6.315339939 vs 6.315739939), and the fallback
+demonstrably fires there. Identical for the base map equation with no corrections, which is why it had
+survived. The object-oriented path shares the convention at the analogous site — **not** changed here;
+that is a master question, filed as a follow-up.
+
+**The lesson, stated as a rule.** *A reported decomposition is a claim about the same objective as the
+reported total; if the two come from different code, they will disagree, and only one of them is being
+tested.* The per-level table had no test asserting it sums to `codelength()` — that one assertion,
+added in `test_map_equation_invariants.cpp`, fails on **eleven** of the twelve engine × objective ×
+depth combinations before this change and is what turned four scattered symptoms into one fix. It also
+immediately caught a **sixth**, out of scope here: with `--num-trials > 1` and a best trial that is not
+the last, `restoreBestResult` re-materializes the winner through `initTree` and the flat shortcut leaves
+it unscored again — for *both* engines (object-oriented `--two-level -N3` on ninetriangles sums 0.936
+against a codelength of 3.518; `-C -N10 -o json` on jazz writes `sum(modules[].codelength) = 0.531`
+against 6.863). The console table escapes because it is captured as a string from the live tree of the
+winning trial; only the rewritten **file** is wrong.
+
+**Two adversarial corrections worth keeping.** (1) "`--non-redundant` is the only configuration where
+the object-oriented fallback is wrong" was false — `--preferred-number-of-modules` is worse, and its
+error (4 bits) is 18× the L\* one (0.22 bits). The right statement is: *the fallback reproduces exactly
+those corrections that have an object-oriented counterpart in `calcCodelength`.* Verified pairwise on a
+rectangular tree for base, `-d`, `-d --recorded-teleportation`, `--markov-time`,
+`--variable-markov-time`, `--entropy-corrected`, `--meta-data` and `--regularized` — all agree;
+`--preferred-number-of-modules` is the only one that differs (7.38583082 vs 3.38583082). (2) The
+one-level fallback was diagnosed as "exact, no numeric change required" on the strength of the
+`L*(one module) == L(one module)` identity, which is real but is **not** the identity that site needs:
+the comparison is zero-module against one-module, not L against L\*.
+
+**Left alone on purpose.** `getIndexCodelength()` is made objective-correct **only** under
+`--non-redundant` (where `m_optimizer` holds a base index term and `getModuleCodelength()` was
+returning `L* - L_index`, a hybrid). Under `--entropy-corrected` the columnar root charge and
+`m_optimizer`'s index term differ by `multiplier/(2*totalDegree)` — but so do the **object-oriented
+engine's own two answers**, since its per-level table charges the root `calcCodelength(m_root)` while
+`getIndexCodelength()` returns the objective's bookkeeping (twotriangles `--entropy-corrected`: 0.214286
+vs 0.178571). Picking one here would only make the engines disagree, so it is a master decision, and
+the differential test that caught it stays as it was.
