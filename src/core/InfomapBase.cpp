@@ -3534,10 +3534,14 @@ void InfomapBase::initOptimizer(bool forceNoMemory)
   m_root.m_edgePool = &m_edgePool;
 
 #if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
-  // Config::adaptDefaults validates --lossy against the parsed flags, but input
-  // parsing can flip state/multilayer input and auto-switch the flow model to
-  // directed afterwards. Re-validate here so lossy never silently falls through
-  // to another objective.
+  // Config::adaptDefaults validates the constraints decidable from the flags alone
+  // (teleportation, regularization, Markov time, --meta-data, an explicitly directed
+  // flow model). Every input-derived constraint is validated here, because the input
+  // type is not known at parse time: for memory and multilayer input this is the sole
+  // check rather than a second line of defence, and it is also what catches meta-data
+  // dimensions and a directed flow model that came from the file rather than a flag
+  // (#1004). initOptimizer() is the objective dispatch point, so an embedder calling
+  // initNetwork directly is caught here too.
   if (lossy) {
     if (haveMetaData() || haveMemory() || isMultilayerNetwork())
       throw std::runtime_error("--lossy does not support memory, multilayer or meta-data input");

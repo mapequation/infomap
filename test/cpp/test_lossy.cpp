@@ -52,6 +52,54 @@ TEST_CASE("Lossy: rejects unsupported input detected after parsing [fast][core][
   CHECK_THROWS_AS(im.run(), std::runtime_error);
 }
 
+TEST_CASE("Lossy: input constraints are owned by the optimizer dispatch, not by adaptDefaults [fast][core][lossy][config]")
+{
+  // #1004: adaptDefaults used to reject stateInput/multilayerInput/additionalInput, which
+  // no CLI option can set at parse time -- configureNetworkMode() writes the first two
+  // when the network is read, and additionalInput is library-only. The check was
+  // therefore only reachable by a library caller mutating the struct, and even there the
+  // same rejection arrives one stage later from initOptimizer(). The second CHECK of each
+  // pair is what makes the deletion safe rather than merely quiet: it pins that the late
+  // guard still covers every field the parse-time one did. Brace-initialised inside the
+  // macro on purpose: InfomapWrapper(config) risks parsing as a declaration.
+  SUBCASE("state input")
+  {
+    Config config;
+    config.lossy = true;
+    config.setStateInput();
+    CHECK_NOTHROW(config.adaptDefaults());
+    CHECK_THROWS_AS(InfomapWrapper { config }, std::runtime_error);
+  }
+
+  SUBCASE("multilayer input")
+  {
+    Config config;
+    config.lossy = true;
+    config.setMultilayerInput();
+    CHECK_NOTHROW(config.adaptDefaults());
+    CHECK_THROWS_AS(InfomapWrapper { config }, std::runtime_error);
+  }
+
+  SUBCASE("additional input")
+  {
+    Config config;
+    config.lossy = true;
+    config.additionalInput.push_back("extra.net");
+    CHECK_NOTHROW(config.adaptDefaults());
+    CHECK_THROWS_AS(InfomapWrapper { config }, std::runtime_error);
+  }
+
+  SUBCASE("meta data stays a parse-time rejection")
+  {
+    // Unlike the three above, --meta-data is a flag, so this one is decidable before the
+    // input is read and keeps failing early.
+    Config config;
+    config.lossy = true;
+    config.metaDataFile = "foo.txt";
+    CHECK_THROWS_AS(config.adaptDefaults(), std::runtime_error);
+  }
+}
+
 TEST_CASE("Lossy: lambda -> infinity reproduces the standard two-level map equation [fast][core][lossy]")
 {
   InfomapWrapper plain(defaultFlags("--two-level"));

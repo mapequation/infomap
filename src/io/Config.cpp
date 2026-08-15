@@ -183,8 +183,20 @@ namespace {
 
     if (config.directed || (config.flowModelIsSet && config.flowModel != FlowModel::undirected))
       throw std::runtime_error("--lossy requires undirected flow");
-    if (config.stateInput || config.multilayerInput || !config.additionalInput.empty())
-      throw std::runtime_error("--lossy does not support memory or multilayer networks");
+    // No input check here, deliberately. This function runs during flag parsing, before
+    // any file is opened: `stateInput`/`multilayerInput` are set by
+    // configureNetworkMode() when the network is READ, and no CLI option sets them
+    // (`additionalInput` is library-only -- a SWIG property with no CLI binding). An
+    // earlier cut rejected those three fields here and could never fire from the CLI.
+    // The rejection that actually fires is in InfomapBase::initOptimizer(), where the
+    // input type is known; it covers everything this did, plus meta data. Two things it
+    // is worth being precise about rather than calling it a strict superset: a *States
+    // file is rejected there iff its state->physical map is non-identity, since
+    // StateNetwork only sets m_haveMemoryInput when node.id != node.physicalId (an
+    // identity *States file is first-order in substance and runs under --lossy); and
+    // that guard reads haveMemory() without honouring the forceNoMemory argument, unlike
+    // the objective dispatch just below it -- unreachable under --lossy today, because
+    // lossy is rejected before any sub-Infomap is constructed. See #1004.
     if (config.haveMetaData())
       throw std::runtime_error("--lossy does not support meta data");
     if (config.recordedTeleportation || config.regularized)
