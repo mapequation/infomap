@@ -118,12 +118,12 @@ TEST_CASE("NonRedundant/columnar: --non-redundant parses and implies --columnar 
   CHECK(directedConf.nonRedundant);
 }
 
-TEST_CASE("NonRedundant/columnar: no input or objective is excluded [fast][core][non-redundant]")
+TEST_CASE("NonRedundant/columnar: no input is excluded and every objective but lossy composes [fast][core][non-redundant]")
 {
   // L* constrains which walk *steps* are possible — no immediate re-entry into the
   // module just left, no immediate exit from the one just entered — which says nothing
-  // about which codebook a step is coded in. Higher-order dynamics and every
-  // composable correction therefore stay available.
+  // about which codebook a step is coded in. Higher-order dynamics and the composable
+  // corrections therefore stay available.
   auto accepts = [](const std::string& flags) {
     const auto conf = nonRedundantConfig(flags);
     CHECK(conf.nonRedundant);
@@ -135,7 +135,12 @@ TEST_CASE("NonRedundant/columnar: no input or objective is excluded [fast][core]
   accepts("--non-redundant --directed --regularized");
   accepts("--non-redundant --multilayer-relax-rate 0.15");
 #if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
-  accepts("--non-redundant --lossy");
+  // The exception, and the reason this case is not called "no objective is excluded"
+  // any more: the lossy noise credit hands back sum_leaf plogp(f) at coefficient 1,
+  // which is the base objective's rate for it, not L*'s (#1011, F38). Both flag
+  // orders, so the check cannot become order-dependent.
+  CHECK_THROWS_AS(nonRedundantConfig("--non-redundant --lossy"), std::runtime_error);
+  CHECK_THROWS_AS(nonRedundantConfig("--lossy --non-redundant"), std::runtime_error);
 #endif
 }
 
