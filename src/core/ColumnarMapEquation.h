@@ -1051,9 +1051,20 @@ private:
  * codeword. The objective is J = L_full - sum_m max(0, l_m - lambda*H_m), so the
  * additive correction to the base map equation is  -sum_m max(0, l_m - lambda*H_m),
  * a leaf-module-level term with the same per-module-aggregate move-loop/merge
- * pattern as Meta/Mem. Being additive, it composes (e.g. bias + lossy). The
- * class itself is objective-agnostic (plain flow/entropy inputs); only the
- * columnarPartition wiring is behind INFOMAP_FEATURE_LOSSY_MAP_EQUATION.
+ * pattern as Meta/Mem. Being additive, it composes with the other corrections
+ * (e.g. bias + lossy). The class itself is objective-agnostic (plain flow/entropy
+ * inputs); only the columnarPartition wiring is behind
+ * INFOMAP_FEATURE_LOSSY_MAP_EQUATION.
+ *
+ * It does NOT compose with the non-redundant map equation L*, and --lossy
+ * --non-redundant is rejected in Config (#1011). "l_m at coefficient 1" is the
+ * base objective's rate for the naming cost sum_leaf plogp(f); L* charges it at
+ * nrLeafCodebookRate >= 1, so the credit is short by (rate_m - 1) * l_m and the
+ * gate compares the wrong quantity. Unlike MemCorrection (#1010), which only
+ * needed the rate on the accounting, the multiplier here belongs inside the
+ * max(0, .) — it moves the gate too. See F38 in
+ * columnar_wip/columnar-rethink-notes.md for the derived form and for what is
+ * still missing (the reporting layer, not the objective).
  */
 class LossyCorrection final : public ColumnarCorrection {
 public:
