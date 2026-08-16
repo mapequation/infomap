@@ -29,7 +29,9 @@ PREFERRED_WARNING = "--preferred-number-of-modules has no effect on this run"
 # the outcome. Since #1012 the outcome is engine-dependent -- the columnar core scores both
 # codebooks, the objective dispatch scores one -- so the message states the condition and
 # what the meta-data objective does, and only that part is stable enough to assert on.
-META_CODEBOOKS_WARNING = "--meta-data on higher-order input asks for two independent codebooks"
+META_CODEBOOKS_WARNING = (
+    "--meta-data on higher-order input asks for two independent codebooks"
+)
 
 
 class _ListHandler(logging.Handler):

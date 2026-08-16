@@ -74,7 +74,7 @@ def category_function(mode, names, states):
     if re.fullmatch(r"pmod\d+", mode):
         k = int(mode[4:])
         return lambda sid, pid: pid % k
-    sys.exit("unknown mode '%s'" % mode)
+    sys.exit(f"unknown mode '{mode}'")
 
 
 def main(argv):
@@ -83,15 +83,18 @@ def main(argv):
     net, mode, out = argv[1], argv[2], argv[3]
     names, states = read_states(net)
     if not states:
-        sys.exit("no *States section in %s -- expand multilayer input with -o states first" % net)
+        sys.exit(
+            f"no *States section in {net} -- expand multilayer input with -o states first"
+        )
     category = category_function(mode, names, states)
 
     with open(out, "w") as f:
-        f.write("# stateId metaCategory (make-state-meta.py %s %s)\n" % (net.split("/")[-1], mode))
-        for sid, pid in states:
-            f.write("%d %d\n" % (sid, category(sid, pid)))
-    print("%d states, %d categories -> %s"
-          % (len(states), len({category(s, p) for s, p in states}), out))
+        f.write(
+            f"# stateId metaCategory (make-state-meta.py {net.split('/')[-1]} {mode})\n"
+        )
+        f.writelines(f"{sid} {category(sid, pid)}\n" for sid, pid in states)
+    ncat = len({category(s, p) for s, p in states})
+    print(f"{len(states)} states, {ncat} categories -> {out}")
 
 
 if __name__ == "__main__":
