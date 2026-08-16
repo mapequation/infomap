@@ -23,6 +23,16 @@ Single-thread convention: `MODE=release OPENMP=0`, `--seed 123`, best-of-N via `
 | air30k (states) | `networks/states/air2011/air30k.net` | — | undirected | **state / memory** (higher-order) real-world | 183 physical · 13 213 state nodes |
 | air30k (regularized) | `networks/states/air2011/air30k.net` | `-d --regularized` | directed | **state / memory** + **recorded teleportation** | 183 physical · 13 213 state nodes |
 | science2001 (preferred modules) | `networks/db/science2001.net` | `-d --preferred-number-of-modules 25` | directed | first-order + **preferred-number-of-modules** bias | 7 170 nodes |
+| air30k (meta) | `networks/states/air2011/air30k.net` (+ `…/air30k_usstate.meta`) | `--meta-data networks/states/air2011/air30k_usstate.meta` | undirected | **state/memory + metadata** (both codebooks) | 183 physical · 13 213 state nodes |
+
+> **`air30k (meta)` metadata is generated, not checked in.** `networks/` is a data directory outside the
+> repo and none of its higher-order networks ships a metadata file, so the row is reconstructed with
+> `python3 columnar_wip/make-state-meta.py networks/states/air2011/air30k.net usstate \
+> networks/states/air2011/air30k_usstate.meta` — one category per state, the two-letter US state code
+> parsed out of the airport's `*Vertices` name (52 categories over 183 airports). It exists because the
+> benchmark set had **no** metadata + higher-order configuration, which is exactly why it could not see
+> #1012: on that input the physical-node codebook was dropped entirely. The object-oriented arm does not
+> finish `-N10` inside 30 minutes on this row and is quoted at `-N1`.
 
 **Coverage rationale**
 - **Base map equation, undirected**: ninetriangles (hierarchy), jazz, netscicoauthor2010, powergrid.
