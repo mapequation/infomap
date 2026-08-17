@@ -1562,7 +1562,30 @@ InfomapBase& InfomapBase::initTree(const NodePaths& tree)
       const auto clusterId = nodePath.second[0]; // First level module
       clusterIds[nodeId] = clusterId;
     }
-    return initPartition(clusterIds, false);
+    initPartition(clusterIds, false);
+    // Score the tree for the side effect only. initPartition updates the objective's
+    // aggregate bookkeeping but writes no InfoNode::codelength, so without this the
+    // shortcut leaves every module holding whatever it held before -- 0 on a fresh
+    // instance, or a stale value from an earlier, deeper trial on a reused one. The
+    // deep branch below already ends in this same call, and the fields it writes are
+    // read by the per-level table and by "codelength" per module in the JSON output.
+    // restoreBestResult re-materializes a best-of-N winner through here and rewrites
+    // the output file, so a flat winner used to land zeros in the rewritten JSON.
+    // The return value is deliberately dropped: initPartition has just set
+    // m_hierarchicalCodelength from getCodelength(), which is what restoreBestResult
+    // reports, and for the biased objective the sum over nodes need not agree with the
+    // search bookkeeping to the last digit. Side effect only means no reported number
+    // moves -- verified bit-identical over the benchmark set.
+    //
+    // It does cost one extra pass on --no-infomap with cluster data, where executeTrial
+    // scores the tree again: web-NotreDame with a flat 325k-leaf tree goes 1.45-1.46s ->
+    // 1.47-1.49s, +1.4%, while the same run with a deep tree is unchanged because the
+    // branch below has always ended in this call. Every other caller either runs a search
+    // that dwarfs the pass or scores once, and the alternative -- threading an "already
+    // scored" flag from here into the trial loop -- buys back one pass on a path that
+    // runs no search, at the price of a stateful contract between the two.
+    calcCodelengthOnTree(root(), true);
+    return *this;
   }
 
   // Tear down the existing partition. Detach the leaves first so that the
@@ -3519,10 +3542,30 @@ void InfomapBase::initOptimizer(bool forceNoMemory)
   m_root.m_edgePool = &m_edgePool;
 
 #if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
-  // Config::adaptDefaults validates --lossy against the parsed flags, but input
-  // parsing can flip state/multilayer input and auto-switch the flow model to
-  // directed afterwards. Re-validate here so lossy never silently falls through
-  // to another objective.
+  // Config::adaptDefaults validates the constraints decidable from the flags alone
+  // (teleportation, regularization, Markov time, --meta-data, an explicitly directed
+  // flow model). Every input-derived constraint is validated here, because the input
+  // type is not known at parse time: for memory and multilayer input this is the sole
+  // check rather than a second line of defence, and it is also what catches meta-data
+  // dimensions read from the file (#1004). initOptimizer() is the objective dispatch
+  // point, so an embedder calling initNetwork directly is caught here too.
+  //
+  // The flow-model clause is narrower than it reads, and a directed edge list is not
+  // what reaches it: *Arcs under an undirected flow model is parsed as undirected and
+  // the model stays undirected. After parsing, flowModel is written by
+  // configureNetworkMode() and by the two config setters setDirected()/setFlowModel().
+  // configureNetworkMode() writes it only when the network was marked as directed input,
+  // which happens solely in multilayer expansion; that normally throws on the clause
+  // above instead, because expansion assigns state ids that differ from the physical
+  // ids, and gets past it only when the expanded map is identity, leaving
+  // haveMemoryInput() false so that neither setStateInput() nor setMultilayerInput()
+  // runs (fixture intra_identity_states.net). The setters reach this guard because
+  // adaptDefaults() runs while a Config is built from flags and never again: on a
+  // constructed instance nothing re-validates, so setDirected(true) and
+  // setFlowModel(directed) land here rather than at parse time. So does an embedder
+  // assigning flowModel on a Config directly, which leaves flowModelIsSet false and is
+  // invisible to adaptDefaults even in the Config-then-adaptDefaults order. All four
+  // routes are pinned in test_lossy.cpp.
   if (lossy) {
     if (haveMetaData() || haveMemory() || isMultilayerNetwork())
       throw std::runtime_error("--lossy does not support memory, multilayer or meta-data input");
