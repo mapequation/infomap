@@ -67,13 +67,41 @@ namespace columnar {
 namespace {
 
   /**
+   * Size `breakdown` to the stack and zero it, so a scorer can charge straight
+   * into moduleTerm[level][module] without bounds checks.
+   */
+  void prepareBreakdown(const StackTerms& t, StackBreakdown& breakdown)
+  {
+    breakdown.rootTerm = 0.0;
+    breakdown.moduleTerm.assign(static_cast<std::size_t>(t.topLevel) + 1, {});
+    for (int k = 1; k <= t.topLevel; ++k)
+      breakdown.moduleTerm[static_cast<std::size_t>(k)].assign(static_cast<std::size_t>(t.level(k).n), 0.0);
+  }
+
+  // Charge `term` to module m at stack level k, when a breakdown was asked for.
+  // Every `total +=` in the two scorers below is paired with one of these, on the
+  // same expression, so the decomposition is the total rather than a re-derivation
+  // of it.
+  inline void charge(StackBreakdown* breakdown, int level, int module, double term)
+  {
+    if (breakdown != nullptr)
+      breakdown->moduleTerm[static_cast<std::size_t>(level)][static_cast<std::size_t>(module)] += term;
+  }
+
+  inline void chargeRoot(StackBreakdown* breakdown, double term)
+  {
+    if (breakdown != nullptr)
+      breakdown->rootTerm += term;
+  }
+
+  /**
    * The base map equation over the stack: every internal node codes its children.
    *
    * Level-1 modules code their leaf children (module-of-leaf-nodes term), higher
    * levels code their module children (module-of-modules term), and the root codes
    * the top modules (the index term).
    */
-  double scoreStackBase(const StackTerms& t)
+  double scoreStackBase(const StackTerms& t, StackBreakdown* breakdown = nullptr)
   {
     using infomath::plogp;
     double total = 0.0;
@@ -95,7 +123,9 @@ namespace {
         if (T[m] < 1e-16)
           continue;
         acc[m] -= plogp(t.exit(1, m) / T[m]);
-        total += acc[m] * T[m];
+        const double term = acc[m] * T[m];
+        total += term;
+        charge(breakdown, 1, m, term);
       }
     }
 
@@ -116,7 +146,9 @@ namespace {
           continue;
         const double ex = t.exit(lvl, m);
         const double totalUse = ex + sumEnter[m];
-        total += plogp(totalUse) - sumPlogpEnter[m] - plogp(ex);
+        const double term = plogp(totalUse) - sumPlogpEnter[m] - plogp(ex);
+        total += term;
+        charge(breakdown, lvl, m, term);
       }
     }
 
@@ -129,7 +161,9 @@ namespace {
         sumEnter += e;
         sumPlogpEnter += plogp(e);
       }
-      total += plogp(sumEnter) - sumPlogpEnter;
+      const double term = plogp(sumEnter) - sumPlogpEnter;
+      total += term;
+      chargeRoot(breakdown, term);
     }
 
     return total;
@@ -151,7 +185,7 @@ namespace {
    *      siblings, e = exitNetworkFlow). This replaces the base index term: L*
    *      codes the module transition once, in the exit codebook of the module left.
    */
-  double scoreStackNonRedundant(const StackTerms& t)
+  double scoreStackNonRedundant(const StackTerms& t, StackBreakdown* breakdown = nullptr)
   {
     using infomath::plogp;
     double total = 0.0;
@@ -163,8 +197,11 @@ namespace {
       std::vector<double> F(L1.n, 0.0);
       for (int i = 0; i < t.leaves.n; ++i)
         F[leafToL1[i]] += plogp(t.leaves.flow[i]);
-      for (int m = 0; m < L1.n; ++m)
-        total += nrEnterWithin(L1.flow[m], t.enter(1, m), t.exit(1, m), F[m]);
+      for (int m = 0; m < L1.n; ++m) {
+        const double term = nrEnterWithin(L1.flow[m], t.enter(1, m), t.exit(1, m), F[m]);
+        total += term;
+        charge(breakdown, 1, m, term);
+      }
     }
 
     // (2) Super parents (level 2..top): parent enter codebook + children exit codebooks.
@@ -178,14 +215,23 @@ namespace {
         sumEnter[childToParent[c]] += ec;
         sumEnterLog[childToParent[c]] += plogp(ec);
       }
+      // Both charges below land on the PARENT p, which is the attribution the
+      // block comment states: a node pays its own enter codebook over its children
+      // plus each child's leave-one-out exit codebook (the child's exit codeword is
+      // drawn from the parent's codebook, so it is the parent's cost).
       for (int p = 0; p < Lk.n; ++p) {
-        if (sumEnter[p] > 1e-16) // parent's enter codebook: pick a child by enter rate
-          total += t.enter(k, p) * (plogp(sumEnter[p]) - sumEnterLog[p]) / sumEnter[p];
+        if (sumEnter[p] > 1e-16) { // parent's enter codebook: pick a child by enter rate
+          const double term = t.enter(k, p) * (plogp(sumEnter[p]) - sumEnterLog[p]) / sumEnter[p];
+          total += term;
+          charge(breakdown, k, p, term);
+        }
       }
       for (int c = 0; c < Lkm1.n; ++c) { // each child's leave-one-out exit codebook
         const int p = childToParent[c];
         const double e = t.exit(k, p);
-        total += nrExitTerm(t.enter(k - 1, c), t.exit(k - 1, c), sumEnter[p] + e, sumEnterLog[p], e);
+        const double term = nrExitTerm(t.enter(k - 1, c), t.exit(k - 1, c), sumEnter[p] + e, sumEnterLog[p], e);
+        total += term;
+        charge(breakdown, k, p, term);
       }
     }
 
@@ -199,8 +245,11 @@ namespace {
         sumEnterLog += plogp(e);
       }
       const double e = t.exitNetworkFlow; // 0 for the whole closed network
-      for (int m = 0; m < Ltop.n; ++m)
-        total += nrExitTerm(t.enter(t.topLevel, m), t.exit(t.topLevel, m), sumEnter + e, sumEnterLog, e);
+      for (int m = 0; m < Ltop.n; ++m) {
+        const double term = nrExitTerm(t.enter(t.topLevel, m), t.exit(t.topLevel, m), sumEnter + e, sumEnterLog, e);
+        total += term;
+        chargeRoot(breakdown, term);
+      }
     }
 
     return total;
@@ -254,6 +303,43 @@ double ColumnarTwoLevel::hierarchicalCodelengthFromStack() const
   return base + objectiveCorrection();
 }
 
+double ColumnarTwoLevel::codelengthBreakdownFromStack(StackBreakdown& breakdown) const
+{
+  const StackTerms terms = buildStackTerms();
+  prepareBreakdown(terms, breakdown);
+  const double base = m_nonRedundant ? scoreStackNonRedundant(terms, &breakdown) : scoreStackBase(terms, &breakdown);
+  return base + objectiveCorrection(&breakdown);
+}
+
+double ColumnarTwoLevel::oneLevelCodelength()
+{
+  // Score the all-in-one-module partition on THIS objective by seeding it as a
+  // one-level stack: the corrections read the partition through the core's
+  // accessors, so there is no way to price them without a stack to read. Moving
+  // the current stack out and back keeps that O(1) — the only real work is the
+  // single aggregateLevel over the leaf network.
+  std::vector<Level> savedLevels = std::move(m_hierLevels);
+  std::vector<std::vector<int>> savedAssign = std::move(m_hierAssign);
+  std::vector<int> savedLeafTop = std::move(m_leafTop);
+  const unsigned int savedNumTopModules = m_numTopModules;
+
+  const std::vector<int> allInOne(static_cast<std::size_t>(m_nLeaves), 0);
+  m_hierLevels.clear();
+  m_hierAssign.clear();
+  m_hierLevels.emplace_back(); // level 0 is the leaf network; see hierLevel()
+  m_hierAssign.push_back(allInOne);
+  m_hierLevels.push_back(aggregateLevel(leaf0(), allInOne, 1, m_undirected));
+  m_leafTop = allInOne;
+  m_numTopModules = 1;
+  const double L = hierarchicalCodelengthFromStack();
+
+  m_hierLevels = std::move(savedLevels);
+  m_hierAssign = std::move(savedAssign);
+  m_leafTop = std::move(savedLeafTop);
+  m_numTopModules = savedNumTopModules;
+  return L;
+}
+
 std::vector<double> ColumnarTwoLevel::leafCodebookRates() const
 {
   // Empty = the uniform rate 1 of the base objective (see the header). Reusing
@@ -277,13 +363,13 @@ std::vector<double> ColumnarTwoLevel::leafCodebookRates() const
   return rates;
 }
 
-double ColumnarTwoLevel::objectiveCorrection() const
+double ColumnarTwoLevel::objectiveCorrection(StackBreakdown* breakdown) const
 {
   if (m_corrections.empty() || m_hierLevels.empty())
     return 0.0;
   double sum = 0.0;
   for (const auto& correction : m_corrections)
-    sum += correction->hierarchicalCorrection(*this);
+    sum += correction->hierarchicalCorrection(*this, breakdown);
   return sum;
 }
 

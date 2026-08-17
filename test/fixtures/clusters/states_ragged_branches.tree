@@ -1,0 +1,12 @@
+# path flow name state_id
+# The ragged shape of twotriangles_ragged_branches.tree, on the state network: module 1
+# holds its state nodes directly while module 2 holds sub-modules. States 1 and 4 are
+# both physical node 1 and share module 1, so MemCorrection's physical-node codebook is
+# actually engaged -- the leaf-module rate it charges F at differs between L and L*,
+# which is what makes this worth having next to the plain undirected case.
+1:1 0.1 "a" 1
+1:2 0.1 "d" 4
+1:3 0.1 "b" 2
+2:1:1 0.1 "c" 3
+2:1:2 0.1 "e" 5
+2:2:1 0.1 "f" 6

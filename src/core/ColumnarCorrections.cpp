@@ -29,7 +29,7 @@ namespace infomap {
 
 using namespace columnar;
 
-double BiasedEntropyCorrection::hierarchicalCorrection(const ColumnarTwoLevel& core) const
+double BiasedEntropyCorrection::hierarchicalCorrection(const ColumnarTwoLevel& core, StackBreakdown* breakdown) const
 {
   // Sum of childDegree over all internal nodes incl. root == count of non-root
   // nodes == sum of every level's size (leaves + modules at all levels).
@@ -37,6 +37,20 @@ double BiasedEntropyCorrection::hierarchicalCorrection(const ColumnarTwoLevel& c
   const unsigned int levels = core.hierNumLevels();
   for (unsigned int k = 0; k < levels; ++k)
     nonRootNodes += core.hierLevelSize(static_cast<int>(k));
+
+  // Per-node split: the identity above IS a per-node sum, so charge each internal
+  // node its own childDegree — the same attribution BiasedMapEquation::calcCodelength
+  // makes on the object-oriented tree. Reporting only; the total is unchanged.
+  if (breakdown != nullptr) {
+    const double perChild = m_multiplier / (2.0 * m_totalDegree);
+    const int topLevel = static_cast<int>(levels) - 1;
+    for (int k = 1; k <= topLevel; ++k) {
+      const int childCount = core.hierLevelSize(k - 1);
+      for (int c = 0; c < childCount; ++c)
+        breakdown->moduleTerm[static_cast<std::size_t>(k)][static_cast<std::size_t>(core.hierUnitParent(k - 1, c))] += perChild;
+    }
+    breakdown->rootTerm += perChild * core.hierLevelSize(topLevel);
+  }
   return m_multiplier * static_cast<double>(nonRootNodes) / (2.0 * m_totalDegree);
 }
 
@@ -44,14 +58,21 @@ double BiasedEntropyCorrection::hierarchicalCorrection(const ColumnarTwoLevel& c
 // PreferredModulesCorrection (--preferred-number-of-modules: |K - K_pref| bias)
 // ===================================================
 
-double PreferredModulesCorrection::hierarchicalCorrection(const ColumnarTwoLevel& core) const
+double PreferredModulesCorrection::hierarchicalCorrection(const ColumnarTwoLevel& core, StackBreakdown* breakdown) const
 {
   // Leaf-module level, matching where the move-loop bias acts (and the other
   // corrections apply). <2 levels means no modules; the base handles that and
   // the one-level fallback would collapse it anyway.
   if (core.hierNumLevels() < 2)
     return 0.0;
-  return cost(core.hierLevelSize(1));
+  const double penalty = cost(core.hierLevelSize(1));
+  // |K - K_pref| is one global scalar about the partition as a whole, not a sum
+  // over modules — there is nothing to split, and splitting it evenly would invent
+  // a per-module structure the penalty does not have. Convention: charge it to the
+  // root, i.e. it shows up as index bits on level 1 of the per-level table.
+  if (breakdown != nullptr)
+    breakdown->rootTerm += penalty;
+  return penalty;
 }
 
 double PreferredModulesCorrection::initMoveLoop(const std::vector<int>& leafModule, int numModules)
@@ -113,7 +134,7 @@ void PreferredModulesCorrection::applyMerge(int a, int b)
   m_moduleMembers[a] = 0;
 }
 
-double MetaCorrection::hierarchicalCorrection(const ColumnarTwoLevel& core) const
+double MetaCorrection::hierarchicalCorrection(const ColumnarTwoLevel& core, StackBreakdown* breakdown) const
 {
   using infomath::plogp;
   // Meta term applies at the leaf-module level (level 1): for each bottom
@@ -139,6 +160,16 @@ double MetaCorrection::hierarchicalCorrection(const ColumnarTwoLevel& core) cons
     total += plogp(moduleFlow[m]);
   for (const auto& kv : catFlow)
     total -= plogp(kv.second);
+  // Per-node split: the meta term is a sum over leaf modules, so it charges the
+  // level-1 modules. Summed separately from `total` (whose two-loop order is part
+  // of the reported number and stays untouched), so the two can differ in the last
+  // ulp; that is reporting noise, not a second objective.
+  if (breakdown != nullptr) {
+    for (int m = 0; m < numModules; ++m)
+      breakdown->moduleTerm[1][static_cast<std::size_t>(m)] += m_metaDataRate * plogp(moduleFlow[m]);
+    for (const auto& kv : catFlow)
+      breakdown->moduleTerm[1][static_cast<std::size_t>(kv.first >> 32)] -= m_metaDataRate * plogp(kv.second);
+  }
   return m_metaDataRate * total;
 }
 
@@ -342,7 +373,7 @@ double MemCorrection::physFlow(int module, int physical) const
   return it == pf.end() ? 0.0 : it->second;
 }
 
-double MemCorrection::hierarchicalCorrection(const ColumnarTwoLevel& core) const
+double MemCorrection::hierarchicalCorrection(const ColumnarTwoLevel& core, StackBreakdown* breakdown) const
 {
   using infomath::plogp;
   if (core.hierNumLevels() < 2)
@@ -371,14 +402,32 @@ double MemCorrection::hierarchicalCorrection(const ColumnarTwoLevel& core) const
     double sum = 0.0;
     for (const auto& kv : physFlowMap)
       sum += plogp(kv.second);
+    // For reporting the split is not noise, it is the whole point: the physical
+    // codebook substitution happens per leaf module, so re-derive it that way
+    // rather than dropping the correction on the root. Same value up to summation
+    // order, which the returned total keeps.
+    if (breakdown != nullptr) {
+      const int numModules = core.hierLevelSize(1);
+      std::vector<double> fStateSplit(static_cast<std::size_t>(numModules), 0.0);
+      for (int i = 0; i < nLeaves; ++i)
+        fStateSplit[static_cast<std::size_t>(core.hierLeafModule(i))] += plogp(m_leafFlow[i]);
+      for (int m = 0; m < numModules; ++m)
+        breakdown->moduleTerm[1][static_cast<std::size_t>(m)] += fStateSplit[static_cast<std::size_t>(m)];
+      for (const auto& kv : physFlowMap)
+        breakdown->moduleTerm[1][static_cast<std::size_t>(kv.first >> 32)] -= plogp(kv.second);
+    }
     return m_cState - sum;
   }
   std::vector<double> fPhys(rates.size(), 0.0);
   for (const auto& kv : physFlowMap)
     fPhys[static_cast<std::size_t>(kv.first >> 32)] += plogp(kv.second);
   double total = 0.0;
-  for (std::size_t m = 0; m < rates.size(); ++m)
-    total += rates[m] * (fState[m] - fPhys[m]);
+  for (std::size_t m = 0; m < rates.size(); ++m) {
+    const double term = rates[m] * (fState[m] - fPhys[m]);
+    total += term;
+    if (breakdown != nullptr)
+      breakdown->moduleTerm[1][m] += term;
+  }
   return total;
 }
 
@@ -642,7 +691,7 @@ double LossyCorrection::moduleCost(double flow, double flowLogFlow, double entro
   return std::max(0.0, (plogp(flow) - flowLogFlow) - m_lambda * entropy);
 }
 
-double LossyCorrection::hierarchicalCorrection(const ColumnarTwoLevel& core) const
+double LossyCorrection::hierarchicalCorrection(const ColumnarTwoLevel& core, StackBreakdown* breakdown) const
 {
   if (core.hierNumLevels() < 2)
     return 0.0;
@@ -656,8 +705,13 @@ double LossyCorrection::hierarchicalCorrection(const ColumnarTwoLevel& core) con
     H[m] += m_leafEntropy[i];
   }
   double sumC = 0.0;
-  for (int m = 0; m < numModules; ++m)
-    sumC += moduleCost(F[m], flf[m], H[m]);
+  for (int m = 0; m < numModules; ++m) {
+    const double c = moduleCost(F[m], flf[m], H[m]);
+    sumC += c;
+    // The noise-module discount is already per leaf module; charge it there.
+    if (breakdown != nullptr)
+      breakdown->moduleTerm[1][static_cast<std::size_t>(m)] -= c;
+  }
   return -sumC; // objective J = base - sum_m c_m
 }
 

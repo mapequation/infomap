@@ -4,39 +4,56 @@
 
 Single-threaded (`MODE=release OPENMP=0`), `--seed 123 -N10` — **best of 10 trials**, the way Infomap is normally run. Codelength in bits; `time` = total wall for all 10 trials, minimum of 3 interleaved repetitions; `top`/`lvls` = top modules / levels of the best partition. The network set spans base (undirected + directed), metadata, multilayer and state/memory objectives; see [`columnar_wip/benchmark-networks.md`](columnar_wip/benchmark-networks.md) for paths and full details. Columnar column = the default columnar search (`-C`).
 
-> **This PR** ([#1010](https://github.com/mapequation/infomap/pull/1010), fixes [#1009](https://github.com/mapequation/infomap/issues/1009)) **is a correctness fix** to the memory objective under L\*: `MemCorrection` substituted the
-> physical-node `sum plogp(flow)` for the state-node one at coefficient 1, which is the base map
-> equation's coefficient, while L\*'s leaf-module term consumes that quantity at a per-module rate
-> `1 + qEnter*qExit/(flow*(flow+qExit)) >= 1`. `-C --non-redundant` on state / memory / multilayer input
-> therefore reported L\* **too high**, and the error grew with the number of physical nodes holding
-> several states in one module. **`--non-redundant` on higher-order input changes value and search
-> trajectory. Everything else is bit-identical**, which is the claim the numbers below have to carry.
+> **This PR is a reporting-correctness fix**: the columnar engine now reports **its own objective**
+> everywhere, not the object-oriented one. It computes its codelength on the stack, so everything that
+> read the materialized `InfoNode` tree was reading a different objective — or nothing at all:
+> jazz `-C` printed a per-level table of `0.000000` next to `Best codelength 6.862755928`; netsci
+> `-C --non-redundant -N10` printed a table totalling `4.103756` next to a headline of `3.892209764`;
+> `-C --no-infomap -c <ragged.tree> --non-redundant` returned the **base** L (ninetriangles
+> 3.458078031 for both objectives, against a true L\* of 3.237864808); the same fallback dropped
+> `--preferred-number-of-modules` entirely; and the one-level collapse priced itself with a
+> **zero-module** tree while installing **one** module. See F38 in
+> [`columnar_wip/columnar-rethink-notes.md`](columnar_wip/columnar-rethink-notes.md).
 >
-> **The base objective did not move — measured, not argued.** 12 `-C` configs run on the pre-fix binary
-> and this one (jazz `-N20` two-level and hierarchical, ninetriangles two-level and hierarchical, the
-> `states.net` / `states_flow.net` / `multilayer.net` fixtures two-level and hierarchical, a
-> `--directed --recorded-teleportation` config, and a 54-state exactly-lumpable duplication of
-> ninetriangles) reproduce their codelength to the **last bit** (`delta == 0.0`, not "within 1e-12").
-> The correction's base branch is untouched down to its summation order, precisely so this holds.
+> **Only one class of run changes value, and it is the last item.** Under `--entropy-corrected`, where
+> the objective charges per node, the one-level collapse now costs `multiplier/(2*totalDegree)` more —
+> the price of the partition it actually installs. Measured: an ER(80, 0.2) graph under
+> `-C -N1 --entropy-corrected` goes 6.315339939 → 6.315739939 (= +1/2500 = exactly that term), with and
+> without `--non-redundant`. Nothing else moves: **28 interleaved A/B configs**, 26 bit-identical, the
+> two exceptions being that same collapse.
 >
-> **STALE — must be re-measured before this PR is reviewed:** the four higher-order rows of the L\*
-> table below (`multilayer (ex.)`, `malaria`, `air30k`, `air30k (reg.)`). Those are pre-fix L\* numbers
-> and this PR changes them by construction. They could not be redone in the session that made the fix:
-> `networks/` (malaria, air30k, and every other real-world benchmark) is not present in that checkout.
-> Every other row of every table is a base-objective or first-order-L\* config that the bit-identity
-> sweep above covers, and is carried over unchanged.
+> **The tables below were re-measured on this binary against the pre-change one, interleaved, same
+> session.** All 13 `-C -N10` configs of the main table are **bit-identical** in codelength, top modules
+> and levels, and so are all four higher-order `--non-redundant` configs — which also let the three
+> rows the previous PR left marked STALE be **replaced with measured values** (malaria 7.427572783,
+> air30k 5.378912606, air30k regularized 5.568875163). The `time` columns are **carried over from the
+> previous session** and are not re-measured here: re-measuring only the columnar column would make each
+> row's OO/columnar ratio cross-session, which is worse than a stated carry-over. The time evidence for
+> this PR is the same-session A/B below instead.
 >
-> Direction of the change, from the configs that *were* available: a 54-state lumpable duplication of
-> ninetriangles under `-C --non-redundant` goes 3.226345721211 → 3.153268798134 (hierarchical, top 3 /
-> 3 levels both ways) and 3.465711933541 → 3.392635010464 (`--two-level`, 9 modules both ways) — the
-> second is now exactly the physical network's L\* for the same partition, which is the invariance the
-> fix restores. The small state fixtures do not move at all: their optima put no physical node's two
-> states in one module, so the correction is zero under either coefficient.
+> **Speed: one config over the 1% line, and it is reproducible.** Minimum and median of 11–15
+> interleaved repetitions, CPU time (`user+sys`), `-N10` unless stated:
 >
-> **Not re-measured:** the `-F` and `-2` tables, and all timings. Nothing on the base-objective path
-> changed, and the L\* scoring path gained one O(K) pass over level-1 modules on the cold
-> (per-structural-operator) path, only when a `MemCorrection` is attached — so re-running them from the
-> same networks is the check to make, not a different set of numbers.
+> | config | min | median |
+> |---|--:|--:|
+> | malaria `-C` | **+0.68%** | **+1.35%** |
+> | malaria `-C -N1` | +0.00% | +0.00% |
+> | air30k `-C` | −2.17% | +0.26% |
+> | air30k `-C -N1` | −5.26% | +0.00% |
+> | science2001 `-d -C` | +0.34% | +0.00% |
+> | web-NotreDame `-d -C -N1` | −0.38% | −1.13% |
+> | web-NotreDame `-d -C -2 -N1` | +1.26% | +0.00% |
+> | powergrid `-C` | +4.35% (0.23→0.24s, one tick) | +0.00% |
+>
+> Malaria is the only one that survives repetition: a **control** run of the pre-change binary against a
+> byte-identical copy of itself, same harness, gives +0.00% / −0.34%, so the harness has no position
+> bias. Gating the per-trial breakdown+stamping off halves it (+0.68% / +0.67%); gating the columnar
+> one-level value off as well leaves +1.02% / +0.33%, i.e. the residual is not cleanly attributable and
+> is partly code layout. `sample` on the full binary puts `codelengthBreakdownFromStack` and
+> `oneLevelCodelength` at 1 sample each out of 253, consistent with the measured magnitude. The added
+> work is one extra stack scoring per trial (the breakdown) plus one O(leaves × depth) walk to stamp it
+> onto the tree; the one-level value is computed **once per run**, not per trial. **Nothing is added to
+> the move loop or to any per-candidate delta.**
 
 <table>
 <thead>
@@ -138,12 +155,12 @@ log.)
 > **This section is a snapshot, not a changelog.** It carries the current numbers plus the evidence for
 > the change under review. Per-feature attribution for features that already landed (partial seeding
 > #985, flat-first #891, coarse-tune #890, the #875 hoist, the split operator #987/#988,
-> the worker leaf-input fix #997, the master sync bringing in #998, the non-redundant map equation #1001)
-lives in each
+> the worker leaf-input fix #997, the master sync bringing in #998, the non-redundant map equation #1001,
+> the file split #1003, the physical-node codebook rate under L\* #1010) lives in each
 > of those PRs, whose own copy of this file is the measurement that justified it; the running narrative
 > is in [`columnar_wip/columnar-rethink-notes.md`](columnar_wip/columnar-rethink-notes.md). The last
-> section below — "What this PR changes: the file split, and nothing else" — is the evidence for **this**
-> PR.
+> section below — "What this PR changes: the reporting paths, and one collapse price" — is the evidence
+> for **this** PR.
 
 Every measured run behind this section is logged row-per-run in [`columnar_wip/columnar-search-runs.tsv`](columnar_wip/columnar-search-runs.tsv) for plotting the codelength/time frontier. Read the `batch` column before comparing times: session noise floors ranged ±3% to 13%, so the time axis is only comparable within a batch (`load1m`, `reps`, `agg` are recorded for that reason), and `derived=1` marks rows reconstructed from reported percentages rather than measured absolutes.
 
@@ -192,8 +209,10 @@ cross-scoring — whether the L\*-aware search earns its place.
 **All 13 benchmark configs run under L\***: no input and no objective is excluded. Both arms
 interleaved in one session, minimum of 3 repetitions, same binary, `--seed 123 -N10`. Times are
 comparable within a row, not across the three batches (`pr1001-lstar`, `pr1001-lstar-ho`,
-`pr1001-lstar-meta` in the run log). The four higher-order L\* codelengths are **stale** — this PR
-changes them and the networks were not available to re-measure; see the note at the top.
+`pr1001-lstar-meta` in the run log). The four higher-order L\* codelengths were marked stale by the
+previous PR (which changed them and could not reach the networks); they are **measured** here on both
+the pre-change and the post-change binary and are identical on the two, so they are this PR's numbers
+as much as the previous one's.
 
 <table>
 <thead>
@@ -219,9 +238,9 @@ changes them and the networks were not available to re-measure; see the note at 
 <tr><td>web-NotreDame (<code>-d</code>)</td><td>base</td><td align="right">5.568529293</td><td align="right">5</td><td align="right">6</td><td align="right">5.517073626</td><td align="right">5</td><td align="right">6</td><td align="right">+0.6%</td></tr>
 <tr><td>lazega</td><td>metadata</td><td align="right">6.017860269</td><td align="right">7</td><td align="right">2</td><td align="right">5.968624653</td><td align="right">7</td><td align="right">2</td><td align="right">0.015s vs 0.015s</td></tr>
 <tr><td>multilayer (ex.)</td><td>multilayer</td><td align="right">2.011405238</td><td align="right">2</td><td align="right">2</td><td align="right">1.928856578 (unchanged)</td><td align="right">2</td><td align="right">2</td><td align="right">0.011s vs 0.012s</td></tr>
-<tr><td>malaria</td><td>multilayer</td><td align="right">7.397501710</td><td align="right">2</td><td align="right">3</td><td align="right"><i>7.432494779 — STALE</i></td><td align="right">2</td><td align="right">3</td><td align="right">−0.4%</td></tr>
-<tr><td>air30k</td><td>state/memory</td><td align="right">5.392425413</td><td align="right">22</td><td align="right">3</td><td align="right"><i>5.486124697 — STALE</i></td><td align="right">22</td><td align="right">3</td><td align="right">−2.0%</td></tr>
-<tr><td>air30k (reg.)</td><td>state/memory</td><td align="right">5.576242406</td><td align="right">11</td><td align="right">3</td><td align="right"><i>5.691341197 — STALE</i></td><td align="right">11</td><td align="right">3</td><td align="right">−3.3%</td></tr>
+<tr><td>malaria</td><td>multilayer</td><td align="right">7.397501710</td><td align="right">2</td><td align="right">3</td><td align="right">7.427572783</td><td align="right">2</td><td align="right">3</td><td align="right">−0.4%</td></tr>
+<tr><td>air30k</td><td>state/memory</td><td align="right">5.392425413</td><td align="right">22</td><td align="right">3</td><td align="right">5.378912606</td><td align="right">22</td><td align="right">3</td><td align="right">−2.0%</td></tr>
+<tr><td>air30k (reg.)</td><td>state/memory</td><td align="right">5.576242406</td><td align="right">11</td><td align="right">3</td><td align="right">5.568875163</td><td align="right">11</td><td align="right">3</td><td align="right">−3.3%</td></tr>
 <tr><td>science2001 (pref-mods)</td><td>base + bias</td><td align="right">8.235585529</td><td align="right">25</td><td align="right">2</td><td align="right">8.447745451</td><td align="right">25</td><td align="right">2</td><td align="right">−1.1%</td></tr>
 </tbody>
 </table>
@@ -238,58 +257,77 @@ under both bases, and the `_states.tree` round-trip trap — lives in
 [#1001](https://github.com/mapequation/infomap/pull/1001), whose own copy of this file is the
 measurement that justified it.
 
-### What this PR changes: L\* on higher-order input, and nothing else ([#1010](https://github.com/mapequation/infomap/pull/1010))
+### What this PR changes: the reporting paths, and one collapse price
 
-The memory objective's physical-node codebook is a **substitution**, not an additive term: both base
-objectives read a level-1 module's leaf flows only through `F_m = sum_{leaf in m} plogp(flow)`, and
-`MemCorrection` is the same objective with the state-node `F_m` replaced by the physical-node one. A
-substitution inherits the coefficient of the term it sits inside — and the two objectives disagree
-about it. The base map equation's `T`-normalized module term collapses to
-`plogp(T) - plogp(qExit) - F_m`, so the coefficient is exactly 1. L\* splits that codebook into an
-enter codebook normalized by `moduleFlow` and a within codebook normalized by `T = moduleFlow + qExit`,
-charging `F_m` against both, so the coefficient is
-`nrLeafCodebookRate = 1 + qEnter*qExit/(flow*(flow+qExit)) >= 1`.
+The columnar core computes its codelength **on the stack**. Everything that read the materialized
+`InfoNode` tree was therefore reading a different objective — or nothing at all. `InfoNode::codelength`
+has exactly one writer, `calcCodelengthOnTree`, and it is the **base** map equation; `initTree`'s
+`maxDepth == 2 || twoLevel` shortcut never calls it, and a flat `.clu` reaches `initPartition` without
+going through `initTree` at all.
 
-The correction was applied at coefficient 1 under both. Since `plogp` is superadditive under splitting,
-`F^state - F^phys <= 0`, so multiplying it by 1 instead of by `rate >= 1` **under-subtracts**: L\* came
-out too high, always, by `(rate - 1) * (F^phys - F^state)`.
+| symptom | before | after |
+|---|--:|--:|
+| jazz `-C -N10`, per-level table Total | `0.000000` | `6.862756` (= `Best codelength`) |
+| politicalblogs `-C -d -N2`, level-1 index bits | `0.000156` (the *previous* trial's value, leaked) | a real 79-module index term |
+| netsci `-C --non-redundant -N10`, table Total | `4.103756` (base L) | `3.892210` (= the L\* headline) |
+| ninetriangles `-C --no-infomap -c <ragged.tree> --non-redundant` | 3.458078031 (= base L) | **3.237864808** |
+| … `+ --entropy-corrected` | 3.688847262 (base L + bias) | **3.468634039** |
+| … `+ --preferred-number-of-modules 5` | 3.458078031 (penalty gone) | **5.458078031** |
+| states `-C --no-infomap -c <ragged state tree> --non-redundant` | 2.078071905 (= base L) | **1.928856578** |
+| ER(80, 0.2) `-C -N1 --entropy-corrected` (one-level collapse) | 6.315339939 | **6.315739939** |
 
-The observable symptom is a broken invariance. Split every physical node into states the walker cannot
-distinguish and lift the partition so no physical node is split across modules: the process, the
-modules and every describable event are unchanged, so the codelength must be too. `L` always was. `L*`
-was not:
+**Why a ragged tree can be fixed for free under L\*, and only under L\*.** L\* is exactly invariant
+under inserting a pass-through (single-child) level: the parent's enter codebook is
+`e*(plogp(e) - plogp(e))/e == 0` and the child's leave-one-out exit term has numerator
+`plogp(x) - 0 - plogp(x) == 0`. The base map equation charges `plogp(x+e) - plogp(e) - plogp(x) > 0` for
+the same node. Measured on ninetriangles with one such level above every leaf module: base
+3.38583082 → 3.97958082, L\* 3.078067323 → bit-identical. So the evaluation rectangularizes a ragged
+tree by repeating each short path's own finest module id — **gated on `--non-redundant`**, and the
+rectangularity guard inside `seedHierarchyFromLeafPaths` stays strict, because it is what keeps the base
+scorer honest.
 
-| case | L (before = after) | L\* before | L\* after | error removed |
-|---|--:|--:|--:|--:|
-| two triangles, all 6 nodes ×2 | 2.320730356834 | 2.145875734724 | 2.128018591867 | +0.017857142857 |
-| two triangles, node 3 only ×2 | 2.320730356834 | 2.131845122479 | 2.128018591867 | +0.003826530612 |
-| ninetriangles, all 27 nodes ×2 | 3.572285805615 | 3.465711933541 | 3.392635010464 | +0.073076923077 |
-| two triangles, directed (rawdir), all ×2 | 1.899533374666 | 1.844312916393 | 1.841584741790 | +0.002728174603 |
-| jazz provenance lift, 30 split nodes | 6.861229774904 | 6.841080565212 | 6.836565239276 | +0.004515325936 |
-| jazz provenance lift, 78 split nodes | 6.861229774904 | 6.855445280017 | 6.836565239276 | +0.018880040741 |
+`--entropy-corrected` is the exception, and it is handled by construction rather than by formula: the
+phantom nodes are marked while the leaf chains are walked, and *their breakdown entries* come off the
+total. Same number as the analytic `padNodes*multiplier/(2*totalDegree)` discount (ninetriangles ragged
+3.468634039 = 3.237864808 + 36/156, one pad node less than the hand-padded tree's 3.475044295 =
++37/156), but it stays right if another correction ever charges per node.
 
-Every "after" equals the *physical* network's own L\* for the same partition to `<= 9e-14` (two
-triangles 2.128018591867112, ninetriangles 3.392635010464057, jazz 6.836565239275705), which is the
-invariance stated as an equation rather than as a delta.
+**The fallback that remains is now complete.** For every objective *except* L\*, a ragged tree still
+falls back to `calcCodelengthOnTree`, which is exact there — checked pairwise between the engines on a
+rectangular tree for base, `-d`, `-d --recorded-teleportation`, `--markov-time 1.5`,
+`--variable-markov-time`, `--entropy-corrected`, `--meta-data` and `--regularized`: all agree.
+`--preferred-number-of-modules` is the **only** one that does not (7.38583082 vs 3.38583082), because it
+has no object-oriented counterpart at all — so its `|K - K_pref|` penalty is added to the fallback value
+from the tree's own leaf-module count.
 
-**The base objective is bit-identical.** 12 `-C` configs — jazz (`-N20`, two-level and hierarchical),
-ninetriangles (both), the `states.net` / `states_flow.net` / `multilayer.net` fixtures (both), a
-`--directed --recorded-teleportation` config, and a 54-state lumpable duplication of ninetriangles
-(both) — reproduce `delta == 0.0` exactly against the pre-fix binary. `MemCorrection`'s base branch
-keeps its two global sums rather than regrouping per module, so even the floating-point summation
-order is preserved.
+**The one-level collapse now prices the partition it installs.** `getOneLevelCodelength()` is
+`calcCodelength` on a tree with **zero** modules; the collapse installs **one**. Under
+`--entropy-corrected` those differ by exactly `multiplier/(2*totalDegree)` (ninetriangles 4.918622452
+vs 4.925032709), and the fallback demonstrably fires there. Identical for the base map equation with no
+corrections, which is why it had survived. The object-oriented path keeps the zero-module convention at
+the analogous site — that is a master question, not one to settle on this branch.
 
-**One source of truth for the teleport augmentation.** The correction has to charge its substitution
-against the same enter/exit rates the scorer used, *including* the recorded-teleportation additions —
-re-deriving them from the link-only rates would be silently wrong on exactly the flow models
-(`--regularized`, `--recorded-teleportation`) where it is hardest to notice. So the teleport preamble is
-extracted into `ColumnarTwoLevel::buildStackTerms()`, which both `hierarchicalCodelengthFromStack()` and
-the new `leafCodebookRates()` consume, rather than written twice.
+A visible consequence, stated so it is not read as a bug: on such a run the summary now prints
+`One-level codelength 6.315339939` above `Best codelength 6.315739939`, i.e. **best > one-level**, and
+`Relative savings -0.01%`. The printed reference is the ZERO-module tree, which is not a partition at
+all; the collapsed one-module partition genuinely costs `multiplier/(2*totalDegree)` more under a
+per-node correction. The alternative — making the printed reference the one-module value — would move
+`getRelativeCodelengthSavings()` and the OO/columnar comparison line for both engines, so it belongs to
+the same master decision.
 
-**Cost.** One O(K) pass over level-1 modules per stack scoring — plus, under recorded teleportation
-only, a second run of the teleport preamble's pass over the leaves — on the cold
-(per-candidate-structural-operator) path, and only when a `MemCorrection` is attached under L\*. The
-per-candidate move arithmetic is untouched — the leaf move loop is deliberately base-flavoured under
-L\* (see `--non-redundant-exact`), so `initMoveLoop`/`moveDelta`/`applyMove`/`mergeDelta` keep the
-coefficient-1 form by design.
+**What is deliberately *not* changed.** `getIndexCodelength()` becomes objective-correct only under
+`--non-redundant`, where `getModuleCodelength()` was returning `L* - L_index`, a hybrid of two
+objectives. Under `--entropy-corrected` the columnar root charge and the objective's own index term
+differ by `multiplier/(2*totalDegree)` — but so do the **object-oriented engine's own two answers**,
+since its per-level table charges the root `calcCodelength(m_root)` while `getIndexCodelength()` returns
+the objective's bookkeeping (twotriangles `--entropy-corrected`: 0.214286 vs 0.178571). Picking one here
+would only make the two engines differ, so the differential test stays exactly as it was.
 
+**Known remaining gap, out of scope here.** With `--num-trials > 1` and a best trial that is not the
+last, `restoreBestResult` re-materializes the winner through `initTree` and the flat shortcut leaves it
+unscored again — so the **rewritten output file** loses the stamping (jazz `-C -N10 -o json`:
+`sum(modules[].codelength) = 0.531` against a codelength of 6.862755928). The **console** table is
+unaffected, because it is captured as a string from the live tree of the winning trial. This is the
+shared half of #1002 and hits the object-oriented engine identically (`--two-level -N3` on ninetriangles
+sums 0.936 against 3.518); it belongs to the `initTree` fix on master, and the columnar re-stamp on
+restore is a one-line follow-up on top of it.

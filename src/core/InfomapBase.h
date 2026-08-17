@@ -46,6 +46,10 @@ namespace detail {
 
 class ColumnarTwoLevel;
 
+namespace columnar {
+  struct StackBreakdown;
+} // namespace columnar
+
 // Cooperative cancellation hook (issue #412). Return true to stop the run at the
 // next checkpoint. Invoked only on the owner thread, so it is safe to enter
 // host-language APIs (R_CheckUserInterrupt, PyErr_CheckSignals) from it.
@@ -142,9 +146,15 @@ public:
 
   const std::vector<double>& codelengths() const { return m_codelengths; }
 
-  double getIndexCodelength() const { return m_optimizer->getIndexCodelength(); }
+  // The index term, under the objective that produced codelength(). Under
+  // --non-redundant that is the root's own charge in the columnar stack breakdown,
+  // not m_optimizer's: m_optimizer is always a BASE map equation on this branch, so
+  // pairing its index term with an L* total made getModuleCodelength() = L* - L_index
+  // a hybrid of two objectives (visible in -vv, and exposed through SWIG as
+  // module_codelength). See m_columnarIndexCodelength for why only L*.
+  double getIndexCodelength() const { return m_columnarIndexCodelength >= 0.0 ? m_columnarIndexCodelength : m_optimizer->getIndexCodelength(); }
 
-  double getModuleCodelength() const { return m_hierarchicalCodelength - m_optimizer->getIndexCodelength(); }
+  double getModuleCodelength() const { return m_hierarchicalCodelength - getIndexCodelength(); }
 
   double getHierarchicalCodelength() const { return m_hierarchicalCodelength; }
 
@@ -532,11 +542,61 @@ private:
   // the current InfoNode tree — the seed for a columnar codelength evaluation.
   std::vector<std::vector<int>> leafModulePathsFromTree() const;
 
+  // Rectangularize ragged leaf paths by repeating each short path's own finest
+  // module id until every path has the maximum depth, so the strict-level stack
+  // can hold the partition. A top-level leaf (empty path -- its parent is the root)
+  // first gets a synthetic module id of its own, since it is its own module. Valid
+  // ONLY under L*, which is invariant under such a pass-through level; see the
+  // definition for the theorem and the guard.
+  // Returns, per leaf, how many levels were inserted below its finest module
+  // (all zeros when nothing was padded). A top-level leaf's synthetic module is that
+  // leaf's finest module, so it is NOT counted -- only the copies stacked above it.
+  static std::vector<int> padLeafPathsToUniformDepth(std::vector<std::vector<int>>& paths);
+
+  // Score the current InfoNode tree with the object-oriented objective (total AND
+  // per-node), plus the one correction calcCodelengthOnTree does not implement
+  // (--preferred-number-of-modules). The columnar fallback when the stack cannot
+  // hold the partition; keeps the reported total and the stamped tree on one
+  // objective.
+  double objectOrientedTreeCodelength();
+
   // Evaluate the current InfoNode partition's codelength on the columnar
-  // structure (base map equation + active correction). Falls back to the
-  // object-oriented calcCodelengthOnTree for a ragged tree. Used for the
-  // --no-infomap input-partition codelength under the columnar core.
+  // structure (base map equation + active correction), and stamp the objective's
+  // own per-node decomposition onto the tree. Falls back to the object-oriented
+  // objectOrientedTreeCodelength for a ragged tree the padding cannot rescue. Used
+  // for the --no-infomap input-partition codelength under the columnar core, and to
+  // re-stamp a tree re-materialized outside a trial (see restampColumnarCodelengths).
   double evaluateColumnarPartition();
+
+  // Put the columnar engine's per-node charges back on the tree currently in memory.
+  // Inside initTree, InfoNode::codelength is written by calcCodelengthOnTree alone --
+  // the BASE map equation -- and not at all when it takes its flat shortcut (the
+  // columnar charges come from stampColumnarCodelengths, which a trial calls and a
+  // restore did not). So a tree
+  // re-materialized OUTSIDE a trial (restoreBestResult, maybeDeepRepairBest) carries
+  // either the previous trial's stale charges or base-L ones next to the winning
+  // trial's reported total. Re-scoring the restored tree on the columnar stack puts
+  // the rewritten file's modules[].codelength, the per-level table and
+  // m_columnarIndexCodelength back on the objective that produced the headline.
+  // No-op unless --columnar. Does not touch m_hierarchicalCodelength: the winning
+  // trial's value stays the reported one.
+  void restampColumnarCodelengths();
+
+  // Write a columnar stack breakdown onto the materialized InfoNode tree, so the
+  // per-level table and -o json modules[].codelength report the objective that
+  // produced the headline number. Returns false, leaving the tree untouched, if
+  // the tree and the stack do not line up (nothing in-tree should hit that; the
+  // caller then keeps whatever calcCodelengthOnTree left). `padDepth` is
+  // padLeafPathsToUniformDepth's return value: a leaf whose path was padded has
+  // its phantom stack levels folded into its finest module.
+  // `padCharge` receives what the phantom levels were charged; the caller subtracts
+  // it from the reported codelength, and it is not written to any node. The one
+  // stack module with no InfoNode that is NOT phantom -- the module a top-level leaf
+  // constitutes -- is charged to the root instead.
+  bool stampColumnarCodelengths(const ColumnarTwoLevel& opt,
+                                const columnar::StackBreakdown& breakdown,
+                                const std::vector<int>& padDepth,
+                                double& padCharge);
 
   // ===================================================
   // runPartition: init: *
@@ -750,6 +810,34 @@ protected:
   // (#989). The object-oriented objective never had the bug because initNetwork already
   // pushes the same figure into it via setNetworkProperties(network).
   double m_entropyBiasTotalDegree = 0.0;
+
+  // L* index term for the tree currently materialized, or -1 when the run is not
+  // --non-redundant (where m_optimizer's own index term is the right one -- checked
+  // to agree with the columnar root charge on a fixed partition for base, -d,
+  // -d --recorded-teleportation, --markov-time, --variable-markov-time, --meta-data
+  // and --regularized). Set wherever the columnar per-node charges are stamped, and
+  // cleared by initTree, so its lifetime is exactly the tree it describes: a single
+  // trial, a serial multi-trial run (restoreBestResult re-stamps, so it is the BEST
+  // trial's root term, not the last executed trial's) and --parallel-trials (same
+  // restore, on the main instance, whose value would otherwise never be written since
+  // the trials run on workers). NOT covered: a caller that mutates the tree by some
+  // other route, concretely the API-only hard-partition path where
+  // restoreHardPartition re-expands the tree after the stamping -- unverified.
+  //
+  // Only L* needs it, and needs it badly: m_optimizer is always a BASE map equation
+  // on this branch, so getModuleCodelength() = L* - L_index was a hybrid of two
+  // objectives. --entropy-corrected is deliberately NOT covered here even though the
+  // columnar root charge and m_optimizer disagree there by multiplier/(2*totalDegree):
+  // the object-oriented engine disagrees with ITSELF the same way (its per-level table
+  // charges the root calcCodelength(m_root) while getIndexCodelength() returns the
+  // objective's bookkeeping), so which one is right is a master-side question and
+  // answering it here would only make the two engines differ.
+  double m_columnarIndexCodelength = -1.0;
+
+  // The all-in-one-module codelength under the ACTIVE objective, for the columnar
+  // one-level fallback; -1 = not computed yet for this network. Invalidated in
+  // init() next to m_oneLevelCodelength, which has the same dependencies.
+  double m_columnarOneLevelCodelength = -1.0;
 
   Network m_network;
   InitialPartition m_initialPartition; // nodeId -> moduleId

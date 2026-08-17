@@ -1,0 +1,11 @@
+# path flow name node_id
+# The SAME partition as twotriangles_top_level_leaf.tree, with A's module written out
+# explicitly (`2:1` instead of a bare `2`). Still ragged -- A's branch is one level
+# shallower than the others -- so this arm exercises the ordinary short-path padding
+# while the bare arm exercises the empty path.
+1:1:1 0.3 "C" 3
+1:1:2 0.2 "B" 2
+1:2:1 0.15 "D" 4
+1:2:2 0.1 "E" 5
+1:2:3 0.1 "F" 6
+2:1 0.15 "A" 1
