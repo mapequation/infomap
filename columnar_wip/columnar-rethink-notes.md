@@ -2484,3 +2484,272 @@ hard-partition path (`haveHardPartition()`, API-only), where `restoreHardPartiti
 tree after the stamping, is the concrete case, and it is unverified here. Under `--entropy-corrected`
 the term stays the object-oriented one on purpose, for the reason F38 gives.
 
+
+### F39 — Two codebooks over the same leaves: the `else` that made `--meta-data` delete the memory objective (#1012, 2026-08-15)
+
+`InfomapBase::addColumnarCorrections` attached `MetaCorrection` under `if (haveMetaData())` and
+`MemCorrection` under `else if (haveMemory())`. The two predicates are orthogonal —
+`haveMetaData()` is `!metaDataFile.empty() || numMetaDataDimensions != 0`, `haveMemory()` is
+`stateInput` — so `-C --meta-data` on state or multilayer input scored the **plain state-level map
+equation plus the meta term**, with the physical-node codebook absent entirely. Not approximated:
+absent. `--meta-data-rate 0` on the reproducer returns the state-level value exactly, and so does a
+metadata file whose categories coincide with the found partition (meta term zero); both land on the
+value of the *unaggregated* network, never on the aggregated one.
+
+**The measurement that names the defect** is a difference of differences, not a codelength. Build two
+networks over identical `*Links`: AGG maps states 1 and 2 to one physical node (and the optimum puts
+them in the same module), IND gives every state its own. The physical-node codebook is worth
+`L(AGG) - L(IND) = -0.330578512396694`. With `--meta-data` that difference was **exactly 0.0** —
+which is what "the codebook is not there" looks like when you cannot see the objective.
+
+**Composition is exact, not approximately exact.** After removing the `else`:
+
+    AGG -C --meta-data  =  2.247219446970401
+    AGG -C              =  1.331703102498692   (memory only)
+    meta term           =  0.915516344471709   (IND with meta − IND without)
+    1.331703102498692 + 0.915516344471709 − 2.247219446970401  =  0.0   (exactly, in double)
+
+and the aggregation saving comes back at full value: `L(AGG) − L(IND)` is `-0.330578512396694` with
+and without metadata, residual exactly 0. This is F37's rule read forwards rather than backwards:
+`MetaCorrection` **adds** a term carrying its own rate, `MemCorrection` **substitutes** one sum for
+another inside the module codebook term. Neither reads the other's quantity, so there is nothing to
+double-count. Additive terms compose; substitutions inherit — and two corrections that touch
+different terms compose with each other regardless.
+
+**Where the `else` came from, and why it is not policy here.** `initOptimizer` really is exclusive:
+`MetaMapEquation` and `MemMapEquation` are sibling `final` classes with different
+`DeltaFlowDataType`s (`DeltaFlow` vs `MemDeltaFlow`), so `InfomapOptimizer<Objective>` can hold
+exactly one. That is a **type-level constraint**, not a decision anyone made. The columnar core sums
+corrections instead of inheriting an objective, so it never had the constraint — the `else` was
+transcribed along with the shape of the dispatch. Composing them on the OO side means writing a new
+objective class (both sources are `final`, so sharing rather than copying means extracting the meta
+term first); that is a separate feature, and until it exists **`-C` and the default engine
+deliberately disagree on meta + higher-order input**. That divergence is now pinned by an explicit
+test in the `[columnar-differential]` family rather than left as a tolerance someone might loosen.
+
+**Why every existing meta+state test stayed green — the part worth remembering.** Co-location is a
+*necessary* condition: the physical-node codebook saves nothing unless two states of one physical
+node share a module. `test/fixtures/networks/states.net` shares physical node 1 between states 1 and
+4, and the optimum puts them in **different** modules. So the two tests that already ran meta+state
+(`test_map_equation_invariants.cpp`, `test_flow.cpp`) were blind by construction, not absent —
+2.929701072500 and 2.011405238446 are unmoved by this fix. The gap was never "no coverage"; it was
+"coverage on the one shape that cannot see it". Hence the new fixtures
+`states_shared_physical.net` / `states_distinct_physical.net`, whose entire purpose is the
+co-location, and which are only useful as a *pair*.
+
+**A second bug fell out, invisible at `-N1`.** `restoreBestResult` re-materializes the winning
+trial's tree with `initTree`, which recomputes the codelength through the **OO** objective, and only
+`if (m_infomap.nonRedundant)` was the columnar value put back. That guard was sound while L\* was the
+only objective the two engines could disagree on. With the composition it no longer was: a 2-trial
+run printed `2.247219447` to the console and wrote `2.577797959367095` to the `.tree`/`.json` files —
+the same run reporting two numbers. It is invisible at `-N1` because the whole block is guarded by
+`m_trialsRun > 1`, so anyone validating the fix with a single trial sees the right number and ships a
+binary that writes the wrong one at the default `-N10`. Measured on an edit-1-only build: N=1 file
+2.247219446970, N=2 and N=10 file 2.577797959367, console 2.247219447 throughout.
+
+The guard is now `if (m_infomap.columnarSearch)` — the engine, not one objective — which is what the
+columnar materialization site already documents ("the columnar core is the source of truth for the
+search codelength"). 78 benchmark configurations (all 13 benchmark networks × {OO, `-C`,
+`-C --non-redundant`} × {`-N1`, `-N10`}, comparing the console `Best codelength` *and* the codelength
+written to the output file) are identical to all 12 printed digits between the pre-fix binary
+(`md5 b601cf2f6e263c2be5ea1f1d496a77ec`) and this one (`md5 f02736dae6a0e3998c1e35a1565c50b0`). No
+benchmark config is meta + higher-order — `lazega`, the only metadata benchmark, is first-order.
+
+**It is not, however, bit-identical, and calling it a "no-op" was wrong.** Read the `-o json`
+`codelength` at full double precision and **nine of the 13** `-C -N10` rows *do* move, in the last
+ULPs. Full sweep of the benchmark set, `-C --seed 123 -N10 --silent -o json`, pre-fix
+`b601cf2f6e263c2be5ea1f1d496a77ec` against the current tip
+(`md5 b8af88017f344d105236e09bec0958b3` — `f02736da…` above is the same code with the older warning
+string, and a clean rebuild after the comment corrections reproduces `b8af8801…` byte for byte),
+sorted by |Δ|:
+
+| config | pre-fix | post-fix | Δ |
+|---|---|---|--:|
+| web-NotreDame `-d -C` | 5.5685292930834125 | 5.568529293083488 | **+7.55e-14** |
+| science2001 `-d -C --preferred-number-of-modules 25` | 8.235585529219229 | 8.235585529219179 | −4.97e-14 |
+| powergrid `-C` | 4.7410720563526025 | 4.741072056352614 | +1.16e-14 |
+| lazega `-C` | 6.0178602693857055 | 6.017860269385701 | −4.44e-15 |
+| science2001 `-d -C` | 7.83343660140164 | 7.833436601401644 | +3.55e-15 |
+| jazz `-C` | 6.862755928271481 | 6.862755928271479 | −1.78e-15 |
+| netsci `-C` | 4.0545402451477415 | 4.054540245147743 | +1.78e-15 |
+| multilayer (example) `-C` | 2.0114052384459713 | 2.0114052384459717 | +4.44e-16 |
+| ninetriangles `-C` | 3.385830820341408 | 3.3858308203414076 | −4.44e-16 |
+
+The four rows that are bit-identical: politicalblogs (6.740943136123672), malaria
+(7.397501710124526), air30k (5.3924254128857285) and air30k `-d --regularized`
+(5.576242406397039). All nine moving rows round to the same 12 significant digits, so nothing
+printed anywhere changes — the movement is only visible in the JSON's full precision.
+
+**An earlier version of this entry listed only six rows and called powergrid the largest.** That was
+a partial sweep read as a complete one: the three rows it missed (web-NotreDame, science2001, and
+science2001 with the preferred-modules bias) include the two *largest* moves, so the "largest" claim
+was wrong by 6.5×. The correction is the table above — a full 13-row sweep, whose three added rows
+reproduce digit-for-digit across two independent sessions. Lesson worth keeping: an enumeration is a
+claim about the rows it *omits* as much as about the ones it lists, and it is only as good as the
+sweep behind it.
+
+Both control arms are byte-exact on **all 13** rows, swept the same way: OO (jazz 6.863047469426564,
+powergrid 4.758729201129937, web-NotreDame 5.565924767871836) and `-C --non-redundant` (jazz
+6.868228367042876, powergrid 4.509265422814488, web-NotreDame 5.517073626480589) — the
+`--non-redundant` arms already restored the columnar value before this change. So the movement is
+exactly the set the guard newly covers, and it is **the point of the change, not an accident**: the
+restored value is now the columnar core's own, which differs from the OO recomputation of the *same* partition in the last
+bits because the two engines sum the same terms in different orders. What the run reports is now what
+the winning trial optimized and what the console printed. The verifiable claim is "identical to all
+12 printed digits"; "bit-identical" is a claim that does not reproduce, and it was the headline
+verification claim of this change.
+
+**The warning had to be reworded, not gated.** `--meta-data takes precedence over higher-order
+input: the run optimizes the meta-data objective ... without the physical-node codebook` became false
+for `-C`. Gating it on `columnarSearch` was rejected for a reason that has nothing to do with this
+bug: that string is **master-resident** and `columnarSearch` is not, so the line would be
+unmergeable upstream and would conflict at every `sync-master-into-columnar`. It is now worded from
+the *objective* rather than from the run — the rule the sibling warnings in the same function already
+state — which is true on both engines and on master. It still earns its place under `-C`: the
+composed total is the columnar one, but `getIndexCodelength()` and `getMetaCodelength()` are still
+materialized through the meta-data objective. The first version of the reworded message also sent the
+reader to "the per-level codelength breakdown reported for this run"; that clause is **removed**,
+because the columnar per-level breakdown is unreliable in this build — a pre-existing reporting gap,
+and not the "always zero" one it was first written up as. Two distinct failures, both measured on the
+post-fix binary:
+
+- **Two-level results print all zeros.** `jazz -C` and `states.net -C` (with *and* without metadata)
+  print `0.000000` in every cell, `Total 0.000000`.
+- **Hierarchical results print a populated but wrong total.** `air30k -C --meta-data <usstate> -N1`
+  prints `0.776939 / 3.657179 / 6.192867`, `Total 10.626985`, against `Best codelength 7.580768` —
+  and 10.626985 is exactly the **meta-data objective's** score of that same partition
+  (10.626984626737512, measured by cross-scoring it with the pre-fix binary). So the table shows a
+  real number computed on the wrong objective, not an empty table. Same shape on malaria + pmod8
+  (`Total 11.649203` against 9.321316, and 11.649202759236191 is the meta-only score).
+  A hierarchical *base* `-C` run is fine — `ninetriangles -C` totals 3.385831, its codelength, which
+  is what F34 recorded, and is why "all zeros regardless" contradicted F34 rather than following it.
+
+The sibling branch **`columnar-report-paths`** fixes exactly this class ("the reporting paths the
+first pass left on the wrong objective"): on its binary `jazz -C` totals 6.899368 and the air30k
+meta run totals 8.207547, each equal to the codelength that binary reports. It will be stacked
+underneath this change before either lands, so the clause is removed here rather than repaired here.
+
+**Recorded, not fixed.** (1) Composing the two objectives on the OO engine — see above. (2)
+`--regularized` multilayer under `-C --meta-data` still loses the teleport prior: the columnar core
+has no `RegularizedMultilayerMapEquation` equivalent, which the correction site has always said is
+deferred. (3) Found in passing, **pre-existing and on the default engine**: `air30k -d --regularized
+-N10` prints `Best codelength 5.578435633` and writes `5.578461103783` (Δ 2.5e-5). Identical on both
+binaries, absent at `-N1`/`-N2`, so it is the same restore-path shape as the bug above but on the OO
+side, where the new guard does not apply.
+
+#### F39 addendum — the fix *does* redirect the search on real input, and the trade is not one-signed
+
+The claim above that "in every case the PARTITION is unchanged; only the number moves" is **false**,
+and it was false because every fixture it was checked on was a toy. On real higher-order input with a
+metadata file the composed objective moves most of the partition. Measured on the same two binaries
+(`b601cf2f6e263c2be5ea1f1d496a77ec` pre-fix, `f02736dae6a0e3998c1e35a1565c50b0` post-fix), `--seed
+123`, `-C --meta-data`:
+
+| config | states | modules | states whose module changed (after greedy label alignment) |
+|---|--:|--:|--:|
+| air30k + usstate `-N1` | 13 213 | 57 → 43 | 7 335 (55.5%) |
+| air30k + usstate `-N10` | 13 213 | 67 → 23 | 11 478 (86.9%) |
+| malaria + pmod8 `-N1` | 2 647 | 85 → 20 | 2 169 (81.9%) |
+| malaria + pmod8 `-N10` | 2 647 | 83 → 17 | 2 203 (83.2%) |
+
+**How the metadata files are generated** (no metadata file for these networks exists in the repo or
+in `networks/`). `columnar_wip/make-state-meta.py <net-with-*States> <mode> <out.meta>` writes clu
+format `"<stateId> <category>"` for every state in the `*States` section. Modes used here:
+`usstate` — the two-letter US state code parsed out of the airport's `*Vertices` name
+(`"City,ST:Airport"`), 52 categories, real geographic metadata; `phys` — the state's physical node
+id; `mod<K>`/`pmod<K>` — `stateId % K` / `physicalId % K`, structure-independent controls. For
+multilayer input (`malaria`, `examples/networks/multilayer.net`) the state ids are the ones the
+expansion assigns, so the file is generated from `Infomap <net> <dir> -o states` output and then fed
+back to the run on the original network.
+
+**Timing: interleaved base/fix, 5 repetitions, min-of-5, wall and CPU.** The machine carried other
+builds throughout (load average 20–38), so the control matters: `air30k -C` with **no** metadata —
+the configuration the fix cannot reach — comes out at +0.7% wall / +0.3% CPU at `-N1` and +0.1% at
+`-N10` with identical codelengths, which is the harness's noise floor.
+
+| config | `-N1` wall (base → fix) | `-N10` wall (base → fix) |
+|---|---|---|
+| air30k + usstate | 1.089 → 1.080 s (−0.9%) ; 2nd pass 1.064 → 1.083 s (+1.8%) | 10.122 → 11.549 s (+14.1%) ; 2nd pass 9.973 → 11.169 s (+12.0%) |
+| air30k + phys | 1.218 → 0.989 s (−18.8%) | 10.308 → 9.727 s (−5.6%) |
+| air30k + mod4 | 1.511 → 1.056 s (−30.1%) | 12.287 → 8.553 s (−30.4%) |
+| air30k + mod2 | 1.229 → 0.808 s (−34.3%) | 11.126 → 6.878 s (−38.2%) |
+| air30k + const (one category) | 1.279 → 0.886 s (−30.7%) | 9.576 → 5.910 s (−38.3%) |
+| malaria + pmod8 | 1.067 → 0.981 s (−8.0%) | 6.458 → 5.498 s (−14.9%) |
+| air30k, **no metadata** (control) | 0.691 → 0.696 s (+0.7%) | 4.820 → 4.825 s (+0.1%) |
+
+CPU time tracks wall within 0.5 pp everywhere except the two contended reps that min-of-5 discards.
+So **the cost is metadata-dependent and not one-signed**: −38% to +14%. The only slowdown that
+reproduces is `air30k + usstate` at `-N10`, **+12% to +14%** across two passes — over the 1% bar, so
+it needs the maintainer's approval, which has not been given. The review's +48% at `-N1` did not
+reproduce with any of the five metadata assignments above (its metadata file was not specified, so it
+could not be used); the closest `-N1` numbers here are −34% to +2%.
+
+**Quality, scored like for like.** The two binaries optimize *different objectives*, so comparing
+their reported codelengths is not a quality comparison. Scoring both partitions under the **composed**
+objective (`fix --no-infomap -c <partition>_states.tree`, an exact round trip — each partition
+re-scores to its own search value):
+
+| config | composed L(pre-fix partition) | composed L(post-fix partition) | Δ |
+|---|--:|--:|--:|
+| air30k + usstate `-N1` | 8.163175 | 7.580768 | **−0.582 (−7.1%)** |
+| air30k + usstate `-N10` | 8.150495 | 7.422153 | **−0.728 (−8.9%)** |
+| malaria + pmod8 `-N1` | 9.241098 | 9.321316 | **+0.080 (+0.87%)** |
+| malaria + pmod8 `-N10` | 9.237589 | 9.291151 | **+0.054 (+0.58%)** |
+| malaria + mod4 `-N10` | 8.949729 | 9.828636 | **+0.879 (+9.8%)** |
+| malaria + pmod2 `-N10` | 8.427893 | 8.444542 | **+0.017 (+0.20%)** |
+
+On air30k the composed objective is both a better objective and better optimized. On **malaria it is
+not optimized as well**: the composed search lands above the value the *pre-fix* partition already
+achieves under the same composed objective, on all three metadata assignments tried. The arithmetic
+says why, and it closes exactly: the pre-fix malaria partition has **zero** co-located states (no
+physical node has two of its states in one leaf module), so the physical-node codebook saves nothing
+on it and its composed score equals its meta-only score to 1e-15. The composed search leaves that
+layer-pure basin for cross-layer merges worth 2.324167 bits of codebook saving and pays more than
+that back elsewhere.
+
+**Each plogp figure belongs to one partition, not to the network.** `Σ plogp(aggregated) − Σ plogp(state)`
+is a property of the tree it is computed on, so every figure below is tagged with the partition it
+was computed from; it is also exactly the gap between the two scorers on that same partition
+(meta-only minus composed), which is how each row is checked:
+
+| partition | `-N1` | `-N10` |
+|---|--:|--:|
+| air30k + usstate, **pre-fix** | 0.044372 (8.207547 − 8.163175) | 0.048964 (8.199459 − 8.150495) |
+| air30k + usstate, **post-fix** | 3.046216 (10.626985 − 7.580768) | 3.643979 (11.066132 − 7.422153) |
+| malaria + pmod8, **post-fix** | 2.327887 (11.649203 − 9.321316) | 2.324167 (11.615318 − 9.291151) |
+
+The three figures quoted in the paragraph above (0.048964 / 3.643979 / 2.324167) are the **`-N10`**
+partitions'; the `-N1` partitions give 0.044372 / 3.046216 / 2.327887. The arithmetic closes on all
+six, which is the point — but quoting one of them without naming its partition reads as a property of
+the network, and it is not one. So this is a **search** problem on the richer objective, not an
+objective error — but it means the change is not "quality up, time up"; on malaria it is quality
+*down* under its own objective.
+
+`examples/networks/multilayer.net` is structurally blind to the whole thing: with `phys`, `pmod2` and
+`mod2` metadata its optimum still puts state 0 and state 3 (both physical node 1) in different
+modules, so the physical-node codebook saves nothing and both binaries return 3.596368 / 2.929701.
+That is the same reason `states.net` is blind (co-location is necessary), and it is worth stating
+because it is the committed multilayer fixture.
+
+**The benchmark set cannot see any of this**, and that is the coverage gap to close: no row in
+`columnar_wip/benchmark-networks.md` is meta + higher-order (`lazega`, the only metadata row, is
+first-order; `air30k`, `malaria` and `multilayer` are higher-order without metadata). Proposed row —
+not added here, because the row obliges the performance snapshot to carry its numbers and that file is
+being rewritten from a central benchmark run:
+
+| network | path | run flags | directedness | type | size |
+|---|---|---|---|---|--:|
+| air30k (meta + states) | `networks/states/air2011/air30k.net` (+ `networks/states/air2011/air30k_usstate.meta`) | `--meta-data networks/states/air2011/air30k_usstate.meta` | undirected | **state / memory + metadata** (both codebooks) | 183 physical · 13 213 state nodes |
+
+The metadata file itself is **not committed**: at 13 213 lines it is larger than any fixture in the
+repo, and the network it keys is not in the repo either (`networks/` is a symlink to a data directory
+outside it), so the row's fixture belongs next to the network, generated by the committed
+`columnar_wip/make-state-meta.py`:
+
+```
+python3 columnar_wip/make-state-meta.py networks/states/air2011/air30k.net usstate \
+        networks/states/air2011/air30k_usstate.meta
+```
+
+**Still not measured:** peak memory on any of these configurations, and `-N10` timings on the
+`--regularized` multilayer arm (which is scored without the teleport prior under `-C` anyway).

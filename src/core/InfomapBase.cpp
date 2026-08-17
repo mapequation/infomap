@@ -674,10 +674,37 @@ private:
         auto timer = m_timing.scope("best_restore_s");
         m_infomap.initTree(result.bestTree);
         // initTree recomputes m_hierarchicalCodelength via calcCodelengthOnTree, which
-        // is the BASE map equation on this branch. For L* the best trial already computed
-        // the exact non-redundant codelength (columnar hierarchicalCodelengthFromStack);
-        // restore it so codelength() reports L*, not the base-L of the materialized tree.
-        if (m_infomap.nonRedundant)
+        // is the OO objective's codelength on the materialized tree. The columnar core is
+        // the source of truth for the search codelength (the same rule the columnar
+        // materialization site applies), so restore the value the winning trial actually
+        // optimized -- otherwise codelength(), and with it the .tree/.json header, reports
+        // a different number than the console did.
+        //
+        // Guarded on columnarSearch rather than on nonRedundant (#1012). The narrow guard
+        // was written when L* was the only objective on which the two engines could
+        // disagree; composing the metadata and physical-node codebooks (see
+        // addColumnarCorrections) added a second one, and the split showed up as console
+        // 2.247219447 against 2.577797959367 in the output files for the same run -- only
+        // at -N>=2, since this whole block is guarded by m_trialsRun > 1. Guarding on the
+        // engine instead of on one objective removes the class of bug rather than this
+        // instance of it. Broadening it is not a no-op, and that is deliberate: the columnar
+        // search value and the OO recomputation of the *same* partition agree only to the
+        // last few ULPs, since the two engines sum the same terms in different orders. A/B
+        // across the benchmark set (base and L*, -C and OO, -N1 and -N10) is identical to all
+        // 12 printed digits, but read the -o json codelength at full double precision and
+        // nine of the 13 -C -N10 rows move in the last bits. The largest is web-NotreDame
+        // 5.5685292930834125 -> 5.568529293083488 (+7.6e-14), then science2001
+        // --preferred-number-of-modules 25 (-5.0e-14) and powergrid
+        // 4.7410720563526025 -> 4.741072056352614 (+1.2e-14); plain science2001, lazega, jazz,
+        // netsci, ninetriangles and the multilayer example move by <= 4.4e-15. The four rows
+        // that do not move at all are politicalblogs, malaria and air30k (plain and
+        // -d --regularized). All nine round to the same 12 significant digits, so nothing
+        // printed changes. The value reported after the restore is now the one the winning
+        // trial actually optimized and the one the console printed, which is the property
+        // this guard exists to hold. The OO arm is byte-exact on all 13 rows (no
+        // columnarSearch), and the -C --non-redundant arms were exact before this change --
+        // they already restored the columnar value.
+        if (m_infomap.columnarSearch)
           m_infomap.m_hierarchicalCodelength = result.bestHierarchicalCodelength;
         // …and the same for the DECOMPOSITION, which initTree leaves either unwritten
         // (flat shortcut: the previous trial's charges survive, so jazz -C -N10 -o json
@@ -830,10 +857,34 @@ private:
     }
 
     if (m_infomap.haveMetaData() && (m_infomap.haveMemory() || m_infomap.isMultilayerNetwork())) {
-      // initOptimizer tests haveMetaData() before haveMemory(), so meta-data wins and the run is
-      // scored by a first-order objective with no physical-node codebook -- the aggregation that
-      // makes this a memory network does not enter the objective at all.
-      Console::warn(0, "--meta-data takes precedence over higher-order input: the run optimizes the meta-data objective over state nodes, without the physical-node codebook of the higher-order map equation. The higher-order structure affects the network, not the objective.");
+      // initOptimizer tests haveMetaData() before haveMemory(), so meta-data wins the OO objective
+      // dispatch and that objective has no physical-node codebook -- the aggregation that makes
+      // this a memory network does not enter it at all.
+      //
+      // The message no longer asserts that the RUN is scored that way, because since #1012 it
+      // depends on the engine: the columnar core sums corrections instead of selecting one
+      // objective, so it scores both codebooks. Gating the warning on columnarSearch was the
+      // obvious alternative and was rejected -- this line is master-resident, columnarSearch is
+      // not, and a branch-only symbol here would make the line unmergeable upstream and turn every
+      // master sync into a conflict. Wording it from the objective instead is true on both engines
+      // and on master, and it follows the rule the sibling warnings above already state: word it
+      // from the objective, and let the banner name which one is in use. It stays worth printing
+      // under -C, where the composed total is the columnar one but getIndexCodelength() and
+      // getMetaCodelength() are still materialized through the meta-data objective.
+      //
+      // It does NOT point at the per-level Levels table, because the columnar per-level
+      // breakdown is unreliable in this build (a pre-existing reporting gap, F38 in the
+      // notes). On a two-level result it prints all zeros -- jazz -C, and states.net -C with
+      // and without metadata. On a hierarchical meta + higher-order result it prints a total
+      // that is the meta-data objective's score of the partition rather than the composed
+      // codelength the run reports: air30k -C --meta-data -N1 prints a Levels total of
+      // 10.626985 against Best codelength 7.580768, and 10.626985 is exactly what the
+      // pre-#1012 binary scores that same partition at (10.626984626737512). The sibling
+      // branch columnar-report-paths fixes precisely this -- there the table totals the
+      // codelength the run reports on both shapes (jazz -C 6.899368; the same air30k run
+      // 8.207547, that branch's own value since it predates the composition) -- and will be
+      // stacked underneath before either lands.
+      Console::warn(0, "--meta-data on higher-order input asks for two independent codebooks: the metadata categories, and the physical-node codebook of the higher-order map equation. The meta-data objective scores state nodes only, without the physical-node codebook -- under it the higher-order structure shapes the network, not the objective.");
     }
   }
 
@@ -2667,7 +2718,31 @@ void InfomapBase::addColumnarCorrections(ColumnarTwoLevel& opt) const
   }
   // Memory (state / higher-order): physical-node leaf-module codebook. The
   // regularized-multilayer teleport prior is a separate correction, deferred.
-  else if (haveMemory()) {
+  //
+  // Attached independently of the metadata correction above, not as its `else`
+  // branch (#1012). They are independent codebooks over the same leaves, and the
+  // distinction that makes them safe to sum is the one Config.cpp's
+  // --non-redundant comment already spells out: MetaCorrection ADDS a term
+  // carrying its own rate (metaDataRate, charged per unit of node-visit flow),
+  // while MemCorrection SUBSTITUTES the physical-node sum plogp for the
+  // state-node one INSIDE the module codebook term. Neither reads the other's
+  // quantity, so composing them cannot double-count: on the co-located state
+  // reproducer in #1012 the composed 2.247219446970401 is the memory-only
+  // 1.331703102498692 plus the meta term 0.915516344471709 with a residual of
+  // exactly zero in double, and the aggregation saving comes back in full
+  // (-0.330578512396694 with metadata, bit-identical to the same delta without
+  // it, which was 0 before this change).
+  //
+  // The `else` was copied from the OO dispatch in initOptimizer, where the
+  // exclusivity is a type-level constraint and not a policy: MetaMapEquation and
+  // MemMapEquation are sibling `final` classes with different DeltaFlowDataTypes,
+  // so InfomapOptimizer<Objective> can hold exactly one. Corrections are summed
+  // rather than inherited, so the columnar core has no such constraint and the
+  // copy simply dropped the physical-node codebook -- --meta-data on
+  // state/multilayer input scored the plain state-level map equation plus the
+  // meta term. This is the one input class where -C deliberately disagrees with
+  // the default engine; a composed OO objective is a separate feature.
+  if (haveMemory()) {
     std::vector<int> leafPhysical(m_leafNodes.size(), 0);
     std::vector<double> leafFlow(m_leafNodes.size(), 0.0);
     for (std::size_t i = 0; i < m_leafNodes.size(); ++i) {
