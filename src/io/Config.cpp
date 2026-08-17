@@ -191,6 +191,34 @@ namespace {
       throw std::runtime_error("--lossy does not support recorded teleportation or regularization");
     if (config.variableMarkovTime || config.markovTime != 1.0)
       throw std::runtime_error("--lossy does not support Markov time scaling");
+    // The rate-distortion trade-off is derived against the base map equation and is
+    // not objective-independent: the noise credit hands back the module's naming cost
+    // sum_leaf plogp(f) at coefficient +1, which is exactly what scoreStackBase
+    // charged, but L* charges it at nrLeafCodebookRate >= 1. Under --non-redundant the
+    // reported J is therefore too high by sum_m (rate_m - 1) * l_m on credited modules,
+    // and the gate fires on the wrong comparison (l_m > lambda*H_m instead of
+    // rate_m*l_m > lambda*H_m), so modules that are genuinely cheaper as noise under L*
+    // are never credited. Measured on test/fixtures/networks/lossy_benchmark.net with
+    // test/fixtures/clusters/lossy_benchmark.clu at lambda 1: reported 2.35214, correct
+    // 2.33832. See F38 in columnar_wip/columnar-rethink-notes.md and #1011.
+    //
+    // The L* form is derived (correction_m = -max(0, rate_m*l_m - lambda*H_m), verified
+    // numerically), but shipping it needs a reporting layer that does not exist yet:
+    // noiseTopModules() and getLossyRate()/getLossyDistortion() are base-flavoured and
+    // have no access to L* boundary rates, so correcting only the correction prints a J
+    // below plain L* next to an empty noise set and zero distortion. Reject until both
+    // halves land rather than emit a self-contradicting header.
+    //
+    // Both fields read here are plain parsed flag targets (ParameterCatalog:
+    // configTarget(&Config::lossy) / (&Config::nonRedundant)), so both are populated
+    // before adaptDefaults() calls this — unlike the memory/multilayer check above,
+    // which cannot fire from the CLI at all: configureNetworkMode() fills stateInput
+    // and multilayerInput in only when the network is READ, and additionalInput has no
+    // option bound to it and no writer in src/ at all, so only a library caller
+    // assigning the field can make it non-empty (the dead-check trap recorded as
+    // #1004 / F35). A parse-time rejection is the right shape for this one.
+    if (config.nonRedundant)
+      throw std::runtime_error("--lossy cannot be combined with --non-redundant: the rate-distortion trade-off has not been derived for the non-redundant map equation (see #1011)");
 
     config.twoLevel = true;
   }
@@ -205,12 +233,12 @@ namespace {
     // non-recursive search that hosts it cleanly), so --non-redundant runs there.
     config.columnarSearch = true;
 
-    // No input or objective is excluded. L* constrains which walk *steps* are
-    // possible — no immediate re-entry into the module just left, no immediate exit
-    // from the one just entered — which is orthogonal to which codebook a step is
-    // coded in. Higher-order dynamics (the state/physical codebook) and every
-    // composable correction (metadata, entropy bias, preferred module count, lossy)
-    // therefore compose with it, through
+    // No input is excluded, and every objective except --lossy composes. L*
+    // constrains which walk *steps* are possible — no immediate re-entry into the
+    // module just left, no immediate exit from the one just entered — which is
+    // orthogonal to which codebook a step is coded in. Higher-order dynamics (the
+    // state/physical codebook) and the composable corrections (metadata, entropy
+    // bias, preferred module count) therefore compose with it, through
     // ColumnarTwoLevel::objectiveCorrection(), which sums them on top of whichever
     // base objective is selected.
     //
@@ -226,13 +254,22 @@ namespace {
     // ColumnarTwoLevel::leafCodebookRates); adding it blind is a bug, not a
     // composition.
     //
+    // --lossy is the second kind and is rejected in applyAndValidateLossyInteraction
+    // above (#1011): its noise credit hands the naming cost back at coefficient +1,
+    // and unlike MemCorrection the rate also belongs INSIDE the max(0, .), so the
+    // fix moves the gate and not just the accounting. The multiplier is derived and
+    // numerically verified; what is missing is the reporting layer (noiseTopModules,
+    // getLossyRate/getLossyDistortion). See F38.
+    //
     // Earlier cuts of this option rejected memory/multilayer input, meta data,
-    // --entropy-corrected and --lossy. Those rejections were wrong in kind, not merely
-    // premature — and the memory/multilayer one could never fire from the CLI at all:
-    // `stateInput`/`multilayerInput` are set by configureNetworkMode() when the network
-    // is READ, which is after config validation, and no option sets them. Higher-order
-    // input ran under L* the whole time. See F34 (addendum) and F35 in
-    // columnar_wip/columnar-rethink-notes.md.
+    // --entropy-corrected and --lossy. The first three rejections were wrong in kind,
+    // not merely premature — and the memory/multilayer one could never fire from the
+    // CLI at all: `stateInput`/`multilayerInput` are set by configureNetworkMode()
+    // when the network is READ, which is after config validation, and no option sets
+    // them. Higher-order input ran under L* the whole time. See F34 (addendum) and
+    // F35 in columnar_wip/columnar-rethink-notes.md. The --lossy one was right for
+    // the wrong reason: it was lifted as "composes like the others" when the
+    // objective's L* form had not in fact been derived.
   }
 
   void applyFingerprintOnlyOutputInteraction(Config& config)

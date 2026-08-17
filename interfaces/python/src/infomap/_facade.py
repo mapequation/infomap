@@ -745,9 +745,11 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             after entering uses a separate enter codebook (no impossible immediate
             exit). Runs on the non-recursive columnar engine (implies --columnar).
             Supports undirected and directed flow, recorded teleportation, and the
-            composable objectives (metadata, memory/state, multilayer, lossy, entropy
-            bias, preferred number of modules), since L* restricts which walk steps are
-            possible, independently of which codebook a step is coded in.
+            composable objectives (metadata, memory/state, multilayer, entropy bias,
+            preferred number of modules), since L* restricts which walk steps are
+            possible, independently of which codebook a step is coded in. Cannot be
+            combined with the lossy (rate-distortion) objective, whose noise credit is
+            derived against the standard map equation.
 
             .. versionchanged:: 2.15
                 Pass it via ``Options``; moves off this signature in 3.0.

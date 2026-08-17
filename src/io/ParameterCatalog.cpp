@@ -834,7 +834,7 @@ const std::vector<ParameterSpec>& parameterCatalog()
         .configTarget(&Config::columnarSearch),
     param()
         .longName("non-redundant")
-        .description("Use the non-redundant map equation L*: a module's exit codebook excludes the module just left (no impossible immediate re-entry) and the first visit after entering uses a separate enter codebook (no impossible immediate exit). Runs on the non-recursive columnar engine (implies --columnar). Supports undirected and directed flow, recorded teleportation, and the composable objectives (metadata, memory/state, multilayer, lossy, entropy bias, preferred number of modules), since L* restricts which walk steps are possible, independently of which codebook a step is coded in.")
+        .description("Use the non-redundant map equation L*: a module's exit codebook excludes the module just left (no impossible immediate re-entry) and the first visit after entering uses a separate enter codebook (no impossible immediate exit). Runs on the non-recursive columnar engine (implies --columnar). Supports undirected and directed flow, recorded teleportation, and the composable objectives (metadata, memory/state, multilayer, entropy bias, preferred number of modules), since L* restricts which walk steps are possible, independently of which codebook a step is coded in. Cannot be combined with the lossy (rate-distortion) objective, whose noise credit is derived against the standard map equation.")
         .group("Algorithm")
         .advanced()
         .configTarget(&Config::nonRedundant),

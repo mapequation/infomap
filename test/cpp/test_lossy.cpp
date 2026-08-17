@@ -41,6 +41,10 @@ TEST_CASE("Lossy: rejects unsupported configurations [fast][core][lossy]")
   throws("--lossy --recorded-teleportation");
   throws("--lossy --variable-markov-time");
   throws("--lossy --markov-time 2");
+  // The noise credit is derived against the standard map equation: it hands back
+  // sum_leaf plogp(f) at coefficient 1, which is the rate scoreStackBase charges it
+  // at, while L* charges nrLeafCodebookRate >= 1. See #1011 / F38.
+  throws("--lossy --non-redundant");
 }
 
 TEST_CASE("Lossy: rejects unsupported input detected after parsing [fast][core][lossy][columnar-contract]")

@@ -2121,6 +2121,54 @@ bits on `lossy_benchmark.net` while `L − L*` stays 0.057844703 to the printed 
 exactly after the removal, which is the expected outcome for deleting validation but is the kind of
 "obviously safe" change that deserves the check anyway.
 
+#### F35 addendum — the `--lossy` half is withdrawn, and the evidence offered for it was the defect (#1011, 2026-08-15)
+
+**Withdrawn: that `--lossy` composes with L\*, and with it the heading's "every correction".** The
+generalisation from F34 — L\* constrains which walk *steps* are possible, which is orthogonal to which
+codebook a step is coded in — still holds for a correction that **adds** a term. `LossyCorrection` does
+not add one: its noise credit hands the module's naming cost back at coefficient exactly **+1**, which is
+what `scoreStackBase` charges and *not* what `scoreStackNonRedundant` charges (`nrLeafCodebookRate >= 1`).
+So `--non-redundant --lossy` reported a J that was too high on every credited module and gated on the
+wrong comparison. The derivation, the magnitudes and the reason the fix is not a one-liner are in **F40**;
+the rejection F35 removed is reinstated in `applyAndValidateLossyInteraction` by the PR that files #1011,
+this time for the reason that was missing the first time. F35's other conclusions stand: the
+memory/multilayer guard really was dead code, the four higher-order rows really were capability the guard
+only appeared to withhold, and `LstarMeta − Lstar == Lmeta − L` really is the right identity for
+`MetaCorrection`. Only the lossy claim is retracted; `--entropy-corrected` remains the open edge F35
+already flagged.
+
+**The λ sweep was the tell, not the evidence.** F35 offered "`--lambda` 1.5 → 5 moves the lossy term by
+0.16 bits while `L − L*` stays 0.057844703 to the printed digit" as proof of composition. Re-measured on
+the pre-fix binary (`md5 32d7f08ccd5dbfeab91439f3bb568f2c`), fixed partition on `lossy_benchmark.net` with
+`lossy_benchmark.clu` and `--no-infomap`:
+
+| λ | `-C --lossy` | `--non-redundant --lossy` | `L − L*` |
+| --- | --- | --- | --- |
+| 1 | 2.4099867595799425 | 2.3521420558461954 | 0.05784470373374706 |
+| 1.5 | 2.653992887305974 | 2.596148183572227 | 0.05784470373374706 |
+| 2 | 2.7309159642290513 | 2.673071260495304 | 0.05784470373374706 |
+| 2.5 | 2.807839041152128 | 2.749994337418381 | 0.05784470373374706 |
+| 3, 4, 5 (gate shut) | 2.818018368324836 | 2.760173664591089 | 0.05784470373374706 |
+| no `--lossy` at all | 2.818018368324836 | 2.760173664591089 | 0.05784470373374706 |
+
+The constancy is not "to the printed digit" — it is **bit-identical at every λ, and identical to the
+difference with no lossy term at all**, while the three modules' rates are 1.0021645 / 1.0075758 /
+1.0111111. A credit that was actually derived against L\* would have to move when the codebook rates it is
+charged against are not 1. Sameness was read as "the correction is objective-independent, therefore it
+composes"; it is the signature of a hardcoded coefficient 1, i.e. of a correction that was never derived
+against the second objective at all.
+
+**Generalisable, and it is F37's distinction one step earlier.** The additive-composition test — fix the
+partition, require the correction term to be identical under both bases — is the correct test for a
+correction that *adds*. For one that *substitutes* part of the base objective's own accounting, the same
+observation flips sign: an identical correction term under both bases is not the pass condition, it is the
+failure signature — a substituting term is supposed to track the rate the base objective charged the
+quantity it replaces, and under L\* that rate is not 1. F35 ran one test against two kinds of correction
+without noticing there were two
+kinds; F37 named the distinction, and F40 supplies the missing derivation for the lossy case. When a check
+returns *exactly* the same number under a change that should have perturbed it, ask what would have had to
+be true for it to move before recording it as agreement.
+
 ### F36 — Splitting a 4284-line file is a measurement problem, not a text problem (#1003, 2026-08-14)
 
 `ColumnarMapEquation.cpp` held four unrelated concerns; the split is mechanical. What made it a *change*
@@ -2753,3 +2801,143 @@ python3 columnar_wip/make-state-meta.py networks/states/air2011/air30k.net ussta
 
 **Still not measured:** peak memory on any of these configurations, and `-N10` timings on the
 `--regularized` multilayer arm (which is scored without the teleport prior under `-C` anyway).
+
+### F40 — The lossy noise credit is derived against L, not L\*; the multiplier belongs inside the gate (#1011, 2026-08-15)
+
+F37's item (2) filed `LossyCorrection` as "the same defect in kind, needs its own derivation". It does,
+and this is it — together with the reason the derivation is recorded here rather than shipped.
+
+**The defect.** `LossyCorrection::moduleCost` is `max(0, (plogp(F_m) - S_m) - lambda*H_m)` with
+`S_m = sum_{leaf in m} plogp(f_i)`, summed and negated by `hierarchicalCorrection`. When the gate is
+open the correction hands `S_m` back at coefficient exactly **+1**. That is precisely what
+`scoreStackBase` charged (its level-1 block collapses to `plogp(T) - plogp(qExit) - S_m`), so under the
+base objective the two cancel and the credit is right. `scoreStackNonRedundant` charges `S_m` at
+`nrLeafCodebookRate(p, qEnter, qExit) = 1 + qEnter*qExit/(p*(p+qExit)) >= 1`, so under L\* only one of
+the `rate_m` units is returned and a residue `-(rate_m - 1)*S_m` is left standing.
+
+The tell is that the credit is **objective-independent**. On
+`test/fixtures/networks/lossy_benchmark.net` with `test/fixtures/clusters/lossy_benchmark.clu`,
+`--no-infomap`, lambda 1:
+
+| flags | codelength |
+| --- | --- |
+| `-C -2` | 2.818018368324836 |
+| `--non-redundant -2` | 2.760173664591089 |
+| `-C --lossy` | 2.4099867595799425 |
+| `--non-redundant --lossy` | 2.3521420558461954 (reported today) |
+| `--non-redundant --lossy`, derived | 2.3383174785435856 |
+
+`L - J = 0.4080316087448934` **bit for bit under both objectives**, while the three modules' rates are
+1.0021645021645023 / 1.0075757575757576 / 1.011111111111111. A correctly derived credit cannot be the
+same number twice; only a hardcoded coefficient 1 produces that. The residue closes:
+`sum_m (rate_m - 1)*l_m = 0.0138245773`, and `0.4218561860475034 - 0.4080316087448934 = 0.0138245773`.
+
+**The derived form.** For a level-1 module with flow `p`, `qEnter e`, `qExit x`, `T = p + x`,
+`l = plogp(p) - S`, the exact code costs `nrEnterWithin(p, e, x, S)` and the noise code — the same L\*
+module with its node set collapsed to one shared codeword — costs
+`nrEnterWithin(p, e, x, plogp(p)) + lambda*H`. `nrEnterWithin` is affine in its last argument, so the
+difference factors cleanly:
+
+```
+correction_m = -max(0, rate_m * l_m - lambda * H_m),   rate_m = nrLeafCodebookRate(p, e, x)
+```
+
+Two things about that expression matter more than the arithmetic:
+
+- **The multiplier sits INSIDE the `max(0, .)`, and multiplies `l_m` only, not `lambda*H_m`.** It moves
+  the **gate**, not just the accounting: under L\* a module is noise iff `rate_m*l_m > lambda*H_m`. This
+  is the difference from #1010/`MemCorrection`, where the rate was a mechanical outer re-weighting of a
+  quantity whose sign was already decided. Getting this wrong would give an achievable-but-not-minimal
+  J rather than a plainly wrong one, which is harder to notice.
+- **F37 (2) addendum — the worry that blocked it was unfounded.** F37 argued this was "not a mechanical
+  re-weighting" because `l_m` is normalized by `p_m` and not by `T`. The algebra dissolves that: the
+  substitution `S -> plogp(p)` is the same substitution in *both* halves of `nrEnterWithin`, so the
+  T-normalization is already carried inside `rate`, and no re-expression of `l_m` is needed.
+  `lambda*H_m` is untouched — distortion is a property of the walk, the same argument that cleared
+  `MetaCorrection`.
+
+**How wrong it is, and when.** The exact discriminator is: the reported J is wrong iff some module has
+`rate_m > 1` **and** `rate_m*l_m > lambda*H_m`. `rate_m > 1` alone is necessary but not sufficient, and
+neither condition is universal — two verified silent cases:
+
+- **Zero boundary flow.** Two disjoint 4-cliques partitioned into their components: `rate == 1` exactly,
+  and `-C --lossy` and `--non-redundant --lossy` both give 1.584962500721156.
+- **Closed gate.** lambda 5 on lossy_benchmark: reported, derived and plain L\* are all
+  2.760173664591089 despite rates 1.0022 / 1.0076 / 1.0111.
+
+The error is `sum_m [max(0, r*l - lambda*H) - max(0, l - lambda*H)] >= 0`, so the reported J is **never
+below** the correct one. Measured magnitudes. The "reported" column is the shipped feature build at
+`d88f1c77` (`md5 32d7f08ccd5dbfeab91439f3bb568f2c`); the "derived" column is a throwaway build of that
+same commit with fix step 1 only — `hierarchicalCorrection` summing
+`max(0, rates[m]*(plogp(F_m) - flf_m) - lambda*H_m)` when `leafCodebookRates()` is non-empty —
+(`md5 c0ddbff71d83d6bc73fa63f4f58ee69f`), cross-checked against a from-scratch model of the objective.
+Both binaries were built and run in the session that revised this note; where the model and the build
+disagree it is in the last ulp (`2.338317478543585` vs `2.3383174785435856`) and the build's value is the
+one quoted:
+
+| case | reported | derived | error (as a fraction of the reported value) |
+| --- | --- | --- | --- |
+| lossy_benchmark, fixed partition, lambda 1 | 2.3521420558461954 | 2.3383174785435856 | 0.59% |
+| lossy_benchmark, `-N5 --seed 123`, lambda 2.58 | 2.760173664591089, `# noise modules 0 of 3: (none)` | 2.7579154218173167, module 3 is noise under the derived gate | 0.08%, and a **decision inversion** |
+| ring of 10 two-node modules (`rate == 7/6` exactly), lambda 0.9 | 3.569925001442311 | 3.403258334775644 | 4.7% |
+| same ring, lambda 1.05 | 3.6699250014423113, 0 noise modules | 3.553258334775644, all 10 noise | 3.2%, full inversion |
+| jazz, 6-module partition rescored at lambda 1 | 6.189292031495019 | 5.983830576189069 | 3.3% |
+
+The two rows that need a recipe: the **ring** is a 20-cycle with unit weights (`i -- i+1 mod 20`) clustered
+into the ten adjacent pairs `{1,2}, {3,4}, …`, scored with `--non-redundant --lossy --lambda <λ> -c <clu>
+--no-infomap`. The **jazz** row is `networks/arenas-jazz.txt`, partitioned by `-C --lossy --lambda 1.5 -N5
+--seed 123` (6 top modules, `--clu`) and that `.clu` then rescored with `--non-redundant --lossy --lambda
+1 --no-infomap`; plain L\* on the same partition is 6.836565239275705. An earlier draft of this row quoted
+6.31061782556533 / 6.082232142189095 against a plain L\* of 6.858483286533167, from a jazz partition no
+recorded command reproduces — the numbers here are the ones the two named commands print. Note what the
+jazz row does *not* show: both builds still print `# noise modules 3 of 6: 1 2 3`, because the printed set
+comes from the base-flavoured `noiseTopModules()`, which fix step 1 does not touch. That is the reporting
+gap, and it is the next paragraph's point rather than a property of the derivation.
+
+**The search trajectory does not change.** `m_nonRedundant` is read in exactly two places in all of
+`src/` (`ColumnarObjectiveScore.cpp:253` and `:270`), so L\* never enters the leaf move loop — it scores
+structural operators only, which is what `--non-redundant-exact` documents. Every partition tried
+pre/post the patched build was bit-identical. So the honest claim is **"the reported J moves by
+0.6-5% and the reported noise set can be wrong"**, not "the search optimizes a different objective".
+
+**An invariant is already violated today.** `test/cpp/test_lossy.cpp` asserts
+`J == rate + lambda*distortion`. At lambda 1.5 on lossy_benchmark the tree headers read
+
+```
+-C --lossy               # lossy lambda 1.5 J 2.65399 rate 2.42322 distortion 0.153846   -> 2.653989 == J
+--non-redundant --lossy  # lossy lambda 1.5 J 2.59615 rate 2.42322 distortion 0.153846   -> 2.653989 != J
+```
+
+off by exactly `L - L*`. The test passes only because it has never run an L\* arm — and it cannot be made
+to. `INFOMAP_TEST_ENGINE` (`test/cpp/TestUtils.h:68`, wired up by `add_infomap_columnar_contract_test` in
+`CMakeLists.txt:187`) takes exactly two values, `oo` and `columnar`; there is no L\* analogue, so a
+`[columnar-contract]` re-run adds `--columnar` and never `--non-redundant`. **The rejection this PR adds
+makes that permanent until #1011 lands**: with `--lossy --non-redundant` throwing, no test can score a
+lossy assertion under L\* at all. That is the right trade — a wrong number withdrawn beats a wrong number
+asserted — but it means the ready-made failing test (a `--non-redundant --lossy --lambda 1.5` arm on the
+`J == rate + lambda*distortion` case, which fails today at 2.59615 against 2.653989) can only be added by
+the PR that lifts the rejection. It belongs in #1011's definition of done, not before it.
+
+**Why this PR rejects the combination instead of shipping the derivation.** The objective is derived and
+verified; the **reporting layer is not built**. `InfomapBase::noiseTopModules()` gates on
+`loss > lossyLambda * lossyEntropy`, i.e. the base comparison, and `getLossyRate()`/
+`getLossyDistortion()` come from the object-oriented `LossyMapEquation`, i.e. the base decomposition.
+Both read per-module aggregates off the `InfoNode` tree and have no access to L\* boundary rates. With
+only `hierarchicalCorrection` re-weighted, lossy_benchmark at lambda 2.58 prints
+`J 2.75792 rate 2.81802 distortion 0` next to `# noise modules 0 of 3: (none)` — a J strictly **below**
+plain L\*, with an empty noise set and zero distortion. Today's output is wrong but internally
+consistent; that half-fix is wrong *and* self-contradictory, which is worse. So `--lossy
+--non-redundant` now throws in `applyAndValidateLossyInteraction`, and the derivation waits here for the
+PR that also makes `noiseTopModules()` and the rate/distortion accessors L\*-aware.
+
+**Checked and benign, so nobody re-checks it.** `getLossyOneLevelLossless()` is `H(p_alpha)` — objective-
+and lambda-independent — and needs no L\* variant. `--lossy` does **not** force undirected flow: it
+*rejects* directed and non-undirected flow models and forces `twoLevel`. The practical consequence is
+the same (`qEnter == qExit`), but the mechanism is a rejection, not a coercion. Sliced sub-optimizers are
+self-consistent: `setNonRedundant` is never called on the sub-optimizer, so a sliced `LossyCorrection`
+sees `leafCodebookRates() == {}` and stays at coefficient 1, matching the sub-core's `scoreStackBase`.
+
+**The parse-time check is live, unlike its neighbour.** `Config::lossy` and `Config::nonRedundant` are
+both plain parsed flag targets, populated before `adaptDefaults()` runs, so a validation-time check
+fires. The `stateInput || multilayerInput` rejection two lines above it is the dead-check trap of F35:
+those fields are set by `configureNetworkMode()` when the network is *read*, and no option sets them.
