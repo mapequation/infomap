@@ -2980,10 +2980,18 @@ bool InfomapBase::columnarSeedPathsFromTree(std::vector<std::vector<int>>& paths
   squared = false;
   // A hard --cluster-data partition is already collapsed into the leaf network the
   // search optimizes (see setupColumnarOptimizer), so there is nothing to seed.
-  if (m_leafNodes.empty() || haveHardPartition() || !haveModules())
+  if (m_leafNodes.empty() || haveHardPartition())
     return false;
 
   paths = leafModulePathsFromTree();
+  // Nothing to seed from only when NO leaf has a module. Read off the paths rather than from
+  // haveModules(), which tests m_root.firstChild alone and so answers false for a tree whose
+  // first row happens to be a bare top-level leaf -- which would make the warm start depend on
+  // the order of the rows in the cluster file.
+  if (std::none_of(paths.begin(), paths.end(), [](const std::vector<int>& p) { return !p.empty(); })) {
+    paths.clear();
+    return false;
+  }
 
   // A top-level leaf gets an EMPTY path (leafModulePathsFromTree stops below the
   // root), but it IS a module of one node, so give it a synthetic id past every real
@@ -3135,7 +3143,16 @@ double InfomapBase::evaluateColumnarPartition()
   // path is empty, so padding would hand each leaf a synthetic module of its own and score
   // a SINGLETON partition instead of the module-less one asked about. That is not this
   // function's question to answer, so it drops through to the fallback below.
-  const std::vector<int> padDepth = haveModules() ? padLeafPathsToUniformDepth(paths) : std::vector<int>();
+  //
+  // The test is "does SOME leaf have a module", read off the paths, and deliberately not
+  // haveModules(): that predicate looks at m_root.firstChild alone, so it answers false for a
+  // tree whose first child happens to be a bare top-level leaf even though the rest of the
+  // tree is fully modular. Gating on it made the result depend on the ORDER of the rows in
+  // the cluster file -- moving the bare leaf to the top of
+  // twotriangles_top_level_leaf.tree took L* from 2.187131226 to 3.02401125, the base L,
+  // because the fallback below reports an objective the object-oriented side cannot express.
+  const bool haveAnyModule = std::any_of(paths.begin(), paths.end(), [](const std::vector<int>& p) { return !p.empty(); });
+  const std::vector<int> padDepth = haveAnyModule ? padLeafPathsToUniformDepth(paths) : std::vector<int>();
   if (!opt.seedHierarchyFromLeafPaths(paths)) {
     // Only one shape reaches this now: a tree with no module structure at all, whose leaf
     // paths are all empty and which the padding above deliberately leaves alone. There is
