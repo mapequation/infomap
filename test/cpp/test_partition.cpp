@@ -968,12 +968,19 @@ TEST_CASE("Soft cluster-data seeds the columnar search [fast][core][partition][c
   const double fromSeed = twoLevel(seed);
 
   infomap::test::checkApproxCodelength(inputPartition, 3.6524101186092026);
-  infomap::test::checkApproxCodelength(fromScratch, 3.5695918914487512);
   infomap::test::checkApproxCodelength(fromSeed, 3.5661656266226012);
   // The seed is not discarded (that is the bug), and continuing from it beats both the
   // partition supplied and the from-scratch search.
   CHECK(fromSeed < fromScratch - 1e-9);
   CHECK(fromSeed < inputPartition - 1e-9);
+  // fromScratch is deliberately NOT pinned. A ring of identical triangles is maximally
+  // tied, so which pair of triangles the from-scratch aggregation merges first is decided
+  // by floating-point ordering rather than by the objective, and that is a property of
+  // the toolchain: 3.5695918914487512 on macOS clang and on every non-OpenMP build,
+  // 3.5675... on gcc and MSVC with -fopenmp (the columnar core contains no OpenMP at all
+  // -- enabling it only changes codegen). The seeded arm has no such freedom, since it
+  // starts from the planted partition, and 3.5661656266226012 held on all five CI
+  // toolchains.
 }
 
 TEST_CASE("Columnar never returns worse than the soft cluster-data partition [fast][core][partition][columnar][cluster-data]")

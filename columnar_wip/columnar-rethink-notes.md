@@ -3040,6 +3040,20 @@ same rows. A best-of-two variant (seeded arm plus from-scratch arm, keep the low
 measured — it removes all 10 — and **rejected**: it is a second search per trial, it is not what
 `--cluster-data` means, and it is not what the object-oriented engine does.
 
+**A regression test on a symmetric network cannot pin the search's own answer.** The clique-ring fixture
+this finding added (32 identical triangles in a ring) is maximally tied, and the first version of the test
+pinned all three arms. CI disagreed on exactly one of them: the FROM-SCRATCH `-2` result came out
+3.5695918914487512 on macOS clang and on every `OPENMP=0` build, and 3.5675… on gcc and MSVC with
+`-fopenmp` — three jobs red, one assertion each. **The columnar core contains no OpenMP** (grep for
+`_OPENMP` under `Columnar*` finds nothing) and `innerParallelization` defaults off, so this is not a
+parallel-nondeterminism story: `-fopenmp` changes floating-point codegen, and on a network where the
+merge candidates are exactly tied, that decides which pair of triangles the aggregation merges first. The
+SEEDED arm has no such freedom — it starts from the planted partition — and its 3.5661656266226012 held
+on all five CI toolchains, as did the input partition's own score. So the test pins those two and asserts
+the from-scratch arm only relationally. Worth remembering for any future fixture chosen because the
+greedy search fails on it: the properties that make it a good demonstration also make its own answer
+unstable.
+
 **Also fixed in passing.** `padLeafPathsToUniformDepth` called `resize(maxDepth, paths[i].back())`,
 whose fill value aliases an element of the vector being resized — dangling if the growth reallocates.
 Both it and the new helper copy the id out first.
