@@ -940,6 +940,62 @@ TEST_CASE("InfoNode owns outgoing edges while incoming edges are non-owning refe
   CHECK(target.inDegree() == 1);
 }
 
+TEST_CASE("Soft cluster-data seeds the columnar search [fast][core][partition][columnar][cluster-data]")
+{
+  // #824: columnarPartition() built its optimizer from the leaf network and never
+  // looked at the InfoNode tree, so a soft --cluster-data partition was read, echoed
+  // in the options banner and then discarded. `-C -c` came out bit-identical to `-C`.
+  //
+  // The clique ring is the smallest input where that is visible: 32 triangles in a
+  // ring, seeded with the planted one-module-per-triangle partition. The planted
+  // partition is OVER-FINE for the map equation (adjacent triangles want merging), so
+  // it is worse on its own than what the search finds from scratch -- yet continuing
+  // from it lands in a better basin than either. It therefore pins both halves of the
+  // fix: that the seed is consumed at all, and that the merge operator runs on an
+  // externally supplied partition (it is skipped for the base objective on a partition
+  // the engine's own aggregation produced, which has already settled every merge --
+  // with it skipped this returned the planted partition unchanged, at 3.652410119).
+  auto twoLevel = [](const std::string& extraFlags) {
+    InfomapWrapper im("--seed 123 --num-trials 1 --silent --two-level --columnar" + extraFlags);
+    infomap::test::readNetworkFixture(im, "clique_ring.net");
+    im.run();
+    return im.codelength();
+  };
+  const std::string seed = " --cluster-data " + infomap::test::clusterFixturePath("clique_ring_planted.clu");
+
+  const double inputPartition = twoLevel(seed + " --no-infomap");
+  const double fromScratch = twoLevel("");
+  const double fromSeed = twoLevel(seed);
+
+  infomap::test::checkApproxCodelength(inputPartition, 3.6524101186092026);
+  infomap::test::checkApproxCodelength(fromScratch, 3.5695918914487512);
+  infomap::test::checkApproxCodelength(fromSeed, 3.5661656266226012);
+  // The seed is not discarded (that is the bug), and continuing from it beats both the
+  // partition supplied and the from-scratch search.
+  CHECK(fromSeed < fromScratch - 1e-9);
+  CHECK(fromSeed < inputPartition - 1e-9);
+}
+
+TEST_CASE("Columnar never returns worse than the soft cluster-data partition [fast][core][partition][columnar][cluster-data]")
+{
+  // The other half of #824's impact: `-C -c` must not hand back something worse than
+  // what the user supplied. The seeded search is gated on the true stack codelength, so
+  // it cannot come out above the SEEDED STACK -- but a ragged input tree has to be
+  // squared up to fit the strict-level stack, and the squared partition is not the
+  // input. So the run also compares against the input tree's own codelength and keeps
+  // the input when nothing beat it, which is the only way a ragged tree can be returned
+  // exactly as given.
+  auto run = [](const std::string& clusterFile, const std::string& extraFlags) {
+    InfomapWrapper im("--seed 123 --num-trials 1 --silent --columnar --cluster-data " + infomap::test::clusterFixturePath(clusterFile) + extraFlags);
+    infomap::test::readNetworkFixture(im, "clique_ring.net");
+    im.run();
+    return im.codelength();
+  };
+  const double inputPartition = run("clique_ring_planted.clu", " --no-infomap");
+  CHECK(run("clique_ring_planted.clu", "") <= inputPartition + 1e-9);
+  CHECK(run("clique_ring_planted.clu", " --two-level") <= inputPartition + 1e-9);
+}
+
 TEST_CASE("Soft cluster-data can be optimized away when it is suboptimal [fast][core][partition][columnar-contract]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());

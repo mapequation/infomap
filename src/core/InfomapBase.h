@@ -553,6 +553,17 @@ private:
   // leaf's finest module, so it is NOT counted -- only the copies stacked above it.
   static std::vector<int> padLeafPathsToUniformDepth(std::vector<std::vector<int>>& paths);
 
+  // Per-leaf module paths for a warm start from a soft --cluster-data partition
+  // (#824), rectangularized to the shape the strict-level stack takes. Returns
+  // false (leaving `paths` empty) when there is nothing to seed from: no initial
+  // partition in the tree, or a hard one, which is collapsed into the leaf
+  // network before the search instead.
+  // `squared` reports whether rectangularizing changed the tree, i.e. whether the
+  // seeded stack still holds exactly the partition the file gave. When it did not,
+  // the stack's codelength is no longer the input partition's, and the caller has to
+  // score the tree itself to know what it must beat.
+  bool columnarSeedPathsFromTree(std::vector<std::vector<int>>& paths, bool& squared) const;
+
   // Score the current InfoNode tree with the object-oriented objective (total AND
   // per-node), plus the one correction calcCodelengthOnTree does not implement
   // (--preferred-number-of-modules). The columnar fallback when the stack cannot
@@ -838,6 +849,11 @@ protected:
   // one-level fallback; -1 = not computed yet for this network. Invalidated in
   // init() next to m_oneLevelCodelength, which has the same dependencies.
   double m_columnarOneLevelCodelength = -1.0;
+  // The soft --cluster-data partition's own codelength on the columnar objective, or
+  // -1 before it is known (#824). Only needed when rectangularizing changed the tree,
+  // and cached because every trial re-materializes the same input partition. Invalidated
+  // in init() next to m_columnarOneLevelCodelength, which has the same dependencies.
+  double m_columnarSeedCodelength = -1.0;
 
   Network m_network;
   InitialPartition m_initialPartition; // nodeId -> moduleId

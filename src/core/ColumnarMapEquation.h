@@ -449,6 +449,27 @@ public:
   // Everything else falls back to the object-oriented tree.
   bool seedHierarchyFromLeafPaths(const std::vector<std::vector<int>>& leafPaths);
 
+  // Continue the search from the partition currently seeded into the stack
+  // (seedHierarchyFromLeafPaths must have run): the columnar analogue of the
+  // object-oriented warm start from a soft --cluster-data partition (#824).
+  //
+  // Two steps. (1) POLISH the seed at its own granularity -- a flat seed through the
+  // two-level interleave (from-singletons split, seeded leaf re-tune, module merge), a
+  // deep one through the interior-layer refinement. The split is the operator that
+  // matters for an EXTERNAL seed: it subdivides a supplied module the engine would
+  // never have built, the job the object-oriented coarseTune does with a sub-Infomap
+  // per module, and it is a no-op on a partition the engine produced itself (which is
+  // why the per-trial pipeline leaves it out). (2) unless `flat` (--two-level),
+  // REBUILD the hierarchy above the polished bottom with the ordinary up-build and
+  // refine it, keeping whichever of the two is better -- because neither operator in
+  // (1) can add or remove a level, so a seed whose shape is wrong for the objective
+  // otherwise traps the search at its own depth.
+  //
+  // sweepLimit caps the refinement sweeps as elsewhere (0 = until convergence).
+  // Returns the codelength of the partition left in the stack, or +infinity when
+  // nothing was seeded.
+  double optimizeFromSeed(bool flat, unsigned int sweepLimit = 0);
+
   // Enable recorded-teleportation codebook terms (regularized flow). Must be set
   // before hierarchicalCodelengthFromStack; per-leaf teleport flow/weight come
   // from buildFromLeaves. No effect on the base/mem/meta objectives.
@@ -667,6 +688,20 @@ private:
   // above marks layer 0 dirty again, so the leaf re-derivation stays reachable
   // once the structure it nests in actually moves.
   bool m_bottomConverged = false;
+  // True inside optimizeFromSeed: the two operators the engine skips on the base
+  // objective -- the from-singletons split (splitTopModules) and the module merge
+  // (mergeLeafModulesWithinParents) -- run there for every objective.
+  //
+  // Both of their usual gates rest on the same premise: that the partition being
+  // operated on came out of THIS engine's aggregation, which already settled every
+  // module-level move, so the only overshoot left to repair is the kind a correction
+  // introduces. An externally supplied partition has no such provenance. Its modules
+  // can need subdividing (an over-coarse cluster file) or merging (an over-fine one)
+  // under the plain map equation, and both operators compute a full base-objective
+  // delta and are gated on the true stack codelength, so running them is sound
+  // wherever it is useful -- it just never pays on an engine-built partition, which is
+  // what the gates keep free.
+  bool m_externalSeed = false;
   // True inside the once-per-run hierarchical repair: coarsenModules then reads
   // COL_HSPLIT_WINNER instead of COL_HSPLIT for the split interleave.
   bool m_forceHSplit = false;
