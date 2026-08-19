@@ -2348,6 +2348,10 @@ void InfomapBase::init()
   // answer getIndexCodelength() from the previous run's stack.
   m_columnarOneLevelCodelength = -1.0;
   m_columnarIndexCodelength = -1.0;
+  // Same reasoning for the seed's own codelength (#824): it prices the initial partition
+  // on this network under this objective, and an instance re-run with either changed
+  // must not compare against the previous run's value.
+  m_columnarSeedCodelength = -1.0;
   Console::detail(1, "one-level codelength: {}", io::toPrecision(m_oneLevelCodelength));
 }
 
@@ -2496,12 +2500,58 @@ void InfomapBase::columnarPartition()
   ColumnarTwoLevel opt;
   setupColumnarOptimizer(opt, trialSeed);
 
+  // Soft --cluster-data warm start (#824). Before this, the search always started
+  // from the leaf network and never looked at the initial partition, so `-C -c`
+  // returned a result that could be far WORSE than its own input, with nothing but
+  // the echoed option line to show the seed had been read at all (the Jelena state
+  // network, -2d: the seed evaluates 6.930934993, the from-scratch search returns
+  // 7.810478411, and the two runs were bit-identical).
+  //
+  // Continue from the seed instead -- the same semantics as the object-oriented
+  // engine, which warm-starts from the initial partition and does not also run a
+  // from-scratch search. optimizeFromSeed gates every step on the true stack
+  // codelength, so its result is never worse than the SEEDED STACK; the guard after the
+  // search is what extends that to the input partition itself, which a squared-up
+  // ragged tree is not.
+  //
+  // Read off the tree here, BEFORE the search: initTree below replaces the initial
+  // partition with the result.
+  std::vector<std::vector<int>> seedPaths;
+  bool seeded = false;
+  bool seedWasSquared = false;
+  double seedOwnL = std::numeric_limits<double>::max();
+  if (columnarSeedPathsFromTree(seedPaths, seedWasSquared)) {
+    seeded = opt.seedHierarchyFromLeafPaths(seedPaths);
+    if (!seeded)
+      // Defensive: columnarSeedPathsFromTree rectangularizes, and the path count is
+      // the leaf count by construction, so nothing in-tree reaches this. Say so
+      // rather than discarding the seed silently, which is the bug being fixed.
+      Console::note(0, "--cluster-data partition does not fit the columnar stack; searching from the leaf network instead.");
+  }
+  if (seeded) {
+    // What the search has to beat: the INPUT partition's own codelength. Without this
+    // the run can still hand back something worse than what the user supplied, which is
+    // the impact #824 reports. Where squaring left the partition intact the seeded
+    // stack already holds it, so its codelength is free; where squaring coarse-grained
+    // or padded the tree, the stack no longer prices the input and the tree has to be
+    // scored on its own (once per run -- every trial re-materializes the same input).
+    if (!seedWasSquared)
+      seedOwnL = opt.hierarchicalCodelengthFromStack();
+    else {
+      if (m_columnarSeedCodelength < 0.0)
+        m_columnarSeedCodelength = evaluateColumnarPartition();
+      seedOwnL = m_columnarSeedCodelength;
+    }
+  }
+
   // Strategy alternation (#889): even-numbered trials of the hierarchical
   // searches run flat-first — the two-level optimum as the bottom, hierarchy
   // grown around it — so best-of-N picks per network between the fine-blocks
   // up-build and the flat-seeded build. Meaningless for -2 (it IS the flat
   // search); the first trial keeps hierarchical-first, so -N1 is unchanged.
-  const bool flatFirst = m_columnarFlatFirstTrial && !twoLevel;
+  // Also meaningless for a seeded trial, which does not build a bottom at all --
+  // the seed IS the bottom.
+  const bool flatFirst = m_columnarFlatFirstTrial && !twoLevel && !seeded;
   if (flatFirst) {
     Console::detail(2, "columnar: flat-first trial (two-level optimum as the bottom)");
     opt.setFlatFirstBottom(true);
@@ -2513,11 +2563,26 @@ void InfomapBase::columnarPartition()
   // within grandparents), skipping the full interior-layer refinement. Without
   // either, the default converge search (screen up-build strategies, then refine
   // the winner to the diminishing-returns knee).
-  const double columnarL = twoLevel
+  double columnarL = seeded
+      ? opt.optimizeFromSeed(twoLevel, tuneIterationLimit)
+      : twoLevel
       ? opt.optimizeTwoLevelStack()
       : fastHierarchicalSolution > 0
       ? opt.optimizeFlexible(1, tuneIterationLimit)
       : opt.optimizeColumnar(1, tuneIterationLimit);
+  // Nothing the seeded search produced beats the input partition: hand the input back
+  // unchanged rather than a worse partition. It is already the tree in memory (the
+  // search works on the columnar stack and only initTree below replaces the tree), so
+  // "keeping" it means not materializing the search's result -- and that also keeps a
+  // ragged input tree exactly as given, which the stack could not have represented.
+  // Re-scoring it stamps this trial's InfoNode charges the same way a materialized
+  // result gets them.
+  const bool keepSeed = seeded && columnarL >= seedOwnL - 1e-10;
+  if (keepSeed) {
+    Console::detail(1, "columnar: the search did not improve the --cluster-data partition ({} vs {}); keeping the input partition", io::toPrecision(columnarL), io::toPrecision(seedOwnL));
+    columnarL = evaluateColumnarPartition();
+  } else if (seeded)
+    Console::detail(1, "columnar: continued from the --cluster-data partition ({}) to codelength {}", io::toPrecision(seedOwnL), io::toPrecision(columnarL));
 
   // Materialize the result into the InfoNode tree for output. initTree also sets
   // m_hierarchicalCodelength by recomputing on the reconstructed tree — but the
@@ -2527,17 +2592,20 @@ void InfomapBase::columnarPartition()
   // disagree with the true columnar codelength — even go negative — so trust the
   // core's value for reporting and trial selection; keep the reconstruction only
   // for the output tree structure.
-  auto paths = opt.toNodePaths(m_leafNodes);
-  // initTree clears m_columnarIndexCodelength on the way in (the previous trial's tree
-  // is gone), and the stamping below sets this trial's -- so no reporting path can read
-  // a value belonging to a tree that no longer exists.
-  initTree(paths);
+  double materializedL = columnarL;
+  if (!keepSeed) {
+    auto paths = opt.toNodePaths(m_leafNodes);
+    // initTree clears m_columnarIndexCodelength on the way in (the previous trial's tree
+    // is gone), and the stamping below sets this trial's -- so no reporting path can read
+    // a value belonging to a tree that no longer exists.
+    initTree(paths);
+    materializedL = m_hierarchicalCodelength;
+  }
   // The columnar core is the source of truth for the search codelength; the OO tree
   // re-materialization (calcCodelengthOnTree, via initTree) can disagree — and on this
   // branch it is the BASE map equation, so for L* it reports the wrong objective
   // entirely. columnarL is the exact codelength the core optimized (L* when
   // --non-redundant), so use it for reporting and trial selection.
-  const double materializedL = m_hierarchicalCodelength;
   m_hierarchicalCodelength = columnarL;
   m_numNonTrivialTopModules = calculateNumNonTrivialTopModules();
 
@@ -2548,13 +2616,15 @@ void InfomapBase::columnarPartition()
   // 3.892209764) — and nothing at all, 0.000000 throughout, whenever initTree took
   // its flat shortcut, which never scores the tree (jazz -C). Stamp the core's own
   // per-node charges instead, so one objective produces both numbers.
-  columnar::StackBreakdown breakdown;
-  opt.codelengthBreakdownFromStack(breakdown);
-  double padCharge = 0.0;
-  if (stampColumnarCodelengths(opt, breakdown, {}, padCharge))
-    m_columnarIndexCodelength = nonRedundant ? breakdown.rootTerm : -1.0;
-  else
-    Console::detail(2, "columnar: stack and materialized tree disagree on depth; per-level table left as initTree scored it");
+  if (!keepSeed) {
+    columnar::StackBreakdown breakdown;
+    opt.codelengthBreakdownFromStack(breakdown);
+    double padCharge = 0.0;
+    if (stampColumnarCodelengths(opt, breakdown, {}, padCharge))
+      m_columnarIndexCodelength = nonRedundant ? breakdown.rootTerm : -1.0;
+    else
+      Console::detail(2, "columnar: stack and materialized tree disagree on depth; per-level table left as initTree scored it");
+  }
 
   // One-level fallback (#827): the columnar search can, like the OO optimizer,
   // return a modular partition whose codelength is worse than the all-in-one-
@@ -2843,9 +2913,93 @@ std::vector<int> InfomapBase::padLeafPathsToUniformDepth(std::vector<std::vector
   // level above every leaf module, against L* bit-identical at 3.078067323).
   for (std::size_t i = 0; i < paths.size(); ++i) {
     padDepth[i] = static_cast<int>(maxDepth - paths[i].size());
-    paths[i].resize(maxDepth, paths[i].back());
+    // Copy the id out first: resize's fill value must not alias an element of the
+    // vector being resized, which reallocating would leave dangling.
+    const int finest = paths[i].back();
+    paths[i].resize(maxDepth, finest);
   }
   return padDepth;
+}
+
+bool InfomapBase::columnarSeedPathsFromTree(std::vector<std::vector<int>>& paths, bool& squared) const
+{
+  paths.clear();
+  squared = false;
+  // A hard --cluster-data partition is already collapsed into the leaf network the
+  // search optimizes (see setupColumnarOptimizer), so there is nothing to seed.
+  if (m_leafNodes.empty() || haveHardPartition() || !haveModules())
+    return false;
+
+  paths = leafModulePathsFromTree();
+
+  // A top-level leaf gets an EMPTY path (leafModulePathsFromTree stops below the
+  // root), but it IS a module of one node, so give it a synthetic id past every real
+  // one -- densely handed out from 0 -- and past every other synthetic one, so no two
+  // such leaves merge and none joins a real module. Same construction as
+  // padLeafPathsToUniformDepth, which needs it for the same reason.
+  int nextSyntheticId = 0;
+  for (const auto& path : paths)
+    for (const int id : path)
+      nextSyntheticId = std::max(nextSyntheticId, id + 1);
+  //
+  // Counted as squaring even though the partition is unchanged by it (a top-level leaf
+  // IS the module it gets): whether the stack then prices the tree the same way depends
+  // on where the root's direct leaf children are charged, and paying one tree score per
+  // run is cheaper than being wrong about that.
+  for (auto& path : paths)
+    if (path.empty()) {
+      path.push_back(nextSyntheticId++);
+      squared = true;
+    }
+
+  // The strict-level stack holds one module level per leaf, so a ragged tree has to be
+  // squared up. Truncate to the MODE depth: a deeper path loses its finest levels,
+  // which is a clean coarse-graining of that subtree, and a shallower one repeats its
+  // own finest id, a single-child pass-through above its leaf module.
+  //
+  // Measured against the two alternatives -- padding every short path up to the
+  // deepest, and dropping to the finest level alone -- on the ragged trees in the
+  // benchmark set, each network seeded with its own object-oriented tree
+  // (`-C --seed 123 -N1 -c <tree>`):
+  //
+  //   tree seed (depths)     mode (this)      pad to max     finest only
+  //   powergrid (4-7)         4.74974076     4.752217852    4.751400221   <- mode wins
+  //   science2001 (2-4)      7.831943521     7.835336866    7.832740037   <- mode wins
+  //   air30k (2-4)           5.393962436     5.393962436    5.393962436
+  //   netsci (2-5)           4.043438853     4.043438853    4.043438853
+  //   web-NotreDame (3-12)   5.566025331     5.566025331    5.566025331
+  //
+  // Mode wins the two it can win and ties the three the guard below decides (there the
+  // search does not beat the tree, so the tree comes back unchanged whatever the
+  // squaring did), and it is the cheapest of the three -- web-NotreDame 4.4s against
+  // 11.2s for padding and 5.8s for the finest level, both of which hand the up-build a
+  // far finer bottom to work from.
+  //
+  // Ties go to the shallower depth (the map below iterates ascending): padding is the
+  // lossy direction under the base map equation, which charges
+  // plogp(x+e)-plogp(e)-plogp(x) per node for a pass-through level.
+  std::map<std::size_t, std::size_t> leavesAtDepth;
+  for (const auto& path : paths)
+    ++leavesAtDepth[path.size()];
+  std::size_t depth = 0;
+  std::size_t mostLeaves = 0;
+  for (const auto& it : leavesAtDepth)
+    if (it.second > mostLeaves) {
+      mostLeaves = it.second;
+      depth = it.first;
+    }
+  if (depth == 0)
+    return false; // no leaves at all
+  if (leavesAtDepth.size() > 1)
+    squared = true;
+
+  for (auto& path : paths) {
+    // Copy the id out first: resize's fill value must not alias an element of the
+    // vector being resized, which reallocating would leave dangling.
+    const int finest = path.back();
+    path.resize(depth, finest);
+  }
+  return true;
 }
 
 double InfomapBase::objectOrientedTreeCodelength()

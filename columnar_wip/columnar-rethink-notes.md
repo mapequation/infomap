@@ -2941,3 +2941,119 @@ sees `leafCodebookRates() == {}` and stays at coefficient 1, matching the sub-co
 both plain parsed flag targets, populated before `adaptDefaults()` runs, so a validation-time check
 fires. The `stateInput || multilayerInput` rejection two lines above it is the dead-check trap of F35:
 those fields are set by `configureNetworkMode()` when the network is *read*, and no option sets them.
+
+### F41 — A warm start is not a refinement, and every operator the engine skips "because it never pays" pays on a seed it did not build (#824, 2026-08-19)
+
+`-C -c` was **bit-identical** to `-C` on every input tried — 51 of 51 seed/network/mode combinations in
+the batch below. `columnarPartition()` built its optimizer from the leaf network and never looked at the
+InfoNode tree, so a soft `--cluster-data` partition was read, echoed in the options banner, and then
+discarded without a warning. On the Jelena state network
+(`network_N256_om6_nc64_E100000_mu10_sample1.net`, `-2d`, `--seed 123 -N1`) the planted partition
+evaluates at **6.930934993** under `-C --no-infomap -c`, and `-C -c` returned **7.810478411** — 12.7%
+worse than its own input, and to the digit what `-C` returns with no seed at all.
+
+**The seeding primitive already existed; what was missing was the search after it.**
+`seedHierarchyFromLeafPaths` has been in the engine since the evaluation path needed it (F38), and
+`deepRepairColumnarBest` already used it to re-enter the search from a materialized tree. Missing were
+the route from the InfoNode tree into it, and a decision about what to *run* once seeded. Four things
+had to be got right, and only the first is obvious.
+
+**1. Rectangularization must not throw the seed away.** The stack holds one module level per leaf, so a
+ragged tree has to be squared up. Truncating to the **mode** depth wins or ties all five ragged trees in
+the benchmark set and is the cheapest (web-NotreDame 4.4s against 11.2s for padding to the maximum and
+5.8s for keeping only the finest level, both of which hand the up-build a far finer bottom). The table is
+in `columnarSeedPathsFromTree`.
+
+**2. The split operator is the point, and its gate had to be lifted.** `splitTopModules` returns 0
+unless a module-move-capable correction (Mem/Meta) is attached, on the argument that "merge overshoot
+only exists where a correction drives the aggregation".
+
+**3. So did the merge operator's.** `mergeLeafModulesWithinParents` returns false with no corrections
+attached because "any merge only raises the codelength". Same premise, same flaw, and it cost more than
+the split gate did: a 32-triangle ring seeded with its own planted partition (one module per triangle —
+over-fine, so adjacent triangles want merging) came back **unchanged** at 3.652410119 under `-2`, 2.3%
+above the 3.569591891 the same run finds from scratch. With the gate lifted it reaches
+**3.566165627** — below the from-scratch search and below `OO -c` (3.60767667). That ring is now
+`test/fixtures/networks/clique_ring.net`.
+
+  The generalization is the useful part: **both gates encode the premise that the partition came out of
+  this engine's own aggregation**, which has already settled every module-level move, so the only
+  overshoot left is what a correction introduces. An externally supplied partition has no such
+  provenance — it can be over-coarse (wants splitting) or over-fine (wants merging) under the plain map
+  equation. Both operators compute a full base-objective delta and are gated on the true stack
+  codelength, so the gates were never protecting correctness, only cost. One flag (`m_externalSeed`)
+  lifts both for the seeded path and leaves engine-produced partitions bit-exact.
+
+**4. Polishing cannot move a level boundary.** Neither operator that acts on a seeded stack — the
+two-level interleave, or the interior-layer refinement — adds or removes a level, so a seed whose
+*shape* is wrong for the objective traps the search at its own depth. Powergrid seeded with its own tree
+truncated to 3 levels settled at **4.965670587** against 4.75504777 unseeded. Three pipelines were built
+and measured against each other over the flat-seed hierarchical rows:
+
+  (These three arms were measured while choosing between them, i.e. before item 3 lifted the merge
+  gate. They compare pipelines against each other on one binary; they are not numbers to reproduce
+  against the shipped one, which is better than all three on the rows where merging is what helps.)
+
+  | seeded hierarchical pipeline | powergrid, coarse flat seed | air30k, perturbed flat seed | science2001, perturbed flat seed |
+  |---|--:|--:|--:|
+  | polish, then grow levels **above** the seed | 5.018444273 | **5.392743628** | 7.871545739 |
+  | polish, then re-derive **below** the seed | 4.978133607 | 5.393608612 | 7.950085457 |
+  | **below, then rebuild above it** | **4.749296398** | 5.393608612 | **7.843424549** |
+
+  Growing upward keeps the seed as the finest level, so a coarse seed can never be refined: it costs up
+  to **+6.2%** on powergrid (`pg-rand2 hier`: 5.043027402 against 4.749355). Re-deriving below without
+  rebuilding above leaves the seed's own top level in place, which is what caps science2001 at 7.95.
+  Doing both — sub-cluster each seed module's leaf set from singletons, so no building block crosses a
+  seed module, then run the ordinary enter-flow up-build over those blocks — wins or ties everywhere
+  except air30k (giving up 0.0065–0.038%) and is usually also *faster*, because the discarded arm was
+  the expensive one. Applied to the deep branch too it turned `pg-cut3` from 4.965670587 into
+  4.777177752 and `sci-cut3` into a win at 7.831943521, below both engines' from-scratch runs.
+
+  Stated as one rule: **the seed fixes where the search starts and at what granularity; the structure
+  above it is rebuilt.** That is also what the object-oriented warm start does, once you read it —
+  `coarseTune` re-derives sub-modules inside each module with a sub-Infomap and the recursion rebuilds
+  what sits above them, so OO does not preserve the seed's levels either.
+
+**And a guard, because none of the above can promise what the issue asks for.** The seeded search is
+gated on the true stack codelength, so it never comes out above the **seeded stack** — but a squared-up
+ragged tree is not the input partition, so that promise does not reach the input. web-NotreDame with its
+own object-oriented tree (depths 3–12) is the case: the tree scores 5.566025331, better than either
+engine's from-scratch run, and every squaring left the seeded search between 5.5828 and 5.6300. So the
+run now also scores the input tree itself — once per run, and only when squaring changed something,
+since otherwise the seeded stack already prices it — and hands the input back untouched when nothing beat
+it. `-C -c` on web-NotreDame now returns the input's 19 modules at 12 levels and 5.566025331. That is
+also the only path by which a ragged tree can be returned exactly as given, the stack being unable to
+hold one.
+
+**The object-oriented arm is the weaker warm start, not the stronger one.** Parity was the goal, so:
+`OO -c` **collapses to a single module** on a seed far from any optimum — powergrid with a random 2-,
+10- or 200-module seed returns **12.00440383 with 1 module** (science2001 9.754829232, air30k
+6.21487022), where the seeded columnar path returns 4.74–4.75. Over the 51 combinations `-C -c` beats
+`OO -c` on **48** and loses on 3: `pg-cut3` (+0.22%), `sci-split` (+0.033%) and `sci-pref3` (+0.027%).
+It is faster than `OO -c` in almost every row (jelena `-d`: 2.0s against 14.9s).
+
+**What the semantics cost, stated plainly.** `-C -c` continues from the seed and does *not* also run a
+from-scratch search, so where the seed is a worse starting point than singletons the result is worse than
+`-C` without `-c`: 10 of the 51 combinations, by 0.0014% to **0.47%** (`pg-cut3`; the rest are ≤0.06%,
+nine of the ten on science2001). That is inherent to warm-starting and OO has the same exposure on the
+same rows. A best-of-two variant (seeded arm plus from-scratch arm, keep the lower) was built and
+measured — it removes all 10 — and **rejected**: it is a second search per trial, it is not what
+`--cluster-data` means, and it is not what the object-oriented engine does.
+
+**A regression test on a symmetric network cannot pin the search's own answer.** The clique-ring fixture
+this finding added (32 identical triangles in a ring) is maximally tied, and the first version of the test
+pinned all three arms. CI disagreed on exactly one of them: the FROM-SCRATCH `-2` result came out
+3.5695918914487512 on macOS clang and on every `OPENMP=0` build, and 3.5675… on gcc and MSVC with
+`-fopenmp` — three jobs red, one assertion each. **The columnar core contains no OpenMP** (grep for
+`_OPENMP` under `Columnar*` finds nothing) and `innerParallelization` defaults off, so this is not a
+parallel-nondeterminism story: `-fopenmp` changes floating-point codegen, and on a network where the
+merge candidates are exactly tied, that decides which pair of triangles the aggregation merges first. The
+SEEDED arm has no such freedom — it starts from the planted partition — and its 3.5661656266226012 held
+on all five CI toolchains, as did the input partition's own score. So the test pins those two and asserts
+the from-scratch arm only relationally. Worth remembering for any future fixture chosen because the
+greedy search fails on it: the properties that make it a good demonstration also make its own answer
+unstable.
+
+**Also fixed in passing.** `padLeafPathsToUniformDepth` called `resize(maxDepth, paths[i].back())`,
+whose fill value aliases an element of the vector being resized — dangling if the growth reallocates.
+Both it and the new helper copy the id out first.

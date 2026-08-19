@@ -1028,7 +1028,9 @@ int ColumnarTwoLevel::splitTopModules(double& L, bool allowSingletons)
   for (auto& cp : m_corrections)
     if (cp->participatesInMoveLoop() && cp->participatesInModuleMoves())
       unitCorr.push_back(cp.get());
-  if (unitCorr.empty())
+  // ...except on an externally seeded partition, whose modules the engine did not
+  // build and can need subdividing under any objective (m_externalSeed, #824).
+  if (unitCorr.empty() && !m_externalSeed)
     return 0;
 
   const int K = hierLevel(1).n;
@@ -1570,6 +1572,117 @@ bool ColumnarTwoLevel::seedHierarchyFromLeafPaths(const std::vector<std::vector<
   m_numTopModules = static_cast<unsigned int>(m_hierLevels.back().n);
   m_leafTop = levelId[1]; // leaf -> finest module, for a subsequent optimize
   return true;
+}
+
+double ColumnarTwoLevel::optimizeFromSeed(bool flat, unsigned int sweepLimit)
+{
+  if (m_hierLevels.size() < 2)
+    return std::numeric_limits<double>::infinity(); // nothing seeded
+
+  // The split and merge operators earn their keep on a seed the engine did not
+  // build; see m_externalSeed.
+  m_externalSeed = true;
+  const bool flatSeed = m_hierLevels.size() == 2;
+
+  // (1) POLISH the seed at its own granularity.
+  //
+  // A flat seed (a --two-level run, or a one-level-deep cluster file) gets the
+  // two-level interleave: the from-singletons split, the seeded leaf re-tune and the
+  // module merge, until the trio stops improving. The split is the operator that
+  // matters for an EXTERNAL seed -- it subdivides a supplied module the engine would
+  // never have built, the job the object-oriented coarseTune does with a sub-Infomap
+  // per module.
+  //
+  // A deep seed gets the interior-layer refinement, whose k == 0 pass re-derives each
+  // grandparent's leaf set from singletons -- the same subdivision, one level down --
+  // followed by the module coarsening.
+  double L = flatSeed
+      ? deepRepairTwoLevelStack()
+      : refineHierarchy(hierarchicalCodelengthFromStack(), sweepLimit);
+  if (flatSeed)
+    // The interleave leaves the leaves at the two-level fixpoint, exactly as
+    // completeFlatFromAggregation does.
+    m_bottomConverged = true;
+  if (flat) {
+    m_externalSeed = false;
+    return L; // --two-level: there is no hierarchy to rebuild
+  }
+
+  // (2) REBUILD the hierarchy above the polished bottom, and keep whichever of the
+  // two is better.
+  //
+  // Polishing alone cannot move a level boundary: neither operator in (1) adds or
+  // removes a level, so a seed whose SHAPE is wrong for the objective traps the search
+  // at its own depth. A FLAT seed is the extreme case -- its bottom is its top, so the
+  // whole hierarchy is missing. So take the polished leaf-module partition as the
+  // bottom and grow the hierarchy over it with the ordinary enter-flow up-build, then
+  // refine that. Measured on powergrid (`--seed 123 -N1 -c`), step (1) alone against
+  // step (1) + this:
+  //
+  // | seed                          | polish only |   + rebuild |
+  // |-------------------------------|------------:|------------:|
+  // | flat, 339 modules (perturbed) | 5.587611395 | 4.738295187 |
+  // | flat, 2 random modules        | 5.620992378 | 4.738600187 |
+  // | its own tree cut to 3 levels  |  4.97282865 | 4.777177752 |
+  // | its own tree (4-7 levels)     |  4.74974076 |  4.74974076 |
+  //
+  // -- so up to -15% on a flat seed, -3.9% on a mis-shaped deep one, and nothing lost
+  // where the seed's own shape was already right (the last row: the rebuild loses the
+  // gate and the polished stack is kept).
+  //
+  // This is the reading of "continue from this partition" that matches the
+  // object-oriented warm start: there, coarseTune re-derives sub-modules inside each
+  // module and the recursion rebuilds the structure above them, so the seed decides
+  // where the search STARTS and at what granularity, not how many levels the answer
+  // has. Keeping the polished stack as a gated candidate is the same
+  // best-of-two-shapes the flat-first trial already does (see optimizeFlexible).
+  std::vector<Level> bestLevels = m_hierLevels;
+  std::vector<std::vector<int>> bestAssign = m_hierAssign;
+  double bestL = L;
+
+  if (flatSeed) {
+    // A flat seed's bottom IS its top, so there is nothing to build over yet. Stack a
+    // pass-through copy of it, making the seed modules the leaves' GRANDPARENTS, and
+    // re-derive each grandparent's leaf set from singletons: building blocks that
+    // respect the seed but are finer than it, which is what the up-build consumes.
+    const int K = m_hierLevels[1].n;
+    std::vector<int> ident(K);
+    for (int i = 0; i < K; ++i)
+      ident[i] = i;
+    m_hierAssign.push_back(ident);
+    m_hierLevels.push_back(aggregateLevel(m_hierLevels[1], ident, K, m_undirected));
+    m_numTopModules = static_cast<unsigned int>(K);
+    if (!refineBottomWithinParents()) {
+      // No module could be subdivided: the seed is already at leaf granularity, so
+      // the up-build would consume the same bottom the polish converged on.
+      m_hierLevels = std::move(bestLevels);
+      m_hierAssign = std::move(bestAssign);
+      m_numTopModules = static_cast<unsigned int>(m_hierLevels.back().n);
+      m_externalSeed = false;
+      return bestL;
+    }
+  }
+
+  m_leafTop = m_hierAssign[0];
+  const int bottomK = m_hierLevels[1].n;
+  m_numTopModules = static_cast<unsigned int>(bottomK);
+  // The rebuilt bottom is a fresh from-singletons derivation, not the converged flat
+  // partition, so the leaf-layer refine below is not a re-solve (see m_bottomConverged).
+  m_bottomConverged = false;
+  const double rebuilt = refineHierarchy(buildHierarchyFromBottom(bottomK), sweepLimit);
+  if (rebuilt < bestL - kMinImprovement) {
+    bestL = rebuilt;
+  } else {
+    m_hierLevels = std::move(bestLevels);
+    m_hierAssign = std::move(bestAssign);
+  }
+  m_numTopModules = static_cast<unsigned int>(m_hierLevels.back().n);
+  // Keep m_leafTop consistent with whichever stack won: nothing in the engine reads it
+  // after this today (the materialization goes through m_hierAssign), but leaving it
+  // pointing at the losing bottom is a trap for whatever calls this next.
+  m_leafTop = m_hierAssign[0];
+  m_externalSeed = false;
+  return bestL;
 }
 
 ColumnarTwoLevel::Level ColumnarTwoLevel::aggregateLevel(const Level& base, const std::vector<int>& assign, int K, bool undirected)
@@ -2319,7 +2432,15 @@ bool ColumnarTwoLevel::mergeLeafModulesWithinParents()
   for (auto& c : m_corrections)
     if (c->participatesInMoveLoop())
       corr.push_back(c.get());
-  if (corr.empty())
+  // ...unless the partition is an external seed (m_externalSeed, #824): "any merge only
+  // raises the codelength" holds for a partition this engine's aggregation produced,
+  // whose module-level move loop already settled every merge, not for an over-fine
+  // cluster file. mergeCost below is the full base-objective delta, and the caller
+  // gates each accepted sweep on the true stack codelength. Measured: a 32-clique ring
+  // seeded with its own planted partition returned that partition unchanged at
+  // 3.652410119 under --two-level -- 2.3% above what the same run finds from scratch --
+  // because merging adjacent cliques was the only move that helped and it was skipped.
+  if (corr.empty() && !m_externalSeed)
     return false;
 
   const int K = hierLevel(1).n; // leaf modules (level-0 -> 1)
