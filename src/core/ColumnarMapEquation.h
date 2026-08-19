@@ -706,6 +706,7 @@ private:
   // COL_HSPLIT_WINNER instead of COL_HSPLIT for the split interleave.
   bool m_forceHSplit = false;
   bool m_deferTerms = false; // deterministic placement: moveUnit skips running-term (plogp) maintenance; rebuildRunningTerms() restores them
+  bool m_noEmptyTargets = false; // purify-only move loop: no empty-module candidates (regroup ladder polish)
   bool m_leafMoveLoop = false; // true while moveLoop units are leaves (corrections active)
   bool m_moduleCorrActive = false; // true while module-move-capable corrections participate in a module-level move loop
   bool m_seededPhase = false; // true when the move loop starts from an existing partition (fine-tune/refine)
