@@ -3057,3 +3057,86 @@ unstable.
 **Also fixed in passing.** `padLeafPathsToUniformDepth` called `resize(maxDepth, paths[i].back())`,
 whose fill value aliases an element of the vector being resized — dangling if the growth reallocates.
 Both it and the new helper copy the id out first.
+
+### F42 — The memory objective has a GROUP hysteresis no pairwise operator crosses; the group proposal lives in the block graph's own flow structure (2026-08-19)
+
+Follow-up to the #1028 Jelena rows: `-c` with the planted partition reaches 6.87, but the FREE `-C -2d`
+search lands at **7.810 with 3585 modules** (om6) and **7.989 with 1 module** (om5) — the same seed-123
+binary, over a bit worse than the planted partition's own `--no-infomap` score (6.931 / 6.902). Both free
+end states are *fixpoints of every operator in the engine*: the leaf move loop, the module-level
+aggregation passes, the pairwise merge (`mergeLeafModulesWithinParents`), the split, the descending
+in-trajectory repair. Two failure modes bracketing the same missing optimum is the signature worth
+remembering.
+
+**Why the search cannot get there.** These networks have ~200 state nodes per physical node and **zero
+links between co-physical pairs** (checked: 0 of 4.9M/5.7M pairs). The mem correction's reward for
+folding co-physical flow together is superadditive in module size, so the augmented optimum wants ~20
+modules of ~2500 states — reachable from the fragmented state only by merging ~150 fragments *at once*.
+Every pairwise fragment merge is uphill (om6 stalls), while on om5 the same superadditive pull, being
+community-blind (only 20% of co-physical pairs share a planted module), snowballs the module passes
+straight through every community boundary into one module. Three dead hypotheses, so nobody re-tries
+them: (1) **co-physical move candidates** (`COL_COMERGE=all/seeded`, the F-era knob) change nothing that
+matters — om6 7.810 → 7.808, om5 unmoved, at up to 15× the trial cost; the barrier is group-level, not
+candidate-level. (2) **Probing the module graph with its own (inherited) flows** is the Louvain
+equivalence — module-level moves on the original network ARE unit moves on the aggregated graph — so a
+probe of the converged partition's module graph returns all singletons by construction. (3) The
+**hierarchical up-build's top level** is not the community structure either (purity 0.77 vs planted;
+flattening it scores 7.83–7.84).
+
+**What works: cluster the block graph as its own network under the enter-flow transform, then gate.**
+The planted communities are plainly visible in the *inter-block* flow structure (mu = 0.10): a plain
+first-order two-level of om6's 3585-fragment graph finds 24 groups of ~2100–2500 states at state-weighted
+purity 0.936. The regroup probe does this in-engine after the aggregation converges: probe the finest
+retained trajectory level with `flow := enter` (the up-build's super-network semantics; with true flows
+see dead hypothesis 2), walk a **multi-scale ladder** (re-aggregate by the found grouping, probe again —
+one probe stops at the base objective's own resolution on a sparse block graph: om5's 11049 blocks probe
+to 4412 groups, nowhere near 20), and offer every rung as a candidate under the true objective,
+keep-best. Two details carried the last percents: the candidate polish is a seeded move loop at **block**
+granularity (whole-rung moves cannot fix intra-rung impurity: om6's best rung scored 7.99 polished at
+rung granularity, 7.17 at block granularity), and it runs **purify-only** (`m_noEmptyTargets`: no
+empty-module targets, otherwise the polish re-fragments a coarse impure seed back into the basin the
+ladder was built to escape — om5's rung-2 candidate went K 45 → 645 with empty targets on).
+
+**Result** (seed 123, `-C -2d`): om5 **7.989 → 6.868** (280 modules), om6 **7.810 → 6.886** (443);
+`-N10` lands 6.868 / 6.887 on both `-2d` and `-d` — within 0.2% of the planted-seeded 6.858 / 6.873,
+with no planted knowledge. Gated on module-move corrections, so every base network is bit-identical
+(verified: 32 of 32 configurations vs the #1028 binary). `COL_REGROUP=off` is the A/B baseline.
+Residual: `-C -d -N1` (hierarchical, single trial) stays in the bad basin (7.88 / 7.48) — the fine-blocks
+bottom skips the probe (`maxAggPasses != 0`) and a single trial has no flat-first arm; any `-N2+` or `-2`
+run is covered.
+
+### F43 — The once-per-run winner repair never ran at -N1, and would have "repaired" --no-infomap (2026-08-19)
+
+Found while wiring F42's probe into the winner repair: `maybeDeepRepairBest` reads `result.bestTree`,
+which the serial path fills **only when `-N > 1`** (`updateBestResult` guards the copy — at `-N1` the
+in-memory tree IS the winner and nothing needed it before #889). At `-N1` the pre-sized placeholder
+entries `(state 0, empty path)` tripped `deepRepairColumnarBest`'s tree-mismatch guard, so the #889
+deep repair — measured and shipped as a winner-repair that "amortizes with -N" — has silently never run
+for any single-trial mem/meta run. Fixed by materializing the winner from the in-memory tree. The fix
+un-masked a second hole: with a real tree at `-N1`, the repair also ran on **`--no-infomap`**
+evaluations and returned a better partition than the one the user asked to score (the fixed-partition
+differential test caught it: metadata case scored 3.34 against the OO arm's 4.29). `--no-infomap` now
+gates the repair explicitly. Single-trial mem/meta runs pay the repair they were always supposed to pay
+— om5/om6 `-2d -N1` go from ~1.1 s to ~2.1–2.6 s *and* from 7.1–7.9 to 6.87–6.89 bits; timings for the
+benchmark set are in the PR snapshot.
+
+**F42 addendum — the ladder behind a detector (same day).** The first shipped shape ran the full
+pass-1-blocks ladder in every trial, which cost the healthy state networks +2..11% at `-N10` (air30k
+`-2` +8.8%) for zero codelength change there — Daniel rejected the balance. Three variants were
+measured before the final shape: (a) an early stop after two consecutive rejected rungs (the winner is
+empirically rung 0–1; quality bit-identical on om5/om6) does not remove the dominant cost, which is
+the rung-0/1 probe + block-granularity polish itself; (b) basing the ladder on the CONVERGED partition
+(a few hundred units) instead of the pass-1 blocks is nearly free but gives back 0.3–0.5% on om5/om6 —
+the converged units are too coarse to purify; (c) escalating from (b) to the blocks ladder when a
+cheap-ladder rung is accepted misfires, because healthy networks accept marginal (~0.01%) rungs too.
+THE FINAL SHAPE: the converged-base ladder runs as a pure DETECTOR — its accepts are always rolled
+back — and only a SUBSTANTIAL win (> 0.1% of the codelength; the pathology's wins are 2–9%, a healthy
+network's ~0.01%) escalates to the full pass-1-blocks ladder from the untouched state. Because the
+ladder consumes no shared RNG state and everything downstream re-derives from bestTop, a run whose
+detector stays quiet is BIT-IDENTICAL to the pre-probe engine: verified on air30k (`-C`/`-2`),
+malaria, air30kmeta `-2`, lazega, multilayer at `-N10`. Interleaved min-of-3, loaded machine (load ~9,
+ratios still paired): air30k `-N10` +1.7%/−1.0%, reg +0.9%/+0.2%, meta +0.4%/+1.8%, malaria
+−2.8%/−1.7% — noise-level, against +2..11% before. om5/om6 quality kept or improved: `-2d -N1`
+6.867282833/6.886461009, `-N10` 6.867282589/6.887275396. The residual ±0.01% on air30kreg
+(`-C`/`-F`/`-2` +0.009..0.012%) and air30kmeta (−0.0002%) comes from the winner repair's fresh-split
+sub-optimizers now running the ladder inside over-merged modules — once per run, not per trial.

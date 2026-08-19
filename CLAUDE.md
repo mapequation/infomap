@@ -2,6 +2,12 @@
 When working on the new columnar core (wip branch `columnar-hierarchical-core`), remember to:
 - append findings to the log in `columnar_wip/columnar-rethink-notes.md`
 - run benchmark networks in `columnar_wip/benchmark-networks.md` to keep all the numbers in `columnar_wip/columnar-pr-performance-section.md` up-to-date for each PR, and report the differences to previous numbers of the columnar core in the chat and in the PR body.
+- include **old-vs-new columnar comparison tables** in the snapshot, styled like the `-F` table: old
+  columnar (the pre-change binary) on the left, this PR's columnar on the right with parenthesized
+  (±%) deltas against the old, same columns (codelength/time/top/lvls) — one table for the standard
+  search (`-C`) and one for two-level (`-C -2`). Both arms measured in the same session with the same
+  wrapper, so the PR's effect is readable directly from the table rather than by diffing against the
+  previous snapshot (whose times came from another session and wrapper).
 - report all cases where it performs more than 0.1% worse in codelength or 1% worse in speed relative previous numbers and explain those. If a systematic bias due to changes in how busy the environment is, the codelength should be same and columnar vs OO speed ratio should be same within a margin.
 - Marginal win in codelength should not cost non-marginal loss in speed unless behind a speed-to-quality trade-off flag, but always report and ask before accepting such trade-off.
 - if a PR includes more than one optimization feature, report the individual contribution of each feature on at least a relevant subset.
