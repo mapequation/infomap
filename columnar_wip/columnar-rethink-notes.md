@@ -4004,3 +4004,74 @@ order-dependent in principle (bottom-up, dissolve preferred on ties); no attempt
 Cosmetic defect found on the way: scoring a ragged input of max depth 9 prints `Initial generated 4
 levels` on the console while the written tree header correctly says 9 levels and L is exact — readout
 only, filed here rather than fixed.
+
+> **Renumbered on port (2026-09-05).** Written on 2026-08-19 as F42 on the unmerged local branch
+> `columnar-native-ragged-eval`, which was never pushed and sat 30 commits behind. F42 has since been
+> taken by another finding, so it is F52 here; the text is otherwise unchanged. The order-dependence
+> it describes in `columnarSeedPathsFromTree` turned out to have a twin in the shared scoring path —
+> see [#1067](https://github.com/mapequation/infomap/issues/1067).
+### F52 — The ragged-tree fallback was one gate, not a missing feature (#824 follow-up, 2026-08-19; logged 2026-09-05)
+
+`evaluateColumnarPartition` handed every ragged tree to the object-oriented scorer unless
+`--non-redundant` was set. That fallback is what made `-C -c`'s guard compare **two different
+objectives**: the search's value came from the columnar core, the input partition's from
+`calcCodelengthOnTree`. On any objective the object-oriented side cannot express — L\*, or
+`--meta-data` on higher-order input, where the columnar core composes two codebooks the OO side
+composes neither of — the comparison prices different things.
+
+**The machinery to score a ragged tree natively was already there, in full generality.**
+`stampColumnarCodelengths` sums the phantom pass-through levels' complete breakdown entries into
+`padCharge`, and the evaluation returns `L - padCharge`. Only the gate was missing:
+`padDepth = nonRedundant ? padLeafPathsToUniformDepth(paths) : std::vector<int>()`. The comment
+justifying that gate — a pass-through level costs 0 under L\* and real bits under L — is true and
+beside the point, because the charge it names *is* the breakdown entry being subtracted.
+
+**Why the subtraction is exact, and the one thing that makes it so.** A phantom `p` inserted
+between module `x` and its real parent `P` is an exact copy of `x`'s flow / enter / exit / teleport
+aggregates (`aggregateLevel` over a singleton assignment skips intra-group edges, so `p`'s edge set
+is `x`'s). Every per-module term in the scorer reads only that module's own exit and its children's
+enter — never a depth, a level count or a grandparent — so `P`'s term is unchanged (its child `p`
+contributes the enter `x` did) and `x`'s term is unchanged. `p`'s whole cost is therefore its own
+entry: `plogp(a+b) - plogp(a) - plogp(b)`, which on undirected input is exactly `2a`.
+
+The load-bearing detail is that the duplicate is **appended**, and paths are coarsest-first, so `x`
+keeps the level-1 leaf-codebook role. Prepending it would re-price `x` as a module-of-modules and
+the cancellation would fail. Verified across all five corrections: four read level-1 quantities
+only and are untouched; `BiasedEntropy` counts nodes and moves by exactly the phantom's own entry.
+
+**Measured**: on `twotriangles_ragged_branches.tree` the native value reproduces the
+object-oriented value to the digit for base, `-d`, `--entropy-corrected`, `--markov-time 0.8`,
+`--preferred-number-of-modules 3` and `--non-redundant`; same on `states_ragged_branches.tree`. The
+pass-through charge on that fixture is exactly 1/7 under base and 0 under L\*.
+
+**A precondition that is enforced but was never written down.** The phantom is a single-child
+pass-through only because no module has both a leaf child and a sub-module child. Under that shape
+the padding is not an insertion at all — `P`'s direct leaf children get grouped into a genuinely new
+module and the stamping would mark the **real** module `P` as phantom and subtract its term.
+`validateClusterDataTreeShape` rejects such input (#898) and the search never builds it, but the
+public `initTree(const NodePaths&)` does not validate, so a library caller can still reach it. Now
+stated in the code.
+
+**Two things ungating exposed that padding had been hiding.**
+
+1. **A module-less tree is not a partition.** With every leaf path empty, padding hands each leaf a
+   synthetic module of its own and scores the **singleton** partition. Under L\* that has been
+   happening since the padding shipped: `-C --non-redundant --no-infomap` with no `--cluster-data`
+   reports 3.220279696 on `twotriangles_flow` — the singleton L\*, not the module-less codelength.
+   The base objective was shielded by the fallback. The guard is `haveModules()`, and it belongs
+   there for both objectives; what L\* assigns to a module-less tree, and which engine computes it,
+   is a separate question, since the stack needs at least one module level and the OO side has no
+   L\* at all.
+
+2. **The two objectives disagree about what a file means.** For a bare top-level leaf
+   (`2 0.15 "A" 1`, which is how Infomap's own writer emits a one-node top module) the repo pins two
+   incompatible readings, each with a reasoned comment: under L\* the bare, explicit-module and
+   rectangular spellings are one partition and score alike (2.187131226); under base the bare
+   spelling is addressed in the **root's** codebook and gets no module codebook (2.714170945 against
+   the explicit 3.014170945), with the note that base "must not move". Both are now implemented
+   without an OO call — the synthetic module's charge is kept under L\* and subtracted under base —
+   but the same file denoting different partitions depending on the objective is a modelling
+   question, not an implementation detail. Related: `BiasedEntropy` over-charges that synthetic
+   module under L\* by one per-node term, and `PreferredModulesCorrection`'s leaf-module count
+   disagrees with the OO one by `max(0, #bare-top-level-leaves - 1)` and sits on `rootTerm`, which
+   `padCharge` structurally never reaches.
