@@ -3140,3 +3140,25 @@ ratios still paired): air30k `-N10` +1.7%/−1.0%, reg +0.9%/+0.2%, meta +0.4%/+
 6.867282833/6.886461009, `-N10` 6.867282589/6.887275396. The residual ±0.01% on air30kreg
 (`-C`/`-F`/`-2` +0.009..0.012%) and air30kmeta (−0.0002%) comes from the winner repair's fresh-split
 sub-optimizers now running the ladder inside over-merged modules — once per run, not per trial.
+
+**F42 second addendum — the size floor, and a measurement correction (2026-08-20).** Two review
+findings from Daniel. (1) **The comparison tables' "old" times were wrapper artifacts**: the old arm
+WAS the branch tip binary, but the harness timed the whole process, and ~30 ms of startup swamps every
+sub-0.1 s row — lazega/multilayer read 0.04 s where the snapshot convention says 0.01 s, which looks
+like a wrong baseline. The instrument is now `--timing-json`'s `timing.total_s` (the engine's own
+wall), written into CLAUDE.md along with: always compare against a fresh build of the branch tip, warn
+and explain every old→new regression on either axis, and NEVER quote a codelength change without the
+time change on the same rows (or vice versa) — every gain/change/drift must carry its axis (bits, s).
+(2) **The remaining once-per-run costs failed the rules and had a better fix.** With engine timing the
+winner repair's fresh splits — every module's sub-cluster running the arm's detector — cost malaria
+`-C -N10` +5.2% in time for exactly 0 change in bits (~140 sub-detectors at ~1 ms), and the same
+sub-ladders were the source of regularized air30k's +0.009..0.012% bits drift. A "significant time
+increase without codelength gain" is auto-reject, so instead of reporting it: the arm now has a SIZE
+FLOOR (1024 leaves) — the hysteresis needs hundreds of co-attribute leaves per would-be group, so
+below the floor the pre-probe engine already handles everything the ladder could offer, and the cost
+was never one ladder but the count of small ones. With the floor, EVERY healthy benchmark row is
+bit-identical to the tip in bits (air30kreg -C/-2/-F and air30kmeta included; air30k's -N1 −0.014%
+bits ladder nibble also reverts to identical), and the only differing rows are the intended ones:
+malaria/lazega `-N1` (repair fix, −1.20%/−0.43% bits) and the jelena family (unchanged by the floor:
+om5 -2d 6.867282833 bits at -N1). The om5 12224-state super-group split that motivated sub-optimizer
+participation is above the floor and keeps working.
