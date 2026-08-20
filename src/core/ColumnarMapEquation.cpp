@@ -899,7 +899,16 @@ double ColumnarTwoLevel::optimizeTwoLevel(unsigned int maxAggPasses, bool doFine
     // objective is the same hysteresis one level down — a super-group holding
     // several communities is only split by rediscovering them inside it, which
     // is exactly the job splitTopModules delegates to the sub-cluster.
-    if (regroupProbeEnabled() && maxAggPasses == 0 && !trajComp.empty()) {
+    // Size floor: the group hysteresis needs scale (hundreds of co-attribute
+    // leaves per would-be group), and the arm's cost on a small problem is not
+    // its own ladder but the COUNT of small problems — the winner repair's
+    // fresh splits probe every module's sub-cluster, and ~140 sub-detectors
+    // cost malaria `-C -N10` +5.2% in time for exactly 0 change in bits.
+    // Below the floor the pre-probe engine already handles everything the
+    // ladder could offer; above it (the om5 12224-state super-group, whole
+    // trials) the arm runs as designed.
+    constexpr int kRegroupMinLeaves = 1024;
+    if (regroupProbeEnabled() && maxAggPasses == 0 && m_nLeaves >= kRegroupMinLeaves && !trajComp.empty()) {
       // The ladder is multi-scale on purpose: one probe pass finds the base
       // objective's OWN resolution on the base graph, which on a large sparse
       // one is an intermediate scale (om5: 11049 pass-1 blocks probe to 4412
