@@ -3213,3 +3213,35 @@ mem-aware aggregation ever coarsens past community boundaries on these networks;
 role is the BARRIER (pairwise merges of community-pure fragments are uphill while the ~100-block
 group merge is downhill), not a snowball. The regroup ladder's design is unaffected — it escapes the
 fragment basin either way — but the mechanism record and the PR text needed this correction.
+
+### F45 — Physical-partition seeding: scored, tried both ways, and why it is not the answer (2026-08-21)
+
+Daniel's probe: could seeding with the physical network (every state in its physical node's module) replace
+or complement the regroup ladder? Three measurements on the overlapping networks (PR #1029 binary):
+
+- **The physical partition itself scores 9.988/9.992 bits** (om5/om6; 256 modules). It holds the MAXIMUM
+  memory folding — the correction reaches −7.10 bits, against −4.54 at the planted partition and −0.67 at
+  the fragments (om6 decomposition, from state flows + partitions) — but with zero co-physical links every
+  bit of link flow crosses a module boundary, and the base terms explode. The planted optimum is the
+  balance point: its −0.88 bits net win over the fragments = −3.87 bits of folding MINUS +2.99 bits of
+  base cost. This is also the quantitative answer to "how much is the memory correction in this": the
+  folding term is 4.4× the net win, fighting a base penalty of 3.4× the net win.
+- **Soft `-c` from the physical partition FAILS both ways**: om5 `-2d -N1` → 7.989 bits (the one-level
+  guard again) at 6.8 s, om6 → 7.882 bits at 5.1 s, om6 `-N10` → 7.858 bits at 54 s — worse in bits AND
+  time than the free search with the ladder (6.87/6.88 bits at 1.8–1.9 s). Greedy single-state moves from
+  the full fold surrender the folding gains one state at a time before any community forms — the same
+  single-move barrier, approached from the opposite side.
+- **As a pass-1 seed inside the normal pipeline** (throwaway COL_PHYSSEED: seedAssignment(physical) for
+  the trial's first leaf move loop, then the ordinary aggregation): om6 lands at 6.8890 bits in 2.0 s
+  WITHOUT the ladder — a real escape, 0.07% in bits above the ladder pipeline's 6.8840 — but om5 `-N1`
+  still ends at the guard's 7.989 bits (its descent from the fold overshoots into the fragments), and the
+  healthy control regresses: air30k `-2 -N10` 5.3931 → 5.4107 bits (+0.33%). So physical seeding is
+  neither robust on the pathology (om5) nor safe on healthy networks; the biased start replaces the
+  from-singletons discovery everywhere. Not shipped; binary kept as a session artifact only.
+
+The single-state framing of F42's barrier is confirmed from both directions: from the fragments, one
+co-physical move captures a ~1/50000 sliver of the −3.87-bit folding term while paying an immediate base
+cut; from the full fold, one move pays an immediate folding loss before any base gain accrues. Only a
+group move — ~100 flow-connected fragments containing ~10 states of each physical — crosses, and the
+optimum folds each physical into ~20 module-level codewords, NOT one (that is the 9.99-bit physical
+partition).
