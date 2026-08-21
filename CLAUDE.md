@@ -16,6 +16,9 @@ When working on the new columnar core (wip branch `columnar-hierarchical-core`),
   without an offsetting gain on the other axis), do not just report it — **inspect whether there is a
   better way to solve the issue**. A significant time increase without a codelength gain is rejected
   automatically; it is not a trade-off to present.
+- **A configuration that appears in more than one table must show the same numbers in all of them.**
+  Measure every table's rows in ONE session with ONE instrument; a reader diffing the `-2` table
+  against the comparison table must never find two different times for the same run.
 - **Codelength and time are one trade-off — never report one without the other.** A codelength change
   quoted without the time change on the same rows is meaningless, and vice versa. Every mention of a
   gain / change / drift / regression — with or without a percentage — must make unambiguous from its

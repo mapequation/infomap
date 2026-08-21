@@ -3197,3 +3197,19 @@ Residual constants and their justification: the 0.1%-of-L escalation threshold (
 bestK < 64 direct escalation (fires only where the converged base is too coarse for the detector to
 carry any signal; on the benchmark set that is om5's true collapse plus toy `-2` runs where the
 blocks ladder costs microseconds).
+
+**F42 third addendum — the om5 "collapse" was the one-level guard, not a snowball (2026-08-21).**
+F42 described the two failure modes as "stalls fully fragmented (om6) or snowballs past every
+community boundary into one module (om5)". The snowball half is WRONG, caught by Daniel asking what
+critical difference could explain a phase shift between om=5 and om=6. Verified with `-vv` on the tip
+binary: om5's `-2d -N1` trajectory ends FRAGMENTED at 8.108349273 bits, which is worse than the
+network's one-module partition (7.989189332 bits — om6's is 7.993397315), so the #827 one-level
+fallback fires ("columnar: worse codelength than one-level, putting all nodes in one module") and the
+1-module output is the guard's, not the search's. Both networks fail the SAME way — stuck in the
+fragment basin ~0.9–1.2 bits above the planted partition — and the om5/om6 difference is only whether
+the trajectory's fragmented codelength lands above or below the one-module bound: om5 `-N10`'s better
+fragmented trial (7.894 bits) stayed below it and was output as 996 modules. There is no evidence the
+mem-aware aggregation ever coarsens past community boundaries on these networks; the correction's
+role is the BARRIER (pairwise merges of community-pure fragments are uphill while the ~100-block
+group merge is downhill), not a snowball. The regroup ladder's design is unaffected — it escapes the
+fragment basin either way — but the mechanism record and the PR text needed this correction.
