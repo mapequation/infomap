@@ -26,6 +26,7 @@ Single-thread convention: `MODE=release OPENMP=0`, `--seed 123`, best-of-N via `
 | air30k (meta) | `networks/states/air2011/air30k.net` (+ `…/air30k_usstate.meta`) | `--meta-data networks/states/air2011/air30k_usstate.meta` | undirected | **state/memory + metadata** (both codebooks) | 183 physical · 13 213 state nodes |
 | jelena om5 | `networks/debug/Jelena/network_N256_om5_nc64_E100000_mu10_sample1.net` | `-2d` (also run `-d`) | directed | **state / memory**, planted overlapping communities, zero co-physical links | 256 physical · 50 133 state nodes |
 | jelena om6 | `networks/debug/Jelena/network_N256_om6_nc64_E100000_mu10_sample1.net` | `-2d` (also run `-d`) | directed | **state / memory**, planted overlapping communities, zero co-physical links | 256 physical · 53 860 state nodes |
+| wikispeedia | `../../networks/examples/wikispeedia_states.net` (repo `icelab/code/networks`) | `-2d` (also run `-d`) | directed | **state / memory**, real order-2 path network, zero co-physical links, healthy control for the jelena rows | 300 physical · 6 475 state nodes |
 
 > **`air30k (meta)` metadata is generated, not checked in.** `networks/` is a data directory outside the
 > repo and none of its higher-order networks ships a metadata file, so the row is reconstructed with
@@ -43,6 +44,10 @@ Single-thread convention: `MODE=release OPENMP=0`, `--seed 123`, best-of-N via `
 > fragmented (om6). The planted partition is the quality reference:
 > `planted_partition_…_state_id.clu` scores 6.902222527 (om5) / 6.930934993 (om6) under
 > `-C -2d --no-infomap -c`; a healthy search must land at or below that.
+>
+> **wikispeedia is the healthy control for the same structural family** (F44): also order-2 with zero
+> co-physical links, but at 21.6 states per physical the memory reward does not dominate, and the
+> regroup machinery must leave it bit-identical in bits at `-N10` (5.907904741, 199 modules, `-2d`).
 
 **Coverage rationale**
 - **Base map equation, undirected**: ninetriangles (hierarchy), jazz, netscicoauthor2010, powergrid.

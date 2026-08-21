@@ -3162,3 +3162,38 @@ bits ladder nibble also reverts to identical), and the only differing rows are t
 malaria/lazega `-N1` (repair fix, −1.20%/−0.43% bits) and the jelena family (unchanged by the floor:
 om5 -2d 6.867282833 bits at -N1). The om5 12224-state super-group split that motivated sub-optimizer
 participation is above the floor and keeps working.
+
+### F44 — Strip-to-what-contributes: the pathology signal was already in the search (2026-08-21)
+
+Daniel's review push: don't work around the feature with constants (the 1024-leaf floor, repair at
+every -N) — find what actually contributes and strip the rest. Contribution evidence, all seed 123:
+
+- **Base objective has no such basins in practice.** Force-enabling the ladder for base (throwaway
+  COL_REGROUP_FORCE build) leaves powergrid / netsci / science2001 `-2 -N10` bit-identical in bits
+  while costing up to +26% in time (science2001) — it never finds a winning group, and it does not
+  touch powergrid's +0.66% bits gap vs OO (a different, finer-grained search difference). Theory
+  matches: the base group reward is bounded by the index codebook (≲ log2 K bits) and the up-build
+  already harvests it via the same enter-flow transform; the mem substitution scales with co-physical
+  flow MASS. The corrections gate is where the physics lives, not protectionism.
+- **wikispeedia (added to the benchmark set, `../../networks/examples/wikispeedia_states.net`,
+  300 physicals / 6475 states / order 2 / mean 21.6 states-per-physical / zero co-physical links like
+  every order-2 network, air30k included) is HEALTHY**: old and new bit-identical in bits at `-N10`
+  (5.907904741, 199 modules) at ±0% in time, detector quiet for free. The pathology is not "no
+  co-physical links" — it is the ~200-states-per-physical overlap regime.
+- **The -N1 repair's whole cost on healthy networks is the fresh from-singletons discovery**
+  (malaria `-C -N1`: 0.36 → 0.96 s for −1.20% bits, of which the cheap sources deliver ~nothing), and
+  the trial's own regroup ESCALATION is a ready-made pathology signal. Final shape: at -N1 the repair
+  runs fresh discovery only when the trial escalated (om5/om6), cheap sources otherwise. Measured:
+  malaria/air30k -N1 back to old bits at old times; om5 -N1 6.868127 bits at 1.91 s (full repair, and
+  ~25% faster than repair-everywhere because the fraction gate also trimmed its sub-arm set); the
+  seeded `-c` -N1 rows return EXACTLY to pre-PR bits and times (the seed path has no from-scratch
+  trial, so no escalation — and its optimizeFromSeed polish already ran the same operators).
+- **1024-leaf floor → fraction-of-root gate** (sub-problem must hold ≥ 10% of the root's leaves; top
+  level always eligible): scale-free, same measured outcomes on every row (om5's 24% super-group in,
+  malaria's <1% modules out).
+
+Residual constants and their justification: the 0.1%-of-L escalation threshold (pathology wins are
+2–9%, healthy detector wins ~0.01% — two orders of separation on every measured network) and the
+bestK < 64 direct escalation (fires only where the converged base is too coarse for the detector to
+carry any signal; on the benchmark set that is om5's true collapse plus toy `-2` runs where the
+blocks ladder costs microseconds).

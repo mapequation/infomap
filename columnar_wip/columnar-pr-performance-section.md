@@ -11,27 +11,35 @@ Single-threaded (`MODE=release OPENMP=0`), `--seed 123 -N10` — **best of 10 tr
 > partition it could itself score (`networks/debug/Jelena`; found via the #1028 `-c` warm start). Mechanism and
 > design history in `columnar_wip/columnar-rethink-notes.md` F42 (+addendum) / F43.
 >
-> Both changes are reachable only with a module-move-capable correction attached (Mem/Meta), the
-> regroup ladder runs behind a rolled-back **detector** that escalates only on a win above 0.1% of the
-> codelength, and the whole arm has a **1024-leaf size floor** (the hysteresis needs scale; without
-> the floor the winner repair's ~140 sub-cluster detectors cost malaria `-C -N10` +5.2% in time for
-> exactly 0 change in bits). A run the pathology does not touch is therefore unchanged: all **32**
-> base-objective configurations (8 networks × `-C`/`-C -2` × `-N1`/`-N10`) produce **byte-identical
-> tree bodies**, and every healthy memory/metadata row is **bit-identical in bits at `-N10`**
-> (regularized air30k and air30k (meta) included). The four engine tables below therefore carry the
-> previous snapshot's numbers unchanged; the PR's own effect is in the **old-vs-new columnar
-> comparison tables**, both arms measured in this session, interleaved.
+> Both changes are reachable only with a module-move-capable correction attached (Mem/Meta) — forced
+> on for the base objective the ladder finds nothing (powergrid/netsci/science2001 `-2 -N10`
+> bit-identical in bits at up to +26% in time; F44) — and every gate is a signal the search already
+> produces: the regroup ladder runs behind a rolled-back **detector** that escalates only on a win
+> above 0.1% of the codelength; a sub-optimizer runs the arm only when it holds **≥ 10% of the root's
+> leaves** (scale-free; without it the winner repair's ~140 tiny sub-detectors cost malaria
+> `-C -N10` +5.2% in time for exactly 0 change in bits); and a **single-trial run pays the repair's
+> expensive fresh discovery only when its own trial escalated** — the pathology signal — with the
+> cheap piece sources still running everywhere. A run the pathology does not touch is therefore
+> unchanged: all **32** base-objective configurations produce **byte-identical tree bodies**, and
+> every healthy memory/metadata row is **bit-identical in bits at `-N10` and at `-N1`** (malaria,
+> air30k, regularized, meta, lazega `-N10`, wikispeedia, multilayer), as are the seeded `-c` rows.
+> The four engine tables below therefore carry the previous snapshot's numbers unchanged; the PR's
+> own effect is in the **old-vs-new columnar comparison tables**, both arms measured in this session,
+> interleaved.
 >
 > **Old** = a fresh `MODE=release OPENMP=0` build of the `columnar-hierarchical-core` tip `1e537d8d`
 > (the #1028 head), md5 `ff9fe3fe79518966bb7519bfb9388eec`; **new** = this PR, md5
-> `0daa0aea46814211801af19dc824b6de`. Time = `--timing-json`'s `timing.total_s` (the engine's own
+> `50ef742d84a04dfff2471ba5e895c676`. Time = `--timing-json`'s `timing.total_s` (the engine's own
 > wall, excluding ~30 ms process startup that would swamp the sub-0.1 s rows), min of 3 interleaved
-> repetitions, desktop load ~5 of 10 cores (arms are paired, so the deltas hold).
+> repetitions, desktop load ~4-6 of 10 cores (arms are paired, so the deltas hold).
 
 ### Old vs new columnar — standard search (`-C -N10`)
 
 The jelena rows run `-C -d -N10` (directed state networks; the planted partitions score
-6.902222527 / 6.930934993 bits under `--no-infomap`).
+6.902222527 / 6.930934993 bits under `--no-infomap`). wikispeedia (300 physicals, 6 475 order-2
+states, zero co-physical links like every order-2 network) is the **healthy control** for the same
+structural family: at 21.6 states per physical the memory reward does not dominate, and the machinery
+must leave it alone.
 
 <table>
 <thead>
@@ -48,12 +56,13 @@ The jelena rows run `-C -d -N10` (directed state networks; the planted partition
 <tbody>
 <tr><td>lazega</td><td align="right">6.01786027</td><td align="right">0.005s</td><td align="right">7</td><td align="right">2</td><td align="right">6.01786027 (=)</td><td align="right">0.005s (=)</td><td align="right">7</td><td align="right">2</td></tr>
 <tr><td>multilayer (ex.)</td><td align="right">2.01140524</td><td align="right">0.002s</td><td align="right">2</td><td align="right">2</td><td align="right">2.01140524 (=)</td><td align="right">0.002s (=)</td><td align="right">2</td><td align="right">2</td></tr>
-<tr><td>malaria</td><td align="right">7.39750171</td><td align="right">3.06s</td><td align="right">2</td><td align="right">3</td><td align="right">7.39750171 (=)</td><td align="right">3.11s (+1.9%)</td><td align="right">2</td><td align="right">3</td></tr>
-<tr><td>air30k</td><td align="right">5.39242541</td><td align="right">3.89s</td><td align="right">22</td><td align="right">3</td><td align="right">5.39242541 (=)</td><td align="right">3.84s (-1.3%)</td><td align="right">22</td><td align="right">3</td></tr>
-<tr><td>air30k (reg.)</td><td align="right">5.57624241</td><td align="right">4.08s</td><td align="right">11</td><td align="right">3</td><td align="right">5.57624241 (=)</td><td align="right">4.18s (+2.4%)</td><td align="right">11</td><td align="right">3</td></tr>
-<tr><td>air30k (meta)</td><td align="right">7.42215327</td><td align="right">9.51s</td><td align="right">23</td><td align="right">3</td><td align="right">7.42215327 (=)</td><td align="right">9.79s (+2.9%)</td><td align="right">23</td><td align="right">3</td></tr>
-<tr><td>jelena om5 (<code>-d</code>)</td><td align="right">7.82050090</td><td align="right">7.91s</td><td align="right">64</td><td align="right">4</td><td align="right"><b>6.86728259</b> (-12.19%)</td><td align="right">9.00s (+13.8%)</td><td align="right">300</td><td align="right">2</td></tr>
-<tr><td>jelena om6 (<code>-d</code>)</td><td align="right">7.47142904</td><td align="right">8.32s</td><td align="right">90</td><td align="right">4</td><td align="right"><b>6.88727540</b> (-7.82%)</td><td align="right">9.09s (+9.2%)</td><td align="right">433</td><td align="right">2</td></tr>
+<tr><td>malaria</td><td align="right">7.39750171</td><td align="right">3.09s</td><td align="right">2</td><td align="right">3</td><td align="right">7.39750171 (=)</td><td align="right">3.19s (+3.3%)</td><td align="right">2</td><td align="right">3</td></tr>
+<tr><td>air30k</td><td align="right">5.39242541</td><td align="right">3.91s</td><td align="right">22</td><td align="right">3</td><td align="right">5.39242541 (=)</td><td align="right">3.93s (+0.7%)</td><td align="right">22</td><td align="right">3</td></tr>
+<tr><td>air30k (reg.)</td><td align="right">5.57624241</td><td align="right">4.14s</td><td align="right">11</td><td align="right">3</td><td align="right">5.57624241 (=)</td><td align="right">4.16s (+0.4%)</td><td align="right">11</td><td align="right">3</td></tr>
+<tr><td>air30k (meta)</td><td align="right">7.42215327</td><td align="right">9.57s</td><td align="right">23</td><td align="right">3</td><td align="right">7.42215327 (=)</td><td align="right">9.71s (+1.4%)</td><td align="right">23</td><td align="right">3</td></tr>
+<tr><td>wikispeedia (<code>-d</code>)</td><td align="right">5.90790474</td><td align="right">0.71s</td><td align="right">199</td><td align="right">2</td><td align="right">5.90790474 (=)</td><td align="right">0.72s (+2.3%)</td><td align="right">199</td><td align="right">2</td></tr>
+<tr><td>jelena om5 (<code>-d</code>)</td><td align="right">7.82050090</td><td align="right">8.03s</td><td align="right">64</td><td align="right">4</td><td align="right"><b>6.86661781</b> (-12.20%)</td><td align="right">8.37s (+4.2%)</td><td align="right">308</td><td align="right">2</td></tr>
+<tr><td>jelena om6 (<code>-d</code>)</td><td align="right">7.47142904</td><td align="right">8.41s</td><td align="right">90</td><td align="right">4</td><td align="right"><b>6.88486215</b> (-7.85%)</td><td align="right">8.81s (+4.7%)</td><td align="right">451</td><td align="right">2</td></tr>
 </tbody>
 </table>
 
@@ -76,67 +85,63 @@ Jelena rows run `-C -2d -N10`.
 <tbody>
 <tr><td>lazega</td><td align="right">6.01786027</td><td align="right">0.005s</td><td align="right">7</td><td align="right">2</td><td align="right">6.01786027 (=)</td><td align="right">0.005s (=)</td><td align="right">7</td><td align="right">2</td></tr>
 <tr><td>multilayer (ex.)</td><td align="right">2.01140524</td><td align="right">0.002s</td><td align="right">2</td><td align="right">2</td><td align="right">2.01140524 (=)</td><td align="right">0.002s (=)</td><td align="right">2</td><td align="right">2</td></tr>
-<tr><td>malaria</td><td align="right">7.40044538</td><td align="right">2.67s</td><td align="right">168</td><td align="right">2</td><td align="right">7.40044538 (=)</td><td align="right">2.62s (-1.7%)</td><td align="right">168</td><td align="right">2</td></tr>
-<tr><td>air30k</td><td align="right">5.39305505</td><td align="right">3.55s</td><td align="right">334</td><td align="right">2</td><td align="right">5.39305505 (=)</td><td align="right">3.63s (+2.2%)</td><td align="right">334</td><td align="right">2</td></tr>
-<tr><td>air30k (reg.)</td><td align="right">5.57557704</td><td align="right">3.68s</td><td align="right">304</td><td align="right">2</td><td align="right">5.57557704 (=)</td><td align="right">3.72s (+1.0%)</td><td align="right">304</td><td align="right">2</td></tr>
-<tr><td>air30k (meta)</td><td align="right">7.42414371</td><td align="right">10.42s</td><td align="right">2237</td><td align="right">2</td><td align="right">7.42414371 (=)</td><td align="right">10.59s (+1.6%)</td><td align="right">2237</td><td align="right">2</td></tr>
-<tr><td>jelena om5 (<code>-2d</code>)</td><td align="right">7.89383431</td><td align="right">17.37s</td><td align="right">996</td><td align="right">2</td><td align="right"><b>6.86728259</b> (-13.00%)</td><td align="right">8.10s (-53.4%)</td><td align="right">300</td><td align="right">2</td></tr>
-<tr><td>jelena om6 (<code>-2d</code>)</td><td align="right">7.79029482</td><td align="right">10.08s</td><td align="right">3516</td><td align="right">2</td><td align="right"><b>6.88727540</b> (-11.59%)</td><td align="right">7.91s (-21.5%)</td><td align="right">433</td><td align="right">2</td></tr>
+<tr><td>malaria</td><td align="right">7.40044538</td><td align="right">2.66s</td><td align="right">168</td><td align="right">2</td><td align="right">7.40044538 (=)</td><td align="right">2.69s (+0.9%)</td><td align="right">168</td><td align="right">2</td></tr>
+<tr><td>air30k</td><td align="right">5.39305505</td><td align="right">3.66s</td><td align="right">334</td><td align="right">2</td><td align="right">5.39305505 (=)</td><td align="right">3.62s (-1.0%)</td><td align="right">334</td><td align="right">2</td></tr>
+<tr><td>air30k (reg.)</td><td align="right">5.57557704</td><td align="right">3.71s</td><td align="right">304</td><td align="right">2</td><td align="right">5.57557704 (=)</td><td align="right">3.76s (+1.2%)</td><td align="right">304</td><td align="right">2</td></tr>
+<tr><td>air30k (meta)</td><td align="right">7.42414371</td><td align="right">10.37s</td><td align="right">2237</td><td align="right">2</td><td align="right">7.42414371 (=)</td><td align="right">10.45s (+0.8%)</td><td align="right">2237</td><td align="right">2</td></tr>
+<tr><td>wikispeedia (<code>-2d</code>)</td><td align="right">5.90790474</td><td align="right">0.66s</td><td align="right">199</td><td align="right">2</td><td align="right">5.90790474 (=)</td><td align="right">0.66s (+0.7%)</td><td align="right">199</td><td align="right">2</td></tr>
+<tr><td>jelena om5 (<code>-2d</code>)</td><td align="right">7.89383431</td><td align="right">17.73s</td><td align="right">996</td><td align="right">2</td><td align="right"><b>6.86661781</b> (-13.01%)</td><td align="right">7.45s (-58.0%)</td><td align="right">308</td><td align="right">2</td></tr>
+<tr><td>jelena om6 (<code>-2d</code>)</td><td align="right">7.79029482</td><td align="right">10.07s</td><td align="right">3516</td><td align="right">2</td><td align="right"><b>6.88486215</b> (-11.62%)</td><td align="right">7.52s (-25.3%)</td><td align="right">451</td><td align="right">2</td></tr>
 </tbody>
 </table>
 
 **Reading the comparison tables — every cell where new is worse than old, explained.** On the
-pathological family the search escapes the wrong basin (−7.8% to −13.0% in bits) and `-2d -N10` gets
-21.5–53.4% *faster* — searching from the right basin is cheaper than thrashing in the wrong one; the
-hierarchical `-d -N10` rows pay +9.2%/+13.8% in time for the −7.8%/−12.2% in bits (the flat-first
-trials that win now do the full escape work). On every healthy row the result is **bit-identical in
-bits**; the time cells move −1.7% to +2.9%, inside the ±2.7% cross-session spread earlier snapshots
-quote for unchanged binaries. The consistent small positives (malaria `-C` +1.9%, air30k `-2` +2.2%,
-regularized `-C` +2.4%, meta `-C` +2.9% in time) are the per-trial detector — and on winners with
-fewer than 64 top modules (malaria, meta) the direct escalation to the full ladder, whose candidates
-all lose. If those ~2–3% in time matter, the next dial is raising the escalation floor's granularity
-test; it is left simple because the deltas sit inside the session noise band.
+pathological family the search escapes the wrong basin (−7.9% to −13.0% in bits) and `-2d -N10` gets
+25.3–58.0% *faster* — searching from the right basin is cheaper than thrashing in the wrong one; the
+hierarchical `-d -N10` rows pay +4.2%/+4.7% in time for their −12.2%/−7.9% in bits (the flat-first
+trials that win do the escape work). On every healthy row — wikispeedia included — the result is
+**bit-identical in bits** and the time cells move −1.0% to +3.3%, inside the ±2.7% cross-session
+spread earlier snapshots quote for unchanged binaries; the small positives are the per-trial detector
+(rolled back, so it can cost time but never change bits).
 
-### Single-trial runs (`-C -N1`): the winner repair now actually runs
+### Single-trial runs (`-C -N1`): the repair follows the pathology signal
 
-The #889 once-per-run deep repair silently never ran at `-N1` (F43) — these rows pay it for the first
-time, and it is the same repair every `-N10` run already paid. Jelena rows `-C -2d -N1`; the last two
-rows seed the search with the planted partition (soft `-c`, #1028). Soft `-c` works without `-2` too:
-`-C -d -N1 -c` returns the same partitions (om5 6.86279690, om6 6.87514579 bits).
+The #889 once-per-run deep repair silently never ran at `-N1` (F43). It now runs there too, but its
+expensive fresh from-singletons discovery is allowed **only when the trial's own regroup detector
+escalated** — the search's pathology signal — while the cheap piece sources run everywhere (F44).
+Jelena rows `-C -2d -N1`; the last two rows seed the search with the planted partition (soft `-c`,
+#1028), whose path has no from-scratch trial and hence no escalation, so those rows return exactly to
+their pre-PR bits and times. Soft `-c` works without `-2` too: `-C -d -N1 -c` returns the same
+partitions (om5 6.86279690, om6 6.87514579 bits).
 
 | network | old bits | new bits | Δbits | old t | new t | Δt |
 |---|--:|--:|--:|--:|--:|--:|
-| lazega | 6.06055879 | **6.03455147** | −0.43% | 0.001s | 0.002s | +0.001s |
-| malaria | 7.50222401 | **7.41249453** | −1.20% | 0.36s | 0.96s | +168% |
-| air30k | 5.47323105 | 5.47323105 | = | 0.36s | 0.42s | +17.5% |
-| air30k (reg.) | 5.66687303 | 5.66687303 | = | 0.46s | 0.54s | +16.9% |
-| air30k (meta) | 7.58076831 | **7.58074898** | −0.0003% | 0.75s | 1.11s | +47.9% |
-| jelena om5 `-2d` | 7.98918933 | **6.86728283** | −14.04% | 0.87s | 2.50s | +186% |
-| jelena om6 `-2d` | 7.81047841 | **6.88646101** | −11.83% | 0.95s | 2.20s | +133% |
-| jelena om5 `-2d -c` planted | 6.85777811 | 6.86279690 | +0.073% | 1.18s | 1.92s | +62.8% |
-| jelena om6 `-2d -c` planted | 6.87337876 | 6.87514579 | +0.026% | 1.27s | 2.37s | +87.2% |
+| lazega | 6.06055879 | **6.04111740** | −0.32% | 0.001s | 0.002s | +0.001s |
+| malaria | 7.50222401 | 7.50222401 | = | 0.36s | 0.36s | +1.5% |
+| air30k | 5.47323105 | 5.47323105 | = | 0.36s | 0.38s | +6.4% |
+| air30k (reg.) | 5.66687303 | 5.66687303 | = | 0.47s | 0.49s | +4.8% |
+| air30k (meta) | 7.58076831 | **7.58074898** | −0.0003% | 0.75s | 0.92s | +21.4% |
+| wikispeedia `-2d` | 5.92071240 | **5.91901362** | −0.029% | 0.074s | 0.101s | +35.1% |
+| jelena om5 `-2d` | 7.98918933 | **6.86812714** | −14.03% | 0.87s | 1.92s | +120% |
+| jelena om6 `-2d` | 7.81047841 | **6.88404244** | −11.86% | 0.99s | 1.88s | +90% |
+| jelena om5 `-2d -c` planted | 6.85777811 | 6.85777811 | = | 1.17s | 1.20s | +3.2% |
+| jelena om6 `-2d -c` planted | 6.87337876 | 6.87337876 | = | 1.34s | 1.31s | −2.2% |
 
-**Where new is worse than old:** the air30k family pays +17–48% in time for unchanged-to-−0.0003%
-bits — that is the repair itself running once (its cost at `-N1` is the whole point of F43; the same
-repair is amortized invisibly at `-N10`), and it is what buys malaria's −1.20% and lazega's −0.43% in
-bits. The seeded `-c` rows pay +63–87% in time AND drift +0.026–0.073% in bits: the repair now runs
-after `optimizeFromSeed`'s own polish and its differently-seeded move loops land nearby but not
-identically; both results stay far below the planted input (6.902/6.931 bits). If that bothers,
-the repair could be gated off soft-seeded runs — `optimizeFromSeed` already runs the same
-split/retune/merge trio — at the price of diverging from pre-PR `-N10` seeded behaviour, where the
-repair did run; flagged as a possible follow-up rather than changed here.
+**Where new is worse than old, explained.** The escalated jelena rows pay +90–120% in time for their
+−11.9/−14.0% in bits — the full repair, which their trials' own detectors requested. The healthy rows
+keep old bits at old-to-slightly-higher times: the +5–21% on the air30k family and +35% on wikispeedia
+(+0.03 s absolute) is the cheap-sources repair (seeded retunes and gated merges — it is what delivers
+lazega's free −0.32% and meta's −0.0003% in bits), plus the per-trial detector. `-C -d -N1` is
+bit-identical in bits on om5/om6 (7.88481128 / 7.47937471) at +7–11% in time — the residual: a
+hierarchical single trial builds a fine-blocks bottom that skips the probe by design and has no
+flat-first arm, so it stays in the bad basin; any `-N2+` or `-2` run is covered.
 
-**Per-feature attribution, both axes** (`COL_REGROUP=off` disables the ladder and isolates the `-N1`
-repair fix): the repair fix alone reproduces malaria's −1.20% and lazega's −0.43% in bits at the same
-time cost as the full change (malaria 0.36 → 0.94s; the ladder adds ~0.02s there), leaves air30k at
-5.47323105 bits for 0.36 → 0.43s, and moves jelena only to 7.89383431 / 7.79536908 bits — for om5 at
-**10.3s**, because the repair's fresh splits thrash on the collapsed 1-module winner without the
-ladder. The ladder provides the basin escape on both axes: om5 6.86728283 bits at 2.50s total, om6
-6.88646101 bits at 2.20s. **Residual:** `-C -d -N1` (hierarchical, single trial) stays in the bad
-basin — om5 7.88296837 bits (old 7.88481128, −0.02%) at 0.80 → 1.11s (+39%), om6 7.48049902 bits
-(old 7.47937471, +0.015%) at 0.85 → 1.17s (+38%), the time being the repair trying and failing; the
-fine-blocks bottom skips the probe by design and one trial has no flat-first arm. Any `-N2+` or `-2`
-run is covered.
+**Per-feature attribution, both axes** (`COL_REGROUP=off` disables the ladder and isolates the
+repair): the repair alone moves jelena om5 `-2d -N1` only to 7.89383431 bits and needs **10.3 s** for
+it — its fresh splits thrash on the collapsed 1-module winner without the ladder (om6: 7.79536908
+bits at 2.87 s). The ladder alone (repair fresh discovery off) reaches om5 7.17509147 bits at 0.71 s.
+Together, escalation-gated: **6.86812714 bits at 1.92 s** — the ladder finds the basin, the repair
+polishes inside it, and each runs only where its own signal says it pays.
 
 <details>
 <summary><b>OO vs columnar (carried over unchanged; the PR leaves every cell bit-identical in bits)</b></summary>
