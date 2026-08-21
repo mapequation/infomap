@@ -48,6 +48,32 @@ namespace columnar {
     return mode;
   }
 
+  // Flow-community regroup probe (env COL_REGROUP): cluster the finest retained
+  // aggregation level as its OWN first-order network (base objective, blind to
+  // the corrections), then gate the found grouping as a seeded module-level
+  // candidate under the true objective. This is the group-merge operator the
+  // module-move corrections need: their reward is strongly superadditive in
+  // module size, so the augmented objective can hold a deep optimum (merge ~100
+  // building blocks into one community) that no chain of pairwise-downhill
+  // moves or merges reaches — greedy either stalls fully fragmented or
+  // snowballs past every community boundary into one module, and both end
+  // states are fixpoints of all pairwise operators. The probe finds the group
+  // proposal in the one place it is visible: the flow structure of the block
+  // graph itself.
+  //
+  // ON BY DEFAULT: this is the shipped behaviour. Only reachable with a
+  // module-move-capable correction attached (Mem/Meta), so every base-objective
+  // network is bit-identical at zero cost. Set COL_REGROUP=off for the
+  // pre-operator A/B baseline.
+  inline bool regroupProbeEnabled()
+  {
+    static const bool on = [] {
+      const char* e = std::getenv("COL_REGROUP");
+      return e == nullptr || std::string(e) != "off";
+    }();
+    return on;
+  }
+
   // Hierarchical split operator (experimental, see splitLevelModules), from env
   // COL_HSPLIT:
   //   off/unset (default) | 1 | all  = every stack level

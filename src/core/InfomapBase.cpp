@@ -314,8 +314,23 @@ public:
   // is defined on a flat partition, so a deeper winner is left untouched.
   void maybeDeepRepairBest(Result& result)
   {
-    if (!m_infomap.columnarSearch || m_infomap.haveHardPartition() || result.bestTree.empty())
+    // --no-infomap evaluates the supplied partition; repairing it would return
+    // a different (better) partition than the one the user asked to score.
+    if (!m_infomap.columnarSearch || m_infomap.haveHardPartition() || m_infomap.noInfomap || result.bestTree.empty())
       return;
+    // At -N1 the serial path never fills bestTree (updateBestResult only
+    // records it when a later trial might need restoring; the in-memory tree
+    // IS the winner), leaving the pre-sized placeholder entries with empty
+    // paths — which used to make deepRepairColumnarBest bail on its
+    // tree-mismatch guard, silently disabling the winner repair for every
+    // single-trial run. Materialize the winner from the in-memory tree.
+    if (result.bestTree.front().second.empty()) {
+      result.bestTree.clear();
+      for (auto it(m_infomap.iterLeafNodes()); !it.isEnd(); ++it)
+        result.bestTree.emplace_back(it->stateId, it.path());
+      if (result.bestTree.empty())
+        return;
+    }
     // Tree paths carry one slot per module level plus the trailing leaf-rank
     // slot: a two-level (flat) tree has paths of length 2.
     const bool deepWinner = !m_infomap.twoLevel && !isFlatTree(result.bestTree);
@@ -325,7 +340,8 @@ public:
       return;
     auto timer = m_timing.scope("deep_repair_s");
     const double before = result.bestHierarchicalCodelength;
-    bool improved = m_infomap.deepRepairColumnarBest(result.bestTree, result.bestHierarchicalCodelength);
+    const bool freshDiscovery = m_numTrials > 1 || m_infomap.m_columnarRegroupEscalated;
+    bool improved = m_infomap.deepRepairColumnarBest(result.bestTree, result.bestHierarchicalCodelength, freshDiscovery);
     // Best-of-each-shape: when the winner was FLAT, its repair used the
     // two-level interleave, so the hierarchical operator has still not been
     // spent. Offer it the best deep trial — on the memory/state networks that is
@@ -334,7 +350,7 @@ public:
     if (!deepWinner && !result.bestDeepTree.empty()) {
       NodePaths deepTree = result.bestDeepTree;
       double deepL = result.bestDeepCodelength;
-      if (m_infomap.deepRepairColumnarBest(deepTree, deepL)
+      if (m_infomap.deepRepairColumnarBest(deepTree, deepL, freshDiscovery)
           && deepL < result.bestHierarchicalCodelength - 1e-10) {
         result.bestTree = std::move(deepTree);
         result.bestHierarchicalCodelength = deepL;
@@ -2421,7 +2437,7 @@ void InfomapBase::setupColumnarOptimizer(ColumnarTwoLevel& opt, unsigned long se
   addColumnarCorrections(opt);
 }
 
-bool InfomapBase::deepRepairColumnarBest(NodePaths& tree, double& codelength)
+bool InfomapBase::deepRepairColumnarBest(NodePaths& tree, double& codelength, bool freshDiscovery)
 {
   // Deep repair of the winning -2 columnar trial (#889): seed a two-level
   // stack from the best tree and run the expensive split-discovery
@@ -2450,6 +2466,12 @@ bool InfomapBase::deepRepairColumnarBest(NodePaths& tree, double& codelength)
   // repairable hierarchical headroom lives on the memory/state objectives.
   if (!opt.hasModuleMoveCorrections())
     return false;
+  // Single-trial runs pay the expensive fresh split discovery only when the
+  // trial's own regroup detector escalated (the pathology signal): on a
+  // healthy network the fresh sub-clusters are where the -N1 repair's whole
+  // cost lives (malaria -C -N1: 0.36 -> 0.96 s) while the cheap sources are
+  // what it would have used anyway. -N >= 2 always runs in full, as before.
+  opt.setFreshDiscovery(freshDiscovery);
 
   // Per-leaf module paths from the best tree (paths are coarsest-first with a
   // trailing leaf-rank slot; a -2 tree has exactly one module level).
@@ -2577,6 +2599,8 @@ void InfomapBase::columnarPartition()
   // ragged input tree exactly as given, which the stack could not have represented.
   // Re-scoring it stamps this trial's InfoNode charges the same way a materialized
   // result gets them.
+  m_columnarRegroupEscalated = opt.regroupEscalated();
+
   const bool keepSeed = seeded && columnarL >= seedOwnL - 1e-10;
   if (keepSeed) {
     Console::detail(1, "columnar: the search did not improve the --cluster-data partition ({} vs {}); keeping the input partition", io::toPrecision(columnarL), io::toPrecision(seedOwnL));

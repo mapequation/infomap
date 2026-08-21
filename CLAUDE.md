@@ -2,6 +2,27 @@
 When working on the new columnar core (wip branch `columnar-hierarchical-core`), remember to:
 - append findings to the log in `columnar_wip/columnar-rethink-notes.md`
 - run benchmark networks in `columnar_wip/benchmark-networks.md` to keep all the numbers in `columnar_wip/columnar-pr-performance-section.md` up-to-date for each PR, and report the differences to previous numbers of the columnar core in the chat and in the PR body.
+- include **old-vs-new columnar comparison tables** in the snapshot, styled like the `-F` table: old
+  columnar on the left, this PR's columnar on the right with parenthesized (±%) deltas against the
+  old, same columns (codelength/time/top/lvls) — one table for the standard search (`-C`) and one for
+  two-level (`-C -2`). **"Old" is a freshly built binary at the tip of `columnar-hierarchical-core`**
+  (name its commit + md5 in the snapshot) — never an intermediate commit of the PR branch. Both arms
+  measured in the same session, interleaved, with the same instrument: **`--timing-json`'s
+  `timing.total_s`** (the engine's own wall time), NOT the process wall — process wall carries ~30 ms
+  of startup that swamps every sub-0.1 s row and once made the unchanged tip read 0.04s where the
+  snapshot said 0.01s.
+- **Warn about and explain every cell where new is worse than old**, in codelength or in time. If a
+  regression breaches the performance rules above (>0.1% worse in bits, or >1% worse in seconds
+  without an offsetting gain on the other axis), do not just report it — **inspect whether there is a
+  better way to solve the issue**. A significant time increase without a codelength gain is rejected
+  automatically; it is not a trade-off to present.
+- **A configuration that appears in more than one table must show the same numbers in all of them.**
+  Measure every table's rows in ONE session with ONE instrument; a reader diffing the `-2` table
+  against the comparison table must never find two different times for the same run.
+- **Codelength and time are one trade-off — never report one without the other.** A codelength change
+  quoted without the time change on the same rows is meaningless, and vice versa. Every mention of a
+  gain / change / drift / regression — with or without a percentage — must make unambiguous from its
+  immediate context which axis it is on, e.g. by writing the unit (bits, s) next to it.
 - report all cases where it performs more than 0.1% worse in codelength or 1% worse in speed relative previous numbers and explain those. If a systematic bias due to changes in how busy the environment is, the codelength should be same and columnar vs OO speed ratio should be same within a margin.
 - Marginal win in codelength should not cost non-marginal loss in speed unless behind a speed-to-quality trade-off flag, but always report and ask before accepting such trade-off.
 - if a PR includes more than one optimization feature, report the individual contribution of each feature on at least a relevant subset.

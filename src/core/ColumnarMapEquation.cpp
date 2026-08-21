@@ -147,6 +147,7 @@ void ColumnarTwoLevel::initLeafContext(const Level* leaf, bool undirected, unsig
   // network — never a null pointer.
   m_lvlPtr = leaf;
   m_nLeaves = leaf->n;
+  m_rootLeaves = m_nLeaves; // sub-optimizers get the true root's count after build
   m_leafFlow = leaf->flow;
   // Inherit the GLOBAL teleport context (the level already carries per-unit
   // teleFlow/teleWeight; the total stays the whole network's, not this level's).
@@ -456,8 +457,12 @@ unsigned int ColumnarTwoLevel::moveLoop()
       double strongestExit = 0.0;
       double strongestDelta = 0.0;
 
-      // Option to move to an empty module (if not already alone).
-      if (m_mMembers[cMod] > 1 && !m_emptyModules.empty()) {
+      // Option to move to an empty module (if not already alone). Suppressed
+      // during a purify-only polish (regroup ladder): there the loop's job is
+      // to re-sort units between the seeded groups, not to re-open the finer
+      // basin the seed was chosen against — the ladder's earlier rungs already
+      // offer every finer scale as its own gated candidate.
+      if (!m_noEmptyTargets && m_mMembers[cMod] > 1 && !m_emptyModules.empty()) {
         const int em = m_emptyModules.back();
         if (dEnter[em] == 0.0 && dExit[em] == 0.0)
           touched.push_back(em);
@@ -872,6 +877,168 @@ double ColumnarTwoLevel::optimizeTwoLevel(unsigned int maxAggPasses, bool doFine
     }
     m_seededPhase = false;
 
+    // Flow-community regroup probe (see columnar::regroupProbeEnabled): the
+    // repair above can only regroup within the trajectory's own module ids,
+    // so it cannot cross the group hysteresis of a module-move correction —
+    // the correction's reward is superadditive in module size, so the true
+    // optimum can need ~100 building blocks merged into one module while
+    // every pairwise step (and hence every greedy trajectory) is uphill.
+    // Both greedy end states — stalled fully fragmented, and snowballed into
+    // one module — are fixpoints of every pairwise operator downstream
+    // (state benchmark N256 om5/om6: 7.989 collapsed / 7.810 fragmented
+    // against 6.902 for the planted 20-module partition). The group proposal
+    // is visible in exactly one place: the flow structure of the block graph
+    // itself, clustered as its OWN closed first-order network — base
+    // objective, blind to the corrections, so the correction's pull cannot
+    // snowball the probe either. Its grouping then seeds a module-level move
+    // loop under the TRUE objective (same polish + scoring as the repair
+    // above), kept only if it beats the aggregation's best. Skipped for
+    // building-block bottoms (maxAggPasses != 0): those callers want
+    // fineness, not the two-level optimum, and the up-build owns the
+    // coarsening there. Runs in sub-optimizers too (an in-context refine with
+    // sliced corrections): subdividing an over-merged module under the memory
+    // objective is the same hysteresis one level down — a super-group holding
+    // several communities is only split by rediscovering them inside it, which
+    // is exactly the job splitTopModules delegates to the sub-cluster.
+    // Fraction-of-root gate: the arm always runs at the top level, but inside a
+    // sub-optimizer only when the sub-problem holds at least a tenth of the
+    // root's leaves. The group hysteresis needs a macroscopic chunk of the
+    // network (a super-group holding several communities), and the arm's cost
+    // on small problems is not one ladder but the COUNT of them — the winner
+    // repair's fresh splits probe every module's sub-cluster, and ~140 tiny
+    // sub-detectors cost malaria `-C -N10` +5.2% in time for exactly 0 change
+    // in bits. The gate is scale-free: om5's 12224-of-50133-leaf super-group
+    // (24% of the root) qualifies, malaria's ~55-leaf modules (<1%) never do.
+    if (regroupProbeEnabled() && maxAggPasses == 0 && m_nLeaves * 10 >= m_rootLeaves && !trajComp.empty()) {
+      // The ladder is multi-scale on purpose: one probe pass finds the base
+      // objective's OWN resolution on the base graph, which on a large sparse
+      // one is an intermediate scale (om5: 11049 pass-1 blocks probe to 4412
+      // groups, nowhere near the 20 planted communities). Re-aggregating by
+      // the found grouping and probing again walks the community hierarchy of
+      // the base graph rung by rung; every rung's grouping is offered to the
+      // true objective independently, keep-best. Rung cost shrinks with the
+      // unit count, so the first probe dominates. Returns whether any rung
+      // improved the best partition.
+      auto runLadder = [&](const Level& baseLvl, const std::vector<int>& comp0) -> bool {
+        bool anyAccepted = false;
+        const int nBase = baseLvl.n;
+        // Every rung's candidate is polished at BASE granularity: the seeded
+        // move loop re-sorts individual base units between the rung's coarse
+        // groups under the true objective, repairing the impurities a
+        // whole-rung-unit move could never reach. lvl() stays the base level
+        // for the whole ladder; only the probe sees the rung levels.
+        activateLevelCopy(baseLvl);
+        for (auto* cp : unitCorr)
+          cp->setUnits(comp0, nBase);
+        Level ladder; // rung >= 1 lives here; rung 0 reads the base level directly
+        std::vector<int> compBase(nBase); // base unit -> current rung unit
+        for (int b = 0; b < nBase; ++b)
+          compBase[b] = b;
+        // The rung polish — a seeded move loop over every base unit — is the
+        // ladder's dominant cost, and the winning rung is empirically the
+        // first or second (later, coarser rungs re-offer roughly the same
+        // grouping with less resolution). Two consecutive rejections end it.
+        int rejected = 0;
+        for (int rung = 0; rung < 64 && rejected < 2; ++rung) {
+          pollInterrupt();
+          const Level& rungLvl = rung == 0 ? baseLvl : ladder;
+          const int nU = rungLvl.n;
+          // Probe under the enter-flow transform (the up-build's super-network
+          // semantics: a unit's codeword usage is its boundary flow). With the
+          // units' TRUE flows the probe would just be the module-level move loop
+          // continued — the Louvain equivalence — and stall on the very fixpoint
+          // it is trying to escape; the boundary-flow view is what exposes the
+          // base graph's community structure at each scale.
+          Level probeNet = rungLvl;
+          probeNet.flow = probeNet.enter;
+          ColumnarTwoLevel probe;
+          probe.setInterruptCallback(m_interruptCallback);
+          probe.buildFromLevel(std::move(probeNet), m_undirected, m_seed, 0.0, m_recordedTeleport, m_totalTeleFlow);
+          probe.optimizeTwoLevel(0, false);
+          const int probeK = static_cast<int>(probe.numTopModules());
+          if (probeK <= 1 || probeK >= nU)
+            break;
+          const std::vector<int> group = probe.leafTopModule(); // rung unit -> group
+          {
+            std::vector<int> gBase(nBase);
+            for (int b = 0; b < nBase; ++b)
+              gBase[b] = group[compBase[b]];
+            m_seededPhase = true;
+            m_noEmptyTargets = true;
+            seedAssignment(gBase);
+            moveLoop();
+            m_noEmptyTargets = false;
+            std::vector<int> remap(nBase, -1);
+            int c = 0;
+            for (int u = 0; u < nBase; ++u)
+              if (remap[m_module[u]] == -1)
+                remap[m_module[u]] = c++;
+            std::vector<int> newTop(m_nLeaves);
+            for (int i = 0; i < m_nLeaves; ++i)
+              newTop[i] = remap[m_module[comp0[i]]];
+            double corrSum = m_lastCorrection;
+            for (auto& cp : m_corrections)
+              if (cp->participatesInMoveLoop() && !(m_moduleCorrActive && cp->participatesInModuleMoves()))
+                corrSum += cp->initMoveLoop(newTop, c);
+            const double L = m_codelength + corrSum;
+            if (L < bestCodelength - kMinImprovement) {
+              bestTop = std::move(newTop);
+              bestCodelength = L;
+              bestK = static_cast<unsigned int>(c);
+              anyAccepted = true;
+              rejected = 0;
+            } else {
+              ++rejected;
+            }
+            m_seededPhase = false;
+          }
+          // Next rung: the probe's grouping aggregated as its own network. Built
+          // from the PROBE's assignment, not the gated candidate — the ladder
+          // follows the base graph's community hierarchy regardless of which
+          // rungs the true objective takes.
+          Level next = aggregateLevel(rungLvl, group, probeK, m_undirected);
+          for (int b = 0; b < nBase; ++b)
+            compBase[b] = group[compBase[b]];
+          ladder = std::move(next);
+        }
+        return anyAccepted;
+      };
+
+      // Escalation policy: probe the CONVERGED partition's module level first
+      // (a few hundred units on a healthy network, so the no-op case costs one
+      // aggregation and a tiny ladder instead of re-clustering thousands of
+      // pass-1 blocks per trial). A SUBSTANTIAL accepted rung — 0.1% of the
+      // codelength; the pathology's accepts are 2-9%, a healthy network's
+      // ~0.01% — confirms the greedy fixpoint was not the objective's optimum,
+      // and only then is the finest-granularity ladder worth its cost (the
+      // converged units are too coarse to purify: staging the escape from the
+      // pass-1 blocks is worth ~0.1% more on the om5/om6 family). An
+      // aggregation that collapsed to fewer than 64 units has no usable
+      // converged base and escalates directly.
+      bool escalate = static_cast<int>(bestK) < 64;
+      if (!escalate) {
+        // DETECTOR ONLY: the cheap ladder's accepts are always rolled back.
+        // Keeping them would let its marginal (~0.01%) wins and losses steer
+        // healthy trials off the shipped trajectory for nothing; discarding
+        // them makes a run whose detector stays quiet BIT-IDENTICAL to the
+        // pre-probe engine (the ladder consumes no shared RNG state, and
+        // everything downstream is re-derived from bestTop). A substantial
+        // win is re-found — better — by the full ladder below.
+        const std::vector<int> savedTop = bestTop;
+        const unsigned int savedK = bestK;
+        const double savedL = bestCodelength;
+        Level convergedBase = aggregateLevel(leaf0(), bestTop, static_cast<int>(bestK), m_undirected);
+        runLadder(convergedBase, savedTop);
+        escalate = savedL - bestCodelength > 1e-3 * savedL;
+        bestTop = savedTop;
+        bestK = savedK;
+        bestCodelength = savedL;
+      }
+      m_regroupEscalated = m_regroupEscalated || escalate;
+      if (escalate)
+        runLadder(trajLevel(0), trajComp[0]);
+    }
+
     m_moduleCorrActive = false;
     for (auto* cp : unitCorr)
       cp->resetUnitsToLeaves();
@@ -1133,7 +1300,7 @@ int ColumnarTwoLevel::splitTopModules(double& L, bool allowSingletons)
   // Fresh derivation is the expensive source: keep paying for it only while
   // it pays (malaria-like nets keep revealing new community splits round
   // after round; air30k-like nets get nothing beyond the first derivation).
-  if (!allowSingletons || (!m_lastSinglesPieces.empty() && !m_freshSinglesProductive))
+  if (!m_freshDiscovery || !allowSingletons || (!m_lastSinglesPieces.empty() && !m_freshSinglesProductive))
     return 0;
 
   // Piece source 2 (decisive): from-singletons sub-clustering within each
@@ -1423,7 +1590,7 @@ int ColumnarTwoLevel::splitLevelModules(int k, double& L, bool allowSingletons)
   // children — community granularity, so extracting a whole community from an
   // over-merged module is a single gated move.
   const bool productive = interior ? m_levelFreshProductive[k] != 0 : m_freshSinglesProductive;
-  if (!allowSingletons || (static_cast<int>(lastPieces.size()) == nU && !productive))
+  if (!m_freshDiscovery || !allowSingletons || (static_cast<int>(lastPieces.size()) == nU && !productive))
     return 0;
 
   std::vector<int> unitToPiece(nU, -1);
@@ -2005,6 +2172,7 @@ int ColumnarTwoLevel::subClusterUnits(const Level& base, bool interior, bool sli
     seedPtr = &seed;
 
   subOpt.buildFromLevel(std::move(sub), m_undirected, m_seed, parentExit, m_recordedTeleport, m_totalTeleFlow);
+  subOpt.m_rootLeaves = m_rootLeaves;
   if (sliceCorrections)
     addSlicedLeafCorrections(subOpt, S);
   subOpt.optimizeTwoLevel(0, fineTune, seedPtr);
@@ -2328,6 +2496,7 @@ bool ColumnarTwoLevel::refineLayerWithinGrandparent(int k)
     ColumnarTwoLevel subOpt;
     subOpt.setInterruptCallback(m_interruptCallback);
     subOpt.buildFromLevel(std::move(sub), m_undirected, m_seed, grand.exit[G], m_recordedTeleport, m_totalTeleFlow);
+    subOpt.m_rootLeaves = m_rootLeaves;
     if (k == 0)
       addSlicedLeafCorrections(subOpt, S);
     subOpt.optimizeTwoLevel(0, true, seedPtr);
