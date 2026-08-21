@@ -349,6 +349,18 @@ public:
   // Whether the once-per-run hierarchical repair is enabled (COL_HSPLIT_WINNER).
   static bool hierarchicalWinnerRepairEnabled();
 
+  // Whether this optimizer's regroup arm escalated to the full finest-granularity
+  // ladder — the search's own pathology signal (a correction-driven group basin
+  // the converged partition could not reach pairwise). The winner repair reads
+  // it to decide whether a single-trial run pays for fresh split discovery.
+  bool regroupEscalated() const { return m_regroupEscalated; }
+
+  // Allow the split operators' expensive fresh from-singletons sub-clustering
+  // (piece source 3). Default on; the winner repair turns it off for a
+  // single-trial run whose trial never escalated — the cheap sources still run,
+  // and on a healthy network they are what the repair would have used anyway.
+  void setFreshDiscovery(bool on) { m_freshDiscovery = on; }
+
   // Whether any attached correction can participate in module-level moves
   // (Mem/Meta) — the gate for the aggregation trajectory repair and the
   // split operator; false on base networks.
@@ -828,6 +840,14 @@ private:
   // O(m) exit sweep over the O(K) power-series delta in the leaf move loop.
   bool m_nonRedundant = false;
   bool m_nrExact = false;
+  // Regroup arm state: whether this optimizer escalated to the full ladder
+  // (see regroupEscalated), whether fresh split discovery is allowed (see
+  // setFreshDiscovery), and the ROOT problem's leaf count — sub-optimizers
+  // inherit it (subClusterUnits) so the arm's fraction-of-root gate is
+  // scale-free rather than an absolute size cutoff.
+  bool m_regroupEscalated = false;
+  bool m_freshDiscovery = true;
+  int m_rootLeaves = 0;
   // Interior-refine early-stop knee (0 = off, grind to convergence): stop once a
   // whole up/down sweep's gain drops below this fraction of the post-build
   // codelength.

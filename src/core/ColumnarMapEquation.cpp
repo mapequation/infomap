@@ -147,6 +147,7 @@ void ColumnarTwoLevel::initLeafContext(const Level* leaf, bool undirected, unsig
   // network — never a null pointer.
   m_lvlPtr = leaf;
   m_nLeaves = leaf->n;
+  m_rootLeaves = m_nLeaves; // sub-optimizers get the true root's count after build
   m_leafFlow = leaf->flow;
   // Inherit the GLOBAL teleport context (the level already carries per-unit
   // teleFlow/teleWeight; the total stays the whole network's, not this level's).
@@ -899,16 +900,16 @@ double ColumnarTwoLevel::optimizeTwoLevel(unsigned int maxAggPasses, bool doFine
     // objective is the same hysteresis one level down — a super-group holding
     // several communities is only split by rediscovering them inside it, which
     // is exactly the job splitTopModules delegates to the sub-cluster.
-    // Size floor: the group hysteresis needs scale (hundreds of co-attribute
-    // leaves per would-be group), and the arm's cost on a small problem is not
-    // its own ladder but the COUNT of small problems — the winner repair's
-    // fresh splits probe every module's sub-cluster, and ~140 sub-detectors
-    // cost malaria `-C -N10` +5.2% in time for exactly 0 change in bits.
-    // Below the floor the pre-probe engine already handles everything the
-    // ladder could offer; above it (the om5 12224-state super-group, whole
-    // trials) the arm runs as designed.
-    constexpr int kRegroupMinLeaves = 1024;
-    if (regroupProbeEnabled() && maxAggPasses == 0 && m_nLeaves >= kRegroupMinLeaves && !trajComp.empty()) {
+    // Fraction-of-root gate: the arm always runs at the top level, but inside a
+    // sub-optimizer only when the sub-problem holds at least a tenth of the
+    // root's leaves. The group hysteresis needs a macroscopic chunk of the
+    // network (a super-group holding several communities), and the arm's cost
+    // on small problems is not one ladder but the COUNT of them — the winner
+    // repair's fresh splits probe every module's sub-cluster, and ~140 tiny
+    // sub-detectors cost malaria `-C -N10` +5.2% in time for exactly 0 change
+    // in bits. The gate is scale-free: om5's 12224-of-50133-leaf super-group
+    // (24% of the root) qualifies, malaria's ~55-leaf modules (<1%) never do.
+    if (regroupProbeEnabled() && maxAggPasses == 0 && m_nLeaves * 10 >= m_rootLeaves && !trajComp.empty()) {
       // The ladder is multi-scale on purpose: one probe pass finds the base
       // objective's OWN resolution on the base graph, which on a large sparse
       // one is an intermediate scale (om5: 11049 pass-1 blocks probe to 4412
@@ -1033,6 +1034,7 @@ double ColumnarTwoLevel::optimizeTwoLevel(unsigned int maxAggPasses, bool doFine
         bestK = savedK;
         bestCodelength = savedL;
       }
+      m_regroupEscalated = m_regroupEscalated || escalate;
       if (escalate)
         runLadder(trajLevel(0), trajComp[0]);
     }
@@ -1298,7 +1300,7 @@ int ColumnarTwoLevel::splitTopModules(double& L, bool allowSingletons)
   // Fresh derivation is the expensive source: keep paying for it only while
   // it pays (malaria-like nets keep revealing new community splits round
   // after round; air30k-like nets get nothing beyond the first derivation).
-  if (!allowSingletons || (!m_lastSinglesPieces.empty() && !m_freshSinglesProductive))
+  if (!m_freshDiscovery || !allowSingletons || (!m_lastSinglesPieces.empty() && !m_freshSinglesProductive))
     return 0;
 
   // Piece source 2 (decisive): from-singletons sub-clustering within each
@@ -1588,7 +1590,7 @@ int ColumnarTwoLevel::splitLevelModules(int k, double& L, bool allowSingletons)
   // children — community granularity, so extracting a whole community from an
   // over-merged module is a single gated move.
   const bool productive = interior ? m_levelFreshProductive[k] != 0 : m_freshSinglesProductive;
-  if (!allowSingletons || (static_cast<int>(lastPieces.size()) == nU && !productive))
+  if (!m_freshDiscovery || !allowSingletons || (static_cast<int>(lastPieces.size()) == nU && !productive))
     return 0;
 
   std::vector<int> unitToPiece(nU, -1);
@@ -2170,6 +2172,7 @@ int ColumnarTwoLevel::subClusterUnits(const Level& base, bool interior, bool sli
     seedPtr = &seed;
 
   subOpt.buildFromLevel(std::move(sub), m_undirected, m_seed, parentExit, m_recordedTeleport, m_totalTeleFlow);
+  subOpt.m_rootLeaves = m_rootLeaves;
   if (sliceCorrections)
     addSlicedLeafCorrections(subOpt, S);
   subOpt.optimizeTwoLevel(0, fineTune, seedPtr);
@@ -2493,6 +2496,7 @@ bool ColumnarTwoLevel::refineLayerWithinGrandparent(int k)
     ColumnarTwoLevel subOpt;
     subOpt.setInterruptCallback(m_interruptCallback);
     subOpt.buildFromLevel(std::move(sub), m_undirected, m_seed, grand.exit[G], m_recordedTeleport, m_totalTeleFlow);
+    subOpt.m_rootLeaves = m_rootLeaves;
     if (k == 0)
       addSlicedLeafCorrections(subOpt, S);
     subOpt.optimizeTwoLevel(0, true, seedPtr);

@@ -507,7 +507,13 @@ private:
   // stack from `tree`, run the split-discovery interleave once, and rewrite
   // tree/codelength when it improves. Returns whether it improved. A no-op
   // for the base objective (no module-move-capable correction).
-  bool deepRepairColumnarBest(NodePaths& tree, double& codelength);
+  bool deepRepairColumnarBest(NodePaths& tree, double& codelength, bool freshDiscovery);
+
+  // Whether the (single) trial's regroup arm escalated — the search's own
+  // pathology signal, set by columnarPartition from the trial engine. A
+  // single-trial run pays the winner repair's expensive fresh discovery only
+  // when this is set; at -N >= 2 the repair always runs in full (amortized).
+  bool m_columnarRegroupEscalated = false;
 
   // --- Native columnar leaf input (I/O migration) ---
   // Build the columnar leaf SoA (flow, enter/exit, teleport, out+in CSR) directly
