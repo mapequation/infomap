@@ -3301,3 +3301,26 @@ integration per codebook. MM is the only free one and the best fit here.
 removal the fragmented partition beats the planted one by ~2.4 bits of plug-in codelength while the whole
 correction is ~0.06 bits, and strengths 1 → 8 walk the search from 49 to 14 modules with the Rand index
 flat at ~0.76. That is the prior network's job (`--regularized`), not the estimator's.
+
+#### F46 addendum — the hierarchical OO search under the correction (#1034)
+
+Measuring the correction's own evidence rows turned up a second thing, pre-existing and not fixed here.
+On a *hierarchical* OO run `--entropy-corrected` returns a partition far worse than one the same binary
+scores. powergrid (4941 nodes, D = 13188): the corrected search gives **7.569248565** bits (37 modules,
+2 levels), while the OO engine's own uncorrected 7-level partition (4.758729201 bits) scores
+**5.086858089** under the same corrected objective. The correction on this network cannot exceed
+0.33 bits — N + m − 1 over 2D ln2 — so a 2.48-bit gap is the search being steered by something other
+than the reported objective, not a large correction.
+
+Pre-existing: on the tip before the sync the same shape reads 6.961915684 against 4.986208728, a
+1.98-bit gap; charging in bits scales every correction term by 1/ln2 and the gap with it. Two-level OO
+is unaffected (5.924258027 corrected against 5.600443859 uncorrected — a partition that differs by about
+the correction, as intended).
+
+**The columnar engine does not show it.** `-C -N10 --entropy-corrected` returns 5 top modules over 5
+levels at 5.073193845 — the uncorrected `-C` partition (4.741072) plus 0.33 bits — and lands within
+0.014 bits of what the OO engine scores for its own uncorrected tree. Both engines agree on *scoring*;
+only the OO hierarchical *search* diverges, which points at the level-wise correction each sub/super
+instance carries with the whole network's node count (`setNetworkPropertiesFrom`) rather than with its
+own codebooks, and at the `findHierarchicalSuperModules` comparison where that term does not cancel.
+Filed as #1034 with the reproducer.
