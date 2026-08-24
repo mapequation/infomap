@@ -1,6 +1,7 @@
 #include "TestUtils.h"
 
 #include <cmath>
+#include <memory>
 
 // Invariant tests for the map-equation objective family.
 //
@@ -89,18 +90,71 @@ TEST_CASE("MapEquation invariant: RegularizedMultilayerMapEquation, tracked == r
 }
 #endif
 
-// Regression for #830: under --entropy-corrected the tracked codelength drifts
-// from a fresh recompute (observed tracked 2.9815 vs recompute 2.9911). Marked
-// should_fail so it stays green while the bug is present and turns RED the
-// moment #830 is fixed -- at which point drop the decorator so it becomes a
-// normal passing invariant.
-TEST_CASE("MapEquation invariant: entropy-corrected tracked == recompute (repro #830) [core][mapeq][entropy-corrected]"
-          * doctest::should_fail())
+// Regression for #830: the tracked codelength used to drift from a fresh
+// recompute under --entropy-corrected (before this fix: tracked 2.9815 against
+// recompute 2.9911), because the recompute charged the root index codebook
+// childDegree free parameters where it has childDegree - 1 -- an index codebook
+// has no exit codeword. Deeper trees are not covered: there the recompute also
+// charges the intermediate module-of-modules codebooks that the tracked side
+// never sees, and #830 stays open for that half.
+TEST_CASE("MapEquation invariant: entropy-corrected tracked == recompute (repro #830) [core][mapeq][entropy-corrected]")
 {
   InfomapWrapper im(defaultFlags("--two-level --entropy-corrected"));
   im.readInputData(networkFixturePath("lossy_benchmark.net"));
   im.run();
   checkTrackedMatchesRecompute(im);
+}
+
+// The size of the correction, on a partition pinned from a file so no search
+// enters the comparison. twotriangles has N = 6 nodes and total degree D = 14,
+// and the codebooks of an m-module partition hold m - 1 + N free parameters:
+// m - 1 in the index codebook and, per module, its nodes plus an exit codeword
+// less the codebook's own normalisation. Miller-Madow charges (K - 1) / (2n)
+// nats per codebook and the map equation is in bits, so each parameter costs
+// 1 / (2 D ln2) bits -- the ln2 is what makes the corrected codelength of a
+// fixed partition stay flat as links are removed.
+TEST_CASE("Entropy correction charges m - 1 + N parameters at 1/(2 D ln2) bits [fast][core][mapeq][entropy-corrected]")
+{
+  const auto codelengthOf = [](const std::string& flags) {
+    InfomapWrapper im(defaultFlags("--two-level --no-infomap --cluster-data "
+                                   + clusterFixturePath("twotriangles_two_modules.clu") + " " + flags));
+    im.readInputData(repoPath("examples/networks/twotriangles.net"));
+    im.run();
+    return im.codelength();
+  };
+
+  const double correction = codelengthOf("--entropy-corrected") - codelengthOf("");
+  const double expected = (2 - 1 + 6) / (2 * 14.0 * std::log(2.0));
+  INFO("correction=" << correction << " expected=" << expected);
+  checkApproxCodelength(correction, expected);
+}
+
+// A module holding the whole network cannot be exited, so its codebook has no
+// exit codeword and the partition has one free parameter less: N - 1, not N.
+// Unlike an unobserved node or an unobserved boundary link -- which the declared
+// alphabet keeps charging, since a sample that misses them does not make them
+// impossible -- this codeword cannot occur in any sample. The index codebook of
+// a single module is likewise never used, and both sides of the equality have to
+// agree about that.
+TEST_CASE("A single module covering the network has no exit codeword [fast][core][mapeq][entropy-corrected]")
+{
+  const auto run = [](const std::string& flags) {
+    auto im = std::make_unique<InfomapWrapper>(defaultFlags("--two-level --no-infomap --cluster-data "
+                                                            + clusterFixturePath("twotriangles_single_module.clu") + " " + flags));
+    im->readInputData(repoPath("examples/networks/twotriangles.net"));
+    im->run();
+    return im;
+  };
+
+  const auto plain = run("");
+  const auto corrected = run("--entropy-corrected");
+
+  const double correction = corrected->codelength() - plain->codelength();
+  const double expected = (6 - 1) / (2 * 14.0 * std::log(2.0));
+  INFO("correction=" << correction << " expected=" << expected);
+  checkApproxCodelength(correction, expected);
+
+  checkTrackedMatchesRecompute(*corrected);
 }
 
 // The entropy-bias correction must reach the move loop, not only the reported
@@ -176,3 +230,4 @@ TEST_CASE("Super level never leaves the trial worse than its own two-level solut
 
 } // namespace test
 } // namespace infomap
+
