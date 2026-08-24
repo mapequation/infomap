@@ -3245,3 +3245,59 @@ cut; from the full fold, one move pays an immediate folding loss before any base
 group move — ~100 flow-connected fragments containing ~10 states of each physical — crosses, and the
 optimum folds each physical into ~20 module-level codewords, NOT one (that is the 9.99-bit physical
 partition).
+
+### F46 — The entropy-bias correction: nats vs bits, and which codewords are real (2026-08-24)
+
+Follow-up to the two gaps the L\* reference turned up (a zero-exit module and disconnected components
+being charged codewords that never occur). Both engines agreed with each other, so this was never a
+parity bug; the question was what the correction should be. Master #1033, merged here.
+
+**The counting model.** The network *is* the sample. In the stationary walk a link of weight `w` is
+traversed `w` times in each direction per `2W` steps, so a walk of `D = Σ_α k_α = 2W` steps visits node
+α exactly `k_α` times — the degrees. Every codebook is then a literal multinomial count vector:
+twotriangles split in two gives module counts `(2,2,3 | 1)` with `n_1 = 8` and index counts `(1,1)` with
+`n = 2`, and `L = Σ_c (n_c/D)·H(c)` reproduces the engine exactly (2.32073035683379 against the printed
+2.320730357). Since `n_c = u_c·D` and the map equation weights codebook c by that same `u_c`, the usage
+cancels: `E[L̂] − L = −Σ_c (K_c − 1)/(2 D ln2)` bits. Equivalently L is the entropy rate of the Markov
+chain over codebooks and the ML bias is −(free parameters)/(2D) nats.
+
+**Two things were wrong, one was not.**
+
+1. *Units.* Miller–Madow's `(K−1)/(2n)` is in nats; the map equation is in bits. Verified on simulated
+   multinomials (200k draws): at K=50, n=1000 the measured plug-in bias is −0.03589 bits against
+   −(K−1)/(2n ln2) = −0.03535 and −(K−1)/(2n) = −0.02450.
+2. *Impossible codewords.* A module holding the whole network can never be exited, in any flow model
+   (recorded teleportation included: module exit is `α·p_i·(1 − t_i)` and `t_i = 1`), and its index
+   codebook holds one codeword. twotriangles as one module: 5/(28 ln2), not 6/28 or 7/28.
+3. *Not wrong: unobserved codewords.* The disconnected-component gap was reported as over-charging ~2×.
+   It is only over-charging if the observed network is the whole population. Under the missing-links
+   premise the option exists for, a node with no observed link and a module with no observed boundary
+   link are unobserved, not impossible — and the measurement is one-sided. Fixed partition, 128-node
+   planted graph, links removed at random, target 6.3749 bits: declared alphabet stays at 6.42 ± 0.04
+   down to 5 % of links; an observed-count census (Miller–Madow's usual `N₀`) falls to 5.97.
+
+**Why the flatness works, and why it pins the constant.** Under Bernoulli link retention `f` the bias to
+return is `(1−f)(K−2)/(2 f D ln2)` while the correction supplies `(K−1)/(2 f D ln2)`; the difference is
+f-independent to leading order and equals the value at `f = 1`. Predicted vs measured offset at f=1:
+ring of 10 cliques 0.0855 vs 0.0855 bits, scale-free planted 0.1220 vs 0.1221 bits. Because both terms
+scale as 1/f, only the right constant stays flat — measured max drift over 0 → 95 % removal:
+`/(2D ln2)` 0.105 bits, `/(2W)` +0.474, `/(2D)` (nats) −0.189, uncorrected −0.852.
+
+**Generalisation.** Hierarchical is exact: charging every codebook in the tree `childDegree − [no exit]`
+reproduces the engine to 9 decimals on ninetriangles (38 parameters, D = 78) and on the weighted
+unbalanced_hierarchy (51 parameters, D = 256.90 = sumWeightedDegree). Directed is only partial: the
+correction removes half to two thirds of the drift, but flatness degrades as dangling nodes appear,
+because unrecorded teleportation renormalises every flow by (1 − danglingRank) — the estimand itself
+moves, which no entropy estimator can track. Measured at 95 % arc removal (87 of 128 nodes dangling):
+plug-in −1.86 bits, corrected −0.90.
+
+**Estimator survey (why Miller–Madow stays).** Screened against an O(1) move-loop delta and non-integer
+flows: Grassberger needs integer counts (the `(−1)^{n_i}` term) — the same wall that sent
+smiljanic2021incomplete to a Bayesian prior — and measured *less* flat than corrected MM; Chao–Shen /
+Chao–Wang–Jost and shrinkage rise with removal; Krichevsky–Trofimov (MDL) rises monotonically; NSB needs
+integration per codebook. MM is the only free one and the best fit here.
+
+**What it does not do.** It cannot stop overpartitioning under link removal at any strength: at 90 %
+removal the fragmented partition beats the planted one by ~2.4 bits of plug-in codelength while the whole
+correction is ~0.06 bits, and strengths 1 → 8 walk the search from 49 to 14 modules with the Rand index
+flat at ~0.76. That is the prior network's job (`--regularized`), not the estimator's.
