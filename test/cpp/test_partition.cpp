@@ -288,6 +288,32 @@ TEST_CASE("Two-level search finds the same optimum on OO and columnar engines [f
   infomap::test::checkApproxCodelength(columnar, oo);
 }
 
+//! Sum InfoNode::codelength over every module including the root, i.e. the quantity
+//! calcCodelengthOnTree(root(), true) returns. Leaves carry no codelength of their own.
+double sumModuleCodelengths(const InfoNode& node)
+{
+  if (node.isLeaf()) {
+    return 0.0;
+  }
+  double sum = node.codelength;
+  for (const auto& child : node.children()) {
+    sum += sumModuleCodelengths(child);
+  }
+  return sum;
+}
+
+unsigned int numScoredModules(const InfoNode& node)
+{
+  if (node.isLeaf()) {
+    return 0;
+  }
+  unsigned int count = node.codelength > 0.0 ? 1 : 0;
+  for (const auto& child : node.children()) {
+    count += numScoredModules(child);
+  }
+  return count;
+}
+
 TEST_CASE("Cluster-data clu fixture initializes a two-level partition [fast][core][partition][columnar-contract]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());
@@ -627,6 +653,48 @@ TEST_CASE("A two-level partition re-initialised after a multi-level one scores t
 
   CHECK(twoLevelCodelength(*reused) == doctest::Approx(expected));
   CHECK(reused->getIndexCodelength() == doctest::Approx(fresh->getIndexCodelength()));
+}
+
+TEST_CASE("A flat tree materialization scores its modules [fast][core][partition][lifecycle]")
+{
+  // #1002: initTree's `maxDepth == 2 || twoLevel` shortcut returned straight out of
+  // initPartition, which updates the objective's aggregate bookkeeping but writes no
+  // InfoNode::codelength. Only the deep branch scored the tree, so a flat materialization
+  // left every module holding whatever it held before. Here that is 0 on a fresh
+  // instance; on a reused one it is a stale value from an earlier, deeper partition.
+  // --no-infomap keeps the search out of it: with a search running, partition() rescores
+  // the tree at the end and the gap is invisible.
+  auto im = infomap::test::makeRunningInfomap(
+      [](InfomapWrapper& wrapper) { wrapper.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net")); },
+      "--no-infomap --two-level");
+
+  // A three-level tree under --two-level takes the shortcut through its second
+  // predicate, keeping only each leaf's top-level module.
+  im->initPartition(infomap::test::clusterFixturePath("twotriangles_three_level.tree"), false, &im->network());
+  REQUIRE(im->numLevels() == 2);
+  REQUIRE(im->codelength() > 0.0);
+
+  // Root plus the two modules; the leaves have no codelength of their own.
+  CHECK(numScoredModules(im->root()) == 3);
+  CHECK(sumModuleCodelengths(im->root()) == doctest::Approx(im->codelength()));
+}
+
+TEST_CASE("A restored flat best-of-N winner keeps its module codelengths [fast][core][partition][lifecycle]")
+{
+  // #1002, as users met it: restoreBestResult re-materializes the winning tree through
+  // initTree and immediately rewrites the output file, so when the winner was flat every
+  // modules[].codelength in the JSON output came out 0 -- while the same run at
+  // --num-trials 1 wrote real values, because nothing restored. ninetriangles under
+  // --two-level reaches the same codelength in every trial, so trial 1 stays the best and
+  // the restore always fires.
+  InfomapWrapper im("--seed 123 --num-trials 10 --silent --two-level --no-file-output");
+  im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+  im.run();
+
+  REQUIRE(im.numLevels() == 2);
+  // Root plus nine module nodes.
+  CHECK(numScoredModules(im.root()) == 10);
+  CHECK(sumModuleCodelengths(im.root()) == doctest::Approx(im.codelength()));
 }
 
 TEST_CASE("Pretty per-level codelength renders a structured levels table [fast][core][partition][output]")

@@ -893,10 +893,14 @@ private:
 };
 
 /**
- * Biased objective: the entropy bias correction. calcCodelengthOnTree adds
- * mult*childDegree/(2*D) to every internal node incl. the root, which sums over
- * the tree to mult*(non-root node count)/(2*D) = mult*(sum of level sizes incl
- * leaves)/(2*D). A structural correction (all levels), no per-node state.
+ * Biased objective: the entropy bias correction. Miller-Madow charges one free
+ * parameter per codebook codeword beyond the first, at mult/(2*D*ln2) bits each
+ * -- (K-1)/(2n) is in nats, the map equation is in bits. calcCodelengthOnTree
+ * adds childDegree parameters for every internal node incl. the root, which sums
+ * over the tree to the non-root node count (= sum of level sizes incl leaves),
+ * less one parameter for every codebook with no exit codeword: the root, and any
+ * module that is an only child all the way up to it. A structural correction
+ * (all levels), no per-node state.
  */
 class BiasedEntropyCorrection final : public ColumnarCorrection {
 public:

@@ -56,6 +56,126 @@ TEST_CASE("Lossy: rejects unsupported input detected after parsing [fast][core][
   CHECK_THROWS_AS(im.run(), std::runtime_error);
 }
 
+TEST_CASE("Lossy: the undirected-flow guard is reachable from the input, not only from a flag [fast][core][lossy][config]")
+{
+  // #1004: adaptDefaults rejects --directed and an explicitly set --flow-model, so the
+  // late guard's flow-model clause only ever sees a model that adaptDefaults did not get
+  // to look at. The four subcases below are the ways that happens: the network read; a
+  // plain assignment on a Config, which leaves flowModelIsSet false; and either config
+  // setter called on a constructed instance, where adaptDefaults no longer runs. A
+  // directed edge list is not one of them: *Arcs under an undirected flow model is parsed
+  // as undirected and the model stays undirected. Every case is checked on the message
+  // rather than on the exception type -- the memory/multilayer clause above throws a
+  // std::runtime_error too, and it is the clause that fires for ordinary multilayer
+  // input.
+  auto messageOf = [](auto&& run) {
+    try {
+      run();
+    } catch (const std::runtime_error& e) {
+      return std::string(e.what());
+    }
+    return std::string("<no exception>");
+  };
+
+  SUBCASE("multilayer expansion whose state map is identity")
+  {
+    // Expansion marks the network as directed input, and configureNetworkMode() then
+    // switches the flow model. Ordinary multilayer input throws one clause earlier,
+    // because expansion gives state ids that differ from the physical ids; this fixture's
+    // coincide, so haveMemoryInput() stays false, neither setStateInput() nor
+    // setMultilayerInput() runs, and the flow-model clause is the only one left.
+    InfomapWrapper im(defaultFlags("--lossy"));
+    im.readInputData(networkFixturePath("intra_identity_states.net"));
+    CHECK(messageOf([&] { im.run(); }) == "--lossy requires undirected flow");
+  }
+
+  SUBCASE("embedder assigning flowModel on a Config before adaptDefaults")
+  {
+    // A plain assignment leaves flowModelIsSet false, so adaptDefaults' clause (which
+    // tests directed || (flowModelIsSet && ...)) does not see it, and it arrives here.
+    Config config;
+    config.lossy = true;
+    config.flowModel = FlowModel::directed;
+    CHECK_NOTHROW(config.adaptDefaults());
+    CHECK(messageOf([&] {
+            InfomapWrapper im { config };
+            (void)im;
+          })
+          == "--lossy requires undirected flow");
+  }
+
+  SUBCASE("embedder calling setDirected on a live instance")
+  {
+    // InfomapConfig::setDirected writes flowModel too, and adaptDefaults ran once while
+    // the flag string was parsed and never runs again, so the parse-time clause cannot
+    // see this. The next initOptimizer() -- here from run() via initNetwork() -- catches
+    // it instead.
+    InfomapWrapper im(defaultFlags("--lossy"));
+    im.readInputData(networkFixturePath("twotriangles_flow.net"));
+    im.setDirected(true);
+    CHECK(messageOf([&] { im.run(); }) == "--lossy requires undirected flow");
+  }
+
+  SUBCASE("embedder calling setFlowModel on a live instance")
+  {
+    // setFlowModel does set flowModelIsSet, but that only matters to adaptDefaults, which
+    // has already run. On a constructed instance it is the same late guard that catches
+    // it.
+    InfomapWrapper im(defaultFlags("--lossy"));
+    im.readInputData(networkFixturePath("twotriangles_flow.net"));
+    im.setFlowModel(FlowModel::directed);
+    CHECK(messageOf([&] { im.run(); }) == "--lossy requires undirected flow");
+  }
+}
+
+TEST_CASE("Lossy: input constraints are owned by the optimizer dispatch, not by adaptDefaults [fast][core][lossy][config]")
+{
+  // #1004: adaptDefaults used to reject stateInput/multilayerInput/additionalInput, which
+  // no CLI option can set at parse time -- configureNetworkMode() writes the first two
+  // when the network is read, and additionalInput is library-only. The check was
+  // therefore only reachable by a library caller mutating the struct, and even there the
+  // same rejection arrives one stage later from initOptimizer(). The second CHECK of each
+  // pair is what makes the deletion safe rather than merely quiet: it pins that the late
+  // guard still covers every field the parse-time one did. Brace-initialised inside the
+  // macro on purpose: InfomapWrapper(config) risks parsing as a declaration.
+  SUBCASE("state input")
+  {
+    Config config;
+    config.lossy = true;
+    config.setStateInput();
+    CHECK_NOTHROW(config.adaptDefaults());
+    CHECK_THROWS_AS(InfomapWrapper { config }, std::runtime_error);
+  }
+
+  SUBCASE("multilayer input")
+  {
+    Config config;
+    config.lossy = true;
+    config.setMultilayerInput();
+    CHECK_NOTHROW(config.adaptDefaults());
+    CHECK_THROWS_AS(InfomapWrapper { config }, std::runtime_error);
+  }
+
+  SUBCASE("additional input")
+  {
+    Config config;
+    config.lossy = true;
+    config.additionalInput.push_back("extra.net");
+    CHECK_NOTHROW(config.adaptDefaults());
+    CHECK_THROWS_AS(InfomapWrapper { config }, std::runtime_error);
+  }
+
+  SUBCASE("meta data stays a parse-time rejection")
+  {
+    // Unlike the three above, --meta-data is a flag, so this one is decidable before the
+    // input is read and keeps failing early.
+    Config config;
+    config.lossy = true;
+    config.metaDataFile = "foo.txt";
+    CHECK_THROWS_AS(config.adaptDefaults(), std::runtime_error);
+  }
+}
+
 TEST_CASE("Lossy: lambda -> infinity reproduces the standard two-level map equation [fast][core][lossy]")
 {
   InfomapWrapper plain(defaultFlags("--two-level"));

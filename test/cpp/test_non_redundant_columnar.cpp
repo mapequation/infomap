@@ -363,11 +363,13 @@ TEST_CASE("NonRedundant/columnar: the ragged padding does not leak into the entr
   // needs one pass-through, above module 1).
   //
   // The per-node bias is derived from the fixture rather than hard-coded: the
-  // single-module partition has 6 leaves + 1 module = 7 non-root nodes, so the gap the
-  // flag opens there is 7 times the per-node term.
+  // single-module partition has 6 leaves + 1 module = 7 non-root nodes, and two of
+  // those codebook slots carry no free parameter -- the root's index codebook holds
+  // one codeword, and the module holds all the flow so it has no exit codeword -- so
+  // the gap the flag opens there is 5 times the per-node term.
   const double oneModule = scoreFixedPartition("twotriangles_flow.net", "twotriangles_single_module.clu", "--non-redundant --two-level");
   const double oneModuleBiased = scoreFixedPartition("twotriangles_flow.net", "twotriangles_single_module.clu", "--non-redundant --two-level --entropy-corrected");
-  const double biasPerNode = (oneModuleBiased - oneModule) / 7.0;
+  const double biasPerNode = (oneModuleBiased - oneModule) / 5.0;
   CHECK(biasPerNode > 0.0);
 
   const double raggedBiased = scoreFixedPartition("twotriangles_flow.net", "twotriangles_ragged_branches.tree", "--non-redundant --entropy-corrected");

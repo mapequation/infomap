@@ -32,26 +32,41 @@ using namespace columnar;
 double BiasedEntropyCorrection::hierarchicalCorrection(const ColumnarTwoLevel& core, StackBreakdown* breakdown) const
 {
   // Sum of childDegree over all internal nodes incl. root == count of non-root
-  // nodes == sum of every level's size (leaves + modules at all levels).
+  // nodes == sum of every level's size (leaves + modules at all levels). Each
+  // internal node owns one codebook, holding a codeword per child plus an exit
+  // codeword, so childDegree is its free-parameter count -- except where the exit
+  // codeword cannot exist: the root (an index codebook is never exited) and any
+  // module that is its parent's only child all the way up, which at this level of
+  // the stack means every level of size one. Those own one parameter less.
   long long nonRootNodes = 0;
   const unsigned int levels = core.hierNumLevels();
   for (unsigned int k = 0; k < levels; ++k)
     nonRootNodes += core.hierLevelSize(static_cast<int>(k));
 
+  const int topLevel = static_cast<int>(levels) - 1;
+  long long noExitCodeword = 1; // the root
+  for (int k = topLevel; k >= 1; --k) {
+    if (core.hierLevelSize(k) != 1)
+      break;
+    ++noExitCodeword;
+  }
+  const long long freeParameters = std::max(nonRootNodes - noExitCodeword, 0LL);
+
   // Per-node split: the identity above IS a per-node sum, so charge each internal
-  // node its own childDegree — the same attribution BiasedMapEquation::calcCodelength
+  // node its own childDegree -- the same attribution BiasedMapEquation::calcCodelength
   // makes on the object-oriented tree. Reporting only; the total is unchanged.
   if (breakdown != nullptr) {
-    const double perChild = m_multiplier / (2.0 * m_totalDegree);
-    const int topLevel = static_cast<int>(levels) - 1;
+    const double perParameter = m_multiplier / (2.0 * m_totalDegree * std::log(2.0));
     for (int k = 1; k <= topLevel; ++k) {
       const int childCount = core.hierLevelSize(k - 1);
       for (int c = 0; c < childCount; ++c)
-        breakdown->moduleTerm[static_cast<std::size_t>(k)][static_cast<std::size_t>(core.hierUnitParent(k - 1, c))] += perChild;
+        breakdown->moduleTerm[static_cast<std::size_t>(k)][static_cast<std::size_t>(core.hierUnitParent(k - 1, c))] += perParameter;
+      if (core.hierLevelSize(k) == 1)
+        breakdown->moduleTerm[static_cast<std::size_t>(k)][0] -= perParameter;
     }
-    breakdown->rootTerm += perChild * core.hierLevelSize(topLevel);
+    breakdown->rootTerm += perParameter * (core.hierLevelSize(topLevel) - 1);
   }
-  return m_multiplier * static_cast<double>(nonRootNodes) / (2.0 * m_totalDegree);
+  return m_multiplier * static_cast<double>(freeParameters) / (2.0 * m_totalDegree * std::log(2.0));
 }
 
 // ===================================================

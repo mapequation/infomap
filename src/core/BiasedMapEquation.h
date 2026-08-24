@@ -136,8 +136,10 @@ private:
 
   unsigned int numModulesAfterMove(int deltaNumModules) const;
 
+  double bitsPerFreeParameter() const;
+  double calcCodebookFreeParameters(const InfoNode& parent) const;
   double calcIndexEntropyBiasCorrection(unsigned int numModules) const;
-  double calcModuleEntropyBiasCorrection() const;
+  double calcModuleEntropyBiasCorrection(unsigned int numModules) const;
   double calcEntropyBiasCorrection(unsigned int numModules) const;
 
   // ===================================================
