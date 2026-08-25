@@ -74,6 +74,106 @@ namespace columnar {
     return on;
   }
 
+  // How the regroup probe treats the recorded-teleport codebook under the
+  // enter-flow transform, from env COL_REGROUP_PROBE_TELE:
+  //   unset (default) = rescale by the transform's own flow factor
+  //   keep            = leave it at the original scale (the pre-fix behaviour)
+  //   drop            = zero it out
+  //
+  // The probe clusters the block graph under the enter-flow transform
+  // (probeNet.flow = probeNet.enter), which rescales every unit's codeword usage
+  // from its own flow to its boundary flow. The per-unit recorded-teleport
+  // aggregates were NOT rescaled with it, and that inconsistency — not the
+  // teleport term as such — is the defect: the teleport codebook stays at the
+  // original network's scale while everything it competes with shrinks to
+  // boundary flow. On `--regularized` state input it then dominates outright
+  // (the global teleport flow is ~2x the summed enter flow) and, being
+  // size-proportional and community-blind, turns the probe's objective into
+  // mostly a uniform size penalty: it collapses to a handful of groups instead of
+  // resolving the block graph (N256 om2: 100 groups, against 536 once the scales
+  // agree).
+  //
+  // Rescaling by the same factor the transform applied to flow is the fix that
+  // matches the diagnosis, and it measured better than zeroing the term on both
+  // axes: at `-N10` on the overlapping `--regularized` rows `scale` beats `drop`
+  // in EVERY time cell (om8 6.25 s against 9.49 s, om4 5.75 against 6.83, om6
+  // 6.50 against 7.43) and is equal or better in bits on three of five rows.
+  // `drop` is kept as the A/B handle for that comparison.
+  //
+  // A NO-OP without recorded teleportation, so every base / plain-memory network
+  // is bit-identical by construction.
+  //
+  // 0 = drop, 1 = keep (pre-fix A/B baseline), 2 = rescale (the default).
+  inline int regroupProbeTeleportMode()
+  {
+    static const int mode = [] {
+      const char* e = std::getenv("COL_REGROUP_PROBE_TELE");
+      if (e == nullptr)
+        return 2;
+      const std::string v(e);
+      if (v == "keep")
+        return 1;
+      if (v == "drop")
+        return 0;
+      return 2;
+    }();
+    return mode;
+  }
+
+  // Leaf-granularity re-tune of a rejected regroup candidate: sweep cap, from
+  // env COL_REGROUP_LEAFTUNE (`off`/`0` disables it and restores the pre-fix
+  // gate; any other integer overrides the cap).
+  //
+  // A rung candidate is polished purify-only at BLOCK granularity, then compared
+  // against an incumbent that has already been tuned at leaf granularity. That
+  // comparison is not between two partitions, it is between a constrained
+  // partition and a free one, and the ladder loses candidates to the handicap
+  // rather than to the objective: on N256 om8 the winning candidate scores
+  // 7.5284 as blocks against the incumbent's 7.4466 and is rejected, but 7.0752
+  // once its leaves are allowed to move, and the run ends at 6.8934 instead of
+  // 7.4125 (-7.00% in bits). Under `--regularized` the two fixes only work
+  // together: dropping the probe's teleport term finds the right grouping, and
+  // only the leaf re-tune can see that it is right (om2 7.9390 -> 7.5469).
+  //
+  // The cap is on the TEST, not on the answer: an accepted candidate is re-tuned
+  // to convergence by the downstream fine-tune either way, so a single sweep
+  // only has to establish that the candidate beats the incumbent. One sweep
+  // reproduces the uncapped outcome on every measured row (om8 identical, om2/
+  // om4 `--regularized` within 0.003% in bits) at a fraction of the cost, and
+  // makes the test conservative: a candidate that needs more than one sweep to
+  // win is not accepted.
+  //
+  // Runs on the ladder's FIRST RUNG only, and only when the cheap block score
+  // does not already win: rung 0's candidate is the one grouping built from the
+  // same units the incumbent is made of, later rungs are strictly coarser
+  // re-offerings of the same probe hierarchy, and restricting to rung 0
+  // reproduces every improved row exactly (om8, om2/om4 `--regularized`,
+  // air30k `--regularized`) while cutting a third of the arm's CPU. A ladder
+  // whose first rung wins outright pays nothing and stays bit-identical to the
+  // pre-fix engine — that is every healthy benchmark row and the whole
+  // om2/om4/om5/om6 plain family.
+  //
+  // Residual cost where it buys nothing: 10 capped leaf sweeps per `-N10` run,
+  // measured by the operator's own clock at 1.3-2.5% of engine CPU on air30k
+  // `-C`/`-2`/meta, wikispeedia and malaria, all of them bit-identical in bits.
+  // A leaf sweep has no cheaper form, and no pre-filter separates the rescue
+  // from the doomed tests: om8's winning candidate scores 1.10% above the
+  // incumbent at block granularity and air30k's useless one 0.82%.
+  constexpr unsigned int kRegroupLeafTuneSweeps = 1;
+  inline unsigned int regroupLeafTuneSweeps()
+  {
+    static const unsigned int n = [] {
+      const char* e = std::getenv("COL_REGROUP_LEAFTUNE");
+      if (e == nullptr)
+        return kRegroupLeafTuneSweeps;
+      if (std::string(e) == "off")
+        return 0u;
+      const int v = std::atoi(e);
+      return v > 0 ? static_cast<unsigned int>(v) : 0u;
+    }();
+    return n;
+  }
+
   // Hierarchical split operator (experimental, see splitLevelModules), from env
   // COL_HSPLIT:
   //   off/unset (default) | 1 | all  = every stack level

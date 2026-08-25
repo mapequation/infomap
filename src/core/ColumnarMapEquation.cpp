@@ -369,7 +369,7 @@ void ColumnarTwoLevel::seedAssignment(const std::vector<int>& assign)
       m_emptyModules.push_back(m);
 }
 
-unsigned int ColumnarTwoLevel::moveLoop()
+unsigned int ColumnarTwoLevel::moveLoop(unsigned int sweepCap)
 {
   using infomath::plogp;
   const int n = lvl().n;
@@ -412,7 +412,7 @@ unsigned int ColumnarTwoLevel::moveLoop()
   double oldCodelength = m_codelength + correctionTotal;
   unsigned int numEffectiveLoops = 0;
   unsigned int coreLoopCount = 0;
-  const unsigned int loopLimit = kCoreLoopLimit;
+  const unsigned int loopLimit = sweepCap != 0 ? sweepCap : kCoreLoopLimit;
 
   do {
     pollInterrupt();
@@ -951,9 +951,35 @@ double ColumnarTwoLevel::optimizeTwoLevel(unsigned int maxAggPasses, bool doFine
           // base graph's community structure at each scale.
           Level probeNet = rungLvl;
           probeNet.flow = probeNet.enter;
+          // The transform rescaled codeword usage to boundary flow; the
+          // recorded-teleport aggregates did not come along, so carrying them
+          // into the probe puts a term the transform already invalidated into
+          // its objective — and on regularized input a dominant, community-blind
+          // one (see columnar::regroupProbeDropsTeleport). No-op without
+          // recorded teleportation.
+          const int teleMode = m_recordedTeleport ? regroupProbeTeleportMode() : 0;
+          double probeTotalTele = m_totalTeleFlow;
+          if (teleMode == 0) {
+            std::fill(probeNet.teleFlow.begin(), probeNet.teleFlow.end(), 0.0);
+            std::fill(probeNet.teleWeight.begin(), probeNet.teleWeight.end(), 0.0);
+            probeTotalTele = 0.0;
+          } else if (teleMode == 2) {
+            // EXPERIMENT (COL_REGROUP_PROBE_TELE=scale): rescale the teleport
+            // aggregates by the same factor the transform applied to flow, so the
+            // teleport codebook keeps its relative weight instead of being dropped.
+            double sf = 0.0, sflow = 0.0;
+            for (int i = 0; i < rungLvl.n; ++i) {
+              sf += rungLvl.enter[i];
+              sflow += rungLvl.flow[i];
+            }
+            const double k = sflow > 0.0 ? sf / sflow : 0.0;
+            for (auto& x : probeNet.teleFlow)
+              x *= k;
+            probeTotalTele = m_totalTeleFlow * k;
+          }
           ColumnarTwoLevel probe;
           probe.setInterruptCallback(m_interruptCallback);
-          probe.buildFromLevel(std::move(probeNet), m_undirected, m_seed, 0.0, m_recordedTeleport, m_totalTeleFlow);
+          probe.buildFromLevel(std::move(probeNet), m_undirected, m_seed, 0.0, teleMode != 0, probeTotalTele);
           probe.optimizeTwoLevel(0, false);
           const int probeK = static_cast<int>(probe.numTopModules());
           if (probeK <= 1 || probeK >= nU)
@@ -980,7 +1006,45 @@ double ColumnarTwoLevel::optimizeTwoLevel(unsigned int maxAggPasses, bool doFine
             for (auto& cp : m_corrections)
               if (cp->participatesInMoveLoop() && !(m_moduleCorrActive && cp->participatesInModuleMoves()))
                 corrSum += cp->initMoveLoop(newTop, c);
-            const double L = m_codelength + corrSum;
+            double L = m_codelength + corrSum;
+            // The candidate was polished purify-only at BLOCK granularity while
+            // the incumbent has already been tuned at leaf granularity, so a
+            // straight comparison charges the candidate for a constraint the
+            // incumbent never carried. Re-tune the candidate at leaf granularity
+            // (empty targets on, one sweep) and score it there instead. Only on
+            // the FIRST rung, and only when the cheap score does not already win:
+            // rung 0 is the one candidate built from the same units the incumbent
+            // is made of, later rungs are strictly coarser re-offerings, and on
+            // every row this fix improves the rescue happens at rung 0. A ladder
+            // whose first rung wins outright therefore keeps the pre-fix
+            // trajectory exactly. See columnar::regroupLeafTuneSweeps.
+            const unsigned int leafSweeps = regroupLeafTuneSweeps();
+            if (leafSweeps != 0 && rung == 0 && L >= bestCodelength - kMinImprovement) {
+              for (auto* cp : unitCorr)
+                cp->resetUnitsToLeaves();
+              activateLeafLevel();
+              m_leafMoveLoop = true;
+              seedAssignment(newTop);
+              moveLoop(leafSweeps);
+              const double leafL = m_codelength + m_lastCorrection;
+              if (leafL < L) {
+                std::vector<int> remapLeaf(m_nLeaves, -1);
+                int cLeaf = 0;
+                std::vector<int> leafTop(m_nLeaves);
+                for (int i = 0; i < m_nLeaves; ++i) {
+                  if (remapLeaf[m_module[i]] == -1)
+                    remapLeaf[m_module[i]] = cLeaf++;
+                  leafTop[i] = remapLeaf[m_module[i]];
+                }
+                newTop = std::move(leafTop);
+                c = cLeaf;
+                L = leafL;
+              }
+              m_leafMoveLoop = false;
+              reactivateLevelCopy(baseLvl);
+              for (auto* cp : unitCorr)
+                cp->setUnits(comp0, nBase);
+            }
             if (L < bestCodelength - kMinImprovement) {
               bestTop = std::move(newTop);
               bestCodelength = L;

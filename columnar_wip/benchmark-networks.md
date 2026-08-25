@@ -24,8 +24,11 @@ Single-thread convention: `MODE=release OPENMP=0`, `--seed 123`, best-of-N via `
 | air30k (regularized) | `networks/states/air2011/air30k.net` | `-d --regularized` | directed | **state / memory** + **recorded teleportation** | 183 physical · 13 213 state nodes |
 | science2001 (preferred modules) | `networks/db/science2001.net` | `-d --preferred-number-of-modules 25` | directed | first-order + **preferred-number-of-modules** bias | 7 170 nodes |
 | air30k (meta) | `networks/states/air2011/air30k.net` (+ `…/air30k_usstate.meta`) | `--meta-data networks/states/air2011/air30k_usstate.meta` | undirected | **state/memory + metadata** (both codebooks) | 183 physical · 13 213 state nodes |
-| overlapping om5 | `networks/debug/Jelena/network_N256_om5_nc64_E100000_mu10_sample1.net` | `-2d` (also run `-d`) | directed | **state / memory**, planted overlapping communities, zero co-physical links | 256 physical · 50 133 state nodes |
-| overlapping om6 | `networks/debug/Jelena/network_N256_om6_nc64_E100000_mu10_sample1.net` | `-2d` (also run `-d`) | directed | **state / memory**, planted overlapping communities, zero co-physical links | 256 physical · 53 860 state nodes |
+| overlapping om2 | `networks/debug/Jelena/network_N256_om2_nc64_E50000_mu10_sample1.net` | `-2d` (also run `-2d --regularized`) | directed | **state / memory**, planted overlapping communities, zero co-physical links | 256 physical · 28 203 state nodes |
+| overlapping om4 | `networks/debug/Jelena/network_N256_om4_nc64_E100000_mu10_sample1.net` | `-2d` (also run `-2d --regularized`) | directed | **state / memory**, planted overlapping communities, zero co-physical links | 256 physical · 45 394 state nodes |
+| overlapping om5 | `networks/debug/Jelena/network_N256_om5_nc64_E100000_mu10_sample1.net` | `-2d` (also run `-d`, `-2d --regularized`) | directed | **state / memory**, planted overlapping communities, zero co-physical links | 256 physical · 50 133 state nodes |
+| overlapping om6 | `networks/debug/Jelena/network_N256_om6_nc64_E100000_mu10_sample1.net` | `-2d` (also run `-d`, `-2d --regularized`) | directed | **state / memory**, planted overlapping communities, zero co-physical links | 256 physical · 53 860 state nodes |
+| overlapping om8 | `networks/debug/Jelena/network_N256_om8_nc64_E100000_mu10_sample1.net` | `-2d` (also run `-2d --regularized`) | directed | **state / memory**, planted overlapping communities, zero co-physical links | 256 physical · 58 505 state nodes |
 | wikispeedia | `../../networks/examples/wikispeedia_states.net` (repo `icelab/code/networks`) | `-2d` (also run `-d`) | directed | **state / memory**, real order-2 path network, zero co-physical links, healthy control for the overlapping rows | 300 physical · 6 475 state nodes |
 
 > **`air30k (meta)` metadata is generated, not checked in.** `networks/` is a data directory outside the
@@ -37,13 +40,26 @@ Single-thread convention: `MODE=release OPENMP=0`, `--seed 123`, best-of-N via `
 > #1012: on that input the physical-node codebook was dropped entirely. The object-oriented arm does not
 > finish `-N10` inside 30 minutes on this row and is quoted at `-N1`.
 
-> **The overlapping rows are the group-hysteresis regression guard** (F42). Each physical node appears in
-> ~200 state nodes spread over 20/24 planted communities and **no two co-physical state nodes are
-> linked**, so the memory objective's optimum requires merging ~100 flow-connected building blocks at
-> once — the regime where a pairwise-greedy search either collapses to one module (om5) or stalls
-> fragmented (om6). The planted partition is the quality reference:
-> `planted_partition_…_state_id.clu` scores 6.902222527 (om5) / 6.930934993 (om6) under
-> `-C -2d --no-infomap -c`; a healthy search must land at or below that.
+> **The overlapping rows are the group-hysteresis regression guard** (F42, F47). The `om` number is the
+> planted module count over four — om2 → 8 planted modules, om8 → 32 — not the overlap; states per
+> physical grows with it too (110 at om2 to 229 at om8). Each physical node appears in ~110–230 state
+> nodes spread over the planted communities and **no two co-physical state nodes are linked**, so the
+> memory objective's optimum requires merging many flow-connected building blocks at once — the regime
+> where a pairwise-greedy search either collapses to one module (om5) or stalls fragmented (om6, om8).
+> The planted partition `planted_partition_<same stem>.clu` is the quality reference under
+> `-C -2d --no-infomap -c`, and a healthy search must land at or below it:
+>
+> | | om2 | om4 | om5 | om6 | om8 |
+> |---|--:|--:|--:|--:|--:|
+> | planted, `-2d` | 6.789039995 | 6.880650147 | 6.902222527 | 6.930934993 | 6.981034760 |
+> | planted, `-2d --regularized` | 7.583820576 | 7.584396786 | 7.791810113 | 8.025567656 | 8.294767960 |
+> | one-level, `-2d --regularized` | 7.970508085 | 7.982849200 | 7.989613065 | 7.993490371 | 7.994735672 |
+>
+> **Under `--regularized` the planted partition of om6 and om8 is worse than one-level**, so on those two
+> rows it is not the reference for anything — soft-seeding om8 from it collapses to the one-level bound.
+> Use the soft-seeded (`-c`) score as the reference there instead. `--regularized` is a distinct
+> configuration on this family, not a variant: it turns on recorded teleportation, and F47's probe defect
+> lived only there.
 >
 > **wikispeedia is the healthy control for the same structural family as the overlapping rows** (F44): also order-2 with zero
 > co-physical links, but at 21.6 states per physical the memory reward does not dominate, and the

@@ -3324,3 +3324,148 @@ only the OO hierarchical *search* diverges, which points at the level-wise corre
 instance carries with the whole network's node count (`setNetworkPropertiesFrom`) rather than with its
 own codebooks, and at the `findHierarchicalSuperModules` comparison where that term does not cancel.
 Filed as #1034 with the reproducer.
+
+### F47 — Two independent defects in the #1029 regroup ladder: the gate's granularity, and the probe's teleport codebook (2026-08-25)
+
+Three new networks in the same overlapping family (`networks/debug/Jelena/`, om2 / om4 / om8, joining
+om5 / om6) each fail, and the two causes are unrelated. Both are in the ladder #1029 shipped; neither
+was reachable from the om5 / om6 rows it was built on. Reference points for the whole family, all
+`-C -2d`, seed 123 (planted `.clu` scored with `--no-infomap -c`, soft seed = the same file as `-c`):
+
+| network | planted | one-level | free (tip) | soft-seeded | planted, `--regularized` | one-level, `--regularized` | free `--regularized` (tip) | soft-seeded `--regularized` |
+|---|--:|--:|--:|--:|--:|--:|--:|--:|
+| om2 | 6.789039995 | 7.970163568 | 6.739358212 | — | 7.583820576 | 7.970508085 | **7.939021094** | 7.532737480 |
+| om4 | 6.880650147 | 7.982931800 | 6.861724654 | — | 7.584396786 | 7.982849200 | **7.973772049** | 7.547750556 |
+| om5 | 6.902222527 | 7.989189332 | 6.868127142 | — | 7.791810113 | 7.989613065 | **7.967095701** | 7.735067968 |
+| om6 | 6.930934993 | 7.993397315 | 6.884042436 | — | 8.025567656 | 7.993490371 | 7.981574549 | 7.961829587 |
+| om8 | 6.981034760 | 7.994219601 | **7.412472853** | 6.875237392 | 8.294767960 | 7.994735672 | 7.978912396 | 7.994735672 |
+
+The om column is the planted module count over four (om2 → 8 planted modules, om8 → 32), not the
+overlap; states per physical grows with it too (110 → 229). Every row is zero-co-physical-link order-2
+input, the F42 regime.
+
+**Two rows in that table are not failures at all.** Under `--regularized` the planted partition of om6
+and om8 is *worse than one-level* (8.026 / 8.295 against 7.993 / 7.995), and soft-seeding om8 from it
+collapses to the one-level bound — so on those two the search's 7.982 / 7.979 is at or below the best
+partition that exists, and the planted `.clu` is simply not the regularized objective's optimum. Only
+om2 / om4 / om5 `--regularized` and om8 plain are search failures. Checking that before explaining
+anything saved building a mechanism for a partition the objective does not want.
+
+**Defect 1 — the ladder gates its candidate at BLOCK granularity against a LEAF-granularity
+incumbent (om8, plain `-2d`).** A rung candidate is polished purify-only over the base units
+(`m_noEmptyTargets`, F42's own choice — empty targets at block granularity re-fragment a coarse seed)
+and then compared against `bestCodelength`, which belongs to a partition the leaf move loop has
+already tuned. That is not a comparison between two partitions; it is a comparison between a
+constrained one and a free one, and the ladder loses candidates to the handicap rather than to the
+objective. On om8 the winning candidate reads 7.528429223 as blocks against the incumbent's
+7.446619468 and is rejected; the detector then finds nothing, does not escalate, and the run ends in
+the fragment basin. `COL_REGROUP=off` reproduces the tip's 7.412472853 bit-for-bit — the arm was
+completely inert on om8. Given the same leaf-level tune the incumbent had, the same candidate reads
+**7.075193632**, the detector escalates at 4.99%, and the run ends at **6.893377041 with 911 modules**
+(−7.00% in bits; seeds 234 / 345 give −6.5% / −7.0%). Note the target scale: om8's optimum is ~900
+modules, not the planted 32 — the soft-seeded 6.875237392 also has 894 — so this is not the om5/om6
+"merge ~100 blocks into one community" barrier at a different size, it is the same gate being wrong
+about a 4.7× coarsening.
+
+**Defect 2 — the probe's enter-flow transform rescales flow but not the teleport aggregates (every
+`--regularized` row).** The probe clusters the block graph under `probeNet.flow = probeNet.enter`,
+which rescales each unit's codeword usage from its flow to its boundary flow. The per-unit teleport
+aggregates were left at the original network's scale. **The inconsistency is the defect, not the
+teleport term itself** — the teleport codebook keeps its full magnitude while everything it competes
+with shrinks to boundary flow. With recorded teleportation it then dominates outright: on om2 the
+global teleport flow is ~2x the summed enter flow, and a module's teleport enter/exit is
+size-proportional and community-blind, so the probe minimizes mostly a uniform size penalty. It
+collapses to 100 groups where the consistent probe resolves 536. A no-op without recorded
+teleportation, hence bit-identical on every base and plain-memory row by construction.
+
+**Which correction: rescale, not zero.** The first fix tried was zeroing the aggregates (`drop`) — the
+probe as a pure structural detector. Rescaling them by the same factor the transform applied to flow
+(`scale`) matches the diagnosis instead of routing around it, and it measured better on BOTH axes. At
+`-N10`, seed 123, min of 3, `old` = tip:
+
+| row | old bits | drop bits | scale bits | old t | drop t | scale t |
+|---|--:|--:|--:|--:|--:|--:|
+| om2 | 7.936999705 | 7.549114839 | **7.547672349** | 2.615 s | 3.116 s (+19.2%) | **2.751 s (+5.2%)** |
+| om4 | 7.973076681 | 7.556018667 | 7.557398694 | 7.197 s | 6.833 s (-5.1%) | **5.750 s (-20.1%)** |
+| om5 | 7.967531078 | = | = | 5.986 s | 7.695 s (+28.6%) | **6.619 s (+10.6%)** |
+| om6 | 7.981574549 | = | = | 5.697 s | 7.425 s (+30.3%) | **6.497 s (+14.0%)** |
+| om8 | 7.976140205 | = | 7.977209567 (+0.013%) | 8.352 s | 9.488 s (+13.6%) | **6.247 s (-25.2%)** |
+
+`scale` wins every time cell against `drop` and is equal or better in bits on three of five rows;
+om8's +0.013% in bits comes with -25.2% in time against the tip. `drop` is kept as the A/B handle. The
+residual against the tip is om6 **+14.0%** and om5 **+10.6%** in time at unchanged bits — the price of
+the om2/om4 wins in the same regime, because the ladder now walks a real community hierarchy on these
+networks instead of a collapsed one, and walks more rungs doing it. A within-family trade
+(-4.89%/-5.21% in bits on two rows against +10..14% in time on two others), reported rather than
+hidden.
+
+**The two fixes only work together, which is why neither shows up alone.** Same binary, env-gated:
+
+| network | tip | probe fix only | leaf-tune fix only | both | soft-seeded |
+|---|--:|--:|--:|--:|--:|
+| om2 `-2d --regularized` | 7.939021094 | 7.939021094 | 7.930556214 | **7.550748053** | 7.532737480 |
+| om4 `-2d --regularized` | 7.973772049 | 7.973772049 | 7.973772049 | **7.557135560** | 7.547750556 |
+| om8 `-2d` | 7.412472853 | — | 6.893377041 | **6.893377041** | 6.875237392 |
+
+The probe fix finds the right grouping and only the leaf tune can see that it is right (the probe-fix
+columns use the shipped `scale` correction; `-N1`, seed 123). om2 / om4 `--regularized` both end
+*below* the planted partition (7.551 / 7.557 against 7.584 / 7.584).
+
+**Shape, and what each constraint bought.** Three shapes were measured before the final one.
+(a) Leaf-tune every rung: om8 fixed, but om4 / om5 plain drift +0.003% / +0.007% in bits — the ladder
+reaches a better intermediate (om5's rung goes 7.481 → 7.176) and greedy path dependence hands back a
+hair at the end — for +21.7% / +10.2% in wall. (b) Leaf-tune every REJECTED rung: om2 / om4 / om5 / om6
+plain bit-identical, om8 fixed, but ~4 tunes per ladder. (c) FINAL: leaf-tune the first rung only, and
+only when the cheap score does not already win, capped at ONE sweep. Rung 0 is the only rung whose
+candidate is a grouping of the units the incumbent is itself made of; restricting to it reproduced every
+improved row exactly while cutting a third of the arm's CPU, and at rung 0 the "ladder still
+empty-handed" guard is redundant, so the condition is one clause instead of two. The cap is on the
+TEST, not on the answer — an accepted candidate is re-tuned to convergence by the downstream fine-tune
+regardless, so one sweep only has to establish that the candidate wins. One sweep reproduces the
+uncapped outcome on om8 exactly and on om2 / om4 `--regularized` within 0.003% in bits, and makes the
+test conservative: a candidate needing more than one sweep is not accepted.
+
+**Result: 6 rows better, nothing worse, 22 bit-identical** (interleaved against a clean build of the
+tip a008b85c, md5 45d8f427c293fa9f0a4b8e3e64eecb61; new md5 74138caa8a9dfbecabf5798f84a2579e). Better:
+om8 `-2d` −7.00%, om4 `-2d --regularized` −5.21%, om2 `-2d --regularized` −4.94%, air30k
+`-2d --regularized` −0.072%, air30k `-d --regularized` −0.026%, om5 `-2d --regularized` −0.0096% — all
+in bits. Bit-identical: om2 / om4 / om5 / om6 plain, om6 / om8 `--regularized`, air30k `-C` / `-2` /
+meta / `-N1`, malaria `-N10` / `-N1`, multilayer, lazega, wikispeedia `-2d` / `-d`, powergrid,
+science2001, politicalblogs, jazz, ninetriangles, pref-25.
+
+**The leaf tune's cost on the overlapping family is irreducible at the gate — measured, not argued.**
+On om8 `-C -d -N10`, a bit-identical row, the tune fires 10 times and every one is wasted: +9.8% in
+time for 0 change in bits (min of 5, tip 8.868 s → 9.733 s; with `COL_REGROUP_LEAFTUNE=off` it is
+8.713 s, so the whole cost is the tune and the probe fix is free there, as it must be without recorded
+teleportation). The obvious shaping is a distance gate — only test a candidate whose block-granularity
+score is close to the incumbent — and the distribution kills it. Those 10 wasted tunes sit at gaps of
+1.12, 1.14, 1.20, 1.31, 1.32, 3.99, 4.08, 4.10, 4.33 and 4.60% above the incumbent, and **the rescue
+that is worth −7.00% in bits sits at 1.0986%** — inside the cluster, below five of the wasted ones. A
+threshold that keeps the rescue keeps half the waste; one that removes the waste removes the rescue.
+Earlier evidence agrees from the other side: air30k's useless test is at 0.82%, *closer* than om8's
+rescue. So no gate available at that point separates them, and the cost is reported rather than tuned
+away with a constant that has one rescue as its evidence.
+
+**Cost, measured by the operator's own clock rather than by wall.** The session's machine sat at load
+9.8–16.5 (a video call plus an editor re-indexing), which put ±5–10% on every sub-5% wall delta and
+produced an inversion that gave the game away: malaria read +7.7% with a 1-sweep cap and +3.0% with a
+2-sweep cap, when 2 sweeps strictly do more work. So the arm was clocked directly: **10 capped leaf
+sweeps per `-N10` run, 1.3–2.5% of engine CPU** on air30k `-C` / `-2` / meta, wikispeedia and malaria,
+every one of them bit-identical in bits. That figure is for the HEALTHY rows only — on the overlapping
+family the same tune reaches ~10% (above), because there each sweep is over 50-58k leaves and the
+hierarchical build runs a ladder in every qualifying sub-optimizer. The earlier "+16.6% on air30kmeta" was the loaded machine,
+not the arm — the arm is 0.16 s of a 12 s run. A leaf sweep has no cheaper form, and no pre-filter
+separates the rescue from the doomed tests: om8's winning candidate sits 1.10% above the incumbent at
+block granularity and air30k's useless one 0.82%.
+
+**Open: om5 `-2d --regularized`** stays at 7.966331368 against a soft-seeded 7.735067968 — 3.0% in
+bits, the one row in the family neither fix reaches. It is a third mechanism, not a remainder of these
+two: om2 and om4 came apart only because both defects happened to compose, and there is no evidence
+yet that om5 is one more of the same kind.
+
+**Not in scope, by decision: the object-oriented engine.** The whole family fails there, including the
+om5 / om6 rows #1029 is credited with — OO `-d2` gives om5 one module at 7.989189332 and om6 3364
+modules at 7.803592696, and OO `-d2 --regularized` collapses all five to one module. The regroup ladder
+is columnar-only and its OO counterpart, `coarseTune`'s super-network, is the Louvain equivalence F42
+already killed as dead hypothesis 2, so there is no probe there to fix. Daniel's call: this closes when
+columnar replaces OO, not before, and no separate issue is filed for it.
