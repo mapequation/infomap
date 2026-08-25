@@ -3469,3 +3469,96 @@ modules at 7.803592696, and OO `-d2 --regularized` collapses all five to one mod
 is columnar-only and its OO counterpart, `coarseTune`'s super-network, is the Louvain equivalence F42
 already killed as dead hypothesis 2, so there is no probe there to fix. Daniel's call: this closes when
 columnar replaces OO, not before, and no separate issue is filed for it.
+
+### F48 — Absolute wall time is not comparable across sessions on this machine; instructions retired is (2026-08-25)
+
+Daniel spotted that web-NotreDame `-C -N10` reads 18.6 s in the #1035 snapshot and 20.0 s in this PR's,
+for what should be the same binary, and asked whether the comparison was even like-for-like. It was —
+and the number still does not come back, which is the finding.
+
+**The comparison is apples-to-apples, checked rather than assumed.** Same binary (md5
+`45d8f427c293fa9f0a4b8e3e64eecb61`, logged on the `sync-1033` arm of `sync1033-fullrefresh`), same
+flags, same instrument (that batch's own note says "engine total_s, min of 3 interleaved reps"), same
+codelength (5.5685292931). Rebuilding from the commit is a no-op: the build is reproducible and the
+md5 already matches.
+
+**It is not load, and there is no clock headroom.** At load 2.2, five reps of that binary give
+instructions 182.44-182.59e9 (±0.09%), cycles 61.73-62.32e9, **3.174-3.200 GHz on an M1 Max whose
+P-core ceiling is 3.228 GHz**, IPC 2.93-2.96, and `timing.total_s` min **19.26 s** — still +3.8% over
+the logged 18.5602 s. `/usr/bin/time -l` shows 19.57 s user against 20.57 s wall, so the process is not
+being starved of CPU (95%); it is executing at ~4% worse IPC for an identical instruction stream. With
+the clock already at the ceiling there is nowhere for the missing 4% to come from except the memory
+subsystem (57 days uptime, 29.2M pageouts).
+
+**And it is not a uniform slowdown, so no correction factor exists.** Same binary, same instrument,
+load 2.2, against the `sync1033-fullrefresh` log:
+
+| row | logged | now (min of 5) | delta |
+|---|--:|--:|--:|
+| powergrid `-C -2 -N10` | 0.1115 s | 0.0965 s | **-13.5%** |
+| powergrid `-C -N10` | 0.2425 s | 0.2356 s | **-2.9%** |
+| web-NotreDame `-C -d -N10` | 18.5602 s | 19.26 s | +3.8% |
+| science2001 `-C -d -N10` | 2.8900 s | 3.0143 s | +4.3% |
+| malaria `-C -N10` | 2.9570 s | 3.1397 s | +6.2% |
+| air30k `-C -N10` | 3.5960 s | 3.9181 s | +9.0% |
+
+Small cache-resident rows come out FASTER than logged, large / memory-heavy ones slower, spanning
+-13.5% to +9.0%. A session-to-session scaling factor would have to be one number; it is not one number.
+
+**What to do about it.** Absolute wall from a previous PR's snapshot is not a baseline — only a paired
+old-vs-new delta measured inside one session is, which is what the comparison tables already report and
+why the conclusions here are unaffected. For the cross-session question, use **instructions retired**
+(`/usr/bin/time -l`), which is load-, clock- and session-independent:
+
+| row | old instructions | new instructions | delta |
+|---|--:|--:|--:|
+| web-NotreDame `-C -d -N10` | 182 430 839 766 | 182 461 445 558 | **+0.017%** |
+| om8 `-C -2d -N1` | 7 076 040 605 | 21 985 221 575 | +211% |
+| om6 `-C -2d --regularized -N10` | 36 568 382 061 | 42 478 160 771 | +16.2% |
+
+web-NotreDame settles the original question outright: this PR issues 0.017% more instructions there, so
+the 18.6 -> 20.0 s gap contains nothing of this change. It also cross-checks the costs that ARE real —
+om6's +16.2% in instructions against the +14.6% in wall measured separately at min-of-5. The snapshot
+now carries an instructions column for exactly this reason, at no extra measurement cost (one
+`/usr/bin/time -l` execution yields both).
+
+**F48 addendum — the central claim above is WRONG; the burst was the artefact (2026-08-26).** Daniel
+pushed twice on the web-NotreDame number and was right both times. Re-measured with the min taken over
+**5 reps spread across a ~55-minute interleaved batch** at load median 3.5 (max 7.3), the tip binary
+gives web-NotreDame `-C -N10` **18.66 s against the logged 18.5602 s (+0.5%)** and `-C -2 -N10`
+**17.21 s against 17.1925 s (+0.1%)**. It reproduces.
+
+What went wrong in the measurement above: those five reps ran **back-to-back inside a single ~2-minute
+window** while Mail.app was indexing at 167% CPU. Min-of-5 over a burst samples ONE machine moment five
+times; min-of-5 spread across a long batch samples five different moments and actually finds the floor.
+The 1-minute load average looked fine (4.0-5.1) throughout, which is exactly why it was not caught —
+`uptime` did not see a single busy process saturating memory bandwidth.
+
+Across the 60 configurations shared with `sync1033-fullrefresh` on the same binary, the corrected batch
+reproduces the log to **within +2.6% / -8.1% for every row above ~0.1 s** (median -3.2%; the large
+negatives are all sub-10-ms rows where min-of-5 simply beats min-of-3 by microseconds). So **absolute
+wall IS comparable across sessions on this machine to a few percent**, and the earlier "no correction
+factor exists" conclusion was an artefact of the burst, not a property of the machine. The rule to
+carry forward is about the *sampling*, not the comparability: **never take min-of-N as a burst — spread
+the reps across the batch**, which the interleaved old/new harness does for free.
+
+The instructions-retired part of F48 stands and is worth keeping: it is load- and clock-independent,
+costs nothing (`/usr/bin/time -l` yields it alongside the wall on the same execution), and it is what
+separated real work from noise on rows where the two disagree — science2001 `-C -F -N10` read +4.9% in
+wall at **+0.01% in instructions** (noise), while om6 `-C -2d --regularized -N10` read +10.0% in wall
+at **+16.1% in instructions** (real). Across the 99 bit-identical configurations the median instruction
+delta is **+0.079%**, which is the cleanest available statement that the change is inert where it
+should be.
+
+**A second thing this turned up: the #1035 snapshot's overlapping rows contradict the run log itself.**
+For om5 `-C -2d -N10` the log holds the SAME binary md5 `50ef742d84a04dfff2471ba5e895c676` twice with
+two different codelengths — **6.8666178047 (top 308)** in `pr1029-final` / `pr1029-fullrefresh`, and
+**7.1087323962 (top 130)** in `sync1033-fullrefresh`. A deterministic binary cannot do both on the same
+input, and today every build reproduces 6.866617805 (top 308): OPENMP=0 and OPENMP=1 alike, with
+`COL_REGROUP=off` / `COL_HSPLIT_WINNER=off` / `COL_PARTSEED_Q=1` all failing to produce 7.1087 either
+(they give 7.89383431 / 6.866617805 / 6.866617805). The `-c` seeded row rules the input out: sync1033
+logged om5 `-2d -c -N1` = 6.8577781131 and it reproduces exactly today, so the `.net` and `.clu` are
+unchanged. So the sync1033 overlapping rows were not produced by the binary their md5 claims — the
+md5 column is written from a hardcoded table by the logging script, i.e. an assertion, not a
+measurement. No cause is offered beyond that; the numbers in this PR are freshly measured and agree
+with the pr1029 batches.
