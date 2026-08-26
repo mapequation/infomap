@@ -3674,3 +3674,124 @@ Consequences for the protocol, which is now what Daniel asked for rather than wh
   instead of the 55 the min-of-5 sweep took.
 - The earlier claim that min-of-3 was insufficient was never demonstrated; what was demonstrated was
   burst-versus-spread, and folding the two together was wrong.
+
+### F49 — The index rate q at every enter-flow transform (#1038), and the leaf-tune restriction that was hiding a 5% win (2026-08-26)
+
+Two changes, measured together and separately. The first is the correctness fix #1038 asks for; the
+second is the one that makes it pay, and it was found by trying to reproduce #1038's own claimed
+numbers and failing.
+
+**The derivation, and OO as the independent witness.** A unit's index-codebook use rate is the rate at
+which a walker enters it, across a link OR by teleporting into it from outside: `q = e + (T − t)·w`.
+`ColumnarLevel::enter` carries only `e`; every *scoring* site adds the teleport term itself, which is
+why scoring was always right. Six *optimizer* sites read `Level::enter` as a node flow and never added
+it — the regroup probe, `buildHierarchyFromBottom`'s `superNet` and its `curIndexCodelength`,
+`refineLayerWithinGrandparent` and `subClusterLevel`'s `interior ? base.enter[g] : base.flow[g]`,
+`refineTopLayer`, and `splitLevelModules`' move base (dead by default; COL_HSPLIT is off). All six now
+go through one `setIndexRateAsFlow` / `unitIndexRate` pair.
+
+The decisive check is not the algebra, it is OO: `InfomapBase::transformNodeFlowToEnterFlow` sets
+`module.data.flow = module.data.enterFlow`, and `aggregateFlowValuesFromLeafToRoot` has *already*
+folded `(T − t)·w` into every non-leaf `enterFlow` (`if (!node.isLeaf())` — leaves are untouched, so
+the columnar leaf level's `enter` is genuinely link-only and there is no double count). OO's
+super-network node flow **is** `q` and its super-level gate compares against an `oldIndexLength` built
+from the same quantity. This was an OO-parity regression, not a new heuristic — which is a much
+stronger justification than the measurement, and it is the reason to ship a change that on its own
+buys almost nothing.
+
+**F47's defect-2 numbers do not belong to this fix.** F47 records om2 / om4 `-2d --regularized` at
+−4.89% / −5.21% in bits for the probe fix combined with the leaf-granularity gate. On the merged tip
+none of that reproduces: the correct `q` leaves both rows bit-identical, and so does the rejected
+`scale`, and so does `drop`. Establishing that before explaining it (the F45 discipline) is what found
+the real cause — the numbers were measured with an **unrestricted** leaf-granularity test, and #1037
+shipped the escalation-source restriction (`tuneWonInDetector`) afterwards, which silently took them
+back. The PR that fixed om8 undid the om2 / om4 rescue in the same commit and neither snapshot noticed,
+because the shipped snapshot only claimed the two om8 rows.
+
+**The two changes are each necessary and only jointly sufficient**, one build, `--seed 123 -N1`:
+
+| | om2 | om4 | om5 | om6 | om8 |
+|---|--:|--:|--:|--:|--:|
+| tip 60378779 | 7.939021094 | 7.973772049 | 7.967095701 | 7.981574549 | 7.978912396 |
+| index rate q only | = | = | 7.966672583 | = | = |
+| leaf-tune scope only | 7.930556214 | = | 7.968281689 | = | 7.978296239 |
+| **both** | **7.548816177** | **7.556894677** | 7.966995214 | = | = |
+| rejected `scale` + scope | 7.550748053 | 7.557135560 | 7.966083701 | = | 7.976260398 |
+| soft-seeded | 7.532737480 | 7.547750556 | 7.735067968 | 7.961829587 | 7.994735672 |
+| planted | 7.583820576 | 7.584396786 | 7.791810113 | 8.025567656 | 8.294767960 |
+
+om2 and om4 end **below their planted partitions**. And the derived `q` matches the rejected `scale`
+hack to within 0.03% in bits on the two rows that move — so the hack bought nothing the derivation does
+not, which is the cleanest possible vindication of being made to derive it.
+
+**Cost, and the part of it that is waste.** Instructions retired, same build, against the tip:
+
+| row | q only | q + scope | bits |
+|---|--:|--:|---|
+| om2 `-2d --regularized` | +28.80% | +37.30% | **−4.92%** |
+| om4 `-2d --regularized` | +23.65% | **−26.25%** | **−5.23%** |
+| om5 `-2d --regularized` | −12.44% | −9.34% | −0.001% |
+| om6 / om8 `-2d --regularized` | +29.75% / +31.62% | +34.88% / +37.81% | = |
+| om2 / om4 / om5 / om6 / om8 `-d --regularized` | +89…+149% | +89…+149% | = |
+| air30k `-d --regularized` `-N1` / `-N10` | +0.47% / +0.27% | +6.11% / +1.60% | +0.027% / −0.027% |
+| om2 `-2d` plain | −0.65% | +3.76% | = |
+| air30k / malaria / science2001 / wikispeedia plain | ±0.3% | ±0.3% | = |
+
+The `-d --regularized` rows are the ugly cell: om8 goes 4.67G → 11.61G instructions for a
+bit-identical answer. It is *correct* work — with the fair gate the up-build keeps a super-level the
+broken gate discarded, 3 levels instead of 2 — and it is then thrown away in full, because on this
+family the regularized objective's optimum is the one-module partition and the one-level guard
+collapses the stack (om8: the build reaches 9.008 against a 7.995 one-level bound, the tip reached
+9.018). A **sound** early exit exists — every deeper stack is bounded below by `stackL − indexTerm(k)`,
+by induction on `total(k+1) = total(k) − indexTerm(k) + superCodelength` with `superCodelength ≥
+indexTerm(k+1) ≥ 0` — but it is far too loose to fire here: om8 gives 9.018 − 4.873 = 4.145 against
+7.995. Anything tighter is a heuristic and belongs to its own change. Filed as part of #1041.
+
+**What the restriction actually bought.** ~4% of instructions on a handful of rows — and om4
+`-2d --regularized` is 26% *cheaper* without it, because the run stops thrashing a basin it cannot
+leave. Every plain row is bit-identical with the restriction removed, om8's 6.893377041 included. It
+was the wrong trade and the A/B handle (`COL_REGROUP_LEAFTUNE_SCOPE=detector`) is kept only so the old
+behaviour stays reachable.
+
+**Both open observations from F47 were tested; both are real and both are now issues.**
+
+- **om5 `-2d --regularized` is a third mechanism (#1042).** Neither fix touches it: 7.966672583 under
+  one, 7.966995214 under the other, against a soft-seeded 7.735067968 — 3.0% in bits, and only 0.28%
+  below the one-level bound. Also settled here: om6 and om8 are not failures on that row at all, since
+  their planted partition scores *worse* than one-level under `--regularized`, so om5 is the last real
+  regularized failure in the family.
+- **The om8 `-d` observation is family-wide and much larger than recorded (#1041).** `-C -d` is 4–14%
+  worse in bits than `-C -2d` on all five, and on om2 / om4 / om5 / om6 the tree it builds is so much
+  worse than one-level that the guard collapses it to a single module (om4 free `-C -d` returns
+  *exactly* its one-level 7.982931800, from a 4-level build at 8.326725668). Seeding the hierarchical
+  run with the two-level answer reaches it or better every time — and on om8 reaches **6.717989927**,
+  2.54% in bits BELOW the two-level optimum, so the hierarchy is real and the up-build simply never
+  enters its basin.
+
+**F47 addendum correction — the "round-trip mismatch" was me feeding back the wrong file (#1039).**
+F47's addendum recorded the engine's own output failing to re-score, ~8 bits out on air30k even
+unregularized, and 2646 rows written for a 13213-state network. Both observations were right and the
+conclusion was wrong. A higher-order run writes two cluster files; the **physical** `air30k.clu` has one
+row per *(physical node, module)* pair — 2646 rows over 183 distinct ids, one node in 60 modules — and
+is not a partition of the state network at all. Fed back it gives 13.44800187; the **state-level**
+`air30k_states.clu` and `_states.tree` both round-trip **exactly** (5.393492268, and 5.396864731 on
+OO). OO returns the same wrong 13.44800187 from the physical file, so what is real here is a shared
+reader defect: `-c` accepts a cluster file with 2463 duplicate ids and silently keeps the last of each,
+with no warning at any verbosity.
+
+**F49 sweep result.** 121 paired configurations, **110 bit-identical** at a median +0.040% in
+instructions (+0.92% in time). Ten rows better in bits: om4 `-2d --regularized` −5.23% / −5.22%
+(`-N1` / `-N10`), om4 `-d --regularized -N10` −5.22%, om2 `-2d --regularized` −4.92% / −4.89%,
+om2 `-d --regularized -N10` −4.84%, air30k (reg.) `-C -2 -N10` −0.072% and `-C -N10` −0.027%, om8
+`-d --regularized -N10` −0.014%, om5 `-2d --regularized -N1` −0.001%. One row worse: air30k (reg.)
+`-C -N1` +0.027% in bits for +6.28% in instructions — single-trial path dependence inside a much
+larger pre-existing gap (OO 5.591403536 against the columnar 5.668390329 on that row), and the same
+network moves the other way at `-N10`. Twelve bit-identical rows pay 34–148% more instructions, all
+of them om `--regularized`; the `-d --regularized` block is the up-build waste analysed above.
+
+The sweep ran with an unrelated job holding ~5 of 10 cores (46% idle), so absolute times sit ~10–15%
+above the previous snapshot's on identical code (web-NotreDame `-C -N10` 21.1s against 19.4s, instr
+−0.08%). The arms are interleaved so the deltas survive, but several time deltas are visibly noise
+against their instruction counts — web-NotreDame `-C -2 -N10` reads −11.9% in time at −0.24% in
+instructions. That is the F48 lesson applied rather than rediscovered: where the two disagree, the
+instruction count is the measurement.

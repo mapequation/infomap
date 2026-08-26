@@ -948,13 +948,14 @@ double ColumnarTwoLevel::optimizeTwoLevel(unsigned int maxAggPasses, bool doFine
           const Level& rungLvl = rung == 0 ? baseLvl : ladder;
           const int nU = rungLvl.n;
           // Probe under the enter-flow transform (the up-build's super-network
-          // semantics: a unit's codeword usage is its boundary flow). With the
-          // units' TRUE flows the probe would just be the module-level move loop
-          // continued — the Louvain equivalence — and stall on the very fixpoint
-          // it is trying to escape; the boundary-flow view is what exposes the
-          // base graph's community structure at each scale.
+          // semantics: a unit's codeword usage is its index rate q — the rate at
+          // which the walker enters it, teleport included). With the units' TRUE
+          // flows the probe would just be the module-level move loop continued —
+          // the Louvain equivalence — and stall on the very fixpoint it is trying
+          // to escape; the boundary-flow view is what exposes the base graph's
+          // community structure at each scale.
           Level probeNet = rungLvl;
-          probeNet.flow = probeNet.enter;
+          setIndexRateAsFlow(probeNet);
           ColumnarTwoLevel probe;
           probe.setInterruptCallback(m_interruptCallback);
           probe.buildFromLevel(std::move(probeNet), m_undirected, m_seed, 0.0, m_recordedTeleport, m_totalTeleFlow);
@@ -1089,7 +1090,14 @@ double ColumnarTwoLevel::optimizeTwoLevel(unsigned int maxAggPasses, bool doFine
       }
       m_regroupEscalated = m_regroupEscalated || escalate;
       if (escalate)
-        runLadder(trajLevel(0), trajComp[0], tuneWonInDetector, false);
+        // The escalated ladder gets the leaf-granularity test unconditionally.
+        // #1037 scoped it to trials whose detector rung came FROM that test
+        // (tuneWonInDetector), which saved ~4% of instructions on a handful of
+        // rows and cost -4.92% / -5.23% in bits on om2 / om4 `-2d --regularized`:
+        // there the detector accepts a rung on its block score and only the
+        // escalated ladder's leaf test can see the 4.9% partition underneath.
+        // See regroupLeafTuneDetectorOnly for the A/B handle and the numbers.
+        runLadder(trajLevel(0), trajComp[0], regroupLeafTuneDetectorOnly() ? tuneWonInDetector : true, false);
     }
 
     m_moduleCorrActive = false;
@@ -1465,16 +1473,16 @@ int ColumnarTwoLevel::splitLevelModules(int k, double& L, bool allowSingletons)
         unitCorr.push_back(cp.get());
 
   // The level-k network in the space the level-(k+1) codebook actually uses:
-  // leaves are coded by their flow, interior modules by their enter flow
-  // (the up-build's superNet.flow = cur.enter transform). Only the move loop
-  // sees the transform; the stack levels keep the true flows.
+  // leaves are coded by their flow, interior modules by their index rate q
+  // (setIndexRateAsFlow, the up-build's transform). Only the move loop sees the
+  // transform; the stack levels keep the true flows.
   const bool phaseTiming = hSplitPhaseTiming();
   Level moveBaseCopy;
   {
     PhaseTimer pt(0, phaseTiming);
     moveBaseCopy = hierLevel(k);
     if (interior)
-      moveBaseCopy.flow = moveBaseCopy.enter;
+      setIndexRateAsFlow(moveBaseCopy);
   }
   const Level& moveBase = moveBaseCopy;
 
@@ -2008,16 +2016,19 @@ double ColumnarTwoLevel::buildHierarchyFromBottom(int bottomK)
   // Grow up with the enter-flow super-search while it shortens the index code.
   while (cur.n > 1) {
     pollInterrupt();
-    // Enter-flow transform: the super-network's node flow is the module's enter
-    // flow; enter/exit and edges are the module's inter-module quantities.
+    // Enter-flow transform: the super-network's node flow is the module's index
+    // rate q; enter/exit, the teleport aggregates and the edges are the module's
+    // inter-module quantities, carried through unchanged.
     Level superNet = cur;
-    superNet.flow = cur.enter;
+    setIndexRateAsFlow(superNet);
 
-    // Current top-level index codebook (flat): plogp(sum enter) - sum plogp(enter).
+    // Current top-level index codebook (flat): plogp(sum q) - sum plogp(q), over
+    // the same index rates the super-search below optimizes (superNet.flow), so
+    // the two sides of this comparison measure the same codebook.
     double sumEnter = 0.0, sumPlogpEnter = 0.0;
-    for (double e : cur.enter) {
-      sumEnter += e;
-      sumPlogpEnter += plogp(e);
+    for (double q : superNet.flow) {
+      sumEnter += q;
+      sumPlogpEnter += plogp(q);
     }
     const double curIndexCodelength = plogp(sumEnter) - sumPlogpEnter;
 
@@ -2168,7 +2179,7 @@ int ColumnarTwoLevel::subClusterUnits(const Level& base, bool interior, bool sli
   std::vector<int> outDeg(nP, 0), inDeg(nP, 0);
   for (int j = 0; j < nP; ++j) {
     const int g = S[j];
-    sub.flow[j] = interior ? base.enter[g] : base.flow[g];
+    sub.flow[j] = interior ? unitIndexRate(base, g) : base.flow[g];
     sub.enter[j] = base.enter[g];
     sub.exit[j] = base.exit[g];
     sub.teleFlow[j] = base.teleFlow.empty() ? 0.0 : base.teleFlow[g];
@@ -2469,9 +2480,9 @@ bool ColumnarTwoLevel::refineLayerWithinGrandparent(int k)
 
   // Layer-0 units are leaves (two-level leaf objective: node flow = leaf flow).
   // Interior units are modules coded by the module-of-modules term, whose
-  // codeword usage is the module's *enter* flow — mirror the up-build's
-  // enter-flow transform (superNet.flow = enter) so grouping optimizes the
-  // right cost instead of over-merging on total flow.
+  // codeword usage is the module's index rate q (unitIndexRate) — mirror the
+  // up-build's enter-flow transform so grouping optimizes the right cost
+  // instead of over-merging on total flow.
   const bool interior = (k > 0);
 
   for (int G = 0; G < numGP; ++G) {
@@ -2494,7 +2505,7 @@ bool ColumnarTwoLevel::refineLayerWithinGrandparent(int k)
     std::vector<int> outDeg(nP, 0), inDeg(nP, 0);
     for (int j = 0; j < nP; ++j) {
       const int g = S[j];
-      sub.flow[j] = interior ? base.enter[g] : base.flow[g];
+      sub.flow[j] = interior ? unitIndexRate(base, g) : base.flow[g];
       sub.enter[j] = base.enter[g];
       sub.exit[j] = base.exit[g];
       sub.teleFlow[j] = base.teleFlow.empty() ? 0.0 : base.teleFlow[g];
@@ -2584,7 +2595,7 @@ bool ColumnarTwoLevel::refineTopLayer()
   const int nU = base.n;
 
   // One root group over all layer-k units; enter-flow transform (grouping
-  // modules, whose codeword usage is the enter flow), root exit = 0.
+  // modules, whose codeword usage is the index rate q), root exit = 0.
   Level sub;
   sub.n = nU;
   sub.flow.resize(nU);
@@ -2594,7 +2605,7 @@ bool ColumnarTwoLevel::refineTopLayer()
   sub.teleWeight.resize(nU);
   std::vector<int> outDeg(nU, 0), inDeg(nU, 0);
   for (int j = 0; j < nU; ++j) {
-    sub.flow[j] = base.enter[j];
+    sub.flow[j] = unitIndexRate(base, j);
     sub.enter[j] = base.enter[j];
     sub.exit[j] = base.exit[j];
     sub.teleFlow[j] = base.teleFlow.empty() ? 0.0 : base.teleFlow[j];
