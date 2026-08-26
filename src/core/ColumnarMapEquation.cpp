@@ -369,7 +369,7 @@ void ColumnarTwoLevel::seedAssignment(const std::vector<int>& assign)
       m_emptyModules.push_back(m);
 }
 
-unsigned int ColumnarTwoLevel::moveLoop()
+unsigned int ColumnarTwoLevel::moveLoop(unsigned int sweepCap)
 {
   using infomath::plogp;
   const int n = lvl().n;
@@ -412,7 +412,7 @@ unsigned int ColumnarTwoLevel::moveLoop()
   double oldCodelength = m_codelength + correctionTotal;
   unsigned int numEffectiveLoops = 0;
   unsigned int coreLoopCount = 0;
-  const unsigned int loopLimit = kCoreLoopLimit;
+  const unsigned int loopLimit = sweepCap != 0 ? sweepCap : kCoreLoopLimit;
 
   do {
     pollInterrupt();
@@ -919,7 +919,11 @@ double ColumnarTwoLevel::optimizeTwoLevel(unsigned int maxAggPasses, bool doFine
       // true objective independently, keep-best. Rung cost shrinks with the
       // unit count, so the first probe dominates. Returns whether any rung
       // improved the best partition.
-      auto runLadder = [&](const Level& baseLvl, const std::vector<int>& comp0) -> bool {
+      // Did the detector's accepted rung come FROM the leaf-granularity test?
+      // That is the signal that this trial is in the basin the test exists for,
+      // and it is what decides whether the escalated ladder pays for the test too.
+      bool tuneWonInDetector = false;
+      auto runLadder = [&](const Level& baseLvl, const std::vector<int>& comp0, bool allowLeafTune, bool isDetector) -> bool {
         bool anyAccepted = false;
         const int nBase = baseLvl.n;
         // Every rung's candidate is polished at BASE granularity: the seeded
@@ -980,13 +984,62 @@ double ColumnarTwoLevel::optimizeTwoLevel(unsigned int maxAggPasses, bool doFine
             for (auto& cp : m_corrections)
               if (cp->participatesInMoveLoop() && !(m_moduleCorrActive && cp->participatesInModuleMoves()))
                 corrSum += cp->initMoveLoop(newTop, c);
-            const double L = m_codelength + corrSum;
+            double L = m_codelength + corrSum;
+            // The candidate was polished purify-only at BLOCK granularity while
+            // the incumbent has already been tuned at leaf granularity, so a
+            // straight comparison charges the candidate for a constraint the
+            // incumbent never carried. Re-tune the candidate at leaf granularity
+            // (empty targets on, one sweep) and score it there instead.
+            //
+            // Scope: first rung only, only when the cheap score does not already
+            // win, and — in the escalated ladder — only when the detector's own
+            // accepted rung came from this test (tuneWonInDetector). This is an escalation question,
+            // not a ladder question — the detector exists to decide whether the
+            // trial is in the pathological basin, and a candidate the block score
+            // rejects is exactly where that decision is being got wrong. A trial
+            // that escalated on the block score alone is one where the ladder is
+            // working normally, so carrying the test into its full ladder is pure
+            // cost — that is every `--regularized` overlapping row. Rung 0
+            // is the one candidate built from the same units the incumbent is
+            // made of; later rungs are strictly coarser re-offerings, and on
+            // every row this fix improves, the rescue happens at rung 0.
+            const unsigned int leafSweeps = regroupLeafTuneSweeps();
+            bool tunedThisRung = false;
+            if (leafSweeps != 0 && allowLeafTune && rung == 0 && L >= bestCodelength - kMinImprovement) {
+              for (auto* cp : unitCorr)
+                cp->resetUnitsToLeaves();
+              activateLeafLevel();
+              m_leafMoveLoop = true;
+              seedAssignment(newTop);
+              moveLoop(leafSweeps);
+              const double leafL = m_codelength + m_lastCorrection;
+              if (leafL < L) {
+                std::vector<int> remapLeaf(m_nLeaves, -1);
+                int cLeaf = 0;
+                std::vector<int> leafTop(m_nLeaves);
+                for (int i = 0; i < m_nLeaves; ++i) {
+                  if (remapLeaf[m_module[i]] == -1)
+                    remapLeaf[m_module[i]] = cLeaf++;
+                  leafTop[i] = remapLeaf[m_module[i]];
+                }
+                newTop = std::move(leafTop);
+                c = cLeaf;
+                L = leafL;
+                tunedThisRung = true;
+              }
+              m_leafMoveLoop = false;
+              reactivateLevelCopy(baseLvl);
+              for (auto* cp : unitCorr)
+                cp->setUnits(comp0, nBase);
+            }
             if (L < bestCodelength - kMinImprovement) {
               bestTop = std::move(newTop);
               bestCodelength = L;
               bestK = static_cast<unsigned int>(c);
               anyAccepted = true;
               rejected = 0;
+              if (tunedThisRung && isDetector)
+                tuneWonInDetector = true;
             } else {
               ++rejected;
             }
@@ -1028,7 +1081,7 @@ double ColumnarTwoLevel::optimizeTwoLevel(unsigned int maxAggPasses, bool doFine
         const unsigned int savedK = bestK;
         const double savedL = bestCodelength;
         Level convergedBase = aggregateLevel(leaf0(), bestTop, static_cast<int>(bestK), m_undirected);
-        runLadder(convergedBase, savedTop);
+        runLadder(convergedBase, savedTop, true, true);
         escalate = savedL - bestCodelength > 1e-3 * savedL;
         bestTop = savedTop;
         bestK = savedK;
@@ -1036,7 +1089,7 @@ double ColumnarTwoLevel::optimizeTwoLevel(unsigned int maxAggPasses, bool doFine
       }
       m_regroupEscalated = m_regroupEscalated || escalate;
       if (escalate)
-        runLadder(trajLevel(0), trajComp[0]);
+        runLadder(trajLevel(0), trajComp[0], tuneWonInDetector, false);
     }
 
     m_moduleCorrActive = false;

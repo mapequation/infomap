@@ -538,7 +538,10 @@ private:
   void rebuildRunningTerms();
   // Forced move of one unit to a target module, updating aggregates + terms.
   void moveUnit(int u, int newMod);
-  unsigned int moveLoop();
+  // sweepCap > 0 caps the loop at that many sweeps instead of kCoreLoopLimit;
+  // used by the regroup ladder's leaf-granularity candidate test, where the
+  // point is to establish that a candidate wins, not to converge it.
+  unsigned int moveLoop(unsigned int sweepCap = 0);
   // Build the next level from the current module assignment; returns unit count.
   int consolidateToNextLevel();
 
@@ -786,6 +789,16 @@ private:
     }
     m_lvlOwned = level;
     m_lvlPtr = &m_lvlOwned;
+  }
+  // Re-activate a level a previous activateLevelCopy already installed, without
+  // copying it again. Valid only while m_lvlOwned still holds that level, i.e.
+  // after an excursion that moved m_lvlPtr alone (activateLeafLevel).
+  void reactivateLevelCopy(const Level& level)
+  {
+    if (&level == m_leaf0Ptr)
+      activateLeafLevel();
+    else
+      m_lvlPtr = &m_lvlOwned;
   }
 
   std::vector<int> m_module; // unit -> module id

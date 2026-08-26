@@ -3324,3 +3324,353 @@ only the OO hierarchical *search* diverges, which points at the level-wise corre
 instance carries with the whole network's node count (`setNetworkPropertiesFrom`) rather than with its
 own codebooks, and at the `findHierarchicalSuperModules` comparison where that term does not cancel.
 Filed as #1034 with the reproducer.
+
+### F47 — Two independent defects in the #1029 regroup ladder: the gate's granularity, and the probe's teleport codebook (2026-08-25)
+
+Three new networks in the same overlapping family (`networks/debug/Jelena/`, om2 / om4 / om8, joining
+om5 / om6) each fail, and the two causes are unrelated. Both are in the ladder #1029 shipped; neither
+was reachable from the om5 / om6 rows it was built on. Reference points for the whole family, all
+`-C -2d`, seed 123 (planted `.clu` scored with `--no-infomap -c`, soft seed = the same file as `-c`):
+
+| network | planted | one-level | free (tip) | soft-seeded | planted, `--regularized` | one-level, `--regularized` | free `--regularized` (tip) | soft-seeded `--regularized` |
+|---|--:|--:|--:|--:|--:|--:|--:|--:|
+| om2 | 6.789039995 | 7.970163568 | 6.739358212 | — | 7.583820576 | 7.970508085 | **7.939021094** | 7.532737480 |
+| om4 | 6.880650147 | 7.982931800 | 6.861724654 | — | 7.584396786 | 7.982849200 | **7.973772049** | 7.547750556 |
+| om5 | 6.902222527 | 7.989189332 | 6.868127142 | — | 7.791810113 | 7.989613065 | **7.967095701** | 7.735067968 |
+| om6 | 6.930934993 | 7.993397315 | 6.884042436 | — | 8.025567656 | 7.993490371 | 7.981574549 | 7.961829587 |
+| om8 | 6.981034760 | 7.994219601 | **7.412472853** | 6.875237392 | 8.294767960 | 7.994735672 | 7.978912396 | 7.994735672 |
+
+The om column is the planted module count over four (om2 → 8 planted modules, om8 → 32), not the
+overlap; states per physical grows with it too (110 → 229). Every row is zero-co-physical-link order-2
+input, the F42 regime.
+
+**Two rows in that table are not failures at all.** Under `--regularized` the planted partition of om6
+and om8 is *worse than one-level* (8.026 / 8.295 against 7.993 / 7.995), and soft-seeding om8 from it
+collapses to the one-level bound — so on those two the search's 7.982 / 7.979 is at or below the best
+partition that exists, and the planted `.clu` is simply not the regularized objective's optimum. Only
+om2 / om4 / om5 `--regularized` and om8 plain are search failures. Checking that before explaining
+anything saved building a mechanism for a partition the objective does not want.
+
+**Defect 1 — the ladder gates its candidate at BLOCK granularity against a LEAF-granularity
+incumbent (om8, plain `-2d`).** A rung candidate is polished purify-only over the base units
+(`m_noEmptyTargets`, F42's own choice — empty targets at block granularity re-fragment a coarse seed)
+and then compared against `bestCodelength`, which belongs to a partition the leaf move loop has
+already tuned. That is not a comparison between two partitions; it is a comparison between a
+constrained one and a free one, and the ladder loses candidates to the handicap rather than to the
+objective. On om8 the winning candidate reads 7.528429223 as blocks against the incumbent's
+7.446619468 and is rejected; the detector then finds nothing, does not escalate, and the run ends in
+the fragment basin. `COL_REGROUP=off` reproduces the tip's 7.412472853 bit-for-bit — the arm was
+completely inert on om8. Given the same leaf-level tune the incumbent had, the same candidate reads
+**7.075193632**, the detector escalates at 4.99%, and the run ends at **6.893377041 with 911 modules**
+(−7.00% in bits; seeds 234 / 345 give −6.5% / −7.0%). Note the target scale: om8's optimum is ~900
+modules, not the planted 32 — the soft-seeded 6.875237392 also has 894 — so this is not the om5/om6
+"merge ~100 blocks into one community" barrier at a different size, it is the same gate being wrong
+about a 4.7× coarsening.
+
+**Defect 2 — the probe's enter-flow transform rescales flow but not the teleport aggregates (every
+`--regularized` row).** The probe clusters the block graph under `probeNet.flow = probeNet.enter`,
+which rescales each unit's codeword usage from its flow to its boundary flow. The per-unit teleport
+aggregates were left at the original network's scale. **The inconsistency is the defect, not the
+teleport term itself** — the teleport codebook keeps its full magnitude while everything it competes
+with shrinks to boundary flow. With recorded teleportation it then dominates outright: on om2 the
+global teleport flow is ~2x the summed enter flow, and a module's teleport enter/exit is
+size-proportional and community-blind, so the probe minimizes mostly a uniform size penalty. It
+collapses to 100 groups where the consistent probe resolves 536. A no-op without recorded
+teleportation, hence bit-identical on every base and plain-memory row by construction.
+
+**Which correction: rescale, not zero.** The first fix tried was zeroing the aggregates (`drop`) — the
+probe as a pure structural detector. Rescaling them by the same factor the transform applied to flow
+(`scale`) matches the diagnosis instead of routing around it, and it measured better on BOTH axes. At
+`-N10`, seed 123, min of 3, `old` = tip:
+
+| row | old bits | drop bits | scale bits | old t | drop t | scale t |
+|---|--:|--:|--:|--:|--:|--:|
+| om2 | 7.936999705 | 7.549114839 | **7.547672349** | 2.615 s | 3.116 s (+19.2%) | **2.751 s (+5.2%)** |
+| om4 | 7.973076681 | 7.556018667 | 7.557398694 | 7.197 s | 6.833 s (-5.1%) | **5.750 s (-20.1%)** |
+| om5 | 7.967531078 | = | = | 5.986 s | 7.695 s (+28.6%) | **6.619 s (+10.6%)** |
+| om6 | 7.981574549 | = | = | 5.697 s | 7.425 s (+30.3%) | **6.497 s (+14.0%)** |
+| om8 | 7.976140205 | = | 7.977209567 (+0.013%) | 8.352 s | 9.488 s (+13.6%) | **6.247 s (-25.2%)** |
+
+`scale` wins every time cell against `drop` and is equal or better in bits on three of five rows;
+om8's +0.013% in bits comes with -25.2% in time against the tip. `drop` is kept as the A/B handle. The
+residual against the tip is om6 **+14.0%** and om5 **+10.6%** in time at unchanged bits — the price of
+the om2/om4 wins in the same regime, because the ladder now walks a real community hierarchy on these
+networks instead of a collapsed one, and walks more rungs doing it. A within-family trade
+(-4.89%/-5.21% in bits on two rows against +10..14% in time on two others), reported rather than
+hidden.
+
+**The two fixes only work together, which is why neither shows up alone.** Same binary, env-gated:
+
+| network | tip | probe fix only | leaf-tune fix only | both | soft-seeded |
+|---|--:|--:|--:|--:|--:|
+| om2 `-2d --regularized` | 7.939021094 | 7.939021094 | 7.930556214 | **7.550748053** | 7.532737480 |
+| om4 `-2d --regularized` | 7.973772049 | 7.973772049 | 7.973772049 | **7.557135560** | 7.547750556 |
+| om8 `-2d` | 7.412472853 | — | 6.893377041 | **6.893377041** | 6.875237392 |
+
+The probe fix finds the right grouping and only the leaf tune can see that it is right (the probe-fix
+columns use the shipped `scale` correction; `-N1`, seed 123). om2 / om4 `--regularized` both end
+*below* the planted partition (7.551 / 7.557 against 7.584 / 7.584).
+
+**Shape, and what each constraint bought.** Three shapes were measured before the final one.
+(a) Leaf-tune every rung: om8 fixed, but om4 / om5 plain drift +0.003% / +0.007% in bits — the ladder
+reaches a better intermediate (om5's rung goes 7.481 → 7.176) and greedy path dependence hands back a
+hair at the end — for +21.7% / +10.2% in wall. (b) Leaf-tune every REJECTED rung: om2 / om4 / om5 / om6
+plain bit-identical, om8 fixed, but ~4 tunes per ladder. (c) FINAL: leaf-tune the first rung only, and
+only when the cheap score does not already win, capped at ONE sweep. Rung 0 is the only rung whose
+candidate is a grouping of the units the incumbent is itself made of; restricting to it reproduced every
+improved row exactly while cutting a third of the arm's CPU, and at rung 0 the "ladder still
+empty-handed" guard is redundant, so the condition is one clause instead of two. The cap is on the
+TEST, not on the answer — an accepted candidate is re-tuned to convergence by the downstream fine-tune
+regardless, so one sweep only has to establish that the candidate wins. One sweep reproduces the
+uncapped outcome on om8 exactly and on om2 / om4 `--regularized` within 0.003% in bits, and makes the
+test conservative: a candidate needing more than one sweep is not accepted.
+
+**Result: 6 rows better, nothing worse, 22 bit-identical** (interleaved against a clean build of the
+tip a008b85c, md5 45d8f427c293fa9f0a4b8e3e64eecb61; new md5 74138caa8a9dfbecabf5798f84a2579e). Better:
+om8 `-2d` −7.00%, om4 `-2d --regularized` −5.21%, om2 `-2d --regularized` −4.94%, air30k
+`-2d --regularized` −0.072%, air30k `-d --regularized` −0.026%, om5 `-2d --regularized` −0.0096% — all
+in bits. Bit-identical: om2 / om4 / om5 / om6 plain, om6 / om8 `--regularized`, air30k `-C` / `-2` /
+meta / `-N1`, malaria `-N10` / `-N1`, multilayer, lazega, wikispeedia `-2d` / `-d`, powergrid,
+science2001, politicalblogs, jazz, ninetriangles, pref-25.
+
+**The leaf tune's cost on the overlapping family is irreducible at the gate — measured, not argued.**
+On om8 `-C -d -N10`, a bit-identical row, the tune fires 10 times and every one is wasted: +9.8% in
+time for 0 change in bits (min of 5, tip 8.868 s → 9.733 s; with `COL_REGROUP_LEAFTUNE=off` it is
+8.713 s, so the whole cost is the tune and the probe fix is free there, as it must be without recorded
+teleportation). The obvious shaping is a distance gate — only test a candidate whose block-granularity
+score is close to the incumbent — and the distribution kills it. Those 10 wasted tunes sit at gaps of
+1.12, 1.14, 1.20, 1.31, 1.32, 3.99, 4.08, 4.10, 4.33 and 4.60% above the incumbent, and **the rescue
+that is worth −7.00% in bits sits at 1.0986%** — inside the cluster, below five of the wasted ones. A
+threshold that keeps the rescue keeps half the waste; one that removes the waste removes the rescue.
+Earlier evidence agrees from the other side: air30k's useless test is at 0.82%, *closer* than om8's
+rescue. So no gate available at that point separates them, and the cost is reported rather than tuned
+away with a constant that has one rescue as its evidence.
+
+**Cost, measured by the operator's own clock rather than by wall.** The session's machine sat at load
+9.8–16.5 (a video call plus an editor re-indexing), which put ±5–10% on every sub-5% wall delta and
+produced an inversion that gave the game away: malaria read +7.7% with a 1-sweep cap and +3.0% with a
+2-sweep cap, when 2 sweeps strictly do more work. So the arm was clocked directly: **10 capped leaf
+sweeps per `-N10` run, 1.3–2.5% of engine CPU** on air30k `-C` / `-2` / meta, wikispeedia and malaria,
+every one of them bit-identical in bits. That figure is for the HEALTHY rows only — on the overlapping
+family the same tune reaches ~10% (above), because there each sweep is over 50-58k leaves and the
+hierarchical build runs a ladder in every qualifying sub-optimizer. The earlier "+16.6% on air30kmeta" was the loaded machine,
+not the arm — the arm is 0.16 s of a 12 s run. A leaf sweep has no cheaper form, and no pre-filter
+separates the rescue from the doomed tests: om8's winning candidate sits 1.10% above the incumbent at
+block granularity and air30k's useless one 0.82%.
+
+**Open: om5 `-2d --regularized`** stays at 7.966331368 against a soft-seeded 7.735067968 — 3.0% in
+bits, the one row in the family neither fix reaches. It is a third mechanism, not a remainder of these
+two: om2 and om4 came apart only because both defects happened to compose, and there is no evidence
+yet that om5 is one more of the same kind.
+
+**Not in scope, by decision: the object-oriented engine.** The whole family fails there, including the
+om5 / om6 rows #1029 is credited with — OO `-d2` gives om5 one module at 7.989189332 and om6 3364
+modules at 7.803592696, and OO `-d2 --regularized` collapses all five to one module. The regroup ladder
+is columnar-only and its OO counterpart, `coarseTune`'s super-network, is the Louvain equivalence F42
+already killed as dead hypothesis 2, so there is no probe there to fix. Daniel's call: this closes when
+columnar replaces OO, not before, and no separate issue is filed for it.
+
+### F48 — Absolute wall time is not comparable across sessions on this machine; instructions retired is (2026-08-25)
+
+Daniel spotted that web-NotreDame `-C -N10` reads 18.6 s in the #1035 snapshot and 20.0 s in this PR's,
+for what should be the same binary, and asked whether the comparison was even like-for-like. It was —
+and the number still does not come back, which is the finding.
+
+**The comparison is apples-to-apples, checked rather than assumed.** Same binary (md5
+`45d8f427c293fa9f0a4b8e3e64eecb61`, logged on the `sync-1033` arm of `sync1033-fullrefresh`), same
+flags, same instrument (that batch's own note says "engine total_s, min of 3 interleaved reps"), same
+codelength (5.5685292931). Rebuilding from the commit is a no-op: the build is reproducible and the
+md5 already matches.
+
+**It is not load, and there is no clock headroom.** At load 2.2, five reps of that binary give
+instructions 182.44-182.59e9 (±0.09%), cycles 61.73-62.32e9, **3.174-3.200 GHz on an M1 Max whose
+P-core ceiling is 3.228 GHz**, IPC 2.93-2.96, and `timing.total_s` min **19.26 s** — still +3.8% over
+the logged 18.5602 s. `/usr/bin/time -l` shows 19.57 s user against 20.57 s wall, so the process is not
+being starved of CPU (95%); it is executing at ~4% worse IPC for an identical instruction stream. With
+the clock already at the ceiling there is nowhere for the missing 4% to come from except the memory
+subsystem (57 days uptime, 29.2M pageouts).
+
+**And it is not a uniform slowdown, so no correction factor exists.** Same binary, same instrument,
+load 2.2, against the `sync1033-fullrefresh` log:
+
+| row | logged | now (min of 5) | delta |
+|---|--:|--:|--:|
+| powergrid `-C -2 -N10` | 0.1115 s | 0.0965 s | **-13.5%** |
+| powergrid `-C -N10` | 0.2425 s | 0.2356 s | **-2.9%** |
+| web-NotreDame `-C -d -N10` | 18.5602 s | 19.26 s | +3.8% |
+| science2001 `-C -d -N10` | 2.8900 s | 3.0143 s | +4.3% |
+| malaria `-C -N10` | 2.9570 s | 3.1397 s | +6.2% |
+| air30k `-C -N10` | 3.5960 s | 3.9181 s | +9.0% |
+
+Small cache-resident rows come out FASTER than logged, large / memory-heavy ones slower, spanning
+-13.5% to +9.0%. A session-to-session scaling factor would have to be one number; it is not one number.
+
+**What to do about it.** Absolute wall from a previous PR's snapshot is not a baseline — only a paired
+old-vs-new delta measured inside one session is, which is what the comparison tables already report and
+why the conclusions here are unaffected. For the cross-session question, use **instructions retired**
+(`/usr/bin/time -l`), which is load-, clock- and session-independent:
+
+| row | old instructions | new instructions | delta |
+|---|--:|--:|--:|
+| web-NotreDame `-C -d -N10` | 182 430 839 766 | 182 461 445 558 | **+0.017%** |
+| om8 `-C -2d -N1` | 7 076 040 605 | 21 985 221 575 | +211% |
+| om6 `-C -2d --regularized -N10` | 36 568 382 061 | 42 478 160 771 | +16.2% |
+
+web-NotreDame settles the original question outright: this PR issues 0.017% more instructions there, so
+the 18.6 -> 20.0 s gap contains nothing of this change. It also cross-checks the costs that ARE real —
+om6's +16.2% in instructions against the +14.6% in wall measured separately at min-of-5. The snapshot
+now carries an instructions column for exactly this reason, at no extra measurement cost (one
+`/usr/bin/time -l` execution yields both).
+
+**F48 addendum — the central claim above is WRONG; the burst was the artefact (2026-08-26).** Daniel
+pushed twice on the web-NotreDame number and was right both times. Re-measured with the min taken over
+**5 reps spread across a ~55-minute interleaved batch** at load median 3.5 (max 7.3), the tip binary
+gives web-NotreDame `-C -N10` **18.66 s against the logged 18.5602 s (+0.5%)** and `-C -2 -N10`
+**17.21 s against 17.1925 s (+0.1%)**. It reproduces.
+
+What went wrong in the measurement above: those five reps ran **back-to-back inside a single ~2-minute
+window** while Mail.app was indexing at 167% CPU. Min-of-5 over a burst samples ONE machine moment five
+times; min-of-5 spread across a long batch samples five different moments and actually finds the floor.
+The 1-minute load average looked fine (4.0-5.1) throughout, which is exactly why it was not caught —
+`uptime` did not see a single busy process saturating memory bandwidth.
+
+Across the 60 configurations shared with `sync1033-fullrefresh` on the same binary, the corrected batch
+reproduces the log to **within +2.6% / -8.1% for every row above ~0.1 s** (median -3.2%; the large
+negatives are all sub-10-ms rows where min-of-5 simply beats min-of-3 by microseconds). So **absolute
+wall IS comparable across sessions on this machine to a few percent**, and the earlier "no correction
+factor exists" conclusion was an artefact of the burst, not a property of the machine. The rule to
+carry forward is about the *sampling*, not the comparability: **never take min-of-N as a burst — spread
+the reps across the batch**, which the interleaved old/new harness does for free.
+
+The instructions-retired part of F48 stands and is worth keeping: it is load- and clock-independent,
+costs nothing (`/usr/bin/time -l` yields it alongside the wall on the same execution), and it is what
+separated real work from noise on rows where the two disagree — science2001 `-C -F -N10` read +4.9% in
+wall at **+0.01% in instructions** (noise), while om6 `-C -2d --regularized -N10` read +10.0% in wall
+at **+16.1% in instructions** (real). Across the 99 bit-identical configurations the median instruction
+delta is **+0.079%**, which is the cleanest available statement that the change is inert where it
+should be.
+
+**A second thing this turned up: the #1035 snapshot's overlapping rows contradict the run log itself.**
+For om5 `-C -2d -N10` the log holds the SAME binary md5 `50ef742d84a04dfff2471ba5e895c676` twice with
+two different codelengths — **6.8666178047 (top 308)** in `pr1029-final` / `pr1029-fullrefresh`, and
+**7.1087323962 (top 130)** in `sync1033-fullrefresh`. A deterministic binary cannot do both on the same
+input, and today every build reproduces 6.866617805 (top 308): OPENMP=0 and OPENMP=1 alike, with
+`COL_REGROUP=off` / `COL_HSPLIT_WINNER=off` / `COL_PARTSEED_Q=1` all failing to produce 7.1087 either
+(they give 7.89383431 / 6.866617805 / 6.866617805). The `-c` seeded row rules the input out: sync1033
+logged om5 `-2d -c -N1` = 6.8577781131 and it reproduces exactly today, so the `.net` and `.clu` are
+unchanged. So the sync1033 overlapping rows were not produced by the binary their md5 claims — the
+md5 column is written from a hardcoded table by the logging script, i.e. an assertion, not a
+measurement. No cause is offered beyond that; the numbers in this PR are freshly measured and agree
+with the pr1029 batches.
+
+**F47 addendum — defect 2 was mis-stated and is pulled out of the PR; the gate got a real scope (2026-08-26).**
+
+Daniel rejected the `scale` correction as a hack and told me to derive the answer from the map equation
+rather than from the enter-flow transform, which is an implementation detail. He was right on both
+counts, and the derivation lands somewhere neither `keep`, `drop` nor `scale` was.
+
+**What the map equation says.** A module's use rate of the index codebook is its ENTER rate. Under
+recorded teleportation the walker enters a module either across a link or by teleporting into it from
+outside, so
+
+    q_m = e_m + (T - t_m) * w_m
+
+That is not a new formula: it is exactly what `moduleTeleEnter` computes and what every scoring site in
+the columnar core adds to the link-only `m_mEnter` (initPartition, the move loop, the merge operator,
+`hierarchicalCodelengthFromStack`). **Scoring was always correct.** What was wrong is that two places in
+the OPTIMIZER feed themselves `Level::enter`, which carries only `e`: the regroup probe, and the
+hierarchical up-build in `buildHierarchyFromBottom` (both `superNet.flow = cur.enter` and the
+`curIndexCodelength` sum next to it). So the objective has always been `q` while the search proposes
+against `e` whenever teleportation is recorded. My earlier framing — "the transform rescales flow but
+not the teleport aggregates" — described the symptom; the cause is simply the wrong enter.
+
+**Verified that scoring is a separate code path and does not move**: a multi-level tree round trip on
+air30k `-d --regularized` gives **8.993069309** on OO, on the columnar tip, and on the corrected binary
+alike, and the planted `.clu` gives 7.791810113 on all three. Twelve fixed-partition configurations
+across om2/om5/om6/om8, with and without `--regularized`, are identical on all three arms.
+
+**Filed as #1038, with the evidence Daniel asked for.** Instrumenting `buildHierarchyFromBottom` to
+print its own `curIndexCodelength` beside the map equation's value for the SAME level shows the
+optimizer steering by a number that is 43.7% wrong on om5 (4.371369072 against 6.283373261) and 72.0%
+wrong on om8 (3.673964956 against 6.317956021), against +0.04% on air30k — the error tracks how much of
+the flow teleports, and on the overlapping networks the optimizer is blind to 41% of the index rate it
+is minimising. Note what did NOT work as evidence: round-tripping the engine's own output through
+`--no-infomap -c` mismatches by ~8 bits on `-C -2` too, i.e. with no teleportation at all, so that is a
+separate output/read-back problem and cannot be used here (the written `.clu` for air30k has 2646 rows
+for a 13213-state, 183-physical network).
+
+**Not shipped here, and it is COLUMNAR-ONLY.** Daniel's call: the correction is too large for this PR
+and needs its own. It does NOT need a master counterpart, which corrects what I first told him — the OO
+core folds the teleport term straight into the node's enter flow in `aggregateFlowValuesFromLeafToRoot`:
+
+    node.data.enterFlow += (m_root.data.teleportFlow - node.data.teleportFlow) * node.data.teleportWeight;
+    node.data.exitFlow  += node.data.teleportFlow * (1.0 - node.data.teleportWeight);
+
+so in OO `enterFlow` IS q, there is no link-only enter to pick up by mistake, and every consumer of it —
+including the super-network build — is correct by construction. The columnar core keeps the two apart on
+purpose, because a group's (T - t_G)w_G is not additive over its members and must be recomputed from the
+aggregates at each level; the price of that representation is exactly this bug class, a consumer of
+`Level::enter` that forgets to add the teleport term. Worth remembering as a hazard of the split, not
+just as one defect. Consequences of pulling it, measured:
+
+- The corrected index rate ALONE buys nothing and costs time — om2 `-2d --regularized -N1` and om4 stay
+  bit-identical at +32% / +21% in seconds, om6 `-2d --regularized -N10` +25%. It makes the probe resolve
+  finer, better proposals which the block-granularity gate then rejects anyway.
+- So the om2 / om4 `--regularized` wins (-4.89% / -5.21% in bits) belong to that PR, not this one.
+  **This PR now fixes om8 plain only.**
+
+**The gate got its scope from the escalation signal, which is Daniel's "spend the effort where it is
+really needed".** The leaf-granularity test answers an escalation question, so: it runs unconditionally
+in the DETECTOR pass, and is carried into the escalated ladder only when the detector's own accepted
+rung came from it. A trial that escalated on the block score alone is one where the ladder already
+works. Measured in instructions retired (min of 3 for `-N1`, one run for `-N10`):
+
+| row | before the gate | with the gate |
+|---|--:|--:|
+| om5 `-2d --regularized -N10` | +13.8% | **-0.02%** |
+| om6 `-2d --regularized -N10` | +16.1% | **+0.01%** |
+| om8 `-2d --regularized -N1` | +61.4% | **+0.07%** |
+| om2 / om5 / om6 `-2d -N1` | +4.5..4.8% | **+0.003..+0.065%** |
+| om8 `-2d -N1` (the fix) | +210% | +210% (kept) |
+| om8 `-2d -N10` (the fix) | -2.4% | -2.4% (kept) |
+
+Two variants were measured and rejected. **Detector-only** loses the om8 fix entirely (back to
+7.412472853) while still spending +18.7% in instructions — the escalated ladder's rung-0 test is
+load-bearing. **Root-optimizer-only** changes no measured row at all, so it is an unjustified constant
+and was removed rather than kept "just in case".
+
+**The one row that still pays: om8 `-C -d -N10`, +9.2% in instructions at unchanged bits.** There the
+root detector's test genuinely wins, so the escalation gate correctly lets it through, but the
+hierarchical pipeline does not convert the escape into a better answer — both arms end at 6.987473156,
+which is itself worse than what the two-level search now reaches on the same network (6.887234466).
+That gap between `-d` and `-2d` on om8 is present in BOTH arms and is not created here; it looks like a
+separate up-build limitation and is left as an open observation rather than folded into this change.
+
+**F48 second addendum — min-of-N wall does not resolve 2% on this machine, at any N (2026-08-26).**
+
+Daniel: the snapshot showed web-NotreDame `-C -N10` at 18.7 s old and 18.2 s new — a -2.4% "win" on a
+row where the codelength is identical — and asked which number is right. Both are, and that is the
+problem. The five reps behind them, same session, load 2.8-6.8:
+
+| rep | old | new |
+|---|--:|--:|
+| 1 | 19.557 | 19.839 |
+| 2 | 19.895 | 18.922 |
+| 3 | 19.505 | 19.465 |
+| 4 | 19.302 | 19.376 |
+| 5 | **18.660** | **18.216** |
+
+Both minima come from rep 5 and the arms overlap completely in reps 1-4. The WITHIN-arm spread is
+18.66-19.90 = 6.6%, three times the 2.4% "difference" between arms, so min-of-N is just latching onto
+whichever arm caught the luckiest sample; more reps cannot fix that, they only give the luck more
+chances. Instructions retired for the same pair differ by **-0.042%**, which is the true answer: the
+code does the same work there, as it must, since the ladder cannot even run on a base network.
+
+Consequences for the protocol, which is now what Daniel asked for rather than what I had:
+- **Instructions retired is the comparison**; wall is context. Any wall delta under a couple of percent
+  on a row whose instructions moved <0.1% is noise and must not be reported as a result.
+- **One run per `-N10` row** is enough — the deterministic codelength plus the instruction count carry
+  the comparison — and **interleaved min-of-3 for `-N1` rows**. That is ~12 minutes for the full set
+  instead of the 55 the min-of-5 sweep took.
+- The earlier claim that min-of-3 was insufficient was never demonstrated; what was demonstrated was
+  burst-versus-spread, and folding the two together was wrong.

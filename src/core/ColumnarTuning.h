@@ -74,6 +74,74 @@ namespace columnar {
     return on;
   }
 
+  // Leaf-granularity re-tune of a rejected regroup candidate: sweep cap, from
+  // env COL_REGROUP_LEAFTUNE (`off`/`0` disables it and restores the pre-fix
+  // gate; any other integer overrides the cap).
+  //
+  // A rung candidate is polished purify-only at BLOCK granularity, then compared
+  // against an incumbent that has already been tuned at leaf granularity. That
+  // comparison is not between two partitions, it is between a constrained
+  // partition and a free one, and the ladder loses candidates to the handicap
+  // rather than to the objective: on N256 om8 the winning candidate scores
+  // 7.5284 as blocks against the incumbent's 7.4466 and is rejected, but 7.0752
+  // once its leaves are allowed to move, and the run ends at 6.8934 instead of
+  // 7.4125 (-7.00% in bits).
+  //
+  // The cap is on the TEST, not on the answer: an accepted candidate is re-tuned
+  // to convergence by the downstream fine-tune either way, so a single sweep
+  // only has to establish that the candidate beats the incumbent. One sweep
+  // reproduces the uncapped outcome on every measured row (om8 identical, om2/
+  // om4 `--regularized` within 0.003% in bits) at a fraction of the cost, and
+  // makes the test conservative: a candidate that needs more than one sweep to
+  // win is not accepted.
+  //
+  // SCOPE, which is what keeps it from costing anything where it cannot win.
+  // The test answers an ESCALATION question — is this trial in the pathological
+  // basin? — so it runs unconditionally in the detector pass, and is carried into
+  // the escalated ladder only when the detector's own accepted rung CAME FROM it.
+  // A trial that escalated on the block score alone is one where the ladder is
+  // already working, and paying there buys nothing: with that gate the
+  // `--regularized` overlapping rows go from +13.8..+16.1% to -0.02..+0.07% in
+  // instructions retired, at unchanged bits. Scoping it to the detector alone was
+  // measured too and is strictly worse than both — it loses the om8 fix entirely
+  // while still spending +18.7% in instructions.
+  //
+  // It runs on the ladder's FIRST RUNG only, and only when the cheap block score
+  // does not already win: rung 0's candidate is the one grouping built from the
+  // same units the incumbent is made of, later rungs are strictly coarser
+  // re-offerings of the same probe hierarchy, and restricting to rung 0
+  // reproduces every improved row exactly (om8, om2/om4 `--regularized`,
+  // air30k `--regularized`) while cutting a third of the arm's CPU. A ladder
+  // whose first rung wins outright pays nothing and stays bit-identical to the
+  // pre-fix engine — that is every healthy benchmark row and the whole
+  // om2/om4/om5/om6 plain family.
+  //
+  // Residual cost where it buys nothing, in instructions retired (load- and
+  // clock-independent, so these are the numbers to trust): +0.003..+0.07% on the
+  // plain overlapping rows and the `--regularized` ones, under +1% on the healthy
+  // memory/metadata rows, and **+9.2% on om8 `-C -d -N10`** — the one row that
+  // still pays. There the root detector's test genuinely wins, so the escalation
+  // gate lets it through, but the hierarchical pipeline does not convert the
+  // escape into a better answer (both arms end at 6.987473156, itself worse than
+  // what the two-level search now reaches, 6.887234466). A distance gate cannot
+  // help: on that row the ten wasted tests sit at score gaps of 1.12-4.60% above
+  // the incumbent and the rescue worth -7.00% in bits sits at 1.0986%, inside the
+  // cluster, with air30k's useless test closer still at 0.82%.
+  constexpr unsigned int kRegroupLeafTuneSweeps = 1;
+  inline unsigned int regroupLeafTuneSweeps()
+  {
+    static const unsigned int n = [] {
+      const char* e = std::getenv("COL_REGROUP_LEAFTUNE");
+      if (e == nullptr)
+        return kRegroupLeafTuneSweeps;
+      if (std::string(e) == "off")
+        return 0u;
+      const int v = std::atoi(e);
+      return v > 0 ? static_cast<unsigned int>(v) : 0u;
+    }();
+    return n;
+  }
+
   // Hierarchical split operator (experimental, see splitLevelModules), from env
   // COL_HSPLIT:
   //   off/unset (default) | 1 | all  = every stack level
