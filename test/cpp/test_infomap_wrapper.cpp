@@ -711,6 +711,38 @@ TEST_CASE("Run reports write machine-readable JSON with no-file-output [fast][co
   removeFiles(paths);
 }
 
+TEST_CASE("Per-trial num_levels reports the tree's depth, not the first-child branch's [fast][core][lifecycle][output]")
+{
+  // numLevels() walks the first-child chain only, so on a ragged tree it reported one
+  // arbitrary branch's depth while the console summary, the .tree file and the JSON tree
+  // output all reported maxTreeDepth. --timing-json and --trial-results share the record,
+  // so both carried the shallow branch (#1036). --no-infomap keeps the fixture's ragged
+  // shape through the trial, so the two depths stay observably different here.
+  const std::vector<std::string> paths = {
+    "run_report_ragged_timing.json",
+    "run_report_ragged_trials.json",
+  };
+  removeFiles(paths);
+
+  InfomapWrapper im("--silent --seed 1 --num-trials 1 --no-file-output --no-infomap"
+                    " --cluster-data "
+                    + infomap::test::clusterFixturePath("twotriangles_ragged_branches.tree")
+                    + " --timing-json " + paths[0] + " --trial-results " + paths[1]);
+  im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+
+  im.run();
+
+  // Preconditions. Without both of these the checks below would pass on the old value
+  // too: the tree has to be ragged, and the shallow branch has to be the first child.
+  REQUIRE(im.maxTreeDepth() == 3);
+  REQUIRE(im.numLevels() == 2);
+
+  CHECK(infomap::test::readTextFile(paths[0]).find("\"num_levels\":3") != std::string::npos);
+  CHECK(infomap::test::readTextFile(paths[1]).find("\"num_levels\":3") != std::string::npos);
+
+  removeFiles(paths);
+}
+
 TEST_CASE("Parallel trials report the best trial codelength [fast][core][lifecycle][openmp]")
 {
   InfomapWrapper im("--silent --seed 7 --num-trials 4 --parallel-trials --no-file-output");

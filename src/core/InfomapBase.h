@@ -122,7 +122,9 @@ public:
   bool haveNonTrivialModules() const { return numNonTrivialTopModules() > 0; }
 
   /**
-   * Number of node levels below the root in current Infomap instance, 1 if no modules
+   * Depth of the first-child branch below the root, 1 if no modules. This equals the
+   * tree's depth only when the tree is uniform-depth; on a ragged tree it under-counts.
+   * Use maxTreeDepth for anything reported to a user or written to a file (#1036).
    */
   unsigned int numLevels() const;
 

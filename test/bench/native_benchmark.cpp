@@ -147,7 +147,7 @@ int main(int argc, char* argv[])
           runSec,
           currentPeakRss,
           im.numTopModules(),
-          im.numLevels(),
+          im.maxTreeDepth(), // not numLevels: that is one branch's depth, #1036
           im.codelength(),
       });
     }
@@ -166,7 +166,7 @@ int main(int argc, char* argv[])
     result["num_nodes"] = inputNodeCount;
     result["num_links"] = inputLinkCount;
     result["num_top_modules"] = im.numTopModules();
-    result["num_levels"] = im.numLevels();
+    result["num_levels"] = im.maxTreeDepth(); // matches the Python benchmark's num_levels, #1036
     result["codelength"] = im.codelength();
     result["higher_order_input"] = higherOrderInput;
     result["directed_input"] = directedInput;

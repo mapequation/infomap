@@ -1005,7 +1005,11 @@ private:
     // From trialSeed, not from the live config field: seedTrial has already moved
     // that field to this trial's seed, so recomputing from it would double-count
     // the global index.
-    m_timing.recordTrial(trialIndex, 0, trialSeed(trialIndex), timer.getElapsedTimeInSec(), m_infomap.m_hierarchicalCodelength, m_infomap.numTopModules(), m_infomap.numLevels());
+    // maxTreeDepth, not numLevels: numLevels only walks the first-child chain, so on a
+    // ragged tree it records one arbitrary branch's depth and the JSON disagrees with the
+    // .tree file and the summary it describes (#1036). The parallel path below already
+    // records printPerLevelCodelength's level count, which is the same all-leaves depth.
+    m_timing.recordTrial(trialIndex, 0, trialSeed(trialIndex), timer.getElapsedTimeInSec(), m_infomap.m_hierarchicalCodelength, m_infomap.numTopModules(), m_infomap.maxTreeDepth());
 
     if (m_infomap.printAllTrials && m_numTrials > 1) {
       auto outputTimer = m_timing.scope("output_s");
@@ -1222,7 +1226,10 @@ std::ostream& operator<<(std::ostream& out, const InfomapBase& infomap)
 
 unsigned int InfomapBase::numLevels() const
 {
-  // TODO: Make sure this is not called unless tree is guaranteed to have even depth!
+  // Walks the first-child chain only, so this is the depth of ONE branch, not the tree's.
+  // Valid only where the tree is uniform-depth by construction (the two-level guards, the
+  // super-level bookkeeping). Anything that reports a depth to a user or to a file wants
+  // maxTreeDepth instead -- see #1036, #898.
   unsigned int depth = 0;
   InfoNode* n = m_root.firstChild;
   while (n != nullptr) {
@@ -1388,8 +1395,11 @@ InfomapBase& InfomapBase::initPartition(const std::string& clusterDataFile, bool
     initPartition(clusterMap.clusterIds(), hard);
   }
 
-  Console().status("Initial", fmt::format(FMT_STRING("generated {} levels, codelength {}"), numLevels(), io::toPrecision(m_hierarchicalCodelength)));
-  Console::detail(1, "generated {} levels, codelength {:g} + {:g} = {}", numLevels(), getIndexCodelength(), m_hierarchicalCodelength - getIndexCodelength(), io::toPrecision(m_hierarchicalCodelength));
+  // maxTreeDepth, not numLevels (#1036): an initial partition read from a .tree file is
+  // exactly the ragged case, and numLevels would report the first-child branch's depth.
+  const unsigned int initialDepth = maxTreeDepth();
+  Console().status("Initial", fmt::format(FMT_STRING("generated {} levels, codelength {}"), initialDepth, io::toPrecision(m_hierarchicalCodelength)));
+  Console::detail(1, "generated {} levels, codelength {:g} + {:g} = {}", initialDepth, getIndexCodelength(), m_hierarchicalCodelength - getIndexCodelength(), io::toPrecision(m_hierarchicalCodelength));
 
   return *this;
 }
@@ -3059,7 +3069,10 @@ unsigned int InfomapBase::recursivePartition()
   std::string queueSource;
   if (fastHierarchicalSolution > 0) {
     queueLeafModules(partitionQueue);
-    queueSource = fmt::format(FMT_STRING("{} sub modules on level {}"), partitionQueue.size(), numLevels() - 2);
+    // partitionQueue.level, not numLevels() - 2 (#1036): queueLeafModules already recorded
+    // the depth of the deepest queued module, computed over all branches. numLevels walks
+    // the first-child chain, and its - 2 named the level above the modules it describes.
+    queueSource = fmt::format(FMT_STRING("{} sub modules on level {}"), partitionQueue.size(), partitionQueue.level);
   } else {
     queueTopModules(partitionQueue);
     queueSource = fmt::format(FMT_STRING("{} top modules"), partitionQueue.size());
