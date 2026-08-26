@@ -3589,6 +3589,16 @@ air30k `-d --regularized` gives **8.993069309** on OO, on the columnar tip, and 
 alike, and the planted `.clu` gives 7.791810113 on all three. Twelve fixed-partition configurations
 across om2/om5/om6/om8, with and without `--regularized`, are identical on all three arms.
 
+**Filed as #1038, with the evidence Daniel asked for.** Instrumenting `buildHierarchyFromBottom` to
+print its own `curIndexCodelength` beside the map equation's value for the SAME level shows the
+optimizer steering by a number that is 43.7% wrong on om5 (4.371369072 against 6.283373261) and 72.0%
+wrong on om8 (3.673964956 against 6.317956021), against +0.04% on air30k — the error tracks how much of
+the flow teleports, and on the overlapping networks the optimizer is blind to 41% of the index rate it
+is minimising. Note what did NOT work as evidence: round-tripping the engine's own output through
+`--no-infomap -c` mismatches by ~8 bits on `-C -2` too, i.e. with no teleportation at all, so that is a
+separate output/read-back problem and cannot be used here (the written `.clu` for air30k has 2646 rows
+for a 13213-state, 183-physical network).
+
 **Not shipped here, and it is COLUMNAR-ONLY.** Daniel's call: the correction is too large for this PR
 and needs its own. It does NOT need a master counterpart, which corrects what I first told him — the OO
 core folds the teleport term straight into the node's enter flow in `aggregateFlowValuesFromLeafToRoot`:
