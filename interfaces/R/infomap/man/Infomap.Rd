@@ -75,7 +75,8 @@ wrong values (numNodes 11 for a three-node network) or aborting R (#900).}
 
 \item{\code{num_non_trivial_top_modules}}{Number of non-trivial top modules.}
 
-\item{\code{num_levels}}{Number of levels in the tree.}
+\item{\code{num_levels}}{Depth of the hierarchical tree. Alias of
+\code{max_tree_depth}.}
 
 \item{\code{max_tree_depth}}{Maximum depth of the tree.}
 
