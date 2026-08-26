@@ -3562,3 +3562,105 @@ unchanged. So the sync1033 overlapping rows were not produced by the binary thei
 md5 column is written from a hardcoded table by the logging script, i.e. an assertion, not a
 measurement. No cause is offered beyond that; the numbers in this PR are freshly measured and agree
 with the pr1029 batches.
+
+**F47 addendum — defect 2 was mis-stated and is pulled out of the PR; the gate got a real scope (2026-08-26).**
+
+Daniel rejected the `scale` correction as a hack and told me to derive the answer from the map equation
+rather than from the enter-flow transform, which is an implementation detail. He was right on both
+counts, and the derivation lands somewhere neither `keep`, `drop` nor `scale` was.
+
+**What the map equation says.** A module's use rate of the index codebook is its ENTER rate. Under
+recorded teleportation the walker enters a module either across a link or by teleporting into it from
+outside, so
+
+    q_m = e_m + (T - t_m) * w_m
+
+That is not a new formula: it is exactly what `moduleTeleEnter` computes and what every scoring site in
+the columnar core adds to the link-only `m_mEnter` (initPartition, the move loop, the merge operator,
+`hierarchicalCodelengthFromStack`). **Scoring was always correct.** What was wrong is that two places in
+the OPTIMIZER feed themselves `Level::enter`, which carries only `e`: the regroup probe, and the
+hierarchical up-build in `buildHierarchyFromBottom` (both `superNet.flow = cur.enter` and the
+`curIndexCodelength` sum next to it). So the objective has always been `q` while the search proposes
+against `e` whenever teleportation is recorded. My earlier framing — "the transform rescales flow but
+not the teleport aggregates" — described the symptom; the cause is simply the wrong enter.
+
+**Verified that scoring is a separate code path and does not move**: a multi-level tree round trip on
+air30k `-d --regularized` gives **8.993069309** on OO, on the columnar tip, and on the corrected binary
+alike, and the planted `.clu` gives 7.791810113 on all three. Twelve fixed-partition configurations
+across om2/om5/om6/om8, with and without `--regularized`, are identical on all three arms.
+
+**Not shipped here, and it is COLUMNAR-ONLY.** Daniel's call: the correction is too large for this PR
+and needs its own. It does NOT need a master counterpart, which corrects what I first told him — the OO
+core folds the teleport term straight into the node's enter flow in `aggregateFlowValuesFromLeafToRoot`:
+
+    node.data.enterFlow += (m_root.data.teleportFlow - node.data.teleportFlow) * node.data.teleportWeight;
+    node.data.exitFlow  += node.data.teleportFlow * (1.0 - node.data.teleportWeight);
+
+so in OO `enterFlow` IS q, there is no link-only enter to pick up by mistake, and every consumer of it —
+including the super-network build — is correct by construction. The columnar core keeps the two apart on
+purpose, because a group's (T - t_G)w_G is not additive over its members and must be recomputed from the
+aggregates at each level; the price of that representation is exactly this bug class, a consumer of
+`Level::enter` that forgets to add the teleport term. Worth remembering as a hazard of the split, not
+just as one defect. Consequences of pulling it, measured:
+
+- The corrected index rate ALONE buys nothing and costs time — om2 `-2d --regularized -N1` and om4 stay
+  bit-identical at +32% / +21% in seconds, om6 `-2d --regularized -N10` +25%. It makes the probe resolve
+  finer, better proposals which the block-granularity gate then rejects anyway.
+- So the om2 / om4 `--regularized` wins (-4.89% / -5.21% in bits) belong to that PR, not this one.
+  **This PR now fixes om8 plain only.**
+
+**The gate got its scope from the escalation signal, which is Daniel's "spend the effort where it is
+really needed".** The leaf-granularity test answers an escalation question, so: it runs unconditionally
+in the DETECTOR pass, and is carried into the escalated ladder only when the detector's own accepted
+rung came from it. A trial that escalated on the block score alone is one where the ladder already
+works. Measured in instructions retired (min of 3 for `-N1`, one run for `-N10`):
+
+| row | before the gate | with the gate |
+|---|--:|--:|
+| om5 `-2d --regularized -N10` | +13.8% | **-0.02%** |
+| om6 `-2d --regularized -N10` | +16.1% | **+0.01%** |
+| om8 `-2d --regularized -N1` | +61.4% | **+0.07%** |
+| om2 / om5 / om6 `-2d -N1` | +4.5..4.8% | **+0.003..+0.065%** |
+| om8 `-2d -N1` (the fix) | +210% | +210% (kept) |
+| om8 `-2d -N10` (the fix) | -2.4% | -2.4% (kept) |
+
+Two variants were measured and rejected. **Detector-only** loses the om8 fix entirely (back to
+7.412472853) while still spending +18.7% in instructions — the escalated ladder's rung-0 test is
+load-bearing. **Root-optimizer-only** changes no measured row at all, so it is an unjustified constant
+and was removed rather than kept "just in case".
+
+**The one row that still pays: om8 `-C -d -N10`, +9.2% in instructions at unchanged bits.** There the
+root detector's test genuinely wins, so the escalation gate correctly lets it through, but the
+hierarchical pipeline does not convert the escape into a better answer — both arms end at 6.987473156,
+which is itself worse than what the two-level search now reaches on the same network (6.887234466).
+That gap between `-d` and `-2d` on om8 is present in BOTH arms and is not created here; it looks like a
+separate up-build limitation and is left as an open observation rather than folded into this change.
+
+**F48 second addendum — min-of-N wall does not resolve 2% on this machine, at any N (2026-08-26).**
+
+Daniel: the snapshot showed web-NotreDame `-C -N10` at 18.7 s old and 18.2 s new — a -2.4% "win" on a
+row where the codelength is identical — and asked which number is right. Both are, and that is the
+problem. The five reps behind them, same session, load 2.8-6.8:
+
+| rep | old | new |
+|---|--:|--:|
+| 1 | 19.557 | 19.839 |
+| 2 | 19.895 | 18.922 |
+| 3 | 19.505 | 19.465 |
+| 4 | 19.302 | 19.376 |
+| 5 | **18.660** | **18.216** |
+
+Both minima come from rep 5 and the arms overlap completely in reps 1-4. The WITHIN-arm spread is
+18.66-19.90 = 6.6%, three times the 2.4% "difference" between arms, so min-of-N is just latching onto
+whichever arm caught the luckiest sample; more reps cannot fix that, they only give the luck more
+chances. Instructions retired for the same pair differ by **-0.042%**, which is the true answer: the
+code does the same work there, as it must, since the ladder cannot even run on a base network.
+
+Consequences for the protocol, which is now what Daniel asked for rather than what I had:
+- **Instructions retired is the comparison**; wall is context. Any wall delta under a couple of percent
+  on a row whose instructions moved <0.1% is noise and must not be reported as a result.
+- **One run per `-N10` row** is enough — the deterministic codelength plus the instruction count carry
+  the comparison — and **interleaved min-of-3 for `-N1` rows**. That is ~12 minutes for the full set
+  instead of the 55 the min-of-5 sweep took.
+- The earlier claim that min-of-3 was insufficient was never demonstrated; what was demonstrated was
+  burst-versus-spread, and folding the two together was wrong.

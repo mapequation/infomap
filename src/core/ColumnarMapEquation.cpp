@@ -919,7 +919,11 @@ double ColumnarTwoLevel::optimizeTwoLevel(unsigned int maxAggPasses, bool doFine
       // true objective independently, keep-best. Rung cost shrinks with the
       // unit count, so the first probe dominates. Returns whether any rung
       // improved the best partition.
-      auto runLadder = [&](const Level& baseLvl, const std::vector<int>& comp0) -> bool {
+      // Did the detector's accepted rung come FROM the leaf-granularity test?
+      // That is the signal that this trial is in the basin the test exists for,
+      // and it is what decides whether the escalated ladder pays for the test too.
+      bool tuneWonInDetector = false;
+      auto runLadder = [&](const Level& baseLvl, const std::vector<int>& comp0, bool allowLeafTune, bool isDetector) -> bool {
         bool anyAccepted = false;
         const int nBase = baseLvl.n;
         // Every rung's candidate is polished at BASE granularity: the seeded
@@ -951,35 +955,9 @@ double ColumnarTwoLevel::optimizeTwoLevel(unsigned int maxAggPasses, bool doFine
           // base graph's community structure at each scale.
           Level probeNet = rungLvl;
           probeNet.flow = probeNet.enter;
-          // The transform rescaled codeword usage to boundary flow; the
-          // recorded-teleport aggregates did not come along, so carrying them
-          // into the probe puts a term the transform already invalidated into
-          // its objective — and on regularized input a dominant, community-blind
-          // one (see columnar::regroupProbeDropsTeleport). No-op without
-          // recorded teleportation.
-          const int teleMode = m_recordedTeleport ? regroupProbeTeleportMode() : 0;
-          double probeTotalTele = m_totalTeleFlow;
-          if (teleMode == 0) {
-            std::fill(probeNet.teleFlow.begin(), probeNet.teleFlow.end(), 0.0);
-            std::fill(probeNet.teleWeight.begin(), probeNet.teleWeight.end(), 0.0);
-            probeTotalTele = 0.0;
-          } else if (teleMode == 2) {
-            // EXPERIMENT (COL_REGROUP_PROBE_TELE=scale): rescale the teleport
-            // aggregates by the same factor the transform applied to flow, so the
-            // teleport codebook keeps its relative weight instead of being dropped.
-            double sf = 0.0, sflow = 0.0;
-            for (int i = 0; i < rungLvl.n; ++i) {
-              sf += rungLvl.enter[i];
-              sflow += rungLvl.flow[i];
-            }
-            const double k = sflow > 0.0 ? sf / sflow : 0.0;
-            for (auto& x : probeNet.teleFlow)
-              x *= k;
-            probeTotalTele = m_totalTeleFlow * k;
-          }
           ColumnarTwoLevel probe;
           probe.setInterruptCallback(m_interruptCallback);
-          probe.buildFromLevel(std::move(probeNet), m_undirected, m_seed, 0.0, teleMode != 0, probeTotalTele);
+          probe.buildFromLevel(std::move(probeNet), m_undirected, m_seed, 0.0, m_recordedTeleport, m_totalTeleFlow);
           probe.optimizeTwoLevel(0, false);
           const int probeK = static_cast<int>(probe.numTopModules());
           if (probeK <= 1 || probeK >= nU)
@@ -1011,15 +989,23 @@ double ColumnarTwoLevel::optimizeTwoLevel(unsigned int maxAggPasses, bool doFine
             // the incumbent has already been tuned at leaf granularity, so a
             // straight comparison charges the candidate for a constraint the
             // incumbent never carried. Re-tune the candidate at leaf granularity
-            // (empty targets on, one sweep) and score it there instead. Only on
-            // the FIRST rung, and only when the cheap score does not already win:
-            // rung 0 is the one candidate built from the same units the incumbent
-            // is made of, later rungs are strictly coarser re-offerings, and on
-            // every row this fix improves the rescue happens at rung 0. A ladder
-            // whose first rung wins outright therefore keeps the pre-fix
-            // trajectory exactly. See columnar::regroupLeafTuneSweeps.
+            // (empty targets on, one sweep) and score it there instead.
+            //
+            // Scope: first rung only, only when the cheap score does not already
+            // win, and — in the escalated ladder — only when the detector's own
+            // accepted rung came from this test (tuneWonInDetector). This is an escalation question,
+            // not a ladder question — the detector exists to decide whether the
+            // trial is in the pathological basin, and a candidate the block score
+            // rejects is exactly where that decision is being got wrong. A trial
+            // that escalated on the block score alone is one where the ladder is
+            // working normally, so carrying the test into its full ladder is pure
+            // cost — that is every `--regularized` overlapping row. Rung 0
+            // is the one candidate built from the same units the incumbent is
+            // made of; later rungs are strictly coarser re-offerings, and on
+            // every row this fix improves, the rescue happens at rung 0.
             const unsigned int leafSweeps = regroupLeafTuneSweeps();
-            if (leafSweeps != 0 && rung == 0 && L >= bestCodelength - kMinImprovement) {
+            bool tunedThisRung = false;
+            if (leafSweeps != 0 && allowLeafTune && rung == 0 && L >= bestCodelength - kMinImprovement) {
               for (auto* cp : unitCorr)
                 cp->resetUnitsToLeaves();
               activateLeafLevel();
@@ -1039,6 +1025,7 @@ double ColumnarTwoLevel::optimizeTwoLevel(unsigned int maxAggPasses, bool doFine
                 newTop = std::move(leafTop);
                 c = cLeaf;
                 L = leafL;
+                tunedThisRung = true;
               }
               m_leafMoveLoop = false;
               reactivateLevelCopy(baseLvl);
@@ -1051,6 +1038,8 @@ double ColumnarTwoLevel::optimizeTwoLevel(unsigned int maxAggPasses, bool doFine
               bestK = static_cast<unsigned int>(c);
               anyAccepted = true;
               rejected = 0;
+              if (tunedThisRung && isDetector)
+                tuneWonInDetector = true;
             } else {
               ++rejected;
             }
@@ -1092,7 +1081,7 @@ double ColumnarTwoLevel::optimizeTwoLevel(unsigned int maxAggPasses, bool doFine
         const unsigned int savedK = bestK;
         const double savedL = bestCodelength;
         Level convergedBase = aggregateLevel(leaf0(), bestTop, static_cast<int>(bestK), m_undirected);
-        runLadder(convergedBase, savedTop);
+        runLadder(convergedBase, savedTop, true, true);
         escalate = savedL - bestCodelength > 1e-3 * savedL;
         bestTop = savedTop;
         bestK = savedK;
@@ -1100,7 +1089,7 @@ double ColumnarTwoLevel::optimizeTwoLevel(unsigned int maxAggPasses, bool doFine
       }
       m_regroupEscalated = m_regroupEscalated || escalate;
       if (escalate)
-        runLadder(trajLevel(0), trajComp[0]);
+        runLadder(trajLevel(0), trajComp[0], tuneWonInDetector, false);
     }
 
     m_moduleCorrActive = false;
