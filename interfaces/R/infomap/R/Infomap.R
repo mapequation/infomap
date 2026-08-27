@@ -1441,7 +1441,7 @@ InfomapClass <- R6::R6Class(
     },
     #' @field num_levels Depth of the hierarchical tree. Alias of
     #'   `max_tree_depth`.
-    num_levels = function() private$.swig$maxTreeDepth(),
+    num_levels = function() private$.swig$numLevels(),
     #' @field max_tree_depth Maximum depth of the tree.
     max_tree_depth = function() private$.swig$maxTreeDepth(),
     #' @field num_leaf_nodes Number of leaf nodes in the tree.

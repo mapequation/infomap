@@ -1005,11 +1005,11 @@ private:
     // From trialSeed, not from the live config field: seedTrial has already moved
     // that field to this trial's seed, so recomputing from it would double-count
     // the global index.
-    // maxTreeDepth, not numLevels: numLevels only walks the first-child chain, so on a
-    // ragged tree it records one arbitrary branch's depth and the JSON disagrees with the
-    // .tree file and the summary it describes (#1036). The parallel path below already
-    // records printPerLevelCodelength's level count, which is the same all-leaves depth.
-    m_timing.recordTrial(trialIndex, 0, trialSeed(trialIndex), timer.getElapsedTimeInSec(), m_infomap.m_hierarchicalCodelength, m_infomap.numTopModules(), m_infomap.maxTreeDepth());
+    // numLevels, which counts over every branch. This used to walk the first-child chain
+    // only, so on a ragged tree the JSON recorded one arbitrary branch's depth and
+    // disagreed with the .tree file and the summary it describes (#1036). The parallel
+    // path below records printPerLevelCodelength's level count, which is the same depth.
+    m_timing.recordTrial(trialIndex, 0, trialSeed(trialIndex), timer.getElapsedTimeInSec(), m_infomap.m_hierarchicalCodelength, m_infomap.numTopModules(), m_infomap.numLevels());
 
     if (m_infomap.printAllTrials && m_numTrials > 1) {
       auto outputTimer = m_timing.scope("output_s");
@@ -1226,10 +1226,11 @@ std::ostream& operator<<(std::ostream& out, const InfomapBase& infomap)
 
 unsigned int InfomapBase::numLevels() const
 {
-  // Walks the first-child chain only, so this is the depth of ONE branch, not the tree's.
-  // Valid only where the tree is uniform-depth by construction (the two-level guards, the
-  // super-level bookkeeping). Anything that reports a depth to a user or to a file wants
-  // maxTreeDepth instead -- see #1036, #898.
+  return maxTreeDepth();
+}
+
+unsigned int InfomapBase::depthOfFirstLeaf() const
+{
   unsigned int depth = 0;
   InfoNode* n = m_root.firstChild;
   while (n != nullptr) {
@@ -1395,9 +1396,9 @@ InfomapBase& InfomapBase::initPartition(const std::string& clusterDataFile, bool
     initPartition(clusterMap.clusterIds(), hard);
   }
 
-  // maxTreeDepth, not numLevels (#1036): an initial partition read from a .tree file is
-  // exactly the ragged case, and numLevels would report the first-child branch's depth.
-  const unsigned int initialDepth = maxTreeDepth();
+  // An initial partition read from a .tree file is exactly the ragged case, so this has
+  // to count over every branch -- it used to print the first-child branch's depth (#1036).
+  const unsigned int initialDepth = numLevels();
   Console().status("Initial", fmt::format(FMT_STRING("generated {} levels, codelength {}"), initialDepth, io::toPrecision(m_hierarchicalCodelength)));
   Console::detail(1, "generated {} levels, codelength {:g} + {:g} = {}", initialDepth, getIndexCodelength(), m_hierarchicalCodelength - getIndexCodelength(), io::toPrecision(m_hierarchicalCodelength));
 
@@ -2586,7 +2587,7 @@ void InfomapBase::findTopModulesRepeatedly(unsigned int maxLevels)
   std::vector<std::string> passList; // "<nodes>*<loops>" per aggregation pass, for the -v trace
   Log(3).print("\nIteration {}:\n", m_tuneIterationIndex + 1);
   m_aggregationLevel = 0;
-  unsigned int numLevelsConsolidated = numLevels() - 1;
+  unsigned int numLevelsConsolidated = depthOfFirstLeaf() - 1;
   if (maxLevels == 0)
     maxLevels = std::numeric_limits<unsigned int>::max();
 
@@ -2632,8 +2633,8 @@ void InfomapBase::findTopModulesRepeatedly(unsigned int maxLevels)
 
 unsigned int InfomapBase::fineTune()
 {
-  if (numLevels() != 2)
-    throw std::logic_error("InfomapBase::fineTune() called but numLevels != 2");
+  if (depthOfFirstLeaf() != 2)
+    throw std::logic_error("InfomapBase::fineTune() called but the tree is not two-level");
 
   setActiveNetworkFromLeafs();
   initPartition();
@@ -2670,8 +2671,8 @@ unsigned int InfomapBase::fineTune()
 
 unsigned int InfomapBase::coarseTune()
 {
-  if (numLevels() != 2)
-    throw std::logic_error("InfomapBase::coarseTune() called but numLevels != 2");
+  if (depthOfFirstLeaf() != 2)
+    throw std::logic_error("InfomapBase::coarseTune() called but the tree is not two-level");
 
   Log(4) << "Coarse-tune...\nPartition each module in sub-modules for coarse tune...\n";
 
@@ -2783,7 +2784,7 @@ unsigned int InfomapBase::findHierarchicalSuperModules(unsigned int superLevelLi
   double hierarchicalCodelength = getCodelength();
   double workingHierarchicalCodelength = hierarchicalCodelength;
 
-  const unsigned int prefBaseDepth = numLevels(); // #308: depth before super levels are added
+  const unsigned int prefBaseDepth = depthOfFirstLeaf(); // #308: depth before super levels are added
 
   if (!haveModules())
     throw std::logic_error("Trying to find hierarchical super modules without any modules");
@@ -2984,12 +2985,12 @@ void InfomapBase::resetFlowOnModules()
 
 unsigned int InfomapBase::removeModules()
 {
-  // Flatten until every child of root is a leaf. numLevels() only follows the
-  // firstChild chain (it assumes a uniform-depth tree, see its TODO), so it
-  // under-counts a ragged multilevel tree and would stop early, leaving deeper
-  // module subtrees behind. Loop on "any non-leaf child" instead so ragged trees
-  // (e.g. from materialize-and-free) flatten completely. For the uniform trees
-  // produced elsewhere this does the same number of passes as before.
+  // Flatten until every child of root is a leaf. This used to loop on numLevels(),
+  // which then followed the firstChild chain only (what depthOfFirstLeaf does now), so
+  // it under-counted a ragged multilevel tree and stopped early, leaving deeper module
+  // subtrees behind. Loop on "any non-leaf child" instead so ragged trees (e.g. from
+  // materialize-and-free) flatten completely. For the uniform trees produced elsewhere
+  // this does the same number of passes as before.
   auto rootHasModuleChild = [this]() {
     for (auto& child : m_root)
       if (!child.isLeaf())
@@ -3011,11 +3012,11 @@ unsigned int InfomapBase::removeModules()
 unsigned int InfomapBase::removeSubModules(bool recalculateCodelengthOnTree)
 {
   // Loop on "any top module still has a module child" for the reason removeModules
-  // gives above: numLevels() follows the firstChild chain only, so on a ragged tree it
-  // reports the leftmost branch's depth and this loop stopped while deeper branches
-  // were still nested. What came out was neither the two-level tree the caller asked
-  // for nor a codelength of it -- calcCodelengthOnTree below then scored a tree that
-  // still had sub-modules in it (#898).
+  // gives above: the old numLevels() followed the firstChild chain only, so on a ragged
+  // tree it reported the leftmost branch's depth and this loop stopped while deeper
+  // branches were still nested. What came out was neither the two-level tree the caller
+  // asked for nor a codelength of it -- calcCodelengthOnTree below then scored a tree
+  // that still had sub-modules in it (#898).
   auto anyModuleHasModuleChild = [this]() {
     for (auto& module : m_root)
       for (auto& child : module)
@@ -3069,9 +3070,9 @@ unsigned int InfomapBase::recursivePartition()
   std::string queueSource;
   if (fastHierarchicalSolution > 0) {
     queueLeafModules(partitionQueue);
-    // partitionQueue.level, not numLevels() - 2 (#1036): queueLeafModules already recorded
-    // the depth of the deepest queued module, computed over all branches. numLevels walks
-    // the first-child chain, and its - 2 named the level above the modules it describes.
+    // partitionQueue.level, not a depth recomputed here (#1036): queueLeafModules already
+    // recorded the depth of the deepest queued module. The old `numLevels() - 2` walked the
+    // first-child chain, and its - 2 named the level above the modules it describes.
     queueSource = fmt::format(FMT_STRING("{} sub modules on level {}"), partitionQueue.size(), partitionQueue.level);
   } else {
     queueTopModules(partitionQueue);

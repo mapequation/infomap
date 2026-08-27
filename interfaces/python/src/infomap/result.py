@@ -351,7 +351,7 @@ class Result(_ResultWritersMixin):
         object.__setattr__(
             self, "_num_non_trivial_top_modules", core.numNonTrivialTopModules()
         )
-        object.__setattr__(self, "_num_levels", core.maxTreeDepth())
+        object.__setattr__(self, "_num_levels", core.numLevels())
         object.__setattr__(self, "_num_nodes", core.network().numNodes())
         object.__setattr__(
             self, "_num_physical_nodes", core.network().numPhysicalNodes()

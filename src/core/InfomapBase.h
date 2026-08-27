@@ -122,9 +122,9 @@ public:
   bool haveNonTrivialModules() const { return numNonTrivialTopModules() > 0; }
 
   /**
-   * Depth of the first-child branch below the root, 1 if no modules. This equals the
-   * tree's depth only when the tree is uniform-depth; on a ragged tree it under-counts.
-   * Use maxTreeDepth for anything reported to a user or written to a file (#1036).
+   * Number of node levels below the root, counted over every branch, 1 if no modules.
+   * Alias of maxTreeDepth. This is the depth the summary, the tree writer and the JSON
+   * output report, so it is what any other report of a depth should use (#1036).
    */
   unsigned int numLevels() const;
 
@@ -270,6 +270,18 @@ public:
 
 private:
   class RunSession;
+
+  /**
+   * Depth of the leftmost branch: follows firstChild to the first leaf. O(depth) where
+   * numLevels is O(nodes), which is why the search uses it -- consolidateModules alone
+   * calls it ~270k times per web-NotreDame trial. It equals numLevels only on a
+   * uniform-depth tree, which every one of its call sites has by construction: they run
+   * inside the per-module optimization, below the point where sub-Infomap results are
+   * stitched in and make the tree ragged. Measured over the test suite and the benchmark
+   * networks, the two never disagreed at any of those sites. Never report this value --
+   * that is the bug in #1036.
+   */
+  unsigned int depthOfFirstLeaf() const;
 
   // Allocate a tree node from this instance's pool and stamp its owning pool
   // back-pointer so node-local teardown (deleteChildren / remove /

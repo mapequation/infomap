@@ -713,11 +713,11 @@ TEST_CASE("Run reports write machine-readable JSON with no-file-output [fast][co
 
 TEST_CASE("Per-trial num_levels reports the tree's depth, not the first-child branch's [fast][core][lifecycle][output]")
 {
-  // numLevels() walks the first-child chain only, so on a ragged tree it reported one
-  // arbitrary branch's depth while the console summary, the .tree file and the JSON tree
-  // output all reported maxTreeDepth. --timing-json and --trial-results share the record,
-  // so both carried the shallow branch (#1036). --no-infomap keeps the fixture's ragged
-  // shape through the trial, so the two depths stay observably different here.
+  // numLevels() used to walk the first-child chain only, so on a ragged tree it reported
+  // one arbitrary branch's depth while the console summary, the .tree file and the JSON
+  // tree output all counted over every branch. --timing-json and --trial-results share
+  // the record, so both carried the shallow branch (#1036). --no-infomap keeps the
+  // fixture's ragged shape through the trial, where the difference is observable.
   const std::vector<std::string> paths = {
     "run_report_ragged_timing.json",
     "run_report_ragged_trials.json",
@@ -732,10 +732,16 @@ TEST_CASE("Per-trial num_levels reports the tree's depth, not the first-child br
 
   im.run();
 
-  // Preconditions. Without both of these the checks below would pass on the old value
-  // too: the tree has to be ragged, and the shallow branch has to be the first child.
+  // The fixture's shape, pinned so an edit to it cannot silently stop exercising this:
+  // three deep, with the SHALLOW branch first. Root's leftmost top module ends at depth
+  // 2 while another branch runs to 3, which is what made the leftmost-branch walk report
+  // 2 for a three-level tree.
   REQUIRE(im.maxTreeDepth() == 3);
-  REQUIRE(im.numLevels() == 2);
+  REQUIRE(im.numLevels() == im.maxTreeDepth());
+  const infomap::InfoNode* firstTopModule = im.root().firstChild;
+  REQUIRE(firstTopModule != nullptr);
+  REQUIRE(firstTopModule->firstChild != nullptr);
+  REQUIRE(firstTopModule->firstChild->isLeaf());
 
   CHECK(infomap::test::readTextFile(paths[0]).find("\"num_levels\":3") != std::string::npos);
   CHECK(infomap::test::readTextFile(paths[1]).find("\"num_levels\":3") != std::string::npos);

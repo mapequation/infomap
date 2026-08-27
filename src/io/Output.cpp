@@ -141,7 +141,7 @@ std::string getOutputFileHeader(const InfomapBase& im, const StateNetwork& netwo
                      // interrupt time, when doing work is least reliable.
                      im.codelengths().size(),
                      im.numTrials,
-                     im.maxTreeDepth(),
+                     im.numLevels(),
                      im.numTopModules(),
                      im.codelength(),
                      im.getRelativeCodelengthSavings() * 100,
@@ -301,7 +301,7 @@ void writeJsonTree(InfomapBase& im, const StateNetwork& network, std::ostream& o
   json["startedAt"] = io::stringify(im.getStartDate());
   json["completedIn"] = im.getElapsedTime().getElapsedTimeInSec();
   json["codelength"] = im.codelength();
-  json["numLevels"] = im.maxTreeDepth();
+  json["numLevels"] = im.numLevels();
   json["numTopModules"] = im.numTopModules();
 
   Json numModules = Json::array();
