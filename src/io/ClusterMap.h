@@ -49,7 +49,11 @@ struct DuplicateClusterIds {
   unsigned int rows = 0; // repeated rows, whether or not they changed anything
   unsigned int ids = 0; // distinct node ids seen more than once
   unsigned int exampleId = 0; // the worst one, named in the warning
-  unsigned int maxRowsForOneId = 0; // how many rows that id had
+  // Rows for exampleId specifically, not a global maximum: the example is chosen by
+  // tier first (a conflicting id beats a verbatim one), so a harmless id with more
+  // rows can lose to a conflicting id with fewer. The number exists to accompany the
+  // example in the message, and nothing reads a global max.
+  unsigned int exampleRows = 0;
 
   // Repeats that actually changed the id's module. A file can repeat a row
   // verbatim, and then nothing is replaced and the partition it describes is the

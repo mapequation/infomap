@@ -237,7 +237,7 @@ namespace {
                   rowWord,
                   duplicates.conflictingRows,
                   duplicates.exampleId,
-                  duplicates.maxRowsForOneId,
+                  duplicates.exampleRows,
                   advice);
   }
 

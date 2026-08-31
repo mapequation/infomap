@@ -277,9 +277,9 @@ void ClusterMap::readClu(const std::string& filename, bool includeFlow, const st
 
     const bool betterTier = isConflicting && !exampleIsConflicting;
     const bool sameTierMoreRows = isConflicting == exampleIsConflicting
-        && repeat.rows > m_duplicateClusterIds.maxRowsForOneId;
+        && repeat.rows > m_duplicateClusterIds.exampleRows;
     if (betterTier || sameTierMoreRows) {
-      m_duplicateClusterIds.maxRowsForOneId = repeat.rows;
+      m_duplicateClusterIds.exampleRows = repeat.rows;
       m_duplicateClusterIds.exampleId = nodeId;
       exampleIsConflicting = isConflicting;
     }
