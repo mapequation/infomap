@@ -198,6 +198,17 @@ double BiasedMapEquation::calcCodelength(const InfoNode& parent) const
       : calcCodelengthOnModuleOfModules(parent);
 }
 
+// Charged once for the whole tree, not per node. biasedCost is a single scalar in
+// |K - K_pref|, so there is no share of it for calcCodelength to return, which is
+// why the scored value used to lose the term entirely while the search kept it --
+// up to 7 bits on a six-node fixture, unbounded in K_pref (#1021). Read from the
+// tree rather than from currentNumModules so a partition that was materialized
+// rather than searched is charged for the modules it actually has.
+double BiasedMapEquation::calcTreeCodelengthCost(const InfoNode& root) const
+{
+  return calcNumModuleCost(root.childDegree());
+}
+
 // Free parameters of the codebook this tree node owns: one codeword per child
 // plus an exit codeword, minus one for the codebook's own normalisation. The root
 // owns the index codebook, which has no exit codeword, and neither does any module

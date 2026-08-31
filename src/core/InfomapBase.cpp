@@ -2555,7 +2555,10 @@ double InfomapBase::calcCodelengthOnTree(InfoNode& root, bool includeRoot) const
     node.codelength = calcCodelength(node);
     totalCodelength += node.codelength;
   }
-  return totalCodelength;
+  // Added to the total only, never written into a node's codelength: the term
+  // belongs to the partition, and the two callers that pass includeRoot=false do
+  // so for the per-node side effect and discard this return value (#1021).
+  return totalCodelength + calcTreeCodelengthCost(root);
 }
 
 // ===================================================
