@@ -93,6 +93,67 @@ def test_no_overwrite_preflight_writes_no_files_when_one_target_exists(
     assert not (out_dir / "network.clu").exists()
 
 
+def make_state_workdir(path: Path) -> Path:
+    # A higher-order input, so the run writes both `<name>.tree` and
+    # `<name>_states.tree`. The file is named after the state half on purpose.
+    path.mkdir(parents=True, exist_ok=True)
+    (path / "net_states.tree").write_text(
+        '*States\n1 1 "a"\n2 2 "b"\n3 1 "a"\n*Links\n1 2 1\n2 3 1\n',
+        encoding="utf-8",
+    )
+    return path
+
+
+def test_state_output_does_not_overwrite_its_own_input(infomap_bin, work):
+    # #1018: the input-overwrite pre-flight saw only the physical artifact, so a
+    # state-network run whose input was named `<out-name>_states.<ext>` destroyed
+    # the input and exited 0. The check needs the higher-order classification,
+    # which is only settled once the network is read -- so this exercises the
+    # ordering inside RunSession::run, not just the plan.
+    make_state_workdir(work)
+    original = (work / "net_states.tree").read_text(encoding="utf-8")
+
+    result = run(
+        infomap_bin,
+        "net_states.tree",
+        ".",
+        "--out-name",
+        "net",
+        "--silent",
+        "-N1",
+        cwd=work,
+    )
+
+    assert result.returncode == 3, result.stderr
+    assert "Refusing to write output" in result.stderr
+    assert (work / "net_states.tree").read_text(encoding="utf-8") == original
+    assert not (work / "net.tree").exists()
+
+
+def test_first_order_run_may_write_beside_a_states_named_input(infomap_bin, work):
+    # The mirror of the case above: first-order input writes no `_states` half, so
+    # the same command must still be allowed. The fix must not buy its refusal by
+    # rejecting runs that would have worked.
+    make_workdir(work)
+    (work / "net_states.tree").write_text(
+        "not an input to this run\n", encoding="utf-8"
+    )
+
+    result = run(
+        infomap_bin,
+        "network.net",
+        ".",
+        "--out-name",
+        "net",
+        "--silent",
+        "-N1",
+        cwd=work,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert (work / "net.tree").exists()
+
+
 def test_overwrite_flag_is_removed(infomap_bin, work):
     make_workdir(work)
 
@@ -136,6 +197,8 @@ def main(argv):
             test_missing_input_returns_input_exit_code,
             test_no_overwrite_returns_output_exit_code,
             test_no_overwrite_preflight_writes_no_files_when_one_target_exists,
+            test_state_output_does_not_overwrite_its_own_input,
+            test_first_order_run_may_write_beside_a_states_named_input,
             test_overwrite_flag_is_removed,
             test_run_manifest_contains_fingerprints_and_outputs,
         ]:

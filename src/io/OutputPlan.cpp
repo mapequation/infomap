@@ -349,25 +349,40 @@ std::vector<std::pair<std::string, std::string>> planReportArtifacts(const Confi
   return reports;
 }
 
-std::vector<std::string> planAllOutputPaths(const Config& config)
+std::vector<std::string> planAllOutputPaths(const Config& config, HigherOrderInput higherOrder)
 {
   std::vector<std::string> paths;
 
-  const auto collectPhase = [&](OutputPhase phase, int trial) {
-    for (const auto& artifact : planOutputArtifacts(config, phase, trial))
+  // Config::stateOutput changes value inside the window this function has to
+  // describe: configureNetworkMode() sets it after the BeforeFlow artifacts are
+  // written and before everything else. So the phases are planned on either side
+  // of that call. Getting it wrong in either direction is a live defect: too few
+  // paths lets a run destroy its own input (#1018), too many refuses a run that
+  // would have been fine.
+  //
+  // BeforeFlow is planned from the config exactly as given, never forced, because
+  // that is what its writer sees. Config::stateOutput is public and the Python and
+  // R bindings expose a setter, so a caller can enter run() with it already true;
+  // the writer then emits the `_states_as_physical` name and the plan has to agree.
+  Config afterConfigure = config;
+  if (higherOrder == HigherOrderInput::Yes)
+    afterConfigure.setStateOutput();
+
+  const auto collectPhase = [&](const Config& phaseConfig, OutputPhase phase, int trial) {
+    for (const auto& artifact : planOutputArtifacts(phaseConfig, phase, trial))
       paths.push_back(artifact.filename);
   };
 
   // Network sidecars are written once, independent of trial.
-  collectPhase(OutputPhase::BeforeFlow, -1);
-  collectPhase(OutputPhase::AfterFlow, -1);
+  collectPhase(config, OutputPhase::BeforeFlow, -1);
+  collectPhase(afterConfigure, OutputPhase::AfterFlow, -1);
 
   // The final modular result is written once with the canonical basename, and
   // additionally per trial when --print-all-trials uses separate files.
-  collectPhase(OutputPhase::AfterPartition, -1);
+  collectPhase(afterConfigure, OutputPhase::AfterPartition, -1);
   if (config.printAllTrials && config.numTrials > 1) {
     for (unsigned int trial = 1; trial <= config.numTrials; ++trial)
-      collectPhase(OutputPhase::AfterPartition, static_cast<int>(trial));
+      collectPhase(afterConfigure, OutputPhase::AfterPartition, static_cast<int>(trial));
   }
 
   for (const auto& report : planReportArtifacts(config))
@@ -376,9 +391,9 @@ std::vector<std::string> planAllOutputPaths(const Config& config)
   return paths;
 }
 
-void preflightOutputTargets(const Config& config)
+void preflightOutputTargets(const Config& config, HigherOrderInput higherOrder)
 {
-  const auto plannedPaths = planAllOutputPaths(config);
+  const auto plannedPaths = planAllOutputPaths(config, higherOrder);
 
   // Checked before the overwrite policy, and deliberately not subject to it:
   // writing a result over the run's own input destroys the input, and
