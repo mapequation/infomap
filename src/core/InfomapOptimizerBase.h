@@ -96,7 +96,7 @@ protected:
 
   // See MapEquation::calcTreeCodelengthCost. Zero for every objective but the
   // biased one, which owns a partition-level |K - K_pref| cost.
-  virtual double calcTreeCodelengthCost(const InfoNode& root) const = 0;
+  virtual double calcTreeCodelengthCost(unsigned int numTopModules) const = 0;
 
   // ===================================================
   // Run: Partition: *

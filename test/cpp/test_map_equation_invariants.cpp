@@ -73,6 +73,39 @@ TEST_CASE("MapEquation invariant: BiasedMapEquation with a module preference, tr
   }
 }
 
+// The one-level reference has to price the same objective as the partition it is
+// compared against. m_oneLevelCodelength was calcCodelength on the bare root -- a
+// tree with no module level at all -- so a partition-level term was missing from it
+// while the reported codelength carried one. Scoring the one-module partition then
+// gave `Relative savings` of -84% against a reference that is that very partition,
+// and the one-level collapse installs this value verbatim on a tree that does have
+// one module (#1020).
+//
+// The entropy-corrected half of that issue is no longer reachable: #1033 gave a
+// module that cannot be left no exit codeword, which made the lone module's
+// correction match the bare root's. --preferred-number-of-modules is what still
+// showed it, and its cost is exactly |K - K_pref| so the expected values follow.
+TEST_CASE("The one-level reference prices the same objective as a one-module partition [fast][core][mapeq][biased]")
+{
+  for (const unsigned int preference : { 0u, 1u, 5u, 9u }) {
+    const auto flags = preference == 0u
+        ? std::string("--two-level --no-infomap --cluster-data ")
+        : "--two-level --preferred-number-of-modules " + std::to_string(preference) + " --no-infomap --cluster-data ";
+    InfomapWrapper im(defaultFlags(flags + clusterFixturePath("twotriangles_single_module.clu")));
+    im.readInputData(repoPath("test/fixtures/graphs/twotriangles_unweighted.edges"));
+    im.run();
+
+    REQUIRE(im.numTopModules() == 1);
+    INFO("--preferred-number-of-modules " << preference
+                                          << " one-level=" << im.getOneLevelCodelength()
+                                          << " codelength=" << im.codelength());
+    // The partition under test *is* the one-module partition, so the reference and
+    // the reported codelength are the same number and the saving is zero.
+    checkApproxCodelength(im.getOneLevelCodelength(), im.codelength());
+    CHECK(im.getRelativeCodelengthSavings() == doctest::Approx(0.0).epsilon(1e-9));
+  }
+}
+
 // The user-visible half of #1021, and the shape the issue reported: scoring a
 // tracked partition with --no-infomap never moved, whatever K_pref was, because
 // the reported number on that path is calcCodelengthOnTree's sum. The partition
