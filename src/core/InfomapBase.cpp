@@ -252,6 +252,9 @@ public:
     // Still ahead of every writer, which is what the check exists for.
     validateNetwork();
     preflightOutputTargets(m_infomap, higherOrderInput());
+    // Before the first seedTrial, so this is the seed the run was asked for.
+    m_infomap.m_baseSeed = m_infomap.seedToRandomNumberGenerator;
+    m_infomap.m_haveBaseSeed = true;
     {
       auto timer = m_timing.scope("configure_network_s");
       configureNetworkMode();

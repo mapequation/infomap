@@ -289,6 +289,49 @@ def test_headers_record_the_trial_offset_of_a_shard(infomap_bin, work):
     assert data["trialOffset"] == 10
 
 
+def test_every_artifact_records_the_same_base_seed(infomap_bin, work):
+    # The serial loop moves Config::seedToRandomNumberGenerator to the current trial's
+    # seed and only gives it back when the loop ends, while updateBestResult writes the
+    # aggregate artifact from inside the loop. A header reading the live field recorded
+    # 42, 43, 44 across the per-trial files, and the aggregate kept the last trial's
+    # seed whenever the best trial was the last -- restoreBestResult then rewrites
+    # nothing. One stable meaning instead: every artifact carries the run's base seed,
+    # and a trial's own seed is base + offset + (trial - 1), with the trial in the
+    # filename.
+    make_workdir(work)
+
+    result = run(
+        infomap_bin,
+        "network.net",
+        "out",
+        "--silent",
+        "--seed",
+        "42",
+        "-N3",
+        "--print-all-trials",
+        "-o",
+        "tree",
+        cwd=work,
+    )
+
+    assert result.returncode == 0, result.stderr
+
+    trees = sorted((work / "out").glob("*.tree"))
+    assert len(trees) >= 4, [t.name for t in trees]
+
+    seeds = {}
+    for tree in trees:
+        lines = [
+            line
+            for line in tree.read_text(encoding="utf-8").splitlines()
+            if line.startswith("# seed ")
+        ]
+        assert len(lines) == 1, (tree.name, lines)
+        seeds[tree.name] = lines[0]
+
+    assert set(seeds.values()) == {"# seed 42"}, seeds
+
+
 def test_overwrite_flag_is_removed(infomap_bin, work):
     make_workdir(work)
 
@@ -338,6 +381,7 @@ def main(argv):
             test_pajek_dump_of_a_first_order_network_is_unchanged,
             test_default_headers_record_the_effective_seed,
             test_headers_record_the_trial_offset_of_a_shard,
+            test_every_artifact_records_the_same_base_seed,
             test_overwrite_flag_is_removed,
             test_run_manifest_contains_fingerprints_and_outputs,
         ]:

@@ -148,7 +148,7 @@ std::string getOutputFileHeader(const InfomapBase& im, const StateNetwork& netwo
                      // on was unrecoverable (#1026). Per-trial seeds derive from
                      // base + offset + i, so the offset is part of the answer and is
                      // written when a shard is not the first.
-                     im.seedToRandomNumberGenerator,
+                     im.baseSeed(),
                      im.trialOffset == 0 ? std::string() : fmt::format(FMT_STRING(" offset {}"), im.trialOffset),
                      im.maxTreeDepth(),
                      im.numTopModules(),
@@ -312,7 +312,7 @@ void writeJsonTree(InfomapBase& im, const StateNetwork& network, std::ostream& o
   json["codelength"] = im.codelength();
   // See the text header: the effective seed, and the trial counts the text header
   // has had since #906 but this output never carried (#1026).
-  json["seed"] = im.seedToRandomNumberGenerator;
+  json["seed"] = im.baseSeed();
   if (im.trialOffset != 0) {
     json["trialOffset"] = im.trialOffset;
   }
