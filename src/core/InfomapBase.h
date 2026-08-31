@@ -147,6 +147,7 @@ public:
 
   double getOneLevelCodelength() const { return m_oneLevelCodelength; }
 
+#ifndef SWIG
   // The seed the run was configured with, which is not the same as reading
   // seedToRandomNumberGenerator: the serial loop moves that field to the current
   // trial's seed (base + trialOffset + index) and only gives it back when the loop
@@ -154,7 +155,11 @@ public:
   // A header reading the live field therefore recorded the last trial's seed
   // whenever the best trial was the last one, since restoreBestResult then performs
   // no rewrite. Falls back to the live value until a run has captured it.
+  //
+  // Guarded from SWIG so it is not exposed as a new binding, the same way
+  // getReferenceOneLevelCodelength above is: the output writer is its only caller.
   unsigned long baseSeed() const { return m_haveBaseSeed ? m_baseSeed : seedToRandomNumberGenerator; }
+#endif
 
 #ifndef SWIG
   // One-level reference reported to the user. In lossy mode this is the lossless
