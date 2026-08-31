@@ -97,11 +97,15 @@ TEST_CASE("The one-level reference prices the same objective as a one-module par
 
     REQUIRE(im.numTopModules() == 1);
     INFO("--preferred-number-of-modules " << preference
-                                          << " one-level=" << im.getOneLevelCodelength()
+                                          << " reference=" << im.getReferenceOneLevelCodelength()
+                                          << " raw=" << im.getOneLevelCodelength()
                                           << " codelength=" << im.codelength());
     // The partition under test *is* the one-module partition, so the reference and
-    // the reported codelength are the same number and the saving is zero.
-    checkApproxCodelength(im.getOneLevelCodelength(), im.codelength());
+    // the reported codelength are the same number and the saving is zero. Asserted
+    // on the *reference* accessor, which is what the summary prints and what
+    // getRelativeCodelengthSavings divides by; the raw field stays the bare root's
+    // value because it also scales partition()'s tuning-termination threshold.
+    checkApproxCodelength(im.getReferenceOneLevelCodelength(), im.codelength());
     CHECK(im.getRelativeCodelengthSavings() == doctest::Approx(0.0).epsilon(1e-9));
   }
 }

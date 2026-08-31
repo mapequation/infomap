@@ -2139,14 +2139,7 @@ void InfomapBase::init()
 
   initNetwork();
 
-  // The one-module partition's codelength, not the bare root's. They differ by any
-  // partition-level term the objective charges, and the collapse below installs this
-  // value verbatim on a tree that does have one module -- so a reference without the
-  // term made `Relative savings` compare two different objectives, and made a
-  // collapsed run report a number its own tree does not evaluate to (#1020). No
-  // effect unless such a term is configured: with --preferred-number-of-modules
-  // unset the cost is identically zero.
-  m_oneLevelCodelength = calcCodelength(m_root) + calcTreeCodelengthCost(1);
+  m_oneLevelCodelength = calcCodelength(m_root);
   Console::detail(1, "one-level codelength: {}", io::toPrecision(m_oneLevelCodelength));
 }
 

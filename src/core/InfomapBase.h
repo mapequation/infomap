@@ -152,13 +152,22 @@ public:
   // L_1 = H(p_alpha) (a lambda-independent upper bound), not the lambda-dependent
   // corrected one-module objective that m_oneLevelCodelength holds for the optimizer.
   // Guarded from SWIG so it is not exposed as a new binding; callers below use it.
+  //
+  // The objective's partition-level cost for one module is added here rather than to
+  // m_oneLevelCodelength, and the distinction matters: that field is the bare root's
+  // codelength, a tree with no module level at all, and it also scales partition()'s
+  // tuning-termination threshold (`initialCodelength * minimumRelativeTuneIterationImprovement`).
+  // Penalizing it would move the search. The *reported* reference has to price the
+  // same objective as the codelength it is compared against, or `Relative savings`
+  // compares two different objectives -- -84% on a one-module partition that is
+  // exactly the reference (#1020). Zero unless such a term is configured.
   double getReferenceOneLevelCodelength() const
   {
 #if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
     if (lossy)
       return m_optimizer->getLossyOneLevelLossless();
 #endif
-    return m_oneLevelCodelength;
+    return m_oneLevelCodelength + calcTreeCodelengthCost(1);
   }
 #endif
 
