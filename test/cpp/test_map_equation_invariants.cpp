@@ -48,6 +48,58 @@ TEST_CASE("MapEquation invariant: BiasedMapEquation (ordinary), tracked == recom
   checkTrackedMatchesRecompute(im);
 }
 
+// The same invariant with a module-count preference in play. The existing biased
+// case above passes at the default --preferred-number-of-modules 0, where the
+// |K - K_pref| term is identically zero, so it never covered the term itself.
+//
+// #1021: biasedCost is one scalar for the whole partition, so calcCodelength has
+// no per-node share to return and calcCodelengthOnTree's sum lost the term
+// completely. The tracked side kept it, so the two disagreed by |K - K_pref| --
+// unbounded in K_pref, and 7 bits on a six-node fixture.
+TEST_CASE("MapEquation invariant: BiasedMapEquation with a module preference, tracked == recompute [fast][core][mapeq][biased]")
+{
+  for (const unsigned int preference : { 1u, 3u, 40u }) {
+    InfomapWrapper im(defaultFlags("--two-level --preferred-number-of-modules " + std::to_string(preference)));
+    im.readInputData(networkFixturePath("lossy_benchmark.net"));
+    im.run();
+    INFO("--preferred-number-of-modules " << preference << ", found " << im.numTopModules());
+    // The invariant is vacuous where the search satisfies the preference exactly,
+    // since |K - K_pref| is then zero and the term under test never appears. At
+    // least one of these has to leave a residual, or the case proves nothing --
+    // 40 exceeds what this fixture can be split into.
+    if (preference == 40u)
+      REQUIRE(im.numTopModules() != preference);
+    checkTrackedMatchesRecompute(im);
+  }
+}
+
+// The user-visible half of #1021, and the shape the issue reported: scoring a
+// tracked partition with --no-infomap never moved, whatever K_pref was, because
+// the reported number on that path is calcCodelengthOnTree's sum. The partition
+// here has two modules, so the term is exactly |2 - K_pref| and the expected
+// values follow from the unbiased run rather than from a hardcoded constant.
+TEST_CASE("A module preference reaches a scored partition, not only the search [fast][core][mapeq][biased]")
+{
+  const auto scoredCodelength = [](const std::string& extraFlags) {
+    InfomapWrapper im(defaultFlags(
+        "--two-level --no-infomap --cluster-data "
+        + clusterFixturePath("twotriangles_two_modules.clu") + " " + extraFlags));
+    im.readInputData(repoPath("test/fixtures/graphs/twotriangles_unweighted.edges"));
+    im.run();
+    REQUIRE(im.numTopModules() == 2);
+    return im.codelength();
+  };
+
+  const double unbiased = scoredCodelength("");
+
+  for (const unsigned int preference : { 1u, 2u, 5u, 9u }) {
+    const double expected = unbiased + std::abs(2.0 - static_cast<double>(preference));
+    const double scored = scoredCodelength("--preferred-number-of-modules " + std::to_string(preference));
+    INFO("K_pref=" << preference << " scored=" << scored << " expected=" << expected);
+    checkApproxCodelength(scored, expected);
+  }
+}
+
 TEST_CASE("MapEquation invariant: MemMapEquation (memory), tracked == recompute [fast][core][mapeq][mem]")
 {
   InfomapWrapper im(defaultFlags("--two-level"));
