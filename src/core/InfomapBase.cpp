@@ -188,6 +188,59 @@ namespace {
   }
 #endif
 
+  // Repeated node ids in a clu file, worded once for both callers: the run session
+  // reports it before the trial loop, and a direct initPartition caller reports it
+  // for itself (#1039).
+  void warnOnDuplicateClusterIds(const DuplicateClusterIds& duplicates, const std::string& clusterDataFile, bool higherOrder)
+  {
+    if (!duplicates.any()) {
+      return;
+    }
+
+    const auto* idPhrase = duplicates.ids == 1 ? "id appears" : "ids appear";
+    const auto* rowWord = duplicates.rows == 1 ? "row" : "rows";
+
+    if (!duplicates.anyConflicting()) {
+      // Every repeat agrees on the module, so nothing was replaced and the reader
+      // ends up with exactly the partition the file describes. Still worth saying:
+      // a clu file is meant to have one row per node.
+      Console::warn(0,
+                    "{} node {} more than once in '{}', {} repeated {} in all, but every repeat gives the same module. "
+                    "The partition is unaffected.",
+                    duplicates.ids,
+                    idPhrase,
+                    clusterDataFile,
+                    duplicates.rows,
+                    rowWord);
+      return;
+    }
+
+    // higherOrder describes the network, not the file, so the advice says what
+    // repeats by construction without asserting that this is that file: a malformed
+    // state clu reaches this branch too.
+    const auto* advice = higherOrder
+        ? "On a higher-order network the physical clu repeats ids by construction -- it has one row per "
+          "(physical node, module) pair, and overlapping modules are not a partition. If that is this file, use "
+          "the state clu (_states.clu) instead; if this already is the state clu, the repeats are in the file."
+        : "A clu file has one row per node, so the last row read wins and the earlier assignments are discarded. "
+          "The codelength below is for the partition that survived, not for the one in the file.";
+
+    // The leading counts are the totals, or a file that mixes a verbatim repeat with
+    // a conflicting one undercounts what the sentence claims to summarize. The
+    // conflicting rows are then named as the subset they are.
+    Console::warn(0,
+                  "{} node {} more than once in '{}': {} repeated {}, {} of which changed an id's module, and node {} alone has {} rows. {}",
+                  duplicates.ids,
+                  idPhrase,
+                  clusterDataFile,
+                  duplicates.rows,
+                  rowWord,
+                  duplicates.conflictingRows,
+                  duplicates.exampleId,
+                  duplicates.maxRowsForOneId,
+                  advice);
+  }
+
   // The serial trial loop moves the config seed to the current trial's seed (see
   // RunSession::seedTrial), but everything downstream of the loop -- the run
   // manifest, the config fingerprint, the shard file's base_seed -- must report
@@ -641,6 +694,14 @@ private:
       return;
     }
 
+    // A tree carries a path per row, so a repeated id there is a different
+    // situation with its own report in normalizeTreePaths (#908). Decided from the
+    // filename before parsing: reading the file only to discover it is a tree and
+    // return would be an extra parse for nothing.
+    if (FileURI(m_infomap.clusterDataFile).getExtension() != "clu") {
+      return;
+    }
+
     ClusterMap clusterMap;
     if (m_network.isMultilayerNetwork()) {
       const auto& map = m_network.layerNodeToStateId();
@@ -649,58 +710,13 @@ private:
       clusterMap.readClusterData(m_infomap.clusterDataFile);
     }
 
-    if (clusterMap.extension() != "clu") {
-      // A tree carries a path per row, so a repeated id there is a different
-      // situation with its own report in normalizeTreePaths (#908).
-      return;
-    }
-
     const auto& duplicates = clusterMap.duplicateClusterIds();
+    m_infomap.m_clusterDataIssuesReported = true;
     if (!duplicates.any()) {
       return;
     }
 
-    const auto idPhrase = duplicates.ids == 1 ? "id appears" : "ids appear";
-
-    if (!duplicates.anyConflicting()) {
-      // Every repeat agrees on the module, so nothing was replaced and the reader
-      // ends up with exactly the partition the file describes. Still worth saying:
-      // a clu file is meant to have one row per node.
-      Console::warn(0,
-                    "{} node {} more than once in '{}', {} repeated {} in all, but every repeat gives the same module. "
-                    "The partition is unaffected.",
-                    duplicates.ids,
-                    idPhrase,
-                    m_infomap.clusterDataFile,
-                    duplicates.rows,
-                    duplicates.rows == 1 ? "row" : "rows");
-      return;
-    }
-
-    // haveMemory() describes the network, not the file, so the higher-order advice
-    // says what repeats by construction without asserting that this is that file:
-    // a malformed state clu reaches this branch too.
-    const auto* advice = m_infomap.haveMemory()
-        ? "On a higher-order network the physical clu repeats ids by construction -- it has one row per "
-          "(physical node, module) pair, and overlapping modules are not a partition. If that is this file, use "
-          "the state clu (_states.clu) instead; if this already is the state clu, the repeats are in the file."
-        : "A clu file has one row per node, so the last row read wins and the earlier assignments are discarded. "
-          "The codelength below is for the partition that survived, not for the one in the file.";
-
-    // The leading counts are the totals, or a file that mixes a verbatim repeat with
-    // a conflicting one undercounts what the sentence claims to summarize. The
-    // conflicting rows are then named as the subset they are.
-    Console::warn(0,
-                  "{} node {} more than once in '{}': {} repeated {}, {} of which changed an id's module, and node {} alone has {} rows. {}",
-                  duplicates.ids,
-                  duplicates.ids == 1 ? "id appears" : "ids appear",
-                  m_infomap.clusterDataFile,
-                  duplicates.rows,
-                  duplicates.rows == 1 ? "row" : "rows",
-                  duplicates.conflictingRows,
-                  duplicates.exampleId,
-                  duplicates.maxRowsForOneId,
-                  advice);
+    warnOnDuplicateClusterIds(duplicates, m_infomap.clusterDataFile, m_infomap.haveMemory());
   }
 
   void configureNetworkMode()
@@ -1493,11 +1509,15 @@ InfomapBase& InfomapBase::initPartition(const std::string& clusterDataFile, bool
     validateClusterDataTreeShape(normalizedTree);
     initTree(normalizedTree);
   } else if (ext == "clu") {
-    // Repeated ids in this file are reported once per run by
-    // RunSession::reportClusterDataIssues, not here: this runs per trial, and per
-    // trial it printed the warning ten times on -N10 and not at all under
-    // --parallel-trials, where the worker's initTrialPartition is wrapped in
-    // Log::ScopedMute.
+    // A run reports repeated ids once, from RunSession::reportClusterDataIssues,
+    // because this function runs per trial: reporting here printed the warning ten
+    // times on -N10 and not at all under --parallel-trials, where the worker's
+    // initTrialPartition is wrapped in Log::ScopedMute. A direct caller of this
+    // method -- the Python and R bindings expose it -- has neither a trial loop nor
+    // a mute, so for them this is the only place it can come from.
+    if (!m_clusterDataIssuesReported) {
+      warnOnDuplicateClusterIds(clusterMap.duplicateClusterIds(), clusterDataFile, haveMemory());
+    }
     initPartition(clusterMap.clusterIds(), hard);
   }
 

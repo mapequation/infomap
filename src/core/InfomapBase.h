@@ -685,6 +685,9 @@ protected:
   bool m_calculateEnterExitFlow = false;
 
   double m_oneLevelCodelength = 0.0;
+  // Set once the run session has reported on the --cluster-data file, so a direct
+  // initPartition caller reports for itself without a run duplicating it (#1039).
+  bool m_clusterDataIssuesReported = false;
   unsigned int m_numNonTrivialTopModules = 0;
   unsigned int m_tuneIterationIndex = 0;
   bool m_isCoarseTune = false;

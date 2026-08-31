@@ -394,6 +394,36 @@ TEST_CASE("A clu mixing a verbatim repeat with a conflicting one counts both [fa
   std::remove(mixedClu.c_str());
 }
 
+TEST_CASE("A direct initPartition call reports duplicate clu ids for itself [fast][core][partition][parser]")
+{
+  // The run-level report is what a CLI run sees, but initPartition is public and the
+  // Python and R bindings expose it. A caller who reads a partition without running a
+  // search has no trial loop and no mute, so moving the report to the run session
+  // alone left that path silent.
+  const std::string duplicateClu = "duplicate_direct.clu";
+  {
+    std::ofstream out(duplicateClu);
+    out << "# node_id module\n1 1\n2 1\n3 2\n3 3\n4 2\n5 3\n6 3\n";
+  }
+
+  std::ostringstream captured;
+  {
+    infomap::test::ScopedLogCapture capture(captured);
+    InfomapWrapper im("--seed 123 --num-trials 1 --no-file-output --two-level");
+    im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+    im.run();
+    // The direct call: no --cluster-data on the command line, so the run session had
+    // nothing to report and this is the only place the file is read.
+    im.initPartition(duplicateClu, false, &im.network());
+  }
+
+  const auto output = captured.str();
+  CHECK(output.find("1 node id appears more than once") != std::string::npos);
+  CHECK(output.find("1 of which changed an id's module") != std::string::npos);
+
+  std::remove(duplicateClu.c_str());
+}
+
 TEST_CASE("The duplicate-clu report survives the trial loop and parallel trials [fast][core][partition][parser][threads]")
 {
   // The report used to sit in initPartition, which runs per trial: ten warnings on
