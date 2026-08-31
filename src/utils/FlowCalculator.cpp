@@ -808,7 +808,7 @@ void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, co
 }
 
 #if INFOMAP_FEATURE_REGULARIZED_MULTILAYER
-void FlowCalculator::calcDirectedRegularizedMultilayerFlow(const StateNetwork& network, const Config& config) noexcept
+void FlowCalculator::calcDirectedRegularizedMultilayerFlow(const StateNetwork& network, const Config& config)
 {
   // Calculate node weights w_i = s_i/k_i, where s_i is the node strength (weighted degree) and k_i the (unweighted) degree
   unsigned int N = network.numNodes();

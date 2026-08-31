@@ -384,6 +384,33 @@ TEST_CASE("Undirected regularization remains stable on the two-triangles fixture
 }
 
 #if INFOMAP_FEATURE_REGULARIZED_MULTILAYER
+// examples/networks/multilayer_intra_inter.net -- a network we ship -- fails its
+// flow-imbalance check under --regularized. The imbalance itself is unresolved
+// (#1019 keeps that separate), but the failure has to arrive as an error the
+// caller can handle: calcDirectedRegularizedMultilayerFlow was noexcept, so the
+// throw called std::terminate and the process died on SIGABRT with a raw
+// libc++abi line instead of Infomap's own message.
+//
+// Note what happens if the noexcept comes back: this test does not fail, it
+// aborts the whole test binary. That is louder than a failed assertion, not
+// quieter, and it is the only way to guard a terminate.
+TEST_CASE("A flow imbalance under regularized multilayer is thrown, not terminated [fast][core][flow]")
+{
+  InfomapWrapper im(infomap::test::defaultFlags("--regularized --two-level"));
+  im.readInputData(infomap::test::repoPath("examples/networks/multilayer_intra_inter.net"));
+
+  CHECK_THROWS_AS(im.run(), std::runtime_error);
+
+  try {
+    im.run();
+    FAIL("expected the flow imbalance to be reported");
+  } catch (const std::runtime_error& e) {
+    // The number is the imbalance and is not asserted -- it belongs to the
+    // unresolved half of the issue and would pin this test to today's value.
+    CHECK(std::string(e.what()).find("Total flow differs from 1") != std::string::npos);
+  }
+}
+
 TEST_CASE("Regularized multilayer flow supports non-dense matchable state ids [fast][core][flow]")
 {
   InfomapWrapper im(infomap::test::defaultFlags(
