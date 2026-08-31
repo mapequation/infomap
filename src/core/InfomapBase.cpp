@@ -687,13 +687,17 @@ private:
         : "A clu file has one row per node, so the last row read wins and the earlier assignments are discarded. "
           "The codelength below is for the partition that survived, not for the one in the file.";
 
+    // The leading counts are the totals, or a file that mixes a verbatim repeat with
+    // a conflicting one undercounts what the sentence claims to summarize. The
+    // conflicting rows are then named as the subset they are.
     Console::warn(0,
-                  "{} node {} more than once in '{}': {} {} an id's module, and node {} alone has {} rows. {}",
-                  duplicates.conflictingIds,
-                  duplicates.conflictingIds == 1 ? "id appears" : "ids appear",
+                  "{} node {} more than once in '{}': {} repeated {}, {} of which changed an id's module, and node {} alone has {} rows. {}",
+                  duplicates.ids,
+                  duplicates.ids == 1 ? "id appears" : "ids appear",
                   m_infomap.clusterDataFile,
+                  duplicates.rows,
+                  duplicates.rows == 1 ? "row" : "rows",
                   duplicates.conflictingRows,
-                  duplicates.conflictingRows == 1 ? "row changed" : "rows changed",
                   duplicates.exampleId,
                   duplicates.maxRowsForOneId,
                   advice);

@@ -326,7 +326,7 @@ TEST_CASE("Duplicate clu ids are reported for a first-order network too [fast][c
 
   const auto output = captured.str();
   CHECK(output.find("1 node id appears more than once") != std::string::npos);
-  CHECK(output.find("1 row changed an id's module") != std::string::npos);
+  CHECK(output.find("1 repeated row, 1 of which changed an id's module") != std::string::npos);
   CHECK(output.find("node 3 alone has 2 rows") != std::string::npos);
   // The higher-order advice would be wrong here; this network has no state clu.
   CHECK(output.find("_states.clu") == std::string::npos);
@@ -362,6 +362,36 @@ TEST_CASE("A clu that repeats a row verbatim is not reported as a changed partit
   CHECK(output.find("not for the one in the file") == std::string::npos);
 
   std::remove(sameModuleClu.c_str());
+}
+
+TEST_CASE("A clu mixing a verbatim repeat with a conflicting one counts both [fast][core][partition][parser]")
+{
+  // The leading counts are totals, not the conflicting subset: reporting only the
+  // conflicts undercounts what the sentence claims to summarize. And the example id
+  // has to name a conflicting id, or the warning talks about changed modules while
+  // pointing at the harmless repeat -- node 2 repeats its row verbatim and has as
+  // many rows as node 3, which is the one that changes module.
+  const std::string mixedClu = "duplicate_mixed.clu";
+  {
+    std::ofstream out(mixedClu);
+    out << "# node_id module\n1 1\n2 1\n2 1\n3 2\n3 3\n4 2\n5 3\n6 3\n";
+  }
+
+  std::ostringstream captured;
+  {
+    infomap::test::ScopedLogCapture capture(captured);
+    InfomapWrapper reader("--seed 123 --num-trials 1 --no-file-output --no-infomap --cluster-data " + mixedClu);
+    reader.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+    reader.run();
+  }
+
+  const auto output = captured.str();
+  CHECK(output.find("2 node ids appear more than once") != std::string::npos);
+  CHECK(output.find("2 repeated rows, 1 of which changed an id's module") != std::string::npos);
+  CHECK(output.find("node 3 alone has 2 rows") != std::string::npos);
+  CHECK(output.find("node 2 alone") == std::string::npos);
+
+  std::remove(mixedClu.c_str());
 }
 
 TEST_CASE("The duplicate-clu report survives the trial loop and parallel trials [fast][core][partition][parser][threads]")

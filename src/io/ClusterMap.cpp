@@ -243,14 +243,14 @@ void ClusterMap::readClu(const std::string& filename, bool includeFlow, const st
       continue;
     }
 
-    // insert_or_assign keeps the last row, which is the behaviour this reports on,
-    // and its result gives both whether the id was already there and what it held,
-    // without a second lookup.
-    const auto existing = m_clusterIds.find(stateId);
-    const bool isNewId = existing == m_clusterIds.end();
-    const bool changesModule = !isNewId && existing->second != moduleId;
-    m_clusterIds.insert_or_assign(stateId, moduleId);
-    if (!isNewId) {
+    // try_emplace, not find-then-assign: on a repeat its iterator already points at
+    // what the id held, so the old value, the fact that it is a repeat, and the
+    // overwrite all come out of a single traversal. A well-formed file pays exactly
+    // one lookup per row, which is what a clu reader should cost.
+    const auto [entry, inserted] = m_clusterIds.try_emplace(stateId, moduleId);
+    if (!inserted) {
+      const bool changesModule = entry->second != moduleId;
+      entry->second = moduleId; // the last row wins, which is what this reports on
       auto& repeat = repeats[stateId];
       if (repeat.rows == 0)
         repeat.rows = 1; // the row already in m_clusterIds
@@ -260,16 +260,28 @@ void ClusterMap::readClu(const std::string& filename, bool includeFlow, const st
     }
   }
 
+  // The example id is there to illustrate the problem, so a conflicting id always
+  // beats one that merely repeats a row verbatim, and within a tier the id with the
+  // most rows wins. Without the first rule a file holding both kinds could name the
+  // harmless one while the warning talks about changed modules.
+  bool exampleIsConflicting = false;
   for (const auto& [nodeId, repeat] : repeats) {
     m_duplicateClusterIds.rows += repeat.rows - 1;
     ++m_duplicateClusterIds.ids;
-    if (repeat.conflicting > 0) {
+
+    const bool isConflicting = repeat.conflicting > 0;
+    if (isConflicting) {
       m_duplicateClusterIds.conflictingRows += repeat.conflicting;
       ++m_duplicateClusterIds.conflictingIds;
     }
-    if (repeat.rows > m_duplicateClusterIds.maxRowsForOneId) {
+
+    const bool betterTier = isConflicting && !exampleIsConflicting;
+    const bool sameTierMoreRows = isConflicting == exampleIsConflicting
+        && repeat.rows > m_duplicateClusterIds.maxRowsForOneId;
+    if (betterTier || sameTierMoreRows) {
       m_duplicateClusterIds.maxRowsForOneId = repeat.rows;
       m_duplicateClusterIds.exampleId = nodeId;
+      exampleIsConflicting = isConflicting;
     }
   }
 }
