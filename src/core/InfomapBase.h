@@ -507,7 +507,7 @@ private:
 
   double calcCodelength(const InfoNode& parent) const { return m_optimizer->calcCodelength(parent); }
 
-  double calcTreeCodelengthCost(const InfoNode& root) const { return m_optimizer->calcTreeCodelengthCost(root); }
+  double calcTreeCodelengthCost(unsigned int numTopModules) const { return m_optimizer->calcTreeCodelengthCost(numTopModules); }
 
   /**
    * Calculate and store codelength on all modules in the tree

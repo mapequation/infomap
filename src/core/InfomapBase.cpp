@@ -2139,7 +2139,14 @@ void InfomapBase::init()
 
   initNetwork();
 
-  m_oneLevelCodelength = calcCodelength(m_root);
+  // The one-module partition's codelength, not the bare root's. They differ by any
+  // partition-level term the objective charges, and the collapse below installs this
+  // value verbatim on a tree that does have one module -- so a reference without the
+  // term made `Relative savings` compare two different objectives, and made a
+  // collapsed run report a number its own tree does not evaluate to (#1020). No
+  // effect unless such a term is configured: with --preferred-number-of-modules
+  // unset the cost is identically zero.
+  m_oneLevelCodelength = calcCodelength(m_root) + calcTreeCodelengthCost(1);
   Console::detail(1, "one-level codelength: {}", io::toPrecision(m_oneLevelCodelength));
 }
 
@@ -2591,7 +2598,7 @@ double InfomapBase::calcCodelengthOnTree(InfoNode& root, bool includeRoot) const
   // Added to the total only, never written into a node's codelength: the term
   // belongs to the partition, and the two callers that pass includeRoot=false do
   // so for the per-node side effect and discard this return value (#1021).
-  return totalCodelength + calcTreeCodelengthCost(root);
+  return totalCodelength + calcTreeCodelengthCost(root.childDegree());
 }
 
 // ===================================================

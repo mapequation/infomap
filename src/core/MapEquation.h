@@ -157,7 +157,7 @@ public:
   // by the per-node sum. Zero here: only the biased objective has one, and a
   // single global scalar has no per-node share to hand back from calcCodelength
   // (#1021).
-  double calcTreeCodelengthCost(const InfoNode& /*root*/) const { return 0.0; }
+  double calcTreeCodelengthCost(unsigned int /*numTopModules*/) const { return 0.0; }
 
   double calcCodelength(const InfoNode& parent) const
   {
