@@ -65,11 +65,9 @@ enum class HigherOrderInput : std::uint8_t {
 // (expanded per trial when --print-all-trials writes separate files) plus the
 // report sidecars. Used by the no-overwrite pre-flight.
 //
-// `higherOrder` is applied per phase, not globally, because state output is
-// turned on between two of them: the BeforeFlow artifacts are written before
-// configureNetworkMode() runs, so they keep the first-order names whatever the
-// input turns out to be, while the AfterFlow and AfterPartition artifacts get
-// their `_states` / `_states_as_physical` names.
+// `higherOrder` stands in for Config::stateOutput, which the caller cannot have
+// set yet. It applies to every phase: all three are written after
+// configureNetworkMode() installs the flag.
 std::vector<std::string> planAllOutputPaths(const Config& config, HigherOrderInput higherOrder);
 
 // Throws InfomapError(OutputError) when a planned output path is one of the run's

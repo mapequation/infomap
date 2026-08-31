@@ -154,6 +154,79 @@ def test_first_order_run_may_write_beside_a_states_named_input(infomap_bin, work
     assert (work / "net.tree").exists()
 
 
+def make_multilayer_workdir(path: Path) -> Path:
+    # *Intra/*Inter multilayer input. The inter-layer links break the symmetry, so
+    # reading it expands the undirected links to directed pairs and the run's flow
+    # model flips to directed -- which is what the Pajek dump has to declare.
+    path.mkdir(parents=True, exist_ok=True)
+    (path / "ml.net").write_text(
+        '*Vertices 3\n1 "i"\n2 "j"\n3 "k"\n'
+        "*Intra\n1 1 2 1\n1 2 1 1\n2 1 3 1\n2 3 1 1\n"
+        "*Inter\n1 1 2 0.4\n2 1 1 0.4\n",
+        encoding="utf-8",
+    )
+    return path
+
+
+def test_pajek_dump_of_a_higher_order_network_is_named_and_labelled_for_it(
+    infomap_bin, work
+):
+    # The BeforeFlow artifacts used to be written before configureNetworkMode(),
+    # so the Pajek dump of a higher-order network was named `<out-name>.net` --
+    # the `_states_as_physical` variant was unreachable from a run -- and declared
+    # `*Edges` while the run had already expanded the links to directed. Both came
+    # from writing the artifact before the config that describes it was finished.
+    make_multilayer_workdir(work)
+
+    result = run(
+        infomap_bin,
+        "ml.net",
+        "out",
+        "--out-name",
+        "ml",
+        "--silent",
+        "-o",
+        "network",
+        "-N1",
+        cwd=work,
+    )
+
+    assert result.returncode == 0, result.stderr
+    dump = work / "out" / "ml_states_as_physical.net"
+    assert dump.exists()
+    assert not (work / "out" / "ml.net").exists()
+
+    text = dump.read_text(encoding="utf-8")
+    assert "# State network as physical network" in text
+    assert "*Arcs" in text
+    assert "*Edges" not in text
+
+
+def test_pajek_dump_of_a_first_order_network_is_unchanged(infomap_bin, work):
+    # The control: first-order input keeps the bare name and the undirected label.
+    make_workdir(work)
+
+    result = run(
+        infomap_bin,
+        "network.net",
+        "out",
+        "--silent",
+        "-o",
+        "network",
+        "-N1",
+        cwd=work,
+    )
+
+    assert result.returncode == 0, result.stderr
+    dump = work / "out" / "network.net"
+    assert dump.exists()
+    assert not (work / "out" / "network_states_as_physical.net").exists()
+
+    text = dump.read_text(encoding="utf-8")
+    assert "*Edges" in text
+    assert "# State network as physical network" not in text
+
+
 def test_overwrite_flag_is_removed(infomap_bin, work):
     make_workdir(work)
 
@@ -199,6 +272,8 @@ def main(argv):
             test_no_overwrite_preflight_writes_no_files_when_one_target_exists,
             test_state_output_does_not_overwrite_its_own_input,
             test_first_order_run_may_write_beside_a_states_named_input,
+            test_pajek_dump_of_a_higher_order_network_is_named_and_labelled_for_it,
+            test_pajek_dump_of_a_first_order_network_is_unchanged,
             test_overwrite_flag_is_removed,
             test_run_manifest_contains_fingerprints_and_outputs,
         ]:

@@ -571,8 +571,10 @@ TEST_CASE("Output plan applies trial suffix before format suffix [fast][core][co
 TEST_CASE("Output preflight refuses to write over the run's own input [fast][core][config][output]")
 {
   // `Infomap ml.net . -o network` plans ./ml.net for the Pajek output, which is
-  // the input itself. It used to overwrite it and exit 0, replacing a multilayer
-  // network with its single-layer projection.
+  // the input itself. It used to overwrite it and exit 0, replacing the network
+  // with Infomap's own dump of it. First-order input, which is what this config
+  // describes -- higher-order input takes the `_states_as_physical` name and does
+  // not collide, which the write-phase case below pins down.
   Config config;
   config.networkFile = "ml.net";
   config.outDirectory = "./";
@@ -808,11 +810,12 @@ TEST_CASE("Output preflight protects the input against the _states artifacts [fa
 
 TEST_CASE("Output preflight follows state output across the write phases [fast][core][config][output]")
 {
-  // Config::stateOutput is set by configureNetworkMode(), which runs after the
-  // BeforeFlow artifacts are written and before the rest. So on higher-order input
-  // the Pajek network still lands on the first-order name while the flow network
-  // picks up the `_states_as_physical_flow` suffix, and the preflight has to model
-  // that boundary rather than flip the flag for the whole run.
+  // Config::stateOutput is set by configureNetworkMode(), which now runs before
+  // every write phase, so one classification names every network artifact. It used
+  // to run after the BeforeFlow write: the Pajek dump then kept the first-order
+  // name on higher-order input, where it collided with an input the run had no
+  // business touching, while the flow network one phase later took the
+  // `_states_as_physical_flow` suffix the pre-flight did not know about.
   const auto collides = [](void (*attach)(Config&), const std::string& input, infomap::HigherOrderInput higherOrder) {
     Config config;
     config.networkFile = input;
@@ -830,17 +833,17 @@ TEST_CASE("Output preflight follows state output across the write phases [fast][
   const auto pajek = [](Config& c) { c.printPajekNetwork = true; };
   const auto flow = [](Config& c) { c.printFlowNetwork = true; };
 
-  // BeforeFlow: `ml.net` whatever the input turns out to be, because the write
-  // happens before configureNetworkMode() and so cannot see the classification.
+  // BeforeFlow, the Pajek dump: the suffix follows the classification, so
+  // higher-order input never lands on the bare `ml.net`.
   CHECK(collides(pajek, "ml.net", infomap::HigherOrderInput::No));
-  CHECK(collides(pajek, "ml.net", infomap::HigherOrderInput::Yes));
-  CHECK_FALSE(collides(pajek, "ml_states_as_physical.net", infomap::HigherOrderInput::Yes));
+  CHECK_FALSE(collides(pajek, "ml.net", infomap::HigherOrderInput::Yes));
+  CHECK(collides(pajek, "ml_states_as_physical.net", infomap::HigherOrderInput::Yes));
+  CHECK_FALSE(collides(pajek, "ml_states_as_physical.net", infomap::HigherOrderInput::No));
 
   // A library caller can set stateOutput itself -- it is public, and the Python and
-  // R bindings expose a setter -- and then the BeforeFlow writer does emit the
-  // `_states_as_physical` name before any classification runs. So that phase is
-  // planned from the config as given and never forced to first-order, or this
-  // collision goes unseen.
+  // R bindings expose a setter. The classification only ever turns it on, never off,
+  // so the caller's value survives configureNetworkMode() and reaches the writer.
+  // The plan has to carry it, not force the phase to first-order.
   const auto pajekWithStateOutput = [](Config& c) {
     c.printPajekNetwork = true;
     c.setStateOutput();
@@ -848,7 +851,7 @@ TEST_CASE("Output preflight follows state output across the write phases [fast][
   CHECK(collides(pajekWithStateOutput, "ml_states_as_physical.net", infomap::HigherOrderInput::No));
   CHECK_FALSE(collides(pajekWithStateOutput, "ml.net", infomap::HigherOrderInput::No));
 
-  // AfterFlow: the suffix depends on the classification, in both directions.
+  // AfterFlow, the flow network: same rule, one phase later.
   CHECK(collides(flow, "ml_flow.net", infomap::HigherOrderInput::No));
   CHECK_FALSE(collides(flow, "ml_flow.net", infomap::HigherOrderInput::Yes));
   CHECK(collides(flow, "ml_states_as_physical_flow.net", infomap::HigherOrderInput::Yes));
