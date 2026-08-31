@@ -246,8 +246,12 @@ public:
     // back on the way out -- including when a run throws.
     const ScopedOpenMpNumThreads scopedThreadBudget(asOpenMpThreadCount(m_threadBudget.threads));
 #endif
-    preflightOutputTargets(m_infomap);
+    // After validateNetwork(), because the pre-flight needs to know whether the
+    // input is higher-order and that is only settled once the network is read and
+    // post-processed -- a multilayer file has no state nodes at all until then.
+    // Still ahead of every writer, which is what the check exists for.
     validateNetwork();
+    preflightOutputTargets(m_infomap, higherOrderInput());
     {
       auto timer = m_timing.scope("pre_run_output_s");
       writeOutputArtifacts(m_infomap, m_network, OutputPhase::BeforeFlow);
@@ -604,12 +608,27 @@ private:
     }
   }
 
+  // Whether configureNetworkMode() will turn state output on, answerable as soon
+  // as the network is read. The output pre-flight has to plan the `_states`
+  // artifacts before the classification runs, and a second, drifting copy of this
+  // condition is exactly how #1018 let a run overwrite its own input.
+  HigherOrderInput higherOrderInput() const
+  {
+    const bool stateOutput = m_network.haveMemoryInput()
+        || m_infomap.haveMemory()
+        || m_network.higherOrderInputMethodCalled();
+    return stateOutput ? HigherOrderInput::Yes : HigherOrderInput::No;
+  }
+
   void configureNetworkMode()
   {
+    // Read before setStateInput() below, which would otherwise make haveMemory()
+    // true and change the predicate's answer mid-function.
+    const bool useStateOutput = higherOrderInput() == HigherOrderInput::Yes;
+
     if (m_network.haveMemoryInput()) {
       Console::detail(1, "found higher-order network input, using the Map Equation for higher-order flows");
       m_infomap.setStateInput();
-      m_infomap.setStateOutput();
 
       if (m_network.isMultilayerNetwork() && !m_infomap.isMultilayerNetwork()) {
         m_infomap.setMultilayerInput();
@@ -617,10 +636,16 @@ private:
     } else {
       if (m_infomap.haveMemory() || m_network.higherOrderInputMethodCalled()) {
         Console::warn(0, "Higher-order network specified but no higher-order input found.");
-        // Use state output anyway for consistency even in the special case when input is first order
-        m_infomap.setStateOutput();
       }
       Console::detail(1, "ordinary network input, using the Map Equation for first-order flows");
+    }
+
+    // Set from the shared predicate rather than inside either branch, so the
+    // pre-flight's view of which artifacts a run writes cannot diverge from the
+    // run's. The first-order branch turns it on too, for consistency, when
+    // higher-order input was asked for but not found.
+    if (useStateOutput) {
+      m_infomap.setStateOutput();
     }
 
     if (m_network.haveDirectedInput() && m_infomap.isUndirectedFlow()) {
