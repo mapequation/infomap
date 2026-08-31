@@ -227,6 +227,68 @@ def test_pajek_dump_of_a_first_order_network_is_unchanged(infomap_bin, work):
     assert "# State network as physical network" not in text
 
 
+def test_default_headers_record_the_effective_seed(infomap_bin, work):
+    # #1026: the header echoes the as-typed argument string, so a run on the default
+    # seed published artifacts from which the seed was unrecoverable -- the one
+    # parameter reproducibility actually hinges on. No --seed here on purpose.
+    make_workdir(work)
+
+    result = run(
+        infomap_bin,
+        "network.net",
+        "out",
+        "--silent",
+        "-N2",
+        "-o",
+        "tree,json",
+        cwd=work,
+    )
+
+    assert result.returncode == 0, result.stderr
+
+    tree = (work / "out" / "network.tree").read_text(encoding="utf-8")
+    assert "# seed 123" in tree
+    # No shard offset in play, so the line carries the seed alone.
+    assert "offset" not in tree.split("# seed")[1].split("\n")[0]
+
+    data = json.loads((work / "out" / "network.json").read_text(encoding="utf-8"))
+    assert data["seed"] == 123
+    assert "trialOffset" not in data
+    # The trial counts the text header has had since #906, which this output lacked.
+    assert data["trials"] == 2
+    assert data["numTrials"] == 2
+
+
+def test_headers_record_the_trial_offset_of_a_shard(infomap_bin, work):
+    # Per-trial seeds derive from base + offset + i, so the offset is part of the
+    # answer and a shard's artifact has to carry it.
+    make_workdir(work)
+
+    result = run(
+        infomap_bin,
+        "network.net",
+        "out",
+        "--silent",
+        "--seed",
+        "42",
+        "-N2",
+        "--trial-offset",
+        "10",
+        "-o",
+        "tree,json",
+        cwd=work,
+    )
+
+    assert result.returncode == 0, result.stderr
+
+    tree = (work / "out" / "network.tree").read_text(encoding="utf-8")
+    assert "# seed 42 offset 10" in tree
+
+    data = json.loads((work / "out" / "network.json").read_text(encoding="utf-8"))
+    assert data["seed"] == 42
+    assert data["trialOffset"] == 10
+
+
 def test_overwrite_flag_is_removed(infomap_bin, work):
     make_workdir(work)
 
@@ -274,6 +336,8 @@ def main(argv):
             test_first_order_run_may_write_beside_a_states_named_input,
             test_pajek_dump_of_a_higher_order_network_is_named_and_labelled_for_it,
             test_pajek_dump_of_a_first_order_network_is_unchanged,
+            test_default_headers_record_the_effective_seed,
+            test_headers_record_the_trial_offset_of_a_shard,
             test_overwrite_flag_is_removed,
             test_run_manifest_contains_fingerprints_and_outputs,
         ]:
