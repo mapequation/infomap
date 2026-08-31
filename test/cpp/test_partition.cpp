@@ -326,9 +326,76 @@ TEST_CASE("Duplicate clu ids are reported for a first-order network too [fast][c
 
   const auto output = captured.str();
   CHECK(output.find("1 node id appears more than once") != std::string::npos);
+  CHECK(output.find("1 row changed an id's module") != std::string::npos);
   CHECK(output.find("node 3 alone has 2 rows") != std::string::npos);
   // The higher-order advice would be wrong here; this network has no state clu.
   CHECK(output.find("_states.clu") == std::string::npos);
+
+  std::remove(duplicateClu.c_str());
+}
+
+TEST_CASE("A clu that repeats a row verbatim is not reported as a changed partition [fast][core][partition][parser]")
+{
+  // A repeated id whose module agrees replaces nothing, and the reader ends up with
+  // exactly the partition the file describes -- so the warning must not claim the
+  // codelength is for something else. Worth a line anyway, since a clu file is
+  // meant to have one row per node.
+  const std::string sameModuleClu = "duplicate_same_module.clu";
+  {
+    std::ofstream out(sameModuleClu);
+    out << "# node_id module\n1 1\n2 1\n3 2\n3 2\n4 2\n5 3\n6 3\n";
+  }
+
+  std::ostringstream captured;
+  {
+    infomap::test::ScopedLogCapture capture(captured);
+    InfomapWrapper reader("--seed 123 --num-trials 1 --no-file-output --no-infomap --cluster-data " + sameModuleClu);
+    reader.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+    reader.run();
+  }
+
+  const auto output = captured.str();
+  CHECK(output.find("every repeat gives the same module") != std::string::npos);
+  CHECK(output.find("The partition is unaffected") != std::string::npos);
+  // None of the claims that only hold when a module actually changed.
+  CHECK(output.find("changed an id's module") == std::string::npos);
+  CHECK(output.find("not for the one in the file") == std::string::npos);
+
+  std::remove(sameModuleClu.c_str());
+}
+
+TEST_CASE("The duplicate-clu report survives the trial loop and parallel trials [fast][core][partition][parser][threads]")
+{
+  // The report used to sit in initPartition, which runs per trial: ten warnings on
+  // a serial -N10, and none at all under --parallel-trials, where every worker's
+  // initTrialPartition is wrapped in Log::ScopedMute. It is now emitted once on the
+  // main instance before any trial starts.
+  const std::string duplicateClu = "duplicate_trials.clu";
+  {
+    std::ofstream out(duplicateClu);
+    out << "# node_id module\n1 1\n2 1\n3 2\n3 3\n4 2\n5 3\n6 3\n";
+  }
+
+  const auto warningCount = [&duplicateClu](const std::string& extraFlags) {
+    std::ostringstream captured;
+    {
+      infomap::test::ScopedLogCapture capture(captured);
+      InfomapWrapper reader("--seed 123 --no-file-output --two-level --cluster-data " + duplicateClu + " " + extraFlags);
+      reader.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+      reader.run();
+    }
+    const auto output = captured.str();
+    unsigned int count = 0;
+    for (std::size_t at = output.find("more than once"); at != std::string::npos;
+         at = output.find("more than once", at + 1)) {
+      ++count;
+    }
+    return count;
+  };
+
+  CHECK(warningCount("--num-trials 1") == 1);
+  CHECK(warningCount("--num-trials 10") == 1);
+  CHECK(warningCount("--num-trials 10 --parallel-trials") == 1);
 
   std::remove(duplicateClu.c_str());
 }

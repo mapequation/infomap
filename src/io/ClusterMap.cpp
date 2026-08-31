@@ -178,12 +178,18 @@ void ClusterMap::readClu(const std::string& filename, bool includeFlow, const st
   SafeInFile input(filename);
   std::string line;
   std::istringstream lineStream;
-  // Rows seen per node id, but only for ids that actually repeat: a well-formed clu
+  // Repeat bookkeeping, kept only for ids that actually repeat: a well-formed clu
   // has one row per node (#1039), so keying this off the insert result below keeps
   // the common case at no extra storage and no extra lookup. Populated only from
   // rows that reach m_clusterIds, so multilayer rows skipped for a layer/node the
-  // network does not have are never mistaken for duplicates.
-  std::map<unsigned int, unsigned int> repeatedRows;
+  // network does not have are never mistaken for duplicates. `conflicting` counts
+  // the repeats that changed the module, which is a different thing from a row
+  // repeated verbatim.
+  struct RepeatCount {
+    unsigned int rows = 0;
+    unsigned int conflicting = 0;
+  };
+  std::map<unsigned int, RepeatCount> repeats;
 
   while (!std::getline(input, line).fail()) {
     if (line.empty() || line[0] == '#' || line[0] == '*')
@@ -238,21 +244,31 @@ void ClusterMap::readClu(const std::string& filename, bool includeFlow, const st
     }
 
     // insert_or_assign keeps the last row, which is the behaviour this reports on,
-    // and its bool tells us the id was already there without a second lookup.
-    const auto isNewId = m_clusterIds.insert_or_assign(stateId, moduleId).second;
+    // and its result gives both whether the id was already there and what it held,
+    // without a second lookup.
+    const auto existing = m_clusterIds.find(stateId);
+    const bool isNewId = existing == m_clusterIds.end();
+    const bool changesModule = !isNewId && existing->second != moduleId;
+    m_clusterIds.insert_or_assign(stateId, moduleId);
     if (!isNewId) {
-      auto& rows = repeatedRows[stateId];
-      if (rows == 0)
-        rows = 1; // the row already in m_clusterIds
-      ++rows;
+      auto& repeat = repeats[stateId];
+      if (repeat.rows == 0)
+        repeat.rows = 1; // the row already in m_clusterIds
+      ++repeat.rows;
+      if (changesModule)
+        ++repeat.conflicting;
     }
   }
 
-  for (const auto& [nodeId, rows] : repeatedRows) {
-    m_duplicateClusterIds.rows += rows - 1;
+  for (const auto& [nodeId, repeat] : repeats) {
+    m_duplicateClusterIds.rows += repeat.rows - 1;
     ++m_duplicateClusterIds.ids;
-    if (rows > m_duplicateClusterIds.maxRowsForOneId) {
-      m_duplicateClusterIds.maxRowsForOneId = rows;
+    if (repeat.conflicting > 0) {
+      m_duplicateClusterIds.conflictingRows += repeat.conflicting;
+      ++m_duplicateClusterIds.conflictingIds;
+    }
+    if (repeat.rows > m_duplicateClusterIds.maxRowsForOneId) {
+      m_duplicateClusterIds.maxRowsForOneId = repeat.rows;
       m_duplicateClusterIds.exampleId = nodeId;
     }
   }

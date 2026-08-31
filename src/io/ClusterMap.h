@@ -43,12 +43,20 @@ using TreePaths = std::vector<TreePath>;
 // that matters -- it has one row per (physical node, module) pair, so overlapping
 // modules make its ids repeat by construction (#1039).
 struct DuplicateClusterIds {
-  unsigned int rows = 0; // rows that replaced an earlier row
+  unsigned int rows = 0; // repeated rows, whether or not they changed anything
   unsigned int ids = 0; // distinct node ids seen more than once
   unsigned int exampleId = 0; // the worst one, named in the warning
   unsigned int maxRowsForOneId = 0; // how many rows that id had
 
+  // Repeats that actually changed the id's module. A file can repeat a row
+  // verbatim, and then nothing is replaced and the partition it describes is the
+  // one the reader ends up with -- so only these justify saying the result is not
+  // the file's partition.
+  unsigned int conflictingRows = 0;
+  unsigned int conflictingIds = 0;
+
   bool any() const noexcept { return rows > 0; }
+  bool anyConflicting() const noexcept { return conflictingRows > 0; }
 };
 
 class ClusterMap {
