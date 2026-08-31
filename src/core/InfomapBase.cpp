@@ -1425,10 +1425,13 @@ InfomapBase& InfomapBase::initPartition(const std::string& clusterDataFile, bool
     // off by bits, which is what #1039 was reported as.
     const auto& duplicates = clusterMap.duplicateClusterIds();
     if (duplicates.any()) {
+      // haveMemory() describes the network, not the file, so the higher-order advice
+      // says what repeats by construction without asserting that this is that file:
+      // a malformed state clu reaches this branch too.
       const auto* advice = haveMemory()
-          ? "This is the physical clu of a higher-order network -- one row per (physical node, module) pair -- so its "
-            "overlapping modules cannot be expressed as a partition at all. Use the state clu (_states.clu) for an "
-            "exact round trip."
+          ? "On a higher-order network the physical clu repeats ids by construction -- it has one row per "
+            "(physical node, module) pair, and overlapping modules are not a partition. If that is this file, use "
+            "the state clu (_states.clu) instead; if this already is the state clu, the repeats are in the file."
           : "A clu file has one row per node, so the last row read wins and the earlier assignments are discarded. "
             "The codelength below is for the partition that survived, not for the one in the file.";
       Console::warn(0,

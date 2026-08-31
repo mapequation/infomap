@@ -178,11 +178,12 @@ void ClusterMap::readClu(const std::string& filename, bool includeFlow, const st
   SafeInFile input(filename);
   std::string line;
   std::istringstream lineStream;
-  // Rows accepted per node id. A well-formed clu has one row per node, so anything
-  // above one means later rows silently replaced earlier ones (#1039). Counted only
-  // for rows that reach m_clusterIds, so multilayer rows skipped for a layer/node
-  // the network does not have are not mistaken for duplicates.
-  std::map<unsigned int, unsigned int> rowsPerId;
+  // Rows seen per node id, but only for ids that actually repeat: a well-formed clu
+  // has one row per node (#1039), so keying this off the insert result below keeps
+  // the common case at no extra storage and no extra lookup. Populated only from
+  // rows that reach m_clusterIds, so multilayer rows skipped for a layer/node the
+  // network does not have are never mistaken for duplicates.
+  std::map<unsigned int, unsigned int> repeatedRows;
 
   while (!std::getline(input, line).fail()) {
     if (line.empty() || line[0] == '#' || line[0] == '*')
@@ -236,13 +237,18 @@ void ClusterMap::readClu(const std::string& filename, bool includeFlow, const st
       continue;
     }
 
-    m_clusterIds[stateId] = moduleId;
-    ++rowsPerId[stateId];
+    // insert_or_assign keeps the last row, which is the behaviour this reports on,
+    // and its bool tells us the id was already there without a second lookup.
+    const auto isNewId = m_clusterIds.insert_or_assign(stateId, moduleId).second;
+    if (!isNewId) {
+      auto& rows = repeatedRows[stateId];
+      if (rows == 0)
+        rows = 1; // the row already in m_clusterIds
+      ++rows;
+    }
   }
 
-  for (const auto& [nodeId, rows] : rowsPerId) {
-    if (rows < 2)
-      continue;
+  for (const auto& [nodeId, rows] : repeatedRows) {
     m_duplicateClusterIds.rows += rows - 1;
     ++m_duplicateClusterIds.ids;
     if (rows > m_duplicateClusterIds.maxRowsForOneId) {
