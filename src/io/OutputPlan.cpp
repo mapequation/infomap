@@ -353,16 +353,17 @@ std::vector<std::string> planAllOutputPaths(const Config& config, HigherOrderInp
 {
   std::vector<std::string> paths;
 
-  // Two configs, because Config::stateOutput changes value inside the window
-  // this function has to describe. configureNetworkMode() sets it after the
-  // BeforeFlow artifacts are written and before everything else, so the
-  // BeforeFlow phase is planned as the run will actually write it -- with state
-  // output still off -- and the later phases with the value the classification
-  // will install. Getting this wrong in either direction is a live defect: too
-  // few paths lets a run destroy its own input (#1018), too many refuses a run
-  // that would have been fine.
-  Config beforeConfigure = config;
-  beforeConfigure.stateOutput = false;
+  // Config::stateOutput changes value inside the window this function has to
+  // describe: configureNetworkMode() sets it after the BeforeFlow artifacts are
+  // written and before everything else. So the phases are planned on either side
+  // of that call. Getting it wrong in either direction is a live defect: too few
+  // paths lets a run destroy its own input (#1018), too many refuses a run that
+  // would have been fine.
+  //
+  // BeforeFlow is planned from the config exactly as given, never forced, because
+  // that is what its writer sees. Config::stateOutput is public and the Python and
+  // R bindings expose a setter, so a caller can enter run() with it already true;
+  // the writer then emits the `_states_as_physical` name and the plan has to agree.
   Config afterConfigure = config;
   if (higherOrder == HigherOrderInput::Yes)
     afterConfigure.setStateOutput();
@@ -373,7 +374,7 @@ std::vector<std::string> planAllOutputPaths(const Config& config, HigherOrderInp
   };
 
   // Network sidecars are written once, independent of trial.
-  collectPhase(beforeConfigure, OutputPhase::BeforeFlow, -1);
+  collectPhase(config, OutputPhase::BeforeFlow, -1);
   collectPhase(afterConfigure, OutputPhase::AfterFlow, -1);
 
   // The final modular result is written once with the canonical basename, and

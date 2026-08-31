@@ -830,10 +830,23 @@ TEST_CASE("Output preflight follows state output across the write phases [fast][
   const auto pajek = [](Config& c) { c.printPajekNetwork = true; };
   const auto flow = [](Config& c) { c.printFlowNetwork = true; };
 
-  // BeforeFlow: `ml.net` whatever the input turns out to be.
+  // BeforeFlow: `ml.net` whatever the input turns out to be, because the write
+  // happens before configureNetworkMode() and so cannot see the classification.
   CHECK(collides(pajek, "ml.net", infomap::HigherOrderInput::No));
   CHECK(collides(pajek, "ml.net", infomap::HigherOrderInput::Yes));
   CHECK_FALSE(collides(pajek, "ml_states_as_physical.net", infomap::HigherOrderInput::Yes));
+
+  // A library caller can set stateOutput itself -- it is public, and the Python and
+  // R bindings expose a setter -- and then the BeforeFlow writer does emit the
+  // `_states_as_physical` name before any classification runs. So that phase is
+  // planned from the config as given and never forced to first-order, or this
+  // collision goes unseen.
+  const auto pajekWithStateOutput = [](Config& c) {
+    c.printPajekNetwork = true;
+    c.setStateOutput();
+  };
+  CHECK(collides(pajekWithStateOutput, "ml_states_as_physical.net", infomap::HigherOrderInput::No));
+  CHECK_FALSE(collides(pajekWithStateOutput, "ml.net", infomap::HigherOrderInput::No));
 
   // AfterFlow: the suffix depends on the classification, in both directions.
   CHECK(collides(flow, "ml_flow.net", infomap::HigherOrderInput::No));
