@@ -185,6 +185,13 @@ private:
   unsigned int m_numNodes = 0;
 
 public:
+  // The divisor of the entropy bias correction: the weighted total degree, floored at the
+  // unweighted one because the correction is derived from discrete counts (a network whose
+  // average link weight is below 1 would otherwise be corrected too hard). Exposed because
+  // the columnar engine builds the same correction outside this objective and the two
+  // divisors have to be the one figure, not two copies of a rule that can drift.
+  static double entropyBiasTotalDegree(const StateNetwork& network);
+
   void setNetworkProperties(const StateNetwork& network);
 
   // Copy the whole-network properties from a parent objective. Sub/super Infomap instances

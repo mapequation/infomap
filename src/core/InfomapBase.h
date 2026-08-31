@@ -13,6 +13,7 @@
 #include "InfomapConfig.h"
 #include "InfoEdge.h"
 #include "InfoNode.h"
+#include "ColumnarLevel.h"
 #include "ObjectPool.h"
 #include "InfomapOptimizerBase.h"
 #include "iterators/InfomapIterator.h"
@@ -42,6 +43,12 @@ namespace detail {
   struct PartitionTaskRecord;
   struct PerLevelStat;
 } // namespace detail
+
+class ColumnarTwoLevel;
+
+namespace columnar {
+  struct StackBreakdown;
+} // namespace columnar
 
 // Cooperative cancellation hook (issue #412). Return true to stop the run at the
 // next checkpoint. Invoked only on the owner thread, so it is safe to enter
@@ -139,9 +146,15 @@ public:
 
   const std::vector<double>& codelengths() const { return m_codelengths; }
 
-  double getIndexCodelength() const { return m_optimizer->getIndexCodelength(); }
+  // The index term, under the objective that produced codelength(). Under
+  // --non-redundant that is the root's own charge in the columnar stack breakdown,
+  // not m_optimizer's: m_optimizer is always a BASE map equation on this branch, so
+  // pairing its index term with an L* total made getModuleCodelength() = L* - L_index
+  // a hybrid of two objectives (visible in -vv, and exposed through SWIG as
+  // module_codelength). See m_columnarIndexCodelength for why only L*.
+  double getIndexCodelength() const { return m_columnarIndexCodelength >= 0.0 ? m_columnarIndexCodelength : m_optimizer->getIndexCodelength(); }
 
-  double getModuleCodelength() const { return m_hierarchicalCodelength - m_optimizer->getIndexCodelength(); }
+  double getModuleCodelength() const { return m_hierarchicalCodelength - getIndexCodelength(); }
 
   double getHierarchicalCodelength() const { return m_hierarchicalCodelength; }
 
@@ -300,8 +313,11 @@ private:
                            .setNonMainConfig(*this)
                            .inheritRuntimeContext(*this);
     // Carry the full-network properties down so entropy bias correction stays consistent
-    // across the hierarchy (this used to be a shared static).
+    // across the hierarchy (this used to be a shared static). A sub instance partitions
+    // InfoNodes and never sees a StateNetwork, so both the objective's copy and the
+    // columnar correction's divisor have to be handed down rather than derived.
     subInfomap.m_optimizer->inheritNetworkPropertiesFrom(*m_optimizer);
+    subInfomap.m_entropyBiasTotalDegree = m_entropyBiasTotalDegree;
     return subInfomap;
   }
 
@@ -313,6 +329,7 @@ private:
                              .setNonMainConfig(*this)
                              .inheritRuntimeContext(*this);
     superInfomap.m_optimizer->inheritNetworkPropertiesFrom(*m_optimizer);
+    superInfomap.m_entropyBiasTotalDegree = m_entropyBiasTotalDegree;
     // getNewInfomapInstanceWithoutMemory builds the objective from a default Config, so unlike a
     // sub-Infomap this one has to be told what to minimise. findHierarchicalSuperModules compares
     // its codelength directly against this instance's index codelength, and the two are only
@@ -457,7 +474,9 @@ private:
 
   void runPartition()
   {
-    if (twoLevel)
+    if (columnarSearch)
+      columnarPartition();
+    else if (twoLevel)
       partition();
     else
       hierarchicalPartition();
@@ -475,14 +494,130 @@ private:
 
   void partition();
 
+  // Non-recursive columnar search engine (--columnar): optimize on the columnar
+  // SoA core and materialize the result into the InfoNode tree via initTree.
+  void columnarPartition();
+
+  // Build + configure a columnar optimizer (native SoA or leaf-tree input,
+  // recorded teleportation, tune knee, corrections). Shared by
+  // columnarPartition() and deepRepairColumnarBest().
+  void setupColumnarOptimizer(ColumnarTwoLevel& opt, unsigned long seed);
+
+  // Deep repair of the winning -2 columnar trial (#889): seed a two-level
+  // stack from `tree`, run the split-discovery interleave once, and rewrite
+  // tree/codelength when it improves. Returns whether it improved. A no-op
+  // for the base objective (no module-move-capable correction).
+  bool deepRepairColumnarBest(NodePaths& tree, double& codelength, bool freshDiscovery);
+
+  // Whether the (single) trial's regroup arm escalated — the search's own
+  // pathology signal, set by columnarPartition from the trial engine. A
+  // single-trial run pays the winner repair's expensive fresh discovery only
+  // when this is set; at -N >= 2 the repair always runs in full (amortized).
+  bool m_columnarRegroupEscalated = false;
+
+  // --- Native columnar leaf input (I/O migration) ---
+  // Build the columnar leaf SoA (flow, enter/exit, teleport, out+in CSR) directly
+  // from the StateNetwork in the init phase (before the CLI releases the links),
+  // reused across trials. Bypasses the InfoNode leaf tree as the optimizer's
+  // input; the tree is still built for output during the transition.
+  void buildColumnarLeafInput(Network& network);
+  // Whether the native leaf input is used (undirected, unit Markov time, no
+  // recorded teleportation / VMT); other cases keep the InfoNode leaf path.
+  bool columnarNativeInputEligible() const;
+  // Point this instance's trials at another instance's leaf SoA instead of building
+  // one. A parallel-trial worker cannot build its own: buildColumnarLeafInput runs in
+  // RunSession while the links are still present, and the worker only ever sees the
+  // network through initNetwork. Borrowing the main instance's is sound for the same
+  // reason each trial's optimizer already borrows it -- it is immutable for the whole
+  // run and the owner outlives every borrower -- and it also puts workers on the same
+  // input construction as the serial path rather than a parallel one (#994).
+  void borrowColumnarLeafInputFrom(const InfomapBase& owner);
+  // The leaf SoA this instance's trials optimize from: the borrowed one when set,
+  // otherwise its own.
+  const ColumnarLevel& columnarLeafInput() const
+  {
+    return m_columnarLeafInputBorrowed != nullptr ? *m_columnarLeafInputBorrowed : m_columnarLeafInput;
+  }
+
+  // Attach the active objective's composable correction (bias / meta / mem /
+  // lossy) to a columnar optimizer, reading leaf attributes from m_leafNodes.
+  // Shared by columnarPartition() and evaluateColumnarPartition().
+  void addColumnarCorrections(ColumnarTwoLevel& opt) const;
+
+  // Per-leaf module ids coarsest-first (top module .. finest module), read from
+  // the current InfoNode tree — the seed for a columnar codelength evaluation.
+  std::vector<std::vector<int>> leafModulePathsFromTree() const;
+
+  // Rectangularize ragged leaf paths by repeating each short path's own finest
+  // module id until every path has the maximum depth, so the strict-level stack
+  // can hold the partition. A top-level leaf (empty path -- its parent is the root)
+  // first gets a synthetic module id of its own, since it is its own module. Valid
+  // ONLY under L*, which is invariant under such a pass-through level; see the
+  // definition for the theorem and the guard.
+  // Returns, per leaf, how many levels were inserted below its finest module
+  // (all zeros when nothing was padded). A top-level leaf's synthetic module is that
+  // leaf's finest module, so it is NOT counted -- only the copies stacked above it.
+  static std::vector<int> padLeafPathsToUniformDepth(std::vector<std::vector<int>>& paths);
+
+  // Per-leaf module paths for a warm start from a soft --cluster-data partition
+  // (#824), rectangularized to the shape the strict-level stack takes. Returns
+  // false (leaving `paths` empty) when there is nothing to seed from: no initial
+  // partition in the tree, or a hard one, which is collapsed into the leaf
+  // network before the search instead.
+  // `squared` reports whether rectangularizing changed the tree, i.e. whether the
+  // seeded stack still holds exactly the partition the file gave. When it did not,
+  // the stack's codelength is no longer the input partition's, and the caller has to
+  // score the tree itself to know what it must beat.
+  bool columnarSeedPathsFromTree(std::vector<std::vector<int>>& paths, bool& squared) const;
+
+  // Score the current InfoNode tree with the object-oriented objective (total AND
+  // per-node), plus the one correction calcCodelengthOnTree does not implement
+  // (--preferred-number-of-modules). The columnar fallback when the stack cannot
+  // hold the partition; keeps the reported total and the stamped tree on one
+  // objective.
+  double objectOrientedTreeCodelength();
+
+  // Evaluate the current InfoNode partition's codelength on the columnar
+  // structure (base map equation + active correction), and stamp the objective's
+  // own per-node decomposition onto the tree. Falls back to the object-oriented
+  // objectOrientedTreeCodelength for a ragged tree the padding cannot rescue. Used
+  // for the --no-infomap input-partition codelength under the columnar core, and to
+  // re-stamp a tree re-materialized outside a trial (see restampColumnarCodelengths).
+  double evaluateColumnarPartition();
+
+  // Put the columnar engine's per-node charges back on the tree currently in memory.
+  // Inside initTree, InfoNode::codelength is written by calcCodelengthOnTree alone --
+  // the BASE map equation -- and not at all when it takes its flat shortcut (the
+  // columnar charges come from stampColumnarCodelengths, which a trial calls and a
+  // restore did not). So a tree
+  // re-materialized OUTSIDE a trial (restoreBestResult, maybeDeepRepairBest) carries
+  // either the previous trial's stale charges or base-L ones next to the winning
+  // trial's reported total. Re-scoring the restored tree on the columnar stack puts
+  // the rewritten file's modules[].codelength, the per-level table and
+  // m_columnarIndexCodelength back on the objective that produced the headline.
+  // No-op unless --columnar. Does not touch m_hierarchicalCodelength: the winning
+  // trial's value stays the reported one.
+  void restampColumnarCodelengths();
+
+  // Write a columnar stack breakdown onto the materialized InfoNode tree, so the
+  // per-level table and -o json modules[].codelength report the objective that
+  // produced the headline number. Returns false, leaving the tree untouched, if
+  // the tree and the stack do not line up (nothing in-tree should hit that; the
+  // caller then keeps whatever calcCodelengthOnTree left). `padDepth` is
+  // padLeafPathsToUniformDepth's return value: a leaf whose path was padded has
+  // its phantom stack levels folded into its finest module.
+  // `padCharge` receives what the phantom levels were charged; the caller subtracts
+  // it from the reported codelength, and it is not written to any node. The one
+  // stack module with no InfoNode that is NOT phantom -- the module a top-level leaf
+  // constitutes -- is charged to the root instead.
+  bool stampColumnarCodelengths(const ColumnarTwoLevel& opt,
+                                const columnar::StackBreakdown& breakdown,
+                                const std::vector<int>& padDepth,
+                                double& padCharge);
+
   // ===================================================
   // runPartition: init: *
   // ===================================================
-
-  /**
-   * Done in network?
-   */
-  void initEnterExitFlow();
 
   void aggregateFlowValuesFromLeafToRoot();
 
@@ -670,6 +805,62 @@ protected:
 
   std::vector<InfoNode*> m_originalLeafNodes;
 
+  // Native columnar leaf input (I/O migration): the leaf SoA built once from the
+  // StateNetwork and reused across trials. This is the single owner of the leaf
+  // CSR — the largest allocation in a run — and every trial's optimizer borrows
+  // it (ColumnarTwoLevel::buildFromBorrowedLevel) rather than copying it. Held
+  // behind a pointer so this header only needs the forward declaration. Null when
+  // the InfoNode leaf path is used (ineligible cases).
+  bool m_columnarNativeInput = false;
+  ColumnarLevel m_columnarLeafInput;
+  // Set on a parallel-trial worker to the main instance's leaf SoA (see
+  // borrowColumnarLeafInputFrom). Non-owning, and read-only from every worker thread:
+  // buildFromBorrowedLevel only takes the level's address and reads it.
+  const ColumnarLevel* m_columnarLeafInputBorrowed = nullptr;
+
+  // Entropy-bias divisor (--entropy-corrected), derived from the network in
+  // initNetwork(Network&) rather than read back off m_network when the correction is
+  // built. A parallel-trial worker is handed the run's network by reference and never
+  // stores one, so m_network is empty inside a worker and every quantity read off it is
+  // zero -- which put the columnar correction on its totalDegree<=0 fallback of 1.0,
+  // orders of magnitude too strong, and collapsed every parallel trial to one module
+  // (#989). The object-oriented objective never had the bug because initNetwork already
+  // pushes the same figure into it via setNetworkProperties(network).
+  double m_entropyBiasTotalDegree = 0.0;
+
+  // L* index term for the tree currently materialized, or -1 when the run is not
+  // --non-redundant (where m_optimizer's own index term is the right one -- checked
+  // to agree with the columnar root charge on a fixed partition for base, -d,
+  // -d --recorded-teleportation, --markov-time, --variable-markov-time, --meta-data
+  // and --regularized). Set wherever the columnar per-node charges are stamped, and
+  // cleared by initTree, so its lifetime is exactly the tree it describes: a single
+  // trial, a serial multi-trial run (restoreBestResult re-stamps, so it is the BEST
+  // trial's root term, not the last executed trial's) and --parallel-trials (same
+  // restore, on the main instance, whose value would otherwise never be written since
+  // the trials run on workers). NOT covered: a caller that mutates the tree by some
+  // other route, concretely the API-only hard-partition path where
+  // restoreHardPartition re-expands the tree after the stamping -- unverified.
+  //
+  // Only L* needs it, and needs it badly: m_optimizer is always a BASE map equation
+  // on this branch, so getModuleCodelength() = L* - L_index was a hybrid of two
+  // objectives. --entropy-corrected is deliberately NOT covered here even though the
+  // columnar root charge and m_optimizer disagree there by multiplier/(2*totalDegree):
+  // the object-oriented engine disagrees with ITSELF the same way (its per-level table
+  // charges the root calcCodelength(m_root) while getIndexCodelength() returns the
+  // objective's bookkeeping), so which one is right is a master-side question and
+  // answering it here would only make the two engines differ.
+  double m_columnarIndexCodelength = -1.0;
+
+  // The all-in-one-module codelength under the ACTIVE objective, for the columnar
+  // one-level fallback; -1 = not computed yet for this network. Invalidated in
+  // init() next to m_oneLevelCodelength, which has the same dependencies.
+  double m_columnarOneLevelCodelength = -1.0;
+  // The soft --cluster-data partition's own codelength on the columnar objective, or
+  // -1 before it is known (#824). Only needed when rectangularizing changed the tree,
+  // and cached because every trial re-materializes the same input partition. Invalidated
+  // in init() next to m_columnarOneLevelCodelength, which has the same dependencies.
+  double m_columnarSeedCodelength = -1.0;
+
   Network m_network;
   InitialPartition m_initialPartition; // nodeId -> moduleId
   // Pending physical multilayer partition: {layer_id, node_id, module_id} rows,
@@ -680,7 +871,13 @@ protected:
   bool m_isMain = true;
   unsigned int m_subLevel = 0;
 
-  bool m_calculateEnterExitFlow = false;
+  // Flat-first strategy alternation (#889): even-numbered trials of the
+  // hierarchical columnar searches build the hierarchy from the full two-level
+  // optimum instead of the fine building blocks (ColumnarTwoLevel::
+  // setFlatFirstBottom). Set per trial by RunSession from the global trial
+  // index (deterministic and identical across serial and parallel trial
+  // modes); the first trial keeps hierarchical-first, so -N1 is unchanged.
+  bool m_columnarFlatFirstTrial = false;
 
   double m_oneLevelCodelength = 0.0;
   unsigned int m_numNonTrivialTopModules = 0;
@@ -696,8 +893,6 @@ protected:
   double m_entropyRate = 0.0;
   double m_maxEntropy = 0.0;
   double m_maxFlow = 0.0;
-
-  double m_sumDanglingFlow = 0.0;
 
   Date m_startDate;
   Date m_endDate;

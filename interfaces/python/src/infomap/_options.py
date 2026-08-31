@@ -145,6 +145,8 @@ _OPTION_TABLE = {
     "multilayer_relax_limit_down": _OptionSpec("--multilayer-relax-limit-down", "value", -1),
     "multilayer_relax_by_jsd": _OptionSpec("--multilayer-relax-by-jsd", "flag", False),
     "multilayer_relax_to_self": _OptionSpec("--multilayer-relax-to-self", "flag", False),
+    "non_redundant": _OptionSpec("--non-redundant", "flag", False),
+    "non_redundant_exact": _OptionSpec("--non-redundant-exact", "flag", False),
     "directed": _OptionSpec("--directed", "directed", None, common=True),
     # accuracy
     "seed": _OptionSpec("--seed", "value", 123, domain=(1, None), common=True),
@@ -154,6 +156,10 @@ _OPTION_TABLE = {
     "tune_iteration_limit": _OptionSpec("--tune-iteration-limit", "value", None, domain=(0, None)),
     "core_loop_codelength_threshold": _OptionSpec("--core-loop-codelength-threshold", "value", 1e-10, domain=(0.0, None)),
     "tune_iteration_relative_threshold": _OptionSpec("--tune-iteration-relative-threshold", "value", 1e-05, domain=(0.0, None)),
+    "hier_from_blocks": _OptionSpec("--hier-from-blocks", "flag", False),
+    "columnar_check": _OptionSpec("--columnar-check", "flag", False),
+    "columnar_two_level": _OptionSpec("--columnar-two-level", "flag", False),
+    "columnar": _OptionSpec("--columnar", "flag", False),
     "inner_parallelization": _OptionSpec("--inner-parallelization", "flag", False),
     "parallel_trials": _OptionSpec("--parallel-trials", "flag", False),
     "converge": _OptionSpec("--converge", "flag", False),
@@ -631,6 +637,22 @@ class Options(metaclass=_OptionsMeta):
         On relaxation, link a state node to its own physical node in the target layer
         instead of spreading to its out-neighbors. Builds a smaller state network with
         the same flow as the default.
+    non_redundant : bool, optional
+        Use the non-redundant map equation L*: a module's exit codebook excludes the
+        module just left (no impossible immediate re-entry) and the first visit after
+        entering uses a separate enter codebook (no impossible immediate exit). Runs on
+        the non-recursive columnar engine (implies --columnar). Supports undirected and
+        directed flow, recorded teleportation, and the composable objectives (metadata,
+        memory/state, multilayer, entropy bias, preferred number of modules), since L*
+        restricts which walk steps are possible, independently of which codebook a step
+        is coded in. Cannot be combined with the lossy (rate-distortion) objective,
+        whose noise credit is derived against the standard map equation.
+    non_redundant_exact : bool, optional
+        Reserved, currently inert: with --non-redundant, drive the leaf move loop with
+        the exact O(m) leave-one-out exit sweep instead of the O(1) adaptive
+        power-series delta. The leaf move loop is not yet L*-aware (it optimizes the
+        base map equation and L* drives the structural search), so neither variant
+        exists and this option does not change the result.
     seed : int, optional
         Set the random number generator seed for reproducible results. Valid range: >=
         1.
@@ -644,8 +666,10 @@ class Options(metaclass=_OptionsMeta):
         to find larger structures. 0 means no limit. Valid range: >= 0. Engine default:
         0.
     tune_iteration_limit : int, optional
-        Limit the main iterations in the two-level partition algorithm. 0 means no
-        limit. Valid range: >= 0. Engine default: 0.
+        Limit the main tuning iterations: fine/coarse-tune sweeps in the two-level
+        partition algorithm, or interior-layer refinement sweeps in the columnar engine
+        (--columnar). 0 means no limit (run until convergence). Valid range: >= 0.
+        Engine default: 0.
     core_loop_codelength_threshold : float, optional
         Require at least this codelength improvement to accept a new solution in a core
         loop. Valid range: >= 0.0.
@@ -655,6 +679,27 @@ class Options(metaclass=_OptionsMeta):
     fast_hierarchical_solution : int, optional
         Find top modules fast. Use 2 to keep all fast levels and 3 to skip the recursive
         part.
+    hier_from_blocks : bool, optional
+        Experimental (phase-1a measurement): stop aggregation at fine building blocks
+        and grow the hierarchy upward with the enter-flow super-search only, skipping
+        two-level tuning and recursive refinement. Block granularity follows
+        --level-aggregation-limit. For comparing an early-departure hierarchical build
+        against the full production result.
+    columnar_check : bool, optional
+        Experimental (phase-1a measurement): after a normal run, rebuild the final
+        partition in the columnar core (base map equation) and log its hierarchical
+        codelength against the tree's, as a correctness gate for the new data structure.
+    columnar_two_level : bool, optional
+        Experimental (phase-1b measurement): run the columnar two-level optimizer on the
+        leaf network and log its codelength against the OO result. Combine with
+        --two-level for an apples-to-apples comparison.
+    columnar : bool, optional
+        Experimental engine (columnar-hierarchical-core): use the non-recursive columnar
+        search (fine building blocks, enter-flow up-build, and the up/down convergence
+        sweep) instead of the recursive two-level-then-refine algorithm. The number of
+        tuning sweeps follows --tune-iteration-limit (0 = until convergence). Supports
+        the composable objectives (metadata, memory/state, multilayer, lossy) and
+        --two-level. Produces the normal output tree.
     inner_parallelization : bool, optional
         Experimental: use batched parallel node moves for coarse optimization.
         Performance gains are workload-dependent, often require a relaxed
@@ -757,6 +802,8 @@ class Options(metaclass=_OptionsMeta):
     multilayer_relax_limit_down: int = -1
     multilayer_relax_by_jsd: bool = False
     multilayer_relax_to_self: bool = False
+    non_redundant: bool = False
+    non_redundant_exact: bool = False
     # accuracy
     seed: int = 123
     num_trials: int = 1
@@ -766,6 +813,10 @@ class Options(metaclass=_OptionsMeta):
     core_loop_codelength_threshold: float = 1e-10
     tune_iteration_relative_threshold: float = 1e-05
     fast_hierarchical_solution: int | None = None
+    hier_from_blocks: bool = False
+    columnar_check: bool = False
+    columnar_two_level: bool = False
+    columnar: bool = False
     inner_parallelization: bool = False
     parallel_trials: bool = False
     converge: bool = False

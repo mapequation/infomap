@@ -11,6 +11,7 @@
 #include "InfomapConfig.h"
 #include "InfoNode.h"
 #include "FlowData.h"
+#include "ColumnarMapEquation.h"
 #include "BiasedMapEquation.h"
 #include "MemMapEquation.h"
 #include "MetaMapEquation.h"
@@ -46,6 +47,7 @@
 #include <map>
 #include <set>
 #include <unordered_map>
+#include <unordered_set>
 #include <cstdlib>
 #include <algorithm>
 #include <numeric>
@@ -223,7 +225,31 @@ public:
     unsigned int bestTrialIndex = 0;
     unsigned int threadsUsed = 1;
     bool bestTreeNeedsRestore = false;
+    // The deep repair already materialized + wrote the best tree on the main
+    // instance (with the columnar core's authoritative codelength); the
+    // restore pass would re-initTree and overwrite that codelength with the
+    // reconstructed tree's value.
+    bool bestTreeMaterialized = false;
+    // Best trial whose tree is NOT two-level-shaped, tracked separately from the
+    // overall winner. The once-per-run split repair comes in two shapes — the
+    // two-level interleave (flat winner) and the hierarchical one — and on some
+    // networks the overall winner is flat while the repairable headroom sits in
+    // the best DEEP trial, which the winner-only hook could never see. Selected
+    // by codelength with an earliest-index tie-break, so it does not depend on
+    // trial completion order (identical serial and parallel).
+    NodePaths bestDeepTree;
+    double bestDeepCodelength = std::numeric_limits<double>::max();
+    unsigned int bestDeepTrialIndex = std::numeric_limits<unsigned int>::max();
   };
+
+  // A columnar tree is two-level-shaped when every leaf path is {module, rank}.
+  static bool isFlatTree(const NodePaths& tree)
+  {
+    for (const auto& p : tree)
+      if (p.second.size() != 2)
+        return false;
+    return !tree.empty();
+  }
 
   RunSession(InfomapBase& infomap, Network& network, TimingRegistry& timing) : m_infomap(infomap), m_network(network), m_timing(timing) {}
 
@@ -256,6 +282,7 @@ public:
       auto timer = m_timing.scope("configure_network_s");
       configureNetworkMode();
     }
+    warnColumnarUnsupportedOptions();
     calculateFlowAndInitNetwork();
     {
       auto timer = m_timing.scope("post_flow_output_s");
@@ -273,8 +300,91 @@ public:
       auto timer = m_timing.scope("trial_optimize_s");
       result = runTrials();
     }
+    maybeDeepRepairBest(result);
     result.threadsUsed = m_threadsUsed;
     return result;
+  }
+
+  // Deep repair of the winning -2 columnar trial (#889): the expensive
+  // split-discovery interleave runs once on the best-of-N partition instead
+  // of inside every trial. Placed after the whole trial loop so the gate does
+  // not depend on trial completion order — deterministic in both serial and
+  // parallel-trial modes. Also applies to hierarchical runs whose winning
+  // tree is two-level-shaped (a flat-first trial won, see #889): the repair
+  // is defined on a flat partition, so a deeper winner is left untouched.
+  void maybeDeepRepairBest(Result& result)
+  {
+    // --no-infomap evaluates the supplied partition; repairing it would return
+    // a different (better) partition than the one the user asked to score.
+    if (!m_infomap.columnarSearch || m_infomap.haveHardPartition() || m_infomap.noInfomap || result.bestTree.empty())
+      return;
+    // At -N1 the serial path never fills bestTree (updateBestResult only
+    // records it when a later trial might need restoring; the in-memory tree
+    // IS the winner), leaving the pre-sized placeholder entries with empty
+    // paths — which used to make deepRepairColumnarBest bail on its
+    // tree-mismatch guard, silently disabling the winner repair for every
+    // single-trial run. Materialize the winner from the in-memory tree.
+    if (result.bestTree.front().second.empty()) {
+      result.bestTree.clear();
+      for (auto it(m_infomap.iterLeafNodes()); !it.isEnd(); ++it)
+        result.bestTree.emplace_back(it->stateId, it.path());
+      if (result.bestTree.empty())
+        return;
+    }
+    // Tree paths carry one slot per module level plus the trailing leaf-rank
+    // slot: a two-level (flat) tree has paths of length 2.
+    const bool deepWinner = !m_infomap.twoLevel && !isFlatTree(result.bestTree);
+    // A deeper winner is only repairable with the hierarchical split operator
+    // (COL_HSPLIT_WINNER); without it the hook stays two-level-only as shipped.
+    if (deepWinner && !ColumnarTwoLevel::hierarchicalWinnerRepairEnabled())
+      return;
+    auto timer = m_timing.scope("deep_repair_s");
+    const double before = result.bestHierarchicalCodelength;
+    const bool freshDiscovery = m_numTrials > 1 || m_infomap.m_columnarRegroupEscalated;
+    bool improved = m_infomap.deepRepairColumnarBest(result.bestTree, result.bestHierarchicalCodelength, freshDiscovery);
+    // Best-of-each-shape: when the winner was FLAT, its repair used the
+    // two-level interleave, so the hierarchical operator has still not been
+    // spent. Offer it the best deep trial — on the memory/state networks that is
+    // where the hierarchical headroom is, and the winner-only hook could never
+    // reach it. Gated on the run's current best, so it can only improve.
+    if (!deepWinner && !result.bestDeepTree.empty()) {
+      NodePaths deepTree = result.bestDeepTree;
+      double deepL = result.bestDeepCodelength;
+      if (m_infomap.deepRepairColumnarBest(deepTree, deepL, freshDiscovery)
+          && deepL < result.bestHierarchicalCodelength - 1e-10) {
+        result.bestTree = std::move(deepTree);
+        result.bestHierarchicalCodelength = deepL;
+        result.bestTrialIndex = result.bestDeepTrialIndex;
+        improved = true;
+      }
+    }
+    if (!improved)
+      return;
+    Console::detail(0, "columnar: deep repair of the best trial improved {} -> {}", io::toPrecision(before), io::toPrecision(result.bestHierarchicalCodelength));
+    // Materialize the repaired tree and refresh the per-level statistics the
+    // summary prints. initTree recomputes a materialized codelength on the
+    // reconstructed tree; the columnar core's value is authoritative (see
+    // columnarPartition), so override it the same way.
+    {
+      Log::ScopedMute mute;
+      m_infomap.initTree(result.bestTree);
+      // Same re-stamp as restoreBestResult: the per-level table below is rebuilt from
+      // this tree, not captured from a trial, so it reads whatever initTree left on the
+      // nodes -- nothing, or the base map equation -- unless the columnar engine writes
+      // its own charges back first.
+      m_infomap.restampColumnarCodelengths();
+    }
+    m_infomap.m_hierarchicalCodelength = result.bestHierarchicalCodelength;
+    result.bestSolutionStatistics.str("");
+    result.bestNumLevels = printPerLevelCodelength(m_infomap.root(), result.bestSolutionStatistics);
+    // The tree in m_infomap is current; no restore pass needed even when the
+    // best trial was not the last executed.
+    result.bestTreeNeedsRestore = false;
+    result.bestTreeMaterialized = true;
+    if (!m_infomap.noFinalOutput) {
+      auto outputTimer = m_timing.scope("output_s");
+      m_infomap.writeResult();
+    }
   }
 
   void printSummary(const Result& result)
@@ -437,6 +547,13 @@ private:
       // Share the cancel flag so workers observe a cancel; they only read it and
       // unwind, caught by the per-trial handler below (issue #412).
       worker.inheritRuntimeContext(m_infomap);
+      // Borrow the run's columnar leaf SoA. A worker cannot build one -- that happens in
+      // the init phase, from a network it does not own and whose links the CLI may already
+      // have released -- so without this it silently fell back to rebuilding the columnar
+      // structure from the InfoNode leaf tree on every trial, which is both slower and a
+      // different input construction from the one the serial path uses (#994). Read-only
+      // and outlived by this scope, so it is safe to share across the worker threads.
+      worker.borrowColumnarLeafInputFrom(m_infomap);
 
       for (unsigned int trialIndex = static_cast<unsigned int>(workerIndex); trialIndex < m_numTrials; trialIndex += numWorkers) {
         try {
@@ -444,6 +561,7 @@ private:
           const auto seed = trialSeed(trialIndex);
           worker.seedToRandomNumberGenerator = seed;
           worker.reseed(static_cast<unsigned int>(seed));
+          worker.m_columnarFlatFirstTrial = ((m_infomap.trialOffset + trialIndex) % 2) == 1;
           int threadNumber = 0;
 #ifdef _OPENMP
           threadNumber = omp_get_thread_num();
@@ -484,6 +602,17 @@ private:
           }
 
           std::lock_guard<std::mutex> lock(bestResultMutex);
+          // Best DEEP trial, same criterion as the serial path: codelength with
+          // an earliest-index tie-break, so it is independent of which worker
+          // finishes first (see maybeTrackBestDeepTrial).
+          if (m_infomap.columnarSearch && !m_infomap.twoLevel && trialNumLevels >= 3
+              && ColumnarTwoLevel::hierarchicalWinnerRepairEnabled()
+              && (trialCodelength < result.bestDeepCodelength - 1e-10
+                  || (std::abs(trialCodelength - result.bestDeepCodelength) < 1e-10 && trialIndex < result.bestDeepTrialIndex))) {
+            result.bestDeepCodelength = trialCodelength;
+            result.bestDeepTrialIndex = trialIndex;
+            result.bestDeepTree = trialTree;
+          }
           const auto bestIndexMissing = result.bestTrialIndex >= m_numTrials;
           const auto isBetter = trialCodelength < result.bestHierarchicalCodelength - 1e-10;
           const auto isEarlierTie = std::abs(trialCodelength - result.bestHierarchicalCodelength) < 1e-10 && trialIndex < result.bestTrialIndex;
@@ -544,6 +673,8 @@ private:
 
   void restoreBestResult(const Result& result)
   {
+    if (result.bestTreeMaterialized)
+      return; // deep repair already restored + wrote the (repaired) best tree
     // Compare against the actual executed trial count (m_trialsRun), not the cap
     // (m_numTrials), so --converge does not force a redundant restore + rewrite
     // when the best trial was the last one executed.
@@ -558,6 +689,48 @@ private:
       {
         auto timer = m_timing.scope("best_restore_s");
         m_infomap.initTree(result.bestTree);
+        // initTree recomputes m_hierarchicalCodelength via calcCodelengthOnTree, which
+        // is the OO objective's codelength on the materialized tree. The columnar core is
+        // the source of truth for the search codelength (the same rule the columnar
+        // materialization site applies), so restore the value the winning trial actually
+        // optimized -- otherwise codelength(), and with it the .tree/.json header, reports
+        // a different number than the console did.
+        //
+        // Guarded on columnarSearch rather than on nonRedundant (#1012). The narrow guard
+        // was written when L* was the only objective on which the two engines could
+        // disagree; composing the metadata and physical-node codebooks (see
+        // addColumnarCorrections) added a second one, and the split showed up as console
+        // 2.247219447 against 2.577797959367 in the output files for the same run -- only
+        // at -N>=2, since this whole block is guarded by m_trialsRun > 1. Guarding on the
+        // engine instead of on one objective removes the class of bug rather than this
+        // instance of it. Broadening it is not a no-op, and that is deliberate: the columnar
+        // search value and the OO recomputation of the *same* partition agree only to the
+        // last few ULPs, since the two engines sum the same terms in different orders. A/B
+        // across the benchmark set (base and L*, -C and OO, -N1 and -N10) is identical to all
+        // 12 printed digits, but read the -o json codelength at full double precision and
+        // nine of the 13 -C -N10 rows move in the last bits. The largest is web-NotreDame
+        // 5.5685292930834125 -> 5.568529293083488 (+7.6e-14), then science2001
+        // --preferred-number-of-modules 25 (-5.0e-14) and powergrid
+        // 4.7410720563526025 -> 4.741072056352614 (+1.2e-14); plain science2001, lazega, jazz,
+        // netsci, ninetriangles and the multilayer example move by <= 4.4e-15. The four rows
+        // that do not move at all are politicalblogs, malaria and air30k (plain and
+        // -d --regularized). All nine round to the same 12 significant digits, so nothing
+        // printed changes. The value reported after the restore is now the one the winning
+        // trial actually optimized and the one the console printed, which is the property
+        // this guard exists to hold. The OO arm is byte-exact on all 13 rows (no
+        // columnarSearch), and the -C --non-redundant arms were exact before this change --
+        // they already restored the columnar value.
+        if (m_infomap.columnarSearch)
+          m_infomap.m_hierarchicalCodelength = result.bestHierarchicalCodelength;
+        // …and the same for the DECOMPOSITION, which initTree leaves either unwritten
+        // (flat shortcut: the previous trial's charges survive, so jazz -C -N10 -o json
+        // wrote sum(modules[].codelength) = 0.530794 against a codelength of
+        // 6.862755928) or on the base objective (a hierarchical L* winner got base-L
+        // per-module values: powergrid -C --non-redundant -N5 --seed 1 summed 5.129307
+        // against 4.518248787). Re-score the restored tree on the columnar stack so the
+        // rewritten file agrees with the console table, which is captured from the live
+        // tree of the winning trial and was right all along.
+        m_infomap.restampColumnarCodelengths();
       }
       if (!m_infomap.noFinalOutput) {
         auto outputTimer = m_timing.scope("output_s");
@@ -630,6 +803,19 @@ private:
     m_network.setConfig(m_infomap);
   }
 
+  // Search-shaping flags with no effect on the columnar engine (#827). Wired:
+  // --preferred-number-of-modules (PreferredModulesCorrection) and
+  // --prefer-modular-solution (honored by the one-level fallback). Dead:
+  // --preferred-number-of-levels(-strength), which biases the OO super-search
+  // depth — the columnar enter-flow up-build has no depth-preference dial.
+  void warnColumnarUnsupportedOptions()
+  {
+    if (!m_infomap.columnarSearch)
+      return;
+    if (m_infomap.preferredNumberOfLevels != 0)
+      Console::warn(0, "--preferred-number-of-levels has no effect with --columnar (the columnar up-build has no depth-preference bias); ignoring it.");
+  }
+
   void calculateFlowAndInitNetwork()
   {
     // Build the consumed CSR link storage before flow: FlowCalculator reads CSR
@@ -656,6 +842,12 @@ private:
 
     checkFlowPostCondition();
     warnOnObjectiveOptionsNotApplied();
+
+    // Build the columnar leaf SoA straight from the network now, while the links
+    // are still present (the CLI releases them before the trials run). Reused
+    // across trials as the optimizer's input, bypassing the InfoNode leaf tree.
+    if (m_infomap.columnarNativeInputEligible())
+      m_infomap.buildColumnarLeafInput(m_network);
   }
 
   // Options that are accepted, echoed in the run banner and recorded in the run metadata as
@@ -681,10 +873,34 @@ private:
     }
 
     if (m_infomap.haveMetaData() && (m_infomap.haveMemory() || m_infomap.isMultilayerNetwork())) {
-      // initOptimizer tests haveMetaData() before haveMemory(), so meta-data wins and the run is
-      // scored by a first-order objective with no physical-node codebook -- the aggregation that
-      // makes this a memory network does not enter the objective at all.
-      Console::warn(0, "--meta-data takes precedence over higher-order input: the run optimizes the meta-data objective over state nodes, without the physical-node codebook of the higher-order map equation. The higher-order structure affects the network, not the objective.");
+      // initOptimizer tests haveMetaData() before haveMemory(), so meta-data wins the OO objective
+      // dispatch and that objective has no physical-node codebook -- the aggregation that makes
+      // this a memory network does not enter it at all.
+      //
+      // The message no longer asserts that the RUN is scored that way, because since #1012 it
+      // depends on the engine: the columnar core sums corrections instead of selecting one
+      // objective, so it scores both codebooks. Gating the warning on columnarSearch was the
+      // obvious alternative and was rejected -- this line is master-resident, columnarSearch is
+      // not, and a branch-only symbol here would make the line unmergeable upstream and turn every
+      // master sync into a conflict. Wording it from the objective instead is true on both engines
+      // and on master, and it follows the rule the sibling warnings above already state: word it
+      // from the objective, and let the banner name which one is in use. It stays worth printing
+      // under -C, where the composed total is the columnar one but getIndexCodelength() and
+      // getMetaCodelength() are still materialized through the meta-data objective.
+      //
+      // It does NOT point at the per-level Levels table, because the columnar per-level
+      // breakdown is unreliable in this build (a pre-existing reporting gap, F38 in the
+      // notes). On a two-level result it prints all zeros -- jazz -C, and states.net -C with
+      // and without metadata. On a hierarchical meta + higher-order result it prints a total
+      // that is the meta-data objective's score of the partition rather than the composed
+      // codelength the run reports: air30k -C --meta-data -N1 prints a Levels total of
+      // 10.626985 against Best codelength 7.580768, and 10.626985 is exactly what the
+      // pre-#1012 binary scores that same partition at (10.626984626737512). The sibling
+      // branch columnar-report-paths fixes precisely this -- there the table totals the
+      // codelength the run reports on both shapes (jazz -C 6.899368; the same air30k run
+      // 8.207547, that branch's own value since it predates the composition) -- and will be
+      // stacked underneath before either lands.
+      Console::warn(0, "--meta-data on higher-order input asks for two independent codebooks: the metadata categories, and the physical-node codebook of the higher-order map equation. The meta-data objective scores state nodes only, without the physical-node codebook -- under it the higher-order structure shapes the network, not the objective.");
     }
   }
 
@@ -911,6 +1127,7 @@ private:
   void runTrial(unsigned int trialIndex, Result& result)
   {
     seedTrial(trialIndex);
+    m_infomap.m_columnarFlatFirstTrial = ((m_infomap.trialOffset + trialIndex) % 2) == 1;
     m_infomap.removeModules();
     auto startDate = Date();
     Stopwatch timer(true);
@@ -979,6 +1196,13 @@ private:
   {
     if (!infomap.noInfomap)
       infomap.runPartition();
+    else if (infomap.columnarSearch)
+      // Input-partition codelength on the columnar structure (base + correction).
+      // It also stamps the per-node charges onto the tree, which is what the
+      // object-oriented branch below gets as a side effect of calcCodelengthOnTree:
+      // without it, -C --no-infomap -c <flat .clu> left every InfoNode::codelength at
+      // zero and printed a per-level table of 0.000000 next to a real codelength.
+      infomap.m_hierarchicalCodelength = infomap.evaluateColumnarPartition();
     else
       infomap.m_hierarchicalCodelength = infomap.calcCodelengthOnTree(infomap.root(), true);
 
@@ -1012,9 +1236,31 @@ private:
       m_infomap.writeResult(static_cast<int>(m_infomap.trialOffset + trialIndex + 1));
     }
 
+    maybeTrackBestDeepTrial(trialIndex, result);
+
     if (m_infomap.m_hierarchicalCodelength < result.bestHierarchicalCodelength - 1e-10) {
       updateBestResult(trialIndex, result);
     }
+  }
+
+  // Keep the best DEEP (non-two-level) trial for the once-per-run hierarchical
+  // repair. Only materializes a tree when this trial actually takes the slot, so
+  // the common case costs one numLevels() check per trial.
+  void maybeTrackBestDeepTrial(unsigned int trialIndex, Result& result)
+  {
+    if (!m_infomap.columnarSearch || m_infomap.twoLevel || m_numTrials <= 1)
+      return;
+    if (!ColumnarTwoLevel::hierarchicalWinnerRepairEnabled())
+      return;
+    if (m_infomap.numLevels() < 3)
+      return; // two-level-shaped: the flat repair path already covers it
+    if (m_infomap.m_hierarchicalCodelength >= result.bestDeepCodelength - 1e-10)
+      return;
+    result.bestDeepCodelength = m_infomap.m_hierarchicalCodelength;
+    result.bestDeepTrialIndex = trialIndex;
+    result.bestDeepTree.clear();
+    for (auto it(m_infomap.iterLeafNodes()); !it.isEnd(); ++it)
+      result.bestDeepTree.emplace_back(it->stateId, it.path());
   }
 
   void updateBestResult(unsigned int trialIndex, Result& result)
@@ -1308,6 +1554,59 @@ void InfomapBase::run(Network& network)
   Stopwatch totalTimer(true);
   RunSession runSession(*this, network, timing);
   auto runResult = runSession.run();
+
+  if (columnarCheck) {
+    // Phase-1a correctness gate: reproduce the final tree's hierarchical
+    // codelength from the columnar core. A match validates the new structure's
+    // ingestion + aggregation + base map-equation math before we build the
+    // move loop and interior tuning on it.
+    ColumnarMapEquation columnar;
+    columnar.buildFromTree(root(), m_leafNodes, isUndirectedClustering());
+    const double columnarL = columnar.hierarchicalCodelength();
+    const double treeL = getHierarchicalCodelength();
+    const double diff = columnarL - treeL;
+    const double rel = treeL > 1e-16 ? diff / treeL : 0.0;
+    Console().section("Columnar check");
+    Console::detail(0, "tree {} vs columnar {}, diff {:.3g} ({:.2g}%), {} modules, {} levels", io::toPrecision(treeL), io::toPrecision(columnarL), diff, rel * 100, columnar.numModules(), columnar.numLevels());
+  }
+
+  if (columnarTwoLevel) {
+    // Phase 1b/1c: run the columnar optimizer and compare to the OO result.
+    // Two-level parity is like-for-like under --two-level; hierarchical parity
+    // (two-level + enter-flow super-search) is compared to the full OO run
+    // (the residual gap is the recursion contribution, the M2 target).
+    Console().section("Columnar optimizer");
+
+    Stopwatch cw2(true);
+    ColumnarTwoLevel opt2;
+    opt2.buildFromLeaves(m_leafNodes, isUndirectedClustering(), seedToRandomNumberGenerator);
+    const double columnar2L = opt2.optimizeTwoLevel();
+    cw2.stop();
+
+    Stopwatch cwH(true);
+    ColumnarTwoLevel optH;
+    optH.buildFromLeaves(m_leafNodes, isUndirectedClustering(), seedToRandomNumberGenerator);
+    const double columnarHL = optH.optimizeHierarchical(levelAggregationLimit);
+    cwH.stop();
+
+    Stopwatch cwF(true);
+    ColumnarTwoLevel optF;
+    optF.buildFromLeaves(m_leafNodes, isUndirectedClustering(), seedToRandomNumberGenerator);
+    const double columnarFL = optF.optimizeFlexible();
+    cwF.stop();
+
+    Stopwatch cwC(true);
+    ColumnarTwoLevel optC;
+    optC.buildFromLeaves(m_leafNodes, isUndirectedClustering(), seedToRandomNumberGenerator);
+    const double columnarCL = optC.optimizeColumnar();
+    cwC.stop();
+
+    const double ooL = getHierarchicalCodelength();
+    // Report OO depth as shallowest..deepest branch (numLevels walks only the
+    // first-child chain, so on a ragged tree it is the shallow branch).
+    Console::detail(0, "OO {} (depth {}..{}) · columnar 2-level {} ({} mods, {:.3g}s) · columnar hier {} ({} lvl, {:.3g}s) · columnar flex {} ({} lvl, {:.3g}s), flex gap {:.2g}% · columnar converge {} ({} lvl, {:.3g}s), converge gap {:.2g}%", io::toPrecision(ooL), numLevels(), maxTreeDepth(), io::toPrecision(columnar2L), opt2.numTopModules(), cw2.getElapsedTimeInSec(), io::toPrecision(columnarHL), optH.numHierLevels(), cwH.getElapsedTimeInSec(), io::toPrecision(columnarFL), optF.numHierLevels(), cwF.getElapsedTimeInSec(), ooL > 1e-16 ? (columnarFL - ooL) / ooL * 100 : 0.0, io::toPrecision(columnarCL), optC.numHierLevels(), cwC.getElapsedTimeInSec(), ooL > 1e-16 ? (columnarCL - ooL) / ooL * 100 : 0.0);
+  }
+
   m_elapsedTime.stop();
   m_endDate = Date();
   runSession.printSummary(runResult);
@@ -1341,9 +1640,13 @@ InfomapBase& InfomapBase::initNetwork(Network& network)
   initOptimizer();
 
   // Per-instance network properties for entropy bias correction must be set after the
-  // optimizer/objective exists and before init() reads them via calcCodelength().
-  if (entropyBiasCorrection)
+  // optimizer/objective exists and before init() reads them via calcCodelength(). Taken
+  // from the network passed in, not from m_network: this instance may be a parallel-trial
+  // worker, which is handed the run's network here and never owns one (#989).
+  if (entropyBiasCorrection) {
     m_optimizer->setNetworkProperties(network);
+    m_entropyBiasTotalDegree = BiasedMapEquation::entropyBiasTotalDegree(network);
+  }
 
   init();
   return *this;
@@ -1541,6 +1844,14 @@ void InfomapBase::validateClusterDataTreeShape(const NodePaths& tree)
 InfomapBase& InfomapBase::initTree(const NodePaths& tree)
 {
   Log(4) << "Init tree... ";
+  // Re-materializing the tree invalidates the columnar decomposition of the previous
+  // one, index term included: whatever writes the new tree's charges sets it again
+  // (columnarPartition and restampColumnarCodelengths both stamp right after calling
+  // here). Without this, initPartition's own "generated {} levels, codelength {:g} +
+  // {:g} = {}" line -- which reads getIndexCodelength() -- printed the PREVIOUS trial's
+  // columnar index term under -vv --non-redundant -c <file> --num-trials > 1, against
+  // this trial's freshly computed total.
+  m_columnarIndexCodelength = -1.0;
   int maxDepth = 2;
   // If only two-level partition, we can directly use initPartition
   for (const auto& nodePath : tree) {
@@ -1953,40 +2264,28 @@ void InfomapBase::generateSubNetwork(Network& network)
   }
   m_root.data.flow = sumNodeFlow;
   m_root.data.teleportFlow = sumTeleFlow;
-  // m_calculateEnterExitFlow = true; //TODO: Implement always in flow calculation
-  if (!this->regularized) {
-    m_calculateEnterExitFlow = true;
-  }
   if (std::abs(sumNodeFlow - 1.0) > 1e-10)
     Console::warn(1, "Total flow on nodes differs from 1.0 by {:g}.", sumNodeFlow - 1.0);
 
-  bool changeMarkovTime = std::abs(markovTime - 1) > 1e-3;
-  if (changeMarkovTime) {
-    Console::detail(1, "rescale link flow with global Markov time {:g}", markovTime);
-  }
-
+  // Global Markov time is now applied to the link flow in FlowCalculator, so the
+  // network flow read here is already scaled -- no rescale on the edge.
   network.forEachLink([&](unsigned int sourceIndex, unsigned int targetIndex, double weight, double& flow) {
     // Ignore self-links in optimization as it doesn't change enter/exit flow on modular level
     if (sourceIndex != targetIndex) {
-      m_leafNodes[sourceIndex]->addOutEdge(*m_leafNodes[targetIndex], weight, flow * markovTime);
+      m_leafNodes[sourceIndex]->addOutEdge(*m_leafNodes[targetIndex], weight, flow);
     }
   });
 
-  if (variableMarkovTime) {
-    Console::detail(1, "rescale link flow with variable Markov time");
-    if (std::abs(variableMarkovTimeDamping - 1) > 1e-9) {
-      Console::detail(1, "use variable Markov time strength {:g}", variableMarkovTimeDamping);
-    }
-  }
-
+  // Reporting stats only (entropy rate, max entropy, max flow, exposed via
+  // getEntropyRate/getMaxEntropy/getMaxFlow). Variable Markov time scaling itself now
+  // lives in FlowCalculator, applied to the network link flow that the InfoNode edges
+  // above already read -- so no per-edge rescale happens here anymore.
   double maxEntropy = 0.0;
   double maxFlow = 0.0;
   double entropyRate = 0.0;
   unsigned int maxDegree = 0;
   unsigned int maxOutDegree = 0;
   unsigned int maxInDegree = 0;
-  double totDegree = network.sumDegree();
-  std::vector<double> entropies(numNodes, 0);
 
   for (unsigned i = 0; i < numNodes; ++i) {
     InfoNode& node = *m_leafNodes[i];
@@ -2009,40 +2308,11 @@ void InfomapBase::generateSubNetwork(Network& network)
     maxEntropy = std::max(maxEntropy, entropy);
     entropyRate += m_leafNodes[i]->data.flow * entropy;
     maxFlow = std::max(maxFlow, node.data.flow);
-    entropies[i] = entropy; // Store for undirected networks
   }
 
   m_entropyRate = entropyRate;
   m_maxEntropy = maxEntropy;
   m_maxFlow = maxFlow;
-
-  double minLocalScale = variableMarkovTimeMinLocalScale;
-  double damping = variableMarkovTimeDamping;
-
-  double maxScale = infomath::linlog(maxFlow * totDegree, damping);
-
-  if (variableMarkovTime) {
-    if (damping < 0) {
-      maxScale = infomath::linlog(pow(2.0, maxEntropy), -damping);
-    }
-    for (unsigned i = 0; i < numNodes; ++i) {
-      InfoNode& node = *m_leafNodes[i];
-      double localScale = damping < 0 ? infomath::linlog(pow(2.0, entropies[i]), -damping) : infomath::linlog(std::max(minLocalScale, node.data.flow * totDegree), damping);
-      for (InfoEdge* e : node.outEdges()) {
-        if (isUndirectedFlow()) {
-          double oppositeLocalScale = damping < 0 ? infomath::linlog(pow(2.0, entropies[nodeIndexMap[e->target->stateId]]), -damping) : infomath::linlog(std::max(minLocalScale, e->target->data.flow * totDegree), damping);
-          localScale = std::max(localScale, oppositeLocalScale);
-        }
-        double localMarkovTimeScale = maxScale / std::max(minLocalScale, localScale);
-        e->data.flow *= localMarkovTimeScale;
-        // Note: deliberately do NOT write the scaled flow back into the shared StateNetwork
-        // (network.nodeLinkMap()). The optimizer and output use only the per-instance InfoEdge
-        // flow (e->data.flow), so the write-back was a non-idempotent side effect that made
-        // --parallel-trials unsafe (workers share one Network). Library getLinks(flow=True) /
-        // getLinkResults() now return the input link flow rather than the VMT-scaled flow.
-      }
-    }
-  }
 }
 
 void InfomapBase::generateSubNetwork(InfoNode& parent)
@@ -2101,12 +2371,26 @@ void InfomapBase::init()
 {
   Log(3) << "InfomapBase::init()...\n";
 
-  if (m_calculateEnterExitFlow && isMainInfomap())
-    initEnterExitFlow();
+  // Enter/exit flow now comes entirely from FlowCalculator, stored on the network and
+  // copied onto the leaf nodes in generateSubNetwork -- so initEnterExitFlow() (which
+  // recomputed it here from the InfoNode edges) is retired. FlowCalculator is the
+  // single source of truth for all flow, including Markov-time / variable-Markov-time
+  // scaling and recorded-teleportation enter/exit.
 
   initNetwork();
 
   m_oneLevelCodelength = calcCodelength(m_root);
+  // Its columnar counterpart depends on the same thing this one does -- the leaf
+  // network and the active objective -- so it is invalidated here and computed at
+  // most once per run, not once per trial (see columnarPartition). The columnar
+  // index term goes with it: an instance re-run with a different objective must not
+  // answer getIndexCodelength() from the previous run's stack.
+  m_columnarOneLevelCodelength = -1.0;
+  m_columnarIndexCodelength = -1.0;
+  // Same reasoning for the seed's own codelength (#824): it prices the initial partition
+  // on this network under this objective, and an instance re-run with either changed
+  // must not compare against the previous run's value.
+  m_columnarSeedCodelength = -1.0;
   Console::detail(1, "one-level codelength: {}", io::toPrecision(m_oneLevelCodelength));
 }
 
@@ -2134,9 +2418,840 @@ std::vector<unsigned int> InfomapBase::noiseTopModules() const
 // Run: *
 // ===================================================
 
+void InfomapBase::setupColumnarOptimizer(ColumnarTwoLevel& opt, unsigned long seed)
+{
+  opt.setInterruptCallback([this] { pollInterrupt(); });
+  if (m_columnarNativeInput && !haveHardPartition()) {
+    // Native leaf SoA built once from the network (see buildColumnarLeafInput),
+    // bypassing the InfoNode leaf tree as the optimizer's input. Lent to the
+    // optimizer, not copied: this is the leaf CSR, 24 B per link, and it is
+    // immutable for the whole run. It outlives every trial's optimizer (owned by
+    // this InfomapBase, or by the main instance for a parallel-trial worker), which
+    // is what buildFromBorrowedLevel requires.
+    const ColumnarLevel& leaf = columnarLeafInput();
+    // Global teleport total = sum of leaf teleport flow (buildFromLeaves derives
+    // this itself; the level builders need it passed so the module teleport terms
+    // use the whole-network total, not zero).
+    double totalTele = 0.0;
+    for (double tf : leaf.teleFlow)
+      totalTele += tf;
+    opt.buildFromBorrowedLevel(leaf, isUndirectedClustering(), seed, 0.0, recordedTeleportation, totalTele);
+  } else {
+    opt.buildFromLeaves(m_leafNodes, isUndirectedClustering(), seed);
+  }
+  opt.setRecordedTeleportation(recordedTeleportation);
+  opt.setNonRedundant(nonRedundant);
+  opt.setNonRedundantExact(nonRedundantExact);
+  // The columnar interior refinement stops at a diminishing-returns knee; its
+  // default (5e-3, set in ColumnarTwoLevel) drops the low-value tail sweeps
+  // (measured: on web-scale directed nets the last sweep cost ~18% of the trial
+  // for +0.06% codelength; shallow nets run a single sweep and are unaffected).
+  // The shared OO --tune-iteration-relative-threshold default (1e-5) is too fine
+  // to trigger it, so honor that flag for the columnar engine only when the user
+  // set it — explicitly on the command line (parsedOptions, so an explicit value
+  // equal to the OO default also counts), or to a non-default value through the
+  // library API (which bypasses the CLI parser).
+  static const double kOoRelTuneDefault = Config().minimumRelativeTuneIterationImprovement;
+  const bool relTuneSetExplicitly = std::any_of(parsedOptions.begin(), parsedOptions.end(), [](const ParsedOption& o) {
+    return o.longName == "tune-iteration-relative-threshold";
+  });
+  if (relTuneSetExplicitly || minimumRelativeTuneIterationImprovement != kOoRelTuneDefault)
+    opt.setMinRelativeTuneImprovement(minimumRelativeTuneIterationImprovement);
+  addColumnarCorrections(opt);
+}
+
+bool InfomapBase::deepRepairColumnarBest(NodePaths& tree, double& codelength, bool freshDiscovery)
+{
+  // Deep repair of the winning -2 columnar trial (#889): seed a two-level
+  // stack from the best tree and run the expensive split-discovery
+  // interleave ONCE, keeping the result only when it lowers the codelength.
+  // Exploration stays cheap per trial; the discovery cost is paid once per
+  // run and amortizes with -N. Runs after the trial loop with a seed derived
+  // from the configured seed, so results are deterministic and identical in
+  // serial and parallel-trial modes.
+  // A deep (multi-level) winner is repaired by the hierarchical split operator
+  // (COL_HSPLIT_WINNER); a flat winner by the two-level interleave as before.
+  bool deepWinner = false;
+  for (const auto& nodePath : tree)
+    if (nodePath.second.size() != 2) {
+      deepWinner = true;
+      break;
+    }
+
+  ColumnarTwoLevel opt;
+  // Golden-ratio offset: a repair seed decoupled from every per-trial seed.
+  setupColumnarOptimizer(opt, seedToRandomNumberGenerator + 0x9e3779b9UL);
+  // Base objective: the two-level split operator is a no-op, and the
+  // hierarchical one is measurably not worth its scaffolding — on the base
+  // networks the whole once-per-run pass buys −0.0005% (web-NotreDame) and
+  // −0.0008% (science2001) while re-building a 325k-node optimizer, seeding a
+  // 6-level stack and re-materializing the tree (+7.0% and +0.3% CPU). The
+  // repairable hierarchical headroom lives on the memory/state objectives.
+  if (!opt.hasModuleMoveCorrections())
+    return false;
+  // Single-trial runs pay the expensive fresh split discovery only when the
+  // trial's own regroup detector escalated (the pathology signal): on a
+  // healthy network the fresh sub-clusters are where the -N1 repair's whole
+  // cost lives (malaria -C -N1: 0.36 -> 0.96 s) while the cheap sources are
+  // what it would have used anyway. -N >= 2 always runs in full, as before.
+  opt.setFreshDiscovery(freshDiscovery);
+
+  // Per-leaf module paths from the best tree (paths are coarsest-first with a
+  // trailing leaf-rank slot; a -2 tree has exactly one module level).
+  std::unordered_map<unsigned int, std::size_t> leafOfState;
+  leafOfState.reserve(m_leafNodes.size());
+  for (std::size_t i = 0; i < m_leafNodes.size(); ++i)
+    leafOfState.emplace(m_leafNodes[i]->stateId, i);
+  std::vector<std::vector<int>> paths(m_leafNodes.size());
+  for (const auto& nodePath : tree) {
+    auto it = leafOfState.find(nodePath.first);
+    if (it == leafOfState.end() || nodePath.second.size() < 2)
+      return false; // tree does not match the leaf network: leave it alone
+    if (deepWinner) {
+      // Every module level, coarsest-first, dropping the leaf-rank slot.
+      std::vector<int> p;
+      p.reserve(nodePath.second.size() - 1);
+      for (std::size_t j = 0; j + 1 < nodePath.second.size(); ++j)
+        p.push_back(static_cast<int>(nodePath.second[j]));
+      paths[it->second] = std::move(p);
+    } else {
+      paths[it->second] = { static_cast<int>(nodePath.second.front()) };
+    }
+  }
+  for (const auto& p : paths)
+    if (p.empty())
+      return false; // leaf missing from the tree
+
+  if (!opt.seedHierarchyFromLeafPaths(paths))
+    return false;
+  const double repairedL = deepWinner ? opt.deepRepairHierarchicalStack() : opt.deepRepairTwoLevelStack();
+  if (repairedL >= codelength - 1e-10)
+    return false;
+  tree = opt.toNodePaths(m_leafNodes);
+  codelength = repairedL;
+  return true;
+}
+
+void InfomapBase::columnarPartition()
+{
+  Console::detail(1, "columnar partition (--columnar)");
+
+  // Optimize on the columnar SoA core: fine building blocks -> enter-flow
+  // up-build -> up/down convergence sweep, best of a few up-merge settings.
+  // --tune-iteration-limit caps the tuning sweeps (0 = until convergence).
+  // Draw the engine seed from m_rand, which runTrial reseeds per trial, so
+  // multiple trials (-N) explore different move orders instead of repeating.
+  const unsigned long trialSeed = m_rand.randInt(0, std::numeric_limits<int>::max());
+  ColumnarTwoLevel opt;
+  setupColumnarOptimizer(opt, trialSeed);
+
+  // Soft --cluster-data warm start (#824). Before this, the search always started
+  // from the leaf network and never looked at the initial partition, so `-C -c`
+  // returned a result that could be far WORSE than its own input, with nothing but
+  // the echoed option line to show the seed had been read at all (the Jelena state
+  // network, -2d: the seed evaluates 6.930934993, the from-scratch search returns
+  // 7.810478411, and the two runs were bit-identical).
+  //
+  // Continue from the seed instead -- the same semantics as the object-oriented
+  // engine, which warm-starts from the initial partition and does not also run a
+  // from-scratch search. optimizeFromSeed gates every step on the true stack
+  // codelength, so its result is never worse than the SEEDED STACK; the guard after the
+  // search is what extends that to the input partition itself, which a squared-up
+  // ragged tree is not.
+  //
+  // Read off the tree here, BEFORE the search: initTree below replaces the initial
+  // partition with the result.
+  std::vector<std::vector<int>> seedPaths;
+  bool seeded = false;
+  bool seedWasSquared = false;
+  double seedOwnL = std::numeric_limits<double>::max();
+  if (columnarSeedPathsFromTree(seedPaths, seedWasSquared)) {
+    seeded = opt.seedHierarchyFromLeafPaths(seedPaths);
+    if (!seeded)
+      // Defensive: columnarSeedPathsFromTree rectangularizes, and the path count is
+      // the leaf count by construction, so nothing in-tree reaches this. Say so
+      // rather than discarding the seed silently, which is the bug being fixed.
+      Console::note(0, "--cluster-data partition does not fit the columnar stack; searching from the leaf network instead.");
+  }
+  if (seeded) {
+    // What the search has to beat: the INPUT partition's own codelength. Without this
+    // the run can still hand back something worse than what the user supplied, which is
+    // the impact #824 reports. Where squaring left the partition intact the seeded
+    // stack already holds it, so its codelength is free; where squaring coarse-grained
+    // or padded the tree, the stack no longer prices the input and the tree has to be
+    // scored on its own (once per run -- every trial re-materializes the same input).
+    if (!seedWasSquared)
+      seedOwnL = opt.hierarchicalCodelengthFromStack();
+    else {
+      if (m_columnarSeedCodelength < 0.0)
+        m_columnarSeedCodelength = evaluateColumnarPartition();
+      seedOwnL = m_columnarSeedCodelength;
+    }
+  }
+
+  // Strategy alternation (#889): even-numbered trials of the hierarchical
+  // searches run flat-first — the two-level optimum as the bottom, hierarchy
+  // grown around it — so best-of-N picks per network between the fine-blocks
+  // up-build and the flat-seeded build. Meaningless for -2 (it IS the flat
+  // search); the first trial keeps hierarchical-first, so -N1 is unchanged.
+  // Also meaningless for a seeded trial, which does not build a bottom at all --
+  // the seed IS the bottom.
+  const bool flatFirst = m_columnarFlatFirstTrial && !twoLevel && !seeded;
+  if (flatFirst) {
+    Console::detail(2, "columnar: flat-first trial (two-level optimum as the bottom)");
+    opt.setFlatFirstBottom(true);
+  }
+
+  // With -2 (--two-level): the two-level search only, no hierarchy build.
+  // With -F (--fast-hierarchical-solution, reused here as the columnar fast
+  // switch): the lighter "flexible" search (up-build + one bottom re-partition
+  // within grandparents), skipping the full interior-layer refinement. Without
+  // either, the default converge search (screen up-build strategies, then refine
+  // the winner to the diminishing-returns knee).
+  double columnarL = seeded
+      ? opt.optimizeFromSeed(twoLevel, tuneIterationLimit)
+      : twoLevel
+      ? opt.optimizeTwoLevelStack()
+      : fastHierarchicalSolution > 0
+      ? opt.optimizeFlexible(1, tuneIterationLimit)
+      : opt.optimizeColumnar(1, tuneIterationLimit);
+  // Nothing the seeded search produced beats the input partition: hand the input back
+  // unchanged rather than a worse partition. It is already the tree in memory (the
+  // search works on the columnar stack and only initTree below replaces the tree), so
+  // "keeping" it means not materializing the search's result -- and that also keeps a
+  // ragged input tree exactly as given, which the stack could not have represented.
+  // Re-scoring it stamps this trial's InfoNode charges the same way a materialized
+  // result gets them.
+  m_columnarRegroupEscalated = opt.regroupEscalated();
+
+  const bool keepSeed = seeded && columnarL >= seedOwnL - 1e-10;
+  if (keepSeed) {
+    Console::detail(1, "columnar: the search did not improve the --cluster-data partition ({} vs {}); keeping the input partition", io::toPrecision(columnarL), io::toPrecision(seedOwnL));
+    columnarL = evaluateColumnarPartition();
+  } else if (seeded)
+    Console::detail(1, "columnar: continued from the --cluster-data partition ({}) to codelength {}", io::toPrecision(seedOwnL), io::toPrecision(columnarL));
+
+  // Materialize the result into the InfoNode tree for output. initTree also sets
+  // m_hierarchicalCodelength by recomputing on the reconstructed tree — but the
+  // columnar core is the source of truth for the search (and is slated to replace
+  // the OO tree for I/O). The OO re-materialization of some partitions (notably a
+  // two-level result reconstructed after a prior trial in the same instance) can
+  // disagree with the true columnar codelength — even go negative — so trust the
+  // core's value for reporting and trial selection; keep the reconstruction only
+  // for the output tree structure.
+  double materializedL = columnarL;
+  if (!keepSeed) {
+    auto paths = opt.toNodePaths(m_leafNodes);
+    // initTree clears m_columnarIndexCodelength on the way in (the previous trial's tree
+    // is gone), and the stamping below sets this trial's -- so no reporting path can read
+    // a value belonging to a tree that no longer exists.
+    initTree(paths);
+    materializedL = m_hierarchicalCodelength;
+  }
+  // The columnar core is the source of truth for the search codelength; the OO tree
+  // re-materialization (calcCodelengthOnTree, via initTree) can disagree — and on this
+  // branch it is the BASE map equation, so for L* it reports the wrong objective
+  // entirely. columnarL is the exact codelength the core optimized (L* when
+  // --non-redundant), so use it for reporting and trial selection.
+  m_hierarchicalCodelength = columnarL;
+  m_numNonTrivialTopModules = calculateNumNonTrivialTopModules();
+
+  // …and the same for the DECOMPOSITION. The per-level table and -o json
+  // modules[].codelength read InfoNode::codelength, which only calcCodelengthOnTree
+  // writes, so they showed the base map equation of the materialized tree next to an
+  // L* headline (netsci -C --non-redundant -N10: table Total 4.103756 against Best
+  // 3.892209764) — and nothing at all, 0.000000 throughout, whenever initTree took
+  // its flat shortcut, which never scores the tree (jazz -C). Stamp the core's own
+  // per-node charges instead, so one objective produces both numbers.
+  if (!keepSeed) {
+    columnar::StackBreakdown breakdown;
+    opt.codelengthBreakdownFromStack(breakdown);
+    double padCharge = 0.0;
+    if (stampColumnarCodelengths(opt, breakdown, {}, padCharge))
+      m_columnarIndexCodelength = nonRedundant ? breakdown.rootTerm : -1.0;
+    else
+      Console::detail(2, "columnar: stack and materialized tree disagree on depth; per-level table left as initTree scored it");
+  }
+
+  // One-level fallback (#827): the columnar search can, like the OO optimizer,
+  // return a modular partition whose codelength is worse than the all-in-one-
+  // module (one-level) codelength — e.g. on near-random networks. The OO path
+  // guards against this (see hierarchicalPartition), collapsing to a single
+  // module; the columnar path had no such guard. Mirror it exactly: same
+  // predicate (skip when the user asked to prefer a modular or a specific-count
+  // solution, and — as OO — for the regularized links-only prior), same
+  // collapse.
+  //
+  // The comparison value is the CORE's one-module codelength, not
+  // getOneLevelCodelength(). The latter is calcCodelength on a tree with ZERO
+  // modules, while the collapse below installs ONE, and under --entropy-corrected
+  // those differ by exactly multiplier/(2*totalDegree) (ninetriangles 4.918622452 vs
+  // 4.925032709) — so the run reported, and the module carried, a price for a
+  // partition it did not produce. It is also the only way to price the collapse
+  // under an objective the object-oriented side does not implement at all (L*).
+  // For the base map equation with no corrections the two are identical, which is
+  // why this had gone unnoticed. The object-oriented path at the analogous site
+  // still uses the zero-module value; that is a master-side question, not one to
+  // settle here.
+  const bool regularizedPriorOnly = regularized && network().numLinks() == 0;
+  if (!preferModularSolution && preferredNumberOfModules == 0
+      && (haveNonTrivialModules() || regularizedPriorOnly)) {
+    // Asked for only after the cheap predicates pass, and cached for the run: it
+    // reads the leaf network and the corrections, neither of which changes between
+    // trials. Per trial it cost malaria -N10 a measurable +1.3%; once per run it is
+    // not measurable anywhere.
+    if (m_columnarOneLevelCodelength < 0.0)
+      m_columnarOneLevelCodelength = opt.oneLevelCodelength();
+    const double oneModuleL = m_columnarOneLevelCodelength;
+    if (columnarL > oneModuleL) {
+      Console::detail(1, "columnar: worse codelength than one-level ({} > {}), putting all nodes in one module", io::toPrecision(columnarL), io::toPrecision(oneModuleL));
+
+      auto& module = root().replaceChildrenWithOneNode();
+      module.data = m_root.data;
+      module.physicalNodes = m_root.physicalNodes;
+#if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
+      module.lossyEntropy = m_root.lossyEntropy;
+      module.lossyFlowLogFlow = m_root.lossyFlowLogFlow;
+#endif
+      module.index = 0;
+      for (auto& node : module)
+        node.index = 0;
+      // The single module carries the whole codelength and the root carries none:
+      // with one module there is no index codebook to pay for (the root's own charge
+      // is plogp(enter) - plogp(enter) == 0 under the base objective, and the top
+      // module's leave-one-out exit codebook has Z == 0 under L*).
+      module.codelength = oneModuleL;
+      m_hierarchicalCodelength = oneModuleL;
+      m_root.codelength = 0.0;
+      m_columnarIndexCodelength = nonRedundant ? 0.0 : -1.0;
+      m_numNonTrivialTopModules = calculateNumNonTrivialTopModules();
+    }
+  }
+
+  Console::detail(1, "columnar: codelength {}, materialized {}, {} levels", io::toPrecision(m_hierarchicalCodelength), io::toPrecision(materializedL), maxTreeDepth());
+}
+
+bool InfomapBase::columnarNativeInputEligible() const
+{
+  // Native leaf input reads the network's stored node enter/exit + link flow, both of
+  // which FlowCalculator now computes for every flow model -- including global and
+  // variable Markov time, which it scales into the link flow (and the enter/exit
+  // derived from it) before the network is handed off. No flow model is excluded.
+  return columnarSearch;
+}
+
+void InfomapBase::buildColumnarLeafInput(Network& network)
+{
+  const unsigned int numNodes = network.numNodes();
+  ColumnarLevel& leaf = m_columnarLeafInput;
+  leaf.n = static_cast<int>(numNodes);
+  leaf.flow.assign(numNodes, 0.0);
+  leaf.enter.assign(numNodes, 0.0);
+  leaf.exit.assign(numNodes, 0.0);
+  leaf.teleFlow.assign(numNodes, 0.0);
+  leaf.teleWeight.assign(numNodes, 0.0);
+
+  // Per-node fields in nodes() order, which equals the consumed-CSR index order
+  // that forEachLink reports (the same invariant generateSubNetwork relies on).
+  unsigned int i = 0;
+  for (const auto& nodeIt : network.nodes()) {
+    const auto& n = nodeIt.second;
+    leaf.flow[i] = n.flow;
+    leaf.enter[i] = n.enterFlow;
+    leaf.exit[i] = n.exitFlow;
+    leaf.teleFlow[i] = n.teleFlow;
+    leaf.teleWeight[i] = n.weight; // teleport weight
+    ++i;
+  }
+
+  // Out + in CSR (in is the transpose), self-links excluded as in generateSubNetwork.
+  std::vector<int> outDeg(numNodes, 0), inDeg(numNodes, 0);
+  network.forEachLink([&](unsigned int s, unsigned int t, double, double&) {
+    if (s != t) {
+      ++outDeg[s];
+      ++inDeg[t];
+    }
+  });
+  leaf.outStart.assign(numNodes + 1, 0);
+  leaf.inStart.assign(numNodes + 1, 0);
+  for (unsigned int k = 0; k < numNodes; ++k) {
+    leaf.outStart[k + 1] = leaf.outStart[k] + outDeg[k];
+    leaf.inStart[k + 1] = leaf.inStart[k] + inDeg[k];
+  }
+  leaf.outTarget.assign(leaf.outStart[numNodes], 0);
+  leaf.outFlow.assign(leaf.outStart[numNodes], 0.0);
+  leaf.inTarget.assign(leaf.inStart[numNodes], 0);
+  leaf.inFlow.assign(leaf.inStart[numNodes], 0.0);
+  std::vector<int> outPos(leaf.outStart.begin(), leaf.outStart.end() - 1);
+  std::vector<int> inPos(leaf.inStart.begin(), leaf.inStart.end() - 1);
+  network.forEachLink([&](unsigned int s, unsigned int t, double, double& f) {
+    if (s == t)
+      return;
+    leaf.outTarget[outPos[s]] = static_cast<int>(t);
+    leaf.outFlow[outPos[s]] = f;
+    ++outPos[s];
+    leaf.inTarget[inPos[t]] = static_cast<int>(s);
+    leaf.inFlow[inPos[t]] = f;
+    ++inPos[t];
+  });
+  m_columnarNativeInput = true;
+  Console::detail(1, "columnar native leaf input built from network ({} nodes)", numNodes);
+}
+
+void InfomapBase::borrowColumnarLeafInputFrom(const InfomapBase& owner)
+{
+  if (!owner.m_columnarNativeInput)
+    return; // owner has none (ineligible input): leave this instance on the leaf-tree path
+  m_columnarLeafInputBorrowed = &owner.m_columnarLeafInput;
+  m_columnarNativeInput = true;
+}
+
+void InfomapBase::addColumnarCorrections(ColumnarTwoLevel& opt) const
+{
+  // Composable objective corrections (default none => base map equation).
+  // Biased entropy-bias: same total-degree divisor as BiasedMapEquation.
+  if (entropyBiasCorrection)
+    opt.addCorrection(std::make_unique<BiasedEntropyCorrection>(entropyBiasCorrectionMultiplier, m_entropyBiasTotalDegree));
+  // Preferred number of modules (#827): |K - K_pref| move-loop bias, the
+  // columnar analogue of BiasedMapEquation. Objective-agnostic (composes with
+  // any of the objectives below). Attached to the top-level optimizer only; its
+  // sliceForLeaves is a no-op, so sub-network refines optimize without it —
+  // matching OO, which does not propagate preferredNumberOfModules downward.
+  if (preferredNumberOfModules != 0)
+    opt.addCorrection(std::make_unique<PreferredModulesCorrection>(preferredNumberOfModules));
+  // Metadata: one category per leaf (first dimension), flow-weighted by default
+  // (unweighted uses a uniform 1/numNodes, matching MetaMapEquation).
+  if (haveMetaData()) {
+    const bool weightByFlow = !unweightedMetaData;
+    const double unweightedFlow = m_leafNodes.empty() ? 1.0 : 1.0 / static_cast<double>(m_leafNodes.size());
+    std::vector<int> leafCategory(m_leafNodes.size(), 0);
+    std::vector<double> leafWeight(m_leafNodes.size(), 0.0);
+    for (std::size_t i = 0; i < m_leafNodes.size(); ++i) {
+      const auto& md = m_leafNodes[i]->metaData();
+      leafCategory[i] = md.empty() ? 0 : md[0];
+      leafWeight[i] = weightByFlow ? m_leafNodes[i]->data.flow : unweightedFlow;
+    }
+    opt.addCorrection(std::make_unique<MetaCorrection>(std::move(leafCategory), std::move(leafWeight), metaDataRate));
+  }
+  // Memory (state / higher-order): physical-node leaf-module codebook. The
+  // regularized-multilayer teleport prior is a separate correction, deferred.
+  //
+  // Attached independently of the metadata correction above, not as its `else`
+  // branch (#1012). They are independent codebooks over the same leaves, and the
+  // distinction that makes them safe to sum is the one Config.cpp's
+  // --non-redundant comment already spells out: MetaCorrection ADDS a term
+  // carrying its own rate (metaDataRate, charged per unit of node-visit flow),
+  // while MemCorrection SUBSTITUTES the physical-node sum plogp for the
+  // state-node one INSIDE the module codebook term. Neither reads the other's
+  // quantity, so composing them cannot double-count: on the co-located state
+  // reproducer in #1012 the composed 2.247219446970401 is the memory-only
+  // 1.331703102498692 plus the meta term 0.915516344471709 with a residual of
+  // exactly zero in double, and the aggregation saving comes back in full
+  // (-0.330578512396694 with metadata, bit-identical to the same delta without
+  // it, which was 0 before this change).
+  //
+  // The `else` was copied from the OO dispatch in initOptimizer, where the
+  // exclusivity is a type-level constraint and not a policy: MetaMapEquation and
+  // MemMapEquation are sibling `final` classes with different DeltaFlowDataTypes,
+  // so InfomapOptimizer<Objective> can hold exactly one. Corrections are summed
+  // rather than inherited, so the columnar core has no such constraint and the
+  // copy simply dropped the physical-node codebook -- --meta-data on
+  // state/multilayer input scored the plain state-level map equation plus the
+  // meta term. This is the one input class where -C deliberately disagrees with
+  // the default engine; a composed OO objective is a separate feature.
+  if (haveMemory()) {
+    std::vector<int> leafPhysical(m_leafNodes.size(), 0);
+    std::vector<double> leafFlow(m_leafNodes.size(), 0.0);
+    for (std::size_t i = 0; i < m_leafNodes.size(); ++i) {
+      leafPhysical[i] = static_cast<int>(m_leafNodes[i]->physicalId);
+      leafFlow[i] = m_leafNodes[i]->data.flow;
+    }
+    opt.addCorrection(std::make_unique<MemCorrection>(std::move(leafPhysical), std::move(leafFlow)));
+  }
+#if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
+  // Lossy (rate-distortion): additive noise-module correction. Being additive it
+  // composes with the others (unlike the OO single-inheritance objective). Reads
+  // the per-leaf Markov entropy share the OO Lossy init already computed from
+  // edge weights (native computation is part of the later input migration).
+  if (lossy) {
+    std::vector<double> lossyLeafFlow(m_leafNodes.size(), 0.0);
+    std::vector<double> lossyLeafEntropy(m_leafNodes.size(), 0.0);
+    for (std::size_t i = 0; i < m_leafNodes.size(); ++i) {
+      lossyLeafFlow[i] = m_leafNodes[i]->data.flow;
+      lossyLeafEntropy[i] = m_leafNodes[i]->lossyEntropy;
+    }
+    opt.addCorrection(std::make_unique<LossyCorrection>(std::move(lossyLeafFlow), std::move(lossyLeafEntropy), lossyLambda));
+  }
+#endif
+}
+
+std::vector<std::vector<int>> InfomapBase::leafModulePathsFromTree() const
+{
+  // For each leaf, walk parents up to (not including) the root, collecting the
+  // enclosing modules finest-first, then reverse to coarsest-first. Distinct
+  // module nodes get distinct ids (by pointer identity) so seedHierarchyFromLeafPaths
+  // can hash path prefixes into per-level module ids.
+  std::vector<std::vector<int>> paths(m_leafNodes.size());
+  std::unordered_map<const InfoNode*, int> moduleId;
+  moduleId.reserve(m_leafNodes.size());
+  for (std::size_t i = 0; i < m_leafNodes.size(); ++i) {
+    std::vector<int> chain; // finest-first
+    for (const InfoNode* m = m_leafNodes[i]->parent; m != nullptr && m != &m_root; m = m->parent) {
+      auto res = moduleId.emplace(m, static_cast<int>(moduleId.size()));
+      chain.push_back(res.first->second);
+    }
+    std::reverse(chain.begin(), chain.end()); // coarsest-first (top .. finest)
+    paths[i] = std::move(chain);
+  }
+  return paths;
+}
+
+std::vector<int> InfomapBase::padLeafPathsToUniformDepth(std::vector<std::vector<int>>& paths)
+{
+  std::vector<int> padDepth(paths.size(), 0);
+
+  // A top-level leaf can get an EMPTY path: leafModulePathsFromTree walks parents up
+  // to but not including the root, so a leaf the root owns directly has no module in
+  // its chain. initTree normalizes such a leaf into a module of its own in exactly one
+  // place -- its `maxDepth == 2 || twoLevel` shortcut, which routes through
+  // initPartition and gives every top-level id a real module. The empty path therefore
+  // needs a file that ALSO carries a path deeper than 2 (so the shortcut does not
+  // fire) and no --two-level; a file whose every path is one level deep takes the
+  // shortcut, arrives here rectangular, and never had an empty path to rescue.
+  //
+  // That mix is the most common ragged shape there is, because Infomap's own .tree
+  // format writes a module of one node as a bare `2 0.15 "A" 1` and reads it back the
+  // same way. Bailing here reported the base L for an L* run: twotriangles_flow.net
+  // with `1:1:1 .. 1:2:3` plus that bare leaf gave 2.714170945 with and without
+  // --non-redundant, against a true L* of 2.187131226.
+  //
+  // An empty path has no finest id to repeat, but it does not need one: a top-level
+  // leaf IS a module of one node -- writing the same partition as `2:1 "A"` gives an
+  // explicit module and the same L* -- so give it a synthetic module id of its own,
+  // past every real id (leafModulePathsFromTree hands those out densely from 0) and
+  // past every other synthetic one, so no two such leaves merge and none joins a real
+  // module. That module is REAL for pricing (it is the module the leaf constitutes; it
+  // just has no InfoNode, so stampColumnarCodelengths charges it to the root, whose
+  // codelength is what the per-level table already attributes to the root's direct leaf
+  // children). Only the copies the repeat below stacks ABOVE it are phantom, exactly as
+  // for a short non-empty path.
+  int nextSyntheticId = 0;
+  for (const auto& path : paths)
+    for (const int id : path)
+      nextSyntheticId = std::max(nextSyntheticId, id + 1);
+  for (auto& path : paths)
+    if (path.empty())
+      path.push_back(nextSyntheticId++);
+
+  std::size_t maxDepth = 0;
+  for (const auto& path : paths)
+    maxDepth = std::max(maxDepth, path.size());
+  if (maxDepth == 0)
+    return padDepth; // no leaves at all; the caller falls back
+
+  // Repeat each short path's own FINEST id: paths are coarsest-first and
+  // seedHierarchyFromLeafPaths maps stack level j to prefix length depth-j+1, so
+  // an appended duplicate becomes a single-child module ABOVE the leaf module,
+  // between it and its real parent. That level costs exactly 0 under L* (the
+  // parent's enter codebook is e*(plogp(e)-plogp(e))/e == 0 and the child's exit
+  // term has numerator plogp(x)-0-plogp(x) == 0), which is why this is gated on
+  // --non-redundant: the base map equation charges plogp(x+e)-plogp(e)-plogp(x)
+  // for the same node (ninetriangles rect 3.38583082 -> 3.97958082 with one such
+  // level above every leaf module, against L* bit-identical at 3.078067323).
+  for (std::size_t i = 0; i < paths.size(); ++i) {
+    padDepth[i] = static_cast<int>(maxDepth - paths[i].size());
+    // Copy the id out first: resize's fill value must not alias an element of the
+    // vector being resized, which reallocating would leave dangling.
+    const int finest = paths[i].back();
+    paths[i].resize(maxDepth, finest);
+  }
+  return padDepth;
+}
+
+bool InfomapBase::columnarSeedPathsFromTree(std::vector<std::vector<int>>& paths, bool& squared) const
+{
+  paths.clear();
+  squared = false;
+  // A hard --cluster-data partition is already collapsed into the leaf network the
+  // search optimizes (see setupColumnarOptimizer), so there is nothing to seed.
+  if (m_leafNodes.empty() || haveHardPartition() || !haveModules())
+    return false;
+
+  paths = leafModulePathsFromTree();
+
+  // A top-level leaf gets an EMPTY path (leafModulePathsFromTree stops below the
+  // root), but it IS a module of one node, so give it a synthetic id past every real
+  // one -- densely handed out from 0 -- and past every other synthetic one, so no two
+  // such leaves merge and none joins a real module. Same construction as
+  // padLeafPathsToUniformDepth, which needs it for the same reason.
+  int nextSyntheticId = 0;
+  for (const auto& path : paths)
+    for (const int id : path)
+      nextSyntheticId = std::max(nextSyntheticId, id + 1);
+  //
+  // Counted as squaring even though the partition is unchanged by it (a top-level leaf
+  // IS the module it gets): whether the stack then prices the tree the same way depends
+  // on where the root's direct leaf children are charged, and paying one tree score per
+  // run is cheaper than being wrong about that.
+  for (auto& path : paths)
+    if (path.empty()) {
+      path.push_back(nextSyntheticId++);
+      squared = true;
+    }
+
+  // The strict-level stack holds one module level per leaf, so a ragged tree has to be
+  // squared up. Truncate to the MODE depth: a deeper path loses its finest levels,
+  // which is a clean coarse-graining of that subtree, and a shallower one repeats its
+  // own finest id, a single-child pass-through above its leaf module.
+  //
+  // Measured against the two alternatives -- padding every short path up to the
+  // deepest, and dropping to the finest level alone -- on the ragged trees in the
+  // benchmark set, each network seeded with its own object-oriented tree
+  // (`-C --seed 123 -N1 -c <tree>`):
+  //
+  //   tree seed (depths)     mode (this)      pad to max     finest only
+  //   powergrid (4-7)         4.74974076     4.752217852    4.751400221   <- mode wins
+  //   science2001 (2-4)      7.831943521     7.835336866    7.832740037   <- mode wins
+  //   air30k (2-4)           5.393962436     5.393962436    5.393962436
+  //   netsci (2-5)           4.043438853     4.043438853    4.043438853
+  //   web-NotreDame (3-12)   5.566025331     5.566025331    5.566025331
+  //
+  // Mode wins the two it can win and ties the three the guard below decides (there the
+  // search does not beat the tree, so the tree comes back unchanged whatever the
+  // squaring did), and it is the cheapest of the three -- web-NotreDame 4.4s against
+  // 11.2s for padding and 5.8s for the finest level, both of which hand the up-build a
+  // far finer bottom to work from.
+  //
+  // Ties go to the shallower depth (the map below iterates ascending): padding is the
+  // lossy direction under the base map equation, which charges
+  // plogp(x+e)-plogp(e)-plogp(x) per node for a pass-through level.
+  std::map<std::size_t, std::size_t> leavesAtDepth;
+  for (const auto& path : paths)
+    ++leavesAtDepth[path.size()];
+  std::size_t depth = 0;
+  std::size_t mostLeaves = 0;
+  for (const auto& it : leavesAtDepth)
+    if (it.second > mostLeaves) {
+      mostLeaves = it.second;
+      depth = it.first;
+    }
+  if (depth == 0)
+    return false; // no leaves at all
+  if (leavesAtDepth.size() > 1)
+    squared = true;
+
+  for (auto& path : paths) {
+    // Copy the id out first: resize's fill value must not alias an element of the
+    // vector being resized, which reallocating would leave dangling.
+    const int finest = path.back();
+    path.resize(depth, finest);
+  }
+  return true;
+}
+
+double InfomapBase::objectOrientedTreeCodelength()
+{
+  // calcCodelengthOnTree dispatches through m_optimizer, so it reproduces every
+  // correction that HAS an object-oriented counterpart (checked to agree with the
+  // columnar engine on a rectangular tree for base, -d, -d --recorded-teleportation,
+  // --markov-time, --variable-markov-time, --entropy-corrected, --meta-data and
+  // --regularized). It also writes InfoNode::codelength on every module, so both the
+  // total and the decomposition come from this one objective.
+  const double L = calcCodelengthOnTree(root(), true);
+  if (preferredNumberOfModules == 0)
+    return L;
+  // --preferred-number-of-modules is the one correction with no OO counterpart,
+  // and dropping it is not a rounding error: ninetriangles ragged reported
+  // 3.458078031 with the whole 4-bit |K - K_pref| penalty gone, against
+  // 7.38583082 on the rectangular tree. Add it here from the tree's own leaf-module
+  // count (the distinct parents of the leaves, which is what hierLevelSize(1) is).
+  // It has no per-module home, so it goes on the root -- the same convention
+  // PreferredModulesCorrection uses when it does have a stack to charge.
+  std::unordered_set<const InfoNode*> leafModules;
+  for (const auto* leafNode : m_leafNodes)
+    leafModules.insert(leafNode->parent);
+  const double penalty = PreferredModulesCorrection::costOf(static_cast<int>(leafModules.size()), preferredNumberOfModules);
+  m_root.codelength += penalty;
+  return L + penalty;
+}
+
+double InfomapBase::evaluateColumnarPartition()
+{
+  m_columnarIndexCodelength = -1.0;
+  ColumnarTwoLevel opt;
+  // Through setupColumnarOptimizer, not a bare buildFromLeaves: it BORROWS the leaf
+  // CSR the run already built where that is eligible, instead of walking the InfoNode
+  // leaf tree again. Scoring does not care which, but restampColumnarCodelengths calls
+  // this once per run on the restore path, where rebuilding a 325k-node/1.5M-link leaf
+  // level is the whole difference. Measured on the restore PHASE itself (--timing-json
+  // best_restore_s, web-NotreDame -d -C -N10 --seed 123, 5 interleaved reps per arm,
+  // min/median): 0.299/0.304 s without this re-score, 0.498/0.511 s with it and the
+  // borrow, 0.582/0.592 s with it and a bare buildFromLeaves. So the re-score costs
+  // ~0.20 s and the borrow takes ~0.084 s off that -- about 30% of it, not half.
+  // Against the quietest whole run in that session (18.25 s CPU) the re-score is
+  // ~+1.1% with the borrow and ~+1.6% without. The phase timer is quoted rather than a
+  // whole-run A/B because a whole-run A/B on a loaded machine cannot see a 1% effect:
+  // 7 interleaved reps in the same session put the three arms' minima at 19.69 / 19.93
+  // / 19.78 s with the medians in a different order again.
+  setupColumnarOptimizer(opt, seedToRandomNumberGenerator);
+  auto paths = leafModulePathsFromTree();
+  // A ragged tree does not fit the strict-level stack, and the object-oriented
+  // fallback below cannot price L* at all (no OO non-redundant objective exists;
+  // grep for nrEnterWithin outside Columnar* finds nothing), so it silently
+  // reported base L for L* runs -- ninetriangles ragged 3.458078031 for both
+  // objectives, against a true L* of 3.237864808. Under L* the tree can be made
+  // rectangular for free instead; see padLeafPathsToUniformDepth.
+  const std::vector<int> padDepth = nonRedundant ? padLeafPathsToUniformDepth(paths) : std::vector<int>();
+  if (!opt.seedHierarchyFromLeafPaths(paths)) {
+    // Ragged tree the padding could not rescue (a base-objective run, or leaves at
+    // differing depths with no leaf level to repeat): score the object-oriented tree.
+    Console::detail(1, "columnar eval: ragged tree, using object-oriented codelength");
+    return objectOrientedTreeCodelength();
+  }
+  columnar::StackBreakdown breakdown;
+  const double L = opt.codelengthBreakdownFromStack(breakdown);
+  double padCharge = 0.0;
+  if (!stampColumnarCodelengths(opt, breakdown, padDepth, padCharge)) {
+    // The helper has already put the whole tree back on the object-oriented
+    // objective, so report that objective's total as well. Returning the columnar L
+    // here would pair a total that still carries the phantom levels' charge with
+    // base-L per-node values -- two objectives in the one branch that exists to keep
+    // them together. Defensive: nothing in-tree reaches it.
+    Console::detail(1, "columnar eval: stack and materialized tree disagree on depth; using object-oriented codelength");
+    return objectOrientedTreeCodelength();
+  }
+  if (nonRedundant)
+    m_columnarIndexCodelength = breakdown.rootTerm;
+  return L - padCharge;
+}
+
+void InfomapBase::restampColumnarCodelengths()
+{
+  if (!columnarSearch || m_leafNodes.empty())
+    return;
+  // The return value is deliberately dropped: the reported codelength is the winning
+  // trial's, computed by the search on its own stack. This only refreshes the
+  // decomposition (and, under L*, the index term) so the file agrees with it.
+  evaluateColumnarPartition();
+}
+
+bool InfomapBase::stampColumnarCodelengths(const ColumnarTwoLevel& opt,
+                                           const columnar::StackBreakdown& breakdown,
+                                           const std::vector<int>& padDepth,
+                                           double& padCharge)
+{
+  padCharge = 0.0;
+  const int topLevel = static_cast<int>(opt.hierNumLevels()) - 1;
+  if (topLevel < 1 || m_leafNodes.empty())
+    return false;
+
+  // Walk each leaf's ancestor chain in the tree next to its module chain in the
+  // stack. Pointer identity, not the module ids in toNodePaths: initTree is free
+  // to renumber, and the same walk then serves a tree materialized from a cluster
+  // file, where no columnar id ever existed.
+  //
+  // The two chains have the same length unless the paths were padded, in which
+  // case the leaf's finest module owns the padDepth phantom levels below its real
+  // one. Those have no InfoNode: under L* the scorer charges them exactly 0 (that
+  // is the theorem the padding rests on), so the only thing that can land on them
+  // is a correction that counts nodes -- --entropy-corrected charges each one
+  // multiplier/(2*totalDegree). Collect that as padCharge for the caller to take
+  // off the reported total, which is the analytic discount
+  // padNodes*multiplier/(2*totalDegree) without this code naming a correction.
+  //
+  // One stack module has no InfoNode and is NOT phantom: the synthetic bottom module
+  // padLeafPathsToUniformDepth gives a top-level leaf, whose parent is the root. It is
+  // the module that leaf constitutes, so its charge belongs in the reported total --
+  // put it on the root, which is the node aggregatePerLevelCodelength already charges
+  // for the root's direct leaf children, so the per-level table still totals the
+  // codelength.
+  const bool anyPad = std::any_of(padDepth.begin(), padDepth.end(), [](int d) { return d > 0; });
+  double rootLeafCharge = 0.0;
+  std::vector<int> chain;
+  std::vector<InfoNode*> ancestors;
+  std::vector<std::vector<char>> isPad(anyPad ? static_cast<std::size_t>(topLevel) + 1 : 0);
+  for (int k = 1; anyPad && k <= topLevel; ++k)
+    isPad[static_cast<std::size_t>(k)].assign(breakdown.moduleTerm[static_cast<std::size_t>(k)].size(), 0);
+
+  for (std::size_t i = 0; i < m_leafNodes.size(); ++i) {
+    chain.clear();
+    for (int m = opt.hierLeafModule(static_cast<int>(i)), k = 1;; ++k) {
+      chain.push_back(m);
+      if (k == topLevel)
+        break;
+      m = opt.hierUnitParent(k, m);
+    }
+    ancestors.clear();
+    for (InfoNode* p = m_leafNodes[i]->parent; p != nullptr && p != &m_root; p = p->parent)
+      ancestors.push_back(p);
+    const int pad = padDepth.empty() ? 0 : padDepth[i];
+    // A top-level leaf has no ancestor below the root, so its stack chain is one
+    // module longer than its tree chain: the synthetic bottom module. (Only the
+    // padding produces such a leaf here -- a stack seeded from toNodePaths always
+    // gives every leaf a module, and an unpadded empty path makes
+    // seedHierarchyFromLeafPaths fail before this.)
+    const bool syntheticBottom = ancestors.empty();
+    if (static_cast<int>(ancestors.size()) + (syntheticBottom ? 1 : 0) + pad != topLevel) {
+      // Defensive only -- initTree materializes exactly the stack it was handed, and
+      // a seeded stack has exactly the tree's depth. Earlier leaves may already carry
+      // stack charges, so put the whole tree back on one objective (the base one, the
+      // only one calcCodelengthOnTree can express) rather than leaving it half and half.
+      calcCodelengthOnTree(root(), true);
+      return false;
+    }
+    // The padded copies sit ABOVE the leaf's finest module: stack level 1 is the
+    // module whose children are the leaves -- real, or the synthetic one a top-level
+    // leaf constitutes -- and levels 2..pad+1 are the single-child pass-throughs
+    // between it and its real parent.
+    for (int k = 1; anyPad && k <= pad; ++k)
+      isPad[static_cast<std::size_t>(k + 1)][static_cast<std::size_t>(chain[static_cast<std::size_t>(k)])] = 1;
+    if (syntheticBottom)
+      rootLeafCharge += breakdown.moduleTerm[1][static_cast<std::size_t>(chain[0])];
+    for (std::size_t a = 0; a < ancestors.size(); ++a) {
+      const std::size_t level = a == 0 ? 1 : a + static_cast<std::size_t>(pad) + 1;
+      ancestors[a]->codelength = breakdown.moduleTerm[level][static_cast<std::size_t>(chain[level - 1])];
+    }
+  }
+
+  for (int k = 1; anyPad && k <= topLevel; ++k)
+    for (std::size_t m = 0; m < isPad[static_cast<std::size_t>(k)].size(); ++m)
+      if (isPad[static_cast<std::size_t>(k)][m] != 0)
+        padCharge += breakdown.moduleTerm[static_cast<std::size_t>(k)][m];
+
+  m_root.codelength = breakdown.rootTerm + rootLeafCharge;
+  return true;
+}
+
 void InfomapBase::hierarchicalPartition()
 {
   Console::detail(1, "hierarchical partition");
+
+  if (hierFromBlocks) {
+    // Phase-1a (corrected) measurement: depart from the two-level-greedy path
+    // early. Instead of aggregating all the way to the coarse two-level optimum
+    // and then rebuilding downward, stop at fine building blocks and grow the
+    // hierarchy UPWARD with the enter-flow super-search — the correct
+    // hierarchical operator. No fine/coarse two-level tuning, no recursive
+    // rebuild. This isolates how far "depart early + correct up-operator" gets
+    // on its own, before any hierarchical tuning is added.
+    Console().section("Optimization (hierarchical-from-blocks experiment)");
+    m_tuneIterationIndex = 0;
+    // Building blocks: stop aggregation early (finest by default). Reuse
+    // --level-aggregation-limit as the block-granularity knob; 0 (its default,
+    // meaning "unlimited") would reproduce the coarse two-level optimum, so map
+    // it to 1 pass = the finest modules.
+    const unsigned int blockAggregationLimit = levelAggregationLimit == 0 ? 1 : levelAggregationLimit;
+    findTopModulesRepeatedly(blockAggregationLimit);
+    Console::detail(1, "blocks: {} building blocks, two-level codelength {}", numTopModules(), io::toPrecision(getCodelength()));
+
+    // Grow up with the enter-flow super-search (sets m_hierarchicalCodelength).
+    findHierarchicalSuperModules();
+
+    for (auto clusterIt = m_root.begin_tree(); !clusterIt.isEnd(); ++clusterIt)
+      clusterIt->index = clusterIt.moduleIndex();
+    Console::detail(1, "hier-from-blocks: {} levels, codelength {}", maxTreeDepth(), io::toPrecision(m_hierarchicalCodelength));
+    return;
+  }
 
   const auto depth = maxTreeDepth();
   if (depth > 2) {
@@ -2388,64 +3503,6 @@ void InfomapBase::restoreHardPartition()
 // ===================================================
 // Run: Init: *
 // ===================================================
-
-void InfomapBase::initEnterExitFlow()
-{
-  // Not done in Bayesian
-  // TODO: Skip this, always add enter/exit/tele flow from flow calculator
-  // Calculate enter/exit
-  double alpha = teleportationProbability;
-  double beta = 1.0 - alpha;
-
-  for (auto* n : m_leafNodes) {
-    n->data.enterFlow = n->data.exitFlow = 0.0;
-  }
-  if (!isUndirectedClustering()) {
-    for (auto* n : m_leafNodes) {
-      auto& node = *n;
-      node.data.teleportFlow = alpha * node.data.flow;
-      node.data.teleportSourceFlow = node.data.flow;
-      if (node.isDangling()) {
-        node.data.teleportFlow = node.data.flow;
-        node.data.danglingFlow = node.data.flow;
-        m_sumDanglingFlow += node.data.flow;
-      }
-    }
-    for (auto* n : m_leafNodes) {
-      auto& node = *n;
-      for (InfoEdge* e : node.outEdges()) {
-        InfoEdge& edge = *e;
-        // Self-links not included here, should not add to enter and exit flow in its enclosing module
-        edge.source->data.exitFlow += edge.data.flow;
-        edge.target->data.enterFlow += edge.data.flow;
-      }
-      if (recordedTeleportation) {
-        // Don't let self-teleportation add to the enter/exit flow (i.e. multiply with (1.0 - node.data.teleportWeight))
-        node.data.exitFlow += (alpha * node.data.flow + beta * node.data.danglingFlow) * (1.0 - node.data.teleportWeight);
-        node.data.enterFlow += (alpha * (1.0 - node.data.flow) + beta * (m_sumDanglingFlow - node.data.danglingFlow)) * node.data.teleportWeight;
-      }
-    }
-  } else {
-    for (auto* n : m_leafNodes) {
-      auto& node = *n;
-      node.data.teleportFlow = alpha * node.data.flow;
-      node.data.teleportSourceFlow = node.data.flow;
-      if (node.isDangling()) {
-        node.data.teleportFlow = node.data.flow;
-        node.data.danglingFlow = node.data.flow;
-      }
-      for (InfoEdge* e : node.outEdges()) {
-        InfoEdge& edge = *e;
-        // Self-links not included here, should not add to enter and exit flow in its enclosing module
-        double halfFlow = edge.data.flow / 2;
-        edge.source->data.exitFlow += halfFlow;
-        edge.target->data.exitFlow += halfFlow;
-        edge.source->data.enterFlow += halfFlow;
-        edge.target->data.enterFlow += halfFlow;
-      }
-    }
-  }
-}
 
 // Aggregate node and enter/exit flow to all tree nodes
 void InfomapBase::aggregateFlowValuesFromLeafToRoot()

@@ -200,6 +200,18 @@ std::string canonicalConfigJson(const Config& config)
   json["randomize_core_loop_limit"] = config.randomizeCoreLoopLimit;
   addCanonicalNumber(json, "minimum_single_node_codelength_improvement", config.minimumSingleNodeCodelengthImprovement);
 
+  // The columnar engine and its measurement flags select a different search, so two runs that
+  // differ only in these are not the same run and must not share a fingerprint.
+  json["columnar"] = config.columnarSearch;
+  json["columnar_two_level"] = config.columnarTwoLevel;
+  json["columnar_check"] = config.columnarCheck;
+  json["hier_from_blocks"] = config.hierFromBlocks;
+
+  // L* is a different objective, and its exact variant a different leaf move loop,
+  // so neither run shares a fingerprint with the base map equation.
+  json["non_redundant"] = config.nonRedundant;
+  json["non_redundant_exact"] = config.nonRedundantExact;
+
   return json.dump();
 }
 

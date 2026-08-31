@@ -1,0 +1,11 @@
+# path flow name node_id
+# The ragged shape Infomap's own .tree format produces and reads back: node A is a
+# module of one node, written as a BARE top-level leaf (no trailing module level) next
+# to a three-level branch. leafModulePathsFromTree gives it an EMPTY path, since it
+# walks parents up to but not including the root.
+1:1:1 0.3 "C" 3
+1:1:2 0.2 "B" 2
+1:2:1 0.15 "D" 4
+1:2:2 0.1 "E" 5
+1:2:3 0.1 "F" 6
+2 0.15 "A" 1

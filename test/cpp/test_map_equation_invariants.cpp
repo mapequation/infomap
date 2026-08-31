@@ -221,6 +221,155 @@ TEST_CASE("Super level never leaves the trial worse than its own two-level solut
   CHECK(std::abs(twoLevel - uncorrected) > 0.1);
 }
 
+namespace {
+
+  // The reporting invariant: the per-level table the summary prints, which sums
+  // InfoNode::codelength level by level, must add up to the codelength the run
+  // reports. On the columnar path those per-node values used to come from a
+  // different objective than the total -- the object-oriented base map equation,
+  // so under --non-redundant the table showed L while the headline was L* -- or
+  // from nowhere at all when initTree took its flat shortcut, which scores no
+  // node and left every entry at 0.000000.
+  void checkPerLevelTableSumsToCodelength(InfomapWrapper& im, const std::string& what)
+  {
+    std::vector<detail::PerLevelStat> perLevel;
+    aggregatePerLevelCodelength(im.root(), perLevel);
+    double sum = 0.0;
+    for (const auto& level : perLevel)
+      sum += level.codelength();
+    INFO(what << ": per-level total=" << sum << " reported=" << im.codelength());
+    CHECK(sum == doctest::Approx(im.codelength()).epsilon(1e-9));
+    CHECK(sum > 0.0);
+  }
+
+  void runAndCheckPerLevelTable(const std::string& flags, const std::string& network)
+  {
+    InfomapWrapper im(defaultFlags(flags));
+    im.readInputData(repoPath(network));
+    im.run();
+    checkPerLevelTableSumsToCodelength(im, flags + " on " + network);
+  }
+
+} // namespace
+
+TEST_CASE("Reporting: the per-level table totals the reported codelength [fast][core][mapeq][columnar-contract]")
+{
+  // Both engines, both objectives, flat and hierarchical winners. --two-level is the
+  // arm that used to print a table of zeros under --columnar: the search value comes
+  // off the columnar stack and initTree's flat shortcut scores no InfoNode.
+  //
+  // Single-trial (defaultFlags() already is) on purpose. With --num-trials > 1 and a best trial that is not the
+  // last, restoreBestResult re-materializes the winner through initTree and the flat
+  // shortcut leaves the tree unscored again -- for the OBJECT-ORIENTED engine
+  // (--two-level --num-trials 3 on ninetriangles gives 0.936 against a codelength of
+  // 3.518). That is the shared half of #1002, fixed in initTree on master; the columnar
+  // half is re-stamped on the restore path and has its own multi-trial case below. The
+  // console table is unaffected either way because it is captured from the live tree of
+  // the winning trial.
+  for (const char* network : { "examples/networks/ninetriangles.net", "examples/networks/states.net" }) {
+    for (const char* flags : { "",
+                               "--two-level",
+                               "--columnar",
+                               "--columnar --two-level",
+                               "--non-redundant",
+                               "--non-redundant --two-level" }) {
+      runAndCheckPerLevelTable(flags, network);
+    }
+  }
+}
+
+TEST_CASE("Reporting: the per-level table survives the multi-trial restore [fast][core][mapeq][columnar-contract]")
+{
+  // The restore path, which the single-trial case above cannot reach. When the best
+  // trial is not the last executed, restoreBestResult re-materializes the winner
+  // through initTree and rewrites the output file -- and initTree writes
+  // InfoNode::codelength only through calcCodelengthOnTree (the base map equation),
+  // or not at all when it takes its flat shortcut. Measured on these exact
+  // configurations before the re-stamp: ninetriangles --non-redundant --num-trials 5
+  // reported 3.078067323 with a table summing 3.385833 (the base L of the same tree),
+  // and states.net --columnar --num-trials 5 reported 2.011405238 with a table summing
+  // 0.066667 -- a leftover from the LAST trial's tree, which is worse than the 0.0 it
+  // used to be: a plausible number instead of an obviously broken one.
+  //
+  // Columnar only: the object-oriented half of the same defect is a master-side
+  // initTree fix, and asserting it here would fail for a reason this branch does not
+  // own.
+  for (const char* network : { "examples/networks/ninetriangles.net", "examples/networks/states.net" }) {
+    for (const char* flags : { "--columnar --num-trials 5",
+                               "--columnar --two-level --num-trials 5",
+                               "--non-redundant --num-trials 5",
+                               "--non-redundant --two-level --num-trials 5" }) {
+      runAndCheckPerLevelTable(flags, network);
+    }
+  }
+}
+
+namespace {
+
+  // An Erdos-Renyi graph with no module structure, from a hand-rolled LCG so the
+  // instance is identical on every platform (the columnar one-level fallback has to
+  // actually fire for the test below to mean anything, and that depends on the
+  // instance). n=80, p=0.2 gives 610 links and a search result worse than the
+  // all-in-one-module partition.
+  void addErdosRenyiLinks(InfomapWrapper& im, unsigned int n, double p)
+  {
+    unsigned long long x = 12345;
+    for (unsigned int i = 1; i <= n; ++i) {
+      for (unsigned int j = i + 1; j <= n; ++j) {
+        x = (1103515245ULL * x + 12345ULL) % 2147483648ULL;
+        if (static_cast<double>(x) / 2147483648.0 < p)
+          im.addLink(i, j, 1.0);
+      }
+    }
+  }
+
+} // namespace
+
+TEST_CASE("Columnar: the one-level fallback prices the partition it installs [fast][core][mapeq]")
+{
+  // Collapsing to one module used to report getOneLevelCodelength(), which is
+  // calcCodelength on a tree with ZERO modules -- while the collapse installs ONE.
+  // The core's own one-module codelength is what it costs now.
+  //
+  // Under --entropy-corrected the two prices are equal, and that equality is the
+  // point rather than an accident: both describe the walk with a single codebook
+  // over the same N node codewords. The zero-module tree has the root codebook and
+  // nothing else; the one-module tree adds an index codebook with a single codeword
+  // (no free parameter) around a module that holds all the flow and so has no exit
+  // codeword either. N - 1 free parameters both ways.
+  InfomapWrapper im(defaultFlags("--columnar --entropy-corrected"));
+  addErdosRenyiLinks(im, 80, 0.2);
+  im.run();
+
+  REQUIRE(im.numTopModules() == 1); // the fallback fired
+  CHECK(im.codelength() == doctest::Approx(im.getOneLevelCodelength()).epsilon(1e-9));
+  checkPerLevelTableSumsToCodelength(im, "columnar one-level fallback");
+
+  // The base map equation charges nothing per node, so there the two coincide and
+  // nothing about the fallback moves.
+  InfomapWrapper plain(defaultFlags("--columnar"));
+  addErdosRenyiLinks(plain, 80, 0.2);
+  plain.run();
+  REQUIRE(plain.numTopModules() == 1);
+  CHECK(plain.codelength() == doctest::Approx(plain.getOneLevelCodelength()).epsilon(1e-12));
+}
+
+TEST_CASE("Reporting: a fixed flat partition is scored on the columnar path too [fast][core][mapeq]")
+{
+  // --no-infomap with a flat partition reaches initPartition directly, never
+  // initTree, so nothing on the columnar path had ever written InfoNode::codelength:
+  // the table was 0.000000 throughout next to a real codelength.
+  InfomapWrapper im(defaultFlags("--columnar --no-infomap --two-level"));
+  addEdgeFixtureLinks(im, "graphs/twotriangles_unweighted.edges");
+  im.setInitialPartition({ { 1, 1 }, { 2, 1 }, { 3, 1 }, { 4, 2 }, { 5, 2 }, { 6, 2 } });
+  im.run();
+
+  checkPerLevelTableSumsToCodelength(im, "columnar --no-infomap flat partition");
+  CHECK(im.root().codelength > 0.0);
+  for (const auto& module : im.root())
+    CHECK(module.codelength > 0.0);
+}
+
 // Follow-ups (not reproduced here): #831 (two-level initPartition/consolidate
 // reentrancy corrupting the recomputed codelength after a prior multi-level
 // trial) and #837 (hierarchical super-step degrading a two-level memory

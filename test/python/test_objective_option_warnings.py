@@ -6,8 +6,8 @@ selects another objective -- state, multilayer and meta-data here, but also ``--
 an ordinary network -- leaves them inert, so those options were accepted,
 echoed in the run banner, recorded in the run metadata as active -- and never applied.
 ``--meta-data`` combined with higher-order input is the mirror case: meta-data wins the
-objective dispatch, so the run is scored without the physical-node codebook that makes it
-a memory network. Both were silent, which read as "applied" (#904).
+objective dispatch, so that objective scores the network without the physical-node codebook
+that makes it a memory network. Both were silent, which read as "applied" (#904).
 
 The assertions go through the routed ``infomap`` logger rather than fd-level capture: it
 is the supported way to observe engine output from Python, and it carries the level-0
@@ -25,7 +25,13 @@ pytestmark = pytest.mark.fast
 
 ENTROPY_WARNING = "--entropy-corrected has no effect on this run"
 PREFERRED_WARNING = "--preferred-number-of-modules has no effect on this run"
-META_PRECEDENCE_WARNING = "--meta-data takes precedence over higher-order input"
+# Matched on the opening clause, which names the condition (the two codebooks) rather than
+# the outcome. Since #1012 the outcome is engine-dependent -- the columnar core scores both
+# codebooks, the objective dispatch scores one -- so the message states the condition and
+# what the meta-data objective does, and only that part is stable enough to assert on.
+META_CODEBOOKS_WARNING = (
+    "--meta-data on higher-order input asks for two independent codebooks"
+)
 
 
 class _ListHandler(logging.Handler):
@@ -87,7 +93,7 @@ def test_preferred_number_of_modules_warns_on_state_input(engine_messages):
     assert _matching(engine_messages, PREFERRED_WARNING)
 
 
-def test_meta_data_precedence_warns_on_state_input(engine_messages, tmp_path):
+def test_meta_data_codebooks_warn_on_state_input(engine_messages, tmp_path):
     meta = tmp_path / "const.meta"
     # Every physical node in one meta category, so the meta term is exactly 0 and the run
     # cannot be defended as "the metadata was worth the swap" -- the objective changed for
@@ -96,7 +102,7 @@ def test_meta_data_precedence_warns_on_state_input(engine_messages, tmp_path):
 
     _run_states(meta_data=str(meta))
 
-    assert _matching(engine_messages, META_PRECEDENCE_WARNING)
+    assert _matching(engine_messages, META_CODEBOOKS_WARNING)
 
 
 def test_ordinary_input_applies_both_options_silently(engine_messages):
@@ -108,7 +114,7 @@ def test_ordinary_input_applies_both_options_silently(engine_messages):
     assert not _matching(engine_messages, PREFERRED_WARNING)
 
 
-def test_meta_data_on_ordinary_input_is_not_a_precedence_warning(
+def test_meta_data_on_ordinary_input_is_not_a_codebooks_warning(
     engine_messages, tmp_path
 ):
     # Meta-data on a first-order network is what MetaMapEquation is for; only the
@@ -118,7 +124,7 @@ def test_meta_data_on_ordinary_input_is_not_a_precedence_warning(
 
     _run_ordinary(meta_data=str(meta))
 
-    assert not _matching(engine_messages, META_PRECEDENCE_WARNING)
+    assert not _matching(engine_messages, META_CODEBOOKS_WARNING)
 
 
 def test_engine_emits_something_at_all(engine_messages):
