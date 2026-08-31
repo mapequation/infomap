@@ -37,11 +37,14 @@ struct TreePath {
 using TreePaths = std::vector<TreePath>;
 
 // What a clu file's repeated node ids amounted to. A clu file has one row per
-// node, so a repeat means the file is not a partition of the network it is being
-// applied to: the reader keeps whichever row it saw last and the earlier module
-// assignments are gone. The physical clu of a higher-order network is the case
-// that matters -- it has one row per (physical node, module) pair, so overlapping
-// modules make its ids repeat by construction (#1039).
+// node, so any repeat means the file is malformed, but the two kinds differ in
+// consequence: a repeat that gives the same module changes nothing, while one that
+// gives a different module discards an assignment, since the reader keeps whichever
+// row it saw last. Only the second means the partition applied is not the file's --
+// see `conflictingRows` below, which the warning is worded from. The physical clu of
+// a higher-order network is the case that matters: it has one row per (physical
+// node, module) pair, so overlapping modules make its ids repeat, and conflict, by
+// construction (#1039).
 struct DuplicateClusterIds {
   unsigned int rows = 0; // repeated rows, whether or not they changed anything
   unsigned int ids = 0; // distinct node ids seen more than once
