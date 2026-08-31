@@ -24,6 +24,7 @@ void ClusterMap::readClusterData(const std::string& filename, bool includeFlow, 
   m_flowData.clear();
   m_treePaths.clear();
   m_extension.clear();
+  m_duplicateClusterIds = {};
   m_isHigherOrder = false;
   m_hasTreeLeafIdType = false;
   m_treeLeafIdType = TreeLeafIdType::physical;
@@ -177,7 +178,11 @@ void ClusterMap::readClu(const std::string& filename, bool includeFlow, const st
   SafeInFile input(filename);
   std::string line;
   std::istringstream lineStream;
-  std::map<unsigned int, unsigned int> clusterData;
+  // Rows accepted per node id. A well-formed clu has one row per node, so anything
+  // above one means later rows silently replaced earlier ones (#1039). Counted only
+  // for rows that reach m_clusterIds, so multilayer rows skipped for a layer/node
+  // the network does not have are not mistaken for duplicates.
+  std::map<unsigned int, unsigned int> rowsPerId;
 
   while (!std::getline(input, line).fail()) {
     if (line.empty() || line[0] == '#' || line[0] == '*')
@@ -232,6 +237,18 @@ void ClusterMap::readClu(const std::string& filename, bool includeFlow, const st
     }
 
     m_clusterIds[stateId] = moduleId;
+    ++rowsPerId[stateId];
+  }
+
+  for (const auto& [nodeId, rows] : rowsPerId) {
+    if (rows < 2)
+      continue;
+    m_duplicateClusterIds.rows += rows - 1;
+    ++m_duplicateClusterIds.ids;
+    if (rows > m_duplicateClusterIds.maxRowsForOneId) {
+      m_duplicateClusterIds.maxRowsForOneId = rows;
+      m_duplicateClusterIds.exampleId = nodeId;
+    }
   }
 }
 

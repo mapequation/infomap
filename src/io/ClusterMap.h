@@ -36,6 +36,21 @@ struct TreePath {
 
 using TreePaths = std::vector<TreePath>;
 
+// What a clu file's repeated node ids amounted to. A clu file has one row per
+// node, so a repeat means the file is not a partition of the network it is being
+// applied to: the reader keeps whichever row it saw last and the earlier module
+// assignments are gone. The physical clu of a higher-order network is the case
+// that matters -- it has one row per (physical node, module) pair, so overlapping
+// modules make its ids repeat by construction (#1039).
+struct DuplicateClusterIds {
+  unsigned int rows = 0; // rows that replaced an earlier row
+  unsigned int ids = 0; // distinct node ids seen more than once
+  unsigned int exampleId = 0; // the worst one, named in the warning
+  unsigned int maxRowsForOneId = 0; // how many rows that id had
+
+  bool any() const noexcept { return rows > 0; }
+};
+
 class ClusterMap {
 public:
   void readClusterData(const std::string& filename, bool includeFlow = false, const std::map<unsigned int, std::map<unsigned int, unsigned int>>* layerNodeToStateId = nullptr);
@@ -51,6 +66,11 @@ public:
 
   TreeLeafIdType treeLeafIdType() const noexcept { return m_treeLeafIdType; }
 
+  // Only ever non-empty for a clu file. The tree reader has its own report for the
+  // same situation, which it can make more precise because a tree row carries a
+  // path it can pair with a state id -- see normalizeTreePaths.
+  const DuplicateClusterIds& duplicateClusterIds() const noexcept { return m_duplicateClusterIds; }
+
 private:
   void readTree(const std::string& filename, bool includeFlow, const std::map<unsigned int, std::map<unsigned int, unsigned int>>* layerNodeToStateId = nullptr);
   void readClu(const std::string& filename, bool includeFlow, const std::map<unsigned int, std::map<unsigned int, unsigned int>>* layerNodeToStateId = nullptr);
@@ -59,6 +79,7 @@ private:
   std::map<unsigned int, double> m_flowData;
   TreePaths m_treePaths;
   std::string m_extension;
+  DuplicateClusterIds m_duplicateClusterIds;
   bool m_isHigherOrder = false;
   bool m_hasTreeLeafIdType = false;
   TreeLeafIdType m_treeLeafIdType = TreeLeafIdType::physical;

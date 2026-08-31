@@ -12,6 +12,7 @@
 #include <map>
 #include <set>
 #include <iostream>
+#include <fstream>
 #include <sstream>
 #include <tuple>
 #include <vector>
@@ -250,6 +251,86 @@ TEST_CASE("A physical tree that cannot express the partition says so [fast][core
 
   std::remove(physicalTree.c_str());
   std::remove(statesTree.c_str());
+}
+
+TEST_CASE("A physical clu whose ids repeat says so [fast][core][partition][parser]")
+{
+  // The clu twin of the physical-tree case above. A physical .clu has one row per
+  // (physical node, module) pair, so overlapping modules make its node ids repeat,
+  // and the reader keeps whichever row it saw last. Unlike a tree row, a clu row
+  // carries no path to pair with a state id, so nothing can be recovered -- but it
+  // used to be silent, and a codelength off by bits reads as a real objective
+  // difference rather than a misread file (#1039).
+  //
+  // A *state* network on purpose, not a multilayer one: the multilayer clu reader
+  // demands node_id and layer_id columns that a physical clu does not carry, so it
+  // already fails loudly ("Couldn't parse node key"). The silent path is this one.
+  const std::string physicalClu = "physical_roundtrip.clu";
+  const std::string statesClu = "physical_roundtrip_states.clu";
+  std::remove(physicalClu.c_str());
+  std::remove(statesClu.c_str());
+
+  {
+    InfomapWrapper writer(infomap::test::defaultFlags("--seed 1"));
+    writer.readInputData(infomap::test::repoPath("examples/networks/states.net"));
+    writer.run();
+    infomap::writeClu(writer, writer.network(), physicalClu, false, 1);
+    infomap::writeClu(writer, writer.network(), statesClu, true, 1);
+  }
+
+  auto warningsWhenReading = [](const std::string& clusterFile) {
+    std::ostringstream captured;
+    {
+      infomap::test::ScopedLogCapture capture(captured);
+      // Not defaultFlags: it carries --silent, which mutes the very warning under test.
+      InfomapWrapper reader("--seed 123 --num-trials 1 --no-file-output --no-infomap --cluster-data " + clusterFile);
+      reader.readInputData(infomap::test::repoPath("examples/networks/states.net"));
+      reader.run();
+    }
+    return captured.str();
+  };
+
+  const auto physicalOutput = warningsWhenReading(physicalClu);
+  CHECK(physicalOutput.find("more than once") != std::string::npos);
+  // Singular, since exactly one physical node repeats here.
+  CHECK(physicalOutput.find("1 node id appears") != std::string::npos);
+  // The message has to name the file to use instead, or it only says "wrong".
+  CHECK(physicalOutput.find("_states.clu") != std::string::npos);
+
+  // The state clu is a partition of the network that was searched, so it must stay quiet.
+  const auto statesOutput = warningsWhenReading(statesClu);
+  CHECK(statesOutput.find("more than once") == std::string::npos);
+
+  std::remove(physicalClu.c_str());
+  std::remove(statesClu.c_str());
+}
+
+TEST_CASE("Duplicate clu ids are reported for a first-order network too [fast][core][partition][parser]")
+{
+  // Nothing higher-order about a repeated id: a hand-written or concatenated clu can
+  // carry one, and the reader discards assignments just the same. The advice differs,
+  // since there is no `_states.clu` to point at.
+  const std::string duplicateClu = "duplicate_ids.clu";
+  {
+    std::ofstream out(duplicateClu);
+    out << "# node_id module\n1 1\n2 1\n3 2\n3 3\n4 2\n5 3\n6 3\n";
+  }
+
+  std::ostringstream captured;
+  {
+    infomap::test::ScopedLogCapture capture(captured);
+    InfomapWrapper reader("--seed 123 --num-trials 1 --no-file-output --no-infomap --cluster-data " + duplicateClu);
+    reader.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+    reader.run();
+  }
+
+  const auto output = captured.str();
+  CHECK(output.find("1 node id appears more than once") != std::string::npos);
+  CHECK(output.find("node 3 alone has 2 rows") != std::string::npos);
+  // The higher-order advice would be wrong here; this network has no state clu.
+  CHECK(output.find("_states.clu") == std::string::npos);
+
+  std::remove(duplicateClu.c_str());
 }
 
 TEST_CASE("Mixed-depth cluster data is rejected instead of crashing [fast][core][partition][parser]")

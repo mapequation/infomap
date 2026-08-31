@@ -1418,6 +1418,30 @@ InfomapBase& InfomapBase::initPartition(const std::string& clusterDataFile, bool
     validateClusterDataTreeShape(normalizedTree);
     initTree(normalizedTree);
   } else if (ext == "clu") {
+    // A clu row is (node id, module) and nothing else, so a repeated id is not
+    // recoverable the way a repeated id in a tree is -- there is no path to pair
+    // with a state, and the reader can only keep the row it saw last. Saying so is
+    // still the difference between a one-line diagnosis and a codelength silently
+    // off by bits, which is what #1039 was reported as.
+    const auto& duplicates = clusterMap.duplicateClusterIds();
+    if (duplicates.any()) {
+      const auto* advice = haveMemory()
+          ? "This is the physical clu of a higher-order network -- one row per (physical node, module) pair -- so its "
+            "overlapping modules cannot be expressed as a partition at all. Use the state clu (_states.clu) for an "
+            "exact round trip."
+          : "A clu file has one row per node, so the last row read wins and the earlier assignments are discarded. "
+            "The codelength below is for the partition that survived, not for the one in the file.";
+      Console::warn(0,
+                    "{} node {} more than once in '{}': {} {} an earlier module assignment, and node {} alone has {} rows. {}",
+                    duplicates.ids,
+                    duplicates.ids == 1 ? "id appears" : "ids appear",
+                    clusterDataFile,
+                    duplicates.rows,
+                    duplicates.rows == 1 ? "row replaced" : "rows replaced",
+                    duplicates.exampleId,
+                    duplicates.maxRowsForOneId,
+                    advice);
+    }
     initPartition(clusterMap.clusterIds(), hard);
   }
 
