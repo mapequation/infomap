@@ -253,12 +253,20 @@ public:
     validateNetwork();
     preflightOutputTargets(m_infomap, higherOrderInput());
     {
-      auto timer = m_timing.scope("pre_run_output_s");
-      writeOutputArtifacts(m_infomap, m_network, OutputPhase::BeforeFlow);
-    }
-    {
       auto timer = m_timing.scope("configure_network_s");
       configureNetworkMode();
+    }
+    // After configureNetworkMode(), not before it. These artifacts describe the
+    // network as read, but the config that names and labels them is only finished
+    // by the classification: state output decides whether the Pajek dump is the
+    // `_states_as_physical` one, and the flow model decides whether it declares
+    // `*Edges` or `*Arcs`. Written earlier, a multilayer run produced a dump named
+    // and labelled as a first-order undirected network while the run itself had
+    // already expanded the links to directed. Still before any flow is computed,
+    // which is what the phase means.
+    {
+      auto timer = m_timing.scope("pre_run_output_s");
+      writeOutputArtifacts(m_infomap, m_network, OutputPhase::BeforeFlow);
     }
     calculateFlowAndInitNetwork();
     {

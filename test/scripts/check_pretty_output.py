@@ -163,7 +163,6 @@ def main():
             "test.csv",
             "test.ftree",
             "test.json",
-            "test.net",
             "test.nwk",
             "test.tree",
             "test_states.clu",
@@ -173,6 +172,12 @@ def main():
             "test_states.net",
             "test_states.nwk",
             "test_states.tree",
+            # The Pajek dump of a state network is the `_states_as_physical` one,
+            # matching its own "# State network as physical network" header and the
+            # flow variant below it. It was written as a bare `test.net` until the
+            # artifact stopped being written ahead of the higher-order
+            # classification that names it.
+            "test_states_as_physical.net",
             "test_states_as_physical_flow.net",
         ):
             assert Path(tmpdir, filename).is_file()

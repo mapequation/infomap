@@ -353,36 +353,36 @@ std::vector<std::string> planAllOutputPaths(const Config& config, HigherOrderInp
 {
   std::vector<std::string> paths;
 
-  // Config::stateOutput changes value inside the window this function has to
-  // describe: configureNetworkMode() sets it after the BeforeFlow artifacts are
-  // written and before everything else. So the phases are planned on either side
-  // of that call. Getting it wrong in either direction is a live defect: too few
-  // paths lets a run destroy its own input (#1018), too many refuses a run that
-  // would have been fine.
+  // Config::stateOutput is still false when the pre-flight runs -- it is set by
+  // configureNetworkMode() once the network is read -- so the classification is
+  // supplied instead. Every write phase now happens after that call, so one value
+  // covers them all. Getting it wrong in either direction is a live defect: too
+  // few paths lets a run destroy its own input (#1018), too many refuses a run
+  // that would have been fine.
   //
-  // BeforeFlow is planned from the config exactly as given, never forced, because
-  // that is what its writer sees. Config::stateOutput is public and the Python and
-  // R bindings expose a setter, so a caller can enter run() with it already true;
-  // the writer then emits the `_states_as_physical` name and the plan has to agree.
-  Config afterConfigure = config;
+  // The copy preserves a stateOutput the caller set itself -- the field is public
+  // and the Python and R bindings expose a setter -- and the classification only
+  // ever turns it on, never off. So the plan agrees with the writers on that case
+  // too, which is what the forced first-order plan this replaced got wrong.
+  Config planConfig = config;
   if (higherOrder == HigherOrderInput::Yes)
-    afterConfigure.setStateOutput();
+    planConfig.setStateOutput();
 
-  const auto collectPhase = [&](const Config& phaseConfig, OutputPhase phase, int trial) {
-    for (const auto& artifact : planOutputArtifacts(phaseConfig, phase, trial))
+  const auto collectPhase = [&](OutputPhase phase, int trial) {
+    for (const auto& artifact : planOutputArtifacts(planConfig, phase, trial))
       paths.push_back(artifact.filename);
   };
 
   // Network sidecars are written once, independent of trial.
-  collectPhase(config, OutputPhase::BeforeFlow, -1);
-  collectPhase(afterConfigure, OutputPhase::AfterFlow, -1);
+  collectPhase(OutputPhase::BeforeFlow, -1);
+  collectPhase(OutputPhase::AfterFlow, -1);
 
   // The final modular result is written once with the canonical basename, and
   // additionally per trial when --print-all-trials uses separate files.
-  collectPhase(afterConfigure, OutputPhase::AfterPartition, -1);
+  collectPhase(OutputPhase::AfterPartition, -1);
   if (config.printAllTrials && config.numTrials > 1) {
     for (unsigned int trial = 1; trial <= config.numTrials; ++trial)
-      collectPhase(afterConfigure, OutputPhase::AfterPartition, static_cast<int>(trial));
+      collectPhase(OutputPhase::AfterPartition, static_cast<int>(trial));
   }
 
   for (const auto& report : planReportArtifacts(config))
