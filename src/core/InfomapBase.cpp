@@ -459,6 +459,12 @@ private:
           Log::ScopedMute muteWorkerLogs;
           const auto seed = trialSeed(trialIndex);
           worker.seedToRandomNumberGenerator = seed;
+          // A worker is its own Infomap, so it does not inherit the main instance's
+          // captured base seed -- and its live seed field is this trial's. Without
+          // this, a per-trial artifact written by a worker reports base + offset + i
+          // as if it were the run's seed.
+          worker.m_baseSeed = m_infomap.baseSeed();
+          worker.m_haveBaseSeed = true;
           worker.reseed(static_cast<unsigned int>(seed));
           int threadNumber = 0;
 #ifdef _OPENMP
