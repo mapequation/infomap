@@ -141,6 +141,55 @@ def test_hidden_bindings_are_derived_from_hide_decisions():
     }
 
 
+def test_every_deprecated_option_field_carries_a_versioned_directive():
+    """RELEASING.md requires a ``.. deprecated:: <version>`` note on every deprecated
+    member, and the published ``Options`` reference -- which the package docstring
+    points at as the parameter reference -- carried none for any field (#915).
+
+    Asserted on the rendered docstring rather than on the generator, since that is what
+    a user reads through ``inspect.getdoc``.
+    """
+    import inspect
+    import re as _re
+
+    from infomap import Options
+    from infomap._options import _OPTION_TABLE
+
+    # getdoc dedents, so a field heading sits at column 0 and its body is indented.
+    doc = inspect.getdoc(Options) or ""
+    blocks: dict[str, list[str]] = {}
+    current = None
+    for line in doc.splitlines():
+        heading = _re.match(r"^(\w+) : ", line)
+        if heading:
+            current = heading.group(1)
+            blocks[current] = []
+        elif current is not None:
+            blocks[current].append(line)
+
+    deprecated_actions = {"remove", "args-only", "deprecate"}
+    expected = sorted(
+        name
+        for name, spec in _OPTION_TABLE.items()
+        if spec.action in deprecated_actions
+    )
+    assert expected, "no deprecated fields to check; the policy shape changed"
+
+    for name in expected:
+        assert name in blocks, f"{name} missing from the Options reference"
+        directives = [line for line in blocks[name] if ".. deprecated::" in line]
+        assert directives, f"{name} has no .. deprecated:: directive"
+        for line in directives:
+            version = line.split(".. deprecated::", 1)[1].strip()
+            assert version, f"{name} has a directive with no version"
+            # Sphinx reads everything after the directive name as the version, so the
+            # note has to be on its own indented line rather than folded onto this one.
+            assert " " not in version, (
+                f"{name} folded its note onto the directive line, which Sphinx would "
+                f"render as the version: {version!r}"
+            )
+
+
 def test_unknown_flag_fails_loud():
     overrides = copy.deepcopy(OVERRIDES)
     overrides["policy"]["parameters"]["--not-a-flag"] = {

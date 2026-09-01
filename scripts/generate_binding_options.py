@@ -645,6 +645,12 @@ def _python_engine_default_doc(param) -> str:
     return f"Engine default: {default}."
 
 
+# The release in which this deprecation wave first shipped. RELEASING.md fixes it at
+# 2.15 -- 2.14.0 shipped the redesign but no versioned markers or runtime warnings --
+# and Sphinx renders an empty version if the directive carries none.
+DEPRECATION_WAVE_VERSION = "2.15"
+
+
 def _options_doc_policy_note(policy: dict) -> str:
     """A short note for the Options docstring flagging fields that are not a
     first-class engine option on the Python library surface.
@@ -675,6 +681,31 @@ def _options_doc_policy_note(policy: dict) -> str:
         "hide": "Not exposed on the Python surface.",
     }.get(action, "")
     return f"{lead} {replacement}".strip()
+
+
+# Actions that make a field deprecated on the Python surface, so it needs the
+# versioned directive RELEASING.md requires. An alias is documented, not deprecated,
+# and `hide` is not on the surface to deprecate in the first place.
+DEPRECATED_POLICY_ACTIONS = {"remove", "args-only", "deprecate"}
+
+
+def _options_doc_deprecation_lines(policy: dict, note: str, indent: str) -> list[str]:
+    """The `.. deprecated::` block for one Options field, or nothing.
+
+    The published Options reference -- which the package docstring points at as the
+    parameter reference -- carried no directive for any field, while RELEASING.md
+    requires one on every deprecated member (#915). The directive goes on its own
+    line with the note indented beneath it: Sphinx reads everything after the
+    directive name as the version, so folding the note onto that line renders the
+    whole sentence as the version string.
+    """
+    action = (policy or {}).get("action", "keep")
+    if action not in DEPRECATED_POLICY_ACTIONS:
+        return []
+    lines = [f"{indent}.. deprecated:: {DEPRECATION_WAVE_VERSION}"]
+    if note:
+        lines.extend(wrap_doc(note, indent + "   "))
+    return lines
 
 
 def generate_python(catalog: ParameterCatalog) -> str:
@@ -809,7 +840,13 @@ def generate_python(catalog: ParameterCatalog) -> str:
             lines.append(f"    {name} : {param.python_doc_type()}")
             lines.extend(wrap_doc(description, "        "))
             note = _options_doc_policy_note(param.policy("python"))
-            if note:
+            deprecation = _options_doc_deprecation_lines(
+                param.policy("python"), note, "        "
+            )
+            if deprecation:
+                lines.append("")
+                lines.extend(deprecation)
+            elif note:
                 lines.append("")
                 lines.extend(wrap_doc(note, "        "))
     lines.append("    include_self_links : bool, optional")

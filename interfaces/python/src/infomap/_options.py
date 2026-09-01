@@ -463,58 +463,69 @@ class Options(metaclass=_OptionsMeta):
     out_name : str, optional
         Base name for output files, for example [out_directory]/[out-name].tree.
 
-        Args-only in library mode (see the note above).
+        .. deprecated:: 2.15
+           Args-only in library mode (see the note above).
     no_file_output : bool, optional
         Do not write output files.
 
-        Args-only in library mode (see the note above).
+        .. deprecated:: 2.15
+           Args-only in library mode (see the note above).
     tree : bool, optional
         Write the modular hierarchy to a tree file. Enabled by default when no other
         output format is selected.
 
-        Args-only in library mode (see the note above).
+        .. deprecated:: 2.15
+           Args-only in library mode (see the note above).
     ftree : bool, optional
         Write the modular hierarchy and aggregated links between nested modules to an
         ftree file. Used by Network Navigator.
 
-        Args-only in library mode (see the note above).
+        .. deprecated:: 2.15
+           Args-only in library mode (see the note above).
     clu : bool, optional
         Write top-level module ids for each node to a clu file.
 
-        Args-only in library mode (see the note above).
+        .. deprecated:: 2.15
+           Args-only in library mode (see the note above).
     clu_level : int, optional
         With --clu or --output clu, write module ids at this depth from the root. Use -1
         for bottom-level modules. Valid range: >= -1. Engine default: 1.
 
-        Args-only in library mode (see the note above).
+        .. deprecated:: 2.15
+           Args-only in library mode (see the note above).
     output : sequence of str, optional
         Write selected output formats as a comma-separated list without spaces, e.g. -o
         clu,tree,ftree. Options: clu, tree, ftree, newick, json, csv, network, states,
         flow.
 
-        Args-only in library mode (see the note above).
+        .. deprecated:: 2.15
+           Args-only in library mode (see the note above).
     hide_bipartite_nodes : bool, optional
         Hide bipartite nodes in output by projecting the solution to primary nodes.
 
-        Args-only on the Python library surface. It projects the secondary (type-B)
-        bipartite nodes out of what result.write_tree/write_clu emit, leaving the
-        in-memory result covering both node types. Set it via Options and write from the
-        Result to use it.
+        .. deprecated:: 2.15
+           Args-only on the Python library surface. It projects the secondary (type-B)
+           bipartite nodes out of what result.write_tree/write_clu emit, leaving the
+           in-memory result covering both node types. Set it via Options and write from
+           the Result to use it.
     print_all_trials : bool, optional
         Write each trial to separate output files. Has effect only when --num-trials is
         greater than 1.
 
-        Args-only in library mode (see the note above).
+        .. deprecated:: 2.15
+           Args-only in library mode (see the note above).
     no_overwrite : bool, optional
         Fail with an output error if any target output file already exists. By default
         existing files are replaced.
 
-        Args-only in library mode (see the note above).
+        .. deprecated:: 2.15
+           Args-only in library mode (see the note above).
     print_config_fingerprint : bool, optional
         Print the canonical configuration fingerprint and exit.
 
-        Not a Python library option; it leaves the surface in 3.0. A print-and-exit CLI
-        diagnostic; run the infomap binary.
+        .. deprecated:: 2.15
+           Not a Python library option; it leaves the surface in 3.0. A print-and-exit
+           CLI diagnostic; run the infomap binary.
     timing_json : str or os.PathLike, optional
         Write machine-readable run timing JSON to this path. Use - for stdout.
     summary_json : str or os.PathLike, optional
@@ -539,17 +550,19 @@ class Options(metaclass=_OptionsMeta):
         Verbosity level on the console. 1 keeps the default output level, 2 renders -vv
         and so on.
 
-        Not a Python library option; it leaves the surface in 3.0. A DEBUG-enabled
-        'infomap' logger (infomap.enable_log(logging.DEBUG)) raises engine verbosity;
-        logger levels filter the records.
+        .. deprecated:: 2.15
+           Not a Python library option; it leaves the surface in 3.0. A DEBUG-enabled
+           'infomap' logger (infomap.enable_log(logging.DEBUG)) raises engine verbosity;
+           logger levels filter the records.
     silent : bool, optional
         Suppress console output. The Python API is already quiet by default; to see the
         engine log, use infomap.enable_log() rather than this flag. The command-line
         interface is unaffected.
 
-        Not a Python library option; it leaves the surface in 3.0. The Python API is
-        quiet by default; logging is the control. Attach handlers to
-        logging.getLogger('infomap') (e.g. infomap.enable_log()) for the engine log.
+        .. deprecated:: 2.15
+           Not a Python library option; it leaves the surface in 3.0. The Python API is
+           quiet by default; logging is the control. Attach handlers to
+           logging.getLogger('infomap') (e.g. infomap.enable_log()) for the engine log.
     two_level : bool, optional
         Optimize a two-level partition instead of the default multi-level hierarchy.
     flow_model : str, optional
@@ -679,8 +692,9 @@ class Options(metaclass=_OptionsMeta):
     threads : str or int, optional
         Alias for --num-threads.
 
-        Not a Python library option; it leaves the surface in 3.0. Use num_threads;
-        threads is a redundant alias of the same engine option.
+        .. deprecated:: 2.15
+           Not a Python library option; it leaves the surface in 3.0. Use num_threads;
+           threads is a redundant alias of the same engine option.
     prefer_modular_solution : bool, optional
         Prefer a modular solution even when one module gives a lower codelength.
     num_random_moves : int, optional
