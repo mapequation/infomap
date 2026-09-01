@@ -150,7 +150,7 @@ notebooks = [
 ]
 release = [
   "build",
-  "cibuildwheel==4.1.1",
+  "cibuildwheel==4.2.0",
   "twine",
   "wheel",
 ]
