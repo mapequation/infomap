@@ -463,6 +463,13 @@ private:
           // captured base seed -- and its live seed field is this trial's. Without
           // this, a per-trial artifact written by a worker reports base + offset + i
           // as if it were the run's seed.
+          //
+          // Unreachable today, and deliberately kept: Config::cloneAsNonMain does not
+          // copy printAllTrials, so the worker's per-trial write below never fires and
+          // --print-all-trials is silently ignored under --parallel-trials. Verified
+          // with 4 workers at -N4: only the aggregate reaches disk. That is why no
+          // test covers these two lines -- there is no artifact to inspect. Whoever
+          // closes that gap gets correct seeds instead of a silent regression.
           worker.m_baseSeed = m_infomap.baseSeed();
           worker.m_haveBaseSeed = true;
           worker.reseed(static_cast<unsigned int>(seed));

@@ -332,6 +332,31 @@ def test_every_artifact_records_the_same_base_seed(infomap_bin, work):
     assert set(seeds.values()) == {"# seed 42"}, seeds
 
 
+def test_parallel_trials_aggregate_records_the_base_seed(infomap_bin, work):
+    # The parallel path takes a different route to the artifact, so it gets its own
+    # assertion. It does not reach the worker's own seed handling: cloneAsNonMain
+    # does not copy printAllTrials, so a worker never writes a per-trial artifact and
+    # there is nothing else to inspect.
+    make_workdir(work)
+
+    result = run(
+        infomap_bin,
+        "network.net",
+        "out",
+        "--silent",
+        "--seed",
+        "42",
+        "-N4",
+        "--parallel-trials",
+        "-o",
+        "tree",
+        cwd=work,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "# seed 42" in (work / "out" / "network.tree").read_text(encoding="utf-8")
+
+
 def test_overwrite_flag_is_removed(infomap_bin, work):
     make_workdir(work)
 
@@ -382,6 +407,7 @@ def main(argv):
             test_default_headers_record_the_effective_seed,
             test_headers_record_the_trial_offset_of_a_shard,
             test_every_artifact_records_the_same_base_seed,
+            test_parallel_trials_aggregate_records_the_base_seed,
             test_overwrite_flag_is_removed,
             test_run_manifest_contains_fingerprints_and_outputs,
         ]:
