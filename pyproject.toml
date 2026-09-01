@@ -96,7 +96,7 @@ test = [
   # reasons in [tool.ruff.lint], and the E4/E7/E9/F rules 0.16.0 dropped from
   # the defaults re-selected there. Keep this in sync with the ruff-pre-commit
   # `rev` in .pre-commit-config.yaml, and bump both together, deliberately.
-  "ruff==0.16.0",
+  "ruff==0.16.5",
   "scipy",
   # Reads the loaded OpenMP runtime's thread count, which is how
   # test_thread_budget.py checks that a run gives the host's limit back. Without
