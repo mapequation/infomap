@@ -2968,7 +2968,13 @@ unsigned int InfomapBase::findHierarchicalSuperModules(unsigned int superLevelLi
     // Consolidate the dynamic modules without replacing any existing ones.
     consolidateModules(false);
 
-    Console::detail(1, "super: consolidated {} modules, index codelength {:g} {} {}", numTopModules(), oldIndexLength, Console::arrow(), io::stringify(*this));
+    // The arrow has to land on an index codelength, since that is what the sentence
+    // says and what oldIndexLength is updated to just below. It used to print
+    // io::stringify(*this): a correctly computed but different quantity -- the whole
+    // objective over the module network after the flat initPartition above -- so the
+    // line compared an index codelength against a full one and reported a value
+    // larger than the codelength the very next line announces (#837).
+    Console::detail(1, "super: consolidated {} modules, index codelength {:g} {} {:g}", numTopModules(), oldIndexLength, Console::arrow(), superIndexCodelength);
 
     hierarchicalCodelength = workingHierarchicalCodelength;
     oldIndexLength = superIndexCodelength;

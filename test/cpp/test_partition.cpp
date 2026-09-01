@@ -13,6 +13,7 @@
 #include <set>
 #include <iostream>
 #include <fstream>
+#include <regex>
 #include <sstream>
 #include <tuple>
 #include <vector>
@@ -428,6 +429,46 @@ TEST_CASE("The duplicate-clu report survives the trial loop and parallel trials 
   CHECK(warningCount("--num-trials 10 --parallel-trials") == 1);
 
   std::remove(duplicateClu.c_str());
+}
+
+TEST_CASE("The super consolidation log reports an index codelength [fast][core][partition]")
+{
+  // #837: the line said "index codelength X -> Y" but Y was io::stringify(*this) --
+  // the whole objective over the module network after the flat initPartition just
+  // above it. A correctly computed but different quantity, so the arrow compared an
+  // index codelength against a full one and landed on a value larger than the
+  // codelength the next line announces. On examples/networks/ninetriangles.net it
+  // read `0.93613 -> 0.0990602 + 3.74245 = 3.84151` against a result of 3.8415.
+  //
+  // Asserted as the invariant rather than on the numbers: the value the arrow lands
+  // on has to be the super index codelength, which the "found N super modules" line
+  // prints as its own first term.
+  std::ostringstream captured;
+  {
+    infomap::test::ScopedLogCapture capture(captured);
+    InfomapWrapper im("--seed 123 --num-trials 1 --no-file-output --verbose --verbose");
+    im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+    im.run();
+  }
+
+  const std::string haystack = captured.str();
+
+  std::smatch found;
+  REQUIRE(std::regex_search(haystack, found, std::regex(R"(found \d+ super modules, codelength ([0-9.e+-]+) \+)")));
+  const auto superIndexCodelength = found[1].str();
+
+  // The whole line, so the assertion can see what follows the arrow as well as the
+  // value it lands on. The old format's stringify(*this) *began* with the same index
+  // codelength and then continued " + <module> = <total>", so matching only the
+  // first number after the arrow passes on both formats and proves nothing.
+  std::smatch consolidated;
+  REQUIRE(std::regex_search(haystack, consolidated, std::regex(R"(super: consolidated \d+ modules, index codelength [^\n]*)")));
+  const auto line = consolidated[0].str();
+
+  INFO("super index=" << superIndexCodelength << " line: " << line);
+  CHECK(line.find(superIndexCodelength) != std::string::npos);
+  // An index codelength is one number. A sum is the other quantity.
+  CHECK(line.find(" = ") == std::string::npos);
 }
 
 TEST_CASE("Mixed-depth cluster data is rejected instead of crashing [fast][core][partition][parser]")
