@@ -206,18 +206,29 @@ runtime depends on how the caller reaches it — three tiers, all pinned by
 `test/python/test_deprecations.py` (plus `test/python/test_wrapper_args.py`
 for the parameters):
 
-- **Silent-by-default `PendingDeprecationWarning`** — the legacy stateful
+The two runtime classes are named once each, as `LEGACY_SURFACE_WARNING` and
+`TYPED_PARAMETER_WARNING` in `interfaces/python/src/infomap/_options.py` (generated
+from `scripts/generate_binding_options.py`). Change them there, not at the call
+sites, and keep them ordered by volume.
+
+- **`LEGACY_SURFACE_WARNING`, a `DeprecationWarning`** — the legacy stateful
   surface: the `Result` accessors mirrored on `Infomap` (`get_modules`,
   `codelength`, …), the advanced-tier keywords on `Infomap()` / `Infomap.run`,
   and `from_options` / `run_with_options` / `from_scipy_sparse_matrix` /
-  `from_edge_index`. Silent under the default warning filter, so existing code
-  is not disrupted; surface it with `python -W` or a logging filter.
+  `from_edge_index`. Shown in `__main__` under PEP 565, so `python analysis.py`
+  sees it while a library that merely imports Infomap does not. This tier was
+  `PendingDeprecationWarning` until #915: CPython's default filters ignore that
+  class outright, so the removal window reached nobody and the exit criterion it
+  was supposed to satisfy was self-certifying.
 - **Docs-only, no runtime warning** — the `add_*` build-from-graph adapters
   (`add_networkx_graph`, `add_scipy_sparse_matrix`, `add_edge_index`,
   `add_igraph_graph`). The `.. deprecated::` note is the only signal.
-- **Louder `DeprecationWarning`** — an explicitly passed deprecated *parameter*
-  (`include_self_links`, `pretty`): silently ignoring or rewriting an argument
-  the caller actually typed hides a migration they need to make.
+- **`TYPED_PARAMETER_WARNING`, a `FutureWarning`** — an explicitly passed
+  deprecated *parameter* (`include_self_links`, `pretty`): silently ignoring or
+  rewriting an argument the caller actually typed hides a migration they need to
+  make. Shown under every filter, which is where scikit-learn, pandas and NumPy
+  each landed for a scientific audience. It moved up with the tier below it, so
+  the two stay distinct rather than collapsing into one class.
 
 **Removal is a major-version event** (`feat!:` / `BREAKING CHANGE`), never part
 of a minor or patch release.

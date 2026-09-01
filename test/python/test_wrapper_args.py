@@ -6,6 +6,7 @@ import sys
 import infomap as infomap_module
 import pytest
 from infomap._bindings import InfomapWrapper
+from infomap._options import TYPED_PARAMETER_WARNING
 
 pytestmark = pytest.mark.fast
 
@@ -50,7 +51,7 @@ def test_construct_args_deduplicates_no_self_links():
     assert tokens.count("--no-self-links") == 1
 
 
-@pytest.mark.filterwarnings("ignore::PendingDeprecationWarning")
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_run_forwards_variable_markov_options(monkeypatch):
     # Deliberately forwards advanced-tier engine kwargs through the stateful
     # run() to assert they reach the engine; the pending-deprecation is expected.
@@ -171,12 +172,18 @@ def test_cli_completion_invalid_shell_exits_without_traceback():
 
 
 def test_pretty_warns_when_passed_explicitly():
-    with pytest.deprecated_call(match="pretty is deprecated and has no effect"):
+    # pytest.deprecated_call only accepts the two Deprecation categories, and a typed
+    # deprecated parameter is the louder TYPED_PARAMETER_WARNING tier now (#915).
+    with pytest.warns(
+        TYPED_PARAMETER_WARNING, match="pretty is deprecated and has no effect"
+    ):
         infomap_module.Infomap(silent=True, pretty=True)
 
     im = infomap_module.Infomap(silent=True)
     im.add_link(0, 1)
-    with pytest.deprecated_call(match="pretty is deprecated and has no effect"):
+    with pytest.warns(
+        TYPED_PARAMETER_WARNING, match="pretty is deprecated and has no effect"
+    ):
         im.run(pretty=False)
 
 
@@ -184,9 +191,10 @@ def test_include_self_links_warning_points_at_caller():
     import warnings
 
     with warnings.catch_warnings(record=True) as caught:
-        warnings.simplefilter("always", DeprecationWarning)
+        warnings.simplefilter("always")
         infomap_module.Infomap(silent=True, include_self_links=True)
 
     matching = [w for w in caught if "include_self_links" in str(w.message)]
-    assert matching, "expected an include_self_links DeprecationWarning"
+    assert matching, "expected an include_self_links warning"
+    assert issubclass(matching[0].category, TYPED_PARAMETER_WARNING)
     assert matching[0].filename == __file__

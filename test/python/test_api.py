@@ -11,7 +11,7 @@ from infomap._bindings import InfomapWrapper
 pytestmark = pytest.mark.fast
 
 
-@pytest.mark.filterwarnings("ignore::PendingDeprecationWarning")
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_run_with_empty_initial_partition_overrides_persisted_partition(make_infomap):
     baseline = make_infomap()
     baseline.add_links([(1, 2), (1, 3), (2, 3), (2, 4)])

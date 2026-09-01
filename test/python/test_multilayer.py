@@ -4,7 +4,7 @@ import pytest
 # compat surface (no_infomap / matchable_multilayer_ids), so the pending
 # deprecation on advanced-tier kwargs is expected here; it is asserted in
 # test_deprecations.py.
-pytestmark = pytest.mark.filterwarnings("ignore::PendingDeprecationWarning")
+pytestmark = pytest.mark.filterwarnings("ignore::DeprecationWarning")
 
 
 def test_matchable_multilayer_ids_with_python_read_file(

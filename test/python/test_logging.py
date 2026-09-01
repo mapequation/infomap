@@ -27,7 +27,7 @@ from infomap._logging import _sync_engine_routing
 # silent keyword is expected here (it is asserted in test_deprecations.py).
 pytestmark = [
     pytest.mark.fast,
-    pytest.mark.filterwarnings("ignore::PendingDeprecationWarning"),
+    pytest.mark.filterwarnings("ignore::DeprecationWarning"),
 ]
 
 

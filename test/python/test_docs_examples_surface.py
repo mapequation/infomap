@@ -30,7 +30,7 @@ DOCS = REPO_ROOT / "interfaces" / "python" / "source"
 SRC = REPO_ROOT / "interfaces" / "python" / "src" / "infomap"
 
 # The legacy result/build/config mirror on Infomap (deprecated in 2.15;
-# silent-by-default PendingDeprecationWarning; see test_deprecations.py).
+# silent-by-default LEGACY_SURFACE_WARNING; see test_deprecations.py).
 # Curated by hand: introspecting
 # docstrings would misclassify blessed members whose docstrings merely
 # *contain* parameter-level deprecation directives (e.g. run()).

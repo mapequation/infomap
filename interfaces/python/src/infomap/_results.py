@@ -9,6 +9,7 @@ from math import log2
 from typing import TYPE_CHECKING, Any
 
 from ._optional import require_pandas
+from ._options import LEGACY_SURFACE_WARNING
 from .errors import InfomapError, _translate_engine_errors
 
 _PACKAGE_PREFIX = os.path.dirname(os.path.abspath(__file__)) + os.sep
@@ -31,7 +32,7 @@ def _emit_accessor_deprecation(member: str, replacement: str) -> None:
 
     The legacy result mirror on ``Infomap`` stays usable through 2.x and leaves
     in 3.0. Like the advanced-tier keyword warning, this is a
-    ``PendingDeprecationWarning`` -- silent under the default filter, so it nags
+    ``LEGACY_SURFACE_WARNING`` -- see its definition in ``_options`` for the class
     no one until 3.0 nears, but it surfaces under ``-W`` and for tools that
     escalate warnings. The caller-frame check keeps internal readers (the
     summary card, ``_repr_html_``, any in-package reuse) quiet, so only user
@@ -46,7 +47,7 @@ def _emit_accessor_deprecation(member: str, replacement: str) -> None:
     warnings.warn(
         f"Infomap.{member} is deprecated and leaves in 3.0; read {replacement} "
         "off the Result returned by im.run() instead.",
-        PendingDeprecationWarning,
+        LEGACY_SURFACE_WARNING,
         stacklevel=3,
     )
 
@@ -59,7 +60,7 @@ def _warn_method_deprecated(member: str, replacement: str) -> None:
     ``from_scipy_sparse_matrix``, ``from_edge_index``) whose replacement is a
     different call, not a ``Result`` attribute -- so the message names the
     replacement directly instead of "read ... off the Result". Same
-    ``PendingDeprecationWarning`` category, caller-frame guard, and stacklevel
+    ``LEGACY_SURFACE_WARNING`` category, caller-frame guard, and stacklevel
     as the accessor warning, so the whole deprecated surface signals uniformly.
     Call it as the first statement of the deprecated method's body.
     """
@@ -68,7 +69,7 @@ def _warn_method_deprecated(member: str, replacement: str) -> None:
         return
     warnings.warn(
         f"Infomap.{member} is deprecated and leaves in 3.0; {replacement}",
-        PendingDeprecationWarning,
+        LEGACY_SURFACE_WARNING,
         stacklevel=3,
     )
 
