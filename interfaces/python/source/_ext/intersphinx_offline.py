@@ -17,7 +17,7 @@ else's uptime.
 ``suppress_warnings`` cannot reach it: Sphinx 9.1 logs this one through
 ``LOGGER.warning`` with no type or subtype (``sphinx/ext/intersphinx/_load.py``),
 and only typed warnings can be suppressed by name. The record is intercepted here
-instead, on the intersphinx logger alone, and demoted to INFO -- still in the
+instead, on the intersphinx loggers alone, and demoted to INFO -- still in the
 log, no longer fatal.
 
 The alternative was a committed ``objects.inv`` per project as a fallback
@@ -41,12 +41,21 @@ from sphinx.util import logging as sphinx_logging
 
 __all__ = ["setup"]
 
-# The logger intersphinx warns on. Resolved through Sphinx's own getLogger so the
-# "sphinx." namespace prefix it adds cannot drift out from under us; the module
-# path is the part that would have to be updated if upstream moved the logger,
-# and if it ever does this filter stops matching and the build goes back to
-# failing on the warning -- loud, not silent.
-_INTERSPHINX_LOGGER = "sphinx.ext.intersphinx"
+# The loggers intersphinx may warn on, each resolved through Sphinx's own
+# getLogger so the "sphinx." namespace prefix it adds cannot drift out from under
+# us. Python does not run an ancestor's filters for a child logger's records, so
+# every candidate is filtered by name rather than relying on propagation.
+#
+# In Sphinx 9.1 the emitting logger is the first one: `_load.py` imports LOGGER
+# from `_shared.py`, which declares getLogger('sphinx.ext.intersphinx') with an
+# explicit string. The second covers the `getLogger(__name__)` layout, where the
+# emitting module owns its own child logger -- so an upstream move to that shape
+# does not quietly put the warning back in front of the fatal handler. Filtering
+# a logger that never emits costs nothing.
+_INTERSPHINX_LOGGERS = (
+    "sphinx.ext.intersphinx",
+    "sphinx.ext.intersphinx._load",
+)
 
 # The message as passed to LOGGER.warning, before %-interpolation. Matched on the
 # format string so the URL, the exception class, and which site happened to be
@@ -77,9 +86,8 @@ class _DemoteUnreachableInventories(logging.Filter):
 def setup(app):
     # Installed at extension-load time, which is before intersphinx fetches
     # anything (it does that on builder-inited), so no ordering hazard.
-    sphinx_logging.getLogger(_INTERSPHINX_LOGGER).logger.addFilter(
-        _DemoteUnreachableInventories()
-    )
+    for name in _INTERSPHINX_LOGGERS:
+        sphinx_logging.getLogger(name).logger.addFilter(_DemoteUnreachableInventories())
     # Only a log filter: no doctree read or write, so parallel builds are fine.
     return {
         "version": "1.0",
