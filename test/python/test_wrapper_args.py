@@ -39,8 +39,12 @@ def test_construct_args_renders_expected_cli_flags():
 
 
 def test_construct_args_deduplicates_no_self_links():
-    with pytest.deprecated_call(
-        match="include_self_links is deprecated, use no_self_links to exclude self-links"
+    # pytest.deprecated_call would pass too -- pytest 9.1 accepts FutureWarning
+    # alongside the two Deprecation categories -- but it matches any of the three,
+    # so it cannot tell the tiers apart. Naming the tier is the point here (#915).
+    with pytest.warns(
+        TYPED_PARAMETER_WARNING,
+        match="include_self_links is deprecated, use no_self_links to exclude self-links",
     ):
         args = infomap_module._construct_args(
             include_self_links=False,
