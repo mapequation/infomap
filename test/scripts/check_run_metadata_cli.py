@@ -332,11 +332,16 @@ def test_every_artifact_records_the_same_base_seed(infomap_bin, work):
     assert set(seeds.values()) == {"# seed 42"}, seeds
 
 
-def test_parallel_trials_aggregate_records_the_base_seed(infomap_bin, work):
-    # The parallel path takes a different route to the artifact, so it gets its own
-    # assertion. It does not reach the worker's own seed handling: cloneAsNonMain
-    # does not copy printAllTrials, so a worker never writes a per-trial artifact and
-    # there is nothing else to inspect.
+def test_parallel_trials_artifacts_record_the_base_seed(infomap_bin, work):
+    # The parallel path writes through a worker Infomap rather than the main instance,
+    # so it gets its own assertion. A worker does not inherit the main run's captured
+    # base seed and its live seed field is the current trial's, so without the
+    # propagation in runTrialsInParallel the per-trial files here reported 52, 53, 54,
+    # 55 while the aggregate reported 42.
+    #
+    # A build without OpenMP warns and runs the same command serially, which asserts
+    # the same invariant over the serial writer; the worker lines are covered by the
+    # OpenMP build.
     make_workdir(work)
 
     result = run(
@@ -347,14 +352,30 @@ def test_parallel_trials_aggregate_records_the_base_seed(infomap_bin, work):
         "--seed",
         "42",
         "-N4",
+        "--trial-offset",
+        "10",
         "--parallel-trials",
+        "--print-all-trials",
         "-o",
         "tree",
         cwd=work,
     )
 
     assert result.returncode == 0, result.stderr
-    assert "# seed 42" in (work / "out" / "network.tree").read_text(encoding="utf-8")
+
+    # The aggregate plus one file per trial, numbered by offset + trial index.
+    names = sorted(tree.name for tree in (work / "out").glob("*.tree"))
+    assert names == [
+        "network.tree",
+        "network_trial_11.tree",
+        "network_trial_12.tree",
+        "network_trial_13.tree",
+        "network_trial_14.tree",
+    ], names
+
+    for name in names:
+        text = (work / "out" / name).read_text(encoding="utf-8")
+        assert "# seed 42 offset 10" in text, (name, text)
 
 
 def test_overwrite_flag_is_removed(infomap_bin, work):
@@ -407,7 +428,7 @@ def main(argv):
             test_default_headers_record_the_effective_seed,
             test_headers_record_the_trial_offset_of_a_shard,
             test_every_artifact_records_the_same_base_seed,
-            test_parallel_trials_aggregate_records_the_base_seed,
+            test_parallel_trials_artifacts_record_the_base_seed,
             test_overwrite_flag_is_removed,
             test_run_manifest_contains_fingerprints_and_outputs,
         ]:
