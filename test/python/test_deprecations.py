@@ -2,20 +2,23 @@
 the ``Result`` returned by :meth:`Infomap.run` and the ``Network`` / functional
 ``infomap.run`` builders.
 
-The legacy result accessors emit a **silent-by-default**
-``LEGACY_SURFACE_WARNING`` naming their ``Result`` replacement (the
-caller-frame guard keeps internal readers -- the summary card, ``_repr_html_``,
-in-package reuse -- quiet, so only user code is flagged). Each such member must
-therefore (a) still work and return the same value as its replacement, (b) emit
-that ``LEGACY_SURFACE_WARNING`` when read from user code, and (c) never raise
-the louder ``DeprecationWarning`` that tools escalate by default. The package
-itself must emit neither warning during normal operation (construct, run, repr,
-summary).
+The legacy result accessors emit a ``LEGACY_SURFACE_WARNING`` naming their
+``Result`` replacement (the caller-frame guard keeps internal readers -- the
+summary card, ``_repr_html_``, in-package reuse -- quiet, so only user code is
+flagged). It is a ``DeprecationWarning`` subclass: visible in ``__main__``
+under PEP 565, where the ``python analysis.py`` audience that has to migrate
+will see it, rather than the ``PendingDeprecationWarning`` CPython's default
+filters ignored outright (#915). Each such member must therefore (a) still work
+and return the same value as its replacement, (b) emit that
+``LEGACY_SURFACE_WARNING`` when read from user code, and (c) never emit the
+louder ``TYPED_PARAMETER_WARNING`` tier, which is reserved for a deprecated
+parameter the caller actually typed. The package itself must emit neither
+warning during normal operation (construct, run, repr, summary).
 
 The ``add_*`` build-from-graph adapters stay documentation-only for now (no
 runtime warning); the result mirror and the legacy config / constructor helpers
 (``from_options``, ``run_with_options``, ``from_scipy_sparse_matrix``,
-``from_edge_index``) emit the pending warning.
+``from_edge_index``) emit the legacy-tier warning.
 """
 
 from __future__ import annotations
@@ -231,14 +234,21 @@ def _pending(records):
 
 
 @pytest.mark.fast
-def test_advanced_tier_kwargs_emit_no_deprecation_warning_and_work():
-    """Advanced-tier kwargs never raise the louder DeprecationWarning (which
-    tools escalate by default) and keep working."""
+def test_advanced_tier_kwargs_stay_on_the_legacy_tier_and_work():
+    """Advanced-tier kwargs warn on the legacy tier only -- never the louder
+    typed-parameter tier, and never a bare deprecation from anywhere else -- and
+    they keep working.
+
+    The filters are ordered: ``simplefilter`` prepends, so the legacy-tier ignore
+    installed last is consulted first, and the two error filters still fire for
+    everything else. That ordering only means something because the tier is its
+    own subclass -- while ``LEGACY_SURFACE_WARNING`` was ``DeprecationWarning``
+    itself, ignoring it swallowed every warning the error filter was there to
+    catch, and this test asserted nothing (#915).
+    """
     with warnings.catch_warnings():
+        warnings.simplefilter("error", FutureWarning)
         warnings.simplefilter("error", DeprecationWarning)
-        # Advanced-tier kwargs on the stateful surface do emit the softer
-        # LEGACY_SURFACE_WARNING by design; this test is only about the
-        # louder DeprecationWarning, so ignore the pending one here.
         warnings.simplefilter("ignore", LEGACY_SURFACE_WARNING)
         im = _two_triangles(core_loop_limit=5, flow_model="undirected")
         result = im.run(markov_time=1.0, core_loop_limit=5)

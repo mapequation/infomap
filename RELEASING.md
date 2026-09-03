@@ -211,6 +211,14 @@ The two runtime classes are named once each, as `LEGACY_SURFACE_WARNING` and
 from `scripts/generate_binding_options.py`). Change them there, not at the call
 sites, and keep them ordered by volume.
 
+Each is a dedicated subclass (`LegacySurfaceWarning(DeprecationWarning)`,
+`TypedParameterWarning(FutureWarning)`), not the built-in class itself. Filters
+match by class hierarchy, so every `-W` spelling on the base class still catches
+them; naming the tier silences that tier alone. That is what the suite does —
+`ignore::infomap._options.LEGACY_SURFACE_WARNING` where a test exercises the
+legacy surface on purpose, rather than `ignore::DeprecationWarning`, which would
+also hide the warnings a test is there to catch.
+
 - **`LEGACY_SURFACE_WARNING`, a `DeprecationWarning`** — the legacy stateful
   surface: the `Result` accessors mirrored on `Infomap` (`get_modules`,
   `codelength`, …), the advanced-tier keywords on `Infomap()` / `Infomap.run`,

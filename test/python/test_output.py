@@ -74,7 +74,7 @@ def test_state_output_writers_include_state_columns(
     assert parsed["higherOrder"] is True
 
 
-@pytest.mark.filterwarnings("ignore::DeprecationWarning")
+@pytest.mark.filterwarnings("ignore::infomap._options.LEGACY_SURFACE_WARNING")
 def test_json_metadata_values_remain_strings(
     make_infomap, output_dir, validate_json_schema
 ):

@@ -51,10 +51,10 @@ def test_construct_args_deduplicates_no_self_links():
     assert tokens.count("--no-self-links") == 1
 
 
-@pytest.mark.filterwarnings("ignore::DeprecationWarning")
+@pytest.mark.filterwarnings("ignore::infomap._options.LEGACY_SURFACE_WARNING")
 def test_run_forwards_variable_markov_options(monkeypatch):
     # Deliberately forwards advanced-tier engine kwargs through the stateful
-    # run() to assert they reach the engine; the pending-deprecation is expected.
+    # run() to assert they reach the engine; the legacy-tier warning is expected.
     captured = {}
     im = infomap_module.Infomap(silent=True)
 

@@ -113,7 +113,7 @@ def test_stateful_infomap_is_silent_by_default(capfd):
 
 def test_stateful_infomap_silent_false_prints_engine_log(capfd):
     _engine_log(capfd)
-    # silent as a bare keyword is pending-deprecated (it moves to logging in
+    # silent as a bare keyword warns on the legacy tier (it moves to logging in
     # 3.0) but still overrides the default in 2.x; the carrier/logging paths are
     # the warning-free replacements.
     with pytest.warns(LEGACY_SURFACE_WARNING, match="silent"):

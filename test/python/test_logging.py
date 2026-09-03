@@ -23,11 +23,11 @@ from infomap import Infomap, Options, disable_log, enable_log, run
 from infomap._logging import _sync_engine_routing
 
 # These tests drive the engine log -> Python logging routing, deliberately
-# using silent=False to produce engine output; the pending deprecation on the
+# using silent=False to produce engine output; the legacy-tier deprecation on the
 # silent keyword is expected here (it is asserted in test_deprecations.py).
 pytestmark = [
     pytest.mark.fast,
-    pytest.mark.filterwarnings("ignore::DeprecationWarning"),
+    pytest.mark.filterwarnings("ignore::infomap._options.LEGACY_SURFACE_WARNING"),
 ]
 
 

@@ -188,7 +188,7 @@ def make_infomap():
     ) -> Infomap:
         # This helper deliberately builds the supported stateful Infomap compat
         # surface for feature tests, so advanced-tier kwargs are exercised on
-        # purpose. The pending-deprecation those emit is asserted in
+        # purpose. The legacy-tier deprecation those emit is asserted in
         # test_deprecations.py; here it is only noise, so silence it.
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", LEGACY_SURFACE_WARNING)

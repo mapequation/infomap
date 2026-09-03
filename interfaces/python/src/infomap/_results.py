@@ -28,15 +28,16 @@ _HIGHER_ORDER_MODULES_MESSAGE = (
 
 
 def _emit_accessor_deprecation(member: str, replacement: str) -> None:
-    """Emit the pending-deprecation warning for a legacy on-instance accessor.
+    """Emit the legacy-tier deprecation warning for a legacy on-instance accessor.
 
     The legacy result mirror on ``Infomap`` stays usable through 2.x and leaves
     in 3.0. Like the advanced-tier keyword warning, this is a
-    ``LEGACY_SURFACE_WARNING`` -- see its definition in ``_options`` for the class
-    no one until 3.0 nears, but it surfaces under ``-W`` and for tools that
-    escalate warnings. The caller-frame check keeps internal readers (the
-    summary card, ``_repr_html_``, any in-package reuse) quiet, so only user
-    code is flagged.
+    ``LEGACY_SURFACE_WARNING`` -- a ``DeprecationWarning`` subclass, so it is
+    visible in ``__main__`` under PEP 565 and to anything that escalates
+    warnings, and silenceable by name without touching the rest of the
+    ecosystem's deprecations; see its definition in ``_options``. The
+    caller-frame check keeps internal readers (the summary card,
+    ``_repr_html_``, any in-package reuse) quiet, so only user code is flagged.
     """
     # frame 0 = this function, frame 1 = the accessor wrapper, frame 2 = the
     # code that read the accessor (property __get__ is C-level, so it adds no
@@ -53,7 +54,7 @@ def _emit_accessor_deprecation(member: str, replacement: str) -> None:
 
 
 def _warn_method_deprecated(member: str, replacement: str) -> None:
-    """Emit the pending-deprecation warning for a legacy ``Infomap`` method.
+    """Emit the legacy-tier deprecation warning for a legacy ``Infomap`` method.
 
     Companion to :func:`_emit_accessor_deprecation` for the deprecated
     constructor / run helpers (``from_options``, ``run_with_options``,

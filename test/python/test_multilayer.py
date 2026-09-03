@@ -1,10 +1,12 @@
 import pytest
 
 # These tests build and run multilayer networks through the stateful Infomap
-# compat surface (no_infomap / matchable_multilayer_ids), so the pending
+# compat surface (no_infomap / matchable_multilayer_ids), so the legacy-tier
 # deprecation on advanced-tier kwargs is expected here; it is asserted in
 # test_deprecations.py.
-pytestmark = pytest.mark.filterwarnings("ignore::DeprecationWarning")
+pytestmark = pytest.mark.filterwarnings(
+    "ignore::infomap._options.LEGACY_SURFACE_WARNING"
+)
 
 
 def test_matchable_multilayer_ids_with_python_read_file(
