@@ -711,6 +711,44 @@ TEST_CASE("Run reports write machine-readable JSON with no-file-output [fast][co
   removeFiles(paths);
 }
 
+TEST_CASE("Per-trial num_levels reports the tree's depth, not the first-child branch's [fast][core][lifecycle][output]")
+{
+  // numLevels() used to walk the first-child chain only, so on a ragged tree it reported
+  // one arbitrary branch's depth while the console summary, the .tree file and the JSON
+  // tree output all counted over every branch. --timing-json and --trial-results share
+  // the record, so both carried the shallow branch (#1036). --no-infomap keeps the
+  // fixture's ragged shape through the trial, where the difference is observable.
+  const std::vector<std::string> paths = {
+    "run_report_ragged_timing.json",
+    "run_report_ragged_trials.json",
+  };
+  removeFiles(paths);
+
+  InfomapWrapper im("--silent --seed 1 --num-trials 1 --no-file-output --no-infomap"
+                    " --cluster-data "
+                    + infomap::test::clusterFixturePath("twotriangles_ragged_branches.tree")
+                    + " --timing-json " + paths[0] + " --trial-results " + paths[1]);
+  im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+
+  im.run();
+
+  // The fixture's shape, pinned so an edit to it cannot silently stop exercising this:
+  // three deep, with the SHALLOW branch first. Root's leftmost top module ends at depth
+  // 2 while another branch runs to 3, which is what made the leftmost-branch walk report
+  // 2 for a three-level tree.
+  REQUIRE(im.maxTreeDepth() == 3);
+  REQUIRE(im.numLevels() == im.maxTreeDepth());
+  const infomap::InfoNode* firstTopModule = im.root().firstChild;
+  REQUIRE(firstTopModule != nullptr);
+  REQUIRE(firstTopModule->firstChild != nullptr);
+  REQUIRE(firstTopModule->firstChild->isLeaf());
+
+  CHECK(infomap::test::readTextFile(paths[0]).find("\"num_levels\":3") != std::string::npos);
+  CHECK(infomap::test::readTextFile(paths[1]).find("\"num_levels\":3") != std::string::npos);
+
+  removeFiles(paths);
+}
+
 TEST_CASE("Parallel trials report the best trial codelength [fast][core][lifecycle][openmp]")
 {
   InfomapWrapper im("--silent --seed 7 --num-trials 4 --parallel-trials --no-file-output");

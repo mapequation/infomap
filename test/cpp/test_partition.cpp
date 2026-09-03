@@ -518,18 +518,26 @@ TEST_CASE("A two-level search from a deeper tree keeps its top level [fast][core
 
 TEST_CASE("removeSubModules flattens a ragged tree whose shallow branch comes first [fast][core][partition][tree]")
 {
-  // numLevels() follows the firstChild chain only, so with the shallow branch first it
-  // reports 2 for a three-level tree and the old `while (numLevels() > 2)` loop did
-  // nothing at all -- leaving sub-modules in place for calcCodelengthOnTree to score as
-  // if they were not there (#898).
+  // The old numLevels() followed the firstChild chain only (that walk is now the private
+  // depthOfFirstLeaf), so with the shallow branch first it reported 2 for a three-level
+  // tree and the old `while (numLevels() > 2)` loop did nothing at all -- leaving
+  // sub-modules in place for calcCodelengthOnTree to score as if they were not there
+  // (#898).
   InfomapWrapper im(infomap::test::defaultFlags());
   im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
   im.initNetwork(im.network());
   im.initPartition(infomap::test::clusterFixturePath("twotriangles_ragged_branches.tree"), false, &im.network());
 
+  // The fixture's shape, pinned so an edit to it cannot silently stop exercising this:
+  // three deep, with the SHALLOW branch first. Root's leftmost top module ends at depth
+  // 2 while another branch runs to 3, which is what made the leftmost-branch walk report
+  // 2 for a three-level tree.
   REQUIRE(im.maxTreeDepth() == 3);
-  // The shortcut this test exists for, pinned so the fixture keeps exercising it.
-  REQUIRE(im.numLevels() == 2);
+  REQUIRE(im.numLevels() == im.maxTreeDepth());
+  const infomap::InfoNode* firstTopModule = im.root().firstChild;
+  REQUIRE(firstTopModule != nullptr);
+  REQUIRE(firstTopModule->firstChild != nullptr);
+  REQUIRE(firstTopModule->firstChild->isLeaf());
 
   im.removeSubModules(true);
 
