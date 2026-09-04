@@ -379,10 +379,19 @@ std::vector<std::string> planAllOutputPaths(const Config& config, HigherOrderInp
 
   // The final modular result is written once with the canonical basename, and
   // additionally per trial when --print-all-trials uses separate files.
+  //
+  // The trial numbers are the writer's global ones -- `trialOffset + i + 1`, the
+  // same expression both writeResult call sites use -- not a local 1..numTrials.
+  // A shard planned `_trial_1.._trial_4` while writing `_trial_11.._trial_14`,
+  // which left both consumers of this plan looking at files that never exist:
+  // --no-overwrite could only discover a real collision by hitting it mid-run,
+  // after earlier artifacts were already on disk, and the input-overwrite check
+  // above could not see that a run was about to destroy an input named like one
+  // of its own per-trial outputs.
   collectPhase(OutputPhase::AfterPartition, -1);
   if (config.printAllTrials && config.numTrials > 1) {
-    for (unsigned int trial = 1; trial <= config.numTrials; ++trial)
-      collectPhase(OutputPhase::AfterPartition, static_cast<int>(trial));
+    for (unsigned int i = 0; i < config.numTrials; ++i)
+      collectPhase(OutputPhase::AfterPartition, static_cast<int>(config.trialOffset + i + 1));
   }
 
   for (const auto& report : planReportArtifacts(config))
