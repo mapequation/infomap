@@ -48,14 +48,21 @@ _FACADE_ONLY_PARAMS = {
     },
 }
 
-# Emitted verbatim into the generated Infomap.__init__/run bodies, at the
-# public boundary so stacklevel=2 attributes the warning to user code.
+# Emitted verbatim into the generated Infomap.__init__/run bodies. The stacklevel
+# is computed rather than fixed at 2: these methods are a public boundary only on a
+# direct Infomap()/im.run() call. infomap.run(graph, pretty=True) reaches the same
+# body through _run.run building Infomap(**resolved), where a fixed 2 named
+# _run.py's own line as the offending code -- an internal frame the caller cannot
+# act on, and now visible under every filter since the tier moved to
+# TYPED_PARAMETER_WARNING (#915). _external_stacklevel walks out to the first frame
+# outside the package, so both entry points point at the user's line, matching what
+# the include_self_links warning already does.
 _PRETTY_WARNING_LINES = [
     "        if pretty is not None:",
     "            warnings.warn(",
     '                "pretty is deprecated and has no effect",',
     "                TYPED_PARAMETER_WARNING,",
-    "                stacklevel=2,",
+    "                stacklevel=_external_stacklevel(),",
     "            )",
 ]
 

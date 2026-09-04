@@ -191,6 +191,36 @@ def test_pretty_warns_when_passed_explicitly():
         im.run(pretty=False)
 
 
+def test_pretty_warning_points_at_caller_through_the_functional_path():
+    """The `pretty` warning names the user's line, not an internal frame.
+
+    ``infomap.run(graph, pretty=True)`` reaches the same generated body through
+    ``_run.run`` building ``Infomap(**resolved)``, so the fixed ``stacklevel=2``
+    this used to carry attributed the warning to ``_run.py`` -- an internal line
+    the caller cannot act on, and one every filter now shows since the tier moved
+    to ``TYPED_PARAMETER_WARNING`` (#915). The direct call is asserted alongside
+    it because a computed stacklevel has to keep that case right too.
+    """
+    import warnings
+
+    nx = pytest.importorskip("networkx")
+    graph = nx.Graph([(1, 2), (2, 3), (3, 1)])
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        infomap_module.run(graph, pretty=True, silent=True)
+    functional = [w for w in caught if "pretty is deprecated" in str(w.message)]
+    assert functional, "expected a pretty warning from the functional path"
+    assert functional[0].filename == __file__
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        infomap_module.Infomap(silent=True, pretty=True)
+    direct = [w for w in caught if "pretty is deprecated" in str(w.message)]
+    assert direct, "expected a pretty warning from the direct constructor"
+    assert direct[0].filename == __file__
+
+
 def test_include_self_links_warning_points_at_caller():
     import warnings
 

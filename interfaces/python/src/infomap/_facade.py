@@ -44,6 +44,7 @@ from ._options import (
     OutputFormat,
     _construct_args,
     _explicit_options,
+    _external_stacklevel,
     _merge_options,
     _warn_advanced_tier_kwargs,
 )
@@ -833,7 +834,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             warnings.warn(
                 "pretty is deprecated and has no effect",
                 TYPED_PARAMETER_WARNING,
-                stacklevel=2,
+                stacklevel=_external_stacklevel(),
             )
         _warn_advanced_tier_kwargs(locals(), "init")
         options = _merge_options(options, _explicit_options(locals(), "init"), "init")
@@ -957,7 +958,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             warnings.warn(
                 "pretty is deprecated and has no effect",
                 TYPED_PARAMETER_WARNING,
-                stacklevel=2,
+                stacklevel=_external_stacklevel(),
             )
         _warn_advanced_tier_kwargs(locals(), "run")
         options = _merge_options(options, _explicit_options(locals(), "run"), "run")
