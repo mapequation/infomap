@@ -393,7 +393,7 @@ def test_find_communities_rejects_trials_and_num_trials_conflict():
         ({"num_trials": 3}, 3),  # the engine option (back-compat)
     ],
 )
-@pytest.mark.filterwarnings("ignore::PendingDeprecationWarning")
+@pytest.mark.filterwarnings("ignore::infomap._options.LEGACY_SURFACE_WARNING")
 def test_find_communities_resolves_num_trials(monkeypatch, kwargs, expected):
     captured = {}
     real_infomap = facade.Infomap

@@ -399,7 +399,7 @@ for name, graph in [("ring of cliques", G_ring), ("karate club", G_karate)]:
 {class}`~infomap.Options` is the canonical option carrier: {func}`infomap.run`
 and {meth}`infomap.Network.run` both take `options=`. On the stateful
 {class}`infomap.Infomap` the advanced keywords stay accepted but are
-pending-deprecated and leave the signature in 3.0 ({doc}`/api/deprecations`).
+deprecated and leave the signature in 3.0 ({doc}`/api/deprecations`).
 After a run, metrics and partition accessors live on the returned
 {class}`~infomap.Result` ({doc}`results-and-iteration`).
 
@@ -452,7 +452,7 @@ logging.getLogger("infomap").setLevel(logging.INFO)
 ```
 
 {func}`~infomap.enable_log` (above) is the supported way to see the engine log;
-the `silent=` and `verbosity_level=` keywords are pending-deprecated and leave
+the `silent=` and `verbosity_level=` keywords are deprecated and leave
 the API in 3.0. One timing nuance if you route through logging: a stateful
 {class}`~infomap.Infomap` bakes its silence in at construction, so configure
 logging *before* you build one (its runs warn otherwise). By contrast, the

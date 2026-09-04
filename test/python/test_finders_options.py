@@ -39,7 +39,7 @@ def _graph():
     return nx.Graph([("a", "b"), ("b", "c")])
 
 
-@pytest.mark.filterwarnings("ignore::PendingDeprecationWarning")
+@pytest.mark.filterwarnings("ignore::infomap._options.LEGACY_SURFACE_WARNING")
 @pytest.mark.parametrize(
     "options, kwargs, expected",
     [
@@ -61,13 +61,13 @@ def test_find_communities_options_carrier_num_trials(
     assert recorded.get("num_trials", 1) == expected
 
 
-@pytest.mark.filterwarnings("ignore::PendingDeprecationWarning")
+@pytest.mark.filterwarnings("ignore::infomap._options.LEGACY_SURFACE_WARNING")
 def test_find_communities_carrier_carries_advanced_option(recorded):
     infomap.find_communities(_graph(), options=infomap.Options(regularized=True))
     assert recorded["regularized"] is True
 
 
-@pytest.mark.filterwarnings("ignore::PendingDeprecationWarning")
+@pytest.mark.filterwarnings("ignore::infomap._options.LEGACY_SURFACE_WARNING")
 def test_find_communities_carrier_keeps_engine_quiet_without_forcing_no_file_output(
     recorded,
 ):
@@ -87,7 +87,7 @@ def test_find_communities_options_carrier_returns_labels():
     assert set().union(*communities) == {"a", "b", "c"}
 
 
-@pytest.mark.filterwarnings("ignore::PendingDeprecationWarning")
+@pytest.mark.filterwarnings("ignore::infomap._options.LEGACY_SURFACE_WARNING")
 def test_find_igraph_communities_options_carrier_num_trials(recorded):
     ig = pytest.importorskip("igraph")
     g = ig.Graph.Formula("a-b, b-c")

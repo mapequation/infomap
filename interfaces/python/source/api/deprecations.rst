@@ -42,9 +42,11 @@ two tiers:
     replacement.
 
 Passing an advanced-tier keyword to :class:`Infomap` or :meth:`Infomap.run`
-emits a :class:`PendingDeprecationWarning` (silent by default; surface it with
-``python -W`` or a logging filter). Routing the option through :class:`Options`
-is the warning-free path, so existing code keeps running unchanged until 3.0.
+emits a :class:`DeprecationWarning`, shown by default when the calling code runs
+as a script (``__main__``, per PEP 565) and surfaced everywhere else by
+``python -W`` or a warning-escalating tool. Routing the option through
+:class:`Options` is the warning-free path, so existing code keeps running
+unchanged until 3.0.
 
 Redesigned result access
 -------------------------
@@ -52,8 +54,8 @@ Redesigned result access
 The stateful accessors on :class:`Infomap` (``get_modules``, ``codelength``,
 ``num_top_modules``, and friends) are ``.. deprecated:: 2.15`` in favour of the
 immutable :class:`Result` that :func:`run` and :meth:`Infomap.run` return.
-Reading one from user code emits the same silent-by-default
-:class:`PendingDeprecationWarning` as the advanced-tier keywords. Read scalars
+Reading one from user code emits the same :class:`DeprecationWarning` as the
+advanced-tier keywords. Read scalars
 as properties (``result.codelength``) and collections as methods
 (``result.modules()``, ``result.nodes()``, ``result.tree()``). See
 :doc:`/working-with-infomap/results-and-iteration`.
@@ -64,10 +66,11 @@ Compatibility aliases
 - ``include_self_links`` is a deprecated alias kept for backward compatibility.
   Infomap includes self-links by default. Pass ``no_self_links=True`` to
   exclude them. Passing ``include_self_links`` explicitly emits a
-  :class:`DeprecationWarning`.
+  :class:`FutureWarning` -- the louder tier, shown under every filter, because
+  an argument you actually typed is being ignored.
 - ``pretty`` is a deprecated no-op — the API accepts it for backward
   compatibility but it has no effect. Passing it explicitly emits a
-  :class:`DeprecationWarning`.
+  :class:`FutureWarning`, for the same reason as ``include_self_links``.
 
 Error base classes
 ------------------

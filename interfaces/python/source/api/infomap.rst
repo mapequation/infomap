@@ -26,8 +26,9 @@ docstrings, follows underneath.
    ``codelength``, …) are **deprecated and leave in 3.0**. Read the
    equivalently named members off the returned :class:`Result` instead. Mind the
    shape shift: ``im.modules`` is a property, while ``result.modules()`` is a
-   method. These accessors emit a silent-by-default ``PendingDeprecationWarning``
-   (surface it with ``-W``). See :doc:`/the-infomap-class` for the full
+   method. These accessors emit a ``DeprecationWarning``, shown by default when
+   the reading code runs as a script (``__main__``, per PEP 565). See
+   :doc:`/the-infomap-class` for the full
    migration table. For one-shot use, prefer :func:`infomap.run`. The stateful
    class remains the way to build incrementally and to write the native output
    files.
