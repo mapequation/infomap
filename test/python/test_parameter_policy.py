@@ -168,11 +168,19 @@ def test_every_deprecated_option_field_carries_a_versioned_directive():
             blocks[current].append(line)
 
     deprecated_actions = {"remove", "args-only", "deprecate"}
+    # _OPTION_TABLE is catalog-driven, so it excludes include_self_links: that field
+    # is a binding-only compatibility alias handled separately. It is also the one
+    # deprecated field on this surface whose directive is emitted by hand, so leaving
+    # it out let the only case that could regress pass unchecked (#915).
     expected = sorted(
-        name
-        for name, spec in _OPTION_TABLE.items()
-        if spec.action in deprecated_actions
+        [
+            name
+            for name, spec in _OPTION_TABLE.items()
+            if spec.action in deprecated_actions
+        ]
+        + ["include_self_links"]
     )
+    assert "include_self_links" in expected
     assert expected, "no deprecated fields to check; the policy shape changed"
 
     for name in expected:

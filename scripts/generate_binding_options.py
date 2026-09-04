@@ -907,8 +907,21 @@ def generate_python(catalog: ParameterCatalog) -> str:
     lines.append("    include_self_links : bool, optional")
     lines.extend(
         wrap_doc(
-            "Deprecated. Self-links are included by default; use no_self_links=True to exclude them.",
+            "Self-links are included by default; use no_self_links=True to exclude them.",
             "        ",
+        )
+    )
+    # Emitted here rather than by the loop above, because this alias is binding-only:
+    # it has no catalog entry, so it never reaches the policy-driven directive. It is
+    # also the only deprecated field on this surface, so omitting it left the contract
+    # with nothing to enforce (#915).
+    lines.append("")
+    lines.append(f"        .. deprecated:: {DEPRECATION_WAVE_VERSION}")
+    lines.extend(
+        wrap_doc(
+            "Pass no_self_links=True instead. Passing include_self_links explicitly "
+            "emits a FutureWarning.",
+            "           ",
         )
     )
     lines.extend(['    """', ""])

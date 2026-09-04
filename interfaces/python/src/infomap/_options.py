@@ -752,8 +752,11 @@ class Options(metaclass=_OptionsMeta):
         Try random moves only for nodes with degree at most this value. Valid range: >=
         0.
     include_self_links : bool, optional
-        Deprecated. Self-links are included by default; use no_self_links=True to
-        exclude them.
+        Self-links are included by default; use no_self_links=True to exclude them.
+
+        .. deprecated:: 2.15
+           Pass no_self_links=True instead. Passing include_self_links explicitly emits
+           a FutureWarning.
     """
 
     # input
