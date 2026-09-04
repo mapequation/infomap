@@ -8,7 +8,7 @@ import os
 import subprocess
 from pathlib import Path
 
-from parameter_catalog import GROUPS, ParameterCatalog
+from parameter_catalog import GROUPS, ParameterCatalog, resolve_policy_decision
 from render_parameter_policy import render as render_parameter_policy_md
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -720,8 +720,23 @@ def _options_doc_deprecation_lines(policy: dict, note: str, indent: str) -> list
     if action not in DEPRECATED_POLICY_ACTIONS:
         return []
     lines = [f"{indent}.. deprecated:: {DEPRECATION_WAVE_VERSION}"]
-    if note:
-        lines.extend(wrap_doc(note, indent + "   "))
+    body = note
+    if action == "args-only":
+        # A directive's body reads as migration guidance, and an args-only note
+        # describes how to use the field *today* -- `hide_bipartite_nodes` says to
+        # set it via Options, which is the very surface it leaves. Naming the
+        # post-removal route here keeps the two apart, for every args-only field
+        # rather than depending on how each replacement string happens to be worded
+        # (the policy defines args-only as reachable through the raw args escape
+        # hatch on library surfaces).
+        # Single backticks: wrap_doc promotes them to the RST double form.
+        route = (
+            "The guidance above applies through 2.x; in 3.0 the field leaves "
+            "`Options` and is reachable only through the raw `args` escape hatch."
+        )
+        body = f"{note} {route}".strip() if note else route
+    if body:
+        lines.extend(wrap_doc(body, indent + "   "))
     return lines
 
 
@@ -904,28 +919,26 @@ def generate_python(catalog: ParameterCatalog) -> str:
             elif note:
                 lines.append("")
                 lines.extend(wrap_doc(note, "        "))
+    # The alias is binding-only, so it has no catalog entry and never reaches the
+    # loop above -- but its flag does carry a policy decision, so the note and the
+    # directive are resolved from that same source rather than restated here. A
+    # hand-written copy would go stale the moment the replacement guidance in
+    # overrides.json changes (#915).
     lines.append("    include_self_links : bool, optional")
-    lines.extend(
-        wrap_doc(
-            "Self-links are included by default; use no_self_links=True to exclude them.",
-            "        ",
-        )
+    lines.extend(wrap_doc("Whether to include self-links.", "        "))
+    alias_policy = resolve_policy_decision(
+        catalog.overrides, include_self_links.flag, "python"
     )
-    # Emitted here rather than by the loop above, because this alias is binding-only:
-    # it has no catalog entry, so it never reaches the policy-driven directive. That
-    # makes it the only deprecated field whose directive is written by hand -- the
-    # policy-driven fields above get theirs from _options_doc_deprecation_lines -- and
-    # the one the contract test had no way to cover until it was named explicitly
-    # (#915).
-    lines.append("")
-    lines.append(f"        .. deprecated:: {DEPRECATION_WAVE_VERSION}")
-    lines.extend(
-        wrap_doc(
-            "Pass no_self_links=True instead. Passing include_self_links explicitly "
-            "emits a FutureWarning.",
-            "           ",
-        )
+    alias_note = _options_doc_policy_note(alias_policy)
+    alias_deprecation = _options_doc_deprecation_lines(
+        alias_policy, alias_note, "        "
     )
+    if alias_deprecation:
+        lines.append("")
+        lines.extend(alias_deprecation)
+    elif alias_note:
+        lines.append("")
+        lines.extend(wrap_doc(alias_note, "        "))
     lines.extend(['    """', ""])
     for group in GROUPS:
         lines.append(f"    # {group.lower()}")

@@ -206,6 +206,14 @@ def test_every_deprecated_option_field_carries_a_versioned_directive():
                 f"{name} folded its note onto the directive line, which Sphinx would "
                 f"render as the version: {version!r}"
             )
+            # The exact release, not merely "some token": RELEASING.md fixes this
+            # deprecation wave at 2.15, and a nonempty-check accepted 2.14 or any
+            # other string while claiming to protect that. Written literally rather
+            # than imported from the generator so the two cannot drift together --
+            # a future wave should have to change this line deliberately.
+            assert version == "2.15", (
+                f"{name} carries version {version!r}; this deprecation wave is 2.15"
+            )
 
 
 def test_unknown_flag_fails_loud():

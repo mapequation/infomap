@@ -512,42 +512,56 @@ class Options(metaclass=_OptionsMeta):
         Base name for output files, for example [out_directory]/[out-name].tree.
 
         .. deprecated:: 2.15
-           Args-only in library mode (see the note above).
+           Args-only in library mode (see the note above). The guidance above applies
+           through 2.x; in 3.0 the field leaves ``Options`` and is reachable only
+           through the raw ``args`` escape hatch.
     no_file_output : bool, optional
         Do not write output files.
 
         .. deprecated:: 2.15
-           Args-only in library mode (see the note above).
+           Args-only in library mode (see the note above). The guidance above applies
+           through 2.x; in 3.0 the field leaves ``Options`` and is reachable only
+           through the raw ``args`` escape hatch.
     tree : bool, optional
         Write the modular hierarchy to a tree file. Enabled by default when no other
         output format is selected.
 
         .. deprecated:: 2.15
-           Args-only in library mode (see the note above).
+           Args-only in library mode (see the note above). The guidance above applies
+           through 2.x; in 3.0 the field leaves ``Options`` and is reachable only
+           through the raw ``args`` escape hatch.
     ftree : bool, optional
         Write the modular hierarchy and aggregated links between nested modules to an
         ftree file. Used by Network Navigator.
 
         .. deprecated:: 2.15
-           Args-only in library mode (see the note above).
+           Args-only in library mode (see the note above). The guidance above applies
+           through 2.x; in 3.0 the field leaves ``Options`` and is reachable only
+           through the raw ``args`` escape hatch.
     clu : bool, optional
         Write top-level module ids for each node to a clu file.
 
         .. deprecated:: 2.15
-           Args-only in library mode (see the note above).
+           Args-only in library mode (see the note above). The guidance above applies
+           through 2.x; in 3.0 the field leaves ``Options`` and is reachable only
+           through the raw ``args`` escape hatch.
     clu_level : int, optional
         With --clu or --output clu, write module ids at this depth from the root. Use -1
         for bottom-level modules. Valid range: >= -1. Engine default: 1.
 
         .. deprecated:: 2.15
-           Args-only in library mode (see the note above).
+           Args-only in library mode (see the note above). The guidance above applies
+           through 2.x; in 3.0 the field leaves ``Options`` and is reachable only
+           through the raw ``args`` escape hatch.
     output : sequence of str, optional
         Write selected output formats as a comma-separated list without spaces, e.g. -o
         clu,tree,ftree. Options: clu, tree, ftree, newick, json, csv, network, states,
         flow.
 
         .. deprecated:: 2.15
-           Args-only in library mode (see the note above).
+           Args-only in library mode (see the note above). The guidance above applies
+           through 2.x; in 3.0 the field leaves ``Options`` and is reachable only
+           through the raw ``args`` escape hatch.
     hide_bipartite_nodes : bool, optional
         Hide bipartite nodes in output by projecting the solution to primary nodes.
 
@@ -555,19 +569,25 @@ class Options(metaclass=_OptionsMeta):
            Args-only on the Python library surface. It projects the secondary (type-B)
            bipartite nodes out of what result.write_tree/write_clu emit, leaving the
            in-memory result covering both node types. Set it via Options and write from
-           the Result to use it.
+           the Result to use it. The guidance above applies through 2.x; in 3.0 the
+           field leaves ``Options`` and is reachable only through the raw ``args``
+           escape hatch.
     print_all_trials : bool, optional
         Write each trial to separate output files. Has effect only when --num-trials is
         greater than 1.
 
         .. deprecated:: 2.15
-           Args-only in library mode (see the note above).
+           Args-only in library mode (see the note above). The guidance above applies
+           through 2.x; in 3.0 the field leaves ``Options`` and is reachable only
+           through the raw ``args`` escape hatch.
     no_overwrite : bool, optional
         Fail with an output error if any target output file already exists. By default
         existing files are replaced.
 
         .. deprecated:: 2.15
-           Args-only in library mode (see the note above).
+           Args-only in library mode (see the note above). The guidance above applies
+           through 2.x; in 3.0 the field leaves ``Options`` and is reachable only
+           through the raw ``args`` escape hatch.
     print_config_fingerprint : bool, optional
         Print the canonical configuration fingerprint and exit.
 
@@ -752,11 +772,11 @@ class Options(metaclass=_OptionsMeta):
         Try random moves only for nodes with degree at most this value. Valid range: >=
         0.
     include_self_links : bool, optional
-        Self-links are included by default; use no_self_links=True to exclude them.
+        Whether to include self-links.
 
         .. deprecated:: 2.15
-           Pass no_self_links=True instead. Passing include_self_links explicitly emits
-           a FutureWarning.
+           Not a Python library option; it leaves the surface in 3.0. Self-links are
+           included by default; pass no_self_links=True to exclude them.
     """
 
     # input
