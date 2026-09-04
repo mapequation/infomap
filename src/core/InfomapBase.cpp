@@ -252,6 +252,9 @@ public:
     // Still ahead of every writer, which is what the check exists for.
     validateNetwork();
     preflightOutputTargets(m_infomap, higherOrderInput());
+    // Before the first seedTrial, so this is the seed the run was asked for.
+    m_infomap.m_baseSeed = m_infomap.seedToRandomNumberGenerator;
+    m_infomap.m_haveBaseSeed = true;
     {
       auto timer = m_timing.scope("configure_network_s");
       configureNetworkMode();
@@ -440,7 +443,14 @@ private:
 #endif
     for (int workerIndex = 0; workerIndex < static_cast<int>(numWorkers); ++workerIndex) {
       auto workerConfig = m_infomap.getConfig();
-      workerConfig.numTrials = 1;
+      // The run's trial count, not the worker's one trial: this field names and
+      // labels the worker's --print-all-trials artifacts. outputPlanBasename only
+      // appends `_trial_N` when numTrials > 1, so at 1 every worker wrote the
+      // aggregate's basename instead -- four trials overwriting one file, and the
+      // per-trial artifacts the output pre-flight had already reserved never
+      // appearing. It does not make the worker run trials: the worker never enters
+      // RunSession::run, and executeTrial is called once per trialIndex from here.
+      workerConfig.numTrials = m_numTrials;
       workerConfig.parallelTrials = false;
       workerConfig.innerParallelization = false;
       workerConfig.seedToRandomNumberGenerator = m_baseSeed + static_cast<unsigned int>(workerIndex);
@@ -456,6 +466,12 @@ private:
           Log::ScopedMute muteWorkerLogs;
           const auto seed = trialSeed(trialIndex);
           worker.seedToRandomNumberGenerator = seed;
+          // A worker is its own Infomap, so it does not inherit the main instance's
+          // captured base seed -- and its live seed field is this trial's. Without
+          // this, a per-trial artifact written by a worker reports base + offset + i
+          // as if it were the run's seed.
+          worker.m_baseSeed = m_infomap.baseSeed();
+          worker.m_haveBaseSeed = true;
           worker.reseed(static_cast<unsigned int>(seed));
           int threadNumber = 0;
 #ifdef _OPENMP
