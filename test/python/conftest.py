@@ -8,6 +8,7 @@ from pathlib import Path
 
 import pytest
 from infomap import Infomap
+from infomap._options import LEGACY_SURFACE_WARNING
 
 
 @dataclass(frozen=True)
@@ -187,10 +188,10 @@ def make_infomap():
     ) -> Infomap:
         # This helper deliberately builds the supported stateful Infomap compat
         # surface for feature tests, so advanced-tier kwargs are exercised on
-        # purpose. The pending-deprecation those emit is asserted in
+        # purpose. The legacy-tier deprecation those emit is asserted in
         # test_deprecations.py; here it is only noise, so silence it.
         with warnings.catch_warnings():
-            warnings.simplefilter("ignore", PendingDeprecationWarning)
+            warnings.simplefilter("ignore", LEGACY_SURFACE_WARNING)
             return Infomap(seed=seed, num_trials=num_trials, silent=silent, **kwargs)
 
     return _make_infomap

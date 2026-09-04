@@ -30,7 +30,8 @@ DOCS = REPO_ROOT / "interfaces" / "python" / "source"
 SRC = REPO_ROOT / "interfaces" / "python" / "src" / "infomap"
 
 # The legacy result/build/config mirror on Infomap (deprecated in 2.15;
-# silent-by-default PendingDeprecationWarning; see test_deprecations.py).
+# LEGACY_SURFACE_WARNING, visible in __main__ under PEP 565; see
+# test_deprecations.py).
 # Curated by hand: introspecting
 # docstrings would misclassify blessed members whose docstrings merely
 # *contain* parameter-level deprecation directives (e.g. run()).
@@ -304,7 +305,7 @@ def test_docs_and_examples_avoid_the_deprecated_surface():
 # instance-accessor rules do NOT, because the deprecated members are *defined*
 # and documented on their own in these files. The console-quieting
 # silent/verbosity_level knobs are excluded: they default to silent, do not emit
-# the pending-deprecation warning, and are covered by the separate
+# the legacy-tier deprecation warning, and are covered by the separate
 # silent->logging migration.
 _CONSOLE_KWARGS = {"silent", "verbosity_level"}
 

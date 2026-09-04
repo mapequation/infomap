@@ -124,6 +124,7 @@ std::string getOutputFileHeader(const InfomapBase& im, const StateNetwork& netwo
                                 "# started at {}\n"
                                 "# completed in {:g} s\n"
                                 "# trials {} of {}\n"
+                                "# seed {}{}\n"
                                 "# partitioned into {} levels with {} top modules\n"
                                 "# codelength {:g} bits\n"
                                 "# relative codelength savings {:g}%\n"
@@ -141,6 +142,14 @@ std::string getOutputFileHeader(const InfomapBase& im, const StateNetwork& netwo
                      // interrupt time, when doing work is least reliable.
                      im.codelengths().size(),
                      im.numTrials,
+                     // The effective seed, not whatever the user typed: the header
+                     // echoes parsedString, so a run on the default seed published
+                     // artifacts from which the one parameter reproducibility hinges
+                     // on was unrecoverable (#1026). Per-trial seeds derive from
+                     // base + offset + i, so the offset is part of the answer and is
+                     // written when a shard is not the first.
+                     im.baseSeed(),
+                     im.trialOffset == 0 ? std::string() : fmt::format(FMT_STRING(" offset {}"), im.trialOffset),
                      im.maxTreeDepth(),
                      im.numTopModules(),
                      im.codelength(),
@@ -301,6 +310,14 @@ void writeJsonTree(InfomapBase& im, const StateNetwork& network, std::ostream& o
   json["startedAt"] = io::stringify(im.getStartDate());
   json["completedIn"] = im.getElapsedTime().getElapsedTimeInSec();
   json["codelength"] = im.codelength();
+  // See the text header: the effective seed, and the trial counts the text header
+  // has had since #906 but this output never carried (#1026).
+  json["seed"] = im.baseSeed();
+  if (im.trialOffset != 0) {
+    json["trialOffset"] = im.trialOffset;
+  }
+  json["trials"] = im.codelengths().size();
+  json["numTrials"] = im.numTrials;
   json["numLevels"] = im.maxTreeDepth();
   json["numTopModules"] = im.numTopModules();
 

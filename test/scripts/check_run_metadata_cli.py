@@ -227,6 +227,157 @@ def test_pajek_dump_of_a_first_order_network_is_unchanged(infomap_bin, work):
     assert "# State network as physical network" not in text
 
 
+def test_default_headers_record_the_effective_seed(infomap_bin, work):
+    # #1026: the header echoes the as-typed argument string, so a run on the default
+    # seed published artifacts from which the seed was unrecoverable -- the one
+    # parameter reproducibility actually hinges on. No --seed here on purpose.
+    make_workdir(work)
+
+    result = run(
+        infomap_bin,
+        "network.net",
+        "out",
+        "--silent",
+        "-N2",
+        "-o",
+        "tree,json",
+        cwd=work,
+    )
+
+    assert result.returncode == 0, result.stderr
+
+    tree = (work / "out" / "network.tree").read_text(encoding="utf-8")
+    assert "# seed 123" in tree
+    # No shard offset in play, so the line carries the seed alone.
+    assert "offset" not in tree.split("# seed")[1].split("\n")[0]
+
+    data = json.loads((work / "out" / "network.json").read_text(encoding="utf-8"))
+    assert data["seed"] == 123
+    assert "trialOffset" not in data
+    # The trial counts the text header has had since #906, which this output lacked.
+    assert data["trials"] == 2
+    assert data["numTrials"] == 2
+
+
+def test_headers_record_the_trial_offset_of_a_shard(infomap_bin, work):
+    # Per-trial seeds derive from base + offset + i, so the offset is part of the
+    # answer and a shard's artifact has to carry it.
+    make_workdir(work)
+
+    result = run(
+        infomap_bin,
+        "network.net",
+        "out",
+        "--silent",
+        "--seed",
+        "42",
+        "-N2",
+        "--trial-offset",
+        "10",
+        "-o",
+        "tree,json",
+        cwd=work,
+    )
+
+    assert result.returncode == 0, result.stderr
+
+    tree = (work / "out" / "network.tree").read_text(encoding="utf-8")
+    assert "# seed 42 offset 10" in tree
+
+    data = json.loads((work / "out" / "network.json").read_text(encoding="utf-8"))
+    assert data["seed"] == 42
+    assert data["trialOffset"] == 10
+
+
+def test_every_artifact_records_the_same_base_seed(infomap_bin, work):
+    # The serial loop moves Config::seedToRandomNumberGenerator to the current trial's
+    # seed and only gives it back when the loop ends, while updateBestResult writes the
+    # aggregate artifact from inside the loop. A header reading the live field recorded
+    # 42, 43, 44 across the per-trial files, and the aggregate kept the last trial's
+    # seed whenever the best trial was the last -- restoreBestResult then rewrites
+    # nothing. One stable meaning instead: every artifact carries the run's base seed,
+    # and a trial's own seed is base + offset + (trial - 1), with the trial in the
+    # filename.
+    make_workdir(work)
+
+    result = run(
+        infomap_bin,
+        "network.net",
+        "out",
+        "--silent",
+        "--seed",
+        "42",
+        "-N3",
+        "--print-all-trials",
+        "-o",
+        "tree",
+        cwd=work,
+    )
+
+    assert result.returncode == 0, result.stderr
+
+    trees = sorted((work / "out").glob("*.tree"))
+    assert len(trees) >= 4, [t.name for t in trees]
+
+    seeds = {}
+    for tree in trees:
+        lines = [
+            line
+            for line in tree.read_text(encoding="utf-8").splitlines()
+            if line.startswith("# seed ")
+        ]
+        assert len(lines) == 1, (tree.name, lines)
+        seeds[tree.name] = lines[0]
+
+    assert set(seeds.values()) == {"# seed 42"}, seeds
+
+
+def test_parallel_trials_artifacts_record_the_base_seed(infomap_bin, work):
+    # The parallel path writes through a worker Infomap rather than the main instance,
+    # so it gets its own assertion. A worker does not inherit the main run's captured
+    # base seed and its live seed field is the current trial's, so without the
+    # propagation in runTrialsInParallel the per-trial files here reported 52, 53, 54,
+    # 55 while the aggregate reported 42.
+    #
+    # A build without OpenMP warns and runs the same command serially, which asserts
+    # the same invariant over the serial writer; the worker lines are covered by the
+    # OpenMP build.
+    make_workdir(work)
+
+    result = run(
+        infomap_bin,
+        "network.net",
+        "out",
+        "--silent",
+        "--seed",
+        "42",
+        "-N4",
+        "--trial-offset",
+        "10",
+        "--parallel-trials",
+        "--print-all-trials",
+        "-o",
+        "tree",
+        cwd=work,
+    )
+
+    assert result.returncode == 0, result.stderr
+
+    # The aggregate plus one file per trial, numbered by offset + trial index.
+    names = sorted(tree.name for tree in (work / "out").glob("*.tree"))
+    assert names == [
+        "network.tree",
+        "network_trial_11.tree",
+        "network_trial_12.tree",
+        "network_trial_13.tree",
+        "network_trial_14.tree",
+    ], names
+
+    for name in names:
+        text = (work / "out" / name).read_text(encoding="utf-8")
+        assert "# seed 42 offset 10" in text, (name, text)
+
+
 def test_overwrite_flag_is_removed(infomap_bin, work):
     make_workdir(work)
 
@@ -274,6 +425,10 @@ def main(argv):
             test_first_order_run_may_write_beside_a_states_named_input,
             test_pajek_dump_of_a_higher_order_network_is_named_and_labelled_for_it,
             test_pajek_dump_of_a_first_order_network_is_unchanged,
+            test_default_headers_record_the_effective_seed,
+            test_headers_record_the_trial_offset_of_a_shard,
+            test_every_artifact_records_the_same_base_seed,
+            test_parallel_trials_artifacts_record_the_base_seed,
             test_overwrite_flag_is_removed,
             test_run_manifest_contains_fingerprints_and_outputs,
         ]:
