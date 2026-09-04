@@ -93,6 +93,84 @@ def test_no_overwrite_preflight_writes_no_files_when_one_target_exists(
     assert not (out_dir / "network.clu").exists()
 
 
+def test_no_overwrite_preflight_sees_a_shards_own_trial_paths(infomap_bin, work):
+    # The plan enumerated `_trial_1..N` while the writers use the global
+    # `trialOffset + i + 1`, so on a shard the two disagreed about every per-trial
+    # filename. --no-overwrite then had nothing real to check and could only meet
+    # the collision by running into it, after earlier artifacts were already
+    # written -- which is the one thing the pre-flight exists to prevent.
+    #
+    # The *last* trial of the shard is the pre-existing file on purpose. With the
+    # first one, the writer collides on its very first write and nothing has
+    # reached disk yet, so the bug is invisible: the run exits 3 either way. At
+    # trial 14 the buggy plan let the aggregate and trials 11 through 13 be
+    # written before the refusal -- four files, under --no-overwrite.
+    make_workdir(work)
+    out_dir = work / "out"
+    out_dir.mkdir()
+    (out_dir / "network_trial_14.tree").write_text("existing\n", encoding="utf-8")
+
+    result = run(
+        infomap_bin,
+        "network.net",
+        "out",
+        "--silent",
+        "--seed",
+        "42",
+        "--trial-offset",
+        "10",
+        "-N4",
+        "--print-all-trials",
+        "-o",
+        "tree",
+        "--no-overwrite",
+        cwd=work,
+    )
+
+    assert result.returncode == 3, result.stderr
+    assert "Output file already exists" in result.stderr
+    assert (out_dir / "network_trial_14.tree").read_text(
+        encoding="utf-8"
+    ) == "existing\n"
+    # Nothing else reached disk, including the aggregate and the earlier trials.
+    assert sorted(path.name for path in out_dir.iterdir()) == [
+        "network_trial_14.tree"
+    ], sorted(path.name for path in out_dir.iterdir())
+
+
+def test_shard_trial_output_does_not_overwrite_its_own_cluster_input(infomap_bin, work):
+    # The mirror consumer of the same plan: feeding a previous run's per-trial clu
+    # back in as the initial partition, into the directory it came from. The
+    # refusal is not subject to the overwrite policy, so a plan blind to the
+    # offset meant this run destroyed its own input and exited 0.
+    make_workdir(work)
+    partition = work / "network_trial_11.clu"
+    partition.write_text("1 1\n2 1\n", encoding="utf-8")
+    original = partition.read_text(encoding="utf-8")
+
+    result = run(
+        infomap_bin,
+        "network.net",
+        ".",
+        "--silent",
+        "--seed",
+        "42",
+        "--cluster-data",
+        "network_trial_11.clu",
+        "--trial-offset",
+        "10",
+        "-N4",
+        "--print-all-trials",
+        "-o",
+        "clu",
+        cwd=work,
+    )
+
+    assert result.returncode == 3, result.stderr
+    assert "Refusing to write output" in result.stderr
+    assert partition.read_text(encoding="utf-8") == original
+
+
 def make_state_workdir(path: Path) -> Path:
     # A higher-order input, so the run writes both `<name>.tree` and
     # `<name>_states.tree`. The file is named after the state half on purpose.
@@ -421,6 +499,8 @@ def main(argv):
             test_missing_input_returns_input_exit_code,
             test_no_overwrite_returns_output_exit_code,
             test_no_overwrite_preflight_writes_no_files_when_one_target_exists,
+            test_no_overwrite_preflight_sees_a_shards_own_trial_paths,
+            test_shard_trial_output_does_not_overwrite_its_own_cluster_input,
             test_state_output_does_not_overwrite_its_own_input,
             test_first_order_run_may_write_beside_a_states_named_input,
             test_pajek_dump_of_a_higher_order_network_is_named_and_labelled_for_it,
