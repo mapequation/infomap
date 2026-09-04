@@ -183,15 +183,25 @@ def test_every_deprecated_option_field_carries_a_versioned_directive():
     assert "include_self_links" in expected
     assert expected, "no deprecated fields to check; the policy shape changed"
 
+    # Anchored to the start of an indented line, not a substring search: Sphinx only
+    # parses a directive that opens its own line, so prose like "See .. deprecated::
+    # 2.15" reads as a directive to `in` while rendering as plain text. The version
+    # is captured from the rest of that line, which is also what catches a note
+    # folded onto it -- Sphinx reads everything after the directive name as the
+    # version, so a folded sentence renders as the version string.
+    directive_pattern = _re.compile(r"^\s+\.\. deprecated::(?P<version>.*)$")
+
     for name in expected:
         assert name in blocks, f"{name} missing from the Options reference"
-        directives = [line for line in blocks[name] if ".. deprecated::" in line]
+        directives = [
+            match
+            for match in (directive_pattern.match(line) for line in blocks[name])
+            if match
+        ]
         assert directives, f"{name} has no .. deprecated:: directive"
-        for line in directives:
-            version = line.split(".. deprecated::", 1)[1].strip()
+        for match in directives:
+            version = match.group("version").strip()
             assert version, f"{name} has a directive with no version"
-            # Sphinx reads everything after the directive name as the version, so the
-            # note has to be on its own indented line rather than folded onto this one.
             assert " " not in version, (
                 f"{name} folded its note onto the directive line, which Sphinx would "
                 f"render as the version: {version!r}"

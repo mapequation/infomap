@@ -912,9 +912,11 @@ def generate_python(catalog: ParameterCatalog) -> str:
         )
     )
     # Emitted here rather than by the loop above, because this alias is binding-only:
-    # it has no catalog entry, so it never reaches the policy-driven directive. It is
-    # also the only deprecated field on this surface, so omitting it left the contract
-    # with nothing to enforce (#915).
+    # it has no catalog entry, so it never reaches the policy-driven directive. That
+    # makes it the only deprecated field whose directive is written by hand -- the
+    # policy-driven fields above get theirs from _options_doc_deprecation_lines -- and
+    # the one the contract test had no way to cover until it was named explicitly
+    # (#915).
     lines.append("")
     lines.append(f"        .. deprecated:: {DEPRECATION_WAVE_VERSION}")
     lines.extend(
