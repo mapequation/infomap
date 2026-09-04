@@ -23,6 +23,10 @@ runtime warning); the result mirror and the legacy config / constructor helpers
 
 from __future__ import annotations
 
+import os
+import subprocess
+import sys
+import textwrap
 import warnings
 
 import pytest
@@ -31,7 +35,7 @@ from infomap._options import LEGACY_SURFACE_WARNING, TYPED_PARAMETER_WARNING
 
 
 def _two_triangles(**kwargs) -> Infomap:
-    # No silent= (advanced-tier, pending-deprecated); the API is quiet by
+    # No silent= (advanced-tier, deprecated); the API is quiet by
     # default, so the helper stays warning-free at construction.
     im = Infomap(num_trials=2, **kwargs)
     for source, target in [(0, 1), (1, 2), (2, 0), (2, 3), (3, 4), (4, 5), (5, 3)]:
@@ -39,18 +43,108 @@ def _two_triangles(**kwargs) -> Infomap:
     return im
 
 
+def _run_script(tmp_path, body: str, *args: str) -> subprocess.CompletedProcess:
+    """Run ``body`` as its own script, with the warning filters a user would have.
+
+    A subprocess, and a file rather than ``-c``, because the property under test is
+    PEP 565's: CPython's default filters show a ``DeprecationWarning`` only when it
+    is attributed to ``__main__``. In-process tests all install their own filters,
+    so none of them can observe it. ``PYTHONWARNINGS`` and ``-W`` are kept out of
+    the environment so the defaults are genuinely in force.
+    """
+    script = tmp_path / "analysis.py"
+    script.write_text(textwrap.dedent(body), encoding="utf-8")
+    env = {k: v for k, v in os.environ.items() if k != "PYTHONWARNINGS"}
+    return subprocess.run(
+        [sys.executable, str(script), *args],
+        capture_output=True,
+        text=True,
+        check=False,
+        env=env,
+    )
+
+
+@pytest.mark.fast
+def test_legacy_warning_reaches_a_plain_script_run(tmp_path):
+    """A legacy accessor read from ``python analysis.py`` prints on stderr.
+
+    This is the contract the whole change exists for, and the one no in-process
+    test can check: every other test here forces its own filter, so it would pass
+    just as happily while CPython's defaults swallowed the warning -- which is
+    exactly what ``PendingDeprecationWarning`` did before #915, and what a
+    misattributed ``stacklevel`` (pointing inside the package rather than at
+    ``__main__``) would silently reintroduce.
+    """
+    result = _run_script(
+        tmp_path,
+        """
+        from infomap import Infomap
+
+        im = Infomap(num_trials=1, seed=1)
+        for source, target in [(0, 1), (1, 2), (2, 0)]:
+            im.add_link(source, target)
+        im.run()
+        im.get_modules()
+        """,
+    )
+
+    assert result.returncode == 0, result.stderr
+    # CPython prints the concrete class, so this is also the evidence that a
+    # DeprecationWarning *subclass* inherits PEP 565's __main__ visibility --
+    # the property the tier's design depends on.
+    assert "LegacySurfaceWarning" in result.stderr, result.stderr
+    assert "Infomap.get_modules is deprecated" in result.stderr, result.stderr
+    # Attributed to the user's script, not to a frame inside the package.
+    assert "analysis.py" in result.stderr, result.stderr
+
+
+@pytest.mark.fast
+def test_package_is_quiet_in_a_plain_script_run(tmp_path):
+    """The mirror: normal operation prints no warning under the same defaults.
+
+    Without this, the assertion above could be satisfied by a package that warns
+    indiscriminately.
+    """
+    result = _run_script(
+        tmp_path,
+        """
+        from infomap import Infomap, Options, run
+
+        im = Infomap(num_trials=1, seed=1)
+        for source, target in [(0, 1), (1, 2), (2, 0)]:
+            im.add_link(source, target)
+        result = im.run()
+        result.codelength
+        result.modules()
+        repr(im)
+        im.summary()
+        run([(0, 1), (1, 2)], options=Options(num_trials=1, seed=1))
+        """,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "Warning" not in result.stderr, result.stderr
+
+
 # -- no self-warning on normal operation ------------------------------------
 
 
 @pytest.mark.fast
 def test_no_self_warnings_on_import_construct_run_repr_summary():
-    """Construct, run, repr() and summary() emit neither a DeprecationWarning nor
-    the accessors' LEGACY_SURFACE_WARNING. The summary card and _repr_html_
-    read the legacy accessors internally, but the caller-frame guard keeps
-    in-package reads quiet."""
+    """Construct, run, repr() and summary() emit nothing from either tier.
+
+    Both base classes are escalated, not just ``DeprecationWarning``: the legacy
+    tier is a subclass of that one, but the typed-parameter tier derives from
+    ``FutureWarning``, so a stray warning from that tier during normal operation
+    passed this contract while the docstring claimed otherwise. The summary card
+    and ``_repr_html_`` read the legacy accessors internally, and the
+    caller-frame guard is what keeps those in-package reads quiet.
+    """
     with warnings.catch_warnings():
         warnings.simplefilter("error", DeprecationWarning)
+        warnings.simplefilter("error", FutureWarning)
         warnings.simplefilter("error", LEGACY_SURFACE_WARNING)
+        warnings.simplefilter("error", TYPED_PARAMETER_WARNING)
         im = _two_triangles()
         im.run()
         repr(im)

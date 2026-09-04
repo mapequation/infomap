@@ -176,8 +176,9 @@ def test_cli_completion_invalid_shell_exits_without_traceback():
 
 
 def test_pretty_warns_when_passed_explicitly():
-    # pytest.deprecated_call only accepts the two Deprecation categories, and a typed
-    # deprecated parameter is the louder TYPED_PARAMETER_WARNING tier now (#915).
+    # Named rather than pytest.deprecated_call, which accepts FutureWarning too on
+    # pytest 9.1 and so cannot tell the tiers apart -- the same reason as the note
+    # on test_construct_args_deduplicates_no_self_links above (#915).
     with pytest.warns(
         TYPED_PARAMETER_WARNING, match="pretty is deprecated and has no effect"
     ):
