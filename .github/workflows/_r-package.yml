@@ -79,7 +79,7 @@ jobs:
           ref: ${{ inputs.ref || github.sha }}
 
       - name: Set up R
-        uses: r-lib/actions/setup-r@d3c5be51b12e724e68f33216ca3c148b66d5f0b6 # v2.12.1
+        uses: r-lib/actions/setup-r@465b7d8e732ca3921382b1674c59bada9cbf3399 # v2.13.0
         with:
           r-version: ${{ matrix.r }}
           use-public-rspm: true
@@ -106,7 +106,7 @@ jobs:
       # Note extra-packages is a list of package refs, not a script: a '#' line
       # inside the block is parsed as a package name, not a comment.
       - name: Install R package dependencies
-        uses: r-lib/actions/setup-r-dependencies@d3c5be51b12e724e68f33216ca3c148b66d5f0b6 # v2.12.1
+        uses: r-lib/actions/setup-r-dependencies@465b7d8e732ca3921382b1674c59bada9cbf3399 # v2.13.0
         with:
           working-directory: interfaces/R/infomap
           extra-packages: |
@@ -183,7 +183,7 @@ jobs:
           ref: ${{ inputs.ref || github.sha }}
 
       - name: Set up R
-        uses: r-lib/actions/setup-r@d3c5be51b12e724e68f33216ca3c148b66d5f0b6 # v2.12.1
+        uses: r-lib/actions/setup-r@465b7d8e732ca3921382b1674c59bada9cbf3399 # v2.13.0
         with:
           r-version: release
           use-public-rspm: true
@@ -194,7 +194,7 @@ jobs:
           python-version: "3.14"
 
       - name: Install R package dependencies
-        uses: r-lib/actions/setup-r-dependencies@d3c5be51b12e724e68f33216ca3c148b66d5f0b6 # v2.12.1
+        uses: r-lib/actions/setup-r-dependencies@465b7d8e732ca3921382b1674c59bada9cbf3399 # v2.13.0
         with:
           working-directory: interfaces/R/infomap
           extra-packages: |
@@ -236,7 +236,7 @@ jobs:
           ref: ${{ inputs.ref || github.sha }}
 
       - name: Set up R
-        uses: r-lib/actions/setup-r@d3c5be51b12e724e68f33216ca3c148b66d5f0b6 # v2.12.1
+        uses: r-lib/actions/setup-r@465b7d8e732ca3921382b1674c59bada9cbf3399 # v2.13.0
         with:
           r-version: ${{ matrix.r }}
           use-public-rspm: true
@@ -257,7 +257,7 @@ jobs:
           python-version: "3.14"
 
       - name: Install R package dependencies
-        uses: r-lib/actions/setup-r-dependencies@d3c5be51b12e724e68f33216ca3c148b66d5f0b6 # v2.12.1
+        uses: r-lib/actions/setup-r-dependencies@465b7d8e732ca3921382b1674c59bada9cbf3399 # v2.13.0
         with:
           working-directory: interfaces/R/infomap
 
@@ -364,7 +364,7 @@ jobs:
           ref: ${{ inputs.ref || github.sha }}
 
       - name: Set up R
-        uses: r-lib/actions/setup-r@d3c5be51b12e724e68f33216ca3c148b66d5f0b6 # v2.12.1
+        uses: r-lib/actions/setup-r@465b7d8e732ca3921382b1674c59bada9cbf3399 # v2.13.0
         with:
           r-version: release
           use-public-rspm: true
@@ -375,7 +375,7 @@ jobs:
           python-version: "3.14"
 
       - name: Install R package dependencies
-        uses: r-lib/actions/setup-r-dependencies@d3c5be51b12e724e68f33216ca3c148b66d5f0b6 # v2.12.1
+        uses: r-lib/actions/setup-r-dependencies@465b7d8e732ca3921382b1674c59bada9cbf3399 # v2.13.0
         with:
           working-directory: interfaces/R/infomap
           extra-packages: |
