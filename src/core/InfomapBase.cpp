@@ -2954,10 +2954,16 @@ std::vector<int> InfomapBase::padLeafPathsToUniformDepth(std::vector<std::vector
   // an appended duplicate becomes a single-child module ABOVE the leaf module,
   // between it and its real parent. That level costs exactly 0 under L* (the
   // parent's enter codebook is e*(plogp(e)-plogp(e))/e == 0 and the child's exit
-  // term has numerator plogp(x)-0-plogp(x) == 0), which is why this is gated on
-  // --non-redundant: the base map equation charges plogp(x+e)-plogp(e)-plogp(x)
-  // for the same node (ninetriangles rect 3.38583082 -> 3.97958082 with one such
-  // level above every leaf module, against L* bit-identical at 3.078067323).
+  // term has numerator plogp(x)-0-plogp(x) == 0) and costs
+  // plogp(x+e)-plogp(e)-plogp(x) under the base map equation (ninetriangles rect
+  // 3.38583082 -> 3.97958082 with one such level above every leaf module, against L*
+  // bit-identical at 3.078067323).
+  //
+  // That base cost is why this helper was once used only under --non-redundant. It no
+  // longer needs to be: the charge is a per-module breakdown entry and the caller takes
+  // it back off the total (padCharge), so padding now serves every objective. See
+  // evaluateColumnarPartition for why the subtraction is exact and for the one tree
+  // shape that would break it.
   for (std::size_t i = 0; i < paths.size(); ++i) {
     padDepth[i] = static_cast<int>(maxDepth - paths[i].size());
     // Copy the id out first: resize's fill value must not alias an element of the
@@ -2974,10 +2980,18 @@ bool InfomapBase::columnarSeedPathsFromTree(std::vector<std::vector<int>>& paths
   squared = false;
   // A hard --cluster-data partition is already collapsed into the leaf network the
   // search optimizes (see setupColumnarOptimizer), so there is nothing to seed.
-  if (m_leafNodes.empty() || haveHardPartition() || !haveModules())
+  if (m_leafNodes.empty() || haveHardPartition())
     return false;
 
   paths = leafModulePathsFromTree();
+  // Nothing to seed from only when NO leaf has a module. Read off the paths rather than from
+  // haveModules(), which tests m_root.firstChild alone and so answers false for a tree whose
+  // first row happens to be a bare top-level leaf -- which would make the warm start depend on
+  // the order of the rows in the cluster file.
+  if (std::none_of(paths.begin(), paths.end(), [](const std::vector<int>& p) { return !p.empty(); })) {
+    paths.clear();
+    return false;
+  }
 
   // A top-level leaf gets an EMPTY path (leafModulePathsFromTree stops below the
   // root), but it IS a module of one node, so give it a synthetic id past every real
@@ -3101,11 +3115,51 @@ double InfomapBase::evaluateColumnarPartition()
   // reported base L for L* runs -- ninetriangles ragged 3.458078031 for both
   // objectives, against a true L* of 3.237864808. Under L* the tree can be made
   // rectangular for free instead; see padLeafPathsToUniformDepth.
-  const std::vector<int> padDepth = nonRedundant ? padLeafPathsToUniformDepth(paths) : std::vector<int>();
+  // Rectangularize whenever the tree HAS a module structure. The padding used to be
+  // gated on --non-redundant, on the argument that a pass-through level is free under L*
+  // and costs real bits under the base map equation -- true, but beside the point: the
+  // stamping below already takes the phantom levels' charge back off the total in full
+  // generality (padCharge), so the base objective is priced exactly too, and the ragged
+  // tree no longer has to be handed to the object-oriented scorer.
+  //
+  // Why the subtraction is exact, for every objective: a phantom p inserted between a
+  // module x and its real parent P is an exact copy of x's flow / enter / exit / teleport
+  // aggregates (aggregateLevel over a singleton assignment), and every per-module term in
+  // the scorer reads only that module's own exit and its children's enter -- never a
+  // depth, a level count or a grandparent. So P's term is unchanged (its child p
+  // contributes the same enter x did), x's term is unchanged, and p's whole cost is its
+  // own breakdown entry: for the base objective plogp(a+b)-plogp(a)-plogp(b), which is
+  // exactly 2a on undirected input. Because the duplicate is APPENDED and paths are
+  // coarsest-first, x keeps the level-1 leaf-codebook role; prepending it would re-price x
+  // as a module-of-modules and the cancellation would fail.
+  //
+  // PRECONDITION, enforced elsewhere: no module has both a leaf child and a sub-module
+  // child. Under that shape the padding is not a pass-through insertion -- P's direct leaf
+  // children would be grouped into a genuinely new module and the stamping would mark the
+  // REAL module P as phantom and subtract its term. validateClusterDataTreeShape rejects
+  // such input (#898) and the search never builds it, which is what makes this safe.
+  //
+  // A tree with NO modules at all is a different matter and is excluded here: every leaf
+  // path is empty, so padding would hand each leaf a synthetic module of its own and score
+  // a SINGLETON partition instead of the module-less one asked about. That is not this
+  // function's question to answer, so it drops through to the fallback below.
+  //
+  // The test is "does SOME leaf have a module", read off the paths, and deliberately not
+  // haveModules(): that predicate looks at m_root.firstChild alone, so it answers false for a
+  // tree whose first child happens to be a bare top-level leaf even though the rest of the
+  // tree is fully modular. Gating on it made the result depend on the ORDER of the rows in
+  // the cluster file -- moving the bare leaf to the top of
+  // twotriangles_top_level_leaf.tree took L* from 2.187131226 to 3.02401125, the base L,
+  // because the fallback below reports an objective the object-oriented side cannot express.
+  const bool haveAnyModule = std::any_of(paths.begin(), paths.end(), [](const std::vector<int>& p) { return !p.empty(); });
+  const std::vector<int> padDepth = haveAnyModule ? padLeafPathsToUniformDepth(paths) : std::vector<int>();
   if (!opt.seedHierarchyFromLeafPaths(paths)) {
-    // Ragged tree the padding could not rescue (a base-objective run, or leaves at
-    // differing depths with no leaf level to repeat): score the object-oriented tree.
-    Console::detail(1, "columnar eval: ragged tree, using object-oriented codelength");
+    // Only one shape reaches this now: a tree with no module structure at all, whose leaf
+    // paths are all empty and which the padding above deliberately leaves alone. There is
+    // no partition for the stack to hold, so the module-less codelength is what the
+    // object-oriented scorer is still asked for. Every ragged tree that DOES carry a
+    // partition is now scored on the columnar stack.
+    Console::detail(1, "columnar eval: no module structure to score on the stack, using object-oriented codelength");
     return objectOrientedTreeCodelength();
   }
   columnar::StackBreakdown breakdown;
@@ -3218,7 +3272,26 @@ bool InfomapBase::stampColumnarCodelengths(const ColumnarTwoLevel& opt,
       if (isPad[static_cast<std::size_t>(k)][m] != 0)
         padCharge += breakdown.moduleTerm[static_cast<std::size_t>(k)][m];
 
-  m_root.codelength = breakdown.rootTerm + rootLeafCharge;
+  // The synthetic module a bare top-level leaf was given is where the two objectives
+  // genuinely disagree about what the FILE MEANS, so it is charged per objective rather
+  // than uniformly.
+  //
+  // Under L* the three spellings of that partition -- bare `2 "A"`, explicit `2:1 "A"`,
+  // and `2:1:1 "A"` -- are one partition and must score alike, which is what keeping this
+  // charge in the total achieves (it is not zero: dropping it moves the bare spelling from
+  // 2.187131226 to 2.037131226 on twotriangles_flow, breaking the equality the L* tests
+  // pin). Under the base map equation a bare top-level leaf is addressed in the ROOT's own
+  // codebook and gets no module codebook of its own -- bare 2.714170945 against explicit
+  // 3.014170945, pinned with the note that base "must not move" -- so there the synthetic
+  // module's charge is one the tree does not contain, and it comes off.
+  //
+  // Both readings predate this function being able to score a ragged tree natively; the
+  // inconsistency between them is a modelling question, not something to settle here. What
+  // matters is that neither value moves now that the object-oriented scorer is out of the
+  // path.
+  if (!nonRedundant)
+    padCharge += rootLeafCharge;
+  m_root.codelength = breakdown.rootTerm + (nonRedundant ? rootLeafCharge : 0.0);
   return true;
 }
 
