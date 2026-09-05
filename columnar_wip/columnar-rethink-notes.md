@@ -4004,3 +4004,87 @@ order-dependent in principle (bottom-up, dissolve preferred on ties); no attempt
 Cosmetic defect found on the way: scoring a ragged input of max depth 9 prints `Initial generated 4
 levels` on the console while the written tree header correctly says 9 levels and L is exact — readout
 only, filed here rather than fixed.
+
+### F52 — Master's sync gave `--preferred-number-of-modules` an OO counterpart, and the columnar fallback then charged it twice (2026-09-05)
+
+Found by the pre-commit test run of the master sync (#1044 … #1066), which is exactly what that step
+in CLAUDE.md exists for: `infomap_cpp_non_redundant_tests` failed 5 of its 6 checks in
+"the preferred-modules penalty survives the object-oriented fallback", with the actual codelength above
+the expected one by 1, 1, 2, 3 and 4 bits at `--preferred-number-of-modules` 1, 3, 4, 5 and 6 — and
+exact at 2.
+
+**Cause.** `objectOrientedTreeCodelength()` is the columnar engine's fallback for a ragged tree the
+columnar stack cannot score. It called `calcCodelengthOnTree` and then added the `|K − K_pref|` penalty
+by hand, with the comment that this is "the one correction with no object-oriented counterpart".
+[#1021](https://github.com/mapequation/infomap/issues/1021) closed on master
+([#1052](https://github.com/mapequation/infomap/pull/1052)) by giving it one:
+`calcCodelengthOnTree` now returns `total + calcTreeCodelengthCost(root.childDegree())`. The premise the
+fallback was written against stopped being true, silently, and both charges applied.
+
+**The interesting half is that the two charges are not the same charge.** Master takes K from
+`root.childDegree()` — the **top**-module count. The columnar engine takes it from `hierLevelSize(1)`
+— the **leaf**-module level, "matching where the move-loop bias acts"
+(`PreferredModulesCorrection::hierarchicalCorrection`), and the fallback's hand-rolled version
+deliberately mirrored that ("the distinct parents of the leaves, which is what hierLevelSize(1) is").
+On a rectangular tree those coincide, which is why nothing else in the suite noticed. On the ragged
+fixture — two top-level ids, three leaf modules — the sum was `|2 − K_pref| + |3 − K_pref|` for a
+partition whose penalty is `|3 − K_pref|`, and the residual `|2 − K_pref|` is exactly the failure
+pattern above (zero at K_pref = 2).
+
+**Fix, and its deliberate limit.** The fallback now subtracts the object-oriented term and adds its own:
+`L − calcTreeCodelengthCost(m_root.childDegree()) + costOf(leafModules, K_pref)`. That restores the
+columnar arm bit-for-bit and leaves master's object-oriented arm untouched — each engine keeps the
+answer it already gave. **Which level should own K is a real modelling question and a master sync is
+the wrong place to settle it**, so it is filed rather than decided. Note the direction of the disagreement:
+a user asking for 25 modules almost certainly means 25 at the top, which is master's reading, while the
+columnar engine prices the finest level; the two engines therefore optimize different objectives under
+this flag on any tree deeper than two levels.
+
+**Filed as [#1068](https://github.com/mapequation/infomap/issues/1068).**
+
+**What it says about the sync step.** The failure was invisible to review — a clean three-way merge, no
+conflict in either file, both sides individually correct. Only building and running the suite before
+committing surfaced it. It is the second time a master change has invalidated an unstated premise in
+columnar code (after #998/#831) and the first where the merge itself was conflict-free.
+
+### F53 — The sync's only inherited regression is a second parse of the cluster file, and the obvious suspect was the wrong one (2026-09-06)
+
+The master sync's sweep came back 125 of 125 columnar configurations bit-identical, median instruction
+delta +0.005%. Five rows broke 1%: the five `om* planted, -2d --no-infomap -c` rows at **+7.0 to +7.5%
+in instructions** (+3.2 to +7.5% in time) with **no change in bits**, plus `om2 -2d -c` at +1.02%.
+
+**Localising it took one query, not a guess.** Absolute rather than relative deltas separated the
+family cleanly: the 10 overlapping rows that pass `-c` moved by a median +110M instructions, the 40
+that do not by −0.2M. Same networks, same sizes, same flags otherwise. Then the delta across the five
+networks — 28 203 rows → +61M, 45 394 → +101M, 50 133 → +110M, 53 860 → +120M, 58 505 → +130M — is
+linear at **~2 290 instructions per cluster-file row with an intercept of zero**, which is the
+signature of exactly one extra pass over the file.
+
+**The obvious suspect was wrong, and a build said so.** [#1051](https://github.com/mapequation/infomap/pull/1051)
+rewrote `readClu`'s insert into a `try_emplace` plus per-row repeat bookkeeping, which is the only
+per-row code the sync added to that path. Gating it off — a throwaway worktree, the bookkeeping
+reverted to the old `m_clusterIds[stateId] = moduleId`, rebuilt, measured interleaved — moved nothing:
+1 259–1 265M against the sync's 1 260–1 265M, codelength identical to all 16 digits. Had this been
+argued rather than built, the wrong cause would have gone into the snapshot with a plausible story
+attached.
+
+**The actual cause is a whole second parse**, and master names its own price:
+`RunSession::reportClusterDataIssues` constructs a fresh `ClusterMap` and re-reads the file to warn
+about repeated node ids — "The cost is one extra parse of the cluster file, which is a validation pass
+and not the partition the trials build". Once per run, so it hurts in inverse proportion to run
+length: 7% of a `--no-infomap` scoring run, ~1% of a `-N10` search seeded with the same file, invisible
+on a long one. It also reads before it checks the extension, so a `.tree` seed pays a re-parse to
+discover the warning cannot apply to it (+11M on a 1 548-line tree).
+
+Filed on master as [#1072](https://github.com/mapequation/infomap/issues/1072): `readClu` already
+accumulates the duplicate statistics during the real read, so what forced the second pass was placement
+(reporting from `initPartition` fires once per trial and is muted under `--parallel-trials`), not
+availability. Not fixed here — it is shared code, so it goes to master through its own PR.
+
+**Method note for the next sweep.** Two of the first pass's outliers were not effects at all. The very
+first run of the batch, `ninetriangles -C -N10` on the old arm, retired 403M instructions where every
+warm repeat of either arm retires ~80M — cold start, read as a −80% "improvement" for the new arm.
+`lazega -C` (−5.1%) and `multilayer -C -F` (−1.9%) were the same thing, smaller. Re-running the five
+startup-dominated networks with 4 extra interleaved reps each dropped all three below 1%. **A single
+rep of a sub-10 ms row measures the machine, not the binary** — the min-of-N rule needs to cover the
+small rows too, not only the `-N1` ones.
