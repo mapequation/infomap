@@ -900,8 +900,8 @@ private:
   double unitIndexRate(const Level& level, int i) const
   {
     if (!m_recordedTeleport || level.teleWeight.empty() || !columnar::teleIndexRate())
-      return level.enter[i];
-    return level.enter[i] + moduleTeleEnter(level.teleFlow[i], level.teleWeight[i]);
+      return level.linkEnter[i];
+    return level.linkEnter[i] + moduleTeleEnter(level.teleFlow[i], level.teleWeight[i]);
   }
 
   // In-place enter-flow transform: node flow := unitIndexRate for every unit.
@@ -909,7 +909,7 @@ private:
   // the sub-search's own group-level enter stays exact.
   void setIndexRateAsFlow(Level& level) const
   {
-    level.flow = level.enter;
+    level.flow = level.linkEnter;
     if (!m_recordedTeleport || level.teleWeight.empty() || !columnar::teleIndexRate())
       return;
     for (int i = 0; i < level.n; ++i)
