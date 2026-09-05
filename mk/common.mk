@@ -297,15 +297,19 @@ dev-bootstrap:
 		"  make build-python dev-python-install" \
 		"  make test-fast"
 
-# Install the pre-commit git hook. Idempotent; safe to re-run. Never fails the
+# Install the pre-commit git hooks. Idempotent; safe to re-run. Never fails the
 # build: a native-only checkout may not have pre-commit yet, and a repo with
 # core.hooksPath set (pre-commit refuses to auto-install there) can still lint
 # via `pre-commit run --all-files` or CI.
+#
+# Which hooks get written is `default_install_hook_types` in
+# .pre-commit-config.yaml, not flags here -- an explicit --hook-type overrides
+# that list, so the two would silently drift apart.
 hooks:
 	@if ! $(PRECOMMIT) --version >/dev/null 2>&1; then \
 		printf "pre-commit not installed; run 'make dev-bootstrap' or 'pip install pre-commit'.\n"; \
-	elif $(PRECOMMIT) install --hook-type pre-commit --hook-type pre-push >/dev/null 2>&1; then \
-		printf "pre-commit and pre-push git hooks installed.\n"; \
+	elif $(PRECOMMIT) install >/dev/null 2>&1; then \
+		printf "git hooks installed (pre-commit, pre-push, commit-msg).\n"; \
 	else \
 		printf "pre-commit is installed but the git hook was not auto-installed:\n"; \
 		printf "  core.hooksPath is set (%s), so pre-commit refuses to manage it.\n" "$$(git config core.hooksPath)"; \
