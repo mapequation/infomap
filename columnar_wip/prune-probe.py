@@ -17,6 +17,7 @@ tree with identical leaf partitions at surviving levels.
 
 Usage: prune_ftree.py <file.ftree> <out.tree> [--report-only]
 """
+
 import math
 import sys
 from collections import defaultdict
@@ -29,7 +30,7 @@ def plogp(x):
 
 
 class Node:
-    __slots__ = ("path", "enter", "exit", "children", "leaves", "parent")
+    __slots__ = ("children", "enter", "exit", "leaves", "parent", "path")
 
     def __init__(self, path):
         self.path = path
@@ -54,7 +55,11 @@ def parse_ftree(fname):
                 parts = line.split()
                 if parts[1] in ("directed", "undirected"):
                     continue
-                path = () if parts[1] == "root" else tuple(int(x) for x in parts[1].split(":"))
+                path = (
+                    ()
+                    if parts[1] == "root"
+                    else tuple(int(x) for x in parts[1].split(":"))
+                )
                 links[path] = (float(parts[2]), float(parts[3]))
                 continue
             parts = line.split(None, 2)
@@ -82,7 +87,9 @@ def parse_ftree(fname):
             nodes[path].exit = ext
     missing = [p for p in nodes if p != () and p not in links]
     if missing:
-        raise SystemExit(f"modules without *Links flow data: {missing[:5]} (+{len(missing)-5})")
+        raise SystemExit(
+            f"modules without *Links flow data: {missing[:5]} (+{len(missing) - 5})"
+        )
     return root, nodes
 
 
@@ -166,7 +173,10 @@ def gain_flatten(m):
     ext = 0.0 if m.parent is None else m.exit
     q = ext
     s = 0.0
-    for fl, _ in leaves:  # subtree_terms_and_leaves already includes m's own direct leaves
+    for (
+        fl,
+        _,
+    ) in leaves:  # subtree_terms_and_leaves already includes m's own direct leaves
         q += fl
         s += plogp(fl)
     after = plogp(q) - plogp(ext) - s
@@ -184,9 +194,8 @@ def all_internal(root, include_root=False):
     stack = [root]
     while stack:
         n = stack.pop()
-        if n.children or n is not root:
-            if n is not root or include_root:
-                out.append(n)
+        if (n.children or n is not root) and (n is not root or include_root):
+            out.append(n)
         stack.extend(n.children)
     return out
 
@@ -281,10 +290,12 @@ def main():
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
     ftree = args[0]
     out = args[1] if len(args) > 1 else None
-    root, nodes = parse_ftree(ftree)
+    root, _nodes = parse_ftree(ftree)
     L0 = total_codelength(root)
     nmod0 = len(all_internal(root))
-    print(f"parsed: {nmod0} internal modules (excl root), leaf depth histogram {depth_histogram(root)}")
+    print(
+        f"parsed: {nmod0} internal modules (excl root), leaf depth histogram {depth_histogram(root)}"
+    )
     print(f"reconstructed L = {L0:.9f}")
     print("per-level codebook terms (depth: bits, #modules):")
     for d, (t, c) in per_level_terms(root).items():
@@ -294,8 +305,10 @@ def main():
     ops, sweeps = greedy_prune(root, homogeneous=homogeneous)
     gain = sum(g for _, _, g in ops)
     L1 = total_codelength(root)
-    print(f"\ngreedy prune: {len(ops)} ops in {sweeps} sweeps, predicted gain {gain:.9f} bits")
-    print(f"L after prune = {L1:.9f}  ({(L1-L0)/L0*100:+.4f}%)")
+    print(
+        f"\ngreedy prune: {len(ops)} ops in {sweeps} sweeps, predicted gain {gain:.9f} bits"
+    )
+    print(f"L after prune = {L1:.9f}  ({(L1 - L0) / L0 * 100:+.4f}%)")
     bytype = defaultdict(lambda: [0, 0.0])
     for op, d, g in ops:
         k = (op, d)
