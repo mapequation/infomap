@@ -2,6 +2,35 @@
 
 All notable changes to this project will be documented in this file. Releases are automated with [release-please](https://github.com/googleapis/release-please), using [Conventional Commits](https://www.conventionalcommits.org) to determine version bumps and changelog entries.
 
+## [2.16.0](https://github.com/mapequation/infomap/compare/v2.15.1...v2.16.0) (2026-09-05)
+
+
+### Features
+
+* **python:** make the 3.0 removal window visible at runtime ([#1060](https://github.com/mapequation/infomap/issues/1060)) ([290dd41](https://github.com/mapequation/infomap/commit/290dd41d1e5f20ea0ea62ff7d4db14c979bc5bdc))
+* record the effective seed in the default output artifacts ([#1055](https://github.com/mapequation/infomap/issues/1055)) ([2a59e06](https://github.com/mapequation/infomap/commit/2a59e06eefbad216ee97ef46a17fa0756ae7a1da))
+
+
+### Bug Fixes
+
+* charge the entropy correction in bits, not nats ([#1033](https://github.com/mapequation/infomap/issues/1033)) ([b5459c7](https://github.com/mapequation/infomap/commit/b5459c77e217de3577d53b2c9b61d0108b8df432))
+* charge the module-count preference on a scored partition ([#1052](https://github.com/mapequation/infomap/issues/1052)) ([2f28f14](https://github.com/mapequation/infomap/commit/2f28f14978b9a94ba6813137643994cf544d4f64))
+* guard the _states output artifacts against overwriting the input ([#1049](https://github.com/mapequation/infomap/issues/1049)) ([08aa5aa](https://github.com/mapequation/infomap/commit/08aa5aa3385267dc396355c9cf7c1122c16e8162))
+* keep the linlog damping interpolation smooth at q = 1 ([#1044](https://github.com/mapequation/infomap/issues/1044)) ([396eec9](https://github.com/mapequation/infomap/commit/396eec9fc823cb0ab850d89a05f92f943a52cd65))
+* make the one-level reference the one-module partition's codelength ([#1054](https://github.com/mapequation/infomap/issues/1054)) ([cecfe87](https://github.com/mapequation/infomap/commit/cecfe873baf58ef5ea34884b65c2032cd90320ae))
+* plan a shard's per-trial output paths with the writer's trial numbers ([#1062](https://github.com/mapequation/infomap/issues/1062)) ([09e4e8a](https://github.com/mapequation/infomap/commit/09e4e8a305a6c92534f6df335c4ace51998b9ae6))
+* report a clu file whose node ids repeat ([#1051](https://github.com/mapequation/infomap/issues/1051)) ([cf5194d](https://github.com/mapequation/infomap/commit/cf5194d8475044fa7523b2a81d6763645a16a073))
+* report a regularized multilayer flow imbalance instead of aborting ([#1053](https://github.com/mapequation/infomap/issues/1053)) ([007c827](https://github.com/mapequation/infomap/commit/007c8277a21a02b06f15b02ac79e955c5babe4c5))
+* report an index codelength in the super consolidation log ([#1056](https://github.com/mapequation/infomap/issues/1056)) ([0a1adb1](https://github.com/mapequation/infomap/commit/0a1adb1f9bae02e8bee96e1b3e44358ab968fe4c))
+* score a re-initialised leaf partition with the leaf network's terms ([#998](https://github.com/mapequation/infomap/issues/998)) ([f3ac046](https://github.com/mapequation/infomap/commit/f3ac046626f3e6c21af0b3da7ac8ac57f96c4d98))
+* score the flat-shortcut tree, and drop the dead --lossy input guard ([#1014](https://github.com/mapequation/infomap/issues/1014)) ([c442701](https://github.com/mapequation/infomap/commit/c4427013f6586f7d8fe28e1a7b29a997c218332d))
+* write the pre-flow artifacts after the network is classified ([#1050](https://github.com/mapequation/infomap/issues/1050)) ([af74a54](https://github.com/mapequation/infomap/commit/af74a5431a1c5642cc87b57b994d6c5b415839be))
+
+
+### Performance Improvements
+
+* validate cluster-data tree shape where input enters, not on every materialization ([#991](https://github.com/mapequation/infomap/issues/991)) ([75ad621](https://github.com/mapequation/infomap/commit/75ad621e43717608a11a637d54dd6650e5ef3911))
+
 ## [2.15.1](https://github.com/mapequation/infomap/compare/v2.15.0...v2.15.1) (2026-08-04)
 
 
