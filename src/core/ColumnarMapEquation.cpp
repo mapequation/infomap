@@ -58,8 +58,8 @@ void ColumnarTwoLevel::buildFromLeaves(const std::vector<InfoNode*>& leafNodes, 
   m_lvlPtr = &m_leaf0Owned;
   L.n = m_nLeaves;
   L.flow.resize(m_nLeaves);
-  L.enter.resize(m_nLeaves);
-  L.exit.resize(m_nLeaves);
+  L.linkEnter.resize(m_nLeaves);
+  L.linkExit.resize(m_nLeaves);
   L.teleFlow.resize(m_nLeaves);
   L.teleWeight.resize(m_nLeaves);
   m_leafFlow.resize(m_nLeaves);
@@ -69,8 +69,8 @@ void ColumnarTwoLevel::buildFromLeaves(const std::vector<InfoNode*>& leafNodes, 
   m_leafNodeFlow_log_nodeFlow = 0.0;
   for (int i = 0; i < m_nLeaves; ++i) {
     L.flow[i] = leafNodes[i]->data.flow;
-    L.enter[i] = leafNodes[i]->data.enterFlow;
-    L.exit[i] = leafNodes[i]->data.exitFlow;
+    L.linkEnter[i] = leafNodes[i]->data.enterFlow;
+    L.linkExit[i] = leafNodes[i]->data.exitFlow;
     m_leafFlow[i] = L.flow[i];
     // Recorded-teleportation bookkeeping (used only when setRecordedTeleportation
     // is on); harmless to populate otherwise.
@@ -185,10 +185,10 @@ void ColumnarTwoLevel::initPartition()
   for (int i = 0; i < n; ++i) {
     m_module[i] = i;
     m_mFlow[i] = lvl().flow[i];
-    m_mEnter[i] = lvl().enter[i];
-    m_mExit[i] = lvl().exit[i];
-    double enter = lvl().enter[i];
-    double exit = lvl().exit[i];
+    m_mEnter[i] = lvl().linkEnter[i];
+    m_mExit[i] = lvl().linkExit[i];
+    double enter = lvl().linkEnter[i];
+    double exit = lvl().linkExit[i];
     if (m_recordedTeleport) {
       m_mTeleFlow[i] = lvl().teleFlow[i];
       m_mTeleWeight[i] = lvl().teleWeight[i];
@@ -254,8 +254,8 @@ void ColumnarTwoLevel::moveUnit(int u, int newMod)
   }
   const double deltaOld = dEnterOld + dExitOld;
   const double deltaNew = dEnterNew + dExitNew;
-  const double curEnter = lvl().enter[u];
-  const double curExit = lvl().exit[u];
+  const double curEnter = lvl().linkEnter[u];
+  const double curExit = lvl().linkExit[u];
   const double curFlow = lvl().flow[u];
 
   if (!m_deferTerms) {
@@ -447,8 +447,8 @@ unsigned int ColumnarTwoLevel::moveLoop(unsigned int sweepCap)
         touched.push_back(cMod);
 
       const double deltaOld = dEnter[cMod] + dExit[cMod];
-      const double curEnter = lvl().enter[u];
-      const double curExit = lvl().exit[u];
+      const double curEnter = lvl().linkEnter[u];
+      const double curExit = lvl().linkExit[u];
       const double curFlow = lvl().flow[u];
 
       int bestMod = cMod;
@@ -611,8 +611,8 @@ int ColumnarTwoLevel::consolidateToNextLevel()
   Level next;
   next.n = K;
   next.flow.assign(K, 0.0);
-  next.enter.assign(K, 0.0);
-  next.exit.assign(K, 0.0);
+  next.linkEnter.assign(K, 0.0);
+  next.linkExit.assign(K, 0.0);
   next.teleFlow.assign(K, 0.0);
   next.teleWeight.assign(K, 0.0);
   // Module aggregates already hold the consolidated flow data. enter/exit stay
@@ -624,8 +624,8 @@ int ColumnarTwoLevel::consolidateToNextLevel()
       continue;
     const int m = remap[oldM];
     next.flow[m] = m_mFlow[oldM];
-    next.enter[m] = m_mEnter[oldM];
-    next.exit[m] = m_mExit[oldM];
+    next.linkEnter[m] = m_mEnter[oldM];
+    next.linkExit[m] = m_mExit[oldM];
     if (m_recordedTeleport) {
       next.teleFlow[m] = m_mTeleFlow[oldM];
       next.teleWeight[m] = m_mTeleWeight[oldM];
@@ -1398,7 +1398,7 @@ int ColumnarTwoLevel::splitTopModules(double& L, bool allowSingletons)
       // Proposal granularity: skip the sub-optimize's fine-tune — the pieces
       // only need to separate communities, and the gated recombination plus
       // the interleaved leaf re-tune do the polishing.
-      Ksub = subClusterLeaves(S, hierLevel(1).exit[P], loc, localAssign, false);
+      Ksub = subClusterLeaves(S, hierLevel(1).linkExit[P], loc, localAssign, false);
       m_subClusterCache.emplace(S, std::make_pair(Ksub, localAssign));
     }
     const int base = static_cast<int>(pieceParent.size());
@@ -1674,7 +1674,7 @@ int ColumnarTwoLevel::splitLevelModules(int k, double& L, bool allowSingletons)
       }
       int Ksub = 0;
       if (interior) {
-        Ksub = subClusterUnits(hierLevel(k), true, false, S, hierLevel(k + 1).exit[P], loc, localAssign, false, nullptr);
+        Ksub = subClusterUnits(hierLevel(k), true, false, S, hierLevel(k + 1).linkExit[P], loc, localAssign, false, nullptr);
       } else {
         // A module's sub-clustering depends only on its own leaf set, so
         // unchanged modules reuse earlier rounds' result (memo shared with
@@ -1684,7 +1684,7 @@ int ColumnarTwoLevel::splitLevelModules(int k, double& L, bool allowSingletons)
           Ksub = it->second.first;
           localAssign = it->second.second;
         } else {
-          Ksub = subClusterLeaves(S, hierLevel(1).exit[P], loc, localAssign, false);
+          Ksub = subClusterLeaves(S, hierLevel(1).linkExit[P], loc, localAssign, false);
           m_subClusterCache.emplace(S, std::make_pair(Ksub, localAssign));
         }
       }
@@ -1918,8 +1918,8 @@ ColumnarTwoLevel::Level ColumnarTwoLevel::aggregateLevel(const Level& base, cons
   Level out;
   out.n = K;
   out.flow.assign(K, 0.0);
-  out.enter.assign(K, 0.0);
-  out.exit.assign(K, 0.0);
+  out.linkEnter.assign(K, 0.0);
+  out.linkExit.assign(K, 0.0);
   out.teleFlow.assign(K, 0.0);
   out.teleWeight.assign(K, 0.0);
   const bool haveTele = !base.teleFlow.empty();
@@ -1944,13 +1944,13 @@ ColumnarTwoLevel::Level ColumnarTwoLevel::aggregateLevel(const Level& base, cons
       edgeMap[static_cast<long long>(ga) * K + gb] += f;
       if (undirected) {
         const double half = f / 2.0;
-        out.exit[ga] += half;
-        out.enter[ga] += half;
-        out.enter[gb] += half;
-        out.exit[gb] += half;
+        out.linkExit[ga] += half;
+        out.linkEnter[ga] += half;
+        out.linkEnter[gb] += half;
+        out.linkExit[gb] += half;
       } else {
-        out.exit[ga] += f;
-        out.enter[gb] += f;
+        out.linkExit[ga] += f;
+        out.linkEnter[gb] += f;
       }
     }
   }
@@ -2094,9 +2094,9 @@ bool ColumnarTwoLevel::buildPartialSeed(const Level& sub, const std::vector<int>
     std::vector<double> loose(nP, 1.0);
     for (int j = 0; j < nP; ++j) {
       if (byExit) {
-        const double tot = sub.flow[j] + sub.exit[j];
+        const double tot = sub.flow[j] + sub.linkExit[j];
         if (tot > 0.0)
-          loose[j] = sub.exit[j] / tot;
+          loose[j] = sub.linkExit[j] / tot;
       } else {
         const int mj = assign[S[j]];
         double tot = 0.0, out = 0.0;
@@ -2172,16 +2172,16 @@ int ColumnarTwoLevel::subClusterUnits(const Level& base, bool interior, bool sli
   Level sub;
   sub.n = nP;
   sub.flow.resize(nP);
-  sub.enter.resize(nP);
-  sub.exit.resize(nP);
+  sub.linkEnter.resize(nP);
+  sub.linkExit.resize(nP);
   sub.teleFlow.resize(nP);
   sub.teleWeight.resize(nP);
   std::vector<int> outDeg(nP, 0), inDeg(nP, 0);
   for (int j = 0; j < nP; ++j) {
     const int g = S[j];
     sub.flow[j] = interior ? unitIndexRate(base, g) : base.flow[g];
-    sub.enter[j] = base.enter[g];
-    sub.exit[j] = base.exit[g];
+    sub.linkEnter[j] = base.linkEnter[g];
+    sub.linkExit[j] = base.linkExit[g];
     sub.teleFlow[j] = base.teleFlow.empty() ? 0.0 : base.teleFlow[g];
     sub.teleWeight[j] = base.teleWeight.empty() ? 0.0 : base.teleWeight[g];
     for (int k = base.outStart[g]; k < base.outStart[g + 1]; ++k) {
@@ -2280,7 +2280,7 @@ bool ColumnarTwoLevel::refineBottomWithinParents()
     // reachable via COL_PARTSEED_ALWAYS, which is how the `-F` half was
     // measured: partial-seeding this single pass costs web-NotreDame +0.08% on
     // 3/3 seeds, because here it replaces the only discovery the search has.
-    const int Ksub = subClusterLeaves(S, hierLevel(2).exit[P], loc, subAssign, true, &a0);
+    const int Ksub = subClusterLeaves(S, hierLevel(2).linkExit[P], loc, subAssign, true, &a0);
 
     for (int j = 0; j < nP; ++j)
       newA0[S[j]] = nextL1 + subAssign[j];
@@ -2498,16 +2498,16 @@ bool ColumnarTwoLevel::refineLayerWithinGrandparent(int k)
     Level sub;
     sub.n = nP;
     sub.flow.resize(nP);
-    sub.enter.resize(nP);
-    sub.exit.resize(nP);
+    sub.linkEnter.resize(nP);
+    sub.linkExit.resize(nP);
     sub.teleFlow.resize(nP);
     sub.teleWeight.resize(nP);
     std::vector<int> outDeg(nP, 0), inDeg(nP, 0);
     for (int j = 0; j < nP; ++j) {
       const int g = S[j];
       sub.flow[j] = interior ? unitIndexRate(base, g) : base.flow[g];
-      sub.enter[j] = base.enter[g];
-      sub.exit[j] = base.exit[g];
+      sub.linkEnter[j] = base.linkEnter[g];
+      sub.linkExit[j] = base.linkExit[g];
       sub.teleFlow[j] = base.teleFlow.empty() ? 0.0 : base.teleFlow[g];
       sub.teleWeight[j] = base.teleWeight.empty() ? 0.0 : base.teleWeight[g];
       for (int e = base.outStart[g]; e < base.outStart[g + 1]; ++e) {
@@ -2559,7 +2559,7 @@ bool ColumnarTwoLevel::refineLayerWithinGrandparent(int k)
 
     ColumnarTwoLevel subOpt;
     subOpt.setInterruptCallback(m_interruptCallback);
-    subOpt.buildFromLevel(std::move(sub), m_undirected, m_seed, grand.exit[G], m_recordedTeleport, m_totalTeleFlow);
+    subOpt.buildFromLevel(std::move(sub), m_undirected, m_seed, grand.linkExit[G], m_recordedTeleport, m_totalTeleFlow);
     subOpt.m_rootLeaves = m_rootLeaves;
     if (k == 0)
       addSlicedLeafCorrections(subOpt, S);
@@ -2599,15 +2599,15 @@ bool ColumnarTwoLevel::refineTopLayer()
   Level sub;
   sub.n = nU;
   sub.flow.resize(nU);
-  sub.enter.resize(nU);
-  sub.exit.resize(nU);
+  sub.linkEnter.resize(nU);
+  sub.linkExit.resize(nU);
   sub.teleFlow.resize(nU);
   sub.teleWeight.resize(nU);
   std::vector<int> outDeg(nU, 0), inDeg(nU, 0);
   for (int j = 0; j < nU; ++j) {
     sub.flow[j] = unitIndexRate(base, j);
-    sub.enter[j] = base.enter[j];
-    sub.exit[j] = base.exit[j];
+    sub.linkEnter[j] = base.linkEnter[j];
+    sub.linkExit[j] = base.linkExit[j];
     sub.teleFlow[j] = base.teleFlow.empty() ? 0.0 : base.teleFlow[j];
     sub.teleWeight[j] = base.teleWeight.empty() ? 0.0 : base.teleWeight[j];
     for (int e = base.outStart[j]; e < base.outStart[j + 1]; ++e) {
@@ -2689,8 +2689,8 @@ bool ColumnarTwoLevel::mergeLeafModulesWithinParents()
 
   // Mutable leaf-module aggregates + parent map + adjacency (crossing flow).
   std::vector<double> flow = hierLevel(1).flow;
-  std::vector<double> enter = hierLevel(1).enter;
-  std::vector<double> exit = hierLevel(1).exit;
+  std::vector<double> enter = hierLevel(1).linkEnter;
+  std::vector<double> exit = hierLevel(1).linkExit;
   std::vector<int> parent = hasGrandparent ? m_hierAssign[1] : std::vector<int>(K, 0);
   std::vector<std::unordered_map<int, double>> adjOut(K), adjIn(K);
   {
@@ -2708,7 +2708,7 @@ bool ColumnarTwoLevel::mergeLeafModulesWithinParents()
   std::vector<double> totalUse(numParents, 0.0);
   if (hasGrandparent)
     for (int p = 0; p < numParents; ++p)
-      totalUse[p] = hierLevel(2).exit[p];
+      totalUse[p] = hierLevel(2).linkExit[p];
   for (int a = 0; a < K; ++a)
     totalUse[parent[a]] += enter[a];
 
