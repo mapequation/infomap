@@ -16,6 +16,7 @@ import infomap
 import networkx as nx
 import pytest
 from infomap import Infomap, Network
+from infomap._options import LEGACY_SURFACE_WARNING
 from infomap.result import Result, _StaleResultError
 
 pytestmark = pytest.mark.fast
@@ -112,10 +113,10 @@ def test_stateful_infomap_is_silent_by_default(capfd):
 
 def test_stateful_infomap_silent_false_prints_engine_log(capfd):
     _engine_log(capfd)
-    # silent as a bare keyword is pending-deprecated (it moves to logging in
+    # silent as a bare keyword warns on the legacy tier (it moves to logging in
     # 3.0) but still overrides the default in 2.x; the carrier/logging paths are
     # the warning-free replacements.
-    with pytest.warns(PendingDeprecationWarning, match="silent"):
+    with pytest.warns(LEGACY_SURFACE_WARNING, match="silent"):
         im = Infomap(silent=False, num_trials=1, seed=1)
     im.add_links(_LINKS)
     im.run()

@@ -34,28 +34,35 @@ FACADE_END = "    # === END generated ==="
 _FACADE_ONLY_PARAMS = {
     "pretty": {
         # None (not False) so an explicitly passed value is distinguishable
-        # from the default and can trigger the DeprecationWarning below --
+        # from the default and can trigger the FutureWarning below --
         # the same sentinel trick as include_self_links.
         "default": "None",
         "type": "bool | None",
         "doc_type": "bool | None, optional",
         "doc": (
             "Deprecated. Accepted for backward compatibility; has no effect. "
-            "Passing it explicitly emits a DeprecationWarning."
+            "Passing it explicitly emits a FutureWarning."
         ),
         # Deprecated no-op; never part of the common signature tier.
         "tier": "advanced",
     },
 }
 
-# Emitted verbatim into the generated Infomap.__init__/run bodies, at the
-# public boundary so stacklevel=2 attributes the warning to user code.
+# Emitted verbatim into the generated Infomap.__init__/run bodies. The stacklevel
+# is computed rather than fixed at 2: these methods are a public boundary only on a
+# direct Infomap()/im.run() call. infomap.run(graph, pretty=True) reaches the same
+# body through _run.run building Infomap(**resolved), where a fixed 2 named
+# _run.py's own line as the offending code -- an internal frame the caller cannot
+# act on, and now visible under every filter since the tier moved to
+# TYPED_PARAMETER_WARNING (#915). _external_stacklevel walks out to the first frame
+# outside the package, so both entry points point at the user's line, matching what
+# the include_self_links warning already does.
 _PRETTY_WARNING_LINES = [
     "        if pretty is not None:",
     "            warnings.warn(",
     '                "pretty is deprecated and has no effect",',
-    "                DeprecationWarning,",
-    "                stacklevel=2,",
+    "                TYPED_PARAMETER_WARNING,",
+    "                stacklevel=_external_stacklevel(),",
     "            )",
 ]
 
@@ -168,7 +175,7 @@ def _facade_params(catalog: ParameterCatalog):
                 "doc_type": param.python_doc_type(),
                 "doc": param.python_doc_description(),
                 # The 3.0 cleanup-policy decision (issue #755) drives both the
-                # docstring migration note and the runtime PendingDeprecationWarning
+                # docstring migration note and the runtime deprecation warning
                 # so the two never diverge from render_parameter_policy.py.
                 "policy": param.policy("python"),
                 "init_default": param.python_default_expr(),
@@ -220,9 +227,9 @@ def _python_literal_alias_lines(catalog: ParameterCatalog) -> list[str]:
 _ADVANCED_TIER_WARNING_HELPER = [
     "def _warn_advanced_tier_kwargs(passed, context):",
     "    # Advanced-tier keywords are docs-only deprecated on the Infomap()/run()",
-    "    # signatures and move off them in 3.0. Emit a",
-    "    # PendingDeprecationWarning -- silent by default, so it nags no one until",
-    "    # 3.0 nears -- when one is set to a non-default value on a direct call.",
+    "    # signatures and move off them in 3.0. Emit a LEGACY_SURFACE_WARNING --",
+    "    # visible in __main__ under PEP 565, see its definition for the tier -- when",
+    "    # one is set to a non-default value on a direct call.",
     "    # Internal funnels (the Options path builds Infomap(**resolved), the graph",
     "    # adapters, the from_* class methods) reach the same methods from inside",
     "    # the package; the caller-frame check skips them so only user-typed",
@@ -235,10 +242,20 @@ _ADVANCED_TIER_WARNING_HELPER = [
     "        default = spec[baseline]",
     "        if passed.get(name, default) != default:",
     "            action, replacement = spec[2], spec[3]",
-    "            lead = (",
-    "                f\"'{name}' is deprecated on the Infomap() and run() \"",
-    '                "signatures and leaves them in 3.0. "',
-    "            )",
+    "            # The lead has to follow the action. A keep/alias keyword really does",
+    "            # only leave the signatures, and Options is where it goes. A keyword",
+    "            # classified `remove` leaves the Python surface altogether -- its",
+    "            # replacement is another option, the logging module or the CLI binary,",
+    "            # never Options -- so naming the signatures implied a refuge that does",
+    "            # not exist, and contradicted the `.. deprecated::` note on the same",
+    "            # field in the Options reference (#915).",
+    '            if action == "remove":',
+    "                lead = f\"'{name}' leaves the Python surface in 3.0. \"",
+    "            else:",
+    "                lead = (",
+    "                    f\"'{name}' is deprecated on the Infomap() and run() \"",
+    '                    "signatures and leaves them in 3.0. "',
+    "                )",
     '            if action in ("keep", "alias"):',
     "                guidance = (",
     '                    "Pass it via Options to infomap.run() or "',
@@ -249,7 +266,7 @@ _ADVANCED_TIER_WARNING_HELPER = [
     "            else:",
     '                guidance = ""',
     "            warnings.warn(",
-    "                lead + guidance, PendingDeprecationWarning, stacklevel=3",
+    "                lead + guidance, LEGACY_SURFACE_WARNING, stacklevel=3",
     "            )",
 ]
 
@@ -371,7 +388,7 @@ _OPTION_TABLE_VIEWS = [
     "",
     "# Advanced-tier keywords on the Infomap()/run() signatures:",
     "# the init/run 'unset' defaults plus the policy action/replacement that",
-    "# shape the PendingDeprecationWarning. Infomap.run() re-renders keywords on",
+    "# shape the deprecation warning. Infomap.run() re-renders keywords on",
     "# top of the constructed state and a rendered flag can only switch on, so a",
     "# truthy-by-default flag (silent) keeps the no-op False default in run",
     "# context.",
@@ -697,6 +714,44 @@ def generate_python(catalog: ParameterCatalog) -> str:
         "",
         "_PACKAGE_PREFIX = os.path.dirname(os.path.abspath(__file__)) + os.sep",
         "",
+        "# The two classes the pre-3.0 surface announces itself with, in one place each",
+        "# so a change of mind is one edit rather than forty (#915).",
+        "#",
+        "# RELEASING.md keeps two tiers on purpose, and they have to stay ordered by",
+        "# volume. The lower one used to be PendingDeprecationWarning, which CPython's",
+        "# default filters ignore outright, so it reached nobody; DeprecationWarning is",
+        "# shown in __main__ under PEP 565, which is exactly the `python analysis.py`",
+        "# audience that has to migrate. Promoting only that one would have collapsed",
+        "# the two tiers into the same class, erasing a distinction the suite pins, so",
+        "# the louder tier moves up too: FutureWarning is shown under every filter, and",
+        "# is where scikit-learn, pandas and NumPy all landed for a scientific audience.",
+        "#",
+        "# Subclasses rather than the built-in classes themselves. A filter matches by",
+        "# class hierarchy, so every -W and filterwarnings spelling that worked on the",
+        "# base class still catches these -- PEP 565's __main__ visibility included --",
+        "# while naming the subclass silences one Infomap tier and nothing else. Bound",
+        "# to the base classes directly, the tiers were unaddressable: silencing the",
+        "# legacy tier in a test meant ignoring every DeprecationWarning in the process,",
+        "# including the ones the same test was there to catch.",
+        "class LegacySurfaceWarning(DeprecationWarning):",
+        '    """The legacy stateful surface: Result accessors mirrored on ``Infomap``,',
+        "    advanced-tier keywords, ``from_options`` and friends.",
+        '    """',
+        "",
+        "",
+        "class TypedParameterWarning(FutureWarning):",
+        '    """A deprecated parameter the caller actually typed, where silently ignoring',
+        "    or rewriting it hides a migration they have to make.",
+        '    """',
+        "",
+        "",
+        "# The names the call sites and the test suite use, and the ones RELEASING.md",
+        "# documents. Aliases so a tier is one edit here, and so a filter spelling",
+        "# (`ignore::infomap._options.LEGACY_SURFACE_WARNING`) names the tier rather",
+        "# than a class whose base a later change of mind would move.",
+        "LEGACY_SURFACE_WARNING = LegacySurfaceWarning",
+        "TYPED_PARAMETER_WARNING = TypedParameterWarning",
+        "",
         "",
         "# Sentinel default for the common-tier keywords on the Infomap()/run()",
         '# signatures, so the merge can tell "the caller passed this" from "left at',
@@ -944,7 +999,7 @@ def generate_python(catalog: ParameterCatalog) -> str:
             "        if self.include_self_links is not None:",
             "            warnings.warn(",
             '                "include_self_links is deprecated, use no_self_links to exclude self-links",',
-            "                DeprecationWarning,",
+            "                TYPED_PARAMETER_WARNING,",
             "                stacklevel=_external_stacklevel(),",
             "            )",
             "",

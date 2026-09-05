@@ -72,6 +72,9 @@ public:
 
   double calcCodelength(const InfoNode& parent) const;
 
+  // The |K - K_pref| cost, charged once from the tree's own top-module count.
+  double calcTreeCodelengthCost(unsigned int numTopModules) const;
+
   using Base::addMemoryContributions;
 
   using Base::addTeleportationFlow;
