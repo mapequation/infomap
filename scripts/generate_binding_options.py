@@ -8,7 +8,7 @@ import os
 import subprocess
 from pathlib import Path
 
-from parameter_catalog import GROUPS, ParameterCatalog
+from parameter_catalog import GROUPS, ParameterCatalog, resolve_policy_decision
 from render_parameter_policy import render as render_parameter_policy_md
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -662,6 +662,12 @@ def _python_engine_default_doc(param) -> str:
     return f"Engine default: {default}."
 
 
+# The release in which this deprecation wave first shipped. RELEASING.md fixes it at
+# 2.15 -- 2.14.0 shipped the redesign but no versioned markers or runtime warnings --
+# and Sphinx renders an empty version if the directive carries none.
+DEPRECATION_WAVE_VERSION = "2.15"
+
+
 def _options_doc_policy_note(policy: dict) -> str:
     """A short note for the Options docstring flagging fields that are not a
     first-class engine option on the Python library surface.
@@ -692,6 +698,46 @@ def _options_doc_policy_note(policy: dict) -> str:
         "hide": "Not exposed on the Python surface.",
     }.get(action, "")
     return f"{lead} {replacement}".strip()
+
+
+# Actions that make a field deprecated on the Python surface, so it needs the
+# versioned directive RELEASING.md requires. An alias is documented, not deprecated,
+# and `hide` is not on the surface to deprecate in the first place.
+DEPRECATED_POLICY_ACTIONS = {"remove", "args-only", "deprecate"}
+
+
+def _options_doc_deprecation_lines(policy: dict, note: str, indent: str) -> list[str]:
+    """The `.. deprecated::` block for one Options field, or nothing.
+
+    The published Options reference -- which the package docstring points at as the
+    parameter reference -- carried no directive for any field, while RELEASING.md
+    requires one on every deprecated member (#915). The directive goes on its own
+    line with the note indented beneath it: Sphinx reads everything after the
+    directive name as the version, so folding the note onto that line renders the
+    whole sentence as the version string.
+    """
+    action = (policy or {}).get("action", "keep")
+    if action not in DEPRECATED_POLICY_ACTIONS:
+        return []
+    lines = [f"{indent}.. deprecated:: {DEPRECATION_WAVE_VERSION}"]
+    body = note
+    if action == "args-only":
+        # A directive's body reads as migration guidance, and an args-only note
+        # describes how to use the field *today* -- `hide_bipartite_nodes` says to
+        # set it via Options, which is the very surface it leaves. Naming the
+        # post-removal route here keeps the two apart, for every args-only field
+        # rather than depending on how each replacement string happens to be worded
+        # (the policy defines args-only as reachable through the raw args escape
+        # hatch on library surfaces).
+        # Single backticks: wrap_doc promotes them to the RST double form.
+        route = (
+            "The guidance above applies through 2.x; in 3.0 the field leaves "
+            "`Options` and is reachable only through the raw `args` escape hatch."
+        )
+        body = f"{note} {route}".strip() if note else route
+    if body:
+        lines.extend(wrap_doc(body, indent + "   "))
+    return lines
 
 
 def generate_python(catalog: ParameterCatalog) -> str:
@@ -864,16 +910,35 @@ def generate_python(catalog: ParameterCatalog) -> str:
             lines.append(f"    {name} : {param.python_doc_type()}")
             lines.extend(wrap_doc(description, "        "))
             note = _options_doc_policy_note(param.policy("python"))
-            if note:
+            deprecation = _options_doc_deprecation_lines(
+                param.policy("python"), note, "        "
+            )
+            if deprecation:
+                lines.append("")
+                lines.extend(deprecation)
+            elif note:
                 lines.append("")
                 lines.extend(wrap_doc(note, "        "))
+    # The alias is binding-only, so it has no catalog entry and never reaches the
+    # loop above -- but its flag does carry a policy decision, so the note and the
+    # directive are resolved from that same source rather than restated here. A
+    # hand-written copy would go stale the moment the replacement guidance in
+    # overrides.json changes (#915).
     lines.append("    include_self_links : bool, optional")
-    lines.extend(
-        wrap_doc(
-            "Deprecated. Self-links are included by default; use no_self_links=True to exclude them.",
-            "        ",
-        )
+    lines.extend(wrap_doc("Whether to include self-links.", "        "))
+    alias_policy = resolve_policy_decision(
+        catalog.overrides, include_self_links.flag, "python"
     )
+    alias_note = _options_doc_policy_note(alias_policy)
+    alias_deprecation = _options_doc_deprecation_lines(
+        alias_policy, alias_note, "        "
+    )
+    if alias_deprecation:
+        lines.append("")
+        lines.extend(alias_deprecation)
+    elif alias_note:
+        lines.append("")
+        lines.extend(wrap_doc(alias_note, "        "))
     lines.extend(['    """', ""])
     for group in GROUPS:
         lines.append(f"    # {group.lower()}")
