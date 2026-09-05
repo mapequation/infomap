@@ -4064,7 +4064,8 @@ stated in the code.
    L\* at all.
 
 2. **The two objectives disagree about what a file means.** For a bare top-level leaf
-   (`2 0.15 "A" 1`, which is how Infomap's own writer emits a one-node top module) the repo pins two
+   (`2 0.15 "A" 1` — a node in no module at all, which only hand-written or third-party cluster files
+   contain: Infomap's own writer gives a one-node top module a full path, `3:1`) the repo pins two
    incompatible readings, each with a reasoned comment: under L\* the bare, explicit-module and
    rectangular spellings are one partition and score alike (2.187131226); under base the bare
    spelling is addressed in the **root's** codebook and gets no module codebook (2.714170945 against
@@ -4075,3 +4076,74 @@ stated in the code.
    module under L\* by one per-node term, and `PreferredModulesCorrection`'s leaf-module count
    disagrees with the OO one by `max(0, #bare-top-level-leaves - 1)` and sits on `rootTerm`, which
    `padCharge` structurally never reaches.
+#### F52 addendum — what the port actually changes, measured commit by commit (2026-09-05)
+
+Ported onto the tip (`090d9ab9`) and measured against a tip-equivalent binary. Two things came out
+differently from the original write-up.
+
+**Commit 1 (score a ragged tree natively) changes no number I can construct.** On both ragged
+fixtures the native value already equalled the object-oriented one on the tip, for every objective
+tried — base, `-d`, `--entropy-corrected`, `--markov-time 0.8`, `--preferred-number-of-modules 3`,
+`--non-redundant`, and `--meta-data` on the higher-order fixture. That is the *expected* outcome for
+objectives OO can express, and the F52 argument was always about the ones it cannot; but no fixture in
+the repo exercises that case, so the benefit stays structural — the columnar path stops depending on
+the OO scorer at all (#832) — and is **not** demonstrated by a moved number. Stated plainly rather
+than implied.
+
+**Commit 2 (order-independent guard) fixes a silent wrong answer, and it is the whole measurable
+win.** Three distinct binaries, `-C --no-infomap -c` on a tree whose one-node top module is written
+as a bare top-level leaf:
+
+| binary | bare row FIRST | bare row LAST | |
+|---|--:|--:|---|
+| tip (md5 4b63cea2…) | 3.02401125 | 2.714170945 | order-dependent |
+| commit 1 only (baf353bd…) | 3.02401125 | 2.714170945 | order-dependent |
+| commit 1+2 (02a498e8…) | **2.714170945** | 2.714170945 | order-independent |
+
+So ungating rectangularization is *not* what sidesteps the defect — reading the guard off the paths
+is. Worth recording because the opposite was inferred first, from the two-arm comparison alone, and
+only the three-binary split showed it.
+
+**The shared half is untouched and is now #1067.** `haveModules()` tests `m_root.firstChild` only, so
+the same file still scores 3.02401125 vs 2.714170945 through the OO path in both arms. That is master
+code and is not this branch's to fix.
+
+**Cost: none.** Every benchmark row bit-identical — the five overlapping `-2d -c` planted seeds, the
+five `-2d` free runs, air30k `-C -2` and `-C -d --regularized`, science2001, malaria — with
+instructions retired within ±0.3%, which on this machine is noise. Expected by construction: the
+`.clu` files in the set are rectangular, so the ragged path never fires.
+
+#### F52 addendum 2 — Infomap never writes a bare top-level leaf (2026-09-07)
+
+The original F42 text asserted, in passing, that a bare top-level leaf is "how Infomap's own writer
+emits a one-node top module", and the comment on
+`test/fixtures/clusters/twotriangles_top_level_leaf.tree` said the same. **Both are wrong**; both are
+corrected in this commit rather than carried in and annotated, since neither had ever been committed
+to this branch. Daniel caught it by reasoning rather than measurement: a one-node top module is still a module, so the writer has a
+path to write; and if there were no modules at all, *every* row would be bare and uniform, so row
+order could not matter. Both halves check out.
+
+Measured. Seeding node A alone into module 3 and writing the tree gives
+
+```
+1:1 0.3  "C" 3      2:1 0.15 "D" 4      3:1 0.15 "A" 1   <- full path, not `3 0.15 "A" 1`
+```
+
+and the one-level fallback writes `1:1` … `1:6`, every leaf at depth 1. Swept the tree section of
+every output mode for a bare top-level leaf — `.tree` and `.ftree`, base / `-d` / hierarchical, `-N1`
+to `-N10`, on twotriangles_flow, ninetriangles, politicalblogs, science2001, air30k (+`_states`),
+malaria (+`_states`): **zero in every one**. Infomap does write genuinely ragged trees — air30k's
+output carries path depths 1, 2 and 3 at once — but every leaf it writes sits inside at least one
+module. A bare top-level leaf means "in no module at all", which the search never produces.
+
+An earlier sweep of mine appeared to find bare leaves in `.ftree` files; those were `*Links root` /
+`*Links 1:2` header rows, which also have four-plus fields and no colon in field 1. The detector was
+wrong, not the writer — worth recording as the second time in this session a plausible-looking
+positive came from the instrument rather than the subject (cf. F48).
+
+**Consequence.** The order dependence in F52's guard is real and reproduces, but only for input that
+*mixes* bare top-level leaves with module paths, which is hand-written or third-party. It is not
+reachable by a write-then-read round trip, so it is a robustness gap on external `--cluster-data`, not
+a round-trip defect. #1067 has been corrected accordingly, and the likely right fix moved with it:
+rejecting or warning on a mixed root (next to `validateClusterDataTreeShape`, #898) rather than making
+`haveModules()` scan and silently picking one of the two pinned readings.
