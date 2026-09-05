@@ -142,6 +142,61 @@ namespace columnar {
     return n;
   }
 
+  // Restrict the escalated ladder's leaf-granularity test to trials whose
+  // DETECTOR rung was itself accepted on that test (#1037's escalation-source
+  // gate), from env COL_REGROUP_LEAFTUNE_SCOPE=detector. Default: no restriction
+  // -- the escalated ladder always gets the test.
+  //
+  // #1037 shipped the restriction as a cost saving and it was the wrong trade.
+  // On om2 / om4 `-2d --regularized` the detector accepts its rung on the block
+  // score, so tuneWonInDetector stays false and the escalated ladder never runs
+  // the test that finds the partition 4.9% / 5.2% better in bits (7.939021094 ->
+  // 7.548816177 and 7.973772049 -> 7.556894677, both then BELOW their planted
+  // partitions). What the restriction bought was ~4% of instructions on a few
+  // rows; om4 `-2d --regularized` is in fact 26% CHEAPER without it, because the
+  // run stops thrashing a basin it cannot leave.
+  //
+  // Unrestricted costs nothing in bits anywhere: every plain row is
+  // bit-identical, om8 `-2d` included (6.893377041, the row #1037 exists for),
+  // and the drift on the two rows that move at all is +0.004% (om5
+  // `-2d --regularized`) and +0.001% (air30k `-d --regularized`) in bits.
+  inline bool regroupLeafTuneDetectorOnly()
+  {
+    static const bool on = [] {
+      const char* e = std::getenv("COL_REGROUP_LEAFTUNE_SCOPE");
+      return e != nullptr && std::string(e) == "detector";
+    }();
+    return on;
+  }
+
+  // The enter-flow transform's node flow: the map equation's index rate q, or
+  // the link-only enter e? From env COL_TELE_INDEX_RATE (off/0 = e, the
+  // pre-#1038 behaviour, for A/B only).
+  //
+  // A unit's index-codebook use rate is the rate at which a walker enters it,
+  // across a link OR by teleporting into it from outside:
+  //     q = e + (T - t) * w
+  // ColumnarLevel::enter carries only e, because a group's (T - t_G) * w_G is
+  // not additive over its members and must be recomputed from the aggregates at
+  // each level; every SCORING site duly adds the term itself. The four
+  // enter-flow transforms — which hand a sub-search a unit's codeword usage as
+  // its node flow — did not, so under recorded teleportation the search
+  // proposed and gated against a quantity the objective never used, 43.7% off
+  // on om5 and 72.0% on om8 (#1038).
+  //
+  // Identically a no-op without recorded teleportation, where q == e.
+  inline bool teleIndexRate()
+  {
+    static const bool on = [] {
+      const char* e = std::getenv("COL_TELE_INDEX_RATE");
+      if (e == nullptr)
+        return true;
+      const std::string v(e);
+      return !(v == "off" || v == "0");
+    }();
+    return on;
+  }
+
   // Hierarchical split operator (experimental, see splitLevelModules), from env
   // COL_HSPLIT:
   //   off/unset (default) | 1 | all  = every stack level

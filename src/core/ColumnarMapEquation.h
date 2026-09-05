@@ -11,8 +11,10 @@
 #define COLUMNAR_MAP_EQUATION_H_
 
 #include "ColumnarLevel.h"
+#include "ColumnarTuning.h" // teleIndexRate, read by unitIndexRate below
 
 #include <functional>
+#include <string>
 #include <vector>
 #include <cstddef>
 #include <cstdlib>
@@ -583,8 +585,8 @@ private:
   // Generalized in-context two-level of one parent's children S at an arbitrary
   // stack level (subClusterLeaves is the level-0 case). `base` is the level the
   // children live on; `interior` applies the enter-flow transform (an interior
-  // unit's codeword usage is its enter flow, exactly as the up-build's
-  // superNet.flow = cur.enter and refineLayerWithinGrandparent's k > 0 branch);
+  // unit's codeword usage is its index rate q, exactly as the up-build's
+  // setIndexRateAsFlow and refineLayerWithinGrandparent's k > 0 branch);
   // `sliceCorrections` slices the leaf-shaping corrections onto S (only
   // meaningful when the children ARE leaves). `loc` is an all -1 scratch vector
   // over base units, restored before returning. `unitModule` is the partial-seed
@@ -888,6 +890,31 @@ private:
   // the rest of the network onto this module's teleport weight (enter).
   double moduleTeleEnter(double tf, double tw) const { return (m_totalTeleFlow - tf) * tw; }
   double moduleTeleExit(double tf, double tw) const { return tf * (1.0 - tw); }
+
+  // A unit's index-codebook use rate q = e + (T - t) * w: the rate at which a
+  // walker enters it, across a link or by teleporting in from outside. This is
+  // what the objective charges the index codebook for the unit, and therefore
+  // what the enter-flow transform must hand a sub-search as its node flow --
+  // `enter` alone is the link part only (see teleIndexRate, #1038). Equal to
+  // `enter` whenever recorded teleportation is off.
+  double unitIndexRate(const Level& level, int i) const
+  {
+    if (!m_recordedTeleport || level.teleWeight.empty() || !columnar::teleIndexRate())
+      return level.enter[i];
+    return level.enter[i] + moduleTeleEnter(level.teleFlow[i], level.teleWeight[i]);
+  }
+
+  // In-place enter-flow transform: node flow := unitIndexRate for every unit.
+  // enter/exit/teleport aggregates and edges are carried through untouched, so
+  // the sub-search's own group-level enter stays exact.
+  void setIndexRateAsFlow(Level& level) const
+  {
+    level.flow = level.enter;
+    if (!m_recordedTeleport || level.teleWeight.empty() || !columnar::teleIndexRate())
+      return;
+    for (int i = 0; i < level.n; ++i)
+      level.flow[i] += moduleTeleEnter(level.teleFlow[i], level.teleWeight[i]);
+  }
   std::vector<double> m_leafTeleFlow;
   std::vector<double> m_leafTeleWeight;
 
