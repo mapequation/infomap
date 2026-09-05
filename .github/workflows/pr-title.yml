@@ -1,0 +1,81 @@
+name: PR title
+
+# The pull request title is what GitHub puts in the squash commit subject, and
+# that subject is what release-please turns into a changelog line. v2.16.0 shipped
+# three `fix(core):` entries that way, and undoing them meant a
+# BEGIN_COMMIT_OVERRIDE block in each merged PR body -- so reject an unsanctioned
+# type or scope here, before it can reach master.
+#
+# Deliberately its own workflow rather than a job in ci.yml: it needs the `edited`
+# event (a title changed after opening must be re-checked -- the merge box reads
+# the title as it stands at merge time), and adding `edited` to ci.yml's trigger
+# would re-run sanitizers, clang-tidy and the Docker lanes on every title or body
+# edit. This job needs no checkout and finishes in seconds.
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+permissions: {}
+
+concurrency:
+  group: pr-title-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  commit-scope:
+    name: Commit scope
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+
+    steps:
+      - name: Check the title's type and scope
+        env:
+          # Via env, never inline in the script: these are attacker-controlled
+          # text and `${{ }}` interpolation would splice them into the shell.
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+        run: |
+          set -euo pipefail
+
+          # Release Please titles its own PR `chore(master): release X.Y.Z`,
+          # where `master` is the release branch rather than a component. That
+          # title is generated, not authored, so exempt the branch instead of
+          # allowlisting a scope no subproject answers to.
+          if [[ "$HEAD_REF" == release-please--* ]]; then
+            echo "Release Please's own pull request ($HEAD_REF); title is generated. Skipping."
+            exit 0
+          fi
+
+          # Conventional Commits types. release-please maps feat/fix/perf to
+          # changelog sections and ignores the rest, but all of them are valid.
+          types=(build chore ci docs feat fix perf refactor revert style test)
+
+          # Sanctioned scopes -- subprojects that exist, plus `deps`/`deps-dev`
+          # for Dependabot's `build(deps): bump ...`.
+          # Keep in sync with --scopes in .pre-commit-config.yaml.
+          scopes=(R build deps deps-dev docker docs js notebooks python scripts skills)
+
+          if [[ ! "$PR_TITLE" =~ ^([a-zA-Z]+)(\(([^\)]*)\))?(!)?:[[:space:]]+(.+)$ ]]; then
+            echo "::error::Not a Conventional Commits title: '$PR_TITLE'"
+            echo "Expected '<type>: <subject>' or '<type>(<scope>): <subject>'."
+            exit 1
+          fi
+
+          type="${BASH_REMATCH[1]}"
+          scope="${BASH_REMATCH[3]}"
+
+          if ! printf '%s\n' "${types[@]}" | grep -qxF -- "$type"; then
+            echo "::error::'$type' is not a Conventional Commits type (title: '$PR_TITLE')"
+            echo "Sanctioned types: ${types[*]}"
+            exit 1
+          fi
+
+          if [ -n "$scope" ] && ! printf '%s\n' "${scopes[@]}" | grep -qxF -- "$scope"; then
+            echo "::error::'$scope' is not a sanctioned commit scope (title: '$PR_TITLE')"
+            echo "Sanctioned scopes: ${scopes[*]}"
+            echo "Drop the scope, or -- if it names a real subproject -- add it here and to .pre-commit-config.yaml."
+            exit 1
+          fi
+
+          echo "OK: type='$type' scope='${scope:-<none>}'"
