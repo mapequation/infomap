@@ -53,6 +53,14 @@ im$run()
 im$num_top_modules
 im$codelength
 im$modules
+
+## ------------------------------------------------
+## Method `InfomapClass$reserve_links`
+## ------------------------------------------------
+
+im <- infomap()
+im$reserve_links(3)
+im$add_link(1, 2)
 }
 \section{Active bindings}{
 \if{html}{\out{<div class="r6-active-bindings">}}
@@ -138,6 +146,7 @@ merged within a module).}
 \item \href{#method-Infomap-set_name}{\code{InfomapClass$set_name()}}
 \item \href{#method-Infomap-set_names}{\code{InfomapClass$set_names()}}
 \item \href{#method-Infomap-add_link}{\code{InfomapClass$add_link()}}
+\item \href{#method-Infomap-reserve_links}{\code{InfomapClass$reserve_links()}}
 \item \href{#method-Infomap-add_links}{\code{InfomapClass$add_links()}}
 \item \href{#method-Infomap-remove_link}{\code{InfomapClass$remove_link()}}
 \item \href{#method-Infomap-remove_links}{\code{InfomapClass$remove_links()}}
@@ -352,6 +361,39 @@ Add a link.
 }
 \if{html}{\out{</div>}}
 }
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Infomap-reserve_links"></a>}}
+\if{latex}{\out{\hypertarget{method-Infomap-reserve_links}{}}}
+\subsection{Method \code{reserve_links()}}{
+Pre-size the link build buffer for \code{num_links} further
+links. Optional. Links are stored in a buffer that grows by doubling,
+so building a large network reserves up to twice the memory it needs
+and copies the buffer on each growth; giving the count up front avoids
+both. Counts from the links already added, so it composes across calls.
+\code{add_links()} does this for you from the length of its input; call this
+directly when adding links one at a time with \code{add_link()}.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InfomapClass$reserve_links(num_links)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{num_links}}{Number of links about to be added.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{im <- infomap()
+im$reserve_links(3)
+im$add_link(1, 2)
+}
+\if{html}{\out{</div>}}
+
+}
+
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Infomap-add_links"></a>}}
