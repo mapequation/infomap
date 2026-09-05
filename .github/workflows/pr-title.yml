@@ -35,15 +35,29 @@ jobs:
           # text and `${{ }}` interpolation would splice them into the shell.
           PR_TITLE: ${{ github.event.pull_request.title }}
           HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          THIS_REPO: ${{ github.repository }}
+          # The GitHub App in release-please.yml, as it appears as a PR author.
+          RELEASE_BOT: infomap-release-bot[bot]
         run: |
           set -euo pipefail
 
           # Release Please titles its own PR `chore(master): release X.Y.Z`,
           # where `master` is the release branch rather than a component. That
-          # title is generated, not authored, so exempt the branch instead of
-          # allowlisting a scope no subproject answers to.
-          if [[ "$HEAD_REF" == release-please--* ]]; then
-            echo "Release Please's own pull request ($HEAD_REF); title is generated. Skipping."
+          # title is generated, not authored, so exempt that one pull request
+          # instead of allowlisting a scope no subproject answers to.
+          #
+          # All three conditions are load-bearing, and the branch prefix is the
+          # weakest: a branch name is chosen by whoever pushes it, so on its own
+          # `release-please--anything` would wave any title past a required
+          # check. Authorship is the part that cannot be forged, and the head
+          # repository keeps a fork out. Fails closed -- rename the app and the
+          # release PR starts failing this check rather than skipping it.
+          if [[ "$HEAD_REF" == release-please--* ]] \
+            && [[ "$PR_AUTHOR" == "$RELEASE_BOT" ]] \
+            && [[ "$HEAD_REPO" == "$THIS_REPO" ]]; then
+            echo "Release Please's own pull request ($HEAD_REF by $PR_AUTHOR); title is generated. Skipping."
             exit 0
           fi
 
@@ -56,7 +70,10 @@ jobs:
           # Keep in sync with --scopes in .pre-commit-config.yaml.
           scopes=(R build deps deps-dev docker docs js notebooks python scripts skills)
 
-          if [[ ! "$PR_TITLE" =~ ^([a-zA-Z]+)(\(([^\)]*)\))?(!)?:[[:space:]]+(.+)$ ]]; then
+          # `[^)]+`, not `[^)]*`: an empty `fix(): subject` is not Conventional
+          # Commits, and matching it here would leave $scope empty and skip the
+          # scope check below.
+          if [[ ! "$PR_TITLE" =~ ^([a-zA-Z]+)(\(([^\)]+)\))?(!)?:[[:space:]]+(.+)$ ]]; then
             echo "::error::Not a Conventional Commits title: '$PR_TITLE'"
             echo "Expected '<type>: <subject>' or '<type>(<scope>): <subject>'."
             exit 1
