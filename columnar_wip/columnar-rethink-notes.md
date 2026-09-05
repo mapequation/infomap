@@ -3795,3 +3795,212 @@ above the previous snapshot's on identical code (web-NotreDame `-C -N10` 21.1s a
 against their instruction counts — web-NotreDame `-C -2 -N10` reads −11.9% in time at −0.24% in
 instructions. That is the F48 lesson applied rather than rediscovered: where the two disagree, the
 instruction count is the measurement.
+
+> **Renumbered on merge (2026-09-05).** These two findings were written before
+> [#1043](https://github.com/mapequation/infomap/pull/1043) landed and were still uncommitted when it
+> did; that PR had already taken F49. They are F50 and F51 here, unchanged otherwise.
+### F50 — First-order fallback for dangling state nodes: the model change is real but only pays on om2 (2026-08-26)
+
+Daniel's observation: the overlapping networks have a high rate of dangling state nodes, so ~1/8 of the
+flow teleports globally each step and a second-order walk collapses to **0th** order. Proposal: patch a
+dangling state node `(a,b)` with links to the states `(b,x)`, preferring those that have out-links, so
+the walk falls back to **first** order instead. Investigated by generating the patched networks in
+python and running the existing binary (v2.15.1, md5 `82624b207d96b1c391d3c6237af8ca1a`) on both arms —
+no C++ written.
+
+**The dangling rate and the dangling flow are both as claimed.** `-2d`, unrecorded teleportation:
+om2 14.8% of states / **13.15% of flow**, om4 10.0%, om5 12.1%, om6 13.9%, om8 15.9% / **14.24% of
+flow**; wikispeedia 8.9% / 2.25%; air30k 4.5%.
+
+**The trigram formulation is not implementable as stated, but an exact structural equivalent is.**
+Infomap has no path/ngram input format — input is always a network, and `StateNetwork::StateNode` holds
+`id`/`physicalId`/`name` with **no memory field**. The memory only exists in the state *name*
+(`{169}_80`, `A -> B`), which is no basis for a core feature. It does not need to: in a consistent
+order-2 state network, **every in-neighbour of `t` sits at `t`'s memory node**, so
+
+> `t` is a first-order continuation of physical node `b`  ⟺  `t` is the target of an out-link of some
+> state node at `b`,
+
+with weight = the aggregated out-distribution `q_b` of the physical node. Checked against the
+name-encoded memory: **precision exactly 1.000** (0 of 49 440 om2 links and 0 of 23 411 wikispeedia
+links have a target whose name-memory differs from the source's physical node), and every dangling node
+gets a non-empty candidate set on all five networks. It captures 100% of the *observed* `b→x`
+transition mass; set-recall against the name-derived `(b,x)` sets is 0.83–0.97, the gap being
+path-initial states `(b,x)` that were never arrived at and so have no in-link. **No fallback tier is
+needed** — the "if there are none, jump on a trigram in the middle" branch never fires.
+
+**The tier preference is not a refinement, it is the whole result — it flips the sign.** om2, seed 123:
+
+| om2 variant | ×links | time (s) | modules (8 planted) | AMI vs planted |
+|---|--:|--:|--:|--:|
+| base | 1.00 | 7.1–11.1 | 638 | 0.7303 |
+| memoryless-hub state per phys node | 1.48 | 15.1 | 420 | 0.3238 |
+| tier-1, top-8 | 1.68 | 9.7 | 1915 | 0.1932 |
+| tier-1, top-32 | 3.70 | 15.4 | 267 | 0.7913 |
+| **tier-1 (targets with out-links)** | 7.73 | 49.8 | 182 | **0.8379** |
+| all continuations `(b,x)` | 9.14 | 38.4 | 186 | 0.6540 |
+
+Linking to *all* `(b,x)` is **worse than not patching at all** (0.654 vs 0.730): dangling targets just
+relocate the teleportation and add spurious inter-module links. Restricting to targets that already
+have out-links gains +0.108.
+
+**Corollary: the hypothesised second pass must not be done.** After one pass every dangling node has
+out-links, so "promote patched nodes to first-choice targets" makes tier-1 degenerate into the
+all-continuations row — it converts the +0.108 win into a −0.076 loss. Tier-1 eligibility has to be
+computed from the **original** link structure, single pass.
+
+**The cheap reformulation is dead.** Routing every dangling state at `b` through one extra *memoryless*
+state node (`hub_b`, `physicalId=b`, carrying `q_b`) costs ×1.48–1.50 links instead of ×7.7–15.8 — but
+the extra Markov step wrecks the partition (om2 AMI 0.324, om8 0.254 against base 0.730/0.784). Not a
+cost dial, a different and much worse model.
+
+**Truncation does not work on this family either.** The om first-order projection is dense (256 nodes,
+50–100k edges) and `q_b` is nearly *uniform* over ~100–190 continuations — top-32 retains only 32–55%
+of the mass. top-8 collapses to 1915 modules (AMI 0.193); top-32 keeps most of om2's gain at ×3.7 links
+but keeps essentially none of om8's.
+
+**Family verdict: om2 is the outlier, and the model change does not pay elsewhere.** `-C -2d --seed 123
+-N10`, tier-1 patch, same binary and session per pair:
+
+| net | dangling flow | ×links | base time | patched time | ×time | base mods | patched mods | base AMI | patched AMI | ΔAMI |
+|---|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|
+| om2 (8 planted) | 13.15% | 7.73 | 7.1–11.1 | 49.8 | ~5–7 | 638 | 182 | 0.7303 | 0.8379 | **+0.108** |
+| om4 (16) | — | 7.70 | 8.4 | 82.8 | 9.9 | 173 | 138 | 0.9008 | 0.9071 | +0.006 |
+| om5 (20) | — | 10.30 | 8.0 | 86.3 | 10.8 | 308 | 295 | 0.8791 | 0.8713 | **−0.008** |
+| om6 (24) | — | 12.71 | 7.8 | 112.9 | 14.5 | 451 | 391 | 0.8495 | 0.8624 | +0.013 |
+| om8 (32) | 14.24% | 15.84 | 11.1 | 223.6 | 20.1 | 921 | 739 | 0.7836 | 0.8008 | +0.017 |
+| wikispeedia | 2.25% | 1.46 | 0.74 | 0.85 | 1.15 | 199 | 136 | (no planted truth) | | |
+
+Four of five move by less than ±0.02 AMI while time goes ×10–20. **Both the om2 win and the om5 loss
+are reproducible**, not seed luck — over seeds 123/456/789/1011, om2 base 0.7303/0.7200/0.7205/0.7071
+vs patched 0.8379/0.8393/0.8402/0.8362 (**+0.119 ± 0.02, same sign 4/4**), om5 base
+0.8791/0.8816/0.8804/0.8783 vs patched 0.8713/0.8709/0.8720/0.8694 (−0.009, same sign 4/4).
+
+**Timing caveat.** om2 base ran 11.101 s and then 7.130 s in the same session with bit-identical output
+(6.73927 bits, 638 modules) — ~35% spread, consistent with F48, so the ×time column is soft. om8's ×20
+is far outside it.
+
+**The premise does not survive the test, and the om2 win points somewhere else.** 13–14% of the flow
+*is* teleported 0th-order, and correcting it to first order changes recovery by less than ±0.02 AMI on
+om4/om5/om6/om8. Where it does help — om2 — the base search is also the one failing worst: 638 modules
+for 8 planted (AMI 0.730), against om4's 173 for 16 (AMI 0.901). The patch's ×7.7 densification makes
+om2 behave like its siblings, which reads as **compensating for the fragmentation/group-hysteresis
+regime (F42, F47) rather than for a modelling defect**. Cheaper lead than a new flow model: find out why
+om2 alone fragments to 638 modules, from the search side, at no ×10 time cost. The patch also preserves
+the family's zero-co-physical-links property exactly (no first-order self-loops in any of these files),
+so it is not disqualified structurally — it just does not earn its cost.
+
+**If it is ever built anyway** it is shared code (`Network::postProcessInputData()` in `src/io/Network.cpp`,
+after the multilayer expansion, on the CSR store) → **master through a PR**, behind a flag, plus a
+`src/io/RunMetadata.cpp` fingerprint entry next to `multilayer_relax_*`. The multilayer relax model at
+`Network.cpp:495` is the precedent: it materializes exactly this kind of aggregate-out-distribution
+patch and offers `--multilayer-relax-limit` as the cost dial. The exact-and-cheap alternative is to keep
+`q_b` implicit and teach the objective per-`(module, physical node)` `q_b` mass — tractable because each
+state belongs to exactly one `q_b` support, but it touches FlowCalculator and every delta function in
+both engines.
+
+#### F50 addendum — the "premise does not survive" reading was wrong; the gate is neighbourhood locality, not flow share (2026-08-26)
+
+Daniel pushed back on the recommendation: falling back to first order is *principally* better than
+falling back to 0th, so the flag deserves recommending regardless of what the om family scores. Testing
+the obvious defence of the null result showed it is not a defence at all — and gave the real gate.
+
+**Hypothesis tested and refuted.** I expected the om family to be insensitive because its first-order
+projection is dense (256 physical nodes, 50–100k edges), so first-order fallback ≈ 0th-order fallback
+there. It is not: total variation between the tier-1 `q_b` and the global teleport distribution is
+**0.994–0.997 on every network**, and `q_b`'s support is only **0.27–0.56% of state nodes** against
+teleportation's 100%. The model change is drastic everywhere, om8 included. So the null on om4/5/6/8 is
+not a weak instrument — those partitions are simply insensitive to where 14% of the flow is routed.
+
+**What does separate the family is how far the fallback spreads over *physical* nodes:**
+
+| net | dangling flow | `q_b` support (% of physical nodes) | ΔAMI |
+|---|--:|--:|--:|
+| om2 | 13.15% | **31.1%** | +0.108 |
+| om5 | — | 58.7% | −0.008 |
+| om8 | 14.24% | 61.1% | +0.017 |
+| wikispeedia | 2.25% | **6.3%** | (no planted truth; 199 → 136 modules at ×1.15 time) |
+| air30k | 4.5% (states) | 40.5% | untested |
+
+The gain needs **both** a large dangling flow **and** a first-order neighbourhood that still carries
+community information. om2 has the most localized fallback in the family (31%) and is the only member
+that responds; om5/om6/om8 spread over ~60% of the physical nodes, so their fallback is concentrated at
+state level yet community-uninformative, and routing the flow there changes nothing. wikispeedia is by
+far the most localized (6.3%) and is the only real-world network in the set — its dangling flow is too
+small for the effect to show, but it is the regime where the mechanism should pay.
+
+**Consequence for F50's conclusion.** "The premise does not survive the test" was too strong. The
+correct statement is that the om family is mostly the wrong place to test it: four of its five members
+sit in the regime where a first-order fallback is drastic but uninformative. The mechanism is not
+disproven, it is unvalidated — and the input class it should serve (sparse real-world order-2 path data,
+where `q_b` spans a few percent of the physical nodes) is under-represented in the benchmark set by
+exactly one network. The om2 search-fragmentation lead stands on its own and is still worth chasing, but
+it is a separate question, not a substitute.
+
+### F51 — Neither engine ever asks whether a level pays for itself: a closed-form prune pass takes 0.06–0.47% in bits off BOTH engines' final trees (2026-08-26)
+
+Daniel's prompt: the columnar core only builds equal-depth partitions while OO can build ragged; with a
+more flexible search including ragged trees it may improve. Probed with **no C++ changes**: post-process
+final trees offline and let the engine referee. Parse the `.ftree` (its `*Links` lines carry every
+module's enter/exit at 6 significant digits; the reconstructed hierarchical L matches the engine to
+~1e-8 on webND, worst case ~2e-6), then greedily apply two local operations bottom-up wherever the
+closed-form ΔL is negative, and score the result with `-C --no-infomap -c` (exact, and the ragged tree
+round-trips bit-identically through the output writer). Binary: tip 60378779, v2.15.1, md5
+`82624b207d96b1c391d3c6237af8ca1a`, `-N10 --seed 123`, single-thread release.
+
+- **dissolve(m)**: splice module m out; its children become its parent's children. Only two codebook
+  terms change (m's, gone, and the parent's, recomposed) — everything else in L is untouched.
+- **flatten(m)**: m's whole subtree becomes one leaf module (the multi-level compound dissolve misses).
+
+Two shape regimes, because dissolving a leaf module into a parent that keeps other module children
+creates a MIXED module (leaf and submodule siblings), which the engine rejects by design (the #991
+validation: "the codelength of such a module is not defined"):
+
+- **Unconstrained (mixed allowed, offline arithmetic only):** webND 5.568529 → 5.516846, **−0.93% in
+  bits**. This is the ceiling raggedness-by-removal could reach if mixed modules were ever priced.
+- **Engine-legal shapes only** (dissolve restricted to modules-of-modules; a leaf module can only
+  disappear via its parent's flatten): about a quarter of the ceiling survives, and every number below
+  is engine-verified.
+
+| network (`-N10 --seed 123`) | columnar `-C` | `-C` pruned | Δbits | OO | OO pruned | Δbits |
+|---|--:|--:|--:|--:|--:|--:|
+| ninetriangles | 3.38583082 | **3.371875026** | −0.412% | 3.38583082 | **3.371875026** | −0.412% |
+| netscicoauthor2010 | 4.05454025 | 4.048287792 | −0.154% | 4.04354934 | **4.028232296** | −0.379% |
+| powergrid | 4.74107206 | **4.718762202** | −0.471% | 4.75872920 | 4.740332445 | −0.387% |
+| science2001 `-d` | 7.83343660 | 7.829055957 | −0.056% | 7.83638921 | **7.828830029** | −0.096% |
+| web-NotreDame `-d` | 5.56852929 | 5.555790592 | −0.229% | 5.56592477 | **5.554600755** | −0.203% |
+| jazz, politicalblogs (2-level) | — | 0 ops | = | | | |
+
+Time axis: all gains are from a post-pass on finished trials — the searches are unchanged, so the run
+times are the snapshot's. The pass itself is 2 greedy sweeps to convergence on every network tested,
+closed-form local deltas over module aggregates (enter/exit/flow); on webND that is 44 620 modules and
+~1 300 accepted ops, in-engine cost estimated well below wall-time resolution (to be measured in the
+implementing PR, not asserted here).
+
+**The finding that generalizes: this is NOT columnar-rigidity slack.** The OO trees are already ragged
+(webND: leaf depths 3–13) and prune by just as much. Both engines decide every level while the
+surrounding structure is still unsettled — OO keeps/discards submodules inside its recursion, the
+columnar up-build fixes one global level per rung — and neither ever revisits the question after the
+rest of the tree converges. On webND the prune takes the columnar tree **below the OO from-scratch
+result** (5.555791 vs 5.56592477, −0.18%) at the columnar arm's 7× speed advantage; on ninetriangles it
+beats the 3.38583082 both engines have agreed on for years (a 27-node toy: one of the three top groups
+flattens, 9 leaves at depth 2, engine-verified 3.371875026).
+
+**What pruning cannot do: create depth.** netsci is the boundary case: OO's 5-level tree pruned
+(4.028232) stays 0.50% in bits below columnar's 4-level tree pruned (4.048288) — structure the up-build
+never built cannot be recovered by removal. Search-native raggedness (per-branch deepening) is the
+separate, larger gap; the OO rows show a converged ragged *search* still leaves 0.2–0.4% in bits for the
+retrospective *pass*, so the pass is not made redundant by it.
+
+**Warm starts are not a substitute for the pass.** OO `-c` on a pruned tree destroys the gain (powergrid
+4.740332 → 4.77175, netsci 4.028232 → 4.04583 — it rebuilds with no input guard), and `-C -c` hands the
+pruned trees back unchanged (the F-guard holds; the seeded columnar search cannot improve them at its own
+granularity).
+
+Scope and caveats: probe covers the base map equation only (first-order rows); memory/meta/regularized
+rows are unprobed because their per-module terms differ — an in-engine implementation should compute
+term deltas through the active objective's own per-node calc rather than re-deriving formulas. Greedy is
+order-dependent in principle (bottom-up, dissolve preferred on ties); no attempt to certify optimality.
+Cosmetic defect found on the way: scoring a ragged input of max depth 9 prints `Initial generated 4
+levels` on the console while the written tree header correctly says 9 levels and L is exact — readout
+only, filed here rather than fixed.
