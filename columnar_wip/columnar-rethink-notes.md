@@ -4075,3 +4075,39 @@ stated in the code.
    module under L\* by one per-node term, and `PreferredModulesCorrection`'s leaf-module count
    disagrees with the OO one by `max(0, #bare-top-level-leaves - 1)` and sits on `rootTerm`, which
    `padCharge` structurally never reaches.
+#### F52 addendum — what the port actually changes, measured commit by commit (2026-09-05)
+
+Ported onto the tip (`090d9ab9`) and measured against a tip-equivalent binary. Two things came out
+differently from the original write-up.
+
+**Commit 1 (score a ragged tree natively) changes no number I can construct.** On both ragged
+fixtures the native value already equalled the object-oriented one on the tip, for every objective
+tried — base, `-d`, `--entropy-corrected`, `--markov-time 0.8`, `--preferred-number-of-modules 3`,
+`--non-redundant`, and `--meta-data` on the higher-order fixture. That is the *expected* outcome for
+objectives OO can express, and the F52 argument was always about the ones it cannot; but no fixture in
+the repo exercises that case, so the benefit stays structural — the columnar path stops depending on
+the OO scorer at all (#832) — and is **not** demonstrated by a moved number. Stated plainly rather
+than implied.
+
+**Commit 2 (order-independent guard) fixes a silent wrong answer, and it is the whole measurable
+win.** Three distinct binaries, `-C --no-infomap -c` on a tree whose one-node top module is written
+as a bare top-level leaf:
+
+| binary | bare row FIRST | bare row LAST | |
+|---|--:|--:|---|
+| tip (md5 4b63cea2…) | 3.02401125 | 2.714170945 | order-dependent |
+| commit 1 only (baf353bd…) | 3.02401125 | 2.714170945 | order-dependent |
+| commit 1+2 (02a498e8…) | **2.714170945** | 2.714170945 | order-independent |
+
+So ungating rectangularization is *not* what sidesteps the defect — reading the guard off the paths
+is. Worth recording because the opposite was inferred first, from the two-arm comparison alone, and
+only the three-binary split showed it.
+
+**The shared half is untouched and is now #1067.** `haveModules()` tests `m_root.firstChild` only, so
+the same file still scores 3.02401125 vs 2.714170945 through the OO path in both arms. That is master
+code and is not this branch's to fix.
+
+**Cost: none.** Every benchmark row bit-identical — the five overlapping `-2d -c` planted seeds, the
+five `-2d` free runs, air30k `-C -2` and `-C -d --regularized`, science2001, malaria — with
+instructions retired within ±0.3%, which on this machine is noise. Expected by construction: the
+`.clu` files in the set are rectangular, so the ragged path never fires.
