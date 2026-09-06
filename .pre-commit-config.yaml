@@ -30,6 +30,14 @@ ci:
   autoupdate_schedule: monthly
   autoupdate_commit_msg: "build(deps): pre-commit autoupdate"
 
+# Which git hooks `pre-commit install` writes. Declared here rather than as
+# --hook-type flags in `make hooks`, so the two agree and adding a stage below
+# takes effect without touching the Makefile.
+default_install_hook_types:
+  - pre-commit
+  - pre-push
+  - commit-msg
+
 repos:
   # Python lint. CI already runs `ruff check` on the package + examples/python
   # (via `make test-python-doctest`); this runs it repo-wide with autofix.
@@ -137,3 +145,23 @@ repos:
         pass_filenames: false
         files: \.py$
         stages: [pre-push]
+
+  # Conventional Commits on the commit message itself. The scope a branch commit
+  # carries is what GitHub offers as the squash subject on a single-commit PR --
+  # which is how v2.16.0 picked up three `fix(core):` changelog entries despite
+  # the PR titles being clean. The same allowlist is enforced on PR titles by
+  # .github/workflows/pr-title.yml; keep the two in sync.
+  #
+  # commit-msg stage, so `pre-commit run --all-files` (what CI runs) does not
+  # touch it -- CI's gate on this is the PR title check.
+  #
+  # No --strict: fixup! commits are how a branch answers review, and they are
+  # squashed away before the message that matters is written.
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v4.4.0
+    hooks:
+      - id: conventional-pre-commit
+        stages: [commit-msg]
+        args:
+          - --scopes
+          - R,build,deps,deps-dev,docker,docs,js,notebooks,python,scripts,skills
