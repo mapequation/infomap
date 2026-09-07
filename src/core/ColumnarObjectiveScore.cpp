@@ -58,8 +58,8 @@ namespace columnar {
     std::vector<std::vector<double>> teleEnter, teleExit;
 
     const ColumnarLevel& level(int k) const { return k == 0 ? leaves : levels[k]; }
-    double enter(int k, int m) const { return level(k).enter[m] + (tele ? teleEnter[k][m] : 0.0); }
-    double exit(int k, int m) const { return level(k).exit[m] + (tele ? teleExit[k][m] : 0.0); }
+    double enter(int k, int m) const { return level(k).linkEnter[m] + (tele ? teleEnter[k][m] : 0.0); }
+    double exit(int k, int m) const { return level(k).linkExit[m] + (tele ? teleExit[k][m] : 0.0); }
   };
 
 } // namespace columnar

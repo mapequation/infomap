@@ -2746,8 +2746,8 @@ void InfomapBase::buildColumnarLeafInput(Network& network)
   ColumnarLevel& leaf = m_columnarLeafInput;
   leaf.n = static_cast<int>(numNodes);
   leaf.flow.assign(numNodes, 0.0);
-  leaf.enter.assign(numNodes, 0.0);
-  leaf.exit.assign(numNodes, 0.0);
+  leaf.linkEnter.assign(numNodes, 0.0);
+  leaf.linkExit.assign(numNodes, 0.0);
   leaf.teleFlow.assign(numNodes, 0.0);
   leaf.teleWeight.assign(numNodes, 0.0);
 
@@ -2757,8 +2757,8 @@ void InfomapBase::buildColumnarLeafInput(Network& network)
   for (const auto& nodeIt : network.nodes()) {
     const auto& n = nodeIt.second;
     leaf.flow[i] = n.flow;
-    leaf.enter[i] = n.enterFlow;
-    leaf.exit[i] = n.exitFlow;
+    leaf.linkEnter[i] = n.enterFlow;
+    leaf.linkExit[i] = n.exitFlow;
     leaf.teleFlow[i] = n.teleFlow;
     leaf.teleWeight[i] = n.weight; // teleport weight
     ++i;
