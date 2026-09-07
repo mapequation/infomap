@@ -183,8 +183,22 @@ def gain_flatten(m):
     return before - after
 
 
+def internal_descendants(m):
+    out = []
+    stack = list(m.children)
+    while stack:
+        n = stack.pop()
+        out.append(n)
+        stack.extend(n.children)
+    return out
+
+
 def apply_flatten(m):
     _, leaves = subtree_terms_and_leaves(m)
+    for d in internal_descendants(m):  # detached: make them inert for any later visitor
+        d.children = []
+        d.leaves = []
+        d.parent = None
     m.children = []
     m.leaves = leaves
 
@@ -239,6 +253,63 @@ def greedy_prune(root, eps=1e-12, homogeneous=False):
         if applied == 0:
             break
     return ops, sweep
+
+
+def greedy_prune_best_first(root, eps=1e-12, homogeneous=False):
+    """Same operation set as greedy_prune, but always applies the single largest
+    remaining gain (heap with per-node version stamps), recomputing only the
+    candidates an operation can change: the parent, the parent's children
+    (their dissolve gain reads the parent's term) and every ancestor (flatten
+    gains read the subtree). Order-independent, unlike the bottom-up sweep."""
+    import heapq
+
+    heap = []
+    version = {}
+
+    def ancestors(n):
+        n = n.parent
+        while n is not None and n.parent is not None:
+            yield n
+            n = n.parent
+
+    def refresh(n):
+        version[id(n)] = version.get(id(n), 0) + 1
+        if n.parent is None or (not n.children and not n.leaves):
+            return
+        can_dissolve = not homogeneous or (n.children and not n.leaves)
+        gd = gain_dissolve(n) if can_dissolve else 0.0
+        gf = gain_flatten(n) if n.children else 0.0
+        g, op = (gd, "dissolve") if gd >= gf else (gf, "flatten")
+        if g > eps:
+            heapq.heappush(heap, (-g, version[id(n)], id(n), op, n))
+
+    for n in all_internal(root):
+        refresh(n)
+    ops = []
+    while heap:
+        negg, v, _, op, n = heapq.heappop(heap)
+        if version.get(id(n)) != v:
+            continue
+        p = n.parent
+        d = depth_of(n)
+        if op == "dissolve":
+            apply_dissolve(n)
+            refresh(n)
+            refresh(p)
+            for c in p.children:
+                refresh(c)
+            for a in ancestors(p):
+                refresh(a)
+        else:
+            removed = internal_descendants(n)
+            apply_flatten(n)
+            for dead in removed:
+                version[id(dead)] = version.get(id(dead), 0) + 1  # kill their heap entries
+            refresh(n)
+            for a in ancestors(n):
+                refresh(a)
+        ops.append((op, d, -negg))
+    return ops, 1
 
 
 def write_tree(root, fname):
@@ -300,9 +371,14 @@ def main():
     print("per-level codebook terms (depth: bits, #modules):")
     for d, (t, c) in per_level_terms(root).items():
         print(f"  depth {d}: {t:.6f} bits over {c} codebooks")
+    best_first = "--best-first" in sys.argv
     if homogeneous:
         print("mode: homogeneous (engine-accepted shapes only)")
-    ops, sweeps = greedy_prune(root, homogeneous=homogeneous)
+    if best_first:
+        print("order: best-first (largest remaining gain each step)")
+        ops, sweeps = greedy_prune_best_first(root, homogeneous=homogeneous)
+    else:
+        ops, sweeps = greedy_prune(root, homogeneous=homogeneous)
     gain = sum(g for _, _, g in ops)
     L1 = total_codelength(root)
     print(

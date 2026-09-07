@@ -4147,3 +4147,80 @@ reachable by a write-then-read round trip, so it is a robustness gap on external
 a round-trip defect. #1067 has been corrected accordingly, and the likely right fix moved with it:
 rejecting or warning on a mixed root (next to `validateClusterDataTreeShape`, #898) rather than making
 `haveModules()` scan and silently picking one of the two pinned readings.
+
+**F51 addendum — which question OO never asks, exactly; and the greedy order was hiding up to 6× of the gain (2026-09-07).**
+Daniel's objection: OO builds the tree by recursively finding sub-modules and by design creates a
+sub-level only when it lowers the codelength — so how can reverting any of that help? The op breakdown
+answers it precisely. Re-run on the current tip (b28de77f, binary md5 `02a498e804c1e91c379aaa1901211190`;
+every reconstructed L reproduces the 2026-08-26 values to the digit): **on all five OO trees, `flatten`
+never fires — 100% of the gain is `dissolve`.** Reverting a sub-partition never pays on an OO tree, so
+the per-module test in `partitionModuleRecursively` (`subCodelength < oldModuleCodelength −
+minimumCodelengthImprovement`, `InfomapBase.cpp:4428`) is sound and Daniel's intuition holds for exactly
+that decision. What pays is removing an *intermediate* module m whose children survive one level up in
+its parent p — the comparison p→{c_i ∪ siblings} vs p→m→{c_i}, which no code path computes. OO makes
+two tests along the build path and never the third:
+
+1. **The super-level test is level-wide.** `findHierarchicalSuperModules` accepts a whole new level
+   (`superCodelength < oldIndexLength − minimumCodelengthImprovement`, `:3949`): the super index codebook
+   plus *all* super-module codebooks against the old index codebook. Super modules stand or fall
+   together; none is asked whether it earns its own codebook. Every OO tree has a depth-1 dissolve.
+2. **Inside the recursion the same thing happens again**, because the sub-Infomap runs
+   `setOnlySuperModules(true)` (`:4410`) — a two-level partition plus super levels *within* the module,
+   each accepted level-wide. And once m exists and its children are found, m is never revisited.
+
+ninetriangles shows why a level-wide test cannot see it even with perfectly symmetric modules: removing
+the whole super level costs **+0.131924 bits** (OO is right to keep it), yet each of the three identical
+super modules shows a **+0.013956-bit** dissolve gain on its own — and only *one* may go, since after the
+first the other two stop paying. The optimum of a symmetric network is a ragged tree, and no
+all-or-nothing test finds it. science2001 is the large-module version: one top module with 233
+sub-modules dissolves for **+0.021158 bits** (OO tree) / **+0.025500** (columnar), a single op worth
+0.27–0.33% in bits.
+
+**The greedy order mattered more than expected.** Sibling and ancestor gains interact (the ninetriangles
+effect), so the bottom-up sweep with dissolve-preferred-on-ties under-reported: on science2001 columnar it
+banked 0.0044 bits in two depth-1 ops where dissolving the big module first banks 0.0255. `prune-probe.py
+--best-first` now applies the single largest remaining gain each step and recomputes only the candidates
+an op can change (the parent, the parent's children, the ancestors' flatten gains). All engine-verified:
+
+| network (`-N10 --seed 123`) | columnar `-C` | pruned, best-first | Δbits | OO | pruned, best-first | Δbits |
+|---|--:|--:|--:|--:|--:|--:|
+| ninetriangles | 3.38583082 | 3.371875026 | −0.412% | 3.38583082 | 3.371875026 | −0.412% |
+| netscicoauthor2010 | 4.05454025 | 4.048287792 | −0.154% | 4.04354934 | **4.026557116** | −0.420% |
+| powergrid | 4.74107206 | **4.717674237** | −0.494% | 4.75872920 | 4.736412597 | −0.469% |
+| science2001 `-d` | 7.83343660 | **7.807937174** | −0.326% | 7.83638921 | 7.815231305 | −0.270% |
+| web-NotreDame `-d` | 5.56852929 | 5.555685583 | −0.231% | 5.56592477 | **5.55442136** | −0.207% |
+
+Where the ops sit: most are deep recursion intermediates (webND OO: 437 at depth 3, 412 at depth 4, of
+~1 060), individually tiny; the depth-1 ones are few but the largest single gains. Columnar trees still
+show a handful of small flattens (webND 335 ops for 0.0018 bits) — the up-build has no per-module
+sub-partition test, so that leak is columnar-only and minor.
+
+**Where the check belongs (Daniel's proposal: after creating level i in the recursion, test dissolving
+level i−1).** Right mechanism, right algorithm — with one placement refinement: run it as a deterministic
+**best-first pass after `recursivePartition()` joins** (and after the super-level build), not inside the
+per-module tasks. (a) The outcome is the same either way — dissolving m does not change what the
+recursion finds below it, since the c_i subnetworks are unchanged. (b) The gains interact: after
+dissolving m into p, p itself may become dissolvable into *its* parent, whose task finished long before;
+and among siblings only some should go. Creation order is the wrong order (science2001 above). (c) The
+recursion is a parallel task graph whose correctness rests on per-module independence (`:4211–4217`); a
+dissolve mutates the parent's children and codebook that sibling tasks read. (d) Depth-1 intermediates
+come from the super-level build, not the recursion; one post-join pass covers both sources, and the same
+pass serves the columnar materialized tree, which has no recursion. Per-module gain from what the nodes
+already hold: `parent.codelength + m.codelength − indexTerm(parent with m's children in m's place)`,
+computed through the active objective so composed objectives are exact. The `Initial generated 4 levels`
+readout defect persists on this binary (webND OO pruned: 9-level tree, console says 4).
+
+**F51 second addendum — filed and implemented for the OO engine (2026-09-07).** Issue #1074 carries both
+tracks; PR #1075 (master) adds `InfomapBase::dissolveUnprofitableModules()` after `recursivePartition()`,
+best-first, priced through the objective on a reversibly spliced `InfoNode` tree. Per trial before the
+best-of-N pick, which is why science2001 lands at 7.805465772 rather than the 7.815231305 of pruning the
+base winner alone. Cost: +0.05…+0.56% in instructions retired, wall within noise. The columnar engine is to
+get its own pruning on its own structures (Daniel: do not couple it to the InfoNode materialization,
+which is going away) — the open design point is that the stack holds one level per leaf, so a ragged
+result needs a representation of its own there.
+PR #1075 merged into master as `cacf8ff8` (2026-09-07). The OO arm of every hierarchical row moves when
+master is next synced in, so that sync's snapshot has to re-measure OO; the columnar arm is unchanged
+until the columnar-native pruning (#1074, second track) lands.
+The `Initial generated 4 levels` readout defect noted in the F51 addendum is #1036, fixed by PR #1040
+(`numLevels()` becomes the tree's depth; the first-child walk stays private for the search) — brought up
+to date with master on 2026-09-07 after two weeks unmerged. Reaches this branch with the next sync.
