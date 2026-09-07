@@ -67,3 +67,61 @@ test_that("multilayer_node returns a tagged integer pair", {
   expect_equal(unname(m), c(1L, 2L))
   expect_named(m, c("layer_id", "node_id"))
 })
+
+test_that("num_levels is the tree depth, not the first-child branch's (#1036)", {
+  # numLevels() in the C++ core walks only the first-child chain, so on a ragged
+  # tree it reports one arbitrary branch's depth. num_levels used it, which also
+  # made get_multilevel_modules() truncate the deeper branches.
+  net <- tempfile(fileext = ".net")
+  writeLines(
+    c(
+      "*Vertices",
+      "1 \"A\"",
+      "2 \"B\"",
+      "3 \"C\"",
+      "4 \"D\"",
+      "5 \"E\"",
+      "6 \"F\"",
+      "*Edges",
+      "1 2",
+      "1 3",
+      "2 3",
+      "3 4",
+      "4 5",
+      "4 6",
+      "5 6"
+    ),
+    net
+  )
+
+  # Ragged, with the shallow branch first: module 1 ends at depth 2, module 2 at
+  # depth 3. --no-infomap keeps that shape instead of re-partitioning it.
+  tree <- tempfile(fileext = ".tree")
+  writeLines(
+    c(
+      "# path flow name state_id",
+      "1:1 0.1 \"A\" 1",
+      "1:2 0.1 \"B\" 2",
+      "1:3 0.1 \"C\" 3",
+      "2:1:1 0.1 \"D\" 4",
+      "2:1:2 0.1 \"E\" 5",
+      "2:2:1 0.1 \"F\" 6"
+    ),
+    tree
+  )
+
+  im <- Infomap(
+    args = paste("--no-infomap --cluster-data", tree),
+    silent = TRUE
+  )
+  im$read_file(net)
+  im$run()
+
+  # Precondition: the tree really is three deep, so this is not vacuous.
+  expect_equal(im$max_tree_depth, 3L)
+  expect_equal(im$num_levels, im$max_tree_depth)
+
+  ml <- im$get_multilevel_modules()
+  expect_length(ml, 6L)
+  expect_true(all(vapply(ml, length, integer(1L)) == 3L))
+})

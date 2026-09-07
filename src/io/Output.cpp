@@ -150,7 +150,7 @@ std::string getOutputFileHeader(const InfomapBase& im, const StateNetwork& netwo
                      // written when a shard is not the first.
                      im.baseSeed(),
                      im.trialOffset == 0 ? std::string() : fmt::format(FMT_STRING(" offset {}"), im.trialOffset),
-                     im.maxTreeDepth(),
+                     im.numLevels(),
                      im.numTopModules(),
                      im.codelength(),
                      im.getRelativeCodelengthSavings() * 100,
@@ -318,7 +318,7 @@ void writeJsonTree(InfomapBase& im, const StateNetwork& network, std::ostream& o
   }
   json["trials"] = im.codelengths().size();
   json["numTrials"] = im.numTrials;
-  json["numLevels"] = im.maxTreeDepth();
+  json["numLevels"] = im.numLevels();
   json["numTopModules"] = im.numTopModules();
 
   Json numModules = Json::array();
