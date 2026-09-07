@@ -449,6 +449,23 @@ InfomapClass <- R6::R6Class(
       invisible(self)
     },
 
+    #' @description Pre-size the link build buffer for `num_links` further
+    #'   links. Optional. Links are stored in a buffer that grows by doubling,
+    #'   so building a large network reserves up to twice the memory it needs
+    #'   and copies the buffer on each growth; giving the count up front avoids
+    #'   both. Counts from the links already added, so it composes across calls.
+    #'   `add_links()` does this for you from the length of its input; call this
+    #'   directly when adding links one at a time with `add_link()`.
+    #' @param num_links Number of links about to be added.
+    #' @examples
+    #' im <- infomap()
+    #' im$reserve_links(3)
+    #' im$add_link(1, 2)
+    reserve_links = function(num_links) {
+      private$.swig$reserveLinks(num_links)
+      invisible(self)
+    },
+
     #' @description Add many links at once.
     #' @param links A list of vectors of the form `c(source, target, weight)`
     #'   (weight optional), or a 2- or 3-column matrix / data.frame whose

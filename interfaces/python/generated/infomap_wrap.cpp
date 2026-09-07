@@ -3910,6 +3910,9 @@ void addLinksFromNumpy2D(InfomapWrapper& infomap, PyObject* links, std::size_t n
 
   const auto* data = linksBuffer.data<char>();
   const auto rowStride = static_cast<std::size_t>(numColumns) * itemSize;
+  // The array's shape is the exact link count, so size the build buffer once
+  // instead of letting it double into place (see StateNetwork::reserveLinks).
+  infomap.network().reserveLinks(numRows);
   for (std::size_t i = 0; i < numRows; ++i) {
     const auto* row = data + i * rowStride;
     const auto source = readUnsignedId(row, dtypeKind, itemSize, "source id");
@@ -40724,6 +40727,42 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_StateNetwork_reserveLinks(PyObject *self, PyObject *args) {
+  PyObject *resultobj = 0;
+  infomap::StateNetwork *arg1 = 0 ;
+  std::size_t arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  size_t val2 ;
+  int ecode2 = 0 ;
+  PyObject *swig_obj[2] ;
+  
+  (void)self;
+  if (!SWIG_Python_UnpackTuple(args, "StateNetwork_reserveLinks", 2, 2, swig_obj)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__StateNetwork, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "StateNetwork_reserveLinks" "', argument " "1"" of type '" "infomap::StateNetwork *""'"); 
+  }
+  arg1 = reinterpret_cast< infomap::StateNetwork * >(argp1);
+  ecode2 = SWIG_AsVal_size_t(swig_obj[1], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "StateNetwork_reserveLinks" "', argument " "2"" of type '" "std::size_t""'");
+  } 
+  arg2 = static_cast< std::size_t >(val2);
+  {
+    try {
+      (arg1)->reserveLinks(SWIG_STD_MOVE(arg2));
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_StateNetwork_removeLink(PyObject *self, PyObject *args) {
   PyObject *resultobj = 0;
   infomap::StateNetwork *arg1 = 0 ;
@@ -60682,6 +60721,7 @@ static PyMethodDef SwigMethods[] = {
 	 { "StateNetwork_addName", _wrap_StateNetwork_addName, METH_VARARGS, NULL},
 	 { "StateNetwork_addLink", _wrap_StateNetwork_addLink, METH_VARARGS, NULL},
 	 { "StateNetwork_addLinks", _wrap_StateNetwork_addLinks, METH_VARARGS, NULL},
+	 { "StateNetwork_reserveLinks", _wrap_StateNetwork_reserveLinks, METH_VARARGS, NULL},
 	 { "StateNetwork_removeLink", _wrap_StateNetwork_removeLink, METH_VARARGS, NULL},
 	 { "StateNetwork_undirectedToDirected", _wrap_StateNetwork_undirectedToDirected, METH_O, NULL},
 	 { "StateNetwork_clear", _wrap_StateNetwork_clear, METH_O, NULL},

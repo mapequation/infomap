@@ -200,6 +200,9 @@ void addLinksFromNumpy2D(InfomapWrapper& infomap, PyObject* links, std::size_t n
 
   const auto* data = linksBuffer.data<char>();
   const auto rowStride = static_cast<std::size_t>(numColumns) * itemSize;
+  // The array's shape is the exact link count, so size the build buffer once
+  // instead of letting it double into place (see StateNetwork::reserveLinks).
+  infomap.network().reserveLinks(numRows);
   for (std::size_t i = 0; i < numRows; ++i) {
     const auto* row = data + i * rowStride;
     const auto source = readUnsignedId(row, dtypeKind, itemSize, "source id");
