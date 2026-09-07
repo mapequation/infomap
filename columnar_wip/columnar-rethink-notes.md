@@ -4224,3 +4224,14 @@ until the columnar-native pruning (#1074, second track) lands.
 The `Initial generated 4 levels` readout defect noted in the F51 addendum is #1036, fixed by PR #1040
 (`numLevels()` becomes the tree's depth; the first-child walk stays private for the search) — brought up
 to date with master on 2026-09-07 after two weeks unmerged. Reaches this branch with the next sync.
+
+**Sync (2026-09-08): master #1044–#1076 merged into the branch (PR into `columnar-hierarchical-core`).**
+Merge `54e1158f`. The three hierarchical-search PRs (#1075 dissolve, #1040 numLevels, #1076 parse
+`--cluster-data` once) move only the OO arm; every columnar row is bit-identical old vs new, so this
+sync re-measures OO (the prior sync carried it from a log). OO improves on every hierarchical network
+(#1075): ninetriangles −0.41%, netsci −0.42%, powergrid −0.47%, science2001 −0.39%, web-NotreDame
+−0.21% in bits. The planted `--no-infomap -c` scoring rows the previous sync attempt would have shipped
+at +7% instructions (#1051's second parse) are +0.3–0.4% here, because #1076 lands in the same sync.
+Consequence for #1074's columnar track: on web-NotreDame the columnar `-C` result (5.5685) is now 0.25%
+in bits *above* the OO arm (5.5544), because OO got the dissolve pass and the columnar engine has not —
+that gap is exactly what the columnar-native pruning is to close.
