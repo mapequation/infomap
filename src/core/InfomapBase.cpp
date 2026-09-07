@@ -44,6 +44,7 @@
 #include <iomanip>
 #include <limits>
 #include <map>
+#include <queue>
 #include <set>
 #include <unordered_map>
 #include <cstdlib>
@@ -2361,6 +2362,7 @@ void InfomapBase::hierarchicalPartition()
     }
 
     recursivePartition();
+    dissolveUnprofitableModules();
     return;
   }
 
@@ -2392,6 +2394,7 @@ void InfomapBase::hierarchicalPartition()
   }
 
   recursivePartition();
+  dissolveUnprofitableModules();
 }
 
 void InfomapBase::partition()
@@ -3326,6 +3329,115 @@ unsigned int InfomapBase::recursivePartition()
   progress.finish(fmt::format(FMT_STRING("{} {} {} levels, codelength {}"), compressionSummary(prettyCompression), Console::arrow(), level, io::toPrecision(hierarchicalCodelength)));
 
   return level;
+}
+
+// Every level in the tree was accepted by one of two tests, and neither asks whether
+// a module still earns its codebook once its children exist. findHierarchicalSuperModules
+// accepts a super level as a whole -- its super modules stand or fall together -- and
+// partitionModuleRecursively accepts a module's sub-partition against that module
+// flat, which is sound but leaves the level it sits in unexamined. Nothing compares
+// p -> m -> {c} with p -> {c, siblings}. On ninetriangles the super level saves 0.13 bits
+// and is rightly kept, while dissolving any one of its three identical super modules
+// saves 0.014 bits -- and only one may go, since after the first the other two stop
+// paying (#1074). Hence best-first: the gains interact along sibling and ancestor
+// chains, and creation order banks a sixth of the gain on science2001.
+//
+// Runs after the recursion has joined rather than inside its tasks: dissolving m does
+// not change what the recursion finds below it, the task graph relies on per-module
+// independence, and the depth-1 candidates come from the super-level build anyway.
+unsigned int InfomapBase::dissolveUnprofitableModules()
+{
+  // Both biases charge tree-level costs -- |K - K_pref| on the number of top modules,
+  // the depth bias per level created -- that a local gain cannot see. A depth
+  // preference with zero strength is a no-op everywhere else and has to be one here.
+  const bool depthBiasActive = preferredNumberOfLevels > 0 && preferredNumberOfLevelsStrength > 0.0;
+  if (preferredNumberOfModules > 0 || depthBiasActive)
+    return 0;
+
+  // Lifting a module's children into its parent must not put leaves beside modules
+  // there, so only a module of modules qualifies -- unless it is the parent's only
+  // child, in which case the parent simply becomes a leaf module.
+  auto isCandidate = [](const InfoNode& m) {
+    return !m.isRoot() && !m.isLeaf() && (!m.firstChild->isLeaf() || m.parent->childDegree() == 1);
+  };
+
+  // The parent's term with m's children in m's place, priced by the objective on the
+  // spliced tree so composed objectives are exact; m's own term disappears.
+  auto dissolveGain = [this](InfoNode& m) {
+    InfoNode& parent = *m.parent;
+    const double before = parent.codelength + m.codelength;
+    m.liftChildrenIntoParent();
+    const double after = calcCodelength(parent);
+    m.restoreLiftedChildren();
+    return before - after;
+  };
+
+  struct Candidate {
+    double gain;
+    unsigned int order; // ties go to the earlier offer, so the result is deterministic
+    unsigned int version;
+    InfoNode* node;
+    bool operator<(const Candidate& other) const noexcept
+    {
+      return gain < other.gain || (gain == other.gain && order > other.order);
+    }
+  };
+  std::priority_queue<Candidate> queue;
+  // A node's live entry is the one carrying its current version; older entries are
+  // skipped when popped. Erased once the node is destroyed, and nothing allocates an
+  // InfoNode during the pass, so a dead pointer can never denote a live node.
+  std::unordered_map<InfoNode*, unsigned int> versions;
+  unsigned int nextOrder = 0;
+  auto offer = [&](InfoNode& m) {
+    const unsigned int version = ++versions[&m];
+    if (!isCandidate(m))
+      return;
+    const double gain = dissolveGain(m);
+    if (gain > minimumCodelengthImprovement)
+      queue.push({ gain, nextOrder++, version, &m });
+  };
+
+  // Every module term current, root included: the gains read node.codelength.
+  const double codelengthBefore = calcCodelengthOnTree(root(), true);
+  std::vector<InfoNode*> modules;
+  for (auto& node : m_root.infomapTree()) {
+    if (!node.isLeaf() && !node.isRoot())
+      modules.push_back(&node);
+  }
+  // Collected first: offer() splices the chain the tree iterator is walking.
+  for (InfoNode* module : modules)
+    offer(*module);
+
+  unsigned int numDissolved = 0;
+  while (!queue.empty()) {
+    const Candidate top = queue.top();
+    queue.pop();
+    auto live = versions.find(top.node);
+    if (live == versions.end() || live->second != top.version)
+      continue;
+    InfoNode& parent = *top.node->parent;
+    top.node->liftChildrenIntoParent();
+    top.node->destroyLifted();
+    versions.erase(live);
+    parent.codelength = calcCodelength(parent);
+    ++numDissolved;
+
+    // The parent's gain reads its new child set; its children's gains read its new term.
+    offer(parent);
+    std::vector<InfoNode*> children;
+    for (auto& child : parent) {
+      if (!child.isLeaf())
+        children.push_back(&child);
+    }
+    for (InfoNode* child : children)
+      offer(*child);
+  }
+
+  if (numDissolved > 0) {
+    m_hierarchicalCodelength = calcCodelengthOnTree(root(), true);
+    Console::detail(1, "prune: dissolved {} modules, codelength {} {} {}", numDissolved, io::toPrecision(codelengthBefore), Console::arrow(), io::toPrecision(m_hierarchicalCodelength));
+  }
+  return numDissolved;
 }
 
 void InfomapBase::queueTopModules(PartitionQueue& partitionQueue)

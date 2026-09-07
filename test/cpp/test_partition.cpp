@@ -969,6 +969,160 @@ TEST_CASE("InfoNode replaceWithChildren reparents a middle child chain before de
   CHECK(after->previous->stateId == 2);
 }
 
+TEST_CASE("InfoNode liftChildrenIntoParent is exactly reversible and commits like replaceWithChildren [fast][core][partition][tree][ownership]")
+{
+  InfoNode root;
+  auto* before = new InfoNode({}, 10);
+  auto* module = new InfoNode({}, 20);
+  auto* after = new InfoNode({}, 30);
+  root.addChild(before);
+  root.addChild(module);
+  root.addChild(after);
+  auto* first = new InfoNode({}, 1);
+  auto* second = new InfoNode({}, 2);
+  module->addChild(first);
+  module->addChild(second);
+
+  REQUIRE(module->liftChildrenIntoParent());
+  CHECK(root.childDegree() == 4);
+  CHECK(childStateIds(root) == std::vector<unsigned int> { 10, 1, 2, 30 });
+  CHECK(first->parent == &root);
+  CHECK(second->parent == &root);
+  CHECK(before->next == first);
+  CHECK(after->previous == second);
+  // The lifted node keeps everything it needs to undo the move.
+  CHECK(module->parent == &root);
+  CHECK(module->firstChild == first);
+  CHECK(module->lastChild == second);
+
+  module->restoreLiftedChildren();
+  CHECK(root.childDegree() == 3);
+  CHECK(childStateIds(root) == std::vector<unsigned int> { 10, 20, 30 });
+  CHECK(module->childDegree() == 2);
+  CHECK(first->parent == module);
+  CHECK(second->parent == module);
+  CHECK(first->previous == nullptr);
+  CHECK(second->next == nullptr);
+  CHECK(before->next == module);
+  CHECK(after->previous == module);
+  CHECK(root.firstChild == before);
+  CHECK(root.lastChild == after);
+
+  // Lift and commit: the same end state replaceWithChildren() produces.
+  REQUIRE(module->liftChildrenIntoParent());
+  module->destroyLifted();
+  CHECK(root.childDegree() == 4);
+  CHECK(childStateIds(root) == std::vector<unsigned int> { 10, 1, 2, 30 });
+  CHECK(first->parent == &root);
+  CHECK(second->next == after);
+
+  // Roots and leaves refuse.
+  CHECK_FALSE(root.liftChildrenIntoParent());
+  CHECK_FALSE(first->liftChildrenIntoParent());
+}
+
+TEST_CASE("InfoNode liftChildrenIntoParent handles first, last and only children [fast][core][partition][tree][ownership]")
+{
+  {
+    InfoNode root;
+    auto* module = new InfoNode({}, 20);
+    auto* after = new InfoNode({}, 30);
+    root.addChild(module);
+    root.addChild(after);
+    module->addChild(new InfoNode({}, 1));
+
+    REQUIRE(module->liftChildrenIntoParent());
+    CHECK(childStateIds(root) == std::vector<unsigned int> { 1, 30 });
+    CHECK(root.firstChild->stateId == 1);
+    module->restoreLiftedChildren();
+    CHECK(childStateIds(root) == std::vector<unsigned int> { 20, 30 });
+    CHECK(root.firstChild == module);
+  }
+  {
+    InfoNode root;
+    auto* before = new InfoNode({}, 10);
+    auto* module = new InfoNode({}, 20);
+    root.addChild(before);
+    root.addChild(module);
+    module->addChild(new InfoNode({}, 1));
+    module->addChild(new InfoNode({}, 2));
+
+    REQUIRE(module->liftChildrenIntoParent());
+    CHECK(childStateIds(root) == std::vector<unsigned int> { 10, 1, 2 });
+    CHECK(root.lastChild->stateId == 2);
+    module->restoreLiftedChildren();
+    CHECK(childStateIds(root) == std::vector<unsigned int> { 10, 20 });
+    CHECK(root.lastChild == module);
+  }
+  {
+    // An only child: the parent becomes a leaf module.
+    InfoNode root;
+    auto* module = new InfoNode({}, 20);
+    root.addChild(module);
+    module->addChild(new InfoNode({}, 1));
+    module->addChild(new InfoNode({}, 2));
+
+    REQUIRE(module->liftChildrenIntoParent());
+    CHECK(root.childDegree() == 2);
+    CHECK(root.isLeafModule());
+    module->restoreLiftedChildren();
+    CHECK(root.childDegree() == 1);
+    CHECK(root.firstChild == module);
+    CHECK(root.lastChild == module);
+    CHECK(module->childDegree() == 2);
+  }
+}
+
+TEST_CASE("Hierarchical search dissolves a super module that no longer pays for its codebook [fast][core][partition][tree]")
+{
+  // ninetriangles: nine triangles in three groups of three. The super level as a whole
+  // saves 0.13 bits over nine top modules, so the level-wide test keeps it -- yet each
+  // of the three identical super modules gains 0.014 bits when dissolved alone, and only
+  // one may go, because after the first the other two stop paying. A symmetric network
+  // whose optimum is a ragged tree; neither level test could see it (#1074).
+  std::ostringstream captured;
+  InfomapWrapper im("--seed 123 --num-trials 1 --no-file-output --verbose");
+  {
+    infomap::test::ScopedLogCapture capture(captured);
+    im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+    im.run();
+  }
+  infomap::test::checkRunSanity(im);
+
+  CHECK(im.codelength() == doctest::Approx(3.371875026).epsilon(1e-8));
+  CHECK(im.numTopModules() == 5);
+  CHECK(im.maxTreeDepth() == 3);
+  unsigned int leafModuleTops = 0;
+  unsigned int nestedTops = 0;
+  for (const auto& module : im.root()) {
+    if (module.isLeafModule())
+      ++leafModuleTops;
+    else
+      ++nestedTops;
+  }
+  CHECK(leafModuleTops == 3);
+  CHECK(nestedTops == 2);
+  CHECK(captured.str().find("prune: dissolved 1 modules, codelength 3.38583082 -> 3.371875026") != std::string::npos);
+  // The reported total is the tree's, recomputed after the dissolve.
+  CHECK(sumModuleCodelengths(im.root()) == doctest::Approx(im.codelength()));
+}
+
+TEST_CASE("Dissolving intermediate modules never mixes leaves with modules under one parent [fast][core][partition][tree]")
+{
+  for (const char* network : { "examples/networks/ninetriangles.net", "test/fixtures/networks/unbalanced_hierarchy.net" }) {
+    InfomapWrapper im("--seed 123 --num-trials 2 --silent --no-file-output");
+    im.readInputData(infomap::test::repoPath(network));
+    im.run();
+    for (auto it = im.root().begin_tree(); !it.isEnd(); ++it) {
+      if (it->isLeaf())
+        continue;
+      const bool firstIsLeaf = it->firstChild->isLeaf();
+      for (const auto& child : *it)
+        CHECK(child.isLeaf() == firstIsLeaf);
+    }
+  }
+}
+
 TEST_CASE("InfoNode remove documents current child-chain ownership semantics [fast][core][partition][tree][ownership]")
 {
   InfoNode deleteRoot;

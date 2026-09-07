@@ -178,7 +178,9 @@ def test_run_file_matches_oo(example_network_path):
 
     expected = _oo_codelength(lambda im: im.read_file(str(path)), **settings)
     assert result.codelength == pytest.approx(expected)
-    assert result.codelength == pytest.approx(3.385830820341408, abs=1e-4)
+    # Three top groups of three triangles, with one group dissolved into its
+    # triangles: the ragged optimum a level-wide test cannot see (#1074).
+    assert result.codelength == pytest.approx(3.371875026, abs=1e-4)
 
 
 class _FsPathOnly:

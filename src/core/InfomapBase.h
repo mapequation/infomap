@@ -606,6 +606,14 @@ private:
 
   unsigned int recursivePartition();
 
+  /**
+   * Dissolve every intermediate module whose index codebook no longer pays for
+   * itself: its children move into its parent, one level up. Best-first over the
+   * whole tree; each gain is priced through the objective on the spliced tree.
+   * @return the number of modules dissolved
+   */
+  unsigned int dissolveUnprofitableModules();
+
   void queueTopModules(PartitionQueue& partitionQueue);
 
   void queueLeafModules(PartitionQueue& partitionQueue);
