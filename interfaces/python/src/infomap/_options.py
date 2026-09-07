@@ -14,6 +14,44 @@ from typing import Any, Literal, NamedTuple, get_args
 
 _PACKAGE_PREFIX = os.path.dirname(os.path.abspath(__file__)) + os.sep
 
+# The two classes the pre-3.0 surface announces itself with, in one place each
+# so a change of mind is one edit rather than forty (#915).
+#
+# RELEASING.md keeps two tiers on purpose, and they have to stay ordered by
+# volume. The lower one used to be PendingDeprecationWarning, which CPython's
+# default filters ignore outright, so it reached nobody; DeprecationWarning is
+# shown in __main__ under PEP 565, which is exactly the `python analysis.py`
+# audience that has to migrate. Promoting only that one would have collapsed
+# the two tiers into the same class, erasing a distinction the suite pins, so
+# the louder tier moves up too: FutureWarning is shown under every filter, and
+# is where scikit-learn, pandas and NumPy all landed for a scientific audience.
+#
+# Subclasses rather than the built-in classes themselves. A filter matches by
+# class hierarchy, so every -W and filterwarnings spelling that worked on the
+# base class still catches these -- PEP 565's __main__ visibility included --
+# while naming the subclass silences one Infomap tier and nothing else. Bound
+# to the base classes directly, the tiers were unaddressable: silencing the
+# legacy tier in a test meant ignoring every DeprecationWarning in the process,
+# including the ones the same test was there to catch.
+class LegacySurfaceWarning(DeprecationWarning):
+    """The legacy stateful surface: Result accessors mirrored on ``Infomap``,
+    advanced-tier keywords, ``from_options`` and friends.
+    """
+
+
+class TypedParameterWarning(FutureWarning):
+    """A deprecated parameter the caller actually typed, where silently ignoring
+    or rewriting it hides a migration they have to make.
+    """
+
+
+# The names the call sites and the test suite use, and the ones RELEASING.md
+# documents. Aliases so a tier is one edit here, and so a filter spelling
+# (`ignore::infomap._options.LEGACY_SURFACE_WARNING`) names the tier rather
+# than a class whose base a later change of mind would move.
+LEGACY_SURFACE_WARNING = LegacySurfaceWarning
+TYPED_PARAMETER_WARNING = TypedParameterWarning
+
 
 # Sentinel default for the common-tier keywords on the Infomap()/run()
 # signatures, so the merge can tell "the caller passed this" from "left at
@@ -200,7 +238,7 @@ _COMMON_TIER_FIELDS = frozenset(
 
 # Advanced-tier keywords on the Infomap()/run() signatures:
 # the init/run 'unset' defaults plus the policy action/replacement that
-# shape the PendingDeprecationWarning. Infomap.run() re-renders keywords on
+# shape the deprecation warning. Infomap.run() re-renders keywords on
 # top of the constructed state and a rendered flag can only switch on, so a
 # truthy-by-default flag (silent) keeps the no-op False default in run
 # context.
@@ -218,9 +256,9 @@ _ADVANCED_TIER_KWARGS = {
 
 def _warn_advanced_tier_kwargs(passed, context):
     # Advanced-tier keywords are docs-only deprecated on the Infomap()/run()
-    # signatures and move off them in 3.0. Emit a
-    # PendingDeprecationWarning -- silent by default, so it nags no one until
-    # 3.0 nears -- when one is set to a non-default value on a direct call.
+    # signatures and move off them in 3.0. Emit a LEGACY_SURFACE_WARNING --
+    # visible in __main__ under PEP 565, see its definition for the tier -- when
+    # one is set to a non-default value on a direct call.
     # Internal funnels (the Options path builds Infomap(**resolved), the graph
     # adapters, the from_* class methods) reach the same methods from inside
     # the package; the caller-frame check skips them so only user-typed
@@ -233,10 +271,20 @@ def _warn_advanced_tier_kwargs(passed, context):
         default = spec[baseline]
         if passed.get(name, default) != default:
             action, replacement = spec[2], spec[3]
-            lead = (
-                f"'{name}' is deprecated on the Infomap() and run() "
-                "signatures and leaves them in 3.0. "
-            )
+            # The lead has to follow the action. A keep/alias keyword really does
+            # only leave the signatures, and Options is where it goes. A keyword
+            # classified `remove` leaves the Python surface altogether -- its
+            # replacement is another option, the logging module or the CLI binary,
+            # never Options -- so naming the signatures implied a refuge that does
+            # not exist, and contradicted the `.. deprecated::` note on the same
+            # field in the Options reference (#915).
+            if action == "remove":
+                lead = f"'{name}' leaves the Python surface in 3.0. "
+            else:
+                lead = (
+                    f"'{name}' is deprecated on the Infomap() and run() "
+                    "signatures and leaves them in 3.0. "
+                )
             if action in ("keep", "alias"):
                 guidance = (
                     "Pass it via Options to infomap.run() or "
@@ -247,7 +295,7 @@ def _warn_advanced_tier_kwargs(passed, context):
             else:
                 guidance = ""
             warnings.warn(
-                lead + guidance, PendingDeprecationWarning, stacklevel=3
+                lead + guidance, LEGACY_SURFACE_WARNING, stacklevel=3
             )
 
 
@@ -469,58 +517,89 @@ class Options(metaclass=_OptionsMeta):
     out_name : str, optional
         Base name for output files, for example [out_directory]/[out-name].tree.
 
-        Args-only in library mode (see the note above).
+        .. deprecated:: 2.15
+           Args-only in library mode (see the note above). The guidance above applies
+           through 2.x; in 3.0 the field leaves ``Options`` and is reachable only
+           through the raw ``args`` escape hatch.
     no_file_output : bool, optional
         Do not write output files.
 
-        Args-only in library mode (see the note above).
+        .. deprecated:: 2.15
+           Args-only in library mode (see the note above). The guidance above applies
+           through 2.x; in 3.0 the field leaves ``Options`` and is reachable only
+           through the raw ``args`` escape hatch.
     tree : bool, optional
         Write the modular hierarchy to a tree file. Enabled by default when no other
         output format is selected.
 
-        Args-only in library mode (see the note above).
+        .. deprecated:: 2.15
+           Args-only in library mode (see the note above). The guidance above applies
+           through 2.x; in 3.0 the field leaves ``Options`` and is reachable only
+           through the raw ``args`` escape hatch.
     ftree : bool, optional
         Write the modular hierarchy and aggregated links between nested modules to an
         ftree file. Used by Network Navigator.
 
-        Args-only in library mode (see the note above).
+        .. deprecated:: 2.15
+           Args-only in library mode (see the note above). The guidance above applies
+           through 2.x; in 3.0 the field leaves ``Options`` and is reachable only
+           through the raw ``args`` escape hatch.
     clu : bool, optional
         Write top-level module ids for each node to a clu file.
 
-        Args-only in library mode (see the note above).
+        .. deprecated:: 2.15
+           Args-only in library mode (see the note above). The guidance above applies
+           through 2.x; in 3.0 the field leaves ``Options`` and is reachable only
+           through the raw ``args`` escape hatch.
     clu_level : int, optional
         With --clu or --output clu, write module ids at this depth from the root. Use -1
         for bottom-level modules. Valid range: >= -1. Engine default: 1.
 
-        Args-only in library mode (see the note above).
+        .. deprecated:: 2.15
+           Args-only in library mode (see the note above). The guidance above applies
+           through 2.x; in 3.0 the field leaves ``Options`` and is reachable only
+           through the raw ``args`` escape hatch.
     output : sequence of str, optional
         Write selected output formats as a comma-separated list without spaces, e.g. -o
         clu,tree,ftree. Options: clu, tree, ftree, newick, json, csv, network, states,
         flow.
 
-        Args-only in library mode (see the note above).
+        .. deprecated:: 2.15
+           Args-only in library mode (see the note above). The guidance above applies
+           through 2.x; in 3.0 the field leaves ``Options`` and is reachable only
+           through the raw ``args`` escape hatch.
     hide_bipartite_nodes : bool, optional
         Hide bipartite nodes in output by projecting the solution to primary nodes.
 
-        Args-only on the Python library surface. It projects the secondary (type-B)
-        bipartite nodes out of what result.write_tree/write_clu emit, leaving the
-        in-memory result covering both node types. Set it via Options and write from the
-        Result to use it.
+        .. deprecated:: 2.15
+           Args-only on the Python library surface. It projects the secondary (type-B)
+           bipartite nodes out of what result.write_tree/write_clu emit, leaving the
+           in-memory result covering both node types. Set it via Options and write from
+           the Result to use it. The guidance above applies through 2.x; in 3.0 the
+           field leaves ``Options`` and is reachable only through the raw ``args``
+           escape hatch.
     print_all_trials : bool, optional
         Write each trial to separate output files. Has effect only when --num-trials is
         greater than 1.
 
-        Args-only in library mode (see the note above).
+        .. deprecated:: 2.15
+           Args-only in library mode (see the note above). The guidance above applies
+           through 2.x; in 3.0 the field leaves ``Options`` and is reachable only
+           through the raw ``args`` escape hatch.
     no_overwrite : bool, optional
         Fail with an output error if any target output file already exists. By default
         existing files are replaced.
 
-        Args-only in library mode (see the note above).
+        .. deprecated:: 2.15
+           Args-only in library mode (see the note above). The guidance above applies
+           through 2.x; in 3.0 the field leaves ``Options`` and is reachable only
+           through the raw ``args`` escape hatch.
     print_config_fingerprint : bool, optional
         Print the canonical configuration fingerprint and exit.
 
-        Not a Python library option; it leaves the surface in 3.0. A print-and-exit CLI
-        diagnostic; run the infomap binary.
+        .. deprecated:: 2.15
+           Not a Python library option; it leaves the surface in 3.0. A print-and-exit
+           CLI diagnostic; run the infomap binary.
     timing_json : str or os.PathLike, optional
         Write machine-readable run timing JSON to this path. Use - for stdout.
     summary_json : str or os.PathLike, optional
@@ -545,17 +624,19 @@ class Options(metaclass=_OptionsMeta):
         Verbosity level on the console. 1 keeps the default output level, 2 renders -vv
         and so on.
 
-        Not a Python library option; it leaves the surface in 3.0. A DEBUG-enabled
-        'infomap' logger (infomap.enable_log(logging.DEBUG)) raises engine verbosity;
-        logger levels filter the records.
+        .. deprecated:: 2.15
+           Not a Python library option; it leaves the surface in 3.0. A DEBUG-enabled
+           'infomap' logger (infomap.enable_log(logging.DEBUG)) raises engine verbosity;
+           logger levels filter the records.
     silent : bool, optional
         Suppress console output. The Python API is already quiet by default; to see the
         engine log, use infomap.enable_log() rather than this flag. The command-line
         interface is unaffected.
 
-        Not a Python library option; it leaves the surface in 3.0. The Python API is
-        quiet by default; logging is the control. Attach handlers to
-        logging.getLogger('infomap') (e.g. infomap.enable_log()) for the engine log.
+        .. deprecated:: 2.15
+           Not a Python library option; it leaves the surface in 3.0. The Python API is
+           quiet by default; logging is the control. Attach handlers to
+           logging.getLogger('infomap') (e.g. infomap.enable_log()) for the engine log.
     two_level : bool, optional
         Optimize a two-level partition instead of the default multi-level hierarchy.
     flow_model : str, optional
@@ -724,8 +805,9 @@ class Options(metaclass=_OptionsMeta):
     threads : str or int, optional
         Alias for --num-threads.
 
-        Not a Python library option; it leaves the surface in 3.0. Use num_threads;
-        threads is a redundant alias of the same engine option.
+        .. deprecated:: 2.15
+           Not a Python library option; it leaves the surface in 3.0. Use num_threads;
+           threads is a redundant alias of the same engine option.
     prefer_modular_solution : bool, optional
         Prefer a modular solution even when one module gives a lower codelength.
     num_random_moves : int, optional
@@ -735,8 +817,11 @@ class Options(metaclass=_OptionsMeta):
         Try random moves only for nodes with degree at most this value. Valid range: >=
         0.
     include_self_links : bool, optional
-        Deprecated. Self-links are included by default; use no_self_links=True to
-        exclude them.
+        Whether to include self-links.
+
+        .. deprecated:: 2.15
+           Not a Python library option; it leaves the surface in 3.0. Self-links are
+           included by default; pass no_self_links=True to exclude them.
     """
 
     # input
@@ -937,7 +1022,7 @@ class Options(metaclass=_OptionsMeta):
         if self.include_self_links is not None:
             warnings.warn(
                 "include_self_links is deprecated, use no_self_links to exclude self-links",
-                DeprecationWarning,
+                TYPED_PARAMETER_WARNING,
                 stacklevel=_external_stacklevel(),
             )
 

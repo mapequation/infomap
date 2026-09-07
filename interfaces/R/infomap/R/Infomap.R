@@ -1439,7 +1439,8 @@ InfomapClass <- R6::R6Class(
     num_non_trivial_top_modules = function() {
       private$.swig$numNonTrivialTopModules()
     },
-    #' @field num_levels Number of levels in the tree.
+    #' @field num_levels Depth of the hierarchical tree. Alias of
+    #'   `max_tree_depth`.
     num_levels = function() private$.swig$numLevels(),
     #' @field max_tree_depth Maximum depth of the tree.
     max_tree_depth = function() private$.swig$maxTreeDepth(),

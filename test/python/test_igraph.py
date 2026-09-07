@@ -398,7 +398,7 @@ def test_find_igraph_communities_rejects_trial_and_vertex_weight_conflicts():
         infomap.find_igraph_communities(graph, vertex_weights=[1, 1])
 
 
-@pytest.mark.filterwarnings("ignore::PendingDeprecationWarning")
+@pytest.mark.filterwarnings("ignore::infomap._options.LEGACY_SURFACE_WARNING")
 def test_find_igraph_communities_accepts_num_trials_alone(monkeypatch):
     # `num_trials` (the engine option name) is accepted on its own, matching
     # the networkx helper; only passing it *together* with `trials` conflicts.

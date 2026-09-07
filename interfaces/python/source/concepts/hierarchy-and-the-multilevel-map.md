@@ -194,7 +194,8 @@ print(f"Top-level modules:       {result.num_top_modules}")
 print(f"Map equation codelength: {result.codelength:.4f} bits/step")
 
 # The text below reads these exact counts; assert so the build catches drift.
-assert result.num_top_modules == 3
+assert result.num_levels == 3
+assert result.num_top_modules == 5
 
 # The bundled copy is the same network; the two must agree exactly.
 result_pkg = infomap.run(infomap.datasets.nine_triangles(),
@@ -202,19 +203,27 @@ result_pkg = infomap.run(infomap.datasets.nine_triangles(),
 assert result.codelength == result_pkg.codelength
 ```
 
-As `num_levels` shows, the tree runs from a root through three coarse
-super-groups down to the nine fine triangles.
+As `num_levels` shows, the tree is three levels deep — but not everywhere,
+and `num_top_modules` is five, not three. Two of the super-groups are kept as
+intermediate modules that nest their three triangles; the third super-group's
+triangles sit directly under the root. The reason is the map equation itself:
+an intermediate module is only worth having if the index codebook it adds
+costs less than the description it saves. Once two super-groups are in place,
+the third no longer pays for its own codebook — listing its three triangles at
+the top level is cheaper — so the optimal tree of this perfectly symmetric
+network is ragged. (Dropping all three super-groups at once would cost 0.13
+bits; dropping exactly one saves 0.014 bits.)
 
 ### Read module assignments at each level
 
 ```{code-cell} python
-# Coarsest level (depth 1): the three super-groups
+# Coarsest level (depth 1): two super-groups plus the three triangles of the third
 modules_l1 = result.modules(depth=1)
 
 # Finer level (depth 2): the nine individual triangles
 modules_l2 = result.modules(depth=2)
 
-print("Level-1 assignment (super-groups):")
+print("Level-1 assignment (top modules):")
 print(modules_l1)
 
 print("\nLevel-2 assignment (triangles):")
@@ -239,7 +248,7 @@ fig, axes = plt.subplots(1, 2, figsize=(9, 4), layout="constrained")
 flow = {n.node_id: n.flow for n in result.nodes()}
 
 draw_partition(G, modules_l1, ax=axes[0], flow=flow)
-axes[0].set_title("Level 1: super-groups", fontsize=11)
+axes[0].set_title("Level 1: top modules", fontsize=11)
 
 draw_partition(G, modules_l2, ax=axes[1], flow=flow)
 axes[1].set_title("Level 2: triangles", fontsize=11)
@@ -251,19 +260,21 @@ plt.close(fig)
 
 ```{glue:figure} fig-hierarchy-and-the-multilevel-map
 The same nested network at two levels of the hierarchy Infomap discovers.
-Left: the three coarse super-groups. Right: the nine fine triangles nested
-inside them. Both panels share one layout, so the levels read against each
+Left: the five top-level modules — two super-groups, and the three triangles
+of the third super-group listed directly under the root. Right: the nine fine
+triangles. Both panels share one layout, so the levels read against each
 other.
 ```
 
 This matches the theoretical picture {cite:p}`rosvall2011multilevel`. The
 network has dense intra-triangle flow, moderately dense intra-super-group flow
 (the unit-weight links joining a super-group's triangles), and weak
-inter-super-group flow (the three 0.8 links). Three nested levels of codebooks
-capture exactly those three scales (two levels of index codebooks over the
-module codebooks). The hierarchical map equation confirms that the
-three-level description is more compressed than either a flat two-level
-partition or a one-level description.
+inter-super-group flow (the three 0.8 links). Nested codebooks capture those
+scales, but only where a codebook pays for itself: two super-groups earn an
+index codebook of their own, the third does not, and the hierarchical map
+equation lands on that ragged three-level tree because it is more compressed
+than a uniform three-level tree, a flat two-level partition, or a one-level
+description.
 
 ## API pointers
 

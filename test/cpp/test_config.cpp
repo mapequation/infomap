@@ -571,18 +571,20 @@ TEST_CASE("Output plan applies trial suffix before format suffix [fast][core][co
 TEST_CASE("Output preflight refuses to write over the run's own input [fast][core][config][output]")
 {
   // `Infomap ml.net . -o network` plans ./ml.net for the Pajek output, which is
-  // the input itself. It used to overwrite it and exit 0, replacing a multilayer
-  // network with its single-layer projection.
+  // the input itself. It used to overwrite it and exit 0, replacing the network
+  // with Infomap's own dump of it. First-order input, which is what this config
+  // describes -- higher-order input takes the `_states_as_physical` name and does
+  // not collide, which the write-phase case below pins down.
   Config config;
   config.networkFile = "ml.net";
   config.outDirectory = "./";
   config.outName = "ml";
   config.printPajekNetwork = true;
 
-  CHECK_THROWS_AS(infomap::preflightOutputTargets(config), infomap::InfomapError);
+  CHECK_THROWS_AS(infomap::preflightOutputTargets(config, infomap::HigherOrderInput::No), infomap::InfomapError);
 
   try {
-    infomap::preflightOutputTargets(config);
+    infomap::preflightOutputTargets(config, infomap::HigherOrderInput::No);
     FAIL("expected the input collision to be rejected");
   } catch (const infomap::InfomapError& e) {
     CHECK(e.code() == infomap::ExitCode::OutputError);
@@ -603,7 +605,7 @@ TEST_CASE("Output preflight input check ignores the overwrite policy [fast][core
   config.printJson = true;
 
   REQUIRE(config.overwriteOutput());
-  CHECK_THROWS_AS(infomap::preflightOutputTargets(config), infomap::InfomapError);
+  CHECK_THROWS_AS(infomap::preflightOutputTargets(config, infomap::HigherOrderInput::No), infomap::InfomapError);
 }
 
 TEST_CASE("Output preflight protects every input the run reads [fast][core][config][output]")
@@ -616,7 +618,7 @@ TEST_CASE("Output preflight protects every input the run reads [fast][core][conf
     config.printTree = true;
     attach(config);
     try {
-      infomap::preflightOutputTargets(config);
+      infomap::preflightOutputTargets(config, infomap::HigherOrderInput::No);
     } catch (const infomap::InfomapError&) {
       return true;
     }
@@ -641,7 +643,7 @@ TEST_CASE("Output preflight names the option that owns a colliding report path [
   config.summaryJsonPath = "run.json";
 
   try {
-    infomap::preflightOutputTargets(config);
+    infomap::preflightOutputTargets(config, infomap::HigherOrderInput::No);
     FAIL("expected the report-path collision to be rejected");
   } catch (const infomap::InfomapError& e) {
     const std::string message = e.what();
@@ -657,7 +659,7 @@ TEST_CASE("Output preflight names the option that owns a colliding report path [
   artifactCollision.printTree = true;
 
   try {
-    infomap::preflightOutputTargets(artifactCollision);
+    infomap::preflightOutputTargets(artifactCollision, infomap::HigherOrderInput::No);
     FAIL("expected the artifact collision to be rejected");
   } catch (const infomap::InfomapError& e) {
     const std::string message = e.what();
@@ -676,7 +678,7 @@ TEST_CASE("Output preflight compares paths through './' [fast][core][config][out
   config.outName = "net";
   config.printTree = true;
 
-  CHECK_THROWS_AS(infomap::preflightOutputTargets(config), infomap::InfomapError);
+  CHECK_THROWS_AS(infomap::preflightOutputTargets(config, infomap::HigherOrderInput::No), infomap::InfomapError);
 }
 
 TEST_CASE("Output preflight anchors relative paths to the working directory [fast][core][config][output]")
@@ -696,14 +698,14 @@ TEST_CASE("Output preflight anchors relative paths to the working directory [fas
   relativeInput.outDirectory = cwd + "/";
   relativeInput.outName = "ml";
   relativeInput.printPajekNetwork = true;
-  CHECK_THROWS_AS(infomap::preflightOutputTargets(relativeInput), infomap::InfomapError);
+  CHECK_THROWS_AS(infomap::preflightOutputTargets(relativeInput, infomap::HigherOrderInput::No), infomap::InfomapError);
 
   Config absoluteInput;
   absoluteInput.networkFile = cwd + "/ml.net";
   absoluteInput.outDirectory = "./";
   absoluteInput.outName = "ml";
   absoluteInput.printPajekNetwork = true;
-  CHECK_THROWS_AS(infomap::preflightOutputTargets(absoluteInput), infomap::InfomapError);
+  CHECK_THROWS_AS(infomap::preflightOutputTargets(absoluteInput, infomap::HigherOrderInput::No), infomap::InfomapError);
 
   // Report paths are given directly, so they mix forms just as easily.
   Config absoluteReport;
@@ -711,7 +713,7 @@ TEST_CASE("Output preflight anchors relative paths to the working directory [fas
   absoluteReport.outDirectory = "";
   absoluteReport.outName = "run";
   absoluteReport.summaryJsonPath = cwd + "/run.json";
-  CHECK_THROWS_AS(infomap::preflightOutputTargets(absoluteReport), infomap::InfomapError);
+  CHECK_THROWS_AS(infomap::preflightOutputTargets(absoluteReport, infomap::HigherOrderInput::No), infomap::InfomapError);
 
 #ifdef _WIN32
   // A UNC path and a root-relative one with the same tail name different files, and
@@ -723,7 +725,7 @@ TEST_CASE("Output preflight anchors relative paths to the working directory [fas
   uncVersusRootRelative.outName = "net";
   uncVersusRootRelative.printTree = true;
   REQUIRE(uncVersusRootRelative.overwriteOutput());
-  CHECK_NOTHROW(infomap::preflightOutputTargets(uncVersusRootRelative));
+  CHECK_NOTHROW(infomap::preflightOutputTargets(uncVersusRootRelative, infomap::HigherOrderInput::No));
 
   // Two UNC paths that do name the same file must still be caught.
   Config uncCollision;
@@ -731,7 +733,7 @@ TEST_CASE("Output preflight anchors relative paths to the working directory [fas
   uncCollision.outDirectory = "\\\\server\\share\\";
   uncCollision.outName = "net";
   uncCollision.printTree = true;
-  CHECK_THROWS_AS(infomap::preflightOutputTargets(uncCollision), infomap::InfomapError);
+  CHECK_THROWS_AS(infomap::preflightOutputTargets(uncCollision, infomap::HigherOrderInput::No), infomap::InfomapError);
 #endif
 
 #ifndef _WIN32
@@ -742,7 +744,7 @@ TEST_CASE("Output preflight anchors relative paths to the working directory [fas
   driveLetterLookalike.outDirectory = cwd + "/a:/";
   driveLetterLookalike.outName = "net";
   driveLetterLookalike.printTree = true;
-  CHECK_THROWS_AS(infomap::preflightOutputTargets(driveLetterLookalike), infomap::InfomapError);
+  CHECK_THROWS_AS(infomap::preflightOutputTargets(driveLetterLookalike, infomap::HigherOrderInput::No), infomap::InfomapError);
 #endif
 
   // Anchoring must not turn a different directory into a collision.
@@ -752,7 +754,108 @@ TEST_CASE("Output preflight anchors relative paths to the working directory [fas
   elsewhere.outName = "ml";
   elsewhere.printPajekNetwork = true;
   REQUIRE(elsewhere.overwriteOutput());
-  CHECK_NOTHROW(infomap::preflightOutputTargets(elsewhere));
+  CHECK_NOTHROW(infomap::preflightOutputTargets(elsewhere, infomap::HigherOrderInput::No));
+}
+
+TEST_CASE("Output preflight protects the input against the _states artifacts [fast][core][config][output]")
+{
+  // #1018: a higher-order run writes both `<name>.<ext>` and `<name>_states.<ext>`,
+  // and only the physical half used to be checked. An input named after the state
+  // half was destroyed, exit 0, no warning. The `_states` twin exists for every
+  // modular format, so each one is checked.
+  const auto collides = [](void (*attach)(Config&), infomap::HigherOrderInput higherOrder) {
+    Config config;
+    config.networkFile = "net_states.tree";
+    config.outDirectory = "";
+    config.outName = "net";
+    attach(config);
+    try {
+      infomap::preflightOutputTargets(config, higherOrder);
+    } catch (const infomap::InfomapError&) {
+      return true;
+    }
+    return false;
+  };
+
+  CHECK(collides([](Config& c) { c.printTree = true; }, infomap::HigherOrderInput::Yes));
+
+  // First-order input writes no `_states` half, so the same command is fine. The
+  // fix must not buy the refusal above by rejecting runs that would have worked.
+  CHECK_FALSE(collides([](Config& c) { c.printTree = true; }, infomap::HigherOrderInput::No));
+
+  const auto stateArtifactCollides = [](void (*attach)(Config&), const std::string& input) {
+    Config config;
+    config.networkFile = input;
+    config.outDirectory = "";
+    config.outName = "net";
+    attach(config);
+    try {
+      infomap::preflightOutputTargets(config, infomap::HigherOrderInput::Yes);
+    } catch (const infomap::InfomapError&) {
+      return true;
+    }
+    return false;
+  };
+
+  CHECK(stateArtifactCollides([](Config& c) { c.printClu = true; }, "net_states.clu"));
+  CHECK(stateArtifactCollides([](Config& c) { c.printFlowTree = true; }, "net_states.ftree"));
+  CHECK(stateArtifactCollides([](Config& c) { c.printNewick = true; }, "net_states.nwk"));
+  CHECK(stateArtifactCollides([](Config& c) { c.printJson = true; }, "net_states.json"));
+  CHECK(stateArtifactCollides([](Config& c) { c.printCsv = true; }, "net_states.csv"));
+
+  // The physical half is still protected on higher-order input -- the fix adds
+  // paths to the plan, it does not move them.
+  CHECK(stateArtifactCollides([](Config& c) { c.printTree = true; }, "net.tree"));
+}
+
+TEST_CASE("Output preflight follows state output across the write phases [fast][core][config][output]")
+{
+  // Config::stateOutput is set by configureNetworkMode(), which now runs before
+  // every write phase, so one classification names every network artifact. It used
+  // to run after the BeforeFlow write: the Pajek dump then kept the first-order
+  // name on higher-order input, where it collided with an input the run had no
+  // business touching, while the flow network one phase later took the
+  // `_states_as_physical_flow` suffix the pre-flight did not know about.
+  const auto collides = [](void (*attach)(Config&), const std::string& input, infomap::HigherOrderInput higherOrder) {
+    Config config;
+    config.networkFile = input;
+    config.outDirectory = "";
+    config.outName = "ml";
+    attach(config);
+    try {
+      infomap::preflightOutputTargets(config, higherOrder);
+    } catch (const infomap::InfomapError&) {
+      return true;
+    }
+    return false;
+  };
+
+  const auto pajek = [](Config& c) { c.printPajekNetwork = true; };
+  const auto flow = [](Config& c) { c.printFlowNetwork = true; };
+
+  // BeforeFlow, the Pajek dump: the suffix follows the classification, so
+  // higher-order input never lands on the bare `ml.net`.
+  CHECK(collides(pajek, "ml.net", infomap::HigherOrderInput::No));
+  CHECK_FALSE(collides(pajek, "ml.net", infomap::HigherOrderInput::Yes));
+  CHECK(collides(pajek, "ml_states_as_physical.net", infomap::HigherOrderInput::Yes));
+  CHECK_FALSE(collides(pajek, "ml_states_as_physical.net", infomap::HigherOrderInput::No));
+
+  // A library caller can set stateOutput itself -- it is public, and the Python and
+  // R bindings expose a setter. The classification only ever turns it on, never off,
+  // so the caller's value survives configureNetworkMode() and reaches the writer.
+  // The plan has to carry it, not force the phase to first-order.
+  const auto pajekWithStateOutput = [](Config& c) {
+    c.printPajekNetwork = true;
+    c.setStateOutput();
+  };
+  CHECK(collides(pajekWithStateOutput, "ml_states_as_physical.net", infomap::HigherOrderInput::No));
+  CHECK_FALSE(collides(pajekWithStateOutput, "ml.net", infomap::HigherOrderInput::No));
+
+  // AfterFlow, the flow network: same rule, one phase later.
+  CHECK(collides(flow, "ml_flow.net", infomap::HigherOrderInput::No));
+  CHECK_FALSE(collides(flow, "ml_flow.net", infomap::HigherOrderInput::Yes));
+  CHECK(collides(flow, "ml_states_as_physical_flow.net", infomap::HigherOrderInput::Yes));
+  CHECK_FALSE(collides(flow, "ml_states_as_physical_flow.net", infomap::HigherOrderInput::No));
 }
 
 TEST_CASE("Parameter catalog owns option choices and render policy [fast][core][config][cli]")

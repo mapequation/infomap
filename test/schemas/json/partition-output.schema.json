@@ -15,6 +15,9 @@
     "directed",
     "flowModel",
     "higherOrder",
+    "seed",
+    "trials",
+    "numTrials",
     "nodes",
     "modules"
   ],
@@ -25,6 +28,10 @@
     "startedAt": { "type": "string" },
     "completedIn": { "type": "number" },
     "codelength": { "type": "number" },
+    "seed": { "type": "integer", "minimum": 0 },
+    "trialOffset": { "type": "integer", "minimum": 1 },
+    "trials": { "type": "integer", "minimum": 0 },
+    "numTrials": { "type": "integer", "minimum": 0 },
     "numLevels": { "type": "integer", "minimum": 0 },
     "numTopModules": { "type": "integer", "minimum": 0 },
     "numModules": {

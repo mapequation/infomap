@@ -129,7 +129,9 @@ public:
   bool haveNonTrivialModules() const { return numNonTrivialTopModules() > 0; }
 
   /**
-   * Number of node levels below the root in current Infomap instance, 1 if no modules
+   * Number of node levels below the root, counted over every branch, 1 if no modules.
+   * Alias of maxTreeDepth. This is the depth the summary, the tree writer and the JSON
+   * output report, so it is what any other report of a depth should use (#1036).
    */
   unsigned int numLevels() const;
 
@@ -159,6 +161,20 @@ public:
   double getHierarchicalCodelength() const { return m_hierarchicalCodelength; }
 
   double getOneLevelCodelength() const { return m_oneLevelCodelength; }
+
+#ifndef SWIG
+  // The seed the run was configured with, which is not the same as reading
+  // seedToRandomNumberGenerator: the serial loop moves that field to the current
+  // trial's seed (base + trialOffset + index) and only gives it back when the loop
+  // ends, while updateBestResult writes the aggregate artifact from inside the loop.
+  // A header reading the live field therefore recorded the last trial's seed
+  // whenever the best trial was the last one, since restoreBestResult then performs
+  // no rewrite. Falls back to the live value until a run has captured it.
+  //
+  // Guarded from SWIG so it is not exposed as a new binding, the same way
+  // getReferenceOneLevelCodelength above is: the output writer is its only caller.
+  unsigned long baseSeed() const { return m_haveBaseSeed ? m_baseSeed : seedToRandomNumberGenerator; }
+#endif
 
 #ifndef SWIG
   // One-level reference reported to the user. In lossy mode this is the lossless
@@ -281,6 +297,18 @@ public:
 
 private:
   class RunSession;
+
+  /**
+   * Depth of the leftmost branch: follows firstChild to the first leaf. O(depth) where
+   * numLevels is O(nodes), which is why the search uses it -- consolidateModules alone
+   * calls it ~270k times per web-NotreDame trial. It equals numLevels only on a
+   * uniform-depth tree, which every one of its call sites has by construction: they run
+   * inside the per-module optimization, below the point where sub-Infomap results are
+   * stitched in and make the tree ragged. Measured over the test suite and the benchmark
+   * networks, the two never disagreed at any of those sites. Never report this value --
+   * that is the bug in #1036.
+   */
+  unsigned int depthOfFirstLeaf() const;
 
   // Allocate a tree node from this instance's pool and stamp its owning pool
   // back-pointer so node-local teardown (deleteChildren / remove /
@@ -420,6 +448,16 @@ private:
    * after that replaced by the original nodes.
    */
   InfomapBase& initPartition(const std::string& clusterDataFile, bool hard = false, const Network* network = nullptr);
+
+#ifndef SWIG
+  /**
+   * Apply cluster data that has already been parsed. A run parses --cluster-data
+   * once and applies it from here in every trial, so the file is read exactly
+   * once however many trials there are (#1072). Not binding API: the bindings
+   * set clusterDataFile and let the run do this.
+   */
+  InfomapBase& initPartition(const ClusterMap& clusterData, bool hard = false);
+#endif
 
   /**
    * Provide an initial partition of the network.
@@ -642,6 +680,8 @@ private:
 
   double calcCodelength(const InfoNode& parent) const { return m_optimizer->calcCodelength(parent); }
 
+  double calcTreeCodelengthCost(unsigned int numTopModules) const { return m_optimizer->calcTreeCodelengthCost(numTopModules); }
+
   /**
    * Calculate and store codelength on all modules in the tree
    * @param includeRoot Also calculate the codelength on the root node
@@ -724,6 +764,14 @@ private:
   unsigned int removeSubModules(bool recalculateCodelengthOnTree);
 
   unsigned int recursivePartition();
+
+  /**
+   * Dissolve every intermediate module whose index codebook no longer pays for
+   * itself: its children move into its parent, one level up. Best-first over the
+   * whole tree; each gain is priced through the objective on the spliced tree.
+   * @return the number of modules dissolved
+   */
+  unsigned int dissolveUnprofitableModules();
 
   void queueTopModules(PartitionQueue& partitionQueue);
 
@@ -880,6 +928,8 @@ protected:
   bool m_columnarFlatFirstTrial = false;
 
   double m_oneLevelCodelength = 0.0;
+  unsigned long m_baseSeed = 0;
+  bool m_haveBaseSeed = false;
   unsigned int m_numNonTrivialTopModules = 0;
   unsigned int m_tuneIterationIndex = 0;
   bool m_isCoarseTune = false;

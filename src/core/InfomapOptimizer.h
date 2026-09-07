@@ -97,6 +97,8 @@ protected:
 
   double calcCodelength(const InfoNode& parent) const override { return m_objective.calcCodelength(parent); }
 
+  double calcTreeCodelengthCost(unsigned int numTopModules) const override { return m_objective.calcTreeCodelengthCost(numTopModules); }
+
   // ===================================================
   // Run: Partition: *
   // ===================================================
@@ -1008,7 +1010,7 @@ inline void InfomapOptimizer<Objective>::consolidateModules(bool replaceExisting
 
   InfoNode& firstActiveNode = *network[0];
   auto level = firstActiveNode.depth();
-  auto leafLevel = m_infomap->numLevels();
+  auto leafLevel = m_infomap->depthOfFirstLeaf(); // cheap: uniform tree here, see its docs
 
   if (leafLevel == 1)
     replaceExistingModules = false;
