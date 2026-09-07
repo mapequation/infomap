@@ -200,6 +200,7 @@ if(BUILD_TESTING)
     add_infomap_cpp_test(infomap_cpp_preferred_levels_tests test/cpp/test_preferred_levels.cpp "fast;core;preferred-levels")
     add_infomap_cpp_test(infomap_cpp_random_tests test/cpp/test_random.cpp "fast;core;rng")
     add_infomap_cpp_test(infomap_cpp_map_equation_invariants_tests test/cpp/test_map_equation_invariants.cpp "fast;core;mapeq")
+    add_infomap_cpp_test(infomap_cpp_infomath_tests test/cpp/test_infomath.cpp "fast;core;utils")
 
     add_test(
         NAME print_json_parameters
@@ -322,6 +323,7 @@ if(BUILD_TESTING)
             infomap_cpp_preferred_levels_tests
             infomap_cpp_random_tests
             infomap_cpp_map_equation_invariants_tests
+            infomap_cpp_infomath_tests
             infomap_cli
     )
 endif()

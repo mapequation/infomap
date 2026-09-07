@@ -141,6 +141,81 @@ def test_hidden_bindings_are_derived_from_hide_decisions():
     }
 
 
+def test_every_deprecated_option_field_carries_a_versioned_directive():
+    """RELEASING.md requires a ``.. deprecated:: <version>`` note on every deprecated
+    member, and the published ``Options`` reference -- which the package docstring
+    points at as the parameter reference -- carried none for any field (#915).
+
+    Asserted on the rendered docstring rather than on the generator, since that is what
+    a user reads through ``inspect.getdoc``.
+    """
+    import inspect
+    import re as _re
+
+    from infomap import Options
+    from infomap._options import _OPTION_TABLE
+
+    # getdoc dedents, so a field heading sits at column 0 and its body is indented.
+    doc = inspect.getdoc(Options) or ""
+    blocks: dict[str, list[str]] = {}
+    current = None
+    for line in doc.splitlines():
+        heading = _re.match(r"^(\w+) : ", line)
+        if heading:
+            current = heading.group(1)
+            blocks[current] = []
+        elif current is not None:
+            blocks[current].append(line)
+
+    deprecated_actions = {"remove", "args-only", "deprecate"}
+    # _OPTION_TABLE is catalog-driven, so it excludes include_self_links: that field
+    # is a binding-only compatibility alias handled separately. It is also the one
+    # deprecated field on this surface whose directive is emitted by hand, so leaving
+    # it out let the only case that could regress pass unchecked (#915).
+    expected = sorted(
+        [
+            name
+            for name, spec in _OPTION_TABLE.items()
+            if spec.action in deprecated_actions
+        ]
+        + ["include_self_links"]
+    )
+    assert "include_self_links" in expected
+    assert expected, "no deprecated fields to check; the policy shape changed"
+
+    # Anchored to the start of an indented line, not a substring search: Sphinx only
+    # parses a directive that opens its own line, so prose like "See .. deprecated::
+    # 2.15" reads as a directive to `in` while rendering as plain text. The version
+    # is captured from the rest of that line, which is also what catches a note
+    # folded onto it -- Sphinx reads everything after the directive name as the
+    # version, so a folded sentence renders as the version string.
+    directive_pattern = _re.compile(r"^\s+\.\. deprecated::(?P<version>.*)$")
+
+    for name in expected:
+        assert name in blocks, f"{name} missing from the Options reference"
+        directives = [
+            match
+            for match in (directive_pattern.match(line) for line in blocks[name])
+            if match
+        ]
+        assert directives, f"{name} has no .. deprecated:: directive"
+        for match in directives:
+            version = match.group("version").strip()
+            assert version, f"{name} has a directive with no version"
+            assert " " not in version, (
+                f"{name} folded its note onto the directive line, which Sphinx would "
+                f"render as the version: {version!r}"
+            )
+            # The exact release, not merely "some token": RELEASING.md fixes this
+            # deprecation wave at 2.15, and a nonempty-check accepted 2.14 or any
+            # other string while claiming to protect that. Written literally rather
+            # than imported from the generator so the two cannot drift together --
+            # a future wave should have to change this line deliberately.
+            assert version == "2.15", (
+                f"{name} carries version {version!r}; this deprecation wave is 2.15"
+            )
+
+
 def test_unknown_flag_fails_loud():
     overrides = copy.deepcopy(OVERRIDES)
     overrides["policy"]["parameters"]["--not-a-flag"] = {

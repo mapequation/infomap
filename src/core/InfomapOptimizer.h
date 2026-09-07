@@ -97,6 +97,8 @@ protected:
 
   double calcCodelength(const InfoNode& parent) const override { return m_objective.calcCodelength(parent); }
 
+  double calcTreeCodelengthCost(unsigned int numTopModules) const override { return m_objective.calcTreeCodelengthCost(numTopModules); }
+
   // ===================================================
   // Run: Partition: *
   // ===================================================

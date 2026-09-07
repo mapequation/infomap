@@ -35,6 +35,7 @@ from ._network_input import flat_multilayer_unpacker as _flat_multilayer_unpacke
 from ._network_input import paired_multilayer_unpacker as _paired_multilayer_unpacker
 from ._options import (
     _UNSET,
+    TYPED_PARAMETER_WARNING,
     # The Literal aliases are referenced by the generated __init__/run
     # signatures below, which are evaluated at class-definition time.
     FlowModel,
@@ -43,6 +44,7 @@ from ._options import (
     OutputFormat,
     _construct_args,
     _explicit_options,
+    _external_stacklevel,
     _merge_options,
     _warn_advanced_tier_kwargs,
 )
@@ -577,7 +579,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
                 log.
         pretty : bool | None, optional
             Deprecated. Accepted for backward compatibility; has no effect. Passing it
-            explicitly emits a DeprecationWarning.
+            explicitly emits a FutureWarning.
         two_level : bool, optional
             Optimize a two-level partition instead of the default multi-level hierarchy
             (default False).
@@ -831,8 +833,8 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         if pretty is not None:
             warnings.warn(
                 "pretty is deprecated and has no effect",
-                DeprecationWarning,
-                stacklevel=2,
+                TYPED_PARAMETER_WARNING,
+                stacklevel=_external_stacklevel(),
             )
         _warn_advanced_tier_kwargs(locals(), "init")
         options = _merge_options(options, _explicit_options(locals(), "init"), "init")
@@ -955,8 +957,8 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         if pretty is not None:
             warnings.warn(
                 "pretty is deprecated and has no effect",
-                DeprecationWarning,
-                stacklevel=2,
+                TYPED_PARAMETER_WARNING,
+                stacklevel=_external_stacklevel(),
             )
         _warn_advanced_tier_kwargs(locals(), "run")
         options = _merge_options(options, _explicit_options(locals(), "run"), "run")

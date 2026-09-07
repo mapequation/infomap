@@ -12,6 +12,8 @@
 #include <map>
 #include <set>
 #include <iostream>
+#include <fstream>
+#include <regex>
 #include <sstream>
 #include <tuple>
 #include <vector>
@@ -250,6 +252,223 @@ TEST_CASE("A physical tree that cannot express the partition says so [fast][core
 
   std::remove(physicalTree.c_str());
   std::remove(statesTree.c_str());
+}
+
+TEST_CASE("A physical clu whose ids repeat says so [fast][core][partition][parser]")
+{
+  // The clu twin of the physical-tree case above. A physical .clu has one row per
+  // (physical node, module) pair, so overlapping modules make its node ids repeat,
+  // and the reader keeps whichever row it saw last. Unlike a tree row, a clu row
+  // carries no path to pair with a state id, so nothing can be recovered -- but it
+  // used to be silent, and a codelength off by bits reads as a real objective
+  // difference rather than a misread file (#1039).
+  //
+  // A *state* network on purpose, not a multilayer one: the multilayer clu reader
+  // demands node_id and layer_id columns that a physical clu does not carry, so it
+  // already fails loudly ("Couldn't parse node key"). The silent path is this one.
+  const std::string physicalClu = "physical_roundtrip.clu";
+  const std::string statesClu = "physical_roundtrip_states.clu";
+  std::remove(physicalClu.c_str());
+  std::remove(statesClu.c_str());
+
+  {
+    InfomapWrapper writer(infomap::test::defaultFlags("--seed 1"));
+    writer.readInputData(infomap::test::repoPath("examples/networks/states.net"));
+    writer.run();
+    infomap::writeClu(writer, writer.network(), physicalClu, false, 1);
+    infomap::writeClu(writer, writer.network(), statesClu, true, 1);
+  }
+
+  auto warningsWhenReading = [](const std::string& clusterFile) {
+    std::ostringstream captured;
+    {
+      infomap::test::ScopedLogCapture capture(captured);
+      // Not defaultFlags: it carries --silent, which mutes the very warning under test.
+      InfomapWrapper reader("--seed 123 --num-trials 1 --no-file-output --no-infomap --cluster-data " + clusterFile);
+      reader.readInputData(infomap::test::repoPath("examples/networks/states.net"));
+      reader.run();
+    }
+    return captured.str();
+  };
+
+  const auto physicalOutput = warningsWhenReading(physicalClu);
+  CHECK(physicalOutput.find("more than once") != std::string::npos);
+  // Singular, since exactly one physical node repeats here.
+  CHECK(physicalOutput.find("1 node id appears") != std::string::npos);
+  // The message has to name the file to use instead, or it only says "wrong".
+  CHECK(physicalOutput.find("_states.clu") != std::string::npos);
+
+  // The state clu is a partition of the network that was searched, so it must stay quiet.
+  const auto statesOutput = warningsWhenReading(statesClu);
+  CHECK(statesOutput.find("more than once") == std::string::npos);
+
+  std::remove(physicalClu.c_str());
+  std::remove(statesClu.c_str());
+}
+
+TEST_CASE("Duplicate clu ids are reported for a first-order network too [fast][core][partition][parser]")
+{
+  // Nothing higher-order about a repeated id: a hand-written or concatenated clu can
+  // carry one, and the reader discards assignments just the same. The advice differs,
+  // since there is no `_states.clu` to point at.
+  const std::string duplicateClu = "duplicate_ids.clu";
+  {
+    std::ofstream out(duplicateClu);
+    out << "# node_id module\n1 1\n2 1\n3 2\n3 3\n4 2\n5 3\n6 3\n";
+  }
+
+  std::ostringstream captured;
+  {
+    infomap::test::ScopedLogCapture capture(captured);
+    InfomapWrapper reader("--seed 123 --num-trials 1 --no-file-output --no-infomap --cluster-data " + duplicateClu);
+    reader.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+    reader.run();
+  }
+
+  const auto output = captured.str();
+  CHECK(output.find("1 node id appears more than once") != std::string::npos);
+  CHECK(output.find("1 repeated row, 1 of which changed an id's module") != std::string::npos);
+  CHECK(output.find("node 3 alone has 2 rows") != std::string::npos);
+  // The higher-order advice would be wrong here; this network has no state clu.
+  CHECK(output.find("_states.clu") == std::string::npos);
+
+  std::remove(duplicateClu.c_str());
+}
+
+TEST_CASE("A clu that repeats a row verbatim is not reported as a changed partition [fast][core][partition][parser]")
+{
+  // A repeated id whose module agrees replaces nothing, and the reader ends up with
+  // exactly the partition the file describes -- so the warning must not claim the
+  // codelength is for something else. Worth a line anyway, since a clu file is
+  // meant to have one row per node.
+  const std::string sameModuleClu = "duplicate_same_module.clu";
+  {
+    std::ofstream out(sameModuleClu);
+    out << "# node_id module\n1 1\n2 1\n3 2\n3 2\n4 2\n5 3\n6 3\n";
+  }
+
+  std::ostringstream captured;
+  {
+    infomap::test::ScopedLogCapture capture(captured);
+    InfomapWrapper reader("--seed 123 --num-trials 1 --no-file-output --no-infomap --cluster-data " + sameModuleClu);
+    reader.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+    reader.run();
+  }
+
+  const auto output = captured.str();
+  CHECK(output.find("every repeat gives the same module") != std::string::npos);
+  CHECK(output.find("The partition is unaffected") != std::string::npos);
+  // None of the claims that only hold when a module actually changed.
+  CHECK(output.find("changed an id's module") == std::string::npos);
+  CHECK(output.find("not for the one in the file") == std::string::npos);
+
+  std::remove(sameModuleClu.c_str());
+}
+
+TEST_CASE("A clu mixing a verbatim repeat with a conflicting one counts both [fast][core][partition][parser]")
+{
+  // The leading counts are totals, not the conflicting subset: reporting only the
+  // conflicts undercounts what the sentence claims to summarize. And the example id
+  // has to name a conflicting id, or the warning talks about changed modules while
+  // pointing at the harmless repeat -- node 2 repeats its row verbatim and has as
+  // many rows as node 3, which is the one that changes module.
+  const std::string mixedClu = "duplicate_mixed.clu";
+  {
+    std::ofstream out(mixedClu);
+    out << "# node_id module\n1 1\n2 1\n2 1\n3 2\n3 3\n4 2\n5 3\n6 3\n";
+  }
+
+  std::ostringstream captured;
+  {
+    infomap::test::ScopedLogCapture capture(captured);
+    InfomapWrapper reader("--seed 123 --num-trials 1 --no-file-output --no-infomap --cluster-data " + mixedClu);
+    reader.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+    reader.run();
+  }
+
+  const auto output = captured.str();
+  CHECK(output.find("2 node ids appear more than once") != std::string::npos);
+  CHECK(output.find("2 repeated rows, 1 of which changed an id's module") != std::string::npos);
+  CHECK(output.find("node 3 alone has 2 rows") != std::string::npos);
+  CHECK(output.find("node 2 alone") == std::string::npos);
+
+  std::remove(mixedClu.c_str());
+}
+
+TEST_CASE("The duplicate-clu report survives the trial loop and parallel trials [fast][core][partition][parser][threads]")
+{
+  // The report used to sit in initPartition, which runs per trial: ten warnings on
+  // a serial -N10, and none at all under --parallel-trials, where every worker's
+  // initTrialPartition is wrapped in Log::ScopedMute. It is now emitted once on the
+  // main instance before any trial starts.
+  const std::string duplicateClu = "duplicate_trials.clu";
+  {
+    std::ofstream out(duplicateClu);
+    out << "# node_id module\n1 1\n2 1\n3 2\n3 3\n4 2\n5 3\n6 3\n";
+  }
+
+  const auto warningCount = [&duplicateClu](const std::string& extraFlags) {
+    std::ostringstream captured;
+    {
+      infomap::test::ScopedLogCapture capture(captured);
+      InfomapWrapper reader("--seed 123 --no-file-output --two-level --cluster-data " + duplicateClu + " " + extraFlags);
+      reader.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+      reader.run();
+    }
+    const auto output = captured.str();
+    unsigned int count = 0;
+    for (std::size_t at = output.find("more than once"); at != std::string::npos;
+         at = output.find("more than once", at + 1)) {
+      ++count;
+    }
+    return count;
+  };
+
+  CHECK(warningCount("--num-trials 1") == 1);
+  CHECK(warningCount("--num-trials 10") == 1);
+  CHECK(warningCount("--num-trials 10 --parallel-trials") == 1);
+
+  std::remove(duplicateClu.c_str());
+}
+
+TEST_CASE("The super consolidation log reports an index codelength [fast][core][partition]")
+{
+  // #837: the line said "index codelength X -> Y" but Y was io::stringify(*this) --
+  // the whole objective over the module network after the flat initPartition just
+  // above it. A correctly computed but different quantity, so the arrow compared an
+  // index codelength against a full one and landed on a value larger than the
+  // codelength the next line announces. On examples/networks/ninetriangles.net it
+  // read `0.93613 -> 0.0990602 + 3.74245 = 3.84151` against a result of 3.8415.
+  //
+  // Asserted as the invariant rather than on the numbers: the value the arrow lands
+  // on has to be the super index codelength, which the "found N super modules" line
+  // prints as its own first term.
+  std::ostringstream captured;
+  {
+    infomap::test::ScopedLogCapture capture(captured);
+    InfomapWrapper im("--seed 123 --num-trials 1 --no-file-output --verbose --verbose");
+    im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+    im.run();
+  }
+
+  const std::string haystack = captured.str();
+
+  std::smatch found;
+  REQUIRE(std::regex_search(haystack, found, std::regex(R"(found \d+ super modules, codelength ([0-9.e+-]+) \+)")));
+  const auto superIndexCodelength = found[1].str();
+
+  // The whole line, so the assertion can see what follows the arrow as well as the
+  // value it lands on. The old format's stringify(*this) *began* with the same index
+  // codelength and then continued " + <module> = <total>", so matching only the
+  // first number after the arrow passes on both formats and proves nothing.
+  std::smatch consolidated;
+  REQUIRE(std::regex_search(haystack, consolidated, std::regex(R"(super: consolidated \d+ modules, index codelength [^\n]*)")));
+  const auto line = consolidated[0].str();
+
+  INFO("super index=" << superIndexCodelength << " line: " << line);
+  CHECK(line.find(superIndexCodelength) != std::string::npos);
+  // An index codelength is one number. A sum is the other quantity.
+  CHECK(line.find(" = ") == std::string::npos);
 }
 
 TEST_CASE("Mixed-depth cluster data is rejected instead of crashing [fast][core][partition][parser]")
@@ -756,6 +975,160 @@ TEST_CASE("InfoNode replaceWithChildren reparents a middle child chain before de
   CHECK(before->next->next->parent == &root);
   CHECK(before->next->next->next == after);
   CHECK(after->previous->stateId == 2);
+}
+
+TEST_CASE("InfoNode liftChildrenIntoParent is exactly reversible and commits like replaceWithChildren [fast][core][partition][tree][ownership]")
+{
+  InfoNode root;
+  auto* before = new InfoNode({}, 10);
+  auto* module = new InfoNode({}, 20);
+  auto* after = new InfoNode({}, 30);
+  root.addChild(before);
+  root.addChild(module);
+  root.addChild(after);
+  auto* first = new InfoNode({}, 1);
+  auto* second = new InfoNode({}, 2);
+  module->addChild(first);
+  module->addChild(second);
+
+  REQUIRE(module->liftChildrenIntoParent());
+  CHECK(root.childDegree() == 4);
+  CHECK(childStateIds(root) == std::vector<unsigned int> { 10, 1, 2, 30 });
+  CHECK(first->parent == &root);
+  CHECK(second->parent == &root);
+  CHECK(before->next == first);
+  CHECK(after->previous == second);
+  // The lifted node keeps everything it needs to undo the move.
+  CHECK(module->parent == &root);
+  CHECK(module->firstChild == first);
+  CHECK(module->lastChild == second);
+
+  module->restoreLiftedChildren();
+  CHECK(root.childDegree() == 3);
+  CHECK(childStateIds(root) == std::vector<unsigned int> { 10, 20, 30 });
+  CHECK(module->childDegree() == 2);
+  CHECK(first->parent == module);
+  CHECK(second->parent == module);
+  CHECK(first->previous == nullptr);
+  CHECK(second->next == nullptr);
+  CHECK(before->next == module);
+  CHECK(after->previous == module);
+  CHECK(root.firstChild == before);
+  CHECK(root.lastChild == after);
+
+  // Lift and commit: the same end state replaceWithChildren() produces.
+  REQUIRE(module->liftChildrenIntoParent());
+  module->destroyLifted();
+  CHECK(root.childDegree() == 4);
+  CHECK(childStateIds(root) == std::vector<unsigned int> { 10, 1, 2, 30 });
+  CHECK(first->parent == &root);
+  CHECK(second->next == after);
+
+  // Roots and leaves refuse.
+  CHECK_FALSE(root.liftChildrenIntoParent());
+  CHECK_FALSE(first->liftChildrenIntoParent());
+}
+
+TEST_CASE("InfoNode liftChildrenIntoParent handles first, last and only children [fast][core][partition][tree][ownership]")
+{
+  {
+    InfoNode root;
+    auto* module = new InfoNode({}, 20);
+    auto* after = new InfoNode({}, 30);
+    root.addChild(module);
+    root.addChild(after);
+    module->addChild(new InfoNode({}, 1));
+
+    REQUIRE(module->liftChildrenIntoParent());
+    CHECK(childStateIds(root) == std::vector<unsigned int> { 1, 30 });
+    CHECK(root.firstChild->stateId == 1);
+    module->restoreLiftedChildren();
+    CHECK(childStateIds(root) == std::vector<unsigned int> { 20, 30 });
+    CHECK(root.firstChild == module);
+  }
+  {
+    InfoNode root;
+    auto* before = new InfoNode({}, 10);
+    auto* module = new InfoNode({}, 20);
+    root.addChild(before);
+    root.addChild(module);
+    module->addChild(new InfoNode({}, 1));
+    module->addChild(new InfoNode({}, 2));
+
+    REQUIRE(module->liftChildrenIntoParent());
+    CHECK(childStateIds(root) == std::vector<unsigned int> { 10, 1, 2 });
+    CHECK(root.lastChild->stateId == 2);
+    module->restoreLiftedChildren();
+    CHECK(childStateIds(root) == std::vector<unsigned int> { 10, 20 });
+    CHECK(root.lastChild == module);
+  }
+  {
+    // An only child: the parent becomes a leaf module.
+    InfoNode root;
+    auto* module = new InfoNode({}, 20);
+    root.addChild(module);
+    module->addChild(new InfoNode({}, 1));
+    module->addChild(new InfoNode({}, 2));
+
+    REQUIRE(module->liftChildrenIntoParent());
+    CHECK(root.childDegree() == 2);
+    CHECK(root.isLeafModule());
+    module->restoreLiftedChildren();
+    CHECK(root.childDegree() == 1);
+    CHECK(root.firstChild == module);
+    CHECK(root.lastChild == module);
+    CHECK(module->childDegree() == 2);
+  }
+}
+
+TEST_CASE("Hierarchical search dissolves a super module that no longer pays for its codebook [fast][core][partition][tree]")
+{
+  // ninetriangles: nine triangles in three groups of three. The super level as a whole
+  // saves 0.13 bits over nine top modules, so the level-wide test keeps it -- yet each
+  // of the three identical super modules gains 0.014 bits when dissolved alone, and only
+  // one may go, because after the first the other two stop paying. A symmetric network
+  // whose optimum is a ragged tree; neither level test could see it (#1074).
+  std::ostringstream captured;
+  InfomapWrapper im("--seed 123 --num-trials 1 --no-file-output --verbose");
+  {
+    infomap::test::ScopedLogCapture capture(captured);
+    im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+    im.run();
+  }
+  infomap::test::checkRunSanity(im);
+
+  CHECK(im.codelength() == doctest::Approx(3.371875026).epsilon(1e-8));
+  CHECK(im.numTopModules() == 5);
+  CHECK(im.maxTreeDepth() == 3);
+  unsigned int leafModuleTops = 0;
+  unsigned int nestedTops = 0;
+  for (const auto& module : im.root()) {
+    if (module.isLeafModule())
+      ++leafModuleTops;
+    else
+      ++nestedTops;
+  }
+  CHECK(leafModuleTops == 3);
+  CHECK(nestedTops == 2);
+  CHECK(captured.str().find("prune: dissolved 1 modules, codelength 3.38583082 -> 3.371875026") != std::string::npos);
+  // The reported total is the tree's, recomputed after the dissolve.
+  CHECK(sumModuleCodelengths(im.root()) == doctest::Approx(im.codelength()));
+}
+
+TEST_CASE("Dissolving intermediate modules never mixes leaves with modules under one parent [fast][core][partition][tree]")
+{
+  for (const char* network : { "examples/networks/ninetriangles.net", "test/fixtures/networks/unbalanced_hierarchy.net" }) {
+    InfomapWrapper im("--seed 123 --num-trials 2 --silent --no-file-output");
+    im.readInputData(infomap::test::repoPath(network));
+    im.run();
+    for (auto it = im.root().begin_tree(); !it.isEnd(); ++it) {
+      if (it->isLeaf())
+        continue;
+      const bool firstIsLeaf = it->firstChild->isLeaf();
+      for (const auto& child : *it)
+        CHECK(child.isLeaf() == firstIsLeaf);
+    }
+  }
 }
 
 TEST_CASE("InfoNode remove documents current child-chain ownership semantics [fast][core][partition][tree][ownership]")

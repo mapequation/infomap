@@ -44,6 +44,7 @@
 #include <iomanip>
 #include <limits>
 #include <map>
+#include <queue>
 #include <set>
 #include <unordered_map>
 #include <cstdlib>
@@ -246,15 +247,30 @@ public:
     // back on the way out -- including when a run throws.
     const ScopedOpenMpNumThreads scopedThreadBudget(asOpenMpThreadCount(m_threadBudget.threads));
 #endif
-    preflightOutputTargets(m_infomap);
+    // After validateNetwork(), because the pre-flight needs to know whether the
+    // input is higher-order and that is only settled once the network is read and
+    // post-processed -- a multilayer file has no state nodes at all until then.
+    // Still ahead of every writer, which is what the check exists for.
     validateNetwork();
-    {
-      auto timer = m_timing.scope("pre_run_output_s");
-      writeOutputArtifacts(m_infomap, m_network, OutputPhase::BeforeFlow);
-    }
+    preflightOutputTargets(m_infomap, higherOrderInput());
+    // Before the first seedTrial, so this is the seed the run was asked for.
+    m_infomap.m_baseSeed = m_infomap.seedToRandomNumberGenerator;
+    m_infomap.m_haveBaseSeed = true;
     {
       auto timer = m_timing.scope("configure_network_s");
       configureNetworkMode();
+    }
+    // After configureNetworkMode(), not before it. These artifacts describe the
+    // network as read, but the config that names and labels them is only finished
+    // by the classification: state output decides whether the Pajek dump is the
+    // `_states_as_physical` one, and the flow model decides whether it declares
+    // `*Edges` or `*Arcs`. Written earlier, a multilayer run produced a dump named
+    // and labelled as a first-order undirected network while the run itself had
+    // already expanded the links to directed. Still before any flow is computed,
+    // which is what the phase means.
+    {
+      auto timer = m_timing.scope("pre_run_output_s");
+      writeOutputArtifacts(m_infomap, m_network, OutputPhase::BeforeFlow);
     }
     calculateFlowAndInitNetwork();
     {
@@ -267,6 +283,7 @@ public:
     m_runParallelTrials = selectParallelTrialMode();
     m_threadsUsed = m_runParallelTrials ? parallelTrialWorkers() : 1;
     releaseInputLinksIfCli();
+    reportClusterDataIssues();
     logRunPartitionStart();
     Result result;
     {
@@ -427,7 +444,14 @@ private:
 #endif
     for (int workerIndex = 0; workerIndex < static_cast<int>(numWorkers); ++workerIndex) {
       auto workerConfig = m_infomap.getConfig();
-      workerConfig.numTrials = 1;
+      // The run's trial count, not the worker's one trial: this field names and
+      // labels the worker's --print-all-trials artifacts. outputPlanBasename only
+      // appends `_trial_N` when numTrials > 1, so at 1 every worker wrote the
+      // aggregate's basename instead -- four trials overwriting one file, and the
+      // per-trial artifacts the output pre-flight had already reserved never
+      // appearing. It does not make the worker run trials: the worker never enters
+      // RunSession::run, and executeTrial is called once per trialIndex from here.
+      workerConfig.numTrials = m_numTrials;
       workerConfig.parallelTrials = false;
       workerConfig.innerParallelization = false;
       workerConfig.seedToRandomNumberGenerator = m_baseSeed + static_cast<unsigned int>(workerIndex);
@@ -443,6 +467,12 @@ private:
           Log::ScopedMute muteWorkerLogs;
           const auto seed = trialSeed(trialIndex);
           worker.seedToRandomNumberGenerator = seed;
+          // A worker is its own Infomap, so it does not inherit the main instance's
+          // captured base seed -- and its live seed field is this trial's. Without
+          // this, a per-trial artifact written by a worker reports base + offset + i
+          // as if it were the run's seed.
+          worker.m_baseSeed = m_infomap.baseSeed();
+          worker.m_haveBaseSeed = true;
           worker.reseed(static_cast<unsigned int>(seed));
           int threadNumber = 0;
 #ifdef _OPENMP
@@ -604,12 +634,101 @@ private:
     }
   }
 
+  // Whether configureNetworkMode() will turn state output on, answerable as soon
+  // as the network is read. The output pre-flight has to plan the `_states`
+  // artifacts before the classification runs, and a second, drifting copy of this
+  // condition is exactly how #1018 let a run overwrite its own input.
+  HigherOrderInput higherOrderInput() const
+  {
+    const bool stateOutput = m_network.haveMemoryInput()
+        || m_infomap.haveMemory()
+        || m_network.higherOrderInputMethodCalled();
+    return stateOutput ? HigherOrderInput::Yes : HigherOrderInput::No;
+  }
+
+  // Report what is wrong with the --cluster-data file, once per run and on the
+  // main instance, where nothing is muted. Doing this from initPartition instead
+  // put it inside the trial loop: ten warnings on a serial -N10, and none at all
+  // under --parallel-trials, because every worker's initTrialPartition is wrapped
+  // in Log::ScopedMute. The cost is one extra parse of the cluster file, which is
+  // a validation pass and not the partition the trials build.
+  void reportClusterDataIssues()
+  {
+    if (!m_infomap.isMainInfomap() || m_infomap.clusterDataFile.empty()) {
+      return;
+    }
+
+    ClusterMap clusterMap;
+    if (m_network.isMultilayerNetwork()) {
+      const auto& map = m_network.layerNodeToStateId();
+      clusterMap.readClusterData(m_infomap.clusterDataFile, false, &map);
+    } else {
+      clusterMap.readClusterData(m_infomap.clusterDataFile);
+    }
+
+    if (clusterMap.extension() != "clu") {
+      // A tree carries a path per row, so a repeated id there is a different
+      // situation with its own report in normalizeTreePaths (#908).
+      return;
+    }
+
+    const auto& duplicates = clusterMap.duplicateClusterIds();
+    if (!duplicates.any()) {
+      return;
+    }
+
+    const auto idPhrase = duplicates.ids == 1 ? "id appears" : "ids appear";
+
+    if (!duplicates.anyConflicting()) {
+      // Every repeat agrees on the module, so nothing was replaced and the reader
+      // ends up with exactly the partition the file describes. Still worth saying:
+      // a clu file is meant to have one row per node.
+      Console::warn(0,
+                    "{} node {} more than once in '{}', {} repeated {} in all, but every repeat gives the same module. "
+                    "The partition is unaffected.",
+                    duplicates.ids,
+                    idPhrase,
+                    m_infomap.clusterDataFile,
+                    duplicates.rows,
+                    duplicates.rows == 1 ? "row" : "rows");
+      return;
+    }
+
+    // haveMemory() describes the network, not the file, so the higher-order advice
+    // says what repeats by construction without asserting that this is that file:
+    // a malformed state clu reaches this branch too.
+    const auto* advice = m_infomap.haveMemory()
+        ? "On a higher-order network the physical clu repeats ids by construction -- it has one row per "
+          "(physical node, module) pair, and overlapping modules are not a partition. If that is this file, use "
+          "the state clu (_states.clu) instead; if this already is the state clu, the repeats are in the file."
+        : "A clu file has one row per node, so the last row read wins and the earlier assignments are discarded. "
+          "The codelength below is for the partition that survived, not for the one in the file.";
+
+    // The leading counts are the totals, or a file that mixes a verbatim repeat with
+    // a conflicting one undercounts what the sentence claims to summarize. The
+    // conflicting rows are then named as the subset they are.
+    Console::warn(0,
+                  "{} node {} more than once in '{}': {} repeated {}, {} of which changed an id's module, and node {} alone has {} rows. {}",
+                  duplicates.ids,
+                  duplicates.ids == 1 ? "id appears" : "ids appear",
+                  m_infomap.clusterDataFile,
+                  duplicates.rows,
+                  duplicates.rows == 1 ? "row" : "rows",
+                  duplicates.conflictingRows,
+                  duplicates.exampleId,
+                  duplicates.maxRowsForOneId,
+                  advice);
+  }
+
   void configureNetworkMode()
   {
+    // Read before setStateInput() below, which would otherwise make haveMemory()
+    // true and change the predicate's answer mid-function.
+    const bool useStateOutput = higherOrderInput() == HigherOrderInput::Yes;
+
     if (m_network.haveMemoryInput()) {
       Console::detail(1, "found higher-order network input, using the Map Equation for higher-order flows");
       m_infomap.setStateInput();
-      m_infomap.setStateOutput();
 
       if (m_network.isMultilayerNetwork() && !m_infomap.isMultilayerNetwork()) {
         m_infomap.setMultilayerInput();
@@ -617,10 +736,16 @@ private:
     } else {
       if (m_infomap.haveMemory() || m_network.higherOrderInputMethodCalled()) {
         Console::warn(0, "Higher-order network specified but no higher-order input found.");
-        // Use state output anyway for consistency even in the special case when input is first order
-        m_infomap.setStateOutput();
       }
       Console::detail(1, "ordinary network input, using the Map Equation for first-order flows");
+    }
+
+    // Set from the shared predicate rather than inside either branch, so the
+    // pre-flight's view of which artifacts a run writes cannot diverge from the
+    // run's. The first-order branch turns it on too, for consistency, when
+    // higher-order input was asked for but not found.
+    if (useStateOutput) {
+      m_infomap.setStateOutput();
     }
 
     if (m_network.haveDirectedInput() && m_infomap.isUndirectedFlow()) {
@@ -1393,6 +1518,11 @@ InfomapBase& InfomapBase::initPartition(const std::string& clusterDataFile, bool
     validateClusterDataTreeShape(normalizedTree);
     initTree(normalizedTree);
   } else if (ext == "clu") {
+    // Repeated ids in this file are reported once per run by
+    // RunSession::reportClusterDataIssues, not here: this runs per trial, and per
+    // trial it printed the warning ten times on -N10 and not at all under
+    // --parallel-trials, where the worker's initTrialPartition is wrapped in
+    // Log::ScopedMute.
     initPartition(clusterMap.clusterIds(), hard);
   }
 
@@ -2117,7 +2247,14 @@ void InfomapBase::init()
 
   initNetwork();
 
-  m_oneLevelCodelength = calcCodelength(m_root);
+  // The one-module partition's codelength, not the bare root's. They differ by any
+  // partition-level term the objective charges, and the collapse below installs this
+  // value verbatim on a tree that does have one module -- so a reference without the
+  // term made `Relative savings` compare two different objectives, and made a
+  // collapsed run report a number its own tree does not evaluate to (#1020). No
+  // effect unless such a term is configured: with --preferred-number-of-modules
+  // unset the cost is identically zero.
+  m_oneLevelCodelength = calcCodelength(m_root) + calcTreeCodelengthCost(1);
   Console::detail(1, "one-level codelength: {}", io::toPrecision(m_oneLevelCodelength));
 }
 
@@ -2236,6 +2373,7 @@ void InfomapBase::hierarchicalPartition()
     }
 
     recursivePartition();
+    dissolveUnprofitableModules();
     return;
   }
 
@@ -2267,6 +2405,7 @@ void InfomapBase::hierarchicalPartition()
   }
 
   recursivePartition();
+  dissolveUnprofitableModules();
 }
 
 void InfomapBase::partition()
@@ -2566,7 +2705,10 @@ double InfomapBase::calcCodelengthOnTree(InfoNode& root, bool includeRoot) const
     node.codelength = calcCodelength(node);
     totalCodelength += node.codelength;
   }
-  return totalCodelength;
+  // Added to the total only, never written into a node's codelength: the term
+  // belongs to the partition, and the two callers that pass includeRoot=false do
+  // so for the per-node side effect and discard this return value (#1021).
+  return totalCodelength + calcTreeCodelengthCost(root.childDegree());
 }
 
 // ===================================================
@@ -2856,7 +2998,13 @@ unsigned int InfomapBase::findHierarchicalSuperModules(unsigned int superLevelLi
     // Consolidate the dynamic modules without replacing any existing ones.
     consolidateModules(false);
 
-    Console::detail(1, "super: consolidated {} modules, index codelength {:g} {} {}", numTopModules(), oldIndexLength, Console::arrow(), io::stringify(*this));
+    // The arrow has to land on an index codelength, since that is what the sentence
+    // says and what oldIndexLength is updated to just below. It used to print
+    // io::stringify(*this): a correctly computed but different quantity -- the whole
+    // objective over the module network after the flat initPartition above -- so the
+    // line compared an index codelength against a full one and reported a value
+    // larger than the codelength the very next line announces (#837).
+    Console::detail(1, "super: consolidated {} modules, index codelength {:g} {} {:g}", numTopModules(), oldIndexLength, Console::arrow(), superIndexCodelength);
 
     hierarchicalCodelength = workingHierarchicalCodelength;
     oldIndexLength = superIndexCodelength;
@@ -3195,6 +3343,115 @@ unsigned int InfomapBase::recursivePartition()
   progress.finish(fmt::format(FMT_STRING("{} {} {} levels, codelength {}"), compressionSummary(prettyCompression), Console::arrow(), level, io::toPrecision(hierarchicalCodelength)));
 
   return level;
+}
+
+// Every level in the tree was accepted by one of two tests, and neither asks whether
+// a module still earns its codebook once its children exist. findHierarchicalSuperModules
+// accepts a super level as a whole -- its super modules stand or fall together -- and
+// partitionModuleRecursively accepts a module's sub-partition against that module
+// flat, which is sound but leaves the level it sits in unexamined. Nothing compares
+// p -> m -> {c} with p -> {c, siblings}. On ninetriangles the super level saves 0.13 bits
+// and is rightly kept, while dissolving any one of its three identical super modules
+// saves 0.014 bits -- and only one may go, since after the first the other two stop
+// paying (#1074). Hence best-first: the gains interact along sibling and ancestor
+// chains, and creation order banks a sixth of the gain on science2001.
+//
+// Runs after the recursion has joined rather than inside its tasks: dissolving m does
+// not change what the recursion finds below it, the task graph relies on per-module
+// independence, and the depth-1 candidates come from the super-level build anyway.
+unsigned int InfomapBase::dissolveUnprofitableModules()
+{
+  // Both biases charge tree-level costs -- |K - K_pref| on the number of top modules,
+  // the depth bias per level created -- that a local gain cannot see. A depth
+  // preference with zero strength is a no-op everywhere else and has to be one here.
+  const bool depthBiasActive = preferredNumberOfLevels > 0 && preferredNumberOfLevelsStrength > 0.0;
+  if (preferredNumberOfModules > 0 || depthBiasActive)
+    return 0;
+
+  // Lifting a module's children into its parent must not put leaves beside modules
+  // there, so only a module of modules qualifies -- unless it is the parent's only
+  // child, in which case the parent simply becomes a leaf module.
+  auto isCandidate = [](const InfoNode& m) {
+    return !m.isRoot() && !m.isLeaf() && (!m.firstChild->isLeaf() || m.parent->childDegree() == 1);
+  };
+
+  // The parent's term with m's children in m's place, priced by the objective on the
+  // spliced tree so composed objectives are exact; m's own term disappears.
+  auto dissolveGain = [this](InfoNode& m) {
+    InfoNode& parent = *m.parent;
+    const double before = parent.codelength + m.codelength;
+    m.liftChildrenIntoParent();
+    const double after = calcCodelength(parent);
+    m.restoreLiftedChildren();
+    return before - after;
+  };
+
+  struct Candidate {
+    double gain;
+    unsigned int order; // ties go to the earlier offer, so the result is deterministic
+    unsigned int version;
+    InfoNode* node;
+    bool operator<(const Candidate& other) const noexcept
+    {
+      return gain < other.gain || (gain == other.gain && order > other.order);
+    }
+  };
+  std::priority_queue<Candidate> queue;
+  // A node's live entry is the one carrying its current version; older entries are
+  // skipped when popped. Erased once the node is destroyed, and nothing allocates an
+  // InfoNode during the pass, so a dead pointer can never denote a live node.
+  std::unordered_map<InfoNode*, unsigned int> versions;
+  unsigned int nextOrder = 0;
+  auto offer = [&](InfoNode& m) {
+    const unsigned int version = ++versions[&m];
+    if (!isCandidate(m))
+      return;
+    const double gain = dissolveGain(m);
+    if (gain > minimumCodelengthImprovement)
+      queue.push({ gain, nextOrder++, version, &m });
+  };
+
+  // Every module term current, root included: the gains read node.codelength.
+  const double codelengthBefore = calcCodelengthOnTree(root(), true);
+  std::vector<InfoNode*> modules;
+  for (auto& node : m_root.infomapTree()) {
+    if (!node.isLeaf() && !node.isRoot())
+      modules.push_back(&node);
+  }
+  // Collected first: offer() splices the chain the tree iterator is walking.
+  for (InfoNode* module : modules)
+    offer(*module);
+
+  unsigned int numDissolved = 0;
+  while (!queue.empty()) {
+    const Candidate top = queue.top();
+    queue.pop();
+    auto live = versions.find(top.node);
+    if (live == versions.end() || live->second != top.version)
+      continue;
+    InfoNode& parent = *top.node->parent;
+    top.node->liftChildrenIntoParent();
+    top.node->destroyLifted();
+    versions.erase(live);
+    parent.codelength = calcCodelength(parent);
+    ++numDissolved;
+
+    // The parent's gain reads its new child set; its children's gains read its new term.
+    offer(parent);
+    std::vector<InfoNode*> children;
+    for (auto& child : parent) {
+      if (!child.isLeaf())
+        children.push_back(&child);
+    }
+    for (InfoNode* child : children)
+      offer(*child);
+  }
+
+  if (numDissolved > 0) {
+    m_hierarchicalCodelength = calcCodelengthOnTree(root(), true);
+    Console::detail(1, "prune: dissolved {} modules, codelength {} {} {}", numDissolved, io::toPrecision(codelengthBefore), Console::arrow(), io::toPrecision(m_hierarchicalCodelength));
+  }
+  return numDissolved;
 }
 
 void InfomapBase::queueTopModules(PartitionQueue& partitionQueue)

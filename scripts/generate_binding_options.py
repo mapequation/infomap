@@ -8,7 +8,7 @@ import os
 import subprocess
 from pathlib import Path
 
-from parameter_catalog import GROUPS, ParameterCatalog
+from parameter_catalog import GROUPS, ParameterCatalog, resolve_policy_decision
 from render_parameter_policy import render as render_parameter_policy_md
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -34,28 +34,35 @@ FACADE_END = "    # === END generated ==="
 _FACADE_ONLY_PARAMS = {
     "pretty": {
         # None (not False) so an explicitly passed value is distinguishable
-        # from the default and can trigger the DeprecationWarning below --
+        # from the default and can trigger the FutureWarning below --
         # the same sentinel trick as include_self_links.
         "default": "None",
         "type": "bool | None",
         "doc_type": "bool | None, optional",
         "doc": (
             "Deprecated. Accepted for backward compatibility; has no effect. "
-            "Passing it explicitly emits a DeprecationWarning."
+            "Passing it explicitly emits a FutureWarning."
         ),
         # Deprecated no-op; never part of the common signature tier.
         "tier": "advanced",
     },
 }
 
-# Emitted verbatim into the generated Infomap.__init__/run bodies, at the
-# public boundary so stacklevel=2 attributes the warning to user code.
+# Emitted verbatim into the generated Infomap.__init__/run bodies. The stacklevel
+# is computed rather than fixed at 2: these methods are a public boundary only on a
+# direct Infomap()/im.run() call. infomap.run(graph, pretty=True) reaches the same
+# body through _run.run building Infomap(**resolved), where a fixed 2 named
+# _run.py's own line as the offending code -- an internal frame the caller cannot
+# act on, and now visible under every filter since the tier moved to
+# TYPED_PARAMETER_WARNING (#915). _external_stacklevel walks out to the first frame
+# outside the package, so both entry points point at the user's line, matching what
+# the include_self_links warning already does.
 _PRETTY_WARNING_LINES = [
     "        if pretty is not None:",
     "            warnings.warn(",
     '                "pretty is deprecated and has no effect",',
-    "                DeprecationWarning,",
-    "                stacklevel=2,",
+    "                TYPED_PARAMETER_WARNING,",
+    "                stacklevel=_external_stacklevel(),",
     "            )",
 ]
 
@@ -168,7 +175,7 @@ def _facade_params(catalog: ParameterCatalog):
                 "doc_type": param.python_doc_type(),
                 "doc": param.python_doc_description(),
                 # The 3.0 cleanup-policy decision (issue #755) drives both the
-                # docstring migration note and the runtime PendingDeprecationWarning
+                # docstring migration note and the runtime deprecation warning
                 # so the two never diverge from render_parameter_policy.py.
                 "policy": param.policy("python"),
                 "init_default": param.python_default_expr(),
@@ -220,9 +227,9 @@ def _python_literal_alias_lines(catalog: ParameterCatalog) -> list[str]:
 _ADVANCED_TIER_WARNING_HELPER = [
     "def _warn_advanced_tier_kwargs(passed, context):",
     "    # Advanced-tier keywords are docs-only deprecated on the Infomap()/run()",
-    "    # signatures and move off them in 3.0. Emit a",
-    "    # PendingDeprecationWarning -- silent by default, so it nags no one until",
-    "    # 3.0 nears -- when one is set to a non-default value on a direct call.",
+    "    # signatures and move off them in 3.0. Emit a LEGACY_SURFACE_WARNING --",
+    "    # visible in __main__ under PEP 565, see its definition for the tier -- when",
+    "    # one is set to a non-default value on a direct call.",
     "    # Internal funnels (the Options path builds Infomap(**resolved), the graph",
     "    # adapters, the from_* class methods) reach the same methods from inside",
     "    # the package; the caller-frame check skips them so only user-typed",
@@ -235,10 +242,20 @@ _ADVANCED_TIER_WARNING_HELPER = [
     "        default = spec[baseline]",
     "        if passed.get(name, default) != default:",
     "            action, replacement = spec[2], spec[3]",
-    "            lead = (",
-    "                f\"'{name}' is deprecated on the Infomap() and run() \"",
-    '                "signatures and leaves them in 3.0. "',
-    "            )",
+    "            # The lead has to follow the action. A keep/alias keyword really does",
+    "            # only leave the signatures, and Options is where it goes. A keyword",
+    "            # classified `remove` leaves the Python surface altogether -- its",
+    "            # replacement is another option, the logging module or the CLI binary,",
+    "            # never Options -- so naming the signatures implied a refuge that does",
+    "            # not exist, and contradicted the `.. deprecated::` note on the same",
+    "            # field in the Options reference (#915).",
+    '            if action == "remove":',
+    "                lead = f\"'{name}' leaves the Python surface in 3.0. \"",
+    "            else:",
+    "                lead = (",
+    "                    f\"'{name}' is deprecated on the Infomap() and run() \"",
+    '                    "signatures and leaves them in 3.0. "',
+    "                )",
     '            if action in ("keep", "alias"):',
     "                guidance = (",
     '                    "Pass it via Options to infomap.run() or "',
@@ -249,7 +266,7 @@ _ADVANCED_TIER_WARNING_HELPER = [
     "            else:",
     '                guidance = ""',
     "            warnings.warn(",
-    "                lead + guidance, PendingDeprecationWarning, stacklevel=3",
+    "                lead + guidance, LEGACY_SURFACE_WARNING, stacklevel=3",
     "            )",
 ]
 
@@ -371,7 +388,7 @@ _OPTION_TABLE_VIEWS = [
     "",
     "# Advanced-tier keywords on the Infomap()/run() signatures:",
     "# the init/run 'unset' defaults plus the policy action/replacement that",
-    "# shape the PendingDeprecationWarning. Infomap.run() re-renders keywords on",
+    "# shape the deprecation warning. Infomap.run() re-renders keywords on",
     "# top of the constructed state and a rendered flag can only switch on, so a",
     "# truthy-by-default flag (silent) keeps the no-op False default in run",
     "# context.",
@@ -645,6 +662,12 @@ def _python_engine_default_doc(param) -> str:
     return f"Engine default: {default}."
 
 
+# The release in which this deprecation wave first shipped. RELEASING.md fixes it at
+# 2.15 -- 2.14.0 shipped the redesign but no versioned markers or runtime warnings --
+# and Sphinx renders an empty version if the directive carries none.
+DEPRECATION_WAVE_VERSION = "2.15"
+
+
 def _options_doc_policy_note(policy: dict) -> str:
     """A short note for the Options docstring flagging fields that are not a
     first-class engine option on the Python library surface.
@@ -677,6 +700,46 @@ def _options_doc_policy_note(policy: dict) -> str:
     return f"{lead} {replacement}".strip()
 
 
+# Actions that make a field deprecated on the Python surface, so it needs the
+# versioned directive RELEASING.md requires. An alias is documented, not deprecated,
+# and `hide` is not on the surface to deprecate in the first place.
+DEPRECATED_POLICY_ACTIONS = {"remove", "args-only", "deprecate"}
+
+
+def _options_doc_deprecation_lines(policy: dict, note: str, indent: str) -> list[str]:
+    """The `.. deprecated::` block for one Options field, or nothing.
+
+    The published Options reference -- which the package docstring points at as the
+    parameter reference -- carried no directive for any field, while RELEASING.md
+    requires one on every deprecated member (#915). The directive goes on its own
+    line with the note indented beneath it: Sphinx reads everything after the
+    directive name as the version, so folding the note onto that line renders the
+    whole sentence as the version string.
+    """
+    action = (policy or {}).get("action", "keep")
+    if action not in DEPRECATED_POLICY_ACTIONS:
+        return []
+    lines = [f"{indent}.. deprecated:: {DEPRECATION_WAVE_VERSION}"]
+    body = note
+    if action == "args-only":
+        # A directive's body reads as migration guidance, and an args-only note
+        # describes how to use the field *today* -- `hide_bipartite_nodes` says to
+        # set it via Options, which is the very surface it leaves. Naming the
+        # post-removal route here keeps the two apart, for every args-only field
+        # rather than depending on how each replacement string happens to be worded
+        # (the policy defines args-only as reachable through the raw args escape
+        # hatch on library surfaces).
+        # Single backticks: wrap_doc promotes them to the RST double form.
+        route = (
+            "The guidance above applies through 2.x; in 3.0 the field leaves "
+            "`Options` and is reachable only through the raw `args` escape hatch."
+        )
+        body = f"{note} {route}".strip() if note else route
+    if body:
+        lines.extend(wrap_doc(body, indent + "   "))
+    return lines
+
+
 def generate_python(catalog: ParameterCatalog) -> str:
     grouped = catalog.grouped()
     include_self_links = catalog.binding_only_entry("python", "include_self_links")
@@ -696,6 +759,44 @@ def generate_python(catalog: ParameterCatalog) -> str:
         "# make build-binding-options.",
         "",
         "_PACKAGE_PREFIX = os.path.dirname(os.path.abspath(__file__)) + os.sep",
+        "",
+        "# The two classes the pre-3.0 surface announces itself with, in one place each",
+        "# so a change of mind is one edit rather than forty (#915).",
+        "#",
+        "# RELEASING.md keeps two tiers on purpose, and they have to stay ordered by",
+        "# volume. The lower one used to be PendingDeprecationWarning, which CPython's",
+        "# default filters ignore outright, so it reached nobody; DeprecationWarning is",
+        "# shown in __main__ under PEP 565, which is exactly the `python analysis.py`",
+        "# audience that has to migrate. Promoting only that one would have collapsed",
+        "# the two tiers into the same class, erasing a distinction the suite pins, so",
+        "# the louder tier moves up too: FutureWarning is shown under every filter, and",
+        "# is where scikit-learn, pandas and NumPy all landed for a scientific audience.",
+        "#",
+        "# Subclasses rather than the built-in classes themselves. A filter matches by",
+        "# class hierarchy, so every -W and filterwarnings spelling that worked on the",
+        "# base class still catches these -- PEP 565's __main__ visibility included --",
+        "# while naming the subclass silences one Infomap tier and nothing else. Bound",
+        "# to the base classes directly, the tiers were unaddressable: silencing the",
+        "# legacy tier in a test meant ignoring every DeprecationWarning in the process,",
+        "# including the ones the same test was there to catch.",
+        "class LegacySurfaceWarning(DeprecationWarning):",
+        '    """The legacy stateful surface: Result accessors mirrored on ``Infomap``,',
+        "    advanced-tier keywords, ``from_options`` and friends.",
+        '    """',
+        "",
+        "",
+        "class TypedParameterWarning(FutureWarning):",
+        '    """A deprecated parameter the caller actually typed, where silently ignoring',
+        "    or rewriting it hides a migration they have to make.",
+        '    """',
+        "",
+        "",
+        "# The names the call sites and the test suite use, and the ones RELEASING.md",
+        "# documents. Aliases so a tier is one edit here, and so a filter spelling",
+        "# (`ignore::infomap._options.LEGACY_SURFACE_WARNING`) names the tier rather",
+        "# than a class whose base a later change of mind would move.",
+        "LEGACY_SURFACE_WARNING = LegacySurfaceWarning",
+        "TYPED_PARAMETER_WARNING = TypedParameterWarning",
         "",
         "",
         "# Sentinel default for the common-tier keywords on the Infomap()/run()",
@@ -809,16 +910,35 @@ def generate_python(catalog: ParameterCatalog) -> str:
             lines.append(f"    {name} : {param.python_doc_type()}")
             lines.extend(wrap_doc(description, "        "))
             note = _options_doc_policy_note(param.policy("python"))
-            if note:
+            deprecation = _options_doc_deprecation_lines(
+                param.policy("python"), note, "        "
+            )
+            if deprecation:
+                lines.append("")
+                lines.extend(deprecation)
+            elif note:
                 lines.append("")
                 lines.extend(wrap_doc(note, "        "))
+    # The alias is binding-only, so it has no catalog entry and never reaches the
+    # loop above -- but its flag does carry a policy decision, so the note and the
+    # directive are resolved from that same source rather than restated here. A
+    # hand-written copy would go stale the moment the replacement guidance in
+    # overrides.json changes (#915).
     lines.append("    include_self_links : bool, optional")
-    lines.extend(
-        wrap_doc(
-            "Deprecated. Self-links are included by default; use no_self_links=True to exclude them.",
-            "        ",
-        )
+    lines.extend(wrap_doc("Whether to include self-links.", "        "))
+    alias_policy = resolve_policy_decision(
+        catalog.overrides, include_self_links.flag, "python"
     )
+    alias_note = _options_doc_policy_note(alias_policy)
+    alias_deprecation = _options_doc_deprecation_lines(
+        alias_policy, alias_note, "        "
+    )
+    if alias_deprecation:
+        lines.append("")
+        lines.extend(alias_deprecation)
+    elif alias_note:
+        lines.append("")
+        lines.extend(wrap_doc(alias_note, "        "))
     lines.extend(['    """', ""])
     for group in GROUPS:
         lines.append(f"    # {group.lower()}")
@@ -944,7 +1064,7 @@ def generate_python(catalog: ParameterCatalog) -> str:
             "        if self.include_self_links is not None:",
             "            warnings.warn(",
             '                "include_self_links is deprecated, use no_self_links to exclude self-links",',
-            "                DeprecationWarning,",
+            "                TYPED_PARAMETER_WARNING,",
             "                stacklevel=_external_stacklevel(),",
             "            )",
             "",
