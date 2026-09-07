@@ -1,8 +1,14 @@
 # path flow name node_id
-# The ragged shape Infomap's own .tree format produces and reads back: node A is a
-# module of one node, written as a BARE top-level leaf (no trailing module level) next
-# to a three-level branch. leafModulePathsFromTree gives it an EMPTY path, since it
-# walks parents up to but not including the root.
+# A BARE top-level leaf (node A, no trailing module level) next to a three-level
+# branch: node A is in no module at all. leafModulePathsFromTree gives it an EMPTY
+# path, since it walks parents up to but not including the root.
+#
+# NOT a shape Infomap writes. Its writer gives a one-node top module a full path
+# (`3:1 0.15 "A" 1`), and the one-level fallback puts every leaf at depth 1, so no
+# output mode -- .tree or .ftree, base/-d/hierarchical, first-order or higher-order --
+# emits a leaf outside every module. Checked across the benchmark set; see F52
+# addendum 2. This fixture exists to pin how the READER treats hand-written or
+# third-party input of that shape, which is the only way it arises.
 1:1:1 0.3 "C" 3
 1:1:2 0.2 "B" 2
 1:2:1 0.15 "D" 4
