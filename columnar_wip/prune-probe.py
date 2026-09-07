@@ -304,7 +304,9 @@ def greedy_prune_best_first(root, eps=1e-12, homogeneous=False):
             removed = internal_descendants(n)
             apply_flatten(n)
             for dead in removed:
-                version[id(dead)] = version.get(id(dead), 0) + 1  # kill their heap entries
+                version[id(dead)] = (
+                    version.get(id(dead), 0) + 1
+                )  # kill their heap entries
             refresh(n)
             for a in ancestors(n):
                 refresh(a)
