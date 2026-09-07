@@ -283,7 +283,7 @@ public:
     m_runParallelTrials = selectParallelTrialMode();
     m_threadsUsed = m_runParallelTrials ? parallelTrialWorkers() : 1;
     releaseInputLinksIfCli();
-    reportClusterDataIssues();
+    readClusterData();
     logRunPartitionStart();
     Result result;
     {
@@ -646,33 +646,42 @@ private:
     return stateOutput ? HigherOrderInput::Yes : HigherOrderInput::No;
   }
 
-  // Report what is wrong with the --cluster-data file, once per run and on the
-  // main instance, where nothing is muted. Doing this from initPartition instead
-  // put it inside the trial loop: ten warnings on a serial -N10, and none at all
-  // under --parallel-trials, because every worker's initTrialPartition is wrapped
-  // in Log::ScopedMute. The cost is one extra parse of the cluster file, which is
-  // a validation pass and not the partition the trials build.
-  void reportClusterDataIssues()
+  // Parse the --cluster-data file once, on the main instance before any trial, and
+  // keep the result: every trial applies this parse (initTrialPartition), and the
+  // duplicate-id report below reads it too. Parsing from initPartition per trial
+  // read the file once per trial, and the report used to re-read it a further time
+  // to warn outside the trial loop -- ~7% of a --no-infomap -c scoring run (#1072).
+  void readClusterData()
   {
     if (!m_infomap.isMainInfomap() || m_infomap.clusterDataFile.empty()) {
       return;
     }
 
-    ClusterMap clusterMap;
     if (m_network.isMultilayerNetwork()) {
       const auto& map = m_network.layerNodeToStateId();
-      clusterMap.readClusterData(m_infomap.clusterDataFile, false, &map);
+      m_clusterData.readClusterData(m_infomap.clusterDataFile, false, &map);
     } else {
-      clusterMap.readClusterData(m_infomap.clusterDataFile);
+      m_clusterData.readClusterData(m_infomap.clusterDataFile);
     }
+    m_haveClusterData = true;
 
-    if (clusterMap.extension() != "clu") {
+    reportClusterDataIssues();
+  }
+
+  // Report what is wrong with the --cluster-data file, once per run and on the
+  // main instance, where nothing is muted. Doing this from initPartition instead
+  // put it inside the trial loop: ten warnings on a serial -N10, and none at all
+  // under --parallel-trials, because every worker's initTrialPartition is wrapped
+  // in Log::ScopedMute.
+  void reportClusterDataIssues()
+  {
+    if (m_clusterData.extension() != "clu") {
       // A tree carries a path per row, so a repeated id there is a different
       // situation with its own report in normalizeTreePaths (#908).
       return;
     }
 
-    const auto& duplicates = clusterMap.duplicateClusterIds();
+    const auto& duplicates = m_clusterData.duplicateClusterIds();
     if (!duplicates.any()) {
       return;
     }
@@ -1067,9 +1076,14 @@ private:
     if (!infomap.clusterDataFile.empty() && !m_network.initialPartitionPaths().empty())
       Console::note(0, "--cluster-data overrides embedded JSON initial-partition paths.");
 
-    if (!infomap.clusterDataFile.empty())
-      infomap.initPartition(infomap.clusterDataFile, infomap.clusterDataIsHard, &m_network);
-    else if (!infomap.m_multilayerInitialPartition.empty()) {
+    if (!infomap.clusterDataFile.empty()) {
+      // The parse readClusterData() did before the trials; shared read-only by the
+      // parallel-trial workers. The fallback only serves a caller that skipped run().
+      if (m_haveClusterData)
+        infomap.initPartition(m_clusterData, infomap.clusterDataIsHard);
+      else
+        infomap.initPartition(infomap.clusterDataFile, infomap.clusterDataIsHard, &m_network);
+    } else if (!infomap.m_multilayerInitialPartition.empty()) {
       // Resolve the physical (layer_id, node_id) keys to the generated state
       // ids now that the network is built, then init as a normal partition.
       const auto& layerNodeToStateId = m_network.layerNodeToStateId();
@@ -1315,6 +1329,9 @@ private:
   unsigned int m_threadsUsed = 1;
   ThreadBudget m_threadBudget;
   unsigned int m_cpusetCount = 0;
+  // --cluster-data, parsed once by readClusterData() and applied in every trial.
+  ClusterMap m_clusterData;
+  bool m_haveClusterData = false;
 };
 
 std::map<unsigned int, std::vector<unsigned int>> InfomapBase::getMultilevelModules(bool states)
@@ -1503,9 +1520,13 @@ InfomapBase& InfomapBase::initPartition(const std::string& clusterDataFile, bool
   } else {
     clusterMap.readClusterData(clusterDataFile);
   }
+  return initPartition(clusterMap, hard);
+}
 
-  Console().status("Initial", fmt::format(FMT_STRING("reading {}"), clusterDataFile));
-  Console::detail(1, "init partition from file '{}'", clusterDataFile);
+InfomapBase& InfomapBase::initPartition(const ClusterMap& clusterMap, bool hard)
+{
+  Console().status("Initial", fmt::format(FMT_STRING("reading {}"), clusterMap.filename()));
+  Console::detail(1, "init partition from file '{}'", clusterMap.filename());
 
   const auto& ext = clusterMap.extension();
 

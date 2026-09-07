@@ -432,6 +432,16 @@ private:
    */
   InfomapBase& initPartition(const std::string& clusterDataFile, bool hard = false, const Network* network = nullptr);
 
+#ifndef SWIG
+  /**
+   * Apply cluster data that has already been parsed. A run parses --cluster-data
+   * once and applies it from here in every trial, so the file is read exactly
+   * once however many trials there are (#1072). Not binding API: the bindings
+   * set clusterDataFile and let the run do this.
+   */
+  InfomapBase& initPartition(const ClusterMap& clusterData, bool hard = false);
+#endif
+
   /**
    * Provide an initial partition of the network.
    *

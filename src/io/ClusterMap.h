@@ -72,6 +72,9 @@ public:
 
   const std::string& extension() const noexcept { return m_extension; }
 
+  //! The file the last readClusterData() call parsed; empty before any read.
+  const std::string& filename() const noexcept { return m_filename; }
+
   TreeLeafIdType treeLeafIdType() const noexcept { return m_treeLeafIdType; }
 
   // Only ever non-empty for a clu file. The tree reader has its own report for the
@@ -87,6 +90,7 @@ private:
   std::map<unsigned int, double> m_flowData;
   TreePaths m_treePaths;
   std::string m_extension;
+  std::string m_filename;
   DuplicateClusterIds m_duplicateClusterIds;
   bool m_isHigherOrder = false;
   bool m_hasTreeLeafIdType = false;

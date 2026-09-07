@@ -24,6 +24,7 @@ void ClusterMap::readClusterData(const std::string& filename, bool includeFlow, 
   m_flowData.clear();
   m_treePaths.clear();
   m_extension.clear();
+  m_filename = filename;
   m_duplicateClusterIds = {};
   m_isHigherOrder = false;
   m_hasTreeLeafIdType = false;
