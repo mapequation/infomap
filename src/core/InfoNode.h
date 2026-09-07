@@ -466,6 +466,8 @@ public:
    */
   unsigned int replaceWithChildren() noexcept;
 
+#ifndef SWIG
+  // Tree surgery for the search, not binding API; kept out of the SWIG wrappers.
   /**
    * Reversibly take this node out of its parent's child chain and put its own
    * children there in its place. Unlike replaceWithChildren() the node stays
@@ -481,6 +483,7 @@ public:
 
   //! Commit liftChildrenIntoParent(): the children stay with the parent, this node is deleted.
   void destroyLifted() noexcept;
+#endif
 
   void replaceWithChildrenDebug() noexcept;
 
