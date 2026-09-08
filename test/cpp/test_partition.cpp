@@ -402,17 +402,16 @@ TEST_CASE("Columnar dissolve reports the codelength a re-score of its own tree g
       if (!it->isLeaf() && !it->isRoot())
         stamped += it->codelength;
     CHECK(stamped == doctest::Approx(im.codelength()).epsilon(1e-9));
-    // The pass fired: the tree is ragged at the top (some triangles lifted to
-    // top-level leaf modules beside super-modules that stayed nested).
-    unsigned int leafModuleTops = 0, nestedTops = 0;
-    for (const auto& top : im.root().children()) {
+    // The pass fired: at least one triangle was lifted to a top-level leaf module,
+    // which the equal-depth three-level search never produces. Whether any super-module
+    // survives beside it is platform-dependent (-d --entropy-corrected dissolves all
+    // three on Linux and Windows and keeps two on macOS -- a libm tie), so only the
+    // lifting is required here.
+    unsigned int leafModuleTops = 0;
+    for (const auto& top : im.root().children())
       if (top.isLeafModule())
         ++leafModuleTops;
-      else if (!top.isLeaf())
-        ++nestedTops;
-    }
     REQUIRE(leafModuleTops > 0);
-    REQUIRE(nestedTops > 0);
 
     im.writeTree(treePath);
     InfomapWrapper scored(flags + " --no-infomap --cluster-data " + treePath);
