@@ -384,7 +384,10 @@ public:
     // modules that no longer pay for their codebook. Every objective; a two-level run
     // has no interior level to remove (#1074).
     bool materializedByDissolve = false;
-    if (!m_infomap.twoLevel) {
+    // A flat (two-level-shaped) winner has no interior level to dissolve -- e.g. the
+    // one-level fallback, or a flat-first trial that won and stayed flat through the
+    // deep repair -- so do not build and score a stack to find that out.
+    if (!m_infomap.twoLevel && !isFlatTree(result.bestTree)) {
       auto timer = m_timing.scope("dissolve_s");
       // Whether the tree in memory IS result.bestTree: the last serial trial won (every
       // -N1 run) and the deep repair above did not change it. Then the pass works on the
