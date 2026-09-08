@@ -4235,3 +4235,73 @@ at +7% instructions (#1051's second parse) are +0.3–0.4% here, because #1076 l
 Consequence for #1074's columnar track: on web-NotreDame the columnar `-C` result (5.5685) is now 0.25%
 in bits *above* the OO arm (5.5544), because OO got the dissolve pass and the columnar engine has not —
 that gap is exactly what the columnar-native pruning is to close.
+
+### F53 — Columnar-native dissolve of unprofitable levels (the #1074 second track): implemented, land pending option B (2026-09-08)
+
+Columnar counterpart of the OO dissolve (#1075). WIP on branch `columnar-dissolve`
+(pushed; commit `41866909`, based on the sync branch `sync-master-into-columnar-1076`).
+NOT yet snapshotted, PR'd, or landed — paused on a perf trade-off (below).
+
+**What it does.** The equal-depth columnar stack cannot represent a ragged optimum, so a
+terminal pass removes every intermediate module-of-modules whose index codebook no longer
+pays for itself (children lift into the parent), best-first, exact per-node delta on the
+base module-of-modules term + the entropy-bias free-parameter term.
+
+**Design that made it clean and decoupled from InfoNode (which is being removed):**
+- Dissolve moves ONLY module-of-modules terms, which are pure base for
+  mem/meta/lossy/regularized (their corrections live on leaf modules, never touched) — so
+  the only correction-specific term is the entropy bias's −1 free parameter per removed
+  node. Teleport is already folded into the stack's enter/exit (buildStackTerms).
+- Logic in `ColumnarTwoLevel::dissolveUnprofitableLevels` (ColumnarObjectiveScore.cpp): builds
+  a module-tree from buildStackTerms, best-first heap dissolve, emits ragged per-leaf paths
+  in `m_dissolvedPaths` (toNodePaths emits them; the rectangular stack is left untouched).
+- `InfomapBase::dissolveColumnarBest` scores the ragged proposal on the TRUE objective via
+  the existing ragged `evaluateColumnarPartition` (pad + score + stamp, #1070) and keeps it
+  only when lower — so it is never-worse on every objective and reverts an L* proposal
+  (base-estimated, not an L* gain).
+- Runs ONCE PER RUN after deep repair, not per trial. A per-trial version regressed
+  memory/state `-N10` (malaria +0.81%): the per-trial ragged winner is fed to the per-run
+  deep repair, whose `seedHierarchyFromLeafPaths` rejects ragged, forfeiting the (larger)
+  repair gain. Placement fixed that — all rows better-or-same.
+- Guards: `ColumnarCorrection::blocksLevelDissolve()` (PreferredModules → true, the
+  |K−K_pref| bias is tree-level), no-op on two-level, and the never-worse score.
+
+**Results (old = sync tip `533d4455`; new = `41866909`; `--seed 123`, interleaved instr):**
+bits 25 better / 0 worse / 71 same. Headline `-N10`: ninetriangles 3.38583082→3.371875026
+(−0.41%), powergrid −0.49%, science2001 −0.33%, netsci −0.14%, web-NotreDame
+5.568529293→5.556421705 (−0.22%, now ~level with the OO arm 5.55442136), om8 `-d` −0.40%,
+memory/meta/regularized all better (malaria −0.068%, air30k −0.003%). Preferred-modules and
+L* never-worse (SAME). Verified 32/32 native at OPENMP=1/0/features, python 855, doctests 40,
+SWIG fresh. Two new tests in test_partition.cpp (ragged optimum; never-worse-on-L*). The
+`-N10` best-trial lifecycle assertions were loosened `== → <=` (a terminal winner pass can
+lower below the best trial, as deep repair already can). A/B driver + full results saved:
+`columnar_wip/bench-dissolve.py`, `columnar_wip/dissolve-ab-results.tsv`.
+
+**THE OPEN TRADE (why it is not landed) — web-NotreDame `-C -d -N10`: −0.2174% bits for
++5.79% instructions** (183→194G). Other `-N10` rows ≤ +2.8%, all with bit gains. Because it
+is a once-per-run POST-pass, single-trial runs pay the full setup: webND `-N1` +70% instr,
+om4 `-d -N1` +77% with no gain on that config. Reported per the marginal-trade rule.
+
+**OPTION B (next session's task): halve the webND cost.** `dissolveColumnarBest` currently
+builds the columnar optimizer TWICE — once to seed + dissolve (setupColumnarOptimizer +
+seedHierarchyFromLeafPaths), once inside `evaluateColumnarPartition` to score+stamp the
+ragged tree. For base + additive corrections the ragged codelength is EXACT from the
+dissolve's own accounting (`startL − totalGain`, which `dissolveUnprofitableLevels` currently
+discards by returning startL), so the decision rescore is unnecessary there; only L* needs
+the true rescore. Reuse the first build (and/or stamp from the module-tree's own per-node
+terms) to avoid the second. Target: webND `-N10` +5.79% → ~+3% and the `-N1` costs down
+proportionally, bits unchanged. Then re-measure the full A/B, refresh the snapshot.
+
+**REMAINING TO LAND (after B, or now if shipping A):**
+1. Refresh `columnar_wip/columnar-pr-performance-section.md` to the COMBINED sync+dissolve
+   state (the sync snapshot currently says "columnar bit-identical" — false once dissolve is
+   in; the columnar arm now improves). Old = sync tip; include the old-vs-new columnar `-C`
+   and `-C -2` tables.
+2. Open the columnar-dissolve PR with base = `sync-master-into-columnar-1076` (a stacked PR;
+   per CLAUDE.md it cannot merge via API — land it locally into the sync branch).
+3. Land BOTH dissolves together: merge columnar-dissolve into the sync branch, re-verify the
+   fast-forward ancestry, then the single fast-forward push lands sync (#1077) + this.
+
+**DEFERRED (documented, not blockers):** flatten operator (columnar-only small extra gain,
+F51 probe showed ~0.002 bits on webND; dissolve-only matches the OO mechanism, which never
+flattens); L*-aware dissolve proposal (currently reverts under L*).
