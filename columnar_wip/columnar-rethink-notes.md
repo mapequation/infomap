@@ -4499,3 +4499,25 @@ web-NotreDame 5.517073626 → 5.512433077 (−0.084% bits, 184.1G → 182.5G ins
 unchanged instr. So the base-estimated proposal is a usable L\* proposal more often than F53 assumed,
 and the "L\*-aware dissolve" stays deferred on its merits (a better proposal), not because the current
 one never lands.
+
+**Addendum (same day): the fallback bug is fixed in this PR after all** (`1a67e6c7`, on Daniel's
+call). `columnarPartition`'s one-level fallback now lifts until the single module's children are the
+leaves (`while (!module.firstChild->isLeaf()) module.replaceChildrenWithGrandChildren();`), so om4
+`-d -N1` writes "partitioned into 2 levels with 1 top modules", the file re-scores to its own header
+with `--no-infomap -c` (7.9829318), the flat-winner skip spares the pass (`dissolve_s` 0), and the run
+retires fewer instructions than the sync tip — 7.62G → 7.11G instructions (-6.8%), 0.746 → 0.693 s, interleaved min of 3, in the re-run A/B — because a four-level tree no longer
+reaches the per-level statistics and the writer. No unit fixture: twenty random and weakly structured
+small graphs that trigger the fallback all do so from a two-level search result, where the old call was
+already right; om4 is the verification. The five `-d --regularized -N1` rows of the overlapping family hit the same fallback and went from 3 to 2 levels too, bits unchanged (the one-level codelength). Why the shared `InfoNode::replaceChildrenWithOneNode` was
+right for one engine and wrong for the other: it is an InfoNode operation, not an engine's — "wrap the
+children under one node, then drop one level" — and the OO fallback calls it on a tree that IS
+two-level at that point (`hierarchicalPartition` collapses before the super-level build), while the
+columnar fallback calls it on the fully materialized multi-level result. The columnar engine still
+materializes into InfoNodes for output, which is the only reason the fallback touches InfoNode at all;
+once the columnar core owns output the fallback becomes "write the one-module partition from the
+stack" and the question disappears.
+
+Also in the follow-up commits: the dissolve round-trip test accepts a flat outcome (`63a06dea`) —
+`-d --entropy-corrected` dissolves all three ninetriangles super-modules on Linux and Windows and
+keeps two on macOS, a libm tie — and the driver drops the OO `-2 -N10 --meta-data` row on air30k, which
+never finishes (104 CPU-minutes, 62,000G instructions when killed).
