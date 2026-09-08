@@ -316,6 +316,112 @@ unsigned int numScoredModules(const InfoNode& node)
   return count;
 }
 
+TEST_CASE("Columnar dissolve turns the symmetric nine-triangles optimum ragged [fast][core][partition][columnar][columnar-contract]")
+{
+  // The columnar search builds an equal-depth stack; the terminal dissolve pass then
+  // removes an intermediate module whose index codebook no longer pays for itself,
+  // making the tree ragged. Nine triangles in three super-groups: two super-groups
+  // stay nested (their triangles at depth 3) and the third dissolves (its triangles
+  // top-level at depth 2), the same ragged optimum the OO dissolve reaches (#1074).
+  // Runs only when the active engine is columnar (the pass is columnar-only).
+  if (infomap::test::testEngineFlags().find("--columnar") == std::string::npos)
+    return;
+  InfomapWrapper im(infomap::test::defaultFlags());
+  im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+  im.run();
+  infomap::test::checkRunSanity(im);
+
+  CHECK(im.codelength() == doctest::Approx(3.371875026).epsilon(1e-8));
+  CHECK(im.numTopModules() == 5);
+  CHECK(im.maxTreeDepth() == 3);
+  // Ragged: three top modules are leaf modules (the dissolved super-group's
+  // triangles) and two are modules of modules (the super-groups still nested).
+  unsigned int leafModuleTops = 0, nestedTops = 0;
+  for (const auto& top : im.root().children()) {
+    if (top.isLeafModule())
+      ++leafModuleTops;
+    else if (!top.isLeaf())
+      ++nestedTops;
+  }
+  CHECK(leafModuleTops == 3);
+  CHECK(nestedTops == 2);
+  // No module ever mixes a leaf node with a sub-module (#990) — the dissolve moves
+  // only modules, so every internal node's children are all leaves or all modules.
+  for (auto it = im.root().begin_tree(); !it.isEnd(); ++it) {
+    if (it->isLeaf() || it->isLeafModule())
+      continue;
+    for (const auto& child : it->children())
+      CHECK_FALSE(child.isLeaf());
+  }
+}
+
+TEST_CASE("Columnar dissolve is never worse than the equal-depth stack it starts from [fast][core][partition][columnar][columnar-contract]")
+{
+  // The pass proposes a ragged tree scored on the base map equation, but commits it
+  // only if it lowers the codelength on the TRUE objective. Under L* the proposal is
+  // not an L* gain, so the run must fall back to the equal-depth stack unchanged.
+  if (infomap::test::testEngineFlags().find("--columnar") == std::string::npos)
+    return;
+  const auto codelength = [](const std::string& flags) {
+    InfomapWrapper im(infomap::test::defaultFlags(flags));
+    im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+    im.run();
+    infomap::test::checkRunSanity(im);
+    return im.codelength();
+  };
+  // Base: dissolve helps (a strict improvement over the equal-depth 3.38583082).
+  CHECK(codelength("") < 3.38583082 - 1e-6);
+  // L*: never worse — the base-estimated proposal is not an L* gain, so the guard
+  // reverts to the equal-depth stack's own L* (3.078067323) rather than a worse tree.
+  CHECK(codelength("--non-redundant") == doctest::Approx(3.078067323).epsilon(1e-7));
+}
+
+TEST_CASE("Columnar dissolve reports the codelength a re-score of its own tree gives [fast][core][partition][columnar][columnar-contract]")
+{
+  // Under every objective but L* the pass decides and reports from its own
+  // accounting -- base module-of-modules terms plus the entropy bias's free-parameter
+  // count -- without re-scoring the ragged tree (#1074). That is exact only if no other
+  // term moves, so check it end to end: the reported codelength must equal what
+  // --no-infomap -c gives for the written tree, which scores it on the full stack.
+  // Each configuration is one where the pass fires on ninetriangles (-d alone does not).
+  if (infomap::test::testEngineFlags().find("--columnar") == std::string::npos)
+    return;
+  const std::string treePath = "columnar_dissolve_roundtrip.tree";
+  // The last entry runs five trials: the winner is then usually not the last trial, so
+  // the pass seeds a stack from the best tree and materializes it before splicing,
+  // rather than working on the last trial's own stack as the single-trial runs do.
+  for (const std::string flags : { infomap::test::defaultFlags(""), infomap::test::defaultFlags("--entropy-corrected"), infomap::test::defaultFlags("-d --entropy-corrected"), infomap::test::defaultFlags("--markov-time 0.8"), infomap::test::withTestEngine("--seed 123 --num-trials 5 --silent") }) {
+    CAPTURE(flags);
+    InfomapWrapper im(flags);
+    im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+    im.run();
+    infomap::test::checkRunSanity(im);
+    // The stamps the pass wrote (no re-score) sum to the headline: root plus every module.
+    double stamped = im.root().codelength;
+    for (auto it = im.root().begin_tree(); !it.isEnd(); ++it)
+      if (!it->isLeaf() && !it->isRoot())
+        stamped += it->codelength;
+    CHECK(stamped == doctest::Approx(im.codelength()).epsilon(1e-9));
+    // The pass fired: at least one triangle was lifted to a top-level leaf module,
+    // which the equal-depth three-level search never produces. Whether any super-module
+    // survives beside it is platform-dependent (-d --entropy-corrected dissolves all
+    // three on Linux and Windows and keeps two on macOS -- a libm tie), so only the
+    // lifting is required here.
+    unsigned int leafModuleTops = 0;
+    for (const auto& top : im.root().children())
+      if (top.isLeafModule())
+        ++leafModuleTops;
+    REQUIRE(leafModuleTops > 0);
+
+    im.writeTree(treePath);
+    InfomapWrapper scored(flags + " --no-infomap --cluster-data " + treePath);
+    scored.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+    scored.run();
+    std::remove(treePath.c_str());
+    CHECK(scored.codelength() == doctest::Approx(im.codelength()).epsilon(1e-9));
+  }
+}
+
 TEST_CASE("Cluster-data clu fixture initializes a two-level partition [fast][core][partition][columnar-contract]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());

@@ -21,7 +21,6 @@
 #include <ctime>
 #include <functional>
 #include <limits>
-#include <map>
 #include <numeric>
 #include <random>
 #include <string>
@@ -1765,15 +1764,26 @@ bool ColumnarTwoLevel::seedHierarchyFromLeafPaths(const std::vector<std::vector<
   // Compact a module id per leaf at each stack level. Stack level j (1 = finest
   // .. depth = top) groups leaves that share the path prefix path[0 .. depth-j]:
   // the finest module needs the whole path to match, the top module only path[0].
-  std::vector<std::vector<int>> levelId(depth + 1); // levelId[j][leaf], j = 1..depth
-  std::vector<int> levelK(depth + 1, 0);
-  for (int j = 1; j <= depth; ++j) {
-    const int prefixLen = depth - j + 1;
-    std::map<std::vector<int>, int> ids;
+  // Coarsest level first, so that a level-j module is the pair (its level-(j+1)
+  // module, path[depth-j]) and one 64-bit key stands in for the whole prefix. Ids
+  // are handed out in first-seen leaf order, exactly as the prefix map did, so the
+  // stack this builds is the same one. That map, keyed by a std::vector copy of the
+  // prefix per leaf per level, was about a third of the seed on web-NotreDame (325k
+  // leaves x 6 levels), and the seed is paid by every -c warm start, every
+  // evaluateColumnarPartition and the terminal winner passes.
+  std::vector<std::vector<int>> levelId(depth + 2); // levelId[j][leaf], j = 1..depth
+  std::vector<int> levelK(depth + 2, 0);
+  levelId[depth + 1].assign(m_nLeaves, 0); // the root, above the top level
+  std::unordered_map<unsigned long long, int> ids;
+  ids.reserve(static_cast<std::size_t>(m_nLeaves));
+  for (int j = depth; j >= 1; --j) {
+    const int element = depth - j; // the path element that splits a level-(j+1) module into level-j ones
+    ids.clear();
     levelId[j].resize(m_nLeaves);
     for (int i = 0; i < m_nLeaves; ++i) {
-      std::vector<int> key(leafPaths[i].begin(), leafPaths[i].begin() + prefixLen);
-      auto res = ids.emplace(std::move(key), static_cast<int>(ids.size()));
+      const unsigned long long key = (static_cast<unsigned long long>(static_cast<unsigned int>(levelId[j + 1][i])) << 32)
+          | static_cast<unsigned long long>(static_cast<unsigned int>(leafPaths[i][element]));
+      const auto res = ids.emplace(key, static_cast<int>(ids.size()));
       levelId[j][i] = res.first->second;
     }
     levelK[j] = static_cast<int>(ids.size());
@@ -2992,6 +3002,22 @@ ColumnarTwoLevel::toNodePaths(const std::vector<InfoNode*>& leafNodes) const
   const int nLeaves = m_hierLevels.empty() ? 0 : hierLevel(0).n;
   const int top = static_cast<int>(m_hierLevels.size()) - 1; // number of module levels
   paths.reserve(nLeaves);
+
+  // A dissolved (ragged) result cannot be walked off the rectangular stack: emit
+  // the per-leaf paths dissolveUnprofitableLevels produced (coarsest-first module
+  // ids, already 1-based since the module-tree's root is 0), plus the leaf slot.
+  if (!m_dissolvedPaths.empty()) {
+    for (int i = 0; i < nLeaves; ++i) {
+      std::vector<unsigned int> path;
+      path.reserve(m_dissolvedPaths[i].size() + 1);
+      for (int id : m_dissolvedPaths[i])
+        path.push_back(static_cast<unsigned int>(id));
+      path.push_back(1); // leaf-rank slot (unused by initTree)
+      paths.emplace_back(leafNodes[i]->stateId, std::move(path));
+    }
+    return paths;
+  }
+
   if (top < 1)
     return paths; // no module structure to materialize
 
