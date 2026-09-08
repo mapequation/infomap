@@ -447,7 +447,9 @@ public:
   // change to leaf modules, so mem/meta/lossy/regularized are untouched; disabled
   // under the |K - K_pref| bias (see ColumnarCorrection::blocksLevelDissolve).
   // `startL` is the incoming hierarchical codelength; returns the (never-greater)
-  // codelength of the dissolved tree, or startL unchanged when nothing dissolves.
+  // codelength of the dissolved tree from the pass's own accounting -- exact for
+  // every objective but L*, whose module-of-modules term this pass does not price
+  // -- or startL unchanged when nothing dissolves.
   double dissolveUnprofitableLevels(double startL);
 
   // Whether the last search produced a ragged result via dissolveUnprofitableLevels.

@@ -342,61 +342,76 @@ double ColumnarTwoLevel::dissolveUnprofitableLevels(double startL)
   // module's children into its parent keeps every child a module, so it never
   // makes a module mix leaf nodes with sub-modules (#990) — it only makes the tree
   // ragged, which is the whole point.
+  //
+  // The OO pass has one more candidate, a leaf module that is its parent's only
+  // child (the parent then becomes the leaf module). It is not needed here: that
+  // parent p is a module-of-modules with the same node set as its child, so
+  // dissolving p into ITS parent produces the identical tree for the identical gain
+  // (p's own term; the grandparent's term is unchanged because the child's enter is
+  // p's), and p is already a candidate. The single-child parents a dissolved tree
+  // still holds (web-NotreDame: 1183 above a leaf module, 157 above a module) are
+  // zero-exit chains, whose term -- and so gain -- is 0.
   std::vector<int> offset(top + 2, 0);
   offset[1] = 1; // root is id 0
   for (int k = 1; k <= top; ++k)
     offset[k + 1] = offset[k] + t.level(k).n;
   const int N = offset[top + 1];
 
-  std::vector<int> nodeLevel(N, 0);
-  std::vector<double> nodeEnter(N, 0.0), nodeExit(N, 0.0);
   std::vector<int> parent(N, -1);
+  std::vector<double> nodeEnter(N, 0.0), nodeExit(N, 0.0);
   std::vector<std::vector<int>> children(N);
+  // Per parent, running sums over its CURRENT children. The module-of-modules term
+  // is plogp(exit + sumEnter) - sumPlogpEnter - plogp(exit), so with these a term,
+  // a gain and an applied dissolve are all O(1). Re-deriving them from the child
+  // list made one gain O(degree) and one dissolve O(degree^2) -- the pass was 30% of
+  // an om4 -d -N1 run (302 of 999 samples) and 0.19 s of web-NotreDame -d -N1.
+  std::vector<double> sumEnter(N, 0.0), sumPlogpEnter(N, 0.0);
 
-  nodeExit[0] = t.exitNetworkFlow; // root
+  // The root's exit stays 0: the base index term never reads it (scoreStackBase),
+  // and this pass prices exactly the base module-of-modules terms.
   for (int k = 1; k <= top; ++k) {
     const int n = t.level(k).n;
     for (int m = 0; m < n; ++m) {
       const int id = offset[k] + m;
-      nodeLevel[id] = k;
       nodeEnter[id] = t.enter(k, m);
       nodeExit[id] = t.exit(k, m);
       const int par = (k == top) ? 0 : offset[k + 1] + m_hierAssign[k][m];
       parent[id] = par;
       children[par].push_back(id);
+      sumEnter[par] += nodeEnter[id];
+      sumPlogpEnter[par] += plogp(nodeEnter[id]);
     }
   }
+  // Only a module-of-modules can dissolve: its children are modules (k >= 2).
+  const int firstModuleOfModules = offset[2];
 
-  // Base module-of-modules / root term over a parent's CURRENT children.
-  auto parentTerm = [&](int p) {
+  // Base module-of-modules / root term of p over its current children.
+  auto term = [&](int p) {
     const double ex = nodeExit[p];
-    double sumEnter = 0.0, sumPlogpEnter = 0.0;
-    for (int c : children[p]) {
-      sumEnter += nodeEnter[c];
-      sumPlogpEnter += plogp(nodeEnter[c]);
-    }
-    return plogp(ex + sumEnter) - sumPlogpEnter - plogp(ex);
+    return plogp(ex + sumEnter[p]) - sumPlogpEnter[p] - plogp(ex);
+  };
+  // Whether m owns an exit codeword. It does not when it is its parent's only child
+  // all the way up to the root, and the entropy bias then counts one free parameter
+  // less for it (BiasedEntropyCorrection::hierarchicalCorrection: "every level of
+  // size one"). Removing such an m saves nothing on that term -- its children keep
+  // exactly the exit codewords they had -- so a flat per-node gain over-predicted
+  // there. The one shape where it matters is a sole top module, whose base gain is 0
+  // as well: the pass proposed a dissolve the true objective then rejected, at the
+  // price of a materialization and a re-score.
+  auto hasExitCodeword = [&](int m) {
+    for (int u = m; u != 0; u = parent[u])
+      if (children[parent[u]].size() > 1)
+        return true;
+    return false;
   };
   // Gain from dissolving m into its parent p: p keeps its exit and its other
   // children but gains m's children in m's place, and m's own codebook is gone.
   auto dissolveGain = [&](int m) {
     const int p = parent[m];
-    const double before = parentTerm(p) + parentTerm(m);
-    // parent term after: swap m out, m's children in.
     const double ex = nodeExit[p];
-    double sumEnter = 0.0, sumPlogpEnter = 0.0;
-    for (int c : children[p]) {
-      if (c == m)
-        continue;
-      sumEnter += nodeEnter[c];
-      sumPlogpEnter += plogp(nodeEnter[c]);
-    }
-    for (int c : children[m]) {
-      sumEnter += nodeEnter[c];
-      sumPlogpEnter += plogp(nodeEnter[c]);
-    }
-    const double after = plogp(ex + sumEnter) - sumPlogpEnter - plogp(ex);
-    return before - after + corrGainPerNode;
+    const double after = plogp(ex + sumEnter[p] - nodeEnter[m] + sumEnter[m]) - (sumPlogpEnter[p] - plogp(nodeEnter[m]) + sumPlogpEnter[m]) - plogp(ex);
+    const double corr = corrGainPerNode != 0.0 && hasExitCodeword(m) ? corrGainPerNode : 0.0;
+    return term(p) + term(m) - after + corr;
   };
 
   const double kDissolveMinGain = 1e-10;
@@ -413,13 +428,13 @@ double ColumnarTwoLevel::dissolveUnprofitableLevels(double startL)
   unsigned int nextOrder = 0;
   auto offer = [&](int m) {
     ++version[m];
-    if (nodeLevel[m] < 2 || !alive[m]) // only a live module-of-modules can dissolve
+    if (m < firstModuleOfModules || !alive[m]) // only a live module-of-modules can dissolve
       return;
     const double g = dissolveGain(m);
     if (g > kDissolveMinGain)
       heap.push({ g, nextOrder++, version[m], m });
   };
-  for (int id = 1; id < N; ++id)
+  for (int id = firstModuleOfModules; id < N; ++id)
     offer(id);
 
   double totalGain = 0.0;
@@ -432,20 +447,22 @@ double ColumnarTwoLevel::dissolveUnprofitableLevels(double startL)
       continue;
     const int m = c.node;
     const int p = parent[m];
-    // Apply: m's children become p's children; m dies.
+    // Apply: m's children become p's children; m dies. p's sums move with them.
     auto& pc = children[p];
     pc.erase(std::remove(pc.begin(), pc.end(), m), pc.end());
     for (int ch : children[m]) {
       parent[ch] = p;
       pc.push_back(ch);
     }
+    sumEnter[p] += sumEnter[m] - nodeEnter[m];
+    sumPlogpEnter[p] += sumPlogpEnter[m] - plogp(nodeEnter[m]);
     alive[m] = 0;
     children[m].clear();
     totalGain += c.gain;
     ++numDissolved;
     // p's child set changed: its own gain and its children's gains are stale.
     offer(p);
-    for (int ch : children[p])
+    for (int ch : pc)
       offer(ch);
   }
 
@@ -453,7 +470,9 @@ double ColumnarTwoLevel::dissolveUnprofitableLevels(double startL)
     return startL;
 
   // Emit one ragged module-path per leaf: its level-1 module, then up the current
-  // parent chain to the root. Coarsest-first (root side first), root excluded.
+  // parent chain to the root. Coarsest-first (root side first), root excluded. A
+  // leaf module is never dissolved, and a dissolved module's children were
+  // re-parented, so every chain runs through live nodes only.
   const int nLeaves = t.leaves.n;
   m_dissolvedPaths.assign(nLeaves, {});
   std::vector<int> chain;
@@ -463,15 +482,15 @@ double ColumnarTwoLevel::dissolveUnprofitableLevels(double startL)
       chain.push_back(id);
     m_dissolvedPaths[i].assign(chain.rbegin(), chain.rend());
   }
-  // A PROPOSAL, not a committed result: totalGain is exact for the base map equation
-  // (and base + additive corrections, since dissolve moves only base module-of-modules
-  // terms), but NOT for L*, whose module-of-modules term is the non-redundant index
-  // codebook, not this one. The rectangular stack is left untouched, so the caller
-  // scores the materialized ragged tree on the true objective and keeps it only if it
-  // is actually lower (InfomapBase::columnarPartition), reverting to the stack otherwise.
-  // The returned value is therefore the unchanged stack codelength.
-  (void)totalGain;
-  return startL;
+  // The dissolved tree's codelength, from this pass's own accounting. Exact for
+  // every objective but L*: a dissolve moves base module-of-modules terms and the
+  // entropy bias's free-parameter count, and nothing else -- every other correction
+  // is a function of the leaf modules, which the pass never touches. L*'s
+  // module-of-modules term is the non-redundant index codebook, which this pass does
+  // not price, so under L* the value is an estimate and the caller re-scores the
+  // materialized tree (InfomapBase::dissolveColumnarBest). The rectangular stack is
+  // left untouched either way; toNodePaths emits the ragged paths while they stand.
+  return startL - totalGain;
 }
 
 double ColumnarTwoLevel::oneLevelCodelength()
