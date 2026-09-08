@@ -3,6 +3,7 @@
 the snapshot tables need, plus the OO arm (new binary, no -C) for the OO-vs-columnar tables. Interleaved by arm; -N1 rows as 3 reps spread across the batch.
 Row: key label arm rep flags codelength total_s instr top levels
 Resumable: existing (key, label, arm, rep) rows are skipped."""
+
 import json
 import os
 import re
@@ -28,13 +29,31 @@ BASE = [
     ("web-NotreDame", "networks/db/web-NotreDame.net", "-d"),
     ("lazega", "networks/meta/lazega.net", "--meta-data networks/meta/lazega.meta"),
     ("multilayer (ex.)", "examples/networks/multilayer.net", ""),
-    ("malaria", "networks/multilayer/real-world/malaria/malaria_PLOSCompBiology_2013.net", ""),
+    (
+        "malaria",
+        "networks/multilayer/real-world/malaria/malaria_PLOSCompBiology_2013.net",
+        "",
+    ),
     ("air30k", "networks/states/air2011/air30k.net", ""),
     ("air30k (reg.)", "networks/states/air2011/air30k.net", "-d --regularized"),
-    ("air30k (meta)", "networks/states/air2011/air30k.net", "--meta-data networks/states/air2011/air30k_usstate.meta"),
-    ("science2001 (pref.)", "networks/db/science2001.net", "-d --preferred-number-of-modules 25"),
+    (
+        "air30k (meta)",
+        "networks/states/air2011/air30k.net",
+        "--meta-data networks/states/air2011/air30k_usstate.meta",
+    ),
+    (
+        "science2001 (pref.)",
+        "networks/db/science2001.net",
+        "-d --preferred-number-of-modules 25",
+    ),
 ]
-OM = [("om2", "E50000"), ("om4", "E100000"), ("om5", "E100000"), ("om6", "E100000"), ("om8", "E100000")]
+OM = [
+    ("om2", "E50000"),
+    ("om4", "E100000"),
+    ("om5", "E100000"),
+    ("om6", "E100000"),
+    ("om8", "E100000"),
+]
 WIKI = "/Users/daniel/dev/projects/icelab/code/networks/examples/wikispeedia_states.net"
 
 # (key, label, net, flags, arms, reps)
@@ -46,7 +65,16 @@ for label, net, fl in BASE:
     # touch it, but the snapshot's rule is one session, one instrument for every table,
     # so it is re-measured here rather than carried from the sync's session.
     # air30k (meta) OO does not finish -N10 in budget (same convention as every snapshot).
-    configs.append(("OO10", label, net, f"-N1 {fl}" if label == "air30k (meta)" else f"-N10 {fl}", ("new",), 1))
+    configs.append(
+        (
+            "OO10",
+            label,
+            net,
+            f"-N1 {fl}" if label == "air30k (meta)" else f"-N10 {fl}",
+            ("new",),
+            1,
+        )
+    )
     configs.append(("OO2_10", label, net, f"-2 -N10 {fl}", ("new",), 1))
     configs.append(("C1", label, net, f"-C -N1 {fl}", ("old", "new"), 3))
     configs.append(("F10", label, net, f"-C -F -N10 {fl}", ("new",), 1))
@@ -59,18 +87,74 @@ for om, e in OM:
     configs.append(("C2_10", f"{lab} `-2d`", net, "-C -2d -N10", ("old", "new"), 1))
     configs.append(("C1", f"{lab} `-2d`", net, "-C -2d -N1", ("old", "new"), 3))
     configs.append(("C1", f"{lab} `-d`", net, "-C -d -N1", ("old", "new"), 3))
-    configs.append(("C1", f"{lab} `-2d -c` planted", net, f"-C -2d -N1 -c {clu}", ("old", "new"), 3))
-    configs.append(("FAM", f"{om} `-2d --regularized -N1`", net, "-C -2d --regularized -N1", ("old", "new"), 3))
-    configs.append(("FAM", f"{om} `-2d --regularized -N10`", net, "-C -2d --regularized -N10", ("old", "new"), 1))
-    configs.append(("FAM", f"{om} `-d --regularized -N1`", net, "-C -d --regularized -N1", ("old", "new"), 3))
-    configs.append(("FAM", f"{om} `-d --regularized -N10`", net, "-C -d --regularized -N10", ("old", "new"), 1))
-    configs.append(("FAM", f"{om} planted, `--no-infomap -c`", net, f"-C -2d -N1 --no-infomap -c {clu}", ("old", "new"), 3))
+    configs.append(
+        (
+            "C1",
+            f"{lab} `-2d -c` planted",
+            net,
+            f"-C -2d -N1 -c {clu}",
+            ("old", "new"),
+            3,
+        )
+    )
+    configs.append(
+        (
+            "FAM",
+            f"{om} `-2d --regularized -N1`",
+            net,
+            "-C -2d --regularized -N1",
+            ("old", "new"),
+            3,
+        )
+    )
+    configs.append(
+        (
+            "FAM",
+            f"{om} `-2d --regularized -N10`",
+            net,
+            "-C -2d --regularized -N10",
+            ("old", "new"),
+            1,
+        )
+    )
+    configs.append(
+        (
+            "FAM",
+            f"{om} `-d --regularized -N1`",
+            net,
+            "-C -d --regularized -N1",
+            ("old", "new"),
+            3,
+        )
+    )
+    configs.append(
+        (
+            "FAM",
+            f"{om} `-d --regularized -N10`",
+            net,
+            "-C -d --regularized -N10",
+            ("old", "new"),
+            1,
+        )
+    )
+    configs.append(
+        (
+            "FAM",
+            f"{om} planted, `--no-infomap -c`",
+            net,
+            f"-C -2d -N1 --no-infomap -c {clu}",
+            ("old", "new"),
+            3,
+        )
+    )
 configs.append(("C10", "wikispeedia `-d`", WIKI, "-C -d -N10", ("old", "new"), 1))
 configs.append(("C2_10", "wikispeedia `-2d`", WIKI, "-C -2d -N10", ("old", "new"), 1))
 configs.append(("C1", "wikispeedia `-2d`", WIKI, "-C -2d -N1", ("old", "new"), 3))
 configs.append(("C1", "wikispeedia `-d`", WIKI, "-C -d -N1", ("old", "new"), 3))
 configs.append(("F10", "wikispeedia `-d`", WIKI, "-C -F -d -N10", ("new",), 1))
-configs.append(("L10", "wikispeedia `-d`", WIKI, "-C --non-redundant -d -N10", ("new",), 1))
+configs.append(
+    ("L10", "wikispeedia `-d`", WIKI, "-C --non-redundant -d -N10", ("new",), 1)
+)
 configs.append(("OO10", "wikispeedia `-d`", WIKI, "-d -N10", ("new",), 1))
 configs.append(("OO2_10", "wikispeedia `-2d`", WIKI, "-2d -N10", ("new",), 1))
 
@@ -91,7 +175,11 @@ def run(key, label, net, flags, arm, rep):
     tj = f"{TMP}/timing.json"
     if os.path.exists(tj):
         os.remove(tj)
-    cmd = ["/usr/bin/time", "-l", BIN[arm], netpath, TMP] + flags.split() + ["--seed", "123", "--no-file-output", "--timing-json", tj]
+    cmd = (
+        ["/usr/bin/time", "-l", BIN[arm], netpath, TMP]
+        + flags.split()
+        + ["--seed", "123", "--no-file-output", "--timing-json", tj]
+    )
     p = subprocess.run(cmd, cwd=R, capture_output=True, text=True)
     out = p.stdout + p.stderr
     m = re.search(r"Best codelength\s+([0-9.eE+-]+)", out)
@@ -107,10 +195,17 @@ def run(key, label, net, flags, arm, rep):
     except Exception:
         total = "NA"
     with open(OUT, "a") as f:
-        f.write("\t".join(map(str, [key, label, arm, rep, flags, cl, total, instr, top, lv])) + "\n")
+        f.write(
+            "\t".join(
+                map(str, [key, label, arm, rep, flags, cl, total, instr, top, lv])
+            )
+            + "\n"
+        )
     if cl == "NA":
         with open(OUT + ".err", "a") as f:
-            f.write(f"### {key} {label} {arm} {rep} :: {' '.join(cmd)}\n{out[-3000:]}\n")
+            f.write(
+                f"### {key} {label} {arm} {rep} :: {' '.join(cmd)}\n{out[-3000:]}\n"
+            )
 
 
 n1 = [c for c in configs if c[5] == 3]
