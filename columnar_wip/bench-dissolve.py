@@ -75,7 +75,10 @@ for label, net, fl in BASE:
             1,
         )
     )
-    configs.append(("OO2_10", label, net, f"-2 -N10 {fl}", ("new",), 1))
+    # air30k (meta) does not finish -2 -N10 on the OO arm either (killed once at 104 CPU-minutes,
+    # 62,000G instructions); the sync snapshot's OO -2 table has no row for it and neither does this.
+    if label != "air30k (meta)":
+        configs.append(("OO2_10", label, net, f"-2 -N10 {fl}", ("new",), 1))
     configs.append(("C1", label, net, f"-C -N1 {fl}", ("old", "new"), 3))
     configs.append(("F10", label, net, f"-C -F -N10 {fl}", ("new",), 1))
     configs.append(("L10", label, net, f"-C --non-redundant -N10 {fl}", ("new",), 1))
@@ -160,12 +163,13 @@ configs.append(("OO2_10", "wikispeedia `-2d`", WIKI, "-2d -N10", ("new",), 1))
 
 done = set()
 if os.path.exists(OUT):
-    for line in open(OUT):
-        p = line.rstrip("\n").split("\t")
-        # A row counts as done only if it actually captured a codelength; NA rows
-        # (e.g. a bad path) are left out so a later invocation retries them.
-        if len(p) >= 6 and p[5] != "NA":
-            done.add((p[0], p[1], p[2], p[3]))
+    with open(OUT) as f:
+        for line in f:
+            p = line.rstrip("\n").split("\t")
+            # A row counts as done only if it actually captured a codelength; NA rows
+            # (e.g. a bad path) are left out so a later invocation retries them.
+            if len(p) >= 6 and p[5] != "NA":
+                done.add((p[0], p[1], p[2], p[3]))
 
 
 def run(key, label, net, flags, arm, rep):
@@ -180,19 +184,20 @@ def run(key, label, net, flags, arm, rep):
         + flags.split()
         + ["--seed", "123", "--no-file-output", "--timing-json", tj]
     )
-    p = subprocess.run(cmd, cwd=R, capture_output=True, text=True)
+    p = subprocess.run(cmd, cwd=R, capture_output=True, text=True, check=False)
     out = p.stdout + p.stderr
     m = re.search(r"Best codelength\s+([0-9.eE+-]+)", out)
     cl = m.group(1) if m else "NA"
-    m = re.search(r"^\s*Top modules\s+(\d+)", out, re.M)
+    m = re.search(r"^\s*Top modules\s+(\d+)", out, re.MULTILINE)
     top = m.group(1) if m else "NA"
-    m = re.search(r"^\s*Levels\s+(\d+)", out, re.M)
+    m = re.search(r"^\s*Levels\s+(\d+)", out, re.MULTILINE)
     lv = m.group(1) if m else "NA"
     m = re.search(r"(\d+)\s+instructions retired", out)
     instr = m.group(1) if m else "NA"
     try:
-        total = json.load(open(tj))["timing"]["total_s"]
-    except Exception:
+        with open(tj) as f:
+            total = json.load(f)["timing"]["total_s"]
+    except (OSError, KeyError, ValueError):
         total = "NA"
     with open(OUT, "a") as f:
         f.write(
