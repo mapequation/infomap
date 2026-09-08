@@ -3082,6 +3082,15 @@ void InfomapBase::columnarPartition()
       Console::detail(1, "columnar: worse codelength than one-level ({} > {}), putting all nodes in one module", io::toPrecision(columnarL), io::toPrecision(oneModuleL));
 
       auto& module = root().replaceChildrenWithOneNode();
+      // replaceChildrenWithOneNode wraps the root's children under one node and then
+      // removes exactly ONE level below it -- all the OO fallback ever needs, because its
+      // tree is two-level at this point. The columnar result is multi-level, so that left
+      // the search's sub-hierarchy under the single module: om4 -d -N1 wrote "partitioned
+      // into 4 levels with 1 top modules" under a header carrying the one-level codelength.
+      // The one-level solution is one module holding every leaf directly, so lift until
+      // the module's children are the leaves.
+      while (module.firstChild != nullptr && !module.firstChild->isLeaf())
+        module.replaceChildrenWithGrandChildren();
       module.data = m_root.data;
       module.physicalNodes = m_root.physicalNodes;
 #if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
