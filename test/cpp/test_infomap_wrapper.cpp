@@ -592,7 +592,12 @@ TEST_CASE("Multi-trial run reports the best trial codelength [fast][core][lifecy
   auto bestIt = std::min_element(codelengths.begin(), codelengths.end());
   REQUIRE(bestIt != codelengths.end());
 
-  CHECK(im.codelength() == doctest::Approx(*bestIt));
+  // The reported codelength is the best trial's, then refined once per run by the
+  // terminal winner passes (deep repair, and the dissolve of unprofitable levels,
+  // #1074) -- both only lower it -- so it is <= the best per-trial value, which is
+  // pre-refinement. Under the object-oriented engine those passes are per trial (or
+  // absent), so the two are equal; <= holds for both engines.
+  CHECK(im.codelength() <= *bestIt + 1e-9);
 }
 
 TEST_CASE("Converge stops trials on a codelength plateau within the cap [fast][core][lifecycle][columnar-contract]")
@@ -613,7 +618,12 @@ TEST_CASE("Converge stops trials on a codelength plateau within the cap [fast][c
 
   auto bestIt = std::min_element(codelengths.begin(), codelengths.end());
   REQUIRE(bestIt != codelengths.end());
-  CHECK(im.codelength() == doctest::Approx(*bestIt));
+  // The reported codelength is the best trial's, then refined once per run by the
+  // terminal winner passes (deep repair, and the dissolve of unprofitable levels,
+  // #1074) -- both only lower it -- so it is <= the best per-trial value, which is
+  // pre-refinement. Under the object-oriented engine those passes are per trial (or
+  // absent), so the two are equal; <= holds for both engines.
+  CHECK(im.codelength() <= *bestIt + 1e-9);
 }
 
 TEST_CASE("Converge is deterministic for a given input and seed [fast][core][lifecycle][columnar-contract]")
@@ -772,7 +782,12 @@ TEST_CASE("Parallel trials report the best trial codelength [fast][core][lifecyc
   auto bestIt = std::min_element(codelengths.begin(), codelengths.end());
   REQUIRE(bestIt != codelengths.end());
 
-  CHECK(im.codelength() == doctest::Approx(*bestIt));
+  // The reported codelength is the best trial's, then refined once per run by the
+  // terminal winner passes (deep repair, and the dissolve of unprofitable levels,
+  // #1074) -- both only lower it -- so it is <= the best per-trial value, which is
+  // pre-refinement. Under the object-oriented engine those passes are per trial (or
+  // absent), so the two are equal; <= holds for both engines.
+  CHECK(im.codelength() <= *bestIt + 1e-9);
 }
 
 TEST_CASE("Parallel trials are deterministic for the same seed [fast][core][lifecycle][openmp][columnar-contract]")

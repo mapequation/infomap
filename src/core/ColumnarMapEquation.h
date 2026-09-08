@@ -13,6 +13,7 @@
 #include "ColumnarLevel.h"
 #include "ColumnarTuning.h" // teleIndexRate, read by unitIndexRate below
 
+#include <cmath>
 #include <functional>
 #include <string>
 #include <vector>
@@ -134,6 +135,23 @@ public:
   virtual bool participatesInModuleMoves() const { return false; }
   virtual void setUnits(const std::vector<int>& /*leafToUnit*/, int /*numUnits*/) {}
   virtual void resetUnitsToLeaves() {}
+
+  // --- Level-dissolve hooks (terminal ragged pass, dissolveUnprofitableLevels) ---
+  // The dissolve pass removes an intermediate module-of-modules whose index
+  // codebook no longer pays for itself, lifting its children into its parent.
+  // It touches ONLY module-of-modules terms, which are the base map equation for
+  // every objective (a correction's own cost lives on leaf modules, which the
+  // pass never moves) -- so a correction contributes to a dissolve gain only if
+  // its cost depends on the SET of internal codebooks. Two cases, both default
+  // to the no-op:
+  //  * blocksLevelDissolve(): the |K - K_pref| bias is a tree-level scalar a
+  //    local per-node delta cannot see, so it disables the pass (as the OO pass
+  //    guards on preferredNumberOfModules). The entropy bias does NOT block: its
+  //    cost is a per-codebook free-parameter count, which is exactly local.
+  //  * dissolveGainPerInternalNode(): bits saved by removing one internal
+  //    codebook -- non-zero only for the entropy bias (one free parameter fewer).
+  virtual bool blocksLevelDissolve() const { return false; }
+  virtual double dissolveGainPerInternalNode() const { return 0.0; }
 
   // --- Leaf-module merge hooks (mem-aware coarsening) -----------------------
   // The leaf-module merge operator folds one leaf module into another to coarsen
@@ -418,6 +436,25 @@ public:
   // materialize into an InfoNode tree. sweepLimit caps the refinement sweeps
   // (0 = until convergence; wired to --tune-iteration-limit / -T).
   double optimizeColumnar(unsigned int bottomBlockLimit = 1, unsigned int sweepLimit = 0);
+
+  // Terminal ragged pass: dissolve every intermediate module-of-modules whose
+  // index codebook no longer pays for itself (its children move up into its
+  // parent), best-first over the whole tree, exact per-node delta on the base
+  // module-of-modules term plus the entropy-bias free-parameter term. The stack
+  // cannot hold a ragged tree, so the surviving partition is emitted as ragged
+  // per-leaf paths (toNodePaths returns them, and hasDissolvedResult() flags that
+  // the caller must score/stamp the materialized tree rather than the stack). No
+  // change to leaf modules, so mem/meta/lossy/regularized are untouched; disabled
+  // under the |K - K_pref| bias (see ColumnarCorrection::blocksLevelDissolve).
+  // `startL` is the incoming hierarchical codelength; returns the (never-greater)
+  // codelength of the dissolved tree, or startL unchanged when nothing dissolves.
+  double dissolveUnprofitableLevels(double startL);
+
+  // Whether the last search produced a ragged result via dissolveUnprofitableLevels.
+  bool hasDissolvedResult() const { return !m_dissolvedPaths.empty(); }
+  // Discard a dissolve proposal so toNodePaths emits the rectangular stack again --
+  // the caller's never-worse revert when the ragged tree did not lower the objective.
+  void clearDissolvedPaths() { m_dissolvedPaths.clear(); }
 
   // Flat-first trial (#889, hierarchical half): the hierarchical searches build
   // the bottom of the hierarchy with the full two-level pipeline
@@ -930,6 +967,12 @@ private:
   std::vector<Level> m_hierLevels;
   const Level& hierLevel(int k) const { return k == 0 ? leaf0() : m_hierLevels[k]; }
   std::vector<std::vector<int>> m_hierAssign;
+
+  // Set by dissolveUnprofitableLevels when it removed at least one level for some
+  // branch: one ragged module-path per leaf (coarsest-first, no trailing leaf
+  // slot), the partition the rectangular stack cannot represent. toNodePaths emits
+  // these when present; every stack rebuild clears them (clearDissolvedPaths()).
+  std::vector<std::vector<int>> m_dissolvedPaths;
 };
 
 /**
@@ -947,6 +990,16 @@ public:
   BiasedEntropyCorrection(double multiplier, double totalDegree)
       : m_multiplier(multiplier), m_totalDegree(totalDegree > 0.0 ? totalDegree : 1.0) {}
   double hierarchicalCorrection(const ColumnarTwoLevel& core, columnar::StackBreakdown* breakdown = nullptr) const override;
+
+  // Removing one internal codebook drops the free-parameter count by one; the
+  // per-parameter price is m_multiplier / (2 * totalDegree * ln2), the same
+  // constant hierarchicalCorrection charges. Matches the OO pass, which prices a
+  // dissolve through BiasedMapEquation::calcCodelengthOnModuleOfModules and so
+  // sheds exactly this one codebook's free-parameter charge.
+  double dissolveGainPerInternalNode() const override
+  {
+    return m_multiplier / (2.0 * m_totalDegree * std::log(2.0));
+  }
 
 private:
   double m_multiplier;
@@ -980,6 +1033,11 @@ public:
   {
     return std::abs(numModules - static_cast<int>(preferredNumModules));
   }
+
+  // |K - K_pref| is a scalar over the whole partition, not a sum over codebooks,
+  // so a local per-node dissolve gain cannot account for it -- disable the pass,
+  // exactly as the OO pass returns early on preferredNumberOfModules > 0.
+  bool blocksLevelDissolve() const override { return true; }
 
   bool participatesInMoveLoop() const override { return true; }
   double initMoveLoop(const std::vector<int>& leafModule, int numModules) override;

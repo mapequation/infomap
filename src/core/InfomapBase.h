@@ -547,6 +547,14 @@ private:
   // for the base objective (no module-move-capable correction).
   bool deepRepairColumnarBest(NodePaths& tree, double& codelength, bool freshDiscovery);
 
+  // Terminal ragged pass on the settled winner, once per run and after any deep
+  // repair (#1074): seed the columnar stack from `tree`, dissolve intermediate
+  // modules whose index codebook no longer pays for itself, and rewrite
+  // tree/codelength when the ragged result lowers the codelength on the active
+  // objective. Runs for every objective (the proposal is scored on the true
+  // objective and reverted if not lower, e.g. under L*). Returns whether it improved.
+  bool dissolveColumnarBest(NodePaths& tree, double& codelength);
+
   // Whether the (single) trial's regroup arm escalated — the search's own
   // pathology signal, set by columnarPartition from the trial engine. A
   // single-trial run pays the winner repair's expensive fresh discovery only

@@ -22,6 +22,8 @@
 #include "ColumnarObjective.h"
 #include "../utils/infomath.h"
 
+#include <algorithm>
+#include <queue>
 #include <vector>
 
 namespace infomap {
@@ -309,6 +311,167 @@ double ColumnarTwoLevel::codelengthBreakdownFromStack(StackBreakdown& breakdown)
   prepareBreakdown(terms, breakdown);
   const double base = m_nonRedundant ? scoreStackNonRedundant(terms, &breakdown) : scoreStackBase(terms, &breakdown);
   return base + objectiveCorrection(&breakdown);
+}
+
+double ColumnarTwoLevel::dissolveUnprofitableLevels(double startL)
+{
+  using infomath::plogp;
+  clearDissolvedPaths();
+
+  const int top = static_cast<int>(m_hierLevels.size()) - 1; // number of module levels
+  if (top < 2)
+    return startL; // no module-of-modules to dissolve (two-level or flat)
+
+  // The |K - K_pref| bias is the one correction a local per-node gain cannot see;
+  // it turns the pass off, matching the OO pass's preferredNumberOfModules guard.
+  // Every other correction adds only a per-internal-codebook gain (the entropy
+  // bias; zero for the rest), because dissolve moves module-of-modules terms only
+  // and each correction's own cost lives on the leaf modules it never touches.
+  double corrGainPerNode = 0.0;
+  for (const auto& c : m_corrections) {
+    if (c->blocksLevelDissolve())
+      return startL;
+    corrGainPerNode += c->dissolveGainPerInternalNode();
+  }
+
+  const StackTerms t = buildStackTerms();
+
+  // Module-tree over root (id 0) + every module (id offset[k] + m). A leaf module
+  // (k == 1) is a leaf of THIS tree; only modules-of-modules (k >= 2) and the root
+  // are parents, and only modules-of-modules are dissolve candidates. Lifting a
+  // module's children into its parent keeps every child a module, so it never
+  // makes a module mix leaf nodes with sub-modules (#990) — it only makes the tree
+  // ragged, which is the whole point.
+  std::vector<int> offset(top + 2, 0);
+  offset[1] = 1; // root is id 0
+  for (int k = 1; k <= top; ++k)
+    offset[k + 1] = offset[k] + t.level(k).n;
+  const int N = offset[top + 1];
+
+  std::vector<int> nodeLevel(N, 0);
+  std::vector<double> nodeEnter(N, 0.0), nodeExit(N, 0.0);
+  std::vector<int> parent(N, -1);
+  std::vector<std::vector<int>> children(N);
+
+  nodeExit[0] = t.exitNetworkFlow; // root
+  for (int k = 1; k <= top; ++k) {
+    const int n = t.level(k).n;
+    for (int m = 0; m < n; ++m) {
+      const int id = offset[k] + m;
+      nodeLevel[id] = k;
+      nodeEnter[id] = t.enter(k, m);
+      nodeExit[id] = t.exit(k, m);
+      const int par = (k == top) ? 0 : offset[k + 1] + m_hierAssign[k][m];
+      parent[id] = par;
+      children[par].push_back(id);
+    }
+  }
+
+  // Base module-of-modules / root term over a parent's CURRENT children.
+  auto parentTerm = [&](int p) {
+    const double ex = nodeExit[p];
+    double sumEnter = 0.0, sumPlogpEnter = 0.0;
+    for (int c : children[p]) {
+      sumEnter += nodeEnter[c];
+      sumPlogpEnter += plogp(nodeEnter[c]);
+    }
+    return plogp(ex + sumEnter) - sumPlogpEnter - plogp(ex);
+  };
+  // Gain from dissolving m into its parent p: p keeps its exit and its other
+  // children but gains m's children in m's place, and m's own codebook is gone.
+  auto dissolveGain = [&](int m) {
+    const int p = parent[m];
+    const double before = parentTerm(p) + parentTerm(m);
+    // parent term after: swap m out, m's children in.
+    const double ex = nodeExit[p];
+    double sumEnter = 0.0, sumPlogpEnter = 0.0;
+    for (int c : children[p]) {
+      if (c == m)
+        continue;
+      sumEnter += nodeEnter[c];
+      sumPlogpEnter += plogp(nodeEnter[c]);
+    }
+    for (int c : children[m]) {
+      sumEnter += nodeEnter[c];
+      sumPlogpEnter += plogp(nodeEnter[c]);
+    }
+    const double after = plogp(ex + sumEnter) - sumPlogpEnter - plogp(ex);
+    return before - after + corrGainPerNode;
+  };
+
+  const double kDissolveMinGain = 1e-10;
+  struct Cand {
+    double gain;
+    unsigned int order;
+    unsigned int version;
+    int node;
+    bool operator<(const Cand& o) const noexcept { return gain < o.gain || (gain == o.gain && order > o.order); }
+  };
+  std::priority_queue<Cand> heap;
+  std::vector<unsigned int> version(N, 0);
+  std::vector<char> alive(N, 1);
+  unsigned int nextOrder = 0;
+  auto offer = [&](int m) {
+    ++version[m];
+    if (nodeLevel[m] < 2 || !alive[m]) // only a live module-of-modules can dissolve
+      return;
+    const double g = dissolveGain(m);
+    if (g > kDissolveMinGain)
+      heap.push({ g, nextOrder++, version[m], m });
+  };
+  for (int id = 1; id < N; ++id)
+    offer(id);
+
+  double totalGain = 0.0;
+  int numDissolved = 0;
+  while (!heap.empty()) {
+    pollInterrupt();
+    const Cand c = heap.top();
+    heap.pop();
+    if (c.version != version[c.node] || !alive[c.node])
+      continue;
+    const int m = c.node;
+    const int p = parent[m];
+    // Apply: m's children become p's children; m dies.
+    auto& pc = children[p];
+    pc.erase(std::remove(pc.begin(), pc.end(), m), pc.end());
+    for (int ch : children[m]) {
+      parent[ch] = p;
+      pc.push_back(ch);
+    }
+    alive[m] = 0;
+    children[m].clear();
+    totalGain += c.gain;
+    ++numDissolved;
+    // p's child set changed: its own gain and its children's gains are stale.
+    offer(p);
+    for (int ch : children[p])
+      offer(ch);
+  }
+
+  if (numDissolved == 0)
+    return startL;
+
+  // Emit one ragged module-path per leaf: its level-1 module, then up the current
+  // parent chain to the root. Coarsest-first (root side first), root excluded.
+  const int nLeaves = t.leaves.n;
+  m_dissolvedPaths.assign(nLeaves, {});
+  std::vector<int> chain;
+  for (int i = 0; i < nLeaves; ++i) {
+    chain.clear();
+    for (int id = offset[1] + m_hierAssign[0][i]; id != 0; id = parent[id])
+      chain.push_back(id);
+    m_dissolvedPaths[i].assign(chain.rbegin(), chain.rend());
+  }
+  // A PROPOSAL, not a committed result: totalGain is exact for the base map equation
+  // (and base + additive corrections, since dissolve moves only base module-of-modules
+  // terms), but NOT for L*, whose module-of-modules term is the non-redundant index
+  // codebook, not this one. The rectangular stack is left untouched, so the caller
+  // scores the materialized ragged tree on the true objective and keeps it only if it
+  // is actually lower (InfomapBase::columnarPartition), reverting to the stack otherwise.
+  // The returned value is therefore the unchanged stack codelength.
+  (void)totalGain;
+  return startL;
 }
 
 double ColumnarTwoLevel::oneLevelCodelength()

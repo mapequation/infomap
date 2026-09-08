@@ -2992,6 +2992,22 @@ ColumnarTwoLevel::toNodePaths(const std::vector<InfoNode*>& leafNodes) const
   const int nLeaves = m_hierLevels.empty() ? 0 : hierLevel(0).n;
   const int top = static_cast<int>(m_hierLevels.size()) - 1; // number of module levels
   paths.reserve(nLeaves);
+
+  // A dissolved (ragged) result cannot be walked off the rectangular stack: emit
+  // the per-leaf paths dissolveUnprofitableLevels produced (coarsest-first module
+  // ids, already 1-based since the module-tree's root is 0), plus the leaf slot.
+  if (!m_dissolvedPaths.empty()) {
+    for (int i = 0; i < nLeaves; ++i) {
+      std::vector<unsigned int> path;
+      path.reserve(m_dissolvedPaths[i].size() + 1);
+      for (int id : m_dissolvedPaths[i])
+        path.push_back(static_cast<unsigned int>(id));
+      path.push_back(1); // leaf-rank slot (unused by initTree)
+      paths.emplace_back(leafNodes[i]->stateId, std::move(path));
+    }
+    return paths;
+  }
+
   if (top < 1)
     return paths; // no module structure to materialize
 
