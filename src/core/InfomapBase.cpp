@@ -384,6 +384,7 @@ public:
     // modules that no longer pay for their codebook. Every objective; a two-level run
     // has no interior level to remove (#1074).
     if (!m_infomap.twoLevel) {
+      auto timer = m_timing.scope("dissolve_s");
       const double beforeDissolve = result.bestHierarchicalCodelength;
       if (m_infomap.dissolveColumnarBest(result.bestTree, result.bestHierarchicalCodelength)) {
         Console::detail(0, "columnar: dissolving unprofitable levels improved {} -> {}", io::toPrecision(beforeDissolve), io::toPrecision(result.bestHierarchicalCodelength));
@@ -2749,14 +2750,35 @@ bool InfomapBase::dissolveColumnarBest(NodePaths& tree, double& codelength)
     return false; // a ragged winner would land here; the deep-repair path keeps it rectangular
 
   const double seededL = opt.hierarchicalCodelengthFromStack();
-  opt.dissolveUnprofitableLevels(seededL);
+  const double dissolvedL = opt.dissolveUnprofitableLevels(seededL);
   if (!opt.hasDissolvedResult())
     return false;
-  // Score the proposed ragged tree on the TRUE objective (evaluateColumnarPartition
-  // pads and prices every objective, and stamps the per-node decomposition). Keep it
-  // only if it is actually lower -- an L* proposal, estimated on the base term, is not.
-  // Scoring materializes the proposal into the tree, so the reject path restores the
-  // winner and the reporting codelengths the caller would otherwise leave corrupted.
+
+  if (!nonRedundant) {
+    // The pass prices the base module-of-modules terms plus the entropy bias's
+    // free-parameter count, which is every term a dissolve can move under every
+    // objective but L* (the other corrections are functions of the leaf modules,
+    // which it never touches; see ColumnarCorrection::dissolveGainPerInternalNode).
+    // So its own accounting IS the ragged tree's codelength -- the round-trip test in
+    // test_partition.cpp re-scores the written tree and gets the same number -- and
+    // the decision needs neither a materialization nor a second stack build. Those
+    // two were 0.6 s of this pass's 1.7 s on web-NotreDame -d -N1 (initTree of the
+    // proposal 0.29 s, the scoring evaluateColumnarPartition 0.31 s); a rejected
+    // proposal now costs the seed and the pass alone, and never touches the tree.
+    if (dissolvedL >= codelength - 1e-10)
+      return false;
+    tree = opt.toNodePaths(m_leafNodes); // the caller materializes and re-stamps this
+    codelength = dissolvedL;
+    return true;
+  }
+
+  // L*: the proposal is base-estimated (L*'s module-of-modules term is the
+  // non-redundant index codebook, which the pass does not price), so score the ragged
+  // tree on the TRUE objective (evaluateColumnarPartition pads and prices every
+  // objective, and stamps the per-node decomposition) and keep it only if it is
+  // actually lower. Scoring materializes the proposal into the tree, so the reject
+  // path restores the winner and the reporting codelengths the caller would otherwise
+  // leave corrupted.
   const double savedHierarchicalCodelength = m_hierarchicalCodelength;
   const double savedColumnarIndexCodelength = m_columnarIndexCodelength;
   auto raggedPaths = opt.toNodePaths(m_leafNodes);

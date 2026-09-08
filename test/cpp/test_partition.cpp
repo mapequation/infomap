@@ -376,6 +376,44 @@ TEST_CASE("Columnar dissolve is never worse than the equal-depth stack it starts
   CHECK(codelength("--non-redundant") == doctest::Approx(3.078067323).epsilon(1e-7));
 }
 
+TEST_CASE("Columnar dissolve reports the codelength a re-score of its own tree gives [fast][core][partition][columnar][columnar-contract]")
+{
+  // Under every objective but L* the pass decides and reports from its own
+  // accounting -- base module-of-modules terms plus the entropy bias's free-parameter
+  // count -- without re-scoring the ragged tree (#1074). That is exact only if no other
+  // term moves, so check it end to end: the reported codelength must equal what
+  // --no-infomap -c gives for the written tree, which scores it on the full stack.
+  // Each configuration is one where the pass fires on ninetriangles (-d alone does not).
+  if (infomap::test::testEngineFlags().find("--columnar") == std::string::npos)
+    return;
+  const std::string treePath = "columnar_dissolve_roundtrip.tree";
+  for (const char* flags : { "", "--entropy-corrected", "-d --entropy-corrected", "--markov-time 0.8" }) {
+    CAPTURE(flags);
+    InfomapWrapper im(infomap::test::defaultFlags(flags));
+    im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+    im.run();
+    infomap::test::checkRunSanity(im);
+    // The pass fired: the tree is ragged at the top (some triangles lifted to
+    // top-level leaf modules beside super-modules that stayed nested).
+    unsigned int leafModuleTops = 0, nestedTops = 0;
+    for (const auto& top : im.root().children()) {
+      if (top.isLeafModule())
+        ++leafModuleTops;
+      else if (!top.isLeaf())
+        ++nestedTops;
+    }
+    REQUIRE(leafModuleTops > 0);
+    REQUIRE(nestedTops > 0);
+
+    im.writeTree(treePath);
+    InfomapWrapper scored(infomap::test::defaultFlags(std::string(flags) + " --no-infomap --cluster-data " + treePath));
+    scored.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+    scored.run();
+    std::remove(treePath.c_str());
+    CHECK(scored.codelength() == doctest::Approx(im.codelength()).epsilon(1e-9));
+  }
+}
+
 TEST_CASE("Cluster-data clu fixture initializes a two-level partition [fast][core][partition][columnar-contract]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());
